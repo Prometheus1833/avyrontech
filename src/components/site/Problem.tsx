@@ -10,18 +10,14 @@ const items = [
 
 const Problem = () => {
   return (
-    <section className="py-20 md:py-28">
+    <section className="py-14 md:py-20">
       <div className="mx-auto max-w-6xl px-4">
         <div className="max-w-2xl">
-          <span className="text-xs font-semibold uppercase tracking-widest text-brand">Problema</span>
-          <h2 className="mt-3 font-display text-4xl md:text-5xl font-bold tracking-tight">
-            Dacă nu te găsesc, nu exiști.
-          </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             Peste 80% dintre oameni caută online înainte să cumpere sau să rezerve. Fără un site profesionist, încrederea — și clienții — merg în altă parte.
           </p>
         </div>
-        <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {items.map((it, i) => (
             <motion.div
               key={it.title}

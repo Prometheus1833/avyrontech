@@ -12,15 +12,9 @@ const features = [
 
 const Solution = () => {
   return (
-    <section id="solutie" className="py-20 md:py-28 bg-secondary/40">
+    <section id="solutie" className="py-14 md:py-20 bg-secondary/40">
       <div className="mx-auto max-w-6xl px-4">
-        <div className="grid md:grid-cols-2 gap-8 items-end mb-12">
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-widest text-brand">Soluția</span>
-            <h2 className="mt-3 font-display text-4xl md:text-5xl font-bold tracking-tight">
-              Site-uri care lucrează<br/>pentru tine.
-            </h2>
-          </div>
+        <div className="max-w-2xl mb-10">
           <p className="text-lg text-muted-foreground">
             Construim pachete complete: design, cod, optimizare, SEO și conturi sociale. Tot ce ai nevoie ca să fii vizibil și ales.
           </p>

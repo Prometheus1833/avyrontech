@@ -24,7 +24,7 @@ const DomainCheck = () => {
   };
 
   return (
-    <section className="py-20 md:py-28 bg-secondary/40">
+    <section className="pt-2 pb-14 md:pt-4 md:pb-20 bg-secondary/40">
       <div className="mx-auto max-w-4xl px-4">
         <div className="rounded-[2rem] bg-darkgrad text-background p-8 md:p-14 shadow-elev relative overflow-hidden">
           <div className="absolute -top-20 -right-20 size-80 rounded-full bg-brand/30 blur-3xl" />
