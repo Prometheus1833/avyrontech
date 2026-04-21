@@ -14,9 +14,9 @@ const Solution = () => {
   return (
     <section id="solutie" className="py-14 md:py-20 bg-secondary/40">
       <div className="mx-auto max-w-6xl px-4">
-        <div className="max-w-2xl mb-10">
-          <p className="text-lg text-muted-foreground">
-            Construim pachete complete: design, cod, optimizare, SEO și conturi sociale. Tot ce ai nevoie ca să fii vizibil și ales.
+        <div className="max-w-3xl mb-10">
+          <p className="font-display text-2xl md:text-4xl font-semibold tracking-tight leading-tight">
+            Construim pachete complete: <span className="text-gradient">design, cod, optimizare, SEO</span> și conturi sociale. Tot ce ai nevoie ca să fii vizibil și ales.
           </p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
