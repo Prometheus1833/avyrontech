@@ -1,16 +1,57 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import Nav from "@/components/site/Nav";
+import Hero from "@/components/site/Hero";
+import Marquee from "@/components/site/Marquee";
+import Problem from "@/components/site/Problem";
+import Solution from "@/components/site/Solution";
+import Examples from "@/components/site/Examples";
+import DomainCheck from "@/components/site/DomainCheck";
+import Benefits from "@/components/site/Benefits";
+import Process from "@/components/site/Process";
+import WhyUs from "@/components/site/WhyUs";
+import FAQ from "@/components/site/FAQ";
+import CTA from "@/components/site/CTA";
+import ContactBar from "@/components/site/ContactBar";
+import Footer from "@/components/site/Footer";
+import { useEffect } from "react";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const Index = () => {
+  useEffect(() => {
+    document.title = "Webcore — Site-uri care aduc clienți | Vizibilitate online";
+    const desc = "Construim site-uri profesioniste, rapide și optimizate pentru Google, în 2-5 zile. Pentru afaceri locale, restaurante, saloane, profesii liberale.";
+    let meta = document.querySelector('meta[name="description"]');
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.setAttribute("name", "description");
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute("content", desc);
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement("link");
+      canonical.setAttribute("rel", "canonical");
+      document.head.appendChild(canonical);
+    }
+    canonical.setAttribute("href", window.location.origin + "/");
+  }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
-    </div>
+    <main className="min-h-screen">
+      <Nav />
+      <Hero />
+      <Marquee />
+      <Problem />
+      <Solution />
+      <Examples />
+      <DomainCheck />
+      <Benefits />
+      <Process />
+      <WhyUs />
+      <FAQ />
+      <CTA />
+      <Footer />
+      <ContactBar />
+    </main>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
