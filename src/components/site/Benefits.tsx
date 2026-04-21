@@ -11,27 +11,28 @@ const benefits = [
 
 const Benefits = () => {
   return (
-    <section className="py-20 md:py-28">
+    <section className="py-14 md:py-20">
       <div className="mx-auto max-w-6xl px-4">
         <div className="max-w-2xl">
-          <span className="text-xs font-semibold uppercase tracking-widest text-brand">Beneficii</span>
-          <h2 className="mt-3 font-display text-4xl md:text-5xl font-bold tracking-tight">
-            Ce câștigi<br />cu un site bine făcut.
+          <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight">
+            Ce câștigi cu un site bine făcut.
           </h2>
         </div>
-        <div className="mt-12 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {benefits.map((b, i) => (
             <motion.div
               key={b.n}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, delay: i * 0.05 }}
-              className="rounded-3xl p-6 bg-cardgrad border border-border/60 hover:border-brand/40 transition-colors"
+              transition={{ duration: 0.4, delay: i * 0.04 }}
+              className="rounded-2xl p-5 bg-cardgrad border border-border/60 hover:border-brand/40 transition-colors"
             >
-              <div className="font-display text-5xl font-bold text-gradient">{b.n}</div>
-              <h3 className="mt-3 font-display font-semibold text-xl">{b.t}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{b.d}</p>
+              <div className="flex items-baseline gap-3">
+                <div className="font-display text-3xl font-bold text-gradient">{b.n}</div>
+                <h3 className="font-display font-semibold text-base">{b.t}</h3>
+              </div>
+              <p className="mt-1.5 text-sm text-muted-foreground">{b.d}</p>
             </motion.div>
           ))}
         </div>

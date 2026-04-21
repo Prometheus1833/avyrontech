@@ -7,7 +7,6 @@ import Examples from "@/components/site/Examples";
 import DomainCheck from "@/components/site/DomainCheck";
 import Benefits from "@/components/site/Benefits";
 import Process from "@/components/site/Process";
-import WhyUs from "@/components/site/WhyUs";
 import FAQ from "@/components/site/FAQ";
 import CTA from "@/components/site/CTA";
 import ContactBar from "@/components/site/ContactBar";
@@ -45,9 +44,8 @@ const Index = () => {
       <DomainCheck />
       <Benefits />
       <Process />
-      <WhyUs />
-      <FAQ />
       <CTA />
+      <FAQ />
       <Footer />
       <ContactBar />
     </main>

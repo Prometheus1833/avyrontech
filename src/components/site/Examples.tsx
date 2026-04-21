@@ -42,11 +42,10 @@ const data: Record<Cat, { img: string; title: string; benefit: string; tag: stri
 const Examples = () => {
   const [active, setActive] = useState<Cat>("beauty");
   return (
-    <section id="exemple" className="py-20 md:py-28">
+    <section id="exemple" className="py-14 md:py-20">
       <div className="mx-auto max-w-6xl px-4">
         <div className="max-w-2xl">
-          <span className="text-xs font-semibold uppercase tracking-widest text-brand">Exemple</span>
-          <h2 className="mt-3 font-display text-4xl md:text-5xl font-bold tracking-tight">
+          <h2 className="font-display text-4xl md:text-5xl font-bold tracking-tight">
             Alege domeniul tău și vezi cum ar arăta.
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
