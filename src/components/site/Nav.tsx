@@ -3,6 +3,7 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
 const links = [
+  { label: "webcore.app", href: "#top", small: true },
   { label: "Proces", href: "#proces" },
   { label: "Exemple", href: "#exemple" },
   { label: "De ce ai nevoie de un site?", href: "#de-ce", highlight: true },
@@ -26,7 +27,9 @@ const Nav = () => {
                   href={l.href}
                   className={
                     l.highlight
-                      ? "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent/20 text-foreground hover:bg-accent/30 transition-colors border border-accent/40"
+                      ? "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand text-brand-foreground hover:opacity-90 transition-opacity shadow-elev"
+                      : l.small
+                      ? "text-xs text-foreground/50 hover:text-foreground/80 transition-colors font-mono"
                       : "text-foreground/70 hover:text-foreground transition-colors"
                   }
                 >
@@ -52,7 +55,7 @@ const Nav = () => {
                 href={l.href}
                 onClick={() => setOpen(false)}
                 className={`block px-3 py-2 rounded-xl text-sm font-medium ${
-                  l.highlight ? "bg-accent/20 border border-accent/40" : "hover:bg-muted"
+                  l.highlight ? "bg-brand text-brand-foreground" : l.small ? "text-xs text-foreground/50 font-mono" : "hover:bg-muted"
                 }`}
               >
                 {l.label}
