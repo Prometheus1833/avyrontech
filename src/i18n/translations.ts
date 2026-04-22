@@ -469,6 +469,6 @@ export const translations = {
       desc: "We build professional, fast and Google-optimized websites in 2-5 days. For local businesses, restaurants, salons and professionals.",
     },
   },
-} as const;
+};
 
 export type Dict = typeof translations.ro;
