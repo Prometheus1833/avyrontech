@@ -1,4 +1,7 @@
+import { useLang } from "@/i18n/LanguageContext";
+
 const Footer = () => {
+  const { t } = useLang();
   return (
     <footer className="border-t border-border/60 py-12 bg-secondary/40">
       <div className="mx-auto max-w-6xl px-4 grid md:grid-cols-3 gap-8">
@@ -8,11 +11,11 @@ const Footer = () => {
             Webcore
           </div>
           <p className="mt-3 text-sm text-muted-foreground max-w-xs">
-            În mediul online, vizibilitatea înseamnă încredere.
+            {t.footer.tagline}
           </p>
         </div>
         <div>
-          <div className="text-xs font-semibold uppercase tracking-widest text-foreground/60 mb-3">Contact</div>
+          <div className="text-xs font-semibold uppercase tracking-widest text-foreground/60 mb-3">{t.footer.contact}</div>
           <ul className="space-y-1.5 text-sm">
             <li><a className="hover:text-brand" href="mailto:contact@webcore.ro">contact@webcore.ro</a></li>
             <li><a className="hover:text-brand" href="tel:+40700000000">+40 700 000 000</a></li>
@@ -20,18 +23,17 @@ const Footer = () => {
           </ul>
         </div>
         <div>
-          <div className="text-xs font-semibold uppercase tracking-widest text-foreground/60 mb-3">Navigare</div>
+          <div className="text-xs font-semibold uppercase tracking-widest text-foreground/60 mb-3">{t.footer.nav}</div>
           <ul className="space-y-1.5 text-sm">
-            <li><a className="hover:text-brand" href="#solutie">Soluție</a></li>
-            <li><a className="hover:text-brand" href="#exemple">Exemple</a></li>
-            <li><a className="hover:text-brand" href="#proces">Proces</a></li>
-            <li><a className="hover:text-brand" href="#faq">FAQ</a></li>
+            {t.footer.navItems.map((n) => (
+              <li key={n.h}><a className="hover:text-brand" href={n.h}>{n.l}</a></li>
+            ))}
           </ul>
         </div>
       </div>
       <div className="mx-auto max-w-6xl px-4 mt-10 pt-6 border-t border-border/60 text-xs text-muted-foreground flex flex-wrap justify-between gap-2">
-        <span>© {new Date().getFullYear()} Webcore. Toate drepturile rezervate.</span>
-        <span>Construit cu pasiune în România.</span>
+        <span>{t.footer.copy.replace("{y}", String(new Date().getFullYear()))}</span>
+        <span>{t.footer.built}</span>
       </div>
     </footer>
   );
