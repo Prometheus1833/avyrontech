@@ -2,7 +2,7 @@ import Nav from "@/components/site/Nav";
 import Hero from "@/components/site/Hero";
 import Marquee from "@/components/site/Marquee";
 import Problem from "@/components/site/Problem";
-
+import Process from "@/components/site/Process";
 import Examples from "@/components/site/Examples";
 import DomainCheck from "@/components/site/DomainCheck";
 import Benefits from "@/components/site/Benefits";
@@ -39,6 +39,7 @@ const Index = () => {
       <Problem />
       <Marquee />
       <Examples />
+      <Process />
       <DomainCheck />
        <Benefits />
        <CTA />
