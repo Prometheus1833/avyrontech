@@ -12,12 +12,12 @@ const Problem = () => {
   return (
     <section className="py-14 md:py-20">
       <div className="mx-auto max-w-6xl px-4">
-        <div className="max-w-3xl">
-          <p className="font-display text-2xl md:text-4xl font-semibold tracking-tight leading-tight">
-            Peste <span className="text-gradient">80%</span> dintre oameni caută online înainte să cumpere sau să rezerve. Fără un site profesionist, încrederea — și clienții — merg în altă parte.
+        <div className="max-w-2xl">
+          <p className="font-display text-base md:text-lg font-medium tracking-tight leading-snug text-muted-foreground">
+            Peste <span className="text-foreground font-semibold">80%</span> dintre oameni caută online înainte să cumpere sau să rezerve. Fără un site profesionist, clienții merg în altă parte.
           </p>
         </div>
-        <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {items.map((it, i) => (
             <motion.div
               key={it.title}
