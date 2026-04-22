@@ -6,7 +6,6 @@ import Problem from "@/components/site/Problem";
 import Examples from "@/components/site/Examples";
 import DomainCheck from "@/components/site/DomainCheck";
 import Benefits from "@/components/site/Benefits";
-import Process from "@/components/site/Process";
 import FAQ from "@/components/site/FAQ";
 import CTA from "@/components/site/CTA";
 import ContactBar from "@/components/site/ContactBar";
@@ -41,9 +40,8 @@ const Index = () => {
       <Marquee />
       <Examples />
       <DomainCheck />
-      <Benefits />
-      <Process />
-      <CTA />
+       <Benefits />
+       <CTA />
       <FAQ />
       <Footer />
       <ContactBar />

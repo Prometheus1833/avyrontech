@@ -13,7 +13,7 @@ const Benefits = () => {
   return (
     <section className="py-14 md:py-20">
       <div className="mx-auto max-w-6xl px-4">
-        <div className="max-w-2xl">
+        <div className="max-w-2xl mx-auto text-center">
           <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight">
             Ce câștigi cu un site bine făcut.
           </h2>
