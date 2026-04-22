@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 const steps = [
   { k: "01", t: "Analiză & obiective", d: "Discutăm despre afacerea ta, publicul țintă și obiective." },
   { k: "02", t: "Prototip & design", d: "Creăm un demo personalizat. După 24-48h primești draft-ul și propui modificări." },
-  { k: "03", t: "Dezvoltare & SEO", d: "Implementăm cu tehnologii moderne, focus pe viteză și conversie." },
+  { k: "03", t: "Dezvoltare & SEO", d: "Implementăm cu tehnologii moderne (ex. Retuvo), focus pe viteză și conversie." },
   { k: "04", t: "Testare & securitate", d: "QA pe toate device-urile + măsuri de securitate de bază." },
   { k: "05", t: "Lansare & suport", d: "Publicăm site-ul și oferim asistență pentru ajustări inițiale." },
 ];
