@@ -114,7 +114,7 @@ const Examples = () => {
   return (
     <section id="exemple" className="py-14 md:py-20">
       <div className="mx-auto max-w-6xl px-4">
-        <div className="max-w-2xl">
+        <div className="max-w-2xl mx-auto text-center">
           <h2 className="font-display text-4xl md:text-5xl font-bold tracking-tight">
             Alege domeniul tău și vezi cum ar arăta.
           </h2>
@@ -123,7 +123,7 @@ const Examples = () => {
           </p>
         </div>
 
-        <div className="mt-8 flex flex-wrap gap-2">
+        <div className="mt-8 flex flex-wrap gap-2 justify-center">
           {cats.map((c) => (
             <button
               key={c.id}
@@ -161,7 +161,7 @@ const Examples = () => {
             </article>
 
             <div className="rounded-3xl bg-cardgrad border border-border/60 p-6 md:p-7 shadow-soft">
-              <div className="text-[10px] uppercase tracking-widest font-bold text-brand mb-3">Ce includem</div>
+              <div className="text-[10px] uppercase tracking-widest font-bold text-brand mb-3">Ce putem include pe lângă nevoile/dorințele tale</div>
               <h4 className="font-display font-semibold text-lg leading-tight mb-5">
                 Funcții gândite special pentru {currentCat.label.toLowerCase()}
               </h4>

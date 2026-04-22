@@ -12,7 +12,7 @@ const Problem = () => {
   return (
     <section className="py-10 md:py-14">
       <div className="mx-auto max-w-6xl px-4">
-        <div className="max-w-2xl">
+        <div className="max-w-2xl mx-auto text-center">
           <p className="font-display text-base md:text-lg font-medium tracking-tight leading-snug text-muted-foreground">
             Peste <span className="text-foreground font-semibold">80%</span> dintre oameni caută online înainte să cumpere sau să rezerve. Fără un site profesionist, clienții merg în altă parte.
           </p>
