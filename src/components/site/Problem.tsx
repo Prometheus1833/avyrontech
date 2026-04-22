@@ -27,8 +27,8 @@ const Problem = () => {
 
       <div className="relative mx-auto max-w-6xl px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="font-display text-2xl md:text-3xl font-semibold tracking-tight text-muted-foreground">
-            De ce ai nevoie de un site?
+          <h2 className="font-display text-2xl md:text-3xl font-semibold tracking-tight">
+            <span className="text-gradient">De ce ai nevoie</span> de un site?
           </h2>
           <p className="mt-4 font-display text-base md:text-lg font-medium leading-snug text-foreground/90">
             Peste <span className="font-bold">80%</span> dintre oameni caută online înainte să cumpere sau să rezerve. Fără un site profesionist, clienții merg în altă parte.

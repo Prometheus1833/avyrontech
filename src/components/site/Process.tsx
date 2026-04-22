@@ -34,10 +34,10 @@ const Process = () => {
       <div className="mx-auto max-w-5xl px-4">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="font-display text-3xl md:text-5xl font-bold tracking-tight">
-            Site-ul afacerii tale, în câteva zile.
+            Identitatea online a activității tale, în câteva zile.
           </h2>
           <p className="mt-4 text-base md:text-lg text-muted-foreground">
-            În doar câteva zile și cu un buget de la câteva sute de euro, poți avea un site care reprezintă cu adevărat societatea ta — modern, rapid și optimizat pentru clienți reali.
+            Cu costuri minime și un proces simplu, construim împreună prezența digitală care reflectă cu adevărat valorile și identitatea afacerii tale — modernă, rapidă și gândită pentru clienți reali.
           </p>
         </div>
 
