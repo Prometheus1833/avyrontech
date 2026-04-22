@@ -91,6 +91,7 @@ const data: Record<Cat, { img: string; title: string; benefit: string; features:
   },
   public: {
     img: publicImg,
+    title: "Site oficial, accesibil pentru toți cetățenii",
     benefit: "Structură europeană, ghid digital pentru cetățean, accesibilitate completă.",
     features: [
       "Structură oficială: despre, servicii, documente, anunțuri, investiții, licitații",
