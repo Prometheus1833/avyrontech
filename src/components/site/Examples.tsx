@@ -10,12 +10,12 @@ import local from "@/assets/cat-local.jpg";
 type Cat = "local" | "resto" | "beauty" | "pro" | "turism" | "public";
 
 const cats: { id: Cat; label: string; examples: string }[] = [
-  { id: "local", label: "Servicii locale & tehnice", examples: "Instalatori, electricieni, HVAC, construcții, finisaje, acoperișuri, auto, cleaning, magazine locale" },
   { id: "resto", label: "Restaurante & cafenele", examples: "Restaurante, cafenele, pub-uri, bistro, food trucks" },
-  { id: "beauty", label: "Beauty & wellness", examples: "Saloane, frizerii, SPA, stomatologi, terapeuți, fitness, veterinari" },
-  { id: "pro", label: "Profesii liberale", examples: "Avocați, notari, contabili, consultanți, designeri, arhitecți" },
-  { id: "turism", label: "Turism & cazare", examples: "Pensiuni, hoteluri, vile, agroturism" },
   { id: "public", label: "Instituții publice", examples: "Primării, spitale, școli, centre culturale, instituții oficiale" },
+  { id: "turism", label: "Turism & cazare", examples: "Pensiuni, hoteluri, vile, agroturism" },
+  { id: "pro", label: "Profesii liberale", examples: "Avocați, notari, contabili, consultanți, designeri, arhitecți" },
+  { id: "beauty", label: "Beauty & wellness", examples: "Saloane, frizerii, SPA, stomatologi, terapeuți, fitness, veterinari" },
+  { id: "local", label: "Servicii locale & tehnice", examples: "Instalatori, electricieni, HVAC, construcții, finisaje, acoperișuri, auto, cleaning, magazine locale" },
 ];
 
 const data: Record<Cat, { img: string; title: string; benefit: string; features: string[] }> = {
@@ -106,7 +106,7 @@ const data: Record<Cat, { img: string; title: string; benefit: string; features:
 };
 
 const Examples = () => {
-  const [active, setActive] = useState<Cat>("beauty");
+  const [active, setActive] = useState<Cat>("resto");
   const current = data[active];
   const currentCat = cats.find((c) => c.id === active)!;
 
@@ -118,7 +118,7 @@ const Examples = () => {
             Alege domeniul tău și vezi cum ar arăta.
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Fiecare industrie are nevoile ei. Iată funcțiile pe care le includem pentru fiecare domeniu.
+            Construim pachete complete: <span className="text-foreground font-medium">design, cod, optimizare, SEO</span> și conturi sociale. Tot ce ai nevoie ca să fii vizibil și ales.
           </p>
         </div>
 
