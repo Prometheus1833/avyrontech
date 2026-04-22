@@ -82,7 +82,6 @@ const data: Record<Cat, { img: string; title: string; benefit: string; features:
     features: [
       "Rezervări directe pe site",
       "Galerie + experiențe + check-in",
-      "Buton EN/RO pentru turiști străini",
       "Integrare Google Maps",
       "Recenzii + rating vizibil",
       "Programe sezoniere & pachete",
@@ -101,21 +100,6 @@ const data: Record<Cat, { img: string; title: string; benefit: string; features:
       "Distanțe către orașe mari și aeroporturi",
       "Accesibilitate: text lizibil, contrast bun, navigare ușoară",
       "Securitate avansată & protecție maximă",
-    ],
-  },
-  _placeholder: {
-    img: publicImg,
-    title: "Site oficial, accesibil pentru toți cetățenii",
-    benefit: "Structură europeană, ghid digital pentru cetățean, accesibilitate completă.",
-    features: [
-      "Structură oficială: despre, servicii, documente, anunțuri, investiții, licitații",
-      "Documente necesare + descărcare directă",
-      "Programări online (eliberat / primit documente)",
-      "Hartă sedii + instituțiile localității",
-      "Distanțe către orașe mari și aeroporturi",
-      "Accesibilitate: text lizibil, contrast bun, navigare ușoară",
-      "Securitate avansată & protecție maximă",
-      "Buton RO/EN pentru schimbarea limbii",
     ],
   },
 };
