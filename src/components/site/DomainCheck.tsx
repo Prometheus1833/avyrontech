@@ -50,14 +50,14 @@ const DomainCheck = () => {
             transition={{ duration: 10, repeat: Infinity }}
             className="absolute -bottom-20 -left-20 size-80 rounded-full bg-brand-2/30 blur-3xl"
           />
-          <div className="relative">
+          <div className="relative text-center">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium">
               <Sparkles className="size-3.5" /> Verificare în timp real
             </div>
             <h2 className="mt-4 font-display text-3xl md:text-5xl font-bold tracking-tight">
               Numele afacerii tale<br />arată bine online?
             </h2>
-            <p className="mt-3 text-background/70 max-w-lg">
+            <p className="mt-3 text-background/70 max-w-lg mx-auto">
               Introdu numele business-ului și vezi instant pe ce extensii e disponibil.
             </p>
 
@@ -65,7 +65,7 @@ const DomainCheck = () => {
             <motion.div
               initial={false}
               animate={{ opacity: livePreview ? 1 : 0.5 }}
-              className="mt-7 rounded-2xl bg-white/5 border border-white/10 backdrop-blur p-3 max-w-lg"
+              className="mt-7 rounded-2xl bg-white/5 border border-white/10 backdrop-blur p-3 max-w-lg mx-auto"
             >
               <div className="flex items-center gap-2 mb-2">
                 <span className="size-2.5 rounded-full bg-brand-3" />
@@ -82,7 +82,7 @@ const DomainCheck = () => {
               </div>
             </motion.div>
 
-            <div className="mt-4 flex flex-col sm:flex-row gap-3 max-w-lg">
+            <div className="mt-4 flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value.slice(0, 40))}

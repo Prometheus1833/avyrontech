@@ -3,9 +3,9 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
 const links = [
-  { label: "Soluție", href: "#solutie" },
-  { label: "Exemple", href: "#exemple" },
   { label: "Proces", href: "#proces" },
+  { label: "Exemple", href: "#exemple" },
+  { label: "De ce ai nevoie de un site?", href: "#de-ce", highlight: true },
   { label: "FAQ", href: "#faq" },
 ];
 
@@ -19,10 +19,19 @@ const Nav = () => {
             <span className="size-7 rounded-lg bg-brand grid place-items-center text-white text-sm">W</span>
             Webcore
           </a>
-          <ul className="hidden md:flex items-center gap-7 text-sm font-medium">
+          <ul className="hidden md:flex items-center gap-5 text-sm font-medium">
             {links.map((l) => (
               <li key={l.href}>
-                <a href={l.href} className="text-foreground/70 hover:text-foreground transition-colors">{l.label}</a>
+                <a
+                  href={l.href}
+                  className={
+                    l.highlight
+                      ? "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent/20 text-foreground hover:bg-accent/30 transition-colors border border-accent/40"
+                      : "text-foreground/70 hover:text-foreground transition-colors"
+                  }
+                >
+                  {l.label}
+                </a>
               </li>
             ))}
           </ul>
@@ -38,7 +47,16 @@ const Nav = () => {
         {open && (
           <div className="md:hidden glass shadow-soft rounded-3xl mt-2 p-4 space-y-2">
             {links.map((l) => (
-              <a key={l.href} href={l.href} onClick={() => setOpen(false)} className="block px-3 py-2 rounded-xl hover:bg-muted text-sm font-medium">{l.label}</a>
+              <a
+                key={l.href}
+                href={l.href}
+                onClick={() => setOpen(false)}
+                className={`block px-3 py-2 rounded-xl text-sm font-medium ${
+                  l.highlight ? "bg-accent/20 border border-accent/40" : "hover:bg-muted"
+                }`}
+              >
+                {l.label}
+              </a>
             ))}
             <Button asChild className="w-full rounded-full bg-foreground text-background hover:bg-foreground/90">
               <a href="#cta" onClick={() => setOpen(false)}>Demo gratuit</a>
