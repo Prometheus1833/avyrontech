@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check } from "lucide-react";
-import salon from "@/assets/work-salon.jpg";
-import resto from "@/assets/work-restaurant.jpg";
-import lawyer from "@/assets/work-lawyer.jpg";
-import hotel from "@/assets/work-hotel.jpg";
-import local from "@/assets/cat-local.jpg";
+import salon from "@/assets/work-beauty-flawless.jpg";
+import resto from "@/assets/work-restaurant-new.jpg";
+import lawyer from "@/assets/work-lawyer-new.jpg";
+import hotel from "@/assets/work-hotel-new.jpg";
+import local from "@/assets/work-local-new.jpg";
+import publicImg from "@/assets/work-public-miago.jpg";
 
 type Cat = "local" | "resto" | "beauty" | "pro" | "turism" | "public";
 
@@ -89,7 +90,7 @@ const data: Record<Cat, { img: string; title: string; benefit: string; features:
     ],
   },
   public: {
-    img: lawyer,
+    img: publicImg,
     title: "Site oficial, accesibil pentru toți cetățenii",
     benefit: "Structură europeană, ghid digital pentru cetățean, accesibilitate completă.",
     features: [
