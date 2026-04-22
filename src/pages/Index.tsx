@@ -11,18 +11,19 @@ import CTA from "@/components/site/CTA";
 import ContactBar from "@/components/site/ContactBar";
 import Footer from "@/components/site/Footer";
 import { useEffect } from "react";
+import { useLang } from "@/i18n/LanguageContext";
 
 const Index = () => {
+  const { t } = useLang();
   useEffect(() => {
-    document.title = "Webcore — Site-uri care aduc clienți | Vizibilitate online";
-    const desc = "Construim site-uri profesioniste, rapide și optimizate pentru Google, în 2-5 zile. Pentru afaceri locale, restaurante, saloane, profesii liberale.";
+    document.title = t.seo.title;
     let meta = document.querySelector('meta[name="description"]');
     if (!meta) {
       meta = document.createElement("meta");
       meta.setAttribute("name", "description");
       document.head.appendChild(meta);
     }
-    meta.setAttribute("content", desc);
+    meta.setAttribute("content", t.seo.desc);
     let canonical = document.querySelector('link[rel="canonical"]');
     if (!canonical) {
       canonical = document.createElement("link");
@@ -30,7 +31,7 @@ const Index = () => {
       document.head.appendChild(canonical);
     }
     canonical.setAttribute("href", window.location.origin + "/");
-  }, []);
+  }, [t.seo.title, t.seo.desc]);
 
   return (
     <main className="min-h-screen">
@@ -41,8 +42,8 @@ const Index = () => {
       <Examples />
       <Process />
       <DomainCheck />
-       <Benefits />
-       <CTA />
+      <Benefits />
+      <CTA />
       <FAQ />
       <Footer />
       <ContactBar />

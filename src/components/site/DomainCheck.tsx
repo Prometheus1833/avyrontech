@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Check, X, Sparkles, Globe, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLang } from "@/i18n/LanguageContext";
 
 const slugify = (s: string) =>
   s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
@@ -10,6 +11,7 @@ const slugify = (s: string) =>
 const tlds = [".ro", ".com", ".eu", ".net"];
 
 const DomainCheck = () => {
+  const { t } = useLang();
   const [name, setName] = useState("");
   const [checking, setChecking] = useState(false);
   const [results, setResults] = useState<null | { tld: string; available: boolean }[]>(null);
@@ -26,7 +28,6 @@ const DomainCheck = () => {
     setChecking(true);
     setResults(null);
     setTimeout(() => {
-      // Demo pseudo-random per TLD
       const r = tlds.map((tld, i) => ({
         tld,
         available: ((slug.length + i) % 3) !== 0 && slug.length > 3,
@@ -52,16 +53,15 @@ const DomainCheck = () => {
           />
           <div className="relative text-center">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium">
-              <Sparkles className="size-3.5" /> Verificare în timp real
+              <Sparkles className="size-3.5" /> {t.domain.badge}
             </div>
             <h2 className="mt-4 font-display text-3xl md:text-5xl font-bold tracking-tight">
-              Numele afacerii tale<br />arată bine online?
+              {t.domain.title1}<br />{t.domain.title2}
             </h2>
             <p className="mt-3 text-background/70 max-w-lg mx-auto">
-              Introdu numele business-ului și vezi instant pe ce extensii e disponibil.
+              {t.domain.desc}
             </p>
 
-            {/* Live browser preview */}
             <motion.div
               initial={false}
               animate={{ opacity: livePreview ? 1 : 0.5 }}
@@ -76,7 +76,7 @@ const DomainCheck = () => {
                 <Globe className="size-4 opacity-70 shrink-0" />
                 <span className="opacity-60">https://</span>
                 <span className="font-mono font-semibold text-background">
-                  {livePreview || "numele-tau"}
+                  {livePreview || t.domain.placeholderUrl}
                 </span>
                 <span className="opacity-60">.ro</span>
               </div>
@@ -87,7 +87,7 @@ const DomainCheck = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value.slice(0, 40))}
                 onKeyDown={(e) => e.key === "Enter" && check()}
-                placeholder="ex: cafeaua mea"
+                placeholder={t.domain.placeholder}
                 className="h-12 rounded-full bg-white/10 border-white/20 text-background placeholder:text-background/50 px-5 focus-visible:ring-brand-glow"
               />
               <Button
@@ -95,7 +95,7 @@ const DomainCheck = () => {
                 disabled={!slug || checking}
                 className="h-12 rounded-full bg-accent text-accent-foreground hover:bg-accent/90 px-6 font-semibold disabled:opacity-60"
               >
-                {checking ? <Loader2 className="size-4 animate-spin" /> : "Verifică"}
+                {checking ? <Loader2 className="size-4 animate-spin" /> : t.domain.check}
               </Button>
             </div>
 
@@ -133,7 +133,7 @@ const DomainCheck = () => {
                             <span className="opacity-70">{r.tld}</span>
                           </div>
                           <div className="text-xs text-background/60">
-                            {r.available ? "Disponibil" : "Probabil ocupat"}
+                            {r.available ? t.domain.available : t.domain.taken}
                           </div>
                         </div>
                       </div>
@@ -149,11 +149,11 @@ const DomainCheck = () => {
                 animate={{ opacity: 1 }}
                 className="mt-5 text-sm text-background/80"
               >
-                ✨ Îți rezervăm domeniul ales direct în pachet. Fără bătăi de cap.
+                {t.domain.success}
               </motion.p>
             )}
 
-            <p className="mt-4 text-xs text-background/50">* Verificare demonstrativă. Disponibilitatea reală se confirmă la rezervare.</p>
+            <p className="mt-4 text-xs text-background/50">{t.domain.disclaimer}</p>
           </div>
         </div>
       </div>
