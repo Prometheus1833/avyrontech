@@ -30,12 +30,14 @@ const Hero = () => {
             </Button>
           </div>
         </motion.div>
-        <div className="mt-12 flex items-center gap-6 text-sm text-muted-foreground justify-center">
+        <div className="mt-12 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-muted-foreground justify-center">
           <div><span className="font-display font-bold text-foreground text-2xl">100%</span> mobile-ready</div>
-          <div className="h-8 w-px bg-border" />
+          <div className="h-8 w-px bg-border hidden sm:block" />
           <div><span className="font-display font-bold text-foreground text-2xl">SEO</span> optimizat</div>
           <div className="h-8 w-px bg-border hidden sm:block" />
-          <div className="hidden sm:block"><span className="font-display font-bold text-foreground text-2xl">QA</span> testat</div>
+          <div><span className="font-display font-bold text-foreground text-2xl">A+</span> securitate</div>
+          <div className="h-8 w-px bg-border hidden sm:block" />
+          <div><span className="font-display font-bold text-foreground text-2xl">QA</span> testat</div>
         </div>
       </div>
     </section>
