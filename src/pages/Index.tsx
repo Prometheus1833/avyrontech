@@ -37,8 +37,8 @@ const Index = () => {
     <main className="min-h-screen">
       <Nav />
       <Hero />
-      <Marquee />
       <Problem />
+      <Marquee />
       <Examples />
       <Solution />
       <DomainCheck />

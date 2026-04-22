@@ -10,7 +10,7 @@ const items = [
 
 const Problem = () => {
   return (
-    <section className="py-14 md:py-20">
+    <section className="py-10 md:py-14">
       <div className="mx-auto max-w-6xl px-4">
         <div className="max-w-2xl">
           <p className="font-display text-base md:text-lg font-medium tracking-tight leading-snug text-muted-foreground">
