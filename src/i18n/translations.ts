@@ -3,6 +3,7 @@ export type Lang = "ro" | "en";
 export const translations = {
   ro: {
     nav: {
+      brand: "Avyron",
       process: "Proces",
       examples: "Exemple",
       whyNeed: "De ce ai nevoie de un site?",
@@ -57,12 +58,14 @@ export const translations = {
       featuresLabel: "Ce putem include pe lângă nevoile/dorințele tale",
       featuresTitle: "Funcții gândite special pentru {cat}",
       cats: {
+        beauty: { label: "Beauty & Wellness", examples: "Saloane, frizerii, SPA, stomatologi, terapeuți, fitness, veterinari" },
         resto: { label: "Restaurante & cafenele", examples: "Restaurante, cafenele, pub-uri, bistro, food trucks" },
         public: { label: "Instituții publice", examples: "Primării, spitale, școli, centre culturale, instituții oficiale" },
         turism: { label: "Turism & cazare", examples: "Pensiuni, hoteluri, vile, agroturism" },
         pro: { label: "Profesii liberale", examples: "Avocați, notari, contabili, consultanți, designeri, arhitecți" },
-        beauty: { label: "Beauty & wellness", examples: "Saloane, frizerii, SPA, stomatologi, terapeuți, fitness, veterinari" },
         local: { label: "Servicii locale & tehnice", examples: "Instalatori, electricieni, HVAC, construcții, finisaje, acoperișuri, auto, cleaning, magazine locale" },
+        national: { label: "Soluții Web/Mobile naționale", examples: "Platforme și aplicații complexe, la scară națională" },
+        other: { label: "Nu se regăsește în lista?", examples: "Nu te îngrijora, găsim soluție pentru orice!" },
       },
       data: {
         local: {
