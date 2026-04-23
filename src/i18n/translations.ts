@@ -266,6 +266,7 @@ export const translations = {
   },
   en: {
     nav: {
+      brand: "Avyron",
       process: "Process",
       examples: "Examples",
       whyNeed: "Why do you need a website?",
@@ -320,14 +321,29 @@ export const translations = {
       featuresLabel: "What we can include alongside your needs/wishes",
       featuresTitle: "Features designed specifically for {cat}",
       cats: {
+        beauty: { label: "Beauty & Wellness", examples: "Salons, barbers, SPA, dentists, therapists, fitness, vets" },
         resto: { label: "Restaurants & cafés", examples: "Restaurants, cafés, pubs, bistros, food trucks" },
         public: { label: "Public institutions", examples: "City halls, hospitals, schools, cultural centers, official institutions" },
         turism: { label: "Tourism & lodging", examples: "Guesthouses, hotels, villas, agritourism" },
         pro: { label: "Liberal professions", examples: "Lawyers, notaries, accountants, consultants, designers, architects" },
-        beauty: { label: "Beauty & wellness", examples: "Salons, barbers, SPA, dentists, therapists, fitness, vets" },
         local: { label: "Local & technical services", examples: "Plumbers, electricians, HVAC, construction, finishing, roofing, auto, cleaning, local shops" },
+        national: { label: "National Web/Mobile solutions", examples: "Complex platforms and apps at national scale" },
+        other: { label: "Not on the list?", examples: "Don't worry, we find a solution for anything!" },
       },
       data: {
+        beauty: {
+          title: "Online bookings, no calls needed",
+          benefit: "Clients book in seconds, your calendar stays full.",
+          features: [
+            "Integrated online bookings",
+            "Service list + clear prices",
+            "Portfolio gallery (before/after)",
+            "Gift vouchers & packages",
+            "On-site + Google reviews",
+            "WhatsApp / quick chat button",
+            "Quiz: which treatment fits you",
+          ],
+        },
         local: {
           title: "A clear site for fast services",
           benefit: "Always-visible call button, coverage area and quote requests in 30 seconds.",
@@ -351,19 +367,6 @@ export const translations = {
             "Gallery + brand story",
             "Location + map + opening hours",
             "WhatsApp button for quick questions",
-          ],
-        },
-        beauty: {
-          title: "Online bookings, no calls needed",
-          benefit: "Clients book in seconds, your calendar stays full.",
-          features: [
-            "Integrated online bookings",
-            "Service list + clear prices",
-            "Portfolio gallery (before/after)",
-            "Gift vouchers & packages",
-            "On-site + Google reviews",
-            "WhatsApp / quick chat button",
-            "Quiz: which treatment fits you",
           ],
         },
         pro: {
@@ -404,6 +407,31 @@ export const translations = {
             "Advanced security & maximum protection",
           ],
         },
+        national: {
+          title: "Retuvo — national deposit-return platform & app",
+          benefit: "We develop the Retuvo (formerly Recivo) web platform and mobile app, where users reclaim the 0.5 RON deposit on every returned container. We integrate the collector service and the nationwide map of collection points.",
+          features: [
+            "iOS & Android app for end users",
+            "Barcode scanning for eligible containers (PET, aluminum, glass)",
+            "Digital wallet with instant 0.5 RON refund",
+            "National network of collectors and pickup points on the map",
+            "Partner dashboard (RetuRO, retailers, city halls)",
+            "Payments, bank transfer and partner-voucher integrations",
+            "Scalable to millions of users & daily transactions",
+          ],
+        },
+        other: {
+          title: "Not on the list?",
+          benefit: "Don't worry, we find a solution for anything! Tell us what you have in mind and we build the right platform together — from a simple idea to a complex ecosystem.",
+          features: [
+            "Personalized analysis of your need",
+            "Technical proposal & quick estimate",
+            "Custom design tailored to your field",
+            "Web, mobile or hybrid development",
+            "API, payments, AI, hardware integrations",
+            "Dedicated support from the Avyron team",
+          ],
+        },
       },
     },
     process: {
@@ -418,14 +446,14 @@ export const translations = {
         { t: "Initial conversation", d: "You share minimal info about your company, activity, wishes and details. We talk directly to understand your vision." },
         { t: "Tailored offer", d: "You receive a complete proposal with site/app concept, demo accounts, analysis, suggestions and relevant info." },
         { t: "Pre-agreement & development", d: "We finalize details and project costs, with constant updates throughout development." },
-        { t: "Delivery & maintenance", d: "The final product is presented. You receive access credentials, or the Webcore team continues to manage it." },
+        { t: "Delivery & maintenance", d: "The final product is presented. You receive access credentials, or the Avyron team continues to manage it." },
       ],
     },
     domain: {
       badge: "Real-time check",
       title1: "Does your business name",
       title2: "look good online?",
-      desc: "Enter your business name and instantly see which extensions are available.",
+      desc: "Enter your business name, choose the extension and instantly see if it's available.",
       placeholder: "e.g. my coffee",
       check: "Check",
       placeholderUrl: "your-name",
@@ -433,6 +461,7 @@ export const translations = {
       taken: "Likely taken",
       success: "✨ We reserve your chosen domain directly in the package. No hassle.",
       disclaimer: "* Demo check. Real availability is confirmed at reservation.",
+      tldLabel: "Extension",
     },
     benefits: {
       title: "What you gain with a well-built site.",
@@ -490,12 +519,12 @@ export const translations = {
         { l: "Process", h: "#proces" },
         { l: "FAQ", h: "#faq" },
       ],
-      copy: "© {y} Webcore. All rights reserved.",
+      copy: "© {y} Avyron. All rights reserved.",
       built: "Built with passion in Romania.",
     },
     seo: {
-      title: "Webcore — Websites that bring customers | Online visibility",
-      desc: "We build professional, fast and Google-optimized websites in 2-5 days. For local businesses, restaurants, salons and professionals.",
+      title: "Avyron — Digital solutions. Products. Future.",
+      desc: "We build professional, fast and Google-optimized websites and apps in 2-5 days. For local businesses, restaurants, salons, professionals and national platforms.",
     },
   },
 };
