@@ -76,7 +76,7 @@ const DomainCheck = () => {
                 <span className="font-mono font-semibold text-background">
                   {livePreview || t.domain.placeholderUrl}
                 </span>
-                <span className="opacity-60">.ro</span>
+                <span className="opacity-60">{tld}</span>
               </div>
             </motion.div>
 
@@ -86,8 +86,18 @@ const DomainCheck = () => {
                 onChange={(e) => setName(e.target.value.slice(0, 40))}
                 onKeyDown={(e) => e.key === "Enter" && check()}
                 placeholder={t.domain.placeholder}
-                className="h-12 rounded-full bg-white/10 border-white/20 text-background placeholder:text-background/50 px-5 focus-visible:ring-brand-glow"
+                className="h-12 rounded-full bg-white/10 border-white/20 text-background placeholder:text-background/50 px-5 focus-visible:ring-brand-glow flex-1"
               />
+              <select
+                value={tld}
+                onChange={(e) => setTld(e.target.value)}
+                aria-label={t.domain.tldLabel}
+                className="h-12 rounded-full bg-white/10 border border-white/20 text-background px-5 font-mono font-semibold text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-glow appearance-none cursor-pointer"
+              >
+                {tlds.map((x) => (
+                  <option key={x} value={x} className="bg-foreground text-background">{x}</option>
+                ))}
+              </select>
               <Button
                 onClick={check}
                 disabled={!slug || checking}
@@ -103,7 +113,7 @@ const DomainCheck = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="mt-6 grid sm:grid-cols-2 gap-2"
+                  className="mt-6 max-w-md mx-auto"
                 >
                   {results.map((r, i) => (
                     <motion.div
