@@ -19,8 +19,8 @@ const Footer = () => {
           <div className="text-xs font-semibold uppercase tracking-widest text-foreground/60 mb-3">{t.footer.contact}</div>
           <ul className="space-y-1.5 text-sm">
             <li><a className="hover:text-brand" href="mailto:avyrontech@gmail.com">avyrontech@gmail.com</a></li>
-            <li><a className="hover:text-brand" href="tel:0734607077">0734 607 077</a></li>
-            <li><a className="hover:text-brand" href="https://wa.me/40734607077" target="_blank" rel="noopener noreferrer">WhatsApp</a></li>
+            <li><a className="hover:text-brand" href="tel:+40734605055">+40 734 605 055</a></li>
+            <li><a className="hover:text-brand" href="https://wa.me/40734605055" target="_blank" rel="noopener noreferrer">WhatsApp</a></li>
           </ul>
         </div>
         <div>
