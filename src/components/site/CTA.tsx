@@ -42,13 +42,13 @@ const CTA = () => {
     <section id="cta" className="py-20 md:py-28">
       <div className="mx-auto max-w-5xl px-4">
         <div className="rounded-[2rem] overflow-hidden grid md:grid-cols-2 shadow-elev border border-border/60">
-          <div className="bg-pink p-10 md:p-12 text-background relative overflow-hidden">
+          <div className="bg-pink p-7 sm:p-10 md:p-12 text-background relative overflow-hidden">
             <div className="absolute -bottom-10 -right-10 size-60 rounded-full bg-white/20 blur-3xl" />
             <div className="relative">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium">
                 <Sparkles className="size-3.5" /> {t.cta.badge}
               </div>
-              <h2 className="mt-5 font-display text-3xl md:text-4xl font-bold leading-tight">
+              <h2 className="mt-5 font-display text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">
                 {t.cta.title}
               </h2>
               <p className="mt-4 text-background/90">{t.cta.desc}</p>
@@ -57,7 +57,7 @@ const CTA = () => {
               </ul>
             </div>
           </div>
-          <form onSubmit={submit} className="bg-card p-8 md:p-10 space-y-4">
+          <form onSubmit={submit} className="bg-card p-6 sm:p-8 md:p-10 space-y-4">
             <div>
               <Label htmlFor="name">{t.cta.name}</Label>
               <Input id="name" value={data.name} onChange={set("name")} className="mt-1.5 h-11 rounded-xl" placeholder={t.cta.namePh} />
@@ -66,7 +66,7 @@ const CTA = () => {
               <Label htmlFor="business">{t.cta.business}</Label>
               <Input id="business" value={data.business} onChange={set("business")} className="mt-1.5 h-11 rounded-xl" placeholder={t.cta.businessPh} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="phone">{t.cta.phone}</Label>
                 <Input id="phone" value={data.phone} onChange={set("phone")} className="mt-1.5 h-11 rounded-xl" placeholder={t.cta.phonePh} />

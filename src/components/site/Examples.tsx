@@ -30,20 +30,20 @@ const Examples = () => {
     <section id="exemple" className="py-14 md:py-20">
       <div className="mx-auto max-w-6xl px-4">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="font-display text-4xl md:text-5xl font-bold tracking-tight">
+          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
             {t.examples.title}
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
+          <p className="mt-4 text-base sm:text-lg text-muted-foreground">
             {t.examples.subtitle}
           </p>
         </div>
 
-        <div className="mt-8 flex flex-wrap gap-2 justify-center">
+        <div className="mt-8 flex flex-wrap gap-2 justify-center px-1">
           {order.map((id) => (
             <button
               key={id}
               onClick={() => setActive(id)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              className={`px-3.5 py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
                 active === id
                   ? "bg-foreground text-background shadow-elev"
                   : "bg-secondary text-foreground/70 hover:bg-secondary/70"
