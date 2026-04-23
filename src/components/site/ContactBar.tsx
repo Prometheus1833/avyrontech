@@ -20,7 +20,7 @@ const ContactBar = () => {
         <Phone className="size-5" />
       </a>
       <a
-        href="mailto:contact@webcore.ro"
+        href="mailto:contact@avyron.ro"
         aria-label="Email"
         className="size-12 rounded-full bg-brand text-white grid place-items-center shadow-elev hover:scale-110 transition-transform"
       >

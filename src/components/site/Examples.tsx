@@ -1,26 +1,30 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check } from "lucide-react";
+import { Check, HelpCircle } from "lucide-react";
 import salon from "@/assets/work-beauty-flawless.jpg";
 import resto from "@/assets/work-restaurant-new.jpg";
 import lawyer from "@/assets/work-lawyer-new.jpg";
 import hotel from "@/assets/work-hotel-new.jpg";
 import local from "@/assets/work-local-new.jpg";
 import publicImg from "@/assets/work-public-miago.jpg";
+import retuvoLogo from "@/assets/retuvo-logo.png";
 import { useLang } from "@/i18n/LanguageContext";
 
-type Cat = "resto" | "public" | "turism" | "pro" | "beauty" | "local";
+type Cat = "beauty" | "resto" | "public" | "turism" | "pro" | "local" | "national" | "other";
 
-const order: Cat[] = ["resto", "public", "turism", "pro", "beauty", "local"];
-const images: Record<Cat, string> = {
-  local, resto, beauty: salon, pro: lawyer, turism: hotel, public: publicImg,
+const order: Cat[] = ["beauty", "resto", "public", "turism", "pro", "local", "national", "other"];
+const images: Record<Cat, string | null> = {
+  beauty: salon, resto, public: publicImg, turism: hotel, pro: lawyer, local,
+  national: retuvoLogo,
+  other: null,
 };
 
 const Examples = () => {
   const { t } = useLang();
-  const [active, setActive] = useState<Cat>("resto");
+  const [active, setActive] = useState<Cat>("beauty");
   const current = t.examples.data[active];
   const currentCat = t.examples.cats[active];
+  const img = images[active];
 
   return (
     <section id="exemple" className="py-14 md:py-20">
@@ -60,8 +64,21 @@ const Examples = () => {
             className="mt-8 grid md:grid-cols-2 gap-6 items-stretch"
           >
             <article className="group rounded-3xl overflow-hidden bg-card border border-border/60 shadow-soft hover:shadow-elev transition-all duration-500">
-              <div className="aspect-[4/3] overflow-hidden bg-muted">
-                <img src={images[active]} alt={current.title} loading="lazy" width={1024} height={768} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+              <div className="aspect-[4/3] overflow-hidden bg-muted grid place-items-center">
+                {img ? (
+                  active === "national" ? (
+                    <img src={img} alt={current.title} loading="lazy" width={1024} height={1024} className="w-3/5 h-3/5 object-contain" />
+                  ) : (
+                    <img src={img} alt={current.title} loading="lazy" width={1024} height={768} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  )
+                ) : (
+                  <div className="text-center px-6">
+                    <div className="size-16 rounded-2xl bg-brand/10 text-brand grid place-items-center mx-auto">
+                      <HelpCircle className="size-8" />
+                    </div>
+                    <p className="mt-4 font-display font-semibold text-lg">{currentCat.examples}</p>
+                  </div>
+                )}
               </div>
               <div className="p-6">
                 <span className="inline-block text-[10px] uppercase tracking-widest font-bold text-brand mb-2">{currentCat.label}</span>

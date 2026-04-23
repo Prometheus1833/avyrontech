@@ -1,4 +1,5 @@
 import { useLang } from "@/i18n/LanguageContext";
+import logo from "@/assets/avyron-logo.jpg";
 
 const Footer = () => {
   const { t } = useLang();
@@ -7,8 +8,8 @@ const Footer = () => {
       <div className="mx-auto max-w-6xl px-4 grid md:grid-cols-3 gap-8">
         <div>
           <div className="flex items-center gap-2 font-display font-bold text-lg">
-            <span className="size-7 rounded-lg bg-brand grid place-items-center text-white text-sm">W</span>
-            Webcore
+            <img src={logo} alt="Avyron" width={28} height={28} className="size-7 rounded-lg object-cover" loading="lazy" />
+            <span className="bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent">Avyron</span>
           </div>
           <p className="mt-3 text-sm text-muted-foreground max-w-xs">
             {t.footer.tagline}
@@ -17,7 +18,7 @@ const Footer = () => {
         <div>
           <div className="text-xs font-semibold uppercase tracking-widest text-foreground/60 mb-3">{t.footer.contact}</div>
           <ul className="space-y-1.5 text-sm">
-            <li><a className="hover:text-brand" href="mailto:contact@webcore.ro">contact@webcore.ro</a></li>
+            <li><a className="hover:text-brand" href="mailto:contact@avyron.ro">contact@avyron.ro</a></li>
             <li><a className="hover:text-brand" href="tel:+40700000000">+40 700 000 000</a></li>
             <li><a className="hover:text-brand" href="https://wa.me/40700000000">WhatsApp</a></li>
           </ul>
