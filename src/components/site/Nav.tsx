@@ -3,24 +3,25 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { useLang } from "@/i18n/LanguageContext";
 import LangSwitch from "./LangSwitch";
+import logo from "@/assets/avyron-logo.jpg";
 
 const Nav = () => {
   const [open, setOpen] = useState(false);
   const { t } = useLang();
   const links = [
-    { label: t.nav.process, href: "#proces" },
-    { label: t.nav.examples, href: "#exemple" },
     { label: t.nav.whyNeed, href: "#de-ce", highlight: true },
+    { label: t.nav.examples, href: "#exemple" },
+    { label: t.nav.process, href: "#proces" },
     { label: t.nav.faq, href: "#faq" },
   ];
   return (
     <header className="fixed top-0 inset-x-0 z-50">
       <div className="mx-auto max-w-6xl px-4 mt-3">
-        <nav className="glass shadow-soft rounded-full flex items-center justify-between pl-5 pr-2 py-2">
+        <nav className="glass shadow-soft rounded-full flex items-center justify-between pl-4 pr-2 py-2">
           <div className="flex items-center gap-3">
             <a href="#top" className="flex items-center gap-2 font-display font-bold text-lg">
-              <span className="size-7 rounded-lg bg-brand grid place-items-center text-white text-sm">W</span>
-              Webcore
+              <img src={logo} alt="Avyron" width={28} height={28} className="size-7 rounded-lg object-cover" />
+              <span className="bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent">Avyron</span>
             </a>
             <LangSwitch className="hidden md:inline-flex" />
           </div>
