@@ -68,6 +68,19 @@ export const translations = {
         other: { label: "Nu se regăsește în lista?", examples: "Nu te îngrijora, găsim soluție pentru orice!" },
       },
       data: {
+        beauty: {
+          title: "Programări online fără sunat",
+          benefit: "Clientele se programează în câteva secunde, tu îți vezi calendarul plin.",
+          features: [
+            "Programări online integrate",
+            "Listă servicii + prețuri clare",
+            "Galerie portofoliu (înainte/după)",
+            "Vouchere cadou & pachete",
+            "Recenzii pe site + Google",
+            "Buton WhatsApp / chat rapid",
+            "Quiz: ce tratament ți se potrivește",
+          ],
+        },
         local: {
           title: "Site clar pentru servicii rapide",
           benefit: "Buton de apel mereu vizibil, zonă de acoperire și solicitare ofertă în 30 secunde.",
@@ -91,19 +104,6 @@ export const translations = {
             "Galerie + story brand",
             "Locație + hartă + program",
             "Buton WhatsApp pentru întrebări rapide",
-          ],
-        },
-        beauty: {
-          title: "Programări online fără sunat",
-          benefit: "Clientele se programează în câteva secunde, tu îți vezi calendarul plin.",
-          features: [
-            "Programări online integrate",
-            "Listă servicii + prețuri clare",
-            "Galerie portofoliu (înainte/după)",
-            "Vouchere cadou & pachete",
-            "Recenzii pe site + Google",
-            "Buton WhatsApp / chat rapid",
-            "Quiz: ce tratament ți se potrivește",
           ],
         },
         pro: {
@@ -142,6 +142,31 @@ export const translations = {
             "Distanțe către orașe mari și aeroporturi",
             "Accesibilitate: text lizibil, contrast bun, navigare ușoară",
             "Securitate avansată & protecție maximă",
+          ],
+        },
+        national: {
+          title: "Retuvo — platformă & aplicație națională de recuperare garanție",
+          benefit: "Dezvoltăm platforma web și aplicația mobilă Retuvo (fostul Recivo), prin care utilizatorii recuperează garanția de 0,5 RON pe fiecare recipient returnat. Integrăm serviciul de colectori și harta punctelor de colectare la nivel național.",
+          features: [
+            "Aplicație iOS & Android pentru utilizatori finali",
+            "Scanare cod de bare pentru recipiente eligibile (PET, aluminiu, sticlă)",
+            "Wallet digital cu recuperare instant a garanției de 0,5 RON",
+            "Rețea națională de colectori și puncte de colectare pe hartă",
+            "Dashboard pentru parteneri (RetuRO, retaileri, primării)",
+            "Integrare plăți, transfer bancar și vouchere partenere",
+            "Scalabilitate la milioane de utilizatori & tranzacții zilnice",
+          ],
+        },
+        other: {
+          title: "Nu se regăsește în lista?",
+          benefit: "Nu te îngrijora, găsim soluție pentru orice! Spune-ne ce ai în minte și construim împreună platforma potrivită — de la idee simplă la ecosistem complex.",
+          features: [
+            "Analiză personalizată a nevoii tale",
+            "Propunere tehnică & estimare rapidă",
+            "Design custom, adaptat domeniului tău",
+            "Dezvoltare web, mobile sau hibridă",
+            "Integrări API, plăți, AI, hardware",
+            "Suport dedicat de la echipa Avyron",
           ],
         },
       },
