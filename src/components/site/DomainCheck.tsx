@@ -8,11 +8,12 @@ import { useLang } from "@/i18n/LanguageContext";
 const slugify = (s: string) =>
   s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
 
-const tlds = [".ro", ".com", ".eu", ".net"];
+const tlds = [".ro", ".com", ".eu", ".net", ".org", ".io", ".app", ".dev", ".tech", ".store", ".online", ".biz", ".info", ".co", ".shop"];
 
 const DomainCheck = () => {
   const { t } = useLang();
   const [name, setName] = useState("");
+  const [tld, setTld] = useState(".ro");
   const [checking, setChecking] = useState(false);
   const [results, setResults] = useState<null | { tld: string; available: boolean }[]>(null);
   const [livePreview, setLivePreview] = useState("");
@@ -28,11 +29,8 @@ const DomainCheck = () => {
     setChecking(true);
     setResults(null);
     setTimeout(() => {
-      const r = tlds.map((tld, i) => ({
-        tld,
-        available: ((slug.length + i) % 3) !== 0 && slug.length > 3,
-      }));
-      setResults(r);
+      const available = ((slug.length + tlds.indexOf(tld)) % 3) !== 0 && slug.length > 3;
+      setResults([{ tld, available }]);
       setChecking(false);
     }, 700);
   };
