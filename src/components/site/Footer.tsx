@@ -20,7 +20,7 @@ const Footer = () => {
           <ul className="space-y-1.5 text-sm">
             <li><a className="hover:text-brand" href="mailto:avyrontech@gmail.com">avyrontech@gmail.com</a></li>
             <li><a className="hover:text-brand" href="tel:0734607077">0734 607 077</a></li>
-            <li><span className="text-muted-foreground">WhatsApp: indisponibil momentan</span></li>
+            <li><a className="hover:text-brand" href="https://wa.me/40734607077" target="_blank" rel="noopener noreferrer">WhatsApp</a></li>
           </ul>
         </div>
         <div>
