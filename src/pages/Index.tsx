@@ -34,7 +34,7 @@ const Index = () => {
   }, [t.seo.title, t.seo.desc]);
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen overflow-x-hidden">
       <Nav />
       <Hero />
       <Problem />

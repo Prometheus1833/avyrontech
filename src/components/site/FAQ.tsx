@@ -8,7 +8,7 @@ const FAQ = () => {
       <div className="mx-auto max-w-3xl px-4">
         <div className="text-center">
           <span className="text-xs font-semibold uppercase tracking-widest text-brand">{t.faq.kicker}</span>
-          <h2 className="mt-3 font-display text-4xl md:text-5xl font-bold tracking-tight">
+          <h2 className="mt-3 font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
             {t.faq.title}
           </h2>
         </div>

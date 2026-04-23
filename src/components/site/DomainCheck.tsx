@@ -38,7 +38,7 @@ const DomainCheck = () => {
   return (
     <section className="pt-2 pb-14 md:pt-4 md:pb-20 bg-secondary/40">
       <div className="mx-auto max-w-4xl px-4">
-        <div className="rounded-[2rem] bg-darkgrad text-background p-8 md:p-14 shadow-elev relative overflow-hidden">
+        <div className="rounded-[1.5rem] md:rounded-[2rem] bg-darkgrad text-background p-6 sm:p-8 md:p-14 shadow-elev relative overflow-hidden">
           <motion.div
             animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
             transition={{ duration: 8, repeat: Infinity }}
@@ -70,10 +70,10 @@ const DomainCheck = () => {
                 <span className="size-2.5 rounded-full bg-accent" />
                 <span className="size-2.5 rounded-full bg-brand" />
               </div>
-              <div className="flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-sm">
+              <div className="flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-2 text-xs sm:text-sm overflow-hidden">
                 <Globe className="size-4 opacity-70 shrink-0" />
-                <span className="opacity-60">https://</span>
-                <span className="font-mono font-semibold text-background">
+                <span className="opacity-60 hidden sm:inline">https://</span>
+                <span className="font-mono font-semibold text-background truncate">
                   {livePreview || t.domain.placeholderUrl}
                 </span>
                 <span className="opacity-60">{tld}</span>

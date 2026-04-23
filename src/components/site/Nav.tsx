@@ -17,7 +17,7 @@ const Nav = () => {
   return (
     <header className="fixed top-0 inset-x-0 z-50">
       <div className="mx-auto max-w-6xl px-4 mt-3">
-        <nav className="glass shadow-soft rounded-full flex items-center justify-between pl-4 pr-2 py-2">
+        <nav className="glass shadow-soft rounded-full flex items-center justify-between pl-3 pr-2 py-2 gap-2">
           <div className="flex items-center gap-3">
             <a href="#top" className="flex items-center gap-2 font-display font-bold text-lg">
               <img src={logo} alt="Avyron" width={28} height={28} className="size-7 rounded-lg object-cover" />
