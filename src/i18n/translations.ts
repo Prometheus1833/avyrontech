@@ -285,7 +285,6 @@ export const translations = {
       stats: [
         { v: "100%", l: "mobile-ready" },
         { v: "SEO", l: "optimized" },
-        { v: "A+", l: "security" },
         { v: "QA", l: "tested" },
       ],
     },
