@@ -175,7 +175,7 @@ export const translations = {
     process: {
       title: "Identitatea online a activității tale, în câteva zile.",
       subtitle:
-        "Cu costuri minime și un proces simplu, construim împreună prezența digitală care reflectă cu adevărat valorile și identitatea afacerii tale — modernă, rapidă și gândită pentru clienți reali.",
+        "Cu costuri minime și un proces simplu, construim împreună prezența digitală care reflectă cu adevărat valorile și identitatea activității tale — modernă, rapidă și gândită pentru clienți reali.",
       footer:
         "Costurile variază în funcție de complexitate: de la {a} pentru site-uri de prezentare și proiecte mici, până la {b} pentru platforme complexe, cu servicii și colaborări extinse.",
       footerA: "câteva sute de lei/euro",
