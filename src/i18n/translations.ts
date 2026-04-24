@@ -107,12 +107,14 @@ export const translations = {
         },
         pro: {
           title: "Site profesionist care inspiră încredere",
-          benefit: "Programări consultații, arii de practică și ghiduri — totul clar și sobru.",
+          benefit: "Programări, consultații, arii de practică și ghiduri — totul clar și elegant.",
           features: [
             "Despre + experiență & calificări",
             "Servicii oferite & arii de practică",
             "CTA „Programează o consultație”",
-            "Secțiune cazuri frecvente / FAQ",
+            "Secțiune de documente pentru încărcare/descărcare",
+            "Buton Apel/WhatsApp/Email",
+            "Localizare și locație pe Google Maps și conexe",
             "Parteneri & colaborări",
             "GDPR, Termeni & Confidențialitate",
             "Formulare inteligente cu pre-screening",
