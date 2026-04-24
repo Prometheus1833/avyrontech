@@ -55,7 +55,7 @@ export const translations = {
       subtitle:
         "Construim pachete complete: design, cod, optimizare, SEO și conturi sociale. Tot ce ai nevoie ca să fii vizibil și ales.",
       featuresLabel: "Ce putem include pe lângă nevoile/dorințele tale",
-      featuresTitle: "Funcții gândite special pentru {cat}",
+      featuresTitle: "Funcții sugerate",
       cats: {
         beauty: { label: "Beauty & Wellness", examples: "Saloane, frizerii, SPA, stomatologi, terapeuți, fitness, veterinari" },
         resto: { label: "Restaurante & cafenele", examples: "Restaurante, cafenele, pub-uri, bistro, food trucks" },
