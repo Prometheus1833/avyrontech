@@ -319,7 +319,7 @@ export const translations = {
       subtitle:
         "We build complete packages: design, code, optimization, SEO and social accounts. Everything you need to be visible and chosen.",
       featuresLabel: "What we can include alongside your needs/wishes",
-      featuresTitle: "Features designed specifically for {cat}",
+      featuresTitle: "Suggested features",
       cats: {
         beauty: { label: "Beauty & Wellness", examples: "Salons, barbers, SPA, dentists, therapists, fitness, vets" },
         resto: { label: "Restaurants & cafés", examples: "Restaurants, cafés, pubs, bistros, food trucks" },
