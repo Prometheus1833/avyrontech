@@ -36,7 +36,7 @@ const DomainCheck = () => {
   };
 
   return (
-    <section className="pt-2 pb-14 md:pt-4 md:pb-20 bg-secondary/40">
+    <section className="pt-2 pb-10 md:pt-4 md:pb-16 bg-secondary/40">
       <div className="mx-auto max-w-4xl px-4">
         <div className="rounded-[1.5rem] md:rounded-[2rem] bg-darkgrad text-background p-6 sm:p-8 md:p-14 shadow-elev relative overflow-hidden">
           <motion.div

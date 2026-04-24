@@ -63,7 +63,7 @@ export const translations = {
         turism: { label: "Turism & cazare", examples: "Pensiuni, hoteluri, vile, agroturism" },
         pro: { label: "Profesii liberale", examples: "Avocați, notari, contabili, consultanți, designeri, arhitecți" },
         local: { label: "Servicii locale & tehnice", examples: "Instalatori, electricieni, HVAC, construcții, finisaje, acoperișuri, auto, cleaning, magazine locale" },
-        national: { label: "Soluții Web/Mobile naționale", examples: "Platforme și aplicații complexe, la scară națională" },
+        national: { label: "Soluții Web/Mobile", examples: "Platforme și aplicații complexe, la scară națională" },
         other: { label: "Nu se regăsește în lista?", examples: "Nu te îngrijora, găsim soluție pentru orice!" },
       },
       data: {
@@ -327,7 +327,7 @@ export const translations = {
         turism: { label: "Tourism & lodging", examples: "Guesthouses, hotels, villas, agritourism" },
         pro: { label: "Liberal professions", examples: "Lawyers, notaries, accountants, consultants, designers, architects" },
         local: { label: "Local & technical services", examples: "Plumbers, electricians, HVAC, construction, finishing, roofing, auto, cleaning, local shops" },
-        national: { label: "National Web/Mobile solutions", examples: "Complex platforms and apps at national scale" },
+        national: { label: "Web/Mobile solutions", examples: "Complex platforms and apps at national scale" },
         other: { label: "Not on the list?", examples: "Don't worry, we find a solution for anything!" },
       },
       data: {

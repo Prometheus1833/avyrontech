@@ -8,7 +8,7 @@ const icons = [Search, MapPinOff, Instagram, FileQuestion, ShieldCheck, Trending
 const Problem = () => {
   const { t } = useLang();
   return (
-    <section id="de-ce" className="relative py-14 md:py-20 overflow-hidden">
+    <section id="de-ce" className="relative py-10 md:py-16 overflow-hidden">
       <div
         className="absolute inset-0 bg-cover bg-center opacity-[0.08]"
         style={{ backgroundImage: `url(${bg})` }}

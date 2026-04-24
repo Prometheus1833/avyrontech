@@ -4,7 +4,7 @@ import { useLang } from "@/i18n/LanguageContext";
 const FAQ = () => {
   const { t } = useLang();
   return (
-    <section id="faq" className="py-20 md:py-28 bg-secondary/40">
+    <section id="faq" className="py-14 md:py-20 bg-secondary/40">
       <div className="mx-auto max-w-3xl px-4">
         <div className="text-center">
           <span className="text-xs font-semibold uppercase tracking-widest text-brand">{t.faq.kicker}</span>
