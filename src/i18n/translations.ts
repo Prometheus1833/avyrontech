@@ -23,7 +23,6 @@ export const translations = {
       stats: [
         { v: "100%", l: "mobile-ready" },
         { v: "SEO", l: "optimizat" },
-        { v: "A+", l: "securitate" },
         { v: "QA", l: "testat" },
       ],
     },
@@ -56,7 +55,7 @@ export const translations = {
       subtitle:
         "Construim pachete complete: design, cod, optimizare, SEO și conturi sociale. Tot ce ai nevoie ca să fii vizibil și ales.",
       featuresLabel: "Ce putem include pe lângă nevoile/dorințele tale",
-      featuresTitle: "Funcții gândite special pentru {cat}",
+      featuresTitle: "Funcții sugerate",
       cats: {
         beauty: { label: "Beauty & Wellness", examples: "Saloane, frizerii, SPA, stomatologi, terapeuți, fitness, veterinari" },
         resto: { label: "Restaurante & cafenele", examples: "Restaurante, cafenele, pub-uri, bistro, food trucks" },
@@ -108,12 +107,14 @@ export const translations = {
         },
         pro: {
           title: "Site profesionist care inspiră încredere",
-          benefit: "Programări consultații, arii de practică și ghiduri — totul clar și sobru.",
+          benefit: "Programări, consultații, arii de practică și ghiduri — totul clar și elegant.",
           features: [
             "Despre + experiență & calificări",
             "Servicii oferite & arii de practică",
             "CTA „Programează o consultație”",
-            "Secțiune cazuri frecvente / FAQ",
+            "Secțiune de documente pentru încărcare/descărcare",
+            "Buton Apel/WhatsApp/Email",
+            "Localizare și locație pe Google Maps și conexe",
             "Parteneri & colaborări",
             "GDPR, Termeni & Confidențialitate",
             "Formulare inteligente cu pre-screening",
@@ -286,7 +287,6 @@ export const translations = {
       stats: [
         { v: "100%", l: "mobile-ready" },
         { v: "SEO", l: "optimized" },
-        { v: "A+", l: "security" },
         { v: "QA", l: "tested" },
       ],
     },
@@ -319,7 +319,7 @@ export const translations = {
       subtitle:
         "We build complete packages: design, code, optimization, SEO and social accounts. Everything you need to be visible and chosen.",
       featuresLabel: "What we can include alongside your needs/wishes",
-      featuresTitle: "Features designed specifically for {cat}",
+      featuresTitle: "Suggested features",
       cats: {
         beauty: { label: "Beauty & Wellness", examples: "Salons, barbers, SPA, dentists, therapists, fitness, vets" },
         resto: { label: "Restaurants & cafés", examples: "Restaurants, cafés, pubs, bistros, food trucks" },
