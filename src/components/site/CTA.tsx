@@ -39,7 +39,7 @@ const CTA = () => {
     setData((d) => ({ ...d, [k]: e.target.value }));
 
   return (
-    <section id="cta" className="py-20 md:py-28">
+    <section id="cta" className="py-14 md:py-20">
       <div className="mx-auto max-w-5xl px-4">
         <div className="rounded-[2rem] overflow-hidden grid md:grid-cols-2 shadow-elev border border-border/60">
           <div className="bg-pink p-7 sm:p-10 md:p-12 text-background relative overflow-hidden">

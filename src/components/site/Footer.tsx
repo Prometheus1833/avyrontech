@@ -4,7 +4,7 @@ import logo from "@/assets/avyron-logo.jpg";
 const Footer = () => {
   const { t } = useLang();
   return (
-    <footer className="border-t border-border/60 py-12 bg-secondary/40">
+    <footer className="border-t border-border/60 py-10 bg-secondary/40">
       <div className="mx-auto max-w-6xl px-4 grid md:grid-cols-3 gap-8">
         <div>
           <div className="flex items-center gap-2 font-display font-bold text-lg">

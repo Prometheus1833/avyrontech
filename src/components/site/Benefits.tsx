@@ -4,7 +4,7 @@ import { useLang } from "@/i18n/LanguageContext";
 const Benefits = () => {
   const { t } = useLang();
   return (
-    <section className="py-10 md:py-16">
+    <section className="py-8 md:py-12">
       <div className="mx-auto max-w-6xl px-4">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="font-display text-2xl md:text-4xl font-bold tracking-tight">

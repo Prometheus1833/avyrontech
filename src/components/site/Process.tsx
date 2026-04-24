@@ -7,7 +7,7 @@ const icons = [MessageSquare, FileText, Handshake, Rocket];
 const Process = () => {
   const { t } = useLang();
   return (
-    <section id="proces" className="py-14 md:py-20 bg-secondary/40">
+    <section id="proces" className="py-10 md:py-16 bg-secondary/40">
       <div className="mx-auto max-w-5xl px-4">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">

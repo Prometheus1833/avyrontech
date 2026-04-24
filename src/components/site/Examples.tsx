@@ -27,7 +27,7 @@ const Examples = () => {
   const img = images[active];
 
   return (
-    <section id="exemple" className="py-14 md:py-20">
+    <section id="exemple" className="py-10 md:py-16">
       <div className="mx-auto max-w-6xl px-4">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
