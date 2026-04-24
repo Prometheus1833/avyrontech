@@ -11,7 +11,7 @@ const Benefits = () => {
             {t.benefits.title}
           </h2>
         </div>
-        <div className="mt-6 grid grid-cols-2 lg:grid-cols-3 gap-2.5 md:gap-3">
+        <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-2.5 md:gap-3">
           {t.benefits.items.map((b, i) => {
             const n = String(i + 1).padStart(2, "0");
             return (
