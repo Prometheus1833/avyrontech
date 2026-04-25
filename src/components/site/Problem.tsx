@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
-import { Search, MapPinOff, Instagram, FileQuestion, ShieldCheck, TrendingUp } from "lucide-react";
+import { Search, MapPinOff, Instagram, Bot, ShieldCheck, TrendingUp } from "lucide-react";
 import bg from "@/assets/problem-search-bg.jpg";
 import { useLang } from "@/i18n/LanguageContext";
 
-const icons = [Search, MapPinOff, Instagram, FileQuestion, ShieldCheck, TrendingUp];
+const icons = [Search, MapPinOff, Instagram, Bot, ShieldCheck, TrendingUp];
 
 const Problem = () => {
   const { t } = useLang();
