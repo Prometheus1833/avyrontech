@@ -147,7 +147,7 @@ export const translations = {
         },
         national: {
           title: "Retuvo — platformă & aplicație națională de recuperare garanție",
-          benefit: "Dezvoltăm platforma web și aplicația mobilă Retuvo (fostul Recivo), prin care utilizatorii recuperează garanția de 0,5 RON pe fiecare recipient returnat. Integrăm serviciul de colectori și harta punctelor de colectare la nivel național.",
+          benefit: "Dezvoltăm platforma web și aplicația mobilă Retuvo, prin care utilizatorii recuperează garanția de 0,5 RON pe fiecare recipient returnat. Integrăm serviciul de colectori și harta punctelor de colectare la nivel național.",
           features: [
             "Aplicație iOS & Android pentru utilizatori finali",
             "Scanare cod de bare pentru recipiente eligibile (PET, aluminiu, sticlă)",
@@ -409,7 +409,7 @@ export const translations = {
         },
         national: {
           title: "Retuvo — national deposit-return platform & app",
-          benefit: "We develop the Retuvo (formerly Recivo) web platform and mobile app, where users reclaim the 0.5 RON deposit on every returned container. We integrate the collector service and the nationwide map of collection points.",
+          benefit: "We develop the Retuvo web platform and mobile app, where users reclaim the 0.5 RON deposit on every returned container. We integrate the collector service and the nationwide map of collection points.",
           features: [
             "iOS & Android app for end users",
             "Barcode scanning for eligible containers (PET, aluminum, glass)",
