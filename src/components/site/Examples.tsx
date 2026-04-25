@@ -52,8 +52,8 @@ const Examples = () => {
             transition={{ duration: 0.4 }}
             className="mt-8 grid md:grid-cols-2 gap-6 items-stretch"
           >
-            <article className="group rounded-3xl overflow-hidden bg-card border border-border/60 shadow-soft hover:shadow-elev transition-all duration-500">
-              <div className="aspect-[4/3] overflow-hidden bg-muted">
+            <article className="group rounded-3xl overflow-hidden bg-card border border-border/60 shadow-soft hover:shadow-elev transition-all duration-500 flex flex-col">
+              <div className="aspect-[3/4] sm:aspect-[4/5] overflow-hidden bg-muted">
                 <Mockup />
               </div>
               <div className="p-6">
