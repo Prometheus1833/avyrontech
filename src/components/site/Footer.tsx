@@ -1,4 +1,5 @@
 import { useLang } from "@/i18n/LanguageContext";
+import { Link } from "react-router-dom";
 import { Mail, Phone, MessageCircle, ArrowUpRight, ArrowRight } from "lucide-react";
 import logo from "@/assets/avyron-logo.jpg";
 import planetBg from "@/assets/footer-planet-bg.jpg";
@@ -107,16 +108,20 @@ const Footer = () => {
         </div>
 
         {/* Nav inline */}
-        <nav className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-          {t.footer.navItems.map((n) => (
-            <a
-              key={n.h}
-              href={n.h}
-              className="text-sm text-white/70 hover:text-purple-300 transition-colors"
-            >
-              {n.l}
-            </a>
-          ))}
+        <nav className="mt-7 flex flex-wrap items-center justify-center gap-2 md:gap-3">
+          {t.footer.navItems.map((n) => {
+            const className =
+              "px-4 py-2 md:px-5 md:py-2.5 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 text-sm md:text-base font-display font-semibold text-white/90 hover:text-white transition-all";
+            return n.h.startsWith("/") ? (
+              <Link key={n.h} to={n.h} className={className}>
+                {n.l}
+              </Link>
+            ) : (
+              <a key={n.h} href={n.h} className={className}>
+                {n.l}
+              </a>
+            );
+          })}
         </nav>
 
         <div className="mt-6 pt-4 border-t border-white/10 text-xs text-white/55 flex flex-wrap justify-between gap-2">
