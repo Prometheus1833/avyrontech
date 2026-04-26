@@ -14,7 +14,7 @@ const FAQ = () => {
         {/* Costuri & Mentenanță quick link (above FAQ) */}
         <Link
           to="/costuri"
-          className="group mb-4 w-full rounded-2xl border border-brand/30 bg-gradient-to-r from-brand/10 via-brand/5 to-transparent hover:from-brand/15 hover:to-brand/5 px-6 py-4 md:py-5 shadow-soft hover:shadow-elev transition-all flex items-center gap-4 text-left"
+          className="group mb-4 w-full rounded-2xl border border-brand/30 bg-gradient-to-r from-brand/10 via-brand/5 to-transparent hover:from-brand/15 hover:to-brand/5 px-4 sm:px-6 py-4 md:py-5 shadow-soft hover:shadow-elev transition-all flex items-center gap-3 sm:gap-4 text-left"
         >
           <span className="size-11 md:size-12 rounded-xl bg-brand text-brand-foreground grid place-items-center shrink-0">
             <Wallet className="size-5 md:size-6" />
@@ -36,25 +36,25 @@ const FAQ = () => {
         <button
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
-          className="w-full group rounded-2xl bg-gradient-to-r from-foreground to-foreground/90 text-background px-6 py-5 md:py-6 shadow-elev hover:shadow-soft transition-all flex items-center gap-4 text-left"
+          className="w-full group rounded-2xl bg-gradient-to-r from-foreground to-foreground/90 text-background px-4 sm:px-6 py-4 sm:py-5 md:py-6 shadow-elev hover:shadow-soft transition-all flex items-center gap-3 sm:gap-4 text-left"
         >
-          <span className="size-12 md:size-14 rounded-xl bg-brand/20 text-brand grid place-items-center shrink-0">
-            <HelpCircle className="size-6 md:size-7" />
+          <span className="size-11 sm:size-12 md:size-14 rounded-xl bg-brand/20 text-brand grid place-items-center shrink-0">
+            <HelpCircle className="size-5 sm:size-6 md:size-7" />
           </span>
           <span className="flex-1 min-w-0">
             <span className="block text-[10px] md:text-xs uppercase tracking-widest text-background/60">
               {t.faq.kicker}
             </span>
-            <span className="block font-display font-bold text-xl md:text-2xl leading-tight">
+            <span className="block font-display font-bold text-base sm:text-xl md:text-2xl leading-tight">
               {t.faq.title}
             </span>
           </span>
           <span
-            className={`size-10 md:size-12 rounded-full bg-brand text-brand-foreground grid place-items-center shrink-0 transition-transform ${
+            className={`size-9 sm:size-10 md:size-12 rounded-full bg-brand text-brand-foreground grid place-items-center shrink-0 transition-transform ${
               open ? "rotate-180" : ""
             }`}
           >
-            <ChevronDown className="size-5 md:size-6" />
+            <ChevronDown className="size-4 sm:size-5 md:size-6" />
           </span>
         </button>
 
@@ -92,7 +92,7 @@ const FAQ = () => {
         {/* Portofoliu & Colaborări CTA */}
         <Link
           to="/despre"
-          className="group mt-4 w-full rounded-2xl border border-border bg-card hover:border-brand/40 hover:shadow-soft px-6 py-4 md:py-5 transition-all flex items-center gap-4 text-left"
+          className="group mt-4 w-full rounded-2xl border border-border bg-card hover:border-brand/40 hover:shadow-soft px-4 sm:px-6 py-4 md:py-5 transition-all flex items-center gap-3 sm:gap-4 text-left"
         >
           <span className="size-11 md:size-12 rounded-xl bg-foreground text-background grid place-items-center shrink-0">
             <Briefcase className="size-5 md:size-6" />
