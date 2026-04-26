@@ -574,11 +574,9 @@ export const translations = {
       whatsappValue: "Message us now",
       nav: "Navigation",
       navItems: [
-        { l: "Examples", h: "#exemple" },
+        { l: "Browse Industries", h: "#exemple" },
         { l: "Process", h: "#proces" },
         { l: "Benefits", h: "#avantaje" },
-        { l: "Pricing & Care", h: "/costuri" },
-        { l: "FAQ", h: "#faq" },
         { l: "Privacy Policy & GDPR", h: "/gdpr" },
       ],
       ctaLabel: "Free demo",
