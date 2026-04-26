@@ -442,6 +442,19 @@ export const translations = {
             "Advanced security & maximum protection",
           ],
         },
+        auto: {
+          title: "Professional site for auto/moto services",
+          benefit: "Customers see services, book maintenance and get quotes without calling.",
+          features: [
+            "Online bookings for service, inspection, repairs",
+            "Service list: mechanics, tire service, detailing, electrical",
+            "Estimated price calculator per service type",
+            "Before/after gallery for detailing & work",
+            "Customer reviews + Google Reviews",
+            "Call & WhatsApp button for towing/emergencies",
+            "Map with shop location and opening hours",
+          ],
+        },
         national: {
           title: "Retuvo — national deposit-return platform & app",
           benefit: "We develop the Retuvo web platform and mobile app, where users reclaim the 0.5 RON deposit on every returned container. We integrate the collector service and the nationwide map of collection points.",
