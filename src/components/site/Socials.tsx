@@ -46,10 +46,10 @@ const Socials = () => {
         <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm px-4 py-4 md:px-6 md:py-5 shadow-soft">
           <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
             <div className="md:w-1/4">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+              <div className="inline-block text-[10px] uppercase tracking-widest font-bold bg-gradient-to-r from-[#fa7e1e] via-[#d62976] to-[#A033FF] bg-clip-text text-transparent">
                 Conectează-te
               </div>
-              <h3 className="font-display font-bold text-lg md:text-xl leading-tight">
+              <h3 className="font-display font-bold text-lg md:text-xl leading-tight bg-gradient-to-r from-brand via-[#d62976] to-[#006AFF] bg-clip-text text-transparent">
                 Urmărește Avyron
               </h3>
             </div>
