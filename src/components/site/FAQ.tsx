@@ -23,7 +23,7 @@ const FAQ = () => {
             <span className="block text-[10px] md:text-xs uppercase tracking-widest text-background/60">
               {t.faq.kicker}
             </span>
-            <span className="block font-display font-bold text-2xl md:text-4xl leading-tight">
+            <span className="block font-display font-bold text-xl md:text-2xl leading-tight">
               {t.faq.title}
             </span>
           </span>
