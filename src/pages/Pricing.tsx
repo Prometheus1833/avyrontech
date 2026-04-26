@@ -199,19 +199,19 @@ const Pricing = () => {
         />
       </div>
 
-      <div className="relative mx-auto max-w-6xl px-4 pt-8 pb-20">
+      <div className="relative mx-auto max-w-6xl px-4 pt-6 sm:pt-8 pb-20">
         {/* Top bar */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-sm text-white/80 hover:bg-white/[0.1] hover:text-white transition-all backdrop-blur"
+            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3 sm:px-4 py-2 text-xs sm:text-sm text-white/80 hover:bg-white/[0.1] hover:text-white transition-all backdrop-blur"
           >
             <ArrowLeft className="size-4" />
             {ro ? "Înapoi" : "Back"}
           </Link>
           <div className="flex items-center gap-2">
-            <img src={logo} alt="Avyron" className="size-8 rounded-md ring-1 ring-white/20" />
-            <span className="font-display tracking-[0.25em] text-sm">AVYRON</span>
+            <img src={logo} alt="Avyron" className="size-7 sm:size-8 rounded-md ring-1 ring-white/20" />
+            <span className="font-display tracking-[0.2em] sm:tracking-[0.25em] text-xs sm:text-sm">AVYRON</span>
           </div>
         </div>
 
@@ -220,7 +220,7 @@ const Pricing = () => {
           <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/30 bg-cyan-300/5 px-4 py-1.5 text-[11px] uppercase tracking-[0.3em] text-cyan-200">
             <span>{ro ? "Costuri & Mentenanță" : "Pricing & Care"}</span>
           </div>
-          <h1 className="mt-6 font-display text-4xl md:text-6xl font-extrabold leading-[1.05] tracking-tight">
+          <h1 className="mt-6 font-display text-3xl sm:text-4xl md:text-6xl font-extrabold leading-[1.05] tracking-tight px-2">
             <span className="bg-gradient-to-r from-white via-cyan-200 to-blue-400 bg-clip-text text-transparent">
               {ro ? "Transparent. Complet. Fără surprize." : "Transparent. Complete. No surprises."}
             </span>
@@ -257,7 +257,7 @@ const Pricing = () => {
             <div className="size-12 shrink-0 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 grid place-items-center">
               <Sparkles className="size-6" />
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <h3 className="font-display text-lg md:text-xl font-bold">
                 {ro ? "Ai deja un site sau un produs?" : "Already have a site or product?"}
               </h3>
@@ -269,7 +269,7 @@ const Pricing = () => {
             </div>
             <a
               href="#cta"
-              className="shrink-0 inline-flex items-center gap-2 rounded-full bg-white text-[#05060f] px-5 py-2.5 text-sm font-semibold hover:bg-cyan-200 transition-colors"
+              className="shrink-0 inline-flex items-center gap-2 rounded-full bg-white text-[#05060f] px-5 py-2.5 text-sm font-semibold hover:bg-cyan-200 transition-colors w-full md:w-auto justify-center"
             >
               {ro ? "Cere evaluare" : "Request evaluation"}
             </a>
@@ -278,11 +278,11 @@ const Pricing = () => {
 
         {/* Main product */}
         <section className="mt-12 grid md:grid-cols-5 gap-5">
-          <div className="md:col-span-2 rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-[#0a0f24] to-[#05060f] p-6 relative overflow-hidden">
+            <div className="md:col-span-2 rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-[#0a0f24] to-[#05060f] p-5 sm:p-6 relative overflow-hidden">
             <div className="text-[11px] uppercase tracking-[0.3em] text-cyan-300/80">[ Tier 01 ]</div>
-            <h2 className="mt-2 font-display text-3xl font-extrabold">{main.title}</h2>
-            <div className="mt-4 flex items-baseline gap-2">
-              <span className="font-display text-5xl font-extrabold bg-gradient-to-r from-cyan-300 to-blue-500 bg-clip-text text-transparent">
+            <h2 className="mt-2 font-display text-2xl sm:text-3xl font-extrabold">{main.title}</h2>
+            <div className="mt-4 flex items-baseline gap-2 flex-wrap">
+              <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-cyan-300 to-blue-500 bg-clip-text text-transparent break-words">
                 {currency === "EUR" ? "300€ – 1000€" : `${Math.round(300 * rate)} – ${Math.round(1000 * rate)} RON`}
               </span>
             </div>

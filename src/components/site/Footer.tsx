@@ -34,11 +34,11 @@ const Footer = () => {
               className="size-10 rounded-lg object-cover ring-1 ring-white/20"
               loading="lazy"
             />
-            <div>
-              <div className="font-display font-extrabold text-2xl md:text-3xl tracking-[0.18em] bg-gradient-to-r from-white via-purple-200 to-purple-400 bg-clip-text text-transparent">
+            <div className="min-w-0">
+              <div className="font-display font-extrabold text-xl sm:text-2xl md:text-3xl tracking-[0.15em] sm:tracking-[0.18em] bg-gradient-to-r from-white via-purple-200 to-purple-400 bg-clip-text text-transparent">
                 AVYRON
               </div>
-              <div className="font-display text-[10px] md:text-xs tracking-[0.3em] uppercase text-white/70">
+              <div className="font-display text-[9px] sm:text-[10px] md:text-xs tracking-[0.22em] sm:tracking-[0.3em] uppercase text-white/70">
                 Innovate. <span className="text-purple-300">Develop.</span> Elevate.
               </div>
             </div>
@@ -47,7 +47,7 @@ const Footer = () => {
           {/* Standalone CTA */}
           <a
             href="#cta"
-            className="group inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 px-5 py-3 shadow-[0_10px_30px_-10px_rgba(168,85,247,0.6)] transition-all"
+            className="group inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 px-4 sm:px-5 py-2.5 sm:py-3 shadow-[0_10px_30px_-10px_rgba(168,85,247,0.6)] transition-all self-start md:self-auto"
           >
             <span className="flex flex-col leading-tight text-left">
               <span className="font-display font-semibold text-sm md:text-base">{t.footer.ctaLabel}</span>
