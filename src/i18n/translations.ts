@@ -284,6 +284,7 @@ export const translations = {
         { l: "Vezi Domenii", h: "#exemple" },
         { l: "Proces", h: "#proces" },
         { l: "Avantaje", h: "#avantaje" },
+        { l: "Despre Noi", h: "/despre" },
         { l: "Politica de Confidențialitate și GDPR", h: "/gdpr" },
       ],
       ctaLabel: "Demo gratuit",
