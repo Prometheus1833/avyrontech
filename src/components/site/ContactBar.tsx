@@ -1,4 +1,4 @@
-import { MessageCircle, Phone, Mail } from "lucide-react";
+import { MessageCircle, Phone, Mail, Send } from "lucide-react";
 
 const ContactBar = () => {
   return (
@@ -11,6 +11,15 @@ const ContactBar = () => {
         className="size-11 md:size-12 rounded-full bg-[#25D366] text-white grid place-items-center shadow-elev hover:scale-110 transition-transform"
       >
         <MessageCircle className="size-5" />
+      </a>
+      <a
+        href="https://m.me/61560319432764"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Messenger"
+        className="size-11 md:size-12 rounded-full bg-gradient-to-br from-[#00B2FF] via-[#006AFF] to-[#A033FF] text-white grid place-items-center shadow-elev hover:scale-110 transition-transform"
+      >
+        <Send className="size-5" />
       </a>
       <a
         href="tel:+40734605055"
