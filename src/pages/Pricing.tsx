@@ -61,26 +61,32 @@ const Pricing = () => {
     title: ro ? "Produs principal" : "Main product",
     range: ro ? "300€ – 1000€" : "€300 – €1000",
     desc: ro
-      ? "Site complet, livrat la cheie. Clientul nu mai are nimic de plătit timp de minim 1 lună / 1 an (în funcție de cerințele inițiale) și beneficiază de suport gratuit pe viață pentru produs."
-      : "Turnkey website. The client owes nothing for at least 1 month / 1 year (depending on the initial scope) and gets free lifetime product support.",
+      ? "Site complet, livrat la cheie — gata să producă rezultate din prima zi. Clientul nu mai are nimic de plătit pentru o perioadă de minim 1 lună până la 1 an (în funcție de cerințele și configurația inițială), iar produsul beneficiază de suport tehnic gratuit pe toată durata de viață: asistență la administrare, recomandări de securitate, răspuns prompt la întrebări și ghidare strategică pentru evoluția site-ului."
+      : "A turnkey website — ready to deliver results from day one. The client owes nothing for a period ranging from 1 month up to 1 year (depending on the initial scope and configuration), and the product comes with free lifetime technical support: admin assistance, security guidance, prompt answers and strategic advice for ongoing growth.",
     includes: ro
       ? [
-          "Cod, structură și design custom",
-          "SEO și optimizări pentru toate device-urile",
-          "Mobile-ready, securizat, performant",
-          "Hosting și rezervare + cumpărare domeniu",
-          "Integrare rețele sociale",
-          "Asistență gratuită la transferul datelor și conturilor",
-          "Suport gratuit lifetime — recomandări de securitate și administrare",
+          "Cod, structură și design custom, dezvoltate de la zero pe identitatea ta",
+          "SEO tehnic și on-page, optimizări complete pentru toate device-urile",
+          "Mobile-ready, securizat (HTTPS, headers, anti-spam) și performant (scor Lighthouse înalt)",
+          "Hosting profesional inclus + rezervare și cumpărare domeniu",
+          "Integrare completă cu rețele sociale și pixeluri analytics",
+          "Conturi demonstrative, mediu de testare și revizii nelimitate până la validare",
+          "Asistență gratuită la transferul datelor, conturilor și e-mailurilor existente",
+          "Ghid de administrare + sesiune live de prezentare a panoului",
+          "Backup inițial, certificat SSL și configurări de e-mail profesionale",
+          "Suport gratuit lifetime — recomandări de securitate, performanță și administrare",
         ]
       : [
-          "Custom code, structure and design",
-          "SEO and optimizations for all devices",
-          "Mobile-ready, secure, performant",
-          "Hosting and domain registration + purchase",
-          "Social media integration",
-          "Free assistance with data and account transfer",
-          "Free lifetime support — security and admin guidance",
+          "Custom code, structure and design built from scratch around your identity",
+          "Technical and on-page SEO, full optimizations across every device",
+          "Mobile-ready, secure (HTTPS, headers, anti-spam) and performant (high Lighthouse score)",
+          "Professional hosting included + domain registration and purchase",
+          "Full integration with social networks and analytics pixels",
+          "Demo accounts, staging environment and unlimited revisions until approval",
+          "Free assistance with migration of data, accounts and existing emails",
+          "Admin guide + live walkthrough session of the dashboard",
+          "Initial backup, SSL certificate and professional email setup",
+          "Free lifetime support — security, performance and admin guidance",
         ],
   };
 
@@ -367,8 +373,8 @@ const Pricing = () => {
         <section className="mt-14 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
           <p className="text-sm md:text-base text-white/75 leading-relaxed">
             {ro
-              ? "Dacă dorești să îți administrezi singur site-ul, nu este nicio problemă. Toți clienții primesc un produs complet funcțional și optimizat la livrare, găzduit la cei mai eficienți parteneri cu care lucrăm de mult timp — nu mai trebuie achitat nimic. Nivelul securității și performanței pe toate device-urile este garantat prin testări și optimizări în mediile noastre de dezvoltare."
-              : "If you want to manage the site yourself, that's perfectly fine. Every client receives a fully functional and optimized product on delivery, hosted with our long-trusted partners — nothing else to pay. Security and cross-device performance are guaranteed through extensive testing and optimization in our development environments."}
+              ? "Dacă alegi să administrezi singur site-ul, totul este pregătit pentru asta. Fiecare client primește la livrare un produs complet funcțional, optimizat și gata de scalare, găzduit la partenerii noștri de încredere cu care colaborăm de mulți ani — fără costuri suplimentare ascunse. Securitatea, viteza de încărcare și performanța pe toate dispozitivele sunt validate riguros prin testări automate și manuale în mediile noastre de dezvoltare, iar la predare primești documentație clară și acces complet la panoul de administrare."
+              : "If you choose to manage the site yourself, everything is set up for it. Each client receives a fully functional, optimized and scale-ready product on delivery, hosted with our long-trusted partners — with no hidden additional costs. Security, load speed and cross-device performance are rigorously validated through automated and manual testing in our development environments, and at handover you receive clear documentation and full access to the admin panel."}
           </p>
         </section>
 
