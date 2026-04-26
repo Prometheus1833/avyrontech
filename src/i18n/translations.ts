@@ -578,6 +578,7 @@ export const translations = {
         { l: "Browse Industries", h: "#exemple" },
         { l: "Process", h: "#proces" },
         { l: "Benefits", h: "#avantaje" },
+        { l: "About Us", h: "/despre" },
         { l: "Privacy Policy & GDPR", h: "/gdpr" },
       ],
       ctaLabel: "Free demo",
