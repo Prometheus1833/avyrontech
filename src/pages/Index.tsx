@@ -7,6 +7,7 @@ import Examples from "@/components/site/Examples";
 import DomainCheck from "@/components/site/DomainCheck";
 import Benefits from "@/components/site/Benefits";
 import FAQ from "@/components/site/FAQ";
+import Socials from "@/components/site/Socials";
 import CTA from "@/components/site/CTA";
 import ContactBar from "@/components/site/ContactBar";
 import Footer from "@/components/site/Footer";
@@ -45,6 +46,7 @@ const Index = () => {
       <Benefits />
       <CTA />
       <FAQ />
+      <Socials />
       <Footer />
       <ContactBar />
     </main>
