@@ -93,7 +93,7 @@ const Pricing = () => {
   const tiers: Tier[] = [
     {
       key: "plus",
-      shape: "cross",
+      shape: "square",
       name: "Plus",
       price: fmt(50),
       tagline: ro ? "Esențial pentru liniște" : "Essential peace of mind",
