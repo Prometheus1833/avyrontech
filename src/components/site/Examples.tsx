@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check } from "lucide-react";
+import { Check, ChevronDown, LayoutGrid } from "lucide-react";
 import { mockups } from "./mockups";
 import { useLang } from "@/i18n/LanguageContext";
 
-type Cat = "beauty" | "resto" | "public" | "turism" | "pro" | "local" | "national" | "other";
+type Cat = "beauty" | "resto" | "public" | "turism" | "pro" | "local" | "auto" | "national" | "other";
 
-const order: Cat[] = ["beauty", "resto", "public", "turism", "pro", "local", "national", "other"];
+const order: Cat[] = ["beauty", "resto", "public", "turism", "pro", "local", "auto", "national", "other"];
 
 const Examples = () => {
   const { t } = useLang();
   const [active, setActive] = useState<Cat>("beauty");
+  const [catsOpen, setCatsOpen] = useState(false);
   const current = t.examples.data[active];
   const currentCat = t.examples.cats[active];
   const Mockup = mockups[active];
@@ -27,21 +28,46 @@ const Examples = () => {
           </p>
         </div>
 
-        <div className="mt-8 flex flex-wrap gap-2 justify-center px-1">
-          {order.map((id) => (
-            <button
-              key={id}
-              onClick={() => setActive(id)}
-              className={`px-3.5 py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
-                active === id
-                  ? "bg-foreground text-background shadow-elev"
-                  : "bg-secondary text-foreground/70 hover:bg-secondary/70"
-              }`}
-            >
-              {t.examples.cats[id].label}
-            </button>
-          ))}
+        <div className="mt-8 flex justify-center">
+          <button
+            onClick={() => setCatsOpen((v) => !v)}
+            aria-expanded={catsOpen}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-foreground text-background font-semibold text-sm shadow-elev hover:opacity-90 transition-all"
+          >
+            <LayoutGrid className="size-4" />
+            {catsOpen ? t.examples.hideCats : t.examples.showCats}
+            <ChevronDown className={`size-4 transition-transform ${catsOpen ? "rotate-180" : ""}`} />
+          </button>
         </div>
+
+        <AnimatePresence initial={false}>
+          {catsOpen && (
+            <motion.div
+              key="cats"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="overflow-hidden"
+            >
+              <div className="mt-4 flex flex-wrap gap-2 justify-center px-1">
+                {order.map((id) => (
+                  <button
+                    key={id}
+                    onClick={() => setActive(id)}
+                    className={`px-3.5 py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
+                      active === id
+                        ? "bg-foreground text-background shadow-elev"
+                        : "bg-secondary text-foreground/70 hover:bg-secondary/70"
+                    }`}
+                  >
+                    {t.examples.cats[id].label}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <AnimatePresence mode="wait">
           <motion.div

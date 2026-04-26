@@ -44,26 +44,6 @@ const Process = () => {
           })}
         </div>
 
-        <p className="mt-8 max-w-3xl mx-auto text-center text-sm text-muted-foreground">
-          {t.process.footer
-            .split("{a}")
-            .flatMap((part, i, arr) =>
-              i < arr.length - 1
-                ? [part, <span key={`a${i}`} className="text-foreground font-medium">{t.process.footerA}</span>]
-                : [part]
-            )
-            .flatMap((part, i) =>
-              typeof part === "string" && part.includes("{b}")
-                ? part
-                    .split("{b}")
-                    .flatMap((p, j, ar) =>
-                      j < ar.length - 1
-                        ? [p, <span key={`b${i}${j}`} className="text-foreground font-medium">{t.process.footerB}</span>]
-                        : [p]
-                    )
-                : [part]
-            )}
-        </p>
       </div>
     </section>
   );
