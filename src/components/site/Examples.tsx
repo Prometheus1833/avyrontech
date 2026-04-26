@@ -4,9 +4,9 @@ import { Check, ChevronDown, LayoutGrid } from "lucide-react";
 import { mockups } from "./mockups";
 import { useLang } from "@/i18n/LanguageContext";
 
-type Cat = "beauty" | "resto" | "public" | "turism" | "pro" | "local" | "auto" | "national" | "other";
+type Cat = "beauty" | "resto" | "public" | "turism" | "pro" | "local" | "auto" | "ecommerce" | "national" | "other";
 
-const order: Cat[] = ["beauty", "resto", "public", "turism", "pro", "local", "auto", "national", "other"];
+const order: Cat[] = ["beauty", "resto", "public", "turism", "pro", "local", "auto", "ecommerce", "national", "other"];
 
 const Examples = () => {
   const { t } = useLang();
