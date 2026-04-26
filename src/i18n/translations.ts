@@ -148,6 +148,19 @@ export const translations = {
             "Securitate avansată & protecție maximă",
           ],
         },
+        auto: {
+          title: "Site profesionist pentru service & servicii auto/moto",
+          benefit: "Clienții văd serviciile, programează revizia și primesc devize fără să te sune.",
+          features: [
+            "Programări online pentru revizie, ITP, reparații",
+            "Listă servicii: mecanică, vulcanizare, detailing, electrică",
+            "Calculator preț estimativ pe tip serviciu",
+            "Galerie before/after detailing & lucrări",
+            "Recenzii clienți + Google Reviews",
+            "Buton apel & WhatsApp pentru tractări/urgențe",
+            "Hartă cu locația service-ului și program",
+          ],
+        },
         national: {
           title: "Retuvo — platformă & aplicație națională de recuperare garanție",
           benefit: "Dezvoltăm platforma web și aplicația mobilă Retuvo, prin care utilizatorii recuperează garanția de 0,5 RON pe fiecare recipient returnat. Integrăm serviciul de colectori și harta punctelor de colectare la nivel național.",
