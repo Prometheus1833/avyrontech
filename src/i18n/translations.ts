@@ -255,6 +255,8 @@ export const translations = {
       kicker: "FAQ",
       title: "Întrebări frecvente",
       items: [
+        { q: "Pentru cine este acest serviciu?", a: "Pentru oricine vrea o prezență digitală serioasă: antreprenori la început de drum, afaceri locale (restaurante, saloane, cabinete, ateliere), profesii liberale, branduri în creștere, ONG-uri și instituții. Lucrăm la fel de bine cu cei care au nevoie de un site simplu de prezentare, dar și cu cei care vor platforme complexe sau aplicații mobile." },
+        { q: "Cum aleg varianta potrivită pentru mine?", a: "Pornim întotdeauna de la o discuție scurtă, fără obligații. Înțelegem ce faci, cui te adresezi și ce obiective ai — apoi îți recomandăm transparent varianta optimă: site de prezentare, magazin online, platformă custom sau aplicație mobilă. Nu vindem ce nu îți trebuie; sugerăm doar ce aduce valoare reală pentru tine." },
         { q: "Cât durează un site?", a: "Între 2 și 5 zile lucrătoare, în funcție de complexitate. Pentru proiecte mai mari, te informăm clar din start." },
         { q: "Am nevoie de conținut pregătit?", a: "Nu. Te putem ajuta cu textele, imaginile și descrierile. Tu validezi totul înainte de lansare." },
         { q: "Pot face modificări?", a: "Da. După demo și detalii, în 24-48h primești un alt draft unde poți propune orice modificare. Iterăm până ești mulțumit." },
@@ -549,6 +551,8 @@ export const translations = {
       kicker: "FAQ",
       title: "Frequently asked questions",
       items: [
+        { q: "Who is this service for?", a: "For anyone who wants a serious digital presence: early-stage entrepreneurs, local businesses (restaurants, salons, clinics, workshops), liberal professions, growing brands, NGOs and institutions. We work just as well with those who need a simple presentation site, and with those who need complex platforms or mobile apps." },
+        { q: "How do I choose the right option for me?", a: "We always start with a short, no-strings conversation. We understand what you do, who you serve and what your goals are — then we transparently recommend the optimal option: presentation site, online store, custom platform or mobile app. We don't sell what you don't need; we only suggest what brings you real value." },
         { q: "How long does a site take?", a: "Between 2 and 5 working days, depending on complexity. For larger projects, we tell you clearly from the start." },
         { q: "Do I need content ready?", a: "No. We can help with texts, images and descriptions. You validate everything before launch." },
         { q: "Can I make changes?", a: "Yes. After the demo and details, in 24-48h you receive another draft where you can propose any change. We iterate until you're happy." },
