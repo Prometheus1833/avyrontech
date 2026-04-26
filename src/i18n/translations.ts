@@ -247,6 +247,12 @@ export const translations = {
         { q: "Pot avea și aplicație mobilă?", a: "Da. Oferim opțional dezvoltare de aplicații pentru Android și iOS, integrate cu site-ul." },
       ],
     },
+    gdpr: {
+      kicker: "Confidențialitate",
+      title: "Politica de Confidențialitate",
+      subtitle: "Cum protejăm datele tale conform GDPR",
+      back: "Înapoi acasă",
+    },
     footer: {
       tagline: "Innovate. Develop. Elevate.",
       brandLine: "Soluții digitale inteligente pentru branduri, activități și oameni ambițioși.",
@@ -516,6 +522,12 @@ export const translations = {
         { q: "Does it work on mobile?", a: "Absolutely. All our sites are 100% responsive and tested on Android, iOS, tablet and desktop." },
         { q: "Can I have a mobile app too?", a: "Yes. We optionally develop apps for Android and iOS, integrated with the site." },
       ],
+    },
+    gdpr: {
+      kicker: "Privacy",
+      title: "Privacy Policy",
+      subtitle: "How we protect your data under GDPR",
+      back: "Back home",
     },
     footer: {
       tagline: "Innovate. Develop. Elevate.",
