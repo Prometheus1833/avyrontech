@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { HelpCircle, ChevronDown, Wallet, ArrowUpRight } from "lucide-react";
+import { HelpCircle, ChevronDown, Wallet, ArrowUpRight, Briefcase } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useLang } from "@/i18n/LanguageContext";
 
