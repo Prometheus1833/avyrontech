@@ -144,29 +144,30 @@ const About = () => {
       </section>
 
       {/* Process / collaboration */}
-      <section className="py-12 md:py-16">
+      <section className="py-16 md:py-24 relative">
         <div className="mx-auto max-w-6xl px-4">
-          <div className="max-w-2xl">
-            <span className="text-xs uppercase tracking-widest text-brand font-semibold">
-              {ro ? "Cum colaborăm" : "How we collaborate"}
+          <div className="max-w-2xl mx-auto text-center">
+            <span className="inline-block font-mono text-[11px] uppercase tracking-[0.2em] text-brand">
+              {ro ? "// cum colaborăm" : "// how we collaborate"}
             </span>
-            <h2 className="mt-2 font-display font-bold text-3xl md:text-4xl">
+            <h2 className="mt-3 font-display font-bold text-3xl md:text-5xl tracking-tight">
               {ro ? "Un proces simplu, de la idee la lansare." : "A simple process, from idea to launch."}
             </h2>
-            <p className="mt-3 text-muted-foreground">
+            <p className="mt-4 text-muted-foreground">
               {ro
                 ? "Comunicarea cu clientul stă la baza fiecărui proiect. După lansare, echipa Avyron poate prelua mentenanța, hostingul, securitatea, performanța și publicarea — astfel încât tu să te concentrezi doar pe activitatea ta."
                 : "Client communication is at the heart of every project. After launch, the Avyron team can take over maintenance, hosting, security, performance and publishing — so you can focus only on your business."}
             </p>
           </div>
-          <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {flow.map((s) => (
-              <div key={s.t} className="rounded-2xl border border-border bg-card p-5 hover:shadow-soft transition-shadow">
-                <span className="size-10 rounded-xl bg-brand/10 text-brand grid place-items-center">
+              <div key={s.t} className="group relative rounded-2xl border border-border/80 bg-card/60 backdrop-blur p-5 hover:border-brand/50 transition-colors overflow-hidden">
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br from-brand/10 via-transparent to-transparent" aria-hidden />
+                <span className="relative size-10 rounded-xl bg-brand/10 text-brand grid place-items-center ring-1 ring-brand/20">
                   <s.icon className="size-5" />
                 </span>
-                <h3 className="mt-4 font-display font-semibold text-base">{s.t}</h3>
-                <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{s.d}</p>
+                <h3 className="relative mt-4 font-display font-semibold text-base">{s.t}</h3>
+                <p className="relative mt-1.5 text-sm text-muted-foreground leading-relaxed">{s.d}</p>
               </div>
             ))}
           </div>
@@ -174,16 +175,16 @@ const About = () => {
       </section>
 
       {/* Team / specialties */}
-      <section className="py-12 md:py-16 bg-secondary/40">
+      <section className="py-16 md:py-24 bg-secondary/40 border-y border-border/60">
         <div className="mx-auto max-w-6xl px-4">
-          <div className="max-w-2xl">
-            <span className="text-xs uppercase tracking-widest text-brand font-semibold">
-              {ro ? "Echipa" : "The team"}
+          <div className="max-w-2xl mx-auto text-center">
+            <span className="inline-block font-mono text-[11px] uppercase tracking-[0.2em] text-brand">
+              {ro ? "// echipa" : "// the team"}
             </span>
-            <h2 className="mt-2 font-display font-bold text-3xl md:text-4xl">
+            <h2 className="mt-3 font-display font-bold text-3xl md:text-5xl tracking-tight">
               {ro ? "Specialiști dedicați, pe fiecare strat al produsului." : "Dedicated specialists across every layer of the product."}
             </h2>
-            <p className="mt-3 text-muted-foreground">
+            <p className="mt-4 text-muted-foreground">
               {ro
                 ? "Lucrăm împreună ca un singur organism: dezvoltare web și mobile, cybersecurity, design, QA și operațiuni — fiecare cu expertiza lui, toți cu același standard de calitate."
                 : "We work as one organism: web & mobile development, cybersecurity, design, QA and operations — each with their own expertise, all sharing the same quality standard."}
