@@ -551,6 +551,8 @@ export const translations = {
       kicker: "FAQ",
       title: "Frequently asked questions",
       items: [
+        { q: "Who is this service for?", a: "For anyone who wants a serious digital presence: early-stage entrepreneurs, local businesses (restaurants, salons, clinics, workshops), liberal professions, growing brands, NGOs and institutions. We work just as well with those who need a simple presentation site, and with those who need complex platforms or mobile apps." },
+        { q: "How do I choose the right option for me?", a: "We always start with a short, no-strings conversation. We understand what you do, who you serve and what your goals are — then we transparently recommend the optimal option: presentation site, online store, custom platform or mobile app. We don't sell what you don't need; we only suggest what brings you real value." },
         { q: "How long does a site take?", a: "Between 2 and 5 working days, depending on complexity. For larger projects, we tell you clearly from the start." },
         { q: "Do I need content ready?", a: "No. We can help with texts, images and descriptions. You validate everything before launch." },
         { q: "Can I make changes?", a: "Yes. After the demo and details, in 24-48h you receive another draft where you can propose any change. We iterate until you're happy." },
