@@ -80,24 +80,26 @@ const DomainCheck = () => {
               </div>
             </motion.div>
 
-            <div className="mt-4 flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value.slice(0, 40))}
-                onKeyDown={(e) => e.key === "Enter" && check()}
-                placeholder={t.domain.placeholder}
-                className="h-12 rounded-full bg-white/10 border-white/20 text-background placeholder:text-background/50 px-5 focus-visible:ring-brand-glow flex-1"
-              />
-              <select
-                value={tld}
-                onChange={(e) => setTld(e.target.value)}
-                aria-label={t.domain.tldLabel}
-                className="h-12 rounded-full bg-white/10 border border-white/20 text-background px-5 font-mono font-semibold text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-glow appearance-none cursor-pointer"
-              >
-                {tlds.map((x) => (
-                  <option key={x} value={x} className="bg-foreground text-background">{x}</option>
-                ))}
-              </select>
+            <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:gap-3 max-w-lg mx-auto">
+              <div className="flex gap-2 sm:contents">
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value.slice(0, 40))}
+                  onKeyDown={(e) => e.key === "Enter" && check()}
+                  placeholder={t.domain.placeholder}
+                  className="h-12 rounded-full bg-white/10 border-white/20 text-background placeholder:text-background/50 px-5 focus-visible:ring-brand-glow flex-1 min-w-0"
+                />
+                <select
+                  value={tld}
+                  onChange={(e) => setTld(e.target.value)}
+                  aria-label={t.domain.tldLabel}
+                  className="h-12 rounded-full bg-white/10 border border-white/20 text-background px-3 sm:px-5 font-mono font-semibold text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-glow appearance-none cursor-pointer shrink-0"
+                >
+                  {tlds.map((x) => (
+                    <option key={x} value={x} className="bg-foreground text-background">{x}</option>
+                  ))}
+                </select>
+              </div>
               <Button
                 onClick={check}
                 disabled={!slug || checking}
