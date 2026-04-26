@@ -545,6 +545,56 @@ export const OtherMockup = () => (
   </Frame>
 );
 
+export const AutoMockup = () => (
+  <Frame url="autopro-service.ro" dark>
+    <div className="h-full flex flex-col bg-[#0a0a0a] text-white">
+      <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-white/10">
+        <div className="flex items-center gap-1">
+          <div className="size-3.5 rounded-md bg-gradient-to-br from-orange-500 to-red-600 grid place-items-center"><Car className="size-2 text-white" /></div>
+          <span className="font-display font-bold text-[9px]">AutoPro <span className="text-white/50 font-normal">Service</span></span>
+        </div>
+        <div className="hidden xs:flex items-center gap-1.5 text-[6.5px] text-white/60">
+          <span>Servicii</span><span>Tarife</span><span>Programări</span><span>Contact</span>
+        </div>
+        <span className="bg-orange-500 text-white rounded-full px-1.5 py-0.5 text-[6.5px] font-bold flex items-center gap-0.5"><Calendar className="size-1.5" /> Programează</span>
+      </div>
+      <div className="px-2.5 py-2 flex-1 min-h-0 flex flex-col">
+        <span className="inline-flex items-center gap-1 text-[6px] uppercase tracking-[0.2em] text-orange-400 font-bold">
+          <Wrench className="size-1.5" /> Service auto · Cluj-Napoca
+        </span>
+        <div className="font-display font-bold text-[15px] leading-[1] mt-1">
+          Mașina ta,<br/>
+          <span className="text-orange-400">în mâini bune.</span>
+        </div>
+        <p className="text-[6.5px] text-white/60 mt-1 max-w-[90%]">
+          Revizii, ITP, vulcanizare, detailing și diagnoze — totul cu programare online și transparență totală.
+        </p>
+        <div className="grid grid-cols-4 gap-1 mt-2">
+          {[
+            { Icon: Wrench, l: "Mecanică" },
+            { Icon: Car, l: "Vulcanizare" },
+            { Icon: Sparkles, l: "Detailing" },
+            { Icon: Zap, l: "Electrică" },
+          ].map(({ Icon, l }) => (
+            <div key={l} className="rounded-lg bg-white/5 border border-white/10 p-1.5 flex flex-col items-center gap-0.5">
+              <Icon className="size-2.5 text-orange-400" />
+              <span className="text-[6px] font-semibold">{l}</span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-auto flex items-center gap-1 pt-1.5">
+          <span className="bg-orange-500 text-white rounded-full px-2 py-1 text-[7px] font-bold flex items-center gap-0.5">Programează acum <ArrowRight className="size-1.5" /></span>
+          <span className="rounded-full border border-white/20 px-2 py-1 text-[7px] font-semibold flex items-center gap-0.5"><Phone className="size-1.5" /> 0734...</span>
+        </div>
+      </div>
+      <div className="border-t border-white/10 px-2.5 py-1 flex items-center justify-between text-[6px] text-white/50">
+        <span className="flex items-center gap-0.5"><Star className="size-1.5 text-yellow-400" /> 4.9 / 320+ recenzii</span>
+        <span>L–V 08:00–18:00 · S 09:00–14:00</span>
+      </div>
+    </div>
+  </Frame>
+);
+
 export const mockups = {
   beauty: BeautyMockup,
   resto: RestoMockup,
@@ -552,6 +602,7 @@ export const mockups = {
   turism: TurismMockup,
   pro: ProMockup,
   local: LocalMockup,
+  auto: AutoMockup,
   national: NationalMockup,
   other: OtherMockup,
 };
