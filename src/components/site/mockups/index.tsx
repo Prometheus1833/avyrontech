@@ -7,6 +7,7 @@ import hotel from "@/assets/work-hotel-new.jpg";
 import local from "@/assets/work-local-new.jpg";
 import publicImg from "@/assets/work-public-miago.jpg";
 import retuvoLogo from "@/assets/retuvo-logo.png";
+import miagoTruck from "@/assets/work-miago-truck.jpg";
 
 /* Browser frame — fills its container 100% */
 const Frame = ({ children, url, dark = false }: { children: React.ReactNode; url: string; dark?: boolean }) => (
@@ -595,6 +596,77 @@ export const AutoMockup = () => (
   </Frame>
 );
 
+/* ============================== ECOMMERCE — Miago.ro marketplace ============================== */
+export const EcommerceMockup = () => (
+  <Frame url="miago.ro">
+    <div className="h-full flex flex-col bg-[#fffdf5] text-[#0a0a0a]">
+      {/* Top nav */}
+      <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-border/60 bg-[#111]">
+        <div className="flex items-center gap-1">
+          <div className="size-3.5 rounded-md bg-yellow-400 grid place-items-center"><Car className="size-2 text-black" /></div>
+          <span className="font-display font-bold text-[9px] text-white tracking-wide">miago<span className="text-yellow-400">.ro</span></span>
+        </div>
+        <div className="hidden xs:flex items-center gap-1.5 text-[6.5px] text-white/70">
+          <span>Auto</span><span>Moto</span><span>Utilaje</span><span>Piese</span><span>Verificare VIN</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Search className="size-2.5 text-white/70" />
+          <span className="bg-yellow-400 text-black rounded-full px-1.5 py-0.5 text-[6.5px] font-bold">Vinde</span>
+        </div>
+      </div>
+
+      {/* Hero with truck image */}
+      <div className="relative flex-1 min-h-0 overflow-hidden">
+        <img src={miagoTruck} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#111]/85 via-[#111]/30 to-transparent" />
+
+        {/* Search bar floating */}
+        <div className="absolute top-1.5 left-1.5 right-1.5 rounded-lg bg-white/95 backdrop-blur shadow-md p-1 flex items-center gap-1">
+          <Search className="size-2.5 text-[#111]" />
+          <span className="text-[6.5px] text-muted-foreground flex-1 truncate">Caută: BMW X5, excavator, scuter...</span>
+          <span className="bg-yellow-400 text-black rounded px-1.5 py-0.5 text-[6px] font-bold">Caută</span>
+        </div>
+
+        {/* Filter chips */}
+        <div className="absolute top-7 left-1.5 right-1.5 flex gap-1 flex-wrap">
+          {["Auto", "Moto", "Utilaje", "< 10.000 €", "Diesel"].map((c) => (
+            <span key={c} className="rounded-full bg-white/90 px-1.5 py-0.5 text-[6px] font-semibold text-[#111]">{c}</span>
+          ))}
+        </div>
+
+        {/* Bottom hero text */}
+        <div className="absolute bottom-1.5 left-1.5 right-1.5 text-white">
+          <div className="text-[6px] uppercase tracking-[0.25em] text-yellow-400 font-bold">Marketplace #1 auto/moto/utilaje</div>
+          <div className="font-display font-bold text-[13px] leading-[1] mt-0.5">
+            Cumpără cu <span className="italic text-yellow-400">încredere.</span>
+          </div>
+          <div className="text-[6.5px] opacity-80 mt-0.5">Verificare VIN, istoric, kilometraj — toate într-un singur loc.</div>
+        </div>
+      </div>
+
+      {/* Listing card + tools strip */}
+      <div className="grid grid-cols-3 gap-px bg-border/60">
+        <div className="col-span-2 bg-white p-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[6.5px] font-bold">BMW X5 · 2019 · 98.500 km</span>
+            <span className="text-[6.5px] font-bold text-[#111]">28.900 €</span>
+          </div>
+          <div className="flex items-center gap-1 mt-0.5">
+            <span className="rounded bg-emerald-100 text-emerald-700 px-1 text-[5.5px] font-bold flex items-center gap-0.5"><Check className="size-1.5" /> VIN ok</span>
+            <span className="rounded bg-yellow-100 text-yellow-800 px-1 text-[5.5px] font-bold">Istoric: 1 dauna</span>
+            <span className="rounded bg-secondary px-1 text-[5.5px] font-bold text-foreground/70">Cluj</span>
+          </div>
+          <div className="text-[5.5px] text-muted-foreground mt-0.5">Preț recomandat: <span className="font-bold text-emerald-700">28.400–30.100 €</span> · sub piață</div>
+        </div>
+        <div className="bg-[#111] text-white p-1.5 flex flex-col justify-center">
+          <div className="text-[5.5px] uppercase tracking-wider text-yellow-400 font-bold flex items-center gap-0.5"><ScanLine className="size-1.5" /> Verifică VIN</div>
+          <div className="text-[6.5px] font-semibold leading-tight mt-0.5">Istoric complet în 30s</div>
+        </div>
+      </div>
+    </div>
+  </Frame>
+);
+
 export const mockups = {
   beauty: BeautyMockup,
   resto: RestoMockup,
@@ -603,6 +675,7 @@ export const mockups = {
   pro: ProMockup,
   local: LocalMockup,
   auto: AutoMockup,
+  ecommerce: EcommerceMockup,
   national: NationalMockup,
   other: OtherMockup,
 };
