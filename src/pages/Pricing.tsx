@@ -422,8 +422,6 @@ const Pricing = () => {
 
         {/* CTA */}
         <section id="cta" className="mt-16 rounded-3xl border border-white/10 bg-gradient-to-br from-blue-600/20 via-purple-600/15 to-pink-500/15 p-8 md:p-10 text-center backdrop-blur relative overflow-hidden">
-          <div className="absolute -top-10 left-10 text-9xl text-white/[0.04] select-none">△</div>
-          <div className="absolute bottom-0 right-10 text-9xl text-white/[0.04] select-none">○</div>
           <h2 className="font-display text-3xl md:text-4xl font-extrabold">
             {ro ? "Începem cu o evaluare gratuită" : "Let's start with a free evaluation"}
           </h2>
