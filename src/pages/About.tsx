@@ -104,10 +104,22 @@ const About = () => {
         </div>
       </div>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-brand/5 via-background to-background" aria-hidden />
-        <div className="relative mx-auto max-w-5xl px-4 py-16 md:py-24 text-center">
+      {/* Hero — Cursor-inspired */}
+      <section className="relative overflow-hidden border-b border-border/60">
+        {/* subtle grid */}
+        <div
+          className="absolute inset-0 opacity-[0.18] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_75%)]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)",
+            backgroundSize: "44px 44px",
+          }}
+          aria-hidden
+        />
+        {/* glow halo */}
+        <div className="pointer-events-none absolute left-1/2 top-[-20%] -translate-x-1/2 size-[640px] rounded-full bg-brand/20 blur-[120px]" aria-hidden />
+        <div className="pointer-events-none absolute right-[-10%] bottom-[-30%] size-[420px] rounded-full bg-foreground/10 blur-[120px]" aria-hidden />
+        <div className="relative mx-auto max-w-5xl px-4 py-20 md:py-28 text-center">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
