@@ -129,7 +129,7 @@ const About = () => {
             <Sparkles className="size-3.5 text-brand" />
             {ro ? "Despre noi & Portofoliu" : "About & Portfolio"}
           </motion.div>
-          <h1 className="mt-5 font-display font-extrabold text-4xl md:text-6xl leading-tight tracking-tight">
+          <h1 className="mt-5 font-display font-extrabold text-3xl sm:text-4xl md:text-6xl leading-tight tracking-tight">
             {ro ? "Construim digital, " : "We build digital, "}
             <span className="bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent">
               {ro ? "cu grijă pentru detalii." : "with care for the details."}
