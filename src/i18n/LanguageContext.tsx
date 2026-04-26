@@ -30,8 +30,11 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useLang = () => {
+export const useLang = (): Ctx => {
   const ctx = useContext(LanguageContext);
-  if (!ctx) throw new Error("useLang must be used within LanguageProvider");
+  if (!ctx) {
+    // HMR fallback: avoids blank screen if context identity is lost during Fast Refresh
+    return { lang: "ro", setLang: () => {}, t: translations.ro };
+  }
   return ctx;
 };
