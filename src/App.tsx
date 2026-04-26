@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/i18n/LanguageContext";
 import Index from "./pages/Index.tsx";
 import Gdpr from "./pages/Gdpr.tsx";
 import Pricing from "./pages/Pricing.tsx";
+import About from "./pages/About.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
