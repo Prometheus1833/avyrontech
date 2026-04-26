@@ -99,7 +99,7 @@ const About = () => {
           </Link>
           <div className="flex items-center gap-2">
             <img src={logo} alt="Avyron" width={28} height={28} className="size-7 rounded-md object-cover" />
-            <span className="font-display font-bold tracking-wide text-sm">Avyron Tech Products</span>
+            <span className="font-display font-bold tracking-wide text-sm">Avyron Tech</span>
           </div>
         </div>
       </div>
@@ -137,8 +137,8 @@ const About = () => {
           </h1>
           <p className="mt-5 max-w-2xl mx-auto text-base md:text-lg text-muted-foreground leading-relaxed">
             {ro
-              ? "Avyron Tech Products este o echipă de specialiști care transformă idei în produse digitale rafinate. Lucrăm direct, transparent și concentrat pe rezultate reale — de la prima conversație, până la mentenanța de lungă durată."
-              : "Avyron Tech Products is a team of specialists turning ideas into refined digital products. We work directly, transparently and focused on real results — from the first conversation to long-term maintenance."}
+              ? "Avyron Tech este o echipă de specialiști care transformă idei în produse digitale rafinate. Lucrăm direct, transparent și concentrat pe rezultate reale — de la prima conversație, până la mentenanța de lungă durată."
+              : "Avyron Tech is a team of specialists turning ideas into refined digital products. We work directly, transparently and focused on real results — from the first conversation to long-term maintenance."}
           </p>
         </div>
       </section>
@@ -147,10 +147,7 @@ const About = () => {
       <section className="py-16 md:py-24 relative">
         <div className="mx-auto max-w-6xl px-4">
           <div className="max-w-2xl mx-auto text-center">
-            <span className="inline-block font-mono text-[11px] uppercase tracking-[0.2em] text-brand">
-              {ro ? "// cum colaborăm" : "// how we collaborate"}
-            </span>
-            <h2 className="mt-3 font-display font-bold text-3xl md:text-5xl tracking-tight">
+            <h2 className="font-display font-bold text-3xl md:text-5xl tracking-tight">
               {ro ? "Un proces simplu, de la idee la lansare." : "A simple process, from idea to launch."}
             </h2>
             <p className="mt-4 text-muted-foreground">
@@ -178,10 +175,7 @@ const About = () => {
       <section className="py-16 md:py-24 bg-secondary/40 border-y border-border/60">
         <div className="mx-auto max-w-6xl px-4">
           <div className="max-w-2xl mx-auto text-center">
-            <span className="inline-block font-mono text-[11px] uppercase tracking-[0.2em] text-brand">
-              {ro ? "// echipa" : "// the team"}
-            </span>
-            <h2 className="mt-3 font-display font-bold text-3xl md:text-5xl tracking-tight">
+            <h2 className="font-display font-bold text-3xl md:text-5xl tracking-tight">
               {ro ? "Specialiști dedicați, pe fiecare strat al produsului." : "Dedicated specialists across every layer of the product."}
             </h2>
             <p className="mt-4 text-muted-foreground">
@@ -210,10 +204,7 @@ const About = () => {
         <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-10 size-[520px] rounded-full bg-brand/10 blur-[120px]" aria-hidden />
         <div className="relative mx-auto max-w-6xl px-4">
           <div className="max-w-2xl mx-auto text-center">
-            <span className="inline-block font-mono text-[11px] uppercase tracking-[0.2em] text-brand">
-              {ro ? "// portofoliu & colaborări" : "// portfolio & collaborations"}
-            </span>
-            <h2 className="mt-3 font-display font-bold text-3xl md:text-5xl tracking-tight">
+            <h2 className="font-display font-bold text-3xl md:text-5xl tracking-tight">
               {ro ? "Printre ultimele noastre creații." : "Among our latest creations."}
             </h2>
             <p className="mt-4 text-muted-foreground">

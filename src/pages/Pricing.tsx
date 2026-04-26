@@ -217,9 +217,6 @@ const Pricing = () => {
 
         {/* Hero */}
         <section className="mt-12 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/30 bg-cyan-300/5 px-4 py-1.5 text-[11px] uppercase tracking-[0.3em] text-cyan-200">
-            <span>{ro ? "Costuri & Mentenanță" : "Pricing & Care"}</span>
-          </div>
           <h1 className="mt-6 font-display text-3xl sm:text-4xl md:text-6xl font-extrabold leading-[1.05] tracking-tight px-2">
             <span className="bg-gradient-to-r from-white via-cyan-200 to-blue-400 bg-clip-text text-transparent">
               {ro ? "Transparent. Complet. Fără surprize." : "Transparent. Complete. No surprises."}
@@ -263,8 +260,8 @@ const Pricing = () => {
               </h3>
               <p className="text-sm text-white/70 mt-1">
                 {ro
-                  ? "Clienții pot aduce site-uri / produse actuale pentru actualizare, modificare sau doar pentru mentenanță. Le evaluăm gratuit și îți spunem exact ce se poate îmbunătăți."
-                  : "Clients can bring existing sites / products for updates, changes or just maintenance. We evaluate them for free and tell you exactly what can be improved."}
+                  ? "Poți aduce site-ul sau produsul pe care îl ai deja pentru actualizare, modificare sau doar pentru mentenanță. Îl evaluăm gratuit și îți spunem exact ce se poate îmbunătăți, ca să iei decizia potrivită fără presiune."
+                  : "You can bring your existing site or product for updates, changes or just maintenance. We'll evaluate it for free and tell you exactly what can be improved, so you can make the right decision without any pressure."}
               </p>
             </div>
             <a
@@ -304,8 +301,7 @@ const Pricing = () => {
         {/* Care plans */}
         <section className="mt-16">
           <div className="text-center">
-            <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">[ Mentenanță ]</div>
-            <h2 className="mt-2 font-display text-3xl md:text-4xl font-extrabold">
+            <h2 className="font-display text-3xl md:text-4xl font-extrabold">
               {ro ? "Pachete de mentenanță" : "Care plans"}
             </h2>
             <p className="mt-3 text-sm text-white/60 max-w-xl mx-auto">
@@ -375,8 +371,7 @@ const Pricing = () => {
         {/* Payments */}
         <section className="mt-16">
           <div className="text-center">
-            <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">[ Payments ]</div>
-            <h2 className="mt-2 font-display text-3xl md:text-4xl font-extrabold">
+            <h2 className="font-display text-3xl md:text-4xl font-extrabold">
               {ro ? "Modalități de plată" : "Payment methods"}
             </h2>
             <p className="mt-3 text-sm text-white/60 max-w-2xl mx-auto">
