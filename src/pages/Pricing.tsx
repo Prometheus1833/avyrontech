@@ -37,6 +37,7 @@ const Pricing = () => {
   const rate = 4.97; // indicative BNR-style rate for display only
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     document.title = ro ? "Costuri & Mentenanță — Avyron" : "Pricing & Care — Avyron";
     let meta = document.querySelector('meta[name="description"]');
     if (!meta) {
@@ -196,11 +197,6 @@ const Pricing = () => {
             maskImage: "radial-gradient(ellipse at center, black 40%, transparent 80%)",
           }}
         />
-        {/* Floating PS shapes */}
-        <div className="absolute top-24 left-10 text-6xl text-cyan-300/10 select-none">△</div>
-        <div className="absolute top-1/3 right-12 text-7xl text-pink-400/10 select-none">○</div>
-        <div className="absolute bottom-40 left-1/4 text-5xl text-emerald-400/10 select-none">✕</div>
-        <div className="absolute bottom-20 right-1/3 text-6xl text-purple-300/10 select-none">□</div>
       </div>
 
       <div className="relative mx-auto max-w-6xl px-4 pt-8 pb-20">
@@ -222,7 +218,6 @@ const Pricing = () => {
         {/* Hero */}
         <section className="mt-12 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/30 bg-cyan-300/5 px-4 py-1.5 text-[11px] uppercase tracking-[0.3em] text-cyan-200">
-            <span className="text-cyan-300">△ ○ ✕ □</span>
             <span>{ro ? "Costuri & Mentenanță" : "Pricing & Care"}</span>
           </div>
           <h1 className="mt-6 font-display text-4xl md:text-6xl font-extrabold leading-[1.05] tracking-tight">
@@ -284,7 +279,6 @@ const Pricing = () => {
         {/* Main product */}
         <section className="mt-12 grid md:grid-cols-5 gap-5">
           <div className="md:col-span-2 rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-[#0a0f24] to-[#05060f] p-6 relative overflow-hidden">
-            <div className="absolute -top-10 -right-10 text-[180px] leading-none text-cyan-300/5 select-none">△</div>
             <div className="text-[11px] uppercase tracking-[0.3em] text-cyan-300/80">[ Tier 01 ]</div>
             <h2 className="mt-2 font-display text-3xl font-extrabold">{main.title}</h2>
             <div className="mt-4 flex items-baseline gap-2">

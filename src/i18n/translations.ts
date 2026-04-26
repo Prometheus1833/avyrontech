@@ -281,11 +281,9 @@ export const translations = {
       whatsappValue: "Scrie-ne acum",
       nav: "Navigare",
       navItems: [
-        { l: "Exemple", h: "#exemple" },
+        { l: "Vezi Domenii", h: "#exemple" },
         { l: "Proces", h: "#proces" },
         { l: "Avantaje", h: "#avantaje" },
-        { l: "Costuri & Mentenanță", h: "/costuri" },
-        { l: "FAQ", h: "#faq" },
         { l: "Politica de Confidențialitate și GDPR", h: "/gdpr" },
       ],
       ctaLabel: "Demo gratuit",
