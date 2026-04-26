@@ -267,7 +267,9 @@ export const translations = {
       navItems: [
         { l: "Exemple", h: "#exemple" },
         { l: "Proces", h: "#proces" },
+        { l: "Avantaje", h: "#avantaje" },
         { l: "FAQ", h: "#faq" },
+        { l: "GDPR", h: "/gdpr" },
       ],
       ctaLabel: "Demo gratuit",
       ctaSub: "Răspundem în maxim 24h",
@@ -543,7 +545,9 @@ export const translations = {
       navItems: [
         { l: "Examples", h: "#exemple" },
         { l: "Process", h: "#proces" },
+        { l: "Benefits", h: "#avantaje" },
         { l: "FAQ", h: "#faq" },
+        { l: "GDPR", h: "/gdpr" },
       ],
       ctaLabel: "Free demo",
       ctaSub: "We reply within 24h",
