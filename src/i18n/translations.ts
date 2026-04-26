@@ -255,6 +255,8 @@ export const translations = {
       kicker: "FAQ",
       title: "Întrebări frecvente",
       items: [
+        { q: "Pentru cine este acest serviciu?", a: "Pentru oricine vrea o prezență digitală serioasă: antreprenori la început de drum, afaceri locale (restaurante, saloane, cabinete, ateliere), profesii liberale, branduri în creștere, ONG-uri și instituții. Lucrăm la fel de bine cu cei care au nevoie de un site simplu de prezentare, dar și cu cei care vor platforme complexe sau aplicații mobile." },
+        { q: "Cum aleg varianta potrivită pentru mine?", a: "Pornim întotdeauna de la o discuție scurtă, fără obligații. Înțelegem ce faci, cui te adresezi și ce obiective ai — apoi îți recomandăm transparent varianta optimă: site de prezentare, magazin online, platformă custom sau aplicație mobilă. Nu vindem ce nu îți trebuie; sugerăm doar ce aduce valoare reală pentru tine." },
         { q: "Cât durează un site?", a: "Între 2 și 5 zile lucrătoare, în funcție de complexitate. Pentru proiecte mai mari, te informăm clar din start." },
         { q: "Am nevoie de conținut pregătit?", a: "Nu. Te putem ajuta cu textele, imaginile și descrierile. Tu validezi totul înainte de lansare." },
         { q: "Pot face modificări?", a: "Da. După demo și detalii, în 24-48h primești un alt draft unde poți propune orice modificare. Iterăm până ești mulțumit." },
