@@ -34,7 +34,7 @@ const Pricing = () => {
   const { lang } = useLang();
   const ro = lang === "ro";
   const [currency, setCurrency] = useState<"EUR" | "RON">("EUR");
-  const rate = 4.97; // indicative BNR-style rate for display only
+  const rate = 5; // indicative leu/euro rate for display only
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -48,8 +48,8 @@ const Pricing = () => {
     meta.setAttribute(
       "content",
       ro
-        ? "Pachete transparente pentru site-uri profesionale: produs principal 300€–1000€, mentenanță Plus / Pro / Pro activ și modalități de plată sigure."
-        : "Transparent packages for professional websites: main product €300–€1000, Plus / Pro / Pro Active care plans and secure payment methods.",
+        ? "Pachete transparente pentru site-uri profesionale: produs principal de la 300€, mentenanță Plus / Pro / Pro activ și modalități de plată sigure."
+        : "Transparent packages for professional websites: main product from €300, Plus / Pro / Pro Active care plans and secure payment methods.",
     );
   }, [ro]);
 
@@ -60,7 +60,7 @@ const Pricing = () => {
 
   const main = {
     title: ro ? "Produs principal" : "Main product",
-    range: ro ? "300€ – 1000€" : "€300 – €1000",
+    range: ro ? "de la 300€" : "from €300",
     desc: ro
       ? "Site complet, livrat la cheie — gata să producă rezultate din prima zi. Clientul nu mai are nimic de plătit pentru o perioadă de minim 1 lună până la 1 an (în funcție de cerințele și configurația inițială), iar produsul beneficiază de suport tehnic gratuit pe toată durata de viață: asistență la administrare, recomandări de securitate, răspuns prompt la întrebări și ghidare strategică pentru evoluția site-ului."
       : "A turnkey website — ready to deliver results from day one. The client owes nothing for a period ranging from 1 month up to 1 year (depending on the initial scope and configuration), and the product comes with free lifetime technical support: admin assistance, security guidance, prompt answers and strategic advice for ongoing growth.",
@@ -280,7 +280,7 @@ const Pricing = () => {
             <h2 className="mt-2 font-display text-2xl sm:text-3xl font-extrabold">{main.title}</h2>
             <div className="mt-4 flex items-baseline gap-2 flex-wrap">
               <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-cyan-300 to-blue-500 bg-clip-text text-transparent break-words">
-                {currency === "EUR" ? "300€ – 1000€" : `${Math.round(300 * rate)} – ${Math.round(1000 * rate)} RON`}
+                {currency === "EUR" ? "de la 300€" : `${ro ? "de la" : "from"} ${Math.round(300 * rate)} RON`}
               </span>
             </div>
             <p className="mt-4 text-sm text-white/70 leading-relaxed">{main.desc}</p>
