@@ -6,7 +6,7 @@ export const translations = {
       brand: "Avyron",
       process: "Proces",
       examples: "Exemple",
-      whyNeed: "De ce ai nevoie de un site?",
+      whyNeed: "De ce ai nevoie de un WEBSITE?",
       faq: "FAQ",
       cta: "Demo gratuit",
       menu: "Meniu",
