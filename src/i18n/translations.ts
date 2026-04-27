@@ -340,7 +340,7 @@ export const translations = {
     },
     problem: {
       title1: "Why do you need",
-      title2: "a website?",
+      title2: "a WEBSITE?",
       desc: "Over {pct} of people search online before they buy or book. Without a professional website, customers go elsewhere.",
       items: [
         { t: "You don't show up on Google", d: "Customers search before they choose. Without a site, you're invisible." },
