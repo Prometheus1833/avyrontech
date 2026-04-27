@@ -86,6 +86,16 @@ const Examples = () => {
                 <span className="inline-block text-[10px] uppercase tracking-widest font-bold text-brand mb-2">{currentCat.label}</span>
                 <h3 className="font-display font-semibold text-xl leading-tight">{current.title}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{current.benefit}</p>
+                {active === "ecommerce" && (
+                  <a
+                    href="https://miago.ro"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:text-brand-2 transition-colors"
+                  >
+                    Vezi miago.ro →
+                  </a>
+                )}
                 <p className="mt-3 text-xs text-muted-foreground/80 italic">{currentCat.examples}</p>
               </div>
             </article>
