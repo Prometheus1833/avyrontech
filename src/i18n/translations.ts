@@ -28,7 +28,7 @@ export const translations = {
     },
     problem: {
       title1: "De ce ai nevoie",
-      title2: "de un site?",
+      title2: "de un WEBSITE?",
       desc: "Peste {pct} dintre oameni caută online înainte să cumpere sau să rezerve. Fără un site profesionist, clienții merg în altă parte.",
       items: [
         { t: "Nu apari pe Google", d: "Clienții caută înainte să aleagă. Fără site, ești invizibil." },
