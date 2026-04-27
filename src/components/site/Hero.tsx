@@ -32,10 +32,10 @@ const Hero = () => {
             </Button>
           </div>
         </motion.div>
-        <div className="mt-10 md:mt-12 flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-3 text-xs sm:text-sm text-muted-foreground justify-center px-2">
+        <div className="mt-10 md:mt-12 flex flex-nowrap items-center gap-x-2.5 sm:gap-x-6 text-[11px] sm:text-sm text-muted-foreground justify-center px-2 overflow-x-auto">
           {t.hero.stats.map((s, i) => (
-            <div key={i} className="flex items-center gap-x-4 sm:gap-x-6">
-              <div className="text-center sm:text-left"><span className="font-display font-bold text-foreground text-lg sm:text-2xl">{s.v}</span> <span className="block sm:inline">{s.l}</span></div>
+            <div key={i} className="flex items-center gap-x-2.5 sm:gap-x-6 shrink-0">
+              <div className="text-center sm:text-left whitespace-nowrap"><span className="font-display font-bold text-foreground text-sm sm:text-2xl">{s.v}</span> <span className="block sm:inline">{s.l}</span></div>
               {i < t.hero.stats.length - 1 && <div className="h-8 w-px bg-border hidden sm:block" />}
             </div>
           ))}
