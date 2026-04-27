@@ -337,7 +337,6 @@ export const translations = {
         { v: "100%", l: "mobile-ready" },
         { v: "SEO", l: "optimized" },
         { v: "QA", l: "tested" },
-        { v: "API", l: "connected to your business" },
         { v: "SSL", l: "& enterprise security" },
       ],
     },
