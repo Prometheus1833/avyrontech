@@ -24,6 +24,8 @@ export const translations = {
         { v: "100%", l: "mobile-ready" },
         { v: "SEO", l: "optimizat" },
         { v: "QA", l: "testat" },
+        { v: "API", l: "integrat în activitatea ta" },
+        { v: "SSL", l: "& securitate enterprise" },
       ],
     },
     problem: {
