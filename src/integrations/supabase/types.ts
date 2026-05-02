@@ -222,9 +222,11 @@ export type Database = {
           id: string
           language: string
           phone: string | null
+          pseudonym: string | null
           social_facebook: string | null
           social_instagram: string | null
           social_tiktok: string | null
+          staff_role: Database["public"]["Enums"]["staff_role"] | null
           theme: string
           updated_at: string
           website: string | null
@@ -240,9 +242,11 @@ export type Database = {
           id: string
           language?: string
           phone?: string | null
+          pseudonym?: string | null
           social_facebook?: string | null
           social_instagram?: string | null
           social_tiktok?: string | null
+          staff_role?: Database["public"]["Enums"]["staff_role"] | null
           theme?: string
           updated_at?: string
           website?: string | null
@@ -258,9 +262,11 @@ export type Database = {
           id?: string
           language?: string
           phone?: string | null
+          pseudonym?: string | null
           social_facebook?: string | null
           social_instagram?: string | null
           social_tiktok?: string | null
+          staff_role?: Database["public"]["Enums"]["staff_role"] | null
           theme?: string
           updated_at?: string
           website?: string | null
@@ -459,6 +465,7 @@ export type Database = {
       billing_cycle: "monthly" | "quarterly" | "yearly" | "one_time"
       entity_type: "individual" | "srl" | "pfa" | "ii" | "other"
       invoice_status: "paid" | "pending" | "overdue" | "cancelled"
+      staff_role: "dev" | "designer" | "marketing" | "support"
       subscription_status: "active" | "suspended" | "cancelled" | "pending"
       ticket_priority: "low" | "medium" | "high" | "urgent"
       ticket_status: "open" | "in_progress" | "resolved" | "closed"
@@ -594,6 +601,7 @@ export const Constants = {
       billing_cycle: ["monthly", "quarterly", "yearly", "one_time"],
       entity_type: ["individual", "srl", "pfa", "ii", "other"],
       invoice_status: ["paid", "pending", "overdue", "cancelled"],
+      staff_role: ["dev", "designer", "marketing", "support"],
       subscription_status: ["active", "suspended", "cancelled", "pending"],
       ticket_priority: ["low", "medium", "high", "urgent"],
       ticket_status: ["open", "in_progress", "resolved", "closed"],
