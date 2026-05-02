@@ -30,7 +30,7 @@ const Examples = () => {
 
   const handleSelectCat = (id: Cat) => {
     setActive(id);
-    setCollapsed(true);
+    setCollapsed(false);
   };
 
   return (
