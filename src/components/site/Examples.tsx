@@ -41,22 +41,16 @@ const Examples = () => {
 
   return (
     <section id="exemple" className="relative py-14 md:py-24 overflow-hidden">
-      {/* Background image with radial fade — blends seamlessly with surrounding sections */}
+      {/* Background image (enlarged) */}
       <div
         aria-hidden
         className="absolute inset-0 -z-10 bg-center bg-cover scale-110"
-        style={{
-          backgroundImage: `url(${examplesBg})`,
-          WebkitMaskImage:
-            "radial-gradient(ellipse 75% 70% at 50% 50%, black 40%, transparent 95%)",
-          maskImage:
-            "radial-gradient(ellipse 75% 70% at 50% 50%, black 40%, transparent 95%)",
-        }}
+        style={{ backgroundImage: `url(${examplesBg})` }}
       />
-      {/* Soft readability tint over the faded image */}
+      {/* Readability overlay — soft fade so content stays crisp */}
       <div
         aria-hidden
-        className="absolute inset-0 -z-10 bg-background/55"
+        className="absolute inset-0 -z-10 bg-gradient-to-b from-background/85 via-background/70 to-background/90"
       />
 
       <div className="mx-auto max-w-6xl px-4">
