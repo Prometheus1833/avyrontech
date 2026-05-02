@@ -139,8 +139,9 @@ const Examples = () => {
           )}
         </AnimatePresence>
 
-        {/* ===== CARD EXEMPLU + FEATURES ===== */}
+        {/* ===== CARD EXEMPLU + FEATURES — only after a category is selected ===== */}
         <AnimatePresence mode="wait">
+          {showCard && (
           <motion.div
             key={active}
             initial={{ opacity: 0, y: 20 }}
