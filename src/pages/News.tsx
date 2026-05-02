@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+
 import {
   Facebook, Instagram, Share2, Newspaper, Plus, ExternalLink,
   Calendar, Tag, Clock, Mail, Link2, Twitter, Linkedin, Check,
-  MessageSquare, Send, Trash2, ChevronRight
+  MessageCircle, Send, Trash2, Heart, Eye, ChevronUp, ChevronDown
 } from "lucide-react";
 import Nav from "@/components/site/Nav";
 import Footer from "@/components/site/Footer";
@@ -97,16 +97,36 @@ const renderMarkdown = (md: string) => {
   return out;
 };
 
+const buildShareLinks = (post: NewsPost) => {
+  const url = `${window.location.origin}/noutati#${post.slug}`;
+  const text = `${post.title} — via Avyron`;
+  const e = encodeURIComponent;
+  return {
+    url, text,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${e(url)}`,
+    messenger: `https://www.facebook.com/dialog/send?app_id=140586622674265&link=${e(url)}&redirect_uri=${e(url)}`,
+    whatsapp: `https://wa.me/?text=${e(text + " " + url)}`,
+    twitter: `https://twitter.com/intent/tweet?url=${e(url)}&text=${e(text)}`,
+    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${e(url)}`,
+    telegram: `https://t.me/share/url?url=${e(url)}&text=${e(text)}`,
+    email: `mailto:?subject=${e(post.title)}&body=${e(text + "\n\n" + url)}`,
+    instagram: `https://www.instagram.com/`, // IG doesn't support web share intent — opens IG, link is copied
+    tiktok: `https://www.tiktok.com/`,
+  };
+};
+
 const News = () => {
   const { user } = useAuth();
   const [posts, setPosts] = useState<NewsPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [isStaff, setIsStaff] = useState(false);
   const [openCreate, setOpenCreate] = useState(false);
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeIdx, setActiveIdx] = useState(0);
   const [openFull, setOpenFull] = useState(false);
+  const [fullPost, setFullPost] = useState<NewsPost | null>(null);
+  const [likes, setLikes] = useState<Record<string, boolean>>({});
 
-  // create post form
+  // create form
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [content, setContent] = useState("");
@@ -115,23 +135,24 @@ const News = () => {
   const [category, setCategory] = useState("tech");
   const [submitting, setSubmitting] = useState(false);
 
-  // comments state per active post
+  // comments for full post
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentText, setCommentText] = useState("");
   const [postingComment, setPostingComment] = useState(false);
-  const [copied, setCopied] = useState(false);
 
-  const featured = posts.find((p) => p.id === activeId) || posts[0];
-  const others = posts.filter((p) => p.id !== featured?.id).slice(0, 4);
+  const feedRef = useRef<HTMLDivElement>(null);
+  const slideRefs = useRef<(HTMLElement | null)[]>([]);
 
-  // SEO meta
+  const active = posts[activeIdx];
+
+  // SEO
   useEffect(() => {
     const baseTitle = "Noutăți Avyron — Tehnologie, Web Design, SEO & Securitate";
     const baseDesc = "Articole zilnice despre IT, web design, SEO și securitate online de la echipa Avyron.";
-    const t = featured ? `${featured.title} · Avyron Insights` : baseTitle;
-    const d = featured?.excerpt || baseDesc;
-    const url = `${window.location.origin}/noutati${featured ? `#${featured.slug}` : ""}`;
-    const image = featured?.cover_image_url || `${window.location.origin}/og-default.jpg`;
+    const t = active ? `${active.title} · Avyron Insights` : baseTitle;
+    const d = active?.excerpt || baseDesc;
+    const url = `${window.location.origin}/noutati${active ? `#${active.slug}` : ""}`;
+    const image = active?.cover_image_url || `${window.location.origin}/og-default.jpg`;
     document.title = t;
     const set = (sel: string, attr: string, val: string, mk?: () => HTMLElement) => {
       let el = document.querySelector(sel) as HTMLElement | null;
@@ -140,26 +161,26 @@ const News = () => {
     };
     set('meta[name="description"]', "content", d, () => { const m = document.createElement("meta"); m.setAttribute("name", "description"); return m; });
     set('link[rel="canonical"]', "href", url, () => { const l = document.createElement("link"); l.setAttribute("rel", "canonical"); return l; });
-    [["og:title", t], ["og:description", d], ["og:type", featured ? "article" : "website"], ["og:url", url], ["og:image", image], ["og:site_name", "Avyron"],
+    [["og:title", t], ["og:description", d], ["og:type", active ? "article" : "website"], ["og:url", url], ["og:image", image], ["og:site_name", "Avyron"],
      ["twitter:card", "summary_large_image"], ["twitter:title", t], ["twitter:description", d], ["twitter:image", image]
     ].forEach(([k, v]) => {
       const sel = k.startsWith("twitter") ? `meta[name="${k}"]` : `meta[property="${k}"]`;
       set(sel, "content", v as string, () => { const m = document.createElement("meta"); k.startsWith("twitter") ? m.setAttribute("name", k) : m.setAttribute("property", k); return m; });
     });
     const ex = document.getElementById("news-jsonld"); if (ex) ex.remove();
-    if (featured) {
+    if (active) {
       const ld = {
         "@context": "https://schema.org", "@type": "BlogPosting",
-        headline: featured.title, description: featured.excerpt,
-        image: featured.cover_image_url ? [featured.cover_image_url] : undefined,
-        datePublished: featured.published_at, dateModified: featured.published_at,
+        headline: active.title, description: active.excerpt,
+        image: active.cover_image_url ? [active.cover_image_url] : undefined,
+        datePublished: active.published_at, dateModified: active.published_at,
         author: { "@type": "Organization", name: "Avyron", url: "https://www.avyron.ro" },
         publisher: { "@type": "Organization", name: "Avyron", logo: { "@type": "ImageObject", url: `${window.location.origin}/avyron-logo.jpg` } },
-        mainEntityOfPage: url, keywords: featured.tags?.join(", ")
+        mainEntityOfPage: url, keywords: active.tags?.join(", ")
       };
       const s = document.createElement("script"); s.type = "application/ld+json"; s.id = "news-jsonld"; s.text = JSON.stringify(ld); document.head.appendChild(s);
     }
-  }, [featured]);
+  }, [active]);
 
   // load posts
   useEffect(() => {
@@ -172,18 +193,26 @@ const News = () => {
       setLoading(false);
     };
     load();
+    try { setLikes(JSON.parse(localStorage.getItem("avyron_news_likes") || "{}")); } catch {}
   }, []);
 
-  // sync URL hash
+  // initial hash → idx
   useEffect(() => {
     if (!posts.length) return;
     const hash = window.location.hash.replace("#", "");
-    if (hash) { const i = posts.findIndex((p) => p.slug === hash); if (i >= 0) setActiveId(posts[i].id); }
+    if (hash) {
+      const i = posts.findIndex((p) => p.slug === hash);
+      if (i >= 0) {
+        setActiveIdx(i);
+        setTimeout(() => slideRefs.current[i]?.scrollIntoView({ behavior: "instant" as ScrollBehavior, block: "start" }), 50);
+      }
+    }
   }, [posts]);
 
+  // sync hash with active
   useEffect(() => {
-    if (featured) window.history.replaceState(null, "", `/noutati#${featured.slug}`);
-  }, [featured]);
+    if (active) window.history.replaceState(null, "", `/noutati#${active.slug}`);
+  }, [active]);
 
   // staff role
   useEffect(() => {
@@ -195,24 +224,41 @@ const News = () => {
     check();
   }, [user]);
 
-  // load comments for featured post
+  // observer-based active index
   useEffect(() => {
-    if (!featured) return;
+    if (!posts.length || !feedRef.current) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible) {
+          const idx = Number((visible.target as HTMLElement).dataset.idx);
+          if (!Number.isNaN(idx)) setActiveIdx(idx);
+        }
+      },
+      { root: feedRef.current, threshold: [0.55, 0.75] }
+    );
+    slideRefs.current.forEach((el) => el && obs.observe(el));
+    return () => obs.disconnect();
+  }, [posts]);
+
+  // load comments for fullPost
+  useEffect(() => {
+    if (!fullPost) return;
     const load = async () => {
       const { data } = await supabase
-        .from("news_comments").select("*").eq("post_id", featured.id)
+        .from("news_comments").select("*").eq("post_id", fullPost.id)
         .order("created_at", { ascending: false });
       setComments((data || []) as Comment[]);
     };
     load();
-    // realtime updates
     const ch = supabase
-      .channel(`comments-${featured.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "news_comments", filter: `post_id=eq.${featured.id}` },
-        () => load())
+      .channel(`comments-${fullPost.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "news_comments", filter: `post_id=eq.${fullPost.id}` }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [featured?.id]);
+  }, [fullPost?.id]);
 
   const slugify = (s: string) =>
     s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -232,18 +278,18 @@ const News = () => {
     if (error) { toast.error(error.message); return; }
     toast.success("Articol publicat");
     setPosts((p) => [data as NewsPost, ...p]);
-    setActiveId((data as NewsPost).id);
+    setActiveIdx(0);
     setOpenCreate(false);
     setTitle(""); setExcerpt(""); setContent(""); setCover(""); setTagsInput(""); setCategory("tech");
   };
 
   const postComment = async () => {
     if (!user) { toast.error("Conectează-te ca să comentezi"); return; }
-    if (!featured || !commentText.trim()) return;
+    if (!fullPost || !commentText.trim()) return;
     setPostingComment(true);
     const name = (user.user_metadata as any)?.display_name || (user.user_metadata as any)?.full_name || user.email?.split("@")[0] || "User";
     const { error } = await supabase.from("news_comments").insert({
-      post_id: featured.id, author_id: user.id, author_name: name, content: commentText.trim(),
+      post_id: fullPost.id, author_id: user.id, author_name: name, content: commentText.trim(),
     });
     setPostingComment(false);
     if (error) { toast.error(error.message); return; }
@@ -256,36 +302,34 @@ const News = () => {
     if (error) toast.error(error.message); else toast.success("Șters");
   };
 
-  const shareLinks = useMemo(() => {
-    if (!featured) return null;
-    const url = `${window.location.origin}/noutati#${featured.slug}`;
-    const text = `${featured.title} — via Avyron`;
-    const e = encodeURIComponent;
-    return {
-      url, text,
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${e(url)}`,
-      messenger: `https://www.facebook.com/dialog/send?app_id=140586622674265&link=${e(url)}&redirect_uri=${e(url)}`,
-      whatsapp: `https://wa.me/?text=${e(text + " " + url)}`,
-      twitter: `https://twitter.com/intent/tweet?url=${e(url)}&text=${e(text)}`,
-      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${e(url)}`,
-      telegram: `https://t.me/share/url?url=${e(url)}&text=${e(text)}`,
-      email: `mailto:?subject=${e(featured.title)}&body=${e(text + "\n\n" + url)}`,
-    };
-  }, [featured]);
+  const toggleLike = (id: string) => {
+    setLikes((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      localStorage.setItem("avyron_news_likes", JSON.stringify(next));
+      return next;
+    });
+  };
 
-  const copyLink = async () => {
-    if (!shareLinks) return;
-    try { await navigator.clipboard.writeText(shareLinks.url); setCopied(true); toast.success("Link copiat"); setTimeout(() => setCopied(false), 1500); }
-    catch { toast.error("Nu am putut copia"); }
+  const copyAndOpen = async (post: NewsPost, target: "instagram" | "tiktok") => {
+    const links = buildShareLinks(post);
+    try { await navigator.clipboard.writeText(`${post.title}\n${links.url}`); }
+    catch {}
+    toast.success(`Link copiat — lipește-l în ${target === "instagram" ? "Instagram" : "TikTok"}`);
+    window.open(links[target], "_blank", "noopener,noreferrer");
+  };
+
+  const scrollToIdx = (i: number) => {
+    const target = Math.max(0, Math.min(posts.length - 1, i));
+    slideRefs.current[target]?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   return (
-    <main className="min-h-screen overflow-x-hidden">
+    <main className="min-h-screen overflow-x-hidden bg-background">
       <Nav />
 
-      {/* Compact hero strip */}
-      <section className="relative pt-24 md:pt-28 pb-3 md:pb-4 overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.12]"
+      {/* Compact strip */}
+      <section className="relative pt-20 md:pt-24 pb-2 overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.10]"
           style={{
             backgroundImage:
               "radial-gradient(circle at 20% 30%, hsl(265 90% 62% / 0.4), transparent 50%), radial-gradient(circle at 80% 60%, hsl(200 95% 55% / 0.4), transparent 55%)",
@@ -293,211 +337,190 @@ const News = () => {
           aria-hidden
         />
         <div className="relative mx-auto max-w-5xl px-4 flex items-center justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand/10 text-brand text-[10px] font-bold uppercase tracking-wider mb-1">
+          <div className="flex items-center gap-3">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand/10 text-brand text-[10px] font-bold uppercase tracking-wider">
               <Newspaper className="size-3" /> Avyron Insights
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+            <h1 className="text-lg md:text-2xl font-bold tracking-tight" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
               <span className="bg-gradient-to-r from-foreground via-brand to-brand-2 bg-clip-text text-transparent">Noutăți</span>
             </h1>
           </div>
           {isStaff && (
             <Button onClick={() => setOpenCreate(true)} size="sm" className="rounded-full">
-              <Plus className="size-3.5 mr-1" /> Postare nouă
+              <Plus className="size-3.5 mr-1" /> Postare
             </Button>
           )}
         </div>
       </section>
 
-      {/* Featured post + side strip — fits in one screen */}
-      <section className="relative pb-10">
-        <div className="mx-auto max-w-5xl px-4">
-          {loading ? (
-            <div className="h-[500px] rounded-2xl bg-muted/40 animate-pulse" />
-          ) : !featured ? (
-            <p className="text-center text-muted-foreground py-10">Nu există articole.</p>
-          ) : (
-            <AnimatePresence mode="wait">
-              <motion.article
-                key={featured.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.3 }}
-                className="bg-card rounded-2xl shadow-soft border border-border/60 overflow-hidden"
-              >
-                {/* Header (Facebook-style) */}
-                <div className="flex items-center gap-3 p-3.5 pb-2">
-                  <Avatar className="size-9 bg-brand/10">
-                    <AvatarFallback className="bg-brand/10 text-brand font-bold text-xs">AV</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold leading-tight">Avyron</div>
-                    <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                      <span>{timeAgo(featured.published_at ?? featured.created_at)}</span>
-                      <span>·</span>
-                      <span className="uppercase tracking-wider font-medium">{featured.category}</span>
-                      <span>·</span>
-                      <Clock className="size-2.5" />
-                      <span>{readingTime(featured.content)} min</span>
+      {/* Vertical scroll feed (Instagram/TikTok-style) */}
+      <section className="relative">
+        {loading ? (
+          <div className="mx-auto max-w-md md:max-w-lg px-3 py-10">
+            <div className="aspect-[9/16] rounded-3xl bg-muted/40 animate-pulse" />
+          </div>
+        ) : posts.length === 0 ? (
+          <p className="text-center text-muted-foreground py-16">Nu există articole.</p>
+        ) : (
+          <div
+            ref={feedRef}
+            className="h-[calc(100vh-7rem)] overflow-y-auto snap-y snap-mandatory scrollbar-thin px-3 pb-6"
+            style={{ scrollPaddingTop: "0.5rem" }}
+          >
+            {posts.map((post, idx) => {
+              const links = buildShareLinks(post);
+              const liked = !!likes[post.id];
+              return (
+                <article
+                  key={post.id}
+                  data-idx={idx}
+                  ref={(el) => (slideRefs.current[idx] = el)}
+                  className="snap-start min-h-[calc(100vh-7rem)] flex items-center justify-center py-2"
+                >
+                  <div className="relative w-full max-w-md md:max-w-lg mx-auto h-[min(80vh,720px)] rounded-3xl overflow-hidden bg-card border border-border/60 shadow-elev">
+                    {/* Background image */}
+                    {post.cover_image_url ? (
+                      <img
+                        src={post.cover_image_url}
+                        alt={post.title}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        loading={idx <= 1 ? "eager" : "lazy"}
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-brand/30 via-brand-2/20 to-brand-3/30" />
+                    )}
+                    {/* gradient overlays for legibility */}
+                    <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/70 to-transparent pointer-events-none" />
+                    <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/85 via-black/50 to-transparent pointer-events-none" />
+
+                    {/* TOP — author */}
+                    <div className="absolute top-0 inset-x-0 p-3.5 flex items-center gap-2.5 text-white z-10">
+                      <Avatar className="size-9 ring-2 ring-white/40">
+                        <AvatarFallback className="bg-brand text-white font-bold text-xs">AV</AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-semibold leading-tight">Avyron</div>
+                        <div className="text-[11px] text-white/80 flex items-center gap-1.5">
+                          <span>{timeAgo(post.published_at ?? post.created_at)}</span>
+                          <span>·</span>
+                          <span className="uppercase tracking-wider">{post.category}</span>
+                          <span>·</span>
+                          <Clock className="size-2.5" />
+                          <span>{readingTime(post.content)} min</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* CENTER — Vezi mai mult */}
+                    <button
+                      onClick={() => { setFullPost(post); setOpenFull(true); }}
+                      className="absolute inset-0 m-auto h-12 w-40 rounded-full bg-white/15 backdrop-blur-md text-white font-semibold text-sm border border-white/30 shadow-glow hover:bg-white/25 transition-all flex items-center justify-center gap-1.5 z-10"
+                      aria-label="Vezi mai mult"
+                    >
+                      <Eye className="size-4" /> Vezi mai mult
+                    </button>
+
+                    {/* RIGHT side — vertical action stack */}
+                    <div className="absolute right-2 bottom-32 md:bottom-36 flex flex-col items-center gap-2.5 z-10">
+                      <ActionBtn label={liked ? "Apreciat" : "Apreciază"} onClick={() => toggleLike(post.id)}>
+                        <Heart className={`size-5 ${liked ? "fill-red-500 text-red-500" : "text-white"}`} />
+                      </ActionBtn>
+                      <ActionBtn label="Comentează" onClick={() => { setFullPost(post); setOpenFull(true); }}>
+                        <MessageCircle className="size-5 text-white" />
+                      </ActionBtn>
+                      <ActionBtn label="Facebook" href={links.facebook}>
+                        <Facebook className="size-5 text-white" />
+                      </ActionBtn>
+                      <ActionBtn label="WhatsApp" href={links.whatsapp}>
+                        <WhatsAppIcon className="size-5 text-white" />
+                      </ActionBtn>
+                      <ActionBtn label="Instagram" onClick={() => copyAndOpen(post, "instagram")}>
+                        <Instagram className="size-5 text-white" />
+                      </ActionBtn>
+                      <ActionBtn label="TikTok" onClick={() => copyAndOpen(post, "tiktok")}>
+                        <TikTokIcon className="size-5 text-white" />
+                      </ActionBtn>
+                      <ActionBtn label="Mai multe" onClick={() => { setFullPost(post); setOpenFull(true); }}>
+                        <Share2 className="size-5 text-white" />
+                      </ActionBtn>
+                    </div>
+
+                    {/* BOTTOM — title + larger description */}
+                    <div className="absolute inset-x-0 bottom-0 p-4 pr-16 text-white z-10">
+                      <h2 className="font-display text-lg md:text-2xl font-bold leading-tight mb-2 drop-shadow">{post.title}</h2>
+                      {post.excerpt && (
+                        <p className="text-sm md:text-base text-white/90 leading-relaxed line-clamp-4 mb-2 drop-shadow">{post.excerpt}</p>
+                      )}
+                      {post.tags && post.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {post.tags.slice(0, 5).map((tg) => (
+                            <span key={tg} className="text-[11px] font-medium text-white/95">#{tg}</span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
 
-                {/* Title + excerpt */}
-                <div className="px-3.5 pb-2.5">
-                  <h2 className="font-display text-lg md:text-xl font-bold leading-snug mb-1.5">{featured.title}</h2>
-                  {featured.excerpt && (
-                    <p className="text-sm text-foreground/75 leading-relaxed line-clamp-2">{featured.excerpt}</p>
-                  )}
-                  {featured.tags && featured.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {featured.tags.slice(0, 5).map((t) => (
-                        <span key={t} className="text-[10px] text-brand/80 font-medium">#{t}</span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Cover */}
-                {featured.cover_image_url && (
-                  <button
-                    onClick={() => setOpenFull(true)}
-                    className="block w-full aspect-[16/9] bg-muted overflow-hidden cursor-pointer group"
-                    aria-label="Vezi mai mult"
-                  >
-                    <img
-                      src={featured.cover_image_url}
-                      alt={featured.title}
-                      className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
-                      width={1920} height={1080}
-                      loading="eager"
-                    />
-                  </button>
-                )}
-
-                {/* Action bar */}
-                <div className="flex items-center justify-between px-3.5 py-2 border-t border-border/60 text-xs text-muted-foreground">
-                  <span>{comments.length} {comments.length === 1 ? "comentariu" : "comentarii"}</span>
-                  <button
-                    onClick={() => setOpenFull(true)}
-                    className="inline-flex items-center gap-1 text-brand font-semibold hover:underline"
-                  >
-                    Vezi mai mult <ChevronRight className="size-3" />
-                  </button>
-                </div>
-
-                {/* Quick share */}
-                <div className="grid grid-cols-4 gap-1 px-2 py-1.5 border-t border-border/60 text-xs">
-                  <a href={shareLinks?.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-1.5 py-1.5 rounded-md hover:bg-muted font-medium text-muted-foreground hover:text-[#1877F2]">
-                    <Facebook className="size-4" /><span className="hidden sm:inline">Share</span>
-                  </a>
-                  <a href={shareLinks?.whatsapp} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-1.5 py-1.5 rounded-md hover:bg-muted font-medium text-muted-foreground hover:text-[#25D366]">
-                    <WhatsAppIcon className="size-4" /><span className="hidden sm:inline">WhatsApp</span>
-                  </a>
-                  <button onClick={() => setOpenFull(true)} className="flex items-center justify-center gap-1.5 py-1.5 rounded-md hover:bg-muted font-medium text-muted-foreground hover:text-brand">
-                    <MessageSquare className="size-4" /><span className="hidden sm:inline">Comentează</span>
-                  </button>
-                  <button onClick={copyLink} className="flex items-center justify-center gap-1.5 py-1.5 rounded-md hover:bg-muted font-medium text-muted-foreground hover:text-brand">
-                    {copied ? <Check className="size-4" /> : <Link2 className="size-4" />}
-                    <span className="hidden sm:inline">{copied ? "Copiat" : "Copiază"}</span>
-                  </button>
-                </div>
-              </motion.article>
-            </AnimatePresence>
-          )}
-
-          {/* Bottom strip — last 3-4 other posts */}
-          {others.length > 0 && (
-            <div className="mt-4">
-              <div className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground mb-2 px-1">Alte postări</div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {others.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => { setActiveId(p.id); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                    className="text-left bg-card rounded-xl border border-border/60 overflow-hidden hover:border-brand/40 hover:shadow-soft transition-all group"
-                  >
-                    {p.cover_image_url && (
-                      <div className="aspect-[16/10] bg-muted overflow-hidden">
-                        <img src={p.cover_image_url} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
-                      </div>
-                    )}
-                    <div className="p-2">
-                      <div className="text-[9px] uppercase tracking-wider font-bold text-brand/80 mb-0.5">{p.category}</div>
-                      <div className="text-[11px] md:text-xs font-semibold leading-tight line-clamp-2">{p.title}</div>
-                      <div className="text-[10px] text-muted-foreground mt-1">{timeAgo(p.published_at ?? p.created_at)}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Vertical nav arrows (desktop) */}
+        {posts.length > 1 && (
+          <div className="hidden md:flex flex-col gap-2 fixed right-4 top-1/2 -translate-y-1/2 z-30">
+            <button onClick={() => scrollToIdx(activeIdx - 1)} disabled={activeIdx === 0}
+              className="size-10 rounded-full bg-card border border-border/60 shadow-soft grid place-items-center hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed">
+              <ChevronUp className="size-4" />
+            </button>
+            <div className="text-center text-[10px] font-bold text-muted-foreground">{activeIdx + 1}/{posts.length}</div>
+            <button onClick={() => scrollToIdx(activeIdx + 1)} disabled={activeIdx === posts.length - 1}
+              className="size-10 rounded-full bg-card border border-border/60 shadow-soft grid place-items-center hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed">
+              <ChevronDown className="size-4" />
+            </button>
+          </div>
+        )}
       </section>
 
       {/* FULL POST DIALOG */}
-      <Dialog open={openFull} onOpenChange={setOpenFull}>
+      <Dialog open={openFull} onOpenChange={(o) => { setOpenFull(o); if (!o) setFullPost(null); }}>
         <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-0">
-          {featured && (
+          {fullPost && (
             <>
               <DialogHeader className="px-6 pt-6">
-                <DialogTitle className="text-xl md:text-2xl font-display leading-tight pr-6">{featured.title}</DialogTitle>
+                <DialogTitle className="text-xl md:text-2xl font-display leading-tight pr-6">{fullPost.title}</DialogTitle>
               </DialogHeader>
               <div className="px-6 pb-6">
-                {featured.cover_image_url && (
-                  <img src={featured.cover_image_url} alt={featured.title} className="w-full rounded-xl my-3 aspect-[16/9] object-cover" />
+                {fullPost.cover_image_url && (
+                  <img src={fullPost.cover_image_url} alt={fullPost.title} className="w-full rounded-xl my-3 aspect-[16/9] object-cover" />
                 )}
                 <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mb-4">
                   <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-brand/10 text-brand font-semibold uppercase tracking-wide">
-                    <Tag className="size-3" /> {featured.category}
+                    <Tag className="size-3" /> {fullPost.category}
                   </span>
-                  <span className="inline-flex items-center gap-1"><Calendar className="size-3" />{new Date(featured.published_at ?? featured.created_at).toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" })}</span>
-                  <span className="inline-flex items-center gap-1"><Clock className="size-3" />{readingTime(featured.content)} min</span>
+                  <span className="inline-flex items-center gap-1"><Calendar className="size-3" />{new Date(fullPost.published_at ?? fullPost.created_at).toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" })}</span>
+                  <span className="inline-flex items-center gap-1"><Clock className="size-3" />{readingTime(fullPost.content)} min</span>
                 </div>
 
-                {featured.excerpt && (
-                  <p className="text-base text-foreground/75 leading-relaxed mb-4 italic border-l-4 border-brand/40 pl-3">{featured.excerpt}</p>
+                {fullPost.excerpt && (
+                  <p className="text-base text-foreground/75 leading-relaxed mb-4 italic border-l-4 border-brand/40 pl-3">{fullPost.excerpt}</p>
                 )}
 
-                <div className="prose prose-sm max-w-none">{renderMarkdown(featured.content)}</div>
+                <div className="prose prose-sm max-w-none">{renderMarkdown(fullPost.content)}</div>
 
-                {featured.tags && featured.tags.length > 0 && (
+                {fullPost.tags && fullPost.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-5 pt-4 border-t border-border/60">
-                    {featured.tags.map((t) => <Badge key={t} variant="secondary" className="text-xs">#{t}</Badge>)}
+                    {fullPost.tags.map((t) => <Badge key={t} variant="secondary" className="text-xs">#{t}</Badge>)}
                   </div>
                 )}
 
                 {/* Full share */}
-                {shareLinks && (
-                  <div className="mt-5 pt-4 border-t border-border/60">
-                    <div className="flex items-center gap-2 mb-2.5"><Share2 className="size-4 text-brand" /><span className="text-sm font-semibold">Distribuie</span></div>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <ShareBtn href={shareLinks.facebook} label="Facebook" color="hover:bg-[#1877F2] hover:text-white"><Facebook className="size-4" /></ShareBtn>
-                      <ShareBtn href={shareLinks.messenger} label="Messenger" color="hover:bg-[#0084FF] hover:text-white"><MessengerIcon className="size-4" /></ShareBtn>
-                      <ShareBtn href={shareLinks.whatsapp} label="WhatsApp" color="hover:bg-[#25D366] hover:text-white"><WhatsAppIcon className="size-4" /></ShareBtn>
-                      <ShareBtn href={shareLinks.twitter} label="X" color="hover:bg-foreground hover:text-background"><Twitter className="size-4" /></ShareBtn>
-                      <ShareBtn href={shareLinks.linkedin} label="LinkedIn" color="hover:bg-[#0A66C2] hover:text-white"><Linkedin className="size-4" /></ShareBtn>
-                      <ShareBtn href={shareLinks.telegram} label="Telegram" color="hover:bg-[#229ED9] hover:text-white"><TelegramIcon className="size-4" /></ShareBtn>
-                      <ShareBtn href={shareLinks.email} label="Email" color="hover:bg-brand hover:text-brand-foreground" external={false}><Mail className="size-4" /></ShareBtn>
-                      <button onClick={copyLink} className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full bg-muted text-xs font-medium hover:bg-brand hover:text-brand-foreground">
-                        {copied ? <Check className="size-3.5" /> : <Link2 className="size-3.5" />}<span className="hidden sm:inline">{copied ? "Copiat" : "Copiază"}</span>
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
-                      <span>Urmărește:</span>
-                      <a href="https://instagram.com/avyron" target="_blank" rel="noopener noreferrer" className="hover:text-brand"><Instagram className="size-4" /></a>
-                      <a href="https://facebook.com/avyron" target="_blank" rel="noopener noreferrer" className="hover:text-brand"><Facebook className="size-4" /></a>
-                      <a href="https://tiktok.com/@avyron" target="_blank" rel="noopener noreferrer" className="hover:text-brand"><TikTokIcon className="size-4" /></a>
-                      <Link to="/" className="ml-auto inline-flex items-center gap-1 text-brand hover:underline font-medium">avyron.ro <ExternalLink className="size-3" /></Link>
-                    </div>
-                  </div>
-                )}
+                <FullShare post={fullPost} onCopyOpen={copyAndOpen} />
 
                 {/* Comments */}
                 <div className="mt-6 pt-4 border-t border-border/60">
                   <div className="flex items-center gap-2 mb-3">
-                    <MessageSquare className="size-4 text-brand" />
+                    <MessageCircle className="size-4 text-brand" />
                     <h3 className="text-sm font-semibold">Comentarii & întrebări ({comments.length})</h3>
                   </div>
 
@@ -524,7 +547,7 @@ const News = () => {
                     </div>
                   ) : (
                     <div className="bg-muted/40 rounded-xl p-3 text-xs text-muted-foreground mb-4 text-center">
-                      <Link to="/auth" className="text-brand font-semibold hover:underline">Conectează-te</Link> ca să lași un comentariu sau o întrebare.
+                      <Link to="/auth" className="text-brand font-semibold hover:underline">Conectează-te</Link> ca să lași un comentariu.
                     </div>
                   )}
 
@@ -579,7 +602,7 @@ const News = () => {
                 </select>
                 <Input placeholder="Tag-uri (separate prin virgulă)" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} />
               </div>
-              <Textarea placeholder="Rezumat scurt" rows={2} value={excerpt} onChange={(e) => setExcerpt(e.target.value)} />
+              <Textarea placeholder="Rezumat scurt" rows={3} value={excerpt} onChange={(e) => setExcerpt(e.target.value)} />
               <Textarea placeholder="Conținut (markdown: ##, ###, **bold**, [link](url), liste -)" rows={12} value={content} onChange={(e) => setContent(e.target.value)} />
               <Button onClick={submit} disabled={submitting} className="w-full">{submitting ? "Se publică..." : "Publică articolul"}</Button>
             </div>
@@ -589,6 +612,63 @@ const News = () => {
 
       <Footer />
     </main>
+  );
+};
+
+const ActionBtn = ({
+  children, label, onClick, href,
+}: { children: React.ReactNode; label: string; onClick?: () => void; href?: string }) => {
+  const cls = "size-11 rounded-full bg-black/40 backdrop-blur-md border border-white/20 grid place-items-center hover:bg-black/60 hover:scale-105 active:scale-95 transition-all";
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label} title={label} className={cls}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <button onClick={onClick} aria-label={label} title={label} className={cls}>
+      {children}
+    </button>
+  );
+};
+
+const FullShare = ({ post, onCopyOpen }: { post: NewsPost; onCopyOpen: (p: NewsPost, t: "instagram" | "tiktok") => void }) => {
+  const [copied, setCopied] = useState(false);
+  const links = useMemo(() => buildShareLinks(post), [post]);
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(links.url); setCopied(true); toast.success("Link copiat"); setTimeout(() => setCopied(false), 1500); }
+    catch { toast.error("Nu am putut copia"); }
+  };
+  return (
+    <div className="mt-5 pt-4 border-t border-border/60">
+      <div className="flex items-center gap-2 mb-2.5"><Share2 className="size-4 text-brand" /><span className="text-sm font-semibold">Distribuie</span></div>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <ShareBtn href={links.facebook} label="Facebook" color="hover:bg-[#1877F2] hover:text-white"><Facebook className="size-4" /></ShareBtn>
+        <ShareBtn href={links.messenger} label="Messenger" color="hover:bg-[#0084FF] hover:text-white"><MessengerIcon className="size-4" /></ShareBtn>
+        <ShareBtn href={links.whatsapp} label="WhatsApp" color="hover:bg-[#25D366] hover:text-white"><WhatsAppIcon className="size-4" /></ShareBtn>
+        <ShareBtn href={links.twitter} label="X" color="hover:bg-foreground hover:text-background"><Twitter className="size-4" /></ShareBtn>
+        <ShareBtn href={links.linkedin} label="LinkedIn" color="hover:bg-[#0A66C2] hover:text-white"><Linkedin className="size-4" /></ShareBtn>
+        <ShareBtn href={links.telegram} label="Telegram" color="hover:bg-[#229ED9] hover:text-white"><TelegramIcon className="size-4" /></ShareBtn>
+        <button onClick={() => onCopyOpen(post, "instagram")} className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full bg-muted text-xs font-medium transition-colors hover:bg-gradient-to-tr hover:from-[#feda75] hover:via-[#d62976] hover:to-[#4f5bd5] hover:text-white">
+          <Instagram className="size-4" /><span className="hidden sm:inline">Instagram</span>
+        </button>
+        <button onClick={() => onCopyOpen(post, "tiktok")} className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full bg-muted text-xs font-medium transition-colors hover:bg-foreground hover:text-background">
+          <TikTokIcon className="size-4" /><span className="hidden sm:inline">TikTok</span>
+        </button>
+        <ShareBtn href={links.email} label="Email" color="hover:bg-brand hover:text-brand-foreground" external={false}><Mail className="size-4" /></ShareBtn>
+        <button onClick={copy} className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full bg-muted text-xs font-medium hover:bg-brand hover:text-brand-foreground">
+          {copied ? <Check className="size-3.5" /> : <Link2 className="size-3.5" />}<span className="hidden sm:inline">{copied ? "Copiat" : "Copiază"}</span>
+        </button>
+      </div>
+      <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
+        <span>Urmărește:</span>
+        <a href="https://instagram.com/avyron" target="_blank" rel="noopener noreferrer" className="hover:text-brand"><Instagram className="size-4" /></a>
+        <a href="https://facebook.com/avyron" target="_blank" rel="noopener noreferrer" className="hover:text-brand"><Facebook className="size-4" /></a>
+        <a href="https://tiktok.com/@avyron" target="_blank" rel="noopener noreferrer" className="hover:text-brand"><TikTokIcon className="size-4" /></a>
+        <Link to="/" className="ml-auto inline-flex items-center gap-1 text-brand hover:underline font-medium">avyron.ro <ExternalLink className="size-3" /></Link>
+      </div>
+    </div>
   );
 };
 
