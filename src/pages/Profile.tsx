@@ -13,6 +13,16 @@ import { InvoicesTab } from "@/components/dashboard/InvoicesTab";
 import { TicketsTab } from "@/components/dashboard/TicketsTab";
 import { StaffClientsTab } from "@/components/dashboard/StaffClientsTab";
 import { StaffAnnouncementsTab } from "@/components/dashboard/StaffAnnouncementsTab";
+import { Card, CardContent } from "@/components/ui/card";
+
+const ComingSoonCard = ({ title }: { title: string }) => (
+  <Card>
+    <CardContent className="p-10 text-center space-y-2">
+      <h3 className="text-xl font-display font-bold">{title}</h3>
+      <p className="text-sm text-muted-foreground">În curând — această secțiune este în lucru.</p>
+    </CardContent>
+  </Card>
+);
 
 const Profile = () => {
   const { t } = useLang();
