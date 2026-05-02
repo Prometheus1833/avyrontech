@@ -351,7 +351,8 @@ export const translations = {
       menu: {
         profile: "Profil",
         product: "Produsul meu",
-        subscription: "Abonamentul meu",
+        subscription: "Istoric și Achiziții",
+        cart: "Coșul meu",
         settings: "Setări",
         news: "Noutăți",
         contact: "Contact",
@@ -360,6 +361,15 @@ export const translations = {
         internal: "Intern",
         resources: "Template-uri / Resurse",
         comingSoon: "În curând",
+        contactDialog: {
+          title: "Contactează echipa Avyron",
+          subtitle: "Alege metoda preferată — răspundem rapid.",
+          email: "Email",
+          phone: "Telefon",
+          whatsapp: "WhatsApp",
+          messenger: "Messenger",
+          faq: "Vezi întrebări frecvente (FAQ)",
+        },
       },
       profile: {
         title: "Profilul meu",
@@ -397,6 +407,7 @@ export const translations = {
           projects: "Proiectele mele",
           maintenance: "Mentenanță clienți",
           resources: "Resurse Avyron",
+          cart: "Coșul meu",
         },
         common: {
           empty: "Nimic de afișat încă.",
@@ -826,7 +837,8 @@ export const translations = {
       menu: {
         profile: "Profile",
         product: "My product",
-        subscription: "My subscription",
+        subscription: "History & Purchases",
+        cart: "My cart",
         settings: "Settings",
         news: "News",
         contact: "Contact",
@@ -835,6 +847,15 @@ export const translations = {
         internal: "Internal",
         resources: "Templates / Resources",
         comingSoon: "Coming soon",
+        contactDialog: {
+          title: "Contact the Avyron team",
+          subtitle: "Pick your preferred channel — we reply fast.",
+          email: "Email",
+          phone: "Phone",
+          whatsapp: "WhatsApp",
+          messenger: "Messenger",
+          faq: "See frequently asked questions (FAQ)",
+        },
       },
       profile: {
         title: "My profile",
@@ -872,6 +893,7 @@ export const translations = {
           projects: "My projects",
           maintenance: "Client maintenance",
           resources: "Avyron resources",
+          cart: "My cart",
         },
         common: {
           empty: "Nothing to show yet.",

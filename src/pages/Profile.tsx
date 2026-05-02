@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, LogOut, User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck, FolderKanban, Wrench, BookOpen, MessagesSquare, Settings } from "lucide-react";
+import { ArrowLeft, LogOut, User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck, FolderKanban, Wrench, BookOpen, MessagesSquare, Settings, ShoppingCart } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import { ProfileTab } from "@/components/dashboard/ProfileTab";
@@ -18,6 +18,7 @@ import { StaffMaintenanceTab } from "@/components/dashboard/StaffMaintenanceTab"
 import { StaffChatTab } from "@/components/dashboard/StaffChatTab";
 import { StaffResourcesTab } from "@/components/dashboard/StaffResourcesTab";
 import { SettingsTab } from "@/components/dashboard/SettingsTab";
+import { CartTab } from "@/components/dashboard/CartTab";
 
 const Profile = () => {
   const { t } = useLang();
@@ -39,6 +40,7 @@ const Profile = () => {
     { value: "subscriptions", label: t.auth.dash.tabs.subscriptions, icon: CreditCard },
     { value: "stats", label: t.auth.dash.tabs.stats, icon: BarChart3 },
     { value: "invoices", label: t.auth.dash.tabs.invoices, icon: Receipt },
+    { value: "cart", label: t.auth.dash.tabs.cart, icon: ShoppingCart },
     { value: "tickets", label: t.auth.dash.tabs.tickets, icon: MessageSquare },
     { value: "settings", label: "Setări", icon: Settings },
   ];
@@ -105,6 +107,7 @@ const Profile = () => {
             <>
               <TabsContent value="subscriptions" className="mt-0"><SubscriptionsTab /></TabsContent>
               <TabsContent value="stats" className="mt-0"><StatsTab /></TabsContent>
+              <TabsContent value="cart" className="mt-0"><CartTab /></TabsContent>
               <TabsContent value="tickets" className="mt-0"><TicketsTab /></TabsContent>
             </>
           )}
