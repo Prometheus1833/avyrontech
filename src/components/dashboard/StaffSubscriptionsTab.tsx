@@ -81,7 +81,7 @@ export function StaffSubscriptionsTab() {
   };
 
   const updateStatus = async (id: string, status: Sub["status"]) => {
-    const patch: Record<string, unknown> = { status };
+    const patch: { status: Sub["status"]; cancelled_at?: string; started_at?: string } = { status };
     if (status === "cancelled") patch.cancelled_at = new Date().toISOString();
     if (status === "active") patch.started_at = new Date().toISOString();
     const { error } = await supabase.from("subscriptions").update(patch).eq("id", id);
