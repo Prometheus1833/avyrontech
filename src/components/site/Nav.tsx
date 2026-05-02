@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogIn } from "lucide-react";
+import { Menu, X, LogIn, Newspaper } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
@@ -13,36 +13,52 @@ const Nav = () => {
   const { t } = useLang();
   const { user, loading } = useAuth();
   const links = [
-    { label: t.nav.whyNeed, href: "#de-ce", highlight: true },
-    { label: t.nav.examples, href: "#exemple" },
-    { label: t.nav.process, href: "#proces" },
-    { label: t.nav.faq, href: "#faq" },
-  ];
+    { label: (t.nav as any).news ?? "Noutăți", to: "/noutati", icon: Newspaper, isRoute: true },
+    { label: t.nav.whyNeed, href: "/#de-ce", highlight: true },
+    { label: t.nav.examples, href: "/#exemple" },
+    { label: t.nav.process, href: "/#proces" },
+    { label: t.nav.faq, href: "/#faq" },
+  ] as Array<{ label: string; href?: string; to?: string; icon?: typeof Newspaper; highlight?: boolean; isRoute?: boolean }>;
 
   return (
     <header className="fixed top-0 inset-x-0 z-50">
       <div className="mx-auto max-w-6xl px-4 mt-3">
         <nav className="glass shadow-soft rounded-full flex items-center justify-between pl-3 pr-2 py-2 gap-2">
           <div className="flex items-center gap-3">
-            <a href="#top" className="flex items-center gap-2 font-display font-bold text-lg">
+            <Link to="/" className="flex items-center gap-2">
               <img src={logo} alt="Avyron" width={28} height={28} className="size-7 rounded-lg object-cover" />
-              <span className="bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent">Avyron</span>
-            </a>
+              <span
+                className="text-xl md:text-2xl font-bold uppercase tracking-[0.18em] bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent"
+                style={{ fontFamily: '"Times New Roman", Times, serif' }}
+              >
+                AVYRON
+              </span>
+            </Link>
             <LangSwitch className="hidden md:inline-flex" />
           </div>
-          <ul className="hidden md:flex items-center gap-5 text-sm font-medium">
+          <ul className="hidden md:flex items-center gap-4 text-sm font-medium">
             {links.map((l) => (
-              <li key={l.href}>
-                <a
-                  href={l.href}
-                  className={
-                    l.highlight
-                      ? "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand text-brand-foreground hover:opacity-90 transition-opacity shadow-elev"
-                      : "text-foreground/70 hover:text-foreground transition-colors"
-                  }
-                >
-                  {l.label}
-                </a>
+              <li key={l.href ?? l.to}>
+                {l.isRoute && l.to ? (
+                  <Link
+                    to={l.to}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-foreground/80 hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    {l.icon && <l.icon className="size-4" />}
+                    {l.label}
+                  </Link>
+                ) : (
+                  <a
+                    href={l.href}
+                    className={
+                      l.highlight
+                        ? "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand text-brand-foreground hover:opacity-90 transition-opacity shadow-elev"
+                        : "text-foreground/70 hover:text-foreground transition-colors"
+                    }
+                  >
+                    {l.label}
+                  </a>
+                )}
               </li>
             ))}
           </ul>
