@@ -40,6 +40,7 @@ const Profile = () => {
     { value: "stats", label: t.auth.dash.tabs.stats, icon: BarChart3 },
     { value: "invoices", label: t.auth.dash.tabs.invoices, icon: Receipt },
     { value: "tickets", label: t.auth.dash.tabs.tickets, icon: MessageSquare },
+    { value: "settings", label: "Setări", icon: Settings },
   ];
   const staffTabs = [
     { value: "profile", label: t.auth.dash.tabs.profile, icon: User },
@@ -48,8 +49,10 @@ const Profile = () => {
     { value: "clients", label: t.auth.dash.tabs.clients, icon: Users },
     { value: "invoices", label: t.auth.dash.tabs.invoices, icon: Receipt },
     { value: "staff-tickets", label: t.auth.dash.tabs.staffTickets, icon: MessageSquare },
+    { value: "intern", label: "Intern", icon: MessagesSquare },
     { value: "announcements", label: t.auth.dash.tabs.announcements, icon: Megaphone },
     { value: "resources", label: t.auth.dash.tabs.resources, icon: BookOpen },
+    { value: "settings", label: "Setări", icon: Settings },
   ];
 
   const tabs = isStaff ? staffTabs : clientTabs;
