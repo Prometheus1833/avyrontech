@@ -13,25 +13,30 @@ const order: Cat[] = ["beauty", "resto", "public", "turism", "pro", "local", "au
 
 const Examples = () => {
   const { t } = useLang();
-  const [active, setActive] = useState<Cat>("ecommerce");
-  const [collapsed, setCollapsed] = useState(false);
+  const [active, setActive] = useState<Cat | null>(null);
+  // 'closed' = only "Vezi domenii" button | 'open' = full list | 'selected' = collapsed pill
+  const [view, setView] = useState<"closed" | "open" | "selected">("closed");
   const [requestSource, setRequestSource] = useState<ExampleRow | null>(null);
 
   const { data: dbExamples } = useExamples();
-  const current = t.examples.data[active];
-  const currentCat = t.examples.cats[active];
-  const Mockup = mockups[active];
+  const fallbackCat: Cat = "ecommerce";
+  const displayCat: Cat = active ?? fallbackCat;
+  const current = t.examples.data[displayCat];
+  const currentCat = t.examples.cats[displayCat];
+  const Mockup = mockups[displayCat];
 
   // Find a DB example matching the active category — shows as the "live" example for this domain
   const liveExample = useMemo(
-    () => dbExamples.find((e) => e.category === active) ?? null,
+    () => (active ? dbExamples.find((e) => e.category === active) ?? null : null),
     [dbExamples, active]
   );
 
   const handleSelectCat = (id: Cat) => {
     setActive(id);
-    setCollapsed(false);
+    setView("selected");
   };
+
+  const showCard = active !== null;
 
   return (
     <section id="exemple" className="py-10 md:py-16">
