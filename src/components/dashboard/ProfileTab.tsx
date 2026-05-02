@@ -15,13 +15,15 @@ import { useLang } from "@/i18n/LanguageContext";
 
 export function ProfileTab() {
   const { t } = useLang();
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, isStaff, refreshProfile } = useAuth();
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
     display_name: "",
+    pseudonym: "",
+    staff_role: "dev" as "dev" | "designer" | "marketing" | "support",
     phone: "",
     address: "",
     entity_type: "individual" as "individual" | "srl" | "pfa" | "ii" | "other",
