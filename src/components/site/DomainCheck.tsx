@@ -38,7 +38,7 @@ const DomainCheck = () => {
   return (
     <section className="pt-2 pb-10 md:pt-4 md:pb-16 bg-secondary/40">
       <div className="mx-auto max-w-4xl px-4">
-        <div className="rounded-[1.5rem] md:rounded-[2rem] bg-darkgrad text-background p-6 sm:p-8 md:p-14 shadow-elev relative overflow-hidden">
+        <div className="rounded-[1.5rem] md:rounded-[2rem] bg-darkgrad text-white p-6 sm:p-8 md:p-14 shadow-elev relative overflow-hidden ring-1 ring-white/10 dark:ring-brand/40 dark:shadow-glow">
           <motion.div
             animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
             transition={{ duration: 8, repeat: Infinity }}
@@ -56,7 +56,7 @@ const DomainCheck = () => {
             <h2 className="mt-4 font-display text-3xl md:text-5xl font-bold tracking-tight">
               {t.domain.title1}<br />{t.domain.title2}
             </h2>
-            <p className="mt-3 text-background/70 max-w-lg mx-auto">
+            <p className="mt-3 text-white/70 max-w-lg mx-auto">
               {t.domain.desc}
             </p>
 
@@ -73,7 +73,7 @@ const DomainCheck = () => {
               <div className="flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-2 text-xs sm:text-sm overflow-hidden">
                 <Globe className="size-4 opacity-70 shrink-0" />
                 <span className="opacity-60 hidden sm:inline">https://</span>
-                <span className="font-mono font-semibold text-background truncate">
+                <span className="font-mono font-semibold text-white truncate">
                   {livePreview || t.domain.placeholderUrl}
                 </span>
                 <span className="opacity-60">{tld}</span>
@@ -87,16 +87,16 @@ const DomainCheck = () => {
                   onChange={(e) => setName(e.target.value.slice(0, 40))}
                   onKeyDown={(e) => e.key === "Enter" && check()}
                   placeholder={t.domain.placeholder}
-                  className="h-12 rounded-full bg-white/10 border-white/20 text-background placeholder:text-background/50 px-5 focus-visible:ring-brand-glow flex-1 min-w-0"
+                  className="h-12 rounded-full bg-white/10 border-white/20 text-white placeholder:text-white/50 px-5 focus-visible:ring-brand-glow flex-1 min-w-0"
                 />
                 <select
                   value={tld}
                   onChange={(e) => setTld(e.target.value)}
                   aria-label={t.domain.tldLabel}
-                  className="h-12 rounded-full bg-white/10 border border-white/20 text-background px-3 sm:px-5 font-mono font-semibold text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-glow appearance-none cursor-pointer shrink-0"
+                  className="h-12 rounded-full bg-white/10 border border-white/20 text-white px-3 sm:px-5 font-mono font-semibold text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-glow appearance-none cursor-pointer shrink-0"
                 >
                   {tlds.map((x) => (
-                    <option key={x} value={x} className="bg-foreground text-background">{x}</option>
+                    <option key={x} value={x} className="bg-foreground text-white">{x}</option>
                   ))}
                 </select>
               </div>
@@ -142,7 +142,7 @@ const DomainCheck = () => {
                             {slug}
                             <span className="opacity-70">{r.tld}</span>
                           </div>
-                          <div className="text-xs text-background/60">
+                          <div className="text-xs text-white/60">
                             {r.available ? t.domain.available : t.domain.taken}
                           </div>
                         </div>
@@ -157,13 +157,13 @@ const DomainCheck = () => {
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="mt-5 text-sm text-background/80"
+                className="mt-5 text-sm text-white/80"
               >
                 {t.domain.success}
               </motion.p>
             )}
 
-            <p className="mt-4 text-xs text-background/50">{t.domain.disclaimer}</p>
+            <p className="mt-4 text-xs text-white/50">{t.domain.disclaimer}</p>
           </div>
         </div>
       </div>
