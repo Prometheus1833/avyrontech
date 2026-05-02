@@ -186,7 +186,7 @@ const About = () => {
           </div>
           <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {specialties.map((s) => (
-              <div key={s.t} className="group relative rounded-2xl border border-border/80 bg-background/60 backdrop-blur p-5 hover:border-brand/50 transition-colors overflow-hidden">
+              <div key={s.t} className="group relative rounded-2xl border border-border/80 bg-background/60 backdrop-blur p-5 hover:border-brand/50 transition-colors overflow-hidden flex flex-col items-center text-center">
                 <div className="absolute -top-px left-6 right-6 h-px bg-gradient-to-r from-transparent via-brand/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden />
                 <span className="size-10 rounded-xl bg-foreground text-background grid place-items-center">
                   <s.icon className="size-5" />
