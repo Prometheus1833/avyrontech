@@ -100,24 +100,18 @@ const UserMenu = () => {
         {items.map((item) => (
           <DropdownMenuItem
             key={item.label}
-            asChild={!item.comingSoon}
-            onSelect={(e) => handleClick(item, e as unknown as Event)}
+            asChild
             className="cursor-pointer"
           >
-            {item.comingSoon ? (
-              <div className="flex items-center justify-between w-full">
-                <span className="flex items-center gap-2">
-                  <item.icon className="size-4" />
-                  {item.label}
-                </span>
-                <span className="text-[10px] uppercase text-muted-foreground">{t.auth.menu.comingSoon}</span>
-              </div>
-            ) : (
-              <Link to={item.to!} className="flex items-center gap-2 w-full">
+            <Link to={item.to} className="flex items-center justify-between w-full gap-2">
+              <span className="flex items-center gap-2">
                 <item.icon className="size-4" />
                 {item.label}
-              </Link>
-            )}
+              </span>
+              {item.comingSoon && (
+                <span className="text-[10px] uppercase text-muted-foreground">{t.auth.menu.comingSoon}</span>
+              )}
+            </Link>
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
