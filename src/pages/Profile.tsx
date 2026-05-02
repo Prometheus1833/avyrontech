@@ -107,6 +107,7 @@ const Profile = () => {
             <>
               <TabsContent value="subscriptions" className="mt-0"><SubscriptionsTab /></TabsContent>
               <TabsContent value="stats" className="mt-0"><StatsTab /></TabsContent>
+              <TabsContent value="cart" className="mt-0"><CartTab /></TabsContent>
               <TabsContent value="tickets" className="mt-0"><TicketsTab /></TabsContent>
             </>
           )}
