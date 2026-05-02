@@ -96,18 +96,29 @@ const Nav = () => {
                 {t.auth.loginCta}
               </Link>
             </Button>
-            {links.map((l) => (
-              <a
-                key={l.href}
-                href={l.href}
-                onClick={() => setOpen(false)}
-                className={`block px-3 py-2 rounded-xl text-sm font-medium ${
-                  l.highlight ? "bg-brand text-brand-foreground" : "hover:bg-muted"
-                }`}
-              >
-                {l.label}
-              </a>
-            ))}
+            {links.map((l) =>
+              l.isRoute && l.to ? (
+                <Link
+                  key={l.to}
+                  to={l.to}
+                  onClick={() => setOpen(false)}
+                  className="block px-3 py-2 rounded-xl text-sm font-medium hover:bg-muted"
+                >
+                  {l.label}
+                </Link>
+              ) : (
+                <a
+                  key={l.href}
+                  href={l.href}
+                  onClick={() => setOpen(false)}
+                  className={`block px-3 py-2 rounded-xl text-sm font-medium ${
+                    l.highlight ? "bg-brand text-brand-foreground" : "hover:bg-muted"
+                  }`}
+                >
+                  {l.label}
+                </a>
+              )
+            )}
             <Button asChild className="w-full rounded-full bg-foreground text-background hover:bg-foreground/90">
               <a href="#cta" onClick={() => setOpen(false)}>{t.nav.cta}</a>
             </Button>
