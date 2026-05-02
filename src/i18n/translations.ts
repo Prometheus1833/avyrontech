@@ -351,7 +351,8 @@ export const translations = {
       menu: {
         profile: "Profil",
         product: "Produsul meu",
-        subscription: "Abonamentul meu",
+        subscription: "Istoric și Achiziții",
+        cart: "Coșul meu",
         settings: "Setări",
         news: "Noutăți",
         contact: "Contact",
@@ -360,6 +361,15 @@ export const translations = {
         internal: "Intern",
         resources: "Template-uri / Resurse",
         comingSoon: "În curând",
+        contactDialog: {
+          title: "Contactează echipa Avyron",
+          subtitle: "Alege metoda preferată — răspundem rapid.",
+          email: "Email",
+          phone: "Telefon",
+          whatsapp: "WhatsApp",
+          messenger: "Messenger",
+          faq: "Vezi întrebări frecvente (FAQ)",
+        },
       },
       profile: {
         title: "Profilul meu",
