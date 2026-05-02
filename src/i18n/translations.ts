@@ -378,6 +378,10 @@ export const translations = {
         theme: "Temă",
         themes: { light: "Luminos", dark: "Întunecat", system: "Sistem" },
         changePassword: "Schimbă parola",
+        pseudonym: "Pseudonim (afișat utilizatorilor)",
+        pseudonymHint: "Doar pseudonimul va fi vizibil pentru utilizatori în chat și anunțuri.",
+        staffRole: "Rol intern",
+        staffRoles: { dev: "Dev", designer: "Designer", marketing: "Marketing", support: "Support" },
       },
       dash: {
         tabs: {
@@ -389,7 +393,10 @@ export const translations = {
           clients: "Clienți",
           manageSubs: "Abonamente",
           staffTickets: "Tickete clienți",
-          announcements: "Anunțuri staff",
+          announcements: "Anunțuri interne",
+          projects: "Proiectele mele",
+          maintenance: "Mentenanță clienți",
+          resources: "Resurse Avyron",
         },
         common: {
           empty: "Nimic de afișat încă.",
