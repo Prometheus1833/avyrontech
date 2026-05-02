@@ -15,7 +15,7 @@ const Nav = () => {
   const { user, loading } = useAuth();
   const links = [
     { label: (t.nav as any).news ?? "Noutăți", to: "/noutati", icon: Newspaper, isRoute: true },
-    { label: t.nav.whyNeed, href: "/#de-ce", highlight: true },
+    { label: t.nav.whyNeed, href: "/#de-ce" },
     { label: t.nav.examples, href: "/#exemple" },
     { label: t.nav.process, href: "/#proces" },
     { label: t.nav.faq, href: "/#faq" },
