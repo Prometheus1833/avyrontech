@@ -9,6 +9,8 @@ import Gdpr from "./pages/Gdpr.tsx";
 import Pricing from "./pages/Pricing.tsx";
 import About from "./pages/About.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import FlawlesstudioDemo from "./pages/demos/FlawlesstudioDemo.tsx";
+import RetuvoDemo from "./pages/demos/RetuvoDemo.tsx";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +26,8 @@ const App = () => (
             <Route path="/gdpr" element={<Gdpr />} />
             <Route path="/costuri" element={<Pricing />} />
             <Route path="/despre" element={<About />} />
+            <Route path="/exemple/flawlesstudio" element={<FlawlesstudioDemo />} />
+            <Route path="/exemple/retuvo" element={<RetuvoDemo />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
