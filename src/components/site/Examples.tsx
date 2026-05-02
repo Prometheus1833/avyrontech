@@ -14,7 +14,7 @@ const order: Cat[] = ["beauty", "resto", "public", "turism", "pro", "local", "au
 const Examples = () => {
   const { t } = useLang();
   const [active, setActive] = useState<Cat>("ecommerce");
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
   const [requestSource, setRequestSource] = useState<ExampleRow | null>(null);
 
   const { data: dbExamples } = useExamples();
@@ -30,7 +30,7 @@ const Examples = () => {
 
   const handleSelectCat = (id: Cat) => {
     setActive(id);
-    setCollapsed(true);
+    setCollapsed(false);
   };
 
   return (
