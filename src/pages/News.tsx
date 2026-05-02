@@ -405,7 +405,7 @@ const News = () => {
                 <article
                   key={post.id}
                   data-idx={idx}
-                  ref={(el) => (slideRefs.current[idx] = el)}
+                  ref={(el) => { slideRefs.current[idx] = el; }}
                   className="snap-start min-h-[calc(100vh-7rem)] flex items-center justify-center py-2"
                 >
                   <div className="relative w-full max-w-md md:max-w-lg mx-auto h-[min(80vh,720px)] rounded-3xl overflow-hidden bg-card border border-border/60 shadow-elev">
