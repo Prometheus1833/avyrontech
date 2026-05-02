@@ -91,6 +91,7 @@ const Profile = () => {
           </div>
 
           <TabsContent value="profile" className="mt-0"><ProfileTab /></TabsContent>
+          <TabsContent value="settings" className="mt-0"><SettingsTab /></TabsContent>
           {!isStaff && (
             <>
               <TabsContent value="subscriptions" className="mt-0"><SubscriptionsTab /></TabsContent>
@@ -101,18 +102,13 @@ const Profile = () => {
           <TabsContent value="invoices" className="mt-0"><InvoicesTab /></TabsContent>
           {isStaff && (
             <>
-              <TabsContent value="projects" className="mt-0">
-                <ComingSoonCard title={t.auth.dash.tabs.projects} />
-              </TabsContent>
-              <TabsContent value="maintenance" className="mt-0">
-                <ComingSoonCard title={t.auth.dash.tabs.maintenance} />
-              </TabsContent>
+              <TabsContent value="projects" className="mt-0"><StaffProjectsTab /></TabsContent>
+              <TabsContent value="maintenance" className="mt-0"><StaffMaintenanceTab /></TabsContent>
               <TabsContent value="clients" className="mt-0"><StaffClientsTab /></TabsContent>
               <TabsContent value="staff-tickets" className="mt-0"><TicketsTab staffMode /></TabsContent>
+              <TabsContent value="intern" className="mt-0"><StaffChatTab /></TabsContent>
               <TabsContent value="announcements" className="mt-0"><StaffAnnouncementsTab /></TabsContent>
-              <TabsContent value="resources" className="mt-0">
-                <ComingSoonCard title={t.auth.dash.tabs.resources} />
-              </TabsContent>
+              <TabsContent value="resources" className="mt-0"><StaffResourcesTab /></TabsContent>
             </>
           )}
         </Tabs>
