@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck, FolderKanban, Wrench, BookOpen, MessagesSquare, Settings, ShoppingCart } from "lucide-react";
+import { ArrowLeft, LogOut, User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck, FolderKanban, Wrench, BookOpen, MessagesSquare, Settings, ShoppingCart } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import { ProfileTab } from "@/components/dashboard/ProfileTab";
@@ -21,7 +22,7 @@ import { CartTab } from "@/components/dashboard/CartTab";
 
 const Profile = () => {
   const { t } = useLang();
-  const { isStaff, isAdmin } = useAuth();
+  const { signOut, isStaff, isAdmin } = useAuth();
   const [params, setParams] = useSearchParams();
   const initial = params.get("tab") ?? "profile";
   const [tab, setTab] = useState(initial);
@@ -65,12 +66,18 @@ const Profile = () => {
           <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="size-4" /> Acasă
           </Link>
-          {isStaff && (
-            <Badge variant="default" className="gap-1">
-              <ShieldCheck className="size-3" />
-              {isAdmin ? "Admin" : "Staff"}
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {isStaff && (
+              <Badge variant="default" className="gap-1">
+                <ShieldCheck className="size-3" />
+                {isAdmin ? "Admin" : "Staff"}
+              </Badge>
+            )}
+            <Button variant="ghost" size="sm" onClick={() => signOut().then(() => (window.location.href = "/"))}>
+              <LogOut className="size-4 mr-2" />
+              {t.auth.logout}
+            </Button>
+          </div>
         </div>
 
         <Tabs value={tab} onValueChange={setTab} className="space-y-6">
