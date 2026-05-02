@@ -6,6 +6,7 @@ import { useLang } from "@/i18n/LanguageContext";
 import { useExamples, publicImageUrl, type ExampleRow } from "@/hooks/useExamples";
 import { RequestExampleModal } from "./RequestExampleModal";
 import { Link } from "react-router-dom";
+import examplesBg from "@/assets/examples-section-bg.jpg";
 
 type Cat = "beauty" | "resto" | "public" | "turism" | "pro" | "local" | "auto" | "ecommerce" | "national" | "other";
 
@@ -39,13 +40,25 @@ const Examples = () => {
   const showCard = active !== null;
 
   return (
-    <section id="exemple" className="py-10 md:py-16">
+    <section id="exemple" className="relative py-14 md:py-24 overflow-hidden">
+      {/* Background image (enlarged) */}
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10 bg-center bg-cover scale-110"
+        style={{ backgroundImage: `url(${examplesBg})` }}
+      />
+      {/* Readability overlay — soft fade so content stays crisp */}
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10 bg-gradient-to-b from-background/85 via-background/70 to-background/90"
+      />
+
       <div className="mx-auto max-w-6xl px-4">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
             {t.examples.title}
           </h2>
-          <p className="mt-4 text-base sm:text-lg text-muted-foreground">
+          <p className="mt-4 text-base sm:text-lg text-foreground/80">
             {t.examples.subtitle}
           </p>
         </div>
