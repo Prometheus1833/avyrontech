@@ -79,14 +79,23 @@ const Profile = () => {
         </div>
 
         <Tabs value={tab} onValueChange={setTab} className="space-y-6">
-          <div className="overflow-x-auto -mx-4 px-4">
-            <TabsList className="inline-flex w-auto h-auto p-1 bg-muted/60">
-              {tabs.map((tb) => (
-                <TabsTrigger key={tb.value} value={tb.value} className="gap-1.5 px-3 py-2 text-xs sm:text-sm">
-                  <tb.icon className="size-4" />
-                  <span className="hidden sm:inline">{tb.label}</span>
-                </TabsTrigger>
-              ))}
+          <div className="overflow-x-auto -mx-4 px-4 scrollbar-thin">
+            <TabsList className="inline-flex w-auto h-auto p-1 bg-muted/60 gap-0.5">
+              {tabs.map((tb) => {
+                const active = tb.value === tab;
+                return (
+                  <TabsTrigger
+                    key={tb.value}
+                    value={tb.value}
+                    title={tb.label}
+                    aria-label={tb.label}
+                    className="gap-1.5 px-2.5 py-1.5 text-xs data-[state=active]:px-3"
+                  >
+                    <tb.icon className="size-4 shrink-0" />
+                    <span className={active ? "inline" : "hidden md:hidden"}>{tb.label}</span>
+                  </TabsTrigger>
+                );
+              })}
             </TabsList>
           </div>
 
