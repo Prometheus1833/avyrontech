@@ -41,9 +41,9 @@ const Index = () => {
       <Problem />
       
       <Examples />
-      <Process />
       <DomainCheck />
       <Benefits />
+      <Process />
       <CTA />
       <FAQ />
       <Socials />

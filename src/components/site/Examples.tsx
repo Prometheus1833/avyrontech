@@ -6,6 +6,7 @@ import { useLang } from "@/i18n/LanguageContext";
 import { useExamples, publicImageUrl, type ExampleRow } from "@/hooks/useExamples";
 import { RequestExampleModal } from "./RequestExampleModal";
 import { Link } from "react-router-dom";
+import examplesBg from "@/assets/examples-section-bg.jpg";
 
 type Cat = "beauty" | "resto" | "public" | "turism" | "pro" | "local" | "auto" | "ecommerce" | "national" | "other";
 
