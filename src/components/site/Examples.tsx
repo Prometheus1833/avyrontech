@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
-import { Check, ExternalLink, MessageSquarePlus, Sparkles } from "lucide-react";
+import { Check, ChevronDown, ExternalLink, Globe, MessageSquarePlus, Sparkles } from "lucide-react";
 import { mockups } from "./mockups";
 import { useLang } from "@/i18n/LanguageContext";
 import { useExamples, publicImageUrl, type ExampleRow } from "@/hooks/useExamples";
@@ -13,25 +13,30 @@ const order: Cat[] = ["beauty", "resto", "public", "turism", "pro", "local", "au
 
 const Examples = () => {
   const { t } = useLang();
-  const [active, setActive] = useState<Cat>("ecommerce");
-  const [collapsed, setCollapsed] = useState(false);
+  const [active, setActive] = useState<Cat | null>(null);
+  // 'closed' = only "Vezi domenii" button | 'open' = full list | 'selected' = collapsed pill
+  const [view, setView] = useState<"closed" | "open" | "selected">("closed");
   const [requestSource, setRequestSource] = useState<ExampleRow | null>(null);
 
   const { data: dbExamples } = useExamples();
-  const current = t.examples.data[active];
-  const currentCat = t.examples.cats[active];
-  const Mockup = mockups[active];
+  const fallbackCat: Cat = "ecommerce";
+  const displayCat: Cat = active ?? fallbackCat;
+  const current = t.examples.data[displayCat];
+  const currentCat = t.examples.cats[displayCat];
+  const Mockup = mockups[displayCat];
 
   // Find a DB example matching the active category — shows as the "live" example for this domain
   const liveExample = useMemo(
-    () => dbExamples.find((e) => e.category === active) ?? null,
+    () => (active ? dbExamples.find((e) => e.category === active) ?? null : null),
     [dbExamples, active]
   );
 
   const handleSelectCat = (id: Cat) => {
     setActive(id);
-    setCollapsed(false);
+    setView("selected");
   };
+
+  const showCard = active !== null;
 
   return (
     <section id="exemple" className="py-10 md:py-16">
@@ -45,68 +50,98 @@ const Examples = () => {
           </p>
         </div>
 
-        {/* ===== SELECTOR — toate vizibile → click → doar selectatul ===== */}
+        {/* ===== "Vezi domenii" trigger — always visible ===== */}
         <div className="mt-8 flex justify-center">
-          <LayoutGroup>
-            <motion.div
-              layout
-              transition={{ type: "spring", damping: 26, stiffness: 220 }}
-              className={`flex flex-wrap gap-2 justify-center px-1 ${collapsed ? "" : "max-w-3xl"}`}
-            >
-              <AnimatePresence mode="popLayout" initial={false}>
-                {order.map((id) => {
-                  const isActive = active === id;
-                  if (collapsed && !isActive) return null;
-                  return (
-                    <motion.button
-                      key={id}
-                      layout="position"
-                      layoutId={`cat-${id}`}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      transition={{ type: "spring", damping: 22, stiffness: 280 }}
-                      onClick={() => {
-                        if (isActive && collapsed) {
-                          setCollapsed(false);
-                        } else {
-                          handleSelectCat(id);
-                        }
-                      }}
-                      aria-pressed={isActive}
-                      className={`relative inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap ${
-                        isActive
-                          ? "bg-foreground text-background shadow-elev"
-                          : "bg-secondary text-foreground/80 hover:bg-foreground/10"
-                      }`}
-                    >
-                      {isActive && collapsed && (
-                        <Sparkles className="size-3.5 text-brand-glow" />
-                      )}
-                      {t.examples.cats[id].label}
-                      {isActive && collapsed && (
-                        <span className="ml-1 text-[10px] opacity-70 hidden sm:inline">· schimbă</span>
-                      )}
-                    </motion.button>
-                  );
-                })}
-              </AnimatePresence>
-            </motion.div>
-          </LayoutGroup>
+          <motion.button
+            layout
+            onClick={() => setView(view === "open" ? (active ? "selected" : "closed") : "open")}
+            aria-expanded={view === "open"}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-foreground text-background text-sm font-semibold shadow-elev hover:opacity-90 transition-opacity"
+          >
+            <Globe className="size-4" />
+            Vezi domenii
+            <motion.span animate={{ rotate: view === "open" ? 180 : 0 }} transition={{ duration: 0.25 }}>
+              <ChevronDown className="size-4" />
+            </motion.span>
+          </motion.button>
         </div>
 
-        {!collapsed && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-3 text-center text-xs text-muted-foreground"
-          >
-            Apasă pe un domeniu pentru a-l selecta
-          </motion.p>
-        )}
+        {/* ===== SELECTOR (collapsible) ===== */}
+        <AnimatePresence initial={false}>
+          {(view === "open" || view === "selected") && (
+            <motion.div
+              key="selector-wrap"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-hidden"
+            >
+              <div className="mt-5 flex justify-center">
+                <LayoutGroup>
+                  <motion.div
+                    layout
+                    transition={{ type: "spring", damping: 26, stiffness: 220 }}
+                    className={`flex flex-wrap gap-2 justify-center px-1 ${view === "selected" ? "" : "max-w-3xl"}`}
+                  >
+                    <AnimatePresence mode="popLayout" initial={false}>
+                      {order.map((id) => {
+                        const isActive = active === id;
+                        if (view === "selected" && !isActive) return null;
+                        return (
+                          <motion.button
+                            key={id}
+                            layout="position"
+                            layoutId={`cat-${id}`}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ type: "spring", damping: 22, stiffness: 280 }}
+                            onClick={() => {
+                              if (isActive && view === "selected") {
+                                setView("open");
+                              } else {
+                                handleSelectCat(id);
+                              }
+                            }}
+                            aria-pressed={isActive}
+                            className={`relative inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap ${
+                              isActive
+                                ? "bg-foreground text-background shadow-elev"
+                                : "bg-secondary text-foreground/80 hover:bg-foreground/10"
+                            }`}
+                          >
+                            {isActive && view === "selected" && (
+                              <Sparkles className="size-3.5 text-brand-glow" />
+                            )}
+                            {t.examples.cats[id].label}
+                            {isActive && view === "selected" && (
+                              <span className="ml-1 text-[10px] opacity-70 hidden sm:inline">· schimbă</span>
+                            )}
+                          </motion.button>
+                        );
+                      })}
+                    </AnimatePresence>
+                  </motion.div>
+                </LayoutGroup>
+              </div>
 
-        {/* ===== CARD EXEMPLU + FEATURES ===== */}
+              {view === "open" && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="mt-3 text-center text-xs text-muted-foreground"
+                >
+                  Apasă pe un domeniu pentru a-l selecta
+                </motion.p>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ===== CARD EXEMPLU + FEATURES — only after a category is selected ===== */}
         <AnimatePresence mode="wait">
+          {showCard && (
           <motion.div
             key={active}
             initial={{ opacity: 0, y: 20 }}
@@ -191,9 +226,9 @@ const Examples = () => {
                     onClick={() =>
                       setRequestSource({
                         id: "",
-                        slug: active,
+                        slug: displayCat,
                         name: currentCat.label,
-                        category: active,
+                        category: displayCat,
                         title: current.title,
                         description: current.benefit,
                         image_path: null,
@@ -238,6 +273,7 @@ const Examples = () => {
               </ul>
             </div>
           </motion.div>
+          )}
         </AnimatePresence>
       </div>
 
