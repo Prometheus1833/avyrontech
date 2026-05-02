@@ -107,10 +107,10 @@ const Auth = () => {
             Avyron
           </Link>
         </div>
-        <div className="relative z-10 space-y-6 max-w-md">
+        <div className="relative z-10 space-y-6 max-w-md mx-auto text-center">
           <h1 className="font-display text-4xl font-bold leading-tight">{t.auth.heroTitle}</h1>
           <p className="text-base text-background/80">{t.auth.heroDesc}</p>
-          <div className="space-y-4 pt-4">
+          <div className="space-y-4 pt-4 text-left">
             <div className="flex gap-3">
               <Sparkles className="size-5 mt-1 text-brand-foreground/80 shrink-0" />
               <p className="text-sm text-background/80">{t.auth.clientPerksDesc}</p>
@@ -125,6 +125,12 @@ const Auth = () => {
               <LayoutDashboard className="size-5 mt-1 text-brand-foreground/80 shrink-0" />
               <p className="text-sm text-background/80">
                 Mini-dashboard intuitiv pentru produse, mentenanță și plăți recurente.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <MessageCircle className="size-5 mt-1 text-brand-foreground/80 shrink-0" />
+              <p className="text-sm text-background/80">
+                Chat direct cu membrii echipei.
               </p>
             </div>
           </div>
