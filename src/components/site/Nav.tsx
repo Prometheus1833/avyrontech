@@ -13,10 +13,11 @@ const Nav = () => {
   const [open, setOpen] = useState(false);
   const { t } = useLang();
   const { user, loading } = useAuth();
+  const isRo = (t.nav as any).examples?.toLowerCase?.().startsWith("ex");
   const links = [
     { label: (t.nav as any).news ?? "Noutăți", to: "/noutati", icon: Newspaper, isRoute: true },
-    { label: t.nav.whyNeed, href: "/#de-ce" },
-    { label: t.nav.examples, href: "/#exemple" },
+    { label: isRo ? "Vezi exemple" : "See examples", href: "/#exemple" },
+    { label: isRo ? "Despre noi" : "About us", to: "/despre", isRoute: true },
     { label: t.nav.process, href: "/#proces" },
     { label: t.nav.faq, href: "/#faq" },
   ] as Array<{ label: string; href?: string; to?: string; icon?: typeof Newspaper; highlight?: boolean; isRoute?: boolean }>;
