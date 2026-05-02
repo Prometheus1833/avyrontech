@@ -55,7 +55,7 @@ const UserMenu = () => {
     { label: t.auth.menu.product, icon: Package, to: "/profil?tab=subscriptions" },
     { label: t.auth.menu.subscription, icon: CreditCard, to: "/profil?tab=invoices" },
     { label: t.auth.menu.cart, icon: ShoppingCart, to: "/profil?tab=cart" },
-    { label: t.auth.menu.settings, icon: Settings, to: "/profil?tab=settings", comingSoon: true },
+    { label: t.auth.menu.settings, icon: Settings, to: "/profil?tab=settings" },
     { label: t.auth.menu.news, icon: Newspaper, to: "/profil?tab=tickets" },
     { label: t.auth.menu.contact, icon: MessageSquare, onSelect: () => setContactOpen(true) },
   ];
@@ -67,7 +67,7 @@ const UserMenu = () => {
     { label: t.auth.menu.internal, icon: UsersIcon, to: "/profil?tab=intern" },
     { label: t.auth.menu.resources, icon: Briefcase, to: "/profil?tab=resources" },
     { label: t.auth.menu.contact, icon: MessageSquare, onSelect: () => setContactOpen(true) },
-    { label: t.auth.menu.settings, icon: Settings, to: "/profil?tab=settings", comingSoon: true },
+    { label: t.auth.menu.settings, icon: Settings, to: "/profil?tab=settings" },
   ];
 
   const items = isStaff ? staffItems : userItems;

@@ -222,7 +222,22 @@ export function ProfileTab() {
           </div>
           <div className="space-y-1">
             <Label className="text-xs">{t.auth.profile.theme}</Label>
-            <Select value={form.theme} onValueChange={(v) => setForm({ ...form, theme: v as typeof form.theme })}>
+            <Select
+              value={form.theme}
+              onValueChange={(v) => {
+                const next = v as typeof form.theme;
+                setForm({ ...form, theme: next });
+                localStorage.setItem("theme", next);
+                const root = document.documentElement;
+                root.classList.remove("light", "dark");
+                if (next === "system") {
+                  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                  root.classList.add(prefersDark ? "dark" : "light");
+                } else {
+                  root.classList.add(next);
+                }
+              }}
+            >
               <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="light">{t.auth.profile.themes.light}</SelectItem>
