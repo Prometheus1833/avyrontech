@@ -48,12 +48,13 @@ const Problem = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.4, delay: i * 0.06 }}
-                className="rounded-2xl bg-cardgrad shadow-soft p-3 md:p-5 border border-border/60"
+                className="rounded-2xl bg-cardgrad shadow-soft p-3 md:p-5 border border-border/60 flex flex-col items-center text-center"
+                style={{ fontFamily: '"Times New Roman", Times, serif' }}
               >
                 <div className="size-8 md:size-10 rounded-xl md:rounded-2xl bg-foreground text-background grid place-items-center mb-2 md:mb-3">
                   <Icon className="size-4 md:size-5" />
                 </div>
-                <h3 className="font-display font-semibold text-sm md:text-base leading-tight">{it.t}</h3>
+                <h3 className="font-semibold text-sm md:text-base leading-tight">{it.t}</h3>
                 <p className="mt-1 md:mt-1.5 text-xs md:text-sm text-muted-foreground leading-snug">{it.d}</p>
               </motion.div>
             );
