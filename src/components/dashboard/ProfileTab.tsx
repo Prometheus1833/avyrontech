@@ -41,6 +41,8 @@ export function ProfileTab() {
     if (profile) {
       setForm({
         display_name: profile.display_name ?? "",
+        pseudonym: profile.pseudonym ?? "",
+        staff_role: profile.staff_role ?? "dev",
         phone: profile.phone ?? "",
         address: profile.address ?? "",
         entity_type: profile.entity_type ?? "individual",
