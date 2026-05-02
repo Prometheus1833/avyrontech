@@ -28,7 +28,7 @@ import { useLang } from "@/i18n/LanguageContext";
 type MenuItem = {
   label: string;
   icon: typeof UserIcon;
-  to?: string;
+  to: string;
   comingSoon?: boolean;
 };
 
@@ -46,31 +46,24 @@ const UserMenu = () => {
     .toUpperCase();
 
   const userItems: MenuItem[] = [
-    { label: t.auth.menu.profile, icon: UserIcon, to: "/profil" },
-    { label: t.auth.menu.product, icon: Package, comingSoon: true },
-    { label: t.auth.menu.subscription, icon: CreditCard, comingSoon: true },
-    { label: t.auth.menu.settings, icon: Settings, comingSoon: true },
-    { label: t.auth.menu.news, icon: Newspaper, comingSoon: true },
+    { label: t.auth.menu.profile, icon: UserIcon, to: "/profil?tab=profile" },
+    { label: t.auth.menu.product, icon: Package, to: "/profil?tab=subscriptions" },
+    { label: t.auth.menu.subscription, icon: CreditCard, to: "/profil?tab=invoices" },
+    { label: t.auth.menu.settings, icon: Settings, to: "/profil?tab=settings", comingSoon: true },
+    { label: t.auth.menu.news, icon: Newspaper, to: "/profil?tab=tickets" },
     { label: t.auth.menu.contact, icon: MessageSquare, to: "/#contact" },
   ];
 
   const staffItems: MenuItem[] = [
-    { label: t.auth.menu.profile, icon: UserIcon, to: "/profil" },
-    { label: t.auth.menu.projects, icon: FolderKanban, comingSoon: true },
-    { label: t.auth.menu.maintenance, icon: Wrench, comingSoon: true },
-    { label: t.auth.menu.internal, icon: UsersIcon, comingSoon: true },
-    { label: t.auth.menu.resources, icon: Briefcase, comingSoon: true },
-    { label: t.auth.menu.settings, icon: Settings, comingSoon: true },
+    { label: t.auth.menu.profile, icon: UserIcon, to: "/profil?tab=profile" },
+    { label: t.auth.menu.projects, icon: FolderKanban, to: "/profil?tab=projects" },
+    { label: t.auth.menu.maintenance, icon: Wrench, to: "/profil?tab=maintenance" },
+    { label: t.auth.menu.internal, icon: UsersIcon, to: "/profil?tab=intern" },
+    { label: t.auth.menu.resources, icon: Briefcase, to: "/profil?tab=resources" },
+    { label: t.auth.menu.settings, icon: Settings, to: "/profil?tab=settings", comingSoon: true },
   ];
 
   const items = isStaff ? staffItems : userItems;
-
-  const handleClick = (item: MenuItem, e: Event) => {
-    if (item.comingSoon) {
-      e.preventDefault();
-      toast.info(`${item.label} — ${t.auth.menu.comingSoon}`);
-    }
-  };
 
   const handleSignOut = async () => {
     await signOut();
