@@ -41,9 +41,10 @@ const Index = () => {
       <Problem />
       
       <Examples />
+      <div className="h-8 md:h-16" aria-hidden />
+      <Process />
       <DomainCheck />
       <Benefits />
-      <Process />
       <CTA />
       <FAQ />
       <Socials />
