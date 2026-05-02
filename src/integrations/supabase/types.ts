@@ -163,6 +163,80 @@ export type Database = {
           },
         ]
       }
+      maintenance_logs: {
+        Row: {
+          action: string
+          author_id: string
+          created_at: string
+          details: string | null
+          id: string
+          site_id: string
+        }
+        Insert: {
+          action: string
+          author_id: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          site_id: string
+        }
+        Update: {
+          action?: string
+          author_id?: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          site_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_logs_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_sites: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          id: string
+          last_check_at: string | null
+          next_check_at: string | null
+          notes: string | null
+          site_name: string
+          site_url: string
+          status: Database["public"]["Enums"]["maintenance_status"]
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          last_check_at?: string | null
+          next_check_at?: string | null
+          notes?: string | null
+          site_name: string
+          site_url: string
+          status?: Database["public"]["Enums"]["maintenance_status"]
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          last_check_at?: string | null
+          next_check_at?: string | null
+          notes?: string | null
+          site_name?: string
+          site_url?: string
+          status?: Database["public"]["Enums"]["maintenance_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       product_stats: {
         Row: {
           avg_response_ms: number
@@ -273,6 +347,92 @@ export type Database = {
         }
         Relationships: []
       }
+      project_notes: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          project_id: string
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+          project_id: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_notes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          assignee_id: string | null
+          budget_cents: number | null
+          client_id: string | null
+          created_at: string
+          deadline: string | null
+          description: string | null
+          id: string
+          owner_id: string
+          priority: Database["public"]["Enums"]["project_priority"]
+          progress: number
+          requirements: string | null
+          status: Database["public"]["Enums"]["project_status"]
+          subscription_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          budget_cents?: number | null
+          client_id?: string | null
+          created_at?: string
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          owner_id: string
+          priority?: Database["public"]["Enums"]["project_priority"]
+          progress?: number
+          requirements?: string | null
+          status?: Database["public"]["Enums"]["project_status"]
+          subscription_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          budget_cents?: number | null
+          client_id?: string | null
+          created_at?: string
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          owner_id?: string
+          priority?: Database["public"]["Enums"]["project_priority"]
+          progress?: number
+          requirements?: string | null
+          status?: Database["public"]["Enums"]["project_status"]
+          subscription_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       staff_announcements: {
         Row: {
           author_id: string
@@ -300,6 +460,27 @@ export type Database = {
           priority?: Database["public"]["Enums"]["announcement_priority"]
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      staff_chat_messages: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
         }
         Relationships: []
       }
@@ -465,6 +646,20 @@ export type Database = {
       billing_cycle: "monthly" | "quarterly" | "yearly" | "one_time"
       entity_type: "individual" | "srl" | "pfa" | "ii" | "other"
       invoice_status: "paid" | "pending" | "overdue" | "cancelled"
+      maintenance_status:
+        | "healthy"
+        | "needs_attention"
+        | "in_progress"
+        | "offline"
+        | "paused"
+      project_priority: "low" | "medium" | "high" | "urgent"
+      project_status:
+        | "todo"
+        | "in_progress"
+        | "review"
+        | "blocked"
+        | "done"
+        | "cancelled"
       staff_role: "dev" | "designer" | "marketing" | "support"
       subscription_status: "active" | "suspended" | "cancelled" | "pending"
       ticket_priority: "low" | "medium" | "high" | "urgent"
@@ -601,6 +796,22 @@ export const Constants = {
       billing_cycle: ["monthly", "quarterly", "yearly", "one_time"],
       entity_type: ["individual", "srl", "pfa", "ii", "other"],
       invoice_status: ["paid", "pending", "overdue", "cancelled"],
+      maintenance_status: [
+        "healthy",
+        "needs_attention",
+        "in_progress",
+        "offline",
+        "paused",
+      ],
+      project_priority: ["low", "medium", "high", "urgent"],
+      project_status: [
+        "todo",
+        "in_progress",
+        "review",
+        "blocked",
+        "done",
+        "cancelled",
+      ],
       staff_role: ["dev", "designer", "marketing", "support"],
       subscription_status: ["active", "suspended", "cancelled", "pending"],
       ticket_priority: ["low", "medium", "high", "urgent"],
