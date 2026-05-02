@@ -853,6 +853,10 @@ export const translations = {
         theme: "Theme",
         themes: { light: "Light", dark: "Dark", system: "System" },
         changePassword: "Change password",
+        pseudonym: "Pseudonym (shown to users)",
+        pseudonymHint: "Only your pseudonym is shown to users in chat and announcements.",
+        staffRole: "Internal role",
+        staffRoles: { dev: "Dev", designer: "Designer", marketing: "Marketing", support: "Support" },
       },
       dash: {
         tabs: {
@@ -864,7 +868,10 @@ export const translations = {
           clients: "Clients",
           manageSubs: "Subscriptions",
           staffTickets: "Client tickets",
-          announcements: "Staff announcements",
+          announcements: "Internal announcements",
+          projects: "My projects",
+          maintenance: "Client maintenance",
+          resources: "Avyron resources",
         },
         common: {
           empty: "Nothing to show yet.",
