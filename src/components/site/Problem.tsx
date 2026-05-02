@@ -24,7 +24,8 @@ const Problem = () => {
               /WEBSITE|website/.test(part) ? (
                 <span
                   key={i}
-                  className="font-extrabold uppercase bg-gradient-to-r from-brand via-accent to-brand-2 bg-clip-text text-transparent tracking-wide"
+                  className="font-extrabold uppercase tracking-wide"
+                  style={{ color: "hsl(265 45% 48%)" }}
                 >
                   {part}
                 </span>
