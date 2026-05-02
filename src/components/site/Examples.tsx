@@ -273,6 +273,7 @@ const Examples = () => {
               </ul>
             </div>
           </motion.div>
+          )}
         </AnimatePresence>
       </div>
 
