@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+
 import {
   Facebook, Instagram, Share2, Newspaper, Plus, ExternalLink,
   Calendar, Tag, Clock, Mail, Link2, Twitter, Linkedin, Check,
