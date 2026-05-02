@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import LangSwitch from "./LangSwitch";
+import ThemeToggle from "./ThemeToggle";
 import UserMenu from "@/components/auth/UserMenu";
 import logo from "@/assets/avyron-logo.jpg";
 
@@ -34,7 +35,10 @@ const Nav = () => {
                 AVYRON
               </span>
             </Link>
-            <LangSwitch className="hidden md:inline-flex" />
+            <div className="hidden md:inline-flex items-center gap-1.5">
+              <LangSwitch />
+              <ThemeToggle />
+            </div>
           </div>
           <ul className="hidden md:flex items-center gap-4 text-sm font-medium">
             {links.map((l) => (
@@ -74,8 +78,9 @@ const Nav = () => {
               </Button>
             ))}
           </div>
-          <div className="md:hidden flex items-center gap-2">
+          <div className="md:hidden flex items-center gap-1.5">
             <LangSwitch />
+            <ThemeToggle />
             {!loading && user ? (
               <UserMenu />
             ) : (
