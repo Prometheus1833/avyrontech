@@ -29,7 +29,7 @@ const Profile = () => {
     if (params.get("tab") !== tab) setParams({ tab }, { replace: true });
   }, [tab, params, setParams]);
 
-  const userTabs = [
+  const clientTabs = [
     { value: "profile", label: t.auth.dash.tabs.profile, icon: User },
     { value: "subscriptions", label: t.auth.dash.tabs.subscriptions, icon: CreditCard },
     { value: "stats", label: t.auth.dash.tabs.stats, icon: BarChart3 },
@@ -37,11 +37,17 @@ const Profile = () => {
     { value: "tickets", label: t.auth.dash.tabs.tickets, icon: MessageSquare },
   ];
   const staffTabs = [
+    { value: "profile", label: t.auth.dash.tabs.profile, icon: User },
+    { value: "projects", label: t.auth.dash.tabs.projects, icon: FolderKanban },
+    { value: "maintenance", label: t.auth.dash.tabs.maintenance, icon: Wrench },
     { value: "clients", label: t.auth.dash.tabs.clients, icon: Users },
-    { value: "manage-subs", label: t.auth.dash.tabs.manageSubs, icon: Package },
+    { value: "invoices", label: t.auth.dash.tabs.invoices, icon: Receipt },
     { value: "staff-tickets", label: t.auth.dash.tabs.staffTickets, icon: MessageSquare },
     { value: "announcements", label: t.auth.dash.tabs.announcements, icon: Megaphone },
+    { value: "resources", label: t.auth.dash.tabs.resources, icon: BookOpen },
   ];
+
+  const tabs = isStaff ? staffTabs : clientTabs;
 
   return (
     <main className="min-h-screen bg-secondary/30 py-8 px-4">
@@ -67,37 +73,38 @@ const Profile = () => {
         <Tabs value={tab} onValueChange={setTab} className="space-y-6">
           <div className="overflow-x-auto -mx-4 px-4">
             <TabsList className="inline-flex w-auto h-auto p-1 bg-muted/60">
-              {userTabs.map((tb) => (
+              {tabs.map((tb) => (
                 <TabsTrigger key={tb.value} value={tb.value} className="gap-1.5 px-3 py-2 text-xs sm:text-sm">
                   <tb.icon className="size-4" />
                   <span className="hidden sm:inline">{tb.label}</span>
                 </TabsTrigger>
               ))}
-              {isStaff && (
-                <>
-                  <span className="mx-1 self-center text-muted-foreground/50">|</span>
-                  {staffTabs.map((tb) => (
-                    <TabsTrigger key={tb.value} value={tb.value} className="gap-1.5 px-3 py-2 text-xs sm:text-sm">
-                      <tb.icon className="size-4" />
-                      <span className="hidden sm:inline">{tb.label}</span>
-                    </TabsTrigger>
-                  ))}
-                </>
-              )}
             </TabsList>
           </div>
 
           <TabsContent value="profile" className="mt-0"><ProfileTab /></TabsContent>
-          <TabsContent value="subscriptions" className="mt-0"><SubscriptionsTab /></TabsContent>
-          <TabsContent value="stats" className="mt-0"><StatsTab /></TabsContent>
+          {!isStaff && (
+            <>
+              <TabsContent value="subscriptions" className="mt-0"><SubscriptionsTab /></TabsContent>
+              <TabsContent value="stats" className="mt-0"><StatsTab /></TabsContent>
+              <TabsContent value="tickets" className="mt-0"><TicketsTab /></TabsContent>
+            </>
+          )}
           <TabsContent value="invoices" className="mt-0"><InvoicesTab /></TabsContent>
-          <TabsContent value="tickets" className="mt-0"><TicketsTab /></TabsContent>
           {isStaff && (
             <>
+              <TabsContent value="projects" className="mt-0">
+                <ComingSoonCard title={t.auth.dash.tabs.projects} />
+              </TabsContent>
+              <TabsContent value="maintenance" className="mt-0">
+                <ComingSoonCard title={t.auth.dash.tabs.maintenance} />
+              </TabsContent>
               <TabsContent value="clients" className="mt-0"><StaffClientsTab /></TabsContent>
-              <TabsContent value="manage-subs" className="mt-0"><StaffSubscriptionsTab /></TabsContent>
               <TabsContent value="staff-tickets" className="mt-0"><TicketsTab staffMode /></TabsContent>
               <TabsContent value="announcements" className="mt-0"><StaffAnnouncementsTab /></TabsContent>
+              <TabsContent value="resources" className="mt-0">
+                <ComingSoonCard title={t.auth.dash.tabs.resources} />
+              </TabsContent>
             </>
           )}
         </Tabs>
