@@ -836,7 +836,8 @@ export const translations = {
       menu: {
         profile: "Profile",
         product: "My product",
-        subscription: "My subscription",
+        subscription: "History & Purchases",
+        cart: "My cart",
         settings: "Settings",
         news: "News",
         contact: "Contact",
@@ -845,6 +846,15 @@ export const translations = {
         internal: "Internal",
         resources: "Templates / Resources",
         comingSoon: "Coming soon",
+        contactDialog: {
+          title: "Contact the Avyron team",
+          subtitle: "Pick your preferred channel — we reply fast.",
+          email: "Email",
+          phone: "Phone",
+          whatsapp: "WhatsApp",
+          messenger: "Messenger",
+          faq: "See frequently asked questions (FAQ)",
+        },
       },
       profile: {
         title: "My profile",
