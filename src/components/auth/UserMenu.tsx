@@ -1,0 +1,140 @@
+import { Link } from "react-router-dom";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  User as UserIcon,
+  Package,
+  CreditCard,
+  Settings,
+  Newspaper,
+  MessageSquare,
+  LogOut,
+  Briefcase,
+  Wrench,
+  Users as UsersIcon,
+  FolderKanban,
+} from "lucide-react";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { useLang } from "@/i18n/LanguageContext";
+
+type MenuItem = {
+  label: string;
+  icon: typeof UserIcon;
+  to?: string;
+  comingSoon?: boolean;
+};
+
+const UserMenu = () => {
+  const { user, profile, isStaff, signOut } = useAuth();
+  const { t } = useLang();
+
+  if (!user) return null;
+
+  const initials = (profile?.display_name || user.email || "A")
+    .split(" ")
+    .map((s) => s[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  const userItems: MenuItem[] = [
+    { label: t.auth.menu.profile, icon: UserIcon, to: "/profil" },
+    { label: t.auth.menu.product, icon: Package, comingSoon: true },
+    { label: t.auth.menu.subscription, icon: CreditCard, comingSoon: true },
+    { label: t.auth.menu.settings, icon: Settings, comingSoon: true },
+    { label: t.auth.menu.news, icon: Newspaper, comingSoon: true },
+    { label: t.auth.menu.contact, icon: MessageSquare, to: "/#contact" },
+  ];
+
+  const staffItems: MenuItem[] = [
+    { label: t.auth.menu.profile, icon: UserIcon, to: "/profil" },
+    { label: t.auth.menu.projects, icon: FolderKanban, comingSoon: true },
+    { label: t.auth.menu.maintenance, icon: Wrench, comingSoon: true },
+    { label: t.auth.menu.internal, icon: UsersIcon, comingSoon: true },
+    { label: t.auth.menu.resources, icon: Briefcase, comingSoon: true },
+    { label: t.auth.menu.settings, icon: Settings, comingSoon: true },
+  ];
+
+  const items = isStaff ? staffItems : userItems;
+
+  const handleClick = (item: MenuItem, e: Event) => {
+    if (item.comingSoon) {
+      e.preventDefault();
+      toast.info(`${item.label} — ${t.auth.menu.comingSoon}`);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success(t.auth.logout);
+    window.location.href = "/";
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className="size-10 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-brand/40 transition"
+          aria-label="Profil"
+        >
+          <Avatar className="size-10">
+            <AvatarImage src={profile?.avatar_url ?? undefined} />
+            <AvatarFallback className="bg-gradient-to-br from-foreground to-brand text-background text-sm">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuLabel className="flex flex-col">
+          <span className="font-medium truncate">{profile?.display_name || user.email}</span>
+          <span className="text-xs text-muted-foreground truncate">{user.email}</span>
+          {isStaff && (
+            <span className="mt-1 inline-flex w-fit text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-brand/10 text-brand">
+              Staff
+            </span>
+          )}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {items.map((item) => (
+          <DropdownMenuItem
+            key={item.label}
+            asChild={!item.comingSoon}
+            onSelect={(e) => handleClick(item, e as unknown as Event)}
+            className="cursor-pointer"
+          >
+            {item.comingSoon ? (
+              <div className="flex items-center justify-between w-full">
+                <span className="flex items-center gap-2">
+                  <item.icon className="size-4" />
+                  {item.label}
+                </span>
+                <span className="text-[10px] uppercase text-muted-foreground">{t.auth.menu.comingSoon}</span>
+              </div>
+            ) : (
+              <Link to={item.to!} className="flex items-center gap-2 w-full">
+                <item.icon className="size-4" />
+                {item.label}
+              </Link>
+            )}
+          </DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={handleSignOut} className="cursor-pointer text-destructive focus:text-destructive">
+          <LogOut className="size-4 mr-2" />
+          {t.auth.logout}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
+export default UserMenu;

@@ -104,15 +104,100 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          address: string | null
+          avatar_url: string | null
+          company_name: string | null
+          created_at: string
+          cui: string | null
+          display_name: string | null
+          entity_type: Database["public"]["Enums"]["entity_type"] | null
+          id: string
+          language: string
+          phone: string | null
+          social_facebook: string | null
+          social_instagram: string | null
+          social_tiktok: string | null
+          theme: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          avatar_url?: string | null
+          company_name?: string | null
+          created_at?: string
+          cui?: string | null
+          display_name?: string | null
+          entity_type?: Database["public"]["Enums"]["entity_type"] | null
+          id: string
+          language?: string
+          phone?: string | null
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_tiktok?: string | null
+          theme?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          avatar_url?: string | null
+          company_name?: string | null
+          created_at?: string
+          cui?: string | null
+          display_name?: string | null
+          entity_type?: Database["public"]["Enums"]["entity_type"] | null
+          id?: string
+          language?: string
+          phone?: string | null
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_tiktok?: string | null
+          theme?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "user" | "staff" | "admin"
+      entity_type: "individual" | "srl" | "pfa" | "ii" | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -239,6 +324,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["user", "staff", "admin"],
+      entity_type: ["individual", "srl", "pfa", "ii", "other"],
+    },
   },
 } as const

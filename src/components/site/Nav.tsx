@@ -1,19 +1,24 @@
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogIn } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
+import { useAuth } from "@/hooks/useAuth";
 import LangSwitch from "./LangSwitch";
+import UserMenu from "@/components/auth/UserMenu";
 import logo from "@/assets/avyron-logo.jpg";
 
 const Nav = () => {
   const [open, setOpen] = useState(false);
   const { t } = useLang();
+  const { user, loading } = useAuth();
   const links = [
     { label: t.nav.whyNeed, href: "#de-ce", highlight: true },
     { label: t.nav.examples, href: "#exemple" },
     { label: t.nav.process, href: "#proces" },
     { label: t.nav.faq, href: "#faq" },
   ];
+
   return (
     <header className="fixed top-0 inset-x-0 z-50">
       <div className="mx-auto max-w-6xl px-4 mt-3">
@@ -41,20 +46,40 @@ const Nav = () => {
               </li>
             ))}
           </ul>
-          <div className="hidden md:block">
+          <div className="hidden md:flex items-center gap-2">
             <Button asChild className="rounded-full bg-foreground text-background hover:bg-foreground/90">
               <a href="#cta">{t.nav.cta}</a>
             </Button>
+            {!loading && (user ? (
+              <UserMenu />
+            ) : (
+              <Button asChild variant="outline" className="rounded-full">
+                <Link to="/auth"><LogIn className="size-4 mr-1.5" />{t.auth.login}</Link>
+              </Button>
+            ))}
           </div>
           <div className="md:hidden flex items-center gap-2">
             <LangSwitch />
-            <button onClick={() => setOpen(!open)} className="size-10 grid place-items-center rounded-full hover:bg-muted" aria-label={t.nav.menu}>
-              {open ? <X className="size-5" /> : <Menu className="size-5" />}
-            </button>
+            {!loading && user ? (
+              <UserMenu />
+            ) : (
+              <button onClick={() => setOpen(!open)} className="size-10 grid place-items-center rounded-full hover:bg-muted" aria-label={t.nav.menu}>
+                {open ? <X className="size-5" /> : <Menu className="size-5" />}
+              </button>
+            )}
+            {!loading && !user && open === false && (
+              <></>
+            )}
           </div>
         </nav>
-        {open && (
+        {open && !user && (
           <div className="md:hidden glass shadow-soft rounded-3xl mt-2 p-4 space-y-2">
+            <Button asChild className="w-full rounded-full bg-brand text-brand-foreground hover:opacity-90">
+              <Link to="/auth" onClick={() => setOpen(false)}>
+                <LogIn className="size-4 mr-1.5" />
+                {t.auth.loginCta}
+              </Link>
+            </Button>
             {links.map((l) => (
               <a
                 key={l.href}
