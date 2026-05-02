@@ -29,9 +29,9 @@ const Process = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.5, delay: i * 0.08 }}
-                className="rounded-3xl bg-card border border-border/60 p-5 hover:border-brand/40 transition-colors shadow-soft"
+                className="rounded-3xl bg-card border border-border/60 p-5 hover:border-brand/40 transition-colors shadow-soft flex flex-col items-center text-center"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-center gap-3">
                   <div className="size-10 rounded-2xl bg-foreground text-background grid place-items-center">
                     <Icon className="size-5" />
                   </div>
