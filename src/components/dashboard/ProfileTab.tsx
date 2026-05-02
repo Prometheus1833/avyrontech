@@ -15,13 +15,15 @@ import { useLang } from "@/i18n/LanguageContext";
 
 export function ProfileTab() {
   const { t } = useLang();
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, isStaff, refreshProfile } = useAuth();
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
     display_name: "",
+    pseudonym: "",
+    staff_role: "dev" as "dev" | "designer" | "marketing" | "support",
     phone: "",
     address: "",
     entity_type: "individual" as "individual" | "srl" | "pfa" | "ii" | "other",
@@ -39,6 +41,8 @@ export function ProfileTab() {
     if (profile) {
       setForm({
         display_name: profile.display_name ?? "",
+        pseudonym: profile.pseudonym ?? "",
+        staff_role: profile.staff_role ?? "dev",
         phone: profile.phone ?? "",
         address: profile.address ?? "",
         entity_type: profile.entity_type ?? "individual",
@@ -129,29 +133,60 @@ export function ProfileTab() {
             <Label>{t.auth.profile.address}</Label>
             <Textarea rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
           </div>
-          <div className="space-y-1.5">
-            <Label>{t.auth.entityType}</Label>
-            <Select value={form.entity_type} onValueChange={(v) => setForm({ ...form, entity_type: v as typeof form.entity_type })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="individual">{t.auth.entity.individual}</SelectItem>
-                <SelectItem value="srl">{t.auth.entity.srl}</SelectItem>
-                <SelectItem value="pfa">{t.auth.entity.pfa}</SelectItem>
-                <SelectItem value="ii">{t.auth.entity.ii}</SelectItem>
-                <SelectItem value="other">{t.auth.entity.other}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {isCompany && (
+          {isStaff ? (
+            <>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>{t.auth.profile.pseudonym}</Label>
+                <Input
+                  value={form.pseudonym}
+                  onChange={(e) => setForm({ ...form, pseudonym: e.target.value })}
+                  placeholder="ex: Alex_Dev"
+                />
+                <p className="text-xs text-muted-foreground">{t.auth.profile.pseudonymHint}</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t.auth.profile.staffRole}</Label>
+                <Select
+                  value={form.staff_role}
+                  onValueChange={(v) => setForm({ ...form, staff_role: v as typeof form.staff_role })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dev">{t.auth.profile.staffRoles.dev}</SelectItem>
+                    <SelectItem value="designer">{t.auth.profile.staffRoles.designer}</SelectItem>
+                    <SelectItem value="marketing">{t.auth.profile.staffRoles.marketing}</SelectItem>
+                    <SelectItem value="support">{t.auth.profile.staffRoles.support}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          ) : (
             <>
               <div className="space-y-1.5">
-                <Label>{t.auth.profile.companyName}</Label>
-                <Input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
+                <Label>{t.auth.entityType}</Label>
+                <Select value={form.entity_type} onValueChange={(v) => setForm({ ...form, entity_type: v as typeof form.entity_type })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="individual">{t.auth.entity.individual}</SelectItem>
+                    <SelectItem value="srl">{t.auth.entity.srl}</SelectItem>
+                    <SelectItem value="pfa">{t.auth.entity.pfa}</SelectItem>
+                    <SelectItem value="ii">{t.auth.entity.ii}</SelectItem>
+                    <SelectItem value="other">{t.auth.entity.other}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label>{t.auth.profile.cui}</Label>
-                <Input value={form.cui} onChange={(e) => setForm({ ...form, cui: e.target.value })} />
-              </div>
+              {isCompany && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label>{t.auth.profile.companyName}</Label>
+                    <Input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t.auth.profile.cui}</Label>
+                    <Input value={form.cui} onChange={(e) => setForm({ ...form, cui: e.target.value })} />
+                  </div>
+                </>
+              )}
             </>
           )}
         </CardContent>

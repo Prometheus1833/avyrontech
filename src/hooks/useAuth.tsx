@@ -19,6 +19,8 @@ export type Profile = {
   website: string | null;
   language: "ro" | "en";
   theme: "light" | "dark" | "system";
+  pseudonym: string | null;
+  staff_role: "dev" | "designer" | "marketing" | "support" | null;
 };
 
 type AuthContextValue = {
