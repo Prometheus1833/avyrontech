@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, LogOut, User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck, FolderKanban, Wrench, BookOpen } from "lucide-react";
+import { ArrowLeft, LogOut, User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck, FolderKanban, Wrench, BookOpen, MessagesSquare, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import { ProfileTab } from "@/components/dashboard/ProfileTab";
@@ -13,16 +13,11 @@ import { InvoicesTab } from "@/components/dashboard/InvoicesTab";
 import { TicketsTab } from "@/components/dashboard/TicketsTab";
 import { StaffClientsTab } from "@/components/dashboard/StaffClientsTab";
 import { StaffAnnouncementsTab } from "@/components/dashboard/StaffAnnouncementsTab";
-import { Card, CardContent } from "@/components/ui/card";
-
-const ComingSoonCard = ({ title }: { title: string }) => (
-  <Card>
-    <CardContent className="p-10 text-center space-y-2">
-      <h3 className="text-xl font-display font-bold">{title}</h3>
-      <p className="text-sm text-muted-foreground">În curând — această secțiune este în lucru.</p>
-    </CardContent>
-  </Card>
-);
+import { StaffProjectsTab } from "@/components/dashboard/StaffProjectsTab";
+import { StaffMaintenanceTab } from "@/components/dashboard/StaffMaintenanceTab";
+import { StaffChatTab } from "@/components/dashboard/StaffChatTab";
+import { StaffResourcesTab } from "@/components/dashboard/StaffResourcesTab";
+import { SettingsTab } from "@/components/dashboard/SettingsTab";
 
 const Profile = () => {
   const { t } = useLang();
@@ -45,6 +40,7 @@ const Profile = () => {
     { value: "stats", label: t.auth.dash.tabs.stats, icon: BarChart3 },
     { value: "invoices", label: t.auth.dash.tabs.invoices, icon: Receipt },
     { value: "tickets", label: t.auth.dash.tabs.tickets, icon: MessageSquare },
+    { value: "settings", label: "Setări", icon: Settings },
   ];
   const staffTabs = [
     { value: "profile", label: t.auth.dash.tabs.profile, icon: User },
@@ -53,8 +49,10 @@ const Profile = () => {
     { value: "clients", label: t.auth.dash.tabs.clients, icon: Users },
     { value: "invoices", label: t.auth.dash.tabs.invoices, icon: Receipt },
     { value: "staff-tickets", label: t.auth.dash.tabs.staffTickets, icon: MessageSquare },
+    { value: "intern", label: "Intern", icon: MessagesSquare },
     { value: "announcements", label: t.auth.dash.tabs.announcements, icon: Megaphone },
     { value: "resources", label: t.auth.dash.tabs.resources, icon: BookOpen },
+    { value: "settings", label: "Setări", icon: Settings },
   ];
 
   const tabs = isStaff ? staffTabs : clientTabs;
@@ -93,6 +91,7 @@ const Profile = () => {
           </div>
 
           <TabsContent value="profile" className="mt-0"><ProfileTab /></TabsContent>
+          <TabsContent value="settings" className="mt-0"><SettingsTab /></TabsContent>
           {!isStaff && (
             <>
               <TabsContent value="subscriptions" className="mt-0"><SubscriptionsTab /></TabsContent>
@@ -103,18 +102,13 @@ const Profile = () => {
           <TabsContent value="invoices" className="mt-0"><InvoicesTab /></TabsContent>
           {isStaff && (
             <>
-              <TabsContent value="projects" className="mt-0">
-                <ComingSoonCard title={t.auth.dash.tabs.projects} />
-              </TabsContent>
-              <TabsContent value="maintenance" className="mt-0">
-                <ComingSoonCard title={t.auth.dash.tabs.maintenance} />
-              </TabsContent>
+              <TabsContent value="projects" className="mt-0"><StaffProjectsTab /></TabsContent>
+              <TabsContent value="maintenance" className="mt-0"><StaffMaintenanceTab /></TabsContent>
               <TabsContent value="clients" className="mt-0"><StaffClientsTab /></TabsContent>
               <TabsContent value="staff-tickets" className="mt-0"><TicketsTab staffMode /></TabsContent>
+              <TabsContent value="intern" className="mt-0"><StaffChatTab /></TabsContent>
               <TabsContent value="announcements" className="mt-0"><StaffAnnouncementsTab /></TabsContent>
-              <TabsContent value="resources" className="mt-0">
-                <ComingSoonCard title={t.auth.dash.tabs.resources} />
-              </TabsContent>
+              <TabsContent value="resources" className="mt-0"><StaffResourcesTab /></TabsContent>
             </>
           )}
         </Tabs>
