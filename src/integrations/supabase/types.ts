@@ -14,7 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      example_requests: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string | null
+          phone: string
+          source_category: string | null
+          source_name: string | null
+          source_slug: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message?: string | null
+          phone: string
+          source_category?: string | null
+          source_name?: string | null
+          source_slug?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string | null
+          phone?: string
+          source_category?: string | null
+          source_name?: string | null
+          source_slug?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      examples: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          description: string
+          display_url: string | null
+          external_url: string | null
+          has_internal_demo: boolean
+          id: string
+          image_path: string | null
+          internal_demo_path: string | null
+          name: string
+          slug: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category: string
+          created_at?: string
+          description: string
+          display_url?: string | null
+          external_url?: string | null
+          has_internal_demo?: boolean
+          id?: string
+          image_path?: string | null
+          internal_demo_path?: string | null
+          name: string
+          slug: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          description?: string
+          display_url?: string | null
+          external_url?: string | null
+          has_internal_demo?: boolean
+          id?: string
+          image_path?: string | null
+          internal_demo_path?: string | null
+          name?: string
+          slug?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
