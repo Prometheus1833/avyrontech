@@ -90,67 +90,68 @@ export function ProfileTab() {
   const isCompany = form.entity_type !== "individual";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div>
-        <h2 className="text-2xl font-display font-bold">{t.auth.profile.title}</h2>
-        <p className="text-sm text-muted-foreground">{t.auth.profile.subtitle}</p>
+        <h2 className="text-xl font-display font-bold leading-tight">{t.auth.profile.title}</h2>
+        <p className="text-xs text-muted-foreground">{t.auth.profile.subtitle}</p>
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">{t.auth.profile.avatar}</CardTitle></CardHeader>
-        <CardContent className="flex items-center gap-4">
-          <Avatar className="size-20">
+        <CardHeader className="py-3"><CardTitle className="text-sm">{t.auth.profile.avatar}</CardTitle></CardHeader>
+        <CardContent className="flex items-center gap-3 pt-0 pb-3">
+          <Avatar className="size-14">
             <AvatarImage src={profile?.avatar_url ?? undefined} />
-            <AvatarFallback className="bg-gradient-to-br from-foreground to-brand text-background">{initials}</AvatarFallback>
+            <AvatarFallback className="bg-gradient-to-br from-foreground to-brand text-background text-xs">{initials}</AvatarFallback>
           </Avatar>
           <div>
             <input ref={fileRef} type="file" accept="image/*" className="hidden"
               onChange={(e) => e.target.files?.[0] && handleAvatar(e.target.files[0])} />
-            <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={uploading}>
-              <Camera className="size-4 mr-2" />{uploading ? "..." : t.auth.profile.changeAvatar}
+            <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()} disabled={uploading}>
+              <Camera className="size-3.5 mr-1.5" />{uploading ? "..." : t.auth.profile.changeAvatar}
             </Button>
-            <p className="text-xs text-muted-foreground mt-1">JPG, PNG • max 5MB</p>
+            <p className="text-[10px] text-muted-foreground mt-1">JPG, PNG • max 5MB</p>
           </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Date personale</CardTitle></CardHeader>
-        <CardContent className="grid sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label>{t.auth.displayName}</Label>
-            <Input value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} />
+        <CardHeader className="py-3"><CardTitle className="text-sm">Date personale</CardTitle></CardHeader>
+        <CardContent className="grid sm:grid-cols-2 gap-2.5 pt-0 pb-3">
+          <div className="space-y-1 sm:col-span-2">
+            <Label className="text-xs">{t.auth.displayName}</Label>
+            <Input className="h-8 text-sm" value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} />
           </div>
-          <div className="space-y-1.5">
-            <Label>{t.auth.email}</Label>
-            <Input value={user?.email ?? ""} disabled />
+          <div className="space-y-1">
+            <Label className="text-xs">{t.auth.email}</Label>
+            <Input className="h-8 text-sm" value={user?.email ?? ""} disabled />
           </div>
-          <div className="space-y-1.5">
-            <Label>{t.auth.profile.phone}</Label>
-            <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+          <div className="space-y-1">
+            <Label className="text-xs">{t.auth.profile.phone}</Label>
+            <Input className="h-8 text-sm" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
           </div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label>{t.auth.profile.address}</Label>
-            <Textarea rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+          <div className="space-y-1 sm:col-span-2">
+            <Label className="text-xs">{t.auth.profile.address}</Label>
+            <Textarea rows={2} className="text-sm min-h-[56px]" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
           </div>
           {isStaff ? (
             <>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label>{t.auth.profile.pseudonym}</Label>
+              <div className="space-y-1 sm:col-span-2">
+                <Label className="text-xs">{t.auth.profile.pseudonym}</Label>
                 <Input
+                  className="h-8 text-sm"
                   value={form.pseudonym}
                   onChange={(e) => setForm({ ...form, pseudonym: e.target.value })}
                   placeholder="ex: Alex_Dev"
                 />
-                <p className="text-xs text-muted-foreground">{t.auth.profile.pseudonymHint}</p>
+                <p className="text-[10px] text-muted-foreground">{t.auth.profile.pseudonymHint}</p>
               </div>
-              <div className="space-y-1.5">
-                <Label>{t.auth.profile.staffRole}</Label>
+              <div className="space-y-1">
+                <Label className="text-xs">{t.auth.profile.staffRole}</Label>
                 <Select
                   value={form.staff_role}
                   onValueChange={(v) => setForm({ ...form, staff_role: v as typeof form.staff_role })}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="dev">{t.auth.profile.staffRoles.dev}</SelectItem>
                     <SelectItem value="designer">{t.auth.profile.staffRoles.designer}</SelectItem>
@@ -162,10 +163,10 @@ export function ProfileTab() {
             </>
           ) : (
             <>
-              <div className="space-y-1.5">
-                <Label>{t.auth.entityType}</Label>
+              <div className="space-y-1">
+                <Label className="text-xs">{t.auth.entityType}</Label>
                 <Select value={form.entity_type} onValueChange={(v) => setForm({ ...form, entity_type: v as typeof form.entity_type })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="individual">{t.auth.entity.individual}</SelectItem>
                     <SelectItem value="srl">{t.auth.entity.srl}</SelectItem>
@@ -177,13 +178,13 @@ export function ProfileTab() {
               </div>
               {isCompany && (
                 <>
-                  <div className="space-y-1.5">
-                    <Label>{t.auth.profile.companyName}</Label>
-                    <Input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t.auth.profile.companyName}</Label>
+                    <Input className="h-8 text-sm" value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label>{t.auth.profile.cui}</Label>
-                    <Input value={form.cui} onChange={(e) => setForm({ ...form, cui: e.target.value })} />
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t.auth.profile.cui}</Label>
+                    <Input className="h-8 text-sm" value={form.cui} onChange={(e) => setForm({ ...form, cui: e.target.value })} />
                   </div>
                 </>
               )}
@@ -193,36 +194,36 @@ export function ProfileTab() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">{t.auth.profile.socials}</CardTitle></CardHeader>
-        <CardContent className="grid sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5"><Label>Facebook</Label>
-            <Input placeholder="https://facebook.com/..." value={form.social_facebook} onChange={(e) => setForm({ ...form, social_facebook: e.target.value })} /></div>
-          <div className="space-y-1.5"><Label>Instagram</Label>
-            <Input placeholder="https://instagram.com/..." value={form.social_instagram} onChange={(e) => setForm({ ...form, social_instagram: e.target.value })} /></div>
-          <div className="space-y-1.5"><Label>TikTok</Label>
-            <Input placeholder="https://tiktok.com/@..." value={form.social_tiktok} onChange={(e) => setForm({ ...form, social_tiktok: e.target.value })} /></div>
-          <div className="space-y-1.5"><Label>{t.auth.profile.website}</Label>
-            <Input placeholder="https://..." value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} /></div>
+        <CardHeader className="py-3"><CardTitle className="text-sm">{t.auth.profile.socials}</CardTitle></CardHeader>
+        <CardContent className="grid sm:grid-cols-2 gap-2.5 pt-0 pb-3">
+          <div className="space-y-1"><Label className="text-xs">Facebook</Label>
+            <Input className="h-8 text-sm" placeholder="https://facebook.com/..." value={form.social_facebook} onChange={(e) => setForm({ ...form, social_facebook: e.target.value })} /></div>
+          <div className="space-y-1"><Label className="text-xs">Instagram</Label>
+            <Input className="h-8 text-sm" placeholder="https://instagram.com/..." value={form.social_instagram} onChange={(e) => setForm({ ...form, social_instagram: e.target.value })} /></div>
+          <div className="space-y-1"><Label className="text-xs">TikTok</Label>
+            <Input className="h-8 text-sm" placeholder="https://tiktok.com/@..." value={form.social_tiktok} onChange={(e) => setForm({ ...form, social_tiktok: e.target.value })} /></div>
+          <div className="space-y-1"><Label className="text-xs">{t.auth.profile.website}</Label>
+            <Input className="h-8 text-sm" placeholder="https://..." value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} /></div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Preferințe</CardTitle></CardHeader>
-        <CardContent className="grid sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label>{t.auth.profile.language}</Label>
+        <CardHeader className="py-3"><CardTitle className="text-sm">Preferințe</CardTitle></CardHeader>
+        <CardContent className="grid sm:grid-cols-2 gap-2.5 pt-0 pb-3">
+          <div className="space-y-1">
+            <Label className="text-xs">{t.auth.profile.language}</Label>
             <Select value={form.language} onValueChange={(v) => setForm({ ...form, language: v as "ro" | "en" })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="ro">Română</SelectItem>
                 <SelectItem value="en">English</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5">
-            <Label>{t.auth.profile.theme}</Label>
+          <div className="space-y-1">
+            <Label className="text-xs">{t.auth.profile.theme}</Label>
             <Select value={form.theme} onValueChange={(v) => setForm({ ...form, theme: v as typeof form.theme })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="light">{t.auth.profile.themes.light}</SelectItem>
                 <SelectItem value="dark">{t.auth.profile.themes.dark}</SelectItem>
@@ -233,11 +234,11 @@ export function ProfileTab() {
         </CardContent>
       </Card>
 
-      <div className="flex flex-col sm:flex-row gap-3 justify-end">
-        <Button asChild variant="outline" className="rounded-full">
+      <div className="flex flex-col sm:flex-row gap-2 justify-end">
+        <Button asChild size="sm" variant="outline" className="rounded-full">
           <Link to="/forgot-password">{t.auth.profile.changePassword}</Link>
         </Button>
-        <Button onClick={onSave} disabled={saving} className="rounded-full">
+        <Button size="sm" onClick={onSave} disabled={saving} className="rounded-full">
           {saving ? "..." : t.auth.profile.save}
         </Button>
       </div>
