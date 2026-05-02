@@ -226,9 +226,9 @@ const Examples = () => {
                     onClick={() =>
                       setRequestSource({
                         id: "",
-                        slug: active,
+                        slug: displayCat,
                         name: currentCat.label,
-                        category: active,
+                        category: displayCat,
                         title: current.title,
                         description: current.benefit,
                         image_path: null,
