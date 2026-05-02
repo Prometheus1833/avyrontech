@@ -1,0 +1,5 @@
+name = "avyrontech"
+compatibility_date = "2026-05-02"
+
+[build]
+command = "npm install && npm run build"
