@@ -6,7 +6,6 @@ import { useLang } from "@/i18n/LanguageContext";
 import { useExamples, publicImageUrl, type ExampleRow } from "@/hooks/useExamples";
 import { RequestExampleModal } from "./RequestExampleModal";
 import { Link } from "react-router-dom";
-import examplesBg from "@/assets/examples-bg.jpg";
 
 type Cat = "beauty" | "resto" | "public" | "turism" | "pro" | "local" | "auto" | "ecommerce" | "national" | "other";
 
@@ -40,33 +39,8 @@ const Examples = () => {
   const showCard = active !== null;
 
   return (
-    <section id="exemple" className="relative py-10 md:py-16 overflow-hidden">
-      {/* Background image — visible until a category is chosen */}
-      <AnimatePresence>
-        {!showCard && (
-          <motion.div
-            key="examples-bg"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.7 }}
-            className="absolute inset-0 -z-10"
-            aria-hidden
-          >
-            <img
-              src={examplesBg}
-              alt=""
-              width={1920}
-              height={1080}
-              loading="lazy"
-              className="absolute inset-0 w-full h-full object-cover opacity-40"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/50 to-background" />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="relative mx-auto max-w-6xl px-4">
+    <section id="exemple" className="py-10 md:py-16">
+      <div className="mx-auto max-w-6xl px-4">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
             {t.examples.title}

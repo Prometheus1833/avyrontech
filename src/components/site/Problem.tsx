@@ -38,10 +38,9 @@ const Problem = () => {
           </p>
         </div>
 
-        <div className="mt-10 grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+        <div className="mt-8 grid grid-cols-2 lg:grid-cols-3 gap-2.5 md:gap-3">
           {t.problem.items.map((it, i) => {
             const Icon = icons[i];
-            const idLabel = String(i + 1).padStart(2, "0");
             return (
               <motion.div
                 key={it.t}
@@ -49,41 +48,14 @@ const Problem = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.4, delay: i * 0.06 }}
-                className="group relative rounded-2xl p-[1px] bg-gradient-to-br from-brand/40 via-brand-2/20 to-accent/30 hover:from-brand/70 hover:via-brand-2/50 hover:to-accent/60 transition-all duration-500"
-                style={{ fontFamily: "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" }}
+                className="rounded-2xl bg-cardgrad shadow-soft p-3 md:p-5 border border-border/60 flex flex-col items-center text-center"
+                style={{ fontFamily: '"Times New Roman", Times, serif' }}
               >
-                <div className="relative h-full rounded-2xl bg-[hsl(222_30%_8%)] text-[hsl(30_25%_95%)] p-4 md:p-6 flex flex-col items-center text-center overflow-hidden">
-                  {/* subtle grid texture */}
-                  <div
-                    className="absolute inset-0 opacity-[0.06] pointer-events-none"
-                    style={{
-                      backgroundImage:
-                        "linear-gradient(hsl(var(--brand-glow)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--brand-glow)) 1px, transparent 1px)",
-                      backgroundSize: "22px 22px",
-                    }}
-                    aria-hidden
-                  />
-                  {/* corner ID chip */}
-                  <span className="absolute top-2.5 left-3 text-[9px] md:text-[10px] tracking-[0.2em] text-[hsl(var(--brand-glow))]/70 font-medium">
-                    /{idLabel}
-                  </span>
-                  <span className="absolute top-2.5 right-3 size-1.5 rounded-full bg-[hsl(var(--brand-glow))] shadow-[0_0_8px_hsl(var(--brand-glow))]" />
-
-                  {/* glowing icon */}
-                  <div className="relative mt-2 mb-3 md:mb-4">
-                    <div className="absolute inset-0 rounded-xl md:rounded-2xl blur-xl bg-gradient-to-br from-brand to-brand-2 opacity-50 group-hover:opacity-80 transition-opacity" aria-hidden />
-                    <div className="relative size-10 md:size-12 rounded-xl md:rounded-2xl bg-gradient-to-br from-brand via-brand-2 to-accent grid place-items-center ring-1 ring-white/10">
-                      <Icon className="size-5 md:size-6 text-white" />
-                    </div>
-                  </div>
-
-                  <h3 className="font-semibold text-sm md:text-base leading-tight tracking-tight">
-                    {it.t}
-                  </h3>
-                  <p className="mt-1.5 md:mt-2 text-[11px] md:text-xs text-[hsl(30_15%_75%)] leading-relaxed">
-                    {it.d}
-                  </p>
+                <div className="size-8 md:size-10 rounded-xl md:rounded-2xl bg-foreground text-background grid place-items-center mb-2 md:mb-3">
+                  <Icon className="size-4 md:size-5" />
                 </div>
+                <h3 className="font-semibold text-sm md:text-base leading-tight">{it.t}</h3>
+                <p className="mt-1 md:mt-1.5 text-xs md:text-sm text-muted-foreground leading-snug">{it.d}</p>
               </motion.div>
             );
           })}
