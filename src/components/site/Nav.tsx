@@ -26,9 +26,9 @@ const Nav = () => {
         <nav className="glass shadow-soft rounded-full flex items-center justify-between pl-3 pr-2 py-2 gap-2">
           <div className="flex items-center gap-3">
             <Link to="/" className="flex items-center gap-2">
-              <img src={logo} alt="Avyron" width={28} height={28} className="size-7 rounded-lg object-cover" />
+              <img src={logo} alt="Avyron" width={22} height={22} className="size-[1.4rem] rounded-md object-cover" />
               <span
-                className="text-xl md:text-2xl font-bold uppercase tracking-[0.18em] bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent"
+                className="text-base md:text-lg font-bold uppercase tracking-[0.18em] bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent"
                 style={{ fontFamily: '"Times New Roman", Times, serif' }}
               >
                 AVYRON
