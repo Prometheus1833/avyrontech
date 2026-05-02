@@ -407,6 +407,7 @@ export const translations = {
           projects: "Proiectele mele",
           maintenance: "Mentenanță clienți",
           resources: "Resurse Avyron",
+          cart: "Coșul meu",
         },
         common: {
           empty: "Nimic de afișat încă.",
@@ -892,6 +893,7 @@ export const translations = {
           projects: "My projects",
           maintenance: "Client maintenance",
           resources: "Avyron resources",
+          cart: "My cart",
         },
         common: {
           empty: "Nothing to show yet.",
