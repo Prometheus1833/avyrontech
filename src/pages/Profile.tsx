@@ -66,18 +66,12 @@ const Profile = () => {
           <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="size-4" /> Acasă
           </Link>
-          <div className="flex items-center gap-2">
-            {isStaff && (
-              <Badge variant="default" className="gap-1">
-                <ShieldCheck className="size-3" />
-                {isAdmin ? "Admin" : "Staff"}
-              </Badge>
-            )}
-            <Button variant="ghost" size="sm" onClick={() => signOut().then(() => (window.location.href = "/"))}>
-              <LogOut className="size-4 mr-2" />
-              {t.auth.logout}
-            </Button>
-          </div>
+          {isStaff && (
+            <Badge variant="default" className="gap-1">
+              <ShieldCheck className="size-3" />
+              {isAdmin ? "Admin" : "Staff"}
+            </Badge>
+          )}
         </div>
 
         <Tabs value={tab} onValueChange={setTab} className="space-y-6">
