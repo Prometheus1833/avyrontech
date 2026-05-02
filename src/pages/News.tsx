@@ -324,32 +324,63 @@ const News = () => {
   };
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-background">
+    <main className="relative min-h-screen overflow-x-hidden bg-background">
+      {/* Tech / digital fixed background */}
+      <div className="fixed inset-0 -z-10 pointer-events-none" aria-hidden>
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(900px 500px at 12% 8%, hsl(265 90% 62% / 0.22), transparent 60%), radial-gradient(800px 500px at 88% 18%, hsl(200 95% 55% / 0.20), transparent 60%), radial-gradient(700px 500px at 50% 95%, hsl(330 85% 65% / 0.18), transparent 60%)",
+          }}
+        />
+        <div
+          className="absolute inset-0 opacity-[0.10] dark:opacity-[0.18] mix-blend-overlay"
+          style={{
+            backgroundImage:
+              "linear-gradient(hsl(var(--brand) / 0.6) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--brand) / 0.6) 1px, transparent 1px)",
+            backgroundSize: "44px 44px",
+            maskImage: "radial-gradient(ellipse at center, black 40%, transparent 80%)",
+            WebkitMaskImage: "radial-gradient(ellipse at center, black 40%, transparent 80%)",
+          }}
+        />
+        <div
+          className="absolute inset-0 opacity-[0.06] dark:opacity-[0.10]"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(0deg, transparent 0 2px, hsl(var(--foreground) / 0.6) 2px 3px)",
+          }}
+        />
+      </div>
+
       <Nav />
 
       {/* Compact strip */}
-      <section className="relative pt-20 md:pt-24 pb-2 overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.10]"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 20% 30%, hsl(265 90% 62% / 0.4), transparent 50%), radial-gradient(circle at 80% 60%, hsl(200 95% 55% / 0.4), transparent 55%)",
-          }}
-          aria-hidden
-        />
-        <div className="relative mx-auto max-w-5xl px-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand/10 text-brand text-[10px] font-bold uppercase tracking-wider">
-              <Newspaper className="size-3" /> Avyron Insights
+      <section className="relative pt-20 md:pt-24 pb-3 overflow-hidden">
+        <div className="relative mx-auto max-w-5xl px-4 flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand/10 text-brand text-[10px] font-bold uppercase tracking-wider border border-brand/20">
+                <Newspaper className="size-3" /> Avyron Insights
+              </div>
+              <h1 className="text-lg md:text-2xl font-bold tracking-tight" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+                <span className="bg-gradient-to-r from-foreground via-brand to-brand-2 bg-clip-text text-transparent">Noutăți</span>
+              </h1>
             </div>
-            <h1 className="text-lg md:text-2xl font-bold tracking-tight" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
-              <span className="bg-gradient-to-r from-foreground via-brand to-brand-2 bg-clip-text text-transparent">Noutăți</span>
-            </h1>
+            {isStaff && (
+              <Button onClick={() => setOpenCreate(true)} size="sm" className="rounded-full">
+                <Plus className="size-3.5 mr-1" /> Postare
+              </Button>
+            )}
           </div>
-          {isStaff && (
-            <Button onClick={() => setOpenCreate(true)} size="sm" className="rounded-full">
-              <Plus className="size-3.5 mr-1" /> Postare
-            </Button>
-          )}
+          <p className="text-xs md:text-sm text-muted-foreground max-w-3xl leading-relaxed">
+            Pulsul digital al echipei <span className="font-semibold text-foreground">Avyron</span> — articole zilnice despre
+            <span className="text-brand font-medium"> tehnologie</span>,
+            <span className="text-brand-2 font-medium"> web design</span>,
+            <span className="text-foreground font-medium"> SEO</span> și
+            <span className="text-brand-3 font-medium"> securitate online</span>.
+            Studii de caz, ghiduri rapide și inspirație pentru identitatea ta online.
+          </p>
         </div>
       </section>
 
