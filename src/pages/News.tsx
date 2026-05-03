@@ -142,8 +142,26 @@ const News = () => {
 
   const feedRef = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<(HTMLElement | null)[]>([]);
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const lastScrollTop = useRef(0);
 
   const active = posts[activeIdx];
+
+  // Hide header on scroll-down, show on scroll-up (within feed)
+  useEffect(() => {
+    const el = feedRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const st = el.scrollTop;
+      if (st <= 8) { setHeaderVisible(true); lastScrollTop.current = st; return; }
+      const delta = st - lastScrollTop.current;
+      if (Math.abs(delta) < 6) return;
+      setHeaderVisible(delta < 0);
+      lastScrollTop.current = st;
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [posts.length]);
 
   // SEO
   useEffect(() => {
@@ -314,8 +332,28 @@ const News = () => {
     const links = buildShareLinks(post);
     try { await navigator.clipboard.writeText(`${post.title}\n${links.url}`); }
     catch {}
-    toast.success(`Link copiat — lipește-l în ${target === "instagram" ? "Instagram" : "TikTok"}`);
+    toast.success(`Link copiat — lipește-l în ${target === "instagram" ? "Instagram" : "TikTok"} (story, postare, mesaj)`);
     window.open(links[target], "_blank", "noopener,noreferrer");
+  };
+
+  const nativeShare = async (post: NewsPost) => {
+    const links = buildShareLinks(post);
+    const data = { title: post.title, text: post.excerpt || post.title, url: links.url };
+    if (typeof navigator !== "undefined" && (navigator as any).share) {
+      try { await (navigator as any).share(data); return; }
+      catch (e: any) { if (e?.name === "AbortError") return; }
+    }
+    // Fallback: open the in-dialog share panel
+    setFullPost(post); setOpenFull(true);
+  };
+
+  const shareTo = async (post: NewsPost, target: "facebook" | "instagram" | "tiktok") => {
+    const links = buildShareLinks(post);
+    if (target === "facebook") {
+      window.open(links.facebook, "_blank", "noopener,noreferrer,width=600,height=600");
+      return;
+    }
+    await copyAndOpen(post, target);
   };
 
   const scrollToIdx = (i: number) => {
@@ -355,8 +393,12 @@ const News = () => {
 
       <Nav />
 
-      {/* Compact strip */}
-      <section className="relative pt-20 md:pt-24 pb-3 overflow-hidden">
+      {/* Compact strip — hides on scroll-down, returns on scroll-up */}
+      <section
+        className={`fixed left-0 right-0 top-16 md:top-20 z-20 transition-all duration-300 ease-out overflow-hidden bg-background/70 backdrop-blur-md ${
+          headerVisible ? "max-h-48 opacity-100 pt-3 pb-3 pointer-events-auto" : "max-h-0 opacity-0 pt-0 pb-0 pointer-events-none"
+        }`}
+      >
         <div className="relative mx-auto max-w-5xl px-4 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -385,7 +427,7 @@ const News = () => {
       </section>
 
       {/* Vertical scroll feed (Instagram/TikTok-style) */}
-      <section className="relative">
+      <section className="relative pt-16 md:pt-20">
         {loading ? (
           <div className="mx-auto max-w-md md:max-w-lg px-3 py-10">
             <div className="aspect-[9/16] rounded-3xl bg-muted/40 animate-pulse" />
@@ -395,7 +437,7 @@ const News = () => {
         ) : (
           <div
             ref={feedRef}
-            className="h-[calc(100vh-7rem)] overflow-y-auto snap-y snap-mandatory scrollbar-thin px-3 pb-6"
+            className="h-[calc(100vh-4rem)] md:h-[calc(100vh-5rem)] overflow-y-auto snap-y snap-mandatory scrollbar-thin px-3 pb-6"
             style={{ scrollPaddingTop: "0.5rem" }}
           >
             {posts.map((post, idx) => {
@@ -406,7 +448,7 @@ const News = () => {
                   key={post.id}
                   data-idx={idx}
                   ref={(el) => { slideRefs.current[idx] = el; }}
-                  className="snap-start min-h-[calc(100vh-7rem)] flex items-center justify-center py-2"
+                  className="snap-start min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)] flex items-center justify-center py-2"
                 >
                   <div className="relative w-full max-w-md md:max-w-lg mx-auto h-[min(80vh,720px)] rounded-3xl overflow-hidden bg-card border border-border/60 shadow-elev">
                     {/* Background image */}
@@ -453,25 +495,21 @@ const News = () => {
 
                     {/* RIGHT side — vertical action stack */}
                     <div className="absolute right-2 bottom-32 md:bottom-36 flex flex-col items-center gap-2.5 z-10">
-                      <ActionBtn label={liked ? "Apreciat" : "Apreciază"} onClick={() => toggleLike(post.id)}>
-                        <Heart className={`size-5 ${liked ? "fill-red-500 text-red-500" : "text-white"}`} />
-                      </ActionBtn>
-                      <ActionBtn label="Comentează" onClick={() => { setFullPost(post); setOpenFull(true); }}>
-                        <MessageCircle className="size-5 text-white" />
-                      </ActionBtn>
-                      <ActionBtn label="Facebook" href={links.facebook}>
-                        <Facebook className="size-5 text-white" />
-                      </ActionBtn>
-                      <ActionBtn label="WhatsApp" href={links.whatsapp}>
-                        <WhatsAppIcon className="size-5 text-white" />
-                      </ActionBtn>
-                      <ActionBtn label="Instagram" onClick={() => copyAndOpen(post, "instagram")}>
+                      {(user || isStaff) && (
+                        <ActionBtn label={liked ? "Apreciat" : "Apreciază"} onClick={() => toggleLike(post.id)}>
+                          <Heart className={`size-5 ${liked ? "fill-red-500 text-red-500" : "text-white"}`} />
+                        </ActionBtn>
+                      )}
+                      <ActionBtn label="Instagram" onClick={() => shareTo(post, "instagram")}>
                         <Instagram className="size-5 text-white" />
                       </ActionBtn>
-                      <ActionBtn label="TikTok" onClick={() => copyAndOpen(post, "tiktok")}>
+                      <ActionBtn label="Facebook" onClick={() => shareTo(post, "facebook")}>
+                        <Facebook className="size-5 text-white" />
+                      </ActionBtn>
+                      <ActionBtn label="TikTok" onClick={() => shareTo(post, "tiktok")}>
                         <TikTokIcon className="size-5 text-white" />
                       </ActionBtn>
-                      <ActionBtn label="Mai multe" onClick={() => { setFullPost(post); setOpenFull(true); }}>
+                      <ActionBtn label="Distribuie" onClick={() => nativeShare(post)}>
                         <Share2 className="size-5 text-white" />
                       </ActionBtn>
                     </div>
