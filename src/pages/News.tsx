@@ -393,8 +393,12 @@ const News = () => {
 
       <Nav />
 
-      {/* Compact strip */}
-      <section className="relative pt-20 md:pt-24 pb-3 overflow-hidden">
+      {/* Compact strip — hides on scroll-down, returns on scroll-up */}
+      <section
+        className={`sticky top-16 md:top-20 z-20 transition-all duration-300 ease-out overflow-hidden ${
+          headerVisible ? "max-h-48 opacity-100 pt-4 pb-3" : "max-h-0 opacity-0 pt-0 pb-0"
+        } bg-background/70 backdrop-blur-md`}
+      >
         <div className="relative mx-auto max-w-5xl px-4 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
