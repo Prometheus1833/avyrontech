@@ -427,7 +427,7 @@ const News = () => {
       </section>
 
       {/* Vertical scroll feed (Instagram/TikTok-style) */}
-      <section className="relative">
+      <section className="relative pt-16 md:pt-20">
         {loading ? (
           <div className="mx-auto max-w-md md:max-w-lg px-3 py-10">
             <div className="aspect-[9/16] rounded-3xl bg-muted/40 animate-pulse" />
@@ -437,7 +437,7 @@ const News = () => {
         ) : (
           <div
             ref={feedRef}
-            className="h-[calc(100vh-7rem)] overflow-y-auto snap-y snap-mandatory scrollbar-thin px-3 pb-6"
+            className="h-[calc(100vh-4rem)] md:h-[calc(100vh-5rem)] overflow-y-auto snap-y snap-mandatory scrollbar-thin px-3 pb-6"
             style={{ scrollPaddingTop: "0.5rem" }}
           >
             {posts.map((post, idx) => {
