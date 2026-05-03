@@ -332,8 +332,28 @@ const News = () => {
     const links = buildShareLinks(post);
     try { await navigator.clipboard.writeText(`${post.title}\n${links.url}`); }
     catch {}
-    toast.success(`Link copiat — lipește-l în ${target === "instagram" ? "Instagram" : "TikTok"}`);
+    toast.success(`Link copiat — lipește-l în ${target === "instagram" ? "Instagram" : "TikTok"} (story, postare, mesaj)`);
     window.open(links[target], "_blank", "noopener,noreferrer");
+  };
+
+  const nativeShare = async (post: NewsPost) => {
+    const links = buildShareLinks(post);
+    const data = { title: post.title, text: post.excerpt || post.title, url: links.url };
+    if (typeof navigator !== "undefined" && (navigator as any).share) {
+      try { await (navigator as any).share(data); return; }
+      catch (e: any) { if (e?.name === "AbortError") return; }
+    }
+    // Fallback: open the in-dialog share panel
+    setFullPost(post); setOpenFull(true);
+  };
+
+  const shareTo = async (post: NewsPost, target: "facebook" | "instagram" | "tiktok") => {
+    const links = buildShareLinks(post);
+    if (target === "facebook") {
+      window.open(links.facebook, "_blank", "noopener,noreferrer,width=600,height=600");
+      return;
+    }
+    await copyAndOpen(post, target);
   };
 
   const scrollToIdx = (i: number) => {
