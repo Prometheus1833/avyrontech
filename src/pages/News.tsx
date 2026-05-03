@@ -395,9 +395,9 @@ const News = () => {
 
       {/* Compact strip — hides on scroll-down, returns on scroll-up */}
       <section
-        className={`sticky top-16 md:top-20 z-20 transition-all duration-300 ease-out overflow-hidden ${
-          headerVisible ? "max-h-48 opacity-100 pt-4 pb-3" : "max-h-0 opacity-0 pt-0 pb-0"
-        } bg-background/70 backdrop-blur-md`}
+        className={`fixed left-0 right-0 top-16 md:top-20 z-20 transition-all duration-300 ease-out overflow-hidden bg-background/70 backdrop-blur-md ${
+          headerVisible ? "max-h-48 opacity-100 pt-3 pb-3 pointer-events-auto" : "max-h-0 opacity-0 pt-0 pb-0 pointer-events-none"
+        }`}
       >
         <div className="relative mx-auto max-w-5xl px-4 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-4">
