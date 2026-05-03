@@ -142,8 +142,26 @@ const News = () => {
 
   const feedRef = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<(HTMLElement | null)[]>([]);
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const lastScrollTop = useRef(0);
 
   const active = posts[activeIdx];
+
+  // Hide header on scroll-down, show on scroll-up (within feed)
+  useEffect(() => {
+    const el = feedRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const st = el.scrollTop;
+      if (st <= 8) { setHeaderVisible(true); lastScrollTop.current = st; return; }
+      const delta = st - lastScrollTop.current;
+      if (Math.abs(delta) < 6) return;
+      setHeaderVisible(delta < 0);
+      lastScrollTop.current = st;
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [posts.length]);
 
   // SEO
   useEffect(() => {
