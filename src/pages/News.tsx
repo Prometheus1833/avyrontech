@@ -495,25 +495,21 @@ const News = () => {
 
                     {/* RIGHT side — vertical action stack */}
                     <div className="absolute right-2 bottom-32 md:bottom-36 flex flex-col items-center gap-2.5 z-10">
-                      <ActionBtn label={liked ? "Apreciat" : "Apreciază"} onClick={() => toggleLike(post.id)}>
-                        <Heart className={`size-5 ${liked ? "fill-red-500 text-red-500" : "text-white"}`} />
-                      </ActionBtn>
-                      <ActionBtn label="Comentează" onClick={() => { setFullPost(post); setOpenFull(true); }}>
-                        <MessageCircle className="size-5 text-white" />
-                      </ActionBtn>
-                      <ActionBtn label="Facebook" href={links.facebook}>
-                        <Facebook className="size-5 text-white" />
-                      </ActionBtn>
-                      <ActionBtn label="WhatsApp" href={links.whatsapp}>
-                        <WhatsAppIcon className="size-5 text-white" />
-                      </ActionBtn>
-                      <ActionBtn label="Instagram" onClick={() => copyAndOpen(post, "instagram")}>
+                      {(user || isStaff) && (
+                        <ActionBtn label={liked ? "Apreciat" : "Apreciază"} onClick={() => toggleLike(post.id)}>
+                          <Heart className={`size-5 ${liked ? "fill-red-500 text-red-500" : "text-white"}`} />
+                        </ActionBtn>
+                      )}
+                      <ActionBtn label="Instagram" onClick={() => shareTo(post, "instagram")}>
                         <Instagram className="size-5 text-white" />
                       </ActionBtn>
-                      <ActionBtn label="TikTok" onClick={() => copyAndOpen(post, "tiktok")}>
+                      <ActionBtn label="Facebook" onClick={() => shareTo(post, "facebook")}>
+                        <Facebook className="size-5 text-white" />
+                      </ActionBtn>
+                      <ActionBtn label="TikTok" onClick={() => shareTo(post, "tiktok")}>
                         <TikTokIcon className="size-5 text-white" />
                       </ActionBtn>
-                      <ActionBtn label="Mai multe" onClick={() => { setFullPost(post); setOpenFull(true); }}>
+                      <ActionBtn label="Distribuie" onClick={() => nativeShare(post)}>
                         <Share2 className="size-5 text-white" />
                       </ActionBtn>
                     </div>
