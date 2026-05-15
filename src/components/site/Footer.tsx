@@ -45,8 +45,8 @@ const Footer = () => {
           </div>
 
           {/* Standalone CTA */}
-          <a
-            href="#cta"
+          <Link
+            to="/#cta"
             className="group inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 px-4 sm:px-5 py-2.5 sm:py-3 shadow-[0_10px_30px_-10px_rgba(168,85,247,0.6)] transition-all self-start md:self-auto"
           >
             <span className="flex flex-col leading-tight text-left">
@@ -56,7 +56,7 @@ const Footer = () => {
             <span className="size-8 rounded-full bg-white/15 grid place-items-center group-hover:translate-x-0.5 transition-transform">
               <ArrowRight className="size-4" />
             </span>
-          </a>
+          </Link>
         </div>
 
         {/* Contact + Nav */}
@@ -112,14 +112,12 @@ const Footer = () => {
           {t.footer.navItems.map((n) => {
             const className =
               "px-4 py-2 md:px-5 md:py-2.5 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 text-sm md:text-base font-display font-semibold text-white/90 hover:text-white transition-all";
-            return n.h.startsWith("/") ? (
-              <Link key={n.h} to={n.h} className={className}>
+            // Anchor link → route to home with hash so it works from any page
+            const to = n.h.startsWith("#") ? `/${n.h}` : n.h;
+            return (
+              <Link key={n.h} to={to} className={className}>
                 {n.l}
               </Link>
-            ) : (
-              <a key={n.h} href={n.h} className={className}>
-                {n.l}
-              </a>
             );
           })}
         </nav>

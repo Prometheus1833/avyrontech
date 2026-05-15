@@ -65,10 +65,10 @@ const About = () => {
     {
       name: "Miago.ro",
       url: "https://miago.ro",
-      tag: ro ? "E-commerce auto + aplicație" : "Auto e-commerce + app",
+      tag: ro ? "Platformă auto + aplicație" : "Auto platform + app",
       desc: ro
-        ? "Platformă web și aplicație mobilă pentru piese și accesorii auto, cu catalog complex, checkout optimizat și gestiune de stoc."
-        : "Web platform and mobile app for auto parts and accessories, with a complex catalog, optimized checkout and stock management.",
+        ? "Platformă Web și aplicație Mobile pentru anunțuri de vânzări autoturisme, autocamioane și alte tipuri de auto într-un concept nou și intuitiv."
+        : "Web platform and Mobile app for sales listings of cars, trucks and other vehicles in a new, intuitive concept.",
     },
     {
       name: "Flawlesstudio.ro",
@@ -266,10 +266,10 @@ const About = () => {
                   : "Create an account on our platform — no strings attached. Get access to resources, news and an inside look at how we work. No purchase required, no need to hand over your product."}
               </p>
               <Button asChild size="lg" className="mt-8 rounded-full bg-foreground text-background hover:bg-foreground/90">
-                <a href="#cta">
+                <Link to="/auth">
                   {ro ? "Conectează-te / Înregistrează-te" : "Sign in / Sign up"}
                   <ArrowUpRight className="size-4 ml-1" />
-                </a>
+                </Link>
               </Button>
             </div>
           </div>
