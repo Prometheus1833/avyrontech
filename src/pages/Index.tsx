@@ -12,6 +12,7 @@ import CTA from "@/components/site/CTA";
 import ContactBar from "@/components/site/ContactBar";
 import Footer from "@/components/site/Footer";
 import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
 
 const Index = () => {
