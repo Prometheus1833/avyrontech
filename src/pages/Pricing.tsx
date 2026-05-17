@@ -66,10 +66,12 @@ const Pricing = () => {
       : "A turnkey website — ready to deliver results from day one. The client owes nothing for a period ranging from 1 month up to 1 year (depending on the initial scope and configuration), and the product comes with free lifetime technical support: admin assistance, security guidance, prompt answers and strategic advice for ongoing growth.",
     includes: ro
       ? [
+          "Logo static creat împreună cu clientul",
+          "Descrieri profesionale pentru produse și servicii — le putem redacta noi pentru tine",
+          "Imagini optimizate și galerii vizuale — le putem crea sau edita noi",
           "Cod, structură și design custom, dezvoltate de la zero pe identitatea ta",
           "SEO tehnic și on-page, optimizări complete pentru toate device-urile",
           "Mobile-ready, securizat (HTTPS, headers, anti-spam) și performant (scor Lighthouse înalt)",
-          "Hosting profesional inclus + rezervare și cumpărare domeniu",
           "Integrare completă cu rețele sociale și pixeluri analytics",
           "Conturi demonstrative, mediu de testare și revizii nelimitate până la validare",
           "Asistență gratuită la transferul datelor, conturilor și e-mailurilor existente",
@@ -78,10 +80,12 @@ const Pricing = () => {
           "Suport gratuit lifetime — recomandări de securitate, performanță și administrare",
         ]
       : [
+          "Static logo crafted together with the client",
+          "Professional descriptions for products and services — we can write them for you",
+          "Optimized images and visual galleries — we can create or edit them for you",
           "Custom code, structure and design built from scratch around your identity",
           "Technical and on-page SEO, full optimizations across every device",
           "Mobile-ready, secure (HTTPS, headers, anti-spam) and performant (high Lighthouse score)",
-          "Professional hosting included + domain registration and purchase",
           "Full integration with social networks and analytics pixels",
           "Demo accounts, staging environment and unlimited revisions until approval",
           "Free assistance with migration of data, accounts and existing emails",
@@ -275,18 +279,17 @@ const Pricing = () => {
 
         {/* Main product */}
         <section className="mt-12 grid md:grid-cols-5 gap-5">
-            <div className="md:col-span-2 rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-[#0a0f24] to-[#05060f] p-5 sm:p-6 relative overflow-hidden">
-            <div className="text-[11px] uppercase tracking-[0.3em] text-cyan-300/80">[ Tier 01 ]</div>
-            <h2 className="mt-2 font-display text-2xl sm:text-3xl font-extrabold">{main.title}</h2>
-            <div className="mt-4 flex items-baseline gap-2 flex-wrap">
+            <div className="md:col-span-2 rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-[#0a0f24] to-[#05060f] p-5 sm:p-6 relative overflow-hidden text-center">
+            <h2 className="font-display text-2xl sm:text-3xl font-extrabold">{main.title}</h2>
+            <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
               <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-cyan-300 to-blue-500 bg-clip-text text-transparent break-words">
                 {currency === "EUR" ? "de la 300€" : `${ro ? "de la" : "from"} ${Math.round(300 * rate)} RON`}
               </span>
             </div>
-            <p className="mt-4 text-sm text-white/70 leading-relaxed">{main.desc}</p>
+            <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">{main.desc}</p>
           </div>
           <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
-            <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">{ro ? "Poate include" : "Can include"}</div>
+            <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">{ro ? "Include:" : "Includes:"}</div>
             <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
               {main.includes.map((f) => (
                 <li key={f} className="flex items-start gap-2 text-sm text-white/85">
@@ -439,6 +442,18 @@ const Pricing = () => {
               className="inline-flex items-center gap-2 rounded-full bg-white text-[#05060f] hover:bg-cyan-200 px-6 py-3 text-sm font-bold transition-colors"
             >
               avyrontech@gmail.com
+            </a>
+            <Link
+              to="/#examples"
+              className="inline-flex items-center gap-2 rounded-full bg-cyan-400 text-[#05060f] hover:bg-cyan-300 px-6 py-3 text-sm font-bold transition-colors"
+            >
+              {ro ? "Vreau un demo" : "I want a demo"}
+            </Link>
+            <a
+              href="tel:+40734605055"
+              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.06] hover:bg-white/[0.12] px-6 py-3 text-sm font-bold text-white transition-colors"
+            >
+              {ro ? "Telefon" : "Phone"}
             </a>
           </div>
         </section>
