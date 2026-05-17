@@ -63,20 +63,20 @@ const About = () => {
 
   const projects = [
     {
-      name: "Miago.ro",
-      url: "https://miago.ro",
-      tag: ro ? "Platformă auto + aplicație" : "Auto platform + app",
-      desc: ro
-        ? "Platformă Web și aplicație Mobile pentru anunțuri de vânzări autoturisme, autocamioane și alte tipuri de auto într-un concept nou și intuitiv."
-        : "Web platform and Mobile app for sales listings of cars, trucks and other vehicles in a new, intuitive concept.",
-    },
-    {
       name: "Flawlesstudio.ro",
       url: "https://flawlesstudio.ro",
       tag: ro ? "Brand local Iași — multi-sediu" : "Local Iași brand — multi-location",
       desc: ro
         ? "Website de prezentare pentru un brand local din Iași, cu mai multe sedii, programări și identitate vizuală premium."
         : "Showcase website for a local Iași brand, with multiple locations, bookings and premium visual identity.",
+    },
+    {
+      name: "Miago.ro",
+      url: "https://miago.ro",
+      tag: ro ? "Platformă Auto — Site + Aplicație" : "Auto Platform — Site + App",
+      desc: ro
+        ? "Platformă Web și aplicație Mobile pentru anunțuri de vânzări autoturisme, autocamioane și alte tipuri de auto într-un concept nou și intuitiv."
+        : "Web platform and Mobile app for sales listings of cars, trucks and other vehicles in a new, intuitive concept.",
     },
     {
       name: "Retuvo.ro",
@@ -89,7 +89,7 @@ const About = () => {
     {
       name: "Plaseieftineiasi.ro",
       url: "https://plaseieftineiasi.ro",
-      tag: ro ? "E-commerce sezonier — Iași" : "Seasonal e-commerce — Iași",
+      tag: ro ? "E-commerce sezonier — Site" : "Seasonal e-commerce — Site",
       desc: ro
         ? "Site integrat și sincronizat pentru vânzarea de plase de țânțari — o necesitate reală în sezonul de vară: comenzi rapide, stoc în timp real și livrare locală în Iași."
         : "Integrated and synchronized site selling mosquito nets — a real summer-season essential: fast orders, real-time stock and local delivery in Iași.",
@@ -164,15 +164,15 @@ const About = () => {
                 : "Client communication is at the heart of every project. After launch, the Avyron team can take over maintenance, hosting, security, performance and publishing — so you can focus only on your business."}
             </p>
           </div>
-          <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="mt-10 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {flow.map((s) => (
-              <div key={s.t} className="group relative rounded-2xl border border-border/80 bg-card/60 backdrop-blur p-5 hover:border-brand/50 transition-colors overflow-hidden">
+              <div key={s.t} className="group relative rounded-2xl border border-border/80 bg-card/60 backdrop-blur p-3 sm:p-5 hover:border-brand/50 transition-colors overflow-hidden">
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br from-brand/10 via-transparent to-transparent" aria-hidden />
-                <span className="relative size-10 rounded-xl bg-brand/10 text-brand grid place-items-center ring-1 ring-brand/20">
-                  <s.icon className="size-5" />
+                <span className="relative size-8 sm:size-10 rounded-xl bg-brand/10 text-brand grid place-items-center ring-1 ring-brand/20">
+                  <s.icon className="size-4 sm:size-5" />
                 </span>
-                <h3 className="relative mt-4 font-display font-semibold text-base">{s.t}</h3>
-                <p className="relative mt-1.5 text-sm text-muted-foreground leading-relaxed">{s.d}</p>
+                <h3 className="relative mt-3 sm:mt-4 font-display font-semibold text-sm sm:text-base leading-tight">{s.t}</h3>
+                <p className="relative mt-1 sm:mt-1.5 text-xs sm:text-sm text-muted-foreground leading-snug">{s.d}</p>
               </div>
             ))}
           </div>
