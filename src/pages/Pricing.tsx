@@ -66,10 +66,12 @@ const Pricing = () => {
       : "A turnkey website — ready to deliver results from day one. The client owes nothing for a period ranging from 1 month up to 1 year (depending on the initial scope and configuration), and the product comes with free lifetime technical support: admin assistance, security guidance, prompt answers and strategic advice for ongoing growth.",
     includes: ro
       ? [
+          "Logo static creat împreună cu clientul",
+          "Descrieri profesionale pentru produse și servicii — le putem redacta noi pentru tine",
+          "Imagini optimizate și galerii vizuale — le putem crea sau edita noi",
           "Cod, structură și design custom, dezvoltate de la zero pe identitatea ta",
           "SEO tehnic și on-page, optimizări complete pentru toate device-urile",
           "Mobile-ready, securizat (HTTPS, headers, anti-spam) și performant (scor Lighthouse înalt)",
-          "Hosting profesional inclus + rezervare și cumpărare domeniu",
           "Integrare completă cu rețele sociale și pixeluri analytics",
           "Conturi demonstrative, mediu de testare și revizii nelimitate până la validare",
           "Asistență gratuită la transferul datelor, conturilor și e-mailurilor existente",
@@ -78,10 +80,12 @@ const Pricing = () => {
           "Suport gratuit lifetime — recomandări de securitate, performanță și administrare",
         ]
       : [
+          "Static logo crafted together with the client",
+          "Professional descriptions for products and services — we can write them for you",
+          "Optimized images and visual galleries — we can create or edit them for you",
           "Custom code, structure and design built from scratch around your identity",
           "Technical and on-page SEO, full optimizations across every device",
           "Mobile-ready, secure (HTTPS, headers, anti-spam) and performant (high Lighthouse score)",
-          "Professional hosting included + domain registration and purchase",
           "Full integration with social networks and analytics pixels",
           "Demo accounts, staging environment and unlimited revisions until approval",
           "Free assistance with migration of data, accounts and existing emails",
