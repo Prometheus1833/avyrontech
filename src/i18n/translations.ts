@@ -790,7 +790,7 @@ export const translations = {
         { l: "Process", h: "#proces" },
         { l: "Benefits", h: "#avantaje" },
         { l: "About Us", h: "/despre" },
-        { l: "Privacy Policy & GDPR", h: "/gdpr" },
+        { l: "Privacy & GDPR", h: "/gdpr" },
       ],
       ctaLabel: "Free demo",
       ctaSub: "We reply within 24h",
