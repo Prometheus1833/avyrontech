@@ -443,6 +443,18 @@ const Pricing = () => {
             >
               avyrontech@gmail.com
             </a>
+            <Link
+              to="/#examples"
+              className="inline-flex items-center gap-2 rounded-full bg-cyan-400 text-[#05060f] hover:bg-cyan-300 px-6 py-3 text-sm font-bold transition-colors"
+            >
+              {ro ? "Vreau un demo" : "I want a demo"}
+            </Link>
+            <a
+              href="tel:+40734605055"
+              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.06] hover:bg-white/[0.12] px-6 py-3 text-sm font-bold text-white transition-colors"
+            >
+              {ro ? "Telefon" : "Phone"}
+            </a>
           </div>
         </section>
       </div>
