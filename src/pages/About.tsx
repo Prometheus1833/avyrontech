@@ -86,6 +86,14 @@ const About = () => {
         ? "Produs care digitalizează procesul SGR din România: decontare prin aplicație și serviciu de colectori la domiciliu pentru recipiente reciclabile."
         : "Product digitalizing Romania's DRS process: in-app refunds and a home pickup collector service for recyclable containers.",
     },
+    {
+      name: "Plaseieftineiasi.ro",
+      url: "https://plaseieftineiasi.ro",
+      tag: ro ? "E-commerce sezonier — Iași" : "Seasonal e-commerce — Iași",
+      desc: ro
+        ? "Site integrat și sincronizat pentru vânzarea de plase de țânțari — o necesitate reală în sezonul de vară: comenzi rapide, stoc în timp real și livrare locală în Iași."
+        : "Integrated and synchronized site selling mosquito nets — a real summer-season essential: fast orders, real-time stock and local delivery in Iași.",
+    },
   ];
 
   return (
@@ -184,15 +192,15 @@ const About = () => {
                 : "We work as one organism: web & mobile development, cybersecurity, design, QA and operations — each with their own expertise, all sharing the same quality standard."}
             </p>
           </div>
-          <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="mt-10 grid grid-cols-2 lg:grid-cols-3 gap-3">
             {specialties.map((s) => (
-              <div key={s.t} className="group relative rounded-2xl border border-border/80 bg-background/60 backdrop-blur p-5 hover:border-brand/50 transition-colors overflow-hidden flex flex-col items-center text-center">
+              <div key={s.t} className="group relative rounded-xl border border-border/80 bg-background/60 backdrop-blur p-3 sm:p-4 hover:border-brand/50 transition-colors overflow-hidden flex flex-col items-center text-center">
                 <div className="absolute -top-px left-6 right-6 h-px bg-gradient-to-r from-transparent via-brand/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden />
-                <span className="size-10 rounded-xl bg-foreground text-background grid place-items-center">
-                  <s.icon className="size-5" />
+                <span className="size-8 sm:size-9 rounded-lg bg-foreground text-background grid place-items-center">
+                  <s.icon className="size-4" />
                 </span>
-                <h3 className="mt-4 font-display font-semibold text-base">{s.t}</h3>
-                <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{s.d}</p>
+                <h3 className="mt-2.5 font-display font-semibold text-sm sm:text-base leading-tight">{s.t}</h3>
+                <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-snug">{s.d}</p>
               </div>
             ))}
           </div>
@@ -213,28 +221,35 @@ const About = () => {
                 : "We only display projects with explicit client consent. Every collaboration remains confidential until our partner decides otherwise."}
             </p>
           </div>
-          <div className="mt-12 grid md:grid-cols-3 gap-5">
-            {projects.map((p) => (
-              <a
-                key={p.name}
-                href={p.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative rounded-2xl border border-border/80 bg-card/60 backdrop-blur p-6 hover:border-brand/50 transition-all flex flex-col overflow-hidden"
-              >
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br from-brand/10 via-transparent to-transparent" aria-hidden />
-                <div className="relative flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="font-display font-bold text-xl">{p.name}</h3>
-                    <span className="mt-1 inline-block font-mono text-[11px] uppercase tracking-[0.18em] text-brand">{p.tag}</span>
-                  </div>
-                  <span className="size-9 rounded-full bg-foreground text-background grid place-items-center group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
-                    <ArrowUpRight className="size-4" />
-                  </span>
-                </div>
-                <p className="relative mt-4 text-sm text-muted-foreground leading-relaxed">{p.desc}</p>
-              </a>
-            ))}
+          <div className="mt-12 max-w-3xl mx-auto">
+            <div className="relative rounded-2xl border border-border/80 bg-card/40 backdrop-blur overflow-hidden">
+              <div className="max-h-[28rem] overflow-y-auto divide-y divide-border/70 [scrollbar-width:thin]">
+                {projects.map((p) => (
+                  <a
+                    key={p.name}
+                    href={p.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative flex items-start gap-4 p-5 hover:bg-brand/5 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-display font-bold text-lg md:text-xl">{p.name}</h3>
+                      <span className="mt-0.5 inline-block font-mono text-[11px] uppercase tracking-[0.18em] text-brand">{p.tag}</span>
+                      <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{p.desc}</p>
+                    </div>
+                    <span className="shrink-0 size-9 rounded-full bg-foreground text-background grid place-items-center group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
+                      <ArrowUpRight className="size-4" />
+                    </span>
+                  </a>
+                ))}
+              </div>
+              {projects.length > 5 && (
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-card to-transparent" aria-hidden />
+              )}
+            </div>
+            <p className="mt-3 text-center text-xs text-muted-foreground">
+              {ro ? "Derulează lista pentru a vedea mai multe proiecte." : "Scroll the list to see more projects."}
+            </p>
           </div>
         </div>
       </section>
