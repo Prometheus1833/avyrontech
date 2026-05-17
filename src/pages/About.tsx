@@ -86,6 +86,14 @@ const About = () => {
         ? "Produs care digitalizează procesul SGR din România: decontare prin aplicație și serviciu de colectori la domiciliu pentru recipiente reciclabile."
         : "Product digitalizing Romania's DRS process: in-app refunds and a home pickup collector service for recyclable containers.",
     },
+    {
+      name: "Plaseieftineiasi.ro",
+      url: "https://plaseieftineiasi.ro",
+      tag: ro ? "E-commerce sezonier — Iași" : "Seasonal e-commerce — Iași",
+      desc: ro
+        ? "Site integrat și sincronizat pentru vânzarea de plase de țânțari — o necesitate reală în sezonul de vară: comenzi rapide, stoc în timp real și livrare locală în Iași."
+        : "Integrated and synchronized site selling mosquito nets — a real summer-season essential: fast orders, real-time stock and local delivery in Iași.",
+    },
   ];
 
   return (
