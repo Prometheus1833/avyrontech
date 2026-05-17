@@ -110,17 +110,38 @@ const Footer = () => {
         {/* Nav inline */}
         <nav className="mt-7 flex flex-wrap items-center justify-center gap-2 md:gap-3">
           {t.footer.navItems.map((n) => {
-            const className =
-              "px-4 py-2 md:px-5 md:py-2.5 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 text-sm md:text-base font-display font-semibold text-white/90 hover:text-white transition-all";
+            const isGdpr = n.h === "/gdpr";
+            const baseClass =
+              "rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 font-display font-semibold text-white/90 hover:text-white transition-all";
+            const sizeClass = isGdpr
+              ? "px-2.5 py-1.5 md:px-4 md:py-2 text-[11px] md:text-sm"
+              : "px-4 py-2 md:px-5 md:py-2.5 text-sm md:text-base";
             // Anchor link → route to home with hash so it works from any page
             const to = n.h.startsWith("#") ? `/${n.h}` : n.h;
             return (
-              <Link key={n.h} to={to} className={className}>
+              <Link key={n.h} to={to} className={`${baseClass} ${sizeClass}`}>
                 {n.l}
               </Link>
             );
           })}
         </nav>
+
+        {/* ANPC badge */}
+        <div className="mt-5 flex justify-center">
+          <button
+            type="button"
+            aria-label="ANPC — Autoritatea Națională pentru Protecția Consumatorilor"
+            className="inline-flex items-center gap-3 rounded-lg border border-white/15 bg-white/[0.06] hover:bg-white/[0.12] px-4 py-2 transition-colors"
+          >
+            <span className="size-9 rounded-md bg-white grid place-items-center shrink-0">
+              <span className="font-display font-extrabold text-[11px] tracking-tight text-[#0a0612]">ANPC</span>
+            </span>
+            <span className="flex flex-col text-left leading-tight">
+              <span className="text-[10px] uppercase tracking-widest text-white/60">Protecția consumatorilor</span>
+              <span className="text-xs sm:text-sm text-white font-medium">anpc.ro — SOL / SAL</span>
+            </span>
+          </button>
+        </div>
 
         <div className="mt-6 pt-4 border-t border-white/10 text-xs text-white/55 flex flex-wrap justify-between gap-2">
           <span>{t.footer.copy.replace("{y}", String(new Date().getFullYear()))}</span>
