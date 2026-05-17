@@ -303,7 +303,7 @@ export const translations = {
         { l: "Proces", h: "#proces" },
         { l: "Avantaje", h: "#avantaje" },
         { l: "Despre Noi", h: "/despre" },
-        { l: "Politica de Confidențialitate și GDPR", h: "/gdpr" },
+        { l: "Confidențialitate & GDPR", h: "/gdpr" },
       ],
       ctaLabel: "Demo gratuit",
       ctaSub: "Răspundem în maxim 24h",
