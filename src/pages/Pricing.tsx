@@ -279,18 +279,17 @@ const Pricing = () => {
 
         {/* Main product */}
         <section className="mt-12 grid md:grid-cols-5 gap-5">
-            <div className="md:col-span-2 rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-[#0a0f24] to-[#05060f] p-5 sm:p-6 relative overflow-hidden">
-            <div className="text-[11px] uppercase tracking-[0.3em] text-cyan-300/80">[ Tier 01 ]</div>
-            <h2 className="mt-2 font-display text-2xl sm:text-3xl font-extrabold">{main.title}</h2>
-            <div className="mt-4 flex items-baseline gap-2 flex-wrap">
+            <div className="md:col-span-2 rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-[#0a0f24] to-[#05060f] p-5 sm:p-6 relative overflow-hidden text-center">
+            <h2 className="font-display text-2xl sm:text-3xl font-extrabold">{main.title}</h2>
+            <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
               <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-cyan-300 to-blue-500 bg-clip-text text-transparent break-words">
                 {currency === "EUR" ? "de la 300€" : `${ro ? "de la" : "from"} ${Math.round(300 * rate)} RON`}
               </span>
             </div>
-            <p className="mt-4 text-sm text-white/70 leading-relaxed">{main.desc}</p>
+            <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">{main.desc}</p>
           </div>
           <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
-            <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">{ro ? "Poate include" : "Can include"}</div>
+            <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">{ro ? "Include:" : "Includes:"}</div>
             <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
               {main.includes.map((f) => (
                 <li key={f} className="flex items-start gap-2 text-sm text-white/85">
