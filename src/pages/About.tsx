@@ -184,15 +184,15 @@ const About = () => {
                 : "We work as one organism: web & mobile development, cybersecurity, design, QA and operations — each with their own expertise, all sharing the same quality standard."}
             </p>
           </div>
-          <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="mt-10 grid grid-cols-2 lg:grid-cols-3 gap-3">
             {specialties.map((s) => (
-              <div key={s.t} className="group relative rounded-2xl border border-border/80 bg-background/60 backdrop-blur p-5 hover:border-brand/50 transition-colors overflow-hidden flex flex-col items-center text-center">
+              <div key={s.t} className="group relative rounded-xl border border-border/80 bg-background/60 backdrop-blur p-3 sm:p-4 hover:border-brand/50 transition-colors overflow-hidden flex flex-col items-center text-center">
                 <div className="absolute -top-px left-6 right-6 h-px bg-gradient-to-r from-transparent via-brand/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden />
-                <span className="size-10 rounded-xl bg-foreground text-background grid place-items-center">
-                  <s.icon className="size-5" />
+                <span className="size-8 sm:size-9 rounded-lg bg-foreground text-background grid place-items-center">
+                  <s.icon className="size-4" />
                 </span>
-                <h3 className="mt-4 font-display font-semibold text-base">{s.t}</h3>
-                <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{s.d}</p>
+                <h3 className="mt-2.5 font-display font-semibold text-sm sm:text-base leading-tight">{s.t}</h3>
+                <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-snug">{s.d}</p>
               </div>
             ))}
           </div>
