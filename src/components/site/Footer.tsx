@@ -1,6 +1,6 @@
 import { useLang } from "@/i18n/LanguageContext";
 import { Link } from "react-router-dom";
-import { Mail, Phone, MessageCircle, ArrowUpRight, ArrowRight } from "lucide-react";
+import { Mail, Phone, MessageCircle, ArrowRight } from "lucide-react";
 import logo from "@/assets/avyron-logo.jpg";
 import planetBg from "@/assets/footer-planet-bg.jpg";
 
