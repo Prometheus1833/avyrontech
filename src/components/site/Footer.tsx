@@ -63,10 +63,15 @@ const Footer = () => {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="WhatsApp"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] px-4 sm:px-5 py-2.5 sm:py-3 shadow-[0_10px_30px_-10px_rgba(37,211,102,0.6)] hover:scale-[1.02] transition-transform ring-1 ring-white/10"
+              className="group inline-flex items-center gap-3 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] px-4 sm:px-5 py-2.5 sm:py-3 shadow-[0_10px_30px_-10px_rgba(37,211,102,0.6)] hover:scale-[1.02] transition-transform ring-1 ring-white/10"
             >
-              <MessageCircle className="size-5 md:size-6 text-white" />
-              <span className="font-display font-semibold text-sm md:text-base text-white">WhatsApp</span>
+              <span className="flex flex-col leading-tight items-center text-center">
+                <span className="font-display font-semibold text-sm md:text-base text-white">WhatsApp</span>
+                <span className="text-[10px] uppercase tracking-widest text-white/80">Scrie-ne acum</span>
+              </span>
+              <span className="size-8 rounded-full bg-white/20 grid place-items-center">
+                <MessageCircle className="size-4 text-white" />
+              </span>
             </a>
           </div>
         </div>
@@ -76,22 +81,22 @@ const Footer = () => {
           <a
             href="tel:+40734605055"
             aria-label={t.footer.phoneLabel}
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 px-3 sm:px-4 py-2 transition-all"
+            className="inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 px-4 sm:px-5 py-2.5 sm:py-3 transition-all"
           >
-            <span className="size-7 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 grid place-items-center">
-              <Phone className="size-3.5 text-white" />
+            <span className="size-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 grid place-items-center">
+              <Phone className="size-4 text-white" />
             </span>
-            <span className="text-xs sm:text-sm text-white/90 font-medium">Sună-ne</span>
+            <span className="text-sm sm:text-base text-white/90 font-medium">Sună-ne</span>
           </a>
           <a
             href="mailto:avyrontech@gmail.com"
             aria-label={t.footer.emailLabel}
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 px-3 sm:px-4 py-2 transition-all"
+            className="inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 px-4 sm:px-5 py-2.5 sm:py-3 transition-all"
           >
-            <span className="size-7 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 grid place-items-center">
-              <Mail className="size-3.5 text-white" />
+            <span className="size-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 grid place-items-center">
+              <Mail className="size-4 text-white" />
             </span>
-            <span className="text-xs sm:text-sm text-white/90 font-medium">Scrie-ne un E-mail</span>
+            <span className="text-sm sm:text-base text-white/90 font-medium">Scrie-ne un E-mail</span>
           </a>
         </div>
 
