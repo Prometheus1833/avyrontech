@@ -30,20 +30,12 @@ const socials = [
     ring: "ring-[#FE2C55]/40",
   },
   {
-    name: "Messenger",
-    handle: "Chat direct",
-    href: "https://m.me/61560319432764",
-    Icon: MessageCircle,
-    gradient: "from-[#00B2FF] via-[#006AFF] to-[#A033FF]",
-    ring: "ring-[#006AFF]/40",
-  },
-  {
-    name: "WhatsApp",
-    handle: "+40 734 605 055",
-    href: "https://wa.me/40734605055",
-    Icon: WhatsAppIcon,
-    gradient: "from-[#25D366] to-[#128C7E]",
-    ring: "ring-[#25D366]/40",
+    name: "LinkedIn",
+    handle: "Avyron Tech",
+    href: "https://www.linkedin.com/company/avyron",
+    Icon: Linkedin,
+    gradient: "from-[#0A66C2] to-[#004182]",
+    ring: "ring-[#0A66C2]/40",
   },
 ];
 
