@@ -81,7 +81,17 @@ const Footer = () => {
             <span className="size-7 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 grid place-items-center">
               <Phone className="size-3.5 text-white" />
             </span>
-            <span className="text-xs sm:text-sm text-white/90 font-medium">+40 734 605 055</span>
+            <span className="text-xs sm:text-sm text-white/90 font-medium">Sună-ne</span>
+          </a>
+          <a
+            href="mailto:avyrontech@gmail.com"
+            aria-label={t.footer.emailLabel}
+            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 px-3 sm:px-4 py-2 transition-all"
+          >
+            <span className="size-7 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 grid place-items-center">
+              <Mail className="size-3.5 text-white" />
+            </span>
+            <span className="text-xs sm:text-sm text-white/90 font-medium">Scrie-ne un E-mail</span>
           </a>
           <a
             href="mailto:avyrontech@gmail.com"
