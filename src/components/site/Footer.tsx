@@ -50,7 +50,7 @@ const Footer = () => {
               to="/#cta"
               className="group inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 px-4 sm:px-5 py-2.5 sm:py-3 shadow-[0_10px_30px_-10px_rgba(168,85,247,0.6)] transition-all"
             >
-              <span className="flex flex-col leading-tight text-left">
+              <span className="flex flex-col leading-tight items-center text-center">
                 <span className="font-display font-semibold text-sm md:text-base">{t.footer.ctaLabel}</span>
                 <span className="text-[10px] uppercase tracking-widest text-white/80">{t.footer.ctaSub}</span>
               </span>
@@ -63,9 +63,10 @@ const Footer = () => {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="WhatsApp"
-              className="size-12 md:size-14 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] grid place-items-center shadow-[0_10px_30px_-10px_rgba(37,211,102,0.6)] hover:scale-105 transition-transform ring-1 ring-white/10"
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] px-4 sm:px-5 py-2.5 sm:py-3 shadow-[0_10px_30px_-10px_rgba(37,211,102,0.6)] hover:scale-[1.02] transition-transform ring-1 ring-white/10"
             >
               <MessageCircle className="size-5 md:size-6 text-white" />
+              <span className="font-display font-semibold text-sm md:text-base text-white">WhatsApp</span>
             </a>
           </div>
         </div>
@@ -80,7 +81,7 @@ const Footer = () => {
             <span className="size-7 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 grid place-items-center">
               <Phone className="size-3.5 text-white" />
             </span>
-            <span className="text-xs sm:text-sm text-white/90 font-medium">+40 734 605 055</span>
+            <span className="text-xs sm:text-sm text-white/90 font-medium">Sună-ne</span>
           </a>
           <a
             href="mailto:avyrontech@gmail.com"
@@ -90,7 +91,7 @@ const Footer = () => {
             <span className="size-7 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 grid place-items-center">
               <Mail className="size-3.5 text-white" />
             </span>
-            <span className="text-xs sm:text-sm text-white/90 font-medium truncate max-w-[160px] sm:max-w-none">avyrontech@gmail.com</span>
+            <span className="text-xs sm:text-sm text-white/90 font-medium">Scrie-ne un E-mail</span>
           </a>
         </div>
 
