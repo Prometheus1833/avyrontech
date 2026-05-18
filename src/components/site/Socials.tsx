@@ -53,7 +53,7 @@ const Socials = () => {
                 Urmărește Avyron
               </h3>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 md:gap-3 flex-1">
+            <div className="grid grid-cols-3 gap-2 md:gap-3 flex-1">
               {socials.map(({ name, handle, href, Icon, gradient, ring }) => (
                 <a
                   key={name}
