@@ -81,22 +81,22 @@ const Footer = () => {
           <a
             href="tel:+40734605055"
             aria-label={t.footer.phoneLabel}
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 px-3 sm:px-4 py-2 transition-all"
+            className="inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 px-4 sm:px-5 py-2.5 sm:py-3 transition-all"
           >
-            <span className="size-7 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 grid place-items-center">
-              <Phone className="size-3.5 text-white" />
+            <span className="size-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 grid place-items-center">
+              <Phone className="size-4 text-white" />
             </span>
-            <span className="text-xs sm:text-sm text-white/90 font-medium">Sună-ne</span>
+            <span className="text-sm sm:text-base text-white/90 font-medium">Sună-ne</span>
           </a>
           <a
             href="mailto:avyrontech@gmail.com"
             aria-label={t.footer.emailLabel}
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 px-3 sm:px-4 py-2 transition-all"
+            className="inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 px-4 sm:px-5 py-2.5 sm:py-3 transition-all"
           >
-            <span className="size-7 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 grid place-items-center">
-              <Mail className="size-3.5 text-white" />
+            <span className="size-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 grid place-items-center">
+              <Mail className="size-4 text-white" />
             </span>
-            <span className="text-xs sm:text-sm text-white/90 font-medium">Scrie-ne un E-mail</span>
+            <span className="text-sm sm:text-base text-white/90 font-medium">Scrie-ne un E-mail</span>
           </a>
         </div>
 
