@@ -1,10 +1,4 @@
-import { Instagram, Facebook, MessageCircle } from "lucide-react";
-
-const WhatsAppIcon = ({ className = "" }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
-    <path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26L4.205 21.16l3.443-.967z"/>
-  </svg>
-);
+import { Instagram, Facebook, Linkedin } from "lucide-react";
 
 const socials = [
   {
@@ -36,20 +30,12 @@ const socials = [
     ring: "ring-[#FE2C55]/40",
   },
   {
-    name: "Messenger",
-    handle: "Chat direct",
-    href: "https://m.me/61560319432764",
-    Icon: MessageCircle,
-    gradient: "from-[#00B2FF] via-[#006AFF] to-[#A033FF]",
-    ring: "ring-[#006AFF]/40",
-  },
-  {
-    name: "WhatsApp",
-    handle: "+40 734 605 055",
-    href: "https://wa.me/40734605055",
-    Icon: WhatsAppIcon,
-    gradient: "from-[#25D366] to-[#128C7E]",
-    ring: "ring-[#25D366]/40",
+    name: "LinkedIn",
+    handle: "Avyron Tech",
+    href: "https://www.linkedin.com/company/avyron",
+    Icon: Linkedin,
+    gradient: "from-[#0A66C2] to-[#004182]",
+    ring: "ring-[#0A66C2]/40",
   },
 ];
 
@@ -67,7 +53,7 @@ const Socials = () => {
                 Urmărește Avyron
               </h3>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 md:gap-3 flex-1">
+            <div className="grid grid-cols-3 gap-2 md:gap-3 flex-1">
               {socials.map(({ name, handle, href, Icon, gradient, ring }) => (
                 <a
                   key={name}

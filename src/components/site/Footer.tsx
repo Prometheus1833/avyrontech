@@ -1,6 +1,6 @@
 import { useLang } from "@/i18n/LanguageContext";
 import { Link } from "react-router-dom";
-import { Mail, Phone, MessageCircle, ArrowUpRight, ArrowRight } from "lucide-react";
+import { Mail, Phone, MessageCircle, ArrowRight } from "lucide-react";
 import logo from "@/assets/avyron-logo.jpg";
 import planetBg from "@/assets/footer-planet-bg.jpg";
 
@@ -44,66 +44,53 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Standalone CTA */}
-          <Link
-            to="/#cta"
-            className="group inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 px-4 sm:px-5 py-2.5 sm:py-3 shadow-[0_10px_30px_-10px_rgba(168,85,247,0.6)] transition-all self-start md:self-auto"
-          >
-            <span className="flex flex-col leading-tight text-left">
-              <span className="font-display font-semibold text-sm md:text-base">{t.footer.ctaLabel}</span>
-              <span className="text-[10px] uppercase tracking-widest text-white/80">{t.footer.ctaSub}</span>
-            </span>
-            <span className="size-8 rounded-full bg-white/15 grid place-items-center group-hover:translate-x-0.5 transition-transform">
-              <ArrowRight className="size-4" />
-            </span>
-          </Link>
+          {/* Standalone CTA + WhatsApp */}
+          <div className="flex items-center gap-2 self-start md:self-auto">
+            <Link
+              to="/#cta"
+              className="group inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 px-4 sm:px-5 py-2.5 sm:py-3 shadow-[0_10px_30px_-10px_rgba(168,85,247,0.6)] transition-all"
+            >
+              <span className="flex flex-col leading-tight text-left">
+                <span className="font-display font-semibold text-sm md:text-base">{t.footer.ctaLabel}</span>
+                <span className="text-[10px] uppercase tracking-widest text-white/80">{t.footer.ctaSub}</span>
+              </span>
+              <span className="size-8 rounded-full bg-white/15 grid place-items-center group-hover:translate-x-0.5 transition-transform">
+                <ArrowRight className="size-4" />
+              </span>
+            </Link>
+            <a
+              href="https://wa.me/40734605055"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="WhatsApp"
+              className="size-12 md:size-14 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] grid place-items-center shadow-[0_10px_30px_-10px_rgba(37,211,102,0.6)] hover:scale-105 transition-transform ring-1 ring-white/10"
+            >
+              <MessageCircle className="size-5 md:size-6 text-white" />
+            </a>
+          </div>
         </div>
 
-        {/* Contact + Nav */}
-        <div className="mt-8 grid md:grid-cols-3 gap-3">
-          {/* WhatsApp first - highlighted */}
-          <a
-            href="https://wa.me/40734605055"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group md:col-span-1 flex items-center gap-3 rounded-xl border border-[#25D366]/30 bg-[#25D366]/10 hover:bg-[#25D366]/20 px-4 py-3 transition-all backdrop-blur-sm"
-          >
-            <span className="size-9 rounded-lg bg-[#25D366] grid place-items-center shrink-0">
-              <MessageCircle className="size-4 text-white" />
-            </span>
-            <span className="flex-1 min-w-0">
-              <span className="block text-[10px] uppercase tracking-widest text-white/60">WhatsApp</span>
-              <span className="block text-sm text-white font-medium">+40 734 605 055</span>
-            </span>
-            <ArrowUpRight className="size-4 text-white/50 group-hover:text-[#25D366] transition-colors" />
-          </a>
-
+        {/* Compact contact icons row: phone + email */}
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
           <a
             href="tel:+40734605055"
-            className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.1] hover:border-purple-400/40 px-4 py-3 transition-all backdrop-blur-sm"
+            aria-label={t.footer.phoneLabel}
+            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 px-3 sm:px-4 py-2 transition-all"
           >
-            <span className="size-9 rounded-lg bg-gradient-to-br from-purple-500 to-purple-700 grid place-items-center shrink-0">
-              <Phone className="size-4 text-white" />
+            <span className="size-7 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 grid place-items-center">
+              <Phone className="size-3.5 text-white" />
             </span>
-            <span className="flex-1 min-w-0">
-              <span className="block text-[10px] uppercase tracking-widest text-white/60">{t.footer.phoneLabel}</span>
-              <span className="block text-sm text-white">+40 734 605 055</span>
-            </span>
-            <ArrowUpRight className="size-4 text-white/50 group-hover:text-purple-300 transition-colors" />
+            <span className="text-xs sm:text-sm text-white/90 font-medium">+40 734 605 055</span>
           </a>
-
           <a
             href="mailto:avyrontech@gmail.com"
-            className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.1] hover:border-purple-400/40 px-4 py-3 transition-all backdrop-blur-sm"
+            aria-label={t.footer.emailLabel}
+            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 px-3 sm:px-4 py-2 transition-all"
           >
-            <span className="size-9 rounded-lg bg-gradient-to-br from-purple-500 to-purple-700 grid place-items-center shrink-0">
-              <Mail className="size-4 text-white" />
+            <span className="size-7 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 grid place-items-center">
+              <Mail className="size-3.5 text-white" />
             </span>
-            <span className="flex-1 min-w-0">
-              <span className="block text-[10px] uppercase tracking-widest text-white/60">{t.footer.emailLabel}</span>
-              <span className="block text-sm text-white truncate">avyrontech@gmail.com</span>
-            </span>
-            <ArrowUpRight className="size-4 text-white/50 group-hover:text-purple-300 transition-colors" />
+            <span className="text-xs sm:text-sm text-white/90 font-medium truncate max-w-[160px] sm:max-w-none">avyrontech@gmail.com</span>
           </a>
         </div>
 
