@@ -44,17 +44,17 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Standalone CTA + WhatsApp */}
-          <div className="flex items-center gap-2 self-start md:self-auto">
+          {/* Standalone CTA + WhatsApp — equal width */}
+          <div className="grid grid-cols-2 gap-2 self-stretch md:self-auto w-full md:w-auto">
             <Link
               to="/#cta"
-              className="group inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 px-4 sm:px-5 py-2.5 sm:py-3 shadow-[0_10px_30px_-10px_rgba(168,85,247,0.6)] transition-all"
+              className="group inline-flex items-center justify-between gap-3 rounded-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 px-4 sm:px-5 py-2.5 sm:py-3 shadow-[0_10px_30px_-10px_rgba(168,85,247,0.6)] transition-all md:min-w-[200px]"
             >
-              <span className="flex flex-col leading-tight items-center text-center">
+              <span className="flex flex-col leading-tight items-center text-center flex-1">
                 <span className="font-display font-semibold text-sm md:text-base">{t.footer.ctaLabel}</span>
                 <span className="text-[10px] uppercase tracking-widest text-white/80">{t.footer.ctaSub}</span>
               </span>
-              <span className="size-8 rounded-full bg-white/15 grid place-items-center group-hover:translate-x-0.5 transition-transform">
+              <span className="size-8 rounded-full bg-white/15 grid place-items-center group-hover:translate-x-0.5 transition-transform shrink-0">
                 <ArrowRight className="size-4" />
               </span>
             </Link>
@@ -63,13 +63,13 @@ const Footer = () => {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="WhatsApp"
-              className="group inline-flex items-center gap-3 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] px-4 sm:px-5 py-2.5 sm:py-3 shadow-[0_10px_30px_-10px_rgba(37,211,102,0.6)] hover:scale-[1.02] transition-transform ring-1 ring-white/10"
+              className="group inline-flex items-center justify-between gap-3 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] px-4 sm:px-5 py-2.5 sm:py-3 shadow-[0_10px_30px_-10px_rgba(37,211,102,0.6)] hover:scale-[1.02] transition-transform ring-1 ring-white/10 md:min-w-[200px]"
             >
-              <span className="flex flex-col leading-tight items-center text-center">
+              <span className="flex flex-col leading-tight items-center text-center flex-1">
                 <span className="font-display font-semibold text-sm md:text-base text-white">WhatsApp</span>
                 <span className="text-[10px] uppercase tracking-widest text-white/80">Scrie-ne acum</span>
               </span>
-              <span className="size-8 rounded-full bg-white/20 grid place-items-center">
+              <span className="size-8 rounded-full bg-white/20 grid place-items-center shrink-0">
                 <MessageCircle className="size-4 text-white" />
               </span>
             </a>
@@ -81,9 +81,9 @@ const Footer = () => {
           <a
             href="tel:+40734605055"
             aria-label={t.footer.phoneLabel}
-            className="inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 px-4 sm:px-5 py-2.5 sm:py-3 transition-all"
+            className="inline-flex items-center gap-2.5 rounded-full border border-cyan-300/30 bg-gradient-to-br from-cyan-500/15 to-sky-600/15 hover:from-cyan-500/25 hover:to-sky-600/25 hover:border-cyan-300/60 px-4 sm:px-5 py-2.5 sm:py-3 transition-all"
           >
-            <span className="size-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 grid place-items-center">
+            <span className="size-8 rounded-full bg-gradient-to-br from-cyan-400 to-sky-600 grid place-items-center">
               <Phone className="size-4 text-white" />
             </span>
             <span className="text-sm sm:text-base text-white/90 font-medium">Sună-ne</span>
@@ -91,9 +91,9 @@ const Footer = () => {
           <a
             href="mailto:avyrontech@gmail.com"
             aria-label={t.footer.emailLabel}
-            className="inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 px-4 sm:px-5 py-2.5 sm:py-3 transition-all"
+            className="inline-flex items-center gap-2.5 rounded-full border border-pink-300/30 bg-gradient-to-br from-pink-500/15 to-rose-600/15 hover:from-pink-500/25 hover:to-rose-600/25 hover:border-pink-300/60 px-4 sm:px-5 py-2.5 sm:py-3 transition-all"
           >
-            <span className="size-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 grid place-items-center">
+            <span className="size-8 rounded-full bg-gradient-to-br from-pink-400 to-rose-600 grid place-items-center">
               <Mail className="size-4 text-white" />
             </span>
             <span className="text-sm sm:text-base text-white/90 font-medium">Scrie-ne un E-mail</span>
