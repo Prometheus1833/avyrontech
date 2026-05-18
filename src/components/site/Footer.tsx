@@ -63,10 +63,15 @@ const Footer = () => {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="WhatsApp"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] px-4 sm:px-5 py-2.5 sm:py-3 shadow-[0_10px_30px_-10px_rgba(37,211,102,0.6)] hover:scale-[1.02] transition-transform ring-1 ring-white/10"
+              className="group inline-flex items-center gap-3 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] px-4 sm:px-5 py-2.5 sm:py-3 shadow-[0_10px_30px_-10px_rgba(37,211,102,0.6)] hover:scale-[1.02] transition-transform ring-1 ring-white/10"
             >
-              <MessageCircle className="size-5 md:size-6 text-white" />
-              <span className="font-display font-semibold text-sm md:text-base text-white">WhatsApp</span>
+              <span className="flex flex-col leading-tight items-center text-center">
+                <span className="font-display font-semibold text-sm md:text-base text-white">WhatsApp</span>
+                <span className="text-[10px] uppercase tracking-widest text-white/80">Scrie-ne acum</span>
+              </span>
+              <span className="size-8 rounded-full bg-white/20 grid place-items-center">
+                <MessageCircle className="size-4 text-white" />
+              </span>
             </a>
           </div>
         </div>
