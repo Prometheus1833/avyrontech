@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +18,17 @@ const ForgotPassword = () => {
   const { t } = useLang();
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    import("@/lib/seo").then(({ setPageMeta }) =>
+      setPageMeta({
+        title: "Resetare parolă — Avyron",
+        description:
+          "Ai uitat parola? Primește un link sigur pe email pentru a-ți reseta accesul la contul Avyron.",
+        path: "/forgot-password",
+      })
+    );
+  }, []);
 
   const form = useForm<Input>({
     resolver: zodResolver(forgotSchema),

@@ -201,14 +201,14 @@ const sections = [
 
 const Gdpr = () => {
   useEffect(() => {
-    document.title = "Politica de Confidențialitate și GDPR | Avyron";
-    let meta = document.querySelector('meta[name="description"]');
-    if (!meta) {
-      meta = document.createElement("meta");
-      meta.setAttribute("name", "description");
-      document.head.appendChild(meta);
-    }
-    meta.setAttribute("content", "Politica de Confidențialitate și Protecția Datelor (GDPR) Avyron — Eco Tech Digital Solution S.R.L. Iași, România.");
+    import("@/lib/seo").then(({ setPageMeta }) =>
+      setPageMeta({
+        title: "Politica de Confidențialitate și GDPR | Avyron",
+        description:
+          "Politica de Confidențialitate și Protecția Datelor (GDPR) Avyron — Eco Tech Digital Solution S.R.L. Iași, România.",
+        path: "/gdpr",
+      })
+    );
     window.scrollTo(0, 0);
   }, []);
 

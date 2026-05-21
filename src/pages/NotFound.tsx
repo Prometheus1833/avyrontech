@@ -6,6 +6,14 @@ const NotFound = () => {
 
   useEffect(() => {
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);
+    import("@/lib/seo").then(({ setPageMeta }) =>
+      setPageMeta({
+        title: "404 — Pagină negăsită | Avyron",
+        description:
+          "Pagina căutată nu există sau a fost mutată. Întoarce-te pe avyron.ro pentru servicii web, aplicații și branding.",
+        path: location.pathname,
+      })
+    );
   }, [location.pathname]);
 
   return (
