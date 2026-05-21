@@ -38,18 +38,12 @@ const Pricing = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    document.title = ro ? "Costuri & Mentenanță — Avyron" : "Pricing & Care — Avyron";
-    let meta = document.querySelector('meta[name="description"]');
-    if (!meta) {
-      meta = document.createElement("meta");
-      meta.setAttribute("name", "description");
-      document.head.appendChild(meta);
-    }
-    meta.setAttribute(
-      "content",
-      ro
-        ? "Pachete transparente pentru site-uri profesionale: produs principal de la 300€, mentenanță Plus / Pro / Pro activ și modalități de plată sigure."
-        : "Transparent packages for professional websites: main product from €300, Plus / Pro / Pro Active care plans and secure payment methods.",
+    const title = ro ? "Costuri & Mentenanță — Avyron" : "Pricing & Care — Avyron";
+    const description = ro
+      ? "Pachete transparente pentru site-uri profesionale: produs principal de la 300€, mentenanță Plus / Pro / Pro activ și plăți sigure."
+      : "Transparent packages for professional websites: main product from €300, Plus / Pro / Pro Active care plans and secure payment methods.";
+    import("@/lib/seo").then(({ setPageMeta }) =>
+      setPageMeta({ title, description, path: "/costuri" }),
     );
   }, [ro]);
 
