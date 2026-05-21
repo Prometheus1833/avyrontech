@@ -1,0 +1,18 @@
+# Avyron
+
+> Soluții digitale moderne — site-uri, aplicații mobile și platforme custom, livrate în 2-5 zile, optimizate pentru Google.
+
+Avyron este un studio românesc de produse digitale: web development, mobile, cybersecurity, design UI/UX, QA și DevOps. Lucrăm cu afaceri locale, profesii liberale și platforme naționale.
+
+## Pages
+
+- [Acasă](/): Servicii, proces, exemple și avantaje Avyron.
+- [Despre noi & Portofoliu](/despre): Echipa, specializări și proiecte realizate (Miago, Flawlesstudio, Retuvo).
+- [Costuri & Mentenanță](/costuri): Pachete transparente, prețuri și planuri de întreținere.
+- [Noutăți](/noutati): Articole și actualizări.
+- [Confidențialitate & GDPR](/gdpr): Politica de confidențialitate.
+
+## Examples
+
+- [Demo Flawlesstudio](/exemple/flawlesstudio): Salon premium — site de prezentare cu programări.
+- [Demo Retuvo](/exemple/retuvo): Platformă pentru servicii locale.
