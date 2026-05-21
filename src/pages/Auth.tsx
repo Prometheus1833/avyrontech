@@ -33,7 +33,14 @@ const Auth = () => {
   const from = (location.state as { from?: string } | null)?.from ?? "/profil";
 
   useEffect(() => {
-    document.title = `${t.auth.login} — Avyron`;
+    import("@/lib/seo").then(({ setPageMeta }) =>
+      setPageMeta({
+        title: `${t.auth.login} — Avyron`,
+        description:
+          "Autentificare și înregistrare în contul Avyron — accesează panoul de proiecte, facturi și mesaje.",
+        path: "/auth",
+      })
+    );
   }, [t.auth.login]);
 
   useEffect(() => {

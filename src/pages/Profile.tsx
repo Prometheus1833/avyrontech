@@ -28,7 +28,14 @@ const Profile = () => {
   const [tab, setTab] = useState(initial);
 
   useEffect(() => {
-    document.title = `${t.auth.profile.title} — Avyron`;
+    import("@/lib/seo").then(({ setPageMeta }) =>
+      setPageMeta({
+        title: `${t.auth.profile.title} — Avyron`,
+        description:
+          "Panoul tău Avyron: gestionează proiectele, abonamentele, facturile și mesajele cu echipa.",
+        path: "/profil",
+      })
+    );
   }, [t.auth.profile.title]);
 
   useEffect(() => {

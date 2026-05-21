@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +16,17 @@ type Input = z.infer<typeof resetSchema>;
 const ResetPassword = () => {
   const { t } = useLang();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    import("@/lib/seo").then(({ setPageMeta }) =>
+      setPageMeta({
+        title: "Setează o parolă nouă — Avyron",
+        description:
+          "Definește o parolă nouă pentru contul tău Avyron și continuă către panoul de proiecte.",
+        path: "/reset-password",
+      })
+    );
+  }, []);
   const [submitting, setSubmitting] = useState(false);
 
   const form = useForm<Input>({
