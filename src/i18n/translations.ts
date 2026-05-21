@@ -312,7 +312,7 @@ export const translations = {
     },
     seo: {
       title: "Avyron — Soluții digitale. Produse. Viitor.",
-      desc: "Construim site-uri și aplicații profesioniste, rapide și optimizate pentru Google, în 2-5 zile. Pentru afaceri locale, restaurante, saloane, profesii liberale și platforme naționale.",
+      desc: "Construim site-uri și aplicații rapide, optimizate Google, în 2-5 zile — pentru afaceri locale, profesii liberale și platforme naționale.",
     },
     auth: {
       loginCta: "Conectează-te / Înregistrează-te",

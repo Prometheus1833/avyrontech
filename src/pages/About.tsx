@@ -28,20 +28,14 @@ const About = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    document.title = ro
+    const title = ro
       ? "Despre Noi & Portofoliu — Avyron Tech Products"
       : "About & Portfolio — Avyron Tech Products";
-    let meta = document.querySelector('meta[name="description"]');
-    if (!meta) {
-      meta = document.createElement("meta");
-      meta.setAttribute("name", "description");
-      document.head.appendChild(meta);
-    }
-    meta.setAttribute(
-      "content",
-      ro
-        ? "Echipa Avyron — specialiști în web, mobile, cybersecurity, design și QA. Portofoliu: Miago, Flawless Studio, Retuvo."
-        : "The Avyron team — specialists in web, mobile, cybersecurity, design and QA. Portfolio: Miago, Flawless Studio, Retuvo.",
+    const description = ro
+      ? "Echipa Avyron — specialiști în web, mobile, cybersecurity, design și QA. Portofoliu: Miago, Flawless Studio, Retuvo."
+      : "The Avyron team — specialists in web, mobile, cybersecurity, design and QA. Portfolio: Miago, Flawless Studio, Retuvo.";
+    import("@/lib/seo").then(({ setPageMeta }) =>
+      setPageMeta({ title, description, path: "/despre" }),
     );
   }, [ro]);
 

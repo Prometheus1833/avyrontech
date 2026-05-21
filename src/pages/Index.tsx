@@ -33,22 +33,19 @@ const Index = () => {
   }, [location.hash]);
 
   useEffect(() => {
-    document.title = t.seo.title;
-    let meta = document.querySelector('meta[name="description"]');
-    if (!meta) {
-      meta = document.createElement("meta");
-      meta.setAttribute("name", "description");
-      document.head.appendChild(meta);
-    }
-    meta.setAttribute("content", t.seo.desc);
-    let canonical = document.querySelector('link[rel="canonical"]');
-    if (!canonical) {
-      canonical = document.createElement("link");
-      canonical.setAttribute("rel", "canonical");
-      document.head.appendChild(canonical);
-    }
-    canonical.setAttribute("href", window.location.origin + "/");
-  }, [t.seo.title, t.seo.desc]);
+    import("@/lib/seo").then(({ setPageMeta, setJsonLd }) => {
+      setPageMeta({ title: t.seo.title, description: t.seo.desc, path: "/" });
+      setJsonLd("ld-faq", {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: t.faq.items.map((it: { q: string; a: string }) => ({
+          "@type": "Question",
+          name: it.q,
+          acceptedAnswer: { "@type": "Answer", text: it.a },
+        })),
+      });
+    });
+  }, [t.seo.title, t.seo.desc, t.faq.items]);
 
   return (
     <main className="min-h-screen overflow-x-hidden">
