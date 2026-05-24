@@ -103,9 +103,18 @@ const About = () => {
       {/* Top bar */}
       <div className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-40">
         <div className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between">
-          <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="size-4" />
-            {ro ? "Înapoi acasă" : "Back home"}
+          <Link
+            to="/"
+            className="group relative inline-flex items-center gap-2 rounded-full border border-border/80 bg-card/60 backdrop-blur pl-2 pr-3.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-brand/60 transition-all duration-300 overflow-hidden"
+          >
+            <span className="absolute inset-0 bg-gradient-to-r from-brand/0 via-brand/10 to-brand/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" aria-hidden />
+            <span className="relative grid place-items-center size-5 rounded-full bg-foreground text-background transition-transform duration-300 group-hover:-translate-x-0.5">
+              <ArrowLeft className="size-3" />
+            </span>
+            <span className="relative font-mono uppercase tracking-[0.18em] text-[10px]">
+              {ro ? "Acasă" : "Home"}
+            </span>
+            <span className="relative size-1 rounded-full bg-brand animate-pulse" aria-hidden />
           </Link>
           <div className="flex items-center gap-2">
             <img src={logo} alt="Avyron" width={28} height={28} className="size-7 rounded-md object-cover" />
