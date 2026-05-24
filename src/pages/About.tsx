@@ -88,6 +88,14 @@ const About = () => {
         ? "Site integrat și sincronizat pentru vânzarea de plase de țânțari — o necesitate reală în sezonul de vară: comenzi rapide, stoc în timp real și livrare locală în Iași."
         : "Integrated and synchronized site selling mosquito nets — a real summer-season essential: fast orders, real-time stock and local delivery in Iași.",
     },
+    {
+      name: "Ruller.eu",
+      url: "https://ruller.eu",
+      tag: ro ? "Barber shop premium — Site + programări" : "Premium barber shop — Site + bookings",
+      desc: ro
+        ? "Website de prezentare pentru un barber shop premium: meniu complet de servicii (tuns clasic, skin fade, barbă, tratamente), galerie salon și programări instant prin integrare Mero și WhatsApp."
+        : "Showcase website for a premium barber shop: full service menu (classic cut, skin fade, beard, treatments), salon gallery and instant bookings via Mero and WhatsApp integration.",
+    },
   ];
 
   return (
