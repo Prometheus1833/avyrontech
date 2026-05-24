@@ -1,15 +1,18 @@
-## Înlocuire favicon cu logo Avyron
+## Ce adaug
 
-Imaginea logo "A" cu gradient mov-fucsia și accent cyan a fost deja generată la `public/favicon.png` (vezi preview-ul de mai sus).
+Un singur item nou în `projects` din `src/pages/About.tsx`, plasat ultimul în listă (sub Plaseieftineiasi.ro). Păstrează exact aceeași structură (nume, url, tag, descriere bilingvă RO/EN) ca celelalte intrări — fără logo separat, fiindcă lista actuală nu afișează logo-uri.
 
-## Pași
+## Conținut propus pentru Ruller.eu
 
-1. **Șterge** `public/favicon.ico` (favicon-ul default Lovable, 51KB) — altfel browserele îl vor cere automat și suprascriu cel nou.
-2. **Actualizează `index.html`** — adaugă după meta google-site-verification:
-   ```html
-   <link rel="icon" type="image/png" href="/favicon.png" />
-   <link rel="apple-touch-icon" href="/favicon.png" />
-   ```
-3. **Republică** site-ul pentru ca favicon-ul nou să fie live pe avyron.ro.
+- **name**: `Ruller.eu`
+- **url**: `https://ruller.eu`
+- **tag**:
+  - RO: `Barber shop premium — Site + programări`
+  - EN: `Premium barber shop — Site + bookings`
+- **desc**:
+  - RO: „Website de prezentare pentru un barber shop premium: meniu complet de servicii (tuns clasic, skin fade, barbă, tratamente), galerie salon și programări instant prin integrare Mero și WhatsApp."
+  - EN: „Showcase website for a premium barber shop: full service menu (classic cut, skin fade, beard, treatments), salon gallery and instant bookings via Mero and WhatsApp integration."
 
-Confirmă trecerea în build mode ca să aplic schimbările.
+## Notă
+
+Secțiunea „Examples" de pe homepage este un selector pe categorii (alimentat din DB `examples` + fallback din traduceri), nu o listă plată — deci nu necesită modificări acolo. Dacă vrei să apară Ruller și în acel selector (categorie `beauty`), spune-mi și îl adaug separat în baza de date prin migrare + upload logo.
