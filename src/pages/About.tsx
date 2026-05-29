@@ -65,6 +65,14 @@ const About = () => {
         : "Showcase website for a local Iași brand, with multiple locations, bookings and premium visual identity.",
     },
     {
+      name: "Clarlumanari.ro",
+      url: "https://clarlumanari.ro",
+      tag: ro ? "Brand artizanal — Site + comenzi" : "Artisan brand — Site + orders",
+      desc: ro
+        ? "Website de prezentare pentru CLAR — lumânări parfumate turnate manual din ceară naturală, cu fitil din lemn. Catalog de produse, poveste de brand și comenzi rapide prin WhatsApp și telefon."
+        : "Showcase website for CLAR — scented candles hand-poured from natural wax with wooden wicks. Product catalog, brand story and quick orders via WhatsApp and phone.",
+    },
+    {
       name: "Miago.ro",
       url: "https://miago.ro",
       tag: ro ? "Platformă Auto — Site + Aplicație" : "Auto Platform — Site + App",
@@ -73,12 +81,12 @@ const About = () => {
         : "Web platform and Mobile app for sales listings of cars, trucks and other vehicles in a new, intuitive concept.",
     },
     {
-      name: "Retuvo.ro",
-      url: "https://retuvo.ro",
-      tag: ro ? "SGR digitalizat — site + aplicație" : "Digital DRS — site + app",
+      name: "Ruller.eu",
+      url: "https://ruller.eu",
+      tag: ro ? "Barber shop premium — Site + programări" : "Premium barber shop — Site + bookings",
       desc: ro
-        ? "Produs care digitalizează procesul SGR din România: decontare prin aplicație și serviciu de colectori la domiciliu pentru recipiente reciclabile."
-        : "Product digitalizing Romania's DRS process: in-app refunds and a home pickup collector service for recyclable containers.",
+        ? "Website de prezentare pentru un barber shop premium: meniu complet de servicii (tuns clasic, skin fade, barbă, tratamente), galerie salon și programări instant prin integrare Mero și WhatsApp."
+        : "Showcase website for a premium barber shop: full service menu (classic cut, skin fade, beard, treatments), salon gallery and instant bookings via Mero and WhatsApp integration.",
     },
     {
       name: "Plaseieftineiasi.ro",
@@ -89,12 +97,12 @@ const About = () => {
         : "Integrated and synchronized site selling mosquito nets — a real summer-season essential: fast orders, real-time stock and local delivery in Iași.",
     },
     {
-      name: "Ruller.eu",
-      url: "https://ruller.eu",
-      tag: ro ? "Barber shop premium — Site + programări" : "Premium barber shop — Site + bookings",
+      name: "Retuvo.ro",
+      url: "https://retuvo.ro",
+      tag: ro ? "SGR digitalizat — site + aplicație" : "Digital DRS — site + app",
       desc: ro
-        ? "Website de prezentare pentru un barber shop premium: meniu complet de servicii (tuns clasic, skin fade, barbă, tratamente), galerie salon și programări instant prin integrare Mero și WhatsApp."
-        : "Showcase website for a premium barber shop: full service menu (classic cut, skin fade, beard, treatments), salon gallery and instant bookings via Mero and WhatsApp integration.",
+        ? "Produs care digitalizează procesul SGR din România: decontare prin aplicație și serviciu de colectori la domiciliu pentru recipiente reciclabile."
+        : "Product digitalizing Romania's DRS process: in-app refunds and a home pickup collector service for recyclable containers.",
     },
   ];
 
