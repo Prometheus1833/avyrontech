@@ -203,7 +203,7 @@ const Pricing = () => {
   ];
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-background text-white">
+    <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
       {/* PS-style background: starfield + grid + glow */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(0,112,243,0.25),transparent_55%)]" />
@@ -224,7 +224,7 @@ const Pricing = () => {
         <div className="flex items-center justify-between gap-3">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 rounded-full border border-foreground/15 bg-foreground/[0.04] px-3 sm:px-4 py-2 text-xs sm:text-sm text-foreground/80 hover:bg-foreground/[0.1] hover:text-white transition-all backdrop-blur"
+            className="inline-flex items-center gap-2 rounded-full border border-foreground/15 bg-foreground/[0.04] px-3 sm:px-4 py-2 text-xs sm:text-sm text-foreground/80 hover:bg-foreground/[0.1] hover:text-foreground transition-all backdrop-blur"
           >
             <ArrowLeft className="size-4" />
             {ro ? "Înapoi" : "Back"}
@@ -260,7 +260,7 @@ const Pricing = () => {
                 key={c}
                 onClick={() => setCurrency(c)}
                 className={`px-4 py-1.5 text-xs font-semibold tracking-widest rounded-full transition-all ${
-                  currency === c ? "bg-cyan-400 text-background" : "text-foreground/70 hover:text-white"
+                  currency === c ? "bg-cyan-400 text-background" : "text-foreground/70 hover:text-foreground"
                 }`}
               >
                 {c}
@@ -782,7 +782,7 @@ const Pricing = () => {
             </Link>
             <a
               href="tel:+40734605055"
-              className="inline-flex items-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.06] hover:bg-foreground/[0.12] px-6 py-3 text-sm font-bold text-white transition-colors"
+              className="inline-flex items-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.06] hover:bg-foreground/[0.12] px-6 py-3 text-sm font-bold text-foreground transition-colors"
             >
               {ro ? "Telefon" : "Phone"}
             </a>
