@@ -195,6 +195,18 @@ const About = () => {
               ? "Avyron Tech este o echipă de specialiști care transformă idei în produse digitale rafinate. Lucrăm direct, transparent și concentrat pe rezultate reale — de la prima conversație, până la mentenanța de lungă durată."
               : "Avyron Tech is a team of specialists turning ideas into refined digital products. We work directly, transparently and focused on real results — from the first conversation to long-term maintenance."}
           </p>
+          <p className="mt-4 max-w-xl mx-auto font-display text-base md:text-lg leading-relaxed">
+            <span className="bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent font-semibold">
+              {ro
+                ? "Oameni reali. Cod curat. Rezultate care se văd."
+                : "Real people. Clean code. Results you can see."}
+            </span>
+            <span className="block mt-1 text-sm text-muted-foreground">
+              {ro
+                ? "Suntem aici cât timp ai nevoie — partenerul tău digital de încredere, nu doar un furnizor."
+                : "We're here as long as you need us — your trusted digital partner, not just a vendor."}
+            </span>
+          </p>
         </div>
       </section>
 
