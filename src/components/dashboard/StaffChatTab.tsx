@@ -32,7 +32,10 @@ type Profile = {
   avatar_url: string | null;
   staff_role: string | null;
 };
-type ConvoTarget = { type: "channel"; id: string; name: string } | { type: "dm"; id: string; name: string };
+type ConvoTarget =
+  | { type: "channel"; id: string; name: string; emoji?: string }
+  | { type: "dm"; id: string; name: string }
+  | { type: "group"; id: string; name: string; memberIds: string[] };
 
 const STAFF_CHANNELS = [
   { id: "general", name: "generala", emoji: "💬", topic: "Discuții generale ale echipei" },
