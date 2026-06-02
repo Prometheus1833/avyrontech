@@ -395,15 +395,190 @@ const Pricing = () => {
             </ul>
             <div className="mt-6 flex justify-center">
               <a
-                href="#cta"
+                href="https://wa.me/40734605055?text=Bună! Sunt interesat de pachetul Identitate Social Media (Facebook, Instagram, TikTok)."
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
               >
-                <Sparkles className="size-4" />
-                {ro ? "Vreau pachetul Social" : "I want the Social pack"}
+                <BadgeCheck className="size-4" />
+                {ro ? "Vreau Identitate Social Media" : "I want the Social Identity pack"}
               </a>
             </div>
           </div>
         </section>
+
+        {/* Platformă eCommerce / Shopify */}
+        <section className="mt-12 grid md:grid-cols-5 gap-5">
+          <div className="md:col-span-2 rounded-2xl border border-emerald-300/20 bg-gradient-to-br from-[#04221a] to-[#05060f] p-5 sm:p-6 relative overflow-hidden text-center">
+            <div aria-hidden className="absolute -top-16 -right-16 size-48 rounded-full bg-emerald-400/15 blur-3xl" />
+            <div aria-hidden className="absolute -bottom-16 -left-16 size-48 rounded-full bg-teal-500/15 blur-3xl" />
+            <div className="relative">
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-emerald-200">
+                <ShoppingBag className="size-3.5" />
+                {ro ? "Magazin online" : "Online store"}
+              </div>
+              <div className="mt-5 mx-auto size-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 grid place-items-center shadow-[0_0_40px_-8px_rgba(16,185,129,0.6)]">
+                <ShoppingBag className="size-8 text-white" />
+              </div>
+              <h2 className="mt-4 font-display text-2xl sm:text-3xl font-extrabold">
+                {ro ? "Platformă eCommerce / Shopify" : "eCommerce / Shopify Platform"}
+              </h2>
+              <p className="mt-2 text-xs uppercase tracking-[0.25em] text-white/50">
+                {ro ? "Shopify · WooCommerce · Custom" : "Shopify · WooCommerce · Custom"}
+              </p>
+              <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
+                <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-emerald-300 to-teal-500 bg-clip-text text-transparent break-words">
+                  {currency === "EUR" ? "de la 1000€" : `${ro ? "de la" : "from"} ${Math.round(1000 * rate)} RON`}
+                </span>
+              </div>
+              <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">
+                {ro
+                  ? "Magazin online complet, optimizat pentru vânzări reale — catalog de produse, coș, checkout securizat și plăți online integrate. Construim pe Shopify sau pe stack custom, în funcție de scară, cu accent pe viteză, conversie și un panou ușor de administrat de oricine din echipa ta."
+                  : "A full online store optimized for real sales — product catalog, cart, secure checkout and integrated online payments. We build on Shopify or on a custom stack depending on scale, focused on speed, conversion and an admin panel anyone on your team can use."}
+              </p>
+            </div>
+          </div>
+          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
+            <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">{ro ? "Include:" : "Includes:"}</div>
+            <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
+              {(ro
+                ? [
+                    { icon: <Package className="size-4" />, text: "Catalog produse cu variante, stocuri și categorii nelimitate" },
+                    { icon: <ShoppingBag className="size-4" />, text: "Coș, checkout securizat și pagini de produs orientate spre conversie" },
+                    { icon: <CreditCard className="size-4" />, text: "Plăți online (card, Apple Pay, Google Pay) + ramburs" },
+                    { icon: <Truck className="size-4" />, text: "Integrare curieri (FAN, Sameday, DPD) cu AWB automat" },
+                    { icon: <FileText className="size-4" />, text: "Facturare automată (SmartBill / Oblio) și conformitate ANAF" },
+                    { icon: <Tag className="size-4" />, text: "Coduri promo, reduceri, bundle-uri și campanii sezoniere" },
+                    { icon: <BarChart3 className="size-4" />, text: "Pixel Meta / TikTok, GA4 și conversion tracking complet" },
+                    { icon: <Globe className="size-4" />, text: "Multilingv, multi-monedă și SEO tehnic pentru fiecare produs" },
+                    { icon: <MessageCircle className="size-4" />, text: "Email-uri automate: comandă, expediere, abandon coș" },
+                    { icon: <Shield className="size-4" />, text: "GDPR, termeni & condiții, politici și backup-uri zilnice" },
+                  ]
+                : [
+                    { icon: <Package className="size-4" />, text: "Product catalog with unlimited variants, stock and categories" },
+                    { icon: <ShoppingBag className="size-4" />, text: "Cart, secure checkout and conversion-focused product pages" },
+                    { icon: <CreditCard className="size-4" />, text: "Online payments (card, Apple Pay, Google Pay) + COD" },
+                    { icon: <Truck className="size-4" />, text: "Courier integrations (FAN, Sameday, DPD) with automatic AWB" },
+                    { icon: <FileText className="size-4" />, text: "Automated invoicing (SmartBill / Oblio) and tax compliance" },
+                    { icon: <Tag className="size-4" />, text: "Promo codes, discounts, bundles and seasonal campaigns" },
+                    { icon: <BarChart3 className="size-4" />, text: "Meta / TikTok pixel, GA4 and complete conversion tracking" },
+                    { icon: <Globe className="size-4" />, text: "Multilingual, multi-currency and per-product technical SEO" },
+                    { icon: <MessageCircle className="size-4" />, text: "Automated emails: order, shipping, abandoned cart" },
+                    { icon: <Shield className="size-4" />, text: "GDPR, terms, policies and daily backups" },
+                  ]
+              ).map((f) => (
+                <li key={f.text} className="flex items-start gap-2 text-sm text-white/85">
+                  <span className="mt-0.5 size-5 rounded-md bg-emerald-400/15 text-emerald-300 grid place-items-center shrink-0">
+                    {f.icon}
+                  </span>
+                  <span>{f.text}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-6 flex justify-center">
+              <a
+                href="https://wa.me/40734605055?text=Bună! Sunt interesat de un magazin online (Platformă eCommerce / Shopify)."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
+              >
+                <ShoppingBag className="size-4" />
+                {ro ? "Vreau magazin online" : "I want an online store"}
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* Aplicații Mobile & Web */}
+        <section className="mt-12 grid md:grid-cols-5 gap-5">
+          <div className="md:col-span-2 rounded-2xl border border-indigo-300/20 bg-gradient-to-br from-[#0a0f2e] to-[#05060f] p-5 sm:p-6 relative overflow-hidden text-center">
+            <div aria-hidden className="absolute -top-16 -left-16 size-48 rounded-full bg-indigo-400/15 blur-3xl" />
+            <div aria-hidden className="absolute -bottom-16 -right-16 size-48 rounded-full bg-violet-500/15 blur-3xl" />
+            <div className="relative">
+              <div className="inline-flex items-center gap-2 rounded-full border border-indigo-300/30 bg-indigo-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-indigo-200">
+                <Smartphone className="size-3.5" />
+                {ro ? "Produs dedicat" : "Dedicated product"}
+              </div>
+              <div className="mt-5 flex items-center justify-center gap-3">
+                <div className="size-12 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-700 grid place-items-center shadow-[0_0_24px_-6px_rgba(99,102,241,0.6)]">
+                  <Smartphone className="size-6 text-white" />
+                </div>
+                <div className="size-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-700 grid place-items-center shadow-[0_0_24px_-6px_rgba(139,92,246,0.6)]">
+                  <Layers className="size-6 text-white" />
+                </div>
+                <div className="size-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-700 grid place-items-center shadow-[0_0_24px_-6px_rgba(34,211,238,0.6)]">
+                  <Code2 className="size-6 text-white" />
+                </div>
+              </div>
+              <h2 className="mt-5 font-display text-2xl sm:text-3xl font-extrabold">
+                {ro ? "Aplicații Mobile & Web" : "Mobile & Web Apps"}
+              </h2>
+              <p className="mt-2 text-xs uppercase tracking-[0.25em] text-white/50">
+                {ro ? "iOS · Android · PWA · SaaS" : "iOS · Android · PWA · SaaS"}
+              </p>
+              <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
+                <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-indigo-300 to-violet-500 bg-clip-text text-transparent break-words">
+                  {currency === "EUR" ? "de la 2500€" : `${ro ? "de la" : "from"} ${Math.round(2500 * rate)} RON`}
+                </span>
+              </div>
+              <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">
+                {ro
+                  ? "Construim aplicații mobile și web custom — de la idee, prototip și UX, până la publicare în App Store, Google Play sau pe propriul tău domeniu. Lucrăm cu tehnologii moderne (React, React Native, Node, Supabase) care îți dau viteză, scalare reală și un cost de mentenanță predictibil pe termen lung."
+                  : "We build custom mobile and web apps — from idea, prototype and UX through to publishing on the App Store, Google Play or your own domain. We use modern technologies (React, React Native, Node, Supabase) that deliver speed, real scalability and predictable long-term maintenance cost."}
+              </p>
+            </div>
+          </div>
+          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
+            <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">{ro ? "Include:" : "Includes:"}</div>
+            <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
+              {(ro
+                ? [
+                    { icon: <Sparkles className="size-4" />, text: "Sesiune de discovery + wireframe-uri și prototip Figma" },
+                    { icon: <Layers className="size-4" />, text: "Design UX/UI custom, sistem de componente și dark mode" },
+                    { icon: <Code2 className="size-4" />, text: "Cod nativ-friendly (React Native) sau Web App / PWA" },
+                    { icon: <Apple className="size-4" />, text: "Publicare App Store & Google Play (cont, build, review)" },
+                    { icon: <Cloud className="size-4" />, text: "Backend, bază de date, autentificare și API-uri securizate" },
+                    { icon: <Bell className="size-4" />, text: "Notificări push, deep links și onboarding utilizator" },
+                    { icon: <BarChart3 className="size-4" />, text: "Analytics, crash reporting și A/B testing integrate" },
+                    { icon: <Cpu className="size-4" />, text: "Integrări AI / API-uri externe (plăți, hărți, OCR, chat)" },
+                    { icon: <Shield className="size-4" />, text: "GDPR, criptare, roluri de utilizator și audit de securitate" },
+                    { icon: <RefreshCw className="size-4" />, text: "Update-uri OTA, versionare și roadmap pe minim 12 luni" },
+                  ]
+                : [
+                    { icon: <Sparkles className="size-4" />, text: "Discovery session + wireframes and Figma prototype" },
+                    { icon: <Layers className="size-4" />, text: "Custom UX/UI design, component system and dark mode" },
+                    { icon: <Code2 className="size-4" />, text: "Native-friendly code (React Native) or Web App / PWA" },
+                    { icon: <Apple className="size-4" />, text: "App Store & Google Play publishing (account, build, review)" },
+                    { icon: <Cloud className="size-4" />, text: "Backend, database, authentication and secure APIs" },
+                    { icon: <Bell className="size-4" />, text: "Push notifications, deep links and user onboarding" },
+                    { icon: <BarChart3 className="size-4" />, text: "Built-in analytics, crash reporting and A/B testing" },
+                    { icon: <Cpu className="size-4" />, text: "AI integrations / external APIs (payments, maps, OCR, chat)" },
+                    { icon: <Shield className="size-4" />, text: "GDPR, encryption, user roles and security audit" },
+                    { icon: <RefreshCw className="size-4" />, text: "OTA updates, versioning and 12+ month roadmap" },
+                  ]
+              ).map((f) => (
+                <li key={f.text} className="flex items-start gap-2 text-sm text-white/85">
+                  <span className="mt-0.5 size-5 rounded-md bg-indigo-400/15 text-indigo-300 grid place-items-center shrink-0">
+                    {f.icon}
+                  </span>
+                  <span>{f.text}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-6 flex justify-center">
+              <a
+                href="https://wa.me/40734605055?text=Bună! Sunt interesat de o aplicație mobilă sau web (iOS / Android / PWA)."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-indigo-500 to-violet-600 text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
+              >
+                <Smartphone className="size-4" />
+                {ro ? "Vreau aplicație Mobile / Web" : "I want a Mobile / Web app"}
+              </a>
+            </div>
+          </div>
+        </section>
+
 
 
         {/* Care plans */}
