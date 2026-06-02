@@ -518,7 +518,7 @@ const Pricing = () => {
               </p>
               <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-indigo-300 to-violet-500 bg-clip-text text-transparent break-words">
-                  {currency === "EUR" ? "de la 2500€" : `${ro ? "de la" : "from"} ${Math.round(2500 * rate)} RON`}
+                  {currency === "EUR" ? "de la 1500€" : `${ro ? "de la" : "from"} ${Math.round(1500 * rate)} RON`}
                 </span>
               </div>
               <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">
