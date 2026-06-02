@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Check, CreditCard, Building2, Link2, FileText, Sparkles, Zap, Crown, Shield, RefreshCw, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import logo from "@/assets/avyron-logo.jpg";
-import premiumTech from "@/assets/premium-tech.png.asset.json";
+import premiumTech from "@/assets/premium-soft.png.asset.json";
 
 /**
  * PlayStation-inspired pricing page.
@@ -282,13 +282,14 @@ const Pricing = () => {
                 <BadgeCheck className="size-3.5" />
                 {ro ? "Produs principal" : "Main product"}
               </div>
-              <div className="mt-5 mx-auto w-32 h-32 sm:w-36 sm:h-36 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-blue-600/10 ring-1 ring-cyan-300/20 grid place-items-center shadow-[0_0_40px_-8px_rgba(34,211,238,0.6)] overflow-hidden">
-                <img src={premiumTech.url} alt="Website Prezentare Premium" width={144} height={144} loading="lazy" className="w-full h-full object-contain" />
+              <div className="mt-5 mx-auto w-36 h-36 sm:w-40 sm:h-40 rounded-2xl bg-gradient-to-br from-white/[0.04] to-white/[0.01] ring-1 ring-white/10 grid place-items-center overflow-hidden">
+                <img src={premiumTech.url} alt="Website Prezentare Premium" width={160} height={160} loading="lazy" className="w-full h-full object-contain opacity-95" />
               </div>
               <h2 className="mt-4 font-display text-2xl sm:text-3xl font-extrabold">{main.title}</h2>
               <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-cyan-300 to-blue-500 bg-clip-text text-transparent break-words">
-                  {currency === "EUR" ? "de la 300€" : `${ro ? "de la" : "from"} ${Math.round(300 * rate)} RON`}
+                  <span className="text-[50%] font-semibold align-middle mr-1.5 opacity-80">{ro ? "de la" : "from"}</span>
+                  {currency === "EUR" ? "300€" : `${Math.round(300 * rate)} RON`}
                 </span>
               </div>
               <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">{main.desc}</p>
@@ -347,7 +348,8 @@ const Pricing = () => {
               </p>
               <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-pink-300 to-purple-500 bg-clip-text text-transparent break-words">
-                  {currency === "EUR" ? "de la 250€" : `${ro ? "de la" : "from"} ${Math.round(250 * rate)} RON`}
+                  <span className="text-[50%] font-semibold align-middle mr-1.5 opacity-80">{ro ? "de la" : "from"}</span>
+                  {currency === "EUR" ? "250€" : `${Math.round(250 * rate)} RON`}
                 </span>
               </div>
               <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">
@@ -429,7 +431,8 @@ const Pricing = () => {
               </p>
               <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-emerald-300 to-teal-500 bg-clip-text text-transparent break-words">
-                  {currency === "EUR" ? "de la 1000€" : `${ro ? "de la" : "from"} ${Math.round(1000 * rate)} RON`}
+                  <span className="text-[50%] font-semibold align-middle mr-1.5 opacity-80">{ro ? "de la" : "from"}</span>
+                  {currency === "EUR" ? "1000€" : `${Math.round(1000 * rate)} RON`}
                 </span>
               </div>
               <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">
@@ -521,7 +524,8 @@ const Pricing = () => {
               </p>
               <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-indigo-300 to-violet-500 bg-clip-text text-transparent break-words">
-                  {currency === "EUR" ? "de la 1500€" : `${ro ? "de la" : "from"} ${Math.round(1500 * rate)} RON`}
+                  <span className="text-[50%] font-semibold align-middle mr-1.5 opacity-80">{ro ? "de la" : "from"}</span>
+                  {currency === "EUR" ? "1500€" : `${Math.round(1500 * rate)} RON`}
                 </span>
               </div>
               <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">
@@ -671,7 +675,7 @@ const Pricing = () => {
             {payments.map((p) => (
               <div
                 key={p.title}
-                className="group rounded-2xl border border-white/10 bg-white/[0.03] p-5 hover:border-cyan-300/30 hover:bg-white/[0.06] transition-all backdrop-blur"
+                className="group rounded-2xl border border-white/10 bg-white/[0.03] p-5 hover:border-cyan-300/30 hover:bg-white/[0.06] transition-all backdrop-blur flex flex-col items-center text-center"
               >
                 <div className="size-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 grid place-items-center text-white">
                   {p.icon}
