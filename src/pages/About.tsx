@@ -313,8 +313,8 @@ const About = () => {
                     key: e.slug,
                     name: e.domain,
                     tag: ro
-                      ? `${e.category.ro} — Exemplu Avyron`
-                      : `${e.category.en} — Avyron example`,
+                      ? `${e.category.ro} — Site`
+                      : `${e.category.en} — Site`,
                     desc: ro ? e.description.ro : e.description.en,
                     href: `/examples/${e.slug}`,
                     internal: true,
