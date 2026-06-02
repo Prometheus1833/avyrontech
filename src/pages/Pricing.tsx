@@ -230,6 +230,11 @@ const Pricing = () => {
             {ro ? "Înapoi" : "Back"}
           </Link>
           <div className="flex items-center gap-2">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.04] px-2 py-1 backdrop-blur">
+              <LangSwitch />
+              <span aria-hidden className="w-px h-3 bg-white/15" />
+              <ThemeToggle />
+            </div>
             <img src={logo} alt="Avyron" className="size-7 sm:size-8 rounded-md ring-1 ring-white/20" />
             <span className="font-display tracking-[0.2em] sm:tracking-[0.25em] text-xs sm:text-sm">AVYRON</span>
           </div>
