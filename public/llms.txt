@@ -7,7 +7,7 @@ Avyron este un studio românesc de produse digitale: web development, mobile, cy
 ## Pages
 
 - [Acasă](/): Servicii, proces, exemple și avantaje Avyron.
-- [Despre noi & Portofoliu](/despre): Echipa, specializări și proiecte realizate (Miago, Flawlesstudio, Retuvo).
+- [Despre noi & Portofoliu](/despre-si-portofoliu): Echipa, specializări și proiecte realizate (Miago, Flawlesstudio, Retuvo).
 - [Costuri & Mentenanță](/costuri): Pachete transparente, prețuri și planuri de întreținere.
 - [Noutăți](/noutati): Articole și actualizări.
 - [Confidențialitate & GDPR](/gdpr): Politica de confidențialitate.

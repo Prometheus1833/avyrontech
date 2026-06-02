@@ -28,7 +28,7 @@ const ExamplePage = () => {
       {/* Banner Avyron — minim, sticky, ca să fie evident că e exemplu */}
       <div className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur">
         <div className="max-w-6xl mx-auto px-4 h-11 flex items-center justify-between text-xs">
-          <Link to="/despre#portofoliu" className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors">
+          <Link to="/despre-si-portofoliu#portofoliu" className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="size-3.5" />
             <span className="font-mono uppercase tracking-[0.18em]">Înapoi la portofoliu</span>
           </Link>
