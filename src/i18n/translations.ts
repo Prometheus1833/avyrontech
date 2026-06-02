@@ -823,9 +823,9 @@ export const translations = {
         ii: "Individual enterprise",
         other: "Other",
       },
-      heroTitle: "Welcome to your Avyron space",
+      heroTitle: "Welcome to the AVYRON community.",
       heroDesc:
-        "Create your account to stay up to date with the latest products, collaborations, technologies and recurring security tips. As a registered user you get access to exclusive news and relevant tech content.",
+        "// Direct access to products, collaborations, tech and security tips. Relevant technical content, delivered without the noise.",
       clientPerksTitle: "Already an Avyron client?",
       clientPerksDesc:
         "Easily monitor all purchased or in-progress products, maintenance status and collaborations with our team — all in one intuitive mini-dashboard. Plus, pay recurring invoices directly from the platform.",
