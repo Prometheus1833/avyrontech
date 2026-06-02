@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import DOMPurify from "dompurify";
 
 import {
   Facebook, Instagram, Share2, Newspaper, Plus, ExternalLink,
@@ -76,12 +77,31 @@ const renderMarkdown = (md: string) => {
   const lines = md.split("\n");
   const out: React.ReactNode[] = [];
   let ul: string[] = [], ol: string[] = [];
-  const inline = (s: string) =>
-    s
+  // Only accept safe URL schemes for links
+  const safeUrl = (u: string) => {
+    const trimmed = u.trim();
+    if (/^(https?:|mailto:|tel:|#|\/)/i.test(trimmed)) return trimmed;
+    return "#";
+  };
+  // Escape HTML in user content before applying markdown patterns
+  const escapeHtml = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  const inline = (s: string) => {
+    const escaped = escapeHtml(s);
+    const html = escaped
       .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>')
-      .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-brand underline-offset-2 hover:underline font-medium">$1</a>')
+      .replace(/\[(.+?)\]\((.+?)\)/g, (_m, label, url) =>
+        `<a href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer" class="text-brand underline-offset-2 hover:underline font-medium">${label}</a>`,
+      )
       .replace(/(#\w+)/g, '<span class="text-brand/80 font-medium">$1</span>')
       .replace(/(@\w+)/g, '<span class="text-brand-2 font-medium">$1</span>');
+    // Defense in depth: sanitize the final HTML
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ["strong", "em", "a", "span", "br", "code"],
+      ALLOWED_ATTR: ["href", "target", "rel", "class"],
+      ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|#|\/)/i,
+    });
+  };
   const flushUl = () => { if (ul.length) { out.push(<ul key={`u${out.length}`} className="list-disc pl-6 space-y-1.5 my-3">{ul.map((l, i) => <li key={i} dangerouslySetInnerHTML={{ __html: inline(l) }} />)}</ul>); ul = []; } };
   const flushOl = () => { if (ol.length) { out.push(<ol key={`o${out.length}`} className="list-decimal pl-6 space-y-1.5 my-3">{ol.map((l, i) => <li key={i} dangerouslySetInnerHTML={{ __html: inline(l) }} />)}</ol>); ol = []; } };
   lines.forEach((raw, i) => {
