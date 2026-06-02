@@ -3,3 +3,7 @@ compatibility_date = "2026-05-02"
 
 [build]
 command = "npm install && npm run build"
+
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"
