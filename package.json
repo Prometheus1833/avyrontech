@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "deploy": "wrangler deploy --config wrangler.toml",
+    "deploy:dry-run": "wrangler deploy --dry-run --config wrangler.toml",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
@@ -89,6 +91,7 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
     "vite": "^6.4.2",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "wrangler": "^4.96.0"
   }
 }
