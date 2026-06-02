@@ -100,24 +100,48 @@ const Footer = () => {
           </a>
         </div>
 
-        {/* Nav inline */}
-        <nav className="mt-7 flex flex-wrap items-center justify-center gap-2 md:gap-3">
-          {t.footer.navItems.map((n) => {
-            const isGdpr = n.h === "/gdpr";
+        {/* Nav — primary buttons grid + legal row */}
+        <nav className="mt-7" aria-label={t.footer.nav}>
+          {(() => {
+            const items = t.footer.navItems;
+            const primary = items.filter((n) => n.h !== "/gdpr");
+            const legal = items.filter((n) => n.h === "/gdpr");
             const baseClass =
-              "rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 font-display font-semibold text-white/90 hover:text-white transition-all";
-            const sizeClass = isGdpr
-              ? "px-2.5 py-1.5 md:px-4 md:py-2 text-[11px] md:text-sm"
-              : "px-4 py-2 md:px-5 md:py-2.5 text-sm md:text-base";
-            // Anchor link → route to home with hash so it works from any page
-            const to = n.h.startsWith("#") ? `/${n.h}` : n.h;
+              "inline-flex items-center justify-center text-center rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 font-display font-semibold text-white/90 hover:text-white transition-all";
             return (
-              <Link key={n.h} to={to} className={`${baseClass} ${sizeClass}`}>
-                {n.l}
-              </Link>
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 max-w-3xl mx-auto">
+                  {primary.map((n) => {
+                    const to = n.h.startsWith("#") ? `/${n.h}` : n.h;
+                    return (
+                      <Link
+                        key={n.h}
+                        to={to}
+                        className={`${baseClass} px-3 py-2.5 text-[13px] md:text-sm`}
+                      >
+                        {n.l}
+                      </Link>
+                    );
+                  })}
+                </div>
+                {legal.length > 0 && (
+                  <div className="mt-3 flex justify-center">
+                    {legal.map((n) => (
+                      <Link
+                        key={n.h}
+                        to={n.h}
+                        className={`${baseClass} px-3.5 py-1.5 text-[11px] md:text-xs`}
+                      >
+                        {n.l}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </>
             );
-          })}
+          })()}
         </nav>
+
 
         {/* ANPC badge */}
         <div className="mt-5 flex justify-center">
