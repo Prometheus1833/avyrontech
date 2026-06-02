@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import {
   Send, Hash, Users2, Smile, Paperclip, Mic, Reply, MoreHorizontal,
   Search, ShieldCheck, Crown, Code2, Palette, Megaphone, Headphones,
-  Circle, AtSign, Pin, Bell, Check, CheckCheck, X, Plus, Inbox,
+  Circle, AtSign, Pin, Bell, Check, CheckCheck, X, Plus, Inbox, UserPlus, UsersRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, isToday, isYesterday } from "date-fns";
