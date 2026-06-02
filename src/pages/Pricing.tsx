@@ -139,7 +139,7 @@ const Pricing = () => {
       accent: "text-cyan-300",
       features: ro
         ? [
-            "Tot din Pro",
+            "Pro +",
             "Modificări / actualizări / postări nelimitate",
             "Optimizare SEO continuă",
             "Monitorizare și analiză trafic",
