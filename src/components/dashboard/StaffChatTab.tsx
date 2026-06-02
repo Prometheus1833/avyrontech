@@ -495,29 +495,85 @@ export const StaffChatTab = () => {
                   </div>
                 </div>
 
-                {/* Clients section */}
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Users2 className="size-3.5 text-muted-foreground" />
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Clienți — {clients.length}</span>
+                {/* Membri grup activ (dacă e cazul) */}
+                {target.type === "group" && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <UsersRound className="size-3.5 text-primary" />
+                      <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                        În acest grup — {(target as any).memberIds?.length ?? 0}
+                      </span>
+                    </div>
+                    <Button size="sm" variant="outline" className="w-full gap-1.5 h-8"
+                      onClick={() => { setInviteOpen(true); setNewGroupMembers((target as any).memberIds); setNewGroupName(target.name); }}>
+                      <UserPlus className="size-3.5" /> <span className="text-xs">Invită alți colegi</span>
+                    </Button>
                   </div>
-                  <div className="space-y-1">
-                    {clients.slice(0, 30).map(c => {
-                      const name = c.display_name || c.pseudonym || "Client";
-                      return (
-                        <div key={c.id} className="flex items-center gap-2 p-1.5 rounded-md hover:bg-muted">
-                          <Avatar className="size-7"><AvatarImage src={c.avatar_url ?? undefined} /><AvatarFallback className="text-[10px]">{name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
-                          <span className="text-xs truncate">{name}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                )}
               </div>
             </ScrollArea>
           </aside>
         )}
       </div>
+
+      {/* ===== Invite / create-group dialog ===== */}
+      {inviteOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 backdrop-blur-sm p-4" onClick={() => setInviteOpen(false)}>
+          <div className="w-full max-w-md rounded-2xl border bg-card shadow-xl p-5 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-2">
+              <UsersRound className="size-5 text-primary" />
+              <h3 className="font-semibold">{target.type === "group" ? "Invită colegi" : "Conversație de grup nouă"}</h3>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Nume grup</label>
+              <Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder="ex: Lansare site Plase Ieftine" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Selectează membri staff</label>
+              <div className="max-h-64 overflow-y-auto rounded-lg border divide-y">
+                {staff.filter(s => s.id !== user?.id).map(s => {
+                  const name = s.pseudonym || s.display_name || "Staff";
+                  const meta = STAFF_ROLE_META[s.staff_role || "dev"];
+                  const checked = newGroupMembers.includes(s.id);
+                  return (
+                    <label key={s.id} className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-muted/50">
+                      <input type="checkbox" checked={checked}
+                        onChange={() => setNewGroupMembers(m => checked ? m.filter(i => i !== s.id) : [...m, s.id])}
+                        className="size-4 accent-primary" />
+                      <Avatar className="size-7"><AvatarImage src={s.avatar_url ?? undefined} /><AvatarFallback className="text-[10px]">{name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
+                      <span className="text-sm flex-1 truncate">{name}</span>
+                      {meta && <span className={cn("text-[10px] font-mono uppercase", meta.color)}>{meta.label}</span>}
+                    </label>
+                  );
+                })}
+                {staff.filter(s => s.id !== user?.id).length === 0 && (
+                  <p className="text-xs text-muted-foreground p-3 text-center">Niciun coleg disponibil.</p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <Button variant="ghost" onClick={() => setInviteOpen(false)}>Anulează</Button>
+              <Button onClick={() => {
+                if (!newGroupName.trim() || newGroupMembers.length === 0) { toast.error("Adaugă nume și cel puțin un membru."); return; }
+                if (target.type === "group") {
+                  setGroups(gs => gs.map(g => g.id === target.id ? { ...g, name: newGroupName.trim(), memberIds: newGroupMembers } : g));
+                  setTarget({ type: "group", id: target.id, name: newGroupName.trim(), memberIds: newGroupMembers });
+                  toast.success("Grup actualizat");
+                } else {
+                  const id = crypto.randomUUID();
+                  const g = { id, name: newGroupName.trim(), memberIds: newGroupMembers };
+                  setGroups(gs => [...gs, g]);
+                  setTarget({ type: "group", id, name: g.name, memberIds: g.memberIds });
+                  toast.success("Grup creat");
+                }
+                setInviteOpen(false);
+              }}>
+                {target.type === "group" ? "Salvează" : "Creează grup"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </TooltipProvider>
   );
 };
