@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Check, CreditCard, Building2, Link2, FileText, Sparkles, Zap, Crown, Shield, RefreshCw, Hourglass, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import logo from "@/assets/avyron-logo.jpg";
-import premiumTech from "@/assets/premium-mockup.jpg.asset.json";
+import premiumTech from "@/assets/premium-website-mockup.jpg";
 
 /**
  * PlayStation-inspired pricing page.
@@ -273,7 +273,7 @@ const Pricing = () => {
         </section>
 
         {/* Main product */}
-        <section className="mt-12 grid md:grid-cols-5 gap-5">
+        <section className="mt-8 grid md:grid-cols-5 gap-4 items-start">
             <div className="md:col-span-2 rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-[#0a0f24] to-[#05060f] p-5 sm:p-6 relative overflow-hidden text-center">
             {/* Decorative glow */}
             <div aria-hidden className="absolute -top-16 -right-16 size-48 rounded-full bg-cyan-400/15 blur-3xl" />
@@ -283,7 +283,7 @@ const Pricing = () => {
                 {ro ? "Produs principal" : "Main product"}
               </div>
               <div className="mt-5 mx-auto w-40 h-40 sm:w-44 sm:h-44 rounded-2xl ring-1 ring-cyan-300/20 overflow-hidden shadow-[0_20px_60px_-20px_rgba(34,211,238,0.45)]">
-                <img src={premiumTech.url} alt="Website Prezentare Premium" width={176} height={176} loading="lazy" className="w-full h-full object-cover" />
+                <img src={premiumTech} alt="Website Prezentare Premium — exemplu" width={176} height={176} loading="lazy" className="w-full h-full object-cover" />
               </div>
               <h2 className="mt-4 font-display text-2xl sm:text-3xl font-extrabold">{main.title}</h2>
               <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
@@ -299,7 +299,7 @@ const Pricing = () => {
               </div>
             </div>
           </div>
-          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
+          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
             <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">{ro ? "Include:" : "Includes:"}</div>
             <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
               {main.includes.map((f) => (
@@ -309,7 +309,7 @@ const Pricing = () => {
                 </li>
               ))}
             </ul>
-            <div className="mt-6 flex justify-center">
+            <div className="mt-5 flex justify-center">
               <a
                 href="https://wa.me/40734605055?text=Bună! Sunt interesat de Website Prezentare Premium."
                 target="_blank"
@@ -324,7 +324,7 @@ const Pricing = () => {
         </section>
 
         {/* Identitate Social Media */}
-        <section className="mt-12 grid md:grid-cols-5 gap-5">
+        <section className="mt-8 grid md:grid-cols-5 gap-4 items-start">
           <div className="md:col-span-2 rounded-2xl border border-pink-300/20 bg-gradient-to-br from-[#1a0a24] to-[#05060f] p-5 sm:p-6 relative overflow-hidden text-center">
             <div aria-hidden className="absolute -top-16 -left-16 size-48 rounded-full bg-pink-400/15 blur-3xl" />
             <div aria-hidden className="absolute -bottom-16 -right-16 size-48 rounded-full bg-purple-500/15 blur-3xl" />
@@ -367,7 +367,7 @@ const Pricing = () => {
               </div>
             </div>
           </div>
-          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
+          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
             <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">{ro ? "Include:" : "Includes:"}</div>
             <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
               {(ro
@@ -404,7 +404,7 @@ const Pricing = () => {
                 </li>
               ))}
             </ul>
-            <div className="mt-6 flex justify-center">
+            <div className="mt-5 flex justify-center">
               <a
                 href="https://wa.me/40734605055?text=Bună! Sunt interesat de pachetul Identitate Social Media (Facebook, Instagram, TikTok)."
                 target="_blank"
@@ -419,7 +419,7 @@ const Pricing = () => {
         </section>
 
         {/* Platformă eCommerce / Shopify */}
-        <section className="mt-12 grid md:grid-cols-5 gap-5">
+        <section className="mt-8 grid md:grid-cols-5 gap-4 items-start">
           <div className="md:col-span-2 rounded-2xl border border-emerald-300/20 bg-gradient-to-br from-[#04221a] to-[#05060f] p-5 sm:p-6 relative overflow-hidden text-center">
             <div aria-hidden className="absolute -top-16 -right-16 size-48 rounded-full bg-emerald-400/15 blur-3xl" />
             <div aria-hidden className="absolute -bottom-16 -left-16 size-48 rounded-full bg-teal-500/15 blur-3xl" />
@@ -454,7 +454,7 @@ const Pricing = () => {
               </div>
             </div>
           </div>
-          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
+          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
             <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">{ro ? "Include:" : "Includes:"}</div>
             <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
               {(ro
@@ -493,7 +493,7 @@ const Pricing = () => {
                 </li>
               ))}
             </ul>
-            <div className="mt-6 flex justify-center">
+            <div className="mt-5 flex justify-center">
               <a
                 href="https://wa.me/40734605055?text=Bună! Sunt interesat de un magazin online (Platformă eCommerce / Shopify)."
                 target="_blank"
@@ -508,7 +508,7 @@ const Pricing = () => {
         </section>
 
         {/* Aplicații Mobile & Web */}
-        <section className="mt-12 grid md:grid-cols-5 gap-5">
+        <section className="mt-8 grid md:grid-cols-5 gap-4 items-start">
           <div className="md:col-span-2 rounded-2xl border border-indigo-300/20 bg-gradient-to-br from-[#0a0f2e] to-[#05060f] p-5 sm:p-6 relative overflow-hidden text-center">
             <div aria-hidden className="absolute -top-16 -left-16 size-48 rounded-full bg-indigo-400/15 blur-3xl" />
             <div aria-hidden className="absolute -bottom-16 -right-16 size-48 rounded-full bg-violet-500/15 blur-3xl" />
@@ -551,7 +551,7 @@ const Pricing = () => {
               </div>
             </div>
           </div>
-          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
+          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
             <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">{ro ? "Include:" : "Includes:"}</div>
             <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
               {(ro
@@ -588,7 +588,7 @@ const Pricing = () => {
                 </li>
               ))}
             </ul>
-            <div className="mt-6 flex justify-center">
+            <div className="mt-5 flex justify-center">
               <a
                 href="https://wa.me/40734605055?text=Bună! Sunt interesat de o aplicație mobilă sau web (iOS / Android / PWA)."
                 target="_blank"
