@@ -37,7 +37,26 @@ const Pricing = () => {
   const { lang } = useLang();
   const ro = lang === "ro";
   const [currency, setCurrency] = useState<"EUR" | "RON">("EUR");
-  const rate = 5; // indicative leu/euro rate for display only
+  const [rate, setRate] = useState<number>(5); // EUR -> RON, indicative fallback
+  const [rateUpdated, setRateUpdated] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    // Free, no-auth EUR->RON rate (ECB data via Frankfurter)
+    fetch("https://api.frankfurter.dev/v1/latest?base=EUR&symbols=RON")
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((d: { rates?: { RON?: number }; date?: string }) => {
+        if (cancelled) return;
+        if (d?.rates?.RON && d.rates.RON > 0) {
+          setRate(Number(d.rates.RON.toFixed(4)));
+          if (d.date) setRateUpdated(d.date);
+        }
+      })
+      .catch(() => {
+        // keep fallback
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
