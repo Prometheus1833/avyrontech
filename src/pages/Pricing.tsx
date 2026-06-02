@@ -273,7 +273,7 @@ const Pricing = () => {
         </section>
 
         {/* Main product */}
-        <section className="mt-12 grid md:grid-cols-5 gap-5">
+        <section className="mt-8 grid md:grid-cols-5 gap-4 items-start">
             <div className="md:col-span-2 rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-[#0a0f24] to-[#05060f] p-5 sm:p-6 relative overflow-hidden text-center">
             {/* Decorative glow */}
             <div aria-hidden className="absolute -top-16 -right-16 size-48 rounded-full bg-cyan-400/15 blur-3xl" />
@@ -309,7 +309,7 @@ const Pricing = () => {
                 </li>
               ))}
             </ul>
-            <div className="mt-6 flex justify-center">
+            <div className="mt-5 flex justify-center">
               <a
                 href="https://wa.me/40734605055?text=Bună! Sunt interesat de Website Prezentare Premium."
                 target="_blank"
@@ -324,7 +324,7 @@ const Pricing = () => {
         </section>
 
         {/* Identitate Social Media */}
-        <section className="mt-12 grid md:grid-cols-5 gap-5">
+        <section className="mt-8 grid md:grid-cols-5 gap-4 items-start">
           <div className="md:col-span-2 rounded-2xl border border-pink-300/20 bg-gradient-to-br from-[#1a0a24] to-[#05060f] p-5 sm:p-6 relative overflow-hidden text-center">
             <div aria-hidden className="absolute -top-16 -left-16 size-48 rounded-full bg-pink-400/15 blur-3xl" />
             <div aria-hidden className="absolute -bottom-16 -right-16 size-48 rounded-full bg-purple-500/15 blur-3xl" />
@@ -404,7 +404,7 @@ const Pricing = () => {
                 </li>
               ))}
             </ul>
-            <div className="mt-6 flex justify-center">
+            <div className="mt-5 flex justify-center">
               <a
                 href="https://wa.me/40734605055?text=Bună! Sunt interesat de pachetul Identitate Social Media (Facebook, Instagram, TikTok)."
                 target="_blank"
@@ -419,7 +419,7 @@ const Pricing = () => {
         </section>
 
         {/* Platformă eCommerce / Shopify */}
-        <section className="mt-12 grid md:grid-cols-5 gap-5">
+        <section className="mt-8 grid md:grid-cols-5 gap-4 items-start">
           <div className="md:col-span-2 rounded-2xl border border-emerald-300/20 bg-gradient-to-br from-[#04221a] to-[#05060f] p-5 sm:p-6 relative overflow-hidden text-center">
             <div aria-hidden className="absolute -top-16 -right-16 size-48 rounded-full bg-emerald-400/15 blur-3xl" />
             <div aria-hidden className="absolute -bottom-16 -left-16 size-48 rounded-full bg-teal-500/15 blur-3xl" />
@@ -493,7 +493,7 @@ const Pricing = () => {
                 </li>
               ))}
             </ul>
-            <div className="mt-6 flex justify-center">
+            <div className="mt-5 flex justify-center">
               <a
                 href="https://wa.me/40734605055?text=Bună! Sunt interesat de un magazin online (Platformă eCommerce / Shopify)."
                 target="_blank"
@@ -508,7 +508,7 @@ const Pricing = () => {
         </section>
 
         {/* Aplicații Mobile & Web */}
-        <section className="mt-12 grid md:grid-cols-5 gap-5">
+        <section className="mt-8 grid md:grid-cols-5 gap-4 items-start">
           <div className="md:col-span-2 rounded-2xl border border-indigo-300/20 bg-gradient-to-br from-[#0a0f2e] to-[#05060f] p-5 sm:p-6 relative overflow-hidden text-center">
             <div aria-hidden className="absolute -top-16 -left-16 size-48 rounded-full bg-indigo-400/15 blur-3xl" />
             <div aria-hidden className="absolute -bottom-16 -right-16 size-48 rounded-full bg-violet-500/15 blur-3xl" />
@@ -588,7 +588,7 @@ const Pricing = () => {
                 </li>
               ))}
             </ul>
-            <div className="mt-6 flex justify-center">
+            <div className="mt-5 flex justify-center">
               <a
                 href="https://wa.me/40734605055?text=Bună! Sunt interesat de o aplicație mobilă sau web (iOS / Android / PWA)."
                 target="_blank"
