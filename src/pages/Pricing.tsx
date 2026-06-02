@@ -534,9 +534,9 @@ const Pricing = () => {
               <p className="mt-2 text-xs uppercase tracking-[0.25em] text-white/50">
                 {ro ? "iOS · Android · PWA · SaaS" : "iOS · Android · PWA · SaaS"}
               </p>
-              <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
+              <div className="mt-3 flex items-baseline justify-center gap-1.5 flex-wrap">
+                <span className="text-sm sm:text-base font-semibold text-white/70">{ro ? "de la" : "from"}</span>
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-indigo-300 to-violet-500 bg-clip-text text-transparent break-words">
-                  <span className="text-[50%] font-semibold align-middle mr-1.5 opacity-80">{ro ? "de la" : "from"}</span>
                   {currency === "EUR" ? "1500€" : `${Math.round(1500 * rate)} RON`}
                 </span>
               </div>
