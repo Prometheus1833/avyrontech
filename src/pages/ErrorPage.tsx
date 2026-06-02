@@ -194,7 +194,7 @@ const ErrorPage = ({ variant = "404" }: Props) => {
             <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
               <Link to="/despre-si-portofoliu" className="hover:text-foreground">Despre Avyron</Link>
               <span aria-hidden className="opacity-30">·</span>
-              <Link to="/costuri" className="hover:text-foreground">Costuri</Link>
+              <Link to="/costurisiproduse" className="hover:text-foreground">Costuri</Link>
               <span aria-hidden className="opacity-30">·</span>
               <Link to="/noutati" className="hover:text-foreground">Noutăți</Link>
               <span aria-hidden className="opacity-30">·</span>
