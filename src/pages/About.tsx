@@ -174,7 +174,7 @@ const About = () => {
         {/* glow halo */}
         <div className="pointer-events-none absolute left-1/2 top-[-20%] -translate-x-1/2 size-[640px] rounded-full bg-brand/20 blur-[120px]" aria-hidden />
         <div className="pointer-events-none absolute right-[-10%] bottom-[-30%] size-[420px] rounded-full bg-foreground/10 blur-[120px]" aria-hidden />
-        <div className="relative mx-auto max-w-5xl px-4 py-20 md:py-28 text-center">
+        <div className="relative mx-auto max-w-5xl px-4 pt-16 md:pt-20 pb-10 md:pb-12 text-center">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -211,7 +211,7 @@ const About = () => {
       </section>
 
       {/* Process / collaboration */}
-      <section className="py-16 md:py-24 relative">
+      <section className="pt-10 md:pt-14 pb-16 md:pb-24 relative">
         <div className="mx-auto max-w-6xl px-4">
           <div className="max-w-2xl mx-auto text-center">
             <h2 className="font-display font-bold text-3xl md:text-5xl tracking-tight">
