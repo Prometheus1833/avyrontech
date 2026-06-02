@@ -51,8 +51,11 @@ const UserMenu = () => {
     .join("")
     .toUpperCase();
 
+  const productsLabel = (t.nav as any).products ?? "Produse";
+
   const userItems: MenuItem[] = [
     { label: t.auth.menu.profile, icon: UserIcon, to: "/profil?tab=profile" },
+    { label: productsLabel, icon: Boxes, to: "/costurisiproduse" },
     { label: t.auth.menu.product, icon: Package, to: "/profil?tab=subscriptions" },
     { label: t.auth.menu.subscription, icon: CreditCard, to: "/profil?tab=invoices" },
     { label: t.auth.menu.cart, icon: ShoppingCart, to: "/profil?tab=cart" },
@@ -63,6 +66,7 @@ const UserMenu = () => {
 
   const staffItems: MenuItem[] = [
     { label: t.auth.menu.profile, icon: UserIcon, to: "/profil?tab=profile" },
+    { label: productsLabel, icon: Boxes, to: "/costurisiproduse" },
     { label: t.auth.menu.projects, icon: FolderKanban, to: "/profil?tab=projects" },
     { label: t.auth.menu.maintenance, icon: Wrench, to: "/profil?tab=maintenance" },
     { label: t.auth.menu.internal, icon: UsersIcon, to: "/profil?tab=intern" },
