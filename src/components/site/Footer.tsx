@@ -22,102 +22,85 @@ const Footer = () => {
       <div className="absolute inset-0 bg-gradient-to-r from-[#0a0612] via-[#0a0612]/85 to-[#0a0612]/40" aria-hidden />
       <div className="absolute inset-0 bg-gradient-to-t from-[#0a0612] via-transparent to-[#0a0612]/60" aria-hidden />
 
-      <div className="relative mx-auto max-w-6xl px-4 pt-10 pb-6">
-        {/* Brand row */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-3">
+      <div className="relative mx-auto max-w-6xl px-4 pt-5 pb-4">
+        {/* Top row: brand + CTA + WhatsApp + contact — single compact bar */}
+        <div className="flex flex-col md:flex-row md:items-center gap-3">
+          {/* Brand */}
+          <div className="flex items-center gap-2 shrink-0">
             <img
               src={logo}
               alt="Avyron"
-              width={40}
-              height={40}
-              className="size-10 rounded-lg object-cover ring-1 ring-white/20"
+              width={32}
+              height={32}
+              className="size-8 rounded-lg object-cover ring-1 ring-white/20"
               loading="lazy"
             />
             <div className="min-w-0">
-              <div className="font-display font-extrabold text-xl sm:text-2xl md:text-3xl tracking-[0.15em] sm:tracking-[0.18em] bg-gradient-to-r from-white via-purple-200 to-purple-400 bg-clip-text text-transparent">
+              <div className="font-display font-extrabold text-lg md:text-xl tracking-[0.15em] bg-gradient-to-r from-white via-purple-200 to-purple-400 bg-clip-text text-transparent leading-none">
                 AVYRON
               </div>
-              <div className="font-display text-[9px] sm:text-[10px] md:text-xs tracking-[0.22em] sm:tracking-[0.3em] uppercase text-white/70">
+              <div className="font-display text-[9px] tracking-[0.22em] uppercase text-white/60 leading-tight mt-0.5">
                 Innovate. <span className="text-purple-300">Develop.</span> Elevate.
               </div>
             </div>
           </div>
 
-          {/* Standalone CTA + WhatsApp — equal width */}
-          <div className="grid grid-cols-2 gap-2 self-stretch md:self-auto w-full md:w-auto">
+          {/* CTA + WhatsApp + Phone + Email — compact pill cluster */}
+          <div className="flex flex-wrap items-center justify-center md:justify-end gap-1.5 flex-1">
             <Link
               to="/#cta"
-              className="group inline-flex items-center justify-between gap-3 rounded-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 px-4 sm:px-5 py-2.5 sm:py-3 shadow-[0_10px_30px_-10px_rgba(168,85,247,0.6)] transition-all md:min-w-[200px]"
+              className="group inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 px-3 py-1.5 shadow-[0_6px_16px_-6px_rgba(168,85,247,0.5)] transition-all"
             >
-              <span className="flex flex-col leading-tight items-center text-center flex-1">
-                <span className="font-display font-semibold text-sm md:text-base">{t.footer.ctaLabel}</span>
-                <span className="text-[10px] uppercase tracking-widest text-white/80">{t.footer.ctaSub}</span>
-              </span>
-              <span className="size-8 rounded-full bg-white/15 grid place-items-center group-hover:translate-x-0.5 transition-transform shrink-0">
-                <ArrowRight className="size-4" />
-              </span>
+              <span className="font-display font-semibold text-xs text-white">{t.footer.ctaLabel}</span>
+              <ArrowRight className="size-3 group-hover:translate-x-0.5 transition-transform" />
             </Link>
             <a
               href="https://wa.me/40734605055"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="WhatsApp"
-              className="group inline-flex items-center justify-between gap-3 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] px-4 sm:px-5 py-2.5 sm:py-3 shadow-[0_10px_30px_-10px_rgba(37,211,102,0.6)] hover:scale-[1.02] transition-transform ring-1 ring-white/10 md:min-w-[200px]"
+              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] px-3 py-1.5 shadow-[0_6px_16px_-6px_rgba(37,211,102,0.5)] hover:scale-[1.03] transition-transform"
             >
-              <span className="flex flex-col leading-tight items-center text-center flex-1">
-                <span className="font-display font-semibold text-sm md:text-base text-white">WhatsApp</span>
-                <span className="text-[10px] uppercase tracking-widest text-white/80">Scrie-ne acum</span>
-              </span>
-              <span className="size-8 rounded-full bg-white/20 grid place-items-center shrink-0">
-                <MessageCircle className="size-4 text-white" />
-              </span>
+              <MessageCircle className="size-3 text-white" />
+              <span className="font-display font-semibold text-xs text-white">WhatsApp</span>
+            </a>
+            <a
+              href="tel:+40734605055"
+              aria-label={t.footer.phoneLabel}
+              className="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/30 bg-gradient-to-br from-cyan-500/15 to-sky-600/15 hover:from-cyan-500/25 hover:to-sky-600/25 hover:border-cyan-300/60 px-3 py-1.5 transition-all"
+            >
+              <Phone className="size-3 text-cyan-300" />
+              <span className="text-xs text-white/90 font-medium hidden sm:inline">Sună-ne</span>
+            </a>
+            <a
+              href="mailto:avyrontech@gmail.com"
+              aria-label={t.footer.emailLabel}
+              className="inline-flex items-center gap-1.5 rounded-full border border-pink-300/30 bg-gradient-to-br from-pink-500/15 to-rose-600/15 hover:from-pink-500/25 hover:to-rose-600/25 hover:border-pink-300/60 px-3 py-1.5 transition-all"
+            >
+              <Mail className="size-3 text-pink-300" />
+              <span className="text-xs text-white/90 font-medium hidden sm:inline">E-mail</span>
             </a>
           </div>
         </div>
 
-        {/* Compact contact icons row: phone + email */}
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-          <a
-            href="tel:+40734605055"
-            aria-label={t.footer.phoneLabel}
-            className="inline-flex items-center gap-2.5 rounded-full border border-cyan-300/30 bg-gradient-to-br from-cyan-500/15 to-sky-600/15 hover:from-cyan-500/25 hover:to-sky-600/25 hover:border-cyan-300/60 px-4 sm:px-5 py-2.5 sm:py-3 transition-all"
-          >
-            <span className="size-8 rounded-full bg-gradient-to-br from-cyan-400 to-sky-600 grid place-items-center">
-              <Phone className="size-4 text-white" />
-            </span>
-            <span className="text-sm sm:text-base text-white/90 font-medium">Sună-ne</span>
-          </a>
-          <a
-            href="mailto:avyrontech@gmail.com"
-            aria-label={t.footer.emailLabel}
-            className="inline-flex items-center gap-2.5 rounded-full border border-pink-300/30 bg-gradient-to-br from-pink-500/15 to-rose-600/15 hover:from-pink-500/25 hover:to-rose-600/25 hover:border-pink-300/60 px-4 sm:px-5 py-2.5 sm:py-3 transition-all"
-          >
-            <span className="size-8 rounded-full bg-gradient-to-br from-pink-400 to-rose-600 grid place-items-center">
-              <Mail className="size-4 text-white" />
-            </span>
-            <span className="text-sm sm:text-base text-white/90 font-medium">Scrie-ne un E-mail</span>
-          </a>
-        </div>
-
-        {/* Nav — primary buttons grid + legal row */}
-        <nav className="mt-7" aria-label={t.footer.nav}>
+        {/* Nav — compact pill row */}
+        <nav className="mt-3" aria-label={t.footer.nav}>
           {(() => {
             const items = t.footer.navItems;
             const primary = items.filter((n) => n.h !== "/gdpr");
             const legal = items.filter((n) => n.h === "/gdpr");
             const baseClass =
-              "inline-flex items-center justify-center text-center rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 font-display font-semibold text-white/90 hover:text-white transition-all";
+              "inline-flex items-center justify-center text-center rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 font-display font-medium text-white/85 hover:text-white transition-all leading-none";
             return (
               <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 max-w-3xl mx-auto">
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 max-w-3xl mx-auto">
                   {primary.map((n) => {
                     const to = n.h.startsWith("#") ? `/${n.h}` : n.h;
                     return (
                       <Link
                         key={n.h}
                         to={to}
-                        className={`${baseClass} px-3 py-2.5 text-[13px] md:text-sm`}
+                        className={`${baseClass} px-2 py-1.5 text-[11px] sm:text-xs`}
                       >
                         {n.l}
                       </Link>
@@ -125,12 +108,12 @@ const Footer = () => {
                   })}
                 </div>
                 {legal.length > 0 && (
-                  <div className="mt-3 flex justify-center">
+                  <div className="mt-1.5 flex justify-center">
                     {legal.map((n) => (
                       <Link
                         key={n.h}
                         to={n.h}
-                        className={`${baseClass} px-3.5 py-1.5 text-[11px] md:text-xs`}
+                        className={`${baseClass} px-3 py-1 text-[10px]`}
                       >
                         {n.l}
                       </Link>
@@ -142,27 +125,24 @@ const Footer = () => {
           })()}
         </nav>
 
-
-        {/* ANPC badge */}
-        <div className="mt-5 flex justify-center">
+        {/* ANPC + copyright — single compact row */}
+        <div className="mt-3 pt-2.5 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-2">
           <button
             type="button"
             aria-label="ANPC — Autoritatea Națională pentru Protecția Consumatorilor"
-            className="inline-flex items-center gap-3 rounded-lg border border-white/15 bg-white/[0.06] hover:bg-white/[0.12] px-4 py-2 transition-colors"
+            className="inline-flex items-center gap-2 rounded-md border border-white/15 bg-white/[0.06] hover:bg-white/[0.12] px-2.5 py-1 transition-colors"
           >
-            <span className="size-9 rounded-md bg-white grid place-items-center shrink-0">
-              <span className="font-display font-extrabold text-[11px] tracking-tight text-[#0a0612]">ANPC</span>
+            <span className="size-6 rounded bg-white grid place-items-center shrink-0">
+              <span className="font-display font-extrabold text-[9px] tracking-tight text-[#0a0612]">ANPC</span>
             </span>
-            <span className="flex flex-col text-left leading-tight">
-              <span className="text-[10px] uppercase tracking-widest text-white/60">Protecția consumatorilor</span>
-              <span className="text-xs sm:text-sm text-white font-medium">anpc.ro — SOL / SAL</span>
+            <span className="text-[10px] text-white/60 leading-tight">
+              anpc.ro — SOL / SAL
             </span>
           </button>
-        </div>
-
-        <div className="mt-6 pt-4 border-t border-white/10 text-xs text-white/55 flex flex-wrap justify-between gap-2">
-          <span>{t.footer.copy.replace("{y}", String(new Date().getFullYear()))}</span>
-          <span>{t.footer.built}</span>
+          <div className="text-[10px] text-white/50 flex flex-wrap justify-center gap-x-3 gap-y-0.5">
+            <span>{t.footer.copy.replace("{y}", String(new Date().getFullYear()))}</span>
+            <span>{t.footer.built}</span>
+          </div>
         </div>
       </div>
     </footer>
