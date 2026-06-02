@@ -675,7 +675,7 @@ const Pricing = () => {
             {payments.map((p) => (
               <div
                 key={p.title}
-                className="group rounded-2xl border border-white/10 bg-white/[0.03] p-5 hover:border-cyan-300/30 hover:bg-white/[0.06] transition-all backdrop-blur"
+                className="group rounded-2xl border border-white/10 bg-white/[0.03] p-5 hover:border-cyan-300/30 hover:bg-white/[0.06] transition-all backdrop-blur flex flex-col items-center text-center"
               >
                 <div className="size-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 grid place-items-center text-white">
                   {p.icon}
