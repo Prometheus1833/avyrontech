@@ -4,7 +4,14 @@ import { Recycle, Smartphone, ScanLine, Wallet, MapPin, ArrowRight, Check, Trend
 
 const RetuvoDemo = () => {
   useEffect(() => {
-    document.title = "Retuvo · Recuperează garanția";
+    import("@/lib/seo").then(({ setPageMeta }) =>
+      setPageMeta({
+        title: "Retuvo — Demo aplicație reciclare și garanție realizată de Avyron",
+        description:
+          "Exemplu de aplicație mobilă pentru reciclare ambalaje și recuperarea garanției: hartă puncte, scanare coduri și parteneri, realizată de Avyron.",
+        path: "/exemple/retuvo",
+      })
+    );
   }, []);
 
   return (
