@@ -4,7 +4,14 @@ import { Calendar, Sparkles, Star, Heart, ArrowRight, MapPin, Phone, Instagram, 
 
 const FlawlesstudioDemo = () => {
   useEffect(() => {
-    document.title = "Flawlesstudio · Salon premium";
+    import("@/lib/seo").then(({ setPageMeta }) =>
+      setPageMeta({
+        title: "Flawlesstudio — Demo site salon premium realizat de Avyron",
+        description:
+          "Exemplu de website pentru salon de înfrumusețare: programări online, echipă, galerie servicii și design premium realizat de Avyron.",
+        path: "/exemple/flawlesstudio",
+      })
+    );
   }, []);
 
   return (
