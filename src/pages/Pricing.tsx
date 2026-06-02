@@ -291,6 +291,17 @@ const Pricing = () => {
                 </span>
               </div>
               <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">{main.desc}</p>
+              <div className="mt-5 flex justify-center">
+                <a
+                  href="https://wa.me/40734605055?text=Bună! Sunt interesat de Website Prezentare Premium."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#25D366] hover:bg-[#1ebe5a] px-5 py-2.5 text-sm font-bold text-white transition-colors"
+                >
+                  <MessageCircle className="size-4" />
+                  {ro ? "Vreau Website Prezentare Premium" : "I want a Premium Presentation Website"}
+                </a>
+              </div>
             </div>
           </div>
           <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
