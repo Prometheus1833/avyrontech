@@ -335,9 +335,9 @@ export const translations = {
         ii: "Întreprindere individuală",
         other: "Altele",
       },
-      heroTitle: "Bun venit în zona ta Avyron",
+      heroTitle: "Bun venit în comunitatea AVYRON.",
       heroDesc:
-        "Creează-ți contul ca să rămâi mereu la curent cu cele mai noi produse, colaborări, tehnologii și sfaturi periodice de securitate. Ca utilizator înregistrat ai acces la noutăți exclusive și conținut tehnic relevant.",
+        "// Acces direct la produse, colaborări, tehnologii și sfaturi de securitate. Conținut tehnic relevant, livrat fără zgomot.",
       clientPerksTitle: "Ești client Avyron?",
       clientPerksDesc:
         "Monitorizează simplu și eficient toate produsele achiziționate sau în lucru, statusul mentenanței și colaborărilor cu echipa noastră — totul într-un mini-dashboard intuitiv. În plus, plătești facturile recurente direct din platformă.",
