@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Check, CreditCard, Building2, Link2, FileText, Sparkles, Zap, Crown, Shield, RefreshCw, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import logo from "@/assets/avyron-logo.jpg";
-import premiumTech from "@/assets/premium-soft.png.asset.json";
+import premiumTech from "@/assets/work-lawyer-new.jpg";
 
 /**
  * PlayStation-inspired pricing page.
@@ -282,8 +282,8 @@ const Pricing = () => {
                 <BadgeCheck className="size-3.5" />
                 {ro ? "Produs principal" : "Main product"}
               </div>
-              <div className="mt-5 mx-auto w-36 h-36 sm:w-40 sm:h-40 rounded-2xl bg-gradient-to-br from-white/[0.04] to-white/[0.01] ring-1 ring-white/10 grid place-items-center overflow-hidden">
-                <img src={premiumTech.url} alt="Website Prezentare Premium" width={160} height={160} loading="lazy" className="w-full h-full object-contain opacity-95" />
+              <div className="mt-5 mx-auto w-40 h-40 sm:w-44 sm:h-44 rounded-2xl ring-1 ring-cyan-300/20 overflow-hidden shadow-[0_20px_60px_-20px_rgba(34,211,238,0.45)]">
+                <img src={premiumTech} alt="Website Prezentare Premium" width={176} height={176} loading="lazy" className="w-full h-full object-cover" />
               </div>
               <h2 className="mt-4 font-display text-2xl sm:text-3xl font-extrabold">{main.title}</h2>
               <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
@@ -293,16 +293,9 @@ const Pricing = () => {
                 </span>
               </div>
               <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">{main.desc}</p>
-              <div className="mt-5 flex justify-center">
-                <a
-                  href="https://wa.me/40734605055?text=Bună! Sunt interesat de Website Prezentare Premium."
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full bg-[#25D366] hover:bg-[#1ebe5a] px-5 py-2.5 text-sm font-bold text-white transition-colors"
-                >
-                  <MessageCircle className="size-4" />
-                  {ro ? "Vreau Website Prezentare Premium" : "I want a Premium Presentation Website"}
-                </a>
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/[0.06] px-3 py-1.5 text-[11px] text-cyan-100">
+                <RefreshCw className="size-3.5" />
+                {ro ? "Timp aproximativ dezvoltare: 2–5 zile" : "Approx. development time: 2–5 days"}
               </div>
             </div>
           </div>
@@ -316,6 +309,17 @@ const Pricing = () => {
                 </li>
               ))}
             </ul>
+            <div className="mt-6 flex justify-center">
+              <a
+                href="https://wa.me/40734605055?text=Bună! Sunt interesat de Website Prezentare Premium."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#25D366] hover:bg-[#1ebe5a] px-5 py-2.5 text-sm font-bold text-white transition-colors"
+              >
+                <MessageCircle className="size-4" />
+                {ro ? "Vreau Website Prezentare Premium" : "I want a Premium Presentation Website"}
+              </a>
+            </div>
           </div>
         </section>
 
@@ -357,6 +361,10 @@ const Pricing = () => {
                   ? "Construim de la zero identitatea ta în social media — conturi profesionale, coerente vizual și pregătite să convertească. Configurăm tot ce ține de prezență, descrieri, design, postări inițiale și butoane de acțiune, sincronizate cu website-ul tău pentru o experiență unitară între online și client."
                   : "We build your social media identity from scratch — professional accounts, visually coherent and conversion-ready. We set up presence, bios, design, initial posts and action buttons, all synced with your website for a seamless online experience."}
               </p>
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-pink-300/20 bg-pink-300/[0.06] px-3 py-1.5 text-[11px] text-pink-100">
+                <RefreshCw className="size-3.5" />
+                {ro ? "Timp aproximativ dezvoltare: 2–5 zile" : "Approx. development time: 2–5 days"}
+              </div>
             </div>
           </div>
           <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
@@ -440,6 +448,10 @@ const Pricing = () => {
                   ? "Magazin online complet, optimizat pentru vânzări reale — catalog de produse, coș, checkout securizat și plăți online integrate. Construim pe Shopify sau pe stack custom, în funcție de scară, cu accent pe viteză, conversie și un panou ușor de administrat de oricine din echipa ta."
                   : "A full online store optimized for real sales — product catalog, cart, secure checkout and integrated online payments. We build on Shopify or on a custom stack depending on scale, focused on speed, conversion and an admin panel anyone on your team can use."}
               </p>
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/[0.06] px-3 py-1.5 text-[11px] text-emerald-100">
+                <RefreshCw className="size-3.5" />
+                {ro ? "Timp aproximativ dezvoltare: 7–21 zile" : "Approx. development time: 7–21 days"}
+              </div>
             </div>
           </div>
           <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
@@ -533,6 +545,10 @@ const Pricing = () => {
                   ? "Construim aplicații mobile și web custom — de la idee, prototip și UX, până la publicare în App Store, Google Play sau pe propriul tău domeniu. Lucrăm cu tehnologii moderne (React, React Native, Node, Supabase) care îți dau viteză, scalare reală și un cost de mentenanță predictibil pe termen lung."
                   : "We build custom mobile and web apps — from idea, prototype and UX through to publishing on the App Store, Google Play or your own domain. We use modern technologies (React, React Native, Node, Supabase) that deliver speed, real scalability and predictable long-term maintenance cost."}
               </p>
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-indigo-300/20 bg-indigo-300/[0.06] px-3 py-1.5 text-[11px] text-indigo-100">
+                <RefreshCw className="size-3.5" />
+                {ro ? "Timp aproximativ dezvoltare: 7–30 zile" : "Approx. development time: 7–30 days"}
+              </div>
             </div>
           </div>
           <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
