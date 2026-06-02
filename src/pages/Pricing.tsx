@@ -282,8 +282,8 @@ const Pricing = () => {
                 <BadgeCheck className="size-3.5" />
                 {ro ? "Produs principal" : "Main product"}
               </div>
-              <div className="mt-5 mx-auto size-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 grid place-items-center shadow-[0_0_40px_-8px_rgba(34,211,238,0.6)]">
-                <Globe className="size-8 text-white" />
+              <div className="mt-5 mx-auto w-32 h-32 sm:w-36 sm:h-36 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-blue-600/10 ring-1 ring-cyan-300/20 grid place-items-center shadow-[0_0_40px_-8px_rgba(34,211,238,0.6)] overflow-hidden">
+                <img src={premiumTech.url} alt="Website Prezentare Premium" width={144} height={144} loading="lazy" className="w-full h-full object-contain" />
               </div>
               <h2 className="mt-4 font-display text-2xl sm:text-3xl font-extrabold">{main.title}</h2>
               <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
