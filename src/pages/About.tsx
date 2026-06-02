@@ -27,7 +27,15 @@ const About = () => {
   const ro = lang === "ro";
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    const hash = window.location.hash;
+    if (hash) {
+      setTimeout(() => {
+        const el = document.querySelector(hash);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    } else {
+      window.scrollTo(0, 0);
+    }
     const title = ro
       ? "Despre Noi & Portofoliu — Avyron Tech Products"
       : "About & Portfolio — Avyron Tech Products";
@@ -227,7 +235,7 @@ const About = () => {
       </section>
 
       {/* Portfolio */}
-      <section className="py-16 md:py-24 relative overflow-hidden">
+      <section id="portofoliu" className="py-16 md:py-24 relative overflow-hidden scroll-mt-24">
         <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-10 size-[520px] rounded-full bg-brand/10 blur-[120px]" aria-hidden />
         <div className="relative mx-auto max-w-6xl px-4">
           <div className="max-w-2xl mx-auto text-center">
