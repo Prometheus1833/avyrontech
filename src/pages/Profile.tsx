@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, LogOut, User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck, FolderKanban, Wrench, BookOpen, MessagesSquare, Settings, ShoppingCart, Globe } from "lucide-react";
+import { ArrowLeft, LogOut, User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck, FolderKanban, Wrench, BookOpen, MessagesSquare, Settings, ShoppingCart, Globe, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import { ProfileTab } from "@/components/dashboard/ProfileTab";
@@ -18,6 +18,7 @@ import { StaffMaintenanceTab } from "@/components/dashboard/StaffMaintenanceTab"
 import { StaffChatTab } from "@/components/dashboard/StaffChatTab";
 import { StaffResourcesTab } from "@/components/dashboard/StaffResourcesTab";
 import { StaffDomainStatsTab } from "@/components/dashboard/StaffDomainStatsTab";
+import { StaffExampleRequestsTab } from "@/components/dashboard/StaffExampleRequestsTab";
 import { SettingsTab } from "@/components/dashboard/SettingsTab";
 import { CartTab } from "@/components/dashboard/CartTab";
 
@@ -63,6 +64,7 @@ const Profile = () => {
     { value: "announcements", label: t.auth.dash.tabs.announcements, icon: Megaphone },
     { value: "resources", label: t.auth.dash.tabs.resources, icon: BookOpen },
     { value: "domains", label: "Domenii", icon: Globe },
+    { value: "demo-requests", label: "Solicitări demo", icon: Sparkles },
     { value: "settings", label: "Setări", icon: Settings },
   ];
 
@@ -131,6 +133,7 @@ const Profile = () => {
               <TabsContent value="announcements" className="mt-0"><StaffAnnouncementsTab /></TabsContent>
               <TabsContent value="resources" className="mt-0"><StaffResourcesTab /></TabsContent>
               <TabsContent value="domains" className="mt-0"><StaffDomainStatsTab /></TabsContent>
+              <TabsContent value="demo-requests" className="mt-0"><StaffExampleRequestsTab /></TabsContent>
             </>
           )}
         </Tabs>
