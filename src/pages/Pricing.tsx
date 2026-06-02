@@ -286,13 +286,13 @@ const Pricing = () => {
                 <img src={premiumTech} alt="Website Prezentare Premium — exemplu" width={176} height={176} loading="lazy" className="w-full h-full object-cover" />
               </div>
               <h2 className="mt-4 font-display text-2xl sm:text-3xl font-extrabold">{main.title}</h2>
-              <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
+              <div className="mt-3 flex items-baseline justify-center gap-1.5 flex-wrap">
+                <span className="text-sm sm:text-base font-semibold text-white/70">{ro ? "de la" : "from"}</span>
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-cyan-300 to-blue-500 bg-clip-text text-transparent break-words">
-                  <span className="text-[50%] font-semibold align-middle mr-1.5 opacity-80">{ro ? "de la" : "from"}</span>
                   {currency === "EUR" ? "300€" : `${Math.round(300 * rate)} RON`}
                 </span>
               </div>
-              <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">{main.desc}</p>
+              <p className="mt-3 text-xs sm:text-sm text-white/70 leading-snug text-left">{main.desc}</p>
               <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/[0.06] px-3 py-1.5 text-[11px] text-cyan-100">
                 <Hourglass className="size-3.5" />
                 {ro ? "Timp aproximativ dezvoltare: 2–5 zile" : "Approx. development time: 2–5 days"}
@@ -350,13 +350,13 @@ const Pricing = () => {
               <p className="mt-2 text-xs uppercase tracking-[0.25em] text-white/50">
                 {ro ? "Facebook · Instagram · TikTok" : "Facebook · Instagram · TikTok"}
               </p>
-              <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
+              <div className="mt-3 flex items-baseline justify-center gap-1.5 flex-wrap">
+                <span className="text-sm sm:text-base font-semibold text-white/70">{ro ? "de la" : "from"}</span>
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-pink-300 to-purple-500 bg-clip-text text-transparent break-words">
-                  <span className="text-[50%] font-semibold align-middle mr-1.5 opacity-80">{ro ? "de la" : "from"}</span>
                   {currency === "EUR" ? "250€" : `${Math.round(250 * rate)} RON`}
                 </span>
               </div>
-              <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">
+              <p className="mt-3 text-xs sm:text-sm text-white/70 leading-snug text-left">
                 {ro
                   ? "Construim de la zero identitatea ta în social media — conturi profesionale, coerente vizual și pregătite să convertească. Configurăm tot ce ține de prezență, descrieri, design, postări inițiale și butoane de acțiune, sincronizate cu website-ul tău pentru o experiență unitară între online și client."
                   : "We build your social media identity from scratch — professional accounts, visually coherent and conversion-ready. We set up presence, bios, design, initial posts and action buttons, all synced with your website for a seamless online experience."}
@@ -437,13 +437,13 @@ const Pricing = () => {
               <p className="mt-2 text-xs uppercase tracking-[0.25em] text-white/50">
                 {ro ? "Shopify · WooCommerce · Custom" : "Shopify · WooCommerce · Custom"}
               </p>
-              <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
+              <div className="mt-3 flex items-baseline justify-center gap-1.5 flex-wrap">
+                <span className="text-sm sm:text-base font-semibold text-white/70">{ro ? "de la" : "from"}</span>
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-emerald-300 to-teal-500 bg-clip-text text-transparent break-words">
-                  <span className="text-[50%] font-semibold align-middle mr-1.5 opacity-80">{ro ? "de la" : "from"}</span>
                   {currency === "EUR" ? "1000€" : `${Math.round(1000 * rate)} RON`}
                 </span>
               </div>
-              <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">
+              <p className="mt-3 text-xs sm:text-sm text-white/70 leading-snug text-left">
                 {ro
                   ? "Magazin online complet, optimizat pentru vânzări reale — catalog de produse, coș, checkout securizat și plăți online integrate. Construim pe Shopify sau pe stack custom, în funcție de scară, cu accent pe viteză, conversie și un panou ușor de administrat de oricine din echipa ta."
                   : "A full online store optimized for real sales — product catalog, cart, secure checkout and integrated online payments. We build on Shopify or on a custom stack depending on scale, focused on speed, conversion and an admin panel anyone on your team can use."}
@@ -534,13 +534,13 @@ const Pricing = () => {
               <p className="mt-2 text-xs uppercase tracking-[0.25em] text-white/50">
                 {ro ? "iOS · Android · PWA · SaaS" : "iOS · Android · PWA · SaaS"}
               </p>
-              <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
+              <div className="mt-3 flex items-baseline justify-center gap-1.5 flex-wrap">
+                <span className="text-sm sm:text-base font-semibold text-white/70">{ro ? "de la" : "from"}</span>
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-indigo-300 to-violet-500 bg-clip-text text-transparent break-words">
-                  <span className="text-[50%] font-semibold align-middle mr-1.5 opacity-80">{ro ? "de la" : "from"}</span>
                   {currency === "EUR" ? "1500€" : `${Math.round(1500 * rate)} RON`}
                 </span>
               </div>
-              <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">
+              <p className="mt-3 text-xs sm:text-sm text-white/70 leading-snug text-left">
                 {ro
                   ? "Construim aplicații mobile și web custom — de la idee, prototip și UX, până la publicare în App Store, Google Play sau pe propriul tău domeniu. Lucrăm cu tehnologii moderne (React, React Native, Node, Supabase) care îți dau viteză, scalare reală și un cost de mentenanță predictibil pe termen lung."
                   : "We build custom mobile and web apps — from idea, prototype and UX through to publishing on the App Store, Google Play or your own domain. We use modern technologies (React, React Native, Node, Supabase) that deliver speed, real scalability and predictable long-term maintenance cost."}
