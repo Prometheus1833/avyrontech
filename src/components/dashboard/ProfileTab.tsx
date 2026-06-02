@@ -23,7 +23,7 @@ export function ProfileTab() {
   const [form, setForm] = useState({
     display_name: "",
     pseudonym: "",
-    staff_role: "dev" as "dev" | "designer" | "marketing" | "support",
+    staff_role: "dev" as "dev" | "designer" | "marketing" | "support" | "admin",
     phone: "",
     address: "",
     entity_type: "individual" as "individual" | "srl" | "pfa" | "ii" | "other",
@@ -153,6 +153,7 @@ export function ProfileTab() {
                 >
                   <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="admin">{t.auth.profile.staffRoles.admin}</SelectItem>
                     <SelectItem value="dev">{t.auth.profile.staffRoles.dev}</SelectItem>
                     <SelectItem value="designer">{t.auth.profile.staffRoles.designer}</SelectItem>
                     <SelectItem value="marketing">{t.auth.profile.staffRoles.marketing}</SelectItem>

@@ -919,7 +919,7 @@ export type Database = {
         | "blocked"
         | "done"
         | "cancelled"
-      staff_role: "dev" | "designer" | "marketing" | "support"
+      staff_role: "dev" | "designer" | "marketing" | "support" | "admin"
       subscription_status: "active" | "suspended" | "cancelled" | "pending"
       ticket_priority: "low" | "medium" | "high" | "urgent"
       ticket_status: "open" | "in_progress" | "resolved" | "closed"
@@ -1071,7 +1071,7 @@ export const Constants = {
         "done",
         "cancelled",
       ],
-      staff_role: ["dev", "designer", "marketing", "support"],
+      staff_role: ["dev", "designer", "marketing", "support", "admin"],
       subscription_status: ["active", "suspended", "cancelled", "pending"],
       ticket_priority: ["low", "medium", "high", "urgent"],
       ticket_status: ["open", "in_progress", "resolved", "closed"],

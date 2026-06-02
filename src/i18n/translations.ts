@@ -393,7 +393,7 @@ export const translations = {
         pseudonym: "Pseudonim (afișat utilizatorilor)",
         pseudonymHint: "Doar pseudonimul va fi vizibil pentru utilizatori în chat și anunțuri.",
         staffRole: "Rol intern",
-        staffRoles: { dev: "Dev", designer: "Designer", marketing: "Marketing", support: "Support" },
+        staffRoles: { admin: "Admin", dev: "Dev", designer: "Designer", marketing: "Marketing", support: "Support" },
       },
       dash: {
         tabs: {
@@ -881,7 +881,7 @@ export const translations = {
         pseudonym: "Pseudonym (shown to users)",
         pseudonymHint: "Only your pseudonym is shown to users in chat and announcements.",
         staffRole: "Internal role",
-        staffRoles: { dev: "Dev", designer: "Designer", marketing: "Marketing", support: "Support" },
+        staffRoles: { admin: "Admin", dev: "Dev", designer: "Designer", marketing: "Marketing", support: "Support" },
       },
       dash: {
         tabs: {
