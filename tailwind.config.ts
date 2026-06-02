@@ -91,10 +91,15 @@ export default {
             height: "0",
           },
         },
+        "partners-scroll": {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "partners-scroll": "partners-scroll 38s linear infinite",
       },
     },
   },
