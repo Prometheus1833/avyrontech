@@ -53,7 +53,7 @@ const Pricing = () => {
   };
 
   const main = {
-    title: ro ? "Produs principal" : "Main product",
+    title: ro ? "Website Prezentare Premium" : "Premium Presentation Website",
     range: ro ? "de la 300€" : "from €300",
     desc: ro
       ? "Site complet, livrat la cheie — gata să producă rezultate din prima zi. Clientul nu mai are nimic de plătit pentru o perioadă de minim 1 lună până la 1 an (în funcție de cerințele și configurația inițială), iar produsul beneficiază de suport tehnic gratuit pe toată durata de viață: asistență la administrare, recomandări de securitate, răspuns prompt la întrebări și ghidare strategică pentru evoluția site-ului."
