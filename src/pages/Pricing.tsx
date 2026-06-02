@@ -242,7 +242,7 @@ const Pricing = () => {
               <ThemeToggle />
             </div>
             <Link
-              to="/#top"
+              to="/"
               aria-label={ro ? "Acasă" : "Home"}
               className="flex items-center gap-2 rounded-full px-1.5 py-1 hover:bg-foreground/5 transition-colors"
             >
