@@ -269,7 +269,9 @@ const Pricing = () => {
           </div>
           <p className="mt-2 text-[11px] uppercase tracking-widest text-white/40 inline-flex items-center gap-2">
             <RefreshCw className="size-3" />
-            {ro ? "Curs orientativ — facturare în RON la cursul BNR" : "Indicative rate — invoicing in RON at BNR rate"}
+            {ro
+              ? `Curs orientativ 1€ ≈ ${rate.toFixed(2)} RON${rateUpdated ? ` · ${rateUpdated}` : ""} · sursa ECB`
+              : `Indicative rate 1€ ≈ ${rate.toFixed(2)} RON${rateUpdated ? ` · ${rateUpdated}` : ""} · ECB source`}
           </p>
         </section>
 
