@@ -227,7 +227,7 @@ const About = () => {
       </section>
 
       {/* Portfolio */}
-      <section className="py-16 md:py-24 relative overflow-hidden">
+      <section id="portofoliu" className="py-16 md:py-24 relative overflow-hidden scroll-mt-24">
         <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-10 size-[520px] rounded-full bg-brand/10 blur-[120px]" aria-hidden />
         <div className="relative mx-auto max-w-6xl px-4">
           <div className="max-w-2xl mx-auto text-center">
