@@ -299,7 +299,7 @@ const Pricing = () => {
               </div>
             </div>
           </div>
-          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
+          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
             <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">{ro ? "Include:" : "Includes:"}</div>
             <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
               {main.includes.map((f) => (
@@ -367,7 +367,7 @@ const Pricing = () => {
               </div>
             </div>
           </div>
-          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
+          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
             <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">{ro ? "Include:" : "Includes:"}</div>
             <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
               {(ro
@@ -454,7 +454,7 @@ const Pricing = () => {
               </div>
             </div>
           </div>
-          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
+          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
             <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">{ro ? "Include:" : "Includes:"}</div>
             <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
               {(ro
@@ -551,7 +551,7 @@ const Pricing = () => {
               </div>
             </div>
           </div>
-          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
+          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
             <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">{ro ? "Include:" : "Includes:"}</div>
             <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
               {(ro
