@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import DOMPurify from "dompurify";
 
 import {
   Facebook, Instagram, Share2, Newspaper, Plus, ExternalLink,
