@@ -4,6 +4,12 @@ import Nav from "@/components/site/Nav";
 import Footer from "@/components/site/Footer";
 import { useLang } from "@/i18n/LanguageContext";
 import { ArrowUpRight, Sparkles, Recycle, ShoppingCart, UtensilsCrossed, Scale, Hotel } from "lucide-react";
+import workFlawlesstudio from "@/assets/work-beauty-flawless.jpg";
+import workRetuvo from "@/assets/work-miago-truck.jpg";
+import workMiago from "@/assets/work-public-miago.jpg";
+import workRestaurant from "@/assets/work-restaurant-new.jpg";
+import workLawyer from "@/assets/work-lawyer-new.jpg";
+import workHotel from "@/assets/work-hotel-new.jpg";
 
 const projects = [
   {
