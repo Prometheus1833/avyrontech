@@ -283,7 +283,7 @@ const Pricing = () => {
                 {ro ? "Produs principal" : "Main product"}
               </div>
               <div className="mt-5 mx-auto w-40 h-40 sm:w-44 sm:h-44 rounded-2xl ring-1 ring-cyan-300/20 overflow-hidden shadow-[0_20px_60px_-20px_rgba(34,211,238,0.45)]">
-                <img src={premiumTech} alt="Website Prezentare Premium" width={176} height={176} loading="lazy" className="w-full h-full object-cover" />
+                <img src={premiumTech.url} alt="Website Prezentare Premium" width={176} height={176} loading="lazy" className="w-full h-full object-cover" />
               </div>
               <h2 className="mt-4 font-display text-2xl sm:text-3xl font-extrabold">{main.title}</h2>
               <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
