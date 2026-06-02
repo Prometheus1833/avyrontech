@@ -447,6 +447,7 @@ const Pricing = () => {
                     { icon: <ShoppingBag className="size-4" />, text: "Coș, checkout securizat și pagini de produs orientate spre conversie" },
                     { icon: <CreditCard className="size-4" />, text: "Plăți online (card, Apple Pay, Google Pay) + ramburs" },
                     { icon: <Truck className="size-4" />, text: "Integrare curieri (FAN, Sameday, DPD) cu AWB automat" },
+                    { icon: <ShoppingBag className="size-4" />, text: "Integrare marketplace eMAG + Sameday cu livrare în România, Ungaria și Bulgaria" },
                     { icon: <FileText className="size-4" />, text: "Facturare automată (SmartBill / Oblio) și conformitate ANAF" },
                     { icon: <Tag className="size-4" />, text: "Coduri promo, reduceri, bundle-uri și campanii sezoniere" },
                     { icon: <BarChart3 className="size-4" />, text: "Pixel Meta / TikTok, GA4 și conversion tracking complet" },
