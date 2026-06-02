@@ -38,6 +38,7 @@ const App = () => (
               <Route path="/gdpr" element={<Gdpr />} />
               <Route path="/costuri" element={<Pricing />} />
               <Route path="/despre" element={<About />} />
+              <Route path="/despre-si-portofoliu" element={<About />} />
               <Route path="/exemple/flawlesstudio" element={<FlawlesstudioDemo />} />
               <Route path="/exemple/retuvo" element={<RetuvoDemo />} />
               <Route path="/noutati" element={<News />} />
