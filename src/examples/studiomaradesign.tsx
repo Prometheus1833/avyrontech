@@ -1,12 +1,16 @@
 import { useEffect } from "react";
 import { ArrowUpRight, Mail, Instagram } from "lucide-react";
 import avyronLogo from "@/assets/avyron-logo.jpg";
+import floreascaImg from "@/assets/mara-floreasca.jpg.asset.json";
+import auraImg from "@/assets/mara-aura.jpg.asset.json";
+import baneasaImg from "@/assets/mara-baneasa.jpg.asset.json";
+import lumenImg from "@/assets/mara-lumen.jpg.asset.json";
 
 const projects = [
-  { title: "Apartament Floreasca", year: "2024", tag: "Rezidențial · 92 mp · Stil japandi" },
-  { title: "Cabinet stomatologic Aura", year: "2024", tag: "Comercial · 140 mp · Sector 1" },
-  { title: "Penthouse Băneasa", year: "2023", tag: "Rezidențial · 180 mp · Două nivele" },
-  { title: "Showroom Lumen", year: "2023", tag: "Retail · 220 mp · Iluminat decorativ" },
+  { title: "Apartament Floreasca", year: "2024", tag: "Rezidențial · 92 mp · Stil japandi", img: floreascaImg.url },
+  { title: "Cabinet stomatologic Aura", year: "2024", tag: "Comercial · 140 mp · Sector 1", img: auraImg.url },
+  { title: "Penthouse Băneasa", year: "2023", tag: "Rezidențial · 180 mp · Două nivele", img: baneasaImg.url },
+  { title: "Showroom Lumen", year: "2023", tag: "Retail · 220 mp · Iluminat decorativ", img: lumenImg.url },
 ];
 
 export default function StudioMaraDesign() {
