@@ -11,6 +11,7 @@ import Gdpr from "./pages/Gdpr.tsx";
 import Pricing from "./pages/Pricing.tsx";
 import About from "./pages/About.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import ErrorPage from "./pages/ErrorPage.tsx";
 import FlawlesstudioDemo from "./pages/demos/FlawlesstudioDemo.tsx";
 import RetuvoDemo from "./pages/demos/RetuvoDemo.tsx";
 import Auth from "./pages/Auth.tsx";
@@ -49,6 +50,10 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route path="/403" element={<ErrorPage variant="403" />} />
+              <Route path="/500" element={<ErrorPage variant="500" />} />
+              <Route path="/mentenanta" element={<ErrorPage variant="maintenance" />} />
+              <Route path="/offline" element={<ErrorPage variant="offline" />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
