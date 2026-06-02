@@ -9,9 +9,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
-  Send, Hash, Users2, Smile, Paperclip, Mic, Reply, MoreHorizontal,
+  Send, Users2, Smile, Paperclip, Mic, Reply, MoreHorizontal,
   Search, ShieldCheck, Crown, Code2, Palette, Megaphone, Headphones,
-  Circle, AtSign, Pin, Bell, Check, CheckCheck, X, Plus, Inbox,
+  Circle, AtSign, Pin, Bell, Check, CheckCheck, X, Plus, Inbox, UserPlus, UsersRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, isToday, isYesterday } from "date-fns";
@@ -32,14 +32,17 @@ type Profile = {
   avatar_url: string | null;
   staff_role: string | null;
 };
-type ConvoTarget = { type: "channel"; id: string; name: string } | { type: "dm"; id: string; name: string };
+type ConvoTarget =
+  | { type: "channel"; id: string; name: string; emoji?: string }
+  | { type: "dm"; id: string; name: string }
+  | { type: "group"; id: string; name: string; memberIds: string[] };
 
 const STAFF_CHANNELS = [
-  { id: "general", name: "generala", topic: "Discuții generale ale echipei" },
-  { id: "dev", name: "dev", topic: "Implementări, bug-uri, deploy" },
-  { id: "design", name: "design", topic: "UI/UX, mockup-uri, branding" },
-  { id: "marketing", name: "marketing", topic: "Campanii, conținut, SEO" },
-  { id: "random", name: "pauza-cafea", topic: "Off-topic, meme, relax" },
+  { id: "general", name: "generala", emoji: "💬", topic: "Discuții generale ale echipei" },
+  { id: "dev", name: "dev", emoji: "💻", topic: "Implementări, bug-uri, deploy" },
+  { id: "design", name: "design", emoji: "🎨", topic: "UI/UX, mockup-uri, branding" },
+  { id: "marketing", name: "marketing", emoji: "📣", topic: "Campanii, conținut, SEO" },
+  { id: "random", name: "pauza-cafea", emoji: "☕", topic: "Off-topic, meme, relax" },
 ];
 
 const QUICK_REACTIONS = ["👍", "❤️", "🔥", "😂", "🎉", "👀", "✅"];
@@ -67,6 +70,10 @@ export const StaffChatTab = () => {
   const [reactions, setReactions] = useState<Record<string, Record<string, string[]>>>({});
   const [recording, setRecording] = useState(false);
   const [showMembers, setShowMembers] = useState(true);
+  const [groups, setGroups] = useState<Array<{ id: string; name: string; memberIds: string[] }>>([]);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [newGroupMembers, setNewGroupMembers] = useState<string[]>([]);
   const endRef = useRef<HTMLDivElement>(null);
 
   const loadProfiles = async (ids: string[]) => {
@@ -187,59 +194,7 @@ export const StaffChatTab = () => {
 
           <ScrollArea className="flex-1">
             <div className="p-3 space-y-6">
-              {/* Camere (channels, redenumite în spirit Signal/WhatsApp) */}
-              <div>
-                <div className="flex items-center justify-between px-2 mb-2">
-                  <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-muted-foreground">Camere</span>
-                  <Plus className="size-3.5 text-muted-foreground hover:text-foreground cursor-pointer" />
-                </div>
-                <div className="space-y-0.5">
-                  {STAFF_CHANNELS.map(c => {
-                    const active = target.type === "channel" && target.id === c.id;
-                    return (
-                      <button key={c.id} onClick={() => setTarget({ type: "channel", id: c.id, name: c.name })}
-                        className={cn("w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition",
-                          active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/70")}>
-                        <Hash className="size-4 shrink-0 opacity-70" />
-                        <span className="truncate">{c.name}</span>
-                        {c.id === "general" && <Badge variant="secondary" className="ml-auto h-4 px-1.5 text-[10px]">live</Badge>}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Staff DMs */}
-              <div>
-                <div className="flex items-center justify-between px-2 mb-2">
-                  <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-muted-foreground">Echipă</span>
-                  <span className="text-[10px] text-muted-foreground">{staff.length}</span>
-                </div>
-                <div className="space-y-0.5">
-                  {staff.filter(s => s.id !== user?.id).map(s => {
-                    const active = target.type === "dm" && target.id === s.id;
-                    const name = s.pseudonym || s.display_name || "Staff";
-                    const meta = STAFF_ROLE_META[s.staff_role || "dev"];
-                    return (
-                      <button key={s.id} onClick={() => setTarget({ type: "dm", id: s.id, name })}
-                        className={cn("w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition",
-                          active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/70")}>
-                        <div className="relative">
-                          <Avatar className="size-7"><AvatarImage src={s.avatar_url ?? undefined} /><AvatarFallback className="text-[10px]">{name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
-                          <Circle className="absolute -bottom-0.5 -right-0.5 size-2 fill-emerald-500 text-emerald-500" />
-                        </div>
-                        <span className="truncate flex items-center gap-1">
-                          <ShieldCheck className="size-3 text-primary shrink-0" />
-                          {name}
-                        </span>
-                        {meta && <meta.icon className={cn("size-3 ml-auto", meta.color)} />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Client chats */}
+              {/* Clienți — urcat sus */}
               <div>
                 <div className="flex items-center justify-between px-2 mb-2">
                   <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-muted-foreground">Clienți</span>
@@ -255,6 +210,59 @@ export const StaffChatTab = () => {
                           active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/70")}>
                         <Avatar className="size-7"><AvatarImage src={c.avatar_url ?? undefined} /><AvatarFallback className="text-[10px]">{name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
                         <span className="truncate">{name}</span>
+                      </button>
+                    );
+                  })}
+                  {clients.length === 0 && <p className="text-[11px] text-muted-foreground px-2">Niciun client momentan.</p>}
+                </div>
+              </div>
+
+              {/* Camere — # înlocuit cu emoji sugestiv */}
+              <div>
+                <div className="flex items-center justify-between px-2 mb-2">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-muted-foreground">Camere</span>
+                  <Plus className="size-3.5 text-muted-foreground hover:text-foreground cursor-pointer" />
+                </div>
+                <div className="space-y-0.5">
+                  {STAFF_CHANNELS.map(c => {
+                    const active = target.type === "channel" && target.id === c.id;
+                    return (
+                      <button key={c.id} onClick={() => setTarget({ type: "channel", id: c.id, name: c.name, emoji: c.emoji })}
+                        className={cn("w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition",
+                          active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/70")}>
+                        <span className="text-base leading-none shrink-0">{c.emoji}</span>
+                        <span className="truncate">{c.name}</span>
+                        {c.id === "general" && <Badge variant="secondary" className="ml-auto h-4 px-1.5 text-[10px]">live</Badge>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Grupuri — conversații cu mai mulți membri staff */}
+              <div>
+                <div className="flex items-center justify-between px-2 mb-2">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-muted-foreground">Grupuri</span>
+                  <button
+                    onClick={() => { setInviteOpen(true); setNewGroupMembers([]); setNewGroupName(""); }}
+                    className="inline-flex items-center gap-1 text-[10px] font-medium text-primary hover:underline"
+                  >
+                    <UserPlus className="size-3" /> Nou
+                  </button>
+                </div>
+                <div className="space-y-0.5">
+                  {groups.length === 0 && (
+                    <p className="text-[11px] text-muted-foreground px-2">Nicio conversație de grup. Apasă <em>Nou</em> ca să inviți mai mulți colegi.</p>
+                  )}
+                  {groups.map(g => {
+                    const active = target.type === "group" && target.id === g.id;
+                    return (
+                      <button key={g.id} onClick={() => setTarget({ type: "group", id: g.id, name: g.name, memberIds: g.memberIds })}
+                        className={cn("w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition",
+                          active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/70")}>
+                        <UsersRound className="size-4 shrink-0 opacity-70" />
+                        <span className="truncate">{g.name}</span>
+                        <span className="ml-auto text-[10px] text-muted-foreground">{g.memberIds.length}</span>
                       </button>
                     );
                   })}
@@ -277,11 +285,21 @@ export const StaffChatTab = () => {
         <section className="flex-1 min-w-0 flex flex-col bg-background">
           {/* Top bar */}
           <div className="h-14 border-b border-border/70 flex items-center px-4 gap-3">
-            {target.type === "channel" ? <Hash className="size-5 text-muted-foreground" /> : <AtSign className="size-5 text-muted-foreground" />}
+            {target.type === "channel" ? (
+              <span className="text-xl leading-none">{(target as any).emoji ?? STAFF_CHANNELS.find(c => c.id === target.id)?.emoji ?? "💬"}</span>
+            ) : target.type === "group" ? (
+              <UsersRound className="size-5 text-muted-foreground" />
+            ) : (
+              <AtSign className="size-5 text-muted-foreground" />
+            )}
             <div className="min-w-0">
               <p className="font-semibold truncate">{target.name}</p>
               <p className="text-[11px] text-muted-foreground truncate">
-                {target.type === "channel" ? (STAFF_CHANNELS.find(c => c.id === target.id)?.topic ?? "") : "Conversație directă"}
+                {target.type === "channel"
+                  ? (STAFF_CHANNELS.find(c => c.id === target.id)?.topic ?? "")
+                  : target.type === "group"
+                    ? `${(target as any).memberIds?.length ?? 0} membri · conversație de grup`
+                    : "Conversație directă"}
               </p>
             </div>
             <div className="ml-auto flex items-center gap-1">
@@ -289,6 +307,12 @@ export const StaffChatTab = () => {
                 <Search className="size-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Caută…" className="h-8 pl-7 w-44 text-xs" />
               </div>
+              <Tooltip><TooltipTrigger asChild>
+                <Button size="sm" variant="outline" className="h-8 gap-1.5"
+                  onClick={() => { setInviteOpen(true); setNewGroupMembers(target.type === "group" ? (target as any).memberIds : []); setNewGroupName(target.type === "group" ? target.name : ""); }}>
+                  <UserPlus className="size-3.5" /> <span className="hidden sm:inline text-xs">Invită</span>
+                </Button>
+              </TooltipTrigger><TooltipContent>Invită colegi într-o conversație de grup</TooltipContent></Tooltip>
               <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" className="size-8"><Pin className="size-4" /></Button></TooltipTrigger><TooltipContent>Mesaje fixate</TooltipContent></Tooltip>
               <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" className="size-8"><Bell className="size-4" /></Button></TooltipTrigger><TooltipContent>Notificări</TooltipContent></Tooltip>
               <Tooltip><TooltipTrigger asChild>
@@ -303,7 +327,7 @@ export const StaffChatTab = () => {
           <ScrollArea className="flex-1">
             <div className="p-4 space-y-1">
               {grouped.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-12">Niciun mesaj pe {target.type === "channel" ? `#${target.name}` : `@${target.name}`}. Începe conversația!</p>
+                <p className="text-sm text-muted-foreground text-center py-12">Niciun mesaj încă. Începe conversația!</p>
               )}
               {grouped.map((row, i) => {
                 if (row.kind === "divider") {
@@ -471,29 +495,85 @@ export const StaffChatTab = () => {
                   </div>
                 </div>
 
-                {/* Clients section */}
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Users2 className="size-3.5 text-muted-foreground" />
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Clienți — {clients.length}</span>
+                {/* Membri grup activ (dacă e cazul) */}
+                {target.type === "group" && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <UsersRound className="size-3.5 text-primary" />
+                      <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                        În acest grup — {(target as any).memberIds?.length ?? 0}
+                      </span>
+                    </div>
+                    <Button size="sm" variant="outline" className="w-full gap-1.5 h-8"
+                      onClick={() => { setInviteOpen(true); setNewGroupMembers((target as any).memberIds); setNewGroupName(target.name); }}>
+                      <UserPlus className="size-3.5" /> <span className="text-xs">Invită alți colegi</span>
+                    </Button>
                   </div>
-                  <div className="space-y-1">
-                    {clients.slice(0, 30).map(c => {
-                      const name = c.display_name || c.pseudonym || "Client";
-                      return (
-                        <div key={c.id} className="flex items-center gap-2 p-1.5 rounded-md hover:bg-muted">
-                          <Avatar className="size-7"><AvatarImage src={c.avatar_url ?? undefined} /><AvatarFallback className="text-[10px]">{name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
-                          <span className="text-xs truncate">{name}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                )}
               </div>
             </ScrollArea>
           </aside>
         )}
       </div>
+
+      {/* ===== Invite / create-group dialog ===== */}
+      {inviteOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 backdrop-blur-sm p-4" onClick={() => setInviteOpen(false)}>
+          <div className="w-full max-w-md rounded-2xl border bg-card shadow-xl p-5 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-2">
+              <UsersRound className="size-5 text-primary" />
+              <h3 className="font-semibold">{target.type === "group" ? "Invită colegi" : "Conversație de grup nouă"}</h3>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Nume grup</label>
+              <Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder="ex: Lansare site Plase Ieftine" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Selectează membri staff</label>
+              <div className="max-h-64 overflow-y-auto rounded-lg border divide-y">
+                {staff.filter(s => s.id !== user?.id).map(s => {
+                  const name = s.pseudonym || s.display_name || "Staff";
+                  const meta = STAFF_ROLE_META[s.staff_role || "dev"];
+                  const checked = newGroupMembers.includes(s.id);
+                  return (
+                    <label key={s.id} className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-muted/50">
+                      <input type="checkbox" checked={checked}
+                        onChange={() => setNewGroupMembers(m => checked ? m.filter(i => i !== s.id) : [...m, s.id])}
+                        className="size-4 accent-primary" />
+                      <Avatar className="size-7"><AvatarImage src={s.avatar_url ?? undefined} /><AvatarFallback className="text-[10px]">{name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
+                      <span className="text-sm flex-1 truncate">{name}</span>
+                      {meta && <span className={cn("text-[10px] font-mono uppercase", meta.color)}>{meta.label}</span>}
+                    </label>
+                  );
+                })}
+                {staff.filter(s => s.id !== user?.id).length === 0 && (
+                  <p className="text-xs text-muted-foreground p-3 text-center">Niciun coleg disponibil.</p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <Button variant="ghost" onClick={() => setInviteOpen(false)}>Anulează</Button>
+              <Button onClick={() => {
+                if (!newGroupName.trim() || newGroupMembers.length === 0) { toast.error("Adaugă nume și cel puțin un membru."); return; }
+                if (target.type === "group") {
+                  setGroups(gs => gs.map(g => g.id === target.id ? { ...g, name: newGroupName.trim(), memberIds: newGroupMembers } : g));
+                  setTarget({ type: "group", id: target.id, name: newGroupName.trim(), memberIds: newGroupMembers });
+                  toast.success("Grup actualizat");
+                } else {
+                  const id = crypto.randomUUID();
+                  const g = { id, name: newGroupName.trim(), memberIds: newGroupMembers };
+                  setGroups(gs => [...gs, g]);
+                  setTarget({ type: "group", id, name: g.name, memberIds: g.memberIds });
+                  toast.success("Grup creat");
+                }
+                setInviteOpen(false);
+              }}>
+                {target.type === "group" ? "Salvează" : "Creează grup"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </TooltipProvider>
   );
 };

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { FileText, Sparkles, Briefcase, Megaphone, Code2, Users2, Wallet } from "lucide-react";
+import { FileText, Sparkles, Briefcase, Megaphone, Code2, Users2, Wallet, Wand2, Workflow } from "lucide-react";
 
 type Doc = {
   id: string;
@@ -172,6 +172,143 @@ const DOCS: Doc[] = [
             <li>Creare 4 conturi admin complet (Cloudflare, Supabase, Vercel, Hostico) — <strong>500 lei</strong></li>
           </ul>
         </div>
+      </div>
+    ),
+  },
+  {
+    id: "d7",
+    num: "07",
+    title: "Prompt General Avyron",
+    subtitle: "ADN-ul vizual și de produs — citește înainte de orice site",
+    icon: Wand2,
+    accent: "from-violet-500/25 to-fuchsia-500/10",
+    body: (
+      <div className="space-y-4 text-sm leading-relaxed">
+        <p>Avyron este o echipă care produce produse digitale — în special website-uri. Accent mare pe <strong>performanță</strong>, <strong>fluiditate</strong>, <strong>intuitivitate</strong> și <strong>viteză de încărcare</strong>. Scroll foarte fluid.</p>
+
+        <div className="rounded-lg border bg-muted/40 p-3 space-y-1">
+          <p className="font-medium">Identitate vizuală</p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>Paleta logo — <strong>violet, mov</strong>.</li>
+            <li>Inspirație design — Cursor / Revolut / Uber / Apple / nVidia: tech, modern, minimalist (pot fi incluse și alte stiluri unde se potrivesc).</li>
+            <li><strong>Liquid glass</strong> de integrat în special la sidebar-ul de sus.</li>
+            <li><code className="px-1 py-0.5 rounded bg-background">getdesign.md</code> = sursă bună de inspirație.</li>
+            <li>Font principal: <strong>Times New Roman</strong>, dar și altele în funcție de secțiune.</li>
+            <li>Contrast corespunzător pe orice secțiune — totul trebuie să fie lizibil în light & dark.</li>
+          </ul>
+        </div>
+
+        <div className="rounded-lg border bg-muted/40 p-3 space-y-1">
+          <p className="font-medium">Conținut & SEO</p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>SEO optimizat pentru orice descriere / secțiune.</li>
+            <li>Unde e cazul → descrieri generate cu AI sau hint-uri relevante dacă nu sunt oferite de client.</li>
+            <li>Mesaje prestabilite personalizate în funcție de secțiune / rol.</li>
+            <li>Logo-ul Avyron în subsol — minimalist, „Powered by / Descoperă-ne" cu buton către <strong>avyron.ro</strong>.</li>
+            <li>Stilul nostru: modern, friendly, orientat spre <strong>conversia vizitelor în comenzi</strong>.</li>
+          </ul>
+        </div>
+
+        <div className="rounded-lg border bg-muted/40 p-3 space-y-1.5">
+          <p className="font-medium">Efecte & micro-interacțiuni</p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>Cursor premium — magnetic, glow, blur, trail discret (fără a afecta fluiditatea).</li>
+            <li>Glassmorphism real + blur dinamic.</li>
+            <li>Card-urile reacționează la mouse / light movement (nu doar blur static), unde e relevant.</li>
+            <li>Micro-animații la hover · butoane, iconițe, carduri care „respiră" fin, fără aglomerare.</li>
+            <li>Scroll reveal inteligent (parțial sau deloc, după caz).</li>
+            <li>Text gradient animat — în special pe headline-urile hero.</li>
+            <li>Progress scroll bar premium — doar unde e relevant.</li>
+            <li>Sound design subtil — <strong>întreabă înainte</strong> de implementare.</li>
+            <li>AI generated illustrations / 3D blobs — fără să încetinească site-ul.</li>
+            <li>Background dinamic subtil (gradient animat, aurora, particles, noise layer) — nu wallpaper static.</li>
+            <li>Tranziții fluide, premium, la schimbarea paginilor.</li>
+          </ul>
+        </div>
+
+        <div className="rounded-lg border bg-muted/40 p-3 space-y-1">
+          <p className="font-medium">Integrări & secțiuni speciale</p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>Google Maps — unde afacerea are locație fizică.</li>
+            <li>Formulare premium (când se cer) — <strong>NU</strong> formulare clasice urâte. Folosim: step by step, progress, animații, iconuri.</li>
+            <li>Before / after — pentru clinici, detailing, beauty, construcții.</li>
+            <li>Spacing optimizat în toată aplicația.</li>
+          </ul>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "d8",
+    num: "08",
+    title: "Setup workflow",
+    subtitle: "Stack-ul intern Avyron — tools, librării, comenzi de instalare",
+    icon: Workflow,
+    accent: "from-cyan-500/25 to-blue-500/10",
+    body: (
+      <div className="space-y-4 text-sm leading-relaxed">
+        <div className="rounded-lg border bg-muted/40 p-3 space-y-1">
+          <p className="font-medium">Platforme & infrastructură</p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li><strong>Lovable / Claude / Cursor</strong> — workflow AI complet.</li>
+            <li><strong>Lovable</strong> — MVP rapid, landing-uri.</li>
+            <li><strong>Atom</strong> — supliment la Lovable.</li>
+            <li><strong>Claude</strong> — baza pentru proiecte mari.</li>
+            <li><strong>Supabase</strong> — bază de date.</li>
+            <li><strong>Cloudflare</strong> — DNS și deploy.</li>
+            <li><strong>Hostico</strong> — domenii .ro.</li>
+            <li><strong>GitHub</strong> — hub proiect / push.</li>
+          </ul>
+        </div>
+
+        <div className="rounded-lg border bg-card p-3 space-y-2">
+          <p className="font-medium">Librării de instalat</p>
+          <div className="space-y-2 font-mono text-xs">
+            <div>
+              <p className="text-muted-foreground"># Lenis — scroll fluid cinematic / luxury</p>
+              <code className="block px-2 py-1 rounded bg-background">npm install lenis</code>
+            </div>
+            <div>
+              <p className="text-muted-foreground"># GSAP — parallax, reveal text, tranziții, mouse effects</p>
+              <code className="block px-2 py-1 rounded bg-background">npm install gsap</code>
+            </div>
+            <div>
+              <p className="text-muted-foreground"># Motion (Framer Motion) — hover, page transitions, cards, micro-interacțiuni</p>
+              <code className="block px-2 py-1 rounded bg-background">npm install motion</code>
+            </div>
+            <div>
+              <p className="text-muted-foreground"># Three.js</p>
+              <code className="block px-2 py-1 rounded bg-background">npm install three</code>
+            </div>
+            <div>
+              <p className="text-muted-foreground"># tsParticles React</p>
+              <code className="block px-2 py-1 rounded bg-background">npm install @tsparticles/react tsparticles tsparticles-slim</code>
+            </div>
+            <div>
+              <p className="text-muted-foreground"># Vanta.js</p>
+              <code className="block px-2 py-1 rounded bg-background">npm install vanta three</code>
+            </div>
+            <div>
+              <p className="text-muted-foreground"># React Bits</p>
+              <code className="block px-2 py-1 rounded bg-background">npm install reactbits</code>
+            </div>
+            <div>
+              <p className="text-muted-foreground"># Magic UI (via shadcn)</p>
+              <code className="block px-2 py-1 rounded bg-background">npx shadcn@latest init</code>
+              <code className="block px-2 py-1 rounded bg-background mt-1">npx shadcn@latest add "https://magicui.design/r/components/all.json"</code>
+            </div>
+            <div>
+              <p className="text-muted-foreground"># Spline React</p>
+              <code className="block px-2 py-1 rounded bg-background">npm install @splinetool/react-spline</code>
+            </div>
+            <div>
+              <p className="text-muted-foreground"># React Three Fiber (recomandat cu Three.js)</p>
+              <code className="block px-2 py-1 rounded bg-background">npm install @react-three/fiber @react-three/drei</code>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-muted-foreground italic text-xs">Tip: instalează doar ce e nevoie pentru proiectul curent — bundle-ul rămâne mic, site-ul rămâne rapid.</p>
       </div>
     ),
   },
