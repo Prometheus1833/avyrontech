@@ -44,7 +44,7 @@ const About = () => {
       ? "Echipa Avyron — specialiști în web, mobile, cybersecurity, design și QA. Portofoliu: Miago, Flawless Studio, Retuvo."
       : "The Avyron team — specialists in web, mobile, cybersecurity, design and QA. Portfolio: Miago, Flawless Studio, Retuvo.";
     import("@/lib/seo").then(({ setPageMeta }) =>
-      setPageMeta({ title, description, path: "/despre" }),
+      setPageMeta({ title, description, path: "/despre-si-portofoliu" }),
     );
   }, [ro]);
 
@@ -66,22 +66,6 @@ const About = () => {
 
   const projects = [
     {
-      name: "Flawlesstudio.ro",
-      url: "https://flawlesstudio.ro",
-      tag: ro ? "Brand local Iași — multi-sediu" : "Local Iași brand — multi-location",
-      desc: ro
-        ? "Website de prezentare pentru un brand local din Iași, cu mai multe sedii, programări și identitate vizuală premium."
-        : "Showcase website for a local Iași brand, with multiple locations, bookings and premium visual identity.",
-    },
-    {
-      name: "Clarlumanari.ro",
-      url: "https://clarlumanari.ro",
-      tag: ro ? "Brand artizanal — Site + comenzi" : "Artisan brand — Site + orders",
-      desc: ro
-        ? "Website de prezentare pentru CLAR — lumânări parfumate turnate manual din ceară naturală, cu fitil din lemn. Catalog de produse, poveste de brand și comenzi rapide prin WhatsApp și telefon."
-        : "Showcase website for CLAR — scented candles hand-poured from natural wax with wooden wicks. Product catalog, brand story and quick orders via WhatsApp and phone.",
-    },
-    {
       name: "Miago.ro",
       url: "https://miago.ro",
       tag: ro ? "Platformă Auto — Site + Aplicație" : "Auto Platform — Site + App",
@@ -98,6 +82,14 @@ const About = () => {
         : "Showcase website for a premium barber shop: full service menu (classic cut, skin fade, beard, treatments), salon gallery and instant bookings via Mero and WhatsApp integration.",
     },
     {
+      name: "Clarlumanari.ro",
+      url: "https://clarlumanari.ro",
+      tag: ro ? "Brand artizanal — Site + comenzi" : "Artisan brand — Site + orders",
+      desc: ro
+        ? "Website de prezentare pentru CLAR — lumânări parfumate turnate manual din ceară naturală, cu fitil din lemn. Catalog de produse, poveste de brand și comenzi rapide prin WhatsApp și telefon."
+        : "Showcase website for CLAR — scented candles hand-poured from natural wax with wooden wicks. Product catalog, brand story and quick orders via WhatsApp and phone.",
+    },
+    {
       name: "Plaseieftineiasi.ro",
       url: "https://plaseieftineiasi.ro",
       tag: ro ? "E-commerce sezonier — Site" : "Seasonal e-commerce — Site",
@@ -112,6 +104,14 @@ const About = () => {
       desc: ro
         ? "Produs care digitalizează procesul SGR din România: decontare prin aplicație și serviciu de colectori la domiciliu pentru recipiente reciclabile."
         : "Product digitalizing Romania's DRS process: in-app refunds and a home pickup collector service for recyclable containers.",
+    },
+    {
+      name: "Flawlesstudio.ro",
+      url: "https://flawlesstudio.ro",
+      tag: ro ? "Brand local Iași — multi-sediu" : "Local Iași brand — multi-location",
+      desc: ro
+        ? "Website de prezentare pentru un brand local din Iași, cu mai multe sedii, programări și identitate vizuală premium."
+        : "Showcase website for a local Iași brand, with multiple locations, bookings and premium visual identity.",
     },
   ];
 
@@ -194,6 +194,18 @@ const About = () => {
             {ro
               ? "Avyron Tech este o echipă de specialiști care transformă idei în produse digitale rafinate. Lucrăm direct, transparent și concentrat pe rezultate reale — de la prima conversație, până la mentenanța de lungă durată."
               : "Avyron Tech is a team of specialists turning ideas into refined digital products. We work directly, transparently and focused on real results — from the first conversation to long-term maintenance."}
+          </p>
+          <p className="mt-4 max-w-xl mx-auto font-display text-base md:text-lg leading-relaxed">
+            <span className="bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent font-semibold">
+              {ro
+                ? "Oameni reali. Cod curat. Rezultate care se văd."
+                : "Real people. Clean code. Results you can see."}
+            </span>
+            <span className="block mt-1 text-sm text-muted-foreground">
+              {ro
+                ? "Suntem aici cât timp ai nevoie — partenerul tău digital de încredere, nu doar un furnizor."
+                : "We're here as long as you need us — your trusted digital partner, not just a vendor."}
+            </span>
           </p>
         </div>
       </section>
