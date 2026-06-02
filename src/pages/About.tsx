@@ -282,6 +282,87 @@ const About = () => {
         </div>
       </section>
 
+      {/* Exemple personalizate — subpagini Avyron */}
+      <section id="examples" className="py-16 md:py-20 border-t border-border/60 scroll-mt-24">
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="max-w-2xl mx-auto text-center">
+            <span className="inline-block font-mono text-[10px] uppercase tracking-[0.24em] text-brand">avyron.ro/examples</span>
+            <h2 className="mt-3 font-display font-bold text-3xl md:text-4xl tracking-tight">
+              {ro ? "Exemple personalizate, găzduite de noi." : "Custom examples, hosted by us."}
+            </h2>
+            <p className="mt-4 text-muted-foreground">
+              {ro
+                ? "Pagini exemplu construite pentru afaceri reale — fiecare e o subpagină live a site-ului Avyron. Le folosim ca demo pentru a-ți arăta cum ar putea arăta propriul tău site."
+                : "Example pages built for real-world businesses — each one is a live subpage of the Avyron site. We use them as demos to show what your own site could look like."}
+            </p>
+          </div>
+          <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {examples.map((e) => (
+              <Link
+                key={e.slug}
+                to={`/examples/${e.slug}`}
+                className="group relative rounded-2xl border border-border/80 bg-card/40 backdrop-blur p-5 hover:border-brand/60 hover:bg-brand/5 transition-all"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                      avyron.ro/examples/
+                    </span>
+                    <h3 className="font-display font-bold text-lg truncate">{e.domain}</h3>
+                  </div>
+                  <span className="shrink-0 size-8 rounded-full bg-foreground text-background grid place-items-center group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
+                    <ArrowUpRight className="size-3.5" />
+                  </span>
+                </div>
+                <span className="mt-3 inline-block text-[11px] font-medium text-brand">
+                  {ro ? e.category.ro : e.category.en}
+                </span>
+                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                  {ro ? e.description.ro : e.description.en}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Parteneri — marquee subtil */}
+      <section aria-labelledby="parteneri-title" className="py-10 md:py-12 border-t border-border/60 bg-card/20">
+        <div className="mx-auto max-w-6xl px-4">
+          <h2 id="parteneri-title" className="text-center font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
+            {ro ? "Partenerii noștri de încredere" : "Our trusted partners"}
+          </h2>
+          <div className="mt-6 relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
+            <div className="flex gap-12 md:gap-16 w-max animate-[partners-scroll_38s_linear_infinite] hover:[animation-play-state:paused]">
+              {[...partners, ...partners].map((p, i) => (
+                <div
+                  key={`${p.label}-${i}`}
+                  className="flex items-center gap-2.5 text-muted-foreground/80 hover:text-foreground transition-colors shrink-0"
+                  title={p.label}
+                >
+                  {p.icon ? (
+                    <img
+                      src={`https://cdn.simpleicons.org/${p.icon}/9ca3af`}
+                      alt=""
+                      aria-hidden
+                      width={20}
+                      height={20}
+                      className="size-5 opacity-80"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span className="size-5 rounded bg-muted-foreground/20 grid place-items-center text-[9px] font-bold">
+                      {p.label.charAt(0)}
+                    </span>
+                  )}
+                  <span className="text-sm font-medium whitespace-nowrap">{p.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Account CTA — Cursor style */}
       <section className="py-16 md:py-24 border-t border-border/60">
         <div className="mx-auto max-w-5xl px-4">
