@@ -501,6 +501,7 @@ export const translations = {
       cta: "Free demo",
       menu: "Menu",
       news: "News",
+      portfolio: "Portfolio",
     },
     hero: {
       badge: "Websites that bring customers, not just visits",
