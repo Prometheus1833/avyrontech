@@ -460,6 +460,7 @@ const Pricing = () => {
                     { icon: <ShoppingBag className="size-4" />, text: "Cart, secure checkout and conversion-focused product pages" },
                     { icon: <CreditCard className="size-4" />, text: "Online payments (card, Apple Pay, Google Pay) + COD" },
                     { icon: <Truck className="size-4" />, text: "Courier integrations (FAN, Sameday, DPD) with automatic AWB" },
+                    { icon: <ShoppingBag className="size-4" />, text: "eMAG marketplace integration + Sameday delivery across Romania, Hungary and Bulgaria" },
                     { icon: <FileText className="size-4" />, text: "Automated invoicing (SmartBill / Oblio) and tax compliance" },
                     { icon: <Tag className="size-4" />, text: "Promo codes, discounts, bundles and seasonal campaigns" },
                     { icon: <BarChart3 className="size-4" />, text: "Meta / TikTok pixel, GA4 and complete conversion tracking" },
