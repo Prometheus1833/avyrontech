@@ -19,6 +19,7 @@ import ForgotPassword from "./pages/ForgotPassword.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import Profile from "./pages/Profile.tsx";
 import News from "./pages/News.tsx";
+import ExamplePage from "./pages/ExamplePage.tsx";
 
 import CookieBanner from "@/components/site/CookieBanner";
 
@@ -40,6 +41,8 @@ const App = () => (
               <Route path="/exemple/flawlesstudio" element={<FlawlesstudioDemo />} />
               <Route path="/exemple/retuvo" element={<RetuvoDemo />} />
               <Route path="/noutati" element={<News />} />
+              <Route path="/examples/:slug" element={<ExamplePage />} />
+              
               
               <Route path="/auth" element={<Auth />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
