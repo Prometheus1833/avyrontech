@@ -4,6 +4,8 @@ import { ArrowLeft, Check, CreditCard, Building2, Link2, FileText, Sparkles, Zap
 import { useLang } from "@/i18n/LanguageContext";
 import logo from "@/assets/avyron-logo.jpg";
 import premiumTech from "@/assets/premium-website-mockup.jpg";
+import LangSwitch from "@/components/site/LangSwitch";
+import ThemeToggle from "@/components/site/ThemeToggle";
 
 /**
  * PlayStation-inspired pricing page.
@@ -35,7 +37,26 @@ const Pricing = () => {
   const { lang } = useLang();
   const ro = lang === "ro";
   const [currency, setCurrency] = useState<"EUR" | "RON">("EUR");
-  const rate = 5; // indicative leu/euro rate for display only
+  const [rate, setRate] = useState<number>(5); // EUR -> RON, indicative fallback
+  const [rateUpdated, setRateUpdated] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    // Free, no-auth EUR->RON rate (ECB data via Frankfurter)
+    fetch("https://api.frankfurter.dev/v1/latest?base=EUR&symbols=RON")
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((d: { rates?: { RON?: number }; date?: string }) => {
+        if (cancelled) return;
+        if (d?.rates?.RON && d.rates.RON > 0) {
+          setRate(Number(d.rates.RON.toFixed(4)));
+          if (d.date) setRateUpdated(d.date);
+        }
+      })
+      .catch(() => {
+        // keep fallback
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -209,6 +230,11 @@ const Pricing = () => {
             {ro ? "Înapoi" : "Back"}
           </Link>
           <div className="flex items-center gap-2">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.04] px-2 py-1 backdrop-blur">
+              <LangSwitch />
+              <span aria-hidden className="w-px h-3 bg-white/15" />
+              <ThemeToggle />
+            </div>
             <img src={logo} alt="Avyron" className="size-7 sm:size-8 rounded-md ring-1 ring-white/20" />
             <span className="font-display tracking-[0.2em] sm:tracking-[0.25em] text-xs sm:text-sm">AVYRON</span>
           </div>
@@ -243,7 +269,9 @@ const Pricing = () => {
           </div>
           <p className="mt-2 text-[11px] uppercase tracking-widest text-white/40 inline-flex items-center gap-2">
             <RefreshCw className="size-3" />
-            {ro ? "Curs orientativ — facturare în RON la cursul BNR" : "Indicative rate — invoicing in RON at BNR rate"}
+            {ro
+              ? `Curs orientativ 1€ ≈ ${rate.toFixed(2)} RON${rateUpdated ? ` · ${rateUpdated}` : ""} · sursa ECB`
+              : `Indicative rate 1€ ≈ ${rate.toFixed(2)} RON${rateUpdated ? ` · ${rateUpdated}` : ""} · ECB source`}
           </p>
         </section>
 
