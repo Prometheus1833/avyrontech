@@ -545,6 +545,10 @@ const Pricing = () => {
                   ? "Construim aplicații mobile și web custom — de la idee, prototip și UX, până la publicare în App Store, Google Play sau pe propriul tău domeniu. Lucrăm cu tehnologii moderne (React, React Native, Node, Supabase) care îți dau viteză, scalare reală și un cost de mentenanță predictibil pe termen lung."
                   : "We build custom mobile and web apps — from idea, prototype and UX through to publishing on the App Store, Google Play or your own domain. We use modern technologies (React, React Native, Node, Supabase) that deliver speed, real scalability and predictable long-term maintenance cost."}
               </p>
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-indigo-300/20 bg-indigo-300/[0.06] px-3 py-1.5 text-[11px] text-indigo-100">
+                <RefreshCw className="size-3.5" />
+                {ro ? "Timp aproximativ dezvoltare: 7–30 zile" : "Approx. development time: 7–30 days"}
+              </div>
             </div>
           </div>
           <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
