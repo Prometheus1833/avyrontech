@@ -324,7 +324,7 @@ const Pricing = () => {
             <div aria-hidden className="absolute -bottom-16 -right-16 size-48 rounded-full bg-purple-500/15 blur-3xl" />
             <div className="relative">
               <div className="inline-flex items-center gap-2 rounded-full border border-pink-300/30 bg-pink-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-pink-200">
-                <Sparkles className="size-3.5" />
+                <MessageCircle className="size-3.5" />
                 {ro ? "Identitate digitală" : "Digital identity"}
               </div>
               <div className="mt-5 flex items-center justify-center gap-3">
@@ -346,7 +346,7 @@ const Pricing = () => {
               </p>
               <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-pink-300 to-purple-500 bg-clip-text text-transparent break-words">
-                  {currency === "EUR" ? "de la 120€" : `${ro ? "de la" : "from"} ${Math.round(120 * rate)} RON`}
+                  {currency === "EUR" ? "de la 250€" : `${ro ? "de la" : "from"} ${Math.round(250 * rate)} RON`}
                 </span>
               </div>
               <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">
@@ -393,13 +393,15 @@ const Pricing = () => {
                 </li>
               ))}
             </ul>
-            <a
-              href="#cta"
-              className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
-            >
-              <Sparkles className="size-4" />
-              {ro ? "Vreau pachetul Social" : "I want the Social pack"}
-            </a>
+            <div className="mt-6 flex justify-center">
+              <a
+                href="#cta"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
+              >
+                <Sparkles className="size-4" />
+                {ro ? "Vreau pachetul Social" : "I want the Social pack"}
+              </a>
+            </div>
           </div>
         </section>
 
