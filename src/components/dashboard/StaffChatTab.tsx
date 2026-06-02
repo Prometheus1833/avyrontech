@@ -327,7 +327,7 @@ export const StaffChatTab = () => {
           <ScrollArea className="flex-1">
             <div className="p-4 space-y-1">
               {grouped.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-12">Niciun mesaj pe {target.type === "channel" ? `#${target.name}` : `@${target.name}`}. Începe conversația!</p>
+                <p className="text-sm text-muted-foreground text-center py-12">Niciun mesaj încă. Începe conversația!</p>
               )}
               {grouped.map((row, i) => {
                 if (row.kind === "divider") {
