@@ -377,38 +377,32 @@ const About = () => {
         </div>
       </section>
 
-      {/* Account CTA — Cursor style */}
-      <section className="py-16 md:py-24 border-t border-border/60">
-        <div className="mx-auto max-w-5xl px-4">
-          <div className="relative rounded-3xl border border-border/80 bg-gradient-to-b from-card to-background p-8 md:p-14 overflow-hidden text-center">
-            <div className="pointer-events-none absolute inset-x-0 -top-24 mx-auto size-[420px] rounded-full bg-brand/20 blur-[120px]" aria-hidden />
-            <div
-              className="pointer-events-none absolute inset-0 opacity-[0.12] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_70%)]"
-              style={{
-                backgroundImage:
-                  "linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)",
-                backgroundSize: "32px 32px",
-              }}
-              aria-hidden
-            />
-            <div className="relative">
-              <span className="mx-auto inline-flex size-14 rounded-2xl bg-foreground text-background items-center justify-center">
-                <UserPlus className="size-7" />
+      {/* Account CTA — compact */}
+      <section className="py-6 md:py-8 border-t border-border/60">
+        <div className="mx-auto max-w-3xl px-4">
+          <div className="relative rounded-2xl border border-border/80 bg-card/50 backdrop-blur p-5 md:p-6 overflow-hidden">
+            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
+              <span className="shrink-0 inline-flex size-10 rounded-xl bg-foreground text-background items-center justify-center">
+                <UserPlus className="size-5" />
               </span>
-              <h2 className="mt-6 font-display font-bold text-3xl md:text-5xl tracking-tight">
-                {ro ? "Vrei să afli mai multe despre noi?" : "Want to learn more about us?"}
-              </h2>
-              <p className="mt-4 max-w-2xl mx-auto text-muted-foreground">
-                {ro
-                  ? "Creează-ți un cont pe platforma noastră — fără obligații. Primești acces la resurse, noutăți și o privire din interior asupra modului în care lucrăm. Nu trebuie să cumperi nimic și nu trebuie să ne lași produsul în administrare."
-                  : "Create an account on our platform — no strings attached. Get access to resources, news and an inside look at how we work. No purchase required, no need to hand over your product."}
-              </p>
-              <Button asChild size="lg" className="mt-8 rounded-full bg-foreground text-background hover:bg-foreground/90">
-                <Link to="/auth">
-                  {ro ? "Conectează-te / Înregistrează-te" : "Sign in / Sign up"}
-                  <ArrowUpRight className="size-4 ml-1" />
-                </Link>
-              </Button>
+              <div className="flex-1 text-center sm:text-left">
+                <h3 className="font-display font-bold text-lg md:text-xl tracking-tight">
+                  {ro ? "Vrei să afli mai multe despre noi?" : "Want to learn more about us?"}
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground leading-snug">
+                  {ro
+                    ? "Creează-ți un cont — fără obligații. Acces la resurse, noutăți și privire din interior."
+                    : "Create an account — no strings attached. Access resources, news and an inside look."}
+                </p>
+              </div>
+              <div className="shrink-0 flex items-center gap-2">
+                <Button asChild size="sm" variant="outline" className="rounded-full border-border/80 hover:border-brand/60 hover:text-brand">
+                  <Link to="/auth">{ro ? "Conectează-te" : "Sign in"}</Link>
+                </Button>
+                <Button asChild size="sm" className="rounded-full bg-foreground text-background hover:bg-foreground/90">
+                  <Link to="/auth">{ro ? "Înregistrează-te" : "Sign up"}</Link>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
