@@ -21,6 +21,8 @@ import { useLang } from "@/i18n/LanguageContext";
 import logo from "@/assets/avyron-logo.jpg";
 import Footer from "@/components/site/Footer";
 import ContactBar from "@/components/site/ContactBar";
+import LangSwitch from "@/components/site/LangSwitch";
+import ThemeToggle from "@/components/site/ThemeToggle";
 import { examples } from "@/examples/registry";
 
 const About = () => {
@@ -153,8 +155,13 @@ const About = () => {
             <span className="relative size-1 rounded-full bg-brand animate-pulse" aria-hidden />
           </Link>
           <div className="flex items-center gap-2">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-card/60 px-2 py-1 backdrop-blur">
+              <LangSwitch />
+              <span aria-hidden className="w-px h-3 bg-border" />
+              <ThemeToggle />
+            </div>
             <img src={logo} alt="Avyron" width={28} height={28} className="size-7 rounded-md object-cover" />
-            <span className="font-display font-bold tracking-wide text-sm">Avyron Tech</span>
+            <span className="font-display font-bold tracking-wide text-sm hidden sm:inline">Avyron Tech</span>
           </div>
         </div>
       </div>
