@@ -18,7 +18,7 @@ const Nav = () => {
     { label: (t.nav as any).news ?? "Noutăți", to: "/noutati", icon: Newspaper, isRoute: true },
     { label: isRo ? "Portofoliu" : "Portfolio", to: "/despre-si-portofoliu#portofoliu", icon: Briefcase, isRoute: true },
     { label: isRo ? "Vezi exemple" : "See examples", href: "/#exemple" },
-    { label: isRo ? "Despre noi" : "About us", to: "/despre", isRoute: true },
+    { label: isRo ? "Despre noi" : "About us", to: "/despre-si-portofoliu", isRoute: true },
     { label: t.nav.process, href: "/#proces" },
     { label: t.nav.faq, href: "/#faq" },
   ] as Array<{ label: string; href?: string; to?: string; icon?: typeof Newspaper; highlight?: boolean; isRoute?: boolean }>;
