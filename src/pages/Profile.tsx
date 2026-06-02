@@ -44,73 +44,78 @@ const Profile = () => {
     if (params.get("tab") !== tab) setParams({ tab }, { replace: true });
   }, [tab, params, setParams]);
 
-  const clientTabs = [
-    { value: "profile", label: t.auth.dash.tabs.profile, icon: User },
-    { value: "subscriptions", label: t.auth.dash.tabs.subscriptions, icon: CreditCard },
-    { value: "stats", label: t.auth.dash.tabs.stats, icon: BarChart3 },
-    { value: "invoices", label: t.auth.dash.tabs.invoices, icon: Receipt },
-    { value: "cart", label: t.auth.dash.tabs.cart, icon: ShoppingCart },
-    { value: "tickets", label: t.auth.dash.tabs.tickets, icon: MessageSquare },
-    { value: "settings", label: "Setări", icon: Settings },
+  type TabItem = { value: string; label: string; icon: typeof User };
+  type TabGroup = { id: string; label: string; items: TabItem[] };
+
+  const clientGroups: TabGroup[] = [
+    {
+      id: "personal",
+      label: "Cont",
+      items: [
+        { value: "profile", label: t.auth.dash.tabs.profile, icon: User },
+        { value: "settings", label: "Setări", icon: Settings },
+      ],
+    },
+    {
+      id: "billing",
+      label: "Abonamente & facturi",
+      items: [
+        { value: "subscriptions", label: t.auth.dash.tabs.subscriptions, icon: CreditCard },
+        { value: "invoices", label: t.auth.dash.tabs.invoices, icon: Receipt },
+        { value: "cart", label: t.auth.dash.tabs.cart, icon: ShoppingCart },
+      ],
+    },
+    {
+      id: "activity",
+      label: "Activitate",
+      items: [
+        { value: "stats", label: t.auth.dash.tabs.stats, icon: BarChart3 },
+        { value: "tickets", label: t.auth.dash.tabs.tickets, icon: MessageSquare },
+      ],
+    },
   ];
-  const staffTabs = [
-    { value: "profile", label: t.auth.dash.tabs.profile, icon: User },
-    { value: "projects", label: t.auth.dash.tabs.projects, icon: FolderKanban },
-    { value: "maintenance", label: t.auth.dash.tabs.maintenance, icon: Wrench },
-    { value: "clients", label: t.auth.dash.tabs.clients, icon: Users },
-    { value: "invoices", label: t.auth.dash.tabs.invoices, icon: Receipt },
-    { value: "staff-tickets", label: t.auth.dash.tabs.staffTickets, icon: MessageSquare },
-    { value: "intern", label: "Intern", icon: MessagesSquare },
-    { value: "announcements", label: t.auth.dash.tabs.announcements, icon: Megaphone },
-    { value: "resources", label: t.auth.dash.tabs.resources, icon: BookOpen },
-    { value: "domains", label: "Domenii", icon: Globe },
-    { value: "demo-requests", label: "Solicitări demo", icon: Sparkles },
-    { value: "settings", label: "Setări", icon: Settings },
+
+  const staffGroups: TabGroup[] = [
+    {
+      id: "personal",
+      label: "Cont",
+      items: [
+        { value: "profile", label: t.auth.dash.tabs.profile, icon: User },
+        { value: "settings", label: "Setări", icon: Settings },
+      ],
+    },
+    {
+      id: "ops",
+      label: "Operațional",
+      items: [
+        { value: "projects", label: t.auth.dash.tabs.projects, icon: FolderKanban },
+        { value: "maintenance", label: t.auth.dash.tabs.maintenance, icon: Wrench },
+        { value: "clients", label: t.auth.dash.tabs.clients, icon: Users },
+        { value: "domains", label: "Domenii", icon: Globe },
+      ],
+    },
+    {
+      id: "finance",
+      label: "Financiar & Suport",
+      items: [
+        { value: "invoices", label: t.auth.dash.tabs.invoices, icon: Receipt },
+        { value: "staff-tickets", label: t.auth.dash.tabs.staffTickets, icon: MessageSquare },
+        { value: "demo-requests", label: "Solicitări demo", icon: Sparkles },
+      ],
+    },
+    {
+      id: "internal",
+      label: "Intern",
+      items: [
+        { value: "intern", label: "Chat intern", icon: MessagesSquare },
+        { value: "announcements", label: t.auth.dash.tabs.announcements, icon: Megaphone },
+        { value: "resources", label: t.auth.dash.tabs.resources, icon: BookOpen },
+      ],
+    },
   ];
 
-  const tabs = isStaff ? staffTabs : clientTabs;
+  const groups = isStaff ? staffGroups : clientGroups;
 
-  return (
-    <main className="min-h-screen bg-secondary/30 py-8 px-4">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="size-4" /> Acasă
-          </Link>
-          <div className="flex items-center gap-2">
-            {isStaff && (
-              <Badge variant="default" className="gap-1">
-                <ShieldCheck className="size-3" />
-                {isAdmin ? "Admin" : "Staff"}
-              </Badge>
-            )}
-            <Button variant="ghost" size="sm" onClick={() => signOut().then(() => (window.location.href = "/"))}>
-              <LogOut className="size-4 mr-2" />
-              {t.auth.logout}
-            </Button>
-          </div>
-        </div>
-
-        <Tabs value={tab} onValueChange={setTab} className="space-y-6">
-          <div className="overflow-x-auto -mx-4 px-4 scrollbar-thin">
-            <TabsList className="inline-flex w-auto h-auto p-1 bg-muted/60 gap-0.5">
-              {tabs.map((tb) => {
-                const active = tb.value === tab;
-                return (
-                  <TabsTrigger
-                    key={tb.value}
-                    value={tb.value}
-                    title={tb.label}
-                    aria-label={tb.label}
-                    className="gap-1.5 px-2.5 py-1.5 text-xs data-[state=active]:px-3"
-                  >
-                    <tb.icon className="size-4 shrink-0" />
-                    <span className={active ? "inline" : "hidden md:hidden"}>{tb.label}</span>
-                  </TabsTrigger>
-                );
-              })}
-            </TabsList>
-          </div>
 
           <TabsContent value="profile" className="mt-0"><ProfileTab /></TabsContent>
           <TabsContent value="settings" className="mt-0"><SettingsTab /></TabsContent>
