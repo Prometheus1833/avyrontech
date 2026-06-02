@@ -23,7 +23,7 @@ export function ProfileTab() {
   const [form, setForm] = useState({
     display_name: "",
     pseudonym: "",
-    staff_role: "dev" as "dev" | "designer" | "marketing" | "support",
+    staff_role: "dev" as "dev" | "designer" | "marketing" | "support" | "admin",
     phone: "",
     address: "",
     entity_type: "individual" as "individual" | "srl" | "pfa" | "ii" | "other",
