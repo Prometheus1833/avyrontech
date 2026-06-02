@@ -11,6 +11,7 @@ export const translations = {
       cta: "Demo gratuit",
       menu: "Meniu",
       news: "Noutăți",
+      portfolio: "Portofoliu",
     },
     hero: {
       badge: "Site-uri care aduc clienți, nu doar vizite",
