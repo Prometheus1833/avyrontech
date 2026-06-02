@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
-  Send, Hash, Users2, Smile, Paperclip, Mic, Reply, MoreHorizontal,
+  Send, Users2, Smile, Paperclip, Mic, Reply, MoreHorizontal,
   Search, ShieldCheck, Crown, Code2, Palette, Megaphone, Headphones,
   Circle, AtSign, Pin, Bell, Check, CheckCheck, X, Plus, Inbox, UserPlus, UsersRound,
 } from "lucide-react";
