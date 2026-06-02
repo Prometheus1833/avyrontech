@@ -43,7 +43,7 @@ const Pricing = () => {
       ? "Pachete transparente pentru site-uri profesionale: produs principal de la 300€, mentenanță Plus / Pro / Pro activ și plăți sigure."
       : "Transparent packages for professional websites: main product from €300, Plus / Pro / Pro Active care plans and secure payment methods.";
     import("@/lib/seo").then(({ setPageMeta }) =>
-      setPageMeta({ title, description, path: "/costuri" }),
+      setPageMeta({ title, description, path: "/costurisiproduse" }),
     );
   }, [ro]);
 
