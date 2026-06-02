@@ -203,7 +203,7 @@ const Pricing = () => {
   ];
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[#05060f] text-white">
+    <main className="relative min-h-screen overflow-x-hidden bg-background text-white">
       {/* PS-style background: starfield + grid + glow */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(0,112,243,0.25),transparent_55%)]" />
@@ -224,15 +224,15 @@ const Pricing = () => {
         <div className="flex items-center justify-between gap-3">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3 sm:px-4 py-2 text-xs sm:text-sm text-white/80 hover:bg-white/[0.1] hover:text-white transition-all backdrop-blur"
+            className="inline-flex items-center gap-2 rounded-full border border-foreground/15 bg-foreground/[0.04] px-3 sm:px-4 py-2 text-xs sm:text-sm text-foreground/80 hover:bg-foreground/[0.1] hover:text-white transition-all backdrop-blur"
           >
             <ArrowLeft className="size-4" />
             {ro ? "Înapoi" : "Back"}
           </Link>
           <div className="flex items-center gap-2">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.04] px-2 py-1 backdrop-blur">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 bg-foreground/[0.04] px-2 py-1 backdrop-blur">
               <LangSwitch />
-              <span aria-hidden className="w-px h-3 bg-white/15" />
+              <span aria-hidden className="w-px h-3 bg-foreground/15" />
               <ThemeToggle />
             </div>
             <img src={logo} alt="Avyron" className="size-7 sm:size-8 rounded-md ring-1 ring-white/20" />
@@ -247,27 +247,27 @@ const Pricing = () => {
               {ro ? "Transparent. Complet. Fără surprize." : "Transparent. Complete. No surprises."}
             </span>
           </h1>
-          <p className="mt-5 max-w-2xl mx-auto text-white/70 text-base md:text-lg">
+          <p className="mt-5 max-w-2xl mx-auto text-foreground/70 text-base md:text-lg">
             {ro
               ? "Aducem site-uri și produse digitale la cheie, le ținem sigure și rapide, iar tu plătești doar ce alegi. Costurile sunt orientative și pot varia în funcție de cerințe."
               : "We deliver turnkey digital products, keep them fast and secure, and you only pay for what you choose. Prices are indicative and may vary by scope."}
           </p>
 
           {/* Currency switch */}
-          <div className="mt-7 inline-flex rounded-full border border-white/15 bg-white/[0.04] p-1 backdrop-blur">
+          <div className="mt-7 inline-flex rounded-full border border-foreground/15 bg-foreground/[0.04] p-1 backdrop-blur">
             {(["EUR", "RON"] as const).map((c) => (
               <button
                 key={c}
                 onClick={() => setCurrency(c)}
                 className={`px-4 py-1.5 text-xs font-semibold tracking-widest rounded-full transition-all ${
-                  currency === c ? "bg-cyan-400 text-[#05060f]" : "text-white/70 hover:text-white"
+                  currency === c ? "bg-cyan-400 text-background" : "text-foreground/70 hover:text-white"
                 }`}
               >
                 {c}
               </button>
             ))}
           </div>
-          <p className="mt-2 text-[11px] uppercase tracking-widest text-white/40 inline-flex items-center gap-2">
+          <p className="mt-2 text-[11px] uppercase tracking-widest text-foreground/40 inline-flex items-center gap-2">
             <RefreshCw className="size-3" />
             {ro
               ? `Curs orientativ 1€ ≈ ${rate.toFixed(2)} RON${rateUpdated ? ` · ${rateUpdated}` : ""} · sursa ECB`
@@ -276,7 +276,7 @@ const Pricing = () => {
         </section>
 
         {/* Bring-your-own banner */}
-        <section className="mt-12 rounded-2xl border border-white/10 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 p-5 md:p-6 backdrop-blur">
+        <section className="mt-12 rounded-2xl border border-foreground/10 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 p-5 md:p-6 backdrop-blur">
           <div className="flex items-start md:items-center gap-4 flex-col md:flex-row">
             <div className="size-12 shrink-0 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 grid place-items-center">
               <Sparkles className="size-6" />
@@ -285,7 +285,7 @@ const Pricing = () => {
               <h3 className="font-display text-lg md:text-xl font-bold">
                 {ro ? "Ai deja un site sau un produs?" : "Already have a site or product?"}
               </h3>
-              <p className="text-sm text-white/70 mt-1">
+              <p className="text-sm text-foreground/70 mt-1">
                 {ro
                   ? "Poți aduce site-ul sau produsul pe care îl ai deja pentru actualizare, modificare sau doar pentru mentenanță. Îl evaluăm gratuit și îți spunem exact ce se poate îmbunătăți, ca să iei decizia potrivită fără presiune."
                   : "You can bring your existing site or product for updates, changes or just maintenance. We'll evaluate it for free and tell you exactly what can be improved, so you can make the right decision without any pressure."}
@@ -293,7 +293,7 @@ const Pricing = () => {
             </div>
             <a
               href="#cta"
-              className="shrink-0 inline-flex items-center gap-2 rounded-full bg-white text-[#05060f] px-5 py-2.5 text-sm font-semibold hover:bg-cyan-200 transition-colors w-full md:w-auto justify-center"
+              className="shrink-0 inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/90 transition-colors w-full md:w-auto justify-center"
             >
               {ro ? "Cere evaluare" : "Request evaluation"}
             </a>
@@ -302,7 +302,7 @@ const Pricing = () => {
 
         {/* Main product */}
         <section className="mt-8 grid md:grid-cols-5 gap-4 items-start">
-            <div className="md:col-span-2 rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-[#0a0f24] to-[#05060f] p-5 sm:p-6 relative overflow-hidden text-center">
+            <div className="md:col-span-2 rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-card to-background p-5 sm:p-6 relative overflow-hidden text-center">
             {/* Decorative glow */}
             <div aria-hidden className="absolute -top-16 -right-16 size-48 rounded-full bg-cyan-400/15 blur-3xl" />
             <div className="relative">
@@ -315,23 +315,23 @@ const Pricing = () => {
               </div>
               <h2 className="mt-4 font-display text-2xl sm:text-3xl font-extrabold">{main.title}</h2>
               <div className="mt-3 flex items-baseline justify-center gap-1.5 flex-wrap">
-                <span className="text-sm sm:text-base font-semibold text-white/70">{ro ? "de la" : "from"}</span>
+                <span className="text-sm sm:text-base font-semibold text-foreground/70">{ro ? "de la" : "from"}</span>
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-cyan-300 to-blue-500 bg-clip-text text-transparent break-words">
                   {currency === "EUR" ? "300€" : `${Math.round(300 * rate)} RON`}
                 </span>
               </div>
-              <p className="mt-3 text-xs sm:text-sm text-white/70 leading-snug text-left">{main.desc}</p>
+              <p className="mt-3 text-xs sm:text-sm text-foreground/70 leading-snug text-left">{main.desc}</p>
               <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/[0.06] px-3 py-1.5 text-[11px] text-cyan-100">
                 <Hourglass className="size-3.5" />
                 {ro ? "Timp aproximativ dezvoltare: 2–5 zile" : "Approx. development time: 2–5 days"}
               </div>
             </div>
           </div>
-          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
-            <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">{ro ? "Include:" : "Includes:"}</div>
+          <div className="md:col-span-3 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur">
+            <div className="text-[11px] uppercase tracking-[0.3em] text-foreground/50">{ro ? "Include:" : "Includes:"}</div>
             <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
               {main.includes.map((f) => (
-                <li key={f} className="flex items-start gap-2 text-sm text-white/85">
+                <li key={f} className="flex items-start gap-2 text-sm text-foreground/85">
                   <Check className="size-4 mt-0.5 text-cyan-300 shrink-0" />
                   <span>{f}</span>
                 </li>
@@ -353,7 +353,7 @@ const Pricing = () => {
 
         {/* Identitate Social Media */}
         <section className="mt-8 grid md:grid-cols-5 gap-4 items-start">
-          <div className="md:col-span-2 rounded-2xl border border-pink-300/20 bg-gradient-to-br from-[#1a0a24] to-[#05060f] p-5 sm:p-6 relative overflow-hidden text-center">
+          <div className="md:col-span-2 rounded-2xl border border-pink-300/20 bg-gradient-to-br from-card to-background p-5 sm:p-6 relative overflow-hidden text-center">
             <div aria-hidden className="absolute -top-16 -left-16 size-48 rounded-full bg-pink-400/15 blur-3xl" />
             <div aria-hidden className="absolute -bottom-16 -right-16 size-48 rounded-full bg-purple-500/15 blur-3xl" />
             <div className="relative">
@@ -375,16 +375,16 @@ const Pricing = () => {
               <h2 className="mt-5 font-display text-2xl sm:text-3xl font-extrabold">
                 {ro ? "Identitate Social Media" : "Social Media Identity"}
               </h2>
-              <p className="mt-2 text-xs uppercase tracking-[0.25em] text-white/50">
+              <p className="mt-2 text-xs uppercase tracking-[0.25em] text-foreground/50">
                 {ro ? "Facebook · Instagram · TikTok" : "Facebook · Instagram · TikTok"}
               </p>
               <div className="mt-3 flex items-baseline justify-center gap-1.5 flex-wrap">
-                <span className="text-sm sm:text-base font-semibold text-white/70">{ro ? "de la" : "from"}</span>
+                <span className="text-sm sm:text-base font-semibold text-foreground/70">{ro ? "de la" : "from"}</span>
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-pink-300 to-purple-500 bg-clip-text text-transparent break-words">
                   {currency === "EUR" ? "250€" : `${Math.round(250 * rate)} RON`}
                 </span>
               </div>
-              <p className="mt-3 text-xs sm:text-sm text-white/70 leading-snug text-left">
+              <p className="mt-3 text-xs sm:text-sm text-foreground/70 leading-snug text-left">
                 {ro
                   ? "Construim de la zero identitatea ta în social media — conturi profesionale, coerente vizual și pregătite să convertească. Configurăm tot ce ține de prezență, descrieri, design, postări inițiale și butoane de acțiune, sincronizate cu website-ul tău pentru o experiență unitară între online și client."
                   : "We build your social media identity from scratch — professional accounts, visually coherent and conversion-ready. We set up presence, bios, design, initial posts and action buttons, all synced with your website for a seamless online experience."}
@@ -395,8 +395,8 @@ const Pricing = () => {
               </div>
             </div>
           </div>
-          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
-            <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">{ro ? "Include:" : "Includes:"}</div>
+          <div className="md:col-span-3 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur">
+            <div className="text-[11px] uppercase tracking-[0.3em] text-foreground/50">{ro ? "Include:" : "Includes:"}</div>
             <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
               {(ro
                 ? [
@@ -424,7 +424,7 @@ const Pricing = () => {
                     { icon: <Shield className="size-4" />, text: "Safety settings, email verification and account recovery" },
                   ]
               ).map((f) => (
-                <li key={f.text} className="flex items-start gap-2 text-sm text-white/85">
+                <li key={f.text} className="flex items-start gap-2 text-sm text-foreground/85">
                   <span className="mt-0.5 size-5 rounded-md bg-pink-400/15 text-pink-300 grid place-items-center shrink-0">
                     {f.icon}
                   </span>
@@ -448,7 +448,7 @@ const Pricing = () => {
 
         {/* Platformă eCommerce / Shopify */}
         <section className="mt-8 grid md:grid-cols-5 gap-4 items-start">
-          <div className="md:col-span-2 rounded-2xl border border-emerald-300/20 bg-gradient-to-br from-[#04221a] to-[#05060f] p-5 sm:p-6 relative overflow-hidden text-center">
+          <div className="md:col-span-2 rounded-2xl border border-emerald-300/20 bg-gradient-to-br from-card to-background p-5 sm:p-6 relative overflow-hidden text-center">
             <div aria-hidden className="absolute -top-16 -right-16 size-48 rounded-full bg-emerald-400/15 blur-3xl" />
             <div aria-hidden className="absolute -bottom-16 -left-16 size-48 rounded-full bg-teal-500/15 blur-3xl" />
             <div className="relative">
@@ -462,16 +462,16 @@ const Pricing = () => {
               <h2 className="mt-4 font-display text-2xl sm:text-3xl font-extrabold">
                 {ro ? "Platformă eCommerce / Shopify" : "eCommerce / Shopify Platform"}
               </h2>
-              <p className="mt-2 text-xs uppercase tracking-[0.25em] text-white/50">
+              <p className="mt-2 text-xs uppercase tracking-[0.25em] text-foreground/50">
                 {ro ? "Shopify · WooCommerce · Custom" : "Shopify · WooCommerce · Custom"}
               </p>
               <div className="mt-3 flex items-baseline justify-center gap-1.5 flex-wrap">
-                <span className="text-sm sm:text-base font-semibold text-white/70">{ro ? "de la" : "from"}</span>
+                <span className="text-sm sm:text-base font-semibold text-foreground/70">{ro ? "de la" : "from"}</span>
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-emerald-300 to-teal-500 bg-clip-text text-transparent break-words">
                   {currency === "EUR" ? "1000€" : `${Math.round(1000 * rate)} RON`}
                 </span>
               </div>
-              <p className="mt-3 text-xs sm:text-sm text-white/70 leading-snug text-left">
+              <p className="mt-3 text-xs sm:text-sm text-foreground/70 leading-snug text-left">
                 {ro
                   ? "Magazin online complet, optimizat pentru vânzări reale — catalog de produse, coș, checkout securizat și plăți online integrate. Construim pe Shopify sau pe stack custom, în funcție de scară, cu accent pe viteză, conversie și un panou ușor de administrat de oricine din echipa ta."
                   : "A full online store optimized for real sales — product catalog, cart, secure checkout and integrated online payments. We build on Shopify or on a custom stack depending on scale, focused on speed, conversion and an admin panel anyone on your team can use."}
@@ -482,8 +482,8 @@ const Pricing = () => {
               </div>
             </div>
           </div>
-          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
-            <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">{ro ? "Include:" : "Includes:"}</div>
+          <div className="md:col-span-3 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur">
+            <div className="text-[11px] uppercase tracking-[0.3em] text-foreground/50">{ro ? "Include:" : "Includes:"}</div>
             <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
               {(ro
                 ? [
@@ -513,7 +513,7 @@ const Pricing = () => {
                     { icon: <Shield className="size-4" />, text: "GDPR, terms, policies and daily backups" },
                   ]
               ).map((f) => (
-                <li key={f.text} className="flex items-start gap-2 text-sm text-white/85">
+                <li key={f.text} className="flex items-start gap-2 text-sm text-foreground/85">
                   <span className="mt-0.5 size-5 rounded-md bg-emerald-400/15 text-emerald-300 grid place-items-center shrink-0">
                     {f.icon}
                   </span>
@@ -537,7 +537,7 @@ const Pricing = () => {
 
         {/* Aplicații Mobile & Web */}
         <section className="mt-8 grid md:grid-cols-5 gap-4 items-start">
-          <div className="md:col-span-2 rounded-2xl border border-indigo-300/20 bg-gradient-to-br from-[#0a0f2e] to-[#05060f] p-5 sm:p-6 relative overflow-hidden text-center">
+          <div className="md:col-span-2 rounded-2xl border border-indigo-300/20 bg-gradient-to-br from-card to-background p-5 sm:p-6 relative overflow-hidden text-center">
             <div aria-hidden className="absolute -top-16 -left-16 size-48 rounded-full bg-indigo-400/15 blur-3xl" />
             <div aria-hidden className="absolute -bottom-16 -right-16 size-48 rounded-full bg-violet-500/15 blur-3xl" />
             <div className="relative">
@@ -559,16 +559,16 @@ const Pricing = () => {
               <h2 className="mt-5 font-display text-2xl sm:text-3xl font-extrabold">
                 {ro ? "Aplicații Mobile & Web" : "Mobile & Web Apps"}
               </h2>
-              <p className="mt-2 text-xs uppercase tracking-[0.25em] text-white/50">
+              <p className="mt-2 text-xs uppercase tracking-[0.25em] text-foreground/50">
                 {ro ? "iOS · Android · PWA · SaaS" : "iOS · Android · PWA · SaaS"}
               </p>
               <div className="mt-3 flex items-baseline justify-center gap-1.5 flex-wrap">
-                <span className="text-sm sm:text-base font-semibold text-white/70">{ro ? "de la" : "from"}</span>
+                <span className="text-sm sm:text-base font-semibold text-foreground/70">{ro ? "de la" : "from"}</span>
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-indigo-300 to-violet-500 bg-clip-text text-transparent break-words">
                   {currency === "EUR" ? "1500€" : `${Math.round(1500 * rate)} RON`}
                 </span>
               </div>
-              <p className="mt-3 text-xs sm:text-sm text-white/70 leading-snug text-left">
+              <p className="mt-3 text-xs sm:text-sm text-foreground/70 leading-snug text-left">
                 {ro
                   ? "Construim aplicații mobile și web custom — de la idee, prototip și UX, până la publicare în App Store, Google Play sau pe propriul tău domeniu. Lucrăm cu tehnologii moderne (React, React Native, Node, Supabase) care îți dau viteză, scalare reală și un cost de mentenanță predictibil pe termen lung."
                   : "We build custom mobile and web apps — from idea, prototype and UX through to publishing on the App Store, Google Play or your own domain. We use modern technologies (React, React Native, Node, Supabase) that deliver speed, real scalability and predictable long-term maintenance cost."}
@@ -579,8 +579,8 @@ const Pricing = () => {
               </div>
             </div>
           </div>
-          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
-            <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">{ro ? "Include:" : "Includes:"}</div>
+          <div className="md:col-span-3 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur">
+            <div className="text-[11px] uppercase tracking-[0.3em] text-foreground/50">{ro ? "Include:" : "Includes:"}</div>
             <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
               {(ro
                 ? [
@@ -608,7 +608,7 @@ const Pricing = () => {
                     { icon: <RefreshCw className="size-4" />, text: "OTA updates, versioning and 12+ month roadmap" },
                   ]
               ).map((f) => (
-                <li key={f.text} className="flex items-start gap-2 text-sm text-white/85">
+                <li key={f.text} className="flex items-start gap-2 text-sm text-foreground/85">
                   <span className="mt-0.5 size-5 rounded-md bg-indigo-400/15 text-indigo-300 grid place-items-center shrink-0">
                     {f.icon}
                   </span>
@@ -638,7 +638,7 @@ const Pricing = () => {
             <h2 className="font-display text-3xl md:text-4xl font-extrabold">
               {ro ? "Pachete de mentenanță" : "Care plans"}
             </h2>
-            <p className="mt-3 text-sm text-white/60 max-w-xl mx-auto">
+            <p className="mt-3 text-sm text-foreground/60 max-w-xl mx-auto">
               {ro
                 ? "Dacă vrei să-ți administrezi singur produsul, e perfect. Dacă vrei să ne ocupăm noi — alege un pachet."
                 : "Run it yourself or let us handle it — pick a plan that fits."}
@@ -652,27 +652,27 @@ const Pricing = () => {
                 className={`relative rounded-2xl border p-6 backdrop-blur transition-all hover:-translate-y-1 ${
                   tier.highlight
                     ? "border-emerald-300/40 bg-gradient-to-b from-emerald-500/10 to-white/[0.02] shadow-[0_30px_80px_-30px_rgba(16,185,129,0.4)]"
-                    : "border-white/10 bg-white/[0.03] hover:border-white/20"
+                    : "border-foreground/10 bg-foreground/[0.03] hover:border-foreground/20"
                 }`}
               >
                 {tier.highlight && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-emerald-400 text-[#05060f] text-[10px] font-bold uppercase tracking-widest px-3 py-1">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-emerald-400 text-background text-[10px] font-bold uppercase tracking-widest px-3 py-1">
                     {tier.tagline}
                   </div>
                 )}
                 <div className="flex items-center justify-between">
                   <span className={`text-3xl ${tier.accent} drop-shadow-[0_0_12px_currentColor]`}>{PS_SHAPES[tier.shape]}</span>
-                  <span className="size-9 rounded-lg bg-white/10 grid place-items-center">{tier.icon}</span>
+                  <span className="size-9 rounded-lg bg-foreground/10 grid place-items-center">{tier.icon}</span>
                 </div>
                 <h3 className="mt-5 font-display text-2xl font-extrabold">{tier.name}</h3>
-                {!tier.highlight && <p className="text-xs text-white/50 mt-1">{tier.tagline}</p>}
+                {!tier.highlight && <p className="text-xs text-foreground/50 mt-1">{tier.tagline}</p>}
                 <div className="mt-4 flex items-baseline gap-1">
                   <span className="font-display text-4xl font-extrabold">{tier.price}</span>
-                  <span className="text-xs text-white/50">/{ro ? "lună" : "mo"}</span>
+                  <span className="text-xs text-foreground/50">/{ro ? "lună" : "mo"}</span>
                 </div>
                 <ul className="mt-6 space-y-2.5">
                   {tier.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm text-white/85">
+                    <li key={f} className="flex items-start gap-2 text-sm text-foreground/85">
                       <Check className={`size-4 mt-0.5 shrink-0 ${tier.accent}`} />
                       <span>{f}</span>
                     </li>
@@ -682,8 +682,8 @@ const Pricing = () => {
                   href="#cta"
                   className={`mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
                     tier.highlight
-                      ? "bg-emerald-400 text-[#05060f] hover:bg-emerald-300"
-                      : "border border-white/15 bg-white/[0.06] hover:bg-white/[0.12]"
+                      ? "bg-emerald-400 text-background hover:bg-emerald-300"
+                      : "border border-foreground/15 bg-foreground/[0.06] hover:bg-foreground/[0.12]"
                   }`}
                 >
                   {ro ? "Alege pachet" : "Choose plan"}
@@ -694,8 +694,8 @@ const Pricing = () => {
         </section>
 
         {/* Self-serve note */}
-        <section className="mt-14 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
-          <p className="text-sm md:text-base text-white/75 leading-relaxed">
+        <section className="mt-14 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-6 backdrop-blur">
+          <p className="text-sm md:text-base text-foreground/75 leading-relaxed">
             {ro
               ? "Dacă alegi să administrezi singur site-ul, totul este pregătit pentru asta. Fiecare client primește la livrare un produs complet funcțional, optimizat și gata de scalare, găzduit la partenerii noștri de încredere cu care colaborăm de mulți ani — fără costuri suplimentare ascunse. Securitatea, viteza de încărcare și performanța pe toate dispozitivele sunt validate riguros prin testări automate și manuale în mediile noastre de dezvoltare, iar la predare primești documentație clară și acces complet la panoul de administrare."
               : "If you choose to manage the site yourself, everything is set up for it. Each client receives a fully functional, optimized and scale-ready product on delivery, hosted with our long-trusted partners — with no hidden additional costs. Security, load speed and cross-device performance are rigorously validated through automated and manual testing in our development environments, and at handover you receive clear documentation and full access to the admin panel."}
@@ -708,7 +708,7 @@ const Pricing = () => {
             <h2 className="font-display text-3xl md:text-4xl font-extrabold">
               {ro ? "Modalități de plată" : "Payment methods"}
             </h2>
-            <p className="mt-3 text-sm text-white/60 max-w-2xl mx-auto">
+            <p className="mt-3 text-sm text-foreground/60 max-w-2xl mx-auto">
               {ro
                 ? "Oferim metode flexibile și sigure de plată, adaptate atât pentru persoane fizice, cât și pentru companii."
                 : "Flexible and secure payment methods, for both individuals and businesses."}
@@ -719,13 +719,13 @@ const Pricing = () => {
             {payments.map((p) => (
               <div
                 key={p.title}
-                className="group rounded-2xl border border-white/10 bg-white/[0.03] p-5 hover:border-cyan-300/30 hover:bg-white/[0.06] transition-all backdrop-blur flex flex-col items-center text-center"
+                className="group rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 hover:border-cyan-300/30 hover:bg-foreground/[0.06] transition-all backdrop-blur flex flex-col items-center text-center"
               >
                 <div className="size-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 grid place-items-center text-white">
                   {p.icon}
                 </div>
                 <h3 className="mt-4 font-display font-bold">{p.title}</h3>
-                <p className="mt-1 text-xs text-white/60 leading-relaxed">{p.desc}</p>
+                <p className="mt-1 text-xs text-foreground/60 leading-relaxed">{p.desc}</p>
               </div>
             ))}
           </div>
@@ -736,12 +736,12 @@ const Pricing = () => {
               <Sparkles className="size-3.5" />
               <span>{ro ? "În curând pe platformă" : "Coming soon on the platform"}</span>
             </div>
-            <p className="mt-3 text-sm text-white/80 leading-relaxed">
+            <p className="mt-3 text-sm text-foreground/80 leading-relaxed">
               {ro
                 ? "Prin simpla creare și validare a contului pe platformă, vei putea achita prin numeroase metode de plată, vei avea toate facturile într-un singur loc și vei vedea în timp real produsele achiziționate sau aflate în administrare — monitorizate eficient de echipa Avyron. Vei putea plăti direct de pe site pachetele, produsele și abonamentele, inclusiv plăți recurente pentru abonamente."
                 : "Once you create and verify your account on the platform, you'll be able to pay using many methods, keep all invoices in one place and see your purchased or managed products in real time — monitored efficiently by the Avyron team. You'll be able to pay packages, products and subscriptions directly from the site, including recurring payments."}
             </p>
-            <p className="mt-3 text-xs text-white/55">
+            <p className="mt-3 text-xs text-foreground/55">
               {ro
                 ? "Costurile afișate sunt orientative și pot varia. Facturile se emit în RON la cursul BNR din ziua emiterii sau a efectuării plății."
                 : "Displayed costs are indicative and may vary. Invoices are issued in RON at the BNR rate on the day of issue or payment."}
@@ -750,11 +750,11 @@ const Pricing = () => {
         </section>
 
         {/* CTA */}
-        <section id="cta" className="mt-16 rounded-3xl border border-white/10 bg-gradient-to-br from-blue-600/20 via-purple-600/15 to-pink-500/15 p-8 md:p-10 text-center backdrop-blur relative overflow-hidden">
+        <section id="cta" className="mt-16 rounded-3xl border border-foreground/10 bg-gradient-to-br from-blue-600/20 via-purple-600/15 to-pink-500/15 p-8 md:p-10 text-center backdrop-blur relative overflow-hidden">
           <h2 className="font-display text-3xl md:text-4xl font-extrabold">
             {ro ? "Începem cu o evaluare gratuită" : "Let's start with a free evaluation"}
           </h2>
-          <p className="mt-3 text-white/70 max-w-xl mx-auto">
+          <p className="mt-3 text-foreground/70 max-w-xl mx-auto">
             {ro
               ? "Spune-ne ce vrei să construiești sau ce vrei să îmbunătățim — îți răspundem în maxim 24h."
               : "Tell us what you want to build or improve — we reply within 24h."}
@@ -770,19 +770,19 @@ const Pricing = () => {
             </a>
             <a
               href="mailto:avyrontech@gmail.com"
-              className="inline-flex items-center gap-2 rounded-full bg-white text-[#05060f] hover:bg-cyan-200 px-6 py-3 text-sm font-bold transition-colors"
+              className="inline-flex items-center gap-2 rounded-full bg-foreground text-background hover:bg-foreground/90 px-6 py-3 text-sm font-bold transition-colors"
             >
               avyrontech@gmail.com
             </a>
             <Link
               to="/#examples"
-              className="inline-flex items-center gap-2 rounded-full bg-cyan-400 text-[#05060f] hover:bg-cyan-300 px-6 py-3 text-sm font-bold transition-colors"
+              className="inline-flex items-center gap-2 rounded-full bg-cyan-400 text-background hover:bg-cyan-300 px-6 py-3 text-sm font-bold transition-colors"
             >
               {ro ? "Vreau un demo" : "I want a demo"}
             </Link>
             <a
               href="tel:+40734605055"
-              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.06] hover:bg-white/[0.12] px-6 py-3 text-sm font-bold text-white transition-colors"
+              className="inline-flex items-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.06] hover:bg-foreground/[0.12] px-6 py-3 text-sm font-bold text-white transition-colors"
             >
               {ro ? "Telefon" : "Phone"}
             </a>
