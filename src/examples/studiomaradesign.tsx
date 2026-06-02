@@ -1,12 +1,16 @@
 import { useEffect } from "react";
 import { ArrowUpRight, Mail, Instagram } from "lucide-react";
 import avyronLogo from "@/assets/avyron-logo.jpg";
+import floreascaImg from "@/assets/mara-floreasca.jpg.asset.json";
+import auraImg from "@/assets/mara-aura.jpg.asset.json";
+import baneasaImg from "@/assets/mara-baneasa.jpg.asset.json";
+import lumenImg from "@/assets/mara-lumen.jpg.asset.json";
 
 const projects = [
-  { title: "Apartament Floreasca", year: "2024", tag: "Rezidențial · 92 mp · Stil japandi" },
-  { title: "Cabinet stomatologic Aura", year: "2024", tag: "Comercial · 140 mp · Sector 1" },
-  { title: "Penthouse Băneasa", year: "2023", tag: "Rezidențial · 180 mp · Două nivele" },
-  { title: "Showroom Lumen", year: "2023", tag: "Retail · 220 mp · Iluminat decorativ" },
+  { title: "Apartament Floreasca", year: "2024", tag: "Rezidențial · 92 mp · Stil japandi", img: floreascaImg.url },
+  { title: "Cabinet stomatologic Aura", year: "2024", tag: "Comercial · 140 mp · Sector 1", img: auraImg.url },
+  { title: "Penthouse Băneasa", year: "2023", tag: "Rezidențial · 180 mp · Două nivele", img: baneasaImg.url },
+  { title: "Showroom Lumen", year: "2023", tag: "Retail · 220 mp · Iluminat decorativ", img: lumenImg.url },
 ];
 
 export default function StudioMaraDesign() {
@@ -47,8 +51,8 @@ export default function StudioMaraDesign() {
           <div className="grid sm:grid-cols-2 gap-8">
             {projects.map((p) => (
               <article key={p.title} className="group cursor-pointer">
-                <div className="aspect-[4/3] bg-gradient-to-br from-[#d8cdbd] via-[#c4b39c] to-[#a08770] mb-4 overflow-hidden rounded-sm">
-                  <div className="size-full opacity-0 group-hover:opacity-20 transition-opacity bg-[#1a1a1a]" />
+                <div className="aspect-[4/3] mb-4 overflow-hidden rounded-sm bg-[#d8cdbd]">
+                  <img src={p.img} alt={p.title} width={1024} height={768} loading="lazy" className="size-full object-cover group-hover:scale-[1.03] transition-transform duration-500" />
                 </div>
                 <div className="flex items-baseline justify-between">
                   <h3 className="font-serif text-xl sm:text-2xl">{p.title}</h3>
