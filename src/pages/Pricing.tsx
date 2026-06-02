@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Check, CreditCard, Building2, Link2, FileText, Sparkles, Zap, Crown, Shield, RefreshCw } from "lucide-react";
+import { ArrowLeft, Check, CreditCard, Building2, Link2, FileText, Sparkles, Zap, Crown, Shield, RefreshCw, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import logo from "@/assets/avyron-logo.jpg";
 
@@ -53,7 +53,7 @@ const Pricing = () => {
   };
 
   const main = {
-    title: ro ? "Produs principal" : "Main product",
+    title: ro ? "Website Prezentare Premium" : "Premium Presentation Website",
     range: ro ? "de la 300€" : "from €300",
     desc: ro
       ? "Site complet, livrat la cheie — gata să producă rezultate din prima zi. Clientul nu mai are nimic de plătit pentru o perioadă de minim 1 lună până la 1 an (în funcție de cerințele și configurația inițială), iar produsul beneficiază de suport tehnic gratuit pe toată durata de viață: asistență la administrare, recomandări de securitate, răspuns prompt la întrebări și ghidare strategică pentru evoluția site-ului."
@@ -274,13 +274,24 @@ const Pricing = () => {
         {/* Main product */}
         <section className="mt-12 grid md:grid-cols-5 gap-5">
             <div className="md:col-span-2 rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-[#0a0f24] to-[#05060f] p-5 sm:p-6 relative overflow-hidden text-center">
-            <h2 className="font-display text-2xl sm:text-3xl font-extrabold">{main.title}</h2>
-            <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
-              <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-cyan-300 to-blue-500 bg-clip-text text-transparent break-words">
-                {currency === "EUR" ? "de la 300€" : `${ro ? "de la" : "from"} ${Math.round(300 * rate)} RON`}
-              </span>
+            {/* Decorative glow */}
+            <div aria-hidden className="absolute -top-16 -right-16 size-48 rounded-full bg-cyan-400/15 blur-3xl" />
+            <div className="relative">
+              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-cyan-200">
+                <BadgeCheck className="size-3.5" />
+                {ro ? "Produs principal" : "Main product"}
+              </div>
+              <div className="mt-5 mx-auto size-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 grid place-items-center shadow-[0_0_40px_-8px_rgba(34,211,238,0.6)]">
+                <Globe className="size-8 text-white" />
+              </div>
+              <h2 className="mt-4 font-display text-2xl sm:text-3xl font-extrabold">{main.title}</h2>
+              <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
+                <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-cyan-300 to-blue-500 bg-clip-text text-transparent break-words">
+                  {currency === "EUR" ? "de la 300€" : `${ro ? "de la" : "from"} ${Math.round(300 * rate)} RON`}
+                </span>
+              </div>
+              <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">{main.desc}</p>
             </div>
-            <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">{main.desc}</p>
           </div>
           <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
             <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">{ro ? "Include:" : "Includes:"}</div>
@@ -294,6 +305,93 @@ const Pricing = () => {
             </ul>
           </div>
         </section>
+
+        {/* Identitate Social Media */}
+        <section className="mt-12 grid md:grid-cols-5 gap-5">
+          <div className="md:col-span-2 rounded-2xl border border-pink-300/20 bg-gradient-to-br from-[#1a0a24] to-[#05060f] p-5 sm:p-6 relative overflow-hidden text-center">
+            <div aria-hidden className="absolute -top-16 -left-16 size-48 rounded-full bg-pink-400/15 blur-3xl" />
+            <div aria-hidden className="absolute -bottom-16 -right-16 size-48 rounded-full bg-purple-500/15 blur-3xl" />
+            <div className="relative">
+              <div className="inline-flex items-center gap-2 rounded-full border border-pink-300/30 bg-pink-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-pink-200">
+                <Sparkles className="size-3.5" />
+                {ro ? "Identitate digitală" : "Digital identity"}
+              </div>
+              <div className="mt-5 flex items-center justify-center gap-3">
+                <div className="size-12 rounded-xl bg-gradient-to-br from-[#1877F2] to-[#0a4fb3] grid place-items-center shadow-[0_0_24px_-6px_rgba(24,119,242,0.6)]">
+                  <Facebook className="size-6 text-white" />
+                </div>
+                <div className="size-12 rounded-xl bg-gradient-to-br from-[#f09433] via-[#dc2743] to-[#bc1888] grid place-items-center shadow-[0_0_24px_-6px_rgba(220,39,67,0.6)]">
+                  <Instagram className="size-6 text-white" />
+                </div>
+                <div className="size-12 rounded-xl bg-gradient-to-br from-[#25F4EE] via-[#000] to-[#FE2C55] grid place-items-center shadow-[0_0_24px_-6px_rgba(254,44,85,0.6)]">
+                  <Music2 className="size-6 text-white" />
+                </div>
+              </div>
+              <h2 className="mt-5 font-display text-2xl sm:text-3xl font-extrabold">
+                {ro ? "Identitate Social Media" : "Social Media Identity"}
+              </h2>
+              <p className="mt-2 text-xs uppercase tracking-[0.25em] text-white/50">
+                {ro ? "Facebook · Instagram · TikTok" : "Facebook · Instagram · TikTok"}
+              </p>
+              <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
+                <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-pink-300 to-purple-500 bg-clip-text text-transparent break-words">
+                  {currency === "EUR" ? "de la 120€" : `${ro ? "de la" : "from"} ${Math.round(120 * rate)} RON`}
+                </span>
+              </div>
+              <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">
+                {ro
+                  ? "Construim de la zero identitatea ta în social media — conturi profesionale, coerente vizual și pregătite să convertească. Configurăm tot ce ține de prezență, descrieri, design, postări inițiale și butoane de acțiune, sincronizate cu website-ul tău pentru o experiență unitară între online și client."
+                  : "We build your social media identity from scratch — professional accounts, visually coherent and conversion-ready. We set up presence, bios, design, initial posts and action buttons, all synced with your website for a seamless online experience."}
+              </p>
+            </div>
+          </div>
+          <div className="md:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
+            <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">{ro ? "Include:" : "Includes:"}</div>
+            <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
+              {(ro
+                ? [
+                    { icon: <BadgeCheck className="size-4" />, text: "Creare conturi Facebook, Instagram și TikTok Business" },
+                    { icon: <FileText className="size-4" />, text: "Descrieri (bio) profesionale, optimizate cu cuvinte cheie" },
+                    { icon: <ImageIcon className="size-4" />, text: "Poză de profil, cover și template-uri vizuale coerente cu brandul" },
+                    { icon: <Sparkles className="size-4" />, text: "Pachet de 6–9 postări inițiale (grid estetic Instagram)" },
+                    { icon: <Calendar className="size-4" />, text: "Repere și calendar editorial pentru primele 30 de zile" },
+                    { icon: <MessageCircle className="size-4" />, text: "Butoane de comenzi & contact (WhatsApp, Mesaj, Sună, Rezervă)" },
+                    { icon: <Share2 className="size-4" />, text: "Sincronizare conturi cu website și pixeluri (Meta, TikTok)" },
+                    { icon: <Instagram className="size-4" />, text: "Linkuri unificate (link-in-bio) și redirect către produse / servicii" },
+                    { icon: <Music2 className="size-4" />, text: "Recomandări de conținut TikTok adaptat domeniului tău" },
+                    { icon: <Shield className="size-4" />, text: "Setări de siguranță, verificare e-mail și recuperare cont" },
+                  ]
+                : [
+                    { icon: <BadgeCheck className="size-4" />, text: "Facebook, Instagram and TikTok Business account setup" },
+                    { icon: <FileText className="size-4" />, text: "Professional bios, optimized with relevant keywords" },
+                    { icon: <ImageIcon className="size-4" />, text: "Profile picture, cover and visual templates aligned to your brand" },
+                    { icon: <Sparkles className="size-4" />, text: "Initial 6–9 posts pack (aesthetic Instagram grid)" },
+                    { icon: <Calendar className="size-4" />, text: "Milestones and editorial calendar for the first 30 days" },
+                    { icon: <MessageCircle className="size-4" />, text: "Order & contact buttons (WhatsApp, Message, Call, Book)" },
+                    { icon: <Share2 className="size-4" />, text: "Accounts synced with website and pixels (Meta, TikTok)" },
+                    { icon: <Instagram className="size-4" />, text: "Unified link-in-bio and redirects to products / services" },
+                    { icon: <Music2 className="size-4" />, text: "TikTok content recommendations tailored to your niche" },
+                    { icon: <Shield className="size-4" />, text: "Safety settings, email verification and account recovery" },
+                  ]
+              ).map((f) => (
+                <li key={f.text} className="flex items-start gap-2 text-sm text-white/85">
+                  <span className="mt-0.5 size-5 rounded-md bg-pink-400/15 text-pink-300 grid place-items-center shrink-0">
+                    {f.icon}
+                  </span>
+                  <span>{f.text}</span>
+                </li>
+              ))}
+            </ul>
+            <a
+              href="#cta"
+              className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
+            >
+              <Sparkles className="size-4" />
+              {ro ? "Vreau pachetul Social" : "I want the Social pack"}
+            </a>
+          </div>
+        </section>
+
 
         {/* Care plans */}
         <section className="mt-16">
