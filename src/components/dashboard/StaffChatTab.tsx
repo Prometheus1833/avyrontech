@@ -285,11 +285,21 @@ export const StaffChatTab = () => {
         <section className="flex-1 min-w-0 flex flex-col bg-background">
           {/* Top bar */}
           <div className="h-14 border-b border-border/70 flex items-center px-4 gap-3">
-            {target.type === "channel" ? <Hash className="size-5 text-muted-foreground" /> : <AtSign className="size-5 text-muted-foreground" />}
+            {target.type === "channel" ? (
+              <span className="text-xl leading-none">{(target as any).emoji ?? STAFF_CHANNELS.find(c => c.id === target.id)?.emoji ?? "💬"}</span>
+            ) : target.type === "group" ? (
+              <UsersRound className="size-5 text-muted-foreground" />
+            ) : (
+              <AtSign className="size-5 text-muted-foreground" />
+            )}
             <div className="min-w-0">
               <p className="font-semibold truncate">{target.name}</p>
               <p className="text-[11px] text-muted-foreground truncate">
-                {target.type === "channel" ? (STAFF_CHANNELS.find(c => c.id === target.id)?.topic ?? "") : "Conversație directă"}
+                {target.type === "channel"
+                  ? (STAFF_CHANNELS.find(c => c.id === target.id)?.topic ?? "")
+                  : target.type === "group"
+                    ? `${(target as any).memberIds?.length ?? 0} membri · conversație de grup`
+                    : "Conversație directă"}
               </p>
             </div>
             <div className="ml-auto flex items-center gap-1">
@@ -297,6 +307,12 @@ export const StaffChatTab = () => {
                 <Search className="size-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Caută…" className="h-8 pl-7 w-44 text-xs" />
               </div>
+              <Tooltip><TooltipTrigger asChild>
+                <Button size="sm" variant="outline" className="h-8 gap-1.5"
+                  onClick={() => { setInviteOpen(true); setNewGroupMembers(target.type === "group" ? (target as any).memberIds : []); setNewGroupName(target.type === "group" ? target.name : ""); }}>
+                  <UserPlus className="size-3.5" /> <span className="hidden sm:inline text-xs">Invită</span>
+                </Button>
+              </TooltipTrigger><TooltipContent>Invită colegi într-o conversație de grup</TooltipContent></Tooltip>
               <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" className="size-8"><Pin className="size-4" /></Button></TooltipTrigger><TooltipContent>Mesaje fixate</TooltipContent></Tooltip>
               <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" className="size-8"><Bell className="size-4" /></Button></TooltipTrigger><TooltipContent>Notificări</TooltipContent></Tooltip>
               <Tooltip><TooltipTrigger asChild>
