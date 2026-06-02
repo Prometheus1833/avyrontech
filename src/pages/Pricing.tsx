@@ -113,7 +113,7 @@ const Pricing = () => {
       accent: "text-emerald-400",
       features: ro
         ? [
-            "Tot din Plus",
+            "Plus +",
             "10 modificări de conținut (texte, imagini)",
             "Backup lunar",
             "Optimizări de performanță",
