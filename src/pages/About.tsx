@@ -21,6 +21,8 @@ import { useLang } from "@/i18n/LanguageContext";
 import logo from "@/assets/avyron-logo.jpg";
 import Footer from "@/components/site/Footer";
 import ContactBar from "@/components/site/ContactBar";
+import LangSwitch from "@/components/site/LangSwitch";
+import ThemeToggle from "@/components/site/ThemeToggle";
 import { examples } from "@/examples/registry";
 
 const About = () => {
