@@ -303,7 +303,7 @@ export const translations = {
         { l: "Vezi Domenii", h: "#exemple" },
         { l: "Proces", h: "#proces" },
         { l: "Avantaje", h: "#avantaje" },
-        { l: "Despre Noi", h: "/despre-si-portofoliu" },
+        { l: "Produse", h: "/costurisiproduse" },
         { l: "Confidențialitate & GDPR", h: "/gdpr" },
       ],
       ctaLabel: "Demo gratuit",
