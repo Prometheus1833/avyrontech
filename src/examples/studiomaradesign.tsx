@@ -51,8 +51,8 @@ export default function StudioMaraDesign() {
           <div className="grid sm:grid-cols-2 gap-8">
             {projects.map((p) => (
               <article key={p.title} className="group cursor-pointer">
-                <div className="aspect-[4/3] bg-gradient-to-br from-[#d8cdbd] via-[#c4b39c] to-[#a08770] mb-4 overflow-hidden rounded-sm">
-                  <div className="size-full opacity-0 group-hover:opacity-20 transition-opacity bg-[#1a1a1a]" />
+                <div className="aspect-[4/3] mb-4 overflow-hidden rounded-sm bg-[#d8cdbd]">
+                  <img src={p.img} alt={p.title} width={1024} height={768} loading="lazy" className="size-full object-cover group-hover:scale-[1.03] transition-transform duration-500" />
                 </div>
                 <div className="flex items-baseline justify-between">
                   <h3 className="font-serif text-xl sm:text-2xl">{p.title}</h3>
