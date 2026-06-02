@@ -66,22 +66,6 @@ const About = () => {
 
   const projects = [
     {
-      name: "Flawlesstudio.ro",
-      url: "https://flawlesstudio.ro",
-      tag: ro ? "Brand local Iași — multi-sediu" : "Local Iași brand — multi-location",
-      desc: ro
-        ? "Website de prezentare pentru un brand local din Iași, cu mai multe sedii, programări și identitate vizuală premium."
-        : "Showcase website for a local Iași brand, with multiple locations, bookings and premium visual identity.",
-    },
-    {
-      name: "Clarlumanari.ro",
-      url: "https://clarlumanari.ro",
-      tag: ro ? "Brand artizanal — Site + comenzi" : "Artisan brand — Site + orders",
-      desc: ro
-        ? "Website de prezentare pentru CLAR — lumânări parfumate turnate manual din ceară naturală, cu fitil din lemn. Catalog de produse, poveste de brand și comenzi rapide prin WhatsApp și telefon."
-        : "Showcase website for CLAR — scented candles hand-poured from natural wax with wooden wicks. Product catalog, brand story and quick orders via WhatsApp and phone.",
-    },
-    {
       name: "Miago.ro",
       url: "https://miago.ro",
       tag: ro ? "Platformă Auto — Site + Aplicație" : "Auto Platform — Site + App",
@@ -98,6 +82,14 @@ const About = () => {
         : "Showcase website for a premium barber shop: full service menu (classic cut, skin fade, beard, treatments), salon gallery and instant bookings via Mero and WhatsApp integration.",
     },
     {
+      name: "Clarlumanari.ro",
+      url: "https://clarlumanari.ro",
+      tag: ro ? "Brand artizanal — Site + comenzi" : "Artisan brand — Site + orders",
+      desc: ro
+        ? "Website de prezentare pentru CLAR — lumânări parfumate turnate manual din ceară naturală, cu fitil din lemn. Catalog de produse, poveste de brand și comenzi rapide prin WhatsApp și telefon."
+        : "Showcase website for CLAR — scented candles hand-poured from natural wax with wooden wicks. Product catalog, brand story and quick orders via WhatsApp and phone.",
+    },
+    {
       name: "Plaseieftineiasi.ro",
       url: "https://plaseieftineiasi.ro",
       tag: ro ? "E-commerce sezonier — Site" : "Seasonal e-commerce — Site",
@@ -112,6 +104,14 @@ const About = () => {
       desc: ro
         ? "Produs care digitalizează procesul SGR din România: decontare prin aplicație și serviciu de colectori la domiciliu pentru recipiente reciclabile."
         : "Product digitalizing Romania's DRS process: in-app refunds and a home pickup collector service for recyclable containers.",
+    },
+    {
+      name: "Flawlesstudio.ro",
+      url: "https://flawlesstudio.ro",
+      tag: ro ? "Brand local Iași — multi-sediu" : "Local Iași brand — multi-location",
+      desc: ro
+        ? "Website de prezentare pentru un brand local din Iași, cu mai multe sedii, programări și identitate vizuală premium."
+        : "Showcase website for a local Iași brand, with multiple locations, bookings and premium visual identity.",
     },
   ];
 
