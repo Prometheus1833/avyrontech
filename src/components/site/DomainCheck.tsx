@@ -12,10 +12,11 @@ const slugify = (s: string) =>
 
 const tlds = [".ro", ".com", ".eu", ".net", ".org", ".io", ".app", ".dev", ".tech", ".store", ".online", ".biz", ".info", ".co", ".shop"];
 
-type Result = { tld: string; available: boolean; uncertain?: boolean };
+type Status = "available" | "registered" | "unknown";
+type Result = { tld: string; status: Status; label: string; message: string; cached?: boolean };
 
 const DomainCheck = () => {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [name, setName] = useState("");
   const [tld, setTld] = useState(".ro");
   const [checking, setChecking] = useState(false);
@@ -38,7 +39,14 @@ const DomainCheck = () => {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      setResults([{ tld, available: !!data.available, uncertain: !!data.uncertain }]);
+      const status = (data.status ?? "unknown") as Status;
+      setResults([{
+        tld,
+        status,
+        label: data.label?.[lang] ?? status,
+        message: data.message?.[lang] ?? "",
+        cached: !!data.cached,
+      }]);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Verificare eșuată";
       toast.error(msg);
@@ -129,38 +137,45 @@ const DomainCheck = () => {
                   exit={{ opacity: 0 }}
                   className="mt-6 max-w-md mx-auto"
                 >
-                  {results.map((r, i) => (
+                  {results.map((r, i) => {
+                    const ok = r.status === "available";
+                    const unknown = r.status === "unknown";
+                    return (
                     <motion.div
                       key={r.tld}
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: i * 0.08 }}
                       className={`rounded-2xl border p-4 flex items-center justify-between backdrop-blur ${
-                        r.available
-                          ? "bg-accent/15 border-accent/30"
+                        ok ? "bg-accent/15 border-accent/30"
+                          : unknown ? "bg-amber-500/10 border-amber-500/30"
                           : "bg-white/5 border-white/10"
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <span
                           className={`size-8 rounded-full grid place-items-center ${
-                            r.available ? "bg-accent text-accent-foreground" : "bg-white/10"
+                            ok ? "bg-accent text-accent-foreground"
+                              : unknown ? "bg-amber-500/30 text-amber-100"
+                              : "bg-white/10"
                           }`}
                         >
-                          {r.uncertain ? <AlertTriangle className="size-4" /> : r.available ? <Check className="size-4" /> : <X className="size-4" />}
+                          {unknown ? <AlertTriangle className="size-4" /> : ok ? <Check className="size-4" /> : <X className="size-4" />}
                         </span>
                         <div className="text-left">
                           <div className="font-mono font-semibold">
                             {slug}
                             <span className="opacity-70">{r.tld}</span>
                           </div>
-                          <div className="text-xs text-white/60">
-                            {r.uncertain ? "Verificare incertă — încearcă din nou" : r.available ? t.domain.available : t.domain.taken}
+                          <div className="text-xs text-white/70">
+                            <span className="font-semibold">{r.label}</span>
+                            {r.message ? <span className="opacity-80"> — {r.message}</span> : null}
+                            {r.cached ? <span className="ml-1 opacity-50">(cache)</span> : null}
                           </div>
                         </div>
                       </div>
                     </motion.div>
-                  ))}
+                  );})}
                 </motion.div>
               )}
             </AnimatePresence>
