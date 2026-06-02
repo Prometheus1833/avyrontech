@@ -270,29 +270,48 @@ const About = () => {
           </div>
           <div className="mt-12 max-w-3xl mx-auto">
             <div className="relative rounded-2xl border border-border/80 bg-card/40 backdrop-blur overflow-hidden">
-              <div className="max-h-[28rem] overflow-y-auto divide-y divide-border/70 [scrollbar-width:thin]">
-                {projects.map((p) => (
-                  <a
-                    key={p.name}
-                    href={p.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group relative flex items-start gap-4 p-5 hover:bg-brand/5 transition-colors"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-display font-bold text-lg md:text-xl">{p.name}</h3>
-                      <span className="mt-0.5 inline-block font-mono text-[11px] uppercase tracking-[0.18em] text-brand">{p.tag}</span>
-                      <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{p.desc}</p>
-                    </div>
-                    <span className="shrink-0 size-9 rounded-full bg-foreground text-background grid place-items-center group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
-                      <ArrowUpRight className="size-4" />
-                    </span>
-                  </a>
-                ))}
+              <div className="max-h-[28rem] overflow-y-auto divide-y divide-border/70 scrollbar-subtle">
+                {[
+                  ...projects.map((p) => ({
+                    key: p.name,
+                    name: p.name,
+                    tag: p.tag,
+                    desc: p.desc,
+                    href: p.url,
+                    internal: false,
+                  })),
+                  ...examples.map((e) => ({
+                    key: e.slug,
+                    name: e.domain,
+                    tag: ro
+                      ? `${e.category.ro} — Exemplu Avyron`
+                      : `${e.category.en} — Avyron example`,
+                    desc: ro ? e.description.ro : e.description.en,
+                    href: `/examples/${e.slug}`,
+                    internal: true,
+                  })),
+                ].map((p) => {
+                  const content = (
+                    <>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-display font-bold text-lg md:text-xl">{p.name}</h3>
+                        <span className="mt-0.5 inline-block font-mono text-[11px] uppercase tracking-[0.18em] text-brand">{p.tag}</span>
+                        <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{p.desc}</p>
+                      </div>
+                      <span className="shrink-0 size-9 rounded-full bg-foreground text-background grid place-items-center group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
+                        <ArrowUpRight className="size-4" />
+                      </span>
+                    </>
+                  );
+                  const cls = "group relative flex items-start gap-4 p-5 hover:bg-brand/5 transition-colors";
+                  return p.internal ? (
+                    <Link key={p.key} to={p.href} className={cls}>{content}</Link>
+                  ) : (
+                    <a key={p.key} href={p.href} target="_blank" rel="noopener noreferrer" className={cls}>{content}</a>
+                  );
+                })}
               </div>
-              {projects.length > 5 && (
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-card to-transparent" aria-hidden />
-              )}
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-card to-transparent" aria-hidden />
             </div>
             <p className="mt-3 text-center text-xs text-muted-foreground">
               {ro ? "Derulează lista pentru a vedea mai multe proiecte." : "Scroll the list to see more projects."}
@@ -301,55 +320,12 @@ const About = () => {
         </div>
       </section>
 
-      {/* Exemple personalizate — subpagini Avyron */}
-      <section id="examples" className="py-16 md:py-20 border-t border-border/60 scroll-mt-24">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="max-w-2xl mx-auto text-center">
-            <span className="inline-block font-mono text-[10px] uppercase tracking-[0.24em] text-brand">avyron.ro/examples</span>
-            <h2 className="mt-3 font-display font-bold text-3xl md:text-4xl tracking-tight">
-              {ro ? "Exemple personalizate, găzduite de noi." : "Custom examples, hosted by us."}
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              {ro
-                ? "Pagini exemplu construite pentru afaceri reale — fiecare e o subpagină live a site-ului Avyron. Le folosim ca demo pentru a-ți arăta cum ar putea arăta propriul tău site."
-                : "Example pages built for real-world businesses — each one is a live subpage of the Avyron site. We use them as demos to show what your own site could look like."}
-            </p>
-          </div>
-          <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {examples.map((e) => (
-              <Link
-                key={e.slug}
-                to={`/examples/${e.slug}`}
-                className="group relative rounded-2xl border border-border/80 bg-card/40 backdrop-blur p-5 hover:border-brand/60 hover:bg-brand/5 transition-all"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                      avyron.ro/examples/
-                    </span>
-                    <h3 className="font-display font-bold text-lg truncate">{e.domain}</h3>
-                  </div>
-                  <span className="shrink-0 size-8 rounded-full bg-foreground text-background grid place-items-center group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
-                    <ArrowUpRight className="size-3.5" />
-                  </span>
-                </div>
-                <span className="mt-3 inline-block text-[11px] font-medium text-brand">
-                  {ro ? e.category.ro : e.category.en}
-                </span>
-                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                  {ro ? e.description.ro : e.description.en}
-                </p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Parteneri — marquee subtil */}
       <section aria-labelledby="parteneri-title" className="py-10 md:py-12 border-t border-border/60 bg-card/20">
         <div className="mx-auto max-w-6xl px-4">
           <h2 id="parteneri-title" className="text-center font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
-            {ro ? "Partenerii noștri de încredere" : "Our trusted partners"}
+            {ro ? "Partenerii și tehnologii de încredere" : "Trusted partners & technologies"}
           </h2>
           <div className="mt-6 relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
             <div className="flex gap-12 md:gap-16 w-max animate-[partners-scroll_38s_linear_infinite] hover:[animation-play-state:paused]">
