@@ -224,10 +224,16 @@ const Pricing = () => {
         <div className="flex items-center justify-between gap-3">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 rounded-full border border-foreground/15 bg-foreground/[0.04] px-3 sm:px-4 py-2 text-xs sm:text-sm text-foreground/80 hover:bg-foreground/[0.1] hover:text-foreground transition-all backdrop-blur"
+            className="group relative inline-flex items-center gap-2 rounded-full border border-foreground/15 bg-foreground/[0.04] backdrop-blur pl-2 pr-3.5 py-1.5 text-xs font-medium text-foreground/70 hover:text-foreground hover:border-cyan-300/60 transition-all duration-300 overflow-hidden"
           >
-            <ArrowLeft className="size-4" />
-            {ro ? "Înapoi" : "Back"}
+            <span className="absolute inset-0 bg-gradient-to-r from-cyan-400/0 via-cyan-400/15 to-cyan-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" aria-hidden />
+            <span className="relative grid place-items-center size-5 rounded-full bg-foreground text-background transition-transform duration-300 group-hover:-translate-x-0.5">
+              <ArrowLeft className="size-3" />
+            </span>
+            <span className="relative font-mono uppercase tracking-[0.18em] text-[10px]">
+              {ro ? "Acasă" : "Home"}
+            </span>
+            <span className="relative size-1 rounded-full bg-cyan-400 animate-pulse" aria-hidden />
           </Link>
           <div className="flex items-center gap-2">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 bg-foreground/[0.04] px-2 py-1 backdrop-blur">
