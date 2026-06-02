@@ -4,6 +4,8 @@ import { ArrowLeft, Check, CreditCard, Building2, Link2, FileText, Sparkles, Zap
 import { useLang } from "@/i18n/LanguageContext";
 import logo from "@/assets/avyron-logo.jpg";
 import premiumTech from "@/assets/premium-website-mockup.jpg";
+import LangSwitch from "@/components/site/LangSwitch";
+import ThemeToggle from "@/components/site/ThemeToggle";
 
 /**
  * PlayStation-inspired pricing page.
