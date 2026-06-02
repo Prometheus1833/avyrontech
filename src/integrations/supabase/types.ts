@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      domain_checks: {
+        Row: {
+          created_at: string
+          domain: string
+          id: string
+          ip_hash: string | null
+          name: string
+          source: string | null
+          status: string
+          tld: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          id?: string
+          ip_hash?: string | null
+          name: string
+          source?: string | null
+          status: string
+          tld: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          id?: string
+          ip_hash?: string | null
+          name?: string
+          source?: string | null
+          status?: string
+          tld?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       example_requests: {
         Row: {
           created_at: string
