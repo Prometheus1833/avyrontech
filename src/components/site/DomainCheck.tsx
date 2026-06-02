@@ -180,7 +180,7 @@ const DomainCheck = () => {
               )}
             </AnimatePresence>
 
-            {results && results.some((r) => r.available) && (
+            {results && results.some((r) => r.status === "available") && (
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
