@@ -1,21 +1,25 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, X, Sparkles, Globe, Loader2 } from "lucide-react";
+import { Check, X, Sparkles, Globe, Loader2, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLang } from "@/i18n/LanguageContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const slugify = (s: string) =>
-  s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+  s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9-]/g, "").replace(/^-+|-+$/g, "");
 
 const tlds = [".ro", ".com", ".eu", ".net", ".org", ".io", ".app", ".dev", ".tech", ".store", ".online", ".biz", ".info", ".co", ".shop"];
+
+type Result = { tld: string; available: boolean; uncertain?: boolean };
 
 const DomainCheck = () => {
   const { t } = useLang();
   const [name, setName] = useState("");
   const [tld, setTld] = useState(".ro");
   const [checking, setChecking] = useState(false);
-  const [results, setResults] = useState<null | { tld: string; available: boolean }[]>(null);
+  const [results, setResults] = useState<null | Result[]>(null);
   const [livePreview, setLivePreview] = useState("");
 
   const slug = slugify(name).slice(0, 30);
@@ -24,15 +28,23 @@ const DomainCheck = () => {
     setLivePreview(slug);
   }, [slug]);
 
-  const check = () => {
-    if (!slug) return;
+  const check = async () => {
+    if (!slug || slug.length < 2) return;
     setChecking(true);
     setResults(null);
-    setTimeout(() => {
-      const available = ((slug.length + tlds.indexOf(tld)) % 3) !== 0 && slug.length > 3;
-      setResults([{ tld, available }]);
+    try {
+      const { data, error } = await supabase.functions.invoke("check-domain", {
+        body: { name: slug, tld: tld.replace(/^\./, "") },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setResults([{ tld, available: !!data.available, uncertain: !!data.uncertain }]);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Verificare eșuată";
+      toast.error(msg);
+    } finally {
       setChecking(false);
-    }, 700);
+    }
   };
 
   return (
@@ -135,15 +147,15 @@ const DomainCheck = () => {
                             r.available ? "bg-accent text-accent-foreground" : "bg-white/10"
                           }`}
                         >
-                          {r.available ? <Check className="size-4" /> : <X className="size-4" />}
+                          {r.uncertain ? <AlertTriangle className="size-4" /> : r.available ? <Check className="size-4" /> : <X className="size-4" />}
                         </span>
-                        <div>
+                        <div className="text-left">
                           <div className="font-mono font-semibold">
                             {slug}
                             <span className="opacity-70">{r.tld}</span>
                           </div>
                           <div className="text-xs text-white/60">
-                            {r.available ? t.domain.available : t.domain.taken}
+                            {r.uncertain ? "Verificare incertă — încearcă din nou" : r.available ? t.domain.available : t.domain.taken}
                           </div>
                         </div>
                       </div>
