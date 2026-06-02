@@ -294,7 +294,7 @@ const Pricing = () => {
               </div>
               <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">{main.desc}</p>
               <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/[0.06] px-3 py-1.5 text-[11px] text-cyan-100">
-                <RefreshCw className="size-3.5" />
+                <Hourglass className="size-3.5" />
                 {ro ? "Timp aproximativ dezvoltare: 2–5 zile" : "Approx. development time: 2–5 days"}
               </div>
             </div>
@@ -362,7 +362,7 @@ const Pricing = () => {
                   : "We build your social media identity from scratch — professional accounts, visually coherent and conversion-ready. We set up presence, bios, design, initial posts and action buttons, all synced with your website for a seamless online experience."}
               </p>
               <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-pink-300/20 bg-pink-300/[0.06] px-3 py-1.5 text-[11px] text-pink-100">
-                <RefreshCw className="size-3.5" />
+                <Hourglass className="size-3.5" />
                 {ro ? "Timp aproximativ dezvoltare: 2–5 zile" : "Approx. development time: 2–5 days"}
               </div>
             </div>
@@ -449,7 +449,7 @@ const Pricing = () => {
                   : "A full online store optimized for real sales — product catalog, cart, secure checkout and integrated online payments. We build on Shopify or on a custom stack depending on scale, focused on speed, conversion and an admin panel anyone on your team can use."}
               </p>
               <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/[0.06] px-3 py-1.5 text-[11px] text-emerald-100">
-                <RefreshCw className="size-3.5" />
+                <Hourglass className="size-3.5" />
                 {ro ? "Timp aproximativ dezvoltare: 7–21 zile" : "Approx. development time: 7–21 days"}
               </div>
             </div>
@@ -546,7 +546,7 @@ const Pricing = () => {
                   : "We build custom mobile and web apps — from idea, prototype and UX through to publishing on the App Store, Google Play or your own domain. We use modern technologies (React, React Native, Node, Supabase) that deliver speed, real scalability and predictable long-term maintenance cost."}
               </p>
               <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-indigo-300/20 bg-indigo-300/[0.06] px-3 py-1.5 text-[11px] text-indigo-100">
-                <RefreshCw className="size-3.5" />
+                <Hourglass className="size-3.5" />
                 {ro ? "Timp aproximativ dezvoltare: 7–30 zile" : "Approx. development time: 7–30 days"}
               </div>
             </div>
