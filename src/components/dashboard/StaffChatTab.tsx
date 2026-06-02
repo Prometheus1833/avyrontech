@@ -194,59 +194,7 @@ export const StaffChatTab = () => {
 
           <ScrollArea className="flex-1">
             <div className="p-3 space-y-6">
-              {/* Camere (channels, redenumite în spirit Signal/WhatsApp) */}
-              <div>
-                <div className="flex items-center justify-between px-2 mb-2">
-                  <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-muted-foreground">Camere</span>
-                  <Plus className="size-3.5 text-muted-foreground hover:text-foreground cursor-pointer" />
-                </div>
-                <div className="space-y-0.5">
-                  {STAFF_CHANNELS.map(c => {
-                    const active = target.type === "channel" && target.id === c.id;
-                    return (
-                      <button key={c.id} onClick={() => setTarget({ type: "channel", id: c.id, name: c.name })}
-                        className={cn("w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition",
-                          active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/70")}>
-                        <Hash className="size-4 shrink-0 opacity-70" />
-                        <span className="truncate">{c.name}</span>
-                        {c.id === "general" && <Badge variant="secondary" className="ml-auto h-4 px-1.5 text-[10px]">live</Badge>}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Staff DMs */}
-              <div>
-                <div className="flex items-center justify-between px-2 mb-2">
-                  <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-muted-foreground">Echipă</span>
-                  <span className="text-[10px] text-muted-foreground">{staff.length}</span>
-                </div>
-                <div className="space-y-0.5">
-                  {staff.filter(s => s.id !== user?.id).map(s => {
-                    const active = target.type === "dm" && target.id === s.id;
-                    const name = s.pseudonym || s.display_name || "Staff";
-                    const meta = STAFF_ROLE_META[s.staff_role || "dev"];
-                    return (
-                      <button key={s.id} onClick={() => setTarget({ type: "dm", id: s.id, name })}
-                        className={cn("w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition",
-                          active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/70")}>
-                        <div className="relative">
-                          <Avatar className="size-7"><AvatarImage src={s.avatar_url ?? undefined} /><AvatarFallback className="text-[10px]">{name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
-                          <Circle className="absolute -bottom-0.5 -right-0.5 size-2 fill-emerald-500 text-emerald-500" />
-                        </div>
-                        <span className="truncate flex items-center gap-1">
-                          <ShieldCheck className="size-3 text-primary shrink-0" />
-                          {name}
-                        </span>
-                        {meta && <meta.icon className={cn("size-3 ml-auto", meta.color)} />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Client chats */}
+              {/* Clienți — urcat sus */}
               <div>
                 <div className="flex items-center justify-between px-2 mb-2">
                   <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-muted-foreground">Clienți</span>
@@ -262,6 +210,59 @@ export const StaffChatTab = () => {
                           active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/70")}>
                         <Avatar className="size-7"><AvatarImage src={c.avatar_url ?? undefined} /><AvatarFallback className="text-[10px]">{name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
                         <span className="truncate">{name}</span>
+                      </button>
+                    );
+                  })}
+                  {clients.length === 0 && <p className="text-[11px] text-muted-foreground px-2">Niciun client momentan.</p>}
+                </div>
+              </div>
+
+              {/* Camere — # înlocuit cu emoji sugestiv */}
+              <div>
+                <div className="flex items-center justify-between px-2 mb-2">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-muted-foreground">Camere</span>
+                  <Plus className="size-3.5 text-muted-foreground hover:text-foreground cursor-pointer" />
+                </div>
+                <div className="space-y-0.5">
+                  {STAFF_CHANNELS.map(c => {
+                    const active = target.type === "channel" && target.id === c.id;
+                    return (
+                      <button key={c.id} onClick={() => setTarget({ type: "channel", id: c.id, name: c.name, emoji: c.emoji })}
+                        className={cn("w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition",
+                          active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/70")}>
+                        <span className="text-base leading-none shrink-0">{c.emoji}</span>
+                        <span className="truncate">{c.name}</span>
+                        {c.id === "general" && <Badge variant="secondary" className="ml-auto h-4 px-1.5 text-[10px]">live</Badge>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Grupuri — conversații cu mai mulți membri staff */}
+              <div>
+                <div className="flex items-center justify-between px-2 mb-2">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-muted-foreground">Grupuri</span>
+                  <button
+                    onClick={() => { setInviteOpen(true); setNewGroupMembers([]); setNewGroupName(""); }}
+                    className="inline-flex items-center gap-1 text-[10px] font-medium text-primary hover:underline"
+                  >
+                    <UserPlus className="size-3" /> Nou
+                  </button>
+                </div>
+                <div className="space-y-0.5">
+                  {groups.length === 0 && (
+                    <p className="text-[11px] text-muted-foreground px-2">Nicio conversație de grup. Apasă <em>Nou</em> ca să inviți mai mulți colegi.</p>
+                  )}
+                  {groups.map(g => {
+                    const active = target.type === "group" && target.id === g.id;
+                    return (
+                      <button key={g.id} onClick={() => setTarget({ type: "group", id: g.id, name: g.name, memberIds: g.memberIds })}
+                        className={cn("w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition",
+                          active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/70")}>
+                        <UsersRound className="size-4 shrink-0 opacity-70" />
+                        <span className="truncate">{g.name}</span>
+                        <span className="ml-auto text-[10px] text-muted-foreground">{g.memberIds.length}</span>
                       </button>
                     );
                   })}
