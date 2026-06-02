@@ -70,6 +70,10 @@ export const StaffChatTab = () => {
   const [reactions, setReactions] = useState<Record<string, Record<string, string[]>>>({});
   const [recording, setRecording] = useState(false);
   const [showMembers, setShowMembers] = useState(true);
+  const [groups, setGroups] = useState<Array<{ id: string; name: string; memberIds: string[] }>>([]);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [newGroupMembers, setNewGroupMembers] = useState<string[]>([]);
   const endRef = useRef<HTMLDivElement>(null);
 
   const loadProfiles = async (ids: string[]) => {
