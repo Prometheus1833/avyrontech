@@ -35,11 +35,11 @@ type Profile = {
 type ConvoTarget = { type: "channel"; id: string; name: string } | { type: "dm"; id: string; name: string };
 
 const STAFF_CHANNELS = [
-  { id: "general", name: "generala", topic: "Discuții generale ale echipei" },
-  { id: "dev", name: "dev", topic: "Implementări, bug-uri, deploy" },
-  { id: "design", name: "design", topic: "UI/UX, mockup-uri, branding" },
-  { id: "marketing", name: "marketing", topic: "Campanii, conținut, SEO" },
-  { id: "random", name: "pauza-cafea", topic: "Off-topic, meme, relax" },
+  { id: "general", name: "generala", emoji: "💬", topic: "Discuții generale ale echipei" },
+  { id: "dev", name: "dev", emoji: "💻", topic: "Implementări, bug-uri, deploy" },
+  { id: "design", name: "design", emoji: "🎨", topic: "UI/UX, mockup-uri, branding" },
+  { id: "marketing", name: "marketing", emoji: "📣", topic: "Campanii, conținut, SEO" },
+  { id: "random", name: "pauza-cafea", emoji: "☕", topic: "Off-topic, meme, relax" },
 ];
 
 const QUICK_REACTIONS = ["👍", "❤️", "🔥", "😂", "🎉", "👀", "✅"];
