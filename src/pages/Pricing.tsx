@@ -636,6 +636,103 @@ const Pricing = () => {
           </div>
         </section>
 
+        {/* Agent AI personalizat */}
+        <section className="mt-8 grid md:grid-cols-5 gap-4 items-start">
+          <div className="md:col-span-2 rounded-2xl border border-fuchsia-300/20 bg-gradient-to-br from-card to-background p-5 sm:p-6 relative overflow-hidden text-center">
+            <div aria-hidden className="absolute -top-16 -right-16 size-48 rounded-full bg-fuchsia-400/15 blur-3xl" />
+            <div aria-hidden className="absolute -bottom-16 -left-16 size-48 rounded-full bg-purple-500/15 blur-3xl" />
+            <div className="relative">
+              <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-300/30 bg-fuchsia-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-fuchsia-700 dark:text-fuchsia-200">
+                <Sparkles className="size-3.5" />
+                {ro ? "Serviciu AI dedicat" : "Dedicated AI service"}
+              </div>
+              <div className="mt-5 flex items-center justify-center gap-3">
+                <div className="size-12 rounded-xl bg-gradient-to-br from-fuchsia-500 to-purple-700 grid place-items-center shadow-[0_0_24px_-6px_rgba(217,70,239,0.6)]">
+                  <Cpu className="size-6 text-white" />
+                </div>
+                <div className="size-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 grid place-items-center shadow-[0_0_24px_-6px_rgba(16,185,129,0.6)]">
+                  <MessageCircle className="size-6 text-white" />
+                </div>
+                <div className="size-12 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-700 grid place-items-center shadow-[0_0_24px_-6px_rgba(139,92,246,0.6)]">
+                  <Sparkles className="size-6 text-white" />
+                </div>
+              </div>
+              <h2 className="mt-5 font-display text-2xl sm:text-3xl font-extrabold">
+                {ro ? "Agentul tău AI personalizat" : "Your personalized AI Agent"}
+              </h2>
+              <p className="mt-2 text-xs uppercase tracking-[0.25em] text-foreground/50">
+                {ro ? "Chat site · WhatsApp · Automatizări" : "Site chat · WhatsApp · Automations"}
+              </p>
+              <div className="mt-3 flex items-baseline justify-center gap-1.5 flex-wrap">
+                <span className="text-sm sm:text-base font-semibold text-foreground/70">{ro ? "de la" : "from"}</span>
+                <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-fuchsia-300 to-purple-500 bg-clip-text text-transparent break-words">
+                  {currency === "EUR" ? "500€" : `${Math.round(500 * rate)} RON`}
+                </span>
+              </div>
+              <p className="mt-3 text-xs sm:text-sm text-foreground/70 leading-snug text-left">
+                {ro
+                  ? "Un asistent AI construit special pentru afacerea ta — răspunde clienților 24/7 pe site și WhatsApp, preia comenzi, programează întâlniri și automatizează sarcini repetitive. Antrenat pe baza ta de date, produsele, prețurile și tonul brandului tău, devine un coleg digital care nu doarme niciodată."
+                  : "An AI assistant built specifically for your business — replies to clients 24/7 on your site and WhatsApp, takes orders, books appointments and automates repetitive tasks. Trained on your database, products, prices and brand tone, it becomes a digital teammate that never sleeps."}
+              </p>
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-fuchsia-300/20 bg-fuchsia-300/[0.06] px-3 py-1.5 text-[11px] text-fuchsia-700 dark:text-fuchsia-100">
+                <Hourglass className="size-3.5" />
+                {ro ? "Timp aproximativ implementare: 5–14 zile" : "Approx. implementation time: 5–14 days"}
+              </div>
+            </div>
+          </div>
+          <div className="md:col-span-3 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur">
+            <div className="text-[11px] uppercase tracking-[0.3em] text-foreground/50">{ro ? "Include:" : "Includes:"}</div>
+            <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
+              {(ro
+                ? [
+                    { icon: <MessageCircle className="size-4" />, text: "Chat AI interactiv pe site, integrabil în orice pagină" },
+                    { icon: <Share2 className="size-4" />, text: "Integrare WhatsApp Business — același agent, același ton" },
+                    { icon: <Cloud className="size-4" />, text: "Bază de date privată cu produsele, prețurile și politicile tale" },
+                    { icon: <Sparkles className="size-4" />, text: "Personalitate, ton și răspunsuri configurate pe brandul tău" },
+                    { icon: <Cpu className="size-4" />, text: "Automatizări: comenzi, programări, lead-uri, follow-up" },
+                    { icon: <Bell className="size-4" />, text: "Notificări către echipă când clientul cere intervenție umană" },
+                    { icon: <BarChart3 className="size-4" />, text: "Dashboard cu conversații, conversii și subiecte frecvente" },
+                    { icon: <Shield className="size-4" />, text: "GDPR-friendly, log-uri criptate și control pe ce date învață" },
+                    { icon: <Globe className="size-4" />, text: "Multilingv (RO / EN +) și SEO-optimized pentru indexare" },
+                    { icon: <RefreshCw className="size-4" />, text: "Reantrenare periodică pe noile informații din afacerea ta" },
+                  ]
+                : [
+                    { icon: <MessageCircle className="size-4" />, text: "Interactive AI chat on your site, embeddable on any page" },
+                    { icon: <Share2 className="size-4" />, text: "WhatsApp Business integration — same agent, same voice" },
+                    { icon: <Cloud className="size-4" />, text: "Private database with your products, pricing and policies" },
+                    { icon: <Sparkles className="size-4" />, text: "Personality, tone and replies tuned to your brand" },
+                    { icon: <Cpu className="size-4" />, text: "Automations: orders, bookings, leads, follow-ups" },
+                    { icon: <Bell className="size-4" />, text: "Notifications to your team when human handoff is needed" },
+                    { icon: <BarChart3 className="size-4" />, text: "Dashboard with conversations, conversions and hot topics" },
+                    { icon: <Shield className="size-4" />, text: "GDPR-friendly, encrypted logs and full control over training data" },
+                    { icon: <Globe className="size-4" />, text: "Multilingual (RO / EN +) and SEO-optimized for indexing" },
+                    { icon: <RefreshCw className="size-4" />, text: "Periodic retraining on new information from your business" },
+                  ]
+              ).map((f) => (
+                <li key={f.text} className="flex items-start gap-2 text-sm text-foreground/85">
+                  <span className="mt-0.5 size-5 rounded-md bg-fuchsia-400/15 text-fuchsia-300 grid place-items-center shrink-0">
+                    {f.icon}
+                  </span>
+                  <span>{f.text}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-5 flex justify-center">
+              <a
+                href="https://wa.me/40734605055?text=Bună! Sunt interesat de un Agent AI personalizat pentru afacerea mea."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
+              >
+                <Sparkles className="size-4" />
+                {ro ? "Vreau un Agent AI" : "I want an AI Agent"}
+              </a>
+            </div>
+          </div>
+        </section>
+
+
+
 
 
         {/* Care plans */}
