@@ -19,6 +19,7 @@ import ForgotPassword from "./pages/ForgotPassword.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import Profile from "./pages/Profile.tsx";
 import News from "./pages/News.tsx";
+import Portfolio from "./pages/Portfolio.tsx";
 import CookieBanner from "@/components/site/CookieBanner";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
               <Route path="/exemple/flawlesstudio" element={<FlawlesstudioDemo />} />
               <Route path="/exemple/retuvo" element={<RetuvoDemo />} />
               <Route path="/noutati" element={<News />} />
+              <Route path="/portofoliu" element={<Portfolio />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogIn, Newspaper } from "lucide-react";
+import { Menu, X, LogIn, Newspaper, Briefcase } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
@@ -16,6 +16,7 @@ const Nav = () => {
   const isRo = (t.nav as any).examples?.toLowerCase?.().startsWith("ex");
   const links = [
     { label: (t.nav as any).news ?? "Noutăți", to: "/noutati", icon: Newspaper, isRoute: true },
+    { label: isRo ? "Portofoliu" : "Portfolio", to: "/portofoliu", icon: Briefcase, isRoute: true },
     { label: isRo ? "Vezi exemple" : "See examples", href: "/#exemple" },
     { label: isRo ? "Despre noi" : "About us", to: "/despre", isRoute: true },
     { label: t.nav.process, href: "/#proces" },
