@@ -1,93 +1,490 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Send } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Send, Hash, Users2, Smile, Paperclip, Mic, Reply, MoreHorizontal,
+  Search, ShieldCheck, Crown, Code2, Palette, Megaphone, Headphones,
+  Circle, AtSign, Pin, Bell, Check, CheckCheck, X, Plus, Inbox,
+} from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, isToday, isYesterday } from "date-fns";
+import { cn } from "@/lib/utils";
 
-type Msg = { id: string; author_id: string; content: string; created_at: string };
-type Profile = { id: string; pseudonym: string | null; display_name: string | null; avatar_url: string | null };
+type Msg = {
+  id: string;
+  author_id: string;
+  content: string;
+  created_at: string;
+  reply_to?: string | null;
+  reactions?: Record<string, string[]>;
+};
+type Profile = {
+  id: string;
+  pseudonym: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  staff_role: string | null;
+};
+type ConvoTarget = { type: "channel"; id: string; name: string } | { type: "dm"; id: string; name: string };
+
+const STAFF_CHANNELS = [
+  { id: "general", name: "general", topic: "Discuții generale ale echipei" },
+  { id: "dev", name: "dev", topic: "Implementări, bug-uri, deploy" },
+  { id: "design", name: "design", topic: "UI/UX, mockup-uri, branding" },
+  { id: "marketing", name: "marketing", topic: "Campanii, conținut, SEO" },
+  { id: "random", name: "random", topic: "Off-topic, meme, pauză cafea" },
+];
+
+const QUICK_REACTIONS = ["👍", "❤️", "🔥", "😂", "🎉", "👀", "✅"];
+
+const STAFF_ROLE_META: Record<string, { label: string; icon: typeof Code2; color: string; gradient: string }> = {
+  admin:     { label: "Admin",     icon: Crown,      color: "text-amber-500",  gradient: "from-amber-500/30 via-amber-400/10 to-transparent" },
+  dev:       { label: "Dev",       icon: Code2,      color: "text-cyan-400",   gradient: "from-cyan-500/30 via-cyan-400/10 to-transparent" },
+  designer:  { label: "Designer",  icon: Palette,    color: "text-pink-400",   gradient: "from-pink-500/30 via-pink-400/10 to-transparent" },
+  marketing: { label: "Marketing", icon: Megaphone,  color: "text-emerald-400",gradient: "from-emerald-500/30 via-emerald-400/10 to-transparent" },
+  support:   { label: "Support",   icon: Headphones, color: "text-violet-400", gradient: "from-violet-500/30 via-violet-400/10 to-transparent" },
+};
+
+const dateLabel = (d: Date) => isToday(d) ? "Astăzi" : isYesterday(d) ? "Ieri" : format(d, "d MMM yyyy");
 
 export const StaffChatTab = () => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
+  const [staff, setStaff] = useState<Profile[]>([]);
+  const [clients, setClients] = useState<Profile[]>([]);
+  const [target, setTarget] = useState<ConvoTarget>({ type: "channel", id: "general", name: "general" });
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [replyTo, setReplyTo] = useState<Msg | null>(null);
+  const [search, setSearch] = useState("");
+  const [reactions, setReactions] = useState<Record<string, Record<string, string[]>>>({});
+  const [recording, setRecording] = useState(false);
+  const [showMembers, setShowMembers] = useState(true);
   const endRef = useRef<HTMLDivElement>(null);
 
   const loadProfiles = async (ids: string[]) => {
-    const missing = ids.filter(i => !profiles[i]);
+    const missing = [...new Set(ids)].filter(i => !profiles[i]);
     if (!missing.length) return;
-    const { data } = await supabase.from("profiles").select("id,pseudonym,display_name,avatar_url").in("id", missing);
+    const { data } = await supabase.from("profiles")
+      .select("id,pseudonym,display_name,avatar_url,staff_role").in("id", missing);
     if (data) setProfiles(p => ({ ...p, ...Object.fromEntries(data.map(d => [d.id, d as Profile])) }));
   };
 
+  // Load all staff + clients for sidebars
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("staff_chat_messages").select("*").order("created_at", { ascending: true }).limit(200);
+      const [{ data: staffRows }, { data: clientRows }] = await Promise.all([
+        supabase.from("user_roles").select("user_id").eq("role", "staff"),
+        supabase.from("profiles").select("id,pseudonym,display_name,avatar_url,staff_role").limit(50),
+      ]);
+      const staffIds = new Set((staffRows ?? []).map(r => r.user_id as string));
+      const all = (clientRows ?? []) as Profile[];
+      setStaff(all.filter(p => staffIds.has(p.id)));
+      setClients(all.filter(p => !staffIds.has(p.id)));
+    })();
+  }, []);
+
+  // Load messages + subscribe (only the staff_chat_messages table exists; DMs are mocked locally)
+  useEffect(() => {
+    if (target.type !== "channel") { setMessages([]); return; }
+    (async () => {
+      const { data } = await supabase.from("staff_chat_messages")
+        .select("*").order("created_at", { ascending: true }).limit(200);
       if (data) {
         setMessages(data as Msg[]);
-        loadProfiles([...new Set((data as Msg[]).map(m => m.author_id))]);
+        loadProfiles((data as Msg[]).map(m => m.author_id));
       }
-      setLoading(false);
     })();
-
-    const ch = supabase.channel("staff-chat")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "staff_chat_messages" }, payload => {
-        const m = payload.new as Msg;
+    const ch = supabase.channel(`chat-${target.id}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "staff_chat_messages" }, p => {
+        const m = p.new as Msg;
         setMessages(prev => [...prev, m]);
         loadProfiles([m.author_id]);
-      })
-      .subscribe();
-
+      }).subscribe();
     return () => { supabase.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [target.id, target.type]);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   const send = async () => {
     if (!input.trim() || !user) return;
-    const content = input.trim();
-    setInput("");
-    const { error } = await supabase.from("staff_chat_messages").insert({ author_id: user.id, content });
-    if (error) toast.error(error.message);
+    const content = replyTo ? `↪ @${nameOf(replyTo.author_id)}: "${replyTo.content.slice(0, 60)}"\n${input.trim()}` : input.trim();
+    setInput(""); setReplyTo(null);
+    if (target.type === "channel") {
+      const { error } = await supabase.from("staff_chat_messages").insert({ author_id: user.id, content });
+      if (error) toast.error(error.message);
+    } else {
+      // DM: optimistic local-only message
+      setMessages(prev => [...prev, {
+        id: crypto.randomUUID(), author_id: user.id, content, created_at: new Date().toISOString(),
+      }]);
+    }
+  };
+
+  const toggleReaction = (msgId: string, emoji: string) => {
+    if (!user) return;
+    setReactions(prev => {
+      const m = { ...(prev[msgId] || {}) };
+      const arr = new Set(m[emoji] || []);
+      arr.has(user.id) ? arr.delete(user.id) : arr.add(user.id);
+      m[emoji] = [...arr];
+      if (!m[emoji].length) delete m[emoji];
+      return { ...prev, [msgId]: m };
+    });
   };
 
   const nameOf = (id: string) => profiles[id]?.pseudonym || profiles[id]?.display_name || "Staff";
+  const initialsOf = (id: string) => nameOf(id).slice(0, 2).toUpperCase();
+
+  const filteredMessages = useMemo(() => {
+    if (!search.trim()) return messages;
+    const q = search.toLowerCase();
+    return messages.filter(m => m.content.toLowerCase().includes(q) || nameOf(m.author_id).toLowerCase().includes(q));
+  }, [messages, search, profiles]);
+
+  // Group by day
+  const grouped = useMemo(() => {
+    const out: Array<{ kind: "divider"; label: string } | { kind: "msg"; msg: Msg; showAuthor: boolean }> = [];
+    let lastDay = "";
+    let lastAuthor = "";
+    let lastTime = 0;
+    filteredMessages.forEach(m => {
+      const d = new Date(m.created_at);
+      const dk = format(d, "yyyy-MM-dd");
+      if (dk !== lastDay) { out.push({ kind: "divider", label: dateLabel(d) }); lastDay = dk; lastAuthor = ""; lastTime = 0; }
+      const showAuthor = m.author_id !== lastAuthor || (d.getTime() - lastTime) > 5 * 60 * 1000;
+      out.push({ kind: "msg", msg: m, showAuthor });
+      lastAuthor = m.author_id; lastTime = d.getTime();
+    });
+    return out;
+  }, [filteredMessages, profiles]);
 
   return (
-    <Card className="h-[70vh] flex flex-col">
-      <CardContent className="flex-1 overflow-y-auto space-y-3 p-4">
-        {loading ? <p className="text-sm text-muted-foreground">Se încarcă…</p> :
-          messages.length === 0 ? <p className="text-sm text-muted-foreground text-center py-8">Niciun mesaj. Începe conversația!</p> :
-          messages.map(m => {
-            const mine = m.author_id === user?.id;
-            const name = nameOf(m.author_id);
-            return (
-              <div key={m.id} className={`flex gap-2 ${mine ? "flex-row-reverse" : ""}`}>
-                <Avatar className="size-8 shrink-0"><AvatarFallback className="text-xs">{name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
-                <div className={`max-w-[75%] ${mine ? "items-end" : "items-start"} flex flex-col`}>
-                  <div className={`px-3 py-2 rounded-2xl text-sm ${mine ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-muted rounded-bl-sm"}`}>
-                    <p className="whitespace-pre-wrap break-words">{m.content}</p>
+    <TooltipProvider delayDuration={200}>
+      <div className="h-[78vh] flex rounded-xl overflow-hidden border border-border/70 bg-card shadow-sm">
+
+        {/* ===== Sidebar: channels + DMs ===== */}
+        <aside className="w-64 shrink-0 border-r border-border/70 bg-muted/40 flex flex-col">
+          <div className="p-3 border-b border-border/70">
+            <div className="flex items-center gap-2">
+              <div className="size-7 rounded-md bg-gradient-to-br from-primary to-brand flex items-center justify-center text-background font-bold text-xs">A</div>
+              <div className="min-w-0">
+                <p className="font-semibold text-sm truncate">Avyron · Intern</p>
+                <p className="text-[10px] font-mono uppercase tracking-wider text-emerald-500 flex items-center gap-1">
+                  <Circle className="size-1.5 fill-current" /> online
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <ScrollArea className="flex-1">
+            <div className="p-2 space-y-4">
+              {/* Channels */}
+              <div>
+                <div className="flex items-center justify-between px-2 mb-1">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Canale</span>
+                  <Plus className="size-3 text-muted-foreground hover:text-foreground cursor-pointer" />
+                </div>
+                {STAFF_CHANNELS.map(c => {
+                  const active = target.type === "channel" && target.id === c.id;
+                  return (
+                    <button key={c.id} onClick={() => setTarget({ type: "channel", id: c.id, name: c.name })}
+                      className={cn("w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition",
+                        active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted")}>
+                      <Hash className="size-4 shrink-0" />
+                      <span className="truncate">{c.name}</span>
+                      {c.id === "general" && <Badge variant="secondary" className="ml-auto h-4 px-1.5 text-[10px]">live</Badge>}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Staff DMs */}
+              <div>
+                <div className="flex items-center justify-between px-2 mb-1">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Staff DM</span>
+                  <span className="text-[10px] text-muted-foreground">{staff.length}</span>
+                </div>
+                {staff.filter(s => s.id !== user?.id).map(s => {
+                  const active = target.type === "dm" && target.id === s.id;
+                  const name = s.pseudonym || s.display_name || "Staff";
+                  const meta = STAFF_ROLE_META[s.staff_role || "dev"];
+                  return (
+                    <button key={s.id} onClick={() => setTarget({ type: "dm", id: s.id, name })}
+                      className={cn("w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition",
+                        active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted")}>
+                      <div className="relative">
+                        <Avatar className="size-6"><AvatarImage src={s.avatar_url ?? undefined} /><AvatarFallback className="text-[10px]">{name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
+                        <Circle className="absolute -bottom-0.5 -right-0.5 size-2 fill-emerald-500 text-emerald-500" />
+                      </div>
+                      <span className="truncate">{name}</span>
+                      {meta && <meta.icon className={cn("size-3 ml-auto", meta.color)} />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Client chats */}
+              <div>
+                <div className="flex items-center justify-between px-2 mb-1">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Clienți</span>
+                  <span className="text-[10px] text-muted-foreground">{clients.length}</span>
+                </div>
+                {clients.slice(0, 20).map(c => {
+                  const active = target.type === "dm" && target.id === c.id;
+                  const name = c.display_name || c.pseudonym || "Client";
+                  return (
+                    <button key={c.id} onClick={() => setTarget({ type: "dm", id: c.id, name })}
+                      className={cn("w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition",
+                        active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted")}>
+                      <Avatar className="size-6"><AvatarImage src={c.avatar_url ?? undefined} /><AvatarFallback className="text-[10px]">{name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
+                      <span className="truncate">{name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </ScrollArea>
+
+          <div className="p-2 border-t border-border/70 flex items-center gap-2">
+            <Avatar className="size-7"><AvatarImage src={profiles[user?.id ?? ""]?.avatar_url ?? undefined} /><AvatarFallback className="text-[10px]">EU</AvatarFallback></Avatar>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium truncate">{nameOf(user?.id ?? "")}</p>
+              <p className="text-[10px] text-muted-foreground">#{user?.id.slice(0, 6)}</p>
+            </div>
+            <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" className="size-7"><Inbox className="size-3.5" /></Button></TooltipTrigger><TooltipContent>Mesaje (WhatsApp/Telegram – în curând)</TooltipContent></Tooltip>
+          </div>
+        </aside>
+
+        {/* ===== Main chat ===== */}
+        <section className="flex-1 min-w-0 flex flex-col bg-background">
+          {/* Top bar */}
+          <div className="h-14 border-b border-border/70 flex items-center px-4 gap-3">
+            {target.type === "channel" ? <Hash className="size-5 text-muted-foreground" /> : <AtSign className="size-5 text-muted-foreground" />}
+            <div className="min-w-0">
+              <p className="font-semibold truncate">{target.name}</p>
+              <p className="text-[11px] text-muted-foreground truncate">
+                {target.type === "channel" ? (STAFF_CHANNELS.find(c => c.id === target.id)?.topic ?? "") : "Conversație directă"}
+              </p>
+            </div>
+            <div className="ml-auto flex items-center gap-1">
+              <div className="relative hidden md:block">
+                <Search className="size-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Caută…" className="h-8 pl-7 w-44 text-xs" />
+              </div>
+              <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" className="size-8"><Pin className="size-4" /></Button></TooltipTrigger><TooltipContent>Mesaje fixate</TooltipContent></Tooltip>
+              <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" className="size-8"><Bell className="size-4" /></Button></TooltipTrigger><TooltipContent>Notificări</TooltipContent></Tooltip>
+              <Tooltip><TooltipTrigger asChild>
+                <Button size="icon" variant="ghost" className="size-8" onClick={() => setShowMembers(s => !s)}>
+                  <Users2 className="size-4" />
+                </Button>
+              </TooltipTrigger><TooltipContent>Lista membri</TooltipContent></Tooltip>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <ScrollArea className="flex-1">
+            <div className="p-4 space-y-1">
+              {grouped.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-12">Niciun mesaj pe {target.type === "channel" ? `#${target.name}` : `@${target.name}`}. Începe conversația!</p>
+              )}
+              {grouped.map((row, i) => {
+                if (row.kind === "divider") {
+                  return (
+                    <div key={`d-${i}`} className="flex items-center gap-3 my-3">
+                      <div className="flex-1 h-px bg-border" />
+                      <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">{row.label}</span>
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
+                  );
+                }
+                const m = row.msg;
+                const meName = nameOf(m.author_id);
+                const meta = STAFF_ROLE_META[profiles[m.author_id]?.staff_role || ""];
+                const mine = m.author_id === user?.id;
+                const rxs = reactions[m.id] || {};
+                return (
+                  <div key={m.id} className={cn("group relative flex gap-3 px-2 py-0.5 rounded-md hover:bg-muted/50",
+                    row.showAuthor ? "mt-3" : "mt-0")}>
+                    <div className="w-10 shrink-0">
+                      {row.showAuthor ? (
+                        <Avatar className="size-10"><AvatarImage src={profiles[m.author_id]?.avatar_url ?? undefined} /><AvatarFallback className="text-xs">{initialsOf(m.author_id)}</AvatarFallback></Avatar>
+                      ) : (
+                        <span className="opacity-0 group-hover:opacity-100 text-[10px] text-muted-foreground block text-right pr-1 pt-1">
+                          {format(new Date(m.created_at), "HH:mm")}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      {row.showAuthor && (
+                        <div className="flex items-baseline gap-2">
+                          <span className="font-semibold text-sm">{meName}</span>
+                          {meta && <span className={cn("inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider", meta.color)}>
+                            <meta.icon className="size-2.5" />{meta.label}
+                          </span>}
+                          <span className="text-[10px] text-muted-foreground">{format(new Date(m.created_at), "d MMM HH:mm")}</span>
+                        </div>
+                      )}
+                      <div className="text-sm whitespace-pre-wrap break-words leading-relaxed">{m.content}</div>
+                      {Object.keys(rxs).length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {Object.entries(rxs).map(([e, users]) => (
+                            <button key={e} onClick={() => toggleReaction(m.id, e)}
+                              className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs border transition",
+                                users.includes(user?.id || "") ? "bg-primary/15 border-primary/40 text-primary" : "bg-muted border-border hover:border-foreground/30")}>
+                              <span>{e}</span><span className="text-[10px]">{users.length}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {mine && (
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <CheckCheck className="size-3 text-cyan-500" />
+                          <span className="text-[10px] text-muted-foreground">Trimis</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Hover actions */}
+                    <div className="absolute -top-3 right-4 hidden group-hover:flex items-center gap-0.5 rounded-md border border-border bg-card shadow-sm">
+                      <Popover>
+                        <PopoverTrigger asChild><Button size="icon" variant="ghost" className="size-7"><Smile className="size-3.5" /></Button></PopoverTrigger>
+                        <PopoverContent className="w-auto p-1.5 flex gap-1">
+                          {QUICK_REACTIONS.map(e => (
+                            <button key={e} onClick={() => toggleReaction(m.id, e)} className="size-7 rounded hover:bg-muted text-lg leading-none">{e}</button>
+                          ))}
+                        </PopoverContent>
+                      </Popover>
+                      <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" className="size-7" onClick={() => setReplyTo(m)}><Reply className="size-3.5" /></Button></TooltipTrigger><TooltipContent>Răspunde</TooltipContent></Tooltip>
+                      <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" className="size-7"><Pin className="size-3.5" /></Button></TooltipTrigger><TooltipContent>Fixează</TooltipContent></Tooltip>
+                      <Button size="icon" variant="ghost" className="size-7"><MoreHorizontal className="size-3.5" /></Button>
+                    </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5 px-1">{name} • {format(new Date(m.created_at), "HH:mm")}</p>
+                );
+              })}
+              <div ref={endRef} />
+            </div>
+          </ScrollArea>
+
+          {/* Reply preview */}
+          {replyTo && (
+            <div className="mx-4 mt-2 flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/60 border-l-2 border-primary">
+              <Reply className="size-3.5 text-primary" />
+              <span className="text-xs text-muted-foreground">Răspuns către</span>
+              <span className="text-xs font-medium">{nameOf(replyTo.author_id)}</span>
+              <span className="text-xs text-muted-foreground truncate flex-1">— {replyTo.content.slice(0, 80)}</span>
+              <button onClick={() => setReplyTo(null)} className="text-muted-foreground hover:text-foreground"><X className="size-3.5" /></button>
+            </div>
+          )}
+
+          {/* Composer */}
+          <div className="p-3">
+            <div className="flex items-end gap-1.5 rounded-2xl border border-border bg-muted/30 focus-within:border-primary/60 px-2 py-1.5">
+              <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" className="size-9" onClick={() => toast.info("Atașamente — în curând (drop & paste fișiere)")}><Paperclip className="size-4" /></Button></TooltipTrigger><TooltipContent>Atașament</TooltipContent></Tooltip>
+              <Input
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                placeholder={target.type === "channel" ? `Mesaj în #${target.name}` : `Mesaj direct către @${target.name}`}
+                className="border-0 bg-transparent focus-visible:ring-0 shadow-none h-9"
+                onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), send())}
+              />
+              <Popover>
+                <PopoverTrigger asChild><Button size="icon" variant="ghost" className="size-9"><Smile className="size-4" /></Button></PopoverTrigger>
+                <PopoverContent className="w-auto p-1.5 flex gap-1">
+                  {QUICK_REACTIONS.map(e => (
+                    <button key={e} onClick={() => setInput(s => s + e)} className="size-7 rounded hover:bg-muted text-lg leading-none">{e}</button>
+                  ))}
+                </PopoverContent>
+              </Popover>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button size="icon" variant="ghost" className={cn("size-9", recording && "text-red-500 animate-pulse")}
+                    onClick={() => { setRecording(r => !r); toast.info(recording ? "Înregistrare oprită" : "Înregistrare voce (mock)"); }}>
+                    <Mic className="size-4" />
+                  </Button>
+                </TooltipTrigger><TooltipContent>Mesaj vocal (în curând)</TooltipContent>
+              </Tooltip>
+              <Button onClick={send} disabled={!input.trim()} size="icon" className="size-9 rounded-full">
+                <Send className="size-4" />
+              </Button>
+            </div>
+            <div className="flex items-center gap-3 mt-1.5 px-2 text-[10px] text-muted-foreground">
+              <span className="flex items-center gap-1"><Check className="size-3" /> Enter pentru trimitere · Shift+Enter rând nou</span>
+              <span className="ml-auto flex items-center gap-1.5">
+                <span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />WhatsApp · Telegram — în curând</span>
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* ===== Members list ===== */}
+        {showMembers && (
+          <aside className="w-60 shrink-0 border-l border-border/70 bg-muted/40 hidden lg:flex flex-col">
+            <ScrollArea className="flex-1">
+              <div className="p-3 space-y-4">
+                {/* Staff section */}
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <ShieldCheck className="size-3.5 text-primary" />
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Staff — {staff.length}</span>
+                  </div>
+                  <div className="space-y-1.5">
+                    {staff.map(s => {
+                      const name = s.pseudonym || s.display_name || "Staff";
+                      const meta = STAFF_ROLE_META[s.staff_role || "dev"];
+                      const Icon = meta?.icon || Code2;
+                      return (
+                        <div key={s.id} className="relative rounded-lg overflow-hidden">
+                          <div className={cn("absolute inset-0 bg-gradient-to-r", meta?.gradient || "from-muted to-transparent")} />
+                          <div className="relative flex items-center gap-2 p-2">
+                            <div className="relative">
+                              <Avatar className="size-8 ring-2 ring-background"><AvatarImage src={s.avatar_url ?? undefined} /><AvatarFallback className="text-[10px]">{name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
+                              <Circle className="absolute -bottom-0.5 -right-0.5 size-2.5 fill-emerald-500 text-emerald-500 ring-2 ring-background rounded-full" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium truncate flex items-center gap-1">
+                                {name} <Icon className={cn("size-3", meta?.color)} />
+                              </p>
+                              <p className="text-[10px] text-muted-foreground truncate">{meta?.label || "Staff"}</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Clients section */}
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users2 className="size-3.5 text-muted-foreground" />
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Clienți — {clients.length}</span>
+                  </div>
+                  <div className="space-y-1">
+                    {clients.slice(0, 30).map(c => {
+                      const name = c.display_name || c.pseudonym || "Client";
+                      return (
+                        <div key={c.id} className="flex items-center gap-2 p-1.5 rounded-md hover:bg-muted">
+                          <Avatar className="size-7"><AvatarImage src={c.avatar_url ?? undefined} /><AvatarFallback className="text-[10px]">{name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
+                          <span className="text-xs truncate">{name}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-            );
-          })
-        }
-        <div ref={endRef} />
-      </CardContent>
-      <div className="p-3 border-t flex gap-2">
-        <Input value={input} onChange={e => setInput(e.target.value)} placeholder="Scrie un mesaj…" onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), send())} />
-        <Button onClick={send} disabled={!input.trim()}><Send className="size-4" /></Button>
+            </ScrollArea>
+          </aside>
+        )}
       </div>
-    </Card>
+    </TooltipProvider>
   );
 };
