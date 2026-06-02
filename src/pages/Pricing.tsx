@@ -282,8 +282,8 @@ const Pricing = () => {
                 <BadgeCheck className="size-3.5" />
                 {ro ? "Produs principal" : "Main product"}
               </div>
-              <div className="mt-5 mx-auto w-36 h-36 sm:w-40 sm:h-40 rounded-2xl bg-gradient-to-br from-white/[0.04] to-white/[0.01] ring-1 ring-white/10 grid place-items-center overflow-hidden">
-                <img src={premiumTech} alt="Website Prezentare Premium" width={160} height={160} loading="lazy" className="w-full h-full object-cover" />
+              <div className="mt-5 mx-auto w-40 h-40 sm:w-44 sm:h-44 rounded-2xl ring-1 ring-cyan-300/20 overflow-hidden shadow-[0_20px_60px_-20px_rgba(34,211,238,0.45)]">
+                <img src={premiumTech} alt="Website Prezentare Premium" width={176} height={176} loading="lazy" className="w-full h-full object-cover" />
               </div>
               <h2 className="mt-4 font-display text-2xl sm:text-3xl font-extrabold">{main.title}</h2>
               <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
@@ -293,16 +293,9 @@ const Pricing = () => {
                 </span>
               </div>
               <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">{main.desc}</p>
-              <div className="mt-5 flex justify-center">
-                <a
-                  href="https://wa.me/40734605055?text=Bună! Sunt interesat de Website Prezentare Premium."
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full bg-[#25D366] hover:bg-[#1ebe5a] px-5 py-2.5 text-sm font-bold text-white transition-colors"
-                >
-                  <MessageCircle className="size-4" />
-                  {ro ? "Vreau Website Prezentare Premium" : "I want a Premium Presentation Website"}
-                </a>
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/[0.06] px-3 py-1.5 text-[11px] text-cyan-100">
+                <RefreshCw className="size-3.5" />
+                {ro ? "Timp aproximativ dezvoltare: 2–5 zile" : "Approx. development time: 2–5 days"}
               </div>
             </div>
           </div>
@@ -316,6 +309,17 @@ const Pricing = () => {
                 </li>
               ))}
             </ul>
+            <div className="mt-6 flex justify-center">
+              <a
+                href="https://wa.me/40734605055?text=Bună! Sunt interesat de Website Prezentare Premium."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#25D366] hover:bg-[#1ebe5a] px-5 py-2.5 text-sm font-bold text-white transition-colors"
+              >
+                <MessageCircle className="size-4" />
+                {ro ? "Vreau Website Prezentare Premium" : "I want a Premium Presentation Website"}
+              </a>
+            </div>
           </div>
         </section>
 
