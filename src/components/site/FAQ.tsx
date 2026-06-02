@@ -13,7 +13,7 @@ const FAQ = () => {
       <div className="mx-auto max-w-5xl px-4">
         {/* Costuri & Mentenanță quick link */}
         <Link
-          to="/costuri"
+          to="/costurisiproduse"
           className="group mb-4 w-full rounded-2xl border border-brand/30 bg-gradient-to-r from-brand/10 via-brand/5 to-transparent hover:from-brand/15 hover:to-brand/5 px-4 sm:px-6 py-4 md:py-5 shadow-soft hover:shadow-elev transition-all flex items-center gap-3 sm:gap-4 text-left"
         >
           <span className="size-11 md:size-12 rounded-xl bg-brand text-brand-foreground grid place-items-center shrink-0">

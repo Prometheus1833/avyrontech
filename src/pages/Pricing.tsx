@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Check, CreditCard, Building2, Link2, FileText, Sparkles, Zap, Crown, Shield, RefreshCw, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import logo from "@/assets/avyron-logo.jpg";
+import premiumTech from "@/assets/premium-tech.png.asset.json";
 
 /**
  * PlayStation-inspired pricing page.
@@ -43,7 +44,7 @@ const Pricing = () => {
       ? "Pachete transparente pentru site-uri profesionale: produs principal de la 300€, mentenanță Plus / Pro / Pro activ și plăți sigure."
       : "Transparent packages for professional websites: main product from €300, Plus / Pro / Pro Active care plans and secure payment methods.";
     import("@/lib/seo").then(({ setPageMeta }) =>
-      setPageMeta({ title, description, path: "/costuri" }),
+      setPageMeta({ title, description, path: "/costurisiproduse" }),
     );
   }, [ro]);
 
@@ -113,7 +114,7 @@ const Pricing = () => {
       accent: "text-emerald-400",
       features: ro
         ? [
-            "Tot din Plus",
+            "Plus +",
             "10 modificări de conținut (texte, imagini)",
             "Backup lunar",
             "Optimizări de performanță",
@@ -139,7 +140,7 @@ const Pricing = () => {
       accent: "text-cyan-300",
       features: ro
         ? [
-            "Tot din Pro",
+            "Pro +",
             "Modificări / actualizări / postări nelimitate",
             "Optimizare SEO continuă",
             "Monitorizare și analiză trafic",
@@ -281,8 +282,8 @@ const Pricing = () => {
                 <BadgeCheck className="size-3.5" />
                 {ro ? "Produs principal" : "Main product"}
               </div>
-              <div className="mt-5 mx-auto size-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 grid place-items-center shadow-[0_0_40px_-8px_rgba(34,211,238,0.6)]">
-                <Globe className="size-8 text-white" />
+              <div className="mt-5 mx-auto w-32 h-32 sm:w-36 sm:h-36 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-blue-600/10 ring-1 ring-cyan-300/20 grid place-items-center shadow-[0_0_40px_-8px_rgba(34,211,238,0.6)] overflow-hidden">
+                <img src={premiumTech.url} alt="Website Prezentare Premium" width={144} height={144} loading="lazy" className="w-full h-full object-contain" />
               </div>
               <h2 className="mt-4 font-display text-2xl sm:text-3xl font-extrabold">{main.title}</h2>
               <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
@@ -447,6 +448,7 @@ const Pricing = () => {
                     { icon: <ShoppingBag className="size-4" />, text: "Coș, checkout securizat și pagini de produs orientate spre conversie" },
                     { icon: <CreditCard className="size-4" />, text: "Plăți online (card, Apple Pay, Google Pay) + ramburs" },
                     { icon: <Truck className="size-4" />, text: "Integrare curieri (FAN, Sameday, DPD) cu AWB automat" },
+                    { icon: <ShoppingBag className="size-4" />, text: "Integrare marketplace eMAG + Sameday cu livrare în România, Ungaria și Bulgaria" },
                     { icon: <FileText className="size-4" />, text: "Facturare automată (SmartBill / Oblio) și conformitate ANAF" },
                     { icon: <Tag className="size-4" />, text: "Coduri promo, reduceri, bundle-uri și campanii sezoniere" },
                     { icon: <BarChart3 className="size-4" />, text: "Pixel Meta / TikTok, GA4 și conversion tracking complet" },
@@ -459,6 +461,7 @@ const Pricing = () => {
                     { icon: <ShoppingBag className="size-4" />, text: "Cart, secure checkout and conversion-focused product pages" },
                     { icon: <CreditCard className="size-4" />, text: "Online payments (card, Apple Pay, Google Pay) + COD" },
                     { icon: <Truck className="size-4" />, text: "Courier integrations (FAN, Sameday, DPD) with automatic AWB" },
+                    { icon: <ShoppingBag className="size-4" />, text: "eMAG marketplace integration + Sameday delivery across Romania, Hungary and Bulgaria" },
                     { icon: <FileText className="size-4" />, text: "Automated invoicing (SmartBill / Oblio) and tax compliance" },
                     { icon: <Tag className="size-4" />, text: "Promo codes, discounts, bundles and seasonal campaigns" },
                     { icon: <BarChart3 className="size-4" />, text: "Meta / TikTok pixel, GA4 and complete conversion tracking" },
@@ -518,7 +521,7 @@ const Pricing = () => {
               </p>
               <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-indigo-300 to-violet-500 bg-clip-text text-transparent break-words">
-                  {currency === "EUR" ? "de la 2500€" : `${ro ? "de la" : "from"} ${Math.round(2500 * rate)} RON`}
+                  {currency === "EUR" ? "de la 1500€" : `${ro ? "de la" : "from"} ${Math.round(1500 * rate)} RON`}
                 </span>
               </div>
               <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">

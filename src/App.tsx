@@ -37,6 +37,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/gdpr" element={<Gdpr />} />
               <Route path="/costuri" element={<Pricing />} />
+              <Route path="/costurisiproduse" element={<Pricing />} />
               <Route path="/despre" element={<About />} />
               <Route path="/despre-si-portofoliu" element={<About />} />
               <Route path="/exemple/flawlesstudio" element={<FlawlesstudioDemo />} />
