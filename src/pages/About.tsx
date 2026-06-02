@@ -44,7 +44,7 @@ const About = () => {
       ? "Echipa Avyron — specialiști în web, mobile, cybersecurity, design și QA. Portofoliu: Miago, Flawless Studio, Retuvo."
       : "The Avyron team — specialists in web, mobile, cybersecurity, design and QA. Portfolio: Miago, Flawless Studio, Retuvo.";
     import("@/lib/seo").then(({ setPageMeta }) =>
-      setPageMeta({ title, description, path: "/despre" }),
+      setPageMeta({ title, description, path: "/despre-si-portofoliu" }),
     );
   }, [ro]);
 
