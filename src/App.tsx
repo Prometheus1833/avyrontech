@@ -19,6 +19,7 @@ import ForgotPassword from "./pages/ForgotPassword.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import Profile from "./pages/Profile.tsx";
 import News from "./pages/News.tsx";
+import Portfolio from "./pages/Portfolio.tsx";
 import CookieBanner from "@/components/site/CookieBanner";
 
 const queryClient = new QueryClient();
