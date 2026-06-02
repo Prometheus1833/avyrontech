@@ -154,6 +154,103 @@
   to { transform: translateX(-50%); }
 }
 
+/* ============================================
+   Avyron — Custom Scrollbar
+   Tech, minimal, fluid. Brand-aware (dark/light).
+   Aplicat global; pe mobile rămâne nativ (mai fluid).
+   ============================================ */
+
+/* Fluid scroll behavior + browser hints */
+html {
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+/* Firefox — thin + branded colors */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--brand) / 0.55) transparent;
+}
+
+/* WebKit (Chrome, Safari, Edge) — main page */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    hsl(var(--brand) / 0.55) 0%,
+    hsl(var(--brand-2) / 0.55) 100%
+  );
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.25s ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    hsl(var(--brand)) 0%,
+    hsl(var(--brand-2)) 100%
+  );
+  background-clip: padding-box;
+  border: 2px solid transparent;
+  box-shadow: 0 0 12px hsl(var(--brand-glow) / 0.5);
+}
+::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(
+    180deg,
+    hsl(var(--brand-glow)) 0%,
+    hsl(var(--brand)) 100%
+  );
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* Scrollbar mai subtil pentru containere interne */
+.scrollbar-subtle::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-subtle::-webkit-scrollbar-thumb {
+  background: hsl(var(--brand) / 0.4);
+  border: none;
+  background-clip: border-box;
+}
+.scrollbar-subtle::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--brand) / 0.7);
+}
+
+/* Pe mobile (touch) păstrăm scrollbar-ul nativ — mai fluid + momentum iOS */
+@media (hover: none) and (pointer: coarse) {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--brand) / 0.5);
+    border: none;
+  }
+}
+
+/* iOS momentum scrolling pe containere scrollabile */
+.overflow-y-auto,
+.overflow-y-scroll,
+.overflow-x-auto,
+.overflow-x-scroll,
+.overflow-auto,
+.overflow-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
