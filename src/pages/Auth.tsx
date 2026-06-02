@@ -106,44 +106,60 @@ const Auth = () => {
   return (
     <main className="min-h-screen grid lg:grid-cols-2">
       {/* Left — branded copy */}
-      <section className="relative hidden lg:flex flex-col justify-between p-12 bg-gradient-to-br from-foreground via-foreground to-brand text-background overflow-hidden">
+      <section className="relative hidden lg:flex flex-col p-12 bg-gradient-to-br from-foreground via-foreground to-brand text-background overflow-hidden">
         <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--brand))_0%,transparent_50%),radial-gradient(circle_at_80%_80%,hsl(var(--accent))_0%,transparent_50%)]" />
-        <div className="relative z-10">
+        <div
+          aria-hidden
+          className="absolute inset-0 opacity-[0.06] [background-image:linear-gradient(to_right,hsl(var(--background))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--background))_1px,transparent_1px)] [background-size:42px_42px]"
+        />
+        <div className="relative z-10 flex items-center justify-between">
           <Link to="/" className="inline-flex items-center gap-2 font-display font-bold text-xl">
             <img src={logo} alt="Avyron" className="size-8 rounded-lg object-cover" />
             Avyron
           </Link>
+          <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-background/60">
+            v1.0 · secure
+          </span>
         </div>
-        <div className="relative z-10 space-y-6 max-w-md mx-auto text-center">
-          <h1 className="font-display text-4xl font-bold leading-tight">{t.auth.heroTitle}</h1>
-          <p className="text-base text-background/80">{t.auth.heroDesc}</p>
-          <div className="space-y-4 pt-4 text-left">
-            <div className="flex gap-3">
-              <Sparkles className="size-5 mt-1 text-brand-foreground/80 shrink-0" />
-              <p className="text-sm text-background/80">{t.auth.clientPerksDesc}</p>
-            </div>
-            <div className="flex gap-3">
-              <ShieldCheck className="size-5 mt-1 text-brand-foreground/80 shrink-0" />
-              <p className="text-sm text-background/80">
-                Sfaturi periodice de securitate, noutăți tech și acces prioritar la noile colaborări.
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <LayoutDashboard className="size-5 mt-1 text-brand-foreground/80 shrink-0" />
-              <p className="text-sm text-background/80">
-                Mini-dashboard intuitiv pentru produse, mentenanță și plăți recurente.
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <MessageCircle className="size-5 mt-1 text-brand-foreground/80 shrink-0" />
-              <p className="text-sm text-background/80">
-                Chat direct cu membrii echipei.
-              </p>
-            </div>
-          </div>
+
+        <div className="relative z-10 mt-10 max-w-md">
+          <span className="inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.25em] uppercase text-background/70 mb-5">
+            <span className="size-1.5 rounded-full bg-brand-foreground animate-pulse" />
+            access · granted
+          </span>
+          <h1 className="font-display text-5xl xl:text-6xl font-bold leading-[0.95] tracking-tight">
+            {t.auth.heroTitle}
+          </h1>
+          <p className="mt-5 font-mono text-[13px] leading-relaxed text-background/75">
+            {t.auth.heroDesc}
+          </p>
+
+          <ul className="mt-10 space-y-4">
+            {[
+              { n: "01", Icon: Sparkles, text: t.auth.clientPerksDesc },
+              { n: "02", Icon: ShieldCheck, text: "Sfaturi periodice de securitate, noutăți tech și acces prioritar la noile colaborări." },
+              { n: "03", Icon: LayoutDashboard, text: "Mini-dashboard intuitiv pentru produse, mentenanță și plăți recurente." },
+              { n: "04", Icon: MessageCircle, text: "Chat direct cu membrii echipei." },
+            ].map(({ n, Icon, text }) => (
+              <li
+                key={n}
+                className="group relative flex items-start gap-4 rounded-xl border border-background/10 bg-background/[0.04] backdrop-blur-sm p-3.5 transition-colors hover:bg-background/[0.08] hover:border-background/20"
+              >
+                <span className="font-mono text-[10px] tracking-widest text-background/50 pt-0.5 w-6">
+                  {n}
+                </span>
+                <Icon className="size-4 mt-0.5 text-brand-foreground shrink-0" strokeWidth={2.25} />
+                <p className="text-[13px] leading-relaxed text-background/90">{text}</p>
+              </li>
+            ))}
+          </ul>
         </div>
-        <div className="relative z-10 text-xs text-background/60">© {new Date().getFullYear()} Avyron</div>
+
+        <div className="relative z-10 mt-auto pt-8 font-mono text-[10px] tracking-[0.2em] uppercase text-background/50">
+          © {new Date().getFullYear()} · Avyron Tech
+        </div>
       </section>
+
 
       {/* Right — form */}
       <section className="flex items-center justify-center p-6 sm:p-12 bg-background">
