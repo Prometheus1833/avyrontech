@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogIn, Newspaper } from "lucide-react";
+import { Menu, X, LogIn, Newspaper, Briefcase } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
