@@ -241,8 +241,14 @@ const Pricing = () => {
               <span aria-hidden className="w-px h-3 bg-foreground/15" />
               <ThemeToggle />
             </div>
-            <img src={logo} alt="Avyron" className="size-7 sm:size-8 rounded-md ring-1 ring-white/20" />
-            <span className="font-display tracking-[0.2em] sm:tracking-[0.25em] text-xs sm:text-sm">AVYRON</span>
+            <Link
+              to="/#top"
+              aria-label={ro ? "Acasă" : "Home"}
+              className="flex items-center gap-2 rounded-full px-1.5 py-1 hover:bg-foreground/5 transition-colors"
+            >
+              <img src={logo} alt="Avyron" className="size-7 sm:size-8 rounded-md ring-1 ring-white/20" />
+              <span className="font-display tracking-[0.2em] sm:tracking-[0.25em] text-xs sm:text-sm">AVYRON</span>
+            </Link>
           </div>
         </div>
 
