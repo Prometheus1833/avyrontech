@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, LogOut, User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck, FolderKanban, Wrench, BookOpen, MessagesSquare, Settings, ShoppingCart, Globe, Sparkles } from "lucide-react";
+import { ArrowLeft, LogOut, User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck, FolderKanban, Wrench, BookOpen, MessagesSquare, Settings, ShoppingCart, Globe, Sparkles, Wallet } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import { ProfileTab } from "@/components/dashboard/ProfileTab";
@@ -21,6 +21,7 @@ import { StaffDomainStatsTab } from "@/components/dashboard/StaffDomainStatsTab"
 import { StaffExampleRequestsTab } from "@/components/dashboard/StaffExampleRequestsTab";
 import { SettingsTab } from "@/components/dashboard/SettingsTab";
 import { CartTab } from "@/components/dashboard/CartTab";
+import { StaffFinanceTab } from "@/components/dashboard/StaffFinanceTab";
 
 const Profile = () => {
   const { t } = useLang();
@@ -99,6 +100,7 @@ const Profile = () => {
       label: "Financiar & Suport",
       items: [
         { value: "invoices", label: t.auth.dash.tabs.invoices, icon: Receipt },
+        { value: "finance", label: "Situație financiară", icon: Wallet },
         { value: "staff-tickets", label: t.auth.dash.tabs.staffTickets, icon: MessageSquare },
         { value: "demo-requests", label: "Solicitări demo", icon: Sparkles },
       ],
@@ -180,6 +182,7 @@ const Profile = () => {
               <TabsContent value="projects" className="mt-0"><StaffProjectsTab /></TabsContent>
               <TabsContent value="maintenance" className="mt-0"><StaffMaintenanceTab /></TabsContent>
               <TabsContent value="clients" className="mt-0"><StaffClientsTab /></TabsContent>
+              <TabsContent value="finance" className="mt-0"><StaffFinanceTab /></TabsContent>
               <TabsContent value="staff-tickets" className="mt-0"><TicketsTab staffMode /></TabsContent>
               <TabsContent value="intern" className="mt-0"><StaffChatTab /></TabsContent>
               <TabsContent value="announcements" className="mt-0"><StaffAnnouncementsTab /></TabsContent>

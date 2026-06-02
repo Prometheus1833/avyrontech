@@ -35,11 +35,11 @@ type Profile = {
 type ConvoTarget = { type: "channel"; id: string; name: string } | { type: "dm"; id: string; name: string };
 
 const STAFF_CHANNELS = [
-  { id: "general", name: "general", topic: "Discuții generale ale echipei" },
+  { id: "general", name: "generala", topic: "Discuții generale ale echipei" },
   { id: "dev", name: "dev", topic: "Implementări, bug-uri, deploy" },
   { id: "design", name: "design", topic: "UI/UX, mockup-uri, branding" },
   { id: "marketing", name: "marketing", topic: "Campanii, conținut, SEO" },
-  { id: "random", name: "random", topic: "Off-topic, meme, pauză cafea" },
+  { id: "random", name: "pauza-cafea", topic: "Off-topic, meme, relax" },
 ];
 
 const QUICK_REACTIONS = ["👍", "❤️", "🔥", "😂", "🎉", "👀", "✅"];
@@ -186,70 +186,79 @@ export const StaffChatTab = () => {
           </div>
 
           <ScrollArea className="flex-1">
-            <div className="p-2 space-y-4">
-              {/* Channels */}
+            <div className="p-3 space-y-6">
+              {/* Camere (channels, redenumite în spirit Signal/WhatsApp) */}
               <div>
-                <div className="flex items-center justify-between px-2 mb-1">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Canale</span>
-                  <Plus className="size-3 text-muted-foreground hover:text-foreground cursor-pointer" />
+                <div className="flex items-center justify-between px-2 mb-2">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-muted-foreground">Camere</span>
+                  <Plus className="size-3.5 text-muted-foreground hover:text-foreground cursor-pointer" />
                 </div>
-                {STAFF_CHANNELS.map(c => {
-                  const active = target.type === "channel" && target.id === c.id;
-                  return (
-                    <button key={c.id} onClick={() => setTarget({ type: "channel", id: c.id, name: c.name })}
-                      className={cn("w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition",
-                        active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted")}>
-                      <Hash className="size-4 shrink-0" />
-                      <span className="truncate">{c.name}</span>
-                      {c.id === "general" && <Badge variant="secondary" className="ml-auto h-4 px-1.5 text-[10px]">live</Badge>}
-                    </button>
-                  );
-                })}
+                <div className="space-y-0.5">
+                  {STAFF_CHANNELS.map(c => {
+                    const active = target.type === "channel" && target.id === c.id;
+                    return (
+                      <button key={c.id} onClick={() => setTarget({ type: "channel", id: c.id, name: c.name })}
+                        className={cn("w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition",
+                          active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/70")}>
+                        <Hash className="size-4 shrink-0 opacity-70" />
+                        <span className="truncate">{c.name}</span>
+                        {c.id === "general" && <Badge variant="secondary" className="ml-auto h-4 px-1.5 text-[10px]">live</Badge>}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Staff DMs */}
               <div>
-                <div className="flex items-center justify-between px-2 mb-1">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Staff DM</span>
+                <div className="flex items-center justify-between px-2 mb-2">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-muted-foreground">Echipă</span>
                   <span className="text-[10px] text-muted-foreground">{staff.length}</span>
                 </div>
-                {staff.filter(s => s.id !== user?.id).map(s => {
-                  const active = target.type === "dm" && target.id === s.id;
-                  const name = s.pseudonym || s.display_name || "Staff";
-                  const meta = STAFF_ROLE_META[s.staff_role || "dev"];
-                  return (
-                    <button key={s.id} onClick={() => setTarget({ type: "dm", id: s.id, name })}
-                      className={cn("w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition",
-                        active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted")}>
-                      <div className="relative">
-                        <Avatar className="size-6"><AvatarImage src={s.avatar_url ?? undefined} /><AvatarFallback className="text-[10px]">{name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
-                        <Circle className="absolute -bottom-0.5 -right-0.5 size-2 fill-emerald-500 text-emerald-500" />
-                      </div>
-                      <span className="truncate">{name}</span>
-                      {meta && <meta.icon className={cn("size-3 ml-auto", meta.color)} />}
-                    </button>
-                  );
-                })}
+                <div className="space-y-0.5">
+                  {staff.filter(s => s.id !== user?.id).map(s => {
+                    const active = target.type === "dm" && target.id === s.id;
+                    const name = s.pseudonym || s.display_name || "Staff";
+                    const meta = STAFF_ROLE_META[s.staff_role || "dev"];
+                    return (
+                      <button key={s.id} onClick={() => setTarget({ type: "dm", id: s.id, name })}
+                        className={cn("w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition",
+                          active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/70")}>
+                        <div className="relative">
+                          <Avatar className="size-7"><AvatarImage src={s.avatar_url ?? undefined} /><AvatarFallback className="text-[10px]">{name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
+                          <Circle className="absolute -bottom-0.5 -right-0.5 size-2 fill-emerald-500 text-emerald-500" />
+                        </div>
+                        <span className="truncate flex items-center gap-1">
+                          <ShieldCheck className="size-3 text-primary shrink-0" />
+                          {name}
+                        </span>
+                        {meta && <meta.icon className={cn("size-3 ml-auto", meta.color)} />}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Client chats */}
               <div>
-                <div className="flex items-center justify-between px-2 mb-1">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Clienți</span>
+                <div className="flex items-center justify-between px-2 mb-2">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-muted-foreground">Clienți</span>
                   <span className="text-[10px] text-muted-foreground">{clients.length}</span>
                 </div>
-                {clients.slice(0, 20).map(c => {
-                  const active = target.type === "dm" && target.id === c.id;
-                  const name = c.display_name || c.pseudonym || "Client";
-                  return (
-                    <button key={c.id} onClick={() => setTarget({ type: "dm", id: c.id, name })}
-                      className={cn("w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition",
-                        active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted")}>
-                      <Avatar className="size-6"><AvatarImage src={c.avatar_url ?? undefined} /><AvatarFallback className="text-[10px]">{name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
-                      <span className="truncate">{name}</span>
-                    </button>
-                  );
-                })}
+                <div className="space-y-0.5">
+                  {clients.slice(0, 20).map(c => {
+                    const active = target.type === "dm" && target.id === c.id;
+                    const name = c.display_name || c.pseudonym || "Client";
+                    return (
+                      <button key={c.id} onClick={() => setTarget({ type: "dm", id: c.id, name })}
+                        className={cn("w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition",
+                          active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/70")}>
+                        <Avatar className="size-7"><AvatarImage src={c.avatar_url ?? undefined} /><AvatarFallback className="text-[10px]">{name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
+                        <span className="truncate">{name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </ScrollArea>

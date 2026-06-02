@@ -22,6 +22,7 @@ import News from "./pages/News.tsx";
 import ExamplePage from "./pages/ExamplePage.tsx";
 
 import CookieBanner from "@/components/site/CookieBanner";
+import MustChangePassword from "@/components/auth/MustChangePassword";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,7 @@ const App = () => (
             </Routes>
           </BrowserRouter>
           <CookieBanner />
+          <MustChangePassword />
         </TooltipProvider>
       </AuthProvider>
     </LanguageProvider>
