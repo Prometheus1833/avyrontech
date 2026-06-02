@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Check, CreditCard, Building2, Link2, FileText, Sparkles, Zap, Crown, Shield, RefreshCw, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu } from "lucide-react";
+import { ArrowLeft, Check, CreditCard, Building2, Link2, FileText, Sparkles, Zap, Crown, Shield, RefreshCw, Hourglass, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import logo from "@/assets/avyron-logo.jpg";
-import premiumTech from "@/assets/work-lawyer-new.jpg";
+import premiumTech from "@/assets/premium-mockup.jpg.asset.json";
 
 /**
  * PlayStation-inspired pricing page.
@@ -283,7 +283,7 @@ const Pricing = () => {
                 {ro ? "Produs principal" : "Main product"}
               </div>
               <div className="mt-5 mx-auto w-40 h-40 sm:w-44 sm:h-44 rounded-2xl ring-1 ring-cyan-300/20 overflow-hidden shadow-[0_20px_60px_-20px_rgba(34,211,238,0.45)]">
-                <img src={premiumTech} alt="Website Prezentare Premium" width={176} height={176} loading="lazy" className="w-full h-full object-cover" />
+                <img src={premiumTech.url} alt="Website Prezentare Premium" width={176} height={176} loading="lazy" className="w-full h-full object-cover" />
               </div>
               <h2 className="mt-4 font-display text-2xl sm:text-3xl font-extrabold">{main.title}</h2>
               <div className="mt-4 flex items-baseline justify-center gap-2 flex-wrap">
@@ -294,7 +294,7 @@ const Pricing = () => {
               </div>
               <p className="mt-4 text-sm text-white/70 leading-relaxed text-left">{main.desc}</p>
               <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/[0.06] px-3 py-1.5 text-[11px] text-cyan-100">
-                <RefreshCw className="size-3.5" />
+                <Hourglass className="size-3.5" />
                 {ro ? "Timp aproximativ dezvoltare: 2–5 zile" : "Approx. development time: 2–5 days"}
               </div>
             </div>
@@ -362,7 +362,7 @@ const Pricing = () => {
                   : "We build your social media identity from scratch — professional accounts, visually coherent and conversion-ready. We set up presence, bios, design, initial posts and action buttons, all synced with your website for a seamless online experience."}
               </p>
               <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-pink-300/20 bg-pink-300/[0.06] px-3 py-1.5 text-[11px] text-pink-100">
-                <RefreshCw className="size-3.5" />
+                <Hourglass className="size-3.5" />
                 {ro ? "Timp aproximativ dezvoltare: 2–5 zile" : "Approx. development time: 2–5 days"}
               </div>
             </div>
@@ -449,7 +449,7 @@ const Pricing = () => {
                   : "A full online store optimized for real sales — product catalog, cart, secure checkout and integrated online payments. We build on Shopify or on a custom stack depending on scale, focused on speed, conversion and an admin panel anyone on your team can use."}
               </p>
               <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/[0.06] px-3 py-1.5 text-[11px] text-emerald-100">
-                <RefreshCw className="size-3.5" />
+                <Hourglass className="size-3.5" />
                 {ro ? "Timp aproximativ dezvoltare: 7–21 zile" : "Approx. development time: 7–21 days"}
               </div>
             </div>
@@ -546,7 +546,7 @@ const Pricing = () => {
                   : "We build custom mobile and web apps — from idea, prototype and UX through to publishing on the App Store, Google Play or your own domain. We use modern technologies (React, React Native, Node, Supabase) that deliver speed, real scalability and predictable long-term maintenance cost."}
               </p>
               <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-indigo-300/20 bg-indigo-300/[0.06] px-3 py-1.5 text-[11px] text-indigo-100">
-                <RefreshCw className="size-3.5" />
+                <Hourglass className="size-3.5" />
                 {ro ? "Timp aproximativ dezvoltare: 7–30 zile" : "Approx. development time: 7–30 days"}
               </div>
             </div>
