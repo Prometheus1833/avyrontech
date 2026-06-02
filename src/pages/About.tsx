@@ -115,6 +115,25 @@ const About = () => {
     },
   ];
 
+  // Parteneri tehnici afișați în marquee (doar vizual, fără linkuri).
+  // `icon` = slug simpleicons.org; lasă null și se afișează ca text-pill.
+  const partners: Array<{ label: string; icon: string | null }> = [
+    { label: "Cloudflare", icon: "cloudflare" },
+    { label: "Supabase", icon: "supabase" },
+    { label: "WordPress", icon: "wordpress" },
+    { label: "Next.js", icon: "nextdotjs" },
+    { label: "GitHub", icon: "github" },
+    { label: "Hostico.ro", icon: null },
+    { label: "Vercel", icon: "vercel" },
+    { label: "React", icon: "react" },
+    { label: "TypeScript", icon: "typescript" },
+    { label: "Tailwind CSS", icon: "tailwindcss" },
+    { label: "Stripe", icon: "stripe" },
+    { label: "Figma", icon: "figma" },
+    { label: "Node.js", icon: "nodedotjs" },
+  ];
+
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       {/* Top bar */}
