@@ -68,6 +68,14 @@ const About = () => {
 
   const projects = [
     {
+      name: "Cutiutamagica.eu",
+      url: "https://cutiutamagica.eu",
+      tag: ro ? "Cutiuțe muzicale artizanale — Site + comenzi" : "Artisan music boxes — Site + orders",
+      desc: ro
+        ? "Magazin online dedicat cutiuțelor muzicale autentice din lemn, inspirate din universuri îndrăgite (Stăpânul Inelelor, Harry Potter și altele). Catalog de produse, poveste de brand, comenzi rapide cu livrare prin curier sau Easybox."
+        : "Online shop for authentic wooden music boxes inspired by beloved universes (Lord of the Rings, Harry Potter and more). Product catalog, brand story, quick orders with courier or Easybox delivery.",
+    },
+    {
       name: "Miago.ro",
       url: "https://miago.ro",
       tag: ro ? "Platformă Auto — Site + Aplicație" : "Auto Platform — Site + App",
@@ -100,20 +108,22 @@ const About = () => {
         : "Integrated and synchronized site selling mosquito nets — a real summer-season essential: fast orders, real-time stock and local delivery in Iași.",
     },
     {
+      name: "Flawlesstudio.ro",
+      url: "https://flawlesstudio.ro",
+      tag: ro
+        ? "Website & Integrare sistem programări multi sediu"
+        : "Website & multi-location bookings system integration",
+      desc: ro
+        ? "Website de prezentare pentru un brand local din Iași, cu mai multe sedii, programări și identitate vizuală premium."
+        : "Showcase website for a local Iași brand, with multiple locations, bookings and premium visual identity.",
+    },
+    {
       name: "Retuvo.ro",
       url: "https://retuvo.ro",
       tag: ro ? "SGR digitalizat — site + aplicație" : "Digital DRS — site + app",
       desc: ro
         ? "Produs care digitalizează procesul SGR din România: decontare prin aplicație și serviciu de colectori la domiciliu pentru recipiente reciclabile."
         : "Product digitalizing Romania's DRS process: in-app refunds and a home pickup collector service for recyclable containers.",
-    },
-    {
-      name: "Flawlesstudio.ro",
-      url: "https://flawlesstudio.ro",
-      tag: ro ? "Brand local Iași — multi-sediu" : "Local Iași brand — multi-location",
-      desc: ro
-        ? "Website de prezentare pentru un brand local din Iași, cu mai multe sedii, programări și identitate vizuală premium."
-        : "Showcase website for a local Iași brand, with multiple locations, bookings and premium visual identity.",
     },
   ];
 
