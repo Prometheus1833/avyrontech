@@ -116,6 +116,53 @@ const Profile = () => {
 
   const groups = isStaff ? staffGroups : clientGroups;
 
+  return (
+    <main className="min-h-screen bg-secondary/30 py-8 px-4">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="size-4" /> Acasă
+          </Link>
+          <div className="flex items-center gap-2">
+            {isStaff && (
+              <Badge variant="default" className="gap-1">
+                <ShieldCheck className="size-3" />
+                {isAdmin ? "Admin" : "Staff"}
+              </Badge>
+            )}
+            <Button variant="ghost" size="sm" onClick={() => signOut().then(() => (window.location.href = "/"))}>
+              <LogOut className="size-4 mr-2" />
+              {t.auth.logout}
+            </Button>
+          </div>
+        </div>
+
+        <Tabs value={tab} onValueChange={setTab} className="space-y-6">
+          <div className="rounded-2xl border border-border/70 bg-card/60 backdrop-blur-sm p-3 sm:p-4 shadow-sm">
+            <div className="flex flex-wrap gap-x-6 gap-y-4">
+              {groups.map((group, gi) => (
+                <div key={group.id} className="flex flex-col gap-1.5 min-w-0">
+                  <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-muted-foreground/80 px-1">
+                    {String(gi + 1).padStart(2, "0")} · {group.label}
+                  </span>
+                  <TabsList className="inline-flex flex-wrap w-auto h-auto p-1 bg-muted/60 gap-1">
+                    {group.items.map((tb) => (
+                      <TabsTrigger
+                        key={tb.value}
+                        value={tb.value}
+                        className="gap-2 px-3.5 py-2 text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                      >
+                        <tb.icon className="size-4 shrink-0" strokeWidth={2.25} />
+                        <span>{tb.label}</span>
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </div>
+              ))}
+            </div>
+          </div>
+
+
 
           <TabsContent value="profile" className="mt-0"><ProfileTab /></TabsContent>
           <TabsContent value="settings" className="mt-0"><SettingsTab /></TabsContent>
