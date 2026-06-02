@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { FileText, Sparkles, Briefcase, Megaphone, Code2, Users2, Wallet } from "lucide-react";
+import { FileText, Sparkles, Briefcase, Megaphone, Code2, Users2, Wallet, Wand2, Workflow } from "lucide-react";
 
 type Doc = {
   id: string;
