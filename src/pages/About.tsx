@@ -27,7 +27,15 @@ const About = () => {
   const ro = lang === "ro";
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    const hash = window.location.hash;
+    if (hash) {
+      setTimeout(() => {
+        const el = document.querySelector(hash);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    } else {
+      window.scrollTo(0, 0);
+    }
     const title = ro
       ? "Despre Noi & Portofoliu — Avyron Tech Products"
       : "About & Portfolio — Avyron Tech Products";
