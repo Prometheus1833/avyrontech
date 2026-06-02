@@ -588,53 +588,151 @@ export type Database = {
           },
         ]
       }
+      project_tasks: {
+        Row: {
+          author_id: string
+          completed: boolean
+          content: string
+          created_at: string
+          id: string
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          completed?: boolean
+          content: string
+          created_at?: string
+          id?: string
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          completed?: boolean
+          content?: string
+          created_at?: string
+          id?: string
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
+          additional_costs_cents: number | null
           assignee_id: string | null
           budget_cents: number | null
+          client_change_requests: string | null
+          client_email: string | null
+          client_facebook: string | null
+          client_first_name: string | null
           client_id: string | null
+          client_instagram: string | null
+          client_last_name: string | null
+          client_phone: string | null
+          client_tiktok: string | null
           created_at: string
           deadline: string | null
+          delivery_date: string | null
           description: string | null
+          estimated_duration: string | null
           id: string
+          integrations: string | null
+          link1: string | null
+          link2: string | null
+          link3: string | null
+          linked_user_id: string | null
           owner_id: string
           priority: Database["public"]["Enums"]["project_priority"]
           progress: number
+          project_number: number
+          project_type: string | null
           requirements: string | null
+          staff_members: string[] | null
+          start_date: string | null
           status: Database["public"]["Enums"]["project_status"]
           subscription_id: string | null
           title: string
           updated_at: string
         }
         Insert: {
+          additional_costs_cents?: number | null
           assignee_id?: string | null
           budget_cents?: number | null
+          client_change_requests?: string | null
+          client_email?: string | null
+          client_facebook?: string | null
+          client_first_name?: string | null
           client_id?: string | null
+          client_instagram?: string | null
+          client_last_name?: string | null
+          client_phone?: string | null
+          client_tiktok?: string | null
           created_at?: string
           deadline?: string | null
+          delivery_date?: string | null
           description?: string | null
+          estimated_duration?: string | null
           id?: string
+          integrations?: string | null
+          link1?: string | null
+          link2?: string | null
+          link3?: string | null
+          linked_user_id?: string | null
           owner_id: string
           priority?: Database["public"]["Enums"]["project_priority"]
           progress?: number
+          project_number?: number
+          project_type?: string | null
           requirements?: string | null
+          staff_members?: string[] | null
+          start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           subscription_id?: string | null
           title: string
           updated_at?: string
         }
         Update: {
+          additional_costs_cents?: number | null
           assignee_id?: string | null
           budget_cents?: number | null
+          client_change_requests?: string | null
+          client_email?: string | null
+          client_facebook?: string | null
+          client_first_name?: string | null
           client_id?: string | null
+          client_instagram?: string | null
+          client_last_name?: string | null
+          client_phone?: string | null
+          client_tiktok?: string | null
           created_at?: string
           deadline?: string | null
+          delivery_date?: string | null
           description?: string | null
+          estimated_duration?: string | null
           id?: string
+          integrations?: string | null
+          link1?: string | null
+          link2?: string | null
+          link3?: string | null
+          linked_user_id?: string | null
           owner_id?: string
           priority?: Database["public"]["Enums"]["project_priority"]
           progress?: number
+          project_number?: number
+          project_type?: string | null
           requirements?: string | null
+          staff_members?: string[] | null
+          start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           subscription_id?: string | null
           title?: string
@@ -919,6 +1017,11 @@ export type Database = {
         | "blocked"
         | "done"
         | "cancelled"
+        | "started"
+        | "refining"
+        | "delivered"
+        | "paid"
+        | "maintenance"
       staff_role: "dev" | "designer" | "marketing" | "support" | "admin"
       subscription_status: "active" | "suspended" | "cancelled" | "pending"
       ticket_priority: "low" | "medium" | "high" | "urgent"
@@ -1070,6 +1173,11 @@ export const Constants = {
         "blocked",
         "done",
         "cancelled",
+        "started",
+        "refining",
+        "delivered",
+        "paid",
+        "maintenance",
       ],
       staff_role: ["dev", "designer", "marketing", "support", "admin"],
       subscription_status: ["active", "suspended", "cancelled", "pending"],
