@@ -22,6 +22,7 @@ import {
   Users as UsersIcon,
   FolderKanban,
   ShoppingCart,
+  Boxes,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
