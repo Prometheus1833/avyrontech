@@ -621,7 +621,7 @@ const Blog = () => {
                     <div className="flex gap-2 mb-4">
                       <Avatar className="size-8 shrink-0">
                         <AvatarFallback className="text-[10px] font-bold bg-brand/10 text-brand">
-                          {initials((user.user_metadata as any)?.display_name || user.email)}
+                          {initials(user.display_name || user.email)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 flex gap-2">
