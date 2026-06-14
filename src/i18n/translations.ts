@@ -848,7 +848,7 @@ export const translations = {
         subscription: "History & Purchases",
         cart: "My cart",
         settings: "Settings",
-        news: "News",
+        news: "Blog",
         contact: "Contact",
         projects: "My projects",
         maintenance: "Maintenance",
