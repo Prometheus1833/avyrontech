@@ -294,12 +294,13 @@ const Blog = () => {
       setComments((data || []) as Comment[]);
     };
     load();
+    if (!user) return; // Realtime requires authenticated reads on news_comments
     const ch = supabase
       .channel(`comments-${fullPost.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "news_comments", filter: `post_id=eq.${fullPost.id}` }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [fullPost?.id]);
+  }, [fullPost?.id, user?.id]);
 
   const slugify = (s: string) =>
     s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
