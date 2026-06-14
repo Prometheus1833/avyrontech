@@ -4,7 +4,7 @@
   <url><loc>https://avyron.ro/despre-si-portofoliu</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://avyron.ro/costurisiproduse</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://avyron.ro/gdpr</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
-  <url><loc>https://avyron.ro/noutati</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://avyron.ro/blog</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
   <url><loc>https://avyron.ro/exemple/flawlesstudio</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://avyron.ro/exemple/retuvo</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://avyron.ro/auth</loc><changefreq>yearly</changefreq><priority>0.2</priority></url>
