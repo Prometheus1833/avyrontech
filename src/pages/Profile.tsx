@@ -132,10 +132,6 @@ const Profile = () => {
                 {isAdmin ? "Admin" : "Staff"}
               </Badge>
             )}
-            <Button variant="ghost" size="sm" onClick={() => signOut().then(() => (window.location.href = "/"))}>
-              <LogOut className="size-4 mr-2" />
-              {t.auth.logout}
-            </Button>
           </div>
         </div>
 
