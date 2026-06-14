@@ -64,6 +64,7 @@ const App = () => (
               <Route path="/500" element={<ErrorPage variant="500" />} />
               <Route path="/mentenanta" element={<ErrorPage variant="maintenance" />} />
               <Route path="/offline" element={<ErrorPage variant="offline" />} />
+              <Route path="/unsubscribe" element={<Unsubscribe />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
