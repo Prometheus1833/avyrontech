@@ -20,6 +20,7 @@ import ResetPassword from "./pages/ResetPassword.tsx";
 import Profile from "./pages/Profile.tsx";
 import Blog from "./pages/Blog.tsx";
 import ExamplePage from "./pages/ExamplePage.tsx";
+import Unsubscribe from "./pages/Unsubscribe.tsx";
 
 import CookieBanner from "@/components/site/CookieBanner";
 import MustChangePassword from "@/components/auth/MustChangePassword";
@@ -63,6 +64,7 @@ const App = () => (
               <Route path="/500" element={<ErrorPage variant="500" />} />
               <Route path="/mentenanta" element={<ErrorPage variant="maintenance" />} />
               <Route path="/offline" element={<ErrorPage variant="offline" />} />
+              <Route path="/unsubscribe" element={<Unsubscribe />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

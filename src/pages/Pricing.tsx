@@ -93,6 +93,9 @@ const Pricing = () => {
           "Asistență gratuită la transferul datelor, conturilor și e-mailurilor existente",
           "Ghid de administrare + sesiune live de prezentare a panoului",
           "Backup inițial, certificat SSL și configurări de e-mail profesionale",
+          "Adresă de email personalizată pe domeniul tău (ex: contact@afacereata.ro)",
+          "Pagină dedicată pentru Politica de confidențialitate și GDPR, conformă legal",
+          "Panou Administrator complet pentru actualizare prețuri, date de contact, imagini și descrieri",
           "Suport gratuit lifetime — recomandări de securitate, performanță și administrare",
         ]
       : [
@@ -107,6 +110,9 @@ const Pricing = () => {
           "Free assistance with migration of data, accounts and existing emails",
           "Admin guide + live walkthrough session of the dashboard",
           "Initial backup, SSL certificate and professional email setup",
+          "Custom email address on your own domain (e.g., contact@yourbusiness.com)",
+          "Dedicated Privacy Policy & GDPR page, fully compliant",
+          "Full Admin Panel to update prices, contact details, images and descriptions",
           "Free lifetime support — security, performance and admin guidance",
         ],
   };

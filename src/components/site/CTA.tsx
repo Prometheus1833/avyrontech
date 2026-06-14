@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Sparkles } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const CTA = () => {
   const { t } = useLang();
@@ -20,7 +21,7 @@ const CTA = () => {
   const [data, setData] = useState({ name: "", business: "", website: "", phone: "", email: "" });
   const [loading, setLoading] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const parsed = schema.safeParse(data);
     if (!parsed.success) {
@@ -28,11 +29,27 @@ const CTA = () => {
       return;
     }
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const { error } = await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "demo-request",
+          recipientEmail: "avyrontech@gmail.com",
+          idempotencyKey: `demo-request-${parsed.data.email}-${Date.now()}`,
+          templateData: {
+            ...parsed.data,
+            submittedAt: new Date().toISOString(),
+          },
+        },
+      });
+      if (error) throw error;
       toast.success(t.cta.success);
       setData({ name: "", business: "", website: "", phone: "", email: "" });
+    } catch (err) {
+      console.error("demo-request submit failed", err);
+      toast.error(t.cta.errEmail);
+    } finally {
       setLoading(false);
-    }, 700);
+    }
   };
 
   const set = (k: keyof typeof data) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
