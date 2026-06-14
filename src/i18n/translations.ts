@@ -300,7 +300,7 @@ export const translations = {
       whatsappValue: "Scrie-ne acum",
       nav: "Navigare",
       navItems: [
-        { l: "Noutăți", h: "/noutati" },
+        { l: "Blog", h: "/blog" },
         { l: "Portofoliu", h: "/despre-si-portofoliu#portofoliu" },
         { l: "Vezi exemple", h: "#exemple" },
         { l: "Produse", h: "/costurisiproduse" },
