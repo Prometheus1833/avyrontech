@@ -30,7 +30,7 @@ const sections = [
         <li><strong>Sediu:</strong> Iași, România</li>
         <li><strong>CUI:</strong> disponibil la cerere — solicitare prin email</li>
         <li><strong>Nr. Registrul Comerțului:</strong> disponibil la cerere — solicitare prin email</li>
-        <li><strong>Email contact:</strong> avyrontech@gmail.com</li>
+        <li><strong>Email contact:</strong> contact@avyron.ro</li>
         <li><strong>Telefon:</strong> +40 734 605 055</li>
       </ul>
     ),
@@ -133,7 +133,7 @@ const sections = [
           <li>Dreptul la opoziție</li>
           <li>Dreptul de a retrage consimțământul</li>
         </ul>
-        <p className="mt-3">Pentru exercitarea acestor drepturi, ne puteți contacta la: <a className="text-brand hover:underline" href="mailto:avyrontech@gmail.com">avyrontech@gmail.com</a></p>
+        <p className="mt-3">Pentru exercitarea acestor drepturi, ne puteți contacta la: <a className="text-brand hover:underline" href="mailto:contact@avyron.ro">contact@avyron.ro</a></p>
       </>
     ),
   },
@@ -298,11 +298,11 @@ const Gdpr = () => {
               Suntem aici. Răspundem prompt și clar la orice solicitare privind datele tale.
             </p>
             <div className="mt-6 grid sm:grid-cols-2 gap-3">
-              <a href="mailto:avyrontech@gmail.com" className="group flex items-center gap-3 rounded-2xl border border-border bg-background hover:border-brand/40 px-5 py-4 transition-colors">
+              <a href="mailto:contact@avyron.ro" className="group flex items-center gap-3 rounded-2xl border border-border bg-background hover:border-brand/40 px-5 py-4 transition-colors">
                 <Mail className="size-4 text-brand" />
                 <div>
                   <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Email</div>
-                  <div className="text-sm font-medium">avyrontech@gmail.com</div>
+                  <div className="text-sm font-medium">contact@avyron.ro</div>
                 </div>
               </a>
               <a href="tel:+40734605055" className="group flex items-center gap-3 rounded-2xl border border-border bg-background hover:border-brand/40 px-5 py-4 transition-colors">

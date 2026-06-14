@@ -21,7 +21,7 @@ export function ContactDialog({ open, onOpenChange }: Props) {
     { label: c.whatsapp, value: "+40 734 605 055", icon: MessageCircle, href: "https://wa.me/40734605055", color: "text-[#25D366]" },
     { label: c.messenger, value: "m.me/Avyron", icon: MessengerIcon, href: "https://m.me/61560319432764", color: "text-[#0078FF]" },
     { label: c.phone, value: "+40 734 605 055", icon: Phone, href: "tel:+40734605055", color: "text-foreground" },
-    { label: c.email, value: "avyrontech@gmail.com", icon: Mail, href: "mailto:avyrontech@gmail.com", color: "text-brand" },
+    { label: c.email, value: "contact@avyron.ro", icon: Mail, href: "mailto:contact@avyron.ro", color: "text-brand" },
   ];
 
   return (

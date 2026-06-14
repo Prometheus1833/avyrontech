@@ -35,7 +35,7 @@ const ContactBar = () => {
         <Phone className="size-4 md:size-5" />
       </a>
       <a
-        href="mailto:avyrontech@gmail.com"
+        href="mailto:contact@avyron.ro"
         aria-label="Email"
         className="size-10 md:size-12 rounded-full bg-brand text-white grid place-items-center shadow-elev hover:scale-110 transition-transform"
       >
