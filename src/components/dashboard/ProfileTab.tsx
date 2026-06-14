@@ -77,7 +77,7 @@ export function ProfileTab() {
     if (!user) return;
     setSaving(true);
     try {
-      await cfAuth.updateProfile({ ...form });
+      await cfAuth.updateProfile({ ...form } as any);
       await refreshProfile();
       toast.success(t.auth.profile.saved);
     } catch (e: any) {
