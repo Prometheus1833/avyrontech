@@ -25,7 +25,7 @@ import { StaffFinanceTab } from "@/components/dashboard/StaffFinanceTab";
 
 const Profile = () => {
   const { t } = useLang();
-  const { signOut, isStaff, isAdmin } = useAuth();
+  const { isStaff, isAdmin } = useAuth();
   const [params, setParams] = useSearchParams();
   const initial = params.get("tab") ?? "profile";
   const [tab, setTab] = useState(initial);
