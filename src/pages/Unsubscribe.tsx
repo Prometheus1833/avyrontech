@@ -45,7 +45,7 @@ export default function Unsubscribe() {
           body: JSON.stringify({ token }),
         },
       );
-      const data = await res.json();
+      const data = (await res.json()) as { success?: boolean; reason?: string };
       if (data.success) setState("done");
       else if (data.reason === "already_unsubscribed") setState("already");
       else setState("error");
