@@ -85,7 +85,7 @@ class CfAuth {
   private async errorFrom(res: Response): Promise<Error> {
     let msg = `HTTP ${res.status}`;
     try {
-      const j = await res.json();
+      const j = await res.json() as any;
       msg = j?.error?.message || j?.error?.code || msg;
     } catch {}
     return new Error(msg);
@@ -100,7 +100,7 @@ class CfAuth {
     try {
       const res = await fetch("/api/auth/refresh", { method: "POST", credentials: "include" });
       if (!res.ok) return false;
-      const j = await res.json();
+      const j = await res.json() as any;
       this.setSession(j.access_token, j.expires_in);
       return true;
     } catch {
@@ -115,7 +115,7 @@ class CfAuth {
       credentials: "include",
       body: JSON.stringify(input),
     });
-    const j = await res.json();
+    const j = await res.json() as any;
     if (!res.ok) throw new Error(j?.error?.message || j?.error?.code || "signup_failed");
     this.setSession(j.access_token, j.expires_in);
     return j;
@@ -128,7 +128,7 @@ class CfAuth {
       credentials: "include",
       body: JSON.stringify({ email, password }),
     });
-    const j = await res.json();
+    const j = await res.json() as any;
     if (!res.ok) throw new Error(j?.error?.message || j?.error?.code || "login_failed");
     this.setSession(j.access_token, j.expires_in);
     return j;
@@ -157,7 +157,7 @@ class CfAuth {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ token, password }),
     });
-    const j = await res.json();
+    const j = await res.json() as any;
     if (!res.ok) throw new Error(j?.error?.message || j?.error?.code || "reset_failed");
     return j;
   }
