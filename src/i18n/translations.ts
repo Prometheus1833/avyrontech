@@ -507,9 +507,9 @@ export const translations = {
     },
     hero: {
       badge: "Websites that bring customers, not just visits",
-      title1: "Visibility.",
-      title2: "Trust.",
-      title3: "Customers.",
+      title1: "Websites",
+      title2: "that bring customers",
+      title3: "to your business.",
       subtitle:
         "We design refined, high-performance digital experiences optimized for conversion — built to turn every visit into a real opportunity.",
       ctaPrimary: "Get a free demo",
