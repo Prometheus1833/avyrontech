@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     })();
     const off = cfAuth.onChange(() => { void load(); });
-    return off;
+    return () => { off(); };
   }, [load]);
 
   const refreshProfile = useCallback(async () => { await load(); }, [load]);
