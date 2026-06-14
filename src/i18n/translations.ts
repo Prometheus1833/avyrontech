@@ -358,7 +358,7 @@ export const translations = {
         subscription: "Istoric și Achiziții",
         cart: "Coșul meu",
         settings: "Setări",
-        news: "Noutăți",
+        news: "Blog",
         contact: "Contact",
         projects: "Proiectele mele",
         maintenance: "Mentenanță",
