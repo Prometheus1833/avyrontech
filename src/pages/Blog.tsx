@@ -285,8 +285,11 @@ const Blog = () => {
   useEffect(() => {
     if (!fullPost) return;
     const load = async () => {
-      const { data } = await supabase
-        .from("news_comments").select("*").eq("post_id", fullPost.id)
+      // Public read uses the security-invoker view that omits author_id (anon-safe).
+      // Authenticated users can still read the full table for moderation actions.
+      const source = user ? "news_comments" : "news_comments_public";
+      const { data } = await (supabase as any)
+        .from(source).select("*").eq("post_id", fullPost.id)
         .order("created_at", { ascending: false });
       setComments((data || []) as Comment[]);
     };
