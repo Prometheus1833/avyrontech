@@ -196,7 +196,7 @@ const ErrorPage = ({ variant = "404" }: Props) => {
               <span aria-hidden className="opacity-30">·</span>
               <Link to="/costurisiproduse" className="hover:text-foreground">Costuri</Link>
               <span aria-hidden className="opacity-30">·</span>
-              <Link to="/noutati" className="hover:text-foreground">Noutăți</Link>
+              <Link to="/blog" className="hover:text-foreground">Blog</Link>
               <span aria-hidden className="opacity-30">·</span>
               <a href="mailto:avyrontech@gmail.com" className="hover:text-foreground">
                 Contact
