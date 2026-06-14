@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Sparkles } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const CTA = () => {
   const { t } = useLang();
