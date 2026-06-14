@@ -185,8 +185,8 @@ const Blog = () => {
 
   // SEO
   useEffect(() => {
-    const baseTitle = "Noutăți Avyron — Tehnologie, Web Design, SEO & Securitate";
-    const baseDesc = "Articole zilnice despre IT, web design, SEO și securitate online de la echipa Avyron.";
+    const baseTitle = "Blog Avyron — Tehnologie, Web Design, SEO & Securitate";
+    const baseDesc = "Articole despre IT, web design, SEO și securitate online de la echipa Avyron.";
     const t = active ? `${active.title} · Avyron Insights` : baseTitle;
     const d = active?.excerpt || baseDesc;
     const url = `${window.location.origin}/blog${active ? `#${active.slug}` : ""}`;
