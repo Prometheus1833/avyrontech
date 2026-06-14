@@ -329,7 +329,7 @@ const Blog = () => {
     if (!user) { toast.error("Conectează-te ca să comentezi"); return; }
     if (!fullPost || !commentText.trim()) return;
     setPostingComment(true);
-    const name = (user.user_metadata as any)?.display_name || (user.user_metadata as any)?.full_name || user.email?.split("@")[0] || "User";
+    const name = user.display_name || user.email?.split("@")[0] || "User";
     const { error } = await supabase.from("news_comments").insert({
       post_id: fullPost.id, author_id: user.id, author_name: name, content: commentText.trim(),
     });
@@ -621,7 +621,7 @@ const Blog = () => {
                     <div className="flex gap-2 mb-4">
                       <Avatar className="size-8 shrink-0">
                         <AvatarFallback className="text-[10px] font-bold bg-brand/10 text-brand">
-                          {initials((user.user_metadata as any)?.display_name || user.email)}
+                          {initials(user.display_name || user.email)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 flex gap-2">

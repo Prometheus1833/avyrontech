@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Camera } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { cfAuth } from "@/lib/cfAuth";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
 
@@ -62,26 +62,29 @@ export function ProfileTab() {
     if (!user) return;
     if (file.size > 5 * 1024 * 1024) return toast.error("Fișierul depășește 5MB");
     setUploading(true);
-    const ext = file.name.split(".").pop() ?? "jpg";
-    const path = `${user.id}/${Date.now()}.${ext}`;
-    const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-    if (upErr) { setUploading(false); return toast.error(upErr.message); }
-    const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-    const { error: dbErr } = await supabase.from("profiles").update({ avatar_url: pub.publicUrl }).eq("id", user.id);
-    setUploading(false);
-    if (dbErr) return toast.error(dbErr.message);
-    await refreshProfile();
-    toast.success(t.auth.profile.saved);
+    try {
+      await cfAuth.uploadAvatar(file);
+      await refreshProfile();
+      toast.success(t.auth.profile.saved);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const onSave = async () => {
     if (!user) return;
     setSaving(true);
-    const { error } = await supabase.from("profiles").update({ ...form }).eq("id", user.id);
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    await refreshProfile();
-    toast.success(t.auth.profile.saved);
+    try {
+      await cfAuth.updateProfile({ ...form } as any);
+      await refreshProfile();
+      toast.success(t.auth.profile.saved);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const initials = (form.display_name || user?.email || "A")

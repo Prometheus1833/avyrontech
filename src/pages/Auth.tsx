@@ -7,13 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Sparkles, ShieldCheck, LayoutDashboard, ArrowLeft, MessageCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { cfAuth } from "@/lib/cfAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
-import SocialButtons from "@/components/auth/SocialButtons";
 import {
   loginSchema,
   registerSchema,
@@ -24,7 +22,7 @@ import logo from "@/assets/avyron-logo.jpg";
 
 const Auth = () => {
   const { t } = useLang();
-  const { user, loading } = useAuth();
+  const { user, loading, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [tab, setTab] = useState<"login" | "register">("login");
@@ -59,48 +57,35 @@ const Auth = () => {
 
   const onLogin = async (data: LoginInput) => {
     setSubmitting(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    });
-    setSubmitting(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    try {
+      await cfAuth.login(data.email, data.password);
+      await refreshProfile();
+      toast.success(t.auth.welcomeBack);
+      navigate(from, { replace: true });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSubmitting(false);
     }
-    toast.success(t.auth.welcomeBack);
-    navigate(from, { replace: true });
   };
 
   const onRegister = async (data: RegisterInput) => {
     setSubmitting(true);
-    const { error } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/profil`,
-        data: {
-          display_name: data.displayName,
-          entity_type: data.entityType,
-        },
-      },
-    });
-    if (error) {
+    try {
+      await cfAuth.signup({
+        email: data.email,
+        password: data.password,
+        displayName: data.displayName,
+        entityType: data.entityType,
+      });
+      await refreshProfile();
+      toast.success(t.auth.accountCreated);
+      navigate(from, { replace: true });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
       setSubmitting(false);
-      toast.error(error.message);
-      return;
     }
-    // entity_type isn't on profiles via metadata trigger — update after signup
-    const { data: sess } = await supabase.auth.getSession();
-    if (sess.session?.user) {
-      await supabase
-        .from("profiles")
-        .update({ entity_type: data.entityType, display_name: data.displayName })
-        .eq("id", sess.session.user.id);
-    }
-    setSubmitting(false);
-    toast.success(t.auth.accountCreated);
-    navigate(from, { replace: true });
   };
 
   return (
@@ -137,7 +122,7 @@ const Auth = () => {
           <ul className="mt-10 space-y-4">
             {[
               { n: "01", Icon: Sparkles, text: t.auth.clientPerksDesc },
-              { n: "02", Icon: ShieldCheck, text: "Sfaturi periodice de securitate, noutăți tech și acces prioritar la noile colaborări." },
+              { n: "02", Icon: ShieldCheck, text: "Infrastructură Cloudflare — D1, KV, R2, edge auth." },
               { n: "03", Icon: LayoutDashboard, text: "Mini-dashboard intuitiv pentru produse, mentenanță și plăți recurente." },
               { n: "04", Icon: MessageCircle, text: "Chat direct cu membrii echipei." },
             ].map(({ n, Icon, text }) => (
@@ -160,7 +145,6 @@ const Auth = () => {
         </div>
       </section>
 
-
       {/* Right — form */}
       <section className="flex items-center justify-center p-6 sm:p-12 bg-background">
         <div className="w-full max-w-md space-y-6">
@@ -175,12 +159,6 @@ const Auth = () => {
             </TabsList>
 
             <TabsContent value="login" className="space-y-5 mt-6">
-              <SocialButtons />
-              <div className="flex items-center gap-3">
-                <Separator className="flex-1" />
-                <span className="text-xs text-muted-foreground uppercase">{t.auth.orContinue}</span>
-                <Separator className="flex-1" />
-              </div>
               <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="li-email">{t.auth.email}</Label>
@@ -208,12 +186,6 @@ const Auth = () => {
             </TabsContent>
 
             <TabsContent value="register" className="space-y-5 mt-6">
-              <SocialButtons />
-              <div className="flex items-center gap-3">
-                <Separator className="flex-1" />
-                <span className="text-xs text-muted-foreground uppercase">{t.auth.orContinue}</span>
-                <Separator className="flex-1" />
-              </div>
               <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="rg-name">{t.auth.displayName}</Label>
