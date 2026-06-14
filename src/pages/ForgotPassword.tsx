@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { cfAuth } from "@/lib/cfAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import { forgotSchema } from "@/lib/validators/auth";
 import { z } from "zod";
@@ -37,16 +37,15 @@ const ForgotPassword = () => {
 
   const onSubmit = async (data: Input) => {
     setSubmitting(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setSubmitting(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    try {
+      await cfAuth.forgot(data.email);
+      setSent(true);
+      toast.success(t.auth.resetSent);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSubmitting(false);
     }
-    setSent(true);
-    toast.success(t.auth.resetSent);
   };
 
   return (
@@ -58,9 +57,7 @@ const ForgotPassword = () => {
 
         <div className="space-y-2">
           <h1 className="font-display text-3xl font-bold">{t.auth.forgot}</h1>
-          <p className="text-sm text-muted-foreground">
-            {t.auth.resetSent}
-          </p>
+          <p className="text-sm text-muted-foreground">{t.auth.resetSent}</p>
         </div>
 
         {sent ? (

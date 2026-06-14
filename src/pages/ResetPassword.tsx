@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { cfAuth } from "@/lib/cfAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import { resetSchema } from "@/lib/validators/auth";
 import { z } from "zod";
@@ -16,13 +16,14 @@ type Input = z.infer<typeof resetSchema>;
 const ResetPassword = () => {
   const { t } = useLang();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const token = params.get("token") ?? "";
 
   useEffect(() => {
     import("@/lib/seo").then(({ setPageMeta }) =>
       setPageMeta({
         title: "Setează o parolă nouă — Avyron",
-        description:
-          "Definește o parolă nouă pentru contul tău Avyron și continuă către panoul de proiecte.",
+        description: "Definește o parolă nouă pentru contul tău Avyron.",
         path: "/reset-password",
       })
     );
@@ -35,15 +36,17 @@ const ResetPassword = () => {
   });
 
   const onSubmit = async (data: Input) => {
+    if (!token) return toast.error("Link invalid — token lipsă");
     setSubmitting(true);
-    const { error } = await supabase.auth.updateUser({ password: data.password });
-    setSubmitting(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    try {
+      await cfAuth.reset(token, data.password);
+      toast.success(t.auth.passwordUpdated);
+      navigate("/auth", { replace: true });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSubmitting(false);
     }
-    toast.success(t.auth.passwordUpdated);
-    navigate("/profil");
   };
 
   return (
@@ -51,6 +54,7 @@ const ResetPassword = () => {
       <div className="w-full max-w-md space-y-6">
         <div className="space-y-2">
           <h1 className="font-display text-3xl font-bold">{t.auth.updatePassword}</h1>
+          {!token && <p className="text-xs text-destructive">Token lipsă din URL.</p>}
         </div>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -68,7 +72,7 @@ const ResetPassword = () => {
               <p className="text-xs text-destructive">{form.formState.errors.confirm.message}</p>
             )}
           </div>
-          <Button type="submit" className="w-full rounded-full h-11" disabled={submitting}>
+          <Button type="submit" className="w-full rounded-full h-11" disabled={submitting || !token}>
             {submitting ? "..." : t.auth.updatePassword}
           </Button>
         </form>
