@@ -1,14 +1,10 @@
-# Cloudflare D1 — Infrastructură
+# Cloudflare D1 — Date business
 
-Acest folder conține schema și migrațiile pentru baza de date D1 (SQLite la edge),
-pregătite pentru a fi rulate pe Cloudflare Workers/Pages.
+D1 (SQLite distribuit) stochează **toate** datele care au listări, relații,
+filtrări sau căutări: clienți, proiecte, facturi, plăți, lead-uri, tickete etc.
 
-## Status
-
-🟡 **Scaffolding** — binding-ul este definit (comentat) în `wrangler.jsonc`.
-Aplicația folosește în continuare Lovable Cloud (Postgres) pentru toate datele;
-D1 este pregătit pentru cazuri viitoare unde vrem stocare la edge (cache,
-analytics, A/B flags, rate limiting persistent etc.).
+> Status: 🟡 **Scaffolding**. Aplicația folosește în continuare Lovable Cloud
+> (Postgres) pentru date live. D1 e pregătit pentru activare graduală.
 
 ## Activare
 
@@ -16,41 +12,54 @@ analytics, A/B flags, rate limiting persistent etc.).
 # 1. Creează baza
 bunx wrangler d1 create avyron-db
 
-# 2. Copiază `database_id` returnat și pune-l în wrangler.jsonc
-#    (decomentează blocul `d1_databases`)
+# 2. Pune `database_id` returnat în wrangler.jsonc (decomentează blocul d1_databases)
 
 # 3. Aplică migrațiile
-bunx wrangler d1 migrations apply avyron-db --remote
-bunx wrangler d1 migrations apply avyron-db --local   # pentru dev
+bunx wrangler d1 migrations apply avyron-db --local    # dev
+bunx wrangler d1 migrations apply avyron-db --remote   # producție
 
-# 4. Query rapid pentru verificare
-bunx wrangler d1 execute avyron-db --remote --command "SELECT name FROM sqlite_master WHERE type='table';"
+# 4. Verificare
+bunx wrangler d1 execute avyron-db --remote \
+  --command "SELECT name FROM sqlite_master WHERE type='table';"
 ```
 
-În Workers/Pages Functions, binding-ul este disponibil ca `env.DB`:
+În Workers/Pages: binding-ul este `env.DB`.
 
-```ts
-export const onRequest: PagesFunction<{ DB: D1Database }> = async ({ env }) => {
-  const { results } = await env.DB.prepare("SELECT 1 AS ok").all();
-  return Response.json(results);
-};
-```
+## Tabele (vezi `migrations/0001_init.sql`)
 
-## Structură
-
-```
-cloudflare/d1/
-├── README.md                 ← acest fișier
-├── schema.sql                ← schema completă (referință)
-└── migrations/
-    └── 0001_init.sql         ← prima migrație
-```
+| Tabel              | Rol                                          |
+|--------------------|----------------------------------------------|
+| `clients`          | Clienți Avyron (companie, contact, status)   |
+| `projects`         | Proiecte per client (domeniu, status)        |
+| `services`         | Servicii per proiect (preț, ciclu facturare) |
+| `subscriptions`    | Abonamente recurente (next_billing_date)     |
+| `invoices`         | Facturi (status, due_date, amount)           |
+| `payments`         | Plăți încasate (provider, paid_at)           |
+| `leads`            | Contact / demo / request example             |
+| `support_tickets`  | Tickete suport per client+proiect            |
+| `website_content`  | CMS per-proiect pentru clienții cu admin     |
 
 ## Convenții
 
-- Migrațiile sunt **append-only**. Nu rescrie un fișier deja aplicat.
-- Numerotare `NNNN_descriere.sql` (4 cifre, snake_case).
-- SQLite ≠ Postgres: fără `gen_random_uuid()`, fără `jsonb`. Folosește `TEXT` pentru
-  UUID/JSON și generează ID-uri în cod (`crypto.randomUUID()`).
-- `created_at`/`updated_at` ca `INTEGER` (epoch ms) sau `TEXT` (ISO) — fără triggere
-  complexe; setate explicit din Worker.
+- Migrațiile sunt **append-only**. Nu rescrie o migrație aplicată.
+- Numerotare: `NNNN_descriere.sql`.
+- ID-uri ca `TEXT` (UUID generat în Worker cu `crypto.randomUUID()`).
+- `created_at` / `updated_at` ca `INTEGER` (epoch ms).
+- JSON stocat ca `TEXT` (SQLite n-are `jsonb`).
+- Indexuri pe coloanele folosite în `WHERE` / `ORDER BY` / `JOIN`.
+
+## Pattern Worker
+
+```ts
+// listare clienți cu filtru
+const { results } = await env.DB
+  .prepare("SELECT id, company_name, status FROM clients WHERE status = ? ORDER BY created_at DESC LIMIT 50")
+  .bind("active")
+  .all<{ id: string; company_name: string; status: string }>();
+```
+
+## Backup
+
+```bash
+bunx wrangler d1 export avyron-db --remote --output=backup-$(date +%F).sql
+```

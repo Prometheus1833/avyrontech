@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,7 +18,7 @@ import Auth from "./pages/Auth.tsx";
 import ForgotPassword from "./pages/ForgotPassword.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import Profile from "./pages/Profile.tsx";
-import News from "./pages/News.tsx";
+import Blog from "./pages/Blog.tsx";
 import ExamplePage from "./pages/ExamplePage.tsx";
 
 import CookieBanner from "@/components/site/CookieBanner";
@@ -43,7 +43,8 @@ const App = () => (
               <Route path="/despre-si-portofoliu" element={<About />} />
               <Route path="/exemple/flawlesstudio" element={<FlawlesstudioDemo />} />
               <Route path="/exemple/retuvo" element={<RetuvoDemo />} />
-              <Route path="/noutati" element={<News />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/noutati" element={<Navigate to="/blog" replace />} />
               <Route path="/examples/:slug" element={<ExamplePage />} />
               
               

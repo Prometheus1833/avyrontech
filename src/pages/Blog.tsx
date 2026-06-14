@@ -118,7 +118,7 @@ const renderMarkdown = (md: string) => {
 };
 
 const buildShareLinks = (post: NewsPost) => {
-  const url = `${window.location.origin}/noutati#${post.slug}`;
+  const url = `${window.location.origin}/blog#${post.slug}`;
   const text = `${post.title} — via Avyron`;
   const e = encodeURIComponent;
   return {
@@ -135,7 +135,7 @@ const buildShareLinks = (post: NewsPost) => {
   };
 };
 
-const News = () => {
+const Blog = () => {
   const { user } = useAuth();
   const [posts, setPosts] = useState<NewsPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -185,11 +185,11 @@ const News = () => {
 
   // SEO
   useEffect(() => {
-    const baseTitle = "Noutăți Avyron — Tehnologie, Web Design, SEO & Securitate";
-    const baseDesc = "Articole zilnice despre IT, web design, SEO și securitate online de la echipa Avyron.";
+    const baseTitle = "Blog Avyron — Tehnologie, Web Design, SEO & Securitate";
+    const baseDesc = "Articole despre IT, web design, SEO și securitate online de la echipa Avyron.";
     const t = active ? `${active.title} · Avyron Insights` : baseTitle;
     const d = active?.excerpt || baseDesc;
-    const url = `${window.location.origin}/noutati${active ? `#${active.slug}` : ""}`;
+    const url = `${window.location.origin}/blog${active ? `#${active.slug}` : ""}`;
     const image = active?.cover_image_url || `${window.location.origin}/og-default.jpg`;
     document.title = t;
     const set = (sel: string, attr: string, val: string, mk?: () => HTMLElement) => {
@@ -249,7 +249,7 @@ const News = () => {
 
   // sync hash with active
   useEffect(() => {
-    if (active) window.history.replaceState(null, "", `/noutati#${active.slug}`);
+    if (active) window.history.replaceState(null, "", `/blog#${active.slug}`);
   }, [active]);
 
   // staff role
@@ -426,7 +426,7 @@ const News = () => {
                 <Newspaper className="size-3" /> Avyron Insights
               </div>
               <h1 className="text-lg md:text-2xl font-bold tracking-tight" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
-                <span className="bg-gradient-to-r from-foreground via-brand to-brand-2 bg-clip-text text-transparent">Noutăți</span>
+                <span className="bg-gradient-to-r from-foreground via-brand to-brand-2 bg-clip-text text-transparent">Blog</span>
               </h1>
             </div>
             {isStaff && (
@@ -768,4 +768,4 @@ const ShareBtn = ({ href, label, color, children, external = true }: { href: str
   </a>
 );
 
-export default News;
+export default Blog;

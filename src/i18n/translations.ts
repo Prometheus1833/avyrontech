@@ -10,7 +10,7 @@ export const translations = {
       faq: "FAQ",
       cta: "Demo gratuit",
       menu: "Meniu",
-      news: "Noutăți",
+      news: "Blog",
       portfolio: "Portofoliu",
     },
     hero: {
@@ -300,7 +300,7 @@ export const translations = {
       whatsappValue: "Scrie-ne acum",
       nav: "Navigare",
       navItems: [
-        { l: "Noutăți", h: "/noutati" },
+        { l: "Blog", h: "/blog" },
         { l: "Portofoliu", h: "/despre-si-portofoliu#portofoliu" },
         { l: "Vezi exemple", h: "#exemple" },
         { l: "Produse", h: "/costurisiproduse" },
@@ -358,7 +358,7 @@ export const translations = {
         subscription: "Istoric și Achiziții",
         cart: "Coșul meu",
         settings: "Setări",
-        news: "Noutăți",
+        news: "Blog",
         contact: "Contact",
         projects: "Proiectele mele",
         maintenance: "Mentenanță",
@@ -502,7 +502,7 @@ export const translations = {
       faq: "FAQ",
       cta: "Free demo",
       menu: "Menu",
-      news: "News",
+      news: "Blog",
       portfolio: "Portfolio",
     },
     hero: {
@@ -790,7 +790,7 @@ export const translations = {
       whatsappValue: "Message us now",
       nav: "Navigation",
       navItems: [
-        { l: "News", h: "/noutati" },
+        { l: "Blog", h: "/blog" },
         { l: "Portfolio", h: "/despre-si-portofoliu#portofoliu" },
         { l: "See examples", h: "#exemple" },
         { l: "Products", h: "/costurisiproduse" },
@@ -848,7 +848,7 @@ export const translations = {
         subscription: "History & Purchases",
         cart: "My cart",
         settings: "Settings",
-        news: "News",
+        news: "Blog",
         contact: "Contact",
         projects: "My projects",
         maintenance: "Maintenance",
