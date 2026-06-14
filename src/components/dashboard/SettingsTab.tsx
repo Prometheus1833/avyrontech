@@ -141,36 +141,42 @@ export const SettingsTab = () => {
     const id = crypto.randomUUID();
     let m: SavedPayMethod | null = null;
 
+    // SECURITY: only persist masked/display metadata in localStorage.
+    // Full PAN, IBAN, cardholder name, expiry, and beneficiary are NEVER stored.
     if (pmType === "card") {
       const num = (pmDraft.card_number || "").replace(/\s+/g, "");
       if (num.length < 12) return toast.error("Număr card invalid");
       if (!pmDraft.holder) return toast.error("Introdu titularul");
+      const brand = detectBrand(num);
+      const last4 = num.slice(-4);
       m = {
         id, type: "card",
-        brand: detectBrand(num),
-        last4: num.slice(-4),
-        exp_month: pmDraft.exp_month, exp_year: pmDraft.exp_year,
-        holder: pmDraft.holder,
-        label: `${detectBrand(num)} •••• ${num.slice(-4)}`,
+        brand,
+        last4,
+        label: `${brand} •••• ${last4}`,
       };
     } else if (pmType === "paypal") {
       if (!pmDraft.email) return toast.error("Introdu email-ul PayPal");
-      m = { id, type: "paypal", email: pmDraft.email, label: `PayPal — ${pmDraft.email}` };
+      const masked = pmDraft.email.replace(/(.{2}).+(@.+)/, "$1•••$2");
+      m = { id, type: "paypal", label: `PayPal — ${masked}` };
     } else if (pmType === "payment_link") {
       if (!pmDraft.url) return toast.error("Introdu URL-ul");
-      m = { id, type: "payment_link", url: pmDraft.url, label: `Link — ${pmDraft.url.replace(/^https?:\/\//, "").slice(0, 30)}` };
+      const host = pmDraft.url.replace(/^https?:\/\//, "").split("/")[0].slice(0, 40);
+      m = { id, type: "payment_link", label: `Link — ${host}` };
     } else if (pmType === "bank_transfer") {
       if (!pmDraft.iban) return toast.error("Introdu IBAN-ul");
+      const last4 = pmDraft.iban.slice(-4);
       m = {
         id, type: "bank_transfer",
-        iban: pmDraft.iban, bank_name: pmDraft.bank_name, beneficiary: pmDraft.beneficiary,
-        label: `${pmDraft.bank_name || "Bancă"} — ${pmDraft.iban.slice(-6).padStart(pmDraft.iban.length, "•")}`,
+        bank_name: pmDraft.bank_name?.slice(0, 40),
+        label: `${pmDraft.bank_name || "Bancă"} — •••• ${last4}`,
       };
     } else if (pmType === "revolut") {
       if (!pmDraft.email) return toast.error("Introdu email/număr Revolut");
-      m = { id, type: "revolut", email: pmDraft.email, label: `Revolut — ${pmDraft.email}` };
+      const masked = pmDraft.email.replace(/(.{2}).+/, "$1•••");
+      m = { id, type: "revolut", label: `Revolut — ${masked}` };
     } else if (pmType === "invoice") {
-      m = { id, type: "invoice", beneficiary: pmDraft.beneficiary, label: `Factură${pmDraft.beneficiary ? " — " + pmDraft.beneficiary : ""}` };
+      m = { id, type: "invoice", label: "Factură (plată ulterioară)" };
     }
 
     if (!m) return;

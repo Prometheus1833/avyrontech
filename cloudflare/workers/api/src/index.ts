@@ -234,7 +234,7 @@ app.post("/api/clients", requireAuth, requireRole("staff", "admin"), async (c) =
 });
 
 // ─── Content (KV) ───────────────────────────────────────────────────────
-app.get("/api/content/:key", async (c) => {
+app.get("/api/content/:key", requireAuth, requireRole("staff", "admin"), async (c) => {
   const v = await c.env.KV.get(c.req.param("key"), "json");
   return c.json({ data: v });
 });
