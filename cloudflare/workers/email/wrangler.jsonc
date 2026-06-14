@@ -1,0 +1,14 @@
+{
+  "$schema": "../../../node_modules/wrangler/config-schema.json",
+  "name": "avyron-email",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-02-04",
+  "observability": { "enabled": true },
+
+  // Permite trimiterea către orice adresă (folosit pentru a răspunde expeditorului).
+  // Pentru forward implicit folosim regula din Email Routing (UI Cloudflare),
+  // dar `send_email` cu destination_address restrânge livrarea unde e necesar.
+  "send_email": [
+    { "name": "SEND_EMAIL" }
+  ]
+}

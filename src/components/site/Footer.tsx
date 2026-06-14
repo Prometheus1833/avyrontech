@@ -73,7 +73,7 @@ const Footer = () => {
               <span className="text-xs text-white/90 font-medium hidden sm:inline">Sună-ne</span>
             </a>
             <a
-              href="mailto:avyrontech@gmail.com"
+              href="mailto:contact@avyron.ro"
               aria-label={t.footer.emailLabel}
               className="inline-flex items-center gap-1.5 rounded-full border border-pink-300/30 bg-gradient-to-br from-pink-500/15 to-rose-600/15 hover:from-pink-500/25 hover:to-rose-600/25 hover:border-pink-300/60 px-3 py-1.5 transition-all"
             >

@@ -42,5 +42,14 @@
   //     "bucket_name": "avyron-files",
   //     "preview_bucket_name": "avyron-files-preview"
   //   }
+  // ],
+  //
+  // ──────────────────────────────────────────────────────────────────────
+  // Email Routing — primește pe contact@avyron.ro, forward + reply prin Worker.
+  // Vezi `cloudflare/workers/email/` pentru worker-ul dedicat.
+  // ──────────────────────────────────────────────────────────────────────
+  //
+  // "send_email": [
+  //   { "name": "SEND_EMAIL", "destination_address": "avyrontech@gmail.com" }
   // ]
 }

@@ -878,10 +878,10 @@ const Pricing = () => {
               WhatsApp
             </a>
             <a
-              href="mailto:avyrontech@gmail.com"
+              href="mailto:contact@avyron.ro"
               className="inline-flex items-center gap-2 rounded-full bg-foreground text-background hover:bg-foreground/90 px-6 py-3 text-sm font-bold transition-colors"
             >
-              avyrontech@gmail.com
+              contact@avyron.ro
             </a>
             <Link
               to="/#examples"
