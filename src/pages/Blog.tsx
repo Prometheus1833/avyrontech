@@ -426,7 +426,7 @@ const Blog = () => {
                 <Newspaper className="size-3" /> Avyron Insights
               </div>
               <h1 className="text-lg md:text-2xl font-bold tracking-tight" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
-                <span className="bg-gradient-to-r from-foreground via-brand to-brand-2 bg-clip-text text-transparent">Noutăți</span>
+                <span className="bg-gradient-to-r from-foreground via-brand to-brand-2 bg-clip-text text-transparent">Blog</span>
               </h1>
             </div>
             {isStaff && (
