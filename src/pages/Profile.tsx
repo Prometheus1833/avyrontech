@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck, FolderKanban, Wrench, BookOpen, MessagesSquare, Settings, ShoppingCart, Globe, Sparkles, Wallet } from "lucide-react";
+import { ArrowLeft, User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck, FolderKanban, Wrench, BookOpen, MessagesSquare, Settings, ShoppingCart, Globe, Sparkles, Wallet, Image as ImageIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
 
@@ -22,6 +22,8 @@ import { StaffExampleRequestsTab } from "@/components/dashboard/StaffExampleRequ
 import { SettingsTab } from "@/components/dashboard/SettingsTab";
 import { CartTab } from "@/components/dashboard/CartTab";
 import { StaffFinanceTab } from "@/components/dashboard/StaffFinanceTab";
+import { StaffPaymentsTab } from "@/components/dashboard/StaffPaymentsTab";
+import { StaffMediaTab } from "@/components/dashboard/StaffMediaTab";
 
 const Profile = () => {
   const { t } = useLang();
@@ -100,7 +102,9 @@ const Profile = () => {
       label: "Financiar & Suport",
       items: [
         { value: "invoices", label: t.auth.dash.tabs.invoices, icon: Receipt },
+        { value: "payments", label: "Plăți", icon: Wallet },
         { value: "finance", label: "Situație financiară", icon: Wallet },
+        { value: "media", label: "Media", icon: ImageIcon },
         { value: "staff-tickets", label: t.auth.dash.tabs.staffTickets, icon: MessageSquare },
         { value: "demo-requests", label: "Solicitări demo", icon: Sparkles },
       ],
@@ -179,6 +183,8 @@ const Profile = () => {
               <TabsContent value="maintenance" className="mt-0"><StaffMaintenanceTab /></TabsContent>
               <TabsContent value="clients" className="mt-0"><StaffClientsTab /></TabsContent>
               <TabsContent value="finance" className="mt-0"><StaffFinanceTab /></TabsContent>
+              <TabsContent value="payments" className="mt-0"><StaffPaymentsTab /></TabsContent>
+              <TabsContent value="media" className="mt-0"><StaffMediaTab /></TabsContent>
               <TabsContent value="staff-tickets" className="mt-0"><TicketsTab staffMode /></TabsContent>
               <TabsContent value="intern" className="mt-0"><StaffChatTab /></TabsContent>
               <TabsContent value="announcements" className="mt-0"><StaffAnnouncementsTab /></TabsContent>

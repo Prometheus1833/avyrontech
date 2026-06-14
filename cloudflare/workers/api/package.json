@@ -1,0 +1,18 @@
+{
+  "name": "avyron-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "migrate:remote": "wrangler d1 migrations apply avyron-db --remote",
+    "migrate:local": "wrangler d1 migrations apply avyron-db --local"
+  },
+  "dependencies": {
+    "hono": "^4.6.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250601.0",
+    "wrangler": "^4.96.0"
+  }
+}

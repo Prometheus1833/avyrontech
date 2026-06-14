@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "avyron-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-06-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+
+  // ─── Bindings ────────────────────────────────────────────────────────
+  // Completează ID-urile după:
+  //   bunx wrangler d1 create avyron-db
+  //   bunx wrangler kv namespace create AVYRON_KV
+  //   bunx wrangler r2 bucket create avyron-files
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "avyron-db",
+      "database_id": "REPLACE_WITH_REAL_ID",
+      "migrations_dir": "../../d1/migrations"
+    }
+  ],
+  "kv_namespaces": [
+    { "binding": "KV", "id": "REPLACE_WITH_REAL_ID" }
+  ],
+  "r2_buckets": [
+    { "binding": "FILES", "bucket_name": "avyron-files" }
+  ],
+
+  // JWT_SECRET se setează cu: bunx wrangler secret put JWT_SECRET
+  "vars": {
+    "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,http://localhost:8080"
+  }
+}
