@@ -502,7 +502,7 @@ export const translations = {
       faq: "FAQ",
       cta: "Free demo",
       menu: "Menu",
-      news: "News",
+      news: "Blog",
       portfolio: "Portfolio",
     },
     hero: {
