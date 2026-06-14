@@ -38,24 +38,24 @@ const Pricing = () => {
   const ro = lang === "ro";
   const [currency, setCurrency] = useState<"EUR" | "RON">("EUR");
   const [rate, setRate] = useState<number>(5); // EUR -> RON, indicative fallback
-  const [rateUpdated, setRateUpdated] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    // Free, no-auth EUR->RON rate (ECB data via Frankfurter)
-    fetch("https://api.frankfurter.dev/v1/latest?base=EUR&symbols=RON")
-      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then((d: { rates?: { RON?: number }; date?: string }) => {
-        if (cancelled) return;
-        if (d?.rates?.RON && d.rates.RON > 0) {
-          setRate(Number(d.rates.RON.toFixed(4)));
-          if (d.date) setRateUpdated(d.date);
-        }
-      })
-      .catch(() => {
-        // keep fallback
-      });
-    return () => { cancelled = true; };
+    import("@/integrations/supabase/client").then(({ supabase }) => {
+      supabase.functions
+        .invoke("get-exchange-rate")
+        .then(({ data, error }) => {
+          if (cancelled || error) return;
+          const r = (data as { rate?: number } | null)?.rate;
+          if (typeof r === "number" && r > 0) setRate(Number(r.toFixed(4)));
+        })
+        .catch(() => {
+          /* keep fallback */
+        });
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -122,7 +122,7 @@ const Pricing = () => {
       key: "plus",
       shape: "square",
       name: "Plus",
-      price: fmt(50),
+      price: fmt(100),
       tagline: ro ? "Esențial pentru liniște" : "Essential peace of mind",
       icon: <Shield className="size-5" />,
       accent: "text-pink-400",
@@ -134,7 +134,7 @@ const Pricing = () => {
       key: "pro",
       shape: "triangle",
       name: "Pro",
-      price: fmt(100),
+      price: fmt(150),
       tagline: ro ? "Cel mai ales de clienți" : "Most chosen by clients",
       highlight: true,
       icon: <Zap className="size-5" />,
@@ -143,7 +143,8 @@ const Pricing = () => {
         ? [
             "Plus +",
             "10 modificări de conținut (texte, imagini)",
-            "Backup lunar",
+            "Backup zilnic automat",
+            "Rapoarte lunare de trafic și statistici",
             "Optimizări de performanță",
             "Ajustări SEO de bază",
             "Administrare rețele sociale (Facebook / Instagram / TikTok)",
@@ -151,7 +152,8 @@ const Pricing = () => {
         : [
             "Everything in Plus",
             "10 content changes (text, images)",
-            "Monthly backups",
+            "Automatic daily backups",
+            "Monthly traffic & statistics reports",
             "Performance optimizations",
             "Basic SEO adjustments",
             "Social media management (Facebook / Instagram / TikTok)",
@@ -161,7 +163,7 @@ const Pricing = () => {
       key: "proactiv",
       shape: "circle",
       name: "Pro activ",
-      price: fmt(150),
+      price: fmt(300),
       tagline: ro ? "Creștere continuă" : "Continuous growth",
       icon: <Crown className="size-5" />,
       accent: "text-cyan-300",
@@ -288,8 +290,8 @@ const Pricing = () => {
           <p className="mt-2 text-[11px] uppercase tracking-widest text-foreground/40 inline-flex items-center gap-2">
             <RefreshCw className="size-3" />
             {ro
-              ? `Curs orientativ 1€ ≈ ${rate.toFixed(2)} RON${rateUpdated ? ` · ${rateUpdated}` : ""} · sursa ECB`
-              : `Indicative rate 1€ ≈ ${rate.toFixed(2)} RON${rateUpdated ? ` · ${rateUpdated}` : ""} · ECB source`}
+              ? `Curs orientativ 1€ ≈ ${rate.toFixed(2)} RON`
+              : `Indicative rate 1€ ≈ ${rate.toFixed(2)} RON`}
           </p>
         </section>
 
