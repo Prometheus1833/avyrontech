@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.prevent_staff_role_self_update() FROM PUBLIC, anon, authenticated;
