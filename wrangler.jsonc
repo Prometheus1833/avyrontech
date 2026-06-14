@@ -1,14 +1,18 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "avyrontech",
+  "main": "src/worker/index.ts",
   "compatibility_date": "2025-06-01",
+  "compatibility_flags": ["nodejs_compat"],
+
   "assets": {
-    "directory": "./dist",
+    "directory": "./dist/client",
+    "binding": "ASSETS",
     "not_found_handling": "single-page-application"
   },
 
   "observability": {
-    "enabled": false,
+    "enabled": true,
     "head_sampling_rate": 1,
     "logs": {
       "enabled": true,
@@ -23,49 +27,31 @@
     }
   },
 
-  // ──────────────────────────────────────────────────────────────────────
-  // Cloudflare backend — infrastructură pregătită, comentată până la activare.
-  // Vezi `cloudflare/README.md` pentru regula KV / D1 / R2 / Workers.
-  //
-  // Activare (o singură dată):
-  //   bunx wrangler d1 create avyron-db
-  //   bunx wrangler kv namespace create AVYRON_KV
-  //   bunx wrangler r2 bucket create avyron-files
-  //
-  // Apoi decomentează blocurile de mai jos și completează ID-urile.
-  // ──────────────────────────────────────────────────────────────────────
+  // ─── Cloudflare backend bindings ─────────────────────────────────────
+  // Bindings live alături de SPA → API-ul răspunde same-origin pe /api/*.
+  // Resurse create de tine (account: 51abbee1bab5f1fc9bfbfd9dcea5f3dc).
+  // JWT_SECRET trebuie pus o singură dată cu:
+  //   bunx wrangler secret put JWT_SECRET
+  //   (lipește output de la: openssl rand -hex 48)
 
-  // "d1_databases": [
-  //   {
-  //     "binding": "DB",
-  //     "database_name": "avyron-db",
-  //     "database_id": "REPLACE_WITH_REAL_ID",
-  //     "migrations_dir": "cloudflare/d1/migrations"
-  //   }
-  // ],
-  //
-  // "kv_namespaces": [
-  //   {
-  //     "binding": "KV",
-  //     "id": "REPLACE_WITH_REAL_ID",
-  //     "preview_id": "REPLACE_WITH_PREVIEW_ID"
-  //   }
-  // ],
-  //
-  // "r2_buckets": [
-  //   {
-  //     "binding": "FILES",
-  //     "bucket_name": "avyron-files",
-  //     "preview_bucket_name": "avyron-files-preview"
-  //   }
-  // ],
-  //
-  // ──────────────────────────────────────────────────────────────────────
-  // Email Routing — primește pe contact@avyron.ro, forward + reply prin Worker.
-  // Vezi `cloudflare/workers/email/` pentru worker-ul dedicat.
-  // ──────────────────────────────────────────────────────────────────────
-  //
-  // "send_email": [
-  //   { "name": "SEND_EMAIL", "destination_address": "avyrontech@gmail.com" }
-  // ]
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "avyron-db",
+      "database_id": "85b6868d-174a-48aa-8891-9366bbcb7e47",
+      "migrations_dir": "cloudflare/d1/migrations"
+    }
+  ],
+
+  "kv_namespaces": [
+    { "binding": "KV", "id": "7c296f2750b943cea4376c12122ed276" }
+  ],
+
+  "r2_buckets": [
+    { "binding": "FILES", "bucket_name": "avyron-files" }
+  ],
+
+  "vars": {
+    "APP_ORIGIN": "https://avyrontech.avyrontech.workers.dev"
+  }
 }
