@@ -18,7 +18,7 @@ import Auth from "./pages/Auth.tsx";
 import ForgotPassword from "./pages/ForgotPassword.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import Profile from "./pages/Profile.tsx";
-import News from "./pages/News.tsx";
+import Blog from "./pages/Blog.tsx";
 import ExamplePage from "./pages/ExamplePage.tsx";
 
 import CookieBanner from "@/components/site/CookieBanner";
