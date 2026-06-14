@@ -294,9 +294,9 @@ const Pricing = () => {
               <Sparkles className="size-6" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-display text-lg md:text-xl font-bold">
+              <h2 className="font-display text-lg md:text-xl font-bold">
                 {ro ? "Ai deja un site sau un produs?" : "Already have a site or product?"}
-              </h3>
+              </h2>
               <p className="text-sm text-foreground/70 mt-1">
                 {ro
                   ? "Poți aduce site-ul sau produsul pe care îl ai deja pentru actualizare, modificare sau doar pentru mentenanță. Îl evaluăm gratuit și îți spunem exact ce se poate îmbunătăți, ca să iei decizia potrivită fără presiune."
