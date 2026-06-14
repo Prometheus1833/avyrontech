@@ -290,8 +290,8 @@ const Pricing = () => {
           <p className="mt-2 text-[11px] uppercase tracking-widest text-foreground/40 inline-flex items-center gap-2">
             <RefreshCw className="size-3" />
             {ro
-              ? `Curs orientativ 1€ ≈ ${rate.toFixed(2)} RON${rateUpdated ? ` · ${rateUpdated}` : ""} · sursa ECB`
-              : `Indicative rate 1€ ≈ ${rate.toFixed(2)} RON${rateUpdated ? ` · ${rateUpdated}` : ""} · ECB source`}
+              ? `Curs orientativ 1€ ≈ ${rate.toFixed(2)} RON`
+              : `Indicative rate 1€ ≈ ${rate.toFixed(2)} RON`}
           </p>
         </section>
 
