@@ -3,6 +3,9 @@ project_id = "skewhrwvnkjsczgnjskw"
 [functions.process-email-queue]
 verify_jwt = true
 
+[functions.get-exchange-rate]
+verify_jwt = false
+
 [functions.send-transactional-email]
 verify_jwt = true
 
