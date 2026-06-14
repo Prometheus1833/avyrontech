@@ -43,7 +43,8 @@ const App = () => (
               <Route path="/despre-si-portofoliu" element={<About />} />
               <Route path="/exemple/flawlesstudio" element={<FlawlesstudioDemo />} />
               <Route path="/exemple/retuvo" element={<RetuvoDemo />} />
-              <Route path="/noutati" element={<News />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/noutati" element={<Navigate to="/blog" replace />} />
               <Route path="/examples/:slug" element={<ExamplePage />} />
               
               
