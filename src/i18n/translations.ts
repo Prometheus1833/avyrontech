@@ -10,7 +10,7 @@ export const translations = {
       faq: "FAQ",
       cta: "Demo gratuit",
       menu: "Meniu",
-      news: "Noutăți",
+      news: "Blog",
       portfolio: "Portofoliu",
     },
     hero: {
