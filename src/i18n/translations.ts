@@ -15,9 +15,9 @@ export const translations = {
     },
     hero: {
       badge: "Site-uri care aduc clienți, nu doar vizite",
-      title1: "Vizibilitate.",
-      title2: "Încredere.",
-      title3: "Clienți.",
+      title1: "Site-uri",
+      title2: "care aduc clienți",
+      title3: "pentru afacerea ta.",
       subtitle:
         "Proiectăm experiențe digitale rafinate, performante și optimizate pentru conversie — gândite să transforme fiecare vizită într-o oportunitate reală.",
       ctaPrimary: "Vreau demo gratuit",
