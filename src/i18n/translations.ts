@@ -790,7 +790,7 @@ export const translations = {
       whatsappValue: "Message us now",
       nav: "Navigation",
       navItems: [
-        { l: "News", h: "/noutati" },
+        { l: "Blog", h: "/blog" },
         { l: "Portfolio", h: "/despre-si-portofoliu#portofoliu" },
         { l: "See examples", h: "#exemple" },
         { l: "Products", h: "/costurisiproduse" },
