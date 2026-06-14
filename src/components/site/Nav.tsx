@@ -15,7 +15,7 @@ const Nav = () => {
   const { user, loading } = useAuth();
   const isRo = (t.nav as any).examples?.toLowerCase?.().startsWith("ex");
   const links = [
-    { label: (t.nav as any).news ?? "Noutăți", to: "/noutati", icon: Newspaper, isRoute: true },
+    { label: (t.nav as any).news ?? "Blog", to: "/blog", icon: Newspaper, isRoute: true },
     { label: isRo ? "Portofoliu" : "Portfolio", to: "/despre-si-portofoliu#portofoliu", icon: Briefcase, isRoute: true },
     { label: isRo ? "Vezi exemple" : "See examples", href: "/#exemple" },
     { label: isRo ? "Produse" : "Products", to: "/costurisiproduse", icon: Package, isRoute: true },
