@@ -24,7 +24,7 @@ export default function Unsubscribe() {
           `${SUPABASE_URL}/functions/v1/handle-email-unsubscribe?token=${encodeURIComponent(token)}`,
           { headers: { apikey: SUPABASE_ANON_KEY } },
         );
-        const data = await res.json();
+        const data = (await res.json()) as { valid?: boolean; reason?: string };
         if (data.valid) setState("valid");
         else if (data.reason === "already_unsubscribed") setState("already");
         else setState("invalid");
