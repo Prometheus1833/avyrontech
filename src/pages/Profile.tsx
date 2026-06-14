@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, LogOut, User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck, FolderKanban, Wrench, BookOpen, MessagesSquare, Settings, ShoppingCart, Globe, Sparkles, Wallet } from "lucide-react";
+import { ArrowLeft, User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck, FolderKanban, Wrench, BookOpen, MessagesSquare, Settings, ShoppingCart, Globe, Sparkles, Wallet } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
+
 import { ProfileTab } from "@/components/dashboard/ProfileTab";
 import { SubscriptionsTab } from "@/components/dashboard/SubscriptionsTab";
 import { StatsTab } from "@/components/dashboard/StatsTab";
@@ -25,7 +25,7 @@ import { StaffFinanceTab } from "@/components/dashboard/StaffFinanceTab";
 
 const Profile = () => {
   const { t } = useLang();
-  const { signOut, isStaff, isAdmin } = useAuth();
+  const { isStaff, isAdmin } = useAuth();
   const [params, setParams] = useSearchParams();
   const initial = params.get("tab") ?? "profile";
   const [tab, setTab] = useState(initial);
@@ -132,10 +132,6 @@ const Profile = () => {
                 {isAdmin ? "Admin" : "Staff"}
               </Badge>
             )}
-            <Button variant="ghost" size="sm" onClick={() => signOut().then(() => (window.location.href = "/"))}>
-              <LogOut className="size-4 mr-2" />
-              {t.auth.logout}
-            </Button>
           </div>
         </div>
 

@@ -5,5 +5,25 @@
   "assets": {
     "directory": "./dist",
     "not_found_handling": "single-page-application"
-  }
+  },
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Cloudflare D1 — infrastructură pregătită, comentată până la activare.
+  // Pentru activare:
+  //   1) `bunx wrangler d1 create avyron-db`           → copiază database_id
+  //   2) Decomentează blocul `d1_databases` de mai jos și pune ID-ul real
+  //   3) `bunx wrangler d1 migrations apply avyron-db --remote`
+  //   4) Redeploy. Binding-ul `DB` va fi disponibil în Workers/Pages Functions.
+  //
+  // Migrațiile trăiesc în `cloudflare/d1/migrations/`.
+  // ──────────────────────────────────────────────────────────────────────
+
+  // "d1_databases": [
+  //   {
+  //     "binding": "DB",
+  //     "database_name": "avyron-db",
+  //     "database_id": "REPLACE_WITH_REAL_ID",
+  //     "migrations_dir": "cloudflare/d1/migrations"
+  //   }
+  // ]
 }

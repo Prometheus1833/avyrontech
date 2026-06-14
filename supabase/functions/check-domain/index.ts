@@ -1,7 +1,9 @@
-// Public domain availability check via RDAP.
-// - .ro  -> rdap.rotld.ro (oficial RoTLD)
-// - rest -> rdap.org (IANA bootstrap)
-// Features: status normalization, DB cache (1h), staff/admin-only logs.
+// Public domain availability check.
+// Strategy (free, no API key required, works for ALL TLDs including .ro):
+//   1) DNS-over-HTTPS lookup (Google → Cloudflare fallback). Universal & fast.
+//      Status 3 (NXDOMAIN) = available; NS/A records present = registered.
+//   2) RDAP fallback (rdap.org) for .com/.net/.org if DoH is ambiguous.
+// Features: status normalization, DB cache (1h), anonymized logs.
 
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -15,7 +17,7 @@ const LABEL_RE = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i;
 const WINDOW_MS = 60_000;
 const MAX_REQ = 20;
 const hits = new Map<string, { count: number; reset: number }>();
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1h
+const CACHE_TTL_MS = 60 * 60 * 1000;
 
 function rateLimited(ip: string): boolean {
   const now = Date.now();
@@ -43,51 +45,65 @@ async function sha256(input: string): Promise<string> {
 type Status = "available" | "registered" | "unknown";
 
 const MESSAGES: Record<Status, { ro: string; en: string }> = {
-  available: {
-    ro: "Domeniul este liber — îl poți înregistra.",
-    en: "Domain is free — you can register it.",
-  },
-  registered: {
-    ro: "Domeniul este deja înregistrat.",
-    en: "Domain is already registered.",
-  },
-  unknown: {
-    ro: "Nu am putut verifica acum. Încearcă din nou în câteva secunde.",
-    en: "Could not verify right now. Try again in a few seconds.",
-  },
+  available: { ro: "Domeniul este liber — îl poți înregistra.", en: "Domain is free — you can register it." },
+  registered: { ro: "Domeniul este deja înregistrat.", en: "Domain is already registered." },
+  unknown: { ro: "Nu am putut verifica acum. Încearcă din nou în câteva secunde.", en: "Could not verify right now. Try again in a few seconds." },
 };
 
-async function rdapLookup(domain: string, tld: string): Promise<{
-  status: Status;
-  source: string;
-  http?: number;
-}> {
-  const url = tld === "ro"
-    ? `https://rdap.rotld.ro/domain/${domain}`
-    : `https://rdap.org/domain/${domain}`;
-
+async function dohQuery(url: string): Promise<{ Status?: number; Answer?: Array<{ type: number }> } | null> {
   try {
     const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), 7000);
-    const res = await fetch(url, {
+    const timer = setTimeout(() => ctl.abort(), 5000);
+    const res = await fetch(url, { headers: { Accept: "application/dns-json" }, signal: ctl.signal });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+}
+
+// DNS-over-HTTPS lookup, free general API, no key. Tries Google then Cloudflare.
+async function dohLookup(domain: string): Promise<{ status: Status; source: string }> {
+  const providers = [
+    { ns: `https://dns.google/resolve?name=${domain}&type=NS`,
+      a:  `https://dns.google/resolve?name=${domain}&type=A`,
+      label: "dns.google" },
+    { ns: `https://cloudflare-dns.com/dns-query?name=${domain}&type=NS`,
+      a:  `https://cloudflare-dns.com/dns-query?name=${domain}&type=A`,
+      label: "cloudflare-dns" },
+  ];
+
+  for (const p of providers) {
+    const ns = await dohQuery(p.ns);
+    if (!ns) continue;
+    if (ns.Status === 3) return { status: "available", source: p.label };
+    if (ns.Status === 0) {
+      const hasNs = Array.isArray(ns.Answer) && ns.Answer.some((a) => a.type === 2);
+      if (hasNs) return { status: "registered", source: p.label };
+      const a = await dohQuery(p.a);
+      if (a?.Status === 3) return { status: "available", source: p.label };
+      if (a?.Answer && a.Answer.length > 0) return { status: "registered", source: p.label };
+      return { status: "available", source: p.label };
+    }
+  }
+  return { status: "unknown", source: "doh" };
+}
+
+// RDAP confirmation for gTLDs (skip .ro — RoTLD RDAP is unreachable from edge).
+async function rdapLookup(domain: string, tld: string): Promise<Status> {
+  if (tld === "ro") return "unknown";
+  try {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 5000);
+    const res = await fetch(`https://rdap.org/domain/${domain}`, {
       headers: { Accept: "application/rdap+json" },
       signal: ctl.signal,
       redirect: "follow",
     });
     clearTimeout(timer);
-
-    // Normalize per RFC 7480: 200 = exists, 404 = not found.
-    // RoTLD also uses 400 for nonexistent names; rdap.org may proxy that.
-    if (res.status === 200) return { status: "registered", source: url, http: 200 };
-    if (res.status === 404) return { status: "available", source: url, http: 404 };
-    if (res.status === 400) return { status: "available", source: url, http: 400 };
-    if (res.status === 429 || res.status >= 500) {
-      return { status: "unknown", source: url, http: res.status };
-    }
-    return { status: "unknown", source: url, http: res.status };
-  } catch {
-    return { status: "unknown", source: url };
-  }
+    if (res.status === 200) return "registered";
+    if (res.status === 404 || res.status === 400) return "available";
+    return "unknown";
+  } catch { return "unknown"; }
 }
 
 Deno.serve(async (req) => {
@@ -95,12 +111,9 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim()
-    || req.headers.get("cf-connecting-ip")
-    || "unknown";
+    || req.headers.get("cf-connecting-ip") || "unknown";
 
-  if (rateLimited(ip)) {
-    return json({ error: "Prea multe verificări. Reîncearcă într-un minut." }, 429);
-  }
+  if (rateLimited(ip)) return json({ error: "Prea multe verificări. Reîncearcă într-un minut." }, 429);
 
   let body: unknown;
   try { body = await req.json(); } catch { return json({ error: "Body invalid" }, 400); }
@@ -123,7 +136,6 @@ Deno.serve(async (req) => {
     { auth: { persistSession: false } },
   );
 
-  // 1) Try cache: most recent log for same domain within TTL, only certain statuses.
   const cutoff = new Date(Date.now() - CACHE_TTL_MS).toISOString();
   const { data: cached } = await admin
     .from("domain_checks")
@@ -144,11 +156,19 @@ Deno.serve(async (req) => {
     source = cached.source ?? null;
     cachedFlag = true;
   } else {
-    const r = await rdapLookup(domain, tldInput);
-    status = r.status;
-    source = r.source;
+    const doh = await dohLookup(domain);
+    status = doh.status;
+    source = doh.source;
 
-    // Log every fresh check (anonymized IP).
+    // If DoH is unsure, try RDAP for gTLDs.
+    if (status === "unknown") {
+      const rdap = await rdapLookup(domain, tldInput);
+      if (rdap !== "unknown") {
+        status = rdap;
+        source = "rdap.org";
+      }
+    }
+
     const ipHash = ip === "unknown" ? null : await sha256(`${ip}:${Deno.env.get("SUPABASE_URL")}`);
     await admin.from("domain_checks").insert({
       domain, tld: tldInput, name: nameInput,
@@ -160,8 +180,10 @@ Deno.serve(async (req) => {
     domain,
     status,
     available: status === "available",
-    label: { ro: status === "available" ? "Disponibil" : status === "registered" ? "Înregistrat" : "Necunoscut",
-             en: status === "available" ? "Available"   : status === "registered" ? "Registered"   : "Unknown" },
+    label: {
+      ro: status === "available" ? "Disponibil" : status === "registered" ? "Înregistrat" : "Necunoscut",
+      en: status === "available" ? "Available" : status === "registered" ? "Registered" : "Unknown",
+    },
     message: MESSAGES[status],
     cached: cachedFlag,
     source,
