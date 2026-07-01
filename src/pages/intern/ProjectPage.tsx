@@ -378,25 +378,28 @@ function ProposalsSection({ projectId, proposals, canWrite, onChange }: { projec
         ) : (
           <ul className="space-y-2">
             {proposals.map((p) => (
-              <li key={p.id} className="border border-border rounded-md p-3 flex items-start gap-3 flex-wrap">
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm">{p.title}</p>
-                  {p.description && <p className="text-sm text-muted-foreground">{p.description}</p>}
-                  <p className="text-xs text-muted-foreground mt-1">{new Date(p.created_at).toLocaleString("ro-RO")}</p>
+              <li key={p.id} className="border border-border rounded-md p-3 space-y-3">
+                <div className="flex items-start gap-3 flex-wrap">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm">{p.title}</p>
+                    {p.description && <p className="text-sm text-muted-foreground">{p.description}</p>}
+                    <p className="text-xs text-muted-foreground mt-1">{new Date(p.created_at).toLocaleString("ro-RO")}</p>
+                  </div>
+                  {canWrite ? (
+                    <Select value={p.status} onValueChange={async (v) => {
+                      await internApi.updateProposal(p.id, { status: v as ProposalStatus });
+                      toast({ description: "Stare actualizată" }); onChange();
+                    }}>
+                      <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(PROPOSAL_LABEL) as ProposalStatus[]).map((s) => <SelectItem key={s} value={s}>{PROPOSAL_LABEL[s]}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge variant="outline">{PROPOSAL_LABEL[p.status]}</Badge>
+                  )}
                 </div>
-                {canWrite ? (
-                  <Select value={p.status} onValueChange={async (v) => {
-                    await internApi.updateProposal(p.id, { status: v as ProposalStatus });
-                    toast({ description: "Stare actualizată" }); onChange();
-                  }}>
-                    <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {(Object.keys(PROPOSAL_LABEL) as ProposalStatus[]).map((s) => <SelectItem key={s} value={s}>{PROPOSAL_LABEL[s]}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Badge variant="outline">{PROPOSAL_LABEL[p.status]}</Badge>
-                )}
+                <MediaAttachments projectId={projectId} proposalId={p.id} canWrite={canWrite} />
               </li>
             ))}
           </ul>
