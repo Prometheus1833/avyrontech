@@ -250,4 +250,12 @@ app.put("/api/media/:path{.+}", requireAuth, requireRole("staff", "admin"), asyn
   return c.json({ ok: true, path });
 });
 
+// ─── Platformă internă (proiecte + propuneri + linkuri + metadata) ──────
+import { projectsRouter } from "./projects";
+app.use("/api/projects/*", requireAuth);
+app.use("/api/proposals/*", requireAuth);
+app.use("/api/links/*", requireAuth);
+app.use("/api/metadata/*", requireAuth);
+app.route("/", projectsRouter);
+
 export default app;

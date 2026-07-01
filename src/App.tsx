@@ -21,6 +21,7 @@ import Profile from "./pages/Profile.tsx";
 import Blog from "./pages/Blog.tsx";
 import ExamplePage from "./pages/ExamplePage.tsx";
 import Unsubscribe from "./pages/Unsubscribe.tsx";
+import ProjectPage from "./pages/intern/ProjectPage.tsx";
 
 import CookieBanner from "@/components/site/CookieBanner";
 import MustChangePassword from "@/components/auth/MustChangePassword";
@@ -65,6 +66,14 @@ const App = () => (
               <Route path="/mentenanta" element={<ErrorPage variant="maintenance" />} />
               <Route path="/offline" element={<ErrorPage variant="offline" />} />
               <Route path="/unsubscribe" element={<Unsubscribe />} />
+              <Route
+                path="/intern/projects/:slug"
+                element={
+                  <ProtectedRoute>
+                    <ProjectPage />
+                  </ProtectedRoute>
+                }
+              />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
