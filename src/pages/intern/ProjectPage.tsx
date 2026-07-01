@@ -265,6 +265,9 @@ export default function ProjectPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Bara de contact — mereu utilă */}
+      <div className="mt-5"><ContactRail /></div>
     </PageShell>
   );
 }
