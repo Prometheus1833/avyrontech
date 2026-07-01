@@ -11,6 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { ExternalLink, Trash2, RefreshCw, Plus, ArrowLeft } from "lucide-react";
+import { MediaAttachments } from "@/components/intern/MediaAttachments";
+import PaymentMethodCard from "@/components/intern/PaymentMethodCard";
+import ContactRail from "@/components/intern/ContactRail";
 
 const BANNER_LABEL: Record<BannerStatus, { label: string; className: string }> = {
   online:      { label: "Online",              className: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30" },
@@ -213,6 +216,16 @@ export default function ProjectPage() {
         </CardContent>
       </Card>
 
+      {/* Metodă de plată vizuală (sincronizată cu abonamentul de mai sus) */}
+      {project.subscription_plan && (
+        <div className="mt-5">
+          <PaymentMethodCard
+            planLabel={SUB_PLANS.find((p) => p.value === project.subscription_plan)?.label ?? project.subscription_plan}
+            billingNext={project.billing_next}
+          />
+        </div>
+      )}
+
       {/* Linkuri externe */}
       <LinksSection projectId={project.id} links={links} canWrite={canWrite} onChange={load} />
 
@@ -252,6 +265,9 @@ export default function ProjectPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Bara de contact — mereu utilă */}
+      <div className="mt-5"><ContactRail /></div>
     </PageShell>
   );
 }
@@ -362,25 +378,28 @@ function ProposalsSection({ projectId, proposals, canWrite, onChange }: { projec
         ) : (
           <ul className="space-y-2">
             {proposals.map((p) => (
-              <li key={p.id} className="border border-border rounded-md p-3 flex items-start gap-3 flex-wrap">
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm">{p.title}</p>
-                  {p.description && <p className="text-sm text-muted-foreground">{p.description}</p>}
-                  <p className="text-xs text-muted-foreground mt-1">{new Date(p.created_at).toLocaleString("ro-RO")}</p>
+              <li key={p.id} className="border border-border rounded-md p-3 space-y-3">
+                <div className="flex items-start gap-3 flex-wrap">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm">{p.title}</p>
+                    {p.description && <p className="text-sm text-muted-foreground">{p.description}</p>}
+                    <p className="text-xs text-muted-foreground mt-1">{new Date(p.created_at).toLocaleString("ro-RO")}</p>
+                  </div>
+                  {canWrite ? (
+                    <Select value={p.status} onValueChange={async (v) => {
+                      await internApi.updateProposal(p.id, { status: v as ProposalStatus });
+                      toast({ description: "Stare actualizată" }); onChange();
+                    }}>
+                      <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(PROPOSAL_LABEL) as ProposalStatus[]).map((s) => <SelectItem key={s} value={s}>{PROPOSAL_LABEL[s]}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge variant="outline">{PROPOSAL_LABEL[p.status]}</Badge>
+                  )}
                 </div>
-                {canWrite ? (
-                  <Select value={p.status} onValueChange={async (v) => {
-                    await internApi.updateProposal(p.id, { status: v as ProposalStatus });
-                    toast({ description: "Stare actualizată" }); onChange();
-                  }}>
-                    <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {(Object.keys(PROPOSAL_LABEL) as ProposalStatus[]).map((s) => <SelectItem key={s} value={s}>{PROPOSAL_LABEL[s]}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Badge variant="outline">{PROPOSAL_LABEL[p.status]}</Badge>
-                )}
+                <MediaAttachments projectId={projectId} proposalId={p.id} canWrite={canWrite} />
               </li>
             ))}
           </ul>

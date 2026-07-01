@@ -145,34 +145,55 @@ export default function InternHome() {
           {isStaff ? "Nu există proiecte încă. Folosește butonul „Creează proiect”." : "Nu ai încă proiecte asignate. Vei fi anunțat când unul e disponibil."}
         </CardContent></Card>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {rows.map((p) => {
+        <>
+          {/* Client hero-banner: statusul proiectului lor principal (primul) */}
+          {!isStaff && rows[0] && (() => {
+            const p = rows[0];
             const B = BANNER[p.banner_status] ?? BANNER.in_progress;
             return (
-              <Link key={p.id} to={`/intern/projects/${p.slug}`} className="group rounded-xl border bg-card p-4 hover:border-primary/50 hover:shadow-md transition">
-                <div className="flex items-start gap-3">
-                  {p.favicon_url ? (
-                    <img src={p.favicon_url} alt="" className="size-8 rounded-md border bg-background object-contain" onError={(e) => (e.currentTarget.style.display = "none")} />
-                  ) : (
-                    <div className="size-8 rounded-md border bg-muted grid place-items-center text-[10px] text-muted-foreground">{p.slug.slice(0, 2).toUpperCase()}</div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-medium truncate group-hover:text-primary">{p.name}</h3>
-                      <Badge variant="secondary" className={B.cls}>{B.label}</Badge>
-                    </div>
-                    {p.url && (
-                      <a href={p.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
-                        {p.url.replace(/^https?:\/\//, "")} <ExternalLink className="size-3" />
-                      </a>
-                    )}
-                    <p className="mt-2 text-[11px] text-muted-foreground">Actualizat {new Date(p.updated_at).toLocaleDateString("ro-RO")}</p>
-                  </div>
+              <Link
+                to={`/intern/projects/${p.slug}`}
+                className={`block rounded-2xl border-2 p-5 sm:p-6 transition hover:shadow-lg ${B.cls}`}
+              >
+                <div className="flex items-center gap-2 text-xs uppercase tracking-widest opacity-80">
+                  <span className="size-2 rounded-full bg-current animate-pulse" />
+                  Status proiect
                 </div>
+                <p className="mt-1 text-3xl sm:text-4xl font-semibold">{B.label}</p>
+                <p className="mt-2 text-sm opacity-90">{p.name} · dă click pentru detalii, propuneri și abonament</p>
               </Link>
             );
-          })}
-        </div>
+          })()}
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            {rows.map((p) => {
+              const B = BANNER[p.banner_status] ?? BANNER.in_progress;
+              return (
+                <Link key={p.id} to={`/intern/projects/${p.slug}`} className="group rounded-xl border bg-card p-4 hover:border-primary/50 hover:shadow-md transition">
+                  <div className="flex items-start gap-3">
+                    {p.favicon_url ? (
+                      <img src={p.favicon_url} alt="" className="size-8 rounded-md border bg-background object-contain" onError={(e) => (e.currentTarget.style.display = "none")} />
+                    ) : (
+                      <div className="size-8 rounded-md border bg-muted grid place-items-center text-[10px] text-muted-foreground">{p.slug.slice(0, 2).toUpperCase()}</div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-medium truncate group-hover:text-primary">{p.name}</h3>
+                        <Badge variant="secondary" className={B.cls}>{B.label}</Badge>
+                      </div>
+                      {p.url && (
+                        <a href={p.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
+                          {p.url.replace(/^https?:\/\//, "")} <ExternalLink className="size-3" />
+                        </a>
+                      )}
+                      <p className="mt-2 text-[11px] text-muted-foreground">Actualizat {new Date(p.updated_at).toLocaleDateString("ro-RO")}</p>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </>
       )}
 
       <ContactRail />
