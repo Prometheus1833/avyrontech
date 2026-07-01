@@ -11,6 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { ExternalLink, Trash2, RefreshCw, Plus, ArrowLeft } from "lucide-react";
+import { MediaAttachments } from "@/components/intern/MediaAttachments";
+import PaymentMethodCard from "@/components/intern/PaymentMethodCard";
+import ContactRail from "@/components/intern/ContactRail";
 
 const BANNER_LABEL: Record<BannerStatus, { label: string; className: string }> = {
   online:      { label: "Online",              className: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30" },
