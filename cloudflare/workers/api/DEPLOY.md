@@ -1,137 +1,71 @@
-# Deployment Avyron API pe Cloudflare
+# Deploy Cloudflare Worker `avyrontech`
 
-Acest ghid presupune că ai deja create în Cloudflare dashboard sau CLI:
-- D1 database `avyron-db`
-- KV namespace `AVYRON_KV`
-- R2 bucket `avyron-files`
-- Worker `avyron-api` (va fi creat la deploy)
+**Contextul actual (deja făcut):**
+- D1 `avyron-db` → `85b6868d-174a-48aa-8891-9366bbcb7e47`
+- KV → `7c296f2750b943cea4376c12122ed276`
+- R2 `avyron-files` (documente private per proiect) → binding `FILES`
+- R2 `avyron-media` (active publice, portfolio, og) → binding `MEDIA`
+- Worker URL: `https://avyrontech.avyrontech.workers.dev`
 
-Dacă nu sunt create, rulează mai întâi:
+Toate ID-urile sunt deja în `wrangler.jsonc`.
 
-```bash
-cd cloudflare/workers/api
-bunx wrangler d1 create avyron-db
-bunx wrangler kv namespace create AVYRON_KV
-bunx wrangler r2 bucket create avyron-files
-```
-
----
-
-## 1. Autentificare
+## Comenzi (rulează din `cloudflare/workers/api/`)
 
 ```bash
+# 1. Autentificare (o singură dată)
 bunx wrangler login
-bunx wrangler whoami
-```
 
-## 2. Obține ID-urile reale
+# 2. Setează secretele (îți cere valoarea în terminal)
+#    JWT_SECRET → openssl rand -hex 48   (96 caractere)
+bunx wrangler secret put JWT_SECRET
 
-```bash
-bunx wrangler d1 list
-bunx wrangler kv namespace list
-```
+#    SEED_TOKEN → openssl rand -hex 24   (48 caractere)
+#    SALVEAZĂ-L, e nevoie o singură dată pentru seed
+bunx wrangler secret put SEED_TOKEN
 
-Outputul va arăta așa:
-
-```
-avyron-db  xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-```
-
-Copiază `database_id` și `id`-ul KV în `wrangler.jsonc` (vezi pasul 3).
-
-## 3. Actualizează `wrangler.jsonc`
-
-Editează `cloudflare/workers/api/wrangler.jsonc` și înlocuiește `REPLACE_WITH_REAL_ID` cu ID-urile obținute.
-
-## 4. Setează secretele
-
-```bash
-cd cloudflare/workers/api
-
-# JWT secret (minim 64 caractere hex recomandat)
-openssl rand -hex 48 | bunx wrangler secret put JWT_SECRET
-
-# Seed token — salvează valoarea pentru pasul 7
-openssl rand -hex 24 | bunx wrangler secret put SEED_TOKEN
-```
-
-**Salvează valoarea SEED_TOKEN într-un loc sigur.**
-
-## 5. Aplică migrările D1
-
-```bash
-cd cloudflare/workers/api
+# 3. Aplică migrațiile pe D1 (remote)
 bunx wrangler d1 migrations apply avyron-db --remote
-```
 
-## 6. Deploy worker
-
-```bash
-cd cloudflare/workers/api
+# 4. Deploy worker
 bunx wrangler deploy
-```
+# → https://avyrontech.avyrontech.workers.dev
 
-La final vei vedea URL-ul workerului, de exemplu:
-
-```
-https://avyron-api.<account>.workers.dev
-```
-
-## 7. Seed conturi și proiecte
-
-```bash
-curl -X POST https://<URL_WORKER>/api/admin/seed \
+# 5. Seed conturi + proiecte demo (o singură dată)
+curl -X POST https://avyrontech.avyrontech.workers.dev/api/admin/seed \
   -H "X-Seed-Token: <SEED_TOKEN>"
+
+# 6. Verifică
+curl https://avyrontech.avyrontech.workers.dev/api/health
 ```
 
-Răspunsul așteptat:
+## Conturi după seed
 
-```json
-{
-  "ok": true,
-  "report": {
-    "staff": [...],
-    "clients": [...],
-    "projects": [...]
-  }
-}
-```
+Parola pentru toate: `Avyronpass123@`
 
-## 8. Verifică funcționarea
+| Email                   | Rol           |
+|-------------------------|---------------|
+| avyrontech@gmail.com    | staff (admin) |
+| client1@example.com     | client        |
+| client2@example.com     | client        |
+| client3@example.com     | client        |
 
-```bash
-# health
-curl https://<URL_WORKER>/api/health
+## Frontend
 
-# login staff
-curl -X POST https://<URL_WORKER>/api/auth/login \
-  -H "content-type: application/json" \
-  -d '{"email":"niko@avyron.ro","password":"Avyronpass123@"}'
+Frontend-ul (React în Lovable) știe deja unde e workerul:
+- pe `avyron.ro` sau direct pe `*.workers.dev` → same-origin
+- în preview Lovable (`*.lovable.app`) → cross-origin către `https://avyrontech.avyrontech.workers.dev`
+- CORS + cookie `sid` funcționează (`credentials: "include"` + `ALLOWED_ORIGINS` includ preview + prod)
 
-# listare proiecte (înlocuiește ACCESS_TOKEN)
-curl https://<URL_WORKER>/api/projects \
-  -H "authorization: Bearer <ACCESS_TOKEN>"
-```
+## Custom domain (opțional, când vrei /api pe avyron.ro)
 
-## 9. Verificare frontend
+În Cloudflare Dashboard → Workers & Pages → `avyrontech` → Settings → Domains & Routes:
+- adaugă route: `avyron.ro/api/*` (zona `avyron.ro`)
+- adaugă route: `www.avyron.ro/api/*`
 
-După ce publici frontend-ul, accesează:
-
-```
-https://avyron.ro/intern
-```
-
-Loghează-te cu:
-
-- **Staff:** `niko@avyron.ro` / `Avyronpass123@`
-- **Client:** `clarlumanari@gmail.com` / `Clarlumanari123`
+După asta frontend-ul din prod trece automat pe same-origin (fără CORS).
 
 ## Troubleshooting
 
-| Problemă | Cauză probabilă | Soluție |
-|---|---|---|
-| `Database not found` | `database_id` greșit în `wrangler.jsonc` | Re-verifică cu `wrangler d1 list` |
-| `KV namespace not found` | `id` greșit în `wrangler.jsonc` | Re-verifică cu `wrangler kv namespace list` |
-| `invalid_credentials` la login | Seed n-a rulat sau parolă greșită | Re-rulează seed și verifică parola |
-| `forbidden` la seed | Tokenul nu e setat sau nu se potrivește | Verifică `wrangler secret list` și header-ul trimis |
-| `CORS error` în browser | Originea frontendului nu e în `ALLOWED_ORIGINS` | Adaugă domeniul în `wrangler.jsonc` → `vars.ALLOWED_ORIGINS` |
+- `invalid_credentials` la login → verifică că seed-ul a rulat.
+- `forbidden` la seed → SEED_TOKEN nu e setat corect; re-rulează `wrangler secret put SEED_TOKEN`.
+- CORS blocked în preview → verifică `ALLOWED_ORIGINS` în `wrangler.jsonc` include exact URL-ul preview-ului.
