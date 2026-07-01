@@ -22,6 +22,7 @@ import Blog from "./pages/Blog.tsx";
 import ExamplePage from "./pages/ExamplePage.tsx";
 import Unsubscribe from "./pages/Unsubscribe.tsx";
 import ProjectPage from "./pages/intern/ProjectPage.tsx";
+import InternHome from "./pages/intern/InternHome.tsx";
 
 import CookieBanner from "@/components/site/CookieBanner";
 import MustChangePassword from "@/components/auth/MustChangePassword";
@@ -66,6 +67,18 @@ const App = () => (
               <Route path="/mentenanta" element={<ErrorPage variant="maintenance" />} />
               <Route path="/offline" element={<ErrorPage variant="offline" />} />
               <Route path="/unsubscribe" element={<Unsubscribe />} />
+              <Route
+                path="/intern"
+                element={
+                  <ProtectedRoute>
+                    <InternHome />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/intern/projects"
+                element={<Navigate to="/intern" replace />}
+              />
               <Route
                 path="/intern/projects/:slug"
                 element={
