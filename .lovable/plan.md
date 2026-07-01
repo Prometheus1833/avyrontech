@@ -1,132 +1,90 @@
-Dacă resursele Cloudflare sunt deja create, pașii rămași sunt doar de configurare locală și deployment. Planul presupune că ai `bun` instalat și ești în folderul rădăcină al proiectului Avyron.
+# Comenzi de rulat în Terminal (Mac)
 
-## Pași de execuție
+Rulează-le în ordine. Toate se dau din folderul worker-ului.
 
-### 1. Autentificare wrangler (dacă nu ești deja logat)
+## 1. Intră în folderul worker-ului
+
+```bash
+cd cloudflare/workers/api
+```
+
+(dacă nu știi calea exactă, în Finder navighează la proiect → click dreapta pe folderul `api` → "New Terminal at Folder")
+
+## 2. Login în Cloudflare (o singură dată)
 
 ```bash
 bunx wrangler login
-bunx wrangler whoami
 ```
 
-### 2. Obține ID-urile reale ale resurselor create
+Se deschide browser-ul, aprobi contul.
+
+## 3. Setează secretele Worker-ului
 
 ```bash
-bunx wrangler d1 list
-bunx wrangler kv namespace list
-bunx wrangler r2 bucket list
+bunx wrangler secret put JWT_SECRET
 ```
-
-Copiază:
-- `database_id` pentru baza `avyron-db`
-- `id` pentru namespace-ul `AVYRON_KV`
-- confirmă că bucketul `avyron-files` există
-
-### 3. Actualizează `cloudflare/workers/api/wrangler.jsonc`
-
-În fișier, înlocuiește:
-
-```json
-"database_id": "REPLACE_WITH_REAL_ID",
-```
-
-cu ID-ul real de la pasul 2, și:
-
-```json
-{ "binding": "KV", "id": "REPLACE_WITH_REAL_ID" }
-```
-
-cu ID-ul real al namespace-ului KV.
-
-R2 rămâne doar cu numele bucketului:
-
-```json
-{ "binding": "FILES", "bucket_name": "avyron-files" }
-```
-
-### 4. Setează secretele workerului
-
-Rulează din `cloudflare/workers/api` (sau adaugă `--config cloudflare/workers/api/wrangler.jsonc`):
+Când îți cere valoare, lipește un string random lung (min 32 caractere). Exemplu:
+`k9Xp2mQ7vR4nY8tL5wA1bZ3cE6fH0jS9dU2iO4kM7pN` (poți genera altul, orice).
 
 ```bash
-cd cloudflare/workers/api
-
-# generează un secret puternic pentru JWT
-openssl rand -hex 48 | bunx wrangler secret put JWT_SECRET
-
-# alege un token pentru seed (poate fi orice string random, ex. 32 caractere)
-openssl rand -hex 24 | bunx wrangler secret put SEED_TOKEN
+bunx wrangler secret put SEED_TOKEN
 ```
+Lipește alt string random (îl vei folosi o singură dată la seed). Exemplu:
+`seed_avyron_9x2m7pQ4wL8vR3nY5tK`
 
-Salvează undeva valoarea `SEED_TOKEN` — ai nevoie la pasul 7.
-
-### 5. Aplică migrările D1
+## 4. Aplică migrațiile D1 pe baza remote
 
 ```bash
-cd cloudflare/workers/api
 bunx wrangler d1 migrations apply avyron-db --remote
 ```
 
-Aceasta creează tabelele `projects`, `project_staff`, `project_proposals`, `project_media`, `project_links`, `project_logs`, `project_updates` și extensiile necesare.
+Confirmă cu `y` dacă întreabă.
 
-### 6. Deploy worker
+## 5. Deploy Worker
 
 ```bash
-cd cloudflare/workers/api
 bunx wrangler deploy
 ```
 
-La final vei vedea URL-ul workerului, de exemplu `https://avyron-api.<subdomain>.workers.dev`.
+La final îți afișează URL-ul: `https://avyrontech.avyrontech.workers.dev`
 
-### 7. Rulează seed-ul pentru conturi și proiecte de test
-
-```bash
-curl -X POST https://<URL_WORKER>/api/admin/seed \
-  -H "X-Seed-Token: <VALOAREA_SEED_TOKEN>"
-```
-
-Răspunsul trebuie să conțină `ok: true` și raport cu staff, clienți și proiecte create.
-
-### 8. Verifică funcționarea
+## 6. Verifică CORS + health
 
 ```bash
-# health check
-curl https://<URL_WORKER>/api/health
+curl -sS https://avyrontech.avyrontech.workers.dev/api/health
 
-# login cu un cont staff
-curl -X POST https://<URL_WORKER>/api/auth/login \
-  -H "content-type: application/json" \
-  -d '{"email":"niko@avyron.ro","password":"Avyronpass123@"}'
+curl -i -X OPTIONS https://avyrontech.avyrontech.workers.dev/api/auth/login \
+  -H "Origin: https://id-preview--3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovable.app" \
+  -H "Access-Control-Request-Method: POST"
+```
+A doua comandă trebuie să răspundă `204` cu header `access-control-allow-origin`.
 
-# listare proiecte (necesită auth; poți folosi tokenul din răspunsul de login)
-curl https://<URL_WORKER>/api/projects \
-  -H "authorization: Bearer <ACCESS_TOKEN>"
+## 7. Rulează seed-ul (creează contul admin)
+
+Înlocuiește `<SEED_TOKEN>` cu valoarea de la pasul 3:
+
+```bash
+curl -X POST https://avyrontech.avyrontech.workers.dev/api/admin/seed \
+  -H "X-Seed-Token: <SEED_TOKEN>"
 ```
 
-### 9. Verifică ruta `/intern` în aplicație
+## 8. Testează login
 
-După ce frontend-ul este publicat, accesează:
-
+```bash
+curl -X POST https://avyrontech.avyrontech.workers.dev/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"avyrontech@gmail.com","password":"Avyronpass123@"}'
 ```
-https://avyron.ro/intern
-```
 
-Loghează-te cu `niko@avyron.ro` / `Avyronpass123@` și verifică:
-- lista de proiecte
-- pagina unui proiect (`/intern/projects/clarlumanari`)
-- posibilitatea de a adăuga propuneri/linkuri
+Trebuie să primești un JSON cu `token` și `user`. Dacă da → login din UI funcționează.
 
-## Rezultat așteptat
+---
 
-- Worker live și conectat la D1 + R2 + KV
-- Baza de date cu schemele aplicate
-- Conturile staff și clienți create
-- Cele 3 proiecte de test vizibile în platformă
-- Frontendul poate apela backendul fără erori CORS/auth
+## Dacă ceva eșuează
 
-## Note
+- **`wrangler: command not found`** → folosește `npx wrangler ...` în loc de `bunx wrangler ...`
+- **`D1_ERROR: no such table`** la seed → migrațiile n-au rulat, repetă pasul 4
+- **`401` la seed** → SEED_TOKEN greșit, repetă pasul 3 cu aceeași valoare pe care o pui în curl
+- **CORS error din browser** → verifică că preview URL-ul e în `ALLOWED_ORIGINS` din `wrangler.jsonc` și redeploy (`bunx wrangler deploy`)
 
-- Dacă login-ul returnează `invalid_credentials`, verifică că seed-ul a rulat și că parola este exact `Avyronpass123@`.
-- Dacă `/api/projects` returnează `forbidden`, tokenul este expirat sau userul nu are rol `staff`/`admin`. Reîmprospătează tokenul prin `/api/auth/refresh`.
-- Dacă workerul nu vede D1, verifică `database_id` din `wrangler.jsonc`.
-- Dacă seed-ul dă `forbidden`, tokenul `SEED_TOKEN` nu este setat corect sau nu este transmis în header.
+Spune-mi la ce pas ești sau lipește output-ul dacă apare o eroare.
