@@ -39,6 +39,11 @@ export type ProjectDetail = {
   permission: { read: boolean; write: boolean; isStaff: boolean; isOwner: boolean };
 };
 
+export type ProjectMedia = {
+  id: string; project_id: string; proposal_id: string | null; uploader_id: string;
+  filename: string; content_type: string; size_bytes: number | null; created_at: number; url: string;
+};
+
 export const internApi = {
   listProjects: () => cfAuth.request<{ data: Array<Pick<Project, "id"|"slug"|"name"|"kind"|"banner_status"|"url"|"favicon_url"|"updated_at">> }>("/api/projects"),
   getProject: (slug: string) => cfAuth.request<ProjectDetail>(`/api/projects/${encodeURIComponent(slug)}`),
@@ -55,4 +60,17 @@ export const internApi = {
   deleteLink: (linkId: string) => cfAuth.request<{ ok: true }>(`/api/links/${linkId}`, { method: "DELETE" }),
   getLogs: (id: string) => cfAuth.request<{ data: ProjectLog[] }>(`/api/projects/${id}/logs`),
   extractMetadata: (url: string) => cfAuth.request<{ url: string; title?: string; description?: string; image?: string; favicon?: string }>(`/api/metadata/extract?url=${encodeURIComponent(url)}`),
+
+  // Media (R2)
+  listMedia: (projectId: string) => cfAuth.request<{ data: ProjectMedia[] }>(`/api/projects/${projectId}/media`),
+  uploadMedia: (projectId: string, file: File, proposalId?: string) => {
+    const q = new URLSearchParams({ filename: file.name });
+    if (proposalId) q.set("proposal_id", proposalId);
+    return cfAuth.request<ProjectMedia>(`/api/projects/${projectId}/media?${q.toString()}`, {
+      method: "POST",
+      headers: { "content-type": file.type || "application/octet-stream" },
+      body: file,
+    });
+  },
+  deleteMedia: (mediaId: string) => cfAuth.request<{ ok: true }>(`/api/media/${mediaId}`, { method: "DELETE" }),
 };

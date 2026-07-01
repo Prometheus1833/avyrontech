@@ -253,11 +253,14 @@ app.put("/api/media/:path{.+}", requireAuth, requireRole("staff", "admin"), asyn
 // ─── Platformă internă (proiecte + propuneri + linkuri + metadata) ──────
 import { projectsRouter } from "./projects";
 import { seedRouter } from "./seed";
+import { mediaRouter } from "./media";
 app.use("/api/projects/*", requireAuth);
 app.use("/api/proposals/*", requireAuth);
 app.use("/api/links/*", requireAuth);
 app.use("/api/metadata/*", requireAuth);
+app.use("/api/media/*", requireAuth);
 app.route("/", projectsRouter);
+app.route("/", mediaRouter);
 // Seed-ul are propria gardă (X-Seed-Token / bootstrap fără admin) — NU necesită requireAuth.
 app.route("/", seedRouter);
 
