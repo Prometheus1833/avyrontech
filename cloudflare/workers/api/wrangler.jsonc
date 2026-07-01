@@ -1,30 +1,21 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "avyron-api",
+  "name": "avyrontech",
   "main": "src/index.ts",
   "compatibility_date": "2025-06-01",
   "compatibility_flags": ["nodejs_compat"],
   "observability": {
-    "enabled": false,
+    "enabled": true,
     "head_sampling_rate": 1,
     "logs": {
       "enabled": true,
       "head_sampling_rate": 1,
       "persist": true,
       "invocation_logs": true
-    },
-    "traces": {
-      "enabled": false,
-      "persist": true,
-      "head_sampling_rate": 1
     }
   },
 
   // ─── Bindings ────────────────────────────────────────────────────────
-  // Completează ID-urile după:
-  //   bunx wrangler d1 create avyron-db
-  //   bunx wrangler kv namespace create AVYRON_KV
-  //   bunx wrangler r2 bucket create avyron-files
   "d1_databases": [
     {
       "binding": "DB",
@@ -37,11 +28,15 @@
     { "binding": "KV", "id": "7c296f2750b943cea4376c12122ed276" }
   ],
   "r2_buckets": [
-    { "binding": "FILES", "bucket_name": "avyron-files" }
+    // FILES  = documente private per proiect (upload din intern, atașamente proposals)
+    { "binding": "FILES", "bucket_name": "avyron-files" },
+    // MEDIA  = active publice (logo-uri, portfolio, cover images, og)
+    { "binding": "MEDIA", "bucket_name": "avyron-media" }
   ],
 
-  // JWT_SECRET se setează cu: bunx wrangler secret put JWT_SECRET
+  // Secrete (setate prin `wrangler secret put`):
+  //   JWT_SECRET, SEED_TOKEN
   "vars": {
-    "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,http://localhost:8080"
+    "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://avyrontech.lovable.app,https://id-preview--3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovable.app,http://localhost:8080"
   }
 }
