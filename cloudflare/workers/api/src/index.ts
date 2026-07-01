@@ -19,8 +19,10 @@ import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 export type Env = {
   DB: D1Database;
   KV: KVNamespace;
-  FILES: R2Bucket;
+  FILES: R2Bucket;   // documente private per proiect
+  MEDIA: R2Bucket;   // active publice (portfolio, logos, og images)
   JWT_SECRET: string;
+  SEED_TOKEN?: string;
   ALLOWED_ORIGINS: string;
 };
 
