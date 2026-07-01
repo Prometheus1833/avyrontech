@@ -29,12 +29,12 @@
     {
       "binding": "DB",
       "database_name": "avyron-db",
-      "database_id": "REPLACE_WITH_REAL_ID",
+      "database_id": "85b6868d-174a-48aa-8891-9366bbcb7e47",
       "migrations_dir": "../../d1/migrations"
     }
   ],
   "kv_namespaces": [
-    { "binding": "KV", "id": "REPLACE_WITH_REAL_ID" }
+    { "binding": "KV", "id": "7c296f2750b943cea4376c12122ed276" }
   ],
   "r2_buckets": [
     { "binding": "FILES", "bucket_name": "avyron-files" }
