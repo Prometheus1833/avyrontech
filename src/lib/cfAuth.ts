@@ -1,5 +1,7 @@
-// Cloudflare auth client — same-origin /api calls.
-// Access token (JWT 15min) is held in-memory + refreshed via cookie `sid`.
+// Cloudflare auth client — cheamă workerul avyrontech (cross-origin în preview / same-origin în prod).
+// Access token (JWT 15min) e ținut in-memory + refresh via cookie `sid`.
+import { apiUrl } from "./apiBase";
+
 
 export type Role = "user" | "staff" | "admin";
 
