@@ -216,6 +216,16 @@ export default function ProjectPage() {
         </CardContent>
       </Card>
 
+      {/* Metodă de plată vizuală (sincronizată cu abonamentul de mai sus) */}
+      {project.subscription_plan && (
+        <div className="mt-5">
+          <PaymentMethodCard
+            planLabel={SUB_PLANS.find((p) => p.value === project.subscription_plan)?.label ?? project.subscription_plan}
+            billingNext={project.billing_next}
+          />
+        </div>
+      )}
+
       {/* Linkuri externe */}
       <LinksSection projectId={project.id} links={links} canWrite={canWrite} onChange={load} />
 
