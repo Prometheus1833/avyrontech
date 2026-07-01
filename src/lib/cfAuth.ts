@@ -69,13 +69,13 @@ class CfAuth {
     if (init.body && !headers.has("content-type") && !(init.body instanceof FormData) && !(init.body instanceof Blob)) {
       headers.set("content-type", "application/json");
     }
-    const res = await fetch(path, { ...init, headers, credentials: "include" });
+    const res = await fetch(apiUrl(path), { ...init, headers, credentials: "include" });
     if (res.status === 401) {
       this.clearSession();
       const refreshed = await this.refresh();
       if (refreshed) {
         headers.set("authorization", `Bearer ${this.accessToken}`);
-        const retry = await fetch(path, { ...init, headers, credentials: "include" });
+        const retry = await fetch(apiUrl(path), { ...init, headers, credentials: "include" });
         if (!retry.ok) throw await this.errorFrom(retry);
         return retry.json();
       }
@@ -100,7 +100,7 @@ class CfAuth {
 
   async refresh(): Promise<boolean> {
     try {
-      const res = await fetch("/api/auth/refresh", { method: "POST", credentials: "include" });
+      const res = await fetch(apiUrl("/api/auth/refresh"), { method: "POST", credentials: "include" });
       if (!res.ok) return false;
       const j = await res.json() as any;
       this.setSession(j.access_token, j.expires_in);
@@ -111,7 +111,7 @@ class CfAuth {
   }
 
   async signup(input: { email: string; password: string; displayName?: string; entityType?: string }) {
-    const res = await fetch("/api/auth/signup", {
+    const res = await fetch(apiUrl("/api/auth/signup"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       credentials: "include",
@@ -124,7 +124,7 @@ class CfAuth {
   }
 
   async login(email: string, password: string) {
-    const res = await fetch("/api/auth/login", {
+    const res = await fetch(apiUrl("/api/auth/login"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       credentials: "include",
@@ -137,7 +137,7 @@ class CfAuth {
   }
 
   async logout() {
-    await fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
+    await fetch(apiUrl("/api/auth/logout"), { method: "POST", credentials: "include" }).catch(() => {});
     this.clearSession();
   }
 
@@ -146,7 +146,7 @@ class CfAuth {
   }
 
   async forgot(email: string) {
-    await fetch("/api/auth/forgot", {
+    await fetch(apiUrl("/api/auth/forgot"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ email }),
@@ -154,7 +154,7 @@ class CfAuth {
   }
 
   async reset(token: string, password: string) {
-    const res = await fetch("/api/auth/reset", {
+    const res = await fetch(apiUrl("/api/auth/reset"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ token, password }),
