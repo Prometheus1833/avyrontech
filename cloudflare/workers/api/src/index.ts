@@ -31,11 +31,22 @@ type Role = "user" | "staff" | "admin";
 const app = new Hono<{ Bindings: Env; Variables: { userId: string; roles: Role[] } }>();
 
 app.use("*", async (c, next) => {
-  const allowed = (c.env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim());
+  const allowed = (c.env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
   return cors({
-    origin: (origin) => (allowed.includes(origin) ? origin : allowed[0]),
+    origin: (origin) => {
+      if (!origin) return allowed[0] || "";
+      if (allowed.includes(origin)) return origin;
+      // Permite orice preview/subdomeniu Lovable + avyron.ro
+      try {
+        const h = new URL(origin).hostname;
+        if (h.endsWith(".lovable.app") || h.endsWith(".lovableproject.com") || h === "avyron.ro" || h === "www.avyron.ro") {
+          return origin;
+        }
+      } catch {}
+      return allowed[0] || "";
+    },
     credentials: true,
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
   })(c, next);
 });
