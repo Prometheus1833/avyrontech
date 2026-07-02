@@ -1,54 +1,66 @@
-# Comenzi de rulat în Terminal (Mac)
+# Comenzi de rulat în Terminal (Mac) — deploy Worker Cloudflare
 
-Rulează-le în ordine. Toate se dau din folderul worker-ului.
+**Context:** Am șters din proiect worker-ul duplicat din rădăcină (`/wrangler.jsonc` + `/src/worker/`) care se suprascria peste cel bun.
+Acum există un singur worker: `cloudflare/workers/api/` — cel complet cu CORS, seed, projects, media.
 
-## 1. Intră în folderul worker-ului
+**Status actual pe `avyrontech.avyrontech.workers.dev`:**
+- ✅ `/api/health` → 200 (worker deployed)
+- ❌ `/api/auth/login` → 500 (versiunea greșită deployed; tabelele lipsesc sau JWT_SECRET nu-i setat)
+- ❌ CORS preflight → 404 (versiunea greșită)
+
+**Trebuie să redeploy-ezi din folderul corect ca să repari totul.**
+
+---
+
+## 1. Intră în folderul worker-ului bun
 
 ```bash
-cd cloudflare/workers/api
+cd ~/Downloads/avyrontech/cloudflare/workers/api
+pwd
 ```
+`pwd` **trebuie** să se termine cu `/cloudflare/workers/api`.
 
-(dacă nu știi calea exactă, în Finder navighează la proiect → click dreapta pe folderul `api` → "New Terminal at Folder")
+```bash
+ls wrangler.jsonc
+```
+Trebuie să afișeze fișierul.
 
-## 2. Login în Cloudflare (o singură dată)
+## 2. Login în Cloudflare (dacă nu ești deja)
 
 ```bash
 bunx wrangler login
 ```
 
-Se deschide browser-ul, aprobi contul.
-
-## 3. Setează secretele Worker-ului
+## 3. Setează secretele
 
 ```bash
 bunx wrangler secret put JWT_SECRET
 ```
-Când îți cere valoare, lipește un string random lung (min 32 caractere). Exemplu:
-`k9Xp2mQ7vR4nY8tL5wA1bZ3cE6fH0jS9dU2iO4kM7pN` (poți genera altul, orice).
+Când cere valoare, lipește un string random ≥32 caractere. Poți genera cu:
+`openssl rand -hex 48`
 
 ```bash
 bunx wrangler secret put SEED_TOKEN
 ```
-Lipește alt string random (îl vei folosi o singură dată la seed). Exemplu:
-`seed_avyron_9x2m7pQ4wL8vR3nY5tK`
+Lipește alt string random (îl folosești o singură dată la seed):
+`openssl rand -hex 24`
+**SALVEAZĂ-L undeva**, îl folosești la pasul 6.
 
-## 4. Aplică migrațiile D1 pe baza remote
+## 4. Aplică migrațiile pe D1 remote
 
 ```bash
 bunx wrangler d1 migrations apply avyron-db --remote
 ```
-
-Confirmă cu `y` dacă întreabă.
+Confirmă cu `y`.
 
 ## 5. Deploy Worker
 
 ```bash
 bunx wrangler deploy
 ```
+La final: `https://avyrontech.avyrontech.workers.dev`
 
-La final îți afișează URL-ul: `https://avyrontech.avyrontech.workers.dev`
-
-## 6. Verifică CORS + health
+## 6. Verifică că merge
 
 ```bash
 curl -sS https://avyrontech.avyrontech.workers.dev/api/health
@@ -57,9 +69,9 @@ curl -i -X OPTIONS https://avyrontech.avyrontech.workers.dev/api/auth/login \
   -H "Origin: https://id-preview--3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovable.app" \
   -H "Access-Control-Request-Method: POST"
 ```
-A doua comandă trebuie să răspundă `204` cu header `access-control-allow-origin`.
+A doua trebuie să răspundă **204** cu header `access-control-allow-origin`. Dacă dă 404 → deploy-ul n-a mers din folderul corect.
 
-## 7. Rulează seed-ul (creează contul admin)
+## 7. Rulează seed-ul (creează admin + demo)
 
 Înlocuiește `<SEED_TOKEN>` cu valoarea de la pasul 3:
 
@@ -68,7 +80,7 @@ curl -X POST https://avyrontech.avyrontech.workers.dev/api/admin/seed \
   -H "X-Seed-Token: <SEED_TOKEN>"
 ```
 
-## 8. Testează login
+## 8. Testează login-ul
 
 ```bash
 curl -X POST https://avyrontech.avyrontech.workers.dev/api/auth/login \
@@ -76,15 +88,25 @@ curl -X POST https://avyrontech.avyrontech.workers.dev/api/auth/login \
   -d '{"email":"avyrontech@gmail.com","password":"Avyronpass123@"}'
 ```
 
-Trebuie să primești un JSON cu `token` și `user`. Dacă da → login din UI funcționează.
+Trebuie JSON cu `access_token` și `user`. Dacă da → **login din UI funcționează**.
 
 ---
 
-## Dacă ceva eșuează
+## Conturi create de seed (parolă `Avyronpass123@`)
 
-- **`wrangler: command not found`** → folosește `npx wrangler ...` în loc de `bunx wrangler ...`
-- **`D1_ERROR: no such table`** la seed → migrațiile n-au rulat, repetă pasul 4
-- **`401` la seed** → SEED_TOKEN greșit, repetă pasul 3 cu aceeași valoare pe care o pui în curl
-- **CORS error din browser** → verifică că preview URL-ul e în `ALLOWED_ORIGINS` din `wrangler.jsonc` și redeploy (`bunx wrangler deploy`)
+| Email | Rol |
+|---|---|
+| avyrontech@gmail.com | staff (admin) |
+| client1@example.com | client |
+| client2@example.com | client |
+| client3@example.com | client |
 
-Spune-mi la ce pas ești sau lipește output-ul dacă apare o eroare.
+## Erori posibile
+
+- **`wrangler: command not found`** → folosește `npx wrangler ...`
+- **`D1_ERROR: no such table`** la seed → repetă pasul 4
+- **`forbidden` la seed** → SEED_TOKEN greșit, repetă pasul 3
+- **`Missing entry-point`** → nu ești în `cloudflare/workers/api`, rerulează pasul 1
+- **CORS blocked în browser** → verifică `ALLOWED_ORIGINS` în `wrangler.jsonc`, apoi redeploy
+
+Spune-mi la ce pas ești / lipește output-ul dacă apare o eroare.
