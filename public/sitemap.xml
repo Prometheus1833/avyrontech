@@ -1,13 +1,94 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://avyron.ro/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
-  <url><loc>https://avyron.ro/despre-si-portofoliu</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://avyron.ro/costurisiproduse</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://avyron.ro/blog</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://avyron.ro/exemple/flawlesstudio</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://avyron.ro/exemple/retuvo</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://avyron.ro/examples/cofetariadulcedor.ro</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://avyron.ro/examples/studiomaradesign.ro</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://avyron.ro/examples/pensiuneacerbul.ro</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://avyron.ro/gdpr</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://avyron.ro/</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/"/>
+    <changefreq>weekly</changefreq><priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/en</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/"/>
+    <changefreq>weekly</changefreq><priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/despre-si-portofoliu</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/despre-si-portofoliu"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/about"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/despre-si-portofoliu"/>
+    <changefreq>monthly</changefreq><priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/en/about</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/despre-si-portofoliu"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/about"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/despre-si-portofoliu"/>
+    <changefreq>monthly</changefreq><priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/costurisiproduse</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/costurisiproduse"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/pricing"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/costurisiproduse"/>
+    <changefreq>monthly</changefreq><priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/en/pricing</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/costurisiproduse"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/pricing"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/costurisiproduse"/>
+    <changefreq>monthly</changefreq><priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/blog</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/blog"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/blog"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/blog"/>
+    <changefreq>weekly</changefreq><priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/en/blog</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/blog"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/blog"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/blog"/>
+    <changefreq>weekly</changefreq><priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/exemple/flawlesstudio</loc>
+    <changefreq>monthly</changefreq><priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/exemple/retuvo</loc>
+    <changefreq>monthly</changefreq><priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/examples/cofetariadulcedor.ro</loc>
+    <changefreq>monthly</changefreq><priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/examples/studiomaradesign.ro</loc>
+    <changefreq>monthly</changefreq><priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/examples/pensiuneacerbul.ro</loc>
+    <changefreq>monthly</changefreq><priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/gdpr</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/gdpr"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/privacy"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/gdpr"/>
+    <changefreq>yearly</changefreq><priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/en/privacy</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/gdpr"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/privacy"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/gdpr"/>
+    <changefreq>yearly</changefreq><priority>0.2</priority>
+  </url>
 </urlset>

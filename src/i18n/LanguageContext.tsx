@@ -12,6 +12,10 @@ const LanguageContext = createContext<Ctx | undefined>(undefined);
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [lang, setLangState] = useState<Lang>(() => {
     if (typeof window === "undefined") return "ro";
+    // URL prefix wins on first paint so SSR-like crawlers see the right language.
+    if (window.location.pathname === "/en" || window.location.pathname.startsWith("/en/")) {
+      return "en";
+    }
     const stored = localStorage.getItem("webcore-lang");
     return (stored === "en" || stored === "ro") ? stored : "ro";
   });
