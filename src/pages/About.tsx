@@ -40,11 +40,11 @@ const About = () => {
       window.scrollTo(0, 0);
     }
     const title = ro
-      ? "Despre Noi & Portofoliu — Avyron Tech Products"
-      : "About & Portfolio — Avyron Tech Products";
+      ? "Agenție web România — Despre noi & Portofoliu | Avyron"
+      : "Romanian Web Agency — About & Portfolio | Avyron";
     const description = ro
-      ? "Echipa Avyron — specialiști în web, mobile, cybersecurity, design și QA. Portofoliu: Miago, Flawless Studio, Retuvo."
-      : "The Avyron team — specialists in web, mobile, cybersecurity, design and QA. Portfolio: Miago, Flawless Studio, Retuvo.";
+      ? "Echipă Avyron: dezvoltatori web, mobile, cybersecurity, UI/UX și QA din România. Vezi portofoliul nostru: Miago, Flawless Studio, Retuvo și alte proiecte livrate."
+      : "Avyron team: web, mobile, cybersecurity, UI/UX and QA specialists from Romania. See our portfolio: Miago, Flawless Studio, Retuvo and other delivered projects.";
     import("@/lib/seo").then(({ setPageMeta }) =>
       setPageMeta({ title, description, path: "/despre-si-portofoliu" }),
     );
