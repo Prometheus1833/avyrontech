@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { Search, MapPinOff, Instagram, Bot, ShieldCheck, TrendingUp } from "lucide-react";
-import bg from "@/assets/problem-search-bg.jpg";
 import { useLang } from "@/i18n/LanguageContext";
 
 const icons = [Search, MapPinOff, Instagram, Bot, ShieldCheck, TrendingUp];
@@ -10,11 +9,12 @@ const Problem = () => {
   return (
     <section id="de-ce" className="relative py-10 md:py-16 overflow-hidden">
       <div
-        className="absolute inset-0 bg-cover bg-center opacity-[0.08]"
-        style={{ backgroundImage: `url(${bg})` }}
+        className="absolute inset-0 opacity-[0.35]"
+        style={{ backgroundImage: "radial-gradient(600px 400px at 20% 10%, hsl(var(--brand)/0.15), transparent 60%), radial-gradient(500px 350px at 80% 90%, hsl(var(--brand-2)/0.15), transparent 60%)" }}
         aria-hidden
       />
       <div className="absolute inset-0 bg-gradient-to-b from-background via-background/85 to-background" aria-hidden />
+
 
       <div className="relative mx-auto max-w-6xl px-4">
         <div className="max-w-3xl mx-auto text-center">
