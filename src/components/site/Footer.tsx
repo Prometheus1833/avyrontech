@@ -1,8 +1,8 @@
 import { useLang } from "@/i18n/LanguageContext";
 import { Link } from "react-router-dom";
 import { Mail, Phone, MessageCircle, ArrowRight } from "lucide-react";
-import logo from "@/assets/avyron-logo.jpg";
-import planetBg from "@/assets/footer-planet-bg.jpg";
+import logo from "@/assets/avyron-logo.webp";
+import planetBg from "@/assets/footer-planet-bg.webp";
 
 const Footer = () => {
   const { t } = useLang();
