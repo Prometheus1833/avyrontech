@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/i18n/LanguageContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index.tsx";
+import LangRouteSync from "@/components/site/LangRouteSync";
 
 const Gdpr = lazy(() => import("./pages/Gdpr.tsx"));
 const Pricing = lazy(() => import("./pages/Pricing.tsx"));
@@ -39,17 +40,23 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <LangRouteSync />
             <Suspense fallback={<div className="min-h-screen" />}>
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/en" element={<Index />} />
                 <Route path="/gdpr" element={<Gdpr />} />
+                <Route path="/en/privacy" element={<Gdpr />} />
                 <Route path="/costuri" element={<Pricing />} />
                 <Route path="/costurisiproduse" element={<Pricing />} />
+                <Route path="/en/pricing" element={<Pricing />} />
                 <Route path="/despre" element={<About />} />
                 <Route path="/despre-si-portofoliu" element={<About />} />
+                <Route path="/en/about" element={<About />} />
                 <Route path="/exemple/flawlesstudio" element={<FlawlesstudioDemo />} />
                 <Route path="/exemple/retuvo" element={<RetuvoDemo />} />
                 <Route path="/blog" element={<Blog />} />
+                <Route path="/en/blog" element={<Blog />} />
                 <Route path="/noutati" element={<Navigate to="/blog" replace />} />
                 <Route path="/examples/:slug" element={<ExamplePage />} />
 
