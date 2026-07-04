@@ -19,7 +19,7 @@ export const translations = {
       title2: "și aplicații",
       title3: "care aduc clienți.",
       subtitle:
-        "Creăm Website-uri și aplicații care vă reprezintă și extinde online activitatea.",
+        "Proiectăm experiențe digitale rafinate, performante și optimizate pentru conversie — gândite să transforme fiecare vizită într-o oportunitate reală.",
       ctaPrimary: "Vreau demo gratuit",
       ctaSecondary: "Vezi exemple",
       stats: [
@@ -314,8 +314,8 @@ export const translations = {
       built: "Construit cu pasiune în România.",
     },
     seo: {
-      title: "Creare website și aplicații care vă reprezintă online | Avyron",
-      desc: "Creăm Website-uri și aplicații care vă reprezintă și extinde online activitatea. Agenție web Iași, România — design, dezvoltare și SEO incluse.",
+      title: "Creare site web și aplicații care aduc clienți | Avyron",
+      desc: "Proiectăm experiențe digitale rafinate, performante și optimizate pentru conversie — gândite să transforme fiecare vizită într-o oportunitate reală.",
     },
     auth: {
       loginCta: "Conectează-te / Înregistrează-te",
@@ -804,8 +804,8 @@ export const translations = {
       built: "Built with passion in Romania.",
     },
     seo: {
-      title: "Websites & apps that represent your business online | Avyron",
-      desc: "We create websites and apps that represent your business and extend your activity online. Web agency Iași, Romania — design, development and SEO included.",
+      title: "Web & app development that brings customers | Avyron",
+      desc: "We design refined, high-performance digital experiences optimized for conversion — built to turn every visit into a real opportunity.",
     },
     auth: {
       loginCta: "Sign in / Sign up",
