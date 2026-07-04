@@ -31,23 +31,28 @@ const Index = () => {
   }, [location.hash]);
 
   useEffect(() => {
-    import("@/lib/seo").then(({ setPageMeta, setJsonLd }) => {
-      setPageMeta({
-        title: t.seo.title,
-        description: t.seo.desc,
-        path: location.pathname === "/en" ? "/en" : "/",
-        alternates: { ro: "/", en: "/en" },
-      });
-      setJsonLd("ld-faq", {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        mainEntity: t.faq.items.map((it: { q: string; a: string }) => ({
-          "@type": "Question",
-          name: it.q,
-          acceptedAnswer: { "@type": "Answer", text: it.a },
-        })),
-      });
-    });
+    Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
+      ([{ setPageMeta, setJsonLd }, { organizationLd, webSiteLd, localBusinessLd }]) => {
+        setPageMeta({
+          title: t.seo.title,
+          description: t.seo.desc,
+          path: location.pathname === "/en" ? "/en" : "/",
+          alternates: { ro: "/", en: "/en" },
+        });
+        setJsonLd("ld-organization", organizationLd);
+        setJsonLd("ld-website", webSiteLd);
+        setJsonLd("ld-localbusiness", localBusinessLd);
+        setJsonLd("ld-faq", {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: t.faq.items.map((it: { q: string; a: string }) => ({
+            "@type": "Question",
+            name: it.q,
+            acceptedAnswer: { "@type": "Answer", text: it.a },
+          })),
+        });
+      },
+    );
   }, [t.seo.title, t.seo.desc, t.faq.items, location.pathname]);
 
   return (

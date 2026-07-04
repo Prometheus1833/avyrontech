@@ -45,13 +45,26 @@ const About = () => {
     const description = ro
       ? "Echipă Avyron: dezvoltatori web, mobile, cybersecurity, UI/UX și QA din România. Vezi portofoliul nostru: Miago, Flawless Studio, Retuvo și alte proiecte livrate."
       : "Avyron team: web, mobile, cybersecurity, UI/UX and QA specialists from Romania. See our portfolio: Miago, Flawless Studio, Retuvo and other delivered projects.";
-    import("@/lib/seo").then(({ setPageMeta }) =>
-      setPageMeta({
-        title,
-        description,
-        path: ro ? "/despre-si-portofoliu" : "/en/about",
-        alternates: { ro: "/despre-si-portofoliu", en: "/en/about" },
-      }),
+    Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
+      ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd }]) => {
+        setPageMeta({
+          title,
+          description,
+          path: ro ? "/despre-si-portofoliu" : "/en/about",
+          alternates: { ro: "/despre-si-portofoliu", en: "/en/about" },
+        });
+        setJsonLd("ld-organization", organizationLd);
+        setJsonLd(
+          "ld-breadcrumb",
+          breadcrumbLd([
+            { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
+            {
+              name: ro ? "Despre & Portofoliu" : "About & Portfolio",
+              path: ro ? "/despre-si-portofoliu" : "/en/about",
+            },
+          ]),
+        );
+      },
     );
   }, [ro]);
 
