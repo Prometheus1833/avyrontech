@@ -15,9 +15,9 @@ export const translations = {
     },
     hero: {
       badge: "Site-uri care aduc clienți, nu doar vizite",
-      title1: "Site-uri",
-      title2: "care aduc clienți",
-      title3: "pentru afacerea ta.",
+      title1: "Creare site web",
+      title2: "și aplicații",
+      title3: "care aduc clienți.",
       subtitle:
         "Proiectăm experiențe digitale rafinate, performante și optimizate pentru conversie — gândite să transforme fiecare vizită într-o oportunitate reală.",
       ctaPrimary: "Vreau demo gratuit",
@@ -507,9 +507,9 @@ export const translations = {
     },
     hero: {
       badge: "Websites that bring customers, not just visits",
-      title1: "Websites",
-      title2: "that bring customers",
-      title3: "to your business.",
+      title1: "Web & app",
+      title2: "development",
+      title3: "that brings customers.",
       subtitle:
         "We design refined, high-performance digital experiences optimized for conversion — built to turn every visit into a real opportunity.",
       ctaPrimary: "Get a free demo",

@@ -266,7 +266,7 @@ const Pricing = () => {
         <section className="mt-12 text-center">
           <h1 className="mt-6 font-display text-3xl sm:text-4xl md:text-6xl font-extrabold leading-[1.05] tracking-tight px-2">
             <span className="bg-gradient-to-r from-foreground via-cyan-500 to-blue-600 dark:from-white dark:via-cyan-200 dark:to-blue-400 bg-clip-text text-transparent">
-              {ro ? "Costuri și prețuri pentru site-uri și produse digitale Avyron" : "Pricing for Avyron websites and digital products"}
+              {ro ? "Prețuri site web și mentenanță — de la 300€" : "Website pricing & care plans — from €300"}
             </span>
           </h1>
           <p className="mt-5 max-w-2xl mx-auto text-foreground/70 text-base md:text-lg">
