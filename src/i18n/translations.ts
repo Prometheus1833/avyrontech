@@ -314,8 +314,8 @@ export const translations = {
       built: "Construit cu pasiune în România.",
     },
     seo: {
-      title: "Creare site web & aplicații în 2-5 zile | Avyron",
-      desc: "Agenție web România: creare site-uri profesionale, magazine online și aplicații mobile optimizate SEO Google. Livrare 2-5 zile, preț fix, mentenanță inclusă.",
+      title: "Creare website și aplicații care vă reprezintă online | Avyron",
+      desc: "Creăm Website-uri și aplicații care vă reprezintă și extinde online activitatea. Agenție web Iași, România — design, dezvoltare și SEO incluse.",
     },
     auth: {
       loginCta: "Conectează-te / Înregistrează-te",
@@ -804,8 +804,8 @@ export const translations = {
       built: "Built with passion in Romania.",
     },
     seo: {
-      title: "Web & App Development in 2-5 Days | Avyron",
-      desc: "Romanian web agency: SEO-optimized websites, online stores and mobile apps. Fast 2-5 day delivery, fixed price, care plans included.",
+      title: "Websites & apps that represent your business online | Avyron",
+      desc: "We create websites and apps that represent your business and extend your activity online. Web agency Iași, Romania — design, development and SEO included.",
     },
     auth: {
       loginCta: "Sign in / Sign up",
