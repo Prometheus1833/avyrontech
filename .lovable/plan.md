@@ -1,112 +1,77 @@
-# Comenzi de rulat în Terminal (Mac) — deploy Worker Cloudflare
+# Rute prefixate pe limbă pentru SEO bilingv
 
-**Context:** Am șters din proiect worker-ul duplicat din rădăcină (`/wrangler.jsonc` + `/src/worker/`) care se suprascria peste cel bun.
-Acum există un singur worker: `cloudflare/workers/api/` — cel complet cu CORS, seed, projects, media.
+Google va putea indexa separat varianta RO (URL curent) și EN (prefixat `/en/`) pentru paginile cheie. RO rămâne canonical la rădăcină (fără prefix), EN primește prefix.
 
-**Status actual pe `avyrontech.avyrontech.workers.dev`:**
-- ✅ `/api/health` → 200 (worker deployed)
-- ❌ `/api/auth/login` → 500 (versiunea greșită deployed; tabelele lipsesc sau JWT_SECRET nu-i setat)
-- ❌ CORS preflight → 404 (versiunea greșită)
+## Pagini incluse
 
-**Trebuie să redeploy-ezi din folderul corect ca să repari totul.**
+| RO (canonical)              | EN                             |
+| --------------------------- | ------------------------------ |
+| `/`                         | `/en`                          |
+| `/costurisiproduse`         | `/en/pricing`                  |
+| `/despre-si-portofoliu`     | `/en/about`                    |
+| `/blog`                     | `/en/blog`                     |
+| `/gdpr`                     | `/en/privacy`                  |
 
----
+Exclus (rămân doar RO): rute demo `/exemple/*`, pagini interne (`/auth`, `/profil`, `/intern`, `/reset-password`, etc.), pagini de eroare.
 
-## 1. Intră în folderul worker-ului bun
+## Ce se schimbă
 
-```bash
-cd ~/Downloads/avyrontech/cloudflare/workers/api
-pwd
+### 1. Router (`src/App.tsx`)
+- Adaug rutele `/en`, `/en/pricing`, `/en/about`, `/en/blog`, `/en/privacy` mapate pe aceleași componente ca RO.
+- Wrap-uiesc cele două grupuri (RO + EN) într-o componentă `LanguageRoute` care detectează prefixul din URL și forțează limba corectă în `LanguageContext` la mount.
+
+### 2. `LanguageContext` (`src/i18n/LanguageContext.tsx`)
+- Adaug o metodă internă `setLangFromRoute(lang)` care schimbă limba fără a scrie în `localStorage` (URL-ul e sursa de adevăr când există prefix).
+- Când nu există prefix `/en`, se păstrează comportamentul actual (localStorage).
+
+### 3. SEO (`src/lib/seo.ts` + pagini)
+- `setPageMeta` primește un nou parametru opțional `altPath` (URL-ul variantei alternative).
+- `canonical` = URL-ul curent (RO fără prefix / EN cu prefix).
+- `hreflang` alternates devin URL-uri distincte:
+  - `ro` → varianta RO
+  - `en` → varianta EN
+  - `x-default` → varianta RO
+- Fiecare pagină cheie transmite ambele path-uri (RO + EN) către `setPageMeta`.
+
+### 4. Language switch (`src/components/site/LangSwitch.tsx`)
+- La schimbarea limbii, navighez la URL-ul echivalent (map RO↔EN) în loc să setez doar localStorage.
+- Folosesc un map simplu `pathname → equivalent` pentru cele 5 pagini traduse; alte rute rămân neschimbate cu update pe context.
+
+### 5. Sitemap (`public/sitemap.xml`)
+- Adaug intrări pentru variantele `/en/*`.
+- Fiecare `<url>` primește `<xhtml:link rel="alternate" hreflang="...">` pentru RO/EN/x-default (standard sitemap i18n Google).
+
+### 6. `robots.txt`
+- Nicio schimbare — noile rute sunt sub `Allow: /` implicit.
+
+## Detalii tehnice
+
+**Detecție limbă din URL:** un helper `getLangFromPath(pathname)` returnează `"en"` dacă începe cu `/en` (sau este exact `/en`), altfel `"ro"`.
+
+**LangSwitch map:**
 ```
-`pwd` **trebuie** să se termine cu `/cloudflare/workers/api`.
-
-```bash
-ls wrangler.jsonc
+{ "/": "/en",
+  "/costurisiproduse": "/en/pricing",
+  "/despre-si-portofoliu": "/en/about",
+  "/blog": "/en/blog",
+  "/gdpr": "/en/privacy" }
 ```
-Trebuie să afișeze fișierul.
+(și invers pentru EN→RO)
 
-## 2. Login în Cloudflare (dacă nu ești deja)
-
-```bash
-bunx wrangler login
+**setPageMeta actualizat:**
 ```
-
-## 3. Setează secretele
-
-```bash
-bunx wrangler secret put JWT_SECRET
-```
-Când cere valoare, lipește un string random ≥32 caractere. Poți genera cu:
-`openssl rand -hex 48`
-
-```bash
-bunx wrangler secret put SEED_TOKEN
-```
-Lipește alt string random (îl folosești o singură dată la seed):
-`openssl rand -hex 24`
-**SALVEAZĂ-L undeva**, îl folosești la pasul 6.
-
-## 4. Aplică migrațiile pe D1 remote
-
-```bash
-bunx wrangler d1 migrations apply avyron-db --remote
-```
-Confirmă cu `y`.
-
-## 5. Deploy Worker
-
-```bash
-bunx wrangler deploy
-```
-La final: `https://avyrontech.avyrontech.workers.dev`
-
-## 6. Verifică că merge
-
-```bash
-curl -sS https://avyrontech.avyrontech.workers.dev/api/health
-
-curl -i -X OPTIONS https://avyrontech.avyrontech.workers.dev/api/auth/login \
-  -H "Origin: https://id-preview--3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovable.app" \
-  -H "Access-Control-Request-Method: POST"
-```
-A doua trebuie să răspundă **204** cu header `access-control-allow-origin`. Dacă dă 404 → deploy-ul n-a mers din folderul corect.
-
-## 7. Rulează seed-ul (creează admin + demo)
-
-Înlocuiește `<SEED_TOKEN>` cu valoarea de la pasul 3:
-
-```bash
-curl -X POST https://avyrontech.avyrontech.workers.dev/api/admin/seed \
-  -H "X-Seed-Token: <SEED_TOKEN>"
+setPageMeta({
+  title, description,
+  path: "/costurisiproduse",       // curent
+  alternates: {
+    ro: "/costurisiproduse",
+    en: "/en/pricing",
+  },
+})
 ```
 
-## 8. Testează login-ul
+**Ce NU fac:** nu introduc `react-i18next`, nu schimb `LanguageProvider` la nivel de tip, nu creez SSR. Traducerile existente din `translations.ts` rămân neschimbate — doar sursa limbii (URL în loc de localStorage) se schimbă pentru rutele prefixate.
 
-```bash
-curl -X POST https://avyrontech.avyrontech.workers.dev/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"avyrontech@gmail.com","password":"Avyronpass123@"}'
-```
+## Confirmare
 
-Trebuie JSON cu `access_token` și `user`. Dacă da → **login din UI funcționează**.
-
----
-
-## Conturi create de seed (parolă `Avyronpass123@`)
-
-| Email | Rol |
-|---|---|
-| avyrontech@gmail.com | staff (admin) |
-| client1@example.com | client |
-| client2@example.com | client |
-| client3@example.com | client |
-
-## Erori posibile
-
-- **`wrangler: command not found`** → folosește `npx wrangler ...`
-- **`D1_ERROR: no such table`** la seed → repetă pasul 4
-- **`forbidden` la seed** → SEED_TOKEN greșit, repetă pasul 3
-- **`Missing entry-point`** → nu ești în `cloudflare/workers/api`, rerulează pasul 1
-- **CORS blocked în browser** → verifică `ALLOWED_ORIGINS` în `wrangler.jsonc`, apoi redeploy
-
-Spune-mi la ce pas ești / lipește output-ul dacă apare o eroare.
+E o schimbare mai amplă (router + context + SEO + sitemap + switch). Confirmi să continui cu implementarea?
