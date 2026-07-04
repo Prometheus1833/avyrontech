@@ -314,7 +314,7 @@ export const translations = {
       built: "Construit cu pasiune în România.",
     },
     seo: {
-      title: "Creare site web și aplicații care aduc clienți | Avyron",
+      title: "Creăm Website-uri și aplicații care vă reprezintă și extinde online activitatea | Avyron",
       desc: "Proiectăm experiențe digitale rafinate, performante și optimizate pentru conversie — gândite să transforme fiecare vizită într-o oportunitate reală.",
     },
     auth: {
