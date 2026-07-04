@@ -23,6 +23,7 @@ import Footer from "@/components/site/Footer";
 import ContactBar from "@/components/site/ContactBar";
 import LangSwitch from "@/components/site/LangSwitch";
 import ThemeToggle from "@/components/site/ThemeToggle";
+import Breadcrumbs from "@/components/site/Breadcrumbs";
 import { examples } from "@/examples/registry";
 
 const About = () => {

@@ -6,6 +6,7 @@ import logo from "@/assets/avyron-logo.jpg";
 import premiumTech from "@/assets/premium-website-mockup.jpg";
 import LangSwitch from "@/components/site/LangSwitch";
 import ThemeToggle from "@/components/site/ThemeToggle";
+import Breadcrumbs from "@/components/site/Breadcrumbs";
 
 /**
  * PlayStation-inspired pricing page.
