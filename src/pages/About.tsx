@@ -202,9 +202,9 @@ const About = () => {
             {ro ? "Despre noi & Portofoliu" : "About & Portfolio"}
           </motion.div>
           <h1 className="mt-5 font-display font-extrabold text-3xl sm:text-4xl md:text-6xl leading-tight tracking-tight">
-            {ro ? "Construim digital, " : "We build digital, "}
+            {ro ? "Agenție web România — " : "Romanian web agency — "}
             <span className="bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent">
-              {ro ? "cu grijă pentru detalii." : "with care for the details."}
+              {ro ? "despre noi & portofoliu." : "about us & portfolio."}
             </span>
           </h1>
           <p className="mt-5 max-w-2xl mx-auto text-base md:text-lg text-muted-foreground leading-relaxed">
