@@ -74,7 +74,12 @@ const Pricing = () => {
           description,
           path: ro ? "/costurisiproduse" : "/en/pricing",
           alternates: { ro: "/costurisiproduse", en: "/en/pricing" },
+          image: "/og/pricing.jpg",
+          imageAlt: ro
+            ? "Pachete de prețuri Avyron — site-uri web, magazine online și mentenanță"
+            : "Avyron pricing packages — websites, online stores and care plans",
         });
+
         setJsonLd("ld-organization", organizationLd);
         setJsonLd(
           "ld-breadcrumb",

@@ -38,7 +38,13 @@ const Index = () => {
           description: t.seo.desc,
           path: location.pathname === "/en" ? "/en" : "/",
           alternates: { ro: "/", en: "/en" },
+          image: "/og/home.jpg",
+          imageAlt:
+            location.pathname === "/en"
+              ? "Avyron — digital agency from Iași, Romania"
+              : "Avyron — agenție digitală din Iași, România",
         });
+
         setJsonLd("ld-organization", organizationLd);
         setJsonLd("ld-website", webSiteLd);
         setJsonLd("ld-localbusiness", localBusinessLd);

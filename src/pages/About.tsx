@@ -53,7 +53,12 @@ const About = () => {
           description,
           path: ro ? "/despre-si-portofoliu" : "/en/about",
           alternates: { ro: "/despre-si-portofoliu", en: "/en/about" },
+          image: "/og/about.jpg",
+          imageAlt: ro
+            ? "Echipa Avyron și portofoliul de proiecte livrate"
+            : "Avyron team and portfolio of delivered projects",
         });
+
         setJsonLd("ld-organization", organizationLd);
         setJsonLd(
           "ld-breadcrumb",
