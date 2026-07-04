@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import LangSwitch from "./LangSwitch";
 import ThemeToggle from "./ThemeToggle";
 import UserMenu from "@/components/auth/UserMenu";
-import logo from "@/assets/avyron-logo.jpg";
+import logo from "@/assets/avyron-logo.webp";
 
 const Nav = () => {
   const [open, setOpen] = useState(false);
