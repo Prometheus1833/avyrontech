@@ -314,8 +314,8 @@ export const translations = {
       built: "Construit cu pasiune în România.",
     },
     seo: {
-      title: "Avyron — Soluții digitale. Produse. Viitor.",
-      desc: "Construim site-uri și aplicații rapide, optimizate Google, în 2-5 zile — pentru afaceri locale, profesii liberale și platforme naționale.",
+      title: "Creare site web & aplicații în 2-5 zile | Avyron",
+      desc: "Agenție web România: creare site-uri profesionale, magazine online și aplicații mobile optimizate SEO Google. Livrare 2-5 zile, preț fix, mentenanță inclusă.",
     },
     auth: {
       loginCta: "Conectează-te / Înregistrează-te",
@@ -804,8 +804,8 @@ export const translations = {
       built: "Built with passion in Romania.",
     },
     seo: {
-      title: "Avyron — Digital solutions. Products. Future.",
-      desc: "We build professional, fast and Google-optimized websites and apps in 2-5 days. For local businesses, restaurants, salons, professionals and national platforms.",
+      title: "Web & App Development in 2-5 Days | Avyron",
+      desc: "Romanian web agency: SEO-optimized websites, online stores and mobile apps. Fast 2-5 day delivery, fixed price, care plans included.",
     },
     auth: {
       loginCta: "Sign in / Sign up",

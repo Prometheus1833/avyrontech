@@ -60,10 +60,12 @@ const Pricing = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    const title = ro ? "Costuri & Mentenanță — Avyron" : "Pricing & Care — Avyron";
+    const title = ro
+      ? "Prețuri site web & mentenanță — de la 300€ | Avyron"
+      : "Website Pricing & Care Plans — from €300 | Avyron";
     const description = ro
-      ? "Pachete transparente pentru site-uri profesionale: produs principal de la 300€, mentenanță Plus / Pro / Pro activ și plăți sigure."
-      : "Transparent packages for professional websites: main product from €300, Plus / Pro / Pro Active care plans and secure payment methods.";
+      ? "Cât costă un site web profesional? Pachete transparente Avyron de la 300€, magazine online, aplicații și mentenanță lunară Plus / Pro / Pro Activ."
+      : "How much does a professional website cost? Transparent Avyron packages from €300, online stores, apps and monthly Plus / Pro / Pro Active care plans.";
     import("@/lib/seo").then(({ setPageMeta }) =>
       setPageMeta({ title, description, path: "/costurisiproduse" }),
     );
