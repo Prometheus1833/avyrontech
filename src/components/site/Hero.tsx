@@ -17,7 +17,7 @@ const Hero = () => {
           <div className="inline-flex items-center gap-2 rounded-full bg-white/70 backdrop-blur px-3 py-1.5 text-xs font-medium text-foreground/70 shadow-soft">
             <Sparkles className="size-3.5 text-brand" /> {t.hero.badge}
           </div>
-          <h1 className="mt-5 font-display text-[2.125rem] sm:text-[2.55rem] md:text-[3.825rem] lg:text-[5.1rem] font-bold leading-[1] md:leading-[0.95] tracking-tight max-w-4xl break-words">
+          <h1 className="mt-5 font-display text-[1.80625rem] sm:text-[2.1675rem] md:text-[3.25125rem] lg:text-[4.335rem] font-bold leading-[1] md:leading-[0.95] tracking-tight max-w-4xl break-words">
             {t.hero.title1} <span className="text-gradient">{t.hero.title2}</span> {t.hero.title3}
           </h1>
           <p className="mt-5 text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl px-2">
