@@ -192,6 +192,17 @@ const About = () => {
             <span className="font-display font-bold tracking-wide text-sm hidden sm:inline">Avyron Tech</span>
           </div>
         </div>
+
+        <Breadcrumbs
+          className="mt-6"
+          items={[
+            { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
+            {
+              name: ro ? "Despre & Portofoliu" : "About & Portfolio",
+              path: ro ? "/despre-si-portofoliu" : "/en/about",
+            },
+          ]}
+        />
       </div>
 
       {/* Hero — Cursor-inspired */}
