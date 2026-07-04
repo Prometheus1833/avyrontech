@@ -19,7 +19,7 @@ export const translations = {
       title2: "și aplicații",
       title3: "care aduc clienți.",
       subtitle:
-        "Proiectăm experiențe digitale rafinate, performante și optimizate pentru conversie — gândite să transforme fiecare vizită într-o oportunitate reală.",
+        "Creăm Website-uri și aplicații care vă reprezintă și extinde online activitatea.",
       ctaPrimary: "Vreau demo gratuit",
       ctaSecondary: "Vezi exemple",
       stats: [
