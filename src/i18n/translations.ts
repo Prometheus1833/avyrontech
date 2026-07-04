@@ -15,9 +15,9 @@ export const translations = {
     },
     hero: {
       badge: "Site-uri care aduc clienți, nu doar vizite",
-      title1: "Creăm",
-      title2: "Website-uri și aplicații",
-      title3: "care vă reprezintă și extinde online activitatea.",
+      title1: "Soluții digitale",
+      title2: "care extind online activitatea",
+      title3: "automatizând procesele.",
       subtitle:
         "Proiectăm experiențe digitale rafinate, performante și optimizate pentru conversie — gândite să transforme fiecare vizită într-o oportunitate reală.",
       ctaPrimary: "Vreau demo gratuit",
@@ -314,7 +314,7 @@ export const translations = {
       built: "Construit cu pasiune în România.",
     },
     seo: {
-      title: "Creăm Website-uri și aplicații care vă reprezintă și extinde online activitatea | Avyron",
+      title: "Soluții digitale care extind online activitatea automatizând procesele | Avyron",
       desc: "Proiectăm experiențe digitale rafinate, performante și optimizate pentru conversie — gândite să transforme fiecare vizită într-o oportunitate reală.",
     },
     auth: {
