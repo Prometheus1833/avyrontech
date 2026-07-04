@@ -9,16 +9,22 @@ function upsertMeta(attr: "property" | "name", key: string, value: string) {
   el.setAttribute("content", value);
 }
 
+const BASE = "https://avyron.ro";
+
 export function setPageMeta({
   title,
   description,
   path,
+  alternates,
 }: {
   title: string;
   description: string;
+  /** Current page path (should match the URL the user is on). */
   path: string;
+  /** Optional RO/EN alternate paths for hreflang. When omitted, only the canonical is set. */
+  alternates?: { ro: string; en: string };
 }) {
-  const url = `https://avyron.ro${path}`;
+  const url = `${BASE}${path}`;
   document.title = title;
   upsertMeta("name", "description", description);
   upsertMeta("property", "og:title", title);
@@ -35,17 +41,25 @@ export function setPageMeta({
   }
   canonical.setAttribute("href", url);
 
-  // hreflang alternates — RO and EN are served at the same URL (client-side language switch)
+  // Clear existing hreflang alternates before writing new ones.
   document.head
     .querySelectorAll('link[rel="alternate"][hreflang]')
     .forEach((el) => el.remove());
-  (["ro", "en", "x-default"] as const).forEach((code) => {
-    const link = document.createElement("link");
-    link.setAttribute("rel", "alternate");
-    link.setAttribute("hreflang", code);
-    link.setAttribute("href", url);
-    document.head.appendChild(link);
-  });
+
+  if (alternates) {
+    const map: Array<[string, string]> = [
+      ["ro", `${BASE}${alternates.ro}`],
+      ["en", `${BASE}${alternates.en}`],
+      ["x-default", `${BASE}${alternates.ro}`],
+    ];
+    for (const [code, href] of map) {
+      const link = document.createElement("link");
+      link.setAttribute("rel", "alternate");
+      link.setAttribute("hreflang", code);
+      link.setAttribute("href", href);
+      document.head.appendChild(link);
+    }
+  }
 }
 
 export function setJsonLd(id: string, data: unknown) {

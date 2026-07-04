@@ -67,7 +67,12 @@ const Pricing = () => {
       ? "Cât costă un site web profesional? Pachete transparente Avyron de la 300€, magazine online, aplicații și mentenanță lunară Plus / Pro / Pro Activ."
       : "How much does a professional website cost? Transparent Avyron packages from €300, online stores, apps and monthly Plus / Pro / Pro Active care plans.";
     import("@/lib/seo").then(({ setPageMeta }) =>
-      setPageMeta({ title, description, path: "/costurisiproduse" }),
+      setPageMeta({
+        title,
+        description,
+        path: ro ? "/costurisiproduse" : "/en/pricing",
+        alternates: { ro: "/costurisiproduse", en: "/en/pricing" },
+      }),
     );
   }, [ro]);
 
