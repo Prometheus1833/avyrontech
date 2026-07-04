@@ -34,6 +34,18 @@ export function setPageMeta({
     document.head.appendChild(canonical);
   }
   canonical.setAttribute("href", url);
+
+  // hreflang alternates — RO and EN are served at the same URL (client-side language switch)
+  document.head
+    .querySelectorAll('link[rel="alternate"][hreflang]')
+    .forEach((el) => el.remove());
+  (["ro", "en", "x-default"] as const).forEach((code) => {
+    const link = document.createElement("link");
+    link.setAttribute("rel", "alternate");
+    link.setAttribute("hreflang", code);
+    link.setAttribute("href", url);
+    document.head.appendChild(link);
+  });
 }
 
 export function setJsonLd(id: string, data: unknown) {
