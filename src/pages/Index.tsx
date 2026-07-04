@@ -32,7 +32,12 @@ const Index = () => {
 
   useEffect(() => {
     import("@/lib/seo").then(({ setPageMeta, setJsonLd }) => {
-      setPageMeta({ title: t.seo.title, description: t.seo.desc, path: "/" });
+      setPageMeta({
+        title: t.seo.title,
+        description: t.seo.desc,
+        path: location.pathname === "/en" ? "/en" : "/",
+        alternates: { ro: "/", en: "/en" },
+      });
       setJsonLd("ld-faq", {
         "@context": "https://schema.org",
         "@type": "FAQPage",
@@ -43,7 +48,7 @@ const Index = () => {
         })),
       });
     });
-  }, [t.seo.title, t.seo.desc, t.faq.items]);
+  }, [t.seo.title, t.seo.desc, t.faq.items, location.pathname]);
 
   return (
     <main className="min-h-screen overflow-x-hidden">

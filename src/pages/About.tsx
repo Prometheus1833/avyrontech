@@ -46,7 +46,12 @@ const About = () => {
       ? "Echipă Avyron: dezvoltatori web, mobile, cybersecurity, UI/UX și QA din România. Vezi portofoliul nostru: Miago, Flawless Studio, Retuvo și alte proiecte livrate."
       : "Avyron team: web, mobile, cybersecurity, UI/UX and QA specialists from Romania. See our portfolio: Miago, Flawless Studio, Retuvo and other delivered projects.";
     import("@/lib/seo").then(({ setPageMeta }) =>
-      setPageMeta({ title, description, path: "/despre-si-portofoliu" }),
+      setPageMeta({
+        title,
+        description,
+        path: ro ? "/despre-si-portofoliu" : "/en/about",
+        alternates: { ro: "/despre-si-portofoliu", en: "/en/about" },
+      }),
     );
   }, [ro]);
 
