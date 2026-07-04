@@ -6,6 +6,7 @@ import logo from "@/assets/avyron-logo.jpg";
 import premiumTech from "@/assets/premium-website-mockup.jpg";
 import LangSwitch from "@/components/site/LangSwitch";
 import ThemeToggle from "@/components/site/ThemeToggle";
+import Breadcrumbs from "@/components/site/Breadcrumbs";
 
 /**
  * PlayStation-inspired pricing page.
@@ -268,7 +269,18 @@ const Pricing = () => {
               <LangSwitch />
               <span aria-hidden className="w-px h-3 bg-foreground/15" />
               <ThemeToggle />
-            </div>
+        </div>
+
+        <Breadcrumbs
+          className="mt-6"
+          items={[
+            { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
+            {
+              name: ro ? "Costuri & Produse" : "Pricing & Products",
+              path: ro ? "/costurisiproduse" : "/en/pricing",
+            },
+          ]}
+        />
             <Link
               to="/"
               aria-label={ro ? "Acasă" : "Home"}
