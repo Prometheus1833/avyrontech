@@ -30,6 +30,17 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks(id) {
           if (!id.includes("node_modules")) return;
+          // React core + its runtime deps MUST live in the same chunk,
+          // otherwise `scheduler` / `use-sync-external-store` load before
+          // React and `React.createContext` becomes undefined in prod.
+          if (
+            id.includes("/node_modules/react/") ||
+            id.includes("/node_modules/react-dom/") ||
+            id.includes("/node_modules/scheduler/") ||
+            id.includes("/node_modules/use-sync-external-store/")
+          ) {
+            return "react";
+          }
           if (id.includes("framer-motion")) return "framer";
           if (id.includes("recharts") || id.includes("d3-")) return "charts";
           if (id.includes("@radix-ui")) return "radix";
@@ -37,7 +48,6 @@ export default defineConfig(({ mode }) => ({
           if (id.includes("react-router")) return "router";
           if (id.includes("@tanstack")) return "query";
           if (id.includes("@supabase")) return "supabase";
-          if (id.includes("react-dom") || id.includes("react/") || id.endsWith("/react/index.js")) return "react";
           return "vendor";
         },
       },
