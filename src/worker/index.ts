@@ -6,8 +6,14 @@
 
 import { decide, isKnownSpaRoute, normalizePath } from "./router";
 
+interface Fetcher {
+  fetch: (req: Request) => Promise<Response>;
+}
+
 interface Env {
-  ASSETS: { fetch: (req: Request) => Promise<Response> };
+  ASSETS: Fetcher;
+  /** Service binding to the existing API Worker ("avyrontech"). */
+  API: Fetcher;
 }
 
 const NOINDEX = "noindex, nofollow";
@@ -29,7 +35,10 @@ export default {
       case "redirect":
         return Response.redirect(new URL(decision.location, url.origin).toString(), decision.status);
 
+      // /api/* belongs to the API Worker, not to the static assets.
       case "api":
+        return env.API.fetch(request);
+
       case "asset":
         return env.ASSETS.fetch(request);
 
