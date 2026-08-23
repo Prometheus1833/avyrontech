@@ -1,25 +1,47 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Gift } from "lucide-react";
+import { Gift, Paperclip, X, Loader2 } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
-import { supabase } from "@/integrations/supabase/client";
+import { apiUrl } from "@/lib/apiBase";
+
+const MAX_FILES = 5;
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const ACCEPT = "image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv";
 
 const CTA = () => {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const schema = z.object({
     name: z.string().trim().min(2, t.cta.errNameShort).max(80),
     business: z.string().trim().min(2, t.cta.errBusiness).max(80),
-    website: z.string().trim().max(120).optional(),
+    description: z.string().trim().max(2000).optional(),
+    website: z.string().trim().max(200).optional(),
     phone: z.string().trim().min(6, t.cta.errPhone).max(30),
     email: z.string().trim().email(t.cta.errEmail).max(120),
   });
 
-  const [data, setData] = useState({ name: "", business: "", website: "", phone: "", email: "" });
+  const [data, setData] = useState({ name: "", business: "", description: "", website: "", phone: "", email: "" });
+  const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  const addFiles = (list: FileList | null) => {
+    if (!list) return;
+    const incoming = Array.from(list);
+    const valid = incoming.filter((f) => {
+      if (f.size > MAX_FILE_BYTES) {
+        toast.error(`${f.name}: max 10MB`);
+        return false;
+      }
+      return true;
+    });
+    setFiles((prev) => [...prev, ...valid].slice(0, MAX_FILES));
+    if (fileInput.current) fileInput.current.value = "";
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,20 +52,16 @@ const CTA = () => {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "demo-request",
-          recipientEmail: "avyrontech@gmail.com",
-          idempotencyKey: `demo-request-${parsed.data.email}-${Date.now()}`,
-          templateData: {
-            ...parsed.data,
-            submittedAt: new Date().toISOString(),
-          },
-        },
-      });
-      if (error) throw error;
+      const fd = new FormData();
+      Object.entries(parsed.data).forEach(([k, v]) => fd.append(k, v ?? ""));
+      fd.append("lang", lang);
+      files.forEach((f) => fd.append("files", f, f.name));
+
+      const res = await fetch(apiUrl("/api/contact/demo"), { method: "POST", body: fd });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       toast.success(t.cta.success);
-      setData({ name: "", business: "", website: "", phone: "", email: "" });
+      setData({ name: "", business: "", description: "", website: "", phone: "", email: "" });
+      setFiles([]);
     } catch (err) {
       console.error("demo-request submit failed", err);
       toast.error(t.cta.errEmail);
@@ -93,13 +111,69 @@ const CTA = () => {
                 <Input id="email" value={data.email} onChange={set("email")} className="mt-1.5 h-11 rounded-xl" placeholder={t.cta.emailPh} />
               </div>
             </div>
+
+            <div>
+              <Label htmlFor="description">{t.cta.description}</Label>
+              <Textarea
+                id="description"
+                value={data.description}
+                onChange={set("description")}
+                maxLength={2000}
+                rows={3}
+                className="mt-1.5 rounded-xl resize-none"
+                placeholder={t.cta.descriptionPh}
+              />
+            </div>
+
+            <div>
+              <Label>{t.cta.files}</Label>
+              <input
+                ref={fileInput}
+                id="files"
+                type="file"
+                multiple
+                accept={ACCEPT}
+                className="sr-only"
+                onChange={(e) => addFiles(e.target.files)}
+              />
+              <button
+                type="button"
+                onClick={() => fileInput.current?.click()}
+                disabled={files.length >= MAX_FILES}
+                className="mt-1.5 w-full h-11 rounded-xl border border-dashed border-border bg-background/40 text-sm text-muted-foreground hover:border-brand hover:text-foreground transition-colors inline-flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <Paperclip className="size-4" /> {t.cta.filesAdd}
+              </button>
+              <p className="mt-1 text-[11px] text-muted-foreground">{t.cta.filesHint}</p>
+              {files.length > 0 && (
+                <ul className="mt-2 space-y-1.5">
+                  {files.map((f, i) => (
+                    <li key={`${f.name}-${i}`} className="flex items-center gap-2 rounded-lg bg-secondary/60 px-2.5 py-1.5 text-xs">
+                      <span className="truncate flex-1">{f.name}</span>
+                      <span className="text-muted-foreground shrink-0">{(f.size / 1024 / 1024).toFixed(1)}MB</span>
+                      <button
+                        type="button"
+                        aria-label="Elimină fișierul"
+                        onClick={() => setFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
             <div>
               <Label htmlFor="website">{t.cta.website}</Label>
               <Input id="website" value={data.website} onChange={set("website")} className="mt-1.5 h-11 rounded-xl" placeholder={t.cta.websitePh} />
             </div>
+
             <Button type="submit" disabled={loading} className="w-full h-12 rounded-full bg-foreground text-background hover:bg-foreground/90 font-semibold">
-              {loading ? t.cta.sending : t.cta.submit}
+              {loading ? <Loader2 className="size-4 animate-spin" /> : t.cta.submit}
             </Button>
+            <p className="text-center text-[11px] tracking-wide text-muted-foreground">{t.cta.personalized}</p>
           </form>
         </div>
       </div>
