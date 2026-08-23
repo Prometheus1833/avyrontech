@@ -18,7 +18,7 @@ const Hero = () => {
           className="flex flex-col items-center"
         >
           <div className="inline-flex items-center gap-2 rounded-full bg-white/70 backdrop-blur px-3 py-1.5 text-xs font-medium text-foreground/70 shadow-soft">
-            <TrendingUp className="size-3.5 text-brand" /> {t.hero.badge}
+            <TrendingUp className="size-3.5 text-brand" aria-hidden="true" focusable="false" /> {t.hero.badge}
           </div>
           <h1 className="mt-5 font-display text-[1.80625rem] sm:text-[2.1675rem] md:text-[3.25125rem] lg:text-[4.335rem] font-bold leading-[1] md:leading-[0.95] tracking-tight max-w-4xl break-words">
             {t.hero.title1} <span className="text-gradient">{t.hero.title2}</span> {t.hero.title3}

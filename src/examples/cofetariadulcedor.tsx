@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Cake, Phone, MapPin, Clock, Instagram, Heart, Sparkles } from "lucide-react";
+import { Cake, Phone, MapPin, Clock, Instagram, Heart, Truck } from "lucide-react";
 import avyronLogo from "@/assets/avyron-logo.jpg";
 
 const products = [
@@ -46,7 +46,7 @@ export default function CofetariaDulceDor() {
         </div>
         <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs text-[#6a4a40]">
           <span className="inline-flex items-center gap-1.5"><Heart className="size-3.5 text-[#b8512a]" /> 4.9 ★ pe Google (320+ recenzii)</span>
-          <span className="inline-flex items-center gap-1.5"><Sparkles className="size-3.5 text-[#b8512a]" /> Livrare în tot Iașiul</span>
+          <span className="inline-flex items-center gap-1.5"><Truck className="size-3.5 text-[#b8512a]" aria-hidden="true" /> Livrare în tot Iașiul</span>
         </div>
       </section>
 
