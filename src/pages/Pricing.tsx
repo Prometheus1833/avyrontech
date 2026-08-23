@@ -818,83 +818,77 @@ const Pricing = () => {
         </section>
 
 
-
-
-
-        {/* Audit Website / Soft Actual */}
+        {/* Testare QA Web & Mobile */}
         <section className="mt-8 grid md:grid-cols-5 gap-4 items-start">
-          <div className="md:col-span-2 rounded-2xl border border-amber-300/20 bg-gradient-to-br from-card to-background p-5 sm:p-6 relative overflow-hidden text-center">
-            <div aria-hidden className="absolute -top-16 -right-16 size-48 rounded-full bg-amber-400/15 blur-3xl" />
-            <div aria-hidden className="absolute -bottom-16 -left-16 size-48 rounded-full bg-orange-500/15 blur-3xl" />
+          <div className="md:col-span-2 rounded-2xl border border-lime-300/20 bg-gradient-to-br from-card to-background p-5 sm:p-6 relative overflow-hidden text-center transition-transform duration-500 hover:-translate-y-1">
+            <div aria-hidden className="absolute -top-16 -right-16 size-48 rounded-full bg-lime-400/15 blur-3xl" />
+            <div aria-hidden className="absolute -bottom-16 -left-16 size-48 rounded-full bg-emerald-500/15 blur-3xl" />
             <div className="relative">
-              <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-amber-700 dark:text-amber-200">
-                <ScanSearch className="size-3.5" aria-hidden />
-                {ro ? "Raport complet" : "Complete report"}
+              <div className="inline-flex items-center gap-2 rounded-full border border-lime-300/30 bg-lime-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-lime-700 dark:text-lime-200">
+                <Bug className="size-3.5" aria-hidden />
+                {ro ? "Calitate garantată" : "Guaranteed quality"}
               </div>
               <div className="mt-5 flex items-center justify-center gap-3">
-                <div className="size-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-600 grid place-items-center shadow-[0_0_24px_-6px_rgba(251,146,60,0.6)]">
-                  <ScanSearch className="size-6 text-white" aria-hidden />
+                <div className="size-12 rounded-xl bg-gradient-to-br from-lime-400 to-emerald-600 grid place-items-center shadow-[0_0_24px_-6px_rgba(132,204,22,0.6)]">
+                  <Bug className="size-6 text-white" aria-hidden />
                 </div>
                 <div className="size-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 grid place-items-center shadow-[0_0_24px_-6px_rgba(16,185,129,0.6)]">
-                  <Shield className="size-6 text-white" aria-hidden />
+                  <FlaskConical className="size-6 text-white" aria-hidden />
                 </div>
-                <div className="size-12 rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 grid place-items-center shadow-[0_0_24px_-6px_rgba(14,165,233,0.6)]">
-                  <Gauge className="size-6 text-white" aria-hidden />
+                <div className="size-12 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-700 grid place-items-center shadow-[0_0_24px_-6px_rgba(14,165,233,0.6)]">
+                  <Smartphone className="size-6 text-white" aria-hidden />
                 </div>
               </div>
               <h2 className="mt-5 font-display text-2xl sm:text-3xl font-extrabold">
-                {ro ? "Audit Website / Soft Actual" : "Website / Software Audit"}
+                {ro ? "Testare QA Web & Mobile" : "QA Testing Web & Mobile"}
               </h2>
               <p className="mt-2 text-xs uppercase tracking-[0.25em] text-foreground/50">
-                {ro ? "Securitate · Performanță · SEO · UI/UX" : "Security · Performance · SEO · UI/UX"}
+                {ro ? "Funcțional · Regresie · Mobil · Automatizat" : "Functional · Regression · Mobile · Automated"}
               </p>
               <div className="mt-3 flex items-baseline justify-center gap-1.5 flex-wrap">
-                <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-amber-300 to-orange-500 bg-clip-text text-transparent">
-                  {ro ? "Gratuit" : "Free"}
+                <span className="text-sm sm:text-base font-semibold text-foreground/70">{ro ? "de la" : "from"}</span>
+                <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-lime-300 to-emerald-500 bg-clip-text text-transparent break-words">
+                  {currency === "EUR" ? "300€" : `${Math.round(300 * rate)} RON`}
                 </span>
               </div>
               <p className="mt-3 text-xs sm:text-sm text-foreground/70 leading-snug text-left">
                 {ro
-                  ? "Un raport complet și onest despre website-ul sau softul pe care îl ai deja: securitate, performanță, SEO tehnic, accesibilitate și UI/UX, plus testare în condiții reale și o analiză scurtă a concurenței din nișa ta. Primești o listă de probleme ordonată după impact, cu recomandări concrete și un plan de acțiune pe 30 și 90 de zile — pe care îl poți aplica singur, cu dezvoltatorul tău actual sau cu noi."
-                  : "A complete, honest report on the website or software you already have: security, performance, technical SEO, accessibility and UI/UX, plus real-world testing and a short competitor analysis for your niche. You receive an impact-ordered list of issues with concrete recommendations and a 30 / 90-day action plan — to apply yourself, with your current developer or with us."}
+                  ? "Testăm site-uri, magazine online și aplicații mobile exact cum o face un client real. Primești un raport de defecte cu severitate și pași de reproducere, plus retestare după remedieri."
+                  : "We test websites, online stores and mobile apps exactly the way a real customer would. You get a defect report with severity and reproduction steps, plus retesting after fixes."}
               </p>
-              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-amber-300/20 bg-amber-300/[0.06] px-3 py-1.5 text-[11px] text-amber-700 dark:text-amber-100">
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-lime-300/20 bg-lime-300/[0.06] px-3 py-1.5 text-[11px] text-lime-700 dark:text-lime-100">
                 <Hourglass className="size-3.5" aria-hidden />
-                {ro ? "Timp de livrare raport: 2–4 zile" : "Report delivery time: 2–4 days"}
+                {ro ? "Durată: 3–10 zile" : "Duration: 3–10 days"}
               </div>
             </div>
           </div>
           <div className="md:col-span-3 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur">
-            <div className="text-[11px] uppercase tracking-[0.3em] text-foreground/50">{ro ? "Raportul acoperă:" : "The report covers:"}</div>
+            <div className="text-[11px] uppercase tracking-[0.3em] text-foreground/50">{ro ? "Acoperim:" : "We cover:"}</div>
             <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
               {(ro
                 ? [
-                    { icon: <Shield className="size-4" />, text: "Securitate: HTTPS, headere, expunere de date, vulnerabilități în dependențe" },
-                    { icon: <Gauge className="size-4" />, text: "Performanță: Core Web Vitals, greutatea paginilor, imagini și scripturi care încetinesc" },
-                    { icon: <Globe className="size-4" />, text: "SEO tehnic: indexare, sitemap, canonical, hreflang, date structurate, titluri duplicate" },
-                    { icon: <Accessibility className="size-4" />, text: "Accesibilitate: contrast, navigare din tastatură, cititoare de ecran, criterii WCAG" },
-                    { icon: <Palette className="size-4" />, text: "UI/UX: claritatea mesajului, ierarhie vizuală, traseul până la conversie, formulare" },
-                    { icon: <Smartphone className="size-4" />, text: "Testare în condiții reale: telefoane, tablete, browsere diferite, internet lent" },
-                    { icon: <BarChart3 className="size-4" />, text: "Analiză de piață: 2–3 concurenți direcți și cuvintele cheie pe care le acoperă" },
-                    { icon: <FileText className="size-4" />, text: "Verificarea formularelor, emailurilor și a fluxului real de comandă / contact" },
-                    { icon: <Check className="size-4" />, text: "Recomandări prioritizate cu impact și efort estimat pentru fiecare intervenție" },
-                    { icon: <Hourglass className="size-4" />, text: "Plan de acțiune pe 30 și 90 de zile + ședință de prezentare a raportului" },
+                    { icon: <Check className="size-4" />, text: "Testare funcțională pe toate fluxurile critice" },
+                    { icon: <Smartphone className="size-4" />, text: "Dispozitive și browsere reale (Android, iOS, desktop)" },
+                    { icon: <FlaskConical className="size-4" />, text: "Teste automate end-to-end, rulate la fiecare update" },
+                    { icon: <Gauge className="size-4" />, text: "Performanță, internet lent și trafic simultan" },
+                    { icon: <Shield className="size-4" />, text: "Securitate de bază: validări, roluri, sesiuni" },
+                    { icon: <Accessibility className="size-4" />, text: "Accesibilitate: tastatură, contrast, WCAG" },
+                    { icon: <FileText className="size-4" />, text: "Raport de defecte cu severitate și pași de reproducere" },
+                    { icon: <RefreshCw className="size-4" />, text: "Retestare și regresie după remedieri" },
                   ]
                 : [
-                    { icon: <Shield className="size-4" />, text: "Security: HTTPS, headers, data exposure, vulnerable dependencies" },
-                    { icon: <Gauge className="size-4" />, text: "Performance: Core Web Vitals, page weight, slow images and scripts" },
-                    { icon: <Globe className="size-4" />, text: "Technical SEO: indexing, sitemap, canonicals, hreflang, structured data, duplicate titles" },
-                    { icon: <Accessibility className="size-4" />, text: "Accessibility: contrast, keyboard navigation, screen readers, WCAG criteria" },
-                    { icon: <Palette className="size-4" />, text: "UI/UX: message clarity, visual hierarchy, path to conversion, forms" },
-                    { icon: <Smartphone className="size-4" />, text: "Real-world testing: phones, tablets, different browsers, slow connections" },
-                    { icon: <BarChart3 className="size-4" />, text: "Market analysis: 2–3 direct competitors and the keywords they cover" },
-                    { icon: <FileText className="size-4" />, text: "Verification of forms, emails and the real order / contact flow" },
-                    { icon: <Check className="size-4" />, text: "Prioritized recommendations with estimated impact and effort" },
-                    { icon: <Hourglass className="size-4" />, text: "30 and 90-day action plan + a report walkthrough session" },
+                    { icon: <Check className="size-4" />, text: "Functional testing across every critical flow" },
+                    { icon: <Smartphone className="size-4" />, text: "Real devices and browsers (Android, iOS, desktop)" },
+                    { icon: <FlaskConical className="size-4" />, text: "Automated end-to-end tests on every release" },
+                    { icon: <Gauge className="size-4" />, text: "Performance, slow networks and concurrent traffic" },
+                    { icon: <Shield className="size-4" />, text: "Baseline security: validation, roles, sessions" },
+                    { icon: <Accessibility className="size-4" />, text: "Accessibility: keyboard, contrast, WCAG" },
+                    { icon: <FileText className="size-4" />, text: "Defect report with severity and reproduction steps" },
+                    { icon: <RefreshCw className="size-4" />, text: "Retesting and regression after fixes" },
                   ]
               ).map((f) => (
                 <li key={f.text} className="flex items-start gap-2 text-sm text-foreground/85">
-                  <span className="mt-0.5 size-5 rounded-md bg-amber-400/15 text-amber-400 grid place-items-center shrink-0">
+                  <span className="mt-0.5 size-5 rounded-md bg-lime-400/15 text-lime-500 grid place-items-center shrink-0">
                     {f.icon}
                   </span>
                   <span>{f.text}</span>
@@ -903,16 +897,16 @@ const Pricing = () => {
             </ul>
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <a
-                href="https://wa.me/40734605055?text=Bună! Aș dori un audit complet pentru website-ul / aplicația mea."
+                href="https://wa.me/40734605055?text=Bună! Aș dori o ofertă de testare QA pentru produsul meu web / mobil."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-lime-500 to-emerald-600 text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
               >
-                <ScanSearch className="size-4" aria-hidden />
-                {ro ? "Vreau auditul gratuit" : "I want the free audit"}
+                <Bug className="size-4" aria-hidden />
+                {ro ? "Vreau testare QA" : "I want QA testing"}
               </a>
               <Link
-                to={ro ? "/produse/audit-website" : "/en/products/website-audit"}
+                to={ro ? "/produse/testare-qa-web-mobile" : "/en/products/qa-testing-web-mobile"}
                 className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
               >
                 {ro ? "Vezi detalii" : "See details"}
@@ -921,6 +915,7 @@ const Pricing = () => {
             </div>
           </div>
         </section>
+
 
         {/* Care plans */}
         <section className="mt-16">
