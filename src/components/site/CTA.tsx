@@ -5,13 +5,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Gift, Paperclip, X, Loader2 } from "lucide-react";
+import { Gift, Paperclip, X, Loader2, CheckCircle2, RotateCcw } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { apiUrl } from "@/lib/apiBase";
+import Turnstile, { TURNSTILE_SITE_KEY } from "@/components/site/Turnstile";
 
 const MAX_FILES = 5;
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const ACCEPT = "image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv";
+
+type Summary = {
+  leadId: string;
+  submittedAt: string;
+  name: string;
+  business: string;
+  phone: string;
+  email: string;
+  website?: string;
+  description?: string;
+  files: { name: string; size: number }[];
+};
 
 const CTA = () => {
   const { t, lang } = useLang();
@@ -24,10 +37,15 @@ const CTA = () => {
     email: z.string().trim().email(t.cta.errEmail).max(120),
   });
 
-  const [data, setData] = useState({ name: "", business: "", description: "", website: "", phone: "", email: "" });
+  const emptyData = { name: "", business: "", description: "", website: "", phone: "", email: "" };
+  const [data, setData] = useState(emptyData);
   const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+  const [summary, setSummary] = useState<Summary | null>(null);
+  const [token, setToken] = useState("");
+  const [resetKey, setResetKey] = useState(0);
   const fileInput = useRef<HTMLInputElement>(null);
+  const honeypot = useRef<HTMLInputElement>(null);
 
   const addFiles = (list: FileList | null) => {
     if (!list) return;
@@ -50,21 +68,60 @@ const CTA = () => {
       toast.error(parsed.error.issues[0].message);
       return;
     }
+    if (TURNSTILE_SITE_KEY && !token) {
+      toast.error(t.cta.captchaRequired);
+      return;
+    }
     setLoading(true);
     try {
       const fd = new FormData();
       Object.entries(parsed.data).forEach(([k, v]) => fd.append(k, v ?? ""));
       fd.append("lang", lang);
+      fd.append("company_url", honeypot.current?.value ?? "");
+      if (token) fd.append("cf-turnstile-response", token);
       files.forEach((f) => fd.append("files", f, f.name));
 
       const res = await fetch(apiUrl("/api/contact/demo"), { method: "POST", body: fd });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const body = (await res.json().catch(() => ({}))) as {
+        summary?: Summary;
+        error?: string;
+        leadId?: string;
+      };
+
+      if (res.status === 429) {
+        toast.error(t.cta.rateLimited);
+        return;
+      }
+      if (res.status === 403) {
+        toast.error(t.cta.captchaFailed);
+        setToken("");
+        setResetKey((k) => k + 1);
+        return;
+      }
+      if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
+
       toast.success(t.cta.success);
-      setData({ name: "", business: "", description: "", website: "", phone: "", email: "" });
+      setSummary(
+        body.summary ?? {
+          leadId: body.leadId ?? "—",
+          submittedAt: new Date().toISOString(),
+          name: parsed.data.name,
+          business: parsed.data.business,
+          phone: parsed.data.phone,
+          email: parsed.data.email,
+          website: parsed.data.website,
+          description: parsed.data.description,
+          files: files.map((f) => ({ name: f.name, size: f.size })),
+        },
+
+      );
+      setData(emptyData);
       setFiles([]);
+      setToken("");
+      setResetKey((k) => k + 1);
     } catch (err) {
       console.error("demo-request submit failed", err);
-      toast.error(t.cta.errEmail);
+      toast.error(t.cta.sendError);
     } finally {
       setLoading(false);
     }
@@ -72,6 +129,7 @@ const CTA = () => {
 
   const set = (k: keyof typeof data) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setData((d) => ({ ...d, [k]: e.target.value }));
+
 
   return (
     <section id="cta" className="py-10 md:py-14">
@@ -92,7 +150,60 @@ const CTA = () => {
               </ul>
             </div>
           </div>
+          {summary ? (
+            <div className="bg-card p-5 sm:p-6 md:p-8" role="status" aria-live="polite">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="size-6 text-brand shrink-0" aria-hidden="true" focusable="false" />
+                <div>
+                  <h3 className="font-display text-lg font-semibold">{t.cta.successTitle}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">{t.cta.successDesc}</p>
+                </div>
+              </div>
+
+              <p className="mt-5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {t.cta.summaryTitle}
+              </p>
+              <dl className="mt-2 divide-y divide-border/60 rounded-xl border border-border/60 text-sm">
+                {[
+                  [t.cta.name, summary.name],
+                  [t.cta.business, summary.business],
+                  [t.cta.phone, summary.phone],
+                  [t.cta.email, summary.email],
+                  [t.cta.website, summary.website || "—"],
+                  [t.cta.description, summary.description || "—"],
+                ].map(([label, value]) => (
+                  <div key={label} className="grid grid-cols-3 gap-2 px-3 py-2">
+                    <dt className="text-xs text-muted-foreground col-span-1">{label}</dt>
+                    <dd className="col-span-2 break-words">{value}</dd>
+                  </div>
+                ))}
+                <div className="grid grid-cols-3 gap-2 px-3 py-2">
+                  <dt className="text-xs text-muted-foreground col-span-1">{t.cta.files}</dt>
+                  <dd className="col-span-2 break-words">
+                    {summary.files.length
+                      ? summary.files.map((f) => `${f.name} (${(f.size / 1024 / 1024).toFixed(1)}MB)`).join(", ")
+                      : t.cta.summaryNoFiles}
+                  </dd>
+                </div>
+              </dl>
+
+              <p className="mt-3 text-[11px] text-muted-foreground">
+                {t.cta.summaryRef}: <span className="font-mono">{summary.leadId.slice(0, 8)}</span> ·{" "}
+                {new Date(summary.submittedAt).toLocaleString(lang === "ro" ? "ro-RO" : "en-GB")}
+              </p>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSummary(null)}
+                className="mt-5 h-10 rounded-full w-full gap-2"
+              >
+                <RotateCcw className="size-4" aria-hidden="true" focusable="false" /> {t.cta.sendAnother}
+              </Button>
+            </div>
+          ) : (
           <form onSubmit={submit} className="bg-card p-5 sm:p-6 md:p-8 space-y-3">
+
             <div>
               <Label htmlFor="name" className="text-xs">{t.cta.name}</Label>
               <Input id="name" value={data.name} onChange={set("name")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.namePh} />
@@ -170,10 +281,31 @@ const CTA = () => {
               <Input id="website" value={data.website} onChange={set("website")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.websitePh} />
             </div>
 
-            <Button type="submit" disabled={loading} className="w-full h-11 rounded-full bg-foreground text-background hover:bg-foreground/90 font-semibold">
-              {loading ? <Loader2 className="size-4 animate-spin" /> : t.cta.submit}
+            {/* honeypot — invizibil pentru utilizatori, completat doar de boți */}
+            <input
+              ref={honeypot}
+              type="text"
+              name="company_url"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              className="hidden"
+/>
+
+            <Turnstile onToken={setToken} resetKey={resetKey} />
+
+            <Button type="submit" disabled={loading} aria-busy={loading} className="w-full h-11 rounded-full bg-foreground text-background hover:bg-foreground/90 font-semibold">
+              {loading ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" focusable="false" /> {t.cta.sending}
+                </span>
+              ) : (
+                t.cta.submit
+              )}
             </Button>
           </form>
+          )}
+
         </div>
       </div>
     </section>
