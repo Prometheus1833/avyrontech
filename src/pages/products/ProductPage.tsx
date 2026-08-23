@@ -73,7 +73,7 @@ const ProductPage = () => {
     const c = product.copy[lang];
     const path = product.path[lang];
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
-      ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd, serviceLd, faqPageLd }]) => {
+      ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd, serviceLd, productLd, faqPageLd }]) => {
         setPageMeta({
           title: c.metaTitle,
           description: c.metaDescription,
@@ -90,7 +90,17 @@ const ProductPage = () => {
             priceEur: product.priceEur || undefined,
           }),
         );
+        setJsonLd(
+          "ld-product",
+          productLd({
+            name: c.name,
+            description: c.metaDescription,
+            path,
+            priceEur: product.priceEur || undefined,
+          }),
+        );
         setJsonLd("ld-faq", faqPageLd(c.faq));
+
         setJsonLd(
           "ld-breadcrumb",
           breadcrumbLd([
