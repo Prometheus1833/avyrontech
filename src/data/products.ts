@@ -238,6 +238,127 @@ const CATALOG: Product[] = [
           "Îți facem gratuit o propunere de structură și un exemplu vizual personalizat pe activitatea ta, înainte să plătești ceva.",
         ctaButton: "Vreau Website Prezentare Premium",
         whatsapp: "Bună! Sunt interesat de Website Prezentare Premium.",
+        heroStats: [
+          { value: "2–5", label: "zile până la lansare" },
+          { value: "90+", label: "țintă Lighthouse" },
+          { value: "RO/EN", label: "structură bilingvă" },
+          { value: "∞", label: "suport gratuit pe viață" },
+        ],
+        audiences: {
+          title: "Identitate online profesională, construită pe contextul tău",
+          lead: "O afacere locală, un brand național și un cabinet de avocatură au nevoie de aceeași calitate tehnică, dar de structură, ton și dovezi complet diferite. Construim varianta potrivită pentru tine.",
+          items: [
+            {
+              icon: "globe",
+              title: "Afaceri locale",
+              desc: "Construit în jurul orașului și al serviciilor căutate efectiv: pagini locale, aliniere cu Google Business Profile, hartă, program, indicații rutiere și buton de apel sau WhatsApp la o atingere.",
+            },
+            {
+              icon: "chart",
+              title: "Branduri naționale",
+              desc: "Arhitectură de pagini scalabilă, sistem de brand coerent, structură bilingvă RO/EN, landing page-uri de campanie și analytics curat, ca bugetul de marketing să fie măsurabil.",
+            },
+            {
+              icon: "shield",
+              title: "Avocați și cabinete juridice",
+              desc: "Design sobru și credibil, pagini pe arii de practică, prezentare profesională, logică de onorarii, formular securizat de contact și texte de confidențialitate aliniate deontologiei.",
+            },
+            {
+              icon: "users",
+              title: "Consultanți financiari și de business",
+              desc: "Structură bazată pe poziționare: expertiză, metodă de lucru, studii de caz, resurse descărcabile și un formular de programare care filtrează cererile serioase.",
+            },
+            {
+              icon: "accessibility",
+              title: "Cabinete medicale și wellbeing",
+              desc: "Pagini clare de servicii și tarife, credențialele echipei, tipografie accesibilă, cereri de programare și tratarea datelor de contact conform GDPR.",
+            },
+            {
+              icon: "store",
+              title: "Studiouri, agenții și creatori",
+              desc: "Layout condus de portofoliu, livrare rapidă a imaginilor, povestea proiectelor și un traseu clar de contact — ca lucrările tale, nu interfața, să vorbească.",
+            },
+          ],
+        },
+        tech: {
+          title: "Tehnologii moderne, de nivel profesionist",
+          lead: "Folosim același stack ca produsele cu trafic mare: randare rapidă, livrare la edge și zero dependențe ascunse de furnizor.",
+          groups: [
+            {
+              name: "Interfață",
+              items: ["React 18", "TypeScript", "Vite", "Tailwind CSS", "Design tokens & dark mode"],
+            },
+            {
+              name: "Livrare și infrastructură",
+              items: ["Rețea edge Cloudflare", "CDN global și cache", "HTTPS automat", "Imagini optimizate (WebP/AVIF)", "Backup zilnic"],
+            },
+            {
+              name: "Căutare și date",
+              items: ["SEO tehnic", "Date structurate Schema.org", "Google Search Console", "GA4 cu consent mode", "Sitemap și hreflang RO/EN"],
+            },
+            {
+              name: "Calitate și securitate",
+              items: ["Lighthouse și Core Web Vitals", "Verificări accesibilitate WCAG", "Headere de securitate și anti-spam", "Testare pe toate dispozitivele", "Monitorizare uptime"],
+            },
+          ],
+        },
+        examples: {
+          title: "Exemple concrete de proiecte",
+          lead: "Tipuri de site-uri livrate cu acest pachet — structura, conținutul și măsurarea sunt alese în funcție de obiectiv.",
+          items: [
+            {
+              title: "Firmă de servicii locale",
+              desc: "Șase pagini: acasă, două pagini de servicii, zona acoperită, despre și contact, cu recenzii și buton fix de apel pe mobil.",
+              result: "Obiectiv: mai multe apeluri din căutările locale.",
+            },
+            {
+              title: "Cabinet de avocatură",
+              desc: "Pagini pe arii de practică, profiluri de avocați, logică de onorarii, secțiune de articole și formular confidențial de contact.",
+              result: "Obiectiv: solicitări calificate și credibilitate profesională.",
+            },
+            {
+              title: "Turism și ospitalitate",
+              desc: "Design condus de galerie, pagini de camere sau meniu, cerere de disponibilitate, hartă și structură bilingvă RO/EN.",
+              result: "Obiectiv: rezervări directe, fără comisioane către platforme.",
+            },
+            {
+              title: "Consultant sau profesie liberală",
+              desc: "O pagină narativă puternică, plus metodă de lucru, studii de caz și formular de programare conectat la calendarul tău.",
+              result: "Obiectiv: mai puține discuții, dar mai bune.",
+            },
+          ],
+        },
+        advice: {
+          title: "După lansare: consiliere, nu tăcere",
+          lead: "Lansarea este începutul. Iată ce recomandăm în primele luni — și la ce te ajutăm gratuit, ca parte din suportul pe viață.",
+          items: [
+            {
+              title: "Primele 7 zile — verifică și indexează",
+              desc: "Trimitem sitemap-ul în Search Console, confirmăm evenimentele de analytics, testăm fiecare formular de pe un telefon real și verificăm ca datele firmei să fie identice peste tot online.",
+            },
+            {
+              title: "Primele 30 de zile — hrănește site-ul",
+              desc: "Adaugă fotografii reale, publică două-trei pagini sau articole utile care răspund la întrebările clienților și strânge primele recenzii autentice.",
+            },
+            {
+              title: "Ritm de conținut",
+              desc: "O actualizare relevantă pe lună valorează mai mult decât un redesign pe an. Ține la zi prețurile, serviciile și echipa; conținutul învechit costă încredere și poziții în Google.",
+            },
+            {
+              title: "Măsoară ce contează",
+              desc: "Urmărește apelurile, click-urile pe WhatsApp și formularele trimise, nu doar vizitele. Configurăm evenimentele ca să vezi exact ce pagini îți aduc lucrări.",
+            },
+            {
+              title: "Protejează activul",
+              desc: "Ține domeniul și conturile pe numele tău, păstrează backup-urile active și reînnoiește la timp. Documentăm totul, ca să nu depinzi niciodată de o singură persoană.",
+            },
+            {
+              title: "Crește cu cap",
+              desc: "Când traficul e stabil, extinde cu blog, sistem de programări, magazin online sau asistent AI. Îți spunem sincer ce merită făcut în etapa următoare și ce nu.",
+            },
+          ],
+        },
+
       },
       en: {
         name: "Premium Presentation Website",
