@@ -22,6 +22,7 @@ export const translations = {
         "Proiectăm experiențe digitale rafinate, performante și optimizate pentru conversie — gândite să transforme fiecare vizită într-o oportunitate reală.",
       ctaPrimary: "Vreau exemplu gratuit",
       ctaSecondary: "Vezi exemple",
+      personalized: "Personalizat cu activitatea ta",
       stats: [
         { v: "100%", l: "mobile-ready" },
         { v: "SEO", l: "optimizat" },
@@ -524,6 +525,7 @@ export const translations = {
         "We design refined, high-performance digital experiences optimized for conversion — built to turn every visit into a real opportunity.",
       ctaPrimary: "I want a free example",
       ctaSecondary: "See examples",
+      personalized: "Tailored to your business",
       stats: [
         { v: "100%", l: "mobile-ready" },
         { v: "SEO", l: "optimized" },
