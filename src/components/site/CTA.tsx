@@ -281,10 +281,31 @@ const CTA = () => {
               <Input id="website" value={data.website} onChange={set("website")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.websitePh} />
             </div>
 
-            <Button type="submit" disabled={loading} className="w-full h-11 rounded-full bg-foreground text-background hover:bg-foreground/90 font-semibold">
-              {loading ? <Loader2 className="size-4 animate-spin" /> : t.cta.submit}
+            {/* honeypot — invizibil pentru utilizatori, completat doar de boți */}
+            <input
+              ref={honeypot}
+              type="text"
+              name="company_url"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              className="hidden"
+􏿿            />
+
+            <Turnstile onToken={setToken} resetKey={resetKey} />
+
+            <Button type="submit" disabled={loading} aria-busy={loading} className="w-full h-11 rounded-full bg-foreground text-background hover:bg-foreground/90 font-semibold">
+              {loading ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" focusable="false" /> {t.cta.sending}
+                </span>
+              ) : (
+                t.cta.submit
+              )}
             </Button>
           </form>
+          )}
+
         </div>
       </div>
     </section>
