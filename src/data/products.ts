@@ -1015,7 +1015,152 @@ export const PRODUCTS: Product[] = [
       },
     },
   },
+  {
+    key: "qa-testing",
+    icon: "bug",
+    path: { ro: "/produse/testare-qa-web-mobile", en: "/en/products/qa-testing-web-mobile" },
+    priceEur: 300,
+    from: true,
+    duration: { ro: "3–10 zile", en: "3–10 days" },
+    accent: {
+      from: "from-lime-400",
+      to: "to-emerald-600",
+      border: "border-lime-300/25",
+      text: "text-lime-400",
+      glow: "bg-lime-400/15",
+      chipBg: "bg-lime-300/10 border-lime-300/30",
+      chipText: "text-lime-700 dark:text-lime-200",
+    },
+    copy: {
+      ro: {
+        name: "Testare QA Web & Mobile",
+        kicker: "Calitate garantată",
+        subtitle: "Funcțional · Regresie · Performanță · Securitate · Mobil",
+        tagline: "Găsim bug-urile înaintea clienților tăi.",
+        metaTitle: "Testare QA Web & Mobile — servicii de testare software de la 300€ | Avyron",
+        metaDescription:
+          "Servicii profesionale de testare QA pentru site-uri, magazine online și aplicații mobile: testare funcțională, regresie, performanță, securitate și compatibilitate. De la 300€.",
+        heroTitle: "Testare QA Web & Mobile",
+        heroLead:
+          "Testăm site-ul, magazinul sau aplicația ta exact cum o face un client real — pe telefoane, tablete și desktop — și îți livrăm un raport clar cu fiecare defect, reprodus pas cu pas.",
+        intro: [
+          "Un bug găsit înainte de lansare costă de zece ori mai puțin decât unul descoperit de client. Testarea QA nu este un lux rezervat companiilor mari: este pasul care oprește comenzile pierdute, formularele care nu trimit nimic și ecranele care se rup pe un telefon vechi.",
+          "Lucrăm pe scenarii reale construite din fluxurile tale de business: înregistrare, autentificare, căutare, adăugare în coș, plată, facturare, notificări, upload de fișiere. Fiecare scenariu este rulat manual pe dispozitive și browsere diferite și, unde are sens, automatizat pentru a putea fi repetat la fiecare actualizare.",
+          "Primești un raport structurat pe severitate, cu pași de reproducere, capturi de ecran sau înregistrări video și recomandarea de remediere. Poți da raportul direct echipei tale de dezvoltare sau ne poți lăsa pe noi să reparăm defectele găsite.",
+        ],
+        highlights: [
+          { icon: "check", title: "Testare funcțională", desc: "Verificăm fiecare flux critic: cont, căutare, coș, checkout, plată, formulare, emailuri și zona de administrare." },
+          { icon: "smartphone", title: "Compatibilitate reală", desc: "Testăm pe telefoane Android și iOS, tablete și desktop, în Chrome, Safari, Firefox și Edge, la rezoluții diferite." },
+          { icon: "flask", title: "Testare automată", desc: "Suite de teste end-to-end (Playwright) care rulează la fiecare actualizare și prind regresiile înainte să ajungă în producție." },
+          { icon: "gauge", title: "Performanță și stres", desc: "Timpi de răspuns, Core Web Vitals, comportament pe internet lent și sub trafic simultan crescut." },
+          { icon: "shield", title: "Securitate de bază", desc: "Validări de input, protecția formularelor, controlul accesului pe roluri, expunerea datelor și configurările de sesiune." },
+          { icon: "accessibility", title: "Accesibilitate", desc: "Navigare din tastatură, contrast, etichete pentru cititoare de ecran și criteriile WCAG relevante pentru produsul tău." },
+        ],
+        deliverables: [
+          "Plan de testare adaptat fluxurilor tale de business",
+          "Scenarii de test documentate (test cases) pe care le păstrezi",
+          "Testare manuală pe dispozitive și browsere reale",
+          "Raport de defecte cu severitate, pași de reproducere și capturi",
+          "Testare de regresie după fiecare rundă de remedieri",
+          "Suită de teste automate end-to-end (opțional, la cerere)",
+          "Verificare performanță, securitate de bază și accesibilitate",
+          "Testare a fluxului de plată și a emailurilor tranzacționale",
+          "Recomandări de prevenire pentru viitoarele lansări",
+          "Ședință de prezentare a rezultatelor (30 de minute)",
+        ],
+        process: [
+          { title: "Analiză și plan", desc: "Stabilim ce testăm, pe ce dispozitive și care sunt fluxurile critice pentru afacerea ta." },
+          { title: "Scenarii de test", desc: "Scriem cazurile de test, inclusiv scenariile negative: date greșite, conexiune pierdută, stoc epuizat." },
+          { title: "Execuție", desc: "Rulăm testele manual pe dispozitive reale și automatizat acolo unde repetabilitatea aduce valoare." },
+          { title: "Raportare", desc: "Documentăm fiecare defect cu severitate, pași de reproducere, capturi și impactul asupra utilizatorului." },
+          { title: "Retestare", desc: "După remedieri retestăm defectele și rulăm o rundă de regresie pentru zonele afectate." },
+        ],
+        faq: [
+          { q: "Cu ce diferă de audit?", a: "Auditul este o evaluare generală, gratuită, a stării produsului. Testarea QA este un proces detaliat, pe scenarii, care caută defecte concrete în fluxurile tale și le documentează pentru remediere." },
+          { q: "Testați și aplicații mobile native?", a: "Da. Testăm aplicații Android și iOS, native sau hibride, inclusiv build-uri de test din TestFlight sau Google Play Internal Testing." },
+          { q: "Ce înseamnă testare automată?", a: "Scriem teste end-to-end care simulează un utilizator real și pot fi rulate oricând, automat, la fiecare modificare de cod — astfel prinzi regresiile imediat." },
+          { q: "Reparați și defectele găsite?", a: "Putem. Remedierea se cotează separat, în funcție de complexitate, iar dacă lucrezi cu altă echipă raportul nostru este suficient de detaliat pentru ca ei să intervină direct." },
+          { q: "Cât costă?", a: "De la 300€ pentru un site de prezentare. Pentru magazine online și aplicații complexe cotăm în funcție de numărul de fluxuri și de dispozitivele acoperite." },
+        ],
+        ctaTitle: "Lansezi în curând sau ai deja probleme raportate?",
+        ctaDesc: "Spune-ne ce produs ai și primești un plan de testare și o cotație clară în 24 de ore.",
+        ctaButton: "Vreau testare QA",
+        whatsapp: "Bună! Aș dori o ofertă de testare QA pentru produsul meu web / mobil.",
+      },
+      en: {
+        name: "QA Testing Web & Mobile",
+        kicker: "Guaranteed quality",
+        subtitle: "Functional · Regression · Performance · Security · Mobile",
+        tagline: "We find the bugs before your customers do.",
+        metaTitle: "QA Testing Web & Mobile — software testing services from €300 | Avyron",
+        metaDescription:
+          "Professional QA testing for websites, online stores and mobile apps: functional testing, regression, performance, security and compatibility. From €300.",
+        heroTitle: "QA Testing Web & Mobile",
+        heroLead:
+          "We test your site, store or app exactly the way a real customer would — on phones, tablets and desktop — and deliver a clear report with every defect reproduced step by step.",
+        intro: [
+          "A bug found before launch costs ten times less than one discovered by a customer. QA testing isn't a luxury reserved for large companies: it's the step that stops lost orders, forms that send nothing and screens that break on an older phone.",
+          "We work with real scenarios built from your business flows: sign-up, login, search, add to cart, checkout, invoicing, notifications, file uploads. Every scenario runs manually across devices and browsers and, where it makes sense, is automated so it can be repeated on every release.",
+          "You receive a report structured by severity, with reproduction steps, screenshots or video recordings and a fix recommendation. Hand it to your development team, or let us fix the defects we found.",
+        ],
+        highlights: [
+          { icon: "check", title: "Functional testing", desc: "We verify every critical flow: account, search, cart, checkout, payment, forms, emails and the admin area." },
+          { icon: "smartphone", title: "Real compatibility", desc: "Testing on Android and iOS phones, tablets and desktop, across Chrome, Safari, Firefox and Edge at different resolutions." },
+          { icon: "flask", title: "Automated testing", desc: "End-to-end suites (Playwright) that run on every release and catch regressions before they reach production." },
+          { icon: "gauge", title: "Performance and stress", desc: "Response times, Core Web Vitals, behaviour on slow networks and under increased concurrent traffic." },
+          { icon: "shield", title: "Baseline security", desc: "Input validation, form protection, role-based access control, data exposure and session configuration." },
+          { icon: "accessibility", title: "Accessibility", desc: "Keyboard navigation, contrast, screen reader labels and the WCAG criteria relevant to your product." },
+        ],
+        deliverables: [
+          "A test plan tailored to your business flows",
+          "Documented test cases that stay with you",
+          "Manual testing on real devices and browsers",
+          "Defect report with severity, reproduction steps and screenshots",
+          "Regression testing after each round of fixes",
+          "End-to-end automated test suite (optional, on request)",
+          "Performance, baseline security and accessibility checks",
+          "Payment flow and transactional email verification",
+          "Prevention recommendations for future releases",
+          "A 30-minute results walkthrough session",
+        ],
+        process: [
+          { title: "Analysis and plan", desc: "We agree what to test, on which devices and which flows are critical for your business." },
+          { title: "Test scenarios", desc: "We write the test cases, including negative scenarios: wrong data, lost connection, out-of-stock products." },
+          { title: "Execution", desc: "We run tests manually on real devices and automate wherever repeatability adds value." },
+          { title: "Reporting", desc: "Every defect is documented with severity, reproduction steps, screenshots and user impact." },
+          { title: "Retesting", desc: "After fixes we retest the defects and run a regression round across the affected areas." },
+        ],
+        faq: [
+          { q: "How is this different from the audit?", a: "The audit is a general, free assessment of your product's state. QA testing is a detailed, scenario-driven process that hunts concrete defects in your flows and documents them for fixing." },
+          { q: "Do you test native mobile apps?", a: "Yes. We test Android and iOS apps, native or hybrid, including test builds from TestFlight or Google Play Internal Testing." },
+          { q: "What does automated testing mean?", a: "We write end-to-end tests that simulate a real user and can run automatically on every code change — so regressions surface immediately." },
+          { q: "Do you also fix the defects?", a: "We can. Fixes are quoted separately based on complexity, and if you work with another team our report is detailed enough for them to act on directly." },
+          { q: "How much does it cost?", a: "From €300 for a presentation website. For online stores and complex apps we quote based on the number of flows and the devices covered." },
+        ],
+        ctaTitle: "Launching soon, or already getting bug reports?",
+        ctaDesc: "Tell us what product you have and receive a test plan and a clear quote within 24 hours.",
+        ctaButton: "I want QA testing",
+        whatsapp: "Hi! I'd like a QA testing quote for my web / mobile product.",
+      },
+    },
+  },
 ];
+
+/** Display order: the audit (free entry point) first, then paid products. */
+const ORDER: ProductKey[] = [
+  "audit",
+  "premium-website",
+  "social-identity",
+  "online-store",
+  "apps",
+  "ai-agent",
+  "qa-testing",
+];
+
+export const PRODUCTS: Product[] = ORDER.map(
+  (k) => CATALOG.find((p) => p.key === k)!,
+);
+
 
 export function getProductByPath(pathname: string): Product | undefined {
   return PRODUCTS.find((p) => p.path.ro === pathname || p.path.en === pathname);
