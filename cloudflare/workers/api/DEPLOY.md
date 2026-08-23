@@ -89,3 +89,57 @@ bunx wrangler deploy
 ```
 
 Dacă SMTP nu e configurat sau pică, formularul răspunde `202` iar lead-ul rămâne salvat în KV + R2.
+
+## Anti-spam + sincronizare lead-uri în tabel
+
+### 1. Cloudflare Turnstile (captcha)
+Dashboard → Turnstile → Add site (domeniu `avyron.ro`). Copiază cele două chei:
+
+```bash
+cd cloudflare/workers/api
+bunx wrangler secret put TURNSTILE_SECRET      # secret key
+```
+
+Site key-ul (public) se pune în `.env` din rădăcina proiectului:
+
+```
+VITE_TURNSTILE_SITE_KEY=0x4AAAAAA...
+```
+
+Dacă nu setezi aceste chei, formularul funcționează normal, doar fără captcha.
+
+### 2. Rate limiting
+Automat, pe KV, fără configurare: max 3 solicitări/oră și 10/zi per IP, 3/zi per email.
+Plus un câmp honeypot ascuns (`company_url`) care blochează boții.
+
+### 3. Tabel (Airtable sau Google Sheets)
+
+**Varianta A — Airtable** (tabel cu coloanele: Lead ID, Data, Nume, Business, Telefon, Email, Website, Descriere, Fisiere, Limba, Sursa):
+
+```bash
+bunx wrangler secret put AIRTABLE_API_KEY   # personal access token
+bunx wrangler secret put AIRTABLE_BASE_ID   # appXXXXXXXX
+bunx wrangler secret put AIRTABLE_TABLE     # opțional, default "Leads"
+```
+
+**Varianta B — Google Sheets** prin Apps Script Web App:
+Sheet → Extensions → Apps Script → cod:
+
+```js
+function doPost(e) {
+  const d = JSON.parse(e.postData.contents);
+  SpreadsheetApp.getActiveSheet().appendRow([
+    d.submittedAt, d.leadId, d.name, d.business, d.phone, d.email,
+    d.website, d.description, (d.files || []).join(", "), d.lang, d.source
+  ]);
+  return ContentService.createTextOutput("ok");
+}
+```
+
+Deploy → Web app → Anyone → copiază URL-ul:
+
+```bash
+bunx wrangler secret put LEAD_WEBHOOK_URL
+```
+
+Apoi `bunx wrangler deploy`.
