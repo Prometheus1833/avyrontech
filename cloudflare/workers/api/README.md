@@ -21,7 +21,8 @@ integrările opționale sunt declarate separat în `src/types.ts`.
 
 ## Contracte importante
 
-- auth: PBKDF2-SHA256, JWT scurt, sesiune hash-uită în cookie `HttpOnly`;
+- auth: scrypt, JWT scurt, sesiune hash-uită în cookie `HttpOnly` și verificare
+  PBKDF2 limitată pentru compatibilitate legacy;
 - mutații: validare, autorizare pe rol/proprietar și audit D1;
 - formulare publice: honeypot, Turnstile, limiter edge și ferestre exacte D1;
 - conținut configurabil: KV versionat, JSON limitat la 128 KiB;

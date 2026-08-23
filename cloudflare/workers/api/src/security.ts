@@ -1,6 +1,10 @@
-import { pbkdf2, timingSafeEqual as nodeTimingSafeEqual } from "node:crypto";
+import { pbkdf2Sync, scryptSync, timingSafeEqual as nodeTimingSafeEqual } from "node:crypto";
 
-const ITERATIONS = 210_000;
+const LEGACY_MAX_ITERATIONS = 100_000;
+const SCRYPT_N = 16_384;
+const SCRYPT_R = 8;
+const SCRYPT_P = 1;
+const SCRYPT_MAX_MEMORY = 64 * 1024 * 1024;
 const encoder = new TextEncoder();
 
 const base64 = (bytes: ArrayBuffer | Uint8Array) => {
@@ -29,28 +33,44 @@ export async function sha256(value: string): Promise<string> {
   return base64Url(await crypto.subtle.digest("SHA-256", encoder.encode(value)));
 }
 
-const derivePassword = (password: string, salt: Uint8Array, iterations: number, length = 32) =>
-  new Promise<Uint8Array>((resolve, reject) => {
-    pbkdf2(password, salt, iterations, length, "sha256", (error, derivedKey) => {
-      if (error) reject(error);
-      else resolve(derivedKey);
-    });
-  });
-
 export async function hashPassword(password: string): Promise<string> {
   const salt = crypto.getRandomValues(new Uint8Array(16));
-  const hash = await derivePassword(password, salt, ITERATIONS);
-  return `${ITERATIONS}$${base64(salt)}$${base64(hash)}`;
+  const hash = scryptSync(password, salt, 32, {
+    N: SCRYPT_N,
+    r: SCRYPT_R,
+    p: SCRYPT_P,
+    maxmem: SCRYPT_MAX_MEMORY,
+  });
+  return `scrypt$${SCRYPT_N}$${SCRYPT_R}$${SCRYPT_P}$${base64(salt)}$${base64(hash)}`;
 }
 
 export async function verifyPassword(password: string, stored: string): Promise<boolean> {
+  const parts = stored.split("$");
+  if (parts[0] === "scrypt") {
+    const [, nValue, rValue, pValue, saltValue, expectedValue] = parts;
+    const N = Number(nValue);
+    const r = Number(rValue);
+    const p = Number(pValue);
+    if (N !== SCRYPT_N || r !== SCRYPT_R || p !== SCRYPT_P || !saltValue || !expectedValue) return false;
+    try {
+      const salt = decodeBase64(saltValue);
+      const expected = decodeBase64(expectedValue);
+      const actual = scryptSync(password, salt, expected.byteLength, { N, r, p, maxmem: SCRYPT_MAX_MEMORY });
+      return actual.byteLength === expected.byteLength && nodeTimingSafeEqual(actual, expected);
+    } catch {
+      return false;
+    }
+  }
+
+  // Compatibility with the original numeric PBKDF2 format. Cloudflare's
+  // runtime rejects counts above 100k, so such accounts must use reset/import.
   const [iterationsValue, saltValue, expectedValue] = stored.split("$");
   const iterations = Number(iterationsValue);
-  if (!Number.isSafeInteger(iterations) || iterations < 100_000 || !saltValue || !expectedValue) return false;
+  if (!Number.isSafeInteger(iterations) || iterations < 100_000 || iterations > LEGACY_MAX_ITERATIONS || !saltValue || !expectedValue) return false;
   try {
     const salt = decodeBase64(saltValue);
     const expected = decodeBase64(expectedValue);
-    const actual = await derivePassword(password, salt, iterations, expected.byteLength);
+    const actual = pbkdf2Sync(password, salt, iterations, expected.byteLength, "sha256");
     return actual.byteLength === expected.byteLength && nodeTimingSafeEqual(actual, expected);
   } catch {
     return false;
