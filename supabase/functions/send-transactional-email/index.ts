@@ -54,15 +54,22 @@ Deno.serve(async (req) => {
   let recipientEmail: string
   let idempotencyKey: string
   let messageId: string
-  let templateData: Record<string, any> = {}
+  let templateData: Record<string, unknown> = {}
   try {
-    const body = await req.json()
-    templateName = body.templateName || body.template_name
-    recipientEmail = body.recipientEmail || body.recipient_email
+    const rawBody: unknown = await req.json()
+    if (!rawBody || typeof rawBody !== 'object' || Array.isArray(rawBody)) {
+      throw new TypeError('Request body must be an object')
+    }
+    const body = rawBody as Record<string, unknown>
+    const templateNameValue = body.templateName || body.template_name
+    const recipientEmailValue = body.recipientEmail || body.recipient_email
+    const idempotencyKeyValue = body.idempotencyKey || body.idempotency_key
+    templateName = typeof templateNameValue === 'string' ? templateNameValue : ''
+    recipientEmail = typeof recipientEmailValue === 'string' ? recipientEmailValue : ''
     messageId = crypto.randomUUID()
-    idempotencyKey = body.idempotencyKey || body.idempotency_key || messageId
-    if (body.templateData && typeof body.templateData === 'object') {
-      templateData = body.templateData
+    idempotencyKey = typeof idempotencyKeyValue === 'string' ? idempotencyKeyValue : messageId
+    if (body.templateData && typeof body.templateData === 'object' && !Array.isArray(body.templateData)) {
+      templateData = body.templateData as Record<string, unknown>
     }
   } catch {
     return new Response(

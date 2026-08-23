@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -141,21 +141,25 @@ export const StaffChatTab = () => {
     setReactions(prev => {
       const m = { ...(prev[msgId] || {}) };
       const arr = new Set(m[emoji] || []);
-      arr.has(user.id) ? arr.delete(user.id) : arr.add(user.id);
+      if (arr.has(user.id)) arr.delete(user.id);
+      else arr.add(user.id);
       m[emoji] = [...arr];
       if (!m[emoji].length) delete m[emoji];
       return { ...prev, [msgId]: m };
     });
   };
 
-  const nameOf = (id: string) => profiles[id]?.pseudonym || profiles[id]?.display_name || "Staff";
+  const nameOf = useCallback(
+    (id: string) => profiles[id]?.pseudonym || profiles[id]?.display_name || "Staff",
+    [profiles],
+  );
   const initialsOf = (id: string) => nameOf(id).slice(0, 2).toUpperCase();
 
   const filteredMessages = useMemo(() => {
     if (!search.trim()) return messages;
     const q = search.toLowerCase();
     return messages.filter(m => m.content.toLowerCase().includes(q) || nameOf(m.author_id).toLowerCase().includes(q));
-  }, [messages, search, profiles]);
+  }, [messages, search, nameOf]);
 
   // Group by day
   const grouped = useMemo(() => {
@@ -172,7 +176,7 @@ export const StaffChatTab = () => {
       lastAuthor = m.author_id; lastTime = d.getTime();
     });
     return out;
-  }, [filteredMessages, profiles]);
+  }, [filteredMessages]);
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -286,7 +290,7 @@ export const StaffChatTab = () => {
           {/* Top bar */}
           <div className="h-14 border-b border-border/70 flex items-center px-4 gap-3">
             {target.type === "channel" ? (
-              <span className="text-xl leading-none">{(target as any).emoji ?? STAFF_CHANNELS.find(c => c.id === target.id)?.emoji ?? "💬"}</span>
+              <span className="text-xl leading-none">{target.emoji ?? STAFF_CHANNELS.find(c => c.id === target.id)?.emoji ?? "💬"}</span>
             ) : target.type === "group" ? (
               <UsersRound className="size-5 text-muted-foreground" />
             ) : (
@@ -298,7 +302,7 @@ export const StaffChatTab = () => {
                 {target.type === "channel"
                   ? (STAFF_CHANNELS.find(c => c.id === target.id)?.topic ?? "")
                   : target.type === "group"
-                    ? `${(target as any).memberIds?.length ?? 0} membri · conversație de grup`
+                    ? `${target.memberIds.length} membri · conversație de grup`
                     : "Conversație directă"}
               </p>
             </div>
@@ -309,7 +313,7 @@ export const StaffChatTab = () => {
               </div>
               <Tooltip><TooltipTrigger asChild>
                 <Button size="sm" variant="outline" className="h-8 gap-1.5"
-                  onClick={() => { setInviteOpen(true); setNewGroupMembers(target.type === "group" ? (target as any).memberIds : []); setNewGroupName(target.type === "group" ? target.name : ""); }}>
+                  onClick={() => { setInviteOpen(true); setNewGroupMembers(target.type === "group" ? target.memberIds : []); setNewGroupName(target.type === "group" ? target.name : ""); }}>
                   <UserPlus className="size-3.5" /> <span className="hidden sm:inline text-xs">Invită</span>
                 </Button>
               </TooltipTrigger><TooltipContent>Invită colegi într-o conversație de grup</TooltipContent></Tooltip>
@@ -501,11 +505,11 @@ export const StaffChatTab = () => {
                     <div className="flex items-center gap-2 mb-2">
                       <UsersRound className="size-3.5 text-primary" />
                       <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-                        În acest grup — {(target as any).memberIds?.length ?? 0}
+                        În acest grup — {target.memberIds.length}
                       </span>
                     </div>
                     <Button size="sm" variant="outline" className="w-full gap-1.5 h-8"
-                      onClick={() => { setInviteOpen(true); setNewGroupMembers((target as any).memberIds); setNewGroupName(target.name); }}>
+                      onClick={() => { setInviteOpen(true); setNewGroupMembers(target.memberIds); setNewGroupName(target.name); }}>
                       <UserPlus className="size-3.5" /> <span className="text-xs">Invită alți colegi</span>
                     </Button>
                   </div>

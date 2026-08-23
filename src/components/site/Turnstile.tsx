@@ -68,7 +68,6 @@ const Turnstile = ({ onToken, resetKey = 0, action }: Props) => {
         widgetId.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [action, onToken]);
 
   useEffect(() => {

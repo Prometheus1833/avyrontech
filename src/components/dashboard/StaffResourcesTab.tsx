@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { FileText, Briefcase, Megaphone, Code2, Users2, Wallet, Wand2, Workflow } from "lucide-react";
+import { FileText, Briefcase, Megaphone, Code2, Users2, Wallet, Wand2, Workflow, type LucideIcon } from "lucide-react";
 
 type Doc = {
   id: string;
   num: string;
   title: string;
   subtitle: string;
-  icon: any;
+  icon: LucideIcon;
   accent: string;
   body: React.ReactNode;
 };

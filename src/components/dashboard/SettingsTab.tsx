@@ -247,7 +247,9 @@ export const SettingsTab = () => {
       <Card>
         <CardHeader className="py-3"><CardTitle className="flex items-center gap-2 text-sm"><Globe className="size-4" />Limbă</CardTitle></CardHeader>
         <CardContent className="pt-0 pb-3">
-          <Select value={lang} onValueChange={(v: any) => setLang(v)}>
+          <Select value={lang} onValueChange={(value) => {
+            if (value === "ro" || value === "en") setLang(value);
+          }}>
             <SelectTrigger className="h-8 text-sm max-w-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="ro">Română</SelectItem>
@@ -303,7 +305,7 @@ export const SettingsTab = () => {
                       <Input className="h-9" maxLength={60} value={pmDraft.holder || ""} onChange={(e) => setPmDraft({ ...pmDraft, holder: e.target.value })} placeholder="Nume Prenume" /></div>
                     <div className="space-y-1"><Label className="text-xs">Număr card</Label>
                       <Input className="h-9" inputMode="numeric" maxLength={23}
-                        value={(pmDraft as any).card_number || ""}
+                        value={pmDraft.card_number || ""}
                         onChange={(e) => {
                           const v = e.target.value.replace(/\D/g, "").slice(0, 19);
                           setPmDraft({ ...pmDraft, card_number: v.replace(/(.{4})/g, "$1 ").trim() });

@@ -25,7 +25,9 @@ import "./index.css";
           root.classList.add(e.matches ? "dark" : "light");
         });
     }
-  } catch {}
+  } catch {
+    // Theme initialization is best effort when storage is unavailable.
+  }
 })();
 
 createRoot(document.getElementById("root")!).render(<App />);

@@ -8,6 +8,7 @@
 
 import { Hono } from "hono";
 import type { Env } from "./types";
+import { fetchMetadataHtml, validateMetadataUrl } from "./metadata";
 
 type Role = "user" | "staff" | "admin";
 type Vars = { userId: string; roles: Role[] };
@@ -222,21 +223,25 @@ projectsRouter.get("/api/projects/:id/logs", async (c) => {
 
 // ─── METADATA extract (favicon + OG) ─────────────────────────────────────
 projectsRouter.get("/api/metadata/extract", async (c) => {
-  const url = c.req.query("url");
-  if (!url || !/^https?:\/\//.test(url)) return c.json({ error: { code: "invalid_url" } }, 400);
+  const requestedUrl = c.req.query("url");
+  let target: URL;
   try {
-    const res = await fetch(url, { headers: { "user-agent": "AvyronBot/1.0 (+https://avyron.ro)" }, signal: AbortSignal.timeout(8000) });
-    const html = (await res.text()).slice(0, 200_000); // cap la 200KB
+    target = validateMetadataUrl(requestedUrl || "");
+  } catch {
+    return c.json({ error: { code: "invalid_url" } }, 400);
+  }
+  try {
+    const { html, url } = await fetchMetadataHtml(target);
     const pick = (re: RegExp) => html.match(re)?.[1]?.trim();
-    const origin = new URL(url).origin;
-    const abs = (u?: string) => (u ? new URL(u, origin).toString() : undefined);
+    const abs = (value?: string) => (value ? new URL(value, url).toString() : undefined);
     const title = pick(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) ?? pick(/<title[^>]*>([^<]+)<\/title>/i);
     const description = pick(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i) ?? pick(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i);
     const image = abs(pick(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i));
     const iconRel = pick(/<link[^>]+rel=["'](?:icon|shortcut icon|apple-touch-icon)["'][^>]+href=["']([^"']+)["']/i);
-    const favicon = abs(iconRel) ?? `${origin}/favicon.ico`;
-    return c.json({ url, title, description, image, favicon });
+    const favicon = abs(iconRel) ?? `${url.origin}/favicon.ico`;
+    return c.json({ url: url.toString(), title, description, image, favicon });
   } catch (e) {
-    return c.json({ error: { code: "fetch_failed", message: String((e as Error).message) } }, 502);
+    console.warn(JSON.stringify({ event: "metadata_fetch_failed", url: target.origin, error: String((e as Error).message) }));
+    return c.json({ error: { code: "fetch_failed", message: "Nu am putut prelua metadata în siguranță" } }, 502);
   }
 });

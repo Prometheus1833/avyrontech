@@ -37,7 +37,7 @@ interface NewsPost {
 interface Comment {
   id: string;
   post_id: string;
-  author_id: string;
+  author_id?: string;
   author_name: string | null;
   content: string;
   created_at: string;
@@ -264,7 +264,11 @@ const Blog = () => {
       setLoading(false);
     };
     load();
-    try { setLikes(JSON.parse(localStorage.getItem("avyron_news_likes") || "{}")); } catch {}
+    try {
+      setLikes(JSON.parse(localStorage.getItem("avyron_news_likes") || "{}"));
+    } catch {
+      // Ignore malformed legacy preferences and keep the empty default.
+    }
   }, []);
 
   // Real article route → active card and full article dialog.
@@ -286,7 +290,7 @@ const Blog = () => {
     const check = async () => {
       if (!user) return setIsStaff(false);
       const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
-      setIsStaff(!!data?.some((r: any) => r.role === "staff" || r.role === "admin"));
+      setIsStaff(!!data?.some((role) => role.role === "staff" || role.role === "admin"));
     };
     check();
   }, [user]);
@@ -310,27 +314,43 @@ const Blog = () => {
     return () => obs.disconnect();
   }, [posts]);
 
+  const activePostId = fullPost?.id;
+  const activeUserId = user?.id;
+
   // load comments for fullPost
   useEffect(() => {
-    if (!fullPost) return;
+    if (!activePostId) return;
     const load = async () => {
       // Public read uses the security-invoker view that omits author_id (anon-safe).
       // Authenticated users can still read the full table for moderation actions.
-      const source = user ? "news_comments" : "news_comments_public";
-      const fields = user ? "id,post_id,author_id,author_name,content,created_at" : "id,post_id,author_name,content,created_at";
-      const { data } = await (supabase as any)
-        .from(source).select(fields).eq("post_id", fullPost.id)
+      if (activeUserId) {
+        const { data } = await supabase
+          .from("news_comments")
+          .select("id,post_id,author_id,author_name,content,created_at")
+          .eq("post_id", activePostId)
+          .order("created_at", { ascending: false });
+        setComments(data ?? []);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("news_comments_public")
+        .select("id,post_id,author_name,content,created_at")
+        .eq("post_id", activePostId)
         .order("created_at", { ascending: false });
-      setComments((data || []) as Comment[]);
+      setComments((data ?? []).flatMap((comment): Comment[] => {
+        if (!comment.id || !comment.post_id || !comment.content || !comment.created_at) return [];
+        return [{ ...comment }];
+      }));
     };
     load();
-    if (!user) return; // Realtime requires authenticated reads on news_comments
+    if (!activeUserId) return; // Realtime requires authenticated reads on news_comments
     const ch = supabase
-      .channel(`comments-${fullPost.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "news_comments", filter: `post_id=eq.${fullPost.id}` }, () => load())
+      .channel(`comments-${activePostId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "news_comments", filter: `post_id=eq.${activePostId}` }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [fullPost?.id, user?.id]);
+  }, [activePostId, activeUserId]);
 
   const slugify = (s: string) =>
     s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -384,8 +404,11 @@ const Blog = () => {
 
   const copyAndOpen = async (post: NewsPost, target: "instagram" | "tiktok") => {
     const links = buildShareLinks(post);
-    try { await navigator.clipboard.writeText(`${post.title}\n${links.url}`); }
-    catch {}
+    try {
+      await navigator.clipboard.writeText(`${post.title}\n${links.url}`);
+    } catch {
+      // Continue to the target app even if clipboard permission is denied.
+    }
     toast.success(`Link copiat — lipește-l în ${target === "instagram" ? "Instagram" : "TikTok"} (story, postare, mesaj)`);
     window.open(links[target], "_blank", "noopener,noreferrer");
   };
@@ -395,7 +418,9 @@ const Blog = () => {
     const data = { title: post.title, text: post.excerpt || post.title, url: links.url };
     if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
       try { await navigator.share(data); return; }
-      catch (e: any) { if (e?.name === "AbortError") return; }
+      catch (error: unknown) {
+        if (error instanceof Error && error.name === "AbortError") return;
+      }
     }
     // Fallback: open the in-dialog share panel
     setFullPost(post); setOpenFull(true);

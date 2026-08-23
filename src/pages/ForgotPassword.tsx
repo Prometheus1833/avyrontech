@@ -41,8 +41,8 @@ const ForgotPassword = () => {
       await cfAuth.forgot(data.email);
       setSent(true);
       toast.success(t.auth.resetSent);
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Solicitarea nu a putut fi trimisă");
     } finally {
       setSubmitting(false);
     }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
@@ -48,7 +48,7 @@ export function TicketsTab({ staffMode = false }: { staffMode?: boolean }) {
 
   const [form, setForm] = useState({ subject: "", description: "", priority: "medium" as Ticket["priority"] });
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     const q = supabase.from("tickets").select("id,subject,description,status,priority,created_at").order("created_at", { ascending: false });
@@ -56,9 +56,9 @@ export function TicketsTab({ staffMode = false }: { staffMode?: boolean }) {
     const { data } = await q;
     setTickets((data as Ticket[]) ?? []);
     setLoading(false);
-  };
+  }, [staffMode, user]);
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [user, staffMode]);
+  useEffect(() => { void load(); }, [load]);
 
   const submit = async () => {
     if (!user || !form.subject.trim()) return;
@@ -170,16 +170,16 @@ function TicketThread({ ticket, staffMode, onChanged }: { ticket: Ticket; staffM
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const { data } = await supabase
       .from("ticket_messages")
       .select("id,ticket_id,author_id,content,is_staff_reply,created_at")
       .eq("ticket_id", ticket.id)
       .order("created_at", { ascending: true });
     setMessages((data as Message[]) ?? []);
-  };
+  }, [ticket.id]);
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [ticket.id]);
+  useEffect(() => { void load(); }, [load]);
 
   const send = async () => {
     if (!user || !reply.trim()) return;

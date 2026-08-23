@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { internApi, type ProjectMedia } from "@/lib/internApi";
 import { Button } from "@/components/ui/button";
 import { Paperclip, X, Image as ImageIcon, FileText, Loader2 } from "lucide-react";
@@ -22,7 +22,7 @@ export const MediaAttachments = ({
   const [uploading, setUploading] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const { data } = await internApi.listMedia(projectId);
@@ -32,8 +32,8 @@ export const MediaAttachments = ({
     } finally {
       setLoading(false);
     }
-  };
-  useEffect(() => { void load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [projectId, proposalId]);
+  }, [projectId, proposalId]);
+  useEffect(() => { void load(); }, [load]);
 
   const onFiles = async (files: FileList | null) => {
     if (!files?.length) return;

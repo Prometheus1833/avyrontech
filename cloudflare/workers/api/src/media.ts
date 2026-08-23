@@ -44,7 +44,7 @@ mediaRouter.post("/api/projects/:id/media", async (c) => {
   const perm = await canAccessProject(c.env.DB, projectId, c.get("userId"), c.get("roles"));
   if (!perm.write) return c.json({ error: { code: "forbidden" } }, 403);
 
-  const filename = (c.req.query("filename") || "file").replace(/[^\w.\-]/g, "_").slice(0, 120);
+  const filename = (c.req.query("filename") || "file").replace(/[^\w.-]/g, "_").slice(0, 120);
   const contentType = c.req.header("content-type") || c.req.query("content_type") || "application/octet-stream";
   if (!ALLOWED_CT.test(contentType)) return c.json({ error: { code: "unsupported_type", message: contentType } }, 415);
 
@@ -78,8 +78,17 @@ mediaRouter.get("/api/projects/:id/media", async (c) => {
   if (!perm.read) return c.json({ error: { code: "forbidden" } }, 403);
   const { results } = await c.env.DB.prepare(
     "SELECT id, project_id, proposal_id, uploader_id, filename, content_type, size_bytes, created_at FROM project_media WHERE project_id = ? ORDER BY created_at DESC"
-  ).bind(projectId).all();
-  return c.json({ data: (results as any[]).map((r) => ({ ...r, url: `/api/media/${r.id}/file` })) });
+  ).bind(projectId).all<{
+    id: string;
+    project_id: string;
+    proposal_id: string | null;
+    uploader_id: string;
+    filename: string;
+    content_type: string;
+    size_bytes: number | null;
+    created_at: number;
+  }>();
+  return c.json({ data: results.map((row) => ({ ...row, url: `/api/media/${row.id}/file` })) });
 });
 
 // ─── SERVE (streaming) ───────────────────────────────────────────────────
