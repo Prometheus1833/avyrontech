@@ -185,14 +185,20 @@ const Blog = () => {
 
   // SEO
   useEffect(() => {
-    const baseTitle = "Blog Avyron — Tehnologie, Web Design, SEO & Securitate";
-    const baseDesc = "Articole despre IT, web design, SEO și securitate online de la echipa Avyron.";
+    const SITE = "https://avyron.ro";
+    const isEn = window.location.pathname.startsWith("/en/");
+    const baseTitle = isEn
+      ? "Avyron Blog — Technology, Web Design, SEO & Security"
+      : "Blog Avyron — Tehnologie, Web Design, SEO & Securitate";
+    const baseDesc = isEn
+      ? "Articles on IT, web design, SEO and online security from the Avyron team."
+      : "Articole despre IT, web design, SEO și securitate online de la echipa Avyron.";
     const t = active ? `${active.title} · Avyron Insights` : baseTitle;
     const d = active?.excerpt || baseDesc;
-    const isEn = window.location.pathname.startsWith("/en/");
     const basePath = isEn ? "/en/blog" : "/blog";
-    const url = `${window.location.origin}${basePath}${active ? `#${active.slug}` : ""}`;
-    const image = active?.cover_image_url || `${window.location.origin}/og-default.jpg`;
+    // Canonical stays on the list URL — hash fragments are not separate pages.
+    const url = `${SITE}${basePath}`;
+    const image = active?.cover_image_url || `${SITE}/og/home.jpg`;
     document.title = t;
     const set = (sel: string, attr: string, val: string, mk?: () => HTMLElement) => {
       let el = document.querySelector(sel) as HTMLElement | null;
@@ -204,9 +210,9 @@ const Blog = () => {
     // hreflang alternates
     document.head.querySelectorAll('link[rel="alternate"][hreflang]').forEach((el) => el.remove());
     const alts: Array<[string, string]> = [
-      ["ro", `${window.location.origin}/blog${active ? `#${active.slug}` : ""}`],
-      ["en", `${window.location.origin}/en/blog${active ? `#${active.slug}` : ""}`],
-      ["x-default", `${window.location.origin}/blog${active ? `#${active.slug}` : ""}`],
+      ["ro", `${SITE}/blog`],
+      ["en", `${SITE}/en/blog`],
+      ["x-default", `${SITE}/blog`],
     ];
     alts.forEach(([code, href]) => {
       const link = document.createElement("link");
@@ -215,7 +221,7 @@ const Blog = () => {
       link.setAttribute("href", href);
       document.head.appendChild(link);
     });
-    [["og:title", t], ["og:description", d], ["og:type", active ? "article" : "website"], ["og:url", url], ["og:image", image], ["og:site_name", "Avyron"],
+    [["og:title", t], ["og:description", d], ["og:type", active ? "article" : "website"], ["og:url", url], ["og:image", image], ["og:site_name", "Avyron"], ["og:locale", isEn ? "en_US" : "ro_RO"],
      ["twitter:card", "summary_large_image"], ["twitter:title", t], ["twitter:description", d], ["twitter:image", image]
     ].forEach(([k, v]) => {
       const sel = k.startsWith("twitter") ? `meta[name="${k}"]` : `meta[property="${k}"]`;
@@ -228,13 +234,15 @@ const Blog = () => {
         headline: active.title, description: active.excerpt,
         image: active.cover_image_url ? [active.cover_image_url] : undefined,
         datePublished: active.published_at, dateModified: active.published_at,
-        author: { "@type": "Organization", name: "Avyron", url: "https://www.avyron.ro" },
-        publisher: { "@type": "Organization", name: "Avyron", logo: { "@type": "ImageObject", url: `${window.location.origin}/avyron-logo.jpg` } },
-        mainEntityOfPage: url, keywords: active.tags?.join(", ")
+        inLanguage: isEn ? "en" : "ro-RO",
+        author: { "@type": "Organization", name: "Avyron", url: SITE },
+        publisher: { "@type": "Organization", "@id": `${SITE}/#organization`, name: "Avyron", logo: { "@type": "ImageObject", url: `${SITE}/avyron-logo.jpg` } },
+        mainEntityOfPage: `${url}#${active.slug}`, keywords: active.tags?.join(", ")
       };
       const s = document.createElement("script"); s.type = "application/ld+json"; s.id = "news-jsonld"; s.text = JSON.stringify(ld); document.head.appendChild(s);
     }
   }, [active]);
+
 
   // load posts
   useEffect(() => {
