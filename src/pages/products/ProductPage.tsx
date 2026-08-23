@@ -275,6 +275,91 @@ const ProductPage = () => {
           </div>
         </section>
 
+        {/* Audiences */}
+        {c.audiences && (
+          <section className="mt-14">
+            <Reveal>
+              <h2 className="font-display text-2xl md:text-3xl font-extrabold">{c.audiences.title}</h2>
+              <p className="mt-3 max-w-2xl text-sm md:text-base text-foreground/70 leading-relaxed">
+                {c.audiences.lead}
+              </p>
+            </Reveal>
+            <div className="mt-7 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {c.audiences.items.map((it, i) => {
+                const Icon = ICONS[it.icon];
+                return (
+                  <Reveal key={it.title} delay={i * 50} as="article">
+                    <div className="group h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-foreground/25 hover:bg-foreground/[0.06]">
+                      <div className={`inline-grid place-items-center size-9 rounded-lg border ${a.chipBg} ${a.chipText} transition-transform duration-300 group-hover:scale-110`}>
+                        <Icon className="size-4" aria-hidden />
+                      </div>
+                      <h3 className="mt-3 font-display font-bold text-sm">{it.title}</h3>
+                      <p className="mt-2 text-sm text-foreground/70 leading-relaxed">{it.desc}</p>
+                    </div>
+                  </Reveal>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Technology */}
+        {c.tech && (
+          <section className="mt-14">
+            <Reveal>
+              <h2 className="font-display text-2xl md:text-3xl font-extrabold">{c.tech.title}</h2>
+              <p className="mt-3 max-w-2xl text-sm md:text-base text-foreground/70 leading-relaxed">
+                {c.tech.lead}
+              </p>
+            </Reveal>
+            <div className="mt-7 grid sm:grid-cols-2 gap-4">
+              {c.tech.groups.map((g, i) => (
+                <Reveal key={g.name} delay={i * 60}>
+                  <div className="h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur">
+                    <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-foreground/45">
+                      {g.name}
+                    </div>
+                    <ul className="mt-3 flex flex-wrap gap-2">
+                      {g.items.map((t) => (
+                        <li
+                          key={t}
+                          className="rounded-full border border-foreground/12 bg-foreground/[0.05] px-3 py-1.5 text-xs text-foreground/80"
+                        >
+                          {t}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Examples */}
+        {c.examples && (
+          <section className="mt-14">
+            <Reveal>
+              <h2 className="font-display text-2xl md:text-3xl font-extrabold">{c.examples.title}</h2>
+              <p className="mt-3 max-w-2xl text-sm md:text-base text-foreground/70 leading-relaxed">
+                {c.examples.lead}
+              </p>
+            </Reveal>
+            <div className="mt-7 grid sm:grid-cols-2 gap-4">
+              {c.examples.items.map((it, i) => (
+                <Reveal key={it.title} delay={i * 60} as="article">
+                  <div className="h-full rounded-2xl border border-foreground/10 bg-gradient-to-br from-foreground/[0.06] to-transparent p-5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-foreground/25">
+                    <h3 className="font-display font-bold text-sm">{it.title}</h3>
+                    <p className="mt-2 text-sm text-foreground/70 leading-relaxed">{it.desc}</p>
+                    <p className={`mt-3 text-xs font-semibold ${a.text}`}>{it.result}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </section>
+        )}
+
+
         {/* Deliverables */}
         <section className="mt-14">
           <Reveal>
