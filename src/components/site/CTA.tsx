@@ -81,7 +81,7 @@ const CTA = () => {
             <div className="absolute -bottom-10 -right-10 size-60 rounded-full bg-white/20 blur-3xl" />
             <div className="relative">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium">
-                <Gift className="size-3.5" /> {t.cta.badge}
+                <Gift className="size-3.5" aria-hidden="true" focusable="false" /> {t.cta.badge}
               </div>
               <h2 className="mt-5 font-display text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">
                 {t.cta.title}
@@ -142,7 +142,7 @@ const CTA = () => {
                 disabled={files.length >= MAX_FILES}
                 className="mt-1.5 w-full h-11 rounded-xl border border-dashed border-border bg-background/40 text-sm text-muted-foreground hover:border-brand hover:text-foreground transition-colors inline-flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                <Paperclip className="size-4" /> {t.cta.filesAdd}
+                <Paperclip className="size-4" aria-hidden="true" focusable="false" /> {t.cta.filesAdd}
               </button>
               <p className="mt-1 text-[11px] text-muted-foreground">{t.cta.filesHint}</p>
               {files.length > 0 && (

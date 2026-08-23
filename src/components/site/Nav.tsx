@@ -48,9 +48,16 @@ const Nav = () => {
                 {l.isRoute && l.to ? (
                   <Link
                     to={l.to}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-foreground/80 hover:text-foreground hover:bg-muted transition-colors"
+                    title={l.label}
+                    className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-foreground/80 transition-all duration-200 ease-out hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   >
-                    {l.icon && <l.icon className="size-4" />}
+                    {l.icon && (
+                      <l.icon
+                        aria-hidden="true"
+                        focusable="false"
+                        className="size-4 text-foreground/60 transition-all duration-200 ease-out group-hover:text-brand group-hover:scale-110 group-focus-visible:text-brand"
+                      />
+                    )}
                     {l.label}
                   </Link>
                 ) : (
@@ -59,7 +66,7 @@ const Nav = () => {
                     className={
                       l.highlight
                         ? "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand text-brand-foreground hover:opacity-90 transition-opacity shadow-elev"
-                        : "text-foreground/70 hover:text-foreground transition-colors"
+                        : "inline-flex items-center px-3 py-1.5 rounded-full text-foreground/70 transition-all duration-200 ease-out hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     }
                   >
                     {l.label}
@@ -70,13 +77,13 @@ const Nav = () => {
           </ul>
           <div className="hidden md:flex items-center gap-2">
             <Button asChild className="rounded-full bg-foreground text-background hover:bg-foreground/90">
-              <a href="#cta">{t.nav.cta}</a>
+              <a href="#cta" title={t.nav.cta} className="transition-transform duration-200 ease-out hover:-translate-y-0.5">{t.nav.cta}</a>
             </Button>
             {!loading && (user ? (
               <UserMenu />
             ) : (
               <Button asChild variant="outline" className="rounded-full">
-                <Link to="/auth"><LogIn className="size-4 mr-1.5" />{t.auth.login}</Link>
+                <Link to="/auth" title={t.auth.login} className="group"><LogIn className="size-4 mr-1.5 transition-transform duration-200 ease-out group-hover:translate-x-0.5" aria-hidden="true" focusable="false" />{t.auth.login}</Link>
               </Button>
             ))}
           </div>
@@ -86,8 +93,14 @@ const Nav = () => {
             {!loading && user ? (
               <UserMenu />
             ) : (
-              <button onClick={() => setOpen(!open)} className="size-10 grid place-items-center rounded-full hover:bg-muted" aria-label={t.nav.menu}>
-                {open ? <X className="size-5" /> : <Menu className="size-5" />}
+              <button
+                onClick={() => setOpen(!open)}
+                className="size-11 grid place-items-center rounded-full transition-all duration-200 ease-out hover:bg-muted active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                aria-label={open ? `${t.nav.menu} — close` : t.nav.menu}
+                aria-expanded={open}
+                title={t.nav.menu}
+              >
+                {open ? <X className="size-5" aria-hidden="true" focusable="false" /> : <Menu className="size-5" aria-hidden="true" focusable="false" />}
               </button>
             )}
             {!loading && !user && open === false && (
@@ -99,7 +112,7 @@ const Nav = () => {
           <div className="md:hidden glass shadow-soft rounded-3xl mt-2 p-4 space-y-2">
             <Button asChild className="w-full rounded-full bg-brand text-brand-foreground hover:opacity-90">
               <Link to="/auth" onClick={() => setOpen(false)}>
-                <LogIn className="size-4 mr-1.5" />
+                <LogIn className="size-4 mr-1.5" aria-hidden="true" focusable="false" />
                 {t.auth.loginCta}
               </Link>
             </Button>
@@ -109,7 +122,7 @@ const Nav = () => {
                   key={l.to}
                   to={l.to}
                   onClick={() => setOpen(false)}
-                  className="block px-3 py-2 rounded-xl text-sm font-medium hover:bg-muted"
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
                 >
                   {l.label}
                 </Link>

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, Plus, Trash2, Send, Package, Globe, Sparkles } from "lucide-react";
+import { ShoppingCart, Plus, Trash2, Send, Package, Globe, Repeat, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -110,7 +110,7 @@ export function CartTab() {
   const totalEstimate = items.reduce((s, i) => s + (i.price_estimate ?? 0), 0);
 
   const typeIcon = (t: CartType) =>
-    t === "package" ? <Package className="size-4" /> : t === "website" ? <Globe className="size-4" /> : <Sparkles className="size-4" />;
+    t === "package" ? <Package className="size-4" aria-hidden="true" /> : t === "website" ? <Globe className="size-4" aria-hidden="true" /> : t === "subscription" ? <Repeat className="size-4" aria-hidden="true" /> : <Wrench className="size-4" aria-hidden="true" />;
 
   return (
     <div className="space-y-4">

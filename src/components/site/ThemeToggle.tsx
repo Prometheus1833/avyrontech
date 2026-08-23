@@ -41,11 +41,11 @@ const ThemeToggle = ({ className = "" }: { className?: string }) => {
   return (
     <button
       onClick={toggle}
-      aria-label="Toggle theme"
+      aria-label={resolved === "dark" ? "Activează tema luminoasă" : "Activează tema întunecată"}
       title={resolved === "dark" ? "Light" : "Dark"}
-      className={`size-6 grid place-items-center rounded-full bg-muted/70 hover:bg-muted text-foreground transition-colors ${className}`}
+      className={`group size-6 grid place-items-center rounded-full bg-muted/70 text-foreground transition-all duration-200 ease-out hover:bg-muted hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${className}`}
     >
-      {resolved === "dark" ? <Sun className="size-3" /> : <Moon className="size-3" />}
+      {resolved === "dark" ? <Sun className="size-3 transition-transform duration-300 ease-out group-hover:rotate-45" aria-hidden="true" focusable="false" /> : <Moon className="size-3 transition-transform duration-300 ease-out group-hover:-rotate-12" aria-hidden="true" focusable="false" />}
     </button>
   );
 };
