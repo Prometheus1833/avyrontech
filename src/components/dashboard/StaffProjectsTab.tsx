@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Plus, Calendar, FolderKanban, Link as LinkIcon, User, Phone, Mail, Trash2,
-  Plus, ArrowUpRight, X, Hash,
+  ArrowUpRight, X, Hash,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
