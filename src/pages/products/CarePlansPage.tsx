@@ -31,6 +31,23 @@ const CarePlansPage = () => {
   const [currency, setCurrency] = useState<"EUR" | "RON">("EUR");
   const [rate, setRate] = useState(5);
 
+  const faq = ro
+    ? [
+        { q: "Pot renunța oricând la pachet?", a: "Da. Abonamentul este lunar, fără contract pe termen lung. Ne anunți cu 15 zile înainte și oprim reînnoirea, iar tu păstrezi accesul complet la site și la datele tale." },
+        { q: "Mentenanța include și hostingul?", a: "Da, hostingul este inclus în toate pachetele, împreună cu certificatul SSL. La pachetul Plus și peste, domeniul este gratuit în primul an." },
+        { q: "Ce se întâmplă dacă site-ul cade?", a: "Monitorizarea uptime ne alertează automat. Intervenim imediat, restaurăm din backup dacă e nevoie și îți trimitem un scurt raport cu cauza și măsura luată." },
+        { q: "Pot schimba pachetul mai târziu?", a: "Oricând, în ambele sensuri. Diferența se calculează proporțional din luna curentă, fără taxe suplimentare." },
+        { q: "Mentenanța se aplică și pentru un site făcut de altcineva?", a: "Da. Facem întâi o evaluare gratuită a produsului actual, îți spunem ce trebuie corectat la preluare și abia apoi pornim abonamentul." },
+      ]
+    : [
+        { q: "Can I cancel at any time?", a: "Yes. The subscription is monthly, with no long-term contract. Let us know 15 days in advance and we stop the renewal — you keep full access to your site and data." },
+        { q: "Does maintenance include hosting?", a: "Yes, hosting is included in every plan together with the SSL certificate. From the Plus plan up, the domain is free for the first year." },
+        { q: "What happens if the site goes down?", a: "Uptime monitoring alerts us automatically. We intervene immediately, restore from backup if needed and send you a short report with the cause and the fix." },
+        { q: "Can I change plans later?", a: "Any time, in both directions. The difference is prorated for the current month, with no extra fees." },
+        { q: "Do you maintain a site built by someone else?", a: "Yes. We first run a free evaluation of your current product, tell you what needs fixing at handover and only then start the subscription." },
+      ];
+
+
   useEffect(() => {
     let cancelled = false;
     import("@/integrations/supabase/client").then(({ supabase }) => {
