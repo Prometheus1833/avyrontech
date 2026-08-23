@@ -77,7 +77,10 @@ export function ProfileTab() {
     if (!user) return;
     setSaving(true);
     try {
-      await cfAuth.updateProfile({ ...form } as any);
+      // staff_role is never sent from the client — only admins can change it server-side.
+      const { staff_role: _ignoredRole, ...safeForm } = form;
+      await cfAuth.updateProfile({ ...safeForm } as any);
+
       await refreshProfile();
       toast.success(t.auth.profile.saved);
     } catch (e: any) {
