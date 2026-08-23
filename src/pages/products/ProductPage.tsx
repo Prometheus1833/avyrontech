@@ -34,6 +34,7 @@ import Breadcrumbs from "@/components/site/Breadcrumbs";
 import Reveal from "@/components/site/Reveal";
 import NotFound from "@/pages/NotFound";
 import logo from "@/assets/avyron-logo.jpg";
+import { trackEvent } from "@/lib/analytics";
 
 const ICONS: Record<IconKey, React.ComponentType<{ className?: string }>> = {
   globe: Globe,
@@ -201,6 +202,7 @@ const ProductPage = () => {
               href={`${WHATSAPP}${encodeURIComponent(c.whatsapp)}`}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "product_hero", product: product.key })}
               className={`group inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${a.from} ${a.to} px-6 py-3 text-sm font-bold text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/40`}
             >
               {c.ctaButton}
@@ -355,6 +357,7 @@ const ProductPage = () => {
                   href={`${WHATSAPP}${encodeURIComponent(c.whatsapp)}`}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "product_cta", product: product.key })}
                   className="inline-flex items-center gap-2 rounded-full bg-[#25D366] hover:bg-[#1ebe5a] px-6 py-3 text-sm font-bold text-white transition-colors"
                 >
                   <MessageCircle className="size-4" aria-hidden />
@@ -362,6 +365,7 @@ const ProductPage = () => {
                 </a>
                 <a
                   href="mailto:contact@avyron.ro"
+                  onClick={() => trackEvent("contact_click", { method: "email", location: "product_cta", product: product.key })}
                   className="inline-flex items-center gap-2 rounded-full bg-foreground text-background hover:bg-foreground/90 px-6 py-3 text-sm font-bold transition-colors"
                 >
                   contact@avyron.ro
