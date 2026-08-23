@@ -74,59 +74,59 @@ const CTA = () => {
     setData((d) => ({ ...d, [k]: e.target.value }));
 
   return (
-    <section id="cta" className="py-14 md:py-20">
+    <section id="cta" className="py-10 md:py-14">
       <div className="mx-auto max-w-5xl px-4">
         <div className="rounded-[2rem] overflow-hidden grid md:grid-cols-2 shadow-elev border border-border/60">
-          <div className="bg-pink p-7 sm:p-10 md:p-12 text-background relative overflow-hidden">
+          <div className="bg-pink p-6 sm:p-8 md:p-10 text-background relative overflow-hidden">
             <div className="absolute -bottom-10 -right-10 size-60 rounded-full bg-white/20 blur-3xl" />
             <div className="relative">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs font-medium">
                 <Gift className="size-3.5" aria-hidden="true" focusable="false" /> {t.cta.badge}
               </div>
-              <h2 className="mt-5 font-display text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">
+              <h2 className="mt-4 font-display text-2xl sm:text-3xl md:text-3xl font-bold leading-tight">
                 {t.cta.title}
               </h2>
-              <p className="mt-4 text-background/90">{t.cta.desc}</p>
-              <ul className="mt-6 space-y-2 text-sm text-background/90">
+              <p className="mt-3 text-sm text-background/90">{t.cta.desc}</p>
+              <ul className="mt-4 space-y-1.5 text-sm text-background/90">
                 {t.cta.bullets.map((b) => <li key={b}>{b}</li>)}
               </ul>
             </div>
           </div>
-          <form onSubmit={submit} className="bg-card p-6 sm:p-8 md:p-10 space-y-4">
+          <form onSubmit={submit} className="bg-card p-5 sm:p-6 md:p-8 space-y-3">
             <div>
-              <Label htmlFor="name">{t.cta.name}</Label>
-              <Input id="name" value={data.name} onChange={set("name")} className="mt-1.5 h-11 rounded-xl" placeholder={t.cta.namePh} />
+              <Label htmlFor="name" className="text-xs">{t.cta.name}</Label>
+              <Input id="name" value={data.name} onChange={set("name")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.namePh} />
             </div>
             <div>
-              <Label htmlFor="business">{t.cta.business}</Label>
-              <Input id="business" value={data.business} onChange={set("business")} className="mt-1.5 h-11 rounded-xl" placeholder={t.cta.businessPh} />
+              <Label htmlFor="business" className="text-xs">{t.cta.business}</Label>
+              <Input id="business" value={data.business} onChange={set("business")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.businessPh} />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
-                <Label htmlFor="phone">{t.cta.phone}</Label>
-                <Input id="phone" value={data.phone} onChange={set("phone")} className="mt-1.5 h-11 rounded-xl" placeholder={t.cta.phonePh} />
+                <Label htmlFor="phone" className="text-xs">{t.cta.phone}</Label>
+                <Input id="phone" value={data.phone} onChange={set("phone")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.phonePh} />
               </div>
               <div>
-                <Label htmlFor="email">{t.cta.email}</Label>
-                <Input id="email" value={data.email} onChange={set("email")} className="mt-1.5 h-11 rounded-xl" placeholder={t.cta.emailPh} />
+                <Label htmlFor="email" className="text-xs">{t.cta.email}</Label>
+                <Input id="email" value={data.email} onChange={set("email")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.emailPh} />
               </div>
             </div>
 
             <div>
-              <Label htmlFor="description">{t.cta.description}</Label>
+              <Label htmlFor="description" className="text-xs">{t.cta.description}</Label>
               <Textarea
                 id="description"
                 value={data.description}
                 onChange={set("description")}
                 maxLength={2000}
-                rows={3}
-                className="mt-1.5 rounded-xl resize-none"
+                rows={2}
+                className="mt-1 rounded-xl resize-none text-sm"
                 placeholder={t.cta.descriptionPh}
               />
             </div>
 
             <div>
-              <Label>{t.cta.files}</Label>
+              <Label className="text-xs">{t.cta.files}</Label>
               <input
                 ref={fileInput}
                 id="files"
@@ -140,15 +140,15 @@ const CTA = () => {
                 type="button"
                 onClick={() => fileInput.current?.click()}
                 disabled={files.length >= MAX_FILES}
-                className="mt-1.5 w-full h-11 rounded-xl border border-dashed border-border bg-background/40 text-sm text-muted-foreground hover:border-brand hover:text-foreground transition-colors inline-flex items-center justify-center gap-2 disabled:opacity-50"
+                className="mt-1 h-9 rounded-lg border border-dashed border-border bg-background/40 text-xs text-muted-foreground hover:border-brand hover:text-foreground transition-colors inline-flex items-center justify-center gap-1.5 px-3 disabled:opacity-50"
               >
-                <Paperclip className="size-4" aria-hidden="true" focusable="false" /> {t.cta.filesAdd}
+                <Paperclip className="size-3.5" aria-hidden="true" focusable="false" /> {t.cta.filesAdd}
               </button>
               <p className="mt-1 text-[11px] text-muted-foreground">{t.cta.filesHint}</p>
               {files.length > 0 && (
-                <ul className="mt-2 space-y-1.5">
+                <ul className="mt-1.5 space-y-1">
                   {files.map((f, i) => (
-                    <li key={`${f.name}-${i}`} className="flex items-center gap-2 rounded-lg bg-secondary/60 px-2.5 py-1.5 text-xs">
+                    <li key={`${f.name}-${i}`} className="flex items-center gap-2 rounded-lg bg-secondary/60 px-2 py-1 text-xs">
                       <span className="truncate flex-1">{f.name}</span>
                       <span className="text-muted-foreground shrink-0">{(f.size / 1024 / 1024).toFixed(1)}MB</span>
                       <button
@@ -166,14 +166,13 @@ const CTA = () => {
             </div>
 
             <div>
-              <Label htmlFor="website">{t.cta.website}</Label>
-              <Input id="website" value={data.website} onChange={set("website")} className="mt-1.5 h-11 rounded-xl" placeholder={t.cta.websitePh} />
+              <Label htmlFor="website" className="text-xs">{t.cta.website}</Label>
+              <Input id="website" value={data.website} onChange={set("website")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.websitePh} />
             </div>
 
-            <Button type="submit" disabled={loading} className="w-full h-12 rounded-full bg-foreground text-background hover:bg-foreground/90 font-semibold">
+            <Button type="submit" disabled={loading} className="w-full h-11 rounded-full bg-foreground text-background hover:bg-foreground/90 font-semibold">
               {loading ? <Loader2 className="size-4 animate-spin" /> : t.cta.submit}
             </Button>
-            <p className="text-center text-[11px] tracking-wide text-muted-foreground">{t.cta.personalized}</p>
           </form>
         </div>
       </div>
