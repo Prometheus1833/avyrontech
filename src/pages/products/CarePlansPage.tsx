@@ -386,8 +386,8 @@ const CarePlansPage = () => {
           </p>
           <p className="mt-5 max-w-2xl text-base md:text-lg text-foreground/75 leading-relaxed">
             {ro
-              ? "Un site lăsat nesupravegheat se degradează: module învechite, backup-uri lipsă, viteză în scădere și poziții pierdute în Google. Noi ținem produsul tău actualizat, sigur și rapid, lună de lună."
-              : "An unattended site degrades: outdated modules, missing backups, dropping speed and lost Google rankings. We keep your product updated, secure and fast, month after month."}
+              ? "Un site lăsat nesupravegheat se degradează: module învechite, backup-uri lipsă, viteză în scădere și poziții pierdute în Google. Printr-o colaborare lunară simplă, ținem produsul tău actualizat, sigur și rapid — cu un om dedicat din echipă care îți răspunde direct."
+              : "An unattended site degrades: outdated modules, missing backups, dropping speed and lost Google rankings. Through a simple monthly collaboration we keep your product updated, secure and fast — with a dedicated person from the team who answers you directly."}
           </p>
 
           <div className="mt-7 flex flex-wrap items-center gap-3">
