@@ -2,9 +2,10 @@
   "$schema": "../../../node_modules/wrangler/config-schema.json",
   "name": "avyron-email",
   "main": "src/index.ts",
-  "compatibility_date": "2025-02-04",
+  "compatibility_date": "2026-08-23",
+  "compatibility_flags": ["nodejs_compat"],
   "observability": {
-    "enabled": false,
+    "enabled": true,
     "head_sampling_rate": 1,
     "logs": {
       "enabled": true,
@@ -24,5 +25,8 @@
   // dar `send_email` cu destination_address restrânge livrarea unde e necesar.
   "send_email": [
     { "name": "SEND_EMAIL" }
-  ]
+  ],
+  "vars": {
+    "FORWARD_TO": "avyrontech@gmail.com"
+  }
 }

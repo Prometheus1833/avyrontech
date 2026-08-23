@@ -40,3 +40,6 @@ jobs:
 
       - name: Validate standalone site Worker build
         run: npm run build:worker
+
+      - name: Validate API and email Workers
+        run: npm run build:api && npm run build:email

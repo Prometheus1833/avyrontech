@@ -7,8 +7,9 @@
 //         trimitere email prin SMTP (Cloudflare Workers TCP sockets) către LEAD_TO.
 
 import { Hono } from "hono";
-import type { Env } from "./index";
-import { sendMailSmtp, type Attachment } from "./smtp";
+import type { Env } from "./types";
+import type { Attachment } from "./smtp";
+import { deliverMail, logDelivery } from "./mailer";
 import { checkRateLimit, verifyTurnstile, clientIp, hashKey } from "./antispam";
 import { syncLeadToTable } from "./leadSink";
 
@@ -142,7 +143,15 @@ contactRouter.post("/api/contact/demo", async (c) => {
     }</p>
   </div>`;
 
-  // Persistăm lead-ul în KV (backup, 90 zile) chiar dacă SMTP eșuează.
+  // D1 is the source of truth. KV remains a short-lived recovery/cache copy.
+  await c.env.DB.prepare(
+    `INSERT INTO leads (id,source,name,business,phone,email,message,website,language,attachments_json,status,delivery_status,created_at,updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?, 'new','pending',?,?)`,
+  ).bind(
+    leadId, "website:cta-demo", name, business, phone, email.toLowerCase(), description || null,
+    website || null, lang, JSON.stringify(stored), Date.now(), Date.now(),
+  ).run();
+
   try {
     await c.env.KV.put(
       `lead:${leadId}`,
@@ -181,35 +190,73 @@ contactRouter.post("/api/contact/demo", async (c) => {
     files: attachments.map((a) => ({ name: a.filename, size: a.content.byteLength })),
   };
 
-  const host = c.env.SMTP_HOST;
-  const user = c.env.SMTP_USER;
-  const pass = c.env.SMTP_PASS;
-  const from = c.env.SMTP_FROM || user;
-  const to = c.env.LEAD_TO || from;
-
-  if (!host || !user || !pass) {
-    console.error("SMTP not configured — lead saved only in KV/R2", leadId);
-    return c.json({ ok: true, leadId, delivered: false, summary }, 202);
+  const to = c.env.LEAD_TO || c.env.SMTP_FROM;
+  if (!to) {
+    await c.env.DB.prepare("UPDATE leads SET delivery_status='failed',delivery_error=?,updated_at=? WHERE id=?")
+      .bind("LEAD_TO is not configured", Date.now(), leadId).run();
+    return c.json({ error: "Livrarea emailului nu este configurată", leadId, delivered: false, summary }, 503);
   }
 
-  try {
-    await sendMailSmtp(
-      { host, port: c.env.SMTP_PORT ? parseInt(c.env.SMTP_PORT, 10) : 587, user, pass },
-      {
-        from: `Avyron Website <${from}>`,
-        to: to!,
-        replyTo: email,
-        subject: `Cerere exemplu gratuit — ${name} (${business})`,
-        text: lines.join("\n"),
-        html,
-        attachments,
-      },
-    );
-  } catch (e) {
-    console.error("lead smtp send failed", e);
-    return c.json({ ok: true, leadId, delivered: false, summary }, 202);
+  const result = await deliverMail(c.env, {
+    from: c.env.SMTP_FROM ? `Avyron Website <${c.env.SMTP_FROM}>` : undefined,
+    to,
+    replyTo: email,
+    subject: `Cerere exemplu gratuit — ${name} (${business})`,
+    text: lines.join("\n"),
+    html,
+    attachments,
+  });
+  await c.env.DB.prepare("UPDATE leads SET delivery_status=?,delivery_error=?,updated_at=? WHERE id=?")
+    .bind(result.delivered ? "sent" : "failed", result.delivered ? null : result.error, Date.now(), leadId).run();
+  await logDelivery(c.env, { kind: "demo_request", entityId: leadId, recipient: to, result }).catch((error) =>
+    console.error(JSON.stringify({ event: "email_log_failed", leadId, error: String(error) })),
+  );
+  if (!result.delivered) {
+    console.error(JSON.stringify({ event: "lead_smtp_failed", leadId, error: result.error }));
+    return c.json({ error: "Solicitarea a fost salvată, dar notificarea email nu a putut fi livrată", leadId, delivered: false, summary }, 502);
   }
 
-  return c.json({ ok: true, leadId, delivered: true, summary });
+  return c.json({ ok: true, leadId, delivered: true, summary }, 201);
 });
 
+contactRouter.post("/api/contact/example", async (c) => {
+  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const email = clean(body.email, 255).toLowerCase();
+  const phone = clean(body.phone, 30);
+  const sourceSlug = clean(body.source_slug, 120);
+  const sourceCategory = clean(body.source_category, 120);
+  const sourceName = clean(body.source_name, 160);
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || phone.length < 5 || !sourceSlug)
+    return c.json({ error: "Câmpuri invalide" }, 400);
+
+  const ip = clientIp(c.req.raw);
+  const rate = await checkRateLimit(c.env.KV, [
+    { key: `example:ip:${await hashKey(ip)}:h`, limit: 5, windowSec: 3600 },
+    { key: `example:mail:${await hashKey(email)}:d`, limit: 3, windowSec: 86400 },
+  ]);
+  if (!rate.ok) return c.json({ error: "rate_limited", retryAfter: rate.retryAfter }, 429);
+
+  const id = crypto.randomUUID();
+  const timestamp = Date.now();
+  await c.env.DB.prepare(
+    `INSERT INTO example_requests (id,email,phone,source_slug,source_category,source_name,user_agent,status,delivery_status,created_at,updated_at)
+     VALUES (?,?,?,?,?,?,?,'new','pending',?,?)`,
+  ).bind(id, email, phone, sourceSlug, sourceCategory || null, sourceName || null, clean(c.req.header("user-agent"), 500), timestamp, timestamp).run();
+
+  const to = c.env.LEAD_TO || c.env.SMTP_FROM;
+  if (!to) {
+    await c.env.DB.prepare("UPDATE example_requests SET delivery_status='failed',updated_at=? WHERE id=?").bind(Date.now(), id).run();
+    return c.json({ error: "Livrarea emailului nu este configurată", requestId: id }, 503);
+  }
+  const result = await deliverMail(c.env, {
+    to,
+    replyTo: email,
+    subject: `Solicitare exemplu — ${sourceName || sourceSlug}`,
+    text: `Email: ${email}\nTelefon: ${phone}\nSursă: ${sourceName || "—"}\nCategorie: ${sourceCategory || "—"}\nSlug: ${sourceSlug}\nID: ${id}`,
+  });
+  await c.env.DB.prepare("UPDATE example_requests SET delivery_status=?,updated_at=? WHERE id=?")
+    .bind(result.delivered ? "sent" : "failed", Date.now(), id).run();
+  await logDelivery(c.env, { kind: "example_request", entityId: id, recipient: to, result }).catch(() => undefined);
+  if (!result.delivered) return c.json({ error: "Solicitarea a fost salvată, dar emailul nu a fost livrat", requestId: id }, 502);
+  return c.json({ ok: true, requestId: id }, 201);
+});

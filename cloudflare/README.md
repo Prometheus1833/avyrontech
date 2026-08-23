@@ -31,11 +31,11 @@ proiecte client noi care vor rula direct pe Cloudflare.
 
 ## Activare (rezumat)
 
-1. `bunx wrangler d1 create avyron-db`
-2. `bunx wrangler kv namespace create AVYRON_KV`
-3. `bunx wrangler r2 bucket create avyron-files`
+1. `npx wrangler d1 create avyron-db`
+2. `npx wrangler kv namespace create AVYRON_KV`
+3. `npx wrangler r2 bucket create avyron-files`
 4. Decomentează cele trei blocuri din `wrangler.jsonc` și completează ID-urile.
-5. `bunx wrangler d1 migrations apply avyron-db --remote`
+5. `npx wrangler d1 migrations apply avyron-db --remote`
 6. Deploy.
 
 Detalii complete în README-urile din subfoldere.

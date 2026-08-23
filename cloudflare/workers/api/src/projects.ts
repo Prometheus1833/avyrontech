@@ -7,7 +7,7 @@
 //   - user.id === projects.owner_user_id (clientul admin)
 
 import { Hono } from "hono";
-import type { Env } from "./index";
+import type { Env } from "./types";
 
 type Role = "user" | "staff" | "admin";
 type Vars = { userId: string; roles: Role[] };

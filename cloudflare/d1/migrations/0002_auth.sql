@@ -1,5 +1,5 @@
 -- 0002_auth.sql — Authentication tables for Cloudflare Workers auth
--- Aplicare: bunx wrangler d1 migrations apply avyron-db --remote
+-- Aplicare: npx wrangler d1 migrations apply avyron-db --remote
 --
 -- Folosit de cloudflare/workers/api (Hono + JWT).
 -- Parolele sunt hash-uite cu PBKDF2-SHA256 (Web Crypto, 210k iter).

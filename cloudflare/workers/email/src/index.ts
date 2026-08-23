@@ -4,7 +4,7 @@
  * Rol:
  *  - Primește orice email trimis la contact@avyron.ro (sau alte alias-uri
  *    pe avyron.ro setate în Email Routing → Send to Worker).
- *  - Îl forwardează către cutia internă (avyrontech@gmail.com) ca să fie
+ *  - Îl forwardează către cutia internă configurată prin FORWARD_TO ca să fie
  *    citit normal în Gmail.
  *  - Logica de auto-reply / filtrare se poate adăuga aici (env.SEND_EMAIL).
  *
@@ -17,27 +17,24 @@
 
 export interface Env {
   SEND_EMAIL: SendEmail;
+  FORWARD_TO: string;
 }
-
-interface SendEmail {
-  send(message: {
-    from: string;
-    to: string;
-    subject: string;
-    text?: string;
-    html?: string;
-  }): Promise<void>;
-}
-
-const INTERNAL_INBOX = "avyrontech@gmail.com";
 
 export default {
-  async email(message: ForwardableEmailMessage, env: Env, _ctx: ExecutionContext) {
+  async email(message: ForwardableEmailMessage, env: Env) {
+    const destination = env.FORWARD_TO?.trim().toLowerCase();
+    if (!destination || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(destination)) {
+      console.error(JSON.stringify({ event: "email_routing_invalid_destination", recipient: message.to }));
+      message.setReject("Email routing destination is not configured");
+      return;
+    }
     // 1) Forward către cutia internă (păstrează headerele originale)
     try {
-      await message.forward(INTERNAL_INBOX);
+      await message.forward(destination);
+      console.log(JSON.stringify({ event: "email_forwarded", from: message.from, to: message.to, destination, size: message.rawSize }));
     } catch (err) {
-      console.error("forward failed", err);
+      console.error(JSON.stringify({ event: "email_forward_failed", from: message.from, to: message.to, destination, error: String(err) }));
+      throw err;
     }
 
     // 2) Exemplu auto-reply (dezactivat by default).
@@ -50,20 +47,3 @@ export default {
     // });
   },
 };
-
-// Tipuri Cloudflare (minim necesare; @cloudflare/workers-types le oferă complet)
-interface ForwardableEmailMessage {
-  readonly from: string;
-  readonly to: string;
-  readonly headers: Headers;
-  readonly raw: ReadableStream;
-  readonly rawSize: number;
-  forward(rcptTo: string, headers?: Headers): Promise<void>;
-  reply(message: EmailMessage): Promise<void>;
-  setReject(reason: string): void;
-}
-interface EmailMessage {
-  readonly from: string;
-  readonly to: string;
-  readonly raw: ReadableStream | string;
-}

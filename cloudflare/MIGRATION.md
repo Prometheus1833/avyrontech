@@ -1,93 +1,43 @@
-# Migrare Avyron → Cloudflare (deploy guide)
+# Migrare Avyron către Cloudflare
 
-Stack final: **Workers + D1 + KV + R2**, totul în același Worker (`avyrontech`)
-care servește SPA-ul din `dist/client/` și API-ul same-origin sub `/api/*`.
-Fără CORS, fără domenii separate.
+GitHub este sursa de adevăr. Arhitectura separă responsabilitățile pentru a putea
+scala și a evita ca un deploy frontend să modifice API-ul sau emailul:
 
-## Resurse configurate
+- Cloudflare Pages: frontendul Vite și prerenderingul SEO;
+- Worker `avyrontech`: auth, API, D1, KV, R2 și SMTP outbound;
+- Worker `avyron-email`: Email Routing inbound;
+- D1: conturi, profiluri, proiecte, lead-uri și audit;
+- KV: rate limits și cache-uri cu TTL;
+- R2: documente și media.
 
-| Tip      | Nume          | ID / valoare                              |
-|----------|---------------|-------------------------------------------|
-| Worker   | avyrontech    | `avyrontech.avyrontech.workers.dev`       |
-| Account  | —             | `51abbee1bab5f1fc9bfbfd9dcea5f3dc`        |
-| D1       | avyron-db     | `85b6868d-174a-48aa-8891-9366bbcb7e47`    |
-| KV       | AVYRON_KV     | `7c296f2750b943cea4376c12122ed276`        |
-| R2       | avyron-files  | bucket de creat (vezi pas 2)              |
-| R2 S3    | endpoint      | `https://51abbee1bab5f1fc9bfbfd9dcea5f3dc.r2.cloudflarestorage.com` |
+## Stadiu
 
-ID-urile sunt deja completate în `wrangler.jsonc` (root).
+Migrate în Cloudflare:
 
-## Pași de deploy (one-time setup)
+- signup/login/logout/refresh/reset/change-password;
+- profil și avatar R2;
+- roluri, sesiuni hash-uite, audit și import controlat de conturi;
+- proiectele din platforma internă și media aferentă;
+- formularul CTA și solicitările de exemple, persistate în D1 și trimise prin SMTP;
+- lista de conturi și lista solicitărilor de exemple din dashboard;
+- Email Routing inbound.
 
-Rulează din root-ul proiectului, pe mașina ta (eu nu am acces la `wrangler login`).
+Rămân temporar pe Supabase modulele interne care încă folosesc direct
+`supabase.from(...)` (facturi, plăți, abonamente, tickets, chat, announcements și
+unele vizualizări de proiect). Acestea se migrează modul cu modul, după contracte
+API și export de date, fără dublă scriere implicită.
 
-```bash
-# 1. autentificare
-bunx wrangler login
+## Cutover sigur
 
-# 2. creează bucket R2 (D1 + KV există deja)
-bunx wrangler r2 bucket create avyron-files
+1. `npm ci`
+2. `npx tsc --noEmit`
+3. `npm run validate:cloudflare`
+4. `npm test`
+5. backup D1 remote;
+6. aplicare migrații D1 remote;
+7. configurare secrete;
+8. upload de versiune preview API;
+9. smoke test auth/form/email;
+10. promovare separată, numai cu aprobare explicită.
 
-# 3. pune JWT_SECRET (HS256 — 48 bytes random)
-openssl rand -hex 48 | bunx wrangler secret put JWT_SECRET
-
-# 4. aplică migrațiile D1 pe remote
-bunx wrangler d1 migrations apply avyron-db --remote
-
-# 5. build + deploy SPA + Worker împreună
-bun run deploy
-```
-
-După deploy, verifică:
-
-```bash
-curl https://avyrontech.avyrontech.workers.dev/api/health
-# → {"ok":true,"ts":...}
-
-# signup test
-curl -X POST https://avyrontech.avyrontech.workers.dev/api/auth/signup \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"admin@avyron.ro","password":"ParolaTest12","displayName":"Admin"}'
-```
-
-## Promovare la admin
-
-```bash
-bunx wrangler d1 execute avyron-db --remote \
-  --command "INSERT INTO user_roles (user_id, role) VALUES ('<uuid-din-signup>', 'admin');"
-```
-
-## Ce e MIGRAT acum (Cloudflare)
-
-- **Auth complet**: `signup`, `login`, `logout`, `refresh`, `me`, `forgot`, `reset`
-- **Profile**: citire + update + upload avatar (R2)
-- **Roluri**: tabel `user_roles` separat (anti privilege-escalation)
-- **Sesiuni**: cookie `sid` httpOnly 30d + JWT access 15min cu refresh
-- **Frontend**: `useAuth`, `Auth.tsx`, `ForgotPassword.tsx`, `ResetPassword.tsx`,
-  `ProfileTab.tsx` — toate pe `cfAuth` (no more `supabase.auth`)
-
-## Ce NU e încă migrat (rămân pe Supabase)
-
-Toate modulele staff care fac `supabase.from(...)` direct:
-- `StaffClientsTab`, `StaffProjectsTab`, `StaffInvoicesTab`, `StaffPaymentsTab`
-- `StaffMaintenanceTab`, `StaffChatTab`, `StaffAnnouncementsTab`, `StaffResourcesTab`
-- `StaffDomainStatsTab`, `StaffExampleRequestsTab`, `StaffFinanceTab`, `StaffMediaTab`
-- `SubscriptionsTab`, `InvoicesTab`, `TicketsTab`, `StatsTab`, `CartTab`, `Blog`
-
-Aceste tab-uri vor returna date goale după cutover (nu mai există sesiune Supabase).
-Cu directiva ta — *"nu sunt mulți utilizatori"* — strategia recomandată e:
-
-1. Lasă-le să afișeze gol până migrăm modul cu modul
-2. Pentru fiecare modul: adaug endpoint în `src/worker/index.ts` (model deja
-   pus în `cloudflare/d1/migrations/0001_init.sql`) + rescriu componenta să
-   folosească `cfAuth.request("/api/...")`
-
-Pot să continui cu **Clients → Projects → Invoices → Payments** într-o pasă
-următoare, dacă vrei.
-
-## Email pentru reset password
-
-Worker-ul de auth doar inserează tokenul în D1 și loghează linkul de reset.
-Pentru trimiterea efectivă pe email folosește `cloudflare/workers/email/`
-(Workers Email Routing — `send_email` binding) sau Resend ca fallback. Spune-mi
-care preferi și conectez handler-ul `/api/auth/forgot` la trimitere reală.
+Comenzile și secretele necesare sunt documentate în `workers/api/DEPLOY.md`.

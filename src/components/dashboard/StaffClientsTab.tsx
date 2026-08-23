@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { cfAuth } from "@/lib/cfAuth";
+import { apiUrl } from "@/lib/apiBase";
 import { useLang } from "@/i18n/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,10 @@ type Profile = {
   phone: string | null;
   entity_type: string | null;
   company_name: string | null;
+  email: string;
+  roles: string | null;
+  disabled_at: number | null;
+  must_change_password: 0 | 1;
 };
 
 export function StaffClientsTab() {
@@ -23,10 +28,10 @@ export function StaffClientsTab() {
   const [q, setQ] = useState("");
 
   useEffect(() => {
-    supabase.from("profiles").select("*").order("display_name").then(({ data }) => {
-      setItems((data as Profile[]) ?? []);
-      setLoading(false);
-    });
+    cfAuth.request<{ data: Profile[] }>("/api/admin/users")
+      .then(({ data }) => setItems(data))
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
   }, []);
 
   const filtered = useMemo(() => {
@@ -34,7 +39,8 @@ export function StaffClientsTab() {
     if (!k) return items;
     return items.filter((p) =>
       (p.display_name ?? "").toLowerCase().includes(k) ||
-      (p.company_name ?? "").toLowerCase().includes(k)
+      (p.company_name ?? "").toLowerCase().includes(k) ||
+      p.email.toLowerCase().includes(k)
     );
   }, [q, items]);
 
@@ -62,13 +68,13 @@ export function StaffClientsTab() {
               return (
                 <div key={p.id} className="flex items-center gap-3 p-4 hover:bg-muted/30">
                   <Avatar className="size-10">
-                    <AvatarImage src={p.avatar_url ?? undefined} />
+                    <AvatarImage src={p.avatar_url ? apiUrl(p.avatar_url) : undefined} />
                     <AvatarFallback>{initials}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{p.display_name ?? "—"}</div>
+                    <div className="font-medium truncate">{p.display_name ?? p.email}</div>
                     <div className="text-xs text-muted-foreground truncate">
-                      {p.company_name ? `${p.company_name} • ` : ""}{p.entity_type ?? "individual"}
+                      {p.company_name ? `${p.company_name} • ` : ""}{p.email} • {p.roles || "user"}
                     </div>
                   </div>
                   {p.phone && <div className="text-xs text-muted-foreground hidden sm:block">{p.phone}</div>}

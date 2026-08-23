@@ -11,6 +11,7 @@ export type CfUser = {
   display_name: string | null;
   avatar_url: string | null;
   email_verified: 0 | 1;
+  must_change_password: 0 | 1;
   created_at: number;
 };
 
@@ -142,15 +143,23 @@ class CfAuth {
   }
 
   async me(): Promise<{ user: CfUser; profile: CfProfile; roles: Role[] } | null> {
-    try { return await this.request("/api/auth/me"); } catch { return null; }
+    try {
+      const result = await this.request<{ user: CfUser; profile: CfProfile; roles: Role[] }>("/api/auth/me");
+      if (result.user.avatar_url?.startsWith("/")) result.user.avatar_url = apiUrl(result.user.avatar_url);
+      if (result.profile.avatar_url?.startsWith("/")) result.profile.avatar_url = apiUrl(result.profile.avatar_url);
+      return result;
+    } catch {
+      return null;
+    }
   }
 
   async forgot(email: string) {
-    await fetch(apiUrl("/api/auth/forgot"), {
+    const res = await fetch(apiUrl("/api/auth/forgot"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ email }),
     });
+    if (!res.ok) throw await this.errorFrom(res);
   }
 
   async reset(token: string, password: string) {
@@ -172,13 +181,20 @@ class CfAuth {
     return j.profile;
   }
 
+  async changePassword(currentPassword: string, newPassword: string) {
+    return this.request<{ ok: true }>("/api/auth/change-password", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  }
+
   async uploadAvatar(file: File): Promise<string> {
     const j = await this.request<{ avatar_url: string }>("/api/profile/avatar", {
       method: "POST",
       headers: { "content-type": file.type || "image/jpeg" },
       body: file,
     });
-    return j.avatar_url;
+    return apiUrl(j.avatar_url);
   }
 }
 

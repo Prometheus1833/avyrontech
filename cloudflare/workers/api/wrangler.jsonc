@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "avyrontech",
   "main": "src/index.ts",
-  "compatibility_date": "2025-06-01",
+  "compatibility_date": "2026-08-23",
   "compatibility_flags": ["nodejs_compat"],
   "observability": {
     "enabled": true,
@@ -34,9 +34,16 @@
     { "binding": "MEDIA", "bucket_name": "avyron-media" }
   ],
 
-  // Secrete (setate prin `wrangler secret put`):
-  //   JWT_SECRET, SEED_TOKEN
+  // Secrete: JWT_SECRET, SEED_TOKEN, SMTP_PASS, TURNSTILE_SECRET.
+  // Cloudflare Email Sending SMTP: host smtp.mx.cloudflare.net, port 465,
+  // username literal api_token, password = API token with Email Sending Edit.
   "vars": {
-    "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://avyrontech.lovable.app,https://id-preview--3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovable.app,https://3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovableproject.com,http://localhost:8080"
+    "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://avyrontech.lovable.app,https://id-preview--3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovable.app,https://3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovableproject.com,http://localhost:8080",
+    "APP_URL": "https://avyron.ro",
+    "SMTP_HOST": "smtp.mx.cloudflare.net",
+    "SMTP_PORT": "465",
+    "SMTP_USER": "api_token",
+    "SMTP_FROM": "contact@avyron.ro",
+    "LEAD_TO": "avyrontech@gmail.com"
   }
 }

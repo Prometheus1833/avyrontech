@@ -1,5 +1,5 @@
 -- 0004_intern_projects.sql — Platformă internă: proiecte + propuneri + linkuri + logs + media
--- Aplicare: bunx wrangler d1 migrations apply avyron-db --remote
+-- Aplicare: npx wrangler d1 migrations apply avyron-db --remote
 --
 -- Extinde tabelul `projects` existent (0001_init.sql) și adaugă structurile
 -- necesare paginii /intern/projects/:slug (staff + client admin al proiectului).

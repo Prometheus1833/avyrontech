@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { cfAuth } from "@/lib/cfAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,16 +15,17 @@ type Row = {
   source_category: string | null;
   source_name: string | null;
   user_agent: string | null;
-  message: string | null;
-  created_at: string;
+  status: string;
+  delivery_status: string;
+  created_at: number;
 };
 
-const timeAgo = (iso: string) => {
-  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+const timeAgo = (timestamp: number) => {
+  const s = Math.floor((Date.now() - timestamp) / 1000);
   if (s < 60) return `acum ${s}s`;
   if (s < 3600) return `acum ${Math.floor(s / 60)} min`;
   if (s < 86400) return `acum ${Math.floor(s / 3600)} h`;
-  return new Date(iso).toLocaleString("ro-RO");
+  return new Date(timestamp).toLocaleString("ro-RO");
 };
 
 const waLink = (phone: string, name?: string | null) => {
@@ -49,36 +50,22 @@ export const StaffExampleRequestsTab = () => {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
 
-  const load = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("example_requests")
-      .select("id, email, phone, source_slug, source_category, source_name, user_agent, message, created_at")
-      .order("created_at", { ascending: false })
-      .limit(500);
-    if (error) toast.error("Eroare la încărcare");
-    setRows((data ?? []) as Row[]);
-    setLoading(false);
+  const load = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    try {
+      const response = await cfAuth.request<{ data: Row[] }>("/api/example-requests");
+      setRows(response.data);
+    } catch {
+      if (showLoading) toast.error("Eroare la încărcare");
+    } finally {
+      if (showLoading) setLoading(false);
+    }
   };
 
   useEffect(() => {
-    load();
-    const channel = supabase
-      .channel("example_requests_staff")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "example_requests" },
-        (payload) => {
-          setRows((prev) => [payload.new as Row, ...prev]);
-          toast.info("Solicitare nouă de exemplu", {
-            description: `${(payload.new as Row).email} · ${(payload.new as Row).source_name ?? "—"}`,
-          });
-        }
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    void load();
+    const interval = window.setInterval(() => void load(false), 60_000);
+    return () => window.clearInterval(interval);
   }, []);
 
   const filtered = useMemo(() => {
@@ -94,7 +81,7 @@ export const StaffExampleRequestsTab = () => {
   const today = useMemo(() => {
     const start = new Date();
     start.setHours(0, 0, 0, 0);
-    return rows.filter((r) => new Date(r.created_at) >= start).length;
+    return rows.filter((r) => r.created_at >= start.getTime()).length;
   }, [rows]);
 
   return (
@@ -174,9 +161,10 @@ export const StaffExampleRequestsTab = () => {
                           <Copy className="size-3 opacity-50" />
                         </button>
                       </div>
-                      {r.message && (
-                        <p className="mt-2 text-sm text-muted-foreground line-clamp-3">{r.message}</p>
-                      )}
+                      <div className="mt-2 flex gap-2">
+                        <Badge variant={r.delivery_status === "sent" ? "secondary" : "destructive"}>Email: {r.delivery_status}</Badge>
+                        <Badge variant="outline">{r.status}</Badge>
+                      </div>
                     </div>
                     <div className="flex flex-wrap gap-2 shrink-0">
                       <Button asChild size="sm" variant="outline" className="h-8">

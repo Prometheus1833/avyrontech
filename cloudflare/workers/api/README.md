@@ -19,21 +19,21 @@ este comutat pe acest API).
 cd cloudflare/workers/api
 
 # 1. autentificare (deschide browserul; o singură dată per mașină)
-bunx wrangler login
+npx wrangler login
 
 # 2. resurse Cloudflare (o singură dată)
-bunx wrangler d1 create avyron-db          # → copiază database_id în wrangler.jsonc
-bunx wrangler kv namespace create AVYRON_KV # → copiază id în wrangler.jsonc
-bunx wrangler r2 bucket create avyron-files
+npx wrangler d1 create avyron-db          # → copiază database_id în wrangler.jsonc
+npx wrangler kv namespace create AVYRON_KV # → copiază id în wrangler.jsonc
+npx wrangler r2 bucket create avyron-files
 
 # 3. completează ID-urile în wrangler.jsonc (3 locuri marcate REPLACE_WITH_REAL_ID)
 
 # 4. JWT secret (random, 64+ chars)
-bunx wrangler secret put JWT_SECRET
+npx wrangler secret put JWT_SECRET
 # lipește output-ul lui:  openssl rand -hex 48
 
 # 5. instalează dependențe + aplică migrațiile D1
-bun install
+npm ci
 bun run migrate:remote
 
 # 6. deploy
@@ -55,7 +55,7 @@ curl -X POST https://avyron-api.<workspace>.workers.dev/api/auth/signup \
 ## Promovarea unui user la admin
 
 ```bash
-bunx wrangler d1 execute avyron-db --remote \
+npx wrangler d1 execute avyron-db --remote \
   --command "INSERT INTO user_roles (user_id, role) VALUES ('<uuid>', 'admin');"
 ```
 

@@ -1,5 +1,5 @@
 -- 0001_init.sql — Schemă D1 inițială (Avyron business data)
--- Aplicare: bunx wrangler d1 migrations apply avyron-db --remote
+-- Aplicare: npx wrangler d1 migrations apply avyron-db --remote
 --
 -- Regulă de aur:
 --   D1 = listări, relații, filtrări, căutări (clients, projects, invoices, …)

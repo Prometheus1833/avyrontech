@@ -5,8 +5,8 @@ R2 stochează **toate** fișierele binare. **Niciodată imagini sau PDF-uri în 
 ## Activare
 
 ```bash
-bunx wrangler r2 bucket create avyron-files
-bunx wrangler r2 bucket create avyron-files-preview   # opțional, pentru dev
+npx wrangler r2 bucket create avyron-files
+npx wrangler r2 bucket create avyron-files-preview   # opțional, pentru dev
 ```
 
 Apoi decomentează blocul `r2_buckets` din `wrangler.jsonc`.

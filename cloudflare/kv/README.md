@@ -10,7 +10,7 @@ KV stochează **doar** valori care sunt: puține, citite des, modificate rar.
 
 ```bash
 # Creează namespace-ul (o singură dată)
-bunx wrangler kv namespace create AVYRON_KV
+npx wrangler kv namespace create AVYRON_KV
 
 # Copiază `id` și `preview_id` în wrangler.jsonc (vezi blocul comentat).
 ```

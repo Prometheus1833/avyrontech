@@ -1,11 +1,12 @@
-// Minimal SMTP client pentru Cloudflare Workers (TCP sockets + STARTTLS).
+// Minimal SMTP client pentru Cloudflare Workers (TCP sockets + implicit TLS).
 // Folosit de /api/contact/demo pentru a trimite formularele pe emailul agenției.
 //
 // Secrete necesare (wrangler secret put ...):
-//   SMTP_HOST, SMTP_PORT (opțional, default 587), SMTP_USER, SMTP_PASS
+//   SMTP_HOST (default smtp.mx.cloudflare.net), SMTP_PORT (default 465),
+//   SMTP_USER (Cloudflare: api_token), SMTP_PASS (Email Sending API token)
 //   SMTP_FROM (opțional, default SMTP_USER), LEAD_TO (opțional, default SMTP_FROM)
 
-import { connect } from "cloudflare:sockets";
+import { connect, type Socket } from "cloudflare:sockets";
 
 export type SmtpConfig = {
   host: string;
@@ -56,19 +57,11 @@ class SmtpSession {
   private writer!: WritableStreamDefaultWriter<Uint8Array>;
   private reader!: ReadableStreamDefaultReader<Uint8Array>;
   private buffer = "";
-  constructor(private socket: any) {}
+  constructor(private socket: Socket) {}
 
   attach() {
     this.writer = this.socket.writable.getWriter();
     this.reader = this.socket.readable.getReader();
-  }
-
-  async upgradeTls() {
-    await this.writer.close();
-    await this.reader.cancel().catch(() => {});
-    this.socket = this.socket.startTls();
-    this.buffer = "";
-    this.attach();
   }
 
   async send(line: string) {
@@ -165,23 +158,21 @@ function buildMime(msg: MailMessage): string {
 
 const addrOnly = (a: string) => {
   const m = a.match(/<([^>]+)>/);
-  return m ? m[1] : a.trim();
+  const value = (m ? m[1] : a.trim()).replace(/[\r\n]/g, "");
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) throw new Error("Invalid SMTP address");
+  return value;
 };
 
 export async function sendMailSmtp(cfg: SmtpConfig, msg: MailMessage): Promise<void> {
-  const port = cfg.port ?? 587;
-  const socket = connect({ hostname: cfg.host, port }, { secureTransport: port === 465 ? "on" : "starttls", allowHalfOpen: false });
+  const port = cfg.port ?? 465;
+  if (port !== 465) throw new Error("Cloudflare Email Sending SMTP requires implicit TLS on port 465");
+  const socket = connect({ hostname: cfg.host, port }, { secureTransport: "on", allowHalfOpen: false });
   const s = new SmtpSession(socket);
   s.attach();
 
   try {
     await s.read(220);
     await s.cmd(`EHLO avyron.ro`);
-    if (port !== 465) {
-      await s.cmd("STARTTLS", 220);
-      await s.upgradeTls();
-      await s.cmd(`EHLO avyron.ro`);
-    }
     await s.cmd("AUTH LOGIN", 334);
     await s.cmd(b64str(cfg.user), 334);
     await s.cmd(b64str(cfg.pass), 235);

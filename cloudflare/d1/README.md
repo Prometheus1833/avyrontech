@@ -10,16 +10,16 @@ filtrări sau căutări: clienți, proiecte, facturi, plăți, lead-uri, tickete
 
 ```bash
 # 1. Creează baza
-bunx wrangler d1 create avyron-db
+npx wrangler d1 create avyron-db
 
 # 2. Pune `database_id` returnat în wrangler.jsonc (decomentează blocul d1_databases)
 
 # 3. Aplică migrațiile
-bunx wrangler d1 migrations apply avyron-db --local    # dev
-bunx wrangler d1 migrations apply avyron-db --remote   # producție
+npx wrangler d1 migrations apply avyron-db --local    # dev
+npx wrangler d1 migrations apply avyron-db --remote   # producție
 
 # 4. Verificare
-bunx wrangler d1 execute avyron-db --remote \
+npx wrangler d1 execute avyron-db --remote \
   --command "SELECT name FROM sqlite_master WHERE type='table';"
 ```
 
@@ -61,5 +61,5 @@ const { results } = await env.DB
 ## Backup
 
 ```bash
-bunx wrangler d1 export avyron-db --remote --output=backup-$(date +%F).sql
+npx wrangler d1 export avyron-db --remote --output=backup-$(date +%F).sql
 ```

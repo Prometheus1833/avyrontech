@@ -15,105 +15,42 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
+import type { AppBindings, Role } from "./types";
+import { hashPassword, now, randomHex, sha256, signJwt, verifyJwt, verifyPassword } from "./security";
+import { deliverMail, logDelivery } from "./mailer";
+import { checkRateLimit, clientIp, hashKey } from "./antispam";
 
-export type Env = {
-  DB: D1Database;
-  KV: KVNamespace;
-  FILES: R2Bucket;   // documente private per proiect
-  MEDIA: R2Bucket;   // active publice (portfolio, logos, og images)
-  JWT_SECRET: string;
-  SEED_TOKEN?: string;
-  ALLOWED_ORIGINS: string;
-  // SMTP (formularul public de lead-uri)
-  SMTP_HOST?: string;
-  SMTP_PORT?: string;
-  SMTP_USER?: string;
-  SMTP_PASS?: string;
-  SMTP_FROM?: string;
-  LEAD_TO?: string;
-  // Anti-spam
-  TURNSTILE_SECRET?: string;
-  // Sincronizare lead-uri în tabel
-  AIRTABLE_API_KEY?: string;
-  AIRTABLE_BASE_ID?: string;
-  AIRTABLE_TABLE?: string;
-  LEAD_WEBHOOK_URL?: string;
-  LEAD_WEBHOOK_SECRET?: string;
+const app = new Hono<AppBindings>();
+
+const allowedOrigin = (env: AppBindings["Bindings"], origin: string | undefined): string => {
+  const configured = (env.ALLOWED_ORIGINS || "").split(",").map((value) => value.trim()).filter(Boolean);
+  if (!origin) return configured[0] || "";
+  if (configured.includes(origin)) return origin;
+  try {
+    const hostname = new URL(origin).hostname;
+    if (hostname === "avyrontech.pages.dev" || hostname.endsWith(".avyrontech.pages.dev")) return origin;
+  } catch {
+    // Invalid Origin is denied below.
+  }
+  return "";
 };
 
-
-type Role = "user" | "staff" | "admin";
-
-const app = new Hono<{ Bindings: Env; Variables: { userId: string; roles: Role[] } }>();
-
 app.use("*", async (c, next) => {
-  const allowed = (c.env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
   return cors({
-    origin: (origin) => {
-      if (!origin) return allowed[0] || "";
-      if (allowed.includes(origin)) return origin;
-      // Permite orice preview/subdomeniu Lovable + avyron.ro
-      try {
-        const h = new URL(origin).hostname;
-        if (h.endsWith(".lovable.app") || h.endsWith(".lovableproject.com") || h === "avyron.ro" || h === "www.avyron.ro") {
-          return origin;
-        }
-      } catch {}
-      return allowed[0] || "";
-    },
+    origin: (origin) => allowedOrigin(c.env, origin),
     credentials: true,
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
   })(c, next);
 });
 
-// ─── Crypto helpers (PBKDF2 + JWT HS256) ─────────────────────────────────
-const ITER = 210_000;
-const enc = new TextEncoder();
-const b64 = (b: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(b)));
-const b64url = (b: ArrayBuffer | Uint8Array) => {
-  const bytes = b instanceof Uint8Array ? b : new Uint8Array(b);
-  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-};
-const fromB64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+app.use("/api/auth/*", async (c, next) => {
+  await next();
+  c.header("cache-control", "no-store");
+  c.header("pragma", "no-cache");
+});
 
-async function hashPassword(password: string): Promise<string> {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const key = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
-  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: ITER, hash: "SHA-256" }, key, 256);
-  return `${ITER}$${b64(salt.buffer)}$${b64(bits)}`;
-}
-async function verifyPassword(password: string, stored: string): Promise<boolean> {
-  const [iterStr, saltB64, hashB64] = stored.split("$");
-  if (!iterStr || !saltB64 || !hashB64) return false;
-  const salt = fromB64(saltB64);
-  const key = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
-  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: parseInt(iterStr), hash: "SHA-256" }, key, 256);
-  return b64(bits) === hashB64;
-}
-async function signJwt(payload: object, secret: string, ttlSec = 900): Promise<string> {
-  const header = { alg: "HS256", typ: "JWT" };
-  const now = Math.floor(Date.now() / 1000);
-  const body = { ...payload, iat: now, exp: now + ttlSec };
-  const data = `${b64url(enc.encode(JSON.stringify(header)))}.${b64url(enc.encode(JSON.stringify(body)))}`;
-  const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(data));
-  return `${data}.${b64url(sig)}`;
-}
-async function verifyJwt<T = any>(token: string, secret: string): Promise<T | null> {
-  const [h, p, s] = token.split(".");
-  if (!h || !p || !s) return null;
-  const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
-  const ok = await crypto.subtle.verify("HMAC", key, fromB64(s.replace(/-/g, "+").replace(/_/g, "/")), enc.encode(`${h}.${p}`));
-  if (!ok) return null;
-  const payload = JSON.parse(new TextDecoder().decode(fromB64(p.replace(/-/g, "+").replace(/_/g, "/"))));
-  if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
-  return payload as T;
-}
-const randomHex = (bytes = 32) =>
-  Array.from(crypto.getRandomValues(new Uint8Array(bytes))).map((b) => b.toString(16).padStart(2, "0")).join("");
 const uuid = () => crypto.randomUUID();
-const now = () => Date.now();
 
 // ─── Auth middleware ────────────────────────────────────────────────────
 async function requireAuth(c: any, next: any) {
@@ -147,6 +84,13 @@ app.post("/api/auth/signup", async (c) => {
   const email = String(body.email || "").trim().toLowerCase();
   const password = String(body.password || "");
   const displayName = body.displayName ? String(body.displayName) : null;
+  const entityType = ["individual", "srl", "pfa", "ii", "other"].includes(String(body.entityType))
+    ? String(body.entityType)
+    : "individual";
+  const signupRate = await checkRateLimit(c.env.KV, [
+    { key: `signup:ip:${await hashKey(clientIp(c.req.raw))}:h`, limit: 5, windowSec: 3600 },
+  ]);
+  if (!signupRate.ok) return c.json({ error: { code: "rate_limited" } }, 429, { "Retry-After": String(signupRate.retryAfter) });
   if (!/^\S+@\S+\.\S+$/.test(email)) return c.json({ error: { code: "invalid_email" } }, 400);
   if (password.length < 8) return c.json({ error: { code: "weak_password", message: "Min 8 chars" } }, 400);
 
@@ -160,6 +104,8 @@ app.post("/api/auth/signup", async (c) => {
     c.env.DB.prepare("INSERT INTO users (id,email,password_hash,display_name,email_verified,created_at,updated_at) VALUES (?,?,?,?,0,?,?)")
       .bind(id, email, hash, displayName, t, t),
     c.env.DB.prepare("INSERT INTO user_roles (user_id, role) VALUES (?, 'user')").bind(id),
+    c.env.DB.prepare("INSERT INTO profiles (id,display_name,entity_type,language,theme,updated_at) VALUES (?,?,?,'ro','system',?)")
+      .bind(id, displayName, entityType, t),
     c.env.DB.prepare("INSERT INTO audit_log (user_id,action,ip,created_at) VALUES (?,?,?,?)")
       .bind(id, "signup", c.req.header("cf-connecting-ip") || null, t),
   ]);
@@ -170,63 +116,111 @@ app.post("/api/auth/login", async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const email = String(body.email || "").trim().toLowerCase();
   const password = String(body.password || "");
-  const row = await c.env.DB.prepare("SELECT id, password_hash FROM users WHERE email = ?").bind(email).first<{ id: string; password_hash: string }>();
-  if (!row || !(await verifyPassword(password, row.password_hash)))
+  const loginRate = await checkRateLimit(c.env.KV, [
+    { key: `login:ip:${await hashKey(clientIp(c.req.raw))}:15m`, limit: 20, windowSec: 900 },
+    { key: `login:mail:${await hashKey(email)}:15m`, limit: 8, windowSec: 900 },
+  ]);
+  if (!loginRate.ok) return c.json({ error: { code: "rate_limited", message: "Prea multe încercări" } }, 429, { "Retry-After": String(loginRate.retryAfter) });
+  const row = await c.env.DB.prepare("SELECT id, password_hash, disabled_at FROM users WHERE email = ?").bind(email).first<{ id: string; password_hash: string; disabled_at: number | null }>();
+  if (!row) {
+    await hashPassword(password); // Keep missing-user timing close to a real password check.
     return c.json({ error: { code: "invalid_credentials" } }, 401);
+  }
+  if (!(await verifyPassword(password, row.password_hash)))
+    return c.json({ error: { code: "invalid_credentials" } }, 401);
+  if (row.disabled_at) return c.json({ error: { code: "account_disabled", message: "Contul este dezactivat" } }, 403);
   const roles = await rolesFor(c.env.DB, row.id);
-  await c.env.DB.prepare("INSERT INTO audit_log (user_id,action,ip,created_at) VALUES (?,?,?,?)")
-    .bind(row.id, "login", c.req.header("cf-connecting-ip") || null, now()).run();
+  const loginAt = now();
+  await c.env.DB.batch([
+    c.env.DB.prepare("UPDATE users SET last_login_at = ? WHERE id = ?").bind(loginAt, row.id),
+    c.env.DB.prepare("INSERT INTO audit_log (user_id,action,ip,created_at) VALUES (?,?,?,?)")
+      .bind(row.id, "login", c.req.header("cf-connecting-ip") || null, loginAt),
+  ]);
   return createSession(c, row.id, roles.length ? roles : ["user"]);
 });
 
 async function createSession(c: any, userId: string, roles: Role[]) {
   const sid = randomHex(32);
+  const sessionId = await sha256(sid);
   const t = now();
   const exp = t + 30 * 24 * 60 * 60 * 1000; // 30d
   await c.env.DB.prepare(
     "INSERT INTO sessions (id,user_id,user_agent,ip,created_at,last_seen_at,expires_at) VALUES (?,?,?,?,?,?,?)"
-  ).bind(sid, userId, c.req.header("user-agent") || null, c.req.header("cf-connecting-ip") || null, t, t, exp).run();
-  setCookie(c, "sid", sid, { httpOnly: true, secure: true, sameSite: "Lax", path: "/", maxAge: 30 * 24 * 60 * 60 });
+  ).bind(sessionId, userId, c.req.header("user-agent") || null, c.req.header("cf-connecting-ip") || null, t, t, exp).run();
+  setCookie(c, "sid", sid, { httpOnly: true, secure: true, sameSite: "None", path: "/", maxAge: 30 * 24 * 60 * 60 });
   const access = await signJwt({ sub: userId, roles }, c.env.JWT_SECRET, 900);
   return c.json({ user: { id: userId, roles }, access_token: access, expires_in: 900 });
 }
 
 app.post("/api/auth/logout", async (c) => {
+  const origin = c.req.header("origin");
+  if (origin && !allowedOrigin(c.env, origin)) return c.json({ error: { code: "forbidden_origin" } }, 403);
   const sid = getCookie(c, "sid");
-  if (sid) await c.env.DB.prepare("DELETE FROM sessions WHERE id = ?").bind(sid).run();
+  if (sid) await c.env.DB.prepare("DELETE FROM sessions WHERE id IN (?, ?)").bind(await sha256(sid), sid).run();
   deleteCookie(c, "sid", { path: "/" });
   return c.json({ ok: true });
 });
 
 app.post("/api/auth/refresh", async (c) => {
+  const origin = c.req.header("origin");
+  if (origin && !allowedOrigin(c.env, origin)) return c.json({ error: { code: "forbidden_origin" } }, 403);
   const sid = getCookie(c, "sid");
   if (!sid) return c.json({ error: { code: "no_session" } }, 401);
-  const row = await c.env.DB.prepare("SELECT user_id, expires_at FROM sessions WHERE id = ?").bind(sid).first<{ user_id: string; expires_at: number }>();
+  const hashedSid = await sha256(sid);
+  const row = await c.env.DB.prepare("SELECT id,user_id,expires_at FROM sessions WHERE id IN (?, ?) LIMIT 1").bind(hashedSid, sid).first<{ id: string; user_id: string; expires_at: number }>();
   if (!row || row.expires_at < now()) {
+    if (row) await c.env.DB.prepare("DELETE FROM sessions WHERE id = ?").bind(row.id).run();
     deleteCookie(c, "sid", { path: "/" });
     return c.json({ error: { code: "expired" } }, 401);
   }
-  await c.env.DB.prepare("UPDATE sessions SET last_seen_at = ? WHERE id = ?").bind(now(), sid).run();
+  await c.env.DB.prepare("UPDATE sessions SET last_seen_at = ? WHERE id = ?").bind(now(), row.id).run();
   const roles = await rolesFor(c.env.DB, row.user_id);
   const access = await signJwt({ sub: row.user_id, roles }, c.env.JWT_SECRET, 900);
   return c.json({ access_token: access, expires_in: 900, user: { id: row.user_id, roles } });
 });
 
 app.get("/api/auth/me", requireAuth, async (c) => {
-  const u = await c.env.DB.prepare("SELECT id,email,display_name,avatar_url,email_verified,created_at FROM users WHERE id = ?")
+  const u = await c.env.DB.prepare("SELECT id,email,display_name,avatar_url,email_verified,must_change_password,created_at FROM users WHERE id = ? AND disabled_at IS NULL")
     .bind(c.get("userId")).first();
-  return c.json({ user: u, roles: c.get("roles") });
+  if (!u) return c.json({ error: { code: "account_unavailable" } }, 401);
+  let profile = await c.env.DB.prepare("SELECT * FROM profiles WHERE id = ?").bind(c.get("userId")).first();
+  if (!profile) {
+    await c.env.DB.prepare("INSERT INTO profiles (id,display_name,entity_type,language,theme,updated_at) VALUES (?,?,'individual','ro','system',?)")
+      .bind(c.get("userId"), (u as { display_name?: string }).display_name || null, now()).run();
+    profile = await c.env.DB.prepare("SELECT * FROM profiles WHERE id = ?").bind(c.get("userId")).first();
+  }
+  return c.json({ user: u, profile, roles: c.get("roles") });
 });
 
 app.post("/api/auth/forgot", async (c) => {
   const { email } = (await c.req.json().catch(() => ({}))) as { email?: string };
-  const u = email ? await c.env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(email.toLowerCase()).first<{ id: string }>() : null;
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const forgotRate = await checkRateLimit(c.env.KV, [
+    { key: `forgot:ip:${await hashKey(clientIp(c.req.raw))}:h`, limit: 8, windowSec: 3600 },
+    { key: `forgot:mail:${await hashKey(normalizedEmail)}:h`, limit: 3, windowSec: 3600 },
+  ]);
+  if (!forgotRate.ok) return c.json({ ok: true });
+  const u = normalizedEmail ? await c.env.DB.prepare("SELECT id FROM users WHERE email = ? AND disabled_at IS NULL").bind(normalizedEmail).first<{ id: string }>() : null;
   if (u) {
     const token = randomHex(32);
+    const tokenHash = await sha256(token);
     const t = now();
-    await c.env.DB.prepare("INSERT INTO password_resets (token,user_id,created_at,expires_at) VALUES (?,?,?,?)")
-      .bind(token, u.id, t, t + 60 * 60 * 1000).run();
-    // TODO: trimite emailul prin worker-ul avyron-email cu link-ul `https://avyron.ro/reset-password?token=${token}`
+    await c.env.DB.batch([
+      c.env.DB.prepare("DELETE FROM password_resets WHERE user_id = ? OR expires_at < ?").bind(u.id, t),
+      c.env.DB.prepare("INSERT INTO password_resets (token,user_id,created_at,expires_at) VALUES (?,?,?,?)")
+        .bind(tokenHash, u.id, t, t + 60 * 60 * 1000),
+    ]);
+    const resetUrl = `${(c.env.APP_URL || "https://avyron.ro").replace(/\/$/, "")}/reset-password?token=${encodeURIComponent(token)}`;
+    const result = await deliverMail(c.env, {
+      to: normalizedEmail,
+      subject: "Resetarea parolei contului Avyron",
+      text: `Ai solicitat resetarea parolei. Linkul este valabil 60 de minute:\n\n${resetUrl}\n\nDacă nu ai solicitat resetarea, ignoră acest mesaj.`,
+      html: `<p>Ai solicitat resetarea parolei contului Avyron.</p><p><a href="${resetUrl}">Setează o parolă nouă</a></p><p>Linkul este valabil 60 de minute. Dacă nu ai solicitat resetarea, ignoră acest mesaj.</p>`,
+    });
+    await logDelivery(c.env, { kind: "password_reset", entityId: u.id, recipient: normalizedEmail, result }).catch((error) =>
+      console.error(JSON.stringify({ event: "email_log_failed", kind: "password_reset", error: String(error) })),
+    );
+    if (!result.delivered) console.error(JSON.stringify({ event: "password_reset_delivery_failed", userId: u.id, error: result.error }));
   }
   return c.json({ ok: true }); // răspuns generic — anti enumeration
 });
@@ -234,21 +228,110 @@ app.post("/api/auth/forgot", async (c) => {
 app.post("/api/auth/reset", async (c) => {
   const { token, password } = (await c.req.json().catch(() => ({}))) as { token?: string; password?: string };
   if (!token || !password || password.length < 8) return c.json({ error: { code: "invalid_input" } }, 400);
-  const row = await c.env.DB.prepare("SELECT user_id, expires_at, used_at FROM password_resets WHERE token = ?").bind(token).first<{ user_id: string; expires_at: number; used_at: number | null }>();
+  const tokenHash = await sha256(token);
+  const row = await c.env.DB.prepare("SELECT token,user_id,expires_at,used_at FROM password_resets WHERE token IN (?, ?) LIMIT 1").bind(tokenHash, token).first<{ token: string; user_id: string; expires_at: number; used_at: number | null }>();
   if (!row || row.used_at || row.expires_at < now()) return c.json({ error: { code: "invalid_token" } }, 400);
   const hash = await hashPassword(password);
   const t = now();
   await c.env.DB.batch([
-    c.env.DB.prepare("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?").bind(hash, t, row.user_id),
-    c.env.DB.prepare("UPDATE password_resets SET used_at = ? WHERE token = ?").bind(t, token),
+    c.env.DB.prepare("UPDATE users SET password_hash = ?, must_change_password = 0, updated_at = ? WHERE id = ?").bind(hash, t, row.user_id),
+    c.env.DB.prepare("UPDATE password_resets SET used_at = ? WHERE token = ?").bind(t, row.token),
     c.env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(row.user_id),
+    c.env.DB.prepare("INSERT INTO audit_log (user_id,action,ip,created_at) VALUES (?,?,?,?)")
+      .bind(row.user_id, "password_reset", c.req.header("cf-connecting-ip") || null, t),
   ]);
   return c.json({ ok: true });
+});
+
+app.post("/api/auth/change-password", requireAuth, async (c) => {
+  const body = await c.req.json().catch(() => ({})) as { currentPassword?: string; newPassword?: string };
+  if (!body.currentPassword || !body.newPassword || body.newPassword.length < 10)
+    return c.json({ error: { code: "invalid_input", message: "Parola nouă trebuie să aibă minimum 10 caractere" } }, 400);
+  const userId = c.get("userId");
+  const row = await c.env.DB.prepare("SELECT password_hash FROM users WHERE id = ? AND disabled_at IS NULL").bind(userId).first<{ password_hash: string }>();
+  if (!row || !(await verifyPassword(body.currentPassword, row.password_hash)))
+    return c.json({ error: { code: "invalid_password", message: "Parola curentă nu este corectă" } }, 401);
+  const timestamp = now();
+  await c.env.DB.batch([
+    c.env.DB.prepare("UPDATE users SET password_hash = ?, must_change_password = 0, updated_at = ? WHERE id = ?")
+      .bind(await hashPassword(body.newPassword), timestamp, userId),
+    c.env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(userId),
+    c.env.DB.prepare("INSERT INTO audit_log (user_id,action,ip,created_at) VALUES (?,?,?,?)")
+      .bind(userId, "password_change", c.req.header("cf-connecting-ip") || null, timestamp),
+  ]);
+  deleteCookie(c, "sid", { path: "/" });
+  return c.json({ ok: true });
+});
+
+const PROFILE_FIELDS = ["display_name", "phone", "address", "entity_type", "company_name", "cui", "social_facebook", "social_instagram", "social_tiktok", "website", "language", "theme", "pseudonym"] as const;
+const profileLimits: Record<(typeof PROFILE_FIELDS)[number], number> = {
+  display_name: 100, phone: 40, address: 500, entity_type: 20, company_name: 160, cui: 40,
+  social_facebook: 300, social_instagram: 300, social_tiktok: 300, website: 300,
+  language: 2, theme: 10, pseudonym: 80,
+};
+
+app.put("/api/profile", requireAuth, async (c) => {
+  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const patch = PROFILE_FIELDS.flatMap((field) => field in body ? [[field, String(body[field] ?? "").trim().slice(0, profileLimits[field])]] as const : []);
+  if (!patch.length) return c.json({ error: { code: "empty_patch" } }, 400);
+  const values = Object.fromEntries(patch);
+  if (values.entity_type && !["individual", "srl", "pfa", "ii", "other"].includes(values.entity_type)) return c.json({ error: { code: "invalid_entity_type" } }, 400);
+  if (values.language && !["ro", "en"].includes(values.language)) return c.json({ error: { code: "invalid_language" } }, 400);
+  if (values.theme && !["light", "dark", "system"].includes(values.theme)) return c.json({ error: { code: "invalid_theme" } }, 400);
+  const userId = c.get("userId");
+  await c.env.DB.prepare(`UPDATE profiles SET ${patch.map(([field]) => `${field} = ?`).join(", ")}, updated_at = ? WHERE id = ?`)
+    .bind(...patch.map(([, value]) => value || null), now(), userId).run();
+  if (values.display_name !== undefined) await c.env.DB.prepare("UPDATE users SET display_name = ?, updated_at = ? WHERE id = ?")
+    .bind(values.display_name || null, now(), userId).run();
+  const profile = await c.env.DB.prepare("SELECT * FROM profiles WHERE id = ?").bind(userId).first();
+  return c.json({ profile });
+});
+
+app.post("/api/profile/avatar", requireAuth, async (c) => {
+  const type = c.req.header("content-type") || "";
+  const length = Number(c.req.header("content-length") || 0);
+  if (!/^image\/(png|jpe?g|webp|avif)$/i.test(type)) return c.json({ error: { code: "unsupported_type" } }, 415);
+  if (length > 5 * 1024 * 1024) return c.json({ error: { code: "too_large" } }, 413);
+  const bytes = await c.req.arrayBuffer();
+  if (!bytes.byteLength || bytes.byteLength > 5 * 1024 * 1024) return c.json({ error: { code: "too_large" } }, 413);
+  const userId = c.get("userId");
+  const key = `avatars/${userId}`;
+  await c.env.MEDIA.put(key, bytes, { httpMetadata: { contentType: type, cacheControl: "public, max-age=3600" } });
+  const avatarUrl = `/api/profile/avatar/${userId}?v=${now()}`;
+  await c.env.DB.batch([
+    c.env.DB.prepare("UPDATE users SET avatar_url = ?, updated_at = ? WHERE id = ?").bind(avatarUrl, now(), userId),
+    c.env.DB.prepare("UPDATE profiles SET avatar_url = ?, updated_at = ? WHERE id = ?").bind(avatarUrl, now(), userId),
+  ]);
+  return c.json({ avatar_url: avatarUrl });
+});
+
+app.get("/api/profile/avatar/:userId", async (c) => {
+  const object = await c.env.MEDIA.get(`avatars/${c.req.param("userId")}`);
+  if (!object) return c.body(null, 404);
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  headers.set("etag", object.httpEtag);
+  headers.set("cache-control", "public, max-age=3600, stale-while-revalidate=86400");
+  return new Response(object.body, { headers });
 });
 
 // ─── Business CRUD (exemplu: clients) ───────────────────────────────────
 app.get("/api/clients", requireAuth, requireRole("staff", "admin"), async (c) => {
   const { results } = await c.env.DB.prepare("SELECT * FROM clients ORDER BY created_at DESC LIMIT 200").all();
+  return c.json({ data: results });
+});
+
+app.get("/api/admin/users", requireAuth, requireRole("staff", "admin"), async (c) => {
+  const { results } = await c.env.DB.prepare(
+    `SELECT u.id,u.email,u.display_name,u.avatar_url,u.email_verified,u.must_change_password,u.disabled_at,u.last_login_at,u.created_at,
+            p.phone,p.entity_type,p.company_name,p.pseudonym,p.staff_role,
+            GROUP_CONCAT(r.role) AS roles
+       FROM users u
+       LEFT JOIN profiles p ON p.id=u.id
+       LEFT JOIN user_roles r ON r.user_id=u.id
+      GROUP BY u.id
+      ORDER BY COALESCE(p.display_name,u.display_name,u.email) COLLATE NOCASE`,
+  ).all();
   return c.json({ data: results });
 });
 
@@ -260,6 +343,13 @@ app.post("/api/clients", requireAuth, requireRole("staff", "admin"), async (c) =
     "INSERT INTO clients (id,company_name,contact_name,email,phone,status,created_at) VALUES (?,?,?,?,?,?,?)"
   ).bind(id, b.company_name, b.contact_name ?? null, b.email, b.phone ?? null, b.status ?? "active", now()).run();
   return c.json({ id }, 201);
+});
+
+app.get("/api/example-requests", requireAuth, requireRole("staff", "admin"), async (c) => {
+  const { results } = await c.env.DB.prepare(
+    "SELECT id,email,phone,source_slug,source_category,source_name,user_agent,status,delivery_status,created_at FROM example_requests ORDER BY created_at DESC LIMIT 500",
+  ).all();
+  return c.json({ data: results });
 });
 
 // ─── Content (KV) ───────────────────────────────────────────────────────
@@ -293,7 +383,14 @@ app.route("/", projectsRouter);
 app.route("/", mediaRouter);
 // Formularul public (fără auth)
 app.route("/", contactRouter);
-// Seed-ul are propria gardă (X-Seed-Token / bootstrap fără admin) — NU necesită requireAuth.
+// Importul administrativ are propria gardă constant-time X-Seed-Token.
 app.route("/", seedRouter);
+
+app.notFound((c) => c.json({ error: { code: "not_found", message: "Ruta nu există" } }, 404));
+app.onError((error, c) => {
+  const requestId = c.req.header("cf-ray") || crypto.randomUUID();
+  console.error(JSON.stringify({ event: "unhandled_error", requestId, path: c.req.path, method: c.req.method, error: error.message }));
+  return c.json({ error: { code: "internal_error", message: "A apărut o eroare internă", requestId } }, 500);
+});
 
 export default app;

@@ -4,7 +4,7 @@ import { X, Loader2, Check, Mail, Phone, Wand2 } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
+import { apiUrl } from "@/lib/apiBase";
 import { toast } from "sonner";
 
 const schema = z.object({
@@ -47,17 +47,20 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
     }
 
     setSubmitting(true);
-    const { error } = await supabase.from("example_requests").insert({
-      email: parsed.data.email,
-      phone: parsed.data.phone,
-      source_slug: source.slug,
-      source_category: source.category,
-      source_name: source.name,
-      user_agent: navigator.userAgent.slice(0, 500),
-    });
+    const response = await fetch(apiUrl("/api/contact/example"), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        email: parsed.data.email,
+        phone: parsed.data.phone,
+        source_slug: source.slug,
+        source_category: source.category,
+        source_name: source.name,
+      }),
+    }).catch(() => null);
     setSubmitting(false);
 
-    if (error) {
+    if (!response?.ok) {
       toast.error("A apărut o eroare. Te rugăm încearcă din nou.");
       return;
     }
