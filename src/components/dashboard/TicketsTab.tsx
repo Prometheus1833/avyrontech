@@ -51,7 +51,7 @@ export function TicketsTab({ staffMode = false }: { staffMode?: boolean }) {
   const load = async () => {
     if (!user) return;
     setLoading(true);
-    const q = supabase.from("tickets").select("*").order("created_at", { ascending: false });
+    const q = supabase.from("tickets").select("id,subject,description,status,priority,created_at").order("created_at", { ascending: false });
     if (!staffMode) q.eq("user_id", user.id);
     const { data } = await q;
     setTickets((data as Ticket[]) ?? []);
@@ -173,7 +173,7 @@ function TicketThread({ ticket, staffMode, onChanged }: { ticket: Ticket; staffM
   const load = async () => {
     const { data } = await supabase
       .from("ticket_messages")
-      .select("*")
+      .select("id,ticket_id,author_id,content,is_staff_reply,created_at")
       .eq("ticket_id", ticket.id)
       .order("created_at", { ascending: true });
     setMessages((data as Message[]) ?? []);

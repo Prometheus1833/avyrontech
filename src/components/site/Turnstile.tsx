@@ -34,9 +34,9 @@ const loadScript = () => {
   return scriptPromise;
 };
 
-type Props = { onToken: (token: string) => void; resetKey?: number };
+type Props = { onToken: (token: string) => void; resetKey?: number; action: string };
 
-const Turnstile = ({ onToken, resetKey = 0 }: Props) => {
+const Turnstile = ({ onToken, resetKey = 0, action }: Props) => {
   const ref = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | null>(null);
 
@@ -50,6 +50,7 @@ const Turnstile = ({ onToken, resetKey = 0 }: Props) => {
           sitekey: TURNSTILE_SITE_KEY,
           theme: "auto",
           size: "flexible",
+          action,
           callback: (token: string) => onToken(token),
           "expired-callback": () => onToken(""),
           "error-callback": () => onToken(""),
@@ -68,7 +69,7 @@ const Turnstile = ({ onToken, resetKey = 0 }: Props) => {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [action, onToken]);
 
   useEffect(() => {
     if (resetKey && widgetId.current && window.turnstile) {

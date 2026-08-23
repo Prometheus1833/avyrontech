@@ -133,12 +133,12 @@ const CATALOG: Product[] = [
         tagline: "Un site care vinde, nu doar arată bine.",
         metaTitle: "Website Prezentare Premium — site profesional de la 300€ | Avyron",
         metaDescription:
-          "Site de prezentare premium, livrat la cheie în 2–5 zile: design custom, SEO tehnic, panou de administrare, email pe domeniu și suport gratuit pe viață. De la 300€.",
+          "Site de prezentare premium, livrat la cheie într-un termen agreat: design custom, SEO tehnic, panou de administrare, email pe domeniu și suport definit în ofertă. De la 300€.",
         heroTitle: "Website Prezentare Premium",
         heroLead:
-          "Site complet, construit de la zero pe identitatea afacerii tale — rapid, sigur, indexat corect în Google și gata să aducă clienți din prima săptămână.",
+          "Site complet, construit de la zero pe identitatea afacerii tale — rapid, sigur, pregătit tehnic pentru indexare și pentru campanii de atragere a clienților după lansare.",
         intro: [
-          "Un site de prezentare nu înseamnă doar câteva pagini frumoase. Înseamnă structura corectă pentru ceea ce caută clientul, viteză de încărcare sub o secundă, texte care răspund la întrebările reale ale vizitatorului și trasee clare către telefon, WhatsApp sau formular. Exact asta livrăm.",
+          "Un site de prezentare nu înseamnă doar câteva pagini frumoase. Înseamnă structura corectă pentru ceea ce caută clientul, obiective Core Web Vitals măsurate, texte care răspund la întrebările reale ale vizitatorului și trasee clare către telefon, WhatsApp sau formular.",
           "Fiecare proiect pornește de la activitatea ta: ce vinzi, cui, în ce zonă și ce te diferențiază de concurență. Construim arhitectura de pagini în jurul acestor răspunsuri, apoi scriem conținutul, pregătim imaginile, implementăm designul și testăm totul pe mobil, tabletă și desktop înainte de livrare.",
           "La final primești acces complet: panou de administrare, documentație, sesiune live de instruire și suport tehnic gratuit pe toată durata de viață a produsului. Site-ul rămâne al tău, fără dependențe ascunse.",
         ],
@@ -171,7 +171,7 @@ const CATALOG: Product[] = [
           {
             icon: "clock",
             title: "Livrare în 2–5 zile",
-            desc: "Proces scurt, revizii nelimitate până la validare și mediu de test unde vezi site-ul înainte să fie public.",
+            desc: "Proces scurt, runde de revizie stabilite în ofertă și mediu de test unde vezi site-ul înainte să fie public.",
           },
         ],
         deliverables: [
@@ -214,7 +214,7 @@ const CATALOG: Product[] = [
         faq: [
           {
             q: "Cât costă un site de prezentare profesional?",
-            a: "Pachetul Website Prezentare Premium pornește de la 300€ și include design custom, conținut, SEO tehnic, panou de administrare, email pe domeniu și suport gratuit pe viață. Prețul final depinde de numărul de pagini și de funcționalitățile cerute.",
+            a: "Pachetul Website Prezentare Premium pornește de la 300€ și include design custom, conținut, SEO tehnic, panou de administrare și email pe domeniu. Durata suportului și prețul final depind de numărul de pagini, funcționalități și oferta agreată.",
           },
           {
             q: "În cât timp este gata site-ul?",
@@ -242,7 +242,7 @@ const CATALOG: Product[] = [
           { value: "2–5", label: "zile până la lansare" },
           { value: "90+", label: "țintă Lighthouse" },
           { value: "RO/EN", label: "structură bilingvă" },
-          { value: "∞", label: "suport gratuit pe viață" },
+          { value: "SLA", label: "suport definit contractual" },
         ],
         audiences: {
           title: "Identitate online profesională, construită pe contextul tău",
@@ -367,7 +367,7 @@ const CATALOG: Product[] = [
         tagline: "A website that sells, not just looks good.",
         metaTitle: "Premium Presentation Website — professional site from €300 | Avyron",
         metaDescription:
-          "Turnkey premium presentation website delivered in 2–5 days: custom design, technical SEO, admin panel, domain email and free lifetime support. From €300.",
+          "Turnkey premium presentation website delivered on an agreed schedule: custom design, technical SEO, admin panel, domain email and support defined in the proposal. From €300.",
         heroTitle: "Premium Presentation Website",
         heroLead:
           "A complete website built from scratch around your brand — fast, secure, properly indexed in Google and ready to bring clients from week one.",
@@ -405,7 +405,7 @@ const CATALOG: Product[] = [
           {
             icon: "clock",
             title: "Delivered in 2–5 days",
-            desc: "A short process, unlimited revisions until approval and a staging environment where you see the site before it goes public.",
+            desc: "A short process, revision rounds defined in the proposal and a staging environment where you see the site before it goes public.",
           },
         ],
         deliverables: [
@@ -448,7 +448,7 @@ const CATALOG: Product[] = [
         faq: [
           {
             q: "How much does a professional presentation website cost?",
-            a: "The Premium Presentation Website package starts at €300 and includes custom design, content, technical SEO, admin panel, domain email and free lifetime support. The final price depends on the number of pages and requested features.",
+            a: "The Premium Presentation Website package starts at €300 and includes custom design, content, technical SEO, an admin panel and domain email. Support duration and final pricing depend on the agreed scope.",
           },
           {
             q: "How long does it take?",
@@ -476,7 +476,7 @@ const CATALOG: Product[] = [
           { value: "2–5", label: "days to launch" },
           { value: "90+", label: "Lighthouse target" },
           { value: "RO/EN", label: "bilingual ready" },
-          { value: "∞", label: "free lifetime support" },
+          { value: "SLA", label: "contract-defined support" },
         ],
         audiences: {
           title: "A professional online identity, built for your context",

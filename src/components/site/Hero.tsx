@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, ChevronDown, TrendingUp } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 
 const Hero = () => {
   const { t } = useLang();
+  const reduceMotion = useReducedMotion();
   return (
     <section
       id="top"
@@ -12,7 +13,7 @@ const Hero = () => {
     >
       <div className="mx-auto max-w-5xl px-4 sm:px-6 text-center flex flex-col items-center justify-center md:justify-start w-full">
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={reduceMotion ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="flex flex-col items-center"
@@ -66,8 +67,8 @@ const Hero = () => {
         aria-label="Mergi la secțiunea următoare"
       >
         <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+          animate={reduceMotion ? undefined : { y: [0, 8, 0] }}
+          transition={reduceMotion ? undefined : { repeat: Infinity, duration: 2, ease: "easeInOut" }}
         >
           <ChevronDown className="size-6" />
         </motion.div>
@@ -77,4 +78,3 @@ const Hero = () => {
 };
 
 export default Hero;
-

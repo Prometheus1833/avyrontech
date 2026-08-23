@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import Nav from "@/components/site/Nav";
 import Hero from "@/components/site/Hero";
 import { useLocation } from "react-router-dom";
@@ -14,6 +14,22 @@ const Socials = lazy(() => import("@/components/site/Socials"));
 const CTA = lazy(() => import("@/components/site/CTA"));
 const ContactBar = lazy(() => import("@/components/site/ContactBar"));
 const Footer = lazy(() => import("@/components/site/Footer"));
+
+const Deferred = ({ children, minHeight = 240 }: { children: ReactNode; minHeight?: number }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    if (ready || !ref.current) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      setReady(true);
+      observer.disconnect();
+    }, { rootMargin: "500px 0px" });
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [ready]);
+  return <div ref={ref} style={!ready ? { minHeight } : undefined}>{ready ? children : null}</div>;
+};
 
 const Index = () => {
   const { t } = useLang();
@@ -66,17 +82,17 @@ const Index = () => {
       <Nav />
       <Hero />
       <Suspense fallback={<div className="h-8" />}>
-        <Problem />
-        <Examples />
+        <Deferred minHeight={520}><Problem /></Deferred>
+        <Deferred minHeight={720}><Examples /></Deferred>
         <div className="h-8 md:h-16" aria-hidden />
-        <Process />
-        <DomainCheck />
-        <Benefits />
-        <CTA />
-        <FAQ />
-        <Socials />
-        <Footer />
-        <ContactBar />
+        <Deferred minHeight={500}><Process /></Deferred>
+        <Deferred minHeight={360}><DomainCheck /></Deferred>
+        <Deferred minHeight={440}><Benefits /></Deferred>
+        <Deferred minHeight={520}><CTA /></Deferred>
+        <Deferred minHeight={420}><FAQ /></Deferred>
+        <Deferred minHeight={320}><Socials /></Deferred>
+        <Deferred minHeight={260}><Footer /></Deferred>
+        <Deferred minHeight={80}><ContactBar /></Deferred>
       </Suspense>
     </main>
   );

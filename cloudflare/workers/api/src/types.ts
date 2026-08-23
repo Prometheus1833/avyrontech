@@ -16,6 +16,7 @@ export type Env = {
   SMTP_FROM?: string;
   LEAD_TO?: string;
   TURNSTILE_SECRET?: string;
+  TURNSTILE_ALLOWED_HOSTNAMES?: string;
   AIRTABLE_API_KEY?: string;
   AIRTABLE_BASE_ID?: string;
   AIRTABLE_TABLE?: string;

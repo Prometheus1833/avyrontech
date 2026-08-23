@@ -292,7 +292,7 @@ const CTA = () => {
               className="hidden"
 />
 
-            <Turnstile onToken={setToken} resetKey={resetKey} />
+            <Turnstile onToken={setToken} resetKey={resetKey} action="contact-demo" />
 
             <Button type="submit" disabled={loading} aria-busy={loading} className="w-full h-11 rounded-full bg-foreground text-background hover:bg-foreground/90 font-semibold">
               {loading ? (

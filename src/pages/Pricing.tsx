@@ -4,7 +4,10 @@ import { ArrowLeft, ArrowRight, ScanSearch, Gauge, Accessibility, Palette, Check
 import { useLang } from "@/i18n/LanguageContext";
 import { trackEvent } from "@/lib/analytics";
 import logo from "@/assets/avyron-logo.jpg";
-import premiumTech from "@/assets/premium-website-mockup.jpg";
+import premiumTech352Avif from "@/assets/premium-website-mockup-352.avif";
+import premiumTech704Avif from "@/assets/premium-website-mockup-704.avif";
+import premiumTech352Webp from "@/assets/premium-website-mockup-352.webp";
+import premiumTech704Webp from "@/assets/premium-website-mockup-704.webp";
 import LangSwitch from "@/components/site/LangSwitch";
 import ThemeToggle from "@/components/site/ThemeToggle";
 import Breadcrumbs from "@/components/site/Breadcrumbs";
@@ -105,8 +108,8 @@ const Pricing = () => {
     title: ro ? "Website Prezentare Premium" : "Premium Presentation Website",
     range: ro ? "de la 300€" : "from €300",
     desc: ro
-      ? "Site complet, livrat la cheie — gata să producă rezultate din prima zi, cu suport tehnic gratuit pe toată durata de viață a produsului."
-      : "A turnkey website — ready to deliver results from day one, with free technical support for the entire lifetime of the product.",
+      ? "Site complet, livrat la cheie — pregătit pentru obiectivele agreate, cu suport tehnic definit clar în ofertă."
+      : "A turnkey website prepared for the agreed goals, with technical support clearly defined in the proposal.",
     includes: ro
       ? [
           "Design și cod custom, dezvoltate de la zero pe identitatea ta",
@@ -116,7 +119,7 @@ const Pricing = () => {
           "Email pe domeniul tău + panou de administrare complet",
           "Pagină GDPR conformă, backup inițial și certificat SSL",
           "Ghid de administrare + sesiune live de instruire",
-          "Suport gratuit pe viață și revizii nelimitate până la validare",
+          "Suport și runde de revizie definite în oferta proiectului",
         ]
       : [
           "Custom design and code, built from scratch around your identity",
@@ -126,7 +129,7 @@ const Pricing = () => {
           "Email on your own domain + full admin panel",
           "Compliant GDPR page, initial backup and SSL certificate",
           "Admin guide + live walkthrough session",
-          "Free lifetime support and unlimited revisions until approval",
+          "Support period and revision rounds defined in the proposal",
         ],
   };
 
@@ -456,7 +459,11 @@ const Pricing = () => {
                 {ro ? "Produs principal" : "Main product"}
               </div>
               <div className="mt-5 mx-auto w-40 h-40 sm:w-44 sm:h-44 rounded-2xl ring-1 ring-cyan-300/20 overflow-hidden shadow-[0_20px_60px_-20px_rgba(34,211,238,0.45)]">
-                <img src={premiumTech} alt="Website Prezentare Premium — exemplu" width={176} height={176} loading="lazy" className="w-full h-full object-cover" />
+                <picture>
+                  <source type="image/avif" srcSet={`${premiumTech352Avif} 352w, ${premiumTech704Avif} 704w`} sizes="176px" />
+                  <source type="image/webp" srcSet={`${premiumTech352Webp} 352w, ${premiumTech704Webp} 704w`} sizes="176px" />
+                  <img src={premiumTech352Webp} alt="Website Prezentare Premium — exemplu" width={176} height={176} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                </picture>
               </div>
               <h2 className="mt-4 font-display text-2xl sm:text-3xl font-extrabold">{main.title}</h2>
               <div className="mt-3 flex items-baseline justify-center gap-1.5 flex-wrap">

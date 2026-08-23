@@ -5,7 +5,7 @@
 import { describe, it, expect } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { PRERENDER_ROUTES } from "@/seo/publicRoutes";
+import { isNoindexPath, PRERENDER_ROUTES } from "@/seo/publicRoutes";
 
 const root = process.cwd();
 const distDir = existsSync(resolve(root, "dist/client/index.html"))
@@ -44,11 +44,12 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
 
   it("titles and descriptions are unique per route", () => {
     const titles = new Set<string>();
-    for (const route of PRERENDER_ROUTES) {
+    const indexableRoutes = PRERENDER_ROUTES.filter((route) => !isNoindexPath(route));
+    for (const route of indexableRoutes) {
       const t = attr(head(read(route)), /<title>([^<]+)<\/title>/)!;
       titles.add(t);
     }
-    expect(titles.size).toBeGreaterThan(PRERENDER_ROUTES.length * 0.8);
+    expect(titles.size).toBeGreaterThan(indexableRoutes.length * 0.8);
   });
 
   it("RO/EN pairs cross-link with hreflang + x-default", () => {

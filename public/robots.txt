@@ -1,16 +1,9 @@
 User-agent: *
 Allow: /
-Disallow: /auth
-Disallow: /forgot-password
-Disallow: /reset-password
-Disallow: /profil
-Disallow: /intern
-Disallow: /intern/
-Disallow: /unsubscribe
-Disallow: /403
-Disallow: /500
-Disallow: /mentenanta
-Disallow: /offline
 Disallow: /*?q=
+
+# Private, authentication and system routes are protected by the application
+# and return X-Robots-Tag: noindex, nofollow. They remain crawlable so robots
+# can read that HTTP directive.
 
 Sitemap: https://avyron.ro/sitemap.xml

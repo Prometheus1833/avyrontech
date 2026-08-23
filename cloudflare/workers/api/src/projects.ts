@@ -94,15 +94,17 @@ projectsRouter.post("/api/projects", async (c) => {
 // ─── DETALIU (după slug) ──────────────────────────────────────────────────
 projectsRouter.get("/api/projects/:slug", async (c) => {
   const slug = c.req.param("slug");
-  const proj = await c.env.DB.prepare("SELECT * FROM projects WHERE slug = ?").bind(slug).first<any>();
+  const proj = await c.env.DB.prepare(
+    "SELECT id,client_id,name,domain,status,created_at,slug,kind,description,owner_user_id,banner_status,url,favicon_url,og_title,og_description,og_image_url,cover_image_url,price_ron,price_eur,subscription_plan,subscription_status,billing_next,updated_at FROM projects WHERE slug = ?",
+  ).bind(slug).first<Record<string, unknown> & { id: string }>();
   if (!proj) return c.json({ error: { code: "not_found" } }, 404);
   const perm = await canAccessProject(c.env.DB, proj.id, c.get("userId"), c.get("roles"));
   if (!perm.read) return c.json({ error: { code: "forbidden" } }, 403);
 
   const [links, proposals, updates, staff] = await Promise.all([
-    c.env.DB.prepare("SELECT * FROM project_links WHERE project_id = ? ORDER BY updated_at DESC").bind(proj.id).all(),
-    c.env.DB.prepare("SELECT * FROM project_proposals WHERE project_id = ? ORDER BY created_at DESC LIMIT 100").bind(proj.id).all(),
-    c.env.DB.prepare("SELECT * FROM project_updates WHERE project_id = ? ORDER BY created_at DESC LIMIT 20").bind(proj.id).all(),
+    c.env.DB.prepare("SELECT id,project_id,kind,label,url,updated_by,updated_at FROM project_links WHERE project_id = ? ORDER BY updated_at DESC").bind(proj.id).all(),
+    c.env.DB.prepare("SELECT id,project_id,author_id,title,description,status,created_at,updated_at FROM project_proposals WHERE project_id = ? ORDER BY created_at DESC LIMIT 100").bind(proj.id).all(),
+    c.env.DB.prepare("SELECT id,project_id,author_id,proposal_id,title,body,created_at FROM project_updates WHERE project_id = ? ORDER BY created_at DESC LIMIT 20").bind(proj.id).all(),
     c.env.DB.prepare(
       `SELECT ps.user_id, ps.role, u.email, p.display_name, p.avatar_url
        FROM project_staff ps JOIN users u ON u.id = ps.user_id
@@ -119,8 +121,16 @@ projectsRouter.patch("/api/projects/:id", async (c) => {
   if (!perm.write) return c.json({ error: { code: "forbidden" } }, 403);
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   const allowed = ["name", "kind", "description", "banner_status", "url", "favicon_url", "og_title", "og_description", "og_image_url", "cover_image_url", "price_ron", "price_eur", "subscription_plan", "subscription_status", "billing_next", "owner_user_id"];
-  const sets: string[] = [], vals: any[] = [];
-  for (const k of allowed) if (k in b) { sets.push(`${k} = ?`); vals.push(b[k]); }
+  const sets: string[] = [], vals: Array<string | number | null> = [];
+  for (const k of allowed) {
+    if (!(k in b)) continue;
+    const value = b[k];
+    if (value !== null && typeof value !== "string" && typeof value !== "number") {
+      return c.json({ error: { code: "invalid_input", field: k } }, 400);
+    }
+    sets.push(`${k} = ?`);
+    vals.push(value);
+  }
   if (!sets.length) return c.json({ ok: true });
   sets.push("updated_at = ?"); vals.push(now()); vals.push(id);
   await c.env.DB.prepare(`UPDATE projects SET ${sets.join(", ")} WHERE id = ?`).bind(...vals).run();
@@ -152,8 +162,16 @@ projectsRouter.patch("/api/proposals/:id", async (c) => {
   if (!perm.write) return c.json({ error: { code: "forbidden", message: "Doar staff-ul poate schimba starea propunerilor" } }, 403);
   const b = (await c.req.json().catch(() => ({}))) as { status?: string; title?: string; description?: string };
   const allowed = ["status", "title", "description"];
-  const sets: string[] = [], vals: any[] = [];
-  for (const k of allowed) if (k in b) { sets.push(`${k} = ?`); vals.push((b as any)[k]); }
+  const sets: string[] = [], vals: Array<string | null> = [];
+  for (const k of allowed) {
+    if (!(k in b)) continue;
+    const value = b[k as keyof typeof b];
+    if (value !== undefined && value !== null && typeof value !== "string") {
+      return c.json({ error: { code: "invalid_input", field: k } }, 400);
+    }
+    sets.push(`${k} = ?`);
+    vals.push(value ?? null);
+  }
   if (!sets.length) return c.json({ ok: true });
   sets.push("updated_at = ?"); vals.push(now()); vals.push(pid);
   await c.env.DB.prepare(`UPDATE project_proposals SET ${sets.join(", ")} WHERE id = ?`).bind(...vals).run();

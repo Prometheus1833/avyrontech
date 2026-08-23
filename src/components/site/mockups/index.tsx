@@ -1,6 +1,5 @@
 import { Calendar, Phone, MapPin, Star, Download, FileText, Wallet, ScanLine, Sparkles, Clock, Mail, MessageCircle, ChevronRight, Menu, Search, Shield, Award, Utensils, Bed, Wrench, Scale, Building2, Wifi, Coffee, Car, Heart, Gift, Megaphone, ArrowRight, Play, Check, Flame, ShoppingBag, Quote, Camera, Zap, Briefcase, Users, TrendingUp, Globe } from "lucide-react";
 import salonHero from "@/assets/work-salon.jpg";
-import flawless from "@/assets/work-beauty-flawless.jpg";
 import resto from "@/assets/work-restaurant-new.jpg";
 import lawyer from "@/assets/work-lawyer-new.jpg";
 import hotel from "@/assets/work-hotel-new.jpg";

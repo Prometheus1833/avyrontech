@@ -1,11 +1,13 @@
 import { useLang } from "@/i18n/LanguageContext";
 import { Link } from "react-router-dom";
 import { Mail, Phone, MessageCircle, ArrowRight } from "lucide-react";
+import { COOKIE_SETTINGS_EVENT } from "@/components/site/CookieBanner";
 import logo from "@/assets/avyron-logo.webp";
 import planetBg from "@/assets/footer-planet-bg.webp";
+import { COMPANY } from "@/config/company";
 
 const Footer = () => {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   return (
     <footer className="relative overflow-hidden border-t border-white/10 bg-[#0a0612] text-white">
       {/* Planet background */}
@@ -108,7 +110,7 @@ const Footer = () => {
                   })}
                 </div>
                 {legal.length > 0 && (
-                  <div className="mt-1.5 flex justify-center">
+                  <div className="mt-1.5 flex flex-wrap justify-center gap-1.5">
                     {legal.map((n) => (
                       <Link
                         key={n.h}
@@ -118,6 +120,13 @@ const Footer = () => {
                         {n.l}
                       </Link>
                     ))}
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new Event(COOKIE_SETTINGS_EVENT))}
+                      className={`${baseClass} px-3 py-1 text-[10px]`}
+                    >
+                      {lang === "en" ? "Cookie settings" : "Setări cookie"}
+                    </button>
                   </div>
                 )}
               </>
@@ -141,6 +150,7 @@ const Footer = () => {
           </button>
           <div className="text-[10px] text-white/50 flex flex-wrap justify-center gap-x-3 gap-y-0.5">
             <span>{t.footer.copy.replace("{y}", String(new Date().getFullYear()))}</span>
+            <span>{COMPANY.legalName}</span>
             <span>{t.footer.built}</span>
           </div>
         </div>

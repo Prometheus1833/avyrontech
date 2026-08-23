@@ -36,7 +36,7 @@ export function SubscriptionsTab() {
     if (!user) return;
     supabase
       .from("subscriptions")
-      .select("*")
+      .select("id,product_name,description,status,price_cents,currency,billing_cycle,started_at,next_renewal_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .then(({ data }) => {

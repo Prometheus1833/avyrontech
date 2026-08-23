@@ -124,7 +124,9 @@ export const SettingsTab = () => {
     try {
       const raw = localStorage.getItem(PM_KEY);
       if (raw) setMethods(JSON.parse(raw));
-    } catch {}
+    } catch {
+      // Keep the default local-only preferences when storage is unavailable.
+    }
   }, []);
   useEffect(() => { localStorage.setItem(PM_KEY, JSON.stringify(methods)); }, [methods]);
 
@@ -200,6 +202,9 @@ export const SettingsTab = () => {
 
   return (
     <div className="space-y-3">
+      <p className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-muted-foreground">
+        Preferințele de notificare și metadatele mascate de plată sunt salvate doar pe acest dispozitiv; profilul și parola sunt persistate în contul Cloudflare.
+      </p>
       {/* Account */}
       <Card>
         <CardHeader className="py-3">

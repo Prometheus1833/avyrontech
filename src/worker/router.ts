@@ -44,7 +44,7 @@ export function decide(url: URL): Decision {
   // Real files (hashed bundles, images, robots.txt, sitemap.xml…).
   if (ASSET_RE.test(path) && !PRERENDER_ROUTES.includes(path)) return { kind: "asset" };
 
-  if (PRERENDER_ROUTES.includes(path)) return { kind: "page", noindex: false };
+  if (PRERENDER_ROUTES.includes(path)) return { kind: "page", noindex: isNoindexPath(path) };
 
   if (isNoindexPath(path)) return { kind: "page", noindex: true };
 

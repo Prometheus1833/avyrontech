@@ -72,7 +72,7 @@ export const StaffFinanceTab = () => {
     (async () => {
       const [inv, proj, maint, subs] = await Promise.all([
         supabase.from("invoices").select("id,invoice_number,amount_cents,status,issued_at,user_id").order("issued_at", { ascending: false }).limit(20),
-        supabase.from("projects").select("*").order("updated_at", { ascending: false }).limit(15),
+        supabase.from("projects").select("id,project_number,title,status,client_first_name,client_last_name,staff_members,assignee_id,budget_cents,updated_at").order("updated_at", { ascending: false }).limit(15),
         supabase.from("maintenance_sites").select("id,status").limit(500),
         supabase.from("subscriptions").select("id,status").limit(500),
       ]);

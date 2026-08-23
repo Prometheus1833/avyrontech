@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import DOMPurify from "dompurify";
 
 import {
@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { BLOG_INDEX } from "@/data/blogIndex";
 
 interface NewsPost {
   id: string;
@@ -30,6 +31,7 @@ interface NewsPost {
   category: string;
   published_at: string | null;
   created_at: string;
+  updated_at?: string;
 }
 
 interface Comment {
@@ -118,7 +120,8 @@ const renderMarkdown = (md: string) => {
 };
 
 const buildShareLinks = (post: NewsPost) => {
-  const url = `${window.location.origin}/blog#${post.slug}`;
+  const base = window.location.pathname.startsWith("/en/") ? "/en/blog" : "/blog";
+  const url = `${window.location.origin}${base}/${post.slug}`;
   const text = `${post.title} — via Avyron`;
   const e = encodeURIComponent;
   return {
@@ -136,6 +139,9 @@ const buildShareLinks = (post: NewsPost) => {
 };
 
 const Blog = () => {
+  const navigate = useNavigate();
+  const { slug } = useParams<{ slug?: string }>();
+  const isEn = window.location.pathname.startsWith("/en/");
   const { user } = useAuth();
   const [posts, setPosts] = useState<NewsPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -166,6 +172,13 @@ const Blog = () => {
   const lastScrollTop = useRef(0);
 
   const active = posts[activeIdx];
+  const routePost = useMemo<NewsPost | null>(() => {
+    if (!slug) return null;
+    const live = posts.find((post) => post.slug === slug);
+    if (live) return live;
+    const indexed = BLOG_INDEX.find((post) => post.slug === slug);
+    return indexed ? { ...indexed, content: indexed.excerpt, created_at: indexed.published_at } : null;
+  }, [posts, slug]);
 
   // Hide header on scroll-down, show on scroll-up (within feed)
   useEffect(() => {
@@ -186,32 +199,28 @@ const Blog = () => {
   // SEO — route-scoped head via the shared manager (single JSON-LD graph).
   useEffect(() => {
     const SITE = "https://avyron.ro";
-    const isEn = window.location.pathname.startsWith("/en/");
     const baseTitle = isEn
       ? "Avyron Blog — Technology, Web Design, SEO & Security"
       : "Blog Avyron — Tehnologie, Web Design, SEO & Securitate";
     const baseDesc = isEn
       ? "Articles on IT, web design, SEO and online security from the Avyron team."
       : "Articole despre IT, web design, SEO și securitate online de la echipa Avyron.";
-    // Only deep-linked articles (#slug) override the blog's own title/description,
-    // so /blog and /en/blog keep a stable, indexable identity.
-    const deepLinked =
-      !!active && window.location.hash.replace("#", "") === active.slug;
-    const t = deepLinked ? `${active!.title} · Avyron Insights` : baseTitle;
-    const d = (deepLinked && active?.excerpt) || baseDesc;
+    const deepLinked = Boolean(slug && routePost);
+    const t = deepLinked ? `${routePost!.title} · Avyron Insights` : baseTitle;
+    const d = (deepLinked && routePost?.excerpt) || baseDesc;
     const basePath = isEn ? "/en/blog" : "/blog";
-    const image = active?.cover_image_url || "/og/home.jpg";
+    const image = routePost?.cover_image_url || "/og/home.jpg";
+    const articlePath = deepLinked ? `${basePath}/${routePost!.slug}` : basePath;
 
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
       ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd }]) => {
         setPageMeta({
           title: t,
           description: d,
-          // Canonical stays on the list URL — hash fragments are not separate pages.
-          path: basePath,
-          alternates: { ro: "/blog", en: "/en/blog" },
+          path: articlePath,
           image,
           type: deepLinked ? "article" : "website",
+          robots: isEn ? "noindex, follow" : undefined,
         });
         setJsonLd("organization", organizationLd);
         setJsonLd(
@@ -219,26 +228,27 @@ const Blog = () => {
           breadcrumbLd([
             { name: isEn ? "Home" : "Acasă", path: isEn ? "/en" : "/" },
             { name: "Blog", path: basePath },
+            ...(deepLinked ? [{ name: routePost!.title, path: articlePath }] : []),
           ]),
         );
-        if (deepLinked && active) {
+        if (deepLinked && routePost) {
           setJsonLd("blogposting", {
             "@type": "BlogPosting",
-            headline: active.title,
-            description: active.excerpt,
-            image: active.cover_image_url ? [active.cover_image_url] : undefined,
-            datePublished: active.published_at,
-            dateModified: active.published_at,
+            headline: routePost.title,
+            description: routePost.excerpt,
+            image: routePost.cover_image_url ? [routePost.cover_image_url] : undefined,
+            datePublished: routePost.published_at,
+            dateModified: routePost.updated_at || routePost.published_at,
             inLanguage: isEn ? "en" : "ro-RO",
             author: { "@type": "Organization", name: "Avyron", url: SITE },
             publisher: { "@id": `${SITE}/#organization` },
-            mainEntityOfPage: `${SITE}${basePath}#${active.slug}`,
-            keywords: active.tags?.join(", "),
+            mainEntityOfPage: `${SITE}${articlePath}`,
+            keywords: routePost.tags?.join(", "),
           });
         }
       },
     );
-  }, [active]);
+  }, [isEn, routePost, slug]);
 
 
 
@@ -246,33 +256,30 @@ const Blog = () => {
   useEffect(() => {
     const load = async () => {
       const { data, error } = await supabase
-        .from("news_posts").select("*").eq("published", true)
+        .from("news_posts").select("id,title,slug,excerpt,content,cover_image_url,tags,category,published_at,created_at,updated_at").eq("published", true)
         .order("published_at", { ascending: false });
-      if (error) toast.error("Nu am putut încărca articolele");
-      else setPosts((data || []) as NewsPost[]);
+      const fallback = BLOG_INDEX.map((post) => ({ ...post, content: post.excerpt, created_at: post.published_at }));
+      if (error) setPosts(fallback);
+      else setPosts(data?.length ? (data as NewsPost[]) : fallback);
       setLoading(false);
     };
     load();
     try { setLikes(JSON.parse(localStorage.getItem("avyron_news_likes") || "{}")); } catch {}
   }, []);
 
-  // initial hash → idx
+  // Real article route → active card and full article dialog.
   useEffect(() => {
     if (!posts.length) return;
-    const hash = window.location.hash.replace("#", "");
-    if (hash) {
-      const i = posts.findIndex((p) => p.slug === hash);
+    if (slug) {
+      const i = posts.findIndex((p) => p.slug === slug);
       if (i >= 0) {
         setActiveIdx(i);
+        setFullPost(posts[i]);
+        setOpenFull(true);
         setTimeout(() => slideRefs.current[i]?.scrollIntoView({ behavior: "instant" as ScrollBehavior, block: "start" }), 50);
       }
     }
-  }, [posts]);
-
-  // sync hash with active
-  useEffect(() => {
-    if (active) window.history.replaceState(null, "", `/blog#${active.slug}`);
-  }, [active]);
+  }, [posts, slug]);
 
   // staff role
   useEffect(() => {
@@ -310,8 +317,9 @@ const Blog = () => {
       // Public read uses the security-invoker view that omits author_id (anon-safe).
       // Authenticated users can still read the full table for moderation actions.
       const source = user ? "news_comments" : "news_comments_public";
+      const fields = user ? "id,post_id,author_id,author_name,content,created_at" : "id,post_id,author_name,content,created_at";
       const { data } = await (supabase as any)
-        .from(source).select("*").eq("post_id", fullPost.id)
+        .from(source).select(fields).eq("post_id", fullPost.id)
         .order("created_at", { ascending: false });
       setComments((data || []) as Comment[]);
     };
@@ -385,12 +393,13 @@ const Blog = () => {
   const nativeShare = async (post: NewsPost) => {
     const links = buildShareLinks(post);
     const data = { title: post.title, text: post.excerpt || post.title, url: links.url };
-    if (typeof navigator !== "undefined" && (navigator as any).share) {
-      try { await (navigator as any).share(data); return; }
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try { await navigator.share(data); return; }
       catch (e: any) { if (e?.name === "AbortError") return; }
     }
     // Fallback: open the in-dialog share panel
     setFullPost(post); setOpenFull(true);
+    navigate(`${isEn ? "/en/blog" : "/blog"}/${post.slug}`);
   };
 
   const shareTo = async (post: NewsPost, target: "facebook" | "instagram" | "tiktok") => {
@@ -532,7 +541,11 @@ const Blog = () => {
 
                     {/* CENTER — Vezi mai mult */}
                     <button
-                      onClick={() => { setFullPost(post); setOpenFull(true); }}
+                      onClick={() => {
+                        setFullPost(post);
+                        setOpenFull(true);
+                        navigate(`${isEn ? "/en/blog" : "/blog"}/${post.slug}`);
+                      }}
                       className="absolute inset-0 m-auto h-12 w-40 rounded-full bg-white/15 backdrop-blur-md text-white font-semibold text-sm border border-white/30 shadow-glow hover:bg-white/25 transition-all flex items-center justify-center gap-1.5 z-10"
                       aria-label="Vezi mai mult"
                     >
@@ -598,7 +611,13 @@ const Blog = () => {
       </section>
 
       {/* FULL POST DIALOG */}
-      <Dialog open={openFull} onOpenChange={(o) => { setOpenFull(o); if (!o) setFullPost(null); }}>
+      <Dialog open={openFull} onOpenChange={(o) => {
+        setOpenFull(o);
+        if (!o) {
+          setFullPost(null);
+          if (slug) navigate(isEn ? "/en/blog" : "/blog");
+        }
+      }}>
         <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-0">
           {fullPost && (
             <>

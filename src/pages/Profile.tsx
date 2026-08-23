@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -6,24 +6,24 @@ import { ArrowLeft, User, CreditCard, BarChart3, Receipt, MessageSquare, Users, 
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
 
-import { ProfileTab } from "@/components/dashboard/ProfileTab";
-import { SubscriptionsTab } from "@/components/dashboard/SubscriptionsTab";
-import { StatsTab } from "@/components/dashboard/StatsTab";
-import { InvoicesTab } from "@/components/dashboard/InvoicesTab";
-import { TicketsTab } from "@/components/dashboard/TicketsTab";
-import { StaffClientsTab } from "@/components/dashboard/StaffClientsTab";
-import { StaffAnnouncementsTab } from "@/components/dashboard/StaffAnnouncementsTab";
-import { StaffProjectsTab } from "@/components/dashboard/StaffProjectsTab";
-import { StaffMaintenanceTab } from "@/components/dashboard/StaffMaintenanceTab";
-import { StaffChatTab } from "@/components/dashboard/StaffChatTab";
-import { StaffResourcesTab } from "@/components/dashboard/StaffResourcesTab";
-import { StaffDomainStatsTab } from "@/components/dashboard/StaffDomainStatsTab";
-import { StaffExampleRequestsTab } from "@/components/dashboard/StaffExampleRequestsTab";
-import { SettingsTab } from "@/components/dashboard/SettingsTab";
-import { CartTab } from "@/components/dashboard/CartTab";
-import { StaffFinanceTab } from "@/components/dashboard/StaffFinanceTab";
-import { StaffPaymentsTab } from "@/components/dashboard/StaffPaymentsTab";
-import { StaffMediaTab } from "@/components/dashboard/StaffMediaTab";
+const ProfileTab = lazy(() => import("@/components/dashboard/ProfileTab").then((m) => ({ default: m.ProfileTab })));
+const SubscriptionsTab = lazy(() => import("@/components/dashboard/SubscriptionsTab").then((m) => ({ default: m.SubscriptionsTab })));
+const StatsTab = lazy(() => import("@/components/dashboard/StatsTab").then((m) => ({ default: m.StatsTab })));
+const InvoicesTab = lazy(() => import("@/components/dashboard/InvoicesTab").then((m) => ({ default: m.InvoicesTab })));
+const TicketsTab = lazy(() => import("@/components/dashboard/TicketsTab").then((m) => ({ default: m.TicketsTab })));
+const StaffClientsTab = lazy(() => import("@/components/dashboard/StaffClientsTab").then((m) => ({ default: m.StaffClientsTab })));
+const StaffAnnouncementsTab = lazy(() => import("@/components/dashboard/StaffAnnouncementsTab").then((m) => ({ default: m.StaffAnnouncementsTab })));
+const StaffProjectsTab = lazy(() => import("@/components/dashboard/StaffProjectsTab").then((m) => ({ default: m.StaffProjectsTab })));
+const StaffMaintenanceTab = lazy(() => import("@/components/dashboard/StaffMaintenanceTab").then((m) => ({ default: m.StaffMaintenanceTab })));
+const StaffChatTab = lazy(() => import("@/components/dashboard/StaffChatTab").then((m) => ({ default: m.StaffChatTab })));
+const StaffResourcesTab = lazy(() => import("@/components/dashboard/StaffResourcesTab").then((m) => ({ default: m.StaffResourcesTab })));
+const StaffDomainStatsTab = lazy(() => import("@/components/dashboard/StaffDomainStatsTab").then((m) => ({ default: m.StaffDomainStatsTab })));
+const StaffExampleRequestsTab = lazy(() => import("@/components/dashboard/StaffExampleRequestsTab").then((m) => ({ default: m.StaffExampleRequestsTab })));
+const SettingsTab = lazy(() => import("@/components/dashboard/SettingsTab").then((m) => ({ default: m.SettingsTab })));
+const CartTab = lazy(() => import("@/components/dashboard/CartTab").then((m) => ({ default: m.CartTab })));
+const StaffFinanceTab = lazy(() => import("@/components/dashboard/StaffFinanceTab").then((m) => ({ default: m.StaffFinanceTab })));
+const StaffPaymentsTab = lazy(() => import("@/components/dashboard/StaffPaymentsTab").then((m) => ({ default: m.StaffPaymentsTab })));
+const StaffMediaTab = lazy(() => import("@/components/dashboard/StaffMediaTab").then((m) => ({ default: m.StaffMediaTab })));
 
 const Profile = () => {
   const { t } = useLang();
@@ -39,6 +39,7 @@ const Profile = () => {
         description:
           "Panoul tău Avyron: gestionează proiectele, abonamentele, facturile și mesajele cu echipa.",
         path: "/profil",
+        robots: "noindex, nofollow",
       })
     );
   }, [t.auth.profile.title]);
@@ -166,6 +167,7 @@ const Profile = () => {
 
 
 
+          <Suspense fallback={<div className="min-h-48 rounded-2xl bg-muted/40 animate-pulse" aria-label="Se încarcă" />}>
           <TabsContent value="profile" className="mt-0"><ProfileTab /></TabsContent>
           <TabsContent value="settings" className="mt-0"><SettingsTab /></TabsContent>
           {!isStaff && (
@@ -193,6 +195,7 @@ const Profile = () => {
               <TabsContent value="demo-requests" className="mt-0"><StaffExampleRequestsTab /></TabsContent>
             </>
           )}
+          </Suspense>
         </Tabs>
       </div>
     </main>

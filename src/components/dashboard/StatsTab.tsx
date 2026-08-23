@@ -29,7 +29,7 @@ export function StatsTab() {
   useEffect(() => {
     if (!user) return;
     Promise.all([
-      supabase.from("product_stats").select("*").eq("user_id", user.id).order("period_end", { ascending: false }),
+      supabase.from("product_stats").select("id,subscription_id,period_start,period_end,visits,unique_visitors,uptime_percent,avg_response_ms").eq("user_id", user.id).order("period_end", { ascending: false }),
       supabase.from("subscriptions").select("id, product_name").eq("user_id", user.id),
     ]).then(([s, sb]) => {
       setStats((s.data as Stat[]) ?? []);

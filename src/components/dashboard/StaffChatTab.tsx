@@ -103,7 +103,7 @@ export const StaffChatTab = () => {
     if (target.type !== "channel") { setMessages([]); return; }
     (async () => {
       const { data } = await supabase.from("staff_chat_messages")
-        .select("*").order("created_at", { ascending: true }).limit(200);
+        .select("id,author_id,content,created_at").order("created_at", { ascending: true }).limit(200);
       if (data) {
         setMessages(data as Msg[]);
         loadProfiles((data as Msg[]).map(m => m.author_id));

@@ -9,9 +9,9 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/prerender.mjs",
+    "build": "vite build && node scripts/prerender.mjs && node scripts/generate-sitemap.mjs",
     "build:pages": "npm run build && node scripts/build-pages-worker.mjs",
-    "build:worker": "AVYRON_WORKER=1 vite build && AVYRON_WORKER=1 node scripts/prerender.mjs",
+    "build:worker": "AVYRON_WORKER=1 vite build && AVYRON_WORKER=1 node scripts/prerender.mjs && node scripts/generate-sitemap.mjs",
     "build:dev": "vite build --mode development",
     "build:api": "wrangler deploy --config cloudflare/workers/api/wrangler.jsonc --dry-run",
     "build:email": "wrangler deploy --config cloudflare/workers/email/wrangler.jsonc --dry-run",
@@ -24,6 +24,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -87,6 +88,7 @@
     "@cloudflare/vite-plugin": "1.53.1",
     "@cloudflare/workers-types": "5.20260823.1",
     "@eslint/js": "^9.32.0",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/typography": "^0.5.16",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",

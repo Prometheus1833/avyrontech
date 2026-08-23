@@ -1,8 +1,8 @@
 # Avyron
 
-> Agenție românească de produse digitale: site-uri de prezentare premium, magazine online, aplicații web & mobile, agenți AI, audit, testare QA și mentenanță. Livrare în 2–5 zile, SEO tehnic inclus, suport gratuit pe viață.
+> Agenție românească de produse digitale: site-uri de prezentare premium, magazine online, aplicații web & mobile, agenți AI, audit, testare QA și mentenanță. Termenele și nivelul de suport sunt stabilite măsurabil pentru fiecare proiect.
 
-Avyron (S.C. Eco Tech Digital Solution S.R.L., Iași, România) construiește identitate online profesională pentru afaceri locale, branduri naționale și profesii liberale (avocați, consultanți financiari, cabinete medicale, arhitecți). Lucrăm în română și engleză, cu tehnologii moderne: React 18, TypeScript, Vite, Tailwind CSS, infrastructură edge Cloudflare, date structurate Schema.org, GA4 cu consent mode.
+Avyron construiește din Iași produse digitale pentru afaceri locale, branduri naționale și profesii liberale. Datele juridice complete sunt publicate în politica GDPR. Lucrăm în română și engleză, cu React, TypeScript, Vite, Tailwind CSS, infrastructură edge Cloudflare, date structurate Schema.org și GA4 cu Consent Mode.
 
 Contact: contact@avyron.ro · +40 734 605 055 · WhatsApp · https://avyron.ro
 
@@ -17,7 +17,7 @@ Contact: contact@avyron.ro · +40 734 605 055 · WhatsApp · https://avyron.ro
 ## Products
 
 - [Audit Website / Soft Actual](/produse/audit-website) — [EN](/en/products/website-audit): Raport complet despre performanță, SEO, securitate, accesibilitate și UI/UX, cu recomandări prioritizate.
-- [Website Prezentare Premium](/produse/website-prezentare-premium) — [EN](/en/products/premium-presentation-website): De la 300€, livrare 2–5 zile. Design custom, SEO tehnic, panou de administrare, email pe domeniu, consiliere post-lansare, suport gratuit pe viață. Potrivit pentru afaceri locale, branduri naționale, avocați, consultanți financiari, cabinete medicale, studiouri și creatori.
+- [Website Prezentare Premium](/produse/website-prezentare-premium) — [EN](/en/products/premium-presentation-website): De la 300€, cu termen și suport stabilite prin ofertă. Design custom, SEO tehnic, panou de administrare, email pe domeniu și consiliere post-lansare.
 - [Identitate Social Media](/produse/identitate-social-media) — [EN](/en/products/social-media-identity): Configurare și identitate vizuală pentru Facebook, Instagram și TikTok.
 - [Magazin Online (eCommerce / Shopify)](/produse/magazin-online) — [EN](/en/products/online-store): Magazin complet, plăți, livrare, facturare și optimizare pentru conversie.
 - [Aplicații Web și Mobile](/produse/aplicatii-web-si-mobile) — [EN](/en/products/web-and-mobile-apps): Aplicații iOS, Android și PWA, cu backend și panou de administrare.

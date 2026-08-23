@@ -103,7 +103,7 @@ export const StaffProjectsTab = () => {
   const load = async () => {
     setLoading(true);
     const [p, s] = await Promise.all([
-      supabase.from("projects").select("*").order("project_number", { ascending: false }),
+      supabase.from("projects").select("id,project_number,title,description,owner_id,assignee_id,client_id,linked_user_id,status,priority,budget_cents,additional_costs_cents,progress,created_at,link1,link2,link3,client_first_name,client_last_name,client_phone,client_email,client_facebook,client_instagram,client_tiktok,project_type,estimated_duration,start_date,delivery_date,integrations,client_change_requests,staff_members").order("project_number", { ascending: false }),
       supabase.from("profiles").select("id,display_name,pseudonym,staff_role"),
     ]);
     if (p.data) setProjects(p.data as unknown as Project[]);
@@ -118,7 +118,7 @@ export const StaffProjectsTab = () => {
   useEffect(() => { load(); }, []);
 
   const loadTasks = async (projectId: string) => {
-    const { data } = await supabase.from("project_tasks").select("*").eq("project_id", projectId).order("created_at", { ascending: true });
+    const { data } = await supabase.from("project_tasks").select("id,content,completed,author_id,created_at").eq("project_id", projectId).order("created_at", { ascending: true });
     if (data) setTasks(data as Task[]);
   };
 

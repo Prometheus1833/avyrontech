@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiUrl } from "@/lib/apiBase";
 import { toast } from "sonner";
+import Turnstile, { TURNSTILE_SITE_KEY } from "@/components/site/Turnstile";
 
 const schema = z.object({
   email: z.string().trim().email("Email invalid").max(255),
@@ -27,12 +28,15 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
   const [phone, setPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [resetKey, setResetKey] = useState(0);
 
   useEffect(() => {
     if (open) {
       setEmail("");
       setPhone("");
       setDone(false);
+      setTurnstileToken("");
     }
   }, [open]);
 
@@ -43,6 +47,10 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
     const parsed = schema.safeParse({ email, phone });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
+      return;
+    }
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      toast.error("Confirmă verificarea anti-spam.");
       return;
     }
 
@@ -56,10 +64,17 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
         source_slug: source.slug,
         source_category: source.category,
         source_name: source.name,
+        turnstileToken,
       }),
     }).catch(() => null);
     setSubmitting(false);
 
+    if (response?.status === 403) {
+      setTurnstileToken("");
+      setResetKey((value) => value + 1);
+      toast.error("Verificarea anti-spam a expirat. Încearcă din nou.");
+      return;
+    }
     if (!response?.ok) {
       toast.error("A apărut o eroare. Te rugăm încearcă din nou.");
       return;
@@ -125,11 +140,12 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
 
                 <form onSubmit={submit} className="mt-5 space-y-3">
                   <div>
-                    <label className="text-xs font-semibold text-foreground/80 mb-1 flex items-center gap-1.5">
+                    <label htmlFor="request-example-email" className="text-xs font-semibold text-foreground/80 mb-1 flex items-center gap-1.5">
                       <Mail className="size-3.5" /> Email
                     </label>
                     <Input
                       type="email"
+                      id="request-example-email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="email@exemplu.ro"
@@ -139,11 +155,12 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-foreground/80 mb-1 flex items-center gap-1.5">
+                    <label htmlFor="request-example-phone" className="text-xs font-semibold text-foreground/80 mb-1 flex items-center gap-1.5">
                       <Phone className="size-3.5" /> Telefon
                     </label>
                     <Input
                       type="tel"
+                      id="request-example-phone"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="07XX XXX XXX"
@@ -152,6 +169,12 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
                       className="h-11 rounded-xl"
                     />
                   </div>
+
+                  <Turnstile
+                    action="request-example"
+                    onToken={setTurnstileToken}
+                    resetKey={resetKey}
+                  />
 
                   <Button
                     type="submit"

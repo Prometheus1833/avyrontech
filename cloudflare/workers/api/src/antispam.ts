@@ -34,6 +34,7 @@ export async function verifyTurnstile(
   secret: string | undefined,
   token: string,
   ip: string,
+  options: { expectedAction?: string; allowedHostnames?: string } = {},
 ): Promise<{ ok: boolean; reason?: string }> {
   if (!secret) return { ok: true, reason: "disabled" }; // neconfigurat → nu blocăm
   if (!token) return { ok: false, reason: "missing-token" };
@@ -46,8 +47,17 @@ export async function verifyTurnstile(
       method: "POST",
       body,
     });
-    const data = (await res.json()) as { success?: boolean; "error-codes"?: string[] };
+    const data = (await res.json()) as { success?: boolean; action?: string; hostname?: string; "error-codes"?: string[] };
     if (!data.success) return { ok: false, reason: (data["error-codes"] || []).join(",") || "failed" };
+    if (options.expectedAction && data.action !== options.expectedAction) return { ok: false, reason: "action-mismatch" };
+    const allowed = (options.allowedHostnames || "").split(",").map((value) => value.trim().toLowerCase()).filter(Boolean);
+    const hostname = data.hostname?.toLowerCase() || "";
+    const hostnameAllowed = allowed.some((pattern) =>
+      pattern.startsWith("*.") ? hostname.endsWith(pattern.slice(1)) : hostname === pattern,
+    );
+    if (allowed.length && !hostnameAllowed) {
+      return { ok: false, reason: "hostname-mismatch" };
+    }
     return { ok: true };
   } catch (e) {
     console.error("turnstile verify error", e);

@@ -8,11 +8,10 @@
  *    citit normal în Gmail.
  *  - Logica de auto-reply / filtrare se poate adăuga aici (env.SEND_EMAIL).
  *
- * Important: răspunsurile trimise din Gmail vor pleca tot din
- * avyrontech@gmail.com — pentru a afișa "contact@avyron.ro" la
- * destinatar, configurează în Gmail: Settings → Accounts → "Send mail as"
- * cu contact@avyron.ro (SMTP via Cloudflare Email Routing nu suportă
- * trimitere directă din Gmail, dar Gmail acceptă "Send as" cu verificare).
+ * Important: destinația de forward trebuie verificată în Email Routing.
+ * Mesajele tranzacționale ale aplicației se trimit separat prin Cloudflare
+ * Email Sending SMTP; răspunsurile manuale din Gmail necesită configurarea
+ * explicită a identității "Send mail as" pentru contact@avyron.ro.
  */
 
 export interface Env {

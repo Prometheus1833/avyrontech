@@ -38,6 +38,12 @@ jobs:
       - name: Run tests against prerendered output
         run: npm test
 
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser journeys
+        run: npm run test:e2e
+
       - name: Validate standalone site Worker build
         run: npm run build:worker
 

@@ -115,17 +115,33 @@ class CfAuth {
     }
   }
 
-  async signup(input: { email: string; password: string; displayName?: string; entityType?: string }) {
+  async signup(input: { email: string; password: string; displayName?: string; entityType?: string; turnstileToken?: string }) {
     const res = await fetch(apiUrl("/api/auth/signup"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       credentials: "include",
       body: JSON.stringify(input),
     });
-    const j = await res.json() as SessionResponse & ApiErrorBody;
+    const j = await res.json() as { ok?: true; verification_required?: boolean; verification_email_sent?: boolean } & ApiErrorBody;
     if (!res.ok) throw new Error(j?.error?.message || j?.error?.code || "signup_failed");
-    this.setSession(j.access_token, j.expires_in);
     return j;
+  }
+
+  async verifyEmail(token: string) {
+    const res = await fetch(apiUrl("/api/auth/verify-email"), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+    if (!res.ok) throw await this.errorFrom(res);
+  }
+
+  async resendVerification(email: string) {
+    await fetch(apiUrl("/api/auth/resend-verification"), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
   }
 
   async login(email: string, password: string) {

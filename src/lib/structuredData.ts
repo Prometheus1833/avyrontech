@@ -3,17 +3,19 @@
  * Used across home + main marketing pages to help Google understand the site.
  */
 
+import { COMPANY } from "@/config/company";
+
 const BASE_URL = "https://avyron.ro";
 const LOGO_URL = `${BASE_URL}/avyron-logo.jpg`;
-const PHONE = "+40734605055";
-const EMAIL = "contact@avyron.ro";
+const PHONE = COMPANY.phone;
+const EMAIL = COMPANY.email;
 
 export const organizationLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
   "@id": `${BASE_URL}/#organization`,
   name: "Avyron",
-  legalName: "S.C. Eco Tech Digital Solution S.R.L.",
+  legalName: COMPANY.legalName,
   url: BASE_URL,
   logo: {
     "@type": "ImageObject",

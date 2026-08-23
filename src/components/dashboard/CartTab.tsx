@@ -46,7 +46,9 @@ export function CartTab() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) setItems(JSON.parse(raw));
-    } catch {}
+    } catch {
+      // Start with an empty local cart when storage is unavailable or invalid.
+    }
   }, []);
 
   useEffect(() => {
@@ -118,6 +120,7 @@ export function CartTab() {
         <h2 className="text-2xl font-display font-bold flex items-center gap-2">
           <ShoppingCart className="size-6" /> Coșul meu
         </h2>
+        <p className="mt-1 text-xs text-muted-foreground">Coșul este salvat doar pe acest dispozitiv până când trimiți comanda către echipă.</p>
         <p className="text-sm text-muted-foreground">
           Adaugă pachete, abonamente sau comenzi de website. Trimite-le ca o comandă către echipă.
         </p>

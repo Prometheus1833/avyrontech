@@ -11,14 +11,14 @@ import logo from "@/assets/avyron-logo.webp";
 
 const Nav = () => {
   const [open, setOpen] = useState(false);
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { user, loading } = useAuth();
-  const isRo = (t.nav as any).examples?.toLowerCase?.().startsWith("ex");
+  const isRo = lang === "ro";
   const links = [
-    { label: (t.nav as any).news ?? "Blog", to: "/blog", icon: Newspaper, isRoute: true },
-    { label: isRo ? "Portofoliu" : "Portfolio", to: "/despre-si-portofoliu#portofoliu", icon: Briefcase, isRoute: true },
+    { label: t.nav.news, to: lang === "en" ? "/en/blog" : "/blog", icon: Newspaper, isRoute: true },
+    { label: isRo ? "Portofoliu" : "Portfolio", to: isRo ? "/despre-si-portofoliu#portofoliu" : "/en/about#portofoliu", icon: Briefcase, isRoute: true },
     { label: isRo ? "Vezi exemple" : "See examples", href: "/#exemple" },
-    { label: isRo ? "Produse" : "Products", to: "/costurisiproduse", icon: ShoppingBag, isRoute: true },
+    { label: isRo ? "Produse" : "Products", to: isRo ? "/costurisiproduse" : "/en/pricing", icon: ShoppingBag, isRoute: true },
     { label: t.nav.process, href: "/#proces" },
     { label: t.nav.faq, href: "/#faq" },
   ] as Array<{ label: string; href?: string; to?: string; icon?: typeof Newspaper; highlight?: boolean; isRoute?: boolean }>;

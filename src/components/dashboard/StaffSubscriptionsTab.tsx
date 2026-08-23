@@ -49,7 +49,7 @@ export function StaffSubscriptionsTab() {
   const load = async () => {
     setLoading(true);
     const [s, p] = await Promise.all([
-      supabase.from("subscriptions").select("*").order("created_at", { ascending: false }),
+      supabase.from("subscriptions").select("id,user_id,product_name,description,status,price_cents,currency,billing_cycle").order("created_at", { ascending: false }),
       supabase.from("profiles").select("id, display_name"),
     ]);
     setSubs((s.data as Sub[]) ?? []);

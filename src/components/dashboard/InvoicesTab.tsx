@@ -36,7 +36,7 @@ export function InvoicesTab() {
     if (!user) return;
     supabase
       .from("invoices")
-      .select("*")
+      .select("id,invoice_number,amount_cents,currency,status,issued_at,due_at,pdf_url")
       .eq("user_id", user.id)
       .order("issued_at", { ascending: false })
       .then(({ data }) => {

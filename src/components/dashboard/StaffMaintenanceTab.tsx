@@ -49,7 +49,7 @@ export const StaffMaintenanceTab = () => {
   const load = async () => {
     setLoading(true);
     const [s, c] = await Promise.all([
-      supabase.from("maintenance_sites").select("*").order("created_at", { ascending: false }),
+      supabase.from("maintenance_sites").select("id,client_id,site_name,site_url,status,notes,last_check_at,next_check_at,created_at").order("created_at", { ascending: false }),
       supabase.from("profiles").select("id,display_name"),
     ]);
     if (s.data) setSites(s.data as Site[]);
@@ -60,7 +60,7 @@ export const StaffMaintenanceTab = () => {
   useEffect(() => { load(); }, []);
 
   const loadLogs = async (id: string) => {
-    const { data } = await supabase.from("maintenance_logs").select("*").eq("site_id", id).order("created_at", { ascending: false });
+    const { data } = await supabase.from("maintenance_logs").select("id,action,details,author_id,created_at").eq("site_id", id).order("created_at", { ascending: false });
     if (data) setLogs(data as Log[]);
   };
 

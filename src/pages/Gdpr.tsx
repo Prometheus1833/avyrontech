@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useEffect } from "react";
 import { ShieldCheck, ArrowLeft, Lock, FileText, Database, Users, Globe, Cookie, Server, Mail, Phone } from "lucide-react";
 import logo from "@/assets/avyron-logo.jpg";
+import { COMPANY } from "@/config/company";
 
 /**
  * Apple-inspired GDPR / Privacy page.
@@ -16,7 +17,7 @@ const sections = [
     title: "Introducere",
     body: (
       <>
-        <p>Această Politică de Confidențialitate descrie modul în care <strong>S.C. Eco Tech Digital Solution S.R.L.</strong> (denumită în continuare „Societatea", „noi" sau „Operatorul") colectează, utilizează, stochează și protejează datele cu caracter personal în conformitate cu Regulamentul (UE) 2016/679 (GDPR).</p>
+        <p>Această Politică de Confidențialitate descrie modul în care <strong>{COMPANY.legalName}</strong> (denumită în continuare „Societatea", „noi" sau „Operatorul") colectează, utilizează, stochează și protejează datele cu caracter personal în conformitate cu Regulamentul (UE) 2016/679 (GDPR).</p>
         <p>Prin utilizarea site-ului nostru și/sau a serviciilor oferite, sunteți de acord cu practicile descrise în prezenta politică.</p>
       </>
     ),
@@ -26,7 +27,9 @@ const sections = [
     title: "Datele Operatorului",
     body: (
       <ul className="space-y-1.5">
-        <li><strong>Denumire:</strong> S.C. Eco Tech Digital Solution S.R.L.</li>
+        <li><strong>Denumire:</strong> {COMPANY.legalName}</li>
+        {COMPANY.taxId && <li><strong>CUI:</strong> {COMPANY.taxId}</li>}
+        <li><strong>Sediu:</strong> {COMPANY.registeredAddress}</li>
         <li><strong>Sediu:</strong> Iași, România</li>
         <li><strong>CUI:</strong> disponibil la cerere — solicitare prin email</li>
         <li><strong>Nr. Registrul Comerțului:</strong> disponibil la cerere — solicitare prin email</li>
@@ -210,10 +213,10 @@ const Gdpr = () => {
           ? "Privacy Policy & GDPR | Avyron"
           : "Politica de Confidențialitate și GDPR | Avyron",
         description: isEn
-          ? "Avyron Privacy Policy and GDPR Data Protection notice — Eco Tech Digital Solution S.R.L., Iași, Romania."
-          : "Politica de Confidențialitate și Protecția Datelor (GDPR) Avyron — Eco Tech Digital Solution S.R.L. Iași, România.",
+          ? "The legally binding Avyron privacy policy is currently available in Romanian. A verified English translation is being prepared."
+          : `Politica de Confidențialitate și Protecția Datelor (GDPR) Avyron — ${COMPANY.legalName}.`,
         path: isEn ? "/en/privacy" : "/gdpr",
-        alternates: { ro: "/gdpr", en: "/en/privacy" },
+        robots: isEn ? "noindex, follow" : undefined,
       })
     );
     window.scrollTo(0, 0);
@@ -254,7 +257,7 @@ const Gdpr = () => {
               : "Transparență totală asupra modului în care colectăm, prelucrăm și protejăm datele tale."}
           </p>
           <p className="mt-8 text-xs uppercase tracking-widest text-muted-foreground/80">
-            {isEn ? "Last updated · 25.04.2026" : "Ultima actualizare · 25.04.2026"}
+            {isEn ? "Policy version · 2026-08-23" : "Versiunea politicii · 2026-08-23"}
           </p>
 
 

@@ -45,5 +45,6 @@
     "SMTP_USER": "api_token",
     "SMTP_FROM": "contact@avyron.ro",
     "LEAD_TO": "avyrontech@gmail.com"
+    ,"TURNSTILE_ALLOWED_HOSTNAMES": "avyron.ro,www.avyron.ro,avyrontech.pages.dev,*.avyrontech.pages.dev,avyrontech.lovable.app,localhost"
   }
 }

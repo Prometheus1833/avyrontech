@@ -68,6 +68,7 @@ contactRouter.post("/api/contact/demo", async (c) => {
     c.env.TURNSTILE_SECRET,
     clean(form.get("cf-turnstile-response") || form.get("turnstileToken"), 4000),
     ip,
+    { expectedAction: "contact-demo", allowedHostnames: c.env.TURNSTILE_ALLOWED_HOSTNAMES },
   );
   if (!turnstile.ok) {
     console.warn("turnstile rejected:", turnstile.reason);
@@ -226,6 +227,7 @@ contactRouter.post("/api/contact/example", async (c) => {
   const sourceSlug = clean(body.source_slug, 120);
   const sourceCategory = clean(body.source_category, 120);
   const sourceName = clean(body.source_name, 160);
+  const turnstileToken = clean(body.turnstileToken, 4000);
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || phone.length < 5 || !sourceSlug)
     return c.json({ error: "Câmpuri invalide" }, 400);
 
@@ -236,6 +238,12 @@ contactRouter.post("/api/contact/example", async (c) => {
   ]);
   if (!rate.ok) return c.json({ error: "rate_limited", retryAfter: rate.retryAfter }, 429);
 
+  const turnstile = await verifyTurnstile(c.env.TURNSTILE_SECRET, turnstileToken, ip, {
+    expectedAction: "request-example",
+    allowedHostnames: c.env.TURNSTILE_ALLOWED_HOSTNAMES,
+  });
+  if (!turnstile.ok) return c.json({ error: "captcha_failed", reason: turnstile.reason }, 403);
+
   const id = crypto.randomUUID();
   const timestamp = Date.now();
   await c.env.DB.prepare(
@@ -245,7 +253,7 @@ contactRouter.post("/api/contact/example", async (c) => {
 
   const to = c.env.LEAD_TO || c.env.SMTP_FROM;
   if (!to) {
-    await c.env.DB.prepare("UPDATE example_requests SET delivery_status='failed',updated_at=? WHERE id=?").bind(Date.now(), id).run();
+    await c.env.DB.prepare("UPDATE example_requests SET delivery_status='failed',delivery_error=?,updated_at=? WHERE id=?").bind("LEAD_TO is not configured", Date.now(), id).run();
     return c.json({ error: "Livrarea emailului nu este configurată", requestId: id }, 503);
   }
   const result = await deliverMail(c.env, {
@@ -254,8 +262,8 @@ contactRouter.post("/api/contact/example", async (c) => {
     subject: `Solicitare exemplu — ${sourceName || sourceSlug}`,
     text: `Email: ${email}\nTelefon: ${phone}\nSursă: ${sourceName || "—"}\nCategorie: ${sourceCategory || "—"}\nSlug: ${sourceSlug}\nID: ${id}`,
   });
-  await c.env.DB.prepare("UPDATE example_requests SET delivery_status=?,updated_at=? WHERE id=?")
-    .bind(result.delivered ? "sent" : "failed", Date.now(), id).run();
+  await c.env.DB.prepare("UPDATE example_requests SET delivery_status=?,delivery_error=?,updated_at=? WHERE id=?")
+    .bind(result.delivered ? "sent" : "failed", result.delivered ? null : result.error, Date.now(), id).run();
   await logDelivery(c.env, { kind: "example_request", entityId: id, recipient: to, result }).catch(() => undefined);
   if (!result.delivered) return c.json({ error: "Solicitarea a fost salvată, dar emailul nu a fost livrat", requestId: id }, 502);
   return c.json({ ok: true, requestId: id }, 201);

@@ -18,7 +18,7 @@ import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import type { AppBindings, Role } from "./types";
 import { hashPassword, now, randomHex, sha256, signJwt, verifyJwt, verifyPassword } from "./security";
 import { deliverMail, logDelivery } from "./mailer";
-import { checkRateLimit, clientIp, hashKey } from "./antispam";
+import { checkRateLimit, clientIp, hashKey, verifyTurnstile } from "./antispam";
 
 const app = new Hono<AppBindings>();
 
@@ -51,6 +51,30 @@ app.use("/api/auth/*", async (c, next) => {
 });
 
 const uuid = () => crypto.randomUUID();
+const PROFILE_SELECT = "id,display_name,avatar_url,phone,address,entity_type,company_name,cui,social_facebook,social_instagram,social_tiktok,website,language,theme,pseudonym,staff_role,updated_at";
+
+async function sendVerification(c: Context<AppBindings>, userId: string, email: string) {
+  const token = randomHex(32);
+  const tokenHash = await sha256(token);
+  const timestamp = now();
+  await c.env.DB.batch([
+    c.env.DB.prepare("DELETE FROM email_verifications WHERE user_id = ? OR expires_at < ?").bind(userId, timestamp),
+    c.env.DB.prepare("INSERT INTO email_verifications (token,user_id,created_at,expires_at) VALUES (?,?,?,?)")
+      .bind(tokenHash, userId, timestamp, timestamp + 24 * 60 * 60 * 1000),
+  ]);
+  const verifyUrl = `${(c.env.APP_URL || "https://avyron.ro").replace(/\/$/, "")}/auth?verify=${encodeURIComponent(token)}`;
+  const result = await deliverMail(c.env, {
+    to: email,
+    subject: "Confirmă adresa de email pentru contul Avyron",
+    text: `Confirmă adresa de email folosind linkul de mai jos. Linkul este valabil 24 de ore:\n\n${verifyUrl}`,
+    html: `<p>Confirmă adresa de email pentru contul Avyron.</p><p><a href="${verifyUrl}">Confirmă adresa</a></p><p>Linkul este valabil 24 de ore.</p>`,
+  });
+  await logDelivery(c.env, { kind: "email_verification", entityId: userId, recipient: email, result }).catch((error) =>
+    console.error(JSON.stringify({ event: "email_log_failed", kind: "email_verification", error: String(error) })),
+  );
+  if (!result.delivered) console.error(JSON.stringify({ event: "verification_delivery_failed", userId, error: result.error }));
+  return result;
+}
 
 // ─── Auth middleware ────────────────────────────────────────────────────
 async function requireAuth(c: Context<AppBindings>, next: Next) {
@@ -84,6 +108,7 @@ app.post("/api/auth/signup", async (c) => {
   const email = String(body.email || "").trim().toLowerCase();
   const password = String(body.password || "");
   const displayName = body.displayName ? String(body.displayName) : null;
+  const turnstileToken = String(body.turnstileToken || "").slice(0, 4000);
   const entityType = ["individual", "srl", "pfa", "ii", "other"].includes(String(body.entityType))
     ? String(body.entityType)
     : "individual";
@@ -91,6 +116,11 @@ app.post("/api/auth/signup", async (c) => {
     { key: `signup:ip:${await hashKey(clientIp(c.req.raw))}:h`, limit: 5, windowSec: 3600 },
   ]);
   if (!signupRate.ok) return c.json({ error: { code: "rate_limited" } }, 429, { "Retry-After": String(signupRate.retryAfter) });
+  const captcha = await verifyTurnstile(c.env.TURNSTILE_SECRET, turnstileToken, clientIp(c.req.raw), {
+    expectedAction: "signup",
+    allowedHostnames: c.env.TURNSTILE_ALLOWED_HOSTNAMES,
+  });
+  if (!captcha.ok) return c.json({ error: { code: "captcha_failed", message: "Verificarea anti-spam a eșuat" } }, 403);
   if (!/^\S+@\S+\.\S+$/.test(email)) return c.json({ error: { code: "invalid_email" } }, 400);
   if (password.length < 8) return c.json({ error: { code: "weak_password", message: "Min 8 chars" } }, 400);
 
@@ -109,7 +139,40 @@ app.post("/api/auth/signup", async (c) => {
     c.env.DB.prepare("INSERT INTO audit_log (user_id,action,ip,created_at) VALUES (?,?,?,?)")
       .bind(id, "signup", c.req.header("cf-connecting-ip") || null, t),
   ]);
-  return createSession(c, id, ["user"]);
+  const delivery = await sendVerification(c, id, email);
+  return c.json({ ok: true, verification_required: true, verification_email_sent: delivery.delivered }, delivery.delivered ? 202 : 503);
+});
+
+app.post("/api/auth/resend-verification", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const email = String(body.email || "").trim().toLowerCase();
+  const rate = await checkRateLimit(c.env.KV, [
+    { key: `verify:ip:${await hashKey(clientIp(c.req.raw))}:h`, limit: 8, windowSec: 3600 },
+    { key: `verify:mail:${await hashKey(email)}:h`, limit: 3, windowSec: 3600 },
+  ]);
+  if (!rate.ok) return c.json({ ok: true });
+  const user = await c.env.DB.prepare("SELECT id,email_verified FROM users WHERE email = ? AND disabled_at IS NULL")
+    .bind(email).first<{ id: string; email_verified: number }>();
+  if (user && !user.email_verified) await sendVerification(c, user.id, email);
+  return c.json({ ok: true });
+});
+
+app.post("/api/auth/verify-email", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const token = String(body.token || "");
+  if (!token) return c.json({ error: { code: "invalid_token" } }, 400);
+  const tokenHash = await sha256(token);
+  const row = await c.env.DB.prepare("SELECT token,user_id,expires_at,used_at FROM email_verifications WHERE token IN (?, ?) LIMIT 1")
+    .bind(tokenHash, token).first<{ token: string; user_id: string; expires_at: number; used_at: number | null }>();
+  if (!row || row.used_at || row.expires_at < now()) return c.json({ error: { code: "invalid_or_expired_token" } }, 400);
+  const timestamp = now();
+  await c.env.DB.batch([
+    c.env.DB.prepare("UPDATE users SET email_verified = 1, updated_at = ? WHERE id = ?").bind(timestamp, row.user_id),
+    c.env.DB.prepare("UPDATE email_verifications SET used_at = ? WHERE token = ?").bind(timestamp, row.token),
+    c.env.DB.prepare("INSERT INTO audit_log (user_id,action,ip,created_at) VALUES (?,?,?,?)")
+      .bind(row.user_id, "email_verified", c.req.header("cf-connecting-ip") || null, timestamp),
+  ]);
+  return c.json({ ok: true });
 });
 
 app.post("/api/auth/login", async (c) => {
@@ -121,7 +184,7 @@ app.post("/api/auth/login", async (c) => {
     { key: `login:mail:${await hashKey(email)}:15m`, limit: 8, windowSec: 900 },
   ]);
   if (!loginRate.ok) return c.json({ error: { code: "rate_limited", message: "Prea multe încercări" } }, 429, { "Retry-After": String(loginRate.retryAfter) });
-  const row = await c.env.DB.prepare("SELECT id, password_hash, disabled_at FROM users WHERE email = ?").bind(email).first<{ id: string; password_hash: string; disabled_at: number | null }>();
+  const row = await c.env.DB.prepare("SELECT id, password_hash, disabled_at, email_verified FROM users WHERE email = ?").bind(email).first<{ id: string; password_hash: string; disabled_at: number | null; email_verified: number }>();
   if (!row) {
     await hashPassword(password); // Keep missing-user timing close to a real password check.
     return c.json({ error: { code: "invalid_credentials" } }, 401);
@@ -129,6 +192,7 @@ app.post("/api/auth/login", async (c) => {
   if (!(await verifyPassword(password, row.password_hash)))
     return c.json({ error: { code: "invalid_credentials" } }, 401);
   if (row.disabled_at) return c.json({ error: { code: "account_disabled", message: "Contul este dezactivat" } }, 403);
+  if (!row.email_verified) return c.json({ error: { code: "verification_required", message: "Confirmă adresa de email înainte de autentificare" } }, 403);
   const roles = await rolesFor(c.env.DB, row.id);
   const loginAt = now();
   await c.env.DB.batch([
@@ -183,11 +247,11 @@ app.get("/api/auth/me", requireAuth, async (c) => {
   const u = await c.env.DB.prepare("SELECT id,email,display_name,avatar_url,email_verified,must_change_password,created_at FROM users WHERE id = ? AND disabled_at IS NULL")
     .bind(c.get("userId")).first();
   if (!u) return c.json({ error: { code: "account_unavailable" } }, 401);
-  let profile = await c.env.DB.prepare("SELECT * FROM profiles WHERE id = ?").bind(c.get("userId")).first();
+  let profile = await c.env.DB.prepare(`SELECT ${PROFILE_SELECT} FROM profiles WHERE id = ?`).bind(c.get("userId")).first();
   if (!profile) {
     await c.env.DB.prepare("INSERT INTO profiles (id,display_name,entity_type,language,theme,updated_at) VALUES (?,?,'individual','ro','system',?)")
       .bind(c.get("userId"), (u as { display_name?: string }).display_name || null, now()).run();
-    profile = await c.env.DB.prepare("SELECT * FROM profiles WHERE id = ?").bind(c.get("userId")).first();
+    profile = await c.env.DB.prepare(`SELECT ${PROFILE_SELECT} FROM profiles WHERE id = ?`).bind(c.get("userId")).first();
   }
   return c.json({ user: u, profile, roles: c.get("roles") });
 });
@@ -283,7 +347,7 @@ app.put("/api/profile", requireAuth, async (c) => {
     .bind(...patch.map(([, value]) => value || null), now(), userId).run();
   if (values.display_name !== undefined) await c.env.DB.prepare("UPDATE users SET display_name = ?, updated_at = ? WHERE id = ?")
     .bind(values.display_name || null, now(), userId).run();
-  const profile = await c.env.DB.prepare("SELECT * FROM profiles WHERE id = ?").bind(userId).first();
+  const profile = await c.env.DB.prepare(`SELECT ${PROFILE_SELECT} FROM profiles WHERE id = ?`).bind(userId).first();
   return c.json({ profile });
 });
 
@@ -317,7 +381,7 @@ app.get("/api/profile/avatar/:userId", async (c) => {
 
 // ─── Business CRUD (exemplu: clients) ───────────────────────────────────
 app.get("/api/clients", requireAuth, requireRole("staff", "admin"), async (c) => {
-  const { results } = await c.env.DB.prepare("SELECT * FROM clients ORDER BY created_at DESC LIMIT 200").all();
+  const { results } = await c.env.DB.prepare("SELECT id,company_name,contact_name,email,phone,status,created_at FROM clients ORDER BY created_at DESC LIMIT 200").all();
   return c.json({ data: results });
 });
 
@@ -331,6 +395,17 @@ app.get("/api/admin/users", requireAuth, requireRole("staff", "admin"), async (c
        LEFT JOIN user_roles r ON r.user_id=u.id
       GROUP BY u.id
       ORDER BY COALESCE(p.display_name,u.display_name,u.email) COLLATE NOCASE`,
+  ).all();
+  return c.json({ data: results });
+});
+
+app.get("/api/admin/email-failures", requireAuth, requireRole("staff", "admin"), async (c) => {
+  const { results } = await c.env.DB.prepare(
+    `SELECT id,kind,entity_id,recipient,status,error,created_at
+       FROM email_delivery_log
+      WHERE status = 'failed'
+      ORDER BY created_at DESC
+      LIMIT 200`,
   ).all();
   return c.json({ data: results });
 });
