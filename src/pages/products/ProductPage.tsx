@@ -5,7 +5,10 @@ import {
   ArrowLeft,
   ArrowRight,
   BarChart3,
+  Bug,
   Check,
+  FlaskConical,
+
   Clock,
   Cloud,
   Code2,
