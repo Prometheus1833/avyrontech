@@ -6,13 +6,20 @@ import {
   BarChart3,
   Check,
   Clock,
+  CreditCard,
   Crown,
   HeartHandshake,
   LifeBuoy,
   MessageCircle,
   RefreshCw,
+  Landmark,
+  Receipt,
   Search,
   Server,
+  Sparkle,
+  TrendingUp,
+  Users,
+  Wallet,
   Shield,
   Zap,
 } from "lucide-react";
@@ -22,6 +29,7 @@ import ThemeToggle from "@/components/site/ThemeToggle";
 import Breadcrumbs from "@/components/site/Breadcrumbs";
 import Reveal from "@/components/site/Reveal";
 import logo from "@/assets/avyron-logo.jpg";
+import { trackEvent } from "@/lib/analytics";
 
 const WHATSAPP = "https://wa.me/40734605055?text=";
 
@@ -78,7 +86,7 @@ const CarePlansPage = () => {
       ? "Mentenanță website lunară: actualizări, backup, monitorizare uptime, securitate, SEO continuu și suport prioritar. Pachete Plus, Pro și Pro Activ de la 100€/lună."
       : "Monthly website maintenance: updates, backups, uptime monitoring, security, ongoing SEO and priority support. Plus, Pro and Pro Active plans from €100/month.";
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
-      ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd, serviceLd, faqPageLd }]) => {
+      ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd, serviceLd, offerCatalogLd, faqPageLd }]) => {
         setPageMeta({
           title,
           description,
@@ -93,6 +101,36 @@ const CarePlansPage = () => {
             description,
             path,
             priceEur: 100,
+          }),
+        );
+        setJsonLd(
+          "ld-offercatalog",
+          offerCatalogLd({
+            name: ro ? "Pachete de mentenanță website" : "Website care plans",
+            path,
+            items: [
+              {
+                name: "Plus",
+                description: ro
+                  ? "Mentenanță esențială: actualizări, backup, monitorizare uptime, hosting inclus și suport prioritar."
+                  : "Essential maintenance: updates, backups, uptime monitoring, hosting included and priority support.",
+                priceEur: 100,
+              },
+              {
+                name: "Pro",
+                description: ro
+                  ? "Colaborare lunară extinsă: backup zilnic, 10 modificări de conținut, rapoarte de trafic, optimizări SEO și social media."
+                  : "Extended monthly collaboration: daily backups, 10 content changes, traffic reports, SEO tuning and social media.",
+                priceEur: 150,
+              },
+              {
+                name: "Pro Activ",
+                description: ro
+                  ? "Parteneriat complet: modificări nelimitate, SEO continuu, analiză de trafic, prioritate maximă și consultanță lunară."
+                  : "Full partnership: unlimited changes, continuous SEO, traffic analysis, top priority and monthly consulting.",
+                priceEur: 300,
+              },
+            ],
           }),
         );
         setJsonLd("ld-faq", faqPageLd(faq));
