@@ -5,7 +5,10 @@ import {
   ArrowLeft,
   ArrowRight,
   BarChart3,
+  Bug,
   Check,
+  FlaskConical,
+
   Clock,
   Cloud,
   Code2,
@@ -50,7 +53,10 @@ const ICONS: Record<IconKey, React.ComponentType<{ className?: string }>> = {
   code: Code2,
   cloud: Cloud,
   users: Users,
+  bug: Bug,
+  flask: FlaskConical,
   clock: Clock,
+
 };
 
 const WHATSAPP = "https://wa.me/40734605055?text=";

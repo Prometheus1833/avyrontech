@@ -28,6 +28,8 @@ const Unsubscribe = lazy(() => import("./pages/Unsubscribe.tsx"));
 const ProjectPage = lazy(() => import("./pages/intern/ProjectPage.tsx"));
 const InternHome = lazy(() => import("./pages/intern/InternHome.tsx"));
 const ProductDetail = lazy(() => import("./pages/products/ProductPage.tsx"));
+const CarePlans = lazy(() => import("./pages/products/CarePlansPage.tsx"));
+
 
 import CookieBanner from "@/components/site/CookieBanner";
 import MustChangePassword from "@/components/auth/MustChangePassword";
@@ -67,12 +69,17 @@ const App = () => (
                 <Route path="/produse/aplicatii-web-si-mobile" element={<ProductDetail />} />
                 <Route path="/produse/agent-ai-personalizat" element={<ProductDetail />} />
                 <Route path="/produse/audit-website" element={<ProductDetail />} />
+                <Route path="/produse/testare-qa-web-mobile" element={<ProductDetail />} />
                 <Route path="/en/products/premium-presentation-website" element={<ProductDetail />} />
                 <Route path="/en/products/social-media-identity" element={<ProductDetail />} />
                 <Route path="/en/products/online-store" element={<ProductDetail />} />
                 <Route path="/en/products/web-and-mobile-apps" element={<ProductDetail />} />
                 <Route path="/en/products/personalized-ai-agent" element={<ProductDetail />} />
                 <Route path="/en/products/website-audit" element={<ProductDetail />} />
+                <Route path="/en/products/qa-testing-web-mobile" element={<ProductDetail />} />
+                <Route path="/pachete-mentenanta" element={<CarePlans />} />
+                <Route path="/en/care-plans" element={<CarePlans />} />
+
                 <Route path="/despre" element={<About />} />
                 <Route path="/despre-si-portofoliu" element={<About />} />
                 <Route path="/en/about" element={<About />} />
