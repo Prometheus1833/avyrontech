@@ -183,7 +183,7 @@ const Blog = () => {
     return () => el.removeEventListener("scroll", onScroll);
   }, [posts.length]);
 
-  // SEO
+  // SEO — route-scoped head via the shared manager (single JSON-LD graph).
   useEffect(() => {
     const SITE = "https://avyron.ro";
     const isEn = window.location.pathname.startsWith("/en/");
@@ -199,54 +199,47 @@ const Blog = () => {
       !!active && window.location.hash.replace("#", "") === active.slug;
     const t = deepLinked ? `${active!.title} · Avyron Insights` : baseTitle;
     const d = (deepLinked && active?.excerpt) || baseDesc;
-
     const basePath = isEn ? "/en/blog" : "/blog";
-    // Canonical stays on the list URL — hash fragments are not separate pages.
-    const url = `${SITE}${basePath}`;
-    const image = active?.cover_image_url || `${SITE}/og/home.jpg`;
-    document.title = t;
-    const set = (sel: string, attr: string, val: string, mk?: () => HTMLElement) => {
-      let el = document.querySelector(sel) as HTMLElement | null;
-      if (!el && mk) { el = mk(); document.head.appendChild(el); }
-      if (el) el.setAttribute(attr, val);
-    };
-    set('meta[name="description"]', "content", d, () => { const m = document.createElement("meta"); m.setAttribute("name", "description"); return m; });
-    set('link[rel="canonical"]', "href", url, () => { const l = document.createElement("link"); l.setAttribute("rel", "canonical"); return l; });
-    // hreflang alternates
-    document.head.querySelectorAll('link[rel="alternate"][hreflang]').forEach((el) => el.remove());
-    const alts: Array<[string, string]> = [
-      ["ro", `${SITE}/blog`],
-      ["en", `${SITE}/en/blog`],
-      ["x-default", `${SITE}/blog`],
-    ];
-    alts.forEach(([code, href]) => {
-      const link = document.createElement("link");
-      link.setAttribute("rel", "alternate");
-      link.setAttribute("hreflang", code);
-      link.setAttribute("href", href);
-      document.head.appendChild(link);
-    });
-    [["og:title", t], ["og:description", d], ["og:type", deepLinked ? "article" : "website"], ["og:url", url], ["og:image", image], ["og:site_name", "Avyron"], ["og:locale", isEn ? "en_US" : "ro_RO"],
-     ["twitter:card", "summary_large_image"], ["twitter:title", t], ["twitter:description", d], ["twitter:image", image]
-    ].forEach(([k, v]) => {
-      const sel = k.startsWith("twitter") ? `meta[name="${k}"]` : `meta[property="${k}"]`;
-      set(sel, "content", v as string, () => { const m = document.createElement("meta"); k.startsWith("twitter") ? m.setAttribute("name", k) : m.setAttribute("property", k); return m; });
-    });
-    const ex = document.getElementById("news-jsonld"); if (ex) ex.remove();
-    if (active) {
-      const ld = {
-        "@context": "https://schema.org", "@type": "BlogPosting",
-        headline: active.title, description: active.excerpt,
-        image: active.cover_image_url ? [active.cover_image_url] : undefined,
-        datePublished: active.published_at, dateModified: active.published_at,
-        inLanguage: isEn ? "en" : "ro-RO",
-        author: { "@type": "Organization", name: "Avyron", url: SITE },
-        publisher: { "@type": "Organization", "@id": `${SITE}/#organization`, name: "Avyron", logo: { "@type": "ImageObject", url: `${SITE}/avyron-logo.jpg` } },
-        mainEntityOfPage: `${url}#${active.slug}`, keywords: active.tags?.join(", ")
-      };
-      const s = document.createElement("script"); s.type = "application/ld+json"; s.id = "news-jsonld"; s.text = JSON.stringify(ld); document.head.appendChild(s);
-    }
+    const image = active?.cover_image_url || "/og/home.jpg";
+
+    Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
+      ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd }]) => {
+        setPageMeta({
+          title: t,
+          description: d,
+          // Canonical stays on the list URL — hash fragments are not separate pages.
+          path: basePath,
+          alternates: { ro: "/blog", en: "/en/blog" },
+          image,
+          type: deepLinked ? "article" : "website",
+        });
+        setJsonLd("organization", organizationLd);
+        setJsonLd(
+          "breadcrumb",
+          breadcrumbLd([
+            { name: isEn ? "Home" : "Acasă", path: isEn ? "/en" : "/" },
+            { name: "Blog", path: basePath },
+          ]),
+        );
+        if (deepLinked && active) {
+          setJsonLd("blogposting", {
+            "@type": "BlogPosting",
+            headline: active.title,
+            description: active.excerpt,
+            image: active.cover_image_url ? [active.cover_image_url] : undefined,
+            datePublished: active.published_at,
+            dateModified: active.published_at,
+            inLanguage: isEn ? "en" : "ro-RO",
+            author: { "@type": "Organization", name: "Avyron", url: SITE },
+            publisher: { "@id": `${SITE}/#organization` },
+            mainEntityOfPage: `${SITE}${basePath}#${active.slug}`,
+            keywords: active.tags?.join(", "),
+          });
+        }
+      },
+    );
   }, [active]);
+
 
 
   // load posts

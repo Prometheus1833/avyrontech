@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -10,6 +10,8 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index.tsx";
 import LangRouteSync from "@/components/site/LangRouteSync";
 import { pageView } from "@/lib/analytics";
+import { resetManagedHead } from "@/lib/seo";
+
 
 const Gdpr = lazy(() => import("./pages/Gdpr.tsx"));
 const Pricing = lazy(() => import("./pages/Pricing.tsx"));
@@ -44,6 +46,22 @@ const AnalyticsTracker = () => {
   return null;
 };
 
+/**
+ * Wipes the previous route's managed head (hreflang, og:locale:alternate,
+ * JSON-LD graph) during render — i.e. BEFORE the page effects of the new route
+ * write their own tags. Guarantees no Product/Service schema survives a
+ * navigation to pricing or the homepage.
+ */
+const HeadManager = () => {
+  const { pathname } = useLocation();
+  const last = useRef<string | null>(null);
+  if (last.current !== pathname) {
+    last.current = pathname;
+    resetManagedHead();
+  }
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
@@ -52,8 +70,10 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <HeadManager />
             <LangRouteSync />
             <AnalyticsTracker />
+
             <Suspense fallback={<div className="min-h-screen" />}>
               <Routes>
                 <Route path="/" element={<Index />} />

@@ -91,26 +91,17 @@ const ErrorPage = ({ variant = "404" }: Props) => {
   const cfg = CONFIGS[variant];
 
   useEffect(() => {
+    // Error pages must never be indexed — robots is part of the managed head.
     import("@/lib/seo").then(({ setPageMeta }) =>
       setPageMeta({
         title: cfg.metaTitle,
         description: cfg.metaDescription,
         path: location.pathname,
+        robots: "noindex, follow",
       })
     );
-    // Disallow indexing for error pages
-    let robots = document.head.querySelector('meta[name="robots"]') as HTMLMetaElement | null;
-    if (!robots) {
-      robots = document.createElement("meta");
-      robots.setAttribute("name", "robots");
-      document.head.appendChild(robots);
-    }
-    const prev = robots.getAttribute("content");
-    robots.setAttribute("content", "noindex, follow");
-    return () => {
-      if (prev) robots?.setAttribute("content", prev);
-    };
   }, [location.pathname, cfg.metaTitle, cfg.metaDescription]);
+
 
   const Icon = cfg.Icon;
 

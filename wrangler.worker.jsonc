@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "avyron-site",
+  "compatibility_date": "2026-06-01",
+  "main": "./src/worker/index.ts",
+  // Enable with: AVYRON_WORKER=1 npm run build (Cloudflare Workers deploy).
+  "assets": {
+    "binding": "ASSETS",
+    // The Worker owns 404/403/500/503 semantics, so the asset server must not
+    // invent its own fallback (that is what produced soft-404s).
+    "not_found_handling": "none",
+    "html_handling": "auto-trailing-slash"
+  },
+  "observability": { "enabled": true }
+}

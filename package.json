@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/prerender.mjs",
     "build:dev": "vite build --mode development",
     "deploy": "npm run build && npx wrangler@4.96.0 deploy --config dist/wrangler.json",
     "deploy:dry-run": "npm run build && npx wrangler@4.96.0 deploy --config dist/wrangler.json --dry-run",
