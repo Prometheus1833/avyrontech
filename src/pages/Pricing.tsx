@@ -670,7 +670,7 @@ const Pricing = () => {
                     { icon: <Shield className="size-4" />, text: "GDPR, termeni & condiții, politici și backup-uri zilnice" },
                   ]
                 : [
-                    { icon: <Package className="size-4" />, text: "Product catalog with unlimited variants, stock and categories" },
+                    { icon: <Package className="size-4" />, text: "Scalable product catalog with variants, stock and categories" },
                     { icon: <ShoppingBag className="size-4" />, text: "Cart, secure checkout and conversion-focused product pages" },
                     { icon: <CreditCard className="size-4" />, text: "Online payments (card, Apple Pay, Google Pay) + COD" },
                     { icon: <Truck className="size-4" />, text: "Courier integrations (FAN, Sameday, DPD) with automatic AWB" },

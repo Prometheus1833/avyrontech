@@ -2,7 +2,7 @@
 
 > Agenție românească de produse digitale: site-uri de prezentare premium, magazine online, aplicații web & mobile, agenți AI, audit, testare QA și mentenanță. Termenele și nivelul de suport sunt stabilite măsurabil pentru fiecare proiect.
 
-Avyron construiește din Iași produse digitale pentru afaceri locale, branduri naționale și profesii liberale. Datele juridice complete sunt publicate în politica GDPR. Lucrăm în română și engleză, cu React, TypeScript, Vite, Tailwind CSS, infrastructură edge Cloudflare, date structurate Schema.org și GA4 cu Consent Mode.
+Avyron construiește din județul Iași produse digitale pentru afaceri locale, branduri naționale și profesii liberale. Brandul este dezvoltat și operat prin colaborarea dintre FV Tech Solutions SRL, cu sediul în municipiul Pașcani, județul Iași, și DIGITAL ECOTECH SOLUTIONS S.R.L., CUI 55055976, cu sediul în municipiul Iași, Bd. Independenței nr. 20, județul Iași. Datele juridice complete sunt publicate în politica GDPR. Lucrăm în română și engleză, cu React, TypeScript, Vite, Tailwind CSS, infrastructură edge Cloudflare, date structurate Schema.org și GA4 cu Consent Mode.
 
 Contact: contact@avyron.ro · +40 734 605 055 · WhatsApp · https://avyron.ro
 
@@ -38,5 +38,5 @@ Contact: contact@avyron.ro · +40 734 605 055 · WhatsApp · https://avyron.ro
 - Livrare tipică: 2–5 zile lucrătoare pentru un site de prezentare.
 - Prețuri de start: site de prezentare de la 300€, testare QA de la 300€, mentenanță de la 100€/lună.
 - Include: design custom, conținut, SEO tehnic, hosting și domeniu în primul an, email pe domeniu, panou de administrare, instruire live.
-- Suport tehnic gratuit pe viață pentru produsele livrate de Avyron.
+- Nivelul și durata suportului tehnic sunt stabilite transparent în oferta și contractul fiecărui proiect.
 - Zone deservite: România și Uniunea Europeană. Limbi: română și engleză.

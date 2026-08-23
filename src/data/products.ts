@@ -140,7 +140,7 @@ const CATALOG: Product[] = [
         intro: [
           "Un site de prezentare nu înseamnă doar câteva pagini frumoase. Înseamnă structura corectă pentru ceea ce caută clientul, obiective Core Web Vitals măsurate, texte care răspund la întrebările reale ale vizitatorului și trasee clare către telefon, WhatsApp sau formular.",
           "Fiecare proiect pornește de la activitatea ta: ce vinzi, cui, în ce zonă și ce te diferențiază de concurență. Construim arhitectura de pagini în jurul acestor răspunsuri, apoi scriem conținutul, pregătim imaginile, implementăm designul și testăm totul pe mobil, tabletă și desktop înainte de livrare.",
-          "La final primești acces complet: panou de administrare, documentație, sesiune live de instruire și suport tehnic gratuit pe toată durata de viață a produsului. Site-ul rămâne al tău, fără dependențe ascunse.",
+          "La final primești acces complet: panou de administrare, documentație, sesiune live de instruire și suport tehnic în perioada și condițiile stabilite în ofertă. Site-ul rămâne al tău, fără dependențe ascunse.",
         ],
         highlights: [
           {
@@ -187,7 +187,7 @@ const CATALOG: Product[] = [
           "Pagină GDPR și politică de cookie-uri",
           "Panou Administrator complet",
           "Ghid de administrare + sesiune live",
-          "Suport tehnic gratuit pe viață",
+          "Suport tehnic conform perioadei stabilite în ofertă",
         ],
         process: [
           {
@@ -196,7 +196,7 @@ const CATALOG: Product[] = [
           },
           {
             title: "Structură și conținut",
-            desc: "Propunem harta de pagini, textele și imaginile. Tu confirmi sau ceri modificări, fără limită.",
+            desc: "Propunem harta de pagini, textele și imaginile. Tu confirmi sau soliciți ajustări în rundele de revizie stabilite în ofertă.",
           },
           {
             title: "Design și dezvoltare",
@@ -330,7 +330,7 @@ const CATALOG: Product[] = [
         },
         advice: {
           title: "După lansare: consiliere, nu tăcere",
-          lead: "Lansarea este începutul. Iată ce recomandăm în primele luni — și la ce te ajutăm gratuit, ca parte din suportul pe viață.",
+          lead: "Lansarea este începutul. Iată ce recomandăm în primele luni și ce acoperă perioada de suport stabilită pentru proiect.",
           items: [
             {
               title: "Primele 7 zile — verifică și indexează",
@@ -370,11 +370,11 @@ const CATALOG: Product[] = [
           "Turnkey premium presentation website delivered on an agreed schedule: custom design, technical SEO, admin panel, domain email and support defined in the proposal. From €300.",
         heroTitle: "Premium Presentation Website",
         heroLead:
-          "A complete website built from scratch around your brand — fast, secure, properly indexed in Google and ready to bring clients from week one.",
+          "A complete website built from scratch around your brand — fast, secure, technically ready for indexing and for customer-acquisition campaigns after launch.",
         intro: [
-          "A presentation website is more than a few nice pages. It's the right structure for what your client is looking for, sub-second loading, copy that answers real questions and clear paths to phone, WhatsApp or form. That's exactly what we deliver.",
+          "A presentation website is more than a few nice pages. It combines the right structure for customer intent, measurable Core Web Vitals objectives, copy that answers real questions and clear paths to phone, WhatsApp or form.",
           "Every project starts from your business: what you sell, to whom, where and what makes you different. We build the page architecture around those answers, then write the content, prepare the imagery, implement the design and test everything on mobile, tablet and desktop before launch.",
-          "At handover you get full access: admin panel, documentation, a live training session and free technical support for the lifetime of the product. The site is yours, with no hidden dependencies.",
+          "At handover you get full access: admin panel, documentation, a live training session and technical support for the period and conditions defined in the proposal. The site is yours, with no hidden dependencies.",
         ],
         highlights: [
           {
@@ -421,7 +421,7 @@ const CATALOG: Product[] = [
           "GDPR page and cookie policy",
           "Full admin panel",
           "Admin guide + live session",
-          "Free lifetime technical support",
+          "Technical support for the period defined in the proposal",
         ],
         process: [
           {
@@ -430,7 +430,7 @@ const CATALOG: Product[] = [
           },
           {
             title: "Structure and content",
-            desc: "We propose the sitemap, copy and imagery. You confirm or request changes, with no limit.",
+            desc: "We propose the sitemap, copy and imagery. You confirm or request changes within the review rounds agreed in the proposal.",
           },
           {
             title: "Design and build",
@@ -564,7 +564,7 @@ const CATALOG: Product[] = [
         },
         advice: {
           title: "After launch: guidance, not silence",
-          lead: "The launch is the beginning. Here is what we recommend in the first months — and what we help you with, free of charge, as part of lifetime support.",
+          lead: "The launch is the beginning. Here is what we recommend in the first months and what the agreed support period covers.",
           items: [
             {
               title: "First 7 days — verify and index",
@@ -852,7 +852,7 @@ const CATALOG: Product[] = [
           "Every product gets its own SEO — title, description, structured data with price and availability — so it can appear in Google Shopping and in organic results with price and ratings.",
         ],
         highlights: [
-          { icon: "store", title: "Unlimited catalog", desc: "Products with variants, stock, categories, filters and fast search, easy for anyone on your team to manage." },
+          { icon: "store", title: "Scalable catalog", desc: "Products with variants, stock, categories, filters and fast search, sized for the agreed platform capacity and easy for your team to manage." },
           { icon: "shield", title: "Secure checkout", desc: "Card, Apple Pay, Google Pay and cash on delivery, with checkout pages optimized for completion rate." },
           { icon: "zap", title: "Couriers and automatic AWB", desc: "FAN, Sameday, DPD and eMAG marketplace integration with automatic AWB generation and delivery tracking." },
           { icon: "check", title: "Compliant invoicing", desc: "SmartBill or Oblio connected, invoices issued automatically on order and full tax compliance." },
@@ -860,7 +860,7 @@ const CATALOG: Product[] = [
           { icon: "chart", title: "Marketing automation", desc: "Abandoned cart emails, promo codes, bundles, Meta/TikTok pixels and GA4 with complete conversion tracking." },
         ],
         deliverables: [
-          "Catalog with unlimited variants, stock and categories",
+          "Scalable catalog with variants, stock and categories",
           "Cart and conversion-focused secure checkout",
           "Online payments (card, Apple Pay, Google Pay) + COD",
           "Courier integrations (FAN, Sameday, DPD) with automatic AWB",

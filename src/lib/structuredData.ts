@@ -15,7 +15,9 @@ export const organizationLd = {
   "@type": "Organization",
   "@id": `${BASE_URL}/#organization`,
   name: "Avyron",
-  legalName: COMPANY.legalName,
+  alternateName: COMPANY.associationName,
+  description:
+    "Avyron este un brand digital operat prin colaborarea dintre FV Tech Solutions SRL și DIGITAL ECOTECH SOLUTIONS S.R.L.",
   url: BASE_URL,
   logo: {
     "@type": "ImageObject",
@@ -32,6 +34,22 @@ export const organizationLd = {
     addressRegion: "IS",
     addressCountry: "RO",
   },
+  member: COMPANY.legalEntities.map((entity) => ({
+    "@type": "Organization",
+    "@id": `${BASE_URL}/#${entity.id}`,
+    name: entity.legalName,
+    legalName: entity.legalName,
+    ...(entity.taxId
+      ? { identifier: { "@type": "PropertyValue", propertyID: "CUI", value: entity.taxId } }
+      : {}),
+    address: {
+      "@type": "PostalAddress",
+      ...(entity.streetAddress ? { streetAddress: entity.streetAddress } : {}),
+      addressLocality: entity.addressLocality,
+      addressRegion: entity.addressRegion,
+      addressCountry: "RO",
+    },
+  })),
   sameAs: [
     "https://www.facebook.com/avyron.tech",
     "https://www.instagram.com/avyron.tech",

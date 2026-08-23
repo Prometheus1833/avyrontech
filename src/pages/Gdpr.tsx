@@ -17,25 +17,31 @@ const sections = [
     title: "Introducere",
     body: (
       <>
-        <p>Această Politică de Confidențialitate descrie modul în care <strong>{COMPANY.legalName}</strong> (denumită în continuare „Societatea", „noi" sau „Operatorul") colectează, utilizează, stochează și protejează datele cu caracter personal în conformitate cu Regulamentul (UE) 2016/679 (GDPR).</p>
-        <p>Prin utilizarea site-ului nostru și/sau a serviciilor oferite, sunteți de acord cu practicile descrise în prezenta politică.</p>
+        <p>Această Politică de Confidențialitate descrie modul în care este realizată prelucrarea datelor cu caracter personal în cadrul serviciilor furnizate sub marca <strong>Avyron</strong>, dezvoltată și operată prin colaborarea dintre <strong>{COMPANY.associationName}</strong>.</p>
+        <p>Politica are rol de informare în conformitate cu Regulamentul (UE) 2016/679 (GDPR). Utilizarea site-ului nu echivalează cu acordarea unui consimțământ general; consimțământul este solicitat distinct numai pentru prelucrările care se bazează pe acest temei.</p>
       </>
     ),
   },
   {
     icon: Users,
-    title: "Datele Operatorului",
+    title: "Identitate juridică și organizarea colaborării",
     body: (
-      <ul className="space-y-1.5">
-        <li><strong>Denumire:</strong> {COMPANY.legalName}</li>
-        {COMPANY.taxId && <li><strong>CUI:</strong> {COMPANY.taxId}</li>}
-        <li><strong>Sediu:</strong> {COMPANY.registeredAddress}</li>
-        <li><strong>Sediu:</strong> Iași, România</li>
-        <li><strong>CUI:</strong> disponibil la cerere — solicitare prin email</li>
-        <li><strong>Nr. Registrul Comerțului:</strong> disponibil la cerere — solicitare prin email</li>
-        <li><strong>Email contact:</strong> contact@avyron.ro</li>
-        <li><strong>Telefon:</strong> +40 734 605 055</li>
-      </ul>
+      <>
+        <p>Avyron reprezintă cadrul comercial și operațional în care colaborează următoarele entități juridice:</p>
+        <div className="grid gap-3 mt-4">
+          {COMPANY.legalEntities.map((entity) => (
+            <div key={entity.id} className="rounded-2xl border border-border bg-background/70 p-4">
+              <div className="font-semibold text-foreground">{entity.legalName}</div>
+              <div className="mt-1 text-sm leading-relaxed">
+                {entity.taxId && <div><strong>CUI:</strong> {entity.taxId}</div>}
+                <div><strong>Sediu:</strong> {entity.registeredAddress}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4">Entitatea responsabilă pentru un proiect, o factură sau o relație contractuală este identificată în oferta, contractul și documentele fiscale aplicabile. Rolurile privind prelucrarea datelor sunt stabilite în funcție de scopul concret și de implicarea fiecărei entități, fără a extinde accesul la date dincolo de ceea ce este necesar.</p>
+        <p>Pentru site, solicitări inițiale și exercitarea drepturilor GDPR este disponibil un punct unic de contact: <a className="text-brand hover:underline" href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> · <a className="text-brand hover:underline" href={`tel:${COMPANY.phone}`}>+40 734 605 055</a>. Cererea va fi direcționată către entitatea responsabilă.</p>
+      </>
     ),
   },
   {
@@ -105,6 +111,7 @@ const sections = [
       <>
         <p>Datele pot fi transmise către:</p>
         <ul className="list-disc pl-5 space-y-1 mt-2">
+          <li>Între entitățile care colaborează sub marca Avyron, numai în măsura necesară furnizării serviciului</li>
           <li>Furnizori de servicii IT (hosting, mentenanță)</li>
           <li>Procesatori de plăți</li>
           <li>Autorități publice (în baza obligațiilor legale)</li>
@@ -136,7 +143,7 @@ const sections = [
           <li>Dreptul la opoziție</li>
           <li>Dreptul de a retrage consimțământul</li>
         </ul>
-        <p className="mt-3">Pentru exercitarea acestor drepturi, ne puteți contacta la: <a className="text-brand hover:underline" href="mailto:contact@avyron.ro">contact@avyron.ro</a></p>
+        <p className="mt-3">Pentru exercitarea acestor drepturi, indiferent de entitatea indicată în documentele contractuale, ne puteți contacta la: <a className="text-brand hover:underline" href="mailto:contact@avyron.ro">contact@avyron.ro</a>. Solicitarea va fi transmisă intern entității responsabile și tratată în termenul legal.</p>
       </>
     ),
   },
@@ -145,7 +152,7 @@ const sections = [
     title: "Securitatea datelor",
     body: (
       <>
-        <p>Societatea implementează măsuri tehnice și organizatorice adecvate:</p>
+        <p>Entitățile implicate implementează, în raport cu rolul și sistemele administrate, măsuri tehnice și organizatorice adecvate:</p>
         <ul className="list-disc pl-5 space-y-1 mt-2">
           <li>Criptarea datelor</li>
           <li>Acces restricționat</li>
@@ -163,10 +170,10 @@ const sections = [
         <p>Site-ul utilizează cookie-uri pentru:</p>
         <ul className="list-disc pl-5 space-y-1 mt-2">
           <li>Funcționare tehnică</li>
-          <li>Analiză trafic</li>
-          <li>Personalizare conținut</li>
+          <li>Analiză de trafic, numai după activarea opțiunii Analytics</li>
+          <li>Marketing și personalizare publicitară, numai după activarea separată a opțiunii Marketing</li>
         </ul>
-        <p className="mt-3">Pentru detalii complete, consultați Politica de Cookie-uri.</p>
+        <p className="mt-3">Preferințele pot fi modificate sau retrase oricând din opțiunea „Setări cookie” disponibilă în footer.</p>
       </>
     ),
   },
@@ -176,7 +183,7 @@ const sections = [
     body: (
       <ul className="list-disc pl-5 space-y-1">
         <li>Datele clienților sunt prelucrate strict conform instrucțiunilor acestora</li>
-        <li>Societatea acționează, după caz, ca operator sau persoană împuternicită</li>
+        <li>Fiecare entitate acționează, după caz și conform documentelor contractuale, ca operator, operator asociat sau persoană împuternicită</li>
         <li>Se încheie acorduri de prelucrare a datelor (DPA), dacă este necesar</li>
         <li>Se asigură separarea logică a datelor între clienți</li>
       </ul>
@@ -214,7 +221,7 @@ const Gdpr = () => {
           : "Politica de Confidențialitate și GDPR | Avyron",
         description: isEn
           ? "The legally binding Avyron privacy policy is currently available in Romanian. A verified English translation is being prepared."
-          : `Politica de Confidențialitate și Protecția Datelor (GDPR) Avyron — ${COMPANY.legalName}.`,
+          : `Politica GDPR Avyron: transparență privind prelucrarea datelor în colaborarea dintre ${COMPANY.associationName}`,
         path: isEn ? "/en/privacy" : "/gdpr",
         robots: isEn ? "noindex, follow" : undefined,
       })
@@ -270,10 +277,9 @@ const Gdpr = () => {
             <p className="text-base md:text-lg leading-relaxed text-foreground/90">
               La Avyron, administrăm informațiile și detaliile clienților noștri cu maximă grijă și responsabilitate.
               Acordurile de securitate sunt fundamentale pentru noi — credem că o colaborare reală se construiește pe încredere.
-              Rămânem mereu deschiși la colaborări complete <strong>fără utilizarea datelor</strong>, inclusiv a celor despre produsul achiziționat,
-              nicăieri în mediul online. Garantăm <strong>anonimizarea completă</strong> și neutilizarea vreunei informații
-              din cadrul colaborării, iar la cerere oferim <strong>acorduri de confidențialitate maximă conform legii</strong>,
-              pentru ca fiecare proiect să rămână strict între tine și echipa noastră.
+              Putem organiza proiecte în care informațiile despre client și produs nu sunt utilizate în portofoliu sau în comunicarea publică.
+              Aplicăm minimizarea datelor și, acolo unde este adecvat, anonimizarea sau pseudonimizarea acestora. La cerere,
+              stabilim prin contract ori acord de confidențialitate limitele de acces, utilizare și publicare aplicabile proiectului.
             </p>
           </div>
         </div>

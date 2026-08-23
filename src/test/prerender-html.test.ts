@@ -73,7 +73,19 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
       expect(new Set(types).size).toBe(types.length);
       const org = graph["@graph"].find((n: { "@type": string }) => n["@type"] === "Organization");
       expect(org.logo.url ?? org.logo).toContain("/avyron-logo.jpg");
+      expect(JSON.stringify(org.member)).toContain("FV Tech Solutions SRL");
+      expect(JSON.stringify(org.member)).toContain("DIGITAL ECOTECH SOLUTIONS S.R.L.");
+      expect(JSON.stringify(org.member)).toContain("55055976");
     }
+  });
+
+  it("publishes the confirmed legal association on the GDPR page", () => {
+    const html = read("/gdpr");
+    expect(html).toContain("FV Tech Solutions SRL");
+    expect(html).toContain("Municipiul Pașcani, județul Iași");
+    expect(html).toContain("DIGITAL ECOTECH SOLUTIONS S.R.L.");
+    expect(html).toContain("55055976");
+    expect(html).toContain("Bd. Independenței nr. 20");
   });
 
   it("keeps Product/Service schema off non-product pages", () => {
