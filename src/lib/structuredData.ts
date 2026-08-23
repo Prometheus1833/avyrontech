@@ -163,3 +163,89 @@ export function faqPageLd(items: Array<{ q: string; a: string }>) {
     })),
   };
 }
+
+/** Build a Product JSON-LD with a single offer (for product/service pages). */
+export function productLd({
+  name,
+  description,
+  path,
+  priceEur,
+  brand = "Avyron",
+}: {
+  name: string;
+  description: string;
+  path: string;
+  priceEur?: number;
+  brand?: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "@id": `${BASE_URL}${path}#product`,
+    name,
+    description,
+    url: `${BASE_URL}${path}`,
+    brand: { "@type": "Brand", name: brand },
+    image: LOGO_URL,
+    ...(priceEur
+      ? {
+          offers: {
+            "@type": "Offer",
+            price: priceEur,
+            priceCurrency: "EUR",
+            availability: "https://schema.org/InStock",
+            url: `${BASE_URL}${path}`,
+            seller: { "@id": `${BASE_URL}/#organization` },
+          },
+        }
+      : {}),
+  };
+}
+
+/** Build an OfferCatalog JSON-LD for subscription tiers (care plans). */
+export function offerCatalogLd({
+  name,
+  path,
+  items,
+}: {
+  name: string;
+  path: string;
+  items: Array<{ name: string; description: string; priceEur: number }>;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "OfferCatalog",
+    "@id": `${BASE_URL}${path}#catalog`,
+    name,
+    url: `${BASE_URL}${path}`,
+    provider: { "@id": `${BASE_URL}/#organization` },
+    itemListElement: items.map((it, i) => ({
+      "@type": "Offer",
+      position: i + 1,
+      name: it.name,
+      description: it.description,
+      price: it.priceEur,
+      priceCurrency: "EUR",
+      availability: "https://schema.org/InStock",
+      url: `${BASE_URL}${path}`,
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: it.priceEur,
+        priceCurrency: "EUR",
+        billingIncrement: 1,
+        unitCode: "MON",
+      },
+      itemOffered: {
+        "@type": "Service",
+        name: it.name,
+        description: it.description,
+        provider: { "@id": `${BASE_URL}/#organization` },
+      },
+      acceptedPaymentMethod: [
+        { "@type": "PaymentMethod", name: "Bank transfer (IBAN)" },
+        { "@type": "PaymentMethod", name: "Credit or debit card" },
+        { "@type": "PaymentMethod", name: "Online payment link" },
+      ],
+    })),
+  };
+}
