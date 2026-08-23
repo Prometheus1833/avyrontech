@@ -193,8 +193,13 @@ const Blog = () => {
     const baseDesc = isEn
       ? "Articles on IT, web design, SEO and online security from the Avyron team."
       : "Articole despre IT, web design, SEO și securitate online de la echipa Avyron.";
-    const t = active ? `${active.title} · Avyron Insights` : baseTitle;
-    const d = active?.excerpt || baseDesc;
+    // Only deep-linked articles (#slug) override the blog's own title/description,
+    // so /blog and /en/blog keep a stable, indexable identity.
+    const deepLinked =
+      !!active && window.location.hash.replace("#", "") === active.slug;
+    const t = deepLinked ? `${active!.title} · Avyron Insights` : baseTitle;
+    const d = (deepLinked && active?.excerpt) || baseDesc;
+
     const basePath = isEn ? "/en/blog" : "/blog";
     // Canonical stays on the list URL — hash fragments are not separate pages.
     const url = `${SITE}${basePath}`;
