@@ -28,6 +28,8 @@ const Unsubscribe = lazy(() => import("./pages/Unsubscribe.tsx"));
 const ProjectPage = lazy(() => import("./pages/intern/ProjectPage.tsx"));
 const InternHome = lazy(() => import("./pages/intern/InternHome.tsx"));
 const ProductDetail = lazy(() => import("./pages/products/ProductPage.tsx"));
+const CarePlans = lazy(() => import("./pages/products/CarePlansPage.tsx"));
+
 
 import CookieBanner from "@/components/site/CookieBanner";
 import MustChangePassword from "@/components/auth/MustChangePassword";
