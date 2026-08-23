@@ -8,17 +8,18 @@ Frontendul Pages și Workerul Email Routing sunt build-uri separate.
 - API Worker: build command `npm run build:api`, deploy command `npm run deploy:api`
 - API preview version: `npm run deploy:api:preview`
 - Pages: build command `npm run build:pages`, output `dist`
-- Node: `22`, package manager: npm (unicul lockfile este `package-lock.json`)
+- Config API canonic: `wrangler.jsonc` din rădăcina repository-ului
+- Node: `22`, package manager canonic: npm; `bun.lock` rămâne sincronizat pentru build-ul Cloudflare configurat anterior pe Bun
 
 ## Ordinea activării
 
 Aceste comenzi modifică resursele Cloudflare și se rulează numai după verificarea preview-ului:
 
 ```bash
-npx wrangler d1 migrations apply avyron-db --remote --config cloudflare/workers/api/wrangler.jsonc
-npx wrangler secret put JWT_SECRET --config cloudflare/workers/api/wrangler.jsonc
-npx wrangler secret put SEED_TOKEN --config cloudflare/workers/api/wrangler.jsonc
-npx wrangler secret put SMTP_PASS --config cloudflare/workers/api/wrangler.jsonc
+npx wrangler d1 migrations apply avyron-db --remote --config wrangler.jsonc
+npx wrangler secret put JWT_SECRET --config wrangler.jsonc
+npx wrangler secret put SEED_TOKEN --config wrangler.jsonc
+npx wrangler secret put SMTP_PASS --config wrangler.jsonc
 npm run deploy:api
 ```
 

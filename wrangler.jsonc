@@ -1,9 +1,13 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
+  // Primary Worker connected to GitHub. Keeping this config at repository
+  // root makes Cloudflare's default `wrangler versions upload` preview command
+  // deterministic without duplicating bindings in dashboard-only settings.
   "name": "avyrontech",
-  "main": "src/index.ts",
+  "main": "cloudflare/workers/api/src/index.ts",
   "compatibility_date": "2026-08-23",
   "compatibility_flags": ["nodejs_compat"],
+  "preview_urls": true,
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1,
@@ -15,28 +19,23 @@
     }
   },
 
-  // ─── Bindings ────────────────────────────────────────────────────────
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "avyron-db",
       "database_id": "85b6868d-174a-48aa-8891-9366bbcb7e47",
-      "migrations_dir": "../../d1/migrations"
+      "migrations_dir": "cloudflare/d1/migrations"
     }
   ],
   "kv_namespaces": [
     { "binding": "KV", "id": "7c296f2750b943cea4376c12122ed276" }
   ],
   "r2_buckets": [
-    // FILES  = documente private per proiect (upload din intern, atașamente proposals)
     { "binding": "FILES", "bucket_name": "avyron-files" },
-    // MEDIA  = active publice (logo-uri, portfolio, cover images, og)
     { "binding": "MEDIA", "bucket_name": "avyron-media" }
   ],
 
-  // Secrete: JWT_SECRET, SEED_TOKEN, SMTP_PASS, TURNSTILE_SECRET.
-  // Cloudflare Email Sending SMTP: host smtp.mx.cloudflare.net, port 465,
-  // username literal api_token, password = API token with Email Sending Edit.
+  // Secrets: JWT_SECRET, SEED_TOKEN, SMTP_PASS, TURNSTILE_SECRET.
   "vars": {
     "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://avyrontech.lovable.app,https://id-preview--3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovable.app,https://3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovableproject.com,http://localhost:8080",
     "APP_URL": "https://avyron.ro",
@@ -44,7 +43,7 @@
     "SMTP_PORT": "465",
     "SMTP_USER": "api_token",
     "SMTP_FROM": "contact@avyron.ro",
-    "LEAD_TO": "avyrontech@gmail.com"
-    ,"TURNSTILE_ALLOWED_HOSTNAMES": "avyron.ro,www.avyron.ro,avyrontech.pages.dev,*.avyrontech.pages.dev,avyrontech.lovable.app,localhost"
+    "LEAD_TO": "avyrontech@gmail.com",
+    "TURNSTILE_ALLOWED_HOSTNAMES": "avyron.ro,www.avyron.ro,avyrontech.pages.dev,*.avyrontech.pages.dev,avyrontech.lovable.app,localhost"
   }
 }

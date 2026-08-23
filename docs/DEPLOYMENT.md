@@ -46,10 +46,11 @@ production safeguard, but previews require the service binding.
 
 ## Cloudflare Workers — API and email
 
-The API Worker is configured in `cloudflare/workers/api/wrangler.jsonc`; the
+The primary API Worker is configured in the root `wrangler.jsonc`; the
 email Worker is configured in `cloudflare/workers/email/wrangler.jsonc`.
-Connect each Worker to the same GitHub repository, production branch `main`,
-and set its root directory to its own folder. Restrict build watch paths so a
+Connect each Worker to the same GitHub repository and production branch `main`.
+Keep the API Worker root at the repository root so Cloudflare's default preview
+command finds `wrangler.jsonc`; use the Email Worker config explicitly. Restrict build watch paths so a
 frontend-only commit does not redeploy backend services.
 
 Recommended watch paths:
