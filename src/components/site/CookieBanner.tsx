@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Cookie, Settings2, Check, X } from "lucide-react";
+import { updateConsent } from "@/lib/analytics";
 
 type Prefs = {
   necessary: true;
@@ -17,17 +18,25 @@ const CookieBanner = () => {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Prefs & { ts?: number };
+        updateConsent(parsed.analytics);
+      } else {
+        updateConsent(false);
+      }
       if (!saved) {
         const t = setTimeout(() => setOpen(true), 600);
         return () => clearTimeout(t);
       }
     } catch {
+      updateConsent(false);
       setOpen(true);
     }
   }, []);
 
   const save = (p: Prefs) => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...p, ts: Date.now() })); } catch {}
+    updateConsent(p.analytics);
     setOpen(false);
   };
 
