@@ -11,6 +11,12 @@ export const ROUTE_ALTERNATES: Array<{ ro: string; en: string }> = [
   { ro: "/despre-si-portofoliu", en: "/en/about" },
   { ro: "/blog", en: "/en/blog" },
   { ro: "/gdpr", en: "/en/privacy" },
+  { ro: "/produse/website-prezentare-premium", en: "/en/products/premium-presentation-website" },
+  { ro: "/produse/identitate-social-media", en: "/en/products/social-media-identity" },
+  { ro: "/produse/magazin-online", en: "/en/products/online-store" },
+  { ro: "/produse/aplicatii-web-si-mobile", en: "/en/products/web-and-mobile-apps" },
+  { ro: "/produse/agent-ai-personalizat", en: "/en/products/personalized-ai-agent" },
+  { ro: "/produse/audit-website", en: "/en/products/website-audit" },
 ];
 
 export function getLangFromPath(pathname: string): Lang {
