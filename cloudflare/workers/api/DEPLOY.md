@@ -69,3 +69,23 @@ După asta frontend-ul din prod trece automat pe same-origin (fără CORS).
 - `invalid_credentials` la login → verifică că seed-ul a rulat.
 - `forbidden` la seed → SEED_TOKEN nu e setat corect; re-rulează `wrangler secret put SEED_TOKEN`.
 - CORS blocked în preview → verifică `ALLOWED_ORIGINS` în `wrangler.jsonc` include exact URL-ul preview-ului.
+
+## Formular „Vreau exemplu gratuit” (SMTP)
+
+Endpoint: `POST /api/contact/demo` (public, multipart/form-data).
+Atașamentele se salvează în R2 `avyron-files` sub `leads/<id>/`, lead-ul se salvează în KV 90 zile,
+apoi se trimite email prin SMTP direct din Worker (TCP sockets + STARTTLS).
+
+Setează secretele (din `cloudflare/workers/api`):
+
+```bash
+bunx wrangler secret put SMTP_HOST     # ex: smtp.gmail.com
+bunx wrangler secret put SMTP_PORT     # 587 (STARTTLS) sau 465 (TLS)
+bunx wrangler secret put SMTP_USER     # ex: avyrontech@gmail.com
+bunx wrangler secret put SMTP_PASS     # app password
+bunx wrangler secret put SMTP_FROM     # ex: contact@avyron.ro (opțional)
+bunx wrangler secret put LEAD_TO       # emailul de bază al agenției
+bunx wrangler deploy
+```
+
+Dacă SMTP nu e configurat sau pică, formularul răspunde `202` iar lead-ul rămâne salvat în KV + R2.
