@@ -150,7 +150,60 @@ const CTA = () => {
               </ul>
             </div>
           </div>
+          {summary ? (
+            <div className="bg-card p-5 sm:p-6 md:p-8" role="status" aria-live="polite">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="size-6 text-brand shrink-0" aria-hidden="true" focusable="false" />
+                <div>
+                  <h3 className="font-display text-lg font-semibold">{t.cta.successTitle}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">{t.cta.successDesc}</p>
+                </div>
+              </div>
+
+              <p className="mt-5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {t.cta.summaryTitle}
+              </p>
+              <dl className="mt-2 divide-y divide-border/60 rounded-xl border border-border/60 text-sm">
+                {[
+                  [t.cta.name, summary.name],
+                  [t.cta.business, summary.business],
+                  [t.cta.phone, summary.phone],
+                  [t.cta.email, summary.email],
+                  [t.cta.website, summary.website || "—"],
+                  [t.cta.description, summary.description || "—"],
+                ].map(([label, value]) => (
+                  <div key={label} className="grid grid-cols-3 gap-2 px-3 py-2">
+                    <dt className="text-xs text-muted-foreground col-span-1">{label}</dt>
+                    <dd className="col-span-2 break-words">{value}</dd>
+                  </div>
+                ))}
+                <div className="grid grid-cols-3 gap-2 px-3 py-2">
+                  <dt className="text-xs text-muted-foreground col-span-1">{t.cta.files}</dt>
+                  <dd className="col-span-2 break-words">
+                    {summary.files.length
+                      ? summary.files.map((f) => `${f.name} (${(f.size / 1024 / 1024).toFixed(1)}MB)`).join(", ")
+                      : t.cta.summaryNoFiles}
+                  </dd>
+                </div>
+              </dl>
+
+              <p className="mt-3 text-[11px] text-muted-foreground">
+                {t.cta.summaryRef}: <span className="font-mono">{summary.leadId.slice(0, 8)}</span> ·{" "}
+                {new Date(summary.submittedAt).toLocaleString(lang === "ro" ? "ro-RO" : "en-GB")}
+              </p>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSummary(null)}
+                className="mt-5 h-10 rounded-full w-full gap-2"
+              >
+                <RotateCcw className="size-4" aria-hidden="true" focusable="false" /> {t.cta.sendAnother}
+              </Button>
+            </div>
+          ) : (
           <form onSubmit={submit} className="bg-card p-5 sm:p-6 md:p-8 space-y-3">
+
             <div>
               <Label htmlFor="name" className="text-xs">{t.cta.name}</Label>
               <Input id="name" value={data.name} onChange={set("name")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.namePh} />
