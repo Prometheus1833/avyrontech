@@ -1,13 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, ChevronDown, Sparkles } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 
 const Hero = () => {
   const { t } = useLang();
   return (
-    <section id="top" className="relative pt-24 pb-12 md:pt-36 md:pb-24 overflow-hidden bg-hero">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 text-center flex flex-col items-center">
+    <section
+      id="top"
+      className="relative min-h-[100dvh] md:min-h-0 flex flex-col items-center justify-center md:justify-start pt-24 pb-16 md:pt-36 md:pb-24 overflow-hidden bg-hero"
+    >
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 text-center flex flex-col items-center justify-center md:justify-start w-full">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -41,8 +44,32 @@ const Hero = () => {
           ))}
         </div>
       </div>
+
+      {/* Soft transition to the next section */}
+      <div
+        className="absolute inset-x-0 bottom-0 h-24 md:h-32 bg-gradient-to-b from-transparent to-background pointer-events-none z-10"
+        aria-hidden
+      />
+
+      {/* Scroll hint — mobile only */}
+      <motion.a
+        href="#de-ce"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1, duration: 0.6 }}
+        className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1 text-muted-foreground/60 md:hidden"
+        aria-label="Mergi la secțiunea următoare"
+      >
+        <motion.div
+          animate={{ y: [0, 8, 0] }}
+          transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+        >
+          <ChevronDown className="size-6" />
+        </motion.div>
+      </motion.a>
     </section>
   );
 };
 
 export default Hero;
+
