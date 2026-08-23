@@ -49,7 +49,6 @@ function wrap76(s: string): string {
 }
 
 function encodeHeader(value: string): string {
-  // eslint-disable-next-line no-control-regex
   return /^[\x20-\x7E]*$/.test(value) ? value : `=?UTF-8?B?${b64str(value)}?=`;
 }
 
@@ -99,13 +98,19 @@ class SmtpSession {
   async close() {
     try {
       await this.send("QUIT");
-    } catch {}
+    } catch {
+      // Connection may already be closed.
+    }
     try {
       await this.writer.close();
-    } catch {}
+    } catch {
+      // Writer may already be released by the peer.
+    }
     try {
       await this.socket.close();
-    } catch {}
+    } catch {
+      // Socket close is best effort.
+    }
   }
 }
 

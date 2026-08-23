@@ -12,7 +12,7 @@
 //   GET  /api/clients           (staff/admin)
 //   ... extinde după nevoie (vezi cloudflare/workers/README.md)
 
-import { Hono } from "hono";
+import { Hono, type Context, type Next } from "hono";
 import { cors } from "hono/cors";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import type { AppBindings, Role } from "./types";
@@ -53,7 +53,7 @@ app.use("/api/auth/*", async (c, next) => {
 const uuid = () => crypto.randomUUID();
 
 // ─── Auth middleware ────────────────────────────────────────────────────
-async function requireAuth(c: any, next: any) {
+async function requireAuth(c: Context<AppBindings>, next: Next) {
   const auth = c.req.header("authorization");
   const token = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
   if (!token) return c.json({ error: { code: "unauthenticated", message: "Missing token" } }, 401);
@@ -63,7 +63,7 @@ async function requireAuth(c: any, next: any) {
   c.set("roles", payload.roles ?? ["user"]);
   await next();
 }
-const requireRole = (...roles: Role[]) => async (c: any, next: any) => {
+const requireRole = (...roles: Role[]) => async (c: Context<AppBindings>, next: Next) => {
   const userRoles: Role[] = c.get("roles") ?? [];
   if (!userRoles.some((r) => roles.includes(r)))
     return c.json({ error: { code: "forbidden", message: "Insufficient role" } }, 403);
@@ -139,7 +139,7 @@ app.post("/api/auth/login", async (c) => {
   return createSession(c, row.id, roles.length ? roles : ["user"]);
 });
 
-async function createSession(c: any, userId: string, roles: Role[]) {
+async function createSession(c: Context<AppBindings>, userId: string, roles: Role[]) {
   const sid = randomHex(32);
   const sessionId = await sha256(sid);
   const t = now();

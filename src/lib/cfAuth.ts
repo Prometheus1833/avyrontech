@@ -35,6 +35,8 @@ export type CfProfile = {
 };
 
 type Listener = () => void;
+type ApiErrorBody = { error?: { message?: string; code?: string } };
+type SessionResponse = { access_token: string; expires_in: number; user: { id: string; roles: Role[] } };
 
 class CfAuth {
   private accessToken: string | null = null;
@@ -63,7 +65,7 @@ class CfAuth {
     this.emit();
   }
 
-  async request<T = any>(path: string, init: RequestInit = {}): Promise<T> {
+  async request<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
     const token = await this.ensureToken();
     const headers = new Headers(init.headers);
     if (token) headers.set("authorization", `Bearer ${token}`);
@@ -78,19 +80,21 @@ class CfAuth {
         headers.set("authorization", `Bearer ${this.accessToken}`);
         const retry = await fetch(apiUrl(path), { ...init, headers, credentials: "include" });
         if (!retry.ok) throw await this.errorFrom(retry);
-        return retry.json();
+        return retry.json() as Promise<T>;
       }
     }
     if (!res.ok) throw await this.errorFrom(res);
-    return res.json();
+    return res.json() as Promise<T>;
   }
 
   private async errorFrom(res: Response): Promise<Error> {
     let msg = `HTTP ${res.status}`;
     try {
-      const j = await res.json() as any;
+      const j = await res.json() as ApiErrorBody;
       msg = j?.error?.message || j?.error?.code || msg;
-    } catch {}
+    } catch {
+      // Keep the HTTP status fallback when the body is not JSON.
+    }
     return new Error(msg);
   }
 
@@ -103,7 +107,7 @@ class CfAuth {
     try {
       const res = await fetch(apiUrl("/api/auth/refresh"), { method: "POST", credentials: "include" });
       if (!res.ok) return false;
-      const j = await res.json() as any;
+      const j = await res.json() as SessionResponse;
       this.setSession(j.access_token, j.expires_in);
       return true;
     } catch {
@@ -118,7 +122,7 @@ class CfAuth {
       credentials: "include",
       body: JSON.stringify(input),
     });
-    const j = await res.json() as any;
+    const j = await res.json() as SessionResponse & ApiErrorBody;
     if (!res.ok) throw new Error(j?.error?.message || j?.error?.code || "signup_failed");
     this.setSession(j.access_token, j.expires_in);
     return j;
@@ -131,7 +135,7 @@ class CfAuth {
       credentials: "include",
       body: JSON.stringify({ email, password }),
     });
-    const j = await res.json() as any;
+    const j = await res.json() as SessionResponse & ApiErrorBody;
     if (!res.ok) throw new Error(j?.error?.message || j?.error?.code || "login_failed");
     this.setSession(j.access_token, j.expires_in);
     return j;
@@ -168,7 +172,7 @@ class CfAuth {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ token, password }),
     });
-    const j = await res.json() as any;
+    const j = await res.json() as { ok?: true } & ApiErrorBody;
     if (!res.ok) throw new Error(j?.error?.message || j?.error?.code || "reset_failed");
     return j;
   }
