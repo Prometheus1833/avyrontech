@@ -9,6 +9,8 @@
 import { Hono } from "hono";
 import type { Env } from "./index";
 import { sendMailSmtp, type Attachment } from "./smtp";
+import { checkRateLimit, verifyTurnstile, clientIp, hashKey } from "./antispam";
+import { syncLeadToTable } from "./leadSink";
 
 export const contactRouter = new Hono<{ Bindings: Env }>();
 
@@ -38,12 +40,46 @@ contactRouter.post("/api/contact/demo", async (c) => {
   const website = clean(form.get("website"), 200);
   const lang = clean(form.get("lang"), 5) || "ro";
 
+  // 1) Honeypot — botul completează câmpul ascuns, omul nu.
+  if (clean(form.get("company_url"), 200)) {
+    console.warn("lead honeypot triggered");
+    return c.json({ ok: true, leadId: crypto.randomUUID(), delivered: false, spam: true });
+  }
+
+  const ip = clientIp(c.req.raw);
+
+  // 2) Rate limiting (IP: 3/oră, 10/zi · email: 3/zi)
+  const ipKey = await hashKey(ip);
+  const emailKey = await hashKey(email.toLowerCase());
+  const rate = await checkRateLimit(c.env.KV, [
+    { key: `demo:ip:${ipKey}:h`, limit: 3, windowSec: 3600 },
+    { key: `demo:ip:${ipKey}:d`, limit: 10, windowSec: 86400 },
+    { key: `demo:mail:${emailKey}:d`, limit: 3, windowSec: 86400 },
+  ]);
+  if (!rate.ok) {
+    return c.json({ error: "rate_limited", retryAfter: rate.retryAfter }, 429, {
+      "Retry-After": String(rate.retryAfter),
+    });
+  }
+
+  // 3) Turnstile
+  const turnstile = await verifyTurnstile(
+    c.env.TURNSTILE_SECRET,
+    clean(form.get("cf-turnstile-response") || form.get("turnstileToken"), 4000),
+    ip,
+  );
+  if (!turnstile.ok) {
+    console.warn("turnstile rejected:", turnstile.reason);
+    return c.json({ error: "captcha_failed", reason: turnstile.reason }, 403);
+  }
+
   const errors: string[] = [];
   if (name.length < 2) errors.push("name");
   if (business.length < 2) errors.push("business");
   if (phone.length < 6) errors.push("phone");
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) errors.push("email");
   if (errors.length) return c.json({ error: "Câmpuri invalide", fields: errors }, 400);
+
 
   const files = form.getAll("files").filter((f): f is File => f instanceof File && f.size > 0);
   if (files.length > MAX_FILES) return c.json({ error: `Maxim ${MAX_FILES} fișiere` }, 400);
