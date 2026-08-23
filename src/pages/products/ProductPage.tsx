@@ -50,7 +50,10 @@ const ICONS: Record<IconKey, React.ComponentType<{ className?: string }>> = {
   code: Code2,
   cloud: Cloud,
   users: Users,
+  bug: Bug,
+  flask: FlaskConical,
   clock: Clock,
+
 };
 
 const WHATSAPP = "https://wa.me/40734605055?text=";
