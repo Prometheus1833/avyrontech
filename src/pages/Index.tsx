@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import Nav from "@/components/site/Nav";
 import Hero from "@/components/site/Hero";
+import AgencyServices from "@/components/site/AgencyServices";
 import { useLocation } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
 
@@ -81,6 +82,7 @@ const Index = () => {
     <main className="min-h-screen overflow-x-hidden">
       <Nav />
       <Hero />
+      <AgencyServices />
       <Suspense fallback={<div className="h-8" />}>
         <Deferred minHeight={520}><Problem /></Deferred>
         <Deferred minHeight={720}><Examples /></Deferred>

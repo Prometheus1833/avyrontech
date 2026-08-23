@@ -25,14 +25,19 @@ test.describe("public SEO routes", () => {
     const graph = await page.locator("#ld-graph").textContent();
     expect(graph).toContain("BlogPosting");
     expect(graph).not.toContain("#importanta-website-afacere-2026");
+    await expect(page.getByRole("heading", { level: 2, name: "Ce face un website util, nu doar frumos" })).toBeVisible();
   });
 
-  test("incomplete English legal/blog variants stay out of the index", async ({ page }) => {
-    for (const path of ["/en/privacy", "/en/blog"] as const) {
-      await page.goto(path);
-      await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
-      await expect(page.locator('link[rel="alternate"][hreflang]')).toHaveCount(0);
-    }
+  test("complete English legal and blog variants are indexable", async ({ page }) => {
+    await page.goto("/en/privacy");
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /index, follow/);
+    await expect(page.getByRole("heading", { level: 2, name: "Legal identity and collaboration structure" })).toBeVisible();
+    await expect(page.locator('link[hreflang="ro"]')).toHaveAttribute("href", "https://avyron.ro/gdpr");
+
+    await page.goto("/en/blog/importanta-website-afacere-2026");
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /index, follow/);
+    await expect(page.getByRole("heading", { level: 2, name: "What makes a website useful, not merely attractive" })).toBeVisible();
+    await expect(page.locator('link[hreflang="ro"]')).toHaveAttribute("href", "https://avyron.ro/blog/importanta-website-afacere-2026");
   });
 
   test("unknown routes render the 404 experience", async ({ page }) => {

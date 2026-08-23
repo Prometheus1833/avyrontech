@@ -61,6 +61,33 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     }
   });
 
+  it("ships complete, indexable English privacy content", () => {
+    const html = read("/en/privacy");
+    const h = head(html);
+    expect(h).toContain('content="index, follow');
+    expect(h).toContain('hreflang="ro" href="https://avyron.ro/gdpr"');
+    expect(h).toContain('hreflang="en" href="https://avyron.ro/en/privacy"');
+    expect(html).toContain("Legal identity and collaboration structure");
+    expect(html).toContain("Your GDPR rights");
+    expect(html).not.toContain("translation is being prepared");
+  });
+
+  it("prerenders complete RO/EN article bodies with reciprocal hreflang", () => {
+    const slug = "importanta-website-afacere-2026";
+    const ro = read(`/blog/${slug}`);
+    const en = read(`/en/blog/${slug}`);
+    for (const html of [ro, en]) {
+      const h = head(html);
+      expect(h).toContain('content="index, follow');
+      expect(h).toContain(`hreflang="ro" href="https://avyron.ro/blog/${slug}"`);
+      expect(h).toContain(`hreflang="en" href="https://avyron.ro/en/blog/${slug}"`);
+      expect(h).toContain('"@type":"BlogPosting"');
+      expect(html.length).toBeGreaterThan(30000);
+    }
+    expect(ro).toContain("Ce face un website util");
+    expect(en).toContain("What makes a website useful");
+  });
+
   it("ships exactly one JSON-LD graph with no duplicated global nodes", () => {
     for (const route of ["/", "/costurisiproduse", "/produse/audit-website", "/pachete-mentenanta"]) {
       const h = head(read(route));
@@ -76,6 +103,9 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
       expect(JSON.stringify(org.member)).toContain("FV Tech Solutions SRL");
       expect(JSON.stringify(org.member)).toContain("DIGITAL ECOTECH SOLUTIONS S.R.L.");
       expect(JSON.stringify(org.member)).toContain("55055976");
+      expect(org.sameAs).toContain("https://www.instagram.com/avyrontech/");
+      expect(org.sameAs).toContain("https://www.tiktok.com/@avyron4");
+      expect(org.sameAs).not.toContain("avyron.tech");
     }
   });
 

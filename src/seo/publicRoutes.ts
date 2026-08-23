@@ -17,6 +17,7 @@ export const EXAMPLE_SLUGS = [
 /** Standalone public routes that have no RO/EN pair. */
 export const STANDALONE_PUBLIC_ROUTES = [
   "/gdpr",
+  "/en/privacy",
   "/blog",
   "/en/blog",
   ...BLOG_SLUGS.flatMap((slug) => [`/blog/${slug}`, `/en/blog/${slug}`]),
@@ -62,7 +63,6 @@ export const NOINDEX_PREFIXES = [
   "/500",
   "/mentenanta",
   "/404",
-  "/en/blog",
 ];
 
 export function isNoindexPath(pathname: string): boolean {

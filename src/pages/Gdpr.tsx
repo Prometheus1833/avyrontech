@@ -209,6 +209,176 @@ const sections = [
   },
 ];
 
+const sectionsEn = [
+  {
+    icon: FileText,
+    title: "Introduction",
+    body: (
+      <>
+        <p>This Privacy Policy explains how personal data is processed in connection with services provided under the <strong>Avyron</strong> brand, developed and operated through the collaboration between <strong>{COMPANY.associationName}</strong>.</p>
+        <p>It is provided in accordance with Regulation (EU) 2016/679 (GDPR). Using the website does not constitute general consent; consent is requested separately only for processing activities that rely on consent.</p>
+      </>
+    ),
+  },
+  {
+    icon: Users,
+    title: "Legal identity and collaboration structure",
+    body: (
+      <>
+        <p>Avyron is the commercial and operational framework in which the following legal entities collaborate:</p>
+        <div className="grid gap-3 mt-4">
+          {COMPANY.legalEntities.map((entity) => (
+            <div key={entity.id} className="rounded-2xl border border-border bg-background/70 p-4">
+              <div className="font-semibold text-foreground">{entity.legalName}</div>
+              <div className="mt-1 text-sm leading-relaxed">
+                {entity.taxId && <div><strong>Romanian tax identifier (CUI):</strong> {entity.taxId}</div>}
+                <div><strong>Registered office:</strong> {entity.registeredAddress}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4">The entity responsible for a project, invoice, or contractual relationship is identified in the applicable proposal, contract, and fiscal documents. Data-processing roles depend on the specific purpose and each entity's involvement, without extending access beyond what is necessary.</p>
+        <p>For this website, initial enquiries, and GDPR rights requests, a single contact point is available at <a className="text-brand hover:underline" href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> · <a className="text-brand hover:underline" href={`tel:${COMPANY.phone}`}>+40 734 605 055</a>. The request will be directed to the responsible entity.</p>
+      </>
+    ),
+  },
+  {
+    icon: Database,
+    title: "Categories of personal data",
+    body: (
+      <>
+        <p className="font-semibold text-foreground">Information provided directly</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>Name</li><li>Email address</li><li>Telephone number</li>
+          <li>Billing information such as address, company name, and tax identifier</li>
+          <li>Messages and files submitted through forms or email</li>
+        </ul>
+        <p className="font-semibold text-foreground mt-4">Information collected automatically</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>IP address</li><li>Browser and device type</li><li>Pages visited and website interactions</li><li>Cookies and similar technologies</li>
+        </ul>
+      </>
+    ),
+  },
+  {
+    icon: FileText,
+    title: "Purposes of processing",
+    body: (
+      <ul className="list-disc pl-5 space-y-1">
+        <li>Providing IT and digital services, including software development, maintenance, and consulting</li>
+        <li>Managing contractual and commercial relationships</li><li>Invoicing and legal compliance</li>
+        <li>Technical support and customer communication</li><li>Improving the website experience</li>
+        <li>Marketing only where explicit consent has been provided</li>
+      </ul>
+    ),
+  },
+  {
+    icon: ShieldCheck,
+    title: "Legal bases",
+    body: (
+      <ul className="list-disc pl-5 space-y-1">
+        <li>Performance of a contract — Article 6(1)(b) GDPR</li><li>Compliance with legal obligations — Article 6(1)(c)</li>
+        <li>Consent — Article 6(1)(a)</li><li>Legitimate interests — Article 6(1)(f), where applicable and balanced against individual rights</li>
+      </ul>
+    ),
+  },
+  {
+    icon: Server,
+    title: "Retention",
+    body: (
+      <ul className="list-disc pl-5 space-y-1">
+        <li>For the duration of the contractual relationship</li><li>For periods required by law, including applicable financial-document retention periods</li>
+        <li>Until consent is withdrawn for consent-based marketing, unless another legal requirement applies</li>
+      </ul>
+    ),
+  },
+  {
+    icon: Users,
+    title: "Disclosure and service providers",
+    body: (
+      <>
+        <p>Data may be disclosed only as necessary to:</p>
+        <ul className="list-disc pl-5 space-y-1 mt-2">
+          <li>the entities collaborating under the Avyron brand</li><li>IT, hosting, maintenance, email, and analytics providers</li>
+          <li>payment processors where a paid service is used</li><li>public authorities where disclosure is legally required</li>
+          <li>contractual partners strictly within the scope needed to deliver the service</li>
+        </ul>
+        <p className="mt-3">Providers and partners are required to protect confidentiality and data security according to their role.</p>
+      </>
+    ),
+  },
+  {
+    icon: Globe,
+    title: "International transfers",
+    body: <p>Where personal data is transferred outside the European Economic Area, appropriate safeguards are used as required, such as adequacy decisions or standard contractual clauses.</p>,
+  },
+  {
+    icon: ShieldCheck,
+    title: "Your GDPR rights",
+    body: (
+      <>
+        <p>Subject to the conditions in applicable law, you may request:</p>
+        <ul className="list-disc pl-5 space-y-1 mt-2">
+          <li>access and a copy of your data</li><li>rectification</li><li>erasure</li><li>restriction of processing</li>
+          <li>data portability</li><li>objection to processing</li><li>withdrawal of consent at any time</li>
+        </ul>
+        <p className="mt-3">Contact <a className="text-brand hover:underline" href="mailto:contact@avyron.ro">contact@avyron.ro</a> to exercise a right. The request will be routed to the responsible entity and handled within the applicable legal period.</p>
+      </>
+    ),
+  },
+  {
+    icon: Lock,
+    title: "Data security",
+    body: (
+      <>
+        <p>The entities involved apply technical and organizational measures appropriate to their role and the systems they manage, including:</p>
+        <ul className="list-disc pl-5 space-y-1 mt-2"><li>encryption in appropriate contexts</li><li>restricted and role-based access</li><li>monitoring and audit trails</li><li>regular backups and recovery procedures</li></ul>
+      </>
+    ),
+  },
+  {
+    icon: Cookie,
+    title: "Cookies and measurement",
+    body: (
+      <>
+        <p>The website uses technologies for essential operation and, only after the relevant choice, for:</p>
+        <ul className="list-disc pl-5 space-y-1 mt-2">
+          <li>traffic and performance measurement when Analytics is enabled</li>
+          <li>advertising storage, advertising user data, and ad personalization when Marketing is enabled separately</li>
+        </ul>
+        <p className="mt-3">Preferences can be changed or withdrawn at any time through “Cookie settings” in the footer.</p>
+      </>
+    ),
+  },
+  {
+    icon: Server,
+    title: "Digital and IT services",
+    body: (
+      <ul className="list-disc pl-5 space-y-1">
+        <li>Client data is processed according to the documented instructions and agreed scope</li>
+        <li>Each entity acts, depending on the contract and context, as controller, joint controller, or processor</li>
+        <li>A data processing agreement is concluded when required</li><li>Logical separation between client datasets is maintained</li>
+      </ul>
+    ),
+  },
+  {
+    icon: FileText,
+    title: "Policy changes",
+    body: <p>This policy may be updated to reflect legal, technical, or operational changes. The current version and its version date will be published on this page.</p>,
+  },
+  {
+    icon: Globe,
+    title: "Supervisory authority",
+    body: (
+      <>
+        <p>You may lodge a complaint with the Romanian supervisory authority:</p>
+        <p className="mt-2"><strong>National Supervisory Authority for Personal Data Processing (ANSPDCP)</strong><br />
+          Website: <a className="text-brand hover:underline" href="https://www.dataprotection.ro" target="_blank" rel="noopener noreferrer">https://www.dataprotection.ro</a></p>
+      </>
+    ),
+  },
+];
+
 const Gdpr = () => {
   const isEn =
     typeof window !== "undefined" && window.location.pathname.startsWith("/en/");
@@ -220,10 +390,10 @@ const Gdpr = () => {
           ? "Privacy Policy & GDPR | Avyron"
           : "Politica de Confidențialitate și GDPR | Avyron",
         description: isEn
-          ? "The legally binding Avyron privacy policy is currently available in Romanian. A verified English translation is being prepared."
+          ? `Avyron privacy and GDPR policy: how personal data is processed in the collaboration between ${COMPANY.associationName}.`
           : `Politica GDPR Avyron: transparență privind prelucrarea datelor în colaborarea dintre ${COMPANY.associationName}`,
         path: isEn ? "/en/privacy" : "/gdpr",
-        robots: isEn ? "noindex, follow" : undefined,
+        alternates: { ro: "/gdpr", en: "/en/privacy" },
       })
     );
     window.scrollTo(0, 0);
@@ -260,7 +430,7 @@ const Gdpr = () => {
           </h1>
           <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             {isEn
-              ? "Full transparency on how we collect, process and protect your data. The legally binding text below is published in Romanian."
+              ? "Clear information on how we collect, process, retain, and protect personal data under the GDPR."
               : "Transparență totală asupra modului în care colectăm, prelucrăm și protejăm datele tale."}
           </p>
           <p className="mt-8 text-xs uppercase tracking-widest text-muted-foreground/80">
@@ -272,14 +442,12 @@ const Gdpr = () => {
           <div className="mt-10 rounded-3xl border border-border bg-card/60 p-6 md:p-8 text-left">
             <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-brand mb-3">
               <ShieldCheck className="size-3.5" />
-              Angajamentul Avyron
+              {isEn ? "Avyron's commitment" : "Angajamentul Avyron"}
             </div>
             <p className="text-base md:text-lg leading-relaxed text-foreground/90">
-              La Avyron, administrăm informațiile și detaliile clienților noștri cu maximă grijă și responsabilitate.
-              Acordurile de securitate sunt fundamentale pentru noi — credem că o colaborare reală se construiește pe încredere.
-              Putem organiza proiecte în care informațiile despre client și produs nu sunt utilizate în portofoliu sau în comunicarea publică.
-              Aplicăm minimizarea datelor și, acolo unde este adecvat, anonimizarea sau pseudonimizarea acestora. La cerere,
-              stabilim prin contract ori acord de confidențialitate limitele de acces, utilizare și publicare aplicabile proiectului.
+              {isEn
+                ? "Avyron handles client information with care and accountability. Security agreements are fundamental because effective collaboration depends on trust. Projects can be arranged so that client or product information is not used in a portfolio or public communication. We apply data minimization and, where appropriate, anonymization or pseudonymization. Access, use, and publication limits can be documented in the contract or a confidentiality agreement."
+                : "La Avyron, administrăm informațiile și detaliile clienților noștri cu maximă grijă și responsabilitate. Acordurile de securitate sunt fundamentale pentru noi — credem că o colaborare reală se construiește pe încredere. Putem organiza proiecte în care informațiile despre client și produs nu sunt utilizate în portofoliu sau în comunicarea publică. Aplicăm minimizarea datelor și, acolo unde este adecvat, anonimizarea sau pseudonimizarea acestora. La cerere, stabilim prin contract ori acord de confidențialitate limitele de acces, utilizare și publicare aplicabile proiectului."}
             </p>
           </div>
         </div>
@@ -289,7 +457,7 @@ const Gdpr = () => {
       <section className="px-6 pb-24">
         <div className="mx-auto max-w-3xl">
           <div className="divide-y divide-border/60">
-            {sections.map((s) => {
+            {(isEn ? sectionsEn : sections).map((s) => {
               const Icon = s.icon;
               return (
                 <article key={s.title} className="py-10 first:pt-0 last:pb-0 grid md:grid-cols-[auto,1fr] gap-6 md:gap-10">
@@ -313,10 +481,10 @@ const Gdpr = () => {
           <div className="mt-16 rounded-3xl border border-border bg-card p-8 md:p-10">
             <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Contact</div>
             <h2 className="mt-2 font-display font-semibold text-2xl md:text-3xl tracking-tight">
-              Întrebări despre protecția datelor?
+              {isEn ? "Questions about your personal data?" : "Întrebări despre protecția datelor?"}
             </h2>
             <p className="mt-3 text-muted-foreground">
-              Suntem aici. Răspundem prompt și clar la orice solicitare privind datele tale.
+              {isEn ? "Contact us for a clear response to a privacy or GDPR request." : "Suntem aici. Răspundem prompt și clar la orice solicitare privind datele tale."}
             </p>
             <div className="mt-6 grid sm:grid-cols-2 gap-3">
               <a href="mailto:contact@avyron.ro" className="group flex items-center gap-3 rounded-2xl border border-border bg-background hover:border-brand/40 px-5 py-4 transition-colors">
@@ -329,7 +497,7 @@ const Gdpr = () => {
               <a href="tel:+40734605055" className="group flex items-center gap-3 rounded-2xl border border-border bg-background hover:border-brand/40 px-5 py-4 transition-colors">
                 <Phone className="size-4 text-brand" />
                 <div>
-                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Telefon</div>
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{isEn ? "Phone" : "Telefon"}</div>
                   <div className="text-sm font-medium">+40 734 605 055</div>
                 </div>
               </a>
@@ -338,11 +506,11 @@ const Gdpr = () => {
 
           <div className="mt-12 text-center">
             <Link
-              to="/"
+              to={isEn ? "/en" : "/"}
               className="inline-flex items-center gap-2 rounded-full bg-foreground text-background hover:bg-foreground/90 px-6 py-3 text-sm font-medium transition-colors"
             >
               <ArrowLeft className="size-4" />
-              Înapoi la pagina principală
+              {isEn ? "Back to the homepage" : "Înapoi la pagina principală"}
             </Link>
           </div>
         </div>

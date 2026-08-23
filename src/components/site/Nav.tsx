@@ -14,13 +14,14 @@ const Nav = () => {
   const { t, lang } = useLang();
   const { user, loading } = useAuth();
   const isRo = lang === "ro";
+  const homePath = isRo ? "/" : "/en";
   const links = [
     { label: t.nav.news, to: lang === "en" ? "/en/blog" : "/blog", icon: Newspaper, isRoute: true },
     { label: isRo ? "Portofoliu" : "Portfolio", to: isRo ? "/despre-si-portofoliu#portofoliu" : "/en/about#portofoliu", icon: Briefcase, isRoute: true },
-    { label: isRo ? "Vezi exemple" : "See examples", href: "/#exemple" },
+    { label: isRo ? "Vezi exemple" : "See examples", href: `${homePath}#exemple` },
     { label: isRo ? "Produse" : "Products", to: isRo ? "/costurisiproduse" : "/en/pricing", icon: ShoppingBag, isRoute: true },
-    { label: t.nav.process, href: "/#proces" },
-    { label: t.nav.faq, href: "/#faq" },
+    { label: t.nav.process, href: `${homePath}#proces` },
+    { label: t.nav.faq, href: `${homePath}#faq` },
   ] as Array<{ label: string; href?: string; to?: string; icon?: typeof Newspaper; highlight?: boolean; isRoute?: boolean }>;
 
   return (
@@ -28,7 +29,7 @@ const Nav = () => {
       <div className="mx-auto max-w-6xl px-4 mt-3">
         <nav className="glass shadow-soft rounded-full flex items-center justify-between pl-3 pr-2 py-2 gap-2">
           <div className="flex items-center gap-3">
-            <Link to="/" className="flex items-center gap-2">
+            <Link to={homePath} className="flex items-center gap-2">
               <img src={logo} alt="Avyron" width={22} height={22} className="size-[1.4rem] rounded-md object-cover" />
               <span
                 className="text-base md:text-lg font-bold uppercase tracking-[0.18em] bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent"
@@ -77,7 +78,7 @@ const Nav = () => {
           </ul>
           <div className="hidden md:flex items-center gap-2">
             <Button asChild className="rounded-full bg-foreground text-background hover:bg-foreground/90">
-              <a href="#cta" title={t.nav.cta} className="transition-transform duration-200 ease-out hover:-translate-y-0.5">{t.nav.cta}</a>
+              <a href={`${homePath}#cta`} title={t.nav.cta} className="transition-transform duration-200 ease-out hover:-translate-y-0.5">{t.nav.cta}</a>
             </Button>
             {!loading && (user ? (
               <UserMenu />
@@ -140,7 +141,7 @@ const Nav = () => {
               )
             )}
             <Button asChild className="w-full rounded-full bg-foreground text-background hover:bg-foreground/90">
-              <a href="#cta" onClick={() => setOpen(false)}>{t.nav.cta}</a>
+              <a href={`${homePath}#cta`} onClick={() => setOpen(false)}>{t.nav.cta}</a>
             </Button>
           </div>
         )}

@@ -5,7 +5,7 @@ import DOMPurify from "dompurify";
 import {
   Facebook, Instagram, Share2, Newspaper, Plus, ExternalLink,
   Calendar, Tag, Clock, Mail, Link2, Twitter, Linkedin, Check,
-  MessageCircle, Send, Trash2, Heart, Eye, ChevronUp, ChevronDown
+  MessageCircle, Send, Trash2, Heart, Eye, ChevronUp, ChevronDown, ArrowLeft
 } from "lucide-react";
 import Nav from "@/components/site/Nav";
 import Footer from "@/components/site/Footer";
@@ -18,7 +18,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { BLOG_INDEX } from "@/data/blogIndex";
+import { BLOG_INDEX, BLOG_INDEX_EN } from "@/data/blogIndex";
+import { socialProfile } from "@/config/socialProfiles";
 
 interface NewsPost {
   id: string;
@@ -43,6 +44,12 @@ interface Comment {
   created_at: string;
 }
 
+const localPosts = (isEn: boolean): NewsPost[] =>
+  (isEn ? BLOG_INDEX_EN : BLOG_INDEX).map((post) => ({
+    ...post,
+    created_at: post.published_at,
+  }));
+
 const TikTokIcon = ({ className = "" }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
     <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43V8.95a8.16 8.16 0 0 0 4.77 1.52V7a4.85 4.85 0 0 1-1.84-.31z" />
@@ -66,13 +73,13 @@ const TelegramIcon = ({ className = "" }: { className?: string }) => (
 
 const readingTime = (text: string) => Math.max(1, Math.round(text.trim().split(/\s+/).length / 220));
 const initials = (name?: string | null) => (name || "U").split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase();
-const timeAgo = (iso: string) => {
+const timeAgo = (iso: string, isEn = false) => {
   const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 60) return "acum";
+  if (s < 60) return isEn ? "just now" : "acum";
   if (s < 3600) return `${Math.floor(s / 60)} min`;
   if (s < 86400) return `${Math.floor(s / 3600)} h`;
-  if (s < 604800) return `${Math.floor(s / 86400)} z`;
-  return new Date(iso).toLocaleDateString("ro-RO");
+  if (s < 604800) return `${Math.floor(s / 86400)} ${isEn ? "d" : "z"}`;
+  return new Date(iso).toLocaleDateString(isEn ? "en-GB" : "ro-RO");
 };
 
 const renderMarkdown = (md: string) => {
@@ -143,8 +150,8 @@ const Blog = () => {
   const { slug } = useParams<{ slug?: string }>();
   const isEn = window.location.pathname.startsWith("/en/");
   const { user } = useAuth();
-  const [posts, setPosts] = useState<NewsPost[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [posts, setPosts] = useState<NewsPost[]>(() => localPosts(isEn));
+  const [loading] = useState(false);
   const [isStaff, setIsStaff] = useState(false);
   const [openCreate, setOpenCreate] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
@@ -176,9 +183,9 @@ const Blog = () => {
     if (!slug) return null;
     const live = posts.find((post) => post.slug === slug);
     if (live) return live;
-    const indexed = BLOG_INDEX.find((post) => post.slug === slug);
-    return indexed ? { ...indexed, content: indexed.excerpt, created_at: indexed.published_at } : null;
-  }, [posts, slug]);
+    const indexed = (isEn ? BLOG_INDEX_EN : BLOG_INDEX).find((post) => post.slug === slug);
+    return indexed ? { ...indexed, created_at: indexed.published_at } : null;
+  }, [isEn, posts, slug]);
 
   // Hide header on scroll-down, show on scroll-up (within feed)
   useEffect(() => {
@@ -220,7 +227,10 @@ const Blog = () => {
           path: articlePath,
           image,
           type: deepLinked ? "article" : "website",
-          robots: isEn ? "noindex, follow" : undefined,
+          alternates: {
+            ro: deepLinked ? `/blog/${routePost!.slug}` : "/blog",
+            en: deepLinked ? `/en/blog/${routePost!.slug}` : "/en/blog",
+          },
         });
         setJsonLd("organization", organizationLd);
         setJsonLd(
@@ -255,13 +265,22 @@ const Blog = () => {
   // load posts
   useEffect(() => {
     const load = async () => {
+      const fallback = localPosts(isEn);
+      if (isEn) {
+        setPosts(fallback);
+        return;
+      }
       const { data, error } = await supabase
         .from("news_posts").select("id,title,slug,excerpt,content,cover_image_url,tags,category,published_at,created_at,updated_at").eq("published", true)
         .order("published_at", { ascending: false });
-      const fallback = BLOG_INDEX.map((post) => ({ ...post, content: post.excerpt, created_at: post.published_at }));
       if (error) setPosts(fallback);
-      else setPosts(data?.length ? (data as NewsPost[]) : fallback);
-      setLoading(false);
+      else if (data?.length) {
+        const remote = data as NewsPost[];
+        const remoteBySlug = new Map(remote.map((post) => [post.slug, post]));
+        const merged = fallback.map((post) => ({ ...post, ...remoteBySlug.get(post.slug) }));
+        const extras = remote.filter((post) => !fallback.some((item) => item.slug === post.slug));
+        setPosts([...extras, ...merged]);
+      } else setPosts(fallback);
     };
     load();
     try {
@@ -269,7 +288,7 @@ const Blog = () => {
     } catch {
       // Ignore malformed legacy preferences and keep the empty default.
     }
-  }, []);
+  }, [isEn]);
 
   // Real article route → active card and full article dialog.
   useEffect(() => {
@@ -441,6 +460,68 @@ const Blog = () => {
     slideRefs.current[target]?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  if (slug && routePost) {
+    const basePath = isEn ? "/en/blog" : "/blog";
+    const related = posts.filter((post) => post.slug !== routePost.slug).slice(0, 3);
+    return (
+      <main className="min-h-screen overflow-x-hidden bg-background">
+        <Nav />
+        <article className="mx-auto max-w-4xl px-4 pb-20 pt-28 md:pt-36">
+          <Link to={basePath} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-brand">
+            <ArrowLeft className="size-4" /> {isEn ? "All articles" : "Toate articolele"}
+          </Link>
+
+          <header className="mt-8">
+            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+              <span className="rounded-full bg-brand/10 px-3 py-1 font-semibold uppercase tracking-wide text-brand">{routePost.category}</span>
+              <span className="inline-flex items-center gap-1.5"><Calendar className="size-3.5" />{new Date(routePost.published_at ?? routePost.created_at).toLocaleDateString(isEn ? "en-GB" : "ro-RO", { day: "numeric", month: "long", year: "numeric" })}</span>
+              <span className="inline-flex items-center gap-1.5"><Clock className="size-3.5" />{readingTime(routePost.content)} {isEn ? "min read" : "min de citit"}</span>
+            </div>
+            <h1 className="mt-5 font-display text-4xl font-bold leading-[1.08] tracking-tight md:text-6xl">{routePost.title}</h1>
+            {routePost.excerpt && <p className="mt-6 max-w-3xl text-lg leading-relaxed text-muted-foreground md:text-xl">{routePost.excerpt}</p>}
+          </header>
+
+          {routePost.cover_image_url && (
+            <img src={routePost.cover_image_url} alt={routePost.title} width={1200} height={675} className="mt-10 aspect-video w-full rounded-3xl border border-border/60 object-cover shadow-elev" />
+          )}
+
+          <div className="mt-10 rounded-3xl border border-border/60 bg-card/70 p-6 shadow-soft md:p-10">
+            <div className="prose prose-lg max-w-none dark:prose-invert">{renderMarkdown(routePost.content)}</div>
+            {routePost.tags && routePost.tags.length > 0 && (
+              <div className="mt-8 flex flex-wrap gap-2 border-t border-border/60 pt-6">
+                {routePost.tags.map((tag) => <Badge key={tag} variant="secondary">#{tag}</Badge>)}
+              </div>
+            )}
+            <FullShare post={routePost} onCopyOpen={copyAndOpen} />
+          </div>
+
+          <aside className="mt-14" aria-labelledby="related-articles">
+            <h2 id="related-articles" className="font-display text-2xl font-bold">{isEn ? "Related articles" : "Articole conexe"}</h2>
+            <div className="mt-5 grid gap-4 md:grid-cols-3">
+              {related.map((post) => (
+                <Link key={post.slug} to={`${basePath}/${post.slug}`} className="rounded-2xl border border-border/70 bg-card/60 p-5 transition-all hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-soft">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-brand">{post.category}</span>
+                  <h3 className="mt-2 font-display font-semibold leading-snug">{post.title}</h3>
+                </Link>
+              ))}
+            </div>
+          </aside>
+
+          <div className="mt-14 rounded-3xl bg-gradient-to-br from-brand/15 via-brand-2/10 to-brand-3/15 p-7 text-center md:p-10">
+            <h2 className="font-display text-2xl font-bold md:text-3xl">{isEn ? "Need a website built around your business?" : "Ai nevoie de un site construit pentru afacerea ta?"}</h2>
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground md:text-base">
+              {isEn ? "Explore the professional website package or request a tailored example without committing to production." : "Vezi pachetul de website de prezentare sau solicită un exemplu adaptat domeniului tău, fără obligația de a publica."}
+            </p>
+            <Link to={isEn ? "/en/products/premium-presentation-website" : "/produse/website-prezentare-premium"} className="mt-6 inline-flex rounded-full bg-brand px-6 py-3 text-sm font-semibold text-brand-foreground shadow-glow">
+              {isEn ? "Professional website service" : "Serviciu site de prezentare"}
+            </Link>
+          </div>
+        </article>
+        <Footer />
+      </main>
+    );
+  }
+
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-background">
       {/* Tech / digital fixed background */}
@@ -491,17 +572,14 @@ const Blog = () => {
             </div>
             {isStaff && (
               <Button onClick={() => setOpenCreate(true)} size="sm" className="rounded-full">
-                <Plus className="size-3.5 mr-1" /> Postare
+                <Plus className="size-3.5 mr-1" /> {isEn ? "New post" : "Postare"}
               </Button>
             )}
           </div>
           <p className="text-xs md:text-sm text-muted-foreground max-w-3xl leading-relaxed">
-            Pulsul digital al echipei <span className="font-semibold text-foreground">Avyron</span> — articole zilnice despre
-            <span className="text-brand font-medium"> tehnologie</span>,
-            <span className="text-brand-2 font-medium"> web design</span>,
-            <span className="text-foreground font-medium"> SEO</span> și
-            <span className="text-brand-3 font-medium"> securitate online</span>.
-            Studii de caz, ghiduri rapide și inspirație pentru identitatea ta online.
+            {isEn
+              ? "Practical guides from Avyron on professional websites, web design, technical SEO, Cloudflare, online security, and scalable digital products."
+              : "Ghiduri practice Avyron despre site-uri de prezentare profesionale, web design, SEO tehnic, Cloudflare, securitate online și produse digitale scalabile."}
           </p>
         </div>
       </section>
@@ -513,7 +591,7 @@ const Blog = () => {
             <div className="aspect-[9/16] rounded-3xl bg-muted/40 animate-pulse" />
           </div>
         ) : posts.length === 0 ? (
-          <p className="text-center text-muted-foreground py-16">Nu există articole.</p>
+          <p className="text-center text-muted-foreground py-16">{isEn ? "No articles available." : "Nu există articole."}</p>
         ) : (
           <div
             ref={feedRef}
@@ -554,7 +632,7 @@ const Blog = () => {
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-semibold leading-tight">Avyron</div>
                         <div className="text-[11px] text-white/80 flex items-center gap-1.5">
-                          <span>{timeAgo(post.published_at ?? post.created_at)}</span>
+                          <span>{timeAgo(post.published_at ?? post.created_at, isEn)}</span>
                           <span>·</span>
                           <span className="uppercase tracking-wider">{post.category}</span>
                           <span>·</span>
@@ -572,15 +650,15 @@ const Blog = () => {
                         navigate(`${isEn ? "/en/blog" : "/blog"}/${post.slug}`);
                       }}
                       className="absolute inset-0 m-auto h-12 w-40 rounded-full bg-white/15 backdrop-blur-md text-white font-semibold text-sm border border-white/30 shadow-glow hover:bg-white/25 transition-all flex items-center justify-center gap-1.5 z-10"
-                      aria-label="Vezi mai mult"
+                      aria-label={isEn ? "Read article" : "Vezi mai mult"}
                     >
-                      <Eye className="size-4" /> Vezi mai mult
+                      <Eye className="size-4" /> {isEn ? "Read article" : "Vezi mai mult"}
                     </button>
 
                     {/* RIGHT side — vertical action stack */}
                     <div className="absolute right-2 bottom-32 md:bottom-36 flex flex-col items-center gap-2.5 z-10">
                       {(user || isStaff) && (
-                        <ActionBtn label={liked ? "Apreciat" : "Apreciază"} onClick={() => toggleLike(post.id)}>
+                        <ActionBtn label={isEn ? (liked ? "Liked" : "Like") : (liked ? "Apreciat" : "Apreciază")} onClick={() => toggleLike(post.id)}>
                           <Heart className={`size-5 ${liked ? "fill-red-500 text-red-500" : "text-white"}`} />
                         </ActionBtn>
                       )}
@@ -593,7 +671,7 @@ const Blog = () => {
                       <ActionBtn label="TikTok" onClick={() => shareTo(post, "tiktok")}>
                         <TikTokIcon className="size-5 text-white" />
                       </ActionBtn>
-                      <ActionBtn label="Distribuie" onClick={() => nativeShare(post)}>
+                      <ActionBtn label={isEn ? "Share" : "Distribuie"} onClick={() => nativeShare(post)}>
                         <Share2 className="size-5 text-white" />
                       </ActionBtn>
                     </div>
@@ -730,7 +808,7 @@ const Blog = () => {
                             </div>
                             <p className="text-sm text-foreground/90 break-words whitespace-pre-wrap">{c.content}</p>
                           </div>
-                          <div className="text-[10px] text-muted-foreground mt-0.5 ml-3">{timeAgo(c.created_at)}</div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5 ml-3">{timeAgo(c.created_at, isEn)}</div>
                         </div>
                       </div>
                     ))}
@@ -795,13 +873,14 @@ const ActionBtn = ({
 const FullShare = ({ post, onCopyOpen }: { post: NewsPost; onCopyOpen: (p: NewsPost, t: "instagram" | "tiktok") => void }) => {
   const [copied, setCopied] = useState(false);
   const links = useMemo(() => buildShareLinks(post), [post]);
+  const isEn = window.location.pathname.startsWith("/en/");
   const copy = async () => {
-    try { await navigator.clipboard.writeText(links.url); setCopied(true); toast.success("Link copiat"); setTimeout(() => setCopied(false), 1500); }
-    catch { toast.error("Nu am putut copia"); }
+    try { await navigator.clipboard.writeText(links.url); setCopied(true); toast.success(isEn ? "Link copied" : "Link copiat"); setTimeout(() => setCopied(false), 1500); }
+    catch { toast.error(isEn ? "Could not copy the link" : "Nu am putut copia"); }
   };
   return (
     <div className="mt-5 pt-4 border-t border-border/60">
-      <div className="flex items-center gap-2 mb-2.5"><Share2 className="size-4 text-brand" /><span className="text-sm font-semibold">Distribuie</span></div>
+      <div className="flex items-center gap-2 mb-2.5"><Share2 className="size-4 text-brand" /><span className="text-sm font-semibold">{isEn ? "Share" : "Distribuie"}</span></div>
       <div className="flex flex-wrap items-center gap-1.5">
         <ShareBtn href={links.facebook} label="Facebook" color="hover:bg-[#1877F2] hover:text-white"><Facebook className="size-4" /></ShareBtn>
         <ShareBtn href={links.messenger} label="Messenger" color="hover:bg-[#0084FF] hover:text-white"><MessengerIcon className="size-4" /></ShareBtn>
@@ -817,15 +896,15 @@ const FullShare = ({ post, onCopyOpen }: { post: NewsPost; onCopyOpen: (p: NewsP
         </button>
         <ShareBtn href={links.email} label="Email" color="hover:bg-brand hover:text-brand-foreground" external={false}><Mail className="size-4" /></ShareBtn>
         <button onClick={copy} className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full bg-muted text-xs font-medium hover:bg-brand hover:text-brand-foreground">
-          {copied ? <Check className="size-3.5" /> : <Link2 className="size-3.5" />}<span className="hidden sm:inline">{copied ? "Copiat" : "Copiază"}</span>
+          {copied ? <Check className="size-3.5" /> : <Link2 className="size-3.5" />}<span className="hidden sm:inline">{isEn ? (copied ? "Copied" : "Copy") : (copied ? "Copiat" : "Copiază")}</span>
         </button>
       </div>
       <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
-        <span>Urmărește:</span>
-        <a href="https://instagram.com/avyron" target="_blank" rel="noopener noreferrer" className="hover:text-brand"><Instagram className="size-4" /></a>
-        <a href="https://facebook.com/avyron" target="_blank" rel="noopener noreferrer" className="hover:text-brand"><Facebook className="size-4" /></a>
-        <a href="https://tiktok.com/@avyron" target="_blank" rel="noopener noreferrer" className="hover:text-brand"><TikTokIcon className="size-4" /></a>
-        <Link to="/" className="ml-auto inline-flex items-center gap-1 text-brand hover:underline font-medium">avyron.ro <ExternalLink className="size-3" /></Link>
+        <span>{isEn ? "Follow:" : "Urmărește:"}</span>
+        <a href={socialProfile("instagram").url} target="_blank" rel="noopener noreferrer" className="hover:text-brand"><Instagram className="size-4" /></a>
+        <a href={socialProfile("facebook").url} target="_blank" rel="noopener noreferrer" className="hover:text-brand"><Facebook className="size-4" /></a>
+        <a href={socialProfile("tiktok").url} target="_blank" rel="noopener noreferrer" className="hover:text-brand"><TikTokIcon className="size-4" /></a>
+        <Link to={isEn ? "/en" : "/"} className="ml-auto inline-flex items-center gap-1 text-brand hover:underline font-medium">avyron.ro <ExternalLink className="size-3" /></Link>
       </div>
     </div>
   );

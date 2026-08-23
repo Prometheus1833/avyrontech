@@ -4,6 +4,7 @@
  */
 
 import { COMPANY } from "@/config/company";
+import { SOCIAL_PROFILE_URLS } from "@/config/socialProfiles";
 
 const BASE_URL = "https://avyron.ro";
 const LOGO_URL = `${BASE_URL}/avyron-logo.jpg`;
@@ -50,11 +51,7 @@ export const organizationLd = {
       addressCountry: "RO",
     },
   })),
-  sameAs: [
-    "https://www.facebook.com/avyron.tech",
-    "https://www.instagram.com/avyron.tech",
-    "https://www.linkedin.com/company/avyron",
-  ],
+  sameAs: SOCIAL_PROFILE_URLS,
   contactPoint: [
     {
       "@type": "ContactPoint",
@@ -101,10 +98,14 @@ export const localBusinessLd = {
     { "@type": "AdministrativeArea", name: "European Union" },
   ],
   serviceType: [
+    "Professional presentation website design",
+    "Business website development",
     "Web development",
     "Mobile app development",
+    "Ecommerce development",
     "UI/UX design",
-    "SEO",
+    "Technical SEO",
+    "Website audit",
     "Cybersecurity",
     "DevOps & Hosting",
   ],
