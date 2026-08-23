@@ -424,6 +424,7 @@ const Pricing = () => {
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <a
                 href="https://wa.me/40734605055?text=Bună! Aș dori un audit complet pentru website-ul / aplicația mea."
+                onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "pricing_product" })}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
@@ -484,6 +485,7 @@ const Pricing = () => {
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <a
                 href="https://wa.me/40734605055?text=Bună! Sunt interesat de Website Prezentare Premium."
+                onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "pricing_product" })}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-[#25D366] hover:bg-[#1ebe5a] px-5 py-2.5 text-sm font-bold text-white transition-colors"
@@ -587,6 +589,7 @@ const Pricing = () => {
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <a
                 href="https://wa.me/40734605055?text=Bună! Sunt interesat de pachetul Identitate Social Media (Facebook, Instagram, TikTok)."
+                onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "pricing_product" })}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
@@ -684,6 +687,7 @@ const Pricing = () => {
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <a
                 href="https://wa.me/40734605055?text=Bună! Sunt interesat de un magazin online (Platformă eCommerce / Shopify)."
+                onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "pricing_product" })}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
@@ -787,6 +791,7 @@ const Pricing = () => {
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <a
                 href="https://wa.me/40734605055?text=Bună! Sunt interesat de o aplicație mobilă sau web (iOS / Android / PWA)."
+                onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "pricing_product" })}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-indigo-500 to-violet-600 text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
@@ -890,6 +895,7 @@ const Pricing = () => {
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <a
                 href="https://wa.me/40734605055?text=Bună! Sunt interesat de un Agent AI personalizat pentru afacerea mea."
+                onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "pricing_product" })}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
@@ -990,6 +996,7 @@ const Pricing = () => {
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <a
                 href="https://wa.me/40734605055?text=Bună! Aș dori o ofertă de testare QA pentru produsul meu web / mobil."
+                onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "pricing_product" })}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-lime-500 to-emerald-600 text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
@@ -1153,6 +1160,7 @@ const Pricing = () => {
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <a
               href="https://wa.me/40734605055"
+              onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "pricing_footer" })}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full bg-[#25D366] hover:bg-[#1ebe5a] px-6 py-3 text-sm font-bold text-white transition-colors"
@@ -1161,6 +1169,7 @@ const Pricing = () => {
             </a>
             <a
               href="mailto:contact@avyron.ro"
+              onClick={() => trackEvent("contact_click", { method: "email", location: "pricing_footer" })}
               className="inline-flex items-center gap-2 rounded-full bg-foreground text-background hover:bg-foreground/90 px-6 py-3 text-sm font-bold transition-colors"
             >
               contact@avyron.ro
