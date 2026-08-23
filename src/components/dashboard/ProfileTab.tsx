@@ -150,20 +150,16 @@ export function ProfileTab() {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">{t.auth.profile.staffRole}</Label>
-                <Select
-                  value={form.staff_role}
-                  onValueChange={(v) => setForm({ ...form, staff_role: v as typeof form.staff_role })}
-                >
-                  <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">{t.auth.profile.staffRoles.admin}</SelectItem>
-                    <SelectItem value="dev">{t.auth.profile.staffRoles.dev}</SelectItem>
-                    <SelectItem value="designer">{t.auth.profile.staffRoles.designer}</SelectItem>
-                    <SelectItem value="marketing">{t.auth.profile.staffRoles.marketing}</SelectItem>
-                    <SelectItem value="support">{t.auth.profile.staffRoles.support}</SelectItem>
-                  </SelectContent>
-                </Select>
+                {/* Read-only: roles are assigned server-side by an admin, never self-set. */}
+                <Input
+                  className="h-8 text-sm"
+                  value={t.auth.profile.staffRoles[form.staff_role] ?? form.staff_role}
+                  readOnly
+                  disabled
+                  aria-readonly="true"
+                />
               </div>
+
             </>
           ) : (
             <>
