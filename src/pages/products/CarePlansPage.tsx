@@ -6,13 +6,20 @@ import {
   BarChart3,
   Check,
   Clock,
+  CreditCard,
   Crown,
   HeartHandshake,
   LifeBuoy,
   MessageCircle,
   RefreshCw,
+  Landmark,
+  Receipt,
   Search,
   Server,
+  Sparkle,
+  TrendingUp,
+  Users,
+  Wallet,
   Shield,
   Zap,
 } from "lucide-react";
@@ -22,6 +29,7 @@ import ThemeToggle from "@/components/site/ThemeToggle";
 import Breadcrumbs from "@/components/site/Breadcrumbs";
 import Reveal from "@/components/site/Reveal";
 import logo from "@/assets/avyron-logo.jpg";
+import { trackEvent } from "@/lib/analytics";
 
 const WHATSAPP = "https://wa.me/40734605055?text=";
 
@@ -78,7 +86,7 @@ const CarePlansPage = () => {
       ? "Mentenanță website lunară: actualizări, backup, monitorizare uptime, securitate, SEO continuu și suport prioritar. Pachete Plus, Pro și Pro Activ de la 100€/lună."
       : "Monthly website maintenance: updates, backups, uptime monitoring, security, ongoing SEO and priority support. Plus, Pro and Pro Active plans from €100/month.";
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
-      ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd, serviceLd, faqPageLd }]) => {
+      ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd, serviceLd, offerCatalogLd, faqPageLd }]) => {
         setPageMeta({
           title,
           description,
@@ -93,6 +101,36 @@ const CarePlansPage = () => {
             description,
             path,
             priceEur: 100,
+          }),
+        );
+        setJsonLd(
+          "ld-offercatalog",
+          offerCatalogLd({
+            name: ro ? "Pachete de mentenanță website" : "Website care plans",
+            path,
+            items: [
+              {
+                name: "Plus",
+                description: ro
+                  ? "Mentenanță esențială: actualizări, backup, monitorizare uptime, hosting inclus și suport prioritar."
+                  : "Essential maintenance: updates, backups, uptime monitoring, hosting included and priority support.",
+                priceEur: 100,
+              },
+              {
+                name: "Pro",
+                description: ro
+                  ? "Colaborare lunară extinsă: backup zilnic, 10 modificări de conținut, rapoarte de trafic, optimizări SEO și social media."
+                  : "Extended monthly collaboration: daily backups, 10 content changes, traffic reports, SEO tuning and social media.",
+                priceEur: 150,
+              },
+              {
+                name: "Pro Activ",
+                description: ro
+                  ? "Parteneriat complet: modificări nelimitate, SEO continuu, analiză de trafic, prioritate maximă și consultanță lunară."
+                  : "Full partnership: unlimited changes, continuous SEO, traffic analysis, top priority and monthly consulting.",
+                priceEur: 300,
+              },
+            ],
           }),
         );
         setJsonLd("ld-faq", faqPageLd(faq));
@@ -120,9 +158,13 @@ const CarePlansPage = () => {
       name: "Plus",
       eur: 100,
       icon: Shield,
+      level: ro ? "Nivel 1 · Colaborare de bază" : "Level 1 · Basic collaboration",
+      bestFor: ro ? "Site de prezentare care trebuie doar să funcționeze impecabil" : "A brochure site that simply has to keep working flawlessly",
+      response: ro ? "Răspuns în 24h" : "24h response",
+      value: ro ? "3 modificări / lună" : "3 changes / month",
       tagline: ro ? "Esențial pentru liniște" : "Essential peace of mind",
       accent: "from-pink-400 to-rose-600",
-      text: "text-pink-400",
+      text: "text-pink-500 dark:text-pink-400",
       features: ro
         ? [
             "Actualizări tehnice și de securitate",
@@ -140,6 +182,9 @@ const CarePlansPage = () => {
             "Hosting included and free domain",
             "Priority support on email and WhatsApp",
           ],
+      extras: ro
+        ? ["Colaborare lunară, fără contract pe termen lung"]
+        : ["Monthly collaboration, no long-term contract"],
     },
     {
       key: "pro",
@@ -147,9 +192,13 @@ const CarePlansPage = () => {
       eur: 150,
       icon: Zap,
       highlight: true,
+      level: ro ? "Nivel 2 · Colaborare extinsă" : "Level 2 · Extended collaboration",
+      bestFor: ro ? "Afaceri care publică des conținut și vor rezultate măsurabile" : "Businesses publishing often and wanting measurable results",
+      response: ro ? "Răspuns în 8h" : "8h response",
+      value: ro ? "10 modificări / lună" : "10 changes / month",
       tagline: ro ? "Cel mai ales de clienți" : "Most chosen by clients",
       accent: "from-emerald-400 to-teal-600",
-      text: "text-emerald-400",
+      text: "text-emerald-600 dark:text-emerald-400",
       features: ro
         ? [
             "Tot din pachetul Plus",
@@ -167,15 +216,32 @@ const CarePlansPage = () => {
             "Performance optimizations and SEO tuning",
             "Social media management (FB / IG / TikTok)",
           ],
+      extras: ro
+        ? [
+            "+7 modificări în plus față de Plus",
+            "Backup zilnic (față de periodic)",
+            "Raport lunar cu recomandări concrete",
+            "Colaborare cu un om dedicat din echipă",
+          ]
+        : [
+            "+7 more changes than Plus",
+            "Daily backups (vs. periodic)",
+            "Monthly report with concrete recommendations",
+            "Collaboration with a dedicated team member",
+          ],
     },
     {
       key: "proactiv",
       name: "Pro Activ",
       eur: 300,
       icon: Crown,
+      level: ro ? "Nivel 3 · Parteneriat complet" : "Level 3 · Full partnership",
+      bestFor: ro ? "Magazine online și platforme unde fiecare oră de downtime costă" : "Online stores and platforms where every hour of downtime costs",
+      response: ro ? "Răspuns în 2h" : "2h response",
+      value: ro ? "Modificări nelimitate" : "Unlimited changes",
       tagline: ro ? "Creștere continuă" : "Continuous growth",
       accent: "from-cyan-400 to-blue-600",
-      text: "text-cyan-400",
+      text: "text-cyan-600 dark:text-cyan-400",
       features: ro
         ? [
             "Tot din pachetul Pro",
@@ -193,8 +259,39 @@ const CarePlansPage = () => {
             "Rapid interventions, top priority",
             "Monthly digital consulting",
           ],
+      extras: ro
+        ? [
+            "Fără limită de modificări sau postări",
+            "Prioritate maximă în coada de intervenții",
+            "Ședință lunară de strategie (colaborare 1-la-1)",
+            "Plan de creștere trimestrial, actualizat cu tine",
+          ]
+        : [
+            "No cap on changes or posts",
+            "Top priority in the intervention queue",
+            "Monthly strategy session (1-on-1 collaboration)",
+            "Quarterly growth plan, updated together with you",
+          ],
     },
   ];
+
+  const payments = ro
+    ? [
+        { icon: Landmark, title: "Transfer bancar (IBAN)", desc: "Îți emitem factura la început de lună, cu IBAN în RON sau EUR. Termen de plată 7 zile, fără comisioane din partea noastră." },
+        { icon: CreditCard, title: "Plată cu cardul", desc: "Link securizat de plată, Visa / Mastercard, 3D Secure. Poți plăti de pe telefon, în câteva secunde." },
+        { icon: RefreshCw, title: "Abonament recurent", desc: "Dacă vrei să nu te mai gândești la asta, activăm debitarea automată lunară. O oprești oricând, dintr-un singur mesaj." },
+        { icon: Wallet, title: "Anual, cu discount", desc: "Plătești 12 luni în avans și primești 2 luni gratuite. Ideal dacă vrei un buget predictibil pe tot anul." },
+        { icon: Receipt, title: "Factură fiscală completă", desc: "Factură cu TVA pentru firme (PFA, SRL), livrată automat pe email și disponibilă în platforma internă Avyron." },
+        { icon: Users, title: "Colaborare flexibilă", desc: "Schimbi pachetul, îl pui pe pauză sau îl reiei oricând. Colaborarea se adaptează la ritmul afacerii tale, nu invers." },
+      ]
+    : [
+        { icon: Landmark, title: "Bank transfer (IBAN)", desc: "We issue the invoice at the start of the month, with a RON or EUR IBAN. 7-day payment term, no fees on our side." },
+        { icon: CreditCard, title: "Card payment", desc: "Secure payment link, Visa / Mastercard, 3D Secure. Pay from your phone in seconds." },
+        { icon: RefreshCw, title: "Recurring subscription", desc: "If you'd rather not think about it, we enable automatic monthly billing. Stop it any time with a single message." },
+        { icon: Wallet, title: "Yearly, with a discount", desc: "Pay 12 months upfront and get 2 months free. Ideal for a predictable budget across the year." },
+        { icon: Receipt, title: "Full fiscal invoice", desc: "VAT invoice for companies, delivered automatically by email and available in the Avyron internal platform." },
+        { icon: Users, title: "Flexible collaboration", desc: "Change, pause or resume your plan any time. The collaboration adapts to your business rhythm, not the other way around." },
+      ];
 
   const pillars = ro
     ? [
@@ -289,8 +386,8 @@ const CarePlansPage = () => {
           </p>
           <p className="mt-5 max-w-2xl text-base md:text-lg text-foreground/75 leading-relaxed">
             {ro
-              ? "Un site lăsat nesupravegheat se degradează: module învechite, backup-uri lipsă, viteză în scădere și poziții pierdute în Google. Noi ținem produsul tău actualizat, sigur și rapid, lună de lună."
-              : "An unattended site degrades: outdated modules, missing backups, dropping speed and lost Google rankings. We keep your product updated, secure and fast, month after month."}
+              ? "Un site lăsat nesupravegheat se degradează: module învechite, backup-uri lipsă, viteză în scădere și poziții pierdute în Google. Printr-o colaborare lunară simplă, ținem produsul tău actualizat, sigur și rapid — cu un om dedicat din echipă care îți răspunde direct."
+              : "An unattended site degrades: outdated modules, missing backups, dropping speed and lost Google rankings. Through a simple monthly collaboration we keep your product updated, secure and fast — with a dedicated person from the team who answers you directly."}
           </p>
 
           <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -300,6 +397,8 @@ const CarePlansPage = () => {
               )}`}
               target="_blank"
               rel="noopener noreferrer"
+              aria-label={ro ? "Cere un pachet de mentenanță pe WhatsApp" : "Request a care plan on WhatsApp"}
+              onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "care_plans_hero" })}
               className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-600 px-6 py-3 text-sm font-bold text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/40"
             >
               {ro ? "Vreau un pachet de mentenanță" : "I want a care plan"}
@@ -311,8 +410,9 @@ const CarePlansPage = () => {
                   key={c}
                   onClick={() => setCurrency(c)}
                   aria-pressed={currency === c}
-                  className={`px-4 py-1.5 text-xs font-semibold tracking-widest rounded-full transition-all ${
-                    currency === c ? "bg-emerald-400 text-background" : "text-foreground/70 hover:text-foreground"
+                  aria-label={ro ? `Afișează prețurile în ${c}` : `Show prices in ${c}`}
+                  className={`px-4 py-1.5 text-xs font-semibold tracking-widest rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50 ${
+                    currency === c ? "bg-emerald-500 text-white dark:bg-emerald-400 dark:text-background" : "text-foreground/70 hover:text-foreground"
                   }`}
                 >
                   {c}
@@ -353,13 +453,28 @@ const CarePlansPage = () => {
                   >
                     <p.icon className="size-5" aria-hidden />
                   </div>
-                  <h3 className="mt-5 font-display text-2xl font-extrabold">{p.name}</h3>
-                  {!p.highlight && <p className="text-xs text-foreground/50 mt-1">{p.tagline}</p>}
+                  <p className="mt-5 text-[10px] font-mono uppercase tracking-[0.2em] text-foreground/50">{p.level}</p>
+                  <h3 className="mt-1.5 font-display text-2xl font-extrabold">{p.name}</h3>
+                  {!p.highlight && <p className="text-xs text-foreground/60 mt-1">{p.tagline}</p>}
                   <div className="mt-4 flex items-baseline gap-1">
                     <span className="font-display text-4xl font-extrabold">{fmt(p.eur)}</span>
                     <span className="text-xs text-foreground/50">/{ro ? "lună" : "mo"}</span>
                   </div>
-                  <ul className="mt-6 space-y-2.5">
+                  <p className="mt-3 text-sm text-foreground/70 leading-relaxed">
+                    <span className="font-semibold text-foreground/85">{ro ? "Potrivit pentru: " : "Best for: "}</span>
+                    {p.bestFor}
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-1.5 text-[11px]">
+                    <span className={`inline-flex items-center gap-1.5 rounded-full border border-foreground/15 bg-foreground/[0.05] px-2.5 py-1 ${p.text}`}>
+                      <TrendingUp className="size-3" aria-hidden />
+                      {p.value}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 bg-foreground/[0.05] px-2.5 py-1 text-foreground/70">
+                      <Clock className="size-3" aria-hidden />
+                      {p.response}
+                    </span>
+                  </div>
+                  <ul className="mt-5 space-y-2.5">
                     {p.features.map((f) => (
                       <li key={f} className="flex items-start gap-2 text-sm text-foreground/85">
                         <Check className={`size-4 mt-0.5 shrink-0 ${p.text}`} aria-hidden />
@@ -367,13 +482,28 @@ const CarePlansPage = () => {
                       </li>
                     ))}
                   </ul>
+                  <div className={`mt-5 rounded-xl border border-dashed p-3.5 ${p.highlight ? "border-emerald-300/40 bg-emerald-400/5" : "border-foreground/15 bg-foreground/[0.02]"}`}>
+                    <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-foreground/55">
+                      {ro ? "În plus față de nivelul anterior" : "On top of the previous level"}
+                    </p>
+                    <ul className="mt-2.5 space-y-2">
+                      {p.extras.map((e) => (
+                        <li key={e} className="flex items-start gap-2 text-xs text-foreground/80">
+                          <Sparkle className={`size-3.5 mt-0.5 shrink-0 ${p.text}`} aria-hidden />
+                          <span>{e}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                   <a
                     href={`${WHATSAPP}${encodeURIComponent(
                       ro ? `Bună! Aș dori pachetul de mentenanță ${p.name}.` : `Hi! I'd like the ${p.name} care plan.`,
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
+                    aria-label={ro ? `Alege pachetul ${p.name} pe WhatsApp` : `Choose the ${p.name} plan on WhatsApp`}
+                    onClick={() => trackEvent("care_plan_select", { plan: p.key, price_eur: p.eur })}
+                    className={`mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                       p.highlight
                         ? "bg-emerald-400 text-background hover:bg-emerald-300"
                         : "border border-foreground/15 bg-foreground/[0.06] hover:bg-foreground/[0.12]"
@@ -408,6 +538,41 @@ const CarePlansPage = () => {
               </Reveal>
             ))}
           </div>
+        </section>
+
+        {/* Payments */}
+        <section className="mt-16">
+          <Reveal>
+            <h2 className="font-display text-2xl md:text-3xl font-extrabold">
+              {ro ? "Plata, simplă și transparentă" : "Payment, simple and transparent"}
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm md:text-base text-foreground/70 leading-relaxed">
+              {ro
+                ? "Nicio surpriză pe factură și nicio bătaie de cap la plată. Alegi metoda care ți se potrivește, iar restul colaborării rămâne despre site-ul tău, nu despre birocrație."
+                : "No surprises on the invoice and no payment hassle. You pick the method that suits you, and the rest of our collaboration stays about your site, not paperwork."}
+            </p>
+          </Reveal>
+          <div className="mt-7 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {payments.map((m, i) => (
+              <Reveal key={m.title} delay={i * 50} as="article">
+                <div className="group h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-foreground/25 hover:bg-foreground/[0.06]">
+                  <div className="size-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 grid place-items-center text-white transition-transform duration-300 group-hover:scale-110">
+                    <m.icon className="size-5" aria-hidden />
+                  </div>
+                  <h3 className="mt-4 font-display font-bold">{m.title}</h3>
+                  <p className="mt-2 text-sm text-foreground/70 leading-relaxed">{m.desc}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+          <Reveal delay={120}>
+            <p className="mt-5 text-xs text-foreground/60 inline-flex items-start gap-2">
+              <Shield className="size-3.5 mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden />
+              {ro
+                ? "Plățile cu cardul sunt procesate securizat de partenerul nostru de plăți — Avyron nu stochează datele cardului tău."
+                : "Card payments are processed securely by our payment partner — Avyron never stores your card details."}
+            </p>
+          </Reveal>
         </section>
 
         {/* FAQ */}
@@ -457,14 +622,18 @@ const CarePlansPage = () => {
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full bg-[#25D366] hover:bg-[#1ebe5a] px-6 py-3 text-sm font-bold text-white transition-colors"
+                  aria-label={ro ? "Scrie-ne pe WhatsApp" : "Message us on WhatsApp"}
+                  onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "care_plans_cta" })}
+                  className="inline-flex items-center gap-2 rounded-full bg-[#25D366] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50 hover:bg-[#1ebe5a] px-6 py-3 text-sm font-bold text-white transition-colors"
                 >
                   <MessageCircle className="size-4" aria-hidden />
                   WhatsApp
                 </a>
                 <a
                   href="mailto:contact@avyron.ro"
-                  className="inline-flex items-center gap-2 rounded-full bg-foreground text-background hover:bg-foreground/90 px-6 py-3 text-sm font-bold transition-colors"
+                  aria-label={ro ? "Trimite email la contact@avyron.ro" : "Email contact@avyron.ro"}
+                  onClick={() => trackEvent("contact_click", { method: "email", location: "care_plans_cta" })}
+                  className="inline-flex items-center gap-2 rounded-full bg-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50 text-background hover:bg-foreground/90 px-6 py-3 text-sm font-bold transition-colors"
                 >
                   contact@avyron.ro
                 </a>

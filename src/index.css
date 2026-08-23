@@ -256,3 +256,25 @@ html {
   50% { transform: translateY(-10px); }
 }
 .float { animation: float 6s ease-in-out infinite; }
+
+/* ============================================
+   Reduced motion — disable 3D card tilts, reveals
+   and decorative transitions for users who ask.
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .group:hover [class*="rotateX"],
+  [class*="hover:[transform"]:hover,
+  [class*="hover:-translate-y"]:hover,
+  [class*="group-hover:scale"],
+  .group:hover [class*="group-hover:translate-x"] {
+    transform: none !important;
+  }
+}
