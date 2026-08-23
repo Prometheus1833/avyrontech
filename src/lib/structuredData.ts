@@ -112,3 +112,54 @@ export function breadcrumbLd(items: Array<{ name: string; path: string }>) {
     })),
   };
 }
+
+/** Build a Service JSON-LD for a product/offering page. */
+export function serviceLd({
+  name,
+  description,
+  path,
+  priceEur,
+  areaServed = "RO",
+}: {
+  name: string;
+  description: string;
+  path: string;
+  priceEur?: number;
+  areaServed?: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "@id": `${BASE_URL}${path}#service`,
+    name,
+    description,
+    url: `${BASE_URL}${path}`,
+    serviceType: name,
+    provider: { "@id": `${BASE_URL}/#organization` },
+    areaServed,
+    ...(priceEur
+      ? {
+          offers: {
+            "@type": "Offer",
+            price: priceEur,
+            priceCurrency: "EUR",
+            availability: "https://schema.org/InStock",
+            url: `${BASE_URL}${path}`,
+          },
+        }
+      : {}),
+  };
+}
+
+/** Build an FAQPage JSON-LD from question/answer pairs. */
+export function faqPageLd(items: Array<{ q: string; a: string }>) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((it) => ({
+      "@type": "Question",
+      name: it.q,
+      acceptedAnswer: { "@type": "Answer", text: it.a },
+    })),
+  };
+}
