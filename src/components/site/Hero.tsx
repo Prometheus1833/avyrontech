@@ -27,8 +27,13 @@ const Hero = () => {
             {t.hero.subtitle}
           </p>
           <div className="mt-7 flex flex-col sm:flex-row flex-wrap gap-3 justify-center w-full sm:w-auto px-2">
-            <Button asChild size="lg" className="rounded-full bg-foreground text-background hover:bg-foreground/90 h-12 px-6 w-full sm:w-auto">
-              <a href="#cta">{t.hero.ctaPrimary} <ArrowRight className="ml-1 size-4" /></a>
+            <Button asChild size="lg" className="rounded-full bg-foreground text-background hover:bg-foreground/90 h-auto py-2.5 px-6 w-full sm:w-auto whitespace-normal">
+              <a href="#cta" className="flex flex-col items-center leading-tight">
+                <span className="flex items-center font-semibold">
+                  {t.hero.ctaPrimary} <ArrowRight className="ml-1 size-4" aria-hidden="true" focusable="false" />
+                </span>
+                <span className="text-[11px] opacity-80 font-normal">{t.hero.personalized}</span>
+              </a>
             </Button>
             <Button asChild size="lg" variant="outline" className="rounded-full h-12 px-6 border-foreground/20 hover:bg-foreground/5 w-full sm:w-auto">
               <a href="#exemple">{t.hero.ctaSecondary}</a>
