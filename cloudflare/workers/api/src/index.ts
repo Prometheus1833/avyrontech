@@ -24,6 +24,13 @@ export type Env = {
   JWT_SECRET: string;
   SEED_TOKEN?: string;
   ALLOWED_ORIGINS: string;
+  // SMTP (formularul public de lead-uri)
+  SMTP_HOST?: string;
+  SMTP_PORT?: string;
+  SMTP_USER?: string;
+  SMTP_PASS?: string;
+  SMTP_FROM?: string;
+  LEAD_TO?: string;
 };
 
 type Role = "user" | "staff" | "admin";
