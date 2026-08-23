@@ -11,6 +11,7 @@
 
 import { Hono } from "hono";
 import type { Env } from "./types";
+import { inlineContentDisposition, projectObjectKey, safeFilename } from "./storage";
 
 type Role = "user" | "staff" | "admin";
 type Vars = { userId: string; roles: Role[] };
@@ -44,7 +45,7 @@ mediaRouter.post("/api/projects/:id/media", async (c) => {
   const perm = await canAccessProject(c.env.DB, projectId, c.get("userId"), c.get("roles"));
   if (!perm.write) return c.json({ error: { code: "forbidden" } }, 403);
 
-  const filename = (c.req.query("filename") || "file").replace(/[^\w.-]/g, "_").slice(0, 120);
+  const filename = safeFilename(c.req.query("filename") || "file");
   const contentType = c.req.header("content-type") || c.req.query("content_type") || "application/octet-stream";
   if (!ALLOWED_CT.test(contentType)) return c.json({ error: { code: "unsupported_type", message: contentType } }, 415);
 
@@ -54,21 +55,33 @@ mediaRouter.post("/api/projects/:id/media", async (c) => {
     if (!ok) return c.json({ error: { code: "invalid_proposal" } }, 400);
   }
 
-  const body = c.req.raw.body;
-  if (!body) return c.json({ error: { code: "no_body" } }, 400);
   const lenHeader = parseInt(c.req.header("content-length") || "0");
   if (lenHeader && lenHeader > MAX_BYTES) return c.json({ error: { code: "too_large", message: "Max 15MB" } }, 413);
+  const bytes = await c.req.arrayBuffer();
+  if (!bytes.byteLength) return c.json({ error: { code: "no_body" } }, 400);
+  if (bytes.byteLength > MAX_BYTES) return c.json({ error: { code: "too_large", message: "Max 15MB" } }, 413);
 
   const mediaId = uuid();
-  const r2Key = `projects/${projectId}/${mediaId}-${filename}`;
-  const put = await c.env.FILES.put(r2Key, body, { httpMetadata: { contentType } });
-  const size = put?.size ?? lenHeader ?? null;
+  const r2Key = projectObjectKey(projectId, mediaId, filename);
+  const uploaderId = c.get("userId");
+  const put = await c.env.FILES.put(r2Key, bytes, {
+    httpMetadata: { contentType, contentDisposition: inlineContentDisposition(filename) },
+    customMetadata: { projectId, mediaId, uploaderId },
+  });
+  const size = put.size;
 
-  await c.env.DB.prepare(
-    "INSERT INTO project_media (id, project_id, proposal_id, uploader_id, r2_key, filename, content_type, size_bytes, created_at) VALUES (?,?,?,?,?,?,?,?,?)"
-  ).bind(mediaId, projectId, proposalId, c.get("userId"), r2Key, filename, contentType, size, now()).run();
+  try {
+    await c.env.DB.prepare(
+      "INSERT INTO project_media (id, project_id, proposal_id, uploader_id, r2_key, filename, content_type, size_bytes, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+    ).bind(mediaId, projectId, proposalId, uploaderId, r2Key, filename, contentType, size, now()).run();
+  } catch (error) {
+    await c.env.FILES.delete(r2Key).catch((cleanupError) =>
+      console.error(JSON.stringify({ event: "r2_orphan_cleanup_failed", r2Key, cleanupError: String(cleanupError) })),
+    );
+    throw error;
+  }
 
-  return c.json({ id: mediaId, r2_key: r2Key, filename, content_type: contentType, size_bytes: size, proposal_id: proposalId, url: `/api/media/${mediaId}/file` }, 201);
+  return c.json({ id: mediaId, filename, content_type: contentType, size_bytes: size, proposal_id: proposalId, url: `/api/media/${mediaId}/file` }, 201);
 });
 
 // ─── LIST ────────────────────────────────────────────────────────────────
@@ -99,14 +112,33 @@ mediaRouter.get("/api/media/:mediaId/file", async (c) => {
   if (!row) return c.json({ error: { code: "not_found" } }, 404);
   const perm = await canAccessProject(c.env.DB, row.project_id, c.get("userId"), c.get("roles"));
   if (!perm.read) return c.json({ error: { code: "forbidden" } }, 403);
-  const obj = await c.env.FILES.get(row.r2_key);
+  const obj = await c.env.FILES.get(row.r2_key, { range: c.req.raw.headers });
   if (!obj) return c.json({ error: { code: "missing_blob" } }, 404);
+  if (c.req.header("if-none-match") === obj.httpEtag) {
+    return new Response(null, { status: 304, headers: { etag: obj.httpEtag } });
+  }
+  const headers = new Headers();
+  obj.writeHttpMetadata(headers);
+  headers.set("content-type", row.content_type || headers.get("content-type") || "application/octet-stream");
+  headers.set("content-length", String(obj.size));
+  headers.set("etag", obj.httpEtag);
+  headers.set("accept-ranges", "bytes");
+  headers.set("x-content-type-options", "nosniff");
+  headers.set("cache-control", "private, max-age=300");
+  headers.set("content-disposition", inlineContentDisposition(row.filename));
+  let status = 200;
+  if (obj.range) {
+    const length = "suffix" in obj.range
+      ? Math.min(obj.range.suffix, obj.size)
+      : obj.range.length ?? Math.max(0, obj.size - (obj.range.offset || 0));
+    const offset = "suffix" in obj.range ? obj.size - length : obj.range.offset || 0;
+    headers.set("content-range", `bytes ${offset}-${offset + length - 1}/${obj.size}`);
+    headers.set("content-length", String(length));
+    status = 206;
+  }
   return new Response(obj.body, {
-    headers: {
-      "content-type": row.content_type || "application/octet-stream",
-      "cache-control": "private, max-age=300",
-      "content-disposition": `inline; filename="${row.filename}"`,
-    },
+    status,
+    headers,
   });
 });
 
@@ -118,7 +150,12 @@ mediaRouter.delete("/api/media/:mediaId", async (c) => {
   const perm = await canAccessProject(c.env.DB, row.project_id, c.get("userId"), c.get("roles"));
   const isUploader = row.uploader_id === c.get("userId");
   if (!perm.write && !isUploader) return c.json({ error: { code: "forbidden" } }, 403);
-  await c.env.FILES.delete(row.r2_key).catch(() => {});
+  try {
+    await c.env.FILES.delete(row.r2_key);
+  } catch (error) {
+    console.error(JSON.stringify({ event: "r2_delete_failed", mediaId, r2Key: row.r2_key, error: String(error) }));
+    return c.json({ error: { code: "storage_unavailable" } }, 503);
+  }
   await c.env.DB.prepare("DELETE FROM project_media WHERE id = ?").bind(mediaId).run();
   return c.json({ ok: true });
 });

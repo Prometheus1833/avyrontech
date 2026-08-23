@@ -19,6 +19,7 @@ import type { AppBindings, Role } from "./types";
 import { hashPassword, now, randomHex, sha256, signJwt, verifyJwt, verifyPassword } from "./security";
 import { deliverMail, logDelivery } from "./mailer";
 import { checkRateLimit, clientIp, hashKey, verifyTurnstile } from "./antispam";
+import { MAX_CONTENT_CONFIG_BYTES, avatarObjectKey, contentConfigKey, jsonByteLength } from "./storage";
 
 const app = new Hono<AppBindings>();
 
@@ -112,9 +113,10 @@ app.post("/api/auth/signup", async (c) => {
   const entityType = ["individual", "srl", "pfa", "ii", "other"].includes(String(body.entityType))
     ? String(body.entityType)
     : "individual";
-  const signupRate = await checkRateLimit(c.env.KV, [
-    { key: `signup:ip:${await hashKey(clientIp(c.req.raw))}:h`, limit: 5, windowSec: 3600 },
-  ]);
+  const signupIpKey = await hashKey(clientIp(c.req.raw));
+  const signupRate = await checkRateLimit(c.env.DB, [
+    { key: `signup:ip:${signupIpKey}:h`, limit: 5, windowSec: 3600 },
+  ], { limiter: c.env.PUBLIC_API_RATE_LIMITER, key: `signup:${signupIpKey}` });
   if (!signupRate.ok) return c.json({ error: { code: "rate_limited" } }, 429, { "Retry-After": String(signupRate.retryAfter) });
   const captcha = await verifyTurnstile(c.env.TURNSTILE_SECRET, turnstileToken, clientIp(c.req.raw), {
     expectedAction: "signup",
@@ -146,10 +148,11 @@ app.post("/api/auth/signup", async (c) => {
 app.post("/api/auth/resend-verification", async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const email = String(body.email || "").trim().toLowerCase();
-  const rate = await checkRateLimit(c.env.KV, [
+  const verificationEmailKey = await hashKey(email);
+  const rate = await checkRateLimit(c.env.DB, [
     { key: `verify:ip:${await hashKey(clientIp(c.req.raw))}:h`, limit: 8, windowSec: 3600 },
-    { key: `verify:mail:${await hashKey(email)}:h`, limit: 3, windowSec: 3600 },
-  ]);
+    { key: `verify:mail:${verificationEmailKey}:h`, limit: 3, windowSec: 3600 },
+  ], { limiter: c.env.PUBLIC_API_RATE_LIMITER, key: `verify:${verificationEmailKey}` });
   if (!rate.ok) return c.json({ ok: true });
   const user = await c.env.DB.prepare("SELECT id,email_verified FROM users WHERE email = ? AND disabled_at IS NULL")
     .bind(email).first<{ id: string; email_verified: number }>();
@@ -179,10 +182,11 @@ app.post("/api/auth/login", async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const email = String(body.email || "").trim().toLowerCase();
   const password = String(body.password || "");
-  const loginRate = await checkRateLimit(c.env.KV, [
+  const loginEmailKey = await hashKey(email);
+  const loginRate = await checkRateLimit(c.env.DB, [
     { key: `login:ip:${await hashKey(clientIp(c.req.raw))}:15m`, limit: 20, windowSec: 900 },
-    { key: `login:mail:${await hashKey(email)}:15m`, limit: 8, windowSec: 900 },
-  ]);
+    { key: `login:mail:${loginEmailKey}:15m`, limit: 8, windowSec: 900 },
+  ], { limiter: c.env.PUBLIC_API_RATE_LIMITER, key: `login:${loginEmailKey}` });
   if (!loginRate.ok) return c.json({ error: { code: "rate_limited", message: "Prea multe încercări" } }, 429, { "Retry-After": String(loginRate.retryAfter) });
   const row = await c.env.DB.prepare("SELECT id, password_hash, disabled_at, email_verified FROM users WHERE email = ?").bind(email).first<{ id: string; password_hash: string; disabled_at: number | null; email_verified: number }>();
   if (!row) {
@@ -259,10 +263,11 @@ app.get("/api/auth/me", requireAuth, async (c) => {
 app.post("/api/auth/forgot", async (c) => {
   const { email } = (await c.req.json().catch(() => ({}))) as { email?: string };
   const normalizedEmail = String(email || "").trim().toLowerCase();
-  const forgotRate = await checkRateLimit(c.env.KV, [
+  const forgotEmailKey = await hashKey(normalizedEmail);
+  const forgotRate = await checkRateLimit(c.env.DB, [
     { key: `forgot:ip:${await hashKey(clientIp(c.req.raw))}:h`, limit: 8, windowSec: 3600 },
-    { key: `forgot:mail:${await hashKey(normalizedEmail)}:h`, limit: 3, windowSec: 3600 },
-  ]);
+    { key: `forgot:mail:${forgotEmailKey}:h`, limit: 3, windowSec: 3600 },
+  ], { limiter: c.env.PUBLIC_API_RATE_LIMITER, key: `forgot:${forgotEmailKey}` });
   if (!forgotRate.ok) return c.json({ ok: true });
   const u = normalizedEmail ? await c.env.DB.prepare("SELECT id FROM users WHERE email = ? AND disabled_at IS NULL").bind(normalizedEmail).first<{ id: string }>() : null;
   if (u) {
@@ -359,8 +364,11 @@ app.post("/api/profile/avatar", requireAuth, async (c) => {
   const bytes = await c.req.arrayBuffer();
   if (!bytes.byteLength || bytes.byteLength > 5 * 1024 * 1024) return c.json({ error: { code: "too_large" } }, 413);
   const userId = c.get("userId");
-  const key = `avatars/${userId}`;
-  await c.env.MEDIA.put(key, bytes, { httpMetadata: { contentType: type, cacheControl: "public, max-age=3600" } });
+  const key = avatarObjectKey(userId);
+  await c.env.MEDIA.put(key, bytes, {
+    httpMetadata: { contentType: type, cacheControl: "public, max-age=3600" },
+    customMetadata: { userId, kind: "avatar" },
+  });
   const avatarUrl = `/api/profile/avatar/${userId}?v=${now()}`;
   await c.env.DB.batch([
     c.env.DB.prepare("UPDATE users SET avatar_url = ?, updated_at = ? WHERE id = ?").bind(avatarUrl, now(), userId),
@@ -370,11 +378,13 @@ app.post("/api/profile/avatar", requireAuth, async (c) => {
 });
 
 app.get("/api/profile/avatar/:userId", async (c) => {
-  const object = await c.env.MEDIA.get(`avatars/${c.req.param("userId")}`);
+  const object = await c.env.MEDIA.get(avatarObjectKey(c.req.param("userId")));
   if (!object) return c.body(null, 404);
   const headers = new Headers();
   object.writeHttpMetadata(headers);
   headers.set("etag", object.httpEtag);
+  headers.set("content-length", String(object.size));
+  headers.set("x-content-type-options", "nosniff");
   headers.set("cache-control", "public, max-age=3600, stale-while-revalidate=86400");
   return new Response(object.body, { headers });
 });
@@ -429,19 +439,21 @@ app.get("/api/example-requests", requireAuth, requireRole("staff", "admin"), asy
 
 // ─── Content (KV) ───────────────────────────────────────────────────────
 app.get("/api/content/:key", requireAuth, requireRole("staff", "admin"), async (c) => {
-  const v = await c.env.KV.get(c.req.param("key"), "json");
+  const key = contentConfigKey(c.req.param("key") || "");
+  if (!key) return c.json({ error: { code: "invalid_content_key" } }, 400);
+  const v = await c.env.KV.get(key, "json");
   return c.json({ data: v });
 });
 app.put("/api/content/:key", requireAuth, requireRole("admin"), async (c) => {
-  await c.env.KV.put(c.req.param("key"), JSON.stringify(await c.req.json()));
+  const key = contentConfigKey(c.req.param("key") || "");
+  if (!key) return c.json({ error: { code: "invalid_content_key" } }, 400);
+  const value = await c.req.json().catch(() => undefined);
+  if (value === undefined) return c.json({ error: { code: "invalid_json" } }, 400);
+  if (jsonByteLength(value) > MAX_CONTENT_CONFIG_BYTES) return c.json({ error: { code: "content_too_large" } }, 413);
+  await c.env.KV.put(key, JSON.stringify(value), {
+    metadata: { schema: "content:v1", updatedAt: now(), updatedBy: c.get("userId") },
+  });
   return c.json({ ok: true });
-});
-
-// ─── Media (R2) ─────────────────────────────────────────────────────────
-app.put("/api/media/:path{.+}", requireAuth, requireRole("staff", "admin"), async (c) => {
-  const path = c.req.param("path");
-  await c.env.FILES.put(path, c.req.raw.body, { httpMetadata: { contentType: c.req.header("content-type") || "application/octet-stream" } });
-  return c.json({ ok: true, path });
 });
 
 // ─── Platformă internă (proiecte + propuneri + linkuri + metadata) ──────
@@ -485,4 +497,18 @@ app.onError((error, c) => {
   return c.json({ error: { code: "internal_error", message: "A apărut o eroare internă", requestId } }, 500);
 });
 
-export default app;
+async function cleanupExpiredData(env: AppBindings["Bindings"]) {
+  const timestamp = now();
+  const timestampSeconds = Math.floor(timestamp / 1000);
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM rate_limit_counters WHERE expires_at < ?").bind(timestampSeconds),
+    env.DB.prepare("DELETE FROM sessions WHERE expires_at < ?").bind(timestamp),
+    env.DB.prepare("DELETE FROM password_resets WHERE expires_at < ? AND (used_at IS NULL OR used_at < ?)").bind(timestamp, timestamp - 24 * 60 * 60 * 1000),
+    env.DB.prepare("DELETE FROM email_verifications WHERE expires_at < ? AND (used_at IS NULL OR used_at < ?)").bind(timestamp, timestamp - 24 * 60 * 60 * 1000),
+  ]);
+}
+
+export default {
+  fetch: (request, env, ctx) => app.fetch(request, env, ctx),
+  scheduled: (_controller, env, ctx) => ctx.waitUntil(cleanupExpiredData(env)),
+} satisfies ExportedHandler<AppBindings["Bindings"]>;

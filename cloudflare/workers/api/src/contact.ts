@@ -12,6 +12,7 @@ import type { Attachment } from "./smtp";
 import { deliverMail, logDelivery } from "./mailer";
 import { checkRateLimit, verifyTurnstile, clientIp, hashKey } from "./antispam";
 import { syncLeadToTable } from "./leadSink";
+import { leadObjectKey, safeFilename } from "./storage";
 
 export const contactRouter = new Hono<{ Bindings: Env }>();
 
@@ -23,8 +24,6 @@ const ALLOWED_CT =
 
 const clean = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
-const safeName = (n: string) => n.replace(/[^\w.\- ]+/g, "_").slice(0, 120) || "fisier";
-
 contactRouter.post("/api/contact/demo", async (c) => {
   let form: FormData;
   try {
@@ -52,11 +51,11 @@ contactRouter.post("/api/contact/demo", async (c) => {
   // 2) Rate limiting (IP: 3/oră, 10/zi · email: 3/zi)
   const ipKey = await hashKey(ip);
   const emailKey = await hashKey(email.toLowerCase());
-  const rate = await checkRateLimit(c.env.KV, [
+  const rate = await checkRateLimit(c.env.DB, [
     { key: `demo:ip:${ipKey}:h`, limit: 3, windowSec: 3600 },
     { key: `demo:ip:${ipKey}:d`, limit: 10, windowSec: 86400 },
     { key: `demo:mail:${emailKey}:d`, limit: 3, windowSec: 86400 },
-  ]);
+  ], { limiter: c.env.PUBLIC_API_RATE_LIMITER, key: `demo:${emailKey}` });
   if (!rate.ok) {
     return c.json({ error: "rate_limited", retryAfter: rate.retryAfter }, 429, {
       "Retry-After": String(rate.retryAfter),
@@ -88,7 +87,6 @@ contactRouter.post("/api/contact/demo", async (c) => {
 
   const leadId = crypto.randomUUID();
   const attachments: Attachment[] = [];
-  const stored: string[] = [];
   let total = 0;
 
   for (const f of files) {
@@ -98,15 +96,21 @@ contactRouter.post("/api/contact/demo", async (c) => {
     total += f.size;
     if (total > MAX_TOTAL_BYTES) return c.json({ error: "Dimensiune totală prea mare" }, 400);
 
-    const bytes = new Uint8Array(await f.arrayBuffer());
-    const key = `leads/${leadId}/${safeName(f.name)}`;
+    attachments.push({ filename: safeFilename(f.name), contentType: ct, content: new Uint8Array(await f.arrayBuffer()) });
+  }
+
+  const stored: string[] = [];
+  for (const attachment of attachments) {
+    const key = leadObjectKey(leadId, attachment.filename);
     try {
-      await c.env.FILES.put(key, bytes, { httpMetadata: { contentType: ct } });
+      await c.env.FILES.put(key, attachment.content, {
+        httpMetadata: { contentType: attachment.contentType },
+        customMetadata: { leadId, source: "website-cta-demo" },
+      });
       stored.push(key);
     } catch (e) {
       console.error("lead attachment r2 put failed", e);
     }
-    attachments.push({ filename: safeName(f.name), contentType: ct, content: bytes });
   }
 
   const submittedAt = new Date().toISOString();
@@ -144,23 +148,20 @@ contactRouter.post("/api/contact/demo", async (c) => {
     }</p>
   </div>`;
 
-  // D1 is the source of truth. KV remains a short-lived recovery/cache copy.
-  await c.env.DB.prepare(
-    `INSERT INTO leads (id,source,name,business,phone,email,message,website,language,attachments_json,status,delivery_status,created_at,updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?, 'new','pending',?,?)`,
-  ).bind(
-    leadId, "website:cta-demo", name, business, phone, email.toLowerCase(), description || null,
-    website || null, lang, JSON.stringify(stored), Date.now(), Date.now(),
-  ).run();
-
+  // D1 is the source of truth; R2 stores only the attachment objects.
   try {
-    await c.env.KV.put(
-      `lead:${leadId}`,
-      JSON.stringify({ leadId, name, business, phone, email, website, description, stored, submittedAt, lang }),
-      { expirationTtl: 60 * 60 * 24 * 90 },
-    );
-  } catch (e) {
-    console.error("lead kv put failed", e);
+    await c.env.DB.prepare(
+      `INSERT INTO leads (id,source,name,business,phone,email,message,website,language,attachments_json,status,delivery_status,created_at,updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?, 'new','pending',?,?)`,
+    ).bind(
+      leadId, "website:cta-demo", name, business, phone, email.toLowerCase(), description || null,
+      website || null, lang, JSON.stringify(stored), Date.now(), Date.now(),
+    ).run();
+  } catch (error) {
+    await Promise.all(stored.map((key) => c.env.FILES.delete(key).catch((cleanupError) =>
+      console.error(JSON.stringify({ event: "lead_r2_orphan_cleanup_failed", key, cleanupError: String(cleanupError) })),
+    )));
+    throw error;
   }
 
   // Sincronizare în tabel (Airtable / Google Sheets prin webhook) — nu blocăm răspunsul.
@@ -232,10 +233,11 @@ contactRouter.post("/api/contact/example", async (c) => {
     return c.json({ error: "Câmpuri invalide" }, 400);
 
   const ip = clientIp(c.req.raw);
-  const rate = await checkRateLimit(c.env.KV, [
+  const emailKey = await hashKey(email);
+  const rate = await checkRateLimit(c.env.DB, [
     { key: `example:ip:${await hashKey(ip)}:h`, limit: 5, windowSec: 3600 },
-    { key: `example:mail:${await hashKey(email)}:d`, limit: 3, windowSec: 86400 },
-  ]);
+    { key: `example:mail:${emailKey}:d`, limit: 3, windowSec: 86400 },
+  ], { limiter: c.env.PUBLIC_API_RATE_LIMITER, key: `example:${emailKey}` });
   if (!rate.ok) return c.json({ error: "rate_limited", retryAfter: rate.retryAfter }, 429);
 
   const turnstile = await verifyTurnstile(c.env.TURNSTILE_SECRET, turnstileToken, ip, {

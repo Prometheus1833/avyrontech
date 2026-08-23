@@ -6,20 +6,32 @@ Frontendul Pages și Workerul Email Routing sunt build-uri separate.
 ## Build settings
 
 - API Worker: build command `npm run build:api`, deploy command `npm run deploy:api`
-- API preview version: `npm run deploy:api:preview`
+- API preview version: `npm run deploy:api:preview` (obligatoriu pentru branch-uri)
 - Pages: build command `npm run build:pages`, output `dist`
 - Config API canonic: `wrangler.jsonc` din rădăcina repository-ului
 - Node: `22`, package manager canonic: npm; `bun.lock` rămâne sincronizat pentru build-ul Cloudflare configurat anterior pe Bun
 
 ## Ordinea activării
 
-Aceste comenzi modifică resursele Cloudflare și se rulează numai după verificarea preview-ului:
+Preview-ul folosește exclusiv resursele `*-preview`. Schema lui se aplică astfel:
 
 ```bash
-npx wrangler d1 migrations apply avyron-db --remote --config wrangler.jsonc
+npx wrangler d1 migrations apply DB --remote --config wrangler.jsonc --env preview
+npm run deploy:api:preview
+```
+
+`wrangler versions upload` creează o versiune verificabilă, fără promovare în
+producție. Pentru un secret de preview se folosește fluxul de versiuni, nu
+`wrangler secret put`, deoarece comanda din urmă publică imediat o versiune.
+
+Următoarele comenzi modifică producția și se rulează numai după aprobarea
+explicită a cutover-ului:
+
+```bash
+npx wrangler d1 migrations apply DB --remote --config wrangler.jsonc --env=
 npx wrangler secret put JWT_SECRET --config wrangler.jsonc
-npx wrangler secret put SEED_TOKEN --config wrangler.jsonc
 npx wrangler secret put SMTP_PASS --config wrangler.jsonc
+npx wrangler secret put TURNSTILE_SECRET --config wrangler.jsonc
 npm run deploy:api
 ```
 
@@ -68,3 +80,8 @@ npx tsc --noEmit
 npm run validate:cloudflare
 npm test
 ```
+
+Configurația de producție refuză uploadul dacă lipsesc `JWT_SECRET`,
+`SMTP_PASS` sau `TURNSTILE_SECRET`. Preview-ul cere `JWT_SECRET`; integrările
+SMTP și Turnstile se validează separat până când tokenurile lor de preview sunt
+configurate.

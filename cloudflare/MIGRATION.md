@@ -7,7 +7,7 @@ scala și a evita ca un deploy frontend să modifice API-ul sau emailul:
 - Worker `avyrontech`: auth, API, D1, KV, R2 și SMTP outbound;
 - Worker `avyron-email`: Email Routing inbound;
 - D1: conturi, profiluri, proiecte, lead-uri și audit;
-- KV: rate limits și cache-uri cu TTL;
+- KV: configurații mici și cache-uri cu TTL, fără date personale;
 - R2: documente și media.
 
 ## Stadiu
@@ -41,3 +41,5 @@ API și export de date, fără dublă scriere implicită.
 10. promovare separată, numai cu aprobare explicită.
 
 Comenzile și secretele necesare sunt documentate în `workers/api/DEPLOY.md`.
+Matricea de medii, convențiile de chei și regulile de retenție sunt documentate
+în `STORAGE_ARCHITECTURE.md`.

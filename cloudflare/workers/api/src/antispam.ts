@@ -1,5 +1,5 @@
 // Protecție anti-spam pentru formularele publice.
-//   • rate limiting pe IP + pe email, cu contoare în KV (fixed window)
+//   • burst limiting la edge + ferestre exacte în D1
 //   • verificare Cloudflare Turnstile (dacă TURNSTILE_SECRET e setat)
 //   • honeypot (câmp ascuns care trebuie să rămână gol)
 
@@ -7,24 +7,34 @@ export type RateRule = { key: string; limit: number; windowSec: number };
 
 export type RateResult = { ok: true } | { ok: false; retryAfter: number };
 
-export async function checkRateLimit(kv: KVNamespace, rules: RateRule[]): Promise<RateResult> {
+export async function checkRateLimit(
+  db: D1Database,
+  rules: RateRule[],
+  burst?: { limiter: RateLimit; key: string },
+): Promise<RateResult> {
+  if (burst) {
+    try {
+      const { success } = await burst.limiter.limit({ key: burst.key });
+      if (!success) return { ok: false, retryAfter: 60 };
+    } catch (error) {
+      // The atomic D1 window below remains the security boundary if the
+      // low-latency edge limiter is temporarily unavailable.
+      console.error("edge rate limiter unavailable", error);
+    }
+  }
+
+  const timestamp = Math.floor(Date.now() / 1000);
   for (const rule of rules) {
-    const bucket = Math.floor(Date.now() / 1000 / rule.windowSec);
-    const key = `rl:${rule.key}:${bucket}`;
-    let count = 0;
-    try {
-      count = parseInt((await kv.get(key)) || "0", 10) || 0;
-    } catch {
-      continue; // KV indisponibil → nu blocăm utilizatorii legitimi
-    }
-    if (count >= rule.limit) {
-      const nextWindow = (bucket + 1) * rule.windowSec;
-      return { ok: false, retryAfter: Math.max(1, nextWindow - Math.floor(Date.now() / 1000)) };
-    }
-    try {
-      await kv.put(key, String(count + 1), { expirationTtl: Math.max(60, rule.windowSec + 60) });
-    } catch {
-      /* best effort */
+    const windowStart = Math.floor(timestamp / rule.windowSec) * rule.windowSec;
+    const row = await db.prepare(
+      `INSERT INTO rate_limit_counters (scope_key,window_start,count,expires_at)
+       VALUES (?,?,1,?)
+       ON CONFLICT(scope_key,window_start)
+       DO UPDATE SET count = rate_limit_counters.count + 1
+       RETURNING count`,
+    ).bind(`rate:v1:${rule.key}`, windowStart, windowStart + rule.windowSec + 300).first<{ count: number }>();
+    if ((row?.count || 1) > rule.limit) {
+      return { ok: false, retryAfter: Math.max(1, windowStart + rule.windowSec - timestamp) };
     }
   }
   return { ok: true };

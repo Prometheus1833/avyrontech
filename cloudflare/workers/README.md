@@ -19,34 +19,9 @@ Toate operațiile trec prin Worker. Browser-ul nu accesează direct D1/KV/R2.
 /api/media/*          ← upload, signed-url, delete (R2)
 ```
 
-## Pattern minimal
-
-```ts
-// src/worker/index.ts
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import clients from "./routes/clients";
-import invoices from "./routes/invoices";
-import content  from "./routes/content";
-import media    from "./routes/media";
-
-type Env = {
-  DB: D1Database;
-  KV: KVNamespace;
-  FILES: R2Bucket;
-  JWT_SECRET: string;
-};
-
-const app = new Hono<{ Bindings: Env }>();
-app.use("*", cors({ origin: ["https://avyron.ro", "https://www.avyron.ro"] }));
-
-app.route("/api/clients",  clients);
-app.route("/api/invoices", invoices);
-app.route("/api/content",  content);
-app.route("/api/media",    media);
-
-export default app;
-```
+Tipurile binding-urilor se generează din `wrangler.jsonc` prin
+`npm run types:worker`; `npm run types:worker:check` detectează orice diferență
+între configurație și `worker-configuration.d.ts`.
 
 ## Reguli de aur
 
@@ -55,7 +30,8 @@ export default app;
 - **Roluri**: `admin` (Avyron staff), `client` (per client_id), `public` (leads).
 - **Audit**: orice mutație de date business → log in D1 (`audit_log` — adăugăm
   într-o migrație ulterioară când e cerut).
-- **Rate limiting**: KV cu TTL (cheie `rl:<ip>:<route>`).
+- **Rate limiting**: Rate Limit binding pentru burst + UPSERT atomic în D1
+  (`rate_limit_counters`) pentru limita exactă.
 - **Erori**: răspuns uniform `{ error: { code, message } }`, status corect.
 
 ## Admin Dashboard Avyron
@@ -75,6 +51,9 @@ Support        → /api/tickets
 Media          → /api/media
 Settings       → /api/content (KV)
 ```
+
+Politica completă D1/KV/R2 și separarea producție/preview sunt în
+`../STORAGE_ARCHITECTURE.md`.
 
 ## Admin pentru site-urile clienților
 

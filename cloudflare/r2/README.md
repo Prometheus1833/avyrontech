@@ -1,56 +1,34 @@
-# Cloudflare R2 — Storage de fișiere
+# Cloudflare R2 — documente și media
 
-R2 stochează **toate** fișierele binare. **Niciodată imagini sau PDF-uri în D1.**
+R2 păstrează corpurile binare; D1 păstrează metadata, proprietarul, proiectul și
+starea business. Binding-urile și mediile sunt:
 
-## Activare
+| Binding | Producție | Preview | Conținut |
+| --- | --- | --- | --- |
+| `FILES` | `avyron-files` | `avyron-files-preview` | atașamente/documente private |
+| `MEDIA` | `avyron-media` | `avyron-media-preview` | avataruri și media proiecte |
 
-```bash
-npx wrangler r2 bucket create avyron-files
-npx wrangler r2 bucket create avyron-files-preview   # opțional, pentru dev
+## Prefixe canonice
+
+```text
+FILES/leads/<lead-id>/<filename>
+MEDIA/projects/<project-id>/<media-id>-<filename>
+MEDIA/avatars/<user-id>
 ```
 
-Apoi decomentează blocul `r2_buckets` din `wrangler.jsonc`.
-Binding-ul în Workers: `env.FILES`.
+Workerul construiește cheile și normalizează segmentele; browserul nu poate
+alege un path arbitrar. Uploadurile sunt validate și bufferizate o singură dată,
+iar dimensiunea reală maximă este 15 MiB pentru fluxurile implementate acum.
 
-## Structură de directoare
+## Acces și consistență
 
-```
-/clients/<client_id>/...           ← date personale ale clientului
-/projects/<project_id>/...         ← assets specifice proiectului
-/invoices/<year>/INV-<id>.pdf      ← facturi PDF (generate)
-/contracts/<client_id>.pdf         ← contracte semnate
-/logos/<client_slug>/logo.webp     ← logo-uri clienți
-/website-media/<project_id>/...    ← galerii, hero images, attachments
-```
+- bucket-urile rămân private; nu se activează `r2.dev` sau Custom Domain pentru
+  documente și media de cont;
+- descărcarea trece prin autentificare și verificarea rolului/proprietarului;
+- `ETag`, byte ranges și lungimea răspunsului sunt propagate din obiectul R2;
+- dacă insertul metadata D1 eșuează, obiectul R2 nou este șters;
+- la delete, obiectul R2 se șterge înaintea metadata D1, evitând linkuri către un
+  fișier eliminat doar parțial.
 
-### Exemple
-- `/contracts/client-001.pdf`
-- `/logos/cogito/logo.webp`
-- `/website-media/project-15/gallery-1.webp`
-- `/invoices/2026/INV-104.pdf`
-
-## Convenții
-
-- **Formate**: imagini → `.webp` (fallback `.jpg`); documente → `.pdf`.
-- **Nume**: `kebab-case`, fără diacritice, fără spații.
-- **Acces public**: doar pentru `logos/` și `website-media/` (via Custom Domain R2).
-- **Acces privat**: `clients/`, `invoices/`, `contracts/` — semnate cu URL pre-signed
-  generate din Worker (TTL scurt, ex. 15 min).
-- Limită soft per fișier: 10 MB pentru imagini, 25 MB pentru PDF-uri.
-
-## API pattern (Worker)
-
-```ts
-// Upload
-PUT  /api/media/upload
-  → multipart/form-data → env.FILES.put(key, body)
-
-// Download privat
-GET  /api/media/signed-url?key=invoices/2026/INV-104.pdf
-  → returnează URL pre-signed (TTL 15 min)
-
-// Delete (admin)
-DELETE /api/media/:key
-```
-
-Toate operațiile trec prin Worker — niciodată acces direct la R2 din browser.
+Regulile lifecycle pentru atașamente și documente se stabilesc după politica de
+retenție GDPR. Nu se șterg automat documente de producție fără o durată aprobată.

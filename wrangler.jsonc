@@ -1,13 +1,14 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  // Primary Worker connected to GitHub. Keeping this config at repository
-  // root makes Cloudflare's default `wrangler versions upload` preview command
-  // deterministic without duplicating bindings in dashboard-only settings.
+  // Primary Worker connected to GitHub. Production is the safe default;
+  // branch builds must explicitly use `--env preview` (see package.json).
   "name": "avyrontech",
   "main": "cloudflare/workers/api/src/index.ts",
   "compatibility_date": "2026-08-23",
   "compatibility_flags": ["nodejs_compat"],
   "preview_urls": true,
+  "upload_source_maps": true,
+  "placement": { "mode": "smart" },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
@@ -31,14 +32,15 @@
   },
   "observability": {
     "enabled": true,
-    "head_sampling_rate": 1,
+    "head_sampling_rate": 0.1,
     "logs": {
       "enabled": true,
-      "head_sampling_rate": 1,
+      "head_sampling_rate": 0.1,
       "persist": true,
       "invocation_logs": true
     }
   },
+  "triggers": { "crons": ["17 3 * * *"] },
 
   "d1_databases": [
     {
@@ -55,9 +57,21 @@
     { "binding": "FILES", "bucket_name": "avyron-files" },
     { "binding": "MEDIA", "bucket_name": "avyron-media" }
   ],
+  "ratelimits": [
+    {
+      "name": "PUBLIC_API_RATE_LIMITER",
+      "namespace_id": "183301",
+      "simple": { "limit": 30, "period": 60 }
+    }
+  ],
 
-  // Secrets: JWT_SECRET, SEED_TOKEN, SMTP_PASS, TURNSTILE_SECRET.
+  // Optional integrations remain typed in src/types.ts and fail closed when
+  // absent. These three bindings are required for a production-ready runtime.
+  "secrets": {
+    "required": ["JWT_SECRET", "SMTP_PASS", "TURNSTILE_SECRET"]
+  },
   "vars": {
+    "APP_ENV": "production",
     "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://avyrontech.lovable.app,https://id-preview--3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovable.app,https://3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovableproject.com,http://localhost:8080",
     "APP_URL": "https://avyron.ro",
     "SMTP_HOST": "smtp.mx.cloudflare.net",
@@ -65,6 +79,61 @@
     "SMTP_USER": "api_token",
     "SMTP_FROM": "contact@avyron.ro",
     "LEAD_TO": "avyrontech@gmail.com",
-    "TURNSTILE_ALLOWED_HOSTNAMES": "avyron.ro,www.avyron.ro,avyrontech.pages.dev,*.avyrontech.pages.dev,avyrontech.lovable.app,localhost"
+    "TURNSTILE_ALLOWED_HOSTNAMES": "avyron.ro,www.avyron.ro,avyrontech.pages.dev,*.avyrontech.pages.dev,*.avyrontech.workers.dev,avyrontech.lovable.app,localhost"
+  },
+
+  // Cloudflare Builds must run `npm run deploy:api:preview` for non-main
+  // branches. The explicit name keeps the familiar branch preview URLs while
+  // every mutable storage binding points to an isolated preview resource.
+  "env": {
+    "preview": {
+      "name": "avyrontech",
+      "observability": {
+        "enabled": true,
+        "head_sampling_rate": 1,
+        "logs": {
+          "enabled": true,
+          "head_sampling_rate": 1,
+          "persist": true,
+          "invocation_logs": true
+        }
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "avyron-db-preview",
+          "database_id": "4df2ac75-51b2-4d17-bd21-a0ab3f143b24",
+          "migrations_dir": "cloudflare/d1/migrations"
+        }
+      ],
+      "kv_namespaces": [
+        { "binding": "KV", "id": "2a37c496edcc4742b87a17d65749da22" }
+      ],
+      "r2_buckets": [
+        { "binding": "FILES", "bucket_name": "avyron-files-preview" },
+        { "binding": "MEDIA", "bucket_name": "avyron-media-preview" }
+      ],
+      "ratelimits": [
+        {
+          "name": "PUBLIC_API_RATE_LIMITER",
+          "namespace_id": "183302",
+          "simple": { "limit": 30, "period": 60 }
+        }
+      ],
+      "secrets": {
+        "required": ["JWT_SECRET"]
+      },
+      "vars": {
+        "APP_ENV": "preview",
+        "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://codex-prelaunch-improvements-2026-08-23-avyrontech.avyrontech.workers.dev,https://avyrontech.lovable.app,http://localhost:8080",
+        "APP_URL": "https://codex-prelaunch-improvements-2026-08-23-avyrontech.avyrontech.workers.dev",
+        "SMTP_HOST": "smtp.mx.cloudflare.net",
+        "SMTP_PORT": "465",
+        "SMTP_USER": "api_token",
+        "SMTP_FROM": "contact@avyron.ro",
+        "LEAD_TO": "avyrontech@gmail.com",
+        "TURNSTILE_ALLOWED_HOSTNAMES": "*.avyrontech.workers.dev,avyrontech.lovable.app,localhost"
+      }
+    }
   }
 }

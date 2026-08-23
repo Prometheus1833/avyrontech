@@ -159,7 +159,7 @@ projectsRouter.patch("/api/proposals/:id", async (c) => {
   if (!perm.write) return c.json({ error: { code: "forbidden", message: "Doar staff-ul poate schimba starea propunerilor" } }, 403);
   const b = (await c.req.json().catch(() => ({}))) as { status?: string; title?: string; description?: string };
   const allowed = ["status", "title", "description"];
-  const sets: string[] = [], vals: Array<string | null> = [];
+  const sets: string[] = [], vals: Array<string | number | null> = [];
   for (const k of allowed) {
     if (!(k in b)) continue;
     const value = b[k as keyof typeof b];

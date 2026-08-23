@@ -6,7 +6,7 @@
 //   SMTP_USER (Cloudflare: api_token), SMTP_PASS (Email Sending API token)
 //   SMTP_FROM (opțional, default SMTP_USER), LEAD_TO (opțional, default SMTP_FROM)
 
-import { connect, type Socket } from "cloudflare:sockets";
+import { connect } from "cloudflare:sockets";
 
 export type SmtpConfig = {
   host: string;
