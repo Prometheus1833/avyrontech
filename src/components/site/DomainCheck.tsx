@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, X, Sparkles, Globe, Loader2, AlertTriangle } from "lucide-react";
+import { Check, X, Activity, Globe, Loader2, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLang } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,7 +71,7 @@ const DomainCheck = () => {
           />
           <div className="relative text-center">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium">
-              <Sparkles className="size-3.5" /> {t.domain.badge}
+              <Activity className="size-3.5" /> {t.domain.badge}
             </div>
             <h2 className="mt-4 font-display text-3xl md:text-5xl font-bold tracking-tight">
               {t.domain.title1}<br />{t.domain.title2}

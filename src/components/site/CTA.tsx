@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Sparkles } from "lucide-react";
+import { Gift } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -63,7 +63,7 @@ const CTA = () => {
             <div className="absolute -bottom-10 -right-10 size-60 rounded-full bg-white/20 blur-3xl" />
             <div className="relative">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium">
-                <Sparkles className="size-3.5" /> {t.cta.badge}
+                <Gift className="size-3.5" /> {t.cta.badge}
               </div>
               <h2 className="mt-5 font-display text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">
                 {t.cta.title}
