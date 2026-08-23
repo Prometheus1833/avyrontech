@@ -105,9 +105,15 @@ const CTA = () => {
         body.summary ?? {
           leadId: body.leadId ?? "—",
           submittedAt: new Date().toISOString(),
-          ...parsed.data,
+          name: parsed.data.name,
+          business: parsed.data.business,
+          phone: parsed.data.phone,
+          email: parsed.data.email,
+          website: parsed.data.website,
+          description: parsed.data.description,
           files: files.map((f) => ({ name: f.name, size: f.size })),
         },
+
       );
       setData(emptyData);
       setFiles([]);
