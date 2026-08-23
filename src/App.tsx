@@ -1,6 +1,6 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,6 +9,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index.tsx";
 import LangRouteSync from "@/components/site/LangRouteSync";
+import { pageView } from "@/lib/analytics";
 
 const Gdpr = lazy(() => import("./pages/Gdpr.tsx"));
 const Pricing = lazy(() => import("./pages/Pricing.tsx"));
@@ -33,6 +34,14 @@ import MustChangePassword from "@/components/auth/MustChangePassword";
 
 const queryClient = new QueryClient();
 
+const AnalyticsTracker = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    pageView(pathname);
+  }, [pathname]);
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
@@ -42,7 +51,8 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <LangRouteSync />
-            <Suspense fallback={<div className="min-h-screen" />}>
+            <AnalyticsTracker />
+            <Suspense fallback={<div className="min-h-screen" />}>}
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/en" element={<Index />} />
