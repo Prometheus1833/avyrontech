@@ -4,13 +4,13 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft,
   ArrowUpRight,
+  Building2,
   Code2,
   Smartphone,
   ShieldCheck,
   Palette,
   Bug,
   Server,
-  Sparkles,
   UserPlus,
   MessageSquare,
   Wrench,
@@ -233,7 +233,7 @@ const About = () => {
             transition={{ duration: 0.5 }}
             className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs uppercase tracking-widest text-muted-foreground"
           >
-            <Sparkles className="size-3.5 text-brand" />
+            <Building2 className="size-3.5 text-brand" />
             {ro ? "Despre noi & Portofoliu" : "About & Portfolio"}
           </motion.div>
           <h1 className="mt-5 font-display font-extrabold text-3xl sm:text-4xl md:text-6xl leading-tight tracking-tight">
