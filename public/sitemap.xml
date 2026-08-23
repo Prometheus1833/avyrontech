@@ -6,202 +6,202 @@
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/"/>
-    <changefreq>weekly</changefreq><priority>1.0</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>weekly</changefreq><priority>1.0</priority>
   </url>
   <url>
     <loc>https://avyron.ro/en</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/"/>
-    <changefreq>weekly</changefreq><priority>0.9</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority>
   </url>
   <url>
     <loc>https://avyron.ro/despre-si-portofoliu</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/despre-si-portofoliu"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/about"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/despre-si-portofoliu"/>
-    <changefreq>monthly</changefreq><priority>0.8</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.8</priority>
   </url>
   <url>
     <loc>https://avyron.ro/en/about</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/despre-si-portofoliu"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/about"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/despre-si-portofoliu"/>
-    <changefreq>monthly</changefreq><priority>0.7</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.7</priority>
   </url>
   <url>
     <loc>https://avyron.ro/costurisiproduse</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/costurisiproduse"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/pricing"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/costurisiproduse"/>
-    <changefreq>monthly</changefreq><priority>0.8</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.8</priority>
   </url>
   <url>
     <loc>https://avyron.ro/en/pricing</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/costurisiproduse"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/pricing"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/costurisiproduse"/>
-    <changefreq>monthly</changefreq><priority>0.7</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.7</priority>
   </url>
   <url>
     <loc>https://avyron.ro/blog</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/blog"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/blog"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/blog"/>
-    <changefreq>weekly</changefreq><priority>0.7</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>weekly</changefreq><priority>0.7</priority>
   </url>
   <url>
     <loc>https://avyron.ro/en/blog</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/blog"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/blog"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/blog"/>
-    <changefreq>weekly</changefreq><priority>0.6</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>weekly</changefreq><priority>0.6</priority>
   </url>
   <url>
     <loc>https://avyron.ro/exemple/flawlesstudio</loc>
-    <changefreq>monthly</changefreq><priority>0.6</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority>
   </url>
   <url>
     <loc>https://avyron.ro/exemple/retuvo</loc>
-    <changefreq>monthly</changefreq><priority>0.6</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority>
   </url>
   <url>
     <loc>https://avyron.ro/examples/cofetariadulcedor.ro</loc>
-    <changefreq>monthly</changefreq><priority>0.5</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.5</priority>
   </url>
   <url>
     <loc>https://avyron.ro/examples/studiomaradesign.ro</loc>
-    <changefreq>monthly</changefreq><priority>0.5</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.5</priority>
   </url>
   <url>
     <loc>https://avyron.ro/examples/pensiuneacerbul.ro</loc>
-    <changefreq>monthly</changefreq><priority>0.5</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.5</priority>
   </url>
   <url>
     <loc>https://avyron.ro/gdpr</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/gdpr"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/privacy"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/gdpr"/>
-    <changefreq>yearly</changefreq><priority>0.3</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>yearly</changefreq><priority>0.3</priority>
   </url>
   <url>
     <loc>https://avyron.ro/en/privacy</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/gdpr"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/privacy"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/gdpr"/>
-    <changefreq>yearly</changefreq><priority>0.2</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>yearly</changefreq><priority>0.2</priority>
   </url>
   <url>
     <loc>https://avyron.ro/produse/website-prezentare-premium</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/website-prezentare-premium"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/premium-presentation-website"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/website-prezentare-premium"/>
-    <changefreq>monthly</changefreq><priority>0.9</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.9</priority>
   </url>
   <url>
     <loc>https://avyron.ro/en/products/premium-presentation-website</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/website-prezentare-premium"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/premium-presentation-website"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/website-prezentare-premium"/>
-    <changefreq>monthly</changefreq><priority>0.7</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.7</priority>
   </url>
   <url>
     <loc>https://avyron.ro/produse/identitate-social-media</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/identitate-social-media"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/social-media-identity"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/identitate-social-media"/>
-    <changefreq>monthly</changefreq><priority>0.9</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.9</priority>
   </url>
   <url>
     <loc>https://avyron.ro/en/products/social-media-identity</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/identitate-social-media"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/social-media-identity"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/identitate-social-media"/>
-    <changefreq>monthly</changefreq><priority>0.7</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.7</priority>
   </url>
   <url>
     <loc>https://avyron.ro/produse/magazin-online</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/magazin-online"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/online-store"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/magazin-online"/>
-    <changefreq>monthly</changefreq><priority>0.9</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.9</priority>
   </url>
   <url>
     <loc>https://avyron.ro/en/products/online-store</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/magazin-online"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/online-store"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/magazin-online"/>
-    <changefreq>monthly</changefreq><priority>0.7</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.7</priority>
   </url>
   <url>
     <loc>https://avyron.ro/produse/aplicatii-web-si-mobile</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/aplicatii-web-si-mobile"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/web-and-mobile-apps"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/aplicatii-web-si-mobile"/>
-    <changefreq>monthly</changefreq><priority>0.9</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.9</priority>
   </url>
   <url>
     <loc>https://avyron.ro/en/products/web-and-mobile-apps</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/aplicatii-web-si-mobile"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/web-and-mobile-apps"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/aplicatii-web-si-mobile"/>
-    <changefreq>monthly</changefreq><priority>0.7</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.7</priority>
   </url>
   <url>
     <loc>https://avyron.ro/produse/agent-ai-personalizat</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/agent-ai-personalizat"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/personalized-ai-agent"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/agent-ai-personalizat"/>
-    <changefreq>monthly</changefreq><priority>0.9</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.9</priority>
   </url>
   <url>
     <loc>https://avyron.ro/en/products/personalized-ai-agent</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/agent-ai-personalizat"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/personalized-ai-agent"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/agent-ai-personalizat"/>
-    <changefreq>monthly</changefreq><priority>0.7</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.7</priority>
   </url>
   <url>
     <loc>https://avyron.ro/produse/audit-website</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/audit-website"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/website-audit"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/audit-website"/>
-    <changefreq>monthly</changefreq><priority>0.9</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.9</priority>
   </url>
   <url>
     <loc>https://avyron.ro/en/products/website-audit</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/audit-website"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/website-audit"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/audit-website"/>
-    <changefreq>monthly</changefreq><priority>0.7</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.7</priority>
   </url>
   <url>
     <loc>https://avyron.ro/produse/testare-qa-web-mobile</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/testare-qa-web-mobile"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/qa-testing-web-mobile"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/testare-qa-web-mobile"/>
-    <changefreq>monthly</changefreq><priority>0.9</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.9</priority>
   </url>
   <url>
     <loc>https://avyron.ro/en/products/qa-testing-web-mobile</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/testare-qa-web-mobile"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/qa-testing-web-mobile"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/testare-qa-web-mobile"/>
-    <changefreq>monthly</changefreq><priority>0.7</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.7</priority>
   </url>
   <url>
     <loc>https://avyron.ro/pachete-mentenanta</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/pachete-mentenanta"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/care-plans"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/pachete-mentenanta"/>
-    <changefreq>monthly</changefreq><priority>0.9</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.9</priority>
   </url>
   <url>
     <loc>https://avyron.ro/en/care-plans</loc>
     <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/pachete-mentenanta"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/care-plans"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/pachete-mentenanta"/>
-    <changefreq>monthly</changefreq><priority>0.7</priority>
+    <lastmod>2026-08-23</lastmod><changefreq>monthly</changefreq><priority>0.7</priority>
   </url>
 </urlset>
 
