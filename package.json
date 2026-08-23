@@ -6,9 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/prerender.mjs",
+    "build:pages": "npm run build && node scripts/build-pages-worker.mjs",
+    "build:worker": "AVYRON_WORKER=1 vite build && AVYRON_WORKER=1 node scripts/prerender.mjs",
     "build:dev": "vite build --mode development",
-    "deploy": "npm run build && npx wrangler@4.96.0 deploy --config dist/wrangler.json",
-    "deploy:dry-run": "npm run build && npx wrangler@4.96.0 deploy --config dist/wrangler.json --dry-run",
+    "deploy": "npm run deploy:worker",
+    "deploy:worker": "npm run build:worker && wrangler deploy --config dist/avyron_site/wrangler.json",
+    "deploy:dry-run": "npm run build:worker && wrangler deploy --config dist/avyron_site/wrangler.json --dry-run",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
@@ -72,8 +75,8 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.39.0",
-    "@cloudflare/workers-types": "^4.20260613.1",
+    "@cloudflare/vite-plugin": "1.39.0",
+    "@cloudflare/workers-types": "4.20260613.1",
     "@eslint/js": "^9.32.0",
     "@tailwindcss/typography": "^0.5.16",
     "@testing-library/jest-dom": "^6.6.0",
@@ -95,6 +98,6 @@
     "typescript-eslint": "^8.38.0",
     "vite": "^6.4.2",
     "vitest": "^3.2.4",
-    "wrangler": "^4.96.0"
+    "wrangler": "4.96.0"
   }
 }

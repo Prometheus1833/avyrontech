@@ -16,12 +16,13 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === "development" && componentTagger(),
-    // Static hosting (Lovable) is the default output. Set AVYRON_WORKER=1 to
-    // build the Cloudflare Worker (301s + hard 404/403/500/503 statuses).
+    // Lovable and Cloudflare Pages use the plain static Vite build. The
+    // Cloudflare plugin is enabled only for the optional standalone site
+    // Worker build; otherwise it emits an unrelated generated Worker config
+    // into dist/ and can make Pages deploy the wrong runtime.
     mode !== "development" &&
-      (process.env.AVYRON_WORKER === "1"
-        ? cloudflare({ configPath: "./wrangler.worker.jsonc" })
-        : cloudflare()),
+      process.env.AVYRON_WORKER === "1" &&
+      cloudflare({ configPath: "./wrangler.worker.jsonc" }),
   ].filter(Boolean),
 
   resolve: {
@@ -31,6 +32,10 @@ export default defineConfig(({ mode }) => ({
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
   },
   build: {
+    // A previous Worker build writes dist/client and dist/avyron_site. Always
+    // remove those artifacts before a static Lovable/Pages build so the wrong
+    // Wrangler configuration cannot leak into a later deployment.
+    emptyOutDir: true,
     cssCodeSplit: true,
     rollupOptions: {
       output: {
@@ -60,4 +65,3 @@ export default defineConfig(({ mode }) => ({
     },
   },
 }));
-

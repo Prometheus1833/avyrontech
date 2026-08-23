@@ -1,7 +1,7 @@
 /**
- * Site Worker (Cloudflare) — serves the prerendered static build and applies
- * correct HTTP semantics: 301 redirects, hard 404/403/500/503 statuses and
- * X-Robots-Tag: noindex on private/auth areas. Assets and /api/* pass through.
+ * Site edge runtime (Cloudflare Pages advanced mode or standalone Worker) —
+ * serves the prerendered static build and applies correct HTTP semantics: 301
+ * redirects, hard 404/403/500/503 statuses and X-Robots-Tag on private areas.
  */
 
 import { decide, isKnownSpaRoute, normalizePath } from "./router";
@@ -13,7 +13,7 @@ interface Fetcher {
 interface Env {
   ASSETS: Fetcher;
   /** Service binding to the existing API Worker ("avyrontech"). */
-  API: Fetcher;
+  API?: Fetcher;
 }
 
 const NOINDEX = "noindex, nofollow";
@@ -37,6 +37,12 @@ export default {
 
       // /api/* belongs to the API Worker, not to the static assets.
       case "api":
+        if (!env.API) {
+          return new Response("API service binding is not configured", {
+            status: 502,
+            headers: { "content-type": "text/plain; charset=utf-8" },
+          });
+        }
         return env.API.fetch(request);
 
       case "asset":
