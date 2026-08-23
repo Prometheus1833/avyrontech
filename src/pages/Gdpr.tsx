@@ -200,8 +200,10 @@ const sections = [
 ];
 
 const Gdpr = () => {
+  const isEn =
+    typeof window !== "undefined" && window.location.pathname.startsWith("/en/");
+
   useEffect(() => {
-    const isEn = window.location.pathname.startsWith("/en/");
     import("@/lib/seo").then(({ setPageMeta }) =>
       setPageMeta({
         title: isEn
@@ -215,18 +217,18 @@ const Gdpr = () => {
       })
     );
     window.scrollTo(0, 0);
-  }, []);
+  }, [isEn]);
 
   return (
     <main className="min-h-screen bg-background text-foreground antialiased">
       {/* Top bar — Apple-like minimal */}
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto max-w-5xl px-6 h-14 flex items-center justify-between">
-          <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <Link to={isEn ? "/en" : "/"} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="size-4" />
-            Înapoi
+            {isEn ? "Back" : "Înapoi"}
           </Link>
-          <Link to="/" className="flex items-center gap-2">
+          <Link to={isEn ? "/en" : "/"} className="flex items-center gap-2">
             <img src={logo} alt="Avyron" width={24} height={24} className="size-6 rounded-md object-cover" />
             <span className="font-display font-semibold tracking-[0.2em] text-xs">AVYRON</span>
           </Link>
@@ -238,18 +240,23 @@ const Gdpr = () => {
         <div className="mx-auto max-w-3xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
             <ShieldCheck className="size-3.5" />
-            GDPR · Regulamentul (UE) 2016/679
+            GDPR · {isEn ? "Regulation (EU) 2016/679" : "Regulamentul (UE) 2016/679"}
           </div>
           <h1 className="mt-6 font-display font-semibold tracking-tight text-4xl md:text-6xl leading-[1.05]">
-            Politica de Confidențialitate
-            <span className="block text-muted-foreground font-normal">și Protecția Datelor.</span>
+            {isEn ? "Privacy Policy" : "Politica de Confidențialitate"}
+            <span className="block text-muted-foreground font-normal">
+              {isEn ? "and Data Protection." : "și Protecția Datelor."}
+            </span>
           </h1>
           <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Transparență totală asupra modului în care colectăm, prelucrăm și protejăm datele tale.
+            {isEn
+              ? "Full transparency on how we collect, process and protect your data. The legally binding text below is published in Romanian."
+              : "Transparență totală asupra modului în care colectăm, prelucrăm și protejăm datele tale."}
           </p>
           <p className="mt-8 text-xs uppercase tracking-widest text-muted-foreground/80">
-            Ultima actualizare · 25.04.2026
+            {isEn ? "Last updated · 25.04.2026" : "Ultima actualizare · 25.04.2026"}
           </p>
+
 
           {/* Friendly commitment statement */}
           <div className="mt-10 rounded-3xl border border-border bg-card/60 p-6 md:p-8 text-left">
