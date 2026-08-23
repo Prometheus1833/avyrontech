@@ -58,7 +58,30 @@ export type ProductCopy = {
   ctaDesc: string;
   ctaButton: string;
   whatsapp: string;
+  /** Optional, page-specific enrichments (currently used by the premium website page). */
+  heroStats?: Array<{ value: string; label: string }>;
+  audiences?: {
+    title: string;
+    lead: string;
+    items: Array<{ icon: IconKey; title: string; desc: string }>;
+  };
+  tech?: {
+    title: string;
+    lead: string;
+    groups: Array<{ name: string; items: string[] }>;
+  };
+  examples?: {
+    title: string;
+    lead: string;
+    items: Array<{ title: string; desc: string; result: string }>;
+  };
+  advice?: {
+    title: string;
+    lead: string;
+    items: Array<{ title: string; desc: string }>;
+  };
 };
+
 
 export type Product = {
   key: ProductKey;
