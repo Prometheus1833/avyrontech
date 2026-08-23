@@ -14,6 +14,7 @@ export type ProductKey =
   | "online-store"
   | "apps"
   | "ai-agent"
+  | "qa-testing"
   | "audit";
 
 export type IconKey =
@@ -34,7 +35,10 @@ export type IconKey =
   | "code"
   | "cloud"
   | "users"
+  | "bug"
+  | "flask"
   | "clock";
+
 
 export type ProductCopy = {
   name: string;
