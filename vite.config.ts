@@ -16,8 +16,14 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === "development" && componentTagger(),
-    mode !== "development" && cloudflare(),
+    // Static hosting (Lovable) is the default output. Set AVYRON_WORKER=1 to
+    // build the Cloudflare Worker (301s + hard 404/403/500/503 statuses).
+    mode !== "development" &&
+      (process.env.AVYRON_WORKER === "1"
+        ? cloudflare({ configPath: "./wrangler.worker.jsonc" })
+        : cloudflare()),
   ].filter(Boolean),
+
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

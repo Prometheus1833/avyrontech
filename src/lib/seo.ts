@@ -1,3 +1,19 @@
+// Route-scoped head management.
+//
+// Every tag written here is tagged with data-seo="1" so it can be removed
+// completely when the SPA navigates to another route. JSON-LD is merged into a
+// SINGLE <script id="ld-graph"> with an @graph array, so a page never ships
+// duplicated Organization / WebSite / Product nodes.
+
+const SEO_ATTR = "data-seo";
+const DEFAULT_ROBOTS = "index, follow, max-image-preview:large, max-snippet:-1";
+
+export const BASE_URL = "https://avyron.ro";
+const BASE = BASE_URL;
+
+/** Nodes for the current route's JSON-LD @graph, keyed by a stable id. */
+const graphNodes = new Map<string, Record<string, unknown>>();
+
 // Sets/updates a meta tag by attribute (property or name).
 function upsertMeta(attr: "property" | "name", key: string, value: string) {
   let el = document.head.querySelector(`meta[${attr}="${key}"]`) as HTMLMetaElement | null;
@@ -6,10 +22,24 @@ function upsertMeta(attr: "property" | "name", key: string, value: string) {
     el.setAttribute(attr, key);
     document.head.appendChild(el);
   }
+  el.setAttribute(SEO_ATTR, "1");
   el.setAttribute("content", value);
 }
 
-const BASE = "https://avyron.ro";
+/**
+ * Removes every route-scoped artefact of the previous page:
+ * hreflang alternates, og:locale:alternate and the JSON-LD graph.
+ * Called on each SPA navigation before the new page writes its head.
+ */
+export function resetManagedHead() {
+  graphNodes.clear();
+  if (typeof document === "undefined") return;
+  document.head
+    .querySelectorAll(
+      'link[rel="alternate"][hreflang], meta[property="og:locale:alternate"], script[type="application/ld+json"][data-seo="1"]',
+    )
+    .forEach((el) => el.remove());
+}
 
 export function setPageMeta({
   title,
@@ -20,6 +50,7 @@ export function setPageMeta({
   imageAlt,
   type = "website",
   locale,
+  robots = DEFAULT_ROBOTS,
 }: {
   title: string;
   description: string;
@@ -35,26 +66,30 @@ export function setPageMeta({
   type?: string;
   /** OG locale, e.g. "ro_RO" or "en_US". Inferred from alternates when omitted. */
   locale?: string;
+  /** Robots directive for this route. */
+  robots?: string;
 }) {
   const url = `${BASE}${path}`;
   document.title = title;
   upsertMeta("name", "description", description);
+  upsertMeta("name", "robots", robots);
   upsertMeta("property", "og:title", title);
   upsertMeta("property", "og:description", description);
   upsertMeta("property", "og:url", url);
   upsertMeta("property", "og:type", type);
   upsertMeta("property", "og:site_name", "Avyron");
   const inferredLocale =
-    locale ?? (alternates && path.startsWith("/en") ? "en_US" : "ro_RO");
+    locale ?? (path === "/en" || path.startsWith("/en/") ? "en_US" : "ro_RO");
   upsertMeta("property", "og:locale", inferredLocale);
+  document.documentElement.lang = inferredLocale === "en_US" ? "en" : "ro";
   if (alternates) {
     const alt = inferredLocale === "ro_RO" ? "en_US" : "ro_RO";
-    // Remove any existing alternate locale tags before writing a fresh one.
     document.head
       .querySelectorAll('meta[property="og:locale:alternate"]')
       .forEach((el) => el.remove());
     const el = document.createElement("meta");
     el.setAttribute("property", "og:locale:alternate");
+    el.setAttribute(SEO_ATTR, "1");
     el.setAttribute("content", alt);
     document.head.appendChild(el);
   }
@@ -81,8 +116,8 @@ export function setPageMeta({
     canonical.setAttribute("rel", "canonical");
     document.head.appendChild(canonical);
   }
+  canonical.setAttribute(SEO_ATTR, "1");
   canonical.setAttribute("href", url);
-
 
   // Clear existing hreflang alternates before writing new ones.
   document.head
@@ -100,18 +135,38 @@ export function setPageMeta({
       link.setAttribute("rel", "alternate");
       link.setAttribute("hreflang", code);
       link.setAttribute("href", href);
+      link.setAttribute(SEO_ATTR, "1");
       document.head.appendChild(link);
     }
   }
 }
 
-export function setJsonLd(id: string, data: unknown) {
-  let el = document.getElementById(id) as HTMLScriptElement | null;
+function renderGraph() {
+  let el = document.getElementById("ld-graph") as HTMLScriptElement | null;
+  if (graphNodes.size === 0) {
+    el?.remove();
+    return;
+  }
   if (!el) {
     el = document.createElement("script");
     el.type = "application/ld+json";
-    el.id = id;
+    el.id = "ld-graph";
+    el.setAttribute(SEO_ATTR, "1");
     document.head.appendChild(el);
   }
-  el.textContent = JSON.stringify(data);
+  el.textContent = JSON.stringify({
+    "@context": "https://schema.org",
+    "@graph": Array.from(graphNodes.values()),
+  });
+}
+
+/**
+ * Adds/replaces one node of the current route's JSON-LD graph.
+ * All nodes are serialised into a single <script id="ld-graph">.
+ */
+export function setJsonLd(id: string, data: unknown) {
+  const node = { ...(data as Record<string, unknown>) };
+  delete node["@context"];
+  graphNodes.set(id, node);
+  renderGraph();
 }
