@@ -91,4 +91,88 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/gdpr"/>
     <changefreq>yearly</changefreq><priority>0.2</priority>
   </url>
+  <url>
+    <loc>https://avyron.ro/produse/website-prezentare-premium</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/website-prezentare-premium"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/premium-presentation-website"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/website-prezentare-premium"/>
+    <changefreq>monthly</changefreq><priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/en/products/premium-presentation-website</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/website-prezentare-premium"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/premium-presentation-website"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/website-prezentare-premium"/>
+    <changefreq>monthly</changefreq><priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/produse/identitate-social-media</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/identitate-social-media"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/social-media-identity"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/identitate-social-media"/>
+    <changefreq>monthly</changefreq><priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/en/products/social-media-identity</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/identitate-social-media"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/social-media-identity"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/identitate-social-media"/>
+    <changefreq>monthly</changefreq><priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/produse/magazin-online</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/magazin-online"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/online-store"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/magazin-online"/>
+    <changefreq>monthly</changefreq><priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/en/products/online-store</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/magazin-online"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/online-store"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/magazin-online"/>
+    <changefreq>monthly</changefreq><priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/produse/aplicatii-web-si-mobile</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/aplicatii-web-si-mobile"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/web-and-mobile-apps"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/aplicatii-web-si-mobile"/>
+    <changefreq>monthly</changefreq><priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/en/products/web-and-mobile-apps</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/aplicatii-web-si-mobile"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/web-and-mobile-apps"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/aplicatii-web-si-mobile"/>
+    <changefreq>monthly</changefreq><priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/produse/agent-ai-personalizat</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/agent-ai-personalizat"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/personalized-ai-agent"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/agent-ai-personalizat"/>
+    <changefreq>monthly</changefreq><priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/en/products/personalized-ai-agent</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/agent-ai-personalizat"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/personalized-ai-agent"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/agent-ai-personalizat"/>
+    <changefreq>monthly</changefreq><priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/produse/audit-website</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/audit-website"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/website-audit"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/audit-website"/>
+    <changefreq>monthly</changefreq><priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://avyron.ro/en/products/website-audit</loc>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/produse/audit-website"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/products/website-audit"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://avyron.ro/produse/audit-website"/>
+    <changefreq>monthly</changefreq><priority>0.7</priority>
+  </url>
 </urlset>
