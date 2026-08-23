@@ -1,6 +1,7 @@
 export type Role = "user" | "staff" | "admin";
 
 export type Env = {
+  ASSETS: Fetcher;
   DB: D1Database;
   KV: KVNamespace;
   FILES: R2Bucket;

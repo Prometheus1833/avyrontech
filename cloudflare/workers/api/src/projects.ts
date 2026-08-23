@@ -3,7 +3,8 @@
 //
 // Toate rutele necesită auth. Accesul la un proiect e permis dacă:
 //   - user e admin, SAU
-//   - user e staff și e în project_staff pentru proiect (sau admin), SAU
+//   - user e staff: poate vedea toate proiectele; poate edita doar dacă este
+//     alocat în project_staff (adminul poate edita orice), SAU
 //   - user.id === projects.owner_user_id (clientul admin)
 
 import { Hono } from "hono";
@@ -26,6 +27,7 @@ async function canAccessProject(db: D1Database, projectId: string, userId: strin
   if (isStaff) {
     const assigned = await db.prepare("SELECT 1 FROM project_staff WHERE project_id = ? AND user_id = ?").bind(projectId, userId).first();
     if (assigned) return { read: true, write: true, isStaff: true, isOwner };
+    return { read: true, write: false, isStaff: true, isOwner };
   }
   if (isOwner) return { read: true, write: false, isStaff: false, isOwner: true };
   return { read: false, write: false, isStaff, isOwner: false };
@@ -48,16 +50,10 @@ projectsRouter.get("/api/projects", async (c) => {
   const isAdmin = roles.includes("admin");
 
   let rows;
-  if (isAdmin) {
+  if (isAdmin || isStaff) {
     rows = await c.env.DB.prepare(
       "SELECT id, slug, name, kind, banner_status, url, favicon_url, updated_at FROM projects ORDER BY updated_at DESC LIMIT 200"
     ).all();
-  } else if (isStaff) {
-    rows = await c.env.DB.prepare(
-      `SELECT p.id, p.slug, p.name, p.kind, p.banner_status, p.url, p.favicon_url, p.updated_at
-       FROM projects p JOIN project_staff ps ON ps.project_id = p.id
-       WHERE ps.user_id = ? ORDER BY p.updated_at DESC LIMIT 200`
-    ).bind(userId).all();
   } else {
     rows = await c.env.DB.prepare(
       "SELECT id, slug, name, kind, banner_status, url, favicon_url, updated_at FROM projects WHERE owner_user_id = ? ORDER BY updated_at DESC"

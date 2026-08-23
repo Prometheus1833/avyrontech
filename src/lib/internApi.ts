@@ -44,11 +44,16 @@ export type ProjectMedia = {
   filename: string; content_type: string; size_bytes: number | null; created_at: number; url: string;
 };
 
+export type ClientOption = { id: string; company_name: string; contact_name: string | null; email: string; status: string };
+export type AccountOption = { id: string; email: string; display_name: string | null; company_name: string | null; roles: string | null };
+
 export const internApi = {
   listProjects: () => cfAuth.request<{ data: Array<Pick<Project, "id"|"slug"|"name"|"kind"|"banner_status"|"url"|"favicon_url"|"updated_at">> }>("/api/projects"),
   getProject: (slug: string) => cfAuth.request<ProjectDetail>(`/api/projects/${encodeURIComponent(slug)}`),
   createProject: (body: { name: string; slug: string; kind?: ProjectKind; url?: string; description?: string; client_id: string; owner_user_id?: string }) =>
     cfAuth.request<{ id: string; slug: string }>("/api/projects", { method: "POST", body: JSON.stringify(body) }),
+  listClients: () => cfAuth.request<{ data: ClientOption[] }>("/api/clients"),
+  listAccounts: () => cfAuth.request<{ data: AccountOption[] }>("/api/admin/users"),
   updateProject: (id: string, patch: Partial<Project>) =>
     cfAuth.request<{ ok: true }>(`/api/projects/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   addProposal: (id: string, body: { title: string; description?: string }) =>

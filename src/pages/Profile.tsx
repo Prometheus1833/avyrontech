@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck, FolderKanban, Wrench, BookOpen, MessagesSquare, Settings, ShoppingCart, Globe, Wallet, Image as ImageIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
+import ContactRail from "@/components/intern/ContactRail";
 
 const ProfileTab = lazy(() => import("@/components/dashboard/ProfileTab").then((m) => ({ default: m.ProfileTab })));
 const SubscriptionsTab = lazy(() => import("@/components/dashboard/SubscriptionsTab").then((m) => ({ default: m.SubscriptionsTab })));
@@ -13,7 +14,7 @@ const InvoicesTab = lazy(() => import("@/components/dashboard/InvoicesTab").then
 const TicketsTab = lazy(() => import("@/components/dashboard/TicketsTab").then((m) => ({ default: m.TicketsTab })));
 const StaffClientsTab = lazy(() => import("@/components/dashboard/StaffClientsTab").then((m) => ({ default: m.StaffClientsTab })));
 const StaffAnnouncementsTab = lazy(() => import("@/components/dashboard/StaffAnnouncementsTab").then((m) => ({ default: m.StaffAnnouncementsTab })));
-const StaffProjectsTab = lazy(() => import("@/components/dashboard/StaffProjectsTab").then((m) => ({ default: m.StaffProjectsTab })));
+const CloudflareProjects = lazy(() => import("@/pages/intern/InternHome"));
 const StaffMaintenanceTab = lazy(() => import("@/components/dashboard/StaffMaintenanceTab").then((m) => ({ default: m.StaffMaintenanceTab })));
 const StaffChatTab = lazy(() => import("@/components/dashboard/StaffChatTab").then((m) => ({ default: m.StaffChatTab })));
 const StaffResourcesTab = lazy(() => import("@/components/dashboard/StaffResourcesTab").then((m) => ({ default: m.StaffResourcesTab })));
@@ -52,6 +53,13 @@ const Profile = () => {
   type TabGroup = { id: string; label: string; items: TabItem[] };
 
   const clientGroups: TabGroup[] = [
+    {
+      id: "projects",
+      label: "Proiecte",
+      items: [
+        { value: "projects", label: "Proiectele mele", icon: FolderKanban },
+      ],
+    },
     {
       id: "personal",
       label: "Cont",
@@ -170,6 +178,7 @@ const Profile = () => {
           <Suspense fallback={<div className="min-h-48 rounded-2xl bg-muted/40 animate-pulse" aria-label="Se încarcă" />}>
           <TabsContent value="profile" className="mt-0"><ProfileTab /></TabsContent>
           <TabsContent value="settings" className="mt-0"><SettingsTab /></TabsContent>
+          <TabsContent value="projects" className="mt-0"><CloudflareProjects embedded /></TabsContent>
           {!isStaff && (
             <>
               <TabsContent value="subscriptions" className="mt-0"><SubscriptionsTab /></TabsContent>
@@ -181,7 +190,6 @@ const Profile = () => {
           <TabsContent value="invoices" className="mt-0"><InvoicesTab /></TabsContent>
           {isStaff && (
             <>
-              <TabsContent value="projects" className="mt-0"><StaffProjectsTab /></TabsContent>
               <TabsContent value="maintenance" className="mt-0"><StaffMaintenanceTab /></TabsContent>
               <TabsContent value="clients" className="mt-0"><StaffClientsTab /></TabsContent>
               <TabsContent value="finance" className="mt-0"><StaffFinanceTab /></TabsContent>
@@ -197,6 +205,7 @@ const Profile = () => {
           )}
           </Suspense>
         </Tabs>
+        <ContactRail />
       </div>
     </main>
   );

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { internApi, type BannerStatus, type ProjectKind } from "@/lib/internApi";
+import { internApi, type AccountOption, type BannerStatus, type ClientOption, type ProjectKind } from "@/lib/internApi";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,12 +36,14 @@ const KINDS: { value: ProjectKind; label: string }[] = [
   { value: "aplicatie",           label: "Aplicație" },
 ];
 
-export default function InternHome() {
+export default function InternHome({ embedded = false }: { embedded?: boolean }) {
   const { user, isStaff, loading: authLoading } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [openCreate, setOpenCreate] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [clients, setClients] = useState<ClientOption[]>([]);
+  const [accounts, setAccounts] = useState<AccountOption[]>([]);
   const [form, setForm] = useState({ name: "", slug: "", kind: "website_prezentare" as ProjectKind, url: "", description: "", client_id: "", owner_user_id: "" });
 
   const load = async () => {
@@ -54,6 +56,18 @@ export default function InternHome() {
     } finally { setLoading(false); }
   };
   useEffect(() => { if (user) void load(); }, [user]);
+  useEffect(() => {
+    if (!user || !isStaff) return;
+    Promise.all([internApi.listClients(), internApi.listAccounts()])
+      .then(([clientResult, accountResult]) => {
+        setClients(clientResult.data);
+        setAccounts(accountResult.data.filter((account) => !/(^|,)(staff|admin)(,|$)/.test(account.roles || "")));
+      })
+      .catch(() => {
+        setClients([]);
+        setAccounts([]);
+      });
+  }, [user, isStaff]);
 
   const handleCreate = async () => {
     if (!form.name.trim() || !form.slug.trim() || !form.client_id.trim()) {
@@ -83,7 +97,7 @@ export default function InternHome() {
   if (authLoading) return <div className="min-h-screen grid place-items-center text-sm text-muted-foreground">Se încarcă…</div>;
 
   return (
-    <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
+    <div className={embedded ? "space-y-6" : "max-w-5xl mx-auto p-4 sm:p-6 space-y-6"}>
       <header className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold flex items-center gap-2">
@@ -125,9 +139,37 @@ export default function InternHome() {
                 </div>
                 <div><Label>URL live</Label><Input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} placeholder="https://clarlumanari.ro" /></div>
                 <div><Label>Descriere</Label><Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-                <div><Label>Client ID *</Label><Input value={form.client_id} onChange={(e) => setForm({ ...form, client_id: e.target.value })} placeholder="uuid client din tabela clients" /></div>
-                <div><Label>Owner user ID (clientul cu cont)</Label><Input value={form.owner_user_id} onChange={(e) => setForm({ ...form, owner_user_id: e.target.value })} placeholder="uuid utilizator" /></div>
-                <p className="text-[11px] text-muted-foreground">💡 Poți obține ID-urile din backend sau din pagina de clienți. Dacă e primul proiect, rulează endpoint-ul <code>/api/admin/seed</code>.</p>
+                <div>
+                  <Label>Client *</Label>
+                  <Select
+                    value={form.client_id}
+                    onValueChange={(clientId) => {
+                      const client = clients.find((item) => item.id === clientId);
+                      const owner = accounts.find((item) => item.email.toLowerCase() === client?.email.toLowerCase());
+                      setForm({ ...form, client_id: clientId, owner_user_id: owner?.id || form.owner_user_id });
+                    }}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Selectează clientul" /></SelectTrigger>
+                    <SelectContent>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>{client.company_name} · {client.email}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Cont client asociat</Label>
+                  <Select value={form.owner_user_id || "unassigned"} onValueChange={(value) => setForm({ ...form, owner_user_id: value === "unassigned" ? "" : value })}>
+                    <SelectTrigger><SelectValue placeholder="Selectează contul" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Fără cont asociat</SelectItem>
+                      {accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>{account.display_name || account.company_name || account.email} · {account.email}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {clients.length === 0 && <p className="text-[11px] text-muted-foreground">Creează sau importă mai întâi un client din secțiunea Clienți.</p>}
               </div>
               <DialogFooter>
                 <Button variant="ghost" onClick={() => setOpenCreate(false)}>Anulează</Button>
@@ -196,7 +238,7 @@ export default function InternHome() {
         </>
       )}
 
-      <ContactRail />
+      {!embedded && <ContactRail />}
     </div>
   );
 }

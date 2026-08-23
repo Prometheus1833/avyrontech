@@ -461,7 +461,24 @@ app.route("/", contactRouter);
 // Importul administrativ are propria gardă constant-time X-Seed-Token.
 app.route("/", seedRouter);
 
-app.notFound((c) => c.json({ error: { code: "not_found", message: "Ruta nu există" } }, 404));
+app.notFound(async (c) => {
+  if (c.req.path.startsWith("/api/")) {
+    return c.json({ error: { code: "not_found", message: "Ruta nu există" } }, 404);
+  }
+
+  // Only auth/private paths are configured to reach this branch. Public pages
+  // and hashed assets stay on Cloudflare's asset-first fast path.
+  const assetResponse = await c.env.ASSETS.fetch(c.req.raw);
+  const headers = new Headers(assetResponse.headers);
+  headers.set("X-Robots-Tag", "noindex, nofollow");
+  headers.set("Cache-Control", "private, no-store");
+  headers.set("Pragma", "no-cache");
+  return new Response(assetResponse.body, {
+    status: assetResponse.status,
+    statusText: assetResponse.statusText,
+    headers,
+  });
+});
 app.onError((error, c) => {
   const requestId = c.req.header("cf-ray") || crypto.randomUUID();
   console.error(JSON.stringify({ event: "unhandled_error", requestId, path: c.req.path, method: c.req.method, error: error.message }));

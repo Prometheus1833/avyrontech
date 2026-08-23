@@ -43,6 +43,12 @@ test.describe("public SEO routes", () => {
 });
 
 test.describe("forms and authentication", () => {
+  test("Romanian login alias renders the auth page and remains noindex", async ({ page }) => {
+    await page.goto("/autentificare");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+  });
+
   test("private profile redirects to login", async ({ page }) => {
     await page.goto("/profil");
     await expect(page).toHaveURL(/\/auth$/);

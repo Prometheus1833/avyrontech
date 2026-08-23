@@ -113,6 +113,7 @@ const App = () => (
                 <Route path="/examples/:slug" element={<ExamplePage />} />
 
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/autentificare" element={<Auth />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route
