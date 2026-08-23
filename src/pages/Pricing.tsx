@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Check, CreditCard, Building2, Link2, FileText, Zap, Crown, Shield, RefreshCw, Hourglass, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu } from "lucide-react";
+import { ArrowLeft, ArrowRight, ScanSearch, Gauge, Accessibility, Palette, Check, CreditCard, Building2, Link2, FileText, Zap, Crown, Shield, RefreshCw, Hourglass, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import logo from "@/assets/avyron-logo.jpg";
 import premiumTech from "@/assets/premium-website-mockup.jpg";
@@ -394,7 +394,7 @@ const Pricing = () => {
                 </li>
               ))}
             </ul>
-            <div className="mt-5 flex justify-center">
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <a
                 href="https://wa.me/40734605055?text=Bună! Sunt interesat de Website Prezentare Premium."
                 target="_blank"
@@ -404,6 +404,13 @@ const Pricing = () => {
                 <MessageCircle className="size-4" />
                 {ro ? "Vreau Website Prezentare Premium" : "I want a Premium Presentation Website"}
               </a>
+              <Link
+                to={ro ? "/produse/website-prezentare-premium" : "/en/products/premium-presentation-website"}
+                className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
+              >
+                {ro ? "Vezi detalii" : "See details"}
+                <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
+              </Link>
             </div>
           </div>
         </section>
@@ -489,7 +496,7 @@ const Pricing = () => {
                 </li>
               ))}
             </ul>
-            <div className="mt-5 flex justify-center">
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <a
                 href="https://wa.me/40734605055?text=Bună! Sunt interesat de pachetul Identitate Social Media (Facebook, Instagram, TikTok)."
                 target="_blank"
@@ -499,11 +506,18 @@ const Pricing = () => {
                 <BadgeCheck className="size-4" />
                 {ro ? "Vreau Identitate Social Media" : "I want the Social Identity pack"}
               </a>
+              <Link
+                to={ro ? "/produse/identitate-social-media" : "/en/products/social-media-identity"}
+                className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
+              >
+                {ro ? "Vezi detalii" : "See details"}
+                <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
+              </Link>
             </div>
           </div>
         </section>
 
-        {/* Platformă eCommerce / Shopify */}
+        {/* Magazin Online (eCommerce / Shopify) */}
         <section className="mt-8 grid md:grid-cols-5 gap-4 items-start">
           <div className="md:col-span-2 rounded-2xl border border-emerald-300/20 bg-gradient-to-br from-card to-background p-5 sm:p-6 relative overflow-hidden text-center">
             <div aria-hidden className="absolute -top-16 -right-16 size-48 rounded-full bg-emerald-400/15 blur-3xl" />
@@ -517,10 +531,10 @@ const Pricing = () => {
                 <ShoppingBag className="size-8 text-white" />
               </div>
               <h2 className="mt-4 font-display text-2xl sm:text-3xl font-extrabold">
-                {ro ? "Platformă eCommerce / Shopify" : "eCommerce / Shopify Platform"}
+                {ro ? "Magazin Online" : "Online Store"}
               </h2>
               <p className="mt-2 text-xs uppercase tracking-[0.25em] text-foreground/50">
-                {ro ? "Shopify · WooCommerce · Custom" : "Shopify · WooCommerce · Custom"}
+                {"eCommerce / Shopify · WooCommerce · Custom"}
               </p>
               <div className="mt-3 flex items-baseline justify-center gap-1.5 flex-wrap">
                 <span className="text-sm sm:text-base font-semibold text-foreground/70">{ro ? "de la" : "from"}</span>
@@ -578,7 +592,7 @@ const Pricing = () => {
                 </li>
               ))}
             </ul>
-            <div className="mt-5 flex justify-center">
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <a
                 href="https://wa.me/40734605055?text=Bună! Sunt interesat de un magazin online (Platformă eCommerce / Shopify)."
                 target="_blank"
@@ -588,6 +602,13 @@ const Pricing = () => {
                 <ShoppingBag className="size-4" />
                 {ro ? "Vreau magazin online" : "I want an online store"}
               </a>
+              <Link
+                to={ro ? "/produse/magazin-online" : "/en/products/online-store"}
+                className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
+              >
+                {ro ? "Vezi detalii" : "See details"}
+                <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
+              </Link>
             </div>
           </div>
         </section>
@@ -673,7 +694,7 @@ const Pricing = () => {
                 </li>
               ))}
             </ul>
-            <div className="mt-5 flex justify-center">
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <a
                 href="https://wa.me/40734605055?text=Bună! Sunt interesat de o aplicație mobilă sau web (iOS / Android / PWA)."
                 target="_blank"
@@ -683,6 +704,13 @@ const Pricing = () => {
                 <Smartphone className="size-4" />
                 {ro ? "Vreau aplicație Mobile / Web" : "I want a Mobile / Web app"}
               </a>
+              <Link
+                to={ro ? "/produse/aplicatii-web-si-mobile" : "/en/products/web-and-mobile-apps"}
+                className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
+              >
+                {ro ? "Vezi detalii" : "See details"}
+                <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
+              </Link>
             </div>
           </div>
         </section>
@@ -768,7 +796,7 @@ const Pricing = () => {
                 </li>
               ))}
             </ul>
-            <div className="mt-5 flex justify-center">
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <a
                 href="https://wa.me/40734605055?text=Bună! Sunt interesat de un Agent AI personalizat pentru afacerea mea."
                 target="_blank"
@@ -778,6 +806,13 @@ const Pricing = () => {
                 <Zap className="size-4" />
                 {ro ? "Vreau un Agent AI" : "I want an AI Agent"}
               </a>
+              <Link
+                to={ro ? "/produse/agent-ai-personalizat" : "/en/products/personalized-ai-agent"}
+                className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
+              >
+                {ro ? "Vezi detalii" : "See details"}
+                <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
+              </Link>
             </div>
           </div>
         </section>
