@@ -104,44 +104,31 @@ const Pricing = () => {
     title: ro ? "Website Prezentare Premium" : "Premium Presentation Website",
     range: ro ? "de la 300€" : "from €300",
     desc: ro
-      ? "Site complet, livrat la cheie — gata să producă rezultate din prima zi. Clientul nu mai are nimic de plătit pentru o perioadă de minim 1 lună până la 1 an (în funcție de cerințele și configurația inițială), iar produsul beneficiază de suport tehnic gratuit pe toată durata de viață: asistență la administrare, recomandări de securitate, răspuns prompt la întrebări și ghidare strategică pentru evoluția site-ului."
-      : "A turnkey website — ready to deliver results from day one. The client owes nothing for a period ranging from 1 month up to 1 year (depending on the initial scope and configuration), and the product comes with free lifetime technical support: admin assistance, security guidance, prompt answers and strategic advice for ongoing growth.",
+      ? "Site complet, livrat la cheie — gata să producă rezultate din prima zi, cu suport tehnic gratuit pe toată durata de viață a produsului."
+      : "A turnkey website — ready to deliver results from day one, with free technical support for the entire lifetime of the product.",
     includes: ro
       ? [
-          "Logo static creat împreună cu clientul",
-          "Descrieri profesionale pentru produse și servicii — le putem redacta noi pentru tine",
-          "Imagini optimizate și galerii vizuale — le putem crea sau edita noi",
-          "Cod, structură și design custom, dezvoltate de la zero pe identitatea ta",
-          "SEO tehnic și on-page, optimizări complete pentru toate device-urile",
-          "Mobile-ready, securizat (HTTPS, headers, anti-spam) și performant (scor Lighthouse înalt)",
-          "Integrare completă cu rețele sociale și pixeluri analytics",
-          "Conturi demonstrative, mediu de testare și revizii nelimitate până la validare",
-          "Asistență gratuită la transferul datelor, conturilor și e-mailurilor existente",
-          "Ghid de administrare + sesiune live de prezentare a panoului",
-          "Backup inițial, certificat SSL și configurări de e-mail profesionale",
-          "Adresă de email personalizată pe domeniul tău (ex: contact@afacereata.ro)",
-          "Pagină dedicată pentru Politica de confidențialitate și GDPR, conformă legal",
-          "Panou Administrator complet pentru actualizare prețuri, date de contact, imagini și descrieri",
-          "Suport gratuit lifetime — recomandări de securitate, performanță și administrare",
+          "Design și cod custom, dezvoltate de la zero pe identitatea ta",
+          "Texte, imagini și galerii optimizate — le putem crea noi",
+          "SEO tehnic și on-page, performanță și scor Lighthouse înalt",
+          "Securizat (HTTPS, headere, anti-spam) și mobile-ready",
+          "Email pe domeniul tău + panou de administrare complet",
+          "Pagină GDPR conformă, backup inițial și certificat SSL",
+          "Ghid de administrare + sesiune live de instruire",
+          "Suport gratuit pe viață și revizii nelimitate până la validare",
         ]
       : [
-          "Static logo crafted together with the client",
-          "Professional descriptions for products and services — we can write them for you",
-          "Optimized images and visual galleries — we can create or edit them for you",
-          "Custom code, structure and design built from scratch around your identity",
-          "Technical and on-page SEO, full optimizations across every device",
-          "Mobile-ready, secure (HTTPS, headers, anti-spam) and performant (high Lighthouse score)",
-          "Full integration with social networks and analytics pixels",
-          "Demo accounts, staging environment and unlimited revisions until approval",
-          "Free assistance with migration of data, accounts and existing emails",
-          "Admin guide + live walkthrough session of the dashboard",
-          "Initial backup, SSL certificate and professional email setup",
-          "Custom email address on your own domain (e.g., contact@yourbusiness.com)",
-          "Dedicated Privacy Policy & GDPR page, fully compliant",
-          "Full Admin Panel to update prices, contact details, images and descriptions",
-          "Free lifetime support — security, performance and admin guidance",
+          "Custom design and code, built from scratch around your identity",
+          "Optimized copy, images and galleries — we can create them for you",
+          "Technical and on-page SEO, performance and a high Lighthouse score",
+          "Secure (HTTPS, headers, anti-spam) and mobile-ready",
+          "Email on your own domain + full admin panel",
+          "Compliant GDPR page, initial backup and SSL certificate",
+          "Admin guide + live walkthrough session",
+          "Free lifetime support and unlimited revisions until approval",
         ],
   };
+
 
   const tiers: Tier[] = [
     {
