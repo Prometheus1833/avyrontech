@@ -158,9 +158,13 @@ const CarePlansPage = () => {
       name: "Plus",
       eur: 100,
       icon: Shield,
+      level: ro ? "Nivel 1 · Colaborare de bază" : "Level 1 · Basic collaboration",
+      bestFor: ro ? "Site de prezentare care trebuie doar să funcționeze impecabil" : "A brochure site that simply has to keep working flawlessly",
+      response: ro ? "Răspuns în 24h" : "24h response",
+      value: ro ? "3 modificări / lună" : "3 changes / month",
       tagline: ro ? "Esențial pentru liniște" : "Essential peace of mind",
       accent: "from-pink-400 to-rose-600",
-      text: "text-pink-400",
+      text: "text-pink-500 dark:text-pink-400",
       features: ro
         ? [
             "Actualizări tehnice și de securitate",
@@ -178,6 +182,9 @@ const CarePlansPage = () => {
             "Hosting included and free domain",
             "Priority support on email and WhatsApp",
           ],
+      extras: ro
+        ? ["Colaborare lunară, fără contract pe termen lung"]
+        : ["Monthly collaboration, no long-term contract"],
     },
     {
       key: "pro",
@@ -185,9 +192,13 @@ const CarePlansPage = () => {
       eur: 150,
       icon: Zap,
       highlight: true,
+      level: ro ? "Nivel 2 · Colaborare extinsă" : "Level 2 · Extended collaboration",
+      bestFor: ro ? "Afaceri care publică des conținut și vor rezultate măsurabile" : "Businesses publishing often and wanting measurable results",
+      response: ro ? "Răspuns în 8h" : "8h response",
+      value: ro ? "10 modificări / lună" : "10 changes / month",
       tagline: ro ? "Cel mai ales de clienți" : "Most chosen by clients",
       accent: "from-emerald-400 to-teal-600",
-      text: "text-emerald-400",
+      text: "text-emerald-600 dark:text-emerald-400",
       features: ro
         ? [
             "Tot din pachetul Plus",
@@ -205,15 +216,32 @@ const CarePlansPage = () => {
             "Performance optimizations and SEO tuning",
             "Social media management (FB / IG / TikTok)",
           ],
+      extras: ro
+        ? [
+            "+7 modificări în plus față de Plus",
+            "Backup zilnic (față de periodic)",
+            "Raport lunar cu recomandări concrete",
+            "Colaborare cu un om dedicat din echipă",
+          ]
+        : [
+            "+7 more changes than Plus",
+            "Daily backups (vs. periodic)",
+            "Monthly report with concrete recommendations",
+            "Collaboration with a dedicated team member",
+          ],
     },
     {
       key: "proactiv",
       name: "Pro Activ",
       eur: 300,
       icon: Crown,
+      level: ro ? "Nivel 3 · Parteneriat complet" : "Level 3 · Full partnership",
+      bestFor: ro ? "Magazine online și platforme unde fiecare oră de downtime costă" : "Online stores and platforms where every hour of downtime costs",
+      response: ro ? "Răspuns în 2h" : "2h response",
+      value: ro ? "Modificări nelimitate" : "Unlimited changes",
       tagline: ro ? "Creștere continuă" : "Continuous growth",
       accent: "from-cyan-400 to-blue-600",
-      text: "text-cyan-400",
+      text: "text-cyan-600 dark:text-cyan-400",
       features: ro
         ? [
             "Tot din pachetul Pro",
@@ -231,8 +259,39 @@ const CarePlansPage = () => {
             "Rapid interventions, top priority",
             "Monthly digital consulting",
           ],
+      extras: ro
+        ? [
+            "Fără limită de modificări sau postări",
+            "Prioritate maximă în coada de intervenții",
+            "Ședință lunară de strategie (colaborare 1-la-1)",
+            "Plan de creștere trimestrial, actualizat cu tine",
+          ]
+        : [
+            "No cap on changes or posts",
+            "Top priority in the intervention queue",
+            "Monthly strategy session (1-on-1 collaboration)",
+            "Quarterly growth plan, updated together with you",
+          ],
     },
   ];
+
+  const payments = ro
+    ? [
+        { icon: Landmark, title: "Transfer bancar (IBAN)", desc: "Îți emitem factura la început de lună, cu IBAN în RON sau EUR. Termen de plată 7 zile, fără comisioane din partea noastră." },
+        { icon: CreditCard, title: "Plată cu cardul", desc: "Link securizat de plată, Visa / Mastercard, 3D Secure. Poți plăti de pe telefon, în câteva secunde." },
+        { icon: RefreshCw, title: "Abonament recurent", desc: "Dacă vrei să nu te mai gândești la asta, activăm debitarea automată lunară. O oprești oricând, dintr-un singur mesaj." },
+        { icon: Wallet, title: "Anual, cu discount", desc: "Plătești 12 luni în avans și primești 2 luni gratuite. Ideal dacă vrei un buget predictibil pe tot anul." },
+        { icon: Receipt, title: "Factură fiscală completă", desc: "Factură cu TVA pentru firme (PFA, SRL), livrată automat pe email și disponibilă în platforma internă Avyron." },
+        { icon: Users, title: "Colaborare flexibilă", desc: "Schimbi pachetul, îl pui pe pauză sau îl reiei oricând. Colaborarea se adaptează la ritmul afacerii tale, nu invers." },
+      ]
+    : [
+        { icon: Landmark, title: "Bank transfer (IBAN)", desc: "We issue the invoice at the start of the month, with a RON or EUR IBAN. 7-day payment term, no fees on our side." },
+        { icon: CreditCard, title: "Card payment", desc: "Secure payment link, Visa / Mastercard, 3D Secure. Pay from your phone in seconds." },
+        { icon: RefreshCw, title: "Recurring subscription", desc: "If you'd rather not think about it, we enable automatic monthly billing. Stop it any time with a single message." },
+        { icon: Wallet, title: "Yearly, with a discount", desc: "Pay 12 months upfront and get 2 months free. Ideal for a predictable budget across the year." },
+        { icon: Receipt, title: "Full fiscal invoice", desc: "VAT invoice for companies, delivered automatically by email and available in the Avyron internal platform." },
+        { icon: Users, title: "Flexible collaboration", desc: "Change, pause or resume your plan any time. The collaboration adapts to your business rhythm, not the other way around." },
+      ];
 
   const pillars = ro
     ? [
