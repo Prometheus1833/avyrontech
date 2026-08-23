@@ -5,13 +5,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Gift, Paperclip, X, Loader2 } from "lucide-react";
+import { Gift, Paperclip, X, Loader2, CheckCircle2, RotateCcw } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { apiUrl } from "@/lib/apiBase";
+import Turnstile, { TURNSTILE_SITE_KEY } from "@/components/site/Turnstile";
 
 const MAX_FILES = 5;
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const ACCEPT = "image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv";
+
+type Summary = {
+  leadId: string;
+  submittedAt: string;
+  name: string;
+  business: string;
+  phone: string;
+  email: string;
+  website?: string;
+  description?: string;
+  files: { name: string; size: number }[];
+};
 
 const CTA = () => {
   const { t, lang } = useLang();
@@ -24,10 +37,15 @@ const CTA = () => {
     email: z.string().trim().email(t.cta.errEmail).max(120),
   });
 
-  const [data, setData] = useState({ name: "", business: "", description: "", website: "", phone: "", email: "" });
+  const emptyData = { name: "", business: "", description: "", website: "", phone: "", email: "" };
+  const [data, setData] = useState(emptyData);
   const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+  const [summary, setSummary] = useState<Summary | null>(null);
+  const [token, setToken] = useState("");
+  const [resetKey, setResetKey] = useState(0);
   const fileInput = useRef<HTMLInputElement>(null);
+  const honeypot = useRef<HTMLInputElement>(null);
 
   const addFiles = (list: FileList | null) => {
     if (!list) return;
@@ -50,21 +68,54 @@ const CTA = () => {
       toast.error(parsed.error.issues[0].message);
       return;
     }
+    if (TURNSTILE_SITE_KEY && !token) {
+      toast.error(t.cta.captchaRequired);
+      return;
+    }
     setLoading(true);
     try {
       const fd = new FormData();
       Object.entries(parsed.data).forEach(([k, v]) => fd.append(k, v ?? ""));
       fd.append("lang", lang);
+      fd.append("company_url", honeypot.current?.value ?? "");
+      if (token) fd.append("cf-turnstile-response", token);
       files.forEach((f) => fd.append("files", f, f.name));
 
       const res = await fetch(apiUrl("/api/contact/demo"), { method: "POST", body: fd });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const body = (await res.json().catch(() => ({}))) as {
+        summary?: Summary;
+        error?: string;
+        leadId?: string;
+      };
+
+      if (res.status === 429) {
+        toast.error(t.cta.rateLimited);
+        return;
+      }
+      if (res.status === 403) {
+        toast.error(t.cta.captchaFailed);
+        setToken("");
+        setResetKey((k) => k + 1);
+        return;
+      }
+      if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
+
       toast.success(t.cta.success);
-      setData({ name: "", business: "", description: "", website: "", phone: "", email: "" });
+      setSummary(
+        body.summary ?? {
+          leadId: body.leadId ?? "—",
+          submittedAt: new Date().toISOString(),
+          ...parsed.data,
+          files: files.map((f) => ({ name: f.name, size: f.size })),
+        },
+      );
+      setData(emptyData);
       setFiles([]);
+      setToken("");
+      setResetKey((k) => k + 1);
     } catch (err) {
       console.error("demo-request submit failed", err);
-      toast.error(t.cta.errEmail);
+      toast.error(t.cta.sendError);
     } finally {
       setLoading(false);
     }
@@ -72,6 +123,7 @@ const CTA = () => {
 
   const set = (k: keyof typeof data) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setData((d) => ({ ...d, [k]: e.target.value }));
+
 
   return (
     <section id="cta" className="py-10 md:py-14">
