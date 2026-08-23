@@ -290,7 +290,7 @@ const CTA = () => {
               autoComplete="off"
               aria-hidden="true"
               className="hidden"
-􏿿            />
+/>
 
             <Turnstile onToken={setToken} resetKey={resetKey} />
 
