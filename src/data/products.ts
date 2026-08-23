@@ -82,7 +82,7 @@ export type Product = {
   copy: Record<Lang, ProductCopy>;
 };
 
-export const PRODUCTS: Product[] = [
+const CATALOG: Product[] = [
   {
     key: "premium-website",
     icon: "globe",
