@@ -9,7 +9,8 @@ export const GA_ENABLED = Boolean(MEASUREMENT_ID);
  */
 export function gtag(...args: unknown[]) {
   if (typeof window === "undefined" || !GA_ENABLED) return;
-  window.gtag?.(...args);
+  const w = window as unknown as { gtag?: (...a: unknown[]) => void };
+  w.gtag?.(...args);
 }
 
 /**
