@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import worker from "@/worker/index";
 import { decide } from "@/worker/router";
 
@@ -15,7 +17,18 @@ const FILES: Record<string, string> = {
   "/robots.txt": "User-agent: *",
 };
 
+let apiCalls = 0;
+
 const env = {
+  API: {
+    async fetch(req: Request) {
+      apiCalls += 1;
+      return new Response(JSON.stringify({ ok: true, from: "api", url: req.url }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    },
+  },
   ASSETS: {
     async fetch(req: Request) {
       const p = new URL(req.url).pathname;
@@ -80,9 +93,59 @@ describe("worker HTTP statuses", () => {
     }
   });
 
-  it("passes assets and /api/* straight through", async () => {
-    expect(decide(new URL("https://avyron.ro/api/contact/demo")).kind).toBe("api");
+  it("passes assets straight through", async () => {
     expect(decide(new URL("https://avyron.ro/assets/app.js")).kind).toBe("asset");
     expect((await get("/robots.txt")).status).toBe(200);
+  });
+});
+
+describe("/api/* service binding", () => {
+  it("forwards /api/health to the API binding, not to ASSETS", async () => {
+    expect(decide(new URL("https://avyron.ro/api/health")).kind).toBe("api");
+    const before = apiCalls;
+    const res = await get("/api/health");
+    expect(apiCalls).toBe(before + 1);
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toMatchObject({ ok: true, from: "api" });
+  });
+
+  it("does not rewrite or duplicate the API path", async () => {
+    const res = await get("/api/contact/demo?x=1");
+    const body = (await res.json()) as { url: string };
+    expect(new URL(body.url).pathname + new URL(body.url).search).toBe("/api/contact/demo?x=1");
+  });
+});
+
+describe("trailing slash normalisation", () => {
+  it("301s /costurisiproduse/ -> /costurisiproduse", async () => {
+    const res = await get("/costurisiproduse/");
+    expect(res.status).toBe(301);
+    expect(new URL(res.headers.get("location")!).pathname).toBe("/costurisiproduse");
+  });
+
+  it("never redirects back to the trailing-slash form", async () => {
+    const res = await get("/costurisiproduse");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("location")).toBeNull();
+  });
+});
+
+describe("wrangler worker config", () => {
+  const cfg = JSON.parse(
+    readFileSync(resolve(process.cwd(), "wrangler.worker.jsonc"), "utf8")
+      .replace(/^\s*\/\/.*$/gm, ""),
+  );
+
+  it("runs the Worker before the asset server", () => {
+    expect(cfg.assets.run_worker_first).toBe(true);
+  });
+
+  it("uses drop-trailing-slash html handling and no asset fallback", () => {
+    expect(cfg.assets.html_handling).toBe("drop-trailing-slash");
+    expect(cfg.assets.not_found_handling).toBe("none");
+  });
+
+  it("declares the API service binding", () => {
+    expect(cfg.services).toContainEqual({ binding: "API", service: "avyrontech" });
   });
 });
