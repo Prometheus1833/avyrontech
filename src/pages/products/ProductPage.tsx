@@ -318,6 +318,32 @@ const ProductPage = () => {
           </ol>
         </section>
 
+        {/* Post-launch advice */}
+        {c.advice && (
+          <section className="mt-14">
+            <Reveal>
+              <h2 className="font-display text-2xl md:text-3xl font-extrabold">{c.advice.title}</h2>
+              <p className="mt-3 max-w-2xl text-sm md:text-base text-foreground/70 leading-relaxed">
+                {c.advice.lead}
+              </p>
+            </Reveal>
+            <div className="mt-7 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {c.advice.items.map((it, i) => (
+                <Reveal key={it.title} delay={i * 50} as="article">
+                  <div className="h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-foreground/25">
+                    <div className={`text-[10px] font-mono uppercase tracking-[0.25em] ${a.text}`}>
+                      {String(i + 1).padStart(2, "0")}
+                    </div>
+                    <h3 className="mt-2 font-display font-bold text-sm">{it.title}</h3>
+                    <p className="mt-2 text-sm text-foreground/70 leading-relaxed">{it.desc}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </section>
+        )}
+
+
         {/* FAQ */}
         <section className="mt-14">
           <Reveal>
