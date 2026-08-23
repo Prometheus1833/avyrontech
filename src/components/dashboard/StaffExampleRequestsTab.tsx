@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sparkles, Mail, Phone, MessageCircle, Copy, ExternalLink, Search } from "lucide-react";
+import { Mail, Phone, MessageCircle, Copy, ExternalLink, Search } from "lucide-react";
 import { toast } from "sonner";
 
 type Row = {
@@ -103,7 +103,7 @@ export const StaffExampleRequestsTab = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-xs text-muted-foreground font-normal flex items-center gap-1">
-              <Sparkles className="size-3" /> Total solicitări
+              <MessageCircle className="size-3" /> Total solicitări
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0"><div className="text-2xl font-bold">{rows.length}</div></CardContent>
@@ -133,7 +133,7 @@ export const StaffExampleRequestsTab = () => {
       <Card>
         <CardHeader>
           <CardTitle className="text-sm flex items-center gap-2">
-            <Sparkles className="size-4" /> Solicitări demo („vrei să vezi cum ar arăta site-ul tău?")
+            <MessageCircle className="size-4" /> Solicitări demo („vrei să vezi cum ar arăta site-ul tău?")
           </CardTitle>
         </CardHeader>
         <CardContent>

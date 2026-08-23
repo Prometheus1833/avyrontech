@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { FileText, Sparkles, Briefcase, Megaphone, Code2, Users2, Wallet, Wand2, Workflow } from "lucide-react";
+import { FileText, Briefcase, Megaphone, Code2, Users2, Wallet, Wand2, Workflow } from "lucide-react";
 
 type Doc = {
   id: string;
@@ -320,7 +320,7 @@ export const StaffResourcesTab = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <Sparkles className="size-4 text-primary" />
+        <FileText className="size-4 text-primary" />
         <p className="text-sm text-muted-foreground">Documente interne — apasă pentru a deschide.</p>
       </div>
 

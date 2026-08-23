@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck, FolderKanban, Wrench, BookOpen, MessagesSquare, Settings, ShoppingCart, Globe, Sparkles, Wallet, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck, FolderKanban, Wrench, BookOpen, MessagesSquare, Settings, ShoppingCart, Globe, Wallet, Image as ImageIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
 
@@ -106,7 +106,7 @@ const Profile = () => {
         { value: "finance", label: "Situație financiară", icon: Wallet },
         { value: "media", label: "Media", icon: ImageIcon },
         { value: "staff-tickets", label: t.auth.dash.tabs.staffTickets, icon: MessageSquare },
-        { value: "demo-requests", label: "Solicitări demo", icon: Sparkles },
+        { value: "demo-requests", label: "Solicitări demo", icon: MessageSquare },
       ],
     },
     {
