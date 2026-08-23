@@ -236,7 +236,29 @@ const ProductPage = () => {
               {ro ? "Suport gratuit pe viață" : "Free lifetime support"}
             </span>
           </div>
+
+          {c.heroStats && (
+            <dl className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl">
+              {c.heroStats.map((s) => (
+                <div
+                  key={s.label}
+                  className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] px-4 py-3 backdrop-blur transition-colors duration-300 hover:border-foreground/25"
+                >
+                  <dt className="sr-only">{s.label}</dt>
+                  <dd>
+                    <span className={`block font-display text-xl sm:text-2xl font-extrabold bg-gradient-to-r ${a.from} ${a.to} bg-clip-text text-transparent`}>
+                      {s.value}
+                    </span>
+                    <span className="mt-1 block text-[11px] leading-snug text-foreground/60">
+                      {s.label}
+                    </span>
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          )}
         </Reveal>
+
 
         {/* Intro */}
         <Reveal as="section" className="mt-14 border-t border-foreground/10 pt-10">
