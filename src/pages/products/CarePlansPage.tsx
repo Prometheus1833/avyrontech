@@ -397,6 +397,8 @@ const CarePlansPage = () => {
               )}`}
               target="_blank"
               rel="noopener noreferrer"
+              aria-label={ro ? "Cere un pachet de mentenanță pe WhatsApp" : "Request a care plan on WhatsApp"}
+              onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "care_plans_hero" })}
               className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-600 px-6 py-3 text-sm font-bold text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/40"
             >
               {ro ? "Vreau un pachet de mentenanță" : "I want a care plan"}
@@ -408,8 +410,9 @@ const CarePlansPage = () => {
                   key={c}
                   onClick={() => setCurrency(c)}
                   aria-pressed={currency === c}
-                  className={`px-4 py-1.5 text-xs font-semibold tracking-widest rounded-full transition-all ${
-                    currency === c ? "bg-emerald-400 text-background" : "text-foreground/70 hover:text-foreground"
+                  aria-label={ro ? `Afișează prețurile în ${c}` : `Show prices in ${c}`}
+                  className={`px-4 py-1.5 text-xs font-semibold tracking-widest rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50 ${
+                    currency === c ? "bg-emerald-500 text-white dark:bg-emerald-400 dark:text-background" : "text-foreground/70 hover:text-foreground"
                   }`}
                 >
                   {c}
@@ -450,13 +453,28 @@ const CarePlansPage = () => {
                   >
                     <p.icon className="size-5" aria-hidden />
                   </div>
-                  <h3 className="mt-5 font-display text-2xl font-extrabold">{p.name}</h3>
-                  {!p.highlight && <p className="text-xs text-foreground/50 mt-1">{p.tagline}</p>}
+                  <p className="mt-5 text-[10px] font-mono uppercase tracking-[0.2em] text-foreground/50">{p.level}</p>
+                  <h3 className="mt-1.5 font-display text-2xl font-extrabold">{p.name}</h3>
+                  {!p.highlight && <p className="text-xs text-foreground/60 mt-1">{p.tagline}</p>}
                   <div className="mt-4 flex items-baseline gap-1">
                     <span className="font-display text-4xl font-extrabold">{fmt(p.eur)}</span>
                     <span className="text-xs text-foreground/50">/{ro ? "lună" : "mo"}</span>
                   </div>
-                  <ul className="mt-6 space-y-2.5">
+                  <p className="mt-3 text-sm text-foreground/70 leading-relaxed">
+                    <span className="font-semibold text-foreground/85">{ro ? "Potrivit pentru: " : "Best for: "}</span>
+                    {p.bestFor}
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-1.5 text-[11px]">
+                    <span className={`inline-flex items-center gap-1.5 rounded-full border border-foreground/15 bg-foreground/[0.05] px-2.5 py-1 ${p.text}`}>
+                      <TrendingUp className="size-3" aria-hidden />
+                      {p.value}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 bg-foreground/[0.05] px-2.5 py-1 text-foreground/70">
+                      <Clock className="size-3" aria-hidden />
+                      {p.response}
+                    </span>
+                  </div>
+                  <ul className="mt-5 space-y-2.5">
                     {p.features.map((f) => (
                       <li key={f} className="flex items-start gap-2 text-sm text-foreground/85">
                         <Check className={`size-4 mt-0.5 shrink-0 ${p.text}`} aria-hidden />
@@ -464,13 +482,28 @@ const CarePlansPage = () => {
                       </li>
                     ))}
                   </ul>
+                  <div className={`mt-5 rounded-xl border border-dashed p-3.5 ${p.highlight ? "border-emerald-300/40 bg-emerald-400/5" : "border-foreground/15 bg-foreground/[0.02]"}`}>
+                    <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-foreground/55">
+                      {ro ? "În plus față de nivelul anterior" : "On top of the previous level"}
+                    </p>
+                    <ul className="mt-2.5 space-y-2">
+                      {p.extras.map((e) => (
+                        <li key={e} className="flex items-start gap-2 text-xs text-foreground/80">
+                          <Sparkle className={`size-3.5 mt-0.5 shrink-0 ${p.text}`} aria-hidden />
+                          <span>{e}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                   <a
                     href={`${WHATSAPP}${encodeURIComponent(
                       ro ? `Bună! Aș dori pachetul de mentenanță ${p.name}.` : `Hi! I'd like the ${p.name} care plan.`,
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
+                    aria-label={ro ? `Alege pachetul ${p.name} pe WhatsApp` : `Choose the ${p.name} plan on WhatsApp`}
+                    onClick={() => trackEvent("care_plan_select", { plan: p.key, price_eur: p.eur })}
+                    className={`mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                       p.highlight
                         ? "bg-emerald-400 text-background hover:bg-emerald-300"
                         : "border border-foreground/15 bg-foreground/[0.06] hover:bg-foreground/[0.12]"
@@ -505,6 +538,41 @@ const CarePlansPage = () => {
               </Reveal>
             ))}
           </div>
+        </section>
+
+        {/* Payments */}
+        <section className="mt-16">
+          <Reveal>
+            <h2 className="font-display text-2xl md:text-3xl font-extrabold">
+              {ro ? "Plata, simplă și transparentă" : "Payment, simple and transparent"}
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm md:text-base text-foreground/70 leading-relaxed">
+              {ro
+                ? "Nicio surpriză pe factură și nicio bătaie de cap la plată. Alegi metoda care ți se potrivește, iar restul colaborării rămâne despre site-ul tău, nu despre birocrație."
+                : "No surprises on the invoice and no payment hassle. You pick the method that suits you, and the rest of our collaboration stays about your site, not paperwork."}
+            </p>
+          </Reveal>
+          <div className="mt-7 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {payments.map((m, i) => (
+              <Reveal key={m.title} delay={i * 50} as="article">
+                <div className="group h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-foreground/25 hover:bg-foreground/[0.06]">
+                  <div className="size-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 grid place-items-center text-white transition-transform duration-300 group-hover:scale-110">
+                    <m.icon className="size-5" aria-hidden />
+                  </div>
+                  <h3 className="mt-4 font-display font-bold">{m.title}</h3>
+                  <p className="mt-2 text-sm text-foreground/70 leading-relaxed">{m.desc}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+          <Reveal delay={120}>
+            <p className="mt-5 text-xs text-foreground/60 inline-flex items-start gap-2">
+              <Shield className="size-3.5 mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden />
+              {ro
+                ? "Plățile cu cardul sunt procesate securizat de partenerul nostru de plăți — Avyron nu stochează datele cardului tău."
+                : "Card payments are processed securely by our payment partner — Avyron never stores your card details."}
+            </p>
+          </Reveal>
         </section>
 
         {/* FAQ */}
@@ -554,14 +622,18 @@ const CarePlansPage = () => {
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full bg-[#25D366] hover:bg-[#1ebe5a] px-6 py-3 text-sm font-bold text-white transition-colors"
+                  aria-label={ro ? "Scrie-ne pe WhatsApp" : "Message us on WhatsApp"}
+                  onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "care_plans_cta" })}
+                  className="inline-flex items-center gap-2 rounded-full bg-[#25D366] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50 hover:bg-[#1ebe5a] px-6 py-3 text-sm font-bold text-white transition-colors"
                 >
                   <MessageCircle className="size-4" aria-hidden />
                   WhatsApp
                 </a>
                 <a
                   href="mailto:contact@avyron.ro"
-                  className="inline-flex items-center gap-2 rounded-full bg-foreground text-background hover:bg-foreground/90 px-6 py-3 text-sm font-bold transition-colors"
+                  aria-label={ro ? "Trimite email la contact@avyron.ro" : "Email contact@avyron.ro"}
+                  onClick={() => trackEvent("contact_click", { method: "email", location: "care_plans_cta" })}
+                  className="inline-flex items-center gap-2 rounded-full bg-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50 text-background hover:bg-foreground/90 px-6 py-3 text-sm font-bold transition-colors"
                 >
                   contact@avyron.ro
                 </a>
