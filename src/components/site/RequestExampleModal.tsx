@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Loader2, Check, Mail, Phone, Sparkles } from "lucide-react";
+import { X, Loader2, Check, Mail, Phone, Wand2 } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -110,7 +110,7 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
             ) : (
               <>
                 <div className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 text-brand px-3 py-1 text-[11px] font-semibold uppercase tracking-wider">
-                  <Sparkles className="size-3" /> Exemplu personalizat
+                  <Wand2 className="size-3" /> Exemplu personalizat
                 </div>
                 <h3 className="mt-3 font-display font-bold text-xl sm:text-2xl leading-tight">
                   Solicită un exemplu asemănător cu{" "}
