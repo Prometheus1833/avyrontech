@@ -1061,7 +1061,19 @@ const Pricing = () => {
               </article>
             ))}
           </div>
+
+          <div className="mt-8 flex justify-center">
+            <Link
+              to={ro ? "/pachete-mentenanta" : "/en/care-plans"}
+              className="group inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-6 py-3 text-sm font-semibold text-emerald-700 dark:text-emerald-200 transition-all duration-300 hover:bg-emerald-400/20 hover:border-emerald-400/50 hover:-translate-y-0.5"
+            >
+              <HeartHandshake className="size-4" aria-hidden />
+              {ro ? "Vezi toate detaliile pachetelor" : "See full care plan details"}
+              <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
+            </Link>
+          </div>
         </section>
+
 
         {/* Self-serve note */}
         <section className="mt-14 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-6 backdrop-blur">
