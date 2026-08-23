@@ -36,19 +36,24 @@ const LangSwitch = ({ className = "" }: { className?: string }) => {
     <div ref={ref} className={`relative inline-block ${className}`}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="px-2 py-0.5 rounded-full bg-muted/70 text-[10px] font-bold uppercase text-foreground hover:bg-muted transition-colors"
+        className="px-2 py-0.5 rounded-full bg-muted/70 text-[10px] font-bold uppercase text-foreground transition-all duration-200 ease-out hover:bg-muted hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-label={lang === "ro" ? "Schimbă limba (română activă)" : "Change language (English active)"}
+        title={lang === "ro" ? "Limbă: Română" : "Language: English"}
       >
         {lang}
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-50 inline-flex flex-col rounded-lg bg-background shadow-soft border border-border p-0.5">
+        <div role="listbox" aria-label="Limbă / Language" className="absolute top-full left-0 mt-1 z-50 inline-flex flex-col rounded-lg bg-background shadow-soft border border-border p-0.5 animate-in fade-in-0 zoom-in-95 duration-150">
           {opts.map((l) => (
             <button
               key={l}
               onClick={() => handleSelect(l)}
-              className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase transition-colors ${
+              role="option"
+              aria-selected={lang === l}
+              title={l === "ro" ? "Română" : "English"}
+              className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 ${
                 lang === l ? "bg-foreground text-background" : "text-foreground/70 hover:bg-muted"
               }`}
             >
