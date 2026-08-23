@@ -9,7 +9,17 @@
     // The Worker owns 404/403/500/503 semantics, so the asset server must not
     // invent its own fallback (that is what produced soft-404s).
     "not_found_handling": "none",
-    "html_handling": "auto-trailing-slash"
+    // Canonical URLs have NO trailing slash and live in route/index.html.
+    // "auto-trailing-slash" would redirect /route -> /route/ while our router
+    // redirects /route/ -> /route: an infinite loop. "drop-trailing-slash"
+    // matches the canonicals.
+    "html_handling": "drop-trailing-slash",
+    // Without this the asset server would answer /403, /500 and /mentenanta
+    // with 200 before the Worker runs, breaking the hard statuses and 301s.
+    "run_worker_first": true
   },
+  // The existing API Worker (cloudflare/workers/api, name "avyrontech").
+  // /api/* is forwarded to it so same-origin calls keep working.
+  "services": [{ "binding": "API", "service": "avyrontech" }],
   "observability": { "enabled": true }
 }
