@@ -31,7 +31,16 @@ export type Env = {
   SMTP_PASS?: string;
   SMTP_FROM?: string;
   LEAD_TO?: string;
+  // Anti-spam
+  TURNSTILE_SECRET?: string;
+  // Sincronizare lead-uri în tabel
+  AIRTABLE_API_KEY?: string;
+  AIRTABLE_BASE_ID?: string;
+  AIRTABLE_TABLE?: string;
+  LEAD_WEBHOOK_URL?: string;
+  LEAD_WEBHOOK_SECRET?: string;
 };
+
 
 type Role = "user" | "staff" | "admin";
 
