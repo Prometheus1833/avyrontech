@@ -226,7 +226,7 @@ const Blog = () => {
       link.setAttribute("href", href);
       document.head.appendChild(link);
     });
-    [["og:title", t], ["og:description", d], ["og:type", active ? "article" : "website"], ["og:url", url], ["og:image", image], ["og:site_name", "Avyron"], ["og:locale", isEn ? "en_US" : "ro_RO"],
+    [["og:title", t], ["og:description", d], ["og:type", deepLinked ? "article" : "website"], ["og:url", url], ["og:image", image], ["og:site_name", "Avyron"], ["og:locale", isEn ? "en_US" : "ro_RO"],
      ["twitter:card", "summary_large_image"], ["twitter:title", t], ["twitter:description", d], ["twitter:image", image]
     ].forEach(([k, v]) => {
       const sel = k.startsWith("twitter") ? `meta[name="${k}"]` : `meta[property="${k}"]`;
