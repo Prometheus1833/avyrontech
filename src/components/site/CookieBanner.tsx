@@ -10,7 +10,32 @@ type Prefs = {
 
 const STORAGE_KEY = "avyron-cookie-consent-v1";
 
+const COPY = {
+  ro: {
+    dialog: "Setări cookies", title: "Folosim cookies",
+    body: "Cookie-urile necesare asigură funcționarea site-ului. Cu acordul tău, folosim și cookies de analiză și marketing pentru a îmbunătăți experiența.",
+    details: "Detalii", detailsHref: "/gdpr",
+    necessary: "Necesare", necessaryDesc: "Indispensabile pentru funcționarea site-ului.",
+    analytics: "Analiză", analyticsDesc: "Ne ajută să înțelegem cum este folosit site-ul.",
+    marketing: "Marketing", marketingDesc: "Conținut și oferte personalizate.",
+    save: "Salvează preferințele", acceptAll: "Accept toate", onlyNecessary: "Doar necesare",
+    hideSettings: "Ascunde setări", settings: "Setări",
+  },
+  en: {
+    dialog: "Cookie settings", title: "We use cookies",
+    body: "Necessary cookies keep the site running. With your consent, we also use analytics and marketing cookies to improve your experience.",
+    details: "Details", detailsHref: "/en/privacy",
+    necessary: "Necessary", necessaryDesc: "Essential for the site to work.",
+    analytics: "Analytics", analyticsDesc: "Help us understand how the site is used.",
+    marketing: "Marketing", marketingDesc: "Personalised content and offers.",
+    save: "Save preferences", acceptAll: "Accept all", onlyNecessary: "Only necessary",
+    hideSettings: "Hide settings", settings: "Settings",
+  },
+} as const;
+
 const CookieBanner = () => {
+  const isEn = typeof window !== "undefined" && window.location.pathname.startsWith("/en");
+  const c = isEn ? COPY.en : COPY.ro;
   const [open, setOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>({ necessary: true, analytics: false, marketing: false });
@@ -49,7 +74,7 @@ const CookieBanner = () => {
   return (
     <div
       role="dialog"
-      aria-label="Setări cookies"
+      aria-label={c.dialog}
       className="fixed inset-x-0 bottom-0 z-[60] px-3 pb-3 sm:px-4 sm:pb-4 animate-in slide-in-from-bottom-4 fade-in duration-300"
     >
       <div className="mx-auto max-w-3xl rounded-2xl border border-white/10 bg-[#0a0612]/95 backdrop-blur-xl text-white shadow-[0_20px_60px_-20px_rgba(168,85,247,0.5)] overflow-hidden">
@@ -63,25 +88,25 @@ const CookieBanner = () => {
             </span>
             <div className="min-w-0 flex-1">
               <h2 className="font-display font-semibold text-sm sm:text-base text-white">
-                Folosim cookies
+                {c.title}
               </h2>
               <p className="mt-1 text-xs sm:text-[13px] text-white/70 leading-relaxed">
-                Cookie-urile necesare asigură funcționarea site-ului. Cu acordul tău, folosim și cookies de analiză și marketing pentru a îmbunătăți experiența.{" "}
-                <a href="/gdpr" className="underline text-purple-300 hover:text-purple-200">Detalii</a>
+                {c.body}{" "}
+                <a href={c.detailsHref} className="underline text-purple-300 hover:text-purple-200">{c.details}</a>
               </p>
 
               {showSettings && (
                 <div className="mt-3 space-y-2">
-                  <Row label="Necesare" desc="Indispensabile pentru funcționarea site-ului." checked disabled />
+                  <Row label={c.necessary} desc={c.necessaryDesc} checked disabled />
                   <Row
-                    label="Analiză"
-                    desc="Ne ajută să înțelegem cum este folosit site-ul."
+                    label={c.analytics}
+                    desc={c.analyticsDesc}
                     checked={prefs.analytics}
                     onChange={(v) => setPrefs((p) => ({ ...p, analytics: v }))}
                   />
                   <Row
-                    label="Marketing"
-                    desc="Conținut și oferte personalizate."
+                    label={c.marketing}
+                    desc={c.marketingDesc}
                     checked={prefs.marketing}
                     onChange={(v) => setPrefs((p) => ({ ...p, marketing: v }))}
                   />
@@ -94,28 +119,28 @@ const CookieBanner = () => {
                     onClick={saveCustom}
                     className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 px-4 py-2 text-xs sm:text-sm font-semibold transition-all"
                   >
-                    <Check className="size-3.5" /> Salvează preferințele
+                    <Check className="size-3.5" /> {c.save}
                   </button>
                 ) : (
                   <button
                     onClick={acceptAll}
                     className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 px-4 py-2 text-xs sm:text-sm font-semibold transition-all"
                   >
-                    <Check className="size-3.5" /> Accept toate
+                    <Check className="size-3.5" /> {c.acceptAll}
                   </button>
                 )}
                 <button
                   onClick={rejectAll}
                   className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] px-4 py-2 text-xs sm:text-sm font-medium transition-all"
                 >
-                  <X className="size-3.5" /> Doar necesare
+                  <X className="size-3.5" /> {c.onlyNecessary}
                 </button>
                 <button
                   onClick={() => setShowSettings((s) => !s)}
                   className="ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs text-white/70 hover:text-white transition-colors"
                 >
                   <Settings2 className="size-3.5" />
-                  {showSettings ? "Ascunde setări" : "Setări"}
+                  {showSettings ? c.hideSettings : c.settings}
                 </button>
               </div>
             </div>
