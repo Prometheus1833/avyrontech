@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, ScanSearch, Gauge, Accessibility, Palette, Check, CreditCard, Building2, Link2, FileText, Zap, Crown, Shield, RefreshCw, Hourglass, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu, Bug, FlaskConical, HeartHandshake } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
+import { trackEvent } from "@/lib/analytics";
 import logo from "@/assets/avyron-logo.jpg";
 import premiumTech from "@/assets/premium-website-mockup.jpg";
 import LangSwitch from "@/components/site/LangSwitch";
@@ -432,6 +433,7 @@ const Pricing = () => {
               </a>
               <Link
                 to={ro ? "/produse/audit-website" : "/en/products/website-audit"}
+                onClick={() => trackEvent("product_details_click", { product: "/produse/audit-website" })}
                 className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
               >
                 {ro ? "Vezi detalii" : "See details"}
@@ -491,6 +493,7 @@ const Pricing = () => {
               </a>
               <Link
                 to={ro ? "/produse/website-prezentare-premium" : "/en/products/premium-presentation-website"}
+                onClick={() => trackEvent("product_details_click", { product: "/produse/website-prezentare-premium" })}
                 className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
               >
                 {ro ? "Vezi detalii" : "See details"}
@@ -593,6 +596,7 @@ const Pricing = () => {
               </a>
               <Link
                 to={ro ? "/produse/identitate-social-media" : "/en/products/social-media-identity"}
+                onClick={() => trackEvent("product_details_click", { product: "/produse/identitate-social-media" })}
                 className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
               >
                 {ro ? "Vezi detalii" : "See details"}
@@ -689,6 +693,7 @@ const Pricing = () => {
               </a>
               <Link
                 to={ro ? "/produse/magazin-online" : "/en/products/online-store"}
+                onClick={() => trackEvent("product_details_click", { product: "/produse/magazin-online" })}
                 className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
               >
                 {ro ? "Vezi detalii" : "See details"}
@@ -791,6 +796,7 @@ const Pricing = () => {
               </a>
               <Link
                 to={ro ? "/produse/aplicatii-web-si-mobile" : "/en/products/web-and-mobile-apps"}
+                onClick={() => trackEvent("product_details_click", { product: "/produse/aplicatii-web-si-mobile" })}
                 className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
               >
                 {ro ? "Vezi detalii" : "See details"}
@@ -893,6 +899,7 @@ const Pricing = () => {
               </a>
               <Link
                 to={ro ? "/produse/agent-ai-personalizat" : "/en/products/personalized-ai-agent"}
+                onClick={() => trackEvent("product_details_click", { product: "/produse/agent-ai-personalizat" })}
                 className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
               >
                 {ro ? "Vezi detalii" : "See details"}
@@ -992,6 +999,7 @@ const Pricing = () => {
               </a>
               <Link
                 to={ro ? "/produse/testare-qa-web-mobile" : "/en/products/qa-testing-web-mobile"}
+                onClick={() => trackEvent("product_details_click", { product: "/produse/testare-qa-web-mobile" })}
                 className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
               >
                 {ro ? "Vezi detalii" : "See details"}
@@ -1065,6 +1073,7 @@ const Pricing = () => {
           <div className="mt-8 flex justify-center">
             <Link
               to={ro ? "/pachete-mentenanta" : "/en/care-plans"}
+              onClick={() => trackEvent("care_plans_click", { location: "pricing_list" })}
               className="group inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-6 py-3 text-sm font-semibold text-emerald-700 dark:text-emerald-200 transition-all duration-300 hover:bg-emerald-400/20 hover:border-emerald-400/50 hover:-translate-y-0.5"
             >
               <HeartHandshake className="size-4" aria-hidden />
