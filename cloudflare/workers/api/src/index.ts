@@ -24,6 +24,13 @@ export type Env = {
   JWT_SECRET: string;
   SEED_TOKEN?: string;
   ALLOWED_ORIGINS: string;
+  // SMTP (formularul public de lead-uri)
+  SMTP_HOST?: string;
+  SMTP_PORT?: string;
+  SMTP_USER?: string;
+  SMTP_PASS?: string;
+  SMTP_FROM?: string;
+  LEAD_TO?: string;
 };
 
 type Role = "user" | "staff" | "admin";
@@ -267,6 +274,7 @@ app.put("/api/media/:path{.+}", requireAuth, requireRole("staff", "admin"), asyn
 import { projectsRouter } from "./projects";
 import { seedRouter } from "./seed";
 import { mediaRouter } from "./media";
+import { contactRouter } from "./contact";
 app.use("/api/projects/*", requireAuth);
 app.use("/api/proposals/*", requireAuth);
 app.use("/api/links/*", requireAuth);
@@ -274,6 +282,8 @@ app.use("/api/metadata/*", requireAuth);
 app.use("/api/media/*", requireAuth);
 app.route("/", projectsRouter);
 app.route("/", mediaRouter);
+// Formularul public (fără auth)
+app.route("/", contactRouter);
 // Seed-ul are propria gardă (X-Seed-Token / bootstrap fără admin) — NU necesită requireAuth.
 app.route("/", seedRouter);
 
