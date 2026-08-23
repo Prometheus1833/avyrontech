@@ -153,6 +153,34 @@ contactRouter.post("/api/contact/demo", async (c) => {
     console.error("lead kv put failed", e);
   }
 
+  // Sincronizare în tabel (Airtable / Google Sheets prin webhook) — nu blocăm răspunsul.
+  const sinkPromise = syncLeadToTable(c.env, {
+    leadId,
+    submittedAt,
+    name,
+    business,
+    phone,
+    email,
+    website,
+    description,
+    files: attachments.map((a) => a.filename),
+    lang,
+    source: "website:cta-demo",
+  });
+  c.executionCtx?.waitUntil?.(sinkPromise.then(() => undefined));
+
+  const summary = {
+    leadId,
+    submittedAt,
+    name,
+    business,
+    phone,
+    email,
+    website,
+    description,
+    files: attachments.map((a) => ({ name: a.filename, size: a.content.byteLength })),
+  };
+
   const host = c.env.SMTP_HOST;
   const user = c.env.SMTP_USER;
   const pass = c.env.SMTP_PASS;
@@ -161,7 +189,7 @@ contactRouter.post("/api/contact/demo", async (c) => {
 
   if (!host || !user || !pass) {
     console.error("SMTP not configured — lead saved only in KV/R2", leadId);
-    return c.json({ ok: true, leadId, delivered: false }, 202);
+    return c.json({ ok: true, leadId, delivered: false, summary }, 202);
   }
 
   try {
@@ -179,8 +207,9 @@ contactRouter.post("/api/contact/demo", async (c) => {
     );
   } catch (e) {
     console.error("lead smtp send failed", e);
-    return c.json({ ok: true, leadId, delivered: false }, 202);
+    return c.json({ ok: true, leadId, delivered: false, summary }, 202);
   }
 
-  return c.json({ ok: true, leadId, delivered: true });
+  return c.json({ ok: true, leadId, delivered: true, summary });
 });
+
