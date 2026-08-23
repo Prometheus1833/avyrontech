@@ -121,7 +121,7 @@ const Auth = () => {
 
           <ul className="mt-10 space-y-4">
             {[
-              { n: "01", Icon: Sparkles, text: t.auth.clientPerksDesc },
+              { n: "01", Icon: Crown, text: t.auth.clientPerksDesc },
               { n: "02", Icon: ShieldCheck, text: "Infrastructură Cloudflare — D1, KV, R2, edge auth." },
               { n: "03", Icon: LayoutDashboard, text: "Mini-dashboard intuitiv pentru produse, mentenanță și plăți recurente." },
               { n: "04", Icon: MessageCircle, text: "Chat direct cu membrii echipei." },

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Check, CreditCard, Building2, Link2, FileText, Sparkles, Zap, Crown, Shield, RefreshCw, Hourglass, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu } from "lucide-react";
+import { ArrowLeft, Check, CreditCard, Building2, Link2, FileText, Zap, Crown, Shield, RefreshCw, Hourglass, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import logo from "@/assets/avyron-logo.jpg";
 import premiumTech from "@/assets/premium-website-mockup.jpg";
@@ -336,7 +336,7 @@ const Pricing = () => {
         <section className="mt-12 rounded-2xl border border-foreground/10 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 p-5 md:p-6 backdrop-blur">
           <div className="flex items-start md:items-center gap-4 flex-col md:flex-row">
             <div className="size-12 shrink-0 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 grid place-items-center">
-              <Sparkles className="size-6" />
+              <Zap className="size-6" />
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="font-display text-lg md:text-xl font-bold">
