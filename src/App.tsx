@@ -52,7 +52,7 @@ const App = () => (
           <BrowserRouter>
             <LangRouteSync />
             <AnalyticsTracker />
-            <Suspense fallback={<div className="min-h-screen" />}>}
+            <Suspense fallback={<div className="min-h-screen" />}>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/en" element={<Index />} />
