@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
-import { Check, ChevronDown, ExternalLink, Globe, MessageSquarePlus, Sparkles } from "lucide-react";
+import { Check, ChevronDown, ExternalLink, Globe, MessageSquarePlus } from "lucide-react";
 import { mockups } from "./mockups";
 import { useLang } from "@/i18n/LanguageContext";
 import { useExamples, publicImageUrl, type ExampleRow } from "@/hooks/useExamples";
@@ -125,7 +125,7 @@ const Examples = () => {
                             }`}
                           >
                             {isActive && view === "selected" && (
-                              <Sparkles className="size-3.5 text-brand-glow" />
+                              <Check className="size-3.5" />
                             )}
                             {t.examples.cats[id].label}
                             {isActive && view === "selected" && (

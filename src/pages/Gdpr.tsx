@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect } from "react";
-import { ShieldCheck, ArrowLeft, Lock, FileText, Database, Users, Globe, Cookie, Server, Mail, Phone, Sparkles } from "lucide-react";
+import { ShieldCheck, ArrowLeft, Lock, FileText, Database, Users, Globe, Cookie, Server, Mail, Phone } from "lucide-react";
 import logo from "@/assets/avyron-logo.jpg";
 
 /**
@@ -254,7 +254,7 @@ const Gdpr = () => {
           {/* Friendly commitment statement */}
           <div className="mt-10 rounded-3xl border border-border bg-card/60 p-6 md:p-8 text-left">
             <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-brand mb-3">
-              <Sparkles className="size-3.5" />
+              <ShieldCheck className="size-3.5" />
               Angajamentul Avyron
             </div>
             <p className="text-base md:text-lg leading-relaxed text-foreground/90">

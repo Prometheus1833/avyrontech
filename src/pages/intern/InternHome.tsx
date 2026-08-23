@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, ArrowUpRight, ExternalLink, FolderKanban, Sparkles } from "lucide-react";
+import { Plus, ArrowUpRight, ExternalLink, FolderKanban } from "lucide-react";
 import { toast } from "sonner";
 import ContactRail from "@/components/intern/ContactRail";
 
@@ -110,7 +110,7 @@ export default function InternHome() {
             </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2"><Sparkles className="size-4 text-primary" /> Proiect nou</DialogTitle>
+                <DialogTitle className="flex items-center gap-2"><Plus className="size-4 text-primary" /> Proiect nou</DialogTitle>
                 <DialogDescription>Slug-ul apare în URL: <code>/intern/projects/&lt;slug&gt;</code>.</DialogDescription>
               </DialogHeader>
               <div className="space-y-3">

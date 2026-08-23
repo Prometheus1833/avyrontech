@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Plus, Calendar, FolderKanban, Link as LinkIcon, User, Phone, Mail, Trash2,
-  Sparkles, ArrowUpRight, X, Hash,
+  ArrowUpRight, X, Hash,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -230,7 +230,7 @@ export const StaffProjectsTab = () => {
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Sparkles className="size-4 text-primary" />
+                <Plus className="size-4 text-primary" />
                 Mini dashboard proiect nou
               </DialogTitle>
               <DialogDescription>Completează informațiile inițiale. Numărul proiectului se atribuie automat.</DialogDescription>

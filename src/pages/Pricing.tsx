@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Check, CreditCard, Building2, Link2, FileText, Sparkles, Zap, Crown, Shield, RefreshCw, Hourglass, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu } from "lucide-react";
+import { ArrowLeft, Check, CreditCard, Building2, Link2, FileText, Zap, Crown, Shield, RefreshCw, Hourglass, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import logo from "@/assets/avyron-logo.jpg";
 import premiumTech from "@/assets/premium-website-mockup.jpg";
@@ -336,7 +336,7 @@ const Pricing = () => {
         <section className="mt-12 rounded-2xl border border-foreground/10 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 p-5 md:p-6 backdrop-blur">
           <div className="flex items-start md:items-center gap-4 flex-col md:flex-row">
             <div className="size-12 shrink-0 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 grid place-items-center">
-              <Sparkles className="size-6" />
+              <Zap className="size-6" />
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="font-display text-lg md:text-xl font-bold">
@@ -460,7 +460,7 @@ const Pricing = () => {
                     { icon: <BadgeCheck className="size-4" />, text: "Creare conturi Facebook, Instagram și TikTok Business" },
                     { icon: <FileText className="size-4" />, text: "Descrieri (bio) profesionale, optimizate cu cuvinte cheie" },
                     { icon: <ImageIcon className="size-4" />, text: "Poză de profil, cover și template-uri vizuale coerente cu brandul" },
-                    { icon: <Sparkles className="size-4" />, text: "Pachet de 6–9 postări inițiale (grid estetic Instagram)" },
+                    { icon: <Crown className="size-4" />, text: "Pachet de 6–9 postări inițiale (grid estetic Instagram)" },
                     { icon: <Calendar className="size-4" />, text: "Repere și calendar editorial pentru primele 30 de zile" },
                     { icon: <MessageCircle className="size-4" />, text: "Butoane de comenzi & contact (WhatsApp, Mesaj, Sună, Rezervă)" },
                     { icon: <Share2 className="size-4" />, text: "Sincronizare conturi cu website și pixeluri (Meta, TikTok)" },
@@ -472,7 +472,7 @@ const Pricing = () => {
                     { icon: <BadgeCheck className="size-4" />, text: "Facebook, Instagram and TikTok Business account setup" },
                     { icon: <FileText className="size-4" />, text: "Professional bios, optimized with relevant keywords" },
                     { icon: <ImageIcon className="size-4" />, text: "Profile picture, cover and visual templates aligned to your brand" },
-                    { icon: <Sparkles className="size-4" />, text: "Initial 6–9 posts pack (aesthetic Instagram grid)" },
+                    { icon: <Crown className="size-4" />, text: "Initial 6–9 posts pack (aesthetic Instagram grid)" },
                     { icon: <Calendar className="size-4" />, text: "Milestones and editorial calendar for the first 30 days" },
                     { icon: <MessageCircle className="size-4" />, text: "Order & contact buttons (WhatsApp, Message, Call, Book)" },
                     { icon: <Share2 className="size-4" />, text: "Accounts synced with website and pixels (Meta, TikTok)" },
@@ -641,7 +641,7 @@ const Pricing = () => {
             <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
               {(ro
                 ? [
-                    { icon: <Sparkles className="size-4" />, text: "Sesiune de discovery + wireframe-uri și prototip Figma" },
+                    { icon: <Crown className="size-4" />, text: "Sesiune de discovery + wireframe-uri și prototip Figma" },
                     { icon: <Layers className="size-4" />, text: "Design UX/UI custom, sistem de componente și dark mode" },
                     { icon: <Code2 className="size-4" />, text: "Cod nativ-friendly (React Native) sau Web App / PWA" },
                     { icon: <Apple className="size-4" />, text: "Publicare App Store & Google Play (cont, build, review)" },
@@ -653,7 +653,7 @@ const Pricing = () => {
                     { icon: <RefreshCw className="size-4" />, text: "Update-uri OTA, versionare și roadmap pe minim 12 luni" },
                   ]
                 : [
-                    { icon: <Sparkles className="size-4" />, text: "Discovery session + wireframes and Figma prototype" },
+                    { icon: <Crown className="size-4" />, text: "Discovery session + wireframes and Figma prototype" },
                     { icon: <Layers className="size-4" />, text: "Custom UX/UI design, component system and dark mode" },
                     { icon: <Code2 className="size-4" />, text: "Native-friendly code (React Native) or Web App / PWA" },
                     { icon: <Apple className="size-4" />, text: "App Store & Google Play publishing (account, build, review)" },
@@ -694,7 +694,7 @@ const Pricing = () => {
             <div aria-hidden className="absolute -bottom-16 -left-16 size-48 rounded-full bg-purple-500/15 blur-3xl" />
             <div className="relative">
               <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-300/30 bg-fuchsia-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-fuchsia-700 dark:text-fuchsia-200">
-                <Sparkles className="size-3.5" />
+                <Cpu className="size-3.5" />
                 {ro ? "Serviciu AI dedicat" : "Dedicated AI service"}
               </div>
               <div className="mt-5 flex items-center justify-center gap-3">
@@ -705,7 +705,7 @@ const Pricing = () => {
                   <MessageCircle className="size-6 text-white" />
                 </div>
                 <div className="size-12 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-700 grid place-items-center shadow-[0_0_24px_-6px_rgba(139,92,246,0.6)]">
-                  <Sparkles className="size-6 text-white" />
+                  <Zap className="size-6 text-white" />
                 </div>
               </div>
               <h2 className="mt-5 font-display text-2xl sm:text-3xl font-extrabold">
@@ -739,7 +739,7 @@ const Pricing = () => {
                     { icon: <MessageCircle className="size-4" />, text: "Chat AI interactiv pe site, integrabil în orice pagină" },
                     { icon: <Share2 className="size-4" />, text: "Integrare WhatsApp Business — același agent, același ton" },
                     { icon: <Cloud className="size-4" />, text: "Bază de date privată cu produsele, prețurile și politicile tale" },
-                    { icon: <Sparkles className="size-4" />, text: "Personalitate, ton și răspunsuri configurate pe brandul tău" },
+                    { icon: <Crown className="size-4" />, text: "Personalitate, ton și răspunsuri configurate pe brandul tău" },
                     { icon: <Cpu className="size-4" />, text: "Automatizări: comenzi, programări, lead-uri, follow-up" },
                     { icon: <Bell className="size-4" />, text: "Notificări către echipă când clientul cere intervenție umană" },
                     { icon: <BarChart3 className="size-4" />, text: "Dashboard cu conversații, conversii și subiecte frecvente" },
@@ -751,7 +751,7 @@ const Pricing = () => {
                     { icon: <MessageCircle className="size-4" />, text: "Interactive AI chat on your site, embeddable on any page" },
                     { icon: <Share2 className="size-4" />, text: "WhatsApp Business integration — same agent, same voice" },
                     { icon: <Cloud className="size-4" />, text: "Private database with your products, pricing and policies" },
-                    { icon: <Sparkles className="size-4" />, text: "Personality, tone and replies tuned to your brand" },
+                    { icon: <Crown className="size-4" />, text: "Personality, tone and replies tuned to your brand" },
                     { icon: <Cpu className="size-4" />, text: "Automations: orders, bookings, leads, follow-ups" },
                     { icon: <Bell className="size-4" />, text: "Notifications to your team when human handoff is needed" },
                     { icon: <BarChart3 className="size-4" />, text: "Dashboard with conversations, conversions and hot topics" },
@@ -775,7 +775,7 @@ const Pricing = () => {
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
               >
-                <Sparkles className="size-4" />
+                <Zap className="size-4" />
                 {ro ? "Vreau un Agent AI" : "I want an AI Agent"}
               </a>
             </div>
@@ -887,7 +887,7 @@ const Pricing = () => {
           {/* Future platform note */}
           <div className="mt-8 rounded-2xl border border-dashed border-cyan-300/30 bg-cyan-300/[0.04] p-6 backdrop-blur">
             <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-cyan-200">
-              <Sparkles className="size-3.5" />
+              <Hourglass className="size-3.5" />
               <span>{ro ? "În curând pe platformă" : "Coming soon on the platform"}</span>
             </div>
             <p className="mt-3 text-sm text-foreground/80 leading-relaxed">
