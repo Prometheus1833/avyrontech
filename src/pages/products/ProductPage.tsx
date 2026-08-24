@@ -35,6 +35,7 @@ import Reveal from "@/components/site/Reveal";
 import NotFound from "@/pages/NotFound";
 import logo from "@/assets/avyron-logo.jpg";
 import { trackEvent } from "@/lib/analytics";
+import Footer from "@/components/site/Footer";
 
 const ICONS: Record<IconKey, React.ComponentType<{ className?: string }>> = {
   globe: Globe,
@@ -184,7 +185,7 @@ const ProductPage = () => {
         />
 
         {/* Hero */}
-        <Reveal as="section" className="mt-8 sm:mt-10">
+        <section className="mt-8 sm:mt-10">
           <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.25em] ${a.chipBg} ${a.chipText}`}>
             <HeroIcon className="size-3.5" aria-hidden />
             {c.kicker}
@@ -233,7 +234,7 @@ const ProductPage = () => {
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 bg-foreground/[0.04] px-3 py-1.5 text-foreground/70">
               <Shield className="size-3.5" aria-hidden />
-              {ro ? "Suport gratuit pe viață" : "Free lifetime support"}
+              {ro ? "Suport conform ofertei" : "Support defined in the proposal"}
             </span>
           </div>
 
@@ -242,7 +243,7 @@ const ProductPage = () => {
               {c.heroStats.map((s) => (
                 <div
                   key={s.label}
-                  className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] px-4 py-3 backdrop-blur transition-colors duration-300 hover:border-foreground/25"
+                  className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] px-4 py-3 md:backdrop-blur transition-colors duration-300 hover:border-foreground/25"
                 >
                   <dt className="sr-only">{s.label}</dt>
                   <dd>
@@ -257,7 +258,7 @@ const ProductPage = () => {
               ))}
             </dl>
           )}
-        </Reveal>
+        </section>
 
 
         {/* Intro */}
@@ -284,7 +285,7 @@ const ProductPage = () => {
               const Icon = ICONS[h.icon];
               return (
                 <Reveal key={h.title} delay={i * 60} as="article">
-                  <div className="group h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-foreground/25 hover:bg-foreground/[0.06]">
+                  <div className="group h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 md:backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-foreground/25 hover:bg-foreground/[0.06]">
                     <div className={`size-10 rounded-xl bg-gradient-to-br ${a.from} ${a.to} grid place-items-center text-white transition-transform duration-300 group-hover:scale-110`}>
                       <Icon className="size-5" aria-hidden />
                     </div>
@@ -311,7 +312,7 @@ const ProductPage = () => {
                 const Icon = ICONS[it.icon];
                 return (
                   <Reveal key={it.title} delay={i * 50} as="article">
-                    <div className="group h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-foreground/25 hover:bg-foreground/[0.06]">
+                    <div className="group h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 md:backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-foreground/25 hover:bg-foreground/[0.06]">
                       <div className={`inline-grid place-items-center size-9 rounded-lg border ${a.chipBg} ${a.chipText} transition-transform duration-300 group-hover:scale-110`}>
                         <Icon className="size-4" aria-hidden />
                       </div>
@@ -337,7 +338,7 @@ const ProductPage = () => {
             <div className="mt-7 grid sm:grid-cols-2 gap-4">
               {c.tech.groups.map((g, i) => (
                 <Reveal key={g.name} delay={i * 60}>
-                  <div className="h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur">
+                  <div className="h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 md:backdrop-blur">
                     <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-foreground/45">
                       {g.name}
                     </div>
@@ -370,7 +371,7 @@ const ProductPage = () => {
             <div className="mt-7 grid sm:grid-cols-2 gap-4">
               {c.examples.items.map((it, i) => (
                 <Reveal key={it.title} delay={i * 60} as="article">
-                  <div className="h-full rounded-2xl border border-foreground/10 bg-gradient-to-br from-foreground/[0.06] to-transparent p-5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-foreground/25">
+                  <div className="h-full rounded-2xl border border-foreground/10 bg-gradient-to-br from-foreground/[0.06] to-transparent p-5 md:backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-foreground/25">
                     <h3 className="font-display font-bold text-sm">{it.title}</h3>
                     <p className="mt-2 text-sm text-foreground/70 leading-relaxed">{it.desc}</p>
                     <p className={`mt-3 text-xs font-semibold ${a.text}`}>{it.result}</p>
@@ -390,7 +391,7 @@ const ProductPage = () => {
             </h2>
           </Reveal>
           <Reveal delay={80}>
-            <ul className="mt-6 grid sm:grid-cols-2 gap-x-8 gap-y-3 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-6 backdrop-blur">
+            <ul className="mt-6 grid sm:grid-cols-2 gap-x-8 gap-y-3 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-6 md:backdrop-blur">
               {c.deliverables.map((d) => (
                 <li key={d} className="flex items-start gap-2.5 text-sm text-foreground/85">
                   <Check className={`size-4 mt-0.5 shrink-0 ${a.text}`} aria-hidden />
@@ -437,7 +438,7 @@ const ProductPage = () => {
             <div className="mt-7 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {c.advice.items.map((it, i) => (
                 <Reveal key={it.title} delay={i * 50} as="article">
-                  <div className="h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-foreground/25">
+                  <div className="h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 md:backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-foreground/25">
                     <div className={`text-[10px] font-mono uppercase tracking-[0.25em] ${a.text}`}>
                       {String(i + 1).padStart(2, "0")}
                     </div>
@@ -461,7 +462,7 @@ const ProductPage = () => {
           <div className="mt-6 space-y-3">
             {c.faq.map((f, i) => (
               <Reveal key={f.q} delay={i * 50}>
-                <details className="group rounded-2xl border border-foreground/10 bg-foreground/[0.03] px-5 py-4 backdrop-blur transition-colors hover:border-foreground/20 open:border-foreground/25">
+                <details className="group rounded-2xl border border-foreground/10 bg-foreground/[0.03] px-5 py-4 md:backdrop-blur transition-colors hover:border-foreground/20 open:border-foreground/25">
                   <summary className="flex cursor-pointer items-center justify-between gap-4 text-sm font-semibold list-none">
                     <span>{f.q}</span>
                     <span
@@ -480,7 +481,7 @@ const ProductPage = () => {
 
         {/* CTA */}
         <Reveal as="section" className="mt-16">
-          <div className={`rounded-3xl border ${a.border} bg-gradient-to-br from-foreground/[0.06] to-transparent p-8 md:p-10 text-center backdrop-blur relative overflow-hidden`}>
+          <div className={`rounded-3xl border ${a.border} bg-gradient-to-br from-foreground/[0.06] to-transparent p-8 md:p-10 text-center md:backdrop-blur relative overflow-hidden`}>
             <div aria-hidden className={`absolute -top-24 left-1/2 -translate-x-1/2 size-72 rounded-full blur-3xl ${a.glow}`} />
             <div className="relative">
               <h2 className="font-display text-2xl md:text-3xl font-extrabold">{c.ctaTitle}</h2>
@@ -529,7 +530,7 @@ const ProductPage = () => {
                 <Reveal key={p.key} delay={i * 50}>
                   <Link
                     to={p.path[lang]}
-                    className="group flex h-full flex-col rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-foreground/25"
+                    className="group flex h-full flex-col rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 md:backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-foreground/25"
                   >
                     <div className={`size-9 rounded-lg bg-gradient-to-br ${p.accent.from} ${p.accent.to} grid place-items-center text-white`}>
                       <Icon className="size-4.5" aria-hidden />
@@ -547,6 +548,7 @@ const ProductPage = () => {
           </div>
         </section>
       </div>
+      <Footer />
     </main>
   );
 };

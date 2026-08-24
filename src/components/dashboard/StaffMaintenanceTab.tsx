@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Globe, CheckCircle2, AlertTriangle, Wrench, PauseCircle, XCircle, ExternalLink } from "lucide-react";
+import { Plus, Globe, CheckCircle2, AlertTriangle, Wrench, PauseCircle, XCircle, ExternalLink, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -27,7 +27,7 @@ type Site = {
 
 type Log = { id: string; action: string; details: string | null; author_id: string; created_at: string };
 
-const statusMeta: Record<Site["status"], { label: string; icon: any; cls: string }> = {
+const statusMeta: Record<Site["status"], { label: string; icon: LucideIcon; cls: string }> = {
   healthy: { label: "Funcțional", icon: CheckCircle2, cls: "bg-green-500/15 text-green-600" },
   needs_attention: { label: "Necesită atenție", icon: AlertTriangle, cls: "bg-orange-500/15 text-orange-600" },
   in_progress: { label: "În lucru", icon: Wrench, cls: "bg-primary/15 text-primary" },
@@ -49,7 +49,7 @@ export const StaffMaintenanceTab = () => {
   const load = async () => {
     setLoading(true);
     const [s, c] = await Promise.all([
-      supabase.from("maintenance_sites").select("*").order("created_at", { ascending: false }),
+      supabase.from("maintenance_sites").select("id,client_id,site_name,site_url,status,notes,last_check_at,next_check_at,created_at").order("created_at", { ascending: false }),
       supabase.from("profiles").select("id,display_name"),
     ]);
     if (s.data) setSites(s.data as Site[]);
@@ -60,7 +60,7 @@ export const StaffMaintenanceTab = () => {
   useEffect(() => { load(); }, []);
 
   const loadLogs = async (id: string) => {
-    const { data } = await supabase.from("maintenance_logs").select("*").eq("site_id", id).order("created_at", { ascending: false });
+    const { data } = await supabase.from("maintenance_logs").select("id,action,details,author_id,created_at").eq("site_id", id).order("created_at", { ascending: false });
     if (data) setLogs(data as Log[]);
   };
 

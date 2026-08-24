@@ -7,7 +7,7 @@
 const FALLBACK = "https://avyrontech.avyrontech.workers.dev";
 
 function detect(): string {
-  const env = (import.meta as any).env?.VITE_CF_API_BASE as string | undefined;
+  const env = import.meta.env.VITE_CF_API_BASE as string | undefined;
   if (env) return env.replace(/\/+$/, "");
   if (typeof window === "undefined") return FALLBACK;
   const host = window.location.hostname;

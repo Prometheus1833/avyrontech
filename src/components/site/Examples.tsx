@@ -1,7 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, type ComponentType } from "react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { Check, ChevronDown, ExternalLink, Globe, MessageSquarePlus } from "lucide-react";
-import { mockups } from "./mockups";
 import { useLang } from "@/i18n/LanguageContext";
 import { useExamples, publicImageUrl, type ExampleRow } from "@/hooks/useExamples";
 import { RequestExampleModal } from "./RequestExampleModal";
@@ -18,13 +17,19 @@ const Examples = () => {
   // 'closed' = only "Vezi domenii" button | 'open' = full list | 'selected' = collapsed pill
   const [view, setView] = useState<"closed" | "open" | "selected">("closed");
   const [requestSource, setRequestSource] = useState<ExampleRow | null>(null);
+  const [Mockup, setMockup] = useState<ComponentType | null>(null);
 
   const { data: dbExamples } = useExamples();
   const fallbackCat: Cat = "ecommerce";
   const displayCat: Cat = active ?? fallbackCat;
   const current = t.examples.data[displayCat];
   const currentCat = t.examples.cats[displayCat];
-  const Mockup = mockups[displayCat];
+  useEffect(() => {
+    if (!active) return;
+    let alive = true;
+    import("./mockups").then(({ mockups }) => alive && setMockup(() => mockups[active]));
+    return () => { alive = false; };
+  }, [active]);
 
   // Find a DB example matching the active category — shows as the "live" example for this domain
   const liveExample = useMemo(
@@ -173,8 +178,10 @@ const Examples = () => {
                     loading="lazy"
                     className="absolute inset-0 w-full h-full object-cover"
                   />
-                ) : (
+                ) : Mockup ? (
                   <Mockup />
+                ) : (
+                  <div className="absolute inset-0 animate-pulse bg-muted" aria-hidden />
                 )}
 
                 {/* Action buttons overlay (only when we have a real example in DB) */}

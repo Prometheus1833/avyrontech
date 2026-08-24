@@ -1,80 +1,32 @@
-# Cloudflare KV — Configurații și conținut simplu
+# Cloudflare KV — configurații și cache
 
-KV stochează **doar** valori care sunt: puține, citite des, modificate rar.
+KV stochează exclusiv valori mici, nesensibile, citite des și modificate rar.
+În Worker binding-ul este `env.KV`; resursele sunt separate:
 
-> Regulă: dacă e listă, tabel, client, factură → **D1**, nu KV.
-> Dacă e fișier → **R2**.
-> Dacă e setare unică → **KV**.
+- producție: `avyron_kv`;
+- preview: `avyron_kv_preview`.
 
-## Activare
+## Contractul aplicației
 
-```bash
-# Creează namespace-ul (o singură dată)
-bunx wrangler kv namespace create AVYRON_KV
+- API: `GET|PUT /api/content/settings/:key`;
+- cheie fizică: `content:v1:<key-validat>`;
+- valoare: JSON valid de maximum 128 KiB;
+- metadata: versiunea schemei și momentul actualizării;
+- autentificare la scriere: rol `admin`;
+- citire publică numai pentru configurațiile expuse explicit de rută.
 
-# Copiază `id` și `preview_id` în wrangler.jsonc (vezi blocul comentat).
-```
+Exemple logice: `site_settings`, `homepage_content`, `seo_settings`, `features`.
+Prefixul `content:v1:` este adăugat de Worker, nu de client.
 
-În Workers/Pages: binding-ul este `env.KV`.
+## Ce nu intră în KV
 
-## Chei standard
+- utilizatori, clienți, facturi, proiecte ori lead-uri — D1;
+- parole, tokenuri, emailuri, atașamente sau alte date personale — D1/R2;
+- fișiere binare — R2;
+- rate limiting exact — D1. Binding-ul Rate Limit oferă doar protecția rapidă
+  de burst, iar contorul atomic D1 decide limita de securitate.
 
-### `site_settings`
-Date de contact și prezență online.
-```json
-{
-  "companyName": "Avyron",
-  "phone": "0740xxxxxx",
-  "email": "contact@avyron.ro",
-  "address": "Iași",
-  "facebook": "https://facebook.com/avyron",
-  "instagram": "https://instagram.com/avyron",
-  "whatsapp": "https://wa.me/40740xxxxxx"
-}
-```
-
-### `homepage_content`
-Texte editabile din hero / CTA homepage.
-```json
-{
-  "heroTitle": "Website-uri moderne",
-  "heroSubtitle": "Transformăm ideile în rezultate",
-  "ctaText": "Solicită ofertă"
-}
-```
-
-### `seo_settings`
-Meta tags globale (fallback când o pagină nu setează ceva specific).
-```json
-{
-  "title": "Avyron — Soluții digitale",
-  "description": "Construim site-uri rapide, optimizate Google, în 2-5 zile.",
-  "keywords": "web design, seo, dezvoltare web, romania"
-}
-```
-
-### `features`
-Feature flags (boolean).
-```json
-{
-  "showTestimonials": true,
-  "showBlog": false,
-  "showDomainCheck": true,
-  "enableCart": false
-}
-```
-
-## Convenții
-
-- Cheile sunt `snake_case`.
-- Valorile sunt **JSON serializat** (string), parse-uit în cod.
-- Pentru editare din admin: `PUT /api/content/settings/:key` (Worker validează JSON-ul).
-- Cache la edge automat (KV e CDN-cached).
-
-## Pentru site-urile clienților
-
-Fiecare proiect client poate avea propriul namespace KV (sau prefix de cheie):
-- `client:<project_id>:site_settings`
-- `client:<project_id>:homepage_content`
-
-Astfel adminul `domeniu.ro/admin` modifică doar cheile lui.
+KV este eventual consistent. Nu folosim secvențe `get` → increment → `put`
+pentru operații concurente și nu creăm câte un namespace per client; izolarea
+logică viitoare folosește prefixe validate, iar izolarea fizică este rezervată
+cerințelor contractuale reale.

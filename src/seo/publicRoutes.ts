@@ -4,7 +4,8 @@
  * Keep it dependency-light: the Worker bundles this file.
  */
 
-import { ROUTE_ALTERNATES } from "@/i18n/routes";
+import { ROUTE_ALTERNATES } from "../i18n/routes";
+import { BLOG_SLUGS } from "../data/blogSlugs";
 
 /** Example demo slugs — mirrored from src/examples/registry.tsx (asserted in tests). */
 export const EXAMPLE_SLUGS = [
@@ -15,6 +16,11 @@ export const EXAMPLE_SLUGS = [
 
 /** Standalone public routes that have no RO/EN pair. */
 export const STANDALONE_PUBLIC_ROUTES = [
+  "/gdpr",
+  "/en/privacy",
+  "/blog",
+  "/en/blog",
+  ...BLOG_SLUGS.flatMap((slug) => [`/blog/${slug}`, `/en/blog/${slug}`]),
   "/exemple/flawlesstudio",
   "/exemple/retuvo",
   ...EXAMPLE_SLUGS.map((s) => `/examples/${s}`),

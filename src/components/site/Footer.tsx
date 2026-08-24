@@ -1,11 +1,14 @@
 import { useLang } from "@/i18n/LanguageContext";
 import { Link } from "react-router-dom";
 import { Mail, Phone, MessageCircle, ArrowRight } from "lucide-react";
+import { COOKIE_SETTINGS_EVENT } from "@/components/site/CookieBanner";
 import logo from "@/assets/avyron-logo.webp";
 import planetBg from "@/assets/footer-planet-bg.webp";
+import { COMPANY } from "@/config/company";
+import { SOCIAL_PROFILES } from "@/config/socialProfiles";
 
 const Footer = () => {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   return (
     <footer className="relative overflow-hidden border-t border-white/10 bg-[#0a0612] text-white">
       {/* Planet background */}
@@ -48,7 +51,7 @@ const Footer = () => {
           {/* CTA + WhatsApp + Phone + Email — compact pill cluster */}
           <div className="flex flex-wrap items-center justify-center md:justify-end gap-1.5 flex-1">
             <Link
-              to="/#cta"
+              to={lang === "en" ? "/en#cta" : "/#cta"}
               className="group inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 px-3 py-1.5 shadow-[0_6px_16px_-6px_rgba(168,85,247,0.5)] transition-all"
             >
               <span className="font-display font-semibold text-xs text-white">{t.footer.ctaLabel}</span>
@@ -70,7 +73,7 @@ const Footer = () => {
               className="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/30 bg-gradient-to-br from-cyan-500/15 to-sky-600/15 hover:from-cyan-500/25 hover:to-sky-600/25 hover:border-cyan-300/60 px-3 py-1.5 transition-all"
             >
               <Phone className="size-3 text-cyan-300" />
-              <span className="text-xs text-white/90 font-medium hidden sm:inline">Sună-ne</span>
+              <span className="text-xs text-white/90 font-medium hidden sm:inline">{lang === "en" ? "Call us" : "Sună-ne"}</span>
             </a>
             <a
               href="mailto:contact@avyron.ro"
@@ -87,8 +90,9 @@ const Footer = () => {
         <nav className="mt-3" aria-label={t.footer.nav}>
           {(() => {
             const items = t.footer.navItems;
-            const primary = items.filter((n) => n.h !== "/gdpr");
-            const legal = items.filter((n) => n.h === "/gdpr");
+            const isLegal = (href: string) => href === "/gdpr" || href === "/en/privacy";
+            const primary = items.filter((n) => !isLegal(n.h));
+            const legal = items.filter((n) => isLegal(n.h));
             const baseClass =
               "inline-flex items-center justify-center text-center rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 font-display font-medium text-white/85 hover:text-white transition-all leading-none";
             return (
@@ -108,7 +112,7 @@ const Footer = () => {
                   })}
                 </div>
                 {legal.length > 0 && (
-                  <div className="mt-1.5 flex justify-center">
+                  <div className="mt-1.5 flex flex-wrap justify-center gap-1.5">
                     {legal.map((n) => (
                       <Link
                         key={n.h}
@@ -118,12 +122,49 @@ const Footer = () => {
                         {n.l}
                       </Link>
                     ))}
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new Event(COOKIE_SETTINGS_EVENT))}
+                      className={`${baseClass} px-3 py-1 text-[10px]`}
+                    >
+                      {lang === "en" ? "Cookie settings" : "Setări cookie"}
+                    </button>
                   </div>
                 )}
               </>
             );
           })()}
         </nav>
+
+        <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1" aria-label={lang === "en" ? "Avyron social profiles" : "Profiluri sociale Avyron"}>
+          {SOCIAL_PROFILES.map((profile) => (
+            <a
+              key={profile.id}
+              href={profile.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] font-medium text-white/55 transition-colors hover:text-purple-200"
+            >
+              {profile.name}
+            </a>
+          ))}
+        </div>
+
+        <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-center">
+          <p className="text-[10px] leading-relaxed text-white/60">
+            {lang === "en"
+              ? "Avyron is developed and operated through the collaboration of:"
+              : "Avyron este dezvoltat și operat prin colaborarea dintre:"}
+          </p>
+          <div className="mt-1 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[10px] leading-relaxed text-white/75">
+            {COMPANY.legalEntities.map((entity) => (
+              <span key={entity.id}>
+                <strong className="font-semibold text-white/90">{entity.legalName}</strong>
+                {entity.taxId ? ` · CUI ${entity.taxId}` : ""} · {entity.registeredAddress}
+              </span>
+            ))}
+          </div>
+        </div>
 
         {/* ANPC + copyright — single compact row */}
         <div className="mt-3 pt-2.5 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-2">
@@ -141,6 +182,7 @@ const Footer = () => {
           </button>
           <div className="text-[10px] text-white/50 flex flex-wrap justify-center gap-x-3 gap-y-0.5">
             <span>{t.footer.copy.replace("{y}", String(new Date().getFullYear()))}</span>
+            <span>{COMPANY.associationName}</span>
             <span>{t.footer.built}</span>
           </div>
         </div>

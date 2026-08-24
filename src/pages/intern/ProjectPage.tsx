@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { internApi, type ProjectDetail, type ProposalStatus, type BannerStatus, type ProjectKind, type LinkKind } from "@/lib/internApi";
@@ -64,7 +64,7 @@ export default function ProjectPage() {
   const [savingUrl, setSavingUrl] = useState(false);
   const [urlDraft, setUrlDraft] = useState("");
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true); setError(null);
     try {
       const d = await internApi.getProject(slug);
@@ -73,8 +73,8 @@ export default function ProjectPage() {
     } catch (e) {
       setError((e as Error).message);
     } finally { setLoading(false); }
-  };
-  useEffect(() => { if (slug) void load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [slug]);
+  }, [slug]);
+  useEffect(() => { if (slug) void load(); }, [load, slug]);
 
   if (authLoading || loading) return <PageShell><p className="text-muted-foreground">Se încarcă…</p></PageShell>;
   if (!user) return <PageShell><p>Necesită autentificare. <Link className="underline" to="/auth">Loghează-te</Link></p></PageShell>;

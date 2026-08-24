@@ -1,0 +1,4 @@
+Contact: mailto:contact@avyron.ro
+Expires: 2027-08-23T23:59:00.000Z
+Canonical: https://avyron.ro/.well-known/security.txt
+Preferred-Languages: ro, en

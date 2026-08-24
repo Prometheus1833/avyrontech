@@ -10,52 +10,48 @@ import {
   Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
-import type { TemplateEntry } from './registry.ts'
+import type { TemplateData, TemplateEntry } from './registry.ts'
 
-interface Props {
-  name?: string
-  business?: string
-  phone?: string
-  email?: string
-  website?: string
-  submittedAt?: string
+const stringValue = (value: unknown, fallback: string) =>
+  typeof value === 'string' && value.trim() ? value : fallback
+
+const Email = (data: TemplateData) => {
+  const name = stringValue(data.name, '-')
+  const business = stringValue(data.business, '-')
+  const phone = stringValue(data.phone, '-')
+  const email = stringValue(data.email, '-')
+  const website = stringValue(data.website, '')
+  const submittedAt = stringValue(data.submittedAt, new Date().toISOString())
+
+  return (
+    <Html lang="ro" dir="ltr">
+      <Head />
+      <Preview>Nouă solicitare de demo de la {name} ({business})</Preview>
+      <Body style={main}>
+        <Container style={container}>
+          <Heading style={h1}>Solicitare demo nouă</Heading>
+          <Text style={lead}>
+            Cineva a completat formularul „Vrei să vezi cum ar arăta site-ul tău?" pe avyron.ro.
+          </Text>
+
+          <Section style={card}>
+            <Row label="Nume" value={name} />
+            <Row label="Afacere" value={business} />
+            <Row label="Telefon" value={phone} />
+            <Row label="Email" value={email} />
+            <Row label="Site actual" value={website || '—'} />
+            <Hr style={hr} />
+            <Row label="Trimis la" value={new Date(submittedAt).toLocaleString('ro-RO')} />
+          </Section>
+
+          <Text style={footer}>
+            Răspunde direct la {email} pentru a continua conversația.
+          </Text>
+        </Container>
+      </Body>
+    </Html>
+  )
 }
-
-const Email = ({
-  name = '-',
-  business = '-',
-  phone = '-',
-  email = '-',
-  website = '',
-  submittedAt = new Date().toISOString(),
-}: Props) => (
-  <Html lang="ro" dir="ltr">
-    <Head />
-    <Preview>Nouă solicitare de demo de la {name} ({business})</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Heading style={h1}>Solicitare demo nouă</Heading>
-        <Text style={lead}>
-          Cineva a completat formularul „Vrei să vezi cum ar arăta site-ul tău?" pe avyron.ro.
-        </Text>
-
-        <Section style={card}>
-          <Row label="Nume" value={name} />
-          <Row label="Afacere" value={business} />
-          <Row label="Telefon" value={phone} />
-          <Row label="Email" value={email} />
-          <Row label="Site actual" value={website || '—'} />
-          <Hr style={hr} />
-          <Row label="Trimis la" value={new Date(submittedAt).toLocaleString('ro-RO')} />
-        </Section>
-
-        <Text style={footer}>
-          Răspunde direct la {email} pentru a continua conversația.
-        </Text>
-      </Container>
-    </Body>
-  </Html>
-)
 
 const Row = ({ label, value }: { label: string; value: string }) => (
   <Section style={rowSection}>
@@ -66,8 +62,8 @@ const Row = ({ label, value }: { label: string; value: string }) => (
 
 export const template = {
   component: Email,
-  subject: (data: Props) =>
-    `Solicitare demo — ${data?.business || data?.name || 'nou client'}`,
+  subject: (data: TemplateData) =>
+    `Solicitare demo — ${stringValue(data.business, stringValue(data.name, 'nou client'))}`,
   displayName: 'Demo request notification',
   to: 'avyrontech@gmail.com',
   previewData: {

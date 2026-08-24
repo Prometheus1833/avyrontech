@@ -19,8 +19,32 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "react-refresh/only-export-components": ["warn", {
+        allowConstantExport: true,
+        allowExportNames: [
+          "mount",
+          "PRERENDER_ROUTES",
+          "STATUS_PAGES",
+          "mockups",
+          "badgeVariants",
+          "buttonVariants",
+          "useFormField",
+          "navigationMenuTriggerStyle",
+          "useSidebar",
+          "toast",
+          "toggleVariants",
+          "useAuth",
+          "useLang",
+        ],
+      }],
       "@typescript-eslint/no-unused-vars": "off",
+    },
+  },
+  {
+    files: ["supabase/functions/**/*.{ts,tsx}"],
+    rules: {
+      // Edge-function templates are rendered server-side and never participate in Vite HMR.
+      "react-refresh/only-export-components": "off",
     },
   },
 );

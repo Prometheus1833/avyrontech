@@ -1,797 +1,234 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Link, useParams } from "react-router-dom";
 import DOMPurify from "dompurify";
-
 import {
-  Facebook, Instagram, Share2, Newspaper, Plus, ExternalLink,
-  Calendar, Tag, Clock, Mail, Link2, Twitter, Linkedin, Check,
-  MessageCircle, Send, Trash2, Heart, Eye, ChevronUp, ChevronDown
+  ArrowLeft, ArrowRight, BookOpen, Calendar, Check, Clock, Copy, Edit3, ExternalLink,
+  Facebook, FileText, ImagePlus, Linkedin, Loader2, Mail, MessageCircle, Plus, Search,
+  Send, Share2, ShieldCheck, Tag, Trash2, Twitter, UserRound,
 } from "lucide-react";
 import Nav from "@/components/site/Nav";
 import Footer from "@/components/site/Footer";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { BLOG_INDEX, BLOG_INDEX_EN, type BlogIndexEntry } from "@/data/blogIndex";
+import { apiUrl } from "@/lib/apiBase";
+import { blogApi, type BlogLanguage, type BlogPost, type BlogPostInput, type BlogStatus } from "@/lib/blogApi";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
-interface NewsPost {
-  id: string;
-  title: string;
-  slug: string;
-  excerpt: string | null;
-  content: string;
-  cover_image_url: string | null;
-  tags: string[] | null;
-  category: string;
-  published_at: string | null;
-  created_at: string;
-}
-
-interface Comment {
-  id: string;
-  post_id: string;
-  author_id: string;
-  author_name: string | null;
-  content: string;
-  created_at: string;
-}
-
-const TikTokIcon = ({ className = "" }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
-    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43V8.95a8.16 8.16 0 0 0 4.77 1.52V7a4.85 4.85 0 0 1-1.84-.31z" />
-  </svg>
-);
-const WhatsAppIcon = ({ className = "" }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
-    <path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26L4.205 21.16l3.443-.967z"/>
-  </svg>
-);
-const MessengerIcon = ({ className = "" }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
-    <path d="M12 0C5.37 0 0 4.97 0 11.1c0 3.49 1.74 6.6 4.46 8.64V24l4.08-2.24c1.09.3 2.24.46 3.46.46 6.63 0 12-4.97 12-11.1S18.63 0 12 0zm1.19 14.94l-3.05-3.25-5.95 3.25 6.55-6.95 3.13 3.25 5.87-3.25-6.55 6.95z"/>
-  </svg>
-);
-const TelegramIcon = ({ className = "" }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
-    <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/>
-  </svg>
-);
-
-const readingTime = (text: string) => Math.max(1, Math.round(text.trim().split(/\s+/).length / 220));
-const initials = (name?: string | null) => (name || "U").split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase();
-const timeAgo = (iso: string) => {
-  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 60) return "acum";
-  if (s < 3600) return `${Math.floor(s / 60)} min`;
-  if (s < 86400) return `${Math.floor(s / 3600)} h`;
-  if (s < 604800) return `${Math.floor(s / 86400)} z`;
-  return new Date(iso).toLocaleDateString("ro-RO");
+const SITE_URL = "https://avyron.ro";
+const FALLBACK_IMAGE = "/og/home.jpg";
+const CATEGORIES: Record<string, { ro: string; en: string }> = {
+  business: { ro: "Afaceri", en: "Business" },
+  "web-design": { ro: "Web design", en: "Web design" },
+  seo: { ro: "SEO și vizibilitate", en: "SEO & visibility" },
+  security: { ro: "Securitate", en: "Security" },
+  securitate: { ro: "Securitate", en: "Security" },
+  cloudflare: { ro: "Cloudflare", en: "Cloudflare" },
+  technology: { ro: "Tehnologie", en: "Technology" },
+  tech: { ro: "Tehnologie", en: "Technology" },
+  avyron: { ro: "Din agenție", en: "Inside Avyron" },
+  digital: { ro: "Strategie digitală", en: "Digital strategy" },
 };
 
-const renderMarkdown = (md: string) => {
-  const lines = md.split("\n");
-  const out: React.ReactNode[] = [];
-  let ul: string[] = [], ol: string[] = [];
-  // Only accept safe URL schemes for links
-  const safeUrl = (u: string) => {
-    const trimmed = u.trim();
-    if (/^(https?:|mailto:|tel:|#|\/)/i.test(trimmed)) return trimmed;
-    return "#";
-  };
-  // Escape HTML in user content before applying markdown patterns
-  const escapeHtml = (s: string) =>
-    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-  const inline = (s: string) => {
-    const escaped = escapeHtml(s);
-    const html = escaped
-      .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>')
-      .replace(/\[(.+?)\]\((.+?)\)/g, (_m, label, url) =>
-        `<a href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer" class="text-brand underline-offset-2 hover:underline font-medium">${label}</a>`,
-      )
-      .replace(/(#\w+)/g, '<span class="text-brand/80 font-medium">$1</span>')
-      .replace(/(@\w+)/g, '<span class="text-brand-2 font-medium">$1</span>');
-    // Defense in depth: sanitize the final HTML
-    return DOMPurify.sanitize(html, {
-      ALLOWED_TAGS: ["strong", "em", "a", "span", "br", "code"],
-      ALLOWED_ATTR: ["href", "target", "rel", "class"],
-      ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|#|\/)/i,
-    });
-  };
-  const flushUl = () => { if (ul.length) { out.push(<ul key={`u${out.length}`} className="list-disc pl-6 space-y-1.5 my-3">{ul.map((l, i) => <li key={i} dangerouslySetInnerHTML={{ __html: inline(l) }} />)}</ul>); ul = []; } };
-  const flushOl = () => { if (ol.length) { out.push(<ol key={`o${out.length}`} className="list-decimal pl-6 space-y-1.5 my-3">{ol.map((l, i) => <li key={i} dangerouslySetInnerHTML={{ __html: inline(l) }} />)}</ol>); ol = []; } };
-  lines.forEach((raw, i) => {
-    const line = raw.replace(/\r$/, "");
-    if (/^##\s+/.test(line)) { flushUl(); flushOl(); out.push(<h2 key={i} className="font-display text-xl md:text-2xl font-bold mt-6 mb-2 tracking-tight">{line.replace(/^##\s+/, "")}</h2>); }
-    else if (/^###\s+/.test(line)) { flushUl(); flushOl(); out.push(<h3 key={i} className="font-display text-base md:text-lg font-semibold mt-4 mb-1.5">{line.replace(/^###\s+/, "")}</h3>); }
-    else if (/^\d+\.\s+/.test(line)) { flushUl(); ol.push(line.replace(/^\d+\.\s+/, "")); }
-    else if (/^-\s+/.test(line)) { flushOl(); ul.push(line.replace(/^-\s+/, "")); }
-    else if (line.trim() === "") { flushUl(); flushOl(); }
-    else { flushUl(); flushOl(); out.push(<p key={i} className="text-foreground/85 leading-relaxed my-2.5" dangerouslySetInnerHTML={{ __html: inline(line) }} />); }
+const toTime = (value: string | number | null | undefined) => !value ? 0 : typeof value === "number" ? value : new Date(value).getTime();
+const formatDate = (value: string | number | null | undefined, lang: BlogLanguage) => new Intl.DateTimeFormat(lang === "en" ? "en-GB" : "ro-RO", { day: "numeric", month: "long", year: "numeric" }).format(new Date(toTime(value) || Date.now()));
+const readingTime = (text: string) => Math.max(1, Math.ceil(text.trim().split(/\s+/).length / 210));
+const initials = (name?: string | null) => (name || "Avyron").split(/\s+/).map((part) => part[0]).slice(0, 2).join("").toUpperCase();
+const categoryLabel = (category: string, lang: BlogLanguage) => CATEGORIES[category]?.[lang] || category.replace(/-/g, " ");
+const slugify = (value: string) => value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 96);
+const mediaUrl = (value?: string | null) => !value ? FALLBACK_IMAGE : value.startsWith("/api/") ? apiUrl(value) : value;
+const absoluteUrl = (value?: string | null) => mediaUrl(value).startsWith("http") ? mediaUrl(value) : `${SITE_URL}${mediaUrl(value)}`;
+
+const fromIndex = (entry: BlogIndexEntry, language: BlogLanguage): BlogPost => ({
+  ...entry, language, status: "published", author_name: "Echipa Avyron", author_avatar_url: null,
+  cover_image_alt: entry.title, created_at: entry.published_at, alternate_slug: entry.slug,
+  translation_key: entry.slug,
+});
+
+const mergePosts = (remote: BlogPost[], local: BlogPost[]) => {
+  const bySlug = new Map(local.map((post) => [post.slug, post]));
+  for (const post of remote) bySlug.set(post.slug, { ...bySlug.get(post.slug), ...post });
+  return [...bySlug.values()].sort((a, b) => toTime(b.published_at) - toTime(a.published_at));
+};
+
+const safeInline = (value: string) => {
+  const escaped = value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const linked = escaped.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, label, rawUrl) => {
+    const url = String(rawUrl).trim();
+    const safe = /^(https?:|mailto:|tel:|#|\/)/i.test(url) ? url : "#";
+    return `<a href="${safe}" rel="noopener noreferrer" class="font-medium text-brand underline-offset-4 hover:underline">${label}</a>`;
   });
-  flushUl(); flushOl();
-  return out;
+  return DOMPurify.sanitize(linked, { ALLOWED_TAGS: ["strong", "em", "a", "code"], ALLOWED_ATTR: ["href", "rel", "class"], ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|#|\/)/i });
 };
 
-const buildShareLinks = (post: NewsPost) => {
-  const url = `${window.location.origin}/blog#${post.slug}`;
-  const text = `${post.title} — via Avyron`;
-  const e = encodeURIComponent;
-  return {
-    url, text,
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${e(url)}`,
-    messenger: `https://www.facebook.com/dialog/send?app_id=140586622674265&link=${e(url)}&redirect_uri=${e(url)}`,
-    whatsapp: `https://wa.me/?text=${e(text + " " + url)}`,
-    twitter: `https://twitter.com/intent/tweet?url=${e(url)}&text=${e(text)}`,
-    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${e(url)}`,
-    telegram: `https://t.me/share/url?url=${e(url)}&text=${e(text)}`,
-    email: `mailto:?subject=${e(post.title)}&body=${e(text + "\n\n" + url)}`,
-    instagram: `https://www.instagram.com/`, // IG doesn't support web share intent — opens IG, link is copied
-    tiktok: `https://www.tiktok.com/`,
+const MarkdownArticle = ({ content }: { content: string }) => {
+  const nodes: ReactNode[] = [];
+  let bullets: string[] = [], numbers: string[] = [];
+  const flush = () => {
+    if (bullets.length) nodes.push(<ul key={`ul-${nodes.length}`} className="my-5 list-disc space-y-2 pl-6">{bullets.map((line, index) => <li key={index} dangerouslySetInnerHTML={{ __html: safeInline(line) }} />)}</ul>);
+    if (numbers.length) nodes.push(<ol key={`ol-${nodes.length}`} className="my-5 list-decimal space-y-2 pl-6">{numbers.map((line, index) => <li key={index} dangerouslySetInnerHTML={{ __html: safeInline(line) }} />)}</ol>);
+    bullets = []; numbers = [];
   };
+  content.split("\n").forEach((raw, index) => {
+    const line = raw.trim();
+    if (!line) return flush();
+    if (line.startsWith("### ")) { flush(); nodes.push(<h3 key={index} className="mb-3 mt-8 font-display text-xl font-semibold" dangerouslySetInnerHTML={{ __html: safeInline(line.slice(4)) }} />); }
+    else if (line.startsWith("## ")) { flush(); nodes.push(<h2 key={index} className="mb-4 mt-12 font-display text-2xl font-bold tracking-tight md:text-3xl" dangerouslySetInnerHTML={{ __html: safeInline(line.slice(3)) }} />); }
+    else if (/^\d+\.\s/.test(line)) { if (bullets.length) flush(); numbers.push(line.replace(/^\d+\.\s/, "")); }
+    else if (line.startsWith("- ")) { if (numbers.length) flush(); bullets.push(line.slice(2)); }
+    else if (line.startsWith("> ")) { flush(); nodes.push(<blockquote key={index} className="my-7 border-l-4 border-brand bg-brand/5 px-5 py-4 text-lg italic" dangerouslySetInnerHTML={{ __html: safeInline(line.slice(2)) }} />); }
+    else { flush(); nodes.push(<p key={index} className="my-4 leading-8 text-foreground/85" dangerouslySetInnerHTML={{ __html: safeInline(line) }} />); }
+  });
+  flush();
+  return <div className="text-base md:text-lg">{nodes}</div>;
+};
+
+const ShareButtons = ({ post, language, compact = false }: { post: BlogPost; language: BlogLanguage; compact?: boolean }) => {
+  const url = `${SITE_URL}${language === "en" ? "/en/blog" : "/blog"}/${post.slug}`;
+  const title = post.social_title || post.title;
+  const text = post.social_description || post.excerpt;
+  const encodedUrl = encodeURIComponent(url), encodedText = encodeURIComponent(`${title} — ${text}`);
+  const links = [
+    { label: "Facebook", icon: Facebook, href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}` },
+    { label: "LinkedIn", icon: Linkedin, href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}` },
+    { label: "X", icon: Twitter, href: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodeURIComponent(title)}` },
+    { label: "WhatsApp", icon: MessageCircle, href: `https://wa.me/?text=${encodedText}%20${encodedUrl}` },
+    { label: "Telegram", icon: Send, href: `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}` },
+    { label: "Email", icon: Mail, href: `mailto:?subject=${encodeURIComponent(title)}&body=${encodedText}%0A%0A${encodedUrl}` },
+  ];
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      const input = document.createElement("textarea");
+      input.value = url;
+      input.style.position = "fixed";
+      input.style.opacity = "0";
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand("copy");
+      input.remove();
+    }
+    toast.success(language === "en" ? "Article link copied" : "Linkul articolului a fost copiat");
+  };
+  const share = async () => {
+    if (!navigator.share) return copy();
+    try { await navigator.share({ title, text, url }); } catch (error) { if (error instanceof Error && error.name !== "AbortError") await copy(); }
+  };
+  return <div className={compact ? "flex flex-wrap gap-2" : "mt-10 border-t border-border/70 pt-7"}>
+    {!compact && <p className="mb-4 flex items-center gap-2 text-sm font-semibold"><Share2 className="size-4 text-brand" />{language === "en" ? "Share this guide" : "Distribuie acest ghid"}</p>}
+    <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" size={compact ? "icon" : "sm"} onClick={share} aria-label={language === "en" ? "Share" : "Distribuie"}><Share2 className="size-4" />{!compact && <span className="ml-2">{language === "en" ? "Share" : "Distribuie"}</span>}</Button>
+      {links.map(({ label, icon: Icon, href }) => <Button key={label} asChild variant="outline" size={compact ? "icon" : "sm"}><a href={href} target="_blank" rel="noopener noreferrer" aria-label={`${language === "en" ? "Share on" : "Distribuie pe"} ${label}`}><Icon className="size-4" />{!compact && <span className="ml-2">{label}</span>}</a></Button>)}
+      <Button type="button" variant="outline" size={compact ? "icon" : "sm"} onClick={copy} aria-label={language === "en" ? "Copy link" : "Copiază linkul"}><Copy className="size-4" />{!compact && <span className="ml-2">{language === "en" ? "Copy" : "Copiază"}</span>}</Button></div>
+  </div>;
+};
+
+const ArticleCard = ({ post, language, featured = false }: { post: BlogPost; language: BlogLanguage; featured?: boolean }) => {
+  const href = `${language === "en" ? "/en/blog" : "/blog"}/${post.slug}`;
+  return <article className={`group overflow-hidden rounded-3xl border border-border/70 bg-card/75 shadow-soft transition-all hover:-translate-y-1 hover:border-brand/40 hover:shadow-elev ${featured ? "grid lg:grid-cols-[1.15fr_.85fr]" : "flex h-full flex-col"}`}>
+    <Link to={href} className={`relative block overflow-hidden bg-muted ${featured ? "min-h-72 lg:min-h-[430px]" : "aspect-[16/10]"}`} aria-label={post.title}><img src={mediaUrl(post.cover_image_url)} alt={post.cover_image_alt || post.title} width={featured ? 1200 : 720} height={featured ? 675 : 450} loading={featured ? "eager" : "lazy"} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.035]" /><div className="absolute inset-0 bg-gradient-to-t from-background/45 to-transparent" /></Link>
+    <div className={`flex flex-1 flex-col ${featured ? "p-7 md:p-10" : "p-6"}`}><div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground"><Badge variant="secondary" className="rounded-full text-brand">{categoryLabel(post.category, language)}</Badge><span className="inline-flex items-center gap-1"><Calendar className="size-3.5" />{formatDate(post.published_at, language)}</span><span className="inline-flex items-center gap-1"><Clock className="size-3.5" />{readingTime(post.content)} min</span></div>
+      <h2 className={`${featured ? "mt-5 text-3xl md:text-4xl" : "mt-4 text-xl"} font-display font-bold leading-tight tracking-tight`}><Link to={href} className="transition-colors hover:text-brand">{post.title}</Link></h2><p className="mt-4 line-clamp-3 leading-relaxed text-muted-foreground">{post.excerpt}</p>
+      <div className="mt-auto flex items-center justify-between gap-4 pt-7"><div className="flex min-w-0 items-center gap-2.5"><Avatar className="size-8 border border-border"><AvatarImage src={post.author_avatar_url ? mediaUrl(post.author_avatar_url) : undefined} alt="" /><AvatarFallback>{initials(post.author_name)}</AvatarFallback></Avatar><span className="truncate text-xs font-medium">{post.author_name || "Echipa Avyron"}</span></div><Button asChild variant="ghost" size="sm" className="shrink-0 text-brand"><Link to={href}>{language === "en" ? "Read" : "Citește"}<ArrowRight className="ml-1 size-4" /></Link></Button></div>
+    </div>
+  </article>;
+};
+
+const emptyForm = (language: BlogLanguage): BlogPostInput => ({ language, title: "", slug: "", translationKey: "", excerpt: "", content: "", coverImageUrl: "", coverImageAlt: "", category: "digital", tags: [], seoTitle: "", seoDescription: "", socialTitle: "", socialDescription: "", status: "draft" });
+const toForm = (post: BlogPost): BlogPostInput => ({ language: post.language, slug: post.slug, translationKey: post.translation_key || "", title: post.title, excerpt: post.excerpt, content: post.content, coverImageUrl: post.cover_image_url || "", coverImageAlt: post.cover_image_alt || "", category: post.category, tags: post.tags, seoTitle: post.seo_title || "", seoDescription: post.seo_description || "", socialTitle: post.social_title || "", socialDescription: post.social_description || "", status: post.status });
+
+const EditorialWorkspace = ({ language, isAdmin, onPublished }: { language: BlogLanguage; isAdmin: boolean; onPublished: () => Promise<void> }) => {
+  const [posts, setPosts] = useState<BlogPost[]>([]), [loading, setLoading] = useState(true), [editorOpen, setEditorOpen] = useState(false);
+  const [editing, setEditing] = useState<BlogPost | null>(null), [form, setForm] = useState<BlogPostInput>(() => emptyForm(language));
+  const [saving, setSaving] = useState(false), [uploading, setUploading] = useState(false);
+  const load = useCallback(async () => { setLoading(true); try { setPosts((await blogApi.listStaff()).data); } catch { toast.error(language === "en" ? "Editorial workspace could not be loaded" : "Spațiul editorial nu a putut fi încărcat"); } finally { setLoading(false); } }, [language]);
+  useEffect(() => { void load(); }, [load]);
+  const set = <K extends keyof BlogPostInput>(key: K, value: BlogPostInput[K]) => setForm((current) => ({ ...current, [key]: value }));
+  const openNew = () => { setEditing(null); setForm(emptyForm(language)); setEditorOpen(true); };
+  const openEdit = (post: BlogPost) => { setEditing(post); setForm(toForm(post)); setEditorOpen(true); };
+  const save = async (status: BlogStatus) => {
+    const next = { ...form, status, slug: form.slug || slugify(form.title), tags: form.tags.filter(Boolean).slice(0, 8) };
+    if (next.title.trim().length < 8 || next.excerpt.trim().length < 40 || next.content.trim().length < 120) return toast.error(language === "en" ? "Complete the title, excerpt and article body" : "Completează titlul, rezumatul și conținutul articolului");
+    setSaving(true); try { if (editing) await blogApi.update(editing.id, next); else await blogApi.create(next); toast.success(status === "published" ? (language === "en" ? "Article published" : "Articol publicat") : (language === "en" ? "Draft saved" : "Ciornă salvată")); setEditorOpen(false); await Promise.all([load(), onPublished()]); } catch (error) { toast.error(error instanceof Error ? error.message : "Eroare la salvare"); } finally { setSaving(false); }
+  };
+  const upload = async (file?: File) => { if (!file) return; setUploading(true); try { set("coverImageUrl", (await blogApi.uploadCover(file)).url); toast.success(language === "en" ? "Cover uploaded" : "Coperta a fost încărcată"); } catch { toast.error(language === "en" ? "Cover upload failed" : "Încărcarea copertei a eșuat"); } finally { setUploading(false); } };
+  const remove = async (post: BlogPost) => { if (!isAdmin || !window.confirm(language === "en" ? "Delete this article permanently?" : "Ștergi definitiv acest articol?")) return; try { await blogApi.remove(post.id); await Promise.all([load(), onPublished()]); toast.success(language === "en" ? "Article deleted" : "Articol șters"); } catch { toast.error(language === "en" ? "Delete failed" : "Articolul nu a putut fi șters"); } };
+
+  return <section className="rounded-3xl border border-brand/25 bg-brand/[0.045] p-5 md:p-7" aria-labelledby="editorial-heading"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><Badge className="mb-2 rounded-full">Staff</Badge><h2 id="editorial-heading" className="font-display text-2xl font-bold">{language === "en" ? "Editorial workspace" : "Spațiu editorial"}</h2><p className="mt-1 text-sm text-muted-foreground">{language === "en" ? "Create, review and publish individual articles." : "Creează, verifică și publică articole individuale."}</p></div><Button onClick={openNew} className="rounded-full"><Plus className="mr-2 size-4" />{language === "en" ? "New article" : "Articol nou"}</Button></div>
+    {loading ? <div className="mt-6 flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />{language === "en" ? "Loading…" : "Se încarcă…"}</div> : <div className="mt-6 grid gap-3 md:grid-cols-2">{posts.length === 0 && <p className="text-sm text-muted-foreground">{language === "en" ? "No database articles yet." : "Nu există încă articole în baza de date."}</p>}{posts.slice(0, 12).map((post) => <div key={post.id} className="flex items-start justify-between gap-3 rounded-2xl border border-border/70 bg-background/75 p-4"><div className="min-w-0"><div className="mb-2 flex flex-wrap gap-2"><Badge variant={post.status === "published" ? "default" : "secondary"}>{post.status}</Badge><Badge variant="outline">{post.language.toUpperCase()}</Badge></div><p className="line-clamp-2 font-semibold">{post.title}</p><p className="mt-1 text-xs text-muted-foreground">{formatDate(post.updated_at, language)}</p></div><div className="flex shrink-0 gap-1"><Button size="icon" variant="ghost" onClick={() => openEdit(post)} aria-label={language === "en" ? "Edit article" : "Editează articolul"}><Edit3 className="size-4" /></Button>{isAdmin && <Button size="icon" variant="ghost" onClick={() => void remove(post)} aria-label={language === "en" ? "Delete article" : "Șterge articolul"}><Trash2 className="size-4 text-destructive" /></Button>}</div></div>)}</div>}
+    <Dialog open={editorOpen} onOpenChange={setEditorOpen}><DialogContent className="max-h-[92vh] max-w-5xl overflow-y-auto"><DialogHeader><DialogTitle className="font-display text-2xl">{editing ? (language === "en" ? "Edit article" : "Editează articolul") : (language === "en" ? "New article" : "Articol nou")}</DialogTitle></DialogHeader>
+      <div className="grid gap-6 py-2 lg:grid-cols-[1fr_.72fr]"><div className="space-y-4"><div><Label htmlFor="blog-title">{language === "en" ? "Title" : "Titlu"}</Label><Input id="blog-title" value={form.title} onChange={(event) => { set("title", event.target.value); if (!editing && !form.slug) set("slug", slugify(event.target.value)); }} maxLength={180} className="mt-1.5" /></div><div><Label htmlFor="blog-excerpt">{language === "en" ? "Short summary" : "Rezumat scurt"}</Label><Textarea id="blog-excerpt" value={form.excerpt} onChange={(event) => set("excerpt", event.target.value)} maxLength={320} rows={3} className="mt-1.5" /><p className="mt-1 text-right text-xs text-muted-foreground">{form.excerpt.length}/320</p></div><div><Label htmlFor="blog-content">{language === "en" ? "Article (Markdown)" : "Articol (Markdown)"}</Label><Textarea id="blog-content" value={form.content} onChange={(event) => set("content", event.target.value)} rows={20} maxLength={60000} className="mt-1.5 font-mono text-sm" placeholder="## Subtitlu\n\nParagraf…\n\n- listă" /><p className="mt-1 text-xs text-muted-foreground">{readingTime(form.content)} min · {form.content.length} caractere</p></div></div>
+        <div className="space-y-5"><div className="grid grid-cols-2 gap-3"><div><Label htmlFor="blog-language">{language === "en" ? "Language" : "Limbă"}</Label><Select value={form.language} onValueChange={(value) => set("language", value as BlogLanguage)}><SelectTrigger id="blog-language" className="mt-1.5"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ro">Română</SelectItem><SelectItem value="en">English</SelectItem></SelectContent></Select></div><div><Label htmlFor="blog-category">{language === "en" ? "Category" : "Categorie"}</Label><Select value={form.category} onValueChange={(value) => set("category", value)}><SelectTrigger id="blog-category" className="mt-1.5"><SelectValue /></SelectTrigger><SelectContent>{["digital","business","web-design","seo","security","cloudflare","technology","avyron"].map((key) => <SelectItem key={key} value={key}>{CATEGORIES[key][form.language]}</SelectItem>)}</SelectContent></Select></div></div>
+          <div><Label htmlFor="blog-slug">Slug URL</Label><Input id="blog-slug" value={form.slug} onChange={(event) => set("slug", slugify(event.target.value))} maxLength={96} className="mt-1.5 font-mono text-xs" /></div><div><Label htmlFor="blog-translation">Translation key</Label><Input id="blog-translation" value={form.translationKey} onChange={(event) => set("translationKey", slugify(event.target.value))} maxLength={96} className="mt-1.5" placeholder="aceeași cheie pentru RO și EN" /></div><div><Label htmlFor="blog-tags">Taguri</Label><Input id="blog-tags" value={form.tags.join(", ")} onChange={(event) => set("tags", event.target.value.split(",").map((tag) => slugify(tag)).filter(Boolean).slice(0, 8))} className="mt-1.5" placeholder="seo, web-design, cloudflare" /></div>
+          <div className="rounded-2xl border border-dashed border-border p-4"><Label htmlFor="blog-cover-file" className="flex cursor-pointer items-center gap-2"><ImagePlus className="size-4 text-brand" />{uploading ? (language === "en" ? "Uploading…" : "Se încarcă…") : (language === "en" ? "Upload cover (AVIF/WebP/JPG/PNG)" : "Încarcă copertă (AVIF/WebP/JPG/PNG)")}</Label><Input id="blog-cover-file" type="file" accept="image/avif,image/webp,image/jpeg,image/png" className="sr-only" disabled={uploading} onChange={(event) => void upload(event.target.files?.[0])} /><Label htmlFor="blog-cover-url" className="mt-3 block text-xs">URL copertă</Label><Input id="blog-cover-url" value={form.coverImageUrl} onChange={(event) => set("coverImageUrl", event.target.value)} className="mt-1" placeholder="https://… sau /api/blog/media/…" /><Label htmlFor="blog-cover-alt" className="mt-2 block text-xs">Text alternativ</Label><Input id="blog-cover-alt" value={form.coverImageAlt} onChange={(event) => set("coverImageAlt", event.target.value)} className="mt-1" placeholder="Descrierea imaginii" /></div>
+          <div className="space-y-3 rounded-2xl border border-border/70 p-4"><p className="flex items-center gap-2 text-sm font-semibold"><Search className="size-4 text-brand" />SEO și social</p><Label htmlFor="blog-seo-title" className="sr-only">Titlu SEO</Label><Input id="blog-seo-title" value={form.seoTitle} onChange={(event) => set("seoTitle", event.target.value)} maxLength={70} placeholder="Titlu SEO (max. 70)" /><Label htmlFor="blog-seo-description" className="sr-only">Descriere SEO</Label><Textarea id="blog-seo-description" value={form.seoDescription} onChange={(event) => set("seoDescription", event.target.value)} maxLength={170} rows={2} placeholder="Descriere SEO (max. 170)" /><Label htmlFor="blog-social-title" className="sr-only">Titlu pentru distribuire</Label><Input id="blog-social-title" value={form.socialTitle} onChange={(event) => set("socialTitle", event.target.value)} maxLength={100} placeholder="Titlu pentru distribuire" /><Label htmlFor="blog-social-description" className="sr-only">Descriere pentru distribuire</Label><Textarea id="blog-social-description" value={form.socialDescription} onChange={(event) => set("socialDescription", event.target.value)} maxLength={220} rows={2} placeholder="Descriere pentru distribuire" /></div></div></div>
+      <div className="sticky bottom-0 flex flex-col-reverse gap-2 border-t border-border bg-background/95 pt-4 backdrop-blur sm:flex-row sm:justify-end"><Button variant="outline" onClick={() => setEditorOpen(false)} disabled={saving}>{language === "en" ? "Cancel" : "Anulează"}</Button><Button variant="secondary" onClick={() => void save("draft")} disabled={saving}><FileText className="mr-2 size-4" />{language === "en" ? "Save draft" : "Salvează ciorna"}</Button><Button onClick={() => void save("published")} disabled={saving}>{saving && <Loader2 className="mr-2 size-4 animate-spin" />}<Check className="mr-2 size-4" />{language === "en" ? "Publish" : "Publică"}</Button></div>
+    </DialogContent></Dialog>
+  </section>;
 };
 
 const Blog = () => {
-  const { user } = useAuth();
-  const [posts, setPosts] = useState<NewsPost[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isStaff, setIsStaff] = useState(false);
-  const [openCreate, setOpenCreate] = useState(false);
-  const [activeIdx, setActiveIdx] = useState(0);
-  const [openFull, setOpenFull] = useState(false);
-  const [fullPost, setFullPost] = useState<NewsPost | null>(null);
-  const [likes, setLikes] = useState<Record<string, boolean>>({});
+  const { slug } = useParams<{ slug?: string }>();
+  const language: BlogLanguage = window.location.pathname.startsWith("/en/") ? "en" : "ro";
+  const { isStaff, isAdmin } = useAuth();
+  const staticPosts = useMemo(() => (language === "en" ? BLOG_INDEX_EN : BLOG_INDEX).map((entry) => fromIndex(entry, language)), [language]);
+  const [posts, setPosts] = useState<BlogPost[]>(staticPosts), [loaded, setLoaded] = useState(false), [query, setQuery] = useState(""), [category, setCategory] = useState("all");
+  const refresh = useCallback(async () => { try { setPosts(mergePosts((await blogApi.listPublished(language)).data, staticPosts)); } catch { setPosts(staticPosts); } finally { setLoaded(true); } }, [language, staticPosts]);
+  useEffect(() => { setPosts(staticPosts); setLoaded(false); void refresh(); }, [refresh, staticPosts]);
+  const current = slug ? posts.find((post) => post.slug === slug) || null : null;
+  useEffect(() => { if (!slug || current || !loaded) return; blogApi.getPublished(language, slug).then(({ data }) => setPosts((items) => mergePosts([data], items))).catch(() => {}); }, [current, language, loaded, slug]);
 
-  // create form
-  const [title, setTitle] = useState("");
-  const [excerpt, setExcerpt] = useState("");
-  const [content, setContent] = useState("");
-  const [cover, setCover] = useState("");
-  const [tagsInput, setTagsInput] = useState("");
-  const [category, setCategory] = useState("tech");
-  const [submitting, setSubmitting] = useState(false);
-
-  // comments for full post
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [commentText, setCommentText] = useState("");
-  const [postingComment, setPostingComment] = useState(false);
-
-  const feedRef = useRef<HTMLDivElement>(null);
-  const slideRefs = useRef<(HTMLElement | null)[]>([]);
-  const [headerVisible, setHeaderVisible] = useState(true);
-  const lastScrollTop = useRef(0);
-
-  const active = posts[activeIdx];
-
-  // Hide header on scroll-down, show on scroll-up (within feed)
   useEffect(() => {
-    const el = feedRef.current;
-    if (!el) return;
-    const onScroll = () => {
-      const st = el.scrollTop;
-      if (st <= 8) { setHeaderVisible(true); lastScrollTop.current = st; return; }
-      const delta = st - lastScrollTop.current;
-      if (Math.abs(delta) < 6) return;
-      setHeaderVisible(delta < 0);
-      lastScrollTop.current = st;
-    };
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
-  }, [posts.length]);
-
-  // SEO — route-scoped head via the shared manager (single JSON-LD graph).
-  useEffect(() => {
-    const SITE = "https://avyron.ro";
-    const isEn = window.location.pathname.startsWith("/en/");
-    const baseTitle = isEn
-      ? "Avyron Blog — Technology, Web Design, SEO & Security"
-      : "Blog Avyron — Tehnologie, Web Design, SEO & Securitate";
-    const baseDesc = isEn
-      ? "Articles on IT, web design, SEO and online security from the Avyron team."
-      : "Articole despre IT, web design, SEO și securitate online de la echipa Avyron.";
-    // Only deep-linked articles (#slug) override the blog's own title/description,
-    // so /blog and /en/blog keep a stable, indexable identity.
-    const deepLinked =
-      !!active && window.location.hash.replace("#", "") === active.slug;
-    const t = deepLinked ? `${active!.title} · Avyron Insights` : baseTitle;
-    const d = (deepLinked && active?.excerpt) || baseDesc;
-    const basePath = isEn ? "/en/blog" : "/blog";
-    const image = active?.cover_image_url || "/og/home.jpg";
-
-    Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
-      ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd }]) => {
-        setPageMeta({
-          title: t,
-          description: d,
-          // Canonical stays on the list URL — hash fragments are not separate pages.
-          path: basePath,
-          alternates: { ro: "/blog", en: "/en/blog" },
-          image,
-          type: deepLinked ? "article" : "website",
-        });
-        setJsonLd("organization", organizationLd);
-        setJsonLd(
-          "breadcrumb",
-          breadcrumbLd([
-            { name: isEn ? "Home" : "Acasă", path: isEn ? "/en" : "/" },
-            { name: "Blog", path: basePath },
-          ]),
-        );
-        if (deepLinked && active) {
-          setJsonLd("blogposting", {
-            "@type": "BlogPosting",
-            headline: active.title,
-            description: active.excerpt,
-            image: active.cover_image_url ? [active.cover_image_url] : undefined,
-            datePublished: active.published_at,
-            dateModified: active.published_at,
-            inLanguage: isEn ? "en" : "ro-RO",
-            author: { "@type": "Organization", name: "Avyron", url: SITE },
-            publisher: { "@id": `${SITE}/#organization` },
-            mainEntityOfPage: `${SITE}${basePath}#${active.slug}`,
-            keywords: active.tags?.join(", "),
-          });
-        }
-      },
-    );
-  }, [active]);
-
-
-
-  // load posts
-  useEffect(() => {
-    const load = async () => {
-      const { data, error } = await supabase
-        .from("news_posts").select("*").eq("published", true)
-        .order("published_at", { ascending: false });
-      if (error) toast.error("Nu am putut încărca articolele");
-      else setPosts((data || []) as NewsPost[]);
-      setLoading(false);
-    };
-    load();
-    try { setLikes(JSON.parse(localStorage.getItem("avyron_news_likes") || "{}")); } catch {}
-  }, []);
-
-  // initial hash → idx
-  useEffect(() => {
-    if (!posts.length) return;
-    const hash = window.location.hash.replace("#", "");
-    if (hash) {
-      const i = posts.findIndex((p) => p.slug === hash);
-      if (i >= 0) {
-        setActiveIdx(i);
-        setTimeout(() => slideRefs.current[i]?.scrollIntoView({ behavior: "instant" as ScrollBehavior, block: "start" }), 50);
-      }
-    }
-  }, [posts]);
-
-  // sync hash with active
-  useEffect(() => {
-    if (active) window.history.replaceState(null, "", `/blog#${active.slug}`);
-  }, [active]);
-
-  // staff role
-  useEffect(() => {
-    const check = async () => {
-      if (!user) return setIsStaff(false);
-      const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
-      setIsStaff(!!data?.some((r: any) => r.role === "staff" || r.role === "admin"));
-    };
-    check();
-  }, [user]);
-
-  // observer-based active index
-  useEffect(() => {
-    if (!posts.length || !feedRef.current) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (visible) {
-          const idx = Number((visible.target as HTMLElement).dataset.idx);
-          if (!Number.isNaN(idx)) setActiveIdx(idx);
-        }
-      },
-      { root: feedRef.current, threshold: [0.55, 0.75] }
-    );
-    slideRefs.current.forEach((el) => el && obs.observe(el));
-    return () => obs.disconnect();
-  }, [posts]);
-
-  // load comments for fullPost
-  useEffect(() => {
-    if (!fullPost) return;
-    const load = async () => {
-      // Public read uses the security-invoker view that omits author_id (anon-safe).
-      // Authenticated users can still read the full table for moderation actions.
-      const source = user ? "news_comments" : "news_comments_public";
-      const { data } = await (supabase as any)
-        .from(source).select("*").eq("post_id", fullPost.id)
-        .order("created_at", { ascending: false });
-      setComments((data || []) as Comment[]);
-    };
-    load();
-    if (!user) return; // Realtime requires authenticated reads on news_comments
-    const ch = supabase
-      .channel(`comments-${fullPost.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "news_comments", filter: `post_id=eq.${fullPost.id}` }, () => load())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [fullPost?.id, user?.id]);
-
-  const slugify = (s: string) =>
-    s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
-
-  const submit = async () => {
-    if (!user || !title.trim() || !content.trim()) { toast.error("Completează titlul și conținutul"); return; }
-    setSubmitting(true);
-    const slug = slugify(title) + "-" + Date.now().toString(36);
-    const tags = tagsInput.split(",").map((s) => s.trim()).filter(Boolean);
-    const { data, error } = await supabase.from("news_posts").insert({
-      author_id: user.id, title: title.trim(), slug,
-      excerpt: excerpt.trim() || null, content: content.trim(),
-      cover_image_url: cover.trim() || null, tags, category,
-    }).select().single();
-    setSubmitting(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Articol publicat");
-    setPosts((p) => [data as NewsPost, ...p]);
-    setActiveIdx(0);
-    setOpenCreate(false);
-    setTitle(""); setExcerpt(""); setContent(""); setCover(""); setTagsInput(""); setCategory("tech");
-  };
-
-  const postComment = async () => {
-    if (!user) { toast.error("Conectează-te ca să comentezi"); return; }
-    if (!fullPost || !commentText.trim()) return;
-    setPostingComment(true);
-    const name = user.display_name || user.email?.split("@")[0] || "User";
-    const { error } = await supabase.from("news_comments").insert({
-      post_id: fullPost.id, author_id: user.id, author_name: name, content: commentText.trim(),
+    const article = slug ? current : null, basePath = language === "en" ? "/en/blog" : "/blog", path = article ? `${basePath}/${article.slug}` : basePath;
+    const alternates = article ? (article.alternate_slug ? (language === "ro" ? { ro: path, en: `/en/blog/${article.alternate_slug}` } : { ro: `/blog/${article.alternate_slug}`, en: path }) : undefined) : { ro: "/blog", en: "/en/blog" };
+    Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd }]) => {
+      const rawTitle = article?.seo_title || article?.title;
+      const title = rawTitle ? `${rawTitle} | Avyron` : (language === "en" ? "Avyron Insights — Web, SEO, Cloudflare & digital products" : "Avyron Insights — Site-uri, SEO, Cloudflare și produse digitale");
+      const description = article?.seo_description || article?.excerpt || (language === "en" ? "Practical guides about professional websites, technical SEO, Cloudflare, security and scalable digital products." : "Ghiduri practice despre site-uri profesionale, SEO tehnic, Cloudflare, securitate și produse digitale scalabile.");
+      setPageMeta({
+        title, description, path, alternates,
+        image: mediaUrl(article?.cover_image_url), imageAlt: article?.cover_image_alt || article?.title,
+        type: article ? "article" : "website", robots: slug && loaded && !article ? "noindex, nofollow" : undefined,
+        publishedTime: article?.published_at ? new Date(toTime(article.published_at)).toISOString() : undefined,
+        modifiedTime: article?.updated_at ? new Date(toTime(article.updated_at)).toISOString() : undefined,
+        section: article ? categoryLabel(article.category, language) : undefined,
+        tags: article?.tags,
+      });
+      setJsonLd("organization", organizationLd); setJsonLd("breadcrumb", breadcrumbLd([{ name: language === "en" ? "Home" : "Acasă", path: language === "en" ? "/en" : "/" }, { name: "Blog", path: basePath }, ...(article ? [{ name: article.title, path }] : [])]));
+      if (article) setJsonLd("blogposting", { "@type": "BlogPosting", "@id": `${SITE_URL}${path}#article`, headline: article.title, description: article.excerpt, image: [absoluteUrl(article.cover_image_url)], datePublished: new Date(toTime(article.published_at)).toISOString(), dateModified: new Date(toTime(article.updated_at)).toISOString(), inLanguage: language === "en" ? "en" : "ro-RO", articleSection: categoryLabel(article.category, language), keywords: article.tags.join(", "), author: { "@type": "Person", name: article.author_name || "Echipa Avyron" }, publisher: { "@id": `${SITE_URL}/#organization` }, mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE_URL}${path}` } });
+      if (!article && !slug) setJsonLd("blog", { "@type": "Blog", "@id": `${SITE_URL}${basePath}#blog`, name: "Avyron Insights", description, url: `${SITE_URL}${basePath}`, inLanguage: language, publisher: { "@id": `${SITE_URL}/#organization` } });
     });
-    setPostingComment(false);
-    if (error) { toast.error(error.message); return; }
-    setCommentText("");
-    toast.success("Comentariu publicat");
-  };
+  }, [current, language, loaded, slug]);
 
-  const deleteComment = async (id: string) => {
-    const { error } = await supabase.from("news_comments").delete().eq("id", id);
-    if (error) toast.error(error.message); else toast.success("Șters");
-  };
+  if (slug && loaded && !current) return <main className="min-h-screen bg-background"><Nav /><section className="mx-auto max-w-3xl px-4 pb-24 pt-32 text-center"><div className="mx-auto grid size-16 place-items-center rounded-2xl bg-muted"><FileText className="size-7 text-muted-foreground" /></div><h1 className="mt-6 font-display text-4xl font-bold">{language === "en" ? "Article not found" : "Articolul nu a fost găsit"}</h1><p className="mt-3 text-muted-foreground">{language === "en" ? "It may still be a draft, archived, or the link may be incorrect." : "Este posibil să fie încă o ciornă, să fi fost arhivat sau linkul să fie incorect."}</p><Button asChild className="mt-7 rounded-full"><Link to={language === "en" ? "/en/blog" : "/blog"}><ArrowLeft className="mr-2 size-4" />{language === "en" ? "Back to insights" : "Înapoi la articole"}</Link></Button></section><Footer /></main>;
 
-  const toggleLike = (id: string) => {
-    setLikes((prev) => {
-      const next = { ...prev, [id]: !prev[id] };
-      localStorage.setItem("avyron_news_likes", JSON.stringify(next));
-      return next;
-    });
-  };
-
-  const copyAndOpen = async (post: NewsPost, target: "instagram" | "tiktok") => {
-    const links = buildShareLinks(post);
-    try { await navigator.clipboard.writeText(`${post.title}\n${links.url}`); }
-    catch {}
-    toast.success(`Link copiat — lipește-l în ${target === "instagram" ? "Instagram" : "TikTok"} (story, postare, mesaj)`);
-    window.open(links[target], "_blank", "noopener,noreferrer");
-  };
-
-  const nativeShare = async (post: NewsPost) => {
-    const links = buildShareLinks(post);
-    const data = { title: post.title, text: post.excerpt || post.title, url: links.url };
-    if (typeof navigator !== "undefined" && (navigator as any).share) {
-      try { await (navigator as any).share(data); return; }
-      catch (e: any) { if (e?.name === "AbortError") return; }
-    }
-    // Fallback: open the in-dialog share panel
-    setFullPost(post); setOpenFull(true);
-  };
-
-  const shareTo = async (post: NewsPost, target: "facebook" | "instagram" | "tiktok") => {
-    const links = buildShareLinks(post);
-    if (target === "facebook") {
-      window.open(links.facebook, "_blank", "noopener,noreferrer,width=600,height=600");
-      return;
-    }
-    await copyAndOpen(post, target);
-  };
-
-  const scrollToIdx = (i: number) => {
-    const target = Math.max(0, Math.min(posts.length - 1, i));
-    slideRefs.current[target]?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
-  return (
-    <main className="relative min-h-screen overflow-x-hidden bg-background">
-      {/* Tech / digital fixed background */}
-      <div className="fixed inset-0 -z-10 pointer-events-none" aria-hidden>
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              "radial-gradient(900px 500px at 12% 8%, hsl(265 90% 62% / 0.22), transparent 60%), radial-gradient(800px 500px at 88% 18%, hsl(200 95% 55% / 0.20), transparent 60%), radial-gradient(700px 500px at 50% 95%, hsl(330 85% 65% / 0.18), transparent 60%)",
-          }}
-        />
-        <div
-          className="absolute inset-0 opacity-[0.10] dark:opacity-[0.18] mix-blend-overlay"
-          style={{
-            backgroundImage:
-              "linear-gradient(hsl(var(--brand) / 0.6) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--brand) / 0.6) 1px, transparent 1px)",
-            backgroundSize: "44px 44px",
-            maskImage: "radial-gradient(ellipse at center, black 40%, transparent 80%)",
-            WebkitMaskImage: "radial-gradient(ellipse at center, black 40%, transparent 80%)",
-          }}
-        />
-        <div
-          className="absolute inset-0 opacity-[0.06] dark:opacity-[0.10]"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(0deg, transparent 0 2px, hsl(var(--foreground) / 0.6) 2px 3px)",
-          }}
-        />
-      </div>
-
-      <Nav />
-
-      {/* Compact strip — hides on scroll-down, returns on scroll-up */}
-      <section
-        className={`fixed left-0 right-0 top-16 md:top-20 z-20 transition-all duration-300 ease-out overflow-hidden bg-background/70 backdrop-blur-md ${
-          headerVisible ? "max-h-48 opacity-100 pt-3 pb-3 pointer-events-auto" : "max-h-0 opacity-0 pt-0 pb-0 pointer-events-none"
-        }`}
-      >
-        <div className="relative mx-auto max-w-5xl px-4 flex flex-col gap-2">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand/10 text-brand text-[10px] font-bold uppercase tracking-wider border border-brand/20">
-                <Newspaper className="size-3" /> Avyron Insights
-              </div>
-              <h1 className="text-lg md:text-2xl font-bold tracking-tight" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
-                <span className="bg-gradient-to-r from-foreground via-brand to-brand-2 bg-clip-text text-transparent">Blog</span>
-              </h1>
-            </div>
-            {isStaff && (
-              <Button onClick={() => setOpenCreate(true)} size="sm" className="rounded-full">
-                <Plus className="size-3.5 mr-1" /> Postare
-              </Button>
-            )}
-          </div>
-          <p className="text-xs md:text-sm text-muted-foreground max-w-3xl leading-relaxed">
-            Pulsul digital al echipei <span className="font-semibold text-foreground">Avyron</span> — articole zilnice despre
-            <span className="text-brand font-medium"> tehnologie</span>,
-            <span className="text-brand-2 font-medium"> web design</span>,
-            <span className="text-foreground font-medium"> SEO</span> și
-            <span className="text-brand-3 font-medium"> securitate online</span>.
-            Studii de caz, ghiduri rapide și inspirație pentru identitatea ta online.
-          </p>
-        </div>
-      </section>
-
-      {/* Vertical scroll feed (Instagram/TikTok-style) */}
-      <section className="relative pt-16 md:pt-20">
-        {loading ? (
-          <div className="mx-auto max-w-md md:max-w-lg px-3 py-10">
-            <div className="aspect-[9/16] rounded-3xl bg-muted/40 animate-pulse" />
-          </div>
-        ) : posts.length === 0 ? (
-          <p className="text-center text-muted-foreground py-16">Nu există articole.</p>
-        ) : (
-          <div
-            ref={feedRef}
-            className="h-[calc(100vh-4rem)] md:h-[calc(100vh-5rem)] overflow-y-auto snap-y snap-mandatory scrollbar-thin px-3 pb-6"
-            style={{ scrollPaddingTop: "0.5rem" }}
-          >
-            {posts.map((post, idx) => {
-              const links = buildShareLinks(post);
-              const liked = !!likes[post.id];
-              return (
-                <article
-                  key={post.id}
-                  data-idx={idx}
-                  ref={(el) => { slideRefs.current[idx] = el; }}
-                  className="snap-start min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)] flex items-center justify-center py-2"
-                >
-                  <div className="relative w-full max-w-md md:max-w-lg mx-auto h-[min(80vh,720px)] rounded-3xl overflow-hidden bg-card border border-border/60 shadow-elev">
-                    {/* Background image */}
-                    {post.cover_image_url ? (
-                      <img
-                        src={post.cover_image_url}
-                        alt={post.title}
-                        className="absolute inset-0 w-full h-full object-cover"
-                        loading={idx <= 1 ? "eager" : "lazy"}
-                      />
-                    ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-brand/30 via-brand-2/20 to-brand-3/30" />
-                    )}
-                    {/* gradient overlays for legibility */}
-                    <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/70 to-transparent pointer-events-none" />
-                    <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/85 via-black/50 to-transparent pointer-events-none" />
-
-                    {/* TOP — author */}
-                    <div className="absolute top-0 inset-x-0 p-3.5 flex items-center gap-2.5 text-white z-10">
-                      <Avatar className="size-9 ring-2 ring-white/40">
-                        <AvatarFallback className="bg-brand text-white font-bold text-xs">AV</AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-semibold leading-tight">Avyron</div>
-                        <div className="text-[11px] text-white/80 flex items-center gap-1.5">
-                          <span>{timeAgo(post.published_at ?? post.created_at)}</span>
-                          <span>·</span>
-                          <span className="uppercase tracking-wider">{post.category}</span>
-                          <span>·</span>
-                          <Clock className="size-2.5" />
-                          <span>{readingTime(post.content)} min</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* CENTER — Vezi mai mult */}
-                    <button
-                      onClick={() => { setFullPost(post); setOpenFull(true); }}
-                      className="absolute inset-0 m-auto h-12 w-40 rounded-full bg-white/15 backdrop-blur-md text-white font-semibold text-sm border border-white/30 shadow-glow hover:bg-white/25 transition-all flex items-center justify-center gap-1.5 z-10"
-                      aria-label="Vezi mai mult"
-                    >
-                      <Eye className="size-4" /> Vezi mai mult
-                    </button>
-
-                    {/* RIGHT side — vertical action stack */}
-                    <div className="absolute right-2 bottom-32 md:bottom-36 flex flex-col items-center gap-2.5 z-10">
-                      {(user || isStaff) && (
-                        <ActionBtn label={liked ? "Apreciat" : "Apreciază"} onClick={() => toggleLike(post.id)}>
-                          <Heart className={`size-5 ${liked ? "fill-red-500 text-red-500" : "text-white"}`} />
-                        </ActionBtn>
-                      )}
-                      <ActionBtn label="Instagram" onClick={() => shareTo(post, "instagram")}>
-                        <Instagram className="size-5 text-white" />
-                      </ActionBtn>
-                      <ActionBtn label="Facebook" onClick={() => shareTo(post, "facebook")}>
-                        <Facebook className="size-5 text-white" />
-                      </ActionBtn>
-                      <ActionBtn label="TikTok" onClick={() => shareTo(post, "tiktok")}>
-                        <TikTokIcon className="size-5 text-white" />
-                      </ActionBtn>
-                      <ActionBtn label="Distribuie" onClick={() => nativeShare(post)}>
-                        <Share2 className="size-5 text-white" />
-                      </ActionBtn>
-                    </div>
-
-                    {/* BOTTOM — title + larger description */}
-                    <div className="absolute inset-x-0 bottom-0 p-4 pr-16 text-white z-10">
-                      <h2 className="font-display text-lg md:text-2xl font-bold leading-tight mb-2 drop-shadow">{post.title}</h2>
-                      {post.excerpt && (
-                        <p className="text-sm md:text-base text-white/90 leading-relaxed line-clamp-4 mb-2 drop-shadow">{post.excerpt}</p>
-                      )}
-                      {post.tags && post.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {post.tags.slice(0, 5).map((tg) => (
-                            <span key={tg} className="text-[11px] font-medium text-white/95">#{tg}</span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Vertical nav arrows (desktop) */}
-        {posts.length > 1 && (
-          <div className="hidden md:flex flex-col gap-2 fixed right-4 top-1/2 -translate-y-1/2 z-30">
-            <button onClick={() => scrollToIdx(activeIdx - 1)} disabled={activeIdx === 0}
-              className="size-10 rounded-full bg-card border border-border/60 shadow-soft grid place-items-center hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed">
-              <ChevronUp className="size-4" />
-            </button>
-            <div className="text-center text-[10px] font-bold text-muted-foreground">{activeIdx + 1}/{posts.length}</div>
-            <button onClick={() => scrollToIdx(activeIdx + 1)} disabled={activeIdx === posts.length - 1}
-              className="size-10 rounded-full bg-card border border-border/60 shadow-soft grid place-items-center hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed">
-              <ChevronDown className="size-4" />
-            </button>
-          </div>
-        )}
-      </section>
-
-      {/* FULL POST DIALOG */}
-      <Dialog open={openFull} onOpenChange={(o) => { setOpenFull(o); if (!o) setFullPost(null); }}>
-        <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-0">
-          {fullPost && (
-            <>
-              <DialogHeader className="px-6 pt-6">
-                <DialogTitle className="text-xl md:text-2xl font-display leading-tight pr-6">{fullPost.title}</DialogTitle>
-              </DialogHeader>
-              <div className="px-6 pb-6">
-                {fullPost.cover_image_url && (
-                  <img src={fullPost.cover_image_url} alt={fullPost.title} className="w-full rounded-xl my-3 aspect-[16/9] object-cover" />
-                )}
-                <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mb-4">
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-brand/10 text-brand font-semibold uppercase tracking-wide">
-                    <Tag className="size-3" /> {fullPost.category}
-                  </span>
-                  <span className="inline-flex items-center gap-1"><Calendar className="size-3" />{new Date(fullPost.published_at ?? fullPost.created_at).toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" })}</span>
-                  <span className="inline-flex items-center gap-1"><Clock className="size-3" />{readingTime(fullPost.content)} min</span>
-                </div>
-
-                {fullPost.excerpt && (
-                  <p className="text-base text-foreground/75 leading-relaxed mb-4 italic border-l-4 border-brand/40 pl-3">{fullPost.excerpt}</p>
-                )}
-
-                <div className="prose prose-sm max-w-none">{renderMarkdown(fullPost.content)}</div>
-
-                {fullPost.tags && fullPost.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-5 pt-4 border-t border-border/60">
-                    {fullPost.tags.map((t) => <Badge key={t} variant="secondary" className="text-xs">#{t}</Badge>)}
-                  </div>
-                )}
-
-                {/* Full share */}
-                <FullShare post={fullPost} onCopyOpen={copyAndOpen} />
-
-                {/* Comments */}
-                <div className="mt-6 pt-4 border-t border-border/60">
-                  <div className="flex items-center gap-2 mb-3">
-                    <MessageCircle className="size-4 text-brand" />
-                    <h3 className="text-sm font-semibold">Comentarii & întrebări ({comments.length})</h3>
-                  </div>
-
-                  {user ? (
-                    <div className="flex gap-2 mb-4">
-                      <Avatar className="size-8 shrink-0">
-                        <AvatarFallback className="text-[10px] font-bold bg-brand/10 text-brand">
-                          {initials(user.display_name || user.email)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 flex gap-2">
-                        <Input
-                          placeholder="Scrie o întrebare sau un comentariu..."
-                          value={commentText}
-                          onChange={(e) => setCommentText(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); postComment(); } }}
-                          maxLength={2000}
-                          className="rounded-full bg-muted/50 border-transparent text-sm"
-                        />
-                        <Button onClick={postComment} disabled={postingComment || !commentText.trim()} size="icon" className="rounded-full shrink-0">
-                          <Send className="size-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-muted/40 rounded-xl p-3 text-xs text-muted-foreground mb-4 text-center">
-                      <Link to="/auth" className="text-brand font-semibold hover:underline">Conectează-te</Link> ca să lași un comentariu.
-                    </div>
-                  )}
-
-                  <div className="space-y-3">
-                    {comments.length === 0 ? (
-                      <p className="text-xs text-muted-foreground text-center py-3">Fii primul care comentează.</p>
-                    ) : comments.map((c) => (
-                      <div key={c.id} className="flex gap-2">
-                        <Avatar className="size-8 shrink-0">
-                          <AvatarFallback className="text-[10px] font-bold bg-muted">{initials(c.author_name)}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="bg-muted/50 rounded-2xl px-3 py-2">
-                            <div className="text-xs font-semibold mb-0.5 flex items-center justify-between gap-2">
-                              <span>{c.author_name || "Anonim"}</span>
-                              {user?.id === c.author_id && (
-                                <button onClick={() => deleteComment(c.id)} className="text-muted-foreground hover:text-destructive" aria-label="Șterge">
-                                  <Trash2 className="size-3" />
-                                </button>
-                              )}
-                            </div>
-                            <p className="text-sm text-foreground/90 break-words whitespace-pre-wrap">{c.content}</p>
-                          </div>
-                          <div className="text-[10px] text-muted-foreground mt-0.5 ml-3">{timeAgo(c.created_at)}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Create post dialog */}
-      {isStaff && (
-        <Dialog open={openCreate} onOpenChange={setOpenCreate}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>Postare nouă</DialogTitle></DialogHeader>
-            <div className="space-y-3">
-              <Input placeholder="Titlu" value={title} onChange={(e) => setTitle(e.target.value)} />
-              <Input placeholder="URL imagine cover (opțional)" value={cover} onChange={(e) => setCover(e.target.value)} />
-              <div className="grid grid-cols-2 gap-3">
-                <select value={category} onChange={(e) => setCategory(e.target.value)} className="rounded-md border border-input bg-background px-3 py-2 text-sm">
-                  <option value="tech">Tehnologie</option>
-                  <option value="web-design">Web Design</option>
-                  <option value="seo">SEO</option>
-                  <option value="securitate">Securitate</option>
-                  <option value="avyron">Avyron</option>
-                  <option value="promotie">Promoție</option>
-                </select>
-                <Input placeholder="Tag-uri (separate prin virgulă)" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} />
-              </div>
-              <Textarea placeholder="Rezumat scurt" rows={3} value={excerpt} onChange={(e) => setExcerpt(e.target.value)} />
-              <Textarea placeholder="Conținut (markdown: ##, ###, **bold**, [link](url), liste -)" rows={12} value={content} onChange={(e) => setContent(e.target.value)} />
-              <Button onClick={submit} disabled={submitting} className="w-full">{submitting ? "Se publică..." : "Publică articolul"}</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      <Footer />
-    </main>
-  );
-};
-
-const ActionBtn = ({
-  children, label, onClick, href,
-}: { children: React.ReactNode; label: string; onClick?: () => void; href?: string }) => {
-  const cls = "size-11 rounded-full bg-black/40 backdrop-blur-md border border-white/20 grid place-items-center hover:bg-black/60 hover:scale-105 active:scale-95 transition-all";
-  if (href) {
-    return (
-      <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label} title={label} className={cls}>
-        {children}
-      </a>
-    );
+  if (slug && current) {
+    const basePath = language === "en" ? "/en/blog" : "/blog";
+    const related = posts.filter((post) => post.slug !== current.slug && (post.category === current.category || post.tags.some((tag) => current.tags.includes(tag)))).slice(0, 3);
+    return <main className="min-h-screen overflow-x-hidden bg-background"><Nav /><article className="mx-auto max-w-5xl px-4 pb-20 pt-28 md:pt-36"><Link to={basePath} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-brand"><ArrowLeft className="size-4" />{language === "en" ? "All insights" : "Toate articolele"}</Link>
+      <header className="mx-auto mt-9 max-w-4xl text-center"><Badge variant="secondary" className="rounded-full text-brand">{categoryLabel(current.category, language)}</Badge><h1 className="mt-5 text-balance font-display text-4xl font-bold leading-[1.08] tracking-tight md:text-6xl">{current.title}</h1><p className="mx-auto mt-6 max-w-3xl text-lg leading-relaxed text-muted-foreground md:text-xl">{current.excerpt}</p><div className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground"><span className="inline-flex items-center gap-1.5"><UserRound className="size-4" />{current.author_name || "Echipa Avyron"}</span><span className="inline-flex items-center gap-1.5"><Calendar className="size-4" />{formatDate(current.published_at, language)}</span><span className="inline-flex items-center gap-1.5"><Clock className="size-4" />{readingTime(current.content)} {language === "en" ? "min read" : "min de citit"}</span></div><div className="mt-6 flex justify-center"><ShareButtons post={current} language={language} compact /></div></header>
+      <figure className="mt-10 overflow-hidden rounded-[2rem] border border-border/70 bg-muted shadow-elev"><img src={mediaUrl(current.cover_image_url)} alt={current.cover_image_alt || current.title} width={1200} height={675} className="aspect-[16/9] w-full object-cover" /></figure>
+      <div className="mx-auto mt-10 grid max-w-5xl gap-8 lg:grid-cols-[minmax(0,1fr)_230px]"><div className="rounded-3xl border border-border/60 bg-card/65 p-6 shadow-soft md:p-10"><MarkdownArticle content={current.content} />{current.tags.length > 0 && <div className="mt-10 flex flex-wrap gap-2 border-t border-border/70 pt-6">{current.tags.map((tag) => <Badge key={tag} variant="outline"><Tag className="mr-1 size-3" />{tag}</Badge>)}</div>}<ShareButtons post={current} language={language} /></div><aside className="space-y-5 lg:sticky lg:top-28 lg:self-start"><div className="rounded-3xl border border-border/70 bg-card/65 p-5"><Avatar className="size-12 border border-border"><AvatarImage src={current.author_avatar_url ? mediaUrl(current.author_avatar_url) : undefined} alt="" /><AvatarFallback>{initials(current.author_name)}</AvatarFallback></Avatar><p className="mt-4 font-semibold">{current.author_name || "Echipa Avyron"}</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{language === "en" ? "Practical analysis based on design, development, SEO and infrastructure work." : "Analiză practică bazată pe proiecte de design, dezvoltare, SEO și infrastructură."}</p></div><div className="rounded-3xl border border-brand/20 bg-brand/5 p-5"><ShieldCheck className="size-5 text-brand" /><p className="mt-3 text-sm font-semibold">{language === "en" ? "Editorial standard" : "Standard editorial"}</p><p className="mt-2 text-xs leading-relaxed text-muted-foreground">{language === "en" ? "Clear scope, verifiable statements and no guaranteed outcomes." : "Informații clare, afirmații verificabile și fără rezultate garantate artificial."}</p></div></aside></div>
+      {related.length > 0 && <section className="mx-auto mt-16 max-w-5xl"><div><p className="text-xs font-bold uppercase tracking-[.2em] text-brand">Avyron Insights</p><h2 className="mt-2 font-display text-3xl font-bold">{language === "en" ? "Related guides" : "Ghiduri conexe"}</h2></div><div className="mt-6 grid gap-5 md:grid-cols-3">{related.map((post) => <ArticleCard key={post.id} post={post} language={language} />)}</div></section>}
+      <section className="mx-auto mt-16 max-w-5xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-brand/20 via-brand-2/10 to-brand-3/20 p-8 text-center md:p-12"><BookOpen className="mx-auto size-7 text-brand" /><h2 className="mt-4 font-display text-3xl font-bold md:text-4xl">{language === "en" ? "Turn useful information into a digital system" : "Transformă informația utilă într-un sistem digital"}</h2><p className="mx-auto mt-4 max-w-2xl text-muted-foreground">{language === "en" ? "Avyron combines strategy, design, development, SEO and Cloudflare infrastructure." : "Avyron combină strategie, design, dezvoltare, SEO și infrastructură Cloudflare."}</p><Button asChild className="mt-7 rounded-full"><Link to={language === "en" ? "/en/pricing" : "/costurisiproduse"}>{language === "en" ? "Explore services" : "Vezi serviciile"}<ArrowRight className="ml-2 size-4" /></Link></Button></section>
+    </article><Footer /></main>;
   }
-  return (
-    <button onClick={onClick} aria-label={label} title={label} className={cls}>
-      {children}
-    </button>
-  );
-};
 
-const FullShare = ({ post, onCopyOpen }: { post: NewsPost; onCopyOpen: (p: NewsPost, t: "instagram" | "tiktok") => void }) => {
-  const [copied, setCopied] = useState(false);
-  const links = useMemo(() => buildShareLinks(post), [post]);
-  const copy = async () => {
-    try { await navigator.clipboard.writeText(links.url); setCopied(true); toast.success("Link copiat"); setTimeout(() => setCopied(false), 1500); }
-    catch { toast.error("Nu am putut copia"); }
-  };
-  return (
-    <div className="mt-5 pt-4 border-t border-border/60">
-      <div className="flex items-center gap-2 mb-2.5"><Share2 className="size-4 text-brand" /><span className="text-sm font-semibold">Distribuie</span></div>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <ShareBtn href={links.facebook} label="Facebook" color="hover:bg-[#1877F2] hover:text-white"><Facebook className="size-4" /></ShareBtn>
-        <ShareBtn href={links.messenger} label="Messenger" color="hover:bg-[#0084FF] hover:text-white"><MessengerIcon className="size-4" /></ShareBtn>
-        <ShareBtn href={links.whatsapp} label="WhatsApp" color="hover:bg-[#25D366] hover:text-white"><WhatsAppIcon className="size-4" /></ShareBtn>
-        <ShareBtn href={links.twitter} label="X" color="hover:bg-foreground hover:text-background"><Twitter className="size-4" /></ShareBtn>
-        <ShareBtn href={links.linkedin} label="LinkedIn" color="hover:bg-[#0A66C2] hover:text-white"><Linkedin className="size-4" /></ShareBtn>
-        <ShareBtn href={links.telegram} label="Telegram" color="hover:bg-[#229ED9] hover:text-white"><TelegramIcon className="size-4" /></ShareBtn>
-        <button onClick={() => onCopyOpen(post, "instagram")} className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full bg-muted text-xs font-medium transition-colors hover:bg-gradient-to-tr hover:from-[#feda75] hover:via-[#d62976] hover:to-[#4f5bd5] hover:text-white">
-          <Instagram className="size-4" /><span className="hidden sm:inline">Instagram</span>
-        </button>
-        <button onClick={() => onCopyOpen(post, "tiktok")} className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full bg-muted text-xs font-medium transition-colors hover:bg-foreground hover:text-background">
-          <TikTokIcon className="size-4" /><span className="hidden sm:inline">TikTok</span>
-        </button>
-        <ShareBtn href={links.email} label="Email" color="hover:bg-brand hover:text-brand-foreground" external={false}><Mail className="size-4" /></ShareBtn>
-        <button onClick={copy} className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full bg-muted text-xs font-medium hover:bg-brand hover:text-brand-foreground">
-          {copied ? <Check className="size-3.5" /> : <Link2 className="size-3.5" />}<span className="hidden sm:inline">{copied ? "Copiat" : "Copiază"}</span>
-        </button>
-      </div>
-      <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
-        <span>Urmărește:</span>
-        <a href="https://instagram.com/avyron" target="_blank" rel="noopener noreferrer" className="hover:text-brand"><Instagram className="size-4" /></a>
-        <a href="https://facebook.com/avyron" target="_blank" rel="noopener noreferrer" className="hover:text-brand"><Facebook className="size-4" /></a>
-        <a href="https://tiktok.com/@avyron" target="_blank" rel="noopener noreferrer" className="hover:text-brand"><TikTokIcon className="size-4" /></a>
-        <Link to="/" className="ml-auto inline-flex items-center gap-1 text-brand hover:underline font-medium">avyron.ro <ExternalLink className="size-3" /></Link>
-      </div>
-    </div>
-  );
+  const normalized = query.trim().toLocaleLowerCase(language === "en" ? "en" : "ro");
+  const filtered = posts.filter((post) => (category === "all" || post.category === category) && (!normalized || `${post.title} ${post.excerpt} ${post.tags.join(" ")}`.toLocaleLowerCase(language === "en" ? "en" : "ro").includes(normalized)));
+  const featured = filtered[0], rest = filtered.slice(1), categories = [...new Set(posts.map((post) => post.category))];
+  return <main className="min-h-screen overflow-x-hidden bg-background"><Nav /><section className="relative border-b border-border/60 pb-16 pt-28 md:pb-20 md:pt-36"><div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_15%_10%,hsl(var(--brand)/.18),transparent_35%),radial-gradient(circle_at_90%_20%,hsl(var(--brand-2)/.13),transparent_38%)]" /><div className="mx-auto max-w-7xl px-4"><div className="max-w-4xl"><Badge variant="outline" className="rounded-full border-brand/30 bg-brand/5 text-brand"><BookOpen className="mr-2 size-3.5" />Avyron Insights</Badge><h1 className="mt-6 text-balance font-display text-5xl font-bold leading-[1.02] tracking-tight md:text-7xl">{language === "en" ? "Useful digital knowledge, clearly organised" : "Cunoaștere digitală utilă, organizată clar"}</h1><p className="mt-6 max-w-3xl text-lg leading-relaxed text-muted-foreground md:text-xl">{language === "en" ? "Practical guides on professional websites, technical SEO, Cloudflare, online security and scalable digital products." : "Ghiduri practice despre site-uri profesionale, SEO tehnic, Cloudflare, securitate online și produse digitale scalabile."}</p></div><div className="mt-10 grid max-w-4xl gap-3 sm:grid-cols-[1fr_auto]"><Label htmlFor="blog-search" className="sr-only">Search</Label><div className="relative"><Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input id="blog-search" value={query} onChange={(event) => setQuery(event.target.value)} className="h-12 rounded-full pl-11" placeholder={language === "en" ? "Search by topic, service or technology…" : "Caută după subiect, serviciu sau tehnologie…"} /></div>{isStaff && <Button onClick={() => document.getElementById("editorial-workspace")?.scrollIntoView({ behavior: "smooth" })} className="h-12 rounded-full"><Edit3 className="mr-2 size-4" />{language === "en" ? "Editorial workspace" : "Spațiu editorial"}</Button>}</div><div className="mt-5 flex flex-wrap gap-2"><Button variant={category === "all" ? "default" : "outline"} size="sm" className="rounded-full" onClick={() => setCategory("all")}>{language === "en" ? "All topics" : "Toate subiectele"}</Button>{categories.map((item) => <Button key={item} variant={category === item ? "default" : "outline"} size="sm" className="rounded-full" onClick={() => setCategory(item)}>{categoryLabel(item, language)}</Button>)}</div></div></section>
+    <div className="mx-auto max-w-7xl space-y-16 px-4 py-14 md:py-20">{isStaff && <div id="editorial-workspace"><EditorialWorkspace language={language} isAdmin={isAdmin} onPublished={refresh} /></div>}{featured ? <section><p className="text-xs font-bold uppercase tracking-[.2em] text-brand">{language === "en" ? "Recommended" : "Recomandat"}</p><h2 className="mb-6 mt-2 font-display text-3xl font-bold">{language === "en" ? "Start here" : "Începe de aici"}</h2><ArticleCard post={featured} language={language} featured /></section> : <section className="py-16 text-center"><Search className="mx-auto size-8 text-muted-foreground" /><h2 className="mt-4 font-display text-2xl font-bold">{language === "en" ? "No matching articles" : "Nu am găsit articole"}</h2><Button variant="outline" className="mt-5 rounded-full" onClick={() => { setQuery(""); setCategory("all"); }}>{language === "en" ? "Reset filters" : "Resetează filtrele"}</Button></section>}
+      {rest.length > 0 && <section><div><p className="text-xs font-bold uppercase tracking-[.2em] text-brand">{language === "en" ? "Knowledge library" : "Bibliotecă de cunoștințe"}</p><h2 className="mt-2 font-display text-3xl font-bold md:text-4xl">{language === "en" ? "Latest practical guides" : "Cele mai noi ghiduri practice"}</h2></div><div className="mt-7 grid gap-6 md:grid-cols-2 xl:grid-cols-3">{rest.map((post) => <ArticleCard key={post.id} post={post} language={language} />)}</div></section>}
+      <section className="grid gap-6 rounded-[2rem] border border-border/70 bg-card/60 p-7 md:grid-cols-[1fr_auto] md:items-center md:p-10"><div><p className="flex items-center gap-2 text-sm font-semibold text-brand"><ShieldCheck className="size-4" />{language === "en" ? "Professional digital guidance" : "Consultanță digitală profesionistă"}</p><h2 className="mt-3 font-display text-3xl font-bold">{language === "en" ? "Need an answer for your project?" : "Ai nevoie de un răspuns pentru proiectul tău?"}</h2><p className="mt-3 max-w-3xl text-muted-foreground">{language === "en" ? "We recommend the appropriate first step: website, audit, application, maintenance or a smaller validation phase." : "Îți recomandăm primul pas potrivit: website, audit, aplicație, mentenanță sau o etapă mai mică de validare."}</p></div><Button asChild size="lg" className="rounded-full"><Link to={language === "en" ? "/en/pricing" : "/costurisiproduse"}>{language === "en" ? "Discuss a project" : "Discută un proiect"}<ExternalLink className="ml-2 size-4" /></Link></Button></section>
+    </div><Footer /></main>;
 };
-
-const ShareBtn = ({ href, label, color, children, external = true }: { href: string; label: string; color: string; children: React.ReactNode; external?: boolean }) => (
-  <a href={href} {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})} aria-label={label} title={label}
-    className={`inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full bg-muted text-xs font-medium transition-colors ${color}`}>
-    {children}<span className="hidden sm:inline">{label}</span>
-  </a>
-);
 
 export default Blog;

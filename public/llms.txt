@@ -1,8 +1,10 @@
-# Avyron
+# Avyron — websites, web development and digital products
 
-> Agenție românească de produse digitale: site-uri de prezentare premium, magazine online, aplicații web & mobile, agenți AI, audit, testare QA și mentenanță. Livrare în 2–5 zile, SEO tehnic inclus, suport gratuit pe viață.
+> Agenție web și de produse digitale din județul Iași: site-uri de prezentare profesionale, magazine online, aplicații web & mobile, agenți AI, audit, testare QA și mentenanță. Web agency in Iași County, Romania, serving Romanian and EU clients in Romanian and English.
 
-Avyron (S.C. Eco Tech Digital Solution S.R.L., Iași, România) construiește identitate online profesională pentru afaceri locale, branduri naționale și profesii liberale (avocați, consultanți financiari, cabinete medicale, arhitecți). Lucrăm în română și engleză, cu tehnologii moderne: React 18, TypeScript, Vite, Tailwind CSS, infrastructură edge Cloudflare, date structurate Schema.org, GA4 cu consent mode.
+Avyron construiește din județul Iași produse digitale pentru afaceri locale, branduri naționale și profesii liberale. Brandul este dezvoltat și operat prin colaborarea dintre FV Tech Solutions SRL, cu sediul în municipiul Pașcani, județul Iași, și DIGITAL ECOTECH SOLUTIONS S.R.L., CUI 55055976, cu sediul în municipiul Iași, Bd. Independenței nr. 20, județul Iași. Datele juridice complete sunt publicate în politica GDPR. Lucrăm în română și engleză, cu React, TypeScript, Vite, Tailwind CSS, infrastructură edge Cloudflare, date structurate Schema.org și GA4 cu Consent Mode.
+
+The agency designs professional presentation websites for companies, practices, salons, restaurants, guest houses, local services and independent professionals. Larger engagements include ecommerce, customer portals, internal dashboards, PWAs, iOS/Android applications, API integrations, automation and account-based platforms. Scope, timelines, support and measurable objectives are agreed per project; the website does not promise guaranteed rankings or sales.
 
 Contact: contact@avyron.ro · +40 734 605 055 · WhatsApp · https://avyron.ro
 
@@ -17,7 +19,7 @@ Contact: contact@avyron.ro · +40 734 605 055 · WhatsApp · https://avyron.ro
 ## Products
 
 - [Audit Website / Soft Actual](/produse/audit-website) — [EN](/en/products/website-audit): Raport complet despre performanță, SEO, securitate, accesibilitate și UI/UX, cu recomandări prioritizate.
-- [Website Prezentare Premium](/produse/website-prezentare-premium) — [EN](/en/products/premium-presentation-website): De la 300€, livrare 2–5 zile. Design custom, SEO tehnic, panou de administrare, email pe domeniu, consiliere post-lansare, suport gratuit pe viață. Potrivit pentru afaceri locale, branduri naționale, avocați, consultanți financiari, cabinete medicale, studiouri și creatori.
+- [Website Prezentare Premium](/produse/website-prezentare-premium) — [EN](/en/products/premium-presentation-website): De la 300€, cu termen și suport stabilite prin ofertă. Design custom, SEO tehnic, panou de administrare, email pe domeniu și consiliere post-lansare.
 - [Identitate Social Media](/produse/identitate-social-media) — [EN](/en/products/social-media-identity): Configurare și identitate vizuală pentru Facebook, Instagram și TikTok.
 - [Magazin Online (eCommerce / Shopify)](/produse/magazin-online) — [EN](/en/products/online-store): Magazin complet, plăți, livrare, facturare și optimizare pentru conversie.
 - [Aplicații Web și Mobile](/produse/aplicatii-web-si-mobile) — [EN](/en/products/web-and-mobile-apps): Aplicații iOS, Android și PWA, cu backend și panou de administrare.
@@ -33,10 +35,24 @@ Contact: contact@avyron.ro · +40 734 605 055 · WhatsApp · https://avyron.ro
 - [Studio Mara Design](/examples/studiomaradesign.ro): Exemplu de site pentru studio de design.
 - [Pensiunea Cerbul](/examples/pensiuneacerbul.ro): Exemplu de site pentru turism și ospitalitate.
 
+## Practical guides / Ghiduri
+
+- [De ce un site de prezentare este vital](/blog/importanta-website-afacere-2026) — [Why a professional business website matters](/en/blog/importanta-website-afacere-2026)
+- [Website profesionist: identitate și conversie](/blog/website-profesionist-identitate-digitala-2026) — [Professional website: identity and conversion](/en/blog/website-profesionist-identitate-digitala-2026)
+- [SEO pentru Google și răspunsuri AI](/blog/seo-2026-google-ai-search) — [SEO for Google and AI answers](/en/blog/seo-2026-google-ai-search)
+- [Securitatea website-ului](/blog/securitate-internet-greseli-afaceri-mici) — [Website security](/en/blog/securitate-internet-greseli-afaceri-mici)
+
+## Official profiles
+
+- Instagram: https://www.instagram.com/avyrontech/
+- Facebook: https://www.facebook.com/people/Avyron-Dev/61560319432764/
+- TikTok: https://www.tiktok.com/@avyron4
+- LinkedIn: https://www.linkedin.com/company/avyron
+
 ## Facts
 
 - Livrare tipică: 2–5 zile lucrătoare pentru un site de prezentare.
 - Prețuri de start: site de prezentare de la 300€, testare QA de la 300€, mentenanță de la 100€/lună.
 - Include: design custom, conținut, SEO tehnic, hosting și domeniu în primul an, email pe domeniu, panou de administrare, instruire live.
-- Suport tehnic gratuit pe viață pentru produsele livrate de Avyron.
+- Nivelul și durata suportului tehnic sunt stabilite transparent în oferta și contractul fiecărui proiect.
 - Zone deservite: România și Uniunea Europeană. Limbi: română și engleză.

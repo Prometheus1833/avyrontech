@@ -11,6 +11,7 @@ export type CfUser = {
   display_name: string | null;
   avatar_url: string | null;
   email_verified: 0 | 1;
+  must_change_password: 0 | 1;
   created_at: number;
 };
 
@@ -34,6 +35,8 @@ export type CfProfile = {
 };
 
 type Listener = () => void;
+type ApiErrorBody = { error?: { message?: string; code?: string } };
+type SessionResponse = { access_token: string; expires_in: number; user: { id: string; roles: Role[] } };
 
 class CfAuth {
   private accessToken: string | null = null;
@@ -62,7 +65,7 @@ class CfAuth {
     this.emit();
   }
 
-  async request<T = any>(path: string, init: RequestInit = {}): Promise<T> {
+  async request<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
     const token = await this.ensureToken();
     const headers = new Headers(init.headers);
     if (token) headers.set("authorization", `Bearer ${token}`);
@@ -77,19 +80,21 @@ class CfAuth {
         headers.set("authorization", `Bearer ${this.accessToken}`);
         const retry = await fetch(apiUrl(path), { ...init, headers, credentials: "include" });
         if (!retry.ok) throw await this.errorFrom(retry);
-        return retry.json();
+        return retry.json() as Promise<T>;
       }
     }
     if (!res.ok) throw await this.errorFrom(res);
-    return res.json();
+    return res.json() as Promise<T>;
   }
 
   private async errorFrom(res: Response): Promise<Error> {
     let msg = `HTTP ${res.status}`;
     try {
-      const j = await res.json() as any;
+      const j = await res.json() as ApiErrorBody;
       msg = j?.error?.message || j?.error?.code || msg;
-    } catch {}
+    } catch {
+      // Keep the HTTP status fallback when the body is not JSON.
+    }
     return new Error(msg);
   }
 
@@ -102,7 +107,7 @@ class CfAuth {
     try {
       const res = await fetch(apiUrl("/api/auth/refresh"), { method: "POST", credentials: "include" });
       if (!res.ok) return false;
-      const j = await res.json() as any;
+      const j = await res.json() as SessionResponse;
       this.setSession(j.access_token, j.expires_in);
       return true;
     } catch {
@@ -110,17 +115,33 @@ class CfAuth {
     }
   }
 
-  async signup(input: { email: string; password: string; displayName?: string; entityType?: string }) {
+  async signup(input: { email: string; password: string; displayName?: string; entityType?: string; turnstileToken?: string }) {
     const res = await fetch(apiUrl("/api/auth/signup"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       credentials: "include",
       body: JSON.stringify(input),
     });
-    const j = await res.json() as any;
+    const j = await res.json() as { ok?: true; verification_required?: boolean; verification_email_sent?: boolean } & ApiErrorBody;
     if (!res.ok) throw new Error(j?.error?.message || j?.error?.code || "signup_failed");
-    this.setSession(j.access_token, j.expires_in);
     return j;
+  }
+
+  async verifyEmail(token: string) {
+    const res = await fetch(apiUrl("/api/auth/verify-email"), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+    if (!res.ok) throw await this.errorFrom(res);
+  }
+
+  async resendVerification(email: string) {
+    await fetch(apiUrl("/api/auth/resend-verification"), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
   }
 
   async login(email: string, password: string) {
@@ -130,7 +151,7 @@ class CfAuth {
       credentials: "include",
       body: JSON.stringify({ email, password }),
     });
-    const j = await res.json() as any;
+    const j = await res.json() as SessionResponse & ApiErrorBody;
     if (!res.ok) throw new Error(j?.error?.message || j?.error?.code || "login_failed");
     this.setSession(j.access_token, j.expires_in);
     return j;
@@ -142,15 +163,23 @@ class CfAuth {
   }
 
   async me(): Promise<{ user: CfUser; profile: CfProfile; roles: Role[] } | null> {
-    try { return await this.request("/api/auth/me"); } catch { return null; }
+    try {
+      const result = await this.request<{ user: CfUser; profile: CfProfile; roles: Role[] }>("/api/auth/me");
+      if (result.user.avatar_url?.startsWith("/")) result.user.avatar_url = apiUrl(result.user.avatar_url);
+      if (result.profile.avatar_url?.startsWith("/")) result.profile.avatar_url = apiUrl(result.profile.avatar_url);
+      return result;
+    } catch {
+      return null;
+    }
   }
 
   async forgot(email: string) {
-    await fetch(apiUrl("/api/auth/forgot"), {
+    const res = await fetch(apiUrl("/api/auth/forgot"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ email }),
     });
+    if (!res.ok) throw await this.errorFrom(res);
   }
 
   async reset(token: string, password: string) {
@@ -159,7 +188,7 @@ class CfAuth {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ token, password }),
     });
-    const j = await res.json() as any;
+    const j = await res.json() as { ok?: true } & ApiErrorBody;
     if (!res.ok) throw new Error(j?.error?.message || j?.error?.code || "reset_failed");
     return j;
   }
@@ -172,13 +201,20 @@ class CfAuth {
     return j.profile;
   }
 
+  async changePassword(currentPassword: string, newPassword: string) {
+    return this.request<{ ok: true }>("/api/auth/change-password", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  }
+
   async uploadAvatar(file: File): Promise<string> {
     const j = await this.request<{ avatar_url: string }>("/api/profile/avatar", {
       method: "POST",
       headers: { "content-type": file.type || "image/jpeg" },
       body: file,
     });
-    return j.avatar_url;
+    return apiUrl(j.avatar_url);
   }
 }
 

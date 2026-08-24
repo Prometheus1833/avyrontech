@@ -7,10 +7,12 @@
 //         trimitere email prin SMTP (Cloudflare Workers TCP sockets) către LEAD_TO.
 
 import { Hono } from "hono";
-import type { Env } from "./index";
-import { sendMailSmtp, type Attachment } from "./smtp";
+import type { Env } from "./types";
+import type { Attachment } from "./smtp";
+import { deliverMail, logDelivery } from "./mailer";
 import { checkRateLimit, verifyTurnstile, clientIp, hashKey } from "./antispam";
 import { syncLeadToTable } from "./leadSink";
+import { leadObjectKey, safeFilename } from "./storage";
 
 export const contactRouter = new Hono<{ Bindings: Env }>();
 
@@ -22,8 +24,6 @@ const ALLOWED_CT =
 
 const clean = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
-const safeName = (n: string) => n.replace(/[^\w.\- ]+/g, "_").slice(0, 120) || "fisier";
-
 contactRouter.post("/api/contact/demo", async (c) => {
   let form: FormData;
   try {
@@ -51,11 +51,11 @@ contactRouter.post("/api/contact/demo", async (c) => {
   // 2) Rate limiting (IP: 3/oră, 10/zi · email: 3/zi)
   const ipKey = await hashKey(ip);
   const emailKey = await hashKey(email.toLowerCase());
-  const rate = await checkRateLimit(c.env.KV, [
+  const rate = await checkRateLimit(c.env.DB, [
     { key: `demo:ip:${ipKey}:h`, limit: 3, windowSec: 3600 },
     { key: `demo:ip:${ipKey}:d`, limit: 10, windowSec: 86400 },
     { key: `demo:mail:${emailKey}:d`, limit: 3, windowSec: 86400 },
-  ]);
+  ], { limiter: c.env.PUBLIC_API_RATE_LIMITER, key: `demo:${emailKey}` });
   if (!rate.ok) {
     return c.json({ error: "rate_limited", retryAfter: rate.retryAfter }, 429, {
       "Retry-After": String(rate.retryAfter),
@@ -67,6 +67,7 @@ contactRouter.post("/api/contact/demo", async (c) => {
     c.env.TURNSTILE_SECRET,
     clean(form.get("cf-turnstile-response") || form.get("turnstileToken"), 4000),
     ip,
+    { expectedAction: "contact-demo", allowedHostnames: c.env.TURNSTILE_ALLOWED_HOSTNAMES },
   );
   if (!turnstile.ok) {
     console.warn("turnstile rejected:", turnstile.reason);
@@ -86,7 +87,6 @@ contactRouter.post("/api/contact/demo", async (c) => {
 
   const leadId = crypto.randomUUID();
   const attachments: Attachment[] = [];
-  const stored: string[] = [];
   let total = 0;
 
   for (const f of files) {
@@ -96,15 +96,21 @@ contactRouter.post("/api/contact/demo", async (c) => {
     total += f.size;
     if (total > MAX_TOTAL_BYTES) return c.json({ error: "Dimensiune totală prea mare" }, 400);
 
-    const bytes = new Uint8Array(await f.arrayBuffer());
-    const key = `leads/${leadId}/${safeName(f.name)}`;
+    attachments.push({ filename: safeFilename(f.name), contentType: ct, content: new Uint8Array(await f.arrayBuffer()) });
+  }
+
+  const stored: string[] = [];
+  for (const attachment of attachments) {
+    const key = leadObjectKey(leadId, attachment.filename);
     try {
-      await c.env.FILES.put(key, bytes, { httpMetadata: { contentType: ct } });
+      await c.env.FILES.put(key, attachment.content, {
+        httpMetadata: { contentType: attachment.contentType },
+        customMetadata: { leadId, source: "website-cta-demo" },
+      });
       stored.push(key);
     } catch (e) {
       console.error("lead attachment r2 put failed", e);
     }
-    attachments.push({ filename: safeName(f.name), contentType: ct, content: bytes });
   }
 
   const submittedAt = new Date().toISOString();
@@ -142,15 +148,20 @@ contactRouter.post("/api/contact/demo", async (c) => {
     }</p>
   </div>`;
 
-  // Persistăm lead-ul în KV (backup, 90 zile) chiar dacă SMTP eșuează.
+  // D1 is the source of truth; R2 stores only the attachment objects.
   try {
-    await c.env.KV.put(
-      `lead:${leadId}`,
-      JSON.stringify({ leadId, name, business, phone, email, website, description, stored, submittedAt, lang }),
-      { expirationTtl: 60 * 60 * 24 * 90 },
-    );
-  } catch (e) {
-    console.error("lead kv put failed", e);
+    await c.env.DB.prepare(
+      `INSERT INTO leads (id,source,name,business,phone,email,message,website,language,attachments_json,status,delivery_status,created_at,updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?, 'new','pending',?,?)`,
+    ).bind(
+      leadId, "website:cta-demo", name, business, phone, email.toLowerCase(), description || null,
+      website || null, lang, JSON.stringify(stored), Date.now(), Date.now(),
+    ).run();
+  } catch (error) {
+    await Promise.all(stored.map((key) => c.env.FILES.delete(key).catch((cleanupError) =>
+      console.error(JSON.stringify({ event: "lead_r2_orphan_cleanup_failed", key, cleanupError: String(cleanupError) })),
+    )));
+    throw error;
   }
 
   // Sincronizare în tabel (Airtable / Google Sheets prin webhook) — nu blocăm răspunsul.
@@ -181,35 +192,81 @@ contactRouter.post("/api/contact/demo", async (c) => {
     files: attachments.map((a) => ({ name: a.filename, size: a.content.byteLength })),
   };
 
-  const host = c.env.SMTP_HOST;
-  const user = c.env.SMTP_USER;
-  const pass = c.env.SMTP_PASS;
-  const from = c.env.SMTP_FROM || user;
-  const to = c.env.LEAD_TO || from;
-
-  if (!host || !user || !pass) {
-    console.error("SMTP not configured — lead saved only in KV/R2", leadId);
-    return c.json({ ok: true, leadId, delivered: false, summary }, 202);
+  const to = c.env.LEAD_TO || c.env.SMTP_FROM;
+  if (!to) {
+    await c.env.DB.prepare("UPDATE leads SET delivery_status='failed',delivery_error=?,updated_at=? WHERE id=?")
+      .bind("LEAD_TO is not configured", Date.now(), leadId).run();
+    return c.json({ error: "Livrarea emailului nu este configurată", leadId, delivered: false, summary }, 503);
   }
 
-  try {
-    await sendMailSmtp(
-      { host, port: c.env.SMTP_PORT ? parseInt(c.env.SMTP_PORT, 10) : 587, user, pass },
-      {
-        from: `Avyron Website <${from}>`,
-        to: to!,
-        replyTo: email,
-        subject: `Cerere exemplu gratuit — ${name} (${business})`,
-        text: lines.join("\n"),
-        html,
-        attachments,
-      },
-    );
-  } catch (e) {
-    console.error("lead smtp send failed", e);
-    return c.json({ ok: true, leadId, delivered: false, summary }, 202);
+  const result = await deliverMail(c.env, {
+    from: c.env.SMTP_FROM ? `Avyron Website <${c.env.SMTP_FROM}>` : undefined,
+    to,
+    replyTo: email,
+    subject: `Cerere exemplu gratuit — ${name} (${business})`,
+    text: lines.join("\n"),
+    html,
+    attachments,
+  });
+  await c.env.DB.prepare("UPDATE leads SET delivery_status=?,delivery_error=?,updated_at=? WHERE id=?")
+    .bind(result.delivered ? "sent" : "failed", result.delivered ? null : result.error, Date.now(), leadId).run();
+  await logDelivery(c.env, { kind: "demo_request", entityId: leadId, recipient: to, result }).catch((error) =>
+    console.error(JSON.stringify({ event: "email_log_failed", leadId, error: String(error) })),
+  );
+  if (!result.delivered) {
+    console.error(JSON.stringify({ event: "lead_smtp_failed", leadId, error: result.error }));
+    return c.json({ error: "Solicitarea a fost salvată, dar notificarea email nu a putut fi livrată", leadId, delivered: false, summary }, 502);
   }
 
-  return c.json({ ok: true, leadId, delivered: true, summary });
+  return c.json({ ok: true, leadId, delivered: true, summary }, 201);
 });
 
+contactRouter.post("/api/contact/example", async (c) => {
+  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const email = clean(body.email, 255).toLowerCase();
+  const phone = clean(body.phone, 30);
+  const sourceSlug = clean(body.source_slug, 120);
+  const sourceCategory = clean(body.source_category, 120);
+  const sourceName = clean(body.source_name, 160);
+  const turnstileToken = clean(body.turnstileToken, 4000);
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || phone.length < 5 || !sourceSlug)
+    return c.json({ error: "Câmpuri invalide" }, 400);
+
+  const ip = clientIp(c.req.raw);
+  const emailKey = await hashKey(email);
+  const rate = await checkRateLimit(c.env.DB, [
+    { key: `example:ip:${await hashKey(ip)}:h`, limit: 5, windowSec: 3600 },
+    { key: `example:mail:${emailKey}:d`, limit: 3, windowSec: 86400 },
+  ], { limiter: c.env.PUBLIC_API_RATE_LIMITER, key: `example:${emailKey}` });
+  if (!rate.ok) return c.json({ error: "rate_limited", retryAfter: rate.retryAfter }, 429);
+
+  const turnstile = await verifyTurnstile(c.env.TURNSTILE_SECRET, turnstileToken, ip, {
+    expectedAction: "request-example",
+    allowedHostnames: c.env.TURNSTILE_ALLOWED_HOSTNAMES,
+  });
+  if (!turnstile.ok) return c.json({ error: "captcha_failed", reason: turnstile.reason }, 403);
+
+  const id = crypto.randomUUID();
+  const timestamp = Date.now();
+  await c.env.DB.prepare(
+    `INSERT INTO example_requests (id,email,phone,source_slug,source_category,source_name,user_agent,status,delivery_status,created_at,updated_at)
+     VALUES (?,?,?,?,?,?,?,'new','pending',?,?)`,
+  ).bind(id, email, phone, sourceSlug, sourceCategory || null, sourceName || null, clean(c.req.header("user-agent"), 500), timestamp, timestamp).run();
+
+  const to = c.env.LEAD_TO || c.env.SMTP_FROM;
+  if (!to) {
+    await c.env.DB.prepare("UPDATE example_requests SET delivery_status='failed',delivery_error=?,updated_at=? WHERE id=?").bind("LEAD_TO is not configured", Date.now(), id).run();
+    return c.json({ error: "Livrarea emailului nu este configurată", requestId: id }, 503);
+  }
+  const result = await deliverMail(c.env, {
+    to,
+    replyTo: email,
+    subject: `Solicitare exemplu — ${sourceName || sourceSlug}`,
+    text: `Email: ${email}\nTelefon: ${phone}\nSursă: ${sourceName || "—"}\nCategorie: ${sourceCategory || "—"}\nSlug: ${sourceSlug}\nID: ${id}`,
+  });
+  await c.env.DB.prepare("UPDATE example_requests SET delivery_status=?,delivery_error=?,updated_at=? WHERE id=?")
+    .bind(result.delivered ? "sent" : "failed", result.delivered ? null : result.error, Date.now(), id).run();
+  await logDelivery(c.env, { kind: "example_request", entityId: id, recipient: to, result }).catch(() => undefined);
+  if (!result.delivered) return c.json({ error: "Solicitarea a fost salvată, dar emailul nu a fost livrat", requestId: id }, 502);
+  return c.json({ ok: true, requestId: id }, 201);
+});

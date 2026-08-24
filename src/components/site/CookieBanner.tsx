@@ -8,7 +8,11 @@ type Prefs = {
   marketing: boolean;
 };
 
-const STORAGE_KEY = "avyron-cookie-consent-v1";
+export const COOKIE_POLICY_VERSION = "2026-08-23";
+export const COOKIE_SETTINGS_EVENT = "avyron:cookie-settings";
+const STORAGE_KEY = "avyron-cookie-consent-v2";
+
+type StoredPrefs = Prefs & { savedAt: string; policyVersion: string };
 
 const COPY = {
   ro: {
@@ -20,6 +24,7 @@ const COPY = {
     marketing: "Marketing", marketingDesc: "Conținut și oferte personalizate.",
     save: "Salvează preferințele", acceptAll: "Accept toate", onlyNecessary: "Doar necesare",
     hideSettings: "Ascunde setări", settings: "Setări",
+    version: "Versiunea politicii",
   },
   en: {
     dialog: "Cookie settings", title: "We use cookies",
@@ -30,6 +35,7 @@ const COPY = {
     marketing: "Marketing", marketingDesc: "Personalised content and offers.",
     save: "Save preferences", acceptAll: "Accept all", onlyNecessary: "Only necessary",
     hideSettings: "Hide settings", settings: "Settings",
+    version: "Policy version",
   },
 } as const;
 
@@ -41,27 +47,66 @@ const CookieBanner = () => {
   const [prefs, setPrefs] = useState<Prefs>({ necessary: true, analytics: false, marketing: false });
 
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const reopen = () => {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved) as StoredPrefs;
+          setPrefs({ necessary: true, analytics: Boolean(parsed.analytics), marketing: Boolean(parsed.marketing) });
+        }
+      } catch {
+        setPrefs({ necessary: true, analytics: false, marketing: false });
+      }
+      setShowSettings(true);
+      setOpen(true);
+    };
+    window.addEventListener(COOKIE_SETTINGS_EVENT, reopen);
+
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved) as Prefs & { ts?: number };
-        updateConsent(parsed.analytics);
+        const parsed = JSON.parse(saved) as StoredPrefs;
+        if (parsed.policyVersion !== COOKIE_POLICY_VERSION) {
+          localStorage.removeItem(STORAGE_KEY);
+          updateConsent({ analytics: false, marketing: false });
+          setOpen(true);
+          return () => window.removeEventListener(COOKIE_SETTINGS_EVENT, reopen);
+        }
+        const next = {
+          necessary: true as const,
+          analytics: Boolean(parsed.analytics),
+          marketing: Boolean(parsed.marketing),
+        };
+        setPrefs(next);
+        updateConsent(next);
       } else {
-        updateConsent(false);
+        updateConsent({ analytics: false, marketing: false });
       }
       if (!saved) {
-        const t = setTimeout(() => setOpen(true), 600);
-        return () => clearTimeout(t);
+        timer = setTimeout(() => setOpen(true), 600);
       }
     } catch {
-      updateConsent(false);
+      updateConsent({ analytics: false, marketing: false });
       setOpen(true);
     }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      window.removeEventListener(COOKIE_SETTINGS_EVENT, reopen);
+    };
   }, []);
 
   const save = (p: Prefs) => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...p, ts: Date.now() })); } catch {}
-    updateConsent(p.analytics);
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ ...p, savedAt: new Date().toISOString(), policyVersion: COOKIE_POLICY_VERSION }),
+      );
+    } catch {
+      // Consent still applies for this page when storage is unavailable.
+    }
+    updateConsent(p);
     setOpen(false);
   };
 
@@ -94,6 +139,7 @@ const CookieBanner = () => {
                 {c.body}{" "}
                 <a href={c.detailsHref} className="underline text-purple-300 hover:text-purple-200">{c.details}</a>
               </p>
+              <p className="mt-1 text-[10px] text-white/45">{c.version}: {COOKIE_POLICY_VERSION}</p>
 
               {showSettings && (
                 <div className="mt-3 space-y-2">

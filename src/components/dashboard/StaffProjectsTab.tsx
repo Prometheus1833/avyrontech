@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 type ProjectStatus =
   | "todo" | "in_progress" | "review" | "blocked" | "done" | "cancelled"
@@ -103,7 +104,7 @@ export const StaffProjectsTab = () => {
   const load = async () => {
     setLoading(true);
     const [p, s] = await Promise.all([
-      supabase.from("projects").select("*").order("project_number", { ascending: false }),
+      supabase.from("projects").select("id,project_number,title,description,owner_id,assignee_id,client_id,linked_user_id,status,priority,budget_cents,additional_costs_cents,progress,created_at,link1,link2,link3,client_first_name,client_last_name,client_phone,client_email,client_facebook,client_instagram,client_tiktok,project_type,estimated_duration,start_date,delivery_date,integrations,client_change_requests,staff_members").order("project_number", { ascending: false }),
       supabase.from("profiles").select("id,display_name,pseudonym,staff_role"),
     ]);
     if (p.data) setProjects(p.data as unknown as Project[]);
@@ -118,14 +119,14 @@ export const StaffProjectsTab = () => {
   useEffect(() => { load(); }, []);
 
   const loadTasks = async (projectId: string) => {
-    const { data } = await supabase.from("project_tasks").select("*").eq("project_id", projectId).order("created_at", { ascending: true });
+    const { data } = await supabase.from("project_tasks").select("id,content,completed,author_id,created_at").eq("project_id", projectId).order("created_at", { ascending: true });
     if (data) setTasks(data as Task[]);
   };
 
   const handleCreate = async () => {
     if (!form.title.trim() || !user) { toast.error("Numele proiectului este obligatoriu"); return; }
     setSubmitting(true);
-    const payload: any = {
+    const payload: TablesInsert<"projects"> = {
       title: form.title.trim(),
       description: form.description || null,
       owner_id: user.id,
@@ -156,7 +157,8 @@ export const StaffProjectsTab = () => {
   };
 
   const updateProject = async (id: string, patch: Partial<Project>) => {
-    const { error } = await supabase.from("projects").update(patch as any).eq("id", id);
+    const update: TablesUpdate<"projects"> = patch;
+    const { error } = await supabase.from("projects").update(update).eq("id", id);
     if (error) return toast.error(error.message);
     if (openProject?.id === id) setOpenProject({ ...openProject, ...patch } as Project);
     setProjects(prev => prev.map(p => p.id === id ? { ...p, ...patch } as Project : p));
@@ -186,8 +188,9 @@ export const StaffProjectsTab = () => {
 
   const staffName = (id: string | null) => {
     if (!id) return "—";
-    const m = staff.find(x => x.id === id) || allUsers.find(x => x.id === id) as any;
-    return m?.pseudonym || m?.display_name || "Necunoscut";
+    const staffMember = staff.find(x => x.id === id);
+    if (staffMember) return staffMember.pseudonym || staffMember.display_name || "Necunoscut";
+    return allUsers.find(x => x.id === id)?.display_name || "Necunoscut";
   };
 
   const visible = useMemo(() =>
@@ -244,16 +247,19 @@ export const StaffProjectsTab = () => {
                   <Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="ex. Site prezentare Plase Ieftine" />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {([1,2,3] as const).map(i => (
-                    <div key={i}>
-                      <Label className="text-xs flex items-center gap-1"><LinkIcon className="size-3" />Link / subdomeniu {i}</Label>
-                      <Input
-                        value={(form as any)[`link${i}`]}
-                        onChange={e => setForm({ ...form, [`link${i}`]: e.target.value } as any)}
-                        placeholder="https://..."
-                      />
-                    </div>
-                  ))}
+                  {([1,2,3] as const).map(i => {
+                    const linkKey = `link${i}` as const;
+                    return (
+                      <div key={linkKey}>
+                        <Label className="text-xs flex items-center gap-1"><LinkIcon className="size-3" />Link / subdomeniu {i}</Label>
+                        <Input
+                          value={form[linkKey]}
+                          onChange={e => setForm({ ...form, [linkKey]: e.target.value })}
+                          placeholder="https://..."
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 

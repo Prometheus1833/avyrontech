@@ -19,6 +19,7 @@ import {
   type RegisterInput,
 } from "@/lib/validators/auth";
 import logo from "@/assets/avyron-logo.jpg";
+import Turnstile, { TURNSTILE_SITE_KEY } from "@/components/site/Turnstile";
 
 const Auth = () => {
   const { t } = useLang();
@@ -27,6 +28,9 @@ const Auth = () => {
   const location = useLocation();
   const [tab, setTab] = useState<"login" | "register">("login");
   const [submitting, setSubmitting] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileReset, setTurnstileReset] = useState(0);
+  const [verificationMessage, setVerificationMessage] = useState("");
 
   const from = (location.state as { from?: string } | null)?.from ?? "/profil";
 
@@ -37,6 +41,7 @@ const Auth = () => {
         description:
           "Autentificare și înregistrare în contul Avyron — accesează panoul de proiecte, facturi și mesaje.",
         path: "/auth",
+        robots: "noindex, nofollow",
       })
     );
   }, [t.auth.login]);
@@ -44,6 +49,21 @@ const Auth = () => {
   useEffect(() => {
     if (!loading && user) navigate(from, { replace: true });
   }, [user, loading, from, navigate]);
+
+  useEffect(() => {
+    const token = new URLSearchParams(location.search).get("verify");
+    if (!token) return;
+    let active = true;
+    cfAuth.verifyEmail(token)
+      .then(() => {
+        if (!active) return;
+        setTab("login");
+        setVerificationMessage("Adresa a fost confirmată. Te poți autentifica.");
+        navigate("/auth", { replace: true });
+      })
+      .catch((error: Error) => active && setVerificationMessage(error.message));
+    return () => { active = false; };
+  }, [location.search, navigate]);
 
   const loginForm = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -62,14 +82,18 @@ const Auth = () => {
       await refreshProfile();
       toast.success(t.auth.welcomeBack);
       navigate(from, { replace: true });
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Autentificarea nu a reușit.");
     } finally {
       setSubmitting(false);
     }
   };
 
   const onRegister = async (data: RegisterInput) => {
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      toast.error("Confirmă verificarea anti-spam.");
+      return;
+    }
     setSubmitting(true);
     try {
       await cfAuth.signup({
@@ -77,12 +101,15 @@ const Auth = () => {
         password: data.password,
         displayName: data.displayName,
         entityType: data.entityType,
+        turnstileToken,
       });
-      await refreshProfile();
-      toast.success(t.auth.accountCreated);
-      navigate(from, { replace: true });
-    } catch (e: any) {
-      toast.error(e.message);
+      setVerificationMessage("Contul a fost creat. Verifică emailul și confirmă adresa înainte de autentificare.");
+      setTab("login");
+      toast.success("Ți-am trimis linkul de confirmare.");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Înregistrarea nu a reușit.");
+      setTurnstileToken("");
+      setTurnstileReset((value) => value + 1);
     } finally {
       setSubmitting(false);
     }
@@ -152,6 +179,12 @@ const Auth = () => {
             <ArrowLeft className="size-4" /> Înapoi
           </Link>
 
+          {verificationMessage && (
+            <div role="status" className="rounded-xl border border-brand/25 bg-brand/10 px-4 py-3 text-sm">
+              {verificationMessage}
+            </div>
+          )}
+
           <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">{t.auth.login}</TabsTrigger>
@@ -209,12 +242,12 @@ const Auth = () => {
                   )}
                 </div>
                 <div className="space-y-1.5">
-                  <Label>{t.auth.entityType}</Label>
+                  <Label htmlFor="rg-entity">{t.auth.entityType}</Label>
                   <Select
                     value={registerForm.watch("entityType")}
                     onValueChange={(v) => registerForm.setValue("entityType", v as RegisterInput["entityType"])}
                   >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="rg-entity"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="individual">{t.auth.entity.individual}</SelectItem>
                       <SelectItem value="srl">{t.auth.entity.srl}</SelectItem>
@@ -224,6 +257,7 @@ const Auth = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                <Turnstile action="signup" onToken={setTurnstileToken} resetKey={turnstileReset} />
                 <Button type="submit" className="w-full rounded-full h-11" disabled={submitting}>
                   {submitting ? "..." : t.auth.register}
                 </Button>

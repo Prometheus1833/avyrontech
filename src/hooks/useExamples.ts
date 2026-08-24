@@ -30,7 +30,7 @@ export const useExamples = () => {
     (async () => {
       const { data: rows } = await supabase
         .from("examples")
-        .select("*")
+        .select("id,slug,name,category,title,description,image_path,external_url,has_internal_demo,internal_demo_path,display_url,sort_order")
         .eq("active", true)
         .order("sort_order", { ascending: true });
       if (mounted && rows) setData(rows as ExampleRow[]);
@@ -53,7 +53,7 @@ export const useExampleBySlug = (slug: string) => {
     (async () => {
       const { data: row } = await supabase
         .from("examples")
-        .select("*")
+        .select("id,slug,name,category,title,description,image_path,external_url,has_internal_demo,internal_demo_path,display_url,sort_order")
         .eq("slug", slug)
         .eq("active", true)
         .maybeSingle();

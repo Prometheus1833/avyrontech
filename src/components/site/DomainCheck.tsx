@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Check, X, Activity, Globe, Loader2, AlertTriangle } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useLang } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ const DomainCheck = () => {
   const [checking, setChecking] = useState(false);
   const [results, setResults] = useState<null | Result[]>(null);
   const [livePreview, setLivePreview] = useState("");
+  const reduceMotion = useReducedMotion();
 
   const slug = slugify(name).slice(0, 30);
 
@@ -60,13 +61,13 @@ const DomainCheck = () => {
       <div className="mx-auto max-w-4xl px-4">
         <div className="rounded-[1.5rem] md:rounded-[2rem] bg-darkgrad text-white p-6 sm:p-8 md:p-14 shadow-elev relative overflow-hidden ring-1 ring-white/10 dark:ring-brand/40 dark:shadow-glow">
           <motion.div
-            animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
-            transition={{ duration: 8, repeat: Infinity }}
+            animate={reduceMotion ? undefined : { scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
+            transition={reduceMotion ? undefined : { duration: 8, repeat: Infinity }}
             className="absolute -top-20 -right-20 size-80 rounded-full bg-brand/30 blur-3xl"
           />
           <motion.div
-            animate={{ scale: [1.1, 1, 1.1], opacity: [0.3, 0.5, 0.3] }}
-            transition={{ duration: 10, repeat: Infinity }}
+            animate={reduceMotion ? undefined : { scale: [1.1, 1, 1.1], opacity: [0.3, 0.5, 0.3] }}
+            transition={reduceMotion ? undefined : { duration: 10, repeat: Infinity }}
             className="absolute -bottom-20 -left-20 size-80 rounded-full bg-brand-2/30 blur-3xl"
           />
           <div className="relative text-center">
@@ -102,7 +103,9 @@ const DomainCheck = () => {
 
             <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:gap-3 max-w-lg mx-auto">
               <div className="flex gap-2 sm:contents">
+                <label htmlFor="domain-name" className="sr-only">{t.domain.placeholder}</label>
                 <Input
+                  id="domain-name"
                   value={name}
                   onChange={(e) => setName(e.target.value.slice(0, 40))}
                   onKeyDown={(e) => e.key === "Enter" && check()}

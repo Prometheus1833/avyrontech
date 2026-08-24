@@ -42,8 +42,8 @@ const ResetPassword = () => {
       await cfAuth.reset(token, data.password);
       toast.success(t.auth.passwordUpdated);
       navigate("/auth", { replace: true });
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Parola nu a putut fi actualizată");
     } finally {
       setSubmitting(false);
     }

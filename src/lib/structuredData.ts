@@ -3,17 +3,22 @@
  * Used across home + main marketing pages to help Google understand the site.
  */
 
+import { COMPANY } from "@/config/company";
+import { SOCIAL_PROFILE_URLS } from "@/config/socialProfiles";
+
 const BASE_URL = "https://avyron.ro";
 const LOGO_URL = `${BASE_URL}/avyron-logo.jpg`;
-const PHONE = "+40734605055";
-const EMAIL = "contact@avyron.ro";
+const PHONE = COMPANY.phone;
+const EMAIL = COMPANY.email;
 
 export const organizationLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
   "@id": `${BASE_URL}/#organization`,
   name: "Avyron",
-  legalName: "S.C. Eco Tech Digital Solution S.R.L.",
+  alternateName: COMPANY.associationName,
+  description:
+    "Avyron este un brand digital operat prin colaborarea dintre FV Tech Solutions SRL și DIGITAL ECOTECH SOLUTIONS S.R.L.",
   url: BASE_URL,
   logo: {
     "@type": "ImageObject",
@@ -30,11 +35,23 @@ export const organizationLd = {
     addressRegion: "IS",
     addressCountry: "RO",
   },
-  sameAs: [
-    "https://www.facebook.com/avyron.tech",
-    "https://www.instagram.com/avyron.tech",
-    "https://www.linkedin.com/company/avyron",
-  ],
+  member: COMPANY.legalEntities.map((entity) => ({
+    "@type": "Organization",
+    "@id": `${BASE_URL}/#${entity.id}`,
+    name: entity.legalName,
+    legalName: entity.legalName,
+    ...(entity.taxId
+      ? { identifier: { "@type": "PropertyValue", propertyID: "CUI", value: entity.taxId } }
+      : {}),
+    address: {
+      "@type": "PostalAddress",
+      ...(entity.streetAddress ? { streetAddress: entity.streetAddress } : {}),
+      addressLocality: entity.addressLocality,
+      addressRegion: entity.addressRegion,
+      addressCountry: "RO",
+    },
+  })),
+  sameAs: SOCIAL_PROFILE_URLS,
   contactPoint: [
     {
       "@type": "ContactPoint",
@@ -81,10 +98,14 @@ export const localBusinessLd = {
     { "@type": "AdministrativeArea", name: "European Union" },
   ],
   serviceType: [
+    "Professional presentation website design",
+    "Business website development",
     "Web development",
     "Mobile app development",
+    "Ecommerce development",
     "UI/UX design",
-    "SEO",
+    "Technical SEO",
+    "Website audit",
     "Cybersecurity",
     "DevOps & Hosting",
   ],

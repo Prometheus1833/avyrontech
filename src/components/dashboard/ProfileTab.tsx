@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Camera } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { cfAuth } from "@/lib/cfAuth";
+import { cfAuth, type CfProfile } from "@/lib/cfAuth";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
 
@@ -66,8 +66,8 @@ export function ProfileTab() {
       await cfAuth.uploadAvatar(file);
       await refreshProfile();
       toast.success(t.auth.profile.saved);
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Încărcarea avatarului a eșuat");
     } finally {
       setUploading(false);
     }
@@ -79,12 +79,12 @@ export function ProfileTab() {
     try {
       // staff_role is never sent from the client — only admins can change it server-side.
       const { staff_role: _ignoredRole, ...safeForm } = form;
-      await cfAuth.updateProfile({ ...safeForm } as any);
+      await cfAuth.updateProfile(safeForm satisfies Partial<CfProfile>);
 
       await refreshProfile();
       toast.success(t.auth.profile.saved);
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Salvarea profilului a eșuat");
     } finally {
       setSaving(false);
     }

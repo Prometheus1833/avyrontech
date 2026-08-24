@@ -9,8 +9,6 @@ export const ROUTE_ALTERNATES: Array<{ ro: string; en: string }> = [
   { ro: "/", en: "/en" },
   { ro: "/costurisiproduse", en: "/en/pricing" },
   { ro: "/despre-si-portofoliu", en: "/en/about" },
-  { ro: "/blog", en: "/en/blog" },
-  { ro: "/gdpr", en: "/en/privacy" },
   { ro: "/produse/website-prezentare-premium", en: "/en/products/premium-presentation-website" },
   { ro: "/produse/identitate-social-media", en: "/en/products/social-media-identity" },
   { ro: "/produse/magazin-online", en: "/en/products/online-store" },

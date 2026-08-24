@@ -39,7 +39,7 @@ type MenuItem = {
 
 const UserMenu = () => {
   const { user, profile, isStaff, signOut } = useAuth();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [contactOpen, setContactOpen] = useState(false);
 
   if (!user) return null;
@@ -51,11 +51,12 @@ const UserMenu = () => {
     .join("")
     .toUpperCase();
 
-  const productsLabel = (t.nav as any).products ?? "Produse";
+  const productsLabel = lang === "en" ? "Products" : "Produse";
+  const productsPath = lang === "en" ? "/en/pricing" : "/costurisiproduse";
 
   const userItems: MenuItem[] = [
     { label: t.auth.menu.profile, icon: UserIcon, to: "/profil?tab=profile" },
-    { label: productsLabel, icon: Boxes, to: "/costurisiproduse" },
+    { label: productsLabel, icon: Boxes, to: productsPath },
     { label: t.auth.menu.product, icon: Package, to: "/profil?tab=subscriptions" },
     { label: t.auth.menu.subscription, icon: CreditCard, to: "/profil?tab=invoices" },
     { label: t.auth.menu.cart, icon: ShoppingCart, to: "/profil?tab=cart" },
@@ -66,7 +67,7 @@ const UserMenu = () => {
 
   const staffItems: MenuItem[] = [
     { label: t.auth.menu.profile, icon: UserIcon, to: "/profil?tab=profile" },
-    { label: productsLabel, icon: Boxes, to: "/costurisiproduse" },
+    { label: productsLabel, icon: Boxes, to: productsPath },
     { label: t.auth.menu.projects, icon: FolderKanban, to: "/profil?tab=projects" },
     { label: t.auth.menu.maintenance, icon: Wrench, to: "/profil?tab=maintenance" },
     { label: t.auth.menu.internal, icon: UsersIcon, to: "/profil?tab=intern" },

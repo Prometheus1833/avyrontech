@@ -36,7 +36,7 @@ export function resetManagedHead() {
   if (typeof document === "undefined") return;
   document.head
     .querySelectorAll(
-      'link[rel="alternate"][hreflang], meta[property="og:locale:alternate"], script[type="application/ld+json"][data-seo="1"]',
+      'link[rel="alternate"][hreflang], meta[property="og:locale:alternate"], meta[property^="article:"][data-seo="1"], script[type="application/ld+json"][data-seo="1"]',
     )
     .forEach((el) => el.remove());
 }
@@ -51,6 +51,10 @@ export function setPageMeta({
   type = "website",
   locale,
   robots = DEFAULT_ROBOTS,
+  publishedTime,
+  modifiedTime,
+  section,
+  tags,
 }: {
   title: string;
   description: string;
@@ -68,6 +72,14 @@ export function setPageMeta({
   locale?: string;
   /** Robots directive for this route. */
   robots?: string;
+  /** ISO publication timestamp for Open Graph article previews. */
+  publishedTime?: string;
+  /** ISO last-modified timestamp for Open Graph article previews. */
+  modifiedTime?: string;
+  /** Editorial section/category for article previews. */
+  section?: string;
+  /** Article topics. Multiple article:tag entries are emitted. */
+  tags?: string[];
 }) {
   const url = `${BASE}${path}`;
   document.title = title;
@@ -96,6 +108,22 @@ export function setPageMeta({
   upsertMeta("name", "twitter:card", "summary_large_image");
   upsertMeta("name", "twitter:title", title);
   upsertMeta("name", "twitter:description", description);
+
+  document.head
+    .querySelectorAll('meta[property^="article:"][data-seo="1"]')
+    .forEach((el) => el.remove());
+  if (type === "article") {
+    if (publishedTime) upsertMeta("property", "article:published_time", publishedTime);
+    if (modifiedTime) upsertMeta("property", "article:modified_time", modifiedTime);
+    if (section) upsertMeta("property", "article:section", section);
+    for (const tag of (tags || []).slice(0, 12)) {
+      const el = document.createElement("meta");
+      el.setAttribute("property", "article:tag");
+      el.setAttribute("content", tag);
+      el.setAttribute(SEO_ATTR, "1");
+      document.head.appendChild(el);
+    }
+  }
 
   if (image) {
     const absImage = image.startsWith("http") ? image : `${BASE}${image}`;

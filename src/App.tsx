@@ -106,11 +106,14 @@ const App = () => (
                 <Route path="/exemple/flawlesstudio" element={<FlawlesstudioDemo />} />
                 <Route path="/exemple/retuvo" element={<RetuvoDemo />} />
                 <Route path="/blog" element={<Blog />} />
+                <Route path="/blog/:slug" element={<Blog />} />
                 <Route path="/en/blog" element={<Blog />} />
+                <Route path="/en/blog/:slug" element={<Blog />} />
                 <Route path="/noutati" element={<Navigate to="/blog" replace />} />
                 <Route path="/examples/:slug" element={<ExamplePage />} />
 
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/autentificare" element={<Auth />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route

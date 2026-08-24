@@ -3,11 +3,13 @@
 //
 // Toate rutele necesită auth. Accesul la un proiect e permis dacă:
 //   - user e admin, SAU
-//   - user e staff și e în project_staff pentru proiect (sau admin), SAU
+//   - user e staff: poate vedea toate proiectele; poate edita doar dacă este
+//     alocat în project_staff (adminul poate edita orice), SAU
 //   - user.id === projects.owner_user_id (clientul admin)
 
 import { Hono } from "hono";
-import type { Env } from "./index";
+import type { Env } from "./types";
+import { fetchMetadataHtml, validateMetadataUrl } from "./metadata";
 
 type Role = "user" | "staff" | "admin";
 type Vars = { userId: string; roles: Role[] };
@@ -25,6 +27,7 @@ async function canAccessProject(db: D1Database, projectId: string, userId: strin
   if (isStaff) {
     const assigned = await db.prepare("SELECT 1 FROM project_staff WHERE project_id = ? AND user_id = ?").bind(projectId, userId).first();
     if (assigned) return { read: true, write: true, isStaff: true, isOwner };
+    return { read: true, write: false, isStaff: true, isOwner };
   }
   if (isOwner) return { read: true, write: false, isStaff: false, isOwner: true };
   return { read: false, write: false, isStaff, isOwner: false };
@@ -47,16 +50,10 @@ projectsRouter.get("/api/projects", async (c) => {
   const isAdmin = roles.includes("admin");
 
   let rows;
-  if (isAdmin) {
+  if (isAdmin || isStaff) {
     rows = await c.env.DB.prepare(
       "SELECT id, slug, name, kind, banner_status, url, favicon_url, updated_at FROM projects ORDER BY updated_at DESC LIMIT 200"
     ).all();
-  } else if (isStaff) {
-    rows = await c.env.DB.prepare(
-      `SELECT p.id, p.slug, p.name, p.kind, p.banner_status, p.url, p.favicon_url, p.updated_at
-       FROM projects p JOIN project_staff ps ON ps.project_id = p.id
-       WHERE ps.user_id = ? ORDER BY p.updated_at DESC LIMIT 200`
-    ).bind(userId).all();
   } else {
     rows = await c.env.DB.prepare(
       "SELECT id, slug, name, kind, banner_status, url, favicon_url, updated_at FROM projects WHERE owner_user_id = ? ORDER BY updated_at DESC"
@@ -94,15 +91,17 @@ projectsRouter.post("/api/projects", async (c) => {
 // ─── DETALIU (după slug) ──────────────────────────────────────────────────
 projectsRouter.get("/api/projects/:slug", async (c) => {
   const slug = c.req.param("slug");
-  const proj = await c.env.DB.prepare("SELECT * FROM projects WHERE slug = ?").bind(slug).first<any>();
+  const proj = await c.env.DB.prepare(
+    "SELECT id,client_id,name,domain,status,created_at,slug,kind,description,owner_user_id,banner_status,url,favicon_url,og_title,og_description,og_image_url,cover_image_url,price_ron,price_eur,subscription_plan,subscription_status,billing_next,updated_at FROM projects WHERE slug = ?",
+  ).bind(slug).first<Record<string, unknown> & { id: string }>();
   if (!proj) return c.json({ error: { code: "not_found" } }, 404);
   const perm = await canAccessProject(c.env.DB, proj.id, c.get("userId"), c.get("roles"));
   if (!perm.read) return c.json({ error: { code: "forbidden" } }, 403);
 
   const [links, proposals, updates, staff] = await Promise.all([
-    c.env.DB.prepare("SELECT * FROM project_links WHERE project_id = ? ORDER BY updated_at DESC").bind(proj.id).all(),
-    c.env.DB.prepare("SELECT * FROM project_proposals WHERE project_id = ? ORDER BY created_at DESC LIMIT 100").bind(proj.id).all(),
-    c.env.DB.prepare("SELECT * FROM project_updates WHERE project_id = ? ORDER BY created_at DESC LIMIT 20").bind(proj.id).all(),
+    c.env.DB.prepare("SELECT id,project_id,kind,label,url,updated_by,updated_at FROM project_links WHERE project_id = ? ORDER BY updated_at DESC").bind(proj.id).all(),
+    c.env.DB.prepare("SELECT id,project_id,author_id,title,description,status,created_at,updated_at FROM project_proposals WHERE project_id = ? ORDER BY created_at DESC LIMIT 100").bind(proj.id).all(),
+    c.env.DB.prepare("SELECT id,project_id,author_id,proposal_id,title,body,created_at FROM project_updates WHERE project_id = ? ORDER BY created_at DESC LIMIT 20").bind(proj.id).all(),
     c.env.DB.prepare(
       `SELECT ps.user_id, ps.role, u.email, p.display_name, p.avatar_url
        FROM project_staff ps JOIN users u ON u.id = ps.user_id
@@ -119,8 +118,16 @@ projectsRouter.patch("/api/projects/:id", async (c) => {
   if (!perm.write) return c.json({ error: { code: "forbidden" } }, 403);
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   const allowed = ["name", "kind", "description", "banner_status", "url", "favicon_url", "og_title", "og_description", "og_image_url", "cover_image_url", "price_ron", "price_eur", "subscription_plan", "subscription_status", "billing_next", "owner_user_id"];
-  const sets: string[] = [], vals: any[] = [];
-  for (const k of allowed) if (k in b) { sets.push(`${k} = ?`); vals.push(b[k]); }
+  const sets: string[] = [], vals: Array<string | number | null> = [];
+  for (const k of allowed) {
+    if (!(k in b)) continue;
+    const value = b[k];
+    if (value !== null && typeof value !== "string" && typeof value !== "number") {
+      return c.json({ error: { code: "invalid_input", field: k } }, 400);
+    }
+    sets.push(`${k} = ?`);
+    vals.push(value);
+  }
   if (!sets.length) return c.json({ ok: true });
   sets.push("updated_at = ?"); vals.push(now()); vals.push(id);
   await c.env.DB.prepare(`UPDATE projects SET ${sets.join(", ")} WHERE id = ?`).bind(...vals).run();
@@ -152,8 +159,16 @@ projectsRouter.patch("/api/proposals/:id", async (c) => {
   if (!perm.write) return c.json({ error: { code: "forbidden", message: "Doar staff-ul poate schimba starea propunerilor" } }, 403);
   const b = (await c.req.json().catch(() => ({}))) as { status?: string; title?: string; description?: string };
   const allowed = ["status", "title", "description"];
-  const sets: string[] = [], vals: any[] = [];
-  for (const k of allowed) if (k in b) { sets.push(`${k} = ?`); vals.push((b as any)[k]); }
+  const sets: string[] = [], vals: Array<string | number | null> = [];
+  for (const k of allowed) {
+    if (!(k in b)) continue;
+    const value = b[k as keyof typeof b];
+    if (value !== undefined && value !== null && typeof value !== "string") {
+      return c.json({ error: { code: "invalid_input", field: k } }, 400);
+    }
+    sets.push(`${k} = ?`);
+    vals.push(value ?? null);
+  }
   if (!sets.length) return c.json({ ok: true });
   sets.push("updated_at = ?"); vals.push(now()); vals.push(pid);
   await c.env.DB.prepare(`UPDATE project_proposals SET ${sets.join(", ")} WHERE id = ?`).bind(...vals).run();
@@ -204,21 +219,25 @@ projectsRouter.get("/api/projects/:id/logs", async (c) => {
 
 // ─── METADATA extract (favicon + OG) ─────────────────────────────────────
 projectsRouter.get("/api/metadata/extract", async (c) => {
-  const url = c.req.query("url");
-  if (!url || !/^https?:\/\//.test(url)) return c.json({ error: { code: "invalid_url" } }, 400);
+  const requestedUrl = c.req.query("url");
+  let target: URL;
   try {
-    const res = await fetch(url, { headers: { "user-agent": "AvyronBot/1.0 (+https://avyron.ro)" }, signal: AbortSignal.timeout(8000) });
-    const html = (await res.text()).slice(0, 200_000); // cap la 200KB
+    target = validateMetadataUrl(requestedUrl || "");
+  } catch {
+    return c.json({ error: { code: "invalid_url" } }, 400);
+  }
+  try {
+    const { html, url } = await fetchMetadataHtml(target);
     const pick = (re: RegExp) => html.match(re)?.[1]?.trim();
-    const origin = new URL(url).origin;
-    const abs = (u?: string) => (u ? new URL(u, origin).toString() : undefined);
+    const abs = (value?: string) => (value ? new URL(value, url).toString() : undefined);
     const title = pick(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) ?? pick(/<title[^>]*>([^<]+)<\/title>/i);
     const description = pick(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i) ?? pick(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i);
     const image = abs(pick(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i));
     const iconRel = pick(/<link[^>]+rel=["'](?:icon|shortcut icon|apple-touch-icon)["'][^>]+href=["']([^"']+)["']/i);
-    const favicon = abs(iconRel) ?? `${origin}/favicon.ico`;
-    return c.json({ url, title, description, image, favicon });
+    const favicon = abs(iconRel) ?? `${url.origin}/favicon.ico`;
+    return c.json({ url: url.toString(), title, description, image, favicon });
   } catch (e) {
-    return c.json({ error: { code: "fetch_failed", message: String((e as Error).message) } }, 502);
+    console.warn(JSON.stringify({ event: "metadata_fetch_failed", url: target.origin, error: String((e as Error).message) }));
+    return c.json({ error: { code: "fetch_failed", message: "Nu am putut prelua metadata în siguranță" } }, 502);
   }
 });

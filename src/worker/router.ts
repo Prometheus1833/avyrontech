@@ -3,12 +3,13 @@
  * Kept free of Cloudflare APIs so it can be unit-tested directly.
  */
 
-import { REDIRECTS, STATUS_PAGES, isNoindexPath, PRERENDER_ROUTES } from "@/seo/publicRoutes";
+import { REDIRECTS, STATUS_PAGES, isNoindexPath, PRERENDER_ROUTES } from "../seo/publicRoutes";
 
 export type Decision =
   | { kind: "redirect"; location: string; status: 301 }
   | { kind: "asset" }
   | { kind: "api" }
+  | { kind: "blog"; language: "ro" | "en"; slug: string }
   | { kind: "static"; file: string; status: number; noindex: boolean }
   | { kind: "page"; noindex: boolean };
 
@@ -31,8 +32,10 @@ export function decide(url: URL): Decision {
     return { kind: "redirect", location: `${target}${url.search}`, status: 301 };
   }
 
+  const blogMatch = path.match(/^\/(en\/)?blog\/([a-z0-9]+(?:-[a-z0-9]+)*)$/);
+
   // Trailing-slash normalisation for real pages (avoids duplicate content).
-  if (path !== url.pathname && PRERENDER_ROUTES.includes(path)) {
+  if (path !== url.pathname && (PRERENDER_ROUTES.includes(path) || blogMatch)) {
     return { kind: "redirect", location: `${path}${url.search}`, status: 301 };
   }
 
@@ -44,7 +47,13 @@ export function decide(url: URL): Decision {
   // Real files (hashed bundles, images, robots.txt, sitemap.xml…).
   if (ASSET_RE.test(path) && !PRERENDER_ROUTES.includes(path)) return { kind: "asset" };
 
-  if (PRERENDER_ROUTES.includes(path)) return { kind: "page", noindex: false };
+  if (PRERENDER_ROUTES.includes(path)) return { kind: "page", noindex: isNoindexPath(path) };
+
+  // Database-backed articles do not exist as build-time files. The edge
+  // Worker renders their public HTML and metadata from the API response.
+  if (blogMatch) {
+    return { kind: "blog", language: blogMatch[1] ? "en" : "ro", slug: blogMatch[2] };
+  }
 
   if (isNoindexPath(path)) return { kind: "page", noindex: true };
 

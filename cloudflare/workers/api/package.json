@@ -9,10 +9,10 @@
     "migrate:local": "wrangler d1 migrations apply avyron-db --local"
   },
   "dependencies": {
-    "hono": "^4.6.0"
+    "hono": "^4.13.3"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250601.0",
-    "wrangler": "^4.96.0"
+    "@cloudflare/workers-types": "5.20260823.1",
+    "wrangler": "4.125.0"
   }
 }

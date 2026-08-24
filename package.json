@@ -3,15 +3,30 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "packageManager": "npm@10.9.2",
+  "engines": {
+    "node": ">=22 <25"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/prerender.mjs",
+    "build": "vite build && node scripts/prerender.mjs && node scripts/generate-sitemap.mjs",
+    "build:pages": "npm run build && node scripts/build-pages-worker.mjs",
+    "build:worker": "AVYRON_WORKER=1 vite build && AVYRON_WORKER=1 node scripts/prerender.mjs && node scripts/generate-sitemap.mjs",
     "build:dev": "vite build --mode development",
-    "deploy": "npm run build && npx wrangler@4.96.0 deploy --config dist/wrangler.json",
-    "deploy:dry-run": "npm run build && npx wrangler@4.96.0 deploy --config dist/wrangler.json --dry-run",
+    "types:worker": "wrangler types cloudflare/workers/api/src/worker-configuration.d.ts --config wrangler.jsonc --include-runtime=false --env-interface CloudflareBindings",
+    "types:worker:check": "wrangler types cloudflare/workers/api/src/worker-configuration.d.ts --config wrangler.jsonc --include-runtime=false --env-interface CloudflareBindings --check",
+    "build:api": "npm run types:worker:check && tsc -p tsconfig.worker.json && wrangler deploy --config wrangler.jsonc --env= --dry-run",
+    "build:email": "wrangler deploy --config cloudflare/workers/email/wrangler.jsonc --dry-run",
+    "validate:cloudflare": "npm run build:pages && npm run build:worker && npm run build:api && npm run build:email",
+    "deploy": "npm run deploy:api",
+    "deploy:api": "wrangler deploy --config wrangler.jsonc --env=",
+    "deploy:api:preview": "wrangler versions upload --config wrangler.jsonc --env preview --strict",
+    "deploy:site": "npm run build:worker && wrangler deploy --config dist/avyron_site/wrangler.json",
+    "deploy:site:dry-run": "npm run build:worker && wrangler deploy --config dist/avyron_site/wrangler.json --dry-run",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -53,7 +68,7 @@
     "dompurify": "^3.4.11",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.38.0",
-    "hono": "^4.12.25",
+    "hono": "^4.13.3",
     "input-otp": "^1.4.2",
     "isomorphic-dompurify": "^3.18.0",
     "lucide-react": "^0.462.0",
@@ -72,9 +87,10 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.39.0",
-    "@cloudflare/workers-types": "^4.20260613.1",
+    "@cloudflare/vite-plugin": "1.53.1",
+    "@cloudflare/workers-types": "5.20260823.1",
     "@eslint/js": "^9.32.0",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/typography": "^0.5.16",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",
@@ -95,6 +111,6 @@
     "typescript-eslint": "^8.38.0",
     "vite": "^6.4.2",
     "vitest": "^3.2.4",
-    "wrangler": "^4.96.0"
+    "wrangler": "4.125.0"
   }
 }

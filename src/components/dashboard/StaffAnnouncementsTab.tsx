@@ -37,7 +37,7 @@ export function StaffAnnouncementsTab() {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase.from("staff_announcements").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase.from("staff_announcements").select("id,author_id,title,content,priority,created_at").order("created_at", { ascending: false });
     setItems((data as Announcement[]) ?? []);
     setLoading(false);
   };

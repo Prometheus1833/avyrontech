@@ -1,0 +1,51 @@
+name: Verify AVYRON
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - main
+      - "codex/**"
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Use Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Build Cloudflare Pages output
+        run: npm run build:pages
+
+      - name: Run tests against prerendered output
+        run: npm test
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser journeys
+        run: npm run test:e2e
+
+      - name: Validate standalone site Worker build
+        run: npm run build:worker
+
+      - name: Validate API and email Workers
+        run: npm run build:api && npm run build:email

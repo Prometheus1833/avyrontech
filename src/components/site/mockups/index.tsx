@@ -1,6 +1,5 @@
-import { Calendar, Phone, MapPin, Star, Download, FileText, Wallet, ScanLine, Sparkles, Clock, Mail, MessageCircle, ChevronRight, Menu, Search, Shield, Award, Utensils, Bed, Wrench, Scale, Building2, Wifi, Coffee, Car, Heart, Gift, Megaphone, ArrowRight, Play, Check, Flame, ShoppingBag, Quote, Camera, Zap, Briefcase, Users, TrendingUp, Globe } from "lucide-react";
+import { Calendar, Phone, MapPin, Star, Download, FileText, Wallet, ScanLine, Sparkles, Clock, Mail, MessageCircle, ChevronRight, Menu, Search, Shield, Award, Utensils, Bed, Wrench, Scale, Building2, Wifi, Coffee, Car, Heart, Gift, Megaphone, ArrowRight, Play, Check, Flame, ShoppingBag, Quote, Camera, Zap, Briefcase, Users, TrendingUp, Globe, type LucideIcon } from "lucide-react";
 import salonHero from "@/assets/work-salon.jpg";
-import flawless from "@/assets/work-beauty-flawless.jpg";
 import resto from "@/assets/work-restaurant-new.jpg";
 import lawyer from "@/assets/work-lawyer-new.jpg";
 import hotel from "@/assets/work-hotel-new.jpg";
@@ -8,6 +7,19 @@ import local from "@/assets/work-local-new.jpg";
 import publicImg from "@/assets/work-public-miago.jpg";
 import retuvoLogo from "@/assets/retuvo-logo.png";
 import miagoTruck from "@/assets/work-miago-truck.jpg";
+
+const PUBLIC_SERVICE_LINKS: Array<[string, LucideIcon, string]> = [
+  ["Programări", Calendar, "bg-[#0b3a6f]"],
+  ["Documente", FileText, "bg-[#1a5fa8]"],
+  ["Plăți taxe", Wallet, "bg-[#2a7fc7]"],
+  ["Sesizări", Megaphone, "bg-[#3d96d8]"],
+];
+
+const RETUVO_ACTIONS: Array<[string, LucideIcon]> = [
+  ["Istoric", FileText],
+  ["Hartă", MapPin],
+  ["Retragere", ArrowRight],
+];
 
 /* Browser frame — fills its container 100% */
 const Frame = ({ children, url, dark = false }: { children: React.ReactNode; url: string; dark?: boolean }) => (
@@ -207,12 +219,7 @@ export const PublicMockup = () => (
 
       {/* Quick services grid */}
       <div className="px-2.5 py-1.5 grid grid-cols-4 gap-1">
-        {[
-          ["Programări", Calendar, "bg-[#0b3a6f]"],
-          ["Documente", FileText, "bg-[#1a5fa8]"],
-          ["Plăți taxe", Wallet, "bg-[#2a7fc7]"],
-          ["Sesizări", Megaphone, "bg-[#3d96d8]"],
-        ].map(([l, I, c]: any) => (
+        {PUBLIC_SERVICE_LINKS.map(([l, I, c]) => (
           <div key={l} className="rounded-lg border border-border/60 p-1.5 text-center bg-white hover:shadow-sm">
             <div className={`size-5 rounded-md ${c} grid place-items-center mx-auto mb-0.5`}><I className="size-2.5 text-white" /></div>
             <div className="text-[6.5px] font-semibold leading-tight">{l}</div>
@@ -467,7 +474,7 @@ export const NationalMockup = () => (
         <ScanLine className="size-2.5" /> Scanează cod de bare
       </button>
       <div className="grid grid-cols-3 gap-1 mb-1.5">
-        {[["Istoric", FileText], ["Hartă", MapPin], ["Retragere", ArrowRight]].map(([l, I]: any) => (
+        {RETUVO_ACTIONS.map(([l, I]) => (
           <div key={l} className="rounded-lg bg-secondary/60 p-1 text-center">
             <I className="size-2.5 text-brand mx-auto" />
             <div className="text-[7px] font-semibold mt-0.5">{l}</div>

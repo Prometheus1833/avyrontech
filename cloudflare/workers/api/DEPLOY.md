@@ -1,145 +1,91 @@
-# Deploy Cloudflare Worker `avyrontech`
+# Deploy controlat — `avyrontech`
 
-**Contextul actual (deja făcut):**
-- D1 `avyron-db` → `85b6868d-174a-48aa-8891-9366bbcb7e47`
-- KV → `7c296f2750b943cea4376c12122ed276`
-- R2 `avyron-files` (documente private per proiect) → binding `FILES`
-- R2 `avyron-media` (active publice, portfolio, og) → binding `MEDIA`
-- Worker URL: `https://avyrontech.avyrontech.workers.dev`
+Workerul API folosește D1 `avyron-db`, KV, R2 `avyron-files` și `avyron-media`.
+Frontendul Pages și Workerul Email Routing sunt build-uri separate.
 
-Toate ID-urile sunt deja în `wrangler.jsonc`.
+## Build settings
 
-## Comenzi (rulează din `cloudflare/workers/api/`)
+- API Worker: build command `npm run build:api`, deploy command `npm run deploy:api`
+- API preview version: `npm run deploy:api:preview` (obligatoriu pentru branch-uri)
+- Pages: build command `npm run build:pages`, output `dist`
+- Config API canonic: `wrangler.jsonc` din rădăcina repository-ului
+- Node: `22`, package manager canonic: npm; `bun.lock` rămâne sincronizat pentru build-ul Cloudflare configurat anterior pe Bun
 
-```bash
-# 1. Autentificare (o singură dată)
-bunx wrangler login
+## Ordinea activării
 
-# 2. Setează secretele (îți cere valoarea în terminal)
-#    JWT_SECRET → openssl rand -hex 48   (96 caractere)
-bunx wrangler secret put JWT_SECRET
-
-#    SEED_TOKEN → openssl rand -hex 24   (48 caractere)
-#    SALVEAZĂ-L, e nevoie o singură dată pentru seed
-bunx wrangler secret put SEED_TOKEN
-
-# 3. Aplică migrațiile pe D1 (remote)
-bunx wrangler d1 migrations apply avyron-db --remote
-
-# 4. Deploy worker
-bunx wrangler deploy
-# → https://avyrontech.avyrontech.workers.dev
-
-# 5. Seed conturi + proiecte demo (o singură dată)
-curl -X POST https://avyrontech.avyrontech.workers.dev/api/admin/seed \
-  -H "X-Seed-Token: <SEED_TOKEN>"
-
-# 6. Verifică
-curl https://avyrontech.avyrontech.workers.dev/api/health
-```
-
-## Conturi după seed
-
-Parola pentru toate: `Avyronpass123@`
-
-| Email                   | Rol           |
-|-------------------------|---------------|
-| avyrontech@gmail.com    | staff (admin) |
-| client1@example.com     | client        |
-| client2@example.com     | client        |
-| client3@example.com     | client        |
-
-## Frontend
-
-Frontend-ul (React în Lovable) știe deja unde e workerul:
-- pe `avyron.ro` sau direct pe `*.workers.dev` → same-origin
-- în preview Lovable (`*.lovable.app`) → cross-origin către `https://avyrontech.avyrontech.workers.dev`
-- CORS + cookie `sid` funcționează (`credentials: "include"` + `ALLOWED_ORIGINS` includ preview + prod)
-
-## Custom domain (opțional, când vrei /api pe avyron.ro)
-
-În Cloudflare Dashboard → Workers & Pages → `avyrontech` → Settings → Domains & Routes:
-- adaugă route: `avyron.ro/api/*` (zona `avyron.ro`)
-- adaugă route: `www.avyron.ro/api/*`
-
-După asta frontend-ul din prod trece automat pe same-origin (fără CORS).
-
-## Troubleshooting
-
-- `invalid_credentials` la login → verifică că seed-ul a rulat.
-- `forbidden` la seed → SEED_TOKEN nu e setat corect; re-rulează `wrangler secret put SEED_TOKEN`.
-- CORS blocked în preview → verifică `ALLOWED_ORIGINS` în `wrangler.jsonc` include exact URL-ul preview-ului.
-
-## Formular „Vreau exemplu gratuit” (SMTP)
-
-Endpoint: `POST /api/contact/demo` (public, multipart/form-data).
-Atașamentele se salvează în R2 `avyron-files` sub `leads/<id>/`, lead-ul se salvează în KV 90 zile,
-apoi se trimite email prin SMTP direct din Worker (TCP sockets + STARTTLS).
-
-Setează secretele (din `cloudflare/workers/api`):
+Preview-ul folosește exclusiv resursele `*-preview`. Schema lui se aplică astfel:
 
 ```bash
-bunx wrangler secret put SMTP_HOST     # ex: smtp.gmail.com
-bunx wrangler secret put SMTP_PORT     # 587 (STARTTLS) sau 465 (TLS)
-bunx wrangler secret put SMTP_USER     # ex: avyrontech@gmail.com
-bunx wrangler secret put SMTP_PASS     # app password
-bunx wrangler secret put SMTP_FROM     # ex: contact@avyron.ro (opțional)
-bunx wrangler secret put LEAD_TO       # emailul de bază al agenției
-bunx wrangler deploy
+npx wrangler d1 migrations apply DB --remote --config wrangler.jsonc --env preview
+npm run deploy:api:preview
 ```
 
-Dacă SMTP nu e configurat sau pică, formularul răspunde `202` iar lead-ul rămâne salvat în KV + R2.
+`wrangler versions upload` creează o versiune verificabilă, fără promovare în
+producție. Pentru un secret de preview se folosește fluxul de versiuni, nu
+`wrangler secret put`, deoarece comanda din urmă publică imediat o versiune.
 
-## Anti-spam + sincronizare lead-uri în tabel
-
-### 1. Cloudflare Turnstile (captcha)
-Dashboard → Turnstile → Add site (domeniu `avyron.ro`). Copiază cele două chei:
+Următoarele comenzi modifică producția și se rulează numai după aprobarea
+explicită a cutover-ului:
 
 ```bash
-cd cloudflare/workers/api
-bunx wrangler secret put TURNSTILE_SECRET      # secret key
+npx wrangler d1 migrations apply DB --remote --config wrangler.jsonc --env=
+npx wrangler secret put JWT_SECRET --config wrangler.jsonc
+npx wrangler secret put SMTP_PASS --config wrangler.jsonc
+npx wrangler secret put TURNSTILE_SECRET --config wrangler.jsonc
+npm run deploy:api
 ```
 
-Site key-ul (public) se pune în `.env` din rădăcina proiectului:
+Pentru Cloudflare Email Sending SMTP:
 
-```
-VITE_TURNSTILE_SITE_KEY=0x4AAAAAA...
-```
+- host: `smtp.mx.cloudflare.net`
+- port: `465` (TLS implicit)
+- username: literal `api_token`
+- `SMTP_PASS`: token API cu permisiunea **Email Sending: Edit**
+- `SMTP_FROM`: expeditor verificat, implicit `contact@avyron.ro`
+- `LEAD_TO`: inbox-ul intern care primește solicitările
 
-Dacă nu setezi aceste chei, formularul funcționează normal, doar fără captcha.
+Email Sending necesită activarea produsului în contul Cloudflare (în prezent,
+planul Workers Paid). Până la activare, `SMTP_PASS` rămâne opțional: datele sunt
+salvate în D1, iar livrarea este marcată explicit `failed`, fără succes fals.
 
-### 2. Rate limiting
-Automat, pe KV, fără configurare: max 3 solicitări/oră și 10/zi per IP, 3/zi per email.
-Plus un câmp honeypot ascuns (`company_url`) care blochează boții.
+Resetarea parolei, formularul CTA și solicitarea unui exemplu folosesc același transport SMTP.
+Datele sunt scrise întâi în D1; un eșec SMTP este înregistrat și returnat explicit frontendului.
 
-### 3. Tabel (Airtable sau Google Sheets)
+## Import de conturi
 
-**Varianta A — Airtable** (tabel cu coloanele: Lead ID, Data, Nume, Business, Telefon, Email, Website, Descriere, Fisiere, Limba, Sursa):
+Endpointul `POST /api/admin/import-users` cere întotdeauna `X-Seed-Token`. Nu există
+parole sau liste de utilizatori în repository. Conturile importate primesc
+`must_change_password=1` și trebuie să schimbe parola temporară la primul login.
 
-```bash
-bunx wrangler secret put AIRTABLE_API_KEY   # personal access token
-bunx wrangler secret put AIRTABLE_BASE_ID   # appXXXXXXXX
-bunx wrangler secret put AIRTABLE_TABLE     # opțional, default "Leads"
-```
+Exemplu de structură (valorile reale se transmit dintr-un fișier local necomis):
 
-**Varianta B — Google Sheets** prin Apps Script Web App:
-Sheet → Extensions → Apps Script → cod:
-
-```js
-function doPost(e) {
-  const d = JSON.parse(e.postData.contents);
-  SpreadsheetApp.getActiveSheet().appendRow([
-    d.submittedAt, d.leadId, d.name, d.business, d.phone, d.email,
-    d.website, d.description, (d.files || []).join(", "), d.lang, d.source
-  ]);
-  return ContentService.createTextOutput("ok");
+```json
+{
+  "users": [
+    {
+      "email": "user@example.com",
+      "temporaryPassword": "generated-temporary-password",
+      "displayName": "User",
+      "roles": ["user"]
+    }
+  ]
 }
 ```
 
-Deploy → Web app → Anyone → copiază URL-ul:
+Importul nu rescrie conturile existente. Hash-urile de parolă Supabase nu se mută
+prin frontend; pentru utilizatorii existenți se folosește un import administrativ
+cu parole temporare sau fluxul de resetare prin email.
+
+## Validare fără publicare
 
 ```bash
-bunx wrangler secret put LEAD_WEBHOOK_URL
+npm ci
+npx tsc --noEmit
+npm run validate:cloudflare
+npm test
 ```
 
-Apoi `bunx wrangler deploy`.
+Configurația de producție refuză uploadul dacă lipsesc `JWT_SECRET`,
+`SMTP_PASS` sau `TURNSTILE_SECRET`. Preview-ul cere `JWT_SECRET`; integrările
+SMTP și Turnstile se validează separat până când tokenurile lor de preview sunt
+configurate.
