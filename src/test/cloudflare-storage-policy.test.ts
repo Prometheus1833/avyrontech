@@ -68,4 +68,10 @@ describe("Cloudflare environment isolation", () => {
     expect(preview.vars.APP_ENV).toBe("preview");
     expect(config.vars.APP_ENV).toBe("production");
   });
+
+  it("lets the integrated Worker own canonical URLs and hard 404 responses", () => {
+    expect(config.assets.run_worker_first).toBe(true);
+    expect(config.assets.html_handling).toBe("drop-trailing-slash");
+    expect(config.assets.not_found_handling).toBe("none");
+  });
 });

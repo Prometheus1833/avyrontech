@@ -3,7 +3,7 @@
  * Kept free of Cloudflare APIs so it can be unit-tested directly.
  */
 
-import { REDIRECTS, STATUS_PAGES, isNoindexPath, PRERENDER_ROUTES } from "@/seo/publicRoutes";
+import { REDIRECTS, STATUS_PAGES, isNoindexPath, PRERENDER_ROUTES } from "../seo/publicRoutes";
 
 export type Decision =
   | { kind: "redirect"; location: string; status: 301 }

@@ -464,6 +464,7 @@ import { contactRouter } from "./contact";
 import { blogRouter, getBlogSitemapEntries, getPublishedBlogPost } from "./blog";
 import { injectBlogHtml, mergeBlogSitemap } from "../../../../src/worker/blogHtml";
 import { BLOG_SLUGS } from "../../../../src/data/blogSlugs";
+import { decide, isKnownSpaRoute, normalizePath } from "../../../../src/worker/router";
 app.use("/api/projects/*", requireAuth);
 app.use("/api/proposals/*", requireAuth);
 app.use("/api/links/*", requireAuth);
@@ -480,9 +481,20 @@ app.route("/", contactRouter);
 // Importul administrativ are propria gardă constant-time X-Seed-Token.
 app.route("/", seedRouter);
 
-async function publicBlogPage(c: Context<AppBindings>, language: "ro" | "en") {
-  const slug = c.req.param("slug") || "";
-  const post = await getPublishedBlogPost(c.env.DB, language, slug);
+async function publicBlogPage(c: Context<AppBindings>, language: "ro" | "en", requestedSlug?: string) {
+  const requestUrl = new URL(c.req.url);
+  const canonicalPath = normalizePath(requestUrl.pathname);
+  if (canonicalPath !== requestUrl.pathname) return c.redirect(`${canonicalPath}${requestUrl.search}`, 301);
+  const slug = requestedSlug || c.req.param("slug") || "";
+  let post: Awaited<ReturnType<typeof getPublishedBlogPost>> = null;
+  try {
+    post = await getPublishedBlogPost(c.env.DB, language, slug);
+  } catch (error) {
+    // Source-controlled articles remain available while a newly provisioned
+    // environment is waiting for its append-only D1 migration.
+    if (!(BLOG_SLUGS as readonly string[]).includes(slug)) throw error;
+    console.error(JSON.stringify({ event: "blog_database_unavailable", slug, error: String(error) }));
+  }
   if (!post) {
     // Source-controlled articles are already prerendered. Unknown slugs must
     // return a hard 404 instead of Cloudflare's SPA asset fallback.
@@ -499,7 +511,8 @@ async function publicBlogPage(c: Context<AppBindings>, language: "ro" | "en") {
   headers.set("content-type", "text/html; charset=utf-8");
   headers.set("cache-control", "public, max-age=60, s-maxage=300, stale-while-revalidate=86400");
   headers.set("Vary", "Accept-Encoding");
-  return new Response(injectBlogHtml(await shell.text(), post), { status: 200, headers });
+  const html = injectBlogHtml(await shell.text(), post);
+  return new Response(c.req.method === "HEAD" ? null : html, { status: 200, headers });
 }
 
 app.get("/blog/:slug", (c) => publicBlogPage(c, "ro"));
@@ -507,31 +520,61 @@ app.get("/en/blog/:slug", (c) => publicBlogPage(c, "en"));
 app.get("/sitemap.xml", async (c) => {
   const asset = await c.env.ASSETS.fetch(c.req.raw);
   if (!asset.ok) return asset;
-  const entries = await getBlogSitemapEntries(c.env.DB);
+  let entries: Awaited<ReturnType<typeof getBlogSitemapEntries>> = [];
+  try {
+    entries = await getBlogSitemapEntries(c.env.DB);
+  } catch (error) {
+    console.error(JSON.stringify({ event: "blog_sitemap_database_unavailable", error: String(error) }));
+  }
   const headers = new Headers(asset.headers);
   headers.set("content-type", "application/xml; charset=utf-8");
   headers.set("cache-control", "public, max-age=300, s-maxage=900, stale-while-revalidate=86400");
   return new Response(mergeBlogSitemap(await asset.text(), entries), { status: 200, headers });
 });
 
-app.notFound(async (c) => {
-  if (c.req.path.startsWith("/api/")) {
-    return c.json({ error: { code: "not_found", message: "Ruta nu există" } }, 404);
-  }
+async function siteFile(c: Context<AppBindings>, file: string, status: number, noindex: boolean) {
+  const method = c.req.method === "HEAD" ? "HEAD" : "GET";
+  const response = await c.env.ASSETS.fetch(new Request(new URL(file, c.req.url), { method }));
+  const headers = new Headers(response.headers);
+  headers.set("content-type", "text/html; charset=utf-8");
+  if (noindex) headers.set("X-Robots-Tag", "noindex, nofollow");
+  return new Response(response.body, { status, headers });
+}
 
-  // Only auth/private paths are configured to reach this branch. Public pages
-  // and hashed assets stay on Cloudflare's asset-first fast path.
-  const assetResponse = await c.env.ASSETS.fetch(c.req.raw);
-  const headers = new Headers(assetResponse.headers);
+// With run_worker_first=true and asset fallback disabled, the API Worker also
+// owns redirects, hard error statuses and private-route indexing semantics.
+// This keeps the direct Worker preview identical to the standalone site Worker.
+app.all("*", async (c) => {
+  const url = new URL(c.req.url);
+  const decision = decide(url);
+  if (decision.kind === "api") return c.json({ error: { code: "not_found", message: "Ruta nu există" } }, 404);
+  if (c.req.method !== "GET" && c.req.method !== "HEAD") return c.json({ error: { code: "method_not_allowed" } }, 405);
+
+  if (decision.kind === "redirect") return c.redirect(new URL(decision.location, url.origin).toString(), decision.status);
+  if (decision.kind === "asset") return c.env.ASSETS.fetch(c.req.raw);
+  if (decision.kind === "static") return siteFile(c, decision.file, decision.status, decision.noindex);
+  if (decision.kind === "blog") return publicBlogPage(c, decision.language, decision.slug);
+
+  const path = normalizePath(url.pathname);
+  const asset = await c.env.ASSETS.fetch(c.req.raw);
+  if (asset.status === 404) {
+    if (isKnownSpaRoute(path)) {
+      const shell = await siteFile(c, "/_shell.html", 200, true);
+      const headers = new Headers(shell.headers);
+      headers.set("Cache-Control", "private, no-store");
+      headers.set("Pragma", "no-cache");
+      return new Response(shell.body, { status: shell.status, headers });
+    }
+    return siteFile(c, "/404.html", 404, true);
+  }
+  if (!decision.noindex) return asset;
+  const headers = new Headers(asset.headers);
   headers.set("X-Robots-Tag", "noindex, nofollow");
   headers.set("Cache-Control", "private, no-store");
   headers.set("Pragma", "no-cache");
-  return new Response(assetResponse.body, {
-    status: assetResponse.status,
-    statusText: assetResponse.statusText,
-    headers,
-  });
+  return new Response(asset.body, { status: asset.status, headers });
 });
+
 app.onError((error, c) => {
   const requestId = c.req.header("cf-ray") || crypto.randomUUID();
   console.error(JSON.stringify({ event: "unhandled_error", requestId, path: c.req.path, method: c.req.method, error: error.message }));
