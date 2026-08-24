@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 const canonical = (path: string) => `https://avyron.ro${path === "/" ? "/" : path}`;
 
 test.describe("public SEO routes", () => {
-  for (const path of ["/", "/costurisiproduse", "/produse/audit-website"] as const) {
+  for (const path of ["/", "/costurisiproduse", "/produse/website-prezentare-premium"] as const) {
     test(`${path} has content and a self canonical`, async ({ page }) => {
       await page.goto(path);
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
@@ -16,6 +16,18 @@ test.describe("public SEO routes", () => {
     await page.goto("/en/pricing");
     await expect(page.locator('link[hreflang="ro"]')).toHaveAttribute("href", "https://avyron.ro/costurisiproduse");
     await expect(page.locator('link[hreflang="en"]')).toHaveAttribute("href", "https://avyron.ro/en/pricing");
+  });
+
+  test("audit remains in the product overview and continues in the request form", async ({ page }) => {
+    await page.goto("/costurisiproduse");
+    await page.getByRole("link", { name: "Vreau auditul", exact: true }).click();
+    await expect(page).toHaveURL(/\/\?request=audit#cta$/);
+    await expect(page.locator("#cta form")).toBeVisible();
+    await expect(page.locator("#description")).toHaveValue(/audit/i);
+
+    await page.goto("/produse/audit-website");
+    await expect(page).toHaveURL(/\/\?request=audit#cta$/);
+    await expect(page.locator("#cta form")).toBeVisible();
   });
 
   test("real blog article owns canonical and BlogPosting schema", async ({ page }) => {

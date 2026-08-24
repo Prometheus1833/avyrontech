@@ -1411,9 +1411,8 @@ const CATALOG: Product[] = [
   },
 ];
 
-/** Display order: the audit (free entry point) first, then paid products. */
+/** Products with dedicated landing pages, in display order. */
 const ORDER: ProductKey[] = [
-  "audit",
   "premium-website",
   "social-identity",
   "online-store",

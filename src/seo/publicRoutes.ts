@@ -48,6 +48,8 @@ export const REDIRECTS: Record<string, string> = {
   "/costuri": "/costurisiproduse",
   "/despre": "/despre-si-portofoliu",
   "/noutati": "/blog",
+  "/produse/audit-website": "/?request=audit#cta",
+  "/en/products/website-audit": "/en?request=audit#cta",
 };
 
 /** Private / auth / error areas: never indexed (X-Robots-Tag: noindex, nofollow). */

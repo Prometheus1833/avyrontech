@@ -2,7 +2,6 @@ import {
   Bot,
   Code2,
   Gauge,
-  Search,
   ShieldCheck,
   ShoppingBag,
 } from "lucide-react";
@@ -12,92 +11,90 @@ import { useLang } from "@/i18n/LanguageContext";
 
 const copy = {
   ro: {
-    eyebrow: "Agenție web din Iași · proiecte în România și UE",
-    title: "Construim prezența digitală de la primul site până la platforma internă.",
+    eyebrow: "Soluții digitale gândite pentru rezultate",
+    title: "Alegi punctul de pornire. Noi construim sistemul potrivit.",
     intro:
-      "Avyron proiectează site-uri de prezentare profesionale, magazine online și aplicații web sau mobile pentru firme, profesii liberale și organizații. Combinăm strategie, design custom, dezvoltare, SEO tehnic, securitate și infrastructură Cloudflare într-un produs ușor de folosit și de extins.",
-    cta: "Vezi produsul",
+      "De la un site de prezentare clar până la un magazin, o aplicație sau o platformă internă, fiecare produs pornește de la obiectivul real și rămâne ușor de extins.",
+    cta: "Descoperă",
     items: [
       {
-        title: "Site de prezentare profesional",
-        text: "Website rapid și credibil pentru firmă, cabinet, salon, restaurant, pensiune sau servicii locale: pagini clare, formulare, WhatsApp, Google Maps, administrare și conținut adaptat clienților reali.",
+        title: "Site de prezentare",
+        text: "O prezență rapidă și credibilă, construită să transforme interesul în solicitări.",
         path: "/produse/website-prezentare-premium",
         Icon: Code2,
+        tone: "from-cyan-400/25 to-blue-500/10 text-cyan-600 dark:text-cyan-300",
       },
       {
-        title: "Vizibilitate Google, locală și AI",
-        text: "Arhitectură indexabilă, metadata unică, Schema.org, hreflang română–engleză, sitemap, Core Web Vitals și texte utile care explică exact serviciile, zonele deservite și diferențiatorii afacerii.",
-        path: "/produse/audit-website",
-        Icon: Search,
-      },
-      {
-        title: "Magazin online și conversie",
-        text: "Catalog, filtre, comenzi, plăți, livrare, facturare și automatizări într-un flux optimizat pentru mobil, cu administrare simplă și o bază tehnică pregătită pentru creștere.",
+        title: "Magazin online",
+        text: "Un traseu simplu de la produs la comandă, optimizat pentru mobil și creștere.",
         path: "/produse/magazin-online",
         Icon: ShoppingBag,
+        tone: "from-amber-400/25 to-orange-500/10 text-orange-600 dark:text-amber-300",
       },
       {
-        title: "Aplicații și platforme scalabile",
-        text: "Dashboarduri, portaluri pentru clienți, aplicații web, PWA, iOS și Android, API-uri și baze de date proiectate pentru roluri, permisiuni, observabilitate și extindere controlată.",
+        title: "Aplicații și platforme",
+        text: "Fluxuri, conturi și date organizate într-un produs fluid, sigur și scalabil.",
         path: "/produse/aplicatii-web-si-mobile",
         Icon: Gauge,
+        tone: "from-indigo-400/25 to-violet-500/10 text-indigo-600 dark:text-indigo-300",
       },
       {
-        title: "Automatizări și agenți AI",
-        text: "Asistenți conectați la informațiile aprobate ale afacerii pentru suport, calificarea solicitărilor și procese repetitive, cu limite clare, trasabilitate și integrare în fluxurile existente.",
+        title: "Automatizări și AI",
+        text: "Asistenți și procese inteligente care reduc munca repetitivă fără să piardă controlul.",
         path: "/produse/agent-ai-personalizat",
         Icon: Bot,
+        tone: "from-fuchsia-400/25 to-purple-500/10 text-fuchsia-600 dark:text-fuchsia-300",
       },
       {
-        title: "Mentenanță, QA și securitate",
-        text: "Testare funcțională și accesibilă, actualizări, backup, monitorizare, protecție la abuz și optimizare continuă, cu obiective și responsabilități stabilite transparent pentru fiecare proiect.",
+        title: "Mentenanță și QA",
+        text: "Monitorizare, testare și îmbunătățiri continue pentru un produs stabil și protejat.",
         path: "/pachete-mentenanta",
         Icon: ShieldCheck,
+        tone: "from-emerald-400/25 to-teal-500/10 text-emerald-600 dark:text-emerald-300",
       },
     ],
   },
   en: {
-    eyebrow: "Web agency in Iași · projects across Romania and the EU",
-    title: "From a first business website to a scalable internal platform.",
+    eyebrow: "Digital solutions designed around outcomes",
+    title: "Choose the starting point. We build the right system.",
     intro:
-      "Avyron designs professional presentation websites, online stores, and web or mobile applications for companies, independent professionals, and organizations. We combine strategy, custom design, development, technical SEO, security, and Cloudflare infrastructure in a product that is easy to use and extend.",
-    cta: "Explore the service",
+      "From a clear business website to a store, an app, or an internal platform, every product starts with the real objective and remains easy to extend.",
+    cta: "Discover",
     items: [
       {
-        title: "Professional business websites",
-        text: "Fast, trustworthy websites for companies, practices, salons, restaurants, guest houses, and local services—with clear pages, forms, WhatsApp, Google Maps, content management, and customer-focused copy.",
+        title: "Business websites",
+        text: "A fast, credible presence designed to turn genuine interest into enquiries.",
         path: "/en/products/premium-presentation-website",
         Icon: Code2,
+        tone: "from-cyan-400/25 to-blue-500/10 text-cyan-600 dark:text-cyan-300",
       },
       {
-        title: "Google, local, and AI visibility",
-        text: "Crawlable architecture, unique metadata, Schema.org, Romanian–English hreflang, sitemaps, Core Web Vitals, and useful copy that clearly explains services, coverage, and genuine business differentiators.",
-        path: "/en/products/website-audit",
-        Icon: Search,
-      },
-      {
-        title: "Ecommerce and conversion",
-        text: "Catalogues, filters, orders, payments, delivery, invoicing, and automation in a mobile-first journey, with straightforward administration and a technical foundation designed for growth.",
+        title: "Online stores",
+        text: "A simple path from product to order, optimized for mobile and sustainable growth.",
         path: "/en/products/online-store",
         Icon: ShoppingBag,
+        tone: "from-amber-400/25 to-orange-500/10 text-orange-600 dark:text-amber-300",
       },
       {
-        title: "Scalable apps and platforms",
-        text: "Dashboards, customer portals, web apps, PWAs, iOS and Android apps, APIs, and databases designed for roles, permissions, observability, and controlled expansion.",
+        title: "Apps and platforms",
+        text: "Workflows, accounts, and data organized into a fluid, secure, scalable product.",
         path: "/en/products/web-and-mobile-apps",
         Icon: Gauge,
+        tone: "from-indigo-400/25 to-violet-500/10 text-indigo-600 dark:text-indigo-300",
       },
       {
-        title: "Automation and AI agents",
-        text: "Assistants grounded in approved business information for support, lead qualification, and repetitive workflows, with clear guardrails, traceability, and integration into existing operations.",
+        title: "Automation and AI",
+        text: "Smart assistants and processes that reduce repetitive work while keeping you in control.",
         path: "/en/products/personalized-ai-agent",
         Icon: Bot,
+        tone: "from-fuchsia-400/25 to-purple-500/10 text-fuchsia-600 dark:text-fuchsia-300",
       },
       {
-        title: "Maintenance, QA, and security",
-        text: "Functional and accessibility testing, updates, backups, monitoring, abuse protection, and continuous optimization, with measurable objectives and responsibilities agreed for every project.",
+        title: "Maintenance and QA",
+        text: "Monitoring, testing, and continuous improvements for a stable, protected product.",
         path: "/en/care-plans",
         Icon: ShieldCheck,
+        tone: "from-emerald-400/25 to-teal-500/10 text-emerald-600 dark:text-emerald-300",
       },
     ],
   },
@@ -108,27 +105,27 @@ const AgencyServices = () => {
   const content = copy[lang];
 
   return (
-    <section id="servicii" aria-labelledby="agency-services-title" className="relative py-16 md:py-24">
+    <section id="servicii" aria-labelledby="agency-services-title" className="relative py-12 md:py-16">
       <div className="mx-auto max-w-6xl px-4">
-        <div className="max-w-4xl">
+        <div className="max-w-3xl">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand">{content.eyebrow}</p>
-          <h2 id="agency-services-title" className="mt-3 font-display text-3xl font-bold leading-tight tracking-tight md:text-5xl">
+          <h2 id="agency-services-title" className="mt-3 font-display text-3xl font-bold leading-tight tracking-tight md:text-4xl">
             {content.title}
           </h2>
-          <p className="mt-5 max-w-3xl text-base leading-relaxed text-muted-foreground md:text-lg">
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground md:text-base">
             {content.intro}
           </p>
         </div>
 
-        <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {content.items.map(({ title, text, path, Icon }) => (
-            <article key={path} className="group rounded-3xl border border-border/70 bg-card/70 p-6 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-brand/40 hover:shadow-elev">
-              <span className="grid size-11 place-items-center rounded-2xl bg-brand/10 text-brand">
-                <Icon className="size-5" aria-hidden />
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {content.items.map(({ title, text, path, Icon, tone }) => (
+            <article key={path} className="group flex min-h-56 flex-col rounded-2xl border border-border/70 bg-card/65 p-4 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-brand/35 hover:bg-card hover:shadow-elev">
+              <span className={`grid size-10 place-items-center rounded-xl bg-gradient-to-br ${tone}`}>
+                <Icon className="size-4.5" aria-hidden />
               </span>
-              <h3 className="mt-5 font-display text-xl font-semibold tracking-tight">{title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{text}</p>
-              <Link to={path} className="mt-5 inline-flex text-sm font-semibold text-brand underline-offset-4 hover:underline">
+              <h3 className="mt-4 font-display text-base font-semibold tracking-tight">{title}</h3>
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{text}</p>
+              <Link to={path} className="mt-auto inline-flex pt-4 text-xs font-semibold text-brand underline-offset-4 hover:underline">
                 {content.cta}<span aria-hidden> →</span>
               </Link>
             </article>

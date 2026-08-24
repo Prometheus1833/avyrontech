@@ -38,6 +38,8 @@ type Tier = {
   accent: string; // tailwind classes for shape color
 };
 
+const PRODUCT_SUMMARY_LIMIT = 7;
+
 const Pricing = () => {
   const { lang } = useLang();
   const ro = lang === "ro";
@@ -323,126 +325,76 @@ const Pricing = () => {
           </p>
         </section>
 
-        {/* Bring-your-own banner */}
-        <section className="mt-12 rounded-2xl border border-foreground/10 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 p-5 md:p-6 backdrop-blur">
-          <div className="flex items-start md:items-center gap-4 flex-col md:flex-row">
-            <div className="size-12 shrink-0 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 grid place-items-center">
-              <Zap className="size-6" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="font-display text-lg md:text-xl font-bold">
-                {ro ? "Ai deja un site sau un produs?" : "Already have a site or product?"}
-              </h2>
-              <p className="text-sm text-foreground/70 mt-1">
-                {ro
-                  ? "Poți aduce site-ul sau produsul pe care îl ai deja pentru actualizare, modificare sau doar pentru mentenanță. Îl evaluăm gratuit și îți spunem exact ce se poate îmbunătăți, ca să iei decizia potrivită fără presiune."
-                  : "You can bring your existing site or product for updates, changes or just maintenance. We'll evaluate it for free and tell you exactly what can be improved, so you can make the right decision without any pressure."}
-              </p>
-            </div>
-            <a
-              href="#cta"
-              className="shrink-0 inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/90 transition-colors w-full md:w-auto justify-center"
-            >
-              {ro ? "Cere evaluare" : "Request evaluation"}
-            </a>
-          </div>
-        </section>
-
-        {/* Audit Website / Soft Actual — punct de intrare gratuit */}
-        <section className="mt-8 grid md:grid-cols-5 gap-4 items-start">
-          <div className="md:col-span-2 rounded-2xl border border-amber-300/20 bg-gradient-to-br from-card to-background p-5 sm:p-6 relative overflow-hidden text-center transition-transform duration-500 hover:-translate-y-1">
-            <div aria-hidden className="absolute -top-16 -right-16 size-48 rounded-full bg-amber-400/15 blur-3xl" />
-            <div aria-hidden className="absolute -bottom-16 -left-16 size-48 rounded-full bg-orange-500/15 blur-3xl" />
-            <div className="relative">
-              <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-amber-700 dark:text-amber-200">
+        {/* Audit — product overview entry; the request continues in the protected form. */}
+        <section className="relative mt-10 overflow-hidden rounded-2xl border border-amber-300/25 bg-gradient-to-br from-amber-400/[0.08] via-card to-orange-500/[0.06] p-5 sm:p-6">
+          <div aria-hidden className="absolute -right-16 -top-20 size-56 rounded-full bg-amber-400/15 blur-3xl" />
+          <div className="relative grid items-start gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-700 dark:text-amber-200">
                 <ScanSearch className="size-3.5" aria-hidden />
-                {ro ? "Începe de aici · Gratuit" : "Start here · Free"}
+                {ro ? "Audit gratuit · punct de pornire" : "Free audit · a clear starting point"}
               </div>
-              <div className="mt-5 flex items-center justify-center gap-3">
-                <div className="size-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-600 grid place-items-center shadow-[0_0_24px_-6px_rgba(251,146,60,0.6)]">
-                  <ScanSearch className="size-6 text-white" aria-hidden />
-                </div>
-                <div className="size-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 grid place-items-center shadow-[0_0_24px_-6px_rgba(16,185,129,0.6)]">
-                  <Shield className="size-6 text-white" aria-hidden />
-                </div>
-                <div className="size-12 rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 grid place-items-center shadow-[0_0_24px_-6px_rgba(14,165,233,0.6)]">
-                  <Gauge className="size-6 text-white" aria-hidden />
-                </div>
-              </div>
-              <h2 className="mt-5 font-display text-2xl sm:text-3xl font-extrabold">
-                {ro ? "Audit Website / Soft Actual" : "Website / Software Audit"}
+              <h2 className="mt-4 font-display text-2xl font-extrabold sm:text-3xl">
+                {ro ? "Audit website / produs digital" : "Website / digital product audit"}
               </h2>
-              <p className="mt-2 text-xs uppercase tracking-[0.25em] text-foreground/50">
-                {ro ? "Securitate · Performanță · SEO · UI/UX" : "Security · Performance · SEO · UI/UX"}
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-foreground/70">
+                {ro
+                  ? "Primești o evaluare clară a produsului actual și recomandări ordonate după impact, ca să știi ce merită îmbunătățit mai întâi."
+                  : "Receive a clear review of your current product and recommendations ordered by impact, so you know what is worth improving first."}
               </p>
-              <div className="mt-3 flex items-baseline justify-center gap-1.5 flex-wrap">
-                <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-amber-300 to-orange-500 bg-clip-text text-transparent">
+              <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-foreground/65">
+                <span className="font-display text-2xl font-extrabold text-amber-600 dark:text-amber-300">
                   {ro ? "Gratuit" : "Free"}
                 </span>
+                <span aria-hidden>·</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Hourglass className="size-3.5" aria-hidden />
+                  {ro ? "Raport în 2–4 zile" : "Report in 2–4 days"}
+                </span>
               </div>
-              <p className="mt-3 text-xs sm:text-sm text-foreground/70 leading-snug text-left">
-                {ro
-                  ? "Un raport onest despre produsul digital pe care îl ai deja, ordonat după impact: ce funcționează, ce te costă clienți și ce trebuie reparat întâi."
-                  : "An honest, impact-ordered report on the digital product you already have: what works, what costs you clients and what to fix first."}
-              </p>
-              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-amber-300/20 bg-amber-300/[0.06] px-3 py-1.5 text-[11px] text-amber-700 dark:text-amber-100">
-                <Hourglass className="size-3.5" aria-hidden />
-                {ro ? "Raport în 2–4 zile" : "Report in 2–4 days"}
-              </div>
-            </div>
-          </div>
-          <div className="md:col-span-3 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur">
-            <div className="text-[11px] uppercase tracking-[0.3em] text-foreground/50">{ro ? "Raportul acoperă:" : "The report covers:"}</div>
-            <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
-              {(ro
-                ? [
-                    { icon: <Shield className="size-4" />, text: "Securitate: HTTPS, headere, vulnerabilități" },
-                    { icon: <Gauge className="size-4" />, text: "Performanță: Core Web Vitals și viteză reală" },
-                    { icon: <Globe className="size-4" />, text: "SEO tehnic: indexare, sitemap, date structurate" },
-                    { icon: <Accessibility className="size-4" />, text: "Accesibilitate: contrast, tastatură, WCAG" },
-                    { icon: <Palette className="size-4" />, text: "UI/UX: claritate, ierarhie, traseu spre conversie" },
-                    { icon: <BarChart3 className="size-4" />, text: "Analiză de piață: 2–3 concurenți din nișa ta" },
-                    { icon: <Check className="size-4" />, text: "Recomandări prioritizate, cu impact și efort" },
-                    { icon: <Hourglass className="size-4" />, text: "Plan de acțiune pe 30 și 90 de zile" },
-                  ]
-                : [
-                    { icon: <Shield className="size-4" />, text: "Security: HTTPS, headers, vulnerabilities" },
-                    { icon: <Gauge className="size-4" />, text: "Performance: Core Web Vitals and real speed" },
-                    { icon: <Globe className="size-4" />, text: "Technical SEO: indexing, sitemap, structured data" },
-                    { icon: <Accessibility className="size-4" />, text: "Accessibility: contrast, keyboard, WCAG" },
-                    { icon: <Palette className="size-4" />, text: "UI/UX: clarity, hierarchy, path to conversion" },
-                    { icon: <BarChart3 className="size-4" />, text: "Market analysis: 2–3 competitors in your niche" },
-                    { icon: <Check className="size-4" />, text: "Prioritized recommendations with impact and effort" },
-                    { icon: <Hourglass className="size-4" />, text: "A 30 and 90-day action plan" },
-                  ]
-              ).map((f) => (
-                <li key={f.text} className="flex items-start gap-2 text-sm text-foreground/85">
-                  <span className="mt-0.5 size-5 rounded-md bg-amber-400/15 text-amber-400 grid place-items-center shrink-0">
-                    {f.icon}
-                  </span>
-                  <span>{f.text}</span>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-              <a
-                href="https://wa.me/40734605055?text=Bună! Aș dori un audit complet pentru website-ul / aplicația mea."
-                onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "pricing_product" })}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
+              <Link
+                to={ro ? "/?request=audit#cta" : "/en?request=audit#cta"}
+                onClick={() => trackEvent("audit_form_click", { location: "pricing_product" })}
+                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 sm:w-auto"
               >
                 <ScanSearch className="size-4" aria-hidden />
-                {ro ? "Vreau auditul gratuit" : "I want the free audit"}
-              </a>
-              <Link
-                to={ro ? "/produse/audit-website" : "/en/products/website-audit"}
-                onClick={() => trackEvent("product_details_click", { product: "/produse/audit-website" })}
-                className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
-              >
-                {ro ? "Vezi detalii" : "See details"}
-                <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
+                {ro ? "Vreau auditul" : "I want an audit"}
               </Link>
+            </div>
+
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-foreground/50">
+                {ro ? "Ce acoperă auditul" : "What the audit covers"}
+              </p>
+              <ul className="mt-4 grid gap-x-5 gap-y-3 sm:grid-cols-2">
+                {(ro
+                  ? [
+                      { icon: <Shield className="size-4" />, text: "Securitate și vulnerabilități evidente" },
+                      { icon: <Gauge className="size-4" />, text: "Performanță și Core Web Vitals" },
+                      { icon: <Globe className="size-4" />, text: "SEO tehnic și indexare" },
+                      { icon: <Accessibility className="size-4" />, text: "Accesibilitate și utilizare" },
+                      { icon: <Palette className="size-4" />, text: "Claritate UI/UX și conversie" },
+                      { icon: <BarChart3 className="size-4" />, text: "Repere relevante din piață" },
+                      { icon: <Check className="size-4" />, text: "Recomandări prioritizate după impact" },
+                    ]
+                  : [
+                      { icon: <Shield className="size-4" />, text: "Security and visible vulnerabilities" },
+                      { icon: <Gauge className="size-4" />, text: "Performance and Core Web Vitals" },
+                      { icon: <Globe className="size-4" />, text: "Technical SEO and indexing" },
+                      { icon: <Accessibility className="size-4" />, text: "Accessibility and usability" },
+                      { icon: <Palette className="size-4" />, text: "UI/UX clarity and conversion" },
+                      { icon: <BarChart3 className="size-4" />, text: "Relevant market benchmarks" },
+                      { icon: <Check className="size-4" />, text: "Recommendations prioritized by impact" },
+                    ]
+                ).slice(0, PRODUCT_SUMMARY_LIMIT).map((feature) => (
+                  <li key={feature.text} className="flex items-start gap-2 text-sm text-foreground/85">
+                    <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-md bg-amber-400/15 text-amber-600 dark:text-amber-300">
+                      {feature.icon}
+                    </span>
+                    <span>{feature.text}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </section>
@@ -482,7 +434,7 @@ const Pricing = () => {
           <div className="md:col-span-3 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur">
             <div className="text-[11px] uppercase tracking-[0.3em] text-foreground/50">{ro ? "Include:" : "Includes:"}</div>
             <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
-              {main.includes.map((f) => (
+              {main.includes.slice(0, PRODUCT_SUMMARY_LIMIT).map((f) => (
                 <li key={f} className="flex items-start gap-2 text-sm text-foreground/85">
                   <Check className="size-4 mt-0.5 text-cyan-300 shrink-0" />
                   <span>{f}</span>
@@ -584,7 +536,7 @@ const Pricing = () => {
                     { icon: <Music2 className="size-4" />, text: "TikTok content recommendations tailored to your niche" },
                     { icon: <Shield className="size-4" />, text: "Safety settings, email verification and account recovery" },
                   ]
-              ).map((f) => (
+              ).slice(0, PRODUCT_SUMMARY_LIMIT).map((f) => (
                 <li key={f.text} className="flex items-start gap-2 text-sm text-foreground/85">
                   <span className="mt-0.5 size-5 rounded-md bg-pink-400/15 text-pink-300 grid place-items-center shrink-0">
                     {f.icon}
@@ -682,7 +634,7 @@ const Pricing = () => {
                     { icon: <MessageCircle className="size-4" />, text: "Automated emails: order, shipping, abandoned cart" },
                     { icon: <Shield className="size-4" />, text: "GDPR, terms, policies and daily backups" },
                   ]
-              ).map((f) => (
+              ).slice(0, PRODUCT_SUMMARY_LIMIT).map((f) => (
                 <li key={f.text} className="flex items-start gap-2 text-sm text-foreground/85">
                   <span className="mt-0.5 size-5 rounded-md bg-emerald-400/15 text-emerald-300 grid place-items-center shrink-0">
                     {f.icon}
@@ -786,7 +738,7 @@ const Pricing = () => {
                     { icon: <Shield className="size-4" />, text: "GDPR, encryption, user roles and security audit" },
                     { icon: <RefreshCw className="size-4" />, text: "OTA updates, versioning and 12+ month roadmap" },
                   ]
-              ).map((f) => (
+              ).slice(0, PRODUCT_SUMMARY_LIMIT).map((f) => (
                 <li key={f.text} className="flex items-start gap-2 text-sm text-foreground/85">
                   <span className="mt-0.5 size-5 rounded-md bg-indigo-400/15 text-indigo-300 grid place-items-center shrink-0">
                     {f.icon}
@@ -890,7 +842,7 @@ const Pricing = () => {
                     { icon: <Globe className="size-4" />, text: "Multilingual (RO / EN +) and SEO-optimized for indexing" },
                     { icon: <RefreshCw className="size-4" />, text: "Periodic retraining on new information from your business" },
                   ]
-              ).map((f) => (
+              ).slice(0, PRODUCT_SUMMARY_LIMIT).map((f) => (
                 <li key={f.text} className="flex items-start gap-2 text-sm text-foreground/85">
                   <span className="mt-0.5 size-5 rounded-md bg-fuchsia-400/15 text-fuchsia-300 grid place-items-center shrink-0">
                     {f.icon}
@@ -991,7 +943,7 @@ const Pricing = () => {
                     { icon: <FileText className="size-4" />, text: "Defect report with severity and reproduction steps" },
                     { icon: <RefreshCw className="size-4" />, text: "Retesting and regression after fixes" },
                   ]
-              ).map((f) => (
+              ).slice(0, PRODUCT_SUMMARY_LIMIT).map((f) => (
                 <li key={f.text} className="flex items-start gap-2 text-sm text-foreground/85">
                   <span className="mt-0.5 size-5 rounded-md bg-lime-400/15 text-lime-500 grid place-items-center shrink-0">
                     {f.icon}
@@ -1063,7 +1015,7 @@ const Pricing = () => {
                   <span className="text-xs text-foreground/50">/{ro ? "lună" : "mo"}</span>
                 </div>
                 <ul className="mt-6 space-y-2.5">
-                  {tier.features.map((f) => (
+                  {tier.features.slice(0, PRODUCT_SUMMARY_LIMIT).map((f) => (
                     <li key={f} className="flex items-start gap-2 text-sm text-foreground/85">
                       <Check className={`size-4 mt-0.5 shrink-0 ${tier.accent}`} />
                       <span>{f}</span>

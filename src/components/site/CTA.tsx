@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Gift, Paperclip, X, Loader2, CheckCircle2, RotateCcw } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
 import { apiUrl } from "@/lib/apiBase";
 import Turnstile, { TURNSTILE_SITE_KEY } from "@/components/site/Turnstile";
@@ -28,6 +29,8 @@ type Summary = {
 
 const CTA = () => {
   const { t, lang } = useLang();
+  const location = useLocation();
+  const isAuditRequest = new URLSearchParams(location.search).get("request") === "audit";
   const schema = z.object({
     name: z.string().trim().min(2, t.cta.errNameShort).max(80),
     business: z.string().trim().min(2, t.cta.errBusiness).max(80),
@@ -37,7 +40,18 @@ const CTA = () => {
     email: z.string().trim().email(t.cta.errEmail).max(120),
   });
 
-  const emptyData = { name: "", business: "", description: "", website: "", phone: "", email: "" };
+  const emptyData = {
+    name: "",
+    business: "",
+    description: isAuditRequest
+      ? lang === "ro"
+        ? "Doresc un audit pentru website-ul sau produsul meu digital."
+        : "I would like an audit for my website or digital product."
+      : "",
+    website: "",
+    phone: "",
+    email: "",
+  };
   const [data, setData] = useState(emptyData);
   const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);

@@ -18,13 +18,13 @@ describe("SPA head cleanup between routes", () => {
   it("drops Product schema and stale alternates when leaving a product page", () => {
     // product page
     setPageMeta({
-      title: "Audit",
+      title: "Website Prezentare Premium",
       description: "d",
-      path: "/produse/audit-website",
-      alternates: { ro: "/produse/audit-website", en: "/en/products/website-audit" },
+      path: "/produse/website-prezentare-premium",
+      alternates: { ro: "/produse/website-prezentare-premium", en: "/en/products/premium-presentation-website" },
     });
     setJsonLd("organization", organizationLd);
-    setJsonLd("product", productLd({ name: "Audit", description: "d", path: "/produse/audit-website" }));
+    setJsonLd("product", productLd({ name: "Website Prezentare Premium", description: "d", path: "/produse/website-prezentare-premium" }));
     expect(types()).toContain("Product");
 
     // -> pricing

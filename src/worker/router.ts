@@ -28,8 +28,18 @@ export function decide(url: URL): Decision {
 
   // Legacy URLs -> canonical URLs, query string preserved, no loops.
   const target = REDIRECTS[path];
-  if (target && normalizePath(target) !== path) {
-    return { kind: "redirect", location: `${target}${url.search}`, status: 301 };
+  if (target) {
+    const targetUrl = new URL(target, url.origin);
+    if (normalizePath(targetUrl.pathname) !== path) {
+      url.searchParams.forEach((value, key) => {
+        if (!targetUrl.searchParams.has(key)) targetUrl.searchParams.append(key, value);
+      });
+      return {
+        kind: "redirect",
+        location: `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`,
+        status: 301,
+      };
+    }
   }
 
   const blogMatch = path.match(/^\/(en\/)?blog\/([a-z0-9]+(?:-[a-z0-9]+)*)$/);

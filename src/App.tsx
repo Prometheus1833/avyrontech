@@ -90,14 +90,14 @@ const App = () => (
                 <Route path="/produse/magazin-online" element={<ProductDetail />} />
                 <Route path="/produse/aplicatii-web-si-mobile" element={<ProductDetail />} />
                 <Route path="/produse/agent-ai-personalizat" element={<ProductDetail />} />
-                <Route path="/produse/audit-website" element={<ProductDetail />} />
+                <Route path="/produse/audit-website" element={<Navigate to="/?request=audit#cta" replace />} />
                 <Route path="/produse/testare-qa-web-mobile" element={<ProductDetail />} />
                 <Route path="/en/products/premium-presentation-website" element={<ProductDetail />} />
                 <Route path="/en/products/social-media-identity" element={<ProductDetail />} />
                 <Route path="/en/products/online-store" element={<ProductDetail />} />
                 <Route path="/en/products/web-and-mobile-apps" element={<ProductDetail />} />
                 <Route path="/en/products/personalized-ai-agent" element={<ProductDetail />} />
-                <Route path="/en/products/website-audit" element={<ProductDetail />} />
+                <Route path="/en/products/website-audit" element={<Navigate to="/en?request=audit#cta" replace />} />
                 <Route path="/en/products/qa-testing-web-mobile" element={<ProductDetail />} />
                 <Route path="/pachete-mentenanta" element={<CarePlans />} />
                 <Route path="/en/care-plans" element={<CarePlans />} />

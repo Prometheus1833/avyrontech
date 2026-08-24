@@ -29,8 +29,8 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
   const cases: Array<[string, string, string]> = [
     ["/", "ro", "https://avyron.ro/"],
     ["/costurisiproduse", "ro", "https://avyron.ro/costurisiproduse"],
-    ["/produse/audit-website", "ro", "https://avyron.ro/produse/audit-website"],
-    ["/en/products/website-audit", "en", "https://avyron.ro/en/products/website-audit"],
+    ["/produse/website-prezentare-premium", "ro", "https://avyron.ro/produse/website-prezentare-premium"],
+    ["/en/products/premium-presentation-website", "en", "https://avyron.ro/en/products/premium-presentation-website"],
     ["/en/pricing", "en", "https://avyron.ro/en/pricing"],
   ];
 
@@ -95,7 +95,7 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
   });
 
   it("ships exactly one JSON-LD graph with no duplicated global nodes", () => {
-    for (const route of ["/", "/costurisiproduse", "/produse/audit-website", "/pachete-mentenanta"]) {
+    for (const route of ["/", "/costurisiproduse", "/produse/website-prezentare-premium", "/pachete-mentenanta"]) {
       const h = head(read(route));
       const scripts = h.match(/<script[^>]*application\/ld\+json[^>]*>/g) || [];
       expect(scripts.length).toBe(1);

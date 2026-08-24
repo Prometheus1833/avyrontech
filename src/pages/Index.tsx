@@ -16,10 +16,22 @@ const CTA = lazy(() => import("@/components/site/CTA"));
 const ContactBar = lazy(() => import("@/components/site/ContactBar"));
 const Footer = lazy(() => import("@/components/site/Footer"));
 
-const Deferred = ({ children, minHeight = 240 }: { children: ReactNode; minHeight?: number }) => {
+const Deferred = ({
+  children,
+  minHeight = 240,
+  forceReady = false,
+}: {
+  children: ReactNode;
+  minHeight?: number;
+  forceReady?: boolean;
+}) => {
   const ref = useRef<HTMLDivElement>(null);
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(forceReady);
   useEffect(() => {
+    if (forceReady) {
+      setReady(true);
+      return;
+    }
     if (ready || !ref.current) return;
     const observer = new IntersectionObserver(([entry]) => {
       if (!entry.isIntersecting) return;
@@ -28,7 +40,7 @@ const Deferred = ({ children, minHeight = 240 }: { children: ReactNode; minHeigh
     }, { rootMargin: "500px 0px" });
     observer.observe(ref.current);
     return () => observer.disconnect();
-  }, [ready]);
+  }, [forceReady, ready]);
   return <div ref={ref} style={!ready ? { minHeight } : undefined}>{ready ? children : null}</div>;
 };
 
@@ -85,13 +97,13 @@ const Index = () => {
       <AgencyServices />
       <Suspense fallback={<div className="h-8" />}>
         <Deferred minHeight={520}><Problem /></Deferred>
-        <Deferred minHeight={720}><Examples /></Deferred>
+        <Deferred minHeight={720} forceReady={location.hash === "#exemple"}><Examples /></Deferred>
         <div className="h-8 md:h-16" aria-hidden />
-        <Deferred minHeight={500}><Process /></Deferred>
+        <Deferred minHeight={500} forceReady={location.hash === "#proces"}><Process /></Deferred>
         <Deferred minHeight={360}><DomainCheck /></Deferred>
         <Deferred minHeight={440}><Benefits /></Deferred>
-        <Deferred minHeight={520}><CTA /></Deferred>
-        <Deferred minHeight={420}><FAQ /></Deferred>
+        <Deferred minHeight={520} forceReady={location.hash === "#cta"}><CTA /></Deferred>
+        <Deferred minHeight={420} forceReady={location.hash === "#faq"}><FAQ /></Deferred>
         <Deferred minHeight={320}><Socials /></Deferred>
         <Deferred minHeight={260}><Footer /></Deferred>
         <Deferred minHeight={80}><ContactBar /></Deferred>

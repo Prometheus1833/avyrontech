@@ -84,6 +84,21 @@ describe("worker redirects", () => {
     expect(loc.pathname + loc.search).toBe("/costurisiproduse?utm_source=google");
     expect((await get(loc.pathname)).status).toBe(200);
   });
+
+  it("redirects removed audit pages to the protected form and preserves campaign data", async () => {
+    const ro = await get("/produse/audit-website?utm_source=search");
+    const roLocation = new URL(ro.headers.get("location")!, "https://avyron.ro");
+    expect(ro.status).toBe(301);
+    expect(roLocation.pathname).toBe("/");
+    expect(roLocation.searchParams.get("request")).toBe("audit");
+    expect(roLocation.searchParams.get("utm_source")).toBe("search");
+    expect(roLocation.hash).toBe("#cta");
+
+    const en = await get("/en/products/website-audit");
+    const enLocation = new URL(en.headers.get("location")!, "https://avyron.ro");
+    expect(en.status).toBe(301);
+    expect(`${enLocation.pathname}${enLocation.search}${enLocation.hash}`).toBe("/en?request=audit#cta");
+  });
 });
 
 describe("worker HTTP statuses", () => {

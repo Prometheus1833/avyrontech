@@ -130,7 +130,7 @@ Ierarhia vizuală, contrastul, spațiul și mișcarea au un scop: evidențiază 
 
 Același nume, aceeași descriere de bază, același domeniu și aceleași date de contact ar trebui să apară pe website, Google Business Profile și profilurile sociale. Legăturile reciproce și Schema.org ajută motoarele să coreleze entitatea, dar numai dacă profilurile sunt reale și publice.
 
-Înainte de redesign, un [audit de website](/produse/audit-website) poate separa problemele de conținut, UX, performanță, SEO și securitate. Pentru un proiect nou, serviciul de [website de prezentare](/produse/website-prezentare-premium) pornește de la public și obiective, apoi traduce identitatea într-un sistem coerent.`,
+Înainte de redesign, un [audit de website](/?request=audit#cta) poate separa problemele de conținut, UX, performanță, SEO și securitate. Pentru un proiect nou, serviciul de [website de prezentare](/produse/website-prezentare-premium) pornește de la public și obiective, apoi traduce identitatea într-un sistem coerent.`,
     cover_image_url: null,
     tags: ["website-profesionist", "identitate-digitala", "web-design", "ux", "conversie"],
     category: "web-design",
@@ -160,7 +160,7 @@ Conținutul original arată experiență: decizii, compromisuri, capturi, rezult
 
 Datele juridice, numele brandului, domeniul, profilurile sociale și Google Business Profile trebuie să fie consecvente. Organization, ProfessionalService, Service, BlogPosting și BreadcrumbList pot clarifica relațiile, dar nu garantează afișarea specială.
 
-După publicare, verifică Page Indexing, sitemapul, canonicalul ales și interogările din Search Console. Google Analytics poate măsura acțiunile de după click, iar Cloudflare Web Analytics poate completa datele agregate de performanță. Un [audit tehnic și SEO](/produse/audit-website) transformă aceste verificări într-o listă prioritizată.`,
+După publicare, verifică Page Indexing, sitemapul, canonicalul ales și interogările din Search Console. Google Analytics poate măsura acțiunile de după click, iar Cloudflare Web Analytics poate completa datele agregate de performanță. Un [audit tehnic și SEO](/?request=audit#cta) transformă aceste verificări într-o listă prioritizată.`,
     cover_image_url: null,
     tags: ["seo-2026", "google", "ai-search", "indexare", "schema-org"],
     category: "seo",
@@ -202,7 +202,7 @@ Erorile Workerului, încercările de autentificare, emailurile eșuate și modif
 
 Colectează numai datele necesare scopului declarat, stabilește retenția și oferă control asupra cookie-urilor. Minimizarea datelor reduce atât riscul tehnic, cât și obligațiile operaționale.
 
-Pentru o evaluare independentă poți porni cu [testare QA web și mobile](/produse/testare-qa-web-mobile) sau un [audit de website](/produse/audit-website). Rezultatul ar trebui să indice severitatea, dovada, impactul și ordinea recomandată a remedierilor.`,
+Pentru o evaluare independentă poți porni cu [testare QA web și mobile](/produse/testare-qa-web-mobile) sau un [audit de website](/?request=audit#cta). Rezultatul ar trebui să indice severitatea, dovada, impactul și ordinea recomandată a remedierilor.`,
     cover_image_url: null,
     tags: ["securitate-website", "parole", "backup", "cloudflare", "gdpr"],
     category: "securitate",
@@ -312,7 +312,7 @@ Visual hierarchy, contrast, space, and motion have a purpose: they make importan
 
 The same name, core description, domain, and contact details should appear on the website, Google Business Profile, and public social profiles. Reciprocal links and Schema.org help systems connect the entity only when the destinations are real and public.
 
-Before a redesign, a [website audit](/en/products/website-audit) can separate content, UX, performance, SEO, and security problems. For a new project, the [professional website service](/en/products/premium-presentation-website) begins with audience and goals, then turns the identity into a coherent system.`,
+Before a redesign, a [website audit](/en?request=audit#cta) can separate content, UX, performance, SEO, and security problems. For a new project, the [professional website service](/en/products/premium-presentation-website) begins with audience and goals, then turns the identity into a coherent system.`,
     tags: ["professional-website", "digital-identity", "web-design", "ux", "conversion"],
   },
   {
@@ -337,7 +337,7 @@ Original content demonstrates experience through decisions, trade-offs, screensh
 
 Legal details, brand name, domain, public profiles, and Google Business Profile should remain consistent. Organization, ProfessionalService, Service, BlogPosting, and BreadcrumbList markup can clarify relationships but cannot guarantee enhanced display.
 
-After publication, monitor Page Indexing, sitemaps, selected canonicals, and queries in Search Console. Google Analytics can measure actions after a click, while Cloudflare Web Analytics can add aggregated performance information. A [technical and SEO audit](/en/products/website-audit) turns those checks into a prioritized plan.`,
+After publication, monitor Page Indexing, sitemaps, selected canonicals, and queries in Search Console. Google Analytics can measure actions after a click, while Cloudflare Web Analytics can add aggregated performance information. A [technical and SEO audit](/en?request=audit#cta) turns those checks into a prioritized plan.`,
     tags: ["seo-2026", "google", "ai-search", "indexing", "schema-org"],
   },
   {
@@ -374,7 +374,7 @@ Worker errors, authentication attempts, failed emails, and administrative change
 
 Collect only what the declared purpose needs, define retention, and give visitors control over optional cookies. Data minimization reduces both technical risk and operational obligations.
 
-For an independent review, start with [web and mobile QA testing](/en/products/qa-testing-web-mobile) or a [website audit](/en/products/website-audit). Findings should include severity, evidence, impact, and a recommended remediation order.`,
+For an independent review, start with [web and mobile QA testing](/en/products/qa-testing-web-mobile) or a [website audit](/en?request=audit#cta). Findings should include severity, evidence, impact, and a recommended remediation order.`,
     tags: ["website-security", "passwords", "backups", "cloudflare", "gdpr"],
   },
 ];
