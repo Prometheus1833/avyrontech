@@ -4,6 +4,7 @@ export type Role = "user" | "staff" | "admin";
 // Wrangler source of truth in worker-configuration.d.ts. Only truly optional
 // integrations are extended here.
 type OptionalIntegrations = {
+  SMTP_PASS?: string;
   SEED_TOKEN?: string;
   AIRTABLE_API_KEY?: string;
   AIRTABLE_BASE_ID?: string;

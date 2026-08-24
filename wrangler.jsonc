@@ -52,10 +52,11 @@
     }
   ],
 
-  // Optional integrations remain typed in src/types.ts and fail closed when
-  // absent. These three bindings are required for a production-ready runtime.
+  // Authentication and bot protection are mandatory. SMTP remains optional
+  // until Cloudflare Email Sending is enabled on the account; delivery errors
+  // are persisted in D1 and returned explicitly instead of being reported as sent.
   "secrets": {
-    "required": ["JWT_SECRET", "SMTP_PASS", "TURNSTILE_SECRET"]
+    "required": ["JWT_SECRET", "TURNSTILE_SECRET"]
   },
   "vars": {
     "APP_ENV": "production",

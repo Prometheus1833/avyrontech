@@ -44,6 +44,10 @@ Pentru Cloudflare Email Sending SMTP:
 - `SMTP_FROM`: expeditor verificat, implicit `contact@avyron.ro`
 - `LEAD_TO`: inbox-ul intern care primește solicitările
 
+Email Sending necesită activarea produsului în contul Cloudflare (în prezent,
+planul Workers Paid). Până la activare, `SMTP_PASS` rămâne opțional: datele sunt
+salvate în D1, iar livrarea este marcată explicit `failed`, fără succes fals.
+
 Resetarea parolei, formularul CTA și solicitarea unui exemplu folosesc același transport SMTP.
 Datele sunt scrise întâi în D1; un eșec SMTP este înregistrat și returnat explicit frontendului.
 
