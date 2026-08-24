@@ -106,22 +106,31 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
       expect(new Set(types).size).toBe(types.length);
       const org = graph["@graph"].find((n: { "@type": string }) => n["@type"] === "Organization");
       expect(org.logo.url ?? org.logo).toContain("/avyron-logo.jpg");
-      expect(JSON.stringify(org.member)).toContain("FV Tech Solutions SRL");
-      expect(JSON.stringify(org.member)).toContain("DIGITAL ECOTECH SOLUTIONS S.R.L.");
-      expect(JSON.stringify(org.member)).toContain("55055976");
+      expect(org.legalName).toBe("DIGITAL ECOTECH SOLUTIONS S.R.L.");
+      expect(org.identifier.value).toBe("55055976");
+      expect(JSON.stringify(org)).not.toContain("FV Tech Solutions SRL");
       expect(org.sameAs).toContain("https://www.instagram.com/avyrontech/");
       expect(org.sameAs).toContain("https://www.tiktok.com/@avyron4");
       expect(org.sameAs).not.toContain("avyron.tech");
     }
   });
 
-  it("publishes the confirmed legal association on the GDPR page", () => {
+  it("keeps the full legal context on the GDPR page and leads with the primary entity", () => {
     const html = read("/gdpr");
     expect(html).toContain("FV Tech Solutions SRL");
     expect(html).toContain("Municipiul Pașcani, județul Iași");
     expect(html).toContain("DIGITAL ECOTECH SOLUTIONS S.R.L.");
     expect(html).toContain("55055976");
     expect(html).toContain("Bd. Independenței nr. 20");
+    expect(html.indexOf("DIGITAL ECOTECH SOLUTIONS S.R.L.")).toBeLessThan(
+      html.indexOf("FV Tech Solutions SRL"),
+    );
+  });
+
+  it("keeps the collaboration disclosure out of the public homepage footer", () => {
+    const html = read("/");
+    expect(html).not.toContain("Avyron este dezvoltat și operat prin colaborarea dintre");
+    expect(html).not.toContain("FV Tech Solutions SRL");
   });
 
   it("keeps Product/Service schema off non-product pages", () => {

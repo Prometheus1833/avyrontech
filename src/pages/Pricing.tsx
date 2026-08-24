@@ -248,10 +248,13 @@ const Pricing = () => {
 
       <div className="relative mx-auto max-w-6xl px-4 pt-6 sm:pt-8 pb-20">
         {/* Top bar */}
-        <div className="flex items-center justify-between gap-3">
+        <nav
+          aria-label={ro ? "Acțiuni pagină produse" : "Product page actions"}
+          className="grid grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-3"
+        >
           <Link
-            to="/"
-            className="group relative inline-flex items-center gap-2 rounded-full border border-foreground/15 bg-foreground/[0.04] backdrop-blur pl-2 pr-3.5 py-1.5 text-xs font-medium text-foreground/70 hover:text-foreground hover:border-cyan-300/60 transition-all duration-300 overflow-hidden"
+            to={ro ? "/" : "/en"}
+            className="group relative inline-flex min-h-9 items-center gap-1.5 overflow-hidden rounded-full border border-foreground/15 bg-foreground/[0.04] py-1.5 pl-1.5 pr-2.5 text-xs font-medium text-foreground/70 backdrop-blur transition-all duration-300 hover:border-cyan-300/60 hover:text-foreground sm:gap-2 sm:pl-2 sm:pr-3.5"
           >
             <span className="absolute inset-0 bg-gradient-to-r from-cyan-400/0 via-cyan-400/15 to-cyan-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" aria-hidden />
             <span className="relative grid place-items-center size-5 rounded-full bg-foreground text-background transition-transform duration-300 group-hover:-translate-x-0.5">
@@ -262,15 +265,25 @@ const Pricing = () => {
             </span>
             <span className="relative size-1 rounded-full bg-cyan-400 animate-pulse" aria-hidden />
           </Link>
-          <div className="flex items-center gap-2">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 bg-foreground/[0.04] px-2 py-1 backdrop-blur">
-              <LangSwitch />
-              <span aria-hidden className="w-px h-3 bg-foreground/15" />
-              <ThemeToggle />
-        </div>
+
+          <Link
+            to={ro ? "/" : "/en"}
+            aria-label={ro ? "Acasă Avyron" : "Avyron home"}
+            className="flex min-w-0 items-center justify-self-center gap-2 rounded-full px-1.5 py-1 transition-colors hover:bg-foreground/5"
+          >
+            <img src={logo} alt="Avyron" className="size-7 rounded-md ring-1 ring-white/20 sm:size-8" />
+            <span className="hidden font-display text-xs tracking-[0.2em] min-[380px]:inline sm:text-sm sm:tracking-[0.25em]">AVYRON</span>
+          </Link>
+
+          <div className="inline-flex min-h-9 items-center justify-self-end gap-1.5 rounded-full border border-foreground/15 bg-foreground/[0.04] px-2 py-1 backdrop-blur">
+            <LangSwitch />
+            <span aria-hidden className="h-3 w-px bg-foreground/15" />
+            <ThemeToggle />
+          </div>
+        </nav>
 
         <Breadcrumbs
-          className="mt-6"
+          className="mt-4 sm:mt-6"
           items={[
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
             {
@@ -279,16 +292,6 @@ const Pricing = () => {
             },
           ]}
         />
-            <Link
-              to="/"
-              aria-label={ro ? "Acasă" : "Home"}
-              className="flex items-center gap-2 rounded-full px-1.5 py-1 hover:bg-foreground/5 transition-colors"
-            >
-              <img src={logo} alt="Avyron" className="size-7 sm:size-8 rounded-md ring-1 ring-white/20" />
-              <span className="font-display tracking-[0.2em] sm:tracking-[0.25em] text-xs sm:text-sm">AVYRON</span>
-            </Link>
-          </div>
-        </div>
 
         {/* Hero */}
         <section className="mt-12 text-center">

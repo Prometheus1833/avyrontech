@@ -19,7 +19,7 @@ export const translations = {
       title2: "care extind online activitatea",
       title3: "automatizând procesele.",
       subtitle:
-        "Proiectăm experiențe digitale rafinate, performante și optimizate pentru conversie — gândite să transforme fiecare vizită într-o oportunitate reală.",
+        "Proiectăm experiențe digitale rafinate, performante, scalabile și optimizate pentru conversie — gândite să transforme fiecare vizită într-o oportunitate reală.",
       ctaPrimary: "Vreau exemplu gratuit",
       ctaSecondary: "Vezi exemple",
       personalized: "Personalizat cu activitatea ta",
@@ -337,7 +337,7 @@ export const translations = {
     },
     seo: {
       title: "Creare site de prezentare și dezvoltare web Iași | Avyron",
-      desc: "Agenție web din Iași: site-uri de prezentare profesionale, magazine online și aplicații web/mobile cu design custom, SEO tehnic, securitate și Cloudflare.",
+      desc: "Agenție web din Iași: site-uri de prezentare profesionale, magazine online și aplicații web/mobile cu design custom, SEO tehnic, securitate și scalabilitate.",
     },
     auth: {
       loginCta: "Conectează-te / Înregistrează-te",
@@ -533,7 +533,7 @@ export const translations = {
       title2: "development",
       title3: "that brings customers.",
       subtitle:
-        "We design refined, high-performance digital experiences optimized for conversion — built to turn every visit into a real opportunity.",
+        "We design refined, high-performance, scalable digital experiences optimized for conversion — built to turn every visit into a real opportunity.",
       ctaPrimary: "I want a free example",
       ctaSecondary: "See examples",
       personalized: "Tailored to your business",
@@ -849,7 +849,7 @@ export const translations = {
     },
     seo: {
       title: "Professional business websites & web development | Avyron",
-      desc: "Web agency in Iași, Romania: professional business websites, ecommerce and web/mobile apps with custom design, technical SEO, security and Cloudflare.",
+      desc: "Web agency in Iași, Romania: professional business websites, ecommerce and web/mobile apps with custom design, technical SEO, security and scalability.",
     },
     auth: {
       loginCta: "Sign in / Sign up",

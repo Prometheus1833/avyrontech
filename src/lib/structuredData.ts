@@ -10,15 +10,21 @@ const BASE_URL = "https://avyron.ro";
 const LOGO_URL = `${BASE_URL}/avyron-logo.jpg`;
 const PHONE = COMPANY.phone;
 const EMAIL = COMPANY.email;
+const PRIMARY_ENTITY = COMPANY.primaryLegalEntity;
 
 export const organizationLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
   "@id": `${BASE_URL}/#organization`,
   name: "Avyron",
-  alternateName: COMPANY.associationName,
+  legalName: PRIMARY_ENTITY.legalName,
+  identifier: {
+    "@type": "PropertyValue",
+    propertyID: "CUI",
+    value: PRIMARY_ENTITY.taxId,
+  },
   description:
-    "Avyron este un brand digital operat prin colaborarea dintre FV Tech Solutions SRL și DIGITAL ECOTECH SOLUTIONS S.R.L.",
+    "Avyron este brandul digital al DIGITAL ECOTECH SOLUTIONS S.R.L., specializat în website-uri, aplicații și produse digitale scalabile.",
   url: BASE_URL,
   logo: {
     "@type": "ImageObject",
@@ -31,26 +37,11 @@ export const organizationLd = {
   telephone: PHONE,
   address: {
     "@type": "PostalAddress",
-    addressLocality: "Iași",
-    addressRegion: "IS",
+    ...(PRIMARY_ENTITY.streetAddress ? { streetAddress: PRIMARY_ENTITY.streetAddress } : {}),
+    addressLocality: PRIMARY_ENTITY.addressLocality,
+    addressRegion: PRIMARY_ENTITY.addressRegion,
     addressCountry: "RO",
   },
-  member: COMPANY.legalEntities.map((entity) => ({
-    "@type": "Organization",
-    "@id": `${BASE_URL}/#${entity.id}`,
-    name: entity.legalName,
-    legalName: entity.legalName,
-    ...(entity.taxId
-      ? { identifier: { "@type": "PropertyValue", propertyID: "CUI", value: entity.taxId } }
-      : {}),
-    address: {
-      "@type": "PostalAddress",
-      ...(entity.streetAddress ? { streetAddress: entity.streetAddress } : {}),
-      addressLocality: entity.addressLocality,
-      addressRegion: entity.addressRegion,
-      addressCountry: "RO",
-    },
-  })),
   sameAs: SOCIAL_PROFILE_URLS,
   contactPoint: [
     {
@@ -81,6 +72,12 @@ export const localBusinessLd = {
   "@type": "ProfessionalService",
   "@id": `${BASE_URL}/#localbusiness`,
   name: "Avyron",
+  legalName: PRIMARY_ENTITY.legalName,
+  identifier: {
+    "@type": "PropertyValue",
+    propertyID: "CUI",
+    value: PRIMARY_ENTITY.taxId,
+  },
   image: LOGO_URL,
   logo: LOGO_URL,
   url: BASE_URL,
@@ -89,8 +86,9 @@ export const localBusinessLd = {
   priceRange: "€€",
   address: {
     "@type": "PostalAddress",
-    addressLocality: "Iași",
-    addressRegion: "IS",
+    ...(PRIMARY_ENTITY.streetAddress ? { streetAddress: PRIMARY_ENTITY.streetAddress } : {}),
+    addressLocality: PRIMARY_ENTITY.addressLocality,
+    addressRegion: PRIMARY_ENTITY.addressRegion,
     addressCountry: "RO",
   },
   areaServed: [

@@ -4,7 +4,6 @@ import { Mail, Phone, MessageCircle, ArrowRight } from "lucide-react";
 import { COOKIE_SETTINGS_EVENT } from "@/components/site/CookieBanner";
 import logo from "@/assets/avyron-logo.webp";
 import planetBg from "@/assets/footer-planet-bg.webp";
-import { COMPANY } from "@/config/company";
 import { SOCIAL_PROFILES } from "@/config/socialProfiles";
 
 const Footer = () => {
@@ -150,22 +149,6 @@ const Footer = () => {
           ))}
         </div>
 
-        <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-center">
-          <p className="text-[10px] leading-relaxed text-white/60">
-            {lang === "en"
-              ? "Avyron is developed and operated through the collaboration of:"
-              : "Avyron este dezvoltat și operat prin colaborarea dintre:"}
-          </p>
-          <div className="mt-1 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[10px] leading-relaxed text-white/75">
-            {COMPANY.legalEntities.map((entity) => (
-              <span key={entity.id}>
-                <strong className="font-semibold text-white/90">{entity.legalName}</strong>
-                {entity.taxId ? ` · CUI ${entity.taxId}` : ""} · {entity.registeredAddress}
-              </span>
-            ))}
-          </div>
-        </div>
-
         {/* ANPC + copyright — single compact row */}
         <div className="mt-3 pt-2.5 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-2">
           <button
@@ -182,7 +165,6 @@ const Footer = () => {
           </button>
           <div className="text-[10px] text-white/50 flex flex-wrap justify-center gap-x-3 gap-y-0.5">
             <span>{t.footer.copy.replace("{y}", String(new Date().getFullYear()))}</span>
-            <span>{COMPANY.associationName}</span>
             <span>{t.footer.built}</span>
           </div>
         </div>

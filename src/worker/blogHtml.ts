@@ -147,7 +147,8 @@ export function injectBlogHtml(shell: string, post: EdgeBlogPost) {
     "@graph": [
       {
         "@type": "Organization", "@id": `${SITE_URL}/#organization`, name: "Avyron", url: SITE_URL,
-        alternateName: "FV Tech Solutions SRL și DIGITAL ECOTECH SOLUTIONS S.R.L.",
+        legalName: "DIGITAL ECOTECH SOLUTIONS S.R.L.",
+        identifier: { "@type": "PropertyValue", propertyID: "CUI", value: "55055976" },
         logo: `${SITE_URL}/avyron-logo.jpg`,
       },
       {

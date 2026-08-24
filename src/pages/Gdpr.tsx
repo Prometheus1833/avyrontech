@@ -17,7 +17,7 @@ const sections = [
     title: "Introducere",
     body: (
       <>
-        <p>Această Politică de Confidențialitate descrie modul în care este realizată prelucrarea datelor cu caracter personal în cadrul serviciilor furnizate sub marca <strong>Avyron</strong>, dezvoltată și operată prin colaborarea dintre <strong>{COMPANY.associationName}</strong>.</p>
+        <p>Această Politică de Confidențialitate descrie modul în care sunt prelucrate datele cu caracter personal pentru serviciile furnizate sub marca <strong>Avyron</strong>. Entitatea principală și punctul juridic de referință al site-ului este <strong>{COMPANY.primaryLegalEntity.legalName}</strong>, CUI <strong>{COMPANY.primaryLegalEntity.taxId}</strong>.</p>
         <p>Politica are rol de informare în conformitate cu Regulamentul (UE) 2016/679 (GDPR). Utilizarea site-ului nu echivalează cu acordarea unui consimțământ general; consimțământul este solicitat distinct numai pentru prelucrările care se bazează pe acest temei.</p>
       </>
     ),
@@ -27,7 +27,7 @@ const sections = [
     title: "Identitate juridică și organizarea colaborării",
     body: (
       <>
-        <p>Avyron reprezintă cadrul comercial și operațional în care colaborează următoarele entități juridice:</p>
+        <p>Avyron este utilizată în principal de <strong>{COMPANY.primaryLegalEntity.legalName}</strong>. În funcție de proiect, ofertă sau contract, pot participa și alte entități menționate mai jos, strict în rolul stabilit prin documentele aplicabile:</p>
         <div className="grid gap-3 mt-4">
           {COMPANY.legalEntities.map((entity) => (
             <div key={entity.id} className="rounded-2xl border border-border bg-background/70 p-4">
@@ -215,7 +215,7 @@ const sectionsEn = [
     title: "Introduction",
     body: (
       <>
-        <p>This Privacy Policy explains how personal data is processed in connection with services provided under the <strong>Avyron</strong> brand, developed and operated through the collaboration between <strong>{COMPANY.associationName}</strong>.</p>
+        <p>This Privacy Policy explains how personal data is processed for services provided under the <strong>Avyron</strong> brand. The principal entity and legal point of reference for this website is <strong>{COMPANY.primaryLegalEntity.legalName}</strong>, Romanian tax identifier <strong>{COMPANY.primaryLegalEntity.taxId}</strong>.</p>
         <p>It is provided in accordance with Regulation (EU) 2016/679 (GDPR). Using the website does not constitute general consent; consent is requested separately only for processing activities that rely on consent.</p>
       </>
     ),
@@ -225,7 +225,7 @@ const sectionsEn = [
     title: "Legal identity and collaboration structure",
     body: (
       <>
-        <p>Avyron is the commercial and operational framework in which the following legal entities collaborate:</p>
+        <p>Avyron is used primarily by <strong>{COMPANY.primaryLegalEntity.legalName}</strong>. Depending on the project, proposal, or contract, another entity listed below may participate strictly in the role defined by the applicable documents:</p>
         <div className="grid gap-3 mt-4">
           {COMPANY.legalEntities.map((entity) => (
             <div key={entity.id} className="rounded-2xl border border-border bg-background/70 p-4">
@@ -390,8 +390,8 @@ const Gdpr = () => {
           ? "Privacy Policy & GDPR | Avyron"
           : "Politica de Confidențialitate și GDPR | Avyron",
         description: isEn
-          ? `Avyron privacy and GDPR policy: how personal data is processed in the collaboration between ${COMPANY.associationName}.`
-          : `Politica GDPR Avyron: transparență privind prelucrarea datelor în colaborarea dintre ${COMPANY.associationName}`,
+          ? `Avyron privacy and GDPR policy for services provided primarily by ${COMPANY.primaryLegalEntity.legalName}.`
+          : `Politica GDPR Avyron pentru serviciile furnizate în principal de ${COMPANY.primaryLegalEntity.legalName}.`,
         path: isEn ? "/en/privacy" : "/gdpr",
         alternates: { ro: "/gdpr", en: "/en/privacy" },
       })
