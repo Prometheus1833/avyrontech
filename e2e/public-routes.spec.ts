@@ -96,6 +96,16 @@ test.describe("forms and authentication", () => {
   });
 
   test("signup waits for email verification", async ({ page }) => {
+    await page.addInitScript(() => {
+      window.turnstile = {
+        render: (_element, options) => {
+          queueMicrotask(() => (options.callback as (token: string) => void)("playwright-turnstile-token"));
+          return "playwright-widget";
+        },
+        remove: () => undefined,
+        reset: () => undefined,
+      };
+    });
     await page.route("**/api/auth/signup", (route) => route.fulfill({
       status: 202,
       contentType: "application/json",
@@ -111,6 +121,16 @@ test.describe("forms and authentication", () => {
   });
 
   test("example request uses the protected Worker endpoint", async ({ page }) => {
+    await page.addInitScript(() => {
+      window.turnstile = {
+        render: (_element, options) => {
+          queueMicrotask(() => (options.callback as (token: string) => void)("playwright-turnstile-token"));
+          return "playwright-widget";
+        },
+        remove: () => undefined,
+        reset: () => undefined,
+      };
+    });
     let payload: Record<string, unknown> | undefined;
     await page.route("**/api/contact/example", async (route) => {
       payload = route.request().postDataJSON() as Record<string, unknown>;
