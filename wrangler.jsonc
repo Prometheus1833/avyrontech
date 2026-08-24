@@ -6,11 +6,12 @@
   "main": "cloudflare/workers/api/src/index.ts",
   "compatibility_date": "2026-08-23",
   "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
   "preview_urls": true,
   "upload_source_maps": true,
   "routes": [
-    { "pattern": "avyron.ro/*", "zone_name": "avyron.ro" },
-    { "pattern": "www.avyron.ro/*", "zone_name": "avyron.ro" }
+    { "pattern": "avyron.ro", "custom_domain": true },
+    { "pattern": "www.avyron.ro", "custom_domain": true }
   ],
   "assets": {
     "directory": "./dist",
