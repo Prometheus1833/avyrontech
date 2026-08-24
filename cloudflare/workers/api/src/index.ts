@@ -47,6 +47,16 @@ const allowedOrigin = (env: AppBindings["Bindings"], origin: string | undefined)
   return "";
 };
 
+const authUiBaseUrl = (c: Context<AppBindings>): string => {
+  if (new URL(c.req.url).hostname.toLowerCase() === "app.avyron.ro") {
+    return "https://app.avyron.ro";
+  }
+  const origin = allowedOrigin(c.env, c.req.header("origin"));
+  return origin === "https://app.avyron.ro"
+    ? origin
+    : (c.env.APP_URL || "https://avyron.ro").replace(/\/$/, "");
+};
+
 app.use("*", async (c, next) => {
   return cors({
     origin: (origin) => allowedOrigin(c.env, origin),
@@ -74,7 +84,7 @@ async function sendVerification(c: Context<AppBindings>, userId: string, email: 
     c.env.DB.prepare("INSERT INTO email_verifications (token,user_id,created_at,expires_at) VALUES (?,?,?,?)")
       .bind(tokenHash, userId, timestamp, timestamp + 24 * 60 * 60 * 1000),
   ]);
-  const verifyUrl = `${(c.env.APP_URL || "https://avyron.ro").replace(/\/$/, "")}/auth?verify=${encodeURIComponent(token)}`;
+  const verifyUrl = `${authUiBaseUrl(c)}/auth?verify=${encodeURIComponent(token)}`;
   const result = await deliverMail(c.env, {
     to: email,
     subject: "Confirmă adresa de email pentru contul Avyron",
@@ -290,7 +300,7 @@ app.post("/api/auth/forgot", async (c) => {
       c.env.DB.prepare("INSERT INTO password_resets (token,user_id,created_at,expires_at) VALUES (?,?,?,?)")
         .bind(tokenHash, u.id, t, t + 60 * 60 * 1000),
     ]);
-    const resetUrl = `${(c.env.APP_URL || "https://avyron.ro").replace(/\/$/, "")}/reset-password?token=${encodeURIComponent(token)}`;
+    const resetUrl = `${authUiBaseUrl(c)}/reset-password?token=${encodeURIComponent(token)}`;
     const result = await deliverMail(c.env, {
       to: normalizedEmail,
       subject: "Resetarea parolei contului Avyron",

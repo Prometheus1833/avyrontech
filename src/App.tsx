@@ -35,6 +35,7 @@ const CarePlans = lazy(() => import("./pages/products/CarePlansPage.tsx"));
 
 import CookieBanner from "@/components/site/CookieBanner";
 import MustChangePassword from "@/components/auth/MustChangePassword";
+import AppHostGuard from "@/components/auth/AppHostGuard";
 
 const queryClient = new QueryClient();
 
@@ -74,8 +75,9 @@ const App = () => (
             <LangRouteSync />
             <AnalyticsTracker />
 
-            <Suspense fallback={<div className="min-h-screen" />}>
-              <Routes>
+            <AppHostGuard>
+              <Suspense fallback={<div className="min-h-screen" />}>
+                <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/en" element={<Index />} />
                 <Route path="/gdpr" element={<Gdpr />} />
@@ -151,8 +153,9 @@ const App = () => (
                 />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
+                </Routes>
+              </Suspense>
+            </AppHostGuard>
           </BrowserRouter>
           <CookieBanner />
           <MustChangePassword />
