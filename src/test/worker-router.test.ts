@@ -14,6 +14,7 @@ const FILES: Record<string, string> = {
   "/mentenanta.html": "<html lang=ro><h1>503</h1>",
   "/_shell.html": "<html lang=\"ro\"><head><title>Avyron</title><meta name=\"description\" content=\"default\"></head><body><div id=\"root\"></div></body></html>",
   "/assets/app.js": "console.log(1)",
+  "/assets/app-Ab12cd34.js": "console.log(2)",
   "/robots.txt": "User-agent: *",
   "/sitemap.xml": "<?xml version=\"1.0\"?><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\"><url><loc>https://avyron.ro/</loc></url></urlset>",
 };
@@ -136,6 +137,13 @@ describe("worker HTTP statuses", () => {
   it("passes assets straight through", async () => {
     expect(decide(new URL("https://avyron.ro/assets/app.js")).kind).toBe("asset");
     expect((await get("/robots.txt")).status).toBe(200);
+  });
+
+  it("caches only content-hashed build assets as immutable", async () => {
+    const hashed = await get("/assets/app-Ab12cd34.js");
+    const unhashed = await get("/assets/app.js");
+    expect(hashed.headers.get("cache-control")).toBe("public, max-age=31536000, immutable");
+    expect(unhashed.headers.get("cache-control")).toBeNull();
   });
 });
 
