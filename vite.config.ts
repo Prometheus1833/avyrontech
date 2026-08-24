@@ -54,12 +54,13 @@ export default defineConfig(({ mode }) => ({
           }
           if (id.includes("framer-motion")) return "framer";
           if (id.includes("recharts") || id.includes("d3-")) return "charts";
-          if (id.includes("@radix-ui")) return "radix";
-          if (id.includes("lucide-react")) return "icons";
           if (id.includes("react-router")) return "router";
           if (id.includes("@tanstack")) return "query";
           if (id.includes("@supabase")) return "supabase";
-          return "vendor";
+          // Let Rollup keep the remaining packages beside the route that
+          // actually uses them. Broad `vendor`, Radix and icon chunks forced
+          // dashboard/editor code into the public homepage preload graph.
+          return;
         },
       },
     },

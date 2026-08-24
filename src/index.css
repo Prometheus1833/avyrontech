@@ -1,4 +1,4 @@
-/* Fonts loaded via <link rel="preload"> in index.html to avoid render-blocking */
+/* System font stacks avoid a render-blocking third-party font request. */
 
 @tailwind base;
 @tailwind components;
@@ -118,7 +118,7 @@
     overflow-x: hidden;
   }
   h1, h2, h3, h4 {
-    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-family: 'Avenir Next', 'Segoe UI Variable Display', 'Segoe UI', system-ui, sans-serif;
     letter-spacing: -0.02em;
   }
 }

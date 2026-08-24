@@ -20,11 +20,14 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+const isLandingPage = () =>
+  typeof window !== "undefined" && (window.location.pathname === "/" || window.location.pathname === "/en");
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !isLandingPage());
 
   const load = useCallback(async () => {
     const me = await cfAuth.me();
@@ -40,14 +43,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    (async () => {
-      // Try refresh from cookie, then load /me
-      await cfAuth.refresh();
-      await load();
-      setLoading(false);
-    })();
-    const off = cfAuth.onChange(() => { void load(); });
-    return () => { off(); };
+    let cancelled = false;
+    let initializing = true;
+    const off = cfAuth.onChange(() => {
+      // refresh() emits once; the initializer performs the single required
+      // /me request itself and avoids a duplicate request from this listener.
+      if (!initializing) void load();
+    });
+    const initialize = async () => {
+      const refreshed = await cfAuth.refresh();
+      if (refreshed && !cancelled) await load();
+      if (!cancelled) setLoading(false);
+      initializing = false;
+    };
+
+    // Authentication is not render-critical on the marketing landing page.
+    // All private, auth and editorial routes still initialize immediately.
+    const timer = isLandingPage() ? window.setTimeout(() => void initialize(), 2000) : undefined;
+    if (!timer) void initialize();
+
+    return () => {
+      cancelled = true;
+      initializing = false;
+      if (timer) window.clearTimeout(timer);
+      off();
+    };
   }, [load]);
 
   const refreshProfile = useCallback(async () => { await load(); }, [load]);

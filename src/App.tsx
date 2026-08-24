@@ -1,11 +1,7 @@
-import { lazy, Suspense, useEffect, useRef } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/i18n/LanguageContext";
-import { AuthProvider } from "@/hooks/useAuth";
+import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index.tsx";
 import LangRouteSync from "@/components/site/LangRouteSync";
@@ -34,10 +30,45 @@ const CarePlans = lazy(() => import("./pages/products/CarePlansPage.tsx"));
 
 
 import CookieBanner from "@/components/site/CookieBanner";
-import MustChangePassword from "@/components/auth/MustChangePassword";
 import AppHostGuard from "@/components/auth/AppHostGuard";
 
-const queryClient = new QueryClient();
+const Notifications = lazy(() =>
+  import("@/components/ui/sonner").then(({ Toaster }) => ({ default: Toaster })),
+);
+const MustChangePassword = lazy(() => import("@/components/auth/MustChangePassword"));
+
+/**
+ * Notification and account-dialog packages are useful only after interaction
+ * or after a session is found. Keeping them out of the first render prevents
+ * private Radix UI code from entering the public homepage preload graph.
+ */
+const DeferredGlobalUi = () => {
+  const { user } = useAuth();
+  const [ready, setReady] = useState(Boolean(user));
+
+  useEffect(() => {
+    if (user) {
+      setReady(true);
+      return;
+    }
+    const activate = () => setReady(true);
+    const timer = window.setTimeout(activate, 2500);
+    window.addEventListener("pointerdown", activate, { once: true, passive: true });
+    window.addEventListener("keydown", activate, { once: true });
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("pointerdown", activate);
+      window.removeEventListener("keydown", activate);
+    };
+  }, [user]);
+
+  return (
+    <Suspense fallback={null}>
+      {ready && <Notifications />}
+      {user && <MustChangePassword />}
+    </Suspense>
+  );
+};
 
 const AnalyticsTracker = () => {
   const { pathname } = useLocation();
@@ -64,20 +95,16 @@ const HeadManager = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <LanguageProvider>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <HeadManager />
-            <LangRouteSync />
-            <AnalyticsTracker />
+  <LanguageProvider>
+    <AuthProvider>
+      <BrowserRouter>
+        <HeadManager />
+        <LangRouteSync />
+        <AnalyticsTracker />
 
-            <AppHostGuard>
-              <Suspense fallback={<div className="min-h-screen" />}>
-                <Routes>
+        <AppHostGuard>
+          <Suspense fallback={<div className="min-h-screen" />}>
+            <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/en" element={<Index />} />
                 <Route path="/gdpr" element={<Gdpr />} />
@@ -153,16 +180,14 @@ const App = () => (
                 />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-            </AppHostGuard>
-          </BrowserRouter>
-          <CookieBanner />
-          <MustChangePassword />
-        </TooltipProvider>
-      </AuthProvider>
-    </LanguageProvider>
-  </QueryClientProvider>
+            </Routes>
+          </Suspense>
+        </AppHostGuard>
+      </BrowserRouter>
+      <CookieBanner />
+      <DeferredGlobalUi />
+    </AuthProvider>
+  </LanguageProvider>
 );
 
 export default App;

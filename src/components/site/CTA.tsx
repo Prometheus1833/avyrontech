@@ -58,6 +58,7 @@ const CTA = () => {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [token, setToken] = useState("");
   const [resetKey, setResetKey] = useState(0);
+  const [captchaReady, setCaptchaReady] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const honeypot = useRef<HTMLInputElement>(null);
 
@@ -216,7 +217,12 @@ const CTA = () => {
               </Button>
             </div>
           ) : (
-          <form onSubmit={submit} className="bg-card p-5 sm:p-6 md:p-8 space-y-3">
+          <form
+            onSubmit={submit}
+            onFocusCapture={() => setCaptchaReady(true)}
+            onPointerDownCapture={() => setCaptchaReady(true)}
+            className="bg-card p-5 sm:p-6 md:p-8 space-y-3"
+          >
 
             <div>
               <Label htmlFor="name" className="text-xs">{t.cta.name}</Label>
@@ -306,7 +312,11 @@ const CTA = () => {
               className="hidden"
 />
 
-            <Turnstile onToken={setToken} resetKey={resetKey} action="contact-demo" />
+            {captchaReady ? (
+              <Turnstile onToken={setToken} resetKey={resetKey} action="contact-demo" />
+            ) : (
+              <div className="h-[65px]" aria-hidden />
+            )}
 
             <Button type="submit" disabled={loading} aria-busy={loading} className="w-full h-11 rounded-full bg-foreground text-background hover:bg-foreground/90 font-semibold">
               {loading ? (

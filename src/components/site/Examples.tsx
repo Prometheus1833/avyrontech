@@ -47,10 +47,15 @@ const Examples = () => {
   return (
     <section id="exemple" className="relative py-14 md:py-24 overflow-hidden">
       {/* Background image (enlarged) */}
-      <div
+      <img
         aria-hidden
-        className="absolute inset-0 -z-10 bg-center bg-cover scale-110"
-        style={{ backgroundImage: `url(${examplesBg})` }}
+        alt=""
+        src={examplesBg}
+        loading="lazy"
+        decoding="async"
+        width={1920}
+        height={1280}
+        className="absolute inset-0 -z-10 h-full w-full object-cover object-center scale-110"
       />
       {/* Readability overlay — soft fade so content stays crisp */}
       <div

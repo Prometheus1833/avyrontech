@@ -1,13 +1,13 @@
-import { Button } from "@/components/ui/button";
 import { Menu, X, LogIn, Newspaper, Briefcase, ShoppingBag } from "lucide-react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Link } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import LangSwitch from "./LangSwitch";
 import ThemeToggle from "./ThemeToggle";
-import UserMenu from "@/components/auth/UserMenu";
 import logo from "@/assets/avyron-logo.webp";
+
+const UserMenu = lazy(() => import("@/components/auth/UserMenu"));
 
 const Nav = () => {
   const [open, setOpen] = useState(false);
@@ -77,22 +77,30 @@ const Nav = () => {
             ))}
           </ul>
           <div className="hidden md:flex items-center gap-2">
-            <Button asChild className="rounded-full bg-foreground text-background hover:bg-foreground/90">
-              <a href={`${homePath}#cta`} title={t.nav.cta} className="transition-transform duration-200 ease-out hover:-translate-y-0.5">{t.nav.cta}</a>
-            </Button>
+            <a
+              href={`${homePath}#cta`}
+              title={t.nav.cta}
+              className="inline-flex h-10 items-center justify-center rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              {t.nav.cta}
+            </a>
             {!loading && (user ? (
-              <UserMenu />
+              <Suspense fallback={<span className="size-10" aria-hidden />}><UserMenu /></Suspense>
             ) : (
-              <Button asChild variant="outline" className="rounded-full">
-                <Link to="/auth" title={t.auth.login} className="group"><LogIn className="size-4 mr-1.5 transition-transform duration-200 ease-out group-hover:translate-x-0.5" aria-hidden="true" focusable="false" />{t.auth.login}</Link>
-              </Button>
+              <Link
+                to="/auth"
+                title={t.auth.login}
+                className="group inline-flex h-10 items-center justify-center rounded-full border border-input bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <LogIn className="size-4 mr-1.5 transition-transform duration-200 ease-out group-hover:translate-x-0.5" aria-hidden="true" focusable="false" />{t.auth.login}
+              </Link>
             ))}
           </div>
           <div className="md:hidden flex items-center gap-1.5">
             <LangSwitch />
             <ThemeToggle />
             {!loading && user ? (
-              <UserMenu />
+              <Suspense fallback={<span className="size-10" aria-hidden />}><UserMenu /></Suspense>
             ) : (
               <button
                 onClick={() => setOpen(!open)}
@@ -111,12 +119,14 @@ const Nav = () => {
         </nav>
         {open && !user && (
           <div className="md:hidden glass shadow-soft rounded-3xl mt-2 p-4 space-y-2">
-            <Button asChild className="w-full rounded-full bg-brand text-brand-foreground hover:opacity-90">
-              <Link to="/auth" onClick={() => setOpen(false)}>
+            <Link
+              to="/auth"
+              onClick={() => setOpen(false)}
+              className="inline-flex h-10 w-full items-center justify-center rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
                 <LogIn className="size-4 mr-1.5" aria-hidden="true" focusable="false" />
                 {t.auth.loginCta}
-              </Link>
-            </Button>
+            </Link>
             {links.map((l) =>
               l.isRoute && l.to ? (
                 <Link
@@ -140,9 +150,13 @@ const Nav = () => {
                 </a>
               )
             )}
-            <Button asChild className="w-full rounded-full bg-foreground text-background hover:bg-foreground/90">
-              <a href={`${homePath}#cta`} onClick={() => setOpen(false)}>{t.nav.cta}</a>
-            </Button>
+            <a
+              href={`${homePath}#cta`}
+              onClick={() => setOpen(false)}
+              className="inline-flex h-10 w-full items-center justify-center rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              {t.nav.cta}
+            </a>
           </div>
         )}
       </div>

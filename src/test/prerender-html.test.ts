@@ -133,6 +133,21 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     expect(html).not.toContain("FV Tech Solutions SRL");
   });
 
+  it("keeps non-critical third-party and private UI code out of the homepage critical path", () => {
+    const html = read("/");
+    const h = head(html);
+    const preloads = [...h.matchAll(/<link rel="modulepreload"[^>]*href="([^"]+)"/g)].map(
+      (match) => match[1],
+    );
+
+    expect(h).not.toContain("fonts.googleapis.com");
+    expect(h).not.toContain("fonts.gstatic.com");
+    expect(h).not.toContain("challenges.cloudflare.com/turnstile");
+    expect(preloads).toHaveLength(2);
+    expect(preloads.every((href) => /\/(react|router)-/.test(href))).toBe(true);
+    expect(html).toMatch(/<img[^>]*examples-section-bg[^>]*loading="lazy"/);
+  });
+
   it("keeps Product/Service schema off non-product pages", () => {
     for (const route of ["/", "/costurisiproduse"]) {
       const h = head(read(route));

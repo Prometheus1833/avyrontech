@@ -1,23 +1,15 @@
-import { Button } from "@/components/ui/button";
-import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, ChevronDown, TrendingUp } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 
 const Hero = () => {
   const { t } = useLang();
-  const reduceMotion = useReducedMotion();
   return (
     <section
       id="top"
       className="relative min-h-[100dvh] md:min-h-0 flex flex-col items-center justify-center md:justify-start pt-24 pb-16 md:pt-36 md:pb-24 overflow-hidden bg-hero"
     >
       <div className="mx-auto max-w-5xl px-4 sm:px-6 text-center flex flex-col items-center justify-center md:justify-start w-full">
-        <motion.div
-          initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-col items-center"
-        >
+        <div className="flex flex-col items-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/70 backdrop-blur px-3 py-1.5 text-xs font-medium text-foreground/70 shadow-soft">
             <TrendingUp className="size-3.5 text-brand" aria-hidden="true" focusable="false" /> {t.hero.badge}
           </div>
@@ -28,19 +20,23 @@ const Hero = () => {
             {t.hero.subtitle}
           </p>
           <div className="mt-7 flex flex-col sm:flex-row flex-wrap gap-3 justify-center w-full sm:w-auto px-2">
-            <Button asChild size="lg" className="rounded-full bg-foreground text-background hover:bg-foreground/90 h-auto py-2.5 px-6 w-full sm:w-auto whitespace-normal">
-              <a href="#cta" className="flex flex-col items-center leading-tight">
+            <a
+              href="#cta"
+              className="inline-flex h-auto w-full flex-col items-center justify-center rounded-full bg-foreground px-6 py-2.5 text-sm font-medium leading-tight text-background transition-colors hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:w-auto"
+            >
                 <span className="flex items-center font-semibold">
                   {t.hero.ctaPrimary} <ArrowRight className="ml-1 size-4" aria-hidden="true" focusable="false" />
                 </span>
                 <span className="text-[11px] opacity-80 font-normal">{t.hero.personalized}</span>
-              </a>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="rounded-full h-12 px-6 border-foreground/20 hover:bg-foreground/5 w-full sm:w-auto">
-              <a href="#exemple">{t.hero.ctaSecondary}</a>
-            </Button>
+            </a>
+            <a
+              href="#exemple"
+              className="inline-flex h-12 w-full items-center justify-center rounded-full border border-foreground/20 bg-background px-6 text-sm font-medium transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:w-auto"
+            >
+              {t.hero.ctaSecondary}
+            </a>
           </div>
-        </motion.div>
+        </div>
         <div className="mt-10 md:mt-12 flex flex-nowrap items-center gap-x-3 sm:gap-x-6 text-sm sm:text-base text-muted-foreground justify-center px-2 overflow-x-auto">
           {t.hero.stats.map((s, i) => (
             <div key={i} className="flex items-center gap-x-3 sm:gap-x-6 shrink-0">
@@ -58,21 +54,15 @@ const Hero = () => {
       />
 
       {/* Scroll hint — mobile only */}
-      <motion.a
+      <a
         href="#de-ce"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1, duration: 0.6 }}
         className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1 text-muted-foreground/60 md:hidden"
         aria-label="Mergi la secțiunea următoare"
       >
-        <motion.div
-          animate={reduceMotion ? undefined : { y: [0, 8, 0] }}
-          transition={reduceMotion ? undefined : { repeat: Infinity, duration: 2, ease: "easeInOut" }}
-        >
+        <span className="motion-safe:animate-bounce">
           <ChevronDown className="size-6" />
-        </motion.div>
-      </motion.a>
+        </span>
+      </a>
     </section>
   );
 };
