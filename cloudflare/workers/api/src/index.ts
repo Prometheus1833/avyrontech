@@ -23,6 +23,17 @@ import { MAX_CONTENT_CONFIG_BYTES, avatarObjectKey, contentConfigKey, jsonByteLe
 
 const app = new Hono<AppBindings>();
 
+// Keep a single public origin for SEO, cookies and analytics while preserving
+// request methods (including API POSTs) during the permanent redirect.
+app.use("*", async (c, next) => {
+  const url = new URL(c.req.url);
+  if (url.hostname === "www.avyron.ro") {
+    url.hostname = "avyron.ro";
+    return c.redirect(url.toString(), 308);
+  }
+  await next();
+});
+
 const allowedOrigin = (env: AppBindings["Bindings"], origin: string | undefined): string => {
   const configured = (env.ALLOWED_ORIGINS || "").split(",").map((value) => value.trim()).filter(Boolean);
   if (!origin) return configured[0] || "";
