@@ -18,8 +18,9 @@ import {
   type LoginInput,
   type RegisterInput,
 } from "@/lib/validators/auth";
-import logo from "@/assets/avyron-logo.jpg";
+import logo from "@/assets/avyron-mark-ai.png";
 import Turnstile, { TURNSTILE_SITE_KEY } from "@/components/site/Turnstile";
+import { isPlatformHostname, publicSiteHref } from "@/lib/appHost";
 
 const Auth = () => {
   const { t } = useLang();
@@ -31,6 +32,8 @@ const Auth = () => {
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileReset, setTurnstileReset] = useState(0);
   const [verificationMessage, setVerificationMessage] = useState("");
+  const platformHost = isPlatformHostname();
+  const homeHref = platformHost ? publicSiteHref() : "/";
 
   const from = (location.state as { from?: string } | null)?.from ?? "/profil";
 
@@ -125,10 +128,10 @@ const Auth = () => {
           className="absolute inset-0 opacity-[0.06] [background-image:linear-gradient(to_right,hsl(var(--background))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--background))_1px,transparent_1px)] [background-size:42px_42px]"
         />
         <div className="relative z-10 flex items-center justify-between">
-          <Link to="/" className="inline-flex items-center gap-2 font-display font-bold text-xl">
-            <img src={logo} alt="Avyron" className="size-8 rounded-lg object-cover" />
+          <a href={homeHref} className="inline-flex items-center gap-2 font-display font-bold text-xl">
+            <img src={logo} alt="Avyron" width={32} height={32} className="size-8 rounded-lg bg-foreground/95 object-contain p-0.5" />
             Avyron
-          </Link>
+          </a>
           <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-background/60">
             v1.0 · secure
           </span>
@@ -175,9 +178,9 @@ const Auth = () => {
       {/* Right — form */}
       <section className="flex items-center justify-center p-6 sm:p-12 bg-background">
         <div className="w-full max-w-md space-y-6">
-          <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <a href={homeHref} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="size-4" /> Înapoi
-          </Link>
+          </a>
 
           {verificationMessage && (
             <div role="status" className="rounded-xl border border-brand/25 bg-brand/10 px-4 py-3 text-sm">

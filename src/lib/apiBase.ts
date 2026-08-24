@@ -6,20 +6,22 @@
 
 const FALLBACK = "https://avyrontech.avyrontech.workers.dev";
 
-function detect(): string {
-  const env = import.meta.env.VITE_CF_API_BASE as string | undefined;
-  if (env) return env.replace(/\/+$/, "");
-  if (typeof window === "undefined") return FALLBACK;
-  const host = window.location.hostname;
-  // Same-origin când suntem pe avyron.ro sau direct pe worker
+export function apiBaseForHost(host: string, configured?: string): string {
+  if (configured) return configured.replace(/\/+$/, "");
   if (
     host === "avyron.ro" ||
     host === "www.avyron.ro" ||
+    host === "app.avyron.ro" ||
     host.endsWith(".avyrontech.workers.dev")
   ) {
     return "";
   }
   return FALLBACK;
+}
+
+function detect(): string {
+  const env = import.meta.env.VITE_CF_API_BASE as string | undefined;
+  return apiBaseForHost(typeof window === "undefined" ? "" : window.location.hostname, env);
 }
 
 export const API_BASE = detect();

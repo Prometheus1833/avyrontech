@@ -11,7 +11,8 @@
   "upload_source_maps": true,
   "routes": [
     { "pattern": "avyron.ro", "custom_domain": true },
-    { "pattern": "www.avyron.ro", "custom_domain": true }
+    { "pattern": "www.avyron.ro", "custom_domain": true },
+    { "pattern": "app.avyron.ro/api/*", "zone_name": "avyron.ro" }
   ],
   "assets": {
     "directory": "./dist",
@@ -65,14 +66,14 @@
   },
   "vars": {
     "APP_ENV": "production",
-    "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://avyrontech.lovable.app,https://id-preview--3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovable.app,https://3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovableproject.com,http://localhost:8080",
+    "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://app.avyron.ro,https://avyrontech.lovable.app,https://id-preview--3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovable.app,https://3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovableproject.com,http://localhost:8080",
     "APP_URL": "https://avyron.ro",
     "SMTP_HOST": "smtp.mx.cloudflare.net",
     "SMTP_PORT": "465",
     "SMTP_USER": "api_token",
     "SMTP_FROM": "contact@avyron.ro",
     "LEAD_TO": "avyrontech@gmail.com",
-    "TURNSTILE_ALLOWED_HOSTNAMES": "avyron.ro,www.avyron.ro,avyrontech.pages.dev,*.avyrontech.pages.dev,*.avyrontech.workers.dev,avyrontech.lovable.app,localhost"
+    "TURNSTILE_ALLOWED_HOSTNAMES": "avyron.ro,www.avyron.ro,app.avyron.ro,avyrontech.pages.dev,*.avyrontech.pages.dev,*.avyrontech.workers.dev,avyrontech.lovable.app,localhost"
   },
 
   // Cloudflare Builds must run `npm run deploy:api:preview` for non-main
@@ -118,14 +119,14 @@
       },
       "vars": {
         "APP_ENV": "preview",
-        "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://codex-prelaunch-improvements-2026-08-23-avyrontech.avyrontech.workers.dev,https://avyrontech.lovable.app,http://localhost:8080",
+        "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://app.avyron.ro,https://codex-prelaunch-improvements-2026-08-23-avyrontech.avyrontech.workers.dev,https://avyrontech.lovable.app,http://localhost:8080",
         "APP_URL": "https://codex-prelaunch-improvements-2026-08-23-avyrontech.avyrontech.workers.dev",
         "SMTP_HOST": "smtp.mx.cloudflare.net",
         "SMTP_PORT": "465",
         "SMTP_USER": "api_token",
         "SMTP_FROM": "contact@avyron.ro",
         "LEAD_TO": "avyrontech@gmail.com",
-        "TURNSTILE_ALLOWED_HOSTNAMES": "*.avyrontech.workers.dev,avyrontech.lovable.app,localhost"
+        "TURNSTILE_ALLOWED_HOSTNAMES": "app.avyron.ro,*.avyrontech.workers.dev,avyrontech.lovable.app,localhost"
       }
     }
   }
