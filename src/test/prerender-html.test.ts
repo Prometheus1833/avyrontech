@@ -133,6 +133,18 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     expect(html).not.toContain("FV Tech Solutions SRL");
   });
 
+  it("keeps the approved Romanian hero copy and removes the rejected location-led labels", () => {
+    const body = read("/").split("</head>")[1];
+
+    expect(body).toContain("Site-uri care aduc clienți, nu doar vizite");
+    expect(body).toContain("Soluții digitale");
+    expect(body).toContain("care extind online activitatea");
+    expect(body).toContain("automatizând procesele.");
+    expect(body).toContain("Soluții digitale gândite pentru rezultate");
+    expect(body).not.toContain("Agenție web Iași · site-uri pentru afaceri din România și UE");
+    expect(body).not.toContain("Agenție web din Iași · proiecte în România și UE");
+  });
+
   it("keeps non-critical third-party and private UI code out of the homepage critical path", () => {
     const html = read("/");
     const h = head(html);

@@ -18,6 +18,20 @@ test.describe("public SEO routes", () => {
     await expect(page.locator('link[hreflang="en"]')).toHaveAttribute("href", "https://avyron.ro/en/pricing");
   });
 
+  test("homepage displays the approved hero and services wording", async ({ page }) => {
+    await page.goto("/");
+
+    await expect(page.getByText("Site-uri care aduc clienți, nu doar vizite", { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        level: 1,
+        name: "Soluții digitale care extind online activitatea automatizând procesele.",
+      }),
+    ).toBeVisible();
+    await expect(page.getByText("Soluții digitale gândite pentru rezultate", { exact: true })).toBeVisible();
+    await expect(page.getByText("Agenție web din Iași · proiecte în România și UE", { exact: true })).toHaveCount(0);
+  });
+
   test("audit remains in the product overview and continues in the request form", async ({ page }) => {
     await page.goto("/costurisiproduse");
     await page.getByRole("link", { name: "Vreau auditul", exact: true }).click();
