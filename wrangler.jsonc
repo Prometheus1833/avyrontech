@@ -8,6 +8,10 @@
   "compatibility_flags": ["nodejs_compat"],
   "preview_urls": true,
   "upload_source_maps": true,
+  "routes": [
+    { "pattern": "avyron.ro/*", "zone_name": "avyron.ro" },
+    { "pattern": "www.avyron.ro/*", "zone_name": "avyron.ro" }
+  ],
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
