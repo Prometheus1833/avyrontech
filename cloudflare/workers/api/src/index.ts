@@ -486,6 +486,7 @@ import { blogRouter, getBlogSitemapEntries, getPublishedBlogPost } from "./blog"
 import { injectBlogHtml, mergeBlogSitemap } from "../../../../src/worker/blogHtml";
 import { BLOG_SLUGS } from "../../../../src/data/blogSlugs";
 import { decide, isKnownSpaRoute, normalizePath } from "../../../../src/worker/router";
+import { serveCachedAsset } from "../../../../src/worker/assetCache";
 app.use("/api/projects/*", requireAuth);
 app.use("/api/proposals/*", requireAuth);
 app.use("/api/links/*", requireAuth);
@@ -572,7 +573,7 @@ app.all("*", async (c) => {
   if (c.req.method !== "GET" && c.req.method !== "HEAD") return c.json({ error: { code: "method_not_allowed" } }, 405);
 
   if (decision.kind === "redirect") return c.redirect(new URL(decision.location, url.origin).toString(), decision.status);
-  if (decision.kind === "asset") return c.env.ASSETS.fetch(c.req.raw);
+  if (decision.kind === "asset") return serveCachedAsset(c.env.ASSETS, c.req.raw);
   if (decision.kind === "static") return siteFile(c, decision.file, decision.status, decision.noindex);
   if (decision.kind === "blog") return publicBlogPage(c, decision.language, decision.slug);
 

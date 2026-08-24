@@ -6,6 +6,7 @@
 
 import { decide, isKnownSpaRoute, normalizePath } from "./router";
 import { injectBlogHtml, mergeBlogSitemap, type EdgeBlogPost, type EdgeSitemapEntry } from "./blogHtml";
+import { serveCachedAsset } from "./assetCache";
 
 interface Fetcher {
   fetch: (req: Request) => Promise<Response>;
@@ -18,7 +19,6 @@ interface Env {
 }
 
 const NOINDEX = "noindex, nofollow";
-const HASHED_ASSET_RE = /^\/assets\/.+-[a-z0-9_-]{6,}\.[a-z0-9]{2,5}$/i;
 
 async function serveFile(env: Env, url: URL, file: string, status: number, noindex: boolean) {
   const res = await env.ASSETS.fetch(new Request(new URL(file, url.origin), { method: "GET" }));
@@ -26,14 +26,6 @@ async function serveFile(env: Env, url: URL, file: string, status: number, noind
   headers.set("content-type", "text/html; charset=utf-8");
   if (noindex) headers.set("X-Robots-Tag", NOINDEX);
   return new Response(res.body, { status, headers });
-}
-
-async function serveAsset(env: Env, request: Request, url: URL) {
-  const response = await env.ASSETS.fetch(request);
-  if (!response.ok || !HASHED_ASSET_RE.test(url.pathname)) return response;
-  const headers = new Headers(response.headers);
-  headers.set("cache-control", "public, max-age=31536000, immutable");
-  return new Response(response.body, { status: response.status, headers });
 }
 
 async function apiFetch(env: Env, path: string) {
@@ -100,7 +92,7 @@ export default {
         return serveBlog(env, url, decision.language, decision.slug);
 
       case "asset":
-        return serveAsset(env, request, url);
+        return serveCachedAsset(env.ASSETS, request);
 
       case "static":
         return serveFile(env, url, decision.file, decision.status, decision.noindex);
