@@ -359,30 +359,6 @@ const ProductPage = () => {
           </section>
         )}
 
-        {/* Examples */}
-        {c.examples && (
-          <section className="mt-14">
-            <Reveal>
-              <h2 className="font-display text-2xl md:text-3xl font-extrabold">{c.examples.title}</h2>
-              <p className="mt-3 max-w-2xl text-sm md:text-base text-foreground/70 leading-relaxed">
-                {c.examples.lead}
-              </p>
-            </Reveal>
-            <div className="mt-7 grid sm:grid-cols-2 gap-4">
-              {c.examples.items.map((it, i) => (
-                <Reveal key={it.title} delay={i * 60} as="article">
-                  <div className="h-full rounded-2xl border border-foreground/10 bg-gradient-to-br from-foreground/[0.06] to-transparent p-5 md:backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-foreground/25">
-                    <h3 className="font-display font-bold text-sm">{it.title}</h3>
-                    <p className="mt-2 text-sm text-foreground/70 leading-relaxed">{it.desc}</p>
-                    <p className={`mt-3 text-xs font-semibold ${a.text}`}>{it.result}</p>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </section>
-        )}
-
-
         {/* Deliverables */}
         <section className="mt-14">
           <Reveal>

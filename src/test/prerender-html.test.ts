@@ -140,6 +140,13 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     }
   });
 
+  it("does not render the removed concrete-project examples on the premium website page", () => {
+    expect(read("/produse/website-prezentare-premium")).not.toContain("Exemple concrete de proiecte");
+    expect(read("/en/products/premium-presentation-website")).not.toContain(
+      "Examples of what this looks like in practice",
+    );
+  });
+
   it("error pages are prerendered with noindex", () => {
     for (const file of ["404.html", "403.html", "500.html", "mentenanta.html"]) {
       const html = readFileSync(resolve(distDir, file), "utf8");

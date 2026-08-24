@@ -70,11 +70,6 @@ export type ProductCopy = {
     lead: string;
     groups: Array<{ name: string; items: string[] }>;
   };
-  examples?: {
-    title: string;
-    lead: string;
-    items: Array<{ title: string; desc: string; result: string }>;
-  };
   advice?: {
     title: string;
     lead: string;
@@ -302,32 +297,6 @@ const CATALOG: Product[] = [
             },
           ],
         },
-        examples: {
-          title: "Exemple concrete de proiecte",
-          lead: "Tipuri de site-uri livrate cu acest pachet — structura, conținutul și măsurarea sunt alese în funcție de obiectiv.",
-          items: [
-            {
-              title: "Firmă de servicii locale",
-              desc: "Șase pagini: acasă, două pagini de servicii, zona acoperită, despre și contact, cu recenzii și buton fix de apel pe mobil.",
-              result: "Obiectiv: mai multe apeluri din căutările locale.",
-            },
-            {
-              title: "Cabinet de avocatură",
-              desc: "Pagini pe arii de practică, profiluri de avocați, logică de onorarii, secțiune de articole și formular confidențial de contact.",
-              result: "Obiectiv: solicitări calificate și credibilitate profesională.",
-            },
-            {
-              title: "Turism și ospitalitate",
-              desc: "Design condus de galerie, pagini de camere sau meniu, cerere de disponibilitate, hartă și structură bilingvă RO/EN.",
-              result: "Obiectiv: rezervări directe, fără comisioane către platforme.",
-            },
-            {
-              title: "Consultant sau profesie liberală",
-              desc: "O pagină narativă puternică, plus metodă de lucru, studii de caz și formular de programare conectat la calendarul tău.",
-              result: "Obiectiv: mai puține discuții, dar mai bune.",
-            },
-          ],
-        },
         advice: {
           title: "După lansare: consiliere, nu tăcere",
           lead: "Lansarea este începutul. Iată ce recomandăm în primele luni și ce acoperă perioada de suport stabilită pentru proiect.",
@@ -533,32 +502,6 @@ const CATALOG: Product[] = [
             {
               name: "Quality & security",
               items: ["Lighthouse & Core Web Vitals", "WCAG accessibility checks", "Security headers & anti-spam", "Cross-device QA", "Uptime monitoring"],
-            },
-          ],
-        },
-        examples: {
-          title: "Examples of what this looks like in practice",
-          lead: "Typical builds we deliver with this package — structure, content and measurement chosen for the goal.",
-          items: [
-            {
-              title: "Local services company",
-              desc: "Six pages: home, two service pages, area covered, about and contact, with reviews and a sticky call button on mobile.",
-              result: "Objective: more calls from local searches.",
-            },
-            {
-              title: "Law firm",
-              desc: "Practice-area pages, lawyer profiles, published fee logic, articles section and a confidential contact form.",
-              result: "Objective: qualified enquiries and professional credibility.",
-            },
-            {
-              title: "Hospitality & tourism",
-              desc: "Gallery-first design, rooms or menu pages, availability enquiry, map and multilingual RO/EN structure.",
-              result: "Objective: direct bookings instead of platform commissions.",
-            },
-            {
-              title: "Consultant or independent professional",
-              desc: "One strong narrative page plus method, case studies and a booking form connected to your calendar.",
-              result: "Objective: fewer, better conversations.",
             },
           ],
         },
