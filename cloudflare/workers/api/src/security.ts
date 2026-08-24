@@ -102,5 +102,14 @@ export async function verifyJwt<T>(token: string, secret: string): Promise<T | n
 
 export async function constantTimeEqual(left: string, right: string): Promise<boolean> {
   const [a, b] = await Promise.all([crypto.subtle.digest("SHA-256", encoder.encode(left)), crypto.subtle.digest("SHA-256", encoder.encode(right))]);
-  return crypto.subtle.timingSafeEqual(a, b);
+  const subtle = crypto.subtle as SubtleCrypto & { timingSafeEqual?: (left: BufferSource, right: BufferSource) => boolean };
+  if (subtle.timingSafeEqual) return subtle.timingSafeEqual(a, b);
+  // Browser-compatible fallback used only by local tests; the production
+  // Workers runtime exposes crypto.subtle.timingSafeEqual.
+  const leftBytes = new Uint8Array(a), rightBytes = new Uint8Array(b);
+  let difference = leftBytes.length ^ rightBytes.length;
+  for (let index = 0; index < Math.max(leftBytes.length, rightBytes.length); index += 1) {
+    difference |= (leftBytes[index % leftBytes.length] || 0) ^ (rightBytes[index % rightBytes.length] || 0);
+  }
+  return difference === 0;
 }

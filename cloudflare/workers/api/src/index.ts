@@ -461,17 +461,58 @@ import { projectsRouter } from "./projects";
 import { seedRouter } from "./seed";
 import { mediaRouter } from "./media";
 import { contactRouter } from "./contact";
+import { blogRouter, getBlogSitemapEntries, getPublishedBlogPost } from "./blog";
+import { injectBlogHtml, mergeBlogSitemap } from "../../../../src/worker/blogHtml";
+import { BLOG_SLUGS } from "../../../../src/data/blogSlugs";
 app.use("/api/projects/*", requireAuth);
 app.use("/api/proposals/*", requireAuth);
 app.use("/api/links/*", requireAuth);
 app.use("/api/metadata/*", requireAuth);
 app.use("/api/media/*", requireAuth);
+// Editorial mutations are authorized server-side. Public article reads and
+// immutable R2 cover images remain accessible to crawlers and visitors.
+app.use("/api/blog/staff/*", requireAuth, requireRole("staff", "admin"));
 app.route("/", projectsRouter);
 app.route("/", mediaRouter);
+app.route("/", blogRouter);
 // Formularul public (fără auth)
 app.route("/", contactRouter);
 // Importul administrativ are propria gardă constant-time X-Seed-Token.
 app.route("/", seedRouter);
+
+async function publicBlogPage(c: Context<AppBindings>, language: "ro" | "en") {
+  const slug = c.req.param("slug") || "";
+  const post = await getPublishedBlogPost(c.env.DB, language, slug);
+  if (!post) {
+    // Source-controlled articles are already prerendered. Unknown slugs must
+    // return a hard 404 instead of Cloudflare's SPA asset fallback.
+    if ((BLOG_SLUGS as readonly string[]).includes(slug)) return c.env.ASSETS.fetch(c.req.raw);
+    const notFound = await c.env.ASSETS.fetch(new Request(new URL("/404.html", c.req.url)));
+    const headers = new Headers(notFound.headers);
+    headers.set("content-type", "text/html; charset=utf-8");
+    headers.set("X-Robots-Tag", "noindex, nofollow");
+    return new Response(notFound.body, { status: 404, headers });
+  }
+  const shell = await c.env.ASSETS.fetch(new Request(new URL("/_shell.html", c.req.url)));
+  if (!shell.ok) return c.text("Site shell unavailable", 503, { "X-Robots-Tag": "noindex, nofollow" });
+  const headers = new Headers(shell.headers);
+  headers.set("content-type", "text/html; charset=utf-8");
+  headers.set("cache-control", "public, max-age=60, s-maxage=300, stale-while-revalidate=86400");
+  headers.set("Vary", "Accept-Encoding");
+  return new Response(injectBlogHtml(await shell.text(), post), { status: 200, headers });
+}
+
+app.get("/blog/:slug", (c) => publicBlogPage(c, "ro"));
+app.get("/en/blog/:slug", (c) => publicBlogPage(c, "en"));
+app.get("/sitemap.xml", async (c) => {
+  const asset = await c.env.ASSETS.fetch(c.req.raw);
+  if (!asset.ok) return asset;
+  const entries = await getBlogSitemapEntries(c.env.DB);
+  const headers = new Headers(asset.headers);
+  headers.set("content-type", "application/xml; charset=utf-8");
+  headers.set("cache-control", "public, max-age=300, s-maxage=900, stale-while-revalidate=86400");
+  return new Response(mergeBlogSitemap(await asset.text(), entries), { status: 200, headers });
+});
 
 app.notFound(async (c) => {
   if (c.req.path.startsWith("/api/")) {

@@ -24,18 +24,17 @@ Fiecare folder are propriul `README.md` cu activare, schemă și pattern-uri.
 
 ## Status
 
-🟡 **Scaffolding pregătit, dar nu activat.**
-Aplicația Avyron rulează pe Lovable Cloud (Postgres + Edge Functions).
-Cloudflare D1/KV/R2 sunt pregătite pentru migrare graduală sau pentru
-proiecte client noi care vor rula direct pe Cloudflare.
+🟢 **Backendul principal este activ pe Cloudflare Workers.** Autentificarea,
+platforma internă, formularele și blogul editorial folosesc API-ul Worker cu
+D1/KV/R2. Frontendul poate fi publicat de fluxul existent, dar nu primește
+niciodată credențiale directe către storage.
 
 ## Activare (rezumat)
 
-1. `npx wrangler d1 create avyron-db`
-2. `npx wrangler kv namespace create AVYRON_KV`
-3. `npx wrangler r2 bucket create avyron-files`
-4. Decomentează cele trei blocuri din `wrangler.jsonc` și completează ID-urile.
-5. `npx wrangler d1 migrations apply avyron-db --remote`
-6. Deploy.
+1. `npm ci`
+2. `npm run validate:cloudflare`
+3. Aplică migrațiile numai în mediul țintă (`preview` înainte de branch).
+4. `npm run deploy:api:preview` pentru o versiune nepromovată.
+5. Producția se migrează și se publică separat, numai după backup și aprobare.
 
 Detalii complete în README-urile din subfoldere.

@@ -5,7 +5,7 @@
  */
 
 import { ROUTE_ALTERNATES } from "@/i18n/routes";
-import { BLOG_SLUGS } from "@/data/blogIndex";
+import { BLOG_SLUGS } from "@/data/blogSlugs";
 
 /** Example demo slugs — mirrored from src/examples/registry.tsx (asserted in tests). */
 export const EXAMPLE_SLUGS = [

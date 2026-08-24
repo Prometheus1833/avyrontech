@@ -3,8 +3,9 @@
 D1 (SQLite distribuit) stochează **toate** datele care au listări, relații,
 filtrări sau căutări: clienți, proiecte, facturi, plăți, lead-uri, tickete etc.
 
-> Status: 🟡 **Scaffolding**. Aplicația folosește în continuare Lovable Cloud
-> (Postgres) pentru date live. D1 e pregătit pentru activare graduală.
+> Status: 🟢 **Activ pentru API-ul Cloudflare**. Producția și preview-ul au baze
+> distincte; migrațiile de preview se aplică înaintea versiunii de branch, iar
+> producția rămâne un pas separat, cu backup și aprobare explicită.
 
 ## Activare
 
@@ -12,11 +13,12 @@ filtrări sau căutări: clienți, proiecte, facturi, plăți, lead-uri, tickete
 # 1. Creează baza
 npx wrangler d1 create avyron-db
 
-# 2. Pune `database_id` returnat în wrangler.jsonc (decomentează blocul d1_databases)
+# 2. Pune `database_id` returnat în wrangler.jsonc
 
 # 3. Aplică migrațiile
 npx wrangler d1 migrations apply avyron-db --local    # dev
-npx wrangler d1 migrations apply avyron-db --remote   # producție
+npx wrangler d1 migrations apply DB --config wrangler.jsonc --env preview --remote # preview
+npx wrangler d1 migrations apply DB --config wrangler.jsonc --env= --remote         # producție
 
 # 4. Verificare
 npx wrangler d1 execute avyron-db --remote \
@@ -25,7 +27,7 @@ npx wrangler d1 execute avyron-db --remote \
 
 În Workers/Pages: binding-ul este `env.DB`.
 
-## Tabele (vezi `migrations/0001_init.sql`)
+## Tabele (vezi `migrations/`)
 
 | Tabel              | Rol                                          |
 |--------------------|----------------------------------------------|
@@ -38,6 +40,10 @@ npx wrangler d1 execute avyron-db --remote \
 | `leads`            | Contact / demo / request example             |
 | `support_tickets`  | Tickete suport per client+proiect            |
 | `website_content`  | CMS per-proiect pentru clienții cu admin     |
+| `users` / `profiles` | Identitate, profil și autentificare Cloudflare |
+| `user_roles`       | Roluri `user`, `staff`, `admin`              |
+| `blog_posts`       | Articole RO/EN, SEO, social și stare editorială |
+| `blog_post_revisions` | Istoric înaintea fiecărei editări de articol |
 
 ## Convenții
 
@@ -47,6 +53,8 @@ npx wrangler d1 execute avyron-db --remote \
 - `created_at` / `updated_at` ca `INTEGER` (epoch ms).
 - JSON stocat ca `TEXT` (SQLite n-are `jsonb`).
 - Indexuri pe coloanele folosite în `WHERE` / `ORDER BY` / `JOIN`.
+- Articolele publice sunt citite fără autentificare; ciornele și operațiile de
+  scriere trec prin Worker și cer rol `staff`/`admin`.
 
 ## Pattern Worker
 

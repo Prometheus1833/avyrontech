@@ -40,6 +40,15 @@ test.describe("public SEO routes", () => {
     await expect(page.locator('link[hreflang="ro"]')).toHaveAttribute("href", "https://avyron.ro/blog/importanta-website-afacere-2026");
   });
 
+  test("article exposes complete native and network sharing actions", async ({ page }) => {
+    await page.goto("/blog/importanta-website-afacere-2026");
+    await expect(page.getByRole("button", { name: "Distribuie" }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "Distribuie pe Facebook" }).first()).toHaveAttribute("href", /facebook\.com\/sharer/);
+    await expect(page.getByRole("link", { name: "Distribuie pe LinkedIn" }).first()).toHaveAttribute("href", /linkedin\.com\/sharing/);
+    await expect(page.getByRole("link", { name: "Distribuie pe WhatsApp" }).first()).toHaveAttribute("href", /wa\.me/);
+    await expect(page.getByRole("button", { name: "Copiază linkul" }).first()).toBeVisible();
+  });
+
   test("unknown routes render the 404 experience", async ({ page }) => {
     await page.goto("/route-that-does-not-exist");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
@@ -48,6 +57,33 @@ test.describe("public SEO routes", () => {
 });
 
 test.describe("forms and authentication", () => {
+  test("authenticated staff can open the Cloudflare editorial workspace", async ({ page }) => {
+    await page.route("**/api/auth/refresh", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ access_token: "local-e2e-token", expires_in: 900, user: { id: "staff-1", roles: ["staff"] } }),
+    }));
+    await page.route("**/api/auth/me", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        user: { id: "staff-1", email: "staff@example.com", display_name: "Editor Avyron", avatar_url: null, email_verified: 1, must_change_password: 0, created_at: 1 },
+        profile: { id: "staff-1", display_name: "Editor Avyron", avatar_url: null, phone: null, address: null, entity_type: "individual", company_name: null, cui: null, social_facebook: null, social_instagram: null, social_tiktok: null, website: null, language: "ro", theme: "system", pseudonym: null, staff_role: "marketing" },
+        roles: ["staff"],
+      }),
+    }));
+    await page.route("**/api/blog/posts?*", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [] }) }));
+    await page.route("**/api/blog/staff/posts", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [] }) }));
+
+    await page.goto("/blog");
+    await expect(page.getByRole("heading", { name: "Spațiu editorial" })).toBeVisible();
+    await page.getByRole("button", { name: "Articol nou" }).click();
+    await expect(page.getByRole("dialog").getByRole("heading", { name: "Articol nou" })).toBeVisible();
+    await expect(page.locator("#blog-title")).toBeVisible();
+    await expect(page.locator("#blog-content")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Publică" })).toBeVisible();
+  });
+
   test("Romanian login alias renders the auth page and remains noindex", async ({ page }) => {
     await page.goto("/autentificare");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();

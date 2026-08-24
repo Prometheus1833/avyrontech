@@ -379,4 +379,4 @@ For an independent review, start with [web and mobile QA testing](/en/products/q
   },
 ];
 
-export const BLOG_SLUGS = BLOG_INDEX.map((post) => post.slug);
+export { BLOG_SLUGS } from "./blogSlugs";

@@ -25,6 +25,7 @@ odată cu o versiune de Worker.
 
 - utilizatori, roluri, profiluri și sesiuni;
 - clienți, proiecte, servicii, facturi, lead-uri și audit;
+- articole, traduceri, stări editoriale și istoricul reviziilor;
 - metadata obiectelor R2, fără corpul fișierului;
 - contoare exacte de rate limiting în ferestre fixe.
 
@@ -47,6 +48,7 @@ valorile vechi. Datele sensibile și listele interogabile rămân în D1.
 - `FILES/leads/<lead-id>/<filename>` pentru atașamentele formularelor;
 - `MEDIA/projects/<project-id>/<media-id>-<filename>` pentru media proiectelor;
 - `MEDIA/avatars/<user-id>` pentru avataruri.
+- `MEDIA/blog/covers/<uuid>.<ext>` pentru coperți publice validate ale articolelor.
 
 Cheile sunt construite numai de Worker, numele sunt normalizate, tipul și
 dimensiunea sunt validate înainte de scriere, iar metadata R2 păstrează

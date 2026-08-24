@@ -6,6 +6,8 @@ import { describe, it, expect } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { isNoindexPath, PRERENDER_ROUTES } from "@/seo/publicRoutes";
+import { BLOG_INDEX } from "@/data/blogIndex";
+import { BLOG_SLUGS } from "@/data/blogSlugs";
 
 const root = process.cwd();
 const distDir = existsSync(resolve(root, "dist/client/index.html"))
@@ -20,6 +22,10 @@ const head = (html: string) => html.split("</head>")[0];
 const attr = (html: string, re: RegExp) => html.match(re)?.[1];
 
 describe.skipIf(!hasBuild)("prerendered HTML", () => {
+  it("keeps the dependency-light Worker slug registry aligned with source articles", () => {
+    expect([...BLOG_SLUGS]).toEqual(BLOG_INDEX.map((post) => post.slug));
+  });
+
   const cases: Array<[string, string, string]> = [
     ["/", "ro", "https://avyron.ro/"],
     ["/costurisiproduse", "ro", "https://avyron.ro/costurisiproduse"],
