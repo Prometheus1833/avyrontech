@@ -64,6 +64,10 @@ test.describe("public SEO routes", () => {
 
   test("footer stays compact and publishes the approved navigation and ANPC link", async ({ page }) => {
     await page.goto("/");
+    // The landing sections hydrate progressively. Wait for their reserved
+    // layout before jumping to the bottom, otherwise scrollTo can run while
+    // the prerendered body is still only one viewport tall.
+    await page.waitForFunction(() => document.body.scrollHeight > window.innerHeight * 2);
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     const footer = page.locator("footer");
     await expect(footer).toBeVisible();

@@ -7,7 +7,7 @@ import { isPlatformHostname, publicSiteHref } from "@/lib/appHost";
 describe("app.avyron.ro platform boundary", () => {
   it("uses the same-origin API route on the platform hostname", () => {
     expect(apiBaseForHost("app.avyron.ro")).toBe("");
-    expect(apiBaseForHost("avyrontech.lovable.app")).toContain("workers.dev");
+    expect(apiBaseForHost("avyrontech.lovable.app")).toBe("https://api.avyron.ro");
   });
 
   it("keeps platform and public-site links explicit", () => {
@@ -20,6 +20,7 @@ describe("app.avyron.ro platform boundary", () => {
   it("declares an exact API route without taking over the Lovable frontend", () => {
     const config = readFileSync(resolve(process.cwd(), "wrangler.jsonc"), "utf8");
     expect(config).toContain('"pattern": "app.avyron.ro/api/*"');
+    expect(config).toContain('"pattern": "api.avyron.ro", "custom_domain": true');
     expect(config).toContain('"zone_name": "avyron.ro"');
     expect(config).not.toContain('"pattern": "app.avyron.ro", "custom_domain": true');
     expect(config).toContain("https://app.avyron.ro");

@@ -1,10 +1,10 @@
 // Base URL pentru API-ul Cloudflare Workers (avyrontech).
 //
 // - În producție (avyron.ro sau workers.dev direct), folosim același origin cu string gol → `/api/*`.
-// - În preview Lovable / dev local, folosim workerul absolut.
+// - În preview Lovable folosim domeniul API first-party, protejat de Cloudflare.
 // Poate fi suprascris prin VITE_CF_API_BASE dacă schimbi domeniul.
 
-const FALLBACK = "https://avyrontech.avyrontech.workers.dev";
+const FALLBACK = "https://api.avyron.ro";
 
 export function apiBaseForHost(host: string, configured?: string): string {
   if (configured) return configured.replace(/\/+$/, "");

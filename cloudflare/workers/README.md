@@ -2,6 +2,10 @@
 
 Toate operațiile trec prin Worker. Browser-ul nu accesează direct D1/KV/R2.
 
+În producție, același Worker este disponibil pe `api.avyron.ro/v1/*` și pe
+rutele same-origin `/api/*`. Namespace-ul versionat este rescris intern, fără
+redirect sau Worker intermediar. Vezi [`../../../docs/API_GATEWAY.md`](../../../docs/API_GATEWAY.md).
+
 ## Rută & responsabilitate
 
 ```

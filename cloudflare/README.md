@@ -38,3 +38,6 @@ niciodată credențiale directe către storage.
 5. Producția se migrează și se publică separat, numai după backup și aprobare.
 
 Detalii complete în README-urile din subfoldere.
+
+Gateway-ul canonic, bugetul Free și furnizorii externi acceptați sunt descriși
+în [`../docs/API_GATEWAY.md`](../docs/API_GATEWAY.md).

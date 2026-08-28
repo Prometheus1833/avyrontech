@@ -15,5 +15,5 @@ type OptionalIntegrations = {
 
 export type Env = CloudflareBindings & OptionalIntegrations;
 
-export type AppVariables = { userId: string; roles: Role[] };
+export type AppVariables = { userId: string; roles: Role[]; requestId: string };
 export type AppBindings = { Bindings: Env; Variables: AppVariables };

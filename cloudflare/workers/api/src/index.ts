@@ -21,6 +21,9 @@ import { deliverMail, logDelivery } from "./mailer";
 import { checkRateLimit, clientIp, hashKey, verifyTurnstile } from "./antispam";
 import { MAX_CONTENT_CONFIG_BYTES, avatarObjectKey, contentConfigKey, jsonByteLength } from "./storage";
 import { handleMappedHostname } from "./sites.config";
+import { apiDiscovery, API_VERSION, isApiHostname, isApiSurfaceRequest, normalizeVersionedApiRequest, openApiDocument } from "./apiGateway";
+import { publicApiCacheRequest } from "./apiCache";
+import { domainRouter } from "./domain";
 
 const app = new Hono<AppBindings>();
 
@@ -45,6 +48,41 @@ const allowedOrigin = (env: AppBindings["Bindings"], origin: string | undefined)
   return "";
 };
 
+const appendVary = (current: string | null, value: string) => {
+  const values = (current || "").split(",").map((item) => item.trim()).filter(Boolean);
+  if (!values.some((item) => item.toLowerCase() === value.toLowerCase())) values.push(value);
+  return values.join(", ");
+};
+
+// One response policy covers both the canonical API hostname and the existing
+// same-origin /api service-binding routes. Private responses are never cached;
+// public handlers must opt in explicitly with Cache-Control.
+app.use("*", async (c, next) => {
+  if (!isApiSurfaceRequest(c.req.raw)) return next();
+  const requestId = c.req.header("cf-ray") || crypto.randomUUID();
+  c.set("requestId", requestId);
+  const origin = c.req.header("origin");
+  const unsafeMethod = !["GET", "HEAD", "OPTIONS"].includes(c.req.method);
+
+  if (unsafeMethod && origin && !allowedOrigin(c.env, origin)) {
+    c.res = c.json({ error: { code: "forbidden_origin", message: "Originea nu este permisă", requestId } }, 403);
+  } else {
+    await next();
+  }
+
+  c.header("X-Request-Id", requestId);
+  c.header("X-API-Version", API_VERSION);
+  c.header("X-Robots-Tag", "noindex, nofollow");
+  c.header("X-Content-Type-Options", "nosniff");
+  c.header("X-Frame-Options", "DENY");
+  c.header("Referrer-Policy", "no-referrer");
+  c.header("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+  c.header("Content-Security-Policy", "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'");
+  if (!c.res.headers.has("cache-control")) c.header("Cache-Control", "private, no-store");
+  if (origin) c.header("Vary", appendVary(c.res.headers.get("vary"), "Origin"));
+  return c.res;
+});
+
 const authUiBaseUrl = (c: Context<AppBindings>): string => {
   if (new URL(c.req.url).hostname.toLowerCase() === "app.avyron.ro") {
     return "https://app.avyron.ro";
@@ -60,8 +98,38 @@ app.use("*", async (c, next) => {
     origin: (origin) => allowedOrigin(c.env, origin),
     credentials: true,
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Request-Id"],
+    exposeHeaders: ["X-Request-Id", "X-API-Version", "X-Avyron-Cache"],
+    maxAge: 86_400,
   })(c, next);
+});
+
+// Cache only anonymous, explicitly public reads. The normalized key prevents
+// query-string cache fragmentation and reduces D1/R2 reads on the Free tier.
+app.use("/api/*", async (c, next) => {
+  const cacheKey = publicApiCacheRequest(c.req.raw);
+  if (!cacheKey || typeof caches === "undefined") return next();
+  const edgeCache = caches.default;
+  try {
+    const cached = await edgeCache.match(cacheKey);
+    if (cached) {
+      const headers = new Headers(cached.headers);
+      headers.set("X-Avyron-Cache", "HIT");
+      return new Response(cached.body, { status: cached.status, headers });
+    }
+  } catch (error) {
+    console.warn(JSON.stringify({ event: "api_cache_read_failed", path: c.req.path, error: String(error) }));
+  }
+
+  await next();
+  const cacheControl = c.res.headers.get("cache-control") || "";
+  if (c.res.ok && /^public\b/i.test(cacheControl) && !c.res.headers.has("set-cookie")) {
+    const stored = c.res.clone();
+    c.executionCtx.waitUntil(edgeCache.put(cacheKey, stored).catch((error) =>
+      console.warn(JSON.stringify({ event: "api_cache_write_failed", path: c.req.path, error: String(error) })),
+    ));
+    c.header("X-Avyron-Cache", "MISS");
+  }
 });
 
 app.use("/api/auth/*", async (c, next) => {
@@ -119,8 +187,38 @@ async function rolesFor(db: D1Database, userId: string): Promise<Role[]> {
   return results.map((r) => r.role);
 }
 
-// ─── Health ─────────────────────────────────────────────────────────────
-app.get("/api/health", (c) => c.json({ ok: true, ts: now() }));
+// ─── Discovery & health ─────────────────────────────────────────────────
+const healthPayload = () => ({ ok: true, service: "avyron-api", version: API_VERSION, ts: now() });
+
+app.get("/", async (c, next) => {
+  if (!isApiHostname(new URL(c.req.url).hostname)) return next();
+  c.header("cache-control", "public, max-age=300, stale-while-revalidate=3600");
+  return c.json(apiDiscovery);
+});
+app.get("/openapi.json", async (c, next) => {
+  if (!isApiHostname(new URL(c.req.url).hostname)) return next();
+  c.header("cache-control", "public, max-age=3600, stale-while-revalidate=86400");
+  return c.json(openApiDocument);
+});
+app.get("/healthz", async (c, next) => {
+  if (!isApiHostname(new URL(c.req.url).hostname)) return next();
+  c.header("cache-control", "no-store");
+  return c.json(healthPayload());
+});
+app.get("/robots.txt", async (c, next) => {
+  if (!isApiHostname(new URL(c.req.url).hostname)) return next();
+  c.header("content-type", "text/plain; charset=utf-8");
+  c.header("cache-control", "public, max-age=86400");
+  return c.body("User-agent: *\nDisallow: /\n");
+});
+app.get("/.well-known/security.txt", async (c, next) => {
+  if (!isApiHostname(new URL(c.req.url).hostname)) return next();
+  return c.redirect("https://avyron.ro/.well-known/security.txt", 308);
+});
+app.get("/api/health", (c) => {
+  c.header("cache-control", "no-store");
+  return c.json(healthPayload());
+});
 
 // ─── AUTH ───────────────────────────────────────────────────────────────
 app.post("/api/auth/signup", async (c) => {
@@ -496,6 +594,7 @@ app.use("/api/blog/staff/*", requireAuth, requireRole("staff", "admin"));
 app.route("/", projectsRouter);
 app.route("/", mediaRouter);
 app.route("/", blogRouter);
+app.route("/", domainRouter);
 // Formularul public (fără auth)
 app.route("/", contactRouter);
 // Importul administrativ are propria gardă constant-time X-Seed-Token.
@@ -566,6 +665,15 @@ async function siteFile(c: Context<AppBindings>, file: string, status: number, n
 // This keeps the direct Worker preview identical to the standalone site Worker.
 app.all("*", async (c) => {
   const url = new URL(c.req.url);
+  if (isApiHostname(url.hostname)) {
+    return c.json({
+      error: {
+        code: "not_found",
+        message: "Ruta API nu există",
+        requestId: c.get("requestId") || c.req.header("cf-ray") || crypto.randomUUID(),
+      },
+    }, 404);
+  }
   const decision = decide(url);
   if (decision.kind === "api") return c.json({ error: { code: "not_found", message: "Ruta nu există" } }, 404);
   if (c.req.method !== "GET" && c.req.method !== "HEAD") return c.json({ error: { code: "method_not_allowed" } }, 405);
@@ -596,7 +704,7 @@ app.all("*", async (c) => {
 });
 
 app.onError((error, c) => {
-  const requestId = c.req.header("cf-ray") || crypto.randomUUID();
+  const requestId = c.get("requestId") || c.req.header("cf-ray") || crypto.randomUUID();
   console.error(JSON.stringify({ event: "unhandled_error", requestId, path: c.req.path, method: c.req.method, error: error.message }));
   return c.json({ error: { code: "internal_error", message: "A apărut o eroare internă", requestId } }, 500);
 });
@@ -613,6 +721,6 @@ async function cleanupExpiredData(env: AppBindings["Bindings"]) {
 }
 
 export default {
-  fetch: (request, env, ctx) => app.fetch(request, env, ctx),
+  fetch: (request, env, ctx) => app.fetch(normalizeVersionedApiRequest(request), env, ctx),
   scheduled: (_controller, env, ctx) => ctx.waitUntil(cleanupExpiredData(env)),
 } satisfies ExportedHandler<AppBindings["Bindings"]>;

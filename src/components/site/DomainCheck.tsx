@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Check, X, Activity, Globe, Loader2, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useLang } from "@/i18n/LanguageContext";
-import { supabase } from "@/integrations/supabase/client";
+import { apiUrl } from "@/lib/apiBase";
 import { toast } from "sonner";
 
 const slugify = (s: string) =>
@@ -35,18 +35,24 @@ const DomainCheck = () => {
     setChecking(true);
     setResults(null);
     try {
-      const { data, error } = await supabase.functions.invoke("check-domain", {
-        body: { name: slug, tld: tld.replace(/^\./, "") },
+      const domain = `${slug}${tld}`;
+      const response = await fetch(apiUrl(`/api/public/domain-check?domain=${encodeURIComponent(domain)}`), {
+        headers: { accept: "application/json" },
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      const data = await response.json() as {
+        status?: Status;
+        label?: Partial<Record<"ro" | "en", string>>;
+        message?: Partial<Record<"ro" | "en", string>>;
+        error?: { message?: string; code?: string };
+      };
+      if (!response.ok) throw new Error(data.error?.message || data.error?.code || "Verificare eșuată");
       const status = (data.status ?? "unknown") as Status;
       setResults([{
         tld,
         status,
         label: data.label?.[lang] ?? status,
         message: data.message?.[lang] ?? "",
-        cached: !!data.cached,
+        cached: response.headers.get("X-Avyron-Cache") === "HIT",
       }]);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Verificare eșuată";

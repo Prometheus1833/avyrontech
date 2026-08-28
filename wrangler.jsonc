@@ -4,7 +4,7 @@
   // branch builds must explicitly use `--env preview` (see package.json).
   "name": "avyrontech",
   "main": "cloudflare/workers/api/src/index.ts",
-  "compatibility_date": "2026-08-23",
+  "compatibility_date": "2026-08-27",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
   "preview_urls": true,
@@ -12,6 +12,7 @@
   "routes": [
     { "pattern": "avyron.ro", "custom_domain": true },
     { "pattern": "www.avyron.ro", "custom_domain": true },
+    { "pattern": "api.avyron.ro", "custom_domain": true },
     { "pattern": "app.avyron.ro/api/*", "zone_name": "avyron.ro" },
     { "pattern": "exemplu1.avyron.ro/*", "zone_name": "avyron.ro" },
     { "pattern": "exemplu2.avyron.ro/*", "zone_name": "avyron.ro" },
@@ -71,7 +72,7 @@
   },
   "vars": {
     "APP_ENV": "production",
-    "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://app.avyron.ro,https://avyrontech.lovable.app,https://id-preview--3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovable.app,https://3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovableproject.com,http://localhost:8080",
+    "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://app.avyron.ro,https://api.avyron.ro,https://avyrontech.lovable.app,https://id-preview--3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovable.app,https://3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovableproject.com,http://localhost:8080",
     "APP_URL": "https://avyron.ro",
     "SMTP_HOST": "smtp.mx.cloudflare.net",
     "SMTP_PORT": "465",
@@ -125,7 +126,7 @@
       },
       "vars": {
         "APP_ENV": "preview",
-        "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://app.avyron.ro,https://codex-prelaunch-improvements-2026-08-23-avyrontech.avyrontech.workers.dev,https://avyrontech.lovable.app,http://localhost:8080",
+        "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://app.avyron.ro,https://api.avyron.ro,https://codex-prelaunch-improvements-2026-08-23-avyrontech.avyrontech.workers.dev,https://avyrontech.lovable.app,http://localhost:8080",
         "APP_URL": "https://codex-prelaunch-improvements-2026-08-23-avyrontech.avyrontech.workers.dev",
         "SMTP_HOST": "smtp.mx.cloudflare.net",
         "SMTP_PORT": "465",
