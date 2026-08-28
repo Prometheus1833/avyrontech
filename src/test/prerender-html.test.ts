@@ -26,12 +26,23 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     expect([...BLOG_SLUGS]).toEqual(BLOG_INDEX.map((post) => post.slug));
   });
 
+  it("gives every source article a distinct optimized editorial cover", () => {
+    const covers = BLOG_INDEX.map((post) => post.cover_image_url);
+    expect(covers.every((cover) => cover?.startsWith("/news/") && cover.endsWith(".webp"))).toBe(true);
+    expect(new Set(covers).size).toBe(BLOG_INDEX.length);
+    for (const cover of covers) expect(existsSync(resolve(root, "public", cover!.slice(1)))).toBe(true);
+  });
+
   const cases: Array<[string, string, string]> = [
     ["/", "ro", "https://avyron.ro/"],
     ["/costurisiproduse", "ro", "https://avyron.ro/costurisiproduse"],
     ["/produse/website-prezentare-premium", "ro", "https://avyron.ro/produse/website-prezentare-premium"],
     ["/en/products/premium-presentation-website", "en", "https://avyron.ro/en/products/premium-presentation-website"],
     ["/en/pricing", "en", "https://avyron.ro/en/pricing"],
+    ["/despre-noi", "ro", "https://avyron.ro/despre-noi"],
+    ["/en/about", "en", "https://avyron.ro/en/about"],
+    ["/portofoliu", "ro", "https://avyron.ro/portofoliu"],
+    ["/en/portfolio", "en", "https://avyron.ro/en/portfolio"],
   ];
 
   it.each(cases)("%s ships lang, title, description and self-canonical", (route, lang, canonical) => {
@@ -67,6 +78,35 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     }
   });
 
+  it("separates the About and Portfolio entities with reciprocal hreflang", () => {
+    const aboutRo = read("/despre-noi");
+    const aboutEn = read("/en/about");
+    const portfolioRo = read("/portofoliu");
+    const portfolioEn = read("/en/portfolio");
+    for (const html of [aboutRo, aboutEn]) {
+      const h = head(html);
+      expect(h).toContain('hreflang="ro" href="https://avyron.ro/despre-noi"');
+      expect(h).toContain('hreflang="en" href="https://avyron.ro/en/about"');
+      expect(h).toContain('"@type":"AboutPage"');
+      expect(html).toContain("Cybersecurity");
+      expect(html).toContain("QA Testing");
+      expect(html).toContain("Vibe Development");
+    }
+    for (const html of [portfolioRo, portfolioEn]) {
+      const h = head(html);
+      expect(h).toContain('hreflang="ro" href="https://avyron.ro/portofoliu"');
+      expect(h).toContain('hreflang="en" href="https://avyron.ro/en/portfolio"');
+      expect(html).toMatch(/Portofoliu|Portfolio/);
+    }
+    expect(portfolioRo).not.toContain("Vibe Development");
+  });
+
+  it("publishes the canonical LinkedIn profile and omits the retired company URL", () => {
+    const html = read("/");
+    expect(html).toContain("https://www.linkedin.com/in/avyron-solutions-757595406");
+    expect(html).not.toContain("https://www.linkedin.com/company/avyron");
+  });
+
   it("ships complete, indexable English privacy content", () => {
     const html = read("/en/privacy");
     const h = head(html);
@@ -92,6 +132,17 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     }
     expect(ro).toContain("Ce face un website util");
     expect(en).toContain("What makes a website useful");
+  });
+
+  it("prerenders the sourced AI Act article as a complete bilingual publication", () => {
+    const slug = "ai-act-reguli-transparenta-2-august-2026";
+    const ro = read(`/blog/${slug}`);
+    const en = read(`/en/blog/${slug}`);
+    expect(ro).toContain("Ce ar trebui să facă o afacere acum");
+    expect(ro).toContain("digital-strategy.ec.europa.eu/en/faqs/transparency-obligations-under-article-50-ai-act");
+    expect(en).toContain("What a business should do now");
+    expect(head(ro)).toContain('"wordCount":');
+    expect(head(en)).toContain(`hreflang="ro" href="https://avyron.ro/blog/${slug}"`);
   });
 
   it("ships exactly one JSON-LD graph with no duplicated global nodes", () => {

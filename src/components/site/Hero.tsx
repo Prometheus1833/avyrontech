@@ -1,11 +1,13 @@
 import { ArrowRight, ChevronDown, TrendingUp } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
+import { Link } from "react-router-dom";
 
 const Hero = () => {
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const ro = lang === "ro";
   return (
     <section
-      id="top"
+      id="hero"
       className="relative min-h-[100dvh] md:min-h-0 flex flex-col items-center justify-center md:justify-start pt-24 pb-16 md:pt-36 md:pb-24 overflow-hidden bg-hero"
     >
       <div className="mx-auto max-w-5xl px-4 sm:px-6 text-center flex flex-col items-center justify-center md:justify-start w-full">
@@ -19,22 +21,20 @@ const Hero = () => {
           <p className="mt-5 text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl px-2">
             {t.hero.subtitle}
           </p>
-          <div className="mt-7 flex flex-col sm:flex-row flex-wrap gap-3 justify-center w-full sm:w-auto px-2">
-            <a
-              href="#cta"
-              className="inline-flex h-auto w-full flex-col items-center justify-center rounded-full bg-foreground px-6 py-2.5 text-sm font-medium leading-tight text-background transition-colors hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:w-auto"
+          <div className="mt-7 grid w-full max-w-md grid-cols-2 gap-2.5 px-2">
+            <Link
+              to={ro ? "/despre-noi" : "/en/about"}
+              className="inline-flex h-12 min-w-0 items-center justify-center rounded-full bg-foreground px-3 text-center text-sm font-semibold text-background transition-colors hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-                <span className="flex items-center font-semibold">
-                  {t.hero.ctaPrimary} <ArrowRight className="ml-1 size-4" aria-hidden="true" focusable="false" />
-                </span>
-                <span className="text-[11px] opacity-80 font-normal">{t.hero.personalized}</span>
-            </a>
-            <a
-              href="#exemple"
-              className="inline-flex h-12 w-full items-center justify-center rounded-full border border-foreground/20 bg-background px-6 text-sm font-medium transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:w-auto"
+              {ro ? "Despre noi" : "About us"}
+            </Link>
+            <Link
+              to={ro ? "/costurisiproduse" : "/en/pricing"}
+              className="inline-flex h-12 min-w-0 items-center justify-center gap-1.5 rounded-full border border-foreground/20 bg-background px-3 text-center text-sm font-semibold transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              {t.hero.ctaSecondary}
-            </a>
+              {ro ? "Vezi Produse" : "View Products"}
+              <ArrowRight className="size-4 shrink-0" aria-hidden="true" focusable="false" />
+            </Link>
           </div>
         </div>
         <div className="mt-10 md:mt-12 flex flex-nowrap items-center gap-x-3 sm:gap-x-6 text-sm sm:text-base text-muted-foreground justify-center px-2 overflow-x-auto">

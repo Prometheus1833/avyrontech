@@ -123,15 +123,15 @@ const ErrorPage = ({ variant = "404" }: Props) => {
       />
 
       <div className="container mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-6 py-16">
-        <Link
-          to="/"
+        <a
+          href="/#hero"
           className="mb-12 inline-flex items-center gap-2 text-sm text-muted-foreground transition hover:text-foreground"
         >
           <span className="grid size-7 place-items-center rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-500 text-xs font-bold text-white">
             A
           </span>
           Avyron
-        </Link>
+        </a>
 
         <div className="relative w-full max-w-2xl text-center">
           {/* Huge ghost code */}
@@ -183,7 +183,7 @@ const ErrorPage = ({ variant = "404" }: Props) => {
             </div>
 
             <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-              <Link to="/despre-si-portofoliu" className="hover:text-foreground">Despre Avyron</Link>
+              <Link to="/despre-noi" className="hover:text-foreground">Despre Avyron</Link>
               <span aria-hidden className="opacity-30">·</span>
               <Link to="/costurisiproduse" className="hover:text-foreground">Costuri</Link>
               <span aria-hidden className="opacity-30">·</span>

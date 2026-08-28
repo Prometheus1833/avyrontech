@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, ScanSearch, Gauge, Accessibility, Palette, Check, CreditCard, Building2, Link2, FileText, Zap, Crown, Shield, RefreshCw, Hourglass, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu, Bug, FlaskConical, HeartHandshake } from "lucide-react";
+import { ArrowLeft, ArrowRight, ScanSearch, Gauge, Accessibility, Check, CreditCard, Building2, Link2, FileText, Zap, Crown, Shield, RefreshCw, Hourglass, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu, Bug, FlaskConical, HeartHandshake } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { trackEvent } from "@/lib/analytics";
 import logo from "@/assets/avyron-logo.jpg";
@@ -266,14 +266,14 @@ const Pricing = () => {
             <span className="relative size-1 rounded-full bg-cyan-400 animate-pulse" aria-hidden />
           </Link>
 
-          <Link
-            to={ro ? "/" : "/en"}
+          <a
+            href={ro ? "/#hero" : "/en#hero"}
             aria-label={ro ? "Acasă Avyron" : "Avyron home"}
             className="flex min-w-0 items-center justify-self-center gap-2 rounded-full px-1.5 py-1 transition-colors hover:bg-foreground/5"
           >
             <img src={logo} alt="Avyron" className="size-7 rounded-md ring-1 ring-white/20 sm:size-8" />
             <span className="hidden font-display text-xs tracking-[0.2em] min-[380px]:inline sm:text-sm sm:tracking-[0.25em]">AVYRON</span>
-          </Link>
+          </a>
 
           <div className="inline-flex min-h-9 items-center justify-self-end gap-1.5 rounded-full border border-foreground/15 bg-foreground/[0.04] px-2 py-1 backdrop-blur">
             <LangSwitch />
@@ -329,24 +329,24 @@ const Pricing = () => {
         </section>
 
         {/* Audit — product overview entry; the request continues in the protected form. */}
-        <section className="relative mt-10 overflow-hidden rounded-2xl border border-amber-300/25 bg-gradient-to-br from-amber-400/[0.08] via-card to-orange-500/[0.06] p-5 sm:p-6">
-          <div aria-hidden className="absolute -right-16 -top-20 size-56 rounded-full bg-amber-400/15 blur-3xl" />
-          <div className="relative grid items-start gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+        <section data-testid="free-audit-card" className="relative mt-8 overflow-hidden rounded-2xl border border-amber-300/25 bg-gradient-to-br from-amber-400/[0.08] via-card to-orange-500/[0.06] p-4 sm:p-5">
+          <div aria-hidden className="absolute -right-10 -top-12 size-36 rounded-full bg-amber-400/10 blur-2xl" />
+          <div className="relative grid items-start gap-5 md:grid-cols-[0.85fr_1.15fr]">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-700 dark:text-amber-200">
                 <ScanSearch className="size-3.5" aria-hidden />
-                {ro ? "Audit gratuit · punct de pornire" : "Free audit · a clear starting point"}
+                {ro ? "Audit gratuit" : "Free audit"}
               </div>
-              <h2 className="mt-4 font-display text-2xl font-extrabold sm:text-3xl">
-                {ro ? "Audit website / produs digital" : "Website / digital product audit"}
+              <h2 className="mt-3 font-display text-xl font-extrabold sm:text-2xl">
+                {ro ? "Audit Produs Digital" : "Digital Product Audit"}
               </h2>
-              <p className="mt-3 max-w-xl text-sm leading-relaxed text-foreground/70">
+              <p className="mt-2 max-w-xl text-xs leading-relaxed text-foreground/70 sm:text-sm">
                 {ro
-                  ? "Primești o evaluare clară a produsului actual și recomandări ordonate după impact, ca să știi ce merită îmbunătățit mai întâi."
-                  : "Receive a clear review of your current product and recommendations ordered by impact, so you know what is worth improving first."}
+                  ? "Evaluăm website-ul sau aplicația și primești prioritățile clare care merită rezolvate mai întâi."
+                  : "We evaluate your website or app and return the clear priorities worth addressing first."}
               </p>
-              <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-foreground/65">
-                <span className="font-display text-2xl font-extrabold text-amber-600 dark:text-amber-300">
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-foreground/65">
+                <span className="font-display text-xl font-extrabold text-amber-600 dark:text-amber-300">
                   {ro ? "Gratuit" : "Free"}
                 </span>
                 <span aria-hidden>·</span>
@@ -358,7 +358,7 @@ const Pricing = () => {
               <Link
                 to={ro ? "/?request=audit#cta" : "/en?request=audit#cta"}
                 onClick={() => trackEvent("audit_form_click", { location: "pricing_product" })}
-                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 sm:w-auto"
+                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 sm:w-auto"
               >
                 <ScanSearch className="size-4" aria-hidden />
                 {ro ? "Vreau auditul" : "I want an audit"}
@@ -369,28 +369,24 @@ const Pricing = () => {
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-foreground/50">
                 {ro ? "Ce acoperă auditul" : "What the audit covers"}
               </p>
-              <ul className="mt-4 grid gap-x-5 gap-y-3 sm:grid-cols-2">
+              <ul data-testid="audit-coverage-list" className="mt-3 grid gap-x-4 gap-y-2 sm:grid-cols-2">
                 {(ro
                   ? [
-                      { icon: <Shield className="size-4" />, text: "Securitate și vulnerabilități evidente" },
+                      { icon: <Shield className="size-4" />, text: "Securitate și vulnerabilități" },
                       { icon: <Gauge className="size-4" />, text: "Performanță și Core Web Vitals" },
                       { icon: <Globe className="size-4" />, text: "SEO tehnic și indexare" },
-                      { icon: <Accessibility className="size-4" />, text: "Accesibilitate și utilizare" },
-                      { icon: <Palette className="size-4" />, text: "Claritate UI/UX și conversie" },
-                      { icon: <BarChart3 className="size-4" />, text: "Repere relevante din piață" },
+                      { icon: <Accessibility className="size-4" />, text: "Accesibilitate, UI/UX și conversie" },
                       { icon: <Check className="size-4" />, text: "Recomandări prioritizate după impact" },
                     ]
                   : [
-                      { icon: <Shield className="size-4" />, text: "Security and visible vulnerabilities" },
+                      { icon: <Shield className="size-4" />, text: "Security and vulnerabilities" },
                       { icon: <Gauge className="size-4" />, text: "Performance and Core Web Vitals" },
                       { icon: <Globe className="size-4" />, text: "Technical SEO and indexing" },
-                      { icon: <Accessibility className="size-4" />, text: "Accessibility and usability" },
-                      { icon: <Palette className="size-4" />, text: "UI/UX clarity and conversion" },
-                      { icon: <BarChart3 className="size-4" />, text: "Relevant market benchmarks" },
+                      { icon: <Accessibility className="size-4" />, text: "Accessibility, UI/UX and conversion" },
                       { icon: <Check className="size-4" />, text: "Recommendations prioritized by impact" },
                     ]
-                ).slice(0, PRODUCT_SUMMARY_LIMIT).map((feature) => (
-                  <li key={feature.text} className="flex items-start gap-2 text-sm text-foreground/85">
+                ).map((feature) => (
+                  <li key={feature.text} className="flex items-start gap-2 text-xs text-foreground/85 sm:text-sm">
                     <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-md bg-amber-400/15 text-amber-600 dark:text-amber-300">
                       {feature.icon}
                     </span>

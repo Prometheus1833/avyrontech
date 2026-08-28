@@ -41,6 +41,7 @@ const UserMenu = () => {
   const { user, profile, isStaff, signOut } = useAuth();
   const { t, lang } = useLang();
   const [contactOpen, setContactOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   if (!user) return null;
 
@@ -79,6 +80,7 @@ const UserMenu = () => {
   const items = isStaff ? staffItems : userItems;
 
   const handleSignOut = async () => {
+    setMenuOpen(false);
     await signOut();
     toast.success(t.auth.logout);
     window.location.href = "/";
@@ -86,11 +88,13 @@ const UserMenu = () => {
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen} modal={false}>
         <DropdownMenuTrigger asChild>
           <button
+            type="button"
             className="size-10 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-brand/40 transition"
             aria-label="Profil"
+            aria-expanded={menuOpen}
           >
             <Avatar className="size-10">
               <AvatarImage src={profile?.avatar_url ?? undefined} />
@@ -100,7 +104,13 @@ const UserMenu = () => {
             </Avatar>
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuContent
+          align="end"
+          sideOffset={8}
+          collisionPadding={12}
+          onCloseAutoFocus={(event) => event.preventDefault()}
+          className="z-[70] w-64"
+        >
           <DropdownMenuLabel className="flex flex-col">
             <span className="font-medium truncate">{profile?.display_name || user.email}</span>
             <span className="text-xs text-muted-foreground truncate">{user.email}</span>
@@ -126,7 +136,7 @@ const UserMenu = () => {
             if (item.to) {
               return (
                 <DropdownMenuItem key={item.label} asChild className="cursor-pointer">
-                  <Link to={item.to}>{inner}</Link>
+                  <Link to={item.to} onClick={() => setMenuOpen(false)}>{inner}</Link>
                 </DropdownMenuItem>
               );
             }
@@ -135,6 +145,7 @@ const UserMenu = () => {
                 key={item.label}
                 onSelect={(e) => {
                   e.preventDefault();
+                  setMenuOpen(false);
                   item.onSelect?.();
                 }}
                 className="cursor-pointer"

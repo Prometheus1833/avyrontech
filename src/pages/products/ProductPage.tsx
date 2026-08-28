@@ -161,14 +161,14 @@ const ProductPage = () => {
               <span aria-hidden className="w-px h-3 bg-foreground/15" />
               <ThemeToggle />
             </div>
-            <Link
-              to={ro ? "/" : "/en"}
+            <a
+              href={ro ? "/#hero" : "/en#hero"}
               aria-label={ro ? "Acasă" : "Home"}
               className="flex items-center gap-2 rounded-full px-1.5 py-1 hover:bg-foreground/5 transition-colors"
             >
               <img src={logo} alt="Avyron" width={32} height={32} className="size-7 sm:size-8 rounded-md ring-1 ring-foreground/15" />
               <span className="font-display tracking-[0.2em] text-xs sm:text-sm">AVYRON</span>
-            </Link>
+            </a>
           </div>
         </div>
 
@@ -185,7 +185,7 @@ const ProductPage = () => {
         />
 
         {/* Hero */}
-        <section className="mt-8 sm:mt-10">
+        <section className="mt-8 text-center sm:mt-10">
           <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.25em] ${a.chipBg} ${a.chipText}`}>
             <HeroIcon className="size-3.5" aria-hidden />
             {c.kicker}
@@ -196,50 +196,56 @@ const ProductPage = () => {
             </span>
           </h1>
           <p className="mt-2 text-xs uppercase tracking-[0.25em] text-foreground/50">{c.subtitle}</p>
-          <p className="mt-5 max-w-2xl text-base md:text-lg text-foreground/75 leading-relaxed">{c.heroLead}</p>
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-foreground/75 md:text-lg">{c.heroLead}</p>
 
-          <div className="mt-7 flex flex-wrap items-center gap-3">
+          <div data-testid="product-hero-actions" className="mx-auto mt-7 grid w-full max-w-lg grid-cols-2 gap-2 sm:gap-3">
             <a
               href={`${WHATSAPP}${encodeURIComponent(c.whatsapp)}`}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "product_hero", product: product.key })}
-              className={`group inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${a.from} ${a.to} px-6 py-3 text-sm font-bold text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/40`}
+              className={`group inline-flex min-h-12 min-w-0 items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r ${a.from} ${a.to} px-2.5 py-2.5 text-center text-xs font-bold leading-tight text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/40 sm:rounded-full sm:px-5 sm:text-sm`}
             >
               {c.ctaButton}
-              <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
+              <ArrowRight className="size-3.5 shrink-0 transition-transform duration-300 group-hover:translate-x-1 sm:size-4" aria-hidden />
             </a>
             <Link
               to={ro ? "/costurisiproduse#cta" : "/en/pricing#cta"}
-              className="inline-flex items-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-6 py-3 text-sm font-semibold hover:bg-foreground/[0.1] transition-colors"
+              className="inline-flex min-h-12 min-w-0 items-center justify-center rounded-2xl border border-foreground/20 bg-foreground/[0.05] px-2.5 py-2.5 text-center text-xs font-semibold leading-tight transition-colors hover:bg-foreground/[0.1] sm:rounded-full sm:px-5 sm:text-sm"
             >
               {ro ? "Cere ofertă" : "Request a quote"}
             </Link>
           </div>
 
-          <div className="mt-7 flex flex-wrap gap-2 text-[11px]">
-            {product.priceEur > 0 && (
-              <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 ${a.chipBg} ${a.chipText}`}>
-                {ro ? "de la" : "from"} {product.priceEur}€
-              </span>
-            )}
-            {product.priceEur === 0 && (
-              <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 ${a.chipBg} ${a.chipText}`}>
-                {ro ? "Gratuit" : "Free"}
-              </span>
-            )}
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 bg-foreground/[0.04] px-3 py-1.5 text-foreground/70">
-              <Clock className="size-3.5" aria-hidden />
-              {ro ? "Durată:" : "Duration:"} {product.duration[lang]}
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 bg-foreground/[0.04] px-3 py-1.5 text-foreground/70">
-              <Shield className="size-3.5" aria-hidden />
-              {ro ? "Suport conform ofertei" : "Support defined in the proposal"}
-            </span>
-          </div>
+          <dl data-testid="product-hero-facts" className="mx-auto mt-7 grid w-full max-w-xl grid-cols-3 gap-1.5 sm:gap-2">
+            <div className={`flex min-w-0 flex-col items-center justify-center rounded-xl border px-1.5 py-2.5 text-center ${a.chipBg} ${a.chipText}`}>
+              <dt className="text-[8px] font-semibold uppercase tracking-[0.12em] opacity-70 sm:text-[9px]">
+                {ro ? "Investiție" : "Investment"}
+              </dt>
+              <dd className="mt-0.5 text-[10px] font-bold leading-tight sm:text-xs">
+                {product.priceEur > 0 ? `${ro ? "de la" : "from"} ${product.priceEur}€` : ro ? "Gratuit" : "Free"}
+              </dd>
+            </div>
+            <div className="flex min-w-0 flex-col items-center justify-center rounded-xl border border-foreground/15 bg-foreground/[0.04] px-1.5 py-2.5 text-center text-foreground/70">
+              <dt className="inline-flex items-center gap-1 text-[8px] font-semibold uppercase tracking-[0.12em] sm:text-[9px]">
+                <Clock className="size-3 shrink-0" aria-hidden />
+                {ro ? "Durată" : "Duration"}
+              </dt>
+              <dd className="mt-0.5 text-[10px] font-bold leading-tight sm:text-xs">{product.duration[lang]}</dd>
+            </div>
+            <div className="flex min-w-0 flex-col items-center justify-center rounded-xl border border-foreground/15 bg-foreground/[0.04] px-1.5 py-2.5 text-center text-foreground/70">
+              <dt className="inline-flex items-center gap-1 text-[8px] font-semibold uppercase tracking-[0.12em] sm:text-[9px]">
+                <Shield className="size-3 shrink-0" aria-hidden />
+                {ro ? "Suport" : "Support"}
+              </dt>
+              <dd className="mt-0.5 text-[10px] font-bold leading-tight sm:text-xs">
+                {ro ? "Conform ofertei" : "Per proposal"}
+              </dd>
+            </div>
+          </dl>
 
           {c.heroStats && (
-            <dl className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl">
+            <dl className="mx-auto mt-8 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
               {c.heroStats.map((s) => (
                 <div
                   key={s.label}
@@ -494,11 +500,11 @@ const ProductPage = () => {
         {/* Related products */}
         <section className="mt-16">
           <Reveal>
-            <h2 className="font-display text-xl md:text-2xl font-extrabold">
+            <h2 className="text-center font-display text-xl font-extrabold md:text-2xl">
               {ro ? "Alte produse Avyron" : "Other Avyron products"}
             </h2>
           </Reveal>
-          <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div data-testid="related-product-list" className="mt-5 grid gap-2 sm:grid-cols-2">
             {others.map((p, i) => {
               const Icon = ICONS[p.icon];
               const oc = p.copy[lang];
@@ -506,15 +512,17 @@ const ProductPage = () => {
                 <Reveal key={p.key} delay={i * 50}>
                   <Link
                     to={p.path[lang]}
-                    className="group flex h-full flex-col rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 md:backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-foreground/25"
+                    className="group grid min-h-16 grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-foreground/10 bg-foreground/[0.03] px-3 py-2.5 transition-all duration-300 hover:-translate-y-0.5 hover:border-foreground/25 hover:bg-foreground/[0.06]"
                   >
-                    <div className={`size-9 rounded-lg bg-gradient-to-br ${p.accent.from} ${p.accent.to} grid place-items-center text-white`}>
+                    <div className={`grid size-9 place-items-center rounded-lg bg-gradient-to-br ${p.accent.from} ${p.accent.to} text-white`}>
                       <Icon className="size-4.5" aria-hidden />
                     </div>
-                    <h3 className="mt-3 font-display font-bold text-sm">{oc.name}</h3>
-                    <p className="mt-1 text-xs text-foreground/60 leading-relaxed flex-1">{oc.tagline}</p>
-                    <span className={`mt-3 inline-flex items-center gap-1.5 text-xs font-semibold ${p.accent.text}`}>
-                      {ro ? "Detalii" : "Details"}
+                    <div className="min-w-0 text-left">
+                      <h3 className="truncate font-display text-sm font-bold">{oc.name}</h3>
+                      <p className="mt-0.5 truncate text-[11px] text-foreground/55">{oc.tagline}</p>
+                    </div>
+                    <span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${p.accent.text}`}>
+                      <span className="hidden min-[370px]:inline">{ro ? "Detalii" : "Details"}</span>
                       <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
                     </span>
                   </Link>

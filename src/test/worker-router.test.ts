@@ -71,7 +71,8 @@ const get = (path: string) =>
 describe("worker redirects", () => {
   it.each([
     ["/costuri", "/costurisiproduse"],
-    ["/despre", "/despre-si-portofoliu"],
+    ["/despre", "/despre-noi"],
+    ["/despre-si-portofoliu", "/portofoliu"],
     ["/noutati", "/blog"],
   ])("301 %s -> %s", async (from, to) => {
     const res = await get(from);

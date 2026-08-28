@@ -9,7 +9,8 @@ import { Gift, Paperclip, X, Loader2, CheckCircle2, RotateCcw } from "lucide-rea
 import { useLocation } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
 import { apiUrl } from "@/lib/apiBase";
-import Turnstile, { TURNSTILE_SITE_KEY } from "@/components/site/Turnstile";
+import Turnstile from "@/components/site/Turnstile";
+import { TURNSTILE_SITE_KEY } from "@/config/turnstile";
 
 const MAX_FILES = 5;
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -150,8 +151,7 @@ const CTA = () => {
     <section id="cta" className="py-10 md:py-14">
       <div className="mx-auto max-w-5xl px-4">
         <div className="rounded-[2rem] overflow-hidden grid md:grid-cols-2 shadow-elev border border-border/60">
-          <div className="bg-pink p-6 sm:p-8 md:p-10 text-background relative overflow-hidden">
-            <div className="absolute -bottom-10 -right-10 size-60 rounded-full bg-white/20 blur-3xl" />
+          <div data-testid="cta-visual-panel" className="cta-panel-bg p-6 sm:p-8 md:p-10 text-background relative overflow-hidden">
             <div className="relative">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs font-medium">
                 <Gift className="size-3.5" aria-hidden="true" focusable="false" /> {t.cta.badge}

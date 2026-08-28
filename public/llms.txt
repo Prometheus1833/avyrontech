@@ -11,7 +11,8 @@ Contact: contact@avyron.ro · +40 734 605 055 · WhatsApp · https://avyron.ro
 ## Pages
 
 - [Acasă](/) — [Home EN](/en): Servicii, proces de lucru, exemple și avantaje Avyron.
-- [Despre noi & Portofoliu](/despre-si-portofoliu) — [About EN](/en/about): Echipa, specializări și proiecte realizate (Miago, Flawlesstudio, Retuvo).
+- [Despre noi](/despre-noi) — [About EN](/en/about): Echipa Avyron, specializări și modul de colaborare.
+- [Portofoliu](/portofoliu) — [Portfolio EN](/en/portfolio): Proiecte web și produse digitale publicate cu acordul clienților.
 - [Costuri & Produse](/costurisiproduse) — [Pricing EN](/en/pricing): Toate pachetele, prețuri transparente în EUR/RON.
 - [Blog](/blog) — [Blog EN](/en/blog): Articole despre web, SEO, securitate și digitalizare.
 - [Confidențialitate & GDPR](/gdpr) — [Privacy EN](/en/privacy): Politica de confidențialitate și cookie-uri.
@@ -41,13 +42,14 @@ Contact: contact@avyron.ro · +40 734 605 055 · WhatsApp · https://avyron.ro
 - [Website profesionist: identitate și conversie](/blog/website-profesionist-identitate-digitala-2026) — [Professional website: identity and conversion](/en/blog/website-profesionist-identitate-digitala-2026)
 - [SEO pentru Google și răspunsuri AI](/blog/seo-2026-google-ai-search) — [SEO for Google and AI answers](/en/blog/seo-2026-google-ai-search)
 - [Securitatea website-ului](/blog/securitate-internet-greseli-afaceri-mici) — [Website security](/en/blog/securitate-internet-greseli-afaceri-mici)
+- [AI Act după 2 august 2026](/blog/ai-act-reguli-transparenta-2-august-2026) — [The AI Act after 2 August 2026](/en/blog/ai-act-reguli-transparenta-2-august-2026)
 
 ## Official profiles
 
 - Instagram: https://www.instagram.com/avyrontech/
 - Facebook: https://www.facebook.com/people/Avyron-Dev/61560319432764/
 - TikTok: https://www.tiktok.com/@avyron4
-- LinkedIn: https://www.linkedin.com/company/avyron
+- LinkedIn: https://www.linkedin.com/in/avyron-solutions-757595406
 
 ## Facts
 

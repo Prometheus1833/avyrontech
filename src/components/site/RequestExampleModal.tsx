@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiUrl } from "@/lib/apiBase";
 import { toast } from "sonner";
-import Turnstile, { TURNSTILE_SITE_KEY } from "@/components/site/Turnstile";
+import Turnstile from "@/components/site/Turnstile";
+import { TURNSTILE_SITE_KEY } from "@/config/turnstile";
 
 const schema = z.object({
   email: z.string().trim().email("Email invalid").max(255),

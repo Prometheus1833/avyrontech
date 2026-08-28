@@ -408,10 +408,10 @@ const Gdpr = () => {
             <ArrowLeft className="size-4" />
             {isEn ? "Back" : "Înapoi"}
           </Link>
-          <Link to={isEn ? "/en" : "/"} className="flex items-center gap-2">
+          <a href={isEn ? "/en#hero" : "/#hero"} className="flex items-center gap-2" aria-label={isEn ? "Avyron — go to hero" : "Avyron — mergi la hero"}>
             <img src={logo} alt="Avyron" width={24} height={24} className="size-6 rounded-md object-cover" />
             <span className="font-display font-semibold tracking-[0.2em] text-xs">AVYRON</span>
-          </Link>
+          </a>
         </div>
       </header>
 

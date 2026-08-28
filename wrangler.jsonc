@@ -12,7 +12,12 @@
   "routes": [
     { "pattern": "avyron.ro", "custom_domain": true },
     { "pattern": "www.avyron.ro", "custom_domain": true },
-    { "pattern": "app.avyron.ro/api/*", "zone_name": "avyron.ro" }
+    { "pattern": "app.avyron.ro/api/*", "zone_name": "avyron.ro" },
+    { "pattern": "exemplu1.avyron.ro/*", "zone_name": "avyron.ro" },
+    { "pattern": "exemplu2.avyron.ro/*", "zone_name": "avyron.ro" },
+    { "pattern": "exemplu3.avyron.ro/*", "zone_name": "avyron.ro" },
+    { "pattern": "avyron.eu/*", "zone_name": "avyron.eu" },
+    { "pattern": "*.avyron.eu/*", "zone_name": "avyron.eu" }
   ],
   "assets": {
     "directory": "./dist",
@@ -82,6 +87,7 @@
   "env": {
     "preview": {
       "name": "avyrontech",
+      "routes": [],
       "observability": {
         "enabled": true,
         "head_sampling_rate": 1,

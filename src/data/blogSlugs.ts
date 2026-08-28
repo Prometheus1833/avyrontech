@@ -10,4 +10,5 @@ export const BLOG_SLUGS = [
   "website-profesionist-identitate-digitala-2026",
   "seo-2026-google-ai-search",
   "securitate-internet-greseli-afaceri-mici",
+  "ai-act-reguli-transparenta-2-august-2026",
 ] as const;

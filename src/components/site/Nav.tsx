@@ -1,4 +1,4 @@
-import { Menu, X, LogIn, Newspaper, Briefcase, ShoppingBag } from "lucide-react";
+import { Menu, X, LogIn, Newspaper, ShoppingBag } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { Link } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
@@ -17,9 +17,8 @@ const Nav = () => {
   const homePath = isRo ? "/" : "/en";
   const links = [
     { label: t.nav.news, to: lang === "en" ? "/en/blog" : "/blog", icon: Newspaper, isRoute: true },
-    { label: isRo ? "Portofoliu" : "Portfolio", to: isRo ? "/despre-si-portofoliu#portofoliu" : "/en/about#portofoliu", icon: Briefcase, isRoute: true },
-    { label: isRo ? "Vezi exemple" : "See examples", href: `${homePath}#exemple` },
     { label: isRo ? "Produse" : "Products", to: isRo ? "/costurisiproduse" : "/en/pricing", icon: ShoppingBag, isRoute: true },
+    { label: isRo ? "Vezi domenii" : "See industries", href: `${homePath}#exemple` },
     { label: t.nav.process, href: `${homePath}#proces` },
     { label: t.nav.faq, href: `${homePath}#faq` },
   ] as Array<{ label: string; href?: string; to?: string; icon?: typeof Newspaper; highlight?: boolean; isRoute?: boolean }>;
@@ -29,7 +28,7 @@ const Nav = () => {
       <div className="mx-auto max-w-6xl px-4 mt-3">
         <nav className="glass shadow-soft rounded-full flex items-center justify-between pl-3 pr-2 py-2 gap-2">
           <div className="flex items-center gap-3">
-            <Link to={homePath} className="flex items-center gap-2">
+            <a href={`${homePath}#hero`} className="flex items-center gap-2" aria-label={isRo ? "Avyron — mergi la hero" : "Avyron — go to hero"}>
               <img src={logo} alt="Avyron" width={22} height={22} className="size-[1.4rem] rounded-md object-cover" />
               <span
                 className="text-base md:text-lg font-bold uppercase tracking-[0.18em] bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent"
@@ -37,7 +36,7 @@ const Nav = () => {
               >
                 AVYRON
               </span>
-            </Link>
+            </a>
             <div className="hidden md:inline-flex items-center gap-1.5">
               <LangSwitch />
               <ThemeToggle />
@@ -118,7 +117,7 @@ const Nav = () => {
           </div>
         </nav>
         {open && !user && (
-          <div className="md:hidden glass shadow-soft rounded-3xl mt-2 p-4 space-y-2">
+          <div data-testid="mobile-nav-menu" className="md:hidden glass shadow-soft rounded-3xl mt-2 p-4 space-y-2">
             <Link
               to="/auth"
               onClick={() => setOpen(false)}

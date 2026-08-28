@@ -30,6 +30,61 @@ test.describe("public SEO routes", () => {
     ).toBeVisible();
     await expect(page.getByText("Soluții digitale gândite pentru rezultate", { exact: true })).toBeVisible();
     await expect(page.getByText("Agenție web din Iași · proiecte în România și UE", { exact: true })).toHaveCount(0);
+    const productList = page.getByTestId("product-list");
+    await expect(productList.getByRole("link")).toHaveCount(5);
+    await expect(productList).toHaveCSS("display", "block");
+
+    const desktopNav = page.locator("nav ul");
+    await expect(desktopNav.locator("li")).toHaveText(["Blog", "Produse", "Vezi domenii", "Proces", "FAQ"]);
+    await expect(page.getByRole("link", { name: "Messenger Facebook" })).toHaveCount(0);
+
+    const hero = page.locator("#hero");
+    await expect(hero.getByRole("link", { name: "Despre noi", exact: true })).toHaveAttribute("href", "/despre-noi");
+    await expect(hero.getByRole("link", { name: "Vezi Produse", exact: true })).toHaveAttribute("href", "/costurisiproduse");
+  });
+
+  test("About and Portfolio are distinct, indexable bilingual pages", async ({ page }) => {
+    await page.goto("/despre-noi");
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro/despre-noi");
+    await expect(page.locator('link[hreflang="en"]')).toHaveAttribute("href", "https://avyron.ro/en/about");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("produse digitale");
+    await expect(page.getByText(/Avyron este o echipă/i).first()).toBeVisible();
+    await expect(page.getByText("Cybersecurity", { exact: true })).toBeVisible();
+    await expect(page.getByText("QA Testing", { exact: true })).toBeVisible();
+    await expect(page.getByText("Vibe Development", { exact: true })).toBeVisible();
+
+    await page.goto("/portofoliu");
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro/portofoliu");
+    await expect(page.locator('link[hreflang="en"]')).toHaveAttribute("href", "https://avyron.ro/en/portfolio");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Proiecte digitale");
+
+    await page.goto("/despre-si-portofoliu");
+    await expect(page).toHaveURL(/\/portofoliu$/);
+  });
+
+  test("footer stays compact and publishes the approved navigation and ANPC link", async ({ page }) => {
+    await page.goto("/");
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    const footer = page.locator("footer");
+    await expect(footer).toBeVisible();
+    const footerNavLinks = footer.locator("nav a");
+    await expect(footerNavLinks).toHaveCount(4);
+    expect((await footerNavLinks.allTextContents()).slice(0, 3)).toEqual(["Blog", "Portofoliu", "Produse"]);
+    await expect(footer.getByRole("link", { name: /ANPC/ })).toHaveAttribute("href", "https://anpc.ro/ce-este-sal/");
+    await expect(footer.getByText("Instagram", { exact: true })).toHaveCount(0);
+    await expect(footer.getByText("Facebook", { exact: true })).toHaveCount(0);
+    await expect(footer.getByText("TikTok", { exact: true })).toHaveCount(0);
+    await expect(footer.getByText("LinkedIn", { exact: true })).toHaveCount(0);
+    await expect(footer.getByText("Proces", { exact: true })).toHaveCount(0);
+    await expect(footer.getByText("Întrebări frecvente", { exact: true })).toHaveCount(0);
+  });
+
+  test("Avyron brand links return to the homepage hero from inner pages", async ({ page }) => {
+    for (const path of ["/costurisiproduse", "/despre-noi", "/portofoliu", "/gdpr", "/auth"]) {
+      await page.goto(path);
+      const brand = page.locator('a[href="/#hero"], a[href="/en#hero"]').filter({ hasText: /Avyron/i }).first();
+      await expect(brand).toHaveAttribute("href", /\/(?:en)?#hero$/);
+    }
   });
 
   test("audit remains in the product overview and continues in the request form", async ({ page }) => {
@@ -42,6 +97,42 @@ test.describe("public SEO routes", () => {
     await page.goto("/produse/audit-website");
     await expect(page).toHaveURL(/\/\?request=audit#cta$/);
     await expect(page.locator("#cta form")).toBeVisible();
+  });
+
+  test("audit and product detail layouts stay compact on mobile", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/costurisiproduse");
+
+    const audit = page.getByTestId("free-audit-card");
+    await expect(audit.getByRole("heading", { name: "Audit Produs Digital", exact: true })).toBeVisible();
+    await expect(page.getByTestId("audit-coverage-list").locator("li")).toHaveCount(5);
+    expect((await audit.boundingBox())!.height).toBeLessThan(500);
+
+    for (const path of [
+      "/produse/identitate-social-media",
+      "/produse/magazin-online",
+      "/produse/agent-ai-personalizat",
+      "/produse/aplicatii-web-si-mobile",
+    ]) {
+      await page.goto(path);
+
+      expect(await page.getByRole("heading", { level: 1 }).evaluate((node) => getComputedStyle(node).textAlign)).toBe("center");
+
+      const actions = page.getByTestId("product-hero-actions").locator("a");
+      await expect(actions).toHaveCount(2);
+      const actionBoxes = await actions.evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().toJSON()));
+      expect(Math.abs(actionBoxes[0].y - actionBoxes[1].y)).toBeLessThan(1);
+      expect(actionBoxes[0].right).toBeLessThanOrEqual(actionBoxes[1].left);
+
+      const facts = page.getByTestId("product-hero-facts").locator(":scope > div");
+      await expect(facts).toHaveCount(3);
+      const factBoxes = await facts.evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().toJSON()));
+      expect(Math.max(...factBoxes.map((box) => box.y)) - Math.min(...factBoxes.map((box) => box.y))).toBeLessThan(1);
+
+      const related = page.getByTestId("related-product-list").locator("a");
+      expect(await related.count()).toBeGreaterThanOrEqual(5);
+      expect((await related.first().boundingBox())!.height).toBeLessThanOrEqual(70);
+    }
   });
 
   test("real blog article owns canonical and BlogPosting schema", async ({ page }) => {
@@ -72,7 +163,44 @@ test.describe("public SEO routes", () => {
     await expect(page.getByRole("link", { name: "Distribuie pe Facebook" }).first()).toHaveAttribute("href", /facebook\.com\/sharer/);
     await expect(page.getByRole("link", { name: "Distribuie pe LinkedIn" }).first()).toHaveAttribute("href", /linkedin\.com\/sharing/);
     await expect(page.getByRole("link", { name: "Distribuie pe WhatsApp" }).first()).toHaveAttribute("href", /wa\.me/);
-    await expect(page.getByRole("button", { name: "Copiază linkul" }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Copiază linkul" })).toHaveCount(0);
+    await expect(page.getByTestId("article-share-row").first()).toHaveCSS("flex-wrap", "nowrap");
+    expect(await page.locator(".article-copy p").first().evaluate((node) => getComputedStyle(node).textAlign)).toBe("justify");
+  });
+
+  test("AI Act article is an individual bilingual, indexable publication", async ({ page }) => {
+    const slug = "ai-act-reguli-transparenta-2-august-2026";
+    await page.goto(`/blog/${slug}`);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("AI Act după 2 august 2026");
+    await expect(page.getByRole("heading", { level: 2, name: "Ce ar trebui să facă o afacere acum" })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Întrebările și răspunsurile oficiale/ })).toHaveAttribute("href", /digital-strategy\.ec\.europa\.eu/);
+    await expect(page.locator('link[hreflang="en"]')).toHaveAttribute("href", `https://avyron.ro/en/blog/${slug}`);
+  });
+
+  test("mobile landing and article controls remain compact and fluid", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+
+    const productList = page.getByTestId("product-list");
+    await expect(productList.getByRole("link")).toHaveCount(5);
+    expect((await productList.boundingBox())!.height).toBeLessThan(380);
+
+    await page.getByRole("button", { name: "Meniu" }).click();
+    const menu = page.getByTestId("mobile-nav-menu");
+    await expect(menu.getByRole("link", { name: "Vezi domenii" })).toBeVisible();
+    const menuLabels = await menu.locator("a").evaluateAll((links) => links.map((link) => link.textContent?.trim()).filter(Boolean));
+    expect(menuLabels).toEqual(expect.arrayContaining(["Blog", "Produse", "Vezi domenii", "Proces", "FAQ"]));
+
+    await page.getByRole("link", { name: "FAQ", exact: true }).click();
+    await expect(page.getByTestId("floating-contact-bar").getByRole("link")).toHaveCount(3);
+    const background = await page.getByTestId("cta-visual-panel").evaluate((node) => getComputedStyle(node).backgroundImage);
+    expect(background).toContain("gradient");
+
+    await page.goto("/blog/ai-act-reguli-transparenta-2-august-2026");
+    const shareRow = page.getByTestId("article-share-row").first();
+    expect(await shareRow.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+    await expect(page.getByRole("button", { name: "Copiază linkul" })).toHaveCount(0);
+    expect(await page.locator(".article-copy p").first().evaluate((node) => getComputedStyle(node).textAlign)).toBe("left");
   });
 
   test("unknown routes render the 404 experience", async ({ page }) => {
@@ -108,6 +236,18 @@ test.describe("forms and authentication", () => {
     await expect(page.locator("#blog-title")).toBeVisible();
     await expect(page.locator("#blog-content")).toBeVisible();
     await expect(page.getByRole("button", { name: "Publică" })).toBeVisible();
+
+    await page.keyboard.press("Escape");
+    await page.goto("/");
+    await page.evaluate(() => window.scrollTo(0, Math.max(900, document.body.scrollHeight * 0.65)));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(300);
+    await page.getByRole("button", { name: "Profil" }).click();
+    const userMenu = page.getByRole("menu");
+    await expect(userMenu).toBeVisible();
+    const menuBox = await userMenu.boundingBox();
+    expect(menuBox).not.toBeNull();
+    expect(menuBox!.y).toBeGreaterThanOrEqual(0);
+    expect(menuBox!.y + menuBox!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
   });
 
   test("Romanian login alias renders the auth page and remains noindex", async ({ page }) => {

@@ -128,6 +128,15 @@
   .bg-brand { background-image: var(--gradient-brand); }
   .bg-lime { background-image: var(--gradient-lime); }
   .bg-pink { background-image: var(--gradient-pink); }
+  .cta-panel-bg {
+    background-color: hsl(var(--brand));
+    background-image:
+      radial-gradient(circle at 86% 92%, hsl(0 0% 100% / 0.22), transparent 34%),
+      radial-gradient(circle at 12% 8%, hsl(var(--brand-glow) / 0.55), transparent 38%),
+      var(--gradient-pink);
+    contain: paint;
+    isolation: isolate;
+  }
   .bg-cardgrad { background-image: var(--gradient-card); }
   .bg-darkgrad { background-image: var(--gradient-dark); }
   .text-gradient {
@@ -256,6 +265,21 @@ html {
   50% { transform: translateY(-10px); }
 }
 .float { animation: float 6s ease-in-out infinite; }
+
+.article-copy p,
+.article-copy li {
+  text-align: left;
+  hyphens: auto;
+  text-wrap: pretty;
+}
+
+@media (min-width: 640px) {
+  .article-copy p,
+  .article-copy li {
+    text-align: justify;
+    text-justify: inter-word;
+  }
+}
 
 /* ============================================
    Reduced motion — disable 3D card tilts, reveals

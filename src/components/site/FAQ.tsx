@@ -34,7 +34,7 @@ const FAQ = () => {
 
         {/* Portofoliu & Colaborări CTA */}
         <Link
-          to="/despre-si-portofoliu"
+          to="/despre-noi"
           className="group mb-4 w-full rounded-2xl border border-border bg-card hover:border-brand/40 hover:shadow-soft px-4 sm:px-6 py-4 md:py-5 transition-all flex items-center gap-3 sm:gap-4 text-left"
         >
           <span className="size-11 md:size-12 rounded-xl bg-foreground text-background grid place-items-center shrink-0">

@@ -14,7 +14,7 @@ import PensiuneaCerbul from "./pensiuneacerbul";
  *    o componentă React (poate fi orice — HTML curat, integrare cu alte
  *    tool-uri, iframe, etc.).
  * 2. Adaugă o intrare în array-ul `examples` de mai jos.
- * 3. Apare automat în lista "Exemple personalizate" din /despre-si-portofoliu#portofoliu
+ * 3. Apare automat în lista de proiecte din /portofoliu
  *    și e accesibilă la /examples/{slug}.
  *
  * IMPORTANT: aici NU stocăm site-urile lansate live (clarlumanari.ro,

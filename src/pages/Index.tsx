@@ -106,7 +106,7 @@ const Index = () => {
         <Deferred minHeight={420} forceReady={location.hash === "#faq"}><FAQ /></Deferred>
         <Deferred minHeight={320}><Socials /></Deferred>
         <Deferred minHeight={260}><Footer /></Deferred>
-        <Deferred minHeight={80}><ContactBar /></Deferred>
+        <ContactBar />
       </Suspense>
     </main>
   );

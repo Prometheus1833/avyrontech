@@ -46,7 +46,8 @@ export const STATUS_PAGES: Array<{ route: string; file: string; status: number }
 /** Permanent redirects for legacy URLs (301, query string preserved). */
 export const REDIRECTS: Record<string, string> = {
   "/costuri": "/costurisiproduse",
-  "/despre": "/despre-si-portofoliu",
+  "/despre": "/despre-noi",
+  "/despre-si-portofoliu": "/portofoliu",
   "/noutati": "/blog",
   "/produse/audit-website": "/?request=audit#cta",
   "/en/products/website-audit": "/en?request=audit#cta",

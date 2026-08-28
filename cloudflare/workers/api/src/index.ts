@@ -20,17 +20,15 @@ import { hashPassword, now, randomHex, sha256, signJwt, verifyJwt, verifyPasswor
 import { deliverMail, logDelivery } from "./mailer";
 import { checkRateLimit, clientIp, hashKey, verifyTurnstile } from "./antispam";
 import { MAX_CONTENT_CONFIG_BYTES, avatarObjectKey, contentConfigKey, jsonByteLength } from "./storage";
+import { handleMappedHostname } from "./sites.config";
 
 const app = new Hono<AppBindings>();
 
-// Keep a single public origin for SEO, cookies and analytics while preserving
-// request methods (including API POSTs) during the permanent redirect.
+// Hostname routing runs before API/auth middleware. Demo hosts therefore cannot
+// fall through to the production API, D1, KV or private assets.
 app.use("*", async (c, next) => {
-  const url = new URL(c.req.url);
-  if (url.hostname === "www.avyron.ro") {
-    url.hostname = "avyron.ro";
-    return c.redirect(url.toString(), 308);
-  }
+  const mapped = await handleMappedHostname(c.req.raw, c.env.ASSETS);
+  if (mapped) return mapped;
   await next();
 });
 

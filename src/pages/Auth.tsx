@@ -19,11 +19,12 @@ import {
   type RegisterInput,
 } from "@/lib/validators/auth";
 import logo from "@/assets/avyron-mark-ai.png";
-import Turnstile, { TURNSTILE_SITE_KEY } from "@/components/site/Turnstile";
+import Turnstile from "@/components/site/Turnstile";
+import { TURNSTILE_SITE_KEY } from "@/config/turnstile";
 import { isPlatformHostname, publicSiteHref } from "@/lib/appHost";
 
 const Auth = () => {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { user, loading, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,7 +34,8 @@ const Auth = () => {
   const [turnstileReset, setTurnstileReset] = useState(0);
   const [verificationMessage, setVerificationMessage] = useState("");
   const platformHost = isPlatformHostname();
-  const homeHref = platformHost ? publicSiteHref() : "/";
+  const heroPath = lang === "en" ? "/en#hero" : "/#hero";
+  const homeHref = platformHost ? publicSiteHref(heroPath) : heroPath;
 
   const from = (location.state as { from?: string } | null)?.from ?? "/profil";
 

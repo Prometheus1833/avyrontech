@@ -8,7 +8,8 @@ import type { Lang } from "./translations";
 export const ROUTE_ALTERNATES: Array<{ ro: string; en: string }> = [
   { ro: "/", en: "/en" },
   { ro: "/costurisiproduse", en: "/en/pricing" },
-  { ro: "/despre-si-portofoliu", en: "/en/about" },
+  { ro: "/despre-noi", en: "/en/about" },
+  { ro: "/portofoliu", en: "/en/portfolio" },
   { ro: "/produse/website-prezentare-premium", en: "/en/products/premium-presentation-website" },
   { ro: "/produse/identitate-social-media", en: "/en/products/social-media-identity" },
   { ro: "/produse/magazin-online", en: "/en/products/online-store" },

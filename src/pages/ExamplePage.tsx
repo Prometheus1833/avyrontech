@@ -28,16 +28,16 @@ const ExamplePage = () => {
       {/* Banner Avyron — minim, sticky, ca să fie evident că e exemplu */}
       <div className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur">
         <div className="max-w-6xl mx-auto px-4 h-11 flex items-center justify-between text-xs">
-          <Link to="/despre-si-portofoliu#portofoliu" className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors">
+          <Link to="/portofoliu" className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="size-3.5" />
             <span className="font-mono uppercase tracking-[0.18em]">Înapoi la portofoliu</span>
           </Link>
-          <div className="flex items-center gap-2">
+          <a href="/#hero" className="flex items-center gap-2" aria-label="Avyron — mergi la hero">
             <span className="hidden sm:inline text-muted-foreground">Exemplu găzduit de</span>
             <img src={logo} alt="Avyron" width={20} height={20} className="size-5 rounded object-cover" />
             <span className="font-display font-bold">Avyron Tech</span>
             <span className="text-muted-foreground hidden md:inline">· avyron.ro/examples/{entry.slug}</span>
-          </div>
+          </a>
         </div>
       </div>
       <div className="flex-1">

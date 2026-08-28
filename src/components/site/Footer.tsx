@@ -4,7 +4,6 @@ import { Mail, Phone, MessageCircle, ArrowRight } from "lucide-react";
 import { COOKIE_SETTINGS_EVENT } from "@/components/site/CookieBanner";
 import logo from "@/assets/avyron-logo.webp";
 import planetBg from "@/assets/footer-planet-bg.webp";
-import { SOCIAL_PROFILES } from "@/config/socialProfiles";
 
 const Footer = () => {
   const { t, lang } = useLang();
@@ -28,7 +27,7 @@ const Footer = () => {
         {/* Top row: brand + CTA + WhatsApp + contact — single compact bar */}
         <div className="flex flex-col md:flex-row md:items-center gap-3">
           {/* Brand */}
-          <div className="flex items-center gap-2 shrink-0">
+          <a href={lang === "en" ? "/en#hero" : "/#hero"} className="flex shrink-0 items-center gap-2" aria-label={lang === "en" ? "Avyron — go to hero" : "Avyron — mergi la hero"}>
             <img
               src={logo}
               alt="Avyron"
@@ -45,7 +44,7 @@ const Footer = () => {
                 Innovate. <span className="text-purple-300">Develop.</span> Elevate.
               </div>
             </div>
-          </div>
+          </a>
 
           {/* CTA + WhatsApp + Phone + Email — compact pill cluster */}
           <div className="flex flex-wrap items-center justify-center md:justify-end gap-1.5 flex-1">
@@ -96,7 +95,7 @@ const Footer = () => {
               "inline-flex items-center justify-center text-center rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 font-display font-medium text-white/85 hover:text-white transition-all leading-none";
             return (
               <>
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 max-w-3xl mx-auto">
+                <div className="mx-auto grid max-w-lg grid-cols-3 gap-1.5">
                   {primary.map((n) => {
                     const to = n.h.startsWith("#") ? `/${n.h}` : n.h;
                     return (
@@ -135,34 +134,21 @@ const Footer = () => {
           })()}
         </nav>
 
-        <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1" aria-label={lang === "en" ? "Avyron social profiles" : "Profiluri sociale Avyron"}>
-          {SOCIAL_PROFILES.map((profile) => (
-            <a
-              key={profile.id}
-              href={profile.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[10px] font-medium text-white/55 transition-colors hover:text-purple-200"
-            >
-              {profile.name}
-            </a>
-          ))}
+        <div className="mt-2 flex justify-center">
+          <a
+            href="https://anpc.ro/ce-este-sal/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="ANPC — Soluționarea alternativă și online a litigiilor"
+            className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/[0.07] px-2.5 py-1.5 transition-colors hover:border-cyan-200/35 hover:bg-white/[0.12]"
+          >
+            <span className="grid size-6 shrink-0 place-items-center rounded bg-white font-display text-[9px] font-extrabold tracking-tight text-[#0a0612]">ANPC</span>
+            <span className="text-[10px] font-semibold tracking-wide text-white/70">SOL · SAL</span>
+          </a>
         </div>
 
-        {/* ANPC + copyright — single compact row */}
-        <div className="mt-3 pt-2.5 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <button
-            type="button"
-            aria-label="ANPC — Autoritatea Națională pentru Protecția Consumatorilor"
-            className="inline-flex items-center gap-2 rounded-md border border-white/15 bg-white/[0.06] hover:bg-white/[0.12] px-2.5 py-1 transition-colors"
-          >
-            <span className="size-6 rounded bg-white grid place-items-center shrink-0">
-              <span className="font-display font-extrabold text-[9px] tracking-tight text-[#0a0612]">ANPC</span>
-            </span>
-            <span className="text-[10px] text-white/60 leading-tight">
-              anpc.ro — SOL / SAL
-            </span>
-          </button>
+        {/* Copyright — single compact row */}
+        <div className="mt-3 flex items-center justify-center border-t border-white/10 pt-2.5">
           <div className="text-[10px] text-white/50 flex flex-wrap justify-center gap-x-3 gap-y-0.5">
             <span>{t.footer.copy.replace("{y}", String(new Date().getFullYear()))}</span>
             <span>{t.footer.built}</span>

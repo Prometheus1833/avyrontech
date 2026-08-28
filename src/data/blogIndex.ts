@@ -41,7 +41,7 @@ O structură sănătoasă folosește postările pentru a răspunde unei întreb�
 ## Recomandarea Avyron
 
 Pornește cu un inventar al canalelor, uniformizează numele, logo-ul, datele de contact și linkurile, apoi stabilește indicatori măsurabili pentru 30–60 de zile. Păstrează opțiunile plătite numai dacă reduc un risc sau îmbunătățesc un rezultat observabil. Pentru identitate și configurare coerentă poți consulta serviciul de [identitate social media](/produse/identitate-social-media).`,
-    cover_image_url: null,
+    cover_image_url: "/news/meta-abonamente-branduri-2026.webp",
     tags: ["meta", "facebook", "instagram", "social-media", "strategie-digitala"],
     category: "tech",
     published_at: "2026-06-02T04:58:50.799028+00:00",
@@ -75,7 +75,7 @@ Un site oferă și o destinație stabilă pentru Google Business Profile, Facebo
 - instrucțiuni de administrare și responsabilități clare după lansare.
 
 Avyron construiește [site-uri de prezentare premium](/produse/website-prezentare-premium) pentru afaceri locale și proiecte naționale, cu design, dezvoltare, optimizare și infrastructură într-un singur flux. Durata și livrabilele sunt stabilite în oferta proiectului, în funcție de conținut și complexitate.`,
-    cover_image_url: "/news/importanta-website-2026.jpg",
+    cover_image_url: "/news/site-prezentare-afacere-2026.webp",
     tags: ["site-prezentare", "website-firma", "business", "web-design", "seo"],
     category: "business",
     published_at: "2026-05-15T22:33:26.25089+00:00",
@@ -102,8 +102,8 @@ Pentru platforme interne și aplicații, definim separat rolurile, permisiunile,
 
 Înainte de livrare verificăm rutele, formularele, autentificarea, responsive design, metadata și erorile. Publicarea nu încheie automat colaborarea: mentenanța, monitorizarea, conținutul și optimizarea pot continua printr-un plan definit, fără promisiuni nelimitate sau responsabilități ambigue.
 
-Poți explora [serviciile și costurile](/costurisiproduse), [portofoliul](/despre-si-portofoliu) sau poți solicita un exemplu adaptat domeniului tău. Recomandarea finală poate fi un site de prezentare, un magazin online, o aplicație, un audit ori o etapă mai mică decât cea imaginată inițial—alegem ceea ce are sens pentru obiectiv.`,
-    cover_image_url: "/og/home.jpg",
+Poți explora [serviciile și costurile](/costurisiproduse), [portofoliul](/portofoliu) sau poți solicita un exemplu adaptat domeniului tău. Recomandarea finală poate fi un site de prezentare, un magazin online, o aplicație, un audit ori o etapă mai mică decât cea imaginată inițial—alegem ceea ce are sens pentru obiectiv.`,
+    cover_image_url: "/news/proces-produs-digital-avyron.webp",
     tags: ["avyron", "agentie-web-iasi", "proces", "dezvoltare-web", "cloudflare"],
     category: "avyron",
     published_at: "2026-05-02T13:32:14.247985+00:00",
@@ -131,7 +131,7 @@ Ierarhia vizuală, contrastul, spațiul și mișcarea au un scop: evidențiază 
 Același nume, aceeași descriere de bază, același domeniu și aceleași date de contact ar trebui să apară pe website, Google Business Profile și profilurile sociale. Legăturile reciproce și Schema.org ajută motoarele să coreleze entitatea, dar numai dacă profilurile sunt reale și publice.
 
 Înainte de redesign, un [audit de website](/?request=audit#cta) poate separa problemele de conținut, UX, performanță, SEO și securitate. Pentru un proiect nou, serviciul de [website de prezentare](/produse/website-prezentare-premium) pornește de la public și obiective, apoi traduce identitatea într-un sistem coerent.`,
-    cover_image_url: null,
+    cover_image_url: "/news/identitate-digitala-conversie.webp",
     tags: ["website-profesionist", "identitate-digitala", "web-design", "ux", "conversie"],
     category: "web-design",
     published_at: "2026-05-02T13:24:19.854279+00:00",
@@ -161,7 +161,7 @@ Conținutul original arată experiență: decizii, compromisuri, capturi, rezult
 Datele juridice, numele brandului, domeniul, profilurile sociale și Google Business Profile trebuie să fie consecvente. Organization, ProfessionalService, Service, BlogPosting și BreadcrumbList pot clarifica relațiile, dar nu garantează afișarea specială.
 
 După publicare, verifică Page Indexing, sitemapul, canonicalul ales și interogările din Search Console. Google Analytics poate măsura acțiunile de după click, iar Cloudflare Web Analytics poate completa datele agregate de performanță. Un [audit tehnic și SEO](/?request=audit#cta) transformă aceste verificări într-o listă prioritizată.`,
-    cover_image_url: null,
+    cover_image_url: "/news/seo-google-ai-search-2026.webp",
     tags: ["seo-2026", "google", "ai-search", "indexare", "schema-org"],
     category: "seo",
     published_at: "2026-05-02T13:24:19.854279+00:00",
@@ -203,11 +203,69 @@ Erorile Workerului, încercările de autentificare, emailurile eșuate și modif
 Colectează numai datele necesare scopului declarat, stabilește retenția și oferă control asupra cookie-urilor. Minimizarea datelor reduce atât riscul tehnic, cât și obligațiile operaționale.
 
 Pentru o evaluare independentă poți porni cu [testare QA web și mobile](/produse/testare-qa-web-mobile) sau un [audit de website](/?request=audit#cta). Rezultatul ar trebui să indice severitatea, dovada, impactul și ordinea recomandată a remedierilor.`,
-    cover_image_url: null,
+    cover_image_url: "/news/securitate-website-afaceri-mici.webp",
     tags: ["securitate-website", "parole", "backup", "cloudflare", "gdpr"],
     category: "securitate",
     published_at: "2026-05-02T13:24:19.854279+00:00",
     updated_at: UPDATED_AT,
+  },
+  {
+    id: "648c6087-2caf-4a69-b5e0-2be03f7db1aa",
+    title: "AI Act după 2 august 2026: noile reguli de transparență pentru inteligența artificială",
+    slug: "ai-act-reguli-transparenta-2-august-2026",
+    excerpt: "Aplicarea AI Act schimbă modul în care sunt prezentate chatboturile, conținutul generat de AI și deepfake-urile. Ce trebuie să verifice firmele și echipele digitale.",
+    content: `Din 2 august 2026, o parte importantă a Regulamentului european privind inteligența artificială a devenit aplicabilă, iar instituțiile desemnate au început etapa de supraveghere și aplicare. Pentru public, schimbarea cea mai vizibilă este transparența: oamenii trebuie să poată înțelege când interacționează cu un sistem AI și când o imagine, o înregistrare sau un text a fost generat ori manipulat artificial.
+
+Momentul nu trebuie interpretat ca o interdicție generală a inteligenței artificiale. Este trecerea de la pregătire la responsabilități verificabile, diferențiate după rol, risc și modul de utilizare. [Comisia Europeană a explicat aplicarea regulilor din 2 august](https://digital-strategy.ec.europa.eu/en/news/commission-starts-enforcing-ai-act-rules-and-new-transparency-requirements-2-august), iar ghidurile publicate înaintea termenului detaliază obligațiile de transparență din articolul 50.
+
+## Ce se schimbă pentru utilizatori
+
+Furnizorii sistemelor care interacționează direct cu persoane trebuie să proiecteze experiența astfel încât utilizatorul să știe că vorbește cu un sistem AI, cu excepția situațiilor în care acest lucru este evident pentru o persoană rezonabil informată. Mesajul nu ar trebui ascuns într-o politică lungă: trebuie să apară clar și la momentul potrivit al interacțiunii.
+
+Pentru conținutul sintetic, anumite rezultate audio, video, imagini și texte trebuie marcate într-un format care poate fi detectat automat. Deepfake-urile necesită și o informare vizibilă. În cazul textelor publicate pentru informarea publicului asupra unor chestiuni de interes public, divulgarea este relevantă atunci când materialul este generat sau manipulat de AI și nu a trecut printr-o revizuire umană ori printr-o responsabilitate editorială clară.
+
+Există reguli distincte și pentru recunoașterea emoțiilor sau categorizarea biometrică. Persoanele expuse unor astfel de sisteme trebuie informate, iar utilizarea rămâne condiționată și de celelalte norme aplicabile privind datele personale și drepturile fundamentale.
+
+## Cine răspunde: furnizorul sau organizația care folosește sistemul
+
+AI Act separă rolul furnizorului de cel al operatorului care implementează sistemul într-un context propriu. Furnizorul răspunde, între altele, pentru capabilitățile tehnice de marcare atunci când acestea sunt cerute. Organizația care publică un deepfake, integrează un chatbot sau folosește un instrument AI într-un proces cu utilizatori are propriile obligații de informare și utilizare.
+
+Pentru o firmă mică, această distincție contează practic. Faptul că un instrument este cumpărat de la un furnizor cunoscut nu înseamnă că interfața, fluxul editorial sau mesajele către clienți sunt automat conforme. Contractele, setările produsului și modul real de publicare trebuie analizate împreună.
+
+## Perioada limitată de tranziție
+
+[Întrebările și răspunsurile oficiale despre articolul 50](https://digital-strategy.ec.europa.eu/en/faqs/transparency-obligations-under-article-50-ai-act) descriu o perioadă limitată până la 2 decembrie 2026 pentru anumite obligații tehnice de marcare și detectare ale sistemelor introduse pe piață înainte de 2 august 2026. Aceasta nu este o amânare generală a tuturor cerințelor de transparență.
+
+Nici conținutul vechi nu trebuie tratat automat ca fiind reetichetat retroactiv. Comisia recomandă însă practici responsabile, mai ales atunci când un material poate induce publicul în eroare sau continuă să circule într-un context sensibil.
+
+## Ce ar trebui să facă o afacere acum
+
+1. Inventariază instrumentele AI folosite în website, suport, marketing, recrutare, analiză și producția de conținut.
+2. Notează pentru fiecare cine este furnizorul, cine îl operează, ce date intră în sistem și ce rezultate ajung la public.
+3. Verifică dacă un chatbot sau un asistent se identifică explicit înainte ca utilizatorul să transmită informații.
+4. Păstrează proveniența fișierelor și activează marcarea tehnică oferită de instrumentele de generare.
+5. Adaugă etichete vizibile pentru deepfake-uri și pentru materialele sintetice în cazurile cerute.
+6. Definește o revizuire umană reală pentru textele de interes public și consemnează responsabilitatea editorială.
+7. Actualizează politicile, contractele și procedura de răspuns atunci când un utilizator contestă sau raportează un rezultat AI.
+
+Un inventar scurt, cu proprietar și termen pentru fiecare acțiune, este mai util decât o declarație generică despre „AI responsabil”. Echipele tehnice, juridice, editoriale și de marketing trebuie să verifice același flux, nu documente separate care descriu sisteme diferite.
+
+## Aplicare și sancțiuni
+
+Supravegherea revine în principal autorităților naționale competente, iar Biroul european pentru AI are atribuții specifice, inclusiv în zona modelelor de uz general și a guvernanței europene. Regulamentul prevede plafoane semnificative ale amenzilor; pentru încălcările relevante pot ajunge până la 15 milioane de euro sau 3% din cifra de afaceri mondială, cu aplicarea principiului proporționalității și reguli adaptate pentru întreprinderile mici.
+
+Aceste valori sunt limite legale, nu sancțiuni automate. Evaluarea depinde de natura, gravitatea, durata și contextul încălcării. [Prezentarea oficială a cadrului AI Act](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai) rămâne punctul de pornire pentru calendar, niveluri de risc și responsabilități.
+
+## Ce înseamnă pentru un website sau produs digital
+
+Transparența trebuie proiectată în interfață, nu adăugată la final ca un paragraf juridic. Un website care include un asistent AI are nevoie de identificare clară, explicații scurte despre date, o cale către suport uman și monitorizarea incidentelor. O platformă care publică imagini sau texte generate are nevoie de metadata, etichete vizibile, versiuni și un traseu editorial verificabil.
+
+Pentru un proiect nou, aceste cerințe pot fi incluse în arhitectură, design și criteriile de acceptare. Pentru un produs existent, un [audit tehnic și de conformitate](/?request=audit#cta) poate separa obligațiile imediate de îmbunătățirile recomandate. Articolul are scop informativ și nu înlocuiește consultanța juridică aplicată situației concrete.`,
+    cover_image_url: "/news/ai-act-transparenta-2-august-2026.webp",
+    tags: ["ai-act", "inteligenta-artificiala", "transparenta-ai", "deepfake", "comisia-europeana"],
+    category: "technology",
+    published_at: "2026-08-28T09:00:00.000+03:00",
+    updated_at: "2026-08-28T09:00:00.000+03:00",
   },
 ];
 
@@ -289,7 +347,7 @@ For internal platforms and applications, roles, permissions, the data model, act
 
 Before delivery, we check routes, forms, authentication, responsive design, metadata, and errors. Publication does not automatically end collaboration: maintenance, monitoring, content, and optimization can continue under a defined plan without unlimited promises or unclear ownership.
 
-Explore [services and pricing](/en/pricing), the [portfolio](/en/about), or request an example for your field. The final recommendation may be a business website, online store, application, audit, or a smaller first phase than initially imagined—we choose what fits the objective.`,
+Explore [services and pricing](/en/pricing), the [portfolio](/en/portfolio), or request an example for your field. The final recommendation may be a business website, online store, application, audit, or a smaller first phase than initially imagined—we choose what fits the objective.`,
     tags: ["avyron", "web-agency-romania", "process", "web-development", "cloudflare"],
   },
   {
@@ -376,6 +434,59 @@ Collect only what the declared purpose needs, define retention, and give visitor
 
 For an independent review, start with [web and mobile QA testing](/en/products/qa-testing-web-mobile) or a [website audit](/en?request=audit#cta). Findings should include severity, evidence, impact, and a recommended remediation order.`,
     tags: ["website-security", "passwords", "backups", "cloudflare", "gdpr"],
+  },
+  {
+    ...BLOG_INDEX[6],
+    title: "The AI Act after 2 August 2026: new transparency rules for artificial intelligence",
+    excerpt: "AI Act enforcement changes how chatbots, AI-generated content, and deepfakes are presented. What businesses and digital teams should review now.",
+    content: `From 2 August 2026, a significant part of the European Artificial Intelligence Act became applicable and designated institutions entered the enforcement phase. For the public, the most visible change is transparency: people should be able to understand when they interact with an AI system and when an image, recording, or text has been generated or manipulated artificially.
+
+This date should not be interpreted as a general ban on artificial intelligence. It marks the move from preparation to verifiable responsibilities that vary by role, risk, and use. The [European Commission explained the enforcement milestone](https://digital-strategy.ec.europa.eu/en/news/commission-starts-enforcing-ai-act-rules-and-new-transparency-requirements-2-august), while guidelines released ahead of the deadline describe the Article 50 transparency duties in more detail.
+
+## What changes for users
+
+Providers of systems that interact directly with people must design the experience so users know that they are dealing with AI, unless that fact is obvious to a reasonably informed person. The notice should not be buried in a long policy; it needs to be clear and presented at the appropriate point in the interaction.
+
+For synthetic media, certain audio, video, image, and text outputs must carry a machine-readable mark. Deepfakes also require a visible disclosure. For text published to inform the public about matters of public interest, disclosure is relevant when AI generated or manipulated the material and it has not undergone human review or a clearly accountable editorial process.
+
+There are distinct rules for emotion-recognition and biometric-categorisation systems. People exposed to these systems must be informed, and any use remains subject to other applicable rules on personal data and fundamental rights.
+
+## Who is responsible: the provider or the organisation using the system
+
+The AI Act distinguishes the provider from the deployer implementing a system in its own context. Among other duties, the provider is responsible for technical marking capabilities when these are required. An organisation publishing a deepfake, integrating a chatbot, or using an AI tool in a customer-facing process has its own disclosure and use responsibilities.
+
+This distinction matters to small businesses. Buying a product from a recognised provider does not automatically make the interface, editorial workflow, or customer messages compliant. Contracts, product settings, and actual publishing practices need to be reviewed together.
+
+## A limited transition period
+
+The Commission's [official Article 50 questions and answers](https://digital-strategy.ec.europa.eu/en/faqs/transparency-obligations-under-article-50-ai-act) describe a limited period until 2 December 2026 for certain technical marking and detection duties concerning systems placed on the market before 2 August 2026. It is not a general postponement of every transparency requirement.
+
+Older content is not automatically subject to retroactive relabelling. The Commission nevertheless encourages responsible practice, particularly where material could mislead the public or continues to circulate in a sensitive context.
+
+## What a business should do now
+
+1. Inventory AI tools used across the website, support, marketing, recruitment, analysis, and content production.
+2. Record the provider, deployer, input data, and public outputs for every tool.
+3. Check whether a chatbot or assistant identifies itself before a user submits information.
+4. Preserve file provenance and enable technical marking supported by generation tools.
+5. Add visible labels to deepfakes and synthetic material where required.
+6. Define genuine human review for public-interest text and document editorial responsibility.
+7. Update policies, contracts, and the response process for challenged or reported AI output.
+
+A short register with an owner and deadline for each action is more useful than a generic statement about “responsible AI.” Technical, legal, editorial, and marketing teams need to review the same workflow rather than separate documents describing different systems.
+
+## Enforcement and penalties
+
+National competent authorities carry the main market-surveillance responsibility, while the European AI Office has specific functions, including general-purpose AI and EU-level governance. The Regulation provides significant maximum fines; relevant infringements can reach EUR 15 million or 3% of worldwide annual turnover, subject to proportionality and provisions adapted for smaller enterprises.
+
+These figures are statutory ceilings, not automatic penalties. Assessment depends on the nature, seriousness, duration, and context of an infringement. The Commission's [official AI Act overview](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai) remains the starting point for the timeline, risk categories, and responsibilities.
+
+## What this means for a website or digital product
+
+Transparency belongs in the interface, not in a legal paragraph added at the end. A website with an AI assistant needs clear identification, concise data information, a path to human support, and incident monitoring. A platform publishing generated images or text needs metadata, visible labels, versioning, and a verifiable editorial trail.
+
+For a new project, these requirements can become part of architecture, design, and acceptance criteria. For an existing product, a [technical and compliance audit](/en?request=audit#cta) can separate immediate obligations from recommended improvements. This article is informational and does not replace legal advice tailored to a specific situation.`,
+    tags: ["ai-act", "artificial-intelligence", "ai-transparency", "deepfakes", "european-commission"],
   },
 ];
 

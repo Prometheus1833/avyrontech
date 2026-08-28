@@ -2,19 +2,9 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  ArrowLeft,
   ArrowUpRight,
   Building2,
-  Code2,
-  Smartphone,
-  ShieldCheck,
-  Palette,
-  Bug,
-  Server,
   UserPlus,
-  MessageSquare,
-  Wrench,
-  Rocket,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLang } from "@/i18n/LanguageContext";
@@ -41,22 +31,22 @@ const About = () => {
       window.scrollTo(0, 0);
     }
     const title = ro
-      ? "Agenție web România — Despre noi & Portofoliu | Avyron"
-      : "Romanian Web Agency — About & Portfolio | Avyron";
+      ? "Portofoliu web și produse digitale | Avyron Iași"
+      : "Web Design & Digital Product Portfolio | Avyron Iași";
     const description = ro
-      ? "Echipă Avyron: dezvoltatori web, mobile, cybersecurity, UI/UX și QA din România. Vezi portofoliul nostru: Miago, Flawless Studio, Retuvo și alte proiecte livrate."
-      : "Avyron team: web, mobile, cybersecurity, UI/UX and QA specialists from Romania. See our portfolio: Miago, Flawless Studio, Retuvo and other delivered projects.";
+      ? "Explorează portofoliul Avyron: site-uri de prezentare, magazine online, aplicații și produse digitale dezvoltate pentru afaceri din România."
+      : "Explore Avyron's portfolio of business websites, online stores, applications and digital products built for organizations in Romania.";
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
       ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd }]) => {
         setPageMeta({
           title,
           description,
-          path: ro ? "/despre-si-portofoliu" : "/en/about",
-          alternates: { ro: "/despre-si-portofoliu", en: "/en/about" },
+          path: ro ? "/portofoliu" : "/en/portfolio",
+          alternates: { ro: "/portofoliu", en: "/en/portfolio" },
           image: "/og/about.jpg",
           imageAlt: ro
-            ? "Echipa Avyron și portofoliul de proiecte livrate"
-            : "Avyron team and portfolio of delivered projects",
+            ? "Portofoliul Avyron de website-uri și produse digitale"
+            : "Avyron portfolio of websites and digital products",
         });
 
         setJsonLd("ld-organization", organizationLd);
@@ -65,30 +55,14 @@ const About = () => {
           breadcrumbLd([
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
             {
-              name: ro ? "Despre & Portofoliu" : "About & Portfolio",
-              path: ro ? "/despre-si-portofoliu" : "/en/about",
+              name: ro ? "Portofoliu" : "Portfolio",
+              path: ro ? "/portofoliu" : "/en/portfolio",
             },
           ]),
         );
       },
     );
   }, [ro]);
-
-  const specialties = [
-    { icon: Code2, t: ro ? "Web Development" : "Web Development", d: ro ? "Stack modern, performant, scalabil." : "Modern, performant, scalable stack." },
-    { icon: Smartphone, t: ro ? "Mobile Development" : "Mobile Development", d: ro ? "Aplicații iOS & Android nativ-ready." : "iOS & Android native-ready apps." },
-    { icon: ShieldCheck, t: "Cybersecurity", d: ro ? "Audit, hardening, protecție continuă." : "Audits, hardening, continuous protection." },
-    { icon: Palette, t: "Design", d: ro ? "UI/UX rafinat, identitate vizuală." : "Refined UI/UX and visual identity." },
-    { icon: Bug, t: "QA & Testing", d: ro ? "Testare automată și manuală riguroasă." : "Rigorous automated and manual testing." },
-    { icon: Server, t: ro ? "DevOps & Hosting" : "DevOps & Hosting", d: ro ? "Infrastructură fiabilă, SLA realist." : "Reliable infrastructure, realistic SLA." },
-  ];
-
-  const flow = [
-    { icon: MessageSquare, t: ro ? "Comunicare clară" : "Clear communication", d: ro ? "Discuții directe, fără jargon. Înțelegem viziunea ta înainte de orice linie de cod." : "Direct conversations, no jargon. We understand your vision before any line of code." },
-    { icon: Wrench, t: ro ? "Dezvoltare end-to-end" : "End-to-end development", d: ro ? "De la wireframe la lansare: design, cod, testare, optimizare." : "From wireframe to launch: design, code, testing, optimization." },
-    { icon: Rocket, t: ro ? "Publicare & lansare" : "Publishing & launch", d: ro ? "Hosting setup, domenii, SSL, indexare Google. Totul pregătit la cheie." : "Hosting setup, domains, SSL, Google indexing. All turnkey." },
-    { icon: ShieldCheck, t: ro ? "Mentenanță continuă" : "Ongoing maintenance", d: ro ? "Securitate, performanță, backup-uri și actualizări — fără bătăi de cap." : "Security, performance, backups and updates — hassle-free." },
-  ];
 
   const projects = [
     {
@@ -151,22 +125,10 @@ const About = () => {
     },
   ];
 
-  // Parteneri tehnici afișați în marquee (doar vizual, fără linkuri).
-  // `icon` = slug simpleicons.org; lasă null și se afișează ca text-pill.
-  const partners: Array<{ label: string; icon: string | null }> = [
-    { label: "Cloudflare", icon: "cloudflare" },
-    { label: "Supabase", icon: "supabase" },
-    { label: "WordPress", icon: "wordpress" },
-    { label: "Next.js", icon: "nextdotjs" },
-    { label: "GitHub", icon: "github" },
-    { label: "Hostico.ro", icon: null },
-    { label: "Vercel", icon: "vercel" },
-    { label: "React", icon: "react" },
-    { label: "TypeScript", icon: "typescript" },
-    { label: "Tailwind CSS", icon: "tailwindcss" },
-    { label: "Stripe", icon: "stripe" },
-    { label: "Figma", icon: "figma" },
-    { label: "Node.js", icon: "nodedotjs" },
+  // Text marks avoid a third-party icon CDN request on this page.
+  const partners = [
+    "Cloudflare", "Supabase", "WordPress", "Next.js", "GitHub", "Hostico.ro",
+    "Vercel", "React", "TypeScript", "Tailwind CSS", "Stripe", "Figma", "Node.js",
   ];
 
 
@@ -175,27 +137,23 @@ const About = () => {
       {/* Top bar */}
       <div className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-40">
         <div className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between">
-          <Link
-            to="/"
-            className="group relative inline-flex items-center gap-2 rounded-full border border-border/80 bg-card/60 backdrop-blur pl-2 pr-3.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-brand/60 transition-all duration-300 overflow-hidden"
+          <a
+            href={ro ? "/#hero" : "/en#hero"}
+            className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full border border-border/80 bg-card/60 py-1.5 pl-2 pr-3.5 text-xs font-medium text-muted-foreground backdrop-blur transition-all duration-300 hover:border-brand/60 hover:text-foreground"
+            aria-label={ro ? "Avyron — mergi la începutul paginii principale" : "Avyron — go to homepage hero"}
           >
             <span className="absolute inset-0 bg-gradient-to-r from-brand/0 via-brand/10 to-brand/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" aria-hidden />
-            <span className="relative grid place-items-center size-5 rounded-full bg-foreground text-background transition-transform duration-300 group-hover:-translate-x-0.5">
-              <ArrowLeft className="size-3" />
-            </span>
-            <span className="relative font-mono uppercase tracking-[0.18em] text-[10px]">
-              {ro ? "Acasă" : "Home"}
-            </span>
+            <img src={logo} alt="" width={22} height={22} className="relative size-5 rounded-md object-cover" />
+            <span className="relative font-display text-[11px] font-extrabold tracking-[0.18em]">AVYRON</span>
             <span className="relative size-1 rounded-full bg-brand animate-pulse" aria-hidden />
-          </Link>
+          </a>
           <div className="flex items-center gap-2">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-card/60 px-2 py-1 backdrop-blur">
               <LangSwitch />
               <span aria-hidden className="w-px h-3 bg-border" />
               <ThemeToggle />
             </div>
-            <img src={logo} alt="Avyron" width={28} height={28} className="size-7 rounded-md object-cover" />
-            <span className="font-display font-bold tracking-wide text-sm hidden sm:inline">Avyron Tech</span>
+            <span className="hidden font-display text-sm font-bold tracking-wide sm:inline">{ro ? "Portofoliu" : "Portfolio"}</span>
           </div>
         </div>
 
@@ -204,8 +162,8 @@ const About = () => {
           items={[
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
             {
-              name: ro ? "Despre & Portofoliu" : "About & Portfolio",
-              path: ro ? "/despre-si-portofoliu" : "/en/about",
+              name: ro ? "Portofoliu" : "Portfolio",
+              path: ro ? "/portofoliu" : "/en/portfolio",
             },
           ]}
         />
@@ -234,87 +192,31 @@ const About = () => {
             className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs uppercase tracking-widest text-muted-foreground"
           >
             <Building2 className="size-3.5 text-brand" />
-            {ro ? "Despre noi & Portofoliu" : "About & Portfolio"}
+            {ro ? "Portofoliu selectat" : "Selected portfolio"}
           </motion.div>
           <h1 className="mt-5 font-display font-extrabold text-3xl sm:text-4xl md:text-6xl leading-tight tracking-tight">
-            {ro ? "Agenție web România — " : "Romanian web agency — "}
+            {ro ? "Proiecte digitale pentru " : "Digital projects for "}
             <span className="bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent">
-              {ro ? "despre noi & portofoliu." : "about us & portfolio."}
+              {ro ? "afaceri care evoluează." : "businesses moving forward."}
             </span>
           </h1>
           <p className="mt-5 max-w-2xl mx-auto text-base md:text-lg text-muted-foreground leading-relaxed">
             {ro
-              ? "Avyron Tech este o echipă de specialiști care transformă idei în produse digitale rafinate. Lucrăm direct, transparent și concentrat pe rezultate reale — de la prima conversație, până la mentenanța de lungă durată."
-              : "Avyron Tech is a team of specialists turning ideas into refined digital products. We work directly, transparently and focused on real results — from the first conversation to long-term maintenance."}
+              ? "Website-uri de prezentare, magazine online și aplicații construite pentru contexte reale. Fiecare proiect pornește de la obiectivul clientului și continuă cu design, dezvoltare, testare și lansare controlată."
+              : "Business websites, online stores and applications built for real contexts. Each project starts with the client's objective and continues through design, development, testing and a controlled launch."}
           </p>
           <p className="mt-4 max-w-xl mx-auto font-display text-base md:text-lg leading-relaxed">
             <span className="bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent font-semibold">
               {ro
-                ? "Oameni reali. Cod curat. Rezultate care se văd."
-                : "Real people. Clean code. Results you can see."}
+                ? "Selecție relevantă, fără proiecte demonstrative prezentate ca rezultate comerciale."
+                : "A relevant selection, without presenting demo concepts as commercial results."}
             </span>
             <span className="block mt-1 text-sm text-muted-foreground">
               {ro
-                ? "Suntem aici cât timp ai nevoie — partenerul tău digital de încredere, nu doar un furnizor."
-                : "We're here as long as you need us — your trusted digital partner, not just a vendor."}
+                ? "Publicăm lucrările reale numai cu acordul clientului."
+                : "We publish real work only with client approval."}
             </span>
           </p>
-        </div>
-      </section>
-
-      {/* Process / collaboration */}
-      <section className="pt-10 md:pt-14 pb-16 md:pb-24 relative">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="font-display font-bold text-3xl md:text-5xl tracking-tight">
-              {ro ? "Un proces simplu, de la idee la lansare." : "A simple process, from idea to launch."}
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              {ro
-                ? "Comunicarea cu clientul stă la baza fiecărui proiect. După lansare, echipa Avyron poate prelua mentenanța, hostingul, securitatea, performanța și publicarea — astfel încât tu să te concentrezi doar pe activitatea ta."
-                : "Client communication is at the heart of every project. After launch, the Avyron team can take over maintenance, hosting, security, performance and publishing — so you can focus only on your business."}
-            </p>
-          </div>
-          <div className="mt-10 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {flow.map((s) => (
-              <div key={s.t} className="group relative rounded-2xl border border-border/80 bg-card/60 backdrop-blur p-3 sm:p-5 hover:border-brand/50 transition-colors overflow-hidden">
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br from-brand/10 via-transparent to-transparent" aria-hidden />
-                <span className="relative size-8 sm:size-10 rounded-xl bg-brand/10 text-brand grid place-items-center ring-1 ring-brand/20">
-                  <s.icon className="size-4 sm:size-5" />
-                </span>
-                <h3 className="relative mt-3 sm:mt-4 font-display font-semibold text-sm sm:text-base leading-tight">{s.t}</h3>
-                <p className="relative mt-1 sm:mt-1.5 text-xs sm:text-sm text-muted-foreground leading-snug">{s.d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Team / specialties */}
-      <section className="py-16 md:py-24 bg-secondary/40 border-y border-border/60">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="font-display font-bold text-3xl md:text-5xl tracking-tight">
-              {ro ? "Specialiști dedicați, pe fiecare strat al produsului." : "Dedicated specialists across every layer of the product."}
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              {ro
-                ? "Lucrăm împreună ca un singur organism: dezvoltare web și mobile, cybersecurity, design, QA și operațiuni — fiecare cu expertiza lui, toți cu același standard de calitate."
-                : "We work as one organism: web & mobile development, cybersecurity, design, QA and operations — each with their own expertise, all sharing the same quality standard."}
-            </p>
-          </div>
-          <div className="mt-10 grid grid-cols-2 lg:grid-cols-3 gap-3">
-            {specialties.map((s) => (
-              <div key={s.t} className="group relative rounded-xl border border-border/80 bg-background/60 backdrop-blur p-3 sm:p-4 hover:border-brand/50 transition-colors overflow-hidden flex flex-col items-center text-center">
-                <div className="absolute -top-px left-6 right-6 h-px bg-gradient-to-r from-transparent via-brand/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden />
-                <span className="size-8 sm:size-9 rounded-lg bg-foreground text-background grid place-items-center">
-                  <s.icon className="size-4" />
-                </span>
-                <h3 className="mt-2.5 font-display font-semibold text-sm sm:text-base leading-tight">{s.t}</h3>
-                <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-snug">{s.d}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -393,28 +295,16 @@ const About = () => {
           </h2>
           <div className="mt-6 relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
             <div className="flex gap-12 md:gap-16 w-max animate-[partners-scroll_38s_linear_infinite] hover:[animation-play-state:paused]">
-              {[...partners, ...partners].map((p, i) => (
+              {[...partners, ...partners].map((partner, i) => (
                 <div
-                  key={`${p.label}-${i}`}
+                  key={`${partner}-${i}`}
                   className="flex items-center gap-2.5 text-muted-foreground/80 hover:text-foreground transition-colors shrink-0"
-                  title={p.label}
+                  title={partner}
                 >
-                  {p.icon ? (
-                    <img
-                      src={`https://cdn.simpleicons.org/${p.icon}/9ca3af`}
-                      alt=""
-                      aria-hidden
-                      width={20}
-                      height={20}
-                      className="size-5 opacity-80"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <span className="size-5 rounded bg-muted-foreground/20 grid place-items-center text-[9px] font-bold">
-                      {p.label.charAt(0)}
-                    </span>
-                  )}
-                  <span className="text-sm font-medium whitespace-nowrap">{p.label}</span>
+                  <span className="grid size-5 place-items-center rounded bg-muted-foreground/20 text-[8px] font-bold uppercase" aria-hidden>
+                    {partner.slice(0, 2)}
+                  </span>
+                  <span className="text-sm font-medium whitespace-nowrap">{partner}</span>
                 </div>
               ))}
             </div>
@@ -422,7 +312,7 @@ const About = () => {
         </div>
       </section>
 
-      {/* Account CTA — compact */}
+      {/* Team / products CTA — compact */}
       <section className="py-6 md:py-8 border-t border-border/60">
         <div className="mx-auto max-w-3xl px-4">
           <div className="relative rounded-2xl border border-border/80 bg-card/50 backdrop-blur p-5 md:p-6 overflow-hidden">
@@ -432,20 +322,20 @@ const About = () => {
               </span>
               <div className="flex-1 text-center sm:text-left">
                 <h3 className="font-display font-bold text-lg md:text-xl tracking-tight">
-                  {ro ? "Vrei să afli mai multe despre noi?" : "Want to learn more about us?"}
+                  {ro ? "Cunoaște echipa din spatele proiectelor." : "Meet the team behind the projects."}
                 </h3>
                 <p className="mt-1 text-sm text-muted-foreground leading-snug">
                   {ro
-                    ? "Creează-ți un cont — fără obligații. Acces la resurse, noutăți și privire din interior."
-                    : "Create an account — no strings attached. Access resources, news and an inside look."}
+                    ? "Descoperă modul nostru de lucru sau explorează produsele pe care le putem adapta afacerii tale."
+                    : "Discover how we work or explore the products we can adapt to your business."}
                 </p>
               </div>
               <div className="shrink-0 flex items-center gap-2">
                 <Button asChild size="sm" variant="outline" className="rounded-full border-border/80 hover:border-brand/60 hover:text-brand">
-                  <Link to="/auth">{ro ? "Conectează-te" : "Sign in"}</Link>
+                  <Link to={ro ? "/despre-noi" : "/en/about"}>{ro ? "Despre noi" : "About us"}</Link>
                 </Button>
                 <Button asChild size="sm" className="rounded-full bg-foreground text-background hover:bg-foreground/90">
-                  <Link to="/auth">{ro ? "Înregistrează-te" : "Sign up"}</Link>
+                  <Link to={ro ? "/costurisiproduse" : "/en/pricing"}>{ro ? "Vezi produsele" : "View products"}</Link>
                 </Button>
               </div>
             </div>

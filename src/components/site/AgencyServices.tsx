@@ -105,31 +105,40 @@ const AgencyServices = () => {
   const content = copy[lang];
 
   return (
-    <section id="servicii" aria-labelledby="agency-services-title" className="relative py-12 md:py-16">
+    <section id="servicii" aria-labelledby="agency-services-title" className="relative py-8 md:py-10">
       <div className="mx-auto max-w-6xl px-4">
-        <div className="max-w-3xl">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand">{content.eyebrow}</p>
-          <h2 id="agency-services-title" className="mt-3 font-display text-3xl font-bold leading-tight tracking-tight md:text-4xl">
-            {content.title}
-          </h2>
-          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground md:text-base">
-            {content.intro}
-          </p>
-        </div>
+        <div className="grid items-start gap-7 md:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] md:gap-10 lg:gap-14">
+          <div className="max-w-xl md:sticky md:top-28">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand">{content.eyebrow}</p>
+            <h2 id="agency-services-title" className="mt-2.5 font-display text-2xl font-bold leading-tight tracking-tight sm:text-3xl lg:text-4xl">
+              {content.title}
+            </h2>
+            <p className="mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground">
+              {content.intro}
+            </p>
+          </div>
 
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {content.items.map(({ title, text, path, Icon, tone }) => (
-            <article key={path} className="group flex min-h-56 flex-col rounded-2xl border border-border/70 bg-card/65 p-4 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-brand/35 hover:bg-card hover:shadow-elev">
-              <span className={`grid size-10 place-items-center rounded-xl bg-gradient-to-br ${tone}`}>
-                <Icon className="size-4.5" aria-hidden />
-              </span>
-              <h3 className="mt-4 font-display text-base font-semibold tracking-tight">{title}</h3>
-              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{text}</p>
-              <Link to={path} className="mt-auto inline-flex pt-4 text-xs font-semibold text-brand underline-offset-4 hover:underline">
-                {content.cta}<span aria-hidden> →</span>
+          <div data-testid="product-list" className="overflow-hidden rounded-2xl border border-border/70 bg-card/65 shadow-soft">
+            {content.items.map(({ title, text, path, Icon, tone }) => (
+              <Link
+                key={path}
+                to={path}
+                aria-label={`${content.cta}: ${title}`}
+                className="group grid min-h-[4.1rem] grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-border/60 px-3 py-2.5 transition-colors duration-200 last:border-b-0 hover:bg-muted/65 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/60 sm:grid-cols-[2.5rem_minmax(0,1fr)_auto] sm:px-4"
+              >
+                <span className={`grid size-9 place-items-center rounded-xl bg-gradient-to-br sm:size-10 ${tone}`}>
+                  <Icon className="size-4" aria-hidden />
+                </span>
+                <span className="min-w-0">
+                  <span className="block font-display text-sm font-semibold tracking-tight sm:text-[0.95rem]">{title}</span>
+                  <span className="mt-0.5 hidden truncate text-xs leading-snug text-muted-foreground sm:block">{text}</span>
+                </span>
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border/70 bg-background/75 px-2.5 py-1.5 text-[11px] font-semibold text-foreground transition-all duration-200 group-hover:border-brand/35 group-hover:text-brand sm:px-3">
+                  {content.cta}<span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>
+                </span>
               </Link>
-            </article>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </section>

@@ -25,8 +25,8 @@ export const SOCIAL_PROFILES = [
   {
     id: "linkedin",
     name: "LinkedIn",
-    handle: "Avyron",
-    url: "https://www.linkedin.com/company/avyron",
+    handle: "Avyron Solutions",
+    url: "https://www.linkedin.com/in/avyron-solutions-757595406",
   },
 ] as const;
 

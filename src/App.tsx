@@ -11,7 +11,8 @@ import { resetManagedHead } from "@/lib/seo";
 
 const Gdpr = lazy(() => import("./pages/Gdpr.tsx"));
 const Pricing = lazy(() => import("./pages/Pricing.tsx"));
-const About = lazy(() => import("./pages/About.tsx"));
+const Portfolio = lazy(() => import("./pages/About.tsx"));
+const AboutUs = lazy(() => import("./pages/AboutUs.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 const ErrorPage = lazy(() => import("./pages/ErrorPage.tsx"));
 const FlawlesstudioDemo = lazy(() => import("./pages/demos/FlawlesstudioDemo.tsx"));
@@ -129,9 +130,12 @@ const App = () => (
                 <Route path="/pachete-mentenanta" element={<CarePlans />} />
                 <Route path="/en/care-plans" element={<CarePlans />} />
 
-                <Route path="/despre" element={<About />} />
-                <Route path="/despre-si-portofoliu" element={<About />} />
-                <Route path="/en/about" element={<About />} />
+                <Route path="/despre" element={<Navigate to="/despre-noi" replace />} />
+                <Route path="/despre-si-portofoliu" element={<Navigate to="/portofoliu" replace />} />
+                <Route path="/despre-noi" element={<AboutUs />} />
+                <Route path="/en/about" element={<AboutUs />} />
+                <Route path="/portofoliu" element={<Portfolio />} />
+                <Route path="/en/portfolio" element={<Portfolio />} />
                 <Route path="/exemple/flawlesstudio" element={<FlawlesstudioDemo />} />
                 <Route path="/exemple/retuvo" element={<RetuvoDemo />} />
                 <Route path="/blog" element={<Blog />} />
