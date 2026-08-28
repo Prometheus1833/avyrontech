@@ -18,6 +18,36 @@ test.describe("public SEO routes", () => {
     await expect(page.locator('link[hreflang="en"]')).toHaveAttribute("href", "https://avyron.ro/en/pricing");
   });
 
+  test("the Cloudflare currency control converts and persists indicative prices", async ({ page }) => {
+    await page.route("**/api/public/exchange-rate", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: {
+          base: "EUR",
+          quote: "RON",
+          rate: 5.1,
+          referenceDate: "2026-08-28",
+          fetchedAt: Date.now(),
+          provider: "European Central Bank",
+          sourceUrl: "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml",
+          status: "fresh",
+        },
+      }),
+    }));
+
+    await page.goto("/costurisiproduse");
+    const switcher = page.getByTestId("currency-switch").first();
+    await expect(switcher.getByRole("button", { name: "Afișează prețurile în EUR" })).toHaveAttribute("aria-pressed", "true");
+    await switcher.getByRole("button", { name: "Afișează prețurile în RON" }).click();
+    await expect(switcher).toContainText("1 EUR = 5.1000 RON");
+    await expect(page.getByText(/1[.\s]?530 RON/, { exact: false }).first()).toBeVisible();
+
+    await page.goto("/produse/website-prezentare-premium");
+    await expect(page.getByTestId("product-hero-facts")).toContainText(/1[.\s]?530 RON/);
+    await expect(page.getByTestId("currency-switch").getByRole("button", { name: "Afișează prețurile în RON" })).toHaveAttribute("aria-pressed", "true");
+  });
+
   test("homepage displays the approved hero and services wording", async ({ page }) => {
     await page.goto("/");
 

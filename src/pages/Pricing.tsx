@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ArrowLeft, ArrowRight, ScanSearch, Gauge, Accessibility, Check, CreditCard, Building2, Link2, FileText, Zap, Crown, Shield, RefreshCw, Hourglass, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu, Bug, FlaskConical, HeartHandshake } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { trackEvent } from "@/lib/analytics";
@@ -11,6 +11,8 @@ import premiumTech704Webp from "@/assets/premium-website-mockup-704.webp";
 import LangSwitch from "@/components/site/LangSwitch";
 import ThemeToggle from "@/components/site/ThemeToggle";
 import Breadcrumbs from "@/components/site/Breadcrumbs";
+import CurrencySwitch from "@/components/site/CurrencySwitch";
+import { useCurrency } from "@/hooks/useCurrency";
 
 /**
  * PlayStation-inspired pricing page.
@@ -43,27 +45,7 @@ const PRODUCT_SUMMARY_LIMIT = 7;
 const Pricing = () => {
   const { lang } = useLang();
   const ro = lang === "ro";
-  const [currency, setCurrency] = useState<"EUR" | "RON">("EUR");
-  const [rate, setRate] = useState<number>(5); // EUR -> RON, indicative fallback
-
-  useEffect(() => {
-    let cancelled = false;
-    import("@/integrations/supabase/client").then(({ supabase }) => {
-      supabase.functions
-        .invoke("get-exchange-rate")
-        .then(({ data, error }) => {
-          if (cancelled || error) return;
-          const r = (data as { rate?: number } | null)?.rate;
-          if (typeof r === "number" && r > 0) setRate(Number(r.toFixed(4)));
-        })
-        .catch(() => {
-          /* keep fallback */
-        });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { formatEur: fmt } = useCurrency(ro ? "ro-RO" : "en-IE");
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -100,11 +82,6 @@ const Pricing = () => {
       },
     );
   }, [ro]);
-
-  const fmt = (eur: number) => {
-    if (currency === "EUR") return `${eur}€`;
-    return `${Math.round(eur * rate)} RON`;
-  };
 
   const main = {
     title: ro ? "Website Prezentare Premium" : "Premium Presentation Website",
@@ -306,26 +283,7 @@ const Pricing = () => {
               : "We deliver turnkey digital products, keep them fast and secure, and you only pay for what you choose. Prices are indicative and may vary by scope."}
           </p>
 
-          {/* Currency switch */}
-          <div className="mt-7 inline-flex rounded-full border border-foreground/15 bg-foreground/[0.04] p-1 backdrop-blur">
-            {(["EUR", "RON"] as const).map((c) => (
-              <button
-                key={c}
-                onClick={() => setCurrency(c)}
-                className={`px-4 py-1.5 text-xs font-semibold tracking-widest rounded-full transition-all ${
-                  currency === c ? "bg-cyan-400 text-background" : "text-foreground/70 hover:text-foreground"
-                }`}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-          <p className="mt-2 text-[11px] uppercase tracking-widest text-foreground/40 inline-flex items-center gap-2">
-            <RefreshCw className="size-3" />
-            {ro
-              ? `Curs orientativ 1€ ≈ ${rate.toFixed(2)} RON`
-              : `Indicative rate 1€ ≈ ${rate.toFixed(2)} RON`}
-          </p>
+          <CurrencySwitch className="mt-7" />
         </section>
 
         {/* Audit — product overview entry; the request continues in the protected form. */}
@@ -420,7 +378,7 @@ const Pricing = () => {
               <div className="mt-3 flex items-baseline justify-center gap-1.5 flex-wrap">
                 <span className="text-sm sm:text-base font-semibold text-foreground/70">{ro ? "de la" : "from"}</span>
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-cyan-300 to-blue-500 bg-clip-text text-transparent break-words">
-                  {currency === "EUR" ? "300€" : `${Math.round(300 * rate)} RON`}
+                  {fmt(300)}
                 </span>
               </div>
               <p className="mt-3 text-xs sm:text-sm text-foreground/70 leading-snug text-left">{main.desc}</p>
@@ -493,7 +451,7 @@ const Pricing = () => {
               <div className="mt-3 flex items-baseline justify-center gap-1.5 flex-wrap">
                 <span className="text-sm sm:text-base font-semibold text-foreground/70">{ro ? "de la" : "from"}</span>
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-pink-300 to-purple-500 bg-clip-text text-transparent break-words">
-                  {currency === "EUR" ? "250€" : `${Math.round(250 * rate)} RON`}
+                  {fmt(250)}
                 </span>
               </div>
               <p className="mt-3 text-xs sm:text-sm text-foreground/70 leading-snug text-left">
@@ -589,7 +547,7 @@ const Pricing = () => {
               <div className="mt-3 flex items-baseline justify-center gap-1.5 flex-wrap">
                 <span className="text-sm sm:text-base font-semibold text-foreground/70">{ro ? "de la" : "from"}</span>
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-emerald-300 to-teal-500 bg-clip-text text-transparent break-words">
-                  {currency === "EUR" ? "1000€" : `${Math.round(1000 * rate)} RON`}
+                  {fmt(1000)}
                 </span>
               </div>
               <p className="mt-3 text-xs sm:text-sm text-foreground/70 leading-snug text-left">
@@ -695,7 +653,7 @@ const Pricing = () => {
               <div className="mt-3 flex items-baseline justify-center gap-1.5 flex-wrap">
                 <span className="text-sm sm:text-base font-semibold text-foreground/70">{ro ? "de la" : "from"}</span>
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-indigo-300 to-violet-500 bg-clip-text text-transparent break-words">
-                  {currency === "EUR" ? "1500€" : `${Math.round(1500 * rate)} RON`}
+                  {fmt(1500)}
                 </span>
               </div>
               <p className="mt-3 text-xs sm:text-sm text-foreground/70 leading-snug text-left">
@@ -799,7 +757,7 @@ const Pricing = () => {
               <div className="mt-3 flex items-baseline justify-center gap-1.5 flex-wrap">
                 <span className="text-sm sm:text-base font-semibold text-foreground/70">{ro ? "de la" : "from"}</span>
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-fuchsia-300 to-purple-500 bg-clip-text text-transparent break-words">
-                  {currency === "EUR" ? "500€" : `${Math.round(500 * rate)} RON`}
+                  {fmt(500)}
                 </span>
               </div>
               <p className="mt-3 text-xs sm:text-sm text-foreground/70 leading-snug text-left">
@@ -904,7 +862,7 @@ const Pricing = () => {
               <div className="mt-3 flex items-baseline justify-center gap-1.5 flex-wrap">
                 <span className="text-sm sm:text-base font-semibold text-foreground/70">{ro ? "de la" : "from"}</span>
                 <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-lime-300 to-emerald-500 bg-clip-text text-transparent break-words">
-                  {currency === "EUR" ? "300€" : `${Math.round(300 * rate)} RON`}
+                  {fmt(300)}
                 </span>
               </div>
               <p className="mt-3 text-xs sm:text-sm text-foreground/70 leading-snug text-left">

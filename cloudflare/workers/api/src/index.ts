@@ -25,6 +25,7 @@ import { apiDiscovery, API_VERSION, isApiHostname, isApiSurfaceRequest, normaliz
 import { publicApiCacheRequest } from "./apiCache";
 import { domainRouter } from "./domain";
 import { promotionsRouter } from "./promotions";
+import { EXCHANGE_RATE_REFRESH_CRON, getPublicExchangeRate, refreshExchangeRate } from "./exchangeRate";
 
 const app = new Hono<AppBindings>();
 
@@ -219,6 +220,19 @@ app.get("/.well-known/security.txt", async (c, next) => {
 app.get("/api/health", (c) => {
   c.header("cache-control", "no-store");
   return c.json(healthPayload());
+});
+
+app.get("/api/public/exchange-rate", async (c) => {
+  const exchangeRate = await getPublicExchangeRate(c.env);
+  if (exchangeRate.status === "stale") {
+    c.executionCtx.waitUntil(refreshExchangeRate(c.env).catch((error) => {
+      console.error(JSON.stringify({ event: "exchange_rate_revalidation_failed", error: String(error) }));
+    }));
+  }
+  c.header("cache-control", exchangeRate.status === "fallback"
+    ? "public, max-age=30, s-maxage=60"
+    : "public, max-age=300, s-maxage=1800, stale-while-revalidate=86400");
+  return c.json({ data: exchangeRate });
 });
 
 // ─── AUTH ───────────────────────────────────────────────────────────────
@@ -726,5 +740,14 @@ async function cleanupExpiredData(env: AppBindings["Bindings"]) {
 
 export default {
   fetch: (request, env, ctx) => app.fetch(normalizeVersionedApiRequest(request), env, ctx),
-  scheduled: (_controller, env, ctx) => ctx.waitUntil(cleanupExpiredData(env)),
+  scheduled: (controller, env, ctx) => {
+    if (controller.cron === EXCHANGE_RATE_REFRESH_CRON) {
+      ctx.waitUntil(refreshExchangeRate(env).catch((error) => {
+        console.error(JSON.stringify({ event: "exchange_rate_refresh_failed", error: String(error) }));
+        throw error;
+      }));
+      return;
+    }
+    ctx.waitUntil(cleanupExpiredData(env));
+  },
 } satisfies ExportedHandler<AppBindings["Bindings"]>;

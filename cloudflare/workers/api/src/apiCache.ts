@@ -4,6 +4,7 @@ const CACHEABLE_PUBLIC_PATHS = [
   /^\/api\/blog\/media\/[a-f0-9-]{36}\.(?:png|jpe?g|webp|avif)$/i,
   /^\/api\/profile\/avatar\/[a-zA-Z0-9-]+$/,
   /^\/api\/public\/domain-check$/,
+  /^\/api\/public\/exchange-rate$/,
 ];
 
 const allowedParamsFor = (pathname: string) => {
@@ -26,4 +27,3 @@ export function publicApiCacheRequest(request: Request): Request | null {
   url.searchParams.sort();
   return new Request(url, { method: "GET", headers: { accept: request.headers.get("accept") || "application/json" } });
 }
-

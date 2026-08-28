@@ -40,6 +40,7 @@ describe("api.avyron.ro gateway", () => {
     expect(openApiDocument.openapi).toBe("3.1.0");
     expect(openApiDocument.servers[0].url).toBe("https://api.avyron.ro/v1");
     expect(openApiDocument.paths["/public/domain-check"]).toBeTruthy();
+    expect(openApiDocument.paths["/public/exchange-rate"]).toBeTruthy();
     expect(openApiDocument.paths["/commerce/quote"]).toBeTruthy();
     expect(apiDiscovery.modules.platform).toContain("promotions");
   });
@@ -49,6 +50,8 @@ describe("public API cache policy", () => {
   it("normalizes safe public query parameters", () => {
     const key = publicApiCacheRequest(new Request("https://api.avyron.ro/api/blog/posts?utm_source=x&lang=en&limit=20"));
     expect(key?.url).toBe("https://api.avyron.ro/api/blog/posts?lang=en&limit=20");
+    const exchangeKey = publicApiCacheRequest(new Request("https://api.avyron.ro/api/public/exchange-rate?utm_source=x"));
+    expect(exchangeKey?.url).toBe("https://api.avyron.ro/api/public/exchange-rate");
   });
 
   it("never caches authenticated or mutating requests", () => {

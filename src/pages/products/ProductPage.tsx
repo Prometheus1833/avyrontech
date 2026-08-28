@@ -36,6 +36,8 @@ import NotFound from "@/pages/NotFound";
 import logo from "@/assets/avyron-logo.jpg";
 import { trackEvent } from "@/lib/analytics";
 import Footer from "@/components/site/Footer";
+import CurrencySwitch from "@/components/site/CurrencySwitch";
+import { useCurrency } from "@/hooks/useCurrency";
 
 const ICONS: Record<IconKey, React.ComponentType<{ className?: string }>> = {
   globe: Globe,
@@ -67,6 +69,7 @@ const ProductPage = () => {
   const { pathname } = useLocation();
   const { lang } = useLang();
   const ro = lang === "ro";
+  const { formatEur } = useCurrency(ro ? "ro-RO" : "en-IE");
   const product = getProductByPath(pathname);
 
   useEffect(() => {
@@ -223,7 +226,7 @@ const ProductPage = () => {
                 {ro ? "Investiție" : "Investment"}
               </dt>
               <dd className="mt-0.5 text-[10px] font-bold leading-tight sm:text-xs">
-                {product.priceEur > 0 ? `${ro ? "de la" : "from"} ${product.priceEur}€` : ro ? "Gratuit" : "Free"}
+                {product.priceEur > 0 ? `${ro ? "de la" : "from"} ${formatEur(product.priceEur)}` : ro ? "Gratuit" : "Free"}
               </dd>
             </div>
             <div className="flex min-w-0 flex-col items-center justify-center rounded-xl border border-foreground/15 bg-foreground/[0.04] px-1.5 py-2.5 text-center text-foreground/70">
@@ -243,6 +246,8 @@ const ProductPage = () => {
               </dd>
             </div>
           </dl>
+
+          {product.priceEur > 0 && <CurrencySwitch compact className="mt-4" />}
 
           {c.heroStats && (
             <dl className="mx-auto mt-8 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">

@@ -41,7 +41,7 @@ export const apiDiscovery = {
   same_origin: "/api",
   documentation: `${API_CANONICAL_ORIGIN}/openapi.json`,
   modules: {
-    public: ["health", "domain-check", "contact", "blog", "public-media"],
+    public: ["health", "domain-check", "exchange-rate", "contact", "blog", "public-media"],
     account: ["auth", "profile"],
     platform: ["clients", "projects", "proposals", "links", "media", "editorial", "commerce", "promotions"],
   },
@@ -82,6 +82,13 @@ export const openApiDocument = {
         summary: "Verifică prudent starea unui domeniu prin surse oficiale RDAP/DNS",
         parameters: [{ name: "domain", in: "query", required: true, schema: { type: "string", maxLength: 253 }, example: "exemplu.ro" }],
         responses: { "200": { description: "Stare verificată" }, "400": { $ref: "#/components/responses/Problem" }, "429": { $ref: "#/components/responses/Problem" } },
+      },
+    },
+    "/public/exchange-rate": {
+      get: {
+        tags: ["Public"],
+        summary: "Returnează cursul indicativ EUR/RON publicat de Banca Centrală Europeană",
+        responses: { "200": { description: "Ultimul curs valid din Workers KV sau un fallback marcat explicit" } },
       },
     },
     "/contact/demo": {

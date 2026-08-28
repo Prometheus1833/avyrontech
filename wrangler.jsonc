@@ -39,7 +39,12 @@
       "invocation_logs": true
     }
   },
-  "triggers": { "crons": ["17 3 * * *"] },
+  "triggers": {
+    "crons": [
+      "17 3 * * *",
+      "17 7,15 * * *"
+    ]
+  },
 
   "d1_databases": [
     {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -30,14 +30,15 @@ import Breadcrumbs from "@/components/site/Breadcrumbs";
 import Reveal from "@/components/site/Reveal";
 import logo from "@/assets/avyron-logo.jpg";
 import { trackEvent } from "@/lib/analytics";
+import CurrencySwitch from "@/components/site/CurrencySwitch";
+import { useCurrency } from "@/hooks/useCurrency";
 
 const WHATSAPP = "https://wa.me/40734605055?text=";
 
 const CarePlansPage = () => {
   const { lang } = useLang();
   const ro = lang === "ro";
-  const [currency, setCurrency] = useState<"EUR" | "RON">("EUR");
-  const [rate, setRate] = useState(5);
+  const { formatEur: fmt } = useCurrency(ro ? "ro-RO" : "en-IE");
 
   const faq = ro
     ? [
@@ -54,26 +55,6 @@ const CarePlansPage = () => {
         { q: "Can I change plans later?", a: "Any time, in both directions. The difference is prorated for the current month, with no extra fees." },
         { q: "Do you maintain a site built by someone else?", a: "Yes. We first run a free evaluation of your current product, tell you what needs fixing at handover and only then start the subscription." },
       ];
-
-
-  useEffect(() => {
-    let cancelled = false;
-    import("@/integrations/supabase/client").then(({ supabase }) => {
-      supabase.functions
-        .invoke("get-exchange-rate")
-        .then(({ data, error }) => {
-          if (cancelled || error) return;
-          const r = (data as { rate?: number } | null)?.rate;
-          if (typeof r === "number" && r > 0) setRate(Number(r.toFixed(4)));
-        })
-        .catch(() => {
-          /* keep fallback */
-        });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const path = ro ? "/pachete-mentenanta" : "/en/care-plans";
 
@@ -149,8 +130,6 @@ const CarePlansPage = () => {
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ro]);
-
-  const fmt = (eur: number) => (currency === "EUR" ? `${eur}€` : `${Math.round(eur * rate)} RON`);
 
   const plans = [
     {
@@ -404,26 +383,8 @@ const CarePlansPage = () => {
               {ro ? "Vreau un pachet de mentenanță" : "I want a care plan"}
               <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
             </a>
-            <div className="inline-flex rounded-full border border-foreground/15 bg-foreground/[0.04] p-1 backdrop-blur">
-              {(["EUR", "RON"] as const).map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setCurrency(c)}
-                  aria-pressed={currency === c}
-                  aria-label={ro ? `Afișează prețurile în ${c}` : `Show prices in ${c}`}
-                  className={`px-4 py-1.5 text-xs font-semibold tracking-widest rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50 ${
-                    currency === c ? "bg-emerald-500 text-white dark:bg-emerald-400 dark:text-background" : "text-foreground/70 hover:text-foreground"
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
+            <CurrencySwitch accent="emerald" />
           </div>
-          <p className="mt-3 text-[11px] uppercase tracking-widest text-foreground/40 inline-flex items-center gap-2">
-            <RefreshCw className="size-3" aria-hidden />
-            {ro ? `Curs orientativ 1€ ≈ ${rate.toFixed(2)} RON` : `Indicative rate 1€ ≈ ${rate.toFixed(2)} RON`}
-          </p>
         </Reveal>
 
         {/* Plans */}

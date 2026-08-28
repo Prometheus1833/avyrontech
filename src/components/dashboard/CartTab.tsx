@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { cfAuth } from "@/lib/cfAuth";
 import { COMMERCE_CATALOG, commerceItemByName, commerceItemBySku, type CommerceItemType } from "@/data/commerceCatalog";
+import CurrencySwitch from "@/components/site/CurrencySwitch";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type CartItem = {
   id: string;
@@ -65,6 +67,7 @@ const restoreItems = (raw: string): CartItem[] => {
 
 export function CartTab() {
   const { user } = useAuth();
+  const { currency, formatRonCents } = useCurrency("ro-RO");
   const [items, setItems] = useState<CartItem[]>([]);
   const [type, setType] = useState<CommerceItemType>("package");
   const [name, setName] = useState("");
@@ -156,11 +159,17 @@ export function CartTab() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-2xl font-display font-bold flex items-center gap-2"><ShoppingCart className="size-6" /> Coșul meu</h2>
-        <p className="mt-1 text-xs text-muted-foreground">Coșul rămâne local până la trimitere; prețul și orice reducere sunt recalculate securizat de Avyron API.</p>
-        <p className="text-sm text-muted-foreground">Adaugă pachete, abonamente sau cereri personalizate și trimite o singură comandă echipei.</p>
+      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
+        <div>
+          <h2 className="text-2xl font-display font-bold flex items-center gap-2"><ShoppingCart className="size-6" /> Coșul meu</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Coșul rămâne local până la trimitere; prețul și orice reducere sunt recalculate securizat de Avyron API.</p>
+          <p className="text-sm text-muted-foreground">Adaugă pachete, abonamente sau cereri personalizate și trimite o singură comandă echipei.</p>
+        </div>
+        <CurrencySwitch compact className="shrink-0 sm:items-end" />
       </div>
+      {currency === "EUR" && (
+        <p className="text-[11px] text-muted-foreground">Conversia EUR este informativă; oferta și comanda sunt validate și înregistrate în RON.</p>
+      )}
 
       <Card>
         <CardHeader><CardTitle className="text-lg">Adaugă în coș</CardTitle></CardHeader>
@@ -182,7 +191,7 @@ export function CartTab() {
             {type === "package" ? (
               <Select value={name} onValueChange={setName}>
                 <SelectTrigger><SelectValue placeholder="Alege un pachet" /></SelectTrigger>
-                <SelectContent>{PRESET_PACKAGES.map((item) => <SelectItem key={item.sku} value={item.name}>{item.name} — {(Number(item.unitPriceCents) / 100).toFixed(0)} RON</SelectItem>)}</SelectContent>
+                <SelectContent>{PRESET_PACKAGES.map((item) => <SelectItem key={item.sku} value={item.name}>{item.name} — {formatRonCents(Number(item.unitPriceCents))}</SelectItem>)}</SelectContent>
               </Select>
             ) : <Input value={name} onChange={(event) => setName(event.target.value)} maxLength={120} placeholder="Ex: Magazin online beauty" />}
           </div>
@@ -197,7 +206,7 @@ export function CartTab() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-3">
           <CardTitle className="text-lg">Conținutul coșului ({items.length})</CardTitle>
-          {displaySubtotal > 0 && <Badge variant="secondary">Subtotal: {(displaySubtotal / 100).toFixed(0)} RON</Badge>}
+          {displaySubtotal > 0 && <Badge variant="secondary">Subtotal: {formatRonCents(displaySubtotal)}</Badge>}
         </CardHeader>
         <CardContent className="space-y-4">
           {!items.length ? <p className="text-sm text-muted-foreground py-6 text-center">Coșul este gol.</p> : (
@@ -208,7 +217,7 @@ export function CartTab() {
                     <div className="size-8 rounded-md bg-primary/10 text-primary grid place-items-center shrink-0">{typeIcon(item.type)}</div>
                     <div className="flex-1 min-w-0">
                       <div className="font-medium truncate">{item.name}</div>
-                      <div className="text-xs text-muted-foreground flex flex-wrap gap-x-2"><span className="uppercase">{item.type}</span>{item.period && <span>· {item.period}</span>}{item.price_estimate ? <span>· {(item.price_estimate / 100).toFixed(0)} RON</span> : <span>· ofertă personalizată</span>}</div>
+                      <div className="text-xs text-muted-foreground flex flex-wrap gap-x-2"><span className="uppercase">{item.type}</span>{item.period && <span>· {item.period}</span>}{item.price_estimate ? <span>· {formatRonCents(item.price_estimate)}</span> : <span>· ofertă personalizată</span>}</div>
                       {item.notes && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.notes}</p>}
                     </div>
                     <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)} aria-label="Șterge"><Trash2 className="size-4 text-destructive" /></Button>
@@ -224,9 +233,9 @@ export function CartTab() {
                 </div>
                 {quote && (
                   <div className="grid gap-1 text-sm border-t pt-3">
-                    <div className="flex justify-between"><span className="text-muted-foreground">Subtotal verificat</span><span>{(quote.subtotalCents / 100).toFixed(2)} RON</span></div>
-                    {quote.promotion && <div className="flex justify-between text-emerald-600 dark:text-emerald-400"><span>{quote.promotion.code} · {quote.promotion.discountPercent}%</span><span>−{(quote.discountCents / 100).toFixed(2)} RON</span></div>}
-                    <div className="flex justify-between font-semibold text-base"><span>Total estimat</span><span>{(displayTotal / 100).toFixed(2)} RON</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Subtotal verificat</span><span>{formatRonCents(quote.subtotalCents)}</span></div>
+                    {quote.promotion && <div className="flex justify-between text-emerald-600 dark:text-emerald-400"><span>{quote.promotion.code} · {quote.promotion.discountPercent}%</span><span>−{formatRonCents(quote.discountCents)}</span></div>}
+                    <div className="flex justify-between font-semibold text-base"><span>Total estimat</span><span>{formatRonCents(displayTotal)}</span></div>
                     {quote.requiresManualQuote && <p className="text-xs text-muted-foreground">Produsele personalizate vor fi evaluate separat; reducerea se aplică valorii eligibile confirmate.</p>}
                   </div>
                 )}

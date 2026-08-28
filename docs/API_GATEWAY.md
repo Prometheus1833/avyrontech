@@ -41,7 +41,7 @@ Limitele se verifică înaintea unei extinderi în documentația oficială:
 | Domeniu | Rute | Persistență | Acces |
 | --- | --- | --- | --- |
 | Sistem | `/health`, discovery, OpenAPI | fără storage | public, no-store pentru health |
-| Public | `/public/domain-check`, `/contact/*`, `/blog/*`, media publică | D1/R2 numai prin Worker | rate limit + Turnstile unde există mutații |
+| Public | `/public/domain-check`, `/public/exchange-rate`, `/contact/*`, `/blog/*`, media publică | KV/D1/R2 numai prin Worker | cache la edge; rate limit + Turnstile unde există mutații |
 | Cont | `/auth/*`, `/profile/*` | D1 + R2 avatar | JWT 15 minute + refresh cookie HttpOnly |
 | Comerț | `/commerce/quote`, `/commerce/orders` | catalog server-side + D1 | cont autentificat; prețurile browserului sunt ignorate |
 | Promoții | `/promotions/admin/*` | D1 + audit log | exclusiv `prometheus@avyron.ro`, verificat server-side |
@@ -58,12 +58,13 @@ no-store`.
 ## Cache și performanță
 
 Cache API este folosit numai pentru requesturi `GET` anonime către articole,
-coperți, avatare și verificarea domeniilor. Cheile sunt normalizate și elimină
-parametrii nerecunoscuți, evitând fragmentarea cache-ului. Un request cu cookie
-sau `Authorization` nu poate intra în cache.
+coperți, avatare, verificarea domeniilor și cursul valutar public. Cheile sunt
+normalizate și elimină parametrii nerecunoscuți, evitând fragmentarea cache-ului.
+Un request cu cookie sau `Authorization` nu poate intra în cache.
 
-Cache-ul este per centru de date Cloudflare; D1 rămâne sursa de adevăr. Acest
-model reduce citirile D1 fără consistență falsă pentru conturi sau dashboard.
+Cache-ul este per centru de date Cloudflare. D1 rămâne sursa de adevăr pentru
+datele relaționale, iar KV păstrează ultima rată valutară validată. Acest model
+reduce citirile fără consistență falsă pentru conturi sau dashboard.
 
 ## Prețuri și promoții
 
@@ -77,6 +78,26 @@ Codurile inițiale sunt `AVY10` (10%), `AVYONG` (10%), `SOCIALAVY` (5%),
 utilizărilor nu este șters când un cod este oprit. Numai contul exact
 `prometheus@avyron.ro` poate vedea, crea sau activa/dezactiva promoții din
 Dashboard; rolul generic de administrator nu acordă acest drept.
+
+### Conversie EUR/RON
+
+`GET /v1/public/exchange-rate` publică ultima rată EUR/RON validă preluată
+direct din fluxul XML al Băncii Centrale Europene. Worker-ul o validează,
+păstrează în KV numai ultima valoare corectă și o actualizează la `07:17 UTC`
+și `15:17 UTC`. Prima oră asigură rata de referință disponibilă la începutul
+zilei, iar a doua este după ora uzuală de publicare BCE; programul rulează și
+în weekend pentru a păstra același comportament operațional.
+
+Interfața folosește cursul numai pentru afișarea orientativă. Catalogul,
+promoțiile, comenzile și facturile rămân calculate și validate server-side în
+RON. Dacă BCE sau KV nu sunt disponibile, API-ul semnalizează explicit
+`status: fallback`, iar UI-ul etichetează valoarea drept estimare de rezervă;
+nu o prezintă drept curs oficial.
+
+- Flux oficial: <https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml>
+- Politica ratelor de referință BCE: <https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html>
+- Cron Triggers: <https://developers.cloudflare.com/workers/configuration/cron-triggers/>
+- Workers KV: <https://developers.cloudflare.com/kv/concepts/how-kv-works/>
 
 ## Furnizori externi acceptați
 
