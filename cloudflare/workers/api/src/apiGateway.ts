@@ -43,7 +43,7 @@ export const apiDiscovery = {
   modules: {
     public: ["health", "domain-check", "contact", "blog", "public-media"],
     account: ["auth", "profile"],
-    platform: ["clients", "projects", "proposals", "links", "media", "editorial"],
+    platform: ["clients", "projects", "proposals", "links", "media", "editorial", "commerce", "promotions"],
   },
   storage: {
     relational: "Cloudflare D1",
@@ -107,6 +107,17 @@ export const openApiDocument = {
     },
     "/projects": {
       get: { tags: ["Platform"], summary: "Listează proiectele accesibile contului", security: [{ bearerAuth: [] }], responses: { "200": { description: "Listă de proiecte" }, "401": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/commerce/quote": {
+      post: { tags: ["Platform"], summary: "Calculează server-side prețul și reducerea unei comenzi", security: [{ bearerAuth: [] }], responses: { "200": { description: "Ofertă calculată" }, "400": { $ref: "#/components/responses/Problem" }, "409": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/commerce/orders": {
+      get: { tags: ["Platform"], summary: "Listează comenzile contului curent", security: [{ bearerAuth: [] }], responses: { "200": { description: "Listă de comenzi" } } },
+      post: { tags: ["Platform"], summary: "Creează o comandă folosind prețurile validate de Worker", security: [{ bearerAuth: [] }], responses: { "201": { description: "Comandă creată" }, "400": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/promotions/admin": {
+      get: { tags: ["Platform"], summary: "Administrare promoții rezervată contului desemnat", security: [{ bearerAuth: [] }], responses: { "200": { description: "Listă promoții" }, "403": { $ref: "#/components/responses/Problem" } } },
+      post: { tags: ["Platform"], summary: "Creează o promoție nouă", security: [{ bearerAuth: [] }], responses: { "201": { description: "Promoție creată" }, "403": { $ref: "#/components/responses/Problem" } } },
     },
   },
   components: {

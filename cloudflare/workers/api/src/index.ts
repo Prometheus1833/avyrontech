@@ -24,6 +24,7 @@ import { handleMappedHostname } from "./sites.config";
 import { apiDiscovery, API_VERSION, isApiHostname, isApiSurfaceRequest, normalizeVersionedApiRequest, openApiDocument } from "./apiGateway";
 import { publicApiCacheRequest } from "./apiCache";
 import { domainRouter } from "./domain";
+import { promotionsRouter } from "./promotions";
 
 const app = new Hono<AppBindings>();
 
@@ -588,6 +589,8 @@ app.use("/api/proposals/*", requireAuth);
 app.use("/api/links/*", requireAuth);
 app.use("/api/metadata/*", requireAuth);
 app.use("/api/media/*", requireAuth);
+app.use("/api/commerce/*", requireAuth);
+app.use("/api/promotions/*", requireAuth);
 // Editorial mutations are authorized server-side. Public article reads and
 // immutable R2 cover images remain accessible to crawlers and visitors.
 app.use("/api/blog/staff/*", requireAuth, requireRole("staff", "admin"));
@@ -595,6 +598,7 @@ app.route("/", projectsRouter);
 app.route("/", mediaRouter);
 app.route("/", blogRouter);
 app.route("/", domainRouter);
+app.route("/", promotionsRouter);
 // Formularul public (fără auth)
 app.route("/", contactRouter);
 // Importul administrativ are propria gardă constant-time X-Seed-Token.

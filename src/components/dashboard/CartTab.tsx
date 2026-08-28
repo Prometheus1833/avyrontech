@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,46 +6,80 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, Plus, Trash2, Send, Package, Globe, Repeat, Wrench } from "lucide-react";
+import { ShoppingCart, Plus, Trash2, Send, Package, Globe, Repeat, Wrench, BadgePercent, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-
-type CartType = "package" | "subscription" | "website" | "custom";
+import { cfAuth } from "@/lib/cfAuth";
+import { COMMERCE_CATALOG, commerceItemByName, commerceItemBySku, type CommerceItemType } from "@/data/commerceCatalog";
 
 type CartItem = {
   id: string;
-  type: CartType;
+  sku: string;
+  type: CommerceItemType;
   name: string;
   period?: string;
   notes?: string;
   price_estimate?: number;
 };
 
-const STORAGE_KEY = "avyron_cart_v1";
+type Quote = {
+  currency: "RON";
+  subtotalCents: number;
+  promotion: { code: string; label: string; discountPercent: number } | null;
+  discountCents: number;
+  totalCents: number;
+  requiresManualQuote: boolean;
+};
 
-const PRESET_PACKAGES = [
-  { name: "Pachet Starter Website", price: 49000 },
-  { name: "Pachet Business Website", price: 99000 },
-  { name: "Pachet Premium + SEO", price: 149000 },
-  { name: "Pachet Mentenanță Lunar", price: 9900 },
-];
-
+const STORAGE_KEY = "avyron_cart_v2";
+const LEGACY_STORAGE_KEY = "avyron_cart_v1";
+const PRESET_PACKAGES = COMMERCE_CATALOG.filter((item) => item.type === "package" && item.unitPriceCents !== null);
 const PERIODS = ["1 lună", "3 luni", "6 luni", "12 luni", "Plată unică"];
+
+const toApiItems = (items: CartItem[]) => items.map((item) => ({
+  sku: item.sku,
+  quantity: 1,
+  period: item.period,
+  notes: item.notes,
+  description: item.sku === "custom-request" ? item.name : undefined,
+}));
+
+const restoreItems = (raw: string): CartItem[] => {
+  const parsed = JSON.parse(raw) as Array<Partial<CartItem>>;
+  if (!Array.isArray(parsed)) return [];
+  return parsed.slice(0, 20).flatMap((item) => {
+    const catalogItem = commerceItemBySku(String(item.sku ?? "")) || commerceItemByName(String(item.name ?? ""));
+    const name = String(item.name ?? "").trim().slice(0, 120);
+    if (!name) return [];
+    return [{
+      id: String(item.id || crypto.randomUUID()),
+      sku: catalogItem?.sku || "custom-request",
+      type: catalogItem?.type || item.type || "custom",
+      name,
+      period: item.period ? String(item.period).slice(0, 40) : undefined,
+      notes: item.notes ? String(item.notes).slice(0, 1000) : undefined,
+      price_estimate: catalogItem?.unitPriceCents ?? undefined,
+    } satisfies CartItem];
+  });
+};
 
 export function CartTab() {
   const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
-  const [type, setType] = useState<CartType>("package");
+  const [type, setType] = useState<CommerceItemType>("package");
   const [name, setName] = useState("");
   const [period, setPeriod] = useState(PERIODS[0]);
   const [notes, setNotes] = useState("");
+  const [promotionCode, setPromotionCode] = useState("");
+  const [quote, setQuote] = useState<Quote | null>(null);
+  const [quoting, setQuoting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setItems(JSON.parse(raw));
+      const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (raw) setItems(restoreItems(raw));
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
     } catch {
       // Start with an empty local cart when storage is unavailable or invalid.
     }
@@ -53,87 +87,87 @@ export function CartTab() {
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    setQuote(null);
   }, [items]);
 
   const addItem = () => {
-    if (!name.trim()) {
-      toast.error("Adaugă o denumire pentru element.");
-      return;
-    }
-    const preset = PRESET_PACKAGES.find((p) => p.name === name);
+    if (!name.trim()) return toast.error("Adaugă o denumire pentru element.");
+    const preset = type === "package" ? commerceItemByName(name) : null;
     const newItem: CartItem = {
       id: crypto.randomUUID(),
+      sku: preset?.sku || "custom-request",
       type,
-      name: name.trim(),
+      name: name.trim().slice(0, 120),
       period: type === "subscription" || type === "package" ? period : undefined,
-      notes: notes.trim() || undefined,
-      price_estimate: preset?.price,
+      notes: notes.trim().slice(0, 1000) || undefined,
+      price_estimate: preset?.unitPriceCents ?? undefined,
     };
-    setItems((prev) => [...prev, newItem]);
+    setItems((previous) => [...previous, newItem]);
     setName("");
     setNotes("");
     toast.success("Adăugat în coș");
   };
 
-  const removeItem = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id));
+  const removeItem = (id: string) => setItems((previous) => previous.filter((item) => item.id !== id));
+
+  const calculateQuote = async () => {
+    if (!items.length) return toast.error("Coșul este gol.");
+    setQuoting(true);
+    try {
+      const response = await cfAuth.request<{ quote: Quote }>("/api/commerce/quote", {
+        method: "POST",
+        body: JSON.stringify({ items: toApiItems(items), promotionCode: promotionCode.trim() || undefined }),
+      });
+      setQuote(response.quote);
+      toast.success(response.quote.promotion ? `Reducere ${response.quote.promotion.discountPercent}% aplicată` : "Preț verificat");
+    } catch (error) {
+      setQuote(null);
+      toast.error(error instanceof Error ? error.message : "Codul promoțional nu poate fi aplicat");
+    } finally {
+      setQuoting(false);
+    }
+  };
 
   const submitOrder = async () => {
     if (!user) return;
-    if (items.length === 0) {
-      toast.error("Coșul este gol.");
-      return;
-    }
+    if (!items.length) return toast.error("Coșul este gol.");
     setSubmitting(true);
-    const description = items
-      .map(
-        (i, idx) =>
-          `${idx + 1}. [${i.type}] ${i.name}${i.period ? ` — ${i.period}` : ""}${
-            i.price_estimate ? ` — ~${(i.price_estimate / 100).toFixed(0)} RON` : ""
-          }${i.notes ? `\n   Note: ${i.notes}` : ""}`
-      )
-      .join("\n");
-
-    const { error } = await supabase.from("tickets").insert({
-      user_id: user.id,
-      subject: `Comandă nouă din coș (${items.length} elemente)`,
-      description,
-      priority: "medium",
-      status: "open",
-    });
-    setSubmitting(false);
-    if (error) {
-      toast.error("Nu am putut trimite comanda: " + error.message);
-      return;
+    try {
+      const response = await cfAuth.request<{ order: Quote & { id: string; status: string } }>("/api/commerce/orders", {
+        method: "POST",
+        body: JSON.stringify({ items: toApiItems(items), promotionCode: promotionCode.trim() || undefined }),
+      });
+      setItems([]);
+      setPromotionCode("");
+      toast.success(`Comanda ${response.order.id.slice(0, 8).toUpperCase()} a fost înregistrată în siguranță.`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Comanda nu a putut fi trimisă");
+    } finally {
+      setSubmitting(false);
     }
-    setItems([]);
-    toast.success("Comanda a fost trimisă echipei. Te contactăm în scurt timp!");
   };
 
-  const totalEstimate = items.reduce((s, i) => s + (i.price_estimate ?? 0), 0);
+  const localSubtotal = useMemo(() => items.reduce((sum, item) => sum + (item.price_estimate ?? 0), 0), [items]);
+  const displaySubtotal = quote?.subtotalCents ?? localSubtotal;
+  const displayTotal = quote?.totalCents ?? localSubtotal;
 
-  const typeIcon = (t: CartType) =>
-    t === "package" ? <Package className="size-4" aria-hidden="true" /> : t === "website" ? <Globe className="size-4" aria-hidden="true" /> : t === "subscription" ? <Repeat className="size-4" aria-hidden="true" /> : <Wrench className="size-4" aria-hidden="true" />;
+  const typeIcon = (itemType: CommerceItemType) =>
+    itemType === "package" ? <Package className="size-4" aria-hidden="true" /> : itemType === "website" ? <Globe className="size-4" aria-hidden="true" /> : itemType === "subscription" ? <Repeat className="size-4" aria-hidden="true" /> : <Wrench className="size-4" aria-hidden="true" />;
 
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-2xl font-display font-bold flex items-center gap-2">
-          <ShoppingCart className="size-6" /> Coșul meu
-        </h2>
-        <p className="mt-1 text-xs text-muted-foreground">Coșul este salvat doar pe acest dispozitiv până când trimiți comanda către echipă.</p>
-        <p className="text-sm text-muted-foreground">
-          Adaugă pachete, abonamente sau comenzi de website. Trimite-le ca o comandă către echipă.
-        </p>
+        <h2 className="text-2xl font-display font-bold flex items-center gap-2"><ShoppingCart className="size-6" /> Coșul meu</h2>
+        <p className="mt-1 text-xs text-muted-foreground">Coșul rămâne local până la trimitere; prețul și orice reducere sunt recalculate securizat de Avyron API.</p>
+        <p className="text-sm text-muted-foreground">Adaugă pachete, abonamente sau cereri personalizate și trimite o singură comandă echipei.</p>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Adaugă în coș</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle className="text-lg">Adaugă în coș</CardTitle></CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label>Tip</Label>
-            <Select value={type} onValueChange={(v) => setType(v as CartType)}>
+            <Select value={type} onValueChange={(value) => { setType(value as CommerceItemType); setName(""); }}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="package">Pachet predefinit</SelectItem>
@@ -143,84 +177,63 @@ export function CartTab() {
               </SelectContent>
             </Select>
           </div>
-
           <div className="space-y-1.5">
             <Label>Denumire / Pachet</Label>
             {type === "package" ? (
               <Select value={name} onValueChange={setName}>
                 <SelectTrigger><SelectValue placeholder="Alege un pachet" /></SelectTrigger>
-                <SelectContent>
-                  {PRESET_PACKAGES.map((p) => (
-                    <SelectItem key={p.name} value={p.name}>
-                      {p.name} — {(p.price / 100).toFixed(0)} RON
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+                <SelectContent>{PRESET_PACKAGES.map((item) => <SelectItem key={item.sku} value={item.name}>{item.name} — {(Number(item.unitPriceCents) / 100).toFixed(0)} RON</SelectItem>)}</SelectContent>
               </Select>
-            ) : (
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Magazin online beauty" />
-            )}
+            ) : <Input value={name} onChange={(event) => setName(event.target.value)} maxLength={120} placeholder="Ex: Magazin online beauty" />}
           </div>
-
           {(type === "subscription" || type === "package") && (
-            <div className="space-y-1.5">
-              <Label>Perioadă</Label>
-              <Select value={period} onValueChange={setPeriod}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {PERIODS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+            <div className="space-y-1.5"><Label>Perioadă</Label><Select value={period} onValueChange={setPeriod}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{PERIODS.map((value) => <SelectItem key={value} value={value}>{value}</SelectItem>)}</SelectContent></Select></div>
           )}
-
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label>Detalii / Cerințe (opțional)</Label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Funcționalități dorite, deadline, referințe..." />
-          </div>
-
-          <div className="sm:col-span-2">
-            <Button onClick={addItem} className="gap-2"><Plus className="size-4" /> Adaugă în coș</Button>
-          </div>
+          <div className="space-y-1.5 sm:col-span-2"><Label>Detalii / Cerințe (opțional)</Label><Textarea value={notes} onChange={(event) => setNotes(event.target.value)} maxLength={1000} rows={2} placeholder="Funcționalități dorite, deadline, referințe..." /></div>
+          <div className="sm:col-span-2"><Button onClick={addItem} className="gap-2"><Plus className="size-4" /> Adaugă în coș</Button></div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-row items-center justify-between gap-3">
           <CardTitle className="text-lg">Conținutul coșului ({items.length})</CardTitle>
-          {totalEstimate > 0 && (
-            <Badge variant="secondary">Estimat: ~{(totalEstimate / 100).toFixed(0)} RON</Badge>
-          )}
+          {displaySubtotal > 0 && <Badge variant="secondary">Subtotal: {(displaySubtotal / 100).toFixed(0)} RON</Badge>}
         </CardHeader>
-        <CardContent className="space-y-3">
-          {items.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">Coșul este gol.</p>
-          ) : (
+        <CardContent className="space-y-4">
+          {!items.length ? <p className="text-sm text-muted-foreground py-6 text-center">Coșul este gol.</p> : (
             <>
               <ul className="divide-y rounded-md border">
-                {items.map((i) => (
-                  <li key={i.id} className="flex items-start gap-3 p-3">
-                    <div className="size-8 rounded-md bg-primary/10 text-primary grid place-items-center shrink-0">
-                      {typeIcon(i.type)}
-                    </div>
+                {items.map((item) => (
+                  <li key={item.id} className="flex items-start gap-3 p-3">
+                    <div className="size-8 rounded-md bg-primary/10 text-primary grid place-items-center shrink-0">{typeIcon(item.type)}</div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">{i.name}</div>
-                      <div className="text-xs text-muted-foreground flex flex-wrap gap-x-2">
-                        <span className="uppercase">{i.type}</span>
-                        {i.period && <span>· {i.period}</span>}
-                        {i.price_estimate && <span>· ~{(i.price_estimate / 100).toFixed(0)} RON</span>}
-                      </div>
-                      {i.notes && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{i.notes}</p>}
+                      <div className="font-medium truncate">{item.name}</div>
+                      <div className="text-xs text-muted-foreground flex flex-wrap gap-x-2"><span className="uppercase">{item.type}</span>{item.period && <span>· {item.period}</span>}{item.price_estimate ? <span>· {(item.price_estimate / 100).toFixed(0)} RON</span> : <span>· ofertă personalizată</span>}</div>
+                      {item.notes && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.notes}</p>}
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => removeItem(i.id)} aria-label="Șterge">
-                      <Trash2 className="size-4 text-destructive" />
-                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)} aria-label="Șterge"><Trash2 className="size-4 text-destructive" /></Button>
                   </li>
                 ))}
               </ul>
-              <Button onClick={submitOrder} disabled={submitting} className="w-full gap-2">
-                <Send className="size-4" /> {submitting ? "Se trimite..." : "Trimite comanda către echipă"}
-              </Button>
+
+              <div className="rounded-xl border border-primary/20 bg-primary/[0.035] p-3 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium"><BadgePercent className="size-4 text-primary" /> Cod promoțional</div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Input aria-label="Cod promoțional" value={promotionCode} onChange={(event) => { setPromotionCode(event.target.value.toUpperCase()); setQuote(null); }} maxLength={32} autoCapitalize="characters" placeholder="Introdu codul" className="font-mono uppercase" />
+                  <Button type="button" variant="outline" onClick={calculateQuote} disabled={quoting}>{quoting ? "Se verifică..." : "Verifică prețul"}</Button>
+                </div>
+                {quote && (
+                  <div className="grid gap-1 text-sm border-t pt-3">
+                    <div className="flex justify-between"><span className="text-muted-foreground">Subtotal verificat</span><span>{(quote.subtotalCents / 100).toFixed(2)} RON</span></div>
+                    {quote.promotion && <div className="flex justify-between text-emerald-600 dark:text-emerald-400"><span>{quote.promotion.code} · {quote.promotion.discountPercent}%</span><span>−{(quote.discountCents / 100).toFixed(2)} RON</span></div>}
+                    <div className="flex justify-between font-semibold text-base"><span>Total estimat</span><span>{(displayTotal / 100).toFixed(2)} RON</span></div>
+                    {quote.requiresManualQuote && <p className="text-xs text-muted-foreground">Produsele personalizate vor fi evaluate separat; reducerea se aplică valorii eligibile confirmate.</p>}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 text-xs text-muted-foreground"><ShieldCheck className="size-4 text-primary" /> Reducerea și totalul sunt validate din nou la trimitere.</div>
+              <Button onClick={submitOrder} disabled={submitting} className="w-full gap-2"><Send className="size-4" /> {submitting ? "Se înregistrează..." : "Trimite comanda către echipă"}</Button>
             </>
           )}
         </CardContent>

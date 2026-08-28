@@ -40,6 +40,8 @@ describe("api.avyron.ro gateway", () => {
     expect(openApiDocument.openapi).toBe("3.1.0");
     expect(openApiDocument.servers[0].url).toBe("https://api.avyron.ro/v1");
     expect(openApiDocument.paths["/public/domain-check"]).toBeTruthy();
+    expect(openApiDocument.paths["/commerce/quote"]).toBeTruthy();
+    expect(apiDiscovery.modules.platform).toContain("promotions");
   });
 });
 
@@ -68,4 +70,3 @@ describe("domain lookup input", () => {
     expect(normalizeDomain("user@example.com")).toBeNull();
   });
 });
-

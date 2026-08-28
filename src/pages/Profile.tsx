@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck, FolderKanban, Wrench, BookOpen, MessagesSquare, Settings, ShoppingCart, Globe, Wallet, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck, FolderKanban, Wrench, BookOpen, MessagesSquare, Settings, ShoppingCart, Globe, Wallet, Image as ImageIcon, BadgePercent } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import ContactRail from "@/components/intern/ContactRail";
@@ -25,10 +25,12 @@ const CartTab = lazy(() => import("@/components/dashboard/CartTab").then((m) => 
 const StaffFinanceTab = lazy(() => import("@/components/dashboard/StaffFinanceTab").then((m) => ({ default: m.StaffFinanceTab })));
 const StaffPaymentsTab = lazy(() => import("@/components/dashboard/StaffPaymentsTab").then((m) => ({ default: m.StaffPaymentsTab })));
 const StaffMediaTab = lazy(() => import("@/components/dashboard/StaffMediaTab").then((m) => ({ default: m.StaffMediaTab })));
+const StaffPromotionsTab = lazy(() => import("@/components/dashboard/StaffPromotionsTab").then((m) => ({ default: m.StaffPromotionsTab })));
 
 const Profile = () => {
   const { t } = useLang();
-  const { isStaff, isAdmin } = useAuth();
+  const { user, isStaff, isAdmin } = useAuth();
+  const isPromotionOwner = user?.email?.trim().toLowerCase() === "prometheus@avyron.ro";
   const [params, setParams] = useSearchParams();
   const initial = params.get("tab") ?? "profile";
   const [tab, setTab] = useState(initial);
@@ -129,7 +131,10 @@ const Profile = () => {
     },
   ];
 
-  const groups = isStaff ? staffGroups : clientGroups;
+  const baseGroups = isStaff ? staffGroups : clientGroups;
+  const groups = isPromotionOwner
+    ? [...baseGroups, { id: "promotion-admin", label: "Administrare", items: [{ value: "promotions", label: "Promoții", icon: BadgePercent }] }]
+    : baseGroups;
 
   return (
     <main className="min-h-screen bg-secondary/30 py-8 px-4">
@@ -203,6 +208,7 @@ const Profile = () => {
               <TabsContent value="demo-requests" className="mt-0"><StaffExampleRequestsTab /></TabsContent>
             </>
           )}
+          {isPromotionOwner && <TabsContent value="promotions" className="mt-0"><StaffPromotionsTab /></TabsContent>}
           </Suspense>
         </Tabs>
         <ContactRail />

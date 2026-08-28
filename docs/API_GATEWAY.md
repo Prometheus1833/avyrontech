@@ -43,6 +43,8 @@ Limitele se verifică înaintea unei extinderi în documentația oficială:
 | Sistem | `/health`, discovery, OpenAPI | fără storage | public, no-store pentru health |
 | Public | `/public/domain-check`, `/contact/*`, `/blog/*`, media publică | D1/R2 numai prin Worker | rate limit + Turnstile unde există mutații |
 | Cont | `/auth/*`, `/profile/*` | D1 + R2 avatar | JWT 15 minute + refresh cookie HttpOnly |
+| Comerț | `/commerce/quote`, `/commerce/orders` | catalog server-side + D1 | cont autentificat; prețurile browserului sunt ignorate |
+| Promoții | `/promotions/admin/*` | D1 + audit log | exclusiv `prometheus@avyron.ro`, verificat server-side |
 | Platformă | `/clients`, `/projects`, `/proposals`, `/links`, `/media` | D1 + R2 | JWT + rol + verificări de ownership |
 | Editorial | `/blog/staff/*` | D1 + R2 | staff/admin; mutații auditate |
 | Config | `/content/*` | KV | staff read, admin write |
@@ -62,6 +64,19 @@ sau `Authorization` nu poate intra în cache.
 
 Cache-ul este per centru de date Cloudflare; D1 rămâne sursa de adevăr. Acest
 model reduce citirile D1 fără consistență falsă pentru conturi sau dashboard.
+
+## Prețuri și promoții
+
+Catalogul este comun interfeței și Worker-ului, însă Worker-ul recalculează
+fiecare linie după SKU și ignoră orice valoare trimisă de browser. Codurile sunt
+normalizate fără diferențe între litere mari și mici, iar perioadele, starea și
+limitele globale/per cont sunt reverificate în tranzacția care creează comanda.
+
+Codurile inițiale sunt `AVY10` (10%), `AVYONG` (10%), `SOCIALAVY` (5%),
+`PROMETHAVY` (100%) și `EXCEPTIEAVY` (50%). Istoricul comenzilor și al
+utilizărilor nu este șters când un cod este oprit. Numai contul exact
+`prometheus@avyron.ro` poate vedea, crea sau activa/dezactiva promoții din
+Dashboard; rolul generic de administrator nu acordă acest drept.
 
 ## Furnizori externi acceptați
 
@@ -96,4 +111,3 @@ confirmarea finală.
 4. Se verifică `/`, `/healthz`, `/openapi.json`, `/v1/health`, CORS și un 404.
 5. Se urmăresc Workers Observability, D1 Row Metrics, KV și R2 usage. Când se
    ajunge constant la 70% dintr-o cotă, se optimizează înainte de extindere.
-

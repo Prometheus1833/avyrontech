@@ -314,6 +314,37 @@ test.describe("forms and authentication", () => {
     expect(menuBox).not.toBeNull();
     expect(menuBox!.y).toBeGreaterThanOrEqual(0);
     expect(menuBox!.y + menuBox!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+
+    await page.goto("/profil");
+    await expect(page.getByRole("tab", { name: "Promoții" })).toHaveCount(0);
+  });
+
+  test("only the designated account receives the promotions dashboard", async ({ page }) => {
+    await page.route("**/api/auth/refresh", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ access_token: "promotion-owner-token", expires_in: 900, user: { id: "promo-owner", roles: ["admin"] } }),
+    }));
+    await page.route("**/api/auth/me", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        user: { id: "promo-owner", email: "Prometheus@Avyron.ro", display_name: "Prometheus", avatar_url: null, email_verified: 1, must_change_password: 0, created_at: 1 },
+        profile: { id: "promo-owner", display_name: "Prometheus", avatar_url: null, phone: null, address: null, entity_type: "individual", company_name: null, cui: null, social_facebook: null, social_instagram: null, social_tiktok: null, website: null, language: "ro", theme: "system", pseudonym: null, staff_role: null },
+        roles: ["admin"],
+      }),
+    }));
+    await page.route("**/api/promotions/admin", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ data: [{ id: "promo-avy10", code: "AVY10", label: "Cont înregistrat", discount_percent: 10, active: 1, registration_required: 1, per_user_limit: 1, max_redemptions: null, starts_at: null, expires_at: null, redemptions: 0, discount_total_cents: 0 }] }),
+    }));
+
+    await page.goto("/profil?tab=promotions");
+    await expect(page.getByRole("tab", { name: "Promoții" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Promoții" })).toBeVisible();
+    await expect(page.getByText("AVY10", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Promoție nouă" })).toBeVisible();
   });
 
   test("Romanian login alias renders the auth page and remains noindex", async ({ page }) => {
