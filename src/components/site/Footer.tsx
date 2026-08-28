@@ -127,6 +127,12 @@ const Footer = () => {
                     >
                       {lang === "en" ? "Cookie settings" : "Setări cookie"}
                     </button>
+                    <Link
+                      to={lang === "en" ? "/en/terms" : "/termeni"}
+                      className={`${baseClass} px-3 py-1 text-[10px]`}
+                    >
+                      {lang === "en" ? "Terms of use" : "Termeni de utilizare"}
+                    </Link>
                   </div>
                 )}
               </>

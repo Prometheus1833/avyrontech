@@ -43,6 +43,8 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     ["/en/about", "en", "https://avyron.ro/en/about"],
     ["/portofoliu", "ro", "https://avyron.ro/portofoliu"],
     ["/en/portfolio", "en", "https://avyron.ro/en/portfolio"],
+    ["/termeni", "ro", "https://avyron.ro/termeni"],
+    ["/en/terms", "en", "https://avyron.ro/en/terms"],
   ];
 
   it.each(cases)("%s ships lang, title, description and self-canonical", (route, lang, canonical) => {
@@ -116,6 +118,24 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     expect(html).toContain("Legal identity and collaboration structure");
     expect(html).toContain("Your GDPR rights");
     expect(html).not.toContain("translation is being prepared");
+  });
+
+  it("ships bilingual terms with legal identity, reciprocal hreflang and WebPage schema", () => {
+    const ro = read("/termeni");
+    const en = read("/en/terms");
+    for (const html of [ro, en]) {
+      const h = head(html);
+      expect(h).toContain('hreflang="ro" href="https://avyron.ro/termeni"');
+      expect(h).toContain('hreflang="en" href="https://avyron.ro/en/terms"');
+      expect(h).toContain('"@type":"WebPage"');
+      expect(html).toContain("DIGITAL ECOTECH SOLUTIONS S.R.L.");
+      expect(html).toContain("FV Tech Solutions SRL");
+      expect(html.indexOf("DIGITAL ECOTECH SOLUTIONS S.R.L.")).toBeLessThan(html.indexOf("FV Tech Solutions SRL"));
+    }
+    expect(ro).toContain("Drepturile consumatorilor");
+    expect(en).toContain("Consumer rights");
+    expect(ro).toContain("https://anpc.ro/sal/");
+    expect(ro).not.toContain("ec.europa.eu/consumers/odr");
   });
 
   it("prerenders complete RO/EN article bodies with reciprocal hreflang", () => {

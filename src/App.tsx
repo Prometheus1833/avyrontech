@@ -10,6 +10,7 @@ import { resetManagedHead } from "@/lib/seo";
 
 
 const Gdpr = lazy(() => import("./pages/Gdpr.tsx"));
+const Terms = lazy(() => import("./pages/Terms.tsx"));
 const Pricing = lazy(() => import("./pages/Pricing.tsx"));
 const Portfolio = lazy(() => import("./pages/About.tsx"));
 const AboutUs = lazy(() => import("./pages/AboutUs.tsx"));
@@ -110,6 +111,8 @@ const App = () => (
                 <Route path="/en" element={<Index />} />
                 <Route path="/gdpr" element={<Gdpr />} />
                 <Route path="/en/privacy" element={<Gdpr />} />
+                <Route path="/termeni" element={<Terms />} />
+                <Route path="/en/terms" element={<Terms />} />
                 <Route path="/costuri" element={<Pricing />} />
                 <Route path="/costurisiproduse" element={<Pricing />} />
                 <Route path="/en/pricing" element={<Pricing />} />

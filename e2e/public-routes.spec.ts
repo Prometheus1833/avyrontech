@@ -68,8 +68,13 @@ test.describe("public SEO routes", () => {
     const footer = page.locator("footer");
     await expect(footer).toBeVisible();
     const footerNavLinks = footer.locator("nav a");
-    await expect(footerNavLinks).toHaveCount(4);
+    await expect(footerNavLinks).toHaveCount(5);
     expect((await footerNavLinks.allTextContents()).slice(0, 3)).toEqual(["Blog", "Portofoliu", "Produse"]);
+    const cookieButton = footer.getByRole("button", { name: "Setări cookie", exact: true });
+    const termsLink = footer.getByRole("link", { name: "Termeni de utilizare", exact: true });
+    await expect(termsLink).toHaveAttribute("href", "/termeni");
+    const legalLabels = await footer.locator("nav a, nav button").allTextContents();
+    expect(legalLabels.indexOf("Setări cookie")).toBeLessThan(legalLabels.indexOf("Termeni de utilizare"));
     await expect(footer.getByRole("link", { name: /ANPC/ })).toHaveAttribute("href", "https://anpc.ro/ce-este-sal/");
     await expect(footer.getByText("Instagram", { exact: true })).toHaveCount(0);
     await expect(footer.getByText("Facebook", { exact: true })).toHaveCount(0);
@@ -77,6 +82,63 @@ test.describe("public SEO routes", () => {
     await expect(footer.getByText("LinkedIn", { exact: true })).toHaveCount(0);
     await expect(footer.getByText("Proces", { exact: true })).toHaveCount(0);
     await expect(footer.getByText("Întrebări frecvente", { exact: true })).toHaveCount(0);
+  });
+
+  test("cookie preference switches stay correctly aligned on mobile", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "avyron-cookie-consent-v2",
+        JSON.stringify({ necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-08-23" }),
+      );
+    });
+    await page.goto("/termeni");
+    const footer = page.locator("footer");
+    await footer.scrollIntoViewIfNeeded();
+    await footer.getByRole("button", { name: "Setări cookie", exact: true }).click();
+
+    const switches = page.getByRole("dialog", { name: "Setări cookies" }).getByRole("switch");
+    await expect(switches).toHaveCount(3);
+    const geometry = async (index: number) => {
+      const track = (await switches.nth(index).boundingBox())!;
+      const thumb = (await switches.nth(index).locator("span").boundingBox())!;
+      expect(thumb.x).toBeGreaterThanOrEqual(track.x);
+      expect(thumb.x + thumb.width).toBeLessThanOrEqual(track.x + track.width);
+      return { track, thumb };
+    };
+
+    const necessary = await geometry(0);
+    const analyticsOff = await geometry(1);
+    await geometry(2);
+    expect(necessary.thumb.x + necessary.thumb.width / 2).toBeGreaterThan(necessary.track.x + necessary.track.width / 2);
+    expect(analyticsOff.thumb.x + analyticsOff.thumb.width / 2).toBeLessThan(analyticsOff.track.x + analyticsOff.track.width / 2);
+
+    await switches.nth(1).click();
+    await expect(switches.nth(1)).toHaveAttribute("aria-checked", "true");
+    await expect.poll(async () => (await switches.nth(1).locator("span").boundingBox())!.x).toBeGreaterThan(analyticsOff.thumb.x + 10);
+    await geometry(1);
+  });
+
+  test("terms pages are complete, bilingual and indexable", async ({ page }) => {
+    await page.goto("/termeni");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Termeni clari");
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro/termeni");
+    await expect(page.locator('link[hreflang="en"]')).toHaveAttribute("href", "https://avyron.ro/en/terms");
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /index, follow/);
+    await expect(page.getByRole("heading", { level: 2, name: "Drepturile consumatorilor" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "ANPC · SAL" })).toHaveAttribute("href", "https://anpc.ro/sal/");
+    expect(await page.locator("#ld-graph").textContent()).toContain("WebPage");
+
+    await page.goto("/en/terms");
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro/en/terms");
+    await expect(page.locator('link[hreflang="ro"]')).toHaveAttribute("href", "https://avyron.ro/termeni");
+    await expect(page.getByRole("heading", { level: 2, name: "Consumer rights" })).toBeVisible();
+  });
+
+  test("terms page has no horizontal overflow on mobile", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/termeni");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
   });
 
   test("Avyron brand links return to the homepage hero from inner pages", async ({ page }) => {

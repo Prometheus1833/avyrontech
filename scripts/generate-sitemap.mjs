@@ -29,6 +29,7 @@ function sourceFiles(route) {
   if (route === "/despre-noi" || route === "/en/about") return ["src/pages/AboutUs.tsx"];
   if (route === "/portofoliu" || route === "/en/portfolio") return ["src/pages/About.tsx"];
   if (route === "/gdpr" || route === "/en/privacy") return ["src/pages/Gdpr.tsx", "src/config/company.ts"];
+  if (route === "/termeni" || route === "/en/terms") return ["src/pages/Terms.tsx", "src/config/company.ts"];
   if (route.includes("care-plans") || route === "/pachete-mentenanta") return ["src/pages/products/CarePlansPage.tsx"];
   return ["src/App.tsx"];
 }

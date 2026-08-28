@@ -10,6 +10,7 @@ export const ROUTE_ALTERNATES: Array<{ ro: string; en: string }> = [
   { ro: "/costurisiproduse", en: "/en/pricing" },
   { ro: "/despre-noi", en: "/en/about" },
   { ro: "/portofoliu", en: "/en/portfolio" },
+  { ro: "/termeni", en: "/en/terms" },
   { ro: "/produse/website-prezentare-premium", en: "/en/products/premium-presentation-website" },
   { ro: "/produse/identitate-social-media", en: "/en/products/social-media-identity" },
   { ro: "/produse/magazin-online", en: "/en/products/online-store" },
@@ -17,7 +18,6 @@ export const ROUTE_ALTERNATES: Array<{ ro: string; en: string }> = [
   { ro: "/produse/agent-ai-personalizat", en: "/en/products/personalized-ai-agent" },
   { ro: "/produse/testare-qa-web-mobile", en: "/en/products/qa-testing-web-mobile" },
   { ro: "/pachete-mentenanta", en: "/en/care-plans" },
-
 ];
 
 export function getLangFromPath(pathname: string): Lang {

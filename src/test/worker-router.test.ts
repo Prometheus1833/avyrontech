@@ -8,6 +8,7 @@ import { decide } from "@/worker/router";
 const FILES: Record<string, string> = {
   "/index.html": "<html lang=ro><h1>home</h1>",
   "/costurisiproduse/index.html": "<html lang=ro><h1>pricing</h1>",
+  "/termeni/index.html": "<html lang=ro><h1>terms</h1>",
   "/404.html": "<html lang=ro><h1>404</h1>",
   "/403.html": "<html lang=ro><h1>403</h1>",
   "/500.html": "<html lang=ro><h1>500</h1>",
@@ -125,6 +126,13 @@ describe("worker HTTP statuses", () => {
     const res = await get("/costurisiproduse");
     expect(res.status).toBe(200);
     expect(res.headers.get("X-Robots-Tag")).toBeNull();
+  });
+
+  it("serves the terms page as an indexable public document", async () => {
+    const res = await get("/termeni");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("X-Robots-Tag")).toBeNull();
+    expect(await res.text()).toContain("terms");
   });
 
   it("marks private/auth routes noindex without breaking them", async () => {

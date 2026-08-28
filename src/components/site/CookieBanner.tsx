@@ -209,15 +209,17 @@ const Row = ({
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-label={label}
       disabled={disabled}
       onClick={() => !disabled && onChange?.(!checked)}
-      className={`relative shrink-0 h-5 w-9 rounded-full transition-colors ${
+      className={`relative shrink-0 h-5 w-9 overflow-hidden rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0612] ${
         checked ? "bg-gradient-to-r from-purple-500 to-purple-700" : "bg-white/15"
       } ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
     >
       <span
-        className={`absolute top-0.5 size-4 rounded-full bg-white transition-transform ${
-          checked ? "translate-x-[18px]" : "translate-x-0.5"
+        aria-hidden="true"
+        className={`pointer-events-none absolute left-0.5 top-1/2 size-4 -translate-y-1/2 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+          checked ? "translate-x-4" : "translate-x-0"
         }`}
       />
     </button>

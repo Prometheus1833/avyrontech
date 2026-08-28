@@ -273,6 +273,46 @@ html {
   text-wrap: pretty;
 }
 
+.terms-copy ul {
+  display: grid;
+  gap: 0.5rem;
+  padding-left: 1.15rem;
+  list-style: disc;
+}
+
+.terms-copy li::marker {
+  color: rgb(103 232 249 / 0.75);
+}
+
+.terms-copy a {
+  color: rgb(165 243 252);
+  text-decoration-line: underline;
+  text-decoration-color: rgb(103 232 249 / 0.3);
+  text-underline-offset: 3px;
+}
+
+.terms-copy a:hover {
+  color: white;
+  text-decoration-color: rgb(255 255 255 / 0.55);
+}
+
+.terms-copy .legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-top: 0.25rem;
+}
+
+.terms-copy .legal-links a {
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.04);
+  padding: 0.35rem 0.7rem;
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  text-decoration: none;
+}
+
 @media (min-width: 640px) {
   .article-copy p,
   .article-copy li {
