@@ -41,6 +41,8 @@ test.describe("public SEO routes", () => {
     await expect(switcher.getByRole("button", { name: "Afișează prețurile în EUR" })).toHaveAttribute("aria-pressed", "true");
     await switcher.getByRole("button", { name: "Afișează prețurile în RON" }).click();
     await expect(switcher).toContainText("1 EUR = 5.1000 RON");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(/1[.\s]?530 RON/);
+    await expect(page.getByRole("heading", { level: 1 })).not.toContainText("300€");
     await expect(page.getByText(/1[.\s]?530 RON/, { exact: false }).first()).toBeVisible();
 
     await page.goto("/produse/website-prezentare-premium");
@@ -227,6 +229,7 @@ test.describe("public SEO routes", () => {
 
       const related = page.getByTestId("related-product-list").locator("a");
       expect(await related.count()).toBeGreaterThanOrEqual(5);
+      await expect(page.getByTestId("related-product-list")).not.toContainText(/Audit (Produs Digital|Website)/i);
       expect((await related.first().boundingBox())!.height).toBeLessThanOrEqual(70);
     }
   });
@@ -429,10 +432,11 @@ test.describe("forms and authentication", () => {
       payload = route.request().postDataJSON() as Record<string, unknown>;
       await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ ok: true, requestId: "test" }) });
     });
-    await page.goto("/");
+    // The hash is the public navigation contract and forces the deferred
+    // industry section to mount before Playwright interacts with it.
+    await page.goto("/#exemple");
     const necessaryCookies = page.getByRole("button", { name: "Doar necesare" });
     if (await necessaryCookies.isVisible()) await necessaryCookies.click();
-    await page.evaluate(() => window.scrollTo(0, 1600));
     await page.getByRole("button", { name: "Vezi domenii" }).click();
     await page.getByRole("button", { name: /Beauty & Wellness/ }).click();
     await page.getByRole("button", { name: "Solicită un exemplu", exact: true }).click();

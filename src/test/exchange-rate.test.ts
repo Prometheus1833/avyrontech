@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   ECB_DAILY_RATES_URL,
   EXCHANGE_RATE_KV_KEY,
+  EXCHANGE_RATE_REFRESH_CRON,
   getPublicExchangeRate,
   isExchangeRateSnapshot,
   parseEcbRonRate,
@@ -19,6 +20,10 @@ const ECB_XML = `<?xml version="1.0" encoding="UTF-8"?>
 </gesmes:Envelope>`;
 
 describe("ECB EUR/RON exchange rate", () => {
+  it("declares the requested twice-daily refresh schedule", () => {
+    expect(EXCHANGE_RATE_REFRESH_CRON).toBe("17 7,15 * * *");
+  });
+
   it("parses and validates the official daily XML shape", () => {
     const snapshot = parseEcbRonRate(ECB_XML, 1_777_000_000_000);
     expect(snapshot).toEqual({

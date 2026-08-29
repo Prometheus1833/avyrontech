@@ -47,6 +47,15 @@ describe("promotion controls", () => {
     for (const code of ["AVY10", "AVYONG", "SOCIALAVY", "PROMETHAVY", "EXCEPTIEAVY"]) {
       expect(migration).toContain(`'${code}'`);
     }
+    for (const [code, percent] of [
+      ["AVY10", 10],
+      ["AVYONG", 10],
+      ["SOCIALAVY", 5],
+      ["PROMETHAVY", 100],
+      ["EXCEPTIEAVY", 50],
+    ] as const) {
+      expect(migration).toMatch(new RegExp(`'${code}'[^\\n]*,\\s*${percent},\\s*1,\\s*1,\\s*1,`));
+    }
     expect(migration).toContain("promotion_redemptions");
     expect(migration).toContain("commerce_orders");
   });

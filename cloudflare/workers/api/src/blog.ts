@@ -49,6 +49,10 @@ type BlogInput = {
 };
 
 const blogRouter = new Hono<AppBindings>();
+const BLOG_POST_SELECT = `
+  id,author_id,language,slug,translation_key,title,excerpt,content,
+  cover_image_url,cover_image_alt,category,tags_json,seo_title,seo_description,
+  social_title,social_description,status,published_at,created_at,updated_at`;
 const PUBLIC_SELECT = `
   p.id,p.author_id,p.language,p.slug,p.translation_key,p.title,p.excerpt,p.content,
   p.cover_image_url,p.cover_image_alt,p.category,p.tags_json,p.seo_title,p.seo_description,
@@ -244,7 +248,7 @@ blogRouter.post("/api/blog/staff/posts", async (c) => {
 
 blogRouter.patch("/api/blog/staff/posts/:id", async (c) => {
   const id = c.req.param("id");
-  const existing = await c.env.DB.prepare("SELECT * FROM blog_posts WHERE id=?").bind(id).first<BlogRow>();
+  const existing = await c.env.DB.prepare(`SELECT ${BLOG_POST_SELECT} FROM blog_posts WHERE id=?`).bind(id).first<BlogRow>();
   if (!existing) return c.json({ error: { code: "not_found" } }, 404);
   const input = normalizedInput(await c.req.json().catch(() => ({})) as BlogInput, existing);
   if ("error" in input) return c.json({ error: { code: input.error } }, 400);

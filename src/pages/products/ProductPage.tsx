@@ -126,7 +126,9 @@ const ProductPage = () => {
   const c = product.copy[lang];
   const a = product.accent;
   const HeroIcon = ICONS[product.icon];
-  const others = PRODUCTS.filter((p) => p.key !== product.key);
+  // The audit is intentionally available only from the complete product overview,
+  // where its protected request flow has the necessary context and anti-spam checks.
+  const others = PRODUCTS.filter((p) => p.key !== product.key && p.key !== "audit");
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
