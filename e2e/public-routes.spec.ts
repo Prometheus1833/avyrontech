@@ -70,7 +70,7 @@ test.describe("public SEO routes", () => {
   test("homepage displays the approved hero and services wording", async ({ page }) => {
     await page.goto("/");
 
-    await expect(page.getByText("Site-uri care aduc clienți, nu doar vizite", { exact: true })).toBeVisible();
+    await expect(page.getByText("Soluții care aduc clienți, nu doar vizite", { exact: true })).toBeVisible();
     await expect(
       page.getByRole("heading", {
         level: 1,

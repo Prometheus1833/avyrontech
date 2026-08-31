@@ -207,7 +207,7 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
   it("keeps the approved Romanian hero copy and removes the rejected location-led labels", () => {
     const body = read("/").split("</head>")[1];
 
-    expect(body).toContain("Site-uri care aduc clienți, nu doar vizite");
+    expect(body).toContain("Soluții care aduc clienți, nu doar vizite");
     expect(body).toContain("Soluții digitale");
     expect(body).toContain("care extind online activitatea");
     expect(body).toContain("automatizând procesele.");
