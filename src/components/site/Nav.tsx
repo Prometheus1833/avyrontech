@@ -106,7 +106,10 @@ const Nav = () => {
               title={t.nav.cta}
               className="inline-flex h-10 items-center justify-center rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              {t.nav.cta}
+              <span className="flex flex-col items-center leading-none">
+                <span>{t.nav.cta}</span>
+                <span className="mt-0.5 text-[9px] font-normal opacity-70">{t.nav.ctaSub}</span>
+              </span>
             </a>
             {!loading && (user ? (
               <Suspense fallback={<span className="size-10" aria-hidden />}><UserMenu /></Suspense>
@@ -180,7 +183,10 @@ const Nav = () => {
               onClick={() => setOpen(false)}
               className="inline-flex h-10 w-full items-center justify-center rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              {t.nav.cta}
+              <span className="flex flex-col items-center leading-none">
+                <span>{t.nav.cta}</span>
+                <span className="mt-0.5 text-[9px] font-normal opacity-70">{t.nav.ctaSub}</span>
+              </span>
             </a>
           </div>
         )}

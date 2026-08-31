@@ -52,7 +52,10 @@ const Footer = () => {
               to={lang === "en" ? "/en#cta" : "/#cta"}
               className="group inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 px-3 py-1.5 shadow-[0_6px_16px_-6px_rgba(168,85,247,0.5)] transition-all"
             >
-              <span className="font-display font-semibold text-xs text-white">{t.footer.ctaLabel}</span>
+              <span className="flex flex-col items-center font-display leading-none text-white">
+                <span className="text-xs font-semibold">{t.footer.ctaLabel}</span>
+                <span className="mt-0.5 text-[8px] font-normal text-white/75">{t.footer.ctaSub}</span>
+              </span>
               <ArrowRight className="size-3 group-hover:translate-x-0.5 transition-transform" />
             </Link>
             <a
