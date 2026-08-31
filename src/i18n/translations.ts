@@ -20,7 +20,7 @@ export const translations = {
       title3: "automatizând procesele.",
       subtitle:
         "Proiectăm experiențe digitale rafinate, performante, scalabile și optimizate pentru conversie — gândite să transforme fiecare vizită într-o oportunitate reală.",
-      ctaPrimary: "Vreau exemplu gratuit",
+      ctaPrimary: "Solicită un demo",
       ctaSecondary: "Vezi exemple",
       personalized: "Personalizat cu activitatea ta",
       stats: [
@@ -531,7 +531,7 @@ export const translations = {
       title3: "that brings customers.",
       subtitle:
         "We design refined, high-performance, scalable digital experiences optimized for conversion — built to turn every visit into a real opportunity.",
-      ctaPrimary: "I want a free example",
+      ctaPrimary: "Request a demo",
       ctaSecondary: "See examples",
       personalized: "Tailored to your business",
       stats: [
