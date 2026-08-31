@@ -52,11 +52,11 @@ const Pricing = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
     const title = ro
-      ? "Prețuri site web & mentenanță — de la 300€ | Avyron"
-      : "Website Pricing & Care Plans — from €300 | Avyron";
+      ? "Produse digitale personalizate & prețuri | Avyron"
+      : "Custom Digital Products & Pricing | Avyron";
     const description = ro
-      ? "Cât costă un site web profesional? Pachete Avyron de la 300€ și mentenanță de la 50€/lună pentru site-uri, magazine online, instituții și platforme."
-      : "How much does a professional website cost? Avyron packages from €300 and care plans from €50/month for websites, online stores, institutions and platforms.";
+      ? "Descoperă produse digitale Avyron proiectate distinct: site-uri, magazine online, aplicații și soluții AI cu funcționalități, infrastructură și integrări adaptate fiecărui proiect."
+      : "Explore distinct Avyron digital products: websites, online stores, apps and AI solutions with features, infrastructure and integrations tailored to each project.";
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
       ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd }]) => {
         setPageMeta({
@@ -282,14 +282,14 @@ const Pricing = () => {
           <h1 className="mt-6 font-display text-3xl sm:text-4xl md:text-6xl font-extrabold leading-[1.05] tracking-tight px-2">
             <span className="bg-gradient-to-r from-foreground via-cyan-500 to-blue-600 dark:from-white dark:via-cyan-200 dark:to-blue-400 bg-clip-text text-transparent">
               {ro
-                ? `Prețuri site web și mentenanță — de la ${fmt(300)}`
-                : `Website pricing & care plans — from ${fmt(300)}`}
+                ? "Produse digitale create pentru fiecare proiect"
+                : "Digital products created for every project"}
             </span>
           </h1>
           <p className="mt-5 max-w-2xl mx-auto text-foreground/70 text-base md:text-lg">
             {ro
-              ? "Aducem site-uri și produse digitale la cheie, le ținem sigure și rapide, iar tu plătești doar ce alegi. Costurile sunt orientative și pot varia în funcție de cerințe."
-              : "We deliver turnkey digital products, keep them fast and secure, and you only pay for what you choose. Prices are indicative and may vary by scope."}
+              ? "Fiecare produs Avyron este construit cu atenție, nu ales dintr-un șablon. Designul, funcționalitățile, infrastructura, integrările și avantajele sunt adaptate scopului și nevoilor fiecărui proiect."
+              : "Every Avyron product is carefully built, not selected from a template. Its design, features, infrastructure, integrations and advantages are tailored to the purpose and needs of each project."}
           </p>
 
           <CurrencySwitch className="mt-7" />
