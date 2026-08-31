@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ArrowLeft, Home, LifeBuoy, Wrench, ShieldAlert, ServerCrash, Compass } from "lucide-react";
+import { LifeBuoy, Wrench, ShieldAlert, ServerCrash, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import PageBackLink from "@/components/site/PageBackLink";
 
 export type ErrorVariant = "404" | "403" | "500" | "maintenance" | "offline";
 
@@ -157,12 +158,7 @@ const ErrorPage = ({ variant = "404" }: Props) => {
             </p>
 
             <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
-              <Button asChild size="lg" className="gap-2">
-                <Link to="/">
-                  <Home className="size-4" />
-                  Înapoi acasă
-                </Link>
-              </Button>
+              <PageBackLink to="/" label="Înapoi" title="Înapoi acasă" />
               {cfg.showRetry ? (
                 <Button
                   variant="outline"
@@ -172,14 +168,7 @@ const ErrorPage = ({ variant = "404" }: Props) => {
                 >
                   Reîncarcă pagina
                 </Button>
-              ) : (
-                <Button asChild variant="outline" size="lg" className="gap-2">
-                  <Link to={-1 as unknown as string} onClick={(e) => { e.preventDefault(); window.history.back(); }}>
-                    <ArrowLeft className="size-4" />
-                    Pagina anterioară
-                  </Link>
-                </Button>
-              )}
+              ) : null}
             </div>
 
             <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">

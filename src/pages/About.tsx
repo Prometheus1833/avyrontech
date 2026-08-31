@@ -14,6 +14,7 @@ import ContactBar from "@/components/site/ContactBar";
 import LangSwitch from "@/components/site/LangSwitch";
 import ThemeToggle from "@/components/site/ThemeToggle";
 import Breadcrumbs from "@/components/site/Breadcrumbs";
+import PageBackLink from "@/components/site/PageBackLink";
 import { examples } from "@/examples/registry";
 
 const About = () => {
@@ -137,16 +138,17 @@ const About = () => {
       {/* Top bar */}
       <div className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-40">
         <div className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between">
-          <a
-            href={ro ? "/#hero" : "/en#hero"}
-            className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full border border-border/80 bg-card/60 py-1.5 pl-2 pr-3.5 text-xs font-medium text-muted-foreground backdrop-blur transition-all duration-300 hover:border-brand/60 hover:text-foreground"
-            aria-label={ro ? "Avyron — mergi la începutul paginii principale" : "Avyron — go to homepage hero"}
-          >
-            <span className="absolute inset-0 bg-gradient-to-r from-brand/0 via-brand/10 to-brand/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" aria-hidden />
-            <img src={logo} alt="" width={22} height={22} className="relative size-5 rounded-md object-cover" />
-            <span className="relative font-display text-[11px] font-extrabold tracking-[0.18em]">AVYRON</span>
-            <span className="relative size-1 rounded-full bg-brand animate-pulse" aria-hidden />
-          </a>
+          <div className="flex items-center gap-2">
+            <PageBackLink to={ro ? "/" : "/en"} label={ro ? "Înapoi" : "Back"} />
+            <a
+              href={ro ? "/#hero" : "/en#hero"}
+              className="group hidden items-center gap-2 rounded-full px-1.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
+              aria-label={ro ? "Avyron — mergi la începutul paginii principale" : "Avyron — go to homepage hero"}
+            >
+              <img src={logo} alt="" width={22} height={22} className="size-5 rounded-md object-cover" />
+              <span className="font-display text-[11px] font-extrabold tracking-[0.18em]">AVYRON</span>
+            </a>
+          </div>
           <div className="flex items-center gap-2">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-card/60 px-2 py-1 backdrop-blur">
               <LangSwitch />

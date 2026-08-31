@@ -2,10 +2,11 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck, FolderKanban, Wrench, BookOpen, MessagesSquare, Settings, ShoppingCart, Globe, Wallet, Image as ImageIcon, BadgePercent } from "lucide-react";
+import { User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck, FolderKanban, Wrench, BookOpen, MessagesSquare, Settings, ShoppingCart, Globe, Wallet, Image as ImageIcon, BadgePercent } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import ContactRail from "@/components/intern/ContactRail";
+import PageBackLink from "@/components/site/PageBackLink";
 
 const ProfileTab = lazy(() => import("@/components/dashboard/ProfileTab").then((m) => ({ default: m.ProfileTab })));
 const SubscriptionsTab = lazy(() => import("@/components/dashboard/SubscriptionsTab").then((m) => ({ default: m.SubscriptionsTab })));
@@ -140,9 +141,7 @@ const Profile = () => {
     <main className="min-h-screen bg-secondary/30 py-8 px-4">
       <div className="mx-auto max-w-6xl space-y-6">
         <div className="flex items-center justify-between gap-4 flex-wrap">
-          <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="size-4" /> Acasă
-          </Link>
+          <PageBackLink to="/" label="Înapoi" />
           <div className="flex items-center gap-2">
             {isStaff && (
               <Badge variant="default" className="gap-1">

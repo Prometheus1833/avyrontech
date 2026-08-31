@@ -10,6 +10,7 @@ import { cfAuth } from "@/lib/cfAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import { resetSchema } from "@/lib/validators/auth";
 import { z } from "zod";
+import PageBackLink from "@/components/site/PageBackLink";
 
 type Input = z.infer<typeof resetSchema>;
 
@@ -52,6 +53,7 @@ const ResetPassword = () => {
   return (
     <main className="min-h-screen grid place-items-center p-6 bg-background">
       <div className="w-full max-w-md space-y-6">
+        <PageBackLink to="/auth" label={t.auth.backToLogin} />
         <div className="space-y-2">
           <h1 className="font-display text-3xl font-bold">{t.auth.updatePassword}</h1>
           {!token && <p className="text-xs text-destructive">Token lipsă din URL.</p>}

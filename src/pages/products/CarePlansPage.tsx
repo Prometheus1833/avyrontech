@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowLeft,
   ArrowRight,
   BarChart3,
   Check,
@@ -27,6 +26,7 @@ import { useLang } from "@/i18n/LanguageContext";
 import LangSwitch from "@/components/site/LangSwitch";
 import ThemeToggle from "@/components/site/ThemeToggle";
 import Breadcrumbs from "@/components/site/Breadcrumbs";
+import PageBackLink from "@/components/site/PageBackLink";
 import Reveal from "@/components/site/Reveal";
 import logo from "@/assets/avyron-logo.jpg";
 import { trackEvent } from "@/lib/analytics";
@@ -310,18 +310,11 @@ const CarePlansPage = () => {
       <div className="relative mx-auto max-w-5xl px-4 pt-6 sm:pt-8 pb-24">
         {/* Top bar */}
         <div className="flex items-center justify-between gap-3">
-          <Link
+          <PageBackLink
             to={ro ? "/costurisiproduse" : "/en/pricing"}
+            label={ro ? "Înapoi" : "Back"}
             title={ro ? "Înapoi la produse" : "Back to products"}
-            className="group inline-flex items-center gap-2 rounded-full border border-foreground/15 bg-foreground/[0.04] backdrop-blur pl-2 pr-3.5 py-1.5 text-xs font-medium text-foreground/70 hover:text-foreground hover:border-foreground/30 transition-all duration-300"
-          >
-            <span className="grid place-items-center size-5 rounded-full bg-foreground text-background transition-transform duration-300 group-hover:-translate-x-0.5">
-              <ArrowLeft className="size-3" aria-hidden />
-            </span>
-            <span className="font-mono uppercase tracking-[0.18em] text-[10px]">
-              {ro ? "Produse" : "Products"}
-            </span>
-          </Link>
+          />
           <div className="flex items-center gap-2">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 bg-foreground/[0.04] px-2 py-1 backdrop-blur">
               <LangSwitch />
@@ -611,13 +604,6 @@ const CarePlansPage = () => {
                 >
                   contact@avyron.ro
                 </a>
-                <Link
-                  to={ro ? "/costurisiproduse" : "/en/pricing"}
-                  className="inline-flex items-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-6 py-3 text-sm font-semibold hover:bg-foreground/[0.1] transition-colors"
-                >
-                  <ArrowLeft className="size-4" aria-hidden />
-                  {ro ? "Înapoi la produse" : "Back to products"}
-                </Link>
               </div>
               <p className="mt-5 text-[11px] text-foreground/50 inline-flex items-center gap-1.5">
                 <Clock className="size-3" aria-hidden />

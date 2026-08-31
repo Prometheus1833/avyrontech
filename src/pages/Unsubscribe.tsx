@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import PageBackLink from "@/components/site/PageBackLink";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
@@ -83,9 +84,7 @@ export default function Unsubscribe() {
         {state === "error" && (
           <p className="text-muted-foreground">A apărut o eroare. Te rugăm să încerci din nou.</p>
         )}
-        <Link to="/" className="block mt-6 text-sm text-primary hover:underline">
-          Înapoi la avyron.ro
-        </Link>
+        <PageBackLink to="/" label="Înapoi" className="mt-6" />
       </div>
     </main>
   );

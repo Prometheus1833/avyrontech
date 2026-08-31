@@ -30,6 +30,7 @@ import LangSwitch from "@/components/site/LangSwitch";
 import ThemeToggle from "@/components/site/ThemeToggle";
 import Footer from "@/components/site/Footer";
 import ContactBar from "@/components/site/ContactBar";
+import PageBackLink from "@/components/site/PageBackLink";
 
 const AboutUs = () => {
   const { lang } = useLang();
@@ -113,10 +114,13 @@ const AboutUs = () => {
     <main className="min-h-screen overflow-x-hidden bg-[#050914] text-white selection:bg-cyan-300 selection:text-slate-950">
       <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#050914]/75 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-          <a href={homeHref} className="group inline-flex items-center gap-2.5" aria-label={ro ? "Avyron — mergi la începutul paginii principale" : "Avyron — go to homepage hero"}>
-            <img src={logo} alt="" width={30} height={30} className="size-7 rounded-md object-cover ring-1 ring-white/20" />
-            <span className="font-display text-sm font-extrabold tracking-[0.2em] text-white">AVYRON</span>
-          </a>
+          <div className="flex items-center gap-2">
+            <PageBackLink to={ro ? "/" : "/en"} label={ro ? "Înapoi" : "Back"} inverse />
+            <a href={homeHref} className="group hidden items-center gap-2.5 sm:inline-flex" aria-label={ro ? "Avyron — mergi la începutul paginii principale" : "Avyron — go to homepage hero"}>
+              <img src={logo} alt="" width={30} height={30} className="size-7 rounded-md object-cover ring-1 ring-white/20" />
+              <span className="font-display text-sm font-extrabold tracking-[0.2em] text-white">AVYRON</span>
+            </a>
+          </div>
           <div className="flex items-center gap-2">
             <Link to={portfolioPath} className="hidden rounded-full border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/70 transition-colors hover:border-cyan-300/40 hover:text-white sm:inline-flex">
               {ro ? "Portofoliu" : "Portfolio"}

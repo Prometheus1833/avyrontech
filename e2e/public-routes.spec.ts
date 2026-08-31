@@ -342,6 +342,45 @@ test.describe("public SEO routes", () => {
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
   });
+
+  test("every secondary page exposes the shared responsive back control", async ({ page }) => {
+    test.setTimeout(90_000);
+    const secondaryRoutes = [
+      "/gdpr", "/en/privacy", "/termeni", "/en/terms",
+      "/costurisiproduse", "/en/pricing",
+      "/produse/website-prezentare-premium", "/produse/identitate-social-media",
+      "/produse/magazin-online", "/produse/aplicatii-web-si-mobile",
+      "/produse/agent-ai-personalizat", "/produse/testare-qa-web-mobile",
+      "/pachete-mentenanta", "/en/care-plans",
+      "/despre-noi", "/en/about", "/portofoliu", "/en/portfolio",
+      "/exemple/flawlesstudio", "/exemple/retuvo",
+      "/blog", "/en/blog", "/blog/importanta-website-afacere-2026",
+      "/examples/cofetariadulcedor.ro",
+      "/auth", "/forgot-password", "/reset-password",
+      "/403", "/500", "/mentenanta", "/offline", "/unsubscribe",
+      "/route-that-does-not-exist",
+    ] as const;
+
+    for (const path of secondaryRoutes) {
+      await page.goto(path, { waitUntil: "domcontentloaded" });
+      const back = page.getByTestId("page-back-link").first();
+      await expect(back, `${path} must expose the shared back control`).toBeVisible();
+      await expect(back).toHaveClass(/rounded-full/);
+      await expect(back.locator("svg")).toBeVisible();
+      expect(await back.evaluate((node) => node.scrollWidth <= node.clientWidth + 1), `${path} back control must not overflow`).toBe(true);
+    }
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (const path of ["/despre-noi", "/blog", "/produse/website-prezentare-premium", "/auth"] as const) {
+      await page.goto(path, { waitUntil: "domcontentloaded" });
+      const back = page.getByTestId("page-back-link").first();
+      await expect(back).toBeVisible();
+      const box = await back.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+    }
+  });
 });
 
 test.describe("forms and authentication", () => {
@@ -388,6 +427,7 @@ test.describe("forms and authentication", () => {
     await expect(userMenu).toBeHidden();
 
     await page.goto("/profil");
+    await expect(page.getByTestId("page-back-link")).toBeVisible();
     await expect(page.getByRole("tab", { name: "Promoții" })).toHaveCount(0);
   });
 

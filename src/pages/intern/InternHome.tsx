@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, ArrowUpRight, ExternalLink, FolderKanban } from "lucide-react";
 import { toast } from "sonner";
 import ContactRail from "@/components/intern/ContactRail";
+import PageBackLink from "@/components/site/PageBackLink";
 
 type Row = {
   id: string; slug: string; name: string; kind: ProjectKind;
@@ -98,6 +99,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
 
   return (
     <div className={embedded ? "space-y-6" : "max-w-5xl mx-auto p-4 sm:p-6 space-y-6"}>
+      {!embedded && <PageBackLink to="/profil" label="Înapoi" title="Înapoi la profil" />}
       <header className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold flex items-center gap-2">

@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { cfAuth } from "@/lib/cfAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import { forgotSchema } from "@/lib/validators/auth";
 import { z } from "zod";
+import PageBackLink from "@/components/site/PageBackLink";
 
 type Input = z.infer<typeof forgotSchema>;
 
@@ -51,9 +50,7 @@ const ForgotPassword = () => {
   return (
     <main className="min-h-screen grid place-items-center p-6 bg-background">
       <div className="w-full max-w-md space-y-6">
-        <Link to="/auth" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="size-4" /> {t.auth.backToLogin}
-        </Link>
+        <PageBackLink to="/auth" label={t.auth.backToLogin} />
 
         <div className="space-y-2">
           <h1 className="font-display text-3xl font-bold">{t.auth.forgot}</h1>

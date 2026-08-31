@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Crown, ShieldCheck, LayoutDashboard, ArrowLeft, MessageCircle } from "lucide-react";
+import { Crown, ShieldCheck, LayoutDashboard, MessageCircle } from "lucide-react";
 import { cfAuth } from "@/lib/cfAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,6 +22,7 @@ import logo from "@/assets/avyron-mark-ai.png";
 import Turnstile from "@/components/site/Turnstile";
 import { TURNSTILE_SITE_KEY } from "@/config/turnstile";
 import { isPlatformHostname, publicSiteHref } from "@/lib/appHost";
+import PageBackLink from "@/components/site/PageBackLink";
 
 const Auth = () => {
   const { t, lang } = useLang();
@@ -180,9 +181,7 @@ const Auth = () => {
       {/* Right — form */}
       <section className="flex items-center justify-center p-6 sm:p-12 bg-background">
         <div className="w-full max-w-md space-y-6">
-          <a href={homeHref} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="size-4" /> Înapoi
-          </a>
+          <PageBackLink to={homeHref} label={lang === "en" ? "Back" : "Înapoi"} />
 
           {verificationMessage && (
             <div role="status" className="rounded-xl border border-brand/25 bg-brand/10 px-4 py-3 text-sm">

@@ -1,7 +1,6 @@
 import { type ReactNode, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowLeft,
   ArrowRight,
   BadgeCheck,
   BookOpenCheck,
@@ -19,6 +18,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import Footer from "@/components/site/Footer";
+import PageBackLink from "@/components/site/PageBackLink";
 import logo from "@/assets/avyron-logo.webp";
 import { COMPANY } from "@/config/company";
 import { useLang } from "@/i18n/LanguageContext";
@@ -331,10 +331,7 @@ const Terms = () => {
     <main className="min-h-screen overflow-hidden bg-[#050711] text-white antialiased selection:bg-cyan-300 selection:text-slate-950">
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#050711]/85 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link to={homePath} className="inline-flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white">
-            <ArrowLeft className="size-4" aria-hidden />
-            {ro ? "Acasă" : "Home"}
-          </Link>
+          <PageBackLink to={homePath} label={ro ? "Înapoi" : "Back"} />
           <a href={homePath} className="inline-flex items-center gap-2" aria-label={ro ? "Avyron — mergi la hero" : "Avyron — go to hero"}>
             <img src={logo} alt="Avyron" width={26} height={26} className="size-[26px] rounded-lg object-cover ring-1 ring-white/15" />
             <span className="font-display text-xs font-bold tracking-[0.22em]">AVYRON</span>

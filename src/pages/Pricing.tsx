@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect } from "react";
-import { ArrowLeft, ArrowRight, ScanSearch, Gauge, Accessibility, Check, CreditCard, Building2, Link2, FileText, Zap, Crown, Shield, RefreshCw, Hourglass, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu, Bug, FlaskConical, HeartHandshake } from "lucide-react";
+import { ArrowRight, ScanSearch, Gauge, Accessibility, Check, CreditCard, Building2, Link2, FileText, Zap, Crown, Shield, RefreshCw, Hourglass, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu, Bug, FlaskConical, HeartHandshake } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { trackEvent } from "@/lib/analytics";
 import logo from "@/assets/avyron-logo.jpg";
@@ -12,6 +12,7 @@ import LangSwitch from "@/components/site/LangSwitch";
 import ThemeToggle from "@/components/site/ThemeToggle";
 import Breadcrumbs from "@/components/site/Breadcrumbs";
 import CurrencySwitch from "@/components/site/CurrencySwitch";
+import PageBackLink from "@/components/site/PageBackLink";
 import { useCurrency } from "@/hooks/useCurrency";
 
 /**
@@ -236,19 +237,7 @@ const Pricing = () => {
           aria-label={ro ? "Acțiuni pagină produse" : "Product page actions"}
           className="grid grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-3"
         >
-          <Link
-            to={ro ? "/" : "/en"}
-            className="group relative inline-flex min-h-9 items-center gap-1.5 overflow-hidden rounded-full border border-foreground/15 bg-foreground/[0.04] py-1.5 pl-1.5 pr-2.5 text-xs font-medium text-foreground/70 backdrop-blur transition-all duration-300 hover:border-cyan-300/60 hover:text-foreground sm:gap-2 sm:pl-2 sm:pr-3.5"
-          >
-            <span className="absolute inset-0 bg-gradient-to-r from-cyan-400/0 via-cyan-400/15 to-cyan-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" aria-hidden />
-            <span className="relative grid place-items-center size-5 rounded-full bg-foreground text-background transition-transform duration-300 group-hover:-translate-x-0.5">
-              <ArrowLeft className="size-3" />
-            </span>
-            <span className="relative font-mono uppercase tracking-[0.18em] text-[10px]">
-              {ro ? "Acasă" : "Home"}
-            </span>
-            <span className="relative size-1 rounded-full bg-cyan-400 animate-pulse" aria-hidden />
-          </Link>
+          <PageBackLink to={ro ? "/" : "/en"} label={ro ? "Înapoi" : "Back"} />
 
           <a
             href={ro ? "/#hero" : "/en#hero"}

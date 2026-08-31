@@ -11,10 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
-import { ExternalLink, Trash2, RefreshCw, Plus, ArrowLeft } from "lucide-react";
+import { ExternalLink, Trash2, RefreshCw, Plus } from "lucide-react";
 import { MediaAttachments } from "@/components/intern/MediaAttachments";
 import PaymentMethodCard from "@/components/intern/PaymentMethodCard";
 import ContactRail from "@/components/intern/ContactRail";
+import PageBackLink from "@/components/site/PageBackLink";
 
 const BANNER_LABEL: Record<BannerStatus, { label: string; className: string }> = {
   online:      { label: "Online",              className: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30" },
@@ -91,9 +92,7 @@ export default function ProjectPage() {
   return (
     <PageShell>
       <div className="mb-4">
-        <Link to="/profil" className="text-sm text-muted-foreground inline-flex items-center gap-1 hover:text-foreground">
-          <ArrowLeft className="w-4 h-4" /> Toate proiectele
-        </Link>
+        <PageBackLink to="/profil?tab=projects" label="Înapoi" title="Înapoi la toate proiectele" />
       </div>
 
       {/* Header */}

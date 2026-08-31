@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import { useEffect } from "react";
-import { ShieldCheck, ArrowLeft, Lock, FileText, Database, Users, Globe, Cookie, Server, Mail, Phone } from "lucide-react";
+import { ShieldCheck, Lock, FileText, Database, Users, Globe, Cookie, Server, Mail, Phone } from "lucide-react";
 import logo from "@/assets/avyron-logo.jpg";
 import { COMPANY } from "@/config/company";
+import PageBackLink from "@/components/site/PageBackLink";
 
 /**
  * Apple-inspired GDPR / Privacy page.
@@ -404,10 +405,7 @@ const Gdpr = () => {
       {/* Top bar — Apple-like minimal */}
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto max-w-5xl px-6 h-14 flex items-center justify-between">
-          <Link to={isEn ? "/en" : "/"} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="size-4" />
-            {isEn ? "Back" : "Înapoi"}
-          </Link>
+          <PageBackLink to={isEn ? "/en" : "/"} label={isEn ? "Back" : "Înapoi"} />
           <a href={isEn ? "/en#hero" : "/#hero"} className="flex items-center gap-2" aria-label={isEn ? "Avyron — go to hero" : "Avyron — mergi la hero"}>
             <img src={logo} alt="Avyron" width={24} height={24} className="size-6 rounded-md object-cover" />
             <span className="font-display font-semibold tracking-[0.2em] text-xs">AVYRON</span>
@@ -504,15 +502,6 @@ const Gdpr = () => {
             </div>
           </div>
 
-          <div className="mt-12 text-center">
-            <Link
-              to={isEn ? "/en" : "/"}
-              className="inline-flex items-center gap-2 rounded-full bg-foreground text-background hover:bg-foreground/90 px-6 py-3 text-sm font-medium transition-colors"
-            >
-              <ArrowLeft className="size-4" />
-              {isEn ? "Back to the homepage" : "Înapoi la pagina principală"}
-            </Link>
-          </div>
         </div>
       </section>
     </main>

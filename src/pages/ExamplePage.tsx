@@ -1,9 +1,9 @@
 import { useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { useParams } from "react-router-dom";
 import { findExample } from "@/examples/registry";
 import logo from "@/assets/avyron-logo.jpg";
 import NotFound from "./NotFound";
+import PageBackLink from "@/components/site/PageBackLink";
 
 const ExamplePage = () => {
   const { slug = "" } = useParams<{ slug: string }>();
@@ -28,10 +28,7 @@ const ExamplePage = () => {
       {/* Banner Avyron — minim, sticky, ca să fie evident că e exemplu */}
       <div className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur">
         <div className="max-w-6xl mx-auto px-4 h-11 flex items-center justify-between text-xs">
-          <Link to="/portofoliu" className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="size-3.5" />
-            <span className="font-mono uppercase tracking-[0.18em]">Înapoi la portofoliu</span>
-          </Link>
+          <PageBackLink to="/portofoliu" label="Înapoi" title="Înapoi la portofoliu" />
           <a href="/#hero" className="flex items-center gap-2" aria-label="Avyron — mergi la hero">
             <span className="hidden sm:inline text-muted-foreground">Exemplu găzduit de</span>
             <img src={logo} alt="Avyron" width={20} height={20} className="size-5 rounded object-cover" />
