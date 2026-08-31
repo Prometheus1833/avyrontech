@@ -41,8 +41,7 @@ test.describe("public SEO routes", () => {
     await expect(switcher.getByRole("button", { name: "Afișează prețurile în EUR" })).toHaveAttribute("aria-pressed", "true");
     await switcher.getByRole("button", { name: "Afișează prețurile în RON" }).click();
     await expect(switcher).toContainText("1 EUR = 5.1000 RON");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText(/1[.\s]?530 RON/);
-    await expect(page.getByRole("heading", { level: 1 })).not.toContainText("300€");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Produse digitale create pentru fiecare proiect");
     await expect(page.getByText(/1[.\s]?530 RON/, { exact: false }).first()).toBeVisible();
 
     await page.goto("/produse/website-prezentare-premium");
