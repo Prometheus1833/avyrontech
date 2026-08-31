@@ -50,10 +50,14 @@ const LINK_KINDS: { value: LinkKind; label: string }[] = [
 ];
 
 const SUB_PLANS = [
-  { value: "100e", label: "100€ / lună · esențial" },
-  { value: "150e", label: "150€ / lună · standard" },
-  { value: "300e", label: "300€ / lună · premium" },
+  { value: "50e", label: "50€ / lună · site-uri de prezentare și bloguri" },
+  { value: "150e", label: "150€ / lună · magazine online și primării" },
+  { value: "300e", label: "300€ / lună · instituții și platforme" },
 ];
+
+const subscriptionPlanLabel = (value: string | null) => value === "100e"
+  ? "100€ / lună · plan anterior"
+  : SUB_PLANS.find((plan) => plan.value === value)?.label ?? value;
 
 export default function ProjectPage() {
   const { slug = "" } = useParams();
@@ -194,7 +198,7 @@ export default function ProjectPage() {
             <p className="text-xs text-muted-foreground mb-1">Abonament</p>
             {project.subscription_status === "active" && project.subscription_plan ? (
               <div>
-                <Badge variant="secondary">{SUB_PLANS.find((p) => p.value === project.subscription_plan)?.label ?? project.subscription_plan}</Badge>
+                <Badge variant="secondary">{subscriptionPlanLabel(project.subscription_plan)}</Badge>
                 {project.billing_next && <p className="text-xs text-muted-foreground mt-1">Următoarea facturare: {new Date(project.billing_next).toLocaleDateString("ro-RO")}</p>}
               </div>
             ) : (
@@ -221,7 +225,7 @@ export default function ProjectPage() {
       {project.subscription_plan && (
         <div className="mt-5">
           <PaymentMethodCard
-            planLabel={SUB_PLANS.find((p) => p.value === project.subscription_plan)?.label ?? project.subscription_plan}
+            planLabel={subscriptionPlanLabel(project.subscription_plan)}
             billingNext={project.billing_next}
           />
         </div>

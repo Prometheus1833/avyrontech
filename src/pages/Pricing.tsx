@@ -33,6 +33,8 @@ type Tier = {
   shape: keyof typeof PS_SHAPES;
   name: string;
   price: string;
+  annualPrice: string;
+  bestFor: string;
   tagline: string;
   highlight?: boolean;
   features: string[];
@@ -53,8 +55,8 @@ const Pricing = () => {
       ? "Prețuri site web & mentenanță — de la 300€ | Avyron"
       : "Website Pricing & Care Plans — from €300 | Avyron";
     const description = ro
-      ? "Cât costă un site web profesional? Pachete transparente Avyron de la 300€, magazine online, aplicații și mentenanță lunară Plus / Pro / Pro Activ."
-      : "How much does a professional website cost? Transparent Avyron packages from €300, online stores, apps and monthly Plus / Pro / Pro Active care plans.";
+      ? "Cât costă un site web profesional? Pachete Avyron de la 300€ și mentenanță de la 50€/lună pentru site-uri, magazine online, instituții și platforme."
+      : "How much does a professional website cost? Avyron packages from €300 and care plans from €50/month for websites, online stores, institutions and platforms.";
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
       ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd }]) => {
         setPageMeta({
@@ -117,7 +119,9 @@ const Pricing = () => {
       key: "plus",
       shape: "square",
       name: "Plus",
-      price: fmt(100),
+      price: fmt(50),
+      annualPrice: fmt(50 * 12 * 0.8),
+      bestFor: ro ? "Site-uri de prezentare, cataloage de produse și bloguri" : "Presentation websites, product catalogues and blogs",
       tagline: ro ? "Esențial pentru liniște" : "Essential peace of mind",
       icon: <Shield className="size-5" />,
       accent: "text-pink-400",
@@ -130,6 +134,8 @@ const Pricing = () => {
       shape: "triangle",
       name: "Pro",
       price: fmt(150),
+      annualPrice: fmt(150 * 12 * 0.8),
+      bestFor: ro ? "Magazine online, primării și organizații cu actualizări frecvente" : "Online stores, municipalities and organisations with frequent updates",
       tagline: ro ? "Cel mai ales de clienți" : "Most chosen by clients",
       highlight: true,
       icon: <Zap className="size-5" />,
@@ -159,6 +165,8 @@ const Pricing = () => {
       shape: "circle",
       name: "Pro activ",
       price: fmt(300),
+      annualPrice: fmt(300 * 12 * 0.8),
+      bestFor: ro ? "Instituții publice, platforme și servicii digitale complexe" : "Public institutions, platforms and complex digital services",
       tagline: ro ? "Creștere continuă" : "Continuous growth",
       icon: <Crown className="size-5" />,
       accent: "text-cyan-300",
@@ -972,6 +980,8 @@ const Pricing = () => {
                   <span className="font-display text-4xl font-extrabold">{tier.price}</span>
                   <span className="text-xs text-foreground/50">/{ro ? "lună" : "mo"}</span>
                 </div>
+                <p className="mt-1 text-[11px] text-emerald-700 dark:text-emerald-300">{tier.annualPrice}/{ro ? "an" : "year"} · ANUALAVY20</p>
+                <p className="mt-4 text-sm text-foreground/70 leading-relaxed"><span className="font-semibold text-foreground/85">{ro ? "Recomandat pentru: " : "Recommended for: "}</span>{tier.bestFor}</p>
                 <ul className="mt-6 space-y-2.5">
                   {tier.features.slice(0, PRODUCT_SUMMARY_LIMIT).map((f) => (
                     <li key={f} className="flex items-start gap-2 text-sm text-foreground/85">
@@ -993,6 +1003,11 @@ const Pricing = () => {
               </article>
             ))}
           </div>
+
+          <p className="mt-5 rounded-xl border border-emerald-300/25 bg-emerald-400/[0.06] p-3 text-center text-xs text-foreground/70">
+            <strong className="font-mono text-emerald-700 dark:text-emerald-300">ANUALAVY20</strong>{" "}
+            {ro ? "oferă 20% reducere exclusiv abonamentului ales pentru 12 luni; celelalte produse din coș nu sunt incluse." : "gives 20% off only the subscription selected for 12 months; other cart products are excluded."}
+          </p>
 
           <div className="mt-8 flex justify-center">
             <Link

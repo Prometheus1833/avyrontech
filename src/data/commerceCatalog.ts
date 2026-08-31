@@ -1,10 +1,13 @@
 export type CommerceItemType = "package" | "subscription" | "website" | "custom";
+export type CommerceCurrency = "RON" | "EUR";
 
 export type CommerceCatalogItem = {
   sku: string;
   type: CommerceItemType;
   name: string;
   unitPriceCents: number | null;
+  currency: CommerceCurrency;
+  billing: "one_time" | "monthly";
 };
 
 /**
@@ -13,15 +16,21 @@ export type CommerceCatalogItem = {
  * trusted.
  */
 export const COMMERCE_CATALOG: readonly CommerceCatalogItem[] = [
-  { sku: "website-starter", type: "package", name: "Pachet Starter Website", unitPriceCents: 49_000 },
-  { sku: "website-business", type: "package", name: "Pachet Business Website", unitPriceCents: 99_000 },
-  { sku: "website-premium-seo", type: "package", name: "Pachet Premium + SEO", unitPriceCents: 149_000 },
-  { sku: "maintenance-monthly", type: "package", name: "Pachet Mentenanță Lunar", unitPriceCents: 9_900 },
-  { sku: "custom-request", type: "custom", name: "Produs personalizat", unitPriceCents: null },
+  { sku: "website-starter", type: "package", name: "Pachet Starter Website", unitPriceCents: 49_000, currency: "RON", billing: "one_time" },
+  { sku: "website-business", type: "package", name: "Pachet Business Website", unitPriceCents: 99_000, currency: "RON", billing: "one_time" },
+  { sku: "website-premium-seo", type: "package", name: "Pachet Premium + SEO", unitPriceCents: 149_000, currency: "RON", billing: "one_time" },
+  { sku: "care-plus", type: "subscription", name: "Abonament Plus", unitPriceCents: 5_000, currency: "EUR", billing: "monthly" },
+  { sku: "care-pro", type: "subscription", name: "Abonament Pro", unitPriceCents: 15_000, currency: "EUR", billing: "monthly" },
+  { sku: "care-pro-active", type: "subscription", name: "Abonament Pro Activ", unitPriceCents: 30_000, currency: "EUR", billing: "monthly" },
+  { sku: "custom-request", type: "custom", name: "Produs personalizat", unitPriceCents: null, currency: "RON", billing: "one_time" },
 ] as const;
 
+const LEGACY_SKU_ALIASES: Readonly<Record<string, string>> = {
+  "maintenance-monthly": "care-plus",
+};
+
 export const commerceItemBySku = (sku: string) =>
-  COMMERCE_CATALOG.find((item) => item.sku === sku) ?? null;
+  COMMERCE_CATALOG.find((item) => item.sku === (LEGACY_SKU_ALIASES[sku] ?? sku)) ?? null;
 
 export const commerceItemByName = (name: string) =>
   COMMERCE_CATALOG.find((item) => item.name === name) ?? null;

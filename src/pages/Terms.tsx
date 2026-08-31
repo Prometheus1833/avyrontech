@@ -23,7 +23,7 @@ import logo from "@/assets/avyron-logo.webp";
 import { COMPANY } from "@/config/company";
 import { useLang } from "@/i18n/LanguageContext";
 
-const VERSION = "2026-08-28";
+const VERSION = "2026-08-31";
 
 type LegalSection = {
   id: string;
@@ -125,6 +125,7 @@ const Terms = () => {
                 <li>Lucrul începe după acceptarea documentelor convenite și îndeplinirea condițiilor inițiale menționate în acestea.</li>
                 <li>Solicitările care schimbă aria agreată sunt estimate și aprobate separat înainte de implementare.</li>
               </ul>
+              <p>Codurile promoționale se aplică numai în condițiile afișate la validare și nu se cumulează, dacă oferta nu spune expres altfel. Codul <strong>ANUALAVY20</strong> acordă 20% exclusiv abonamentului selectat pentru plata pe 12 luni; alte produse sau servicii din aceeași comandă nu intră în baza reducerii.</p>
             </>
           ),
         },
@@ -262,7 +263,7 @@ const Terms = () => {
           id: "proposals",
           title: "Proposals, pricing and project start",
           icon: BriefcaseBusiness,
-          body: <><p>“From” prices, timelines and public examples are indicative. Final scope follows clarification of goals, features, content, integrations and technical dependencies.</p><ul><li>The proposal defines deliverables, stages, costs, schedule and payment terms.</li><li>Work starts after the agreed documents are accepted and their initial conditions are met.</li><li>Requests changing the agreed scope are estimated and approved separately before implementation.</li></ul></>,
+          body: <><p>“From” prices, timelines and public examples are indicative. Final scope follows clarification of goals, features, content, integrations and technical dependencies.</p><ul><li>The proposal defines deliverables, stages, costs, schedule and payment terms.</li><li>Work starts after the agreed documents are accepted and their initial conditions are met.</li><li>Requests changing the agreed scope are estimated and approved separately before implementation.</li></ul><p>Promotion codes apply only under the conditions shown during validation and are not cumulative unless the offer expressly states otherwise. <strong>ANUALAVY20</strong> gives 20% off only the subscription selected for 12-month billing; other products or services in the same order are excluded from the discount base.</p></>,
         },
         {
           id: "collaboration",

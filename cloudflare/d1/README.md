@@ -42,8 +42,8 @@ npx wrangler d1 execute avyron-db --remote \
 | `website_content`  | CMS per-proiect pentru clienții cu admin     |
 | `users` / `profiles` | Identitate, profil și autentificare Cloudflare |
 | `user_roles`       | Roluri `user`, `staff`, `admin`              |
-| `promotions`       | Coduri, procente, perioade și limite          |
-| `commerce_orders`  | Comenzi recalculate și validate de Worker     |
+| `promotions`       | Coduri, procente, perioade, limite și domeniu de aplicare |
+| `commerce_orders`  | Comenzi recalculate, bază eligibilă și total validate de Worker |
 | `promotion_redemptions` | Utilizări promoționale auditabile       |
 | `blog_posts`       | Articole RO/EN, SEO, social și stare editorială |
 | `blog_post_revisions` | Istoric înaintea fiecărei editări de articol |

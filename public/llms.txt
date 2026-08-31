@@ -27,7 +27,7 @@ Contact: contact@avyron.ro · +40 734 605 055 · WhatsApp · https://avyron.ro
 - [Aplicații Web și Mobile](/produse/aplicatii-web-si-mobile) — [EN](/en/products/web-and-mobile-apps): Aplicații iOS, Android și PWA, cu backend și panou de administrare.
 - [Agent AI Personalizat](/produse/agent-ai-personalizat) — [EN](/en/products/personalized-ai-agent): Asistent AI antrenat pe datele afacerii, pentru suport, vânzări și automatizări.
 - [Testare QA Web & Mobile](/produse/testare-qa-web-mobile) — [EN](/en/products/qa-testing-web-mobile): De la 300€. Testare funcțională, de performanță, securitate și accesibilitate, cu raport și retestare.
-- [Pachete de Mentenanță](/pachete-mentenanta) — [EN](/en/care-plans): Colaborare lunară Plus (100€), Pro (150€) și Pro Activ (300€): actualizări, backup, securitate, SEO continuu, rapoarte și suport prioritar. Plată prin transfer IBAN, card, abonament recurent sau anual cu discount.
+- [Pachete de Mentenanță](/pachete-mentenanta) — [EN](/en/care-plans): Plus (50€/lună) pentru site-uri de prezentare, cataloage și bloguri; Pro (150€/lună) pentru magazine online, primării și organizații; Pro Activ (300€/lună) pentru instituții publice și platforme. Codul ANUALAVY20 reduce cu 20% exclusiv abonamentul ales pentru 12 luni.
 
 ## Examples
 
@@ -55,7 +55,7 @@ Contact: contact@avyron.ro · +40 734 605 055 · WhatsApp · https://avyron.ro
 ## Facts
 
 - Livrare tipică: 2–5 zile lucrătoare pentru un site de prezentare.
-- Prețuri de start: site de prezentare de la 300€, testare QA de la 300€, mentenanță de la 100€/lună.
+- Prețuri de start: site de prezentare de la 300€, testare QA de la 300€, mentenanță de la 50€/lună.
 - Include: design custom, conținut, SEO tehnic, hosting și domeniu în primul an, email pe domeniu, panou de administrare, instruire live.
 - Nivelul și durata suportului tehnic sunt stabilite transparent în oferta și contractul fiecărui proiect.
 - Zone deservite: România și Uniunea Europeană. Limbi: română și engleză.

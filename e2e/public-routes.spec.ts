@@ -50,6 +50,23 @@ test.describe("public SEO routes", () => {
     await expect(page.getByTestId("currency-switch").getByRole("button", { name: "Afișează prețurile în RON" })).toHaveAttribute("aria-pressed", "true");
   });
 
+  test("care plans publish the approved prices, recommendations and annual discount rule", async ({ page }) => {
+    await page.goto("/pachete-mentenanta");
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /50€\/lună/);
+    const plans = page.locator("article").filter({ has: page.locator("h3") });
+    const plus = page.locator("article").filter({ has: page.getByRole("heading", { level: 3, name: "Plus", exact: true }) }).first();
+    const pro = page.locator("article").filter({ has: page.getByRole("heading", { level: 3, name: "Pro", exact: true }) }).first();
+    const proActive = page.locator("article").filter({ has: page.getByRole("heading", { level: 3, name: "Pro Activ", exact: true }) }).first();
+    await expect(plus).toBeVisible();
+    await expect(plus).toContainText(/50\s*€/);
+    await expect(plus).toContainText("Site-uri de prezentare, cataloage de produse și bloguri");
+    await expect(pro).toContainText("Magazine online, primării și organizații cu actualizări frecvente");
+    await expect(proActive).toContainText("Instituții publice, platforme și servicii digitale cu cerințe complexe");
+    await expect(page.getByText("ANUALAVY20", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText(/orice alt produs sau serviciu din aceeași comandă/i).first()).toBeVisible();
+    expect(await plans.count()).toBeGreaterThanOrEqual(3);
+  });
+
   test("homepage displays the approved hero and services wording", async ({ page }) => {
     await page.goto("/");
 
@@ -370,13 +387,18 @@ test.describe("forms and authentication", () => {
     await page.route("**/api/promotions/admin", (route) => route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ data: [{ id: "promo-avy10", code: "AVY10", label: "Cont înregistrat", discount_percent: 10, active: 1, registration_required: 1, per_user_limit: 1, max_redemptions: null, starts_at: null, expires_at: null, redemptions: 0, discount_total_cents: 0 }] }),
+      body: JSON.stringify({ data: [
+        { id: "promo-avy10", code: "AVY10", label: "Cont înregistrat", discount_percent: 10, discount_scope: "order", active: 1, registration_required: 1, per_user_limit: 1, max_redemptions: null, starts_at: null, expires_at: null, redemptions: 0, discount_total_cents: 0 },
+        { id: "promo-anualavy20", code: "ANUALAVY20", label: "Abonament anual", discount_percent: 20, discount_scope: "annual_subscription", active: 1, registration_required: 1, per_user_limit: null, max_redemptions: null, starts_at: null, expires_at: null, redemptions: 0, discount_total_cents: 0 },
+      ] }),
     }));
 
     await page.goto("/profil?tab=promotions");
     await expect(page.getByRole("tab", { name: "Promoții" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Promoții" })).toBeVisible();
     await expect(page.getByText("AVY10", { exact: true })).toBeVisible();
+    await expect(page.getByText("ANUALAVY20", { exact: true })).toBeVisible();
+    await expect(page.getByText("Numai abonament anual", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Promoție nouă" })).toBeVisible();
   });
 

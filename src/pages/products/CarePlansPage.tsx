@@ -47,6 +47,7 @@ const CarePlansPage = () => {
         { q: "Ce se întâmplă dacă site-ul cade?", a: "Monitorizarea uptime ne alertează automat. Intervenim imediat, restaurăm din backup dacă e nevoie și îți trimitem un scurt raport cu cauza și măsura luată." },
         { q: "Pot schimba pachetul mai târziu?", a: "Oricând, în ambele sensuri. Diferența se calculează proporțional din luna curentă, fără taxe suplimentare." },
         { q: "Mentenanța se aplică și pentru un site făcut de altcineva?", a: "Da. Facem întâi o evaluare gratuită a produsului actual, îți spunem ce trebuie corectat la preluare și abia apoi pornim abonamentul." },
+        { q: "Cum funcționează reducerea anuală?", a: "Selectezi plata pe 12 luni și folosești codul ANUALAVY20. Reducerea de 20% se calculează numai pentru abonamentul anual ales, nu pentru alte produse sau servicii aflate în aceeași comandă." },
       ]
     : [
         { q: "Can I cancel at any time?", a: "Yes. The subscription is monthly, with no long-term contract. Let us know 15 days in advance and we stop the renewal — you keep full access to your site and data." },
@@ -54,6 +55,7 @@ const CarePlansPage = () => {
         { q: "What happens if the site goes down?", a: "Uptime monitoring alerts us automatically. We intervene immediately, restore from backup if needed and send you a short report with the cause and the fix." },
         { q: "Can I change plans later?", a: "Any time, in both directions. The difference is prorated for the current month, with no extra fees." },
         { q: "Do you maintain a site built by someone else?", a: "Yes. We first run a free evaluation of your current product, tell you what needs fixing at handover and only then start the subscription." },
+        { q: "How does the yearly discount work?", a: "Choose 12-month billing and use ANUALAVY20. The 20% discount applies only to the selected yearly subscription, never to other products or services in the same order." },
       ];
 
   const path = ro ? "/pachete-mentenanta" : "/en/care-plans";
@@ -61,11 +63,11 @@ const CarePlansPage = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
     const title = ro
-      ? "Pachete de mentenanță website — de la 100€/lună | Avyron"
-      : "Website Care Plans — from €100/month | Avyron";
+      ? "Pachete de mentenanță website — de la 50€/lună | Avyron"
+      : "Website Care Plans — from €50/month | Avyron";
     const description = ro
-      ? "Mentenanță website lunară: actualizări, backup, monitorizare uptime, securitate, SEO continuu și suport prioritar. Pachete Plus, Pro și Pro Activ de la 100€/lună."
-      : "Monthly website maintenance: updates, backups, uptime monitoring, security, ongoing SEO and priority support. Plus, Pro and Pro Active plans from €100/month.";
+      ? "Mentenanță website de la 50€/lună pentru site-uri de prezentare, bloguri, magazine online, instituții și platforme. Plată lunară sau anuală cu reducere 20%."
+      : "Website care from €50/month for presentation sites, blogs, online stores, public institutions and platforms. Monthly or yearly billing with a 20% discount.";
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
       ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd, serviceLd, offerCatalogLd, faqPageLd }]) => {
         setPageMeta({
@@ -81,7 +83,7 @@ const CarePlansPage = () => {
             name: ro ? "Pachete de mentenanță website" : "Website care plans",
             description,
             path,
-            priceEur: 100,
+            priceEur: 50,
           }),
         );
         setJsonLd(
@@ -95,7 +97,7 @@ const CarePlansPage = () => {
                 description: ro
                   ? "Mentenanță esențială: actualizări, backup, monitorizare uptime, hosting inclus și suport prioritar."
                   : "Essential maintenance: updates, backups, uptime monitoring, hosting included and priority support.",
-                priceEur: 100,
+                priceEur: 50,
               },
               {
                 name: "Pro",
@@ -135,10 +137,10 @@ const CarePlansPage = () => {
     {
       key: "plus",
       name: "Plus",
-      eur: 100,
+      eur: 50,
       icon: Shield,
       level: ro ? "Nivel 1 · Colaborare de bază" : "Level 1 · Basic collaboration",
-      bestFor: ro ? "Site de prezentare care trebuie doar să funcționeze impecabil" : "A brochure site that simply has to keep working flawlessly",
+      bestFor: ro ? "Site-uri de prezentare, cataloage de produse și bloguri" : "Presentation websites, product catalogues and blogs",
       response: ro ? "Răspuns în 24h" : "24h response",
       value: ro ? "3 modificări / lună" : "3 changes / month",
       tagline: ro ? "Esențial pentru liniște" : "Essential peace of mind",
@@ -172,7 +174,7 @@ const CarePlansPage = () => {
       icon: Zap,
       highlight: true,
       level: ro ? "Nivel 2 · Colaborare extinsă" : "Level 2 · Extended collaboration",
-      bestFor: ro ? "Afaceri care publică des conținut și vor rezultate măsurabile" : "Businesses publishing often and wanting measurable results",
+      bestFor: ro ? "Magazine online, primării și organizații cu actualizări frecvente" : "Online stores, municipalities and organisations with frequent updates",
       response: ro ? "Răspuns în 8h" : "8h response",
       value: ro ? "10 modificări / lună" : "10 changes / month",
       tagline: ro ? "Cel mai ales de clienți" : "Most chosen by clients",
@@ -215,7 +217,7 @@ const CarePlansPage = () => {
       eur: 300,
       icon: Crown,
       level: ro ? "Nivel 3 · Parteneriat complet" : "Level 3 · Full partnership",
-      bestFor: ro ? "Magazine online și platforme unde fiecare oră de downtime costă" : "Online stores and platforms where every hour of downtime costs",
+      bestFor: ro ? "Instituții publice, platforme și servicii digitale cu cerințe complexe" : "Public institutions, platforms and digital services with complex requirements",
       response: ro ? "Răspuns în 2h" : "2h response",
       value: ro ? "Modificări nelimitate" : "Unlimited changes",
       tagline: ro ? "Creștere continuă" : "Continuous growth",
@@ -259,7 +261,7 @@ const CarePlansPage = () => {
         { icon: Landmark, title: "Transfer bancar (IBAN)", desc: "Îți emitem factura la început de lună, cu IBAN în RON sau EUR. Termen de plată 7 zile, fără comisioane din partea noastră." },
         { icon: CreditCard, title: "Plată cu cardul", desc: "Link securizat de plată, Visa / Mastercard, 3D Secure. Poți plăti de pe telefon, în câteva secunde." },
         { icon: RefreshCw, title: "Abonament recurent", desc: "Dacă vrei să nu te mai gândești la asta, activăm debitarea automată lunară. O oprești oricând, dintr-un singur mesaj." },
-        { icon: Wallet, title: "Anual, cu discount", desc: "Plătești 12 luni în avans și primești 2 luni gratuite. Ideal dacă vrei un buget predictibil pe tot anul." },
+        { icon: Wallet, title: "Anual · −20%", desc: "Selectezi 12 luni și aplici ANUALAVY20. Reducerea se calculează exclusiv din abonamentul ales, nu din alte produse din coș." },
         { icon: Receipt, title: "Factură fiscală completă", desc: "Factură cu TVA pentru firme (PFA, SRL), livrată automat pe email și disponibilă în platforma internă Avyron." },
         { icon: Users, title: "Colaborare flexibilă", desc: "Schimbi pachetul, îl pui pe pauză sau îl reiei oricând. Colaborarea se adaptează la ritmul afacerii tale, nu invers." },
       ]
@@ -267,7 +269,7 @@ const CarePlansPage = () => {
         { icon: Landmark, title: "Bank transfer (IBAN)", desc: "We issue the invoice at the start of the month, with a RON or EUR IBAN. 7-day payment term, no fees on our side." },
         { icon: CreditCard, title: "Card payment", desc: "Secure payment link, Visa / Mastercard, 3D Secure. Pay from your phone in seconds." },
         { icon: RefreshCw, title: "Recurring subscription", desc: "If you'd rather not think about it, we enable automatic monthly billing. Stop it any time with a single message." },
-        { icon: Wallet, title: "Yearly, with a discount", desc: "Pay 12 months upfront and get 2 months free. Ideal for a predictable budget across the year." },
+        { icon: Wallet, title: "Yearly · 20% off", desc: "Choose 12 months and apply ANUALAVY20. The discount is calculated only from the selected subscription, not from other cart products." },
         { icon: Receipt, title: "Full fiscal invoice", desc: "VAT invoice for companies, delivered automatically by email and available in the Avyron internal platform." },
         { icon: Users, title: "Flexible collaboration", desc: "Change, pause or resume your plan any time. The collaboration adapts to your business rhythm, not the other way around." },
       ];
@@ -353,7 +355,7 @@ const CarePlansPage = () => {
         <Reveal as="section" className="mt-8 sm:mt-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-emerald-700 dark:text-emerald-200">
             <HeartHandshake className="size-3.5" aria-hidden />
-            {ro ? "Abonament lunar" : "Monthly subscription"}
+            {ro ? "Abonament lunar sau anual" : "Monthly or yearly subscription"}
           </div>
           <h1 className="mt-5 font-display text-3xl sm:text-4xl md:text-5xl font-extrabold leading-[1.08] tracking-tight">
             <span className="bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent">
@@ -421,6 +423,9 @@ const CarePlansPage = () => {
                     <span className="font-display text-4xl font-extrabold">{fmt(p.eur)}</span>
                     <span className="text-xs text-foreground/50">/{ro ? "lună" : "mo"}</span>
                   </div>
+                  <p className="mt-1 text-[11px] text-emerald-700 dark:text-emerald-300">
+                    {ro ? `${fmt(p.eur * 12 * 0.8)}/an cu ANUALAVY20` : `${fmt(p.eur * 12 * 0.8)}/year with ANUALAVY20`}
+                  </p>
                   <p className="mt-3 text-sm text-foreground/70 leading-relaxed">
                     <span className="font-semibold text-foreground/85">{ro ? "Potrivit pentru: " : "Best for: "}</span>
                     {p.bestFor}
@@ -477,6 +482,14 @@ const CarePlansPage = () => {
               </Reveal>
             ))}
           </div>
+          <Reveal delay={220}>
+            <div className="mt-6 rounded-2xl border border-emerald-300/30 bg-emerald-400/[0.07] p-4 text-sm text-foreground/75">
+              <strong className="font-mono text-emerald-700 dark:text-emerald-300">ANUALAVY20</strong>{" "}
+              {ro
+                ? "reduce cu 20% numai abonamentul selectat pentru 12 luni. Orice alt produs sau serviciu din aceeași comandă își păstrează prețul integral."
+                : "takes 20% off only the subscription selected for 12 months. Every other product or service in the same order keeps its full price."}
+            </div>
+          </Reveal>
         </section>
 
         {/* Pillars */}
