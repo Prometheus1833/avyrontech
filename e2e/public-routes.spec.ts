@@ -84,11 +84,11 @@ test.describe("public SEO routes", () => {
     await expect(productList).toHaveCSS("display", "block");
 
     const desktopNav = page.locator("nav ul");
-    await expect(desktopNav.locator("li")).toHaveText(["Blog", "Produse", "Vezi domenii", "Proces", "FAQ"]);
+    await expect(desktopNav.locator("li")).toHaveText(["Blog", "Produse", "Despre noi", "Vezi domenii", "Proces", "FAQ"]);
     await expect(page.getByRole("link", { name: "Messenger Facebook" })).toHaveCount(0);
 
     const hero = page.locator("#hero");
-    await expect(hero.getByRole("link", { name: "Despre noi", exact: true })).toHaveAttribute("href", "/despre-noi");
+    await expect(hero.getByRole("link", { name: /Solicită un demo.*Personalizat cu activitatea ta/ })).toHaveAttribute("href", "#cta");
     await expect(hero.getByRole("link", { name: "Vezi Produse", exact: true })).toHaveAttribute("href", "/costurisiproduse");
   });
 
@@ -304,8 +304,13 @@ test.describe("public SEO routes", () => {
     await page.getByRole("button", { name: "Meniu" }).click();
     const menu = page.getByTestId("mobile-nav-menu");
     await expect(menu.getByRole("link", { name: "Vezi domenii" })).toBeVisible();
+    await expect(menu.getByRole("link", { name: "Despre noi", exact: true })).toHaveAttribute("href", "/despre-noi");
     const menuLabels = await menu.locator("a").evaluateAll((links) => links.map((link) => link.textContent?.trim()).filter(Boolean));
-    expect(menuLabels).toEqual(expect.arrayContaining(["Blog", "Produse", "Vezi domenii", "Proces", "FAQ"]));
+    expect(menuLabels).toEqual(expect.arrayContaining(["Blog", "Produse", "Despre noi", "Vezi domenii", "Proces", "FAQ"]));
+
+    await page.mouse.click(4, 700);
+    await expect(menu).toBeHidden();
+    await page.getByRole("button", { name: "Meniu" }).click();
 
     await page.getByRole("link", { name: "FAQ", exact: true }).click();
     await expect(page.getByTestId("floating-contact-bar").getByRole("link")).toHaveCount(3);
@@ -360,10 +365,14 @@ test.describe("forms and authentication", () => {
     await page.getByRole("button", { name: "Profil" }).click();
     const userMenu = page.getByRole("menu");
     await expect(userMenu).toBeVisible();
+    await expect(userMenu.getByRole("menuitem", { name: "Despre noi", exact: true })).toBeVisible();
     const menuBox = await userMenu.boundingBox();
     expect(menuBox).not.toBeNull();
     expect(menuBox!.y).toBeGreaterThanOrEqual(0);
     expect(menuBox!.y + menuBox!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+
+    await page.mouse.click(4, page.viewportSize()!.height - 100);
+    await expect(userMenu).toBeHidden();
 
     await page.goto("/profil");
     await expect(page.getByRole("tab", { name: "Promoții" })).toHaveCount(0);

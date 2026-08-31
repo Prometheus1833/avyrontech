@@ -23,6 +23,7 @@ import {
   FolderKanban,
   ShoppingCart,
   Boxes,
+  UsersRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -54,10 +55,13 @@ const UserMenu = () => {
 
   const productsLabel = lang === "en" ? "Products" : "Produse";
   const productsPath = lang === "en" ? "/en/pricing" : "/costurisiproduse";
+  const aboutLabel = lang === "en" ? "About us" : "Despre noi";
+  const aboutPath = lang === "en" ? "/en/about" : "/despre-noi";
 
   const userItems: MenuItem[] = [
     { label: t.auth.menu.profile, icon: UserIcon, to: "/profil?tab=profile" },
     { label: productsLabel, icon: Boxes, to: productsPath },
+    { label: aboutLabel, icon: UsersRound, to: aboutPath },
     { label: t.auth.menu.product, icon: Package, to: "/profil?tab=subscriptions" },
     { label: t.auth.menu.subscription, icon: CreditCard, to: "/profil?tab=invoices" },
     { label: t.auth.menu.cart, icon: ShoppingCart, to: "/profil?tab=cart" },
@@ -69,6 +73,7 @@ const UserMenu = () => {
   const staffItems: MenuItem[] = [
     { label: t.auth.menu.profile, icon: UserIcon, to: "/profil?tab=profile" },
     { label: productsLabel, icon: Boxes, to: productsPath },
+    { label: aboutLabel, icon: UsersRound, to: aboutPath },
     { label: t.auth.menu.projects, icon: FolderKanban, to: "/profil?tab=projects" },
     { label: t.auth.menu.maintenance, icon: Wrench, to: "/profil?tab=maintenance" },
     { label: t.auth.menu.internal, icon: UsersIcon, to: "/profil?tab=intern" },
@@ -109,6 +114,8 @@ const UserMenu = () => {
           sideOffset={8}
           collisionPadding={12}
           onCloseAutoFocus={(event) => event.preventDefault()}
+          onPointerDownOutside={() => setMenuOpen(false)}
+          onInteractOutside={() => setMenuOpen(false)}
           className="z-[70] w-64"
         >
           <DropdownMenuLabel className="flex flex-col">

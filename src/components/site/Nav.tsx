@@ -1,5 +1,5 @@
-import { Menu, X, LogIn, Newspaper, ShoppingBag } from "lucide-react";
-import { lazy, Suspense, useState } from "react";
+import { Menu, X, LogIn, Newspaper, ShoppingBag, UsersRound } from "lucide-react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,6 +11,8 @@ const UserMenu = lazy(() => import("@/components/auth/UserMenu"));
 
 const Nav = () => {
   const [open, setOpen] = useState(false);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const mobileMenuTriggerRef = useRef<HTMLButtonElement>(null);
   const { t, lang } = useLang();
   const { user, loading } = useAuth();
   const isRo = lang === "ro";
@@ -18,10 +20,33 @@ const Nav = () => {
   const links = [
     { label: t.nav.news, to: lang === "en" ? "/en/blog" : "/blog", icon: Newspaper, isRoute: true },
     { label: isRo ? "Produse" : "Products", to: isRo ? "/costurisiproduse" : "/en/pricing", icon: ShoppingBag, isRoute: true },
+    { label: isRo ? "Despre noi" : "About us", to: isRo ? "/despre-noi" : "/en/about", icon: UsersRound, isRoute: true },
     { label: isRo ? "Vezi domenii" : "See industries", href: `${homePath}#exemple` },
     { label: t.nav.process, href: `${homePath}#proces` },
     { label: t.nav.faq, href: `${homePath}#faq` },
   ] as Array<{ label: string; href?: string; to?: string; icon?: typeof Newspaper; highlight?: boolean; isRoute?: boolean }>;
+
+  useEffect(() => {
+    if (!open) return;
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (mobileMenuRef.current?.contains(target) || mobileMenuTriggerRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsidePointer, true);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointer, true);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [open]);
 
   return (
     <header className="fixed top-0 inset-x-0 z-50">
@@ -102,6 +127,7 @@ const Nav = () => {
               <Suspense fallback={<span className="size-10" aria-hidden />}><UserMenu /></Suspense>
             ) : (
               <button
+                ref={mobileMenuTriggerRef}
                 onClick={() => setOpen(!open)}
                 className="size-11 grid place-items-center rounded-full transition-all duration-200 ease-out hover:bg-muted active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 aria-label={open ? `${t.nav.menu} — close` : t.nav.menu}
@@ -117,7 +143,7 @@ const Nav = () => {
           </div>
         </nav>
         {open && !user && (
-          <div data-testid="mobile-nav-menu" className="md:hidden glass shadow-soft rounded-3xl mt-2 p-4 space-y-2">
+          <div ref={mobileMenuRef} data-testid="mobile-nav-menu" className="md:hidden glass shadow-soft rounded-3xl mt-2 p-4 space-y-2">
             <Link
               to="/auth"
               onClick={() => setOpen(false)}
