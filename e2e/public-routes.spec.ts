@@ -91,6 +91,16 @@ test.describe("public SEO routes", () => {
     const hero = page.locator("#hero");
     await expect(hero.getByRole("link", { name: /Solicită un demo.*Personalizat cu activitatea ta/ })).toHaveAttribute("href", "#cta");
     await expect(hero.getByRole("link", { name: "Vezi Produse", exact: true })).toHaveAttribute("href", "/costurisiproduse");
+
+    await page.goto("/#faq");
+    const portfolioCard = page.getByTestId("portfolio-card");
+    const aboutCard = page.getByTestId("about-card");
+    await expect(portfolioCard).toHaveAttribute("href", "/portofoliu");
+    await expect(portfolioCard).toContainText("Proiecte, exemple și parteneri");
+    await expect(portfolioCard).not.toContainText("Despre noi");
+    await expect(aboutCard).toHaveAttribute("href", "/despre-noi");
+    await expect(aboutCard).toContainText("Despre noi");
+    await expect(aboutCard).toContainText("Web design, development, cybersecurity și QA");
   });
 
   test("About and Portfolio are distinct, indexable bilingual pages", async ({ page }) => {
