@@ -223,7 +223,7 @@ const AboutUs = () => {
         </div>
       </section>
 
-      <section className="border-y border-white/10 bg-white/[0.018] py-20 sm:py-24">
+      <section id="proces" className="scroll-mt-28 border-y border-white/10 bg-white/[0.018] py-20 sm:py-24">
         <div className="mx-auto max-w-6xl px-4">
           <div className="mx-auto max-w-2xl text-center">
             <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.25em] text-violet-300">{ro ? "Cum lucrăm" : "How we work"}</p>
@@ -251,7 +251,7 @@ const AboutUs = () => {
         </div>
       </section>
 
-      <section className="py-20 sm:py-24">
+      <section id="contact" className="scroll-mt-28 py-20 sm:py-24">
         <div className="mx-auto max-w-5xl px-4">
           <div className="overflow-hidden rounded-3xl border border-cyan-300/20 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,.2),transparent_42%),linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.015))] p-6 sm:p-10">
             <div className="grid items-end gap-8 md:grid-cols-[1fr_auto]">

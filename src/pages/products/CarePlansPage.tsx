@@ -383,7 +383,7 @@ const CarePlansPage = () => {
         </Reveal>
 
         {/* Plans */}
-        <section className="mt-14">
+        <section id="pachete" className="mt-14 scroll-mt-28">
           <Reveal>
             <h2 className="font-display text-2xl md:text-3xl font-extrabold">
               {ro ? "Alege ritmul potrivit" : "Pick the right pace"}
@@ -486,7 +486,7 @@ const CarePlansPage = () => {
         </section>
 
         {/* Pillars */}
-        <section className="mt-16">
+        <section id="cum-functioneaza" className="mt-16 scroll-mt-28">
           <Reveal>
             <h2 className="font-display text-2xl md:text-3xl font-extrabold">
               {ro ? "Ce facem lună de lună" : "What we do every month"}
@@ -508,7 +508,7 @@ const CarePlansPage = () => {
         </section>
 
         {/* Payments */}
-        <section className="mt-16">
+        <section id="intrebari" className="mt-16 scroll-mt-28">
           <Reveal>
             <h2 className="font-display text-2xl md:text-3xl font-extrabold">
               {ro ? "Plata, simplă și transparentă" : "Payment, simple and transparent"}
@@ -543,7 +543,7 @@ const CarePlansPage = () => {
         </section>
 
         {/* FAQ */}
-        <section className="mt-16">
+        <section id="contact" className="mt-16 scroll-mt-28">
           <Reveal>
             <h2 className="font-display text-2xl md:text-3xl font-extrabold">
               {ro ? "Întrebări frecvente" : "Frequently asked questions"}

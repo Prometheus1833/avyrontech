@@ -246,7 +246,7 @@ const Pricing = () => {
         />
 
         {/* Hero */}
-        <section className="mt-12 text-center">
+        <section id="prezentare" className="mt-12 scroll-mt-28 text-center">
           <h1 className="mt-6 font-display text-3xl sm:text-4xl md:text-6xl font-extrabold leading-[1.05] tracking-tight px-2">
             <span className="bg-gradient-to-r from-foreground via-cyan-500 to-blue-600 dark:from-white dark:via-cyan-200 dark:to-blue-400 bg-clip-text text-transparent">
               {ro
@@ -264,7 +264,7 @@ const Pricing = () => {
         </section>
 
         {/* Audit — product overview entry; the request continues in the protected form. */}
-        <section data-testid="free-audit-card" className="relative mt-8 overflow-hidden rounded-2xl border border-amber-300/25 bg-gradient-to-br from-amber-400/[0.08] via-card to-orange-500/[0.06] p-4 sm:p-5">
+        <section id="audit" data-testid="free-audit-card" className="relative mt-8 overflow-hidden rounded-2xl border border-amber-300/25 bg-gradient-to-br from-amber-400/[0.08] via-card to-orange-500/[0.06] p-4 sm:p-5">
           <div aria-hidden className="absolute -right-10 -top-12 size-36 rounded-full bg-amber-400/10 blur-2xl" />
           <div className="relative grid items-start gap-5 md:grid-cols-[0.85fr_1.15fr]">
             <div>
@@ -1006,7 +1006,7 @@ const Pricing = () => {
         </div>
 
         {/* CTA */}
-        <section id="cta" className="mt-16 rounded-3xl border border-foreground/10 bg-gradient-to-br from-blue-600/20 via-purple-600/15 to-pink-500/15 p-8 md:p-10 text-center backdrop-blur relative overflow-hidden">
+        <section id="cta" className="mt-16 scroll-mt-28 rounded-3xl border border-foreground/10 bg-gradient-to-br from-blue-600/20 via-purple-600/15 to-pink-500/15 p-8 md:p-10 text-center backdrop-blur relative overflow-hidden">
           <h2 className="font-display text-3xl md:text-4xl font-extrabold">
             {ro ? "Începem cu o evaluare gratuită" : "Let's start with a free evaluation"}
           </h2>
