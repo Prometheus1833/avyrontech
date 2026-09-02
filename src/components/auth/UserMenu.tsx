@@ -33,6 +33,7 @@ import { ContactDialog } from "./ContactDialog";
 type MenuItem = {
   label: string;
   icon: typeof UserIcon;
+  dot: string; // comma-separated HSL, e.g. "264, 90%, 62%"
   to?: string;
   onSelect?: () => void;
   comingSoon?: boolean;
@@ -59,27 +60,27 @@ const UserMenu = () => {
   const aboutPath = lang === "en" ? "/en/about" : "/despre-noi";
 
   const userItems: MenuItem[] = [
-    { label: t.auth.menu.profile, icon: UserIcon, to: "/profil?tab=profile" },
-    { label: productsLabel, icon: Boxes, to: productsPath },
-    { label: aboutLabel, icon: UsersRound, to: aboutPath },
-    { label: t.auth.menu.product, icon: Package, to: "/profil?tab=subscriptions" },
-    { label: t.auth.menu.subscription, icon: CreditCard, to: "/profil?tab=invoices" },
-    { label: t.auth.menu.cart, icon: ShoppingCart, to: "/profil?tab=cart" },
-    { label: t.auth.menu.settings, icon: Settings, to: "/profil?tab=settings" },
-    { label: t.auth.menu.news, icon: Newspaper, to: "/profil?tab=tickets" },
-    { label: t.auth.menu.contact, icon: MessageSquare, onSelect: () => setContactOpen(true) },
+    { label: t.auth.menu.profile, icon: UserIcon, dot: "264, 90%, 62%", to: "/profil?tab=profile" },
+    { label: productsLabel, icon: Boxes, dot: "200, 95%, 55%", to: productsPath },
+    { label: aboutLabel, icon: UsersRound, dot: "86, 78%, 60%", to: aboutPath },
+    { label: t.auth.menu.product, icon: Package, dot: "330, 85%, 65%", to: "/profil?tab=subscriptions" },
+    { label: t.auth.menu.subscription, icon: CreditCard, dot: "40, 95%, 60%", to: "/profil?tab=invoices" },
+    { label: t.auth.menu.cart, icon: ShoppingCart, dot: "170, 80%, 45%", to: "/profil?tab=cart" },
+    { label: t.auth.menu.settings, icon: Settings, dot: "222, 25%, 40%", to: "/profil?tab=settings" },
+    { label: t.auth.menu.news, icon: Newspaper, dot: "280, 70%, 55%", to: "/profil?tab=tickets" },
+    { label: t.auth.menu.contact, icon: MessageSquare, dot: "340, 80%, 60%", onSelect: () => setContactOpen(true) },
   ];
 
   const staffItems: MenuItem[] = [
-    { label: t.auth.menu.profile, icon: UserIcon, to: "/profil?tab=profile" },
-    { label: productsLabel, icon: Boxes, to: productsPath },
-    { label: aboutLabel, icon: UsersRound, to: aboutPath },
-    { label: t.auth.menu.projects, icon: FolderKanban, to: "/profil?tab=projects" },
-    { label: t.auth.menu.maintenance, icon: Wrench, to: "/profil?tab=maintenance" },
-    { label: t.auth.menu.internal, icon: UsersIcon, to: "/profil?tab=intern" },
-    { label: t.auth.menu.resources, icon: Briefcase, to: "/profil?tab=resources" },
-    { label: t.auth.menu.contact, icon: MessageSquare, onSelect: () => setContactOpen(true) },
-    { label: t.auth.menu.settings, icon: Settings, to: "/profil?tab=settings" },
+    { label: t.auth.menu.profile, icon: UserIcon, dot: "264, 90%, 62%", to: "/profil?tab=profile" },
+    { label: productsLabel, icon: Boxes, dot: "200, 95%, 55%", to: productsPath },
+    { label: aboutLabel, icon: UsersRound, dot: "86, 78%, 60%", to: aboutPath },
+    { label: t.auth.menu.projects, icon: FolderKanban, dot: "210, 90%, 55%", to: "/profil?tab=projects" },
+    { label: t.auth.menu.maintenance, icon: Wrench, dot: "30, 90%, 55%", to: "/profil?tab=maintenance" },
+    { label: t.auth.menu.internal, icon: UsersIcon, dot: "260, 80%, 60%", to: "/profil?tab=intern" },
+    { label: t.auth.menu.resources, icon: Briefcase, dot: "150, 70%, 45%", to: "/profil?tab=resources" },
+    { label: t.auth.menu.contact, icon: MessageSquare, dot: "340, 80%, 60%", onSelect: () => setContactOpen(true) },
+    { label: t.auth.menu.settings, icon: Settings, dot: "222, 25%, 40%", to: "/profil?tab=settings" },
   ];
 
   const items = isStaff ? staffItems : userItems;
@@ -129,10 +130,16 @@ const UserMenu = () => {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           {items.map((item) => {
+            const itemStyle = { ["--dot-color" as string]: item.dot };
             const inner = (
               <span className="flex items-center justify-between w-full gap-2">
                 <span className="flex items-center gap-2">
                   <item.icon className="size-4" />
+                  <span
+                    aria-hidden="true"
+                    className="size-2 rounded-full shadow-sm"
+                    style={{ backgroundColor: `hsl(${item.dot})` }}
+                  />
                   {item.label}
                 </span>
                 {item.comingSoon && (
@@ -142,7 +149,12 @@ const UserMenu = () => {
             );
             if (item.to) {
               return (
-                <DropdownMenuItem key={item.label} asChild className="cursor-pointer">
+                <DropdownMenuItem
+                  key={item.label}
+                  asChild
+                  className="cursor-pointer menu-press active:scale-[0.98] transition-transform duration-150 ease-out"
+                  style={itemStyle}
+                >
                   <Link to={item.to} onClick={() => setMenuOpen(false)}>{inner}</Link>
                 </DropdownMenuItem>
               );
@@ -155,15 +167,25 @@ const UserMenu = () => {
                   setMenuOpen(false);
                   item.onSelect?.();
                 }}
-                className="cursor-pointer"
+                className="cursor-pointer menu-press active:scale-[0.98] transition-transform duration-150 ease-out"
+                style={itemStyle}
               >
                 {inner}
               </DropdownMenuItem>
             );
           })}
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={handleSignOut} className="cursor-pointer text-destructive focus:text-destructive">
+          <DropdownMenuItem
+            onSelect={handleSignOut}
+            className="cursor-pointer menu-press active:scale-[0.98] transition-transform duration-150 ease-out text-destructive focus:text-destructive"
+            style={{ ["--dot-color" as string]: "0, 84%, 60%" }}
+          >
             <LogOut className="size-4 mr-2" />
+            <span
+              aria-hidden="true"
+              className="size-2 rounded-full shadow-sm mr-2"
+              style={{ backgroundColor: "hsl(0, 84%, 60%)" }}
+            />
             {t.auth.logout}
           </DropdownMenuItem>
         </DropdownMenuContent>

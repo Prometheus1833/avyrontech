@@ -322,6 +322,36 @@ html {
 }
 
 /* ============================================
+   User menu press effect
+   Colored radial glow that blooms from the
+   center while the item is held/active.
+   ============================================ */
+.menu-press {
+  position: relative;
+  overflow: hidden;
+}
+.menu-press::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at center,
+    hsla(var(--dot-color, 264, 90%, 62%), 0.22),
+    transparent 70%
+  );
+  opacity: 0;
+  transform: scale(0.6);
+  transition: transform 0.25s var(--transition-smooth),
+    opacity 0.2s ease-out;
+  pointer-events: none;
+}
+.menu-press:active::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ============================================
    Reduced motion — disable 3D card tilts, reveals
    and decorative transitions for users who ask.
    ============================================ */
