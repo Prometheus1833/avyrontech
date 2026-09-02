@@ -111,7 +111,7 @@ app.use("*", async (c, next) => {
 app.use("/api/*", async (c, next) => {
   const cacheKey = publicApiCacheRequest(c.req.raw);
   if (!cacheKey || typeof caches === "undefined") return next();
-  const edgeCache = caches.default;
+  const edgeCache = (caches as unknown as { default: Cache }).default;
   try {
     const cached = await edgeCache.match(cacheKey);
     if (cached) {
