@@ -388,7 +388,7 @@ const CarePlansPage = () => {
               {ro ? "Vreau un pachet de mentenanță" : "I want a care plan"}
               <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
             </a>
-            <CurrencySwitch accent="emerald" />
+            <CurrencySwitch compact accent="emerald" />
           </div>
         </Reveal>
 

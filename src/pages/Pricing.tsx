@@ -270,7 +270,7 @@ const Pricing = () => {
               : "Every Avyron product is carefully built, not selected from a template. Its design, features, infrastructure, integrations and advantages are tailored to the purpose and needs of each project."}
           </p>
 
-          <CurrencySwitch className="mt-7" />
+          <CurrencySwitch compact className="mt-7" />
         </section>
 
         {/* Audit — product overview entry; the request continues in the protected form. */}
