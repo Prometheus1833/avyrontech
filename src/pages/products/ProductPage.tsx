@@ -39,6 +39,7 @@ import Footer from "@/components/site/Footer";
 import CurrencySwitch from "@/components/site/CurrencySwitch";
 import { useCurrency } from "@/hooks/useCurrency";
 import PaymentMethods from "@/components/site/PaymentMethods";
+import QuickNav, { type QuickNavItem } from "@/components/site/QuickNav";
 
 const ICONS: Record<IconKey, React.ComponentType<{ className?: string }>> = {
   globe: Globe,
@@ -131,8 +132,21 @@ const ProductPage = () => {
   // where its protected request flow has the necessary context and anti-spam checks.
   const others = PRODUCTS.filter((p) => p.key !== product.key && p.key !== "audit");
 
+  const quickNavItems: QuickNavItem[] = [
+    { id: "prezentare", label: ro ? "Prezentare" : "Overview", icon: HeroIcon },
+    { id: "beneficii", label: ro ? "Beneficii" : "Highlights", icon: Check },
+    ...(c.audiences ? [{ id: "pentru-cine", label: ro ? "Pentru cine" : "Who it's for", icon: Users }] : []),
+    ...(c.tech ? [{ id: "tehnologii", label: ro ? "Tehnologii" : "Technologies", icon: Code2 }] : []),
+    { id: "pachet", label: ro ? "Ce include" : "What's included", icon: ShoppingBag },
+    { id: "proces", label: ro ? "Proces" : "Process", icon: Clock },
+    ...(c.advice ? [{ id: "consiliere", label: ro ? "Consiliere" : "Advice", icon: Gauge }] : []),
+    { id: "faq", label: "FAQ", icon: MessageCircle },
+    { id: "contact", label: ro ? "Contact" : "Contact", icon: ArrowRight },
+  ];
+
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
+      <QuickNav items={quickNavItems} />
       {/* Ambient background */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div className={`absolute -top-40 left-1/2 -translate-x-1/2 size-[42rem] rounded-full blur-3xl opacity-40 ${a.glow}`} />
