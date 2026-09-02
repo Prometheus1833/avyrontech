@@ -163,6 +163,7 @@ const Footer = () => {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="WhatsApp"
+              onClick={() => trackEvent("cta_click", { location: "footer", page: cta.page, channel: "whatsapp" })}
               className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] px-3 py-1.5 shadow-[0_6px_16px_-6px_rgba(37,211,102,0.5)] hover:scale-[1.03] transition-transform"
             >
               <MessageCircle className="size-3 text-white" />
@@ -171,6 +172,7 @@ const Footer = () => {
             <a
               href="tel:+40734605055"
               aria-label={t.footer.phoneLabel}
+              onClick={() => trackEvent("cta_click", { location: "footer", page: cta.page, channel: "phone" })}
               className="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/30 bg-gradient-to-br from-cyan-500/15 to-sky-600/15 hover:from-cyan-500/25 hover:to-sky-600/25 hover:border-cyan-300/60 px-3 py-1.5 transition-all"
             >
               <Phone className="size-3 text-cyan-300" />
@@ -179,11 +181,13 @@ const Footer = () => {
             <a
               href="mailto:contact@avyron.ro"
               aria-label={t.footer.emailLabel}
+              onClick={() => trackEvent("cta_click", { location: "footer", page: cta.page, channel: "email" })}
               className="inline-flex items-center gap-1.5 rounded-full border border-pink-300/30 bg-gradient-to-br from-pink-500/15 to-rose-600/15 hover:from-pink-500/25 hover:to-rose-600/25 hover:border-pink-300/60 px-3 py-1.5 transition-all"
             >
               <Mail className="size-3 text-pink-300" />
               <span className="text-xs text-white/90 font-medium hidden sm:inline">E-mail</span>
             </a>
+
           </div>
         </div>
 
