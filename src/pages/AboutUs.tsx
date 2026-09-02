@@ -19,6 +19,7 @@ import {
   Video,
 } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
+import QuickNav from "@/components/site/QuickNav";
 import logo from "@/assets/avyron-logo.webp";
 import aboutHero1536Avif from "@/assets/about-hero-1536.avif";
 import aboutHero1536Webp from "@/assets/about-hero-1536.webp";
@@ -112,6 +113,14 @@ const AboutUs = () => {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#050914] text-white selection:bg-cyan-300 selection:text-slate-950">
+      <QuickNav
+        items={[
+          { id: "about-hero", label: ro ? "Despre noi" : "About us", icon: UsersRound },
+          { id: "expertiza", label: ro ? "Expertiză" : "Expertise", icon: Code2 },
+          { id: "proces", label: ro ? "Proces" : "Process", icon: Layers3 },
+          { id: "contact", label: ro ? "Contact" : "Contact", icon: MessageSquareText },
+        ]}
+      />
       <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#050914]/75 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <div className="flex items-center gap-2">
