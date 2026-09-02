@@ -1022,51 +1022,9 @@ const Pricing = () => {
         </section>
 
         {/* Payments */}
-        <section className="mt-16">
-          <div className="text-center">
-            <h2 className="font-display text-3xl md:text-4xl font-extrabold">
-              {ro ? "Modalități de plată" : "Payment methods"}
-            </h2>
-            <p className="mt-3 text-sm text-foreground/60 max-w-2xl mx-auto">
-              {ro
-                ? "Oferim metode flexibile și sigure de plată, adaptate atât pentru persoane fizice, cât și pentru companii."
-                : "Flexible and secure payment methods, for both individuals and businesses."}
-            </p>
-          </div>
-
-          <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {payments.map((p) => (
-              <div
-                key={p.title}
-                className="group rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 hover:border-cyan-300/30 hover:bg-foreground/[0.06] transition-all backdrop-blur flex flex-col items-center text-center"
-              >
-                <div className="size-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 grid place-items-center text-white">
-                  {p.icon}
-                </div>
-                <h3 className="mt-4 font-display font-bold">{p.title}</h3>
-                <p className="mt-1 text-xs text-foreground/60 leading-relaxed">{p.desc}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Future platform note */}
-          <div className="mt-8 rounded-2xl border border-dashed border-cyan-300/30 bg-cyan-300/[0.04] p-6 backdrop-blur">
-            <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-cyan-200">
-              <Hourglass className="size-3.5" />
-              <span>{ro ? "În curând pe platformă" : "Coming soon on the platform"}</span>
-            </div>
-            <p className="mt-3 text-sm text-foreground/80 leading-relaxed">
-              {ro
-                ? "Prin simpla creare și validare a contului pe platformă, vei putea achita prin numeroase metode de plată, vei avea toate facturile într-un singur loc și vei vedea în timp real produsele achiziționate sau aflate în administrare — monitorizate eficient de echipa Avyron. Vei putea plăti direct de pe site pachetele, produsele și abonamentele, inclusiv plăți recurente pentru abonamente."
-                : "Once you create and verify your account on the platform, you'll be able to pay using many methods, keep all invoices in one place and see your purchased or managed products in real time — monitored efficiently by the Avyron team. You'll be able to pay packages, products and subscriptions directly from the site, including recurring payments."}
-            </p>
-            <p className="mt-3 text-xs text-foreground/55">
-              {ro
-                ? "Costurile afișate sunt orientative și pot varia. Facturile se emit în RON la cursul BNR din ziua emiterii sau a efectuării plății."
-                : "Displayed costs are indicative and may vary. Invoices are issued in RON at the BNR rate on the day of issue or payment."}
-            </p>
-          </div>
-        </section>
+        <div className="mt-12">
+          <PaymentMethods />
+        </div>
 
         {/* CTA */}
         <section id="cta" className="mt-16 rounded-3xl border border-foreground/10 bg-gradient-to-br from-blue-600/20 via-purple-600/15 to-pink-500/15 p-8 md:p-10 text-center backdrop-blur relative overflow-hidden">
