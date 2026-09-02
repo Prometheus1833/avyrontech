@@ -4,6 +4,7 @@ import { ShieldCheck, Lock, FileText, Database, Users, Globe, Cookie, Server, Ma
 import logo from "@/assets/avyron-logo.jpg";
 import { COMPANY } from "@/config/company";
 import PageBackLink from "@/components/site/PageBackLink";
+import Footer from "@/components/site/Footer";
 
 /**
  * Apple-inspired GDPR / Privacy page.

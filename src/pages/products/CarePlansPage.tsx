@@ -29,6 +29,7 @@ import Breadcrumbs from "@/components/site/Breadcrumbs";
 import PageBackLink from "@/components/site/PageBackLink";
 import QuickNav from "@/components/site/QuickNav";
 import Reveal from "@/components/site/Reveal";
+import Footer from "@/components/site/Footer";
 import logo from "@/assets/avyron-logo.jpg";
 import { trackEvent } from "@/lib/analytics";
 import CurrencySwitch from "@/components/site/CurrencySwitch";
