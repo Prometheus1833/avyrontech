@@ -4,6 +4,7 @@ import { ArrowRight, ScanSearch, Gauge, Accessibility, Check, CreditCard, FileTe
 import PaymentMethods from "@/components/site/PaymentMethods";
 import { useLang } from "@/i18n/LanguageContext";
 import { trackEvent } from "@/lib/analytics";
+import Footer from "@/components/site/Footer";
 import logo from "@/assets/avyron-logo.jpg";
 import premiumTech352Avif from "@/assets/premium-website-mockup-352.avif";
 import premiumTech704Avif from "@/assets/premium-website-mockup-704.avif";
@@ -1056,6 +1057,7 @@ const Pricing = () => {
           </div>
         </section>
       </div>
+      <Footer />
     </main>
   );
 };
