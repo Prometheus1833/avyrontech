@@ -1,6 +1,7 @@
 const MEASUREMENT_ID =
   import.meta.env.VITE_GOOGLE_ANALYTICS_ID ||
-  import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_ANALYTICS_API_KEY;
+  import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_ANALYTICS_API_KEY ||
+  "G-5KMPKNG8WS";
 
 export const GA_ENABLED = Boolean(MEASUREMENT_ID);
 let initialized = false;
