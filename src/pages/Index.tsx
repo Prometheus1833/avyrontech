@@ -4,8 +4,6 @@ import Hero from "@/components/site/Hero";
 import AgencyServices from "@/components/site/AgencyServices";
 import { useLocation } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
-import QuickNav from "@/components/site/QuickNav";
-import { Rocket, LayoutGrid, Workflow, BadgeCheck, MessageSquare, HelpCircle } from "lucide-react";
 
 const Problem = lazy(() => import("@/components/site/Problem"));
 const Process = lazy(() => import("@/components/site/Process"));
