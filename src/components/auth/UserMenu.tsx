@@ -130,10 +130,16 @@ const UserMenu = () => {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           {items.map((item) => {
+            const itemStyle = { ["--dot-color" as string]: item.dot };
             const inner = (
               <span className="flex items-center justify-between w-full gap-2">
                 <span className="flex items-center gap-2">
                   <item.icon className="size-4" />
+                  <span
+                    aria-hidden="true"
+                    className="size-2 rounded-full shadow-sm"
+                    style={{ backgroundColor: `hsl(${item.dot})` }}
+                  />
                   {item.label}
                 </span>
                 {item.comingSoon && (
@@ -143,7 +149,12 @@ const UserMenu = () => {
             );
             if (item.to) {
               return (
-                <DropdownMenuItem key={item.label} asChild className="cursor-pointer">
+                <DropdownMenuItem
+                  key={item.label}
+                  asChild
+                  className="cursor-pointer menu-press active:scale-[0.98] transition-transform duration-150 ease-out"
+                  style={itemStyle}
+                >
                   <Link to={item.to} onClick={() => setMenuOpen(false)}>{inner}</Link>
                 </DropdownMenuItem>
               );
@@ -156,15 +167,25 @@ const UserMenu = () => {
                   setMenuOpen(false);
                   item.onSelect?.();
                 }}
-                className="cursor-pointer"
+                className="cursor-pointer menu-press active:scale-[0.98] transition-transform duration-150 ease-out"
+                style={itemStyle}
               >
                 {inner}
               </DropdownMenuItem>
             );
           })}
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={handleSignOut} className="cursor-pointer text-destructive focus:text-destructive">
+          <DropdownMenuItem
+            onSelect={handleSignOut}
+            className="cursor-pointer menu-press active:scale-[0.98] transition-transform duration-150 ease-out text-destructive focus:text-destructive"
+            style={{ ["--dot-color" as string]: "0, 84%, 60%" }}
+          >
             <LogOut className="size-4 mr-2" />
+            <span
+              aria-hidden="true"
+              className="size-2 rounded-full shadow-sm mr-2"
+              style={{ backgroundColor: "hsl(0, 84%, 60%)" }}
+            />
             {t.auth.logout}
           </DropdownMenuItem>
         </DropdownMenuContent>
