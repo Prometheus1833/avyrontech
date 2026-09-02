@@ -471,10 +471,18 @@ const profileLimits: Record<(typeof PROFILE_FIELDS)[number], number> = {
   language: 2, theme: 10, pseudonym: 80,
 };
 
+// Privileged columns are never patchable through this endpoint. The allowlist
+// already drops them; the explicit reject makes escalation attempts loud.
+const PRIVILEGED_PROFILE_FIELDS = ["staff_role", "role", "roles", "id", "avatar_url"] as const;
+
 app.put("/api/profile", requireAuth, async (c) => {
   const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  if (PRIVILEGED_PROFILE_FIELDS.some((field) => field in body)) {
+    return c.json({ error: { code: "forbidden_field", message: "Câmp privilegiat: doar un administrator îl poate modifica" } }, 403);
+  }
   const patch = PROFILE_FIELDS.flatMap((field) => field in body ? [[field, String(body[field] ?? "").trim().slice(0, profileLimits[field])]] as const : []);
   if (!patch.length) return c.json({ error: { code: "empty_patch" } }, 400);
+
   const values = Object.fromEntries(patch);
   if (values.entity_type && !["individual", "srl", "pfa", "ii", "other"].includes(values.entity_type)) return c.json({ error: { code: "invalid_entity_type" } }, 400);
   if (values.language && !["ro", "en"].includes(values.language)) return c.json({ error: { code: "invalid_language" } }, 400);
