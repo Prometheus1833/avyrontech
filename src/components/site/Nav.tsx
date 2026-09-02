@@ -1,13 +1,17 @@
 import { Menu, X, LogIn, Newspaper, ShoppingBag, UsersRound } from "lucide-react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import LangSwitch from "./LangSwitch";
 import ThemeToggle from "./ThemeToggle";
+import CurrencySwitch from "./CurrencySwitch";
 import logo from "@/assets/avyron-logo.webp";
 
 const UserMenu = lazy(() => import("@/components/auth/UserMenu"));
+
+// Routes where prices are shown — the currency toggle belongs in the nav cluster there.
+const CURRENCY_ROUTES = /^\/(en\/)?($|costurisiproduse|pricing|pachete-mentenanta|care-plans|produse|products)/;
 
 const Nav = () => {
   const [open, setOpen] = useState(false);
@@ -17,6 +21,8 @@ const Nav = () => {
   const { user, loading } = useAuth();
   const isRo = lang === "ro";
   const homePath = isRo ? "/" : "/en";
+  const { pathname } = useLocation();
+  const showCurrency = CURRENCY_ROUTES.test(pathname);
   const links = [
     { label: t.nav.news, to: lang === "en" ? "/en/blog" : "/blog", icon: Newspaper, isRoute: true },
     { label: isRo ? "Produse" : "Products", to: isRo ? "/costurisiproduse" : "/en/pricing", icon: ShoppingBag, isRoute: true },
@@ -63,6 +69,7 @@ const Nav = () => {
               </span>
             </a>
             <div className="hidden md:inline-flex items-center gap-1.5">
+              {showCurrency && <CurrencySwitch compact showDetails={false} />}
               <LangSwitch />
               <ThemeToggle />
             </div>
@@ -124,6 +131,7 @@ const Nav = () => {
             ))}
           </div>
           <div className="md:hidden flex items-center gap-1.5">
+            {showCurrency && <CurrencySwitch compact showDetails={false} />}
             <LangSwitch />
             <ThemeToggle />
             {!loading && user ? (
