@@ -9,12 +9,14 @@ const Reveal = ({
   delay = 0,
   className = "",
   as: Tag = "div",
+  id,
 }: {
   children: ReactNode;
   /** Stagger delay in ms. */
   delay?: number;
   className?: string;
   as?: "div" | "section" | "li" | "article";
+  id?: string;
 }) => {
   const ref = useRef<HTMLElement | null>(null);
   const [shown, setShown] = useState(false);
@@ -43,6 +45,7 @@ const Reveal = ({
   return (
     <Tag
       ref={ref as never}
+      id={id}
       style={{ transitionDelay: `${delay}ms` }}
       className={`transition-all duration-700 ease-out ${
         shown ? "opacity-100 translate-y-0 blur-0" : "will-change-transform opacity-0 translate-y-6 blur-[2px]"
