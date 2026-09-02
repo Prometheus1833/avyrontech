@@ -39,6 +39,7 @@ import Footer from "@/components/site/Footer";
 import CurrencySwitch from "@/components/site/CurrencySwitch";
 import { useCurrency } from "@/hooks/useCurrency";
 import PaymentMethods from "@/components/site/PaymentMethods";
+import QuickNav, { type QuickNavItem } from "@/components/site/QuickNav";
 
 const ICONS: Record<IconKey, React.ComponentType<{ className?: string }>> = {
   globe: Globe,
@@ -131,8 +132,21 @@ const ProductPage = () => {
   // where its protected request flow has the necessary context and anti-spam checks.
   const others = PRODUCTS.filter((p) => p.key !== product.key && p.key !== "audit");
 
+  const quickNavItems: QuickNavItem[] = [
+    { id: "prezentare", label: ro ? "Prezentare" : "Overview", icon: HeroIcon },
+    { id: "beneficii", label: ro ? "Beneficii" : "Highlights", icon: Check },
+    ...(c.audiences ? [{ id: "pentru-cine", label: ro ? "Pentru cine" : "Who it's for", icon: Users }] : []),
+    ...(c.tech ? [{ id: "tehnologii", label: ro ? "Tehnologii" : "Technologies", icon: Code2 }] : []),
+    { id: "pachet", label: ro ? "Ce include" : "What's included", icon: ShoppingBag },
+    { id: "proces", label: ro ? "Proces" : "Process", icon: Clock },
+    ...(c.advice ? [{ id: "consiliere", label: ro ? "Consiliere" : "Advice", icon: Gauge }] : []),
+    { id: "faq", label: "FAQ", icon: MessageCircle },
+    { id: "contact", label: ro ? "Contact" : "Contact", icon: ArrowRight },
+  ];
+
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
+      <QuickNav items={quickNavItems} />
       {/* Ambient background */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div className={`absolute -top-40 left-1/2 -translate-x-1/2 size-[42rem] rounded-full blur-3xl opacity-40 ${a.glow}`} />
@@ -185,7 +199,7 @@ const ProductPage = () => {
         />
 
         {/* Hero */}
-        <section className="mt-8 text-center sm:mt-10">
+        <section id="prezentare" className="mt-8 scroll-mt-28 text-center sm:mt-10">
           <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.25em] ${a.chipBg} ${a.chipText}`}>
             <HeroIcon className="size-3.5" aria-hidden />
             {c.kicker}
@@ -282,7 +296,7 @@ const ProductPage = () => {
         </Reveal>
 
         {/* Highlights */}
-        <section className="mt-14">
+        <section id="beneficii" className="mt-14 scroll-mt-28">
           <Reveal>
             <h2 className="font-display text-2xl md:text-3xl font-extrabold">
               {ro ? "Ce primești, pe scurt" : "What you get, in short"}
@@ -308,7 +322,7 @@ const ProductPage = () => {
 
         {/* Audiences */}
         {c.audiences && (
-          <section className="mt-14">
+          <section id="pentru-cine" className="mt-14 scroll-mt-28">
             <Reveal>
               <h2 className="font-display text-2xl md:text-3xl font-extrabold">{c.audiences.title}</h2>
               <p className="mt-3 max-w-2xl text-sm md:text-base text-foreground/70 leading-relaxed">
@@ -336,7 +350,7 @@ const ProductPage = () => {
 
         {/* Technology */}
         {c.tech && (
-          <section className="mt-14">
+          <section id="tehnologii" className="mt-14 scroll-mt-28">
             <Reveal>
               <h2 className="font-display text-2xl md:text-3xl font-extrabold">{c.tech.title}</h2>
               <p className="mt-3 max-w-2xl text-sm md:text-base text-foreground/70 leading-relaxed">
@@ -368,7 +382,7 @@ const ProductPage = () => {
         )}
 
         {/* Deliverables */}
-        <section className="mt-14">
+        <section id="pachet" className="mt-14 scroll-mt-28">
           <Reveal>
             <h2 className="font-display text-2xl md:text-3xl font-extrabold">
               {ro ? "Include în pachet" : "Included in the package"}
@@ -387,7 +401,7 @@ const ProductPage = () => {
         </section>
 
         {/* Process */}
-        <section className="mt-14">
+        <section id="proces" className="mt-14 scroll-mt-28">
           <Reveal>
             <h2 className="font-display text-2xl md:text-3xl font-extrabold">
               {ro ? "Cum lucrăm" : "How we work"}
@@ -412,7 +426,7 @@ const ProductPage = () => {
 
         {/* Post-launch advice */}
         {c.advice && (
-          <section className="mt-14">
+          <section id="consiliere" className="mt-14 scroll-mt-28">
             <Reveal>
               <h2 className="font-display text-2xl md:text-3xl font-extrabold">{c.advice.title}</h2>
               <p className="mt-3 max-w-2xl text-sm md:text-base text-foreground/70 leading-relaxed">
@@ -437,7 +451,7 @@ const ProductPage = () => {
 
 
         {/* FAQ */}
-        <section className="mt-14">
+        <section id="faq" className="mt-14 scroll-mt-28">
           <Reveal>
             <h2 className="font-display text-2xl md:text-3xl font-extrabold">
               {ro ? "Întrebări frecvente" : "Frequently asked questions"}
@@ -469,7 +483,7 @@ const ProductPage = () => {
         </Reveal>
 
         {/* CTA */}
-        <Reveal as="section" className="mt-12">
+        <Reveal as="section" id="contact" className="mt-12 scroll-mt-28">
           <div className={`rounded-3xl border ${a.border} bg-gradient-to-br from-foreground/[0.06] to-transparent p-8 md:p-10 text-center md:backdrop-blur relative overflow-hidden`}>
             <div aria-hidden className={`absolute -top-24 left-1/2 -translate-x-1/2 size-72 rounded-full blur-3xl ${a.glow}`} />
             <div className="relative">

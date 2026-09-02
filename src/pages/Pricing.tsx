@@ -14,6 +14,7 @@ import ThemeToggle from "@/components/site/ThemeToggle";
 import Breadcrumbs from "@/components/site/Breadcrumbs";
 import CurrencySwitch from "@/components/site/CurrencySwitch";
 import PageBackLink from "@/components/site/PageBackLink";
+import QuickNav from "@/components/site/QuickNav";
 import { useCurrency } from "@/hooks/useCurrency";
 
 /**
@@ -195,6 +196,14 @@ const Pricing = () => {
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
+      <QuickNav
+        items={[
+          { id: "prezentare", label: ro ? "Produse" : "Products", icon: ShoppingBag },
+          { id: "audit", label: ro ? "Audit gratuit" : "Free audit", icon: ScanSearch },
+          { id: "garantii", label: ro ? "Garanții" : "Guarantees", icon: Shield },
+          { id: "cta", label: ro ? "Contact" : "Contact", icon: MessageCircle },
+        ]}
+      />
       {/* PS-style background: starfield + grid + glow */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(0,112,243,0.25),transparent_55%)]" />
@@ -246,7 +255,7 @@ const Pricing = () => {
         />
 
         {/* Hero */}
-        <section className="mt-12 text-center">
+        <section id="prezentare" className="mt-12 scroll-mt-28 text-center">
           <h1 className="mt-6 font-display text-3xl sm:text-4xl md:text-6xl font-extrabold leading-[1.05] tracking-tight px-2">
             <span className="bg-gradient-to-r from-foreground via-cyan-500 to-blue-600 dark:from-white dark:via-cyan-200 dark:to-blue-400 bg-clip-text text-transparent">
               {ro
@@ -264,7 +273,7 @@ const Pricing = () => {
         </section>
 
         {/* Audit — product overview entry; the request continues in the protected form. */}
-        <section data-testid="free-audit-card" className="relative mt-8 overflow-hidden rounded-2xl border border-amber-300/25 bg-gradient-to-br from-amber-400/[0.08] via-card to-orange-500/[0.06] p-4 sm:p-5">
+        <section id="audit" data-testid="free-audit-card" className="relative mt-8 overflow-hidden rounded-2xl border border-amber-300/25 bg-gradient-to-br from-amber-400/[0.08] via-card to-orange-500/[0.06] p-4 sm:p-5">
           <div aria-hidden className="absolute -right-10 -top-12 size-36 rounded-full bg-amber-400/10 blur-2xl" />
           <div className="relative grid items-start gap-5 md:grid-cols-[0.85fr_1.15fr]">
             <div>
@@ -1006,7 +1015,7 @@ const Pricing = () => {
         </div>
 
         {/* CTA */}
-        <section id="cta" className="mt-16 rounded-3xl border border-foreground/10 bg-gradient-to-br from-blue-600/20 via-purple-600/15 to-pink-500/15 p-8 md:p-10 text-center backdrop-blur relative overflow-hidden">
+        <section id="cta" className="mt-16 scroll-mt-28 rounded-3xl border border-foreground/10 bg-gradient-to-br from-blue-600/20 via-purple-600/15 to-pink-500/15 p-8 md:p-10 text-center backdrop-blur relative overflow-hidden">
           <h2 className="font-display text-3xl md:text-4xl font-extrabold">
             {ro ? "Începem cu o evaluare gratuită" : "Let's start with a free evaluation"}
           </h2>
