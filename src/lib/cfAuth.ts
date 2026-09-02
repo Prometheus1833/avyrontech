@@ -60,9 +60,13 @@ class CfAuth {
   }
 
   private clearSession() {
+    // Only notify listeners when an actual session existed. Without this
+    // guard, a 401 for an anonymous visitor triggers emit() -> reload ->
+    // 401 -> emit() ... in an endless request loop.
+    const hadSession = this.accessToken !== null || this.expiresAt !== 0;
     this.accessToken = null;
     this.expiresAt = 0;
-    this.emit();
+    if (hadSession) this.emit();
   }
 
   async request<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
