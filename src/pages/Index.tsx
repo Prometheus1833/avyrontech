@@ -4,8 +4,6 @@ import Hero from "@/components/site/Hero";
 import AgencyServices from "@/components/site/AgencyServices";
 import { useLocation } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
-import QuickNav from "@/components/site/QuickNav";
-import { Rocket, LayoutGrid, Workflow, BadgeCheck, MessageSquare, HelpCircle } from "lucide-react";
 
 const Problem = lazy(() => import("@/components/site/Problem"));
 const Process = lazy(() => import("@/components/site/Process"));
@@ -96,16 +94,6 @@ const Index = () => {
   return (
     <main className="min-h-screen overflow-x-hidden">
       <Nav />
-      <QuickNav
-        items={[
-          { id: "hero", label: isRo ? "Start" : "Start", icon: Rocket },
-          { id: "exemple", label: isRo ? "Domenii" : "Industries", icon: LayoutGrid },
-          { id: "proces", label: isRo ? "Proces" : "Process", icon: Workflow },
-          { id: "avantaje", label: isRo ? "Avantaje" : "Benefits", icon: BadgeCheck },
-          { id: "cta", label: isRo ? "Demo gratuit" : "Free demo", icon: MessageSquare },
-          { id: "faq", label: "FAQ", icon: HelpCircle },
-        ]}
-      />
       <Hero />
       <AgencyServices />
       <Suspense fallback={<div className="h-8" />}>

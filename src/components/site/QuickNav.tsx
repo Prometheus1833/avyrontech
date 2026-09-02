@@ -19,9 +19,24 @@ interface Props {
 const QuickNav = ({ items }: Props) => {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<string | null>(null);
+  const [present, setPresent] = useState<string[]>([]);
   const rootRef = useRef<HTMLDivElement>(null);
   const { lang } = useLang();
   const ro = lang === "ro";
+
+  // Keep only anchors that really exist on the page (relevant buttons only).
+  useEffect(() => {
+    const sync = () => {
+      const found = items.filter(({ id }) => document.getElementById(id)).map((i) => i.id);
+      setPresent((prev) => (prev.join("|") === found.join("|") ? prev : found));
+    };
+    sync();
+    const mo = new MutationObserver(sync);
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => mo.disconnect();
+  }, [items]);
+
+  const visibleItems = items.filter((i) => present.includes(i.id));
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -32,12 +47,12 @@ const QuickNav = ({ items }: Props) => {
       },
       { rootMargin: "-30% 0px -60% 0px" }
     );
-    items.forEach(({ id }) => {
+    present.forEach((id) => {
       const el = document.getElementById(id);
       if (el) observer.observe(el);
     });
     return () => observer.disconnect();
-  }, [items]);
+  }, [present]);
 
   useEffect(() => {
     if (!open) return;
@@ -55,7 +70,9 @@ const QuickNav = ({ items }: Props) => {
     };
   }, [open]);
 
-  if (items.length === 0) return null;
+  // Not worth a floating menu for one or two sections.
+  if (visibleItems.length < 3) return null;
+
 
   const menuLabel = ro ? "Cuprinsul paginii" : "On this page";
   const toggleLabel = open

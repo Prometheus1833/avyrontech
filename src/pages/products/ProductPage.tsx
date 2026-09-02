@@ -134,15 +134,13 @@ const ProductPage = () => {
 
   const quickNavItems: QuickNavItem[] = [
     { id: "prezentare", label: ro ? "Prezentare" : "Overview", icon: HeroIcon },
-    { id: "beneficii", label: ro ? "Beneficii" : "Highlights", icon: Check },
     ...(c.audiences ? [{ id: "pentru-cine", label: ro ? "Pentru cine" : "Who it's for", icon: Users }] : []),
-    ...(c.tech ? [{ id: "tehnologii", label: ro ? "Tehnologii" : "Technologies", icon: Code2 }] : []),
     { id: "pachet", label: ro ? "Ce include" : "What's included", icon: ShoppingBag },
     { id: "proces", label: ro ? "Proces" : "Process", icon: Clock },
-    ...(c.advice ? [{ id: "consiliere", label: ro ? "Consiliere" : "Advice", icon: Gauge }] : []),
     { id: "faq", label: "FAQ", icon: MessageCircle },
     { id: "contact", label: ro ? "Contact" : "Contact", icon: ArrowRight },
   ];
+
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
