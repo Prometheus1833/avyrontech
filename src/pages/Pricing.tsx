@@ -191,28 +191,6 @@ const Pricing = () => {
     },
   ];
 
-  const payments = [
-    {
-      icon: <CreditCard className="size-5" />,
-      title: ro ? "Card bancar" : "Bank card",
-      desc: ro ? "Plăți rapide și securizate prin procesator autorizat." : "Fast, secure payments via certified processor.",
-    },
-    {
-      icon: <Building2 className="size-5" />,
-      title: ro ? "Transfer bancar" : "Bank transfer",
-      desc: ro ? "Plată direct în contul firmei pe baza facturii emise." : "Direct payment into the company account against an issued invoice.",
-    },
-    {
-      icon: <Link2 className="size-5" />,
-      title: ro ? "Link de plată" : "Payment link",
-      desc: ro ? "Pentru servicii rapide sau abonamente lunare." : "For quick services or monthly subscriptions.",
-    },
-    {
-      icon: <FileText className="size-5" />,
-      title: ro ? "Factură & ordin de plată" : "Invoice & payment order",
-      desc: ro ? "Disponibil pentru clienți business." : "Available for business clients.",
-    },
-  ];
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
