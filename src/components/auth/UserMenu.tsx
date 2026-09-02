@@ -33,6 +33,7 @@ import { ContactDialog } from "./ContactDialog";
 type MenuItem = {
   label: string;
   icon: typeof UserIcon;
+  dot: string; // comma-separated HSL, e.g. "264, 90%, 62%"
   to?: string;
   onSelect?: () => void;
   comingSoon?: boolean;
