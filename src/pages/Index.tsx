@@ -94,16 +94,6 @@ const Index = () => {
   return (
     <main className="min-h-screen overflow-x-hidden">
       <Nav />
-      <QuickNav
-        items={[
-          { id: "hero", label: isRo ? "Start" : "Start", icon: Rocket },
-          { id: "exemple", label: isRo ? "Domenii" : "Industries", icon: LayoutGrid },
-          { id: "proces", label: isRo ? "Proces" : "Process", icon: Workflow },
-          { id: "avantaje", label: isRo ? "Avantaje" : "Benefits", icon: BadgeCheck },
-          { id: "cta", label: isRo ? "Demo gratuit" : "Free demo", icon: MessageSquare },
-          { id: "faq", label: "FAQ", icon: HelpCircle },
-        ]}
-      />
       <Hero />
       <AgencyServices />
       <Suspense fallback={<div className="h-8" />}>
