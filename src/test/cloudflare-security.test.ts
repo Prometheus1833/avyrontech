@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { hashPassword, verifyPassword } from "../../cloudflare/workers/api/src/security";
 
@@ -20,7 +21,7 @@ describe("Cloudflare password hashing", () => {
 });
 
 describe("Profile privilege escalation guard", () => {
-  const source = readFileSync(new URL("../../cloudflare/workers/api/src/index.ts", import.meta.url), "utf8");
+  const source = readFileSync(resolve(process.cwd(), "cloudflare/workers/api/src/index.ts"), "utf8");
 
   it("keeps staff_role out of the patchable profile allowlist", () => {
     const allowlist = source.match(/const PROFILE_FIELDS = \[(.*?)\] as const;/s)?.[1] ?? "";
@@ -35,7 +36,7 @@ describe("Profile privilege escalation guard", () => {
   });
 
   it("never lets the client send staff_role from the profile form", () => {
-    const form = readFileSync(new URL("../components/dashboard/ProfileTab.tsx", import.meta.url), "utf8");
+    const form = readFileSync(resolve(process.cwd(), "src/components/dashboard/ProfileTab.tsx"), "utf8");
     expect(form).toMatch(/const \{ staff_role: _ignoredRole, \.\.\.safeForm \} = form;/);
     expect(form).not.toMatch(/updateProfile\(\s*form\s*\)/);
   });
