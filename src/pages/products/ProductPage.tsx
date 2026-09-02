@@ -38,6 +38,7 @@ import { trackEvent } from "@/lib/analytics";
 import Footer from "@/components/site/Footer";
 import CurrencySwitch from "@/components/site/CurrencySwitch";
 import { useCurrency } from "@/hooks/useCurrency";
+import PaymentMethods from "@/components/site/PaymentMethods";
 
 const ICONS: Record<IconKey, React.ComponentType<{ className?: string }>> = {
   globe: Globe,
@@ -462,8 +463,13 @@ const ProductPage = () => {
           </div>
         </section>
 
+        {/* Payment methods */}
+        <Reveal as="div" className="mt-12">
+          <PaymentMethods compact />
+        </Reveal>
+
         {/* CTA */}
-        <Reveal as="section" className="mt-16">
+        <Reveal as="section" className="mt-12">
           <div className={`rounded-3xl border ${a.border} bg-gradient-to-br from-foreground/[0.06] to-transparent p-8 md:p-10 text-center md:backdrop-blur relative overflow-hidden`}>
             <div aria-hidden className={`absolute -top-24 left-1/2 -translate-x-1/2 size-72 rounded-full blur-3xl ${a.glow}`} />
             <div className="relative">
