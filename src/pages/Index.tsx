@@ -47,7 +47,8 @@ const Deferred = ({
 };
 
 const Index = () => {
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const isRo = lang === "ro";
   const location = useLocation();
 
   useEffect(() => {
