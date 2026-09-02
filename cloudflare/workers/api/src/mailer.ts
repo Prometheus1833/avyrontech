@@ -1,7 +1,8 @@
 import type { Env } from "./types";
 import { sendMailSmtp, type Attachment, type MailMessage } from "./smtp";
 
-export type DeliveryResult = { delivered: true } | { delivered: false; error: string };
+// Câmpuri opționale (nu union discriminat) pentru narrowing corect și fără `strictNullChecks`.
+export type DeliveryResult = { delivered: boolean; error?: string };
 
 const errorMessage = (error: unknown) => error instanceof Error ? error.message.slice(0, 500) : "Unknown SMTP error";
 

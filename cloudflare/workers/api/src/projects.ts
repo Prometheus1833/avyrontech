@@ -126,7 +126,7 @@ projectsRouter.patch("/api/projects/:id", async (c) => {
       return c.json({ error: { code: "invalid_input", field: k } }, 400);
     }
     sets.push(`${k} = ?`);
-    vals.push(value);
+    vals.push(value as string | number);
   }
   if (!sets.length) return c.json({ ok: true });
   sets.push("updated_at = ?"); vals.push(now()); vals.push(id);

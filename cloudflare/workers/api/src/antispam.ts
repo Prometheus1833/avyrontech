@@ -5,7 +5,9 @@
 
 export type RateRule = { key: string; limit: number; windowSec: number };
 
-export type RateResult = { ok: true } | { ok: false; retryAfter: number };
+// Notă: folosim câmpuri opționale (nu union discriminat) pentru ca narrowing-ul
+// să funcționeze și în configurările de typecheck fără `strictNullChecks`.
+export type RateResult = { ok: boolean; retryAfter?: number };
 
 export async function checkRateLimit(
   db: D1Database,

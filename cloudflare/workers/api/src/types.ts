@@ -1,3 +1,5 @@
+/// <reference path="./worker-configuration.d.ts" />
+
 export type Role = "user" | "staff" | "admin";
 
 // Resource bindings, vars and required secrets are generated from the
