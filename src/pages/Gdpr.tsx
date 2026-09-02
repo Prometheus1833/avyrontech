@@ -504,6 +504,7 @@ const Gdpr = () => {
 
         </div>
       </section>
+      <Footer />
     </main>
   );
 };

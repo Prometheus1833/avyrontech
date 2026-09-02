@@ -1056,6 +1056,7 @@ const Pricing = () => {
           </div>
         </section>
       </div>
+      <Footer />
     </main>
   );
 };

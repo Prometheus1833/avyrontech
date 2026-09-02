@@ -622,6 +622,7 @@ const CarePlansPage = () => {
           </div>
         </Reveal>
       </div>
+      <Footer />
     </main>
   );
 };
