@@ -1,12 +1,103 @@
 import { useLang } from "@/i18n/LanguageContext";
-import { Link } from "react-router-dom";
-import { Mail, Phone, MessageCircle, ArrowRight } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { Mail, Phone, MessageCircle, ArrowRight, Sparkles, Wrench, ShieldCheck, MessagesSquare, Briefcase } from "lucide-react";
 import { COOKIE_SETTINGS_EVENT } from "@/components/site/CookieBanner";
+import { trackEvent } from "@/lib/analytics";
 import logo from "@/assets/avyron-logo.webp";
 import planetBg from "@/assets/footer-planet-bg.webp";
 
+type PageCta = {
+  label: string;
+  sub: string;
+  to: string;
+  external?: boolean;
+  Icon: typeof ArrowRight;
+  page: string;
+};
+
+/** Conversion-focused, page-specific primary CTA for the footer. */
+const pageCta = (pathname: string, lang: "ro" | "en", fallback: { ctaLabel: string; ctaSub: string }): PageCta => {
+  const en = lang === "en";
+  const home = en ? "/en#cta" : "/#cta";
+  const p = pathname.toLowerCase();
+  if (p.includes("/produse/") || p.includes("/products/")) {
+    return {
+      page: "product",
+      label: en ? "Get a quote for this service" : "Cere ofertă pentru acest serviciu",
+      sub: en ? "Free · reply in 24h" : "Gratuit · răspuns în 24h",
+      to: `https://wa.me/40734605055?text=${encodeURIComponent(
+        en ? `Hello! I want a quote for: ${p}` : `Bună! Vreau o ofertă pentru: ${p}`,
+      )}`,
+      external: true,
+      Icon: Briefcase,
+    };
+  }
+  if (p.includes("mentenanta") || p.includes("care-plans")) {
+    return {
+      page: "care",
+      label: en ? "Activate maintenance" : "Activează mentenanța",
+      sub: en ? "Priority support included" : "Suport prioritar inclus",
+      to: `https://wa.me/40734605055?text=${encodeURIComponent(
+        en ? "Hello! I want to activate a maintenance plan." : "Bună! Vreau să activez un pachet de mentenanță.",
+      )}`,
+      external: true,
+      Icon: Wrench,
+    };
+  }
+  if (p.includes("/blog")) {
+    return {
+      page: "blog",
+      label: en ? "Free website audit" : "Audit gratuit al site-ului",
+      sub: en ? "SEO · Speed · Security" : "SEO · Viteză · Securitate",
+      to: en ? "/en?request=audit#cta" : "/?request=audit#cta",
+      Icon: ShieldCheck,
+    };
+  }
+  if (p.includes("/despre") || p.includes("/about")) {
+    return {
+      page: "about",
+      label: en ? "Let's talk about your project" : "Hai să vorbim despre proiectul tău",
+      sub: en ? "Free consultation" : "Consultanță gratuită",
+      to: home,
+      Icon: MessagesSquare,
+    };
+  }
+  if (p.includes("/portofoliu") || p.includes("/portfolio")) {
+    return {
+      page: "portfolio",
+      label: en ? "I want a similar project" : "Vreau un proiect similar",
+      sub: en ? "Free estimate" : "Estimare gratuită",
+      to: home,
+      Icon: Sparkles,
+    };
+  }
+  if (p.includes("/costuri") || p.includes("/pricing")) {
+    return {
+      page: "pricing",
+      label: en ? "Get a custom quote" : "Cere ofertă personalizată",
+      sub: en ? "No obligation" : "Fără obligații",
+      to: home,
+      Icon: Briefcase,
+    };
+  }
+  return { page: "home", label: fallback.ctaLabel, sub: fallback.ctaSub, to: home, Icon: ArrowRight };
+};
+
 const Footer = () => {
   const { t, lang } = useLang();
+  const { pathname } = useLocation();
+  const cta = pageCta(pathname, lang, { ctaLabel: t.footer.ctaLabel, ctaSub: t.footer.ctaSub });
+  const ctaClass =
+    "group inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 px-3 py-1.5 shadow-[0_6px_16px_-6px_rgba(168,85,247,0.5)] transition-all";
+  const ctaInner = (
+    <>
+      <span className="flex flex-col items-center font-display leading-none text-white">
+        <span className="text-xs font-semibold">{cta.label}</span>
+        <span className="mt-0.5 text-[8px] font-normal text-white/75">{cta.sub}</span>
+      </span>
+      <cta.Icon className="size-3 text-white group-hover:translate-x-0.5 transition-transform" aria-hidden />
+    </>
+  );
   return (
     <footer className="relative overflow-hidden border-t border-white/10 bg-[#0a0612] text-white">
       {/* Planet background */}
@@ -48,16 +139,25 @@ const Footer = () => {
 
           {/* CTA + WhatsApp + Phone + Email — compact pill cluster */}
           <div className="flex flex-wrap items-center justify-center md:justify-end gap-1.5 flex-1">
-            <Link
-              to={lang === "en" ? "/en#cta" : "/#cta"}
-              className="group inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 px-3 py-1.5 shadow-[0_6px_16px_-6px_rgba(168,85,247,0.5)] transition-all"
-            >
-              <span className="flex flex-col items-center font-display leading-none text-white">
-                <span className="text-xs font-semibold">{t.footer.ctaLabel}</span>
-                <span className="mt-0.5 text-[8px] font-normal text-white/75">{t.footer.ctaSub}</span>
-              </span>
-              <ArrowRight className="size-3 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
+            {cta.external ? (
+              <a
+                href={cta.to}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackEvent("cta_click", { location: "footer", page: cta.page })}
+                className={ctaClass}
+              >
+                {ctaInner}
+              </a>
+            ) : (
+              <Link
+                to={cta.to}
+                onClick={() => trackEvent("cta_click", { location: "footer", page: cta.page })}
+                className={ctaClass}
+              >
+                {ctaInner}
+              </Link>
+            )}
             <a
               href="https://wa.me/40734605055"
               target="_blank"
