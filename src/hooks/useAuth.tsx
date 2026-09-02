@@ -27,7 +27,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
-  const [loading, setLoading] = useState(() => !isLandingPage());
+  // Start in loading state on every route so signed-in visitors never see a
+  // "Log in" CTA flash while the (possibly deferred) session bootstrap runs.
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     const me = await cfAuth.me();
