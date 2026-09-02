@@ -69,6 +69,7 @@ const Nav = () => {
               </span>
             </a>
             <div className="hidden md:inline-flex items-center gap-1.5">
+              {showCurrency && <CurrencySwitch compact showDetails={false} />}
               <LangSwitch />
               <ThemeToggle />
             </div>
@@ -130,6 +131,7 @@ const Nav = () => {
             ))}
           </div>
           <div className="md:hidden flex items-center gap-1.5">
+            {showCurrency && <CurrencySwitch compact showDetails={false} />}
             <LangSwitch />
             <ThemeToggle />
             {!loading && user ? (
