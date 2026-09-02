@@ -27,6 +27,7 @@ import LangSwitch from "@/components/site/LangSwitch";
 import ThemeToggle from "@/components/site/ThemeToggle";
 import Breadcrumbs from "@/components/site/Breadcrumbs";
 import PageBackLink from "@/components/site/PageBackLink";
+import QuickNav from "@/components/site/QuickNav";
 import Reveal from "@/components/site/Reveal";
 import logo from "@/assets/avyron-logo.jpg";
 import { trackEvent } from "@/lib/analytics";
@@ -294,6 +295,14 @@ const CarePlansPage = () => {
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
+      <QuickNav
+        items={[
+          { id: "pachete", label: ro ? "Pachete" : "Plans", icon: HeartHandshake },
+          { id: "cum-functioneaza", label: ro ? "Cum funcționează" : "How it works", icon: RefreshCw },
+          { id: "intrebari", label: ro ? "Întrebări" : "Questions", icon: MessageCircle },
+          { id: "contact", label: ro ? "Contact" : "Contact", icon: ArrowRight },
+        ]}
+      />
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 size-[42rem] rounded-full blur-3xl opacity-40 bg-emerald-400/15" />
         <div

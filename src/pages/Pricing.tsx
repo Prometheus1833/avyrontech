@@ -14,6 +14,7 @@ import ThemeToggle from "@/components/site/ThemeToggle";
 import Breadcrumbs from "@/components/site/Breadcrumbs";
 import CurrencySwitch from "@/components/site/CurrencySwitch";
 import PageBackLink from "@/components/site/PageBackLink";
+import QuickNav from "@/components/site/QuickNav";
 import { useCurrency } from "@/hooks/useCurrency";
 
 /**
@@ -195,6 +196,14 @@ const Pricing = () => {
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
+      <QuickNav
+        items={[
+          { id: "prezentare", label: ro ? "Produse" : "Products", icon: ShoppingBag },
+          { id: "audit", label: ro ? "Audit gratuit" : "Free audit", icon: ScanSearch },
+          { id: "garantii", label: ro ? "Garanții" : "Guarantees", icon: Shield },
+          { id: "cta", label: ro ? "Contact" : "Contact", icon: MessageCircle },
+        ]}
+      />
       {/* PS-style background: starfield + grid + glow */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(0,112,243,0.25),transparent_55%)]" />
