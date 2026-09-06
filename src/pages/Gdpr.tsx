@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useEffect } from "react";
 import { ShieldCheck, Lock, FileText, Database, Users, Globe, Cookie, Server, Mail, Phone } from "lucide-react";
-import logo from "@/assets/avyron-logo.jpg";
+import AvyronLogo from "@/components/site/AvyronLogo";
 import { COMPANY } from "@/config/company";
 import PageBackLink from "@/components/site/PageBackLink";
 import Footer from "@/components/site/Footer";
@@ -408,8 +408,7 @@ const Gdpr = () => {
         <div className="mx-auto max-w-5xl px-6 h-14 flex items-center justify-between">
           <PageBackLink to={isEn ? "/en" : "/"} label={isEn ? "Back" : "Înapoi"} />
           <a href={isEn ? "/en#hero" : "/#hero"} className="flex items-center gap-2" aria-label={isEn ? "Avyron — go to hero" : "Avyron — mergi la hero"}>
-            <img src={logo} alt="Avyron" width={24} height={24} className="size-6 rounded-md object-cover" />
-            <span className="font-display font-semibold tracking-[0.2em] text-xs">AVYRON</span>
+            <AvyronLogo size={24} />
           </a>
         </div>
       </header>

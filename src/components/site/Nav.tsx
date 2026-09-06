@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import LangSwitch from "./LangSwitch";
 import ThemeToggle from "./ThemeToggle";
 import CurrencySwitch from "./CurrencySwitch";
-import logo from "@/assets/avyron-logo.webp";
+import AvyronLogo from "./AvyronLogo";
 
 const UserMenu = lazy(() => import("@/components/auth/UserMenu"));
 
@@ -59,14 +59,8 @@ const Nav = () => {
       <div className="mx-auto max-w-6xl px-4 mt-3">
         <nav className="glass shadow-soft rounded-full flex items-center justify-between pl-3 pr-2 py-2 gap-2">
           <div className="flex items-center gap-3">
-            <a href={`${homePath}#hero`} className="flex items-center gap-2" aria-label={isRo ? "Avyron — mergi la hero" : "Avyron — go to hero"}>
-              <img src={logo} alt="Avyron" width={22} height={22} className="size-[1.4rem] rounded-md object-cover" />
-              <span
-                className="text-base md:text-lg font-bold uppercase tracking-[0.18em] bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent"
-                style={{ fontFamily: '"Times New Roman", Times, serif' }}
-              >
-                AVYRON
-              </span>
+            <a href={`${homePath}#hero`} className="flex items-center" aria-label={isRo ? "Avyron — mergi la hero" : "Avyron — go to hero"}>
+              <AvyronLogo size={28} />
             </a>
             <div className="hidden md:inline-flex items-center gap-1.5">
               {showCurrency && <CurrencySwitch compact showDetails={false} />}

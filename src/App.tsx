@@ -29,6 +29,7 @@ const ProjectPage = lazy(() => import("./pages/intern/ProjectPage.tsx"));
 const InternHome = lazy(() => import("./pages/intern/InternHome.tsx"));
 const ProductDetail = lazy(() => import("./pages/products/ProductPage.tsx"));
 const CarePlans = lazy(() => import("./pages/products/CarePlansPage.tsx"));
+const ProcessPage = lazy(() => import("./pages/ProcessPage.tsx"));
 
 
 import CookieBanner from "@/components/site/CookieBanner";
@@ -132,6 +133,8 @@ const App = () => (
                 <Route path="/en/products/qa-testing-web-mobile" element={<ProductDetail />} />
                 <Route path="/pachete-mentenanta" element={<CarePlans />} />
                 <Route path="/en/care-plans" element={<CarePlans />} />
+                <Route path="/proces" element={<ProcessPage />} />
+                <Route path="/en/process" element={<ProcessPage />} />
 
                 <Route path="/despre" element={<Navigate to="/despre-noi" replace />} />
                 <Route path="/despre-si-portofoliu" element={<Navigate to="/portofoliu" replace />} />

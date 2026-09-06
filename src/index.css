@@ -352,6 +352,113 @@ html {
 }
 
 /* ============================================
+   Avyron logo — the mark's motion.
+   Only transform/opacity animate, so the whole
+   thing stays on the compositor. The global
+   reduced-motion rule below stills all of it and
+   parks the sphere at its base offset-distance.
+   ============================================ */
+.avyron-logo {
+  /* Ink for the shadowed facet, wordmark and tagline. Follows the theme by
+     default; `--on-dark` pins it to white for permanently dark surfaces. */
+  --avy-ink: var(--foreground);
+}
+
+.avyron-logo--on-dark {
+  --avy-ink: 0 0% 100%;
+}
+
+.avyron-logo__tagline {
+  color: hsl(var(--avy-ink) / 0.6);
+}
+
+.avyron-logo__electron {
+  offset-path: path("M 57.84 18.83 A 29 12 -27 1 0 6.16 45.17 A 29 12 -27 1 0 57.84 18.83");
+  offset-distance: 16%;
+  offset-rotate: 0deg;
+  animation: avyron-orbit 11s linear infinite;
+  will-change: offset-distance;
+}
+
+/* Browsers without CSS Motion Path keep the sphere parked on the orbit. */
+@supports not (offset-path: path("M0 0 L1 1")) {
+  .avyron-logo__electron {
+    transform: translate(52px, 22px);
+    animation: none;
+  }
+}
+
+.avyron-logo__sweep {
+  animation: avyron-sweep 7s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  will-change: transform;
+}
+
+.avyron-logo__orbit {
+  transform-origin: 32px 32px;
+  animation: avyron-orbit-breathe 7s ease-in-out infinite;
+}
+
+@keyframes avyron-orbit {
+  to {
+    offset-distance: 116%;
+  }
+}
+
+@keyframes avyron-sweep {
+  0%,
+  62% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(104px);
+  }
+}
+
+@keyframes avyron-orbit-breathe {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Hover: the orbit tightens up and the mark lifts slightly out of the page. */
+a:hover .avyron-logo__electron,
+button:hover .avyron-logo__electron {
+  animation-duration: 4.5s;
+}
+
+a:hover .avyron-logo__orbit,
+button:hover .avyron-logo__orbit {
+  opacity: 1;
+}
+
+.avyron-logo__mark {
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform-style: preserve-3d;
+}
+
+a:hover .avyron-logo__mark,
+button:hover .avyron-logo__mark {
+  transform: perspective(220px) rotateY(11deg) rotateX(-5deg) scale(1.04);
+}
+
+/* One wordmark treatment everywhere the logo appears. */
+.avyron-logo__wordmark {
+  background-image: linear-gradient(
+    100deg,
+    hsl(var(--avy-ink)) 0%,
+    hsl(var(--brand)) 52%,
+    hsl(var(--brand-2)) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ============================================
    Reduced motion — disable 3D card tilts, reveals
    and decorative transitions for users who ask.
    ============================================ */

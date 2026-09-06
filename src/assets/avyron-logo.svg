@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="512" height="512" role="img" aria-label="Avyron">
+  <title>Avyron</title>
+  <desc>Faceted A monogram with an elliptical orbit and a shaded sphere.</desc>
+
+  <defs>
+    <linearGradient id="face-light" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#b98cff"/>
+      <stop offset="55%" stop-color="#7c3ded"/>
+      <stop offset="100%" stop-color="#1aa3f5"/>
+    </linearGradient>
+
+    <linearGradient id="face-dark" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#2f3668"/>
+      <stop offset="100%" stop-color="#171a33"/>
+    </linearGradient>
+
+    <linearGradient id="orbit" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1aa3f5" stop-opacity="0.15"/>
+      <stop offset="40%" stop-color="#7c3ded" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#f062a6" stop-opacity="0.25"/>
+    </linearGradient>
+
+    <radialGradient id="sphere" cx="0.34" cy="0.3" r="0.78">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="28%" stop-color="#b98cff"/>
+      <stop offset="72%" stop-color="#7c3ded"/>
+      <stop offset="100%" stop-color="#2a1160"/>
+    </radialGradient>
+  </defs>
+
+
+
+  <!-- Containment ring: four arcs on r=28, broken on the diagonals -->
+  <g stroke="#7c3ded" fill="none">
+    <g stroke-width="1.1" stroke-opacity="0.5" stroke-linecap="round">
+      <path d="M 19.3 7.05 A 28 28 0 0 1 44.7 7.05"/>
+      <path d="M 56.95 19.3 A 28 28 0 0 1 56.95 44.7"/>
+      <path d="M 44.7 56.95 A 28 28 0 0 1 19.3 56.95"/>
+      <path d="M 7.05 44.7 A 28 28 0 0 1 7.05 19.3"/>
+    </g>
+    <g stroke-width="1.6" stroke-opacity="0.8" stroke-linecap="round" stroke-linejoin="round">
+      <g transform="translate(12.2 12.2) scale(0.58)">
+        <circle cx="0" cy="0" r="5.4"/>
+        <path d="M-5.4 0 H5.4 M0 -5.4 C2.9 -2.4 2.9 2.4 0 5.4 C-2.9 2.4 -2.9 -2.4 0 -5.4"/>
+      </g>
+      <g transform="translate(51.8 12.2) scale(0.58)">
+        <rect x="-3.6" y="-5.6" width="7.2" height="11.2" rx="1.6"/>
+        <path d="M-1.1 3.6 H1.1"/>
+      </g>
+      <g transform="translate(12.2 51.8) scale(0.58)">
+        <path d="M-1.8 -4.6 L-6 0 L-1.8 4.6 M1.8 -4.6 L6 0 L1.8 4.6"/>
+      </g>
+      <g transform="translate(51.8 51.8) scale(0.58)">
+        <path d="M-1.5 3.2 C-5.6 -0.6 -4.3 -5.2 0 -6.6 C4.3 -5.2 5.6 -0.6 1.5 3.2 Z"/>
+        <path d="M-1.5 3.2 L-3.6 5.8 M1.5 3.2 L3.6 5.8"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- Monogram, scaled to sit inside the ring -->
+  <g transform="translate(32 32) scale(0.66) translate(-32 -32)">
+
+  <!-- Orbit -->
+  <path d="M 57.84 18.83 A 29 12 -27 1 0 6.16 45.17 A 29 12 -27 1 0 57.84 18.83"
+        fill="none" stroke="url(#orbit)" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Extruded side wall -->
+  <g transform="translate(2.2 2.4)" opacity="0.34">
+    <path d="M32 7 L5 57 L17.5 57 L32 30 Z" fill="#1b0f3d"/>
+    <path d="M32 7 L59 57 L46.5 57 L32 30 Z" fill="#1b0f3d"/>
+  </g>
+
+  <!-- Front faces -->
+  <path d="M32 7 L5 57 L17.5 57 L32 30 Z" fill="url(#face-dark)"
+        stroke="#9aa3e0" stroke-opacity="0.45" stroke-width="0.5" stroke-linejoin="round"/>
+  <path d="M32 7 L59 57 L46.5 57 L32 30 Z" fill="url(#face-light)"/>
+
+  <!-- Apex bevel -->
+  <path d="M32 7 L32 30" stroke="#b98cff" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round"/>
+
+  <!-- Sphere, parked on the orbit -->
+  <g transform="translate(52.5 21.6)">
+    <circle r="7" fill="#b98cff" opacity="0.2"/>
+    <circle r="4" fill="url(#sphere)"/>
+  </g>
+  </g>
+</svg>

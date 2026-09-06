@@ -37,7 +37,12 @@ export default function CurrencySwitch({
   const other: DisplayCurrency = currency === "EUR" ? "RON" : "EUR";
 
   return (
-    <div data-testid="currency-switch" className={`inline-flex flex-col items-center ${className}`}>
+    <div
+      data-testid="currency-switch"
+      /* The active currency, readable without depending on localised button copy. */
+      data-currency={currency}
+      className={`inline-flex flex-col items-center ${className}`}
+    >
       {compact ? (
         // Minimal single-pill toggle (same style as LangSwitch): shows only the
         // active currency; clicking switches to the other one.

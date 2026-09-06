@@ -5,7 +5,7 @@ import PaymentMethods from "@/components/site/PaymentMethods";
 import { useLang } from "@/i18n/LanguageContext";
 import { trackEvent } from "@/lib/analytics";
 import Footer from "@/components/site/Footer";
-import logo from "@/assets/avyron-logo.jpg";
+import AvyronLogo from "@/components/site/AvyronLogo";
 import premiumTech352Avif from "@/assets/premium-website-mockup-352.avif";
 import premiumTech704Avif from "@/assets/premium-website-mockup-704.avif";
 import premiumTech352Webp from "@/assets/premium-website-mockup-352.webp";
@@ -233,8 +233,7 @@ const Pricing = () => {
             aria-label={ro ? "Acasă Avyron" : "Avyron home"}
             className="flex min-w-0 items-center justify-self-center gap-2 rounded-full px-1.5 py-1 transition-colors hover:bg-foreground/5"
           >
-            <img src={logo} alt="Avyron" className="size-7 rounded-md ring-1 ring-white/20 sm:size-8" />
-            <span className="hidden font-display text-xs tracking-[0.2em] min-[380px]:inline sm:text-sm sm:tracking-[0.25em]">AVYRON</span>
+            <AvyronLogo size={28} />
           </a>
 
           <div className="inline-flex min-h-9 items-center justify-self-end gap-1.5 rounded-full border border-foreground/15 bg-foreground/[0.04] px-2 py-1 backdrop-blur">
