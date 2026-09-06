@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 64 64" width="512" height="512" role="img" aria-label="Avyron">
+  <title>Avyron</title>
+  <desc>Faceted A monogram with a sphere orbiting it and a travelling specular highlight.</desc>
+
+  <!--
+    The animated variant. Motion is SMIL, which cannot be switched off from CSS,
+    so `avyron-logo.svg` is the still counterpart to reach for when motion is
+    unwanted (print, email, prefers-reduced-motion contexts). Inside the app the
+    React component `AvyronLogo` is used instead, and it does honour
+    prefers-reduced-motion.
+  -->
+
+  <defs>
+    <linearGradient id="face-light" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#b98cff"/>
+      <stop offset="55%" stop-color="#7c3ded"/>
+      <stop offset="100%" stop-color="#1aa3f5"/>
+    </linearGradient>
+
+    <linearGradient id="face-dark" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#2f3668"/>
+      <stop offset="100%" stop-color="#171a33"/>
+    </linearGradient>
+
+    <linearGradient id="orbit" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1aa3f5" stop-opacity="0.15"/>
+      <stop offset="40%" stop-color="#7c3ded" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#f062a6" stop-opacity="0.25"/>
+    </linearGradient>
+
+    <radialGradient id="sphere" cx="0.34" cy="0.3" r="0.78">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="28%" stop-color="#b98cff"/>
+      <stop offset="72%" stop-color="#7c3ded"/>
+      <stop offset="100%" stop-color="#2a1160"/>
+    </radialGradient>
+
+    <linearGradient id="sweep" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <clipPath id="limbs">
+      <path d="M32 7 L5 57 L17.5 57 L32 30 Z M32 7 L59 57 L46.5 57 L32 30 Z"/>
+    </clipPath>
+
+    <path id="orbit-path" d="M 57.84 18.83 A 29 12 -27 1 0 6.16 45.17 A 29 12 -27 1 0 57.84 18.83"/>
+  </defs>
+
+
+  <!-- Orbit -->
+  <use href="#orbit-path" xlink:href="#orbit-path" fill="none" stroke="url(#orbit)" stroke-width="2" stroke-linecap="round">
+    <animate attributeName="opacity" values="0.7;1;0.7" dur="7s" repeatCount="indefinite"/>
+  </use>
+
+  <!-- Extruded side wall -->
+  <g transform="translate(2.2 2.4)" opacity="0.34">
+    <path d="M32 7 L5 57 L17.5 57 L32 30 Z" fill="#1b0f3d"/>
+    <path d="M32 7 L59 57 L46.5 57 L32 30 Z" fill="#1b0f3d"/>
+  </g>
+
+  <!-- Front faces -->
+  <path d="M32 7 L5 57 L17.5 57 L32 30 Z" fill="url(#face-dark)"
+        stroke="#9aa3e0" stroke-opacity="0.45" stroke-width="0.5" stroke-linejoin="round"/>
+  <path d="M32 7 L59 57 L46.5 57 L32 30 Z" fill="url(#face-light)"/>
+
+  <!-- Apex bevel -->
+  <path d="M32 7 L32 30" stroke="#b98cff" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round"/>
+
+  <!-- Travelling specular highlight -->
+  <g clip-path="url(#limbs)">
+    <rect x="-30" y="0" width="26" height="64" fill="url(#sweep)">
+      <animate attributeName="x" values="-30;-30;74" keyTimes="0;0.62;1" dur="7s" repeatCount="indefinite"/>
+    </rect>
+  </g>
+
+  <!--
+    Sphere travelling the orbit. No transform of its own: animateMotion composes
+    on top of the element's transform, so a static offset here would double up.
+  -->
+  <g>
+    <circle r="7" fill="#b98cff" opacity="0.2"/>
+    <circle r="4" fill="url(#sphere)"/>
+    <animateMotion dur="11s" repeatCount="indefinite" rotate="0">
+      <mpath href="#orbit-path" xlink:href="#orbit-path"/>
+    </animateMotion>
+  </g>
+</svg>

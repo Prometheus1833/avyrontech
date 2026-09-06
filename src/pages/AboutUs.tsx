@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import QuickNav from "@/components/site/QuickNav";
-import logo from "@/assets/avyron-logo.webp";
+import AvyronLogo from "@/components/site/AvyronLogo";
 import aboutHero1536Avif from "@/assets/about-hero-1536.avif";
 import aboutHero1536Webp from "@/assets/about-hero-1536.webp";
 import aboutHero768Avif from "@/assets/about-hero-768.avif";
@@ -126,8 +126,7 @@ const AboutUs = () => {
           <div className="flex items-center gap-2">
             <PageBackLink to={ro ? "/" : "/en"} label={ro ? "Înapoi" : "Back"} inverse />
             <a href={homeHref} className="group hidden items-center gap-2.5 sm:inline-flex" aria-label={ro ? "Avyron — mergi la începutul paginii principale" : "Avyron — go to homepage hero"}>
-              <img src={logo} alt="" width={30} height={30} className="size-7 rounded-md object-cover ring-1 ring-white/20" />
-              <span className="font-display text-sm font-extrabold tracking-[0.2em] text-white">AVYRON</span>
+              <AvyronLogo size={28} tone="onDark" />
             </a>
           </div>
           <div className="flex items-center gap-2">

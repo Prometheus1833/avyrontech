@@ -33,7 +33,7 @@ import Breadcrumbs from "@/components/site/Breadcrumbs";
 import PageBackLink from "@/components/site/PageBackLink";
 import Reveal from "@/components/site/Reveal";
 import NotFound from "@/pages/NotFound";
-import logo from "@/assets/avyron-logo.jpg";
+import AvyronLogo from "@/components/site/AvyronLogo";
 import { trackEvent } from "@/lib/analytics";
 import Footer from "@/components/site/Footer";
 import CurrencySwitch from "@/components/site/CurrencySwitch";
@@ -178,8 +178,7 @@ const ProductPage = () => {
               aria-label={ro ? "Acasă" : "Home"}
               className="flex items-center gap-2 rounded-full px-1.5 py-1 hover:bg-foreground/5 transition-colors"
             >
-              <img src={logo} alt="Avyron" width={32} height={32} className="size-7 sm:size-8 rounded-md ring-1 ring-foreground/15" />
-              <span className="font-display tracking-[0.2em] text-xs sm:text-sm">AVYRON</span>
+              <AvyronLogo size={28} />
             </a>
           </div>
         </div>

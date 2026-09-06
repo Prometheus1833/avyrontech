@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLang } from "@/i18n/LanguageContext";
-import logo from "@/assets/avyron-logo.jpg";
+import AvyronLogo from "@/components/site/AvyronLogo";
 import Footer from "@/components/site/Footer";
 import ContactBar from "@/components/site/ContactBar";
 import LangSwitch from "@/components/site/LangSwitch";
@@ -145,8 +145,7 @@ const About = () => {
               className="group hidden items-center gap-2 rounded-full px-1.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
               aria-label={ro ? "Avyron — mergi la începutul paginii principale" : "Avyron — go to homepage hero"}
             >
-              <img src={logo} alt="" width={22} height={22} className="size-5 rounded-md object-cover" />
-              <span className="font-display text-[11px] font-extrabold tracking-[0.18em]">AVYRON</span>
+              <AvyronLogo size={22} />
             </a>
           </div>
           <div className="flex items-center gap-2">

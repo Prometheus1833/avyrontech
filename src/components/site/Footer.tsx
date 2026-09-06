@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Mail, Phone, MessageCircle, ArrowRight, Sparkles, Wrench, ShieldCheck, MessagesSquare, Briefcase } from "lucide-react";
 import { COOKIE_SETTINGS_EVENT } from "@/components/site/CookieBanner";
 import { trackEvent } from "@/lib/analytics";
-import logo from "@/assets/avyron-logo.webp";
+import AvyronLogo from "./AvyronLogo";
 import planetBg from "@/assets/footer-planet-bg.webp";
 
 type PageCta = {
@@ -119,22 +119,7 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row md:items-center gap-3">
           {/* Brand */}
           <a href={lang === "en" ? "/en#hero" : "/#hero"} className="flex shrink-0 items-center gap-2" aria-label={lang === "en" ? "Avyron — go to hero" : "Avyron — mergi la hero"}>
-            <img
-              src={logo}
-              alt="Avyron"
-              width={32}
-              height={32}
-              className="size-8 rounded-lg object-cover ring-1 ring-white/20"
-              loading="lazy"
-            />
-            <div className="min-w-0">
-              <div className="font-display font-extrabold text-lg md:text-xl tracking-[0.15em] bg-gradient-to-r from-white via-purple-200 to-purple-400 bg-clip-text text-transparent leading-none">
-                AVYRON
-              </div>
-              <div className="font-display text-[9px] tracking-[0.22em] uppercase text-white/60 leading-tight mt-0.5">
-                Innovate. <span className="text-purple-300">Develop.</span> Elevate.
-              </div>
-            </div>
+            <AvyronLogo size={32} showTagline tone="onDark" />
           </a>
 
           {/* CTA + WhatsApp + Phone + Email — compact pill cluster */}

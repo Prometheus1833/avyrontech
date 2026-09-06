@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import Footer from "@/components/site/Footer";
 import PageBackLink from "@/components/site/PageBackLink";
-import logo from "@/assets/avyron-logo.webp";
+import AvyronLogo from "@/components/site/AvyronLogo";
 import { COMPANY } from "@/config/company";
 import { useLang } from "@/i18n/LanguageContext";
 
@@ -333,8 +333,7 @@ const Terms = () => {
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
           <PageBackLink to={homePath} label={ro ? "Înapoi" : "Back"} />
           <a href={homePath} className="inline-flex items-center gap-2" aria-label={ro ? "Avyron — mergi la hero" : "Avyron — go to hero"}>
-            <img src={logo} alt="Avyron" width={26} height={26} className="size-[26px] rounded-lg object-cover ring-1 ring-white/15" />
-            <span className="font-display text-xs font-bold tracking-[0.22em]">AVYRON</span>
+            <AvyronLogo size={26} tone="onDark" />
           </a>
         </div>
       </header>
