@@ -268,3 +268,38 @@ export function offerCatalogLd({
     })),
   };
 }
+
+/**
+ * HowTo schema for the process page. Google renders these as step-by-step
+ * rich results, which is the right shape for a "how we work" page.
+ */
+export function howToLd({
+  name,
+  description,
+  path,
+  totalTime,
+  steps,
+}: {
+  name: string;
+  description: string;
+  path: string;
+  /** ISO 8601 duration, e.g. "P15D". */
+  totalTime?: string;
+  steps: Array<{ name: string; text: string }>;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name,
+    description,
+    ...(totalTime ? { totalTime } : {}),
+    url: `${BASE_URL}${path}`,
+    step: steps.map((s, i) => ({
+      "@type": "HowToStep",
+      position: i + 1,
+      name: s.name,
+      text: s.text,
+      url: `${BASE_URL}${path}#etapa-${i + 1}`,
+    })),
+  };
+}
