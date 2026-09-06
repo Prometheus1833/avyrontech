@@ -37,16 +37,25 @@ test.describe("public SEO routes", () => {
     }));
 
     await page.goto("/costurisiproduse");
+    // The control is the compact single pill: it shows the active currency and
+    // switches to the other one on click. `data-currency` carries that state
+    // without depending on localised button copy.
     const switcher = page.getByTestId("currency-switch").first();
-    await expect(switcher.getByRole("button", { name: "Afișează prețurile în EUR" })).toHaveAttribute("aria-pressed", "true");
-    await switcher.getByRole("button", { name: "Afișează prețurile în RON" }).click();
-    await expect(switcher).toContainText("1 EUR = 5.1000 RON");
+    await expect(switcher).toHaveAttribute("data-currency", "EUR");
+    await switcher.getByRole("button").click();
+    await expect(switcher).toHaveAttribute("data-currency", "RON");
+
+    // Only the instance rendered with `showDetails` carries the rate line; the
+    // one in the nav is rendered without it.
+    await expect(
+      page.getByTestId("currency-switch").filter({ hasText: "1 EUR =" }).first(),
+    ).toContainText("1 EUR = 5.1000 RON");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Produse digitale create pentru fiecare proiect");
     await expect(page.getByText(/1[.\s]?530 RON/, { exact: false }).first()).toBeVisible();
 
     await page.goto("/produse/website-prezentare-premium");
     await expect(page.getByTestId("product-hero-facts")).toContainText(/1[.\s]?530 RON/);
-    await expect(page.getByTestId("currency-switch").getByRole("button", { name: "Afișează prețurile în RON" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByTestId("currency-switch").first()).toHaveAttribute("data-currency", "RON");
   });
 
   test("care plans publish the approved prices, recommendations and annual discount rule", async ({ page }) => {
