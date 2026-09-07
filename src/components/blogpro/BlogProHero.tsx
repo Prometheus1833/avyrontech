@@ -1,6 +1,10 @@
-import { ArrowRight, BookOpen, Bookmark, Gauge, Search, Share2, Sparkle } from "lucide-react";
+import { ArrowRight, BookOpen, Bookmark, Gauge, MessageCircle, Search, Share2, Sparkle } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
+import { trackEvent } from "@/lib/analytics";
 import { Chip, GridBackdrop } from "./ui";
+
+const WHATSAPP = "https://wa.me/40734605055?text=";
+
 
 /* SCENE 01 — HERO. Future: 3D article depth + pointer parallax (Three.js). */
 
@@ -14,6 +18,9 @@ const copy = {
     lead: "Construim platforme editoriale rapide, inteligente și optimizate pentru SEO, create pentru publicare, descoperire, autoritate și conversie.",
     cta1: "Configurează blogul",
     cta2: "Descoperă cum funcționează",
+    cta3: "Discută pe WhatsApp",
+    waMsg: "Bună! Sunt interesat de un blog profesional / content hub AVYRON.",
+
     caps: ["CMS", "SEO tehnic", "Analytics", "AI", "Automatizări", "Content strategy"],
     card: {
       category: "Strategie digitală",
