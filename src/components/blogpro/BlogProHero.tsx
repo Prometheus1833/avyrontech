@@ -1,6 +1,10 @@
-import { ArrowRight, BookOpen, Bookmark, Gauge, Search, Share2, Sparkle } from "lucide-react";
+import { ArrowRight, BookOpen, Bookmark, Gauge, MessageCircle, Search, Share2, Sparkle } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
+import { trackEvent } from "@/lib/analytics";
 import { Chip, GridBackdrop } from "./ui";
+
+const WHATSAPP = "https://wa.me/40734605055?text=";
+
 
 /* SCENE 01 — HERO. Future: 3D article depth + pointer parallax (Three.js). */
 
@@ -14,6 +18,9 @@ const copy = {
     lead: "Construim platforme editoriale rapide, inteligente și optimizate pentru SEO, create pentru publicare, descoperire, autoritate și conversie.",
     cta1: "Configurează blogul",
     cta2: "Descoperă cum funcționează",
+    cta3: "Discută pe WhatsApp",
+    waMsg: "Bună! Sunt interesat de un blog profesional / content hub AVYRON.",
+
     caps: ["CMS", "SEO tehnic", "Analytics", "AI", "Automatizări", "Content strategy"],
     card: {
       category: "Strategie digitală",
@@ -34,6 +41,9 @@ const copy = {
     lead: "We build fast, intelligent, SEO-ready editorial platforms designed for publishing, discovery, authority and conversion.",
     cta1: "Configure your blog",
     cta2: "See how it works",
+    cta3: "Chat on WhatsApp",
+    waMsg: "Hi! I'm interested in an AVYRON professional blog / content hub.",
+
     caps: ["CMS", "Technical SEO", "Analytics", "AI", "Automation", "Content strategy"],
     card: {
       category: "Digital strategy",
@@ -82,19 +92,33 @@ const BlogProHero = () => {
             {c.lead}
           </p>
 
-          <div className="mt-7 flex flex-wrap gap-3">
+          <div className="mt-7 flex flex-wrap gap-2.5 sm:gap-3">
             <button
               type="button"
-              onClick={scrollTo("configurator-blog")}
-              className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-3 text-sm font-semibold text-background transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              onClick={() => {
+                trackEvent("cta_click", { location: "blogpro_hero", action: "configurator" });
+                document.getElementById("configurator-blog")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+              className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-foreground px-5 py-3 text-sm font-semibold text-background transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:flex-none"
             >
               {c.cta1}
               <ArrowRight className="size-4" aria-hidden />
             </button>
+            <a
+              href={`${WHATSAPP}${encodeURIComponent(c.waMsg)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "blogpro_hero" })}
+              className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full border border-brand/40 bg-brand/10 px-5 py-3 text-sm font-semibold text-brand transition-colors duration-200 hover:bg-brand/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:flex-none"
+            >
+              <MessageCircle className="size-4" aria-hidden />
+              {c.cta3}
+            </a>
+
             <button
               type="button"
               onClick={scrollTo("content-journey")}
-              className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-card/70 px-5 py-3 text-sm font-semibold transition-colors duration-200 hover:border-brand/40 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-border/80 bg-card/70 px-5 py-3 text-sm font-semibold transition-colors duration-200 hover:border-brand/40 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:w-auto"
             >
               {c.cta2}
             </button>

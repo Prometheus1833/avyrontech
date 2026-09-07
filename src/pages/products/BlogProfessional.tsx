@@ -28,6 +28,7 @@ import {
   FAQ_ITEMS,
   FinalCta,
 } from "@/components/blogpro/Closing";
+import { BASE_PRICE } from "@/data/blogProfessional";
 
 const PATHS = { ro: "/produse/blog-profesional", en: "/en/products/professional-blog" };
 
@@ -103,7 +104,26 @@ const BlogProfessional = () => {
           "ld-service",
           serviceLd({ name: m.name, description: m.description, path: PATHS[lang] }),
         );
+        setJsonLd("ld-product", {
+          "@context": "https://schema.org",
+          "@type": "Product",
+          "@id": `https://avyron.ro${PATHS[lang]}#product`,
+          name: m.name,
+          description: m.description,
+          url: `https://avyron.ro${PATHS[lang]}`,
+          brand: { "@type": "Brand", name: "Avyron" },
+          category: ro ? "Servicii web / Blog profesional" : "Web services / Professional blog",
+          offers: {
+            "@type": "Offer",
+            price: BASE_PRICE,
+            priceCurrency: "RON",
+            availability: "https://schema.org/InStock",
+            url: `https://avyron.ro${PATHS[lang]}`,
+            seller: { "@id": "https://avyron.ro/#organization" },
+          },
+        });
         setJsonLd("ld-faq", faqPageLd([...FAQ_ITEMS[lang]]));
+
         setJsonLd(
           "ld-breadcrumb",
           breadcrumbLd([
