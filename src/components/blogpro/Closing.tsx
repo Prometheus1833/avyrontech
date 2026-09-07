@@ -239,7 +239,7 @@ const finalCta = {
     lead: "Configure your blog in a few minutes and receive a clear offer with concrete next steps.",
     primary: "Configure your blog",
     secondary: "See all products",
-    to: "/en/products-and-costs",
+    to: "/en/pricing",
   },
 } as const;
 
