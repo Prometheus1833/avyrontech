@@ -1,10 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Bot, Send, X, Sparkles, ThumbsUp, ThumbsDown } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Bot, Send, X, Sparkles, ThumbsUp, ThumbsDown, MessageCircle } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { avyApi, type ChatReply } from "@/lib/aiOsApi";
 import { trackEvent } from "@/lib/analytics";
 
 type Msg = { id: string; role: "user" | "assistant"; text: string; rated?: boolean };
+
+/** Numărul real de WhatsApp AVYRON (format internațional, fără spații). */
+export const AVYRON_WHATSAPP = "40734605055";
 
 const COPY = {
   ro: {
@@ -19,6 +22,11 @@ const COPY = {
     chips: ["Cât costă un site?", "Vreau o ofertă", "Audit gratuit la site-ul meu", "În cât timp e gata?"],
     helpful: "Ți-a fost util?",
     thanks: "Mulțumim!",
+    wa: "Continuă pe WhatsApp",
+    waHint: "Trimitem conversația cu AVY direct în WhatsApp, la un consultant real.",
+    waIntro: "Bună! Am discutat cu AVY pe site și vreau să continuăm aici.",
+    waYou: "Eu",
+    waPage: "Pagina",
   },
   en: {
     open: "Chat with AVY, the Avyron assistant",
@@ -32,8 +40,14 @@ const COPY = {
     chips: ["How much is a website?", "I want a quote", "Free audit of my site", "How long does it take?"],
     helpful: "Was this helpful?",
     thanks: "Thank you!",
+    wa: "Continue on WhatsApp",
+    waHint: "We send your AVY conversation straight to WhatsApp, to a real consultant.",
+    waIntro: "Hi! I chatted with AVY on your site and I would like to continue here.",
+    waYou: "Me",
+    waPage: "Page",
   },
 } as const;
+
 
 const visitorId = () => {
   try {
@@ -99,10 +113,22 @@ const AvyChat = ({ agent = "avy" }: { agent?: string }) => {
     [agent, busy, conversationId, lang, t.error],
   );
 
+  const waHref = useMemo(() => {
+    const transcript = messages
+      .filter((m) => m.id !== "welcome")
+      .slice(-8)
+      .map((m) => `${m.role === "user" ? t.waYou : "AVY"}: ${m.text}`)
+      .join("\n");
+    const page = typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}` : "";
+    const body = [t.waIntro, transcript, page ? `${t.waPage}: ${page}` : ""].filter(Boolean).join("\n\n");
+    return `https://wa.me/${AVYRON_WHATSAPP}?text=${encodeURIComponent(body.slice(0, 1500))}`;
+  }, [messages, t.waIntro, t.waPage, t.waYou]);
+
   const rate = (id: string, helpful: boolean) => {
     setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, rated: true } : m)));
     void avyApi.feedback(id, helpful).catch(() => undefined);
   };
+
 
   return (
     <>
@@ -177,6 +203,21 @@ const AvyChat = ({ agent = "avy" }: { agent?: string }) => {
               </div>
             )}
           </div>
+
+          <div className="border-t border-border/60 bg-muted/30 px-3 py-2.5">
+            <a
+              href={waHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackEvent("cta_click", { type: "whatsapp", source: "avy_chat", agent })}
+              className="flex items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary transition hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            >
+              <MessageCircle className="size-4" aria-hidden /> {t.wa}
+            </a>
+            <p className="mt-1.5 text-center text-[11px] leading-snug text-muted-foreground">{t.waHint}</p>
+          </div>
+
+
 
           <form
             onSubmit={(e) => {
