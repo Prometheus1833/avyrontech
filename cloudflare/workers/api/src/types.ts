@@ -13,6 +13,8 @@ type OptionalIntegrations = {
   AIRTABLE_TABLE?: string;
   LEAD_WEBHOOK_URL?: string;
   LEAD_WEBHOOK_SECRET?: string;
+  /** Workers AI (AI OS "AVY"). Absent → agenții răspund din baza de cunoștințe. */
+  AI?: { run: (model: string, input: Record<string, unknown>) => Promise<unknown> };
 };
 
 export type Env = CloudflareBindings & OptionalIntegrations;
