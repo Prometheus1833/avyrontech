@@ -29,7 +29,7 @@ const COPY = {
     close: "Close chat",
     error: "I could not answer right now. Write to contact@avyron.ro.",
     hello: "Hi! I am AVY. Ask me about pricing, products or a quick estimate.",
-    chips: ["How much is a website?", "What is in the professional blog?", "How do we start?"],
+    chips: ["How much is a website?", "I want a quote", "Free audit of my site", "How long does it take?"],
     helpful: "Was this helpful?",
     thanks: "Thank you!",
   },
