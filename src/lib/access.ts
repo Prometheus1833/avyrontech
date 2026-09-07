@@ -55,7 +55,7 @@ export type SectionId =
   | "profile" | "settings" | "projects" | "subscriptions" | "invoices" | "cart"
   | "stats" | "tickets" | "maintenance" | "clients" | "domains" | "payments"
   | "finance" | "media" | "staff-tickets" | "demo-requests" | "intern"
-  | "announcements" | "resources" | "promotions";
+  | "announcements" | "resources" | "promotions" | "ai-os";
 
 export type SectionDef = {
   id: SectionId;
@@ -95,6 +95,7 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "payments", group: "control", audience: "superadmin", keywords: ["plati", "payments", "incasari"] },
   { id: "finance", group: "control", audience: "superadmin", keywords: ["financiar", "facturare", "venituri", "finance"] },
   { id: "promotions", group: "control", audience: "superadmin", keywords: ["promotii", "reduceri", "campanii"] },
+  { id: "ai-os", group: "control", audience: "superadmin", keywords: ["ai", "avy", "agenti", "chatbot", "automatizare"] },
 ];
 
 export const sectionsFor = (a: Access) => SECTIONS.filter((s) => canSee(s.audience, a));
