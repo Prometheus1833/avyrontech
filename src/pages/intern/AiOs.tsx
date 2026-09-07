@@ -106,6 +106,16 @@ const AiOs = ({ embedded = false }: { embedded?: boolean }) => {
     if (k) setKnowledge(k.data);
   };
 
+  if (restricted) {
+    return (
+      <div className={embedded ? "" : "min-h-screen bg-secondary/30 px-4 py-16"}>
+        <p className="mx-auto max-w-md rounded-2xl border border-border/60 bg-card/60 p-6 text-center text-sm text-muted-foreground">
+          Zona AI OS este rezervată contului super admin.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className={embedded ? "space-y-6" : "min-h-screen bg-secondary/30 px-4 py-8"}>
       <div className={embedded ? "space-y-6" : "mx-auto max-w-6xl space-y-6"}>
