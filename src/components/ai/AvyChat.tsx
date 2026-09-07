@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { Bot, Send, X, Sparkles, ThumbsUp, ThumbsDown, MessageCircle } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { avyApi, type ChatReply } from "@/lib/aiOsApi";
