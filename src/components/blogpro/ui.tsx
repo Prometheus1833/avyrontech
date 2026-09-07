@@ -32,8 +32,14 @@ export const Section = ({
       id={id}
       data-scroll-scene={scene}
       aria-labelledby={labelledBy}
-      className={`relative scroll-mt-24 overflow-hidden py-14 sm:py-20 ${tones[tone]} ${className}`}
+      className={`relative scroll-mt-24 overflow-hidden py-10 sm:py-14 ${tones[tone]} ${className}`}
     >
+      {tone !== "graphite" && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border to-transparent"
+        />
+      )}
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">{children}</div>
     </section>
   );

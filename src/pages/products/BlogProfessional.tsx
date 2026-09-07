@@ -8,6 +8,7 @@ import Footer from "@/components/site/Footer";
 import QuickNav, { type QuickNavItem } from "@/components/site/QuickNav";
 import logo from "@/assets/avyron-logo.jpg";
 import ScrollProgress from "@/components/blogpro/ScrollProgress";
+import ScrollNudges from "@/components/blogpro/ScrollNudges";
 import BlogProHero from "@/components/blogpro/BlogProHero";
 import { BlogAudiences, ContentJourney } from "@/components/blogpro/Story";
 import { CmsExperience, ReaderExperience } from "@/components/blogpro/Product";
@@ -72,6 +73,22 @@ const BlogProfessional = () => {
   const m = meta[lang];
 
   useEffect(() => {
+    const els = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries)
+          if (e.isIntersecting) {
+            e.target.classList.add("is-in");
+            io.unobserve(e.target);
+          }
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -8% 0px" },
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [lang]);
+
+  useEffect(() => {
     window.scrollTo(0, 0);
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
       ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd, serviceLd, faqPageLd }]) => {
@@ -102,6 +119,7 @@ const BlogProfessional = () => {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <ScrollProgress />
+      <ScrollNudges />
 
       <div className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 sm:pt-8">
         <div className="flex items-center justify-between gap-3">

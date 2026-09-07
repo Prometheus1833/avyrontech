@@ -6,7 +6,7 @@ import { Chip, GridBackdrop } from "./ui";
 
 const copy = {
   ro: {
-    eyebrow: "Blog profesional • Content hub",
+    eyebrow: "Blog profesional & Content hub",
     h1: "Creare Blog Profesional & Content Hub",
     line1: "Transformă expertiza în trafic.",
     line2: "Traficul în autoritate.",
@@ -26,7 +26,7 @@ const copy = {
     nodes: ["Google", "SEO", "Social", "Newsletter", "Analytics", "AI"],
   },
   en: {
-    eyebrow: "Professional blog • Content hub",
+    eyebrow: "Professional blog & Content hub",
     h1: "Professional blog & content hub development",
     line1: "Turn expertise into traffic.",
     line2: "Traffic into authority.",
@@ -58,7 +58,7 @@ const BlogProHero = () => {
     <section
       id="prezentare"
       data-scroll-scene="hero"
-      className="relative scroll-mt-24 overflow-hidden border-b border-border/60 bg-background pb-14 pt-10 sm:pb-20 sm:pt-16"
+      className="relative scroll-mt-24 overflow-hidden border-b border-border/60 bg-background pb-10 pt-8 sm:pb-14 sm:pt-12"
     >
       <GridBackdrop />
       <div
@@ -69,10 +69,8 @@ const BlogProHero = () => {
         <div data-reveal>
           <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-brand">{c.eyebrow}</p>
           <h1 className="mt-3">
-            <span className="block font-display text-sm font-semibold tracking-tight text-muted-foreground sm:text-base">
-              {c.h1}
-            </span>
-            <span className="mt-2.5 block font-display text-[1.9rem] font-bold leading-[1.06] tracking-tight sm:text-5xl lg:text-[3.4rem]">
+            <span className="sr-only">{c.h1}. </span>
+            <span className="block font-display text-[1.9rem] font-bold leading-[1.06] tracking-tight sm:text-5xl lg:text-[3.4rem]">
               <span className="block">{c.line1}</span>
               <span className="block text-muted-foreground/80">{c.line2}</span>
               <span className="block bg-gradient-to-r from-brand via-indigo-500 to-violet-500 bg-clip-text text-transparent">
