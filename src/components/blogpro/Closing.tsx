@@ -158,23 +158,27 @@ export const AvyronBlogPreview = () => {
 
       <div
         className="relative mt-7 [mask-image:linear-gradient(to_right,transparent,black_5%,black_95%,transparent)]"
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-        onFocusCapture={() => setPaused(true)}
-        onBlurCapture={() => setPaused(false)}
-        onPointerDown={() => setPaused(true)}
+        onMouseEnter={() => pause(true)}
+        onMouseLeave={() => pause(false)}
+        onFocusCapture={() => pause(true)}
+        onBlurCapture={() => pause(false)}
+        onPointerDown={() => pause(true)}
+        onPointerUp={() => pause(false)}
+        onPointerCancel={() => pause(false)}
       >
         <ul
           ref={trackRef}
           aria-label={c.eyebrow}
-          className="scrollbar-subtle flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-2"
+          data-playing={!paused || undefined}
+          className="scrollbar-subtle flex gap-3 overflow-x-auto pb-2"
           style={{ scrollbarWidth: "none" }}
         >
-          {posts.map((post) => (
+          {[...posts, ...posts].map((post, i) => (
             <li
-              key={post.id}
+              key={`${post.id}-${i}`}
               data-card
-              className="w-[78%] shrink-0 snap-start sm:w-[46%] lg:w-[31.5%]"
+              aria-hidden={i >= posts.length || undefined}
+              className="w-[78%] shrink-0 sm:w-[46%] lg:w-[31.5%]"
             >
               <article className="group h-full">
                 <Link
