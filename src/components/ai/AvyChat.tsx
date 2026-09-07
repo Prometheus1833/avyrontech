@@ -16,7 +16,7 @@ const COPY = {
     close: "Închide conversația",
     error: "Nu am putut răspunde acum. Scrie-ne la contact@avyron.ro.",
     hello: "Salut! Sunt AVY. Te ajut cu prețuri, produse sau o estimare rapidă.",
-    chips: ["Cât costă un site?", "Ce include blogul profesional?", "Cum începem?"],
+    chips: ["Cât costă un site?", "Vreau o ofertă", "Audit gratuit la site-ul meu", "În cât timp e gata?"],
     helpful: "Ți-a fost util?",
     thanks: "Mulțumim!",
   },
