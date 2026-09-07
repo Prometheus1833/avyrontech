@@ -330,11 +330,22 @@ export function defaultSelection(): Selection {
   const sel: Selection = {};
   for (const step of CONFIG_STEPS) {
     for (const group of step.groups) {
-      sel[group.id] = group.defaultId ? [group.defaultId] : [];
+      if (group.kind === "stepper" && group.stepper) sel[group.id] = [String(group.stepper.min)];
+      else sel[group.id] = group.defaultId ? [group.defaultId] : [];
     }
   }
   return sel;
 }
+
+/** Reads the numeric quantity of a stepper group from the selection. */
+export function stepperValue(selection: Selection, group: ConfigGroup): number {
+  const cfg = group.stepper;
+  if (!cfg) return 0;
+  const raw = Number((selection[group.id] ?? [])[0]);
+  if (!Number.isFinite(raw)) return cfg.min;
+  return Math.min(cfg.max, Math.max(cfg.min, Math.round(raw)));
+}
+
 
 export type PricedItem = { id: string; label: Bi; price: number; customQuote?: boolean };
 
