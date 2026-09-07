@@ -105,6 +105,8 @@ const copy = {
     errPhone: "Enter a valid phone number.",
     errEmail: "Enter a valid email address.",
     captcha: "Please complete the security check.",
+    captchaFailed: "Security check failed. Please try again.",
+    rateLimited: "Too many requests. Please try again in a few minutes.",
     error: "Sending failed. Please try again.",
     configLabel: "Professional blog configuration",
     customQuote: "Custom quote",
