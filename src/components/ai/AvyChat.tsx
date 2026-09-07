@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { Bot, Send, X, Sparkles, ThumbsUp, ThumbsDown, MessageCircle } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { avyApi, type ChatReply } from "@/lib/aiOsApi";
@@ -73,6 +73,110 @@ const AvyChat = ({ agent = "avy" }: { agent?: string }) => {
   const [busy, setBusy] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const bubbleRef = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const dragState = useRef<{ dx: number; dy: number; moved: boolean } | null>(null);
+
+  const clamp = useCallback((x: number, y: number) => {
+    const el = bubbleRef.current;
+    const w = el?.offsetWidth ?? 56;
+    const h = el?.offsetHeight ?? 56;
+    const m = 8;
+    return {
+      x: Math.min(Math.max(x, m), Math.max(m, window.innerWidth - w - m)),
+      y: Math.min(Math.max(y, m), Math.max(m, window.innerHeight - h - m)),
+    };
+  }, []);
+
+  // Poziția salvată (bubble style Messenger) + repoziționare la resize.
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("avy_bubble_pos");
+      if (saved) {
+        const parsed = JSON.parse(saved) as { x: number; y: number };
+        if (typeof parsed?.x === "number" && typeof parsed?.y === "number") setPos(clamp(parsed.x, parsed.y));
+      }
+    } catch {
+      /* ignore */
+    }
+    const onResize = () => setPos((p) => (p ? clamp(p.x, p.y) : p));
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [clamp]);
+
+  const onBubblePointerDown = useCallback(
+    (e: ReactPointerEvent<HTMLButtonElement>) => {
+      if (e.button !== 0 && e.pointerType === "mouse") return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      dragState.current = { dx: e.clientX - rect.left, dy: e.clientY - rect.top, moved: false };
+      e.currentTarget.setPointerCapture(e.pointerId);
+      setDragging(true);
+
+      const move = (ev: PointerEvent) => {
+        const st = dragState.current;
+        if (!st) return;
+        const next = clamp(ev.clientX - st.dx, ev.clientY - st.dy);
+        if (Math.abs(next.x - rect.left) > 4 || Math.abs(next.y - rect.top) > 4) st.moved = true;
+        setPos(next);
+      };
+      const up = () => {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+        window.removeEventListener("pointercancel", up);
+        setDragging(false);
+        setPos((p) => {
+          if (p) {
+            try {
+              localStorage.setItem("avy_bubble_pos", JSON.stringify(p));
+            } catch {
+              /* ignore */
+            }
+          }
+          return p;
+        });
+      };
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+      window.addEventListener("pointercancel", up);
+    },
+    [clamp],
+  );
+
+  const onBubbleClick = useCallback(() => {
+    if (dragState.current?.moved) {
+      dragState.current = null;
+      return;
+    }
+    setOpen((v) => !v);
+  }, []);
+
+  const onBubbleKeyDown = useCallback(
+    (e: ReactKeyboardEvent<HTMLButtonElement>) => {
+      const step = e.shiftKey ? 40 : 12;
+      const map: Record<string, [number, number]> = {
+        ArrowLeft: [-step, 0],
+        ArrowRight: [step, 0],
+        ArrowUp: [0, -step],
+        ArrowDown: [0, step],
+      };
+      const delta = map[e.key];
+      if (!delta) return;
+      e.preventDefault();
+      const rect = bubbleRef.current?.getBoundingClientRect();
+      const base = pos ?? { x: rect?.left ?? 12, y: rect?.top ?? 80 };
+      const next = clamp(base.x + delta[0], base.y + delta[1]);
+      setPos(next);
+      try {
+        localStorage.setItem("avy_bubble_pos", JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+    },
+    [clamp, pos],
+  );
+
+
 
   useEffect(() => {
     if (open && messages.length === 0) {
@@ -133,11 +237,17 @@ const AvyChat = ({ agent = "avy" }: { agent?: string }) => {
   return (
     <>
       <button
+        ref={bubbleRef}
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onPointerDown={onBubblePointerDown}
+        onClick={onBubbleClick}
+        onKeyDown={onBubbleKeyDown}
         aria-label={t.open}
         aria-expanded={open}
-        className="fixed left-3 top-1/2 z-40 -translate-y-1/2 rounded-2xl border border-border/60 bg-background/70 p-3 shadow-lg backdrop-blur-xl transition hover:scale-105 hover:bg-background/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+        style={pos ? { left: pos.x, top: pos.y, right: "auto", bottom: "auto" } : undefined}
+        className={`fixed z-40 touch-none select-none rounded-2xl border border-border/60 bg-background/70 p-3 shadow-lg backdrop-blur-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
+          pos ? "" : "left-3 top-20"
+        } ${dragging ? "scale-105 cursor-grabbing" : "cursor-grab transition hover:scale-105 hover:bg-background/90"}`}
       >
         <span className="relative flex items-center gap-2">
           <span className="absolute -inset-2 -z-10 rounded-2xl bg-primary/20 blur-xl" aria-hidden />
@@ -145,6 +255,7 @@ const AvyChat = ({ agent = "avy" }: { agent?: string }) => {
           <span className="hidden text-xs font-semibold tracking-wide sm:inline">AVY</span>
         </span>
       </button>
+
 
       {open && (
         <div
