@@ -83,27 +83,54 @@ export const AvyronBlogPreview = () => {
   const posts = (lang === "ro" ? BLOG_INDEX : BLOG_INDEX_EN).slice(0, 8);
   const base = lang === "ro" ? "/blog" : "/en/blog";
   const trackRef = useRef<HTMLUListElement>(null);
+  const pausedRef = useRef(false);
   const [paused, setPaused] = useState(false);
+
+  const pause = (value: boolean) => {
+    pausedRef.current = value;
+    setPaused(value);
+  };
+
+  const halfWidth = () => {
+    const el = trackRef.current;
+    return el ? el.scrollWidth / 2 : 0;
+  };
 
   const scrollByCard = (dir: 1 | -1) => {
     const el = trackRef.current;
     if (!el) return;
     const card = el.querySelector<HTMLElement>("[data-card]");
     const step = card ? card.offsetWidth + 12 : el.clientWidth * 0.8;
-    const max = el.scrollWidth - el.clientWidth;
+    const half = halfWidth();
     let next = el.scrollLeft + dir * step;
-    if (next > max - 4) next = 0;
-    if (next < 0) next = max;
+    if (next >= half) next -= half;
+    if (next < 0) next += half;
     el.scrollTo({ left: next, behavior: "smooth" });
   };
 
-  /* Autoplay right-to-left, paused on hover, focus, touch and reduced motion. */
+  /* Fluid continuous autoplay (right-to-left). Pauses while the pointer hovers or
+     presses the track and resumes the moment it is released. Disabled for reduced motion. */
   useEffect(() => {
-    if (paused) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const timer = window.setInterval(() => scrollByCard(1), 3800);
-    return () => window.clearInterval(timer);
-  }, [paused, lang]);
+    const el = trackRef.current;
+    if (!el) return;
+    let raf = 0;
+    let last = performance.now();
+    const SPEED = 42; // px per second — slow, editorial drift
+    const tick = (now: number) => {
+      const dt = Math.min(64, now - last);
+      last = now;
+      if (!pausedRef.current && el.scrollWidth > el.clientWidth) {
+        const half = el.scrollWidth / 2;
+        let next = el.scrollLeft + (SPEED * dt) / 1000;
+        if (next >= half) next -= half;
+        el.scrollLeft = next;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [lang]);
 
   return (
     <Section id="blog-avyron" scene="blog" labelledBy="blog-avyron-title">
