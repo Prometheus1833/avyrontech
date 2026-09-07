@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   Bot,
   Code2,
   Gauge,
@@ -30,6 +31,13 @@ const copy = {
         path: "/produse/magazin-online",
         Icon: ShoppingBag,
         tone: "from-amber-400/25 to-orange-500/10 text-orange-600 dark:text-amber-300",
+      },
+      {
+        title: "Blog Profesional",
+        text: "Un content hub rapid și optimizat SEO, care transformă expertiza în trafic și cereri.",
+        path: "/produse/blog-profesional",
+        Icon: BookOpen,
+        tone: "from-rose-400/25 to-pink-500/10 text-rose-600 dark:text-rose-300",
       },
       {
         title: "Aplicații și platforme",
@@ -74,6 +82,13 @@ const copy = {
         path: "/en/products/online-store",
         Icon: ShoppingBag,
         tone: "from-amber-400/25 to-orange-500/10 text-orange-600 dark:text-amber-300",
+      },
+      {
+        title: "Professional Blog",
+        text: "A fast, SEO-ready content hub that turns expertise into traffic and enquiries.",
+        path: "/en/products/professional-blog",
+        Icon: BookOpen,
+        tone: "from-rose-400/25 to-pink-500/10 text-rose-600 dark:text-rose-300",
       },
       {
         title: "Apps and platforms",
