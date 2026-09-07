@@ -1,9 +1,9 @@
 import {
   BookOpen,
   Bot,
+  Bug,
   Code2,
   Gauge,
-  ShieldCheck,
   ShoppingBag,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -54,10 +54,10 @@ const copy = {
         tone: "from-fuchsia-400/25 to-purple-500/10 text-fuchsia-600 dark:text-fuchsia-300",
       },
       {
-        title: "Mentenanță și QA",
-        text: "Monitorizare, testare și îmbunătățiri continue pentru un produs stabil și protejat.",
-        path: "/pachete-mentenanta",
-        Icon: ShieldCheck,
+        title: "QA Testing Web/Mobile",
+        text: "Testare manuală și automată pe dispozitive reale, cu raport clar de defecte. Fără abonament.",
+        path: "/produse/testare-qa-web-mobile",
+        Icon: Bug,
         tone: "from-emerald-400/25 to-teal-500/10 text-emerald-600 dark:text-emerald-300",
       },
     ],
@@ -105,10 +105,10 @@ const copy = {
         tone: "from-fuchsia-400/25 to-purple-500/10 text-fuchsia-600 dark:text-fuchsia-300",
       },
       {
-        title: "Maintenance and QA",
-        text: "Monitoring, testing, and continuous improvements for a stable, protected product.",
-        path: "/en/care-plans",
-        Icon: ShieldCheck,
+        title: "QA Testing Web/Mobile",
+        text: "Manual and automated testing on real devices, with a clear defect report. No subscription.",
+        path: "/en/products/qa-testing-web-mobile",
+        Icon: Bug,
         tone: "from-emerald-400/25 to-teal-500/10 text-emerald-600 dark:text-emerald-300",
       },
     ],

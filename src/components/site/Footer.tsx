@@ -32,18 +32,6 @@ const pageCta = (pathname: string, lang: "ro" | "en", fallback: { ctaLabel: stri
       Icon: Briefcase,
     };
   }
-  if (p.includes("mentenanta") || p.includes("care-plans")) {
-    return {
-      page: "care",
-      label: en ? "Activate maintenance" : "Activează mentenanța",
-      sub: en ? "Priority support included" : "Suport prioritar inclus",
-      to: `https://wa.me/40734605055?text=${encodeURIComponent(
-        en ? "Hello! I want to activate a maintenance plan." : "Bună! Vreau să activez un pachet de mentenanță.",
-      )}`,
-      external: true,
-      Icon: Wrench,
-    };
-  }
   if (p.includes("/blog")) {
     return {
       page: "blog",
