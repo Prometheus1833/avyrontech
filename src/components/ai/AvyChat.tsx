@@ -113,10 +113,22 @@ const AvyChat = ({ agent = "avy" }: { agent?: string }) => {
     [agent, busy, conversationId, lang, t.error],
   );
 
+  const waHref = useMemo(() => {
+    const transcript = messages
+      .filter((m) => m.id !== "welcome")
+      .slice(-8)
+      .map((m) => `${m.role === "user" ? t.waYou : "AVY"}: ${m.text}`)
+      .join("\n");
+    const page = typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}` : "";
+    const body = [t.waIntro, transcript, page ? `${t.waPage}: ${page}` : ""].filter(Boolean).join("\n\n");
+    return `https://wa.me/${AVYRON_WHATSAPP}?text=${encodeURIComponent(body.slice(0, 1500))}`;
+  }, [messages, t.waIntro, t.waPage, t.waYou]);
+
   const rate = (id: string, helpful: boolean) => {
     setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, rated: true } : m)));
     void avyApi.feedback(id, helpful).catch(() => undefined);
   };
+
 
   return (
     <>
