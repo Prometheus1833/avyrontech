@@ -1,5 +1,7 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLang } from "@/i18n/LanguageContext";
+import BlogPreloader from "@/components/blogpro/BlogPreloader";
+
 import LangSwitch from "@/components/site/LangSwitch";
 import ThemeToggle from "@/components/site/ThemeToggle";
 import Breadcrumbs from "@/components/site/Breadcrumbs";
@@ -72,6 +74,16 @@ const BlogProfessional = () => {
   const { lang } = useLang();
   const ro = lang === "ro";
   const m = meta[lang];
+  /* The intro is decorative: content stays in the DOM for users and crawlers. */
+  const [introDone, setIntroDone] = useState(() => typeof window === "undefined");
+  const [showIntro, setShowIntro] = useState(() => typeof window !== "undefined");
+  const handleIntroDone = useCallback(() => {
+    setIntroDone(true);
+    /* Keep the canvas mounted through its fade so the handoff has no hard cut. */
+    window.setTimeout(() => setShowIntro(false), 500);
+  }, []);
+
+
 
   useEffect(() => {
     const els = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
@@ -137,9 +149,14 @@ const BlogProfessional = () => {
   }, [lang, ro, m]);
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main
+      className="min-h-screen overflow-x-clip bg-background text-foreground"
+      data-hero-enter={introDone ? "in" : "pending"}
+    >
+      {showIntro && <BlogPreloader onDone={handleIntroDone} />}
       <ScrollProgress />
       <ScrollNudges />
+
 
       <div className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 sm:pt-8">
         <div className="flex items-center justify-between gap-3">

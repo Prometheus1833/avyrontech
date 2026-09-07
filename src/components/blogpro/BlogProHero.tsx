@@ -77,8 +77,8 @@ const BlogProHero = () => {
       />
       <div className="relative mx-auto grid w-full max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.92fr)] lg:items-center lg:gap-14">
         <div data-reveal>
-          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-brand">{c.eyebrow}</p>
-          <h1 className="mt-3">
+          <p data-hero-step="1" className="text-[11px] font-bold uppercase tracking-[0.24em] text-brand">{c.eyebrow}</p>
+          <h1 className="mt-3" data-hero-step="2">
             <span className="sr-only">{c.h1}. </span>
             <span className="block font-display text-[1.9rem] font-bold leading-[1.06] tracking-tight sm:text-5xl lg:text-[3.4rem]">
               <span className="block">{c.line1}</span>
@@ -88,11 +88,11 @@ const BlogProHero = () => {
               </span>
             </span>
           </h1>
-          <p className="mt-5 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-[0.98rem]">
+          <p data-hero-step="3" className="mt-5 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-[0.98rem]">
             {c.lead}
           </p>
 
-          <div className="mt-7 flex flex-wrap gap-2.5 sm:gap-3">
+          <div data-hero-step="4" className="mt-7 flex flex-wrap gap-2.5 sm:gap-3">
             <button
               type="button"
               onClick={() => {
@@ -124,7 +124,7 @@ const BlogProHero = () => {
             </button>
           </div>
 
-          <ul className="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+          <ul data-hero-step="5" className="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
             {c.caps.map((cap) => (
               <li key={cap} className="flex items-center gap-1.5">
                 <Sparkle className="size-3 text-brand" aria-hidden />
@@ -135,7 +135,7 @@ const BlogProHero = () => {
         </div>
 
         {/* Central editorial object — reused conceptually across the page. */}
-        <div className="relative" data-depth="1">
+        <div className="relative" data-depth="1" data-hero-step="0">
           <div className="pointer-events-none absolute inset-0 -z-10 hidden lg:block" aria-hidden>
             {c.nodes.map((node, i) => {
               const positions = [
