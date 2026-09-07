@@ -58,7 +58,7 @@ const BlogProHero = () => {
     <section
       id="prezentare"
       data-scroll-scene="hero"
-      className="relative scroll-mt-24 overflow-hidden border-b border-border/60 bg-background pb-14 pt-10 sm:pb-20 sm:pt-16"
+      className="relative scroll-mt-24 overflow-hidden border-b border-border/60 bg-background pb-10 pt-8 sm:pb-14 sm:pt-12"
     >
       <GridBackdrop />
       <div

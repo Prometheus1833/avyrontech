@@ -230,10 +230,10 @@ const Configurator = () => {
         </p>
       </div>
 
-      <div className="mt-9 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
+      <div className="mt-7 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
         <div className="space-y-4">
           {CONFIG_STEPS.map((step) => (
-            <div key={step.id} className="rounded-2xl border border-border/70 bg-card/60 p-4 shadow-soft sm:p-5">
+            <div key={step.id} className="rounded-2xl border border-border/70 bg-card/60 p-4 shadow-soft sm:p-5" data-reveal>
               <div className="flex items-baseline gap-3">
                 <span className="text-[11px] font-bold tracking-[0.2em] text-brand">{step.num}</span>
                 <h3 className="font-display text-lg font-bold tracking-tight">{step.title[lang]}</h3>
@@ -246,7 +246,7 @@ const Configurator = () => {
                     {group.title[lang]}
                   </legend>
                   {group.hint && <p className="mt-1 text-xs text-muted-foreground">{group.hint[lang]}</p>}
-                  <div className="mt-2.5 grid gap-2.5 sm:grid-cols-2">
+                  <div className="mt-2.5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {group.options.map((option) => {
                       const chosen = (selection[group.id] ?? []).includes(option.id);
                       const covered = aiPackOn && AI_BUNDLED_IDS.includes(option.id);
