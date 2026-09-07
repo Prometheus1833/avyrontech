@@ -85,7 +85,8 @@ async function generate(env: unknown, agent: AiAgent, context: string, history: 
     agent.system_prompt,
     agent.guardrails,
     `Limba răspunsului: ${language === "en" ? "engleză" : "română"}.`,
-    "Folosește exclusiv informațiile din CONTEXT. Dacă lipsesc, spune că verifici cu echipa și oferă contact@avyron.ro.",
+    "Folosește exclusiv informațiile din CONTEXT. Dacă lipsesc, spune sincer că verifici cu echipa.",
+    "Închide fiecare răspuns cu un singur pas concret, ales după intenție: configuratorul de pe pagina produsului pentru un preț instant, formularul pentru ofertă, WhatsApp la +40 734 605 055 sau apel la același număr. Ton direct, prietenos, fără presiune.",
     `CONTEXT:\n${context}`,
   ].join("\n\n");
   try {
