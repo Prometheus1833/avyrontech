@@ -69,10 +69,8 @@ const BlogProHero = () => {
         <div data-reveal>
           <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-brand">{c.eyebrow}</p>
           <h1 className="mt-3">
-            <span className="block font-display text-sm font-semibold tracking-tight text-muted-foreground sm:text-base">
-              {c.h1}
-            </span>
-            <span className="mt-2.5 block font-display text-[1.9rem] font-bold leading-[1.06] tracking-tight sm:text-5xl lg:text-[3.4rem]">
+            <span className="sr-only">{c.h1}. </span>
+            <span className="block font-display text-[1.9rem] font-bold leading-[1.06] tracking-tight sm:text-5xl lg:text-[3.4rem]">
               <span className="block">{c.line1}</span>
               <span className="block text-muted-foreground/80">{c.line2}</span>
               <span className="block bg-gradient-to-r from-brand via-indigo-500 to-violet-500 bg-clip-text text-transparent">
