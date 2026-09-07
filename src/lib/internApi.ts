@@ -47,6 +47,47 @@ export type ProjectMedia = {
 export type ClientOption = { id: string; company_name: string; contact_name: string | null; email: string; status: string };
 export type AccountOption = { id: string; email: string; display_name: string | null; company_name: string | null; roles: string | null };
 
+
+export type FunnelStep = { event: string; hits: number; sessions: number };
+export type FunnelSummary = {
+  page: string;
+  days: number;
+  sessions: number;
+  views: number;
+  steps: {
+    page_view: FunnelStep;
+    view_configurator: FunnelStep;
+    view_lead_form: FunnelStep;
+    generate_lead: FunnelStep;
+    cta_click: FunnelStep;
+  };
+  conversion: { toConfigurator: number; toLeadForm: number; toLead: number };
+  daily: { day: string; views: number; configurator: number; leads: number }[];
+};
+
+export type PipelineLead = {
+  id: string;
+  name: string | null;
+  business: string | null;
+  email: string;
+  phone: string | null;
+  status: string;
+  product: string | null;
+  estimate_ron: number | null;
+  language: string | null;
+  created_at: number;
+  first_response_at: number | null;
+  delivery_status: string | null;
+};
+
+export type LeadPipeline = {
+  product: string | null;
+  days: number;
+  byStatus: { status: string; n: number }[];
+  waiting: { open: number; avgHours: number; maxHours: number };
+  recent: PipelineLead[];
+};
+
 export const internApi = {
   listProjects: () => cfAuth.request<{ data: Array<Pick<Project, "id"|"slug"|"name"|"kind"|"banner_status"|"url"|"favicon_url"|"updated_at">> }>("/api/projects"),
   getProject: (slug: string) => cfAuth.request<ProjectDetail>(`/api/projects/${encodeURIComponent(slug)}`),
@@ -78,4 +119,10 @@ export const internApi = {
     });
   },
   deleteMedia: (mediaId: string) => cfAuth.request<{ ok: true }>(`/api/media/${mediaId}`, { method: "DELETE" }),
+
+  // Măsurare pâlnie + oferte primite din configuratoare
+  getFunnel: (page: string, days: number) =>
+    cfAuth.request<FunnelSummary>(`/api/admin/analytics/funnel?page=${encodeURIComponent(page)}&days=${days}`),
+  getLeadPipeline: (product: string, days: number) =>
+    cfAuth.request<LeadPipeline>(`/api/admin/leads/pipeline?product=${encodeURIComponent(product)}&days=${days}`),
 };
