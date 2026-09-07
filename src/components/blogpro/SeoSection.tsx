@@ -1,4 +1,4 @@
-import { Gauge, Link2, ListTree, Rss, ScanSearch, Share2, Sitemap as SitemapIcon, Sparkles } from "lucide-react";
+import { Gauge, Link2, ListTree, Rss, ScanSearch, Network as SitemapIcon, Share2, Sparkles } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { Panel, Section, SectionHead } from "./ui";
 
@@ -15,7 +15,7 @@ const seo = {
       { icon: SitemapIcon, t: "Sitemap automat", d: "Se actualizează la fiecare publicare." },
       { icon: Link2, t: "Canonical & indexare", d: "Reguli clare, fără conținut duplicat." },
       { icon: Rss, t: "Feed RSS", d: "Distribuție și sindicalizare fără efort." },
-      { icon: Share2, t: "Open Graph & social", d: "Previzualizări corecte pe fiecare rețea." },
+      { icon: Network as SitemapIcon, Share2, t: "Open Graph & social", d: "Previzualizări corecte pe fiecare rețea." },
       { icon: Gauge, t: "Core Web Vitals", d: "Viteză, stabilitate vizuală și interacțiune rapidă." },
       { icon: Sparkles, t: "Pregătit pentru AI", d: "Conținut clar, ușor de extras și de citat." },
     ],
@@ -36,7 +36,7 @@ const seo = {
       { icon: SitemapIcon, t: "Automatic sitemap", d: "Updated on every publish." },
       { icon: Link2, t: "Canonical & indexing", d: "Clear rules, no duplicate content." },
       { icon: Rss, t: "RSS feed", d: "Effortless distribution and syndication." },
-      { icon: Share2, t: "Open Graph & social", d: "Correct previews on every network." },
+      { icon: Network as SitemapIcon, Share2, t: "Open Graph & social", d: "Correct previews on every network." },
       { icon: Gauge, t: "Core Web Vitals", d: "Speed, visual stability and fast interaction." },
       { icon: Sparkles, t: "AI ready", d: "Clear content, easy to extract and to cite." },
     ],

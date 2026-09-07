@@ -87,7 +87,7 @@ export const ContentJourney = () => {
             <Panel className="group h-full p-4 transition-transform duration-300 hover:-translate-y-1">
               <div className="flex items-center gap-3">
                 <span className="grid size-9 place-items-center rounded-xl bg-brand/10 text-brand">
-                  <step.icon className="size-4.5" aria-hidden />
+                  <step.icon className="size-4" aria-hidden />
                 </span>
                 <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
                   {String(i + 1).padStart(2, "0")}

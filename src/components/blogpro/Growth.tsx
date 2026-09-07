@@ -120,7 +120,7 @@ export const AnalyticsSection = () => {
           <ul className="mt-5 grid gap-3 sm:grid-cols-2">
             {c.metrics.map((m) => (
               <li key={m.label} className="rounded-xl border border-border/70 bg-card/70 p-3.5">
-                <m.icon className="size-4.5 text-brand" aria-hidden />
+                <m.icon className="size-4 text-brand" aria-hidden />
                 <p className="mt-2 text-sm font-semibold">{m.label}</p>
                 <p className="text-xs text-muted-foreground">{m.hint}</p>
               </li>
