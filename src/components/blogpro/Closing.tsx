@@ -183,6 +183,7 @@ export const AvyronBlogPreview = () => {
               <article className="group h-full">
                 <Link
                   to={`${base}/${post.slug}`}
+                  tabIndex={i >= posts.length ? -1 : undefined}
                   className="flex h-full flex-col rounded-2xl border border-border/70 bg-card/70 p-4 shadow-soft transition-all duration-500 hover:-translate-y-1 hover:border-brand/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
                   <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand">{post.category}</span>
