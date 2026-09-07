@@ -9,6 +9,7 @@ import Breadcrumbs from "@/components/site/Breadcrumbs";
 import PageBackLink from "@/components/site/PageBackLink";
 import Footer from "@/components/site/Footer";
 import QuickNav, { type QuickNavItem } from "@/components/site/QuickNav";
+import FloatingWhatsApp from "@/components/site/FloatingWhatsApp";
 import logo from "@/assets/avyron-logo.jpg";
 import ScrollProgress from "@/components/blogpro/ScrollProgress";
 import ScrollNudges from "@/components/blogpro/ScrollNudges";
@@ -219,7 +220,8 @@ const BlogProfessional = () => {
       <BlogFaq />
       <FinalCta />
 
-      <QuickNav items={quickNav[lang] as unknown as QuickNavItem[]} />
+      <QuickNav items={quickNav[lang] as unknown as QuickNavItem[]} showLang />
+      <FloatingWhatsApp />
       <Footer />
     </main>
   );
