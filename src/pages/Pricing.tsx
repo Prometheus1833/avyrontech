@@ -25,26 +25,6 @@ import { useCurrency } from "@/hooks/useCurrency";
  * - Glass cards, sharp grid, monospaced labels
  */
 
-const PS_SHAPES = {
-  triangle: "△",
-  circle: "○",
-  cross: "✕",
-  square: "□",
-};
-
-type Tier = {
-  key: "plus" | "pro" | "proactiv";
-  shape: keyof typeof PS_SHAPES;
-  name: string;
-  price: string;
-  annualPrice: string;
-  bestFor: string;
-  tagline: string;
-  highlight?: boolean;
-  features: string[];
-  icon: React.ReactNode;
-  accent: string; // tailwind classes for shape color
-};
 
 const PRODUCT_SUMMARY_LIMIT = 7;
 
