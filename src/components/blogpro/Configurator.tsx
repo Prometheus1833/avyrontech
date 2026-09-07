@@ -196,15 +196,26 @@ const Configurator = () => {
       if (token) fd.append("cf-turnstile-response", token);
 
       const res = await fetch(apiUrl("/api/contact/demo"), { method: "POST", body: fd });
-      if (res.status === 429 || res.status === 403 || !res.ok) {
+      if (!res.ok) {
         setToken("");
         setResetKey((k) => k + 1);
-        throw new Error(`HTTP ${res.status}`);
+        toast.error(res.status === 429 ? c.rateLimited : res.status === 403 ? c.captchaFailed : c.error);
+        return;
       }
+      trackEvent("generate_lead", {
+        location: "blogpro_configurator",
+        product: "blog_profesional",
+        value: estimate.total,
+        currency: "RON",
+        custom_quote: estimate.hasCustomQuote,
+      });
       setSent(true);
       setForm({ name: "", business: "", phone: "", email: "", website: "", message: "" });
       setToken("");
       setResetKey((k) => k + 1);
+      requestAnimationFrame(() =>
+        document.getElementById("configurator-lead")?.scrollIntoView({ behavior: "smooth", block: "center" }),
+      );
     } catch (err) {
       console.error("blog configurator submit failed", err);
       toast.error(c.error);
@@ -212,6 +223,7 @@ const Configurator = () => {
       setLoading(false);
     }
   };
+
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
