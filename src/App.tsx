@@ -30,6 +30,26 @@ const InternHome = lazy(() => import("./pages/intern/InternHome.tsx"));
 const ProductDetail = lazy(() => import("./pages/products/ProductPage.tsx"));
 const CarePlans = lazy(() => import("./pages/products/CarePlansPage.tsx"));
 const BlogProfessional = lazy(() => import("./pages/products/BlogProfessional.tsx"));
+const AiOsConsole = lazy(() => import("./pages/intern/AiOs.tsx"));
+const AvyChat = lazy(() => import("@/components/ai/AvyChat"));
+
+/** Butonul AVY apare pe paginile comerciale, nu pe cele private sau pe demo-uri. */
+const AvyLauncher = () => {
+  const { pathname } = useLocation();
+  const [ready, setReady] = useState(false);
+  const excluded = /^\/(auth|autentificare|profil|intern|exemple|examples|demo|forgot-password|reset-password|403|500|offline|mentenanta|unsubscribe)/.test(pathname);
+  useEffect(() => {
+    if (excluded) return;
+    const timer = window.setTimeout(() => setReady(true), 1800);
+    return () => window.clearTimeout(timer);
+  }, [excluded, pathname]);
+  if (excluded || !ready) return null;
+  return (
+    <Suspense fallback={null}>
+      <AvyChat />
+    </Suspense>
+  );
+};
 
 
 import CookieBanner from "@/components/site/CookieBanner";
@@ -104,6 +124,7 @@ const App = () => (
         <HeadManager />
         <LangRouteSync />
         <AnalyticsTracker />
+        <AvyLauncher />
 
         <AppHostGuard>
           <Suspense fallback={<div className="min-h-screen" />}>
@@ -173,6 +194,14 @@ const App = () => (
                   element={
                     <ProtectedRoute>
                       <InternHome />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/intern/ai-os"
+                  element={
+                    <ProtectedRoute>
+                      <AiOsConsole />
                     </ProtectedRoute>
                   }
                 />
