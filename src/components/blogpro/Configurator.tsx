@@ -152,6 +152,11 @@ const Configurator = () => {
     const lines: string[] = [`${c.configLabel}:`];
     for (const step of CONFIG_STEPS) {
       for (const group of step.groups) {
+        if (group.kind === "stepper" && group.stepper) {
+          const count = stepperValue(selection, group);
+          lines.push(`- ${group.title[lang]}: ${count} ${group.stepper.unitPlural[lang]}`);
+          continue;
+        }
         const chosen = selection[group.id] ?? [];
         if (!chosen.length) continue;
         const labels = group.options
@@ -164,6 +169,7 @@ const Configurator = () => {
     lines.push(`- ${c.total}: ${formatLei(estimate.total)}${estimate.hasCustomQuote ? ` (+ ${c.customQuote})` : ""}`);
     return lines.join("\n");
   }, [selection, lang, estimate, c]);
+
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
