@@ -188,11 +188,11 @@ const BlogProHero = () => {
             </div>
           </article>
 
-          <Chip className="absolute -left-2 top-6 shadow-soft backdrop-blur sm:-left-4">
+          <Chip className="absolute -bottom-3 left-3 shadow-soft backdrop-blur">
             <Gauge className="size-3.5 text-brand" aria-hidden />
             {c.badges.perf}
           </Chip>
-          <Chip className="absolute -bottom-3 right-3 shadow-soft backdrop-blur">
+          <Chip className="absolute -top-3 right-4 shadow-soft backdrop-blur">
             <BookOpen className="size-3.5 text-brand" aria-hidden />
             {c.badges.seo}
           </Chip>
