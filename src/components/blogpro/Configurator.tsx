@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { useLang } from "@/i18n/LanguageContext";
 import { apiUrl } from "@/lib/apiBase";
-import { trackEvent } from "@/lib/analytics";
+
+import { trackFunnel } from "@/lib/siteAnalytics";
 import Turnstile from "@/components/site/Turnstile";
 import { TURNSTILE_SITE_KEY } from "@/config/turnstile";
 import { Input } from "@/components/ui/input";
@@ -149,7 +150,9 @@ const Configurator = () => {
           if (!entry.isIntersecting) continue;
           const name = watched[entry.target.id];
           if (name) {
-            trackEvent(name, { location: "blogpro", product: "blog_profesional" });
+            trackFunnel(name as "view_configurator" | "view_lead_form", "blogpro", {
+              product: "blog_profesional",
+            });
           }
           io.unobserve(entry.target);
         }
@@ -242,6 +245,9 @@ const Configurator = () => {
         `${parsed.data.message ?? ""}\n\n${configurationText}`.trim().slice(0, 2000),
       );
       fd.append("lang", lang);
+      fd.append("product", "blog_profesional");
+      fd.append("config", configurationText.slice(0, 4000));
+      fd.append("estimate", String(estimate.total));
       fd.append("company_url", honeypot.current?.value ?? "");
       if (token) fd.append("cf-turnstile-response", token);
 
@@ -252,8 +258,7 @@ const Configurator = () => {
         toast.error(res.status === 429 ? c.rateLimited : res.status === 403 ? c.captchaFailed : c.error);
         return;
       }
-      trackEvent("generate_lead", {
-        location: "blogpro_configurator",
+      trackFunnel("generate_lead", "blogpro", {
         product: "blog_profesional",
         value: estimate.total,
         currency: "RON",

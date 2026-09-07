@@ -25,6 +25,7 @@ import { apiDiscovery, API_VERSION, isApiHostname, isApiSurfaceRequest, normaliz
 import { publicApiCacheRequest } from "./apiCache";
 import { domainRouter } from "./domain";
 import { promotionsRouter } from "./promotions";
+import { recordPageEvent, funnelSummary, leadPipeline } from "./analytics";
 import { EXCHANGE_RATE_REFRESH_CRON, getPublicExchangeRate, refreshExchangeRate } from "./exchangeRate";
 
 const app = new Hono<AppBindings>();
@@ -568,6 +569,35 @@ app.post("/api/clients", requireAuth, requireRole("staff", "admin"), async (c) =
     "INSERT INTO clients (id,company_name,contact_name,email,phone,status,created_at) VALUES (?,?,?,?,?,?,?)"
   ).bind(id, b.company_name, b.contact_name ?? null, b.email, b.phone ?? null, b.status ?? "active", now()).run();
   return c.json({ id }, 201);
+});
+
+// Măsurare first-party a pâlniei (public, fără date personale).
+app.post("/api/analytics/event", async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+  const ipKey = await hashKey(clientIp(c.req.raw));
+  const rate = await checkRateLimit(c.env.DB, [{ key: `evt:${ipKey}:h`, limit: 240, windowSec: 3600 }]);
+  if (!rate.ok) return c.json({ ok: false, error: "rate_limited" }, 429);
+  const result = await recordPageEvent(c.env.DB, {
+    page: body.page,
+    event: body.event,
+    sessionId: body.sessionId,
+    lang: body.lang,
+    path: body.path,
+    referrer: body.referrer,
+  });
+  return c.json(result, result.ok ? 202 : 400);
+});
+
+app.get("/api/admin/analytics/funnel", requireAuth, requireRole("staff", "admin"), async (c) => {
+  const page = (c.req.query("page") || "blogpro").slice(0, 40);
+  const days = Math.min(90, Math.max(1, Number.parseInt(c.req.query("days") || "30", 10) || 30));
+  return c.json(await funnelSummary(c.env.DB, page, days));
+});
+
+app.get("/api/admin/leads/pipeline", requireAuth, requireRole("staff", "admin"), async (c) => {
+  const product = (c.req.query("product") || "").slice(0, 60) || null;
+  const days = Math.min(365, Math.max(1, Number.parseInt(c.req.query("days") || "90", 10) || 90));
+  return c.json(await leadPipeline(c.env.DB, product, days));
 });
 
 app.get("/api/example-requests", requireAuth, requireRole("staff", "admin"), async (c) => {

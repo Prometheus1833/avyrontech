@@ -39,6 +39,10 @@ contactRouter.post("/api/contact/demo", async (c) => {
   const description = clean(form.get("description"), 2000);
   const website = clean(form.get("website"), 200);
   const lang = clean(form.get("lang"), 5) || "ro";
+  // Configuratoarele de produs (ex: blog profesional) trimit și oferta calculată.
+  const product = clean(form.get("product"), 60);
+  const configJson = clean(form.get("config"), 4000);
+  const estimateRon = Number.parseInt(clean(form.get("estimate"), 12), 10);
 
   // 1) Honeypot — botul completează câmpul ascuns, omul nu.
   if (clean(form.get("company_url"), 200)) {
@@ -151,11 +155,13 @@ contactRouter.post("/api/contact/demo", async (c) => {
   // D1 is the source of truth; R2 stores only the attachment objects.
   try {
     await c.env.DB.prepare(
-      `INSERT INTO leads (id,source,name,business,phone,email,message,website,language,attachments_json,status,delivery_status,created_at,updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?, 'new','pending',?,?)`,
+      `INSERT INTO leads (id,source,name,business,phone,email,message,website,language,attachments_json,product,config_json,estimate_ron,status,delivery_status,created_at,updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?, 'new','pending',?,?)`,
     ).bind(
-      leadId, "website:cta-demo", name, business, phone, email.toLowerCase(), description || null,
-      website || null, lang, JSON.stringify(stored), Date.now(), Date.now(),
+      leadId, product ? `website:${product}` : "website:cta-demo", name, business, phone, email.toLowerCase(),
+      description || null, website || null, lang, JSON.stringify(stored),
+      product || null, configJson || null, Number.isFinite(estimateRon) ? estimateRon : null,
+      Date.now(), Date.now(),
     ).run();
   } catch (error) {
     await Promise.all(stored.map((key) => c.env.FILES.delete(key).catch((cleanupError) =>

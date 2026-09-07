@@ -1,3 +1,4 @@
+import { trackFunnel } from "@/lib/siteAnalytics";
 import { useCallback, useEffect, useState } from "react";
 import { useLang } from "@/i18n/LanguageContext";
 import BlogPreloader from "@/components/blogpro/BlogPreloader";
@@ -147,6 +148,11 @@ const BlogProfessional = () => {
       },
     );
   }, [lang, ro, m]);
+
+  /* Vizită de pagină numărată în baza noastră (și în GA4). */
+  useEffect(() => {
+    trackFunnel("page_view", "blogpro", { product: "blog_profesional" });
+  }, []);
 
   return (
     <main
