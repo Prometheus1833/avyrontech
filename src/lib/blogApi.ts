@@ -70,6 +70,10 @@ export const blogApi = {
     method: "PATCH",
     body: JSON.stringify(body),
   }),
+  setStatus: (id: string, status: BlogStatus) => cfAuth.request<{ ok: true; slug: string; status: BlogStatus }>(`/api/blog/staff/posts/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  }),
   remove: (id: string) => cfAuth.request<{ ok: true }>(`/api/blog/staff/posts/${id}`, { method: "DELETE" }),
   uploadCover: async (file: File) => {
     const result = await cfAuth.request<{ url: string }>("/api/blog/staff/media", {

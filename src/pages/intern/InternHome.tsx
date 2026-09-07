@@ -1,4 +1,5 @@
 import BlogProInsights from "@/components/intern/BlogProInsights";
+import BlogAdminPanel from "@/components/intern/BlogAdminPanel";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -102,6 +103,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
     <div className={embedded ? "space-y-6" : "max-w-5xl mx-auto p-4 sm:p-6 space-y-6"}>
       {!embedded && <PageBackLink to="/profil" label="Înapoi" title="Înapoi la profil" />}
       {isStaff && <BlogProInsights />}
+      {isStaff && <BlogAdminPanel />}
       <header className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold flex items-center gap-2">
