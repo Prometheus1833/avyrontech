@@ -106,7 +106,7 @@ const AvyChat = ({ agent = "avy" }: { agent?: string }) => {
   }, [clamp]);
 
   const onBubblePointerDown = useCallback(
-    (e: React.PointerEvent<HTMLButtonElement>) => {
+    (e: ReactPointerEvent<HTMLButtonElement>) => {
       if (e.button !== 0 && e.pointerType === "mouse") return;
       const rect = e.currentTarget.getBoundingClientRect();
       dragState.current = { dx: e.clientX - rect.left, dy: e.clientY - rect.top, moved: false };
@@ -152,7 +152,7 @@ const AvyChat = ({ agent = "avy" }: { agent?: string }) => {
   }, []);
 
   const onBubbleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    (e: ReactKeyboardEvent<HTMLButtonElement>) => {
       const step = e.shiftKey ? 40 : 12;
       const map: Record<string, [number, number]> = {
         ArrowLeft: [-step, 0],
