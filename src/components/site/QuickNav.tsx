@@ -115,7 +115,7 @@ const QuickNav = ({ items }: Props) => {
             {menuLabel}
           </p>
           <ul className="space-y-0.5">
-            {items.map((item) => {
+            {visibleItems.map((item) => {
               const isActive = active === item.id;
               const Icon = item.icon;
               return (
