@@ -233,17 +233,38 @@ export const CONFIG_STEPS: ConfigStep[] = [
         kind: "multi",
         title: { ro: "Module AVYRON AI", en: "AVYRON AI modules" },
         options: [
-          { id: "ai-writing", label: { ro: "AI writing assistant", en: "AI writing assistant" }, price: 400 },
-          { id: "ai-seo", label: { ro: "AI SEO assistant", en: "AI SEO assistant" }, price: 350 },
-          { id: "ai-related", label: { ro: "AI related content", en: "AI related content" }, price: 350 },
-          { id: "ai-refresh", label: { ro: "AI content refresh", en: "AI content refresh" }, price: 500 },
+          {
+            id: "ai-writing",
+            label: { ro: "AI writing assistant", en: "AI writing assistant" },
+            desc: { ro: "Claude · ChatGPT — schițe și titluri.", en: "Claude · ChatGPT — drafts and headlines." },
+            price: 400,
+          },
+          {
+            id: "ai-seo",
+            label: { ro: "AI SEO assistant", en: "AI SEO assistant" },
+            desc: { ro: "Gemini · ChatGPT — meta și structură.", en: "Gemini · ChatGPT — meta and structure." },
+            price: 350,
+          },
+          {
+            id: "ai-related",
+            label: { ro: "AI related content", en: "AI related content" },
+            desc: { ro: "Embeddings — articole conexe.", en: "Embeddings — related articles." },
+            price: 350,
+          },
+          {
+            id: "ai-refresh",
+            label: { ro: "AI content refresh", en: "AI content refresh" },
+            desc: { ro: "Claude — articole de actualizat.", en: "Claude — articles to refresh." },
+            price: 500,
+          },
           {
             id: AI_PACK_ID,
             label: { ro: "AI Content Intelligence Pack", en: "AI Content Intelligence Pack" },
             desc: { ro: "Include toate modulele AI.", en: "Includes every AI module." },
-            price: 1500,
+            price: 1000,
           },
         ],
+
       },
     ],
   },
