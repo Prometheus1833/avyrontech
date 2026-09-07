@@ -21,80 +21,106 @@ const cms = {
   ro: {
     eyebrow: "Panoul de administrare",
     title: "Un CMS pe care îl folosești fără manual",
-    lead: "Editor curat, previzualizare instantanee, programare, autori și categorii. Publici în minute, nu în ședințe.",
+    lead: "Fiecare secțiune are funcțiile ei clare: editor, SEO, media, planificare, categorii și echipă. Publici în minute, nu în ședințe.",
     tabs: [
       { id: "editor", label: "Editor", icon: Type },
       { id: "seo", label: "SEO", icon: Eye },
       { id: "media", label: "Media", icon: ImageIcon },
       { id: "plan", label: "Planificare", icon: CalendarClock },
+      { id: "taxonomy", label: "Categorii", icon: Tags },
+      { id: "team", label: "Echipă", icon: Users },
     ],
     panes: {
-      editor: [
-        "Editor vizual cu blocuri de conținut",
-        "Titluri, citate, liste, cod, galerii",
-        "Salvare automată și istoric versiuni",
-      ],
-      seo: [
-        "Titlu SEO, descriere și slug editabile",
-        "Previzualizare rezultat Google și card social",
-        "Verificări automate înainte de publicare",
-      ],
-      media: [
-        "Imagini optimizate automat, formate moderne",
-        "Text alternativ obligatoriu pentru accesibilitate",
-        "Bibliotecă media organizată și căutabilă",
-      ],
-      plan: [
-        "Programare publicare la dată și oră",
-        "Stări: ciornă, în revizuire, programat, publicat",
-        "Roluri și permisiuni pentru echipă",
-      ],
+      editor: {
+        d: "Scrii articolul în blocuri, cu salvare automată.",
+        lines: ["Blocuri: titlu, citat, listă, cod, galerie, CTA", "Salvare automată și istoric versiuni", "Previzualizare instant, desktop și mobil"],
+        actions: ["Adaugă bloc", "Compară versiuni", "Previzualizare"],
+      },
+      seo: {
+        d: "Verifici cum arată articolul în Google înainte să apeși publică.",
+        lines: ["Titlu SEO, descriere și slug editabile", "Previzualizare rezultat Google și card social", "Verificări automate: lungimi, linkuri, alt text"],
+        actions: ["Analizează articolul", "Editează slug", "Adaugă redirect"],
+      },
+      media: {
+        d: "Bibliotecă ordonată, imagini optimizate automat.",
+        lines: ["Conversie automată în formate moderne", "Text alternativ obligatoriu pentru accesibilitate", "Căutare, foldere și înlocuire fișier"],
+        actions: ["Încarcă", "Decupează", "Setează imagine principală"],
+      },
+      plan: {
+        d: "Calendar editorial cu stări clare pentru fiecare articol.",
+        lines: ["Programare la dată și oră", "Stări: ciornă, în revizuire, programat, publicat", "Notificări pentru articolele blocate"],
+        actions: ["Programează", "Trimite la revizuire", "Duplică articol"],
+      },
+      taxonomy: {
+        d: "Categorii, subcategorii și etichete cu reguli proprii.",
+        lines: ["Reguli per categorie: layout, autor implicit, CTA", "Etichete și pagini de arhivă optimizate", "Reordonare și îmbinare fără linkuri stricate"],
+        actions: ["Creează categorie", "Setează CTA implicit", "Îmbină etichete"],
+      },
+      team: {
+        d: "Fiecare rol vede exact ce are nevoie.",
+        lines: ["Roluri: administrator, editor, autor, colaborator", "Aprobare înainte de publicare", "Profiluri de autor cu bio și rețele"],
+        actions: ["Invită autor", "Schimbă rol", "Vezi jurnal activitate"],
+      },
     },
     meta: [
-      { icon: Tags, label: "Categorii" },
-      { icon: Users, label: "Autori" },
+      { icon: Tags, label: "Categorii & clase" },
+      { icon: Users, label: "Roluri" },
       { icon: LayoutList, label: "Fluxuri de lucru" },
       { icon: FileText, label: "Ciorne nelimitate" },
     ],
+    fnLabel: "Funcții rapide",
   },
   en: {
     eyebrow: "Admin panel",
     title: "A CMS you can use without a manual",
-    lead: "Clean editor, instant preview, scheduling, authors and categories. You publish in minutes, not in meetings.",
+    lead: "Every section has its own clear functions: editor, SEO, media, planning, categories and team. You publish in minutes, not in meetings.",
     tabs: [
       { id: "editor", label: "Editor", icon: Type },
       { id: "seo", label: "SEO", icon: Eye },
       { id: "media", label: "Media", icon: ImageIcon },
       { id: "plan", label: "Planning", icon: CalendarClock },
+      { id: "taxonomy", label: "Categories", icon: Tags },
+      { id: "team", label: "Team", icon: Users },
     ],
     panes: {
-      editor: [
-        "Visual editor built from content blocks",
-        "Headings, quotes, lists, code, galleries",
-        "Autosave and version history",
-      ],
-      seo: [
-        "Editable SEO title, description and slug",
-        "Google result and social card preview",
-        "Automatic checks before publishing",
-      ],
-      media: [
-        "Images optimised automatically, modern formats",
-        "Alt text required for accessibility",
-        "Organised, searchable media library",
-      ],
-      plan: [
-        "Schedule publishing by date and time",
-        "States: draft, in review, scheduled, published",
-        "Roles and permissions for the team",
-      ],
+      editor: {
+        d: "Write the article in blocks, with autosave.",
+        lines: ["Blocks: heading, quote, list, code, gallery, CTA", "Autosave and version history", "Instant preview, desktop and mobile"],
+        actions: ["Add block", "Compare versions", "Preview"],
+      },
+      seo: {
+        d: "Check how the article looks in Google before hitting publish.",
+        lines: ["Editable SEO title, description and slug", "Google result and social card preview", "Automatic checks: lengths, links, alt text"],
+        actions: ["Analyse article", "Edit slug", "Add redirect"],
+      },
+      media: {
+        d: "A tidy library with automatically optimised images.",
+        lines: ["Automatic conversion to modern formats", "Alt text required for accessibility", "Search, folders and file replace"],
+        actions: ["Upload", "Crop", "Set cover image"],
+      },
+      plan: {
+        d: "An editorial calendar with clear states per article.",
+        lines: ["Schedule by date and time", "States: draft, in review, scheduled, published", "Notifications for stalled articles"],
+        actions: ["Schedule", "Send to review", "Duplicate article"],
+      },
+      taxonomy: {
+        d: "Categories, subcategories and tags with their own rules.",
+        lines: ["Per-category rules: layout, default author, CTA", "Optimised tags and archive pages", "Reorder and merge without breaking links"],
+        actions: ["Create category", "Set default CTA", "Merge tags"],
+      },
+      team: {
+        d: "Every role sees exactly what it needs.",
+        lines: ["Roles: admin, editor, author, contributor", "Approval before publishing", "Author profiles with bio and socials"],
+        actions: ["Invite author", "Change role", "View activity log"],
+      },
     },
     meta: [
-      { icon: Tags, label: "Categories" },
-      { icon: Users, label: "Authors" },
+      { icon: Tags, label: "Categories & classes" },
+      { icon: Users, label: "Roles" },
       { icon: LayoutList, label: "Workflows" },
       { icon: FileText, label: "Unlimited drafts" },
     ],
+    fnLabel: "Quick functions",
   },
 } as const;
 
@@ -154,6 +180,7 @@ export const CmsExperience = () => {
           {c.tabs.map((t) => {
             const key = t.id as keyof typeof c.panes;
             if (key !== tab) return null;
+            const pane = c.panes[key];
             return (
               <div
                 key={t.id}
@@ -162,20 +189,28 @@ export const CmsExperience = () => {
                 aria-labelledby={`cms-tab-${t.id}`}
                 className="p-4"
               >
-                <ul className="space-y-2.5">
-                  {c.panes[key].map((line) => (
+                <p className="text-sm font-semibold">{pane.d}</p>
+                <ul className="mt-3 space-y-2.5">
+                  {pane.lines.map((line) => (
                     <li key={line} className="flex items-start gap-2.5 text-sm text-muted-foreground">
                       <Check className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />
                       <span>{line}</span>
                     </li>
                   ))}
                 </ul>
-                <div aria-hidden className="mt-4 space-y-2 rounded-xl border border-border/60 bg-background/60 p-3">
-                  <div className="h-2 w-1/3 rounded-full bg-brand/40" />
-                  <div className="h-2 w-full rounded-full bg-muted" />
-                  <div className="h-2 w-11/12 rounded-full bg-muted" />
-                  <div className="h-2 w-2/3 rounded-full bg-muted" />
-                </div>
+                <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                  {c.fnLabel}
+                </p>
+                <ul className="mt-2 flex flex-wrap gap-2">
+                  {pane.actions.map((a) => (
+                    <li key={a}>
+                      <span className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-background/70 px-2.5 py-1.5 text-xs font-medium">
+                        <span aria-hidden className="size-1.5 rounded-full bg-brand" />
+                        {a}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             );
           })}
@@ -184,6 +219,7 @@ export const CmsExperience = () => {
     </Section>
   );
 };
+
 
 const reader = {
   ro: {
