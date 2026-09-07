@@ -29,6 +29,7 @@ const ProjectPage = lazy(() => import("./pages/intern/ProjectPage.tsx"));
 const InternHome = lazy(() => import("./pages/intern/InternHome.tsx"));
 const ProductDetail = lazy(() => import("./pages/products/ProductPage.tsx"));
 const CarePlans = lazy(() => import("./pages/products/CarePlansPage.tsx"));
+const BlogProfessional = lazy(() => import("./pages/products/BlogProfessional.tsx"));
 
 
 import CookieBanner from "@/components/site/CookieBanner";
@@ -119,6 +120,7 @@ const App = () => (
                 <Route path="/produse/website-prezentare-premium" element={<ProductDetail />} />
                 <Route path="/produse/identitate-social-media" element={<ProductDetail />} />
                 <Route path="/produse/magazin-online" element={<ProductDetail />} />
+                <Route path="/produse/blog-profesional" element={<BlogProfessional />} />
                 <Route path="/produse/aplicatii-web-si-mobile" element={<ProductDetail />} />
                 <Route path="/produse/agent-ai-personalizat" element={<ProductDetail />} />
                 <Route path="/produse/audit-website" element={<Navigate to="/?request=audit#cta" replace />} />
@@ -126,6 +128,7 @@ const App = () => (
                 <Route path="/en/products/premium-presentation-website" element={<ProductDetail />} />
                 <Route path="/en/products/social-media-identity" element={<ProductDetail />} />
                 <Route path="/en/products/online-store" element={<ProductDetail />} />
+                <Route path="/en/products/professional-blog" element={<BlogProfessional />} />
                 <Route path="/en/products/web-and-mobile-apps" element={<ProductDetail />} />
                 <Route path="/en/products/personalized-ai-agent" element={<ProductDetail />} />
                 <Route path="/en/products/website-audit" element={<Navigate to="/en?request=audit#cta" replace />} />
