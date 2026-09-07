@@ -11,7 +11,7 @@ import logo from "@/assets/avyron-logo.webp";
 const UserMenu = lazy(() => import("@/components/auth/UserMenu"));
 
 // Routes where prices are shown — the currency toggle belongs in the nav cluster there.
-const CURRENCY_ROUTES = /^\/(en\/)?($|costurisiproduse|pricing|pachete-mentenanta|care-plans|produse|products)/;
+const CURRENCY_ROUTES = /^\/(en\/)?(costurisiproduse|pricing|pachete-mentenanta|care-plans|produse|products)/;
 
 const Nav = () => {
   const [open, setOpen] = useState(false);
