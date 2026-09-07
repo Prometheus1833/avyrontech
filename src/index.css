@@ -44,6 +44,11 @@
 
     --radius: 1.25rem;
 
+    /* Cinematic intro (Blog Profesional): identical in both themes. */
+    --loader-bg: 228 16% 6%;
+    --loader-ink: 0 0% 96%;
+
+
     --gradient-hero: radial-gradient(1200px 600px at 10% 0%, hsl(264 90% 62% / 0.18), transparent 60%),
                      radial-gradient(900px 500px at 90% 10%, hsl(200 95% 55% / 0.18), transparent 60%),
                      radial-gradient(700px 400px at 50% 100%, hsl(86 78% 60% / 0.18), transparent 60%);
@@ -385,4 +390,59 @@ html {
     opacity: 1;
     transform: none;
   }
+}
+
+/* ---------- Blog Profesional: cinematic intro + hero handoff ---------- */
+@layer components {
+  .blogpro-loader {
+    background:
+      radial-gradient(60% 50% at 50% 45%, hsl(264 90% 62% / 0.10), transparent 70%),
+      hsl(var(--loader-bg));
+    transition: opacity 420ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: opacity;
+  }
+  .blogpro-loader[data-state="leaving"] {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .blogpro-loader-brand {
+    animation: blogpro-brand-in 900ms cubic-bezier(0.22, 1, 0.36, 1) 780ms both;
+  }
+  .blogpro-loader-brand p:first-child {
+    color: hsl(var(--loader-ink));
+  }
+  .blogpro-loader-brand p + p {
+    color: hsl(var(--loader-ink) / 0.45);
+  }
+
+  [data-hero-enter] [data-hero-step] {
+    opacity: 0;
+  }
+  [data-hero-enter="in"] [data-hero-step] {
+    animation: blogpro-hero-step 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  [data-hero-enter="in"] [data-hero-step="0"] { animation-delay: 0ms; }
+  [data-hero-enter="in"] [data-hero-step="1"] { animation-delay: 60ms; }
+  [data-hero-enter="in"] [data-hero-step="2"] { animation-delay: 130ms; }
+  [data-hero-enter="in"] [data-hero-step="3"] { animation-delay: 210ms; }
+  [data-hero-enter="in"] [data-hero-step="4"] { animation-delay: 290ms; }
+  [data-hero-enter="in"] [data-hero-step="5"] { animation-delay: 360ms; }
+}
+
+@keyframes blogpro-brand-in {
+  from { opacity: 0; letter-spacing: 0.9em; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes blogpro-hero-step {
+  from { opacity: 0; transform: translateY(14px) scale(0.995); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blogpro-loader-brand { animation-duration: 300ms; animation-delay: 120ms; }
+  [data-hero-enter="in"] [data-hero-step] {
+    animation: blogpro-hero-fade 240ms ease both;
+  }
+  @keyframes blogpro-hero-fade { from { opacity: 0 } to { opacity: 1 } }
 }
