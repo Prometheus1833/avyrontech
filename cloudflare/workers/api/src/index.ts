@@ -661,6 +661,7 @@ app.put("/api/content/:key", requireAuth, requireRole("admin"), async (c) => {
 
 // ─── Platformă internă (proiecte + propuneri + linkuri + metadata) ──────
 import { projectsRouter } from "./projects";
+import { aiOsRouter } from "./aiOs";
 import { seedRouter } from "./seed";
 import { mediaRouter } from "./media";
 import { contactRouter } from "./contact";
@@ -679,6 +680,10 @@ app.use("/api/promotions/*", requireAuth);
 // Editorial mutations are authorized server-side. Public article reads and
 // immutable R2 cover images remain accessible to crawlers and visitors.
 app.use("/api/blog/staff/*", requireAuth, requireRole("staff", "admin"));
+// AI OS: consola de administrare este rezervată super adminilor; scrierile sunt
+// limitate suplimentar la contul owner în interiorul routerului.
+app.use("/api/ai/admin/*", requireAuth, requireSuperAdmin);
+app.route("/", aiOsRouter);
 app.route("/", projectsRouter);
 app.route("/", mediaRouter);
 app.route("/", blogRouter);

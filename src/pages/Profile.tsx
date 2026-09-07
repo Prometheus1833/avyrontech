@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck,
   FolderKanban, Wrench, BookOpen, MessagesSquare, Settings, ShoppingCart, Globe, Wallet,
-  Image as ImageIcon, BadgePercent, Search, Lock,
+  Image as ImageIcon, BadgePercent, Search, Lock, Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
@@ -32,6 +32,7 @@ const StaffFinanceTab = lazy(() => import("@/components/dashboard/StaffFinanceTa
 const StaffPaymentsTab = lazy(() => import("@/components/dashboard/StaffPaymentsTab").then((m) => ({ default: m.StaffPaymentsTab })));
 const StaffMediaTab = lazy(() => import("@/components/dashboard/StaffMediaTab").then((m) => ({ default: m.StaffMediaTab })));
 const StaffPromotionsTab = lazy(() => import("@/components/dashboard/StaffPromotionsTab").then((m) => ({ default: m.StaffPromotionsTab })));
+const AiOsConsole = lazy(() => import("@/pages/intern/AiOs"));
 
 const GROUP_LABELS: Record<string, string> = {
   account: "Cont",
@@ -73,6 +74,7 @@ const Profile = () => {
     payments: { label: "Plăți", icon: Wallet },
     finance: { label: "Situație financiară", icon: Wallet },
     promotions: { label: "Promoții", icon: BadgePercent },
+    "ai-os": { label: "AI OS AVY", icon: Sparkles },
   }), [t, access.isStaff]);
 
   const allowed = useMemo(() => sectionsFor(access), [access]);
@@ -211,6 +213,7 @@ const Profile = () => {
                 <TabsContent value="payments" className="mt-0"><StaffPaymentsTab /></TabsContent>
                 <TabsContent value="finance" className="mt-0"><StaffFinanceTab /></TabsContent>
                 <TabsContent value="promotions" className="mt-0"><StaffPromotionsTab /></TabsContent>
+                <TabsContent value="ai-os" className="mt-0"><AiOsConsole embedded /></TabsContent>
               </>
             )}
           </Suspense>
