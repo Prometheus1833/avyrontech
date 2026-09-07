@@ -166,7 +166,7 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
   });
 
   it("ships exactly one JSON-LD graph with no duplicated global nodes", () => {
-    for (const route of ["/", "/costurisiproduse", "/produse/website-prezentare-premium", "/pachete-mentenanta"]) {
+    for (const route of ["/", "/costurisiproduse", "/produse/website-prezentare-premium", "/produse/testare-qa-web-mobile"]) {
       const h = head(read(route));
       const scripts = h.match(/<script[^>]*application\/ld\+json[^>]*>/g) || [];
       expect(scripts.length).toBe(1);

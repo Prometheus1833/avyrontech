@@ -24,6 +24,7 @@ function htmlFiles(dir) {
 function sourceFiles(route) {
   if (route === "/" || route === "/en") return ["src/pages/Index.tsx", "src/i18n/translations.ts"];
   if (route.includes("/blog")) return ["src/pages/Blog.tsx", "src/data/blogIndex.ts"];
+  if (route === "/produse/testare-qa-web-mobile" || route === "/en/products/qa-testing-web-mobile") return ["src/pages/products/QaTestingPage.tsx"];
   if (route.includes("/products/") || route.startsWith("/produse/")) return ["src/pages/products/ProductPage.tsx", "src/data/products.ts"];
   if (route.includes("pricing") || route === "/costurisiproduse") return ["src/pages/Pricing.tsx"];
   if (route === "/despre-noi" || route === "/en/about") return ["src/pages/AboutUs.tsx"];

@@ -18,7 +18,6 @@ export const ROUTE_ALTERNATES: Array<{ ro: string; en: string }> = [
   { ro: "/produse/aplicatii-web-si-mobile", en: "/en/products/web-and-mobile-apps" },
   { ro: "/produse/agent-ai-personalizat", en: "/en/products/personalized-ai-agent" },
   { ro: "/produse/testare-qa-web-mobile", en: "/en/products/qa-testing-web-mobile" },
-  { ro: "/pachete-mentenanta", en: "/en/care-plans" },
 ];
 
 export function getLangFromPath(pathname: string): Lang {

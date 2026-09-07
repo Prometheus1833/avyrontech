@@ -28,7 +28,7 @@ const Unsubscribe = lazy(() => import("./pages/Unsubscribe.tsx"));
 const ProjectPage = lazy(() => import("./pages/intern/ProjectPage.tsx"));
 const InternHome = lazy(() => import("./pages/intern/InternHome.tsx"));
 const ProductDetail = lazy(() => import("./pages/products/ProductPage.tsx"));
-const CarePlans = lazy(() => import("./pages/products/CarePlansPage.tsx"));
+const QaTesting = lazy(() => import("./pages/products/QaTestingPage.tsx"));
 const BlogProfessional = lazy(() => import("./pages/products/BlogProfessional.tsx"));
 const AiOsConsole = lazy(() => import("./pages/intern/AiOs.tsx"));
 const AvyChat = lazy(() => import("@/components/ai/AvyChat"));
@@ -145,7 +145,7 @@ const App = () => (
                 <Route path="/produse/aplicatii-web-si-mobile" element={<ProductDetail />} />
                 <Route path="/produse/agent-ai-personalizat" element={<ProductDetail />} />
                 <Route path="/produse/audit-website" element={<Navigate to="/?request=audit#cta" replace />} />
-                <Route path="/produse/testare-qa-web-mobile" element={<ProductDetail />} />
+                <Route path="/produse/testare-qa-web-mobile" element={<QaTesting />} />
                 <Route path="/en/products/premium-presentation-website" element={<ProductDetail />} />
                 <Route path="/en/products/social-media-identity" element={<ProductDetail />} />
                 <Route path="/en/products/online-store" element={<ProductDetail />} />
@@ -153,9 +153,9 @@ const App = () => (
                 <Route path="/en/products/web-and-mobile-apps" element={<ProductDetail />} />
                 <Route path="/en/products/personalized-ai-agent" element={<ProductDetail />} />
                 <Route path="/en/products/website-audit" element={<Navigate to="/en?request=audit#cta" replace />} />
-                <Route path="/en/products/qa-testing-web-mobile" element={<ProductDetail />} />
-                <Route path="/pachete-mentenanta" element={<CarePlans />} />
-                <Route path="/en/care-plans" element={<CarePlans />} />
+                <Route path="/en/products/qa-testing-web-mobile" element={<QaTesting />} />
+                <Route path="/pachete-mentenanta" element={<Navigate to="/produse/testare-qa-web-mobile" replace />} />
+                <Route path="/en/care-plans" element={<Navigate to="/en/products/qa-testing-web-mobile" replace />} />
 
                 <Route path="/despre" element={<Navigate to="/despre-noi" replace />} />
                 <Route path="/despre-si-portofoliu" element={<Navigate to="/portofoliu" replace />} />
