@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
 import { cfAuth, type CfUser, type CfProfile, type Role } from "@/lib/cfAuth";
+import { isSuperAdminEmail } from "@/lib/access";
 
 export type AppRole = Role;
 export type Profile = CfProfile;
