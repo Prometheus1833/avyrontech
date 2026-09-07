@@ -1,5 +1,6 @@
-import { useMemo, useRef, useState } from "react";
-import { ArrowRight, CheckCircle2, Loader2, RotateCcw, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight, CheckCircle2, Loader2, Minus, Plus, RotateCcw, Sparkles } from "lucide-react";
+
 import { toast } from "sonner";
 import { z } from "zod";
 import { useLang } from "@/i18n/LanguageContext";
@@ -23,7 +24,9 @@ import {
   defaultSelection,
   formatLei,
   levelFor,
+  stepperValue,
 } from "@/data/blogProfessional";
+
 import { Section, SectionHead } from "./ui";
 
 /* SCENE 15 — pricing + configurator + lead capture. */
