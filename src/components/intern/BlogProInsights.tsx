@@ -23,6 +23,8 @@ const STATUS_LABEL: Record<string, string> = {
 export default function BlogProInsights() {
   const [days, setDays] = useState<(typeof WINDOWS)[number]>(30);
   const [funnel, setFunnel] = useState<FunnelSummary | null>(null);
+  const [blogFunnel, setBlogFunnel] = useState<FunnelSummary | null>(null);
+  const [articleFunnel, setArticleFunnel] = useState<FunnelSummary | null>(null);
   const [pipeline, setPipeline] = useState<LeadPipeline | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -31,11 +33,15 @@ export default function BlogProInsights() {
     setLoading(true);
     setError("");
     try {
-      const [f, p] = await Promise.all([
+      const [f, blog, article, p] = await Promise.all([
         internApi.getFunnel("blogpro", window),
+        internApi.getFunnel("blog", window),
+        internApi.getFunnel("blog_article", window),
         internApi.getLeadPipeline("blog_profesional", Math.max(window, 90)),
       ]);
       setFunnel(f);
+      setBlogFunnel(blog);
+      setArticleFunnel(article);
       setPipeline(p);
     } catch (e) {
       setError((e as Error).message || "Nu am putut încărca datele");
@@ -51,7 +57,12 @@ export default function BlogProInsights() {
   const cards = useMemo(() => {
     if (!funnel) return [];
     return [
-      { label: "Vizite pagină", value: fmt(funnel.views), hint: `${fmt(funnel.sessions)} sesiuni` },
+      {
+        label: "Vizite blog",
+        value: fmt((blogFunnel?.views ?? 0) + (articleFunnel?.views ?? 0)),
+        hint: `${fmt(blogFunnel?.views ?? 0)} listă · ${fmt(articleFunnel?.views ?? 0)} articole`,
+      },
+      { label: "Vizite pagină serviciu", value: fmt(funnel.views), hint: `${fmt(funnel.sessions)} sesiuni` },
       {
         label: "Ajung la configurator",
         value: fmt(funnel.steps.view_configurator.sessions),
@@ -68,7 +79,7 @@ export default function BlogProInsights() {
         hint: `${funnel.conversion.toLead}% conversie`,
       },
     ];
-  }, [funnel]);
+  }, [funnel, blogFunnel, articleFunnel]);
 
   return (
     <section className="space-y-4" aria-labelledby="blogpro-insights-title">

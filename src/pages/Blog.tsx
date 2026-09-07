@@ -22,6 +22,7 @@ import { blogApi, type BlogLanguage, type BlogPost, type BlogPostInput, type Blo
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import PageBackLink from "@/components/site/PageBackLink";
+import { trackFunnel } from "@/lib/siteAnalytics";
 
 const SITE_URL = "https://avyron.ro";
 const FALLBACK_IMAGE = "/og/home.jpg";
@@ -174,6 +175,11 @@ const Blog = () => {
   useEffect(() => { setPosts(staticPosts); setLoaded(false); void refresh(); }, [refresh, staticPosts]);
   const current = slug ? posts.find((post) => post.slug === slug) || null : null;
   useEffect(() => { if (!slug || current || !loaded) return; blogApi.getPublished(language, slug).then(({ data }) => setPosts((items) => mergePosts([data], items))).catch(() => {}); }, [current, language, loaded, slug]);
+
+  /* Vizitele blogului sunt numărate în baza noastră (și în GA4). */
+  useEffect(() => {
+    trackFunnel("page_view", slug ? "blog_article" : "blog", { article: slug || "index", lang: language });
+  }, [slug, language]);
 
   useEffect(() => {
     const article = slug ? current : null, basePath = language === "en" ? "/en/blog" : "/blog", path = article ? `${basePath}/${article.slug}` : basePath;
