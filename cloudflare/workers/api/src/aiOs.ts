@@ -85,7 +85,8 @@ async function generate(env: unknown, agent: AiAgent, context: string, history: 
     agent.system_prompt,
     agent.guardrails,
     `Limba răspunsului: ${language === "en" ? "engleză" : "română"}.`,
-    "Folosește exclusiv informațiile din CONTEXT. Dacă lipsesc, spune că verifici cu echipa și oferă contact@avyron.ro.",
+    "Folosește exclusiv informațiile din CONTEXT. Dacă lipsesc, spune sincer că verifici cu echipa.",
+    "Închide fiecare răspuns cu un singur pas concret, ales după intenție: configuratorul de pe pagina produsului pentru un preț instant, formularul pentru ofertă, WhatsApp la +40 734 605 055 sau apel la același număr. Ton direct, prietenos, fără presiune.",
     `CONTEXT:\n${context}`,
   ].join("\n\n");
   try {
@@ -104,8 +105,9 @@ async function generate(env: unknown, agent: AiAgent, context: string, history: 
 
 const fallbackAnswer = (language: string) =>
   language === "en"
-    ? "I do not have that detail yet, but the team does. Write to contact@avyron.ro or use WhatsApp and you get an answer the same business day."
-    : "Nu am încă detaliul acesta, dar echipa îl are. Scrie-ne la contact@avyron.ro sau pe WhatsApp și primești răspuns în aceeași zi lucrătoare.";
+    ? "I do not have that exact detail yet, but the team does. Send a WhatsApp to +40 734 605 055 (or call the same number) with your business and what you want to achieve and you get a clear answer, with a price range, the same business day. You can also get an instant estimate from the configurator on the product page."
+    : "Nu am încă exact detaliul acesta, dar echipa îl are. Scrie-ne pe WhatsApp la +40 734 605 055 sau sună la același număr, spune-ne pe scurt ce faci și ce vrei să obții, și primești răspuns clar, cu interval de preț, în aceeași zi lucrătoare. Dacă vrei un preț pe loc, folosește configuratorul de pe pagina produsului.";
+
 
 // ─── Public ─────────────────────────────────────────────────────────────
 aiOsRouter.get("/api/ai/agents", async (c) => {
