@@ -27,7 +27,6 @@ import {
   FAQ_ITEMS,
   FinalCta,
 } from "@/components/blogpro/Closing";
-import { BASE_PRICE } from "@/data/blogProfessional";
 
 const PATHS = { ro: "/produse/blog-profesional", en: "/en/products/professional-blog" };
 
@@ -161,7 +160,6 @@ const BlogProfessional = () => {
 
       <QuickNav items={quickNav[lang] as unknown as QuickNavItem[]} />
       <Footer />
-      <span className="sr-only">{BASE_PRICE}</span>
     </main>
   );
 };
