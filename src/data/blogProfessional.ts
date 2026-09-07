@@ -283,8 +283,9 @@ export const CONFIG_STEPS: ConfigStep[] = [
 ];
 
 /** Individual AI modules covered by the bundle (never double-charged). */
-export const AI_BUNDLED_IDS = CONFIG_STEPS.find((s) => s.id === "ai")!
-  .groups[0].options.filter((o) => o.id !== AI_PACK_ID)
+export const AI_BUNDLED_IDS = CONFIG_STEPS.flatMap((s) => s.groups)
+  .find((g) => g.id === AI_GROUP_ID)!
+  .options.filter((o) => o.id !== AI_PACK_ID)
   .map((o) => o.id);
 
 export type Selection = Record<string, string[]>;
