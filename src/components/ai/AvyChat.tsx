@@ -133,11 +133,17 @@ const AvyChat = ({ agent = "avy" }: { agent?: string }) => {
   return (
     <>
       <button
+        ref={bubbleRef}
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onPointerDown={onBubblePointerDown}
+        onClick={onBubbleClick}
+        onKeyDown={onBubbleKeyDown}
         aria-label={t.open}
         aria-expanded={open}
-        className="fixed left-3 top-1/2 z-40 -translate-y-1/2 rounded-2xl border border-border/60 bg-background/70 p-3 shadow-lg backdrop-blur-xl transition hover:scale-105 hover:bg-background/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+        style={pos ? { left: pos.x, top: pos.y, right: "auto", bottom: "auto" } : undefined}
+        className={`fixed z-40 touch-none select-none rounded-2xl border border-border/60 bg-background/70 p-3 shadow-lg backdrop-blur-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
+          pos ? "" : "left-3 top-20"
+        } ${dragging ? "scale-105 cursor-grabbing" : "cursor-grab transition hover:scale-105 hover:bg-background/90"}`}
       >
         <span className="relative flex items-center gap-2">
           <span className="absolute -inset-2 -z-10 rounded-2xl bg-primary/20 blur-xl" aria-hidden />
@@ -145,6 +151,7 @@ const AvyChat = ({ agent = "avy" }: { agent?: string }) => {
           <span className="hidden text-xs font-semibold tracking-wide sm:inline">AVY</span>
         </span>
       </button>
+
 
       {open && (
         <div
