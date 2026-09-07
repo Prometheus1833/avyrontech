@@ -136,6 +136,42 @@ const Configurator = () => {
   const level = useMemo(() => levelFor(estimate.addons), [estimate.addons]);
   const aiPackOn = (selection[AI_GROUP_ID] ?? []).includes(AI_PACK_ID);
 
+  /* Real usage measurement: how many visitors actually reach the configurator
+     and the lead form. Fired once per page view, only when GA consent is on. */
+  useEffect(() => {
+    const watched: Record<string, string> = {
+      "configurator-blog": "view_configurator",
+      "configurator-lead": "view_lead_form",
+    };
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const name = watched[entry.target.id];
+          if (name) {
+            trackEvent(name, { location: "blogpro", product: "blog_profesional" });
+          }
+          io.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.25 },
+    );
+    for (const id of Object.keys(watched)) {
+      const el = document.getElementById(id);
+      if (el) io.observe(el);
+    }
+    return () => io.disconnect();
+  }, []);
+
+  const setStepper = (group: ConfigGroup, next: number) => {
+    const cfg = group.stepper;
+    if (!cfg) return;
+    const value = Math.min(cfg.max, Math.max(cfg.min, next));
+    setSelection((prev) => ({ ...prev, [group.id]: [String(value)] }));
+  };
+
+
+
   const toggle = (group: ConfigGroup, optionId: string) => {
     setSelection((prev) => {
       const current = prev[group.id] ?? [];
