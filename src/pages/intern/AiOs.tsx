@@ -28,7 +28,7 @@ const field = "w-full rounded-xl border border-border/60 bg-background/70 px-3 p
 
 /** Consola AI OS "AVY". Vizibilă super adminilor, editabilă doar de contul owner. */
 const AiOs = ({ embedded = false }: { embedded?: boolean }) => {
-  const { user } = useAuth();
+  const { user, isSuperAdmin, loading: authLoading } = useAuth();
   const [tab, setTab] = useState<TabId>("overview");
   const [stats, setStats] = useState<AiStats | null>(null);
   const [agents, setAgents] = useState<AiAgent[]>([]);

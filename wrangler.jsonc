@@ -54,6 +54,9 @@
       "migrations_dir": "cloudflare/d1/migrations"
     }
   ],
+  // Workers AI alimentează agenții AI OS "AVY". Fără binding, agenții răspund
+  // determinist din baza de cunoștințe D1.
+  "ai": { "binding": "AI" },
   "kv_namespaces": [
     { "binding": "KV", "id": "7c296f2750b943cea4376c12122ed276" }
   ],
@@ -112,6 +115,7 @@
           "migrations_dir": "cloudflare/d1/migrations"
         }
       ],
+      "ai": { "binding": "AI" },
       "kv_namespaces": [
         { "binding": "KV", "id": "2a37c496edcc4742b87a17d65749da22" }
       ],
