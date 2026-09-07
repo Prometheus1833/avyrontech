@@ -153,28 +153,114 @@ const ai = {
   ro: {
     eyebrow: "AVYRON AI · opțional",
     title: "Inteligență care ajută redacția, nu o înlocuiește",
-    lead: "Modulele AI sunt opționale și se activează doar dacă îți aduc timp câștigat. Publicarea rămâne o decizie umană.",
-    items: [
-      { icon: Sparkles, t: "Asistent de scriere", d: "Structuri, titluri și variante de introducere." },
-      { icon: FileSearch, t: "Brief de conținut", d: "Ce trebuie să acopere un articol pentru subiectul ales." },
-      { icon: BrainCircuit, t: "Asistent SEO", d: "Sugestii pentru titluri, descrieri și structură." },
-      { icon: RefreshCcw, t: "Content refresh", d: "Identifică articolele care merită actualizate." },
-      { icon: Languages, t: "Traducere asistată", d: "Versiuni în alte limbi, revizuite de om." },
-      { icon: BellRing, t: "Recomandări conexe", d: "Articole relevante propuse automat cititorului." },
+    lead: "Folosim modele consacrate — Claude, ChatGPT și Gemini — alese pentru fiecare sarcină. Modulele sunt opționale, iar publicarea rămâne o decizie umană.",
+    modelsLabel: "Modele folosite",
+    models: [
+      { n: "Claude", d: "Texte lungi, ton editorial, rescriere" },
+      { n: "ChatGPT", d: "Idei, titluri, structuri, meta" },
+      { n: "Gemini", d: "Analiză SERP, imagini, multilingv" },
     ],
+    items: [
+      {
+        icon: Sparkles,
+        t: "Asistent de scriere",
+        m: "Claude 4.5 · GPT-5",
+        d: "Structuri, titluri și variante de introducere.",
+        e: "Exemplu: „Scrie 5 titluri pentru un ghid despre facturare electronică”.",
+      },
+      {
+        icon: FileSearch,
+        t: "Brief de conținut",
+        m: "Gemini · GPT-5",
+        d: "Ce trebuie să acopere un articol pentru subiectul ales.",
+        e: "Exemplu: analizează primele 10 rezultate Google și propune structura H2.",
+      },
+      {
+        icon: BrainCircuit,
+        t: "Asistent SEO",
+        m: "GPT-5 mini",
+        d: "Sugestii pentru titluri, descrieri și structură.",
+        e: "Exemplu: meta description de 155 caractere, cu cuvântul-cheie principal.",
+      },
+      {
+        icon: RefreshCcw,
+        t: "Content refresh",
+        m: "Claude 4.5",
+        d: "Identifică articolele care merită actualizate.",
+        e: "Exemplu: „Articolul are date din 2024 — actualizează cifrele și concluzia”.",
+      },
+      {
+        icon: Languages,
+        t: "Traducere asistată",
+        m: "Gemini 3",
+        d: "Versiuni în alte limbi, revizuite de om.",
+        e: "Exemplu: versiune EN a ghidului, cu terminologie păstrată.",
+      },
+      {
+        icon: BellRing,
+        t: "Recomandări conexe",
+        m: "Embeddings",
+        d: "Articole relevante propuse automat cititorului.",
+        e: "Exemplu: la finalul articolului apar 3 texte pe aceeași temă.",
+      },
+    ],
+    note: "Modelele pot fi schimbate oricând, iar costurile de consum API se facturează separat, transparent.",
   },
   en: {
     eyebrow: "AVYRON AI · optional",
     title: "Intelligence that helps the editorial team, not replaces it",
-    lead: "AI modules are optional and only worth enabling when they save you real time. Publishing stays a human decision.",
-    items: [
-      { icon: Sparkles, t: "Writing assistant", d: "Structures, headlines and intro variations." },
-      { icon: FileSearch, t: "Content brief", d: "What an article should cover for the chosen topic." },
-      { icon: BrainCircuit, t: "SEO assistant", d: "Suggestions for titles, descriptions and structure." },
-      { icon: RefreshCcw, t: "Content refresh", d: "Spots the articles worth updating." },
-      { icon: Languages, t: "Assisted translation", d: "Versions in other languages, reviewed by a human." },
-      { icon: BellRing, t: "Related recommendations", d: "Relevant articles proposed to the reader automatically." },
+    lead: "We use proven models — Claude, ChatGPT and Gemini — matched to each task. Modules are optional and publishing stays a human decision.",
+    modelsLabel: "Models we use",
+    models: [
+      { n: "Claude", d: "Long-form, editorial tone, rewriting" },
+      { n: "ChatGPT", d: "Ideas, headlines, outlines, meta" },
+      { n: "Gemini", d: "SERP analysis, images, multilingual" },
     ],
+    items: [
+      {
+        icon: Sparkles,
+        t: "Writing assistant",
+        m: "Claude 4.5 · GPT-5",
+        d: "Structures, headlines and intro variations.",
+        e: "Example: “Write 5 headlines for a guide on e-invoicing”.",
+      },
+      {
+        icon: FileSearch,
+        t: "Content brief",
+        m: "Gemini · GPT-5",
+        d: "What an article should cover for the chosen topic.",
+        e: "Example: analyse the top 10 Google results and propose the H2 outline.",
+      },
+      {
+        icon: BrainCircuit,
+        t: "SEO assistant",
+        m: "GPT-5 mini",
+        d: "Suggestions for titles, descriptions and structure.",
+        e: "Example: a 155-character meta description with the main keyword.",
+      },
+      {
+        icon: RefreshCcw,
+        t: "Content refresh",
+        m: "Claude 4.5",
+        d: "Spots the articles worth updating.",
+        e: "Example: “This article uses 2024 data — refresh figures and conclusion”.",
+      },
+      {
+        icon: Languages,
+        t: "Assisted translation",
+        m: "Gemini 3",
+        d: "Versions in other languages, reviewed by a human.",
+        e: "Example: an EN version of the guide with terminology preserved.",
+      },
+      {
+        icon: BellRing,
+        t: "Related recommendations",
+        m: "Embeddings",
+        d: "Relevant articles proposed to the reader automatically.",
+        e: "Example: 3 articles on the same topic appear at the end of the read.",
+      },
+    ],
+    note: "Models can be swapped at any time, and API usage costs are billed separately and transparently.",
   },
 } as const;
 
@@ -184,22 +270,45 @@ export const AiSection = () => {
   return (
     <Section id="ai" scene="ai" tone="graphite" labelledBy="ai-title">
       <SectionHead id="ai-title" eyebrow={c.eyebrow} title={c.title} lead={c.lead} invert />
-      <div className="mt-9 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+
+      <div className="mt-6" data-reveal>
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-background/50">{c.modelsLabel}</p>
+        <ul className="mt-2.5 flex flex-wrap gap-2">
+          {c.models.map((m) => (
+            <li key={m.n}>
+              <Chip invert>
+                <span className="font-bold text-background">{m.n}</span>
+                <span className="text-background/60">{m.d}</span>
+              </Chip>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {c.items.map((item) => (
           <div
             key={item.t}
             data-reveal
             className="rounded-2xl border border-background/15 bg-background/[0.06] p-4 transition-transform duration-300 hover:-translate-y-1"
           >
-            <item.icon className="size-5 text-brand-glow" aria-hidden />
+            <div className="flex items-center justify-between gap-2">
+              <item.icon className="size-5 text-brand-glow" aria-hidden />
+              <span className="rounded-full border border-background/20 px-2 py-0.5 text-[10px] font-semibold text-background/70">
+                {item.m}
+              </span>
+            </div>
             <h3 className="mt-3 font-display text-[0.95rem] font-bold tracking-tight text-background">{item.t}</h3>
             <p className="mt-1.5 text-sm leading-relaxed text-background/65">{item.d}</p>
+            <p className="mt-2 border-t border-background/10 pt-2 text-xs leading-relaxed text-background/50">{item.e}</p>
           </div>
         ))}
       </div>
+      <p className="mt-5 text-xs text-background/50">{c.note}</p>
     </Section>
   );
 };
+
 
 const integrations = {
   ro: {
