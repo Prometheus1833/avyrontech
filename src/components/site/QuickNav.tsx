@@ -1,6 +1,7 @@
 import { ListTree, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLang } from "@/i18n/LanguageContext";
+import LangSwitch from "./LangSwitch";
 
 export interface QuickNavItem {
   id: string;
@@ -10,13 +11,15 @@ export interface QuickNavItem {
 
 interface Props {
   items: QuickNavItem[];
+  /** Show a liquid-glass RO/EN toggle above the menu (for standalone pages). */
+  showLang?: boolean;
 }
 
 /**
  * Floating liquid-glass mini menu (top-right) with on-page section anchors.
  * Highlights the section currently in view via IntersectionObserver.
  */
-const QuickNav = ({ items }: Props) => {
+const QuickNav = ({ items, showLang = false }: Props) => {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<string | null>(null);
   const [present, setPresent] = useState<string[]>([]);
@@ -71,7 +74,7 @@ const QuickNav = ({ items }: Props) => {
   }, [open]);
 
   // Not worth a floating menu for one or two sections.
-  if (visibleItems.length < 3) return null;
+  if (visibleItems.length < 3 && !showLang) return null;
 
 
   const menuLabel = ro ? "Cuprinsul paginii" : "On this page";
@@ -82,8 +85,14 @@ const QuickNav = ({ items }: Props) => {
   return (
     <div
       ref={rootRef}
-      className="fixed right-3 top-20 z-40 sm:right-4 md:top-24"
+      className="fixed right-3 top-20 z-40 flex flex-col items-end gap-2 sm:right-4 md:top-24"
     >
+      {showLang && (
+        <div className="rounded-full border border-foreground/15 bg-background/60 p-1.5 shadow-elev backdrop-blur-xl">
+          <LangSwitch />
+        </div>
+      )}
+      {visibleItems.length >= 3 && (
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -104,12 +113,13 @@ const QuickNav = ({ items }: Props) => {
         )}
         <span className="sr-only">{menuLabel}</span>
       </button>
+      )}
 
-      {open && (
+      {open && visibleItems.length >= 3 && (
         <nav
           id="quick-nav-panel"
           aria-label={menuLabel}
-          className="absolute right-0 mt-2 w-56 origin-top-right animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200 rounded-2xl border border-foreground/15 bg-background/70 p-2 shadow-elev backdrop-blur-xl"
+          className="absolute right-0 top-full mt-2 w-56 origin-top-right animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200 rounded-2xl border border-foreground/15 bg-background/70 p-2 shadow-elev backdrop-blur-xl"
         >
           <p className="px-3 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground/50">
             {menuLabel}
