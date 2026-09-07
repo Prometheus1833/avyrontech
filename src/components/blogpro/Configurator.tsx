@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { useLang } from "@/i18n/LanguageContext";
 import { apiUrl } from "@/lib/apiBase";
-import { trackEvent } from "@/lib/analytics";
+
 import { trackFunnel } from "@/lib/siteAnalytics";
 import Turnstile from "@/components/site/Turnstile";
 import { TURNSTILE_SITE_KEY } from "@/config/turnstile";
