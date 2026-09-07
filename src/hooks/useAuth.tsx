@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
 import { cfAuth, type CfUser, type CfProfile, type Role } from "@/lib/cfAuth";
+import { isSuperAdminEmail } from "@/lib/access";
 
 export type AppRole = Role;
 export type Profile = CfProfile;
@@ -13,6 +14,7 @@ type AuthContextValue = {
   roles: AppRole[];
   isStaff: boolean;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   loading: boolean;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -27,6 +29,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
+  const [superadmin, setSuperadmin] = useState(false);
   // Start in loading state on every route so signed-in visitors never see a
   // "Log in" CTA flash while the (possibly deferred) session bootstrap runs.
   const [loading, setLoading] = useState(true);
@@ -37,10 +40,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(me.user);
       setProfile(me.profile);
       setRoles(me.roles ?? []);
+      setSuperadmin(me.superadmin === true || isSuperAdminEmail(me.user.email));
     } else {
       setUser(null);
       setProfile(null);
       setRoles([]);
+      setSuperadmin(false);
     }
   }, []);
 
@@ -76,7 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = useCallback(async () => {
     await cfAuth.logout();
-    setUser(null); setProfile(null); setRoles([]);
+    setUser(null); setProfile(null); setRoles([]); setSuperadmin(false);
   }, []);
 
   const value: AuthContextValue = {
@@ -86,6 +91,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     roles,
     isStaff: roles.includes("staff") || roles.includes("admin"),
     isAdmin: roles.includes("admin"),
+    isSuperAdmin: roles.includes("admin") && superadmin,
     loading,
     refreshProfile,
     signOut,

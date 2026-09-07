@@ -185,6 +185,22 @@ const requireRole = (...roles: Role[]) => async (c: Context<AppBindings>, next: 
   await next();
 };
 
+// Conturi cu control total: doar ele pot atinge zona financiară și datele
+// personale complete ale utilizatorilor.
+const SUPERADMIN_EMAILS = ["prometheus@avyron.ro", "avyrontech@gmail.com"];
+async function isSuperAdmin(c: Context<AppBindings>): Promise<boolean> {
+  const roles: Role[] = c.get("roles") ?? [];
+  if (!roles.includes("admin")) return false;
+  const row = await c.env.DB.prepare("SELECT email FROM users WHERE id = ? AND disabled_at IS NULL")
+    .bind(c.get("userId")).first<{ email: string }>();
+  return !!row && SUPERADMIN_EMAILS.includes(row.email.trim().toLowerCase());
+}
+const requireSuperAdmin = async (c: Context<AppBindings>, next: Next) => {
+  if (!(await isSuperAdmin(c)))
+    return c.json({ error: { code: "forbidden", message: "Doar super adminul are acces" } }, 403);
+  await next();
+};
+
 async function rolesFor(db: D1Database, userId: string): Promise<Role[]> {
   const { results } = await db.prepare("SELECT role FROM user_roles WHERE user_id = ?").bind(userId).all<{ role: Role }>();
   return results.map((r) => r.role);
@@ -390,7 +406,7 @@ app.get("/api/auth/me", requireAuth, async (c) => {
       .bind(c.get("userId"), (u as { display_name?: string }).display_name || null, now()).run();
     profile = await c.env.DB.prepare(`SELECT ${PROFILE_SELECT} FROM profiles WHERE id = ?`).bind(c.get("userId")).first();
   }
-  return c.json({ user: u, profile, roles: c.get("roles") });
+  return c.json({ user: u, profile, roles: c.get("roles"), superadmin: await isSuperAdmin(c) });
 });
 
 app.post("/api/auth/forgot", async (c) => {
@@ -530,6 +546,12 @@ app.get("/api/profile/avatar/:userId", async (c) => {
   return new Response(object.body, { headers });
 });
 
+const maskEmail = (email: string) => {
+  const [name, domain] = email.split("@");
+  if (!domain) return "";
+  return `${name.slice(0, 2)}${"*".repeat(Math.max(1, name.length - 2))}@${domain}`;
+};
+
 // ─── Business CRUD (exemplu: clients) ───────────────────────────────────
 app.get("/api/clients", requireAuth, requireRole("staff", "admin"), async (c) => {
   const { results } = await c.env.DB.prepare("SELECT id,company_name,contact_name,email,phone,status,created_at FROM clients ORDER BY created_at DESC LIMIT 200").all();
@@ -546,11 +568,22 @@ app.get("/api/admin/users", requireAuth, requireRole("staff", "admin"), async (c
        LEFT JOIN user_roles r ON r.user_id=u.id
       GROUP BY u.id
       ORDER BY COALESCE(p.display_name,u.display_name,u.email) COLLATE NOCASE`,
-  ).all();
-  return c.json({ data: results });
+  ).all<Record<string, unknown>>();
+  if (await isSuperAdmin(c)) return c.json({ data: results });
+  // Staff-ul vede doar ce îi trebuie pentru alocare; fără date personale complete.
+  const masked = results.map((r) => ({
+    id: r.id,
+    display_name: r.display_name ?? r.pseudonym ?? null,
+    avatar_url: r.avatar_url,
+    company_name: r.company_name,
+    staff_role: r.staff_role,
+    roles: r.roles,
+    email: maskEmail(String(r.email ?? "")),
+  }));
+  return c.json({ data: masked });
 });
 
-app.get("/api/admin/email-failures", requireAuth, requireRole("staff", "admin"), async (c) => {
+app.get("/api/admin/email-failures", requireAuth, requireSuperAdmin, async (c) => {
   const { results } = await c.env.DB.prepare(
     `SELECT id,kind,entity_id,recipient,status,error,created_at
        FROM email_delivery_log

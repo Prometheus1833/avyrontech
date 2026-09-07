@@ -166,9 +166,9 @@ class CfAuth {
     this.clearSession();
   }
 
-  async me(): Promise<{ user: CfUser; profile: CfProfile; roles: Role[] } | null> {
+  async me(): Promise<{ user: CfUser; profile: CfProfile; roles: Role[]; superadmin?: boolean } | null> {
     try {
-      const result = await this.request<{ user: CfUser; profile: CfProfile; roles: Role[] }>("/api/auth/me");
+      const result = await this.request<{ user: CfUser; profile: CfProfile; roles: Role[]; superadmin?: boolean }>("/api/auth/me");
       if (result.user.avatar_url?.startsWith("/")) result.user.avatar_url = apiUrl(result.user.avatar_url);
       if (result.profile.avatar_url?.startsWith("/")) result.profile.avatar_url = apiUrl(result.profile.avatar_url);
       return result;
