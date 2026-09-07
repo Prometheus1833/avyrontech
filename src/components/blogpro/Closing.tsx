@@ -74,29 +74,94 @@ const blogLink = {
 export const AvyronBlogPreview = () => {
   const { lang } = useLang();
   const c = blogLink[lang];
-  const posts = (lang === "ro" ? BLOG_INDEX : BLOG_INDEX_EN).slice(0, 3);
+  const posts = (lang === "ro" ? BLOG_INDEX : BLOG_INDEX_EN).slice(0, 8);
   const base = lang === "ro" ? "/blog" : "/en/blog";
+  const trackRef = useRef<HTMLUListElement>(null);
+  const [paused, setPaused] = useState(false);
+
+  const scrollByCard = (dir: 1 | -1) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const card = el.querySelector<HTMLElement>("[data-card]");
+    const step = card ? card.offsetWidth + 12 : el.clientWidth * 0.8;
+    const max = el.scrollWidth - el.clientWidth;
+    let next = el.scrollLeft + dir * step;
+    if (next > max - 4) next = 0;
+    if (next < 0) next = max;
+    el.scrollTo({ left: next, behavior: "smooth" });
+  };
+
+  /* Autoplay right-to-left, paused on hover, focus, touch and reduced motion. */
+  useEffect(() => {
+    if (paused) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = window.setInterval(() => scrollByCard(1), 3800);
+    return () => window.clearInterval(timer);
+  }, [paused, lang]);
+
   return (
     <Section id="blog-avyron" scene="blog" labelledBy="blog-avyron-title">
-      <SectionHead id="blog-avyron-title" eyebrow={c.eyebrow} title={c.title} lead={c.lead} />
-      <div className="mt-9 grid gap-3 md:grid-cols-3">
-        {posts.map((post) => (
-          <article key={post.id} className="group h-full">
-            <Link
-              to={`${base}/${post.slug}`}
-              className="flex h-full flex-col rounded-2xl border border-border/70 bg-card/70 p-4 shadow-soft transition-colors duration-300 hover:border-brand/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-            >
-              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand">{post.category}</span>
-              <h3 className="mt-2.5 font-display text-base font-bold leading-snug tracking-tight">{post.title}</h3>
-              <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{post.excerpt}</p>
-              <span className="mt-auto inline-flex items-center gap-1.5 pt-3.5 text-xs font-semibold text-brand">
-                {c.read}
-                <ArrowUpRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-0.5" aria-hidden />
-              </span>
-            </Link>
-          </article>
-        ))}
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <SectionHead id="blog-avyron-title" eyebrow={c.eyebrow} title={c.title} lead={c.lead} />
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => scrollByCard(-1)}
+            aria-label={c.prev}
+            className="inline-flex size-10 items-center justify-center rounded-full border border-border/70 bg-card/70 backdrop-blur transition-colors hover:border-brand/50 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            <ChevronLeft className="size-4" aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollByCard(1)}
+            aria-label={c.next}
+            className="inline-flex size-10 items-center justify-center rounded-full border border-border/70 bg-card/70 backdrop-blur transition-colors hover:border-brand/50 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            <ChevronRight className="size-4" aria-hidden />
+          </button>
+        </div>
       </div>
+
+      <div
+        className="relative mt-7 [mask-image:linear-gradient(to_right,transparent,black_5%,black_95%,transparent)]"
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+        onFocusCapture={() => setPaused(true)}
+        onBlurCapture={() => setPaused(false)}
+        onPointerDown={() => setPaused(true)}
+      >
+        <ul
+          ref={trackRef}
+          aria-label={c.eyebrow}
+          className="scrollbar-subtle flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-2"
+          style={{ scrollbarWidth: "none" }}
+        >
+          {posts.map((post) => (
+            <li
+              key={post.id}
+              data-card
+              className="w-[78%] shrink-0 snap-start sm:w-[46%] lg:w-[31.5%]"
+            >
+              <article className="group h-full">
+                <Link
+                  to={`${base}/${post.slug}`}
+                  className="flex h-full flex-col rounded-2xl border border-border/70 bg-card/70 p-4 shadow-soft transition-all duration-500 hover:-translate-y-1 hover:border-brand/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand">{post.category}</span>
+                  <h3 className="mt-2.5 font-display text-base font-bold leading-snug tracking-tight">{post.title}</h3>
+                  <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{post.excerpt}</p>
+                  <span className="mt-auto inline-flex items-center gap-1.5 pt-3.5 text-xs font-semibold text-brand">
+                    {c.read}
+                    <ArrowUpRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-0.5" aria-hidden />
+                  </span>
+                </Link>
+              </article>
+            </li>
+          ))}
+        </ul>
+      </div>
+
       <Link
         to={base}
         className="mt-5 inline-flex items-center gap-2 rounded-full border border-border/80 px-4 py-2.5 text-sm font-semibold transition-colors hover:border-brand/40 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
@@ -107,6 +172,7 @@ export const AvyronBlogPreview = () => {
     </Section>
   );
 };
+
 
 export const FAQ_ITEMS = {
   ro: [
