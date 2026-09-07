@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ArrowUpRight, Minus, PenLine, Plus, Repeat2, ShieldCheck, Wrench } from "lucide-react";
+import { ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, Minus, PenLine, Plus, Repeat2, ShieldCheck, Wrench } from "lucide-react";
+
 import { useLang } from "@/i18n/LanguageContext";
 import { BLOG_INDEX, BLOG_INDEX_EN } from "@/data/blogIndex";
 import { Panel, Section, SectionHead } from "./ui";
