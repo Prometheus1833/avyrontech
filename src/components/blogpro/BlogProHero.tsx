@@ -6,7 +6,7 @@ import { Chip, GridBackdrop } from "./ui";
 
 const copy = {
   ro: {
-    eyebrow: "Blog profesional • Content hub",
+    eyebrow: "Blog profesional & Content hub",
     h1: "Creare Blog Profesional & Content Hub",
     line1: "Transformă expertiza în trafic.",
     line2: "Traficul în autoritate.",
@@ -26,7 +26,7 @@ const copy = {
     nodes: ["Google", "SEO", "Social", "Newsletter", "Analytics", "AI"],
   },
   en: {
-    eyebrow: "Professional blog • Content hub",
+    eyebrow: "Professional blog & Content hub",
     h1: "Professional blog & content hub development",
     line1: "Turn expertise into traffic.",
     line2: "Traffic into authority.",
