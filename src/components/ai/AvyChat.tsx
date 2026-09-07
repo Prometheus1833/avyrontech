@@ -204,6 +204,21 @@ const AvyChat = ({ agent = "avy" }: { agent?: string }) => {
             )}
           </div>
 
+          <div className="border-t border-border/60 bg-muted/30 px-3 py-2.5">
+            <a
+              href={waHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackEvent("cta_click", { type: "whatsapp", source: "avy_chat", agent })}
+              className="flex items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary transition hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            >
+              <MessageCircle className="size-4" aria-hidden /> {t.wa}
+            </a>
+            <p className="mt-1.5 text-center text-[11px] leading-snug text-muted-foreground">{t.waHint}</p>
+          </div>
+
+
+
           <form
             onSubmit={(e) => {
               e.preventDefault();
