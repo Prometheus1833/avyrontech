@@ -92,15 +92,29 @@ const BlogProHero = () => {
             {c.lead}
           </p>
 
-          <div className="mt-7 flex flex-wrap gap-3">
+          <div className="mt-7 flex flex-wrap gap-2.5 sm:gap-3">
             <button
               type="button"
-              onClick={scrollTo("configurator-blog")}
-              className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-3 text-sm font-semibold text-background transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              onClick={() => {
+                trackEvent("cta_click", { location: "blogpro_hero", action: "configurator" });
+                document.getElementById("configurator-blog")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+              className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-foreground px-5 py-3 text-sm font-semibold text-background transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:flex-none"
             >
               {c.cta1}
               <ArrowRight className="size-4" aria-hidden />
             </button>
+            <a
+              href={`${WHATSAPP}${encodeURIComponent(c.waMsg)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "blogpro_hero" })}
+              className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full border border-brand/40 bg-brand/10 px-5 py-3 text-sm font-semibold text-brand transition-colors duration-200 hover:bg-brand/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:flex-none"
+            >
+              <MessageCircle className="size-4" aria-hidden />
+              {c.cta3}
+            </a>
+
             <button
               type="button"
               onClick={scrollTo("content-journey")}
