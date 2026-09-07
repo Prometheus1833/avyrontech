@@ -4,7 +4,6 @@ import LangSwitch from "@/components/site/LangSwitch";
 import ThemeToggle from "@/components/site/ThemeToggle";
 import Breadcrumbs from "@/components/site/Breadcrumbs";
 import PageBackLink from "@/components/site/PageBackLink";
-import CurrencySwitch from "@/components/site/CurrencySwitch";
 import Footer from "@/components/site/Footer";
 import QuickNav, { type QuickNavItem } from "@/components/site/QuickNav";
 import logo from "@/assets/avyron-logo.jpg";
@@ -152,8 +151,6 @@ const BlogProfessional = () => {
           <div className="flex items-center gap-2">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 bg-foreground/[0.04] px-2 py-1 backdrop-blur">
               <LangSwitch />
-              <span aria-hidden className="h-3 w-px bg-foreground/15" />
-              <CurrencySwitch compact showDetails={false} />
               <span aria-hidden className="h-3 w-px bg-foreground/15" />
               <ThemeToggle />
             </div>
