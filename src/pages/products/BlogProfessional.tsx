@@ -4,6 +4,7 @@ import LangSwitch from "@/components/site/LangSwitch";
 import ThemeToggle from "@/components/site/ThemeToggle";
 import Breadcrumbs from "@/components/site/Breadcrumbs";
 import PageBackLink from "@/components/site/PageBackLink";
+import CurrencySwitch from "@/components/site/CurrencySwitch";
 import Footer from "@/components/site/Footer";
 import QuickNav, { type QuickNavItem } from "@/components/site/QuickNav";
 import logo from "@/assets/avyron-logo.jpg";
