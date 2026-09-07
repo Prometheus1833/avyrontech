@@ -363,7 +363,23 @@ export function computeEstimate(selection: Selection): Estimate {
 
   for (const step of CONFIG_STEPS) {
     for (const group of step.groups) {
+      if (group.kind === "stepper" && group.stepper) {
+        const count = stepperValue(selection, group);
+        const billable = Math.max(0, count - group.stepper.freeUpTo);
+        if (billable > 0) {
+          items.push({
+            id: group.id,
+            label: {
+              ro: `${count} ${group.stepper.unitPlural.ro}`,
+              en: `${count} ${group.stepper.unitPlural.en}`,
+            },
+            price: billable * group.stepper.unitPrice,
+          });
+        }
+        continue;
+      }
       const chosen = selection[group.id] ?? [];
+
       for (const option of group.options) {
         if (!chosen.includes(option.id)) continue;
         if (option.customQuote) {
