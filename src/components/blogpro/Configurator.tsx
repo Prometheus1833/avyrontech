@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { useLang } from "@/i18n/LanguageContext";
 import { apiUrl } from "@/lib/apiBase";
+import { trackEvent } from "@/lib/analytics";
 import Turnstile from "@/components/site/Turnstile";
 import { TURNSTILE_SITE_KEY } from "@/config/turnstile";
 import { Input } from "@/components/ui/input";
@@ -63,6 +64,8 @@ const copy = {
     errPhone: "Introdu un număr de telefon valid.",
     errEmail: "Introdu o adresă de email validă.",
     captcha: "Confirmă verificarea de securitate.",
+    captchaFailed: "Verificarea de securitate a eșuat. Încearcă din nou.",
+    rateLimited: "Prea multe cereri. Te rugăm să încerci din nou în câteva minute.",
     error: "Trimiterea a eșuat. Încearcă din nou.",
     configLabel: "Configurație blog profesional",
     customQuote: "Ofertă personalizată",
