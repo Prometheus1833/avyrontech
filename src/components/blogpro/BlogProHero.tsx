@@ -118,7 +118,7 @@ const BlogProHero = () => {
             <button
               type="button"
               onClick={scrollTo("content-journey")}
-              className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-card/70 px-5 py-3 text-sm font-semibold transition-colors duration-200 hover:border-brand/40 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-border/80 bg-card/70 px-5 py-3 text-sm font-semibold transition-colors duration-200 hover:border-brand/40 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:w-auto"
             >
               {c.cta2}
             </button>
