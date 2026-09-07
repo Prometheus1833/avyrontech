@@ -61,6 +61,8 @@ const blogLink = {
     lead: "Publicăm despre web, SEO, automatizări și strategie digitală. Aceleași principii stau la baza blogurilor pe care le construim.",
     all: "Citește blogul AVYRON",
     read: "Citește articolul",
+    prev: "Articolul anterior",
+    next: "Articolul următor",
   },
   en: {
     eyebrow: "AVYRON blog",
@@ -68,6 +70,9 @@ const blogLink = {
     lead: "We publish about web, SEO, automation and digital strategy. The same principles power the blogs we build.",
     all: "Read the AVYRON blog",
     read: "Read the article",
+    prev: "Previous article",
+    next: "Next article",
+
   },
 } as const;
 
