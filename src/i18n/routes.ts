@@ -14,6 +14,7 @@ export const ROUTE_ALTERNATES: Array<{ ro: string; en: string }> = [
   { ro: "/produse/website-prezentare-premium", en: "/en/products/premium-presentation-website" },
   { ro: "/produse/identitate-social-media", en: "/en/products/social-media-identity" },
   { ro: "/produse/magazin-online", en: "/en/products/online-store" },
+  { ro: "/produse/blog-profesional", en: "/en/products/professional-blog" },
   { ro: "/produse/aplicatii-web-si-mobile", en: "/en/products/web-and-mobile-apps" },
   { ro: "/produse/agent-ai-personalizat", en: "/en/products/personalized-ai-agent" },
   { ro: "/produse/testare-qa-web-mobile", en: "/en/products/qa-testing-web-mobile" },
