@@ -40,6 +40,9 @@ const copy = {
     line3: "Authority into clients.",
     lead: "We build fast, intelligent, SEO-ready editorial platforms designed for publishing, discovery, authority and conversion.",
     cta1: "Configure your blog",
+    cta3: "Chat on WhatsApp",
+    waMsg: "Hi! I'm interested in an AVYRON professional blog / content hub.",
+
     cta2: "See how it works",
     caps: ["CMS", "Technical SEO", "Analytics", "AI", "Automation", "Content strategy"],
     card: {
