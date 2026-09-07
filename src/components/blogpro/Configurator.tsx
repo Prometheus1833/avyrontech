@@ -392,6 +392,8 @@ const Configurator = () => {
                       );
                     })}
                   </div>
+                  )}
+
                 </fieldset>
               ))}
 
