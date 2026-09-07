@@ -1,5 +1,6 @@
-import { useMemo, useRef, useState } from "react";
-import { ArrowRight, CheckCircle2, Loader2, RotateCcw, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight, CheckCircle2, Loader2, Minus, Plus, RotateCcw, Sparkles } from "lucide-react";
+
 import { toast } from "sonner";
 import { z } from "zod";
 import { useLang } from "@/i18n/LanguageContext";
@@ -23,7 +24,9 @@ import {
   defaultSelection,
   formatLei,
   levelFor,
+  stepperValue,
 } from "@/data/blogProfessional";
+
 import { Section, SectionHead } from "./ui";
 
 /* SCENE 15 — pricing + configurator + lead capture. */
@@ -133,6 +136,42 @@ const Configurator = () => {
   const level = useMemo(() => levelFor(estimate.addons), [estimate.addons]);
   const aiPackOn = (selection[AI_GROUP_ID] ?? []).includes(AI_PACK_ID);
 
+  /* Real usage measurement: how many visitors actually reach the configurator
+     and the lead form. Fired once per page view, only when GA consent is on. */
+  useEffect(() => {
+    const watched: Record<string, string> = {
+      "configurator-blog": "view_configurator",
+      "configurator-lead": "view_lead_form",
+    };
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const name = watched[entry.target.id];
+          if (name) {
+            trackEvent(name, { location: "blogpro", product: "blog_profesional" });
+          }
+          io.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.25 },
+    );
+    for (const id of Object.keys(watched)) {
+      const el = document.getElementById(id);
+      if (el) io.observe(el);
+    }
+    return () => io.disconnect();
+  }, []);
+
+  const setStepper = (group: ConfigGroup, next: number) => {
+    const cfg = group.stepper;
+    if (!cfg) return;
+    const value = Math.min(cfg.max, Math.max(cfg.min, next));
+    setSelection((prev) => ({ ...prev, [group.id]: [String(value)] }));
+  };
+
+
+
   const toggle = (group: ConfigGroup, optionId: string) => {
     setSelection((prev) => {
       const current = prev[group.id] ?? [];
@@ -152,6 +191,11 @@ const Configurator = () => {
     const lines: string[] = [`${c.configLabel}:`];
     for (const step of CONFIG_STEPS) {
       for (const group of step.groups) {
+        if (group.kind === "stepper" && group.stepper) {
+          const count = stepperValue(selection, group);
+          lines.push(`- ${group.title[lang]}: ${count} ${group.stepper.unitPlural[lang]}`);
+          continue;
+        }
         const chosen = selection[group.id] ?? [];
         if (!chosen.length) continue;
         const labels = group.options
@@ -164,6 +208,7 @@ const Configurator = () => {
     lines.push(`- ${c.total}: ${formatLei(estimate.total)}${estimate.hasCustomQuote ? ` (+ ${c.customQuote})` : ""}`);
     return lines.join("\n");
   }, [selection, lang, estimate, c]);
+
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -263,7 +308,48 @@ const Configurator = () => {
                     {group.title[lang]}
                   </legend>
                   {group.hint && <p className="mt-1 text-xs text-muted-foreground">{group.hint[lang]}</p>}
+                  {group.kind === "stepper" && group.stepper ? (
+                    (() => {
+                      const cfg = group.stepper;
+                      const count = stepperValue(selection, group);
+                      const billable = Math.max(0, count - cfg.freeUpTo);
+                      return (
+                        <div className="mt-2.5 flex flex-wrap items-center gap-3 rounded-xl border border-border/70 bg-card/60 p-3">
+                          <div className="inline-flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setStepper(group, count - 1)}
+                              disabled={count <= cfg.min}
+                              aria-label={lang === "ro" ? "Scade numărul de limbi" : "Decrease languages"}
+                              className="inline-flex size-9 items-center justify-center rounded-full border border-border/70 transition-colors hover:border-brand/50 hover:text-brand disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                            >
+                              <Minus className="size-4" aria-hidden />
+                            </button>
+                            <output
+                              aria-live="polite"
+                              className="min-w-[6.5rem] text-center font-display text-lg font-bold tracking-tight"
+                            >
+                              {count} {count === 1 ? cfg.unit[lang] : cfg.unitPlural[lang]}
+                            </output>
+                            <button
+                              type="button"
+                              onClick={() => setStepper(group, count + 1)}
+                              disabled={count >= cfg.max}
+                              aria-label={lang === "ro" ? "Crește numărul de limbi" : "Increase languages"}
+                              className="inline-flex size-9 items-center justify-center rounded-full border border-border/70 transition-colors hover:border-brand/50 hover:text-brand disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                            >
+                              <Plus className="size-4" aria-hidden />
+                            </button>
+                          </div>
+                          <span className={`text-xs font-semibold ${billable ? "text-brand" : "text-muted-foreground"}`}>
+                            {billable ? `+${formatLei(billable * cfg.unitPrice)}` : c.included}
+                          </span>
+                        </div>
+                      );
+                    })()
+                  ) : (
                   <div className="mt-2.5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+
                     {group.options.map((option) => {
                       const chosen = (selection[group.id] ?? []).includes(option.id);
                       const covered = aiPackOn && AI_BUNDLED_IDS.includes(option.id);
@@ -306,6 +392,8 @@ const Configurator = () => {
                       );
                     })}
                   </div>
+                  )}
+
                 </fieldset>
               ))}
 

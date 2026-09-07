@@ -22,15 +22,29 @@ export type ConfigOption = {
   included?: boolean;
 };
 
+export type StepperConfig = {
+  min: number;
+  max: number;
+  /** Quantities up to (and including) this value are part of the base package. */
+  freeUpTo: number;
+  /** Price per unit above `freeUpTo`, in RON. */
+  unitPrice: number;
+  unit: Bi;
+  unitPlural: Bi;
+};
+
 export type ConfigGroup = {
   id: string;
-  kind: "single" | "multi";
+  kind: "single" | "multi" | "stepper";
   title: Bi;
   hint?: Bi;
   options: ConfigOption[];
   /** Default selected option id (single-select groups). */
   defaultId?: string;
+  /** Quantity control configuration (stepper groups). */
+  stepper?: StepperConfig;
 };
+
 
 export type ConfigStep = {
   id: string;
@@ -219,17 +233,38 @@ export const CONFIG_STEPS: ConfigStep[] = [
         kind: "multi",
         title: { ro: "Module AVYRON AI", en: "AVYRON AI modules" },
         options: [
-          { id: "ai-writing", label: { ro: "AI writing assistant", en: "AI writing assistant" }, price: 400 },
-          { id: "ai-seo", label: { ro: "AI SEO assistant", en: "AI SEO assistant" }, price: 350 },
-          { id: "ai-related", label: { ro: "AI related content", en: "AI related content" }, price: 350 },
-          { id: "ai-refresh", label: { ro: "AI content refresh", en: "AI content refresh" }, price: 500 },
+          {
+            id: "ai-writing",
+            label: { ro: "AI writing assistant", en: "AI writing assistant" },
+            desc: { ro: "Claude · ChatGPT — schițe și titluri.", en: "Claude · ChatGPT — drafts and headlines." },
+            price: 400,
+          },
+          {
+            id: "ai-seo",
+            label: { ro: "AI SEO assistant", en: "AI SEO assistant" },
+            desc: { ro: "Gemini · ChatGPT — meta și structură.", en: "Gemini · ChatGPT — meta and structure." },
+            price: 350,
+          },
+          {
+            id: "ai-related",
+            label: { ro: "AI related content", en: "AI related content" },
+            desc: { ro: "Embeddings — articole conexe.", en: "Embeddings — related articles." },
+            price: 350,
+          },
+          {
+            id: "ai-refresh",
+            label: { ro: "AI content refresh", en: "AI content refresh" },
+            desc: { ro: "Claude — articole de actualizat.", en: "Claude — articles to refresh." },
+            price: 500,
+          },
           {
             id: AI_PACK_ID,
             label: { ro: "AI Content Intelligence Pack", en: "AI Content Intelligence Pack" },
             desc: { ro: "Include toate modulele AI.", en: "Includes every AI module." },
-            price: 1500,
+            price: 1000,
           },
         ],
+
       },
     ],
   },
@@ -244,22 +279,23 @@ export const CONFIG_STEPS: ConfigStep[] = [
     groups: [
       {
         id: "multilingual",
-        kind: "single",
-        defaultId: "lang-ro",
+        kind: "stepper",
         title: { ro: "Limbi", en: "Languages" },
-        options: [
-          { id: "lang-ro", label: { ro: "O limbă", en: "One language" }, price: 0, included: true },
-          { id: "lang-ro-en", label: { ro: "Două limbi", en: "Two languages" }, price: 400 },
-          { id: "lang-3", label: { ro: "3 limbi", en: "3 languages" }, price: 650 },
-          {
-            id: "lang-4",
-            label: { ro: "4+ limbi", en: "4+ languages" },
-            price: 0,
-            customQuote: true,
-            display: { ro: "Ofertă personalizată", en: "Custom quote" },
-          },
-        ],
+        hint: {
+          ro: "Primele două limbi sunt incluse. De la a 3-a: +100 lei/limbă.",
+          en: "The first two languages are included. From the 3rd: +100 lei/language.",
+        },
+        stepper: {
+          min: 1,
+          max: 8,
+          freeUpTo: 2,
+          unitPrice: 100,
+          unit: { ro: "limbă", en: "language" },
+          unitPlural: { ro: "limbi", en: "languages" },
+        },
+        options: [],
       },
+
       {
         id: "migration",
         kind: "single",
@@ -294,11 +330,22 @@ export function defaultSelection(): Selection {
   const sel: Selection = {};
   for (const step of CONFIG_STEPS) {
     for (const group of step.groups) {
-      sel[group.id] = group.defaultId ? [group.defaultId] : [];
+      if (group.kind === "stepper" && group.stepper) sel[group.id] = [String(group.stepper.min)];
+      else sel[group.id] = group.defaultId ? [group.defaultId] : [];
     }
   }
   return sel;
 }
+
+/** Reads the numeric quantity of a stepper group from the selection. */
+export function stepperValue(selection: Selection, group: ConfigGroup): number {
+  const cfg = group.stepper;
+  if (!cfg) return 0;
+  const raw = Number((selection[group.id] ?? [])[0]);
+  if (!Number.isFinite(raw)) return cfg.min;
+  return Math.min(cfg.max, Math.max(cfg.min, Math.round(raw)));
+}
+
 
 export type PricedItem = { id: string; label: Bi; price: number; customQuote?: boolean };
 
@@ -316,7 +363,23 @@ export function computeEstimate(selection: Selection): Estimate {
 
   for (const step of CONFIG_STEPS) {
     for (const group of step.groups) {
+      if (group.kind === "stepper" && group.stepper) {
+        const count = stepperValue(selection, group);
+        const billable = Math.max(0, count - group.stepper.freeUpTo);
+        if (billable > 0) {
+          items.push({
+            id: group.id,
+            label: {
+              ro: `${count} ${group.stepper.unitPlural.ro}`,
+              en: `${count} ${group.stepper.unitPlural.en}`,
+            },
+            price: billable * group.stepper.unitPrice,
+          });
+        }
+        continue;
+      }
       const chosen = selection[group.id] ?? [];
+
       for (const option of group.options) {
         if (!chosen.includes(option.id)) continue;
         if (option.customQuote) {
