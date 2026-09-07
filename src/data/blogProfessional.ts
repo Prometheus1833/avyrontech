@@ -22,15 +22,29 @@ export type ConfigOption = {
   included?: boolean;
 };
 
+export type StepperConfig = {
+  min: number;
+  max: number;
+  /** Quantities up to (and including) this value are part of the base package. */
+  freeUpTo: number;
+  /** Price per unit above `freeUpTo`, in RON. */
+  unitPrice: number;
+  unit: Bi;
+  unitPlural: Bi;
+};
+
 export type ConfigGroup = {
   id: string;
-  kind: "single" | "multi";
+  kind: "single" | "multi" | "stepper";
   title: Bi;
   hint?: Bi;
   options: ConfigOption[];
   /** Default selected option id (single-select groups). */
   defaultId?: string;
+  /** Quantity control configuration (stepper groups). */
+  stepper?: StepperConfig;
 };
+
 
 export type ConfigStep = {
   id: string;
