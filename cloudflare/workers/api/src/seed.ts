@@ -8,6 +8,10 @@ type ImportUser = {
   temporaryPassword: string;
   displayName?: string;
   roles?: Role[];
+  /** Contul primește parola fixă și nu i se cere schimbarea la primul login. */
+  forcePasswordChange?: boolean;
+  /** Pentru conturi existente: aplică rolurile și resetează parola. */
+  updateExisting?: boolean;
   profile?: {
     entityType?: "individual" | "srl" | "pfa" | "ii" | "other";
     companyName?: string;
@@ -29,7 +33,7 @@ type ImportUser = {
   };
 };
 
-type ImportStatus = "created" | "exists" | "invalid";
+type ImportStatus = "created" | "exists" | "updated" | "invalid";
 type ImportReport = {
   email: string;
   status: ImportStatus;
@@ -61,10 +65,20 @@ seedRouter.post("/api/admin/import-users", async (c) => {
     const roles = Array.from(new Set<Role>(["user", ...(item.roles || []).filter((role): role is Role => ["user", "staff", "admin"].includes(role))]));
     const profile = item.profile || {};
     const entityType = ["individual", "srl", "pfa", "ii", "other"].includes(profile.entityType || "") ? profile.entityType : "individual";
-    if (!existing) {
+    const mustChange = item.forcePasswordChange === false ? 0 : 1;
+    if (existing && item.updateExisting) {
+      // Promovare controlată: rolurile cerute + parolă nouă pentru conturile existente.
       await c.env.DB.batch([
-        c.env.DB.prepare("INSERT INTO users (id,email,password_hash,display_name,email_verified,must_change_password,created_at,updated_at) VALUES (?,?,?,?,1,1,?,?)")
-          .bind(id, email, await hashPassword(item.temporaryPassword), String(item.displayName || "").slice(0, 100) || null, timestamp, timestamp),
+        c.env.DB.prepare("UPDATE users SET password_hash = ?, email_verified = 1, must_change_password = ?, updated_at = ? WHERE id = ?")
+          .bind(await hashPassword(item.temporaryPassword), mustChange, timestamp, id),
+        ...roles.map((role) => c.env.DB.prepare("INSERT OR IGNORE INTO user_roles (user_id,role) VALUES (?,?)").bind(id, role)),
+        c.env.DB.prepare("INSERT INTO audit_log (user_id,action,meta_json,created_at) VALUES (?,?,?,?)")
+          .bind(id, "account_elevated", JSON.stringify({ roles }), timestamp),
+      ]);
+    } else if (!existing) {
+      await c.env.DB.batch([
+        c.env.DB.prepare("INSERT INTO users (id,email,password_hash,display_name,email_verified,must_change_password,created_at,updated_at) VALUES (?,?,?,?,1,?,?,?)")
+          .bind(id, email, await hashPassword(item.temporaryPassword), String(item.displayName || "").slice(0, 100) || null, mustChange, timestamp, timestamp),
         c.env.DB.prepare("INSERT INTO profiles (id,display_name,entity_type,company_name,pseudonym,staff_role,language,theme,updated_at) VALUES (?,?,?,?,?,?, 'ro','system',?)")
           .bind(id, String(item.displayName || "").slice(0, 100) || null, entityType, String(profile.companyName || "").slice(0, 160) || null, String(profile.pseudonym || "").slice(0, 80) || null, profile.staffRole || null, timestamp),
         ...roles.map((role) => c.env.DB.prepare("INSERT INTO user_roles (user_id,role) VALUES (?,?)").bind(id, role)),
@@ -73,7 +87,7 @@ seedRouter.post("/api/admin/import-users", async (c) => {
       ]);
     }
 
-    const entry: ImportReport = { email, status: existing ? "exists" : "created" };
+    const entry: ImportReport = { email, status: existing ? (item.updateExisting ? "updated" : "exists") : "created" };
     const clientInput = item.client;
     if (clientInput) {
       const companyName = String(clientInput.companyName || "").trim().slice(0, 160);
