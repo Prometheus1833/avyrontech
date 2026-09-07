@@ -308,7 +308,48 @@ const Configurator = () => {
                     {group.title[lang]}
                   </legend>
                   {group.hint && <p className="mt-1 text-xs text-muted-foreground">{group.hint[lang]}</p>}
+                  {group.kind === "stepper" && group.stepper ? (
+                    (() => {
+                      const cfg = group.stepper;
+                      const count = stepperValue(selection, group);
+                      const billable = Math.max(0, count - cfg.freeUpTo);
+                      return (
+                        <div className="mt-2.5 flex flex-wrap items-center gap-3 rounded-xl border border-border/70 bg-card/60 p-3">
+                          <div className="inline-flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setStepper(group, count - 1)}
+                              disabled={count <= cfg.min}
+                              aria-label={lang === "ro" ? "Scade numărul de limbi" : "Decrease languages"}
+                              className="inline-flex size-9 items-center justify-center rounded-full border border-border/70 transition-colors hover:border-brand/50 hover:text-brand disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                            >
+                              <Minus className="size-4" aria-hidden />
+                            </button>
+                            <output
+                              aria-live="polite"
+                              className="min-w-[6.5rem] text-center font-display text-lg font-bold tracking-tight"
+                            >
+                              {count} {count === 1 ? cfg.unit[lang] : cfg.unitPlural[lang]}
+                            </output>
+                            <button
+                              type="button"
+                              onClick={() => setStepper(group, count + 1)}
+                              disabled={count >= cfg.max}
+                              aria-label={lang === "ro" ? "Crește numărul de limbi" : "Increase languages"}
+                              className="inline-flex size-9 items-center justify-center rounded-full border border-border/70 transition-colors hover:border-brand/50 hover:text-brand disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                            >
+                              <Plus className="size-4" aria-hidden />
+                            </button>
+                          </div>
+                          <span className={`text-xs font-semibold ${billable ? "text-brand" : "text-muted-foreground"}`}>
+                            {billable ? `+${formatLei(billable * cfg.unitPrice)}` : c.included}
+                          </span>
+                        </div>
+                      );
+                    })()
+                  ) : (
                   <div className="mt-2.5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+
                     {group.options.map((option) => {
                       const chosen = (selection[group.id] ?? []).includes(option.id);
                       const covered = aiPackOn && AI_BUNDLED_IDS.includes(option.id);
