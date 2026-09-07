@@ -279,22 +279,23 @@ export const CONFIG_STEPS: ConfigStep[] = [
     groups: [
       {
         id: "multilingual",
-        kind: "single",
-        defaultId: "lang-ro",
+        kind: "stepper",
         title: { ro: "Limbi", en: "Languages" },
-        options: [
-          { id: "lang-ro", label: { ro: "O limbă", en: "One language" }, price: 0, included: true },
-          { id: "lang-ro-en", label: { ro: "Două limbi", en: "Two languages" }, price: 400 },
-          { id: "lang-3", label: { ro: "3 limbi", en: "3 languages" }, price: 650 },
-          {
-            id: "lang-4",
-            label: { ro: "4+ limbi", en: "4+ languages" },
-            price: 0,
-            customQuote: true,
-            display: { ro: "Ofertă personalizată", en: "Custom quote" },
-          },
-        ],
+        hint: {
+          ro: "Primele două limbi sunt incluse. De la a 3-a: +100 lei/limbă.",
+          en: "The first two languages are included. From the 3rd: +100 lei/language.",
+        },
+        stepper: {
+          min: 1,
+          max: 8,
+          freeUpTo: 2,
+          unitPrice: 100,
+          unit: { ro: "limbă", en: "language" },
+          unitPlural: { ro: "limbi", en: "languages" },
+        },
+        options: [],
       },
+
       {
         id: "migration",
         kind: "single",
