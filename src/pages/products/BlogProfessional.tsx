@@ -133,6 +133,8 @@ const BlogProfessional = () => {
             <div className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 bg-foreground/[0.04] px-2 py-1 backdrop-blur">
               <LangSwitch />
               <span aria-hidden className="h-3 w-px bg-foreground/15" />
+              <CurrencySwitch compact showDetails={false} />
+              <span aria-hidden className="h-3 w-px bg-foreground/15" />
               <ThemeToggle />
             </div>
             <a
