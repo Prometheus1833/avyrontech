@@ -268,3 +268,53 @@ export function offerCatalogLd({
     })),
   };
 }
+
+/**
+ * Catalog de abonamente cu prețul în moneda de facturare (RON pentru
+ * abonamentele de mentenanță). Fiecare treaptă devine o ofertă lunară.
+ */
+export function subscriptionCatalogLd({
+  name,
+  path,
+  currency,
+  items,
+}: {
+  name: string;
+  path: string;
+  currency: string;
+  items: Array<{ name: string; description: string; price: number; sku?: string; category?: string }>;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "OfferCatalog",
+    "@id": `${BASE_URL}${path}#subscriptions`,
+    name,
+    url: `${BASE_URL}${path}`,
+    provider: { "@id": `${BASE_URL}/#organization` },
+    itemListElement: items.map((item, index) => ({
+      "@type": "Offer",
+      position: index + 1,
+      name: item.name,
+      description: item.description,
+      ...(item.sku ? { sku: item.sku } : {}),
+      ...(item.category ? { category: item.category } : {}),
+      price: item.price,
+      priceCurrency: currency,
+      availability: "https://schema.org/InStock",
+      url: `${BASE_URL}${path}`,
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: item.price,
+        priceCurrency: currency,
+        billingIncrement: 1,
+        unitCode: "MON",
+      },
+      itemOffered: {
+        "@type": "Service",
+        name: item.name,
+        description: item.description,
+        provider: { "@id": `${BASE_URL}/#organization` },
+      },
+    })),
+  };
+}

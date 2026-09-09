@@ -32,7 +32,7 @@ function sourceFiles(route) {
   if (route === "/gdpr" || route === "/en/privacy") return ["src/pages/Gdpr.tsx", "src/config/company.ts"];
   if (route === "/termeni" || route === "/en/terms") return ["src/pages/Terms.tsx", "src/config/company.ts"];
   if (route === "/politica-cookies" || route === "/en/cookie-policy") return ["src/pages/CookiePolicy.tsx", "src/lib/cookieConsent.ts", "src/config/company.ts"];
-  if (route.includes("care-plans") || route === "/pachete-mentenanta") return ["src/pages/products/CarePlansPage.tsx"];
+  if (route.includes("maintenance-and-partnerships") || route === "/mentenanta-si-colaborari") return ["src/pages/MaintenancePartnerships.tsx", "src/data/subscriptionPlans.ts"];
   return ["src/App.tsx"];
 }
 

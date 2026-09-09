@@ -44,7 +44,7 @@ const CommandCenter = lazy(() => import("@/components/dashboard/CommandCenter"))
 const GROUP_LABELS: Record<string, string> = {
   overview: "Principal", work: "Clienți și livrare", activity: "Activitate",
   team: "Echipă și cunoaștere", control: "Control AVYRON OS",
-  billing: "Facturare", account: "Cont",
+  billing: "Produse & facturi", account: "Cont",
 };
 const GROUP_ORDER = ["overview", "work", "activity", "team", "control", "billing", "account"];
 
