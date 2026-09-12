@@ -11,6 +11,7 @@ import { resetManagedHead } from "@/lib/seo";
 
 const Gdpr = lazy(() => import("./pages/Gdpr.tsx"));
 const Terms = lazy(() => import("./pages/Terms.tsx"));
+const CookiePolicy = lazy(() => import("./pages/CookiePolicy.tsx"));
 const Pricing = lazy(() => import("./pages/Pricing.tsx"));
 const Portfolio = lazy(() => import("./pages/About.tsx"));
 const AboutUs = lazy(() => import("./pages/AboutUs.tsx"));
@@ -31,6 +32,10 @@ const ProductDetail = lazy(() => import("./pages/products/ProductPage.tsx"));
 const QaTesting = lazy(() => import("./pages/products/QaTestingPage.tsx"));
 const BlogProfessional = lazy(() => import("./pages/products/BlogProfessional.tsx"));
 const AiOsConsole = lazy(() => import("./pages/intern/AiOs.tsx"));
+const AiProjects = lazy(() => import("./pages/intern/AiProjects.tsx"));
+const AiProjectPage = lazy(() => import("./pages/intern/AiProjectPage.tsx"));
+const Finance = lazy(() => import("./pages/intern/Finance.tsx"));
+const AvyEngine = lazy(() => import("./pages/intern/AvyEngine.tsx"));
 const AvyChat = lazy(() => import("@/components/ai/AvyChat"));
 
 /** Butonul AVY apare pe paginile comerciale, nu pe cele private sau pe demo-uri. */
@@ -135,6 +140,8 @@ const App = () => (
                 <Route path="/en/privacy" element={<Gdpr />} />
                 <Route path="/termeni" element={<Terms />} />
                 <Route path="/en/terms" element={<Terms />} />
+                <Route path="/politica-cookies" element={<CookiePolicy />} />
+                <Route path="/en/cookie-policy" element={<CookiePolicy />} />
                 <Route path="/costuri" element={<Pricing />} />
                 <Route path="/costurisiproduse" element={<Pricing />} />
                 <Route path="/en/pricing" element={<Pricing />} />
@@ -184,6 +191,14 @@ const App = () => (
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/finance"
+                  element={
+                    <ProtectedRoute>
+                      <Finance />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="/403" element={<ErrorPage variant="403" />} />
                 <Route path="/500" element={<ErrorPage variant="500" />} />
                 <Route path="/mentenanta" element={<ErrorPage variant="maintenance" />} />
@@ -202,6 +217,30 @@ const App = () => (
                   element={
                     <ProtectedRoute>
                       <AiOsConsole />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/intern/ai-projects"
+                  element={
+                    <ProtectedRoute>
+                      <AiProjects />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/intern/ai-projects/:slug"
+                  element={
+                    <ProtectedRoute>
+                      <AiProjectPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/intern/avy-engine"
+                  element={
+                    <ProtectedRoute>
+                      <AvyEngine />
                     </ProtectedRoute>
                   }
                 />

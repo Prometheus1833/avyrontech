@@ -1,18 +1,16 @@
 import { useEffect, useState } from "react";
 import { Cookie, Settings2, Check, X } from "lucide-react";
 import { updateConsent } from "@/lib/analytics";
+import {
+  COOKIE_CONSENT_STORAGE_KEY,
+  COOKIE_POLICY_VERSION,
+  COOKIE_SETTINGS_EVENT,
+  readCookieConsent,
+  saveCookieConsent,
+  type CookieConsentPreferences,
+} from "@/lib/cookieConsent";
 
-type Prefs = {
-  necessary: true;
-  analytics: boolean;
-  marketing: boolean;
-};
-
-export const COOKIE_POLICY_VERSION = "2026-08-23";
-export const COOKIE_SETTINGS_EVENT = "avyron:cookie-settings";
-const STORAGE_KEY = "avyron-cookie-consent-v2";
-
-type StoredPrefs = Prefs & { savedAt: string; policyVersion: string };
+export { COOKIE_POLICY_VERSION, COOKIE_SETTINGS_EVENT } from "@/lib/cookieConsent";
 
 const COPY = {
   ro: {
@@ -24,6 +22,7 @@ const COPY = {
     marketing: "Marketing", marketingDesc: "Conținut și oferte personalizate.",
     save: "Salvează preferințele", acceptAll: "Accept toate", onlyNecessary: "Doar necesare",
     hideSettings: "Ascunde setări", settings: "Setări",
+    policy: "Politica de cookies", policyHref: "/politica-cookies",
     version: "Versiunea politicii",
   },
   en: {
@@ -35,6 +34,7 @@ const COPY = {
     marketing: "Marketing", marketingDesc: "Personalised content and offers.",
     save: "Save preferences", acceptAll: "Accept all", onlyNecessary: "Only necessary",
     hideSettings: "Hide settings", settings: "Settings",
+    policy: "Cookie policy", policyHref: "/en/cookie-policy",
     version: "Policy version",
   },
 } as const;
@@ -44,15 +44,14 @@ const CookieBanner = () => {
   const c = isEn ? COPY.en : COPY.ro;
   const [open, setOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [prefs, setPrefs] = useState<Prefs>({ necessary: true, analytics: false, marketing: false });
+  const [prefs, setPrefs] = useState<CookieConsentPreferences>({ necessary: true, analytics: false, marketing: false });
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const reopen = () => {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved) as StoredPrefs;
+        const parsed = readCookieConsent();
+        if (parsed) {
           setPrefs({ necessary: true, analytics: Boolean(parsed.analytics), marketing: Boolean(parsed.marketing) });
         }
       } catch {
@@ -64,15 +63,9 @@ const CookieBanner = () => {
     window.addEventListener(COOKIE_SETTINGS_EVENT, reopen);
 
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved) as StoredPrefs;
-        if (parsed.policyVersion !== COOKIE_POLICY_VERSION) {
-          localStorage.removeItem(STORAGE_KEY);
-          updateConsent({ analytics: false, marketing: false });
-          setOpen(true);
-          return () => window.removeEventListener(COOKIE_SETTINGS_EVENT, reopen);
-        }
+      const raw = localStorage.getItem(COOKIE_CONSENT_STORAGE_KEY);
+      const parsed = readCookieConsent();
+      if (parsed) {
         const next = {
           necessary: true as const,
           analytics: Boolean(parsed.analytics),
@@ -83,7 +76,8 @@ const CookieBanner = () => {
       } else {
         updateConsent({ analytics: false, marketing: false });
       }
-      if (!saved) {
+      if (!parsed) {
+        if (raw) localStorage.removeItem(COOKIE_CONSENT_STORAGE_KEY);
         timer = setTimeout(() => setOpen(true), 600);
       }
     } catch {
@@ -97,12 +91,9 @@ const CookieBanner = () => {
     };
   }, []);
 
-  const save = (p: Prefs) => {
+  const save = (p: CookieConsentPreferences) => {
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ ...p, savedAt: new Date().toISOString(), policyVersion: COOKIE_POLICY_VERSION }),
-      );
+      saveCookieConsent(p);
     } catch {
       // Consent still applies for this page when storage is unavailable.
     }
@@ -181,6 +172,14 @@ const CookieBanner = () => {
                 >
                   <X className="size-3.5" /> {c.onlyNecessary}
                 </button>
+                {showSettings && (
+                  <a
+                    href={c.policyHref}
+                    className="inline-flex items-center rounded-full border border-cyan-300/25 bg-cyan-300/[0.07] px-3 py-2 text-xs font-medium text-cyan-100 transition-colors hover:bg-cyan-300/[0.14]"
+                  >
+                    {c.policy}
+                  </a>
+                )}
                 <button
                   onClick={() => setShowSettings((s) => !s)}
                   className="ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs text-white/70 hover:text-white transition-colors"

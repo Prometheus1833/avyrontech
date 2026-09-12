@@ -1,5 +1,3 @@
-/// <reference path="./worker-configuration.d.ts" />
-
 export type Role = "user" | "staff" | "admin";
 
 // Resource bindings, vars and required secrets are generated from the
@@ -19,5 +17,5 @@ type OptionalIntegrations = {
 
 export type Env = CloudflareBindings & OptionalIntegrations;
 
-export type AppVariables = { userId: string; roles: Role[]; requestId: string };
+export type AppVariables = { userId: string; roles: Role[]; requestId: string; sessionId: string; mfaVerified: boolean };
 export type AppBindings = { Bindings: Env; Variables: AppVariables };

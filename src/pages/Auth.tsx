@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Crown, ShieldCheck, LayoutDashboard, MessageCircle } from "lucide-react";
+import { Crown, ShieldCheck, LayoutDashboard, MessageCircle, KeyRound } from "lucide-react";
 import { cfAuth } from "@/lib/cfAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,6 +34,9 @@ const Auth = () => {
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileReset, setTurnstileReset] = useState(0);
   const [verificationMessage, setVerificationMessage] = useState("");
+  const [mfaChallenge, setMfaChallenge] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const emailChangeToken = new URLSearchParams(location.search).get("email_change");
   const platformHost = isPlatformHostname();
   const heroPath = lang === "en" ? "/en#hero" : "/#hero";
   const homeHref = platformHost ? publicSiteHref(heroPath) : heroPath;
@@ -53,8 +56,24 @@ const Auth = () => {
   }, [t.auth.login]);
 
   useEffect(() => {
-    if (!loading && user) navigate(from, { replace: true });
-  }, [user, loading, from, navigate]);
+    if (!loading && user && !emailChangeToken) navigate(from, { replace: true });
+  }, [user, loading, from, navigate, emailChangeToken]);
+
+  useEffect(() => {
+    if (!user || !emailChangeToken) return;
+    let active = true;
+    setSubmitting(true);
+    cfAuth.confirmEmailChange(emailChangeToken)
+      .then(() => {
+        if (!active) return;
+        setVerificationMessage("Adresa de email a fost schimbată. Autentifică-te din nou cu noua adresă.");
+        toast.success("Adresa de email a fost actualizată.");
+        navigate("/auth", { replace: true });
+      })
+      .catch((error: Error) => active && setVerificationMessage(error.message))
+      .finally(() => active && setSubmitting(false));
+    return () => { active = false; };
+  }, [user, emailChangeToken, navigate]);
 
   useEffect(() => {
     const token = new URLSearchParams(location.search).get("verify");
@@ -84,12 +103,34 @@ const Auth = () => {
   const onLogin = async (data: LoginInput) => {
     setSubmitting(true);
     try {
-      await cfAuth.login(data.email, data.password);
+      const result = await cfAuth.login(data.email, data.password);
+      if ("mfa_required" in result) {
+        setMfaChallenge(result.challenge_token);
+        setMfaCode("");
+        return;
+      }
       await refreshProfile();
       toast.success(t.auth.welcomeBack);
-      navigate(from, { replace: true });
+      if (!emailChangeToken) navigate(from, { replace: true });
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Autentificarea nu a reușit.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const onMfa = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!mfaChallenge) return;
+    setSubmitting(true);
+    try {
+      await cfAuth.verifyMfaChallenge(mfaChallenge, mfaCode);
+      await refreshProfile();
+      toast.success(t.auth.welcomeBack);
+      setMfaChallenge(null);
+      if (!emailChangeToken) navigate(from, { replace: true });
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Codul MFA nu este valid.");
     } finally {
       setSubmitting(false);
     }
@@ -196,6 +237,35 @@ const Auth = () => {
             </TabsList>
 
             <TabsContent value="login" className="space-y-5 mt-6">
+              {mfaChallenge ? (
+                <form onSubmit={onMfa} className="space-y-4">
+                  <div className="rounded-xl border border-brand/20 bg-brand/5 p-4">
+                    <KeyRound className="mb-2 size-5 text-brand" />
+                    <h2 className="font-semibold">Confirmare în doi pași</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Introdu codul din aplicația de autentificare sau un cod de recuperare.
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="mfa-code">Cod de securitate</Label>
+                    <Input
+                      id="mfa-code"
+                      value={mfaCode}
+                      onChange={(event) => setMfaCode(event.target.value.toUpperCase())}
+                      autoComplete="one-time-code"
+                      inputMode="numeric"
+                      maxLength={14}
+                      autoFocus
+                    />
+                  </div>
+                  <Button type="submit" className="w-full rounded-full h-11" disabled={submitting || mfaCode.length < 6}>
+                    {submitting ? "..." : "Confirmă accesul"}
+                  </Button>
+                  <Button type="button" variant="ghost" className="w-full" onClick={() => setMfaChallenge(null)}>
+                    Revino la autentificare
+                  </Button>
+                </form>
+              ) : (
               <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="li-email">{t.auth.email}</Label>
@@ -220,6 +290,7 @@ const Auth = () => {
                   {submitting ? "..." : t.auth.login}
                 </Button>
               </form>
+              )}
             </TabsContent>
 
             <TabsContent value="register" className="space-y-5 mt-6">

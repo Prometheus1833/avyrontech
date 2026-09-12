@@ -95,6 +95,10 @@ window.matchMedia = (query) => ({
 });
 window.scrollTo = () => {};
 window.HTMLElement.prototype.scrollIntoView = () => {};
+// The preloader treats a missing 2D context as a supported no-animation path.
+// Stubbing it avoids JSDOM's noisy "not implemented" diagnostic without
+// adding a native canvas dependency to the production toolchain.
+window.HTMLCanvasElement.prototype.getContext = () => null;
 // No network during prerender: auth/pricing calls resolve to an empty answer.
 window.fetch = async () => new window.Response("{}", { status: 200 });
 

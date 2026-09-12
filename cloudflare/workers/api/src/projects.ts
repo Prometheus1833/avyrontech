@@ -10,6 +10,7 @@
 import { Hono } from "hono";
 import type { Env } from "./types";
 import { fetchMetadataHtml, validateMetadataUrl } from "./metadata";
+import { organizationRoleForUser, platformRoleForUser } from "./authorization";
 
 type Role = "user" | "staff" | "admin";
 type Vars = { userId: string; roles: Role[] };
@@ -20,9 +21,28 @@ const now = () => Date.now();
 async function canAccessProject(db: D1Database, projectId: string, userId: string, roles: Role[]): Promise<{ read: boolean; write: boolean; isStaff: boolean; isOwner: boolean }> {
   const isAdmin = roles.includes("admin");
   const isStaff = roles.includes("staff") || isAdmin;
-  const proj = await db.prepare("SELECT owner_user_id FROM projects WHERE id = ?").bind(projectId).first<{ owner_user_id: string | null }>();
+  const proj = await db.prepare("SELECT owner_user_id, organization_id FROM projects WHERE id = ?").bind(projectId)
+    .first<{ owner_user_id: string | null; organization_id: string | null }>();
   if (!proj) return { read: false, write: false, isStaff: false, isOwner: false };
   const isOwner = proj.owner_user_id === userId;
+  if (await platformRoleForUser(db, userId)) return { read: true, write: true, isStaff: true, isOwner };
+
+  const membership = proj.organization_id
+    ? await organizationRoleForUser(db, proj.organization_id, userId)
+    : null;
+  if (membership) {
+    const write = ["owner", "admin", "manager", "specialist"].includes(membership);
+    return { read: true, write, isStaff, isOwner };
+  }
+  if (proj.organization_id) {
+    const assigned = isStaff
+      ? await db.prepare("SELECT 1 FROM project_staff WHERE project_id = ? AND user_id = ?").bind(projectId, userId).first()
+      : null;
+    return { read: !!assigned || isOwner, write: !!assigned, isStaff, isOwner };
+  }
+
+  // Legacy projects remain available under the pre-tenant policy until they
+  // are explicitly linked through client_organizations.
   if (isAdmin) return { read: true, write: true, isStaff: true, isOwner };
   if (isStaff) {
     const assigned = await db.prepare("SELECT 1 FROM project_staff WHERE project_id = ? AND user_id = ?").bind(projectId, userId).first();
@@ -50,14 +70,34 @@ projectsRouter.get("/api/projects", async (c) => {
   const isAdmin = roles.includes("admin");
 
   let rows;
-  if (isAdmin || isStaff) {
+  if (await platformRoleForUser(c.env.DB, userId)) {
     rows = await c.env.DB.prepare(
-      "SELECT id, slug, name, kind, banner_status, url, favicon_url, updated_at FROM projects ORDER BY updated_at DESC LIMIT 200"
+      "SELECT id, organization_id, slug, name, kind, banner_status, url, favicon_url, updated_at FROM projects ORDER BY updated_at DESC LIMIT 200"
     ).all();
+  } else if (isAdmin || isStaff) {
+    rows = await c.env.DB.prepare(
+      `SELECT DISTINCT project.id, project.organization_id, project.slug, project.name,
+              project.kind, project.banner_status, project.url, project.favicon_url, project.updated_at
+         FROM projects AS project
+         LEFT JOIN organization_memberships AS membership
+           ON membership.organization_id = project.organization_id
+          AND membership.user_id = ? AND membership.status = 'active'
+         LEFT JOIN project_staff AS assignment
+           ON assignment.project_id = project.id AND assignment.user_id = ?
+        WHERE project.organization_id IS NULL OR membership.user_id IS NOT NULL OR assignment.user_id IS NOT NULL
+        ORDER BY project.updated_at DESC LIMIT 200`,
+    ).bind(userId, userId).all();
   } else {
     rows = await c.env.DB.prepare(
-      "SELECT id, slug, name, kind, banner_status, url, favicon_url, updated_at FROM projects WHERE owner_user_id = ? ORDER BY updated_at DESC"
-    ).bind(userId).all();
+      `SELECT DISTINCT project.id, project.organization_id, project.slug, project.name,
+              project.kind, project.banner_status, project.url, project.favicon_url, project.updated_at
+         FROM projects AS project
+         LEFT JOIN organization_memberships AS membership
+           ON membership.organization_id = project.organization_id
+          AND membership.user_id = ? AND membership.status = 'active'
+        WHERE project.owner_user_id = ? OR membership.user_id IS NOT NULL
+        ORDER BY project.updated_at DESC`,
+    ).bind(userId, userId).all();
   }
   return c.json({ data: rows.results });
 });
@@ -69,16 +109,34 @@ projectsRouter.post("/api/projects", async (c) => {
   const userId = c.get("userId");
   const b = (await c.req.json().catch(() => ({}))) as {
     name?: string; slug?: string; kind?: string; url?: string; description?: string;
-    client_id?: string; owner_user_id?: string;
+    client_id?: string; owner_user_id?: string; organization_id?: string;
   };
   if (!b.name || !b.slug || !b.client_id) return c.json({ error: { code: "invalid_input", message: "name, slug, client_id required" } }, 400);
   const id = uuid();
   const t = now();
+  if (b.organization_id) {
+    const [platformRole, membership, clientOrganization] = await Promise.all([
+      platformRoleForUser(c.env.DB, userId),
+      organizationRoleForUser(c.env.DB, b.organization_id, userId),
+      c.env.DB.prepare("SELECT organization_id FROM client_organizations WHERE client_id = ?")
+        .bind(b.client_id).first<{ organization_id: string }>(),
+    ]);
+    const canCreate = platformRole !== null || ["owner", "admin", "manager"].includes(membership || "");
+    if (!canCreate || clientOrganization?.organization_id !== b.organization_id) {
+      return c.json({ error: { code: "organization_scope_denied" } }, 403);
+    }
+  }
   try {
     await c.env.DB.prepare(
-      `INSERT INTO projects (id, client_id, name, slug, kind, url, description, owner_user_id, banner_status, status, created_at, updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
-    ).bind(id, b.client_id, b.name, b.slug, b.kind ?? "website_prezentare", b.url ?? null, b.description ?? null, b.owner_user_id ?? null, "in_progress", "in_progress", t, t).run();
+      `INSERT INTO projects
+         (id, client_id, organization_id, name, slug, kind, url, description,
+          owner_user_id, banner_status, status, created_at, updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`
+    ).bind(
+      id, b.client_id, b.organization_id ?? null, b.name, b.slug,
+      b.kind ?? "website_prezentare", b.url ?? null, b.description ?? null,
+      b.owner_user_id ?? null, "in_progress", "in_progress", t, t,
+    ).run();
     await c.env.DB.prepare("INSERT INTO project_staff (project_id, user_id, role, assigned_at) VALUES (?,?,?,?)")
       .bind(id, userId, "owner", t).run();
     await log(c.env.DB, id, userId, "project.create");
@@ -92,7 +150,7 @@ projectsRouter.post("/api/projects", async (c) => {
 projectsRouter.get("/api/projects/:slug", async (c) => {
   const slug = c.req.param("slug");
   const proj = await c.env.DB.prepare(
-    "SELECT id,client_id,name,domain,status,created_at,slug,kind,description,owner_user_id,banner_status,url,favicon_url,og_title,og_description,og_image_url,cover_image_url,price_ron,price_eur,subscription_plan,subscription_status,billing_next,updated_at FROM projects WHERE slug = ?",
+    "SELECT id,client_id,organization_id,name,domain,status,created_at,slug,kind,description,owner_user_id,banner_status,url,favicon_url,og_title,og_description,og_image_url,cover_image_url,price_ron,price_eur,subscription_plan,subscription_status,billing_next,updated_at FROM projects WHERE slug = ?",
   ).bind(slug).first<Record<string, unknown> & { id: string }>();
   if (!proj) return c.json({ error: { code: "not_found" } }, 404);
   const perm = await canAccessProject(c.env.DB, proj.id, c.get("userId"), c.get("roles"));

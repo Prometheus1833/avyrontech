@@ -45,6 +45,14 @@
       "17 7,15 * * *"
     ]
   },
+  "durable_objects": {
+    "bindings": [
+      { "name": "AVYRON_AGENT_RUNTIME", "class_name": "AvyronAgentRuntime" }
+    ]
+  },
+  "migrations": [
+    { "tag": "agents-v1", "new_sqlite_classes": ["AvyronAgentRuntime"] }
+  ],
 
   "d1_databases": [
     {
@@ -76,7 +84,7 @@
   // until Cloudflare Email Sending is enabled on the account; delivery errors
   // are persisted in D1 and returned explicitly instead of being reported as sent.
   "secrets": {
-    "required": ["JWT_SECRET", "TURNSTILE_SECRET"]
+    "required": ["JWT_SECRET", "TURNSTILE_SECRET", "MFA_ENCRYPTION_KEY"]
   },
   "vars": {
     "APP_ENV": "production",
@@ -95,8 +103,11 @@
   // every mutable storage binding points to an isolated preview resource.
   "env": {
     "preview": {
-      "name": "avyrontech",
+      "name": "avyrontech-preview",
       "routes": [],
+      // Preview is manual-only: never inherit production schedules or run
+      // ingestion/maintenance jobs without an explicit test invocation.
+      "triggers": { "crons": [] },
       "observability": {
         "enabled": true,
         "head_sampling_rate": 1,
@@ -106,6 +117,11 @@
           "persist": true,
           "invocation_logs": true
         }
+      },
+      "durable_objects": {
+        "bindings": [
+          { "name": "AVYRON_AGENT_RUNTIME", "class_name": "AvyronAgentRuntime" }
+        ]
       },
       "d1_databases": [
         {
@@ -131,12 +147,12 @@
         }
       ],
       "secrets": {
-        "required": ["JWT_SECRET"]
+        "required": ["JWT_SECRET", "MFA_ENCRYPTION_KEY"]
       },
       "vars": {
         "APP_ENV": "preview",
-        "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://app.avyron.ro,https://api.avyron.ro,https://codex-prelaunch-improvements-2026-08-23-avyrontech.avyrontech.workers.dev,https://avyrontech.lovable.app,http://localhost:8080",
-        "APP_URL": "https://codex-prelaunch-improvements-2026-08-23-avyrontech.avyrontech.workers.dev",
+        "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://app.avyron.ro,https://api.avyron.ro,https://avyrontech-preview.avyrontech.workers.dev,https://avyrontech.lovable.app,http://localhost:8080",
+        "APP_URL": "https://avyrontech-preview.avyrontech.workers.dev",
         "SMTP_HOST": "smtp.mx.cloudflare.net",
         "SMTP_PORT": "465",
         "SMTP_USER": "api_token",

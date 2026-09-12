@@ -36,7 +36,31 @@ export type CfProfile = {
 
 type Listener = () => void;
 type ApiErrorBody = { error?: { message?: string; code?: string } };
-type SessionResponse = { access_token: string; expires_in: number; user: { id: string; roles: Role[] } };
+type SessionResponse = {
+  access_token: string;
+  expires_in: number;
+  user: { id: string; roles: Role[] };
+  mfa_enrollment_required?: boolean;
+};
+export type MfaChallengeResponse = { mfa_required: true; challenge_token: string; expires_in: number };
+export type AuthSession = {
+  id: string;
+  device_name: string | null;
+  created_at: number;
+  last_seen_at: number;
+  expires_at: number;
+  mfa_verified_at: number | null;
+  current: boolean;
+};
+export type MfaFactor = {
+  id: string;
+  kind: "totp" | "webauthn";
+  label: string;
+  status: "pending" | "active";
+  verified_at: number | null;
+  last_used_at: number | null;
+  created_at: number;
+};
 
 class CfAuth {
   private accessToken: string | null = null;
@@ -51,6 +75,22 @@ class CfAuth {
 
   getToken() {
     return this.accessToken && Date.now() < this.expiresAt ? this.accessToken : null;
+  }
+
+  async raw(path: string, init: RequestInit = {}): Promise<Response> {
+    const token = await this.ensureToken();
+    const headers = new Headers(init.headers);
+    if (token) headers.set("authorization", `Bearer ${token}`);
+    const send = () => fetch(apiUrl(path), { ...init, headers, credentials: "include" });
+    let response = await send();
+    if (response.status === 401) {
+      this.clearSession();
+      if (await this.refresh()) {
+        headers.set("authorization", `Bearer ${this.accessToken}`);
+        response = await send();
+      }
+    }
+    return response;
   }
 
   private setSession(access: string, expiresIn: number) {
@@ -155,8 +195,21 @@ class CfAuth {
       credentials: "include",
       body: JSON.stringify({ email, password }),
     });
-    const j = await res.json() as SessionResponse & ApiErrorBody;
+    const j = await res.json() as (SessionResponse | MfaChallengeResponse) & ApiErrorBody;
     if (!res.ok) throw new Error(j?.error?.message || j?.error?.code || "login_failed");
+    if ("access_token" in j) this.setSession(j.access_token, j.expires_in);
+    return j;
+  }
+
+  async verifyMfaChallenge(challengeToken: string, code: string) {
+    const res = await fetch(apiUrl("/api/auth/mfa/challenge"), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ challengeToken, code }),
+    });
+    const j = await res.json() as SessionResponse & ApiErrorBody;
+    if (!res.ok) throw new Error(j?.error?.message || j?.error?.code || "mfa_failed");
     this.setSession(j.access_token, j.expires_in);
     return j;
   }
@@ -210,6 +263,60 @@ class CfAuth {
       method: "POST",
       body: JSON.stringify({ currentPassword, newPassword }),
     });
+  }
+
+  async listSessions(): Promise<AuthSession[]> {
+    const result = await this.request<{ data: AuthSession[] }>("/api/auth/sessions");
+    return result.data;
+  }
+
+  async revokeSession(id: string) {
+    return this.request<{ ok: true }>(`/api/auth/sessions/${encodeURIComponent(id)}`, { method: "DELETE" });
+  }
+
+  async mfaStatus(): Promise<{ data: MfaFactor[]; session_verified: boolean }> {
+    return this.request("/api/auth/mfa");
+  }
+
+  async enrollTotp(currentPassword: string) {
+    return this.request<{ factorId: string; secret: string; otpauthUri: string }>("/api/auth/mfa/totp/enroll", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword }),
+    });
+  }
+
+  async verifyTotpEnrollment(factorId: string, code: string) {
+    const result = await this.request<{ ok: true; access_token: string; expires_in: number; recoveryCodes: string[] }>(
+      "/api/auth/mfa/totp/verify",
+      { method: "POST", body: JSON.stringify({ factorId, code }) },
+    );
+    this.setSession(result.access_token, result.expires_in);
+    return result;
+  }
+
+  async disableMfa(factorId: string, currentPassword: string, code: string) {
+    const result = await this.request<{ ok: true }>(`/api/auth/mfa/${encodeURIComponent(factorId)}`, {
+      method: "DELETE",
+      body: JSON.stringify({ currentPassword, code }),
+    });
+    this.clearSession();
+    return result;
+  }
+
+  async requestEmailChange(currentPassword: string, newEmail: string) {
+    return this.request<{ ok: true; confirmation_email_sent: boolean }>("/api/auth/change-email/request", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newEmail }),
+    });
+  }
+
+  async confirmEmailChange(token: string) {
+    const result = await this.request<{ ok: true; reauthentication_required: boolean }>("/api/auth/change-email/confirm", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    });
+    this.clearSession();
+    return result;
   }
 
   async uploadAvatar(file: File): Promise<string> {

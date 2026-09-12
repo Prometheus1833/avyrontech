@@ -39,6 +39,7 @@ const Terms = () => {
   const homePath = ro ? "/#hero" : "/en#hero";
   const productsPath = ro ? "/costurisiproduse" : "/en/pricing";
   const privacyPath = ro ? "/gdpr" : "/en/privacy";
+  const cookiePath = ro ? "/politica-cookies" : "/en/cookie-policy";
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -216,7 +217,7 @@ const Terms = () => {
           title: "Confidențialitate, date și cookies",
           icon: Fingerprint,
           body: (
-            <p>Datele personale și opțiunile de măsurare sunt tratate conform <Link to={privacyPath}>Politicii de Confidențialitate și GDPR</Link>. Preferințele pentru cookies pot fi modificate sau retrase oricând din „Setări cookie” în subsol. Pentru proiecte sensibile putem documenta obligații suplimentare prin contract sau acord de confidențialitate.</p>
+            <p>Datele personale și opțiunile de măsurare sunt tratate conform <Link to={privacyPath}>Politicii de Confidențialitate și GDPR</Link>. Preferințele pot fi modificate sau retrase oricând din „Setări cookie” în subsol, iar inventarul este explicat în <Link to={cookiePath}>Politica de cookies</Link>. Pentru proiecte sensibile putem documenta obligații suplimentare prin contract sau acord de confidențialitate.</p>
           ),
         },
         {
@@ -311,7 +312,7 @@ const Terms = () => {
           id: "privacy",
           title: "Privacy, data and cookies",
           icon: Fingerprint,
-          body: <p>Personal data and measurement choices are handled under the <Link to={privacyPath}>Privacy and GDPR Policy</Link>. Cookie preferences may be changed or withdrawn at any time through “Cookie settings” in the footer. Additional confidentiality duties can be documented for sensitive projects.</p>,
+          body: <p>Personal data and measurement choices are handled under the <Link to={privacyPath}>Privacy and GDPR Policy</Link>. Preferences can be changed or withdrawn at any time through “Cookie settings” in the footer, and the inventory is explained in the <Link to={cookiePath}>Cookie Policy</Link>. Additional confidentiality duties can be documented for sensitive projects.</p>,
         },
         {
           id: "resolution",

@@ -3,7 +3,7 @@
 The production Worker uses `cloudflare/workers/api/src/sites.config.ts` as the
 single hostname/project registry. Demo requests are resolved before API routes,
 so an unconfigured demo cannot reach auth, D1, KV, R2 client files or the main
-site fallback. All registered projects start as `unavailable` and non-indexable.
+site fallback. All registered projects start as `preparing` and non-indexable.
 
 ## DNS records
 
@@ -29,11 +29,11 @@ hostnames. Exact routes are intentional.
 
 | Type | Name | Target | Proxy | Reason |
 | --- | --- | --- | --- | --- |
-| A | `@` | existing origin IP (or `192.0.2.1` after a controlled cutover) | Proxied | Required for the apex Worker route; Worker returns 301 to `https://avyron.ro/`. |
+| A | `@` | existing origin IP; do not change target in this rollout | Proxied | Required for the apex Worker route; Worker returns a safe 301 to `https://avyron.ro/`. |
 | CNAME | `www` | `avyron.eu` | Proxied | Exact public DNS plus the wildcard Worker route returns the same 301. |
 | A | `*` | `192.0.2.1` | Proxied | One scalable DNS record for all first-level demo hostnames; the Worker fails closed for unknown names. |
 
-The wildcard covers `exemplu1`–`exemplu10`, `salaforza`,
+The wildcard covers canonical `demo1`–`demo10`, their `exemplu1`–`exemplu10` aliases, `salaforza`,
 `pensiuneabradetul`, `asociatia-europa` and future first-level demo names.
 Individual A/CNAME records are unnecessary unless one project later needs a
 different origin. Exact records override the wildcard.

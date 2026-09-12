@@ -1,10 +1,11 @@
 // Măsurare proprie (Cloudflare D1) + Google Analytics, în paralel.
 //
-// Trimitem doar evenimente agregate: nicio dată personală, niciun cookie.
+// Trimitem doar după consimțământ evenimente agregate: nicio dată de contact și niciun cookie.
 // Identificatorul de sesiune trăiește în sessionStorage și dispare la închiderea tab-ului.
 
 import { apiUrl } from "./apiBase";
 import { trackEvent } from "./analytics";
+import { hasAnalyticsConsent } from "./cookieConsent";
 
 export type FunnelEvent =
   | "page_view"
@@ -46,6 +47,7 @@ export function trackFunnel(
   page: string,
   gaParams: Record<string, string | number | boolean | undefined> = {},
 ) {
+  if (!hasAnalyticsConsent()) return;
   trackEvent(event === "page_view" ? "page_view_product" : event, { location: page, ...gaParams });
   if (typeof window === "undefined") return;
 

@@ -77,6 +77,7 @@ export const SPA_ONLY_PREFIXES = [
   "/forgot-password",
   "/reset-password",
   "/profil",
+  "/finance",
   "/intern",
   "/unsubscribe",
   "/offline",

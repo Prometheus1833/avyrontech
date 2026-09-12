@@ -38,38 +38,28 @@ test.describe("public SEO routes", () => {
 
     await page.goto("/costurisiproduse");
     const switcher = page.getByTestId("currency-switch").first();
-    await expect(switcher.getByRole("button", { name: "Afișează prețurile în EUR" })).toHaveAttribute("aria-pressed", "true");
-    await switcher.getByRole("button", { name: "Afișează prețurile în RON" }).click();
+    await switcher.getByRole("button", { name: "Schimbă moneda (activă: EUR)" }).click();
+    await expect(switcher.getByRole("button", { name: "Schimbă moneda (activă: RON)" })).toBeVisible();
     await expect(switcher).toContainText("1 EUR = 5.1000 RON");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Produse digitale create pentru fiecare proiect");
     await expect(page.getByText(/1[.\s]?530 RON/, { exact: false }).first()).toBeVisible();
 
     await page.goto("/produse/website-prezentare-premium");
     await expect(page.getByTestId("product-hero-facts")).toContainText(/1[.\s]?530 RON/);
-    await expect(page.getByTestId("currency-switch").getByRole("button", { name: "Afișează prețurile în RON" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByTestId("currency-switch").getByRole("button", { name: "Schimbă moneda (activă: RON)" })).toBeVisible();
   });
 
-  test("care plans publish the approved prices, recommendations and annual discount rule", async ({ page }) => {
+  test("the retired care-plans route redirects permanently to the current QA product", async ({ page }) => {
     await page.goto("/pachete-mentenanta");
-    await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /50€\/lună/);
-    const plans = page.locator("article").filter({ has: page.locator("h3") });
-    const plus = page.locator("article").filter({ has: page.getByRole("heading", { level: 3, name: "Plus", exact: true }) }).first();
-    const pro = page.locator("article").filter({ has: page.getByRole("heading", { level: 3, name: "Pro", exact: true }) }).first();
-    const proActive = page.locator("article").filter({ has: page.getByRole("heading", { level: 3, name: "Pro Activ", exact: true }) }).first();
-    await expect(plus).toBeVisible();
-    await expect(plus).toContainText(/50\s*€/);
-    await expect(plus).toContainText("Site-uri de prezentare, cataloage de produse și bloguri");
-    await expect(pro).toContainText("Magazine online, primării și organizații cu actualizări frecvente");
-    await expect(proActive).toContainText("Instituții publice, platforme și servicii digitale cu cerințe complexe");
-    await expect(page.getByText("ANUALAVY20", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText(/orice alt produs sau serviciu din aceeași comandă/i).first()).toBeVisible();
-    expect(await plans.count()).toBeGreaterThanOrEqual(3);
+    await expect(page).toHaveURL(/\/produse\/testare-qa-web-mobile$/);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro/produse/testare-qa-web-mobile");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("QA Testing");
   });
 
   test("homepage displays the approved hero and services wording", async ({ page }) => {
     await page.goto("/");
 
-    await expect(page.getByText("Soluții care aduc clienți, nu doar vizite", { exact: true })).toBeVisible();
+    await expect(page.getByText("Site-uri care aduc clienți, nu doar vizite", { exact: true })).toBeVisible();
     await expect(
       page.getByRole("heading", {
         level: 1,
@@ -79,7 +69,7 @@ test.describe("public SEO routes", () => {
     await expect(page.getByText("Soluții digitale gândite pentru rezultate", { exact: true })).toBeVisible();
     await expect(page.getByText("Agenție web din Iași · proiecte în România și UE", { exact: true })).toHaveCount(0);
     const productList = page.getByTestId("product-list");
-    await expect(productList.getByRole("link")).toHaveCount(5);
+    await expect(productList.getByRole("link")).toHaveCount(6);
     await expect(productList).toHaveCSS("display", "block");
 
     const desktopNav = page.locator("nav ul");
@@ -153,7 +143,7 @@ test.describe("public SEO routes", () => {
     await page.addInitScript(() => {
       localStorage.setItem(
         "avyron-cookie-consent-v2",
-        JSON.stringify({ necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-08-23" }),
+        JSON.stringify({ necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12" }),
       );
     });
     await page.goto("/termeni");
@@ -161,7 +151,9 @@ test.describe("public SEO routes", () => {
     await footer.scrollIntoViewIfNeeded();
     await footer.getByRole("button", { name: "Setări cookie", exact: true }).click();
 
-    const switches = page.getByRole("dialog", { name: "Setări cookies" }).getByRole("switch");
+    const dialog = page.getByRole("dialog", { name: "Setări cookies" });
+    await expect(dialog.getByRole("link", { name: "Politica de cookies", exact: true })).toHaveAttribute("href", "/politica-cookies");
+    const switches = dialog.getByRole("switch");
     await expect(switches).toHaveCount(3);
     const geometry = async (index: number) => {
       const track = (await switches.nth(index).boundingBox())!;
@@ -181,6 +173,24 @@ test.describe("public SEO routes", () => {
     await expect(switches.nth(1)).toHaveAttribute("aria-checked", "true");
     await expect.poll(async () => (await switches.nth(1).locator("span").boundingBox())!.x).toBeGreaterThan(analyticsOff.thumb.x + 10);
     await geometry(1);
+  });
+
+  test("cookie policy is bilingual, indexable and reuses the current preference panel", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
+      necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12",
+    })));
+    await page.goto("/politica-cookies");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Controlul rămâne la tine");
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro/politica-cookies");
+    await expect(page.locator('link[hreflang="en"]')).toHaveAttribute("href", "https://avyron.ro/en/cookie-policy");
+    await expect(page.getByText("avyron-cookie-consent-v2", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Gestionează preferințele" }).click();
+    await expect(page.getByRole("dialog", { name: "Setări cookies" })).toBeVisible();
+
+    await page.goto("/en/cookie-policy");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("You stay in control");
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro/en/cookie-policy");
+    await expect(page.locator('link[hreflang="ro"]')).toHaveAttribute("href", "https://avyron.ro/politica-cookies");
   });
 
   test("terms pages are complete, bilingual and indexable", async ({ page }) => {
@@ -309,8 +319,8 @@ test.describe("public SEO routes", () => {
     await page.goto("/");
 
     const productList = page.getByTestId("product-list");
-    await expect(productList.getByRole("link")).toHaveCount(5);
-    expect((await productList.boundingBox())!.height).toBeLessThan(380);
+    await expect(productList.getByRole("link")).toHaveCount(6);
+    expect((await productList.boundingBox())!.height).toBeLessThan(430);
 
     await page.getByRole("button", { name: "Meniu" }).click();
     const menu = page.getByTestId("mobile-nav-menu");
@@ -383,6 +393,217 @@ test.describe("public SEO routes", () => {
 });
 
 test.describe("forms and authentication", () => {
+  test("AI AVY Prod opens from the dashboard and creates approval-only drafts", async ({ page }) => {
+    let generationPayload: Record<string, unknown> | null = null;
+    let generationKey = "";
+    const project = {
+      id: "aip_avyron_web", organization_id: null, slug: "avyron-web", name: "Avyron WEB",
+      product_key: "avyron_web", ownership_scope: "agency", summary: "Produsul web premium Avyron.",
+      status: "active", primary_objective: "visibility", automation_mode: "manual", memory_status: "learning",
+      channels_total: 6, channels_connected: 0, agents_total: 3, agents_ready: 1, content_pending: 0,
+      updated_at: 1_788_800_000_000, brand_tone: "tech, premium, friendly", target_audience: "IMM-uri",
+      core_offer: "Website-uri performante", agent_instructions: "Nu inventa prețuri.", competitor_scopes_json: "[]",
+      daily_generation_limit: 12, content_retention_days: 45, raw_data_retention_days: 7,
+      max_asset_bytes: 20_000_000, allow_outbound_messages: 0,
+    };
+    const channels = ["facebook", "instagram", "tiktok", "linkedin", "whatsapp", "messenger"].map((provider) => ({
+      project_id: project.id, provider, connection_id: null, account_label: null, external_account_id: null,
+      connection_status: "disconnected", allowed_actions_json: '["read"]', last_analyzed_at: null,
+      last_synced_at: null, last_error_code: null, verified_provider: null,
+      verified_connection_status: null, last_validated_at: null,
+    }));
+    const draft = {
+      id: "aic_e2e", generated_by_agent: "ai-prod-content", format: "post", objective: "visibility",
+      channels_json: '["instagram"]', title: "Website-ul care lucrează pentru afacerea ta",
+      caption: "O experiență digitală rapidă, clară și construită pentru conversii.",
+      visual_direction: "Interfață premium pe fundal violet închis.", cta: "Solicită o analiză.",
+      hashtags_json: '["Avyron","WebDesign"]', status: "draft", scheduled_at: null, published_at: null,
+      expires_at: 1_792_688_000_000, created_at: 1_788_800_000_000, updated_at: 1_788_800_000_000,
+    };
+
+    await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
+      necessary: true, analytics: false, marketing: false,
+      savedAt: new Date().toISOString(), policyVersion: "2026-09-12",
+    })));
+
+    await page.route("**/api/auth/refresh", (route) => route.fulfill({
+      status: 200, contentType: "application/json",
+      body: JSON.stringify({ access_token: "ai-prod-e2e-token", expires_in: 900, user: { id: "owner-1", roles: ["admin"] } }),
+    }));
+    await page.route("**/api/auth/me", (route) => route.fulfill({
+      status: 200, contentType: "application/json",
+      body: JSON.stringify({
+        user: { id: "owner-1", email: "prometheus@avyron.ro", display_name: "Prometheus", avatar_url: null, email_verified: 1, must_change_password: 0, created_at: 1 },
+        profile: { id: "owner-1", display_name: "Prometheus", avatar_url: null, phone: null, address: null, entity_type: "individual", company_name: null, cui: null, social_facebook: null, social_instagram: null, social_tiktok: null, website: null, language: "ro", theme: "system", pseudonym: null, staff_role: null },
+        roles: ["admin"], superadmin: true,
+      }),
+    }));
+    await page.route("**/api/ai-projects**", async (route) => {
+      const url = new URL(route.request().url());
+      if (url.pathname.endsWith("/content/generate")) {
+        generationPayload = route.request().postDataJSON() as Record<string, unknown>;
+        generationKey = route.request().headers()["idempotency-key"] || "";
+        await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ data: draft, runId: "run_e2e" }) });
+        return;
+      }
+      if (url.pathname === "/api/ai-projects/avyron-web") {
+        await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+          project, channels,
+          agents: [{ agent_slug: "ai-prod-content", role: "content", status: "ready", autonomy: "assist", capabilities_json: '["knowledge_search","content_draft"]', instructions: "", quality_score: null, last_trained_at: null, last_run_at: null, name: "AI Prod Content", mission: "Creează ciorne relevante.", accent: "#8b5cf6", current_version: 1 }],
+          content: [], memories: [], competitors: [], members: [], events: [],
+          permission: { role: "platform_owner", canManage: true, canCreateContent: true, canConnect: true },
+        }) });
+        return;
+      }
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [project], platformRole: "platform_owner" }) });
+    });
+
+    await page.goto("/profil?tab=profile");
+    const entry = page.getByRole("link", { name: /Deschide AI AVY Prod/ });
+    await expect(entry).toBeVisible();
+    await entry.click();
+    await expect(page.getByRole("heading", { name: "Proiecte AI", exact: true })).toBeVisible();
+    await page.getByRole("link", { name: /Avyron WEB/ }).click();
+    await expect(page.getByRole("heading", { name: "Avyron WEB" })).toBeVisible();
+    await expect(page.getByText("Nicio acțiune nu publică sau trimite automat.")).toBeVisible();
+    await page.getByLabel("Subiect / brief").fill("Website premium pentru afaceri locale");
+    await page.getByRole("button", { name: "Generează ciornă" }).click();
+    await expect(page.getByRole("heading", { name: draft.title })).toBeVisible();
+    await expect(page.getByText(draft.caption)).toBeVisible();
+    await expect.poll(() => generationPayload).not.toBeNull();
+    expect(generationPayload).toMatchObject({ format: "post", channel: "instagram", objective: "visibility" });
+    expect(generationKey).toMatch(/^[0-9a-f-]{36}$/i);
+    await expect(page.getByRole("button", { name: /Publică/ })).toHaveCount(0);
+  });
+
+  test("AVY Engine opens from the dashboard and keeps sources behind review gates", async ({ page }) => {
+    const source = {
+      id: "eng_src_originkit", slug: "originkit", name: "OriginKit", canonical_url: "https://www.originkit.dev/",
+      source_type: "platform", access_mode: "account_required", pricing_model: "freemium",
+      lifecycle_status: "reviewing", verification_status: "observed", security_status: "pending",
+      account_label: null, summary: "Bibliotecă de componente animate cu CLI și MCP.", robots_reviewed: 0,
+      terms_reviewed: 0, discovery_enabled: 0, last_observed_at: null, last_verified_at: null,
+      next_review_at: null, approved_at: null, updated_at: 1_788_800_000_000, capability_count: 2, document_count: 0,
+    };
+    const capability = { id: "eng_cap_originkit_mcp", source_id: source.id, slug: "mcp-catalog", name: "Catalog OriginKit prin MCP", category: "mcp", summary: "Catalog controlat de componente.", delivery_method: "mcp", availability: "limited_free", implementation_status: "discovered", risk_level: "high", documentation_url: "https://www.originkit.dev/docs/components", repository_url: null, license_spdx: null, requirements_json: "[]", tags_json: "[]", evidence_json: "[]", approved_at: null, source_name: "OriginKit", source_status: "reviewing" };
+    await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({ necessary:true,analytics:false,marketing:false,savedAt:new Date().toISOString(),policyVersion:"2026-09-12" })));
+    await page.route("**/api/auth/refresh", (route) => route.fulfill({ status:200, contentType:"application/json", body:JSON.stringify({ access_token:"engine-e2e",expires_in:900,user:{id:"owner-engine",roles:["admin"]} }) }));
+    await page.route("**/api/auth/me", (route) => route.fulfill({ status:200, contentType:"application/json", body:JSON.stringify({ user:{id:"owner-engine",email:"prometheus@avyron.ro",display_name:"Prometheus",avatar_url:null,email_verified:1,must_change_password:0,created_at:1}, profile:{id:"owner-engine",display_name:"Prometheus",avatar_url:null,phone:null,address:null,entity_type:"individual",company_name:null,cui:null,social_facebook:null,social_instagram:null,social_tiktok:null,website:null,language:"ro",theme:"system",pseudonym:null,staff_role:null}, roles:["admin"],superadmin:true }) }));
+    await page.route("**/api/engine/**", async (route) => {
+      const path = new URL(route.request().url()).pathname;
+      let body: unknown = {};
+      if (path === "/api/engine/overview") body = { sources:{total:7,active:0,reviewing:7,blocked:0},capabilities:{total:9,ready:0},documents:{total:0,pending:0},suggestions:{total:0,pending:0},bindings:{total:0,active:0},recentDiscoveryRuns:[],discoveryPolicy:{id:"engine_policy_monthly",name:"Descoperire periodică",enabled:0,frequency_days:30,max_sources_per_run:1,next_run_at:null,last_run_at:null} };
+      else if (path === "/api/engine/sources") body = { data:[source] };
+      else if (path === `/api/engine/sources/${source.id}`) body = { source:{...source,license_spdx:null,license_url:null,terms_url:null,metadata_json:"{}"},capabilities:[capability],connectors:[{id:"eng_conn_originkit_mcp",capability_id:capability.id,kind:"mcp",name:"OriginKit hosted MCP",endpoint_url:"https://mcp.originkit.dev/mcp",repository_url:null,auth_type:"oauth",status:"not_configured",scopes_json:"[]",last_validated_at:null,last_error_code:null,approved_at:null}],documents:[],history:[] };
+      else if (path === "/api/engine/capabilities") body = { data:[capability] };
+      else if (path === "/api/engine/suggestions" || path === "/api/engine/bindings") body = { data:[] };
+      await route.fulfill({ status:200, contentType:"application/json", body:JSON.stringify(body) });
+    });
+
+    await page.goto("/profil?tab=profile");
+    const card = page.getByRole("link", { name: "Deschide AVY Engine" });
+    await expect(card).toBeVisible();
+    await card.click();
+    await expect(page.getByRole("heading", { name:"AVY Engine", exact:true })).toBeVisible();
+    await expect(page.getByText("7 active")).toHaveCount(0);
+    await page.getByRole("button", { name:/OriginKit/ }).click();
+    const drawer = page.getByRole("dialog");
+    await expect(drawer.getByText("În verificare", { exact:true }).first()).toBeVisible();
+    await expect(drawer.getByText("OriginKit hosted MCP")).toBeVisible();
+    await expect(drawer.getByRole("button", { name:/Analizează sursa/ })).toHaveCount(0);
+    await drawer.getByRole("button", { name:"Close" }).click();
+    await page.getByRole("tab", { name:"Control" }).click();
+    await expect(page.getByText("Dezactivat implicit")).toBeVisible();
+  });
+
+  test("finance stays concise, opens expense details and masks payment methods", async ({ page }) => {
+    const expense = { id:"fin_exp_claude_api",vendor_id:"fin_vendor_claude",vendor_name:"Claude",service_name:"Claude API Usage",category:"ai",subcategory:null,description:"",status:"needs_configuration",billing_type:"usage_based",billing_cycle:"monthly",currency:"USD",net_amount_minor:null,vat_amount_minor:null,gross_amount_minor:null,amount_ron_minor:null,future_amount_minor:null,invoice_number:null,invoice_date:null,due_date:null,paid_date:null,next_billing_date:null,trial_end:null,free_period_end:null,project_id:null,client_id:null,payment_account_id:null,payment_method_id:null,notes:"",source:"manual",updated_at:1_788_800_000_000 };
+    await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({ necessary:true,analytics:false,marketing:false,savedAt:new Date().toISOString(),policyVersion:"2026-09-12" })));
+    await page.route("**/api/auth/refresh",(route)=>route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({access_token:"finance-e2e",expires_in:900,user:{id:"owner-fin",roles:["admin"]}})}));
+    await page.route("**/api/auth/me",(route)=>route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({user:{id:"owner-fin",email:"prometheus@avyron.ro",display_name:"Prometheus",avatar_url:null,email_verified:1,must_change_password:0,created_at:1},profile:{id:"owner-fin",display_name:"Prometheus",avatar_url:null,phone:null,address:null,entity_type:"individual",company_name:null,cui:null,social_facebook:null,social_instagram:null,social_tiktok:null,website:null,language:"ro",theme:"system",pseudonym:null,staff_role:null},roles:["admin"],superadmin:true})}));
+    await page.route("**/api/finance/**",async(route)=>{const path=new URL(route.request().url()).pathname;let body:unknown={};if(path==="/api/finance/overview")body={period:{from:1,to:2},kpis:{expensesMinor:0,revenuesMinor:0,operatingProfitEstimateMinor:0,activeSubscriptions:0,aiCostMinor:0,advertisingMinor:0,costPerLeadMinor:null,invoicesPayable:0,invoicesReceivable:0,nextPayment:null,budgetLimitMinor:0,budgetCount:0,freeTierSavingsMinor:null,criticalAlerts:0},notice:"Estimări de management"};else if(path==="/api/finance/expenses")body={data:[expense],total:1};else if(path==="/api/finance/expenses/fin_exp_claude_api")body={expense,billing:[],allocations:[],prices:[],metrics:[],documents:[],history:[]};else if(path==="/api/finance/revenues")body={data:[]};else if(path==="/api/finance/accounts")body={accounts:[{id:"a1",name:"Revolut Business – AVYRON RON",institution:"Revolut Business",currency:"RON",account_type:"bank",internal_alias:"AVYRON RON",iban_last4:null,status:"needs_configuration",balance_minor:null,purpose:"Main operating account"}],methods:[{id:"m1",account_id:"a1",provider:"Revolut",alias:"AVYRON SaaS",display:"•••• 4242",last4:"4242",expiry_month:null,expiry_year:null,status:"active",purpose:"SaaS"}]};else if(path==="/api/finance/budgets")body={budgets:[],quotas:[]};else if(path==="/api/finance/analytics")body={categories:[],monthlyRecurringMinor:0,monthlyVariableAverageMinor:0,projections:[{months:3,monthlyMinor:0,projectedMinor:0,annualizedRecurringMinor:0},{months:6,monthlyMinor:0,projectedMinor:0,annualizedRecurringMinor:0},{months:12,monthlyMinor:0,projectedMinor:0,annualizedRecurringMinor:0}],clients:[],projects:[],notice:"MANAGEMENT ESTIMATE"};else if(path==="/api/finance/alerts"||path==="/api/finance/audit")body={data:[]};else if(path==="/api/finance/config")body={vendors:[{id:"fin_vendor_claude",name:"Claude",category:"ai",status:"needs_configuration"}],projects:[],clients:[]};await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(body)});});
+
+    await page.goto("/finance");
+    await expect(page.getByRole("heading",{name:"Financiar",exact:true})).toBeVisible();
+    await expect(page.getByText("Profit estimat")).toBeVisible();
+    await page.getByRole("button",{name:"Cheltuieli",exact:true}).click();
+    await page.getByRole("button",{name:/Claude API Usage/}).click();
+    await expect(page.getByRole("dialog").getByText("Claude",{exact:true})).toBeVisible();
+    await expect(page.getByRole("dialog").getByText("Atașează",{exact:true})).toBeVisible();
+    await page.keyboard.press("Escape");
+    await page.getByRole("button",{name:"Conturi & carduri",exact:true}).click();
+    await expect(page.getByText("•••• 4242")).toBeVisible();
+    await expect(page.getByText(/4242 4242/)).toHaveCount(0);
+    await page.getByRole("button",{name:"Venituri",exact:true}).click();
+    await page.getByRole("button",{name:"Venit",exact:true}).click();
+    const revenueDialog=page.getByRole("dialog",{name:"Venit nou"});
+    await expect(revenueDialog).toBeVisible();
+    await revenueDialog.getByRole("button",{name:"Close"}).click();
+    await expect(revenueDialog).toBeHidden();
+    await page.getByRole("button",{name:"Bugete",exact:true}).click();
+    await page.getByRole("button",{name:"Buget",exact:true}).click();
+    await expect(page.getByRole("dialog",{name:"Buget nou"})).toBeVisible();
+  });
+
+  test("staff can create and open a lead in the Cloudflare CRM", async ({ page }) => {
+    let createdLead: Record<string, unknown> | null = null;
+    let idempotencyKey = "";
+    const lead = {
+      id: "lead_e2e", organization_id: null, source: "manual", name: "Ana Popescu",
+      business: "Atelier Nord", phone: "+40 700 000 000", email: "ana@example.com",
+      message: "Solicită website de prezentare.", website: "https://example.com/",
+      product: "Website premium", status: "new", lifecycle_stage: "new_lead",
+      preferred_channel: "email", next_follow_up_at: null, urgent: 0,
+      converted_project_id: null, estimate_ron: 5000, delivery_status: "pending",
+      lost_reason: null, provenance_url: null, outreach_eligibility: "unknown",
+      created_at: 1_788_800_000_000, updated_at: 1_788_800_000_000,
+    };
+
+    await page.route("**/api/auth/refresh", (route) => route.fulfill({
+      status: 200, contentType: "application/json",
+      body: JSON.stringify({ access_token: "lead-e2e-token", expires_in: 900, user: { id: "staff-1", roles: ["staff"] } }),
+    }));
+    await page.route("**/api/auth/me", (route) => route.fulfill({
+      status: 200, contentType: "application/json",
+      body: JSON.stringify({
+        user: { id: "staff-1", email: "staff@example.com", display_name: "Operator Avyron", avatar_url: null, email_verified: 1, must_change_password: 0, created_at: 1 },
+        profile: { id: "staff-1", display_name: "Operator Avyron", avatar_url: null, phone: null, address: null, entity_type: "individual", company_name: null, cui: null, social_facebook: null, social_instagram: null, social_tiktok: null, website: null, language: "ro", theme: "system", pseudonym: null, staff_role: "vanzari" },
+        roles: ["staff"],
+      }),
+    }));
+    await page.route("**/api/leads/lead_e2e", (route) => route.fulfill({
+      status: 200, contentType: "application/json",
+      body: JSON.stringify({ data: lead, activities: [], assignments: [], reminders: [], canEdit: true }),
+    }));
+    await page.route("**/api/leads", async (route) => {
+      if (route.request().method() === "POST") {
+        createdLead = route.request().postDataJSON() as Record<string, unknown>;
+        idempotencyKey = route.request().headers()["idempotency-key"] || "";
+        await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ id: "lead_e2e" }) });
+        return;
+      }
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [] }) });
+    });
+
+    await page.goto("/profil?tab=leads");
+    await expect(page.getByRole("heading", { name: "Leads", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Lead nou", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Lead nou" });
+    await dialog.getByLabel("Persoană").fill("Ana Popescu");
+    await dialog.getByLabel("Afacere").fill("Atelier Nord");
+    await dialog.getByRole("textbox", { name: "Email", exact: true }).fill("ana@example.com");
+    await dialog.getByRole("textbox", { name: "Produs(e)", exact: true }).fill("Website premium");
+    await dialog.getByRole("button", { name: "Adaugă lead" }).click();
+
+    await expect.poll(() => createdLead).not.toBeNull();
+    expect(createdLead).toMatchObject({ name: "Ana Popescu", business: "Atelier Nord", email: "ana@example.com", product: "Website premium" });
+    expect(idempotencyKey).toMatch(/^[0-9a-f-]{36}$/i);
+    await expect(page.getByRole("dialog", { name: "Ana Popescu" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Contact" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Istoric" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Remindere" })).toBeVisible();
+  });
+
   test("authenticated staff can open the Cloudflare editorial workspace", async ({ page }) => {
     await page.route("**/api/auth/refresh", (route) => route.fulfill({
       status: 200,
@@ -430,7 +651,7 @@ test.describe("forms and authentication", () => {
     await expect(page.getByRole("tab", { name: "Promoții" })).toHaveCount(0);
   });
 
-  test("only the designated account receives the promotions dashboard", async ({ page }) => {
+  test("only the server-designated platform principal receives the promotions dashboard", async ({ page }) => {
     await page.route("**/api/auth/refresh", (route) => route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -443,6 +664,7 @@ test.describe("forms and authentication", () => {
         user: { id: "promo-owner", email: "Prometheus@Avyron.ro", display_name: "Prometheus", avatar_url: null, email_verified: 1, must_change_password: 0, created_at: 1 },
         profile: { id: "promo-owner", display_name: "Prometheus", avatar_url: null, phone: null, address: null, entity_type: "individual", company_name: null, cui: null, social_facebook: null, social_instagram: null, social_tiktok: null, website: null, language: "ro", theme: "system", pseudonym: null, staff_role: null },
         roles: ["admin"],
+        superadmin: true,
       }),
     }));
     await page.route("**/api/promotions/admin", (route) => route.fulfill({
@@ -469,9 +691,11 @@ test.describe("forms and authentication", () => {
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
   });
 
-  test("private profile redirects to login", async ({ page }) => {
-    await page.goto("/profil");
-    await expect(page).toHaveURL(/\/auth$/);
+  test("private workspaces redirect to login", async ({ page }) => {
+    for (const path of ["/profil", "/finance"]) {
+      await page.goto(path);
+      await expect(page).toHaveURL(/\/auth$/);
+    }
   });
 
   test("signup waits for email verification", async ({ page }) => {
@@ -501,6 +725,10 @@ test.describe("forms and authentication", () => {
 
   test("example request uses the protected Worker endpoint", async ({ page }) => {
     await page.addInitScript(() => {
+      localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
+        necessary: true, analytics: false, marketing: false,
+        savedAt: new Date().toISOString(), policyVersion: "2026-09-12",
+      }));
       window.turnstile = {
         render: (_element, options) => {
           queueMicrotask(() => (options.callback as (token: string) => void)("playwright-turnstile-token"));
@@ -518,11 +746,12 @@ test.describe("forms and authentication", () => {
     // The hash is the public navigation contract and forces the deferred
     // industry section to mount before Playwright interacts with it.
     await page.goto("/#exemple");
-    const necessaryCookies = page.getByRole("button", { name: "Doar necesare" });
-    if (await necessaryCookies.isVisible()) await necessaryCookies.click();
     await page.getByRole("button", { name: "Vezi domenii" }).click();
-    await page.getByRole("button", { name: /Beauty & Wellness/ }).click();
-    await page.getByRole("button", { name: "Solicită un exemplu", exact: true }).click();
+    const beauty = page.getByRole("button", { name: /Beauty & Wellness/ });
+    await expect(beauty).toBeVisible();
+    await beauty.evaluate((button) => button.click());
+    await expect(beauty).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: /Solicită (un exemplu|asemănător)/ }).click();
     await page.locator("#request-example-email").fill("lead@example.com");
     await page.locator("#request-example-phone").fill("0712345678");
     await page.getByRole("button", { name: "Trimite solicitarea" }).click();

@@ -52,6 +52,8 @@ describe("public API cache policy", () => {
     expect(key?.url).toBe("https://api.avyron.ro/api/blog/posts?lang=en&limit=20");
     const exchangeKey = publicApiCacheRequest(new Request("https://api.avyron.ro/api/public/exchange-rate?utm_source=x"));
     expect(exchangeKey?.url).toBe("https://api.avyron.ro/api/public/exchange-rate");
+    const agentKey = publicApiCacheRequest(new Request("https://avyrontech-preview.avyrontech.workers.dev/api/ai/agents?utm_source=x"));
+    expect(agentKey?.url).toBe("https://avyrontech-preview.avyrontech.workers.dev/api/ai/agents");
   });
 
   it("never caches authenticated or mutating requests", () => {

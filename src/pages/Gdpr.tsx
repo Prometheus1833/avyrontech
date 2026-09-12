@@ -175,7 +175,7 @@ const sections = [
           <li>Analiză de trafic, numai după activarea opțiunii Analytics</li>
           <li>Marketing și personalizare publicitară, numai după activarea separată a opțiunii Marketing</li>
         </ul>
-        <p className="mt-3">Preferințele pot fi modificate sau retrase oricând din opțiunea „Setări cookie” disponibilă în footer.</p>
+        <p className="mt-3">Preferințele pot fi modificate sau retrase oricând din opțiunea „Setări cookie” disponibilă în footer. Inventarul actual, scopurile și duratele sunt publicate în <Link className="text-brand hover:underline" to="/politica-cookies">Politica de cookies</Link>.</p>
       </>
     ),
   },
@@ -348,7 +348,7 @@ const sectionsEn = [
           <li>traffic and performance measurement when Analytics is enabled</li>
           <li>advertising storage, advertising user data, and ad personalization when Marketing is enabled separately</li>
         </ul>
-        <p className="mt-3">Preferences can be changed or withdrawn at any time through “Cookie settings” in the footer.</p>
+        <p className="mt-3">Preferences can be changed or withdrawn at any time through “Cookie settings” in the footer. The current inventory, purposes and retention periods are published in the <Link className="text-brand hover:underline" to="/en/cookie-policy">Cookie Policy</Link>.</p>
       </>
     ),
   },

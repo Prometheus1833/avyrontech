@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Bot, Brain, BarChart3, MessageSquare, Save, Plus, Archive, Sparkles, RefreshCw, Lock, GraduationCap,
+  Bot, Brain, BarChart3, MessageSquare, Save, Plus, Archive, Sparkles, RefreshCw, Lock, GraduationCap, Database,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  aiOsAdmin, type AiAgent, type AiStats, type KnowledgeRow, type LearningRow,
+  aiOsAdmin, type AiAgent, type AiStats, type KnowledgeRow, type LearningRow, type KnowledgeSource,
 } from "@/lib/aiOsApi";
 
 const TABS = [
   { id: "overview", label: "Panou", icon: BarChart3 },
   { id: "agents", label: "Agenți", icon: Bot },
   { id: "knowledge", label: "Cunoștințe", icon: Brain },
+  { id: "sources", label: "Surse", icon: Database },
   { id: "learning", label: "Auto-învățare", icon: GraduationCap },
   { id: "conversations", label: "Conversații", icon: MessageSquare },
 ] as const;
@@ -34,6 +35,7 @@ const AiOs = ({ embedded = false }: { embedded?: boolean }) => {
   const [agents, setAgents] = useState<AiAgent[]>([]);
   const [knowledge, setKnowledge] = useState<KnowledgeRow[]>([]);
   const [learning, setLearning] = useState<LearningRow[]>([]);
+  const [sources, setSources] = useState<KnowledgeSource[]>([]);
   const [conversations, setConversations] = useState<{ id: string; agent_slug: string; language: string; page: string | null; messages: number; last_at: number }[]>([]);
   const [transcript, setTranscript] = useState<{ role: string; content: string; created_at: number }[] | null>(null);
   const [canEdit, setCanEdit] = useState(false);
@@ -47,8 +49,8 @@ const AiOs = ({ embedded = false }: { embedded?: boolean }) => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [s, a, k, l, c] = await Promise.all([
-        aiOsAdmin.stats(30), aiOsAdmin.agents(), aiOsAdmin.knowledge(), aiOsAdmin.learning(), aiOsAdmin.conversations(),
+      const [s, a, k, l, c, sourceResult] = await Promise.all([
+        aiOsAdmin.stats(30), aiOsAdmin.agents(), aiOsAdmin.knowledge(), aiOsAdmin.learning(), aiOsAdmin.conversations(), aiOsAdmin.sources(),
       ]);
       setStats(s);
       setAgents(a.data);
@@ -56,6 +58,7 @@ const AiOs = ({ embedded = false }: { embedded?: boolean }) => {
       setKnowledge(k.data);
       setLearning(l.data);
       setConversations(c.data);
+      setSources(sourceResult.data);
     } catch {
       setStatus("Nu am putut încărca datele AI OS.");
     } finally {
@@ -104,6 +107,17 @@ const AiOs = ({ embedded = false }: { embedded?: boolean }) => {
     setSearch(value);
     const k = await aiOsAdmin.knowledge(value).catch(() => null);
     if (k) setKnowledge(k.data);
+  };
+
+  const updateSource = async (source: KnowledgeSource, patch: { status?: string; trustLevel?: string }) => {
+    try {
+      await aiOsAdmin.updateSource(source.id, patch);
+      setStatus("Sursa a fost actualizată.");
+      const result = await aiOsAdmin.sources();
+      setSources(result.data);
+    } catch {
+      setStatus("Sursa nu poate fi activată fără conexiune autorizată și identitate verificată.");
+    }
   };
 
   if (restricted) {
@@ -338,6 +352,47 @@ const AiOs = ({ embedded = false }: { embedded?: boolean }) => {
           </ul>
         )}
 
+        {!loading && tab === "sources" && (
+          <div className="space-y-3">
+            <div className="rounded-2xl border border-border/60 bg-card/60 p-4 text-sm text-muted-foreground">
+              Conținutul intră în răspunsurile publice numai după validarea sursei și aprobarea documentelor.
+              Tokenurile OAuth/API sunt secrete Cloudflare; aici se afișează doar starea conexiunii.
+            </div>
+            <ul className="grid gap-3 md:grid-cols-2">
+              {sources.map((source) => (
+                <li key={source.id} className="space-y-3 rounded-2xl border border-border/60 bg-card/60 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium">{source.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">{source.canonical_url || "Sursă internă"}</p>
+                    </div>
+                    <span className="rounded-full border border-border/60 px-2 py-0.5 font-mono text-[10px] uppercase">{source.kind}</span>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <label className="text-xs text-muted-foreground">Stare
+                      <select className={field} value={source.status} disabled={!canEdit}
+                        onChange={(event) => void updateSource(source, { status: event.target.value })}>
+                        {["pending", "active", "paused", "error", "revoked"].map((value) => <option key={value}>{value}</option>)}
+                      </select>
+                    </label>
+                    <label className="text-xs text-muted-foreground">Încredere
+                      <select className={field} value={source.trust_level} disabled={!canEdit}
+                        onChange={(event) => void updateSource(source, { trustLevel: event.target.value })}>
+                        {["unverified", "authorized", "verified"].map((value) => <option key={value}>{value}</option>)}
+                      </select>
+                    </label>
+                  </div>
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    conexiune: {source.connection_status || "neconfigurată"}
+                    {source.provider ? ` · ${source.provider}` : ""}
+                    {source.last_synced_at ? ` · sync ${new Date(source.last_synced_at).toLocaleString("ro-RO")}` : ""}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {!loading && tab === "conversations" && (
           <div className="grid gap-4 lg:grid-cols-[320px,1fr]">
             <ul className="space-y-2">
@@ -347,7 +402,7 @@ const AiOs = ({ embedded = false }: { embedded?: boolean }) => {
                     className="w-full rounded-xl border border-border/60 p-3 text-left text-sm hover:bg-muted/50">
                     <span className="font-medium">{row.agent_slug}</span>
                     <span className="block text-xs text-muted-foreground">
-                      {row.page || "—"} · {row.messages} mesaje · {new Date(row.last_at * 1000).toLocaleString("ro-RO")}
+                      {row.page || "—"} · {row.messages} mesaje · {new Date(row.last_at).toLocaleString("ro-RO")}
                     </span>
                   </button>
                 </li>

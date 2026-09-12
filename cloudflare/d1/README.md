@@ -47,6 +47,43 @@ npx wrangler d1 execute avyron-db --remote \
 | `promotion_redemptions` | Utilizări promoționale auditabile       |
 | `blog_posts`       | Articole RO/EN, SEO, social și stare editorială |
 | `blog_post_revisions` | Istoric înaintea fiecărei editări de articol |
+| `organizations` / `organization_memberships` | Tenanturi și RBAC contextual |
+| `organization_invitations` | Invitații one-time stocate hash-uit |
+| `platform_principals` / `user_capabilities` | Control platformă și excepții auditate |
+| `security_events` | Audit de securitate append-only |
+| `idempotency_keys` / `outbox_events` | Retry sigur și livrare durabilă |
+| `ai_agent_versions` / `ai_tools` | Configurații versionate și registry de tool-uri |
+| `ai_runs` / `ai_run_steps` / `ai_approvals` | Trasabilitate și aprobări AI |
+| `ai_budgets` / `ai_kill_switches` | Limite și oprire operațională AI |
+| `knowledge_sources` / `knowledge_documents` / `knowledge_chunks` | Knowledge cu proveniență și aprobare |
+| `knowledge_claims` / `knowledge_sync_runs` | Fapte versionabile și sincronizări durabile |
+| `source_connections` | Registry de conectori; numai referințe la secrete |
+| `lead_assignments` / `lead_activities` / `lead_reminders` | CRM și istoric operațional Leads |
+| `lead_candidates` | Propuneri ale agentului, fără outreach automat |
+| `ai_projects` / `ai_project_members` | Portofoliu AI separat și acces explicit per utilizator |
+| `ai_project_channels` / `ai_project_agents` | Conexiuni sociale verificate și agenți atribuiți per proiect |
+| `ai_project_strategy_versions` / `ai_project_memories` | Strategie versionabilă și memorie rezumată, cu expirare |
+| `ai_content_items` / `ai_project_events` | Ciorne, aprobări, retenție și audit pentru AI AVY Prod |
+| `financial_expenses` / `financial_revenues` | Costuri și venituri în unități minore, cu FX păstrat |
+| `financial_accounts` / `financial_payment_methods` | Conturi și metode strict mascate |
+| `financial_budgets` / `financial_provider_quotas` / `financial_agent_provider_policies` | Bugete, free tiers, praguri și permisiuni per agent/provider |
+| `financial_usage_events` / `financial_alerts` | AI Cost Guard și alerte operaționale |
+| `financial_documents` / `financial_audit_events` | Referințe R2 private și audit append-only |
+| `engine_sources` / `engine_capabilities` | Catalog AVY Engine și capabilități evaluate |
+| `engine_connectors` / `engine_resource_bindings` | Conectori inerți și distribuție aprobată |
+| `engine_documents` / `engine_suggestions` | Documente R2 private și sugestii cu human approval |
+| `engine_discovery_policies` / `engine_discovery_runs` | Descoperire periodică bugetată și trasabilă |
+| `engine_audit_events` | Audit AVY Engine append-only |
+
+## Audit local reproductibil
+
+```bash
+npm run audit:d1
+```
+
+Comanda recreează o bază temporară, aplică toate migrațiile în ordine și
+verifică integritatea, cheile externe, timestampurile AI și relațiile critice.
+Nu accesează D1 remote.
 
 ## Convenții
 

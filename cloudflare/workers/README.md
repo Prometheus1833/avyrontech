@@ -9,7 +9,7 @@ redirect sau Worker intermediar. Vezi [`../../../docs/API_GATEWAY.md`](../../../
 ## Rută & responsabilitate
 
 ```
-/api/auth/*           ← signup, login, refresh, logout
+/api/auth/*           ← signup, login, MFA, sessions, email/password, logout
 /api/clients/*        ← CRUD clienți (D1: clients)
 /api/projects/*       ← CRUD proiecte (D1: projects)
 /api/services/*       ← CRUD servicii pe proiect (D1: services)
@@ -21,6 +21,9 @@ redirect sau Worker intermediar. Vezi [`../../../docs/API_GATEWAY.md`](../../../
 /api/content/*        ← KV (site_settings, homepage, seo, features)
                        + D1 (website_content per proiect)
 /api/media/*          ← upload, signed-url, delete (R2)
+/api/finance/*        ← control financiar intern (D1 + documente private R2)
+/api/ai-projects/*    ← proiecte și agenți AI operaționali (D1 + Workers AI)
+/api/engine/*         ← surse/capabilități/conectori guvernați (D1 + R2)
 ```
 
 Tipurile binding-urilor se generează din `wrangler.jsonc` prin
@@ -30,7 +33,7 @@ Tipurile binding-urilor se generează din `wrangler.jsonc` prin
 ## Reguli de aur
 
 - **Validare**: zod la fiecare endpoint.
-- **Auth**: JWT scurt (15 min) + refresh, stocat httpOnly cookie.
+- **Auth**: JWT scurt (15 min), legat de sesiunea D1 revocabilă + refresh cookie HttpOnly; MFA obligatoriu pentru rolurile privilegiate.
 - **Roluri**: `admin` (Avyron staff), `client` (per client_id), `public` (leads).
 - **Audit**: orice mutație de date business → log in D1 (`audit_log` — adăugăm
   într-o migrație ulterioară când e cerut).

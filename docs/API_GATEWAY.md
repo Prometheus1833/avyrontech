@@ -42,7 +42,7 @@ Limitele se verifică înaintea unei extinderi în documentația oficială:
 | --- | --- | --- | --- |
 | Sistem | `/health`, discovery, OpenAPI | fără storage | public, no-store pentru health |
 | Public | `/public/domain-check`, `/public/exchange-rate`, `/contact/*`, `/blog/*`, media publică | KV/D1/R2 numai prin Worker | cache la edge; rate limit + Turnstile unde există mutații |
-| Cont | `/auth/*`, `/profile/*` | D1 + R2 avatar | JWT 15 minute + refresh cookie HttpOnly |
+| Cont | `/auth/*`, `/profile/*` | D1 + R2 avatar | JWT 15 minute legat de sesiune D1 + refresh cookie HttpOnly + MFA privilegiat |
 | Comerț | `/commerce/quote`, `/commerce/orders` | catalog server-side + D1 | cont autentificat; prețurile browserului sunt ignorate |
 | Promoții | `/promotions/admin/*` | D1 + audit log | exclusiv `prometheus@avyron.ro`, verificat server-side |
 | Platformă | `/clients`, `/projects`, `/proposals`, `/links`, `/media` | D1 + R2 | JWT + rol + verificări de ownership |

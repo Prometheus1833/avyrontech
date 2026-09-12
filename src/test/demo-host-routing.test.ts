@@ -26,25 +26,27 @@ describe("multi-domain demo registry", () => {
     expect(new Set(DEMO_SITES.map((site) => site.hostname)).size).toBe(DEMO_SITES.length);
     expect(DEMO_SITES.filter((site) => site.hostname.endsWith(".avyron.ro")).map((site) => site.hostname))
       .toEqual(["exemplu1.avyron.ro", "exemplu2.avyron.ro", "exemplu3.avyron.ro"]);
-    expect(DEMO_SITES.filter((site) => /^exemplu\d+\.avyron\.eu$/.test(site.hostname))).toHaveLength(10);
+    expect(DEMO_SITES.filter((site) => /^demo\d+\.avyron\.eu$/.test(site.hostname))).toHaveLength(10);
+    expect(DEMO_SITES.flatMap((site) => site.aliases).filter((hostname) => /^exemplu\d+\.avyron\.eu$/.test(hostname)))
+      .toHaveLength(10);
     expect(DEMO_SITES.map((site) => site.hostname)).toEqual(expect.arrayContaining([
       "salaforza.avyron.eu",
       "pensiuneabradetul.avyron.eu",
       "asociatia-europa.avyron.eu",
     ]));
-    expect(DEMO_SITES.every((site) => !site.indexing && site.status === "unavailable")).toBe(true);
+    expect(DEMO_SITES.every((site) => !site.indexing && site.status === "preparing")).toBe(true);
   });
 
   it("normalises DNS hostnames without treating unrelated .ro hosts as demos", () => {
     expect(resolveHostname("EXEMPLU1.AVYRON.EU.")).toMatchObject({
       kind: "demo",
-      site: { project: "example-eu-1" },
+      site: { project: "demo-eu-1", hostname: "demo1.avyron.eu" },
     });
     expect(resolveHostname("app.avyron.ro")).toEqual({ kind: "main" });
     expect(resolveHostname("restaurant.avyron.eu")).toEqual({ kind: "unknown-demo" });
   });
 
-  it("preserves path/query for www.ro and avoids .eu duplicate-content paths", async () => {
+  it("preserves safe paths/query values and strips sensitive redirect parameters", async () => {
     const ro = await handleMappedHostname(
       new Request("https://www.avyron.ro/servicii?utm_source=test"),
       unusedAssets,
@@ -53,11 +55,11 @@ describe("multi-domain demo registry", () => {
     expect(ro?.headers.get("location")).toBe("https://avyron.ro/servicii?utm_source=test");
 
     const eu = await handleMappedHostname(
-      new Request("https://www.avyron.eu/produs-inexistent?utm_source=eu"),
+      new Request("https://www.avyron.eu/servicii?utm_source=eu&access_token=secret&code=oauth"),
       unusedAssets,
     );
     expect(eu?.status).toBe(301);
-    expect(eu?.headers.get("location")).toBe("https://avyron.ro/?utm_source=eu");
+    expect(eu?.headers.get("location")).toBe("https://avyron.ro/servicii?utm_source=eu");
   });
 
   it("fails closed before API routing for configured and unknown demo hosts", async () => {
@@ -69,7 +71,7 @@ describe("multi-domain demo registry", () => {
       expect(response?.status).toBe(404);
       expect(response?.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
       expect(response?.headers.get("Cache-Control")).toBe("private, no-store");
-      expect(await response?.text()).toContain("Demo indisponibil");
+      expect(await response?.text()).toContain("Demo în pregătire");
     }
   });
 

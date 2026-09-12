@@ -30,6 +30,7 @@ explicită a cutover-ului:
 ```bash
 npx wrangler d1 migrations apply DB --remote --config wrangler.jsonc --env=
 npx wrangler secret put JWT_SECRET --config wrangler.jsonc
+npx wrangler secret put MFA_ENCRYPTION_KEY --config wrangler.jsonc
 npx wrangler secret put SMTP_PASS --config wrangler.jsonc
 npx wrangler secret put TURNSTILE_SECRET --config wrangler.jsonc
 npm run deploy:api
@@ -80,12 +81,12 @@ cu parole temporare sau fluxul de resetare prin email.
 
 ```bash
 npm ci
-npx tsc --noEmit
+npm run typecheck
 npm run validate:cloudflare
 npm test
 ```
 
-Configurația de producție refuză uploadul dacă lipsesc `JWT_SECRET`,
-`SMTP_PASS` sau `TURNSTILE_SECRET`. Preview-ul cere `JWT_SECRET`; integrările
-SMTP și Turnstile se validează separat până când tokenurile lor de preview sunt
-configurate.
+Configurația declară `JWT_SECRET`, `MFA_ENCRYPTION_KEY` și
+`TURNSTILE_SECRET` ca secrete necesare în producție. Preview-ul cere
+`JWT_SECRET` și o cheie MFA distinctă; integrările SMTP și Turnstile se
+validează separat până când tokenurile lor de preview sunt configurate.

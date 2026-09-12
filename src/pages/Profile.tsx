@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   User, CreditCard, BarChart3, Receipt, MessageSquare, Users, Megaphone, ShieldCheck,
   FolderKanban, Wrench, BookOpen, MessagesSquare, Settings, ShoppingCart, Globe, Wallet,
-  Image as ImageIcon, BadgePercent, Search, Lock, Sparkles,
+  Image as ImageIcon, BadgePercent, Search, Lock, Sparkles, Target,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
@@ -31,8 +31,11 @@ const CartTab = lazy(() => import("@/components/dashboard/CartTab").then((m) => 
 const StaffFinanceTab = lazy(() => import("@/components/dashboard/StaffFinanceTab").then((m) => ({ default: m.StaffFinanceTab })));
 const StaffPaymentsTab = lazy(() => import("@/components/dashboard/StaffPaymentsTab").then((m) => ({ default: m.StaffPaymentsTab })));
 const StaffMediaTab = lazy(() => import("@/components/dashboard/StaffMediaTab").then((m) => ({ default: m.StaffMediaTab })));
+const StaffLeadsTab = lazy(() => import("@/components/dashboard/StaffLeadsTab").then((m) => ({ default: m.StaffLeadsTab })));
 const StaffPromotionsTab = lazy(() => import("@/components/dashboard/StaffPromotionsTab").then((m) => ({ default: m.StaffPromotionsTab })));
 const AiOsConsole = lazy(() => import("@/pages/intern/AiOs"));
+const AiProductionEntryCard = lazy(() => import("@/components/dashboard/AiProductionEntryCard"));
+const EngineEntryCard = lazy(() => import("@/components/dashboard/EngineEntryCard"));
 
 const GROUP_LABELS: Record<string, string> = {
   account: "Cont",
@@ -61,6 +64,7 @@ const Profile = () => {
     clients: { label: t.auth.dash.tabs.clients, icon: Users },
     domains: { label: "Domenii", icon: Globe },
     media: { label: "Media", icon: ImageIcon },
+    leads: { label: "Leads", icon: Target },
     subscriptions: { label: t.auth.dash.tabs.subscriptions, icon: CreditCard },
     cart: { label: t.auth.dash.tabs.cart, icon: ShoppingCart },
     invoices: { label: t.auth.dash.tabs.invoices, icon: Receipt },
@@ -127,6 +131,15 @@ const Profile = () => {
             {roleLabel}
           </Badge>
         </div>
+
+        {access.isSuperAdmin && (
+          <Suspense fallback={<div className="h-36 animate-pulse rounded-2xl bg-card/50" aria-label="Se încarcă instrumentele AVYRON OS" />}>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <AiProductionEntryCard />
+              <EngineEntryCard />
+            </div>
+          </Suspense>
+        )}
 
         <Tabs value={tab} onValueChange={setTab} className="space-y-6">
           <div className="rounded-2xl border border-border/70 bg-card/60 backdrop-blur-md p-3 sm:p-4 shadow-sm space-y-4">
@@ -200,6 +213,7 @@ const Profile = () => {
                 <TabsContent value="clients" className="mt-0"><StaffClientsTab /></TabsContent>
                 <TabsContent value="domains" className="mt-0"><StaffDomainStatsTab /></TabsContent>
                 <TabsContent value="media" className="mt-0"><StaffMediaTab /></TabsContent>
+                <TabsContent value="leads" className="mt-0"><StaffLeadsTab /></TabsContent>
                 <TabsContent value="staff-tickets" className="mt-0"><TicketsTab staffMode /></TabsContent>
                 <TabsContent value="demo-requests" className="mt-0"><StaffExampleRequestsTab /></TabsContent>
                 <TabsContent value="intern" className="mt-0"><StaffChatTab /></TabsContent>

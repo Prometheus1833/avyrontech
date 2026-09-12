@@ -9,6 +9,7 @@ export type PublicAgent = {
 
 export type ChatReply = {
   conversationId: string;
+  runId: string;
   messageId: string;
   reply: string;
   confidence: number;
@@ -21,7 +22,7 @@ export type AiAgent = {
   visibility: string; model: string; temperature: number; max_tokens: number; autonomy: string;
   language: string; accent: string; greeting_ro: string; greeting_en: string;
   system_prompt: string; guardrails: string; tools_json: string; handoff_email: string | null;
-  updated_at: number;
+  current_version: number; updated_at: number;
 };
 
 export type KnowledgeRow = {
@@ -33,6 +34,14 @@ export type KnowledgeRow = {
 export type LearningRow = {
   id: string; agent_slug: string; language: string; question: string;
   occurrences: number; best_score: number; created_at: number;
+};
+
+export type KnowledgeSource = {
+  id: string; organization_id: string | null; connection_id: string | null;
+  kind: string; name: string; canonical_url: string | null; status: string;
+  visibility: string; trust_level: string; sync_policy_json: string;
+  last_synced_at: number | null; last_error_code: string | null;
+  provider: string | null; account_label: string | null; connection_status: string | null;
 };
 
 export type AiStats = {
@@ -72,15 +81,18 @@ export const avyApi = {
 export const aiOsAdmin = {
   agents: () => cfAuth.request<{ data: AiAgent[]; canEdit: boolean }>("/api/ai/admin/agents"),
   saveAgent: (slug: string, patch: Partial<AiAgent>) =>
-    cfAuth.request<{ ok: true }>(`/api/ai/admin/agents/${slug}`, { method: "PUT", body: JSON.stringify(patch) }),
+    cfAuth.request<{ ok: true; version: number }>(`/api/ai/admin/agents/${slug}`, { method: "PUT", body: JSON.stringify(patch) }),
   createAgent: (body: { slug: string; name: string; mission?: string; channel?: string }) =>
-    cfAuth.request<{ ok: true; slug: string }>("/api/ai/admin/agents", { method: "POST", body: JSON.stringify(body) }),
+    cfAuth.request<{ ok: true; slug: string; version: number }>("/api/ai/admin/agents", { method: "POST", body: JSON.stringify(body) }),
   knowledge: (q = "") =>
     cfAuth.request<{ data: KnowledgeRow[]; canEdit: boolean }>(`/api/ai/admin/knowledge${q ? `?q=${encodeURIComponent(q)}` : ""}`),
   saveKnowledge: (row: Partial<KnowledgeRow>) =>
     cfAuth.request<{ ok: true; id: string }>("/api/ai/admin/knowledge", { method: "POST", body: JSON.stringify(row) }),
   archiveKnowledge: (id: string) =>
     cfAuth.request<{ ok: true }>(`/api/ai/admin/knowledge/${id}`, { method: "DELETE" }),
+  sources: () => cfAuth.request<{ data: KnowledgeSource[]; canEdit: boolean }>("/api/ai/admin/sources"),
+  updateSource: (id: string, patch: { status?: string; trustLevel?: string; visibility?: string }) =>
+    cfAuth.request<{ ok: true }>(`/api/ai/admin/sources/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   stats: (days = 30) => cfAuth.request<AiStats>(`/api/ai/admin/stats?days=${days}`),
   conversations: () =>
     cfAuth.request<{ data: { id: string; agent_slug: string; language: string; page: string | null; messages: number; last_at: number }[] }>(

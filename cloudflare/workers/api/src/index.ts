@@ -27,6 +27,11 @@ import { domainRouter } from "./domain";
 import { promotionsRouter } from "./promotions";
 import { recordPageEvent, funnelSummary, leadPipeline } from "./analytics";
 import { EXCHANGE_RATE_REFRESH_CRON, getPublicExchangeRate, refreshExchangeRate } from "./exchangeRate";
+import { platformRoleForUser } from "./authorization";
+import { base32Encode, decryptTotpSecret, encryptTotpSecret, generateTotpSecret, totpUri, verifyTotp } from "./totp";
+import { engineRouter, runDueEngineDiscovery } from "./engine";
+
+export { AvyronAgentRuntime } from "./agents/AvyronAgentRuntime";
 
 const app = new Hono<AppBindings>();
 
@@ -101,7 +106,7 @@ app.use("*", async (c, next) => {
     origin: (origin) => allowedOrigin(c.env, origin),
     credentials: true,
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "X-Request-Id"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Request-Id", "Idempotency-Key"],
     exposeHeaders: ["X-Request-Id", "X-API-Version", "X-Avyron-Cache"],
     maxAge: 86_400,
   })(c, next);
@@ -172,38 +177,80 @@ async function requireAuth(c: Context<AppBindings>, next: Next) {
   const auth = c.req.header("authorization");
   const token = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
   if (!token) return c.json({ error: { code: "unauthenticated", message: "Missing token" } }, 401);
-  const payload = await verifyJwt<{ sub: string; roles: Role[] }>(token, c.env.JWT_SECRET);
-  if (!payload?.sub) return c.json({ error: { code: "unauthenticated", message: "Invalid token" } }, 401);
+  const payload = await verifyJwt<{ sub: string; sid?: string }>(token, c.env.JWT_SECRET);
+  if (!payload?.sub || !payload.sid) return c.json({ error: { code: "unauthenticated", message: "Invalid token" } }, 401);
+  const session = await c.env.DB.prepare(
+    `SELECT session.mfa_verified_at, group_concat(role.role) AS roles_csv
+       FROM sessions AS session
+       JOIN users AS account ON account.id = session.user_id AND account.disabled_at IS NULL
+       LEFT JOIN user_roles AS role ON role.user_id = account.id
+      WHERE session.id = ? AND session.user_id = ? AND session.revoked_at IS NULL AND session.expires_at > ?
+      GROUP BY session.id`,
+  ).bind(payload.sid, payload.sub, now()).first<{ mfa_verified_at: number | null; roles_csv: string | null }>();
+  if (!session) return c.json({ error: { code: "session_revoked", message: "Sesiunea nu mai este activă" } }, 401);
+  const liveRoles = (session.roles_csv || "user").split(",").filter((role): role is Role => ["user", "staff", "admin"].includes(role));
   c.set("userId", payload.sub);
-  c.set("roles", payload.roles ?? ["user"]);
+  c.set("sessionId", payload.sid);
+  c.set("roles", liveRoles.length ? liveRoles : ["user"]);
+  c.set("mfaVerified", session.mfa_verified_at !== null);
   await next();
 }
 const requireRole = (...roles: Role[]) => async (c: Context<AppBindings>, next: Next) => {
   const userRoles: Role[] = c.get("roles") ?? [];
   if (!userRoles.some((r) => roles.includes(r)))
     return c.json({ error: { code: "forbidden", message: "Insufficient role" } }, 403);
+  if (roles.some((role) => role === "staff" || role === "admin") && !c.get("mfaVerified"))
+    return c.json({ error: { code: "mfa_required", message: "Confirmă autentificarea în doi pași" } }, 403);
   await next();
 };
 
-// Conturi cu control total: doar ele pot atinge zona financiară și datele
-// personale complete ale utilizatorilor.
-const SUPERADMIN_EMAILS = ["prometheus@avyron.ro", "avyrontech@gmail.com"];
 async function isSuperAdmin(c: Context<AppBindings>): Promise<boolean> {
-  const roles: Role[] = c.get("roles") ?? [];
-  if (!roles.includes("admin")) return false;
-  const row = await c.env.DB.prepare("SELECT email FROM users WHERE id = ? AND disabled_at IS NULL")
-    .bind(c.get("userId")).first<{ email: string }>();
-  return !!row && SUPERADMIN_EMAILS.includes(row.email.trim().toLowerCase());
+  return (await platformRoleForUser(c.env.DB, c.get("userId"))) !== null;
 }
 const requireSuperAdmin = async (c: Context<AppBindings>, next: Next) => {
   if (!(await isSuperAdmin(c)))
     return c.json({ error: { code: "forbidden", message: "Doar super adminul are acces" } }, 403);
+  if (!c.get("mfaVerified"))
+    return c.json({ error: { code: "mfa_required", message: "MFA este obligatoriu pentru acces privilegiat" } }, 403);
   await next();
 };
 
 async function rolesFor(db: D1Database, userId: string): Promise<Role[]> {
   const { results } = await db.prepare("SELECT role FROM user_roles WHERE user_id = ?").bind(userId).all<{ role: Role }>();
   return results.map((r) => r.role);
+}
+
+const privilegedAccount = async (db: D1Database, userId: string, roles: Role[]): Promise<boolean> => {
+  if (roles.includes("staff") || roles.includes("admin") || (await platformRoleForUser(db, userId)) !== null) return true;
+  return Boolean(await db.prepare(
+    `SELECT 1 FROM organization_memberships
+      WHERE user_id = ? AND status = 'active' AND role IN ('owner','admin','manager','specialist') LIMIT 1`,
+  ).bind(userId).first());
+};
+
+const requirePrivilegedMfa = async (c: Context<AppBindings>, next: Next) => {
+  if (["GET", "HEAD", "OPTIONS"].includes(c.req.method)) return next();
+  if (await privilegedAccount(c.env.DB, c.get("userId"), c.get("roles") ?? []) && !c.get("mfaVerified")) {
+    return c.json({ error: { code: "mfa_required", message: "MFA este obligatoriu pentru această acțiune" } }, 403);
+  }
+  await next();
+};
+
+async function recordSecurityEvent(
+  c: Context<AppBindings>,
+  userId: string | null,
+  action: string,
+  outcome: "allowed" | "denied" | "failed",
+  severity: "info" | "warning" | "critical" = "info",
+) {
+  await c.env.DB.prepare(
+    `INSERT INTO security_events
+      (id,actor_user_id,actor_type,action,outcome,severity,request_id,ip_hash,metadata_json,created_at)
+     VALUES (?,?,?, ?,?,?,?,?, '{}',?)`,
+  ).bind(
+    uuid(), userId, userId ? "user" : "anonymous", action, outcome, severity,
+    c.get("requestId") || null, await hashKey(clientIp(c.req.raw)), now(),
+  ).run();
 }
 
 // ─── Discovery & health ─────────────────────────────────────────────────
@@ -347,33 +394,238 @@ app.post("/api/auth/login", async (c) => {
   if (row.disabled_at) return c.json({ error: { code: "account_disabled", message: "Contul este dezactivat" } }, 403);
   if (!row.email_verified) return c.json({ error: { code: "verification_required", message: "Confirmă adresa de email înainte de autentificare" } }, 403);
   const roles = await rolesFor(c.env.DB, row.id);
-  const loginAt = now();
-  await c.env.DB.batch([
-    c.env.DB.prepare("UPDATE users SET last_login_at = ? WHERE id = ?").bind(loginAt, row.id),
-    c.env.DB.prepare("INSERT INTO audit_log (user_id,action,ip,created_at) VALUES (?,?,?,?)")
-      .bind(row.id, "login", c.req.header("cf-connecting-ip") || null, loginAt),
-  ]);
-  return createSession(c, row.id, roles.length ? roles : ["user"]);
+  const resolvedRoles = roles.length ? roles : ["user"] as Role[];
+  if (await privilegedAccount(c.env.DB, row.id, resolvedRoles)) {
+    const factor = await c.env.DB.prepare(
+      "SELECT id FROM mfa_factors WHERE user_id = ? AND kind = 'totp' AND status = 'active' LIMIT 1",
+    ).bind(row.id).first<{ id: string }>();
+    if (factor) {
+      const challenge = randomHex(32);
+      const timestamp = now();
+      await c.env.DB.batch([
+        c.env.DB.prepare("DELETE FROM mfa_challenges WHERE user_id = ? OR expires_at < ?").bind(row.id, timestamp),
+        c.env.DB.prepare(
+          `INSERT INTO mfa_challenges
+            (token_hash,user_id,factor_id,ip_hash,attempts,expires_at,created_at)
+           VALUES (?,?,?,?,0,?,?)`,
+        ).bind(await sha256(challenge), row.id, factor.id, await hashKey(clientIp(c.req.raw)), timestamp + 5 * 60_000, timestamp),
+      ]);
+      await recordSecurityEvent(c, row.id, "auth.mfa_challenge_created", "allowed");
+      return c.json({ mfa_required: true, challenge_token: challenge, expires_in: 300 });
+    }
+    return createSession(c, row.id, resolvedRoles, false, { mfa_enrollment_required: true });
+  }
+  return createSession(c, row.id, resolvedRoles, false);
 });
 
-async function createSession(c: Context<AppBindings>, userId: string, roles: Role[]) {
+async function createSession(
+  c: Context<AppBindings>,
+  userId: string,
+  roles: Role[],
+  mfaVerified: boolean,
+  extra: Record<string, unknown> = {},
+) {
   const sid = randomHex(32);
   const sessionId = await sha256(sid);
   const t = now();
   const exp = t + 30 * 24 * 60 * 60 * 1000; // 30d
-  await c.env.DB.prepare(
-    "INSERT INTO sessions (id,user_id,user_agent,ip,created_at,last_seen_at,expires_at) VALUES (?,?,?,?,?,?,?)"
-  ).bind(sessionId, userId, c.req.header("user-agent") || null, c.req.header("cf-connecting-ip") || null, t, t, exp).run();
+  const userAgent = c.req.header("user-agent") || null;
+  const deviceName = userAgent ? userAgent.slice(0, 120) : "Dispozitiv necunoscut";
+  await c.env.DB.batch([
+    c.env.DB.prepare(
+      `INSERT INTO sessions
+        (id,user_id,user_agent,ip,device_name,mfa_verified_at,created_at,last_seen_at,expires_at)
+       VALUES (?,?,?,?,?,?,?,?,?)`,
+    ).bind(sessionId, userId, userAgent, c.req.header("cf-connecting-ip") || null, deviceName, mfaVerified ? t : null, t, t, exp),
+    c.env.DB.prepare("UPDATE users SET last_login_at = ? WHERE id = ?").bind(t, userId),
+    c.env.DB.prepare("INSERT INTO audit_log (user_id,action,ip,created_at) VALUES (?,?,?,?)")
+      .bind(userId, mfaVerified ? "login_mfa" : "login", c.req.header("cf-connecting-ip") || null, t),
+  ]);
   setCookie(c, "sid", sid, { httpOnly: true, secure: true, sameSite: "None", path: "/", maxAge: 30 * 24 * 60 * 60 });
-  const access = await signJwt({ sub: userId, roles }, c.env.JWT_SECRET, 900);
-  return c.json({ user: { id: userId, roles }, access_token: access, expires_in: 900 });
+  const access = await signJwt({ sub: userId, sid: sessionId }, c.env.JWT_SECRET, 900);
+  return c.json({ user: { id: userId, roles }, access_token: access, expires_in: 900, ...extra });
 }
+
+app.post("/api/auth/mfa/challenge", async (c) => {
+  const body = await c.req.json().catch(() => ({})) as { challengeToken?: string; code?: string };
+  const challengeToken = String(body.challengeToken || "");
+  const code = String(body.code || "").trim().toUpperCase();
+  if (!challengeToken || !code) return c.json({ error: { code: "invalid_input" } }, 400);
+  const tokenHash = await sha256(challengeToken);
+  const ipHash = await hashKey(clientIp(c.req.raw));
+  const rate = await checkRateLimit(c.env.DB, [
+    { key: `mfa:ip:${ipHash}:15m`, limit: 20, windowSec: 900 },
+    { key: `mfa:challenge:${tokenHash}:15m`, limit: 6, windowSec: 900 },
+  ], { limiter: c.env.PUBLIC_API_RATE_LIMITER, key: `mfa:${tokenHash}` });
+  if (!rate.ok) return c.json({ error: { code: "rate_limited", message: "Prea multe încercări" } }, 429);
+
+  const challenge = await c.env.DB.prepare(
+    `SELECT c.user_id,c.factor_id,c.ip_hash,c.attempts,c.expires_at,f.secret_ciphertext
+       FROM mfa_challenges c
+       JOIN mfa_factors f ON f.id = c.factor_id AND f.status = 'active'
+      WHERE c.token_hash = ? AND c.used_at IS NULL AND c.attempts < 5`,
+  ).bind(tokenHash).first<{
+    user_id: string; factor_id: string; ip_hash: string; attempts: number;
+    expires_at: number; secret_ciphertext: string;
+  }>();
+  if (!challenge || challenge.expires_at < now() || challenge.ip_hash !== ipHash) {
+    await recordSecurityEvent(c, challenge?.user_id ?? null, "auth.mfa_challenge", "denied", "warning");
+    return c.json({ error: { code: "invalid_or_expired_challenge" } }, 401);
+  }
+
+  let valid = false;
+  let recoveryHash: string | null = null;
+  if (/^\d{6}$/.test(code)) {
+    try {
+      const secret = await decryptTotpSecret(challenge.secret_ciphertext, c.env.MFA_ENCRYPTION_KEY);
+      valid = await verifyTotp(secret, code);
+    } catch (error) {
+      console.error(JSON.stringify({ event: "mfa_secret_decrypt_failed", userId: challenge.user_id, error: String(error) }));
+    }
+  } else if (/^AVY-[A-F0-9]{5}-[A-F0-9]{5}$/.test(code)) {
+    recoveryHash = await sha256(code);
+    const recovery = await c.env.DB.prepare(
+      "SELECT 1 FROM mfa_recovery_codes WHERE factor_id = ? AND code_hash = ? AND used_at IS NULL",
+    ).bind(challenge.factor_id, recoveryHash).first();
+    valid = Boolean(recovery);
+  }
+
+  if (!valid) {
+    await c.env.DB.prepare(
+      "UPDATE mfa_challenges SET attempts = attempts + 1 WHERE token_hash = ? AND attempts < 5",
+    ).bind(tokenHash).run();
+    await recordSecurityEvent(c, challenge.user_id, "auth.mfa_challenge", "denied", "warning");
+    return c.json({ error: { code: "invalid_mfa_code", message: "Codul nu este valid" } }, 401);
+  }
+
+  const timestamp = now();
+  const consumed = await c.env.DB.prepare(
+    "UPDATE mfa_challenges SET used_at = ? WHERE token_hash = ? AND used_at IS NULL AND attempts < 5",
+  ).bind(timestamp, tokenHash).run();
+  if ((consumed.meta.changes ?? 0) !== 1) return c.json({ error: { code: "challenge_already_used" } }, 409);
+  const writes = [
+    c.env.DB.prepare("UPDATE mfa_factors SET last_used_at = ? WHERE id = ?").bind(timestamp, challenge.factor_id),
+  ];
+  if (recoveryHash) {
+    writes.push(c.env.DB.prepare(
+      "UPDATE mfa_recovery_codes SET used_at = ? WHERE factor_id = ? AND code_hash = ? AND used_at IS NULL",
+    ).bind(timestamp, challenge.factor_id, recoveryHash));
+  }
+  await c.env.DB.batch(writes);
+  await recordSecurityEvent(c, challenge.user_id, recoveryHash ? "auth.mfa_recovery_used" : "auth.mfa_challenge", "allowed", recoveryHash ? "warning" : "info");
+  const roles = await rolesFor(c.env.DB, challenge.user_id);
+  return createSession(c, challenge.user_id, roles.length ? roles : ["user"], true);
+});
+
+app.get("/api/auth/mfa", requireAuth, async (c) => {
+  const { results } = await c.env.DB.prepare(
+    `SELECT id,kind,label,status,verified_at,last_used_at,created_at
+       FROM mfa_factors WHERE user_id = ? AND status <> 'revoked' ORDER BY created_at DESC`,
+  ).bind(c.get("userId")).all();
+  return c.json({ data: results, session_verified: c.get("mfaVerified") });
+});
+
+app.post("/api/auth/mfa/totp/enroll", requireAuth, async (c) => {
+  const body = await c.req.json().catch(() => ({})) as { currentPassword?: string; label?: string };
+  const password = String(body.currentPassword || "");
+  const userId = c.get("userId");
+  const user = await c.env.DB.prepare(
+    "SELECT email,password_hash FROM users WHERE id = ? AND disabled_at IS NULL",
+  ).bind(userId).first<{ email: string; password_hash: string }>();
+  if (!user || !(await verifyPassword(password, user.password_hash))) {
+    await recordSecurityEvent(c, userId, "auth.mfa_enroll", "denied", "warning");
+    return c.json({ error: { code: "invalid_password", message: "Parola curentă nu este corectă" } }, 403);
+  }
+  const active = await c.env.DB.prepare(
+    "SELECT 1 FROM mfa_factors WHERE user_id = ? AND kind = 'totp' AND status = 'active'",
+  ).bind(userId).first();
+  if (active) return c.json({ error: { code: "mfa_already_enabled" } }, 409);
+  const secret = generateTotpSecret();
+  const factorId = uuid();
+  const timestamp = now();
+  await c.env.DB.batch([
+    c.env.DB.prepare("DELETE FROM mfa_factors WHERE user_id = ? AND kind = 'totp' AND status = 'pending'").bind(userId),
+    c.env.DB.prepare(
+      `INSERT INTO mfa_factors
+        (id,user_id,kind,label,secret_ciphertext,status,created_at)
+       VALUES (?,?,'totp',?,?,'pending',?)`,
+    ).bind(factorId, userId, String(body.label || "Aplicație de autentificare").slice(0, 80), await encryptTotpSecret(secret, c.env.MFA_ENCRYPTION_KEY), timestamp),
+  ]);
+  await recordSecurityEvent(c, userId, "auth.mfa_enroll_started", "allowed");
+  return c.json({ factorId, secret: base32Encode(secret), otpauthUri: totpUri(secret, user.email) });
+});
+
+app.post("/api/auth/mfa/totp/verify", requireAuth, async (c) => {
+  const body = await c.req.json().catch(() => ({})) as { factorId?: string; code?: string };
+  const factorId = String(body.factorId || "");
+  const sid = getCookie(c, "sid");
+  if (!sid) return c.json({ error: { code: "session_required" } }, 401);
+  const hashedSid = await sha256(sid);
+  const sessionId = c.get("sessionId");
+  if (sessionId !== hashedSid && sessionId !== sid) return c.json({ error: { code: "session_mismatch" } }, 401);
+  const factor = await c.env.DB.prepare(
+    `SELECT secret_ciphertext FROM mfa_factors
+      WHERE id = ? AND user_id = ? AND kind = 'totp' AND status = 'pending'`,
+  ).bind(factorId, c.get("userId")).first<{ secret_ciphertext: string }>();
+  if (!factor) return c.json({ error: { code: "factor_not_found" } }, 404);
+  const secret = await decryptTotpSecret(factor.secret_ciphertext, c.env.MFA_ENCRYPTION_KEY);
+  if (!(await verifyTotp(secret, String(body.code || "")))) {
+    await recordSecurityEvent(c, c.get("userId"), "auth.mfa_enroll_verify", "denied", "warning");
+    return c.json({ error: { code: "invalid_mfa_code", message: "Codul nu este valid" } }, 400);
+  }
+  const recoveryCodes = Array.from({ length: 10 }, () => {
+    const value = randomHex(5).toUpperCase();
+    return `AVY-${value.slice(0, 5)}-${value.slice(5)}`;
+  });
+  const timestamp = now();
+  const recoveryStatements = await Promise.all(recoveryCodes.map(async (code) =>
+    c.env.DB.prepare("INSERT INTO mfa_recovery_codes (factor_id,code_hash,created_at) VALUES (?,?,?)")
+      .bind(factorId, await sha256(code), timestamp),
+  ));
+  await c.env.DB.batch([
+    c.env.DB.prepare(
+      "UPDATE mfa_factors SET status = 'active', verified_at = ?, last_used_at = ? WHERE id = ? AND status = 'pending'",
+    ).bind(timestamp, timestamp, factorId),
+    ...recoveryStatements,
+  ]);
+  await c.env.DB.prepare(
+    "UPDATE sessions SET mfa_verified_at = ? WHERE id IN (?, ?) AND user_id = ? AND revoked_at IS NULL",
+  ).bind(timestamp, sessionId, sid, c.get("userId")).run();
+  const access = await signJwt({ sub: c.get("userId"), sid: sessionId }, c.env.JWT_SECRET, 900);
+  await recordSecurityEvent(c, c.get("userId"), "auth.mfa_enabled", "allowed");
+  return c.json({ ok: true, access_token: access, expires_in: 900, recoveryCodes });
+});
+
+app.delete("/api/auth/mfa/:id", requireAuth, async (c) => {
+  const body = await c.req.json().catch(() => ({})) as { currentPassword?: string; code?: string };
+  const userId = c.get("userId");
+  if (!c.get("mfaVerified")) return c.json({ error: { code: "mfa_required" } }, 403);
+  const row = await c.env.DB.prepare(
+    `SELECT u.password_hash,f.secret_ciphertext
+       FROM users u JOIN mfa_factors f ON f.user_id = u.id
+      WHERE u.id = ? AND f.id = ? AND f.kind = 'totp' AND f.status = 'active'`,
+  ).bind(userId, c.req.param("id")).first<{ password_hash: string; secret_ciphertext: string }>();
+  if (!row || !(await verifyPassword(String(body.currentPassword || ""), row.password_hash)))
+    return c.json({ error: { code: "invalid_password" } }, 403);
+  const secret = await decryptTotpSecret(row.secret_ciphertext, c.env.MFA_ENCRYPTION_KEY);
+  if (!(await verifyTotp(secret, String(body.code || "")))) return c.json({ error: { code: "invalid_mfa_code" } }, 401);
+  const timestamp = now();
+  await c.env.DB.batch([
+    c.env.DB.prepare("UPDATE mfa_factors SET status = 'revoked' WHERE id = ? AND user_id = ?").bind(c.req.param("id"), userId),
+    c.env.DB.prepare("UPDATE sessions SET revoked_at = ?, revoked_reason = 'mfa_disabled' WHERE user_id = ? AND revoked_at IS NULL").bind(timestamp, userId),
+  ]);
+  deleteCookie(c, "sid", { path: "/" });
+  await recordSecurityEvent(c, userId, "auth.mfa_disabled", "allowed", "warning");
+  return c.json({ ok: true });
+});
 
 app.post("/api/auth/logout", async (c) => {
   const origin = c.req.header("origin");
   if (origin && !allowedOrigin(c.env, origin)) return c.json({ error: { code: "forbidden_origin" } }, 403);
   const sid = getCookie(c, "sid");
-  if (sid) await c.env.DB.prepare("DELETE FROM sessions WHERE id IN (?, ?)").bind(await sha256(sid), sid).run();
+  if (sid) await c.env.DB.prepare(
+    "UPDATE sessions SET revoked_at = ?, revoked_reason = 'logout' WHERE id IN (?, ?) AND revoked_at IS NULL",
+  ).bind(now(), await sha256(sid), sid).run();
   deleteCookie(c, "sid", { path: "/" });
   return c.json({ ok: true });
 });
@@ -384,16 +636,21 @@ app.post("/api/auth/refresh", async (c) => {
   const sid = getCookie(c, "sid");
   if (!sid) return c.json({ error: { code: "no_session" } }, 401);
   const hashedSid = await sha256(sid);
-  const row = await c.env.DB.prepare("SELECT id,user_id,expires_at FROM sessions WHERE id IN (?, ?) LIMIT 1").bind(hashedSid, sid).first<{ id: string; user_id: string; expires_at: number }>();
+  const row = await c.env.DB.prepare(
+    "SELECT id,user_id,expires_at,mfa_verified_at FROM sessions WHERE id IN (?, ?) AND revoked_at IS NULL LIMIT 1",
+  ).bind(hashedSid, sid).first<{ id: string; user_id: string; expires_at: number; mfa_verified_at: number | null }>();
   if (!row || row.expires_at < now()) {
-    if (row) await c.env.DB.prepare("DELETE FROM sessions WHERE id = ?").bind(row.id).run();
+    if (row) await c.env.DB.prepare(
+      "UPDATE sessions SET revoked_at = ?, revoked_reason = 'expired' WHERE id = ? AND revoked_at IS NULL",
+    ).bind(now(), row.id).run();
     deleteCookie(c, "sid", { path: "/" });
     return c.json({ error: { code: "expired" } }, 401);
   }
   await c.env.DB.prepare("UPDATE sessions SET last_seen_at = ? WHERE id = ?").bind(now(), row.id).run();
   const roles = await rolesFor(c.env.DB, row.user_id);
-  const access = await signJwt({ sub: row.user_id, roles }, c.env.JWT_SECRET, 900);
-  return c.json({ access_token: access, expires_in: 900, user: { id: row.user_id, roles } });
+  const resolvedRoles = roles.length ? roles : ["user"] as Role[];
+  const access = await signJwt({ sub: row.user_id, sid: row.id }, c.env.JWT_SECRET, 900);
+  return c.json({ access_token: access, expires_in: 900, user: { id: row.user_id, roles: resolvedRoles } });
 });
 
 app.get("/api/auth/me", requireAuth, async (c) => {
@@ -407,6 +664,40 @@ app.get("/api/auth/me", requireAuth, async (c) => {
     profile = await c.env.DB.prepare(`SELECT ${PROFILE_SELECT} FROM profiles WHERE id = ?`).bind(c.get("userId")).first();
   }
   return c.json({ user: u, profile, roles: c.get("roles"), superadmin: await isSuperAdmin(c) });
+});
+
+app.get("/api/auth/sessions", requireAuth, async (c) => {
+  const sid = getCookie(c, "sid");
+  const currentId = sid ? await sha256(sid) : null;
+  const { results } = await c.env.DB.prepare(
+    `SELECT id, device_name, created_at, last_seen_at, expires_at, mfa_verified_at
+       FROM sessions
+      WHERE user_id = ? AND revoked_at IS NULL AND expires_at > ?
+      ORDER BY last_seen_at DESC`,
+  ).bind(c.get("userId"), now()).all<{
+    id: string; device_name: string | null; created_at: number; last_seen_at: number;
+    expires_at: number; mfa_verified_at: number | null;
+  }>();
+  return c.json({
+    data: results.map((session) => ({ ...session, current: session.id === currentId })),
+  });
+});
+
+app.delete("/api/auth/sessions/:id", requireAuth, async (c) => {
+  const sessionId = c.req.param("id") || "";
+  if (!/^[A-Za-z0-9_-]{20,128}$/.test(sessionId)) {
+    return c.json({ error: { code: "invalid_session" } }, 400);
+  }
+  const result = await c.env.DB.prepare(
+    `UPDATE sessions
+        SET revoked_at = ?, revoked_reason = 'user_revoked'
+      WHERE id = ? AND user_id = ? AND revoked_at IS NULL`,
+  ).bind(now(), sessionId, c.get("userId")).run();
+  if ((result.meta.changes ?? 0) !== 1) return c.json({ error: { code: "not_found" } }, 404);
+
+  const currentSid = getCookie(c, "sid");
+  if (currentSid && await sha256(currentSid) === sessionId) deleteCookie(c, "sid", { path: "/" });
+  return c.json({ ok: true });
 });
 
 app.post("/api/auth/forgot", async (c) => {
@@ -454,7 +745,9 @@ app.post("/api/auth/reset", async (c) => {
   await c.env.DB.batch([
     c.env.DB.prepare("UPDATE users SET password_hash = ?, must_change_password = 0, updated_at = ? WHERE id = ?").bind(hash, t, row.user_id),
     c.env.DB.prepare("UPDATE password_resets SET used_at = ? WHERE token = ?").bind(t, row.token),
-    c.env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(row.user_id),
+    c.env.DB.prepare(
+      "UPDATE sessions SET revoked_at = ?, revoked_reason = 'password_reset' WHERE user_id = ? AND revoked_at IS NULL",
+    ).bind(t, row.user_id),
     c.env.DB.prepare("INSERT INTO audit_log (user_id,action,ip,created_at) VALUES (?,?,?,?)")
       .bind(row.user_id, "password_reset", c.req.header("cf-connecting-ip") || null, t),
   ]);
@@ -468,17 +761,107 @@ app.post("/api/auth/change-password", requireAuth, async (c) => {
   const userId = c.get("userId");
   const row = await c.env.DB.prepare("SELECT password_hash FROM users WHERE id = ? AND disabled_at IS NULL").bind(userId).first<{ password_hash: string }>();
   if (!row || !(await verifyPassword(body.currentPassword, row.password_hash)))
-    return c.json({ error: { code: "invalid_password", message: "Parola curentă nu este corectă" } }, 401);
+    return c.json({ error: { code: "invalid_password", message: "Parola curentă nu este corectă" } }, 403);
   const timestamp = now();
   await c.env.DB.batch([
     c.env.DB.prepare("UPDATE users SET password_hash = ?, must_change_password = 0, updated_at = ? WHERE id = ?")
       .bind(await hashPassword(body.newPassword), timestamp, userId),
-    c.env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(userId),
+    c.env.DB.prepare(
+      "UPDATE sessions SET revoked_at = ?, revoked_reason = 'password_change' WHERE user_id = ? AND revoked_at IS NULL",
+    ).bind(timestamp, userId),
     c.env.DB.prepare("INSERT INTO audit_log (user_id,action,ip,created_at) VALUES (?,?,?,?)")
       .bind(userId, "password_change", c.req.header("cf-connecting-ip") || null, timestamp),
   ]);
   deleteCookie(c, "sid", { path: "/" });
   return c.json({ ok: true });
+});
+
+app.post("/api/auth/change-email/request", requireAuth, async (c) => {
+  const body = await c.req.json().catch(() => ({})) as { currentPassword?: string; newEmail?: string };
+  const newEmail = String(body.newEmail || "").trim().toLowerCase();
+  if (!/^\S+@\S+\.\S+$/.test(newEmail)) return c.json({ error: { code: "invalid_email" } }, 400);
+  const userId = c.get("userId");
+  if (await privilegedAccount(c.env.DB, userId, c.get("roles") ?? []) && !c.get("mfaVerified")) {
+    return c.json({ error: { code: "mfa_required", message: "MFA este obligatoriu pentru schimbarea emailului privilegiat" } }, 403);
+  }
+  const user = await c.env.DB.prepare(
+    "SELECT email,password_hash FROM users WHERE id = ? AND disabled_at IS NULL",
+  ).bind(userId).first<{ email: string; password_hash: string }>();
+  if (!user || !(await verifyPassword(String(body.currentPassword || ""), user.password_hash))) {
+    await recordSecurityEvent(c, userId, "auth.email_change_requested", "denied", "warning");
+    return c.json({ error: { code: "invalid_password", message: "Parola curentă nu este corectă" } }, 403);
+  }
+  if (newEmail === user.email.toLowerCase()) return c.json({ error: { code: "email_unchanged" } }, 400);
+  if (await c.env.DB.prepare("SELECT 1 FROM users WHERE email = ?").bind(newEmail).first()) {
+    return c.json({ error: { code: "email_taken" } }, 409);
+  }
+  const rate = await checkRateLimit(c.env.DB, [
+    { key: `email-change:user:${userId}:d`, limit: 3, windowSec: 86_400 },
+    { key: `email-change:ip:${await hashKey(clientIp(c.req.raw))}:h`, limit: 6, windowSec: 3600 },
+  ]);
+  if (!rate.ok) return c.json({ error: { code: "rate_limited" } }, 429);
+  const token = randomHex(32);
+  const timestamp = now();
+  await c.env.DB.batch([
+    c.env.DB.prepare(
+      "UPDATE email_change_requests SET revoked_at = ? WHERE user_id = ? AND used_at IS NULL AND revoked_at IS NULL",
+    ).bind(timestamp, userId),
+    c.env.DB.prepare(
+      `INSERT INTO email_change_requests
+        (token_hash,user_id,old_email,new_email,expires_at,created_at) VALUES (?,?,?,?,?,?)`,
+    ).bind(await sha256(token), userId, user.email, newEmail, timestamp + 60 * 60_000, timestamp),
+  ]);
+  const confirmationUrl = `${authUiBaseUrl(c)}/auth?email_change=${encodeURIComponent(token)}`;
+  const confirmation = await deliverMail(c.env, {
+    to: newEmail,
+    subject: "Confirmă noua adresă de email Avyron",
+    text: `Confirmă noua adresă de email folosind linkul de mai jos. Linkul este valabil 60 de minute:\n\n${confirmationUrl}`,
+    html: `<p>Confirmă noua adresă de email pentru contul Avyron.</p><p><a href="${confirmationUrl}">Confirmă schimbarea</a></p><p>Linkul este valabil 60 de minute.</p>`,
+  });
+  await logDelivery(c.env, { kind: "email_change_confirmation", entityId: userId, recipient: newEmail, result: confirmation }).catch(() => {});
+  const alert = await deliverMail(c.env, {
+    to: user.email,
+    subject: "Solicitare de schimbare a emailului Avyron",
+    text: "A fost solicitată schimbarea adresei de email a contului tău. Dacă nu ai inițiat acțiunea, schimbă parola și contactează echipa Avyron.",
+    html: "<p>A fost solicitată schimbarea adresei de email a contului tău.</p><p>Dacă nu ai inițiat acțiunea, schimbă parola și contactează echipa Avyron.</p>",
+  });
+  await logDelivery(c.env, { kind: "email_change_alert", entityId: userId, recipient: user.email, result: alert }).catch(() => {});
+  await recordSecurityEvent(c, userId, "auth.email_change_requested", "allowed", "warning");
+  return c.json({ ok: true, confirmation_email_sent: confirmation.delivered }, confirmation.delivered ? 202 : 503);
+});
+
+app.post("/api/auth/change-email/confirm", requireAuth, async (c) => {
+  const body = await c.req.json().catch(() => ({})) as { token?: string };
+  const token = String(body.token || "");
+  if (!token) return c.json({ error: { code: "invalid_token" } }, 400);
+  const tokenHash = await sha256(token);
+  const request = await c.env.DB.prepare(
+    `SELECT token_hash,user_id,old_email,new_email,expires_at
+       FROM email_change_requests
+      WHERE token_hash = ? AND user_id = ? AND used_at IS NULL AND revoked_at IS NULL`,
+  ).bind(tokenHash, c.get("userId")).first<{
+    token_hash: string; user_id: string; old_email: string; new_email: string; expires_at: number;
+  }>();
+  if (!request || request.expires_at < now()) return c.json({ error: { code: "invalid_or_expired_token" } }, 400);
+  if (await c.env.DB.prepare("SELECT 1 FROM users WHERE email = ? AND id <> ?").bind(request.new_email, request.user_id).first()) {
+    return c.json({ error: { code: "email_taken" } }, 409);
+  }
+  const timestamp = now();
+  await c.env.DB.batch([
+    c.env.DB.prepare("UPDATE users SET email = ?, updated_at = ? WHERE id = ? AND email = ?")
+      .bind(request.new_email, timestamp, request.user_id, request.old_email),
+    c.env.DB.prepare("UPDATE platform_principals SET email = ?, updated_at = ? WHERE email = ?")
+      .bind(request.new_email, timestamp, request.old_email),
+    c.env.DB.prepare("UPDATE email_change_requests SET used_at = ? WHERE token_hash = ? AND used_at IS NULL")
+      .bind(timestamp, request.token_hash),
+    c.env.DB.prepare("UPDATE sessions SET revoked_at = ?, revoked_reason = 'email_change' WHERE user_id = ? AND revoked_at IS NULL")
+      .bind(timestamp, request.user_id),
+    c.env.DB.prepare("INSERT INTO audit_log (user_id,action,ip,created_at) VALUES (?,?,?,?)")
+      .bind(request.user_id, "email_change", c.req.header("cf-connecting-ip") || null, timestamp),
+  ]);
+  deleteCookie(c, "sid", { path: "/" });
+  await recordSecurityEvent(c, request.user_id, "auth.email_changed", "allowed", "warning");
+  return c.json({ ok: true, reauthentication_required: true });
 });
 
 const PROFILE_FIELDS = ["display_name", "phone", "address", "entity_type", "company_name", "cui", "social_facebook", "social_instagram", "social_tiktok", "website", "language", "theme", "pseudonym"] as const;
@@ -661,7 +1044,11 @@ app.put("/api/content/:key", requireAuth, requireRole("admin"), async (c) => {
 
 // ─── Platformă internă (proiecte + propuneri + linkuri + metadata) ──────
 import { projectsRouter } from "./projects";
+import { organizationsRouter } from "./organizations";
 import { aiOsRouter } from "./aiOs";
+import { leadsRouter } from "./leads";
+import { aiProjectsRouter } from "./aiProjects";
+import { financeRouter } from "./finance";
 import { seedRouter } from "./seed";
 import { mediaRouter } from "./media";
 import { contactRouter } from "./contact";
@@ -671,12 +1058,32 @@ import { BLOG_SLUGS } from "../../../../src/data/blogSlugs";
 import { decide, isKnownSpaRoute, normalizePath } from "../../../../src/worker/router";
 import { serveCachedAsset } from "../../../../src/worker/assetCache";
 app.use("/api/projects/*", requireAuth);
+app.use("/api/organizations/*", requireAuth);
+app.use("/api/organization-invitations/*", requireAuth);
 app.use("/api/proposals/*", requireAuth);
 app.use("/api/links/*", requireAuth);
 app.use("/api/metadata/*", requireAuth);
 app.use("/api/media/*", requireAuth);
 app.use("/api/commerce/*", requireAuth);
 app.use("/api/promotions/*", requireAuth);
+app.use("/api/leads", requireAuth);
+app.use("/api/leads/*", requireAuth);
+app.use("/api/ai-projects", requireAuth);
+app.use("/api/ai-projects/*", requireAuth);
+app.use("/api/finance/*", requireAuth);
+app.use("/api/engine/*", requireAuth);
+app.use("/api/projects/*", requirePrivilegedMfa);
+app.use("/api/organizations/*", requirePrivilegedMfa);
+app.use("/api/organization-invitations/*", requirePrivilegedMfa);
+app.use("/api/proposals/*", requirePrivilegedMfa);
+app.use("/api/links/*", requirePrivilegedMfa);
+app.use("/api/metadata/*", requirePrivilegedMfa);
+app.use("/api/leads", requirePrivilegedMfa);
+app.use("/api/leads/*", requirePrivilegedMfa);
+app.use("/api/ai-projects", requirePrivilegedMfa);
+app.use("/api/ai-projects/*", requirePrivilegedMfa);
+app.use("/api/finance/*", requirePrivilegedMfa);
+app.use("/api/engine/*", requirePrivilegedMfa);
 // Editorial mutations are authorized server-side. Public article reads and
 // immutable R2 cover images remain accessible to crawlers and visitors.
 app.use("/api/blog/staff/*", requireAuth, requireRole("staff", "admin"));
@@ -684,6 +1091,11 @@ app.use("/api/blog/staff/*", requireAuth, requireRole("staff", "admin"));
 // limitate suplimentar la contul owner în interiorul routerului.
 app.use("/api/ai/admin/*", requireAuth, requireSuperAdmin);
 app.route("/", aiOsRouter);
+app.route("/", leadsRouter);
+app.route("/", aiProjectsRouter);
+app.route("/", financeRouter);
+app.route("/", engineRouter);
+app.route("/", organizationsRouter);
 app.route("/", projectsRouter);
 app.route("/", mediaRouter);
 app.route("/", blogRouter);
@@ -824,6 +1236,12 @@ export default {
       }));
       return;
     }
-    ctx.waitUntil(cleanupExpiredData(env));
+    ctx.waitUntil(Promise.all([
+      cleanupExpiredData(env),
+      runDueEngineDiscovery(env),
+    ]).then(() => undefined).catch((error) => {
+      console.error(JSON.stringify({ event: "maintenance_job_failed", error: String(error) }));
+      throw error;
+    }));
   },
 } satisfies ExportedHandler<AppBindings["Bindings"]>;

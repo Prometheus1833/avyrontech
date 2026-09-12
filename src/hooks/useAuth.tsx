@@ -1,6 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
 import { cfAuth, type CfUser, type CfProfile, type Role } from "@/lib/cfAuth";
-import { isSuperAdminEmail } from "@/lib/access";
 
 export type AppRole = Role;
 export type Profile = CfProfile;
@@ -40,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(me.user);
       setProfile(me.profile);
       setRoles(me.roles ?? []);
-      setSuperadmin(me.superadmin === true || isSuperAdminEmail(me.user.email));
+      setSuperadmin(me.superadmin === true);
     } else {
       setUser(null);
       setProfile(null);

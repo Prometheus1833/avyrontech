@@ -2,12 +2,6 @@
 // Un singur loc definește cine vede ce: butoane, secțiuni și date sensibile.
 export type AppRole = "user" | "staff" | "admin";
 
-/** Conturile cu control total (facturare, plăți, date personale complete). */
-export const SUPERADMIN_EMAILS = ["prometheus@avyron.ro", "avyrontech@gmail.com"] as const;
-
-export const isSuperAdminEmail = (email?: string | null) =>
-  !!email && (SUPERADMIN_EMAILS as readonly string[]).includes(email.trim().toLowerCase());
-
 export type Access = {
   roles: AppRole[];
   isClient: boolean;
@@ -29,7 +23,9 @@ export const buildAccess = (input: {
     isClient: !isStaff,
     isStaff,
     isAdmin,
-    isSuperAdmin: isAdmin && (input.superadmin === true || isSuperAdminEmail(input.email)),
+    // Elevated access is asserted only by the server after a fresh D1 lookup.
+    // Email addresses are identity attributes, never authorization rules.
+    isSuperAdmin: isAdmin && input.superadmin === true,
   };
 };
 
@@ -54,7 +50,7 @@ export const canSee = (audience: Audience, a: Access) => {
 export type SectionId =
   | "profile" | "settings" | "projects" | "subscriptions" | "invoices" | "cart"
   | "stats" | "tickets" | "maintenance" | "clients" | "domains" | "payments"
-  | "finance" | "media" | "staff-tickets" | "demo-requests" | "intern"
+  | "finance" | "media" | "leads" | "staff-tickets" | "demo-requests" | "intern"
   | "announcements" | "resources" | "promotions" | "ai-os";
 
 export type SectionDef = {
@@ -78,6 +74,7 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "clients", group: "work", audience: "staff", keywords: ["clienti", "clients", "companii"] },
   { id: "domains", group: "work", audience: "staff", keywords: ["domenii", "dns", "domains"] },
   { id: "media", group: "work", audience: "staff", keywords: ["media", "imagini", "fisiere"] },
+  { id: "leads", group: "work", audience: "staff", keywords: ["leads", "crm", "vanzari", "oferta", "prospecti"] },
 
   { id: "subscriptions", group: "billing", audience: "client", keywords: ["abonament", "plan", "subscriptions"] },
   { id: "cart", group: "billing", audience: "client", keywords: ["cos", "comanda", "cart"] },

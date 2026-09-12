@@ -24,6 +24,8 @@ import {
   ShoppingCart,
   Boxes,
   UsersRound,
+  Bot,
+  Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -61,6 +63,7 @@ const UserMenu = () => {
 
   const userItems: MenuItem[] = [
     { label: t.auth.menu.profile, icon: UserIcon, dot: "264, 90%, 62%", to: "/profil?tab=profile" },
+    { label: "AI AVY Prod", icon: Bot, dot: "270, 88%, 62%", to: "/intern/ai-projects" },
     { label: productsLabel, icon: Boxes, dot: "200, 95%, 55%", to: productsPath },
     { label: aboutLabel, icon: UsersRound, dot: "86, 78%, 60%", to: aboutPath },
     { label: t.auth.menu.product, icon: Package, dot: "330, 85%, 65%", to: "/profil?tab=subscriptions" },
@@ -73,6 +76,8 @@ const UserMenu = () => {
 
   const staffItems: MenuItem[] = [
     { label: t.auth.menu.profile, icon: UserIcon, dot: "264, 90%, 62%", to: "/profil?tab=profile" },
+    { label: "AI AVY Prod", icon: Bot, dot: "270, 88%, 62%", to: "/intern/ai-projects" },
+    { label: "Financiar", icon: Wallet, dot: "155, 72%, 42%", to: "/finance" },
     { label: productsLabel, icon: Boxes, dot: "200, 95%, 55%", to: productsPath },
     { label: aboutLabel, icon: UsersRound, dot: "86, 78%, 60%", to: aboutPath },
     { label: t.auth.menu.projects, icon: FolderKanban, dot: "210, 90%, 55%", to: "/profil?tab=projects" },

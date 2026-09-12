@@ -101,7 +101,31 @@ export const openApiDocument = {
       post: { tags: ["Auth"], summary: "Creează un cont și trimite verificarea emailului", responses: { "202": { description: "Cont creat; verificare necesară" }, "400": { $ref: "#/components/responses/Problem" }, "429": { $ref: "#/components/responses/Problem" } } },
     },
     "/auth/login": {
-      post: { tags: ["Auth"], summary: "Autentifică un cont verificat", responses: { "200": { description: "Sesiune creată" }, "401": { $ref: "#/components/responses/Problem" } } },
+      post: { tags: ["Auth"], summary: "Autentifică un cont verificat sau inițiază challenge-ul MFA", responses: { "200": { description: "Sesiune creată sau challenge MFA necesar" }, "401": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/auth/mfa/challenge": {
+      post: { tags: ["Auth"], summary: "Finalizează loginul privilegiat cu TOTP sau recovery code", responses: { "200": { description: "Sesiune MFA creată" }, "401": { $ref: "#/components/responses/Problem" }, "429": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/auth/mfa": {
+      get: { tags: ["Auth"], summary: "Listează factorii MFA ai contului", security: [{ bearerAuth: [] }], responses: { "200": { description: "Factori și starea sesiunii" }, "401": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/auth/mfa/totp/enroll": {
+      post: { tags: ["Auth"], summary: "Începe înscrierea unui factor TOTP după reverificarea parolei", security: [{ bearerAuth: [] }], responses: { "200": { description: "Secret afișat o singură dată" }, "401": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/auth/mfa/totp/verify": {
+      post: { tags: ["Auth"], summary: "Activează factorul TOTP și emite recovery codes", security: [{ bearerAuth: [] }], responses: { "200": { description: "MFA activat" }, "400": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/auth/sessions": {
+      get: { tags: ["Auth"], summary: "Listează sesiunile active", security: [{ bearerAuth: [] }], responses: { "200": { description: "Sesiuni și dispozitivul curent" } } },
+    },
+    "/auth/sessions/{id}": {
+      delete: { tags: ["Auth"], summary: "Revocă imediat o sesiune", security: [{ bearerAuth: [] }], responses: { "200": { description: "Sesiune revocată" }, "404": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/auth/change-email/request": {
+      post: { tags: ["Auth"], summary: "Trimite confirmarea schimbării pe noua adresă", security: [{ bearerAuth: [] }], responses: { "202": { description: "Confirmare trimisă" }, "403": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/auth/change-email/confirm": {
+      post: { tags: ["Auth"], summary: "Confirmă noul email și revocă toate sesiunile", security: [{ bearerAuth: [] }], responses: { "200": { description: "Email schimbat; reautentificare necesară" }, "400": { $ref: "#/components/responses/Problem" } } },
     },
     "/auth/refresh": {
       post: { tags: ["Auth"], summary: "Reînnoiește tokenul folosind cookie-ul securizat", responses: { "200": { description: "Token reînnoit" }, "401": { $ref: "#/components/responses/Problem" } } },
@@ -114,6 +138,23 @@ export const openApiDocument = {
     },
     "/projects": {
       get: { tags: ["Platform"], summary: "Listează proiectele accesibile contului", security: [{ bearerAuth: [] }], responses: { "200": { description: "Listă de proiecte" }, "401": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/leads": {
+      get: { tags: ["Platform"], summary: "Listează lead-urile accesibile, filtrate server-side", security: [{ bearerAuth: [] }], responses: { "200": { description: "Pipeline Leads" }, "401": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/leads/{leadId}": {
+      get: { tags: ["Platform"], summary: "Returnează lead-ul și istoricul autorizat", security: [{ bearerAuth: [] }], responses: { "200": { description: "Detalii lead" }, "403": { $ref: "#/components/responses/Problem" } } },
+      patch: { tags: ["Platform"], summary: "Actualizează pipeline-ul fără a permite outreach automat", security: [{ bearerAuth: [] }], responses: { "200": { description: "Lead actualizat" }, "403": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/ai/agents": {
+      get: { tags: ["Public"], summary: "Listează agenții publici activi", responses: { "200": { description: "Agenți publici" } } },
+    },
+    "/ai/chat": {
+      post: { tags: ["Public"], summary: "Conversație rate-limited cu Avyron AI Assistant", responses: { "200": { description: "Răspuns cu proveniență" }, "429": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/ai/admin/sources": {
+      get: { tags: ["Platform"], summary: "Registry read-only pentru sursele knowledge", security: [{ bearerAuth: [] }], responses: { "200": { description: "Surse și starea conexiunilor" }, "403": { $ref: "#/components/responses/Problem" } } },
+      post: { tags: ["Platform"], summary: "Creează o sursă pending; numai platform owner", security: [{ bearerAuth: [] }], responses: { "201": { description: "Sursă înregistrată" }, "403": { $ref: "#/components/responses/Problem" } } },
     },
     "/commerce/quote": {
       post: { tags: ["Platform"], summary: "Calculează server-side prețul și reducerea unei comenzi", security: [{ bearerAuth: [] }], responses: { "200": { description: "Ofertă calculată" }, "400": { $ref: "#/components/responses/Problem" }, "409": { $ref: "#/components/responses/Problem" } } },
@@ -129,7 +170,7 @@ export const openApiDocument = {
   },
   components: {
     securitySchemes: {
-      bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT", description: "Token de acces cu durată de 15 minute" },
+      bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT", description: "Token de acces de 15 minute legat de o sesiune D1 revocabilă" },
     },
     responses: {
       Problem: {

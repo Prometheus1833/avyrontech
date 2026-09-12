@@ -13,6 +13,7 @@ politicile de autentificare, roluri, validare și audit.
 | R2 documente | `avyron-files` | `avyron-files-preview` | documente și atașamente private |
 | R2 media | `avyron-media` | `avyron-media-preview` | imagini/avataruri/media de proiect |
 | Rate Limit | namespace `183301` | namespace `183302` | protecție rapidă la edge, înainte de D1 |
+| Agent runtime | Durable Object `AvyronAgentRuntime` | namespace separat în Workerul `avyrontech-preview` | coordonare per conversație, fără date de business |
 
 Un build de branch trebuie să execute `npm run deploy:api:preview`. Testul
 `cloudflare-storage-policy.test.ts` eșuează dacă preview-ul reutilizează ID-urile
@@ -28,6 +29,8 @@ odată cu o versiune de Worker.
 - articole, traduceri, stări editoriale și istoricul reviziilor;
 - metadata obiectelor R2, fără corpul fișierului;
 - contoare exacte de rate limiting în ferestre fixe.
+- surse knowledge, documente aprobate, proveniență, claims și sincronizări;
+- pipeline Leads, asignări, activități, remindere și candidați propuși.
 
 Operațiile concurente și regulile de securitate nu folosesc KV drept contor.
 Interogările frecvente trebuie să selecteze coloane explicite și să aibă index
@@ -49,6 +52,8 @@ valorile vechi. Datele sensibile și listele interogabile rămân în D1.
 - `MEDIA/projects/<project-id>/<media-id>-<filename>` pentru media proiectelor;
 - `MEDIA/avatars/<user-id>` pentru avataruri.
 - `MEDIA/blog/covers/<uuid>.<ext>` pentru coperți publice validate ale articolelor.
+- `FILES/knowledge/<source-id>/<document-id>` pentru documente care depășesc
+  limita textului indexabil din D1; D1 păstrează hashul și metadata.
 
 Cheile sunt construite numai de Worker, numele sunt normalizate, tipul și
 dimensiunea sunt validate înainte de scriere, iar metadata R2 păstrează
@@ -58,6 +63,13 @@ identificatorii utili. Dacă salvarea metadata în D1 eșuează, obiectul nou es
 Fișierele sunt private implicit. Download-ul autorizat este transmis prin
 Worker cu `ETag`, intervale byte, `nosniff`, `private, no-store` și un
 `Content-Disposition` sigur.
+
+### Durable Objects — coordonare, nu depozit central
+
+`AvyronAgentRuntime` păstrează numai identificatori de agent, conversație/run și
+starea execuției. Mesajele, lead-urile, knowledge și politicile rămân în D1.
+Workerul preview are alt nume decât cel de producție, astfel încât namespace-ul
+Durable Object și versiunile de test să nu poată modifica starea producției.
 
 ## Retenție și operare
 
