@@ -966,6 +966,73 @@ app.get("/api/admin/users", requireAuth, requireRole("staff", "admin"), async (c
   return c.json({ data: masked });
 });
 
+app.patch("/api/admin/users/:userId/roles", requireAuth, requireSuperAdmin, async (c) => {
+  const actorUserId = c.get("userId");
+  const rate = await checkRateLimit(c.env.DB, [{ key: `admin-roles:${actorUserId}:h`, limit: 30, windowSec: 3600 }]);
+  if (!rate.ok) {
+    await recordSecurityEvent(c, actorUserId, "admin.user_roles_rate_limited", "denied", "warning");
+    return c.json({ error: { code: "rate_limited", message: "Prea multe modificări de acces. Încearcă mai târziu." } }, 429);
+  }
+  const targetUserId = c.req.param("userId");
+  if (!targetUserId) return c.json({ error: { code: "user_id_required", message: "Identificatorul contului lipsește" } }, 400);
+  const body = await c.req.json<{ accessLevel?: unknown }>().catch(() => null);
+  const accessLevel = body?.accessLevel;
+  if (accessLevel !== "user" && accessLevel !== "staff" && accessLevel !== "admin") {
+    return c.json({ error: { code: "invalid_access_level", message: "Nivelul de acces nu este valid" } }, 400);
+  }
+
+  const idempotencyKey = (c.req.header("idempotency-key") || "").trim();
+  if (!/^[A-Za-z0-9_.:-]{16,128}$/.test(idempotencyKey)) {
+    return c.json({ error: { code: "idempotency_key_required", message: "Cheia de idempotency este obligatorie" } }, 400);
+  }
+  const scope = `admin.user_roles.update:${actorUserId}`;
+  const requestHash = await sha256(JSON.stringify({ targetUserId, accessLevel }));
+  const previous = await c.env.DB.prepare(
+    "SELECT request_hash,response_status,response_json FROM idempotency_keys WHERE scope=? AND idempotency_key=? AND expires_at>?",
+  ).bind(scope, idempotencyKey, now()).first<{ request_hash: string; response_status: number | null; response_json: string | null }>();
+  if (previous) {
+    if (previous.request_hash !== requestHash) {
+      return c.json({ error: { code: "idempotency_key_reused", message: "Cheia a fost folosită pentru altă cerere" } }, 409);
+    }
+    return c.json(JSON.parse(previous.response_json || "{}"), (previous.response_status || 200) as 200);
+  }
+
+  const account = await c.env.DB.prepare(
+    "SELECT id,disabled_at FROM users WHERE id=?",
+  ).bind(targetUserId).first<{ id: string; disabled_at: number | null }>();
+  if (!account) return c.json({ error: { code: "user_not_found", message: "Contul nu există" } }, 404);
+  if (account.disabled_at !== null) {
+    return c.json({ error: { code: "account_disabled", message: "Contul este dezactivat" } }, 409);
+  }
+
+  const protectedPlatformRole = await platformRoleForUser(c.env.DB, targetUserId);
+  if (protectedPlatformRole && accessLevel !== "admin") {
+    return c.json({ error: { code: "platform_principal_protected", message: "Identitatea platformei nu poate fi retrogradată" } }, 409);
+  }
+
+  const before = await rolesFor(c.env.DB, targetUserId);
+  const after: Role[] = accessLevel === "user" ? ["user"] : ["user", accessLevel as Role];
+  const timestamp = now();
+  const response = { ok: true as const, userId: targetUserId, roles: after };
+  const metadata = JSON.stringify({ before, after });
+  const ipHash = await hashKey(clientIp(c.req.raw));
+  await c.env.DB.batch([
+    c.env.DB.prepare("DELETE FROM user_roles WHERE user_id=?").bind(targetUserId),
+    ...after.map((role) => c.env.DB.prepare("INSERT INTO user_roles (user_id,role) VALUES (?,?)").bind(targetUserId, role)),
+    c.env.DB.prepare(
+      `INSERT INTO security_events
+        (id,actor_user_id,actor_type,action,target_type,target_id,outcome,severity,request_id,ip_hash,metadata_json,created_at)
+       VALUES (?,?,'user','admin.user_roles_updated','user',?,'allowed','warning',?,?,?,?)`,
+    ).bind(uuid(), actorUserId, targetUserId, c.get("requestId") || null, ipHash, metadata, timestamp),
+    c.env.DB.prepare(
+      `INSERT INTO idempotency_keys
+        (scope,idempotency_key,request_hash,response_status,response_json,resource_type,resource_id,created_at,expires_at)
+       VALUES (?,?,?,200,?,'user',?,?,?)`,
+    ).bind(scope, idempotencyKey, requestHash, JSON.stringify(response), targetUserId, timestamp, timestamp + 86_400_000),
+  ]);
+  return c.json(response);
+});
+
 app.get("/api/admin/email-failures", requireAuth, requireSuperAdmin, async (c) => {
   const { results } = await c.env.DB.prepare(
     `SELECT id,kind,entity_id,recipient,status,error,created_at
@@ -1049,6 +1116,7 @@ import { aiOsRouter } from "./aiOs";
 import { leadsRouter } from "./leads";
 import { aiProjectsRouter } from "./aiProjects";
 import { financeRouter } from "./finance";
+import { dashboardRouter } from "./osDashboard";
 import { seedRouter } from "./seed";
 import { mediaRouter } from "./media";
 import { contactRouter } from "./contact";
@@ -1072,6 +1140,7 @@ app.use("/api/ai-projects", requireAuth);
 app.use("/api/ai-projects/*", requireAuth);
 app.use("/api/finance/*", requireAuth);
 app.use("/api/engine/*", requireAuth);
+app.use("/api/os/*", requireAuth);
 app.use("/api/projects/*", requirePrivilegedMfa);
 app.use("/api/organizations/*", requirePrivilegedMfa);
 app.use("/api/organization-invitations/*", requirePrivilegedMfa);
@@ -1084,6 +1153,7 @@ app.use("/api/ai-projects", requirePrivilegedMfa);
 app.use("/api/ai-projects/*", requirePrivilegedMfa);
 app.use("/api/finance/*", requirePrivilegedMfa);
 app.use("/api/engine/*", requirePrivilegedMfa);
+app.use("/api/os/*", requirePrivilegedMfa);
 // Editorial mutations are authorized server-side. Public article reads and
 // immutable R2 cover images remain accessible to crawlers and visitors.
 app.use("/api/blog/staff/*", requireAuth, requireRole("staff", "admin"));
@@ -1094,6 +1164,7 @@ app.route("/", aiOsRouter);
 app.route("/", leadsRouter);
 app.route("/", aiProjectsRouter);
 app.route("/", financeRouter);
+app.route("/", dashboardRouter);
 app.route("/", engineRouter);
 app.route("/", organizationsRouter);
 app.route("/", projectsRouter);

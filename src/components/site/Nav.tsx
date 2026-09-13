@@ -29,7 +29,6 @@ const Nav = () => {
     { label: isRo ? "Despre noi" : "About us", to: isRo ? "/despre-noi" : "/en/about", icon: UsersRound, isRoute: true },
     { label: isRo ? "Vezi domenii" : "See industries", href: `${homePath}#exemple` },
     { label: t.nav.process, href: `${homePath}#proces` },
-    { label: t.nav.faq, href: `${homePath}#faq` },
   ] as Array<{ label: string; href?: string; to?: string; icon?: typeof Newspaper; highlight?: boolean; isRoute?: boolean }>;
 
   useEffect(() => {

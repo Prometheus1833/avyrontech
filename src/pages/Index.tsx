@@ -10,7 +10,7 @@ const Process = lazy(() => import("@/components/site/Process"));
 const Examples = lazy(() => import("@/components/site/Examples"));
 const DomainCheck = lazy(() => import("@/components/site/DomainCheck"));
 const Benefits = lazy(() => import("@/components/site/Benefits"));
-const FAQ = lazy(() => import("@/components/site/FAQ"));
+const HomepageQuickLinks = lazy(() => import("@/components/site/HomepageQuickLinks"));
 const Socials = lazy(() => import("@/components/site/Socials"));
 const CTA = lazy(() => import("@/components/site/CTA"));
 const ContactBar = lazy(() => import("@/components/site/ContactBar"));
@@ -78,18 +78,9 @@ const Index = () => {
         setJsonLd("ld-organization", organizationLd);
         setJsonLd("ld-website", webSiteLd);
         setJsonLd("ld-localbusiness", localBusinessLd);
-        setJsonLd("ld-faq", {
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: t.faq.items.map((it: { q: string; a: string }) => ({
-            "@type": "Question",
-            name: it.q,
-            acceptedAnswer: { "@type": "Answer", text: it.a },
-          })),
-        });
       },
     );
-  }, [t.seo.title, t.seo.desc, t.faq.items, location.pathname]);
+  }, [t.seo.title, t.seo.desc, location.pathname]);
 
   return (
     <main className="min-h-screen overflow-x-hidden">
@@ -103,8 +94,8 @@ const Index = () => {
         <Deferred minHeight={500} forceReady={location.hash === "#proces"}><Process /></Deferred>
         <Deferred minHeight={360}><DomainCheck /></Deferred>
         <Deferred minHeight={440}><Benefits /></Deferred>
+        <Deferred minHeight={220}><HomepageQuickLinks /></Deferred>
         <Deferred minHeight={520} forceReady={location.hash === "#cta"}><CTA /></Deferred>
-        <Deferred minHeight={420} forceReady={location.hash === "#faq"}><FAQ /></Deferred>
         <Deferred minHeight={320}><Socials /></Deferred>
         <Deferred minHeight={260}><Footer /></Deferred>
         <ContactBar />

@@ -19,7 +19,7 @@ const copy = {
     cta: "Descoperă",
     items: [
       {
-        title: "Site de prezentare",
+        title: "Site Prezentare Profesional",
         text: "O prezență rapidă și credibilă, construită să transforme interesul în solicitări.",
         path: "/produse/website-prezentare-premium",
         Icon: Code2,

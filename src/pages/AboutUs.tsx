@@ -48,11 +48,11 @@ const AboutUs = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
     const title = ro
-      ? "Despre Avyron — echipă web development și cybersecurity Iași"
-      : "About Avyron — Web Development & Cybersecurity Team in Iași";
+      ? "Despre Avyron — echipă web development și cybersecurity în România și Europa"
+      : "About Avyron — Web Development & Cybersecurity Team in Romania and Europe";
     const description = ro
-      ? "Cunoaște echipa Avyron din Iași: specialiști în web design, web development, cybersecurity, QA testing și dezvoltare asistată de AI."
-      : "Meet the Avyron team in Iași: specialists in web design, web development, cybersecurity, QA testing and AI-assisted engineering.";
+      ? "Cunoaște echipa Avyron din România, activă în Europa: specialiști în web design, web development, cybersecurity, QA testing și dezvoltare asistată de AI."
+      : "Meet the Avyron team from Romania, working across Europe: specialists in web design, web development, cybersecurity, QA testing and AI-assisted engineering.";
     const path = ro ? "/despre-noi" : "/en/about";
 
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
@@ -164,7 +164,7 @@ const AboutUs = () => {
           <motion.div initial={reduceMotion ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }} className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/[0.08] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-cyan-200">
               <UsersRound className="size-3.5" aria-hidden />
-              {ro ? "Echipă IT · Iași, România" : "IT team · Iași, Romania"}
+              {ro ? "Echipă IT · România, Europa" : "IT team · Romania, Europe"}
             </div>
             <h1 className="mt-6 max-w-3xl font-display text-4xl font-extrabold leading-[1.02] tracking-tight sm:text-5xl md:text-7xl">
               {ro ? "Construim produse digitale cu " : "We build digital products with "}
@@ -174,8 +174,8 @@ const AboutUs = () => {
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-slate-300 sm:text-lg">
               {ro
-                ? "Avyron este o echipă pasionată de Web Development și Web Design din Iași. Reunim specialiști în dezvoltare, cybersecurity, QA și experiență digitală pentru a transforma o idee într-un produs coerent, sigur și ușor de folosit."
-                : "Avyron is a Iași-based team passionate about web development and web design. We bring together specialists in engineering, cybersecurity, QA and digital experience to turn an idea into a coherent, secure and easy-to-use product."}
+                ? "Avyron este o echipă din România, activă în Europa, pasionată de Web Development și Web Design. Reunim specialiști în dezvoltare, cybersecurity, QA și experiență digitală pentru a transforma o idee într-un produs coerent, sigur și ușor de folosit."
+                : "Avyron is a Romania-based team working across Europe, passionate about web development and web design. We bring together specialists in engineering, cybersecurity, QA and digital experience to turn an idea into a coherent, secure and easy-to-use product."}
             </p>
             <div className="mt-8 grid w-full max-w-md grid-cols-2 gap-2.5">
               <a href="#expertiza" className="inline-flex min-h-12 items-center justify-center rounded-full bg-white px-4 text-sm font-bold text-slate-950 transition-transform hover:-translate-y-0.5">

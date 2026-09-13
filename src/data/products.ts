@@ -122,14 +122,14 @@ const CATALOG: Product[] = [
     },
     copy: {
       ro: {
-        name: "Website Prezentare Premium",
+        name: "Site Prezentare Profesional",
         kicker: "Produs principal",
         subtitle: "Site de prezentare la cheie, optimizat pentru clienți",
         tagline: "Un site care vinde, nu doar arată bine.",
-        metaTitle: "Website Prezentare Premium — site profesional de la 300€ | Avyron",
+        metaTitle: "Site Prezentare Profesional — site profesional de la 300€ | Avyron",
         metaDescription:
           "Site de prezentare premium, livrat la cheie într-un termen agreat: design custom, SEO tehnic, panou de administrare, email pe domeniu și suport definit în ofertă. De la 300€.",
-        heroTitle: "Website Prezentare Premium",
+        heroTitle: "Site Prezentare Profesional",
         heroLead:
           "Site complet, construit de la zero pe identitatea afacerii tale — rapid, sigur, pregătit tehnic pentru indexare și pentru campanii de atragere a clienților după lansare.",
         intro: [
@@ -209,7 +209,7 @@ const CATALOG: Product[] = [
         faq: [
           {
             q: "Cât costă un site de prezentare profesional?",
-            a: "Pachetul Website Prezentare Premium pornește de la 300€ și include design custom, conținut, SEO tehnic, panou de administrare și email pe domeniu. Durata suportului și prețul final depind de numărul de pagini, funcționalități și oferta agreată.",
+            a: "Pachetul Site Prezentare Profesional pornește de la 300€ și include design custom, conținut, SEO tehnic, panou de administrare și email pe domeniu. Durata suportului și prețul final depind de numărul de pagini, funcționalități și oferta agreată.",
           },
           {
             q: "În cât timp este gata site-ul?",
@@ -231,8 +231,8 @@ const CATALOG: Product[] = [
         ctaTitle: "Vrei un site care aduce clienți?",
         ctaDesc:
           "Îți facem gratuit o propunere de structură și un exemplu vizual personalizat pe activitatea ta, înainte să plătești ceva.",
-        ctaButton: "Vreau Website Prezentare Premium",
-        whatsapp: "Bună! Sunt interesat de Website Prezentare Premium.",
+        ctaButton: "Vreau Site Prezentare Profesional",
+        whatsapp: "Bună! Sunt interesat de Site Prezentare Profesional.",
         heroStats: [
           { value: "2–5", label: "zile până la lansare" },
           { value: "90+", label: "țintă Lighthouse" },

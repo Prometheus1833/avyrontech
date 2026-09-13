@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect } from "react";
-import { ArrowRight, ScanSearch, Gauge, Accessibility, Check, CreditCard, FileText, Zap, Crown, Shield, RefreshCw, Hourglass, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu, Bug, FlaskConical, HeartHandshake } from "lucide-react";
+import { ArrowRight, ScanSearch, Gauge, Accessibility, Check, CreditCard, FileText, Zap, Crown, Shield, RefreshCw, Hourglass, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu, Bug, FlaskConical, HeartHandshake, BookOpen, PenTool, SearchCheck } from "lucide-react";
 import PaymentMethods from "@/components/site/PaymentMethods";
 import { useLang } from "@/i18n/LanguageContext";
 import { trackEvent } from "@/lib/analytics";
@@ -70,7 +70,7 @@ const Pricing = () => {
   }, [ro]);
 
   const main = {
-    title: ro ? "Website Prezentare Premium" : "Premium Presentation Website",
+    title: ro ? "Site Prezentare Profesional" : "Professional Presentation Website",
     desc: ro
       ? "Site complet, livrat la cheie — pregătit pentru obiectivele agreate, cu suport tehnic definit clar în ofertă."
       : "A turnkey website prepared for the agreed goals, with technical support clearly defined in the proposal.",
@@ -263,7 +263,7 @@ const Pricing = () => {
                 <picture>
                   <source type="image/avif" srcSet={`${premiumTech352Avif} 352w, ${premiumTech704Avif} 704w`} sizes="176px" />
                   <source type="image/webp" srcSet={`${premiumTech352Webp} 352w, ${premiumTech704Webp} 704w`} sizes="176px" />
-                  <img src={premiumTech352Webp} alt="Website Prezentare Premium — exemplu" width={176} height={176} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                  <img src={premiumTech352Webp} alt="Site Prezentare Profesional — exemplu" width={176} height={176} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                 </picture>
               </div>
               <h2 className="mt-4 font-display text-2xl sm:text-3xl font-extrabold">{main.title}</h2>
@@ -292,14 +292,14 @@ const Pricing = () => {
             </ul>
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <a
-                href="https://wa.me/40734605055?text=Bună! Sunt interesat de Website Prezentare Premium."
+                href="https://wa.me/40734605055?text=Bună! Sunt interesat de Site Prezentare Profesional."
                 onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "pricing_product" })}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-[#25D366] hover:bg-[#1ebe5a] px-5 py-2.5 text-sm font-bold text-white transition-colors"
               >
                 <MessageCircle className="size-4" />
-                {ro ? "Vreau Website Prezentare Premium" : "I want a Premium Presentation Website"}
+                {ro ? "Vreau Site Prezentare Profesional" : "I want a Professional Presentation Website"}
               </a>
               <Link
                 to={ro ? "/produse/website-prezentare-premium" : "/en/products/premium-presentation-website"}
@@ -309,6 +309,36 @@ const Pricing = () => {
                 {ro ? "Vezi detalii" : "See details"}
                 <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
               </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Blog Profesional — produs editorial și motor SEO */}
+        <section className="relative mt-8 overflow-hidden rounded-2xl border border-rose-300/20 bg-gradient-to-br from-rose-400/[0.08] via-card to-violet-500/[0.08] p-5 sm:p-6">
+          <div aria-hidden className="absolute -right-20 -top-24 size-64 rounded-full bg-rose-400/12 blur-3xl" />
+          <div className="relative grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-rose-300/25 bg-rose-300/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-rose-700 dark:text-rose-200">
+                <BookOpen className="size-3.5" /> {ro ? "Conținut care construiește autoritate" : "Content that builds authority"}
+              </span>
+              <h2 className="mt-4 font-display text-2xl font-extrabold sm:text-3xl">{ro ? "Blog Profesional" : "Professional Blog"}</h2>
+              <p className="mt-3 text-sm leading-relaxed text-foreground/70">
+                {ro ? "Un hub editorial rapid, sigur și ușor de administrat, proiectat pentru SEO, expertiză și conversii — nu doar o listă de articole." : "A fast, secure, easy-to-manage editorial hub designed for SEO, expertise and conversions — not merely a list of articles."}
+              </p>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Link to={ro ? "/produse/blog-profesional" : "/en/products/professional-blog"} onClick={() => trackEvent("product_details_click", { product: "/produse/blog-profesional" })} className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-rose-500 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90">
+                  {ro ? "Descoperă Blog Profesional" : "Explore Professional Blog"}<ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+                <a href="https://wa.me/40734605055?text=Bună! Sunt interesat de un Blog Profesional." onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "pricing_blog_professional" })} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 rounded-full border border-foreground/15 bg-foreground/[0.04] px-5 py-2.5 text-sm font-semibold transition hover:bg-foreground/[0.09]"><MessageCircle className="size-4" />{ro ? "Solicită o configurație" : "Request a configuration"}</a>
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                { icon: SearchCheck, title: ro ? "SEO editorial" : "Editorial SEO", text: ro ? "Structură semantică, metadata, sitemap și articole conectate." : "Semantic structure, metadata, sitemap and connected articles." },
+                { icon: PenTool, title: ro ? "Administrare clară" : "Clear administration", text: ro ? "Ciorne, publicare, autori, categorii și conținut bilingv." : "Drafts, publishing, authors, categories and bilingual content." },
+                { icon: Gauge, title: ro ? "Performanță reală" : "Real performance", text: ro ? "Imagini optimizate, încărcare rapidă și experiență fluidă pe mobil." : "Optimized images, fast loading and a fluid mobile experience." },
+                { icon: Shield, title: ro ? "Siguranță și măsurare" : "Security and measurement", text: ro ? "Moderare, protecție anti-abuz, analytics și conversii măsurabile." : "Moderation, abuse protection, analytics and measurable conversions." },
+              ].map((feature) => <article key={feature.title} className="rounded-xl border border-rose-200/10 bg-background/45 p-4 backdrop-blur"><span className="grid size-9 place-items-center rounded-xl bg-rose-400/10 text-rose-600 dark:text-rose-300"><feature.icon className="size-4" /></span><h3 className="mt-3 text-sm font-semibold">{feature.title}</h3><p className="mt-1 text-xs leading-relaxed text-foreground/60">{feature.text}</p></article>)}
             </div>
           </div>
         </section>

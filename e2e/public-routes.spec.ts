@@ -57,7 +57,7 @@ test.describe("public SEO routes", () => {
   });
 
   test("homepage displays the approved hero and services wording", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/#cta");
 
     await expect(page.getByText("Site-uri care aduc clienți, nu doar vizite", { exact: true })).toBeVisible();
     await expect(
@@ -73,7 +73,7 @@ test.describe("public SEO routes", () => {
     await expect(productList).toHaveCSS("display", "block");
 
     const desktopNav = page.locator("nav ul");
-    await expect(desktopNav.locator("li")).toHaveText(["Blog", "Produse", "Despre noi", "Vezi domenii", "Proces", "FAQ"]);
+    await expect(desktopNav.locator("li")).toHaveText(["Blog", "Produse", "Despre noi", "Vezi domenii", "Proces"]);
     await expect(page.locator("header").getByRole("link", { name: /Exemplu Gratuit.*Personalizat/ })).toBeVisible();
     await expect(page.getByRole("link", { name: "Messenger Facebook" })).toHaveCount(0);
 
@@ -81,7 +81,6 @@ test.describe("public SEO routes", () => {
     await expect(hero.getByRole("link", { name: /Solicită un demo.*Personalizat cu activitatea ta/ })).toHaveAttribute("href", "#cta");
     await expect(hero.getByRole("link", { name: "Vezi Produse", exact: true })).toHaveAttribute("href", "/costurisiproduse");
 
-    await page.goto("/#faq");
     const portfolioCard = page.getByTestId("portfolio-card");
     const aboutCard = page.getByTestId("about-card");
     await expect(portfolioCard).toHaveAttribute("href", "/portofoliu");
@@ -328,13 +327,14 @@ test.describe("public SEO routes", () => {
     await expect(menu.getByRole("link", { name: /Exemplu Gratuit.*Personalizat/ })).toBeVisible();
     await expect(menu.getByRole("link", { name: "Despre noi", exact: true })).toHaveAttribute("href", "/despre-noi");
     const menuLabels = await menu.locator("a").evaluateAll((links) => links.map((link) => link.textContent?.trim()).filter(Boolean));
-    expect(menuLabels).toEqual(expect.arrayContaining(["Blog", "Produse", "Despre noi", "Vezi domenii", "Proces", "FAQ"]));
+    expect(menuLabels).toEqual(expect.arrayContaining(["Blog", "Produse", "Despre noi", "Vezi domenii", "Proces"]));
+    expect(menuLabels).not.toContain("FAQ");
 
     await page.mouse.click(4, 700);
     await expect(menu).toBeHidden();
     await page.getByRole("button", { name: "Meniu" }).click();
 
-    await page.getByRole("link", { name: "FAQ", exact: true }).click();
+    await menu.getByRole("link", { name: /Exemplu Gratuit.*Personalizat/ }).click();
     await expect(page.getByTestId("floating-contact-bar").getByRole("link")).toHaveCount(3);
     const background = await page.getByTestId("cta-visual-panel").evaluate((node) => getComputedStyle(node).backgroundImage);
     expect(background).toContain("gradient");
@@ -531,7 +531,7 @@ test.describe("forms and authentication", () => {
     await expect(page.getByRole("dialog").getByText("Claude",{exact:true})).toBeVisible();
     await expect(page.getByRole("dialog").getByText("Atașează",{exact:true})).toBeVisible();
     await page.keyboard.press("Escape");
-    await page.getByRole("button",{name:"Conturi & carduri",exact:true}).click();
+    await page.getByRole("button",{name:"Conturi și carduri",exact:true}).click();
     await expect(page.getByText("•••• 4242")).toBeVisible();
     await expect(page.getByText(/4242 4242/)).toHaveCount(0);
     await page.getByRole("button",{name:"Venituri",exact:true}).click();

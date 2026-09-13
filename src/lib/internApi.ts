@@ -45,7 +45,15 @@ export type ProjectMedia = {
 };
 
 export type ClientOption = { id: string; company_name: string; contact_name: string | null; email: string; status: string };
-export type AccountOption = { id: string; email: string; display_name: string | null; company_name: string | null; roles: string | null };
+export type AccountOption = {
+  id: string;
+  email: string;
+  display_name: string | null;
+  company_name: string | null;
+  staff_role?: string | null;
+  disabled_at?: number | null;
+  roles: string | null;
+};
 
 
 export type FunnelStep = { event: string; hits: number; sessions: number };
@@ -95,6 +103,12 @@ export const internApi = {
     cfAuth.request<{ id: string; slug: string }>("/api/projects", { method: "POST", body: JSON.stringify(body) }),
   listClients: () => cfAuth.request<{ data: ClientOption[] }>("/api/clients"),
   listAccounts: () => cfAuth.request<{ data: AccountOption[] }>("/api/admin/users"),
+  updateAccountAccess: (userId: string, accessLevel: "user" | "staff" | "admin") =>
+    cfAuth.request<{ ok: true; userId: string; roles: string[] }>(`/api/admin/users/${encodeURIComponent(userId)}/roles`, {
+      method: "PATCH",
+      headers: { "Idempotency-Key": crypto.randomUUID() },
+      body: JSON.stringify({ accessLevel }),
+    }),
   updateProject: (id: string, patch: Partial<Project>) =>
     cfAuth.request<{ ok: true }>(`/api/projects/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   addProposal: (id: string, body: { title: string; description?: string }) =>

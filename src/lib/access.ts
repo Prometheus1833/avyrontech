@@ -48,14 +48,14 @@ export const canSee = (audience: Audience, a: Access) => {
 };
 
 export type SectionId =
-  | "profile" | "settings" | "projects" | "subscriptions" | "invoices" | "cart"
+  | "overview" | "profile" | "settings" | "projects" | "subscriptions" | "invoices" | "cart"
   | "stats" | "tickets" | "maintenance" | "clients" | "domains" | "payments"
   | "finance" | "media" | "leads" | "staff-tickets" | "demo-requests" | "intern"
-  | "announcements" | "resources" | "promotions" | "ai-os";
+  | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers";
 
 export type SectionDef = {
   id: SectionId;
-  group: "account" | "work" | "billing" | "activity" | "team" | "control";
+  group: "overview" | "account" | "work" | "billing" | "activity" | "team" | "control";
   audience: Audience;
   /** Cuvinte pentru căutarea rapidă. */
   keywords: string[];
@@ -66,6 +66,7 @@ export type SectionDef = {
  * conturilor de super admin — restul echipei nu le vede deloc.
  */
 export const SECTIONS: readonly SectionDef[] = [
+  { id: "overview", group: "overview", audience: "everyone", keywords: ["acasa", "azi", "overview", "dashboard", "briefing", "atentie"] },
   { id: "profile", group: "account", audience: "everyone", keywords: ["cont", "profil", "date", "account"] },
   { id: "settings", group: "account", audience: "everyone", keywords: ["setari", "preferinte", "settings", "tema", "limba"] },
 
@@ -88,11 +89,13 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "intern", group: "team", audience: "staff", keywords: ["chat", "echipa", "intern"] },
   { id: "announcements", group: "team", audience: "staff", keywords: ["anunturi", "noutati"] },
   { id: "resources", group: "team", audience: "staff", keywords: ["resurse", "documente", "ghid"] },
+  { id: "team-staff", group: "team", audience: "staff", keywords: ["echipa", "staff", "roluri", "permisiuni", "acces"] },
 
   { id: "payments", group: "control", audience: "superadmin", keywords: ["plati", "payments", "incasari"] },
   { id: "finance", group: "control", audience: "superadmin", keywords: ["financiar", "facturare", "venituri", "finance"] },
   { id: "promotions", group: "control", audience: "superadmin", keywords: ["promotii", "reduceri", "campanii"] },
   { id: "ai-os", group: "control", audience: "superadmin", keywords: ["ai", "avy", "agenti", "chatbot", "automatizare"] },
+  { id: "os-centers", group: "control", audience: "staff", keywords: ["securitate", "automatizari", "integrari", "backup", "erori", "newsletter", "programari", "comentarii", "pluginuri"] },
 ];
 
 export const sectionsFor = (a: Access) => SECTIONS.filter((s) => canSee(s.audience, a));
@@ -102,4 +105,4 @@ export const canOpenSection = (id: string, a: Access) => {
   return !!s && canSee(s.audience, a);
 };
 
-export const defaultSection = (a: Access): SectionId => (a.isStaff ? "projects" : "projects");
+export const defaultSection = (_a: Access): SectionId => "overview";
