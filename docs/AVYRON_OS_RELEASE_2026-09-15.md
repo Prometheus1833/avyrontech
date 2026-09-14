@@ -27,7 +27,9 @@ Verificat în dashboardul Cloudflare, contul Avyron:
   build `npm run build`, deploy `npm run deploy:api`.
 - `JWT_SECRET`, `MFA_ENCRYPTION_KEY` și `TURNSTILE_SECRET` există ca secrete.
   Nu au fost afișate sau copiate valorile lor. `SMTP_PASS` lipsește.
-- `avyrontech-preview` are resurse izolate, dar nu are integrarea Git activată.
+- `avyrontech-preview` are resurse izolate. Conexiunea Git a fost configurată
+  pentru ramura release-ului, cu `npm run build` și `npm run deploy:api:preview`,
+  folosind tokenul de build existent. Buildurile altor ramuri sunt dezactivate.
 
 Autentificarea OAuth nouă pentru Wrangler a fost respinsă de revizuirea
 automată din cauza permisiunilor persistente solicitate. Nu s-au acordat
@@ -53,3 +55,7 @@ sunt în [raportul operațional](AVYRON_OS_OPERATIONS_2026-09-15.md).
 Rezultatele finale și identificatorii release-ului se completează după
 verificarea CI și a stării live. Un build local sau un upload de versiune
 preview nu reprezintă un deploy în producție.
+
+Push-ul ramurii a reușit după confirmarea explicită a repository-ului public.
+Release-ul este urmărit în [PR #9](https://github.com/Prometheus1833/avyrontech/pull/9).
+Workerul de producție urmărește numai `main`; preview se construiește separat.
