@@ -60,6 +60,15 @@ describe("AVYRON OS dashboard", () => {
     expect(seedScript).toContain("curl -sS --fail-with-body");
   });
 
+  it("publică AVYRON OS pe domeniul dedicat app.avyron.ro", () => {
+    const worker = readFileSync(resolve(process.cwd(), "cloudflare/workers/api/src/index.ts"), "utf8");
+    const config = readFileSync(resolve(process.cwd(), "wrangler.jsonc"), "utf8");
+    expect(config).toContain('{ "pattern": "app.avyron.ro", "custom_domain": true }');
+    expect(config).not.toContain('"app.avyron.ro/api/*"');
+    expect(worker).toContain('c.redirect("https://app.avyron.ro/profil", 302)');
+    expect(worker).toContain('c.header("X-Robots-Tag", "noindex, nofollow")');
+  });
+
   it("elimină FAQ-ul de pe homepage fără a afecta paginile de produs", () => {
     const homepage = readFileSync(resolve(process.cwd(), "src/pages/Index.tsx"), "utf8");
     expect(homepage).not.toContain('import("@/components/site/FAQ")');

@@ -84,7 +84,7 @@ describe("multi-domain demo registry", () => {
     const config = readJsonc("wrangler.jsonc");
     const patterns = config.routes.map((route: { pattern: string }) => route.pattern);
     expect(patterns).toEqual(expect.arrayContaining([
-      "app.avyron.ro/api/*",
+      "app.avyron.ro",
       "exemplu1.avyron.ro/*",
       "exemplu2.avyron.ro/*",
       "exemplu3.avyron.ro/*",

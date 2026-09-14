@@ -17,12 +17,12 @@ describe("app.avyron.ro platform boundary", () => {
     expect(publicSiteHref("gdpr")).toBe("https://avyron.ro/gdpr");
   });
 
-  it("declares an exact API route without taking over the Lovable frontend", () => {
+  it("declares the complete platform hostname as a first-party custom domain", () => {
     const config = readFileSync(resolve(process.cwd(), "wrangler.jsonc"), "utf8");
-    expect(config).toContain('"pattern": "app.avyron.ro/api/*"');
+    expect(config).toContain('"pattern": "app.avyron.ro", "custom_domain": true');
     expect(config).toContain('"pattern": "api.avyron.ro", "custom_domain": true');
     expect(config).toContain('"zone_name": "avyron.ro"');
-    expect(config).not.toContain('"pattern": "app.avyron.ro", "custom_domain": true');
+    expect(config).not.toContain('"pattern": "app.avyron.ro/api/*"');
     expect(config).toContain("https://app.avyron.ro");
   });
 });

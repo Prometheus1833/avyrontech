@@ -13,7 +13,7 @@
     { "pattern": "avyron.ro", "custom_domain": true },
     { "pattern": "www.avyron.ro", "custom_domain": true },
     { "pattern": "api.avyron.ro", "custom_domain": true },
-    { "pattern": "app.avyron.ro/api/*", "zone_name": "avyron.ro" },
+    { "pattern": "app.avyron.ro", "custom_domain": true },
     { "pattern": "exemplu1.avyron.ro/*", "zone_name": "avyron.ro" },
     { "pattern": "exemplu2.avyron.ro/*", "zone_name": "avyron.ro" },
     { "pattern": "exemplu3.avyron.ro/*", "zone_name": "avyron.ro" },

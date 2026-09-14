@@ -7,6 +7,11 @@ proiecte, leaduri, date financiare, aprobări AI și starea infrastructurii.
 Interfața aplică progressive disclosure: afișează numai informația esențială,
 iar modulele păstrează detaliile și acțiunile complete.
 
+Intrarea canonică a platformei interne este `https://app.avyron.ro`, servită de
+același Worker Cloudflare ca API-ul pentru autentificare și acces same-origin.
+Rădăcina domeniului redirecționează spre `/profil`, iar suprafețele interne sunt
+marcate `noindex` și nu folosesc cache public.
+
 ## Surse de date active
 
 - D1: proiecte, clienți, leaduri, facturi, alerte financiare, rulări și aprobări AI;

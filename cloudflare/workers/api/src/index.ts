@@ -1228,6 +1228,16 @@ app.get("/sitemap.xml", async (c) => {
   return new Response(mergeBlogSitemap(await asset.text(), entries), { status: 200, headers });
 });
 
+// `app.avyron.ro` is the dedicated entry point for AVYRON OS. The complete
+// hostname stays on the same Worker so /api remains same-origin and no second
+// deployment or database boundary is introduced.
+app.get("/", async (c, next) => {
+  if (new URL(c.req.url).hostname.toLowerCase() !== "app.avyron.ro") return next();
+  c.header("X-Robots-Tag", "noindex, nofollow");
+  c.header("Cache-Control", "private, no-store");
+  return c.redirect("https://app.avyron.ro/profil", 302);
+});
+
 async function siteFile(c: Context<AppBindings>, file: string, status: number, noindex: boolean) {
   const method = c.req.method === "HEAD" ? "HEAD" : "GET";
   const response = await c.env.ASSETS.fetch(new Request(new URL(file, c.req.url), { method }));
