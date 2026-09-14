@@ -1,15 +1,21 @@
-import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
+// @vitest-environment node
+import type { DatabaseSync as SqliteDatabase, SQLInputValue } from 'node:sqlite';
+import { createRequire } from 'node:module';
 import { readdirSync, readFileSync } from 'node:fs';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { dashboardRouter } from '../../cloudflare/workers/api/src/osDashboard';
 import { bucharestMonthStart } from '../../cloudflare/workers/api/src/financialTotals';
 
+// Node 22 supports SQLite but does not list this experimental module among all
+// builtinModules. Load it natively rather than asking Vite to bundle it.
+const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
+
 // Execute the production router's SQL against every versioned migration. This
 // adapter models D1 batch atomicity; it does not replace remote Workers checks.
 class Statement {
   values: SQLInputValue[] = [];
-  constructor(readonly db: DatabaseSync, readonly sql: string) {}
+  constructor(readonly db: SqliteDatabase, readonly sql: string) {}
   bind(...values: SQLInputValue[]) { this.values = values; return this; }
   async first() { return this.db.prepare(this.sql).get(...this.values) ?? null; }
   async all() { return { results: this.db.prepare(this.sql).all(...this.values) }; }
@@ -17,7 +23,7 @@ class Statement {
 }
 
 describe('OS dashboard — migrated SQLite and actual Hono handlers', () => {
-  let db: DatabaseSync;
+  let db: SqliteDatabase;
   let app: Hono;
   let actor: 'owner' | 'client';
   const stamp = Date.now();
