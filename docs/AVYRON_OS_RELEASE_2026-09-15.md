@@ -59,3 +59,9 @@ preview nu reprezintă un deploy în producție.
 Push-ul ramurii a reușit după confirmarea explicită a repository-ului public.
 Release-ul este urmărit în [PR #9](https://github.com/Prometheus1833/avyrontech/pull/9).
 Workerul de producție urmărește numai `main`; preview se construiește separat.
+
+Primul build remote a aplicat `0020`, apoi parserul D1 a respins trigger-ele
+din `0021` (`incomplete input`). Publicarea Workerului s-a oprit. Migrațiile
+încă neaplicate `0021` și `0024` folosesc acum `RAISE ... WHERE` pentru
+validări și paranteze pentru expresia CASE, cu aceeași semantică verificată
+de testele registrului financiar și ale rezervărilor concurente.

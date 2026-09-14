@@ -1,3 +1,4 @@
+-- Keep trigger CASE expressions parenthesized for the remote D1 SQL parser.
 -- Recorded receipts are distinct from invoiced revenue. No payment is initiated.
 CREATE TABLE financial_receipts (
   id TEXT PRIMARY KEY,
@@ -13,16 +14,14 @@ CREATE TABLE financial_receipts (
 );
 CREATE INDEX idx_financial_receipts_date ON financial_receipts(paid_at,revenue_id);
 CREATE TRIGGER financial_receipt_validate BEFORE INSERT ON financial_receipts BEGIN
-  SELECT CASE WHEN NOT EXISTS(SELECT 1 FROM financial_revenues WHERE id=NEW.revenue_id AND archived_at IS NULL
-    AND status IN ('invoiced','sent','partially_paid','overdue') AND currency=NEW.currency AND gross_amount_minor IS NOT NULL)
-    THEN RAISE(ABORT,'receipt_revenue_not_payable') END;
-  SELECT CASE WHEN NEW.amount_minor + COALESCE((SELECT SUM(amount_minor) FROM financial_receipts WHERE revenue_id=NEW.revenue_id),0)
-    > (SELECT gross_amount_minor FROM financial_revenues WHERE id=NEW.revenue_id)
-    THEN RAISE(ABORT,'receipt_exceeds_balance') END;
+  SELECT RAISE(ABORT,'receipt_revenue_not_payable') WHERE NOT EXISTS(SELECT 1 FROM financial_revenues WHERE id=NEW.revenue_id AND archived_at IS NULL
+    AND status IN ('invoiced','sent','partially_paid','overdue') AND currency=NEW.currency AND gross_amount_minor IS NOT NULL);
+  SELECT RAISE(ABORT,'receipt_exceeds_balance') WHERE NEW.amount_minor + COALESCE((SELECT SUM(amount_minor) FROM financial_receipts WHERE revenue_id=NEW.revenue_id),0)
+    > (SELECT gross_amount_minor FROM financial_revenues WHERE id=NEW.revenue_id);
 END;
 CREATE TRIGGER financial_receipt_apply AFTER INSERT ON financial_receipts BEGIN
   UPDATE financial_revenues SET
-    status=CASE WHEN (SELECT SUM(amount_minor) FROM financial_receipts WHERE revenue_id=NEW.revenue_id)=gross_amount_minor THEN 'paid' ELSE 'partially_paid' END,
+    status=(CASE WHEN (SELECT SUM(amount_minor) FROM financial_receipts WHERE revenue_id=NEW.revenue_id)=gross_amount_minor THEN 'paid' ELSE 'partially_paid' END),
     payment_date=(SELECT MAX(paid_at) FROM financial_receipts WHERE revenue_id=NEW.revenue_id),
     updated_at=NEW.created_at,updated_by=NEW.created_by
     WHERE id=NEW.revenue_id;
