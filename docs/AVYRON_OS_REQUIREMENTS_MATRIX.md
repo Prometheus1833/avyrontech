@@ -1,5 +1,11 @@
 # AVYRON OS — matrice de acoperire a cerințelor
 
+> **Inventar istoric (12 septembrie).** Pentru situația actuală, toate cerințele
+> ulterioare și limitele confirmate, vezi
+> [auditul de release din 14 septembrie](AVYRON_OS_RELEASE_AUDIT_2026-09-14.md).
+> Informațiile de mai jos despre lipsa deploy-ului/app DNS și migrările neaplicate
+> au fost depășite de publicările aprobate ulterior.
+
 Ultima verificare: 2026-09-12. Matricea consolidează cele trei briefuri furnizate
 și starea reală din cod/infrastructură. `Complet local` nu înseamnă publicat;
 activarea unui Worker, migrarea D1, DNS-ul, push-ul și producția rămân operații

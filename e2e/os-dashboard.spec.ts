@@ -102,7 +102,7 @@ test.describe("dashboard AVYRON OS în română", () => {
     })));
   });
 
-  test("afișează sumarul operațional și centrele principale pe desktop", async ({ page }) => {
+  test("afișează sumarul operațional și centrele principale pe desktop", async ({ page }, testInfo) => {
     await page.goto("/profil?tab=overview");
 
     await expect(page.getByRole("heading", { name: "Bun venit, Andrei." })).toBeVisible();
@@ -114,6 +114,7 @@ test.describe("dashboard AVYRON OS în română", () => {
     await expect(page.getByText("Informare AVY", { exact: false })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Navigare AVYRON OS" })).toBeVisible();
     await expect(page.locator("html")).toHaveAttribute("lang", "ro");
+    await page.screenshot({path:testInfo.outputPath('overview-desktop.png'),fullPage:true});
   });
 
   test("rămâne utilizabil pe mobil și oferă Command Center", async ({ page }) => {
@@ -125,6 +126,22 @@ test.describe("dashboard AVYRON OS în română", () => {
     await expect(page.getByPlaceholder("Caută proiecte, leaduri, facturi, agenți…")).toBeVisible();
     await expect(page.getByText("Comenzi disponibile", { exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
+  });
+
+  test("pune prioritățile înaintea KPI-urilor și leagă centrele existente", async ({page}) => {
+    await page.goto('/profil?tab=overview');
+    const attention = page.getByText('Necesită atenție · Azi');
+    await expect(attention).toBeVisible();
+    const priorityBox = await attention.boundingBox();
+    const revenueBox = await page.getByText('Venituri luna aceasta').boundingBox();
+    expect(priorityBox!.y).toBeLessThan(revenueBox!.y);
+    await expect(page.getByTestId('page-back-link')).toHaveAttribute('href','https://avyron.ro');
+    await page.getByRole('tab',{name:'Centre AVYRON OS',exact:true}).first().click();
+    await page.getByLabel('Caută funcționalități').fill('reinnoiri');
+    await expect(page.getByRole('heading',{name:'Contracte și reînnoiri',exact:true})).toBeVisible();
+    await page.getByLabel('Caută funcționalități').fill('aprobari');
+    await page.getByRole('button',{name:'Deschide funcțiile disponibile'}).click();
+    await expect(page.getByRole('heading',{name:'Bun venit, Andrei.'})).toBeVisible();
   });
 
   test("Super Admin poate gestiona controlat accesul unui membru", async ({ page }) => {

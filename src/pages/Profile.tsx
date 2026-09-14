@@ -11,6 +11,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { buildAccess, canOpenSection, defaultSection, sectionsFor, type SectionId } from "@/lib/access";
 import logo from "@/assets/avyron-logo.webp";
+import { publicSiteHref } from "@/lib/appHost";
 
 const ProfileTab = lazy(() => import("@/components/dashboard/ProfileTab").then((m) => ({ default: m.ProfileTab })));
 const SubscriptionsTab = lazy(() => import("@/components/dashboard/SubscriptionsTab").then((m) => ({ default: m.SubscriptionsTab })));
@@ -116,10 +117,10 @@ export default function Profile() {
     <Tabs value={tab} onValueChange={(value) => setTab(value as SectionId)} className="relative flex min-h-screen">
       <aside className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r border-white/[0.07] bg-[#090e1d]/95 px-3 py-4 backdrop-blur-xl transition-[width] duration-200 lg:flex ${sidebarCollapsed ? "w-[76px]" : "w-[248px]"}`}>
         <div className={`flex items-center ${sidebarCollapsed ? "justify-center" : "justify-between"}`}>
-          <Link to="/" className="flex min-w-0 items-center gap-2.5 rounded-xl p-1.5 hover:bg-white/[0.04]">
+          <a href={publicSiteHref()} className="flex min-w-0 items-center gap-2.5 rounded-xl p-1.5 hover:bg-white/[0.04]">
             <img src={logo} alt="Avyron" className="size-9 rounded-xl ring-1 ring-white/10" />
             {!sidebarCollapsed && <div className="min-w-0"><p className="font-display text-sm font-bold tracking-[0.08em] text-white">AVYRON <span className="text-violet-300">OS</span></p><p className="text-[9px] text-slate-600">Sistem operațional intern</p></div>}
-          </Link>
+          </a>
           {!sidebarCollapsed && <button type="button" onClick={() => setSidebarCollapsed(true)} aria-label="Restrânge meniul" className="rounded-lg p-2 text-slate-600 hover:bg-white/[0.05] hover:text-slate-300"><PanelLeftClose className="size-4" /></button>}
         </div>
         {sidebarCollapsed && <button type="button" onClick={() => setSidebarCollapsed(false)} aria-label="Extinde meniul" className="mx-auto mt-2 rounded-lg p-2 text-slate-600 hover:bg-white/[0.05] hover:text-slate-300"><PanelLeftOpen className="size-4" /></button>}
@@ -140,23 +141,36 @@ export default function Profile() {
 
       <div className="min-w-0 flex-1 pb-20 lg:pb-0">
         <header className="sticky top-0 z-30 border-b border-white/[0.07] bg-[#080d1b]/85 px-3 py-3 backdrop-blur-xl sm:px-5 lg:px-6"><div className="mx-auto flex max-w-[1500px] items-center gap-3">
-          <Link to="/" aria-label="Înapoi la site" data-testid="page-back-link" className="rounded-xl p-2 text-slate-600 hover:bg-white/[0.05] hover:text-slate-300"><ChevronLeft className="size-5" /></Link>
+          <a href={publicSiteHref()} aria-label="Înapoi la site" data-testid="page-back-link" className="rounded-xl p-2 text-slate-600 hover:bg-white/[0.05] hover:text-slate-300"><ChevronLeft className="size-5" /></a>
           <button type="button" onClick={() => setCommandOpen(true)} className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2.5 text-left text-xs text-slate-600 transition hover:border-violet-400/25 hover:text-slate-400 sm:max-w-xl"><Search className="size-4 shrink-0" /><span className="truncate">Caută clienți, proiecte, leaduri, facturi…</span><kbd className="ml-auto hidden rounded border border-white/10 bg-black/20 px-1.5 py-0.5 font-mono text-[10px] sm:inline">⌘K</kbd></button>
           {access.isSuperAdmin && <button type="button" onClick={() => setTab("ai-os")} className="hidden items-center gap-2 rounded-xl border border-violet-400/20 bg-violet-500/10 px-3 py-2.5 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/20 sm:inline-flex"><Sparkles className="size-4" /> Întreabă AVY</button>}
-          <button type="button" aria-label="Notificări" className="relative rounded-xl p-2.5 text-slate-500 hover:bg-white/[0.05] hover:text-slate-200"><Bell className="size-4" />{access.isSuperAdmin && <span className="absolute right-2 top-2 size-1.5 rounded-full bg-rose-400" />}</button>
+          <button type="button" onClick={() => setTab("overview")} aria-label="Vezi prioritățile de azi" title="Priorități și alerte" className="relative rounded-xl p-2.5 text-slate-500 hover:bg-white/[0.05] hover:text-slate-200"><Bell className="size-4" /></button>
           <button type="button" onClick={() => void signOut().then(() => window.location.assign("/"))} aria-label="Deconectare" title="Deconectare" className="rounded-xl p-2.5 text-slate-600 hover:bg-rose-400/10 hover:text-rose-300"><LogOut className="size-4" /></button>
           <span className="hidden items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1.5 text-[10px] text-slate-500 xl:inline-flex">{isSuperAdmin ? <Lock className="size-3" /> : <ShieldCheck className="size-3" />}{roleLabel}</span>
         </div></header>
 
         <div className="mx-auto max-w-[1500px] p-3 sm:p-5 lg:p-6">
-          {access.isSuperAdmin && (tab === "overview" || tab === "profile") && <Suspense fallback={contentFallback}><div className="mb-4 grid gap-3 lg:grid-cols-2"><AiProductionEntryCard /><EngineEntryCard /></div></Suspense>}
           <Suspense fallback={contentFallback}>
           <TabsContent value="overview" className="mt-0"><AvyronOverview access={access} displayName={displayName} onOpenSection={openSection} onOpenCommand={() => setCommandOpen(true)} /></TabsContent>
           <TabsContent value="profile" className="mt-0"><ProfileTab /></TabsContent><TabsContent value="settings" className="mt-0"><SettingsTab /></TabsContent><TabsContent value="projects" className="mt-0"><CloudflareProjects embedded /></TabsContent>
           {access.isClient && <><TabsContent value="subscriptions" className="mt-0"><SubscriptionsTab /></TabsContent><TabsContent value="invoices" className="mt-0"><InvoicesTab /></TabsContent><TabsContent value="cart" className="mt-0"><CartTab /></TabsContent><TabsContent value="stats" className="mt-0"><StatsTab /></TabsContent><TabsContent value="tickets" className="mt-0"><TicketsTab /></TabsContent></>}
-          {access.isStaff && <><TabsContent value="maintenance" className="mt-0"><StaffMaintenanceTab /></TabsContent><TabsContent value="clients" className="mt-0"><StaffClientsTab /></TabsContent><TabsContent value="domains" className="mt-0"><StaffDomainStatsTab /></TabsContent><TabsContent value="media" className="mt-0"><StaffMediaTab /></TabsContent><TabsContent value="leads" className="mt-0"><StaffLeadsTab /></TabsContent><TabsContent value="staff-tickets" className="mt-0"><TicketsTab staffMode /></TabsContent><TabsContent value="demo-requests" className="mt-0"><StaffExampleRequestsTab /></TabsContent><TabsContent value="intern" className="mt-0"><StaffChatTab /></TabsContent><TabsContent value="announcements" className="mt-0"><StaffAnnouncementsTab /></TabsContent><TabsContent value="resources" className="mt-0"><StaffResourcesTab /></TabsContent><TabsContent value="team-staff" className="mt-0"><TeamStaffTab /></TabsContent><TabsContent value="os-centers" className="mt-0"><OsCentersTab /></TabsContent></>}
+          {access.isStaff && <>
+            <TabsContent value="maintenance" className="mt-0"><StaffMaintenanceTab /></TabsContent>
+            <TabsContent value="clients" className="mt-0"><StaffClientsTab /></TabsContent>
+            <TabsContent value="domains" className="mt-0"><StaffDomainStatsTab /></TabsContent>
+            <TabsContent value="media" className="mt-0"><StaffMediaTab /></TabsContent>
+            <TabsContent value="leads" className="mt-0"><StaffLeadsTab /></TabsContent>
+            <TabsContent value="staff-tickets" className="mt-0"><TicketsTab staffMode /></TabsContent>
+            <TabsContent value="demo-requests" className="mt-0"><StaffExampleRequestsTab /></TabsContent>
+            <TabsContent value="intern" className="mt-0"><StaffChatTab /></TabsContent>
+            <TabsContent value="announcements" className="mt-0"><StaffAnnouncementsTab /></TabsContent>
+            <TabsContent value="resources" className="mt-0"><StaffResourcesTab /></TabsContent>
+            <TabsContent value="team-staff" className="mt-0"><TeamStaffTab /></TabsContent>
+            <TabsContent value="os-centers" className="mt-0"><OsCentersTab access={access} onNavigate={openSection} /></TabsContent>
+          </>}
           {access.isSuperAdmin && <><TabsContent value="payments" className="mt-0"><StaffPaymentsTab /></TabsContent><TabsContent value="finance" className="mt-0"><StaffFinanceTab /></TabsContent><TabsContent value="promotions" className="mt-0"><StaffPromotionsTab /></TabsContent><TabsContent value="ai-os" className="mt-0"><AiOsConsole embedded /></TabsContent></>}
           </Suspense>
+          {access.isSuperAdmin && (tab === "overview" || tab === "profile") && <Suspense fallback={contentFallback}><div className="mt-4 grid gap-3 lg:grid-cols-2"><AiProductionEntryCard /><EngineEntryCard /></div></Suspense>}
         </div>
       </div>
 

@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Access, SectionId } from "@/lib/access";
+import { canOpenSection } from "@/lib/access";
 import { osApi, type OsOverview } from "@/lib/osApi";
 
 type Props = {
@@ -100,8 +101,8 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
     if (access.isSuperAdmin) return [
       { label: "Leaduri deschise", value: data.metrics.openLeads, helper: `${data.metrics.leads} în total`, icon: Target, tone: "from-cyan-500/20" },
       { label: "Proiecte active", value: data.metrics.activeProjects, helper: `${data.metrics.projects} în portofoliu`, icon: FolderKanban, tone: "from-blue-500/20" },
-      { label: "Venituri luna aceasta", value: money(data.metrics.revenuesMinor), helper: "date configurate", icon: CircleDollarSign, tone: "from-emerald-500/20" },
-      { label: "Cheltuieli luna aceasta", value: money(data.metrics.expensesMinor), helper: "date configurate", icon: Gauge, tone: "from-violet-500/20" },
+      { label: "Venituri luna aceasta", value: money(data.metrics.revenuesMinor), helper: "estimare · echivalente RON cunoscute", icon: CircleDollarSign, tone: "from-emerald-500/20" },
+      { label: "Cheltuieli luna aceasta", value: money(data.metrics.expensesMinor), helper: "estimare · echivalente RON cunoscute", icon: Gauge, tone: "from-violet-500/20" },
     ];
     if (access.isStaff) return [
       { label: "Leaduri deschise", value: data.metrics.openLeads, helper: `${data.metrics.leads} în total`, icon: Target, tone: "from-cyan-500/20" },
@@ -136,7 +137,7 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
   );
 
   return (
-    <div className="space-y-4 text-slate-100">
+    <div className="flex flex-col gap-4 text-slate-100">
       <header className="relative overflow-hidden rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-600/[0.16] via-[#11182d] to-cyan-500/[0.08] p-5 sm:p-6">
         <div aria-hidden className="absolute -right-20 -top-24 size-64 rounded-full bg-violet-500/20 blur-3xl" />
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
@@ -150,24 +151,6 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
           </button>
         </div>
       </header>
-
-      <div className={`grid gap-3 ${metrics.length > 2 ? "sm:grid-cols-2 xl:grid-cols-4" : "sm:grid-cols-2"}`}>
-        {metrics.map((metric) => {
-          const Icon = metric.icon;
-          return (
-            <div key={metric.label} className={`relative overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br ${metric.tone} to-[#10162a] p-4`}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs text-slate-400">{metric.label}</p>
-                  <p className="mt-2 font-display text-2xl font-bold text-white">{metric.value}</p>
-                  <p className="mt-1 text-[11px] text-slate-500">{metric.helper}</p>
-                </div>
-                <span className="grid size-9 place-items-center rounded-xl border border-white/10 bg-white/[0.06] text-violet-200"><Icon className="size-4" /></span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
 
       <div className="grid gap-4 xl:grid-cols-12">
         <Panel className="p-4 sm:p-5 xl:col-span-7">
@@ -223,11 +206,29 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
         </Panel>
       </div>
 
+      <div className={`grid gap-3 ${metrics.length > 2 ? "sm:grid-cols-2 xl:grid-cols-4" : "sm:grid-cols-2"}`}>
+        {metrics.map((metric) => {
+          const Icon = metric.icon;
+          return (
+            <div key={metric.label} className={`relative overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br ${metric.tone} to-[#10162a] p-4`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs text-slate-400">{metric.label}</p>
+                  <p className="mt-2 font-display text-2xl font-bold text-white">{metric.value}</p>
+                  <p className="mt-1 text-[11px] text-slate-500">{metric.helper}</p>
+                </div>
+                <span className="grid size-9 place-items-center rounded-xl border border-white/10 bg-white/[0.06] text-violet-200"><Icon className="size-4" /></span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       <div className="grid gap-4 xl:grid-cols-12">
         <Panel className="p-4 sm:p-5 xl:col-span-7">
           <div className="mb-4 flex items-center justify-between">
             <div><p className="font-mono text-[10px] uppercase tracking-[0.22em] text-cyan-200/70">Observabilitate AI</p><h2 className="mt-1 font-display text-lg font-semibold text-white">Activitatea agenților</h2></div>
-            <button type="button" onClick={() => onOpenSection("ai-os")} className="text-xs font-medium text-violet-300 hover:text-violet-200">Vezi agenții</button>
+            {access.isSuperAdmin && <button type="button" onClick={() => onOpenSection("ai-os")} className="text-xs font-medium text-violet-300 hover:text-violet-200">Vezi agenții</button>}
           </div>
           <div className="space-y-2">
             {data.agentRuns.length === 0 && <EmptyState>{access.isSuperAdmin ? "Nu există rulări recente." : "Activitatea AI detaliată este rezervată rolurilor autorizate."}</EmptyState>}
@@ -253,7 +254,7 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
             ))}
           </div>
           <div className="mt-4 border-t border-white/[0.06] pt-4">
-            <div className="mb-2 flex items-center justify-between"><h3 className="text-xs font-semibold text-slate-300">Integrări verificate</h3><span className="text-[10px] text-slate-600">{data.integrations.length} configurate</span></div>
+            <div className="mb-2 flex items-center justify-between"><h3 className="text-xs font-semibold text-slate-300">Registrul integrărilor</h3><span className="text-[10px] text-slate-600">{data.integrations.length} înregistrate</span></div>
             {data.integrations.length === 0 ? <EmptyState>Nu există conectori externi validați. Aceștia vor apărea după configurare.</EmptyState> : (
               <div className="flex flex-wrap gap-2">
                 {data.integrations.slice(0, 8).map((item, index) => <span key={`${item.name}-${index}`} className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[11px] text-slate-400"><span className={`size-1.5 rounded-full ${statusTone(item.status)}`} />{item.name}</span>)}
@@ -278,7 +279,7 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
             { label: "Echipă", helper: "Roluri și permisiuni", icon: Users, section: "team-staff" },
             { label: "Securitate", helper: "Incidente și audit", icon: ShieldCheck, section: "security" },
             { label: "Automatizări", helper: "Execuții și economie", icon: Clock3, section: "automations" },
-          ].filter((item) => access.isStaff || ["projects"].includes(item.section)).map((item) => {
+          ].filter((item) => canOpenSection(item.section, access) || (access.isStaff && ["security", "automations"].includes(item.section))).map((item) => {
             const Icon = item.icon;
             return <button key={item.label} type="button" onClick={() => onOpenSection(item.section as SectionId)} className="group flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 text-left transition hover:border-violet-400/25 hover:bg-violet-400/[0.06]"><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-violet-400/10 text-violet-300"><Icon className="size-4" /></span><span className="min-w-0"><span className="block text-sm font-medium text-slate-200">{item.label}</span><span className="block truncate text-[11px] text-slate-600">{item.helper}</span></span><ArrowRight className="ml-auto size-4 text-slate-700 transition group-hover:translate-x-0.5 group-hover:text-violet-300" /></button>;
           })}

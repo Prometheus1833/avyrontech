@@ -35,7 +35,7 @@ export type OsAgentRun = {
 export type OsHealth = {
   id: string;
   label: string;
-  status: "funcțional" | "atenție" | "eroare" | "neconfigurat";
+  status: "funcțional" | "configurat" | "atenție" | "eroare" | "neconfigurat";
   detail: string;
 };
 

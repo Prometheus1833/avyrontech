@@ -165,6 +165,14 @@ secret binding aprobate. Nu se deduce niciun preț din pagini publice.
 
 ## Limitări curente
 
+- Actualizare 14 septembrie: Home și Financiar reutilizează `financialTotals.ts`,
+  luna Europe/Bucharest și echivalente RON explicite. Documentele fără curs/sumă
+  RON nu sunt convertite implicit. Documentele parțial încasate sunt încă evaluate
+  la valoarea documentului; acestea nu reprezintă un cashflow reconciliat.
+- Celelalte rapoarte multivalută, toate câmpurile/editorii și atomicitatea tuturor
+  operațiilor financiare necesită audit suplimentar. DoD 1–24 nu este încă complet;
+  vezi `AVYRON_OS_RELEASE_AUDIT_2026-09-14.md`.
+
 - graficele și proiecțiile afișează stare goală până există istoric suficient;
 - detectarea anomaliilor este deterministă, nu ML, și nu blochează tranzacții;
 - nu există reconciliere bancară, sync automat, webhook activ sau plăți în
