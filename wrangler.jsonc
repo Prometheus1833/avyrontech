@@ -42,6 +42,7 @@
   "triggers": {
     "crons": [
       "17 3 * * *",
+      "0,15,30,45 * * * *",
       "17 7,15 * * *"
     ]
   },
@@ -88,6 +89,7 @@
   },
   "vars": {
     "APP_ENV": "production",
+    "ADMIN_MFA_POLICY": "optional_until_enrollment",
     "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://app.avyron.ro,https://api.avyron.ro,https://avyrontech.lovable.app,https://id-preview--3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovable.app,https://3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovableproject.com,http://localhost:8080",
     "APP_URL": "https://avyron.ro",
     "SMTP_HOST": "smtp.mx.cloudflare.net",
@@ -151,6 +153,7 @@
       },
       "vars": {
         "APP_ENV": "preview",
+        "ADMIN_MFA_POLICY": "optional_until_enrollment",
         "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://app.avyron.ro,https://api.avyron.ro,https://avyrontech-preview.avyrontech.workers.dev,https://avyrontech.lovable.app,http://localhost:8080",
         "APP_URL": "https://avyrontech-preview.avyrontech.workers.dev",
         "SMTP_HOST": "smtp.mx.cloudflare.net",

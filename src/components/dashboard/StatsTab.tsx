@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { workspaceApi } from "@/lib/workspaceApi";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,15 +9,17 @@ import { Activity, Eye, Users, Zap } from "lucide-react";
 type Stat = {
   id: string;
   subscription_id: string;
+  product_name: string;
+  source: string;
   period_start: string;
   period_end: string;
-  visits: number;
-  unique_visitors: number;
-  uptime_percent: number;
-  avg_response_ms: number;
+  visits: number | null;
+  unique_visitors: number | null;
+  uptime_percent: number | null;
+  avg_response_ms: number | null;
 };
 
-type SubLite = { id: string; product_name: string };
+
 
 export function StatsTab() {
   const { user } = useAuth();
@@ -25,19 +27,13 @@ export function StatsTab() {
   const [stats, setStats] = useState<Stat[]>([]);
   const [subs, setSubs] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([
-      supabase.from("product_stats").select("id,subscription_id,period_start,period_end,visits,unique_visitors,uptime_percent,avg_response_ms").eq("user_id", user.id).order("period_end", { ascending: false }),
-      supabase.from("subscriptions").select("id, product_name").eq("user_id", user.id),
-    ]).then(([s, sb]) => {
-      setStats((s.data as Stat[]) ?? []);
-      const map: Record<string, string> = {};
-      ((sb.data as SubLite[]) ?? []).forEach((x) => (map[x.id] = x.product_name));
-      setSubs(map);
-      setLoading(false);
-    });
+    let active=true;
+    workspaceApi.list<Stat>('statistics').then(({data})=>{if(!active)return;setStats(data);setSubs(Object.fromEntries(data.map(row=>[row.subscription_id,row.product_name])));}).catch(e=>{if(active)setError(e.message);}).finally(()=>{if(active)setLoading(false);});
+    return()=>{active=false;};
   }, [user]);
 
   const fmtDate = (d: string) =>
@@ -53,19 +49,21 @@ export function StatsTab() {
         <p className="text-sm text-muted-foreground">{t.auth.dash.stats.subtitle}</p>
       </div>
 
+      {error&&<p role="alert" className="text-destructive">{error}</p>}
+      <p className="text-xs text-muted-foreground">Rapoarte introduse din surse documentate. Lipsa unei măsurători este afișată cu —; colectarea automată necesită conectarea sursei proiectului.</p>
       {loading ? (
         <div className="grid sm:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24 w-full" />)}
         </div>
-      ) : !latest ? (
+      ) : error ? null : !latest ? (
         <Card><CardContent className="py-10 text-center text-muted-foreground">{t.auth.dash.common.empty}</CardContent></Card>
       ) : (
         <>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <MetricCard icon={<Eye className="size-4" />} label={t.auth.dash.stats.visits} value={latest.visits.toLocaleString()} />
-            <MetricCard icon={<Users className="size-4" />} label={t.auth.dash.stats.unique} value={latest.unique_visitors.toLocaleString()} />
-            <MetricCard icon={<Activity className="size-4" />} label={t.auth.dash.stats.uptime} value={`${Number(latest.uptime_percent).toFixed(2)}%`} />
-            <MetricCard icon={<Zap className="size-4" />} label={t.auth.dash.stats.response} value={`${latest.avg_response_ms} ms`} />
+            <MetricCard icon={<Eye className="size-4" />} label={t.auth.dash.stats.visits} value={latest.visits?.toLocaleString() ?? "—"} />
+            <MetricCard icon={<Users className="size-4" />} label={t.auth.dash.stats.unique} value={latest.unique_visitors?.toLocaleString() ?? "—"} />
+            <MetricCard icon={<Activity className="size-4" />} label={t.auth.dash.stats.uptime} value={latest.uptime_percent === null ? "—" : `${latest.uptime_percent.toFixed(2)}%`} />
+            <MetricCard icon={<Zap className="size-4" />} label={t.auth.dash.stats.response} value={latest.avg_response_ms === null ? "—" : `${latest.avg_response_ms} ms`} />
           </div>
 
           <Card>
@@ -86,12 +84,12 @@ export function StatsTab() {
                   <tbody>
                     {stats.map((s) => (
                       <tr key={s.id} className="border-t">
-                        <td className="px-4 py-2.5">{subs[s.subscription_id] ?? "—"}</td>
+                        <td className="px-4 py-2.5">{subs[s.subscription_id] ?? "—"}<p className="text-xs text-muted-foreground">{s.source}</p></td>
                         <td className="px-4 py-2.5 text-muted-foreground">{fmtDate(s.period_start)} – {fmtDate(s.period_end)}</td>
-                        <td className="px-4 py-2.5 text-right tabular-nums">{s.visits.toLocaleString()}</td>
-                        <td className="px-4 py-2.5 text-right tabular-nums">{s.unique_visitors.toLocaleString()}</td>
-                        <td className="px-4 py-2.5 text-right tabular-nums">{Number(s.uptime_percent).toFixed(2)}%</td>
-                        <td className="px-4 py-2.5 text-right tabular-nums">{s.avg_response_ms} ms</td>
+                        <td className="px-4 py-2.5 text-right tabular-nums">{s.visits?.toLocaleString() ?? "—"}</td>
+                        <td className="px-4 py-2.5 text-right tabular-nums">{s.unique_visitors?.toLocaleString() ?? "—"}</td>
+                        <td className="px-4 py-2.5 text-right tabular-nums">{s.uptime_percent === null ? "—" : `${s.uptime_percent.toFixed(2)}%`}</td>
+                        <td className="px-4 py-2.5 text-right tabular-nums">{s.avg_response_ms === null ? "—" : `${s.avg_response_ms} ms`}</td>
                       </tr>
                     ))}
                   </tbody>

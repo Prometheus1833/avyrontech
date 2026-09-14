@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { workspaceApi } from "@/lib/workspaceApi";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import { MessageSquarePlus, Send, ChevronDown, ChevronUp } from "lucide-react";
 
 type Ticket = {
   id: string;
+  revision: number;
   subject: string;
   description: string | null;
   status: "open" | "in_progress" | "resolved" | "closed";
@@ -46,29 +47,36 @@ export function TicketsTab({ staffMode = false }: { staffMode?: boolean }) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
 
+  const [clients, setClients] = useState<{id:string;company_name:string}[]>([]);
+  const [clientId, setClientId] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({ subject: "", description: "", priority: "medium" as Ticket["priority"] });
 
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const q = supabase.from("tickets").select("id,subject,description,status,priority,created_at").order("created_at", { ascending: false });
-    if (!staffMode) q.eq("user_id", user.id);
-    const { data } = await q;
-    setTickets((data as Ticket[]) ?? []);
-    setLoading(false);
+    setError("");
+    try {
+      const {data} = await workspaceApi.list<Ticket>("tickets"); setTickets(data);
+      if (!staffMode) {
+        const linked = await workspaceApi.list<{id:string;company_name:string}>("clients");
+        setClients(linked.data);
+        setClientId(current => current || linked.data[0]?.id || "");
+      }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Suportul nu poate fi încărcat."); }
+    finally { setLoading(false); }
   }, [staffMode, user]);
 
   useEffect(() => { void load(); }, [load]);
 
   const submit = async () => {
     if (!user || !form.subject.trim()) return;
-    const { error } = await supabase.from("tickets").insert({
-      user_id: user.id,
-      subject: form.subject.trim(),
-      description: form.description.trim() || null,
-      priority: form.priority,
-    });
-    if (error) return toast.error(error.message);
+    if (!clientId || creating) return;
+    setCreating(true);
+    try { await workspaceApi.write("tickets", { ...form, client_id: clientId }); }
+    catch (error) { return toast.error(error instanceof Error ? error.message : "Solicitarea nu poate fi salvată."); }
+    finally { setCreating(false); }
     toast.success(t.auth.dash.tickets.created);
     setOpen(false);
     setForm({ subject: "", description: "", priority: "medium" });
@@ -97,6 +105,8 @@ export function TicketsTab({ staffMode = false }: { staffMode?: boolean }) {
             <DialogContent>
               <DialogHeader><DialogTitle>{t.auth.dash.tickets.newTicket}</DialogTitle></DialogHeader>
               <div className="space-y-3">
+                <label className="block text-sm">Cont client<select aria-label="Cont client" className="mt-1 w-full rounded border bg-background p-2" value={clientId} onChange={e=>setClientId(e.target.value)}><option value="">Selectează clientul</option>{clients.map(client=><option key={client.id} value={client.id}>{client.company_name}</option>)}</select></label>
+                {!clients.length && <p className="text-sm text-muted-foreground">Administratorul trebuie să asocieze contul tău unui client pentru a deschide solicitări.</p>}
                 <div className="space-y-1.5">
                   <Label>{t.auth.dash.tickets.subject}</Label>
                   <Input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} maxLength={200} />
@@ -119,16 +129,17 @@ export function TicketsTab({ staffMode = false }: { staffMode?: boolean }) {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpen(false)}>{t.auth.dash.common.cancel}</Button>
-                <Button onClick={submit}>{t.auth.dash.tickets.send}</Button>
+                <Button onClick={submit} disabled={creating || !clientId || !form.subject.trim()}>{t.auth.dash.tickets.send}</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
         )}
       </div>
 
+      {error && <p role="alert" className="text-destructive">{error}</p>}
       {loading ? (
         <div className="space-y-2">{[1, 2].map((i) => <Skeleton key={i} className="h-20 w-full" />)}</div>
-      ) : tickets.length === 0 ? (
+      ) : error ? null : tickets.length === 0 ? (
         <Card><CardContent className="py-10 text-center text-muted-foreground">{t.auth.dash.tickets.noTickets}</CardContent></Card>
       ) : (
         <div className="space-y-2">
@@ -171,12 +182,8 @@ function TicketThread({ ticket, staffMode, onChanged }: { ticket: Ticket; staffM
   const [sending, setSending] = useState(false);
 
   const load = useCallback(async () => {
-    const { data } = await supabase
-      .from("ticket_messages")
-      .select("id,ticket_id,author_id,content,is_staff_reply,created_at")
-      .eq("ticket_id", ticket.id)
-      .order("created_at", { ascending: true });
-    setMessages((data as Message[]) ?? []);
+    try { const { data } = await workspaceApi.list<Message>(`tickets/${encodeURIComponent(ticket.id)}/messages`); setMessages(data); }
+    catch (error) { toast.error(error instanceof Error ? error.message : "Mesajele nu pot fi încărcate."); }
   }, [ticket.id]);
 
   useEffect(() => { void load(); }, [load]);
@@ -184,25 +191,17 @@ function TicketThread({ ticket, staffMode, onChanged }: { ticket: Ticket; staffM
   const send = async () => {
     if (!user || !reply.trim()) return;
     setSending(true);
-    const { error } = await supabase.from("ticket_messages").insert({
-      ticket_id: ticket.id,
-      author_id: user.id,
-      content: reply.trim(),
-      is_staff_reply: staffMode,
-    });
-    setSending(false);
-    if (error) return toast.error(error.message);
+    try { await workspaceApi.write(`tickets/${encodeURIComponent(ticket.id)}/messages`, { content: reply.trim() }); }
+    catch (error) { return toast.error(error instanceof Error ? error.message : "Mesajul nu poate fi salvat."); }
+    finally { setSending(false); }
     setReply("");
     toast.success(t.auth.dash.tickets.messageSent);
     load();
   };
 
   const updateStatus = async (status: Ticket["status"]) => {
-    const { error } = await supabase.from("tickets").update({
-      status,
-      closed_at: status === "closed" ? new Date().toISOString() : null,
-    }).eq("id", ticket.id);
-    if (error) return toast.error(error.message);
+    try { await workspaceApi.write(`tickets/${encodeURIComponent(ticket.id)}`, { status, revision: ticket.revision }, "PATCH"); }
+    catch (error) { toast.error(error instanceof Error ? error.message : "Starea nu poate fi schimbată."); onChanged(); return; }
     onChanged();
   };
 

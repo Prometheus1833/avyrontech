@@ -1,3 +1,4 @@
+import { privilegedMfaSatisfied } from "./mfaPolicy";
 import { Hono, type Context } from "hono";
 import type { AppBindings } from "./types";
 import { platformRoleForUser } from "./authorization";
@@ -74,7 +75,7 @@ export const aiProjectsRouter = new Hono<AppBindings>();
 // Every mutation in this high-impact workspace requires a current MFA session,
 // including changes made by explicitly invited client collaborators.
 const requireAiProjectMfa = async (c: Context<AppBindings>, next: () => Promise<void>) => {
-  if (!["GET", "HEAD", "OPTIONS"].includes(c.req.method) && !c.get("mfaVerified")) {
+  if (!["GET", "HEAD", "OPTIONS"].includes(c.req.method) && !(await privilegedMfaSatisfied(c))) {
     return c.json({ error: { code: "mfa_required" } }, 403);
   }
   await next();

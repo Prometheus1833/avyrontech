@@ -300,7 +300,7 @@ const AiOs = ({ embedded = false }: { embedded?: boolean }) => {
             <input className={field} placeholder="Caută în baza de cunoștințe…" value={search} onChange={(e) => void searchKnowledge(e.target.value)} />
             {canEdit && (
               <div className="space-y-3 rounded-2xl border border-border/60 bg-card/60 p-4">
-                <p className="text-sm font-medium">Adaugă o cunoștință</p>
+                <p className="text-sm font-medium">{kbDraft.id ? "Editează cunoștința" : "Adaugă o cunoștință"}</p>
                 <div className="grid gap-3 sm:grid-cols-3">
                   <select className={field} value={kbDraft.category} onChange={(e) => setKbDraft({ ...kbDraft, category: e.target.value })}>
                     {["general", "agentie", "produse", "preturi", "proces", "contact", "tehnic", "obiectii"].map((v) => <option key={v}>{v}</option>)}
@@ -313,6 +313,10 @@ const AiOs = ({ embedded = false }: { embedded?: boolean }) => {
                 </div>
                 <input className={field} placeholder="Întrebare" value={kbDraft.question ?? ""} onChange={(e) => setKbDraft({ ...kbDraft, question: e.target.value })} />
                 <textarea rows={3} className={field} placeholder="Răspuns" value={kbDraft.answer ?? ""} onChange={(e) => setKbDraft({ ...kbDraft, answer: e.target.value })} />
+                <label className="block text-sm">Valabilă până la (opțional)
+                  <input type="date" className={field} value={kbDraft.review_after ? new Date(kbDraft.review_after).toISOString().slice(0,10) : ''} onChange={e=>setKbDraft({...kbDraft,review_after:e.target.value?new Date(e.target.value+'T23:59:59Z').getTime():null})}/>
+                  <span className="text-xs text-muted-foreground">După această dată, agentul o exclude până la o nouă verificare.</span>
+                </label>
                 <input className={field} placeholder="Cuvinte cheie (separate prin spațiu)" value={kbDraft.keywords ?? ""} onChange={(e) => setKbDraft({ ...kbDraft, keywords: e.target.value })} />
                 <button type="button" onClick={() => void saveKnowledge()} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
                   <Plus className="size-4" /> Salvează
@@ -331,10 +335,11 @@ const AiOs = ({ embedded = false }: { embedded?: boolean }) => {
                       </p>
                     </div>
                     {canEdit && (
+                      <div className="flex gap-2"><button type="button" onClick={()=>{setKbDraft(row);window.scrollTo({top:0,behavior:"smooth"});}} className="rounded-lg border border-border/60 p-2 text-sm hover:bg-muted">Editează</button>
                       <button type="button" aria-label="Arhivează" onClick={() => void aiOsAdmin.archiveKnowledge(row.id).then(() => searchKnowledge(search))}
                         className="rounded-lg border border-border/60 p-2 hover:bg-muted">
                         <Archive className="size-4" />
-                      </button>
+                      </button></div>
                     )}
                   </div>
                 </li>

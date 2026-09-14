@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { workspaceApi } from "@/lib/workspaceApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,8 @@ const csvEscape = (v: unknown) => {
 };
 
 export const StaffDomainStatsTab = () => {
+  const [domain, setDomain] = useState("");
+  const [checking, setChecking] = useState(false);
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [from, setFrom] = useState<string>(daysAgoISO(30));
@@ -47,15 +49,8 @@ export const StaffDomainStatsTab = () => {
     setLoading(true);
     const fromTs = new Date(from + "T00:00:00").toISOString();
     const toTs = new Date(to + "T23:59:59.999").toISOString();
-    const { data, error } = await supabase
-      .from("domain_checks")
-      .select("id, domain, tld, name, status, source, created_at")
-      .gte("created_at", fromTs)
-      .lte("created_at", toTs)
-      .order("created_at", { ascending: false })
-      .limit(1000);
-    if (error) toast.error("Eroare la încărcare");
-    setRows((data ?? []) as Row[]);
+    try { const {data}=await workspaceApi.list<Row>(`domains?from=${Date.parse(fromTs)}&to=${Date.parse(toTs)}&limit=100`); setRows(data); }
+    catch(error) { toast.error(error instanceof Error?error.message:"Eroare la încărcare"); }
     setLoading(false);
   };
 
@@ -92,18 +87,11 @@ export const StaffDomainStatsTab = () => {
     try {
       const fromTs = new Date(from + "T00:00:00").toISOString();
       const toTs = new Date(to + "T23:59:59.999").toISOString();
-      const pageSize = 1000;
+      const pageSize = 100;
       let all: Row[] = [];
       let pageStart = 0;
       while (true) {
-        const { data, error } = await supabase
-          .from("domain_checks")
-          .select("id, domain, tld, name, status, source, created_at")
-          .gte("created_at", fromTs)
-          .lte("created_at", toTs)
-          .order("created_at", { ascending: false })
-          .range(pageStart, pageStart + pageSize - 1);
-        if (error) throw error;
+        const {data}=await workspaceApi.list<Row>(`domains?from=${Date.parse(fromTs)}&to=${Date.parse(toTs)}&limit=${pageSize}&offset=${pageStart}`);
         const page = (data ?? []) as Row[];
         all = all.concat(page);
         if (page.length < pageSize) break;
@@ -146,6 +134,8 @@ export const StaffDomainStatsTab = () => {
 
   return (
     <div className="space-y-6">
+      <form className="flex flex-wrap gap-2" onSubmit={async e=>{e.preventDefault();setChecking(true);try{await workspaceApi.write('domains',{domain});await load();}catch(error){toast.error(error instanceof Error?error.message:'Verificarea a eșuat.');}finally{setChecking(false);}}}><Input aria-label="Domeniu de verificat" placeholder="exemplu.ro" value={domain} onChange={e=>setDomain(e.target.value)} required className="max-w-sm"/><Button disabled={checking}>{checking?'Se verifică…':'Verifică domeniul'}</Button></form>
+      <p className="text-xs text-muted-foreground">Istoric al verificărilor interne. Sumarul include ultimele 100 de rezultate; exportul parcurge întregul interval (maximum 50.000). Disponibilitatea necesită confirmare la registrar.</p>
       <Card>
         <CardContent className="pt-6 flex flex-wrap items-end gap-3">
           <div className="space-y-1">

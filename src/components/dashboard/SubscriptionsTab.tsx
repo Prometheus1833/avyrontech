@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { workspaceApi } from "@/lib/workspaceApi";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,18 +31,17 @@ export function SubscriptionsTab() {
   const { t, lang } = useLang();
   const [items, setItems] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("subscriptions")
-      .select("id,product_name,description,status,price_cents,currency,billing_cycle,started_at,next_renewal_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setItems((data as Subscription[]) ?? []);
-        setLoading(false);
-      });
+    let active = true;
+    setLoading(true); setError("");
+    workspaceApi.list<Subscription>("subscriptions")
+      .then(({ data }) => { if (active) setItems(data); })
+      .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : "Datele nu pot fi încărcate."); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [user]);
 
   const fmt = (cents: number, currency: string) =>
@@ -58,11 +57,12 @@ export function SubscriptionsTab() {
         <p className="text-sm text-muted-foreground">{t.auth.dash.subs.subtitle}</p>
       </div>
 
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       {loading ? (
         <div className="space-y-3">
           {[1, 2].map((i) => <Skeleton key={i} className="h-32 w-full" />)}
         </div>
-      ) : items.length === 0 ? (
+      ) : error ? null : items.length === 0 ? (
         <Card><CardContent className="py-10 text-center text-muted-foreground">{t.auth.dash.common.empty}</CardContent></Card>
       ) : (
         <div className="grid gap-4">

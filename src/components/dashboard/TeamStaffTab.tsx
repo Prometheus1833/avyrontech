@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { KeyRound, LockKeyhole, Search, Settings2, ShieldCheck, UserCheck, Users } from "lucide-react";
-import { internApi, type AccountOption } from "@/lib/internApi";
+import { workspaceApi } from "@/lib/workspaceApi";
+import { internApi, type AccountOption, type ClientOption } from "@/lib/internApi";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -22,12 +23,15 @@ export default function TeamStaffTab() {
   const [selected, setSelected] = useState<AccountOption | null>(null);
   const [accessLevel, setAccessLevel] = useState<"user" | "staff" | "admin">("staff");
   const [saving, setSaving] = useState(false);
+  const [clients, setClients] = useState<ClientOption[]>([]);
+  const [clientIds, setClientIds] = useState<string[]>([]);
+  const [linksReady, setLinksReady] = useState(false);
 
   const loadAccounts = useCallback(async () => {
     setLoading(true);
     setError("");
     await internApi.listAccounts()
-      .then((result) => setAccounts(result.data.filter((account) => /(^|,)(staff|admin)(,|$)/.test(account.roles || ""))))
+      .then((result) => setAccounts(result.data))
       .catch((cause) => setError(cause instanceof Error ? cause.message : "Echipa nu a putut fi încărcată."))
       .finally(() => setLoading(false));
   }, []);
@@ -36,18 +40,23 @@ export default function TeamStaffTab() {
     void loadAccounts();
   }, [loadAccounts]);
 
-  const openAccess = (account: AccountOption) => {
+  const openAccess = async (account: AccountOption) => {
+    setLinksReady(false);setClientIds([]);
+    try {
+      const [list, linked] = await Promise.all([internApi.listClients(),workspaceApi.list<{client_id:string}>(`account-access/${account.id}`)]);
+      setClients(list.data);setClientIds(linked.data.map(r=>r.client_id));setLinksReady(true);
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Asocierile nu pot fi încărcate."); }
     const roles = (account.roles || "").split(",");
     setAccessLevel(roles.includes("admin") ? "admin" : roles.includes("staff") ? "staff" : "user");
     setSelected(account);
   };
 
   const saveAccess = async () => {
-    if (!selected || !isSuperAdmin) return;
+    if (!selected || !isSuperAdmin || !linksReady) return;
     setSaving(true);
     try {
-      await internApi.updateAccountAccess(selected.id, accessLevel);
-      toast.success("Nivelul de acces a fost actualizat și auditat.");
+      await workspaceApi.write(`account-access/${selected.id}`, {client_ids:clientIds,access_level:accessLevel}, "PUT");
+      toast.success("Accesul și asocierile client au fost actualizate și auditate.");
       setSelected(null);
       await loadAccounts();
     } catch (cause) {
@@ -76,7 +85,7 @@ export default function TeamStaffTab() {
 
       <div className="grid gap-3 md:grid-cols-3">
         {[
-          { label: "Membri staff", value: accounts.length, icon: Users },
+          { label: "Membri staff", value: accounts.filter(item => /(^|,)(staff|admin)(,|$)/.test(item.roles || "")).length, icon: Users },
           { label: "Administratori", value: accounts.filter((item) => (item.roles || "").split(",").includes("admin")).length, icon: LockKeyhole },
           { label: "Politică acces", value: "Privilegii minime", icon: KeyRound },
         ].map((item) => <div key={item.label} className="rounded-2xl border border-white/[0.08] bg-[#10162a]/90 p-4"><div className="flex items-start justify-between"><div><p className="text-xs text-slate-500">{item.label}</p><p className="mt-2 font-display text-xl font-semibold text-white">{item.value}</p></div><span className="grid size-9 place-items-center rounded-xl bg-violet-400/10 text-violet-300"><item.icon className="size-4" /></span></div></div>)}
@@ -84,7 +93,7 @@ export default function TeamStaffTab() {
 
       <section className="rounded-2xl border border-white/[0.08] bg-[#10162a]/90 p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div><h2 className="font-display text-lg font-semibold text-white">Membrii echipei</h2><p className="text-xs text-slate-500">Datele personale sunt mascate pentru rolurile fără acces complet.</p></div>
+          <div><h2 className="font-display text-lg font-semibold text-white">Conturi și membri</h2><p className="text-xs text-slate-500">Datele personale sunt mascate pentru rolurile fără acces complet.</p></div>
           <label className="relative block sm:w-72"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-600" /><span className="sr-only">Caută membru</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Caută membru sau rol…" className="w-full rounded-xl border border-white/[0.08] bg-black/20 py-2.5 pl-9 pr-3 text-sm text-slate-200 outline-none placeholder:text-slate-600 focus:border-violet-400/40" /></label>
         </div>
         <div className="mt-4 space-y-2">
@@ -98,11 +107,11 @@ export default function TeamStaffTab() {
             return <div key={account.id} className="flex flex-col gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 sm:flex-row sm:items-center">
               <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-violet-500/25 to-cyan-400/10 font-display text-sm font-bold text-violet-200">{name.slice(0, 2).toUpperCase()}</span>
               <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-slate-200">{name}</p><p className="truncate text-xs text-slate-600">{account.email}</p></div>
-              <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-violet-300/10 bg-violet-400/[0.08] px-2.5 py-1 text-[11px] text-violet-200">{roleLabels[primaryRole]}</span><span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/[0.08] px-2.5 py-1 text-[11px] text-emerald-300"><UserCheck className="size-3" /> Activ</span>{isSuperAdmin && <Button type="button" size="sm" variant="outline" className="h-8 gap-1.5 border-white/10 bg-white/[0.03] text-xs text-slate-300 hover:bg-violet-400/10 hover:text-white" onClick={() => openAccess(account)}><Settings2 className="size-3.5" /> Gestionează</Button>}</div>
+              <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-violet-300/10 bg-violet-400/[0.08] px-2.5 py-1 text-[11px] text-violet-200">{roleLabels[primaryRole]}</span><span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/[0.08] px-2.5 py-1 text-[11px] text-emerald-300"><UserCheck className="size-3" /> {account.disabled_at ? "Dezactivat" : "Activ"}</span>{isSuperAdmin && <Button type="button" size="sm" variant="outline" className="h-8 gap-1.5 border-white/10 bg-white/[0.03] text-xs text-slate-300 hover:bg-violet-400/10 hover:text-white" onClick={() => openAccess(account)}><Settings2 className="size-3.5" /> Gestionează</Button>}</div>
             </div>;
           })}
         </div>
-        {!isSuperAdmin && <p className="mt-4 text-[11px] leading-relaxed text-slate-600">Modificarea rolurilor și privilegiilor este disponibilă exclusiv Super Adminului și va necesita MFA și audit.</p>}
+        {!isSuperAdmin && <p className="mt-4 text-[11px] leading-relaxed text-slate-600">Modificarea rolurilor și privilegiilor este disponibilă exclusiv Super Adminului cu verificare și audit.</p>}
       </section>
 
       <Dialog open={selected !== null} onOpenChange={(open) => { if (!open && !saving) setSelected(null); }}>
@@ -122,9 +131,14 @@ export default function TeamStaffTab() {
             </select>
             <p className="text-xs leading-relaxed text-amber-200/70">Identitățile protejate ale platformei nu pot fi retrogradate. Super Admin rămâne o atribuire separată, controlată de infrastructură.</p>
           </div>
+          <fieldset disabled={!linksReady || saving} className="space-y-2 max-h-48 overflow-y-auto">
+            <legend className="text-sm font-medium">Acces la facturarea și suportul clienților</legend>
+            {!linksReady && <p className="text-xs text-muted-foreground">Asocierile se încarcă sau nu sunt disponibile.</p>}
+            {clients.map(client=><label key={client.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={clientIds.includes(client.id)} onChange={e=>setClientIds(current=>e.target.checked?[...current,client.id]:current.filter(id=>id!==client.id))}/>{client.company_name}</label>)}
+          </fieldset>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => setSelected(null)} disabled={saving}>Anulează</Button>
-            <Button type="button" onClick={() => void saveAccess()} disabled={saving} className="bg-violet-600 hover:bg-violet-500">{saving ? "Se salvează…" : "Salvează accesul"}</Button>
+            <Button type="button" onClick={() => void saveAccess()} disabled={saving || !linksReady} className="bg-violet-600 hover:bg-violet-500">{saving ? "Se salvează…" : "Salvează accesul"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

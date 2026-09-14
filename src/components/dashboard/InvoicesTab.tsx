@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { workspaceApi } from "@/lib/workspaceApi";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import { Download, Receipt } from "lucide-react";
 type Invoice = {
   id: string;
   invoice_number: string;
-  amount_cents: number;
+  amount_cents: number | null;
   currency: string;
   status: "paid" | "pending" | "overdue" | "cancelled";
   issued_at: string;
@@ -31,22 +31,21 @@ export function InvoicesTab() {
   const { t, lang } = useLang();
   const [items, setItems] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("invoices")
-      .select("id,invoice_number,amount_cents,currency,status,issued_at,due_at,pdf_url")
-      .eq("user_id", user.id)
-      .order("issued_at", { ascending: false })
-      .then(({ data }) => {
-        setItems((data as Invoice[]) ?? []);
-        setLoading(false);
-      });
+    let active = true;
+    setLoading(true); setError("");
+    workspaceApi.list<Invoice>("invoices")
+      .then(({ data }) => { if (active) setItems(data); })
+      .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : "Datele nu pot fi încărcate."); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [user]);
 
-  const fmt = (cents: number, currency: string) =>
-    new Intl.NumberFormat(lang === "ro" ? "ro-RO" : "en-US", { style: "currency", currency }).format(cents / 100);
+  const fmt = (cents: number | null, currency: string) =>
+    cents === null ? "—" : new Intl.NumberFormat(lang === "ro" ? "ro-RO" : "en-US", { style: "currency", currency }).format(cents / 100);
   const fmtDate = (d: string | null) =>
     d ? new Date(d).toLocaleDateString(lang === "ro" ? "ro-RO" : "en-US", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
@@ -57,9 +56,10 @@ export function InvoicesTab() {
         <p className="text-sm text-muted-foreground">{t.auth.dash.invoices.subtitle}</p>
       </div>
 
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       {loading ? (
         <div className="space-y-2">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
-      ) : items.length === 0 ? (
+      ) : error ? null : items.length === 0 ? (
         <Card><CardContent className="py-10 text-center text-muted-foreground">{t.auth.dash.common.empty}</CardContent></Card>
       ) : (
         <Card>

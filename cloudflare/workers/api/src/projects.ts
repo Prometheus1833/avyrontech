@@ -18,7 +18,7 @@ type Vars = { userId: string; roles: Role[] };
 const uuid = () => crypto.randomUUID();
 const now = () => Date.now();
 
-async function canAccessProject(db: D1Database, projectId: string, userId: string, roles: Role[]): Promise<{ read: boolean; write: boolean; isStaff: boolean; isOwner: boolean }> {
+export async function canAccessProject(db: D1Database, projectId: string, userId: string, roles: Role[]): Promise<{ read: boolean; write: boolean; isStaff: boolean; isOwner: boolean }> {
   const isAdmin = roles.includes("admin");
   const isStaff = roles.includes("staff") || isAdmin;
   const proj = await db.prepare("SELECT owner_user_id, organization_id FROM projects WHERE id = ?").bind(projectId)

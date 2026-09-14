@@ -1,3 +1,5 @@
+import { privilegedMfaSatisfied } from "./mfaPolicy";
+import { receiptsRouter } from "./receipts";
 import { Hono, type Context } from "hono";
 import type { AppBindings } from "./types";
 import { hasCapability, platformRoleForUser } from "./authorization";
@@ -45,9 +47,11 @@ async function idempotency(c: Context<AppBindings>, scope: string, request: unkn
 financeRouter.use("/api/finance/*", async (c, next) => {
   const rate = await checkRateLimit(c.env.DB, [{ key: `finance:${c.get("userId")}:h`, limit: 600, windowSec: 3600 }]);
   if (!rate.ok) return c.json({ error: { code: "rate_limited" } }, 429);
-  if (!["GET", "HEAD", "OPTIONS"].includes(c.req.method) && !c.get("mfaVerified")) return c.json({ error: { code: "mfa_required" } }, 403);
+  if (!["GET", "HEAD", "OPTIONS"].includes(c.req.method) && !(await privilegedMfaSatisfied(c))) return c.json({ error: { code: "mfa_required" } }, 403);
   await next();
 });
+
+financeRouter.route("/", receiptsRouter);
 
 financeRouter.get("/api/finance/overview", async (c) => {
   if (!(await allowed(c, "finance.read"))) return deny(c);
@@ -63,19 +67,19 @@ financeRouter.get("/api/finance/overview", async (c) => {
     c.env.DB.prepare(`SELECT COUNT(*) total FROM financial_expenses WHERE archived_at IS NULL AND status IN ('payment_due','overdue')`).first<{ total: number }>(),
     c.env.DB.prepare(`SELECT COUNT(*) total FROM financial_revenues WHERE archived_at IS NULL AND status IN ('invoiced','sent','partially_paid','overdue')`).first<{ total: number }>(),
     c.env.DB.prepare(`SELECT vendor.name vendor, expense.next_billing_date date, expense.gross_amount_minor amount, expense.currency FROM financial_expenses expense JOIN financial_vendors vendor ON vendor.id=expense.vendor_id WHERE expense.archived_at IS NULL AND expense.next_billing_date >= ? ORDER BY expense.next_billing_date LIMIT 1`).bind(timestamp).first(),
-    c.env.DB.prepare(`SELECT COALESCE(SUM(limit_minor),0) budget, COUNT(*) count FROM financial_budgets WHERE status='active' AND period_start <= ? AND period_end > ?`).bind(timestamp, timestamp).first<{ budget: number; count: number }>(),
+    c.env.DB.prepare(`SELECT COALESCE(SUM(CASE WHEN currency='RON' THEN limit_minor END),0) budget, COUNT(*) count FROM financial_budgets WHERE status='active' AND period_start <= ? AND period_end > ?`).bind(timestamp, timestamp).first<{ budget: number; count: number }>(),
     c.env.DB.prepare(`SELECT COUNT(*) total FROM financial_alerts WHERE status='open' AND severity='critical'`).first<{ total: number }>(),
     c.env.DB.prepare(`SELECT COUNT(*) total FROM leads WHERE created_at BETWEEN ? AND ?`).bind(from, to).first<{ total: number }>(),
   ]);
   const expenseMinor = totals?.expenses || 0, revenueMinor = totals?.revenues || 0;
   return c.json({ period: { from, to }, kpis: {
-    expensesMinor: expenseMinor, revenuesMinor: revenueMinor, operatingProfitEstimateMinor: revenueMinor - expenseMinor,
+    expensesMinor: expenseMinor, revenuesMinor: revenueMinor, invoicedMinor: totals?.invoiced || 0, operatingProfitEstimateMinor: revenueMinor - expenseMinor,
     activeSubscriptions: subscription?.total || 0, aiCostMinor: ai?.total || 0, advertisingMinor: advertising?.total || 0,
     costPerLeadMinor: leads?.total ? Math.round(expenseMinor / leads.total) : null,
     invoicesPayable: invoicesPayable?.total || 0, invoicesReceivable: invoicesReceivable?.total || 0,
     nextPayment, budgetLimitMinor: budgets?.budget || 0, budgetCount: budgets?.count || 0,
     freeTierSavingsMinor: null, criticalAlerts: alerts?.total || 0,
-  }, notice: "Estimări de management, nu contabilitate fiscală. Sumele fără echivalent RON sunt excluse; încasările parțiale folosesc valoarea documentului până la reconciliere." });
+  }, notice: "Estimări de management, nu contabilitate fiscală. Sumele fără echivalent RON sunt excluse; încasările parțiale includ numai înregistrările de încasare. Documentele marcate integral plătite fără registru de încasări sunt păstrate ca date istorice." });
 });
 
 financeRouter.get("/api/finance/config", async (c) => {
@@ -99,7 +103,7 @@ financeRouter.get("/api/finance/expenses", async (c) => {
   if (search) { where.push("(vendor.name LIKE ? ESCAPE '\\' OR expense.service_name LIKE ? ESCAPE '\\')"); const q = `%${search.replace(/[\\%_]/g, "\\$&")}%`; values.push(q, q); }
   if (category) { where.push("expense.category = ?"); values.push(category); }
   if (status) { where.push("expense.status = ?"); values.push(status); }
-  const sort = c.req.query("sort") === "highest" ? "COALESCE(expense.amount_ron_minor,expense.gross_amount_minor,-1) DESC" : c.req.query("sort") === "next_payment" ? "expense.next_billing_date IS NULL, expense.next_billing_date" : "expense.updated_at DESC";
+  const sort = c.req.query("sort") === "highest" ? "COALESCE(CASE WHEN expense.currency='RON' THEN expense.gross_amount_minor ELSE expense.amount_ron_minor END,-1) DESC" : c.req.query("sort") === "next_payment" ? "expense.next_billing_date IS NULL, expense.next_billing_date" : "expense.updated_at DESC";
   const result = await c.env.DB.prepare(`SELECT expense.*,vendor.name vendor_name,vendor.service_type FROM financial_expenses expense JOIN financial_vendors vendor ON vendor.id=expense.vendor_id WHERE ${where.join(" AND ")} ORDER BY ${sort} LIMIT ? OFFSET ?`).bind(...values, limit, (page - 1) * limit).all();
   const count = await c.env.DB.prepare(`SELECT COUNT(*) total FROM financial_expenses expense JOIN financial_vendors vendor ON vendor.id=expense.vendor_id WHERE ${where.join(" AND ")}`).bind(...values).first<{ total: number }>();
   return c.json({ data: result.results, page, limit, total: count?.total || 0 });
@@ -190,14 +194,25 @@ financeRouter.patch("/api/finance/revenues/:revenueId", async (c) => {
   if(!body)return c.json({error:{code:"invalid_revenue"}},400);
   const status=String(body.status??before.status),amount=body.grossAmountMinor===undefined?before.gross_amount_minor:Number(body.grossAmountMinor),timestamp=now();
   if(!["draft","invoiced","sent","partially_paid","paid","overdue","cancelled","refunded"].includes(status)||!(amount===null||(Number.isSafeInteger(amount)&&Number(amount)>=0)))return c.json({error:{code:"invalid_revenue"}},400);
-  await c.env.DB.prepare("UPDATE financial_revenues SET status=?,gross_amount_minor=?,amount_ron_minor=?,invoice_date=?,due_date=?,payment_date=?,notes=?,updated_by=?,updated_at=? WHERE id=?").bind(status,amount,body.amountRonMinor??before.amount_ron_minor,body.invoiceDate??before.invoice_date,body.dueDate??before.due_date,body.paymentDate??before.payment_date,typeof body.notes==="string"?body.notes.slice(0,8000):before.notes,c.get("userId"),timestamp,c.req.param("revenueId")).run();
-  await audit(c,"finance.revenue.update","revenue",c.req.param("revenueId"),before,{status,grossAmountMinor:amount});
+  try {
+    await c.env.DB.batch([
+      c.env.DB.prepare("UPDATE financial_revenues SET status=?,gross_amount_minor=?,amount_ron_minor=?,invoice_date=?,due_date=?,payment_date=?,notes=?,updated_by=?,updated_at=? WHERE id=?").bind(status,amount,body.amountRonMinor??before.amount_ron_minor,body.invoiceDate??before.invoice_date,body.dueDate??before.due_date,body.paymentDate??before.payment_date,typeof body.notes==="string"?body.notes.slice(0,8000):before.notes,c.get("userId"),timestamp,c.req.param("revenueId")),
+      c.env.DB.prepare("INSERT INTO financial_audit_events(id,actor_user_id,action,resource_type,resource_id,before_json,after_json,source,created_at) VALUES (?,?,'finance.revenue.update','revenue',?,?,?,'manual',?)").bind(id("faud"),c.get("userId"),c.req.param("revenueId"),JSON.stringify(before),JSON.stringify({status,grossAmountMinor:amount}),timestamp),
+    ]);
+  } catch (error) {
+    if (/reconciled_document_(amount|state)_locked/.test(String(error))) return c.json({error:{code:"receipt_ledger_locked",message:"Suma, starea și data plății sunt controlate de încasările înregistrate."}},409);
+    throw error;
+  }
   return c.json({ok:true});
 });
 
 financeRouter.delete("/api/finance/revenues/:revenueId", async (c) => {
   if (!(await allowed(c,"finance.write"))) return deny(c);
-  const timestamp=now(),result=await c.env.DB.prepare("UPDATE financial_revenues SET status='archived',archived_at=?,updated_by=?,updated_at=? WHERE id=? AND archived_at IS NULL").bind(timestamp,c.get("userId"),timestamp,c.req.param("revenueId")).run();
+  if (await c.env.DB.prepare("SELECT 1 FROM financial_receipts WHERE revenue_id=? LIMIT 1").bind(c.req.param("revenueId")).first()) return c.json({error:{code:"receipt_ledger_locked",message:"Documentele cu încasări se păstrează în registru."}},409);
+  const timestamp=now();
+  let result: D1Result;
+  try { result=await c.env.DB.prepare("UPDATE financial_revenues SET status='archived',archived_at=?,updated_by=?,updated_at=? WHERE id=? AND archived_at IS NULL").bind(timestamp,c.get("userId"),timestamp,c.req.param("revenueId")).run(); }
+  catch (error) { if (/reconciled_document_state_locked/.test(String(error))) return c.json({error:{code:"receipt_ledger_locked"}},409); throw error; }
   if(!(result.meta.changes??0))return c.json({error:{code:"not_found"}},404);
   await audit(c,"finance.revenue.archive","revenue",c.req.param("revenueId"),null,{status:"archived"});
   return c.json({ok:true});
@@ -285,14 +300,14 @@ financeRouter.get("/api/finance/analytics", async (c) => {
   if (!(await allowed(c,"finance.read"))) return deny(c);
   const timestamp=now(),threeMonthsAgo=timestamp-92*86_400_000;
   const [categories,recurring,variable,clients,projects]=await Promise.all([
-    c.env.DB.prepare("SELECT category,COALESCE(SUM(COALESCE(amount_ron_minor,gross_amount_minor,0)),0) total_minor FROM financial_expenses WHERE archived_at IS NULL GROUP BY category ORDER BY total_minor DESC").all(),
-    c.env.DB.prepare(`SELECT COALESCE(SUM(CASE billing_cycle WHEN 'yearly' THEN COALESCE(amount_ron_minor,gross_amount_minor,0)/12 WHEN 'quarterly' THEN COALESCE(amount_ron_minor,gross_amount_minor,0)/3 ELSE COALESCE(amount_ron_minor,gross_amount_minor,0) END),0) monthly_minor FROM financial_expenses WHERE archived_at IS NULL AND billing_type='recurring' AND status='active'`).first<{monthly_minor:number}>(),
-    c.env.DB.prepare("SELECT COALESCE(SUM(COALESCE(amount_ron_minor,gross_amount_minor,0))/3,0) monthly_minor FROM financial_expenses WHERE archived_at IS NULL AND billing_type IN ('variable','usage_based') AND COALESCE(paid_date,invoice_date,created_at)>=?").bind(threeMonthsAgo).first<{monthly_minor:number}>(),
-    c.env.DB.prepare(`SELECT client.id,client.company_name,COALESCE((SELECT SUM(COALESCE(revenue.amount_ron_minor,revenue.gross_amount_minor,0)) FROM financial_revenues revenue WHERE revenue.client_id=client.id AND revenue.status IN ('paid','partially_paid') AND revenue.archived_at IS NULL),0) revenue_minor,COALESCE((SELECT SUM(COALESCE(expense.amount_ron_minor,expense.gross_amount_minor,0)) FROM financial_expenses expense WHERE expense.client_id=client.id AND expense.archived_at IS NULL),0) direct_cost_minor FROM clients client ORDER BY revenue_minor DESC LIMIT 50`).all(),
-    c.env.DB.prepare(`SELECT project.id,project.name,COALESCE((SELECT SUM(COALESCE(revenue.amount_ron_minor,revenue.gross_amount_minor,0)) FROM financial_revenues revenue WHERE revenue.project_id=project.id AND revenue.status IN ('paid','partially_paid') AND revenue.archived_at IS NULL),0) revenue_minor,COALESCE((SELECT SUM(COALESCE(expense.amount_ron_minor,expense.gross_amount_minor,0)) FROM financial_expenses expense WHERE expense.project_id=project.id AND expense.archived_at IS NULL),0) direct_cost_minor FROM projects project WHERE project.status<>'archived' ORDER BY revenue_minor DESC LIMIT 50`).all(),
+    c.env.DB.prepare("SELECT category,COALESCE(SUM(CASE WHEN currency='RON' THEN gross_amount_minor ELSE amount_ron_minor END),0) total_minor FROM financial_expenses WHERE archived_at IS NULL GROUP BY category ORDER BY total_minor DESC").all(),
+    c.env.DB.prepare(`SELECT COALESCE(SUM(CASE billing_cycle WHEN 'yearly' THEN CASE WHEN currency='RON' THEN gross_amount_minor ELSE amount_ron_minor END/12 WHEN 'quarterly' THEN CASE WHEN currency='RON' THEN gross_amount_minor ELSE amount_ron_minor END/3 ELSE CASE WHEN currency='RON' THEN gross_amount_minor ELSE amount_ron_minor END END),0) monthly_minor FROM financial_expenses WHERE archived_at IS NULL AND billing_type='recurring' AND status='active'`).first<{monthly_minor:number}>(),
+    c.env.DB.prepare("SELECT COALESCE(SUM(CASE WHEN currency='RON' THEN gross_amount_minor ELSE amount_ron_minor END)/3,0) monthly_minor FROM financial_expenses WHERE archived_at IS NULL AND billing_type IN ('variable','usage_based') AND COALESCE(paid_date,invoice_date,created_at)>=?").bind(threeMonthsAgo).first<{monthly_minor:number}>(),
+    c.env.DB.prepare(`SELECT client.id,client.company_name,COALESCE((SELECT SUM(CASE WHEN revenue.currency='RON' THEN revenue.gross_amount_minor ELSE revenue.amount_ron_minor END) FROM financial_revenues revenue WHERE revenue.client_id=client.id AND revenue.status IN ('invoiced','sent','paid','partially_paid','overdue') AND revenue.archived_at IS NULL),0) revenue_minor,COALESCE((SELECT SUM(CASE WHEN expense.currency='RON' THEN expense.gross_amount_minor ELSE expense.amount_ron_minor END) FROM financial_expenses expense WHERE expense.client_id=client.id AND expense.archived_at IS NULL),0) direct_cost_minor FROM clients client ORDER BY revenue_minor DESC LIMIT 50`).all(),
+    c.env.DB.prepare(`SELECT project.id,project.name,COALESCE((SELECT SUM(CASE WHEN revenue.currency='RON' THEN revenue.gross_amount_minor ELSE revenue.amount_ron_minor END) FROM financial_revenues revenue WHERE revenue.project_id=project.id AND revenue.status IN ('invoiced','sent','paid','partially_paid','overdue') AND revenue.archived_at IS NULL),0) revenue_minor,COALESCE((SELECT SUM(CASE WHEN expense.currency='RON' THEN expense.gross_amount_minor ELSE expense.amount_ron_minor END) FROM financial_expenses expense WHERE expense.project_id=project.id AND expense.archived_at IS NULL),0) direct_cost_minor FROM projects project WHERE project.status<>'archived' ORDER BY revenue_minor DESC LIMIT 50`).all(),
   ]);
   const monthlyRecurring=Math.round(recurring?.monthly_minor||0),monthlyVariable=Math.round(variable?.monthly_minor||0);
-  return c.json({categories:categories.results,monthlyRecurringMinor:monthlyRecurring,monthlyVariableAverageMinor:monthlyVariable,projections:[projectionFromRecurring(monthlyRecurring,monthlyVariable,3),projectionFromRecurring(monthlyRecurring,monthlyVariable,6),projectionFromRecurring(monthlyRecurring,monthlyVariable,12)],clients:clients.results.map((row)=>({...row,estimated_contribution_minor:Number((row as Record<string,unknown>).revenue_minor||0)-Number((row as Record<string,unknown>).direct_cost_minor||0)})),projects:projects.results.map((row)=>({...row,estimated_contribution_minor:Number((row as Record<string,unknown>).revenue_minor||0)-Number((row as Record<string,unknown>).direct_cost_minor||0)})),notice:"MANAGEMENT ESTIMATE"});
+  return c.json({categories:categories.results,monthlyRecurringMinor:monthlyRecurring,monthlyVariableAverageMinor:monthlyVariable,projections:[projectionFromRecurring(monthlyRecurring,monthlyVariable,3),projectionFromRecurring(monthlyRecurring,monthlyVariable,6),projectionFromRecurring(monthlyRecurring,monthlyVariable,12)],clients:clients.results.map((row)=>({...row,estimated_contribution_minor:Number((row as Record<string,unknown>).revenue_minor||0)-Number((row as Record<string,unknown>).direct_cost_minor||0)})),projects:projects.results.map((row)=>({...row,estimated_contribution_minor:Number((row as Record<string,unknown>).revenue_minor||0)-Number((row as Record<string,unknown>).direct_cost_minor||0)})),notice:"Profitabilitate estimată din venit facturat și costuri directe. Sumele fără echivalent RON sunt excluse; încasările sunt raportate separat. Bugetele fără conversie RON nu intră în totalul RON."});
 });
 
 financeRouter.post("/api/finance/cost-guard/evaluate", async (c) => {
@@ -357,7 +372,7 @@ financeRouter.delete("/api/finance/documents/:documentId", async (c) => {
 });
 
 financeRouter.get("/api/finance/export", async (c) => {
-  if(!c.get("mfaVerified")||!(await allowed(c,"finance.audit.read")))return deny(c);
+  if(!(await privilegedMfaSatisfied(c))||!(await allowed(c,"finance.audit.read")))return deny(c);
   const resource=c.req.query("resource")==="revenues"?"revenues":"expenses",format=c.req.query("format")==="json"?"json":"csv";
   const result=resource==="expenses"?await c.env.DB.prepare(`SELECT vendor.name vendor,expense.service_name,expense.category,expense.status,expense.billing_type,expense.billing_cycle,expense.currency,expense.net_amount_minor,expense.vat_amount_minor,expense.gross_amount_minor,expense.amount_ron_minor,expense.invoice_number,expense.invoice_date,expense.due_date,expense.paid_date,expense.next_billing_date,expense.source FROM financial_expenses expense JOIN financial_vendors vendor ON vendor.id=expense.vendor_id WHERE expense.archived_at IS NULL ORDER BY expense.updated_at DESC LIMIT 10000`).all<Record<string,unknown>>():await c.env.DB.prepare(`SELECT service_name,revenue_type,status,currency,net_amount_minor,vat_amount_minor,gross_amount_minor,amount_ron_minor,invoice_number,invoice_date,due_date,payment_date,source FROM financial_revenues WHERE archived_at IS NULL ORDER BY updated_at DESC LIMIT 10000`).all<Record<string,unknown>>();
   await audit(c,"finance.export",resource,null,null,{format,rows:result.results.length});

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { cfAuth } from "@/lib/cfAuth";
 import { internApi, type ProjectMedia } from "@/lib/internApi";
 import { Button } from "@/components/ui/button";
 import { Paperclip, X, Image as ImageIcon, FileText, Loader2 } from "lucide-react";
@@ -39,14 +40,16 @@ export const MediaAttachments = ({
     if (!files?.length) return;
     setUploading(true);
     try {
+      let uploaded = 0;
       for (const f of Array.from(files)) {
         if (f.size > 15 * 1024 * 1024) {
           toast.error(`${f.name} depășește 15 MB`);
           continue;
         }
         await internApi.uploadMedia(projectId, f, proposalId);
+        uploaded++;
       }
-      toast.success("Fișier(e) încărcat(e)");
+      if (uploaded) toast.success(`${uploaded} fișier(e) încărcat(e)`);
       await load();
     } catch (e) {
       toast.error((e as Error).message);
@@ -76,16 +79,17 @@ export const MediaAttachments = ({
             const isImg = m.content_type.startsWith("image/");
             return (
               <div key={m.id} className="relative group rounded-lg border bg-muted/30 overflow-hidden">
-                {isImg ? (
-                  <a href={m.url} target="_blank" rel="noreferrer" title={m.filename}>
-                    <img src={m.url} alt={m.filename} className="w-24 h-24 object-cover" />
-                  </a>
-                ) : (
-                  <a href={m.url} target="_blank" rel="noreferrer" title={m.filename} className="w-24 h-24 flex flex-col items-center justify-center gap-1 text-xs text-muted-foreground p-1 text-center">
-                    <FileText className="size-6" />
-                    <span className="truncate w-full">{m.filename}</span>
-                  </a>
-                )}
+                <button type="button" title={m.filename} className="w-32 h-24 flex flex-col items-center justify-center gap-1 text-xs text-muted-foreground p-2 text-center" onClick={async () => {
+                  try {
+                    const response = await cfAuth.requestResponse(m.url);
+                    const url = URL.createObjectURL(await response.blob());
+                    const link = document.createElement("a"); link.href = url; link.download = m.filename; link.click();
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                  } catch (error) { toast.error(error instanceof Error ? error.message : "Descărcarea a eșuat."); }
+                }}>
+                  {isImg ? <ImageIcon className="size-6" /> : <FileText className="size-6" />}
+                  <span className="truncate w-full">{m.filename}</span><span>Descarcă</span>
+                </button>
                 {canWrite && (
                   <button
                     onClick={() => remove(m.id)}

@@ -26,6 +26,7 @@ export type AiAgent = {
 };
 
 export type KnowledgeRow = {
+  review_after: number | null;
   id: string; agent_slug: string | null; category: string; language: string;
   question: string; answer: string; keywords: string; source: string;
   priority: number; status: string; hits: number; updated_at: number;

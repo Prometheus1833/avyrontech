@@ -4,18 +4,19 @@ import {
   RefreshCcw, ShieldCheck, TimerReset, UserRoundCheck, Workflow,
 } from "lucide-react";
 import { useState } from "react";
+import OperationsConsole from "./OperationsConsole";
 import { Link } from "react-router-dom";
 import { canOpenSection, type Access, type SectionId } from "@/lib/access";
 
 const modules = [
   { group: "AI și automatizare", name: "Centru de aprobări", detail: "Aprobă, revizuiește sau respinge acțiunile propuse de agenți.", status: "activ", icon: UserRoundCheck },
   { group: "AI și automatizare", name: "Activitate agenți", detail: "Rulări, pași, resurse, cost estimat și rezultat.", status: "activ", icon: Bot },
-  { group: "AI și automatizare", name: "Centru de automatizări", detail: "Execuții, erori, următoarea rulare și economie de timp.", status: "în dezvoltare", icon: Workflow },
+  { group: "AI și automatizare", name: "Centru de automatizări", detail: "Rapoarte programate, execuție manuală, istoric, retry și oprire; disponibile în consola de mai sus.", status: "în dezvoltare", icon: Workflow },
   { group: "AI și automatizare", name: "Pluginuri", detail: "Registru verificat de capabilități, versiuni și permisiuni.", status: "fundație existentă", icon: Blocks },
   { group: "Clienți și livrare", name: "Profitabilitate clienți", detail: "Venit, cost alocat, marjă estimată, upsell și risc.", status: "fundație existentă", icon: Gauge },
-  { group: "Clienți și livrare", name: "Contracte și reînnoiri", detail: "Contracte, mentenanță, hosting și reînnoiri; fluxul complet AVY Renewal rămâne de implementat.", status: "în dezvoltare", icon: CalendarClock },
+  { group: "Clienți și livrare", name: "Contracte și reînnoiri", detail: "Registru cu termene, responsabil și aprobare pe versiune. Semnarea și facturarea se activează separat.", status: "în dezvoltare", icon: CalendarClock },
   { group: "Clienți și livrare", name: "SLA și termene", detail: "Răspuns, livrare și suport cu avertizare înainte de depășire.", status: "în dezvoltare", icon: TimerReset },
-  { group: "Clienți și livrare", name: "Solicitări de modificare", detail: "Solicitări separate de proiect, cu status și cost suplimentar.", status: "în dezvoltare", icon: RefreshCcw },
+  { group: "Clienți și livrare", name: "Solicitări de modificare", detail: "Solicitări legate de proiect, valoare și aprobare pe versiune în consola operațională.", status: "în dezvoltare", icon: RefreshCcw },
   { group: "Clienți și livrare", name: "Urmărirea livrabilelor", detail: "Livrabile, responsabil, termen, aprobare și predare.", status: "în dezvoltare", icon: FileCheck2 },
   { group: "Clienți și livrare", name: "Onboarding / Offboarding", detail: "Checklisturi controlate pentru pornire, predare și arhivare.", status: "în dezvoltare", icon: HeartHandshake },
   { group: "Infrastructură și siguranță", name: "Stare infrastructură", detail: "Site, app, API, auth, baze de date, Workers, Pages și email.", status: "activ parțial", icon: Cloud },
@@ -29,11 +30,11 @@ const modules = [
   { group: "Creștere și conformitate", name: "Comentarii", detail: "Moderarea centralizată a comentariilor din blog și pagini.", status: "în dezvoltare", icon: MessageSquare },
   { group: "Creștere și conformitate", name: "Vizite și analytics", detail: "Trafic first-party în overview; rapoartele complete necesită conectarea interfeței la D1.", status: "activ parțial", icon: Activity },
   { group: "Creștere și conformitate", name: "Abonați / Newsletter", detail: "Liste, consimțământ, campanii și dezabonare.", status: "în dezvoltare", icon: Mail },
-  { group: "Creștere și conformitate", name: "Programări", detail: "Planificare, responsabil, client și reminder.", status: "în dezvoltare", icon: CalendarClock },
+  { group: "Creștere și conformitate", name: "Programări", detail: "Programări cu responsabil și client, verificarea suprapunerilor și raport de termene.", status: "în dezvoltare", icon: CalendarClock },
   { group: "Creștere și conformitate", name: "Centru de experimente", detail: "Teste A/B, CTA-uri, prețuri, conversii și rezultate.", status: "în dezvoltare", icon: Beaker },
   { group: "Creștere și conformitate", name: "Confidențialitate și consimțământ", detail: "GDPR, cereri de export/ștergere, consimțăminte și politici active.", status: "fundație existentă", icon: ShieldCheck },
   { group: "Creștere și conformitate", name: "Calendar juridic", detail: "Contracte, politici, accesibilitate și obligații care expiră.", status: "în dezvoltare", icon: CalendarClock },
-  { group: "AI și automatizare", name: "AVY Briefing", detail: "Sinteză deterministă din datele reale ale dashboardului. Preferințele și programarea personalizată nu sunt încă implementate.", status: "activ parțial", icon: Bot },
+  { group: "AI și automatizare", name: "AVY Briefing", detail: "Sinteză din D1, cu programare configurabilă și notificări interne în centrul operațional.", status: "activ parțial", icon: Bot },
 ] as const;
 
 const destinations: Record<string, SectionId> = {
@@ -56,6 +57,8 @@ export default function OsCentersTab({ access, onNavigate }: {access: Access; on
   const normalize = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const visible = modules.filter(module => normalize(`${module.name} ${module.detail}`).includes(normalize(search)));
   return <div className="space-y-4 text-slate-100">
+    {access.isSuperAdmin && <OperationsConsole/>}
+    <details className="rounded-2xl border border-white/10 p-4"><summary className="cursor-pointer text-sm">Inventarul extins al platformei și module planificate</summary>
     <header className="rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.14] via-[#11182d] to-cyan-400/[0.06] p-5 sm:p-6"><p className="font-mono text-[10px] uppercase tracking-[0.24em] text-violet-200/70">Arhitectură modulară</p><h1 className="mt-2 font-display text-2xl font-bold text-white">Centre AVYRON OS</h1><p className="mt-1 max-w-3xl text-sm leading-relaxed text-slate-400">Inventarul unic al capabilităților operaționale. Statusurile separă funcțiile active de fundațiile existente și modulele care urmează să primească fluxuri complete.</p></header>
     <input aria-label="Caută funcționalități" value={search} onChange={event=>setSearch(event.target.value)} placeholder="Caută funcționalități…" className="w-full rounded-xl border border-white/10 bg-[#10162a] px-4 py-3 text-sm" />
     {visible.length === 0 && <p className="text-sm text-slate-400">Nicio funcționalitate găsită.</p>}
@@ -71,5 +74,6 @@ export default function OsCentersTab({ access, onNavigate }: {access: Access; on
         </article>;
       })}</div>
     </details>)}
+    </details>
   </div>;
 }
