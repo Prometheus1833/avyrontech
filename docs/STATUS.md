@@ -1,5 +1,11 @@
 # AVYRON OS — status verificat
 
+## Release autorizat — 15 septembrie 2026
+
+Push și deploy sunt acum autorizate. Stabilizarea finală și procedura de
+migrare înainte de publicare sunt în [raportul release-ului](AVYRON_OS_RELEASE_2026-09-15.md).
+Secțiunile de mai jos descriu etapele locale anterioare.
+
 ## Continuare locală — 15 septembrie 2026
 
 Centrul operațional adaugă registre cu aprobări și programări fără suprapuneri,

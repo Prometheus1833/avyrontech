@@ -32,6 +32,15 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
+      - name: Check application and Worker types
+        run: npm run typecheck
+
+      - name: Lint source
+        run: npm run lint
+
+      - name: Audit all D1 migrations
+        run: npm run audit:d1
+
       - name: Build Cloudflare Pages output
         run: npm run build:pages
 

@@ -128,6 +128,20 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
  it('charges a duplicate concurrent AI reservation exactly once',async()=>{
   budget();const result=await Promise.all([reserve('same-key'),reserve('same-key')]);expect(result.every(r=>r.decision==='allowed')).toBe(true);expect(db.prepare('SELECT quota_used FROM financial_provider_quotas').get()!.quota_used).toBe(60);expect(db.prepare('SELECT COUNT(*) n FROM financial_usage_events').get()!.n).toBe(1);
  });
+ it('rejects reservation replay with different units, cost, agent or tenant',async()=>{
+  budget();await reserve('bound-key');
+  const input={db:env.DB,agentSlug:'avy',vendorId:'fin_vendor_cloudflare_ai',operation:'public_chat_generation',requestedUnits:60,estimatedCostMinor:0,idempotencyKey:'bound-key'};
+  for(const patch of [{requestedUnits:61},{estimatedCostMinor:1},{agentSlug:'avy-finance'},{vendorId:'different'},{operation:'other'},{projectId:'pa'},{clientId:'a'}]){
+   expect(await reserveAiCost({...input,...patch})).toMatchObject({decision:'blocked',reason:'idempotency_key_reused'});
+  }
+  expect(db.prepare('SELECT quota_used FROM financial_provider_quotas').get()!.quota_used).toBe(60);
+  expect(db.prepare('SELECT COUNT(*) n FROM financial_usage_events').get()!.n).toBe(1);
+ });
+ it('rejects different concurrent requests sharing one reservation key',async()=>{
+  budget();const results=await Promise.all([reserve('collision',10),reserve('collision',20)]);
+  expect(results.filter(r=>r.decision==='allowed')).toHaveLength(1);
+  expect(results.filter(r=>r.reason==='idempotency_key_reused')).toHaveLength(1);
+ });
  it('serializes competing reservations at the quota and daily budget limits',async()=>{
   budget();const result=await Promise.all([reserve('first',60),reserve('second',60)]);expect(result.filter(r=>r.decision==='allowed')).toHaveLength(1);expect(db.prepare('SELECT quota_used FROM financial_provider_quotas').get()!.quota_used).toBe(60);
   db.exec('UPDATE financial_provider_quotas SET quota_used=0');const paid=await Promise.all([reserve('paid-first',1,6),reserve('paid-second',1,6)]);expect(paid.filter(r=>r.decision==='allowed')).toHaveLength(1);
@@ -139,6 +153,16 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
  });
  const chat=(message:string)=>app.request('/api/ai/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({message,agent:'avy',visitorId:'fixture-visitor'})},env,{waitUntil:(p:Promise<unknown>)=>pending.push(p),passThroughOnException:()=>{}} as ExecutionContext);
  const chatSeed=()=>{db.exec("DELETE FROM ai_knowledge; UPDATE ai_agents SET status='active',visibility='public' WHERE slug='avy'; UPDATE financial_provider_quotas SET quota_total=100000,quota_used=0,status='active'; UPDATE financial_agent_provider_policies SET status='active' WHERE agent_slug='avy'");knowledge('valid','Optimizare Cloudflare pentru agenți');};
+ it('rejects malformed public AI input before rate limiting, persistence or model use',async()=>{
+  const model=vi.fn();env.AI={run:model} as unknown as Ai;
+  for(const body of [{message:42},{message:'Valid',agent:{}},{message:'Valid',visitorId:[]},{message:'Valid',page:42},{message:'x'.repeat(1001)},{message:'Valid',language:'invalid'}]){
+   const response=await app.request('/api/ai/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)},env);expect(response.status).toBe(400);
+  }
+  for(const body of [{messageId:{id:'bad'},helpful:true},{messageId:'valid',helpful:'yes'}]){
+   expect((await app.request('/api/ai/feedback',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)},env)).status).toBe(400);
+  }
+  expect(model).not.toHaveBeenCalled();expect(db.prepare('SELECT COUNT(*) n FROM ai_runs').get()!.n).toBe(0);
+ });
  it('answers exact verified questions without a model call or token charge',async()=>{
   chatSeed();const model=vi.fn();env.AI={run:model} as unknown as Ai;const response=await chat('Optimizare Cloudflare pentru agenti');expect(response.status).toBe(200);expect((await response.json()).reply).toBe('Validated answer');expect(model).not.toHaveBeenCalled();expect(db.prepare('SELECT input_tokens,output_tokens,usage_source FROM ai_runs').get()).toMatchObject({input_tokens:0,output_tokens:0,usage_source:'retrieval'});
  });

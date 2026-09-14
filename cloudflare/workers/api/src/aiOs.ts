@@ -185,11 +185,14 @@ aiOsRouter.get("/api/ai/agents", async (c) => {
 });
 
 aiOsRouter.post("/api/ai/chat", async (c) => {
-  const body = await c.req.json<{
-    agent?: string; message?: string; conversationId?: string;
-    language?: string; page?: string; visitorId?: string; website?: string;
-  }>().catch(() => null);
-  if (!body) return c.json({ error: { code: "bad_request", message: "JSON invalid" } }, 400);
+  const parsed = z.object({
+    agent: z.string().max(80).optional(), message: z.string().max(1000).optional(),
+    conversationId: z.string().max(100).optional(), language: z.enum(['ro', 'en']).optional(),
+    page: z.string().max(2048).optional(), visitorId: z.string().max(64).optional(),
+    website: z.string().max(2048).optional(),
+  }).safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ error: { code: "bad_request", message: "Date invalide" } }, 400);
+  const body = parsed.data;
   if (body.website) return c.json({ ok: true, reply: "" }); // honeypot
   const message = (body.message || "").trim();
   if (message.length < 2 || message.length > 1000)
@@ -356,9 +359,11 @@ aiOsRouter.post("/api/ai/chat", async (c) => {
 });
 
 aiOsRouter.post("/api/ai/feedback", async (c) => {
-  const body = await c.req.json<{ messageId?: string; helpful?: boolean }>().catch(() => null);
-  if (!body?.messageId || typeof body.helpful !== "boolean")
+  const parsed = z.object({ messageId: z.string().min(1).max(100), helpful: z.boolean() })
+    .safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success)
     return c.json({ error: { code: "bad_request", message: "Date invalide" } }, 400);
+  const body = parsed.data;
   await c.env.DB.prepare("UPDATE ai_messages SET helpful = ? WHERE id = ? AND role = 'assistant'")
     .bind(body.helpful ? 1 : 0, body.messageId).run();
   return c.json({ ok: true });

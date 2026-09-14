@@ -34,23 +34,34 @@ export type AiCostReservation = CostGuardDecision & { quotaId: string | null };
 
 const safeInteger = (value: number) => Number.isSafeInteger(value) && value >= 0;
 
+type UsageEvent = {
+  quota_id: string | null; decision: CostGuardDecision["decision"] | "failed";
+  reason: string; units: number; vendor_id: string; agent_slug: string;
+  operation: string; estimated_cost_minor: number; project_id: string | null; client_id: string | null;
+};
+const replayQuery = `SELECT quota_id,decision,reason,units,vendor_id,agent_slug,operation,
+  estimated_cost_minor,project_id,client_id FROM financial_usage_events WHERE idempotency_key_hash=?`;
+
+function replayReservation(previous: UsageEvent, input: ReserveInput): AiCostReservation {
+  // A key identifies one semantic request, including its tenant and cost.
+  // Compare stored fields so reservations written by older Workers remain safe.
+  const matches = previous.vendor_id === input.vendorId && previous.agent_slug === input.agentSlug
+    && previous.operation === input.operation.slice(0, 120) && previous.units === input.requestedUnits
+    && previous.estimated_cost_minor === input.estimatedCostMinor
+    && previous.project_id === (input.projectId || null) && previous.client_id === (input.clientId || null);
+  if (!matches) return { decision: "blocked", reason: "idempotency_key_reused", projectedQuotaUsed: 0, quotaId: null };
+  return { decision: previous.decision === "failed" ? "blocked" : previous.decision,
+    reason: previous.reason, projectedQuotaUsed: previous.units, quotaId: previous.quota_id };
+}
+
 export async function reserveAiCost(input: ReserveInput): Promise<AiCostReservation> {
   if (!safeInteger(input.requestedUnits) || !safeInteger(input.estimatedCostMinor)) {
     return { decision: "blocked", reason: "invalid_cost_estimate", projectedQuotaUsed: 0, quotaId: null };
   }
 
   const idempotencyHash = await sha256(input.idempotencyKey);
-  const previous = await input.db.prepare(
-    "SELECT quota_id,decision,reason,units FROM financial_usage_events WHERE idempotency_key_hash=?",
-  ).bind(idempotencyHash).first<{ quota_id: string | null; decision: CostGuardDecision["decision"] | "failed"; reason: string; units: number }>();
-  if (previous) {
-    return {
-      decision: previous.decision === "failed" ? "blocked" : previous.decision,
-      reason: previous.reason,
-      projectedQuotaUsed: previous.units,
-      quotaId: previous.quota_id,
-    };
-  }
+  const previous = await input.db.prepare(replayQuery).bind(idempotencyHash).first<UsageEvent>();
+  if (previous) return replayReservation(previous, input);
 
   const policy = await input.db.prepare(
     `SELECT status,daily_budget_minor,monthly_budget_minor,max_request_cost_minor,currency
@@ -112,9 +123,8 @@ export async function reserveAiCost(input: ReserveInput): Promise<AiCostReservat
 
   try { await persist(); } catch (error) {
     // Insertion and quota consumption are one SQLite statement via D1 triggers.
-    const existing = await input.db.prepare("SELECT quota_id,decision,reason,units FROM financial_usage_events WHERE idempotency_key_hash=?")
-      .bind(idempotencyHash).first<{quota_id:string|null;decision:CostGuardDecision["decision"]|"failed";reason:string;units:number}>();
-    if(existing)return {decision:existing.decision==='failed'?'blocked':existing.decision,reason:existing.reason,projectedQuotaUsed:existing.units,quotaId:existing.quota_id};
+    const existing = await input.db.prepare(replayQuery).bind(idempotencyHash).first<UsageEvent>();
+    if (existing) return replayReservation(existing, input);
     if(!/ai_(quota|budget)_reservation_conflict/.test(String(error)))throw error;
     decision={decision:"blocked",reason:"budget_or_quota_reservation_conflict",projectedQuotaUsed:quota?.quota_used||0};
     await persist();

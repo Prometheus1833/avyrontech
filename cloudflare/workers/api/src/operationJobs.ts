@@ -11,8 +11,8 @@ export async function operationPreview(env:Env,action:OperationAction) {
     return {checked_at:timestamp,probes:probes.map((probe,i)=>({service:['D1','R2 documents','R2 media','KV'][i],status:probe.status==='fulfilled'?'ok':'error'})),ai:'not_probed_to_avoid_model_usage',email:env.SMTP_PASS?'configured_delivery_unverified':'not_configured'};
   }
   const [work,records]=await Promise.all([
-    env.DB.prepare("SELECT item.id,item.title,item.due_at,item.project_id FROM project_work_items item JOIN projects p ON p.id=item.project_id WHERE item.status IN ('open','in_progress','blocked') AND item.due_at<=? AND p.status!='archived' ORDER BY item.due_at LIMIT 30").bind(timestamp+7*86400000).all(),
-    env.DB.prepare("SELECT id,kind,title,due_at,assignee_id FROM operation_records WHERE archived_at IS NULL AND status NOT IN ('done','cancelled') AND due_at<=? ORDER BY due_at LIMIT 30").bind(timestamp+7*86400000).all(),
+    env.DB.prepare("SELECT item.id,item.title,item.due_at,item.project_id FROM project_work_items item JOIN projects p ON p.id=item.project_id WHERE item.status IN ('open','in_progress','blocked') AND item.due_at<=? AND p.status!='archived' ORDER BY item.due_at LIMIT 100").bind(timestamp+7*86400000).all(),
+    env.DB.prepare("SELECT id,kind,title,due_at,assignee_id FROM operation_records WHERE archived_at IS NULL AND status NOT IN ('done','cancelled') AND due_at<=? ORDER BY due_at LIMIT 100").bind(timestamp+7*86400000).all(),
   ]);
   if(action==='deadlines')return {generated_at:timestamp,work:work.results,records:records.results,limit_per_collection:100};
   const [leads,approvals,receipts]=await Promise.all([

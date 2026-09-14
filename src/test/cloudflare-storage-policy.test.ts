@@ -63,8 +63,7 @@ describe("Cloudflare environment isolation", () => {
   });
 
   it("requires branch version uploads to select preview explicitly", () => {
-    expect(scripts["deploy:api:preview"]).toContain("versions upload");
-    expect(scripts["deploy:api:preview"]).toContain("--env preview");
+    expect(scripts["deploy:api:preview"]).toBe("node scripts/release-api.mjs --preview");
     expect(preview.vars.APP_ENV).toBe("preview");
     expect(config.vars.APP_ENV).toBe("production");
   });
