@@ -48,6 +48,18 @@ describe("AVYRON OS dashboard", () => {
     expect(source).toContain("admin.user_roles_updated");
   });
 
+  it("limitează middleware-urile MFA la modulele lor fără a bloca rutele publice sau bootstrap", () => {
+    const aiProjects = readFileSync(resolve(process.cwd(), "cloudflare/workers/api/src/aiProjects.ts"), "utf8");
+    const finance = readFileSync(resolve(process.cwd(), "cloudflare/workers/api/src/finance.ts"), "utf8");
+    const seedScript = readFileSync(resolve(process.cwd(), "cloudflare/scripts/seed-superadmins.sh"), "utf8");
+    expect(aiProjects).not.toContain('aiProjectsRouter.use("*"');
+    expect(aiProjects).toContain('aiProjectsRouter.use("/api/ai-projects"');
+    expect(aiProjects).toContain('aiProjectsRouter.use("/api/ai-projects/*"');
+    expect(finance).not.toContain('financeRouter.use("*"');
+    expect(finance).toContain('financeRouter.use("/api/finance/*"');
+    expect(seedScript).toContain("curl -sS --fail-with-body");
+  });
+
   it("elimină FAQ-ul de pe homepage fără a afecta paginile de produs", () => {
     const homepage = readFileSync(resolve(process.cwd(), "src/pages/Index.tsx"), "utf8");
     expect(homepage).not.toContain('import("@/components/site/FAQ")');

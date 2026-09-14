@@ -73,12 +73,14 @@ export const aiProjectsRouter = new Hono<AppBindings>();
 
 // Every mutation in this high-impact workspace requires a current MFA session,
 // including changes made by explicitly invited client collaborators.
-aiProjectsRouter.use("*", async (c, next) => {
+const requireAiProjectMfa = async (c: Context<AppBindings>, next: () => Promise<void>) => {
   if (!["GET", "HEAD", "OPTIONS"].includes(c.req.method) && !c.get("mfaVerified")) {
     return c.json({ error: { code: "mfa_required" } }, 403);
   }
   await next();
-});
+};
+aiProjectsRouter.use("/api/ai-projects", requireAiProjectMfa);
+aiProjectsRouter.use("/api/ai-projects/*", requireAiProjectMfa);
 
 aiProjectsRouter.get("/api/ai-projects", async (c) => {
   const platformRole = await platformRoleForUser(c.env.DB, c.get("userId"));

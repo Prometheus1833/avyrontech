@@ -41,7 +41,7 @@ async function idempotency(c: Context<AppBindings>, scope: string, request: unkn
   return {ok:true as const,key,requestHash};
 }
 
-financeRouter.use("*", async (c, next) => {
+financeRouter.use("/api/finance/*", async (c, next) => {
   const rate = await checkRateLimit(c.env.DB, [{ key: `finance:${c.get("userId")}:h`, limit: 600, windowSec: 3600 }]);
   if (!rate.ok) return c.json({ error: { code: "rate_limited" } }, 429);
   if (!["GET", "HEAD", "OPTIONS"].includes(c.req.method) && !c.get("mfaVerified")) return c.json({ error: { code: "mfa_required" } }, 403);

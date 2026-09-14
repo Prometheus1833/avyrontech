@@ -38,7 +38,7 @@ print(json.dumps({"users": [
 PY
 )
 
-curl -sS -X POST "$API_BASE/api/admin/import-users" \
+curl -sS --fail-with-body -X POST "$API_BASE/api/admin/import-users" \
   -H "content-type: application/json" \
   -H "x-seed-token: $SEED_TOKEN" \
   --data "$payload"
