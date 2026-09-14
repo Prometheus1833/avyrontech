@@ -19,6 +19,16 @@ npm test
 Tipurile `CloudflareBindings` sunt generate din `wrangler.jsonc`, iar
 integrările opționale sunt declarate separat în `src/types.ts`.
 
+### Dependențe reproductibile
+
+SDK-ul `agents` și MCP sunt instalate în pachetul Worker existent, nu în pachetul
+React. `npm ci` din rădăcină rulează automat `npm run install:api`, care aplică
+lockfile-ul din acest director. Nu folosi `--legacy-peer-deps` sau `--force`.
+Frontendul păstrează React 18/Zod 3; runtime-ul SDK utilizează Zod 4.
+Nu importa `agents/react` în frontend fără o revizie separată a compatibilității.
+Wrangler și workers-types sunt aliniate cu versiunile rădăcinii; niciun nou
+Worker, binding sau serviciu nu este creat de această separare a pachetelor.
+
 ## Contracte importante
 
 - auth: scrypt, JWT scurt, sesiune hash-uită în cookie `HttpOnly` și verificare

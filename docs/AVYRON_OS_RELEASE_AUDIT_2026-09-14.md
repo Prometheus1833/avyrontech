@@ -45,6 +45,11 @@ Un card, o schemă sau un adapter neconectat nu constituie un flux funcțional c
   notificare fictivă. Accesul rapid este filtrat după permisiuni.
 - Centrele au căutare fără sensibilitate la diacritice, grupuri pliabile,
   status explicit și butoane numai pentru destinațiile deja disponibile.
+- CI a identificat un conflict preexistent React 18 / peer opțional React 19
+  al SDK-ului Agents. SDK/MCP au fost separate în pachetul API deja existent,
+  cu lockfile propriu și instalare automată prin `postinstall`. Instalarea curată
+  strictă trece fără `--force`/`--legacy-peer-deps`; versiunile frontend rămân
+  neschimbate. SDK-ul folosește Zod 4 în server, fără upgrade Zod/React în UI.
 
 ## Matrice consolidată — fără module duplicate
 

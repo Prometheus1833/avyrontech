@@ -8,6 +8,8 @@
     "node": ">=22 <25"
   },
   "scripts": {
+    "postinstall": "npm run install:api",
+    "install:api": "npm ci --prefix cloudflare/workers/api --no-audit --no-fund",
     "dev": "vite",
     "build": "vite build && node scripts/prerender.mjs && node scripts/generate-sitemap.mjs",
     "build:pages": "npm run build && node scripts/build-pages-worker.mjs",
@@ -36,9 +38,6 @@
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
     "@lovable.dev/cloud-auth-js": "^1.1.2",
-    "@modelcontextprotocol/client": "^2.0.0",
-    "@modelcontextprotocol/sdk": "^1.30.0",
-    "@modelcontextprotocol/server": "^2.0.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-aspect-ratio": "^1.1.7",
@@ -68,7 +67,6 @@
     "@radix-ui/react-tooltip": "^1.2.7",
     "@supabase/supabase-js": "^2.110.0",
     "@tanstack/react-query": "^5.83.0",
-    "agents": "^0.22.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
