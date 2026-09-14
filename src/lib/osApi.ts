@@ -10,6 +10,7 @@ export type OsAttention = {
 };
 
 export type OsApproval = {
+  revision: number;
   id: string;
   summary: string;
   action_class: "write" | "external" | "financial" | "publish";
@@ -72,10 +73,10 @@ export type OsOverview = {
 
 export const osApi = {
   overview: () => cfAuth.request<OsOverview>("/api/os/overview"),
-  decideApproval: (id: string, decision: "approved" | "rejected", note?: string) =>
+  decideApproval: (id: string, decision: "approved" | "rejected", revision: number, note?: string) =>
     cfAuth.request<{ ok: true; status: string }>(`/api/os/approvals/${encodeURIComponent(id)}`, {
       method: "PATCH",
       headers: { "Idempotency-Key": crypto.randomUUID() },
-      body: JSON.stringify({ decision, note }),
+      body: JSON.stringify({ decision, note, revision }),
     }),
 };

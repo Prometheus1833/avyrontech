@@ -79,17 +79,23 @@ describe('OS dashboard — migrated SQLite and actual Hono handlers', () => {
     const data = await overview();
     expect(data.role).toBe('client'); expect(data.approvals).toEqual([]);
     expect(data.agentRuns).toEqual([]); expect(data.integrations).toEqual([]);
-    expect((await decide({decision:'approved'})).status).toBe(403);
+    expect((await decide({revision:1,decision:'approved'})).status).toBe(403);
   });
   it('rejects non-string notes without changing approval state',async () => {
     seedApproval();
-    expect((await decide({decision:'approved',note:{malicious:true}})).status).toBe(400);
+    expect((await decide({revision:1,decision:'approved',note:{malicious:true}})).status).toBe(400);
     expect(db.prepare('SELECT status FROM ai_approvals').get()!.status).toBe('pending');
+  });
+  it('rejects a stale approval after the requested intent changes',async()=>{
+    seedApproval();db.exec(`UPDATE ai_approvals SET request_json='{"action":"changed"}' WHERE id='approval'`);
+    expect((await decide({decision:'approved',revision:1})).status).toBe(409);
+    expect((await decide({decision:'approved',revision:2})).status).toBe(200);
+    expect(db.prepare('SELECT approved_revision FROM ai_approvals').get()!.approved_revision).toBe(2);
   });
   it('rolls back the decision if the continuation write fails',async () => {
     seedApproval();
     db.exec(`CREATE TRIGGER fail_run BEFORE UPDATE ON ai_runs BEGIN SELECT RAISE(ABORT,'simulated database failure'); END`);
-    expect((await decide({decision:'approved'})).status).toBe(500);
+    expect((await decide({revision:1,decision:'approved'})).status).toBe(500);
     expect(db.prepare('SELECT status FROM ai_approvals').get()!.status).toBe('pending');
     expect(db.prepare("SELECT COUNT(*) total FROM security_events WHERE action LIKE 'ai.approval.%'").get()!.total).toBe(0);
   });
@@ -101,8 +107,8 @@ describe('OS dashboard — migrated SQLite and actual Hono handlers', () => {
   });
   it('records one decision and one audit event on duplicate submission',async () => {
     seedApproval();
-    expect((await decide({decision:'approved'})).status).toBe(200);
-    expect((await decide({decision:'rejected'})).status).toBe(409);
+    expect((await decide({revision:1,decision:'approved'})).status).toBe(200);
+    expect((await decide({revision:1,decision:'rejected'})).status).toBe(409);
     expect(db.prepare("SELECT COUNT(*) total FROM security_events WHERE action LIKE 'ai.approval.%'").get()!.total).toBe(1);
     expect(db.prepare('SELECT status FROM ai_runs').get()!.status).toBe('queued');
   });
@@ -112,14 +118,14 @@ describe('OS dashboard — migrated SQLite and actual Hono handlers', () => {
   });
   it('rejects expired approvals without an audit claim or state transition',async () => {
     seedApproval(); db.prepare('UPDATE ai_approvals SET expires_at=?').run(stamp-1000);
-    expect((await decide({decision:'approved'})).status).toBe(409);
+    expect((await decide({revision:1,decision:'approved'})).status).toBe(409);
     expect(db.prepare('SELECT status FROM ai_runs').get()!.status).toBe('awaiting_approval');
   });
   it('does not resume a run while another step awaits approval',async () => {
     seedApproval();
     db.prepare(`INSERT INTO ai_run_steps(id,run_id,sequence,kind,name,status,created_at) VALUES ('step-2','run-approval',1,'tool','fixture','awaiting_approval',?)`).run(stamp);
     db.prepare(`INSERT INTO ai_approvals(id,run_id,step_id,action_class,summary,request_json,requested_at,expires_at) VALUES ('approval-2','run-approval','step-2','write','Fixture','{}',?,?)`).run(stamp,stamp+60000);
-    expect((await decide({decision:'approved'})).status).toBe(200);
+    expect((await decide({revision:1,decision:'approved'})).status).toBe(200);
     expect(db.prepare('SELECT status FROM ai_runs').get()!.status).toBe('awaiting_approval');
   });
   it('uses Romanian month boundaries through winter and summer time',() => {

@@ -86,7 +86,7 @@ dashboardRouter.get("/api/os/overview", async (c) => {
         ).bind(timestamp).first<CountRow>(),
         financialTotals(c.env.DB, monthStart, timestamp),
         c.env.DB.prepare(
-          `SELECT approval.id, approval.summary, approval.action_class, approval.requested_at, approval.expires_at,
+          `SELECT approval.id, approval.revision, approval.summary, approval.action_class, approval.requested_at, approval.expires_at,
                   run.agent_slug, run.status AS run_status, COUNT(*) OVER () AS pending_total
              FROM ai_approvals AS approval
              JOIN ai_runs AS run ON run.id = approval.run_id
@@ -220,7 +220,8 @@ dashboardRouter.patch("/api/os/approvals/:approvalId", async (c: Context<AppBind
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     return c.json({ error: { code: "invalid_decision" } }, 400);
   }
-  const { decision, note } = body as Record<string, unknown>;
+  const { decision, note, revision } = body as Record<string, unknown>;
+  if (!Number.isSafeInteger(revision) || Number(revision)<1) return c.json({error:{code:"invalid_revision"}},400);
   if (decision !== "approved" && decision !== "rejected") {
     return c.json({ error: { code: "invalid_decision", message: "Decizia trebuie să fie aprobat sau respins." } }, 400);
   }
@@ -240,11 +241,11 @@ dashboardRouter.patch("/api/os/approvals/:approvalId", async (c: Context<AppBind
       `INSERT INTO security_events
         (id,actor_user_id,actor_type,action,outcome,severity,request_id,metadata_json,created_at)
        SELECT ?,?, 'user', ?, 'allowed', 'info', ?, ?, ?
-         FROM ai_approvals WHERE id = ? AND status = 'pending' AND expires_at > ?`,
+         FROM ai_approvals WHERE id = ? AND status = 'pending' AND expires_at > ? AND revision = ?`,
     ).bind(eventId, userId, `ai.approval.${decision}`, c.get("requestId") || null,
-      JSON.stringify({ approvalId }), timestamp, approvalId, timestamp),
+      JSON.stringify({ approvalId, revision }), timestamp, approvalId, timestamp, revision),
     c.env.DB.prepare(
-      `UPDATE ai_approvals SET status = ?, decided_by = ?, decided_at = ?, decision_note = ?
+      `UPDATE ai_approvals SET status = ?, decided_by = ?, decided_at = ?, decision_note = ?, approved_revision=revision, revision=revision+1
         WHERE id = ? AND EXISTS (SELECT 1 FROM security_events WHERE id = ?)`,
     ).bind(decision, userId, timestamp, typeof note === "string" ? note.trim() || null : null, approvalId, eventId),
     c.env.DB.prepare(

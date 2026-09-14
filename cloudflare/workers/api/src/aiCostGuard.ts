@@ -97,22 +97,11 @@ export async function reserveAiCost(input: ReserveInput): Promise<AiCostReservat
   }
 
   const timestamp = now();
-  if (decision.decision === "allowed" && quota) {
-    const reserved = await input.db.prepare(
-      `UPDATE financial_provider_quotas SET quota_used=quota_used+?,updated_at=?
-        WHERE id=? AND status IN ('active','warning') AND quota_total IS NOT NULL
-          AND (quota_used+?<=quota_total OR hard_stop_before_paid=0)`,
-    ).bind(input.requestedUnits,timestamp,quota.id,input.requestedUnits).run();
-    if ((reserved.meta.changes ?? 0) !== 1) {
-      decision = { decision: "blocked", reason: "quota_reservation_race", projectedQuotaUsed: quota.quota_used + input.requestedUnits };
-    }
-  }
-
-  await input.db.prepare(
+  const persist = () => input.db.prepare(
     `INSERT INTO financial_usage_events
       (id,vendor_id,quota_id,agent_slug,project_id,client_id,operation,units,
-       estimated_cost_minor,currency,decision,reason,idempotency_key_hash,request_id,created_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+       estimated_cost_minor,currency,decision,reason,idempotency_key_hash,request_id,created_at,reservation_mode)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'atomic')`,
   ).bind(
     `fuse_${crypto.randomUUID().replace(/-/g, "")}`, input.vendorId, quota?.id || null,
     input.agentSlug, input.projectId || null, input.clientId || null,
@@ -121,5 +110,14 @@ export async function reserveAiCost(input: ReserveInput): Promise<AiCostReservat
     idempotencyHash, input.requestId || null, timestamp,
   ).run();
 
+  try { await persist(); } catch (error) {
+    // Insertion and quota consumption are one SQLite statement via D1 triggers.
+    const existing = await input.db.prepare("SELECT quota_id,decision,reason,units FROM financial_usage_events WHERE idempotency_key_hash=?")
+      .bind(idempotencyHash).first<{quota_id:string|null;decision:CostGuardDecision["decision"]|"failed";reason:string;units:number}>();
+    if(existing)return {decision:existing.decision==='failed'?'blocked':existing.decision,reason:existing.reason,projectedQuotaUsed:existing.units,quotaId:existing.quota_id};
+    if(!/ai_(quota|budget)_reservation_conflict/.test(String(error)))throw error;
+    decision={decision:"blocked",reason:"budget_or_quota_reservation_conflict",projectedQuotaUsed:quota?.quota_used||0};
+    await persist();
+  }
   return { ...decision, quotaId: quota?.id || null };
 }

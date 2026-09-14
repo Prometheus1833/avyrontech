@@ -47,6 +47,10 @@ const mockAuthenticatedSuperAdmin = async (page: Page) => {
       superadmin: true,
     }),
   }));
+  await page.route('**/api/operations/**',r=>{
+    const path=new URL(r.request().url()).pathname;
+    return r.fulfill({json:path.endsWith('/config')?{clients:[],projects:[],staff:[{id:'user-superadmin',name:'Andrei'}],canManageIntegrations:true}:path.endsWith('/integrations')?{providers:{},data:[],canEdit:false}:path.endsWith('/automations')?{data:[],jobs:[]}:path.endsWith('/agents')?{data:[],runs:[],evaluations:[]}:{data:[],total:0}});
+  });
   await page.route("**/api/os/overview", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
@@ -71,7 +75,7 @@ const mockAuthenticatedSuperAdmin = async (page: Page) => {
         { id: "project-1", kind: "proiect", severity: "atenție", title: "2 proiecte necesită actualizare", detail: "Termenul intern se apropie.", destination: "projects" },
       ],
       approvals: [
-        { id: "approval-1", summary: "AVY AI propune publicarea unei postări pentru Avyron WEB.", action_class: "publish", requested_at: now - 120_000, expires_at: now + 86_400_000, agent_slug: "avy-social", run_status: "waiting_approval" },
+        { id: "approval-1", revision:1, summary: "AVY AI propune publicarea unei postări pentru Avyron WEB.", action_class: "publish", requested_at: now - 120_000, expires_at: now + 86_400_000, agent_slug: "avy-social", run_status: "waiting_approval" },
       ],
       agentRuns: [
         { id: "run-1", agent_slug: "Lead Hunter", status: "succeeded", input_tokens: 1250, output_tokens: 430, estimated_cost_micros: 0, steps: 46, started_at: now - 300_000, completed_at: now - 180_000, created_at: now - 300_000 },
@@ -137,6 +141,7 @@ test.describe("dashboard AVYRON OS în română", () => {
     expect(priorityBox!.y).toBeLessThan(revenueBox!.y);
     await expect(page.getByTestId('page-back-link')).toHaveAttribute('href','https://avyron.ro');
     await page.getByRole('tab',{name:'Centre AVYRON OS',exact:true}).first().click();
+    await page.getByText('Inventarul extins al platformei și module planificate',{exact:true}).click();
     await page.getByLabel('Caută funcționalități').fill('reinnoiri');
     await expect(page.getByRole('heading',{name:'Contracte și reînnoiri',exact:true})).toBeVisible();
     await page.getByLabel('Caută funcționalități').fill('aprobari');
@@ -204,6 +209,45 @@ test.describe("dashboard AVYRON OS în română", () => {
     await page.getByRole('button',{name:'Înregistrează încasarea'}).click();
     await expect(page.getByText('Încasare înregistrată.',{exact:true})).toBeVisible();
     expect(payload).toMatchObject({revenue_id:'r1',amount_minor:3025,reference:'bank-fixture'});
+  });
+
+  test('creează și aprobă versiunea unui contract din centrul operațional',async({page},testInfo)=>{
+    const records:Record<string,unknown>[]=[];let approved:unknown;
+    await page.route(/\/api\/operations\/records/,async r=>{
+      if(r.request().method()==='POST'){
+        if(r.request().url().endsWith('/approve')){approved=r.request().postDataJSON();records[0].status='approved';records[0].revision=2;records[0].approved_revision=1;return r.fulfill({json:{ok:true}});}
+        records.push({...r.request().postDataJSON(),id:'record',revision:1,approved_revision:null});return r.fulfill({json:{id:'record'}});
+      }
+      return r.fulfill({json:{data:records,total:records.length}});
+    });
+    await page.goto('/profil?tab=os-centers');await expect(page.getByRole('heading',{name:'Centrul operațional',exact:true})).toBeVisible();
+    await page.getByRole('button',{name:'Adaugă înregistrare',exact:true}).click();await page.getByLabel('Titlu',{exact:true}).fill('Contract de mentenanță');await page.getByRole('combobox',{name:'Stare',exact:true}).selectOption('pending');await page.getByLabel('Valoare',{exact:true}).fill('1200,25');await page.getByRole('button',{name:'Salvează înregistrarea'}).click();
+    await expect(page.getByRole('heading',{name:'Contract de mentenanță'})).toBeVisible();expect(records[0].amount_minor).toBe(120025);await page.getByRole('button',{name:'Aprobă versiunea 1'}).click();await expect(page.getByText(/aprobare v1/)).toBeVisible();expect(approved).toEqual({revision:1});await page.screenshot({path:testInfo.outputPath('operations-desktop.png'),fullPage:true});
+  });
+  test('simulează și programează rapoarte fără apel de model',async({page})=>{
+    let rule:unknown,job:unknown;
+    await page.route('**/api/operations/preview',r=>r.fulfill({json:{generated_at:now,source:'D1',work:[],records:[]}}));
+    await page.route('**/api/operations/automations',r=>{if(r.request().method()==='POST'){rule=r.request().postDataJSON();return r.fulfill({json:{id:'rule'}});}return r.fulfill({json:{data:[],jobs:[]}});});
+    await page.route('**/api/operations/jobs',r=>{job=r.request().postDataJSON();return r.fulfill({json:{id:'job'}});});
+    await page.goto('/profil?tab=os-centers');await page.getByRole('button',{name:'Automatizări',exact:true}).click();await page.getByLabel('Nume automatizare').fill('Informarea de dimineață');await page.getByLabel('Programare activă').check();await page.getByRole('button',{name:'Creează automatizarea'}).click();await expect.poll(()=>rule).toMatchObject({name:'Informarea de dimineață',action:'briefing',enabled:true});await page.getByRole('button',{name:'Simulează raportul'}).click();await expect(page.getByText(/^Generat:/)).toBeVisible();await page.getByRole('button',{name:'Execută acum'}).click();await expect.poll(()=>job).toEqual({action:'briefing'});
+  });
+  test('configurează o integrare fără a reafișa credentialul',async({page})=>{
+    let saved:unknown;let revision=1;
+    await page.route('**/api/operations/integrations',r=>r.fulfill({json:{providers:{stripe:{name:'Stripe',description:'Citire facturi',documentation:'https://docs.stripe.com/api/invoices/list'}},canEdit:true,data:[{id:'stripe',provider:'stripe',label:'Facturare test',environment:'test',status:'configured',revision,has_credential:revision>1?1:0}]}}));
+    await page.route('**/api/operations/integrations/stripe/credential',r=>{saved=r.request().postDataJSON();revision++;return r.fulfill({json:{ok:true}});});
+    await page.goto('/profil?tab=os-centers');await page.getByRole('button',{name:'Integrări',exact:true}).click();await page.getByRole('button',{name:'Configurează cheia'}).click();await expect(page.getByLabel('Token API')).toHaveAttribute('type','password');await page.getByLabel('Token API').fill('sk_test_fixture_not_a_real_key');await page.getByRole('button',{name:'Salvează cheia'}).click();await expect(page.getByLabel('Token API')).toHaveCount(0);expect(saved).toEqual({token:'sk_test_fixture_not_a_real_key',revision:1});await expect(page.getByRole('button',{name:'Verifică',exact:true})).toBeEnabled();expect(await page.locator('body').innerText()).not.toContain('sk_test_fixture_not_a_real_key');
+  });
+  test('afișează evaluarea agenților și consumul necunoscut separat',async({page})=>{
+    await page.route('**/api/operations/agents',r=>r.fulfill({json:{data:[{slug:'avy',name:'AVY',status:'active',current_version:1,version_status:'approved',model:'@cf/meta/fixture',max_tokens:600,stopped:0}],runs:[{id:'run',agent_slug:'avy',status:'succeeded',input_tokens:0,output_tokens:0,usage_source:'retrieval',actual_cost_micros:null,started_at:now}],evaluations:[]}}));
+    await page.route('**/api/operations/agents/avy/evaluate',r=>r.fulfill({json:{score:1,checks:[{name:'approved_version',passed:true}],matches:[],reply:'Răspuns validat'}}));
+    await page.goto('/profil?tab=os-centers');await page.getByRole('button',{name:'Agenți și evaluări'}).click();await page.getByLabel('Întrebare pentru evaluare').fill('Cum funcționează Cloudflare?');await page.getByRole('button',{name:'Verifică agentul'}).click();await expect(page.getByText('Răspuns validat',{exact:true})).toBeVisible();await expect(page.getByRole('cell',{name:'Necunoscut'})).toBeVisible();await expect(page.getByRole('cell',{name:'Fără apel de model'})).toBeVisible();
+  });
+  test('păstrează toate modulele operaționale utilizabile pe mobil',async({page},testInfo)=>{
+    await page.setViewportSize({width:390,height:844});await page.goto('/profil?tab=os-centers');
+    for(const tab of ['Registre','Automatizări','Integrări','Agenți și evaluări','Notificări']){
+      await page.getByRole('button',{name:tab,exact:true}).click();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1)).toBe(true);
+    }
+    await page.getByRole('button',{name:'Registre',exact:true}).click();await page.getByRole('button',{name:'Adaugă înregistrare'}).click();await page.screenshot({path:testInfo.outputPath('operations-mobile.png'),fullPage:true});
   });
 
 });

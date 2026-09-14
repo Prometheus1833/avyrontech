@@ -131,3 +131,12 @@ rambursare trebuie să adauge înregistrări de reversare auditate.
 6. Fetch și verificare față de ultimul `main`, secret scan, diff și verificări
    pe commitul final; push și PR la finalul etapei autorizate. Migrarea remote,
    activarea preview, merge și producția rămân operații distincte.
+
+## Continuare — 15 septembrie 2026
+
+Implementarea registrelor, aprobărilor, programărilor, automatizărilor,
+notificărilor, adaptoarelor de citire și optimizărilor AI este documentată în
+[raportul operațional](AVYRON_OS_OPERATIONS_2026-09-15.md). Acesta actualizează
+starea punctelor 3, 4, 6 și 7 din plan și adaugă protecții atomice Cost Guard.
+Tabelele de mai sus păstrează starea etapei precedente; raportul nou indică
+exact ce este implementat și ce necesită încă dezvoltare sau activare.

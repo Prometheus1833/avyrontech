@@ -1,5 +1,18 @@
 # AVYRON OS — status verificat
 
+## Continuare locală — 15 septembrie 2026
+
+Centrul operațional adaugă registre cu aprobări și programări fără suprapuneri,
+automatizări cu joburi persistente/retry/anulare, notificări interne și adaptoare
+de citire GitHub, Cloudflare, Stripe și Revolut Business. Agenții folosesc
+retrieval indexat, răspunsuri directe, configurații aprobate și rezervări de
+consum atomice. Conturile se configurează ulterior din interfață.
+
+Implementarea, limitele și procedura de activare sunt în
+[raportul operațional](AVYRON_OS_OPERATIONS_2026-09-15.md).
+Migrațiile `0022`–`0024` sunt locale. Nu s-au efectuat push sau deploy.
+Raportul separă activarea conturilor de fluxurile care încă necesită dezvoltare.
+
 ## Continuare locală — 14 septembrie 2026
 
 Ramura `codex/avyron-os-finalization-2026-09-14` înlocuiește dependențele

@@ -25,6 +25,10 @@ describe("TOTP security primitives", () => {
     const encrypted = await encryptTotpSecret(secret, key);
     expect(encrypted).not.toContain(rfcSecret);
     expect(Array.from(await decryptTotpSecret(encrypted, key))).toEqual(Array.from(secret));
-    await expect(decryptTotpSecret(`${encrypted.slice(0, -1)}x`, key)).rejects.toThrow();
+    const [version,iv,body]=encrypted.split('.');
+    // Always change an authenticated byte; replacing the last character with
+    // a constant can leave a randomly generated ciphertext unchanged.
+    const tampered=`${version}.${iv}.${body[0]==='A'?'B':'A'}${body.slice(1)}`;
+    await expect(decryptTotpSecret(tampered, key)).rejects.toThrow();
   });
 });

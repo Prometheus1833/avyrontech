@@ -1118,6 +1118,8 @@ import { leadsRouter } from "./leads";
 import { aiProjectsRouter } from "./aiProjects";
 import { financeRouter } from "./finance";
 import { workspaceRouter } from "./workspace";
+import { operationsRouter } from "./operations";
+import { runOperationJobs } from "./operationJobs";
 import { dashboardRouter } from "./osDashboard";
 import { seedRouter } from "./seed";
 import { mediaRouter } from "./media";
@@ -1169,6 +1171,8 @@ app.route("/", aiProjectsRouter);
 app.route("/", financeRouter);
 app.use("/api/workspace/*", requireAuth, requirePrivilegedMfa);
 app.route("/", workspaceRouter);
+app.use("/api/operations/*", requireAuth, requirePrivilegedMfa);
+app.route("/", operationsRouter);
 app.route("/", dashboardRouter);
 app.route("/", engineRouter);
 app.route("/", organizationsRouter);
@@ -1315,6 +1319,10 @@ async function cleanupExpiredData(env: AppBindings["Bindings"]) {
 export default {
   fetch: (request, env, ctx) => app.fetch(normalizeVersionedApiRequest(request), env, ctx),
   scheduled: (controller, env, ctx) => {
+    if (controller.cron === "0,15,30,45 * * * *") {
+      ctx.waitUntil(runOperationJobs(env));
+      return;
+    }
     if (controller.cron === EXCHANGE_RATE_REFRESH_CRON) {
       ctx.waitUntil(refreshExchangeRate(env).catch((error) => {
         console.error(JSON.stringify({ event: "exchange_rate_refresh_failed", error: String(error) }));
