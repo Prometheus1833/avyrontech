@@ -2,6 +2,7 @@ import { Hono, type Context } from "hono";
 import type { AppBindings, Role } from "./types";
 import { platformRoleForUser } from "./authorization";
 import { now } from "./security";
+import { bucharestMonthStart, financialTotals } from "./financialTotals";
 
 type AttentionItem = {
   id: string;
@@ -44,7 +45,7 @@ dashboardRouter.get("/api/os/overview", async (c) => {
   const staff = isStaffRole(roles);
   const superAdmin = (await platformRoleForUser(c.env.DB, userId)) !== null;
   const timestamp = now();
-  const monthStart = new Date(new Date(timestamp).getFullYear(), new Date(timestamp).getMonth(), 1).getTime();
+  const monthStart = bucharestMonthStart(timestamp);
   const thirtyDaysAgo = timestamp - 30 * 24 * 60 * 60 * 1000;
 
   const projectSummary = staff
@@ -66,10 +67,10 @@ dashboardRouter.get("/api/os/overview", async (c) => {
         c.env.DB.prepare(
           `SELECT COUNT(*) AS total,
                   SUM(CASE WHEN status IN ('new','qualified') THEN 1 ELSE 0 END) AS open,
-                  SUM(CASE WHEN urgent = 1 AND first_response_at IS NULL THEN 1 ELSE 0 END) AS urgent,
-                  SUM(CASE WHEN first_response_at IS NULL AND created_at < ? AND status = 'new' THEN 1 ELSE 0 END) AS waiting
+                  SUM(CASE WHEN first_response_at IS NULL AND status IN ('new','qualified')
+                    AND (urgent = 1 OR (created_at < ? AND status = 'new')) THEN 1 ELSE 0 END) AS waiting
              FROM leads`,
-        ).bind(timestamp - 4 * 60 * 60 * 1000).first<{ total: number; open: number; urgent: number; waiting: number }>(),
+        ).bind(timestamp - 4 * 60 * 60 * 1000).first<{ total: number; open: number; waiting: number }>(),
         c.env.DB.prepare("SELECT COUNT(*) AS total FROM clients WHERE status = 'active'").first<CountRow>(),
         c.env.DB.prepare("SELECT COUNT(*) AS total FROM support_tickets WHERE status IN ('open','pending')").first<CountRow>(),
         c.env.DB.prepare(
@@ -83,17 +84,10 @@ dashboardRouter.get("/api/os/overview", async (c) => {
         c.env.DB.prepare(
           "SELECT COUNT(*) AS total FROM invoices WHERE status = 'overdue' OR (status = 'sent' AND due_date < ?)",
         ).bind(timestamp).first<CountRow>(),
-        c.env.DB.prepare(
-          `SELECT
-             (SELECT COALESCE(SUM(CASE WHEN currency = 'RON' THEN COALESCE(gross_amount_minor,0) ELSE COALESCE(amount_ron_minor,0) END),0)
-                FROM financial_expenses WHERE archived_at IS NULL AND COALESCE(invoice_date,created_at) >= ?) AS expenses,
-             (SELECT COALESCE(SUM(CASE WHEN currency = 'RON' THEN COALESCE(gross_amount_minor,0) ELSE COALESCE(amount_ron_minor,0) END),0)
-                FROM financial_revenues WHERE archived_at IS NULL AND status NOT IN ('cancelled','refunded') AND COALESCE(invoice_date,created_at) >= ?) AS revenues,
-             (SELECT COUNT(*) FROM financial_alerts WHERE status IN ('open','acknowledged') AND severity = 'critical') AS critical_alerts`,
-        ).bind(monthStart, monthStart).first<{ expenses: number; revenues: number; critical_alerts: number }>(),
+        financialTotals(c.env.DB, monthStart, timestamp),
         c.env.DB.prepare(
           `SELECT approval.id, approval.summary, approval.action_class, approval.requested_at, approval.expires_at,
-                  run.agent_slug, run.status AS run_status
+                  run.agent_slug, run.status AS run_status, COUNT(*) OVER () AS pending_total
              FROM ai_approvals AS approval
              JOIN ai_runs AS run ON run.id = approval.run_id
             WHERE approval.status = 'pending' AND approval.expires_at > ?
@@ -103,7 +97,7 @@ dashboardRouter.get("/api/os/overview", async (c) => {
           `SELECT run.id, run.agent_slug, run.status, run.input_tokens, run.output_tokens,
                   run.estimated_cost_micros, run.started_at, run.completed_at, run.created_at,
                   COUNT(step.id) AS steps
-             FROM ai_runs AS run
+             FROM (SELECT * FROM ai_runs ORDER BY created_at DESC LIMIT 8) AS run
              LEFT JOIN ai_run_steps AS step ON step.run_id = run.id
             GROUP BY run.id
             ORDER BY run.created_at DESC LIMIT 8`,
@@ -132,7 +126,7 @@ dashboardRouter.get("/api/os/overview", async (c) => {
     : [null, null, { results: [] }, { results: [] }, { results: [] }, { results: [] }, null];
 
   const attention: AttentionItem[] = [];
-  const waitingLeads = Number(leadSummary?.waiting || 0) + Number(leadSummary?.urgent || 0);
+  const waitingLeads = Number(leadSummary?.waiting || 0);
   if (waitingLeads > 0) attention.push({
     id: "leaduri-necontactate", kind: "lead", severity: waitingLeads > 5 ? "critic" : "atenție",
     title: `${waitingLeads} ${waitingLeads === 1 ? "lead prioritar fără răspuns" : "leaduri prioritare fără răspuns"}`,
@@ -173,7 +167,7 @@ dashboardRouter.get("/api/os/overview", async (c) => {
     openLeads: Number(leadSummary?.open || 0),
     clients: Number(clientSummary?.total || 0),
     visits: Number(visitsSummary?.sessions || 0),
-    approvals: approvals.results.length,
+    approvals: Number(approvals.results[0]?.pending_total || 0),
     expensesMinor: Number(finance?.expenses || 0),
     revenuesMinor: Number(finance?.revenues || 0),
     criticalAlerts: Number(finance?.critical_alerts || 0),
@@ -182,7 +176,9 @@ dashboardRouter.get("/api/os/overview", async (c) => {
   const integrationRows = connections.results.map((row) => ({
     name: row.name,
     category: row.category,
-    status: statusLabel(row.status),
+    status: row.last_error_code ? "eroare" : ["active", "connected"].includes(row.status)
+      && (!row.checked_at || row.checked_at < timestamp - 7 * 86_400_000)
+      ? "în_verificare" : statusLabel(row.status),
     checkedAt: row.checked_at,
     errorCode: row.last_error_code,
   }));
@@ -199,9 +195,9 @@ dashboardRouter.get("/api/os/overview", async (c) => {
       { id: "api", label: "API AVYRON", status: "funcțional", detail: "Workerul a răspuns autentificat." },
       { id: "auth", label: "Autentificare", status: "funcțional", detail: "Sesiunea și rolul au fost validate." },
       { id: "d1", label: "Baza de date D1", status: "funcțional", detail: "Interogările dashboardului au reușit." },
-      { id: "files", label: "Documente R2", status: c.env.FILES ? "funcțional" : "neconfigurat", detail: c.env.FILES ? "Binding disponibil." : "Binding indisponibil." },
-      { id: "media", label: "Media R2", status: c.env.MEDIA ? "funcțional" : "neconfigurat", detail: c.env.MEDIA ? "Binding disponibil." : "Binding indisponibil." },
-      { id: "ai", label: "Workers AI", status: c.env.AI ? "funcțional" : "neconfigurat", detail: c.env.AI ? "Binding disponibil; utilizarea rămâne protejată de Cost Guard." : "Agenții folosesc fallback determinist." },
+      { id: "files", label: "Documente R2", status: c.env.FILES ? "configurat" : "neconfigurat", detail: "Disponibilitatea bindingului nu confirmă o operațiune de stocare." },
+      { id: "media", label: "Media R2", status: c.env.MEDIA ? "configurat" : "neconfigurat", detail: "Disponibilitatea bindingului nu confirmă o operațiune de stocare." },
+      { id: "ai", label: "Workers AI", status: c.env.AI ? "configurat" : "neconfigurat", detail: "Nu se consumă resurse AI pentru verificarea stării. Utilizarea necesită Cost Guard." },
     ],
     integrations: integrationRows,
   });
@@ -212,40 +208,53 @@ dashboardRouter.patch("/api/os/approvals/:approvalId", async (c: Context<AppBind
   if ((await platformRoleForUser(c.env.DB, userId)) === null) {
     return c.json({ error: { code: "forbidden", message: "Doar super adminul poate decide aprobări." } }, 403);
   }
-  const body = await c.req.json<{ decision?: string; note?: string }>().catch(() => null);
-  const decision = body?.decision;
+  const body = await c.req.json<unknown>().catch(() => null);
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return c.json({ error: { code: "invalid_decision" } }, 400);
+  }
+  const { decision, note } = body as Record<string, unknown>;
   if (decision !== "approved" && decision !== "rejected") {
     return c.json({ error: { code: "invalid_decision", message: "Decizia trebuie să fie aprobat sau respins." } }, 400);
   }
+  if (note !== undefined && (typeof note !== "string" || note.length > 500)) {
+    return c.json({ error: { code: "invalid_note", message: "Nota trebuie să conțină maximum 500 de caractere." } }, 400);
+  }
   const approvalId = c.req.param("approvalId");
   const timestamp = now();
-  const result = await c.env.DB.prepare(
-    `UPDATE ai_approvals SET status = ?, decided_by = ?, decided_at = ?, decision_note = ?
-      WHERE id = ? AND status = 'pending' AND expires_at > ?`,
-  ).bind(decision, userId, timestamp, (body?.note || "").trim().slice(0, 500) || null, approvalId, timestamp).run();
-  if (!(result.meta.changes ?? 0)) {
-    return c.json({ error: { code: "not_available", message: "Aprobarea nu mai este disponibilă." } }, 409);
-  }
+  const eventId = crypto.randomUUID();
   const runState = decision === "approved" ? "queued" : "denied";
   const stepState = decision === "approved" ? "queued" : "denied";
-  await c.env.DB.batch([
-    c.env.DB.prepare(
-      `UPDATE ai_runs SET status = ? WHERE id = (SELECT run_id FROM ai_approvals WHERE id = ?)
-        AND status = 'awaiting_approval'`,
-    ).bind(runState, approvalId),
-    c.env.DB.prepare(
-      `UPDATE ai_run_steps SET status = ? WHERE id = (SELECT step_id FROM ai_approvals WHERE id = ?)
-        AND status = 'awaiting_approval'`,
-    ).bind(stepState, approvalId),
+  // The conditional audit row is a per-request claim. D1 batch is transactional:
+  // a failed continuation rolls back the claim and decision as well. Retries or
+  // competing decisions cannot reuse this claim or mutate an already decided row.
+  const results = await c.env.DB.batch([
     c.env.DB.prepare(
       `INSERT INTO security_events
         (id,actor_user_id,actor_type,action,outcome,severity,request_id,metadata_json,created_at)
-       VALUES (?,?, 'user', ?, 'allowed', 'info', ?, ?, ?)`,
-    ).bind(
-      crypto.randomUUID(), userId, `ai.approval.${decision}`, c.get("requestId") || null,
-      JSON.stringify({ approvalId }), timestamp,
-    ),
+       SELECT ?,?, 'user', ?, 'allowed', 'info', ?, ?, ?
+         FROM ai_approvals WHERE id = ? AND status = 'pending' AND expires_at > ?`,
+    ).bind(eventId, userId, `ai.approval.${decision}`, c.get("requestId") || null,
+      JSON.stringify({ approvalId }), timestamp, approvalId, timestamp),
+    c.env.DB.prepare(
+      `UPDATE ai_approvals SET status = ?, decided_by = ?, decided_at = ?, decision_note = ?
+        WHERE id = ? AND EXISTS (SELECT 1 FROM security_events WHERE id = ?)`,
+    ).bind(decision, userId, timestamp, typeof note === "string" ? note.trim() || null : null, approvalId, eventId),
+    c.env.DB.prepare(
+      `UPDATE ai_runs SET status = ? WHERE id = (SELECT run_id FROM ai_approvals WHERE id = ?)
+        AND status = 'awaiting_approval'
+        AND EXISTS (SELECT 1 FROM security_events WHERE id = ?)
+        AND (? = 'denied' OR NOT EXISTS
+          (SELECT 1 FROM ai_approvals WHERE run_id = ai_runs.id AND status = 'pending'))`,
+    ).bind(runState, approvalId, eventId, runState),
+    c.env.DB.prepare(
+      `UPDATE ai_run_steps SET status = ? WHERE id = (SELECT step_id FROM ai_approvals WHERE id = ?)
+        AND status = 'awaiting_approval'
+        AND EXISTS (SELECT 1 FROM security_events WHERE id = ?)`,
+    ).bind(stepState, approvalId, eventId),
   ]);
+  if (!(results[0].meta.changes ?? 0)) {
+    return c.json({ error: { code: "not_available", message: "Aprobarea nu mai este disponibilă." } }, 409);
+  }
   return c.json({ ok: true, status: decision });
 });
 

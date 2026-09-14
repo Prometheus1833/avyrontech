@@ -5,6 +5,7 @@ import { checkRateLimit } from "./antispam";
 import { now, sha256 } from "./security";
 import { maskPaymentMethod, projectionFromRecurring, validateExpenseWrite } from "./financePolicy";
 import { reserveAiCost } from "./aiCostGuard";
+import { bucharestMonthStart, financialTotals, RON_AMOUNT_SQL } from "./financialTotals";
 
 const id = (prefix: string) => `${prefix}_${crypto.randomUUID().replace(/-/g, "")}`;
 type Permission = "finance.read" | "finance.write" | "finance.accounts.read" | "finance.documents.read" | "finance.settings" | "finance.budget.approve" | "finance.integrations.manage" | "finance.audit.read";
@@ -51,15 +52,14 @@ financeRouter.use("/api/finance/*", async (c, next) => {
 financeRouter.get("/api/finance/overview", async (c) => {
   if (!(await allowed(c, "finance.read"))) return deny(c);
   const timestamp = now();
-  const from = Math.max(0, Number(c.req.query("from")) || new Date(new Date(timestamp).getFullYear(), new Date(timestamp).getMonth(), 1).getTime());
+  const from = Math.max(0, Number(c.req.query("from")) || bucharestMonthStart(timestamp));
   const to = Math.min(timestamp + 366 * 86_400_000, Number(c.req.query("to")) || timestamp);
-  if (to <= from) return c.json({ error: { code: "invalid_period" } }, 400);
-  const [expense, revenue, subscription, ai, advertising, invoicesPayable, invoicesReceivable, nextPayment, budgets, alerts, leads] = await Promise.all([
-    c.env.DB.prepare(`SELECT COALESCE(SUM(COALESCE(amount_ron_minor,gross_amount_minor,0)),0) total FROM financial_expenses WHERE archived_at IS NULL AND COALESCE(paid_date,invoice_date,created_at) BETWEEN ? AND ?`).bind(from, to).first<{ total: number }>(),
-    c.env.DB.prepare(`SELECT COALESCE(SUM(COALESCE(amount_ron_minor,gross_amount_minor,0)),0) total FROM financial_revenues WHERE archived_at IS NULL AND status IN ('paid','partially_paid') AND COALESCE(payment_date,invoice_date,created_at) BETWEEN ? AND ?`).bind(from, to).first<{ total: number }>(),
+  if (!Number.isSafeInteger(from) || !Number.isSafeInteger(to) || to <= from) return c.json({ error: { code: "invalid_period" } }, 400);
+  const [totals, subscription, ai, advertising, invoicesPayable, invoicesReceivable, nextPayment, budgets, alerts, leads] = await Promise.all([
+    financialTotals(c.env.DB, from, to),
     c.env.DB.prepare(`SELECT COUNT(*) total FROM financial_expenses WHERE archived_at IS NULL AND billing_type = 'recurring' AND status = 'active'`).first<{ total: number }>(),
-    c.env.DB.prepare(`SELECT COALESCE(SUM(COALESCE(amount_ron_minor,gross_amount_minor,0)),0) total FROM financial_expenses WHERE archived_at IS NULL AND category = 'ai' AND COALESCE(paid_date,invoice_date,created_at) BETWEEN ? AND ?`).bind(from, to).first<{ total: number }>(),
-    c.env.DB.prepare(`SELECT COALESCE(SUM(COALESCE(amount_ron_minor,gross_amount_minor,0)),0) total FROM financial_expenses WHERE archived_at IS NULL AND category = 'advertising' AND COALESCE(paid_date,invoice_date,created_at) BETWEEN ? AND ?`).bind(from, to).first<{ total: number }>(),
+    c.env.DB.prepare(`SELECT COALESCE(SUM(${RON_AMOUNT_SQL}),0) total FROM financial_expenses WHERE archived_at IS NULL AND category = 'ai' AND COALESCE(paid_date,invoice_date,created_at) BETWEEN ? AND ?`).bind(from, to).first<{ total: number }>(),
+    c.env.DB.prepare(`SELECT COALESCE(SUM(${RON_AMOUNT_SQL}),0) total FROM financial_expenses WHERE archived_at IS NULL AND category = 'advertising' AND COALESCE(paid_date,invoice_date,created_at) BETWEEN ? AND ?`).bind(from, to).first<{ total: number }>(),
     c.env.DB.prepare(`SELECT COUNT(*) total FROM financial_expenses WHERE archived_at IS NULL AND status IN ('payment_due','overdue')`).first<{ total: number }>(),
     c.env.DB.prepare(`SELECT COUNT(*) total FROM financial_revenues WHERE archived_at IS NULL AND status IN ('invoiced','sent','partially_paid','overdue')`).first<{ total: number }>(),
     c.env.DB.prepare(`SELECT vendor.name vendor, expense.next_billing_date date, expense.gross_amount_minor amount, expense.currency FROM financial_expenses expense JOIN financial_vendors vendor ON vendor.id=expense.vendor_id WHERE expense.archived_at IS NULL AND expense.next_billing_date >= ? ORDER BY expense.next_billing_date LIMIT 1`).bind(timestamp).first(),
@@ -67,7 +67,7 @@ financeRouter.get("/api/finance/overview", async (c) => {
     c.env.DB.prepare(`SELECT COUNT(*) total FROM financial_alerts WHERE status='open' AND severity='critical'`).first<{ total: number }>(),
     c.env.DB.prepare(`SELECT COUNT(*) total FROM leads WHERE created_at BETWEEN ? AND ?`).bind(from, to).first<{ total: number }>(),
   ]);
-  const expenseMinor = expense?.total || 0, revenueMinor = revenue?.total || 0;
+  const expenseMinor = totals?.expenses || 0, revenueMinor = totals?.revenues || 0;
   return c.json({ period: { from, to }, kpis: {
     expensesMinor: expenseMinor, revenuesMinor: revenueMinor, operatingProfitEstimateMinor: revenueMinor - expenseMinor,
     activeSubscriptions: subscription?.total || 0, aiCostMinor: ai?.total || 0, advertisingMinor: advertising?.total || 0,
@@ -75,7 +75,7 @@ financeRouter.get("/api/finance/overview", async (c) => {
     invoicesPayable: invoicesPayable?.total || 0, invoicesReceivable: invoicesReceivable?.total || 0,
     nextPayment, budgetLimitMinor: budgets?.budget || 0, budgetCount: budgets?.count || 0,
     freeTierSavingsMinor: null, criticalAlerts: alerts?.total || 0,
-  }, notice: "Estimări de management, nu contabilitate fiscală." });
+  }, notice: "Estimări de management, nu contabilitate fiscală. Sumele fără echivalent RON sunt excluse; încasările parțiale folosesc valoarea documentului până la reconciliere." });
 });
 
 financeRouter.get("/api/finance/config", async (c) => {

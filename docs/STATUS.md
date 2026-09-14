@@ -1,5 +1,20 @@
 # AVYRON OS — status verificat
 
+## Actualizare 14 septembrie 2026
+
+`app.avyron.ro` este live, cu redirect spre `/profil`. Ambele conturi privilegiate
+au trecut login/logout și citirea dashboardului, Financiar, Proiecte AI și
+AVY Engine. Administrarea utilizatorilor cere MFA. Codul a fost publicat în
+`main` până la `9e346ed` înaintea release-ului curent; migrările 0001–0019 erau
+aplicate în producție. Acest release nu aplică migrări noi.
+
+**AVYRON OS nu este încă complet:** unele centre sunt numai fundații, iar
+secțiuni legacy mai au dependențe Supabase. Matricea canonică de acoperire,
+limitările și pașii rămași sunt în
+[auditul de release](AVYRON_OS_RELEASE_AUDIT_2026-09-14.md).
+
+## Arhivă: inventarul 10–12 septembrie (nu reprezintă starea live actuală)
+
 Ultima actualizare locală: 2026-09-12. Inventarul live de mai jos a fost
 confirmat la 2026-09-10 și nu a fost reinterogat în această etapă. Documentul
 separă explicit producția de mediul preview și de codul pregătit local.
