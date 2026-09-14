@@ -110,7 +110,7 @@ test.describe("dashboard AVYRON OS în română", () => {
     await expect(page.getByText("Centru de aprobări")).toBeVisible();
     await expect(page.getByText("Activitatea agenților")).toBeVisible();
     await expect(page.getByText("Infrastructură", { exact: true })).toBeVisible();
-    await expect(page.getByText("Venituri luna aceasta")).toBeVisible();
+    await expect(page.getByText("Încasări luna aceasta")).toBeVisible();
     await expect(page.getByText("Informare AVY", { exact: false })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Navigare AVYRON OS" })).toBeVisible();
     await expect(page.locator("html")).toHaveAttribute("lang", "ro");
@@ -133,7 +133,7 @@ test.describe("dashboard AVYRON OS în română", () => {
     const attention = page.getByText('Necesită atenție · Azi');
     await expect(attention).toBeVisible();
     const priorityBox = await attention.boundingBox();
-    const revenueBox = await page.getByText('Venituri luna aceasta').boundingBox();
+    const revenueBox = await page.getByText('Încasări luna aceasta').boundingBox();
     expect(priorityBox!.y).toBeLessThan(revenueBox!.y);
     await expect(page.getByTestId('page-back-link')).toHaveAttribute('href','https://avyron.ro');
     await page.getByRole('tab',{name:'Centre AVYRON OS',exact:true}).first().click();
@@ -145,7 +145,7 @@ test.describe("dashboard AVYRON OS în română", () => {
   });
 
   test("Super Admin poate gestiona controlat accesul unui membru", async ({ page }) => {
-    let submitted: { accessLevel?: string } | null = null;
+    let submitted: { access_level?: string; client_ids?: string[] } | null = null;
     await page.route("**/api/admin/users", (route) => route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -153,8 +153,10 @@ test.describe("dashboard AVYRON OS în română", () => {
         data: [{ id: "staff-1", email: "coleg@avyron.ro", display_name: "Coleg Avyron", company_name: "Avyron", staff_role: "marketing", disabled_at: null, roles: "user,staff" }],
       }),
     }));
-    await page.route("**/api/admin/users/**", async (route) => {
-      submitted = route.request().postDataJSON() as { accessLevel?: string };
+    await page.route("**/api/clients", route=>route.fulfill({json:{data:[{id:'client-a',company_name:'Client A'}]}}));
+    await page.route("**/api/workspace/account-access/staff-1", async (route) => {
+      if (route.request().method()==='GET') return route.fulfill({json:{data:[]}});
+      submitted = route.request().postDataJSON() as { access_level?: string; client_ids?: string[] };
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, userId: "staff-1", roles: ["user", "admin"] }) });
     });
 
@@ -162,9 +164,46 @@ test.describe("dashboard AVYRON OS în română", () => {
     await expect(page.getByRole("heading", { name: "Echipă și personal" })).toBeVisible();
     await page.getByRole("button", { name: "Gestionează" }).click();
     await page.getByLabel("Nivel de acces").selectOption("admin");
+    await page.getByLabel("Client A", {exact:true}).check();
     await page.getByRole("button", { name: "Salvează accesul" }).click();
 
-    await expect(page.getByText("Nivelul de acces a fost actualizat și auditat.")).toBeVisible();
-    expect(submitted).toEqual({ accessLevel: "admin" });
+    await expect(page.getByText("Accesul și asocierile client au fost actualizate și auditate.")).toBeVisible();
+    expect(submitted).toEqual({ access_level: "admin", client_ids:["client-a"] });
   });
+  test('chatul mobil trimite către destinatarul ales și păstrează mesajul după reload', async ({page},testInfo)=>{
+    await page.setViewportSize({width:390,height:844});
+    await page.route('**/api/workspace/staff',r=>r.fulfill({json:{data:[{id:'peer',display_name:'Coleg',staff_role:'dev'}]}}));
+    const messages:{id:string;author_id:string;content:string;created_at:string}[]=[];
+    let payload:unknown;
+    await page.route('**/api/workspace/chat**',async r=>{
+      if(r.request().method()==='POST'){payload=r.request().postDataJSON();messages.push({id:'m1',author_id:'user-superadmin',content:'Status local verificat',created_at:new Date().toISOString()});return r.fulfill({json:{id:'m1'}});}
+      return r.fulfill({json:{data:r.request().url().includes('recipient_id=peer')?messages:[]}});
+    });
+    await page.goto('/profil?tab=intern');
+    await page.getByLabel('Conversație',{exact:true}).selectOption('dm:peer');
+    await page.getByLabel('Mesaj',{exact:true}).fill('Status local verificat');
+    await page.getByRole('button',{name:'Trimite',exact:true}).click();
+    await expect(page.getByText('Status local verificat',{exact:true})).toBeVisible();
+    expect(payload).toEqual({content:'Status local verificat',channel:'general',recipient_id:'peer'});
+    await page.reload();await page.getByLabel('Conversație',{exact:true}).selectOption('dm:peer');
+    await expect(page.getByText('Status local verificat',{exact:true})).toBeVisible();
+    await page.screenshot({path:testInfo.outputPath('chat-mobile.png'),fullPage:true});
+  });
+  test('înregistrează o plată parțială cu suma în unități minore',async({page})=>{
+    let payload:unknown;
+    await page.route('**/api/finance/revenues',r=>r.fulfill({json:{data:[{id:'r1',service_name:'Site',invoice_number:'INV-1',status:'sent',currency:'RON',gross_amount_minor:10000}]}}));
+    await page.route('**/api/finance/receipts**',async r=>{
+      if(r.request().method()==='POST'){payload=r.request().postDataJSON();return r.fulfill({json:{id:'receipt'}});}
+      return r.fulfill({json:{data:[],totals:[],canWrite:true}});
+    });
+    await page.goto('/profil?tab=payments');
+    await page.getByRole('combobox',{name:'Document',exact:true}).selectOption('r1');
+    await page.getByLabel('Suma primită (RON)',{exact:true}).fill('30,25');
+    await page.getByLabel('Referință unică încasare').fill('bank-fixture');
+    await page.getByLabel('Data încasării').fill('2026-09-01T10:00');
+    await page.getByRole('button',{name:'Înregistrează încasarea'}).click();
+    await expect(page.getByText('Încasare înregistrată.',{exact:true})).toBeVisible();
+    expect(payload).toMatchObject({revenue_id:'r1',amount_minor:3025,reference:'bank-fixture'});
+  });
+
 });

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { workspaceApi } from "@/lib/workspaceApi";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,22 +37,17 @@ export function StaffAnnouncementsTab() {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase.from("staff_announcements").select("id,author_id,title,content,priority,created_at").order("created_at", { ascending: false });
-    setItems((data as Announcement[]) ?? []);
-    setLoading(false);
+    try { const { data } = await workspaceApi.list<Announcement>("announcements"); setItems(data); }
+    catch (error) { toast.error(error instanceof Error ? error.message : "Anunțurile nu pot fi încărcate."); }
+    finally { setLoading(false); }
   };
 
   useEffect(() => { load(); }, []);
 
   const create = async () => {
     if (!user || !form.title.trim() || !form.content.trim()) return;
-    const { error } = await supabase.from("staff_announcements").insert({
-      author_id: user.id,
-      title: form.title.trim(),
-      content: form.content.trim(),
-      priority: form.priority,
-    });
-    if (error) return toast.error(error.message);
+    try { await workspaceApi.write("announcements", form); }
+    catch (error) { return toast.error(error instanceof Error ? error.message : "Anunțul nu poate fi salvat."); }
     toast.success("Anunț publicat");
     setOpen(false);
     setForm({ title: "", content: "", priority: "normal" });
@@ -60,8 +55,8 @@ export function StaffAnnouncementsTab() {
   };
 
   const remove = async (id: string) => {
-    const { error } = await supabase.from("staff_announcements").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    try { await workspaceApi.write(`announcements/${encodeURIComponent(id)}`, undefined, "DELETE"); }
+    catch (error) { return toast.error(error instanceof Error ? error.message : "Anunțul nu poate fi arhivat."); }
     load();
   };
 

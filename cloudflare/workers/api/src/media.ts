@@ -10,6 +10,7 @@
 //   DELETE /api/media/:mediaId
 
 import { Hono } from "hono";
+import { canAccessProject } from "./projects";
 import type { Env } from "./types";
 import { inlineContentDisposition, projectObjectKey, safeFilename } from "./storage";
 
@@ -20,22 +21,6 @@ const now = () => Date.now();
 
 const MAX_BYTES = 15 * 1024 * 1024; // 15 MB
 const ALLOWED_CT = /^(image\/(png|jpeg|jpg|webp|gif|svg\+xml)|application\/pdf|text\/plain)$/i;
-
-async function canAccessProject(db: D1Database, projectId: string, userId: string, roles: Role[]) {
-  const isAdmin = roles.includes("admin");
-  const isStaff = roles.includes("staff") || isAdmin;
-  const proj = await db.prepare("SELECT owner_user_id FROM projects WHERE id = ?").bind(projectId).first<{ owner_user_id: string | null }>();
-  if (!proj) return { read: false, write: false };
-  const isOwner = proj.owner_user_id === userId;
-  if (isAdmin) return { read: true, write: true };
-  if (isStaff) {
-    const a = await db.prepare("SELECT 1 FROM project_staff WHERE project_id = ? AND user_id = ?").bind(projectId, userId).first();
-    if (a) return { read: true, write: true };
-  }
-  // owner (client) poate CITI + UPLOAD la propriile propuneri
-  if (isOwner) return { read: true, write: true };
-  return { read: false, write: false };
-}
 
 export const mediaRouter = new Hono<{ Bindings: Env; Variables: Vars }>();
 
@@ -57,7 +42,22 @@ mediaRouter.post("/api/projects/:id/media", async (c) => {
 
   const lenHeader = parseInt(c.req.header("content-length") || "0");
   if (lenHeader && lenHeader > MAX_BYTES) return c.json({ error: { code: "too_large", message: "Max 15MB" } }, 413);
-  const bytes = await c.req.arrayBuffer();
+  const reader = c.req.raw.body?.getReader();
+  if (!reader) return c.json({ error: { code: "no_body" } }, 400);
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > MAX_BYTES) { await reader.cancel(); return c.json({ error: { code: "too_large" } }, 413); }
+      chunks.push(value);
+    }
+  } finally { reader.releaseLock(); }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
   if (!bytes.byteLength) return c.json({ error: { code: "no_body" } }, 400);
   if (bytes.byteLength > MAX_BYTES) return c.json({ error: { code: "too_large", message: "Max 15MB" } }, 413);
 
@@ -115,7 +115,7 @@ mediaRouter.get("/api/media/:mediaId/file", async (c) => {
   const obj = await c.env.FILES.get(row.r2_key, { range: c.req.raw.headers });
   if (!obj) return c.json({ error: { code: "missing_blob" } }, 404);
   if (c.req.header("if-none-match") === obj.httpEtag) {
-    return new Response(null, { status: 304, headers: { etag: obj.httpEtag } });
+    return new Response(null, { status: 304, headers: { etag: obj.httpEtag, "cache-control": "private, no-store" } });
   }
   const headers = new Headers();
   obj.writeHttpMetadata(headers);
@@ -124,7 +124,8 @@ mediaRouter.get("/api/media/:mediaId/file", async (c) => {
   headers.set("etag", obj.httpEtag);
   headers.set("accept-ranges", "bytes");
   headers.set("x-content-type-options", "nosniff");
-  headers.set("cache-control", "private, max-age=300");
+  headers.set("cache-control", "private, no-store");
+  headers.set("content-security-policy", "sandbox; default-src 'none'");
   headers.set("content-disposition", inlineContentDisposition(row.filename));
   let status = 200;
   if (obj.range) {
@@ -149,7 +150,7 @@ mediaRouter.delete("/api/media/:mediaId", async (c) => {
   if (!row) return c.json({ ok: true });
   const perm = await canAccessProject(c.env.DB, row.project_id, c.get("userId"), c.get("roles"));
   const isUploader = row.uploader_id === c.get("userId");
-  if (!perm.write && !isUploader) return c.json({ error: { code: "forbidden" } }, 403);
+  if (!perm.read || (!perm.write && !isUploader)) return c.json({ error: { code: "forbidden" } }, 403);
   try {
     await c.env.FILES.delete(row.r2_key);
   } catch (error) {

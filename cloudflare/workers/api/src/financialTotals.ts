@@ -19,8 +19,14 @@ export async function financialTotals(db: D1Database, from: number, to: number) 
     (SELECT COALESCE(SUM(${RON_AMOUNT_SQL}),0) FROM financial_expenses
       WHERE archived_at IS NULL AND COALESCE(paid_date,invoice_date,created_at) BETWEEN ? AND ?) AS expenses,
     (SELECT COALESCE(SUM(${RON_AMOUNT_SQL}),0) FROM financial_revenues
-      WHERE archived_at IS NULL AND status IN ('paid','partially_paid')
-        AND COALESCE(payment_date,invoice_date,created_at) BETWEEN ? AND ?) AS revenues,
+      WHERE archived_at IS NULL AND status='paid'
+        AND NOT EXISTS (SELECT 1 FROM financial_receipts WHERE revenue_id=financial_revenues.id)
+        AND COALESCE(payment_date,invoice_date,created_at) BETWEEN ? AND ?)
+      + (SELECT COALESCE(SUM(CASE WHEN currency='RON' THEN amount_minor ELSE amount_ron_minor END),0)
+         FROM financial_receipts WHERE paid_at BETWEEN ? AND ?) AS revenues,
+    (SELECT COALESCE(SUM(${RON_AMOUNT_SQL}),0) FROM financial_revenues
+      WHERE archived_at IS NULL AND status IN ('invoiced','sent','partially_paid','paid','overdue')
+        AND COALESCE(invoice_date,created_at) BETWEEN ? AND ?) AS invoiced,
     (SELECT COUNT(*) FROM financial_alerts WHERE status IN ('open','acknowledged') AND severity = 'critical') AS critical_alerts
-  `).bind(from,to,from,to).first<{expenses:number;revenues:number;critical_alerts:number}>();
+  `).bind(from,to,from,to,from,to,from,to).first<{expenses:number;revenues:number;invoiced:number;critical_alerts:number}>();
 }

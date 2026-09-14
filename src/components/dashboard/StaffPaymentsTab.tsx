@@ -1,73 +1,24 @@
-import { useEffect, useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Wallet, TrendingUp, Clock } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-
-type Row = { id: string; amount_cents: number; currency: string; status: string; paid_at: string | null; invoice_number: string };
-
-export const StaffPaymentsTab = () => {
-  const [rows, setRows] = useState<Row[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from("invoices")
-        .select("id, amount_cents, currency, status, paid_at, invoice_number")
-        .eq("status", "paid")
-        .order("paid_at", { ascending: false })
-        .limit(100);
-      setRows((data as Row[]) ?? []);
-      setLoading(false);
-    })();
-  }, []);
-
-  const ron = (cents: number) => (cents / 100).toLocaleString("ro-RO", { maximumFractionDigits: 2 });
-  const total = rows.reduce((s, r) => s + (r.amount_cents || 0), 0);
-  const last30 = rows.filter((r) => r.paid_at && Date.now() - new Date(r.paid_at).getTime() < 30 * 86400000);
-  const last30Sum = last30.reduce((s, r) => s + (r.amount_cents || 0), 0);
-
-  return (
-    <div className="space-y-4">
-      <div className="grid sm:grid-cols-3 gap-3">
-        <Card className="p-4">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground"><Wallet className="size-3.5" /> Total încasat</div>
-          <div className="mt-1 font-display text-2xl font-bold">{ron(total)} RON</div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground"><TrendingUp className="size-3.5" /> Ultimele 30 zile</div>
-          <div className="mt-1 font-display text-2xl font-bold">{ron(last30Sum)} RON</div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground"><Clock className="size-3.5" /> Plăți (#)</div>
-          <div className="mt-1 font-display text-2xl font-bold">{rows.length}</div>
-        </Card>
-      </div>
-
-      <Card className="p-4">
-        <h3 className="font-display text-lg font-semibold mb-3">Încasări recente</h3>
-        {loading ? (
-          <p className="text-sm text-muted-foreground">Se încarcă…</p>
-        ) : rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nicio încasare înregistrată.</p>
-        ) : (
-          <div className="divide-y">
-            {rows.map((r) => (
-              <div key={r.id} className="flex items-center justify-between py-2.5 text-sm">
-                <div>
-                  <div className="font-medium font-mono text-xs">{r.invoice_number}</div>
-                  <div className="text-xs text-muted-foreground">{r.paid_at ? new Date(r.paid_at).toLocaleDateString("ro-RO") : "—"}</div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="font-mono">{ron(r.amount_cents)} {r.currency}</span>
-                  <Badge variant="default">paid</Badge>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-    </div>
-  );
-};
+import { useCallback, useEffect, useState } from 'react';
+import { cfAuth } from '@/lib/cfAuth';
+import { financeApi, type FinanceRevenue } from '@/lib/financeApi';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+type Receipt={id:string;amount_minor:number;currency:string;reference:string;paid_at:number;invoice_number:string|null;service_name:string};
+type Result={data:Receipt[];totals:{currency:string;amount_minor:number;count:number}[];canWrite:boolean};
+const money=(amount:number,currency:string)=>new Intl.NumberFormat('ro-RO',{style:'currency',currency}).format(amount/100);
+const minor=(value:string)=>{const match=/^(\d{1,10})(?:[.,](\d{1,2}))?$/.exec(value.trim());return match?Number(match[1])*100+Number((match[2]||'').padEnd(2,'0')):null;};
+export function StaffPaymentsTab(){
+ const [result,setResult]=useState<Result|null>(null),[revenues,setRevenues]=useState<FinanceRevenue[]>([]),[error,setError]=useState(''),[offset,setOffset]=useState(0),[saving,setSaving]=useState(false);
+ const [revenueId,setRevenueId]=useState(''),[amount,setAmount]=useState(''),[ron,setRon]=useState(''),[reference,setReference]=useState(''),[paidAt,setPaidAt]=useState('');
+ const load=useCallback(async()=>{setError('');try{const [receipts,invoices]=await Promise.all([cfAuth.request<Result>(`/api/finance/receipts?offset=${offset}`),financeApi.revenues()]);setResult(receipts);setRevenues(invoices.data);}catch(e){setError(e instanceof Error?e.message:'Încasările nu pot fi încărcate.');}},[offset]);
+ useEffect(()=>{void load();},[load]);
+ const selected=revenues.find(r=>r.id===revenueId);
+ async function save(e:React.FormEvent){e.preventDefault();const amountMinor=minor(amount),ronMinor=ron?minor(ron):null;if(!amountMinor||(ron&& !ronMinor))return toast.error('Introdu sume pozitive, cu maximum două zecimale.');setSaving(true);
+  try{await cfAuth.request('/api/finance/receipts',{method:'POST',headers:{'Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({revenue_id:revenueId,amount_minor:amountMinor,amount_ron_minor:ronMinor,reference,paid_at:new Date(paidAt).getTime()})});setAmount('');setReference('');setRon('');await load();toast.success('Încasare înregistrată.');}catch(e){toast.error(e instanceof Error?e.message:'Înregistrarea a eșuat.');}finally{setSaving(false);}}
+ const cls='rounded-lg border bg-background p-2 text-sm';
+ return <section className="space-y-4"><header><h2 className="text-2xl font-semibold">Încasări înregistrate</h2><p className="text-sm text-muted-foreground">Înregistrează sumele deja primite, inclusiv plățile parțiale. Această acțiune nu transferă bani.</p></header>{error&&<p role="alert" className="text-destructive">{error}</p>}
+ <div className="flex flex-wrap gap-3">{result?.totals.map(t=><div key={t.currency} className="rounded-xl border bg-card p-4"><p className="text-sm text-muted-foreground">Total înregistrat · {t.count} încasări</p><p className="text-xl font-semibold">{money(t.amount_minor,t.currency)}</p></div>)}</div>
+ {result?.canWrite&&<form onSubmit={save} className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2"><label className="grid gap-1 text-sm">Document<select required value={revenueId} onChange={e=>setRevenueId(e.target.value)} className={cls}><option value="">Selectează documentul</option>{revenues.filter(r=>['invoiced','sent','partially_paid','overdue'].includes(r.status)).map(r=><option key={r.id} value={r.id}>{r.invoice_number||r.service_name} · {r.currency}</option>)}</select></label><label className="grid gap-1 text-sm">Suma primită ({selected?.currency||'valuta documentului'})<input required inputMode="decimal" value={amount} onChange={e=>setAmount(e.target.value)} className={cls}/></label><label className="grid gap-1 text-sm">Referință unică încasare<input required maxLength={200} value={reference} onChange={e=>setReference(e.target.value)} className={cls}/></label><label className="grid gap-1 text-sm">Data încasării<input required type="datetime-local" value={paidAt} onChange={e=>setPaidAt(e.target.value)} className={cls}/></label>{selected?.currency!=='RON'&&<label className="grid gap-1 text-sm">Echivalent RON documentat (opțional)<input inputMode="decimal" value={ron} onChange={e=>setRon(e.target.value)} className={cls}/></label>}<Button disabled={saving||!revenueId} className="self-end">{saving?'Se salvează…':'Înregistrează încasarea'}</Button></form>}
+ <div className="divide-y rounded-xl border bg-card px-4">{result?.data.map(r=><article key={r.id} className="flex flex-wrap justify-between gap-3 py-3"><div><p className="font-medium">{r.invoice_number||r.service_name}</p><p className="text-xs text-muted-foreground">{r.reference} · {new Date(r.paid_at).toLocaleString('ro-RO')}</p></div><p>{money(r.amount_minor,r.currency)}</p></article>)}{result&&!result.data.length&&<p className="p-4 text-sm text-muted-foreground">Nicio încasare în registru. Documentele istorice marcate plătite rămân vizibile în Financiar.</p>}</div>
+ <div className="flex gap-2"><Button variant="outline" disabled={!offset} onClick={()=>setOffset(v=>Math.max(0,v-50))}>Înapoi</Button><Button variant="outline" disabled={result?.data.length!==50} onClick={()=>setOffset(v=>v+50)}>Următoarele</Button></div></section>;
+}

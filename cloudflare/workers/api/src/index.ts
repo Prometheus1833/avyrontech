@@ -1,3 +1,4 @@
+import { privilegedMfaSatisfied } from "./mfaPolicy";
 // Avyron API — Cloudflare Workers + D1 + KV + R2
 // Auth: PBKDF2-SHA256 password hashing + signed JWT (HS256) + rolling sessions.
 //
@@ -199,7 +200,7 @@ const requireRole = (...roles: Role[]) => async (c: Context<AppBindings>, next: 
   const userRoles: Role[] = c.get("roles") ?? [];
   if (!userRoles.some((r) => roles.includes(r)))
     return c.json({ error: { code: "forbidden", message: "Insufficient role" } }, 403);
-  if (roles.some((role) => role === "staff" || role === "admin") && !c.get("mfaVerified"))
+  if (roles.some((role) => role === "staff" || role === "admin") && !(await privilegedMfaSatisfied(c)))
     return c.json({ error: { code: "mfa_required", message: "Confirmă autentificarea în doi pași" } }, 403);
   await next();
 };
@@ -210,7 +211,7 @@ async function isSuperAdmin(c: Context<AppBindings>): Promise<boolean> {
 const requireSuperAdmin = async (c: Context<AppBindings>, next: Next) => {
   if (!(await isSuperAdmin(c)))
     return c.json({ error: { code: "forbidden", message: "Doar super adminul are acces" } }, 403);
-  if (!c.get("mfaVerified"))
+  if (!(await privilegedMfaSatisfied(c)))
     return c.json({ error: { code: "mfa_required", message: "MFA este obligatoriu pentru acces privilegiat" } }, 403);
   await next();
 };
@@ -230,7 +231,7 @@ const privilegedAccount = async (db: D1Database, userId: string, roles: Role[]):
 
 const requirePrivilegedMfa = async (c: Context<AppBindings>, next: Next) => {
   if (["GET", "HEAD", "OPTIONS"].includes(c.req.method)) return next();
-  if (await privilegedAccount(c.env.DB, c.get("userId"), c.get("roles") ?? []) && !c.get("mfaVerified")) {
+  if (await privilegedAccount(c.env.DB, c.get("userId"), c.get("roles") ?? []) && !(await privilegedMfaSatisfied(c))) {
     return c.json({ error: { code: "mfa_required", message: "MFA este obligatoriu pentru această acțiune" } }, 403);
   }
   await next();
@@ -781,7 +782,7 @@ app.post("/api/auth/change-email/request", requireAuth, async (c) => {
   const newEmail = String(body.newEmail || "").trim().toLowerCase();
   if (!/^\S+@\S+\.\S+$/.test(newEmail)) return c.json({ error: { code: "invalid_email" } }, 400);
   const userId = c.get("userId");
-  if (await privilegedAccount(c.env.DB, userId, c.get("roles") ?? []) && !c.get("mfaVerified")) {
+  if (await privilegedAccount(c.env.DB, userId, c.get("roles") ?? []) && !(await privilegedMfaSatisfied(c))) {
     return c.json({ error: { code: "mfa_required", message: "MFA este obligatoriu pentru schimbarea emailului privilegiat" } }, 403);
   }
   const user = await c.env.DB.prepare(
@@ -1116,6 +1117,7 @@ import { aiOsRouter } from "./aiOs";
 import { leadsRouter } from "./leads";
 import { aiProjectsRouter } from "./aiProjects";
 import { financeRouter } from "./finance";
+import { workspaceRouter } from "./workspace";
 import { dashboardRouter } from "./osDashboard";
 import { seedRouter } from "./seed";
 import { mediaRouter } from "./media";
@@ -1142,6 +1144,7 @@ app.use("/api/finance/*", requireAuth);
 app.use("/api/engine/*", requireAuth);
 app.use("/api/os/*", requireAuth);
 app.use("/api/projects/*", requirePrivilegedMfa);
+app.use("/api/media/*", requirePrivilegedMfa);
 app.use("/api/organizations/*", requirePrivilegedMfa);
 app.use("/api/organization-invitations/*", requirePrivilegedMfa);
 app.use("/api/proposals/*", requirePrivilegedMfa);
@@ -1164,6 +1167,8 @@ app.route("/", aiOsRouter);
 app.route("/", leadsRouter);
 app.route("/", aiProjectsRouter);
 app.route("/", financeRouter);
+app.use("/api/workspace/*", requireAuth, requirePrivilegedMfa);
+app.route("/", workspaceRouter);
 app.route("/", dashboardRouter);
 app.route("/", engineRouter);
 app.route("/", organizationsRouter);

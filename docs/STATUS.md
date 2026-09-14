@@ -1,5 +1,18 @@
 # AVYRON OS — status verificat
 
+## Continuare locală — 14 septembrie 2026
+
+Ramura `codex/avyron-os-finalization-2026-09-14` înlocuiește dependențele
+Supabase din dashboard, adaugă acces cont–client explicit, chat și checklisturi
+persistente, un registru de încasări parțiale și politica temporară fără
+înrolare MFA nouă pentru administratorii platformei. Migrațiile `0020` și
+`0021` nu au fost aplicate remote; această etapă nu a modificat producția.
+
+Planul, rezultatele, inventarul live și limitele sunt în
+[planul de finalizare](AVYRON_OS_FINALIZATION_PLAN_2026-09-14.md).
+Backlogul complet nu este încă finalizat. Secțiunile de mai jos păstrează
+starea istorică de la release-ul anterior.
+
 ## Actualizare 14 septembrie 2026
 
 `app.avyron.ro` este live, cu redirect spre `/profil`. Ambele conturi privilegiate

@@ -110,6 +110,10 @@ class CfAuth {
   }
 
   async request<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
+    return (await this.requestResponse(path, init)).json() as Promise<T>;
+  }
+
+  async requestResponse(path: string, init: RequestInit = {}): Promise<Response> {
     const token = await this.ensureToken();
     const headers = new Headers(init.headers);
     if (token) headers.set("authorization", `Bearer ${token}`);
@@ -124,11 +128,11 @@ class CfAuth {
         headers.set("authorization", `Bearer ${this.accessToken}`);
         const retry = await fetch(apiUrl(path), { ...init, headers, credentials: "include" });
         if (!retry.ok) throw await this.errorFrom(retry);
-        return retry.json() as Promise<T>;
+        return retry;
       }
     }
     if (!res.ok) throw await this.errorFrom(res);
-    return res.json() as Promise<T>;
+    return res;
   }
 
   private async errorFrom(res: Response): Promise<Error> {

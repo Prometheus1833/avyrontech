@@ -126,6 +126,14 @@ dashboardRouter.get("/api/os/overview", async (c) => {
     : [null, null, { results: [] }, { results: [] }, { results: [] }, { results: [] }, null];
 
   const attention: AttentionItem[] = [];
+  const deadlines=await c.env.DB.prepare(`SELECT COUNT(*) total, SUM(CASE WHEN item.due_at<? THEN 1 ELSE 0 END) overdue
+    FROM project_work_items item JOIN projects project ON project.id=item.project_id
+    WHERE item.status IN ('open','in_progress','blocked') AND item.due_at<=? AND project.status!='archived'
+      AND (?=1 OR project.owner_user_id=? OR EXISTS(SELECT 1 FROM project_staff WHERE project_id=project.id AND user_id=?)
+        OR EXISTS(SELECT 1 FROM organization_memberships WHERE organization_id=project.organization_id AND user_id=? AND status='active'))`)
+    .bind(timestamp,timestamp+48*3600000,superAdmin?1:0,userId,userId,userId).first<{total:number;overdue:number}>();
+  if(deadlines?.total)attention.push({id:'termene-proiecte',kind:'proiect',severity:deadlines.overdue?'critic':'atenție',title:`${deadlines.total} termene necesită atenție`,detail:`${deadlines.overdue||0} depășite; celelalte în următoarele 48 de ore.`,destination:'projects'});
+
   const waitingLeads = Number(leadSummary?.waiting || 0);
   if (waitingLeads > 0) attention.push({
     id: "leaduri-necontactate", kind: "lead", severity: waitingLeads > 5 ? "critic" : "atenție",

@@ -12,6 +12,8 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { ExternalLink, Trash2, RefreshCw, Plus } from "lucide-react";
+import { ProjectStatisticsForm } from "@/components/intern/ProjectStatisticsForm";
+import { ProjectWorkItems } from "@/components/intern/ProjectWorkItems";
 import { MediaAttachments } from "@/components/intern/MediaAttachments";
 import PaymentMethodCard from "@/components/intern/PaymentMethodCard";
 import ContactRail from "@/components/intern/ContactRail";
@@ -94,6 +96,9 @@ export default function ProjectPage() {
       <div className="mb-4">
         <PageBackLink to="/profil?tab=projects" label="Înapoi" title="Înapoi la toate proiectele" />
       </div>
+
+      <ProjectWorkItems projectId={project.id} />
+      {canWrite && <ProjectStatisticsForm projectId={project.id} />}
 
       {/* Header */}
       <div className="rounded-xl border border-border bg-card overflow-hidden">

@@ -101,7 +101,7 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
     if (access.isSuperAdmin) return [
       { label: "Leaduri deschise", value: data.metrics.openLeads, helper: `${data.metrics.leads} în total`, icon: Target, tone: "from-cyan-500/20" },
       { label: "Proiecte active", value: data.metrics.activeProjects, helper: `${data.metrics.projects} în portofoliu`, icon: FolderKanban, tone: "from-blue-500/20" },
-      { label: "Venituri luna aceasta", value: money(data.metrics.revenuesMinor), helper: "estimare · echivalente RON cunoscute", icon: CircleDollarSign, tone: "from-emerald-500/20" },
+      { label: "Încasări luna aceasta", value: money(data.metrics.revenuesMinor), helper: "estimare · echivalente RON cunoscute", icon: CircleDollarSign, tone: "from-emerald-500/20" },
       { label: "Cheltuieli luna aceasta", value: money(data.metrics.expensesMinor), helper: "estimare · echivalente RON cunoscute", icon: Gauge, tone: "from-violet-500/20" },
     ];
     if (access.isStaff) return [

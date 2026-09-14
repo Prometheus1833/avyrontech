@@ -4,7 +4,7 @@ import { apiUrl } from "./apiBase";
 export type FinanceOverview = {
   period: { from: number; to: number };
   kpis: {
-    expensesMinor: number; revenuesMinor: number; operatingProfitEstimateMinor: number;
+    expensesMinor: number; revenuesMinor: number; invoicedMinor?: number; operatingProfitEstimateMinor: number;
     activeSubscriptions: number; aiCostMinor: number; advertisingMinor: number;
     costPerLeadMinor: number | null; invoicesPayable: number; invoicesReceivable: number;
     nextPayment: { vendor: string; date: number; amount: number | null; currency: string } | null;
