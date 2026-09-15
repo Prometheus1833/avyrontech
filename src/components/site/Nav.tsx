@@ -9,6 +9,7 @@ import CurrencySwitch from "./CurrencySwitch";
 import logo from "@/assets/avyron-logo.webp";
 
 const UserMenu = lazy(() => import("@/components/auth/UserMenu"));
+const StaffOsMenu = lazy(() => import("./StaffOsMenu"));
 
 // Routes where prices are shown — the currency toggle belongs in the nav cluster there.
 const CURRENCY_ROUTES = /^\/(en\/)?(costurisiproduse|pricing|produse|products)/;
@@ -18,7 +19,7 @@ const Nav = () => {
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const mobileMenuTriggerRef = useRef<HTMLButtonElement>(null);
   const { t, lang } = useLang();
-  const { user, loading } = useAuth();
+  const { user, isStaff, loading } = useAuth();
   const isRo = lang === "ro";
   const homePath = isRo ? "/" : "/en";
   const { pathname } = useLocation();
@@ -67,6 +68,11 @@ const Nav = () => {
                 AVYRON
               </span>
             </a>
+            {!loading && isStaff && (
+              <Suspense fallback={<span className="h-8 w-12" aria-hidden="true" />}>
+                <StaffOsMenu />
+              </Suspense>
+            )}
             <div className="hidden md:inline-flex items-center gap-1.5">
               {showCurrency && <CurrencySwitch compact showDetails={false} />}
               <LangSwitch />
