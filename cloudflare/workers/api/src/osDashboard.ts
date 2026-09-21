@@ -4,7 +4,10 @@ import { platformRoleForUser } from "./authorization";
 import { now } from "./security";
 import { bucharestMonthStart, financialTotals } from "./financialTotals";
 
+import { centerAttention } from "./centerAttention";
+
 type AttentionItem = {
+  center?: string;
   id: string;
   kind: "financiar" | "lead" | "proiect" | "suport" | "securitate";
   severity: "informare" | "atenție" | "critic";
@@ -35,6 +38,7 @@ const buildBriefing = (attention: AttentionItem[], metrics: Record<string, numbe
   if (urgentLeads) fragments.push(urgentLeads.title.toLowerCase());
   if (overdue) fragments.push(overdue.title.toLowerCase());
   if (approvals) fragments.push(`${approvals} ${approvals === 1 ? "aprobare așteaptă" : "aprobări așteaptă"} decizia ta`);
+  for (const item of attention.filter(a=>!["leaduri-necontactate","facturi-restante"].includes(a.id)).slice(0,Math.max(0,4-fragments.length))) fragments.push(item.title.toLowerCase());
   if (!fragments.length) return "Nu există urgențe confirmate din modulele conectate. Verifică proiectele active și continuă prioritățile planificate.";
   return `Astăzi, ${fragments.join(", ")}. Deschide elementele prioritare pentru context și acțiuni controlate.`;
 };
@@ -82,7 +86,7 @@ dashboardRouter.get("/api/os/overview", async (c) => {
   const [legacyOverdue, finance, approvals, agentRuns, financialAlerts, connections, securityWarnings] = superAdmin
     ? await Promise.all([
         c.env.DB.prepare(
-          "SELECT COUNT(*) AS total FROM invoices WHERE status = 'overdue' OR (status = 'sent' AND due_date < ?)",
+          "SELECT COUNT(*) AS total FROM financial_revenues WHERE archived_at IS NULL AND (status = 'overdue' OR (status IN ('invoiced','sent','partially_paid') AND due_date < ?))",
         ).bind(timestamp).first<CountRow>(),
         financialTotals(c.env.DB, monthStart, timestamp),
         c.env.DB.prepare(
@@ -113,6 +117,8 @@ dashboardRouter.get("/api/os/overview", async (c) => {
            UNION ALL
            SELECT provider AS name, status, 'financiar' AS category, last_sync_at AS checked_at, last_error_code
              FROM financial_provider_connections
+           UNION ALL
+           SELECT provider AS name,status,'cont conectat' AS category,checked_at,error_code FROM integration_accounts
            UNION ALL
            SELECT name, status, 'motor' AS category, last_validated_at AS checked_at, last_error_code
              FROM engine_connectors
@@ -168,6 +174,10 @@ dashboardRouter.get("/api/os/overview", async (c) => {
     });
   }
 
+  const extension = staff ? await centerAttention(c,superAdmin,timestamp) : null;
+  if(extension) attention.push(...extension.attention);
+  attention.sort((a,b)=>["critic","atenție","informare"].indexOf(a.severity)-["critic","atenție","informare"].indexOf(b.severity));
+
   const metrics = {
     projects: Number(projectSummary?.total || 0),
     activeProjects: Number(projectSummary?.active || 0),
@@ -194,9 +204,9 @@ dashboardRouter.get("/api/os/overview", async (c) => {
   return c.json({
     generatedAt: timestamp,
     role: superAdmin ? "super_admin" : staff ? "staff" : "client",
-    briefing: buildBriefing(attention, metrics),
+    briefing: extension?.preferences.enabled===0 ? "" : buildBriefing(extension?.preferences.include_finance===0 ? attention.filter(a=>a.kind!=="financiar"):attention, metrics),
     metrics,
-    attention: attention.slice(0, 12),
+    attention: attention.slice(0, 30),
     approvals: approvals.results,
     agentRuns: agentRuns.results,
     health: [

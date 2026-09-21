@@ -1,5 +1,9 @@
 # AVYRON OS — matrice de acoperire a cerințelor
 
+> Extensia locală pentru lista completă de centre, verificată la 22 septembrie:
+> [centre, funcții și limite](AVYRON_OS_CENTERS_2026-09-22.md). Această extensie
+> necesită migrația 0025 și nu este inclusă încă în producția PR #10.
+
 > **Inventar istoric (12 septembrie).** Pentru situația actuală, toate cerințele
 > ulterioare și limitele confirmate, vezi
 > [auditul de release din 14 septembrie](AVYRON_OS_RELEASE_AUDIT_2026-09-14.md).

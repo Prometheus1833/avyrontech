@@ -1,3 +1,4 @@
+import type { StaffPolicy } from "@/shared/osCatalog";
 // Cloudflare auth client — cheamă workerul avyrontech (cross-origin în preview / same-origin în prod).
 // Access token (JWT 15min) e ținut in-memory + refresh via cookie `sid`.
 import { apiUrl } from "./apiBase";
@@ -223,9 +224,9 @@ class CfAuth {
     this.clearSession();
   }
 
-  async me(): Promise<{ user: CfUser; profile: CfProfile; roles: Role[]; superadmin?: boolean } | null> {
+  async me(): Promise<{ user: CfUser; profile: CfProfile; roles: Role[]; superadmin?: boolean; staffPolicy?: StaffPolicy } | null> {
     try {
-      const result = await this.request<{ user: CfUser; profile: CfProfile; roles: Role[]; superadmin?: boolean }>("/api/auth/me");
+      const result = await this.request<{ user: CfUser; profile: CfProfile; roles: Role[]; superadmin?: boolean; staffPolicy?: StaffPolicy }>("/api/auth/me");
       if (result.user.avatar_url?.startsWith("/")) result.user.avatar_url = apiUrl(result.user.avatar_url);
       if (result.profile.avatar_url?.startsWith("/")) result.profile.avatar_url = apiUrl(result.profile.avatar_url);
       return result;

@@ -1,3 +1,4 @@
+import type { StaffPolicy } from "@/shared/osCatalog";
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
 import { cfAuth, type CfUser, type CfProfile, type Role } from "@/lib/cfAuth";
 
@@ -14,6 +15,7 @@ type AuthContextValue = {
   isStaff: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  staffPolicy: StaffPolicy | null;
   loading: boolean;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -29,6 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [superadmin, setSuperadmin] = useState(false);
+  const [staffPolicy, setStaffPolicy] = useState<StaffPolicy|null>(null);
   // Start in loading state on every route so signed-in visitors never see a
   // "Log in" CTA flash while the (possibly deferred) session bootstrap runs.
   const [loading, setLoading] = useState(true);
@@ -40,11 +43,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setProfile(me.profile);
       setRoles(me.roles ?? []);
       setSuperadmin(me.superadmin === true);
+      setStaffPolicy(me.staffPolicy || null);
     } else {
       setUser(null);
       setProfile(null);
       setRoles([]);
       setSuperadmin(false);
+      setStaffPolicy(null);
     }
   }, []);
 
@@ -81,6 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = useCallback(async () => {
     await cfAuth.logout();
     setUser(null); setProfile(null); setRoles([]); setSuperadmin(false);
+      setStaffPolicy(null);
   }, []);
 
   const value: AuthContextValue = {
@@ -92,6 +98,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isAdmin: roles.includes("admin"),
     isSuperAdmin: roles.includes("admin") && superadmin,
     loading,
+    staffPolicy,
     refreshProfile,
     signOut,
   };

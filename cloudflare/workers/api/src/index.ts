@@ -664,7 +664,7 @@ app.get("/api/auth/me", requireAuth, async (c) => {
       .bind(c.get("userId"), (u as { display_name?: string }).display_name || null, now()).run();
     profile = await c.env.DB.prepare(`SELECT ${PROFILE_SELECT} FROM profiles WHERE id = ?`).bind(c.get("userId")).first();
   }
-  return c.json({ user: u, profile, roles: c.get("roles"), superadmin: await isSuperAdmin(c) });
+  return c.json({ user: u, profile, roles: c.get("roles"), superadmin: await isSuperAdmin(c), staffPolicy: await staffPolicy(c.env.DB,c.get("userId")) });
 });
 
 app.get("/api/auth/sessions", requireAuth, async (c) => {
@@ -1119,6 +1119,8 @@ import { aiProjectsRouter } from "./aiProjects";
 import { financeRouter } from "./finance";
 import { workspaceRouter } from "./workspace";
 import { operationsRouter } from "./operations";
+import { centersRouter, communityRouter } from "./osCenters";
+import { staffPolicy } from "./centerAccess";
 import { runOperationJobs } from "./operationJobs";
 import { dashboardRouter } from "./osDashboard";
 import { seedRouter } from "./seed";
@@ -1173,6 +1175,10 @@ app.use("/api/workspace/*", requireAuth, requirePrivilegedMfa);
 app.route("/", workspaceRouter);
 app.use("/api/operations/*", requireAuth, requirePrivilegedMfa);
 app.route("/", operationsRouter);
+app.use("/api/centers/*", requireAuth, requirePrivilegedMfa);
+app.route("/", centersRouter);
+app.use("/api/community/*", requireAuth);
+app.route("/", communityRouter);
 app.route("/", dashboardRouter);
 app.route("/", engineRouter);
 app.route("/", organizationsRouter);
@@ -1299,9 +1305,10 @@ app.all("*", async (c) => {
   return new Response(asset.body, { status: asset.status, headers });
 });
 
-app.onError((error, c) => {
+app.onError(async (error, c) => {
   const requestId = c.get("requestId") || c.req.header("cf-ray") || crypto.randomUUID();
   console.error(JSON.stringify({ event: "unhandled_error", requestId, path: c.req.path, method: c.req.method, error: error.message }));
+  await recordSecurityEvent(c,c.get("userId") || null,"api.unhandled_error","failed","warning").catch(()=>undefined);
   return c.json({ error: { code: "internal_error", message: "A apărut o eroare internă", requestId } }, 500);
 });
 
