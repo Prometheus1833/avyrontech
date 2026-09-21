@@ -5,6 +5,7 @@ export const departmentLabels: Record<Department, string> = {general:'General',s
 export const centers = [
   {id:'marketing',name:'Marketing Studio',group:'Conformitate și creștere',detail:'Strategii, costuri, ciorne AI, publicare aprobată și analiza audienței.',roles:['marketing']},
   {id:'accounts',name:'Conturi & dispozitive',group:'Infrastructură și securitate',detail:'Conturi Avyron / Cutiuța Magică, seif și sesiuni asistate.',roles:[]},
+  {id:'surveys',name:'Smart Surveys',group:'Clienți și livrare',detail:'Discovery, răspunsuri, materiale și briefuri aprobate.',roles:['sales','developer','marketing','support']},
   {id:'approvals',name:'Approval Center',group:'AI și control',detail:'Aprobări AI, revizuire și decizii pe versiunea exactă.',roles:[]},
   {id:'runs',name:'AI Activity / Agent Runs',group:'AI și control',detail:'Pași, rezultate, erori și consum înregistrat.',roles:[]},
   {id:'automations',name:'Automation Center',group:'AI și control',detail:'Reguli, execuții, retry și următoarea rulare.',roles:[]},

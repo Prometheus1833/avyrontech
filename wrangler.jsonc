@@ -9,7 +9,9 @@
   "workers_dev": true,
   "preview_urls": true,
   "upload_source_maps": true,
+  "send_email": [{ "name": "SURVEY_EMAIL", "destination_address": "avyrontech@gmail.com" }],
   "routes": [
+    { "pattern": "surveys.avyron.ro", "custom_domain": true },
     { "pattern": "avyron.ro", "custom_domain": true },
     { "pattern": "www.avyron.ro", "custom_domain": true },
     { "pattern": "api.avyron.ro", "custom_domain": true },
@@ -36,7 +38,7 @@
       "enabled": true,
       "head_sampling_rate": 0.1,
       "persist": true,
-      "invocation_logs": true
+      "invocation_logs": false
     }
   },
   "triggers": {
@@ -92,14 +94,14 @@
     "APP_ENV": "production",
     "BACKUP_DATABASE_ID": "85b6868d-174a-48aa-8891-9366bbcb7e47",
     "ADMIN_MFA_POLICY": "optional_until_enrollment",
-    "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://app.avyron.ro,https://api.avyron.ro,https://avyrontech.lovable.app,https://id-preview--3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovable.app,https://3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovableproject.com,http://localhost:8080",
+    "ALLOWED_ORIGINS": "https://surveys.avyron.ro,https://avyron.ro,https://www.avyron.ro,https://app.avyron.ro,https://api.avyron.ro,https://avyrontech.lovable.app,https://id-preview--3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovable.app,https://3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovableproject.com,http://localhost:8080",
     "APP_URL": "https://avyron.ro",
     "SMTP_HOST": "smtp.mx.cloudflare.net",
     "SMTP_PORT": "465",
     "SMTP_USER": "api_token",
     "SMTP_FROM": "contact@avyron.ro",
     "LEAD_TO": "avyrontech@gmail.com",
-    "TURNSTILE_ALLOWED_HOSTNAMES": "avyron.ro,www.avyron.ro,app.avyron.ro,avyrontech.pages.dev,*.avyrontech.pages.dev,*.avyrontech.workers.dev,avyrontech.lovable.app,localhost"
+    "TURNSTILE_ALLOWED_HOSTNAMES": "surveys.avyron.ro,avyron.ro,www.avyron.ro,app.avyron.ro,avyrontech.pages.dev,*.avyrontech.pages.dev,*.avyrontech.workers.dev,avyrontech.lovable.app,localhost"
   },
 
   // Cloudflare Builds must run `npm run deploy:api:preview` for non-main
@@ -108,6 +110,7 @@
   "env": {
     "preview": {
       "name": "avyrontech-preview",
+      "send_email": [{ "name": "SURVEY_EMAIL", "destination_address": "avyrontech@gmail.com" }],
       "routes": [],
       // Preview is manual-only: never inherit production schedules or run
       // ingestion/maintenance jobs without an explicit test invocation.
@@ -119,7 +122,7 @@
           "enabled": true,
           "head_sampling_rate": 1,
           "persist": true,
-          "invocation_logs": true
+          "invocation_logs": false
         }
       },
       "durable_objects": {
@@ -158,14 +161,14 @@
         "APP_ENV": "preview",
         "BACKUP_DATABASE_ID": "4df2ac75-51b2-4d17-bd21-a0ab3f143b24",
         "ADMIN_MFA_POLICY": "optional_until_enrollment",
-        "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://app.avyron.ro,https://api.avyron.ro,https://avyrontech-preview.avyrontech.workers.dev,https://avyrontech.lovable.app,http://localhost:8080",
+        "ALLOWED_ORIGINS": "https://surveys.avyron.ro,https://avyron.ro,https://www.avyron.ro,https://app.avyron.ro,https://api.avyron.ro,https://avyrontech-preview.avyrontech.workers.dev,https://avyrontech.lovable.app,http://localhost:8080",
         "APP_URL": "https://avyrontech-preview.avyrontech.workers.dev",
         "SMTP_HOST": "smtp.mx.cloudflare.net",
         "SMTP_PORT": "465",
         "SMTP_USER": "api_token",
         "SMTP_FROM": "contact@avyron.ro",
         "LEAD_TO": "avyrontech@gmail.com",
-        "TURNSTILE_ALLOWED_HOSTNAMES": "app.avyron.ro,*.avyrontech.workers.dev,avyrontech.lovable.app,localhost"
+        "TURNSTILE_ALLOWED_HOSTNAMES": "surveys.avyron.ro,app.avyron.ro,*.avyrontech.workers.dev,avyrontech.lovable.app,localhost"
       }
     }
   }

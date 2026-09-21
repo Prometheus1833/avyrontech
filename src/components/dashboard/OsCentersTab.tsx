@@ -1,3 +1,4 @@
+import SurveyAdmin from '@/pages/surveys/Admin';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowUpRight, Search } from 'lucide-react';
@@ -26,6 +27,7 @@ export default function OsCentersTab({access}:{access:Access;onNavigate:(section
   if(id==='accounts')return <AccountsPanel/>;
   if(id==='marketing')return <MarketingPanel canWrite={m.canWrite}/>;
   if(id==='backup')return <BackupsPanel canWrite={m.canWrite}/>;
+  if(id==='surveys')return <SurveyAdmin embedded/>;
   if(id==='documents')return <DocumentsHub canWrite={m.canWrite}/>;
   if(id==='approvals')return <ApprovalsPanel/>;
   if(id==='briefing')return <BriefingPanel/>;

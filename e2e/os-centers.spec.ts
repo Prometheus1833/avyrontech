@@ -3,6 +3,7 @@ import {centers,defaultReads} from '../src/shared/osCatalog';
 async function setup(page:Page,owner=true){
  await page.route('**/api/auth/refresh',r=>r.fulfill({json:{access_token:'fixture-local-token',expires_in:900}}));
  await page.route('**/api/auth/me',r=>r.fulfill({json:{user:{id:'owner',email:'owner@example.test',display_name:'Test',email_verified:1},profile:{id:'owner',display_name:'Test'},roles:[owner?'admin':'staff'],superadmin:owner,staffPolicy:{department:owner?'general':'marketing',job_title:'Marketing',read:defaultReads('marketing'),write:['comments'],revision:1}}}));
+ await page.route('**/api/survey-admin/**',r=>r.fulfill({json:{data:[],canManage:owner}}));
  await page.route('**/api/operations/**',r=>{const p=new URL(r.request().url()).pathname;return r.fulfill({json:p.endsWith('config')?{clients:[],projects:[],staff:[],canManageIntegrations:true}:p.endsWith('integrations')?{providers:{},data:[],canEdit:true}:p.endsWith('automations')?{data:[],jobs:[]}:p.endsWith('agents')?{data:[],runs:[],evaluations:[]}:{data:[],total:0}});});
  await page.route('**/api/centers/**',r=>{const p=new URL(r.request().url()).pathname;
   let body:unknown={data:[],total:0};
@@ -18,7 +19,7 @@ async function setup(page:Page,owner=true){
  await page.addInitScript(()=>localStorage.setItem('avyron-cookie-consent-v2',JSON.stringify({necessary:true,analytics:false,marketing:false,savedAt:new Date().toISOString(),policyVersion:'2026-09-12'})));
 }
 for(const size of [{width:1440,height:1000},{width:390,height:844}]){
- test(`all 29 operational centers render without overflow ${size.width}`,async({page},info)=>{
+ test(`all ${centers.length} operational centers render without overflow ${size.width}`,async({page},info)=>{
   await setup(page);await page.setViewportSize(size);await page.goto('/profil?tab=os-centers');
   for(const center of centers){
    await page.getByLabel('Caută funcționalități').fill(center.name);

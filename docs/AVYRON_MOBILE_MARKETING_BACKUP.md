@@ -7,7 +7,7 @@ This extends the unpublished OS centers and Documents Hub work. Nothing in this 
 
 - Read this file and `AGENTS.md` before editing these modules. Work on a dedicated branch. Do not run a Lovable agent or overwrite parallel GitHub changes. Fetch/compare main before an authorized push; preserve normal merge history.
 - Use the existing Cloudflare API and `cfAuth`. Never create a parallel Supabase backend, login session store or credential store. Staff permissions are checked again on the server; hiding a button is not authorization.
-- Migration `0027_marketing_accounts_backups.sql` is append-only after first release. Current migration is local only until explicitly applied remotely. Deploying code without migrations 0025–0027 breaks the new centers.
+- Migration `0030_marketing_accounts_backups.sql` is append-only after first release. The previously local-only 0027 marketing migration was renumbered during integration with the already published survey migrations. Deploying without the complete migration history breaks the new centers.
 - Preserve the distinction between a draft, approval of an exact revision, and explicit external publication. Content edits clear approval. No agent may bypass Cost Guard, kill switches, identity checks or admin approval.
 - Keep `os-backups/` private. Never include it in public media/file listings. No private API response, page HTML, token or user document may enter the service worker cache. Do not cache the dashboard offline.
 - Do not automatically enable subscriptions, paid usage, backup schedules, account connections or publishing. No real social account was contacted or changed by implementation tests.

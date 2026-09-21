@@ -1,3 +1,7 @@
+import { serveSurveyHost } from '../../../../src/worker/surveyHost';
+import { surveyPublic } from './surveys/public';
+import { surveyAdmin } from './surveys/admin';
+import { processSurveyEvents, processSurveyAiJobs, cleanupSurveys } from './surveys/tasks';
 import { privilegedMfaSatisfied } from "./mfaPolicy";
 // Avyron API — Cloudflare Workers + D1 + KV + R2
 // Auth: PBKDF2-SHA256 password hashing + signed JWT (HS256) + rolling sessions.
@@ -39,6 +43,8 @@ const app = new Hono<AppBindings>();
 // Hostname routing runs before API/auth middleware. Demo hosts therefore cannot
 // fall through to the production API, D1, KV or private assets.
 app.use("*", async (c, next) => {
+  const survey = await serveSurveyHost(c.req.raw, c.env.ASSETS);
+  if (survey) return survey;
   const mapped = await handleMappedHostname(c.req.raw, c.env.ASSETS);
   if (mapped) return mapped;
   await next();
@@ -107,7 +113,7 @@ app.use("*", async (c, next) => {
     origin: (origin) => allowedOrigin(c.env, origin),
     credentials: true,
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "X-Request-Id", "Idempotency-Key", "X-Device-Token"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Request-Id", "Idempotency-Key", "X-Device-Token", "X-Survey-Token", "X-File-Name"],
     exposeHeaders: ["X-Request-Id", "X-API-Version", "X-Avyron-Cache"],
     maxAge: 86_400,
   })(c, next);
@@ -1170,6 +1176,14 @@ app.use("/api/blog/staff/*", requireAuth, requireRole("staff", "admin"));
 // AI OS: consola de administrare este rezervată super adminilor; scrierile sunt
 // limitate suplimentar la contul owner în interiorul routerului.
 app.use("/api/ai/admin/*", requireAuth, requireSuperAdmin);
+app.use('/api/survey-admin/*', requireAuth, requirePrivilegedMfa);
+// Optional authentication is only used for explicitly account-bound survey links.
+app.use('/api/surveys/*', async (c, next) => {
+  if (c.req.header('authorization')) return requireAuth(c, next);
+  await next();
+});
+app.route('/', surveyPublic);
+app.route('/', surveyAdmin);
 app.route("/", aiOsRouter);
 app.route("/", leadsRouter);
 app.route("/", aiProjectsRouter);
@@ -1331,11 +1345,12 @@ export default {
   scheduled: (controller, env, ctx) => {
     if (controller.cron === "0,15,30,45 * * * *") {
       ctx.waitUntil((async () => {
-        const results = await Promise.allSettled([runOperationJobs(env), runMarketingJobs(env)]);
+        const jobs = ["operations", "marketing", "survey-events", "survey-ai"];
+        const results = await Promise.allSettled([runOperationJobs(env), runMarketingJobs(env), processSurveyEvents(env), processSurveyAiJobs(env)]);
         results.forEach((result, index) => {
-          if (result.status === "rejected") console.error(JSON.stringify({event:"os_scheduled_job_failed",job:index===0?"operations":"marketing"}));
+          if (result.status === "rejected") console.error(JSON.stringify({event:"os_scheduled_job_failed",job:jobs[index]}));
         });
-        // D1 export can pause the database; start it after the other scheduled writes finish.
+        // D1 export can pause the database; start it after other scheduled writes finish.
         await scheduleBackups(env);
       })());
       return;
@@ -1349,6 +1364,7 @@ export default {
     }
     ctx.waitUntil(Promise.all([
       cleanupExpiredData(env),
+      cleanupSurveys(env),
       runDueEngineDiscovery(env),
     ]).then(() => undefined).catch((error) => {
       console.error(JSON.stringify({ event: "maintenance_job_failed", error: String(error) }));
