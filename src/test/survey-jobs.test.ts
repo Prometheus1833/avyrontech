@@ -4,6 +4,7 @@ import {readdirSync,readFileSync} from 'node:fs';
 import type {DatabaseSync as SqliteDatabase,SQLInputValue} from 'node:sqlite';
 import {beforeEach,afterEach,describe,it,expect,vi} from 'vitest';
 import {processSurveyAiJobs,generateSurveyAi} from '../../cloudflare/workers/api/src/surveys/tasks';
+import {groundedRephrase} from '../../cloudflare/workers/api/src/surveys/rephrase';
 import {sha256} from '../../cloudflare/workers/api/src/security';
 import type {Env} from '../../cloudflare/workers/api/src/types';
 const {reserve}=vi.hoisted(()=>({reserve:vi.fn(async()=>({decision:'allowed',reason:'within_budget'}))}));
@@ -20,4 +21,9 @@ describe('Durable survey AI processing',()=>{
  it('recovers an interrupted model run with a separately reserved attempt',async()=>{const run=`survey_${await sha256('b:ai')}`;db.prepare("INSERT INTO ai_runs(id,agent_slug,agent_version_id,status,input_hash,input_tokens,started_at,created_at) VALUES(?,'survey-brief','survey_brief_v1','running','test',1,?,?)").run(run,Date.now()-960000,Date.now()-960000);await processSurveyAiJobs(env);expect(db.prepare('SELECT status,error_code FROM ai_runs WHERE id=?').get(run)).toMatchObject({status:'failed',error_code:'execution_interrupted'});expect(db.prepare('SELECT status FROM ai_runs WHERE id=?').get(`${run}:2`)!.status).toBe('succeeded');expect(reserve.mock.calls[0][0].idempotencyKey).toBe(`${run}:2`);});
  it('bounds failures to three attempts while retaining the structured brief',async()=>{model.mockRejectedValue(new Error('provider unavailable'));for(let i=0;i<3;i++){db.exec("UPDATE outbox_events SET available_at=0 WHERE id='e'");await processSurveyAiJobs(env);}expect(db.prepare("SELECT status,attempts FROM outbox_events WHERE id='e'").get()).toMatchObject({status:'dead',attempts:3});expect(db.prepare("SELECT source_json FROM survey_briefs WHERE id='b'").get()!.source_json).toBe('{}');expect((await generateSurveyAi(env,'s')).reason).toBe('attempts_exhausted');expect(model).toHaveBeenCalledTimes(3);expect(new Set(reserve.mock.calls.map(c=>c[0].idempotencyKey)).size).toBe(3);});
  it('does not invoke a model while an existing attempt still holds its lease',async()=>{const run=`survey_${await sha256('b:ai')}`;db.prepare("INSERT INTO ai_runs(id,agent_slug,agent_version_id,status,input_hash,input_tokens,started_at,created_at) VALUES(?,'survey-brief','survey_brief_v1','running','test',1,?,?)").run(run,Date.now(),Date.now());expect((await generateSurveyAi(env,'s')).reason).toBe('already_running');expect(model).not.toHaveBeenCalled();});
+});
+
+describe('Rephrase factual vocabulary guard',()=>{
+ it('allows clear phrasing and Romanian inflections',()=>{expect(groundedRephrase('vreau ceva modern pentru construcții','Îmi doresc o prezentare modernă pentru domeniul construcțiilor.')).toBe(true);});
+ it('rejects invented services, numbers and names',()=>{for(const suggestion of ['Oferim proiectare și întreținere.','Avem 20 de angajați.','Compania se numește Exemplu.'])expect(groundedRephrase('servicii de construcții',suggestion)).toBe(false);expect(groundedRephrase('vreau un proiect','Vreau proiectare.')).toBe(false);expect(groundedRephrase('Nu vreau magazin','Vreau magazin.')).toBe(false);});
 });
