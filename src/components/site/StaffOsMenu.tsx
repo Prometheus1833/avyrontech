@@ -27,7 +27,7 @@ type QuickLink = {
 };
 
 const StaffOsMenu = () => {
-  const { profile, user, isStaff, isSuperAdmin } = useAuth();
+  const { profile, user, isStaff, isAdmin, isSuperAdmin } = useAuth();
   const { lang } = useLang();
   const ro = lang === "ro";
 
@@ -72,8 +72,8 @@ const StaffOsMenu = () => {
 
   const displayName = profile?.display_name || user.display_name || user.email.split("@")[0];
   const roleLabel = isSuperAdmin
-    ? ro ? "Super administrator" : "Super administrator"
-    : ro ? "Membru staff" : "Staff member";
+    ? "Super administrator"
+    : isAdmin ? "Administrator" : ro ? "Membru staff" : "Staff member";
 
   return (
     <DropdownMenu modal={false}>
@@ -81,7 +81,7 @@ const StaffOsMenu = () => {
         <button
           type="button"
           aria-label={ro ? "Deschide accesul rapid AVYRON OS" : "Open AVYRON OS quick access"}
-          className="group relative inline-flex h-8 items-center justify-center rounded-full border border-violet-500/25 bg-violet-500/[0.08] px-3 font-mono text-[10px] font-bold tracking-[0.16em] text-violet-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-500/45 hover:bg-violet-500/15 hover:text-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:text-violet-200 dark:hover:text-white"
+          className="group relative inline-flex h-10 shrink-0 items-center justify-center rounded-full border border-violet-500/25 bg-violet-500/[0.08] px-3 font-mono text-[10px] font-bold tracking-[0.16em] text-violet-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-500/45 hover:bg-violet-500/15 hover:text-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:text-violet-200 dark:hover:text-white"
         >
           <span className="absolute inset-x-2 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/60 to-transparent" aria-hidden="true" />
           OS
@@ -93,9 +93,9 @@ const StaffOsMenu = () => {
         align="start"
         sideOffset={10}
         collisionPadding={12}
-        className="z-[70] w-[min(22rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border-violet-500/20 bg-background/95 p-0 shadow-[0_24px_70px_-26px_rgba(76,29,149,.55)] backdrop-blur-2xl"
+        className="z-[70] flex max-h-[var(--radix-dropdown-menu-content-available-height)] w-[min(22rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border-violet-500/20 bg-background/95 p-0 shadow-[0_24px_70px_-26px_rgba(76,29,149,.55)] backdrop-blur-2xl"
       >
-        <DropdownMenuLabel className="relative overflow-hidden px-4 pb-3 pt-4">
+        <DropdownMenuLabel className="relative shrink-0 overflow-hidden px-4 pb-3 pt-4">
           <span className="pointer-events-none absolute -right-8 -top-12 size-32 rounded-full bg-violet-500/15 blur-3xl" aria-hidden="true" />
           <span className="relative flex items-start gap-3">
             <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-300">
@@ -109,7 +109,7 @@ const StaffOsMenu = () => {
         </DropdownMenuLabel>
 
         <DropdownMenuSeparator className="m-0 bg-violet-500/10" />
-        <div className="grid gap-1 p-2" aria-label={ro ? "Acces rapid OS" : "OS quick access"}>
+        <div className="grid min-h-0 gap-1 overflow-y-auto overscroll-contain p-2" aria-label={ro ? "Acces rapid OS" : "OS quick access"}>
           {quickLinks.map((item) => {
             const Icon = item.icon;
             return (
@@ -130,7 +130,7 @@ const StaffOsMenu = () => {
         </div>
 
         <DropdownMenuSeparator className="m-0 bg-violet-500/10" />
-        <div className="p-2">
+        <div className="shrink-0 p-2">
           <DropdownMenuItem asChild className="cursor-pointer rounded-xl bg-foreground p-0 text-background focus:bg-foreground/90 focus:text-background">
             <Link to="/profil?tab=overview" className="flex items-center justify-between gap-3 px-3.5 py-3 text-xs font-semibold">
               <span>{ro ? "Către Panoul de comandă" : "Go to Command Dashboard"}</span>

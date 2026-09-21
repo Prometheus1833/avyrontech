@@ -56,30 +56,30 @@ const Nav = () => {
 
   return (
     <header className="fixed top-0 inset-x-0 z-50">
-      <div className="mx-auto max-w-6xl px-4 mt-3">
+      <div className="mx-auto max-w-6xl px-3 sm:px-4 mt-3">
         <nav className="glass shadow-soft rounded-full flex items-center justify-between pl-3 pr-2 py-2 gap-2">
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <a href={`${homePath}#hero`} className="flex items-center gap-2" aria-label={isRo ? "Avyron — mergi la hero" : "Avyron — go to hero"}>
               <img src={logo} alt="Avyron" width={22} height={22} className="size-[1.4rem] rounded-md object-cover" />
               <span
-                className="text-base md:text-lg font-bold uppercase tracking-[0.18em] bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent"
+                className="text-sm sm:text-base md:text-lg font-bold uppercase tracking-[0.18em] bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent"
                 style={{ fontFamily: '"Times New Roman", Times, serif' }}
               >
                 AVYRON
               </span>
             </a>
             {!loading && isStaff && (
-              <Suspense fallback={<span className="h-8 w-12" aria-hidden="true" />}>
+              <Suspense fallback={<span className="h-10 w-12" aria-hidden="true" />}>
                 <StaffOsMenu />
               </Suspense>
             )}
-            <div className="hidden md:inline-flex items-center gap-1.5">
+            <div className="hidden xl:inline-flex items-center gap-1.5">
               {showCurrency && <CurrencySwitch compact showDetails={false} />}
               <LangSwitch />
               <ThemeToggle />
             </div>
           </div>
-          <ul className="hidden md:flex items-center gap-4 text-sm font-medium">
+          <ul className="hidden xl:flex items-center gap-4 text-sm font-medium">
             {links.map((l) => (
               <li key={l.href ?? l.to}>
                 {l.isRoute && l.to ? (
@@ -112,7 +112,7 @@ const Nav = () => {
               </li>
             ))}
           </ul>
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden xl:flex items-center gap-2">
             <a
               href={`${homePath}#cta`}
               title={t.nav.cta}
@@ -135,7 +135,7 @@ const Nav = () => {
               </Link>
             ))}
           </div>
-          <div className="md:hidden flex items-center gap-1.5">
+          <div className="xl:hidden flex shrink-0 items-center gap-1.5">
             {showCurrency && <CurrencySwitch compact showDetails={false} />}
             <LangSwitch />
             <ThemeToggle />
@@ -159,7 +159,7 @@ const Nav = () => {
           </div>
         </nav>
         {open && !user && (
-          <div ref={mobileMenuRef} data-testid="mobile-nav-menu" className="md:hidden glass shadow-soft rounded-3xl mt-2 p-4 space-y-2">
+          <div ref={mobileMenuRef} data-testid="mobile-nav-menu" className="xl:hidden glass shadow-soft rounded-3xl mt-2 p-4 space-y-2">
             <Link
               to="/auth"
               onClick={() => setOpen(false)}
