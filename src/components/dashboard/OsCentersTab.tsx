@@ -8,6 +8,9 @@ import OperationsConsole, { Automations, Integrations, Records } from './Operati
 import { ApprovalsPanel, BriefingPanel, CommentsPanel, Notice, RegistryPanel, ReportPanel, WorkPanel } from './CenterPanels';
 import {inputClass,panelClass,useCenterData} from './centerHooks';
 import DocumentsHub from './DocumentsHub';
+import AccountsPanel from './AccountsPanel';
+import MarketingPanel from './MarketingPanel';
+import BackupsPanel from './BackupsPanel';
 import { centerFields } from './centerForms';
 type Module={id:CenterId;name:string;group:string;detail:string;canWrite:boolean};
 const recordKinds={contracts:'contract',changes:'change_request',appointments:'appointment',privacy:'privacy_request',compliance:'compliance',experiments:'experiment'} as const;
@@ -20,11 +23,14 @@ export default function OsCentersTab({access}:{access:Access;onNavigate:(section
  const visible=data?.modules.filter(m=>normalized(`${m.name} ${m.detail}`).includes(normalized(search)))||[];
  const render=(m:Module)=>{
   const id=m.id;
+  if(id==='accounts')return <AccountsPanel/>;
+  if(id==='marketing')return <MarketingPanel canWrite={m.canWrite}/>;
+  if(id==='backup')return <BackupsPanel canWrite={m.canWrite}/>;
   if(id==='documents')return <DocumentsHub canWrite={m.canWrite}/>;
   if(id==='approvals')return <ApprovalsPanel/>;
   if(id==='briefing')return <BriefingPanel/>;
   if(id==='automations')return <Automations/>;
-  if(id==='integrations')return <><Integrations/><div className={`${panelClass} mt-4`}><h3 className="font-semibold">Următoarele conexiuni</h3><p className="mt-2 text-sm text-slate-400">FGO, NETOPIA, Google și Meta: neconfigurate, adaptoarele de execuție se activează în etapele dedicate. Email: necesită dovadă de livrare. Supabase: legacy, nu este backendul AVYRON OS.</p></div></>;
+  if(id==='integrations')return <><Integrations/><div className={`${panelClass} mt-4`}><h3 className="font-semibold">Următoarele conexiuni</h3><p className="mt-2 text-sm text-slate-400">Meta: configurare în Conturi & dispozitive și publicare în Marketing Studio. FGO, NETOPIA și Google: adaptoarele se activează în etapele dedicate. Email: necesită dovadă de livrare. Supabase: legacy, nu este backendul AVYRON OS.</p></div></>;
   if(id in recordKinds)return <><Records key={id} initialKind={recordKinds[id as keyof typeof recordKinds]}/>{id==='privacy'&&<div className="mt-5"><h3 className="mb-3 font-semibold">Jurnal de consimțământ newsletter</h3><ReportPanel center="privacy" canWrite={false}/></div>}</>;
   if(['deliverables','onboarding','offboarding'].includes(id))return <WorkPanel center={id} canWrite={m.canWrite}/>;
   if(id==='comments')return <CommentsPanel canWrite={m.canWrite}/>;

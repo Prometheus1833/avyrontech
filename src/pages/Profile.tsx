@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { buildAccess, canOpenSection, defaultSection, sectionsFor, type SectionId } from "@/lib/access";
+import InstallApp, {AppConnectivity} from "@/components/pwa/InstallApp";
 import logo from "@/assets/avyron-logo.webp";
 import { publicSiteHref } from "@/lib/appHost";
 
@@ -141,9 +142,11 @@ export default function Profile() {
       </aside>
 
       <div className="min-w-0 flex-1 pb-20 lg:pb-0">
+        <AppConnectivity/>
         <header className="sticky top-0 z-30 border-b border-white/[0.07] bg-[#080d1b]/85 px-3 py-3 backdrop-blur-xl sm:px-5 lg:px-6"><div className="mx-auto flex max-w-[1500px] items-center gap-3">
           <a href={publicSiteHref()} aria-label="Înapoi la site" data-testid="page-back-link" className="rounded-xl p-2 text-slate-600 hover:bg-white/[0.05] hover:text-slate-300"><ChevronLeft className="size-5" /></a>
           <button type="button" onClick={() => setCommandOpen(true)} className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2.5 text-left text-xs text-slate-600 transition hover:border-violet-400/25 hover:text-slate-400 sm:max-w-xl"><Search className="size-4 shrink-0" /><span className="truncate">Caută clienți, proiecte, leaduri, facturi…</span><kbd className="ml-auto hidden rounded border border-white/10 bg-black/20 px-1.5 py-0.5 font-mono text-[10px] sm:inline">⌘K</kbd></button>
+          {access.isStaff&&<InstallApp/>}
           {access.isSuperAdmin && <button type="button" onClick={() => setTab("ai-os")} className="hidden items-center gap-2 rounded-xl border border-violet-400/20 bg-violet-500/10 px-3 py-2.5 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/20 sm:inline-flex"><Sparkles className="size-4" /> Întreabă AVY</button>}
           <button type="button" onClick={() => setTab("overview")} aria-label="Vezi prioritățile de azi" title="Priorități și alerte" className="relative rounded-xl p-2.5 text-slate-500 hover:bg-white/[0.05] hover:text-slate-200"><Bell className="size-4" /></button>
           <button type="button" onClick={() => void signOut().then(() => window.location.assign("/"))} aria-label="Deconectare" title="Deconectare" className="rounded-xl p-2.5 text-slate-600 hover:bg-rose-400/10 hover:text-rose-300"><LogOut className="size-4" /></button>

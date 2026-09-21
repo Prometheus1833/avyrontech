@@ -35,3 +35,8 @@ These rules apply to all work in this repository.
 - Run the relevant tests, type checks, lint checks, and production builds before pushing.
 - Report any check that could not be run and the exact reason.
 - Keep commits focused on the requested task.
+
+## Mobile, marketing and backup handoff
+
+- Before editing PWA installation, social accounts, marketing publication or backup/recovery, read [the module runbook](docs/AVYRON_MOBILE_MARKETING_BACKUP.md). This applies equally to Codex, Claude and Lovable edits.
+- Keep authentication and Cloudflare bindings intact; preserve exact-version approvals, Cost Guard, private-only backup storage and permanent baseline protection.

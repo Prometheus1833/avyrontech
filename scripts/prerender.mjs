@@ -12,6 +12,7 @@
  * stays fully interactive and every route/dashboard/auth flow keeps working.
  */
 
+import { createHash } from "node:crypto";
 import { build } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import { JSDOM } from "jsdom";
@@ -26,7 +27,8 @@ const distDir = existsSync(resolve(root, "dist/client/index.html"))
   : resolve(root, "dist");
 const template = readFileSync(resolve(distDir, "index.html"), "utf8");
 
-const outDir = resolve(root, "node_modules/.avyron-prerender");
+// Worktrees may share node_modules; never overwrite another build bundle.
+const outDir = resolve(root, "node_modules/.avyron-prerender", createHash("sha256").update(root).digest("hex").slice(0, 16));
 
 // 1. Bundle the app for Node (single React instance, CJS deps interop handled
 //    by rollup). Browser conditions so we get the same code the client runs.

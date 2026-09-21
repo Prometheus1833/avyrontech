@@ -55,7 +55,7 @@ export function decide(url: URL): Decision {
   }
 
   // Real files (hashed bundles, images, robots.txt, sitemap.xml…).
-  if (ASSET_RE.test(path) && !PRERENDER_ROUTES.includes(path)) return { kind: "asset" };
+  if ((ASSET_RE.test(path)||path==='/site.webmanifest'||path==='/pwa-offline') && !PRERENDER_ROUTES.includes(path)) return { kind: "asset" };
 
   if (PRERENDER_ROUTES.includes(path)) return { kind: "page", noindex: isNoindexPath(path) };
 

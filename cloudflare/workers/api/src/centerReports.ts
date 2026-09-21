@@ -21,13 +21,16 @@ export function mountCenterReports(router:Hono<AppBindings>){
     UNION ALL SELECT id,'email',COALESCE(error,'Livrare nereușită'),created_at FROM email_delivery_log WHERE status!='sent'
     UNION ALL SELECT id,'securitate/API',action,created_at FROM security_events WHERE outcome='failed'
     UNION ALL SELECT id,'integrare',error_code,updated_at FROM integration_accounts WHERE status='error'
+    UNION ALL SELECT id,'marketing',error_code,updated_at FROM marketing_posts WHERE status IN ('failed','uncertain')
+    UNION ALL SELECT id,'backup',error_code,created_at FROM backup_runs WHERE status='failed'
+    UNION ALL SELECT id,'cont',error_code,updated_at FROM os_accounts WHERE status='error'
     ORDER BY created_at DESC LIMIT 100`).all()).results});
   if(center==='runs'){
    const runs=await db.prepare('SELECT id,agent_slug,status,input_tokens,output_tokens,estimated_cost_micros,error_code,created_at,completed_at FROM ai_runs ORDER BY created_at DESC LIMIT 50').all();
    const steps=await db.prepare('SELECT run_id,sequence,kind,name,status,substr(output_json,1,12000) output_json,error_code FROM ai_run_steps WHERE run_id IN (SELECT id FROM ai_runs ORDER BY created_at DESC LIMIT 50) ORDER BY run_id,sequence LIMIT 300').all();
    return c.json({data:runs.results,steps:steps.results});
   }
-  if(center==='approvals')return c.json({data:(await db.prepare(`SELECT a.id,a.revision,a.summary,a.request_json,a.action_class,a.status,a.requested_at,a.expires_at,r.agent_slug FROM ai_approvals a JOIN ai_runs r ON r.id=a.run_id WHERE a.status='pending' AND a.expires_at>? ORDER BY a.requested_at LIMIT 100`).bind(t).all()).results});
+  if(center==='approvals')return c.json({marketing:(await db.prepare("SELECT id,title,revision FROM marketing_posts WHERE status='draft' ORDER BY updated_at DESC LIMIT 50").all()).results,data:(await db.prepare(`SELECT a.id,a.revision,a.summary,a.request_json,a.action_class,a.status,a.requested_at,a.expires_at,r.agent_slug FROM ai_approvals a JOIN ai_runs r ON r.id=a.run_id WHERE a.status='pending' AND a.expires_at>? ORDER BY a.requested_at LIMIT 100`).bind(t).all()).results});
   if(center==='plugins')return c.json({data:(await db.prepare("SELECT id,name,category,implementation_status,risk_level,summary,requirements_json,last_verified_at FROM engine_capabilities WHERE category IN ('plugin','mcp','integration','skill','ai_tool') AND (name LIKE ? ESCAPE '\\' OR summary LIKE ? ESCAPE '\\') ORDER BY name LIMIT 100").bind(term,term).all()).results});
   if(center==='documents'){
    const documents=await db.prepare(`SELECT id,title,status,visibility,updated_at,substr(content_text,1,600) excerpt FROM knowledge_documents WHERE status!='archived' AND (title LIKE ? ESCAPE '\\' OR content_text LIKE ? ESCAPE '\\') ORDER BY updated_at DESC LIMIT 50`).bind(term,term).all();

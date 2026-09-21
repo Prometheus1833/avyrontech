@@ -8,6 +8,8 @@ async function setup(page:Page,owner=true){
   let body:unknown={data:[],total:0};
   if(p.endsWith('/catalog'))body={modules:centers.filter(c=>owner||defaultReads('marketing').includes(c.id)).map(c=>({...c,canWrite:owner||c.id==='comments'})),policy:{department:'marketing'}};
   if(p.endsWith('/config'))body={clients:[{id:'c',name:'Client test'}],projects:[{id:'p',name:'Proiect test',client_id:'c'}]};
+  if(p.endsWith('/marketing'))body={campaigns:[],posts:[],accounts:[],audits:[],canApprove:owner};
+  if(p.endsWith('/backups'))body={settings:{enabled:0,account_id:null,interval_hours:24,retention_days:30,keep_count:7,max_bytes:1073741824,include_files:1,include_media:1,revision:1},runs:[],accounts:[]};
   if(p.endsWith('/briefing'))body={enabled:1,lookahead_days:7,include_finance:1};
   if(p.endsWith('/infrastructure'))body={data:[{service:'api',status:'ok',detail:'HTTP 200',checked_at:Date.now(),source:'probe'},{service:'email',status:'unknown',detail:'Nicio probă',checked_at:null,source:'neconfigurat'}]};
   if(p.endsWith('/comments'))body={data:[{id:'cm',revision:1,path:'/blog/test',author:'Membru',content:'Comentariu de verificat',created_at:Date.now()}]};
@@ -16,7 +18,7 @@ async function setup(page:Page,owner=true){
  await page.addInitScript(()=>localStorage.setItem('avyron-cookie-consent-v2',JSON.stringify({necessary:true,analytics:false,marketing:false,savedAt:new Date().toISOString(),policyVersion:'2026-09-12'})));
 }
 for(const size of [{width:1440,height:1000},{width:390,height:844}]){
- test(`all 27 operational centers render without overflow ${size.width}`,async({page},info)=>{
+ test(`all 29 operational centers render without overflow ${size.width}`,async({page},info)=>{
   await setup(page);await page.setViewportSize(size);await page.goto('/profil?tab=os-centers');
   for(const center of centers){
    await page.getByLabel('Caută funcționalități').fill(center.name);
@@ -24,7 +26,7 @@ for(const size of [{width:1440,height:1000},{width:390,height:844}]){
    await expect(page.getByRole('heading',{name:center.name,exact:true})).toBeVisible();
    await expect(page.getByRole('status')).toHaveCount(0);
    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1),center.id).toBe(true);
-   if(['domains','sla','vault','backup','security','profitability','newsletter'].includes(center.id)){await page.getByRole('button',{name:'Adaugă',exact:true}).click();await expect(page.getByLabel('Denumire',{exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1)).toBe(true);if(center.id==='domains')await page.screenshot({path:info.outputPath(`domain-form-${size.width}.png`),fullPage:true});await page.getByRole('button',{name:'Anulează',exact:true}).click();}
+   if(['domains','sla','vault','security','profitability','newsletter'].includes(center.id)){await page.getByRole('button',{name:'Adaugă',exact:true}).click();await expect(page.getByLabel('Denumire',{exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1)).toBe(true);if(center.id==='domains')await page.screenshot({path:info.outputPath(`domain-form-${size.width}.png`),fullPage:true});await page.getByRole('button',{name:'Anulează',exact:true}).click();}
    if(['domains','infrastructure','newsletter'].includes(center.id))await page.screenshot({path:info.outputPath(`${center.id}-${size.width}.png`),fullPage:true});
    await page.getByRole('button',{name:'Toate centrele',exact:true}).click();
   }

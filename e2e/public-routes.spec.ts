@@ -715,6 +715,7 @@ test.describe("forms and authentication", () => {
       body: JSON.stringify({ ok: true, verification_required: true, verification_email_sent: true }),
     }));
     await page.goto("/auth");
+    await page.getByRole("button", { name: "Doar necesare", exact: true }).click();
     await page.getByRole("tab", { name: /înregistr|register/i }).click();
     await page.locator("#rg-name").fill("Test Avyron");
     await page.locator("#rg-email").fill("test@example.com");

@@ -8,13 +8,16 @@ import { centers, centerIds, departments, ownerOnly, type CenterId } from '../..
 import { checkRateLimit } from './antispam';
 import { fail, audit, replay, write } from './centerPersistence';
 import { mountDocumentHub } from './documentHub';
+import {mountAccounts} from './accountVault';
+import {mountMarketing} from './marketing';
+import {mountBackups} from './backups';
 import { mountCommands } from './centerCommands';
 import { sealCredential, openCredential } from './integrationAdapters';
 import { mountCenterReports } from './centerReports';
 import { canAccessProject } from './projects';
 export const centersRouter=new Hono<AppBindings>();
 type Ctx=Context<AppBindings>;
-centersRouter.use('/api/centers/*',async(c,next)=>bodyLimit({maxSize:/^\/api\/centers\/documents\/[^/]+\/file$/.test(c.req.path)?10_100_000:65536})(c,next));
+centersRouter.use('/api/centers/*',async(c,next)=>bodyLimit({maxSize:/^\/api\/centers\/documents\/[^/]+\/file$/.test(c.req.path)?10_100_000:c.req.path==='/api/centers/marketing/social-audit'?4_100_000:65536})(c,next));
 centersRouter.use('/api/centers/*',async(c,next)=>{
  c.header('Cache-Control','private, no-store');
  if(!c.get('roles')?.some(r=>r==='staff'||r==='admin'))return fail(c,'forbidden',403);
@@ -155,3 +158,7 @@ centersRouter.post('/api/centers/checklists',async c=>{
  const t=Date.now();
  return write(c,{ok:true},[...titles.map(title=>c.env.DB.prepare(`INSERT INTO project_work_items(id,project_id,kind,title,status,due_at,created_by,created_at,updated_at) SELECT ?,?,?,?,'open',?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM project_work_items WHERE project_id=? AND kind=? AND title=?)`).bind(crypto.randomUUID(),b.data.project_id,b.data.kind,title,b.data.due_at,c.get('userId'),t,t,b.data.project_id,b.data.kind,title)),audit(c,'project.checklist.created',b.data.project_id)]);
 });
+
+mountAccounts(centersRouter);
+mountMarketing(centersRouter);
+mountBackups(centersRouter);

@@ -55,6 +55,7 @@
     { "tag": "agents-v1", "new_sqlite_classes": ["AvyronAgentRuntime"] }
   ],
 
+  "workflows": [{"binding":"BACKUP_WORKFLOW","name":"avyron-backup","class_name":"AvyronBackupWorkflow"}],
   "d1_databases": [
     {
       "binding": "DB",
@@ -89,6 +90,7 @@
   },
   "vars": {
     "APP_ENV": "production",
+    "BACKUP_DATABASE_ID": "85b6868d-174a-48aa-8891-9366bbcb7e47",
     "ADMIN_MFA_POLICY": "optional_until_enrollment",
     "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://app.avyron.ro,https://api.avyron.ro,https://avyrontech.lovable.app,https://id-preview--3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovable.app,https://3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovableproject.com,http://localhost:8080",
     "APP_URL": "https://avyron.ro",
@@ -125,6 +127,7 @@
           { "name": "AVYRON_AGENT_RUNTIME", "class_name": "AvyronAgentRuntime" }
         ]
       },
+      "workflows": [{"binding":"BACKUP_WORKFLOW","name":"avyron-backup-preview","class_name":"AvyronBackupWorkflow"}],
       "d1_databases": [
         {
           "binding": "DB",
@@ -153,6 +156,7 @@
       },
       "vars": {
         "APP_ENV": "preview",
+        "BACKUP_DATABASE_ID": "4df2ac75-51b2-4d17-bd21-a0ab3f143b24",
         "ADMIN_MFA_POLICY": "optional_until_enrollment",
         "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://app.avyron.ro,https://api.avyron.ro,https://avyrontech-preview.avyrontech.workers.dev,https://avyrontech.lovable.app,http://localhost:8080",
         "APP_URL": "https://avyrontech-preview.avyrontech.workers.dev",

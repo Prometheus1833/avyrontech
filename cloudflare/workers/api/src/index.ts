@@ -107,7 +107,7 @@ app.use("*", async (c, next) => {
     origin: (origin) => allowedOrigin(c.env, origin),
     credentials: true,
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "X-Request-Id", "Idempotency-Key"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Request-Id", "Idempotency-Key", "X-Device-Token"],
     exposeHeaders: ["X-Request-Id", "X-API-Version", "X-Avyron-Cache"],
     maxAge: 86_400,
   })(c, next);
@@ -1121,6 +1121,9 @@ import { workspaceRouter } from "./workspace";
 import { operationsRouter } from "./operations";
 import { centersRouter, communityRouter } from "./osCenters";
 import { staffPolicy } from "./centerAccess";
+export {AvyronBackupWorkflow} from "./backupWorkflow";
+import {runMarketingJobs} from "./marketing";
+import {scheduleBackups} from "./backups";
 import { runOperationJobs } from "./operationJobs";
 import { dashboardRouter } from "./osDashboard";
 import { seedRouter } from "./seed";
@@ -1327,7 +1330,14 @@ export default {
   fetch: (request, env, ctx) => app.fetch(normalizeVersionedApiRequest(request), env, ctx),
   scheduled: (controller, env, ctx) => {
     if (controller.cron === "0,15,30,45 * * * *") {
-      ctx.waitUntil(runOperationJobs(env));
+      ctx.waitUntil((async () => {
+        const results = await Promise.allSettled([runOperationJobs(env), runMarketingJobs(env)]);
+        results.forEach((result, index) => {
+          if (result.status === "rejected") console.error(JSON.stringify({event:"os_scheduled_job_failed",job:index===0?"operations":"marketing"}));
+        });
+        // D1 export can pause the database; start it after the other scheduled writes finish.
+        await scheduleBackups(env);
+      })());
       return;
     }
     if (controller.cron === EXCHANGE_RATE_REFRESH_CRON) {
