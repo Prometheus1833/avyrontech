@@ -20,6 +20,8 @@ async function setup(page:Page,owner=true){
 }
 for(const size of [{width:1440,height:1000},{width:390,height:844}]){
  test(`all ${centers.length} operational centers render without overflow ${size.width}`,async({page},info)=>{
+  // This journey visits every center and its forms sequentially.
+  test.setTimeout(90_000);
   await setup(page);await page.setViewportSize(size);await page.goto('/profil?tab=os-centers');
   for(const center of centers){
    await page.getByLabel('Caută funcționalități').fill(center.name);
