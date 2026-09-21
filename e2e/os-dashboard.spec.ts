@@ -121,6 +121,37 @@ test.describe("dashboard AVYRON OS în română", () => {
     await page.screenshot({path:testInfo.outputPath('overview-desktop.png'),fullPage:true});
   });
 
+  test("oferă staffului acces rapid OS din bara landing page", async ({ page }, testInfo) => {
+    await page.goto("/");
+
+    const osButton = page.getByRole("button", { name: "Deschide accesul rapid AVYRON OS" });
+    await expect(osButton).toBeVisible();
+    await expect(osButton).toHaveText(/OS/);
+    const brandBox = await page.getByRole("link", { name: /Avyron — mergi la hero/ }).boundingBox();
+    const osBox = await osButton.boundingBox();
+    const languageBox = await page.getByRole("button", { name: /Schimbă limba/ }).boundingBox();
+    expect(brandBox!.x + brandBox!.width).toBeLessThan(osBox!.x);
+    expect(osBox!.x + osBox!.width).toBeLessThan(languageBox!.x);
+    await osButton.click();
+
+    const quickAccess = page.getByLabel("Acces rapid OS");
+    await expect(quickAccess.getByRole("menuitem", { name: /Privire de ansamblu/ })).toHaveAttribute("href", "/profil?tab=overview");
+    await expect(quickAccess.getByRole("menuitem", { name: /Leaduri & CRM/ })).toHaveAttribute("href", "/profil?tab=leads");
+    await expect(quickAccess.getByRole("menuitem", { name: /Agenți AI/ })).toHaveAttribute("href", "/profil?tab=ai-os");
+    await expect(page.getByRole("menuitem", { name: "Către Panoul de comandă" })).toHaveAttribute("href", "/profil?tab=overview");
+    await expect(page.getByRole("menu")).toHaveCSS("opacity", "1");
+    await page.screenshot({ path: testInfo.outputPath("landing-os-quick-menu.png") });
+
+    await osButton.click();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(osButton).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
+    await osButton.click();
+    await expect(page.getByRole("menuitem", { name: "Către Panoul de comandă" })).toBeVisible();
+    await expect(page.getByRole("menu")).toHaveCSS("opacity", "1");
+    await page.screenshot({ path: testInfo.outputPath("landing-os-quick-menu-mobile.png") });
+  });
+
   test("rămâne utilizabil pe mobil și oferă Command Center", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/profil?tab=overview");
