@@ -17,5 +17,5 @@ export async function surveyFx(env:Env){
 export function surveyCostEstimate(source:string,maxOutput:number,ronPerUsd:number){
  if(!Number.isFinite(ronPerUsd)||ronPerUsd<=0||!Number.isInteger(maxOutput)||maxOutput<1)throw new Error('invalid_estimate');
  const input=new TextEncoder().encode(source).length+1500;
- return {units:input+maxOutput,minor:Math.max(1,Math.ceil((input*0.152+maxOutput*0.287)*ronPerUsd*1.5/10000))};
+ return {units:input+maxOutput,minor:Math.max(1,Math.ceil((input*0.293+maxOutput*2.253)*ronPerUsd*1.5/10000))};
 }

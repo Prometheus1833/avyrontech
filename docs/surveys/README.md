@@ -17,7 +17,7 @@ Initial templates map to the existing catalog: professional website, ecommerce, 
 
 Browser -> same-origin `/api/surveys` -> pinned template and response in D1 -> submission transaction -> structured brief + existing outbox + OS notification -> restricted email binding. AI interpretation runs separately through the existing 15-minute scheduled job, with leased outbox entries and at most three reserved attempts per brief. Email delivery never waits for model inference. Interrupted runs become auditable failures before a new cost reservation. AI interpretation is optional; staff approval creates or updates the canonical Documents Hub brief. Survey answers are never silently rewritten by AI.
 
-Dependencies are the existing OS centers and Documents Hub migrations 0025/0026. Additive 0027 introduces the survey domain; 0028 seeds templates. No duplicate identities, CRM, document repository or email queue is introduced.
+Dependencies are the existing OS centers and Documents Hub migrations 0025/0026. Additive 0027 introduces the survey domain; 0028 seeds templates; 0029 versions the JSON Schema-capable AI model after live provider testing. No duplicate identities, CRM, document repository or email queue is introduced.
 
 ## Data model
 
@@ -70,9 +70,9 @@ Analytics show the latest 100 accessible surveys: created, sent, opened, started
 
 The `survey-brief` agent is registered but AI is disabled by default. Generation requires an approved agent version, no kill switch, explicit survey activation, configured provider quota and a bounded daily/monthly RON policy. Quota units are conservative application token estimates, not Cloudflare billing neurons. Never label a locally configured quota as the account's remaining free allowance.
 
-The configured model is `@cf/meta/llama-3.1-8b-instruct-fp8`. The RON reservation uses the documented model rates, UTF-8 bytes plus prompt allowance for the input upper estimate, maximum output tokens, and uses ECB USD/RON cross rates with a 50% conversion/tax buffer, then rounds up to bani. Unsupported models or currencies fail closed. See [Cloudflare model pricing](https://developers.cloudflare.com/workers-ai/models/llama-3.1-8b-instruct-fp8/). Pricing must be reviewed if the model or provider price changes. Generation fails closed after 2026-10-22 until its pricing review is renewed. The user approved a 25 RON monthly survey budget; deployment configuration uses a 2.50 RON daily cap and a 0.20 RON per-request cap. The cap covers this agent, not unrelated account services.
+The configured model is `@cf/meta/llama-3.3-70b-instruct-fp8-fast`. The RON reservation uses the documented model rates, UTF-8 bytes plus prompt allowance for the input upper estimate, maximum output tokens, and uses ECB USD/RON cross rates with a 50% conversion/tax buffer, then rounds up to bani. Unsupported models or currencies fail closed. See [Cloudflare model pricing](https://developers.cloudflare.com/workers-ai/models/llama-3.3-70b-instruct-fp8-fast/). Pricing must be reviewed if the model or provider price changes. Generation fails closed after 2026-10-22 until its pricing review is renewed. The user approved a 25 RON monthly survey budget; deployment configuration uses a 2.50 RON daily cap and a 0.20 RON per-request cap. The cap covers this agent, not unrelated account services.
 
-The structured brief remains available when AI is disabled/denied. AI facts require source citations whose quotes match client answers; staff must still verify the interpretation. Smart text input only proposes text and requires the client's explicit acceptance. Uploaded files and contact email/phone are not fed into brief generation.
+The structured brief remains available when AI is disabled/denied. AI facts require source citations whose quotes match client answers; staff must still verify the interpretation. Smart text input only proposes text and requires the client's explicit acceptance. A conservative vocabulary and negation filter rejects unsupported details before displaying a suggestion; uncertain outputs leave the original answer intact. This is an additional check, not a semantic guarantee, so client confirmation remains required. Uploaded files and contact email/phone are not fed into brief generation.
 
 ## Deployment and verification
 
@@ -88,6 +88,6 @@ The implemented direction is calm dark violet/blue glass, responsive CSS depth, 
 
 ## Concurrent-task handoff
 
-This release is isolated in `codex/smart-surveys-2026-09-22`, based on `55df3b1` with the existing OS centers/Documents Hub commits. The separate mobile/marketing/backup worktree remains untouched. Its unpublished `0027_marketing_accounts_backups.sql` must be renumbered after 0028 when integrating these branches, before its first remote application; never rename migrations already applied remotely. The release script checks the actual migration history and stops on an incompatible sequence.
+This release is isolated in `codex/smart-surveys-2026-09-22`, based on `55df3b1` with the existing OS centers/Documents Hub commits. The separate mobile/marketing/backup worktree remains untouched. Its unpublished `0027_marketing_accounts_backups.sql` must be renumbered after 0029 when integrating these branches, before its first remote application; never rename migrations already applied remotely. The release script checks the actual migration history and stops on an incompatible sequence.
 
 Browser tests use `PLAYWRIGHT_PORT=4187` for isolation; server reuse is opt-in. Prerender bundles are scoped by worktree path even when node_modules is shared.
