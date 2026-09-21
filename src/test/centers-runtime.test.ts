@@ -4,6 +4,8 @@ import {readdirSync,readFileSync} from 'node:fs';
 import type {DatabaseSync as SqliteDatabase,SQLInputValue} from 'node:sqlite';
 import {Hono} from 'hono';
 import {beforeEach,afterEach,describe,it,expect,vi} from 'vitest';
+import {commandIntent} from '../shared/commandIntent';
+import {inspectAccessibility} from '../../cloudflare/workers/api/src/centerCommands';
 import {centersRouter,communityRouter} from '../../cloudflare/workers/api/src/osCenters';
 import {dashboardRouter} from '../../cloudflare/workers/api/src/osDashboard';
 import {centers,defaultReads} from '../shared/osCatalog';
@@ -17,12 +19,12 @@ class Statement {
  async run(){return {meta:this.db.prepare(this.sql).run(...this.values)};}
 }
 describe('OS centers: real routes and all D1 migrations',()=>{
- let db:SqliteDatabase,app:Hono,actor:string,env:Env,kv:Map<string,string>;
+ let db:SqliteDatabase,app:Hono,actor:string,env:Env,kv:Map<string,string>,files:Map<string,Uint8Array>;
  beforeEach(()=>{
   db=new DatabaseSync(':memory:');for(const p of readdirSync('cloudflare/d1/migrations').filter(p=>p.endsWith('.sql')).sort())db.exec(readFileSync(`cloudflare/d1/migrations/${p}`,'utf8'));
   for(const [id,email,role] of [['owner','prometheus@avyron.ro','admin'],['staff','staff@example.test','staff'],['client','client@example.test','user']]){db.prepare('INSERT INTO users(id,email,password_hash,created_at,updated_at) VALUES (?,?,?,1,1)').run(id,email,'fixture');db.prepare('INSERT INTO user_roles VALUES (?,?)').run(id,role);}
   db.exec("INSERT INTO clients(id,company_name,email,created_at) VALUES ('c','Client One','c@example.test',1);INSERT INTO projects(id,client_id,name,slug,created_at) VALUES ('p','c','Project','project',1)");
-  actor='owner';kv=new Map();env={DB:{prepare:(sql:string)=>new Statement(db,sql),batch:async(statements:Statement[])=>{db.exec('BEGIN');try{const result=[];for(const s of statements)result.push(await s.run());db.exec('COMMIT');return result;}catch(e){db.exec('ROLLBACK');throw e;}}},KV:{get:async(k:string)=>kv.get(k)||null,put:async(k:string,v:string)=>{kv.set(k,v);},delete:async(k:string)=>{kv.delete(k);}},FILES:{list:async()=>({objects:[]})},MEDIA:{list:async()=>({objects:[]})},MFA_ENCRYPTION_KEY:'fixture-key-not-real-at-least-thirty-two',ADMIN_MFA_POLICY:'optional_until_enrollment'} as unknown as Env;
+  actor='owner';kv=new Map();files=new Map();env={DB:{prepare:(sql:string)=>new Statement(db,sql),batch:async(statements:Statement[])=>{db.exec('BEGIN');try{const result=[];for(const s of statements)result.push(await s.run());db.exec('COMMIT');return result;}catch(e){db.exec('ROLLBACK');throw e;}}},KV:{get:async(k:string)=>kv.get(k)||null,put:async(k:string,v:string)=>{kv.set(k,v);},delete:async(k:string)=>{kv.delete(k);}},FILES:{list:async()=>({objects:[]}),put:async(k:string,v:Uint8Array)=>{files.set(k,v);},delete:async(k:string)=>{files.delete(k);},get:async(k:string)=>files.has(k)?{body:files.get(k)}:null},MEDIA:{list:async()=>({objects:[]})},MFA_ENCRYPTION_KEY:'fixture-key-not-real-at-least-thirty-two',ADMIN_MFA_POLICY:'optional_until_enrollment'} as unknown as Env;
   app=new Hono();app.use('*',async(c,next)=>{Object.assign(c.env,env);c.set('userId',actor);c.set('roles',actor==='owner'?['admin']:actor==='staff'?['staff']:['user']);await next();});app.route('/',centersRouter);app.route('/',communityRouter);app.route('/',dashboardRouter);app.onError(e=>{console.error(e);return new Response('safe failure',{status:500});});
  });
  afterEach(()=>{db.close();vi.restoreAllMocks();});
@@ -109,4 +111,80 @@ describe('OS centers: real routes and all D1 migrations',()=>{
  it('defines distinct professional defaults without privileged control',()=>{
   expect(defaultReads('sales')).toContain('onboarding');expect(defaultReads('developer')).toContain('infrastructure');expect(defaultReads('marketing')).toContain('newsletter');expect(defaultReads('finance')).toContain('profitability');for(const role of ['sales','developer','marketing','finance'] as const)expect(defaultReads(role)).not.toContain('security');
  });
+ const document=(overrides:Record<string,unknown>={})=>({title:'Contract mentenanță',category:'contract',content_text:'Mentenanța include backup zilnic și suport tehnic.',client_id:'c',project_id:'p',status:'approved',review_after:null,...overrides});
+ const saveDoc=async(overrides:Record<string,unknown>={})=>(await (await req('documents',document(overrides))).json()).id as string;
+ const aiBudget=()=>db.exec("INSERT INTO financial_agent_provider_policies(agent_slug,vendor_id,status,created_at,updated_at) VALUES ('knowledge-auditor','fin_vendor_cloudflare_ai','active',1,1); UPDATE financial_provider_quotas SET quota_total=1000000,quota_used=0,status='active' WHERE vendor_id='fin_vendor_cloudflare_ai'");
+ it('persists categorized documents, searches accents, isolates clients and rejects stale edits',async()=>{
+  const id=await saveDoc();await saveDoc({title:'Alt document',client_id:null,project_id:null});
+  const result=await (await req('documents?search=mentenanta&client=c&category=contract')).json();expect(result.total).toBe(1);expect(result.data[0].id).toBe(id);
+  expect((await req(`documents/${id}`,document({revision:1,title:'Nou'}),'PATCH')).status).toBe(200);
+  expect((await req(`documents/${id}`,document({revision:1}),'PATCH')).status).toBe(409);
+  actor='staff';expect((await req('documents')).status).toBe(403);expect((await req('documents/ai',{mode:'audit',query:'',client_id:null})).status).toBe(403);
+ });
+ it('audits document mutations atomically and replays idempotency without duplicates',async()=>{
+  const key=crypto.randomUUID();const a=await (await req('documents',document(),'POST',key)).json();const b=await (await req('documents',document(),'POST',key)).json();expect(a).toEqual(b);
+  expect(db.prepare('SELECT count(*) n FROM hub_documents').get()!.n).toBe(1);
+  db.exec("CREATE TRIGGER block_document_audit BEFORE INSERT ON security_events WHEN NEW.action='document.saved' BEGIN SELECT RAISE(ABORT,'fixture blocked'); END");
+  expect((await req('documents',document())).status).toBe(500);expect(db.prepare('SELECT count(*) n FROM hub_documents').get()!.n).toBe(1);
+ });
+ it('stores files privately, resets approval and checks revision and download authorization',async()=>{
+  const id=await saveDoc();const form=new FormData();form.set('file',new File(['%PDF-fixture'],'contract.pdf',{type:'application/pdf'}));form.set('revision','1');
+  const upload=()=>app.request(`/api/centers/documents/${id}/file`,{method:'POST',headers:{'idempotency-key':crypto.randomUUID()},body:form},env);
+  expect((await upload()).status).toBe(200);expect(files.size).toBe(1);
+  expect(db.prepare('SELECT status,revision FROM hub_documents WHERE id=?').get(id)).toMatchObject({status:'draft',revision:2});
+  expect((await upload()).status).toBe(409);const download=await req(`documents/${id}/file`);expect(await download.text()).toBe('%PDF-fixture');expect(download.headers.get('content-disposition')).toContain('attachment');
+  expect((await (await req('documents')).json()).data[0]).not.toHaveProperty('r2_key');actor='staff';expect((await req(`documents/${id}/file`)).status).toBe(403);
+ });
+ it('lists overdue reviews and excludes expired and draft sources from AI search',async()=>{
+  const id=await saveDoc();await saveDoc({title:'Ciornă',status:'draft'});await saveDoc({title:'Expirat',review_after:Date.now()-1000});
+  expect((await (await req('documents')).json()).stale).toHaveLength(1);aiBudget();
+  const model=vi.fn(async(_model:string,input:Record<string,unknown>)=>{const messages=input.messages as {content:string}[];const sources=JSON.parse(messages[1].content).sources;expect(sources).toHaveLength(1);expect(sources[0].id).toBe(id);return {response:JSON.stringify({answer:'Include backup zilnic.',citations:[{id,quote:'backup zilnic'}]})};});env.AI={run:model};
+  const key=crypto.randomUUID(),body={mode:'search',query:'mentenanta backup',client_id:'c'};
+  const first=await (await req('documents/ai',body,'POST',key)).json();expect(first.answer).toContain('backup');expect(first.sources[0].revision).toBe(1);
+  expect(await (await req('documents/ai',body,'POST',key)).json()).toEqual(first);expect(model).toHaveBeenCalledTimes(1);
+  expect(db.prepare("SELECT status FROM ai_runs WHERE id=?").get(first.run_id)!.status).toBe('succeeded');
+ });
+ it('fails closed on budget and kill switch without model calls',async()=>{
+  await saveDoc();const model=vi.fn();env.AI={run:model};
+  expect((await (await req('documents/ai',{mode:'search',query:'backup',client_id:null})).json()).error.code).toBe('agent_provider_policy_not_configured');expect(model).not.toHaveBeenCalled();
+  db.exec("INSERT OR REPLACE INTO ai_kill_switches(scope_type,scope_id,enabled,reason,changed_at) VALUES ('global','*',1,'test',1)");
+  expect((await req('documents/ai',{mode:'audit',query:'',client_id:null})).status).toBe(503);
+ });
+ it('rejects fabricated citations and persists evidence for grounded contradiction findings',async()=>{
+  const a=await saveDoc(),b=await saveDoc({title:'Ofertă veche',content_text:'Mentenanța include backup lunar și suport tehnic.'});aiBudget();
+  env.AI={run:async()=>({response:JSON.stringify({answer:'inventat',citations:[{id:a,quote:'conținut care nu există'}]})})};
+  expect((await (await req('documents/ai',{mode:'search',query:'backup',client_id:null})).json()).error.code).toBe('document_ai_failed');
+  env.AI={run:async()=>({response:JSON.stringify({findings:[{summary:'Frecvențe diferite, de revizuit.',citations:[{id:a,quote:'backup zilnic'},{id:b,quote:'backup lunar'}]}]})})};
+  const result=await (await req('documents/ai',{mode:'audit',query:'',client_id:'c'})).json();expect(result.findings).toHaveLength(1);expect((await (await req('documents/audits')).json()).data).toHaveLength(1);expect(db.prepare('SELECT revision FROM hub_documents WHERE id=?').get(a)!.revision).toBe(1);
+  db.prepare('UPDATE hub_documents SET client_id=NULL,project_id=NULL WHERE id=?').run(b);
+  expect((await (await req('documents/ai',{mode:'audit',query:'',client_id:null})).json()).error.code).toBe('document_ai_failed');
+ });
+ it('returns real unpaid invoices and client dossiers with platform-role enforcement',async()=>{
+  db.exec("INSERT INTO financial_revenues(id,revenue_type,client_id,service_name,status,currency,gross_amount_minor,created_at,updated_at) VALUES ('f','maintenance','c','Hosting','sent','EUR',12345,1,1)");
+  expect((await (await req('commands/query?type=invoices')).json()).data[0]).toMatchObject({currency:'EUR',gross_amount_minor:12345});
+  expect((await (await req('commands/query?type=client&q=Client')).json()).data).toHaveLength(1);expect((await (await req('commands/client/c')).json()).data).toHaveLength(2);
+  actor='staff';expect((await req('commands/query?type=invoices')).status).toBe(403);expect((await req('commands/client/c')).status).toBe(403);
+ });
+ it('generates a UTC monthly report in Documents Hub without changing invoices',async()=>{
+  db.prepare("INSERT INTO financial_revenues(id,revenue_type,service_name,status,currency,gross_amount_minor,invoice_date,created_at,updated_at) VALUES ('aug','maintenance','Hosting','sent','RON',10000,?,1,1)").run(Date.UTC(2026,7,1));
+  const key=crypto.randomUUID(),body={month:'2026-08'};const result=await (await req('commands/report',body,'POST',key)).json();expect(result.text).toContain('100.00');expect(db.prepare('SELECT category,status FROM hub_documents WHERE id=?').get(result.id)).toMatchObject({category:'report',status:'draft'});
+  expect((await (await req('commands/report',body,'POST',key)).json()).id).toBe(result.id);expect((await req('commands/report',{month:'2026-13'})).status).toBe(400);
+ });
+ it('scans only fixed public origins without redirects and saves limited WCAG evidence',async()=>{
+  const fetcher=vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response('<html><head><title></title></head><body><img src="x"></body></html>',{headers:{'content-type':'text/html'}}));
+  const result=await (await req('commands/wcag',{path:'/'})).json();expect(result.findings).toHaveLength(3);expect(fetcher).toHaveBeenCalledWith('https://avyron.ro/',expect.objectContaining({redirect:'manual'}));expect(result.limitation).toContain('preliminară');
+  expect((await req('commands/wcag',{path:'//127.0.0.1/'})).status).toBe(400);expect(fetcher).toHaveBeenCalledTimes(1);
+  expect(inspectAccessibility('<html lang="ro"><title>Avyron</title><img alt=""></html>').findings).toHaveLength(0);
+ });
+ it('stores independent domain ownership, DNS, SSL, redirects and subdomains',async()=>{
+  const body={...domain(),client_id:'c'};body.data={...body.data,ownership:'client',registrar:'Registrar',dns_records:'A www 192.0.2.1',ssl_status:'valid',subdomains:'app.example.test',redirect:'www → apex'};
+  const id=(await (await req('records/domains',body)).json()).id;expect((await (await req('records/domains')).json()).data.find((d:{id:string})=>d.id===id).data).toMatchObject({ownership:'client',ssl_status:'valid',subdomains:'app.example.test'});
+  expect((await req('records/domains',{...body,client_id:null})).status).toBe(400);
+ });
+ it('parses concrete Romanian commands and resolves report dates explicitly',()=>{
+  expect(commandIntent('Creează lead')).toEqual({type:'lead'});expect(commandIntent('arată facturile neachitate')).toEqual({type:'invoices'});expect(commandIntent('deschide clientul Acme')).toEqual({type:'client',query:'Acme'});
+  expect(commandIntent('deschide clientul Căsuța')).toEqual({type:'client',query:'Căsuța'});
+  expect(commandIntent('generează raportul august',new Date('2026-01-05'))).toEqual({type:'report',month:'2025-08'});expect(commandIntent('generează raportul august 2026')).toEqual({type:'report',month:'2026-08'});expect(commandIntent('generează raportul 2026-03')).toEqual({type:'report',month:'2026-03'});
+ });
+
 });

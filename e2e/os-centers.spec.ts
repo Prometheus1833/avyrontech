@@ -45,5 +45,36 @@ test('marketing dashboard hides restricted centers and can moderate comments',as
  await page.getByRole('button',{name:/Comentarii/}).click();await expect(page.getByText('Comentariu de verificat',{exact:true})).toBeVisible();await page.getByRole('button',{name:'Aprobat',exact:true}).click();await expect.poll(()=>decision).toEqual({status:'approved',revision:1});
 });
 test('command palette opens an authorized operational center',async({page})=>{
- await setup(page);await page.goto('/profil?tab=os-centers');await expect(page.getByRole('heading',{name:'Centre AVYRON OS',exact:true})).toBeVisible();await page.keyboard.press('Control+k');await page.getByPlaceholder('Caută proiecte, leaduri, facturi, agenți…').fill('newsletter');await page.getByRole('dialog').getByRole('button',{name:/Abonați/}).click();await expect(page.getByRole('heading',{name:'Abonați / Newsletter',exact:true})).toBeVisible();
+ await setup(page);await page.goto('/profil?tab=os-centers');await expect(page.getByRole('heading',{name:'Centre AVYRON OS',exact:true})).toBeVisible();await page.keyboard.press('Control+k');await page.getByPlaceholder('Caută proiecte, leaduri, facturi, agenți…').fill('newsletter');await page.getByRole('dialog').getByRole('option',{name:/Abonați/}).click();await expect(page.getByRole('heading',{name:'Abonați / Newsletter',exact:true})).toBeVisible();
+});
+for(const width of [390,1440])test(`Documents Hub saves categories and displays grounded AI citations ${width}`,async({page},info)=>{
+ await setup(page);await page.setViewportSize({width,height:900});let saved:Record<string,unknown>|null=null;
+ await page.route(/\/api\/centers\/documents(?:\/|\?|$)/,r=>{
+  const path=new URL(r.request().url()).pathname;
+  if(path.endsWith('/audits'))return r.fulfill({json:{data:[]}});
+  if(path.endsWith('/ai'))return r.fulfill({json:{answer:'Mentenanța include backup zilnic.',citations:[{id:'d',quote:'backup zilnic'}],sources:[{id:'d',title:'Contract client',revision:1}]}});
+  if(r.request().method()==='POST'){saved=r.request().postDataJSON();return r.fulfill({json:{id:'d'}});}
+  return r.fulfill({json:{data:saved?[{...saved,id:'d',revision:1,file_name:null,updated_at:Date.now()}]:[],total:saved?1:0,stale:[]}});
+ });
+ await page.goto('/profil?tab=os-centers&center=documents');await page.getByRole('button',{name:'Adaugă document',exact:true}).click();await page.getByLabel('Titlu document').fill('Contract client');await page.getByLabel('Categorie document',{exact:true}).selectOption('contract');await page.getByLabel('Conținut pentru căutare și AI').fill('Mentenanța include backup zilnic.');await page.getByLabel('Stare document').selectOption('approved');await page.getByRole('button',{name:'Salvează documentul'}).click();await expect(page.getByRole('heading',{name:'Contract client',exact:true})).toBeVisible();expect(saved).toMatchObject({category:'contract',status:'approved'});
+ await page.getByLabel('Întrebare pentru documente').fill('Ce include mentenanța?');await page.getByRole('button',{name:'Caută cu AI',exact:true}).click();await expect(page.getByText('„backup zilnic”',{exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);await page.screenshot({path:info.outputPath(`documents-${width}.png`),fullPage:true});
+});
+test('command palette executes unpaid invoices, opens client and generates explicit month report',async({page})=>{
+ await setup(page);let report:unknown;
+ await page.route('**/api/centers/commands/**',r=>{
+  const url=new URL(r.request().url());
+  if(url.pathname.endsWith('/report')){report=r.request().postDataJSON();return r.fulfill({json:{id:'report',title:'Raport operațional 2026-08',text:'Raport lunar salvat.'}});}
+  if(url.pathname.endsWith('/client/c'))return r.fulfill({json:{title:'Fișa clientului',data:[{id:'c',company_name:'Acme',email:'acme@example.test'},{id:'p',name:'Website Acme',status:'live'}]}});
+  return r.fulfill({json:url.searchParams.get('type')==='invoices'?{title:'Facturi neachitate',data:[{id:'invoice',invoice_number:'AVY-10',gross_amount_minor:12345,currency:'RON'}]}:{title:'Clienți',data:[{id:'c',company_name:'Acme'}]}});
+ });
+ await page.goto('/profil?tab=os-centers');await expect(page.getByRole('heading',{name:'Centre AVYRON OS',exact:true})).toBeVisible();await page.keyboard.press('Control+k');const input=page.getByLabel('Comandă rapidă');await input.fill('arată facturile neachitate');await input.press('Enter');await expect(page.getByText('AVY-10',{exact:true})).toBeVisible();await input.fill('deschide clientul Acme');await input.press('Enter');await page.getByRole('button',{name:'Deschide fișa clientului'}).click();await expect(page.getByText('Website Acme',{exact:true})).toBeVisible();await input.fill('generează raportul august 2026');await input.press('Enter');await expect(page.getByText('Raport lunar salvat.',{exact:true})).toBeVisible();expect(report).toEqual({month:'2026-08'});
+});
+test('marketing cannot execute privileged commands through the palette',async({page})=>{
+ await setup(page,false);await page.goto('/profil?tab=os-centers');await expect(page.getByRole('heading',{name:'Centre AVYRON OS',exact:true})).toBeVisible();await page.keyboard.press('Control+k');await page.getByLabel('Comandă rapidă').fill('arată facturile neachitate');await expect(page.getByRole('option',{name:'Arată facturile neachitate'})).toHaveCount(0);
+});
+test('editing an older domain fills new ownership and SSL defaults',async({page})=>{
+ await setup(page);let saved:unknown;
+ await page.route('**/api/centers/records/domains**',r=>r.fulfill({json:{data:[{id:'legacy',kind:'domains',title:'Domeniu existent',description:'',status:'active',client_id:null,project_id:null,assignee_id:null,due_at:null,revision:1,data:{domain:'example.test',dns:'',redirect:'',estimated_value_minor:null,opportunity:''}}],total:1}}));
+ await page.route('**/api/centers/records/domains/legacy',r=>{saved=r.request().postDataJSON();return r.fulfill({json:{id:'legacy'}});});
+ await page.goto('/profil?tab=os-centers&center=domains');await page.getByRole('button',{name:'Editează',exact:true}).click();await page.getByRole('button',{name:'Salvează',exact:true}).click();await expect.poll(()=>saved).toMatchObject({data:{ownership:'avyron',ssl_status:'unknown'},revision:1});
 });

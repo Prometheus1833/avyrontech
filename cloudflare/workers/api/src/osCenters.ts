@@ -6,27 +6,15 @@ import { centerAllowed, staffPolicy } from './centerAccess';
 import { platformRoleForUser } from './authorization';
 import { centers, centerIds, departments, ownerOnly, type CenterId } from '../../../../src/shared/osCatalog';
 import { checkRateLimit } from './antispam';
-import { sha256 } from './security';
+import { fail, audit, replay, write } from './centerPersistence';
+import { mountDocumentHub } from './documentHub';
+import { mountCommands } from './centerCommands';
 import { sealCredential, openCredential } from './integrationAdapters';
 import { mountCenterReports } from './centerReports';
 import { canAccessProject } from './projects';
 export const centersRouter=new Hono<AppBindings>();
 type Ctx=Context<AppBindings>;
-const fail=(c:Ctx,code:string,status:400|403|404|409|503=400)=>c.json({error:{code,message:({forbidden:'Nu ai acces la această funcție.',revision_conflict:'Datele au fost modificate. Reîncarcă înainte de a salva.',invalid_input:'Verifică toate câmpurile obligatorii.',consent_required:'Este necesară dovada consimțământului.',not_found:'Înregistrarea nu există.'} as Record<string,string>)[code]||code}},status);
-const audit=(c:Ctx,action:string,target:string)=>c.env.DB.prepare("INSERT INTO security_events(id,actor_user_id,actor_type,action,target_id,outcome,severity,created_at) VALUES (?,?,'user',?,?,'allowed','info',?)").bind(crypto.randomUUID(),c.get('userId'),action,target,Date.now());
-const scope=(c:Ctx)=>`centers:${c.get('userId')}:${c.req.method}:${c.req.path}`;
-async function replay(c:Ctx){
- const row=await c.env.DB.prepare('SELECT request_hash,response_json FROM idempotency_keys WHERE scope=? AND idempotency_key=?').bind(scope(c),c.req.header('idempotency-key')).first<{request_hash:string;response_json:string}>();
- if(!row)return null;
- return row.request_hash===await sha256(JSON.stringify(await c.req.json().catch(()=>null)))?c.json(JSON.parse(row.response_json)):fail(c,'idempotency_key_reused',409);
-}
-async function write(c:Ctx,result:Record<string,unknown>,sql:D1PreparedStatement[]){
- const t=Date.now();
- try{await c.env.DB.batch([c.env.DB.prepare('INSERT INTO idempotency_keys(scope,idempotency_key,request_hash,response_status,response_json,created_at,expires_at) VALUES (?,?,?,200,?,?,?)').bind(scope(c),c.req.header('idempotency-key'),await sha256(JSON.stringify(await c.req.json().catch(()=>null))),JSON.stringify(result),t,t+86400000),...sql]);}
- catch(e){const prior=await replay(c);if(prior)return prior;if(/(NOT NULL constraint failed: .*revision|UNIQUE constraint failed)/.test(String(e)))return fail(c,'revision_conflict',409);throw e;}
- return c.json(result);
-}
-centersRouter.use('/api/centers/*',bodyLimit({maxSize:32768}));
+centersRouter.use('/api/centers/*',async(c,next)=>bodyLimit({maxSize:/^\/api\/centers\/documents\/[^/]+\/file$/.test(c.req.path)?10_100_000:65536})(c,next));
 centersRouter.use('/api/centers/*',async(c,next)=>{
  c.header('Cache-Control','private, no-store');
  if(!c.get('roles')?.some(r=>r==='staff'||r==='admin'))return fail(c,'forbidden',403);
@@ -44,7 +32,7 @@ centersRouter.get('/api/centers/catalog',async c=>{
 centersRouter.get('/api/centers/config',async c=>{
  const principal=await platformRoleForUser(c.env.DB,c.get('userId'));
  const projects=await c.env.DB.prepare(`SELECT p.id,p.name,p.client_id FROM projects p WHERE p.status!='archived' AND (?=1 OR p.owner_user_id=? OR EXISTS(SELECT 1 FROM project_staff WHERE project_id=p.id AND user_id=?) OR EXISTS(SELECT 1 FROM organization_memberships WHERE organization_id=p.organization_id AND user_id=? AND status='active' AND role IN ('owner','admin','manager','specialist')) OR (?=1 AND p.organization_id IS NULL)) ORDER BY p.name LIMIT 250`).bind(principal?1:0,c.get('userId'),c.get('userId'),c.get('userId'),c.get('roles').includes('admin')?1:0).all();
- const clients=(principal||await centerAllowed(c,'profitability'))?await c.env.DB.prepare("SELECT id,company_name name FROM clients WHERE status!='archived' ORDER BY company_name LIMIT 250").all():{results:[]};
+ const clients=(principal||await centerAllowed(c,'profitability')||await centerAllowed(c,'domains'))?await c.env.DB.prepare("SELECT id,company_name name FROM clients WHERE status!='archived' ORDER BY company_name LIMIT 250").all():{results:[]};
  const staff=await c.env.DB.prepare("SELECT id,COALESCE(display_name,'Membru') name FROM users WHERE disabled_at IS NULL AND EXISTS(SELECT 1 FROM user_roles WHERE user_id=users.id AND role IN ('staff','admin')) ORDER BY name LIMIT 250").all();
  return c.json({projects:projects.results,clients:clients.results,staff:staff.results});
 });
@@ -68,7 +56,7 @@ const date=z.number().int().min(0).max(8640000000000000).nullable();
 const text=z.string().trim().max(1000).default('');
 const amount=z.number().int().min(0).max(9e12).nullable().default(null);
 const dataSchemas={
- domains:z.object({domain:z.string().trim().toLowerCase().regex(/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/),dns:text,ssl_expires_at:date.optional(),redirect:text,estimated_value_minor:amount,opportunity:text}),
+ domains:z.object({domain:z.string().trim().toLowerCase().regex(/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/),dns:text,registrar:text,ownership:z.enum(['avyron','client']).default('avyron'),ssl_status:z.enum(['unknown','valid','warning','expired']).default('unknown'),ssl_expires_at:date.optional(),redirect:text,subdomains:text,dns_records:text,estimated_value_minor:amount,opportunity:text}),
  sla:z.object({category:z.enum(['response','delivery','support','wcag','incident']),warning_hours:z.number().int().min(1).max(720),evidence:text}),
  vault:z.object({asset_type:z.enum(['brand','document','credential','domain','other']),location:text,owner:text}),
  backup:z.object({resource:text,evidence:text,last_backup_at:date,last_restore_test_at:date,recovery_note:text}),
@@ -96,6 +84,7 @@ async function saveRecord(c:Ctx){
  const allowed=kind==='newsletter'?['pending','subscribed','unsubscribed']:kind==='backup'?['draft','active','warning','resolved','archived','recovery_requested']:['draft','active','warning','resolved','archived'];
  if(!allowed.includes(b.status))return fail(c,'invalid_status');
  if(kind==='newsletter'&&b.status==='subscribed'&&(!b.data.consent_evidence||!b.data.policy_version))return fail(c,'consent_required');
+ if(kind==='domains'&&data.data&&'ownership' in data.data&&data.data.ownership==='client'&&!b.client_id)return fail(c,'client_required');
  if(kind==='profitability'&&!b.client_id)return fail(c,'client_required');
  if(kind==='backup'&&['last_backup_at','last_restore_test_at'].some(key=>typeof b.data[key]==='number'&&Number(b.data[key])>Date.now()))return fail(c,'future_evidence');
  if(kind==='backup'&&b.status==='recovery_requested'&&!b.data.recovery_note)return fail(c,'recovery_reason_required');
@@ -156,6 +145,8 @@ communityRouter.post('/api/community/comments',bodyLimit({maxSize:8192}),async c
 });
 
 mountCenterReports(centersRouter);
+mountDocumentHub(centersRouter);
+mountCommands(centersRouter);
 centersRouter.post('/api/centers/checklists',async c=>{
  const b=z.object({project_id:z.string().min(1).max(100),kind:z.enum(['onboarding','offboarding']),due_at:date}).strict().safeParse(await c.req.json().catch(()=>null));if(!b.success)return fail(c,'invalid_input');
  if(!await centerAllowed(c,b.data.kind,true)||!(await canAccessProject(c.env.DB,b.data.project_id,c.get('userId'),c.get('roles'))).write)return fail(c,'forbidden',403);

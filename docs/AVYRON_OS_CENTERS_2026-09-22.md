@@ -1,3 +1,5 @@
+> Pentru extinderea ulterioară a Documents Hub, Command Center și Domains, vezi [raportul dedicat](AVYRON_DOCUMENTS_COMMANDS_DOMAINS_2026-09-22.md).
+
 # AVYRON OS — centre operaționale, 22 septembrie 2026
 
 Ramură: `codex/os-complete-centers-2026-09-21`, pornită din `f86b4c9` (PR #10).

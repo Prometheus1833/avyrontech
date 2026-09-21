@@ -7,6 +7,7 @@ import type { CenterId, StaffPolicy } from '@/shared/osCatalog';
 import OperationsConsole, { Automations, Integrations, Records } from './OperationsConsole';
 import { ApprovalsPanel, BriefingPanel, CommentsPanel, Notice, RegistryPanel, ReportPanel, WorkPanel } from './CenterPanels';
 import {inputClass,panelClass,useCenterData} from './centerHooks';
+import DocumentsHub from './DocumentsHub';
 import { centerFields } from './centerForms';
 type Module={id:CenterId;name:string;group:string;detail:string;canWrite:boolean};
 const recordKinds={contracts:'contract',changes:'change_request',appointments:'appointment',privacy:'privacy_request',compliance:'compliance',experiments:'experiment'} as const;
@@ -19,6 +20,7 @@ export default function OsCentersTab({access}:{access:Access;onNavigate:(section
  const visible=data?.modules.filter(m=>normalized(`${m.name} ${m.detail}`).includes(normalized(search)))||[];
  const render=(m:Module)=>{
   const id=m.id;
+  if(id==='documents')return <DocumentsHub canWrite={m.canWrite}/>;
   if(id==='approvals')return <ApprovalsPanel/>;
   if(id==='briefing')return <BriefingPanel/>;
   if(id==='automations')return <Automations/>;
