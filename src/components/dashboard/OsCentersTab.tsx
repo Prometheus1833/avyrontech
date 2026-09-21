@@ -1,3 +1,4 @@
+import SurveyAdmin from '@/pages/surveys/Admin';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowUpRight, Search } from 'lucide-react';
@@ -20,6 +21,7 @@ export default function OsCentersTab({access}:{access:Access;onNavigate:(section
  const visible=data?.modules.filter(m=>normalized(`${m.name} ${m.detail}`).includes(normalized(search)))||[];
  const render=(m:Module)=>{
   const id=m.id;
+  if(id==='surveys')return <SurveyAdmin embedded/>;
   if(id==='documents')return <DocumentsHub canWrite={m.canWrite}/>;
   if(id==='approvals')return <ApprovalsPanel/>;
   if(id==='briefing')return <BriefingPanel/>;

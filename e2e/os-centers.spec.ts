@@ -3,6 +3,7 @@ import {centers,defaultReads} from '../src/shared/osCatalog';
 async function setup(page:Page,owner=true){
  await page.route('**/api/auth/refresh',r=>r.fulfill({json:{access_token:'fixture-local-token',expires_in:900}}));
  await page.route('**/api/auth/me',r=>r.fulfill({json:{user:{id:'owner',email:'owner@example.test',display_name:'Test',email_verified:1},profile:{id:'owner',display_name:'Test'},roles:[owner?'admin':'staff'],superadmin:owner,staffPolicy:{department:owner?'general':'marketing',job_title:'Marketing',read:defaultReads('marketing'),write:['comments'],revision:1}}}));
+ await page.route('**/api/survey-admin/**',r=>r.fulfill({json:{data:[],canManage:owner}}));
  await page.route('**/api/operations/**',r=>{const p=new URL(r.request().url()).pathname;return r.fulfill({json:p.endsWith('config')?{clients:[],projects:[],staff:[],canManageIntegrations:true}:p.endsWith('integrations')?{providers:{},data:[],canEdit:true}:p.endsWith('automations')?{data:[],jobs:[]}:p.endsWith('agents')?{data:[],runs:[],evaluations:[]}:{data:[],total:0}});});
  await page.route('**/api/centers/**',r=>{const p=new URL(r.request().url()).pathname;
   let body:unknown={data:[],total:0};

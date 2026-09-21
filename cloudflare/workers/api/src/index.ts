@@ -1,3 +1,7 @@
+import { serveSurveyHost } from '../../../../src/worker/surveyHost';
+import { surveyPublic } from './surveys/public';
+import { surveyAdmin } from './surveys/admin';
+import { processSurveyEvents, cleanupSurveys } from './surveys/tasks';
 import { privilegedMfaSatisfied } from "./mfaPolicy";
 // Avyron API — Cloudflare Workers + D1 + KV + R2
 // Auth: PBKDF2-SHA256 password hashing + signed JWT (HS256) + rolling sessions.
@@ -39,6 +43,8 @@ const app = new Hono<AppBindings>();
 // Hostname routing runs before API/auth middleware. Demo hosts therefore cannot
 // fall through to the production API, D1, KV or private assets.
 app.use("*", async (c, next) => {
+  const survey = await serveSurveyHost(c.req.raw, c.env.ASSETS);
+  if (survey) return survey;
   const mapped = await handleMappedHostname(c.req.raw, c.env.ASSETS);
   if (mapped) return mapped;
   await next();
@@ -107,7 +113,7 @@ app.use("*", async (c, next) => {
     origin: (origin) => allowedOrigin(c.env, origin),
     credentials: true,
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "X-Request-Id", "Idempotency-Key"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Request-Id", "Idempotency-Key", "X-Survey-Token", "X-File-Name"],
     exposeHeaders: ["X-Request-Id", "X-API-Version", "X-Avyron-Cache"],
     maxAge: 86_400,
   })(c, next);
@@ -1167,6 +1173,14 @@ app.use("/api/blog/staff/*", requireAuth, requireRole("staff", "admin"));
 // AI OS: consola de administrare este rezervată super adminilor; scrierile sunt
 // limitate suplimentar la contul owner în interiorul routerului.
 app.use("/api/ai/admin/*", requireAuth, requireSuperAdmin);
+app.use('/api/survey-admin/*', requireAuth, requirePrivilegedMfa);
+// Optional authentication is only used for explicitly account-bound survey links.
+app.use('/api/surveys/*', async (c, next) => {
+  if (c.req.header('authorization')) return requireAuth(c, next);
+  await next();
+});
+app.route('/', surveyPublic);
+app.route('/', surveyAdmin);
 app.route("/", aiOsRouter);
 app.route("/", leadsRouter);
 app.route("/", aiProjectsRouter);
@@ -1327,7 +1341,7 @@ export default {
   fetch: (request, env, ctx) => app.fetch(normalizeVersionedApiRequest(request), env, ctx),
   scheduled: (controller, env, ctx) => {
     if (controller.cron === "0,15,30,45 * * * *") {
-      ctx.waitUntil(runOperationJobs(env));
+      ctx.waitUntil(Promise.all([runOperationJobs(env), processSurveyEvents(env)]).then(() => undefined));
       return;
     }
     if (controller.cron === EXCHANGE_RATE_REFRESH_CRON) {
@@ -1339,6 +1353,7 @@ export default {
     }
     ctx.waitUntil(Promise.all([
       cleanupExpiredData(env),
+      cleanupSurveys(env),
       runDueEngineDiscovery(env),
     ]).then(() => undefined).catch((error) => {
       console.error(JSON.stringify({ event: "maintenance_job_failed", error: String(error) }));

@@ -3,6 +3,7 @@ export const departments = ['general', 'sales', 'developer', 'marketing', 'finan
 export type Department = typeof departments[number];
 export const departmentLabels: Record<Department, string> = {general:'General',sales:'Sales',developer:'Developer',marketing:'Marketing',finance:'Finance',support:'Support'};
 export const centers = [
+  {id:'surveys',name:'Smart Surveys',group:'Clienți și livrare',detail:'Discovery, răspunsuri, materiale și briefuri aprobate.',roles:['sales','developer','marketing','support']},
   {id:'approvals',name:'Approval Center',group:'AI și control',detail:'Aprobări AI, revizuire și decizii pe versiunea exactă.',roles:[]},
   {id:'runs',name:'AI Activity / Agent Runs',group:'AI și control',detail:'Pași, rezultate, erori și consum înregistrat.',roles:[]},
   {id:'automations',name:'Automation Center',group:'AI și control',detail:'Reguli, execuții, retry și următoarea rulare.',roles:[]},
