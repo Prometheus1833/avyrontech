@@ -27,7 +27,13 @@ export async function generateSurveyAi(env:Env,surveyId:string,actor:string|null
  const template=await getTemplate(env.DB,survey.version_id),answers=JSON.parse(response.answers_json);
  const sources=surveyPath(template,answers).filter(q=>!empty(answers[q.id])&&!['consent','file','files','image','logo','document','email','phone'].includes(q.type)).map(q=>({id:q.id,label:q.label,text:typeof answers[q.id]==='string'?answers[q.id]:JSON.stringify(answers[q.id])}));
  const agent=await env.DB.prepare("SELECT v.id,v.model FROM ai_agents a JOIN ai_agent_versions v ON v.agent_slug=a.slug AND v.version=a.current_version WHERE a.slug='survey-brief' AND a.status='active' AND v.status='approved'").first<{id:string;model:string}>();if(!agent)return {available:false,reason:'agent_unavailable'};
- const input=JSON.stringify(sources).slice(0,22000),timestamp=Date.now(),run=`survey_${await sha256(`${brief.id}:ai`)}`;
+ const input=JSON.stringify(sources).slice(0,22000),timestamp=Date.now(),base=`survey_${await sha256(`${brief.id}:ai`)}`;
+ const previous=await env.DB.prepare('SELECT id,status,started_at FROM ai_runs WHERE id=? OR substr(id,1,?)=? ORDER BY created_at DESC').bind(base,base.length+1,`${base}:`).all<{id:string;status:string;started_at:number}>();
+ const active=previous.results.find(r=>r.status==='running'&&r.started_at>timestamp-900000);
+ if(active)return {available:false,reason:'already_running'};
+ if(previous.results.length>=3)return {available:false,reason:'attempts_exhausted'};
+ const run=previous.results.length?`${base}:${previous.results.length+1}`:base;
+ await env.DB.prepare("UPDATE ai_runs SET status='failed',error_code='execution_interrupted',completed_at=? WHERE status='running' AND started_at<=? AND (id=? OR substr(id,1,?)=?)").bind(timestamp,timestamp-900000,base,base.length+1,`${base}:`).run();
  const claimed=await env.DB.prepare("INSERT OR IGNORE INTO ai_runs(id,agent_slug,agent_version_id,actor_user_id,status,input_hash,input_tokens,started_at,created_at) VALUES (?,'survey-brief',?,?,'running',?,?,?,?)").bind(run,agent.id,actor,await sha256(input),Math.ceil(input.length/3),timestamp,timestamp).run();
  if(!claimed.meta.changes)return {available:false,reason:'already_requested',message:'Consultă istoricul agentului pentru această versiune.'};
  const finish=async(status:string,code:string|null,output:unknown,tokens=0)=>{await env.DB.batch([env.DB.prepare('UPDATE ai_runs SET status=?,error_code=?,completed_at=?,output_tokens=? WHERE id=?').bind(status,code,Date.now(),tokens,run),env.DB.prepare("INSERT INTO ai_run_steps(id,run_id,sequence,kind,name,status,output_json,created_at,completed_at) VALUES (?,?,0,'model','survey_brief',?,?,?,?)").bind(id(),run,status==='denied'?'denied':status==='succeeded'?'succeeded':'failed',JSON.stringify(output),timestamp,Date.now())]);};
@@ -52,7 +58,6 @@ export async function processSurveyEvents(env:Env){
    // Stable Message-ID assists downstream deduplication; SMTP cannot promise exactly-once delivery.
    const brief=JSON.parse(b.source_json) as ReturnType<typeof deterministicBrief>;
    const lines=[`AVYRON Smart Survey · ${survey.title}`,`Completitudine: ${brief.completeness}%`,'',...brief.sections.flatMap(s=>[s.title,...s.answers.map(a=>`${a.label}: ${typeof a.value==='string'?a.value:JSON.stringify(a.value)}`),'']),`Deschide în AVYRON OS: https://app.avyron.ro/intern/surveys?survey=${survey.id}`];
-   await generateSurveyAi(env,survey.id).catch(()=>({available:false}));
    const content=lines.join('\n'),rawBase64=btoa(Array.from(new TextEncoder().encode(content),b=>String.fromCharCode(b)).join('')).match(/.{1,76}/g)!.join('\r\n');
    const {EmailMessage}=await import('cloudflare:email');
    const raw=`From: AVYRON Development <contact@avyron.ro>\r\nTo: avyrontech@gmail.com\r\nSubject: AVYRON Smart Survey - Brief primit\r\nMessage-ID: <${e.id}@surveys.avyron.ro>\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n${rawBase64}`;
@@ -71,10 +76,31 @@ export async function processSurveyEvents(env:Env){
  }
  await env.DB.prepare("UPDATE outbox_events SET status='dead',last_error='lease_exhausted' WHERE event_type='survey.completed' AND status='processing' AND attempts>=5 AND locked_at<?").bind(Date.now()-300000).run();
 }
+
+// Scheduled invocations have a longer lifetime than HTTP waitUntil. Email never waits for inference.
+export async function processSurveyAiJobs(env:Env){
+ if(!(await env.DB.prepare("SELECT ai_enabled FROM survey_settings WHERE id='global'").first<{ai_enabled:number}>())?.ai_enabled)return;
+ const timestamp=Date.now(),events=await env.DB.prepare("SELECT id,aggregate_id,attempts,payload_json FROM outbox_events WHERE event_type='survey.ai_requested' AND attempts<3 AND ((status='pending' AND available_at<=?) OR(status='processing' AND locked_at<=?)) ORDER BY created_at LIMIT 3").bind(timestamp,timestamp-900000).all<{id:string;aggregate_id:string;attempts:number;payload_json:string}>();
+ for(const e of events.results){
+  const lease=id(),claim=await env.DB.prepare("UPDATE outbox_events SET status='processing',lease_token=?,locked_at=?,attempts=attempts+1 WHERE id=? AND attempts<3 AND ((status='pending' AND available_at<=?) OR(status='processing' AND locked_at<=?))").bind(lease,timestamp,e.id,timestamp,timestamp-900000).run();if(!claim.meta.changes)continue;
+  try{
+   const payload=JSON.parse(e.payload_json) as {briefId:string};
+   const current=await env.DB.prepare("SELECT b.id FROM survey_briefs b JOIN surveys s ON s.id=b.survey_id JOIN survey_responses r ON r.survey_id=s.id AND r.revision=b.response_revision WHERE b.id=? AND b.survey_id=? AND s.status='completed' AND s.retention_at>?").bind(payload.briefId,e.aggregate_id,Date.now()).first();
+   const result=current?await generateSurveyAi(env,e.aggregate_id):{available:false,reason:'superseded'};
+   const reason='reason' in result?result.reason:null;
+   const terminal=result.available||['superseded','brief_already_reviewed','attempts_exhausted','already_requested'].includes(reason||'');
+   await env.DB.prepare("UPDATE outbox_events SET status=?,published_at=?,last_error=?,available_at=?,locked_at=NULL WHERE id=? AND lease_token=?").bind(terminal?'published':e.attempts>=2?'dead':'pending',terminal?Date.now():null,result.available?null:reason,Date.now()+900000,e.id,lease).run();
+  }catch{
+   await env.DB.prepare("UPDATE outbox_events SET status=?,last_error='survey_ai_job_failed',available_at=?,locked_at=NULL WHERE id=? AND lease_token=?").bind(e.attempts>=2?'dead':'pending',Date.now()+900000,e.id,lease).run();
+  }
+ }
+ await env.DB.prepare("UPDATE outbox_events SET status='dead',last_error='lease_exhausted' WHERE event_type='survey.ai_requested' AND status='processing' AND attempts>=3 AND locked_at<=?").bind(Date.now()-900000).run();
+}
+
 export async function purgeSurvey(env:Env,s:SurveyRow){
  await env.DB.prepare("UPDATE surveys SET status='archived' WHERE id=?").bind(s.id).run();await env.DB.prepare('UPDATE survey_sessions SET revoked_at=? WHERE survey_id=?').bind(Date.now(),s.id).run();
  const briefs=await env.DB.prepare('SELECT id FROM survey_briefs WHERE survey_id=?').bind(s.id).all<{id:string}>();
- for(const brief of briefs.results){const run=`survey_${await sha256(`${brief.id}:ai`)}`;await env.DB.prepare('DELETE FROM ai_run_steps WHERE run_id=?').bind(run).run();await env.DB.prepare('DELETE FROM ai_runs WHERE id=?').bind(run).run();}
+ for(const brief of briefs.results){const run=`survey_${await sha256(`${brief.id}:ai`)}`;await env.DB.prepare('DELETE FROM ai_run_steps WHERE run_id=? OR substr(run_id,1,?)=?').bind(run,run.length+1,`${run}:`).run();await env.DB.prepare('DELETE FROM ai_runs WHERE id=? OR substr(id,1,?)=?').bind(run,run.length+1,`${run}:`).run();}
  const files=await env.DB.prepare('SELECT storage_key FROM survey_files WHERE survey_id=?').bind(s.id).all<{storage_key:string}>();for(const f of files.results)await env.FILES.delete(f.storage_key);
  await env.DB.batch([env.DB.prepare("DELETE FROM outbox_events WHERE aggregate_type='survey' AND aggregate_id=?").bind(s.id),env.DB.prepare('DELETE FROM surveys WHERE id=?').bind(s.id)]);
  // Approved project documents have their own retention policy and remain in Documents Hub.

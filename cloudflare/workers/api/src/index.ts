@@ -1,7 +1,7 @@
 import { serveSurveyHost } from '../../../../src/worker/surveyHost';
 import { surveyPublic } from './surveys/public';
 import { surveyAdmin } from './surveys/admin';
-import { processSurveyEvents, cleanupSurveys } from './surveys/tasks';
+import { processSurveyEvents, processSurveyAiJobs, cleanupSurveys } from './surveys/tasks';
 import { privilegedMfaSatisfied } from "./mfaPolicy";
 // Avyron API — Cloudflare Workers + D1 + KV + R2
 // Auth: PBKDF2-SHA256 password hashing + signed JWT (HS256) + rolling sessions.
@@ -1341,7 +1341,7 @@ export default {
   fetch: (request, env, ctx) => app.fetch(normalizeVersionedApiRequest(request), env, ctx),
   scheduled: (controller, env, ctx) => {
     if (controller.cron === "0,15,30,45 * * * *") {
-      ctx.waitUntil(Promise.all([runOperationJobs(env), processSurveyEvents(env)]).then(() => undefined));
+      ctx.waitUntil(Promise.all([runOperationJobs(env), processSurveyEvents(env), processSurveyAiJobs(env)]).then(() => undefined));
       return;
     }
     if (controller.cron === EXCHANGE_RATE_REFRESH_CRON) {

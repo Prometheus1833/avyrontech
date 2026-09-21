@@ -15,7 +15,7 @@ Initial templates map to the existing catalog: professional website, ecommerce, 
 
 `src/shared/surveys/engine.ts` is the shared deterministic schema, conditional rule evaluator, answer validator, completeness calculator and structured brief builder. `src/pages/surveys` supplies the React UI. Hono routes under `cloudflare/workers/api/src/surveys` use the existing auth, staff center permissions, D1, private R2 bucket, AI runtime and financial guard.
 
-Browser -> same-origin `/api/surveys` -> pinned template and response in D1 -> submission transaction -> structured brief + existing outbox + OS notification -> restricted email binding. AI interpretation is optional; staff approval creates or updates the canonical Documents Hub brief. Survey answers are never silently rewritten by AI.
+Browser -> same-origin `/api/surveys` -> pinned template and response in D1 -> submission transaction -> structured brief + existing outbox + OS notification -> restricted email binding. AI interpretation runs separately through the existing 15-minute scheduled job, with leased outbox entries and at most three reserved attempts per brief. Email delivery never waits for model inference. Interrupted runs become auditable failures before a new cost reservation. AI interpretation is optional; staff approval creates or updates the canonical Documents Hub brief. Survey answers are never silently rewritten by AI.
 
 Dependencies are the existing OS centers and Documents Hub migrations 0025/0026. Additive 0027 introduces the survey domain; 0028 seeds templates. No duplicate identities, CRM, document repository or email queue is introduced.
 
