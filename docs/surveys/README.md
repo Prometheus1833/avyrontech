@@ -9,7 +9,7 @@ Smart Surveys collects discovery, onboarding and project materials through a pri
 - `/auth` on the survey host: existing AVYRON login and MFA, for explicitly account-bound surveys only.
 - AVYRON OS `/intern/surveys` and the Smart Surveys operational center: templates, questions/rules, campaigns, responses, private files, reviewed briefs, analytics and settings.
 
-Initial templates map to the existing catalog: professional website, ecommerce, professional blog, web/mobile application, AI agent, SEO, branding/social identity, QA and website/software audit. Onboarding, content collection, feedback and maintenance/subscriptions support the delivery lifecycle. Thirteen templates are seeded. They are editable, versioned database content; published API summaries drive the landing, including subsequently created templates. Seed summaries also provide prerendered fallback content.
+Initial templates map to the existing catalog: professional website, ecommerce, professional blog, web/mobile application, AI agent, SEO, branding/social identity, QA and website/software audit. Onboarding, content collection, feedback and maintenance/subscriptions support the delivery lifecycle. Thirteen templates are seeded internally. The public catalogue presents nine choices; standalone SEO, project feedback, client onboarding and material collection are retired from public and internal template catalogues and new session creation, while private sessions remain available. Each visible service has editable, specific presentation copy: summary, features, audience, interview steps, expected brief outcome and CTA. They are editable, versioned database content; published API summaries drive the landing, including subsequently created templates. Seed summaries also provide prerendered fallback content.
 
 ## Architecture
 
@@ -17,7 +17,7 @@ Initial templates map to the existing catalog: professional website, ecommerce, 
 
 Browser -> same-origin `/api/surveys` -> pinned template and response in D1 -> submission transaction -> structured brief + existing outbox + OS notification -> restricted email binding. AI interpretation runs separately through the existing 15-minute scheduled job, with leased outbox entries and at most three reserved attempts per brief. Email delivery never waits for model inference. Interrupted runs become auditable failures before a new cost reservation. AI interpretation is optional; staff approval creates or updates the canonical Documents Hub brief. Survey answers are never silently rewritten by AI.
 
-Dependencies are the existing OS centers and Documents Hub migrations 0025/0026. Additive 0027 introduces the survey domain; 0028 seeds templates; 0029 versions the JSON Schema-capable AI model after live provider testing. No duplicate identities, CRM, document repository or email queue is introduced.
+Dependencies are the existing OS centers and Documents Hub migrations 0025/0026. Additive 0027 introduces the survey domain; 0028 seeds templates; 0029 versions the JSON Schema-capable AI model after live provider testing; 0031 adds public visibility and presentation metadata without changing existing questionnaire versions. No duplicate identities, CRM, document repository or email queue is introduced.
 
 ## Data model
 
@@ -50,7 +50,7 @@ Staff need both center permissions and access to the parent project, organizatio
 
 ## Templates and field extensions
 
-Open OS -> Smart Surveys -> Template-uri. Create or duplicate a template, edit sections/questions/help text/options, set required/importance, and use the advanced question JSON for dependencies, ranges, repeats or matrices. Preview evaluates the same deterministic engine. Publish creates a new immutable version; deactivate removes a template from new public creation.
+Open OS -> Smart Surveys -> Template-uri. Create or duplicate a template, edit sections/questions/help text/options, set required/importance, and use the advanced question JSON for dependencies, ranges, repeats or matrices. Preview evaluates the same deterministic engine. The “Prezentare pe pagina publică” section controls copy and public visibility. Hiding a template removes it from the public catalogue and campaign starts; existing private links continue to work. Publish creates a new immutable questionnaire version; deactivation additionally prevents creation of new internal sessions.
 
 Rules: SHOW IF, HIDE IF, REQUIRE IF, SKIP IF, RECOMMEND IF, REPEAT, BRANCH, DEPENDS ON. Conditions reference question IDs and are validated for missing references/cycles. Repeated answer IDs use `base__index`. Branch targets are section IDs.
 
