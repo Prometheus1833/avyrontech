@@ -25,6 +25,30 @@ const rows = result => {
   return result.flatMap(query => query.results);
 };
 
+/** D1 can exceed its query memory limit compiling the global check for a large
+ * schema. Only that provider error permits bounded checks of every application
+ * table (including FTS shadow tables). Integrity errors still stop publication.
+ * Cloudflare/SQLite managed metadata remains the provider's responsibility. */
+export function verifyD1Integrity(query) {
+  const check = result => {
+    if (!result.length || result.some(row => row.quick_check !== 'ok')) throw new Error('D1 integrity audit failed.');
+  };
+  try { const result = query('PRAGMA quick_check'); check(result); if (result.length !== 1) throw new Error('Unexpected D1 integrity result.'); }
+  catch (error) {
+    if (!String(error?.stdout || error).includes('SQLITE_NOMEM')) throw error;
+    const tables = query("SELECT name,type FROM pragma_table_list WHERE schema='main' ORDER BY name")
+      .filter(row => row.type !== 'view' && !row.name.startsWith('_cf_') && !row.name.startsWith('sqlite_'));
+    if (!tables.length) throw new Error('D1 table inventory unavailable.');
+    console.warn(`D1 global check exceeded memory; checking ${tables.length} application tables in bounded batches.`);
+    for (let index = 0; index < tables.length; index += 20) {
+      const chunk = tables.slice(index, index + 20);
+      const result = query(chunk.map(row => `PRAGMA quick_check('${row.name.replaceAll("'", "''")}')`).join('; '));
+      if (result.length !== chunk.length) throw new Error('D1 table integrity audit incomplete.');
+      check(result);
+    }
+  }
+}
+
 /** Runs using the existing deployment identity. Never creates credentials or
  * changes token scopes. Every failed check stops before publishing code. */
 export function releaseApi({ preview = false, run = cli, expected = migrationNames(), checkAssets = true, ciName = process.env.WRANGLER_CI_OVERRIDE_NAME } = {}) {
@@ -45,12 +69,12 @@ export function releaseApi({ preview = false, run = cli, expected = migrationNam
   assertMigrationPrefix(applied, expected);
   if (applied.length !== expected.length) throw new Error('D1 migrations are incomplete.');
   if (query('PRAGMA foreign_key_check').length) throw new Error('D1 foreign key audit failed.');
-  const integrity = query('PRAGMA quick_check');
-  if (integrity.length !== 1 || integrity[0].quick_check !== 'ok') throw new Error('D1 integrity audit failed.');
+  verifyD1Integrity(query);
   // Journal entries alone cannot prove the schema or FTS runtime is usable.
   query("SELECT r.reservation_mode,k.review_after,a.revision FROM financial_usage_events r JOIN ai_knowledge k ON 0 JOIN ai_approvals a ON 0 LIMIT 0");
   query("SELECT id FROM operation_records LIMIT 0");
   query("SELECT rowid FROM ai_knowledge_fts WHERE ai_knowledge_fts MATCH 'releasecheck' LIMIT 1");
+  query("SELECT rowid FROM hub_documents_fts WHERE hub_documents_fts MATCH 'releasecheck' LIMIT 1");
   run(preview ? ['versions', 'upload', ...config, '--strict'] : ['deploy', ...config]);
 }
 

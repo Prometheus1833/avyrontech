@@ -78,7 +78,7 @@ The structured brief remains available when AI is disabled/denied. AI facts requ
 
 Validate `npm run typecheck`, `npm run lint`, `npm test`, `npm run audit:d1`, `npm run build:pages`, `npm run build:worker`, `npm run build:api`, and Playwright. Build Pages again before releasing the combined Worker, because Worker builds use `dist/client`.
 
-The normal release script records the D1 Time Travel bookmark, validates migration history, applies additive migrations, checks referential/integrity constraints and deploys. Preserve the previous Worker version for rollback; do not roll back database migrations by dropping survey tables.
+The normal release script records the D1 Time Travel bookmark, validates migration history, applies additive migrations, checks referential/integrity constraints and deploys. If D1 returns SQLITE_NOMEM for the global quick check, the release script checks every application table, including FTS shadow tables, in bounded batches. It does not skip an integrity failure or claim to check provider-owned metadata. Preserve the previous Worker version for rollback; do not roll back database migrations by dropping survey tables.
 
 Cloudflare changes: survey custom domain on the existing Worker, allowed origin/Turnstile hostname, existing Turnstile widget allowlist, restricted `SURVEY_EMAIL` recipient `avyrontech@gmail.com`, and existing scheduled cleanup/outbox execution. No second R2 bucket or external marketing service is required.
 
