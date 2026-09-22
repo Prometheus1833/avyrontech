@@ -1,3 +1,4 @@
+import SurveySummary from '@/components/surveys/SurveySummary';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -97,6 +98,7 @@ export default function ProjectPage() {
         <PageBackLink to="/profil?tab=projects" label="Înapoi" title="Înapoi la toate proiectele" />
       </div>
 
+      <SurveySummary project={project.id}/>
       <ProjectWorkItems projectId={project.id} />
       {canWrite && <ProjectStatisticsForm projectId={project.id} />}
 

@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
+import StaffPrivilegesEditor from "./StaffPrivilegesEditor";
+
 const roleLabels: Record<string, string> = {
   admin: "Administrator",
   staff: "Membru staff",
@@ -115,7 +117,7 @@ export default function TeamStaffTab() {
       </section>
 
       <Dialog open={selected !== null} onOpenChange={(open) => { if (!open && !saving) setSelected(null); }}>
-        <DialogContent className="border-white/10 bg-[#10162a] text-slate-100 sm:max-w-md">
+        <DialogContent className="border-white/10 bg-[#10162a] text-slate-100 max-h-[90dvh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
             <DialogTitle className="font-display text-white">Gestionează accesul</DialogTitle>
             <DialogDescription className="text-slate-400">
@@ -136,6 +138,7 @@ export default function TeamStaffTab() {
             {!linksReady && <p className="text-xs text-muted-foreground">Asocierile se încarcă sau nu sunt disponibile.</p>}
             {clients.map(client=><label key={client.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={clientIds.includes(client.id)} onChange={e=>setClientIds(current=>e.target.checked?[...current,client.id]:current.filter(id=>id!==client.id))}/>{client.company_name}</label>)}
           </fieldset>
+          {selected && /(^|,)(staff|admin)(,|$)/.test(selected.roles || "") && <StaffPrivilegesEditor key={selected.id} userId={selected.id}/>}
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => setSelected(null)} disabled={saving}>Anulează</Button>
             <Button type="button" onClick={() => void saveAccess()} disabled={saving || !linksReady} className="bg-violet-600 hover:bg-violet-500">{saving ? "Se salvează…" : "Salvează accesul"}</Button>

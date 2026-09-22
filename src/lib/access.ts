@@ -1,8 +1,10 @@
+import type { Department } from "@/shared/osCatalog";
 // Model central de acces pentru platforma internă.
 // Un singur loc definește cine vede ce: butoane, secțiuni și date sensibile.
 export type AppRole = "user" | "staff" | "admin";
 
 export type Access = {
+  department?: Department;
   roles: AppRole[];
   isClient: boolean;
   isStaff: boolean;
@@ -11,6 +13,7 @@ export type Access = {
 };
 
 export const buildAccess = (input: {
+  department?: Department;
   roles: AppRole[];
   email?: string | null;
   superadmin?: boolean;
@@ -20,6 +23,7 @@ export const buildAccess = (input: {
   const isStaff = isAdmin || roles.includes("staff");
   return {
     roles,
+    department: input.department,
     isClient: !isStaff,
     isStaff,
     isAdmin,
@@ -98,11 +102,15 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "os-centers", group: "control", audience: "staff", keywords: ["securitate", "automatizari", "integrari", "backup", "erori", "newsletter", "programari", "comentarii", "pluginuri"] },
 ];
 
-export const sectionsFor = (a: Access) => SECTIONS.filter((s) => canSee(s.audience, a));
+const departmentSections: Record<Department,string[]> = {
+ general: [], sales:['projects','clients','leads','staff-tickets','demo-requests'], developer:['projects','maintenance','domains','media','staff-tickets'], marketing:['projects','media','leads','demo-requests'], finance:['projects','clients'], support:['projects','clients','staff-tickets','maintenance'],
+};
+const roleSection = (id:string,a:Access) => !a.department || a.department==='general' || a.isSuperAdmin || !a.isStaff || ['overview','profile','settings','intern','announcements','resources','team-staff','os-centers'].includes(id) || departmentSections[a.department].includes(id);
+export const sectionsFor = (a: Access) => SECTIONS.filter((s) => canSee(s.audience, a) && roleSection(s.id,a));
 
 export const canOpenSection = (id: string, a: Access) => {
   const s = SECTIONS.find((x) => x.id === id);
-  return !!s && canSee(s.audience, a);
+  return !!s && canSee(s.audience, a) && roleSection(s.id,a);
 };
 
 export const defaultSection = (_a: Access): SectionId => "overview";

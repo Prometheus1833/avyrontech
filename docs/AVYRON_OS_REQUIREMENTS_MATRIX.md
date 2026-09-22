@@ -1,4 +1,10 @@
+> Extensie Documents Hub / comenzi / domenii: [raportul din 22 septembrie](AVYRON_DOCUMENTS_COMMANDS_DOMAINS_2026-09-22.md). Actualizează limitele documentate pentru aceste trei centre.
+
 # AVYRON OS — matrice de acoperire a cerințelor
+
+> Extensia locală pentru lista completă de centre, verificată la 22 septembrie:
+> [centre, funcții și limite](AVYRON_OS_CENTERS_2026-09-22.md). Această extensie
+> necesită migrația 0025 și nu este inclusă încă în producția PR #10.
 
 > **Inventar istoric (12 septembrie).** Pentru situația actuală, toate cerințele
 > ulterioare și limitele confirmate, vezi

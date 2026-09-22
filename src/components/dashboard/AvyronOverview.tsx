@@ -11,7 +11,7 @@ import { osApi, type OsOverview } from "@/lib/osApi";
 type Props = {
   access: Access;
   displayName: string;
-  onOpenSection: (section: SectionId) => void;
+  onOpenSection: (section: SectionId, center?: string) => void;
   onOpenCommand: () => void;
 };
 
@@ -136,6 +136,8 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
     </Panel>
   );
 
+  const visibleAttention=data.attention.filter(item=>canOpenSection(item.destination,access)||(["security","automations"].includes(item.destination)&&access.isSuperAdmin));
+
   return (
     <div className="flex flex-col gap-4 text-slate-100">
       <header className="relative overflow-hidden rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-600/[0.16] via-[#11182d] to-cyan-500/[0.08] p-5 sm:p-6">
@@ -159,12 +161,12 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
               <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-amber-200/70">Prioritate operațională</p>
               <h2 className="mt-1 font-display text-lg font-semibold text-white">Necesită atenție · Azi</h2>
             </div>
-            <span className="rounded-full bg-amber-300/10 px-2.5 py-1 text-xs font-semibold text-amber-200">{data.attention.length}</span>
+            <span className="rounded-full bg-amber-300/10 px-2.5 py-1 text-xs font-semibold text-amber-200">{visibleAttention.length}</span>
           </div>
           <div className="space-y-2">
-            {data.attention.length === 0 && <EmptyState>Nu există urgențe confirmate în modulele conectate.</EmptyState>}
-            {data.attention.map((item) => (
-              <button key={item.id} type="button" onClick={() => onOpenSection(item.destination as SectionId)} className="group flex w-full items-start gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 text-left transition hover:border-violet-400/25 hover:bg-violet-400/[0.06]">
+            {visibleAttention.length === 0 && <EmptyState>Nu există urgențe confirmate în modulele conectate.</EmptyState>}
+            {visibleAttention.map((item) => (
+              <button key={item.id} type="button" onClick={() => onOpenSection(item.destination as SectionId,item.center)} className="group flex w-full items-start gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 text-left transition hover:border-violet-400/25 hover:bg-violet-400/[0.06]">
                 <span className={`mt-1 size-2 shrink-0 rounded-full ${item.severity === "critic" ? "bg-rose-400 shadow-[0_0_14px_rgba(251,113,133,.7)]" : "bg-amber-300"}`} />
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-medium text-slate-100">{item.title}</span>
@@ -197,7 +199,7 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-2">
                   <button disabled={busyApproval === approval.id} onClick={() => void decide(approval.id, "approved", approval.revision)} className="inline-flex items-center justify-center gap-1 rounded-lg bg-emerald-400/12 px-2 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-400/20 disabled:opacity-50"><Check className="size-3" /> Aprobă</button>
-                  <button onClick={() => onOpenSection("ai-os")} className="rounded-lg bg-white/[0.05] px-2 py-1.5 text-xs font-semibold text-slate-300 hover:bg-white/[0.1]">Revizuiește</button>
+                  <button onClick={() => onOpenSection("os-centers","approvals")} className="rounded-lg bg-white/[0.05] px-2 py-1.5 text-xs font-semibold text-slate-300 hover:bg-white/[0.1]">Revizuiește</button>
                   <button disabled={busyApproval === approval.id} onClick={() => void decide(approval.id, "rejected", approval.revision)} className="inline-flex items-center justify-center gap-1 rounded-lg bg-rose-400/10 px-2 py-1.5 text-xs font-semibold text-rose-300 hover:bg-rose-400/20 disabled:opacity-50"><X className="size-3" /> Respinge</button>
                 </div>
               </div>

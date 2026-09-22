@@ -103,18 +103,18 @@ operationsRouter.delete('/api/operations/records/:id',async c=>{
  return write(c,{ok:true},[c.env.DB.prepare('UPDATE operation_records SET archived_at=?,revision=CASE WHEN revision=? THEN revision+1 ELSE NULL END WHERE id=? AND archived_at IS NULL').bind(Date.now(),b.data.revision,c.req.param('id')),audit(c,'operations.record.archived',c.req.param('id'))]);
 });
 operationsRouter.get('/api/operations/automations',async c=>{
- const [rules,jobs]=await Promise.all([c.env.DB.prepare('SELECT * FROM operation_automations ORDER BY created_at DESC').all(),c.env.DB.prepare('SELECT * FROM operation_jobs ORDER BY created_at DESC LIMIT 50').all()]);return c.json({data:rules.results,jobs:jobs.results});
+ const [rules,jobs]=await Promise.all([c.env.DB.prepare("SELECT rule.*,(SELECT COUNT(*) FROM operation_jobs WHERE automation_id=rule.id AND status='succeeded') successful_runs FROM operation_automations rule ORDER BY rule.created_at DESC").all(),c.env.DB.prepare('SELECT * FROM operation_jobs ORDER BY created_at DESC LIMIT 50').all()]);return c.json({data:rules.results,jobs:jobs.results});
 });
-const automationSchema=z.object({name:z.string().trim().min(1).max(160),action:z.enum(operationActions),interval_minutes:z.number().int().min(15).max(10080),enabled:z.boolean()}).strict();
+const automationSchema=z.object({name:z.string().trim().min(1).max(160),action:z.enum(operationActions),interval_minutes:z.number().int().min(15).max(10080),enabled:z.boolean(),manual_minutes_saved:z.number().int().min(0).max(10080).nullable().default(null)}).strict();
 operationsRouter.post('/api/operations/automations',async c=>{
  const parsed=automationSchema.safeParse(await c.req.json().catch(()=>null));if(!parsed.success)return bad(c,'invalid_automation');const b=parsed.data,id=crypto.randomUUID(),t=Date.now();
- return write(c,{id},[c.env.DB.prepare('INSERT INTO operation_automations(id,name,action,interval_minutes,enabled,next_run_at,created_by,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)').bind(id,b.name,b.action,b.interval_minutes,b.enabled?1:0,t,c.get('userId'),t,t),audit(c,'operations.automation.created',id)]);
+ return write(c,{id},[c.env.DB.prepare('INSERT INTO operation_automations(id,name,action,interval_minutes,enabled,next_run_at,created_by,created_at,updated_at,manual_minutes_saved) VALUES (?,?,?,?,?,?,?,?,?,?)').bind(id,b.name,b.action,b.interval_minutes,b.enabled?1:0,t,c.get('userId'),t,t,b.manual_minutes_saved),audit(c,'operations.automation.created',id)]);
 });
 operationsRouter.patch('/api/operations/automations/:id',async c=>{
  const parsed=automationSchema.extend({revision:z.number().int().positive()}).safeParse(await c.req.json().catch(()=>null));if(!parsed.success)return bad(c,'invalid_automation');const b=parsed.data;
  if(!await c.env.DB.prepare('SELECT id FROM operation_automations WHERE id=?').bind(c.req.param('id')).first())return bad(c,'not_found',404);
  return write(c,{ok:true},[
-  c.env.DB.prepare('UPDATE operation_automations SET name=?,action=?,interval_minutes=?,enabled=?,next_run_at=?,updated_at=?,revision=CASE WHEN revision=? THEN revision+1 ELSE NULL END WHERE id=?').bind(b.name,b.action,b.interval_minutes,b.enabled?1:0,Date.now(),Date.now(),b.revision,c.req.param('id')),
+  c.env.DB.prepare('UPDATE operation_automations SET name=?,action=?,interval_minutes=?,enabled=?,next_run_at=?,updated_at=?,manual_minutes_saved=?,revision=CASE WHEN revision=? THEN revision+1 ELSE NULL END WHERE id=?').bind(b.name,b.action,b.interval_minutes,b.enabled?1:0,Date.now(),Date.now(),b.manual_minutes_saved,b.revision,c.req.param('id')),
   ...(!b.enabled?[c.env.DB.prepare("UPDATE operation_jobs SET status='cancelled',locked_until=NULL WHERE automation_id=? AND status IN ('queued','running')").bind(c.req.param('id'))]:[]),audit(c,'operations.automation.updated',c.req.param('id'))]);
 });
 operationsRouter.post('/api/operations/preview',async c=>{

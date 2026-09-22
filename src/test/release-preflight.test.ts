@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 // Deployment script is also used directly by the Cloudflare build identity.
 // @ts-expect-error the CLI is intentionally plain ESM
-import { assertMigrationPrefix, releaseApi } from '../../scripts/release-api.mjs';
+import { assertMigrationPrefix, releaseApi, verifyD1Integrity } from '../../scripts/release-api.mjs';
 
 describe('Cloudflare release preflight', () => {
   const expected = ['0001.sql', '0002.sql'];
@@ -43,4 +43,10 @@ describe('Cloudflare release preflight', () => {
   it('rejects CI name overrides before touching a database', () => {
     expect(() => releaseApi({preview:true, ciName:'avyrontech', checkAssets:false, run:() => {throw new Error('unexpected database access');}})).toThrow('refusing a CI Worker-name override');
   });
+});
+
+describe('bounded D1 integrity verification',()=>{
+ it('uses all application and shadow tables only after SQLITE_NOMEM',()=>{const seen:string[]=[];verifyD1Integrity((sql:string)=>{seen.push(sql);if(sql==='PRAGMA quick_check')throw Object.assign(new Error('provider'),{stdout:'SQLITE_NOMEM'});if(sql.includes('pragma_table_list'))return [{name:'_cf_KV',type:'table'},{name:'sqlite_schema',type:'table'},{name:'surveys',type:'table'},{name:'hub_documents_fts_data',type:'shadow'}];return [{quick_check:'ok'},{quick_check:'ok'}];});expect(seen.at(-1)).toBe("PRAGMA quick_check('surveys'); PRAGMA quick_check('hub_documents_fts_data')");});
+ it.each(['broken','incomplete'])('rejects %s table checks',failure=>{expect(()=>verifyD1Integrity((sql:string)=>{if(sql==='PRAGMA quick_check')throw new Error('SQLITE_NOMEM');if(sql.includes('pragma_table_list'))return [{name:'surveys',type:'table'}];return failure==='broken'?[{quick_check:'broken'}]:[];})).toThrow();});
+ it('does not convert a provider authorization failure into a partial audit',()=>{expect(()=>verifyD1Integrity(()=>{throw new Error('SQLITE_AUTH');})).toThrow('SQLITE_AUTH');});
 });

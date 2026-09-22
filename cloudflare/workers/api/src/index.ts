@@ -1,3 +1,7 @@
+import { serveSurveyHost } from '../../../../src/worker/surveyHost';
+import { surveyPublic } from './surveys/public';
+import { surveyAdmin } from './surveys/admin';
+import { processSurveyEvents, processSurveyAiJobs, cleanupSurveys } from './surveys/tasks';
 import { privilegedMfaSatisfied } from "./mfaPolicy";
 // Avyron API — Cloudflare Workers + D1 + KV + R2
 // Auth: PBKDF2-SHA256 password hashing + signed JWT (HS256) + rolling sessions.
@@ -39,6 +43,8 @@ const app = new Hono<AppBindings>();
 // Hostname routing runs before API/auth middleware. Demo hosts therefore cannot
 // fall through to the production API, D1, KV or private assets.
 app.use("*", async (c, next) => {
+  const survey = await serveSurveyHost(c.req.raw, c.env.ASSETS);
+  if (survey) return survey;
   const mapped = await handleMappedHostname(c.req.raw, c.env.ASSETS);
   if (mapped) return mapped;
   await next();
@@ -107,7 +113,7 @@ app.use("*", async (c, next) => {
     origin: (origin) => allowedOrigin(c.env, origin),
     credentials: true,
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "X-Request-Id", "Idempotency-Key"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Request-Id", "Idempotency-Key", "X-Survey-Token", "X-File-Name"],
     exposeHeaders: ["X-Request-Id", "X-API-Version", "X-Avyron-Cache"],
     maxAge: 86_400,
   })(c, next);
@@ -664,7 +670,7 @@ app.get("/api/auth/me", requireAuth, async (c) => {
       .bind(c.get("userId"), (u as { display_name?: string }).display_name || null, now()).run();
     profile = await c.env.DB.prepare(`SELECT ${PROFILE_SELECT} FROM profiles WHERE id = ?`).bind(c.get("userId")).first();
   }
-  return c.json({ user: u, profile, roles: c.get("roles"), superadmin: await isSuperAdmin(c) });
+  return c.json({ user: u, profile, roles: c.get("roles"), superadmin: await isSuperAdmin(c), staffPolicy: await staffPolicy(c.env.DB,c.get("userId")) });
 });
 
 app.get("/api/auth/sessions", requireAuth, async (c) => {
@@ -1119,6 +1125,8 @@ import { aiProjectsRouter } from "./aiProjects";
 import { financeRouter } from "./finance";
 import { workspaceRouter } from "./workspace";
 import { operationsRouter } from "./operations";
+import { centersRouter, communityRouter } from "./osCenters";
+import { staffPolicy } from "./centerAccess";
 import { runOperationJobs } from "./operationJobs";
 import { dashboardRouter } from "./osDashboard";
 import { seedRouter } from "./seed";
@@ -1165,6 +1173,14 @@ app.use("/api/blog/staff/*", requireAuth, requireRole("staff", "admin"));
 // AI OS: consola de administrare este rezervată super adminilor; scrierile sunt
 // limitate suplimentar la contul owner în interiorul routerului.
 app.use("/api/ai/admin/*", requireAuth, requireSuperAdmin);
+app.use('/api/survey-admin/*', requireAuth, requirePrivilegedMfa);
+// Optional authentication is only used for explicitly account-bound survey links.
+app.use('/api/surveys/*', async (c, next) => {
+  if (c.req.header('authorization')) return requireAuth(c, next);
+  await next();
+});
+app.route('/', surveyPublic);
+app.route('/', surveyAdmin);
 app.route("/", aiOsRouter);
 app.route("/", leadsRouter);
 app.route("/", aiProjectsRouter);
@@ -1173,6 +1189,10 @@ app.use("/api/workspace/*", requireAuth, requirePrivilegedMfa);
 app.route("/", workspaceRouter);
 app.use("/api/operations/*", requireAuth, requirePrivilegedMfa);
 app.route("/", operationsRouter);
+app.use("/api/centers/*", requireAuth, requirePrivilegedMfa);
+app.route("/", centersRouter);
+app.use("/api/community/*", requireAuth);
+app.route("/", communityRouter);
 app.route("/", dashboardRouter);
 app.route("/", engineRouter);
 app.route("/", organizationsRouter);
@@ -1299,9 +1319,10 @@ app.all("*", async (c) => {
   return new Response(asset.body, { status: asset.status, headers });
 });
 
-app.onError((error, c) => {
+app.onError(async (error, c) => {
   const requestId = c.get("requestId") || c.req.header("cf-ray") || crypto.randomUUID();
   console.error(JSON.stringify({ event: "unhandled_error", requestId, path: c.req.path, method: c.req.method, error: error.message }));
+  await recordSecurityEvent(c,c.get("userId") || null,"api.unhandled_error","failed","warning").catch(()=>undefined);
   return c.json({ error: { code: "internal_error", message: "A apărut o eroare internă", requestId } }, 500);
 });
 
@@ -1320,7 +1341,7 @@ export default {
   fetch: (request, env, ctx) => app.fetch(normalizeVersionedApiRequest(request), env, ctx),
   scheduled: (controller, env, ctx) => {
     if (controller.cron === "0,15,30,45 * * * *") {
-      ctx.waitUntil(runOperationJobs(env));
+      ctx.waitUntil(Promise.all([runOperationJobs(env), processSurveyEvents(env), processSurveyAiJobs(env)]).then(() => undefined));
       return;
     }
     if (controller.cron === EXCHANGE_RATE_REFRESH_CRON) {
@@ -1332,6 +1353,7 @@ export default {
     }
     ctx.waitUntil(Promise.all([
       cleanupExpiredData(env),
+      cleanupSurveys(env),
       runDueEngineDiscovery(env),
     ]).then(() => undefined).catch((error) => {
       console.error(JSON.stringify({ event: "maintenance_job_failed", error: String(error) }));

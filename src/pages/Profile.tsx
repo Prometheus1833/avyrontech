@@ -49,8 +49,8 @@ const GROUP_LABELS: Record<string, string> = {
 const GROUP_ORDER = ["overview", "work", "activity", "team", "control", "billing", "account"];
 
 export default function Profile() {
-  const { user, profile, roles, isSuperAdmin, isStaff, isAdmin, signOut } = useAuth();
-  const access = useMemo(() => buildAccess({ roles, email: user?.email, superadmin: isSuperAdmin }), [roles, user?.email, isSuperAdmin]);
+  const { user, profile, roles, isSuperAdmin, isStaff, isAdmin, staffPolicy, signOut } = useAuth();
+  const access = useMemo(() => buildAccess({ roles, email: user?.email, superadmin: isSuperAdmin, department: staffPolicy?.department }), [roles, user?.email, isSuperAdmin, staffPolicy?.department]);
   const [params, setParams] = useSearchParams();
   const requested = params.get("tab") ?? "";
   const [tab, setTab] = useState<SectionId>(canOpenSection(requested, access) ? requested as SectionId : defaultSection(access));
@@ -75,13 +75,13 @@ export default function Profile() {
   const allowed = useMemo(() => sectionsFor(access), [access]);
   const groups = GROUP_ORDER.map((group) => ({ id: group, label: GROUP_LABELS[group], items: allowed.filter((section) => section.group === group) })).filter((group) => group.items.length);
   const displayName = profile?.display_name || user?.display_name || user?.email?.split("@")[0] || "utilizator";
-  const roleLabel = isSuperAdmin ? "Super administrator" : isAdmin ? "Administrator" : isStaff ? "Membru al echipei" : "Client";
+  const roleLabel = isSuperAdmin ? "Super administrator" : isAdmin ? "Administrator" : isStaff ? (staffPolicy?.job_title || staffPolicy?.department || "Membru al echipei") : "Client";
 
   useEffect(() => {
     if (!canOpenSection(tab, access)) setTab(defaultSection(access));
   }, [tab, access]);
   useEffect(() => {
-    if (params.get("tab") !== tab) setParams({ tab }, { replace: true });
+    if (params.get("tab") !== tab) setParams(previous => { const next=new URLSearchParams(previous); next.set("tab",tab); return next; }, { replace: true });
   }, [tab, params, setParams]);
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -96,9 +96,10 @@ export default function Profile() {
     }));
   }, []);
 
-  const openSection = (section: SectionId) => {
+  const openSection = (section: SectionId, center?: string) => {
+    if(center) setParams(previous=>{const next=new URLSearchParams(previous); next.set("center",center);return next;});
     if (canOpenSection(section, access)) setTab(section);
-    else if (["security", "automations"].includes(String(section)) && access.isStaff) setTab("os-centers");
+    else if (["security", "automations"].includes(String(section)) && access.isStaff) { setTab("os-centers"); setParams(previous=>{const next=new URLSearchParams(previous);next.set("center",section);return next;}); }
   };
 
   const NavButton = ({ section, mobile = false }: { section: SectionId; mobile?: boolean }) => {
@@ -175,7 +176,7 @@ export default function Profile() {
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-white/[0.08] bg-[#080d1b]/95 px-2 pb-[max(.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden" aria-label="Navigare mobilă">
-        <NavButton section="overview" mobile /><NavButton section="projects" mobile />{access.isStaff ? <NavButton section="leads" mobile /> : <NavButton section="invoices" mobile />}{access.isSuperAdmin ? <NavButton section="ai-os" mobile /> : <NavButton section="profile" mobile />}{access.isStaff && <NavButton section="os-centers" mobile />}
+        <NavButton section="overview" mobile /><NavButton section="projects" mobile />{access.isClient ? <NavButton section="invoices" mobile /> : canOpenSection("leads",access) ? <NavButton section="leads" mobile /> : <NavButton section="resources" mobile />}{access.isSuperAdmin ? <NavButton section="ai-os" mobile /> : <NavButton section="profile" mobile />}{access.isStaff && <NavButton section="os-centers" mobile />}
       </nav>
     </Tabs>
     <Suspense fallback={null}><CommandCenter open={commandOpen} onOpenChange={setCommandOpen} access={access} onNavigate={openSection} /></Suspense>

@@ -1,3 +1,4 @@
+import { useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, Building2, Clock3, Mail, Phone, Plus, RefreshCw, Search, Star } from "lucide-react";
 import { toast } from "sonner";
@@ -21,6 +22,8 @@ export const StaffLeadsTab = () => {
   const [saving, setSaving] = useState<string | null>(null);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [newLeadOpen, setNewLeadOpen] = useState(false);
+  const [params,setParams]=useSearchParams();
+  useEffect(()=>{if(params.get('action')==='new-lead'){setNewLeadOpen(true);setParams(previous=>{const next=new URLSearchParams(previous);next.delete('action');return next;},{replace:true});}},[params,setParams]);
 
   const load = async () => {
     setLoading(true);

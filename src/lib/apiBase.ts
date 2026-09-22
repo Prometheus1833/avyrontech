@@ -9,6 +9,7 @@ const FALLBACK = "https://api.avyron.ro";
 export function apiBaseForHost(host: string, configured?: string): string {
   if (configured) return configured.replace(/\/+$/, "");
   if (
+    host === "surveys.avyron.ro" ||
     host === "avyron.ro" ||
     host === "www.avyron.ro" ||
     host === "app.avyron.ro" ||

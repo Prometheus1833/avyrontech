@@ -1,3 +1,4 @@
+import SurveySummary from '@/components/surveys/SurveySummary';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bell, Check, Clock3, ExternalLink, LoaderCircle, Mail, MessageCircle, Phone, Save, Star } from "lucide-react";
 import { toast } from "sonner";
@@ -156,6 +157,7 @@ export function LeadDetailDialog({ leadId, onOpenChange, onChanged }: {
         {!loading && lead && detail && (
           <div className="grid gap-5 lg:grid-cols-[1.05fr_.95fr]">
             <div className="space-y-4">
+              <SurveySummary lead={lead.id}/>
               <section className="space-y-3 rounded-2xl border border-border/60 bg-card/60 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="font-medium">Stare și follow-up</h3>
