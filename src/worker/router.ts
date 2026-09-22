@@ -55,7 +55,7 @@ export function decide(url: URL): Decision {
   }
 
   // Real files (hashed bundles, images, robots.txt, sitemap.xml…).
-  if (ASSET_RE.test(path) && !PRERENDER_ROUTES.includes(path)) return { kind: "asset" };
+  if ((ASSET_RE.test(path)||path==='/site.webmanifest'||path==='/pwa-offline') && !PRERENDER_ROUTES.includes(path)) return { kind: "asset" };
 
   if (PRERENDER_ROUTES.includes(path)) return { kind: "page", noindex: isNoindexPath(path) };
 
@@ -73,6 +73,7 @@ export function decide(url: URL): Decision {
 
 /** Routes that exist in the SPA router but are not prerendered (auth, dashboard…). */
 export const SPA_ONLY_PREFIXES = [
+  "/s",
   "/auth",
   "/forgot-password",
   "/reset-password",

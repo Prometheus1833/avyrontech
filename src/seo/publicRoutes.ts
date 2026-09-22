@@ -16,6 +16,7 @@ export const EXAMPLE_SLUGS = [
 
 /** Standalone public routes that have no RO/EN pair. */
 export const STANDALONE_PUBLIC_ROUTES = [
+  "/surveys",
   "/gdpr",
   "/en/privacy",
   "/blog",
@@ -57,6 +58,7 @@ export const REDIRECTS: Record<string, string> = {
 
 /** Private / auth / error areas: never indexed (X-Robots-Tag: noindex, nofollow). */
 export const NOINDEX_PREFIXES = [
+  "/s",
   "/auth",
   "/forgot-password",
   "/reset-password",

@@ -1,3 +1,4 @@
+import "./auth-cinematic.css";
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -33,6 +34,7 @@ const Auth = () => {
   const [submitting, setSubmitting] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileReset, setTurnstileReset] = useState(0);
+  const [authError,setAuthError]=useState("");
   const [verificationMessage, setVerificationMessage] = useState("");
   const [mfaChallenge, setMfaChallenge] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
@@ -101,7 +103,7 @@ const Auth = () => {
   });
 
   const onLogin = async (data: LoginInput) => {
-    setSubmitting(true);
+    setSubmitting(true);setAuthError("");
     try {
       const result = await cfAuth.login(data.email, data.password);
       if ("mfa_required" in result) {
@@ -113,6 +115,7 @@ const Auth = () => {
       toast.success(t.auth.welcomeBack);
       if (!emailChangeToken) navigate(from, { replace: true });
     } catch (error: unknown) {
+      setAuthError(error instanceof Error ? error.message : "Autentificarea nu a reușit.");
       toast.error(error instanceof Error ? error.message : "Autentificarea nu a reușit.");
     } finally {
       setSubmitting(false);
@@ -122,7 +125,7 @@ const Auth = () => {
   const onMfa = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!mfaChallenge) return;
-    setSubmitting(true);
+    setSubmitting(true);setAuthError("");
     try {
       await cfAuth.verifyMfaChallenge(mfaChallenge, mfaCode);
       await refreshProfile();
@@ -141,7 +144,7 @@ const Auth = () => {
       toast.error("Confirmă verificarea anti-spam.");
       return;
     }
-    setSubmitting(true);
+    setSubmitting(true);setAuthError("");
     try {
       await cfAuth.signup({
         email: data.email,
@@ -154,6 +157,7 @@ const Auth = () => {
       setTab("login");
       toast.success("Ți-am trimis linkul de confirmare.");
     } catch (error: unknown) {
+      setAuthError(error instanceof Error ? error.message : "Înregistrarea nu a reușit.");
       toast.error(error instanceof Error ? error.message : "Înregistrarea nu a reușit.");
       setTurnstileToken("");
       setTurnstileReset((value) => value + 1);
@@ -163,9 +167,10 @@ const Auth = () => {
   };
 
   return (
-    <main className="min-h-screen grid lg:grid-cols-2">
+    <main className="auth-cinematic grid lg:grid-cols-2">
       {/* Left — branded copy */}
-      <section className="relative hidden lg:flex flex-col p-12 bg-gradient-to-br from-foreground via-foreground to-brand text-background overflow-hidden">
+      <section className="auth-stage relative flex flex-col p-12 overflow-hidden">
+        <div aria-hidden="true" className="auth-orbit"/>
         <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--brand))_0%,transparent_50%),radial-gradient(circle_at_80%_80%,hsl(var(--accent))_0%,transparent_50%)]" />
         <div
           aria-hidden
@@ -176,61 +181,64 @@ const Auth = () => {
             <img src={logo} alt="Avyron" width={32} height={32} className="size-8 rounded-lg bg-foreground/95 object-contain p-0.5" />
             Avyron
           </a>
-          <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-background/60">
-            v1.0 · secure
+          <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-slate-400">
+            AVYRON OS · workspace
           </span>
         </div>
 
-        <div className="relative z-10 mt-10 max-w-md">
-          <span className="inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.25em] uppercase text-background/70 mb-5">
+        <div className="auth-stage-copy relative z-10 mt-10 max-w-md">
+          <span className="inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.25em] uppercase text-slate-400 mb-5">
             <span className="size-1.5 rounded-full bg-brand-foreground animate-pulse" />
-            access · granted
+            {lang === "en" ? "your next chapter starts here" : "următorul capitol începe aici"}
           </span>
           <h1 className="font-display text-5xl xl:text-6xl font-bold leading-[0.95] tracking-tight">
-            {t.auth.heroTitle}
+            {lang === "en" ? "Your ideas. One connected workspace." : "Ideile tale. Un spațiu conectat."}
           </h1>
-          <p className="mt-5 font-mono text-[13px] leading-relaxed text-background/75">
-            {t.auth.heroDesc}
+          <p className="mt-5 font-mono text-[13px] leading-relaxed text-slate-400">
+            {lang === "en" ? "From the first brief to the next launch. Projects, people and decisions, together in Avyron." : "De la primul brief la următoarea lansare. Proiecte, oameni și decizii, împreună în Avyron."}
           </p>
 
           <ul className="mt-10 space-y-4">
             {[
-              { n: "01", Icon: Crown, text: t.auth.clientPerksDesc },
-              { n: "02", Icon: ShieldCheck, text: "Infrastructură Cloudflare — D1, KV, R2, edge auth." },
-              { n: "03", Icon: LayoutDashboard, text: "Mini-dashboard intuitiv pentru produse, mentenanță și plăți recurente." },
-              { n: "04", Icon: MessageCircle, text: "Chat direct cu membrii echipei." },
+              { n: "01", Icon: Crown, text: lang === "en" ? "Your briefs, documents and project updates in one place." : "Briefuri, documente și actualizări de proiect, într-un singur loc." },
+              { n: "02", Icon: ShieldCheck, text: lang === "en" ? "Secure access, tailored to your role." : "Acces securizat, adaptat rolului tău." },
+              { n: "03", Icon: LayoutDashboard, text: lang === "en" ? "Your projects and next steps, clearly organized." : "Proiectele și pașii următori, organizate clar." },
+              { n: "04", Icon: MessageCircle, text: lang === "en" ? "Stay connected with your team." : "Rămâi conectat cu echipa ta." },
             ].map(({ n, Icon, text }) => (
               <li
                 key={n}
-                className="group relative flex items-start gap-4 rounded-xl border border-background/10 bg-background/[0.04] backdrop-blur-sm p-3.5 transition-colors hover:bg-background/[0.08] hover:border-background/20"
+                onPointerMove={e=>{if(e.pointerType!=="mouse")return;const r=e.currentTarget.getBoundingClientRect();e.currentTarget.style.setProperty("--tilt-x",`${(0.5-(e.clientY-r.top)/r.height)*5}deg`);e.currentTarget.style.setProperty("--tilt-y",`${((e.clientX-r.left)/r.width-0.5)*5}deg`);}} onPointerLeave={e=>{e.currentTarget.style.setProperty("--tilt-x","0deg");e.currentTarget.style.setProperty("--tilt-y","0deg");}}
+                className="auth-feature group relative flex items-start gap-4 rounded-xl border border-background/10 bg-background/[0.04] backdrop-blur-sm p-3.5 transition-colors hover:bg-background/[0.08] hover:border-background/20"
               >
-                <span className="font-mono text-[10px] tracking-widest text-background/50 pt-0.5 w-6">
+                <span className="font-mono text-[10px] tracking-widest text-slate-400 pt-0.5 w-6">
                   {n}
                 </span>
-                <Icon className="size-4 mt-0.5 text-brand-foreground shrink-0" strokeWidth={2.25} />
-                <p className="text-[13px] leading-relaxed text-background/90">{text}</p>
+                <Icon className="size-4 mt-0.5 text-violet-300 shrink-0" strokeWidth={2.25} />
+                <p className="text-[13px] leading-relaxed text-slate-200">{text}</p>
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="relative z-10 mt-auto pt-8 font-mono text-[10px] tracking-[0.2em] uppercase text-background/50">
+        <footer className="relative z-10 mt-auto pt-8 font-mono text-[10px] tracking-[0.2em] uppercase text-slate-400">
           © {new Date().getFullYear()} · Avyron Tech
-        </div>
+        </footer>
       </section>
 
       {/* Right — form */}
-      <section className="flex items-center justify-center p-6 sm:p-12 bg-background">
-        <div className="w-full max-w-md space-y-6">
+      <section className="auth-form-wrap flex items-center justify-center p-6 sm:p-12">
+        <div className="auth-form-panel w-full max-w-md space-y-6">
           <PageBackLink to={homeHref} label={lang === "en" ? "Back" : "Înapoi"} />
 
+          <div><p className="mb-2 text-xs uppercase tracking-[.2em] text-violet-300">{lang==='en'?'Welcome to Avyron':'Bine ai venit în Avyron'}</p><h2 className="text-2xl font-display font-semibold">{tab==='login'?(lang==='en'?'Continue your work.':'Continuă ce ai început.'):(lang==='en'?'Let’s build your next chapter.':'Construim următorul capitol.')}</h2><p className="mt-2 text-sm text-slate-400">{tab==='login'?(lang==='en'?'Sign in to your projects and workspace.':'Intră în cont pentru proiectele și spațiul tău de lucru.'):(lang==='en'?'Create your account. We’ll confirm your email before your first sign in.':'Creează contul. Confirmăm adresa de email înainte de prima conectare.')}</p></div>
+          {authError&&<div role="alert" className="rounded-xl border border-rose-300/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">{authError}</div>}
           {verificationMessage && (
             <div role="status" className="rounded-xl border border-brand/25 bg-brand/10 px-4 py-3 text-sm">
               {verificationMessage}
             </div>
           )}
 
-          <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="w-full">
+          <Tabs value={tab} onValueChange={(v) => {if(!submitting){setAuthError("");setTab(v as typeof tab);}}} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">{t.auth.login}</TabsTrigger>
               <TabsTrigger value="register">{t.auth.register}</TabsTrigger>

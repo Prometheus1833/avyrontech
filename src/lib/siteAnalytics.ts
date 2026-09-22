@@ -47,7 +47,7 @@ export function trackFunnel(
   page: string,
   gaParams: Record<string, string | number | boolean | undefined> = {},
 ) {
-  if (!hasAnalyticsConsent()) return;
+  if (!hasAnalyticsConsent() || (typeof window !== "undefined" && (window.location.pathname.startsWith("/s/") || window.location.hostname === "surveys.avyron.ro"))) return;
   trackEvent(event === "page_view" ? "page_view_product" : event, { location: page, ...gaParams });
   if (typeof window === "undefined") return;
 

@@ -1,11 +1,28 @@
 {
-  "name": "Avyron",
+  "name": "AVYRON OS",
   "short_name": "Avyron",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
   ],
-  "theme_color": "#0a0612",
-  "background_color": "#0a0612",
-  "display": "standalone"
+  "theme_color": "#080d1b",
+  "background_color": "#080d1b",
+  "display": "standalone",
+  "id": "/avyron-os",
+  "description": "Proiectele, echipa și operațiunile Avyron, într-un singur loc.",
+  "start_url": "/profil?source=pwa",
+  "scope": "/",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "lang": "ro"
 }

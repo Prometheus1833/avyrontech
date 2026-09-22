@@ -9,6 +9,10 @@ import { pageView } from "@/lib/analytics";
 import { resetManagedHead } from "@/lib/seo";
 
 
+const SurveyLanding = lazy(() => import('./pages/surveys/Landing'));
+const SurveyInterview = lazy(() => import('./pages/surveys/Interview'));
+const SurveyAdmin = lazy(() => import('./pages/surveys/Admin'));
+const surveyHost = typeof window !== 'undefined' && window.location.hostname === 'surveys.avyron.ro';
 const Gdpr = lazy(() => import("./pages/Gdpr.tsx"));
 const Terms = lazy(() => import("./pages/Terms.tsx"));
 const CookiePolicy = lazy(() => import("./pages/CookiePolicy.tsx"));
@@ -42,7 +46,7 @@ const AvyChat = lazy(() => import("@/components/ai/AvyChat"));
 const AvyLauncher = () => {
   const { pathname } = useLocation();
   const [ready, setReady] = useState(false);
-  const excluded = /^\/(auth|autentificare|profil|intern|exemple|examples|demo|forgot-password|reset-password|403|500|offline|mentenanta|unsubscribe)/.test(pathname);
+  const excluded = surveyHost || pathname.startsWith('/s/') || pathname === '/surveys' || /^\/(auth|autentificare|profil|intern|exemple|examples|demo|forgot-password|reset-password|403|500|offline|mentenanta|unsubscribe)/.test(pathname);
   useEffect(() => {
     if (excluded) return;
     const timer = window.setTimeout(() => setReady(true), 1800);
@@ -101,7 +105,7 @@ const DeferredGlobalUi = () => {
 const AnalyticsTracker = () => {
   const { pathname } = useLocation();
   useEffect(() => {
-    pageView(pathname);
+    if (!pathname.startsWith('/s/')) pageView(pathname);
   }, [pathname]);
   return null;
 };
@@ -134,7 +138,10 @@ const App = () => (
         <AppHostGuard>
           <Suspense fallback={<div className="min-h-screen" />}>
             <Routes>
-                <Route path="/" element={<Index />} />
+                <Route path="/" element={surveyHost ? <SurveyLanding /> : <Index />} />
+                <Route path="/surveys" element={<SurveyLanding />} />
+                <Route path="/s/:token" element={<SurveyInterview />} />
+                <Route path="/intern/surveys" element={<ProtectedRoute><SurveyAdmin /></ProtectedRoute>} />
                 <Route path="/en" element={<Index />} />
                 <Route path="/gdpr" element={<Gdpr />} />
                 <Route path="/en/privacy" element={<Gdpr />} />

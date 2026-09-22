@@ -1,3 +1,4 @@
+import { serveSurveyHost } from './surveyHost';
 /**
  * Site edge runtime (Cloudflare Pages advanced mode or standalone Worker) —
  * serves the prerendered static build and applies correct HTTP semantics: 301
@@ -70,6 +71,8 @@ async function serveSitemap(env: Env, request: Request) {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const survey = await serveSurveyHost(request, env.ASSETS);
+    if (survey) return survey;
     const url = new URL(request.url);
     if (url.pathname === "/sitemap.xml") return serveSitemap(env, request);
     const decision = decide(url);

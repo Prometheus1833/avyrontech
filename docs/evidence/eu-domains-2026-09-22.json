@@ -1,0 +1,539 @@
+{
+  "date": "2026-09-22",
+  "scope": "avyron.eu redirect and ten explicit demo DNS records",
+  "configuration": {
+    "dnsType": "A",
+    "dnsContent": "192.0.2.0",
+    "proxied": true,
+    "ttl": "Auto",
+    "workerRoute": "*.avyron.eu/*",
+    "redirectRuleId": "86c3aedbaf894d089f16b9421dba23e3",
+    "queryStringsForwarded": false
+  },
+  "publicDnsAndIsolatedHttps": {
+    "checkedAt": "2026-09-21T23:38:42.622805+00:00",
+    "method": "Public DNS via 1.1.1.1 and 8.8.8.8; HTTPS curl --resolve to returned A answer, full TLS validation. Local resolver may retain old TTL.",
+    "results": [
+      {
+        "host": "exemplu1.avyron.eu",
+        "dns": {
+          "1.1.1.1": [
+            "188.114.97.8",
+            "188.114.96.8"
+          ],
+          "8.8.8.8": [
+            "188.114.97.0",
+            "188.114.96.0"
+          ]
+        },
+        "requests": [
+          {
+            "path": "/",
+            "tlsVerified": true,
+            "headers": [
+              "HTTP/2 404",
+              "x-robots-tag: noindex, nofollow"
+            ],
+            "preparingPage": true,
+            "error": ""
+          },
+          {
+            "path": "/api/auth/me",
+            "tlsVerified": true,
+            "headers": [
+              "HTTP/2 404",
+              "x-robots-tag: noindex, nofollow"
+            ],
+            "preparingPage": true,
+            "error": ""
+          }
+        ]
+      },
+      {
+        "host": "exemplu2.avyron.eu",
+        "dns": {
+          "1.1.1.1": [
+            "188.114.97.8",
+            "188.114.96.8"
+          ],
+          "8.8.8.8": [
+            "188.114.97.0",
+            "188.114.96.0"
+          ]
+        },
+        "requests": [
+          {
+            "path": "/",
+            "tlsVerified": true,
+            "headers": [
+              "HTTP/2 404",
+              "x-robots-tag: noindex, nofollow"
+            ],
+            "preparingPage": true,
+            "error": ""
+          },
+          {
+            "path": "/api/auth/me",
+            "tlsVerified": true,
+            "headers": [
+              "HTTP/2 404",
+              "x-robots-tag: noindex, nofollow"
+            ],
+            "preparingPage": true,
+            "error": ""
+          }
+        ]
+      },
+      {
+        "host": "exemplu3.avyron.eu",
+        "dns": {
+          "1.1.1.1": [
+            "188.114.97.8",
+            "188.114.96.8"
+          ],
+          "8.8.8.8": [
+            "188.114.97.0",
+            "188.114.96.0"
+          ]
+        },
+        "requests": [
+          {
+            "path": "/",
+            "tlsVerified": true,
+            "headers": [
+              "HTTP/2 404",
+              "x-robots-tag: noindex, nofollow"
+            ],
+            "preparingPage": true,
+            "error": ""
+          },
+          {
+            "path": "/api/auth/me",
+            "tlsVerified": true,
+            "headers": [
+              "HTTP/2 404",
+              "x-robots-tag: noindex, nofollow"
+            ],
+            "preparingPage": true,
+            "error": ""
+          }
+        ]
+      },
+      {
+        "host": "exemplu4.avyron.eu",
+        "dns": {
+          "1.1.1.1": [
+            "188.114.96.8",
+            "188.114.97.8"
+          ],
+          "8.8.8.8": [
+            "188.114.97.0",
+            "188.114.96.0"
+          ]
+        },
+        "requests": [
+          {
+            "path": "/",
+            "tlsVerified": true,
+            "headers": [
+              "HTTP/2 404",
+              "x-robots-tag: noindex, nofollow"
+            ],
+            "preparingPage": true,
+            "error": ""
+          },
+          {
+            "path": "/api/auth/me",
+            "tlsVerified": true,
+            "headers": [
+              "HTTP/2 404",
+              "x-robots-tag: noindex, nofollow"
+            ],
+            "preparingPage": true,
+            "error": ""
+          }
+        ]
+      },
+      {
+        "host": "exemplu5.avyron.eu",
+        "dns": {
+          "1.1.1.1": [
+            "188.114.97.8",
+            "188.114.96.8"
+          ],
+          "8.8.8.8": [
+            "188.114.96.0",
+            "188.114.97.0"
+          ]
+        },
+        "requests": [
+          {
+            "path": "/",
+            "tlsVerified": true,
+            "headers": [
+              "HTTP/2 404",
+              "x-robots-tag: noindex, nofollow"
+            ],
+            "preparingPage": true,
+            "error": ""
+          },
+          {
+            "path": "/api/auth/me",
+            "tlsVerified": true,
+            "headers": [
+              "HTTP/2 404",
+              "x-robots-tag: noindex, nofollow"
+            ],
+            "preparingPage": true,
+            "error": ""
+          }
+        ]
+      },
+      {
+        "host": "demo1.avyron.eu",
+        "dns": {
+          "1.1.1.1": [
+            "188.114.97.8",
+            "188.114.96.8"
+          ],
+          "8.8.8.8": [
+            "188.114.97.0",
+            "188.114.96.0"
+          ]
+        },
+        "requests": [
+          {
+            "path": "/",
+            "tlsVerified": true,
+            "headers": [
+              "HTTP/2 404",
+              "x-robots-tag: noindex, nofollow"
+            ],
+            "preparingPage": true,
+            "error": ""
+          },
+          {
+            "path": "/api/auth/me",
+            "tlsVerified": true,
+            "headers": [
+              "HTTP/2 404",
+              "x-robots-tag: noindex, nofollow"
+            ],
+            "preparingPage": true,
+            "error": ""
+          }
+        ]
+      },
+      {
+        "host": "demo2.avyron.eu",
+        "dns": {
+          "1.1.1.1": [
+            "188.114.96.8",
+            "188.114.97.8"
+          ],
+          "8.8.8.8": [
+            "188.114.96.0",
+            "188.114.97.0"
+          ]
+        },
+        "requests": [
+          {
+            "path": "/",
+            "tlsVerified": true,
+            "headers": [
+              "HTTP/2 404",
+              "x-robots-tag: noindex, nofollow"
+            ],
+            "preparingPage": true,
+            "error": ""
+          },
+          {
+            "path": "/api/auth/me",
+            "tlsVerified": true,
+            "headers": [
+              "HTTP/2 404",
+              "x-robots-tag: noindex, nofollow"
+            ],
+            "preparingPage": true,
+            "error": ""
+          }
+        ]
+      },
+      {
+        "host": "demo3.avyron.eu",
+        "dns": {
+          "1.1.1.1": [
+            "188.114.97.8",
+            "188.114.96.8"
+          ],
+          "8.8.8.8": [
+            "188.114.96.0",
+            "188.114.97.0"
+          ]
+        },
+        "requests": [
+          {
+            "path": "/",
+            "tlsVerified": true,
+            "headers": [
+              "HTTP/2 404",
+              "x-robots-tag: noindex, nofollow"
+            ],
+            "preparingPage": true,
+            "error": ""
+          },
+          {
+            "path": "/api/auth/me",
+            "tlsVerified": true,
+            "headers": [
+              "HTTP/2 404",
+              "x-robots-tag: noindex, nofollow"
+            ],
+            "preparingPage": true,
+            "error": ""
+          }
+        ]
+      },
+      {
+        "host": "demo4.avyron.eu",
+        "dns": {
+          "1.1.1.1": [
+            "188.114.97.8",
+            "188.114.96.8"
+          ],
+          "8.8.8.8": [
+            "188.114.97.0",
+            "188.114.96.0"
+          ]
+        },
+        "requests": [
+          {
+            "path": "/",
+            "tlsVerified": true,
+            "headers": [
+              "HTTP/2 404",
+              "x-robots-tag: noindex, nofollow"
+            ],
+            "preparingPage": true,
+            "error": ""
+          },
+          {
+            "path": "/api/auth/me",
+            "tlsVerified": true,
+            "headers": [
+              "HTTP/2 404",
+              "x-robots-tag: noindex, nofollow"
+            ],
+            "preparingPage": true,
+            "error": ""
+          }
+        ]
+      },
+      {
+        "host": "demo5.avyron.eu",
+        "dns": {
+          "1.1.1.1": [
+            "188.114.97.8",
+            "188.114.96.8"
+          ],
+          "8.8.8.8": [
+            "188.114.96.0",
+            "188.114.97.0"
+          ]
+        },
+        "requests": [
+          {
+            "path": "/",
+            "tlsVerified": true,
+            "headers": [
+              "HTTP/2 404",
+              "x-robots-tag: noindex, nofollow"
+            ],
+            "preparingPage": true,
+            "error": ""
+          },
+          {
+            "path": "/api/auth/me",
+            "tlsVerified": true,
+            "headers": [
+              "HTTP/2 404",
+              "x-robots-tag: noindex, nofollow"
+            ],
+            "preparingPage": true,
+            "error": ""
+          }
+        ]
+      }
+    ]
+  },
+  "apexRedirect": {
+    "checkedAt": "2026-09-21T23:42:17.238805+00:00",
+    "requests": [
+      {
+        "url": "http://avyron.eu/",
+        "tlsVerified": false,
+        "headers": [
+          "HTTP/1.1 301 Moved Permanently",
+          "Location: https://avyron.ro/"
+        ],
+        "error": ""
+      },
+      {
+        "url": "http://avyron.eu/servicii?utm_source=eu&access_token=test",
+        "tlsVerified": false,
+        "headers": [
+          "HTTP/1.1 301 Moved Permanently",
+          "Location: https://avyron.ro/servicii"
+        ],
+        "error": ""
+      },
+      {
+        "url": "https://avyron.eu/",
+        "tlsVerified": true,
+        "headers": [
+          "HTTP/2 301",
+          "location: https://avyron.ro/"
+        ],
+        "error": ""
+      },
+      {
+        "url": "https://avyron.eu/servicii?utm_source=eu&access_token=test",
+        "tlsVerified": true,
+        "headers": [
+          "HTTP/2 301",
+          "location: https://avyron.ro/servicii"
+        ],
+        "error": ""
+      }
+    ]
+  },
+  "normalResolverFinalCheck": {
+    "checkedAt": "2026-09-21T23:42:43.886169+00:00",
+    "results": [
+      {
+        "host": "avyron.eu",
+        "exit": 0,
+        "headers": [
+          "HTTP/2 301",
+          "location: https://avyron.ro/"
+        ],
+        "preparingPage": false,
+        "error": ""
+      },
+      {
+        "host": "avyron.ro",
+        "exit": 0,
+        "headers": [
+          "HTTP/2 200"
+        ],
+        "preparingPage": false,
+        "error": ""
+      },
+      {
+        "host": "exemplu1.avyron.eu",
+        "exit": 0,
+        "headers": [
+          "HTTP/2 404",
+          "x-robots-tag: noindex, nofollow"
+        ],
+        "preparingPage": true,
+        "error": ""
+      },
+      {
+        "host": "exemplu2.avyron.eu",
+        "exit": 0,
+        "headers": [
+          "HTTP/2 404",
+          "x-robots-tag: noindex, nofollow"
+        ],
+        "preparingPage": true,
+        "error": ""
+      },
+      {
+        "host": "exemplu3.avyron.eu",
+        "exit": 0,
+        "headers": [
+          "HTTP/2 404",
+          "x-robots-tag: noindex, nofollow"
+        ],
+        "preparingPage": true,
+        "error": ""
+      },
+      {
+        "host": "exemplu4.avyron.eu",
+        "exit": 0,
+        "headers": [
+          "HTTP/2 404",
+          "x-robots-tag: noindex, nofollow"
+        ],
+        "preparingPage": true,
+        "error": ""
+      },
+      {
+        "host": "exemplu5.avyron.eu",
+        "exit": 0,
+        "headers": [
+          "HTTP/2 404",
+          "x-robots-tag: noindex, nofollow"
+        ],
+        "preparingPage": true,
+        "error": ""
+      },
+      {
+        "host": "demo1.avyron.eu",
+        "exit": 0,
+        "headers": [
+          "HTTP/2 404",
+          "x-robots-tag: noindex, nofollow"
+        ],
+        "preparingPage": true,
+        "error": ""
+      },
+      {
+        "host": "demo2.avyron.eu",
+        "exit": 0,
+        "headers": [
+          "HTTP/2 404",
+          "x-robots-tag: noindex, nofollow"
+        ],
+        "preparingPage": true,
+        "error": ""
+      },
+      {
+        "host": "demo3.avyron.eu",
+        "exit": 0,
+        "headers": [
+          "HTTP/2 404",
+          "x-robots-tag: noindex, nofollow"
+        ],
+        "preparingPage": true,
+        "error": ""
+      },
+      {
+        "host": "demo4.avyron.eu",
+        "exit": 0,
+        "headers": [
+          "HTTP/2 404",
+          "x-robots-tag: noindex, nofollow"
+        ],
+        "preparingPage": true,
+        "error": ""
+      },
+      {
+        "host": "demo5.avyron.eu",
+        "exit": 0,
+        "headers": [
+          "HTTP/2 404",
+          "x-robots-tag: noindex, nofollow"
+        ],
+        "preparingPage": true,
+        "error": ""
+      }
+    ]
+  },
+  "localRoutingTests": {
+    "file": "src/test/demo-host-routing.test.ts",
+    "passed": 6
+  },
+  "expectedDemoState": "HTTP 404 holding page, valid TLS and noindex until actual project content is connected"
+}

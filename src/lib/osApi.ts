@@ -7,6 +7,7 @@ export type OsAttention = {
   title: string;
   detail: string;
   destination: string;
+  center?: string;
 };
 
 export type OsApproval = {

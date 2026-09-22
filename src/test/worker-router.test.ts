@@ -16,6 +16,9 @@ const FILES: Record<string, string> = {
   "/_shell.html": "<html lang=\"ro\"><head><title>Avyron</title><meta name=\"description\" content=\"default\"></head><body><div id=\"root\"></div></body></html>",
   "/assets/app.js": "console.log(1)",
   "/assets/app-Ab12cd34.js": "console.log(2)",
+  "/site.webmanifest": '{"display":"standalone"}',
+  "/sw.js": 'self.addEventListener("fetch", () => {})',
+  "/pwa-offline": '<html><meta name="robots" content="noindex"><h1>Offline</h1></html>',
   "/robots.txt": "User-agent: *",
   "/sitemap.xml": "<?xml version=\"1.0\"?><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\"><url><loc>https://avyron.ro/</loc></url></urlset>",
 };
@@ -240,4 +243,12 @@ describe("wrangler worker config", () => {
   it("declares the API service binding", () => {
     expect(cfg.services).toContainEqual({ binding: "API", service: "avyrontech" });
   });
+});
+
+
+describe("PWA edge assets",()=>{
+ it.each(['/sw.js','/site.webmanifest','/pwa-offline'])('serves %s without immutable caching or fallback routing',async(path)=>{
+  expect(decide(new URL(`https://avyron.ro${path}`))).toMatchObject({kind:'asset'});
+  const response=await get(path);expect(response.status).toBe(200);expect(response.headers.get('cache-control')).toBe('no-cache');if(path==='/sw.js')expect(response.headers.get('service-worker-allowed')).toBe('/');
+ });
 });

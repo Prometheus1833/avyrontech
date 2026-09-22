@@ -16,6 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { buildAccess, canOpenSection } from "@/lib/access";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
 
@@ -27,7 +28,7 @@ type QuickLink = {
 };
 
 const StaffOsMenu = () => {
-  const { profile, user, isStaff, isAdmin, isSuperAdmin } = useAuth();
+  const { profile, user, roles, staffPolicy, isStaff, isAdmin, isSuperAdmin } = useAuth();
   const { lang } = useLang();
   const ro = lang === "ro";
 
@@ -70,6 +71,9 @@ const StaffOsMenu = () => {
       : []),
   ];
 
+  const access=buildAccess({roles,superadmin:isSuperAdmin,department:staffPolicy?.department});
+  const visibleLinks=quickLinks.filter(item=>canOpenSection(new URLSearchParams(item.to.split("?")[1]).get("tab")||"",access));
+
   const displayName = profile?.display_name || user.display_name || user.email.split("@")[0];
   const roleLabel = isSuperAdmin
     ? "Super administrator"
@@ -110,7 +114,7 @@ const StaffOsMenu = () => {
 
         <DropdownMenuSeparator className="m-0 bg-violet-500/10" />
         <div className="grid min-h-0 gap-1 overflow-y-auto overscroll-contain p-2" aria-label={ro ? "Acces rapid OS" : "OS quick access"}>
-          {quickLinks.map((item) => {
+          {visibleLinks.map((item) => {
             const Icon = item.icon;
             return (
               <DropdownMenuItem key={item.to} asChild className="cursor-pointer rounded-xl p-0 focus:bg-violet-500/10">
