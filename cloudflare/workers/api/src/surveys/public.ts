@@ -1,3 +1,4 @@
+import { presentationSchema } from '../../../../../src/shared/surveys/catalog';
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { z } from 'zod';
@@ -23,8 +24,9 @@ surveyPublic.use(`${root}/*`,async(c,next)=>{
 surveyPublic.get(`${root}/templates`,async c=>{
  const campaignId=c.req.query('campaign');const campaign=campaignId?await c.env.DB.prepare('SELECT template_id FROM survey_campaigns WHERE id=? AND active=1').bind(campaignId).first<{template_id:string}>():null;
  if(campaignId&&!campaign)return error(c,'campaign_unavailable',404);
- const {results}=await c.env.DB.prepare("SELECT t.id,t.title,v.schema_json FROM survey_templates t JOIN survey_versions v ON v.id=t.current_version_id WHERE t.active=1 ORDER BY CASE WHEN t.id='website' THEN 0 ELSE 1 END,t.title").all<{id:string;title:string;schema_json:string}>();
- return c.json({data:results.filter(r=>!campaign||r.id===campaign.template_id).map(r=>{const t=JSON.parse(r.schema_json);return {id:r.id,title:r.title,description:t.description,service:t.service};}),campaign:campaign?.template_id});
+ const {results}=await c.env.DB.prepare("SELECT t.id,t.title,t.presentation_json,v.schema_json FROM survey_templates t JOIN survey_versions v ON v.id=t.current_version_id WHERE t.active=1 AND t.public_visible=1 ORDER BY CASE WHEN t.id='website' THEN 0 ELSE 1 END,t.title").all<{id:string;title:string;presentation_json:string;schema_json:string}>();
+ if(campaign&&!results.some(r=>r.id===campaign.template_id))return error(c,'campaign_unavailable',404);
+ return c.json({data:results.filter(r=>!campaign||r.id===campaign.template_id).map(r=>{const t=JSON.parse(r.schema_json);return {id:r.id,title:r.title,description:t.description,service:t.service,presentation:presentationSchema.parse(JSON.parse(r.presentation_json))};}),campaign:campaign?.template_id});
 });
 surveyPublic.post(`${root}/start`,async c=>{
  const input=z.object({template:z.string().max(100),campaign:z.string().max(100).optional(),turnstileToken:z.string().max(4000),requestKey:z.string().uuid(),attribution:z.record(z.string(),z.string().max(200)).optional(),website_url:z.string().max(200).optional()}).strict().safeParse(await readJson(c));
@@ -38,7 +40,7 @@ surveyPublic.post(`${root}/start`,async c=>{
  const ip=await hashKey(clientIp(c.req.raw));if(!(await checkRateLimit(c.env.DB,[{key:`survey:start:${ip}`,limit:12,windowSec:86400}])).ok)return error(c,'rate_limited',429);
  let template=b.template;
  if(b.campaign){const campaign=await c.env.DB.prepare('SELECT template_id FROM survey_campaigns WHERE id=? AND active=1').bind(b.campaign).first<{template_id:string}>();if(!campaign)return error(c,'campaign_unavailable',404);template=campaign.template_id;}
- const row=await c.env.DB.prepare('SELECT current_version_id,title FROM survey_templates WHERE id=? AND active=1').bind(template).first<{current_version_id:string;title:string}>();if(!row)return error(c,'template_unavailable',404);
+ const row=await c.env.DB.prepare('SELECT current_version_id,title FROM survey_templates WHERE id=? AND active=1 AND public_visible=1').bind(template).first<{current_version_id:string;title:string}>();if(!row)return error(c,'template_unavailable',404);
  const attribution=Object.fromEntries(Object.entries(b.attribution||{}).filter(([k])=>['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].includes(k)));
  return c.json(await createSurvey(c.env,{version:row.current_version_id,title:row.title,token,campaign:b.campaign,attribution}),201);
 });

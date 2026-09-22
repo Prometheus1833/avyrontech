@@ -19,6 +19,28 @@ describe('Smart Survey routes against complete SQLite schema',()=>{
  const req=(path:string,body?:unknown,method=body===undefined?'GET':'POST',token?:string)=>app.request(path,{method,headers:{'content-type':'application/json',...(token?{'x-survey-token':token}:{})},body:body===undefined?undefined:JSON.stringify(body)},env,{waitUntil:()=>{},passThroughOnException:()=>{},props:{}});
  const create=async()=>{const r=await req('/api/survey-admin/surveys',{template:'website'});expect(r.status).toBe(201);return r.json() as Promise<{id:string;token:string}>;};
  const valid={business:'Company',activity:'Servicii profesionale',objectives:['Prezentare profesională'],page_topics:'Acasă și Servicii',name:'Client',email:'client@example.test',privacy:true};
+ it('retires four catalogue choices while preserving existing private sessions',async()=>{
+  const catalog=await(await req('/api/surveys/templates')).json();expect(catalog.data).toHaveLength(9);
+  for(const hidden of ['seo','feedback','onboarding','content']){
+   expect(catalog.data.some((t:{id:string})=>t.id===hidden)).toBe(false);
+   const start=await req('/api/surveys/start',{template:hidden,requestKey:crypto.randomUUID(),turnstileToken:'fixture'});expect(start.status).toBe(404);
+   expect((await req('/api/survey-admin/surveys',{template:hidden})).status).toBe(404);const privateSurvey=await createSurvey(env,{version:hidden+'_v1',title:'Existing private session'});expect((await req('/api/surveys/session',undefined,'GET',privateSurvey.token)).status).toBe(200);expect((await req(`/api/survey-admin/surveys/${privateSurvey.id}/action`,{action:'duplicate',revision:1})).status).toBe(404);const retired=JSON.parse(String(db.prepare('SELECT schema_json FROM survey_versions WHERE id=?').get(hidden+'_v1')!.schema_json));expect((await req('/api/survey-admin/templates',{id:hidden,baseVersion:1,template:retired,active:true,public_visible:true})).status).toBe(404);
+  }
+  expect((await(await req('/api/survey-admin/templates')).json()).data).toHaveLength(9);
+  expect(catalog.data.find((t:{id:string})=>t.id==='website').presentation.features).toHaveLength(3);
+  db.prepare("INSERT INTO survey_campaigns VALUES ('hidden','Hidden campaign','seo',1,'owner',1)").run();
+  expect((await req('/api/surveys/templates?campaign=hidden')).status).toBe(404);
+ });
+ it('synchronizes OS presentation and visibility with the public catalogue, preserving omitted metadata',async()=>{
+  const template=JSON.parse(String(db.prepare("SELECT schema_json FROM survey_versions WHERE id='website_v1'").get()!.schema_json));
+  const update={id:'website',baseVersion:1,template,active:true,public_visible:false,presentation:{summary:'Un website pentru afacerea ta.',features:['Mesaj clar'],cta:'Începem proiectul'}};
+  expect((await req('/api/survey-admin/templates',update)).status).toBe(200);
+  expect((await(await req('/api/surveys/templates')).json()).data).toHaveLength(8);
+  expect((await req('/api/survey-admin/templates',{id:'website',baseVersion:2,template,active:true})).status).toBe(200);
+  const stored=db.prepare("SELECT public_visible,presentation_json FROM survey_templates WHERE id='website'").get()!;expect(stored.public_visible).toBe(0);expect(JSON.parse(String(stored.presentation_json)).cta).toBe('Începem proiectul');
+  expect((await req('/api/survey-admin/templates',{id:'website',baseVersion:3,template,active:true,public_visible:true})).status).toBe(200);
+  const catalog=(await(await req('/api/surveys/templates')).json()).data;expect(catalog).toHaveLength(9);expect(catalog.find((t:{id:string})=>t.id==='website').presentation.summary).toBe(update.presentation.summary);
+ });
  it('creates templates and isolated sessions, restores progress and rejects stale writes',async()=>{const s=await create();const read=await req('/api/surveys/session',undefined,'GET',s.token);expect(read.status).toBe(200);expect((await read.json()).revision).toBe(1);expect((await req('/api/surveys/session',{revision:1,patch:{business:'Company'}},'PATCH',s.token)).status).toBe(200);expect((await req('/api/surveys/session',{revision:1,patch:{business:'Overwritten'}},'PATCH',s.token)).status).toBe(409);const resume=await (await req('/api/surveys/session',undefined,'GET',s.token)).json();expect(resume.answers.business).toBe('Company');expect(resume.revision).toBe(2);});
  it('rejects invalid tokens, revoked and expired links',async()=>{const s=await create();expect((await req('/api/surveys/session',undefined,'GET','a'.repeat(64))).status).toBe(404);db.prepare('UPDATE survey_sessions SET expires_at=1 WHERE survey_id=?').run(s.id);expect((await req('/api/surveys/session',undefined,'GET',s.token)).status).toBe(404);});
  it('does not leak CRM data to unassigned staff or clients',async()=>{const s=await create();actor='client';expect((await req('/api/survey-admin/surveys')).status).toBe(403);actor='staff';expect((await req(`/api/survey-admin/surveys/${s.id}`)).status).toBe(403);expect((await req('/api/survey-admin/surveys',{template:'website',lead_id:'lead'})).status).toBe(403);});
