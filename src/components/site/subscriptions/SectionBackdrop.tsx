@@ -15,7 +15,16 @@ const SectionBackdrop = ({ theme }: Props) => {
   const line = `hsl(${hue} / 0.16)`;
 
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+      style={{
+        // Marginile se sting, ca fundalul secțiunii să nu se taie brusc în
+        // banda de tranziție de deasupra și de dedesubt.
+        maskImage: "linear-gradient(180deg, transparent, black 11%, black 89%, transparent)",
+        WebkitMaskImage: "linear-gradient(180deg, transparent, black 11%, black 89%, transparent)",
+      }}
+    >
       <div
         className="absolute inset-0"
         style={{

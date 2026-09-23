@@ -477,3 +477,17 @@ html {
 .avyron-backdrop-pulse {
   animation: avyron-pulse-soft 7s ease-in-out infinite;
 }
+
+/* Fire de lumină care urcă prin cusătura dintre secțiuni. */
+@keyframes avyron-mote {
+  0% { transform: translate3d(0, 24px, 0); opacity: 0; }
+  18% { opacity: 0.85; }
+  82% { opacity: 0.45; }
+  100% { transform: translate3d(0, -168px, 0); opacity: 0; }
+}
+
+.avyron-mote {
+  animation-name: avyron-mote;
+  animation-timing-function: cubic-bezier(0.33, 0, 0.2, 1);
+  animation-iteration-count: infinite;
+}

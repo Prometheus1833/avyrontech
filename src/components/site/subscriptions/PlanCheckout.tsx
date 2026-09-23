@@ -133,8 +133,8 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
           <DialogDescription>
             {orderId
               ? (ro
-                ? "Îl găsești în contul tău, la Produse & Servicii. Îl activăm imediat ce plata este confirmată."
-                : "You'll find it in your account, under Products & Services. We activate it as soon as the payment is confirmed.")
+                ? "Îl găsești în contul tău, la Produse & Servicii, și îl legăm de proiectul tău din platformă imediat ce plata este confirmată."
+                : "You'll find it in your account, under Products & Services, and we attach it to your project in the platform as soon as the payment is confirmed.")
               : plan.copy[lang].bestFor}
           </DialogDescription>
         </DialogHeader>

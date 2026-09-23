@@ -111,9 +111,12 @@ const MaintenancePartnerships = () => {
       ]), [ro]);
 
   useEffect(() => {
+    // Pragul de preț vine din catalog, ca titlul să nu rămână în urmă la o
+    // schimbare de tarif.
+    const fromPrice = Math.round(cheapest / 100);
     const title = ro
-      ? "Mentenanță și colaborări — abonamente de la 50 lei/lună | Avyron"
-      : "Maintenance and partnerships — plans from 50 RON/month | Avyron";
+      ? `Mentenanță și colaborări — abonamente de la ${fromPrice} lei/lună | Avyron`
+      : `Maintenance and partnerships — plans from ${fromPrice} RON/month | Avyron`;
     const description = ro
       ? "Abonamente lunare de mentenanță pentru site de prezentare, magazin online, blog profesional, agent AI și aplicații web sau mobile. Actualizări, backup, monitorizare, SEO și suport prioritar, cu prețuri în lei și euro."
       : "Monthly maintenance plans for presentation websites, online stores, professional blogs, AI agents and web or mobile apps. Updates, backups, monitoring, SEO and priority support, priced in RON and EUR.";
@@ -154,20 +157,20 @@ const MaintenancePartnerships = () => {
         ]));
       },
     );
-  }, [ro, lang, path, faq]);
+  }, [ro, lang, path, faq, cheapest]);
 
   const steps = ro
     ? [
         { icon: Search, title: "Alegi produsul", desc: "Fiecare tip de produs are propriile trepte, pentru că un magazin online și un blog nu au aceleași nevoi." },
         { icon: CalendarClock, title: "Alegi treapta", desc: "Apeși abonamentul și se deschide un mini-dashboard cu specificațiile exacte: timp de răspuns, backup, ore incluse." },
         { icon: CreditCard, title: "Activezi din cont", desc: "Te autentifici, alegi ritmul de facturare și abonamentul apare în contul tău, la Produse & Servicii." },
-        { icon: BarChart3, title: "Primești raportul", desc: "La final de lună știi exact ce s-a lucrat, cum a evoluat traficul și ce recomandăm pentru luna următoare." },
+        { icon: BarChart3, title: "Urmărești din platformă", desc: "Abonamentul se leagă de proiectul tău din platforma Avyron, unde vezi starea, intervențiile și raportul de la final de lună." },
       ]
     : [
         { icon: Search, title: "Pick your product", desc: "Each product type has its own tiers, because an online store and a blog don't have the same needs." },
         { icon: CalendarClock, title: "Pick your tier", desc: "Tap a plan and a mini dashboard opens with the exact specs: response time, backups, included hours." },
         { icon: CreditCard, title: "Activate from your account", desc: "Sign in, pick the billing rhythm and the plan shows up in your account under Products & Services." },
-        { icon: BarChart3, title: "Get the report", desc: "At the end of the month you know exactly what was done, how traffic moved and what we recommend next." },
+        { icon: BarChart3, title: "Follow it from the platform", desc: "The plan attaches to your project in the Avyron platform, where you see its state, the interventions and the end-of-month report." },
       ];
 
   const pillars = ro
@@ -317,12 +320,16 @@ const MaintenancePartnerships = () => {
                     <a
                       key={category.key}
                       href={`#${sectionId(category.key)}`}
-                      className={`group inline-flex items-center gap-2 rounded-full border ${category.theme.border} bg-foreground/[0.03] px-3.5 py-2 text-xs font-semibold transition-all duration-300 hover:-translate-y-0.5 hover:bg-foreground/[0.07]`}
+                      className={`group inline-flex items-center gap-2.5 rounded-2xl border ${category.theme.border} bg-foreground/[0.03] px-3 py-2 text-left transition-all duration-300 hover:-translate-y-0.5 hover:bg-foreground/[0.07]`}
                     >
-                      <Icon className={`size-3.5 ${category.theme.text}`} aria-hidden />
-                      {category.copy[lang].title}
-                      <span className="font-mono text-[10px] tabular-nums text-foreground/45">
-                        {ro ? "de la" : "from"} {primary(min)}
+                      <span className={`grid size-7 shrink-0 place-items-center rounded-lg bg-gradient-to-br ${category.theme.from} ${category.theme.to} text-white transition-transform duration-300 group-hover:scale-110`}>
+                        <Icon className="size-3.5" aria-hidden />
+                      </span>
+                      <span className="flex flex-col leading-tight">
+                        <span className="text-xs font-semibold">{category.copy[lang].title}</span>
+                        <span className="font-mono text-[10px] tabular-nums text-foreground/45">
+                          {ro ? "de la" : "from"} {primary(min)}
+                        </span>
                       </span>
                     </a>
                   );

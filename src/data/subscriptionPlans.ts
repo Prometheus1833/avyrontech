@@ -85,6 +85,13 @@ export type CategoryTheme = {
 export type SubscriptionCategory = {
   key: PlanCategoryKey;
   icon: "globe" | "store" | "pen" | "cpu" | "smartphone";
+  /**
+   * Tipurile de proiect din platforma internă acoperite de categorie
+   * (`projects.kind`). Valorile `blog` și `agent_ai` nu există încă în
+   * platformă — sunt pregătite aici pentru când se sincronizează lista de
+   * abonamente din `/intern`, într-un task separat.
+   */
+  internProjectKinds: string[];
   /** Pagina de produs care afișează cardurile acestei categorii. */
   products: ProductKey[];
   productPath: { ro: string; en: string } | null;
@@ -121,6 +128,7 @@ const plan = (
 const SITE: SubscriptionCategory = {
   key: "site",
   icon: "globe",
+  internProjectKinds: ["website_prezentare", "prezentare_premium"],
   products: ["premium-website"],
   productPath: {
     ro: "/produse/website-prezentare-premium",
@@ -331,6 +339,7 @@ const SITE: SubscriptionCategory = {
 const SHOP: SubscriptionCategory = {
   key: "shop",
   icon: "store",
+  internProjectKinds: ["magazin_online"],
   products: ["online-store"],
   productPath: { ro: "/produse/magazin-online", en: "/en/products/online-store" },
   theme: {
@@ -538,6 +547,7 @@ const SHOP: SubscriptionCategory = {
 const BLOG: SubscriptionCategory = {
   key: "blog",
   icon: "pen",
+  internProjectKinds: ["blog", "retele_sociale", "identitate_completa"],
   products: ["social-identity"],
   productPath: { ro: "/produse/blog-profesional", en: "/en/products/professional-blog" },
   theme: {
@@ -745,6 +755,7 @@ const BLOG: SubscriptionCategory = {
 const AI: SubscriptionCategory = {
   key: "ai",
   icon: "cpu",
+  internProjectKinds: ["agent_ai"],
   products: ["ai-agent"],
   productPath: { ro: "/produse/agent-ai-personalizat", en: "/en/products/personalized-ai-agent" },
   theme: {
@@ -952,6 +963,7 @@ const AI: SubscriptionCategory = {
 const APP: SubscriptionCategory = {
   key: "app",
   icon: "smartphone",
+  internProjectKinds: ["aplicatie"],
   products: ["apps"],
   productPath: { ro: "/produse/aplicatii-web-si-mobile", en: "/en/products/web-and-mobile-apps" },
   theme: {
@@ -1176,5 +1188,20 @@ export const planBySku = (sku: string) => {
 /** Cel mai mic preț lunar din toate categoriile, în bani. */
 export const lowestPlanPriceCents = () =>
   Math.min(...SUBSCRIPTION_CATEGORIES.flatMap((c) => c.plans.map((p) => p.priceCents)));
+
+/** Categoria de abonamente potrivită unui proiect din platforma internă. */
+export const categoryForProjectKind = (kind: string | null | undefined) =>
+  kind ? SUBSCRIPTION_CATEGORIES.find((category) => category.internProjectKinds.includes(kind)) ?? null : null;
+
+/**
+ * Abonamentele care se pot atașa unui proiect din platforma internă. Fără un
+ * tip cunoscut, întoarce toate treptele, ca alegerea să rămână posibilă.
+ */
+export const plansForProjectKind = (kind: string | null | undefined) => {
+  const category = categoryForProjectKind(kind);
+  return category
+    ? category.plans.map((plan) => ({ category, plan }))
+    : SUBSCRIPTION_CATEGORIES.flatMap((item) => item.plans.map((plan) => ({ category: item, plan })));
+};
 
 export const SUBSCRIPTION_PATH = { ro: "/mentenanta-si-colaborari", en: "/en/maintenance-and-partnerships" } as const;

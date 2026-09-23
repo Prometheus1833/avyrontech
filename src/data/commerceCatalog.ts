@@ -39,9 +39,9 @@ export const COMMERCE_CATALOG: readonly CommerceCatalogItem[] = [
   { sku: "sub-blog-pro", type: "subscription", name: "Mentenanță Blog profesional — Pro", unitPriceCents: 20_000, currency: "RON", billing: "monthly" },
   { sku: "sub-blog-proactiv", type: "subscription", name: "Mentenanță Blog profesional — Pro Activ", unitPriceCents: 30_000, currency: "RON", billing: "monthly" },
 
-  { sku: "sub-ai-plus", type: "subscription", name: "Mentenanță Agent AI — Plus", unitPriceCents: 5_000, currency: "RON", billing: "monthly" },
-  { sku: "sub-ai-pro", type: "subscription", name: "Mentenanță Agent AI — Pro", unitPriceCents: 10_000, currency: "RON", billing: "monthly" },
-  { sku: "sub-ai-proactiv", type: "subscription", name: "Mentenanță Agent AI — Pro Activ", unitPriceCents: 15_000, currency: "RON", billing: "monthly" },
+  { sku: "sub-ai-plus", type: "subscription", name: "Mentenanță Agent AI — Plus", unitPriceCents: 25_000, currency: "RON", billing: "monthly" },
+  { sku: "sub-ai-pro", type: "subscription", name: "Mentenanță Agent AI — Pro", unitPriceCents: 35_000, currency: "RON", billing: "monthly" },
+  { sku: "sub-ai-proactiv", type: "subscription", name: "Mentenanță Agent AI — Pro Activ", unitPriceCents: 50_000, currency: "RON", billing: "monthly" },
 
   { sku: "sub-app-plus", type: "subscription", name: "Mentenanță Aplicație web/mobile — Plus", unitPriceCents: 50_000, currency: "RON", billing: "monthly" },
   { sku: "sub-app-pro", type: "subscription", name: "Mentenanță Aplicație web/mobile — Pro", unitPriceCents: 100_000, currency: "RON", billing: "monthly" },
