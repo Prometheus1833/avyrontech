@@ -155,7 +155,7 @@ export function Audiences() {
               <span className="text-[var(--l3d-text)]">{lang === "ro" ? "Unde îl folosești: " : "Where you use it: "}</span>
               {item.uses}
             </p>
-            <a href={`#pachet-${tier.key}`} className="l3d-link mt-5 inline-block text-sm font-semibold">
+            <a href={`#pachet-${tier.key}`} className="l3d-link l3d-tap mt-3 text-sm font-semibold">
               {a.recommended}: {tier.name}
             </a>
           </div>
@@ -244,7 +244,7 @@ export function Packages({ onPreview }: { onPreview: (tier: string) => void }) {
                   <MessageCircle className="size-4" aria-hidden />
                   {p.choose(t.name)}
                 </a>
-                <button type="button" className="l3d-link py-2 text-sm" onClick={() => onPreview(t.name)}>
+                <button type="button" className="l3d-link l3d-tap justify-center text-sm" onClick={() => onPreview(t.name)}>
                   {lang === "ro" ? "Sau cere întâi o previzualizare gratuită" : "Or request a free preview first"}
                 </button>
               </div>
@@ -469,7 +469,7 @@ export function FinalCta({ onPreview }: { onPreview: () => void }) {
           {related.map((r, i) => (
             <span key={r.to}>
               {i > 0 && " · "}
-              <Link className="l3d-link" to={r.to}>
+              <Link className="l3d-link l3d-tap" to={r.to}>
                 {r.label}
               </Link>
             </span>

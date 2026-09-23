@@ -74,12 +74,13 @@ export function StageProvider({ children, onReady }: Props) {
       import("./engine/engine")
         .then(({ Stage }) => {
           if (!alive || !canvasRef.current) return;
-          created = Stage.create(canvasRef.current, {
-            reducedMotion: reduced,
-            tier: saveData ? "low" : undefined,
-          });
+          // ?l3d=low|std|ultra forces a tier (QA on specific devices); save-data always means low.
+          const forced = new URLSearchParams(window.location.search).get("l3d");
+          const tier = saveData ? "low" : forced === "low" || forced === "std" || forced === "ultra" ? forced : undefined;
+          created = Stage.create(canvasRef.current, { reducedMotion: reduced, tier, watch: forced === null });
           if (!created) {
             setStatus("off");
+            document.documentElement.setAttribute("data-logo3d", "off");
             return;
           }
           created.defineMark("studio", STUDIO_MARK as MarkDraw);
@@ -87,10 +88,15 @@ export function StageProvider({ children, onReady }: Props) {
           created.setPaused(initialPaused);
           setStage(created);
           setStatus("on");
+          (window as Window & { __avLogo3d?: () => unknown }).__avLogo3d = () => created?.info;
           document.documentElement.setAttribute("data-logo3d", "on");
           readyRef.current?.(created);
         })
-        .catch(() => alive && setStatus("off"));
+        .catch(() => {
+          if (!alive) return;
+          setStatus("off");
+          document.documentElement.setAttribute("data-logo3d", "off");
+        });
     };
 
     // After the first paint and the loader, when the main thread is free.

@@ -92,7 +92,37 @@ export function signedDistance(coverage: Uint8Array, w: number, h: number): Floa
   edtGrid(inner, w, h);
   const out = new Float32Array(w * h);
   for (let i = 0; i < w * h; i++) out[i] = Math.sqrt(outer[i]) - Math.sqrt(inner[i]);
-  return out;
+  return smooth(out, w, h, 2);
+}
+
+/**
+ * Separable [1 2 1] blur, a couple of passes. Removes the per-texel ripple the
+ * transform leaves along slanted edges (visible as serrated bevels once lit);
+ * the zero line only moves on sharp corners, which the bevel rounds anyway.
+ */
+export function smooth(field: Float32Array, w: number, h: number, passes: number): Float32Array {
+  let src = field;
+  let tmp = new Float32Array(w * h);
+  for (let p = 0; p < passes; p++) {
+    for (let y = 0; y < h; y++) {
+      const row = y * w;
+      for (let x = 0; x < w; x++) {
+        const l = src[row + Math.max(0, x - 1)];
+        const r = src[row + Math.min(w - 1, x + 1)];
+        tmp[row + x] = (l + 2 * src[row + x] + r) * 0.25;
+      }
+    }
+    const next = new Float32Array(w * h);
+    for (let y = 0; y < h; y++) {
+      const up = Math.max(0, y - 1) * w;
+      const dn = Math.min(h - 1, y + 1) * w;
+      const row = y * w;
+      for (let x = 0; x < w; x++) next[row + x] = (tmp[up + x] + 2 * tmp[row + x] + tmp[dn + x]) * 0.25;
+    }
+    src = next;
+    tmp = new Float32Array(w * h);
+  }
+  return src;
 }
 
 export type MarkDraw = (ctx: CanvasRenderingContext2D, size: number) => void;

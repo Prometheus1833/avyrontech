@@ -166,6 +166,7 @@ export class Stage {
   private tintTargetB: Rgb = [0.22, 0.71, 0.97];
   private pointer = { x: 0, y: 0, sx: 0, sy: 0 };
   private slowFrames = 0;
+  private watchEnabled = true;
   private beforeFrame: Array<(t: number) => void> = [];
   private dirty = true;
   private lastScroll = -1;
@@ -221,7 +222,10 @@ export class Stage {
   }
 
   /** Returns null when WebGL2 is missing or the shaders fail on this GPU. */
-  static create(canvas: HTMLCanvasElement, opts: { tier?: Tier; reducedMotion?: boolean } = {}): Stage | null {
+  static create(
+    canvas: HTMLCanvasElement,
+    opts: { tier?: Tier; reducedMotion?: boolean; watch?: boolean } = {},
+  ): Stage | null {
     try {
       const gl = canvas.getContext("webgl2", {
         alpha: false,
@@ -232,7 +236,9 @@ export class Stage {
         powerPreference: "high-performance",
       });
       if (!gl) return null;
-      return new Stage(canvas, gl, opts.tier ?? detectTier(), Boolean(opts.reducedMotion));
+      const stage = new Stage(canvas, gl, opts.tier ?? detectTier(), Boolean(opts.reducedMotion));
+      stage.watchEnabled = opts.watch !== false;
+      return stage;
     } catch (err) {
       console.warn("[logo3d] WebGL stage disabled:", err);
       return null;
@@ -264,6 +270,11 @@ export class Stage {
 
   get isPaused() {
     return this.paused;
+  }
+
+  /** Current render settings, for QA (window.__avLogo3d). */
+  get info() {
+    return { tier: this.tier, dpr: this.dpr, steps: this.steps, views: this.views.size };
   }
 
   addView(el: HTMLElement, params: Partial<ViewParams>): ViewHandle {
@@ -421,7 +432,7 @@ export class Stage {
 
   /** Frame-time guard: if the device can't keep up, render fewer pixels. Never goes back up. */
   private watch(dt: number) {
-    if (this.paused || dt <= 0) return;
+    if (!this.watchEnabled || this.paused || dt <= 0) return;
     if (dt > 1 / 32) this.slowFrames++;
     else this.slowFrames = Math.max(0, this.slowFrames - 1);
     if (this.slowFrames > 24 && this.dpr > 0.62) {

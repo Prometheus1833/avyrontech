@@ -15,8 +15,14 @@
   isolation: isolate;
   min-height: 100vh;
   color: var(--l3d-text);
-  background: transparent;
+  /* The canvas and the gradient layer sit at negative z-index inside this stacking
+     context, so they paint above this colour; it only matters when they are absent. */
+  background: var(--l3d-bg);
   overflow-x: clip;
+}
+html:has(main.l3d),
+html:has(main.l3d) body {
+  background: #08060f;
 }
 
 /* The page background is the canvas; this is what shows before it (and without WebGL). */
@@ -120,6 +126,10 @@ html[data-logo3d="on"] .l3d-canvas {
 .l3d-view {
   position: relative;
   touch-action: pan-y;
+}
+.l3d-view.l3d-fill {
+  position: absolute;
+  inset: 0;
 }
 .l3d-fallback {
   position: absolute;
@@ -474,6 +484,13 @@ html[data-logo3d="on"] .l3d-view[data-engine="on"] .l3d-fallback {
   max-height: 9rem;
   opacity: 1;
 }
+@media (max-width: 959px) {
+  .l3d-genesis .l3d-h2 { font-size: clamp(1.7rem, 7vw, 2.4rem); }
+  .l3d-genesis .l3d-lead { display: none; }
+  .l3d-genesis ol { margin-top: 1rem; }
+  .l3d-step { padding: 0.45rem 0 0.45rem 1rem; }
+  .l3d-step h3 { font-size: 1rem; }
+}
 .l3d-genesis-stage {
   position: relative;
   aspect-ratio: 1 / 1;
@@ -482,7 +499,14 @@ html[data-logo3d="on"] .l3d-view[data-engine="on"] .l3d-fallback {
   margin: 0 auto;
 }
 @media (max-width: 960px) {
-  .l3d-genesis-stage { max-width: 22rem; }
+  @media (max-width: 959px) {
+  .l3d-genesis .l3d-h2 { font-size: clamp(1.7rem, 7vw, 2.4rem); }
+  .l3d-genesis .l3d-lead { display: none; }
+  .l3d-genesis ol { margin-top: 1rem; }
+  .l3d-step { padding: 0.45rem 0 0.45rem 1rem; }
+  .l3d-step h3 { font-size: 1rem; }
+}
+.l3d-genesis-stage { max-width: 22rem; }
 }
 .l3d-grid-overlay {
   position: absolute;
@@ -519,26 +543,26 @@ html[data-logo3d="on"] .l3d-view[data-engine="on"] .l3d-fallback {
 .l3d-gallery {
   margin-top: 2.5rem;
   display: grid;
-  gap: 1px;
+  gap: 0.75rem;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  background: var(--l3d-line);
-  border: 1px solid var(--l3d-line);
-  border-radius: 1.75rem;
-  overflow: hidden;
 }
 @media (min-width: 900px) {
-  .l3d-gallery { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .l3d-gallery { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
 }
+/* Cards stay transparent: the logo is drawn by the canvas underneath the page. */
 .l3d-card {
   position: relative;
-  background: rgba(8, 6, 15, 0.72);
-  padding: 1rem 1rem 1.25rem;
-  transition: background-color 0.4s;
+  padding: 0.75rem 1rem 1.25rem;
+  border-radius: 1.5rem;
+  border: 1px solid var(--l3d-line);
+  background: transparent;
+  transition: border-color 0.4s, box-shadow 0.4s;
   display: flex;
   flex-direction: column;
 }
 .l3d-card:hover {
-  background: rgba(20, 15, 36, 0.55);
+  border-color: var(--l3d-line-strong);
+  box-shadow: inset 0 0 60px -20px rgba(167, 139, 250, 0.25);
 }
 .l3d-card[hidden] {
   display: none;
@@ -578,7 +602,7 @@ html[data-logo3d="on"] .l3d-view[data-engine="on"] .l3d-fallback {
   aspect-ratio: 16 / 9;
   border-radius: 1.75rem;
   border: 1px solid var(--l3d-line);
-  background: radial-gradient(80% 70% at 50% 45%, rgba(167, 139, 250, 0.08), transparent 70%);
+  background: transparent;
 }
 .l3d-input {
   width: 100%;
@@ -874,6 +898,11 @@ html[data-logo3d="on"] .l3d-view[data-engine="on"] .l3d-fallback {
   text-underline-offset: 4px;
   transition: text-decoration-color 0.25s;
 }
+.l3d-link.l3d-tap {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
 .l3d-link:hover {
   text-decoration-color: var(--l3d-violet);
 }
@@ -929,3 +958,9 @@ html.lenis body {
 .lenis.lenis-stopped {
   overflow: clip;
 }
+
+/* Without WebGL the scroll-driven stage has nothing to animate: show it as a normal section. */
+html[data-logo3d="off"] .l3d-genesis { height: auto; }
+html[data-logo3d="off"] .l3d-genesis-sticky { position: relative; height: auto; padding: 5rem 0; }
+html[data-logo3d="off"] .l3d-step p { max-height: none; opacity: 1; }
+html[data-logo3d="off"] .l3d-step { color: var(--l3d-text); }

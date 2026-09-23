@@ -179,7 +179,7 @@ export function Genesis() {
         fill,
         extrude,
         rotation: "manual",
-        yaw: -0.55 * extrude + motion * Math.PI * 1.35,
+        yaw: -0.55 * extrude + motion * Math.PI * 2,
         pitch: 0.18 * extrude - 0.08 * motion,
         material: [1 - glassy, glassy, 0, 0],
         scale: 1 - 0.08 * extrude,
@@ -234,7 +234,7 @@ export function Genesis() {
               <line x1="74" y1="0" x2="74" y2="100" />
             </svg>
             <LogoView
-              className="absolute inset-0"
+              className="l3d-fill"
               label={lang === "ro" ? "Logo-ul Fluxa trecând de la schiță la volum și mișcare" : "The Fluxa logo moving from sketch to volume and motion"}
               mark={fluxa.key}
               face={fluxa.face}

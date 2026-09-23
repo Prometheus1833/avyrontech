@@ -194,7 +194,7 @@ float mapSmooth(vec3 p) {
 }
 vec3 normalAt(vec3 p) {
   const vec2 k = vec2(1.0, -1.0);
-  float e = 0.004 * uFit;
+  float e = 0.006 * uFit;
   return normalize(k.xyy * mapSmooth(p + k.xyy * e) + k.yyx * mapSmooth(p + k.yyx * e) + k.yxy * mapSmooth(p + k.yxy * e) + k.xxx * mapSmooth(p + k.xxx * e));
 }
 vec2 boxHit(vec3 ro, vec3 rd, vec3 b) {
@@ -218,16 +218,20 @@ float vnoise(vec3 x) {
 // Procedural product studio (world space): a large key softbox above-left of the
 // camera, a cool fill on the right, a vertical strip, coloured rims behind.
 vec3 env(vec3 d) {
-  vec3 c = mix(vec3(0.018, 0.016, 0.03), vec3(0.11, 0.1, 0.16), smoothstep(-0.6, 0.9, d.y));
-  float key = smoothstep(0.62, 0.95, dot(d, normalize(vec3(-0.35, 0.5, 0.8))));
-  c += vec3(1.0, 0.97, 0.93) * key * 2.1;
-  float fill = smoothstep(0.62, 0.97, dot(d, normalize(vec3(0.65, 0.05, 0.75))));
-  c += vec3(0.78, 0.86, 1.0) * fill * 0.75;
-  float strip = smoothstep(0.06, 0.0, abs(d.x - 0.78)) * smoothstep(-0.3, 0.6, d.y);
-  c += vec3(0.95, 0.97, 1.0) * strip * 1.2;
-  c += uGlow * smoothstep(0.35, 1.0, dot(d, normalize(vec3(-0.9, 0.15, -0.35)))) * 0.8;
-  c += vec3(0.62, 0.45, 1.0) * smoothstep(0.45, 1.0, dot(d, normalize(vec3(0.9, -0.05, -0.3)))) * 0.55;
-  c += vec3(0.16, 0.14, 0.2) * smoothstep(0.2, 1.0, d.y);
+  // Room: dark floor, soft grey ceiling.
+  vec3 c = mix(vec3(0.02, 0.018, 0.034), vec3(0.2, 0.19, 0.26), smoothstep(-0.5, 1.0, d.y));
+  // Big key softbox above-left of the camera: front faces pick it up as a broad sheen.
+  float key = smoothstep(0.5, 0.96, dot(d, normalize(vec3(-0.3, 0.42, 0.86))));
+  c += vec3(1.0, 0.97, 0.93) * key * 1.9;
+  // Hard spec strip for the crisp line that travels across metal when it turns.
+  float strip = smoothstep(0.05, 0.0, abs(d.x + 0.12 - d.y * 0.18)) * smoothstep(-0.1, 0.7, d.y) * step(0.0, d.z);
+  c += vec3(1.0) * strip * 2.2;
+  // Cool fill from the right.
+  float fill = smoothstep(0.55, 0.97, dot(d, normalize(vec3(0.7, 0.05, 0.7))));
+  c += vec3(0.75, 0.85, 1.0) * fill * 0.8;
+  // Coloured rims from behind.
+  c += uGlow * smoothstep(0.3, 1.0, dot(d, normalize(vec3(-0.9, 0.15, -0.35)))) * 0.9;
+  c += vec3(0.62, 0.45, 1.0) * smoothstep(0.4, 1.0, dot(d, normalize(vec3(0.9, -0.05, -0.3)))) * 0.6;
   return c;
 }
 vec3 toWorld(vec3 v) { return v * uRot; }
@@ -288,12 +292,12 @@ void main() {
         float dIn = field(po.xy);
         float rim = pow(1.0 - nv, 3.0);
 
-        vec3 metal = envR * mix(tint, vec3(1.0), 0.12 + 0.55 * F) + tint * (0.06 + 0.1 * diff);
+        vec3 metal = envR * mix(tint, vec3(1.0), 0.1 + 0.5 * F) * 1.15 + tint * (0.1 + 0.18 * wrap);
         vec3 refr = env(refract(-vW, nW, 0.7));
         float thick = smoothstep(0.0, 0.3, -dIn);
-        vec3 body = uFace * (0.22 + 0.45 * wrap);
-        vec3 glass = mix(refr * mix(vec3(1.0), uFace, 0.6) * 0.9, body, 0.3 + 0.25 * thick);
-        glass = mix(glass, envR, clamp(F * 1.4, 0.0, 1.0)) + uGlow * rim * 0.45;
+        vec3 body = uFace * (0.35 + 0.55 * wrap);
+        vec3 glass = mix(refr * mix(vec3(1.0), uFace, 0.7) * 1.1, body, 0.28 + 0.3 * thick);
+        glass = mix(glass, envR, clamp(0.12 + F * 1.3, 0.0, 1.0)) + uGlow * rim * 0.6;
         float tube = smoothstep(0.03, 0.0, abs(dIn + 0.05)) * faceMask;
         vec3 neon = envR * 0.1 + tint * 0.15 * wrap + uGlow * tube * 2.6 + uGlow * rim * 0.5;
         vec3 matte = tint * (0.26 + 0.82 * wrap) + envR * 0.05 * (0.4 + F) + tint * rim * 0.22;
@@ -301,7 +305,7 @@ void main() {
         vec3 c = metal * uMat.x + glass * uMat.y + neon * uMat.z + matte * uMat.w;
         c /= max(uMat.x + uMat.y + uMat.z + uMat.w, 0.0001);
         c = c * (1.0 + c / 4.0) / (1.0 + c);
-        float alpha = 1.0 - uMat.y * 0.12;
+        float alpha = 1.0 - uMat.y * 0.06;
 
         if (uReveal < 0.999) {
           float n3 = vnoise(po * 7.0 + uTime * 0.2);
