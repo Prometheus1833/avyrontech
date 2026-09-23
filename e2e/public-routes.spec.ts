@@ -319,7 +319,8 @@ test.describe("public SEO routes", () => {
 
     const productList = page.getByTestId("product-list");
     await expect(productList.getByRole("link")).toHaveCount(7);
-    expect((await productList.boundingBox())!.height).toBeLessThan(430);
+    // 7 services on the homepage (Logo Dinamic 3D added): same ~71 px per row budget as before.
+    expect((await productList.boundingBox())!.height).toBeLessThan(500);
 
     await page.getByRole("button", { name: "Meniu" }).click();
     const menu = page.getByTestId("mobile-nav-menu");
