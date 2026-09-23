@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect } from "react";
-import { ArrowRight, ScanSearch, Gauge, Accessibility, Check, CreditCard, FileText, Zap, Crown, Shield, RefreshCw, Hourglass, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu, Bug, FlaskConical, HeartHandshake, BookOpen, PenTool, SearchCheck } from "lucide-react";
+import { Box, Sparkles, ArrowRight, ScanSearch, Gauge, Accessibility, Check, CreditCard, FileText, Zap, Crown, Shield, RefreshCw, Hourglass, Globe, Instagram, Facebook, Music2, Image as ImageIcon, MessageCircle, Share2, Calendar, BadgeCheck, ShoppingBag, Package, Truck, Tag, BarChart3, Smartphone, Apple, Layers, Code2, Bell, Cloud, Cpu, Bug, FlaskConical, HeartHandshake, BookOpen, PenTool, SearchCheck } from "lucide-react";
 import PaymentMethods from "@/components/site/PaymentMethods";
 import { useLang } from "@/i18n/LanguageContext";
 import { trackEvent } from "@/lib/analytics";
@@ -16,6 +16,8 @@ import Breadcrumbs from "@/components/site/Breadcrumbs";
 import CurrencySwitch from "@/components/site/CurrencySwitch";
 import PageBackLink from "@/components/site/PageBackLink";
 import QuickNav from "@/components/site/QuickNav";
+import { LOGO3D_PATHS, LOGO3D_TIERS } from "@/data/logo3d";
+import { useLeiPrice } from "@/components/logo3d/utils";
 import { useCurrency } from "@/hooks/useCurrency";
 
 /**
@@ -32,6 +34,7 @@ const Pricing = () => {
   const { lang } = useLang();
   const ro = lang === "ro";
   const { formatEur: fmt } = useCurrency(ro ? "ro-RO" : "en-IE");
+  const lei = useLeiPrice(lang);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -339,6 +342,89 @@ const Pricing = () => {
                 { icon: Gauge, title: ro ? "Performanță reală" : "Real performance", text: ro ? "Imagini optimizate, încărcare rapidă și experiență fluidă pe mobil." : "Optimized images, fast loading and a fluid mobile experience." },
                 { icon: Shield, title: ro ? "Siguranță și măsurare" : "Security and measurement", text: ro ? "Moderare, protecție anti-abuz, analytics și conversii măsurabile." : "Moderation, abuse protection, analytics and measurable conversions." },
               ].map((feature) => <article key={feature.title} className="rounded-xl border border-rose-200/10 bg-background/45 p-4 backdrop-blur"><span className="grid size-9 place-items-center rounded-xl bg-rose-400/10 text-rose-600 dark:text-rose-300"><feature.icon className="size-4" /></span><h3 className="mt-3 text-sm font-semibold">{feature.title}</h3><p className="mt-1 text-xs leading-relaxed text-foreground/60">{feature.text}</p></article>)}
+            </div>
+          </div>
+        </section>
+
+        {/* Logo Dinamic 3D */}
+        <section id="logo-dinamic-3d" className="mt-8 grid md:grid-cols-5 gap-4 items-start">
+          <div className="md:col-span-2 rounded-2xl border border-violet-300/20 bg-gradient-to-br from-card to-background p-5 sm:p-6 relative overflow-hidden text-center">
+            <div aria-hidden className="absolute -top-16 -left-16 size-48 rounded-full bg-violet-500/20 blur-3xl" />
+            <div aria-hidden className="absolute -bottom-16 -right-16 size-48 rounded-full bg-sky-400/15 blur-3xl" />
+            <div className="relative">
+              <div className="inline-flex items-center gap-2 rounded-full border border-violet-300/30 bg-violet-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-violet-700 dark:text-violet-200">
+                <Sparkles className="size-3.5" />
+                {ro ? "Serviciu nou" : "New service"}
+              </div>
+              <div className="mt-5 mx-auto size-16 rounded-2xl bg-gradient-to-br from-violet-400 to-sky-500 grid place-items-center shadow-[0_0_40px_-8px_rgba(139,92,246,0.7)] [transform:perspective(300px)_rotateY(-18deg)_rotateX(8deg)]">
+                <Box className="size-8 text-white" />
+              </div>
+              <h2 className="mt-4 font-display text-2xl sm:text-3xl font-extrabold">
+                {ro ? "Logo Dinamic 3D" : "Dynamic 3D Logo"}
+              </h2>
+              <p className="mt-2 text-xs uppercase tracking-[0.25em] text-foreground/50">
+                {ro ? "Vector · 3D · Animație" : "Vector · 3D · Motion"}
+              </p>
+              <div className="mt-3 flex items-baseline justify-center gap-1.5 flex-wrap">
+                <span className="text-sm sm:text-base font-semibold text-foreground/70">{ro ? "de la" : "from"}</span>
+                <span className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-violet-300 to-sky-400 bg-clip-text text-transparent break-words">
+                  {lei(LOGO3D_TIERS.ro[0].priceRon)}
+                </span>
+              </div>
+              <p className="mt-3 text-xs sm:text-sm text-foreground/70 leading-snug text-left">
+                {ro
+                  ? "Un logo original gândit din prima pentru print, volum și mișcare: fișiere vectoriale, model 3D, animații și logo interactiv pentru site. Pentru persoane fizice, firme mici și medii, branduri și startupuri."
+                  : "An original logo designed from day one for print, volume and motion: vector files, a 3D model, animations and an interactive website logo. For individuals, small and mid-size companies, brands and startups."}
+              </p>
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-violet-300/20 bg-violet-300/[0.06] px-3 py-1.5 text-[11px] text-violet-700 dark:text-violet-100">
+                <Hourglass className="size-3.5" />
+                {ro ? "Timp aproximativ: 5–15 zile lucrătoare" : "Approx. time: 5–15 working days"}
+              </div>
+            </div>
+          </div>
+          <div className="md:col-span-3 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur">
+            <div className="text-[11px] uppercase tracking-[0.3em] text-foreground/50">{ro ? "Pachete:" : "Packages:"}</div>
+            <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+              {LOGO3D_TIERS[lang].map((t) => (
+                <li key={t.key} className={`rounded-xl border p-4 ${t.featured ? "border-violet-400/40 bg-violet-400/[0.06]" : "border-foreground/10 bg-background/40"}`}>
+                  <div className="text-sm font-semibold">{t.name}</div>
+                  <div className="mt-1 font-display text-2xl font-extrabold">{lei(t.priceRon)}</div>
+                  <p className="mt-1 text-xs leading-relaxed text-foreground/60">{t.for}</p>
+                </li>
+              ))}
+            </ul>
+            <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
+              {(ro
+                ? ["Logo vectorial original: SVG, PDF, PNG", "Model 3D pentru web și realitate augmentată", "Intro și buclă animată pentru site și social media", "Drepturi de autor cedate integral"]
+                : ["Original vector logo: SVG, PDF, PNG", "3D model for the web and augmented reality", "Animated intro and loop for web and social media", "Full copyright transfer"]
+              ).map((text) => (
+                <li key={text} className="flex items-start gap-2 text-sm text-foreground/85">
+                  <span className="mt-0.5 size-5 rounded-md bg-violet-400/15 text-violet-500 dark:text-violet-300 grid place-items-center shrink-0">
+                    <Check className="size-3.5" />
+                  </span>
+                  <span>{text}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+              <a
+                href={`https://wa.me/40734605055?text=${encodeURIComponent(ro ? "Bună! Sunt interesat de un Logo Dinamic 3D." : "Hi! I'm interested in a Dynamic 3D Logo.")}`}
+                onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "pricing_logo_3d" })}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-violet-500 to-sky-500 text-white px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
+              >
+                <Sparkles className="size-4" />
+                {ro ? "Vreau un logo 3D" : "I want a 3D logo"}
+              </a>
+              <Link
+                to={LOGO3D_PATHS[lang]}
+                onClick={() => trackEvent("product_details_click", { product: LOGO3D_PATHS.ro })}
+                className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
+              >
+                {ro ? "Vezi pagina și exemplele" : "See the page and examples"}
+                <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
+              </Link>
             </div>
           </div>
         </section>
