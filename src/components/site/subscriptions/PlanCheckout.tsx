@@ -195,7 +195,7 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
         ) : (
           <div className="space-y-4">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-foreground/50">
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-foreground/65">
                 {ro ? "Ritm de facturare" : "Billing rhythm"}
               </p>
               <div className="mt-2 grid grid-cols-2 gap-2">
@@ -212,7 +212,7 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
                     }`}
                   >
                     <span className="block text-xs font-semibold">{ro ? option.ro : option.en}</span>
-                    <span className="mt-0.5 block text-[10px] text-foreground/50">{ro ? option.hintRo : option.hintEn}</span>
+                    <span className="mt-0.5 block text-[10px] text-foreground/65">{ro ? option.hintRo : option.hintEn}</span>
                   </button>
                 ))}
               </div>
@@ -237,12 +237,12 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
               )}
               <div className="mt-3 flex items-end justify-between gap-3 border-t border-foreground/10 pt-3">
                 <div>
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-foreground/50">{ro ? "Total" : "Total"}</p>
-                  <p className="text-[11px] text-foreground/50">{converted ? `${ro ? "facturat" : "billed"} ` : "≈ "}{secondary(total)}</p>
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-foreground/65">{ro ? "Total" : "Total"}</p>
+                  <p className="text-[11px] text-foreground/65">{converted ? `${ro ? "facturat" : "billed"} ` : "≈ "}{secondary(total)}</p>
                 </div>
                 <div className="text-right">
                   <span className="font-display text-2xl font-extrabold">{primary(total)}</span>
-                  {loading && <Loader2 className="ml-2 inline size-3.5 animate-spin text-foreground/50" aria-hidden />}
+                  {loading && <Loader2 className="ml-2 inline size-3.5 animate-spin text-foreground/65" aria-hidden />}
                 </div>
               </div>
             </div>
@@ -289,7 +289,7 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
                 {submitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <CheckCircle2 className="size-4" aria-hidden />}
                 {ro ? "Activează abonamentul" : "Activate the subscription"}
               </button>
-              <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-foreground/55">
+              <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-foreground/70">
                 <ShieldCheck className="mt-0.5 size-3.5 shrink-0" aria-hidden />
                 {ro
                   ? "Prețul este recalculat de serverul Avyron în RON; conversia în euro este informativă. Primești factura pe email, iar abonamentul apare în cont la Produse & Servicii."

@@ -67,7 +67,7 @@ const PlanMiniDash = ({ plan, category, caretX, onClose, onSelect }: Props) => {
         <div className="flex items-center gap-3">
           <div className="text-right">
             <div className="font-display text-2xl font-extrabold leading-none">{primary(plan.priceCents)}</div>
-            <div className="mt-1 text-[11px] text-foreground/55">
+            <div className="mt-1 text-[11px] text-foreground/70">
               {converted ? `${ro ? "facturat" : "billed"} ` : "≈ "}{secondary(plan.priceCents)} · {ro ? "pe lună" : "per month"}
             </div>
           </div>
@@ -84,7 +84,7 @@ const PlanMiniDash = ({ plan, category, caretX, onClose, onSelect }: Props) => {
 
       <div className="relative mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/50">
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/65">
             {ro ? "Specificații" : "Specifications"}
           </p>
           <dl className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
@@ -97,7 +97,7 @@ const PlanMiniDash = ({ plan, category, caretX, onClose, onSelect }: Props) => {
                 >
                   <Icon className={`mt-0.5 size-4 shrink-0 ${t.text}`} aria-hidden />
                   <div className="min-w-0">
-                    <dt className="text-[10px] font-mono uppercase tracking-[0.16em] text-foreground/50">
+                    <dt className="text-[10px] font-mono uppercase tracking-[0.16em] text-foreground/65">
                       {SPEC_LABELS[spec.key][lang]}
                     </dt>
                     <dd className="mt-0.5 text-sm font-semibold leading-snug">{ro ? spec.ro : spec.en}</dd>
@@ -109,7 +109,7 @@ const PlanMiniDash = ({ plan, category, caretX, onClose, onSelect }: Props) => {
         </div>
 
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/50">
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/65">
             {ro ? "Ce înseamnă concret" : "What it means in practice"}
           </p>
           <ul className="mt-3 space-y-2">
@@ -122,7 +122,7 @@ const PlanMiniDash = ({ plan, category, caretX, onClose, onSelect }: Props) => {
           </ul>
 
           <div className={`mt-4 rounded-2xl border border-dashed ${t.border} bg-foreground/[0.02] p-3.5`}>
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-foreground/55">
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-foreground/70">
               {ro ? "Potrivit pentru" : "Best for"}
             </p>
             <p className="mt-1.5 text-sm text-foreground/80">{text.bestFor}</p>
@@ -137,7 +137,7 @@ const PlanMiniDash = ({ plan, category, caretX, onClose, onSelect }: Props) => {
               {ro ? `Alege ${plan.name}` : `Choose ${plan.name}`}
               <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden />
             </button>
-            <span className="inline-flex items-center gap-1.5 text-[11px] text-foreground/55">
+            <span className="inline-flex items-center gap-1.5 text-[11px] text-foreground/70">
               <Sparkles className="size-3.5" aria-hidden />
               {ro ? "Fără contract pe termen lung" : "No long-term contract"}
             </span>

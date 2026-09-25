@@ -82,9 +82,9 @@ const PlanCard = ({ plan, category, active, duplicate, price, secondaryPrice, co
 
         <div className="relative mt-3 flex items-baseline gap-2">
           <span className="font-display text-3xl font-extrabold tabular-nums">{price}</span>
-          <span className="text-xs text-foreground/50">/{ro ? "lună" : "mo"}</span>
+          <span className="text-xs text-foreground/65">/{ro ? "lună" : "mo"}</span>
         </div>
-        <p className="relative mt-1 text-[11px] text-foreground/50">
+        <p className="relative mt-1 text-[11px] text-foreground/65">
           {converted ? `${ro ? "facturat" : "billed"} ` : "≈ "}{secondaryPrice} {ro ? "pe lună" : "per month"}
         </p>
 
@@ -104,7 +104,7 @@ const PlanCard = ({ plan, category, active, duplicate, price, secondaryPrice, co
             {active ? (ro ? "Ascunde detaliile" : "Hide details") : (ro ? "Detalii și specificații" : "Details and specs")}
             <ChevronDown className={`size-3.5 transition-transform duration-300 ${active ? "rotate-180" : ""}`} aria-hidden />
           </span>
-          <span className="inline-flex items-center gap-1 text-[11px] text-foreground/45">
+          <span className="inline-flex items-center gap-1 text-[11px] text-foreground/65">
             <Sparkle className="size-3" aria-hidden />
             {ro ? "lunar" : "monthly"}
           </span>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Hand, Pause } from "lucide-react";
+import { ArrowRight, Hand, Pause, Play } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import type { SubscriptionCategory, SubscriptionPlan } from "@/data/subscriptionPlans";
 import { useDualPrice } from "@/hooks/useDualPrice";
@@ -37,6 +37,8 @@ const PlanCarousel = ({ category, onSelect }: Props) => {
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [caretX, setCaretX] = useState<number | undefined>(undefined);
   const [held, setHeld] = useState(false);
+  const [userPaused, setUserPaused] = useState(false);
+  const [focusWithin, setFocusWithin] = useState(false);
 
   const applyOffset = useCallback(() => {
     const track = trackRef.current;
@@ -95,9 +97,22 @@ const PlanCarousel = ({ category, onSelect }: Props) => {
     return () => cancelAnimationFrame(frame);
   }, [enhanced, applyOffset]);
 
+  // Banda stă pe loc cât timp e apăsată, cât e deschis un mini-dashboard, cât
+  // are focus din tastatură și cât vizitatorul a oprit-o din buton.
   useEffect(() => {
-    pausedRef.current = held || openKey !== null;
-  }, [held, openKey]);
+    pausedRef.current = held || openKey !== null || userPaused || focusWithin;
+  }, [held, openKey, userPaused, focusWithin]);
+
+  useEffect(() => {
+    if (!openKey) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setOpenKey(null);
+      wrapRef.current?.querySelector<HTMLButtonElement>(`[data-plan-key="${openKey}"] button`)?.focus();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [openKey]);
 
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!enhanced || event.button !== 0) return;
@@ -157,6 +172,10 @@ const PlanCarousel = ({ category, onSelect }: Props) => {
         onPointerUp={endPress}
         onPointerCancel={endPress}
         onPointerLeave={endPress}
+        onFocusCapture={() => setFocusWithin(true)}
+        onBlurCapture={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocusWithin(false);
+        }}
         onClickCapture={(event) => {
           if (!draggedRef.current) return;
           event.preventDefault();
@@ -189,17 +208,26 @@ const PlanCarousel = ({ category, onSelect }: Props) => {
         </div>
       </div>
 
-      <p className="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/40">
-        <span className="inline-flex items-center gap-1.5">
-          <Pause className="size-3" aria-hidden />
-          {ro ? "ține apăsat ca să oprești" : "hold to pause"}
-        </span>
-        <span aria-hidden className="hidden size-1 rounded-full bg-foreground/25 sm:block" />
-        <span className="inline-flex items-center gap-1.5">
+      <div className="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+        {enhanced && (
+          <button
+            type="button"
+            data-testid={`carousel-pause-${category.key}`}
+            onClick={() => setUserPaused((value) => !value)}
+            aria-pressed={userPaused}
+            className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 bg-foreground/[0.04] px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/70 transition-colors hover:bg-foreground/[0.09] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50"
+          >
+            {userPaused ? <Play className="size-3" aria-hidden /> : <Pause className="size-3" aria-hidden />}
+            {userPaused
+              ? (ro ? "pornește banda" : "resume")
+              : (ro ? "oprește banda" : "pause")}
+          </button>
+        )}
+        <p className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/65">
           <Hand className="size-3" aria-hidden />
-          {ro ? "apasă pentru detalii" : "tap for details"}
-        </span>
-      </p>
+          {ro ? "apasă un abonament pentru detalii" : "tap a plan for details"}
+        </p>
+      </div>
 
       {openPlanData && (
         <PlanMiniDash
@@ -225,7 +253,7 @@ const PlanCarousel = ({ category, onSelect }: Props) => {
             }`}
           >
             {plan.name}
-            <span className="font-mono text-[10px] tabular-nums text-foreground/45">{primary(plan.priceCents)}</span>
+            <span className="font-mono text-[10px] tabular-nums text-foreground/65">{primary(plan.priceCents)}</span>
           </button>
         ))}
         {category.productPath && (

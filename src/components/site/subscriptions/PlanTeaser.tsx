@@ -70,9 +70,9 @@ const TeaserCard = ({ plan, category, accent, anchor, productKey, price, seconda
       <h3 className="relative mt-1 font-display text-xl font-extrabold">{plan.name}</h3>
       <div className="relative mt-2 flex items-baseline gap-1.5">
         <span className="font-display text-2xl font-extrabold tabular-nums">{price}</span>
-        <span className="text-xs text-foreground/50">/{ro ? "lună" : "mo"}</span>
+        <span className="text-xs text-foreground/65">/{ro ? "lună" : "mo"}</span>
       </div>
-      <p className="relative mt-0.5 text-[11px] text-foreground/50">
+      <p className="relative mt-0.5 text-[11px] text-foreground/65">
         {converted ? `${ro ? "facturat" : "billed"} ` : "≈ "}{secondaryPrice}
       </p>
       <p className="relative mt-3 text-[13px] leading-relaxed text-foreground/70">{text.bestFor}</p>
@@ -181,7 +181,7 @@ const PlanTeaser = ({ category, accent, productName, productKey }: Props) => {
             <MessageCircle className="size-4" aria-hidden />
             {ro ? "Întreabă un coleg" : "Ask a colleague"}
           </a>
-          <span className="inline-flex items-center gap-1.5 text-[11px] text-foreground/50">
+          <span className="inline-flex items-center gap-1.5 text-[11px] text-foreground/65">
             <Clock className="size-3" aria-hidden />
             {ro ? "Fără contract pe termen lung · schimbi treapta oricând" : "No long-term contract · change tier any time"}
           </span>

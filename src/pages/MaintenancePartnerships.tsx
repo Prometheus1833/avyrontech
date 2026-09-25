@@ -49,12 +49,22 @@ const MaintenancePartnerships = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { primary, secondary, converted, setCurrency } = useDualPrice(ro ? "ro-RO" : "en-IE");
   const [selection, setSelection] = useState<{ plan: SubscriptionPlan; category: SubscriptionCategory } | null>(null);
-  const [booted, setBooted] = useState(false);
+  const [showIntro, setShowIntro] = useState(false);
 
   const path = ro ? SUBSCRIPTION_PATH.ro : SUBSCRIPTION_PATH.en;
   const cheapest = lowestPlanPriceCents();
 
-  useEffect(() => setBooted(true), []);
+  // Intro-ul rulează o singură dată pe sesiune: cine se întoarce pe pagină din
+  // alt loc al site-ului intră direct în conținut.
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("avyron-subscriptions-intro") === "1") return;
+      sessionStorage.setItem("avyron-subscriptions-intro", "1");
+    } catch {
+      // Fără sessionStorage, intro-ul rulează normal.
+    }
+    setShowIntro(true);
+  }, []);
 
   // Abonamentele se facturează în lei, deci vizitatorul care nu a ales încă o
   // monedă vede prețul real, nu o conversie.
@@ -117,9 +127,10 @@ const MaintenancePartnerships = () => {
     const title = ro
       ? `Mentenanță și colaborări — abonamente de la ${fromPrice} lei/lună | Avyron`
       : `Maintenance and partnerships — plans from ${fromPrice} RON/month | Avyron`;
+    // Descrierea stă sub 160 de caractere, ca să intre întreagă în rezultatele Google.
     const description = ro
-      ? "Abonamente lunare de mentenanță pentru site de prezentare, magazin online, blog profesional, agent AI și aplicații web sau mobile. Actualizări, backup, monitorizare, SEO și suport prioritar, cu prețuri în lei și euro."
-      : "Monthly maintenance plans for presentation websites, online stores, professional blogs, AI agents and web or mobile apps. Updates, backups, monitoring, SEO and priority support, priced in RON and EUR.";
+      ? `Abonamente lunare pentru site, magazin online, blog, agent AI și aplicații: actualizări, backup, monitorizare, SEO și suport prioritar. De la ${fromPrice} lei/lună.`
+      : `Monthly plans for websites, online stores, blogs, AI agents and apps: updates, backups, monitoring, SEO and priority support. From ${fromPrice} RON/month.`;
 
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
       ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd, serviceLd, subscriptionCatalogLd, faqPageLd }]) => {
@@ -240,7 +251,7 @@ const MaintenancePartnerships = () => {
 
   return (
     <>
-      {booted && <SpaceLoader />}
+      {showIntro && <SpaceLoader />}
       <PlanProgressBar sections={progressSections} />
       <Nav />
       <QuickNav items={quickNavItems} />
@@ -284,7 +295,7 @@ const MaintenancePartnerships = () => {
                   {ro ? "colaborări lunare" : "monthly partnerships"}
                 </span>
               </h1>
-              <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.24em] text-foreground/50">
+              <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.24em] text-foreground/65">
                 {ro ? "Site · Magazin · Blog · Agent AI · Aplicații" : "Website · Store · Blog · AI agent · Apps"}
               </p>
               <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-foreground/75 md:text-lg">
@@ -304,7 +315,7 @@ const MaintenancePartnerships = () => {
                 <span className="inline-flex items-center gap-2 rounded-full border border-foreground/15 bg-foreground/[0.04] px-4 py-2.5 text-sm backdrop-blur">
                   <span className="text-foreground/60">{ro ? "de la" : "from"}</span>
                   <strong className="font-display text-base tabular-nums">{primary(cheapest)}</strong>
-                  <span className="text-foreground/45">
+                  <span className="text-foreground/65">
                     {converted ? `${ro ? "facturat" : "billed"} ` : "≈ "}{secondary(cheapest)}
                   </span>
                 </span>
@@ -327,7 +338,7 @@ const MaintenancePartnerships = () => {
                       </span>
                       <span className="flex flex-col leading-tight">
                         <span className="text-xs font-semibold">{category.copy[lang].title}</span>
-                        <span className="font-mono text-[10px] tabular-nums text-foreground/45">
+                        <span className="font-mono text-[10px] tabular-nums text-foreground/65">
                           {ro ? "de la" : "from"} {primary(min)}
                         </span>
                       </span>
@@ -342,7 +353,7 @@ const MaintenancePartnerships = () => {
                     <dt className="sr-only">{stat.label}</dt>
                     <dd>
                       <span className="font-display text-2xl font-extrabold">{stat.value}</span>
-                      <span className="mt-1 block text-[11px] leading-tight text-foreground/55">{stat.label}</span>
+                      <span className="mt-1 block text-[11px] leading-tight text-foreground/70">{stat.label}</span>
                     </dd>
                   </div>
                 ))}
@@ -372,7 +383,7 @@ const MaintenancePartnerships = () => {
                     <span className="grid size-10 place-items-center rounded-xl bg-gradient-to-br from-brand to-brand-2 text-white shadow-lg transition-transform duration-300 group-hover:scale-110">
                       <step.icon className="size-5" aria-hidden />
                     </span>
-                    <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-foreground/45">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-foreground/65">
                       {String(index + 1).padStart(2, "0")}
                     </span>
                   </div>
@@ -415,7 +426,7 @@ const MaintenancePartnerships = () => {
                       </span>
                     </div>
 
-                    <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px] text-foreground/55">
+                    <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px] text-foreground/70">
                       {highlights.map((spec) => (
                         <span key={spec.key} className="inline-flex items-center gap-1.5">
                           <span aria-hidden className={`size-1 rounded-full bg-gradient-to-br ${category.theme.from} ${category.theme.to}`} />
@@ -440,7 +451,7 @@ const MaintenancePartnerships = () => {
                   </div>
 
                   <Reveal delay={80}>
-                    <p className="mx-auto mt-6 flex max-w-2xl items-start justify-center gap-2 text-center text-xs leading-relaxed text-foreground/55">
+                    <p className="mx-auto mt-6 flex max-w-2xl items-start justify-center gap-2 text-center text-xs leading-relaxed text-foreground/70">
                       <Check className={`mt-0.5 size-3.5 shrink-0 ${category.theme.text}`} aria-hidden />
                       <span>{copy.note}</span>
                     </p>
@@ -465,14 +476,22 @@ const MaintenancePartnerships = () => {
             </p>
           </Reveal>
           <Reveal delay={80}>
-            <div className="mt-8 overflow-x-auto rounded-3xl border border-foreground/10 bg-foreground/[0.02] backdrop-blur">
-              <table className="w-full min-w-[36rem] border-collapse text-sm">
+            <div className="relative mt-8">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 right-0 z-10 w-14 rounded-r-3xl bg-gradient-to-l from-background to-transparent sm:hidden"
+            />
+            <div className="overflow-x-auto rounded-3xl border border-foreground/10 bg-foreground/[0.02] backdrop-blur">
+              <table className="w-full min-w-[34rem] border-collapse text-sm">
                 <caption className="sr-only">
                   {ro ? "Prețuri lunare pe tip de produs și treaptă de colaborare" : "Monthly prices by product type and collaboration tier"}
                 </caption>
                 <thead>
                   <tr className="border-b border-foreground/10 text-left">
-                    <th scope="col" className="px-4 py-3 font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/50">
+                    <th
+                      scope="col"
+                      className="sticky left-0 z-10 border-r border-foreground/10 bg-background px-4 py-3 text-left font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/65"
+                    >
                       {ro ? "Produs" : "Product"}
                     </th>
                     {["Plus", "Pro", "Pro Activ"].map((tier) => (
@@ -492,7 +511,7 @@ const MaintenancePartnerships = () => {
                     const Icon = CATEGORY_ICONS[category.icon];
                     return (
                       <tr key={category.key} className="border-b border-foreground/[0.07] transition-colors last:border-0 hover:bg-foreground/[0.03]">
-                        <th scope="row" className="px-4 py-3 text-left font-semibold">
+                        <th scope="row" className="sticky left-0 z-10 border-r border-foreground/10 bg-background px-4 py-3 text-left font-semibold">
                           <a href={`#${sectionId(category.key)}`} className="inline-flex items-center gap-2 hover:underline">
                             <span className={`grid size-7 place-items-center rounded-lg bg-gradient-to-br ${category.theme.from} ${category.theme.to} text-white`}>
                               <Icon className="size-3.5" aria-hidden />
@@ -501,9 +520,9 @@ const MaintenancePartnerships = () => {
                           </a>
                         </th>
                         {category.plans.map((plan) => (
-                          <td key={plan.key} className="px-4 py-3">
+                          <td key={plan.key} className="whitespace-nowrap px-4 py-3">
                             <span className="block font-display font-bold tabular-nums">{primary(plan.priceCents)}</span>
-                            <span className="block text-[10px] text-foreground/45">
+                            <span className="block text-[10px] text-foreground/65">
                               {converted ? `${ro ? "facturat" : "billed"} ` : "≈ "}{secondary(plan.priceCents)}
                             </span>
                           </td>
@@ -514,6 +533,10 @@ const MaintenancePartnerships = () => {
                 </tbody>
               </table>
             </div>
+            </div>
+            <p className="mt-3 text-center font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/65 sm:hidden">
+              {ro ? "glisează tabelul pe orizontală" : "swipe the table sideways"}
+            </p>
           </Reveal>
         </section>
 
@@ -653,7 +676,7 @@ const MaintenancePartnerships = () => {
                   {ro ? "Vezi produsele" : "See the products"}
                 </Link>
               </div>
-              <p className="mt-5 inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] text-foreground/50">
+              <p className="mt-5 inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] text-foreground/65">
                 <Clock className="size-3" aria-hidden />
                 {ro ? "Răspundem în maximum 24 de ore" : "We reply within 24 hours"}
                 <span aria-hidden>·</span>
