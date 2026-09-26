@@ -148,7 +148,7 @@ export class Stage {
   private bg: ReturnType<typeof program>;
   private logo: ReturnType<typeof program>;
   private vao: WebGLVertexArrayObject;
-  private marks = new Map<string, MarkDraw>();
+  private marks = new Map<string, { draw: MarkDraw; aspect: number }>();
   private textures = new Map<string, Tex>();
   private views = new Set<View>();
   private io: IntersectionObserver;
@@ -245,8 +245,15 @@ export class Stage {
     }
   }
 
-  defineMark(key: string, draw: MarkDraw) {
-    this.marks.set(key, draw);
+  /** Register (or replace) a mark. Replacing drops its cached field, so views pick up the new drawing. */
+  defineMark(key: string, draw: MarkDraw, aspect = 1) {
+    this.marks.set(key, { draw, aspect });
+    const old = this.textures.get(key);
+    if (old) {
+      this.gl.deleteTexture(old.tex);
+      this.textures.delete(key);
+      this.dirty = true;
+    }
   }
 
   /** Run a callback at the start of every frame (used to drive smooth scrolling). */
@@ -375,8 +382,8 @@ export class Stage {
     let info: SdfTexture | null = null;
     if (key.startsWith("text:")) info = sdfFromText(key.slice(5));
     else {
-      const draw = this.marks.get(key);
-      if (draw) info = sdfFromMark(draw, this.tier === "low" ? 224 : 320);
+      const mark = this.marks.get(key);
+      if (mark) info = sdfFromMark(mark.draw, this.tier === "low" ? 224 : 320, mark.aspect);
     }
     if (!info) return null;
     const gl = this.gl;

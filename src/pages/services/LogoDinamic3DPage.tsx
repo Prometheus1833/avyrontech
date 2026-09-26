@@ -16,6 +16,8 @@ import LogoLoader, { useLoaderState } from "@/components/logo3d/LogoLoader";
 import { Gallery, Genesis, Hero, NameStudio } from "@/components/logo3d/Interactive";
 import { Audiences, Faq, FinalCta, Formats, Packages, Process, States, Tools } from "@/components/logo3d/Content";
 import { LOGO3D_FAQ, LOGO3D_META, LOGO3D_PATHS, LOGO3D_TIERS } from "@/data/logo3d";
+import StudioTeaser from "@/components/logoStudio/StudioTeaser";
+import "@/components/logoStudio/studio.css";
 import "@/components/logo3d/logo3d.css";
 
 const quickNav: Record<"ro" | "en", QuickNavItem[]> = {
@@ -26,6 +28,7 @@ const quickNav: Record<"ro" | "en", QuickNavItem[]> = {
     { id: "numele-tau", label: "Numele tău în 3D" },
     { id: "pentru-cine", label: "Pentru cine" },
     { id: "preturi", label: "Prețuri" },
+    { id: "creeaza-singur", label: "Creează-l cu AI" },
     { id: "faq", label: "Întrebări" },
   ],
   en: [
@@ -35,6 +38,7 @@ const quickNav: Record<"ro" | "en", QuickNavItem[]> = {
     { id: "numele-tau", label: "Your name in 3D" },
     { id: "pentru-cine", label: "Who it's for" },
     { id: "preturi", label: "Pricing" },
+    { id: "creeaza-singur", label: "Create it with AI" },
     { id: "faq", label: "FAQ" },
   ],
 };
@@ -198,6 +202,7 @@ function PageBody() {
         <Formats />
         <Tools />
         <Process />
+        <StudioTeaser />
         <Faq />
         <FinalCta onPreview={() => openPreview()} />
       </div>

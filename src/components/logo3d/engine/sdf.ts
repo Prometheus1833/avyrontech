@@ -165,17 +165,21 @@ function finish(
   return { data: sdf, width: w, height: h, aspect: w / h, spread, contentHalf };
 }
 
-/** Square mark drawn by `draw` into a size² canvas (content should stay inside ~80% of it). */
-export function sdfFromMark(draw: MarkDraw, size = 256): SdfTexture | null {
-  const ctx = makeCanvas(size, size);
+/**
+ * Mark drawn by `draw` into a canvas `size` texels high and `size × aspect` wide
+ * (content should stay inside ~80% of it). Square by default.
+ */
+export function sdfFromMark(draw: MarkDraw, size = 256, aspect = 1): SdfTexture | null {
+  const w = Math.max(16, Math.round(size * aspect));
+  const ctx = makeCanvas(w, size);
   if (!ctx) return null;
-  ctx.clearRect(0, 0, size, size);
+  ctx.clearRect(0, 0, w, size);
   ctx.fillStyle = "#fff";
   ctx.strokeStyle = "#fff";
   ctx.save();
   draw(ctx, size);
   ctx.restore();
-  return finish(ctx, size, size, size * 0.09, [1.0, 1.0]);
+  return finish(ctx, w, size, size * 0.09, [1.0 * aspect, 1.0]);
 }
 
 export const TEXT_FONT = '800 {px}px "Avenir Next", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif';

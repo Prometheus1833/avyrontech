@@ -14,6 +14,7 @@ export const ROUTE_ALTERNATES: Array<{ ro: string; en: string }> = [
   { ro: "/politica-cookies", en: "/en/cookie-policy" },
   { ro: "/produse/website-prezentare-premium", en: "/en/products/premium-presentation-website" },
   { ro: "/servicii/logo", en: "/en/services/logo" },
+  { ro: "/servicii/logo/creeaza", en: "/en/services/logo/create" },
   { ro: "/produse/identitate-social-media", en: "/en/products/social-media-identity" },
   { ro: "/produse/magazin-online", en: "/en/products/online-store" },
   { ro: "/produse/blog-profesional", en: "/en/products/professional-blog" },
