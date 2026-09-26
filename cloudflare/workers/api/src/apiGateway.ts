@@ -97,6 +97,12 @@ export const openApiDocument = {
     "/contact/example": {
       post: { tags: ["Public"], summary: "Solicită un exemplu de produs", responses: { "201": { description: "Solicitare creată" }, "400": { $ref: "#/components/responses/Problem" } } },
     },
+    "/logo-studio/generate": {
+      post: { tags: ["Public"], summary: "Logo Studio: 4 concepte alese de Workers AI dintr-un vocabular închis (plafonat pe IP și zilnic)", responses: { "200": { description: "Concepte validate" }, "429": { $ref: "#/components/responses/Problem" }, "503": { description: "Workers AI indisponibil; clientul folosește generatorul local" } } },
+    },
+    "/logo-studio/orders": {
+      post: { tags: ["Public"], summary: "Logo Studio: comandă pentru livrarea plătită a unui logo creat de client (lead în CRM)", responses: { "201": { description: "Comandă înregistrată" }, "400": { $ref: "#/components/responses/Problem" }, "429": { $ref: "#/components/responses/Problem" } } },
+    },
     "/auth/signup": {
       post: { tags: ["Auth"], summary: "Creează un cont și trimite verificarea emailului", responses: { "202": { description: "Cont creat; verificare necesară" }, "400": { $ref: "#/components/responses/Problem" }, "429": { $ref: "#/components/responses/Problem" } } },
     },

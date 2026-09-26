@@ -31,6 +31,8 @@ const InternHome = lazy(() => import("./pages/intern/InternHome.tsx"));
 const ProductDetail = lazy(() => import("./pages/products/ProductPage.tsx"));
 const QaTesting = lazy(() => import("./pages/products/QaTestingPage.tsx"));
 const BlogProfessional = lazy(() => import("./pages/products/BlogProfessional.tsx"));
+const LogoDinamic3D = lazy(() => import("./pages/services/LogoDinamic3DPage.tsx"));
+const LogoStudio = lazy(() => import("./pages/services/LogoStudioPage.tsx"));
 const AiOsConsole = lazy(() => import("./pages/intern/AiOs.tsx"));
 const AiProjects = lazy(() => import("./pages/intern/AiProjects.tsx"));
 const AiProjectPage = lazy(() => import("./pages/intern/AiProjectPage.tsx"));
@@ -146,6 +148,10 @@ const App = () => (
                 <Route path="/costurisiproduse" element={<Pricing />} />
                 <Route path="/en/pricing" element={<Pricing />} />
                 <Route path="/produse/website-prezentare-premium" element={<ProductDetail />} />
+                <Route path="/servicii/logo" element={<LogoDinamic3D />} />
+                <Route path="/en/services/logo" element={<LogoDinamic3D />} />
+                <Route path="/servicii/logo/creeaza" element={<LogoStudio />} />
+                <Route path="/en/services/logo/create" element={<LogoStudio />} />
                 <Route path="/produse/identitate-social-media" element={<ProductDetail />} />
                 <Route path="/produse/magazin-online" element={<ProductDetail />} />
                 <Route path="/produse/blog-profesional" element={<BlogProfessional />} />

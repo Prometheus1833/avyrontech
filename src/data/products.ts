@@ -1,4 +1,13 @@
 import type { Lang } from "@/i18n/translations";
+import {
+  LOGO3D_FAQ,
+  LOGO3D_HERO,
+  LOGO3D_META,
+  LOGO3D_PATHS,
+  LOGO3D_PROCESS,
+  LOGO3D_STATES,
+  LOGO3D_TIERS,
+} from "./logo3d";
 
 /**
  * Product catalog used by /costurisiproduse (summary cards) and the
@@ -10,6 +19,7 @@ import type { Lang } from "@/i18n/translations";
 
 export type ProductKey =
   | "premium-website"
+  | "logo-3d"
   | "social-identity"
   | "online-store"
   | "apps"
@@ -100,7 +110,61 @@ export type Product = {
   copy: Record<Lang, ProductCopy>;
 };
 
+/**
+ * Logo Dinamic 3D has its own page (/servicii/logo); this entry only feeds the
+ * shared lists (other services, cards), built from the page's own data file.
+ */
+function logoProduct(): Product {
+  const copy = (lang: Lang): ProductCopy => {
+    const meta = LOGO3D_META[lang];
+    const hero = LOGO3D_HERO[lang];
+    const ro = lang === "ro";
+    return {
+      name: meta.name,
+      kicker: ro ? "Serviciu nou" : "New service",
+      subtitle: ro ? "Logo gândit pentru print, 3D și mișcare" : "A logo designed for print, 3D and motion",
+      tagline: ro ? "Logo-ul tău, în volum și în mișcare." : "Your logo, in volume and in motion.",
+      metaTitle: meta.title,
+      metaDescription: meta.description,
+      heroTitle: hero.title,
+      heroLead: hero.lead,
+      intro: [LOGO3D_STATES[lang].lead],
+      highlights: LOGO3D_STATES[lang].items.map((it, i) => ({
+        icon: (["palette", "cloud", "zap"] as const)[i],
+        title: it.title,
+        desc: it.text,
+      })),
+      deliverables: LOGO3D_TIERS[lang][1].includes,
+      process: LOGO3D_PROCESS[lang].steps.map((s) => ({ title: s.title, desc: s.text })),
+      faq: LOGO3D_FAQ[lang],
+      ctaTitle: ro ? "Hai să-i dăm volum brandului tău" : "Let's give your brand some volume",
+      ctaDesc: hero.delivery,
+      ctaButton: hero.primary,
+      whatsapp: ro ? "Bună! Aș vrea un Logo Dinamic 3D." : "Hi! I'd like a Dynamic 3D Logo.",
+    };
+  };
+  return {
+    key: "logo-3d",
+    icon: "palette",
+    path: { ro: LOGO3D_PATHS.ro, en: LOGO3D_PATHS.en },
+    priceEur: 100,
+    from: true,
+    duration: { ro: "5–15 zile", en: "5–15 days" },
+    accent: {
+      from: "from-violet-400",
+      to: "to-sky-500",
+      border: "border-violet-300/25",
+      text: "text-violet-300",
+      glow: "bg-violet-400/15",
+      chipBg: "bg-violet-300/10 border-violet-300/30",
+      chipText: "text-violet-700 dark:text-violet-200",
+    },
+    copy: { ro: copy("ro"), en: copy("en") },
+  };
+}
+
 const CATALOG: Product[] = [
+  logoProduct(),
   {
     key: "premium-website",
     icon: "globe",
@@ -1357,6 +1421,7 @@ const CATALOG: Product[] = [
 /** Products with dedicated landing pages, in display order. */
 const ORDER: ProductKey[] = [
   "premium-website",
+  "logo-3d",
   "social-identity",
   "online-store",
   "apps",

@@ -1,4 +1,5 @@
 import {
+  Box,
   BookOpen,
   Bot,
   Bug,
@@ -24,6 +25,13 @@ const copy = {
         path: "/produse/website-prezentare-premium",
         Icon: Code2,
         tone: "from-cyan-400/25 to-blue-500/10 text-cyan-600 dark:text-cyan-300",
+      },
+      {
+        title: "Logo Dinamic 3D",
+        text: "Un logo original gândit pentru print, volum și mișcare, gata pentru site, video și social media.",
+        path: "/servicii/logo",
+        Icon: Box,
+        tone: "from-violet-400/25 to-sky-500/10 text-violet-600 dark:text-violet-300",
       },
       {
         title: "Magazin online",
@@ -75,6 +83,13 @@ const copy = {
         path: "/en/products/premium-presentation-website",
         Icon: Code2,
         tone: "from-cyan-400/25 to-blue-500/10 text-cyan-600 dark:text-cyan-300",
+      },
+      {
+        title: "Dynamic 3D Logo",
+        text: "An original logo designed for print, volume and motion, ready for web, video and social media.",
+        path: "/en/services/logo",
+        Icon: Box,
+        tone: "from-violet-400/25 to-sky-500/10 text-violet-600 dark:text-violet-300",
       },
       {
         title: "Online stores",
