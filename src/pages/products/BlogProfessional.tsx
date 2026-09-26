@@ -1,4 +1,5 @@
 import { trackFunnel } from "@/lib/siteAnalytics";
+import LibraryLink from "@/components/site/LibraryLink";
 import { useCallback, useEffect, useState } from "react";
 import { useLang } from "@/i18n/LanguageContext";
 import BlogPreloader from "@/components/blogpro/BlogPreloader";
@@ -219,6 +220,10 @@ const BlogProfessional = () => {
       <AvyronBlogPreview />
       <BlogFaq />
       <FinalCta />
+
+      <div className="mx-auto max-w-5xl px-4 sm:px-6">
+        <LibraryLink />
+      </div>
 
       <QuickNav items={quickNav[lang] as unknown as QuickNavItem[]} showLang />
       <FloatingWhatsApp />

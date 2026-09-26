@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import LibraryLink from "@/components/site/LibraryLink";
 import {
   Accessibility,
   ArrowRight,
@@ -378,6 +379,8 @@ const ProductPage = () => {
             </div>
           </section>
         )}
+
+        <LibraryLink />
 
         {/* Deliverables */}
         <section id="pachet" className="mt-14 scroll-mt-28">

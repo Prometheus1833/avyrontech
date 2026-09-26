@@ -1,4 +1,5 @@
 import type { Lang } from "./translations";
+import { FEATURES } from "@/config/features";
 
 /**
  * Language-prefixed routes for SEO.
@@ -19,6 +20,10 @@ export const ROUTE_ALTERNATES: Array<{ ro: string; en: string }> = [
   { ro: "/produse/aplicatii-web-si-mobile", en: "/en/products/web-and-mobile-apps" },
   { ro: "/produse/agent-ai-personalizat", en: "/en/products/personalized-ai-agent" },
   { ro: "/produse/testare-qa-web-mobile", en: "/en/products/qa-testing-web-mobile" },
+  // Biblioteca intră în prerender, sitemap și hreflang abia la lansare.
+  ...(FEATURES.bibliotecaLive
+    ? [{ ro: "/biblioteca", en: "/en/library" }]
+    : []),
 ];
 
 export function getLangFromPath(pathname: string): Lang {
