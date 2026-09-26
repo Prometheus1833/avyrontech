@@ -261,6 +261,18 @@ const IDEAS: Record<Shape, { ro: string; en: string }> = {
   heart: { ro: "O inimă geometrică: căldură și atenție la oameni.", en: "A geometric heart: warmth and attention to people." },
 };
 
+/** Layouts that hide the symbol get their own explanation instead of the symbol's. */
+const LAYOUT_IDEAS: Partial<Record<Layout, { ro: string; en: string }>> = {
+  wordmark: {
+    ro: "Doar numele, cu un accent geometric la final: sobru și ușor de reținut.",
+    en: "The name alone, with a geometric accent at the end: sober and easy to remember.",
+  },
+  badge: {
+    ro: "O emblemă cu inițiala: compactă, perfectă pentru avatar, ștampilă și ambalaj.",
+    en: "A badge with the initial: compact, ideal for avatars, stamps and packaging.",
+  },
+};
+
 /** Six varied, sensible concepts without any AI call — instant, free and offline. */
 export function localConcepts(brief: LogoBrief, count = 6, salt = ""): LogoConcept[] {
   const rand = rng(`${brief.name}|${brief.industry}|${brief.style}|${brief.color}|${salt}`);
@@ -275,7 +287,7 @@ export function localConcepts(brief: LogoBrief, count = 6, salt = ""): LogoConce
     const layout = layouts[i % layouts.length];
     const useMono = layout === "badge" || layout === "icon-only" || rand() < 0.45;
     out.push({
-      idea: IDEAS[symbol][brief.lang],
+      idea: (LAYOUT_IDEAS[layout] ?? IDEAS[symbol])[brief.lang],
       symbol,
       monogram: useMono ? initials(brief.name, rand() < 0.6 ? 1 : 2) : "",
       cut: useMono ? "none" : choose(CUTS),

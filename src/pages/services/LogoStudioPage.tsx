@@ -528,7 +528,15 @@ const LogoStudioPage = () => {
     const url = `https://avyron.ro${path}`;
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
       ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd, faqPageLd }]) => {
-        setPageMeta({ title: m.title, description: m.description, path, alternates: { ...STUDIO_PATHS } });
+        const image = ro ? "/og/logo-studio.jpg" : "/og/logo-studio-en.jpg";
+        setPageMeta({
+          title: m.title,
+          description: m.description,
+          path,
+          alternates: { ...STUDIO_PATHS },
+          image,
+          imageAlt: ro ? "Avyron Logo Studio — logo-uri create cu AI, de la 75 lei" : "Avyron Logo Studio — logos made with AI, from 75 lei",
+        });
         setJsonLd("ld-organization", organizationLd);
         setJsonLd("ld-service", {
           "@context": "https://schema.org",
@@ -538,6 +546,7 @@ const LogoStudioPage = () => {
           url,
           description: m.description,
           applicationCategory: "DesignApplication",
+          image: `https://avyron.ro${ro ? "/og/logo-studio.jpg" : "/og/logo-studio-en.jpg"}`,
           operatingSystem: "Web",
           inLanguage: ro ? "ro" : "en",
           provider: { "@id": "https://avyron.ro/#organization" },

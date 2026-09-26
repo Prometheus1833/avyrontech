@@ -68,6 +68,13 @@ describe("Logo Studio — model", () => {
     expect(new Set(a.map((c) => c.layout)).size).toBeGreaterThan(3);
   });
 
+  it("describes the layout, not a hidden symbol, for badges and wordmarks", () => {
+    for (const c of localConcepts(brief, 6, "y")) {
+      if (c.layout === "wordmark") expect(c.idea).toMatch(/Doar numele/);
+      if (c.layout === "badge") expect(c.idea).toMatch(/emblemă/);
+    }
+  });
+
   it("round-trips a design through the share link", () => {
     const c = localConcepts(brief, 1)[0];
     const back = decodeDesign(encodeDesign(brief, c));
@@ -126,5 +133,28 @@ describe("Logo Studio — page", () => {
     expect(STUDIO_FAQ.ro.length).toBe(STUDIO_FAQ.en.length);
     expect(Object.keys(STUDIO_UI.ro).sort()).toEqual(Object.keys(STUDIO_UI.en).sort());
     expect(KIND_COPY.ro.static.gets.length).toBe(KIND_COPY.en.static.gets.length);
+  });
+});
+
+describe("Logo pages — social images", () => {
+  it("ship a 1200×630 JPEG for every page and language", () => {
+    for (const name of ["logo-dinamic-3d", "logo-dinamic-3d-en", "logo-studio", "logo-studio-en"]) {
+      const buf = readFileSync(resolve(__dirname, "../../public/og", `${name}.jpg`));
+      expect(buf.subarray(0, 3).toString("hex")).toBe("ffd8ff");
+      // Find the SOF0/SOF2 marker and read height/width.
+      let i = 2;
+      let size: [number, number] | null = null;
+      while (i < buf.length) {
+        const marker = buf[i + 1];
+        const len = buf.readUInt16BE(i + 2);
+        if (marker === 0xc0 || marker === 0xc2) {
+          size = [buf.readUInt16BE(i + 7), buf.readUInt16BE(i + 5)];
+          break;
+        }
+        i += 2 + len;
+      }
+      expect(size).toEqual([1200, 630]);
+      expect(buf.length).toBeLessThan(120 * 1024);
+    }
   });
 });

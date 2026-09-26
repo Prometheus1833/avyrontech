@@ -238,7 +238,15 @@ const LogoDinamic3DPage = () => {
     const tiers = LOGO3D_TIERS[lang];
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
       ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd, serviceLd, faqPageLd }]) => {
-        setPageMeta({ title: m.title, description: m.description, path, alternates: { ...LOGO3D_PATHS } });
+        const image = ro ? "/og/logo-dinamic-3d.jpg" : "/og/logo-dinamic-3d-en.jpg";
+        setPageMeta({
+          title: m.title,
+          description: m.description,
+          path,
+          alternates: { ...LOGO3D_PATHS },
+          image,
+          imageAlt: ro ? "Logo dinamic 3D Avyron — logo metalic extrudat, de la 500 lei" : "Avyron dynamic 3D logo — extruded metal mark, from 500 lei",
+        });
         setJsonLd("ld-organization", organizationLd);
         setJsonLd("ld-service", serviceLd({ name: m.name, description: m.description, path }));
         setJsonLd("ld-product", {
@@ -249,6 +257,7 @@ const LogoDinamic3DPage = () => {
           description: m.description,
           url,
           brand: { "@type": "Brand", name: "Avyron" },
+          image: `https://avyron.ro${ro ? "/og/logo-dinamic-3d.jpg" : "/og/logo-dinamic-3d-en.jpg"}`,
           category: ro ? "Design logo / Identitate vizuală / Animație 3D" : "Logo design / Visual identity / 3D animation",
           offers: {
             "@type": "AggregateOffer",
