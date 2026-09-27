@@ -293,27 +293,33 @@ void main() {
         float rim = pow(1.0 - nv, 3.0);
 
         vec3 metal = envR * mix(tint, vec3(1.0), 0.1 + 0.5 * F) * 1.15 + tint * (0.1 + 0.18 * wrap);
+        // Glass is see-through: the scene behind shows through a tinted body, and the
+        // reflections are added on top (premultiplied), so it never reads as grey plastic.
         vec3 refr = env(refract(-vW, nW, 0.7));
         float thick = smoothstep(0.0, 0.3, -dIn);
-        vec3 body = uFace * (0.35 + 0.55 * wrap);
-        vec3 glass = mix(refr * mix(vec3(1.0), uFace, 0.7) * 1.1, body, 0.28 + 0.3 * thick);
-        glass = mix(glass, envR, clamp(0.12 + F * 1.3, 0.0, 1.0)) + uGlow * rim * 0.6;
+        // Faces stay clear; bevels and sides carry the colour, like thick glass seen edge-on.
+        float edgeG = 1.0 - faceMask;
+        float glassA = clamp(0.12 + 0.55 * edgeG + 0.6 * F, 0.0, 0.95);
+        vec3 hi = max(envR - vec3(0.24), vec3(0.0));
+        float spec = pow(clamp(dot(reflect(-normalize(uLightDir), nW), vW), 0.0, 1.0), 48.0);
+        vec3 glass = uFace * (0.22 + 0.95 * edgeG) * glassA + uFace * refr * 0.06 * thick
+          + hi * (0.35 + 0.9 * F) + vec3(1.0) * spec * 1.6 + uGlow * rim * 0.8;
         float tube = smoothstep(0.03, 0.0, abs(dIn + 0.05)) * faceMask;
         vec3 neon = envR * 0.1 + tint * 0.15 * wrap + uGlow * tube * 2.6 + uGlow * rim * 0.5;
         vec3 matte = tint * (0.26 + 0.82 * wrap) + envR * 0.05 * (0.4 + F) + tint * rim * 0.22;
 
-        vec3 c = metal * uMat.x + glass * uMat.y + neon * uMat.z + matte * uMat.w;
-        c /= max(uMat.x + uMat.y + uMat.z + uMat.w, 0.0001);
+        // Every material is expressed premultiplied: opaque ones with alpha 1, glass with glassA.
+        float wSum = max(uMat.x + uMat.y + uMat.z + uMat.w, 0.0001);
+        vec3 c = (metal * uMat.x + glass * uMat.y + neon * uMat.z + matte * uMat.w) / wSum;
+        float alpha = (uMat.x + glassA * uMat.y + uMat.z + uMat.w) / wSum;
         c = c * (1.0 + c / 4.0) / (1.0 + c);
-        float alpha = 1.0 - uMat.y * 0.06;
-
         if (uReveal < 0.999) {
           float n3 = vnoise(po * 7.0 + uTime * 0.2);
           float edge = uReveal * 1.15 - 0.075;
           if (n3 > edge) { c = vec3(0.0); alpha = 0.0; }
           else c += uGlow * smoothstep(edge - 0.08, edge, n3) * 2.0;
         }
-        solid = vec4(c * alpha, alpha);
+        solid = vec4(c, alpha);
       }
     }
   }
