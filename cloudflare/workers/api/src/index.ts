@@ -1124,6 +1124,7 @@ import { dashboardRouter } from "./osDashboard";
 import { seedRouter } from "./seed";
 import { mediaRouter } from "./media";
 import { contactRouter } from "./contact";
+import { logoStudioRouter } from "./logoStudio";
 import { blogRouter, getBlogSitemapEntries, getPublishedBlogPost } from "./blog";
 import { injectBlogHtml, mergeBlogSitemap } from "../../../../src/worker/blogHtml";
 import { BLOG_SLUGS } from "../../../../src/data/blogSlugs";
@@ -1183,6 +1184,7 @@ app.route("/", domainRouter);
 app.route("/", promotionsRouter);
 // Formularul public (fără auth)
 app.route("/", contactRouter);
+app.route("/", logoStudioRouter);
 // Importul administrativ are propria gardă constant-time X-Seed-Token.
 app.route("/", seedRouter);
 

@@ -1,0 +1,321 @@
+/* Avyron Logo Studio — builds on logo3d.css tokens. */
+
+.ls .ls-kicker {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--l3d-lime);
+}
+.ls .ls-h1 {
+  margin-top: 0.6rem;
+  font-size: clamp(2.4rem, 6vw, 4.6rem);
+  max-width: 16ch;
+}
+.ls-hero {
+  padding-top: 3rem;
+}
+.ls-how {
+  margin-top: 1.6rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.4rem;
+  font-size: 0.95rem;
+  color: var(--l3d-muted);
+}
+.ls-how li {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+.ls-how li span {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--l3d-line-strong);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--l3d-text);
+}
+.ls-kinds {
+  margin-top: 2rem;
+  display: grid;
+  gap: 0.75rem;
+  max-width: 46rem;
+}
+@media (min-width: 700px) {
+  .ls-kinds { grid-template-columns: 1fr 1fr; }
+}
+.ls-kind {
+  padding: 1.1rem 1.2rem;
+  border-radius: 1.25rem;
+  border: 1px solid var(--l3d-line-strong);
+  background: rgba(10, 8, 18, 0.55);
+  text-align: left;
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s var(--l3d-ease);
+}
+.ls-kind:hover {
+  transform: translateY(-2px);
+}
+.ls-kind[aria-checked="true"] {
+  border-color: var(--l3d-violet);
+  box-shadow: 0 0 0 1px var(--l3d-violet), 0 18px 50px -24px rgba(139, 92, 246, 0.8);
+}
+.ls-kind:focus-visible,
+.ls-locked:focus-visible,
+.ls-color:focus-visible,
+.ls-check:focus-visible,
+.ls-range:focus-visible,
+.ls-select:focus-visible,
+.ls-textarea:focus-visible {
+  outline: 2px solid var(--l3d-cyan);
+  outline-offset: 3px;
+}
+
+.ls-card {
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border-radius: 1.75rem;
+  border: 1px solid var(--l3d-line);
+  background: rgba(10, 8, 18, 0.68);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.ls-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.ls-field > span:first-child {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--l3d-muted);
+}
+.ls-inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 44px;
+}
+.ls-inline > span:first-child {
+  display: none;
+}
+.ls .l3d-input {
+  font-size: 1rem;
+  min-height: 48px;
+}
+.ls-select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--l3d-muted) 50%), linear-gradient(135deg, var(--l3d-muted) 50%, transparent 50%);
+  background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%;
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 2.4rem;
+}
+.ls-select option {
+  background: #120e20;
+  color: #f4f1fa;
+}
+.ls-textarea {
+  padding-top: 0.8rem;
+  resize: vertical;
+}
+.ls-color {
+  width: 48px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--l3d-line-strong);
+  border-radius: 0.8rem;
+  background: none;
+  cursor: pointer;
+}
+.ls-check {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: #8b5cf6;
+  flex: none;
+}
+.ls-range {
+  accent-color: #8b5cf6;
+  min-height: 44px;
+}
+.l3d-chip.ls-radio[aria-checked="true"] {
+  color: #120c22;
+  background: var(--l3d-text);
+  border-color: var(--l3d-text);
+}
+
+.ls-grid {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1rem;
+}
+@media (min-width: 700px) {
+  .ls-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1100px) {
+  .ls-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.ls-result {
+  padding: 0.9rem;
+  border-radius: 1.5rem;
+  border: 1px solid var(--l3d-line);
+  background: rgba(10, 8, 18, 0.6);
+  display: flex;
+  flex-direction: column;
+  animation: ls-in 0.7s var(--l3d-ease) both;
+  transition: border-color 0.3s;
+}
+.ls-result:nth-child(2) { animation-delay: 60ms; }
+.ls-result:nth-child(3) { animation-delay: 120ms; }
+.ls-result:nth-child(4) { animation-delay: 180ms; }
+.ls-result:nth-child(5) { animation-delay: 240ms; }
+.ls-result:nth-child(6) { animation-delay: 300ms; }
+.ls-result[data-picked="true"] {
+  border-color: var(--l3d-violet);
+}
+@keyframes ls-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.ls-skeleton {
+  aspect-ratio: 4 / 3;
+  border-radius: 1.5rem;
+  border: 1px solid var(--l3d-line);
+  background: linear-gradient(100deg, rgba(255, 255, 255, 0.03) 20%, rgba(255, 255, 255, 0.09) 40%, rgba(255, 255, 255, 0.03) 60%) 0 0 / 250% 100%;
+  animation: ls-shimmer 1.4s linear infinite;
+}
+@keyframes ls-shimmer {
+  to { background-position: -250% 0; }
+}
+
+.ls-preview {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 1.1rem;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  transition: background-color 0.4s;
+}
+.ls-svg {
+  width: 88%;
+  height: 80%;
+  display: grid;
+  place-items: center;
+}
+.ls-svg svg {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+}
+.ls-big {
+  aspect-ratio: 16 / 9;
+}
+.ls-big-sub {
+  aspect-ratio: 16 / 6;
+}
+
+.ls-editor {
+  display: grid;
+  gap: 2rem;
+}
+@media (min-width: 1024px) {
+  .ls-editor { grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.9fr); align-items: start; }
+}
+/* The 3D logo is painted by the page canvas underneath: keep this area transparent. */
+.ls-stage {
+  position: relative;
+  aspect-ratio: 16 / 8;
+  border-radius: 1.5rem;
+  border: 1px solid var(--l3d-line);
+}
+/* Two classes: .l3d-view (position: relative) is bundled after this file. */
+.l3d-view.ls-3d {
+  position: absolute;
+  inset: 0;
+}
+.ls-controls {
+  display: grid;
+  gap: 1rem;
+}
+@media (min-width: 640px) {
+  .ls-controls { grid-template-columns: 1fr 1fr; }
+}
+
+.ls-checkout {
+  padding: 1.5rem;
+  border-radius: 1.75rem;
+  border: 1px solid var(--l3d-line);
+  background: rgba(12, 9, 22, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+@media (min-width: 1024px) {
+  .ls-checkout { position: sticky; top: 1.5rem; }
+}
+.ls-locked {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 64px;
+  padding: 0.5rem;
+  border-radius: 1rem;
+  border: 1px dashed var(--l3d-line-strong);
+  color: var(--l3d-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: border-color 0.25s, color 0.25s, background-color 0.25s;
+}
+.ls-locked:hover {
+  color: var(--l3d-text);
+  border-color: var(--l3d-violet);
+  background: rgba(139, 92, 246, 0.08);
+}
+.ls-lock {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.5rem;
+  color: var(--l3d-dim);
+}
+.ls-done {
+  padding: 1.25rem;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(190, 242, 100, 0.35);
+  background: rgba(190, 242, 100, 0.06);
+}
+.ls-staff {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  border: 1px dashed rgba(56, 189, 248, 0.5);
+}
+
+/* ------------------------------------------------ teaser on the service page */
+.ls-teaser {
+  display: grid;
+  gap: 2rem;
+  align-items: center;
+}
+@media (min-width: 960px) {
+  .ls-teaser { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+.ls-teaser-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.ls-teaser-grid .ls-preview:first-child {
+  grid-column: span 2;
+  aspect-ratio: 16 / 7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ls-result { animation: none; }
+  .ls-skeleton { animation: none; }
+}
+html[data-logo3d-paused] .ls-result { animation: none; }

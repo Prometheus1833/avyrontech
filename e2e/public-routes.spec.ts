@@ -69,7 +69,7 @@ test.describe("public SEO routes", () => {
     await expect(page.getByText("Soluții digitale gândite pentru rezultate", { exact: true })).toBeVisible();
     await expect(page.getByText("Agenție web din Iași · proiecte în România și UE", { exact: true })).toHaveCount(0);
     const productList = page.getByTestId("product-list");
-    await expect(productList.getByRole("link")).toHaveCount(6);
+    await expect(productList.getByRole("link")).toHaveCount(7);
     await expect(productList).toHaveCSS("display", "block");
 
     const desktopNav = page.locator("nav ul");
@@ -318,8 +318,9 @@ test.describe("public SEO routes", () => {
     await page.goto("/");
 
     const productList = page.getByTestId("product-list");
-    await expect(productList.getByRole("link")).toHaveCount(6);
-    expect((await productList.boundingBox())!.height).toBeLessThan(430);
+    await expect(productList.getByRole("link")).toHaveCount(7);
+    // 7 services on the homepage (Logo Dinamic 3D added): same ~71 px per row budget as before.
+    expect((await productList.boundingBox())!.height).toBeLessThan(500);
 
     await page.getByRole("button", { name: "Meniu" }).click();
     const menu = page.getByTestId("mobile-nav-menu");
