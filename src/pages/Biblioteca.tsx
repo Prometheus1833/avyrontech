@@ -39,7 +39,7 @@ const TIER_LABEL: Record<QualityTier, { ro: string; en: string }> = {
  * Biblioteca Avyron.
  *
  * Vitrina de efecte, organizată pe ordinea produselor din site. Se intră din
- * pagina unui produs, se aterizează direct în secțiunea potrivită, iar la
+ * pagina unui serviciu, se aterizează direct în secțiunea potrivită, iar la
  * final efectele alese pleacă spre ofertă cu codurile lor.
  *
  * Trei reguli care țin pagina în bugetul de performanță: un singur context

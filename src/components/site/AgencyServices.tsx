@@ -19,55 +19,55 @@ const copy = {
     eyebrow: "Soluții digitale gândite pentru rezultate",
     title: "Alegi punctul de pornire. Noi construim sistemul potrivit.",
     intro:
-      "De la un site de prezentare clar până la un magazin, o aplicație sau o platformă internă, fiecare produs pornește de la obiectivul real și rămâne ușor de extins.",
+      "De la un site de prezentare clar până la un magazin, o aplicație sau o platformă internă, fiecare serviciu pornește de la obiectivul real și rămâne ușor de extins.",
     cta: "Descoperă",
     items: [
       {
         title: "Site Prezentare Profesional",
         text: "O prezență rapidă și credibilă, construită să transforme interesul în solicitări.",
-        path: "/produse/website-prezentare-premium",
+        path: "/servicii/website-prezentare-profesional",
         Icon: Code2,
         tone: "from-cyan-400/25 to-blue-500/10 text-cyan-600 dark:text-cyan-300",
       },
       {
         title: "Logo Dinamic 3D",
         text: "Un logo original gândit pentru print, volum și mișcare, gata pentru site, video și social media.",
-        path: "/servicii/logo",
+        path: "/servicii/creare-logo-3d-dinamic-cinematic",
         Icon: Box,
         tone: "from-violet-400/25 to-sky-500/10 text-violet-600 dark:text-violet-300",
       },
       {
         title: "Magazin online",
         text: "Un traseu simplu de la produs la comandă, optimizat pentru mobil și creștere.",
-        path: "/produse/magazin-online",
+        path: "/servicii/magazin-online",
         Icon: ShoppingBag,
         tone: "from-amber-400/25 to-orange-500/10 text-orange-600 dark:text-amber-300",
       },
       {
         title: "Blog Profesional",
         text: "Un content hub rapid și optimizat SEO, care transformă expertiza în trafic și cereri.",
-        path: "/produse/blog-profesional",
+        path: "/servicii/blog-profesional",
         Icon: BookOpen,
         tone: "from-rose-400/25 to-pink-500/10 text-rose-600 dark:text-rose-300",
       },
       {
         title: "Aplicații și platforme",
         text: "Fluxuri, conturi și date organizate într-un produs fluid, sigur și scalabil.",
-        path: "/produse/aplicatii-web-si-mobile",
+        path: "/servicii/aplicatii-si-platforme",
         Icon: Gauge,
         tone: "from-indigo-400/25 to-violet-500/10 text-indigo-600 dark:text-indigo-300",
       },
       {
         title: "Automatizări și AI",
         text: "Asistenți și procese inteligente care reduc munca repetitivă fără să piardă controlul.",
-        path: "/produse/agent-ai-personalizat",
+        path: "/servicii/automatizari-si-ai",
         Icon: Bot,
         tone: "from-fuchsia-400/25 to-purple-500/10 text-fuchsia-600 dark:text-fuchsia-300",
       },
       {
         title: "QA Testing Web/Mobile",
         text: "Testare manuală și automată pe dispozitive reale, cu raport clar de defecte. Fără abonament.",
-        path: "/produse/testare-qa-web-mobile",
+        path: "/servicii/qa-testing-web-mobile",
         Icon: Bug,
         tone: "from-emerald-400/25 to-teal-500/10 text-emerald-600 dark:text-emerald-300",
       },
@@ -77,55 +77,55 @@ const copy = {
     eyebrow: "Digital solutions designed around outcomes",
     title: "Choose the starting point. We build the right system.",
     intro:
-      "From a clear business website to a store, an app, or an internal platform, every product starts with the real objective and remains easy to extend.",
+      "From a clear business website to a store, an app, or an internal platform, every service starts with the real objective and remains easy to extend.",
     cta: "Discover",
     items: [
       {
         title: "Business websites",
         text: "A fast, credible presence designed to turn genuine interest into enquiries.",
-        path: "/en/products/premium-presentation-website",
+        path: "/en/services/professional-presentation-website",
         Icon: Code2,
         tone: "from-cyan-400/25 to-blue-500/10 text-cyan-600 dark:text-cyan-300",
       },
       {
         title: "Dynamic 3D Logo",
         text: "An original logo designed for print, volume and motion, ready for web, video and social media.",
-        path: "/en/services/logo",
+        path: "/en/services/cinematic-dynamic-3d-logo-design",
         Icon: Box,
         tone: "from-violet-400/25 to-sky-500/10 text-violet-600 dark:text-violet-300",
       },
       {
         title: "Online stores",
         text: "A simple path from product to order, optimized for mobile and sustainable growth.",
-        path: "/en/products/online-store",
+        path: "/en/services/online-store",
         Icon: ShoppingBag,
         tone: "from-amber-400/25 to-orange-500/10 text-orange-600 dark:text-amber-300",
       },
       {
         title: "Professional Blog",
         text: "A fast, SEO-ready content hub that turns expertise into traffic and enquiries.",
-        path: "/en/products/professional-blog",
+        path: "/en/services/professional-blog",
         Icon: BookOpen,
         tone: "from-rose-400/25 to-pink-500/10 text-rose-600 dark:text-rose-300",
       },
       {
         title: "Apps and platforms",
         text: "Workflows, accounts, and data organized into a fluid, secure, scalable product.",
-        path: "/en/products/web-and-mobile-apps",
+        path: "/en/services/apps-and-platforms",
         Icon: Gauge,
         tone: "from-indigo-400/25 to-violet-500/10 text-indigo-600 dark:text-indigo-300",
       },
       {
         title: "Automation and AI",
         text: "Smart assistants and processes that reduce repetitive work while keeping you in control.",
-        path: "/en/products/personalized-ai-agent",
+        path: "/en/services/automation-and-ai",
         Icon: Bot,
         tone: "from-fuchsia-400/25 to-purple-500/10 text-fuchsia-600 dark:text-fuchsia-300",
       },
       {
         title: "QA Testing Web/Mobile",
         text: "Manual and automated testing on real devices, with a clear defect report. No subscription.",
-        path: "/en/products/qa-testing-web-mobile",
+        path: "/en/services/web-mobile-qa-testing",
         Icon: Bug,
         tone: "from-emerald-400/25 to-teal-500/10 text-emerald-600 dark:text-emerald-300",
       },
@@ -151,7 +151,7 @@ const AgencyServices = () => {
             </p>
           </div>
 
-          <div data-testid="product-list" className="overflow-hidden rounded-2xl border border-border/70 bg-card/65 shadow-soft">
+          <div data-testid="service-list" className="overflow-hidden rounded-2xl border border-border/70 bg-card/65 shadow-soft">
             {content.items.map(({ title, text, path, Icon, tone }) => (
               <Link
                 key={path}

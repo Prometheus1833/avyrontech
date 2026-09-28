@@ -9,7 +9,7 @@ import {
   type DemoKey,
 } from "@/data/bibliotecaCatalog";
 import { DEMO_LOADERS, WEBGL_LOADERS } from "@/components/biblioteca/demos/registry";
-import { PRODUCTS } from "@/data/products";
+import { SERVICES } from "@/data/services";
 
 /**
  * Catalogul Bibliotecii e sursa unică pentru pagină, pentru coșul de brief și
@@ -68,18 +68,17 @@ describe("catalogul Bibliotecii", () => {
     }
   });
 
-  it("folosește ancore identice cu slug-urile paginilor de produs", () => {
-    const productPaths = new Set(PRODUCTS.map((product) => product.path.ro));
+  it("leagă fiecare secțiune de o rută canonică de serviciu", () => {
+    const servicePaths = new Set(SERVICES.map((service) => service.path.ro));
     for (const section of LIBRARY_SECTIONS) {
-      if (!section.product) continue;
-      expect(section.id).toBe(section.product.ro.split("/").pop());
-      // Blogul are pagină proprie, în afara listei PRODUCTS.
+      if (!section.service) continue;
+      // Blogul are pagină proprie, în afara listei SERVICES.
       if (section.id === "blog-profesional") continue;
-      expect(productPaths.has(section.product.ro), `ruta ${section.product.ro} nu există`).toBe(true);
+      expect(servicePaths.has(section.service.ro), `ruta ${section.service.ro} nu există`).toBe(true);
     }
   });
 
-  it("nu leagă biblioteca de paginile de produs excluse", () => {
+  it("nu leagă biblioteca de paginile de serviciu excluse", () => {
     const excluse = LIBRARY_SECTIONS.filter((section) => !section.entry).map((section) => section.id);
     expect(excluse.sort()).toEqual(["agent-ai-personalizat", "aplicatii-web-si-mobile"]);
   });

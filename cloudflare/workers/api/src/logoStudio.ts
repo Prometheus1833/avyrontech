@@ -118,7 +118,7 @@ logoStudioRouter.post("/api/logo-studio/orders", async (c) => {
 
   const price = STUDIO_PRICES[kind];
   const token = encodeDesign(brief, concept);
-  const path = brief.lang === "en" ? "/en/services/logo/create" : "/servicii/logo/creeaza";
+  const path = brief.lang === "en" ? "/en/services/cinematic-dynamic-3d-logo-design/create" : "/servicii/creare-logo-3d-dinamic-cinematic/creeaza";
   const link = `https://avyron.ro${path}?design=${token}`;
   const id = crypto.randomUUID();
   const ts = Date.now();

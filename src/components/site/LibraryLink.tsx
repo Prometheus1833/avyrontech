@@ -7,10 +7,10 @@ import { useLang } from "@/i18n/LanguageContext";
 const LIBRARY_PATH = { ro: "/biblioteca", en: "/en/library" };
 
 /**
- * Intrarea în Bibliotecă de pe pagina unui produs.
+ * Intrarea în Bibliotecă de pe pagina unui serviciu.
  *
  * Singurul drum spre bibliotecă trece pe aici (decizia D1): link doar din
- * paginile de produs, cu proveniența în URL, ca utilizatorul să aterizeze
+ * paginile de serviciu, cu proveniența în URL, ca utilizatorul să aterizeze
  * direct în secțiunea serviciului pe care tocmai îl citea.
  */
 export default function LibraryLink({ sectionId }: { sectionId?: string } = {}) {
@@ -20,9 +20,9 @@ export default function LibraryLink({ sectionId }: { sectionId?: string } = {}) 
   if (!FEATURES.biblioteca) return null;
 
   const section = LIBRARY_SECTIONS.find((item) =>
-    sectionId ? item.id === sectionId : item.product && (item.product.ro === pathname || item.product.en === pathname),
+    sectionId ? item.id === sectionId : item.service && (item.service.ro === pathname || item.service.en === pathname),
   );
-  // `entry: false` înseamnă că pagina acelui produs rămâne exact cum e:
+  // `entry: false` înseamnă că pagina acelui serviciu rămâne exact cum e:
   // componenta nu randează nimic acolo.
   if (!section || !section.entry) return null;
 

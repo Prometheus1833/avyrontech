@@ -101,10 +101,10 @@ export default function ServiceSection({
           </div>
         </div>
 
-        {section.product && (
+        {section.service && (
           <div className="mt-10 flex flex-wrap items-center gap-4 border-t border-white/10 pt-6">
             <Link
-              to={`${section.product[lang]}#pachet`}
+              to={`${section.service[lang]}#pachet`}
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm text-white/85 transition-colors hover:border-white/60 hover:text-white"
             >
               {lang === "ro" ? `Vezi pachetul ${section.name.ro}` : `See the ${section.name.en} package`}

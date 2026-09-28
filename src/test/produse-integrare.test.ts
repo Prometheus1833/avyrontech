@@ -98,10 +98,18 @@ describe("cablajul dintre magazin și dashboardul intern", () => {
     expect(produse.find((section) => section.id === "produse-avyron")!.audience).toBe("superadmin");
   });
 
+  it("ține serviciile într-o categorie OS distinctă de produse", () => {
+    const servicii = SECTIONS.filter((section) => section.group === "servicii");
+    expect(servicii.map((section) => section.id)).toEqual(["servicii-avyron"]);
+    expect(servicii[0].audience).toBe("staff");
+  });
+
   it("randează ambele panouri în dashboard", () => {
     expect(profile).toContain('<TabsContent value="collection"');
     expect(profile).toContain('<TabsContent value="produse-avyron"');
-    expect(profile).toContain('produse: "Produse Avyron"');
+    expect(profile).toContain('servicii: "Servicii AVYRON"');
+    expect(profile).toContain('produse: "Produse AVYRON"');
+    expect(profile).toContain('<TabsContent value="servicii-avyron"');
   });
 
   it("ține centrul din OS pe datele Worker-ului, nu pe date locale", () => {

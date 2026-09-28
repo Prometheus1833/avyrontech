@@ -190,7 +190,7 @@ export default function ProjectPage() {
         </CardContent>
       </Card>
 
-      {/* Info produs (preluat conceptual din /costurisiproduse — se poate edita) */}
+      {/* Info produs (preluat conceptual din /servicii — se poate edita) */}
       <Card className="mt-5">
         <CardHeader><CardTitle className="text-base">Detalii produs & preț</CardTitle></CardHeader>
         <CardContent className="grid sm:grid-cols-3 gap-4 text-sm">

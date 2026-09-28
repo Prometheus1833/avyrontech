@@ -13,7 +13,7 @@ import { FEATURES } from "@/config/features";
 const Gdpr = lazy(() => import("./pages/Gdpr.tsx"));
 const Terms = lazy(() => import("./pages/Terms.tsx"));
 const CookiePolicy = lazy(() => import("./pages/CookiePolicy.tsx"));
-const Pricing = lazy(() => import("./pages/Pricing.tsx"));
+const Services = lazy(() => import("./pages/Services.tsx"));
 const Portfolio = lazy(() => import("./pages/About.tsx"));
 const AboutUs = lazy(() => import("./pages/AboutUs.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
@@ -29,10 +29,10 @@ const ExamplePage = lazy(() => import("./pages/ExamplePage.tsx"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe.tsx"));
 const ProjectPage = lazy(() => import("./pages/intern/ProjectPage.tsx"));
 const InternHome = lazy(() => import("./pages/intern/InternHome.tsx"));
-const ProductDetail = lazy(() => import("./pages/products/ProductPage.tsx"));
-const QaTesting = lazy(() => import("./pages/products/QaTestingPage.tsx"));
+const ServiceDetail = lazy(() => import("./pages/services/ServicePage.tsx"));
+const QaTesting = lazy(() => import("./pages/services/QaTestingPage.tsx"));
 const MaintenancePartnerships = lazy(() => import("./pages/MaintenancePartnerships.tsx"));
-const BlogProfessional = lazy(() => import("./pages/products/BlogProfessional.tsx"));
+const BlogProfessional = lazy(() => import("./pages/services/BlogProfessional.tsx"));
 const LogoDinamic3D = lazy(() => import("./pages/services/LogoDinamic3DPage.tsx"));
 const LogoStudio = lazy(() => import("./pages/services/LogoStudioPage.tsx"));
 const AiOsConsole = lazy(() => import("./pages/intern/AiOs.tsx"));
@@ -41,6 +41,7 @@ const AiProjects = lazy(() => import("./pages/intern/AiProjects.tsx"));
 const AiProjectPage = lazy(() => import("./pages/intern/AiProjectPage.tsx"));
 const Finance = lazy(() => import("./pages/intern/Finance.tsx"));
 const ProduseAvyronOs = lazy(() => import("./pages/intern/ProduseAvyron.tsx"));
+const ServiciiAvyronOs = lazy(() => import("./pages/intern/ServiciiAvyron.tsx"));
 const AvyEngine = lazy(() => import("./pages/intern/AvyEngine.tsx"));
 const Biblioteca = lazy(() => import("./pages/Biblioteca.tsx"));
 const AvyChat = lazy(() => import("@/components/ai/AvyChat"));
@@ -153,33 +154,55 @@ const App = () => (
                     poate retrage temporar din prerender, sitemap și hreflang. */}
                 {FEATURES.produse && (
                   <>
-                    <Route path="/produse-avyron/*" element={<ProduseApp />} />
-                    <Route path="/en/avyron-products/*" element={<ProduseApp />} />
+                    <Route path="/produse/*" element={<ProduseApp />} />
+                    <Route path="/en/products/*" element={<ProduseApp />} />
                   </>
                 )}
-                <Route path="/costuri" element={<Pricing />} />
-                <Route path="/costurisiproduse" element={<Pricing />} />
-                <Route path="/en/pricing" element={<Pricing />} />
-                <Route path="/produse/website-prezentare-premium" element={<ProductDetail />} />
-                <Route path="/servicii/logo" element={<LogoDinamic3D />} />
-                <Route path="/en/services/logo" element={<LogoDinamic3D />} />
-                <Route path="/servicii/logo/creeaza" element={<LogoStudio />} />
-                <Route path="/en/services/logo/create" element={<LogoStudio />} />
-                <Route path="/produse/identitate-social-media" element={<ProductDetail />} />
-                <Route path="/produse/magazin-online" element={<ProductDetail />} />
-                <Route path="/produse/blog-profesional" element={<BlogProfessional />} />
-                <Route path="/produse/aplicatii-web-si-mobile" element={<ProductDetail />} />
-                <Route path="/produse/agent-ai-personalizat" element={<ProductDetail />} />
+                <Route path="/servicii" element={<Services />} />
+                <Route path="/en/services" element={<Services />} />
+                <Route path="/servicii/website-prezentare-profesional" element={<ServiceDetail />} />
+                <Route path="/servicii/creare-logo-3d-dinamic-cinematic" element={<LogoDinamic3D />} />
+                <Route path="/en/services/cinematic-dynamic-3d-logo-design" element={<LogoDinamic3D />} />
+                <Route path="/servicii/creare-logo-3d-dinamic-cinematic/creeaza" element={<LogoStudio />} />
+                <Route path="/en/services/cinematic-dynamic-3d-logo-design/create" element={<LogoStudio />} />
+                <Route path="/servicii/identitate-social-media" element={<ServiceDetail />} />
+                <Route path="/servicii/magazin-online" element={<ServiceDetail />} />
+                <Route path="/servicii/blog-profesional" element={<BlogProfessional />} />
+                <Route path="/servicii/aplicatii-si-platforme" element={<ServiceDetail />} />
+                <Route path="/servicii/automatizari-si-ai" element={<ServiceDetail />} />
+                <Route path="/servicii/audit-website" element={<Navigate to="/?request=audit#cta" replace />} />
+                <Route path="/servicii/qa-testing-web-mobile" element={<QaTesting />} />
+                <Route path="/en/services/professional-presentation-website" element={<ServiceDetail />} />
+                <Route path="/en/services/social-media-identity" element={<ServiceDetail />} />
+                <Route path="/en/services/online-store" element={<ServiceDetail />} />
+                <Route path="/en/services/professional-blog" element={<BlogProfessional />} />
+                <Route path="/en/services/apps-and-platforms" element={<ServiceDetail />} />
+                <Route path="/en/services/automation-and-ai" element={<ServiceDetail />} />
+                <Route path="/en/services/website-audit" element={<Navigate to="/en?request=audit#cta" replace />} />
+                <Route path="/en/services/web-mobile-qa-testing" element={<QaTesting />} />
+                {/* Client-side safety net for bookmarks; production serves the
+                    same mappings as HTTP 301 redirects at the edge. */}
+                <Route path="/costuri" element={<Navigate to="/servicii" replace />} />
+                <Route path="/costurisiproduse" element={<Navigate to="/servicii" replace />} />
+                <Route path="/en/pricing" element={<Navigate to="/en/services" replace />} />
+                <Route path="/produse/website-prezentare-premium" element={<Navigate to="/servicii/website-prezentare-profesional" replace />} />
+                <Route path="/en/products/premium-presentation-website" element={<Navigate to="/en/services/professional-presentation-website" replace />} />
+                <Route path="/produse/identitate-social-media" element={<Navigate to="/servicii/identitate-social-media" replace />} />
+                <Route path="/en/products/social-media-identity" element={<Navigate to="/en/services/social-media-identity" replace />} />
+                <Route path="/produse/magazin-online" element={<Navigate to="/servicii/magazin-online" replace />} />
+                <Route path="/en/products/online-store" element={<Navigate to="/en/services/online-store" replace />} />
+                <Route path="/produse/blog-profesional" element={<Navigate to="/servicii/blog-profesional" replace />} />
+                <Route path="/en/products/professional-blog" element={<Navigate to="/en/services/professional-blog" replace />} />
+                <Route path="/produse/aplicatii-web-si-mobile" element={<Navigate to="/servicii/aplicatii-si-platforme" replace />} />
+                <Route path="/en/products/web-and-mobile-apps" element={<Navigate to="/en/services/apps-and-platforms" replace />} />
+                <Route path="/produse/agent-ai-personalizat" element={<Navigate to="/servicii/automatizari-si-ai" replace />} />
+                <Route path="/en/products/personalized-ai-agent" element={<Navigate to="/en/services/automation-and-ai" replace />} />
+                <Route path="/produse/testare-qa-web-mobile" element={<Navigate to="/servicii/qa-testing-web-mobile" replace />} />
+                <Route path="/en/products/qa-testing-web-mobile" element={<Navigate to="/en/services/web-mobile-qa-testing" replace />} />
                 <Route path="/produse/audit-website" element={<Navigate to="/?request=audit#cta" replace />} />
-                <Route path="/produse/testare-qa-web-mobile" element={<QaTesting />} />
-                <Route path="/en/products/premium-presentation-website" element={<ProductDetail />} />
-                <Route path="/en/products/social-media-identity" element={<ProductDetail />} />
-                <Route path="/en/products/online-store" element={<ProductDetail />} />
-                <Route path="/en/products/professional-blog" element={<BlogProfessional />} />
-                <Route path="/en/products/web-and-mobile-apps" element={<ProductDetail />} />
-                <Route path="/en/products/personalized-ai-agent" element={<ProductDetail />} />
                 <Route path="/en/products/website-audit" element={<Navigate to="/en?request=audit#cta" replace />} />
-                <Route path="/en/products/qa-testing-web-mobile" element={<QaTesting />} />
+                <Route path="/servicii/logo" element={<Navigate to="/servicii/creare-logo-3d-dinamic-cinematic" replace />} />
+                <Route path="/en/services/logo" element={<Navigate to="/en/services/cinematic-dynamic-3d-logo-design" replace />} />
                 {/* Biblioteca este publică și indexabilă, dar intrările ei
                     rămân exclusiv în paginile serviciilor. */}
                 {FEATURES.biblioteca && (
@@ -238,6 +261,14 @@ const App = () => (
                   element={
                     <ProtectedRoute>
                       <InternHome />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/intern/servicii"
+                  element={
+                    <ProtectedRoute>
+                      <ServiciiAvyronOs />
                     </ProtectedRoute>
                   }
                 />

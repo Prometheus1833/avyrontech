@@ -67,7 +67,7 @@ for (const item of ITEMS) {
     dependencies: item.deps ?? [],
     files: [{ path: `components/avyron/${file}`, type: REGISTRY_TYPE[item.type] ?? "registry:component", content }],
     meta: {
-      docs: `${BASE}/produse-avyron/${segmentFor(item.type)}/${item.slug}`,
+      docs: `${BASE}/produse/${segmentFor(item.type)}/${item.slug}`,
       licence: "Utilizare nelimitată în proiecte proprii și ale clienților.",
       weightKb: item.weightKb,
     },
@@ -82,7 +82,7 @@ writeFileSync(
     {
       $schema: "https://ui.shadcn.com/schema/registry.json",
       name: "avyron",
-      homepage: `${BASE}/produse-avyron`,
+      homepage: `${BASE}/produse`,
       items: published.map((item) => ({ name: item.slug, type: REGISTRY_TYPE[item.type] ?? "registry:component", title: item.name.en, description: item.short.en })),
     },
     null,
@@ -110,11 +110,11 @@ for (const type of TYPES) {
   if (!items?.length) continue;
   lines.push(`## ${type.plural.ro} (${type.plural.en})`, "");
   for (const item of items) {
-    lines.push(`- [${item.name.ro}](${BASE}/produse-avyron/${type.seg.ro}/${item.slug}): ${item.short.ro}`);
+    lines.push(`- [${item.name.ro}](${BASE}/produse/${type.seg.ro}/${item.slug}): ${item.short.ro}`);
   }
   lines.push("");
 }
-lines.push("## Documentație", "", `- [Ghid de instalare](${BASE}/produse-avyron/ghid)`, `- [Întrebări frecvente](${BASE}/produse-avyron/intrebari-frecvente)`, `- [Parteneriate AVY](${BASE}/produse-avyron#parteneriate)`, "");
+lines.push("## Documentație", "", `- [Ghid de instalare](${BASE}/produse/ghid)`, `- [Întrebări frecvente](${BASE}/produse/intrebari-frecvente)`, `- [Parteneriate AVY](${BASE}/produse#parteneriate)`, "");
 writeFileSync(join(dist, "llms.txt"), lines.join("\n"));
 
 console.log(`registru Produse: ${published.length} produse publicate în /r, plus llms.txt`);

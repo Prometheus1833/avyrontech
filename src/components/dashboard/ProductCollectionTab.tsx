@@ -127,7 +127,7 @@ export function ProductCollectionTab() {
                 <Badge variant="default">{PLAN_LABEL[state.plan]}</Badge>
                 {expiry && <span className="text-sm text-muted-foreground">valabil până pe {expiry}</span>}
                 {state.plan === "free" && (
-                  <a className="inline-flex items-center gap-1 text-sm underline underline-offset-4" href="/produse-avyron#parteneriate">
+                  <a className="inline-flex items-center gap-1 text-sm underline underline-offset-4" href="/produse#parteneriate">
                     Vezi parteneriatele <ExternalLink className="h-3 w-3" aria-hidden="true" />
                   </a>
                 )}

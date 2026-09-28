@@ -77,7 +77,7 @@ After the production deployment:
 ```bash
 curl -I https://avyron.ro/costuri
 curl -I https://avyron.ro/pagina-inexistenta-verificare
-curl -I https://avyron.ro/produse/website-prezentare-premium
+curl -I https://avyron.ro/servicii/website-prezentare-profesional
 ```
 
 Expected statuses are `301`, `404`, and `200`, respectively.

@@ -25,6 +25,42 @@ const rows = result => {
   return result.flatMap(query => query.results);
 };
 
+const isSqliteNomem = error => /SQLITE_NOMEM|out of memory/i.test(String(error?.message ?? error));
+const quotePragmaTable = name => `'${String(name).replaceAll("'", "''")}'`;
+
+/**
+ * D1's global quick_check may exhaust the query memory limit on a large,
+ * healthy database. Only that specific failure falls back to the equivalent
+ * table-by-table audit; any other error remains fatal.
+ */
+export function assertD1Integrity(query) {
+  try {
+    const integrity = query('PRAGMA quick_check');
+    if (integrity.length !== 1 || integrity[0].quick_check !== 'ok') throw new Error('D1 integrity audit failed.');
+    return;
+  } catch (error) {
+    if (!isSqliteNomem(error)) throw error;
+  }
+
+  const schema = query("SELECT name, sql FROM sqlite_schema WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' ORDER BY name");
+  const virtualTables = schema
+    .filter(row => /^CREATE VIRTUAL TABLE/i.test(String(row.sql ?? '')))
+    .map(row => String(row.name));
+  const isVirtualShadow = name => virtualTables.some(base =>
+    ['_data', '_idx', '_content', '_docsize', '_config'].some(suffix => name === `${base}${suffix}`),
+  );
+  const tables = schema
+    .map(row => String(row.name))
+    .filter(name => !virtualTables.includes(name) && !isVirtualShadow(name));
+  if (!tables.length) throw new Error('D1 integrity audit found no application tables.');
+  for (const table of tables) {
+    const integrity = query(`PRAGMA quick_check(${quotePragmaTable(table)})`);
+    if (integrity.length !== 1 || integrity[0].quick_check !== 'ok') {
+      throw new Error(`D1 integrity audit failed for table ${table}.`);
+    }
+  }
+}
+
 /** Runs using the existing deployment identity. Never creates credentials or
  * changes token scopes. Every failed check stops before publishing code. */
 export function releaseApi({ preview = false, run = cli, expected = migrationNames(), checkAssets = true, ciName = process.env.WRANGLER_CI_OVERRIDE_NAME } = {}) {
@@ -45,8 +81,7 @@ export function releaseApi({ preview = false, run = cli, expected = migrationNam
   assertMigrationPrefix(applied, expected);
   if (applied.length !== expected.length) throw new Error('D1 migrations are incomplete.');
   if (query('PRAGMA foreign_key_check').length) throw new Error('D1 foreign key audit failed.');
-  const integrity = query('PRAGMA quick_check');
-  if (integrity.length !== 1 || integrity[0].quick_check !== 'ok') throw new Error('D1 integrity audit failed.');
+  assertD1Integrity(query);
   // Journal entries alone cannot prove the schema or FTS runtime is usable.
   query("SELECT r.reservation_mode,k.review_after,a.revision FROM financial_usage_events r JOIN ai_knowledge k ON 0 JOIN ai_approvals a ON 0 LIMIT 0");
   query("SELECT id FROM operation_records LIMIT 0");

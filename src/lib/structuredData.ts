@@ -132,18 +132,20 @@ export function breadcrumbLd(items: Array<{ name: string; path: string }>) {
   };
 }
 
-/** Build a Service JSON-LD for a product/offering page. */
+/** Build a Service JSON-LD for a professional service page. */
 export function serviceLd({
   name,
   description,
   path,
   priceEur,
+  offers,
   areaServed = "RO",
 }: {
   name: string;
   description: string;
   path: string;
   priceEur?: number;
+  offers?: Record<string, unknown>;
   areaServed?: string;
 }) {
   return {
@@ -156,7 +158,9 @@ export function serviceLd({
     serviceType: name,
     provider: { "@id": `${BASE_URL}/#organization` },
     areaServed,
-    ...(priceEur
+    ...(offers
+      ? { offers }
+      : priceEur
       ? {
           offers: {
             "@type": "Offer",

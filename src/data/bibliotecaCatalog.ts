@@ -64,7 +64,7 @@ export type LibrarySection = {
   name: { ro: string; en: string };
   claim: { ro: string; en: string };
   /** Ruta produsului, pentru CTA-ul de la finalul secțiunii. */
-  product: { ro: string; en: string } | null;
+  service: { ro: string; en: string } | null;
   /**
    * Butonul de intrare apare pe pagina produsului?
    *
@@ -89,7 +89,7 @@ export const LIBRARY_SECTIONS: LibrarySection[] = [
       ro: "Un site de prezentare nu trebuie doar să arate bine. Trebuie să facă vizitatorul să rămână, iar mișcarea e instrumentul care ține atenția fără să încarce pagina.",
       en: "A presentation website should not merely look good. It has to keep the visitor there, and motion is the tool that holds attention without weighing the page down.",
     },
-    product: { ro: "/produse/website-prezentare-premium", en: "/en/products/premium-presentation-website" },
+    service: { ro: "/servicii/website-prezentare-profesional", en: "/en/services/professional-presentation-website" },
     entry: true,
     cases: [
       { ro: "Cabinet stomatologic: coborârea cinematică devine drumul de la stradă la scaunul din cabinet.", en: "Dental clinic: the cinematic descent becomes the walk from the street to the chair." },
@@ -138,7 +138,7 @@ export const LIBRARY_SECTIONS: LibrarySection[] = [
       ro: "Identitatea se vede în mișcare, nu în paletă. Un template care se animă corect valorează cât zece postări statice.",
       en: "Identity shows in motion, not in a palette. One template that animates well is worth ten static posts.",
     },
-    product: { ro: "/produse/identitate-social-media", en: "/en/products/social-media-identity" },
+    service: { ro: "/servicii/identitate-social-media", en: "/en/services/social-media-identity" },
     entry: true,
     cases: [
       { ro: "Cofetărie: generatorul scoate treizeci de postări pe lună din același brand kit.", en: "Pastry shop: the generator turns out thirty posts a month from one brand kit." },
@@ -187,7 +187,7 @@ export const LIBRARY_SECTIONS: LibrarySection[] = [
       ro: "Într-un magazin, fiecare efect trebuie să răspundă la o întrebare de cumpărare: cum arată produsul, ce am în coș, cât mai durează.",
       en: "In a store, every effect must answer a buying question: what the product looks like, what is in the cart, how much longer this takes.",
     },
-    product: { ro: "/produse/magazin-online", en: "/en/products/online-store" },
+    service: { ro: "/servicii/magazin-online", en: "/en/services/online-store" },
     entry: true,
     cases: [
       { ro: "Magazin de mobilă: configurator 3D pe canapele, cu textile comutabile.", en: "Furniture store: a 3D configurator on sofas, with switchable fabrics." },
@@ -236,7 +236,7 @@ export const LIBRARY_SECTIONS: LibrarySection[] = [
       ro: "La o aplicație, mișcarea nu decorează: explică unde ești, ce s-a schimbat și ce urmează.",
       en: "In an app, motion is not decoration: it explains where you are, what changed and what comes next.",
     },
-    product: { ro: "/produse/aplicatii-web-si-mobile", en: "/en/products/web-and-mobile-apps" },
+    service: { ro: "/servicii/aplicatii-si-platforme", en: "/en/services/apps-and-platforms" },
     entry: false,
     cases: [
       { ro: "Aplicație de livrare: fluxul de comandă jucabil direct în pagina de prezentare.", en: "Delivery app: the ordering flow playable right in the landing page." },
@@ -279,7 +279,7 @@ export const LIBRARY_SECTIONS: LibrarySection[] = [
       ro: "Un agent se vinde prin ritm: cât de repede răspunde, cât de firesc scrie, cât de clar se vede munca pe care o preia.",
       en: "An agent sells on rhythm: how fast it answers, how naturally it writes, how clearly you see the work it takes over.",
     },
-    product: { ro: "/produse/agent-ai-personalizat", en: "/en/products/personalized-ai-agent" },
+    service: { ro: "/servicii/automatizari-si-ai", en: "/en/services/automation-and-ai" },
     entry: false,
     cases: [
       { ro: "Clinică: agentul preia programările din afara programului.", en: "Clinic: the agent takes bookings outside working hours." },
@@ -322,7 +322,7 @@ export const LIBRARY_SECTIONS: LibrarySection[] = [
       ro: "Calitatea e greu de vândut pentru că e invizibilă. Aici o facem vizibilă: diferența dintre două capturi, dintre două încărcări, dintre două versiuni.",
       en: "Quality is hard to sell because it is invisible. Here we make it visible: the difference between two captures, two loads, two versions.",
     },
-    product: { ro: "/produse/testare-qa-web-mobile", en: "/en/products/qa-testing-web-mobile" },
+    service: { ro: "/servicii/qa-testing-web-mobile", en: "/en/services/web-mobile-qa-testing" },
     entry: true,
     cases: [
       { ro: "Magazin online înainte de Black Friday: diff vizual pe checkout, la fiecare build.", en: "Online store before Black Friday: a visual diff on checkout, on every build." },
@@ -365,7 +365,7 @@ export const LIBRARY_SECTIONS: LibrarySection[] = [
       ro: "Un blog bun se citește până la capăt. Efectele de aici servesc lectura, nu o întrerup.",
       en: "A good blog gets read to the end. The effects here serve reading instead of interrupting it.",
     },
-    product: { ro: "/produse/blog-profesional", en: "/en/products/professional-blog" },
+    service: { ro: "/servicii/blog-profesional", en: "/en/services/professional-blog" },
     entry: true,
     cases: [
       { ro: "Cabinet de avocatură: articole cu cuprins magnetic și progres de citire.", en: "Law firm: articles with a magnetic table of contents and reading progress." },
@@ -408,7 +408,7 @@ export const LIBRARY_SECTIONS: LibrarySection[] = [
       ro: "Un logo se judecă în mișcare și în aplicare. Aici îl vezi construindu-se, nu doar așezat pe un fundal alb.",
       en: "A logo is judged in motion and in application. Here you watch it being built, not just placed on white.",
     },
-    product: null,
+    service: null,
     entry: true,
     cases: [
       { ro: "Rebranding de pensiune: marca extrudată în 3D pentru clipul de deschidere.", en: "Guesthouse rebrand: the mark extruded in 3D for the opening clip." },

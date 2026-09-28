@@ -7,7 +7,7 @@ import { decide } from "@/worker/router";
 /** Minimal ASSETS binding: serves the files the prerender build produces. */
 const FILES: Record<string, string> = {
   "/index.html": "<html lang=ro><h1>home</h1>",
-  "/costurisiproduse/index.html": "<html lang=ro><h1>pricing</h1>",
+  "/servicii/index.html": "<html lang=ro><h1>pricing</h1>",
   "/termeni/index.html": "<html lang=ro><h1>terms</h1>",
   "/404.html": "<html lang=ro><h1>404</h1>",
   "/403.html": "<html lang=ro><h1>403</h1>",
@@ -71,7 +71,7 @@ const get = (path: string) =>
 
 describe("worker redirects", () => {
   it.each([
-    ["/costuri", "/costurisiproduse"],
+    ["/costuri", "/servicii"],
     ["/despre", "/despre-noi"],
     ["/despre-si-portofoliu", "/portofoliu"],
     ["/noutati", "/blog"],
@@ -84,8 +84,31 @@ describe("worker redirects", () => {
   it("preserves the query string and does not loop", async () => {
     const res = await get("/costuri?utm_source=google");
     const loc = new URL(res.headers.get("location")!);
-    expect(loc.pathname + loc.search).toBe("/costurisiproduse?utm_source=google");
+    expect(loc.pathname + loc.search).toBe("/servicii?utm_source=google");
     expect((await get(loc.pathname)).status).toBe(200);
+  });
+
+  it.each([
+    ["/costurisiproduse", "/servicii"],
+    ["/en/pricing", "/en/services"],
+    ["/produse/website-prezentare-premium", "/servicii/website-prezentare-profesional"],
+    ["/en/products/premium-presentation-website", "/en/services/professional-presentation-website"],
+    ["/servicii/logo", "/servicii/creare-logo-3d-dinamic-cinematic"],
+  ])("keeps legacy service URL %s as a permanent redirect", async (from, to) => {
+    const res = await get(from);
+    expect(res.status).toBe(301);
+    expect(new URL(res.headers.get("location")!).pathname).toBe(to);
+  });
+
+  it("moves the complete legacy product namespace while preserving suffixes and campaigns", async () => {
+    const ro = await get("/produse-avyron/componente/buton-magnetic?utm_campaign=migrare");
+    const roLocation = new URL(ro.headers.get("location")!);
+    expect(ro.status).toBe(301);
+    expect(`${roLocation.pathname}${roLocation.search}`).toBe("/produse/componente/buton-magnetic?utm_campaign=migrare");
+
+    const en = await get("/en/avyron-products/tools/generator-json-ld");
+    expect(en.status).toBe(301);
+    expect(new URL(en.headers.get("location")!).pathname).toBe("/en/products/tools/generator-json-ld");
   });
 
   it("redirects removed audit pages to the protected form and preserves campaign data", async () => {
@@ -123,7 +146,7 @@ describe("worker HTTP statuses", () => {
   });
 
   it("serves public pages with 200 and no noindex header", async () => {
-    const res = await get("/costurisiproduse");
+    const res = await get("/servicii");
     expect(res.status).toBe(200);
     expect(res.headers.get("X-Robots-Tag")).toBeNull();
   });
@@ -203,14 +226,14 @@ describe("database-backed blog pages", () => {
 });
 
 describe("trailing slash normalisation", () => {
-  it("301s /costurisiproduse/ -> /costurisiproduse", async () => {
-    const res = await get("/costurisiproduse/");
+  it("301s /servicii/ -> /servicii", async () => {
+    const res = await get("/servicii/");
     expect(res.status).toBe(301);
-    expect(new URL(res.headers.get("location")!).pathname).toBe("/costurisiproduse");
+    expect(new URL(res.headers.get("location")!).pathname).toBe("/servicii");
   });
 
   it("never redirects back to the trailing-slash form", async () => {
-    const res = await get("/costurisiproduse");
+    const res = await get("/servicii");
     expect(res.status).toBe(200);
     expect(res.headers.get("location")).toBeNull();
   });

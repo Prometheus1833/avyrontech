@@ -21,16 +21,16 @@ import { useLeiPrice } from "@/components/logo3d/utils";
 import { useCurrency } from "@/hooks/useCurrency";
 
 /**
- * PlayStation-inspired pricing page.
+ * Public services hub.
  * - Deep navy/black background with neon-blue accents
  * - PS shape glyphs (▲ ◯ ✕ ◻) as decorative tags for each tier
  * - Glass cards, sharp grid, monospaced labels
  */
 
 
-const PRODUCT_SUMMARY_LIMIT = 7;
+const SERVICE_SUMMARY_LIMIT = 7;
 
-const Pricing = () => {
+const Services = () => {
   const { lang } = useLang();
   const ro = lang === "ro";
   const { formatEur: fmt } = useCurrency(ro ? "ro-RO" : "en-IE");
@@ -40,7 +40,7 @@ const Pricing = () => {
     window.scrollTo(0, 0);
     const title = ro
       ? "Servicii digitale personalizate & costuri | Avyron"
-      : "Custom Digital Services & Pricing | Avyron";
+      : "Custom Digital AVYRON Services | Avyron";
     const description = ro
       ? "Descoperă serviciile digitale Avyron: site-uri profesionale, identitate vizuală, magazine online, bloguri, aplicații, automatizări și soluții AI adaptate fiecărui proiect."
       : "Explore Avyron digital services: professional websites, visual identity, online stores, blogs, apps, automations and AI solutions tailored to each project.";
@@ -49,8 +49,8 @@ const Pricing = () => {
         setPageMeta({
           title,
           description,
-          path: ro ? "/costurisiproduse" : "/en/pricing",
-          alternates: { ro: "/costurisiproduse", en: "/en/pricing" },
+          path: ro ? "/servicii" : "/en/services",
+          alternates: { ro: "/servicii", en: "/en/services" },
           image: "/og/pricing.jpg",
           imageAlt: ro
             ? "Pachete de prețuri Avyron — site-uri web, magazine online și mentenanță"
@@ -63,8 +63,8 @@ const Pricing = () => {
           breadcrumbLd([
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
             {
-              name: ro ? "Servicii & Costuri" : "Services & Pricing",
-              path: ro ? "/costurisiproduse" : "/en/pricing",
+              name: ro ? "Servicii AVYRON" : "AVYRON Services",
+              path: ro ? "/servicii" : "/en/services",
             },
           ]),
         );
@@ -157,8 +157,8 @@ const Pricing = () => {
           items={[
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
             {
-              name: ro ? "Servicii & Costuri" : "Services & Pricing",
-              path: ro ? "/costurisiproduse" : "/en/pricing",
+              name: ro ? "Servicii AVYRON" : "AVYRON Services",
+              path: ro ? "/servicii" : "/en/services",
             },
           ]}
         />
@@ -181,7 +181,7 @@ const Pricing = () => {
           <CurrencySwitch compact className="mt-7" />
         </section>
 
-        {/* Audit — product overview entry; the request continues in the protected form. */}
+        {/* Audit — service overview entry; the request continues in the protected form. */}
         <section id="audit" data-testid="free-audit-card" className="relative mt-8 overflow-hidden rounded-2xl border border-amber-300/25 bg-gradient-to-br from-amber-400/[0.08] via-card to-orange-500/[0.06] p-4 sm:p-5">
           <div aria-hidden className="absolute -right-10 -top-12 size-36 rounded-full bg-amber-400/10 blur-2xl" />
           <div className="relative grid items-start gap-5 md:grid-cols-[0.85fr_1.15fr]">
@@ -251,7 +251,7 @@ const Pricing = () => {
           </div>
         </section>
 
-        {/* Main product */}
+        {/* Main service */}
 
         <section className="mt-8 grid md:grid-cols-5 gap-4 items-start">
             <div className="md:col-span-2 rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-card to-background p-5 sm:p-6 relative overflow-hidden text-center">
@@ -260,7 +260,7 @@ const Pricing = () => {
             <div className="relative">
               <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-cyan-200">
                 <BadgeCheck className="size-3.5" />
-                {ro ? "Produs principal" : "Main product"}
+                {ro ? "Serviciu principal" : "Main service"}
               </div>
               <div className="mt-5 mx-auto w-40 h-40 sm:w-44 sm:h-44 rounded-2xl ring-1 ring-cyan-300/20 overflow-hidden shadow-[0_20px_60px_-20px_rgba(34,211,238,0.45)]">
                 <picture>
@@ -286,7 +286,7 @@ const Pricing = () => {
           <div className="md:col-span-3 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur">
             <div className="text-[11px] uppercase tracking-[0.3em] text-foreground/50">{ro ? "Include:" : "Includes:"}</div>
             <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
-              {main.includes.slice(0, PRODUCT_SUMMARY_LIMIT).map((f) => (
+              {main.includes.slice(0, SERVICE_SUMMARY_LIMIT).map((f) => (
                 <li key={f} className="flex items-start gap-2 text-sm text-foreground/85">
                   <Check className="size-4 mt-0.5 text-cyan-300 shrink-0" />
                   <span>{f}</span>
@@ -305,8 +305,8 @@ const Pricing = () => {
                 {ro ? "Vreau Site Prezentare Profesional" : "I want a Professional Presentation Website"}
               </a>
               <Link
-                to={ro ? "/produse/website-prezentare-premium" : "/en/products/premium-presentation-website"}
-                onClick={() => trackEvent("product_details_click", { product: "/produse/website-prezentare-premium" })}
+                to={ro ? "/servicii/website-prezentare-profesional" : "/en/services/professional-presentation-website"}
+                onClick={() => trackEvent("product_details_click", { product: "/servicii/website-prezentare-profesional" })}
                 className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
               >
                 {ro ? "Vezi detalii" : "See details"}
@@ -329,7 +329,7 @@ const Pricing = () => {
                 {ro ? "Un hub editorial rapid, sigur și ușor de administrat, proiectat pentru SEO, expertiză și conversii — nu doar o listă de articole." : "A fast, secure, easy-to-manage editorial hub designed for SEO, expertise and conversions — not merely a list of articles."}
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
-                <Link to={ro ? "/produse/blog-profesional" : "/en/products/professional-blog"} onClick={() => trackEvent("product_details_click", { product: "/produse/blog-profesional" })} className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-rose-500 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90">
+                <Link to={ro ? "/servicii/blog-profesional" : "/en/services/professional-blog"} onClick={() => trackEvent("product_details_click", { product: "/servicii/blog-profesional" })} className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-rose-500 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90">
                   {ro ? "Descoperă Blog Profesional" : "Explore Professional Blog"}<ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
                 </Link>
                 <a href="https://wa.me/40734605055?text=Bună! Sunt interesat de un Blog Profesional." onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "pricing_blog_professional" })} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 rounded-full border border-foreground/15 bg-foreground/[0.04] px-5 py-2.5 text-sm font-semibold transition hover:bg-foreground/[0.09]"><MessageCircle className="size-4" />{ro ? "Solicită o configurație" : "Request a configuration"}</a>
@@ -501,7 +501,7 @@ const Pricing = () => {
                     { icon: <Music2 className="size-4" />, text: "TikTok content recommendations tailored to your niche" },
                     { icon: <Shield className="size-4" />, text: "Safety settings, email verification and account recovery" },
                   ]
-              ).slice(0, PRODUCT_SUMMARY_LIMIT).map((f) => (
+              ).slice(0, SERVICE_SUMMARY_LIMIT).map((f) => (
                 <li key={f.text} className="flex items-start gap-2 text-sm text-foreground/85">
                   <span className="mt-0.5 size-5 rounded-md bg-pink-400/15 text-pink-300 grid place-items-center shrink-0">
                     {f.icon}
@@ -522,8 +522,8 @@ const Pricing = () => {
                 {ro ? "Vreau Identitate Social Media" : "I want the Social Identity pack"}
               </a>
               <Link
-                to={ro ? "/produse/identitate-social-media" : "/en/products/social-media-identity"}
-                onClick={() => trackEvent("product_details_click", { product: "/produse/identitate-social-media" })}
+                to={ro ? "/servicii/identitate-social-media" : "/en/services/social-media-identity"}
+                onClick={() => trackEvent("product_details_click", { product: "/servicii/identitate-social-media" })}
                 className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
               >
                 {ro ? "Vezi detalii" : "See details"}
@@ -599,7 +599,7 @@ const Pricing = () => {
                     { icon: <MessageCircle className="size-4" />, text: "Automated emails: order, shipping, abandoned cart" },
                     { icon: <Shield className="size-4" />, text: "GDPR, terms, policies and daily backups" },
                   ]
-              ).slice(0, PRODUCT_SUMMARY_LIMIT).map((f) => (
+              ).slice(0, SERVICE_SUMMARY_LIMIT).map((f) => (
                 <li key={f.text} className="flex items-start gap-2 text-sm text-foreground/85">
                   <span className="mt-0.5 size-5 rounded-md bg-emerald-400/15 text-emerald-300 grid place-items-center shrink-0">
                     {f.icon}
@@ -620,8 +620,8 @@ const Pricing = () => {
                 {ro ? "Vreau magazin online" : "I want an online store"}
               </a>
               <Link
-                to={ro ? "/produse/magazin-online" : "/en/products/online-store"}
-                onClick={() => trackEvent("product_details_click", { product: "/produse/magazin-online" })}
+                to={ro ? "/servicii/magazin-online" : "/en/services/online-store"}
+                onClick={() => trackEvent("product_details_click", { product: "/servicii/magazin-online" })}
                 className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
               >
                 {ro ? "Vezi detalii" : "See details"}
@@ -639,7 +639,7 @@ const Pricing = () => {
             <div className="relative">
               <div className="inline-flex items-center gap-2 rounded-full border border-indigo-300/30 bg-indigo-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-indigo-700 dark:text-indigo-200">
                 <Smartphone className="size-3.5" />
-                {ro ? "Produs dedicat" : "Dedicated product"}
+                {ro ? "Serviciu dedicat" : "Dedicated service"}
               </div>
               <div className="mt-5 flex items-center justify-center gap-3">
                 <div className="size-12 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-700 grid place-items-center shadow-[0_0_24px_-6px_rgba(99,102,241,0.6)]">
@@ -703,7 +703,7 @@ const Pricing = () => {
                     { icon: <Shield className="size-4" />, text: "GDPR, encryption, user roles and security audit" },
                     { icon: <RefreshCw className="size-4" />, text: "OTA updates, versioning and 12+ month roadmap" },
                   ]
-              ).slice(0, PRODUCT_SUMMARY_LIMIT).map((f) => (
+              ).slice(0, SERVICE_SUMMARY_LIMIT).map((f) => (
                 <li key={f.text} className="flex items-start gap-2 text-sm text-foreground/85">
                   <span className="mt-0.5 size-5 rounded-md bg-indigo-400/15 text-indigo-300 grid place-items-center shrink-0">
                     {f.icon}
@@ -724,8 +724,8 @@ const Pricing = () => {
                 {ro ? "Vreau aplicație Mobile / Web" : "I want a Mobile / Web app"}
               </a>
               <Link
-                to={ro ? "/produse/aplicatii-web-si-mobile" : "/en/products/web-and-mobile-apps"}
-                onClick={() => trackEvent("product_details_click", { product: "/produse/aplicatii-web-si-mobile" })}
+                to={ro ? "/servicii/aplicatii-si-platforme" : "/en/services/apps-and-platforms"}
+                onClick={() => trackEvent("product_details_click", { product: "/servicii/aplicatii-si-platforme" })}
                 className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
               >
                 {ro ? "Vezi detalii" : "See details"}
@@ -807,7 +807,7 @@ const Pricing = () => {
                     { icon: <Globe className="size-4" />, text: "Multilingual (RO / EN +) and SEO-optimized for indexing" },
                     { icon: <RefreshCw className="size-4" />, text: "Periodic retraining on new information from your business" },
                   ]
-              ).slice(0, PRODUCT_SUMMARY_LIMIT).map((f) => (
+              ).slice(0, SERVICE_SUMMARY_LIMIT).map((f) => (
                 <li key={f.text} className="flex items-start gap-2 text-sm text-foreground/85">
                   <span className="mt-0.5 size-5 rounded-md bg-fuchsia-400/15 text-fuchsia-300 grid place-items-center shrink-0">
                     {f.icon}
@@ -828,8 +828,8 @@ const Pricing = () => {
                 {ro ? "Vreau un Agent AI" : "I want an AI Agent"}
               </a>
               <Link
-                to={ro ? "/produse/agent-ai-personalizat" : "/en/products/personalized-ai-agent"}
-                onClick={() => trackEvent("product_details_click", { product: "/produse/agent-ai-personalizat" })}
+                to={ro ? "/servicii/automatizari-si-ai" : "/en/services/automation-and-ai"}
+                onClick={() => trackEvent("product_details_click", { product: "/servicii/automatizari-si-ai" })}
                 className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
               >
                 {ro ? "Vezi detalii" : "See details"}
@@ -908,7 +908,7 @@ const Pricing = () => {
                     { icon: <FileText className="size-4" />, text: "Defect report with severity and reproduction steps" },
                     { icon: <RefreshCw className="size-4" />, text: "Retesting and regression after fixes" },
                   ]
-              ).slice(0, PRODUCT_SUMMARY_LIMIT).map((f) => (
+              ).slice(0, SERVICE_SUMMARY_LIMIT).map((f) => (
                 <li key={f.text} className="flex items-start gap-2 text-sm text-foreground/85">
                   <span className="mt-0.5 size-5 rounded-md bg-lime-400/15 text-lime-500 grid place-items-center shrink-0">
                     {f.icon}
@@ -929,8 +929,8 @@ const Pricing = () => {
                 {ro ? "Vreau testare QA" : "I want QA testing"}
               </a>
               <Link
-                to={ro ? "/produse/testare-qa-web-mobile" : "/en/products/qa-testing-web-mobile"}
-                onClick={() => trackEvent("product_details_click", { product: "/produse/testare-qa-web-mobile" })}
+                to={ro ? "/servicii/qa-testing-web-mobile" : "/en/services/web-mobile-qa-testing"}
+                onClick={() => trackEvent("product_details_click", { product: "/servicii/qa-testing-web-mobile" })}
                 className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
               >
                 {ro ? "Vezi detalii" : "See details"}
@@ -1004,4 +1004,4 @@ const Pricing = () => {
   );
 };
 
-export default Pricing;
+export default Services;

@@ -45,7 +45,7 @@ const QaTestingPage = () => {
   const { formatEur: fmt } = useCurrency(ro ? "ro-RO" : "en-IE");
   const [mode, setMode] = useState<"manual" | "auto">("manual");
 
-  const path = ro ? "/produse/testare-qa-web-mobile" : "/en/products/qa-testing-web-mobile";
+  const path = ro ? "/servicii/qa-testing-web-mobile" : "/en/services/web-mobile-qa-testing";
 
   const faq = ro
     ? [
@@ -82,8 +82,8 @@ const QaTestingPage = () => {
           description,
           path,
           alternates: {
-            ro: "/produse/testare-qa-web-mobile",
-            en: "/en/products/qa-testing-web-mobile",
+            ro: "/servicii/qa-testing-web-mobile",
+            en: "/en/services/web-mobile-qa-testing",
           },
         });
         setJsonLd("ld-organization", organizationLd);
@@ -131,7 +131,7 @@ const QaTestingPage = () => {
           "ld-breadcrumb",
           breadcrumbLd([
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
-            { name: ro ? "Servicii & Costuri" : "Services & Pricing", path: ro ? "/costurisiproduse" : "/en/pricing" },
+            { name: ro ? "Servicii AVYRON" : "AVYRON Services", path: ro ? "/servicii" : "/en/services" },
             { name: "QA Testing Web/Mobile", path },
           ]),
         );
@@ -302,9 +302,9 @@ const QaTestingPage = () => {
         {/* Top bar */}
         <div className="flex items-center justify-between gap-3">
           <PageBackLink
-            to={ro ? "/costurisiproduse" : "/en/pricing"}
+            to={ro ? "/servicii" : "/en/services"}
             label={ro ? "Înapoi" : "Back"}
-            title={ro ? "Înapoi la produse" : "Back to products"}
+            title={ro ? "Înapoi la servicii" : "Back to services"}
           />
           <div className="flex items-center gap-2">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 bg-foreground/[0.04] px-2 py-1 backdrop-blur">
@@ -327,7 +327,7 @@ const QaTestingPage = () => {
           className="mt-6"
           items={[
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
-            { name: ro ? "Servicii & Costuri" : "Services & Pricing", path: ro ? "/costurisiproduse" : "/en/pricing" },
+            { name: ro ? "Servicii AVYRON" : "AVYRON Services", path: ro ? "/servicii" : "/en/services" },
             { name: "QA Testing Web/Mobile", path },
           ]}
         />

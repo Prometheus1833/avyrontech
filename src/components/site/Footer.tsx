@@ -20,9 +20,9 @@ const pageCta = (pathname: string, lang: "ro" | "en", fallback: { ctaLabel: stri
   const en = lang === "en";
   const home = en ? "/en#cta" : "/#cta";
   const p = pathname.toLowerCase();
-  if (p.includes("/produse/") || p.includes("/products/")) {
+  if (p.startsWith("/servicii/") || p.startsWith("/en/services/")) {
     return {
-      page: "product",
+      page: "service",
       label: en ? "Get a quote for this service" : "Cere ofertă pentru acest serviciu",
       sub: en ? "Free · reply in 24h" : "Gratuit · răspuns în 24h",
       to: `https://wa.me/40734605055?text=${encodeURIComponent(
@@ -30,6 +30,15 @@ const pageCta = (pathname: string, lang: "ro" | "en", fallback: { ctaLabel: stri
       )}`,
       external: true,
       Icon: Briefcase,
+    };
+  }
+  if (p === "/produse" || p.startsWith("/produse/") || p === "/en/products" || p.startsWith("/en/products/")) {
+    return {
+      page: "products",
+      label: en ? "Explore all products" : "Explorează toate produsele",
+      sub: en ? "Free and partner editions" : "Gratuite și pentru parteneri",
+      to: en ? "/en/products" : "/produse",
+      Icon: Sparkles,
     };
   }
   if (p.includes("/blog")) {
@@ -59,9 +68,9 @@ const pageCta = (pathname: string, lang: "ro" | "en", fallback: { ctaLabel: stri
       Icon: Sparkles,
     };
   }
-  if (p.includes("/costuri") || p.includes("/pricing")) {
+  if (p === "/servicii" || p === "/en/services") {
     return {
-      page: "pricing",
+      page: "services",
       label: en ? "Get a custom quote" : "Cere ofertă personalizată",
       sub: en ? "No obligation" : "Fără obligații",
       to: home,

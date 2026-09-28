@@ -37,7 +37,7 @@ const Terms = () => {
   const ro = lang === "ro";
   const path = ro ? "/termeni" : "/en/terms";
   const homePath = ro ? "/#hero" : "/en#hero";
-  const productsPath = ro ? "/costurisiproduse" : "/en/pricing";
+  const productsPath = ro ? "/servicii" : "/en/services";
   const privacyPath = ro ? "/gdpr" : "/en/privacy";
   const cookiePath = ro ? "/politica-cookies" : "/en/cookie-policy";
 

@@ -51,11 +51,11 @@ export type SectionId =
   | "overview" | "profile" | "settings" | "projects" | "subscriptions" | "invoices" | "cart" | "collection"
   | "stats" | "tickets" | "maintenance" | "clients" | "domains" | "payments"
   | "finance" | "media" | "leads" | "staff-tickets" | "demo-requests" | "intern"
-  | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "produse-avyron";
+  | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "servicii-avyron" | "produse-avyron";
 
 export type SectionDef = {
   id: SectionId;
-  group: "overview" | "account" | "work" | "billing" | "produse" | "activity" | "team" | "control";
+  group: "overview" | "account" | "work" | "billing" | "servicii" | "produse" | "activity" | "team" | "control";
   audience: Audience;
   /** Cuvinte pentru căutarea rapidă. */
   keywords: string[];
@@ -81,6 +81,10 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "cart", group: "billing", audience: "client", keywords: ["cos", "comanda", "cart"] },
   { id: "invoices", group: "billing", audience: "client", keywords: ["facturi", "invoices", "plata"] },
 
+
+  // Serviciile sunt angajamente personalizate pentru clienți; produsele sunt
+  // artefacte digitale reutilizabile. Categoriile rămân deliberat separate.
+  { id: "servicii-avyron", group: "servicii", audience: "staff", keywords: ["servicii avyron", "website", "magazin", "blog", "aplicatii", "automatizari", "qa", "logo", "oferta"] },
 
   // Produsele digitale au categoria lor: clientul își vede colecția, iar
   // super adminul centrul magazinului — două fețe ale aceluiași lucru.

@@ -33,7 +33,7 @@ const Hero = () => {
               <span className="text-[11px] font-normal opacity-80">{t.hero.personalized}</span>
             </a>
             <Link
-              to={ro ? "/costurisiproduse" : "/en/pricing"}
+              to={ro ? "/servicii" : "/en/services"}
               className="inline-flex h-12 min-w-0 items-center justify-center gap-1.5 rounded-full border border-foreground/20 bg-background px-3 text-center text-sm font-semibold transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               {ro ? "Vezi serviciile" : "View services"}

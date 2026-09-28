@@ -42,13 +42,14 @@ const OsCentersTab = lazy(() => import("@/components/dashboard/OsCentersTab"));
 const CommandCenter = lazy(() => import("@/components/dashboard/CommandCenter"));
 const ProductCollectionTab = lazy(() => import("@/components/dashboard/ProductCollectionTab").then((m) => ({ default: m.ProductCollectionTab })));
 const StaffProduseTab = lazy(() => import("@/components/dashboard/StaffProduseTab").then((m) => ({ default: m.StaffProduseTab })));
+const StaffServicesTab = lazy(() => import("@/components/dashboard/StaffServicesTab").then((m) => ({ default: m.StaffServicesTab })));
 
 const GROUP_LABELS: Record<string, string> = {
   overview: "Principal", work: "Clienți și livrare", activity: "Activitate",
   team: "Echipă și cunoaștere", control: "Control AVYRON OS",
-  billing: "Facturare", produse: "Produse Avyron", account: "Cont",
+  billing: "Facturare", servicii: "Servicii AVYRON", produse: "Produse AVYRON", account: "Cont",
 };
-const GROUP_ORDER = ["overview", "work", "produse", "activity", "team", "control", "billing", "account"];
+const GROUP_ORDER = ["overview", "work", "servicii", "produse", "activity", "team", "control", "billing", "account"];
 
 export default function Profile() {
   const { user, profile, roles, isSuperAdmin, isStaff, isAdmin, signOut } = useAuth();
@@ -72,7 +73,7 @@ export default function Profile() {
     intern: { label: "Chat intern", icon: MessagesSquare }, announcements: { label: "Anunțuri", icon: Megaphone },
     resources: { label: "Documente și resurse", icon: BookOpen }, "team-staff": { label: "Echipă și personal", icon: Users },
     payments: { label: "Plăți", icon: Wallet }, finance: { label: "Financiar", icon: Wallet }, promotions: { label: "Promoții", icon: BadgePercent },
-    "ai-os": { label: "Agenți AI", icon: Sparkles }, "produse-avyron": { label: "Produse Avyron", icon: Boxes }, "os-centers": { label: "Centre AVYRON OS", icon: BriefcaseBusiness },
+    "ai-os": { label: "Agenți AI", icon: Sparkles }, "servicii-avyron": { label: "Servicii AVYRON", icon: BriefcaseBusiness }, "produse-avyron": { label: "Produse AVYRON", icon: Boxes }, "os-centers": { label: "Centre AVYRON OS", icon: BriefcaseBusiness },
   }), [access.isStaff]);
 
   const allowed = useMemo(() => sectionsFor(access), [access]);
@@ -158,6 +159,7 @@ export default function Profile() {
           <TabsContent value="profile" className="mt-0"><ProfileTab /></TabsContent><TabsContent value="settings" className="mt-0"><SettingsTab /></TabsContent><TabsContent value="collection" className="mt-0"><ProductCollectionTab /></TabsContent><TabsContent value="projects" className="mt-0"><CloudflareProjects embedded /></TabsContent>
           {access.isClient && <><TabsContent value="subscriptions" className="mt-0"><SubscriptionsTab /></TabsContent><TabsContent value="invoices" className="mt-0"><InvoicesTab /></TabsContent><TabsContent value="cart" className="mt-0"><CartTab /></TabsContent><TabsContent value="stats" className="mt-0"><StatsTab /></TabsContent><TabsContent value="tickets" className="mt-0"><TicketsTab /></TabsContent></>}
           {access.isStaff && <>
+            <TabsContent value="servicii-avyron" className="mt-0"><StaffServicesTab /></TabsContent>
             <TabsContent value="maintenance" className="mt-0"><StaffMaintenanceTab /></TabsContent>
             <TabsContent value="clients" className="mt-0"><StaffClientsTab /></TabsContent>
             <TabsContent value="domains" className="mt-0"><StaffDomainStatsTab /></TabsContent>

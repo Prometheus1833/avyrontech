@@ -164,7 +164,7 @@ const MaintenancePartnerships = () => {
         setJsonLd("ld-faq", faqPageLd(faq));
         setJsonLd("ld-breadcrumb", breadcrumbLd([
           { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
-          { name: ro ? "Servicii & Costuri" : "Services & Pricing", path: ro ? "/costurisiproduse" : "/en/pricing" },
+          { name: ro ? "Servicii AVYRON" : "AVYRON Services", path: ro ? "/servicii" : "/en/services" },
           { name: ro ? "Mentenanță & Colaborări" : "Maintenance & Partnerships", path },
         ]));
       },
@@ -278,7 +278,7 @@ const MaintenancePartnerships = () => {
 
           <div className="relative mx-auto max-w-6xl px-4 pb-10">
             <PageBackLink
-              to={ro ? "/costurisiproduse" : "/en/pricing"}
+              to={ro ? "/servicii" : "/en/services"}
               label={ro ? "Înapoi" : "Back"}
               title={ro ? "Înapoi la servicii și costuri" : "Back to services and pricing"}
               className="mb-4"
@@ -286,7 +286,7 @@ const MaintenancePartnerships = () => {
             <Breadcrumbs
               items={[
                 { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
-                { name: ro ? "Servicii & Costuri" : "Services & Pricing", path: ro ? "/costurisiproduse" : "/en/pricing" },
+                { name: ro ? "Servicii AVYRON" : "AVYRON Services", path: ro ? "/servicii" : "/en/services" },
                 { name: ro ? "Mentenanță & Colaborări" : "Maintenance & Partnerships", path },
               ]}
             />
@@ -677,7 +677,7 @@ const MaintenancePartnerships = () => {
                   contact@avyron.ro
                 </a>
                 <Link
-                  to={ro ? "/costurisiproduse" : "/en/pricing"}
+                  to={ro ? "/servicii" : "/en/services"}
                   className="inline-flex items-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-6 py-3 text-sm font-semibold transition-all hover:-translate-y-0.5 hover:bg-foreground/[0.1]"
                 >
                   {ro ? "Vezi serviciile" : "See the services"}

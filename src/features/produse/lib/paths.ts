@@ -4,15 +4,15 @@ import { PRODUSE_COLLECTION_SEGMENTS } from "../data/routes";
 import type { CatalogItem, ItemType } from "../data/types";
 
 /**
- * Rutele paginii. Până la lansare stă pe o rută de lucru, separată de
- * /produse/* (care încă servește serviciile). La lansare se schimbă doar BASE.
+ * Rutele canonice ale catalogului de produse digitale reutilizabile.
+ * Serviciile personalizate au namespace separat, sub `/servicii`.
  */
-export const BASE: Record<Lang, string> = { ro: "/produse-avyron", en: "/en/avyron-products" };
+export const BASE: Record<Lang, string> = { ro: "/produse", en: "/en/products" };
 
 export const SPECIAL = {
   guide: { ro: "ghid", en: "guide" },
   faq: { ro: "intrebari-frecvente", en: "faq" },
-  /** Prefixul colecțiilor: /produse-avyron/colectii/<segment>. */
+  /** Prefixul colecțiilor: /produse/colectii/<segment>. */
   collections: { ro: "colectii", en: "collections" },
 } as const;
 

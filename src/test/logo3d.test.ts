@@ -13,7 +13,7 @@ import {
 } from "@/data/logo3d";
 import { ROUTE_ALTERNATES } from "@/i18n/routes";
 import { PRERENDER_ROUTES } from "@/seo/publicRoutes";
-import { PRODUCTS } from "@/data/products";
+import { SERVICES } from "@/data/services";
 import { signedDistance } from "@/components/logo3d/engine/sdf";
 import { CONCEPTS } from "@/components/logo3d/marks";
 
@@ -66,7 +66,7 @@ describe("Logo Dinamic 3D — routing", () => {
   });
 
   it("is listed right before Social Media Identity", () => {
-    const keys = PRODUCTS.map((p) => p.key);
+    const keys = SERVICES.map((p) => p.key);
     expect(keys.indexOf("logo-3d")).toBe(keys.indexOf("social-identity") - 1);
   });
 });
