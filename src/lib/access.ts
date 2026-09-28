@@ -48,14 +48,14 @@ export const canSee = (audience: Audience, a: Access) => {
 };
 
 export type SectionId =
-  | "overview" | "profile" | "settings" | "projects" | "subscriptions" | "invoices" | "cart"
+  | "overview" | "profile" | "settings" | "projects" | "subscriptions" | "invoices" | "cart" | "collection"
   | "stats" | "tickets" | "maintenance" | "clients" | "domains" | "payments"
   | "finance" | "media" | "leads" | "staff-tickets" | "demo-requests" | "intern"
-  | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers";
+  | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "produse-avyron";
 
 export type SectionDef = {
   id: SectionId;
-  group: "overview" | "account" | "work" | "billing" | "activity" | "team" | "control";
+  group: "overview" | "account" | "work" | "billing" | "produse" | "activity" | "team" | "control";
   audience: Audience;
   /** Cuvinte pentru căutarea rapidă. */
   keywords: string[];
@@ -80,6 +80,12 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "subscriptions", group: "billing", audience: "client", keywords: ["abonament", "plan", "subscriptions"] },
   { id: "cart", group: "billing", audience: "client", keywords: ["cos", "comanda", "cart"] },
   { id: "invoices", group: "billing", audience: "client", keywords: ["facturi", "invoices", "plata"] },
+
+
+  // Produsele digitale au categoria lor: clientul își vede colecția, iar
+  // super adminul centrul magazinului — două fețe ale aceluiași lucru.
+  { id: "collection", group: "produse", audience: "everyone", keywords: ["colectia mea", "produse avyron", "componente", "parteneriat", "avy", "collection", "artefacte"] },
+  { id: "produse-avyron", group: "produse", audience: "superadmin", keywords: ["produse avyron", "artefacte", "catalog", "parteneriate", "magazin", "componente"] },
 
   { id: "stats", group: "activity", audience: "client", keywords: ["statistici", "vizite", "stats"] },
   { id: "tickets", group: "activity", audience: "client", keywords: ["suport", "tichete", "tickets", "mesaje"] },

@@ -36,9 +36,11 @@ const BlogProfessional = lazy(() => import("./pages/products/BlogProfessional.ts
 const LogoDinamic3D = lazy(() => import("./pages/services/LogoDinamic3DPage.tsx"));
 const LogoStudio = lazy(() => import("./pages/services/LogoStudioPage.tsx"));
 const AiOsConsole = lazy(() => import("./pages/intern/AiOs.tsx"));
+const ProduseApp = lazy(() => import("./features/produse/ProduseApp.tsx"));
 const AiProjects = lazy(() => import("./pages/intern/AiProjects.tsx"));
 const AiProjectPage = lazy(() => import("./pages/intern/AiProjectPage.tsx"));
 const Finance = lazy(() => import("./pages/intern/Finance.tsx"));
+const ProduseAvyronOs = lazy(() => import("./pages/intern/ProduseAvyron.tsx"));
 const AvyEngine = lazy(() => import("./pages/intern/AvyEngine.tsx"));
 const Biblioteca = lazy(() => import("./pages/Biblioteca.tsx"));
 const AvyChat = lazy(() => import("@/components/ai/AvyChat"));
@@ -147,6 +149,14 @@ const App = () => (
                 <Route path="/en/terms" element={<Terms />} />
                 <Route path="/politica-cookies" element={<CookiePolicy />} />
                 <Route path="/en/cookie-policy" element={<CookiePolicy />} />
+                {/* Produse Avyron (Artefacte) — rută de lucru până la lansare.
+                    Cu VITE_PRODUSE_LIVE=1 intră în prerender, sitemap și hreflang. */}
+                {FEATURES.produse && (
+                  <>
+                    <Route path="/produse-avyron/*" element={<ProduseApp />} />
+                    <Route path="/en/avyron-products/*" element={<ProduseApp />} />
+                  </>
+                )}
                 <Route path="/costuri" element={<Pricing />} />
                 <Route path="/costurisiproduse" element={<Pricing />} />
                 <Route path="/en/pricing" element={<Pricing />} />
@@ -228,6 +238,14 @@ const App = () => (
                   element={
                     <ProtectedRoute>
                       <InternHome />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/intern/produse"
+                  element={
+                    <ProtectedRoute>
+                      <ProduseAvyronOs />
                     </ProtectedRoute>
                   }
                 />

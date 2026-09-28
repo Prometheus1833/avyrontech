@@ -9,6 +9,10 @@ interface ImportMetaEnv {
   readonly VITE_LOVABLE_CONNECTOR_GOOGLE_ANALYTICS_API_KEY?: string;
   /** "1" activează pagina /biblioteca într-un build de producție. */
   readonly VITE_BIBLIOTECA?: string;
+  /** "1" face ruta de lucru Produse Avyron accesibilă într-un build (noindex). */
+  readonly VITE_PRODUSE?: string;
+  /** "1" publică Produse Avyron: indexabilă, prerender, sitemap, card pe home. */
+  readonly VITE_PRODUSE_LIVE?: string;
 }
 
 interface ImportMeta {
@@ -19,4 +23,3 @@ interface Window {
   dataLayer: unknown[];
   gtag: (...args: unknown[]) => void;
 }
-

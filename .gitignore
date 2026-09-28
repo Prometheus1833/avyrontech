@@ -29,3 +29,9 @@ playwright/.cache/
 *.njsproj
 *.sln
 *.sw?
+
+# Chei și artefacte locale (nu ajung niciodată în repo)
+.worldlabs-key
+.avyron-current.tar.gz
+Claude outputs/
+.worktrees/

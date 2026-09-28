@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import {
-  BarChart3, Bell, BookOpen, Bot, BriefcaseBusiness, ChevronLeft, Command,
+  BarChart3, Bell, BookOpen, Bot, Boxes, BriefcaseBusiness, ChevronLeft, Command,
   CreditCard, FolderKanban, Globe, Image as ImageIcon, LayoutDashboard, Lock,
   LogOut, Megaphone, MessageSquare, MessagesSquare, PanelLeftClose, PanelLeftOpen,
   Receipt, Search, Settings, ShieldCheck, ShoppingCart, Sparkles, Target, User,
@@ -40,13 +40,15 @@ const AvyronOverview = lazy(() => import("@/components/dashboard/AvyronOverview"
 const TeamStaffTab = lazy(() => import("@/components/dashboard/TeamStaffTab"));
 const OsCentersTab = lazy(() => import("@/components/dashboard/OsCentersTab"));
 const CommandCenter = lazy(() => import("@/components/dashboard/CommandCenter"));
+const ProductCollectionTab = lazy(() => import("@/components/dashboard/ProductCollectionTab").then((m) => ({ default: m.ProductCollectionTab })));
+const StaffProduseTab = lazy(() => import("@/components/dashboard/StaffProduseTab").then((m) => ({ default: m.StaffProduseTab })));
 
 const GROUP_LABELS: Record<string, string> = {
   overview: "Principal", work: "Clienți și livrare", activity: "Activitate",
   team: "Echipă și cunoaștere", control: "Control AVYRON OS",
-  billing: "Produse & facturi", account: "Cont",
+  billing: "Facturare", produse: "Produse Avyron", account: "Cont",
 };
-const GROUP_ORDER = ["overview", "work", "activity", "team", "control", "billing", "account"];
+const GROUP_ORDER = ["overview", "work", "produse", "activity", "team", "control", "billing", "account"];
 
 export default function Profile() {
   const { user, profile, roles, isSuperAdmin, isStaff, isAdmin, signOut } = useAuth();
@@ -64,12 +66,13 @@ export default function Profile() {
     maintenance: { label: "Mentenanță", icon: Wrench }, clients: { label: "Clienți", icon: Users },
     domains: { label: "Domenii", icon: Globe }, media: { label: "Media", icon: ImageIcon }, leads: { label: "Leaduri & CRM", icon: Target },
     subscriptions: { label: "Abonamente", icon: CreditCard }, cart: { label: "Coș", icon: ShoppingCart }, invoices: { label: "Facturi", icon: Receipt },
+    collection: { label: "Colecția mea", icon: Boxes },
     stats: { label: "Vizite și statistici", icon: BarChart3 }, tickets: { label: "Suport", icon: MessageSquare },
     "staff-tickets": { label: "Solicitări clienți", icon: MessageSquare }, "demo-requests": { label: "Solicitări demo", icon: MessageSquare },
     intern: { label: "Chat intern", icon: MessagesSquare }, announcements: { label: "Anunțuri", icon: Megaphone },
     resources: { label: "Documente și resurse", icon: BookOpen }, "team-staff": { label: "Echipă și personal", icon: Users },
     payments: { label: "Plăți", icon: Wallet }, finance: { label: "Financiar", icon: Wallet }, promotions: { label: "Promoții", icon: BadgePercent },
-    "ai-os": { label: "Agenți AI", icon: Sparkles }, "os-centers": { label: "Centre AVYRON OS", icon: BriefcaseBusiness },
+    "ai-os": { label: "Agenți AI", icon: Sparkles }, "produse-avyron": { label: "Produse Avyron", icon: Boxes }, "os-centers": { label: "Centre AVYRON OS", icon: BriefcaseBusiness },
   }), [access.isStaff]);
 
   const allowed = useMemo(() => sectionsFor(access), [access]);
@@ -152,7 +155,7 @@ export default function Profile() {
         <div className="mx-auto max-w-[1500px] p-3 sm:p-5 lg:p-6">
           <Suspense fallback={contentFallback}>
           <TabsContent value="overview" className="mt-0"><AvyronOverview access={access} displayName={displayName} onOpenSection={openSection} onOpenCommand={() => setCommandOpen(true)} /></TabsContent>
-          <TabsContent value="profile" className="mt-0"><ProfileTab /></TabsContent><TabsContent value="settings" className="mt-0"><SettingsTab /></TabsContent><TabsContent value="projects" className="mt-0"><CloudflareProjects embedded /></TabsContent>
+          <TabsContent value="profile" className="mt-0"><ProfileTab /></TabsContent><TabsContent value="settings" className="mt-0"><SettingsTab /></TabsContent><TabsContent value="collection" className="mt-0"><ProductCollectionTab /></TabsContent><TabsContent value="projects" className="mt-0"><CloudflareProjects embedded /></TabsContent>
           {access.isClient && <><TabsContent value="subscriptions" className="mt-0"><SubscriptionsTab /></TabsContent><TabsContent value="invoices" className="mt-0"><InvoicesTab /></TabsContent><TabsContent value="cart" className="mt-0"><CartTab /></TabsContent><TabsContent value="stats" className="mt-0"><StatsTab /></TabsContent><TabsContent value="tickets" className="mt-0"><TicketsTab /></TabsContent></>}
           {access.isStaff && <>
             <TabsContent value="maintenance" className="mt-0"><StaffMaintenanceTab /></TabsContent>
@@ -168,7 +171,7 @@ export default function Profile() {
             <TabsContent value="team-staff" className="mt-0"><TeamStaffTab /></TabsContent>
             <TabsContent value="os-centers" className="mt-0"><OsCentersTab access={access} onNavigate={openSection} /></TabsContent>
           </>}
-          {access.isSuperAdmin && <><TabsContent value="payments" className="mt-0"><StaffPaymentsTab /></TabsContent><TabsContent value="finance" className="mt-0"><StaffFinanceTab /></TabsContent><TabsContent value="promotions" className="mt-0"><StaffPromotionsTab /></TabsContent><TabsContent value="ai-os" className="mt-0"><AiOsConsole embedded /></TabsContent></>}
+          {access.isSuperAdmin && <><TabsContent value="payments" className="mt-0"><StaffPaymentsTab /></TabsContent><TabsContent value="finance" className="mt-0"><StaffFinanceTab /></TabsContent><TabsContent value="promotions" className="mt-0"><StaffPromotionsTab /></TabsContent><TabsContent value="produse-avyron" className="mt-0"><StaffProduseTab /></TabsContent><TabsContent value="ai-os" className="mt-0"><AiOsConsole embedded /></TabsContent></>}
           </Suspense>
           {access.isSuperAdmin && (tab === "overview" || tab === "profile") && <Suspense fallback={contentFallback}><div className="mt-4 grid gap-3 lg:grid-cols-2"><AiProductionEntryCard /><EngineEntryCard /></div></Suspense>}
         </div>

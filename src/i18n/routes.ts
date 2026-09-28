@@ -1,5 +1,7 @@
 import type { Lang } from "./translations";
-import { FEATURES } from "@/config/features";
+import { FEATURES } from "../config/features";
+import { alternatePath as produseAlternate } from "../features/produse/lib/paths";
+import { produseRoutePairs } from "../features/produse/data/routes";
 
 /**
  * Language-prefixed routes for SEO.
@@ -27,6 +29,9 @@ export const ROUTE_ALTERNATES: Array<{ ro: string; en: string }> = [
   ...(FEATURES.bibliotecaLive
     ? [{ ro: "/biblioteca", en: "/en/library" }]
     : []),
+  // Produse Avyron intră în prerender, sitemap și hreflang abia la lansare
+  // (VITE_PRODUSE_LIVE=1). Până atunci pagina e accesibilă, dar `noindex`.
+  ...(FEATURES.produseLive ? produseRoutePairs() : []),
 ];
 
 export function getLangFromPath(pathname: string): Lang {
@@ -39,7 +44,7 @@ export function getAlternateForPath(pathname: string, target: Lang): string | nu
   const match = ROUTE_ALTERNATES.find(
     (r) => r.ro === pathname || r.en === pathname,
   );
-  if (!match) return null;
+  if (!match) return produseAlternate(pathname, target);
   return target === "en" ? match.en : match.ro;
 }
 
