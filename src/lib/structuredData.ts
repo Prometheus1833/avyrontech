@@ -17,6 +17,7 @@ export const organizationLd = {
   "@type": "Organization",
   "@id": `${BASE_URL}/#organization`,
   name: "Avyron",
+  alternateName: "Avyron Development",
   legalName: PRIMARY_ENTITY.legalName,
   identifier: {
     "@type": "PropertyValue",
@@ -61,6 +62,7 @@ export const webSiteLd = {
   "@id": `${BASE_URL}/#website`,
   url: BASE_URL,
   name: "Avyron",
+  alternateName: "Avyron Development",
   description:
     "Agenție web România — creare site-uri, aplicații mobile și produse digitale optimizate SEO.",
   inLanguage: ["ro-RO", "en"],
@@ -72,6 +74,7 @@ export const localBusinessLd = {
   "@type": "ProfessionalService",
   "@id": `${BASE_URL}/#localbusiness`,
   name: "Avyron",
+  alternateName: "Avyron Development",
   legalName: PRIMARY_ENTITY.legalName,
   identifier: {
     "@type": "PropertyValue",
@@ -104,16 +107,13 @@ export const localBusinessLd = {
     "UI/UX design",
     "Technical SEO",
     "Website audit",
+    "AI automation and integrations",
+    "Web and mobile quality assurance testing",
+    "Dynamic 3D logo design",
+    "Visual identity and graphic design",
+    "Website and application maintenance",
     "Cybersecurity",
     "DevOps & Hosting",
-  ],
-  openingHoursSpecification: [
-    {
-      "@type": "OpeningHoursSpecification",
-      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-      opens: "09:00",
-      closes: "18:00",
-    },
   ],
   sameAs: organizationLd.sameAs,
 };

@@ -80,6 +80,23 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     }
   });
 
+  it("publishes reciprocal language alternates and representative images in the sitemap", () => {
+    const sitemap = readFileSync(resolve(distDir, "sitemap.xml"), "utf8");
+    expect(sitemap).toContain('xmlns:xhtml="http://www.w3.org/1999/xhtml"');
+    expect(sitemap).toContain('xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"');
+    expect(sitemap).toContain(
+      '<xhtml:link rel="alternate" hreflang="ro" href="https://avyron.ro/servicii" />',
+    );
+    expect(sitemap).toContain(
+      '<xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/services" />',
+    );
+    expect(sitemap).toContain("<loc>https://avyron.ro/</loc>");
+    expect(sitemap).toContain(
+      "<image:loc>https://avyron.ro/og/produse/logo-studio-3d.jpg</image:loc>",
+    );
+    expect(sitemap).not.toContain("<image:loc>https://avyron.ro/og/home.jpg</image:loc>");
+  });
+
   it("separates the About and Portfolio entities with reciprocal hreflang", () => {
     const aboutRo = read("/despre-noi");
     const aboutEn = read("/en/about");
@@ -178,6 +195,7 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
       const org = graph["@graph"].find((n: { "@type": string }) => n["@type"] === "Organization");
       expect(org.logo.url ?? org.logo).toContain("/avyron-logo.jpg");
       expect(org.legalName).toBe("DIGITAL ECOTECH SOLUTIONS S.R.L.");
+      expect(org.alternateName).toBe("Avyron Development");
       expect(org.identifier.value).toBe("55055976");
       expect(JSON.stringify(org)).not.toContain("FV Tech Solutions SRL");
       expect(org.sameAs).toContain("https://www.instagram.com/avyrontech/");
