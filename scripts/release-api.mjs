@@ -25,7 +25,18 @@ const rows = result => {
   return result.flatMap(query => query.results);
 };
 
-const isSqliteNomem = error => /SQLITE_NOMEM|out of memory/i.test(String(error?.message ?? error));
+const errorPart = value => {
+  if (value == null) return '';
+  if (Buffer.isBuffer(value)) return value.toString('utf8');
+  if (typeof value === 'string') return value;
+  try { return JSON.stringify(value); } catch { return String(value); }
+};
+const isSqliteNomem = error => /SQLITE_NOMEM|out of memory/i.test([
+  error?.message,
+  error?.stdout,
+  error?.stderr,
+  ...(Array.isArray(error?.output) ? error.output : []),
+].map(errorPart).join('\n'));
 const quotePragmaTable = name => `'${String(name).replaceAll("'", "''")}'`;
 
 /**

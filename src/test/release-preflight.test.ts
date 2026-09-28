@@ -16,6 +16,11 @@ describe('Cloudflare release preflight', () => {
       if (sql?.includes('d1_migrations')) results = (migrated && failure !== 'incomplete' ? expected : expected.slice(0, 1)).map(name => ({name}));
       if (sql === 'PRAGMA foreign_key_check' && failure === 'foreign_keys') results = [{table:'broken'}];
       if (sql === 'PRAGMA quick_check' && ['integrity_nomem','table_integrity'].includes(failure)) throw new Error('SQLITE_NOMEM: out of memory');
+      if (sql === 'PRAGMA quick_check' && failure === 'integrity_nomem_stdout') {
+        throw Object.assign(new Error('Command failed: wrangler d1 execute'), {
+          stdout: '{"error":{"notes":[{"text":"out of memory: SQLITE_NOMEM [code: 7500]"}]}}',
+        });
+      }
       if (sql === 'PRAGMA quick_check') results = [{quick_check: failure === 'integrity' ? 'broken' : 'ok'}];
       if (sql?.startsWith("SELECT name, sql FROM sqlite_schema")) results = [
         {name:'clients',sql:'CREATE TABLE clients(id TEXT)'},
@@ -48,6 +53,11 @@ describe('Cloudflare release preflight', () => {
     expect(f.calls.some(args => args.includes("PRAGMA quick_check('clients')"))).toBe(true);
     expect(f.calls.some(args => args.includes("PRAGMA quick_check('search')"))).toBe(false);
     expect(f.calls.some(args => args.includes("PRAGMA quick_check('search_data')"))).toBe(false);
+    expect(f.calls.at(-1)?.[0]).toBe('deploy');
+  });
+  it('recognizes Cloudflare SQLITE_NOMEM details captured in command stdout', () => {
+    const f = fixture('integrity_nomem_stdout'); f.release();
+    expect(f.calls.some(args => args.includes("PRAGMA quick_check('clients')"))).toBe(true);
     expect(f.calls.at(-1)?.[0]).toBe('deploy');
   });
   it('stops publication when the table-by-table fallback finds corruption', () => {
