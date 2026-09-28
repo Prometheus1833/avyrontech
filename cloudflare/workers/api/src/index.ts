@@ -1124,6 +1124,11 @@ import { dashboardRouter } from "./osDashboard";
 import { seedRouter } from "./seed";
 import { mediaRouter } from "./media";
 import { contactRouter } from "./contact";
+import { logoStudioRouter } from "./logoStudio";
+import { produseRouter } from "./produse";
+import { produseShopRouter } from "./produseShop";
+import { produseCheckoutRouter } from "./produseCheckout";
+import { produseAdminRouter } from "./produseAdmin";
 import { blogRouter, getBlogSitemapEntries, getPublishedBlogPost } from "./blog";
 import { injectBlogHtml, mergeBlogSitemap } from "../../../../src/worker/blogHtml";
 import { BLOG_SLUGS } from "../../../../src/data/blogSlugs";
@@ -1183,6 +1188,15 @@ app.route("/", domainRouter);
 app.route("/", promotionsRouter);
 // Formularul public (fără auth)
 app.route("/", contactRouter);
+app.route("/", logoStudioRouter);
+app.route("/", produseRouter);
+// Magazinul cere cont; webhook-ul Stripe rămâne public, semnat criptografic.
+app.use("/api/produse/account/*", requireAuth);
+app.use("/api/produse/admin/*", requireAuth);
+app.use("/api/produse/admin/*", requirePrivilegedMfa);
+app.route("/", produseShopRouter);
+app.route("/", produseCheckoutRouter);
+app.route("/", produseAdminRouter);
 // Importul administrativ are propria gardă constant-time X-Seed-Token.
 app.route("/", seedRouter);
 

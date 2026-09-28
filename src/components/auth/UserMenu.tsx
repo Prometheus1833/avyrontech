@@ -56,7 +56,7 @@ const UserMenu = () => {
     .join("")
     .toUpperCase();
 
-  const productsLabel = lang === "en" ? "Products" : "Produse";
+  const productsLabel = lang === "en" ? "Services" : "Servicii";
   const productsPath = lang === "en" ? "/en/pricing" : "/costurisiproduse";
   const aboutLabel = lang === "en" ? "About us" : "Despre noi";
   const aboutPath = lang === "en" ? "/en/about" : "/despre-noi";

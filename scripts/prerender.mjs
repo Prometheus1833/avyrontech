@@ -14,6 +14,7 @@
 
 import { build } from "vite";
 import react from "@vitejs/plugin-react-swc";
+import glsl from "vite-plugin-glsl";
 import { JSDOM } from "jsdom";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -35,7 +36,7 @@ await build({
   root,
   mode: "production",
   logLevel: "warn",
-  plugins: [react()],
+  plugins: [react(), glsl()],
   resolve: {
     alias: { "@": resolve(root, "src") },
     conditions: ["browser", "module", "import", "default"],
@@ -65,7 +66,10 @@ class ImmediateIntersectionObserver {
     this.cb = cb;
   }
   observe(el) {
-    this.cb([{ isIntersecting: true, intersectionRatio: 1, target: el }], this);
+    // Includem `boundingClientRect` pentru că observatorii reali îl au, iar
+    // componentele care îl citesc nu trebuie să cadă la prerender.
+    const rect = { top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0 };
+    this.cb([{ isIntersecting: true, intersectionRatio: 1, target: el, boundingClientRect: rect, intersectionRect: rect, rootBounds: rect, time: 0 }], this);
   }
   unobserve() {}
   disconnect() {}

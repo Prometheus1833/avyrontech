@@ -131,6 +131,7 @@ export function setPageMeta({
     upsertMeta("property", "og:image:secure_url", absImage);
     upsertMeta("property", "og:image:width", "1200");
     upsertMeta("property", "og:image:height", "630");
+    upsertMeta("property", "og:image:type", /\.png(?:$|\?)/i.test(absImage) ? "image/png" : "image/jpeg");
     upsertMeta("name", "twitter:image", absImage);
     if (imageAlt) {
       upsertMeta("property", "og:image:alt", imageAlt);

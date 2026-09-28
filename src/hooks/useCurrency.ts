@@ -15,7 +15,8 @@ type ExchangeRate = {
   status: Exclude<ExchangeRateStatus, "loading">;
 };
 
-const CURRENCY_STORAGE_KEY = "avyron-display-currency";
+export const CURRENCY_STORAGE_KEY = "avyron-display-currency";
+
 const CURRENCY_EVENT = "avyron:currency-change";
 const FALLBACK_RATE = 5.25;
 
@@ -23,6 +24,15 @@ let cachedRate: ExchangeRate | null = null;
 let pendingRate: Promise<ExchangeRate> | null = null;
 
 const isDisplayCurrency = (value: unknown): value is DisplayCurrency => value === "EUR" || value === "RON";
+/** True dacă vizitatorul a ales deja o monedă. */
+export const hasStoredCurrency = () => {
+  if (typeof window === "undefined") return true;
+  try {
+    return isDisplayCurrency(window.localStorage.getItem(CURRENCY_STORAGE_KEY));
+  } catch {
+    return true;
+  }
+};
 
 const readPreferredCurrency = (): DisplayCurrency => {
   if (typeof window === "undefined") return "EUR";

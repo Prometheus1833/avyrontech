@@ -41,7 +41,7 @@ test.describe("public SEO routes", () => {
     await switcher.getByRole("button", { name: "Schimbă moneda (activă: EUR)" }).click();
     await expect(switcher.getByRole("button", { name: "Schimbă moneda (activă: RON)" })).toBeVisible();
     await expect(switcher).toContainText("1 EUR = 5.1000 RON");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Produse digitale create pentru fiecare proiect");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Servicii digitale construite pentru fiecare proiect");
     await expect(page.getByText(/1[.\s]?530 RON/, { exact: false }).first()).toBeVisible();
 
     await page.goto("/produse/website-prezentare-premium");
@@ -49,11 +49,11 @@ test.describe("public SEO routes", () => {
     await expect(page.getByTestId("currency-switch").getByRole("button", { name: "Schimbă moneda (activă: RON)" })).toBeVisible();
   });
 
-  test("the retired care-plans route redirects permanently to the current QA product", async ({ page }) => {
+  test("the legacy care-plans route redirects to maintenance and partnerships", async ({ page }) => {
     await page.goto("/pachete-mentenanta");
-    await expect(page).toHaveURL(/\/produse\/testare-qa-web-mobile$/);
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro/produse/testare-qa-web-mobile");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("QA Testing");
+    await expect(page).toHaveURL(/\/mentenanta-si-colaborari$/);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro/mentenanta-si-colaborari");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Mentenanță");
   });
 
   test("homepage displays the approved hero and services wording", async ({ page }) => {
@@ -69,33 +69,36 @@ test.describe("public SEO routes", () => {
     await expect(page.getByText("Soluții digitale gândite pentru rezultate", { exact: true })).toBeVisible();
     await expect(page.getByText("Agenție web din Iași · proiecte în România și UE", { exact: true })).toHaveCount(0);
     const productList = page.getByTestId("product-list");
-    await expect(productList.getByRole("link")).toHaveCount(6);
+    await expect(productList.getByRole("link")).toHaveCount(7);
     await expect(productList).toHaveCSS("display", "block");
 
     const desktopNav = page.locator("nav ul");
-    await expect(desktopNav.locator("li")).toHaveText(["Blog", "Produse", "Despre noi", "Vezi domenii", "Proces"]);
+    await expect(desktopNav.locator("li")).toHaveText(["Blog", "Servicii", "Despre noi", "Vezi domenii", "Proces"]);
     await expect(page.locator("header").getByRole("link", { name: /Exemplu Gratuit.*Personalizat/ })).toBeVisible();
     await expect(page.getByRole("link", { name: "Messenger Facebook" })).toHaveCount(0);
 
     const hero = page.locator("#hero");
     await expect(hero.getByRole("link", { name: /Solicită un demo.*Personalizat cu activitatea ta/ })).toHaveAttribute("href", "#cta");
-    await expect(hero.getByRole("link", { name: "Vezi Produse", exact: true })).toHaveAttribute("href", "/costurisiproduse");
+    await expect(hero.getByRole("link", { name: "Vezi serviciile", exact: true })).toHaveAttribute("href", "/costurisiproduse");
 
     const portfolioCard = page.getByTestId("portfolio-card");
     const aboutCard = page.getByTestId("about-card");
+    const maintenanceCard = page.getByTestId("maintenance-card");
     await expect(portfolioCard).toHaveAttribute("href", "/portofoliu");
     await expect(portfolioCard).toContainText("Proiecte, exemple și parteneri");
     await expect(portfolioCard).not.toContainText("Despre noi");
     await expect(aboutCard).toHaveAttribute("href", "/despre-noi");
     await expect(aboutCard).toContainText("Despre noi");
     await expect(aboutCard).toContainText("Web design, development, cybersecurity și QA");
+    await expect(maintenanceCard).toHaveAttribute("href", "/mentenanta-si-colaborari");
+    await expect(maintenanceCard).toContainText("Mentenanță și colaborări");
   });
 
   test("About and Portfolio are distinct, indexable bilingual pages", async ({ page }) => {
     await page.goto("/despre-noi");
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro/despre-noi");
     await expect(page.locator('link[hreflang="en"]')).toHaveAttribute("href", "https://avyron.ro/en/about");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("produse digitale");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("soluții digitale");
     await expect(page.getByText(/Avyron este o echipă/i).first()).toBeVisible();
     await expect(page.getByText("Cybersecurity", { exact: true })).toBeVisible();
     await expect(page.getByText("QA Testing", { exact: true })).toBeVisible();
@@ -122,7 +125,7 @@ test.describe("public SEO routes", () => {
     await expect(footer.getByRole("link", { name: /Exemplu Gratuit.*Personalizat/ })).toBeVisible();
     const footerNavLinks = footer.locator("nav a");
     await expect(footerNavLinks).toHaveCount(5);
-    expect((await footerNavLinks.allTextContents()).slice(0, 3)).toEqual(["Blog", "Portofoliu", "Produse"]);
+    expect((await footerNavLinks.allTextContents()).slice(0, 3)).toEqual(["Blog", "Portofoliu", "Servicii"]);
     const cookieButton = footer.getByRole("button", { name: "Setări cookie", exact: true });
     const termsLink = footer.getByRole("link", { name: "Termeni de utilizare", exact: true });
     await expect(termsLink).toHaveAttribute("href", "/termeni");
@@ -318,8 +321,9 @@ test.describe("public SEO routes", () => {
     await page.goto("/");
 
     const productList = page.getByTestId("product-list");
-    await expect(productList.getByRole("link")).toHaveCount(6);
-    expect((await productList.boundingBox())!.height).toBeLessThan(430);
+    await expect(productList.getByRole("link")).toHaveCount(7);
+    // 7 services on the homepage (Logo Dinamic 3D added): same ~71 px per row budget as before.
+    expect((await productList.boundingBox())!.height).toBeLessThan(500);
 
     await page.getByRole("button", { name: "Meniu" }).click();
     const menu = page.getByTestId("mobile-nav-menu");
@@ -327,7 +331,7 @@ test.describe("public SEO routes", () => {
     await expect(menu.getByRole("link", { name: /Exemplu Gratuit.*Personalizat/ })).toBeVisible();
     await expect(menu.getByRole("link", { name: "Despre noi", exact: true })).toHaveAttribute("href", "/despre-noi");
     const menuLabels = await menu.locator("a").evaluateAll((links) => links.map((link) => link.textContent?.trim()).filter(Boolean));
-    expect(menuLabels).toEqual(expect.arrayContaining(["Blog", "Produse", "Despre noi", "Vezi domenii", "Proces"]));
+    expect(menuLabels).toEqual(expect.arrayContaining(["Blog", "Servicii", "Despre noi", "Vezi domenii", "Proces"]));
     expect(menuLabels).not.toContain("FAQ");
 
     await page.mouse.click(4, 700);

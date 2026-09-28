@@ -1,4 +1,5 @@
 import {
+  Box,
   BookOpen,
   Bot,
   Bug,
@@ -7,6 +8,9 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { FEATURES } from "@/config/features";
+import { homePath as produsePath } from "@/features/produse/lib/paths";
+import { PRODUSE_COUNTS } from "@/features/produse/data/counts";
 
 import { useLang } from "@/i18n/LanguageContext";
 
@@ -24,6 +28,13 @@ const copy = {
         path: "/produse/website-prezentare-premium",
         Icon: Code2,
         tone: "from-cyan-400/25 to-blue-500/10 text-cyan-600 dark:text-cyan-300",
+      },
+      {
+        title: "Logo Dinamic 3D",
+        text: "Un logo original gândit pentru print, volum și mișcare, gata pentru site, video și social media.",
+        path: "/servicii/logo",
+        Icon: Box,
+        tone: "from-violet-400/25 to-sky-500/10 text-violet-600 dark:text-violet-300",
       },
       {
         title: "Magazin online",
@@ -75,6 +86,13 @@ const copy = {
         path: "/en/products/premium-presentation-website",
         Icon: Code2,
         tone: "from-cyan-400/25 to-blue-500/10 text-cyan-600 dark:text-cyan-300",
+      },
+      {
+        title: "Dynamic 3D Logo",
+        text: "An original logo designed for print, volume and motion, ready for web, video and social media.",
+        path: "/en/services/logo",
+        Icon: Box,
+        tone: "from-violet-400/25 to-sky-500/10 text-violet-600 dark:text-violet-300",
       },
       {
         title: "Online stores",
@@ -155,6 +173,32 @@ const AgencyServices = () => {
             ))}
           </div>
         </div>
+
+        {/* Produsele digitale (Artefacte) stau sub servicii: alt public, alt
+            traseu de cumpărare. Cardul apare doar cât timp pagina e activată. */}
+        {FEATURES.produse && (
+          <Link
+            to={produsePath(lang)}
+            data-testid="produse-avyron-card"
+            className="group mt-4 grid gap-3 overflow-hidden rounded-2xl border border-brand/25 bg-gradient-to-br from-brand/12 via-brand-2/[0.06] to-transparent p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-brand/45 hover:shadow-elev sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-5"
+          >
+            <span className="min-w-0">
+              <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-brand">
+                {lang === "ro" ? "Produse Avyron" : "Avyron Products"}
+              </span>
+              <span className="mt-1 block font-display text-lg font-bold tracking-tight sm:text-xl">Avyron Artefacte</span>
+              <span className="mt-1 block max-w-xl text-xs leading-relaxed text-muted-foreground sm:text-[13px]">
+                {lang === "ro"
+                  ? `${PRODUSE_COUNTS.total} componente, secțiuni, template-uri, efecte 3D și integrări API pentru agenții, freelanceri și programatori. ${PRODUSE_COUNTS.free} gratuite, cu cod gata de copiat.`
+                  : `${PRODUSE_COUNTS.total} components, sections, templates, 3D effects and API integrations for agencies, freelancers and developers. ${PRODUSE_COUNTS.free} free, with code ready to copy.`}
+              </span>
+            </span>
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-brand to-brand-2 px-4 py-2 text-xs font-semibold text-white shadow-[0_12px_30px_-16px_hsl(264_90%_60%)]">
+              {lang === "ro" ? "Deschide produsele" : "Open the products"}
+              <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>
+            </span>
+          </Link>
+        )}
       </div>
     </section>
   );

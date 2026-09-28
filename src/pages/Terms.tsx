@@ -422,7 +422,7 @@ const Terms = () => {
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base">{ro ? "Spune-ne ce vrei să construiești. Îți răspundem clar despre arie, livrare și condițiile potrivite proiectului tău." : "Tell us what you want to build. We will answer clearly about scope, delivery and the terms appropriate for your project."}</p>
           <div className="mt-7 flex flex-wrap justify-center gap-2">
             <a href={`mailto:${COMPANY.email}`} className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200">{ro ? "Scrie-ne" : "Contact us"}<ArrowRight className="size-4" aria-hidden /></a>
-            <Link to={productsPath} className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.05] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/[0.1]">{ro ? "Vezi produsele" : "View products"}</Link>
+            <Link to={productsPath} className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.05] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/[0.1]">{ro ? "Vezi serviciile" : "View services"}</Link>
           </div>
         </div>
       </section>

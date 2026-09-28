@@ -97,6 +97,28 @@ export const openApiDocument = {
     "/contact/example": {
       post: { tags: ["Public"], summary: "Solicită un exemplu de produs", responses: { "201": { description: "Solicitare creată" }, "400": { $ref: "#/components/responses/Problem" } } },
     },
+    "/logo-studio/generate": {
+      post: { tags: ["Public"], summary: "Logo Studio: 4 concepte alese de Workers AI dintr-un vocabular închis (plafonat pe IP și zilnic)", responses: { "200": { description: "Concepte validate" }, "429": { $ref: "#/components/responses/Problem" }, "503": { description: "Workers AI indisponibil; clientul folosește generatorul local" } } },
+    },
+    "/logo-studio/orders": {
+      post: { tags: ["Public"], summary: "Logo Studio: comandă pentru livrarea plătită a unui logo creat de client (lead în CRM)", responses: { "201": { description: "Comandă înregistrată" }, "400": { $ref: "#/components/responses/Problem" }, "429": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/produse/requests": {
+      post: { tags: ["Public"], summary: "Trimite o cerere de funcție sau o selecție din pagina Produse Avyron", responses: { "201": { description: "Cerere salvată și notificată" }, "400": { $ref: "#/components/responses/Problem" }, "429": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/produse/account/state": {
+      get: { tags: ["Commerce"], summary: "Parteneriatul, limitele de azi, colecția și produsele deținute", responses: { "200": { description: "Starea contului în magazinul Produse Avyron" }, "401": { $ref: "#/components/responses/Problem" }, "503": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/produse/account/copy": {
+      post: { tags: ["Commerce"], summary: "Obține un produs; consumă din limita zilnică a parteneriatului", responses: { "200": { description: "Produs obținut" }, "402": { $ref: "#/components/responses/Problem" }, "429": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/produse/account/collection": {
+      get: { tags: ["Commerce"], summary: "Colecția salvată în cont", responses: { "200": { description: "Lista de produse salvate" } } },
+      post: { tags: ["Commerce"], summary: "Adaugă, scoate sau sincronizează produse în colecție", responses: { "200": { description: "Colecția actualizată" }, "400": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/produse/account/checkout": {
+      post: { tags: ["Commerce"], summary: "Creează comanda și sesiunea de plată pentru un parteneriat sau un produs", responses: { "201": { description: "Sesiune de plată creată" }, "404": { $ref: "#/components/responses/Problem" }, "503": { $ref: "#/components/responses/Problem" } } },
+    },
     "/auth/signup": {
       post: { tags: ["Auth"], summary: "Creează un cont și trimite verificarea emailului", responses: { "202": { description: "Cont creat; verificare necesară" }, "400": { $ref: "#/components/responses/Problem" }, "429": { $ref: "#/components/responses/Problem" } } },
     },

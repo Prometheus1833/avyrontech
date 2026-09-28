@@ -127,7 +127,7 @@ test.describe("dashboard AVYRON OS în română", () => {
     const osButton = page.getByRole("button", { name: "Deschide accesul rapid AVYRON OS" });
     await expect(osButton).toBeVisible();
     await expect(osButton).toHaveText(/OS/);
-    const brandBox = await page.getByRole("link", { name: /Avyron — mergi la hero/ }).boundingBox();
+    const brandBox = await page.locator("header").getByRole("link", { name: /Avyron — mergi la hero/ }).boundingBox();
     const osBox = await osButton.boundingBox();
     const languageBox = await page.getByRole("button", { name: /Schimbă limba/ }).boundingBox();
     expect(brandBox!.x + brandBox!.width).toBeLessThan(osBox!.x);

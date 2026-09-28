@@ -1,4 +1,4 @@
-import { ArrowUpRight, Briefcase, UsersRound, Wallet } from "lucide-react";
+import { ArrowUpRight, Briefcase, HeartHandshake, UsersRound, Wallet } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
 
@@ -9,11 +9,20 @@ export default function HomepageQuickLinks() {
     {
       to: ro ? "/costurisiproduse" : "/en/pricing",
       eyebrow: ro ? "Transparență totală" : "Full transparency",
-      title: ro ? "Costuri și produse" : "Pricing and products",
-      detail: ro ? "Produse, configurații și repere de buget prezentate clar." : "Products, configurations and clear budget guidance.",
+      title: ro ? "Servicii și costuri" : "Services and pricing",
+      detail: ro ? "Servicii, configurații și repere de buget prezentate clar." : "Services, configurations and clear budget guidance.",
       icon: Wallet,
       testId: "pricing-card",
       tone: "from-violet-500/15 to-cyan-500/[0.05] text-violet-600 dark:text-violet-300",
+    },
+    {
+      to: ro ? "/mentenanta-si-colaborari" : "/en/maintenance-and-partnerships",
+      eyebrow: ro ? "Continuitate după lansare" : "Continuity after launch",
+      title: ro ? "Mentenanță și colaborări" : "Maintenance and partnerships",
+      detail: ro ? "Abonamente clare pentru mentenanță, evoluție și lucru pe termen lung." : "Clear plans for maintenance, evolution and long-term collaboration.",
+      icon: HeartHandshake,
+      testId: "maintenance-card",
+      tone: "from-emerald-500/15 to-cyan-500/[0.05] text-emerald-600 dark:text-emerald-300",
     },
     {
       to: ro ? "/portofoliu" : "/en/portfolio",
@@ -36,7 +45,7 @@ export default function HomepageQuickLinks() {
   ];
 
   return <section aria-label={ro ? "Descoperă Avyron" : "Discover Avyron"} className="py-8 md:py-12">
-    <div className="mx-auto grid max-w-6xl gap-3 px-4 md:grid-cols-3">
+    <div className="mx-auto grid max-w-6xl gap-3 px-4 sm:grid-cols-2 xl:grid-cols-4">
       {cards.map(({ to, eyebrow, title, detail, icon: Icon, testId, tone }) => <Link key={to} to={to} data-testid={testId} className={`group relative overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br ${tone} p-4 shadow-soft transition hover:-translate-y-0.5 hover:border-brand/35 hover:shadow-elev sm:p-5`}>
         <div className="flex items-start gap-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-current/15 bg-background/70"><Icon className="size-4" /></span>

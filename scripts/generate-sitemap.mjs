@@ -24,7 +24,12 @@ function htmlFiles(dir) {
 function sourceFiles(route) {
   if (route === "/" || route === "/en") return ["src/pages/Index.tsx", "src/i18n/translations.ts"];
   if (route.includes("/blog")) return ["src/pages/Blog.tsx", "src/data/blogIndex.ts"];
+  if (route === "/servicii/logo/creeaza" || route === "/en/services/logo/create") return ["src/pages/services/LogoStudioPage.tsx", "src/data/logoStudioCopy.ts", "src/data/logoStudio.ts"];
+  if (route === "/servicii/logo" || route === "/en/services/logo") return ["src/pages/services/LogoDinamic3DPage.tsx", "src/data/logo3d.ts"];
   if (route === "/produse/testare-qa-web-mobile" || route === "/en/products/qa-testing-web-mobile") return ["src/pages/products/QaTestingPage.tsx"];
+  if (route === "/biblioteca" || route === "/en/library") return ["src/pages/Biblioteca.tsx", "src/data/bibliotecaCatalog.ts"];
+  if (route.startsWith("/produse-avyron") || route.startsWith("/en/avyron-products"))
+    return ["src/features/produse/data/items.ts", "src/features/produse/ProduseApp.tsx"];
   if (route.includes("/products/") || route.startsWith("/produse/")) return ["src/pages/products/ProductPage.tsx", "src/data/products.ts"];
   if (route.includes("pricing") || route === "/costurisiproduse") return ["src/pages/Pricing.tsx"];
   if (route === "/despre-noi" || route === "/en/about") return ["src/pages/AboutUs.tsx"];
@@ -32,7 +37,7 @@ function sourceFiles(route) {
   if (route === "/gdpr" || route === "/en/privacy") return ["src/pages/Gdpr.tsx", "src/config/company.ts"];
   if (route === "/termeni" || route === "/en/terms") return ["src/pages/Terms.tsx", "src/config/company.ts"];
   if (route === "/politica-cookies" || route === "/en/cookie-policy") return ["src/pages/CookiePolicy.tsx", "src/lib/cookieConsent.ts", "src/config/company.ts"];
-  if (route.includes("care-plans") || route === "/pachete-mentenanta") return ["src/pages/products/CarePlansPage.tsx"];
+  if (route.includes("maintenance-and-partnerships") || route === "/mentenanta-si-colaborari") return ["src/pages/MaintenancePartnerships.tsx", "src/data/subscriptionPlans.ts"];
   return ["src/App.tsx"];
 }
 

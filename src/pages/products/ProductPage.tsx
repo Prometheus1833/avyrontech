@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import LibraryLink from "@/components/site/LibraryLink";
 import {
   Accessibility,
   ArrowRight,
@@ -14,6 +15,7 @@ import {
   Cpu,
   Gauge,
   Globe,
+  HeartHandshake,
   MessageCircle,
   Palette,
   ScanSearch,
@@ -40,6 +42,8 @@ import CurrencySwitch from "@/components/site/CurrencySwitch";
 import { useCurrency } from "@/hooks/useCurrency";
 import PaymentMethods from "@/components/site/PaymentMethods";
 import QuickNav, { type QuickNavItem } from "@/components/site/QuickNav";
+import PlanTeaser from "@/components/site/subscriptions/PlanTeaser";
+import { categoryForProduct } from "@/data/subscriptionPlans";
 
 const ICONS: Record<IconKey, React.ComponentType<{ className?: string }>> = {
   globe: Globe,
@@ -113,7 +117,7 @@ const ProductPage = () => {
           breadcrumbLd([
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
             {
-              name: ro ? "Costuri & Produse" : "Pricing & Products",
+              name: ro ? "Servicii & Costuri" : "Services & Pricing",
               path: ro ? "/costurisiproduse" : "/en/pricing",
             },
             { name: c.name, path },
@@ -131,6 +135,7 @@ const ProductPage = () => {
   // The audit is intentionally available only from the complete product overview,
   // where its protected request flow has the necessary context and anti-spam checks.
   const others = PRODUCTS.filter((p) => p.key !== product.key && p.key !== "audit");
+  const planCategory = categoryForProduct(product.key);
 
   const quickNavItems: QuickNavItem[] = [
     { id: "prezentare", label: ro ? "Prezentare" : "Overview", icon: HeroIcon },
@@ -138,6 +143,7 @@ const ProductPage = () => {
     { id: "pachet", label: ro ? "Ce include" : "What's included", icon: ShoppingBag },
     { id: "proces", label: ro ? "Proces" : "Process", icon: Clock },
     { id: "faq", label: "FAQ", icon: MessageCircle },
+    ...(planCategory ? [{ id: "abonamente", label: ro ? "Abonamente" : "Plans", icon: HeartHandshake }] : []),
     { id: "contact", label: ro ? "Contact" : "Contact", icon: ArrowRight },
   ];
 
@@ -189,7 +195,7 @@ const ProductPage = () => {
           items={[
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
             {
-              name: ro ? "Costuri & Produse" : "Pricing & Products",
+              name: ro ? "Servicii & Costuri" : "Services & Pricing",
               path: ro ? "/costurisiproduse" : "/en/pricing",
             },
             { name: c.name, path: product.path[lang] },
@@ -379,6 +385,8 @@ const ProductPage = () => {
           </section>
         )}
 
+        <LibraryLink />
+
         {/* Deliverables */}
         <section id="pachet" className="mt-14 scroll-mt-28">
           <Reveal>
@@ -550,6 +558,16 @@ const ProductPage = () => {
             })}
           </div>
         </section>
+
+        {/* Abonamentele de mentenanță potrivite produsului */}
+        {planCategory && (
+          <PlanTeaser
+            category={planCategory}
+            accent={{ from: a.from, to: a.to, text: a.text, border: a.border }}
+            productName={c.name}
+            productKey={product.key}
+          />
+        )}
       </div>
       <Footer />
     </main>

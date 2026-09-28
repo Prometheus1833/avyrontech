@@ -7,6 +7,7 @@ import Index from "./pages/Index.tsx";
 import LangRouteSync from "@/components/site/LangRouteSync";
 import { pageView } from "@/lib/analytics";
 import { resetManagedHead } from "@/lib/seo";
+import { FEATURES } from "@/config/features";
 
 
 const Gdpr = lazy(() => import("./pages/Gdpr.tsx"));
@@ -30,12 +31,18 @@ const ProjectPage = lazy(() => import("./pages/intern/ProjectPage.tsx"));
 const InternHome = lazy(() => import("./pages/intern/InternHome.tsx"));
 const ProductDetail = lazy(() => import("./pages/products/ProductPage.tsx"));
 const QaTesting = lazy(() => import("./pages/products/QaTestingPage.tsx"));
+const MaintenancePartnerships = lazy(() => import("./pages/MaintenancePartnerships.tsx"));
 const BlogProfessional = lazy(() => import("./pages/products/BlogProfessional.tsx"));
+const LogoDinamic3D = lazy(() => import("./pages/services/LogoDinamic3DPage.tsx"));
+const LogoStudio = lazy(() => import("./pages/services/LogoStudioPage.tsx"));
 const AiOsConsole = lazy(() => import("./pages/intern/AiOs.tsx"));
+const ProduseApp = lazy(() => import("./features/produse/ProduseApp.tsx"));
 const AiProjects = lazy(() => import("./pages/intern/AiProjects.tsx"));
 const AiProjectPage = lazy(() => import("./pages/intern/AiProjectPage.tsx"));
 const Finance = lazy(() => import("./pages/intern/Finance.tsx"));
+const ProduseAvyronOs = lazy(() => import("./pages/intern/ProduseAvyron.tsx"));
 const AvyEngine = lazy(() => import("./pages/intern/AvyEngine.tsx"));
+const Biblioteca = lazy(() => import("./pages/Biblioteca.tsx"));
 const AvyChat = lazy(() => import("@/components/ai/AvyChat"));
 
 /** Butonul AVY apare pe paginile comerciale, nu pe cele private sau pe demo-uri. */
@@ -142,10 +149,22 @@ const App = () => (
                 <Route path="/en/terms" element={<Terms />} />
                 <Route path="/politica-cookies" element={<CookiePolicy />} />
                 <Route path="/en/cookie-policy" element={<CookiePolicy />} />
+                {/* Produse Avyron este public implicit; VITE_PRODUSE_LIVE=0 îl
+                    poate retrage temporar din prerender, sitemap și hreflang. */}
+                {FEATURES.produse && (
+                  <>
+                    <Route path="/produse-avyron/*" element={<ProduseApp />} />
+                    <Route path="/en/avyron-products/*" element={<ProduseApp />} />
+                  </>
+                )}
                 <Route path="/costuri" element={<Pricing />} />
                 <Route path="/costurisiproduse" element={<Pricing />} />
                 <Route path="/en/pricing" element={<Pricing />} />
                 <Route path="/produse/website-prezentare-premium" element={<ProductDetail />} />
+                <Route path="/servicii/logo" element={<LogoDinamic3D />} />
+                <Route path="/en/services/logo" element={<LogoDinamic3D />} />
+                <Route path="/servicii/logo/creeaza" element={<LogoStudio />} />
+                <Route path="/en/services/logo/create" element={<LogoStudio />} />
                 <Route path="/produse/identitate-social-media" element={<ProductDetail />} />
                 <Route path="/produse/magazin-online" element={<ProductDetail />} />
                 <Route path="/produse/blog-profesional" element={<BlogProfessional />} />
@@ -161,8 +180,18 @@ const App = () => (
                 <Route path="/en/products/personalized-ai-agent" element={<ProductDetail />} />
                 <Route path="/en/products/website-audit" element={<Navigate to="/en?request=audit#cta" replace />} />
                 <Route path="/en/products/qa-testing-web-mobile" element={<QaTesting />} />
-                <Route path="/pachete-mentenanta" element={<Navigate to="/produse/testare-qa-web-mobile" replace />} />
-                <Route path="/en/care-plans" element={<Navigate to="/en/products/qa-testing-web-mobile" replace />} />
+                {/* Biblioteca este publică și indexabilă, dar intrările ei
+                    rămân exclusiv în paginile serviciilor. */}
+                {FEATURES.biblioteca && (
+                  <>
+                    <Route path="/biblioteca" element={<Biblioteca />} />
+                    <Route path="/en/library" element={<Biblioteca />} />
+                  </>
+                )}
+                <Route path="/mentenanta-si-colaborari" element={<MaintenancePartnerships />} />
+                <Route path="/en/maintenance-and-partnerships" element={<MaintenancePartnerships />} />
+                <Route path="/pachete-mentenanta" element={<Navigate to="/mentenanta-si-colaborari" replace />} />
+                <Route path="/en/care-plans" element={<Navigate to="/en/maintenance-and-partnerships" replace />} />
 
                 <Route path="/despre" element={<Navigate to="/despre-noi" replace />} />
                 <Route path="/despre-si-portofoliu" element={<Navigate to="/portofoliu" replace />} />
@@ -209,6 +238,14 @@ const App = () => (
                   element={
                     <ProtectedRoute>
                       <InternHome />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/intern/produse"
+                  element={
+                    <ProtectedRoute>
+                      <ProduseAvyronOs />
                     </ProtectedRoute>
                   }
                 />

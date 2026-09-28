@@ -1,4 +1,5 @@
 import { trackFunnel } from "@/lib/siteAnalytics";
+import LibraryLink from "@/components/site/LibraryLink";
 import { useCallback, useEffect, useState } from "react";
 import { useLang } from "@/i18n/LanguageContext";
 import BlogPreloader from "@/components/blogpro/BlogPreloader";
@@ -33,6 +34,8 @@ import {
   FinalCta,
 } from "@/components/blogpro/Closing";
 import { BASE_PRICE } from "@/data/blogProfessional";
+import PlanTeaser from "@/components/site/subscriptions/PlanTeaser";
+import { categoryByKey } from "@/data/subscriptionPlans";
 
 const PATHS = { ro: "/produse/blog-profesional", en: "/en/products/professional-blog" };
 
@@ -60,6 +63,7 @@ const quickNav = {
     { id: "conversie", label: "Conversie" },
     { id: "configurator-blog", label: "Preț" },
     { id: "faq", label: "Întrebări" },
+    { id: "abonamente", label: "Abonamente" },
   ],
   en: [
     { id: "prezentare", label: "Overview" },
@@ -69,6 +73,7 @@ const quickNav = {
     { id: "conversie", label: "Conversion" },
     { id: "configurator-blog", label: "Pricing" },
     { id: "faq", label: "FAQ" },
+    { id: "abonamente", label: "Plans" },
   ],
 } as const;
 
@@ -142,13 +147,15 @@ const BlogProfessional = () => {
           "ld-breadcrumb",
           breadcrumbLd([
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
-            { name: ro ? "Costuri & Produse" : "Pricing & Products", path: ro ? "/costurisiproduse" : "/en/pricing" },
+            { name: ro ? "Servicii & Costuri" : "Services & Pricing", path: ro ? "/costurisiproduse" : "/en/pricing" },
             { name: m.name, path: PATHS[lang] },
           ]),
         );
       },
     );
   }, [lang, ro, m]);
+
+  const blogPlans = categoryByKey("blog");
 
   /* Vizită de pagină numărată în baza noastră (și în GA4). */
   useEffect(() => {
@@ -193,7 +200,7 @@ const BlogProfessional = () => {
           className="mt-6"
           items={[
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
-            { name: ro ? "Costuri & Produse" : "Pricing & Products", path: ro ? "/costurisiproduse" : "/en/pricing" },
+            { name: ro ? "Servicii & Costuri" : "Services & Pricing", path: ro ? "/costurisiproduse" : "/en/pricing" },
             { name: ro ? "Blog Profesional" : "Professional Blog", path: PATHS[lang] },
           ]}
         />
@@ -219,6 +226,27 @@ const BlogProfessional = () => {
       <AvyronBlogPreview />
       <BlogFaq />
       <FinalCta />
+
+      <div className="mx-auto max-w-5xl px-4 sm:px-6">
+        <LibraryLink />
+      </div>
+
+      {/* Abonamentele de mentenanță pentru blog, deasupra subsolului */}
+      {blogPlans && (
+        <div className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6">
+          <PlanTeaser
+            category={blogPlans}
+            accent={{
+              from: "from-amber-400",
+              to: "to-orange-600",
+              text: "text-amber-600 dark:text-amber-300",
+              border: "border-amber-300/30",
+            }}
+            productName={ro ? "blogul tău" : "your blog"}
+            productKey="blog-professional"
+          />
+        </div>
+      )}
 
       <QuickNav items={quickNav[lang] as unknown as QuickNavItem[]} showLang />
       <FloatingWhatsApp />
