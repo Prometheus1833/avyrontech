@@ -23,7 +23,7 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const MIGRATIONS = join(root, "cloudflare/d1/migrations");
-const SEED_NAME = "0026_produse_catalog_seed.sql";
+const SEED_NAME = "0033_produse_catalog_seed.sql";
 
 /** Aduce catalogul TypeScript în Node, fără să ceară un runner extern. */
 async function loadCatalog() {

@@ -55,7 +55,7 @@ describe("cablajul dintre pagină și Worker", () => {
 });
 
 describe("cablajul dintre magazin și D1", () => {
-  const seed = read("cloudflare/d1/migrations/0026_produse_catalog_seed.sql");
+  const seed = read("cloudflare/d1/migrations/0033_produse_catalog_seed.sql");
   const shop = read("cloudflare/workers/api/src/produseShop.ts");
 
   it("citește accesul și prețul din tabelele migrate, nu din browser", () => {
@@ -66,13 +66,13 @@ describe("cablajul dintre magazin și D1", () => {
   });
 
   it("numără limitele pe zile și blochează dublura prin constrângere", () => {
-    const migration = read("cloudflare/d1/migrations/0025_produse_catalog.sql");
+    const migration = read("cloudflare/d1/migrations/0032_produse_catalog.sql");
     expect(migration).toContain("UNIQUE (user_id, slug, day)");
     expect(shop).toContain("FROM product_copy_events");
   });
 
   it("acordă o singură dată dreptul cumpărat și validează comanda Stripe", () => {
-    const migration = read("cloudflare/d1/migrations/0027_produse_checkout_idempotency.sql");
+    const migration = read("cloudflare/d1/migrations/0034_produse_checkout_idempotency.sql");
     const checkout = read("cloudflare/workers/api/src/produseCheckout.ts");
     expect(migration).toContain("CREATE UNIQUE INDEX IF NOT EXISTS idx_product_entitlements_order");
     expect(checkout).toContain("SELECT user_id, items_json, total_cents, status FROM commerce_orders WHERE id = ?");
