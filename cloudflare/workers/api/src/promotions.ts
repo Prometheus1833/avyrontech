@@ -282,7 +282,7 @@ promotionsRouter.post("/api/commerce/orders", async (c) => {
 
 promotionsRouter.get("/api/commerce/orders", async (c) => {
   const { results } = await c.env.DB.prepare(
-    `SELECT id,subtotal_cents,promotion_code,discount_percent,discount_base_cents,discount_cents,total_cents,currency,requires_manual_quote,status,created_at
+    `SELECT id,items_json,subtotal_cents,promotion_code,discount_percent,discount_base_cents,discount_cents,total_cents,currency,requires_manual_quote,status,created_at
        FROM commerce_orders WHERE user_id = ? ORDER BY created_at DESC LIMIT 100`,
   ).bind(c.get("userId")).all();
   return c.json({ data: results });

@@ -31,6 +31,7 @@ const ProjectPage = lazy(() => import("./pages/intern/ProjectPage.tsx"));
 const InternHome = lazy(() => import("./pages/intern/InternHome.tsx"));
 const ProductDetail = lazy(() => import("./pages/products/ProductPage.tsx"));
 const QaTesting = lazy(() => import("./pages/products/QaTestingPage.tsx"));
+const MaintenancePartnerships = lazy(() => import("./pages/MaintenancePartnerships.tsx"));
 const BlogProfessional = lazy(() => import("./pages/products/BlogProfessional.tsx"));
 const LogoDinamic3D = lazy(() => import("./pages/services/LogoDinamic3DPage.tsx"));
 const LogoStudio = lazy(() => import("./pages/services/LogoStudioPage.tsx"));
@@ -169,7 +170,6 @@ const App = () => (
                 <Route path="/en/products/personalized-ai-agent" element={<ProductDetail />} />
                 <Route path="/en/products/website-audit" element={<Navigate to="/en?request=audit#cta" replace />} />
                 <Route path="/en/products/qa-testing-web-mobile" element={<QaTesting />} />
-
                 {/* Biblioteca de efecte. Se construiește etapizat și rămâne
                     invizibilă în producție până la lansare (D7). */}
                 {FEATURES.biblioteca && (
@@ -178,8 +178,10 @@ const App = () => (
                     <Route path="/en/library" element={<Biblioteca />} />
                   </>
                 )}
-                <Route path="/pachete-mentenanta" element={<Navigate to="/produse/testare-qa-web-mobile" replace />} />
-                <Route path="/en/care-plans" element={<Navigate to="/en/products/qa-testing-web-mobile" replace />} />
+                <Route path="/mentenanta-si-colaborari" element={<MaintenancePartnerships />} />
+                <Route path="/en/maintenance-and-partnerships" element={<MaintenancePartnerships />} />
+                <Route path="/pachete-mentenanta" element={<Navigate to="/mentenanta-si-colaborari" replace />} />
+                <Route path="/en/care-plans" element={<Navigate to="/en/maintenance-and-partnerships" replace />} />
 
                 <Route path="/despre" element={<Navigate to="/despre-noi" replace />} />
                 <Route path="/despre-si-portofoliu" element={<Navigate to="/portofoliu" replace />} />

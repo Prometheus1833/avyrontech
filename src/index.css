@@ -446,3 +446,48 @@ html {
   }
   @keyframes blogpro-hero-fade { from { opacity: 0 } to { opacity: 1 } }
 }
+
+/* ============================================
+   Mentenanță & Colaborări — animații de pagină
+   ============================================ */
+@keyframes avyron-loader-bar {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes avyron-dash-in {
+  from { opacity: 0; transform: translateY(-10px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes avyron-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-56px, -56px, 0); }
+}
+
+@keyframes avyron-pulse-soft {
+  0%, 100% { opacity: 0.28; }
+  50% { opacity: 0.62; }
+}
+
+.avyron-backdrop-drift {
+  animation: avyron-drift 26s linear infinite;
+}
+
+.avyron-backdrop-pulse {
+  animation: avyron-pulse-soft 7s ease-in-out infinite;
+}
+
+/* Fire de lumină care urcă prin cusătura dintre secțiuni. */
+@keyframes avyron-mote {
+  0% { transform: translate3d(0, 24px, 0); opacity: 0; }
+  18% { opacity: 0.85; }
+  82% { opacity: 0.45; }
+  100% { transform: translate3d(0, -168px, 0); opacity: 0; }
+}
+
+.avyron-mote {
+  animation-name: avyron-mote;
+  animation-timing-function: cubic-bezier(0.33, 0, 0.2, 1);
+  animation-iteration-count: infinite;
+}

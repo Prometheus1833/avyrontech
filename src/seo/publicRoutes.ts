@@ -51,8 +51,8 @@ export const REDIRECTS: Record<string, string> = {
   "/noutati": "/blog",
   "/produse/audit-website": "/?request=audit#cta",
   "/en/products/website-audit": "/en?request=audit#cta",
-  "/pachete-mentenanta": "/produse/testare-qa-web-mobile",
-  "/en/care-plans": "/en/products/qa-testing-web-mobile",
+  "/pachete-mentenanta": "/mentenanta-si-colaborari",
+  "/en/care-plans": "/en/maintenance-and-partnerships",
 };
 
 /** Private / auth / error areas: never indexed (X-Robots-Tag: noindex, nofollow). */

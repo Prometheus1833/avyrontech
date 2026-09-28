@@ -420,7 +420,7 @@ export const translations = {
       dash: {
         tabs: {
           profile: "Profil",
-          subscriptions: "Abonamentele mele",
+          subscriptions: "Produse & Servicii",
           stats: "Statistici",
           invoices: "Facturi",
           tickets: "Suport",
@@ -446,8 +446,8 @@ export const translations = {
           delete: "Șterge",
         },
         subs: {
-          title: "Abonamentele tale",
-          subtitle: "Toate produsele și serviciile contractate.",
+          title: "Produse & Servicii",
+          subtitle: "Abonamentele active și cererile aflate în procesare.",
           product: "Produs",
           price: "Preț",
           cycle: "Ciclu",
@@ -930,7 +930,7 @@ export const translations = {
       dash: {
         tabs: {
           profile: "Profile",
-          subscriptions: "My subscriptions",
+          subscriptions: "Products & Services",
           stats: "Statistics",
           invoices: "Invoices",
           tickets: "Support",
@@ -956,8 +956,8 @@ export const translations = {
           delete: "Delete",
         },
         subs: {
-          title: "Your subscriptions",
-          subtitle: "All contracted products and services.",
+          title: "Products & Services",
+          subtitle: "Active subscriptions and requests being processed.",
           product: "Product",
           price: "Price",
           cycle: "Cycle",
