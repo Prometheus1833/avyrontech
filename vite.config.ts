@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { cloudflare } from "@cloudflare/vite-plugin";
+import glsl from "vite-plugin-glsl";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -15,6 +16,8 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    // Shaderele Bibliotecii sunt fișiere .glsl importate ca string-uri.
+    glsl({ compress: mode !== "development" }),
     mode === "development" && componentTagger(),
     // Lovable and Cloudflare Pages use the plain static Vite build. The
     // Cloudflare plugin is enabled only for the optional standalone site
@@ -40,6 +43,11 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // Ajutorul de preîncărcare al Vite e importat de entry pentru fiecare
+          // import dinamic. Dacă îl lăsăm pe Rollup să-l grupeze singur, poate
+          // ateriza în chunk-ul 3D — și atunci homepage-ul ajunge să preîncarce
+          // 850 kB de three. Îl fixăm lângă React, care oricum e critic.
+          if (id.includes("vite/preload-helper")) return "react";
           if (!id.includes("node_modules")) return;
           // React core + its runtime deps MUST live in the same chunk,
           // otherwise `scheduler` / `use-sync-external-store` load before
@@ -51,6 +59,16 @@ export default defineConfig(({ mode }) => ({
             id.includes("/node_modules/use-sync-external-store/")
           ) {
             return "react";
+          }
+          // Motorul 3D al Bibliotecii. three + R3F + postprocessing stau într-un
+          // singur chunk, cerut abia când o secțiune îl activează. Nimic din
+          // graful inițial nu îl importă, deci rămâne complet asincron.
+          if (
+            id.includes("/node_modules/three/") ||
+            id.includes("/node_modules/@react-three/") ||
+            id.includes("/node_modules/postprocessing/")
+          ) {
+            return "three";
           }
           if (id.includes("framer-motion")) return "framer";
           if (id.includes("recharts") || id.includes("d3-")) return "charts";

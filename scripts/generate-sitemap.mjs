@@ -27,6 +27,7 @@ function sourceFiles(route) {
   if (route === "/servicii/logo/creeaza" || route === "/en/services/logo/create") return ["src/pages/services/LogoStudioPage.tsx", "src/data/logoStudioCopy.ts", "src/data/logoStudio.ts"];
   if (route === "/servicii/logo" || route === "/en/services/logo") return ["src/pages/services/LogoDinamic3DPage.tsx", "src/data/logo3d.ts"];
   if (route === "/produse/testare-qa-web-mobile" || route === "/en/products/qa-testing-web-mobile") return ["src/pages/products/QaTestingPage.tsx"];
+  if (route === "/biblioteca" || route === "/en/library") return ["src/pages/Biblioteca.tsx", "src/data/bibliotecaCatalog.ts"];
   if (route.includes("/products/") || route.startsWith("/produse/")) return ["src/pages/products/ProductPage.tsx", "src/data/products.ts"];
   if (route.includes("pricing") || route === "/costurisiproduse") return ["src/pages/Pricing.tsx"];
   if (route === "/despre-noi" || route === "/en/about") return ["src/pages/AboutUs.tsx"];

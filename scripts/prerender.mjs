@@ -14,6 +14,7 @@
 
 import { build } from "vite";
 import react from "@vitejs/plugin-react-swc";
+import glsl from "vite-plugin-glsl";
 import { JSDOM } from "jsdom";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -35,7 +36,7 @@ await build({
   root,
   mode: "production",
   logLevel: "warn",
-  plugins: [react()],
+  plugins: [react(), glsl()],
   resolve: {
     alias: { "@": resolve(root, "src") },
     conditions: ["browser", "module", "import", "default"],

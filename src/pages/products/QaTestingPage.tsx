@@ -30,6 +30,7 @@ import Breadcrumbs from "@/components/site/Breadcrumbs";
 import PageBackLink from "@/components/site/PageBackLink";
 import QuickNav from "@/components/site/QuickNav";
 import Reveal from "@/components/site/Reveal";
+import LibraryLink from "@/components/site/LibraryLink";
 import Footer from "@/components/site/Footer";
 import CurrencySwitch from "@/components/site/CurrencySwitch";
 import logo from "@/assets/avyron-logo.jpg";
@@ -719,6 +720,8 @@ const QaTestingPage = () => {
             </div>
           </Reveal>
         </section>
+
+        <LibraryLink />
       </div>
 
       <Footer />

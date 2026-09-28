@@ -7,6 +7,7 @@ import Index from "./pages/Index.tsx";
 import LangRouteSync from "@/components/site/LangRouteSync";
 import { pageView } from "@/lib/analytics";
 import { resetManagedHead } from "@/lib/seo";
+import { FEATURES } from "@/config/features";
 
 
 const Gdpr = lazy(() => import("./pages/Gdpr.tsx"));
@@ -38,6 +39,7 @@ const AiProjects = lazy(() => import("./pages/intern/AiProjects.tsx"));
 const AiProjectPage = lazy(() => import("./pages/intern/AiProjectPage.tsx"));
 const Finance = lazy(() => import("./pages/intern/Finance.tsx"));
 const AvyEngine = lazy(() => import("./pages/intern/AvyEngine.tsx"));
+const Biblioteca = lazy(() => import("./pages/Biblioteca.tsx"));
 const AvyChat = lazy(() => import("@/components/ai/AvyChat"));
 
 /** Butonul AVY apare pe paginile comerciale, nu pe cele private sau pe demo-uri. */
@@ -167,6 +169,15 @@ const App = () => (
                 <Route path="/en/products/personalized-ai-agent" element={<ProductDetail />} />
                 <Route path="/en/products/website-audit" element={<Navigate to="/en?request=audit#cta" replace />} />
                 <Route path="/en/products/qa-testing-web-mobile" element={<QaTesting />} />
+
+                {/* Biblioteca de efecte. Se construiește etapizat și rămâne
+                    invizibilă în producție până la lansare (D7). */}
+                {FEATURES.biblioteca && (
+                  <>
+                    <Route path="/biblioteca" element={<Biblioteca />} />
+                    <Route path="/en/library" element={<Biblioteca />} />
+                  </>
+                )}
                 <Route path="/pachete-mentenanta" element={<Navigate to="/produse/testare-qa-web-mobile" replace />} />
                 <Route path="/en/care-plans" element={<Navigate to="/en/products/qa-testing-web-mobile" replace />} />
 
