@@ -33,7 +33,7 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
   const showCurrency = CURRENCY_ROUTES.test(pathname);
   const defaultLinks = [
     { label: t.nav.news, to: lang === "en" ? "/en/blog" : "/blog", icon: Newspaper, isRoute: true },
-    { label: isRo ? "Produse" : "Products", to: isRo ? "/costurisiproduse" : "/en/pricing", icon: ShoppingBag, isRoute: true },
+    { label: isRo ? "Servicii" : "Services", to: isRo ? "/costurisiproduse" : "/en/pricing", icon: ShoppingBag, isRoute: true },
     { label: isRo ? "Despre noi" : "About us", to: isRo ? "/despre-noi" : "/en/about", icon: UsersRound, isRoute: true },
     { label: isRo ? "Vezi domenii" : "See industries", href: `${homePath}#exemple` },
     { label: t.nav.process, href: `${homePath}#proces` },

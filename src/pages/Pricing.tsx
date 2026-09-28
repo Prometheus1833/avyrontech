@@ -39,11 +39,11 @@ const Pricing = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
     const title = ro
-      ? "Produse digitale personalizate & prețuri | Avyron"
-      : "Custom Digital Products & Pricing | Avyron";
+      ? "Servicii digitale personalizate & costuri | Avyron"
+      : "Custom Digital Services & Pricing | Avyron";
     const description = ro
-      ? "Descoperă produse digitale Avyron proiectate distinct: site-uri, magazine online, aplicații și soluții AI cu funcționalități, infrastructură și integrări adaptate fiecărui proiect."
-      : "Explore distinct Avyron digital products: websites, online stores, apps and AI solutions with features, infrastructure and integrations tailored to each project.";
+      ? "Descoperă serviciile digitale Avyron: site-uri profesionale, identitate vizuală, magazine online, bloguri, aplicații, automatizări și soluții AI adaptate fiecărui proiect."
+      : "Explore Avyron digital services: professional websites, visual identity, online stores, blogs, apps, automations and AI solutions tailored to each project.";
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
       ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd }]) => {
         setPageMeta({
@@ -63,7 +63,7 @@ const Pricing = () => {
           breadcrumbLd([
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
             {
-              name: ro ? "Costuri & Produse" : "Pricing & Products",
+              name: ro ? "Servicii & Costuri" : "Services & Pricing",
               path: ro ? "/costurisiproduse" : "/en/pricing",
             },
           ]),
@@ -107,7 +107,7 @@ const Pricing = () => {
     <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
       <QuickNav
         items={[
-          { id: "prezentare", label: ro ? "Produse" : "Products", icon: ShoppingBag },
+          { id: "prezentare", label: ro ? "Servicii" : "Services", icon: ShoppingBag },
           { id: "audit", label: ro ? "Audit gratuit" : "Free audit", icon: ScanSearch },
           { id: "garantii", label: ro ? "Garanții" : "Guarantees", icon: Shield },
           { id: "cta", label: ro ? "Contact" : "Contact", icon: MessageCircle },
@@ -131,7 +131,7 @@ const Pricing = () => {
       <div className="relative mx-auto max-w-6xl px-4 pt-6 sm:pt-8 pb-20">
         {/* Top bar */}
         <nav
-          aria-label={ro ? "Acțiuni pagină produse" : "Product page actions"}
+          aria-label={ro ? "Acțiuni pagină servicii" : "Services page actions"}
           className="grid grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-3"
         >
           <PageBackLink to={ro ? "/" : "/en"} label={ro ? "Înapoi" : "Back"} />
@@ -157,7 +157,7 @@ const Pricing = () => {
           items={[
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
             {
-              name: ro ? "Costuri & Produse" : "Pricing & Products",
+              name: ro ? "Servicii & Costuri" : "Services & Pricing",
               path: ro ? "/costurisiproduse" : "/en/pricing",
             },
           ]}
@@ -168,14 +168,14 @@ const Pricing = () => {
           <h1 className="mt-6 font-display text-3xl sm:text-4xl md:text-6xl font-extrabold leading-[1.05] tracking-tight px-2">
             <span className="bg-gradient-to-r from-foreground via-cyan-500 to-blue-600 dark:from-white dark:via-cyan-200 dark:to-blue-400 bg-clip-text text-transparent">
               {ro
-                ? "Produse digitale create pentru fiecare proiect"
-                : "Digital products created for every project"}
+                ? "Servicii digitale construite pentru fiecare proiect"
+                : "Digital services built for every project"}
             </span>
           </h1>
           <p className="mt-5 max-w-2xl mx-auto text-foreground/70 text-base md:text-lg">
             {ro
-              ? "Fiecare produs Avyron este construit cu atenție, nu ales dintr-un șablon. Designul, funcționalitățile, infrastructura, integrările și avantajele sunt adaptate scopului și nevoilor fiecărui proiect."
-              : "Every Avyron product is carefully built, not selected from a template. Its design, features, infrastructure, integrations and advantages are tailored to the purpose and needs of each project."}
+              ? "Fiecare serviciu Avyron este configurat în jurul obiectivelor proiectului. Designul, funcționalitățile, infrastructura și integrările sunt adaptate afacerii tale, nu alese dintr-un șablon."
+              : "Every Avyron service is configured around the project's goals. Design, features, infrastructure and integrations are tailored to your business, not selected from a template."}
           </p>
 
           <CurrencySwitch compact className="mt-7" />

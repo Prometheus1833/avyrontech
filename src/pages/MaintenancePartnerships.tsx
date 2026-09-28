@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import Nav from "@/components/site/Nav";
 import Breadcrumbs from "@/components/site/Breadcrumbs";
+import PageBackLink from "@/components/site/PageBackLink";
 import Reveal from "@/components/site/Reveal";
 import CurrencySwitch from "@/components/site/CurrencySwitch";
 import PaymentMethods from "@/components/site/PaymentMethods";
@@ -163,7 +164,7 @@ const MaintenancePartnerships = () => {
         setJsonLd("ld-faq", faqPageLd(faq));
         setJsonLd("ld-breadcrumb", breadcrumbLd([
           { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
-          { name: ro ? "Costuri & Produse" : "Pricing & Products", path: ro ? "/costurisiproduse" : "/en/pricing" },
+          { name: ro ? "Servicii & Costuri" : "Services & Pricing", path: ro ? "/costurisiproduse" : "/en/pricing" },
           { name: ro ? "Mentenanță & Colaborări" : "Maintenance & Partnerships", path },
         ]));
       },
@@ -276,10 +277,16 @@ const MaintenancePartnerships = () => {
           <ParticleLayer hue="264 90% 62%" density={60} />
 
           <div className="relative mx-auto max-w-6xl px-4 pb-10">
+            <PageBackLink
+              to={ro ? "/costurisiproduse" : "/en/pricing"}
+              label={ro ? "Înapoi" : "Back"}
+              title={ro ? "Înapoi la servicii și costuri" : "Back to services and pricing"}
+              className="mb-4"
+            />
             <Breadcrumbs
               items={[
                 { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
-                { name: ro ? "Costuri & Produse" : "Pricing & Products", path: ro ? "/costurisiproduse" : "/en/pricing" },
+                { name: ro ? "Servicii & Costuri" : "Services & Pricing", path: ro ? "/costurisiproduse" : "/en/pricing" },
                 { name: ro ? "Mentenanță & Colaborări" : "Maintenance & Partnerships", path },
               ]}
             />
@@ -673,7 +680,7 @@ const MaintenancePartnerships = () => {
                   to={ro ? "/costurisiproduse" : "/en/pricing"}
                   className="inline-flex items-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-6 py-3 text-sm font-semibold transition-all hover:-translate-y-0.5 hover:bg-foreground/[0.1]"
                 >
-                  {ro ? "Vezi produsele" : "See the products"}
+                  {ro ? "Vezi serviciile" : "See the services"}
                 </Link>
               </div>
               <p className="mt-5 inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] text-foreground/65">

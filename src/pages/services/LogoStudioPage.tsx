@@ -11,6 +11,7 @@ import Breadcrumbs from "@/components/site/Breadcrumbs";
 import PageBackLink from "@/components/site/PageBackLink";
 import Footer from "@/components/site/Footer";
 import FloatingWhatsApp from "@/components/site/FloatingWhatsApp";
+import LibraryLink from "@/components/site/LibraryLink";
 import logo from "@/assets/avyron-logo.jpg";
 import { StageProvider } from "@/components/logo3d/StageProvider";
 import { ripple, useLeiPrice } from "@/components/logo3d/utils";
@@ -578,6 +579,9 @@ const LogoStudioPage = () => {
       <div className="l3d-root-bg" aria-hidden />
       <StageProvider>
         <StudioBody />
+        <div className="l3d-wrap relative z-[1] pb-16">
+          <LibraryLink sectionId="logo-identitate-vizuala" />
+        </div>
         <FloatingWhatsApp />
         <div className="relative z-[1]">
           <Footer />

@@ -36,7 +36,7 @@ const Hero = () => {
               to={ro ? "/costurisiproduse" : "/en/pricing"}
               className="inline-flex h-12 min-w-0 items-center justify-center gap-1.5 rounded-full border border-foreground/20 bg-background px-3 text-center text-sm font-semibold transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              {ro ? "Vezi Produse" : "View Products"}
+              {ro ? "Vezi serviciile" : "View services"}
               <ArrowRight className="size-4 shrink-0" aria-hidden="true" focusable="false" />
             </Link>
           </div>

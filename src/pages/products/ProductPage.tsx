@@ -117,7 +117,7 @@ const ProductPage = () => {
           breadcrumbLd([
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
             {
-              name: ro ? "Costuri & Produse" : "Pricing & Products",
+              name: ro ? "Servicii & Costuri" : "Services & Pricing",
               path: ro ? "/costurisiproduse" : "/en/pricing",
             },
             { name: c.name, path },
@@ -195,7 +195,7 @@ const ProductPage = () => {
           items={[
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
             {
-              name: ro ? "Costuri & Produse" : "Pricing & Products",
+              name: ro ? "Servicii & Costuri" : "Services & Pricing",
               path: ro ? "/costurisiproduse" : "/en/pricing",
             },
             { name: c.name, path: product.path[lang] },

@@ -149,8 +149,8 @@ const App = () => (
                 <Route path="/en/terms" element={<Terms />} />
                 <Route path="/politica-cookies" element={<CookiePolicy />} />
                 <Route path="/en/cookie-policy" element={<CookiePolicy />} />
-                {/* Produse Avyron (Artefacte) — rută de lucru până la lansare.
-                    Cu VITE_PRODUSE_LIVE=1 intră în prerender, sitemap și hreflang. */}
+                {/* Produse Avyron este public implicit; VITE_PRODUSE_LIVE=0 îl
+                    poate retrage temporar din prerender, sitemap și hreflang. */}
                 {FEATURES.produse && (
                   <>
                     <Route path="/produse-avyron/*" element={<ProduseApp />} />
@@ -180,8 +180,8 @@ const App = () => (
                 <Route path="/en/products/personalized-ai-agent" element={<ProductDetail />} />
                 <Route path="/en/products/website-audit" element={<Navigate to="/en?request=audit#cta" replace />} />
                 <Route path="/en/products/qa-testing-web-mobile" element={<QaTesting />} />
-                {/* Biblioteca de efecte. Se construiește etapizat și rămâne
-                    invizibilă în producție până la lansare (D7). */}
+                {/* Biblioteca este publică și indexabilă, dar intrările ei
+                    rămân exclusiv în paginile serviciilor. */}
                 {FEATURES.biblioteca && (
                   <>
                     <Route path="/biblioteca" element={<Biblioteca />} />

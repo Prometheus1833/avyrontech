@@ -12,7 +12,7 @@ import GetModal from "../components/GetModal";
 import { Pill, Reveal, Seam, Section, SectionHead } from "../components/Primitives";
 import { defaultValues, priceLabel, progressionNote } from "../lib/item";
 import { collectionPath, guidePath, homePath, itemPath, typePath } from "../lib/paths";
-import { applySeo, breadcrumb, productLd } from "../lib/seo";
+import { applySeo, breadcrumb, productLd, productOgImage } from "../lib/seo";
 import { hasSource } from "../lib/source";
 import { store, useProduseStore } from "../lib/store";
 
@@ -48,6 +48,8 @@ export default function ItemPage({ item, lang }: { item: CatalogItem; lang: Lang
       description: item.short[lang],
       path: itemPath(lang, item),
       lang,
+      image: productOgImage(lang, item),
+      imageAlt: `${item.name[lang]} — Produse Avyron`,
       jsonLd: [
         ["product", productLd(lang, item)],
         [

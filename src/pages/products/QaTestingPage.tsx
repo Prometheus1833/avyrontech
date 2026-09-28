@@ -131,7 +131,7 @@ const QaTestingPage = () => {
           "ld-breadcrumb",
           breadcrumbLd([
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
-            { name: ro ? "Costuri & Produse" : "Pricing & Products", path: ro ? "/costurisiproduse" : "/en/pricing" },
+            { name: ro ? "Servicii & Costuri" : "Services & Pricing", path: ro ? "/costurisiproduse" : "/en/pricing" },
             { name: "QA Testing Web/Mobile", path },
           ]),
         );
@@ -327,7 +327,7 @@ const QaTestingPage = () => {
           className="mt-6"
           items={[
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
-            { name: ro ? "Costuri & Produse" : "Pricing & Products", path: ro ? "/costurisiproduse" : "/en/pricing" },
+            { name: ro ? "Servicii & Costuri" : "Services & Pricing", path: ro ? "/costurisiproduse" : "/en/pricing" },
             { name: "QA Testing Web/Mobile", path },
           ]}
         />

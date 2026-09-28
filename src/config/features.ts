@@ -5,22 +5,20 @@
  * unul, pentru că sunt două întrebări diferite:
  *
  *  - `biblioteca` — ruta există și poate fi deschisă. Pornită în dezvoltare.
- *  - `bibliotecaLive` — pagina e lansată: intră în prerender, în sitemap, în
- *    hreflang și devine indexabilă. Se aprinde doar cu VITE_BIBLIOTECA=1 la
- *    build, deci lansarea e o singură variabilă de mediu, nu un set de editări.
+ *  - `bibliotecaLive` — pagina e lansată: intră în prerender, în sitemap și în
+ *    hreflang. `VITE_BIBLIOTECA=0` rămâne un kill switch de urgență.
  *
  * Produse Avyron (Artefacte) se construiește separat până la lansare:
  *  - `produse` — ruta de lucru există (în dezvoltare sau cu VITE_PRODUSE=1),
  *    cu `noindex`, în afara sitemap-ului și a prerenderului;
  *  - `produseLive` — pagina e publicată: prerender, sitemap, hreflang, card pe
- *    home. Se aprinde doar cu VITE_PRODUSE_LIVE=1, deci lansarea e o singură
- *    variabilă de mediu.
+ *    home. `VITE_PRODUSE_LIVE=0` o poate opri fără modificări de cod.
  */
 // Fișierul e citit și de programul Worker-ului (prin i18n/routes), unde
 // tipurile Vite nu există, așa că `import.meta.env` se citește defensiv.
 const env = (import.meta as unknown as { env?: Record<string, string | boolean | undefined> }).env ?? {};
-const BIBLIOTECA_LIVE = env.VITE_BIBLIOTECA === "1";
-const PRODUSE_LIVE = env.VITE_PRODUSE_LIVE === "1";
+const BIBLIOTECA_LIVE = env.VITE_BIBLIOTECA !== "0";
+const PRODUSE_LIVE = env.VITE_PRODUSE_LIVE !== "0";
 const PRODUSE_PREVIEW = PRODUSE_LIVE || env.VITE_PRODUSE === "1";
 
 export const FEATURES = {

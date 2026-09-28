@@ -255,7 +255,7 @@ export function PageFaq({ items }: { items: Array<{ id: string; q: string; a: st
             </h3>
             <div
               id={`${item.id}-panel`}
-              className="grid transition-[grid-template-rows] duration-500 ease-[cubic-bezier(.22,1,.36,1)]"
+              className="grid transition-[grid-template-rows] duration-500 ease-out"
               style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
             >
               <div className="overflow-hidden">

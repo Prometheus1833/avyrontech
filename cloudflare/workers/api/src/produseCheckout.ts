@@ -141,11 +141,18 @@ export async function stripeSignatureValid(secret: string, header: string, paylo
 /** Un an de parteneriat. Produsele cumpărate separat rămân pe viață. */
 const YEAR_MS = 365 * 86400000;
 
-async function grantAndRecord(env: Env, input: { orderId: string; userId: string; kind: Kind; target: string; amountMinor: number; reference: string }) {
+async function grantAndRecord(
+  env: Env,
+  input: { eventId: string; orderId: string; userId: string; kind: Kind; target: string; amountMinor: number; reference: string },
+) {
   const now = Date.now();
   const entitlementId = crypto.randomUUID();
+  const scope = "produse.stripe";
 
   const statements = [
+    env.DB.prepare(
+      "INSERT INTO idempotency_keys (scope,idempotency_key,request_hash,response_status,response_json,resource_type,resource_id,created_at,expires_at) VALUES (?,?,?,?,?,?,?,?,?)",
+    ).bind(scope, input.eventId, input.eventId, 200, JSON.stringify({ ok: true }), "commerce_order", input.orderId, now, now + 30 * 86400000),
     env.DB.prepare("UPDATE commerce_orders SET status='paid', updated_at=? WHERE id=? AND status!='paid'").bind(now, input.orderId),
     input.kind === "plan"
       ? env.DB.prepare(
@@ -183,7 +190,7 @@ produseCheckoutRouter.post("/api/produse/stripe/webhook", async (c) => {
   const event = JSON.parse(payload) as {
     id: string;
     type: string;
-    data: { object: { id: string; client_reference_id?: string; payment_intent?: string; amount_total?: number; metadata?: Record<string, string>; customer_details?: { email?: string; name?: string } } };
+    data: { object: { id: string; client_reference_id?: string; payment_intent?: string; payment_status?: string; amount_total?: number; metadata?: Record<string, string>; customer_details?: { email?: string; name?: string } } };
   };
 
   // Stripe repetă evenimentele până primește 2xx; cheia de idempotență face ca
@@ -196,20 +203,46 @@ produseCheckoutRouter.post("/api/produse/stripe/webhook", async (c) => {
 
   const session = event.data.object;
   const orderId = session.client_reference_id ?? session.metadata?.order_id ?? "";
-  const userId = session.metadata?.user_id ?? "";
-  const kind = (session.metadata?.kind as Kind) ?? "item";
-  const target = session.metadata?.target ?? "";
   const amountMinor = session.amount_total ?? 0;
-  if (!orderId || !userId || !target || amountMinor <= 0) return c.json({ error: { code: "incomplete_session" } }, 400);
+  if (!orderId || amountMinor <= 0) return c.json({ error: { code: "incomplete_session" } }, 400);
+  if (session.payment_status && session.payment_status !== "paid") return c.json({ ok: true, pending: true }, 202);
 
   const now = Date.now();
-  await c.env.DB.prepare(
-    "INSERT INTO idempotency_keys (scope,idempotency_key,request_hash,response_status,response_json,resource_type,resource_id,created_at,expires_at) VALUES (?,?,?,?,?,?,?,?,?)",
-  )
-    .bind(scope, event.id, event.id, 200, JSON.stringify({ ok: true }), "commerce_order", orderId, now, now + 30 * 86400000)
-    .run();
+  const order = await c.env.DB.prepare("SELECT user_id, items_json, total_cents, status FROM commerce_orders WHERE id = ?")
+    .bind(orderId)
+    .first<{ user_id: string; items_json: string; total_cents: number; status: string }>();
+  if (!order) return c.json({ error: { code: "unknown_order" } }, 400);
+  if (order.status === "paid") return c.json({ ok: true, replay: true });
+  if (order.total_cents !== amountMinor || session.metadata?.user_id !== order.user_id) {
+    return c.json({ error: { code: "order_mismatch" } }, 400);
+  }
 
-  await grantAndRecord(c.env, { orderId, userId, kind, target, amountMinor, reference: session.payment_intent ?? session.id });
+  const [stored] = JSON.parse(order.items_json) as Array<{ kind?: string; id?: string; taxId?: string | null }>;
+  const kind = stored?.kind;
+  const target = stored?.id ?? "";
+  if ((kind !== "plan" && kind !== "item") || !target || session.metadata?.kind !== kind || session.metadata?.target !== target) {
+    return c.json({ error: { code: "order_mismatch" } }, 400);
+  }
+
+  try {
+    await grantAndRecord(c.env, {
+      eventId: event.id,
+      orderId,
+      userId: order.user_id,
+      kind,
+      target,
+      amountMinor,
+      reference: session.payment_intent ?? session.id,
+    });
+  } catch (error) {
+    // Două instanțe pot trece simultan de citirea `seen`; indexurile unice și
+    // batch-ul atomic lasă doar una să acorde dreptul. Cealaltă răspunde 2xx.
+    const replay = await c.env.DB.prepare("SELECT 1 AS ok FROM idempotency_keys WHERE scope=? AND idempotency_key=?")
+      .bind(scope, event.id)
+      .first<{ ok: number }>();
+    if (replay) return c.json({ ok: true, replay: true });
+    throw error;
+  }
 
   // Factura pleacă doar dacă FGO e configurat, inclusiv cota de TVA. Dacă nu,
   // plata rămâne înregistrată și factura se emite manual din OS.
@@ -217,7 +250,8 @@ produseCheckoutRouter.post("/api/produse/stripe/webhook", async (c) => {
     buyer: {
       name: session.customer_details?.name || session.customer_details?.email || "Client Avyron",
       email: session.customer_details?.email,
-      isCompany: false,
+      taxId: stored.taxId,
+      isCompany: Boolean(stored.taxId),
     },
     lines: [{ name: kind === "plan" ? `Parteneriat AVY ${target}` : `Produs Avyron ${target}`, quantity: 1, unitPriceMinor: amountMinor }],
     currency: "RON",

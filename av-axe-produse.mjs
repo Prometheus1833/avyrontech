@@ -2,13 +2,14 @@
  * Audit de accesibilitate + capturi pentru pagina Produse Avyron.
  * Rulare: node <cale>/axe-produse.mjs  (din rădăcina repo-ului, după build)
  */
-import { chromium } from "/home/claude/.npm-global/lib/node_modules/playwright/index.mjs";
+import { chromium } from "playwright";
 import { createServer } from "node:http";
-import { readFile, stat } from "node:fs/promises";
+import { mkdir, readFile, stat } from "node:fs/promises";
 import { extname, join, resolve } from "node:path";
 
 const DIST = resolve("dist");
 const AXE = resolve("node_modules/axe-core/axe.min.js");
+const OUTPUT = resolve("test-results/visual-produse");
 const TYPES = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript",
@@ -39,6 +40,7 @@ const server = createServer(async (request, response) => {
 });
 
 await new Promise((done) => server.listen(4191, done));
+await mkdir(OUTPUT, { recursive: true });
 const axeSource = await readFile(AXE, "utf8");
 const browser = await chromium.launch({ args: ["--use-gl=swiftshader", "--enable-unsafe-swiftshader"] });
 
@@ -69,7 +71,7 @@ for (const [name, path, viewport, scrollTo] of shots) {
   } else if (path.includes("#")) {
     await page.waitForTimeout(1600);
   }
-  await page.screenshot({ path: `/mnt/user-data/outputs/${name}.png` });
+  await page.screenshot({ path: join(OUTPUT, `${name}.png`) });
   await page.close();
 }
 

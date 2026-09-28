@@ -7,8 +7,8 @@
  * Reguli:
  *  - intră DOAR produsele gratuite care au fișier sursă public; codul plătit
  *    nu ajunge niciodată aici (se servește din R2, după verificarea dreptului);
- *  - se scrie numai când pagina e publicată (VITE_PRODUSE_LIVE=1), ca până la
- *    lansare producția să rămână neatinsă;
+ *  - se scrie implicit la build; `VITE_PRODUSE_LIVE=0` este kill switch-ul
+ *    care o scoate împreună cu rutele publice;
  *  - fișierele se scriu în `dist/r/`, lângă restul site-ului.
  *
  * Rulare: node scripts/produse-registry.mjs  (după `vite build`)
@@ -23,7 +23,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = existsSync(join(root, "dist/client/index.html")) ? join(root, "dist/client") : join(root, "dist");
 const BASE = "https://avyron.ro";
 
-if (process.env.VITE_PRODUSE_LIVE !== "1") {
+if (process.env.VITE_PRODUSE_LIVE === "0") {
   console.log("registru Produse: sărit (pagina nu e publicată)");
   process.exit(0);
 }

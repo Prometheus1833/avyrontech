@@ -7,8 +7,8 @@ import { alternatePath, homePath, itemPath } from "./paths";
 
 /**
  * SEO-ul paginii. Un singur loc care scrie titlul, descrierea, canonical,
- * hreflang și datele structurate — și care ține pagina pe `noindex` până la
- * lansare (`VITE_PRODUSE_LIVE=1`).
+ * hreflang și datele structurate. Catalogul este public implicit; variabila
+ * `VITE_PRODUSE_LIVE=0` rămâne doar un kill switch operațional.
  */
 
 const BASE = "https://avyron.ro";
@@ -20,10 +20,12 @@ export type PageSeo = {
   description: string;
   path: string;
   lang: Lang;
+  image?: string;
+  imageAlt?: string;
   jsonLd?: Array<[string, LdValue]>;
 };
 
-export async function applySeo({ title, description, path, lang, jsonLd = [] }: PageSeo) {
+export async function applySeo({ title, description, path, lang, image = "/og/home.jpg", imageAlt, jsonLd = [] }: PageSeo) {
   const [{ setPageMeta, setJsonLd }] = await Promise.all([import("@/lib/seo")]);
   const alt = alternatePath(path, lang === "ro" ? "en" : "ro");
   setPageMeta({
@@ -31,11 +33,15 @@ export async function applySeo({ title, description, path, lang, jsonLd = [] }: 
     description,
     path,
     alternates: lang === "ro" ? { ro: path, en: alt ?? path } : { ro: alt ?? path, en: path },
-    image: "/og/home.jpg",
+    image,
+    imageAlt,
     ...(FEATURES.produseLive ? {} : { robots: "noindex, nofollow" }),
   });
   for (const [id, value] of jsonLd) setJsonLd(`produse-${id}`, value as never);
 }
+
+export const productOgImage = (lang: Lang, item: CatalogItem) =>
+  `/og/produse/${item.slug}${lang === "en" ? "-en" : ""}.jpg`;
 
 /**
  * Meta description-ul unei colecții: fraze întregi din introducere, cât încap
@@ -102,6 +108,7 @@ export function productLd(lang: Lang, item: CatalogItem): LdValue {
     name: item.name[lang],
     description: item.short[lang],
     url: `${BASE}${itemPath(lang, item)}`,
+    image: `${BASE}${productOgImage(lang, item)}`,
     inLanguage: lang === "ro" ? "ro-RO" : "en-US",
     programmingLanguage: item.tech.includes("react") ? "TypeScript" : undefined,
     codeSampleType: item.type === "template" ? "full solution" : "code snippet",

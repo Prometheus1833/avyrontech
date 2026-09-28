@@ -97,7 +97,11 @@ const Index = () => {
         <Deferred minHeight={220}><HomepageQuickLinks /></Deferred>
         <Deferred minHeight={520} forceReady={location.hash === "#cta"}><CTA /></Deferred>
         <Deferred minHeight={320}><Socials /></Deferred>
-        <Deferred minHeight={260}><Footer /></Deferred>
+        {/* Footerul trebuie să existe chiar și când vizitatorul sare direct la
+            finalul paginii folosind bara de scroll. Altfel, extinderea
+            secțiunilor lazy îl poate împinge din nou în afara zonei observate
+            înainte să fie montat. */}
+        <Deferred minHeight={260} forceReady><Footer /></Deferred>
         <ContactBar />
       </Suspense>
     </main>

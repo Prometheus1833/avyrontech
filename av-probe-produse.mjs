@@ -9,7 +9,7 @@
  * Rulare: node av-probe-produse.mjs  (necesită un build cu VITE_PRODUSE_LIVE=1)
  */
 
-import { chromium } from "/home/claude/.npm-global/lib/node_modules/playwright/index.mjs";
+import { chromium } from "playwright";
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, resolve } from "node:path";

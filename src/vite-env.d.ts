@@ -7,11 +7,11 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_URL: string;
   readonly VITE_GOOGLE_ANALYTICS_ID?: string;
   readonly VITE_LOVABLE_CONNECTOR_GOOGLE_ANALYTICS_API_KEY?: string;
-  /** "1" activează pagina /biblioteca într-un build de producție. */
+  /** "0" dezactivează temporar Biblioteca într-un build de producție. */
   readonly VITE_BIBLIOTECA?: string;
   /** "1" face ruta de lucru Produse Avyron accesibilă într-un build (noindex). */
   readonly VITE_PRODUSE?: string;
-  /** "1" publică Produse Avyron: indexabilă, prerender, sitemap, card pe home. */
+  /** "0" retrage temporar Produse Avyron din suprafața publică. */
   readonly VITE_PRODUSE_LIVE?: string;
 }
 

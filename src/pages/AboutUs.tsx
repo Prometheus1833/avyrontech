@@ -167,7 +167,7 @@ const AboutUs = () => {
               {ro ? "Echipă IT · România, Europa" : "IT team · Romania, Europe"}
             </div>
             <h1 className="mt-6 max-w-3xl font-display text-4xl font-extrabold leading-[1.02] tracking-tight sm:text-5xl md:text-7xl">
-              {ro ? "Construim produse digitale cu " : "We build digital products with "}
+              {ro ? "Construim soluții digitale cu " : "We build digital solutions with "}
               <span className="bg-gradient-to-r from-cyan-200 via-blue-300 to-violet-300 bg-clip-text text-transparent">
                 {ro ? "rigoare și imaginație." : "rigour and imagination."}
               </span>
@@ -270,7 +270,7 @@ const AboutUs = () => {
                 <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-400">{ro ? "Putem începe remote, cu o întâlnire planificată în intervalul potrivit pentru tine. Pleci din discuție cu opțiuni, priorități și următorul pas." : "We can start remotely with a meeting scheduled for a time that works for you. You leave with options, priorities and a clear next step."}</p>
               </div>
               <div className="grid min-w-56 grid-cols-2 gap-2 md:grid-cols-1">
-                <Link to={productsPath} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-white px-4 text-xs font-bold text-slate-950">{ro ? "Vezi produsele" : "View products"}<ArrowRight className="size-3.5" aria-hidden /></Link>
+                <Link to={productsPath} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-white px-4 text-xs font-bold text-slate-950">{ro ? "Vezi serviciile" : "View services"}<ArrowRight className="size-3.5" aria-hidden /></Link>
                 <Link to={ro ? "/#cta" : "/en#cta"} className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/15 px-4 text-xs font-semibold text-white transition-colors hover:bg-white/[0.07]">{ro ? "Discută cu noi" : "Talk to us"}</Link>
               </div>
             </div>

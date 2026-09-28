@@ -132,7 +132,7 @@ const SpaceLoader = ({ duration = 1400, label = "Avyron" }: Props) => {
     <div
       aria-hidden
       data-testid="space-loader"
-      className="pointer-events-none fixed inset-0 z-[70] grid place-items-center bg-[#07040f] transition-opacity duration-[420ms] ease-out"
+      className="pointer-events-none fixed inset-0 z-[70] grid place-items-center bg-[#07040f] transition-opacity duration-500 ease-out"
       style={{ opacity: phase === "fade" ? 0 : 1 }}
     >
       <canvas ref={canvasRef} className="absolute inset-0 size-full" />

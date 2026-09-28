@@ -71,6 +71,15 @@ describe("cablajul dintre magazin și D1", () => {
     expect(shop).toContain("FROM product_copy_events");
   });
 
+  it("acordă o singură dată dreptul cumpărat și validează comanda Stripe", () => {
+    const migration = read("cloudflare/d1/migrations/0027_produse_checkout_idempotency.sql");
+    const checkout = read("cloudflare/workers/api/src/produseCheckout.ts");
+    expect(migration).toContain("CREATE UNIQUE INDEX IF NOT EXISTS idx_product_entitlements_order");
+    expect(checkout).toContain("SELECT user_id, items_json, total_cents, status FROM commerce_orders WHERE id = ?");
+    expect(checkout).toContain('code: "order_mismatch"');
+    expect(checkout).toMatch(/const statements = \[[\s\S]*INSERT INTO idempotency_keys[\s\S]*INSERT INTO product_entitlements/);
+  });
+
   it("nu servește cod plătit din bundle-ul public", () => {
     // Sursele publice sunt doar pentru produse gratuite (verificat în
     // produse.test.ts); aici verificăm că descărcarea plătită trece prin R2.
@@ -112,9 +121,9 @@ describe("cablajul dintre magazin și dashboardul intern", () => {
 });
 
 describe("indexarea", () => {
-  it("publică registrul și llms.txt doar când pagina e live", () => {
+  it("publică registrul și llms.txt implicit, cu kill switch comun", () => {
     const script = read("scripts/produse-registry.mjs");
-    expect(script).toContain('process.env.VITE_PRODUSE_LIVE !== "1"');
+    expect(script).toContain('process.env.VITE_PRODUSE_LIVE === "0"');
     expect(script).toContain("llms.txt");
     // Registrul public conține exclusiv produse gratuite.
     expect(script).toContain('item.access !== "free"');

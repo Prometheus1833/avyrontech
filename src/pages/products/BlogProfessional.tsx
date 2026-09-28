@@ -147,7 +147,7 @@ const BlogProfessional = () => {
           "ld-breadcrumb",
           breadcrumbLd([
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
-            { name: ro ? "Costuri & Produse" : "Pricing & Products", path: ro ? "/costurisiproduse" : "/en/pricing" },
+            { name: ro ? "Servicii & Costuri" : "Services & Pricing", path: ro ? "/costurisiproduse" : "/en/pricing" },
             { name: m.name, path: PATHS[lang] },
           ]),
         );
@@ -200,7 +200,7 @@ const BlogProfessional = () => {
           className="mt-6"
           items={[
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
-            { name: ro ? "Costuri & Produse" : "Pricing & Products", path: ro ? "/costurisiproduse" : "/en/pricing" },
+            { name: ro ? "Servicii & Costuri" : "Services & Pricing", path: ro ? "/costurisiproduse" : "/en/pricing" },
             { name: ro ? "Blog Profesional" : "Professional Blog", path: PATHS[lang] },
           ]}
         />

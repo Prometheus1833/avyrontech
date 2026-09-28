@@ -13,14 +13,14 @@ const LIBRARY_PATH = { ro: "/biblioteca", en: "/en/library" };
  * paginile de produs, cu proveniența în URL, ca utilizatorul să aterizeze
  * direct în secțiunea serviciului pe care tocmai îl citea.
  */
-export default function LibraryLink() {
+export default function LibraryLink({ sectionId }: { sectionId?: string } = {}) {
   const { pathname } = useLocation();
   const { lang } = useLang();
 
   if (!FEATURES.biblioteca) return null;
 
-  const section = LIBRARY_SECTIONS.find(
-    (item) => item.product && (item.product.ro === pathname || item.product.en === pathname),
+  const section = LIBRARY_SECTIONS.find((item) =>
+    sectionId ? item.id === sectionId : item.product && (item.product.ro === pathname || item.product.en === pathname),
   );
   // `entry: false` înseamnă că pagina acelui produs rămâne exact cum e:
   // componenta nu randează nimic acolo.

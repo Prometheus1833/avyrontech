@@ -48,7 +48,7 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }
         expect(box.x).toBeGreaterThanOrEqual(0);
         expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
       }
-      const brand = (await page.getByRole("link", { name: /Avyron —/ }).boundingBox())!;
+      const brand = (await page.locator("header").getByRole("link", { name: /Avyron —/ }).boundingBox())!;
       const os = (await trigger.boundingBox())!;
       const lang = (await page.getByRole("button", { name: /Schimbă limba|Change language/ }).filter({ visible: true }).boundingBox())!;
       expect(brand.x + brand.width).toBeLessThanOrEqual(os.x);

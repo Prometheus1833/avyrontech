@@ -17,6 +17,7 @@ import { Gallery, Genesis, Hero, NameStudio } from "@/components/logo3d/Interact
 import { Audiences, Faq, FinalCta, Formats, Packages, Process, States, Tools } from "@/components/logo3d/Content";
 import { LOGO3D_FAQ, LOGO3D_META, LOGO3D_PATHS, LOGO3D_TIERS } from "@/data/logo3d";
 import StudioTeaser from "@/components/logoStudio/StudioTeaser";
+import LibraryLink from "@/components/site/LibraryLink";
 import "@/components/logoStudio/studio.css";
 import "@/components/logo3d/logo3d.css";
 
@@ -205,6 +206,9 @@ function PageBody() {
         <StudioTeaser />
         <Faq />
         <FinalCta onPreview={() => openPreview()} />
+        <div className="l3d-wrap pb-16">
+          <LibraryLink sectionId="logo-identitate-vizuala" />
+        </div>
       </div>
 
       <QuickNav items={quickNav[lang]} showLang />

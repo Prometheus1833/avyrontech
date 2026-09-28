@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import sharp from "sharp";
 
 import { FAQ } from "@/features/produse/data/faq";
 import { ITEMS, ITEM_BY_SLUG, FEATURED_SLUG } from "@/features/produse/data/items";
@@ -14,7 +15,7 @@ import { DEMOS } from "@/features/produse/demos/registry";
 import { accessNow, defaultValues } from "@/features/produse/lib/item";
 import { alternatePath, itemPath, parseRoute, typePath } from "@/features/produse/lib/paths";
 import { searchItems } from "@/features/produse/lib/search";
-import { metaFrom } from "@/features/produse/lib/seo";
+import { metaFrom, productOgImage } from "@/features/produse/lib/seo";
 import { DEMOS as DEMO_REGISTRY } from "@/features/produse/demos/registry";
 import { SOURCE_FILE } from "@/features/produse/lib/source";
 
@@ -72,6 +73,24 @@ describe("catalogul de produse", () => {
 
   it("are produsul principal în catalog", () => {
     expect(ITEM_BY_SLUG.get(FEATURED_SLUG)).toBeDefined();
+  });
+
+  it("are imagine socială distinctă, bilingvă și 1200×630 pentru fiecare produs", async () => {
+    const paths = new Set<string>();
+    const files: string[] = [];
+    for (const item of ITEMS) {
+      for (const lang of ["ro", "en"] as const) {
+        const path = productOgImage(lang, item);
+        expect(paths.has(path), `imagine OG duplicată: ${path}`).toBe(false);
+        paths.add(path);
+        const file = resolve(__dirname, `../../public${path}`);
+        expect(existsSync(file), `lipsește ${path}`).toBe(true);
+        files.push(file);
+      }
+    }
+    expect(paths.size).toBe(ITEMS.length * 2);
+    const metadata = await Promise.all(files.map((file) => sharp(file).metadata()));
+    for (const image of metadata) expect([image.width, image.height, image.format]).toEqual([1200, 630, "jpeg"]);
   });
 
   it("trimite doar la demo-uri existente în registru", () => {

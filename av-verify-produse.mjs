@@ -11,7 +11,7 @@
  *         node av-verify-produse.mjs --fast (un eșantion de 25 de produse)
  */
 
-import { chromium } from "/home/claude/.npm-global/lib/node_modules/playwright/index.mjs";
+import { chromium } from "playwright";
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, resolve } from "node:path";
@@ -20,6 +20,7 @@ import { build } from "esbuild";
 const DIST = resolve("dist");
 const PORT = 4187;
 const FAST = process.argv.includes("--fast");
+const LIVE = process.env.VITE_PRODUSE_LIVE !== "0";
 /** `--slice=0:60` rulează doar o felie din rute, ca să încapă în timpul unei comenzi. */
 const SLICE = (process.argv.find((argument) => argument.startsWith("--slice=")) ?? "").split("=")[1];
 
@@ -179,7 +180,8 @@ for (const route of selected) {
   if (facts.h1.length !== 1) say(`${facts.h1.length} elemente h1`);
   if (!facts.title || facts.title.length < 15) say(`titlu prea scurt: ${facts.title}`);
   if (!facts.description || facts.description.length < 50) say(`descriere prea scurtă (${facts.description?.length ?? 0})`);
-  if (facts.robots !== "noindex, nofollow" && process.env.VITE_PRODUSE_LIVE !== "1") say("lipsește noindex înainte de lansare");
+  if (LIVE && !facts.robots?.startsWith("index, follow")) say(`pagina publică nu este indexabilă: ${facts.robots}`);
+  if (!LIVE && facts.robots !== "noindex, nofollow") say("lipsește noindex când catalogul este retras");
   if (!facts.canonical || !facts.canonical.startsWith("https://avyron.ro")) say(`canonical greșit: ${facts.canonical}`);
   if (!facts.alternateRo || !facts.alternateEn) say("hreflang incomplet");
   if (facts.ld.includes("INVALID")) say("JSON-LD invalid");

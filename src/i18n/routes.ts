@@ -25,12 +25,11 @@ export const ROUTE_ALTERNATES: Array<{ ro: string; en: string }> = [
   { ro: "/produse/aplicatii-web-si-mobile", en: "/en/products/web-and-mobile-apps" },
   { ro: "/produse/agent-ai-personalizat", en: "/en/products/personalized-ai-agent" },
   { ro: "/produse/testare-qa-web-mobile", en: "/en/products/qa-testing-web-mobile" },
-  // Biblioteca intră în prerender, sitemap și hreflang abia la lansare.
+  // Biblioteca este publică; VITE_BIBLIOTECA=0 rămâne kill switch de urgență.
   ...(FEATURES.bibliotecaLive
     ? [{ ro: "/biblioteca", en: "/en/library" }]
     : []),
-  // Produse Avyron intră în prerender, sitemap și hreflang abia la lansare
-  // (VITE_PRODUSE_LIVE=1). Până atunci pagina e accesibilă, dar `noindex`.
+  // Produse Avyron este public implicit; VITE_PRODUSE_LIVE=0 îl poate retrage.
   ...(FEATURES.produseLive ? produseRoutePairs() : []),
 ];
 
