@@ -1,6 +1,6 @@
 /**
  * Pricing model + configuration data for the "Blog Profesional & Content Hub"
- * service landing page (/produse/blog-profesional).
+ * service landing page (/servicii/blog-profesional).
  *
  * Single source of truth: every price shown on the page (calculator, summary,
  * badges) is derived from this file. No pricing literals inside components.

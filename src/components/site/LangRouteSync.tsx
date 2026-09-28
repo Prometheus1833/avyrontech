@@ -6,8 +6,8 @@ import { langOfPath } from "@/features/produse/lib/paths";
 
 /**
  * Syncs the LanguageContext with the URL for pages that have a language-prefixed variant.
- * If the user lands on /en/pricing, force lang=en. If they land on a bilingual RO path
- * (e.g. /costurisiproduse), force lang=ro. Other routes are left untouched so localStorage wins.
+ * If the user lands on /en/services, force lang=en. If they land on a bilingual RO path
+ * (e.g. /servicii), force lang=ro. Other routes are left untouched so localStorage wins.
  */
 const LangRouteSync = () => {
   const { lang, setLang } = useLang();

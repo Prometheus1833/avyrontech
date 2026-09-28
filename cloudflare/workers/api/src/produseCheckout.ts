@@ -96,7 +96,7 @@ produseCheckoutRouter.post("/api/produse/account/checkout", async (c) => {
       client_reference_id: orderId,
       customer_email: user?.email ?? "",
       success_url: `${appUrl}/profil?tab=collection&plata=reusita`,
-      cancel_url: `${appUrl}/produse-avyron#parteneriate`,
+      cancel_url: `${appUrl}/produse#parteneriate`,
       "line_items[0][quantity]": 1,
       "line_items[0][price_data][currency]": "ron",
       "line_items[0][price_data][unit_amount]": priced.amountMinor,

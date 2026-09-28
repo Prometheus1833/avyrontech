@@ -163,6 +163,15 @@ test.describe("dashboard AVYRON OS în română", () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
   });
 
+  test("separă serviciile personalizate de catalogul de produse", async ({ page }) => {
+    await page.goto("/profil?tab=servicii-avyron");
+    await expect(page.getByRole("heading", { name: "Servicii AVYRON", exact: true })).toBeVisible();
+    await expect(page.getByText("Prezență digitală", { exact: true })).toBeVisible();
+    await expect(page.getByText("Software, automatizări și AI", { exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Produse AVYRON/ })).toHaveAttribute("href", "/produse");
+    await expect(page.getByRole("tab", { name: "Produse AVYRON", exact: true }).first()).toBeVisible();
+  });
+
   test("pune prioritățile înaintea KPI-urilor și leagă centrele existente", async ({page}) => {
     await page.goto('/profil?tab=overview');
     const attention = page.getByText('Necesită atenție · Azi');

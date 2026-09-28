@@ -43,7 +43,7 @@ const AboutUs = () => {
   const copyY = useTransform(scrollYProgress, [0, 1], [0, 28]);
   const homeHref = ro ? "/#hero" : "/en#hero";
   const portfolioPath = ro ? "/portofoliu" : "/en/portfolio";
-  const productsPath = ro ? "/costurisiproduse" : "/en/pricing";
+  const productsPath = ro ? "/servicii" : "/en/services";
 
   useEffect(() => {
     window.scrollTo(0, 0);

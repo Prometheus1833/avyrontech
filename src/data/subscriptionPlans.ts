@@ -1,5 +1,5 @@
 import type { Lang } from "@/i18n/translations";
-import type { ProductKey } from "@/data/products";
+import type { ServiceKey } from "@/data/services";
 import { subscriptionPriceCents } from "@/data/commerceCatalog";
 
 /**
@@ -7,7 +7,7 @@ import { subscriptionPriceCents } from "@/data/commerceCatalog";
  *
  * Prețurile de bază sunt în RON (bani), citite din COMMERCE_CATALOG, care este
  * și sursa de adevăr pentru Worker. Nicio pagină nu-și scrie propriile prețuri:
- * pagina /mentenanta-si-colaborari, cardurile de pe paginile de produs și
+ * pagina /mentenanta-si-colaborari, cardurile de pe paginile de serviciu și
  * contul clientului citesc toate din acest fișier.
  */
 
@@ -92,9 +92,9 @@ export type SubscriptionCategory = {
    * abonamente din `/intern`, într-un task separat.
    */
   internProjectKinds: string[];
-  /** Pagina de produs care afișează cardurile acestei categorii. */
-  products: ProductKey[];
-  productPath: { ro: string; en: string } | null;
+  /** Serviciile pentru care se afișează planurile acestei categorii. */
+  services: ServiceKey[];
+  servicePath: { ro: string; en: string } | null;
   theme: CategoryTheme;
   copy: Record<Lang, {
     title: string;
@@ -129,10 +129,10 @@ const SITE: SubscriptionCategory = {
   key: "site",
   icon: "globe",
   internProjectKinds: ["website_prezentare", "prezentare_premium"],
-  products: ["premium-website"],
-  productPath: {
-    ro: "/produse/website-prezentare-premium",
-    en: "/en/products/premium-presentation-website",
+  services: ["premium-website"],
+  servicePath: {
+    ro: "/servicii/website-prezentare-profesional",
+    en: "/en/services/professional-presentation-website",
   },
   theme: {
     from: "from-cyan-400", to: "to-blue-600", text: "text-cyan-600 dark:text-cyan-300",
@@ -340,8 +340,8 @@ const SHOP: SubscriptionCategory = {
   key: "shop",
   icon: "store",
   internProjectKinds: ["magazin_online"],
-  products: ["online-store"],
-  productPath: { ro: "/produse/magazin-online", en: "/en/products/online-store" },
+  services: ["online-store"],
+  servicePath: { ro: "/servicii/magazin-online", en: "/en/services/online-store" },
   theme: {
     from: "from-emerald-400", to: "to-teal-600", text: "text-emerald-600 dark:text-emerald-300",
     border: "border-emerald-300/30", glow: "bg-emerald-400/15", ring: "ring-emerald-300/40",
@@ -548,8 +548,8 @@ const BLOG: SubscriptionCategory = {
   key: "blog",
   icon: "pen",
   internProjectKinds: ["blog", "retele_sociale", "identitate_completa"],
-  products: ["social-identity"],
-  productPath: { ro: "/produse/blog-profesional", en: "/en/products/professional-blog" },
+  services: ["social-identity"],
+  servicePath: { ro: "/servicii/blog-profesional", en: "/en/services/professional-blog" },
   theme: {
     from: "from-amber-400", to: "to-orange-600", text: "text-amber-600 dark:text-amber-300",
     border: "border-amber-300/30", glow: "bg-amber-400/15", ring: "ring-amber-300/40",
@@ -756,8 +756,8 @@ const AI: SubscriptionCategory = {
   key: "ai",
   icon: "cpu",
   internProjectKinds: ["agent_ai"],
-  products: ["ai-agent"],
-  productPath: { ro: "/produse/agent-ai-personalizat", en: "/en/products/personalized-ai-agent" },
+  services: ["ai-agent"],
+  servicePath: { ro: "/servicii/automatizari-si-ai", en: "/en/services/automation-and-ai" },
   theme: {
     from: "from-fuchsia-500", to: "to-purple-600", text: "text-fuchsia-600 dark:text-fuchsia-300",
     border: "border-fuchsia-300/30", glow: "bg-fuchsia-400/15", ring: "ring-fuchsia-300/40",
@@ -964,8 +964,8 @@ const APP: SubscriptionCategory = {
   key: "app",
   icon: "smartphone",
   internProjectKinds: ["aplicatie"],
-  products: ["apps"],
-  productPath: { ro: "/produse/aplicatii-web-si-mobile", en: "/en/products/web-and-mobile-apps" },
+  services: ["apps"],
+  servicePath: { ro: "/servicii/aplicatii-si-platforme", en: "/en/services/apps-and-platforms" },
   theme: {
     from: "from-indigo-500", to: "to-violet-600", text: "text-indigo-600 dark:text-indigo-300",
     border: "border-indigo-300/30", glow: "bg-indigo-400/15", ring: "ring-indigo-300/40",
@@ -1174,8 +1174,8 @@ export const categoryByKey = (key: PlanCategoryKey) =>
   SUBSCRIPTION_CATEGORIES.find((c) => c.key === key) ?? null;
 
 /** Categoria de abonamente afișată pe o pagină de produs. */
-export const categoryForProduct = (product: ProductKey) =>
-  SUBSCRIPTION_CATEGORIES.find((c) => c.products.includes(product)) ?? null;
+export const categoryForService = (service: ServiceKey) =>
+  SUBSCRIPTION_CATEGORIES.find((category) => category.services.includes(service)) ?? null;
 
 export const planBySku = (sku: string) => {
   for (const category of SUBSCRIPTION_CATEGORIES) {

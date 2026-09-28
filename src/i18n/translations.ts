@@ -325,7 +325,8 @@ export const translations = {
       navItems: [
         { l: "Blog", h: "/blog" },
         { l: "Portofoliu", h: "/portofoliu" },
-        { l: "Servicii", h: "/costurisiproduse" },
+        { l: "Servicii", h: "/servicii" },
+        { l: "Produse", h: "/produse" },
         { l: "Confidențialitate & GDPR", h: "/gdpr" },
       ],
       ctaLabel: "Exemplu Gratuit",
@@ -835,7 +836,8 @@ export const translations = {
       navItems: [
         { l: "Blog", h: "/en/blog" },
         { l: "Portfolio", h: "/en/portfolio" },
-        { l: "Services", h: "/en/pricing" },
+        { l: "Services", h: "/en/services" },
+        { l: "Products", h: "/en/products" },
         { l: "Privacy & GDPR", h: "/en/privacy" },
       ],
       ctaLabel: "Free Example",

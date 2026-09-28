@@ -35,10 +35,10 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
 
   const cases: Array<[string, string, string]> = [
     ["/", "ro", "https://avyron.ro/"],
-    ["/costurisiproduse", "ro", "https://avyron.ro/costurisiproduse"],
-    ["/produse/website-prezentare-premium", "ro", "https://avyron.ro/produse/website-prezentare-premium"],
-    ["/en/products/premium-presentation-website", "en", "https://avyron.ro/en/products/premium-presentation-website"],
-    ["/en/pricing", "en", "https://avyron.ro/en/pricing"],
+    ["/servicii", "ro", "https://avyron.ro/servicii"],
+    ["/servicii/website-prezentare-profesional", "ro", "https://avyron.ro/servicii/website-prezentare-profesional"],
+    ["/en/services/professional-presentation-website", "en", "https://avyron.ro/en/services/professional-presentation-website"],
+    ["/en/services", "en", "https://avyron.ro/en/services"],
     ["/despre-noi", "ro", "https://avyron.ro/despre-noi"],
     ["/en/about", "en", "https://avyron.ro/en/about"],
     ["/portofoliu", "ro", "https://avyron.ro/portofoliu"],
@@ -72,11 +72,11 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
   });
 
   it("RO/EN pairs cross-link with hreflang + x-default", () => {
-    for (const route of ["/costurisiproduse", "/en/pricing"]) {
+    for (const route of ["/servicii", "/en/services"]) {
       const h = head(read(route));
-      expect(h).toContain('hreflang="ro" href="https://avyron.ro/costurisiproduse"');
-      expect(h).toContain('hreflang="en" href="https://avyron.ro/en/pricing"');
-      expect(h).toContain('hreflang="x-default" href="https://avyron.ro/costurisiproduse"');
+      expect(h).toContain('hreflang="ro" href="https://avyron.ro/servicii"');
+      expect(h).toContain('hreflang="en" href="https://avyron.ro/en/services"');
+      expect(h).toContain('hreflang="x-default" href="https://avyron.ro/servicii"');
     }
   });
 
@@ -166,7 +166,7 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
   });
 
   it("ships exactly one JSON-LD graph with no duplicated global nodes", () => {
-    for (const route of ["/", "/costurisiproduse", "/produse/website-prezentare-premium", "/produse/testare-qa-web-mobile"]) {
+    for (const route of ["/", "/servicii", "/servicii/website-prezentare-profesional", "/servicii/qa-testing-web-mobile"]) {
       const h = head(read(route));
       const scripts = h.match(/<script[^>]*application\/ld\+json[^>]*>/g) || [];
       expect(scripts.length).toBe(1);
@@ -232,15 +232,15 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
   });
 
   it("keeps Product/Service schema off non-product pages", () => {
-    for (const route of ["/", "/costurisiproduse"]) {
+    for (const route of ["/", "/servicii"]) {
       const h = head(read(route));
       expect(h).not.toContain('"@type":"Product"');
     }
   });
 
   it("does not render the removed concrete-project examples on the premium website page", () => {
-    expect(read("/produse/website-prezentare-premium")).not.toContain("Exemple concrete de proiecte");
-    expect(read("/en/products/premium-presentation-website")).not.toContain(
+    expect(read("/servicii/website-prezentare-profesional")).not.toContain("Exemple concrete de proiecte");
+    expect(read("/en/services/professional-presentation-website")).not.toContain(
       "Examples of what this looks like in practice",
     );
   });

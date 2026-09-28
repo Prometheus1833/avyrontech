@@ -20,11 +20,11 @@ describe("SPA head cleanup between routes", () => {
     setPageMeta({
       title: "Website Prezentare Premium",
       description: "d",
-      path: "/produse/website-prezentare-premium",
-      alternates: { ro: "/produse/website-prezentare-premium", en: "/en/products/premium-presentation-website" },
+      path: "/servicii/website-prezentare-profesional",
+      alternates: { ro: "/servicii/website-prezentare-profesional", en: "/en/services/professional-presentation-website" },
     });
     setJsonLd("organization", organizationLd);
-    setJsonLd("product", productLd({ name: "Website Prezentare Premium", description: "d", path: "/produse/website-prezentare-premium" }));
+    setJsonLd("product", productLd({ name: "Website Prezentare Premium", description: "d", path: "/servicii/website-prezentare-profesional" }));
     expect(types()).toContain("Product");
 
     // -> pricing
@@ -32,18 +32,18 @@ describe("SPA head cleanup between routes", () => {
     setPageMeta({
       title: "Prețuri",
       description: "d",
-      path: "/costurisiproduse",
-      alternates: { ro: "/costurisiproduse", en: "/en/pricing" },
+      path: "/servicii",
+      alternates: { ro: "/servicii", en: "/en/services" },
     });
     setJsonLd("organization", organizationLd);
     setJsonLd("breadcrumb", breadcrumbLd([{ name: "Acasă", path: "/" }]));
     expect(types()).not.toContain("Product");
     expect(document.querySelector('link[rel="canonical"]')!.getAttribute("href")).toBe(
-      "https://avyron.ro/costurisiproduse",
+      "https://avyron.ro/servicii",
     );
     expect(
       [...document.querySelectorAll('link[hreflang="en"]')].map((l) => l.getAttribute("href")),
-    ).toEqual(["https://avyron.ro/en/pricing"]);
+    ).toEqual(["https://avyron.ro/en/services"]);
 
     // -> homepage
     resetManagedHead();
@@ -56,7 +56,7 @@ describe("SPA head cleanup between routes", () => {
   });
 
   it("switches document lang and robots per route", () => {
-    setPageMeta({ title: "EN", description: "d", path: "/en/pricing" });
+    setPageMeta({ title: "EN", description: "d", path: "/en/services" });
     expect(document.documentElement.lang).toBe("en");
     setPageMeta({ title: "404", description: "d", path: "/404", robots: "noindex, follow" });
     expect(document.documentElement.lang).toBe("ro");

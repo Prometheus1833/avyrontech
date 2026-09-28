@@ -8,8 +8,8 @@ const pagesSuite = existsSync(bundle) ? describe : describe.skip;
 
 pagesSuite("Cloudflare Pages advanced-mode bundle", () => {
   const files: Record<string, string> = {
-    "/costurisiproduse/index.html": "<h1>pricing</h1>",
-    "/produse/website-prezentare-premium/index.html": "<h1>product</h1>",
+    "/servicii/index.html": "<h1>pricing</h1>",
+    "/servicii/website-prezentare-profesional/index.html": "<h1>product</h1>",
     "/404.html": "<h1>404</h1>",
     "/_shell.html": "<div id=root></div>",
   };
@@ -36,9 +36,9 @@ pagesSuite("Cloudflare Pages advanced-mode bundle", () => {
   it("contains the same redirect and status semantics used in production", async () => {
     const redirect = await get("/costuri");
     expect(redirect.status).toBe(301);
-    expect(new URL(redirect.headers.get("location")!).pathname).toBe("/costurisiproduse");
+    expect(new URL(redirect.headers.get("location")!).pathname).toBe("/servicii");
 
-    expect((await get("/produse/website-prezentare-premium")).status).toBe(200);
+    expect((await get("/servicii/website-prezentare-profesional")).status).toBe(200);
 
     const missing = await get("/pagina-inexistenta");
     expect(missing.status).toBe(404);

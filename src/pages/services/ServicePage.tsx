@@ -28,7 +28,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
-import { getProductByPath, PRODUCTS, type IconKey } from "@/data/products";
+import { getServiceByPath, SERVICES, type IconKey } from "@/data/services";
 import LangSwitch from "@/components/site/LangSwitch";
 import ThemeToggle from "@/components/site/ThemeToggle";
 import Breadcrumbs from "@/components/site/Breadcrumbs";
@@ -43,7 +43,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import PaymentMethods from "@/components/site/PaymentMethods";
 import QuickNav, { type QuickNavItem } from "@/components/site/QuickNav";
 import PlanTeaser from "@/components/site/subscriptions/PlanTeaser";
-import { categoryForProduct } from "@/data/subscriptionPlans";
+import { categoryForService } from "@/data/subscriptionPlans";
 
 const ICONS: Record<IconKey, React.ComponentType<{ className?: string }>> = {
   globe: Globe,
@@ -71,12 +71,12 @@ const ICONS: Record<IconKey, React.ComponentType<{ className?: string }>> = {
 
 const WHATSAPP = "https://wa.me/40734605055?text=";
 
-const ProductPage = () => {
+const ServicePage = () => {
   const { pathname } = useLocation();
   const { lang } = useLang();
   const ro = lang === "ro";
   const { formatEur } = useCurrency(ro ? "ro-RO" : "en-IE");
-  const product = getProductByPath(pathname);
+  const product = getServiceByPath(pathname);
 
   useEffect(() => {
     if (!product) return;
@@ -84,7 +84,7 @@ const ProductPage = () => {
     const c = product.copy[lang];
     const path = product.path[lang];
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
-      ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd, serviceLd, productLd, faqPageLd }]) => {
+      ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd, serviceLd, faqPageLd }]) => {
         setPageMeta({
           title: c.metaTitle,
           description: c.metaDescription,
@@ -101,15 +101,6 @@ const ProductPage = () => {
             priceEur: product.priceEur || undefined,
           }),
         );
-        setJsonLd(
-          "ld-product",
-          productLd({
-            name: c.name,
-            description: c.metaDescription,
-            path,
-            priceEur: product.priceEur || undefined,
-          }),
-        );
         setJsonLd("ld-faq", faqPageLd(c.faq));
 
         setJsonLd(
@@ -117,8 +108,8 @@ const ProductPage = () => {
           breadcrumbLd([
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
             {
-              name: ro ? "Servicii & Costuri" : "Services & Pricing",
-              path: ro ? "/costurisiproduse" : "/en/pricing",
+              name: ro ? "Servicii AVYRON" : "AVYRON Services",
+              path: ro ? "/servicii" : "/en/services",
             },
             { name: c.name, path },
           ]),
@@ -132,10 +123,10 @@ const ProductPage = () => {
   const c = product.copy[lang];
   const a = product.accent;
   const HeroIcon = ICONS[product.icon];
-  // The audit is intentionally available only from the complete product overview,
+  // The audit is intentionally available only from the complete services overview,
   // where its protected request flow has the necessary context and anti-spam checks.
-  const others = PRODUCTS.filter((p) => p.key !== product.key && p.key !== "audit");
-  const planCategory = categoryForProduct(product.key);
+  const others = SERVICES.filter((p) => p.key !== product.key && p.key !== "audit");
+  const planCategory = categoryForService(product.key);
 
   const quickNavItems: QuickNavItem[] = [
     { id: "prezentare", label: ro ? "Prezentare" : "Overview", icon: HeroIcon },
@@ -169,9 +160,9 @@ const ProductPage = () => {
         {/* Top bar */}
         <div className="flex items-center justify-between gap-3">
           <PageBackLink
-            to={ro ? "/costurisiproduse" : "/en/pricing"}
+            to={ro ? "/servicii" : "/en/services"}
             label={ro ? "Înapoi" : "Back"}
-            title={ro ? "Înapoi la produse" : "Back to products"}
+            title={ro ? "Înapoi la servicii" : "Back to services"}
           />
           <div className="flex items-center gap-2">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 bg-foreground/[0.04] px-2 py-1 backdrop-blur">
@@ -195,8 +186,8 @@ const ProductPage = () => {
           items={[
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
             {
-              name: ro ? "Servicii & Costuri" : "Services & Pricing",
-              path: ro ? "/costurisiproduse" : "/en/pricing",
+              name: ro ? "Servicii AVYRON" : "AVYRON Services",
+              path: ro ? "/servicii" : "/en/services",
             },
             { name: c.name, path: product.path[lang] },
           ]}
@@ -228,7 +219,7 @@ const ProductPage = () => {
               <ArrowRight className="size-3.5 shrink-0 transition-transform duration-300 group-hover:translate-x-1 sm:size-4" aria-hidden />
             </a>
             <Link
-              to={ro ? "/costurisiproduse#cta" : "/en/pricing#cta"}
+              to={ro ? "/servicii#cta" : "/en/services#cta"}
               className="inline-flex min-h-12 min-w-0 items-center justify-center rounded-2xl border border-foreground/20 bg-foreground/[0.05] px-2.5 py-2.5 text-center text-xs font-semibold leading-tight transition-colors hover:bg-foreground/[0.1] sm:rounded-full sm:px-5 sm:text-sm"
             >
               {ro ? "Cere ofertă" : "Request a quote"}
@@ -514,7 +505,7 @@ const ProductPage = () => {
                   contact@avyron.ro
                 </a>
                 <Link
-                  to={ro ? "/costurisiproduse" : "/en/pricing"}
+                  to={ro ? "/servicii" : "/en/services"}
                   className="inline-flex items-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-6 py-3 text-sm font-semibold hover:bg-foreground/[0.1] transition-colors"
                 >
                   {ro ? "Vezi toate prețurile" : "See all pricing"}
@@ -524,11 +515,11 @@ const ProductPage = () => {
           </div>
         </Reveal>
 
-        {/* Related products */}
+        {/* Related services */}
         <section className="mt-16">
           <Reveal>
             <h2 className="text-center font-display text-xl font-extrabold md:text-2xl">
-              {ro ? "Alte produse Avyron" : "Other Avyron products"}
+              {ro ? "Alte servicii AVYRON" : "Other AVYRON services"}
             </h2>
           </Reveal>
           <div data-testid="related-product-list" className="mt-5 grid gap-2 sm:grid-cols-2">
@@ -559,7 +550,7 @@ const ProductPage = () => {
           </div>
         </section>
 
-        {/* Abonamentele de mentenanță potrivite produsului */}
+        {/* Abonamentele de mentenanță potrivite serviciului */}
         {planCategory && (
           <PlanTeaser
             category={planCategory}
@@ -574,4 +565,4 @@ const ProductPage = () => {
   );
 };
 
-export default ProductPage;
+export default ServicePage;

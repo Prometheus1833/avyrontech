@@ -7,7 +7,7 @@ export default function HomepageQuickLinks() {
   const ro = lang === "ro";
   const cards = [
     {
-      to: ro ? "/costurisiproduse" : "/en/pricing",
+      to: ro ? "/servicii" : "/en/services",
       eyebrow: ro ? "Transparență totală" : "Full transparency",
       title: ro ? "Servicii și costuri" : "Services and pricing",
       detail: ro ? "Servicii, configurații și repere de buget prezentate clar." : "Services, configurations and clear budget guidance.",

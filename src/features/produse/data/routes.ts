@@ -7,7 +7,7 @@
  * `src/test/produse.test.ts` verifică ca listele să fie identice cu catalogul.
  */
 
-export const PRODUSE_BASE = { ro: "/produse-avyron", en: "/en/avyron-products" } as const;
+export const PRODUSE_BASE = { ro: "/produse", en: "/en/products" } as const;
 
 /** Segmentele de tip, în ordinea din taxonomie. */
 export const PRODUSE_TYPE_SEGMENTS: Array<{ ro: string; en: string }> = [

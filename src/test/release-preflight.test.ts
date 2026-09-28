@@ -15,7 +15,15 @@ describe('Cloudflare release preflight', () => {
       let results: unknown[] = [];
       if (sql?.includes('d1_migrations')) results = (migrated && failure !== 'incomplete' ? expected : expected.slice(0, 1)).map(name => ({name}));
       if (sql === 'PRAGMA foreign_key_check' && failure === 'foreign_keys') results = [{table:'broken'}];
+      if (sql === 'PRAGMA quick_check' && ['integrity_nomem','table_integrity'].includes(failure)) throw new Error('SQLITE_NOMEM: out of memory');
       if (sql === 'PRAGMA quick_check') results = [{quick_check: failure === 'integrity' ? 'broken' : 'ok'}];
+      if (sql?.startsWith("SELECT name, sql FROM sqlite_schema")) results = [
+        {name:'clients',sql:'CREATE TABLE clients(id TEXT)'},
+        {name:'search',sql:'CREATE VIRTUAL TABLE search USING fts5(body)'},
+        {name:'search_data',sql:'CREATE TABLE search_data(id INTEGER PRIMARY KEY, block BLOB)'},
+      ];
+      if (sql?.startsWith("PRAGMA quick_check('") && failure === 'table_integrity' && sql.includes('clients')) results = [{quick_check:'broken'}];
+      else if (sql?.startsWith("PRAGMA quick_check('")) results = [{quick_check:'ok'}];
       if (sql?.includes('MATCH') && failure === 'fts') throw new Error('FTS unavailable');
       return [{success: true, results}];
     };
@@ -33,6 +41,18 @@ describe('Cloudflare release preflight', () => {
   });
   it.each(['migration','incomplete','foreign_keys','integrity','fts'])('stops publication when %s fails', failure => {
     const f = fixture(failure); expect(f.release).toThrow();
+    expect(f.calls.some(args => ['deploy','versions'].includes(args[0]))).toBe(false);
+  });
+  it('falls back to table-by-table integrity checks only for SQLITE_NOMEM', () => {
+    const f = fixture('integrity_nomem'); f.release();
+    expect(f.calls.some(args => args.includes("PRAGMA quick_check('clients')"))).toBe(true);
+    expect(f.calls.some(args => args.includes("PRAGMA quick_check('search')"))).toBe(false);
+    expect(f.calls.some(args => args.includes("PRAGMA quick_check('search_data')"))).toBe(false);
+    expect(f.calls.at(-1)?.[0]).toBe('deploy');
+  });
+  it('stops publication when the table-by-table fallback finds corruption', () => {
+    const f = fixture('table_integrity');
+    expect(f.release).toThrow('clients');
     expect(f.calls.some(args => ['deploy','versions'].includes(args[0]))).toBe(false);
   });
   it('keeps preview migrations and upload isolated from production', () => {

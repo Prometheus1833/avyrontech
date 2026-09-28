@@ -18,7 +18,7 @@ const CollectionsIndex = lazy(() => import("./pages/CollectionPage").then((m) =>
 /**
  * Router-ul intern al paginii Produse Avyron.
  *
- * Toate rutele intră prin `/produse-avyron/*` (RO) și `/en/avyron-products/*`
+ * Toate rutele intră prin `/produse/*` (RO) și `/en/products/*`
  * (EN), iar aici se decide ce se randează. Un singur punct de intrare ține
  * cadrul (bara de sus, fundalul 3D, coșul, paleta de căutare) montat între
  * navigări, deci trecerea dintre liste și produse nu reia preloaderul.

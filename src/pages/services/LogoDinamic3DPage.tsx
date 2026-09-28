@@ -168,7 +168,7 @@ function PageBody() {
       <div className="l3d-content">
         <header className="l3d-wrap flex items-center justify-between gap-3 pt-6 sm:pt-8">
           <PageBackLink
-            to={ro ? "/costurisiproduse" : "/en/pricing"}
+            to={ro ? "/servicii" : "/en/services"}
             label={ro ? "Înapoi" : "Back"}
             title={ro ? "Înapoi la servicii" : "Back to services"}
           />
@@ -187,7 +187,7 @@ function PageBody() {
             className="mt-5"
             items={[
               { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
-              { name: ro ? "Costuri & Servicii" : "Pricing & Services", path: ro ? "/costurisiproduse" : "/en/pricing" },
+              { name: ro ? "Servicii AVYRON" : "AVYRON Services", path: ro ? "/servicii" : "/en/services" },
               { name: m.name, path: LOGO3D_PATHS[lang] },
             ]}
           />
@@ -252,17 +252,10 @@ const LogoDinamic3DPage = () => {
           imageAlt: ro ? "Logo dinamic 3D Avyron — logo metalic extrudat, de la 500 lei" : "Avyron dynamic 3D logo — extruded metal mark, from 500 lei",
         });
         setJsonLd("ld-organization", organizationLd);
-        setJsonLd("ld-service", serviceLd({ name: m.name, description: m.description, path }));
-        setJsonLd("ld-product", {
-          "@context": "https://schema.org",
-          "@type": "Product",
-          "@id": `${url}#product`,
+        setJsonLd("ld-service", serviceLd({
           name: m.name,
           description: m.description,
-          url,
-          brand: { "@type": "Brand", name: "Avyron" },
-          image: `https://avyron.ro${ro ? "/og/logo-dinamic-3d.jpg" : "/og/logo-dinamic-3d-en.jpg"}`,
-          category: ro ? "Design logo / Identitate vizuală / Animație 3D" : "Logo design / Visual identity / 3D animation",
+          path,
           offers: {
             "@type": "AggregateOffer",
             priceCurrency: "RON",
@@ -281,13 +274,13 @@ const LogoDinamic3DPage = () => {
               url: `${url}#pachet-${t.key}`,
             })),
           },
-        });
+        }));
         setJsonLd("ld-faq", faqPageLd([...LOGO3D_FAQ[lang]]));
         setJsonLd(
           "ld-breadcrumb",
           breadcrumbLd([
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
-            { name: ro ? "Costuri & Servicii" : "Pricing & Services", path: ro ? "/costurisiproduse" : "/en/pricing" },
+            { name: ro ? "Servicii AVYRON" : "AVYRON Services", path: ro ? "/servicii" : "/en/services" },
             { name: m.name, path },
           ]),
         );

@@ -10,21 +10,21 @@ import { produseRoutePairs } from "../features/produse/data/routes";
  */
 export const ROUTE_ALTERNATES: Array<{ ro: string; en: string }> = [
   { ro: "/", en: "/en" },
-  { ro: "/costurisiproduse", en: "/en/pricing" },
+  { ro: "/servicii", en: "/en/services" },
   { ro: "/despre-noi", en: "/en/about" },
   { ro: "/portofoliu", en: "/en/portfolio" },
   { ro: "/termeni", en: "/en/terms" },
   { ro: "/politica-cookies", en: "/en/cookie-policy" },
-  { ro: "/produse/website-prezentare-premium", en: "/en/products/premium-presentation-website" },
-  { ro: "/servicii/logo", en: "/en/services/logo" },
-  { ro: "/servicii/logo/creeaza", en: "/en/services/logo/create" },
-  { ro: "/produse/identitate-social-media", en: "/en/products/social-media-identity" },
-  { ro: "/produse/magazin-online", en: "/en/products/online-store" },
-  { ro: "/produse/blog-profesional", en: "/en/products/professional-blog" },
+  { ro: "/servicii/website-prezentare-profesional", en: "/en/services/professional-presentation-website" },
+  { ro: "/servicii/creare-logo-3d-dinamic-cinematic", en: "/en/services/cinematic-dynamic-3d-logo-design" },
+  { ro: "/servicii/creare-logo-3d-dinamic-cinematic/creeaza", en: "/en/services/cinematic-dynamic-3d-logo-design/create" },
+  { ro: "/servicii/identitate-social-media", en: "/en/services/social-media-identity" },
+  { ro: "/servicii/magazin-online", en: "/en/services/online-store" },
+  { ro: "/servicii/blog-profesional", en: "/en/services/professional-blog" },
   { ro: "/mentenanta-si-colaborari", en: "/en/maintenance-and-partnerships" },
-  { ro: "/produse/aplicatii-web-si-mobile", en: "/en/products/web-and-mobile-apps" },
-  { ro: "/produse/agent-ai-personalizat", en: "/en/products/personalized-ai-agent" },
-  { ro: "/produse/testare-qa-web-mobile", en: "/en/products/qa-testing-web-mobile" },
+  { ro: "/servicii/aplicatii-si-platforme", en: "/en/services/apps-and-platforms" },
+  { ro: "/servicii/automatizari-si-ai", en: "/en/services/automation-and-ai" },
+  { ro: "/servicii/qa-testing-web-mobile", en: "/en/services/web-mobile-qa-testing" },
   // Biblioteca este publică; VITE_BIBLIOTECA=0 rămâne kill switch de urgență.
   ...(FEATURES.bibliotecaLive
     ? [{ ro: "/biblioteca", en: "/en/library" }]

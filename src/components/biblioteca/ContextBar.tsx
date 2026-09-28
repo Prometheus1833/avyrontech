@@ -11,23 +11,23 @@ type Props = {
 /**
  * Bara de proveniență.
  *
- * Apare doar când utilizatorul a intrat din pagina unui produs. Îi spune de
+ * Apare doar când utilizatorul a intrat din pagina unui serviciu. Îi spune de
  * unde vine, îi ține drumul de întoarcere la un click distanță și duce mai
  * departe spre ofertă — biblioteca nu e o fundătură.
  */
 export default function ContextBar({ origin, lang }: Props) {
   if (!origin) return null;
 
-  const productPath = origin.product ? origin.product[lang] : null;
+  const servicePath = origin.service ? origin.service[lang] : null;
   const label = origin.name[lang];
 
   return (
     <div className="sticky top-0 z-40 border-b border-white/10 bg-[#07080d]/85 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-2.5 text-xs sm:px-6">
         <span className="flex min-w-0 items-center gap-2 text-white/60">
-          {productPath ? (
+          {servicePath ? (
             <Link
-              to={productPath}
+              to={servicePath}
               className="flex items-center gap-1.5 text-white/70 transition-colors hover:text-white"
             >
               <ArrowLeft className="size-3.5 shrink-0" aria-hidden="true" />

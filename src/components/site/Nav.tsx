@@ -1,4 +1,4 @@
-import { Menu, X, LogIn, Newspaper, ShoppingBag, UsersRound } from "lucide-react";
+import { Boxes, Menu, X, LogIn, Newspaper, ShoppingBag, UsersRound } from "lucide-react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
@@ -12,7 +12,7 @@ const UserMenu = lazy(() => import("@/components/auth/UserMenu"));
 const StaffOsMenu = lazy(() => import("./StaffOsMenu"));
 
 // Routes where prices are shown — the currency toggle belongs in the nav cluster there.
-const CURRENCY_ROUTES = /^\/(en\/)?(costurisiproduse|pricing|produse|products)/;
+const CURRENCY_ROUTES = /^\/(en\/)?(servicii|services|produse|products)/;
 
 export type NavLinkDef = { label: string; href?: string; to?: string; icon?: typeof Newspaper; highlight?: boolean; isRoute?: boolean };
 export type NavCta = { label: string; sub: string; href: string };
@@ -33,9 +33,9 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
   const showCurrency = CURRENCY_ROUTES.test(pathname);
   const defaultLinks = [
     { label: t.nav.news, to: lang === "en" ? "/en/blog" : "/blog", icon: Newspaper, isRoute: true },
-    { label: isRo ? "Servicii" : "Services", to: isRo ? "/costurisiproduse" : "/en/pricing", icon: ShoppingBag, isRoute: true },
+    { label: isRo ? "Servicii" : "Services", to: isRo ? "/servicii" : "/en/services", icon: ShoppingBag, isRoute: true },
+    { label: isRo ? "Produse" : "Products", to: isRo ? "/produse" : "/en/products", icon: Boxes, isRoute: true },
     { label: isRo ? "Despre noi" : "About us", to: isRo ? "/despre-noi" : "/en/about", icon: UsersRound, isRoute: true },
-    { label: isRo ? "Vezi domenii" : "See industries", href: `${homePath}#exemple` },
     { label: t.nav.process, href: `${homePath}#proces` },
   ] as NavLinkDef[];
   const links = customLinks ?? defaultLinks;

@@ -34,13 +34,13 @@ Un badge sau accesul la suport poate crește încrederea în anumite contexte. T
 
 ## Rețelele sociale și site-ul au roluri diferite
 
-Profilurile sociale ajută la descoperire și conversație. Un [site de prezentare profesional](/produse/website-prezentare-premium) oferă însă control asupra identității, paginilor de servicii, formularelor, măsurării conversiilor și informațiilor pe care Google sau sistemele AI le pot înțelege. Lista de urmăritori aparține platformei; domeniul, conținutul și baza de solicitări pot rămâne activele afacerii.
+Profilurile sociale ajută la descoperire și conversație. Un [site de prezentare profesional](/servicii/website-prezentare-profesional) oferă însă control asupra identității, paginilor de servicii, formularelor, măsurării conversiilor și informațiilor pe care Google sau sistemele AI le pot înțelege. Lista de urmăritori aparține platformei; domeniul, conținutul și baza de solicitări pot rămâne activele afacerii.
 
 O structură sănătoasă folosește postările pentru a răspunde unei întrebări concrete, trimite utilizatorul către o pagină relevantă și măsoară o acțiune utilă: apel, mesaj, programare, cerere de ofertă sau comandă. Astfel, un produs Meta devine o componentă a sistemului de marketing, nu întregul sistem.
 
 ## Recomandarea Avyron
 
-Pornește cu un inventar al canalelor, uniformizează numele, logo-ul, datele de contact și linkurile, apoi stabilește indicatori măsurabili pentru 30–60 de zile. Păstrează opțiunile plătite numai dacă reduc un risc sau îmbunătățesc un rezultat observabil. Pentru identitate și configurare coerentă poți consulta serviciul de [identitate social media](/produse/identitate-social-media).`,
+Pornește cu un inventar al canalelor, uniformizează numele, logo-ul, datele de contact și linkurile, apoi stabilește indicatori măsurabili pentru 30–60 de zile. Păstrează opțiunile plătite numai dacă reduc un risc sau îmbunătățesc un rezultat observabil. Pentru identitate și configurare coerentă poți consulta serviciul de [identitate social media](/servicii/identitate-social-media).`,
     cover_image_url: "/news/meta-abonamente-branduri-2026.webp",
     tags: ["meta", "facebook", "instagram", "social-media", "strategie-digitala"],
     category: "tech",
@@ -74,7 +74,7 @@ Un site oferă și o destinație stabilă pentru Google Business Profile, Facebo
 - măsurare cu consimțământ și acces la datele conturilor;
 - instrucțiuni de administrare și responsabilități clare după lansare.
 
-Avyron construiește [site-uri de prezentare premium](/produse/website-prezentare-premium) pentru afaceri locale și proiecte naționale, cu design, dezvoltare, optimizare și infrastructură într-un singur flux. Durata și livrabilele sunt stabilite în oferta proiectului, în funcție de conținut și complexitate.`,
+Avyron construiește [site-uri de prezentare premium](/servicii/website-prezentare-profesional) pentru afaceri locale și proiecte naționale, cu design, dezvoltare, optimizare și infrastructură într-un singur flux. Durata și livrabilele sunt stabilite în oferta proiectului, în funcție de conținut și complexitate.`,
     cover_image_url: "/news/site-prezentare-afacere-2026.webp",
     tags: ["site-prezentare", "website-firma", "business", "web-design", "seo"],
     category: "business",
@@ -102,7 +102,7 @@ Pentru platforme interne și aplicații, definim separat rolurile, permisiunile,
 
 Înainte de livrare verificăm rutele, formularele, autentificarea, responsive design, metadata și erorile. Publicarea nu încheie automat colaborarea: mentenanța, monitorizarea, conținutul și optimizarea pot continua printr-un plan definit, fără promisiuni nelimitate sau responsabilități ambigue.
 
-Poți explora [serviciile și costurile](/costurisiproduse), [portofoliul](/portofoliu) sau poți solicita un exemplu adaptat domeniului tău. Recomandarea finală poate fi un site de prezentare, un magazin online, o aplicație, un audit ori o etapă mai mică decât cea imaginată inițial—alegem ceea ce are sens pentru obiectiv.`,
+Poți explora [serviciile și costurile](/servicii), [portofoliul](/portofoliu) sau poți solicita un exemplu adaptat domeniului tău. Recomandarea finală poate fi un site de prezentare, un magazin online, o aplicație, un audit ori o etapă mai mică decât cea imaginată inițial—alegem ceea ce are sens pentru obiectiv.`,
     cover_image_url: "/news/proces-produs-digital-avyron.webp",
     tags: ["avyron", "agentie-web-iasi", "proces", "dezvoltare-web", "cloudflare"],
     category: "avyron",
@@ -130,7 +130,7 @@ Ierarhia vizuală, contrastul, spațiul și mișcarea au un scop: evidențiază 
 
 Același nume, aceeași descriere de bază, același domeniu și aceleași date de contact ar trebui să apară pe website, Google Business Profile și profilurile sociale. Legăturile reciproce și Schema.org ajută motoarele să coreleze entitatea, dar numai dacă profilurile sunt reale și publice.
 
-Înainte de redesign, un [audit de website](/?request=audit#cta) poate separa problemele de conținut, UX, performanță, SEO și securitate. Pentru un proiect nou, serviciul de [website de prezentare](/produse/website-prezentare-premium) pornește de la public și obiective, apoi traduce identitatea într-un sistem coerent.`,
+Înainte de redesign, un [audit de website](/?request=audit#cta) poate separa problemele de conținut, UX, performanță, SEO și securitate. Pentru un proiect nou, serviciul de [website de prezentare](/servicii/website-prezentare-profesional) pornește de la public și obiective, apoi traduce identitatea într-un sistem coerent.`,
     cover_image_url: "/news/identitate-digitala-conversie.webp",
     tags: ["website-profesionist", "identitate-digitala", "web-design", "ux", "conversie"],
     category: "web-design",
@@ -202,7 +202,7 @@ Erorile Workerului, încercările de autentificare, emailurile eșuate și modif
 
 Colectează numai datele necesare scopului declarat, stabilește retenția și oferă control asupra cookie-urilor. Minimizarea datelor reduce atât riscul tehnic, cât și obligațiile operaționale.
 
-Pentru o evaluare independentă poți porni cu [testare QA web și mobile](/produse/testare-qa-web-mobile) sau un [audit de website](/?request=audit#cta). Rezultatul ar trebui să indice severitatea, dovada, impactul și ordinea recomandată a remedierilor.`,
+Pentru o evaluare independentă poți porni cu [testare QA web și mobile](/servicii/qa-testing-web-mobile) sau un [audit de website](/?request=audit#cta). Rezultatul ar trebui să indice severitatea, dovada, impactul și ordinea recomandată a remedierilor.`,
     cover_image_url: "/news/securitate-website-afaceri-mici.webp",
     tags: ["securitate-website", "parole", "backup", "cloudflare", "gdpr"],
     category: "securitate",
@@ -289,13 +289,13 @@ A badge or improved support access may strengthen trust in some situations. It d
 
 ## Social profiles and websites serve different roles
 
-Social networks help discovery and conversation. A [professional business website](/en/products/premium-presentation-website) provides control over identity, service pages, forms, conversion measurement, and the information that search engines or AI systems can understand. A follower list belongs to the platform; a domain, approved content, and enquiry data can remain business assets.
+Social networks help discovery and conversation. A [professional business website](/en/services/professional-presentation-website) provides control over identity, service pages, forms, conversion measurement, and the information that search engines or AI systems can understand. A follower list belongs to the platform; a domain, approved content, and enquiry data can remain business assets.
 
 A healthy system uses each post to answer a specific question, links to the relevant page, and measures a useful action such as a call, message, booking, quote request, or order. The subscription then becomes one component of marketing rather than the entire system.
 
 ## Avyron's recommendation
 
-Audit the current channels first, align the brand name, logo, contact details, and links, then define measurable indicators for 30–60 days. Keep a paid option only when it reduces a real risk or improves an observable result. For consistent profile setup and visual direction, explore [social media identity](/en/products/social-media-identity).`,
+Audit the current channels first, align the brand name, logo, contact details, and links, then define measurable indicators for 30–60 days. Keep a paid option only when it reduces a real risk or improves an observable result. For consistent profile setup and visual direction, explore [social media identity](/en/services/social-media-identity).`,
     tags: ["meta", "facebook", "instagram", "social-media", "digital-strategy"],
   },
   {
@@ -324,7 +324,7 @@ A website is also a stable destination for Google Business Profile, Facebook, In
 - consent-aware measurement with access to the underlying accounts;
 - administration guidance and clear post-launch responsibilities.
 
-Avyron builds [professional presentation websites](/en/products/premium-presentation-website) for local businesses and national projects, combining design, development, optimization, and infrastructure. Timelines and deliverables are agreed in the project proposal according to content and complexity.`,
+Avyron builds [professional presentation websites](/en/services/professional-presentation-website) for local businesses and national projects, combining design, development, optimization, and infrastructure. Timelines and deliverables are agreed in the project proposal according to content and complexity.`,
     tags: ["business-website", "presentation-website", "web-design", "seo", "local-business"],
   },
   {
@@ -347,7 +347,7 @@ For internal platforms and applications, roles, permissions, the data model, act
 
 Before delivery, we check routes, forms, authentication, responsive design, metadata, and errors. Publication does not automatically end collaboration: maintenance, monitoring, content, and optimization can continue under a defined plan without unlimited promises or unclear ownership.
 
-Explore [services and pricing](/en/pricing), the [portfolio](/en/portfolio), or request an example for your field. The final recommendation may be a business website, online store, application, audit, or a smaller first phase than initially imagined—we choose what fits the objective.`,
+Explore [services and pricing](/en/services), the [portfolio](/en/portfolio), or request an example for your field. The final recommendation may be a business website, online store, application, audit, or a smaller first phase than initially imagined—we choose what fits the objective.`,
     tags: ["avyron", "web-agency-romania", "process", "web-development", "cloudflare"],
   },
   {
@@ -370,7 +370,7 @@ Visual hierarchy, contrast, space, and motion have a purpose: they make importan
 
 The same name, core description, domain, and contact details should appear on the website, Google Business Profile, and public social profiles. Reciprocal links and Schema.org help systems connect the entity only when the destinations are real and public.
 
-Before a redesign, a [website audit](/en?request=audit#cta) can separate content, UX, performance, SEO, and security problems. For a new project, the [professional website service](/en/products/premium-presentation-website) begins with audience and goals, then turns the identity into a coherent system.`,
+Before a redesign, a [website audit](/en?request=audit#cta) can separate content, UX, performance, SEO, and security problems. For a new project, the [professional website service](/en/services/professional-presentation-website) begins with audience and goals, then turns the identity into a coherent system.`,
     tags: ["professional-website", "digital-identity", "web-design", "ux", "conversion"],
   },
   {
@@ -432,7 +432,7 @@ Worker errors, authentication attempts, failed emails, and administrative change
 
 Collect only what the declared purpose needs, define retention, and give visitors control over optional cookies. Data minimization reduces both technical risk and operational obligations.
 
-For an independent review, start with [web and mobile QA testing](/en/products/qa-testing-web-mobile) or a [website audit](/en?request=audit#cta). Findings should include severity, evidence, impact, and a recommended remediation order.`,
+For an independent review, start with [web and mobile QA testing](/en/services/web-mobile-qa-testing) or a [website audit](/en?request=audit#cta). Findings should include severity, evidence, impact, and a recommended remediation order.`,
     tags: ["website-security", "passwords", "backups", "cloudflare", "gdpr"],
   },
   {

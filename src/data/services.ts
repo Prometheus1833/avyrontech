@@ -1,4 +1,5 @@
 import type { Lang } from "@/i18n/translations";
+import { SERVICE_ROUTES } from "./serviceRoutes";
 import {
   LOGO3D_FAQ,
   LOGO3D_HERO,
@@ -10,14 +11,14 @@ import {
 } from "./logo3d";
 
 /**
- * Product catalog used by /costurisiproduse (summary cards) and the
- * dedicated product landing pages under /produse/* (RO) and /en/products/* (EN).
+ * Service catalog used by the /servicii hub and the dedicated service landing
+ * pages under /servicii/* (RO) and /en/services/* (EN).
  *
- * Content is written for SEO: each product has a unique title, description,
+ * Content is written for SEO: each service has a unique title, description,
  * intro copy, benefit blocks, a delivery process and an FAQ (rendered as FAQPage JSON-LD).
  */
 
-export type ProductKey =
+export type ServiceKey =
   | "premium-website"
   | "logo-3d"
   | "social-identity"
@@ -50,7 +51,7 @@ export type IconKey =
   | "clock";
 
 
-export type ProductCopy = {
+export type ServiceCopy = {
   name: string;
   kicker: string;
   subtitle: string;
@@ -88,8 +89,9 @@ export type ProductCopy = {
 };
 
 
-export type Product = {
-  key: ProductKey;
+export type Service = {
+  key: ServiceKey;
+  category: "presence" | "brand" | "commerce" | "software" | "quality";
   icon: IconKey;
   /** RO path (canonical) and EN path. */
   path: { ro: string; en: string };
@@ -107,15 +109,15 @@ export type Product = {
     chipBg: string;
     chipText: string;
   };
-  copy: Record<Lang, ProductCopy>;
+  copy: Record<Lang, ServiceCopy>;
 };
 
 /**
- * Logo Dinamic 3D has its own page (/servicii/logo); this entry only feeds the
+ * Logo Dinamic 3D has its own page (/servicii/creare-logo-3d-dinamic-cinematic); this entry only feeds the
  * shared lists (other services, cards), built from the page's own data file.
  */
-function logoProduct(): Product {
-  const copy = (lang: Lang): ProductCopy => {
+function logoService(): Service {
+  const copy = (lang: Lang): ServiceCopy => {
     const meta = LOGO3D_META[lang];
     const hero = LOGO3D_HERO[lang];
     const ro = lang === "ro";
@@ -145,8 +147,9 @@ function logoProduct(): Product {
   };
   return {
     key: "logo-3d",
+    category: "brand",
     icon: "palette",
-    path: { ro: LOGO3D_PATHS.ro, en: LOGO3D_PATHS.en },
+    path: SERVICE_ROUTES.logo3d,
     priceEur: 100,
     from: true,
     duration: { ro: "5–15 zile", en: "5–15 days" },
@@ -163,15 +166,13 @@ function logoProduct(): Product {
   };
 }
 
-const CATALOG: Product[] = [
-  logoProduct(),
+const CATALOG: Service[] = [
+  logoService(),
   {
     key: "premium-website",
+    category: "presence",
     icon: "globe",
-    path: {
-      ro: "/produse/website-prezentare-premium",
-      en: "/en/products/premium-presentation-website",
-    },
+    path: SERVICE_ROUTES.website,
     priceEur: 300,
     from: true,
     duration: { ro: "2–5 zile", en: "2–5 days" },
@@ -605,11 +606,9 @@ const CATALOG: Product[] = [
   },
   {
     key: "social-identity",
+    category: "presence",
     icon: "share",
-    path: {
-      ro: "/produse/identitate-social-media",
-      en: "/en/products/social-media-identity",
-    },
+    path: SERVICE_ROUTES.socialIdentity,
     priceEur: 250,
     from: true,
     duration: { ro: "2–5 zile", en: "2–5 days" },
@@ -771,8 +770,9 @@ const CATALOG: Product[] = [
   },
   {
     key: "online-store",
+    category: "commerce",
     icon: "store",
-    path: { ro: "/produse/magazin-online", en: "/en/products/online-store" },
+    path: SERVICE_ROUTES.onlineStore,
     priceEur: 1000,
     from: true,
     duration: { ro: "7–21 zile", en: "7–21 days" },
@@ -902,8 +902,9 @@ const CATALOG: Product[] = [
   },
   {
     key: "apps",
+    category: "software",
     icon: "smartphone",
-    path: { ro: "/produse/aplicatii-web-si-mobile", en: "/en/products/web-and-mobile-apps" },
+    path: SERVICE_ROUTES.apps,
     priceEur: 1500,
     from: true,
     duration: { ro: "7–30 zile", en: "7–30 days" },
@@ -1031,8 +1032,9 @@ const CATALOG: Product[] = [
   },
   {
     key: "ai-agent",
+    category: "software",
     icon: "cpu",
-    path: { ro: "/produse/agent-ai-personalizat", en: "/en/products/personalized-ai-agent" },
+    path: SERVICE_ROUTES.automationAi,
     priceEur: 500,
     from: true,
     duration: { ro: "5–14 zile", en: "5–14 days" },
@@ -1160,8 +1162,9 @@ const CATALOG: Product[] = [
   },
   {
     key: "audit",
+    category: "quality",
     icon: "scan",
-    path: { ro: "/produse/audit-website", en: "/en/products/website-audit" },
+    path: SERVICE_ROUTES.audit,
     priceEur: 0,
     from: false,
     duration: { ro: "2–4 zile", en: "2–4 days" },
@@ -1289,8 +1292,9 @@ const CATALOG: Product[] = [
   },
   {
     key: "qa-testing",
+    category: "quality",
     icon: "bug",
-    path: { ro: "/produse/testare-qa-web-mobile", en: "/en/products/qa-testing-web-mobile" },
+    path: SERVICE_ROUTES.qa,
     priceEur: 300,
     from: true,
     duration: { ro: "3–10 zile", en: "3–10 days" },
@@ -1418,8 +1422,8 @@ const CATALOG: Product[] = [
   },
 ];
 
-/** Products with dedicated landing pages, in display order. */
-const ORDER: ProductKey[] = [
+/** Services with dedicated landing pages, in display order. */
+const ORDER: ServiceKey[] = [
   "premium-website",
   "logo-3d",
   "social-identity",
@@ -1429,15 +1433,15 @@ const ORDER: ProductKey[] = [
   "qa-testing",
 ];
 
-export const PRODUCTS: Product[] = ORDER.map(
-  (k) => CATALOG.find((p) => p.key === k)!,
+export const SERVICES: Service[] = ORDER.map(
+  (k) => CATALOG.find((service) => service.key === k)!,
 );
 
 
-export function getProductByPath(pathname: string): Product | undefined {
-  return PRODUCTS.find((p) => p.path.ro === pathname || p.path.en === pathname);
+export function getServiceByPath(pathname: string): Service | undefined {
+  return SERVICES.find((service) => service.path.ro === pathname || service.path.en === pathname);
 }
 
-export function getProduct(key: ProductKey): Product {
-  return PRODUCTS.find((p) => p.key === key)!;
+export function getService(key: ServiceKey): Service {
+  return SERVICES.find((service) => service.key === key)!;
 }

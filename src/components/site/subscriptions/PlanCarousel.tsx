@@ -256,9 +256,9 @@ const PlanCarousel = ({ category, onSelect }: Props) => {
             <span className="font-mono text-[10px] tabular-nums text-foreground/65">{primary(plan.priceCents)}</span>
           </button>
         ))}
-        {category.productPath && (
+        {category.servicePath && (
           <Link
-            to={category.productPath[lang]}
+            to={category.servicePath[lang]}
             className="inline-flex items-center gap-1.5 rounded-full border border-foreground/12 px-3 py-1.5 text-[11px] font-semibold text-foreground/60 transition-all duration-300 hover:-translate-y-0.5 hover:bg-foreground/[0.06] hover:text-foreground"
           >
             {ro ? "Vezi produsul" : "See the product"}

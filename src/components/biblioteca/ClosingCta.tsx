@@ -74,10 +74,10 @@ export default function ClosingCta({ codes, lang, origin }: Props) {
             {ro ? "Mergi direct la produs" : "Go straight to the product"}
           </p>
           <ul className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-            {LIBRARY_SECTIONS.filter((section) => section.product && section.entry).map((section) => (
+            {LIBRARY_SECTIONS.filter((section) => section.service && section.entry).map((section) => (
               <li key={section.id}>
                 <Link
-                  to={section.product![lang]}
+                  to={section.service![lang]}
                   className="text-white/55 underline-offset-4 transition-colors hover:text-white hover:underline"
                 >
                   {section.name[lang]}

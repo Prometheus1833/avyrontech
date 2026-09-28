@@ -2,12 +2,14 @@ import type { Lang } from "@/i18n/translations";
 import type { SegmentKey } from "@/components/logo3d/marks";
 
 /**
- * Content for the "Logo Dinamic 3D" service page (/servicii/logo).
+ * Content for the "Logo Dinamic 3D" service page (/servicii/creare-logo-3d-dinamic-cinematic).
  * One source for the page, the pricing card, JSON-LD and the tests.
  * Prices are in lei (RON); the page converts to EUR with the live rate.
  */
 
-export const LOGO3D_PATHS = { ro: "/servicii/logo", en: "/en/services/logo" } as const;
+import { SERVICE_ROUTES } from "./serviceRoutes";
+
+export const LOGO3D_PATHS = SERVICE_ROUTES.logo3d;
 
 type L<T> = Record<Lang, T>;
 

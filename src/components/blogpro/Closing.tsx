@@ -335,7 +335,7 @@ const finalCta = {
     lead: "Configurează blogul în câteva minute și primești o ofertă clară, cu pași concreți.",
     primary: "Configurează blogul",
     secondary: "Vezi toate produsele",
-    to: "/costurisiproduse",
+    to: "/servicii",
   },
   en: {
     eyebrow: "Next step",
@@ -343,7 +343,7 @@ const finalCta = {
     lead: "Configure your blog in a few minutes and receive a clear offer with concrete next steps.",
     primary: "Configure your blog",
     secondary: "See all products",
-    to: "/en/pricing",
+    to: "/en/services",
   },
 } as const;
 

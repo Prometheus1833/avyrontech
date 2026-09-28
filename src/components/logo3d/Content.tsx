@@ -421,12 +421,12 @@ export function FinalCta({ onPreview }: { onPreview: () => void }) {
   const c = LOGO3D_CTA[lang];
   const related = lang === "ro"
     ? [
-        { to: "/produse/website-prezentare-premium", label: "Site Prezentare Profesional" },
-        { to: "/produse/identitate-social-media", label: "Identitate Social Media" },
+        { to: "/servicii/website-prezentare-profesional", label: "Site Prezentare Profesional" },
+        { to: "/servicii/identitate-social-media", label: "Identitate Social Media" },
       ]
     : [
-        { to: "/en/products/premium-presentation-website", label: "Business website" },
-        { to: "/en/products/social-media-identity", label: "Social Media Identity" },
+        { to: "/en/services/professional-presentation-website", label: "Business website" },
+        { to: "/en/services/social-media-identity", label: "Social Media Identity" },
       ];
   return (
     <section id="contact" className="l3d-section text-center" data-palette="#38bdf8,#8b5cf6" aria-labelledby="final-title">

@@ -337,7 +337,7 @@ const About = () => {
                   <Link to={ro ? "/despre-noi" : "/en/about"}>{ro ? "Despre noi" : "About us"}</Link>
                 </Button>
                 <Button asChild size="sm" className="rounded-full bg-foreground text-background hover:bg-foreground/90">
-                  <Link to={ro ? "/costurisiproduse" : "/en/pricing"}>{ro ? "Vezi serviciile" : "View services"}</Link>
+                  <Link to={ro ? "/servicii" : "/en/services"}>{ro ? "Vezi serviciile" : "View services"}</Link>
                 </Button>
               </div>
             </div>

@@ -3,7 +3,7 @@
  * Kept free of Cloudflare APIs so it can be unit-tested directly.
  */
 
-import { REDIRECTS, STATUS_PAGES, isNoindexPath, PRERENDER_ROUTES } from "../seo/publicRoutes";
+import { redirectTarget, STATUS_PAGES, isNoindexPath, PRERENDER_ROUTES } from "../seo/publicRoutes";
 
 export type Decision =
   | { kind: "redirect"; location: string; status: 301 }
@@ -27,7 +27,7 @@ export function decide(url: URL): Decision {
   if (path.startsWith("/api/")) return { kind: "api" };
 
   // Legacy URLs -> canonical URLs, query string preserved, no loops.
-  const target = REDIRECTS[path];
+  const target = redirectTarget(path);
   if (target) {
     const targetUrl = new URL(target, url.origin);
     if (normalizePath(targetUrl.pathname) !== path) {

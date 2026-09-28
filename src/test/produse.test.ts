@@ -146,8 +146,8 @@ describe("rutele paginii", () => {
     // acasă + pagini statice + tipuri + colecții + produse
     expect(pairs.length).toBe(1 + PRODUSE_STATIC_SEGMENTS.length + TYPES.length + PRODUSE_COLLECTION_SEGMENTS.length + ITEMS.length);
     for (const pair of pairs) {
-      expect(pair.ro.startsWith("/produse-avyron")).toBe(true);
-      expect(pair.en.startsWith("/en/avyron-products")).toBe(true);
+      expect(pair.ro.startsWith("/produse")).toBe(true);
+      expect(pair.en.startsWith("/en/products")).toBe(true);
     }
     expect(new Set(pairs.map((pair) => pair.ro)).size).toBe(pairs.length);
   });
@@ -158,11 +158,11 @@ describe("rutele paginii", () => {
     expect(parseRoute(ro, "ro")).toEqual({ kind: "item", type: "component", slug: item.slug });
     expect(alternatePath(ro, "en")).toBe(itemPath("en", item));
     expect(parseRoute(typePath("en", "effect"), "en")).toEqual({ kind: "type", type: "effect" });
-    expect(parseRoute("/produse-avyron/colectii", "ro")).toEqual({ kind: "collections" });
-    expect(parseRoute("/produse-avyron/colectii/kit-landing-page", "ro")).toEqual({ kind: "collection", seg: "kit-landing-page" });
-    expect(alternatePath("/produse-avyron/colectii/kit-landing-page", "en")).toBe("/en/avyron-products/collections/landing-page-kit");
-    expect(parseRoute("/produse-avyron/nu-exista", "ro")).toEqual({ kind: "missing" });
-    expect(alternatePath("/costurisiproduse", "en")).toBeNull();
+    expect(parseRoute("/produse/colectii", "ro")).toEqual({ kind: "collections" });
+    expect(parseRoute("/produse/colectii/kit-landing-page", "ro")).toEqual({ kind: "collection", seg: "kit-landing-page" });
+    expect(alternatePath("/produse/colectii/kit-landing-page", "en")).toBe("/en/products/collections/landing-page-kit");
+    expect(parseRoute("/produse/nu-exista", "ro")).toEqual({ kind: "missing" });
+    expect(alternatePath("/servicii", "en")).toBeNull();
   });
 });
 

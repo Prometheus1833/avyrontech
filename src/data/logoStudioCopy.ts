@@ -2,7 +2,7 @@ import type { Industry, Layout, FontKey, Style, StudioKind, Shape } from "./logo
 
 type L<T> = Record<"ro" | "en", T>;
 
-export const STUDIO_PATHS = { ro: "/servicii/logo/creeaza", en: "/en/services/logo/create" } as const;
+export const STUDIO_PATHS = { ro: "/servicii/creare-logo-3d-dinamic-cinematic/creeaza", en: "/en/services/cinematic-dynamic-3d-logo-design/create" } as const;
 
 export const STUDIO_META: L<{ title: string; description: string; name: string }> = {
   ro: {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bot, Command, FileText, FolderKanban, Search, Target, Wallet } from "lucide-react";
+import { Bot, Boxes, BriefcaseBusiness, Command, FileText, FolderKanban, Search, Target, Wallet } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { Access, SectionId } from "@/lib/access";
 
@@ -17,6 +17,8 @@ export default function CommandCenter({ open, onOpenChange, access, onNavigate }
   const commands = useMemo(() => [
     { label: "Deschide proiectele", hint: "Proiecte, status și livrare", section: "projects" as SectionId, icon: FolderKanban, allowed: true },
     { label: "Arată leadurile", hint: "Pipeline și leaduri fără răspuns", section: "leads" as SectionId, icon: Target, allowed: access.isStaff },
+    { label: "Deschide serviciile AVYRON", hint: "Taxonomie, pagini publice și oferte", section: "servicii-avyron" as SectionId, icon: BriefcaseBusiness, allowed: access.isStaff },
+    { label: "Deschide produsele AVYRON", hint: "Catalog, parteneriate și comenzi", section: "produse-avyron" as SectionId, icon: Boxes, allowed: access.isSuperAdmin },
     { label: "Deschide situația financiară", hint: "Facturi, costuri, venituri și bugete", section: "finance" as SectionId, icon: Wallet, allowed: access.isSuperAdmin },
     { label: "Deschide agenții AVY", hint: "Agenți, activitate și cunoaștere", section: "ai-os" as SectionId, icon: Bot, allowed: access.isSuperAdmin },
     { label: "Deschide centrul de documente", hint: "Documente și resurse interne", section: "resources" as SectionId, icon: FileText, allowed: access.isStaff },
