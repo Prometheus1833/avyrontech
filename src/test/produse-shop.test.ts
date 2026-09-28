@@ -57,7 +57,7 @@ describe("progresia accesului", () => {
 });
 
 describe("catalogul din D1", () => {
-  const seed = readFileSync(resolve(__dirname, "../../cloudflare/d1/migrations/0026_produse_catalog_seed.sql"), "utf8");
+  const seed = readFileSync(resolve(__dirname, "../../cloudflare/d1/migrations/0033_produse_catalog_seed.sql"), "utf8");
 
   it("are un rând pentru fiecare produs din catalogul paginii", () => {
     for (const item of ITEMS) {
