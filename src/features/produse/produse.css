@@ -1,0 +1,90 @@
+/* Produse Avyron — stiluri locale paginii. Tokenii vin din index.css (tema site-ului). */
+
+.pa-root {
+  --pa-hue: 265;
+  --pa-accent: hsl(var(--pa-hue) 90% 68%);
+  --pa-line: hsl(var(--foreground) / 0.08);
+  --pa-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  position: relative;
+  isolation: isolate;
+}
+
+/* Liquid Glass: sticla existentă a site-ului, cu muchie luminoasă și saturație. */
+.pa-glass {
+  background: linear-gradient(135deg, hsl(var(--card) / 0.72), hsl(var(--card) / 0.42));
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid hsl(var(--foreground) / 0.09);
+  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.12), 0 20px 50px -30px hsl(222 40% 2% / 0.8);
+}
+.pa-edge { position: relative; }
+.pa-edge::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(140deg, hsl(var(--pa-hue) 90% 75% / 0.55), transparent 35%, transparent 65%, hsl(200 95% 60% / 0.35));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Tranzițiile de secțiune: fine, subtile. Conținutul intră din ceață ușoară,
+   cu 16px de urcare. Fără JS nu se ascunde nimic (clasa vine din JS). */
+.pa-js .pa-reveal { opacity: 0; transform: translate3d(0, 16px, 0); filter: blur(6px); }
+.pa-reveal {
+  transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), transform 0.9s cubic-bezier(0.22, 1, 0.36, 1), filter 0.9s ease;
+  transition-delay: calc(var(--i, 0) * 70ms);
+}
+.pa-reveal[data-in="1"] { opacity: 1; transform: none; filter: none; }
+
+/* Separatorul dintre secțiuni: o linie de lumină care se aprinde la trecere. */
+.pa-seam {
+  height: 1px;
+  margin-inline: auto;
+  width: min(72rem, calc(100% - 2rem));
+  background: linear-gradient(90deg, transparent, hsl(var(--pa-hue) 90% 70% / 0.55), hsl(200 95% 60% / 0.45), transparent);
+  transform: scaleX(0.15);
+  opacity: 0.25;
+  transition: transform 1.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 1.4s ease;
+}
+.pa-seam[data-in="1"] { transform: scaleX(1); opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pa-js .pa-reveal, .pa-reveal { opacity: 1 !important; transform: none !important; filter: none !important; transition: none !important; }
+  .pa-seam { transform: none; opacity: 0.6; transition: none; }
+}
+
+.pa-mono { font-family: var(--pa-mono); }
+
+.pa-text-grad {
+  background: linear-gradient(100deg, hsl(var(--foreground)) 10%, hsl(264 90% 72%) 45%, hsl(200 95% 62%) 80%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Unda de la click (feedback global de apăsare). */
+.pa-shock {
+  position: fixed;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 90;
+  border: 1px solid hsl(var(--pa-hue) 90% 75% / 0.8);
+  box-shadow: 0 0 24px hsl(var(--pa-hue) 90% 70% / 0.55);
+  animation: pa-shock 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes pa-shock { to { transform: scale(7); opacity: 0; } }
+
+.pa-card-media { aspect-ratio: 16 / 10; }
+
+.pa-scroll-x { scrollbar-width: none; }
+.pa-scroll-x::-webkit-scrollbar { display: none; }
+
+@keyframes pa-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes pa-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }

@@ -47,4 +47,12 @@ export default tseslint.config(
       "react-refresh/only-export-components": "off",
     },
   },
+  {
+    files: ["src/features/produse/source/**/*.{ts,tsx}"],
+    rules: {
+      // Fișierele astea sunt livrate ca sursă copiabilă: un singur fișier
+      // conține componenta și helperii ei, exact cum îl primește clientul.
+      "react-refresh/only-export-components": "off",
+    },
+  },
 );

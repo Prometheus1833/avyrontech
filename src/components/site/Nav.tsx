@@ -14,7 +14,14 @@ const StaffOsMenu = lazy(() => import("./StaffOsMenu"));
 // Routes where prices are shown — the currency toggle belongs in the nav cluster there.
 const CURRENCY_ROUTES = /^\/(en\/)?(costurisiproduse|pricing|produse|products)/;
 
-const Nav = () => {
+export type NavLinkDef = { label: string; href?: string; to?: string; icon?: typeof Newspaper; highlight?: boolean; isRoute?: boolean };
+export type NavCta = { label: string; sub: string; href: string };
+
+/**
+ * Bara de sus a site-ului. Paginile cu navigare proprie (ex. Produse Avyron)
+ * își pot trimite legăturile și CTA-ul; restul site-ului o folosește neschimbată.
+ */
+const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta?: NavCta } = {}) => {
   const [open, setOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const mobileMenuTriggerRef = useRef<HTMLButtonElement>(null);
@@ -24,13 +31,17 @@ const Nav = () => {
   const homePath = isRo ? "/" : "/en";
   const { pathname } = useLocation();
   const showCurrency = CURRENCY_ROUTES.test(pathname);
-  const links = [
+  const defaultLinks = [
     { label: t.nav.news, to: lang === "en" ? "/en/blog" : "/blog", icon: Newspaper, isRoute: true },
     { label: isRo ? "Produse" : "Products", to: isRo ? "/costurisiproduse" : "/en/pricing", icon: ShoppingBag, isRoute: true },
     { label: isRo ? "Despre noi" : "About us", to: isRo ? "/despre-noi" : "/en/about", icon: UsersRound, isRoute: true },
     { label: isRo ? "Vezi domenii" : "See industries", href: `${homePath}#exemple` },
     { label: t.nav.process, href: `${homePath}#proces` },
-  ] as Array<{ label: string; href?: string; to?: string; icon?: typeof Newspaper; highlight?: boolean; isRoute?: boolean }>;
+  ] as NavLinkDef[];
+  const links = customLinks ?? defaultLinks;
+  const ctaHref = customCta?.href ?? `${homePath}#cta`;
+  const ctaLabel = customCta?.label ?? t.nav.cta;
+  const ctaSub = customCta?.sub ?? t.nav.ctaSub;
 
   useEffect(() => {
     if (!open) return;
@@ -60,7 +71,7 @@ const Nav = () => {
         <nav className="glass shadow-soft rounded-full flex items-center justify-between pl-3 pr-2 py-2 gap-2">
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <a href={`${homePath}#hero`} className="flex items-center gap-2" aria-label={isRo ? "Avyron — mergi la hero" : "Avyron — go to hero"}>
-              <img src={logo} alt="Avyron" width={22} height={22} className="size-[1.4rem] rounded-md object-cover" />
+              <img src={logo} alt="" width={22} height={22} className="size-[1.4rem] rounded-md object-cover" />
               <span
                 className="text-sm sm:text-base md:text-lg font-bold uppercase tracking-[0.18em] bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent"
                 style={{ fontFamily: '"Times New Roman", Times, serif' }}
@@ -114,13 +125,13 @@ const Nav = () => {
           </ul>
           <div className="hidden xl:flex items-center gap-2">
             <a
-              href={`${homePath}#cta`}
-              title={t.nav.cta}
+              href={ctaHref}
+              title={ctaLabel}
               className="inline-flex h-10 items-center justify-center rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <span className="flex flex-col items-center leading-none">
-                <span>{t.nav.cta}</span>
-                <span className="mt-0.5 text-[9px] font-normal opacity-70">{t.nav.ctaSub}</span>
+                <span>{ctaLabel}</span>
+                <span className="mt-0.5 text-[9px] font-normal opacity-70">{ctaSub}</span>
               </span>
             </a>
             {!loading && (user ? (
@@ -192,13 +203,13 @@ const Nav = () => {
               )
             )}
             <a
-              href={`${homePath}#cta`}
+              href={ctaHref}
               onClick={() => setOpen(false)}
               className="inline-flex h-10 w-full items-center justify-center rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <span className="flex flex-col items-center leading-none">
-                <span>{t.nav.cta}</span>
-                <span className="mt-0.5 text-[9px] font-normal opacity-70">{t.nav.ctaSub}</span>
+                <span>{ctaLabel}</span>
+                <span className="mt-0.5 text-[9px] font-normal opacity-70">{ctaSub}</span>
               </span>
             </a>
           </div>
