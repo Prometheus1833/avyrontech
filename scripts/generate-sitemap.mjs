@@ -64,6 +64,17 @@ const routes = htmlFiles(dist)
   .sort((a, b) => a.localeCompare(b));
 
 const esc = (value) => value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+
+function pageMetadata(route) {
+  const file = route === "/" ? join(dist, "index.html") : join(dist, route.slice(1), "index.html");
+  const html = readFileSync(file, "utf8");
+  const alternates = [...html.matchAll(/<link\s+rel="alternate"\s+hreflang="([^"]+)"\s+href="([^"]+)"[^>]*>/g)]
+    .map((match) => ({ language: match[1], href: match[2] }))
+    .filter(({ href }) => href.startsWith(`${base}/`) || href === `${base}/`);
+  const image = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"[^>]*>/)?.[1] || null;
+  return { alternates, image };
+}
+
 const body = routes.map((route) => {
   const slug = route.startsWith("/blog/")
     ? route.slice("/blog/".length)
@@ -71,8 +82,22 @@ const body = routes.map((route) => {
       ? route.slice("/en/blog/".length)
       : "";
   const date = articleDates.get(slug) || lastModified(route);
-  return `  <url>\n    <loc>${esc(`${base}${route === "/" ? "" : route}`)}</loc>\n    <lastmod>${date.toISOString()}</lastmod>\n  </url>`;
+  const { alternates, image } = pageMetadata(route);
+  const alternateXml = alternates
+    .map(({ language, href }) => `    <xhtml:link rel="alternate" hreflang="${esc(language)}" href="${esc(href)}" />`)
+    .join("\n");
+  const imageXml = image && image !== `${base}/og/home.jpg`
+    ? `    <image:image>\n      <image:loc>${esc(image)}</image:loc>\n    </image:image>`
+    : "";
+  return [
+    "  <url>",
+    `    <loc>${esc(`${base}${route === "/" ? "/" : route}`)}</loc>`,
+    `    <lastmod>${date.toISOString()}</lastmod>`,
+    alternateXml,
+    imageXml,
+    "  </url>",
+  ].filter(Boolean).join("\n");
 }).join("\n");
 
-writeFileSync(join(dist, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`);
+writeFileSync(join(dist, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${body}\n</urlset>\n`);
 console.log(`sitemap: ${routes.length} indexable URLs written with route-specific lastmod values`);
