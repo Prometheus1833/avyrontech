@@ -44,7 +44,6 @@ const copy = {
       "De la un site de prezentare clar până la un magazin, o aplicație sau o platformă internă, fiecare serviciu pornește de la obiectivul real și rămâne ușor de extins.",
     cta: "Descoperă",
     more: "Alte servicii",
-    scrollHint: "derulează lista",
     choose: "Alege tipul de site",
     soon: "În curând",
     soonToast: "Website Cinematic 3D va fi disponibil în curând.",
@@ -79,7 +78,6 @@ const copy = {
       "From a clear business website to a store, an app, or an internal platform, every service starts with the real objective and remains easy to extend.",
     cta: "Discover",
     more: "More services",
-    scrollHint: "scroll the list",
     choose: "Choose your website type",
     soon: "Coming soon",
     soonToast: "Cinematic 3D Website is coming soon.",
@@ -253,14 +251,11 @@ const AgencyServices = () => {
               </div>
             )}
 
-            {/* Restul serviciilor: listă cu scroll ascuns, derulează doar la scroll-ul utilizatorului */}
+            {/* Restul serviciilor rămân complet vizibile, fără o zonă de scroll separată. */}
             <div className="mt-3 flex items-center justify-between px-1">
               <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{content.more}</span>
-              <span className="text-[10px] text-muted-foreground/70">↕ {content.scrollHint}</span>
             </div>
-            <div
-              className="mt-1.5 max-h-[8.6rem] overflow-y-auto rounded-2xl border border-border/60 bg-card/50 [mask-image:linear-gradient(to_bottom,transparent,black_14%,black_86%,transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            >
+            <div className="mt-1.5 rounded-2xl border border-border/60 bg-card/50">
               <div className="py-3">
                 {content.rest.map(({ key, title, text, path, Icon }) => (
                   <Link

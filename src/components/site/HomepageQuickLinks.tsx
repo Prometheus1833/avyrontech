@@ -9,8 +9,8 @@ export default function HomepageQuickLinks() {
     {
       to: ro ? "/servicii" : "/en/services",
       eyebrow: ro ? "Descoperă ce construim" : "Explore what we build",
-      title: ro ? "Servicii și câteva exemple" : "Services and examples",
-      detail: ro ? "Vezi serviciile Avyron și exemple relevante pentru fiecare direcție." : "Explore Avyron services and relevant examples for every direction.",
+      title: ro ? "Servicii" : "Services",
+      detail: ro ? "Vezi toate serviciile Avyron și alege direcția potrivită proiectului tău." : "Explore all Avyron services and choose the right direction for your project.",
       icon: Layers,
       testId: "services-examples-card",
       tone: "from-cyan-500/15 to-blue-500/[0.05] text-cyan-600 dark:text-cyan-300",
