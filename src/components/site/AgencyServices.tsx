@@ -48,7 +48,7 @@ const copy = {
     classic: {
       title: "Site Prezentare Profesional",
       text: "Rapid, clar și optimizat pentru solicitări.",
-      cats: ["Clinici", "Avocați", "Construcții", "Restaurante", "Consultanți", "Saloane"],
+      cats: ["Clinici", "Studouri fitness", "Construcții", "Restaurante", "Consultanți", "Saloane"],
       cta: "Deschide",
     },
     cinematic: {
@@ -82,7 +82,7 @@ const copy = {
     classic: {
       title: "Business Website",
       text: "Fast, clear and built for enquiries.",
-      cats: ["Clinics", "Lawyers", "Construction", "Restaurants", "Consultants", "Salons"],
+      cats: ["Clinics", "Fitness studios", "Construction", "Restaurants", "Consultants", "Salons"],
       cta: "Open",
     },
     cinematic: {
@@ -118,7 +118,12 @@ const AgencyServices = () => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
   }, [open]);
 
   const tone = (k: string) => TONES[k as keyof typeof TONES];
