@@ -44,8 +44,27 @@ const SERVICES: Svc[] = [
     features: [{ ro: "Performanță", en: "Performance" }, { ro: "Securitate", en: "Security" }, { ro: "Accesibilitate", en: "Accessibility" }, { ro: "Multi-device", en: "Multi-device" }] },
 ];
 
-const TIMELINES: L[] = [{ ro: "Urgent (sub 2 săpt.)", en: "Urgent (< 2 weeks)" }, { ro: "1–2 luni", en: "1–2 months" }, { ro: "Flexibil", en: "Flexible" }];
-const BUDGETS: L[] = [{ ro: "Sub 1.000 €", en: "Under €1,000" }, { ro: "1.000–3.000 €", en: "€1,000–3,000" }, { ro: "3.000–10.000 €", en: "€3,000–10,000" }, { ro: "Peste 10.000 €", en: "Over €10,000" }, { ro: "Nu știu încă", en: "Not sure yet" }];
+type TL = L & { hint: L };
+const TIMELINES: TL[] = [
+  { ro: "3–7 zile", en: "3–7 days", hint: { ro: "Când nu mai poate aștepta", en: "When it can't wait" } },
+  { ro: "1–2 săptămâni", en: "1–2 weeks", hint: { ro: "Cel mai des ales", en: "Most common" } },
+  { ro: "2–3 săptămâni", en: "2–3 weeks", hint: { ro: "Timp pentru conținut și finisaje", en: "Room for content and polish" } },
+  { ro: "3–4 săptămâni", en: "3–4 weeks", hint: { ro: "Proiect mare, mai multe servicii", en: "Bigger project, more services" } },
+];
+const BUDGETS: L[] = [
+  { ro: "200–500 €", en: "€200–500" },
+  { ro: "500–1.000 €", en: "€500–1,000" },
+  { ro: "1.000–2.500 €", en: "€1,000–2,500" },
+  { ro: "2.500–5.000 €", en: "€2,500–5,000" },
+  { ro: "Nu știu încă", en: "Not sure yet" },
+];
+// Întrebări scurt care îl ajută pe vizitator să descrie proiectul concret.
+const PROMPTS: L[] = [
+  { ro: "Ce vinzi", en: "What you sell" },
+  { ro: "Cui te adresezi", en: "Who you serve" },
+  { ro: "Ce te deranjează acum", en: "What bothers you now" },
+  { ro: "Ce vrei să obții", en: "What you want from it" },
+];
 
 type Pick = { type?: string; features: string[] };
 
