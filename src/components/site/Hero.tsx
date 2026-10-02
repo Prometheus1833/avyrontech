@@ -1,10 +1,42 @@
-import { ArrowRight, ChevronDown, TrendingUp } from "lucide-react";
+import { ArrowRight, BookOpen, ChevronDown, Layers, ShoppingBag, TrendingUp } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { Link } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 const Hero = () => {
   const { t, lang } = useLang();
   const ro = lang === "ro";
+
+  const quickLinks = [
+    {
+      key: "services",
+      to: ro ? "/servicii" : "/en/services",
+      label: t.hero.ctaServices,
+      short: ro ? "Servicii" : "Services",
+      icon: Layers,
+      tone:
+        "border-cyan-300/50 bg-cyan-300/10 text-cyan-900 hover:border-cyan-300/80 hover:bg-cyan-300/20 dark:border-cyan-300/25 dark:text-cyan-100",
+    },
+    {
+      key: "blog",
+      to: ro ? "/blog" : "/en/blog",
+      label: t.hero.ctaBlog,
+      short: "Blog",
+      icon: BookOpen,
+      tone:
+        "border-rose-300/50 bg-rose-300/10 text-rose-900 hover:border-rose-300/80 hover:bg-rose-300/20 dark:border-rose-300/25 dark:text-rose-100",
+    },
+    {
+      key: "products",
+      to: ro ? "/produse" : "/en/products",
+      label: t.hero.ctaProducts,
+      short: ro ? "Produse" : "Products",
+      icon: ShoppingBag,
+      tone:
+        "border-emerald-300/50 bg-emerald-300/10 text-emerald-900 hover:border-emerald-300/80 hover:bg-emerald-300/20 dark:border-emerald-300/25 dark:text-emerald-100",
+    },
+  ];
+
   return (
     <section
       id="hero"
@@ -21,24 +53,45 @@ const Hero = () => {
           <p className="mt-5 text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl px-2">
             {t.hero.subtitle}
           </p>
-          <div className="mt-7 grid w-full max-w-md grid-cols-2 gap-2.5 px-2">
+
+          <div className="mt-7 w-full max-w-md px-2">
             <a
               href="#cta"
-              className="inline-flex min-h-12 min-w-0 flex-col items-center justify-center rounded-full bg-foreground px-3 py-2 text-center text-sm leading-tight text-background transition-colors hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="group inline-flex min-h-12 w-full flex-col items-center justify-center rounded-full bg-foreground px-4 py-2 text-center text-sm leading-tight text-background shadow-soft transition-all hover:bg-foreground/90 hover:shadow-elev active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <span className="flex items-center font-semibold">
                 {t.hero.ctaPrimary}
-                <ArrowRight className="ml-1 size-4 shrink-0" aria-hidden="true" focusable="false" />
+                <ArrowRight
+                  className="ml-1 size-4 shrink-0 transition-transform motion-safe:group-hover:translate-x-0.5"
+                  aria-hidden="true"
+                  focusable="false"
+                />
               </span>
               <span className="text-[11px] font-normal opacity-80">{t.hero.personalized}</span>
             </a>
-            <Link
-              to={ro ? "/servicii" : "/en/services"}
-              className="inline-flex h-12 min-w-0 items-center justify-center gap-1.5 rounded-full border border-foreground/20 bg-background px-3 text-center text-sm font-semibold transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+
+            <div
+              data-testid="hero-quick-links"
+              className="mt-2.5 grid grid-cols-3 gap-2"
             >
-              {ro ? "Vezi serviciile" : "View services"}
-              <ArrowRight className="size-4 shrink-0" aria-hidden="true" focusable="false" />
-            </Link>
+              {quickLinks.map((item) => (
+                <Link
+                  key={item.key}
+                  to={item.to}
+                  aria-label={item.label}
+                  className={cn(
+                    "inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-full border px-2 text-[13px] font-semibold leading-none transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                    item.tone
+                  )}
+                >
+                  <item.icon className="size-4 shrink-0 opacity-90" aria-hidden="true" focusable="false" />
+                  <span className="truncate">
+                    <span className="sm:hidden">{item.short}</span>
+                    <span className="hidden sm:inline">{item.label}</span>
+                  </span>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
         <div className="mt-10 md:mt-12 flex flex-nowrap items-center gap-x-3 sm:gap-x-6 text-sm sm:text-base text-muted-foreground justify-center px-2 overflow-x-auto">

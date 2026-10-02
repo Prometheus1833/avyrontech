@@ -23,7 +23,10 @@ export const translations = {
         "Proiectăm experiențe digitale rafinate, performante, scalabile și optimizate pentru conversie — gândite să transforme fiecare vizită într-o oportunitate reală.",
       ctaPrimary: "Solicită un demo",
       ctaSecondary: "Vezi exemple",
-      personalized: "Personalizat cu activitatea ta",
+      ctaServices: "Vezi serviciile",
+      ctaBlog: "Blog",
+      ctaProducts: "Vezi produsele",
+      personalized: "Personalizat",
       stats: [
         { v: "100%", l: "mobile-ready" },
         { v: "SEO", l: "optimizat" },
@@ -536,7 +539,10 @@ export const translations = {
         "We design refined, high-performance, scalable digital experiences optimized for conversion — built to turn every visit into a real opportunity.",
       ctaPrimary: "Request a demo",
       ctaSecondary: "See examples",
-      personalized: "Tailored to your business",
+      ctaServices: "View services",
+      ctaBlog: "Blog",
+      ctaProducts: "View products",
+      personalized: "Personalized",
       stats: [
         { v: "100%", l: "mobile-ready" },
         { v: "SEO", l: "optimized" },
