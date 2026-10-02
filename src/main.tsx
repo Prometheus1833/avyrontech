@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
+import { clearChunkReloadFlag } from "@/lib/lazyWithRetry";
 import "./index.css";
 
 // Apply theme as early as possible to avoid FOUC
