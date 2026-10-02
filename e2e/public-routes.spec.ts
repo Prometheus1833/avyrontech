@@ -87,7 +87,7 @@ test.describe("public SEO routes", () => {
     await expect(navDate).toBeVisible();
     await expect(navDate).not.toContainText(/\d{2}:\d{2}:\d{2}/);
     await expect(hero.getByTestId("local-date-time")).toHaveCount(0);
-    await expect(hero.getByRole("link", { name: /Solicită un demo.*Personalizat/ })).toHaveAttribute("href", "#cta");
+    await expect(hero.getByRole("link", { name: /Solicită ofertă.*Personalizat/ })).toHaveAttribute("href", "#cta");
     await expect(hero.getByRole("link", { name: "Vezi serviciile", exact: true })).toHaveAttribute("href", "/servicii");
     await expect(hero.getByRole("link", { name: "Blog", exact: true })).toHaveAttribute("href", "/blog");
     await expect(hero.getByRole("link", { name: "Vezi produsele", exact: true })).toHaveAttribute("href", "/produse");
