@@ -133,6 +133,7 @@ const AiOs = ({ embedded = false }: { embedded?: boolean }) => {
   return (
     <div className={embedded ? "space-y-6" : "min-h-screen bg-secondary/30 px-4 py-8"}>
       <div className={embedded ? "space-y-6" : "mx-auto max-w-6xl space-y-6"}>
+        {!embedded && <PageBackLink to="/profil" label="Înapoi" title="Înapoi la profil" />}
         <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/60 bg-card/60 p-4 backdrop-blur-md">
           <div>
             <h1 className="flex items-center gap-2 text-lg font-semibold">
