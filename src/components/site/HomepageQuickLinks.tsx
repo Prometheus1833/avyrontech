@@ -1,4 +1,4 @@
-import { ArrowUpRight, Briefcase, HeartHandshake, UsersRound, Wallet } from "lucide-react";
+import { ArrowUpRight, BookOpen, Layers, ShoppingBag, UsersRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
 
@@ -8,35 +8,35 @@ export default function HomepageQuickLinks() {
   const cards = [
     {
       to: ro ? "/servicii" : "/en/services",
-      eyebrow: ro ? "Transparență totală" : "Full transparency",
-      title: ro ? "Servicii și costuri" : "Services and pricing",
-      detail: ro ? "Servicii, configurații și repere de buget prezentate clar." : "Services, configurations and clear budget guidance.",
-      icon: Wallet,
-      testId: "pricing-card",
-      tone: "from-violet-500/15 to-cyan-500/[0.05] text-violet-600 dark:text-violet-300",
-    },
-    {
-      to: ro ? "/mentenanta-si-colaborari" : "/en/maintenance-and-partnerships",
-      eyebrow: ro ? "Continuitate după lansare" : "Continuity after launch",
-      title: ro ? "Mentenanță și colaborări" : "Maintenance and partnerships",
-      detail: ro ? "Abonamente clare pentru mentenanță, evoluție și lucru pe termen lung." : "Clear plans for maintenance, evolution and long-term collaboration.",
-      icon: HeartHandshake,
-      testId: "maintenance-card",
-      tone: "from-emerald-500/15 to-cyan-500/[0.05] text-emerald-600 dark:text-emerald-300",
-    },
-    {
-      to: ro ? "/portofoliu" : "/en/portfolio",
-      eyebrow: ro ? "Proiecte, exemple și parteneri" : "Projects, examples and partners",
-      title: ro ? "Portofoliu și colaborări" : "Portfolio and collaborations",
-      detail: ro ? "Vezi proiecte și direcții potrivite pentru o colaborare." : "Explore projects and directions suited to a collaboration.",
-      icon: Briefcase,
-      testId: "portfolio-card",
+      eyebrow: ro ? "Descoperă ce construim" : "Explore what we build",
+      title: ro ? "Servicii și câteva exemple" : "Services and examples",
+      detail: ro ? "Vezi serviciile Avyron și exemple relevante pentru fiecare direcție." : "Explore Avyron services and relevant examples for every direction.",
+      icon: Layers,
+      testId: "services-examples-card",
       tone: "from-cyan-500/15 to-blue-500/[0.05] text-cyan-600 dark:text-cyan-300",
     },
     {
+      to: ro ? "/produse" : "/en/products",
+      eyebrow: ro ? "Soluții gata de explorat" : "Solutions ready to explore",
+      title: ro ? "Produse" : "Products",
+      detail: ro ? "Descoperă produsele digitale și alege varianta potrivită proiectului tău." : "Discover digital products and choose the right fit for your project.",
+      icon: ShoppingBag,
+      testId: "products-card",
+      tone: "from-emerald-500/15 to-cyan-500/[0.05] text-emerald-600 dark:text-emerald-300",
+    },
+    {
+      to: ro ? "/blog" : "/en/blog",
+      eyebrow: ro ? "Idei și resurse digitale" : "Digital ideas and resources",
+      title: "Blog Avyron",
+      detail: ro ? "Citește ghiduri practice despre web, tehnologie, securitate și creștere online." : "Read practical guides about web, technology, security and online growth.",
+      icon: BookOpen,
+      testId: "blog-card",
+      tone: "from-rose-500/15 to-fuchsia-500/[0.05] text-rose-600 dark:text-rose-300",
+    },
+    {
       to: ro ? "/despre-noi" : "/en/about",
-      eyebrow: ro ? "Echipa din spatele produselor" : "The team behind the products",
-      title: ro ? "Despre noi" : "About us",
+      eyebrow: ro ? "Cunoaște echipa" : "Meet the team",
+      title: ro ? "Despre Noi" : "About us",
       detail: ro ? "Web design, development, cybersecurity și QA, reunite într-un proces clar." : "Web design, development, cybersecurity and QA in one clear process.",
       icon: UsersRound,
       testId: "about-card",
@@ -44,7 +44,7 @@ export default function HomepageQuickLinks() {
     },
   ];
 
-  return <section aria-label={ro ? "Descoperă Avyron" : "Discover Avyron"} className="py-8 md:py-12">
+  return <section aria-label={ro ? "Descoperă Avyron" : "Discover Avyron"} className="pt-8 pb-3 md:pt-12 md:pb-4">
     <div className="mx-auto grid max-w-6xl gap-3 px-4 sm:grid-cols-2 xl:grid-cols-4">
       {cards.map(({ to, eyebrow, title, detail, icon: Icon, testId, tone }) => <Link key={to} to={to} data-testid={testId} className={`group relative overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br ${tone} p-4 shadow-soft transition hover:-translate-y-0.5 hover:border-brand/35 hover:shadow-elev sm:p-5`}>
         <div className="flex items-start gap-3">
