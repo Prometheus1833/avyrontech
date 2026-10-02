@@ -33,7 +33,6 @@ function sourceFiles(route) {
   if (route.startsWith("/servicii/") || route.startsWith("/en/services/")) return ["src/pages/services/ServicePage.tsx", "src/data/services.ts"];
   if (route === "/servicii" || route === "/en/services") return ["src/pages/Services.tsx"];
   if (route === "/despre-noi" || route === "/en/about") return ["src/pages/AboutUs.tsx"];
-  if (route === "/portofoliu" || route === "/en/portfolio") return ["src/pages/About.tsx"];
   if (route === "/gdpr" || route === "/en/privacy") return ["src/pages/Gdpr.tsx", "src/config/company.ts"];
   if (route === "/termeni" || route === "/en/terms") return ["src/pages/Terms.tsx", "src/config/company.ts"];
   if (route === "/politica-cookies" || route === "/en/cookie-policy") return ["src/pages/CookiePolicy.tsx", "src/lib/cookieConsent.ts", "src/config/company.ts"];

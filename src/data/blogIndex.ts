@@ -102,7 +102,7 @@ Pentru platforme interne și aplicații, definim separat rolurile, permisiunile,
 
 Înainte de livrare verificăm rutele, formularele, autentificarea, responsive design, metadata și erorile. Publicarea nu încheie automat colaborarea: mentenanța, monitorizarea, conținutul și optimizarea pot continua printr-un plan definit, fără promisiuni nelimitate sau responsabilități ambigue.
 
-Poți explora [serviciile și costurile](/servicii), [portofoliul](/portofoliu) sau poți solicita un exemplu adaptat domeniului tău. Recomandarea finală poate fi un site de prezentare, un magazin online, o aplicație, un audit ori o etapă mai mică decât cea imaginată inițial—alegem ceea ce are sens pentru obiectiv.`,
+Poți explora [serviciile și costurile](/servicii), [portofoliul](/servicii/website-prezentare-profesional#portofoliu) sau poți solicita un exemplu adaptat domeniului tău. Recomandarea finală poate fi un site de prezentare, un magazin online, o aplicație, un audit ori o etapă mai mică decât cea imaginată inițial—alegem ceea ce are sens pentru obiectiv.`,
     cover_image_url: "/news/proces-produs-digital-avyron.webp",
     tags: ["avyron", "agentie-web-iasi", "proces", "dezvoltare-web", "cloudflare"],
     category: "avyron",
@@ -347,7 +347,7 @@ For internal platforms and applications, roles, permissions, the data model, act
 
 Before delivery, we check routes, forms, authentication, responsive design, metadata, and errors. Publication does not automatically end collaboration: maintenance, monitoring, content, and optimization can continue under a defined plan without unlimited promises or unclear ownership.
 
-Explore [services and pricing](/en/services), the [portfolio](/en/portfolio), or request an example for your field. The final recommendation may be a business website, online store, application, audit, or a smaller first phase than initially imagined—we choose what fits the objective.`,
+Explore [services and pricing](/en/services), the [portfolio](/en/services/professional-presentation-website#portofoliu), or request an example for your field. The final recommendation may be a business website, online store, application, audit, or a smaller first phase than initially imagined—we choose what fits the objective.`,
     tags: ["avyron", "web-agency-romania", "process", "web-development", "cloudflare"],
   },
   {

@@ -73,7 +73,7 @@ describe("worker redirects", () => {
   it.each([
     ["/costuri", "/servicii"],
     ["/despre", "/despre-noi"],
-    ["/despre-si-portofoliu", "/portofoliu"],
+    ["/despre-si-portofoliu", "/servicii/website-prezentare-profesional"],
     ["/noutati", "/blog"],
   ])("301 %s -> %s", async (from, to) => {
     const res = await get(from);
