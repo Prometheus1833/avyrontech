@@ -104,11 +104,18 @@ export default function Configurator() {
   const toggleFeat = (k: string, f: string) => setPicks((p) => {
     const cur = p[k].features; return { ...p, [k]: { ...p[k], features: cur.includes(f) ? cur.filter((x) => x !== f) : [...cur, f] } };
   });
+  // Adaugă o întrebare-ghid în descriere, ca vizitatorul să o poată completa.
+  const addPrompt = (p: L) => setC((s) => {
+    const line = `${tx(p)}: `;
+    if (s.notes.includes(line)) return s;
+    const cur = s.notes.trim();
+    return { ...s, notes: (cur ? `${cur.replace(/\s+$/, "")}\n${line}` : line).slice(0, 1200) };
+  });
 
   const summary = useMemo(() => {
     const lines = chosen.map((s) => `• ${tx(s.title)}${picks[s.key].type ? ` — ${picks[s.key].type}` : ""}${picks[s.key].features.length ? ` (${picks[s.key].features.join(", ")})` : ""}`);
     lines.push(`${ro ? "Termen" : "Timeline"}: ${timeline || "—"}`, `${ro ? "Buget" : "Budget"}: ${budget || "—"}`);
-    if (c.notes.trim()) lines.push(`${ro ? "Note" : "Notes"}: ${c.notes.trim()}`);
+    if (c.notes.trim()) lines.push(`${ro ? "Descriere" : "Description"}: ${c.notes.trim()}`);
     return lines.join("\n");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [picks, timeline, budget, c.notes, lang]);
