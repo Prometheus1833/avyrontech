@@ -255,7 +255,7 @@ const AgencyServices = () => {
               <span className="text-[10px] text-muted-foreground/70">↕ {content.scrollHint}</span>
             </div>
             <div
-              className="mt-1.5 max-h-[8.6rem] snap-y snap-mandatory overflow-y-auto overscroll-contain rounded-2xl border border-border/60 bg-card/50 [mask-image:linear-gradient(to_bottom,transparent,black_14%,black_86%,transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="mt-1.5 max-h-[8.6rem] overflow-y-auto rounded-2xl border border-border/60 bg-card/50 [mask-image:linear-gradient(to_bottom,transparent,black_14%,black_86%,transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               <div className="py-3">
                 {content.rest.map(({ key, title, text, path, Icon }) => (
@@ -263,7 +263,7 @@ const AgencyServices = () => {
                     key={key}
                     to={path}
                     aria-label={`${content.cta}: ${title}`}
-                    className="group grid snap-center grid-cols-[2.1rem_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/60 sm:px-4"
+                    className="group grid grid-cols-[2.1rem_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/60 sm:px-4"
                   >
                     <span className={`grid size-8 place-items-center rounded-lg bg-gradient-to-br ${tone(key)}`}>
                       <Icon className="size-4" aria-hidden />
