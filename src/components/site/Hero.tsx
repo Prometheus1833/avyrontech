@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronDown, TrendingUp } from "lucide-react";
+import { ArrowRight, ChevronDown, Layers, ShoppingBag, TrendingUp } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { Link } from "react-router-dom";
 
@@ -21,7 +21,7 @@ const Hero = () => {
             {t.hero.subtitle}
           </p>
 
-          <div className="mt-7 flex items-center justify-center px-2">
+          <div className="mt-7 flex flex-col items-center justify-center px-2">
             <Link
               to={lang === "en" ? "/en/configurator" : "/configurator"}
               className="group inline-flex min-h-12 max-w-full flex-col items-center justify-center rounded-full bg-foreground px-5 py-2 text-center text-sm leading-tight text-background shadow-soft transition-all hover:bg-foreground/90 hover:shadow-elev active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -36,7 +36,22 @@ const Hero = () => {
               </span>
               <span className="text-[11px] font-normal opacity-80">{t.hero.personalized}</span>
             </Link>
-
+            <div data-testid="hero-quick-links" className="mt-2.5 grid grid-cols-2 gap-2">
+              <a
+                href="#servicii"
+                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-cyan-300/50 bg-cyan-300/10 px-4 text-[13px] font-semibold text-cyan-900 transition-all hover:border-cyan-300/80 hover:bg-cyan-300/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:border-cyan-300/25 dark:text-cyan-100"
+              >
+                <Layers className="size-4" aria-hidden />
+                {lang === "en" ? "Services" : "Servicii"}
+              </a>
+              <Link
+                to={lang === "en" ? "/en/products" : "/produse"}
+                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-emerald-300/50 bg-emerald-300/10 px-4 text-[13px] font-semibold text-emerald-900 transition-all hover:border-emerald-300/80 hover:bg-emerald-300/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:border-emerald-300/25 dark:text-emerald-100"
+              >
+                <ShoppingBag className="size-4" aria-hidden />
+                {lang === "en" ? "Products" : "Produse"}
+              </Link>
+            </div>
           </div>
         </div>
         <div className="mt-10 md:mt-12 flex flex-nowrap items-center gap-x-3 sm:gap-x-6 text-sm sm:text-base text-muted-foreground justify-center px-2 overflow-x-auto">

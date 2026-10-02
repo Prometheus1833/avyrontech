@@ -88,7 +88,8 @@ test.describe("public SEO routes", () => {
     await expect(navDate).not.toContainText(/\d{2}:\d{2}:\d{2}/);
     await expect(hero.getByTestId("local-date-time")).toHaveCount(0);
     await expect(hero.getByRole("link", { name: /Solicită ofertă.*Personalizată/ })).toHaveAttribute("href", "/configurator");
-    await expect(hero.getByTestId("hero-quick-links")).toHaveCount(0);
+    await expect(hero.getByTestId("hero-quick-links").getByRole("link", { name: "Servicii", exact: true })).toHaveAttribute("href", "#servicii");
+    await expect(hero.getByTestId("hero-quick-links").getByRole("link", { name: "Produse", exact: true })).toHaveAttribute("href", "/produse");
 
     const servicesCard = page.getByTestId("services-examples-card");
     const productsCard = page.getByTestId("products-card");
@@ -96,7 +97,8 @@ test.describe("public SEO routes", () => {
     const aboutCard = page.getByTestId("about-card");
     await servicesCard.scrollIntoViewIfNeeded();
     await expect(servicesCard).toHaveAttribute("href", "/servicii");
-    await expect(servicesCard).toContainText("Servicii și câteva exemple");
+    await expect(servicesCard).toContainText("Servicii");
+    await expect(servicesCard).not.toContainText("câteva exemple");
     await expect(productsCard).toHaveAttribute("href", "/produse");
     await expect(blogCard).toHaveAttribute("href", "/blog");
     await expect(aboutCard).toHaveAttribute("href", "/despre-noi");
@@ -339,13 +341,13 @@ test.describe("public SEO routes", () => {
     expect(dateBox!.x).toBeGreaterThanOrEqual(0);
     expect(dateBox!.x + dateBox!.width).toBeLessThanOrEqual(390);
 
-    await expect(page.getByTestId("hero-quick-links")).toHaveCount(0);
+    await expect(page.getByTestId("hero-quick-links")).toBeVisible();
     expect(await page.locator("html").evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
 
     const serviceList = page.getByTestId("service-list");
     await expect(serviceList.getByRole("link").first()).toBeVisible();
-    // All 8 services are available on the homepage; the compact list keeps the same height budget.
-    expect((await serviceList.boundingBox())!.height).toBeLessThan(500);
+    // All 8 services are available without trapping the page inside a nested scroll region.
+    await expect(serviceList.locator("div.overflow-y-auto")).toHaveCount(0);
 
     await page.getByRole("button", { name: "Meniu" }).click();
     const menu = page.getByTestId("mobile-nav-menu");
