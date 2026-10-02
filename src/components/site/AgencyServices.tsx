@@ -12,6 +12,7 @@ import {
   ShoppingBag,
   Sparkles,
   Wand2,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { Link } from "react-router-dom";
