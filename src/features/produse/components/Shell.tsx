@@ -8,6 +8,7 @@ import { detectTier, finePointer, reducedMotion } from "../lib/capability";
 import { collectionsPath, faqPath, guidePath, homePath, typePath } from "../lib/paths";
 import Preloader from "./Preloader";
 import CartDrawer from "./CartDrawer";
+import PageBackLink from "@/components/site/PageBackLink";
 
 const Backdrop = lazy(() => import("./Backdrop"));
 const SearchPalette = lazy(() => import("./SearchPalette"));
@@ -134,6 +135,9 @@ export default function Shell({ lang, children }: { lang: Lang; children: ReactN
 
       <main className="mx-auto max-w-6xl px-4 pt-24 sm:pt-28">
         <div className="mb-4 flex items-center gap-2">
+          {pathname !== homePath(lang) && pathname !== `${homePath(lang)}/` && (
+            <PageBackLink to={homePath(lang)} label={ro ? "Înapoi" : "Back"} />
+          )}
           <Link to={homePath(lang)} className="pa-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-foreground">
             {ro ? "Produse Avyron" : "Avyron Products"}
           </Link>
