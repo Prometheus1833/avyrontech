@@ -12,6 +12,7 @@ import {
   ShoppingBag,
   Sparkles,
   Wand2,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -48,7 +49,7 @@ const copy = {
     classic: {
       title: "Site Prezentare Profesional",
       text: "Rapid, clar și optimizat pentru solicitări.",
-      cats: ["Clinici", "Avocați", "Construcții", "Restaurante", "Consultanți", "Saloane"],
+      cats: ["Clinici", "Studouri fitness", "Construcții", "Restaurante", "Consultanți", "Saloane"],
       cta: "Deschide",
     },
     cinematic: {
@@ -82,7 +83,7 @@ const copy = {
     classic: {
       title: "Business Website",
       text: "Fast, clear and built for enquiries.",
-      cats: ["Clinics", "Lawyers", "Construction", "Restaurants", "Consultants", "Salons"],
+      cats: ["Clinics", "Fitness studios", "Construction", "Restaurants", "Consultants", "Salons"],
       cta: "Open",
     },
     cinematic: {
@@ -118,7 +119,12 @@ const AgencyServices = () => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
   }, [open]);
 
   const tone = (k: string) => TONES[k as keyof typeof TONES];
@@ -173,54 +179,75 @@ const AgencyServices = () => {
               })}
             </div>
 
-            {/* Panou fluid: două tipuri de site */}
-            <div
-              id={panelId}
-              ref={panelRef}
-              className={`grid transition-[grid-template-rows,opacity,margin] duration-300 ease-out ${open ? "mt-2.5 grid-rows-[1fr] opacity-100" : "mt-0 grid-rows-[0fr] opacity-0"}`}
-              aria-hidden={!open}
-            >
-              <div className="min-h-0 overflow-hidden">
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{content.choose}</p>
-                <div className="grid gap-2.5 sm:grid-cols-2">
-                  <Link
-                    to={content.featured[0].path}
-                    tabIndex={open ? 0 : -1}
-                    className="group rounded-2xl border border-border/70 bg-card/80 p-3.5 transition-all duration-300 hover:border-brand/40 hover:shadow-elev"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span className={`grid size-8 place-items-center rounded-lg bg-gradient-to-br ${TONES.website}`}><Code2 className="size-4" aria-hidden /></span>
-                      <span className="font-display text-sm font-semibold">{content.classic.title}</span>
-                      <span aria-hidden className="ml-auto text-xs text-brand transition-transform group-hover:translate-x-0.5">→</span>
-                    </span>
-                    <span className="mt-1.5 block text-xs text-muted-foreground">{content.classic.text}</span>
-                    <span className="mt-2.5 flex flex-wrap gap-1.5">
-                      {content.classic.cats.map((c) => (
-                        <span key={c} className="rounded-full border border-border/70 bg-background/70 px-2 py-0.5 text-[10px] font-medium">{c}</span>
-                      ))}
-                    </span>
-                  </Link>
-                  <button
-                    type="button"
-                    tabIndex={open ? 0 : -1}
-                    onClick={() => toast(content.soon, { description: content.soonToast })}
-                    className="group relative overflow-hidden rounded-2xl border border-brand/30 bg-gradient-to-br from-brand/12 via-brand-2/[0.07] to-transparent p-3.5 text-left transition-all duration-300 hover:border-brand/50 hover:shadow-elev"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span className="grid size-8 place-items-center rounded-lg bg-gradient-to-br from-brand/30 to-brand-2/20 text-brand"><Sparkles className="size-4" aria-hidden /></span>
-                      <span className="font-display text-sm font-semibold">{content.cinematic.title}</span>
-                      <span className="ml-auto rounded-full bg-brand/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-brand">{content.soon}</span>
-                    </span>
-                    <span className="mt-1.5 block text-xs text-muted-foreground">{content.cinematic.text}</span>
-                    <span className="mt-2.5 flex flex-wrap gap-1.5">
-                      {content.cinematic.cats.map((c) => (
-                        <span key={c} className="rounded-full border border-brand/25 bg-background/60 px-2 py-0.5 text-[10px] font-medium">{c}</span>
-                      ))}
-                    </span>
-                  </button>
+            {/* Modal peste ecran: două tipuri de site */}
+            {open && (
+              <div
+                id={panelId}
+                role="dialog"
+                aria-modal="true"
+                aria-label={content.choose}
+                className="fixed inset-0 z-[80] flex items-center justify-center p-4"
+              >
+                <button
+                  type="button"
+                  aria-label={lang === "ro" ? "Închide" : "Close"}
+                  onClick={() => setOpen(false)}
+                  className="absolute inset-0 bg-foreground/45 backdrop-blur-sm motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-200"
+                />
+                <div
+                  ref={panelRef}
+                  className="relative w-full max-w-2xl rounded-3xl border border-border/70 bg-background/95 p-4 shadow-elev backdrop-blur-xl motion-safe:animate-in motion-safe:zoom-in-95 motion-safe:fade-in-0 motion-safe:duration-200 sm:p-5"
+                >
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{content.choose}</p>
+                    <button
+                      type="button"
+                      onClick={() => setOpen(false)}
+                      aria-label={lang === "ro" ? "Închide" : "Close"}
+                      className="grid size-8 place-items-center rounded-full border border-border/70 text-muted-foreground transition-colors hover:border-brand/40 hover:text-foreground"
+                    >
+                      <X className="size-4" aria-hidden />
+                    </button>
+                  </div>
+                  <div className="grid gap-2.5 sm:grid-cols-2">
+                    <Link
+                      to={content.featured[0].path}
+                      onClick={() => setOpen(false)}
+                      className="group rounded-2xl border border-border/70 bg-card/80 p-3.5 transition-all duration-300 hover:border-brand/40 hover:shadow-elev"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className={`grid size-8 place-items-center rounded-lg bg-gradient-to-br ${TONES.website}`}><Code2 className="size-4" aria-hidden /></span>
+                        <span className="font-display text-sm font-semibold">{content.classic.title}</span>
+                        <span aria-hidden className="ml-auto text-xs text-brand transition-transform group-hover:translate-x-0.5">→</span>
+                      </span>
+                      <span className="mt-1.5 block text-xs text-muted-foreground">{content.classic.text}</span>
+                      <span className="mt-2.5 flex flex-wrap gap-1.5">
+                        {content.classic.cats.map((c) => (
+                          <span key={c} className="rounded-full border border-border/70 bg-background/70 px-2 py-0.5 text-[10px] font-medium">{c}</span>
+                        ))}
+                      </span>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => toast(content.soon, { description: content.soonToast })}
+                      className="group relative overflow-hidden rounded-2xl border border-brand/30 bg-gradient-to-br from-brand/12 via-brand-2/[0.07] to-transparent p-3.5 text-left transition-all duration-300 hover:border-brand/50 hover:shadow-elev"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="grid size-8 place-items-center rounded-lg bg-gradient-to-br from-brand/30 to-brand-2/20 text-brand"><Sparkles className="size-4" aria-hidden /></span>
+                        <span className="font-display text-sm font-semibold">{content.cinematic.title}</span>
+                        <span className="ml-auto rounded-full bg-brand/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-brand">{content.soon}</span>
+                      </span>
+                      <span className="mt-1.5 block text-xs text-muted-foreground">{content.cinematic.text}</span>
+                      <span className="mt-2.5 flex flex-wrap gap-1.5">
+                        {content.cinematic.cats.map((c) => (
+                          <span key={c} className="rounded-full border border-brand/25 bg-background/60 px-2 py-0.5 text-[10px] font-medium">{c}</span>
+                        ))}
+                      </span>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Restul serviciilor: listă cu scroll ascuns, derulează doar la scroll-ul utilizatorului */}
             <div className="mt-3 flex items-center justify-between px-1">
