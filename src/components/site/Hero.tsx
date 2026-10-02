@@ -1,7 +1,6 @@
 import { ArrowRight, ChevronDown, TrendingUp } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { Link } from "react-router-dom";
-import LocalDateTime from "@/components/site/LocalDateTime";
 
 const Hero = () => {
   const { t, lang } = useLang();
@@ -13,7 +12,6 @@ const Hero = () => {
     >
       <div className="mx-auto max-w-5xl px-4 sm:px-6 text-center flex flex-col items-center justify-center md:justify-start w-full">
         <div className="flex flex-col items-center">
-          <LocalDateTime />
           <div className="inline-flex items-center gap-2 rounded-full bg-white/70 backdrop-blur px-3 py-1.5 text-xs font-medium text-foreground/70 shadow-soft">
             <TrendingUp className="size-3.5 text-brand" aria-hidden="true" focusable="false" /> {t.hero.badge}
           </div>
