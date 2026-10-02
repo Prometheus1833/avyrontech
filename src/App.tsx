@@ -15,6 +15,7 @@ const Gdpr = lazyWithRetry(() => import("./pages/Gdpr.tsx"));
 const Terms = lazyWithRetry(() => import("./pages/Terms.tsx"));
 const CookiePolicy = lazyWithRetry(() => import("./pages/CookiePolicy.tsx"));
 const Services = lazyWithRetry(() => import("./pages/Services.tsx"));
+const Configurator = lazyWithRetry(() => import("./pages/Configurator.tsx"));
 const Portfolio = lazyWithRetry(() => import("./pages/About.tsx"));
 const AboutUs = lazyWithRetry(() => import("./pages/AboutUs.tsx"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound.tsx"));
@@ -159,6 +160,8 @@ const App = () => (
                     <Route path="/en/products/*" element={<ProduseApp />} />
                   </>
                 )}
+                <Route path="/configurator" element={<Configurator />} />
+                <Route path="/en/configurator" element={<Configurator />} />
                 <Route path="/servicii" element={<Services />} />
                 <Route path="/en/services" element={<Services />} />
                 <Route path="/servicii/website-prezentare-profesional" element={<ServiceDetail />} />
