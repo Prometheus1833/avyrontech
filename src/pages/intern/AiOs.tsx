@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import PageBackLink from "@/components/site/PageBackLink";
 import {
   Bot, Brain, BarChart3, MessageSquare, Save, Plus, Archive, Sparkles, RefreshCw, Lock, GraduationCap, Database,
 } from "lucide-react";

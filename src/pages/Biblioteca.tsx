@@ -1,4 +1,5 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import PageBackLink from "@/components/site/PageBackLink";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowDown } from "lucide-react";
 
