@@ -31,3 +31,7 @@ import "./index.css";
 })();
 
 createRoot(document.getElementById("root")!).render(<App />);
+
+// Aplicația a pornit: permitem din nou o viitoare reîncărcare automată
+// dacă un chunk lipsește după un deploy ulterior.
+clearChunkReloadFlag();
