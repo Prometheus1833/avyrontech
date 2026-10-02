@@ -223,13 +223,51 @@ export default function Configurator() {
                 )}
 
                 {step === 2 && (
-                  <div className="space-y-5">
-                    <div><h2 className="font-semibold">{ro ? "Termen dorit" : "Desired timeline"}</h2>
-                      <div className="mt-2 flex flex-wrap gap-2">{TIMELINES.map((t) => <Chip key={t.ro} on={timeline === tx(t)} onClick={() => setTimeline(tx(t))}>{tx(t)}</Chip>)}</div></div>
-                    <div><h2 className="font-semibold">{ro ? "Buget estimativ" : "Estimated budget"}</h2>
-                      <div className="mt-2 flex flex-wrap gap-2">{BUDGETS.map((b) => <Chip key={b.ro} on={budget === tx(b)} onClick={() => setBudget(tx(b))}>{tx(b)}</Chip>)}</div></div>
-                    <textarea value={c.notes} maxLength={800} onChange={(e) => setC({ ...c, notes: e.target.value })} rows={3} className={input}
-                      placeholder={ro ? "Altceva important? (opțional)" : "Anything else? (optional)"} />
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="font-semibold">{ro ? "Cât de repede?" : "How soon?"}</h2>
+                      <p className="text-sm text-muted-foreground">{ro ? "Alege cel mai apropiat termen. Îl confirmăm împreună." : "Pick the closest match. We confirm it together."}</p>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        {TIMELINES.map((t) => {
+                          const on = timeline === tx(t);
+                          return (
+                            <button type="button" key={t.ro} onClick={() => setTimeline(tx(t))} aria-pressed={on}
+                              className={cn("rounded-2xl border px-3.5 py-2.5 text-left transition-all active:scale-[0.98]",
+                                on ? "border-brand bg-brand/10 shadow-soft" : "border-border hover:border-brand/50")}>
+                              <span className="flex items-center gap-1.5 text-sm font-medium">
+                                {on && <Check className="size-3.5 shrink-0 text-brand" aria-hidden />}{tx(t)}
+                              </span>
+                              <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">{tx(t.hint)}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h2 className="font-semibold">{ro ? "Buget estimativ" : "Estimated budget"}</h2>
+                      <p className="text-sm text-muted-foreground">{ro ? "Valoarea totală a proiectului, nu o rată lunară." : "Total project value, not a monthly fee."}</p>
+                      <div className="mt-3 flex flex-wrap gap-2">{BUDGETS.map((b) => <Chip key={b.ro} on={budget === tx(b)} onClick={() => setBudget(tx(b))}>{tx(b)}</Chip>)}</div>
+                    </div>
+
+                    <div>
+                      <h2 className="font-semibold">{ro ? "Descrie proiectul" : "Describe your project"}</h2>
+                      <p className="text-sm text-muted-foreground">{ro ? "Două rânduri concrete valorează mai mult decât zece generice: ce vinzi, cui, ce vrei să facă proiectul." : "Two concrete lines beat ten generic ones: what you sell, to whom, and what the project must do."}</p>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {PROMPTS.map((p) => (
+                          <button type="button" key={p.ro} onClick={() => addPrompt(p)}
+                            className="rounded-full border border-dashed border-border px-2.5 py-1 text-[11px] text-muted-foreground transition hover:border-brand/60 hover:text-foreground active:scale-[0.97]">
+                            + {tx(p)}
+                          </button>
+                        ))}
+                      </div>
+                      <textarea value={c.notes} maxLength={1200} onChange={(e) => setC({ ...c, notes: e.target.value })} rows={5} className={cn(input, "mt-2 leading-relaxed")}
+                        aria-label={ro ? "Descrierea proiectului" : "Project description"}
+                        placeholder={ro
+                          ? "Ex: cabinet stomatologic în Cluj, clienți de 25–50 ani. Vreau site nou cu programări online și pagină pentru fiecare serviciu. Am logo și poze, site-ul vechi e lent și nu apare în Google."
+                          : "E.g. dental clinic in Cluj, clients aged 25–50. I need a new site with online booking and a page per service. I have a logo and photos, the old site is slow and invisible on Google."} />
+                      <p className="mt-1 text-right font-mono text-[10px] text-muted-foreground">{c.notes.length}/1200</p>
+                    </div>
                   </div>
                 )}
 
