@@ -57,9 +57,9 @@ const copy = {
       cats: ["Showrooms", "Pensiuni", "Brands", "Imobiliare", "Hoteluri", "Evenimente"],
     },
     featured: [
-      { key: "website", title: "Site Prezentare Profesional", text: "Prezență rapidă și credibilă, gândită pentru solicitări.", path: "/servicii/website-prezentare-profesional", Icon: Code2 },
-      { key: "apps", title: "Aplicație Mobilă / Platformă", text: "Conturi, fluxuri și date într-un produs fluid.", path: "/servicii/aplicatii-si-platforme", Icon: Gauge },
-      { key: "shop", title: "Magazin online", text: "De la produs la comandă, optimizat pentru mobil.", path: "/servicii/magazin-online", Icon: ShoppingBag },
+      { key: "website", title: "Site Prezentare Profesional", text: "Cod curat, livrat rapid, gata de recomandat clienților tăi.", path: "/servicii/website-prezentare-profesional", Icon: Code2 },
+      { key: "apps", title: "Aplicație Mobilă", text: "Conturi, fluxuri și API documentat, pe care îl extinzi oricând.", path: "/servicii/aplicatii-si-platforme", Icon: Gauge },
+      { key: "shop", title: "Magazin online", text: "Catalog, coș și plată funcționale, cu cod modificabil de tine.", path: "/servicii/magazin-online", Icon: ShoppingBag },
     ],
     rest: [
       { key: "logo", title: "Logo Dinamic 3D", text: "Logo original pentru print, volum și mișcare.", path: "/servicii/creare-logo-3d-dinamic-cinematic", Icon: Box },
@@ -91,9 +91,9 @@ const copy = {
       cats: ["Showrooms", "Guesthouses", "Brands", "Real estate", "Hotels", "Events"],
     },
     featured: [
-      { key: "website", title: "Business websites", text: "A fast, credible presence built for enquiries.", path: "/en/services/professional-presentation-website", Icon: Code2 },
-      { key: "apps", title: "Mobile app / Platform", text: "Accounts, workflows and data in one fluid product.", path: "/en/services/apps-and-platforms", Icon: Gauge },
-      { key: "shop", title: "Online stores", text: "From product to order, optimized for mobile.", path: "/en/services/online-store", Icon: ShoppingBag },
+      { key: "website", title: "Business websites", text: "Clean code, delivered fast, ready to hand to your clients.", path: "/en/services/professional-presentation-website", Icon: Code2 },
+      { key: "apps", title: "Mobile app", text: "Accounts, flows and documented APIs you can extend anytime.", path: "/en/services/apps-and-platforms", Icon: Gauge },
+      { key: "shop", title: "Online stores", text: "Catalog, cart and checkout with code your team can edit.", path: "/en/services/online-store", Icon: ShoppingBag },
     ],
     rest: [
       { key: "logo", title: "Dynamic 3D Logo", text: "An original logo for print, volume and motion.", path: "/en/services/cinematic-dynamic-3d-logo-design", Icon: Box },
@@ -105,7 +105,7 @@ const copy = {
 } as const;
 
 const tileBase =
-  "group relative flex aspect-square flex-col justify-between overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-3 text-left shadow-soft transition-all duration-300 hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-elev focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 sm:p-4";
+  "group relative flex aspect-square flex-col items-center justify-between overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-3 text-center shadow-soft transition-all duration-300 hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-elev focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 sm:p-4";
 
 const AgencyServices = () => {
   const { lang } = useLang();
