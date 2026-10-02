@@ -1,5 +1,6 @@
 import { ListTree, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
 import LangSwitch from "./LangSwitch";
 
@@ -7,6 +8,8 @@ export interface QuickNavItem {
   id: string;
   label: string;
   icon?: React.ComponentType<{ className?: string }>;
+  /** When set, the item navigates to this route instead of scrolling to an anchor. */
+  href?: string;
 }
 
 interface Props {
@@ -28,9 +31,12 @@ const QuickNav = ({ items, showLang = false }: Props) => {
   const ro = lang === "ro";
 
   // Keep only anchors that really exist on the page (relevant buttons only).
+  // Items with href always pass — they navigate to another route.
   useEffect(() => {
     const sync = () => {
-      const found = items.filter(({ id }) => document.getElementById(id)).map((i) => i.id);
+      const found = items
+        .filter(({ id, href }) => href || document.getElementById(id))
+        .map((i) => i.id);
       setPresent((prev) => (prev.join("|") === found.join("|") ? prev : found));
     };
     sync();
@@ -124,31 +130,43 @@ const QuickNav = ({ items, showLang = false }: Props) => {
           <p className="px-3 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground/50">
             {menuLabel}
           </p>
-          <ul className="space-y-0.5">
+          <ul className="max-h-[60vh] space-y-0.5 overflow-y-auto overscroll-contain">
             {visibleItems.map((item) => {
-              const isActive = active === item.id;
+              const isActive = !item.href && active === item.id;
               const Icon = item.icon;
+              const itemClass = `flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 ${
+                isActive
+                  ? "bg-brand/10 text-brand"
+                  : "text-foreground/70 hover:bg-muted hover:text-foreground"
+              }`;
+              const inner = (
+                <>
+                  <span
+                    aria-hidden="true"
+                    className={`h-4 w-1 rounded-full transition-all duration-300 ${
+                      isActive ? "bg-gradient-to-b from-brand to-brand-2" : "bg-foreground/15"
+                    }`}
+                  />
+                  {Icon && <Icon className="size-3.5 shrink-0" />}
+                  <span className="truncate">{item.label}</span>
+                </>
+              );
               return (
                 <li key={item.id}>
-                  <a
-                    href={`#${item.id}`}
-                    onClick={() => setOpen(false)}
-                    aria-current={isActive ? "location" : undefined}
-                    className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 ${
-                      isActive
-                        ? "bg-brand/10 text-brand"
-                        : "text-foreground/70 hover:bg-muted hover:text-foreground"
-                    }`}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={`h-4 w-1 rounded-full transition-all duration-300 ${
-                        isActive ? "bg-gradient-to-b from-brand to-brand-2" : "bg-foreground/15"
-                      }`}
-                    />
-                    {Icon && <Icon className="size-3.5 shrink-0" />}
-                    <span className="truncate">{item.label}</span>
-                  </a>
+                  {item.href ? (
+                    <Link to={item.href} onClick={() => setOpen(false)} className={itemClass}>
+                      {inner}
+                    </Link>
+                  ) : (
+                    <a
+                      href={`#${item.id}`}
+                      onClick={() => setOpen(false)}
+                      aria-current={isActive ? "location" : undefined}
+                      className={itemClass}
+                    >
+                      {inner}
+                    </a>
+                  )}
                 </li>
               );
             })}
