@@ -55,12 +55,12 @@ const Hero = () => {
           </p>
 
           <div className="mt-7 flex w-full flex-col items-center px-2">
-            <a
-              href="#cta"
+            <Link
+              to={lang === "en" ? "/en/configurator" : "/configurator"}
               className="group inline-flex min-h-12 max-w-full flex-col items-center justify-center rounded-full bg-foreground px-5 py-2 text-center text-sm leading-tight text-background shadow-soft transition-all hover:bg-foreground/90 hover:shadow-elev active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <span className="flex items-center font-semibold">
-                {t.hero.ctaPrimary}
+                {lang === "en" ? "Request a quote" : "Solicită ofertă"}
                 <ArrowRight
                   className="ml-1 size-4 shrink-0 transition-transform motion-safe:group-hover:translate-x-0.5"
                   aria-hidden="true"
@@ -68,7 +68,7 @@ const Hero = () => {
                 />
               </span>
               <span className="text-[11px] font-normal opacity-80">{t.hero.personalized}</span>
-            </a>
+            </Link>
 
             <div
               data-testid="hero-quick-links"
