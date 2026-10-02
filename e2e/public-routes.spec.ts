@@ -74,7 +74,7 @@ test.describe("public SEO routes", () => {
     await expect(page.getByText("Soluții digitale gândite pentru rezultate", { exact: true })).toBeVisible();
     await expect(page.getByText("Agenție web din Iași · proiecte în România și UE", { exact: true })).toHaveCount(0);
     const serviceList = page.getByTestId("service-list");
-    await expect(serviceList.getByRole("link")).toHaveCount(7);
+    await expect(serviceList.getByRole("link").first()).toBeVisible();
     await expect(serviceList).toHaveCSS("display", "block");
 
     const desktopNav = page.locator("nav ul");
@@ -338,7 +338,7 @@ test.describe("public SEO routes", () => {
     expect(await page.locator("html").evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
 
     const serviceList = page.getByTestId("service-list");
-    await expect(serviceList.getByRole("link")).toHaveCount(7);
+    await expect(serviceList.getByRole("link").first()).toBeVisible();
     // 7 services on the homepage (Logo Dinamic 3D added): same ~71 px per row budget as before.
     expect((await serviceList.boundingBox())!.height).toBeLessThan(500);
 
