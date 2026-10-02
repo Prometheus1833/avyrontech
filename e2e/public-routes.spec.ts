@@ -344,7 +344,7 @@ test.describe("public SEO routes", () => {
 
     const serviceList = page.getByTestId("service-list");
     await expect(serviceList.getByRole("link").first()).toBeVisible();
-    // 7 services on the homepage (Logo Dinamic 3D added): same ~71 px per row budget as before.
+    // All 8 services are available on the homepage; the compact list keeps the same height budget.
     expect((await serviceList.boundingBox())!.height).toBeLessThan(500);
 
     await page.getByRole("button", { name: "Meniu" }).click();

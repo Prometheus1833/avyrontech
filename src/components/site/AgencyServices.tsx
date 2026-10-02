@@ -7,6 +7,7 @@ import {
   ChevronDown,
   Code2,
   Gauge,
+  Instagram,
   Layers,
   Puzzle,
   ShoppingBag,
@@ -30,6 +31,7 @@ const TONES = {
   shop: "from-amber-400/25 to-orange-500/10 text-orange-600 dark:text-amber-300",
   blog: "from-rose-400/25 to-pink-500/10 text-rose-600 dark:text-rose-300",
   apps: "from-indigo-400/25 to-violet-500/10 text-indigo-600 dark:text-indigo-300",
+  social: "from-pink-400/25 to-fuchsia-500/10 text-pink-600 dark:text-pink-300",
   ai: "from-fuchsia-400/25 to-purple-500/10 text-fuchsia-600 dark:text-fuchsia-300",
   qa: "from-emerald-400/25 to-teal-500/10 text-emerald-600 dark:text-emerald-300",
 };
@@ -65,6 +67,7 @@ const copy = {
     rest: [
       { key: "logo", title: "Logo Dinamic 3D", text: "Logo original pentru print, volum și mișcare.", path: "/servicii/creare-logo-3d-dinamic-cinematic", Icon: Box },
       { key: "blog", title: "Blog Profesional", text: "Content hub rapid, optimizat SEO, care aduce cereri.", path: "/servicii/blog-profesional", Icon: BookOpen },
+      { key: "social", title: "Identitate Social Media", text: "Facebook, Instagram și TikTok, configurate coerent pentru brand.", path: "/servicii/identitate-social-media", Icon: Instagram },
       { key: "ai", title: "Automatizări și AI", text: "Asistenți și procese care reduc munca repetitivă.", path: "/servicii/automatizari-si-ai", Icon: Bot },
       { key: "qa", title: "QA Testing Web/Mobile", text: "Testare manuală și automată, fără abonament.", path: "/servicii/qa-testing-web-mobile", Icon: Bug },
     ],
@@ -99,6 +102,7 @@ const copy = {
     rest: [
       { key: "logo", title: "Dynamic 3D Logo", text: "An original logo for print, volume and motion.", path: "/en/services/cinematic-dynamic-3d-logo-design", Icon: Box },
       { key: "blog", title: "Professional Blog", text: "A fast, SEO-ready hub that turns expertise into leads.", path: "/en/services/professional-blog", Icon: BookOpen },
+      { key: "social", title: "Social Media Identity", text: "Facebook, Instagram and TikTok, set up consistently for your brand.", path: "/en/services/social-media-identity", Icon: Instagram },
       { key: "ai", title: "Automation and AI", text: "Assistants and processes that cut repetitive work.", path: "/en/services/automation-and-ai", Icon: Bot },
       { key: "qa", title: "QA Testing Web/Mobile", text: "Manual and automated testing, no subscription.", path: "/en/services/web-mobile-qa-testing", Icon: Bug },
     ],
