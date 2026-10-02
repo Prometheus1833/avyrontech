@@ -55,6 +55,7 @@ function parseJwtClaims(token: string): Record<string, unknown> | null {
 // The queue client is created with the service role key and no generated
 // schema types, so we keep it loosely typed to avoid generic mismatches.
 // deno-lint-ignore no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type QueueClient = any
 
 // Move a message to the dead letter queue and log the reason.
