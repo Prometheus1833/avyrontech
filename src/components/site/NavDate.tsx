@@ -5,7 +5,7 @@ import { formatLocalDateTime } from "@/lib/localDateTime";
 
 /**
  * Doar data, discret, în bara de sus. Ora și locația au fost scoase din hero;
-* calendarul rămâne vizibil aici, pe toate paginile care au bara de sus.
+ * calendarul rămâne vizibil aici, pe toate paginile care au bara de sus.
  */
 const NavDate = () => {
   const { lang } = useLang();
