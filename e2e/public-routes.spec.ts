@@ -36,17 +36,22 @@ test.describe("public SEO routes", () => {
       }),
     }));
 
-    await page.goto("/servicii");
+    await page.goto("/servicii/website-prezentare-profesional");
     const switcher = page.getByTestId("currency-switch").first();
     await switcher.getByRole("button", { name: "Schimbă moneda (activă: EUR)" }).click();
     await expect(switcher.getByRole("button", { name: "Schimbă moneda (activă: RON)" })).toBeVisible();
     await expect(switcher).toContainText("1 EUR = 5.1000 RON");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Servicii digitale construite pentru fiecare proiect");
-    await expect(page.getByText(/1[.\s]?530 RON/, { exact: false }).first()).toBeVisible();
-
-    await page.goto("/servicii/website-prezentare-profesional");
     await expect(page.getByTestId("product-hero-facts")).toContainText(/1[.\s]?530 RON/);
-    await expect(page.getByTestId("currency-switch").getByRole("button", { name: "Schimbă moneda (activă: RON)" })).toBeVisible();
+  });
+
+  test("the services overview shows services without prices and points to subscriptions", async ({ page }) => {
+    await page.goto("/servicii");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Servicii digitale construite pentru fiecare proiect");
+    await expect(page.getByTestId("currency-switch")).toHaveCount(0);
+    await expect(page.getByTestId("services-list")).toBeVisible();
+    await expect(page.getByTestId("subscriptions-teaser")).toBeVisible();
+    await expect(page.getByTestId("subscriptions-teaser").getByRole("link", { name: /abonamente/i }).first())
+      .toHaveAttribute("href", /mentenanta-si-colaborari/);
   });
 
   test("the legacy care-plans route redirects to maintenance and partnerships", async ({ page }) => {
