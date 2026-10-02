@@ -52,9 +52,14 @@ function parseJwtClaims(token: string): Record<string, unknown> | null {
   }
 }
 
+// The queue client is created with the service role key and no generated
+// schema types, so we keep it loosely typed to avoid generic mismatches.
+// deno-lint-ignore no-explicit-any
+type QueueClient = any
+
 // Move a message to the dead letter queue and log the reason.
 async function moveToDlq(
-  supabase: ReturnType<typeof createClient>,
+  supabase: QueueClient,
   queue: string,
   msg: { msg_id: number; message: Record<string, unknown> },
   reason: string
