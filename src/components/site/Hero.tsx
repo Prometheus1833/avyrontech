@@ -1,51 +1,9 @@
-import { ArrowRight, BookOpen, ChevronDown, Layers, ShoppingBag, TrendingUp, Users } from "lucide-react";
+import { ArrowRight, ChevronDown, TrendingUp } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { Link } from "react-router-dom";
-import { cn } from "@/lib/utils";
 
 const Hero = () => {
   const { t, lang } = useLang();
-  const ro = lang === "ro";
-
-  const quickLinks = [
-    {
-      key: "services",
-      to: ro ? "/servicii" : "/en/services",
-      label: t.hero.ctaServices,
-      short: ro ? "Servicii" : "Services",
-      icon: Layers,
-      tone:
-        "border-cyan-300/50 bg-cyan-300/10 text-cyan-900 hover:border-cyan-300/80 hover:bg-cyan-300/20 dark:border-cyan-300/25 dark:text-cyan-100",
-    },
-    {
-      key: "blog",
-      to: ro ? "/blog" : "/en/blog",
-      label: t.hero.ctaBlog,
-      short: "Blog",
-      icon: BookOpen,
-      tone:
-        "border-rose-300/50 bg-rose-300/10 text-rose-900 hover:border-rose-300/80 hover:bg-rose-300/20 dark:border-rose-300/25 dark:text-rose-100",
-    },
-    {
-      key: "products",
-      to: ro ? "/produse" : "/en/products",
-      label: t.hero.ctaProducts,
-      short: ro ? "Produse" : "Products",
-      icon: ShoppingBag,
-      tone:
-        "border-emerald-300/50 bg-emerald-300/10 text-emerald-900 hover:border-emerald-300/80 hover:bg-emerald-300/20 dark:border-emerald-300/25 dark:text-emerald-100",
-    },
-    {
-      key: "about",
-      to: ro ? "/despre-noi" : "/en/about",
-      label: t.hero.ctaAbout,
-      short: ro ? "Despre" : "About",
-      icon: Users,
-      tone:
-        "border-violet-300/50 bg-violet-300/10 text-violet-900 hover:border-violet-300/80 hover:bg-violet-300/20 dark:border-violet-300/25 dark:text-violet-100",
-    },
-  ];
-
   return (
     <section
       id="hero"
@@ -63,7 +21,7 @@ const Hero = () => {
             {t.hero.subtitle}
           </p>
 
-          <div className="mt-7 flex w-full flex-col items-center px-2">
+          <div className="mt-7 flex items-center justify-center px-2">
             <Link
               to={lang === "en" ? "/en/configurator" : "/configurator"}
               className="group inline-flex min-h-12 max-w-full flex-col items-center justify-center rounded-full bg-foreground px-5 py-2 text-center text-sm leading-tight text-background shadow-soft transition-all hover:bg-foreground/90 hover:shadow-elev active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -79,28 +37,6 @@ const Hero = () => {
               <span className="text-[11px] font-normal opacity-80">{t.hero.personalized}</span>
             </Link>
 
-            <div
-              data-testid="hero-quick-links"
-              className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4"
-            >
-              {quickLinks.map((item) => (
-                <Link
-                  key={item.key}
-                  to={item.to}
-                  aria-label={item.label}
-                  className={cn(
-                    "inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-full border px-2 text-[13px] font-semibold leading-none transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                    item.tone
-                  )}
-                >
-                  <item.icon className="size-4 shrink-0 opacity-90" aria-hidden="true" focusable="false" />
-                  <span className="truncate">
-                    <span className="sm:hidden">{item.short}</span>
-                    <span className="hidden sm:inline">{item.label}</span>
-                  </span>
-                </Link>
-              ))}
-            </div>
           </div>
         </div>
         <div className="mt-10 md:mt-12 flex flex-nowrap items-center gap-x-3 sm:gap-x-6 text-sm sm:text-base text-muted-foreground justify-center px-2 overflow-x-auto">
