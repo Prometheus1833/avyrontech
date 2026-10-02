@@ -4,7 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Accessibility, Apple, ArrowRight, BadgeCheck, BarChart3, Bell, BookOpen, Box,
   Bug, Calendar, Check, Cloud, Code2, Cpu, CreditCard, Facebook, FileText,
-  FlaskConical, Gauge, Globe, Hourglass, Image as ImageIcon, Instagram, Layers,
+  FlaskConical, Gauge, Globe, Hourglass, Image as ImageIcon, Instagram, Layers, LibraryBig,
   MessageCircle, Music2, Package, PenTool, RefreshCw, ScanSearch, SearchCheck,
   Share2, Shield, ShoppingBag, Smartphone, Tag, Truck, Zap,
 } from "lucide-react";
@@ -721,7 +721,7 @@ const ServiceBlock = ({ service, lang }: { service: ServiceDef; lang: Lang }) =>
     <section
       id={service.key}
       data-service={service.key}
-      className="mt-6 grid items-start gap-4 md:grid-cols-5"
+      className="mt-6 scroll-mt-28 grid items-start gap-4 md:grid-cols-5"
     >
       <div
         className={`md:col-span-2 rounded-2xl border ${a.border} bg-gradient-to-br from-card to-background p-5 sm:p-6 relative overflow-hidden text-center`}
@@ -833,8 +833,19 @@ const Services = () => {
       <QuickNav
         items={[
           { id: "prezentare", label: ro ? "Servicii" : "Services", icon: ShoppingBag },
+          ...SERVICES.map((service) => ({
+            id: service.key,
+            label: service.title[lang],
+            icon: service.icon,
+          })),
           { id: "audit", label: ro ? "Audit gratuit" : "Free audit", icon: ScanSearch },
           { id: "abonamente", label: ro ? "Abonamente" : "Plans", icon: RefreshCw },
+          {
+            id: "biblioteca",
+            label: ro ? "Bibliotecă" : "Library",
+            icon: LibraryBig,
+            href: ro ? "/biblioteca" : "/en/library",
+          },
           { id: "cta", label: ro ? "Contact" : "Contact", icon: MessageCircle },
         ]}
       />
