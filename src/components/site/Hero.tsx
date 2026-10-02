@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpen, ChevronDown, Layers, ShoppingBag, TrendingUp } from "lucide-react";
+import { ArrowRight, BookOpen, ChevronDown, Layers, ShoppingBag, TrendingUp, Users } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -34,6 +34,15 @@ const Hero = () => {
       icon: ShoppingBag,
       tone:
         "border-emerald-300/50 bg-emerald-300/10 text-emerald-900 hover:border-emerald-300/80 hover:bg-emerald-300/20 dark:border-emerald-300/25 dark:text-emerald-100",
+    },
+    {
+      key: "about",
+      to: ro ? "/despre-noi" : "/en/about",
+      label: t.hero.ctaAbout,
+      short: ro ? "Despre" : "About",
+      icon: Users,
+      tone:
+        "border-violet-300/50 bg-violet-300/10 text-violet-900 hover:border-violet-300/80 hover:bg-violet-300/20 dark:border-violet-300/25 dark:text-violet-100",
     },
   ];
 
@@ -72,7 +81,7 @@ const Hero = () => {
 
             <div
               data-testid="hero-quick-links"
-              className="mt-2.5 grid grid-cols-3 gap-2"
+              className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4"
             >
               {quickLinks.map((item) => (
                 <Link
