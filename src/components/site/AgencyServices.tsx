@@ -21,7 +21,7 @@ import { homePath as produsePath } from "@/features/produse/lib/paths";
 import { PRODUSE_COUNTS } from "@/features/produse/data/counts";
 import { useLang } from "@/i18n/LanguageContext";
 
-type Item = { key: string; title: string; text: string; path: string; Icon: LucideIcon; tone: string };
+
 
 const TONES = {
   website: "from-cyan-400/25 to-blue-500/10 text-cyan-600 dark:text-cyan-300",
@@ -138,7 +138,7 @@ const AgencyServices = () => {
           <div data-testid="service-list" className="block">
             {/* 3 servicii principale, pătrate, în linie */}
             <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-              {content.featured.map(({ key, title, text, path, Icon }: Item | (typeof content.featured)[number]) => {
+              {content.featured.map(({ key, title, text, path, Icon }) => {
                 const inner = (
                   <>
                     <span aria-hidden className="pointer-events-none absolute -right-8 -top-8 size-24 rounded-full bg-brand/10 blur-2xl transition-opacity duration-300 group-hover:opacity-100 sm:opacity-60" />
