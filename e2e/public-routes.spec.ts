@@ -87,22 +87,24 @@ test.describe("public SEO routes", () => {
     await expect(navDate).toBeVisible();
     await expect(navDate).not.toContainText(/\d{2}:\d{2}:\d{2}/);
     await expect(hero.getByTestId("local-date-time")).toHaveCount(0);
-    await expect(hero.getByRole("link", { name: /Solicită ofertă.*Personalizat/ })).toHaveAttribute("href", "/configurator");
-    await expect(hero.getByRole("link", { name: "Vezi serviciile", exact: true })).toHaveAttribute("href", "/servicii");
-    await expect(hero.getByRole("link", { name: "Blog", exact: true })).toHaveAttribute("href", "/blog");
-    await expect(hero.getByRole("link", { name: "Vezi produsele", exact: true })).toHaveAttribute("href", "/produse");
+    await expect(hero.getByRole("link", { name: /Solicită ofertă.*Personalizată/ })).toHaveAttribute("href", "/configurator");
+    await expect(hero.getByTestId("hero-quick-links")).toHaveCount(0);
 
-    const portfolioCard = page.getByTestId("portfolio-card");
+    const servicesCard = page.getByTestId("services-examples-card");
+    const productsCard = page.getByTestId("products-card");
+    const blogCard = page.getByTestId("blog-card");
     const aboutCard = page.getByTestId("about-card");
-    const maintenanceCard = page.getByTestId("maintenance-card");
-    await expect(portfolioCard).toHaveAttribute("href", "/portofoliu");
-    await expect(portfolioCard).toContainText("Proiecte, exemple și parteneri");
-    await expect(portfolioCard).not.toContainText("Despre noi");
+    await servicesCard.scrollIntoViewIfNeeded();
+    await expect(servicesCard).toHaveAttribute("href", "/servicii");
+    await expect(servicesCard).toContainText("Servicii și câteva exemple");
+    await expect(productsCard).toHaveAttribute("href", "/produse");
+    await expect(blogCard).toHaveAttribute("href", "/blog");
     await expect(aboutCard).toHaveAttribute("href", "/despre-noi");
-    await expect(aboutCard).toContainText("Despre noi");
+    await expect(aboutCard).toContainText("Despre Noi");
     await expect(aboutCard).toContainText("Web design, development, cybersecurity și QA");
-    await expect(maintenanceCard).toHaveAttribute("href", "/mentenanta-si-colaborari");
-    await expect(maintenanceCard).toContainText("Mentenanță și colaborări");
+    const cardsBox = await servicesCard.boundingBox();
+    const ctaBox = await page.locator("#cta").boundingBox();
+    expect(cardsBox?.y).toBeLessThan(ctaBox?.y ?? 0);
   });
 
   test("About and Portfolio are distinct, indexable bilingual pages", async ({ page }) => {
@@ -337,12 +339,7 @@ test.describe("public SEO routes", () => {
     expect(dateBox!.x).toBeGreaterThanOrEqual(0);
     expect(dateBox!.x + dateBox!.width).toBeLessThanOrEqual(390);
 
-    const heroLinks = page.getByTestId("hero-quick-links");
-    await expect(heroLinks).toBeVisible();
-    await expect(heroLinks.getByRole("link")).toHaveCount(3);
-    const linksBox = await heroLinks.boundingBox();
-    expect(linksBox!.x).toBeGreaterThanOrEqual(0);
-    expect(linksBox!.x + linksBox!.width).toBeLessThanOrEqual(390);
+    await expect(page.getByTestId("hero-quick-links")).toHaveCount(0);
     expect(await page.locator("html").evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
 
     const serviceList = page.getByTestId("service-list");
