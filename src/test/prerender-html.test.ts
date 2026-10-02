@@ -41,8 +41,6 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     ["/en/services", "en", "https://avyron.ro/en/services"],
     ["/despre-noi", "ro", "https://avyron.ro/despre-noi"],
     ["/en/about", "en", "https://avyron.ro/en/about"],
-    ["/portofoliu", "ro", "https://avyron.ro/portofoliu"],
-    ["/en/portfolio", "en", "https://avyron.ro/en/portfolio"],
     ["/termeni", "ro", "https://avyron.ro/termeni"],
     ["/en/terms", "en", "https://avyron.ro/en/terms"],
   ];
@@ -97,11 +95,9 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     expect(sitemap).not.toContain("<image:loc>https://avyron.ro/og/home.jpg</image:loc>");
   });
 
-  it("separates the About and Portfolio entities with reciprocal hreflang", () => {
+  it("keeps the About page entity with reciprocal hreflang", () => {
     const aboutRo = read("/despre-noi");
     const aboutEn = read("/en/about");
-    const portfolioRo = read("/portofoliu");
-    const portfolioEn = read("/en/portfolio");
     for (const html of [aboutRo, aboutEn]) {
       const h = head(html);
       expect(h).toContain('hreflang="ro" href="https://avyron.ro/despre-noi"');
@@ -111,13 +107,6 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
       expect(html).toContain("QA Testing");
       expect(html).toContain("Vibe Development");
     }
-    for (const html of [portfolioRo, portfolioEn]) {
-      const h = head(html);
-      expect(h).toContain('hreflang="ro" href="https://avyron.ro/portofoliu"');
-      expect(h).toContain('hreflang="en" href="https://avyron.ro/en/portfolio"');
-      expect(html).toMatch(/Portofoliu|Portfolio/);
-    }
-    expect(portfolioRo).not.toContain("Vibe Development");
   });
 
   it("publishes the canonical LinkedIn profile and omits the retired company URL", () => {

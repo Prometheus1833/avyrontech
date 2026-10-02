@@ -16,7 +16,6 @@ const Terms = lazyWithRetry(() => import("./pages/Terms.tsx"));
 const CookiePolicy = lazyWithRetry(() => import("./pages/CookiePolicy.tsx"));
 const Services = lazyWithRetry(() => import("./pages/Services.tsx"));
 const Configurator = lazyWithRetry(() => import("./pages/Configurator.tsx"));
-const Portfolio = lazyWithRetry(() => import("./pages/About.tsx"));
 const AboutUs = lazyWithRetry(() => import("./pages/AboutUs.tsx"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound.tsx"));
 const ErrorPage = lazyWithRetry(() => import("./pages/ErrorPage.tsx"));
@@ -221,11 +220,11 @@ const App = () => (
                 <Route path="/en/care-plans" element={<Navigate to="/en/maintenance-and-partnerships" replace />} />
 
                 <Route path="/despre" element={<Navigate to="/despre-noi" replace />} />
-                <Route path="/despre-si-portofoliu" element={<Navigate to="/portofoliu" replace />} />
+                <Route path="/despre-si-portofoliu" element={<Navigate to="/servicii/website-prezentare-profesional#portofoliu" replace />} />
                 <Route path="/despre-noi" element={<AboutUs />} />
                 <Route path="/en/about" element={<AboutUs />} />
-                <Route path="/portofoliu" element={<Portfolio />} />
-                <Route path="/en/portfolio" element={<Portfolio />} />
+                <Route path="/portofoliu" element={<Navigate to="/servicii/website-prezentare-profesional#portofoliu" replace />} />
+                <Route path="/en/portfolio" element={<Navigate to="/en/services/professional-presentation-website#portofoliu" replace />} />
                 <Route path="/exemple/flawlesstudio" element={<FlawlesstudioDemo />} />
                 <Route path="/exemple/retuvo" element={<RetuvoDemo />} />
                 <Route path="/blog" element={<Blog />} />

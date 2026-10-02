@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import LibraryLink from "@/components/site/LibraryLink";
+import PortfolioCarousel from "@/components/site/PortfolioCarousel";
 import {
   Accessibility,
   ArrowRight,
@@ -133,6 +134,7 @@ const ServicePage = () => {
     ...(c.audiences ? [{ id: "pentru-cine", label: ro ? "Pentru cine" : "Who it's for", icon: Users }] : []),
     { id: "pachet", label: ro ? "Ce include" : "What's included", icon: ShoppingBag },
     { id: "proces", label: ro ? "Proces" : "Process", icon: Clock },
+    ...(product.key === "premium-website" ? [{ id: "portofoliu", label: ro ? "Portofoliu" : "Portfolio", icon: Globe }] : []),
     { id: "faq", label: "FAQ", icon: MessageCircle },
     ...(planCategory ? [{ id: "abonamente", label: ro ? "Abonamente" : "Plans", icon: HeartHandshake }] : []),
     { id: "contact", label: ro ? "Contact" : "Contact", icon: ArrowRight },
@@ -446,6 +448,17 @@ const ServicePage = () => {
           </section>
         )}
 
+
+        {product.key === "premium-website" && (
+          <section id="portofoliu" data-testid="portfolio-section" className="mt-14 scroll-mt-28">
+            <div className="text-center">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-brand">{ro ? "Portofoliu" : "Portfolio"}</p>
+              <h2 className="mt-2 font-display text-2xl font-bold tracking-tight sm:text-3xl">{ro ? "Site-uri create de noi" : "Websites we've built"}</h2>
+              <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">{ro ? "Proiecte live, afișate cu acordul clienților, și exemple găzduite de Avyron. Apasă pe oricare ca să-l deschizi." : "Live projects shown with client consent, plus examples hosted by Avyron. Tap any card to open it."}</p>
+            </div>
+            <div className="mt-6"><PortfolioCarousel lang={ro ? "ro" : "en"} /></div>
+          </section>
+        )}
 
         {/* FAQ */}
         <section id="faq" className="mt-14 scroll-mt-28">

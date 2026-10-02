@@ -327,8 +327,10 @@ export const translations = {
       nav: "Navigare",
       navItems: [
         { l: "Blog", h: "/blog" },
-        { l: "Portofoliu", h: "/portofoliu" },
+        { l: "Solicită un demo", h: "/#cta" },
         { l: "Servicii", h: "/servicii" },
+        { l: "Abonamente", h: "/mentenanta-si-colaborari" },
+        { l: "Bibliotecă", h: "/biblioteca" },
         { l: "Produse", h: "/produse" },
         { l: "Confidențialitate & GDPR", h: "/gdpr" },
       ],
@@ -841,8 +843,10 @@ export const translations = {
       nav: "Navigation",
       navItems: [
         { l: "Blog", h: "/en/blog" },
-        { l: "Portfolio", h: "/en/portfolio" },
+        { l: "Request a demo", h: "/en#cta" },
         { l: "Services", h: "/en/services" },
+        { l: "Plans", h: "/en/maintenance-and-partnerships" },
+        { l: "Library", h: "/en/library" },
         { l: "Products", h: "/en/products" },
         { l: "Privacy & GDPR", h: "/en/privacy" },
       ],

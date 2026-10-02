@@ -42,7 +42,7 @@ const AboutUs = () => {
   const imageY = useTransform(scrollYProgress, [0, 1], [0, 90]);
   const copyY = useTransform(scrollYProgress, [0, 1], [0, 28]);
   const homeHref = ro ? "/#hero" : "/en#hero";
-  const portfolioPath = ro ? "/portofoliu" : "/en/portfolio";
+  const portfolioPath = ro ? "/servicii/website-prezentare-profesional#portofoliu" : "/en/services/professional-presentation-website#portofoliu";
   const productsPath = ro ? "/servicii" : "/en/services";
 
   useEffect(() => {
