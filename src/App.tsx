@@ -69,7 +69,7 @@ const AvyLauncher = () => {
 import CookieBanner from "@/components/site/CookieBanner";
 import AppHostGuard from "@/components/auth/AppHostGuard";
 
-const Notifications = lazy(() =>
+const Notifications = lazyWithRetry(() =>
   import("@/components/ui/sonner").then(({ Toaster }) => ({ default: Toaster })),
 );
 const MustChangePassword = lazyWithRetry(() => import("@/components/auth/MustChangePassword"));
