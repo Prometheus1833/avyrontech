@@ -83,13 +83,14 @@ test.describe("public SEO routes", () => {
     await expect(page.getByRole("link", { name: "Messenger Facebook" })).toHaveCount(0);
 
     const hero = page.locator("#hero");
-    const localDateTime = hero.getByTestId("local-date-time");
-    await expect(localDateTime).toBeVisible();
-    await expect(localDateTime).toContainText(/\d{2}:\d{2}/);
-    await expect(localDateTime).not.toContainText(/\d{2}:\d{2}:\d{2}/);
-    expect(await localDateTime.evaluate((node) => getComputedStyle(node).position)).toBe("static");
-    await expect(hero.getByRole("link", { name: /Solicită un demo.*Personalizat cu activitatea ta/ })).toHaveAttribute("href", "#cta");
+    const navDate = page.locator("header").getByTestId("nav-date");
+    await expect(navDate).toBeVisible();
+    await expect(navDate).not.toContainText(/\d{2}:\d{2}:\d{2}/);
+    await expect(hero.getByTestId("local-date-time")).toHaveCount(0);
+    await expect(hero.getByRole("link", { name: /Solicită un demo.*Personalizat/ })).toHaveAttribute("href", "#cta");
     await expect(hero.getByRole("link", { name: "Vezi serviciile", exact: true })).toHaveAttribute("href", "/servicii");
+    await expect(hero.getByRole("link", { name: "Blog", exact: true })).toHaveAttribute("href", "/blog");
+    await expect(hero.getByRole("link", { name: "Vezi produsele", exact: true })).toHaveAttribute("href", "/produse");
 
     const portfolioCard = page.getByTestId("portfolio-card");
     const aboutCard = page.getByTestId("about-card");
@@ -330,11 +331,18 @@ test.describe("public SEO routes", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
 
-    const localDateTime = page.getByTestId("local-date-time");
-    await expect(localDateTime).toBeVisible();
-    const clockBox = await localDateTime.boundingBox();
-    expect(clockBox!.x).toBeGreaterThanOrEqual(0);
-    expect(clockBox!.x + clockBox!.width).toBeLessThanOrEqual(390);
+    const navDate = page.locator("header").getByTestId("nav-date");
+    await expect(navDate).toBeVisible();
+    const dateBox = await navDate.boundingBox();
+    expect(dateBox!.x).toBeGreaterThanOrEqual(0);
+    expect(dateBox!.x + dateBox!.width).toBeLessThanOrEqual(390);
+
+    const heroLinks = page.getByTestId("hero-quick-links");
+    await expect(heroLinks).toBeVisible();
+    await expect(heroLinks.getByRole("link")).toHaveCount(3);
+    const linksBox = await heroLinks.boundingBox();
+    expect(linksBox!.x).toBeGreaterThanOrEqual(0);
+    expect(linksBox!.x + linksBox!.width).toBeLessThanOrEqual(390);
     expect(await page.locator("html").evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
 
     const serviceList = page.getByTestId("service-list");
