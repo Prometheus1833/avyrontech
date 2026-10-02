@@ -54,10 +54,10 @@ const Hero = () => {
             {t.hero.subtitle}
           </p>
 
-          <div className="mt-7 w-full max-w-md px-2">
+          <div className="mt-7 flex w-full flex-col items-center px-2">
             <a
               href="#cta"
-              className="group inline-flex min-h-12 w-full flex-col items-center justify-center rounded-full bg-foreground px-4 py-2 text-center text-sm leading-tight text-background shadow-soft transition-all hover:bg-foreground/90 hover:shadow-elev active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="group inline-flex min-h-12 max-w-full flex-col items-center justify-center rounded-full bg-foreground px-5 py-2 text-center text-sm leading-tight text-background shadow-soft transition-all hover:bg-foreground/90 hover:shadow-elev active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <span className="flex items-center font-semibold">
                 {t.hero.ctaPrimary}
