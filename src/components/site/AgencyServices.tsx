@@ -145,7 +145,7 @@ const AgencyServices = () => {
                     <span className={`grid size-9 place-items-center rounded-xl bg-gradient-to-br sm:size-11 ${tone(key)}`}>
                       <Icon className="size-4 sm:size-5" aria-hidden />
                     </span>
-                    <span className="min-w-0">
+                    <span className="w-full min-w-0">
                       <span className="block font-display text-[12px] font-semibold leading-tight tracking-tight sm:text-[15px]">{title}</span>
                       <span className="mt-1 hidden text-[11px] leading-snug text-muted-foreground sm:line-clamp-2">{text}</span>
                     </span>
