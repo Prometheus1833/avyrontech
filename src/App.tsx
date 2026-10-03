@@ -47,6 +47,21 @@ const ServiciiAvyronOs = lazyWithRetry(() => import("./pages/intern/ServiciiAvyr
 const AvyEngine = lazyWithRetry(() => import("./pages/intern/AvyEngine.tsx"));
 const Biblioteca = lazyWithRetry(() => import("./pages/Biblioteca.tsx"));
 const AvyChat = lazyWithRetry(() => import("@/components/ai/AvyChat"));
+const NewsletterPrompt = lazyWithRetry(() => import("@/components/site/NewsletterPrompt"));
+
+const DeferredNewsletterPrompt = () => {
+  const { pathname } = useLocation();
+  const [ready, setReady] = useState(false);
+  const excluded = /^\/(auth|autentificare|profil|intern|finance|gdpr|en\/privacy|termeni|en\/terms|politica-cookies|en\/cookie-policy|unsubscribe|403|500|offline|mentenanta|exemple|examples|demo)(\/|$)/.test(pathname);
+  useEffect(() => {
+    setReady(false);
+    if (excluded) return;
+    const timer = window.setTimeout(() => setReady(true), 3000);
+    return () => window.clearTimeout(timer);
+  }, [excluded, pathname]);
+  if (!ready || excluded) return null;
+  return <Suspense fallback={null}><NewsletterPrompt /></Suspense>;
+};
 
 /** Butonul AVY apare pe paginile comerciale, nu pe cele private sau pe demo-uri. */
 const AvyLauncher = () => {
@@ -140,6 +155,7 @@ const App = () => (
         <LangRouteSync />
         <AnalyticsTracker />
         <AvyLauncher />
+        <DeferredNewsletterPrompt />
 
         <AppHostGuard>
           <Suspense fallback={<div className="min-h-screen" />}>

@@ -31,6 +31,7 @@ import { EXCHANGE_RATE_REFRESH_CRON, getPublicExchangeRate, refreshExchangeRate 
 import { platformRoleForUser } from "./authorization";
 import { base32Encode, decryptTotpSecret, encryptTotpSecret, generateTotpSecret, totpUri, verifyTotp } from "./totp";
 import { engineRouter, runDueEngineDiscovery } from "./engine";
+import { newsletterRouter } from "./newsletter";
 
 export { AvyronAgentRuntime } from "./agents/AvyronAgentRuntime";
 
@@ -1171,7 +1172,10 @@ app.use("/api/blog/staff/*", requireAuth, requireRole("staff", "admin"));
 // AI OS: consola de administrare este rezervată super adminilor; scrierile sunt
 // limitate suplimentar la contul owner în interiorul routerului.
 app.use("/api/ai/admin/*", requireAuth, requireSuperAdmin);
+app.use("/api/newsletter/admin", requireAuth, requireSuperAdmin);
+app.use("/api/newsletter/admin/*", requireAuth, requireSuperAdmin);
 app.route("/", aiOsRouter);
+app.route("/", newsletterRouter);
 app.route("/", leadsRouter);
 app.route("/", aiProjectsRouter);
 app.route("/", financeRouter);
@@ -1328,6 +1332,8 @@ async function cleanupExpiredData(env: AppBindings["Bindings"]) {
     env.DB.prepare("DELETE FROM sessions WHERE expires_at < ?").bind(timestamp),
     env.DB.prepare("DELETE FROM password_resets WHERE expires_at < ? AND (used_at IS NULL OR used_at < ?)").bind(timestamp, timestamp - 24 * 60 * 60 * 1000),
     env.DB.prepare("DELETE FROM email_verifications WHERE expires_at < ? AND (used_at IS NULL OR used_at < ?)").bind(timestamp, timestamp - 24 * 60 * 60 * 1000),
+    env.DB.prepare("UPDATE newsletter_subscribers SET confirmation_token_hash = NULL, confirmation_expires_at = NULL, updated_at = ? WHERE status = 'pending' AND confirmation_expires_at < ?")
+      .bind(timestamp, timestamp),
   ]);
 }
 

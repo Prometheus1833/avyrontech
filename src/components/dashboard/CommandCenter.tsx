@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bot, Boxes, BriefcaseBusiness, Command, FileText, FolderKanban, Search, Target, Wallet } from "lucide-react";
+import { Bot, Boxes, BriefcaseBusiness, Command, FileText, FolderKanban, Mail, Search, Target, Wallet } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { Access, SectionId } from "@/lib/access";
 
@@ -21,6 +21,7 @@ export default function CommandCenter({ open, onOpenChange, access, onNavigate }
     { label: "Deschide produsele AVYRON", hint: "Catalog, parteneriate și comenzi", section: "produse-avyron" as SectionId, icon: Boxes, allowed: access.isSuperAdmin },
     { label: "Deschide situația financiară", hint: "Facturi, costuri, venituri și bugete", section: "finance" as SectionId, icon: Wallet, allowed: access.isSuperAdmin },
     { label: "Deschide agenții AVY", hint: "Agenți, activitate și cunoaștere", section: "ai-os" as SectionId, icon: Bot, allowed: access.isSuperAdmin },
+    { label: "Deschide newsletterul", hint: "Abonați, notificare, campanii și export", section: "newsletter" as SectionId, icon: Mail, allowed: access.isSuperAdmin },
     { label: "Deschide centrul de documente", hint: "Documente și resurse interne", section: "resources" as SectionId, icon: FileText, allowed: access.isStaff },
     { label: "Vezi toate centrele AVYRON OS", hint: "Securitate, automatizări, integrări și operațiuni", section: "os-centers" as SectionId, icon: Command, allowed: access.isStaff },
   ].filter((command) => command.allowed), [access]);

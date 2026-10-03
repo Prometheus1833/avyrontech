@@ -4,7 +4,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import {
   BarChart3, Bell, BookOpen, Bot, Boxes, BriefcaseBusiness, ChevronLeft, Command,
   CreditCard, FolderKanban, Globe, Image as ImageIcon, LayoutDashboard, Lock,
-  LogOut, Megaphone, MessageSquare, MessagesSquare, PanelLeftClose, PanelLeftOpen,
+  LogOut, Mail, Megaphone, MessageSquare, MessagesSquare, PanelLeftClose, PanelLeftOpen,
   Receipt, Search, Settings, ShieldCheck, ShoppingCart, Sparkles, Target, User,
   Users, Wallet, Wrench, BadgePercent,
 } from "lucide-react";
@@ -43,6 +43,7 @@ const CommandCenter = lazy(() => import("@/components/dashboard/CommandCenter"))
 const ProductCollectionTab = lazy(() => import("@/components/dashboard/ProductCollectionTab").then((m) => ({ default: m.ProductCollectionTab })));
 const StaffProduseTab = lazy(() => import("@/components/dashboard/StaffProduseTab").then((m) => ({ default: m.StaffProduseTab })));
 const StaffServicesTab = lazy(() => import("@/components/dashboard/StaffServicesTab").then((m) => ({ default: m.StaffServicesTab })));
+const StaffNewsletterTab = lazy(() => import("@/components/dashboard/StaffNewsletterTab"));
 
 const GROUP_LABELS: Record<string, string> = {
   overview: "Principal", work: "Clienți și livrare", activity: "Activitate",
@@ -73,6 +74,7 @@ export default function Profile() {
     intern: { label: "Chat intern", icon: MessagesSquare }, announcements: { label: "Anunțuri", icon: Megaphone },
     resources: { label: "Documente și resurse", icon: BookOpen }, "team-staff": { label: "Echipă și personal", icon: Users },
     payments: { label: "Plăți", icon: Wallet }, finance: { label: "Financiar", icon: Wallet }, promotions: { label: "Promoții", icon: BadgePercent },
+    newsletter: { label: "Newsletter", icon: Mail },
     "ai-os": { label: "Agenți AI", icon: Sparkles }, "servicii-avyron": { label: "Servicii AVYRON", icon: BriefcaseBusiness }, "produse-avyron": { label: "Produse AVYRON", icon: Boxes }, "os-centers": { label: "Centre AVYRON OS", icon: BriefcaseBusiness },
   }), [access.isStaff]);
 
@@ -173,7 +175,7 @@ export default function Profile() {
             <TabsContent value="team-staff" className="mt-0"><TeamStaffTab /></TabsContent>
             <TabsContent value="os-centers" className="mt-0"><OsCentersTab access={access} onNavigate={openSection} /></TabsContent>
           </>}
-          {access.isSuperAdmin && <><TabsContent value="payments" className="mt-0"><StaffPaymentsTab /></TabsContent><TabsContent value="finance" className="mt-0"><StaffFinanceTab /></TabsContent><TabsContent value="promotions" className="mt-0"><StaffPromotionsTab /></TabsContent><TabsContent value="produse-avyron" className="mt-0"><StaffProduseTab /></TabsContent><TabsContent value="ai-os" className="mt-0"><AiOsConsole embedded /></TabsContent></>}
+          {access.isSuperAdmin && <><TabsContent value="payments" className="mt-0"><StaffPaymentsTab /></TabsContent><TabsContent value="finance" className="mt-0"><StaffFinanceTab /></TabsContent><TabsContent value="promotions" className="mt-0"><StaffPromotionsTab /></TabsContent><TabsContent value="newsletter" className="mt-0"><StaffNewsletterTab /></TabsContent><TabsContent value="produse-avyron" className="mt-0"><StaffProduseTab /></TabsContent><TabsContent value="ai-os" className="mt-0"><AiOsConsole embedded /></TabsContent></>}
           </Suspense>
           {access.isSuperAdmin && (tab === "overview" || tab === "profile") && <Suspense fallback={contentFallback}><div className="mt-4 grid gap-3 lg:grid-cols-2"><AiProductionEntryCard /><EngineEntryCard /></div></Suspense>}
         </div>

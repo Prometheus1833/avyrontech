@@ -29,7 +29,7 @@ const modules = [
   { group: "Cunoaștere și active", name: "Seif de active", detail: "Elemente de brand și documente private; secretele rămân în configurările securizate Cloudflare.", status: "în dezvoltare", icon: FileKey2 },
   { group: "Creștere și conformitate", name: "Comentarii", detail: "Moderarea centralizată a comentariilor din blog și pagini.", status: "în dezvoltare", icon: MessageSquare },
   { group: "Creștere și conformitate", name: "Vizite și analytics", detail: "Trafic first-party în overview; rapoartele complete necesită conectarea interfeței la D1.", status: "activ parțial", icon: Activity },
-  { group: "Creștere și conformitate", name: "Abonați / Newsletter", detail: "Liste, consimțământ, campanii și dezabonare.", status: "în dezvoltare", icon: Mail },
+  { group: "Creștere și conformitate", name: "Abonați / Newsletter", detail: "Double opt-in, surse și interese, configurarea notificării, drafturi, export și dezabonare.", status: "activ", icon: Mail },
   { group: "Creștere și conformitate", name: "Programări", detail: "Programări cu responsabil și client, verificarea suprapunerilor și raport de termene.", status: "în dezvoltare", icon: CalendarClock },
   { group: "Creștere și conformitate", name: "Centru de experimente", detail: "Teste A/B, CTA-uri, prețuri, conversii și rezultate.", status: "în dezvoltare", icon: Beaker },
   { group: "Creștere și conformitate", name: "Confidențialitate și consimțământ", detail: "GDPR, cereri de export/ștergere, consimțăminte și politici active.", status: "fundație existentă", icon: ShieldCheck },
@@ -42,6 +42,7 @@ const destinations: Record<string, SectionId> = {
   "Stare infrastructură": "overview", "Stare integrări": "overview",
   "AVY Briefing": "overview", "Vizite și analytics": "overview",
   "Profitabilitate clienți": "finance",
+  "Abonați / Newsletter": "newsletter",
 };
 
 const tones: Record<string, string> = {

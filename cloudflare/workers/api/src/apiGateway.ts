@@ -41,7 +41,7 @@ export const apiDiscovery = {
   same_origin: "/api",
   documentation: `${API_CANONICAL_ORIGIN}/openapi.json`,
   modules: {
-    public: ["health", "domain-check", "exchange-rate", "contact", "blog", "public-media"],
+    public: ["health", "domain-check", "exchange-rate", "contact", "blog", "newsletter", "public-media"],
     account: ["auth", "profile"],
     platform: ["clients", "projects", "proposals", "links", "media", "editorial", "commerce", "promotions"],
   },
@@ -105,6 +105,16 @@ export const openApiDocument = {
     },
     "/produse/requests": {
       post: { tags: ["Public"], summary: "Trimite o cerere de funcție sau o selecție din pagina Produse Avyron", responses: { "201": { description: "Cerere salvată și notificată" }, "400": { $ref: "#/components/responses/Problem" }, "429": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/newsletter/config": {
+      get: { tags: ["Public"], summary: "Returnează configurarea publică a invitației rare la newsletter", responses: { "200": { description: "Configurare publică fără date personale" } } },
+    },
+    "/newsletter/subscribe": {
+      post: { tags: ["Public"], summary: "Înregistrează consimțământul și trimite confirmarea double opt-in", responses: { "202": { description: "Cerere acceptată; confirmare necesară" }, "400": { $ref: "#/components/responses/Problem" }, "429": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/newsletter/unsubscribe": {
+      get: { tags: ["Public"], summary: "Verifică un link individual de dezabonare", responses: { "200": { description: "Starea linkului" } } },
+      post: { tags: ["Public"], summary: "Dezabonează adresa asociată unui link semnat", responses: { "200": { description: "Dezabonare înregistrată" }, "400": { $ref: "#/components/responses/Problem" } } },
     },
     "/produse/account/state": {
       get: { tags: ["Commerce"], summary: "Parteneriatul, limitele de azi, colecția și produsele deținute", responses: { "200": { description: "Starea contului în magazinul Produse Avyron" }, "401": { $ref: "#/components/responses/Problem" }, "503": { $ref: "#/components/responses/Problem" } } },
@@ -188,6 +198,9 @@ export const openApiDocument = {
     "/promotions/admin": {
       get: { tags: ["Platform"], summary: "Administrare promoții rezervată contului desemnat", security: [{ bearerAuth: [] }], responses: { "200": { description: "Listă promoții" }, "403": { $ref: "#/components/responses/Problem" } } },
       post: { tags: ["Platform"], summary: "Creează o promoție nouă", security: [{ bearerAuth: [] }], responses: { "201": { description: "Promoție creată" }, "403": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/newsletter/admin": {
+      get: { tags: ["Platform"], summary: "Listează abonații și indicatorii newsletterului pentru super admin", security: [{ bearerAuth: [] }], responses: { "200": { description: "Abonați și indicatori" }, "403": { $ref: "#/components/responses/Problem" } } },
     },
   },
   components: {
