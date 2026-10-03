@@ -36,6 +36,7 @@ import CurrencySwitch from "@/components/site/CurrencySwitch";
 import logo from "@/assets/avyron-logo.jpg";
 import { trackEvent } from "@/lib/analytics";
 import { useCurrency } from "@/hooks/useCurrency";
+import ServiceCinematicIntro from "@/components/services/ServiceCinematicIntro";
 
 const WHATSAPP = "https://wa.me/40734605055?text=";
 
@@ -283,6 +284,7 @@ const QaTestingPage = () => {
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
+      <ServiceCinematicIntro service="qa-testing" />
       <QuickNav
         items={[
           { id: "moduri", label: ro ? "Moduri de testare" : "Testing modes", icon: FlaskConical },

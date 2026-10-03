@@ -45,6 +45,8 @@ import PaymentMethods from "@/components/site/PaymentMethods";
 import QuickNav, { type QuickNavItem } from "@/components/site/QuickNav";
 import PlanTeaser from "@/components/site/subscriptions/PlanTeaser";
 import { categoryForService } from "@/data/subscriptionPlans";
+import ServiceCinematicIntro from "@/components/services/ServiceCinematicIntro";
+import { isServiceIntroKey } from "@/data/serviceIntros";
 
 const ICONS: Record<IconKey, React.ComponentType<{ className?: string }>> = {
   globe: Globe,
@@ -143,6 +145,7 @@ const ServicePage = () => {
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
+      {isServiceIntroKey(product.key) && <ServiceCinematicIntro service={product.key} />}
       <QuickNav items={quickNavItems} />
       {/* Ambient background */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
