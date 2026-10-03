@@ -1,5 +1,4 @@
 const CACHEABLE_PUBLIC_PATHS = [
-  /^\/api\/ai\/agents$/,
   /^\/api\/blog\/posts(?:\/[^/]+)?$/,
   /^\/api\/blog\/sitemap$/,
   /^\/api\/blog\/media\/[a-f0-9-]{36}\.(?:png|jpe?g|webp|avif)$/i,
