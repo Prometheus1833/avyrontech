@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { plannedSocialJobs, type SocialPolicy } from "../../cloudflare/workers/api/src/socialStudioScheduler";
+import {
+  canonicalAvyronConversionUrl,
+  plannedSocialJobs,
+  sanitizeFacebookCaptionLinks,
+  type SocialPolicy,
+} from "../../cloudflare/workers/api/src/socialStudioScheduler";
 
 const policy: SocialPolicy = {
   project_id: "aip_avyron_web",
@@ -58,5 +63,18 @@ describe("Social Studio scheduler", () => {
       Date.UTC(2026, 9, 3 + offset, 16, 0),
     ).some((job) => job.kind === "reel"));
     expect(reelDays).toHaveLength(1);
+  });
+
+  it("keeps Facebook conversion links canonical and removes demo or tracking URLs", () => {
+    expect(canonicalAvyronConversionUrl("https://avyron.ro/servicii/website-prezentare-profesional?utm_source=facebook#oferta"))
+      .toBe("https://avyron.ro/servicii/website-prezentare-profesional");
+    expect(canonicalAvyronConversionUrl("https://avyron.ro/exemple/restaurant-demo"))
+      .toBe("https://avyron.ro/servicii/website-prezentare-profesional");
+    expect(canonicalAvyronConversionUrl("https://example.com/a-very-long-demo-url"))
+      .toBe("https://avyron.ro/servicii/website-prezentare-profesional");
+    expect(sanitizeFacebookCaptionLinks(
+      "Descoperă proiectul https://example.com/demo?utm_source=facebook și discută cu noi.",
+      "https://avyron.ro/servicii/website-prezentare-profesional?utm_campaign=demo",
+    )).toBe("Descoperă proiectul și discută cu noi.\n\nhttps://avyron.ro/servicii/website-prezentare-profesional");
   });
 });

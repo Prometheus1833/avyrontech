@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "project": {
     "id": "aip_avyron_web",
     "slug": "avyron-web",
@@ -40,7 +40,17 @@
   "links": {
     "storyPriority": ["native_link_sticker", "profile_link", "visible_avyron_ro"],
     "feedPriority": ["native_clickable_url", "first_comment_when_appropriate", "visible_avyron_ro"],
-    "defaultUrl": "https://avyron.ro"
+    "defaultUrl": "https://avyron.ro",
+    "defaultServiceUrl": "https://avyron.ro/servicii/website-prezentare-profesional",
+    "allowedConversionRoots": ["/", "/servicii", "/produse", "/blog"],
+    "facebook": {
+      "maximumVisibleLinks": 1,
+      "stripQueryAndFragment": true,
+      "forbidExampleUrls": true,
+      "forbidExternalConversionUrls": true,
+      "placement": "caption_end",
+      "selectionOrder": ["exact_service_or_product", "service_category", "professional_website_service", "homepage"]
+    }
   },
   "nativeElements": {
     "instagram": ["music", "link_sticker", "poll", "captions", "subtle_emoji"],
