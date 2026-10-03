@@ -6,6 +6,7 @@ type CurrencySwitchProps = {
   accent?: "cyan" | "emerald";
   className?: string;
   compact?: boolean;
+  fixedPricing?: boolean;
   showDetails?: boolean;
 };
 
@@ -13,6 +14,7 @@ export default function CurrencySwitch({
   accent = "cyan",
   className = "",
   compact = false,
+  fixedPricing = false,
   showDetails = true,
 }: CurrencySwitchProps) {
   const { lang } = useLang();
@@ -55,7 +57,7 @@ export default function CurrencySwitch({
           <span aria-hidden className="grid place-items-center rounded-full text-foreground/55 size-8">
             <ArrowRightLeft className="size-3.5" />
           </span>
-          {(["EUR", "RON"] as DisplayCurrency[]).map((option) => (
+          {(["RON", "EUR"] as DisplayCurrency[]).map((option) => (
             <button
               key={option}
               type="button"
@@ -75,7 +77,9 @@ export default function CurrencySwitch({
         <p className="mt-2 inline-flex max-w-full items-center gap-1.5 text-center font-mono text-[9px] uppercase tracking-[0.11em] text-foreground/45 sm:text-[10px]" aria-live="polite">
           <DatabaseZap className="size-3 shrink-0" aria-hidden />
           <span>
-            {sourceLabel} · 1 EUR = {rateStatus === "loading" ? "…" : rate.toFixed(4)} RON{formattedDate ? ` · ${formattedDate}` : ""}
+            {fixedPricing
+              ? (ro ? "Prețuri comerciale fixe · RON principal" : "Fixed commercial prices · RON primary")
+              : `${sourceLabel} · 1 EUR = ${rateStatus === "loading" ? "…" : rate.toFixed(4)} RON${formattedDate ? ` · ${formattedDate}` : ""}`}
           </span>
         </p>
       )}

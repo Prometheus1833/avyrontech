@@ -7,6 +7,7 @@ import {
   ArrowRight,
   BarChart3,
   Bug,
+  Calculator,
   Check,
   FlaskConical,
 
@@ -47,6 +48,7 @@ import PlanTeaser from "@/components/site/subscriptions/PlanTeaser";
 import { categoryForService } from "@/data/subscriptionPlans";
 import ServiceCinematicIntro from "@/components/services/ServiceCinematicIntro";
 import { isServiceIntroKey } from "@/data/serviceIntros";
+import WebsitePriceCalculator from "@/components/services/WebsitePriceCalculator";
 
 const ICONS: Record<IconKey, React.ComponentType<{ className?: string }>> = {
   globe: Globe,
@@ -78,7 +80,7 @@ const ServicePage = () => {
   const { pathname } = useLocation();
   const { lang } = useLang();
   const ro = lang === "ro";
-  const { formatEur } = useCurrency(ro ? "ro-RO" : "en-IE");
+  const { formatFixedPrice } = useCurrency(ro ? "ro-RO" : "en-IE");
   const product = getServiceByPath(pathname);
 
   useEffect(() => {
@@ -101,6 +103,7 @@ const ServicePage = () => {
             name: c.name,
             description: c.metaDescription,
             path,
+            priceRon: product.priceRon || undefined,
             priceEur: product.priceEur || undefined,
           }),
         );
@@ -136,6 +139,7 @@ const ServicePage = () => {
     ...(c.audiences ? [{ id: "pentru-cine", label: ro ? "Pentru cine" : "Who it's for", icon: Users }] : []),
     { id: "pachet", label: ro ? "Ce include" : "What's included", icon: ShoppingBag },
     { id: "proces", label: ro ? "Proces" : "Process", icon: Clock },
+    ...(product.key === "premium-website" ? [{ id: "calculator", label: ro ? "Calculator" : "Estimator", icon: Calculator }] : []),
     ...(product.key === "premium-website" ? [{ id: "portofoliu", label: ro ? "Portofoliu" : "Portfolio", icon: Globe }] : []),
     { id: "faq", label: "FAQ", icon: MessageCircle },
     ...(planCategory ? [{ id: "abonamente", label: ro ? "Abonamente" : "Plans", icon: HeartHandshake }] : []),
@@ -237,7 +241,7 @@ const ServicePage = () => {
                 {ro ? "Investiție" : "Investment"}
               </dt>
               <dd className="mt-0.5 text-[10px] font-bold leading-tight sm:text-xs">
-                {product.priceEur > 0 ? `${ro ? "de la" : "from"} ${formatEur(product.priceEur)}` : ro ? "Gratuit" : "Free"}
+                {product.priceRon > 0 ? `${ro ? "de la" : "from"} ${formatFixedPrice(product.priceRon, product.priceEur)}` : ro ? "Gratuit" : "Free"}
               </dd>
             </div>
             <div className="flex min-w-0 flex-col items-center justify-center rounded-xl border border-foreground/15 bg-foreground/[0.04] px-1.5 py-2.5 text-center text-foreground/70">
@@ -258,7 +262,7 @@ const ServicePage = () => {
             </div>
           </dl>
 
-          {product.priceEur > 0 && <CurrencySwitch compact className="mt-4" />}
+          {product.priceRon > 0 && <CurrencySwitch compact fixedPricing className="mt-4" />}
 
           {c.heroStats && (
             <dl className="mx-auto mt-8 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
@@ -451,16 +455,18 @@ const ServicePage = () => {
           </section>
         )}
 
-
         {product.key === "premium-website" && (
-          <section id="portofoliu" data-testid="portfolio-section" className="mt-14 scroll-mt-28">
-            <div className="text-center">
-              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-brand">{ro ? "Portofoliu" : "Portfolio"}</p>
-              <h2 className="mt-2 font-display text-2xl font-bold tracking-tight sm:text-3xl">{ro ? "Site-uri create de noi" : "Websites we've built"}</h2>
-              <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">{ro ? "Website-uri din industrii diferite, construite pentru obiective comerciale reale. Apasă pe oricare pentru a vedea experiența completă." : "Websites across different industries, built for real commercial goals. Open any project to explore the complete experience."}</p>
-            </div>
-            <div className="mt-6"><PortfolioCarousel lang={ro ? "ro" : "en"} /></div>
-          </section>
+          <>
+            <WebsitePriceCalculator />
+            <section id="portofoliu" data-testid="portfolio-section" className="mt-14 scroll-mt-28">
+              <div className="text-center">
+                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-brand">{ro ? "Portofoliu" : "Portfolio"}</p>
+                <h2 className="mt-2 font-display text-2xl font-bold tracking-tight sm:text-3xl">{ro ? "Site-uri create de noi" : "Websites we've built"}</h2>
+                <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">{ro ? "Website-uri din industrii diferite, construite pentru obiective comerciale reale. Apasă pe oricare pentru a vedea experiența completă." : "Websites across different industries, built for real commercial goals. Open any project to explore the complete experience."}</p>
+              </div>
+              <div className="mt-6"><PortfolioCarousel lang={ro ? "ro" : "en"} /></div>
+            </section>
+          </>
         )}
 
         {/* FAQ */}
