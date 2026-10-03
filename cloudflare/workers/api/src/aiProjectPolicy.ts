@@ -2,7 +2,7 @@ export const AI_PROJECT_OBJECTIVES = ["sales", "promotion", "visibility", "monet
 export const AI_PROJECT_AUTOMATION_MODES = ["manual", "approval", "automatic"] as const;
 export const AI_PROJECT_STATUSES = ["setup", "active", "paused", "archived"] as const;
 export const AI_CONTENT_FORMATS = ["post", "story", "reel", "carousel", "message", "article"] as const;
-export const AI_CHANNEL_PROVIDERS = ["facebook", "instagram", "tiktok", "linkedin", "whatsapp", "messenger"] as const;
+export const AI_CHANNEL_PROVIDERS = ["facebook", "instagram", "tiktok", "threads", "linkedin", "whatsapp", "messenger"] as const;
 
 export type AiProjectObjective = (typeof AI_PROJECT_OBJECTIVES)[number];
 export type AiProjectAutomationMode = (typeof AI_PROJECT_AUTOMATION_MODES)[number];

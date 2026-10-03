@@ -37,11 +37,32 @@ unsafe_engine_state=$(sqlite3 "$audit_database" \
         + (SELECT COUNT(*) FROM engine_capabilities WHERE source_id = 'eng_src_uiprompts')
         + (SELECT COUNT(*) FROM engine_discovery_policies
             WHERE id = 'engine_policy_monthly' AND enabled <> 0);")
+unsafe_audience_state=$(sqlite3 "$audit_database" \
+  "SELECT (SELECT COUNT(*) FROM ai_social_accounts
+            WHERE connection_status = 'connected' AND connection_id IS NULL)
+        + (SELECT COUNT(*) FROM ai_social_audience_candidates candidate
+            JOIN ai_social_relationships relationship ON relationship.id = candidate.relationship_id
+            JOIN ai_social_profile_protections protection
+              ON protection.account_id = relationship.account_id
+             AND protection.external_profile_id = relationship.external_profile_id
+           WHERE candidate.status IN ('queued','executing')
+             AND (protection.expires_at IS NULL OR protection.expires_at > CAST(strftime('%s','now') AS INTEGER)*1000));")
+unsafe_social_backup_state=$(sqlite3 "$audit_database" \
+  "SELECT (SELECT COUNT(*) FROM ai_projects project
+            WHERE project.id = 'aip_avyron_web'
+              AND NOT EXISTS (SELECT 1 FROM ai_social_design_profiles profile
+                               WHERE profile.project_id = project.id AND profile.status = 'approved'))
+        + (SELECT COUNT(*) FROM ai_social_backup_runs
+            WHERE status IN ('ready','verified')
+              AND (manifest_object_key IS NULL OR manifest_sha256 IS NULL OR byte_size <= 0))
+        + (SELECT COUNT(*) FROM ai_social_assets
+            WHERE status = 'active' AND length(sha256) < 32);")
 
 if [[ "$foreign_key_issues" != "0" || "$integrity" != "ok" || "$legacy_ai_timestamps" != "0" \
    || "$platform_owners" != "1" || "$unsafe_social_sources" != "0" || "$invalid_lead_state" != "0" \
-   || "$unsafe_engine_state" != "0" ]]; then
-  echo "D1 schema audit failed: foreign_keys=$foreign_key_issues integrity=$integrity legacy_ai_timestamps=$legacy_ai_timestamps platform_owners=$platform_owners unsafe_social_sources=$unsafe_social_sources invalid_lead_state=$invalid_lead_state unsafe_engine_state=$unsafe_engine_state" >&2
+   || "$unsafe_engine_state" != "0" || "$unsafe_audience_state" != "0" \
+   || "$unsafe_social_backup_state" != "0" ]]; then
+  echo "D1 schema audit failed: foreign_keys=$foreign_key_issues integrity=$integrity legacy_ai_timestamps=$legacy_ai_timestamps platform_owners=$platform_owners unsafe_social_sources=$unsafe_social_sources invalid_lead_state=$invalid_lead_state unsafe_engine_state=$unsafe_engine_state unsafe_audience_state=$unsafe_audience_state unsafe_social_backup_state=$unsafe_social_backup_state" >&2
   exit 1
 fi
 

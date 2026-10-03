@@ -76,3 +76,33 @@ SELECT 'unverified_uiprompts_capabilities' AS check_name, COUNT(*) AS value
 SELECT 'enabled_engine_discovery_seed' AS check_name, COUNT(*) AS value
   FROM engine_discovery_policies
  WHERE id = 'engine_policy_monthly' AND enabled <> 0;
+
+SELECT 'connected_audience_accounts_without_connection' AS check_name, COUNT(*) AS value
+  FROM ai_social_accounts
+ WHERE connection_status = 'connected' AND connection_id IS NULL;
+
+SELECT 'protected_audience_actions_queued' AS check_name, COUNT(*) AS value
+  FROM ai_social_audience_candidates AS candidate
+  JOIN ai_social_relationships AS relationship ON relationship.id = candidate.relationship_id
+  JOIN ai_social_profile_protections AS protection
+    ON protection.account_id = relationship.account_id
+   AND protection.external_profile_id = relationship.external_profile_id
+ WHERE candidate.status IN ('queued','executing')
+   AND (protection.expires_at IS NULL OR protection.expires_at > CAST(strftime('%s','now') AS INTEGER)*1000);
+
+SELECT 'projects_without_approved_social_design' AS check_name, COUNT(*) AS value
+  FROM ai_projects AS project
+ WHERE project.id = 'aip_avyron_web'
+   AND NOT EXISTS (
+     SELECT 1 FROM ai_social_design_profiles AS profile
+      WHERE profile.project_id = project.id AND profile.status = 'approved'
+   );
+
+SELECT 'ready_backups_without_manifest' AS check_name, COUNT(*) AS value
+  FROM ai_social_backup_runs
+ WHERE status IN ('ready','verified')
+   AND (manifest_object_key IS NULL OR manifest_sha256 IS NULL OR byte_size <= 0);
+
+SELECT 'social_assets_without_checksum' AS check_name, COUNT(*) AS value
+  FROM ai_social_assets
+ WHERE status = 'active' AND length(sha256) < 32;
