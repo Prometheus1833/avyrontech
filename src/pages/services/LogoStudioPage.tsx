@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Download, Loader2, Lock, Mail, Share2, Sparkles, Wand2, Zap } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
-import { apiUrl } from "@/lib/apiBase";
+import { cfAuth } from "@/lib/cfAuth";
 import { trackEvent } from "@/lib/analytics";
 import { trackFunnel } from "@/lib/siteAnalytics";
 import LangSwitch from "@/components/site/LangSwitch";
@@ -57,7 +57,7 @@ function StudioBody() {
   const ro = lang === "ro";
   const t = STUDIO_UI[lang];
   const lei = useLeiPrice(lang);
-  const { isStaff } = useAuth();
+  const { user, isStaff, loading: authLoading } = useAuth();
 
   const [kind, setKind] = useState<StudioKind>("static");
   const [form, setForm] = useState({ name: "", tagline: "", industry: "other" as Industry, style: "modern" as Style, color: "", notes: "" });
@@ -70,6 +70,7 @@ function StudioBody() {
   const [bg, setBg] = useState<"paper" | "dark">("paper");
   const [ordering, setOrdering] = useState(false);
   const [salt, setSalt] = useState(0);
+  const [authPrompt, setAuthPrompt] = useState(false);
   const resultsRef = useRef<HTMLElement>(null);
   const editorRef = useRef<HTMLElement>(null);
 
@@ -121,12 +122,15 @@ function StudioBody() {
 
   const generate = async () => {
     if (!brief || busy) return;
+    if (!user) {
+      setAuthPrompt(true);
+      return;
+    }
     setBusy(true);
     trackFunnel("view_configurator", "logo_studio", { product: "logo_studio", kind });
     try {
-      const res = await fetch(apiUrl("/api/logo-studio/generate"), {
+      const res = await cfAuth.requestResponse("/api/logo-studio/generate", {
         method: "POST",
-        headers: { "content-type": "application/json" },
         body: JSON.stringify({ brief }),
       });
       if (res.status === 429) {
@@ -301,6 +305,24 @@ function StudioBody() {
                 {t.quick}
               </button>
             </div>
+            <p className="mt-2 text-xs text-[var(--l3d-muted)]">
+              {ro ? "Generarea cu AI este disponibilă exclusiv utilizatorilor înregistrați." : "AI generation is available only to registered users."}
+            </p>
+            {authPrompt && !user && !authLoading && (
+              <div className="mt-4 rounded-2xl border border-violet-400/25 bg-violet-400/[0.07] p-4" role="dialog" aria-label={ro ? "Acces generare AI" : "AI generation access"}>
+                <div className="flex items-start gap-3">
+                  <Lock className="mt-0.5 size-5 shrink-0 text-violet-300" aria-hidden />
+                  <div>
+                    <p className="font-semibold">{ro ? "Continuă cu un cont Avyron" : "Continue with an Avyron account"}</p>
+                    <p className="mt-1 text-sm text-[var(--l3d-muted)]">{ro ? "Autentifică-te sau creează gratuit un cont pentru a genera concepte cu AI și a le regăsi în fluxul tău." : "Sign in or create a free account to generate AI concepts and keep them in your workflow."}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Link to="/auth" state={{ from: window.location.pathname + window.location.search }} className="l3d-btn l3d-btn-primary"><Lock className="size-4" />{ro ? "Autentificare / înregistrare" : "Sign in / register"}</Link>
+                      <button type="button" className="l3d-btn l3d-btn-ghost" onClick={() => setAuthPrompt(false)}>{ro ? "Mai târziu" : "Later"}</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>

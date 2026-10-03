@@ -11,7 +11,7 @@ import { trackEvent } from "@/lib/analytics";
 import { useDualPrice } from "@/hooks/useDualPrice";
 import type { SubscriptionCategory, SubscriptionPlan } from "@/data/subscriptionPlans";
 import {
-  BILLING_PERIODS, PAYMENT_GATEWAY_ENABLED, authStateFor, buildOrderItems, type BillingPeriod,
+  ANNUAL_PROMOTION_CODE, BILLING_PERIODS, PAYMENT_GATEWAY_ENABLED, authStateFor, buildOrderItems, type BillingPeriod,
 } from "@/lib/subscriptionCheckout";
 
 type Quote = {
@@ -84,7 +84,9 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
 
   useEffect(() => {
     if (!plan || !user) return;
-    void refreshQuote();
+    const automaticCode = period.value === "annual" ? ANNUAL_PROMOTION_CODE : undefined;
+    setPromotionCode(automaticCode || "");
+    void refreshQuote(automaticCode);
   }, [plan, user, period, refreshQuote]);
 
   const submitOrder = async () => {

@@ -19,7 +19,7 @@ const ACTIVITY_KINDS = new Set<string>(LEAD_ACTIVITY_KINDS);
 type LeadAccess = { read: boolean; write: boolean; organizationId: string | null };
 
 async function leadAccess(c: Context<AppBindings>, leadId: string): Promise<LeadAccess | null> {
-  const lead = await c.env.DB.prepare("SELECT organization_id FROM leads WHERE id = ?")
+  const lead = await c.env.DB.prepare("SELECT organization_id FROM leads WHERE id = ? AND deleted_at IS NULL")
     .bind(leadId).first<{ organization_id: string | null }>();
   if (!lead) return null;
   const userId = c.get("userId");
@@ -175,7 +175,7 @@ leadsRouter.get("/api/leads", async (c) => {
   }
 
   const values: unknown[] = [];
-  const filters: string[] = [];
+  const filters: string[] = ["lead.deleted_at IS NULL"];
   if (organizationId) { filters.push("lead.organization_id = ?"); values.push(organizationId); }
   if (stage) { filters.push("lead.lifecycle_stage = ?"); values.push(stage); }
   if (!platformRole) {
@@ -264,6 +264,19 @@ leadsRouter.patch("/api/leads/:leadId", async (c) => {
   sets.push("updated_at = ?"); values.push(now(), leadId);
   await c.env.DB.prepare(`UPDATE leads SET ${sets.join(", ")} WHERE id = ?`).bind(...values).run();
   await audit(c, leadId, "lead.update", "allowed");
+  return c.json({ ok: true });
+});
+
+leadsRouter.delete("/api/leads/:leadId", async (c) => {
+  const leadId = c.req.param("leadId");
+  const access = await leadAccess(c, leadId);
+  if (!access) return c.json({ error: { code: "not_found" } }, 404);
+  if (!access.write) { await audit(c, leadId, "lead.delete", "denied"); return c.json({ error: { code: "forbidden" } }, 403); }
+  const timestamp = now();
+  await audit(c, leadId, "lead.delete", "allowed");
+  const result = await c.env.DB.prepare("UPDATE leads SET deleted_at=?,updated_at=? WHERE id=? AND deleted_at IS NULL")
+    .bind(timestamp, timestamp, leadId).run();
+  if (!result.meta.changes) return c.json({ error: { code: "not_found" } }, 404);
   return c.json({ ok: true });
 });
 

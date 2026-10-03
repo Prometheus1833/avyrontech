@@ -30,6 +30,7 @@ const ExamplePage = lazyWithRetry(() => import("./pages/ExamplePage.tsx"));
 const Unsubscribe = lazyWithRetry(() => import("./pages/Unsubscribe.tsx"));
 const ProjectPage = lazyWithRetry(() => import("./pages/intern/ProjectPage.tsx"));
 const InternHome = lazyWithRetry(() => import("./pages/intern/InternHome.tsx"));
+const InternBlog = lazyWithRetry(() => import("./pages/intern/InternBlog.tsx"));
 const ServiceDetail = lazyWithRetry(() => import("./pages/services/ServicePage.tsx"));
 const QaTesting = lazyWithRetry(() => import("./pages/services/QaTestingPage.tsx"));
 const MaintenancePartnerships = lazyWithRetry(() => import("./pages/MaintenancePartnerships.tsx"));
@@ -264,6 +265,14 @@ const App = () => (
                   element={
                     <ProtectedRoute>
                       <InternHome />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/intern/blog"
+                  element={
+                    <ProtectedRoute>
+                      <InternBlog />
                     </ProtectedRoute>
                   }
                 />

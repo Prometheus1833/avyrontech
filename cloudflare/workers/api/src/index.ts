@@ -1142,6 +1142,7 @@ app.use("/api/links/*", requireAuth);
 app.use("/api/metadata/*", requireAuth);
 app.use("/api/media/*", requireAuth);
 app.use("/api/commerce/*", requireAuth);
+app.use("/api/logo-studio/generate", requireAuth);
 app.use("/api/promotions/*", requireAuth);
 app.use("/api/leads", requireAuth);
 app.use("/api/leads/*", requireAuth);

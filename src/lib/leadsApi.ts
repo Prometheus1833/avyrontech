@@ -65,6 +65,7 @@ export const leadsApi = {
     lifecycleStage?: LeadStage; urgent?: boolean; nextFollowUpAt?: number | null;
     preferredChannel?: LeadChannel | null; lostReason?: string | null;
   }) => cfAuth.request<{ ok: true }>(`/api/leads/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  remove: (id: string) => cfAuth.request<{ ok: true }>(`/api/leads/${id}`, { method: "DELETE" }),
   addActivity: (id: string, input: { kind: string; direction?: string; outcome?: string; content?: string }) =>
     cfAuth.request<{ id: string }>(`/api/leads/${id}/activities`, { method: "POST", body: JSON.stringify(input) }),
   addReminder: (id: string, input: { dueAt: number; note: string; assignedTo?: string }) =>

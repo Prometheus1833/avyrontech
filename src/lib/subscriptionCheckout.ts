@@ -12,6 +12,9 @@
  */
 
 export const PAYMENT_GATEWAY_ENABLED = false;
+export const ANNUAL_DISCOUNT_PERCENT = 20;
+export const ANNUAL_PROMOTION_CODE = "ANUALAVY20";
+const CART_STORAGE_KEY = "avyron_cart_v2";
 
 export type BillingPeriodValue = "monthly" | "annual";
 
@@ -39,6 +42,26 @@ export type OrderItemPayload = {
 export const buildOrderItems = (sku: string, period: BillingPeriod, notes?: string): OrderItemPayload[] => [
   { sku, quantity: 1, period: period.value, notes },
 ];
+
+export const annualSubscriptionTotal = (monthlyPriceCents: number) =>
+  Math.round(monthlyPriceCents * 12 * (1 - ANNUAL_DISCOUNT_PERCENT / 100));
+
+export function addAnnualSubscriptionToCart(input: { sku: string; name: string; monthlyPriceCents: number }) {
+  if (typeof window === "undefined") return false;
+  const raw = window.localStorage.getItem(CART_STORAGE_KEY);
+  let items: Array<Record<string, unknown>> = [];
+  try { items = raw ? JSON.parse(raw) : []; } catch { items = []; }
+  if (!Array.isArray(items)) items = [];
+  items = items.filter((item) => item?.type !== "subscription");
+  items.push({
+    id: crypto.randomUUID(), sku: input.sku, type: "subscription", name: input.name,
+    period: "annual", price_estimate: input.monthlyPriceCents, price_currency: "RON",
+    notes: `Pachet anual · ${ANNUAL_DISCOUNT_PERCENT}% avantaj aplicat la validarea comenzii`,
+  });
+  window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items.slice(0, 20)));
+  window.dispatchEvent(new CustomEvent("avyron:cart-updated"));
+  return true;
+}
 
 /**
  * Starea trimisă către /auth ca vizitatorul să revină exact la abonamentul

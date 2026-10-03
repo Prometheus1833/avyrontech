@@ -9,6 +9,7 @@ import {
   priceOrderItems,
   promotionDiscountFor,
 } from "../../cloudflare/workers/api/src/promotions";
+import { ANNUAL_DISCOUNT_PERCENT, annualSubscriptionTotal } from "@/lib/subscriptionCheckout";
 
 describe("server-authoritative commerce pricing", () => {
   it("uses catalog prices and never accepts a browser supplied price", () => {
@@ -77,6 +78,11 @@ describe("server-authoritative commerce pricing", () => {
 });
 
 describe("promotion controls", () => {
+  it("shows the same 20% annual advantage that the server promotion applies", () => {
+    expect(ANNUAL_DISCOUNT_PERCENT).toBe(20);
+    expect(annualSubscriptionTotal(25_000)).toBe(240_000);
+  });
+
   it("normalizes codes consistently and rejects malformed values", () => {
     expect(normalizePromotionCode(" avy 10 ")).toBe("AVY10");
     expect(isValidPromotionCode("SOCIALAVY")).toBe(true);

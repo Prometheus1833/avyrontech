@@ -1,5 +1,4 @@
 import BlogProInsights from "@/components/intern/BlogProInsights";
-import BlogAdminPanel from "@/components/intern/BlogAdminPanel";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, ArrowUpRight, ExternalLink, FolderKanban } from "lucide-react";
+import { Plus, ArrowUpRight, ExternalLink, FolderKanban, BookOpen, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import ContactRail from "@/components/intern/ContactRail";
 import PageBackLink from "@/components/site/PageBackLink";
@@ -103,7 +102,20 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
     <div className={embedded ? "space-y-6" : "max-w-5xl mx-auto p-4 sm:p-6 space-y-6"}>
       {!embedded && <PageBackLink to="/profil" label="Înapoi" title="Înapoi la profil" />}
       {isStaff && <BlogProInsights />}
-      {isStaff && <BlogAdminPanel />}
+      {isStaff && (
+        <section className="grid gap-3 sm:grid-cols-2" aria-label="Administrare blog">
+          <Link to="/intern/blog?view=publish" className="group rounded-2xl border bg-card p-4 transition hover:border-primary/40 hover:shadow-md">
+            <BookOpen className="size-5 text-primary" />
+            <h2 className="mt-3 font-semibold">Publicare blog</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Ciorne, articole publicate și arhivare într-un flux separat.</p>
+          </Link>
+          <Link to="/intern/blog?view=settings" className="group rounded-2xl border bg-card p-4 transition hover:border-primary/40 hover:shadow-md">
+            <Settings2 className="size-5 text-primary" />
+            <h2 className="mt-3 font-semibold">Setări blog</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Identitate editorială, limbă și categorie implicită.</p>
+          </Link>
+        </section>
+      )}
       <header className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold flex items-center gap-2">

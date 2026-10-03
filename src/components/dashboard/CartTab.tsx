@@ -13,6 +13,7 @@ import { cfAuth } from "@/lib/cfAuth";
 import { COMMERCE_CATALOG, commerceItemByName, commerceItemBySku, type CommerceCurrency, type CommerceItemType } from "@/data/commerceCatalog";
 import CurrencySwitch from "@/components/site/CurrencySwitch";
 import { useCurrency } from "@/hooks/useCurrency";
+import { ANNUAL_PROMOTION_CODE } from "@/lib/subscriptionCheckout";
 
 type CartItem = {
   id: string;
@@ -100,6 +101,7 @@ export function CartTab() {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     setQuote(null);
+    if (items.some((item) => item.type === "subscription" && item.period === "annual")) setPromotionCode(ANNUAL_PROMOTION_CODE);
   }, [items]);
 
   const addItem = () => {

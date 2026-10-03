@@ -78,9 +78,9 @@ export default function BlogAdminPanel() {
               Reîmprospătează
             </Button>
             <Button asChild size="sm" className="rounded-full">
-              <Link to="/blog#editorial-workspace">
+              <Link to="/intern/blog?view=publish">
                 <PenSquare className="mr-2 size-4" />
-                Editor articole
+                Centru editorial
               </Link>
             </Button>
           </div>

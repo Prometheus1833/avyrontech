@@ -6,6 +6,7 @@ import type { SubscriptionCategory, SubscriptionPlan } from "@/data/subscription
 import { useDualPrice } from "@/hooks/useDualPrice";
 import PlanCard from "./PlanCard";
 import PlanMiniDash from "./PlanMiniDash";
+import { annualSubscriptionTotal } from "@/lib/subscriptionCheckout";
 
 /** Viteza benzii, în pixeli pe secundă — lentă cât să se poată citi. */
 const SPEED = 40;
@@ -198,6 +199,7 @@ const PlanCarousel = ({ category, onSelect }: Props) => {
                   active={openKey === plan.key}
                   duplicate={copy > 0}
                   price={primary(plan.priceCents)}
+                  annualPrice={primary(annualSubscriptionTotal(plan.priceCents))}
                   secondaryPrice={secondary(plan.priceCents)}
                   converted={converted}
                   onOpen={openPlan}
