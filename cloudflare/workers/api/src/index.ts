@@ -31,6 +31,7 @@ import { EXCHANGE_RATE_REFRESH_CRON, getPublicExchangeRate, refreshExchangeRate 
 import { platformRoleForUser } from "./authorization";
 import { base32Encode, decryptTotpSecret, encryptTotpSecret, generateTotpSecret, totpUri, verifyTotp } from "./totp";
 import { engineRouter, runDueEngineDiscovery } from "./engine";
+import { runSocialStudioScheduler } from "./socialStudioScheduler";
 
 export { AvyronAgentRuntime } from "./agents/AvyronAgentRuntime";
 
@@ -1334,7 +1335,10 @@ export default {
   fetch: (request, env, ctx) => app.fetch(normalizeVersionedApiRequest(request), env, ctx),
   scheduled: (controller, env, ctx) => {
     if (controller.cron === "0,15,30,45 * * * *") {
-      ctx.waitUntil(runOperationJobs(env));
+      ctx.waitUntil(Promise.all([
+        runOperationJobs(env),
+        runSocialStudioScheduler(env),
+      ]).then(() => undefined));
       return;
     }
     if (controller.cron === EXCHANGE_RATE_REFRESH_CRON) {

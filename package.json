@@ -23,6 +23,7 @@
     "build:api": "npm run types:worker:check && tsc -p tsconfig.worker.json && WRANGLER_LOG_PATH=/tmp/avyron-wrangler-api.log wrangler deploy --config wrangler.jsonc --env= --dry-run",
     "build:email": "WRANGLER_LOG_PATH=/tmp/avyron-wrangler-email.log wrangler deploy --config cloudflare/workers/email/wrangler.jsonc --dry-run",
     "audit:d1": "bash scripts/audit-d1-schema.sh",
+    "backup:social-studio": "node scripts/backup-avyron-social-studio.mjs",
     "catalog:produse": "node scripts/produse-catalog-sql.mjs",
     "catalog:produse:check": "node scripts/produse-catalog-sql.mjs --check",
     "og:produse": "node scripts/generate-produse-og.mjs",
