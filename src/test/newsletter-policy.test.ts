@@ -20,6 +20,11 @@ describe("newsletter consent policy", () => {
     const settings = db.prepare("SELECT * FROM newsletter_settings WHERE id='global'").get();
     expect(settings).toMatchObject({ enabled: 1, prompt_enabled: 1, min_page_views: 2, cooldown_days: 30 });
     expect(settings?.consent_policy_version).toMatch(/^newsletter-/);
+    const subscriberColumns = db.prepare("PRAGMA table_info(newsletter_subscribers)").all() as Array<{ name: string }>;
+    const campaignColumns = db.prepare("PRAGMA table_info(newsletter_campaigns)").all() as Array<{ name: string }>;
+    expect(subscriberColumns.map((column) => column.name)).toContain("resend_synced_at");
+    expect(campaignColumns.map((column) => column.name)).toContain("provider_broadcast_id");
+    expect(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='newsletter_provider_events'").get()).toBeTruthy();
     db.close();
   });
 
@@ -42,8 +47,21 @@ describe("newsletter consent policy", () => {
     expect(api).toContain("confirmation_token_hash");
     expect(api).toContain('purpose: "newsletter_unsubscribe"');
     expect(api).toContain("Reactivarea necesită un nou acord confirmat prin email");
+    expect(api).toContain("syncSubscriberMarketing");
+    expect(api).toContain('confirmation !== expected');
     expect(index).toContain('app.use("/api/newsletter/admin/*", requireAuth, requireSuperAdmin)');
     expect(prompt).toContain("readCookieConsent()");
     expect(prompt).toContain("cooldownDays");
+  });
+
+  it("keeps essential delivery on Cloudflare and isolates Resend to marketing", () => {
+    const newsletter = readFileSync("cloudflare/workers/api/src/newsletter.ts", "utf8");
+    const mailer = readFileSync("cloudflare/workers/api/src/mailer.ts", "utf8");
+    const resend = readFileSync("cloudflare/workers/api/src/resendMarketing.ts", "utf8");
+    expect(newsletter).toContain("const mail = await deliverMail");
+    expect(mailer).toContain('env.SMTP_HOST || "smtp.mx.cloudflare.net"');
+    expect(resend).toContain('const RESEND_API = "https://api.resend.com"');
+    expect(resend).toContain("RESEND_UNSUBSCRIBE_URL");
+    expect(resend).not.toContain("SMTP_PASS");
   });
 });

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Download, FilePenLine, Mail, Plus, RefreshCw, Search, Settings2, ShieldCheck, Users } from "lucide-react";
+import { CheckCircle2, Cloud, Download, FilePenLine, Mail, Plus, RefreshCw, Search, Send, Settings2, ShieldCheck, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ type Subscriber = {
   id: string; email: string; name: string | null; language: "ro" | "en"; status: Status;
   source: string; interest: string | null; consent_policy_version: string; requested_at: number;
   confirmed_at: number | null; unsubscribed_at: number | null; updated_at: number;
+  resend_synced_at: number | null; resend_sync_error: string | null;
 };
 type Settings = {
   enabled: number; prompt_enabled: number; delay_seconds: number; min_page_views: number; scroll_percent: number; cooldown_days: number;
@@ -27,8 +28,11 @@ type Settings = {
 type Campaign = {
   id: string; name: string; language: "ro" | "en" | "all"; subject: string; preheader: string;
   content: string; status: "draft" | "ready" | "archived"; updated_at: number;
+  provider_broadcast_id: string | null; provider_status: "local_draft" | "provider_draft" | "queued" | "scheduled" | "sent" | "failed";
+  provider_error: string | null; scheduled_at: number | null; sent_at: number | null;
 };
 type ListResponse = { data: Subscriber[]; meta: { total: number; counts: Partial<Record<Status, number>> } };
+type Provider = { configured: boolean; apiKey: boolean; segment: boolean; sender: boolean; webhook: boolean; isolatedSender: boolean; active: number; pending: number; failed: number };
 
 const statusLabel: Record<Status, string> = { pending: "În confirmare", active: "Activ", unsubscribed: "Dezabonat", suppressed: "Suprimat" };
 const statusTone: Record<Status, string> = {
@@ -46,6 +50,7 @@ export default function StaffNewsletterTab() {
   const [counts, setCounts] = useState<Partial<Record<Status, number>>>({});
   const [settings, setSettings] = useState<Settings | null>(null);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [provider, setProvider] = useState<Provider | null>(null);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<Status | "all">("all");
   const [loading, setLoading] = useState(true);
@@ -54,17 +59,21 @@ export default function StaffNewsletterTab() {
   const [manual, setManual] = useState(emptyManual);
   const [campaignOpen, setCampaignOpen] = useState(false);
   const [campaign, setCampaign] = useState(emptyCampaign);
+  const [sendCampaign, setSendCampaign] = useState<Campaign | null>(null);
+  const [sendConfirmation, setSendConfirmation] = useState("");
+  const [scheduledAt, setScheduledAt] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const suffix = new URLSearchParams({ ...(query.trim() ? { q: query.trim() } : {}), ...(status !== "all" ? { status } : {}) });
-      const [list, settingResult, campaignResult] = await Promise.all([
+      const [list, settingResult, campaignResult, providerResult] = await Promise.all([
         cfAuth.request<ListResponse>(`/api/newsletter/admin?${suffix}`),
         cfAuth.request<{ data: Settings }>("/api/newsletter/admin/settings"),
         cfAuth.request<{ data: Campaign[] }>("/api/newsletter/admin/campaigns"),
+        cfAuth.request<{ data: Provider }>("/api/newsletter/admin/provider"),
       ]);
-      setRows(list.data); setCounts(list.meta.counts); setSettings(settingResult.data); setCampaigns(campaignResult.data);
+      setRows(list.data); setCounts(list.meta.counts); setSettings(settingResult.data); setCampaigns(campaignResult.data); setProvider(providerResult.data);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Newsletterul nu a putut fi încărcat");
     } finally { setLoading(false); }
@@ -130,6 +139,39 @@ export default function StaffNewsletterTab() {
     } catch (error) { toast.error(error instanceof Error ? error.message : "Campania nu a putut fi actualizată"); }
   };
 
+  const syncProvider = async () => {
+    setSaving(true);
+    try {
+      const { data } = await cfAuth.request<{ data: { processed: number; synced: number; failed: number; more: boolean } }>("/api/newsletter/admin/provider/sync", { method: "POST" });
+      toast.success(`${data.synced} abonați sincronizați${data.more ? ". Mai există un lot de procesat." : "."}`);
+      if (data.failed) toast.warning(`${data.failed} sincronizări necesită reverificare.`);
+      await load();
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Sincronizarea Resend a eșuat"); }
+    finally { setSaving(false); }
+  };
+
+  const createProviderDraft = async (item: Campaign) => {
+    setSaving(true);
+    try {
+      await cfAuth.request(`/api/newsletter/admin/campaigns/${item.id}/resend-draft`, { method: "POST" });
+      toast.success("Draftul a fost creat în Resend. Verifică-l înainte de trimitere."); await load();
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Draftul Resend nu a putut fi creat"); }
+    finally { setSaving(false); }
+  };
+
+  const sendProviderCampaign = async () => {
+    if (!sendCampaign) return;
+    setSaving(true);
+    try {
+      await cfAuth.request(`/api/newsletter/admin/campaigns/${sendCampaign.id}/send`, {
+        method: "POST", body: JSON.stringify({ confirmation: sendConfirmation, scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : undefined }),
+      });
+      toast.success(scheduledAt ? "Campania a fost programată în Resend" : "Campania a intrat în coada de trimitere Resend");
+      setSendCampaign(null); setSendConfirmation(""); setScheduledAt(""); await load();
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Campania nu a putut fi trimisă"); }
+    finally { setSaving(false); }
+  };
+
   const exportSubscribers = async () => {
     try {
       const response = await cfAuth.requestResponse("/api/newsletter/admin/export.csv");
@@ -157,6 +199,10 @@ export default function StaffNewsletterTab() {
 
     <div className="rounded-xl border border-emerald-300/15 bg-emerald-400/[0.055] p-3 text-xs leading-relaxed text-slate-300"><ShieldCheck className="mr-2 inline size-4 text-emerald-300" />Baza se îmbogățește prin formulare cu double opt-in și adăugări manuale numai când există dovada acordului. Adresele cumpărate sau colectate fără permisiune nu sunt acceptate.</div>
 
+    {provider && <section className="rounded-2xl border border-cyan-300/15 bg-gradient-to-r from-cyan-400/[0.07] to-violet-400/[0.06] p-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-3"><div className="rounded-xl bg-cyan-300/10 p-2"><Cloud className="size-5 text-cyan-200" /></div><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-semibold">Livrare separată și protejată</h3><Badge variant="outline" className={provider.configured ? "border-emerald-300/20 text-emerald-200" : "border-amber-300/20 text-amber-200"}>{provider.configured ? "Resend configurat" : "Configurare necesară"}</Badge></div><p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-400">Cloudflare păstrează emailurile esențiale. Resend procesează exclusiv campaniile către abonații confirmați, cu dezabonare și feedback sincronizate.</p><p className="mt-2 text-[11px] text-slate-500">{provider.active} activi · {provider.pending} de sincronizat · {provider.failed} erori · webhook {provider.webhook ? "activ" : "neconfigurat"} · domeniu marketing {provider.isolatedSender ? "separat" : "de verificat"}</p></div></div><Button variant="outline" disabled={saving || !provider.configured || provider.pending === 0} onClick={() => void syncProvider()} className="border-cyan-300/20 bg-cyan-300/[0.06] text-cyan-100"><RefreshCw /> Sincronizează lotul</Button></div>
+    </section>}
+
     <Tabs defaultValue="subscribers" className="space-y-4">
       <TabsList className="grid h-auto w-full grid-cols-3 bg-white/[0.05] p-1 sm:w-auto"><TabsTrigger value="subscribers">Abonați</TabsTrigger><TabsTrigger value="prompt">Notificare site</TabsTrigger><TabsTrigger value="campaigns">Campanii</TabsTrigger></TabsList>
 
@@ -170,7 +216,7 @@ export default function StaffNewsletterTab() {
           {rows.map((subscriber) => <article key={subscriber.id} className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4">
             <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-semibold text-white">{subscriber.name || subscriber.email.split("@")[0]}</p><a href={`mailto:${subscriber.email}`} className="block truncate text-xs text-violet-300 hover:underline">{subscriber.email}</a></div><Badge variant="outline" className={statusTone[subscriber.status]}>{statusLabel[subscriber.status]}</Badge></div>
             <div className="mt-3 grid grid-cols-2 gap-2 text-xs"><Info label="Interes" value={subscriber.interest || "General"} /><Info label="Sursă" value={subscriber.source} /><Info label="Limbă" value={subscriber.language.toUpperCase()} /><Info label="Solicitat" value={new Date(subscriber.requested_at).toLocaleDateString("ro-RO")} /></div>
-            <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/[0.07] pt-3"><span className="truncate text-[10px] text-slate-600">Politică: {subscriber.consent_policy_version}</span><Select value={subscriber.status} onValueChange={(value) => void updateStatus(subscriber, value as Status)}><SelectTrigger className="h-8 w-40 border-white/10 bg-[#0d1324] text-xs"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(statusLabel).filter(([value]) => value !== "active" || subscriber.status === "active").map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
+            <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/[0.07] pt-3"><span className={`truncate text-[10px] ${subscriber.resend_sync_error ? "text-rose-300" : "text-slate-600"}`}>{subscriber.status === "active" ? (subscriber.resend_sync_error ? `Resend: ${subscriber.resend_sync_error}` : subscriber.resend_synced_at ? "Resend sincronizat" : "În așteptarea sincronizării") : `Politică: ${subscriber.consent_policy_version}`}</span><Select value={subscriber.status} onValueChange={(value) => void updateStatus(subscriber, value as Status)}><SelectTrigger className="h-8 w-40 border-white/10 bg-[#0d1324] text-xs"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(statusLabel).filter(([value]) => value !== "active" || subscriber.status === "active").map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
           </article>)}
         </div>}
       </TabsContent>
@@ -186,14 +232,16 @@ export default function StaffNewsletterTab() {
       </TabsContent>
 
       <TabsContent value="campaigns" className="space-y-4">
-        <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-lg font-semibold">Drafturi editoriale</h3><p className="text-xs text-slate-500">Pregătești conținutul și segmentul aici. Trimiterea în masă nu pornește din Workerul tranzacțional.</p></div><Button onClick={() => setCampaignOpen(true)} className="bg-violet-600 hover:bg-violet-500"><Plus /> Campanie nouă</Button></div>
-        <div className="grid gap-3 md:grid-cols-2">{campaigns.map((item) => <Card key={item.id} className="border-white/[0.08] bg-white/[0.035] text-slate-100"><CardHeader className="pb-3"><div className="flex items-start justify-between gap-3"><div><CardTitle className="text-base">{item.name}</CardTitle><p className="mt-1 line-clamp-1 text-xs text-slate-500">{item.subject}</p></div><Badge variant="outline">{item.status}</Badge></div></CardHeader><CardContent><p className="line-clamp-3 whitespace-pre-wrap text-xs leading-relaxed text-slate-400">{item.content}</p><div className="mt-4 flex items-center justify-between border-t border-white/[0.07] pt-3"><span className="text-[10px] text-slate-600">{item.language.toUpperCase()} · {new Date(item.updated_at).toLocaleDateString("ro-RO")}</span><Select value={item.status} onValueChange={(value) => void setCampaignStatus(item, value as Campaign["status"])}><SelectTrigger className="h-8 w-32 border-white/10 bg-[#0d1324] text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="ready">Pregătită</SelectItem><SelectItem value="archived">Arhivată</SelectItem></SelectContent></Select></div></CardContent></Card>)}{campaigns.length === 0 && <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center text-sm text-slate-500 md:col-span-2">Nu există încă drafturi de campanie.</div>}</div>
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-lg font-semibold">Campanii Resend</h3><p className="text-xs text-slate-500">Pregătești conținutul aici, creezi un draft verificabil în Resend, apoi confirmi separat trimiterea sau programarea.</p></div><Button onClick={() => setCampaignOpen(true)} className="bg-violet-600 hover:bg-violet-500"><Plus /> Campanie nouă</Button></div>
+        <div className="grid gap-3 md:grid-cols-2">{campaigns.map((item) => <Card key={item.id} className="border-white/[0.08] bg-white/[0.035] text-slate-100"><CardHeader className="pb-3"><div className="flex items-start justify-between gap-3"><div><CardTitle className="text-base">{item.name}</CardTitle><p className="mt-1 line-clamp-1 text-xs text-slate-500">{item.subject}</p></div><div className="flex flex-col items-end gap-1"><Badge variant="outline">{item.status}</Badge><span className="text-[9px] uppercase tracking-wide text-cyan-300/70">{item.provider_status.replace(/_/g, " ")}</span></div></div></CardHeader><CardContent><p className="line-clamp-3 whitespace-pre-wrap text-xs leading-relaxed text-slate-400">{item.content}</p>{item.provider_error && <p className="mt-2 text-[11px] text-rose-300">{item.provider_error}</p>}<div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.07] pt-3"><span className="text-[10px] text-slate-600">{item.language.toUpperCase()} · {new Date(item.updated_at).toLocaleDateString("ro-RO")}</span><div className="flex flex-wrap gap-2">{!item.provider_broadcast_id && item.status === "ready" && <Button size="sm" variant="outline" disabled={saving || !provider?.configured} onClick={() => void createProviderDraft(item)} className="h-8 border-cyan-300/20 text-cyan-100"><Cloud /> Draft Resend</Button>}{item.provider_status === "provider_draft" && <Button size="sm" disabled={saving} onClick={() => { setSendCampaign(item); setSendConfirmation(""); setScheduledAt(""); }} className="h-8 bg-violet-600 hover:bg-violet-500"><Send /> Trimite / programează</Button>}<Select value={item.status} disabled={Boolean(item.provider_broadcast_id)} onValueChange={(value) => void setCampaignStatus(item, value as Campaign["status"])}><SelectTrigger className="h-8 w-32 border-white/10 bg-[#0d1324] text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="ready">Pregătită</SelectItem><SelectItem value="archived">Arhivată</SelectItem></SelectContent></Select></div></div></CardContent></Card>)}{campaigns.length === 0 && <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center text-sm text-slate-500 md:col-span-2">Nu există încă drafturi de campanie.</div>}</div>
       </TabsContent>
     </Tabs>
 
     <Dialog open={manualOpen} onOpenChange={setManualOpen}><DialogContent className="border-white/10 bg-[#0b1020] text-slate-100"><DialogHeader><DialogTitle>Adaugă un abonat cu acord documentat</DialogTitle></DialogHeader><div className="grid gap-4 sm:grid-cols-2"><Field label="Email" type="email" value={manual.email} onChange={(value) => setManual({ ...manual, email: value })} /><Field label="Nume (opțional)" value={manual.name} onChange={(value) => setManual({ ...manual, name: value })} /><Field label="Interes" value={manual.interest} onChange={(value) => setManual({ ...manual, interest: value })} /><div className="space-y-1.5"><Label>Limbă</Label><Select value={manual.language} onValueChange={(value) => setManual({ ...manual, language: value })}><SelectTrigger className="border-white/10 bg-white/[0.04]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ro">Română</SelectItem><SelectItem value="en">English</SelectItem></SelectContent></Select></div><div className="sm:col-span-2"><Area label="Dovada consimțământului" value={manual.consentEvidence} onChange={(value) => setManual({ ...manual, consentEvidence: value })} placeholder="Ex.: acord scris primit prin email la data…" /></div></div><DialogFooter><Button variant="outline" onClick={() => setManualOpen(false)}>Anulează</Button><Button disabled={saving} onClick={() => void addSubscriber()}>{saving ? "Se salvează…" : "Adaugă"}</Button></DialogFooter></DialogContent></Dialog>
 
     <Dialog open={campaignOpen} onOpenChange={setCampaignOpen}><DialogContent className="max-w-2xl border-white/10 bg-[#0b1020] text-slate-100"><DialogHeader><DialogTitle className="flex items-center gap-2"><FilePenLine className="size-5" /> Campanie nouă</DialogTitle></DialogHeader><div className="grid gap-4 sm:grid-cols-2"><Field label="Nume intern" value={campaign.name} onChange={(value) => setCampaign({ ...campaign, name: value })} /><div className="space-y-1.5"><Label>Limbă</Label><Select value={campaign.language} onValueChange={(value) => setCampaign({ ...campaign, language: value })}><SelectTrigger className="border-white/10 bg-white/[0.04]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ro">Română</SelectItem><SelectItem value="en">English</SelectItem><SelectItem value="all">Ambele</SelectItem></SelectContent></Select></div><div className="sm:col-span-2"><Field label="Subiect" value={campaign.subject} onChange={(value) => setCampaign({ ...campaign, subject: value })} /></div><div className="sm:col-span-2"><Field label="Preheader" value={campaign.preheader} onChange={(value) => setCampaign({ ...campaign, preheader: value })} /></div><div className="sm:col-span-2"><Area label="Conținut" value={campaign.content} onChange={(value) => setCampaign({ ...campaign, content: value })} rows={8} /></div></div><DialogFooter><Button variant="outline" onClick={() => setCampaignOpen(false)}>Anulează</Button><Button disabled={saving} onClick={() => void createCampaign()}>{saving ? "Se salvează…" : "Creează draft"}</Button></DialogFooter></DialogContent></Dialog>
+
+    <Dialog open={Boolean(sendCampaign)} onOpenChange={(open) => { if (!open) setSendCampaign(null); }}><DialogContent className="border-white/10 bg-[#0b1020] text-slate-100"><DialogHeader><DialogTitle className="flex items-center gap-2"><Send className="size-5 text-violet-300" /> Confirmare trimitere în masă</DialogTitle></DialogHeader>{sendCampaign && <div className="space-y-4"><div className="rounded-xl border border-amber-300/15 bg-amber-300/[0.06] p-3 text-xs leading-relaxed text-amber-100">Acțiunea va porni o campanie reală către segmentul Resend. Verifică în Resend expeditorul, conținutul, linkurile și numărul de destinatari.</div><Field label={`Scrie exact „TRIMITE ${sendCampaign.name}”`} value={sendConfirmation} onChange={setSendConfirmation} /><div className="space-y-1.5"><Label>Programare opțională</Label><Input type="datetime-local" value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} className="border-white/10 bg-white/[0.04]" /><p className="text-[10px] text-slate-500">Lasă liber pentru trimitere imediată; programarea trebuie să fie cu minimum 5 minute în viitor.</p></div></div>}<DialogFooter><Button variant="outline" onClick={() => setSendCampaign(null)}>Anulează</Button><Button disabled={saving || !sendCampaign || sendConfirmation !== `TRIMITE ${sendCampaign.name}`} onClick={() => void sendProviderCampaign()} className="bg-rose-600 hover:bg-rose-500">{saving ? "Se procesează…" : scheduledAt ? "Programează campania" : "Pornește trimiterea"}</Button></DialogFooter></DialogContent></Dialog>
   </div>;
 }
 

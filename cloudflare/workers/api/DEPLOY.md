@@ -52,6 +52,33 @@ salvate în D1, iar livrarea este marcată explicit `failed`, fără succes fals
 Resetarea parolei, formularul CTA și solicitarea unui exemplu folosesc același transport SMTP.
 Datele sunt scrise întâi în D1; un eșec SMTP este înregistrat și returnat explicit frontendului.
 
+## Newsletter în masă prin Resend
+
+Separarea transporturilor este intenționată:
+
+- Cloudflare Email Service / SMTP rămâne pentru confirmarea abonării și toate
+  emailurile esențiale sau tranzacționale;
+- Resend Contacts + Segments + Broadcasts este folosit numai pentru campanii
+  de marketing către abonați confirmați;
+- nicio cheie Resend nu este expusă frontendului și nici salvată în repository.
+
+Workerul așteaptă următoarele valori server-side:
+
+- `RESEND_API_KEY` — secret Resend cu acces la Contacts și Broadcasts;
+- `RESEND_MARKETING_SEGMENT_ID` — segmentul dedicat newsletterului AVYRON;
+- `RESEND_MARKETING_FROM` — expeditor verificat, recomandat pe un subdomeniu
+  separat de traficul tranzacțional, de exemplu `AVYRON <newsletter@news.avyron.ro>`;
+- `RESEND_WEBHOOK_SECRET` — secretul endpointului
+  `POST /api/newsletter/resend/webhook`.
+
+Aceste valori se configurează numai în fluxul de release autorizat. Nu se
+rulează `wrangler secret put` în timpul validării locale, deoarece publică o
+nouă versiune. Webhookul Resend trebuie să includă cel puțin evenimentele
+`contact.updated`, `email.bounced`, `email.complained` și `email.suppressed`.
+
+Panoul intern creează mai întâi un draft Resend. Trimiterea sau programarea
+necesită o acțiune separată și confirmarea textuală a numelui campaniei.
+
 ## Import de conturi
 
 Endpointul `POST /api/admin/import-users` cere întotdeauna `X-Seed-Token`. Nu există

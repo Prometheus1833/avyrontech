@@ -24,6 +24,11 @@ type OptionalIntegrations = {
   FGO_PLATFORM_URL?: string;
   FGO_SERIES?: string;
   FGO_VAT_RATE?: string;
+  /** Resend is used only for consented marketing broadcasts, never essential email. */
+  RESEND_API_KEY?: string;
+  RESEND_MARKETING_SEGMENT_ID?: string;
+  RESEND_MARKETING_FROM?: string;
+  RESEND_WEBHOOK_SECRET?: string;
 };
 
 export type Env = CloudflareBindings & OptionalIntegrations;

@@ -1,7 +1,16 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import type { AppBindings } from "./types";
 import { checkRateLimit, clientIp, hashKey, verifyTurnstile } from "./antispam";
 import { deliverMail, logDelivery } from "./mailer";
+import {
+  createResendBroadcast,
+  resendMarketingStatus,
+  ResendMarketingError,
+  sendResendBroadcast,
+  suppressResendContact,
+  syncResendContact,
+  verifyResendWebhook,
+} from "./resendMarketing";
 import { now, randomHex, sha256, signJwt, verifyJwt } from "./security";
 
 type NewsletterSettings = {
@@ -37,6 +46,9 @@ type Subscriber = {
   unsubscribed_at: number | null;
   last_seen_at: number;
   updated_at: number;
+  resend_contact_id?: string | null;
+  resend_synced_at?: number | null;
+  resend_sync_error?: string | null;
 };
 
 const router = new Hono<AppBindings>();
@@ -49,6 +61,39 @@ const cleanText = (value: unknown, max: number) => String(value || "").trim().sl
 const safeLanguage = (value: unknown): "ro" | "en" => value === "en" ? "en" : "ro";
 const safeSource = (value: unknown) => cleanText(value, 80).replace(/[^a-zA-Z0-9_./:-]/g, "-") || "website";
 const safeInterest = (value: unknown) => cleanText(value, 80).replace(/[^a-zA-Z0-9_./:-]/g, "-") || null;
+
+const marketingError = (error: unknown) => error instanceof Error ? error.message.slice(0, 500) : "Eroare Resend";
+
+async function syncSubscriberMarketing(env: AppBindings["Bindings"], subscriberId: string) {
+  const subscriber = await env.DB.prepare(
+    "SELECT id,email,name,language,status,interest FROM newsletter_subscribers WHERE id = ?",
+  ).bind(subscriberId).first<Subscriber>();
+  if (!subscriber) return;
+  try {
+    if (subscriber.status === "active") {
+      const contactId = await syncResendContact(env, subscriber);
+      await env.DB.prepare(
+        "UPDATE newsletter_subscribers SET resend_contact_id=COALESCE(?,resend_contact_id),resend_synced_at=?,resend_sync_error=NULL WHERE id=?",
+      ).bind(contactId, now(), subscriber.id).run();
+    } else {
+      await suppressResendContact(env, subscriber.email);
+      await env.DB.prepare(
+        "UPDATE newsletter_subscribers SET resend_synced_at=?,resend_sync_error=NULL WHERE id=?",
+      ).bind(now(), subscriber.id).run();
+    }
+  } catch (error) {
+    await env.DB.prepare("UPDATE newsletter_subscribers SET resend_sync_error=? WHERE id=?")
+      .bind(marketingError(error), subscriber.id).run();
+    throw error;
+  }
+}
+
+const backgroundMarketingSync = (c: Context<AppBindings>, subscriberId: string) => {
+  if (!resendMarketingStatus(c.env).configured) return;
+  c.executionCtx.waitUntil(syncSubscriberMarketing(c.env, subscriberId).catch((error) =>
+    console.error(JSON.stringify({ event: "newsletter_resend_sync_failed", subscriberId, error: marketingError(error) })),
+  ));
+};
 
 async function settings(db: D1Database): Promise<NewsletterSettings> {
   const row = await db.prepare("SELECT * FROM newsletter_settings WHERE id = 'global'").first<NewsletterSettings>();
@@ -213,6 +258,7 @@ router.get("/api/newsletter/confirm", async (c) => {
     ).bind(timestamp, timestamp, row.id),
     subscriberEvent(c.env.DB, row.id, "confirmed", "email_confirmation", null),
   ]);
+  backgroundMarketingSync(c, row.id);
   return c.redirect(destination.toString(), 302);
 });
 
@@ -239,6 +285,62 @@ router.post("/api/newsletter/unsubscribe", async (c) => {
       .bind(timestamp, timestamp, subscriberId),
     subscriberEvent(c.env.DB, subscriberId, "unsubscribed", "self_service", null),
   ]);
+  backgroundMarketingSync(c, subscriberId);
+  return c.json({ ok: true });
+});
+
+router.post("/api/newsletter/resend/webhook", async (c) => {
+  const payload = await c.req.text();
+  let event;
+  try {
+    event = verifyResendWebhook(c.env, payload, c.req.raw.headers);
+  } catch (error) {
+    console.warn(JSON.stringify({ event: "resend_webhook_rejected", error: marketingError(error) }));
+    return c.json({ error: { code: "invalid_signature" } }, 400);
+  }
+  const eventId = cleanText(c.req.header("svix-id"), 200);
+  if (!eventId) return c.json({ error: { code: "missing_event_id" } }, 400);
+  const data = event.data || {};
+  const email = cleanText(data.email || (Array.isArray(data.to) ? data.to[0] : ""), 254).toLowerCase() || null;
+  const campaign = typeof data.broadcast_id === "string"
+    ? await c.env.DB.prepare("SELECT id FROM newsletter_campaigns WHERE provider_broadcast_id = ?")
+      .bind(data.broadcast_id).first<{ id: string }>()
+    : null;
+  const recorded = await c.env.DB.prepare(
+    `INSERT OR IGNORE INTO newsletter_provider_events
+      (id,provider,event_type,email,campaign_id,payload_json,created_at,processed_at) VALUES (?,'resend',?,?,?,?,?,?)`,
+  ).bind(eventId, event.type, email, campaign?.id || null, payload, Date.parse(event.created_at || "") || now(), 0).run();
+  if (!recorded.meta.changes) {
+    const stored = await c.env.DB.prepare("SELECT processed_at FROM newsletter_provider_events WHERE id=?")
+      .bind(eventId).first<{ processed_at: number }>();
+    if (stored?.processed_at) return c.json({ ok: true, duplicate: true });
+  }
+
+  if (email && event.type === "contact.updated" && data.unsubscribed === true) {
+    const row = await c.env.DB.prepare("SELECT id,status FROM newsletter_subscribers WHERE email=? COLLATE NOCASE")
+      .bind(email).first<{ id: string; status: Subscriber["status"] }>();
+    if (row && row.status !== "unsubscribed") {
+      const timestamp = now();
+      await c.env.DB.batch([
+        c.env.DB.prepare("UPDATE newsletter_subscribers SET status='unsubscribed',unsubscribed_at=?,resend_synced_at=?,resend_sync_error=NULL,updated_at=? WHERE id=?")
+          .bind(timestamp, timestamp, timestamp, row.id),
+        subscriberEvent(c.env.DB, row.id, "unsubscribed", "resend_webhook", null, { eventId }),
+      ]);
+    }
+  }
+  if (email && ["email.bounced", "email.complained", "email.suppressed"].includes(event.type)) {
+    const row = await c.env.DB.prepare("SELECT id,status FROM newsletter_subscribers WHERE email=? COLLATE NOCASE")
+      .bind(email).first<{ id: string; status: Subscriber["status"] }>();
+    if (row && row.status !== "suppressed") {
+      const timestamp = now();
+      await c.env.DB.batch([
+        c.env.DB.prepare("UPDATE newsletter_subscribers SET status='suppressed',resend_synced_at=?,resend_sync_error=NULL,updated_at=? WHERE id=?")
+          .bind(timestamp, timestamp, row.id),
+        subscriberEvent(c.env.DB, row.id, "suppressed", "resend_webhook", null, { eventId, type: event.type }),
+      ]);
+    }
+  }
+  await c.env.DB.prepare("UPDATE newsletter_provider_events SET processed_at=? WHERE id=?").bind(now(), eventId).run();
   return c.json({ ok: true });
 });
 
@@ -256,7 +358,8 @@ router.get("/api/newsletter/admin", async (c) => {
     c.env.DB.prepare("SELECT status, COUNT(*) AS count FROM newsletter_subscribers GROUP BY status").all<{ status: string; count: number }>(),
     c.env.DB.prepare(`SELECT COUNT(*) AS count FROM newsletter_subscribers ${where}`).bind(...bindings).first<{ count: number }>(),
     c.env.DB.prepare(
-      `SELECT id,email,name,language,status,source,interest,consent_policy_version,requested_at,confirmed_at,unsubscribed_at,last_seen_at,updated_at
+      `SELECT id,email,name,language,status,source,interest,consent_policy_version,requested_at,confirmed_at,unsubscribed_at,last_seen_at,updated_at,
+              resend_contact_id,resend_synced_at,resend_sync_error
        FROM newsletter_subscribers ${where} ORDER BY updated_at DESC LIMIT ? OFFSET ?`,
     ).bind(...bindings, limit, (page - 1) * limit).all<Subscriber>(),
   ]);
@@ -265,6 +368,39 @@ router.get("/api/newsletter/admin", async (c) => {
 });
 
 router.get("/api/newsletter/admin/settings", async (c) => c.json({ data: await settings(c.env.DB) }));
+
+router.get("/api/newsletter/admin/provider", async (c) => {
+  const provider = resendMarketingStatus(c.env);
+  const sync = await c.env.DB.prepare(
+    `SELECT
+      SUM(CASE WHEN status='active' THEN 1 ELSE 0 END) AS active,
+      SUM(CASE WHEN status='active' AND (resend_synced_at IS NULL OR resend_synced_at < updated_at OR resend_sync_error IS NOT NULL) THEN 1 ELSE 0 END) AS pending,
+      SUM(CASE WHEN resend_sync_error IS NOT NULL THEN 1 ELSE 0 END) AS failed
+     FROM newsletter_subscribers`,
+  ).first<{ active: number | null; pending: number | null; failed: number | null }>();
+  return c.json({ data: { ...provider, active: sync?.active || 0, pending: sync?.pending || 0, failed: sync?.failed || 0 } });
+});
+
+router.post("/api/newsletter/admin/provider/sync", async (c) => {
+  if (!resendMarketingStatus(c.env).configured) {
+    return c.json({ error: { code: "resend_unconfigured", message: "Configurează cheia, segmentul și expeditorul Resend" } }, 503);
+  }
+  const { results } = await c.env.DB.prepare(
+    `SELECT id FROM newsletter_subscribers
+      WHERE status='active' AND (resend_synced_at IS NULL OR resend_synced_at < updated_at OR resend_sync_error IS NOT NULL)
+      ORDER BY updated_at ASC LIMIT 25`,
+  ).all<{ id: string }>();
+  let synced = 0;
+  const failed: string[] = [];
+  for (let index = 0; index < results.length; index += 3) {
+    const chunk = results.slice(index, index + 3);
+    await Promise.all(chunk.map(async ({ id }) => {
+      try { await syncSubscriberMarketing(c.env, id); synced += 1; }
+      catch { failed.push(id); }
+    }));
+  }
+  return c.json({ data: { processed: results.length, synced, failed: failed.length, more: results.length === 25 } });
+});
 
 router.patch("/api/newsletter/admin/settings", async (c) => {
   const body: Record<string, unknown> = await c.req.json<Record<string, unknown>>().catch(() => ({}));
@@ -311,6 +447,7 @@ router.post("/api/newsletter/admin/subscribers", async (c) => {
       currentSettings.consent_policy_version, evidence, timestamp, timestamp, timestamp, timestamp),
     subscriberEvent(c.env.DB, subscriberId, "admin_added", source, c.get("userId"), { consentEvidence: evidence }),
   ]);
+  backgroundMarketingSync(c, subscriberId);
   return c.json({ ok: true, id: subscriberId }, 201);
 });
 
@@ -339,6 +476,7 @@ router.patch("/api/newsletter/admin/subscribers/:id", async (c) => {
     ),
     subscriberEvent(c.env.DB, existing.id, status === "suppressed" ? "suppressed" : "admin_updated", "dashboard", c.get("userId"), { status }),
   ]);
+  if (status !== existing.status) backgroundMarketingSync(c, existing.id);
   return c.json({ ok: true });
 });
 
@@ -392,6 +530,9 @@ router.patch("/api/newsletter/admin/campaigns/:id", async (c) => {
   const body: Record<string, unknown> = await c.req.json<Record<string, unknown>>().catch(() => ({}));
   const existing = await c.env.DB.prepare("SELECT * FROM newsletter_campaigns WHERE id = ?").bind(c.req.param("id")).first<Record<string, unknown>>();
   if (!existing) return c.json({ error: { code: "not_found", message: "Campania nu există" } }, 404);
+  if (existing.provider_broadcast_id && ["name", "language", "subject", "preheader", "content", "segment"].some((key) => body[key] !== undefined)) {
+    return c.json({ error: { code: "provider_draft_locked", message: "Draftul creat în Resend este blocat; creează o campanie nouă pentru alt conținut" } }, 409);
+  }
   const status = ["draft", "ready", "archived"].includes(String(body.status)) ? String(body.status) : String(existing.status);
   const language = ["ro", "en", "all"].includes(String(body.language)) ? String(body.language) : String(existing.language);
   await c.env.DB.prepare(
@@ -402,6 +543,75 @@ router.patch("/api/newsletter/admin/campaigns/:id", async (c) => {
     body.segment === undefined ? String(existing.segment_json) : JSON.stringify(body.segment || {}), c.get("userId"), now(), c.req.param("id"),
   ).run();
   return c.json({ ok: true });
+});
+
+router.post("/api/newsletter/admin/campaigns/:id/resend-draft", async (c) => {
+  const campaign = await c.env.DB.prepare("SELECT * FROM newsletter_campaigns WHERE id = ?")
+    .bind(c.req.param("id")).first<Record<string, unknown>>();
+  if (!campaign) return c.json({ error: { code: "not_found", message: "Campania nu există" } }, 404);
+  if (campaign.provider_broadcast_id) {
+    return c.json({ error: { code: "draft_exists", message: "Campania are deja un draft Resend" } }, 409);
+  }
+  if (campaign.status !== "ready") {
+    return c.json({ error: { code: "campaign_not_ready", message: "Marchează campania ca pregătită înainte de exportul în Resend" } }, 409);
+  }
+  try {
+    const providerId = await createResendBroadcast(c.env, {
+      name: String(campaign.name), subject: String(campaign.subject), preheader: String(campaign.preheader || ""),
+      content: String(campaign.content), language: campaign.language as "ro" | "en" | "all",
+    });
+    await c.env.DB.prepare(
+      "UPDATE newsletter_campaigns SET provider_broadcast_id=?,provider_status='provider_draft',provider_error=NULL,updated_by=?,updated_at=? WHERE id=?",
+    ).bind(providerId, c.get("userId"), now(), c.req.param("id")).run();
+    return c.json({ data: { providerBroadcastId: providerId, providerStatus: "provider_draft" } }, 201);
+  } catch (error) {
+    await c.env.DB.prepare("UPDATE newsletter_campaigns SET provider_status='failed',provider_error=?,updated_by=?,updated_at=? WHERE id=?")
+      .bind(marketingError(error), c.get("userId"), now(), c.req.param("id")).run();
+    const status = error instanceof ResendMarketingError ? error.status : 502;
+    return c.json({ error: { code: "resend_draft_failed", message: marketingError(error) } }, status as 400);
+  }
+});
+
+router.post("/api/newsletter/admin/campaigns/:id/send", async (c) => {
+  const campaign = await c.env.DB.prepare("SELECT * FROM newsletter_campaigns WHERE id = ?")
+    .bind(c.req.param("id")).first<Record<string, unknown>>();
+  if (!campaign) return c.json({ error: { code: "not_found", message: "Campania nu există" } }, 404);
+  if (!campaign.provider_broadcast_id || campaign.provider_status !== "provider_draft") {
+    return c.json({ error: { code: "provider_draft_required", message: "Creează și verifică mai întâi draftul Resend" } }, 409);
+  }
+  const provider = resendMarketingStatus(c.env);
+  if (!provider.configured || !provider.webhook) {
+    return c.json({ error: { code: "provider_safety_incomplete", message: "Configurează complet Resend și webhookul de feedback înainte de trimitere" } }, 503);
+  }
+  const unsynced = await c.env.DB.prepare(
+    "SELECT COUNT(*) AS count FROM newsletter_subscribers WHERE status='active' AND (resend_synced_at IS NULL OR resend_synced_at < updated_at OR resend_sync_error IS NOT NULL)",
+  ).first<{ count: number }>();
+  if ((unsynced?.count || 0) > 0) {
+    return c.json({ error: { code: "subscribers_not_synced", message: `Sincronizează mai întâi cei ${unsynced?.count || 0} abonați activi rămași` } }, 409);
+  }
+  const body: Record<string, unknown> = await c.req.json<Record<string, unknown>>().catch(() => ({}));
+  const expected = `TRIMITE ${String(campaign.name)}`;
+  if (body.confirmation !== expected) {
+    return c.json({ error: { code: "confirmation_required", message: `Pentru confirmare scrie exact: ${expected}` } }, 400);
+  }
+  const scheduledAt = cleanText(body.scheduledAt, 80);
+  if (scheduledAt && (!Number.isFinite(Date.parse(scheduledAt)) || Date.parse(scheduledAt) < Date.now() + 5 * 60 * 1000)) {
+    return c.json({ error: { code: "invalid_schedule", message: "Programarea trebuie să fie cu minimum 5 minute în viitor" } }, 400);
+  }
+  try {
+    await sendResendBroadcast(c.env, String(campaign.provider_broadcast_id), scheduledAt || undefined);
+    const timestamp = now();
+    const providerStatus = scheduledAt ? "scheduled" : "queued";
+    await c.env.DB.prepare(
+      "UPDATE newsletter_campaigns SET provider_status=?,scheduled_at=?,sent_at=?,provider_error=NULL,updated_by=?,updated_at=? WHERE id=?",
+    ).bind(providerStatus, scheduledAt ? Date.parse(scheduledAt) : null, scheduledAt ? null : timestamp, c.get("userId"), timestamp, c.req.param("id")).run();
+    return c.json({ data: { providerStatus, scheduledAt: scheduledAt || null } });
+  } catch (error) {
+    await c.env.DB.prepare("UPDATE newsletter_campaigns SET provider_status='provider_draft',provider_error=?,updated_by=?,updated_at=? WHERE id=?")
+      .bind(marketingError(error), c.get("userId"), now(), c.req.param("id")).run();
+    const status = error instanceof ResendMarketingError ? error.status : 502;
+    return c.json({ error: { code: "resend_send_failed", message: marketingError(error) } }, status as 400);
+  }
 });
 
 export const newsletterRouter = router;
