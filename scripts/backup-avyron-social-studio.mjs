@@ -21,6 +21,7 @@ const sources = [
   join(repositoryRoot, "cloudflare", "d1", "migrations", "0036_social_studio_free_credit_policy.sql"),
   join(repositoryRoot, "cloudflare", "d1", "migrations", "0037_social_audience_optimizer.sql"),
   join(repositoryRoot, "cloudflare", "d1", "migrations", "0038_social_studio_library_backup.sql"),
+  join(repositoryRoot, "cloudflare", "d1", "migrations", "0039_social_facebook_canonical_links.sql"),
   join(repositoryRoot, "cloudflare", "workers", "api", "src", "aiProjects.ts"),
   join(repositoryRoot, "cloudflare", "workers", "api", "src", "socialStudioScheduler.ts"),
   join(repositoryRoot, "cloudflare", "workers", "api", "src", "socialStudioBackup.ts"),

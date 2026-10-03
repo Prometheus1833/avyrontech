@@ -242,6 +242,30 @@ async function enqueueDueJobs(env: Env, timestamp: number) {
 }
 
 const allowedChannels = new Set(["facebook", "instagram", "tiktok", "threads", "linkedin", "whatsapp", "messenger", "blog"]);
+const DEFAULT_WEBSITE_SERVICE_URL = "https://avyron.ro/servicii/website-prezentare-profesional";
+const FACEBOOK_URL_PATTERN = /https?:\/\/[^\s<>()]+/gi;
+
+export function canonicalAvyronConversionUrl(raw: unknown, fallback = DEFAULT_WEBSITE_SERVICE_URL) {
+  const candidate = String(raw || "").trim();
+  try {
+    const url = new URL(candidate || fallback);
+    if (!["avyron.ro", "www.avyron.ro"].includes(url.hostname.toLowerCase())) return fallback;
+    const path = url.pathname.replace(/\/+$/, "") || "/";
+    if (path.startsWith("/exemple") || path.startsWith("/examples")) return fallback;
+    if (!["/", "/servicii", "/produse", "/blog"].some((root) => path === root || (root !== "/" && path.startsWith(`${root}/`)))) {
+      return fallback;
+    }
+    return `https://avyron.ro${path}`;
+  } catch {
+    return fallback;
+  }
+}
+
+export function sanitizeFacebookCaptionLinks(caption: string, rawLink: unknown, includeLink = true) {
+  const canonicalLink = canonicalAvyronConversionUrl(rawLink);
+  const cleanCaption = caption.replace(FACEBOOK_URL_PATTERN, "").replace(/[ \t]{2,}/g, " ").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  return includeLink ? `${cleanCaption}\n\n${canonicalLink}`.trim() : cleanCaption;
+}
 
 function parseVariants(raw: string, fallback: ReturnType<typeof parseGeneratedContent>) {
   const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
@@ -263,15 +287,21 @@ function parseVariants(raw: string, fallback: ReturnType<typeof parseGeneratedCo
       : [];
     const linkStrategy = ["native_clickable", "profile_link", "first_comment", "visible_fallback", "none"]
       .includes(String(item.linkStrategy)) ? String(item.linkStrategy) : "visible_fallback";
-    let linkUrl = String(item.linkUrl || "").trim().slice(0, 1_000) || null;
+    const requestedLink = String(item.linkUrl || "").trim().slice(0, 1_000) || null;
+    let linkUrl = requestedLink;
     if (linkUrl) {
       try { if (!/^https?:$/.test(new URL(linkUrl).protocol)) linkUrl = null; } catch { linkUrl = null; }
     }
     const safeZone = item.safeZone && typeof item.safeZone === "object" && !Array.isArray(item.safeZone)
       ? item.safeZone as Record<string, unknown> : {};
+    const linkIsExpected = linkStrategy !== "none" && Boolean(requestedLink);
+    const caption = channel === "facebook"
+      ? sanitizeFacebookCaptionLinks(String(item.caption || fallback.caption), requestedLink, linkIsExpected)
+      : String(item.caption || fallback.caption).trim().slice(0, 8_000);
+    if (channel === "facebook" && linkIsExpected) linkUrl = canonicalAvyronConversionUrl(requestedLink);
     return [{
       channel,
-      caption: String(item.caption || fallback.caption).trim().slice(0, 8_000),
+      caption: caption.slice(0, 8_000),
       hashtags,
       mediaBrief: String(item.mediaBrief || fallback.visualDirection).trim().slice(0, 2_000),
       altText: String(item.altText || "").trim().slice(0, 500),
@@ -346,6 +376,7 @@ async function generateJobDraft(env: Env, job: JobRow, timestamp: number) {
     "Returneaza exclusiv JSON valid cu cheile title, caption, visualDirection, cta, hashtags si variants.",
     "variants este un array; fiecare element are channel, caption, hashtags, cta, mediaBrief, altText, linkUrl, linkStrategy, nativeElements, safeZone si backgroundDirection.",
     "linkStrategy este una dintre native_clickable, profile_link, first_comment, visible_fallback sau none. nativeElements descrie numai functii disponibile nativ pe canal.",
+    "Pentru Facebook foloseste maximum un URL canonic, scurt, fara query, fragment sau UTM vizibil. Sunt permise numai avyron.ro, pagina serviciilor, serviciul exact, produsul exact sau articolul relevant. Nu folosi URL-uri de exemple/demo ori domenii externe ca destinatie de conversie. Daca nu exista o destinatie mai exacta, foloseste https://avyron.ro/servicii/website-prezentare-profesional.",
     `Proiect: ${project.name}. Ton: ${project.brand_tone}.`,
     `Audienta: ${project.target_audience}. Oferta: ${project.core_offer}.`,
     `Reguli proiect: ${project.agent_instructions}.`,
