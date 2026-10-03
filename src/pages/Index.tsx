@@ -79,8 +79,8 @@ const Index = () => {
           image: "/og/home.jpg",
           imageAlt:
             location.pathname === "/en"
-              ? "Avyron — digital agency from Iași, Romania"
-              : "Avyron — agenție digitală din Iași, România",
+              ? "Avyron — websites, apps and digital products"
+              : "Avyron — website-uri, aplicații și produse digitale",
         });
 
         setJsonLd("ld-organization", organizationLd);

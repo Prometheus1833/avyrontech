@@ -341,8 +341,8 @@ export const translations = {
       built: "Construit cu pasiune în România.",
     },
     seo: {
-      title: "Creare site de prezentare și dezvoltare web Iași | Avyron",
-      desc: "Agenție web din Iași: site-uri de prezentare profesionale, magazine online și aplicații web/mobile cu design custom, SEO tehnic, securitate și scalabilitate.",
+      title: "Avyron — Website-uri, aplicații și produse digitale",
+      desc: "Avyron creează experiențe digitale premium — website-uri, aplicații și soluții online construite pentru claritate, performanță și creștere.",
     },
     auth: {
       loginCta: "Conectează-te / Înregistrează-te",
@@ -858,8 +858,8 @@ export const translations = {
       built: "Built with passion in Romania.",
     },
     seo: {
-      title: "Professional business websites & web development | Avyron",
-      desc: "Web agency in Iași, Romania: professional business websites, ecommerce and web/mobile apps with custom design, technical SEO, security and scalability.",
+      title: "Avyron — Websites, apps and digital products",
+      desc: "Avyron creates premium digital experiences — websites, applications and online solutions built for clarity, performance and sustainable growth.",
     },
     auth: {
       loginCta: "Sign in / Sign up",

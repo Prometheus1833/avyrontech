@@ -253,6 +253,18 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     expect(body).not.toContain("Agenție web din Iași · proiecte în România și UE");
   });
 
+  it("ships a professional, location-neutral homepage social preview", () => {
+    const roHead = head(read("/"));
+    const enHead = head(read("/en"));
+
+    expect(roHead).toContain('property="og:title" content="Avyron — Website-uri, aplicații și produse digitale"');
+    expect(roHead).toContain('property="og:description" content="Avyron creează experiențe digitale premium');
+    expect(enHead).toContain('property="og:title" content="Avyron — Websites, apps and digital products"');
+    expect(enHead).toContain('property="og:description" content="Avyron creates premium digital experiences');
+    expect(roHead).not.toContain("Agenție web din Iași");
+    expect(enHead).not.toContain("Web agency in Iași");
+  });
+
   it("keeps non-critical third-party and private UI code out of the homepage critical path", () => {
     const html = read("/");
     const h = head(html);
