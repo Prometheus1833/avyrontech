@@ -2,16 +2,19 @@ import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import {
-  BarChart3, Bell, BookOpen, Bot, Boxes, BriefcaseBusiness, ChevronLeft, Command,
-  CreditCard, FolderKanban, Globe, Image as ImageIcon, LayoutDashboard, Lock,
-  LogOut, Mail, Megaphone, MessageSquare, MessagesSquare, PanelLeftClose, PanelLeftOpen,
-  Receipt, Search, Settings, ShieldCheck, ShoppingCart, Sparkles, Target, User,
-  Users, Wallet, Wrench, BadgePercent,
+  Bell, Bot, ChevronLeft, Command, Ellipsis, Lock, LogOut, Menu,
+  PanelLeftClose, PanelLeftOpen, Search, ShieldCheck, Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { buildAccess, canOpenSection, defaultSection, sectionsFor, type SectionId } from "@/lib/access";
 import logo from "@/assets/avyron-logo.webp";
 import { publicSiteHref } from "@/lib/appHost";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  DASHBOARD_GROUP_LABELS,
+  DASHBOARD_GROUP_ORDER,
+  DASHBOARD_SECTION_META,
+} from "@/components/dashboard/dashboardNavigation";
 
 const ProfileTab = lazy(() => import("@/components/dashboard/ProfileTab").then((m) => ({ default: m.ProfileTab })));
 const SubscriptionsTab = lazy(() => import("@/components/dashboard/SubscriptionsTab").then((m) => ({ default: m.SubscriptionsTab })));
@@ -45,13 +48,6 @@ const StaffProduseTab = lazy(() => import("@/components/dashboard/StaffProduseTa
 const StaffServicesTab = lazy(() => import("@/components/dashboard/StaffServicesTab").then((m) => ({ default: m.StaffServicesTab })));
 const StaffNewsletterTab = lazy(() => import("@/components/dashboard/StaffNewsletterTab"));
 
-const GROUP_LABELS: Record<string, string> = {
-  overview: "Principal", work: "Clienți și livrare", activity: "Activitate",
-  team: "Echipă și cunoaștere", control: "Control AVYRON OS",
-  billing: "Facturare", servicii: "Servicii AVYRON", produse: "Produse AVYRON", account: "Cont",
-};
-const GROUP_ORDER = ["overview", "work", "servicii", "produse", "activity", "team", "control", "billing", "account"];
-
 export default function Profile() {
   const { user, profile, roles, isSuperAdmin, isStaff, isAdmin, signOut } = useAuth();
   const access = useMemo(() => buildAccess({ roles, email: user?.email, superadmin: isSuperAdmin }), [roles, user?.email, isSuperAdmin]);
@@ -60,26 +56,14 @@ export default function Profile() {
   const [tab, setTab] = useState<SectionId>(canOpenSection(requested, access) ? requested as SectionId : defaultSection(access));
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
-
-  const meta: Record<SectionId, { label: string; icon: typeof User }> = useMemo(() => ({
-    overview: { label: "Prezentare generală", icon: LayoutDashboard },
-    profile: { label: "Profil", icon: User }, settings: { label: "Setări", icon: Settings },
-    projects: { label: access.isStaff ? "Proiecte" : "Proiectele mele", icon: FolderKanban },
-    maintenance: { label: "Mentenanță", icon: Wrench }, clients: { label: "Clienți", icon: Users },
-    domains: { label: "Domenii", icon: Globe }, media: { label: "Media", icon: ImageIcon }, leads: { label: "Leaduri & CRM", icon: Target },
-    subscriptions: { label: "Abonamente", icon: CreditCard }, cart: { label: "Coș", icon: ShoppingCart }, invoices: { label: "Facturi", icon: Receipt },
-    collection: { label: "Colecția mea", icon: Boxes },
-    stats: { label: "Vizite și statistici", icon: BarChart3 }, tickets: { label: "Suport", icon: MessageSquare },
-    "staff-tickets": { label: "Solicitări clienți", icon: MessageSquare }, "demo-requests": { label: "Solicitări demo", icon: MessageSquare },
-    intern: { label: "Chat intern", icon: MessagesSquare }, announcements: { label: "Anunțuri", icon: Megaphone },
-    resources: { label: "Documente și resurse", icon: BookOpen }, "team-staff": { label: "Echipă și personal", icon: Users },
-    payments: { label: "Plăți", icon: Wallet }, finance: { label: "Financiar", icon: Wallet }, promotions: { label: "Promoții", icon: BadgePercent },
-    newsletter: { label: "Newsletter", icon: Mail },
-    "ai-os": { label: "Agenți AI", icon: Sparkles }, "servicii-avyron": { label: "Servicii AVYRON", icon: BriefcaseBusiness }, "produse-avyron": { label: "Produse AVYRON", icon: Boxes }, "os-centers": { label: "Centre AVYRON OS", icon: BriefcaseBusiness },
-  }), [access.isStaff]);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const allowed = useMemo(() => sectionsFor(access), [access]);
-  const groups = GROUP_ORDER.map((group) => ({ id: group, label: GROUP_LABELS[group], items: allowed.filter((section) => section.group === group) })).filter((group) => group.items.length);
+  const groups = DASHBOARD_GROUP_ORDER.map((group) => ({ id: group, label: DASHBOARD_GROUP_LABELS[group], items: allowed.filter((section) => section.group === group) })).filter((group) => group.items.length);
+  const mobilePrimary = new Set<SectionId>(["overview", "projects", access.isStaff ? "leads" : "invoices", ...(access.isSuperAdmin ? ["ai-os" as SectionId] : [])]);
+  const mobileMoreGroups = groups
+    .map((group) => ({ ...group, items: group.items.filter((section) => !mobilePrimary.has(section.id)) }))
+    .filter((group) => group.items.length);
   const displayName = profile?.display_name || user?.display_name || user?.email?.split("@")[0] || "utilizator";
   const roleLabel = isSuperAdmin ? "Super administrator" : isAdmin ? "Administrator" : isStaff ? "Membru al echipei" : "Client";
 
@@ -105,14 +89,17 @@ export default function Profile() {
   const openSection = (section: SectionId) => {
     if (canOpenSection(section, access)) setTab(section);
     else if (["security", "automations"].includes(String(section)) && access.isStaff) setTab("os-centers");
+    setMobileMenuOpen(false);
   };
 
   const NavButton = ({ section, mobile = false }: { section: SectionId; mobile?: boolean }) => {
-    const Icon = meta[section].icon;
+    const sectionMeta = DASHBOARD_SECTION_META[section];
+    const Icon = sectionMeta.icon;
+    const label = section === "projects" && !access.isStaff ? "Proiectele mele" : sectionMeta.label;
     const active = tab === section;
-    return <button type="button" role="tab" aria-selected={active} aria-label={meta[section].label} title={sidebarCollapsed ? meta[section].label : undefined} onClick={() => setTab(section)} className={`${mobile ? "flex min-w-0 flex-1 flex-col" : "w-full flex-row"} group flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-left text-xs font-medium transition lg:justify-start ${active ? "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white shadow-[0_10px_30px_-16px_rgba(124,58,237,.9)]" : "text-slate-500 hover:bg-white/[0.05] hover:text-slate-200"}`}>
+    return <button type="button" role="tab" aria-selected={active} aria-label={label} title={sidebarCollapsed ? label : undefined} onClick={() => openSection(section)} className={`${mobile ? "flex min-w-0 flex-1 flex-col" : "w-full flex-row"} group flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-left text-xs font-medium transition lg:justify-start ${active ? "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white shadow-[0_10px_30px_-16px_rgba(124,58,237,.9)]" : "text-slate-500 hover:bg-white/[0.05] hover:text-slate-200"}`}>
       <Icon className="size-4 shrink-0" strokeWidth={2.1} />
-      {mobile ? <span className="max-w-full truncate text-[9px]">{meta[section].label.replace("Prezentare generală", "Acasă")}</span> : !sidebarCollapsed && <span className="truncate">{meta[section].label}</span>}
+      {mobile ? <span className="max-w-full truncate text-[9px]">{sectionMeta.mobileLabel || label}</span> : !sidebarCollapsed && <span className="truncate">{label}</span>}
     </button>;
   };
 
@@ -146,14 +133,23 @@ export default function Profile() {
       </aside>
 
       <div className="min-w-0 flex-1 pb-20 lg:pb-0">
-        <header className="sticky top-0 z-30 border-b border-white/[0.07] bg-[#080d1b]/85 px-3 py-3 backdrop-blur-xl sm:px-5 lg:px-6"><div className="mx-auto flex max-w-[1500px] items-center gap-3">
-          <a href={publicSiteHref()} aria-label="Înapoi la site" data-testid="page-back-link" className="rounded-xl p-2 text-slate-600 hover:bg-white/[0.05] hover:text-slate-300"><ChevronLeft className="size-5" /></a>
-          <button type="button" onClick={() => setCommandOpen(true)} className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2.5 text-left text-xs text-slate-600 transition hover:border-violet-400/25 hover:text-slate-400 sm:max-w-xl"><Search className="size-4 shrink-0" /><span className="truncate">Caută clienți, proiecte, leaduri, facturi…</span><kbd className="ml-auto hidden rounded border border-white/10 bg-black/20 px-1.5 py-0.5 font-mono text-[10px] sm:inline">⌘K</kbd></button>
-          {access.isSuperAdmin && <button type="button" onClick={() => setTab("ai-os")} className="hidden items-center gap-2 rounded-xl border border-violet-400/20 bg-violet-500/10 px-3 py-2.5 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/20 sm:inline-flex"><Sparkles className="size-4" /> Întreabă AVY</button>}
-          <button type="button" onClick={() => setTab("overview")} aria-label="Vezi prioritățile de azi" title="Priorități și alerte" className="relative rounded-xl p-2.5 text-slate-500 hover:bg-white/[0.05] hover:text-slate-200"><Bell className="size-4" /></button>
-          <button type="button" onClick={() => void signOut().then(() => window.location.assign("/"))} aria-label="Deconectare" title="Deconectare" className="rounded-xl p-2.5 text-slate-600 hover:bg-rose-400/10 hover:text-rose-300"><LogOut className="size-4" /></button>
-          <span className="hidden items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1.5 text-[10px] text-slate-500 xl:inline-flex">{isSuperAdmin ? <Lock className="size-3" /> : <ShieldCheck className="size-3" />}{roleLabel}</span>
-        </div></header>
+        <header className="sticky top-0 z-30 border-b border-white/[0.07] bg-[#080d1b]/90 px-3 py-2.5 backdrop-blur-xl sm:px-5 lg:px-6">
+          <div className="mx-auto flex max-w-[1500px] items-center gap-2.5">
+            <button type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Deschide toate secțiunile" className="rounded-xl p-2 text-slate-400 hover:bg-white/[0.05] hover:text-slate-200 lg:hidden"><Menu className="size-5" /></button>
+            <a href={publicSiteHref()} aria-label="Înapoi la site" data-testid="page-back-link" className="hidden rounded-xl p-2 text-slate-600 hover:bg-white/[0.05] hover:text-slate-300 lg:inline-flex"><ChevronLeft className="size-5" /></a>
+            <button type="button" onClick={() => openSection("overview")} className="mr-auto flex items-center gap-2 lg:hidden" aria-label="Deschide prezentarea generală">
+              <img src={logo} alt="" className="size-7 rounded-lg ring-1 ring-white/10" />
+              <span className="font-display text-xs font-bold tracking-[0.08em] text-white">AVYRON <span className="text-violet-300">OS</span></span>
+            </button>
+            <button type="button" onClick={() => setCommandOpen(true)} aria-label="Caută clienți, proiecte, leaduri, facturi" className="rounded-xl p-2 text-slate-500 transition hover:bg-white/[0.05] hover:text-slate-200 lg:hidden"><Search className="size-4" /></button>
+            <button type="button" onClick={() => setCommandOpen(true)} className="hidden min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2.5 text-left text-xs text-slate-600 transition hover:border-violet-400/25 hover:text-slate-400 sm:max-w-xl lg:flex"><Search className="size-4 shrink-0" /><span className="truncate">Caută clienți, proiecte, leaduri, facturi…</span><kbd className="ml-auto rounded border border-white/10 bg-black/20 px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd></button>
+            {access.isSuperAdmin && <button type="button" onClick={() => openSection("ai-os")} className="hidden items-center gap-2 rounded-xl border border-violet-400/20 bg-violet-500/10 px-3 py-2.5 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/20 sm:inline-flex"><Sparkles className="size-4" /> Întreabă AVY</button>}
+            <button type="button" onClick={() => openSection("overview")} aria-label="Vezi prioritățile de azi" title="Priorități și alerte" className="relative rounded-xl p-2 text-slate-500 hover:bg-white/[0.05] hover:text-slate-200"><Bell className="size-4" /><span aria-hidden className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-fuchsia-400 ring-2 ring-[#080d1b]" /></button>
+            <button type="button" onClick={() => openSection("profile")} aria-label="Deschide profilul" className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-xl bg-violet-500/15 text-[10px] font-semibold text-violet-100 ring-1 ring-white/10">{user?.avatar_url ? <img src={user.avatar_url} alt="" className="size-full object-cover" /> : displayName.slice(0, 2).toUpperCase()}</button>
+            <button type="button" onClick={() => void signOut().then(() => window.location.assign("/"))} aria-label="Deconectare" title="Deconectare" className="hidden rounded-xl p-2.5 text-slate-600 hover:bg-rose-400/10 hover:text-rose-300 lg:inline-flex"><LogOut className="size-4" /></button>
+            <span className="hidden items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1.5 text-[10px] text-slate-500 xl:inline-flex">{isSuperAdmin ? <Lock className="size-3" /> : <ShieldCheck className="size-3" />}{roleLabel}</span>
+          </div>
+        </header>
 
         <div className="mx-auto max-w-[1500px] p-3 sm:p-5 lg:p-6">
           <Suspense fallback={contentFallback}>
@@ -181,10 +177,45 @@ export default function Profile() {
         </div>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-white/[0.08] bg-[#080d1b]/95 px-2 pb-[max(.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden" aria-label="Navigare mobilă">
-        <NavButton section="overview" mobile /><NavButton section="projects" mobile />{access.isStaff ? <NavButton section="leads" mobile /> : <NavButton section="invoices" mobile />}{access.isSuperAdmin ? <NavButton section="ai-os" mobile /> : <NavButton section="profile" mobile />}{access.isStaff && <NavButton section="os-centers" mobile />}
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-white/[0.08] bg-[#080d1b]/95 px-2 pb-[max(.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden" aria-label="Navigare mobilă">
+        <NavButton section="overview" mobile />
+        {access.isStaff ? <NavButton section="leads" mobile /> : <NavButton section="invoices" mobile />}
+        <button type="button" aria-label="Deschide AVY" aria-pressed={tab === "ai-os"} onClick={() => access.isSuperAdmin ? openSection("ai-os") : setCommandOpen(true)} className="group -mt-5 flex min-w-0 flex-col items-center justify-center gap-1 text-[9px] font-medium text-violet-100">
+          <span className="grid size-12 place-items-center rounded-full border border-violet-300/30 bg-gradient-to-br from-violet-500 to-indigo-700 shadow-[0_0_28px_rgba(124,58,237,.55)] ring-4 ring-[#080d1b]"><Sparkles className="size-5" /></span>
+          <span>AVY</span>
+        </button>
+        <NavButton section="projects" mobile />
+        <button type="button" aria-label="Deschide mai multe secțiuni" aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(true)} className={`group flex min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[9px] font-medium transition ${mobilePrimary.has(tab) ? "text-slate-500" : "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white"}`}><Ellipsis className="size-4" /><span>Mai multe</span></button>
       </nav>
     </Tabs>
+    <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+      <SheetContent side="left" className="dark w-[88vw] max-w-sm overflow-y-auto border-white/[0.08] bg-[#090e1d] p-0 text-slate-100">
+        <SheetHeader className="border-b border-white/[0.07] p-5 text-left">
+          <div className="flex items-center gap-3">
+            <img src={logo} alt="" className="size-10 rounded-xl ring-1 ring-white/10" />
+            <div><SheetTitle className="font-display text-base text-white">AVYRON <span className="text-violet-300">OS</span></SheetTitle><SheetDescription className="text-xs text-slate-500">Toate funcțiile autorizate, într-un singur loc.</SheetDescription></div>
+          </div>
+        </SheetHeader>
+        <nav className="space-y-5 p-4 pb-28" aria-label="Toate secțiunile AVYRON OS">
+          {mobileMoreGroups.map((group) => <section key={group.id}>
+            <p className="mb-2 px-2 font-mono text-[9px] uppercase tracking-[0.18em] text-slate-600">{group.label}</p>
+            <div className="grid grid-cols-2 gap-2">
+              {group.items.map((section) => {
+                const sectionMeta = DASHBOARD_SECTION_META[section.id];
+                const Icon = sectionMeta.icon;
+                const active = tab === section.id;
+                return <button key={section.id} type="button" onClick={() => openSection(section.id)} aria-current={active ? "page" : undefined} className={`flex min-h-20 flex-col items-start justify-between rounded-xl border p-3 text-left transition ${active ? "border-violet-400/35 bg-violet-500/15 text-white" : "border-white/[0.07] bg-white/[0.025] text-slate-300 hover:border-violet-400/25"}`}><Icon className="size-4 text-violet-300" /><span className="mt-3 text-xs font-medium leading-tight">{sectionMeta.label}</span></button>;
+              })}
+            </div>
+          </section>)}
+          <div className="grid grid-cols-2 gap-2 border-t border-white/[0.07] pt-4">
+            {access.isSuperAdmin && <Link to="/intern/ai-projects" onClick={() => setMobileMenuOpen(false)} className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3 text-xs text-slate-300"><Bot className="mb-3 size-4 text-cyan-300" />Proiecte AI</Link>}
+            {access.isSuperAdmin && <Link to="/intern/avy-engine" onClick={() => setMobileMenuOpen(false)} className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3 text-xs text-slate-300"><Command className="mb-3 size-4 text-fuchsia-300" />AVY Engine</Link>}
+          </div>
+          <button type="button" onClick={() => void signOut().then(() => window.location.assign("/"))} className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-400/15 bg-rose-400/[0.06] px-4 py-3 text-xs font-semibold text-rose-200"><LogOut className="size-4" /> Deconectare</button>
+        </nav>
+      </SheetContent>
+    </Sheet>
     <Suspense fallback={null}><CommandCenter open={commandOpen} onOpenChange={setCommandOpen} access={access} onNavigate={openSection} /></Suspense>
   </main>;
 }

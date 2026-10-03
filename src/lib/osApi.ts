@@ -48,6 +48,20 @@ export type OsIntegration = {
   errorCode: string | null;
 };
 
+export type OsLeadStage = {
+  status: "new" | "contacted" | "qualified" | "won" | "lost";
+  total: number;
+};
+
+export type OsActiveProject = {
+  id: string;
+  slug: string;
+  name: string;
+  status: string;
+  bannerStatus: string;
+  updatedAt: number;
+};
+
 export type OsOverview = {
   generatedAt: number;
   role: "super_admin" | "staff" | "client";
@@ -69,6 +83,8 @@ export type OsOverview = {
   agentRuns: OsAgentRun[];
   health: OsHealth[];
   integrations: OsIntegration[];
+  leadPipeline: OsLeadStage[];
+  activeProjects: OsActiveProject[];
 };
 
 export const osApi = {
