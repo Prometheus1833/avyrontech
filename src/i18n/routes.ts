@@ -14,6 +14,7 @@ export const ROUTE_ALTERNATES: Array<{ ro: string; en: string }> = [
   { ro: "/despre-noi", en: "/en/about" },
   { ro: "/termeni", en: "/en/terms" },
   { ro: "/politica-cookies", en: "/en/cookie-policy" },
+  { ro: "/configurator", en: "/en/configurator" },
   { ro: "/servicii/website-prezentare-profesional", en: "/en/services/professional-presentation-website" },
   { ro: "/servicii/creare-logo-3d-dinamic-cinematic", en: "/en/services/cinematic-dynamic-3d-logo-design" },
   { ro: "/servicii/creare-logo-3d-dinamic-cinematic/creeaza", en: "/en/services/cinematic-dynamic-3d-logo-design/create" },

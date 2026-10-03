@@ -36,6 +36,8 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
   const cases: Array<[string, string, string]> = [
     ["/", "ro", "https://avyron.ro/"],
     ["/servicii", "ro", "https://avyron.ro/servicii"],
+    ["/configurator", "ro", "https://avyron.ro/configurator"],
+    ["/en/configurator", "en", "https://avyron.ro/en/configurator"],
     ["/servicii/website-prezentare-profesional", "ro", "https://avyron.ro/servicii/website-prezentare-profesional"],
     ["/en/services/professional-presentation-website", "en", "https://avyron.ro/en/services/professional-presentation-website"],
     ["/en/services", "en", "https://avyron.ro/en/services"],
