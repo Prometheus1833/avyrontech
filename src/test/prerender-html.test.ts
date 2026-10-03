@@ -45,6 +45,11 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     ["/en/about", "en", "https://avyron.ro/en/about"],
     ["/termeni", "ro", "https://avyron.ro/termeni"],
     ["/en/terms", "en", "https://avyron.ro/en/terms"],
+    ["/it/prodotti", "it", "https://avyron.ro/it/prodotti"],
+    ["/hu/termekek", "hu", "https://avyron.ro/hu/termekek"],
+    ["/de/produkte", "de", "https://avyron.ro/de/produkte"],
+    ["/fr/produits", "fr", "https://avyron.ro/fr/produits"],
+    ["/pl/produkty", "pl", "https://avyron.ro/pl/produkty"],
   ];
 
   it.each(cases)("%s ships lang, title, description and self-canonical", (route, lang, canonical) => {
@@ -80,6 +85,25 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     }
   });
 
+  it("international Products hubs publish reciprocal seven-language hreflang", () => {
+    const expected = {
+      ro: "/produse",
+      en: "/en/products",
+      it: "/it/prodotti",
+      hu: "/hu/termekek",
+      de: "/de/produkte",
+      fr: "/fr/produits",
+      pl: "/pl/produkty",
+    };
+    for (const route of Object.values(expected)) {
+      const h = head(read(route));
+      for (const [language, alternate] of Object.entries(expected)) {
+        expect(h).toContain(`hreflang="${language}" href="https://avyron.ro${alternate}"`);
+      }
+      expect(h).toContain('hreflang="x-default" href="https://avyron.ro/en/products"');
+    }
+  });
+
   it("publishes reciprocal language alternates and representative images in the sitemap", () => {
     const sitemap = readFileSync(resolve(distDir, "sitemap.xml"), "utf8");
     expect(sitemap).toContain('xmlns:xhtml="http://www.w3.org/1999/xhtml"');
@@ -89,6 +113,10 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     );
     expect(sitemap).toContain(
       '<xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/services" />',
+    );
+    expect(sitemap).toContain('<loc>https://avyron.ro/de/produkte</loc>');
+    expect(sitemap).toContain(
+      '<xhtml:link rel="alternate" hreflang="pl" href="https://avyron.ro/pl/produkty" />',
     );
     expect(sitemap).toContain("<loc>https://avyron.ro/</loc>");
     expect(sitemap).toContain(

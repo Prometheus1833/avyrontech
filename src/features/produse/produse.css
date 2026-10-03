@@ -88,3 +88,167 @@
 
 @keyframes pa-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 @keyframes pa-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+/* International Products hub: a lightweight orbital identity. The Three.js
+   backdrop remains progressively enhanced; this composition is pure CSS and
+   therefore survives prerendering, low-power devices and crawler snapshots. */
+.pa-international {
+  --pa-hue: 263;
+  background:
+    radial-gradient(70rem 48rem at 78% 8%, hsl(263 88% 58% / 0.11), transparent 62%),
+    radial-gradient(52rem 38rem at 12% 30%, hsl(197 92% 52% / 0.08), transparent 68%),
+    hsl(var(--background));
+}
+
+.pa-international-fallback {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(80% 60% at 76% 18%, hsl(265 82% 38% / 0.32), transparent 68%),
+    radial-gradient(70% 55% at 12% 72%, hsl(197 88% 34% / 0.22), transparent 72%);
+}
+
+.pa-locale-switcher { max-width: min(100%, 25rem); }
+
+.pa-europe-orbit {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, hsl(264 85% 62% / 0.18), transparent 26%),
+    radial-gradient(circle at 50% 50%, transparent 48%, hsl(197 92% 62% / 0.08) 49%, transparent 50%);
+  filter: drop-shadow(0 45px 70px hsl(264 88% 28% / 0.28));
+}
+
+.pa-europe-orbit::before,
+.pa-europe-orbit::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.pa-europe-orbit::before {
+  inset: 5%;
+  border: 1px solid hsl(var(--foreground) / 0.08);
+  background: repeating-conic-gradient(from 0deg, hsl(var(--foreground) / 0.07) 0 1deg, transparent 1deg 18deg);
+  -webkit-mask: radial-gradient(transparent 58%, #000 59% 60%, transparent 61%);
+  mask: radial-gradient(transparent 58%, #000 59% 60%, transparent 61%);
+  animation: pa-orbit-spin 28s linear infinite;
+}
+
+.pa-europe-orbit::after {
+  inset: 23%;
+  border: 1px dashed hsl(264 88% 70% / 0.22);
+  animation: pa-orbit-spin 36s linear infinite reverse;
+}
+
+.pa-europe-core {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: clamp(7rem, 26vw, 10rem);
+  aspect-ratio: 1;
+  place-content: center;
+  border: 1px solid hsl(var(--foreground) / 0.16);
+  border-radius: 50%;
+  background: linear-gradient(145deg, hsl(var(--card) / 0.9), hsl(264 72% 20% / 0.72));
+  box-shadow:
+    inset 0 1px 0 hsl(0 0% 100% / 0.18),
+    0 0 0 18px hsl(264 90% 60% / 0.04),
+    0 0 80px hsl(264 88% 52% / 0.34);
+  text-align: center;
+}
+
+.pa-europe-core span {
+  font-family: var(--pa-mono);
+  font-size: clamp(1.35rem, 5vw, 2rem);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.pa-europe-core small {
+  margin-top: 0.25rem;
+  color: hsl(var(--muted-foreground));
+  font-family: var(--pa-mono);
+  font-size: 0.48rem;
+  letter-spacing: 0.28em;
+}
+
+.pa-europe-ring {
+  position: absolute;
+  inset: 14%;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  pointer-events: none;
+}
+
+.pa-europe-ring-a {
+  border-top-color: hsl(264 90% 72% / 0.72);
+  border-right-color: hsl(197 92% 64% / 0.22);
+  animation: pa-orbit-spin 13s linear infinite;
+}
+
+.pa-europe-ring-b {
+  inset: 31%;
+  border-bottom-color: hsl(197 92% 64% / 0.65);
+  border-left-color: hsl(264 90% 72% / 0.2);
+  animation: pa-orbit-spin 9s linear infinite reverse;
+}
+
+.pa-europe-node {
+  --node-angle: calc(var(--node-index) * 51.428deg);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  display: grid;
+  width: clamp(2rem, 8vw, 2.75rem);
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid hsl(var(--foreground) / 0.14);
+  border-radius: 50%;
+  background: hsl(var(--card) / 0.84);
+  box-shadow: 0 10px 35px hsl(222 40% 2% / 0.36);
+  color: hsl(var(--muted-foreground));
+  font-family: var(--pa-mono);
+  font-size: clamp(0.48rem, 1.5vw, 0.62rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  transform:
+    translate(-50%, -50%)
+    rotate(var(--node-angle))
+    translateX(clamp(8.2rem, 32vw, 12.2rem))
+    rotate(calc(var(--node-angle) * -1));
+}
+
+.pa-europe-node.is-active {
+  border-color: hsl(264 92% 74% / 0.7);
+  background: hsl(264 82% 58% / 0.25);
+  box-shadow: 0 0 0 6px hsl(264 90% 65% / 0.08), 0 0 28px hsl(264 90% 62% / 0.42);
+  color: hsl(var(--foreground));
+  animation: pa-node-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes pa-orbit-spin { to { transform: rotate(360deg); } }
+@keyframes pa-node-pulse { 50% { box-shadow: 0 0 0 11px hsl(264 90% 65% / 0), 0 0 42px hsl(264 90% 62% / 0.56); } }
+
+@media (max-width: 520px) {
+  .pa-europe-node {
+    transform:
+      translate(-50%, -50%)
+      rotate(var(--node-angle))
+      translateX(clamp(7.2rem, 35vw, 9rem))
+      rotate(calc(var(--node-angle) * -1));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pa-europe-orbit::before,
+  .pa-europe-orbit::after,
+  .pa-europe-ring,
+  .pa-europe-node.is-active {
+    animation: none !important;
+  }
+}

@@ -1,6 +1,7 @@
 import { FEATURES } from "@/config/features";
 import type { Lang } from "@/i18n/translations";
 import { ITEMS } from "../data/items";
+import { PRODUCT_HUB_PATHS, productHubAlternates } from "../data/productLocales";
 import { EUR_FOR_RON, TYPE_BY_ID } from "../data/taxonomy";
 import type { CatalogItem } from "../data/types";
 import { alternatePath, homePath, itemPath } from "./paths";
@@ -28,11 +29,16 @@ export type PageSeo = {
 export async function applySeo({ title, description, path, lang, image = "/og/home.jpg", imageAlt, jsonLd = [] }: PageSeo) {
   const [{ setPageMeta, setJsonLd }] = await Promise.all([import("@/lib/seo")]);
   const alt = alternatePath(path, lang === "ro" ? "en" : "ro");
+  const isProductsHub = path === PRODUCT_HUB_PATHS.ro || path === PRODUCT_HUB_PATHS.en;
   setPageMeta({
     title,
     description,
     path,
-    alternates: lang === "ro" ? { ro: path, en: alt ?? path } : { ro: alt ?? path, en: path },
+    alternates: isProductsHub
+      ? productHubAlternates()
+      : lang === "ro"
+        ? { ro: path, en: alt ?? path }
+        : { ro: alt ?? path, en: path },
     image,
     imageAlt,
     ...(FEATURES.produseLive ? {} : { robots: "noindex, nofollow" }),

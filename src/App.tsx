@@ -39,6 +39,7 @@ const LogoDinamic3D = lazyWithRetry(() => import("./pages/services/LogoDinamic3D
 const LogoStudio = lazyWithRetry(() => import("./pages/services/LogoStudioPage.tsx"));
 const AiOsConsole = lazyWithRetry(() => import("./pages/intern/AiOs.tsx"));
 const ProduseApp = lazyWithRetry(() => import("./features/produse/ProduseApp.tsx"));
+const InternationalProductsHome = lazyWithRetry(() => import("./features/produse/pages/InternationalHome.tsx"));
 const AiProjects = lazyWithRetry(() => import("./pages/intern/AiProjects.tsx"));
 const AiProjectPage = lazyWithRetry(() => import("./pages/intern/AiProjectPage.tsx"));
 const Finance = lazyWithRetry(() => import("./pages/intern/Finance.tsx"));
@@ -174,6 +175,11 @@ const App = () => (
                   <>
                     <Route path="/produse/*" element={<ProduseApp />} />
                     <Route path="/en/products/*" element={<ProduseApp />} />
+                    <Route path="/it/prodotti" element={<InternationalProductsHome lang="it" />} />
+                    <Route path="/hu/termekek" element={<InternationalProductsHome lang="hu" />} />
+                    <Route path="/de/produkte" element={<InternationalProductsHome lang="de" />} />
+                    <Route path="/fr/produits" element={<InternationalProductsHome lang="fr" />} />
+                    <Route path="/pl/produkty" element={<InternationalProductsHome lang="pl" />} />
                   </>
                 )}
                 <Route path="/configurator" element={<Configurator />} />
@@ -357,8 +363,8 @@ const App = () => (
             </Routes>
           </Suspense>
         </AppHostGuard>
+        <CookieBanner />
       </BrowserRouter>
-      <CookieBanner />
       <DeferredGlobalUi />
     </AuthProvider>
   </LanguageProvider>

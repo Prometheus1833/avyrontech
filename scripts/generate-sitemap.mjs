@@ -30,6 +30,8 @@ function sourceFiles(route) {
   if (route === "/biblioteca" || route === "/en/library") return ["src/pages/Biblioteca.tsx", "src/data/bibliotecaCatalog.ts"];
   if (route.startsWith("/produse") || route.startsWith("/en/products"))
     return ["src/features/produse/data/items.ts", "src/features/produse/ProduseApp.tsx"];
+  if (/^\/(it\/prodotti|hu\/termekek|de\/produkte|fr\/produits|pl\/produkty)$/.test(route))
+    return ["src/features/produse/data/internationalCopy.ts", "src/features/produse/pages/InternationalHome.tsx"];
   if (route.startsWith("/servicii/") || route.startsWith("/en/services/")) return ["src/pages/services/ServicePage.tsx", "src/data/services.ts"];
   if (route === "/servicii" || route === "/en/services") return ["src/pages/Services.tsx"];
   if (route === "/despre-noi" || route === "/en/about") return ["src/pages/AboutUs.tsx"];
