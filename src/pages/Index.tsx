@@ -41,7 +41,15 @@ const Deferred = ({
     observer.observe(ref.current);
     return () => observer.disconnect();
   }, [forceReady, ready]);
-  return <div ref={ref} style={!ready ? { minHeight } : undefined}>{ready ? children : null}</div>;
+  // Fiecare secțiune are propriul Suspense: când chunk-ul ei se încarcă, doar
+  // ea afișează un placeholder de aceeași înălțime. Un Suspense comun ascundea
+  // toate secțiunile deja afișate, pagina se scurta și browserul arunca
+  // vizitatorul înapoi la zona de servicii.
+  return (
+    <div ref={ref} style={!ready ? { minHeight } : undefined}>
+      {ready ? <Suspense fallback={<div style={{ minHeight }} />}>{children}</Suspense> : null}
+    </div>
+  );
 };
 
 const Index = () => {
@@ -87,23 +95,19 @@ const Index = () => {
       <Nav />
       <Hero />
       <AgencyServices />
-      <Suspense fallback={<div className="h-8" />}>
-        <Deferred minHeight={520}><Problem /></Deferred>
-        <Deferred minHeight={720} forceReady={location.hash === "#exemple"}><Examples /></Deferred>
-        <div className="h-8 md:h-16" aria-hidden />
-        <Deferred minHeight={500} forceReady={location.hash === "#proces"}><Process /></Deferred>
-        <Deferred minHeight={360}><DomainCheck /></Deferred>
-        <Deferred minHeight={440}><Benefits /></Deferred>
-        <Deferred minHeight={220}><HomepageQuickLinks /></Deferred>
-        <Deferred minHeight={520} forceReady={location.hash === "#cta"}><CTA /></Deferred>
-        <Deferred minHeight={320}><Socials /></Deferred>
-        {/* Footerul trebuie să existe chiar și când vizitatorul sare direct la
-            finalul paginii folosind bara de scroll. Altfel, extinderea
-            secțiunilor lazy îl poate împinge din nou în afara zonei observate
-            înainte să fie montat. */}
-        <Deferred minHeight={260} forceReady><Footer /></Deferred>
-        <ContactBar />
-      </Suspense>
+      <Deferred minHeight={520}><Problem /></Deferred>
+      <Deferred minHeight={720} forceReady={location.hash === "#exemple"}><Examples /></Deferred>
+      <div className="h-8 md:h-16" aria-hidden />
+      <Deferred minHeight={500} forceReady={location.hash === "#proces"}><Process /></Deferred>
+      <Deferred minHeight={360}><DomainCheck /></Deferred>
+      <Deferred minHeight={440}><Benefits /></Deferred>
+      <Deferred minHeight={220}><HomepageQuickLinks /></Deferred>
+      <Deferred minHeight={520} forceReady={location.hash === "#cta"}><CTA /></Deferred>
+      <Deferred minHeight={320}><Socials /></Deferred>
+      {/* Footerul trebuie să existe chiar și când vizitatorul sare direct la
+          finalul paginii folosind bara de scroll. */}
+      <Deferred minHeight={260} forceReady><Footer /></Deferred>
+      <Suspense fallback={null}><ContactBar /></Suspense>
     </main>
   );
 };
