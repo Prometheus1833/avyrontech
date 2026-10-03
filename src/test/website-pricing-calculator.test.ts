@@ -16,17 +16,17 @@ describe("website pricing and estimator", () => {
     const website = getService("premium-website");
 
     expect(DEFAULT_DISPLAY_CURRENCY).toBe("RON");
-    expect(website.priceRon).toBe(890);
-    expect(website.priceEur).toBe(170);
-    expect(WEBSITE_BASE_PRICE_RON).toBe(890);
-    expect(WEBSITE_BASE_PRICE_EUR).toBe(170);
-    expect(fixedWebsiteEur(890)).toBe(170);
+    expect(website.priceRon).toBe(1150);
+    expect(website.priceEur).toBe(220);
+    expect(WEBSITE_BASE_PRICE_RON).toBe(1150);
+    expect(WEBSITE_BASE_PRICE_EUR).toBe(220);
+    expect(fixedWebsiteEur(1150)).toBe(220);
   });
 
-  it("uses the 890 RON package as the minimum estimate", () => {
+  it("uses the 1,150 RON package as the minimum estimate", () => {
     expect(calculateWebsiteEstimate(DEFAULT_WEBSITE_ESTIMATOR_SELECTION)).toEqual({
-      lowRon: 890,
-      highRon: 990,
+      lowRon: 1150,
+      highRon: 1250,
       daysMin: 3,
       daysMax: 5,
       profile: "essential",
@@ -40,8 +40,8 @@ describe("website pricing and estimator", () => {
       addons: ["bilingual", "booking", "catalog", "motion", "integrations"],
     });
 
-    expect(result.lowRon).toBe(4_740);
-    expect(result.highRon).toBe(5_400);
+    expect(result.lowRon).toBe(5_000);
+    expect(result.highRon).toBe(5_700);
     expect(result.daysMin).toBe(16);
     expect(result.daysMax).toBe(18);
     expect(result.profile).toBe("signature");

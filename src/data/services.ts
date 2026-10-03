@@ -177,8 +177,8 @@ const CATALOG: Service[] = [
     category: "presence",
     icon: "globe",
     path: SERVICE_ROUTES.website,
-    priceRon: 890,
-    priceEur: 170,
+    priceRon: 1150,
+    priceEur: 220,
     from: true,
     duration: { ro: "2–5 zile", en: "2–5 days" },
     accent: {
@@ -196,9 +196,9 @@ const CATALOG: Service[] = [
         kicker: "Produs principal",
         subtitle: "Site de prezentare la cheie, optimizat pentru clienți",
         tagline: "Un site care vinde, nu doar arată bine.",
-        metaTitle: "Site Prezentare Profesional — site profesional de la 890 lei | Avyron",
+        metaTitle: "Site Prezentare Profesional — site profesional de la 1.150 lei | Avyron",
         metaDescription:
-          "Site de prezentare premium, livrat la cheie într-un termen agreat: design custom, SEO tehnic, panou de administrare, email pe domeniu și suport definit în ofertă. De la 890 lei.",
+          "Site de prezentare premium, livrat la cheie într-un termen agreat: design custom, SEO tehnic, panou de administrare, email pe domeniu și suport definit în ofertă. De la 1.150 lei.",
         heroTitle: "Site Prezentare Profesional",
         heroLead:
           "Site complet, construit de la zero pe identitatea afacerii tale — rapid, sigur, pregătit tehnic pentru indexare și pentru campanii de atragere a clienților după lansare.",
@@ -279,7 +279,7 @@ const CATALOG: Service[] = [
         faq: [
           {
             q: "Cât costă un site de prezentare profesional?",
-            a: "Pachetul Site Prezentare Profesional pornește de la 890 lei (170€ la afișarea în euro) și include design custom, conținut, SEO tehnic, panou de administrare și email pe domeniu. Durata suportului și prețul final depind de numărul de pagini, funcționalități și oferta agreată.",
+            a: "Pachetul Site Prezentare Profesional pornește de la 1.150 lei (220€ la afișarea în euro) și include design custom, conținut, SEO tehnic, panou de administrare și email pe domeniu. Durata suportului și prețul final depind de numărul de pagini, funcționalități și oferta agreată.",
           },
           {
             q: "În cât timp este gata site-ul?",
@@ -404,9 +404,9 @@ const CATALOG: Service[] = [
         kicker: "Main product",
         subtitle: "Turnkey presentation website, built to convert",
         tagline: "A website that sells, not just looks good.",
-        metaTitle: "Professional Presentation Website — from 890 RON | Avyron",
+        metaTitle: "Professional Presentation Website — from 1,150 RON | Avyron",
         metaDescription:
-          "Turnkey premium presentation website delivered on an agreed schedule: custom design, technical SEO, admin panel, domain email and support defined in the proposal. From 890 RON.",
+          "Turnkey premium presentation website delivered on an agreed schedule: custom design, technical SEO, admin panel, domain email and support defined in the proposal. From 1,150 RON.",
         heroTitle: "Premium Presentation Website",
         heroLead:
           "A complete website built from scratch around your brand — fast, secure, technically ready for indexing and for customer-acquisition campaigns after launch.",
@@ -487,7 +487,7 @@ const CATALOG: Service[] = [
         faq: [
           {
             q: "How much does a professional presentation website cost?",
-            a: "The Professional Presentation Website package starts at 890 RON (a fixed €170 display price) and includes custom design, content, technical SEO, an admin panel and domain email. Support duration and final pricing depend on the agreed scope.",
+            a: "The Professional Presentation Website package starts at 1,150 RON (a fixed €220 display price) and includes custom design, content, technical SEO, an admin panel and domain email. Support duration and final pricing depend on the agreed scope.",
           },
           {
             q: "How long does it take?",
