@@ -8,6 +8,12 @@ import retuvo from "@/assets/portfolio/retuvo.jpg";
 import cofetariadulcedor from "@/assets/portfolio/cofetariadulcedor.jpg";
 import studiomaradesign from "@/assets/portfolio/studiomaradesign.jpg";
 import pensiuneacerbul from "@/assets/portfolio/pensiuneacerbul.jpg";
+import luminaBotez from "@/assets/portfolio/lumina-botez.webp";
+import verdia from "@/assets/portfolio/verdia.webp";
+import pungiplast from "@/assets/portfolio/pungiplast.webp";
+import detectivIcm from "@/assets/portfolio/detectiv-icm.webp";
+import craitaDinulescu from "@/assets/portfolio/craita-dinulescu.webp";
+import tipografiaUmc from "@/assets/portfolio/tipografia-umc.webp";
 
 type L = { ro: string; en: string };
 export type PortfolioItem = {
@@ -44,13 +50,31 @@ export const PORTFOLIO: PortfolioItem[] = [
   { key: "miago", name: "Miago.ro", href: "https://miago.ro", external: true, image: miago,
     tag: { ro: "Platformă web + aplicație", en: "Web platform + app" },
     desc: { ro: "Anunțuri auto (autoturisme, camioane, utilaje) într-un concept nou și intuitiv.", en: "Vehicle listings (cars, trucks, machinery) in a fresh, intuitive concept." } },
-  { key: "cofetariadulcedor", name: "cofetariadulcedor.ro", href: "/examples/cofetariadulcedor.ro", external: false, image: cofetariadulcedor,
-    tag: { ro: "Exemplu · Cofetărie", en: "Example · Pastry shop" },
+  { key: "lumina-botez", name: "Lumina Botez", href: "https://demo1.avyron.eu", external: true, image: luminaBotez,
+    tag: { ro: "Atelier pentru evenimente", en: "Event atelier" },
+    desc: { ro: "Lumânări pentru botez și cununie, mărturii și trusouri personalizate, cu ofertare directă.", en: "Baptism and wedding candles, favors and personalized sets, with direct quote requests." } },
+  { key: "verdia", name: "VERDIA", href: "https://demo2.avyron.eu", external: true, image: verdia,
+    tag: { ro: "Magazin naturist", en: "Natural products store" },
+    desc: { ro: "Suplimente din plante organizate după nevoie, catalog clar, ghid de alegere și cumpărare online.", en: "Plant-based supplements organized by need, with a clear catalog, selection guide and online shopping." } },
+  { key: "pungiplast", name: "PungiPlast", href: "https://exemplu1.avyron.eu", external: true, image: pungiplast,
+    tag: { ro: "Producător și distribuție", en: "Manufacturing and distribution" },
+    desc: { ro: "Catalog B2B de pungi pentru magazine și distribuitori, cu producție proprie și ofertare rapidă.", en: "B2B bag catalog for retailers and distributors, with in-house manufacturing and fast quotes." } },
+  { key: "detectiv-icm", name: "Detectiv ICM", href: "https://detectiv-icm.avyron.eu", external: true, image: detectivIcm,
+    tag: { ro: "Investigații private", en: "Private investigations" },
+    desc: { ro: "Servicii de detectiv licențiat și consultanță criminologică, prezentate sobru și confidențial.", en: "Licensed private investigation and criminology consulting services, presented discreetly and professionally." } },
+  { key: "craita-dinulescu", name: "Crăița Dinulescu", href: "https://dinulescu-craita-consultant-financiar.avyron.eu", external: true, image: craitaDinulescu,
+    tag: { ro: "Consultanță financiară", en: "Financial consulting" },
+    desc: { ro: "Consultanță financiară, fiscală și contabilă pentru antreprenori, cu programare directă a discuției.", en: "Financial, tax and accounting consulting for entrepreneurs, with direct consultation booking." } },
+  { key: "tipografia-umc", name: "Tipografia UMC", href: "https://umc.avyron.eu", external: true, image: tipografiaUmc,
+    tag: { ro: "Tipografie industrială", en: "Industrial printing" },
+    desc: { ro: "Tipar offset, digital și large format, ambalaje și finisări premium într-un flux complet de producție.", en: "Offset, digital and large-format printing, packaging and premium finishing in one production workflow." } },
+  { key: "cofetariadulcedor", name: "Cofetăria Dulce Dor", href: "/examples/cofetariadulcedor.ro", external: false, image: cofetariadulcedor,
+    tag: { ro: "Cofetărie artizanală", en: "Artisan pastry shop" },
     desc: { ro: "Meniu sezonier, torturi pe comandă și comenzi instant prin WhatsApp.", en: "Seasonal menu, custom cakes and instant WhatsApp orders." } },
-  { key: "studiomaradesign", name: "studiomaradesign.ro", href: "/examples/studiomaradesign.ro", external: false, image: studiomaradesign,
-    tag: { ro: "Exemplu · Design interior", en: "Example · Interior design" },
+  { key: "studiomaradesign", name: "Studio Mara Design", href: "/examples/studiomaradesign.ro", external: false, image: studiomaradesign,
+    tag: { ro: "Design interior", en: "Interior design" },
     desc: { ro: "Proiecte rezidențiale și comerciale, proces transparent și formular de consultanță.", en: "Residential and commercial projects, clear process and consultation form." } },
-  { key: "pensiuneacerbul", name: "pensiuneacerbul.ro", href: "/examples/pensiuneacerbul.ro", external: false, image: pensiuneacerbul,
-    tag: { ro: "Exemplu · Pensiune", en: "Example · Guesthouse" },
+  { key: "pensiuneacerbul", name: "Pensiunea Cerbul", href: "/examples/pensiuneacerbul.ro", external: false, image: pensiuneacerbul,
+    tag: { ro: "Turism și rezervări", en: "Travel and bookings" },
     desc: { ro: "Camere, facilități și rezervări directe pentru o pensiune montană.", en: "Rooms, amenities and direct bookings for a mountain guesthouse." } },
 ];
