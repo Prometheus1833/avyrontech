@@ -77,7 +77,7 @@ const TeaserCard = ({ plan, category, accent, anchor, productKey, price, seconda
       </p>
       <p className="relative mt-3 text-[13px] leading-relaxed text-foreground/70">{text.bestFor}</p>
       <ul className="relative mt-4 space-y-2">
-        {text.features.slice(0, 4).map((feature) => (
+        {text.features.slice(0, category.key === "site" ? 6 : 4).map((feature) => (
           <li key={feature} className="flex items-start gap-2 text-[13px] leading-snug text-foreground/85">
             <Check className={`mt-0.5 size-3.5 shrink-0 ${accent.text}`} aria-hidden />
             <span>{feature}</span>
@@ -143,9 +143,9 @@ const PlanTeaser = ({ category, accent, productName, productKey }: Props) => {
         </p>
       </Reveal>
 
-      <div className="mt-9 grid gap-4 md:grid-cols-3 md:items-center">
+      <div className="mt-9 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:items-center md:overflow-visible md:pb-0">
         {category.plans.map((plan, index) => (
-          <Reveal key={plan.key} delay={index * 70} as="article" className="h-full">
+          <Reveal key={plan.key} delay={index * 70} as="article" className="h-full w-[78vw] max-w-[18rem] shrink-0 snap-center md:w-auto md:max-w-none">
             <TeaserCard
               plan={plan}
               category={category}

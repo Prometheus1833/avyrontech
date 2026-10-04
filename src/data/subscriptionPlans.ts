@@ -144,13 +144,13 @@ const SITE: SubscriptionCategory = {
       title: "Site de prezentare",
       kicker: "Colaborare lunară",
       lead: "Un site lăsat nesupravegheat pierde întâi viteză, apoi poziții în Google și abia la final clienți. Abonamentele de mai jos țin site-ul actualizat, rapid și indexat corect, cu un om din echipă care îți răspunde direct.",
-      note: "Hosting, certificat SSL și email pe domeniu sunt incluse în toate cele trei trepte.",
+      note: "Hostingul și mentenanța tehnică sunt incluse în toate cele trei trepte.",
     },
     en: {
       title: "Presentation website",
       kicker: "Monthly collaboration",
       lead: "An unattended website loses speed first, then Google rankings, and only at the end customers. These plans keep your site updated, fast and properly indexed, with a real person from the team answering you directly.",
-      note: "Hosting, SSL certificate and email on your domain are included in all three tiers.",
+      note: "Hosting and technical maintenance are included in all three tiers.",
     },
   },
   plans: [
@@ -168,11 +168,11 @@ const SITE: SubscriptionCategory = {
         bestFor: "Site-uri cu conținut stabil, unde contează uptime-ul și securitatea, nu volumul de modificări.",
         summary: "Ne ocupăm de toată partea tehnică — actualizări, backup, monitorizare și mici corecturi de text. Tu nu mai atingi nimic și nu mai plătești separat hostingul.",
         features: [
+          "Hosting și mentenanță tehnică incluse",
           "Actualizări tehnice și de securitate lunare",
           "Backup săptămânal cu restaurare la cerere",
           "Monitorizare uptime din 5 în 5 minute",
           "3 modificări de text sau imagine pe lună",
-          "Hosting, SSL și email pe domeniu incluse",
           "Suport pe email și WhatsApp, răspuns în 24h",
         ],
         includes: [
@@ -190,11 +190,11 @@ const SITE: SubscriptionCategory = {
         bestFor: "Sites with stable content where uptime and security matter more than the number of edits.",
         summary: "We handle the whole technical side — updates, backups, monitoring and small copy fixes. You stop touching anything and stop paying separately for hosting.",
         features: [
+          "Hosting and technical maintenance included",
           "Monthly technical and security updates",
           "Weekly backups with restore on request",
           "Uptime monitoring every 5 minutes",
           "3 text or image changes per month",
-          "Hosting, SSL and email on your domain included",
           "Email and WhatsApp support, 24h response",
         ],
         includes: [
@@ -222,10 +222,10 @@ const SITE: SubscriptionCategory = {
         summary: "Pe lângă partea tehnică, lucrăm activ la conținut, viteză și SEO. La final de lună primești un raport cu ce s-a schimbat și ce urmează.",
         features: [
           "Tot din pachetul Plus",
+          "Hosting și mentenanță tehnică incluse",
           "10 modificări de conținut pe lună",
-          "Backup zilnic automat, păstrat 30 de zile",
-          "Optimizări de viteză și Core Web Vitals",
-          "Ajustări SEO on-page și date structurate",
+          "Verificare lunară Search Console",
+          "O pagină nouă de serviciu pe lună",
           "Raport lunar de trafic cu recomandări",
         ],
         includes: [
@@ -249,10 +249,10 @@ const SITE: SubscriptionCategory = {
         summary: "Beyond the technical side we actively work on content, speed and SEO. At the end of the month you get a report on what changed and what comes next.",
         features: [
           "Everything in Plus",
+          "Hosting and technical maintenance included",
           "10 content changes per month",
-          "Automatic daily backups, kept 30 days",
-          "Speed and Core Web Vitals optimisation",
-          "On-page SEO tuning and structured data",
+          "Monthly Search Console review",
+          "One new service page per month",
           "Monthly traffic report with recommendations",
         ],
         includes: [
@@ -285,11 +285,11 @@ const SITE: SubscriptionCategory = {
         summary: "Devenim echipa ta digitală: modificări nelimitate, SEO continuu, intervenții prioritare și o ședință lunară în care decidem împreună următorii pași.",
         features: [
           "Tot din pachetul Pro",
+          "Hosting și mentenanță tehnică incluse",
           "Modificări și pagini noi nelimitate",
-          "SEO continuu: conținut, linkuri interne, tehnic",
-          "Analiză de trafic și comportament pe site",
+          "Teste A/B pentru formulare și conversii",
+          "Audit tehnic complet trimestrial",
           "Prioritate maximă la intervenții, răspuns în 2h",
-          "Ședință lunară de strategie, unu la unu",
         ],
         includes: [
           "Plan de creștere trimestrial, construit și actualizat împreună cu tine",
@@ -312,11 +312,11 @@ const SITE: SubscriptionCategory = {
         summary: "We become your digital team: unlimited changes, continuous SEO, priority interventions and a monthly session where we decide the next steps together.",
         features: [
           "Everything in Pro",
+          "Hosting and technical maintenance included",
           "Unlimited changes and new pages",
-          "Continuous SEO: content, internal links, technical",
-          "Traffic and on-site behaviour analysis",
+          "A/B testing for forms and conversions",
+          "Full quarterly technical audit",
           "Top priority interventions, 2h response",
-          "Monthly one-to-one strategy session",
         ],
         includes: [
           "A quarterly growth plan, built and updated together with you",

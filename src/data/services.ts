@@ -193,12 +193,12 @@ const CATALOG: Service[] = [
     copy: {
       ro: {
         name: "Site Prezentare Profesional",
-        kicker: "Produs principal",
-        subtitle: "Site de prezentare la cheie, optimizat pentru clienți",
+        kicker: "Serviciu web complet",
+        subtitle: "Prezență digitală clară, rapidă și construită pentru conversii",
         tagline: "Un site care vinde, nu doar arată bine.",
-        metaTitle: "Site Prezentare Profesional — site profesional de la 1.150 lei | Avyron",
+        metaTitle: "Site Prezentare Profesional — design, SEO și performanță | Avyron",
         metaDescription:
-          "Site de prezentare premium, livrat la cheie într-un termen agreat: design custom, SEO tehnic, panou de administrare, email pe domeniu și suport definit în ofertă. De la 1.150 lei.",
+          "Site de prezentare construit strategic pentru încredere și conversii: design personalizat, SEO tehnic, administrare simplă și performanță măsurabilă.",
         heroTitle: "Site Prezentare Profesional",
         heroLead:
           "Site complet, construit de la zero pe identitatea afacerii tale — rapid, sigur, pregătit tehnic pentru indexare și pentru campanii de atragere a clienților după lansare.",
@@ -279,7 +279,7 @@ const CATALOG: Service[] = [
         faq: [
           {
             q: "Cât costă un site de prezentare profesional?",
-            a: "Pachetul Site Prezentare Profesional pornește de la 1.150 lei (220€ la afișarea în euro) și include design custom, conținut, SEO tehnic, panou de administrare și email pe domeniu. Durata suportului și prețul final depind de numărul de pagini, funcționalități și oferta agreată.",
+            a: "Configurația de bază pornește de la 1.150 lei și include design personalizat, conținut, SEO tehnic, panou de administrare și email pe domeniu. Prețul final depinde de structură, funcționalități și oferta agreată.",
           },
           {
             q: "În cât timp este gata site-ul?",
@@ -347,7 +347,7 @@ const CATALOG: Service[] = [
         },
         tech: {
           title: "Tehnologii moderne, de nivel profesionist",
-          lead: "Folosim același stack ca produsele cu trafic mare: randare rapidă, livrare la edge și zero dependențe ascunse de furnizor.",
+          lead: "Alegem tehnologia după obiectiv: încărcare rapidă pentru vizitatori, administrare simplă pentru echipă și o bază care poate crește fără reconstrucții inutile.",
           groups: [
             {
               name: "Interfață",
@@ -401,12 +401,12 @@ const CATALOG: Service[] = [
       },
       en: {
         name: "Premium Presentation Website",
-        kicker: "Main product",
-        subtitle: "Turnkey presentation website, built to convert",
+        kicker: "Complete web service",
+        subtitle: "A clear, fast digital presence built for conversion",
         tagline: "A website that sells, not just looks good.",
-        metaTitle: "Professional Presentation Website — from 1,150 RON | Avyron",
+        metaTitle: "Professional Presentation Website — design, SEO and performance | Avyron",
         metaDescription:
-          "Turnkey premium presentation website delivered on an agreed schedule: custom design, technical SEO, admin panel, domain email and support defined in the proposal. From 1,150 RON.",
+          "A strategically built presentation website for trust and conversion, with custom design, technical SEO, simple administration and measurable performance.",
         heroTitle: "Premium Presentation Website",
         heroLead:
           "A complete website built from scratch around your brand — fast, secure, technically ready for indexing and for customer-acquisition campaigns after launch.",
@@ -487,7 +487,7 @@ const CATALOG: Service[] = [
         faq: [
           {
             q: "How much does a professional presentation website cost?",
-            a: "The Professional Presentation Website package starts at 1,150 RON (a fixed €220 display price) and includes custom design, content, technical SEO, an admin panel and domain email. Support duration and final pricing depend on the agreed scope.",
+            a: "The base configuration starts at 1,150 RON and includes custom design, content, technical SEO, an admin panel and domain email. Final pricing depends on the agreed structure and features.",
           },
           {
             q: "How long does it take?",
@@ -555,7 +555,7 @@ const CATALOG: Service[] = [
         },
         tech: {
           title: "Modern, professional technology",
-          lead: "We use the same stack that powers high-traffic products: fast rendering, edge delivery and no hidden vendor lock-in.",
+          lead: "We choose technology around the goal: fast loading for visitors, simple management for your team and a foundation that can grow without unnecessary rebuilds.",
           groups: [
             {
               name: "Interface",
