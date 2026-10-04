@@ -1,7 +1,7 @@
 import type { Env } from "./types";
 import { now, sha256 } from "./security";
 
-export const SOCIAL_BACKUP_SCHEMA_VERSION = 41;
+export const SOCIAL_BACKUP_SCHEMA_VERSION = 42;
 
 export type SocialBackupScope = "configuration" | "content" | "full";
 

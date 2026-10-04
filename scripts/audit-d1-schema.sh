@@ -57,18 +57,18 @@ unsafe_social_backup_state=$(sqlite3 "$audit_database" \
               AND (manifest_object_key IS NULL OR manifest_sha256 IS NULL OR byte_size <= 0))
         + (SELECT COUNT(*) FROM ai_social_assets
             WHERE status = 'active' AND length(sha256) < 32);")
-unsafe_friend_request_state=$(sqlite3 "$audit_database" \
+unsafe_admin_only_audience_state=$(sqlite3 "$audit_database" \
   "SELECT (SELECT COUNT(*) FROM ai_social_policies
-            WHERE incoming_friend_request_mode <> 'admin_only')
+            WHERE incoming_friend_request_mode <> 'admin_only' OR follow_back_mode <> 'admin_only')
         + (SELECT COUNT(*) FROM ai_social_tool_policies
-            WHERE capability = 'incoming_friend_request_management'
+            WHERE capability IN ('incoming_friend_request_management','follow_back_management')
               AND (status <> 'disabled' OR max_calls_per_day <> 0));")
 
 if [[ "$foreign_key_issues" != "0" || "$integrity" != "ok" || "$legacy_ai_timestamps" != "0" \
    || "$platform_owners" != "1" || "$unsafe_social_sources" != "0" || "$invalid_lead_state" != "0" \
    || "$unsafe_engine_state" != "0" || "$unsafe_audience_state" != "0" \
-   || "$unsafe_social_backup_state" != "0" || "$unsafe_friend_request_state" != "0" ]]; then
-  echo "D1 schema audit failed: foreign_keys=$foreign_key_issues integrity=$integrity legacy_ai_timestamps=$legacy_ai_timestamps platform_owners=$platform_owners unsafe_social_sources=$unsafe_social_sources invalid_lead_state=$invalid_lead_state unsafe_engine_state=$unsafe_engine_state unsafe_audience_state=$unsafe_audience_state unsafe_social_backup_state=$unsafe_social_backup_state unsafe_friend_request_state=$unsafe_friend_request_state" >&2
+   || "$unsafe_social_backup_state" != "0" || "$unsafe_admin_only_audience_state" != "0" ]]; then
+  echo "D1 schema audit failed: foreign_keys=$foreign_key_issues integrity=$integrity legacy_ai_timestamps=$legacy_ai_timestamps platform_owners=$platform_owners unsafe_social_sources=$unsafe_social_sources invalid_lead_state=$invalid_lead_state unsafe_engine_state=$unsafe_engine_state unsafe_audience_state=$unsafe_audience_state unsafe_social_backup_state=$unsafe_social_backup_state unsafe_admin_only_audience_state=$unsafe_admin_only_audience_state" >&2
   exit 1
 fi
 

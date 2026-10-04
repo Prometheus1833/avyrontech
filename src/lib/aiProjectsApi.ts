@@ -76,6 +76,7 @@ export type AiSocialPolicy = {
   industry_rotation_json: string; last_planned_at: number | null;
   credit_mode: "free_only" | "approved_paid";
   incoming_friend_request_mode: "admin_only";
+  follow_back_mode: "admin_only";
 };
 
 export type AiSocialToolPolicy = {
