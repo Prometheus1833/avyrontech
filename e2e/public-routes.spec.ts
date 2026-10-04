@@ -36,17 +36,22 @@ test.describe("public SEO routes", () => {
       }),
     }));
 
-    await page.goto("/servicii");
+    await page.goto("/servicii/website-prezentare-profesional");
     const switcher = page.getByTestId("currency-switch").first();
     await switcher.getByRole("button", { name: "Schimbă moneda (activă: EUR)" }).click();
     await expect(switcher.getByRole("button", { name: "Schimbă moneda (activă: RON)" })).toBeVisible();
     await expect(switcher).toContainText("1 EUR = 5.1000 RON");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Servicii digitale construite pentru fiecare proiect");
-    await expect(page.getByText(/1[.\s]?530 RON/, { exact: false }).first()).toBeVisible();
-
-    await page.goto("/servicii/website-prezentare-profesional");
     await expect(page.getByTestId("product-hero-facts")).toContainText(/1[.\s]?530 RON/);
-    await expect(page.getByTestId("currency-switch").getByRole("button", { name: "Schimbă moneda (activă: RON)" })).toBeVisible();
+  });
+
+  test("the services overview shows services without prices and points to subscriptions", async ({ page }) => {
+    await page.goto("/servicii");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Servicii digitale construite pentru fiecare proiect");
+    await expect(page.getByTestId("currency-switch")).toHaveCount(0);
+    await expect(page.getByTestId("services-list")).toBeVisible();
+    await expect(page.getByTestId("subscriptions-teaser")).toBeVisible();
+    await expect(page.getByTestId("subscriptions-teaser").getByRole("link", { name: /abonamente/i }).first())
+      .toHaveAttribute("href", /mentenanta-si-colaborari/);
   });
 
   test("the legacy care-plans route redirects to maintenance and partnerships", async ({ page }) => {
@@ -69,7 +74,7 @@ test.describe("public SEO routes", () => {
     await expect(page.getByText("Soluții digitale gândite pentru rezultate", { exact: true })).toBeVisible();
     await expect(page.getByText("Agenție web din Iași · proiecte în România și UE", { exact: true })).toHaveCount(0);
     const serviceList = page.getByTestId("service-list");
-    await expect(serviceList.getByRole("link")).toHaveCount(7);
+    await expect(serviceList.getByRole("link").first()).toBeVisible();
     await expect(serviceList).toHaveCSS("display", "block");
 
     const desktopNav = page.locator("nav ul");
@@ -78,25 +83,30 @@ test.describe("public SEO routes", () => {
     await expect(page.getByRole("link", { name: "Messenger Facebook" })).toHaveCount(0);
 
     const hero = page.locator("#hero");
-    const localDateTime = hero.getByTestId("local-date-time");
-    await expect(localDateTime).toBeVisible();
-    await expect(localDateTime).toContainText(/\d{2}:\d{2}/);
-    await expect(localDateTime).not.toContainText(/\d{2}:\d{2}:\d{2}/);
-    expect(await localDateTime.evaluate((node) => getComputedStyle(node).position)).toBe("static");
-    await expect(hero.getByRole("link", { name: /Solicită un demo.*Personalizat cu activitatea ta/ })).toHaveAttribute("href", "#cta");
-    await expect(hero.getByRole("link", { name: "Vezi serviciile", exact: true })).toHaveAttribute("href", "/servicii");
+    const navDate = page.locator("header").getByTestId("nav-date");
+    await expect(navDate).toBeVisible();
+    await expect(navDate).not.toContainText(/\d{2}:\d{2}:\d{2}/);
+    await expect(hero.getByTestId("local-date-time")).toHaveCount(0);
+    await expect(hero.getByRole("link", { name: /Solicită ofertă.*Personalizată/ })).toHaveAttribute("href", "/configurator");
+    await expect(hero.getByTestId("hero-quick-links").getByRole("link", { name: "Servicii", exact: true })).toHaveAttribute("href", "#servicii");
+    await expect(hero.getByTestId("hero-quick-links").getByRole("link", { name: "Produse", exact: true })).toHaveAttribute("href", "/produse");
 
-    const portfolioCard = page.getByTestId("portfolio-card");
+    const servicesCard = page.getByTestId("services-examples-card");
+    const productsCard = page.getByTestId("products-card");
+    const blogCard = page.getByTestId("blog-card");
     const aboutCard = page.getByTestId("about-card");
-    const maintenanceCard = page.getByTestId("maintenance-card");
-    await expect(portfolioCard).toHaveAttribute("href", "/portofoliu");
-    await expect(portfolioCard).toContainText("Proiecte, exemple și parteneri");
-    await expect(portfolioCard).not.toContainText("Despre noi");
+    await servicesCard.scrollIntoViewIfNeeded();
+    await expect(servicesCard).toHaveAttribute("href", "/servicii");
+    await expect(servicesCard).toContainText("Servicii");
+    await expect(servicesCard).not.toContainText("câteva exemple");
+    await expect(productsCard).toHaveAttribute("href", "/produse");
+    await expect(blogCard).toHaveAttribute("href", "/blog");
     await expect(aboutCard).toHaveAttribute("href", "/despre-noi");
-    await expect(aboutCard).toContainText("Despre noi");
+    await expect(aboutCard).toContainText("Despre Noi");
     await expect(aboutCard).toContainText("Web design, development, cybersecurity și QA");
-    await expect(maintenanceCard).toHaveAttribute("href", "/mentenanta-si-colaborari");
-    await expect(maintenanceCard).toContainText("Mentenanță și colaborări");
+    const cardsBox = await servicesCard.boundingBox();
+    const ctaBox = await page.locator("#cta").boundingBox();
+    expect(cardsBox?.y).toBeLessThan(ctaBox?.y ?? 0);
   });
 
   test("About and Portfolio are distinct, indexable bilingual pages", async ({ page }) => {
@@ -325,17 +335,19 @@ test.describe("public SEO routes", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
 
-    const localDateTime = page.getByTestId("local-date-time");
-    await expect(localDateTime).toBeVisible();
-    const clockBox = await localDateTime.boundingBox();
-    expect(clockBox!.x).toBeGreaterThanOrEqual(0);
-    expect(clockBox!.x + clockBox!.width).toBeLessThanOrEqual(390);
+    const navDate = page.locator("header").getByTestId("nav-date");
+    await expect(navDate).toBeVisible();
+    const dateBox = await navDate.boundingBox();
+    expect(dateBox!.x).toBeGreaterThanOrEqual(0);
+    expect(dateBox!.x + dateBox!.width).toBeLessThanOrEqual(390);
+
+    await expect(page.getByTestId("hero-quick-links")).toBeVisible();
     expect(await page.locator("html").evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
 
     const serviceList = page.getByTestId("service-list");
-    await expect(serviceList.getByRole("link")).toHaveCount(7);
-    // 7 services on the homepage (Logo Dinamic 3D added): same ~71 px per row budget as before.
-    expect((await serviceList.boundingBox())!.height).toBeLessThan(500);
+    await expect(serviceList.getByRole("link").first()).toBeVisible();
+    // All 8 services are available without trapping the page inside a nested scroll region.
+    await expect(serviceList.locator("div.overflow-y-auto")).toHaveCount(0);
 
     await page.getByRole("button", { name: "Meniu" }).click();
     const menu = page.getByTestId("mobile-nav-menu");

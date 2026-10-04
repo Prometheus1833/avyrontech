@@ -28,7 +28,7 @@ const ExamplePage = () => {
       {/* Banner Avyron — minim, sticky, ca să fie evident că e exemplu */}
       <div className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur">
         <div className="max-w-6xl mx-auto px-4 h-11 flex items-center justify-between text-xs">
-          <PageBackLink to="/portofoliu" label="Înapoi" title="Înapoi la portofoliu" />
+          <PageBackLink to="/servicii/website-prezentare-profesional#portofoliu" label="Înapoi" title="Înapoi la portofoliu" />
           <a href="/#hero" className="flex items-center gap-2" aria-label="Avyron — mergi la hero">
             <span className="hidden sm:inline text-muted-foreground">Exemplu găzduit de</span>
             <img src={logo} alt="Avyron" width={20} height={20} className="size-5 rounded object-cover" />

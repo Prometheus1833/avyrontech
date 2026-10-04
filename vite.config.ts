@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     // Shaderele Bibliotecii sunt fișiere .glsl importate ca string-uri.
-    glsl({ compress: mode !== "development" }),
+    glsl(),
     mode === "development" && componentTagger(),
     // Lovable and Cloudflare Pages use the plain static Vite build. The
     // Cloudflare plugin is enabled only for the optional standalone site

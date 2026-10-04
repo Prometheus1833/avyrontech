@@ -1,4 +1,5 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import PageBackLink from "@/components/site/PageBackLink";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowDown } from "lucide-react";
 
@@ -247,8 +248,9 @@ const Biblioteca = () => {
         <ContextBar origin={origin} lang={lang} />
       ) : (
         <div className="sticky top-0 z-40 border-b border-white/10 bg-[#07080d]/80 backdrop-blur">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2.5 sm:px-6">
-            <Link to={lang === "ro" ? "/" : "/en"} className="flex items-center gap-2 text-sm">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
+            <PageBackLink to={lang === "ro" ? "/" : "/en"} label={lang === "ro" ? "Înapoi" : "Back"} inverse />
+            <Link to={lang === "ro" ? "/" : "/en"} className="mr-auto flex items-center gap-2 text-sm">
               <img src={logo} alt="" width={20} height={20} className="size-5 rounded object-cover" />
               <span className="font-semibold">Avyron</span>
               <span className="text-white/40">/ {lang === "ro" ? "Bibliotecă" : "Library"}</span>

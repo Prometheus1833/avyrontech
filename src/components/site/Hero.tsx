@@ -1,11 +1,9 @@
-import { ArrowRight, ChevronDown, TrendingUp } from "lucide-react";
+import { ArrowRight, ChevronDown, Layers, ShoppingBag, TrendingUp } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { Link } from "react-router-dom";
-import LocalDateTime from "@/components/site/LocalDateTime";
 
 const Hero = () => {
   const { t, lang } = useLang();
-  const ro = lang === "ro";
   return (
     <section
       id="hero"
@@ -13,7 +11,6 @@ const Hero = () => {
     >
       <div className="mx-auto max-w-5xl px-4 sm:px-6 text-center flex flex-col items-center justify-center md:justify-start w-full">
         <div className="flex flex-col items-center">
-          <LocalDateTime />
           <div className="inline-flex items-center gap-2 rounded-full bg-white/70 backdrop-blur px-3 py-1.5 text-xs font-medium text-foreground/70 shadow-soft">
             <TrendingUp className="size-3.5 text-brand" aria-hidden="true" focusable="false" /> {t.hero.badge}
           </div>
@@ -23,24 +20,38 @@ const Hero = () => {
           <p className="mt-5 text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl px-2">
             {t.hero.subtitle}
           </p>
-          <div className="mt-7 grid w-full max-w-md grid-cols-2 gap-2.5 px-2">
-            <a
-              href="#cta"
-              className="inline-flex min-h-12 min-w-0 flex-col items-center justify-center rounded-full bg-foreground px-3 py-2 text-center text-sm leading-tight text-background transition-colors hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+
+          <div className="mt-7 flex flex-col items-center justify-center px-2">
+            <Link
+              to={lang === "en" ? "/en/configurator" : "/configurator"}
+              className="group inline-flex min-h-12 max-w-full flex-col items-center justify-center rounded-full bg-foreground px-5 py-2 text-center text-sm leading-tight text-background shadow-soft transition-all hover:bg-foreground/90 hover:shadow-elev active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <span className="flex items-center font-semibold">
-                {t.hero.ctaPrimary}
-                <ArrowRight className="ml-1 size-4 shrink-0" aria-hidden="true" focusable="false" />
+                {lang === "en" ? "Request a quote" : "Solicită ofertă"}
+                <ArrowRight
+                  className="ml-1 size-4 shrink-0 transition-transform motion-safe:group-hover:translate-x-0.5"
+                  aria-hidden="true"
+                  focusable="false"
+                />
               </span>
               <span className="text-[11px] font-normal opacity-80">{t.hero.personalized}</span>
-            </a>
-            <Link
-              to={ro ? "/servicii" : "/en/services"}
-              className="inline-flex h-12 min-w-0 items-center justify-center gap-1.5 rounded-full border border-foreground/20 bg-background px-3 text-center text-sm font-semibold transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            >
-              {ro ? "Vezi serviciile" : "View services"}
-              <ArrowRight className="size-4 shrink-0" aria-hidden="true" focusable="false" />
             </Link>
+            <div data-testid="hero-quick-links" className="mt-2.5 grid grid-cols-2 gap-2">
+              <a
+                href="#servicii"
+                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-cyan-300/50 bg-cyan-300/10 px-4 text-[13px] font-semibold text-cyan-900 transition-all hover:border-cyan-300/80 hover:bg-cyan-300/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:border-cyan-300/25 dark:text-cyan-100"
+              >
+                <Layers className="size-4" aria-hidden />
+                {lang === "en" ? "Services" : "Servicii"}
+              </a>
+              <Link
+                to={lang === "en" ? "/en/products" : "/produse"}
+                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-emerald-300/50 bg-emerald-300/10 px-4 text-[13px] font-semibold text-emerald-900 transition-all hover:border-emerald-300/80 hover:bg-emerald-300/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:border-emerald-300/25 dark:text-emerald-100"
+              >
+                <ShoppingBag className="size-4" aria-hidden />
+                {lang === "en" ? "Products" : "Produse"}
+              </Link>
+            </div>
           </div>
         </div>
         <div className="mt-10 md:mt-12 flex flex-nowrap items-center gap-x-3 sm:gap-x-6 text-sm sm:text-base text-muted-foreground justify-center px-2 overflow-x-auto">

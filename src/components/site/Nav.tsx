@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import LangSwitch from "./LangSwitch";
 import ThemeToggle from "./ThemeToggle";
 import CurrencySwitch from "./CurrencySwitch";
+import NavDate from "./NavDate";
 import logo from "@/assets/avyron-logo.webp";
 
 const UserMenu = lazy(() => import("@/components/auth/UserMenu"));
@@ -84,6 +85,7 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
                 <StaffOsMenu />
               </Suspense>
             )}
+            <NavDate />
             <div className="hidden xl:inline-flex items-center gap-1.5">
               {showCurrency && <CurrencySwitch compact showDetails={false} />}
               <LangSwitch />

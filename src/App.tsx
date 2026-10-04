@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { lazyWithRetry, clearChunkReloadFlag } from "@/lib/lazyWithRetry";
 import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
@@ -10,41 +11,41 @@ import { resetManagedHead } from "@/lib/seo";
 import { FEATURES } from "@/config/features";
 
 
-const Gdpr = lazy(() => import("./pages/Gdpr.tsx"));
-const Terms = lazy(() => import("./pages/Terms.tsx"));
-const CookiePolicy = lazy(() => import("./pages/CookiePolicy.tsx"));
-const Services = lazy(() => import("./pages/Services.tsx"));
-const Portfolio = lazy(() => import("./pages/About.tsx"));
-const AboutUs = lazy(() => import("./pages/AboutUs.tsx"));
-const NotFound = lazy(() => import("./pages/NotFound.tsx"));
-const ErrorPage = lazy(() => import("./pages/ErrorPage.tsx"));
-const FlawlesstudioDemo = lazy(() => import("./pages/demos/FlawlesstudioDemo.tsx"));
-const RetuvoDemo = lazy(() => import("./pages/demos/RetuvoDemo.tsx"));
-const Auth = lazy(() => import("./pages/Auth.tsx"));
-const ForgotPassword = lazy(() => import("./pages/ForgotPassword.tsx"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
-const Profile = lazy(() => import("./pages/Profile.tsx"));
-const Blog = lazy(() => import("./pages/Blog.tsx"));
-const ExamplePage = lazy(() => import("./pages/ExamplePage.tsx"));
-const Unsubscribe = lazy(() => import("./pages/Unsubscribe.tsx"));
-const ProjectPage = lazy(() => import("./pages/intern/ProjectPage.tsx"));
-const InternHome = lazy(() => import("./pages/intern/InternHome.tsx"));
-const ServiceDetail = lazy(() => import("./pages/services/ServicePage.tsx"));
-const QaTesting = lazy(() => import("./pages/services/QaTestingPage.tsx"));
-const MaintenancePartnerships = lazy(() => import("./pages/MaintenancePartnerships.tsx"));
-const BlogProfessional = lazy(() => import("./pages/services/BlogProfessional.tsx"));
-const LogoDinamic3D = lazy(() => import("./pages/services/LogoDinamic3DPage.tsx"));
-const LogoStudio = lazy(() => import("./pages/services/LogoStudioPage.tsx"));
-const AiOsConsole = lazy(() => import("./pages/intern/AiOs.tsx"));
-const ProduseApp = lazy(() => import("./features/produse/ProduseApp.tsx"));
-const AiProjects = lazy(() => import("./pages/intern/AiProjects.tsx"));
-const AiProjectPage = lazy(() => import("./pages/intern/AiProjectPage.tsx"));
-const Finance = lazy(() => import("./pages/intern/Finance.tsx"));
-const ProduseAvyronOs = lazy(() => import("./pages/intern/ProduseAvyron.tsx"));
-const ServiciiAvyronOs = lazy(() => import("./pages/intern/ServiciiAvyron.tsx"));
-const AvyEngine = lazy(() => import("./pages/intern/AvyEngine.tsx"));
-const Biblioteca = lazy(() => import("./pages/Biblioteca.tsx"));
-const AvyChat = lazy(() => import("@/components/ai/AvyChat"));
+const Gdpr = lazyWithRetry(() => import("./pages/Gdpr.tsx"));
+const Terms = lazyWithRetry(() => import("./pages/Terms.tsx"));
+const CookiePolicy = lazyWithRetry(() => import("./pages/CookiePolicy.tsx"));
+const Services = lazyWithRetry(() => import("./pages/Services.tsx"));
+const Configurator = lazyWithRetry(() => import("./pages/Configurator.tsx"));
+const AboutUs = lazyWithRetry(() => import("./pages/AboutUs.tsx"));
+const NotFound = lazyWithRetry(() => import("./pages/NotFound.tsx"));
+const ErrorPage = lazyWithRetry(() => import("./pages/ErrorPage.tsx"));
+const FlawlesstudioDemo = lazyWithRetry(() => import("./pages/demos/FlawlesstudioDemo.tsx"));
+const RetuvoDemo = lazyWithRetry(() => import("./pages/demos/RetuvoDemo.tsx"));
+const Auth = lazyWithRetry(() => import("./pages/Auth.tsx"));
+const ForgotPassword = lazyWithRetry(() => import("./pages/ForgotPassword.tsx"));
+const ResetPassword = lazyWithRetry(() => import("./pages/ResetPassword.tsx"));
+const Profile = lazyWithRetry(() => import("./pages/Profile.tsx"));
+const Blog = lazyWithRetry(() => import("./pages/Blog.tsx"));
+const ExamplePage = lazyWithRetry(() => import("./pages/ExamplePage.tsx"));
+const Unsubscribe = lazyWithRetry(() => import("./pages/Unsubscribe.tsx"));
+const ProjectPage = lazyWithRetry(() => import("./pages/intern/ProjectPage.tsx"));
+const InternHome = lazyWithRetry(() => import("./pages/intern/InternHome.tsx"));
+const ServiceDetail = lazyWithRetry(() => import("./pages/services/ServicePage.tsx"));
+const QaTesting = lazyWithRetry(() => import("./pages/services/QaTestingPage.tsx"));
+const MaintenancePartnerships = lazyWithRetry(() => import("./pages/MaintenancePartnerships.tsx"));
+const BlogProfessional = lazyWithRetry(() => import("./pages/services/BlogProfessional.tsx"));
+const LogoDinamic3D = lazyWithRetry(() => import("./pages/services/LogoDinamic3DPage.tsx"));
+const LogoStudio = lazyWithRetry(() => import("./pages/services/LogoStudioPage.tsx"));
+const AiOsConsole = lazyWithRetry(() => import("./pages/intern/AiOs.tsx"));
+const ProduseApp = lazyWithRetry(() => import("./features/produse/ProduseApp.tsx"));
+const AiProjects = lazyWithRetry(() => import("./pages/intern/AiProjects.tsx"));
+const AiProjectPage = lazyWithRetry(() => import("./pages/intern/AiProjectPage.tsx"));
+const Finance = lazyWithRetry(() => import("./pages/intern/Finance.tsx"));
+const ProduseAvyronOs = lazyWithRetry(() => import("./pages/intern/ProduseAvyron.tsx"));
+const ServiciiAvyronOs = lazyWithRetry(() => import("./pages/intern/ServiciiAvyron.tsx"));
+const AvyEngine = lazyWithRetry(() => import("./pages/intern/AvyEngine.tsx"));
+const Biblioteca = lazyWithRetry(() => import("./pages/Biblioteca.tsx"));
+const AvyChat = lazyWithRetry(() => import("@/components/ai/AvyChat"));
 
 /** Butonul AVY apare pe paginile comerciale, nu pe cele private sau pe demo-uri. */
 const AvyLauncher = () => {
@@ -68,10 +69,10 @@ const AvyLauncher = () => {
 import CookieBanner from "@/components/site/CookieBanner";
 import AppHostGuard from "@/components/auth/AppHostGuard";
 
-const Notifications = lazy(() =>
+const Notifications = lazyWithRetry(() =>
   import("@/components/ui/sonner").then(({ Toaster }) => ({ default: Toaster })),
 );
-const MustChangePassword = lazy(() => import("@/components/auth/MustChangePassword"));
+const MustChangePassword = lazyWithRetry(() => import("@/components/auth/MustChangePassword"));
 
 /**
  * Notification and account-dialog packages are useful only after interaction
@@ -158,6 +159,8 @@ const App = () => (
                     <Route path="/en/products/*" element={<ProduseApp />} />
                   </>
                 )}
+                <Route path="/configurator" element={<Configurator />} />
+                <Route path="/en/configurator" element={<Configurator />} />
                 <Route path="/servicii" element={<Services />} />
                 <Route path="/en/services" element={<Services />} />
                 <Route path="/servicii/website-prezentare-profesional" element={<ServiceDetail />} />
@@ -217,11 +220,11 @@ const App = () => (
                 <Route path="/en/care-plans" element={<Navigate to="/en/maintenance-and-partnerships" replace />} />
 
                 <Route path="/despre" element={<Navigate to="/despre-noi" replace />} />
-                <Route path="/despre-si-portofoliu" element={<Navigate to="/portofoliu" replace />} />
+                <Route path="/despre-si-portofoliu" element={<Navigate to="/servicii/website-prezentare-profesional#portofoliu" replace />} />
                 <Route path="/despre-noi" element={<AboutUs />} />
                 <Route path="/en/about" element={<AboutUs />} />
-                <Route path="/portofoliu" element={<Portfolio />} />
-                <Route path="/en/portfolio" element={<Portfolio />} />
+                <Route path="/portofoliu" element={<Navigate to="/servicii/website-prezentare-profesional#portofoliu" replace />} />
+                <Route path="/en/portfolio" element={<Navigate to="/en/services/professional-presentation-website#portofoliu" replace />} />
                 <Route path="/exemple/flawlesstudio" element={<FlawlesstudioDemo />} />
                 <Route path="/exemple/retuvo" element={<RetuvoDemo />} />
                 <Route path="/blog" element={<Blog />} />
