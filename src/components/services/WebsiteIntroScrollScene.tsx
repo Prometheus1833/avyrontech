@@ -13,7 +13,7 @@ const FADE = 0.18;
  * of it. At a hand-off the outgoing paragraph fades out before the incoming one fades in,
  * so two paragraphs are never legible on top of each other.
  */
-export const paragraphVisibility = (progress: number, index: number, count: number) => {
+const paragraphVisibility = (progress: number, index: number, count: number) => {
   if (count <= 1) return 1;
   const segment = 1 / count;
   const start = index * segment;
