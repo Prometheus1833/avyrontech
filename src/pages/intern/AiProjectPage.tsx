@@ -434,6 +434,7 @@ export default function AiProjectPage() {
             </div>;
           })}</div>
           <p className="mt-4 flex gap-2 text-xs leading-relaxed text-muted-foreground"><ShieldCheck className="mt-0.5 size-3.5 shrink-0" />Profilurile cu conversații, reacții, Story-uri apreciate, contactări, leaduri, clienți, parteneri sau protecție manuală sunt excluse la selecție și reverificate înainte de aprobarea lotului. Un website existent este doar un semnal, nu un motiv suficient pentru eliminare.</p>
+          <p className="mt-2 flex gap-2 text-xs leading-relaxed text-muted-foreground"><ShieldCheck className="mt-0.5 size-3.5 shrink-0" />Cererile de prietenie primite nu sunt acceptate sau respinse de agent. Decizia rămâne exclusiv administratorilor contului.</p>
         </Panel>}
 
         <div className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]">

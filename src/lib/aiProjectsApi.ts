@@ -75,6 +75,7 @@ export type AiSocialPolicy = {
   require_human_approval: number; time_slots_json: string; channel_priority_json: string;
   industry_rotation_json: string; last_planned_at: number | null;
   credit_mode: "free_only" | "approved_paid";
+  incoming_friend_request_mode: "admin_only";
 };
 
 export type AiSocialToolPolicy = {
