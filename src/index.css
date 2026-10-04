@@ -522,7 +522,9 @@ html[data-motion-tier="usor"] .avy-route-transition {
 }
 /* Fast page reveal: no navigation delay, JS animation work or layout shift. */
 .avy-route-transition {
-  animation: avy-route-reveal 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* fill-mode backwards: no transform remains after the reveal, so
+     position:fixed descendants (nav, WhatsApp, QuickNav) stay pinned. */
+  animation: avy-route-reveal 340ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
   transform-origin: 50% 12%;
 }
 
@@ -533,7 +535,7 @@ html[data-motion-tier="usor"] .avy-route-transition {
   }
   to {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: none;
   }
 }
 
