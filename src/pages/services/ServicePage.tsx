@@ -50,6 +50,7 @@ import { categoryForService } from "@/data/subscriptionPlans";
 import ServiceCinematicIntro from "@/components/services/ServiceCinematicIntro";
 import { isServiceIntroKey } from "@/data/serviceIntros";
 import WebsitePriceCalculator from "@/components/services/WebsitePriceCalculator";
+import TechnologyPartnersCarousel from "@/components/services/TechnologyPartnersCarousel";
 import { useAuth } from "@/hooks/useAuth";
 import { addLocalAccountCartItem, syncLocalAccountCartSource } from "@/lib/accountCart";
 import { setPageMeta } from "@/lib/seo";
@@ -303,7 +304,7 @@ const ServicePage = () => {
             </div>
           </dl>
 
-          {product.priceRon > 0 && <CurrencySwitch compact fixedPricing className="mt-4" />}
+          {product.priceRon > 0 && <CurrencySwitch compact fixedPricing showDetails={false} className="mt-4" />}
 
           {c.heroStats && (
             <dl className="mx-auto mt-8 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
@@ -347,17 +348,17 @@ const ServicePage = () => {
               {ro ? "Ce primești, pe scurt" : "What you get, in short"}
             </h2>
           </Reveal>
-          <div className="mt-7 grid sm:grid-cols-2 gap-4">
+          <div className="mt-5 grid gap-2 sm:grid-cols-2">
             {c.highlights.map((h, i) => {
               const Icon = ICONS[h.icon];
               return (
                 <Reveal key={h.title} delay={i * 60} as="article">
-                  <div className="group h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 transition-[transform,border-color,background-color,box-shadow] duration-300 [transform:perspective(850px)_rotateX(0deg)_rotateY(0deg)] hover:border-foreground/25 hover:bg-foreground/[0.06] hover:shadow-lg hover:[transform:perspective(850px)_rotateX(1.5deg)_rotateY(-1.5deg)_translateY(-4px)] active:scale-[0.99] motion-reduce:transform-none md:backdrop-blur">
-                    <div className={`size-10 rounded-xl bg-gradient-to-br ${a.from} ${a.to} grid place-items-center text-white transition-transform duration-300 group-hover:scale-110`}>
-                      <Icon className="size-5" aria-hidden />
+                  <div className="group h-full rounded-lg border border-foreground/10 bg-foreground/[0.03] p-4 transition-[transform,border-color,background-color,box-shadow] duration-300 [transform:perspective(850px)_rotateX(0deg)_rotateY(0deg)] hover:border-foreground/25 hover:bg-foreground/[0.06] hover:shadow-lg hover:[transform:perspective(850px)_rotateX(1.5deg)_rotateY(-1.5deg)_translateY(-4px)] active:scale-[0.99] motion-reduce:transform-none md:backdrop-blur">
+                    <div className={`size-8 rounded-lg bg-gradient-to-br ${a.from} ${a.to} grid place-items-center text-white transition-transform duration-300 group-hover:scale-110`}>
+                      <Icon className="size-4" aria-hidden />
                     </div>
-                    <h3 className="mt-4 font-display font-bold">{h.title}</h3>
-                    <p className="mt-2 text-sm text-foreground/70 leading-relaxed">{h.desc}</p>
+                    <h3 className="mt-3 font-display text-sm font-bold">{h.title}</h3>
+                    <p className="mt-1 text-xs text-foreground/70 leading-relaxed">{h.desc}</p>
                   </div>
                 </Reveal>
               );
@@ -374,17 +375,17 @@ const ServicePage = () => {
                 {c.audiences.lead}
               </p>
             </Reveal>
-            <div className="mt-7 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {c.audiences.items.map((it, i) => {
                 const Icon = ICONS[it.icon];
                 return (
                   <Reveal key={it.title} delay={i * 50} as="article">
-                    <div className="group h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 transition-[transform,border-color,background-color,box-shadow] duration-300 [transform:perspective(850px)_rotateX(0deg)_rotateY(0deg)] hover:border-foreground/25 hover:bg-foreground/[0.06] hover:shadow-lg hover:[transform:perspective(850px)_rotateX(1.5deg)_rotateY(-1.5deg)_translateY(-4px)] active:scale-[0.99] motion-reduce:transform-none md:backdrop-blur">
+                    <div className="group h-full rounded-lg border border-foreground/10 bg-foreground/[0.03] p-4 transition-[transform,border-color,background-color,box-shadow] duration-300 [transform:perspective(850px)_rotateX(0deg)_rotateY(0deg)] hover:border-foreground/25 hover:bg-foreground/[0.06] hover:shadow-lg hover:[transform:perspective(850px)_rotateX(1.5deg)_rotateY(-1.5deg)_translateY(-4px)] active:scale-[0.99] motion-reduce:transform-none md:backdrop-blur">
                       <div className={`inline-grid place-items-center size-9 rounded-lg border ${a.chipBg} ${a.chipText} transition-transform duration-300 group-hover:scale-110`}>
                         <Icon className="size-4" aria-hidden />
                       </div>
                       <h3 className="mt-3 font-display font-bold text-sm">{it.title}</h3>
-                      <p className="mt-2 text-sm text-foreground/70 leading-relaxed">{it.desc}</p>
+                      <p className="mt-1 text-xs text-foreground/70 leading-relaxed">{it.desc}</p>
                     </div>
                   </Reveal>
                 );
@@ -425,8 +426,6 @@ const ServicePage = () => {
             </div>
           </section>
         )}
-
-        <LibraryLink />
 
         {/* Deliverables */}
         <section id="pachet" className="mt-14 scroll-mt-28">
@@ -499,6 +498,7 @@ const ServicePage = () => {
         {product.key === "premium-website" && (
           <>
             <WebsitePriceCalculator />
+            <LibraryLink />
             <section id="portofoliu" data-testid="portfolio-section" className="mt-14 scroll-mt-28">
               <div className="text-center">
                 <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-brand">{ro ? "Portofoliu" : "Portfolio"}</p>
@@ -507,6 +507,7 @@ const ServicePage = () => {
               </div>
               <div className="mt-6"><PortfolioCarousel lang={ro ? "ro" : "en"} /></div>
             </section>
+            <TechnologyPartnersCarousel lang={ro ? "ro" : "en"} />
           </>
         )}
 
@@ -536,6 +537,16 @@ const ServicePage = () => {
             ))}
           </div>
         </section>
+
+        {/* Abonamentele potrivite serviciului sunt afișate imediat după FAQ. */}
+        {planCategory && (
+          <PlanTeaser
+            category={planCategory}
+            accent={{ from: a.from, to: a.to, text: a.text, border: a.border }}
+            productName={c.name}
+            productKey={product.key}
+          />
+        )}
 
         {/* Payment methods */}
         <Reveal as="div" className="mt-12">
@@ -613,15 +624,6 @@ const ServicePage = () => {
           </div>
         </section>
 
-        {/* Abonamentele de mentenanță potrivite serviciului */}
-        {planCategory && (
-          <PlanTeaser
-            category={planCategory}
-            accent={{ from: a.from, to: a.to, text: a.text, border: a.border }}
-            productName={c.name}
-            productKey={product.key}
-          />
-        )}
       </div>
       <Footer />
     </main>

@@ -27,9 +27,9 @@ export const COMMERCE_CATALOG: readonly CommerceCatalogItem[] = [
   { sku: "care-plus", type: "subscription", name: "Abonament Plus", unitPriceCents: 5_000, currency: "EUR", billing: "monthly" },
   { sku: "care-pro", type: "subscription", name: "Abonament Pro", unitPriceCents: 15_000, currency: "EUR", billing: "monthly" },
   { sku: "care-pro-active", type: "subscription", name: "Abonament Pro Activ", unitPriceCents: 30_000, currency: "EUR", billing: "monthly" },
-  { sku: "sub-site-plus", type: "subscription", name: "Mentenanță Site de prezentare — Plus", unitPriceCents: 10_000, currency: "RON", billing: "monthly" },
-  { sku: "sub-site-pro", type: "subscription", name: "Mentenanță Site de prezentare — Pro", unitPriceCents: 20_000, currency: "RON", billing: "monthly" },
-  { sku: "sub-site-proactiv", type: "subscription", name: "Mentenanță Site de prezentare — Pro Activ", unitPriceCents: 30_000, currency: "RON", billing: "monthly" },
+  { sku: "sub-site-plus", type: "subscription", name: "Mentenanță Site de prezentare — Plus", unitPriceCents: 5_000, currency: "RON", billing: "monthly" },
+  { sku: "sub-site-pro", type: "subscription", name: "Mentenanță Site de prezentare — Pro", unitPriceCents: 10_000, currency: "RON", billing: "monthly" },
+  { sku: "sub-site-proactiv", type: "subscription", name: "Mentenanță Site de prezentare — Pro Activ", unitPriceCents: 20_000, currency: "RON", billing: "monthly" },
 
   { sku: "sub-shop-plus", type: "subscription", name: "Mentenanță Magazin online — Plus", unitPriceCents: 20_000, currency: "RON", billing: "monthly" },
   { sku: "sub-shop-pro", type: "subscription", name: "Mentenanță Magazin online — Pro", unitPriceCents: 40_000, currency: "RON", billing: "monthly" },
