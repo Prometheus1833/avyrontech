@@ -5,9 +5,11 @@ export const integrationProviders = {
   stripe: { name: 'Stripe', description: 'Verificare acces și import facturi pentru reconciliere', documentation: 'https://docs.stripe.com/api/invoices/list' },
   cloudflare: { name: 'Cloudflare', description: 'Verificare token personal și inventar zone DNS', documentation: 'https://developers.cloudflare.com/api/resources/user/subresources/tokens/' },
   revolut: { name: 'Revolut Business', description: 'Citire conturi și solduri, fără inițiere de plăți', documentation: 'https://developer.revolut.com/docs/business/get-accounts' },
+  supabase: { name: 'Supabase', description: 'Verificare Data API și inventar de scheme, fără migrarea autentificării sau a datelor', documentation: 'https://supabase.com/docs/guides/api' },
+  google_drive: { name: 'Google Drive', description: 'Verificare cont și import limitat la metadatele fișierelor, fără descărcarea conținutului', documentation: 'https://developers.google.com/workspace/drive/api/reference/rest/v3/files/list' },
 } as const;
 export type IntegrationProvider = keyof typeof integrationProviders;
-export type IntegrationAccount = {id:string;provider:IntegrationProvider;environment:'test'|'live';secret_reference:string|null;revision:number;status:string};
+export type IntegrationAccount = {id:string;provider:IntegrationProvider;environment:'test'|'live';secret_reference:string|null;revision:number;status:string;config_json?:string|null};
 const encoder = new TextEncoder();
 const encoded = (bytes:Uint8Array) => btoa(String.fromCharCode(...bytes));
 const decoded = (value:string) => Uint8Array.from(atob(value),c=>c.charCodeAt(0));
@@ -31,14 +33,17 @@ export class ProviderError extends Error {
   constructor(readonly code:string){super(code);}
 }
 export async function boundedProviderJson(url:string,token:string,provider:IntegrationProvider,fetcher:typeof fetch=fetch):Promise<unknown> {
-  const allowed:Record<IntegrationProvider,string[]>={github:['api.github.com'],stripe:['api.stripe.com'],cloudflare:['api.cloudflare.com'],revolut:['b2b.revolut.com','sandbox-b2b.revolut.com']};
+  const allowed:Record<Exclude<IntegrationProvider,'supabase'>,string[]>={github:['api.github.com'],stripe:['api.stripe.com'],cloudflare:['api.cloudflare.com'],revolut:['b2b.revolut.com','sandbox-b2b.revolut.com'],google_drive:['www.googleapis.com']};
   const parsed=new URL(url);
-  if(parsed.protocol!=='https:'||!allowed[provider].includes(parsed.hostname)||parsed.username||parsed.password)throw new ProviderError('provider_url_denied');
+  const supabaseHost=provider==='supabase'&&/^[a-z0-9-]{8,63}\.supabase\.co$/.test(parsed.hostname);
+  const knownHost=provider!=='supabase'&&allowed[provider].includes(parsed.hostname);
+  if(parsed.protocol!=='https:'||(!supabaseHost&&!knownHost)||parsed.username||parsed.password||parsed.port)throw new ProviderError('provider_url_denied');
   const headers:Record<string,string>={Authorization:`Bearer ${token}`,Accept:'application/json','User-Agent':'AVYRON-OS'};
   if(provider==='github')headers['X-GitHub-Api-Version']='2026-03-10';
   if(provider==='stripe')headers['Stripe-Version']='2024-06-20';
+  if(provider==='supabase')headers.apikey=token;
   const response=await fetcher(url,{headers,redirect:'error',signal:AbortSignal.timeout(10000)});
-  if(!response.ok){await response.body?.cancel();throw new ProviderError(response.status===401||response.status===403?'credentials_or_scope_invalid':response.status===429?'provider_rate_limited':'provider_unavailable');}
+  if(!response.ok){await response.body?.cancel();throw new ProviderError(response.status===401?'credentials_invalid':response.status===403?'provider_scope_or_access_denied':response.status===404?'provider_project_unavailable':response.status===402||response.status===429?'provider_quota_exceeded':'provider_unavailable');}
   const reader=response.body?.getReader();if(!reader)throw new ProviderError('provider_empty_response');
   const chunks:Uint8Array[]=[];let size=0;
   try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>512*1024){await reader.cancel();throw new ProviderError('provider_response_too_large');}chunks.push(value);}}
@@ -49,6 +54,15 @@ export async function boundedProviderJson(url:string,token:string,provider:Integ
 const object=(value:unknown):Record<string,unknown>=>value!==null&&typeof value==='object'&&!Array.isArray(value)?value as Record<string,unknown>:{};
 const text=(value:unknown)=>typeof value==='string'?value.slice(0,300):null;
 const integer=(value:unknown)=>typeof value==='number'&&Number.isSafeInteger(value)?value:null;
+const jsonConfig=(value:string|null|undefined)=>{try{return object(JSON.parse(value||'{}'));}catch{return {};}};
+export const normalizeSupabaseProjectUrl=(value:unknown)=>{
+  if(typeof value!=='string')throw new ProviderError('supabase_project_url_missing');
+  const parsed=new URL(value);
+  if(parsed.protocol!=='https:'||parsed.username||parsed.password||parsed.port||!/^([a-z0-9-]{8,63})\.supabase\.co$/.test(parsed.hostname)||!['','/'].includes(parsed.pathname)||parsed.search||parsed.hash)throw new ProviderError('supabase_project_url_invalid');
+  return parsed.origin;
+};
+const jwtRole=(token:string)=>{try{const part=token.split('.')[1];if(!part)return null;const normalized=part.replace(/-/g,'+').replace(/_/g,'/').padEnd(Math.ceil(part.length/4)*4,'=');return text(object(JSON.parse(atob(normalized))).role);}catch{return null;}};
+const assertSafeSupabaseKey=(token:string)=>{if(token.startsWith('sb_secret_')||token.includes('service_role')||jwtRole(token)==='service_role')throw new ProviderError('supabase_privileged_key_denied');};
 export async function readIntegration(env:Env,account:IntegrationAccount,sync:boolean,fetcher:typeof fetch=fetch) {
   if(!account.secret_reference||account.status==='disconnected')throw new ProviderError('account_not_activated');
   const encrypted=await env.KV.get(account.secret_reference);
@@ -73,10 +87,22 @@ export async function readIntegration(env:Env,account:IntegrationAccount,sync:bo
     summary={status:'active',expires_on:text(tokenInfo.expires_on)};
     if(sync){const zones=object(await read('https://api.cloudflare.com/client/v4/zones?per_page=50'));if(zones.success!==true||!Array.isArray(zones.result))throw new ProviderError('credentials_or_scope_invalid');
       for(const raw of zones.result){const row=object(raw);if(typeof row.id==='string')documents.push({id:row.id,kind:'zone',data:{name:text(row.name),status:text(row.status)}});}summary.limit=50;}
-  } else {
+  } else if(account.provider==='revolut') {
     const host=account.environment==='test'?'sandbox-b2b.revolut.com':'b2b.revolut.com';
     const rows=await read(`https://${host}/api/1.0/accounts`);if(!Array.isArray(rows))throw new ProviderError('provider_invalid_response');summary={accounts:rows.length};
     if(sync)for(const raw of rows.slice(0,100)){const row=object(raw);if(typeof row.id==='string')documents.push({id:row.id,kind:'bank_account',data:{name:text(row.name),currency:text(row.currency),state:text(row.state),balance:typeof row.balance==='number'?row.balance:null}});}
+  } else if(account.provider==='supabase') {
+    assertSafeSupabaseKey(token);const projectUrl=normalizeSupabaseProjectUrl(jsonConfig(account.config_json).projectUrl);
+    const schema=object(await read(`${projectUrl}/rest/v1/`));const paths=object(schema.paths);
+    const tables=[...new Set(Object.keys(paths).map(path=>/^\/([^/{?]+)$/.exec(path)?.[1]).filter((value):value is string=>Boolean(value)).map(value=>decodeURIComponent(value)))].slice(0,100);
+    summary={project_host:new URL(projectUrl).hostname,available_resources:tables.length,mode:'metadata_only'};
+    if(sync)for(const table of tables)documents.push({id:`table:${table}`,kind:'database_resource',data:{name:table}});
+  } else {
+    const about=object(await read('https://www.googleapis.com/drive/v3/about?fields=user(displayName),storageQuota(limit,usage,usageInDrive)'));
+    const user=object(about.user),quota=object(about.storageQuota);
+    summary={display_name:text(user.displayName),storage_limit_bytes:text(quota.limit),storage_usage_bytes:text(quota.usage),mode:'metadata_only'};
+    if(sync){const listing=object(await read("https://www.googleapis.com/drive/v3/files?pageSize=100&q=trashed%3Dfalse&orderBy=modifiedTime%20desc&fields=files(id%2Cname%2CmimeType%2CmodifiedTime%2Csize)%2CnextPageToken"));if(!Array.isArray(listing.files))throw new ProviderError('provider_invalid_response');
+      for(const raw of listing.files){const row=object(raw);if(typeof row.id==='string')documents.push({id:row.id,kind:'drive_file_metadata',data:{name:text(row.name),mime_type:text(row.mimeType),modified_at:text(row.modifiedTime),size_bytes:text(row.size)}});}summary.limit=100;summary.has_more=typeof listing.nextPageToken==='string';}
   }
   return {summary:{...summary,documents:documents.length},documents};
 }

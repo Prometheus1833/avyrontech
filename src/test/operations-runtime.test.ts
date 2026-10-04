@@ -99,6 +99,20 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
   db.prepare("INSERT INTO integration_documents VALUES (?,'in_1','invoice','{}',1)").run(id);
   expect((await req(`integrations/${id}/credential`,{token:'sk_test_replacement_fixture',revision:2},'PUT')).status).toBe(200);await Promise.all(pending);expect(kv.size).toBe(1);expect(db.prepare('SELECT COUNT(*) n FROM integration_documents').get()!.n).toBe(0);
  });
+ it('registers optional Supabase and Drive accounts without activating data use',async()=>{
+  const supabase=await req('integrations',{provider:'supabase',label:'Arhivă proiect',environment:'live',projectUrl:'https://projectref123.supabase.co'});expect(supabase.status).toBe(200);
+  const drive=await req('integrations',{provider:'google_drive',label:'Drive documente',environment:'live'});expect(drive.status).toBe(200);
+  const rows=db.prepare("SELECT provider,status,config_json,secret_reference,owner_user_id FROM integration_accounts WHERE provider IN ('supabase','google_drive') ORDER BY provider").all();
+  expect(rows).toHaveLength(2);expect(rows.every(row=>row.status==='configured'&&row.secret_reference===null)).toBe(true);
+  expect(rows.every(row=>row.owner_user_id==='owner')).toBe(true);
+  expect(JSON.parse(String(rows.find(row=>row.provider==='supabase')?.config_json))).toEqual({projectUrl:'https://projectref123.supabase.co'});
+  const listing=await (await req('integrations')).json() as {data:Record<string,unknown>[]};
+  const optional=listing.data.filter(row=>['supabase','google_drive'].includes(String(row.provider)));
+  expect(optional.every(row=>row.owner_user_id==='owner'&&row.owner_email==='prometheus@avyron.ro')).toBe(true);
+  expect(JSON.stringify(optional)).not.toContain('secret_reference');
+  expect((await req('integrations',{provider:'supabase',label:'Invalid',environment:'test',projectUrl:'https://projectref123.supabase.co'})).status).toBe(400);
+  expect((await req('integrations',{provider:'supabase',label:'Invalid',environment:'live',projectUrl:'https://evil.test'})).status).toBe(400);
+ });
  it('fails closed without a vault key or with an unenrolled unauthorized actor',async()=>{
   const {id}=await (await req('integrations',{provider:'stripe',label:'Billing',environment:'test'})).json();env.MFA_ENCRYPTION_KEY='';expect((await req(`integrations/${id}/credential`,{token:'sk_test_fixture_secret',revision:1},'PUT')).status).toBe(503);expect(kv.size).toBe(0);
  });
@@ -198,5 +212,23 @@ describe('Integration adapter boundaries',()=>{
  it('rejects a Stripe test/live mismatch before calling the provider',async()=>{
   const master='fixture-master-key-with-at-least-32-characters',cipher=await sealCredential('sk_live_fixture',master,'ref'),fetcher=vi.fn() as unknown as typeof fetch;
   await expect(readIntegration({KV:{get:async()=>cipher},MFA_ENCRYPTION_KEY:master} as unknown as Env,{id:'a',provider:'stripe',environment:'test',secret_reference:'ref',revision:1,status:'configured'},true,fetcher)).rejects.toThrow('credential_environment_mismatch');expect(fetcher).not.toHaveBeenCalled();
+ });
+ it('reads only Supabase schema metadata and rejects privileged keys',async()=>{
+  const master='fixture-master-key-with-at-least-32-characters',token='sb_publishable_fixture_key_with_enough_length',cipher=await sealCredential(token,master,'ref'),fetcher=vi.fn(async()=>Response.json({paths:{'/public_items':{get:{}},'/private_notes':{get:{}}},definitions:{secret:{}}})) as unknown as typeof fetch;
+  const result=await readIntegration({KV:{get:async()=>cipher},MFA_ENCRYPTION_KEY:master} as unknown as Env,{id:'a',provider:'supabase',environment:'live',secret_reference:'ref',revision:1,status:'configured',config_json:'{"projectUrl":"https://projectref123.supabase.co"}'},true,fetcher);
+  expect(result.summary).toMatchObject({project_host:'projectref123.supabase.co',available_resources:2,mode:'metadata_only'});expect(result.documents).toEqual(expect.arrayContaining([expect.objectContaining({id:'table:public_items',kind:'database_resource'})]));
+  expect(fetcher).toHaveBeenCalledWith('https://projectref123.supabase.co/rest/v1/',expect.objectContaining({headers:expect.objectContaining({apikey:token})}));expect(JSON.stringify(result)).not.toContain('definitions');
+  const privileged=await sealCredential('sb_secret_fixture_privileged_key',master,'ref');await expect(readIntegration({KV:{get:async()=>privileged},MFA_ENCRYPTION_KEY:master} as unknown as Env,{id:'a',provider:'supabase',environment:'live',secret_reference:'ref',revision:1,status:'configured',config_json:'{"projectUrl":"https://projectref123.supabase.co"}'},false,fetcher)).rejects.toThrow('supabase_privileged_key_denied');
+ });
+ it('reads Google Drive account and file metadata without downloading content',async()=>{
+  const master='fixture-master-key-with-at-least-32-characters',cipher=await sealCredential('fixture-google-oauth-token',master,'ref');const urls:string[]=[];
+  const fetcher=vi.fn(async(url:string)=>{urls.push(url);return Response.json(url.includes('/about')?{user:{displayName:'Avyron'},storageQuota:{limit:'1000',usage:'100',usageInDrive:'80'}}:{files:[{id:'file-1',name:'Brief.pdf',mimeType:'application/pdf',modifiedTime:'2026-10-04T08:00:00Z',size:'321',webContentLink:'never-store'}],nextPageToken:'next'});}) as unknown as typeof fetch;
+  const result=await readIntegration({KV:{get:async()=>cipher},MFA_ENCRYPTION_KEY:master} as unknown as Env,{id:'a',provider:'google_drive',environment:'live',secret_reference:'ref',revision:1,status:'configured'},true,fetcher);
+  expect(result.summary).toMatchObject({display_name:'Avyron',storage_limit_bytes:'1000',mode:'metadata_only',limit:100,has_more:true});expect(result.documents).toEqual([expect.objectContaining({id:'file-1',kind:'drive_file_metadata',data:expect.objectContaining({name:'Brief.pdf',mime_type:'application/pdf'})})]);expect(JSON.stringify(result)).not.toContain('never-store');expect(urls).toHaveLength(2);
+ });
+ it('maps provider quota and scope failures without exposing response bodies',async()=>{
+  const quota=vi.fn(async()=>new Response('private quota detail',{status:429})) as unknown as typeof fetch;await expect(boundedProviderJson('https://www.googleapis.com/drive/v3/files','token','google_drive',quota)).rejects.toThrow('provider_quota_exceeded');
+  const denied=vi.fn(async()=>new Response('private policy detail',{status:403})) as unknown as typeof fetch;await expect(boundedProviderJson('https://projectref123.supabase.co/rest/v1/','token','supabase',denied)).rejects.toThrow('provider_scope_or_access_denied');
+  await expect(boundedProviderJson('https://projectref123.supabase.co.evil.test/rest/v1/','token','supabase',vi.fn() as unknown as typeof fetch)).rejects.toThrow('provider_url_denied');
  });
 });

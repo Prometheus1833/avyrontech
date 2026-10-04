@@ -6,7 +6,7 @@ import { platformRoleForUser } from './authorization';
 import { privilegedMfaSatisfied } from './mfaPolicy';
 import { checkRateLimit } from './antispam';
 import { sha256 } from './security';
-import { integrationProviders, readIntegration, sealCredential, ProviderError, type IntegrationAccount } from './integrationAdapters';
+import { integrationProviders, normalizeSupabaseProjectUrl, readIntegration, sealCredential, ProviderError, type IntegrationAccount } from './integrationAdapters';
 import { evaluateAgent } from './agentEvaluation';
 import { operationActions, operationPreview, runOperationJobs } from './operationJobs';
 export const operationsRouter=new Hono<AppBindings>();
@@ -134,14 +134,15 @@ operationsRouter.post('/api/operations/jobs/:id/:action',async c=>{
 operationsRouter.get('/api/operations/notifications',async c=>c.json({data:(await c.env.DB.prepare('SELECT * FROM operation_notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 100').bind(c.get('userId')).all()).results}));
 operationsRouter.post('/api/operations/notifications/:id/read',async c=>write(c,{ok:true},[c.env.DB.prepare('UPDATE operation_notifications SET read_at=? WHERE id=? AND user_id=?').bind(Date.now(),c.req.param('id'),c.get('userId'))]));
 operationsRouter.get('/api/operations/integrations',async c=>{
- const accounts=await c.env.DB.prepare('SELECT id,provider,label,environment,status,revision,checked_at,synced_at,error_code,secret_reference IS NOT NULL has_credential FROM integration_accounts ORDER BY label').all();
+ const accounts=await c.env.DB.prepare("SELECT account.id,account.provider,account.label,account.environment,account.status,account.revision,account.checked_at,account.synced_at,account.error_code,account.secret_reference IS NOT NULL has_credential,CASE WHEN account.provider='supabase' THEN json_extract(account.config_json,'$.projectUrl') ELSE NULL END project_url,account.owner_user_id,owner.email owner_email FROM integration_accounts account JOIN users owner ON owner.id=account.owner_user_id ORDER BY account.label").all();
  return c.json({providers:integrationProviders,data:accounts.results,canEdit:await platformRoleForUser(c.env.DB,c.get('userId'))==='platform_owner'});
 });
 operationsRouter.post('/api/operations/integrations',async c=>{
  if(await platformRoleForUser(c.env.DB,c.get('userId'))!=='platform_owner')return bad(c,'forbidden',403);
- const b=z.object({provider:z.enum(['github','stripe','cloudflare','revolut']),label:z.string().trim().min(1).max(120),environment:z.enum(['test','live'])}).strict().safeParse(await c.req.json().catch(()=>null));if(!b.success)return bad(c,'invalid_account');const id=crypto.randomUUID(),t=Date.now();
- if(['github','cloudflare'].includes(b.data.provider)&&b.data.environment!=='live')return bad(c,'invalid_environment');
- return write(c,{id},[c.env.DB.prepare('INSERT INTO integration_accounts(id,provider,label,environment,created_by,created_at,updated_at) VALUES (?,?,?,?,?,?,?)').bind(id,b.data.provider,b.data.label,b.data.environment,c.get('userId'),t,t),audit(c,'integration.account.created',id)]);
+ const b=z.object({provider:z.enum(['github','stripe','cloudflare','revolut','supabase','google_drive']),label:z.string().trim().min(1).max(120),environment:z.enum(['test','live']),projectUrl:z.string().trim().max(300).optional()}).strict().safeParse(await c.req.json().catch(()=>null));if(!b.success)return bad(c,'invalid_account');const id=crypto.randomUUID(),t=Date.now();
+ if(['github','cloudflare','supabase','google_drive'].includes(b.data.provider)&&b.data.environment!=='live')return bad(c,'invalid_environment');
+ let config:Record<string,string>={};if(b.data.provider==='supabase'){try{config={projectUrl:normalizeSupabaseProjectUrl(b.data.projectUrl)};}catch{return bad(c,'supabase_project_url_invalid');}}else if(b.data.projectUrl)return bad(c,'project_url_not_allowed');
+ return write(c,{id},[c.env.DB.prepare('INSERT INTO integration_accounts(id,provider,label,environment,config_json,owner_user_id,created_by,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)').bind(id,b.data.provider,b.data.label,b.data.environment,JSON.stringify(config),c.get('userId'),c.get('userId'),t,t),audit(c,'integration.account.created',id)]);
 });
 operationsRouter.put('/api/operations/integrations/:id/credential',async c=>{
  if(await platformRoleForUser(c.env.DB,c.get('userId'))!=='platform_owner')return bad(c,'forbidden',403);
