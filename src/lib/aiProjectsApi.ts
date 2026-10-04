@@ -183,7 +183,7 @@ export type AiProjectDetail = {
   socialSources: AiSocialSource[];
   socialOpportunities: AiSocialOpportunity[];
   socialTools: AiSocialToolPolicy[];
-  socialModelRoutes: AiSocialModelRoute[];
+  socialModelRoutes?: AiSocialModelRoute[];
   socialAccounts: AiSocialAccount[];
   audienceRuns: AiAudienceRun[];
   audienceCandidates: AiAudienceCandidate[];
