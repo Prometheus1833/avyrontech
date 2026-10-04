@@ -705,6 +705,12 @@ const SERVICES: ServiceDef[] = [
   },
 ];
 
+const SERVICE_ORDER = ["website", "shop", "apps", "logo", "blog", "social", "ai", "qa"] as const;
+const ORDERED_SERVICES = SERVICE_ORDER.flatMap((key) => {
+  const service = SERVICES.find((candidate) => candidate.key === key);
+  return service ? [service] : [];
+});
+
 const AUDIT_COVERAGE: Copy[] = [
   { ro: "Securitate", en: "Security" },
   { ro: "Performanță", en: "Performance" },
@@ -856,7 +862,7 @@ const Services = () => {
       <QuickNav
         items={[
           { id: "prezentare", label: ro ? "Servicii" : "Services", icon: ShoppingBag },
-          ...SERVICES.map((service) => ({
+          ...ORDERED_SERVICES.map((service) => ({
             id: service.key,
             label: service.title[lang],
             icon: service.icon,
@@ -943,11 +949,18 @@ const Services = () => {
           </p>
         </section>
 
-        {/* Audit — compact entry; the request continues in the protected form. */}
+        {/* All services — one uniform block each */}
+        <div data-testid="services-list" className="mt-6">
+          {ORDERED_SERVICES.map((service) => (
+            <ServiceBlock key={service.key} service={service} lang={lang} />
+          ))}
+        </div>
+
+        {/* Audit — last in the service list; the request continues in the protected form. */}
         <section
           id="audit"
           data-testid="free-audit-card"
-          className="relative mt-8 overflow-hidden rounded-2xl border border-amber-300/25 bg-gradient-to-r from-amber-400/[0.08] via-card to-orange-500/[0.06] p-4"
+          className="relative mt-6 scroll-mt-28 overflow-hidden rounded-2xl border border-amber-300/25 bg-gradient-to-r from-amber-400/[0.08] via-card to-orange-500/[0.06] p-4"
         >
           <div aria-hidden className="absolute -right-10 -top-12 size-36 rounded-full bg-amber-400/10 blur-2xl" />
           <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -970,10 +983,7 @@ const Services = () => {
             <div className="flex flex-wrap items-center gap-2">
               <ul data-testid="audit-coverage-list" className="flex flex-wrap items-center gap-1.5">
                 {AUDIT_COVERAGE.map((item) => (
-                  <li
-                    key={item[lang]}
-                    className="rounded-full border border-amber-300/20 bg-amber-300/[0.07] px-2.5 py-1 text-[11px] text-foreground/70"
-                  >
+                  <li key={item[lang]} className="rounded-full border border-amber-300/20 bg-amber-300/[0.07] px-2.5 py-1 text-[11px] text-foreground/70">
                     {t(item, lang)}
                   </li>
                 ))}
@@ -992,13 +1002,6 @@ const Services = () => {
             </div>
           </div>
         </section>
-
-        {/* All services — one uniform block each */}
-        <div data-testid="services-list" className="mt-6">
-          {SERVICES.map((service) => (
-            <ServiceBlock key={service.key} service={service} lang={lang} />
-          ))}
-        </div>
 
         {/* Subscriptions — one short pointer, plans are split per service */}
         <section
