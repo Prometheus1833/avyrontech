@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useMemo, useState, type CSSProperties } from "react";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import { Suspense, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -30,7 +31,7 @@ import { STATS } from "../lib/seo";
 import { detectTier } from "../lib/capability";
 import "../produse.css";
 
-const Backdrop = lazy(() => import("../components/Backdrop"));
+const Backdrop = lazyWithRetry(() => import("../components/Backdrop"));
 
 const FEATURED_SLUGS = [
   "logo-studio-3d",

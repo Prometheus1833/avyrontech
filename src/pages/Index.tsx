@@ -1,20 +1,21 @@
-import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import Nav from "@/components/site/Nav";
 import Hero from "@/components/site/Hero";
 import AgencyServices from "@/components/site/AgencyServices";
 import { useLocation } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
 
-const Problem = lazy(() => import("@/components/site/Problem"));
-const Process = lazy(() => import("@/components/site/Process"));
-const Examples = lazy(() => import("@/components/site/Examples"));
-const DomainCheck = lazy(() => import("@/components/site/DomainCheck"));
-const Benefits = lazy(() => import("@/components/site/Benefits"));
-const HomepageQuickLinks = lazy(() => import("@/components/site/HomepageQuickLinks"));
-const Socials = lazy(() => import("@/components/site/Socials"));
-const CTA = lazy(() => import("@/components/site/CTA"));
-const ContactBar = lazy(() => import("@/components/site/ContactBar"));
-const Footer = lazy(() => import("@/components/site/Footer"));
+const Problem = lazyWithRetry(() => import("@/components/site/Problem"));
+const Process = lazyWithRetry(() => import("@/components/site/Process"));
+const Examples = lazyWithRetry(() => import("@/components/site/Examples"));
+const DomainCheck = lazyWithRetry(() => import("@/components/site/DomainCheck"));
+const Benefits = lazyWithRetry(() => import("@/components/site/Benefits"));
+const HomepageQuickLinks = lazyWithRetry(() => import("@/components/site/HomepageQuickLinks"));
+const Socials = lazyWithRetry(() => import("@/components/site/Socials"));
+const CTA = lazyWithRetry(() => import("@/components/site/CTA"));
+const ContactBar = lazyWithRetry(() => import("@/components/site/ContactBar"));
+const Footer = lazyWithRetry(() => import("@/components/site/Footer"));
 
 const Deferred = ({
   children,
