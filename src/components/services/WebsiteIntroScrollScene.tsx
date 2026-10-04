@@ -68,7 +68,7 @@ const WebsiteIntroScrollScene = ({ title, paragraphs }: Props) => {
           <div className="mt-6 grid place-items-center md:mt-8">
             {paragraphs.map((paragraph, index) => {
               const visibility = paragraphVisibility(progress, index, paragraphs.length);
-              const offset = visibility >= 1 ? 0 : (1 - visibility) * (progress < (index + 0.5) / paragraphs.length ? 18 : -18);
+              const offset = visibility >= 1 ? 0 : (1 - visibility) * (progress < (index + 0.5) / paragraphs.length ? 10 : -10);
               return (
                 <p
                   key={paragraph.slice(0, 40)}
@@ -87,7 +87,7 @@ const WebsiteIntroScrollScene = ({ title, paragraphs }: Props) => {
               );
             })}
           </div>
-          <div className="mx-auto mt-3 flex max-w-32 gap-1" aria-hidden>
+          <div className="mx-auto mt-6 flex max-w-32 gap-1" aria-hidden>
             {paragraphs.map((paragraph, index) => {
               const threshold = paragraphs.length === 1 ? 0 : index / (paragraphs.length - 1);
               return <span key={paragraph.slice(0, 18)} className={`h-0.5 flex-1 rounded-full transition-colors ${progress + 0.08 >= threshold ? "bg-primary" : "bg-foreground/15"}`} />;
