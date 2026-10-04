@@ -57,12 +57,25 @@ unsafe_social_backup_state=$(sqlite3 "$audit_database" \
               AND (manifest_object_key IS NULL OR manifest_sha256 IS NULL OR byte_size <= 0))
         + (SELECT COUNT(*) FROM ai_social_assets
             WHERE status = 'active' AND length(sha256) < 32);")
+unsafe_lead_agent_state=$(sqlite3 "$audit_database" \
+  "SELECT CASE WHEN EXISTS (
+      SELECT 1 FROM ai_agents agent
+      JOIN ai_agent_versions version
+        ON version.agent_slug = agent.slug AND version.version = agent.current_version
+      WHERE agent.slug = 'leads'
+        AND agent.status = 'active'
+        AND agent.visibility = 'private'
+        AND agent.handoff_email = 'avyrontech@gmail.com'
+        AND version.status = 'approved'
+        AND instr(version.guardrails, 'soliciți intervenția echipei') > 0
+        AND instr(version.guardrails, '2026-10-03 18:57:16 Europe/Bucharest') > 0
+    ) THEN 0 ELSE 1 END;")
 
 if [[ "$foreign_key_issues" != "0" || "$integrity" != "ok" || "$legacy_ai_timestamps" != "0" \
    || "$platform_owners" != "1" || "$unsafe_social_sources" != "0" || "$invalid_lead_state" != "0" \
    || "$unsafe_engine_state" != "0" || "$unsafe_audience_state" != "0" \
-   || "$unsafe_social_backup_state" != "0" ]]; then
-  echo "D1 schema audit failed: foreign_keys=$foreign_key_issues integrity=$integrity legacy_ai_timestamps=$legacy_ai_timestamps platform_owners=$platform_owners unsafe_social_sources=$unsafe_social_sources invalid_lead_state=$invalid_lead_state unsafe_engine_state=$unsafe_engine_state unsafe_audience_state=$unsafe_audience_state unsafe_social_backup_state=$unsafe_social_backup_state" >&2
+   || "$unsafe_social_backup_state" != "0" || "$unsafe_lead_agent_state" != "0" ]]; then
+  echo "D1 schema audit failed: foreign_keys=$foreign_key_issues integrity=$integrity legacy_ai_timestamps=$legacy_ai_timestamps platform_owners=$platform_owners unsafe_social_sources=$unsafe_social_sources invalid_lead_state=$invalid_lead_state unsafe_engine_state=$unsafe_engine_state unsafe_audience_state=$unsafe_audience_state unsafe_social_backup_state=$unsafe_social_backup_state unsafe_lead_agent_state=$unsafe_lead_agent_state" >&2
   exit 1
 fi
 
