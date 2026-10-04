@@ -1,6 +1,7 @@
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import MfaEnrollBanner from "@/components/dashboard/MfaEnrollBanner";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import {
   ChevronDown, ChevronLeft, Ellipsis, Lock, LogOut, Menu,
@@ -176,6 +177,7 @@ export default function Profile() {
         </header>
 
         <div className="mx-auto max-w-[1500px] p-3 sm:p-5 lg:p-6">
+          <MfaEnrollBanner onOpenSettings={() => openSection("settings")} />
           <Suspense fallback={contentFallback}>
           <TabsContent value="overview" className="mt-0"><AvyronOverview access={access} displayName={displayName} onOpenSection={openSection} onOpenCommand={() => setCommandOpen(true)} /></TabsContent>
           {access.isSuperAdmin && <TabsContent value="social-manager" className="mt-0"><SocialMediaManagerTab /></TabsContent>}
