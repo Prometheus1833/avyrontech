@@ -60,12 +60,15 @@ const UserMenu = () => {
   const productsPath = lang === "en" ? "/en/services" : "/servicii";
   const aboutLabel = lang === "en" ? "About us" : "Despre noi";
   const aboutPath = lang === "en" ? "/en/about" : "/despre-noi";
+  const careersLabel = lang === "en" ? "Careers" : "Cariere";
+  const careersPath = lang === "en" ? "/en/careers" : "/cariere";
 
   const userItems: MenuItem[] = [
     { label: t.auth.menu.profile, icon: UserIcon, dot: "264, 90%, 62%", to: "/profil?tab=profile" },
     { label: "AI AVY Prod", icon: Bot, dot: "270, 88%, 62%", to: "/intern/ai-projects" },
     { label: productsLabel, icon: Boxes, dot: "200, 95%, 55%", to: productsPath },
     { label: aboutLabel, icon: UsersRound, dot: "86, 78%, 60%", to: aboutPath },
+    { label: careersLabel, icon: Briefcase, dot: "44, 90%, 58%", to: careersPath },
     { label: t.auth.menu.product, icon: Package, dot: "330, 85%, 65%", to: "/profil?tab=subscriptions" },
     { label: t.auth.menu.subscription, icon: CreditCard, dot: "40, 95%, 60%", to: "/profil?tab=invoices" },
     { label: t.auth.menu.cart, icon: ShoppingCart, dot: "170, 80%, 45%", to: "/profil?tab=cart" },
@@ -80,6 +83,7 @@ const UserMenu = () => {
     { label: "Financiar", icon: Wallet, dot: "155, 72%, 42%", to: "/finance" },
     { label: productsLabel, icon: Boxes, dot: "200, 95%, 55%", to: productsPath },
     { label: aboutLabel, icon: UsersRound, dot: "86, 78%, 60%", to: aboutPath },
+    { label: careersLabel, icon: Briefcase, dot: "44, 90%, 58%", to: careersPath },
     { label: t.auth.menu.projects, icon: FolderKanban, dot: "210, 90%, 55%", to: "/profil?tab=projects" },
     { label: t.auth.menu.maintenance, icon: Wrench, dot: "30, 90%, 55%", to: "/profil?tab=maintenance" },
     { label: t.auth.menu.internal, icon: UsersIcon, dot: "260, 80%, 60%", to: "/profil?tab=intern" },

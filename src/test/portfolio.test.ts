@@ -8,6 +8,8 @@ const requestedProjects = new Map([
   ["Detectiv ICM", "https://detectiv-icm.avyron.eu"],
   ["Crăița Dinulescu", "https://dinulescu-craita-consultant-financiar.avyron.eu"],
   ["Tipografia UMC", "https://umc.avyron.eu"],
+  ["CGC Imobiliare", "https://demo3.avyron.eu"],
+  ["Cabane Sucevița", "https://demo4.avyron.eu"],
 ]);
 
 describe("portfolio carousel", () => {

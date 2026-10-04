@@ -14,6 +14,8 @@ import pungiplast from "@/assets/portfolio/pungiplast.webp";
 import detectivIcm from "@/assets/portfolio/detectiv-icm.webp";
 import craitaDinulescu from "@/assets/portfolio/craita-dinulescu.webp";
 import tipografiaUmc from "@/assets/portfolio/tipografia-umc.webp";
+import cgcImobiliare from "@/assets/portfolio/cgc-imobiliare.jpg";
+import cabaneSucevita from "@/assets/portfolio/cabane-sucevita.jpg";
 
 type L = { ro: string; en: string };
 export type PortfolioItem = {
@@ -68,6 +70,12 @@ export const PORTFOLIO: PortfolioItem[] = [
   { key: "tipografia-umc", name: "Tipografia UMC", href: "https://umc.avyron.eu", external: true, image: tipografiaUmc,
     tag: { ro: "Tipografie industrială", en: "Industrial printing" },
     desc: { ro: "Tipar offset, digital și large format, ambalaje și finisări premium într-un flux complet de producție.", en: "Offset, digital and large-format printing, packaging and premium finishing in one production workflow." } },
+  { key: "cgc-imobiliare", name: "CGC Imobiliare", href: "https://demo3.avyron.eu", external: true, image: cgcImobiliare,
+    tag: { ro: "Consultanță imobiliară", en: "Property advisory" },
+    desc: { ro: "Proprietăți atent selectate, consultanță și coordonarea clară a tranzacției, într-o prezentare premium.", en: "Carefully selected properties, advisory and clear transaction coordination in a premium presentation." } },
+  { key: "cabane-sucevita", name: "Cabane Sucevița", href: "https://demo4.avyron.eu", external: true, image: cabaneSucevita,
+    tag: { ro: "Construcții din lemn", en: "Timber construction" },
+    desc: { ro: "Case și cabane din bușteni, foișoare și sculpturi în lemn realizate în Bucovina.", en: "Log homes, cabins, gazebos and wood sculptures crafted in Bucovina." } },
   { key: "cofetariadulcedor", name: "Cofetăria Dulce Dor", href: "/examples/cofetariadulcedor.ro", external: false, image: cofetariadulcedor,
     tag: { ro: "Cofetărie artizanală", en: "Artisan pastry shop" },
     desc: { ro: "Meniu sezonier, torturi pe comandă și comenzi instant prin WhatsApp.", en: "Seasonal menu, custom cakes and instant WhatsApp orders." } },

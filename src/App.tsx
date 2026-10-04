@@ -17,6 +17,7 @@ const CookiePolicy = lazyWithRetry(() => import("./pages/CookiePolicy.tsx"));
 const Services = lazyWithRetry(() => import("./pages/Services.tsx"));
 const Configurator = lazyWithRetry(() => import("./pages/Configurator.tsx"));
 const AboutUs = lazyWithRetry(() => import("./pages/AboutUs.tsx"));
+const Careers = lazyWithRetry(() => import("./pages/Careers.tsx"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound.tsx"));
 const ErrorPage = lazyWithRetry(() => import("./pages/ErrorPage.tsx"));
 const FlawlesstudioDemo = lazyWithRetry(() => import("./pages/demos/FlawlesstudioDemo.tsx"));
@@ -85,6 +86,7 @@ const AvyLauncher = () => {
 
 import CookieBanner from "@/components/site/CookieBanner";
 import AppHostGuard from "@/components/auth/AppHostGuard";
+import RouteTransition from "@/components/site/RouteTransition";
 
 const Notifications = lazyWithRetry(() =>
   import("@/components/ui/sonner").then(({ Toaster }) => ({ default: Toaster })),
@@ -160,7 +162,8 @@ const App = () => (
 
         <AppHostGuard>
           <Suspense fallback={<div className="min-h-screen" />}>
-            <Routes>
+            <RouteTransition>
+              <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/en" element={<Index />} />
                 <Route path="/gdpr" element={<Gdpr />} />
@@ -246,6 +249,8 @@ const App = () => (
                 <Route path="/despre-si-portofoliu" element={<Navigate to="/servicii/website-prezentare-profesional#portofoliu" replace />} />
                 <Route path="/despre-noi" element={<AboutUs />} />
                 <Route path="/en/about" element={<AboutUs />} />
+                <Route path="/cariere" element={<Careers />} />
+                <Route path="/en/careers" element={<Careers />} />
                 <Route path="/portofoliu" element={<Navigate to="/servicii/website-prezentare-profesional#portofoliu" replace />} />
                 <Route path="/en/portfolio" element={<Navigate to="/en/services/professional-presentation-website#portofoliu" replace />} />
                 <Route path="/exemple/flawlesstudio" element={<FlawlesstudioDemo />} />
@@ -360,7 +365,8 @@ const App = () => (
                 />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
-            </Routes>
+              </Routes>
+            </RouteTransition>
           </Suspense>
         </AppHostGuard>
         <CookieBanner />

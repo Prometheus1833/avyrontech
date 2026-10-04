@@ -12,6 +12,7 @@ export const ROUTE_ALTERNATES: Array<{ ro: string; en: string }> = [
   { ro: "/", en: "/en" },
   { ro: "/servicii", en: "/en/services" },
   { ro: "/despre-noi", en: "/en/about" },
+  { ro: "/cariere", en: "/en/careers" },
   { ro: "/termeni", en: "/en/terms" },
   { ro: "/politica-cookies", en: "/en/cookie-policy" },
   { ro: "/configurator", en: "/en/configurator" },
