@@ -1,4 +1,5 @@
 import { type ComponentType, type LazyExoticComponent } from "react";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import type { PropValues } from "../data/types";
 
 export type DemoProps = {
