@@ -12,6 +12,7 @@ import {
   Layers,
   Puzzle,
   ShoppingBag,
+  ScanSearch,
   Sparkles,
   Wand2,
   X,
@@ -35,6 +36,7 @@ const TONES = {
   social: "from-pink-400/25 to-fuchsia-500/10 text-pink-600 dark:text-pink-300",
   ai: "from-fuchsia-400/25 to-purple-500/10 text-fuchsia-600 dark:text-fuchsia-300",
   qa: "from-emerald-400/25 to-teal-500/10 text-emerald-600 dark:text-emerald-300",
+  audit: "from-amber-400/25 to-orange-500/10 text-amber-700 dark:text-amber-300",
 };
 
 const copy = {
@@ -62,8 +64,8 @@ const copy = {
     },
     featured: [
       { key: "website", title: "Site Prezentare Profesional", text: "Cod curat, livrat rapid, gata de recomandat clienților tăi.", path: "/servicii/website-prezentare-profesional", Icon: Code2 },
-      { key: "apps", title: "Aplicație Mobilă", text: "Conturi, fluxuri și API documentat, pe care îl extinzi oricând.", path: "/servicii/aplicatii-si-platforme", Icon: Gauge },
       { key: "shop", title: "Magazin online", text: "Catalog, coș și plată funcționale, cu cod modificabil de tine.", path: "/servicii/magazin-online", Icon: ShoppingBag },
+      { key: "apps", title: "Aplicații Web și Mobile", text: "Conturi, fluxuri și API documentat, pe care îl extinzi oricând.", path: "/servicii/aplicatii-si-platforme", Icon: Gauge },
     ],
     rest: [
       { key: "logo", title: "Logo Dinamic 3D", text: "Logo original pentru print, volum și mișcare.", path: "/servicii/creare-logo-3d-dinamic-cinematic", Icon: Box },
@@ -71,6 +73,7 @@ const copy = {
       { key: "social", title: "Identitate Social Media", text: "Facebook, Instagram și TikTok, configurate coerent pentru brand.", path: "/servicii/identitate-social-media", Icon: Instagram },
       { key: "ai", title: "Automatizări și AI", text: "Asistenți și procese care reduc munca repetitivă.", path: "/servicii/automatizari-si-ai", Icon: Bot },
       { key: "qa", title: "QA Testing Web/Mobile", text: "Testare manuală și automată, fără abonament.", path: "/servicii/qa-testing-web-mobile", Icon: Bug },
+      { key: "audit", title: "Audit Website", text: "Analiză clară pentru performanță, SEO, securitate și experiență.", path: "/servicii/audit-website", Icon: ScanSearch },
     ],
   },
   en: {
@@ -97,8 +100,8 @@ const copy = {
     },
     featured: [
       { key: "website", title: "Business websites", text: "Clean code, delivered fast, ready to hand to your clients.", path: "/en/services/professional-presentation-website", Icon: Code2 },
-      { key: "apps", title: "Mobile app", text: "Accounts, flows and documented APIs you can extend anytime.", path: "/en/services/apps-and-platforms", Icon: Gauge },
       { key: "shop", title: "Online stores", text: "Catalog, cart and checkout with code your team can edit.", path: "/en/services/online-store", Icon: ShoppingBag },
+      { key: "apps", title: "Web and Mobile Apps", text: "Accounts, flows and documented APIs you can extend anytime.", path: "/en/services/apps-and-platforms", Icon: Gauge },
     ],
     rest: [
       { key: "logo", title: "Dynamic 3D Logo", text: "An original logo for print, volume and motion.", path: "/en/services/cinematic-dynamic-3d-logo-design", Icon: Box },
@@ -106,6 +109,7 @@ const copy = {
       { key: "social", title: "Social Media Identity", text: "Facebook, Instagram and TikTok, set up consistently for your brand.", path: "/en/services/social-media-identity", Icon: Instagram },
       { key: "ai", title: "Automation and AI", text: "Assistants and processes that cut repetitive work.", path: "/en/services/automation-and-ai", Icon: Bot },
       { key: "qa", title: "QA Testing Web/Mobile", text: "Manual and automated testing, no subscription.", path: "/en/services/web-mobile-qa-testing", Icon: Bug },
+      { key: "audit", title: "Website Audit", text: "A clear review of performance, SEO, security and user experience.", path: "/en/services/website-audit", Icon: ScanSearch },
     ],
   },
 } as const;

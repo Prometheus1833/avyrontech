@@ -37,13 +37,13 @@ const Hero = () => {
               <span className="text-[11px] font-normal opacity-80">{t.hero.personalized}</span>
             </Link>
             <div data-testid="hero-quick-links" className="mt-2.5 grid grid-cols-2 gap-2">
-              <a
-                href="#servicii"
+              <Link
+                to={lang === "en" ? "/en/services" : "/servicii"}
                 className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-cyan-300/50 bg-cyan-300/10 px-4 text-[13px] font-semibold text-cyan-900 transition-all hover:border-cyan-300/80 hover:bg-cyan-300/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:border-cyan-300/25 dark:text-cyan-100"
               >
                 <Layers className="size-4" aria-hidden />
                 {lang === "en" ? "Services" : "Servicii"}
-              </a>
+              </Link>
               <Link
                 to={lang === "en" ? "/en/products" : "/produse"}
                 className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-emerald-300/50 bg-emerald-300/10 px-4 text-[13px] font-semibold text-emerald-900 transition-all hover:border-emerald-300/80 hover:bg-emerald-300/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:border-emerald-300/25 dark:text-emerald-100"
