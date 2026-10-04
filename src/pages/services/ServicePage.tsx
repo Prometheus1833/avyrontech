@@ -229,7 +229,7 @@ const ServicePage = () => {
         <section id="prezentare" className="mt-8 scroll-mt-28 text-center sm:mt-10">
           <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.25em] ${a.chipBg} ${a.chipText}`}>
             <HeroIcon className="size-3.5" aria-hidden />
-            {c.kicker}
+            {product.key === "premium-website" ? (ro ? "Serviciu principal" : "Main service") : c.kicker}
           </div>
           <h1 className="mt-5 font-display text-3xl sm:text-4xl md:text-5xl font-extrabold leading-[1.08] tracking-tight">
             <span className={`bg-gradient-to-r ${a.from} ${a.to} bg-clip-text text-transparent`}>
@@ -352,7 +352,7 @@ const ServicePage = () => {
               const Icon = ICONS[h.icon];
               return (
                 <Reveal key={h.title} delay={i * 60} as="article">
-                  <div className="group h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 md:backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-foreground/25 hover:bg-foreground/[0.06]">
+                  <div className="group h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 transition-[transform,border-color,background-color,box-shadow] duration-300 [transform:perspective(850px)_rotateX(0deg)_rotateY(0deg)] hover:border-foreground/25 hover:bg-foreground/[0.06] hover:shadow-lg hover:[transform:perspective(850px)_rotateX(1.5deg)_rotateY(-1.5deg)_translateY(-4px)] active:scale-[0.99] motion-reduce:transform-none md:backdrop-blur">
                     <div className={`size-10 rounded-xl bg-gradient-to-br ${a.from} ${a.to} grid place-items-center text-white transition-transform duration-300 group-hover:scale-110`}>
                       <Icon className="size-5" aria-hidden />
                     </div>
@@ -379,7 +379,7 @@ const ServicePage = () => {
                 const Icon = ICONS[it.icon];
                 return (
                   <Reveal key={it.title} delay={i * 50} as="article">
-                    <div className="group h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 md:backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-foreground/25 hover:bg-foreground/[0.06]">
+                    <div className="group h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 transition-[transform,border-color,background-color,box-shadow] duration-300 [transform:perspective(850px)_rotateX(0deg)_rotateY(0deg)] hover:border-foreground/25 hover:bg-foreground/[0.06] hover:shadow-lg hover:[transform:perspective(850px)_rotateX(1.5deg)_rotateY(-1.5deg)_translateY(-4px)] active:scale-[0.99] motion-reduce:transform-none md:backdrop-blur">
                       <div className={`inline-grid place-items-center size-9 rounded-lg border ${a.chipBg} ${a.chipText} transition-transform duration-300 group-hover:scale-110`}>
                         <Icon className="size-4" aria-hidden />
                       </div>

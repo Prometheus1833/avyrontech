@@ -70,6 +70,32 @@ describe("AVYRON OS dashboard", () => {
     expect(page).toContain('trackFunnel("page_view", "abonamente"');
   });
 
+  it("sincronizează verificările publice de domeniu și configuratorul cu dashboardul", () => {
+    const domain = readFileSync(resolve(process.cwd(), "cloudflare/workers/api/src/domain.ts"), "utf8");
+    const workspace = readFileSync(resolve(process.cwd(), "cloudflare/workers/api/src/workspace.ts"), "utf8");
+    const contact = readFileSync(resolve(process.cwd(), "cloudflare/workers/api/src/contact.ts"), "utf8");
+    const configurator = readFileSync(resolve(process.cwd(), "src/pages/Configurator.tsx"), "utf8");
+    const migration = readFileSync(resolve(process.cwd(), "cloudflare/d1/migrations/0055_public_flow_sync.sql"), "utf8");
+    expect(domain).toContain('domainRouter.post("/api/public/domain-check"');
+    expect(domain).toContain("INSERT INTO public_domain_checks");
+    expect(workspace).toContain("FROM public_domain_checks");
+    expect(migration).toContain("CREATE TABLE IF NOT EXISTS public_domain_checks");
+    expect(migration).not.toMatch(/\b(ip_hash|email|phone|cookie_id)\b/i);
+    expect(configurator).toContain('form.set("product", "configurator-website")');
+    expect(configurator).toContain('apiUrl("/api/contact/demo")');
+    expect(contact).toContain("config_json");
+  });
+
+  it("afișează selectorul principal de website prin portal și păstrează produsele clar denumite", () => {
+    const services = readFileSync(resolve(process.cwd(), "src/components/site/AgencyServices.tsx"), "utf8");
+    const servicePage = readFileSync(resolve(process.cwd(), "src/pages/services/ServicePage.tsx"), "utf8");
+    expect(services).toContain("createPortal");
+    expect(services).toContain('mainService: "Serviciu principal"');
+    expect(services).toContain('"Produse AVYRON"');
+    expect(servicePage).toContain('product.key === "premium-website"');
+    expect(servicePage).toContain('"Serviciu principal"');
+  });
+
   it("creează atomic proiectul cu mentenanță și abonament opțional", () => {
     const projects = readFileSync(resolve(process.cwd(), "cloudflare/workers/api/src/projects.ts"), "utf8");
     expect(projects).toContain("recurring_service");

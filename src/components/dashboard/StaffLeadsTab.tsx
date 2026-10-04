@@ -40,8 +40,8 @@ export const StaffLeadsTab = ({
   const [view, setView] = useState<"list" | "pipeline">("list");
   const [previewLeadId, setPreviewLeadId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const result = await leadsApi.list();
       const next = (sourceFilter ? result.data.filter(sourceFilter) : result.data).sort((a, b) => b.created_at - a.created_at);
@@ -49,13 +49,17 @@ export const StaffLeadsTab = ({
       setPreviewLeadId((current) => current && next.some((lead) => lead.id === current) ? current : next[0]?.id || null);
       setPlatformRole(result.platformRole);
     } catch {
-      toast.error("Nu am putut încărca pipeline-ul Leads. Verifică sesiunea MFA.");
+      if (showLoading) toast.error("Nu am putut încărca pipeline-ul Leads. Verifică sesiunea MFA.");
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, [sourceFilter]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+    const interval = window.setInterval(() => void load(false), 20_000);
+    return () => window.clearInterval(interval);
+  }, [load]);
 
   const update = async (lead: LeadListRow, patch: { lifecycleStage?: LeadStage; urgent?: boolean }) => {
     setSaving(lead.id);

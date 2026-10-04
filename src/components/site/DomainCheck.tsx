@@ -37,8 +37,10 @@ const DomainCheck = () => {
     setResults(null);
     try {
       const domain = `${slug}${tld}`;
-      const response = await fetch(apiUrl(`/api/public/domain-check?domain=${encodeURIComponent(domain)}`), {
-        headers: { accept: "application/json" },
+      const response = await fetch(apiUrl("/api/public/domain-check"), {
+        method: "POST",
+        headers: { accept: "application/json", "content-type": "application/json" },
+        body: JSON.stringify({ domain, language: lang, surface: "landing" }),
       });
       const data = await response.json() as {
         status?: Status;

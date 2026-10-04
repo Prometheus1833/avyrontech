@@ -24,6 +24,7 @@ export type NavCta = { label: string; sub: string; href: string };
  */
 const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta?: NavCta } = {}) => {
   const [open, setOpen] = useState(false);
+  const [scrollLift, setScrollLift] = useState(0);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const mobileMenuTriggerRef = useRef<HTMLButtonElement>(null);
   const { t, lang } = useLang();
@@ -66,10 +67,30 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
     };
   }, [open]);
 
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      setScrollLift(Math.min(10, window.scrollY * 0.035));
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
   return (
-    <header className="fixed top-0 inset-x-0 z-50">
+    <header
+      className="fixed inset-x-0 top-0 z-50 transition-transform duration-300 ease-out motion-reduce:transform-none"
+      style={{ transform: `translate3d(0, ${scrollLift}px, 0)` }}
+    >
       <div className="mx-auto max-w-6xl px-3 sm:px-4 mt-3">
-        <nav className="glass shadow-soft rounded-full flex items-center justify-between pl-3 pr-2 py-2 gap-2">
+        <nav className={`flex items-center justify-between gap-2 rounded-full border pl-3 pr-2 py-2 backdrop-blur-2xl transition-[background-color,border-color,box-shadow] duration-500 ${scrollLift > 2 ? "border-white/20 bg-background/[0.72] shadow-[0_18px_55px_-25px_rgba(15,23,42,0.65),inset_0_1px_0_rgba(255,255,255,0.18)]" : "glass border-white/10 shadow-soft"}`}>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <a href={`${homePath}#hero`} className="flex items-center gap-2" aria-label={isRo ? "Avyron — mergi la hero" : "Avyron — go to hero"}>
               <img src={logo} alt="" width={22} height={22} className="size-[1.4rem] rounded-md object-cover" />

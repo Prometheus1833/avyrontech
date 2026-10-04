@@ -15,6 +15,7 @@ type Row = {
   name: string;
   status: "available" | "registered" | "unknown";
   source: string | null;
+  origin: "internal" | "public";
   created_at: string;
 };
 
@@ -98,10 +99,10 @@ export const StaffDomainStatsTab = () => {
         pageStart += pageSize;
         if (all.length >= 50000) break;
       }
-      const header = ["id", "domain", "name", "tld", "status", "source", "created_at"];
+      const header = ["id", "domain", "name", "tld", "status", "source", "origin", "created_at"];
       const lines = [header.join(",")];
       for (const r of all) {
-        lines.push([r.id, r.domain, r.name, r.tld, r.status, r.source ?? "", r.created_at].map(csvEscape).join(","));
+        lines.push([r.id, r.domain, r.name, r.tld, r.status, r.source ?? "", r.origin, r.created_at].map(csvEscape).join(","));
       }
       downloadCSV(`domain-checks_${from}_${to}.csv`, lines.join("\n"));
       toast.success(`Export: ${all.length} verificări`);
@@ -135,7 +136,7 @@ export const StaffDomainStatsTab = () => {
   return (
     <div className="space-y-6">
       <form className="flex flex-wrap gap-2" onSubmit={async e=>{e.preventDefault();setChecking(true);try{await workspaceApi.write('domains',{domain});await load();}catch(error){toast.error(error instanceof Error?error.message:'Verificarea a eșuat.');}finally{setChecking(false);}}}><Input aria-label="Domeniu de verificat" placeholder="exemplu.ro" value={domain} onChange={e=>setDomain(e.target.value)} required className="max-w-sm"/><Button disabled={checking}>{checking?'Se verifică…':'Verifică domeniul'}</Button></form>
-      <p className="text-xs text-muted-foreground">Istoric al verificărilor interne. Sumarul include ultimele 100 de rezultate; exportul parcurge întregul interval (maximum 50.000). Disponibilitatea necesită confirmare la registrar.</p>
+      <p className="text-xs text-muted-foreground">Istoric sincronizat pentru verificările din AVYRON OS și de pe landing page. Sumarul include ultimele 100 de rezultate; exportul parcurge întregul interval (maximum 50.000). Disponibilitatea necesită confirmare la registrar.</p>
       <Card>
         <CardContent className="pt-6 flex flex-wrap items-end gap-3">
           <div className="space-y-1">
@@ -212,6 +213,7 @@ export const StaffDomainStatsTab = () => {
                     <th className="px-2 py-2">Domeniu</th>
                     <th className="px-2 py-2">Status</th>
                     <th className="px-2 py-2 hidden md:table-cell">Sursă</th>
+                    <th className="px-2 py-2 hidden lg:table-cell">Flux</th>
                     <th className="px-2 py-2 text-right">Când</th>
                   </tr>
                 </thead>
@@ -221,6 +223,7 @@ export const StaffDomainStatsTab = () => {
                       <td className="px-2 py-2 font-mono">{r.domain}</td>
                       <td className="px-2 py-2"><StatusBadge s={r.status} /></td>
                       <td className="px-2 py-2 hidden md:table-cell text-xs text-muted-foreground truncate max-w-[200px]">{r.source ?? "—"}</td>
+                      <td className="px-2 py-2 hidden lg:table-cell"><Badge variant="outline">{r.origin === "public" ? "Landing" : "AVYRON OS"}</Badge></td>
                       <td className="px-2 py-2 text-right text-xs text-muted-foreground whitespace-nowrap">
                         {new Date(r.created_at).toLocaleString("ro-RO")}
                       </td>

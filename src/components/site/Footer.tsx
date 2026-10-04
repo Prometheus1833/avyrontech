@@ -199,14 +199,14 @@ const Footer = () => {
               "inline-flex items-center justify-center text-center rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 font-display font-medium text-white/85 hover:text-white transition-all leading-none";
             return (
               <>
-                <div className="mx-auto grid max-w-lg grid-cols-3 gap-1.5">
+                <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-1.5 px-1">
                   {primary.map((n) => {
                     const to = n.h.startsWith("#") ? `/${n.h}` : n.h;
                     return (
                       <Link
                         key={n.h}
                         to={to}
-                        className={`${baseClass} px-2 py-1.5 text-[11px] sm:text-xs`}
+                        className={`${baseClass} min-w-[8.5rem] max-w-[12rem] flex-1 px-2 py-1.5 text-[11px] sm:flex-none sm:text-xs`}
                       >
                         {n.l}
                       </Link>

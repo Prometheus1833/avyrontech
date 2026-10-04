@@ -252,7 +252,11 @@ workspaceRouter.get('/api/workspace/domains',async c=>{
   const from=Number(c.req.query('from')||0),to=Number(c.req.query('to')||Date.now());
   if(!Number.isSafeInteger(from)||!Number.isSafeInteger(to)||from<0||to<from)return fail(c,'invalid_period');
   const {limit,offset}=page(c);
-  const {results}=await c.env.DB.prepare('SELECT id,domain,status,source,created_at FROM internal_domain_checks WHERE created_at BETWEEN ? AND ? ORDER BY created_at DESC,id LIMIT ? OFFSET ?').bind(from,to,limit,offset).all<Record<string,unknown>>();
+  const {results}=await c.env.DB.prepare(`SELECT id,domain,status,source,created_at,origin FROM (
+    SELECT id,domain,status,source,created_at,'internal' AS origin FROM internal_domain_checks WHERE created_at BETWEEN ? AND ?
+    UNION ALL
+    SELECT id,domain,status,source,created_at,'public' AS origin FROM public_domain_checks WHERE created_at BETWEEN ? AND ?
+  ) ORDER BY created_at DESC,id LIMIT ? OFFSET ?`).bind(from,to,from,to,limit,offset).all<Record<string,unknown>>();
   return c.json({data:results.map(r=>({...r,name:String(r.domain).split('.')[0],tld:String(r.domain).split('.').at(-1),created_at:iso(r.created_at)}))});
 });
 workspaceRouter.post('/api/workspace/domains',async c=>{

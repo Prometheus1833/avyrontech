@@ -64,7 +64,7 @@ export const StaffExampleRequestsTab = () => {
 
   useEffect(() => {
     void load();
-    const interval = window.setInterval(() => void load(false), 60_000);
+    const interval = window.setInterval(() => void load(false), 20_000);
     return () => window.clearInterval(interval);
   }, []);
 

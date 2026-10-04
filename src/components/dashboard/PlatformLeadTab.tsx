@@ -23,10 +23,10 @@ const CONFIG: Record<PlatformKind, {
   configurator: {
     eyebrow: "Platformă · Configuratoare",
     title: "Configurator",
-    description: "Cereri și estimări venite din configuratoarele AVYRON. Prețul final și următorul pas se gestionează în CRM, fără a amesteca aceste date cu Proiecte.",
+    description: "Configurații sincronizate din formularul public, cu domenii de activitate, servicii, funcții și preferințe de domeniu. Lista se actualizează automat.",
     href: "/configurator",
     action: "Deschide configuratorul public",
-    matches: (lead) => /config|blogpro|horeca|estimate|oferta/.test(`${lead.source || ""} ${lead.product || ""}`.toLowerCase()),
+    matches: (lead) => /config|blogpro|horeca|estimate|oferta|premium-website/.test(`${lead.source || ""} ${lead.product || ""}`.toLowerCase()),
   },
 };
 
