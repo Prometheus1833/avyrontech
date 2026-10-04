@@ -10,7 +10,7 @@ import {operationsRouter} from '../../cloudflare/workers/api/src/operations';
 import {runOperationJobs} from '../../cloudflare/workers/api/src/operationJobs';
 import {retrieveKnowledge,boundedKnowledgeContext} from '../../cloudflare/workers/api/src/knowledgeRetrieval';
 import {reserveAiCost} from '../../cloudflare/workers/api/src/aiCostGuard';
-import {sealCredential,openCredential,boundedProviderJson,readIntegration} from '../../cloudflare/workers/api/src/integrationAdapters';
+import {sealCredential,openCredential,boundedProviderJson,readIntegration,googleOAuthAuthorization,completeGoogleOAuth} from '../../cloudflare/workers/api/src/integrationAdapters';
 import type {Env} from '../../cloudflare/workers/api/src/types';
 const {DatabaseSync}=createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
 class Statement {
@@ -33,7 +33,7 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
   kv=new Map();pending=[];actor='owner';
   env={DB:{prepare:(sql:string)=>new Statement(db,sql),batch:async(statements:Statement[])=>{
    db.exec('BEGIN');try{const result=statements.map(s=>({meta:db.prepare(s.sql).run(...s.values)}));db.exec('COMMIT');return result;}catch(e){db.exec('ROLLBACK');throw e;}
-  }},KV:{get:async(key:string)=>kv.get(key)||null,put:async(key:string,value:string)=>{kv.set(key,value);},delete:async(key:string)=>{kv.delete(key);}},FILES:{list:async()=>({objects:[]})},MEDIA:{list:async()=>({objects:[]})},ADMIN_MFA_POLICY:'optional_until_enrollment',MFA_ENCRYPTION_KEY:master} as unknown as Env;
+  }},KV:{get:async(key:string)=>kv.get(key)||null,put:async(key:string,value:string)=>{kv.set(key,value);},delete:async(key:string)=>{kv.delete(key);}},FILES:{list:async()=>({objects:[]})},MEDIA:{list:async()=>({objects:[]})},ADMIN_MFA_POLICY:'optional_until_enrollment',MFA_ENCRYPTION_KEY:master,SUPABASE_DATA_OPERATIONS_ENABLED:'false',GOOGLE_DRIVE_DATA_OPERATIONS_ENABLED:'false',BACKUP_JOBS_ENABLED:'false'} as unknown as Env;
   app=new Hono();app.use('*',async(c,next)=>{Object.assign(c.env,env);c.set('userId',actor);c.set('roles',actor==='client'?['user']:actor==='staff'?['staff']:['admin']);c.set('mfaVerified',false);await next();});app.route('/',operationsRouter);app.route('/',aiOsRouter);app.onError(()=>new Response('safe failure',{status:500}));
  });
  afterEach(async()=>{await Promise.allSettled(pending);db.close();vi.restoreAllMocks();});
@@ -110,8 +110,14 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
   const optional=listing.data.filter(row=>['supabase','google_drive'].includes(String(row.provider)));
   expect(optional.every(row=>row.owner_user_id==='owner'&&row.owner_email==='prometheus@avyron.ro')).toBe(true);
   expect(JSON.stringify(optional)).not.toContain('secret_reference');
+  expect(optional.every(row=>row.data_operations_enabled===false)).toBe(true);
   expect((await req('integrations',{provider:'supabase',label:'Invalid',environment:'test',projectUrl:'https://projectref123.supabase.co'})).status).toBe(400);
   expect((await req('integrations',{provider:'supabase',label:'Invalid',environment:'live',projectUrl:'https://evil.test'})).status).toBe(400);
+  const supabaseId=String((await supabase.json()).id),driveId=String((await drive.json()).id);
+  await req(`integrations/${supabaseId}/credential`,{token:'sb_publishable_fixture_key_with_enough_length',revision:1},'PUT');
+  expect((await req(`integrations/${supabaseId}/sync`,{})).status).toBe(409);
+  expect((await req(`integrations/${driveId}/credential`,{token:'fixture-google-access-token',revision:1},'PUT')).status).toBe(409);
+  expect((await req(`integrations/${driveId}/google-oauth/start`,{revision:1})).status).toBe(503);
  });
  it('fails closed without a vault key or with an unenrolled unauthorized actor',async()=>{
   const {id}=await (await req('integrations',{provider:'stripe',label:'Billing',environment:'test'})).json();env.MFA_ENCRYPTION_KEY='';expect((await req(`integrations/${id}/credential`,{token:'sk_test_fixture_secret',revision:1},'PUT')).status).toBe(503);expect(kv.size).toBe(0);
@@ -201,6 +207,17 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
  });
 });
 describe('Integration adapter boundaries',()=>{
+ it('uses single-use PKCE state and the minimum Drive OAuth scope',async()=>{
+  const stateStore=new Map<string,string>();
+  const oauthEnv={APP_URL:'https://avyron.ro',GOOGLE_OAUTH_CLIENT_ID:'fixture-client',GOOGLE_OAUTH_CLIENT_SECRET:'fixture-secret',KV:{get:async(key:string)=>stateStore.get(key)||null,put:async(key:string,value:string)=>{stateStore.set(key,value);},delete:async(key:string)=>{stateStore.delete(key);}}} as unknown as Env;
+  const authorization=new URL(await googleOAuthAuthorization(oauthEnv,'account-1','owner-1',7));
+  expect(authorization.origin).toBe('https://accounts.google.com');expect(authorization.searchParams.get('scope')).toBe('https://www.googleapis.com/auth/drive.file');expect(authorization.searchParams.get('code_challenge_method')).toBe('S256');expect(authorization.searchParams.get('login_hint')).toBe('avyrontech@gmail.com');
+  const state=authorization.searchParams.get('state')!;
+  const fetcher=vi.fn(async(url:string,init?:RequestInit)=>url.includes('/token')?Response.json({access_token:'fixture-access',refresh_token:'fixture-refresh',expires_in:3600,scope:'https://www.googleapis.com/auth/drive.file'}):Response.json({user:{displayName:'AVYRON',emailAddress:'avyrontech@gmail.com'},storageQuota:{limit:'1000',usage:'100',usageInDrive:'80'}})) as unknown as typeof fetch;
+  const completed=await completeGoogleOAuth(oauthEnv,state,'fixture-authorization-code',fetcher);
+  expect(completed).toMatchObject({accountId:'account-1',userId:'owner-1',revision:7,summary:{account_email:'avyrontech@gmail.com',mode:'verification_only'}});expect(stateStore.size).toBe(0);expect(fetcher).toHaveBeenCalledTimes(2);
+  await expect(completeGoogleOAuth(oauthEnv,state,'fixture-authorization-code',fetcher)).rejects.toThrow('google_oauth_state_invalid');
+ });
  it('binds ciphertext to its key reference and master key',async()=>{
   const master='fixture-master-key-with-at-least-32-characters',sealed=await sealCredential('fixture-token',master,'ref-a');await expect(openCredential(sealed,master,'ref-b')).rejects.toThrow();await expect(openCredential(sealed,master+'different','ref-a')).rejects.toThrow();expect(await openCredential(sealed,master,'ref-a')).toBe('fixture-token');
  });
@@ -220,17 +237,19 @@ describe('Integration adapter boundaries',()=>{
   await expect(readIntegration({KV:{get:async()=>cipher},MFA_ENCRYPTION_KEY:master} as unknown as Env,{id:'a',provider:'stripe',environment:'test',secret_reference:'ref',revision:1,status:'configured'},true,fetcher)).rejects.toThrow('credential_environment_mismatch');expect(fetcher).not.toHaveBeenCalled();
  });
  it('reads only Supabase schema metadata and rejects privileged keys',async()=>{
-  const master='fixture-master-key-with-at-least-32-characters',token='sb_publishable_fixture_key_with_enough_length',cipher=await sealCredential(token,master,'ref'),fetcher=vi.fn(async()=>Response.json({paths:{'/public_items':{get:{}},'/private_notes':{get:{}}},definitions:{secret:{}}})) as unknown as typeof fetch;
-  const result=await readIntegration({KV:{get:async()=>cipher},MFA_ENCRYPTION_KEY:master} as unknown as Env,{id:'a',provider:'supabase',environment:'live',secret_reference:'ref',revision:1,status:'configured',config_json:'{"projectUrl":"https://projectref123.supabase.co"}'},true,fetcher);
-  expect(result.summary).toMatchObject({project_host:'projectref123.supabase.co',available_resources:2,mode:'metadata_only'});expect(result.documents).toEqual(expect.arrayContaining([expect.objectContaining({id:'table:public_items',kind:'database_resource'})]));
+  const master='fixture-master-key-with-at-least-32-characters',token='sb_publishable_fixture_key_with_enough_length',cipher=await sealCredential(token,master,'ref'),fetcher=vi.fn(async()=>Response.json({openapi:'3.0.0',paths:{'/public_items':{get:{}},'/private_notes':{get:{}}},definitions:{secret:{}}})) as unknown as typeof fetch;
+  const result=await readIntegration({KV:{get:async()=>cipher},MFA_ENCRYPTION_KEY:master} as unknown as Env,{id:'a',provider:'supabase',environment:'live',secret_reference:'ref',revision:1,status:'configured',config_json:'{"projectUrl":"https://projectref123.supabase.co"}'},false,fetcher);
+  expect(result.summary).toMatchObject({project_host:'projectref123.supabase.co',data_api_available:true,mode:'verification_only'});expect(result.documents).toEqual([]);
   expect(fetcher).toHaveBeenCalledWith('https://projectref123.supabase.co/rest/v1/',expect.objectContaining({headers:expect.objectContaining({apikey:token})}));expect(JSON.stringify(result)).not.toContain('definitions');
   const privileged=await sealCredential('sb_secret_fixture_privileged_key',master,'ref');await expect(readIntegration({KV:{get:async()=>privileged},MFA_ENCRYPTION_KEY:master} as unknown as Env,{id:'a',provider:'supabase',environment:'live',secret_reference:'ref',revision:1,status:'configured',config_json:'{"projectUrl":"https://projectref123.supabase.co"}'},false,fetcher)).rejects.toThrow('supabase_privileged_key_denied');
  });
- it('reads Google Drive account and file metadata without downloading content',async()=>{
-  const master='fixture-master-key-with-at-least-32-characters',cipher=await sealCredential('fixture-google-oauth-token',master,'ref');const urls:string[]=[];
-  const fetcher=vi.fn(async(url:string)=>{urls.push(url);return Response.json(url.includes('/about')?{user:{displayName:'Avyron'},storageQuota:{limit:'1000',usage:'100',usageInDrive:'80'}}:{files:[{id:'file-1',name:'Brief.pdf',mimeType:'application/pdf',modifiedTime:'2026-10-04T08:00:00Z',size:'321',webContentLink:'never-store'}],nextPageToken:'next'});}) as unknown as typeof fetch;
-  const result=await readIntegration({KV:{get:async()=>cipher},MFA_ENCRYPTION_KEY:master} as unknown as Env,{id:'a',provider:'google_drive',environment:'live',secret_reference:'ref',revision:1,status:'configured'},true,fetcher);
-  expect(result.summary).toMatchObject({display_name:'Avyron',storage_limit_bytes:'1000',mode:'metadata_only',limit:100,has_more:true});expect(result.documents).toEqual([expect.objectContaining({id:'file-1',kind:'drive_file_metadata',data:expect.objectContaining({name:'Brief.pdf',mime_type:'application/pdf'})})]);expect(JSON.stringify(result)).not.toContain('never-store');expect(urls).toHaveLength(2);
+ it('verifies only the expected Google Drive account and quota without listing files',async()=>{
+  const master='fixture-master-key-with-at-least-32-characters',credential=JSON.stringify({type:'google_oauth_v1',access_token:'fixture-google-oauth-token',refresh_token:'fixture-refresh-token',expires_at:Date.now()+3600000,scope:'https://www.googleapis.com/auth/drive.file'}),cipher=await sealCredential(credential,master,'ref');const urls:string[]=[];
+  const fetcher=vi.fn(async(url:string)=>{urls.push(url);return Response.json({user:{displayName:'Avyron',emailAddress:'avyrontech@gmail.com'},storageQuota:{limit:'1000',usage:'100',usageInDrive:'80'}});}) as unknown as typeof fetch;
+  const result=await readIntegration({KV:{get:async()=>cipher,put:async()=>{}},MFA_ENCRYPTION_KEY:master} as unknown as Env,{id:'a',provider:'google_drive',environment:'live',secret_reference:'ref',revision:1,status:'configured'},false,fetcher);
+  expect(result.summary).toMatchObject({account_email:'avyrontech@gmail.com',display_name:'Avyron',storage_limit_bytes:'1000',mode:'verification_only'});expect(result.documents).toEqual([]);expect(urls).toHaveLength(1);expect(urls[0]).toContain('/drive/v3/about');
+  const wrong=vi.fn(async()=>Response.json({user:{displayName:'Other',emailAddress:'other@example.test'},storageQuota:{}})) as unknown as typeof fetch;
+  await expect(readIntegration({KV:{get:async()=>cipher,put:async()=>{}},MFA_ENCRYPTION_KEY:master} as unknown as Env,{id:'a',provider:'google_drive',environment:'live',secret_reference:'ref',revision:1,status:'configured'},false,wrong)).rejects.toThrow('google_account_mismatch');
  });
  it('maps provider quota and scope failures without exposing response bodies',async()=>{
   const quota=vi.fn(async()=>new Response('private quota detail',{status:429})) as unknown as typeof fetch;await expect(boundedProviderJson('https://www.googleapis.com/drive/v3/files','token','google_drive',quota)).rejects.toThrow('provider_quota_exceeded');

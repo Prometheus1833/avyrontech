@@ -177,6 +177,10 @@ export const openApiDocument = {
     "/leads/{leadId}": {
       get: { tags: ["Platform"], summary: "Returnează lead-ul și istoricul autorizat", security: [{ bearerAuth: [] }], responses: { "200": { description: "Detalii lead" }, "403": { $ref: "#/components/responses/Problem" } } },
       patch: { tags: ["Platform"], summary: "Actualizează pipeline-ul fără a permite outreach automat", security: [{ bearerAuth: [] }], responses: { "200": { description: "Lead actualizat" }, "403": { $ref: "#/components/responses/Problem" } } },
+      delete: { tags: ["Platform"], summary: "Elimină recuperabil lead-ul din pipeline și păstrează motivul în audit", security: [{ bearerAuth: [] }], responses: { "200": { description: "Lead eliminat" }, "400": { $ref: "#/components/responses/Problem" }, "403": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/leads/deletions": {
+      get: { tags: ["Platform"], summary: "Listează jurnalul restricționat al lead-urilor eliminate", security: [{ bearerAuth: [] }], responses: { "200": { description: "Jurnal de audit" }, "403": { $ref: "#/components/responses/Problem" } } },
     },
     "/ai/agents": {
       get: { tags: ["Public"], summary: "Listează agenții publici activi", responses: { "200": { description: "Agenți publici" } } },

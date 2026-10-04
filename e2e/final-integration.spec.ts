@@ -42,9 +42,22 @@ test("public pages remain indexable and fluid on mobile", async ({ page }) => {
   await expect(page.getByTestId("product-hero-facts")).toContainText(/1[.\s]?150 RON/, { timeout: 10_000 });
   await expect(page.getByRole("heading", { name: "Configurează site-ul potrivit afacerii tale" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Site-uri create de noi" })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Lumina Botez/ }).first()).toHaveAttribute("href", "https://demo1.avyron.eu");
-  await expect(page.getByRole("link", { name: /VERDIA/ }).first()).toHaveAttribute("href", "https://demo2.avyron.eu");
-  await expect(page.getByRole("link", { name: /PungiPlast/ }).first()).toHaveAttribute("href", "https://exemplu1.avyron.eu");
+  const portfolioLinks = new Map([
+    ["Lumina Botez", "https://demo1.avyron.eu"],
+    ["VERDIA", "https://demo2.avyron.eu"],
+    ["PungiPlast", "https://exemplu1.avyron.eu"],
+    ["Detectiv ICM", "https://detectiv-icm.avyron.eu"],
+    ["Crăița Dinulescu", "https://dinulescu-craita-consultant-financiar.avyron.eu"],
+    ["Tipografia UMC", "https://umc.avyron.eu"],
+    ["CGC Imobiliare", "https://demo3.avyron.eu"],
+    ["Cabane Sucevița", "https://demo4.avyron.eu"],
+    ["Cofetăria Dulce Dor", "/examples/cofetariadulcedor.ro"],
+    ["Studio Mara Design", "/examples/studiomaradesign.ro"],
+    ["Pensiunea Cerbul", "/examples/pensiuneacerbul.ro"],
+  ]);
+  for (const [name, href] of portfolioLinks) {
+    await expect(page.getByRole("link", { name: new RegExp(name) }).first()).toHaveAttribute("href", href);
+  }
 
   await page.goto("/produse", { waitUntil: "domcontentloaded" });
   await expect(page.locator('a[href="/de/produkte"]')).toBeVisible();

@@ -6,14 +6,32 @@ import { platformRoleForUser } from './authorization';
 import { privilegedMfaSatisfied } from './mfaPolicy';
 import { checkRateLimit } from './antispam';
 import { sha256 } from './security';
-import { integrationProviders, normalizeSupabaseProjectUrl, readIntegration, sealCredential, ProviderError, type IntegrationAccount } from './integrationAdapters';
+import { completeGoogleOAuth, googleOAuthAuthorization, integrationProviders, normalizeSupabaseProjectUrl, readIntegration, sealCredential, ProviderError, type IntegrationAccount } from './integrationAdapters';
 import { evaluateAgent } from './agentEvaluation';
 import { operationActions, operationPreview, runOperationJobs } from './operationJobs';
 export const operationsRouter=new Hono<AppBindings>();
+export const operationsOAuthRouter=new Hono<AppBindings>();
 type Ctx=Context<AppBindings>;
-const messages:Record<string,string>={revision_conflict:'Înregistrarea a fost modificată. Reîncarcă datele înainte de a salva.',approval_required:'Trimite versiunea curentă în aprobare înainte de activare.',appointment_overlap_or_invalid_period:'Responsabilul are deja o programare în acest interval.',invalid_reference_or_period:'Verifică asocierile și perioada. Programările necesită responsabil, început și sfârșit.',vault_not_configured:'Cheia de criptare a platformei trebuie configurată înainte de conectarea contului.',credentials_or_scope_invalid:'Cheia este expirată sau nu are permisiunile de citire necesare.',credential_environment_mismatch:'Cheia nu corespunde mediului test sau real selectat.',provider_unavailable:'Furnizorul nu este disponibil. Încearcă din nou.',provider_rate_limited:'Furnizorul a limitat solicitările. Reîncearcă mai târziu.',invalid_job_state:'Execuția nu mai este în starea necesară.',forbidden:'Contul nu are permisiunea necesară.',not_found:'Înregistrarea nu mai este disponibilă.',idempotency_key_reused:'Aceeași cheie a fost folosită pentru altă cerere.'};
+const messages:Record<string,string>={revision_conflict:'Înregistrarea a fost modificată. Reîncarcă datele înainte de a salva.',approval_required:'Trimite versiunea curentă în aprobare înainte de activare.',appointment_overlap_or_invalid_period:'Responsabilul are deja o programare în acest interval.',invalid_reference_or_period:'Verifică asocierile și perioada. Programările necesită responsabil, început și sfârșit.',vault_not_configured:'Cheia de criptare a platformei trebuie configurată înainte de conectarea contului.',credentials_or_scope_invalid:'Cheia este expirată sau nu are permisiunile de citire necesare.',credential_environment_mismatch:'Cheia nu corespunde mediului test sau real selectat.',provider_unavailable:'Furnizorul nu este disponibil. Încearcă din nou.',provider_rate_limited:'Furnizorul a limitat solicitările. Reîncearcă mai târziu.',data_operations_disabled:'Operațiile asupra datelor sunt dezactivate pentru această integrare.',google_account_mismatch:'Contul Google autorizat trebuie să fie avyrontech@gmail.com.',google_oauth_required:'Google Drive se conectează numai prin fluxul OAuth securizat.',google_oauth_not_configured:'Clientul OAuth Google nu este încă configurat în Worker.',google_reconnect_required:'Autorizarea Google a expirat sau a fost revocată. Reconectează contul.',invalid_job_state:'Execuția nu mai este în starea necesară.',forbidden:'Contul nu are permisiunea necesară.',not_found:'Înregistrarea nu mai este disponibilă.',idempotency_key_reused:'Aceeași cheie a fost folosită pentru altă cerere.'};
 const bad=(c:Ctx,code:string,status:400|403|404|409|503=400)=>c.json({error:{code,message:messages[code]||'Acțiunea nu poate fi efectuată. Verifică datele și reîncarcă pagina.'}},status);
 const audit=(c:Ctx,action:string,target:string)=>c.env.DB.prepare("INSERT INTO security_events(id,actor_user_id,actor_type,action,target_id,outcome,severity,created_at) VALUES (?,?,'user',?,?,'allowed','info',?)").bind(crypto.randomUUID(),c.get('userId'),action,target,Date.now());
+const integrationReturn=(env:AppBindings['Bindings'],status:string)=>`${env.APP_URL}/profil?tab=os-centers&integration=google-drive&status=${encodeURIComponent(status)}`;
+operationsOAuthRouter.get('/api/integrations/google-drive/callback',async c=>{
+ const state=c.req.query('state')||'',code=c.req.query('code')||'';
+ if(!/^[a-f0-9]{32}$/.test(state)||code.length<8||code.length>4096)return c.redirect(integrationReturn(c.env,'invalid_callback'),303);
+ try{
+  const completed=await completeGoogleOAuth(c.env,state,code),account=await c.env.DB.prepare('SELECT id,provider,owner_user_id,secret_reference,revision FROM integration_accounts WHERE id=?').bind(completed.accountId).first<IntegrationAccount&{owner_user_id:string}>();
+  if(!account||account.provider!=='google_drive'||account.owner_user_id!==completed.userId||account.revision!==completed.revision)throw new ProviderError('revision_conflict');
+  const reference=`integration:v1:${account.id}:${crypto.randomUUID()}`,sealed=await sealCredential(completed.credential,c.env.MFA_ENCRYPTION_KEY,reference),timestamp=Date.now();await c.env.KV.put(reference,sealed);
+  try{await c.env.DB.batch([
+   c.env.DB.prepare("UPDATE integration_accounts SET secret_reference=?,status='connected',checked_at=?,synced_at=NULL,error_code=NULL,updated_at=?,revision=revision+1 WHERE id=? AND revision=?").bind(reference,timestamp,timestamp,account.id,account.revision),
+   c.env.DB.prepare('INSERT INTO integration_snapshots(account_id,summary_json,created_at) VALUES (?,?,?) ON CONFLICT(account_id) DO UPDATE SET summary_json=excluded.summary_json,created_at=excluded.created_at').bind(account.id,JSON.stringify(completed.summary),timestamp),
+   c.env.DB.prepare("INSERT INTO security_events(id,actor_user_id,actor_type,action,target_id,outcome,severity,created_at) VALUES (?,?,'user','integration.google_oauth.connected',?,'allowed','info',?)").bind(crypto.randomUUID(),completed.userId,account.id,timestamp),
+  ]);}catch(error){await c.env.KV.delete(reference);throw error;}
+  if(account.secret_reference)c.executionCtx.waitUntil(c.env.KV.delete(account.secret_reference));
+  return c.redirect(integrationReturn(c.env,'connected'),303);
+ }catch(error){const status=error instanceof ProviderError?error.code:'provider_unavailable';return c.redirect(integrationReturn(c.env,status),303);}
+});
 const scope=(c:Ctx)=>`operations:${c.get('userId')}:${c.req.method}:${c.req.path}`;
 async function replay(c:Ctx) {
   const old=await c.env.DB.prepare('SELECT request_hash,response_json FROM idempotency_keys WHERE scope=? AND idempotency_key=?').bind(scope(c),c.req.header('idempotency-key')).first<{request_hash:string;response_json:string}>();
@@ -134,8 +152,8 @@ operationsRouter.post('/api/operations/jobs/:id/:action',async c=>{
 operationsRouter.get('/api/operations/notifications',async c=>c.json({data:(await c.env.DB.prepare('SELECT * FROM operation_notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 100').bind(c.get('userId')).all()).results}));
 operationsRouter.post('/api/operations/notifications/:id/read',async c=>write(c,{ok:true},[c.env.DB.prepare('UPDATE operation_notifications SET read_at=? WHERE id=? AND user_id=?').bind(Date.now(),c.req.param('id'),c.get('userId'))]));
 operationsRouter.get('/api/operations/integrations',async c=>{
- const accounts=await c.env.DB.prepare("SELECT account.id,account.provider,account.label,account.environment,account.status,account.revision,account.checked_at,account.synced_at,account.error_code,account.secret_reference IS NOT NULL has_credential,CASE WHEN account.provider='supabase' THEN json_extract(account.config_json,'$.projectUrl') ELSE NULL END project_url,account.owner_user_id,owner.email owner_email FROM integration_accounts account JOIN users owner ON owner.id=account.owner_user_id ORDER BY account.label").all();
- return c.json({providers:integrationProviders,data:accounts.results,canEdit:await platformRoleForUser(c.env.DB,c.get('userId'))==='platform_owner'});
+ const accounts=await c.env.DB.prepare("SELECT account.id,account.provider,account.label,account.environment,account.status,account.revision,account.checked_at,account.synced_at,account.error_code,account.secret_reference IS NOT NULL has_credential,CASE WHEN account.provider='supabase' THEN json_extract(account.config_json,'$.projectUrl') ELSE NULL END project_url,account.owner_user_id,owner.email owner_email,json_extract(snapshot.summary_json,'$.account_email') verified_identity,json_extract(snapshot.summary_json,'$.storage_limit_bytes') storage_limit_bytes,json_extract(snapshot.summary_json,'$.storage_usage_bytes') storage_usage_bytes,json_extract(snapshot.summary_json,'$.storage_usage_drive_bytes') storage_usage_drive_bytes FROM integration_accounts account JOIN users owner ON owner.id=account.owner_user_id LEFT JOIN integration_snapshots snapshot ON snapshot.account_id=account.id ORDER BY account.label").all();
+ return c.json({providers:integrationProviders,data:accounts.results.map(account=>({...account,data_operations_enabled:account.provider==='supabase'?String(c.env.SUPABASE_DATA_OPERATIONS_ENABLED)==='true':account.provider==='google_drive'?String(c.env.GOOGLE_DRIVE_DATA_OPERATIONS_ENABLED)==='true':true})),backup_jobs_enabled:String(c.env.BACKUP_JOBS_ENABLED)==='true',canEdit:await platformRoleForUser(c.env.DB,c.get('userId'))==='platform_owner'});
 });
 operationsRouter.post('/api/operations/integrations',async c=>{
  if(await platformRoleForUser(c.env.DB,c.get('userId'))!=='platform_owner')return bad(c,'forbidden',403);
@@ -148,6 +166,7 @@ operationsRouter.put('/api/operations/integrations/:id/credential',async c=>{
  if(await platformRoleForUser(c.env.DB,c.get('userId'))!=='platform_owner')return bad(c,'forbidden',403);
  const b=z.object({token:z.string().trim().min(16).max(8000).regex(/^[^\s]+$/),revision:z.number().int().positive()}).strict().safeParse(await c.req.json().catch(()=>null));if(!b.success)return bad(c,'invalid_credential');
  const account=await c.env.DB.prepare('SELECT * FROM integration_accounts WHERE id=?').bind(c.req.param('id')).first<IntegrationAccount>();if(!account)return bad(c,'not_found',404);if(account.revision!==b.data.revision)return bad(c,'revision_conflict',409);
+ if(account.provider==='google_drive')return bad(c,'google_oauth_required',409);
  if(!c.env.MFA_ENCRYPTION_KEY||c.env.MFA_ENCRYPTION_KEY.length<32)return bad(c,'vault_not_configured',503);
  const reference=`integration:v1:${account.id}:${crypto.randomUUID()}`;
  const sealed=await sealCredential(b.data.token,c.env.MFA_ENCRYPTION_KEY,reference);await c.env.KV.put(reference,sealed);
@@ -158,10 +177,18 @@ operationsRouter.put('/api/operations/integrations/:id/credential',async c=>{
   else if(account.secret_reference)c.executionCtx.waitUntil(c.env.KV.delete(account.secret_reference));return result;
  }catch(error){await c.env.KV.delete(reference);throw error;}
 });
+operationsRouter.post('/api/operations/integrations/:id/google-oauth/start',async c=>{
+ if(await platformRoleForUser(c.env.DB,c.get('userId'))!=='platform_owner')return bad(c,'forbidden',403);
+ const b=z.object({revision:z.number().int().positive()}).strict().safeParse(await c.req.json().catch(()=>null));if(!b.success)return bad(c,'invalid_revision');
+ const account=await c.env.DB.prepare('SELECT id,provider,owner_user_id,revision FROM integration_accounts WHERE id=?').bind(c.req.param('id')).first<IntegrationAccount&{owner_user_id:string}>();if(!account)return bad(c,'not_found',404);if(account.provider!=='google_drive')return bad(c,'invalid_provider');if(account.owner_user_id!==c.get('userId'))return bad(c,'forbidden',403);if(account.revision!==b.data.revision)return bad(c,'revision_conflict',409);
+ try{return c.json({authorization_url:await googleOAuthAuthorization(c.env,account.id,c.get('userId'),account.revision)});}catch(error){return bad(c,error instanceof ProviderError?error.code:'provider_unavailable',503);}
+});
 operationsRouter.post('/api/operations/integrations/:id/:action',async c=>{
  if(await platformRoleForUser(c.env.DB,c.get('userId'))!=='platform_owner')return bad(c,'forbidden',403);
  const action=c.req.param('action');if(!['verify','sync','disconnect'].includes(action))return bad(c,'invalid_action');
  const account=await c.env.DB.prepare('SELECT * FROM integration_accounts WHERE id=?').bind(c.req.param('id')).first<IntegrationAccount>();if(!account)return bad(c,'not_found',404);
+ if(action==='sync'&&account.provider==='supabase'&&String(c.env.SUPABASE_DATA_OPERATIONS_ENABLED)!=='true')return bad(c,'data_operations_disabled',409);
+ if(action==='sync'&&account.provider==='google_drive'&&String(c.env.GOOGLE_DRIVE_DATA_OPERATIONS_ENABLED)!=='true')return bad(c,'data_operations_disabled',409);
  if(action==='disconnect'){
   const result=await write(c,{ok:true},[c.env.DB.prepare("UPDATE integration_accounts SET status='disconnected',secret_reference=NULL,updated_at=?,revision=CASE WHEN revision=? THEN revision+1 ELSE NULL END WHERE id=?").bind(Date.now(),account.revision,account.id),audit(c,'integration.disconnected',account.id)]);
   if(result.status===200&&account.secret_reference)c.executionCtx.waitUntil(c.env.KV.delete(account.secret_reference));return result;

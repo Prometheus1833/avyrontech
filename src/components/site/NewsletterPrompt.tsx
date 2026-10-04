@@ -26,6 +26,25 @@ const excluded = /^\/(auth|autentificare|profil|intern|finance|gdpr|en\/privacy|
 
 type PromptState = { lastShownAt?: number; subscribedAt?: number };
 
+const isLocalizedCopy = (value: unknown): value is { ro: string; en: string } => {
+  if (!value || typeof value !== "object") return false;
+  const copy = value as Record<string, unknown>;
+  return typeof copy.ro === "string" && typeof copy.en === "string";
+};
+
+const isNewsletterConfig = (value: unknown): value is NewsletterConfig => {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Record<string, unknown>;
+  return typeof item.enabled === "boolean"
+    && typeof item.promptEnabled === "boolean"
+    && ["delaySeconds", "minPageViews", "scrollPercent", "cooldownDays"].every((key) => Number.isFinite(item[key]))
+    && isLocalizedCopy(item.title)
+    && isLocalizedCopy(item.body)
+    && isLocalizedCopy(item.cta)
+    && isLocalizedCopy(item.frequency)
+    && typeof item.consentPolicyVersion === "string";
+};
+
 const readState = (): PromptState => {
   try { return JSON.parse(localStorage.getItem(STATE_KEY) || "{}") as PromptState; }
   catch { return {}; }
@@ -85,9 +104,9 @@ export default function NewsletterPrompt() {
     fetch(apiUrl("/api/newsletter/config"), { headers: { accept: "application/json" } })
       .then(async (response) => {
         if (!response.ok) throw new Error("config_unavailable");
-        return response.json() as Promise<{ data: NewsletterConfig }>;
+        return response.json() as Promise<{ data?: unknown }>;
       })
-      .then(({ data }) => { if (!cancelled) setConfig(data); })
+      .then(({ data }) => { if (!cancelled && isNewsletterConfig(data)) setConfig(data); })
       .catch(() => undefined);
     return () => { cancelled = true; };
   }, [eligiblePath]);

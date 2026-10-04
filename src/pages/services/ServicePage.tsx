@@ -52,6 +52,7 @@ import { isServiceIntroKey } from "@/data/serviceIntros";
 import WebsitePriceCalculator from "@/components/services/WebsitePriceCalculator";
 import { useAuth } from "@/hooks/useAuth";
 import { addLocalAccountCartItem, syncLocalAccountCartSource } from "@/lib/accountCart";
+import { setPageMeta } from "@/lib/seo";
 
 const ICONS: Record<IconKey, React.ComponentType<{ className?: string }>> = {
   globe: Globe,
@@ -93,14 +94,17 @@ const ServicePage = () => {
     window.scrollTo(0, 0);
     const c = product.copy[lang];
     const path = product.path[lang];
-    Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
-      ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd, serviceLd, faqPageLd }]) => {
-        setPageMeta({
-          title: c.metaTitle,
-          description: c.metaDescription,
-          path,
-          alternates: { ro: product.path.ro, en: product.path.en },
-        });
+    // Update the canonical synchronously on SPA redirects. The structured-data
+    // helpers can stay deferred, but metadata must never retain the previous
+    // route while a service chunk is loading.
+    setPageMeta({
+      title: c.metaTitle,
+      description: c.metaDescription,
+      path,
+      alternates: { ro: product.path.ro, en: product.path.en },
+    });
+    void Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
+      ([{ setJsonLd }, { organizationLd, breadcrumbLd, serviceLd, faqPageLd }]) => {
         setJsonLd("ld-organization", organizationLd);
         setJsonLd(
           "ld-service",

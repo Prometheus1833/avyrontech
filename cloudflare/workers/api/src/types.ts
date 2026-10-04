@@ -29,6 +29,13 @@ type OptionalIntegrations = {
   RESEND_MARKETING_SEGMENT_ID?: string;
   RESEND_MARKETING_FROM?: string;
   RESEND_WEBHOOK_SECRET?: string;
+  /** Optional connectors remain verification-only until explicitly enabled. */
+  SUPABASE_DATA_OPERATIONS_ENABLED?: string;
+  GOOGLE_DRIVE_DATA_OPERATIONS_ENABLED?: string;
+  BACKUP_JOBS_ENABLED?: string;
+  GOOGLE_OAUTH_CLIENT_ID?: string;
+  GOOGLE_OAUTH_CLIENT_SECRET?: string;
+  GOOGLE_OAUTH_REDIRECT_URI?: string;
 };
 
 export type Env = CloudflareBindings & OptionalIntegrations;

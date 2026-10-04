@@ -5,8 +5,8 @@ export const integrationProviders = {
   stripe: { name: 'Stripe', description: 'Verificare acces și import facturi pentru reconciliere', documentation: 'https://docs.stripe.com/api/invoices/list' },
   cloudflare: { name: 'Cloudflare', description: 'Verificare token personal și inventar zone DNS', documentation: 'https://developers.cloudflare.com/api/resources/user/subresources/tokens/' },
   revolut: { name: 'Revolut Business', description: 'Citire conturi și solduri, fără inițiere de plăți', documentation: 'https://developer.revolut.com/docs/business/get-accounts' },
-  supabase: { name: 'Supabase', description: 'Verificare Data API și inventar de scheme, fără migrarea autentificării sau a datelor', documentation: 'https://supabase.com/docs/guides/api' },
-  google_drive: { name: 'Google Drive', description: 'Verificare cont și import limitat la metadatele fișierelor, fără descărcarea conținutului', documentation: 'https://developers.google.com/workspace/drive/api/reference/rest/v3/files/list' },
+  supabase: { name: 'Supabase', description: 'Verificare Data API fără migrarea autentificării, fișierelor sau datelor', documentation: 'https://supabase.com/docs/guides/api' },
+  google_drive: { name: 'Google Drive', description: 'Verificare cont și cotă prin Drive API, fără scanarea sau transferul fișierelor', documentation: 'https://developers.google.com/workspace/drive/api/reference/rest/v3/about/get' },
 } as const;
 export type IntegrationProvider = keyof typeof integrationProviders;
 export type IntegrationAccount = {id:string;provider:IntegrationProvider;environment:'test'|'live';secret_reference:string|null;revision:number;status:string;config_json?:string|null};
@@ -31,6 +31,35 @@ export async function openCredential(ciphertext:string,master:string,reference:s
 }
 export class ProviderError extends Error {
   constructor(readonly code:string){super(code);}
+}
+type GoogleOAuthCredential={type:'google_oauth_v1';access_token:string;refresh_token:string;expires_at:number;scope:string};
+const googleCredential=(value:string):GoogleOAuthCredential=>{try{const parsed=JSON.parse(value) as Partial<GoogleOAuthCredential>;if(parsed.type!=='google_oauth_v1'||typeof parsed.access_token!=='string'||typeof parsed.refresh_token!=='string'||typeof parsed.expires_at!=='number'||typeof parsed.scope!=='string')throw new Error();return parsed as GoogleOAuthCredential;}catch{throw new ProviderError('google_oauth_required');}};
+async function googleTokenRequest(env:Env,body:URLSearchParams,fetcher:typeof fetch){
+  if(!env.GOOGLE_OAUTH_CLIENT_ID||!env.GOOGLE_OAUTH_CLIENT_SECRET)throw new ProviderError('google_oauth_not_configured');
+  body.set('client_id',env.GOOGLE_OAUTH_CLIENT_ID);body.set('client_secret',env.GOOGLE_OAUTH_CLIENT_SECRET);
+  const response=await fetcher('https://oauth2.googleapis.com/token',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded',accept:'application/json'},body:body.toString(),redirect:'error',signal:AbortSignal.timeout(10000)});
+  if(!response.ok){await response.body?.cancel();throw new ProviderError(response.status===400?'google_reconnect_required':'provider_unavailable');}
+  const payload=object(await response.json());if(typeof payload.access_token!=='string'||typeof payload.expires_in!=='number')throw new ProviderError('provider_invalid_response');return payload;
+}
+export const googleOAuthRedirectUri=(env:Env)=>env.GOOGLE_OAUTH_REDIRECT_URI||`${env.APP_URL}/api/integrations/google-drive/callback`;
+export async function googleOAuthAuthorization(env:Env,accountId:string,userId:string,revision:number){
+  if(!env.GOOGLE_OAUTH_CLIENT_ID||!env.GOOGLE_OAUTH_CLIENT_SECRET)throw new ProviderError('google_oauth_not_configured');
+  const state=crypto.randomUUID().replace(/-/g,''),bytes=crypto.getRandomValues(new Uint8Array(48));
+  const verifier=encoded(bytes).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const digest=new Uint8Array(await crypto.subtle.digest('SHA-256',encoder.encode(verifier)));
+  const challenge=encoded(digest).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  await env.KV.put(`google-oauth-state:${state}`,JSON.stringify({accountId,userId,revision,verifier,expiresAt:Date.now()+600000}),{expirationTtl:600});
+  const query=new URLSearchParams({client_id:env.GOOGLE_OAUTH_CLIENT_ID,redirect_uri:googleOAuthRedirectUri(env),response_type:'code',scope:'https://www.googleapis.com/auth/drive.file',access_type:'offline',prompt:'consent',include_granted_scopes:'true',state,code_challenge:challenge,code_challenge_method:'S256',login_hint:'avyrontech@gmail.com'});
+  return `https://accounts.google.com/o/oauth2/v2/auth?${query}`;
+}
+export async function completeGoogleOAuth(env:Env,state:string,code:string,fetcher:typeof fetch=fetch){
+  const key=`google-oauth-state:${state}`,raw=await env.KV.get(key);await env.KV.delete(key);if(!raw)throw new ProviderError('google_oauth_state_invalid');
+  const saved=object(JSON.parse(raw));if(typeof saved.accountId!=='string'||typeof saved.userId!=='string'||typeof saved.revision!=='number'||typeof saved.verifier!=='string'||typeof saved.expiresAt!=='number'||saved.expiresAt<Date.now())throw new ProviderError('google_oauth_state_invalid');
+  const token=await googleTokenRequest(env,new URLSearchParams({grant_type:'authorization_code',code,redirect_uri:googleOAuthRedirectUri(env),code_verifier:saved.verifier}),fetcher);
+  if(typeof token.refresh_token!=='string'||typeof token.scope!=='string'||!token.scope.split(' ').includes('https://www.googleapis.com/auth/drive.file'))throw new ProviderError('google_oauth_scope_invalid');
+  const access=String(token.access_token),about=object(await boundedProviderJson('https://www.googleapis.com/drive/v3/about?fields=user(emailAddress%2CdisplayName)%2CstorageQuota(limit%2Cusage%2CusageInDrive)',access,'google_drive',fetcher));
+  const user=object(about.user),email=text(user.emailAddress)?.toLowerCase();if(email!=='avyrontech@gmail.com')throw new ProviderError('google_account_mismatch');
+  return {accountId:saved.accountId,userId:saved.userId,revision:saved.revision,credential:JSON.stringify({type:'google_oauth_v1',access_token:access,refresh_token:token.refresh_token,expires_at:Date.now()+Number(token.expires_in)*1000,scope:token.scope} satisfies GoogleOAuthCredential),summary:{account_email:email,display_name:text(user.displayName),storage_limit_bytes:text(object(about.storageQuota).limit),storage_usage_bytes:text(object(about.storageQuota).usage),storage_usage_drive_bytes:text(object(about.storageQuota).usageInDrive),mode:'verification_only'}};
 }
 export async function boundedProviderJson(url:string,token:string,provider:IntegrationProvider,fetcher:typeof fetch=fetch):Promise<unknown> {
   const allowed:Record<Exclude<IntegrationProvider,'supabase'>,string[]>={github:['api.github.com'],stripe:['api.stripe.com'],cloudflare:['api.cloudflare.com'],revolut:['b2b.revolut.com','sandbox-b2b.revolut.com'],google_drive:['www.googleapis.com']};
@@ -67,7 +96,12 @@ export async function readIntegration(env:Env,account:IntegrationAccount,sync:bo
   if(!account.secret_reference||account.status==='disconnected')throw new ProviderError('account_not_activated');
   const encrypted=await env.KV.get(account.secret_reference);
   if(!encrypted)throw new ProviderError('credential_unavailable');
-  const token=await openCredential(encrypted,env.MFA_ENCRYPTION_KEY,account.secret_reference);
+  let token=await openCredential(encrypted,env.MFA_ENCRYPTION_KEY,account.secret_reference);
+  if(account.provider==='google_drive'){
+    let credential=googleCredential(token);
+    if(credential.expires_at<=Date.now()+60000){const refreshed=await googleTokenRequest(env,new URLSearchParams({grant_type:'refresh_token',refresh_token:credential.refresh_token}),fetcher);credential={...credential,access_token:String(refreshed.access_token),expires_at:Date.now()+Number(refreshed.expires_in)*1000,scope:typeof refreshed.scope==='string'?refreshed.scope:credential.scope};await env.KV.put(account.secret_reference,await sealCredential(JSON.stringify(credential),env.MFA_ENCRYPTION_KEY,account.secret_reference));}
+    token=credential.access_token;
+  }
   const read=(url:string)=>boundedProviderJson(url,token,account.provider,fetcher);
   const documents:{id:string;kind:string;data:Record<string,unknown>}[]=[];
   let summary:Record<string,unknown>={};
@@ -93,16 +127,17 @@ export async function readIntegration(env:Env,account:IntegrationAccount,sync:bo
     if(sync)for(const raw of rows.slice(0,100)){const row=object(raw);if(typeof row.id==='string')documents.push({id:row.id,kind:'bank_account',data:{name:text(row.name),currency:text(row.currency),state:text(row.state),balance:typeof row.balance==='number'?row.balance:null}});}
   } else if(account.provider==='supabase') {
     assertSafeSupabaseKey(token);const projectUrl=normalizeSupabaseProjectUrl(jsonConfig(account.config_json).projectUrl);
-    const schema=object(await read(`${projectUrl}/rest/v1/`));const paths=object(schema.paths);
-    const tables=[...new Set(Object.keys(paths).map(path=>/^\/([^/{?]+)$/.exec(path)?.[1]).filter((value):value is string=>Boolean(value)).map(value=>decodeURIComponent(value)))].slice(0,100);
-    summary={project_host:new URL(projectUrl).hostname,available_resources:tables.length,mode:'metadata_only'};
-    if(sync)for(const table of tables)documents.push({id:`table:${table}`,kind:'database_resource',data:{name:table}});
+    const schema=object(await read(`${projectUrl}/rest/v1/`));
+    if(!schema.openapi&&!schema.swagger)throw new ProviderError('provider_invalid_response');
+    summary={project_host:new URL(projectUrl).hostname,data_api_available:true,mode:'verification_only'};
+    if(sync)throw new ProviderError('data_operations_disabled');
   } else {
-    const about=object(await read('https://www.googleapis.com/drive/v3/about?fields=user(displayName),storageQuota(limit,usage,usageInDrive)'));
+    const about=object(await read('https://www.googleapis.com/drive/v3/about?fields=user(displayName%2CemailAddress)%2CstorageQuota(limit%2Cusage%2CusageInDrive)'));
     const user=object(about.user),quota=object(about.storageQuota);
-    summary={display_name:text(user.displayName),storage_limit_bytes:text(quota.limit),storage_usage_bytes:text(quota.usage),mode:'metadata_only'};
-    if(sync){const listing=object(await read("https://www.googleapis.com/drive/v3/files?pageSize=100&q=trashed%3Dfalse&orderBy=modifiedTime%20desc&fields=files(id%2Cname%2CmimeType%2CmodifiedTime%2Csize)%2CnextPageToken"));if(!Array.isArray(listing.files))throw new ProviderError('provider_invalid_response');
-      for(const raw of listing.files){const row=object(raw);if(typeof row.id==='string')documents.push({id:row.id,kind:'drive_file_metadata',data:{name:text(row.name),mime_type:text(row.mimeType),modified_at:text(row.modifiedTime),size_bytes:text(row.size)}});}summary.limit=100;summary.has_more=typeof listing.nextPageToken==='string';}
+    const email=text(user.emailAddress)?.toLowerCase();
+    if(email!=='avyrontech@gmail.com')throw new ProviderError('google_account_mismatch');
+    summary={account_email:email,display_name:text(user.displayName),storage_limit_bytes:text(quota.limit),storage_usage_bytes:text(quota.usage),storage_usage_drive_bytes:text(quota.usageInDrive),mode:'verification_only'};
+    if(sync)throw new ProviderError('data_operations_disabled');
   }
   return {summary:{...summary,documents:documents.length},documents};
 }

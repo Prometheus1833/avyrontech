@@ -4,6 +4,7 @@ export type LeadStage =
   | "new_lead" | "contacted" | "discussion" | "potential_client" | "offer"
   | "accepted" | "rejected" | "converted";
 export type LeadChannel = "phone" | "whatsapp" | "email" | "sms" | "social";
+export type LeadDeletionReasonCode = "duplicate" | "spam" | "test_entry" | "invalid_contact" | "withdrawn" | "outside_scope" | "other";
 
 export type LeadListRow = {
   id: string; organization_id: string | null; source: string | null;
@@ -45,6 +46,12 @@ export type LeadDetailResponse = {
   canEdit: boolean;
 };
 
+export type LeadDeletionLog = {
+  id: string; lead_id: string; actor_user_id: string | null; actor_email: string | null;
+  lead_label: string; business: string | null; source: string | null; lifecycle_stage: LeadStage | null;
+  reason_code: LeadDeletionReasonCode | null; reason_detail: string | null; created_at: number;
+};
+
 export type NewLeadInput = {
   name?: string; business?: string; source?: string; phone?: string; email?: string;
   website?: string; product?: string; message?: string; preferredChannel?: LeadChannel;
@@ -53,7 +60,7 @@ export type NewLeadInput = {
 };
 
 export const leadsApi = {
-  list: () => cfAuth.request<{ data: LeadListRow[] }>("/api/leads"),
+  list: () => cfAuth.request<{ data: LeadListRow[]; platformRole: "platform_owner" | "superadmin" | null }>("/api/leads"),
   detail: (id: string) => cfAuth.request<LeadDetailResponse>(`/api/leads/${id}`),
   create: (input: NewLeadInput) =>
     cfAuth.request<{ id: string }>("/api/leads", {
@@ -65,7 +72,8 @@ export const leadsApi = {
     lifecycleStage?: LeadStage; urgent?: boolean; nextFollowUpAt?: number | null;
     preferredChannel?: LeadChannel | null; lostReason?: string | null;
   }) => cfAuth.request<{ ok: true }>(`/api/leads/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
-  remove: (id: string) => cfAuth.request<{ ok: true }>(`/api/leads/${id}`, { method: "DELETE" }),
+  remove: (id: string, input: { reasonCode: LeadDeletionReasonCode; reasonDetail?: string }) => cfAuth.request<{ ok: true }>(`/api/leads/${id}`, { method: "DELETE", body: JSON.stringify(input) }),
+  deletionLog: () => cfAuth.request<{ data: LeadDeletionLog[] }>("/api/leads/deletions"),
   addActivity: (id: string, input: { kind: string; direction?: string; outcome?: string; content?: string }) =>
     cfAuth.request<{ id: string }>(`/api/leads/${id}/activities`, { method: "POST", body: JSON.stringify(input) }),
   addReminder: (id: string, input: { dueAt: number; note: string; assignedTo?: string }) =>

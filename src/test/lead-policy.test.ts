@@ -43,9 +43,11 @@ describe("lead policy", () => {
 
   it("soft-deletes leads and excludes them from the active pipeline", () => {
     const api = readFileSync(resolve(process.cwd(), "cloudflare/workers/api/src/leads.ts"), "utf8");
-    const migration = readFileSync(resolve(process.cwd(), "cloudflare/d1/migrations/0038_internal_platform_19.sql"), "utf8");
+    const migration = readFileSync(resolve(process.cwd(), "cloudflare/d1/migrations/0048_lead_deletion_audit.sql"), "utf8");
     expect(api).toContain('leadsRouter.delete("/api/leads/:leadId"');
     expect(api).toContain("lead.deleted_at IS NULL");
-    expect(migration).toContain("ALTER TABLE leads ADD COLUMN deleted_at");
+    expect(api).toContain('leadsRouter.get("/api/leads/deletions"');
+    expect(migration).toContain("ALTER TABLE leads ADD COLUMN deletion_reason_code");
+    expect(migration).toContain("ALTER TABLE leads ADD COLUMN deleted_by");
   });
 });
