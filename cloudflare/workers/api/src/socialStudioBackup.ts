@@ -1,7 +1,7 @@
 import type { Env } from "./types";
 import { now, sha256 } from "./security";
 
-export const SOCIAL_BACKUP_SCHEMA_VERSION = 39;
+export const SOCIAL_BACKUP_SCHEMA_VERSION = 42;
 
 export type SocialBackupScope = "configuration" | "content" | "full";
 
@@ -52,7 +52,7 @@ async function rows(env: Env, query: string, projectId: string) {
 }
 
 async function collectBackupData(env: Env, projectId: string, scope: SocialBackupScope): Promise<BackupCollections> {
-  const [project, policy, designProfiles, channels, agents, toolPolicies] = await Promise.all([
+  const [project, policy, designProfiles, channels, agents, toolPolicies, modelRoutes] = await Promise.all([
     rows(env, `SELECT id,slug,name,status,primary_objective,automation_mode,brand_tone,target_audience,
                       core_offer,agent_instructions,content_retention_days,daily_generation_limit,updated_at
                  FROM ai_projects WHERE id=?`, projectId),
@@ -71,8 +71,12 @@ async function collectBackupData(env: Env, projectId: string, scope: SocialBacku
     rows(env, `SELECT provider,capability,billing_mode,status,requires_approval,max_calls_per_day,
                       notes,last_checked_at,updated_at
                  FROM ai_social_tool_policies WHERE project_id=? ORDER BY provider,capability`, projectId),
+    rows(env, `SELECT route_key,provider,model_id,modality,execution_mode,billing_mode,status,priority,
+                      max_output_tokens,daily_unit_limit,source_url,license_spdx,storage_policy,
+                      notes,last_verified_at,updated_at
+                 FROM ai_social_model_routes WHERE project_id=? ORDER BY route_key,priority`, projectId),
   ]);
-  const data: BackupCollections = { project, policy, designProfiles, channels, agents, toolPolicies };
+  const data: BackupCollections = { project, policy, designProfiles, channels, agents, toolPolicies, modelRoutes };
 
   if (scope === "content" || scope === "full") {
     const [content, variants, assets, reviews] = await Promise.all([

@@ -64,18 +64,19 @@ export function proposeAudienceCandidates(
   }).sort((a, b) => b.score - a.score).slice(0, Math.min(25, Math.max(0, limits.cleanup)));
 
   const growth = profiles.flatMap<AudienceProposal>((profile) => {
-    if (protectedProfile(profile) || !["follower", "suggested"].includes(profile.relationship)) return [];
+    // Follow-back is an administrator-only decision. Followers remain read-only
+    // observations and never enter the agent's approval or execution queue.
+    if (protectedProfile(profile) || profile.relationship !== "suggested") return [];
     if (!["business", "organization", "creator"].includes(profile.profileKind) || profile.activityState !== "active") return [];
     if (profile.relevanceScore < 45 || !["none", "weak", "unknown"].includes(profile.websiteState)) return [];
     const reasons = ["activitate profesională relevantă"];
     let score = profile.relevanceScore * 0.55 + profile.intentScore * 0.3;
     if (profile.websiteState === "none") { score += 18; reasons.push("fără website identificat"); }
     else if (profile.websiteState === "weak") { score += 10; reasons.push("prezență web ce poate fi îmbunătățită"); }
-    if (profile.relationship === "follower") { score += 8; reasons.push("urmărește deja contul AVYRON"); }
     if (score < 55) return [];
     return [{
       relationshipId: profile.id,
-      action: profile.relationship === "suggested" ? "friend_request" : "follow",
+      action: "friend_request",
       score: clamp(score),
       reasons,
     }];

@@ -75,12 +75,25 @@ export type AiSocialPolicy = {
   require_human_approval: number; time_slots_json: string; channel_priority_json: string;
   industry_rotation_json: string; last_planned_at: number | null;
   credit_mode: "free_only" | "approved_paid";
+  incoming_friend_request_mode: "admin_only";
+  follow_back_mode: "admin_only";
 };
 
 export type AiSocialToolPolicy = {
   provider: string; capability: string; billing_mode: "free_only" | "approved_paid";
   status: "available" | "pending_connection" | "blocked_paid" | "disabled";
   requires_approval: number; max_calls_per_day: number; notes: string; last_checked_at: number | null;
+};
+
+export type AiSocialModelRoute = {
+  route_key: string; provider: string; model_id: string;
+  modality: "text" | "image" | "audio" | "video";
+  execution_mode: "remote_api" | "catalog_only";
+  billing_mode: "free_only";
+  status: "available" | "catalog_only" | "blocked_paid" | "disabled";
+  priority: number; max_output_tokens: number; daily_unit_limit: number;
+  source_url: string; license_spdx: string | null; storage_policy: "metadata_only";
+  notes: string; last_verified_at: number | null;
 };
 
 export type AiSocialJob = {
@@ -170,6 +183,7 @@ export type AiProjectDetail = {
   socialSources: AiSocialSource[];
   socialOpportunities: AiSocialOpportunity[];
   socialTools: AiSocialToolPolicy[];
+  socialModelRoutes?: AiSocialModelRoute[];
   socialAccounts: AiSocialAccount[];
   audienceRuns: AiAudienceRun[];
   audienceCandidates: AiAudienceCandidate[];

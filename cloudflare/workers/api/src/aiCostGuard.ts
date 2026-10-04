@@ -59,6 +59,16 @@ export async function reserveAiCost(input: ReserveInput): Promise<AiCostReservat
     return { decision: "blocked", reason: "invalid_cost_estimate", projectedQuotaUsed: 0, quotaId: null };
   }
 
+  const timestamp = now();
+  await input.db.prepare(
+    `UPDATE financial_provider_quotas
+        SET quota_used=0,status='active',
+            reset_date=CAST(strftime('%s',? / 1000,'unixepoch','start of day','+1 day') AS INTEGER)*1000,
+            updated_at=?
+      WHERE vendor_id=? AND reset_frequency='daily' AND hard_stop_before_paid=1
+        AND reset_date IS NOT NULL AND reset_date<=? AND status<>'archived'`,
+  ).bind(timestamp, timestamp, input.vendorId, timestamp).run();
+
   const idempotencyHash = await sha256(input.idempotencyKey);
   const previous = await input.db.prepare(replayQuery).bind(idempotencyHash).first<UsageEvent>();
   if (previous) return replayReservation(previous, input);
@@ -81,13 +91,13 @@ export async function reserveAiCost(input: ReserveInput): Promise<AiCostReservat
   } else if (!quota || quota.quota_total === null || !["active", "warning"].includes(quota.status)) {
     decision = { decision: "waiting_for_budget_approval", reason: "provider_quota_not_configured", projectedQuotaUsed: quota?.quota_used || 0 };
   } else {
-    const timestamp = now();
-    const dayStart = new Date(timestamp); dayStart.setUTCHours(0, 0, 0, 0);
+    const decisionTimestamp = now();
+    const dayStart = new Date(decisionTimestamp); dayStart.setUTCHours(0, 0, 0, 0);
     const monthStart = new Date(Date.UTC(dayStart.getUTCFullYear(), dayStart.getUTCMonth(), 1)).getTime();
     const [daily, monthly, financial] = await Promise.all([
       input.db.prepare("SELECT COALESCE(SUM(estimated_cost_minor),0) total FROM financial_usage_events WHERE agent_slug=? AND vendor_id=? AND decision='allowed' AND created_at>=?").bind(input.agentSlug,input.vendorId,dayStart.getTime()).first<{total:number}>(),
       input.db.prepare("SELECT COALESCE(SUM(estimated_cost_minor),0) total FROM financial_usage_events WHERE agent_slug=? AND vendor_id=? AND decision='allowed' AND created_at>=?").bind(input.agentSlug,input.vendorId,monthStart).first<{total:number}>(),
-      input.db.prepare(`SELECT MIN(limit_minor-COALESCE((SELECT SUM(estimated_cost_minor) FROM financial_usage_events usage WHERE usage.created_at BETWEEN budget.period_start AND budget.period_end AND usage.decision='allowed' AND (budget.agent_slug IS NULL OR usage.agent_slug=budget.agent_slug)),0)) remaining FROM financial_budgets budget WHERE budget.status='active' AND budget.category IN ('general','ai') AND budget.period_start<=? AND budget.period_end>? AND (budget.agent_slug IS NULL OR budget.agent_slug=?)`).bind(timestamp,timestamp,input.agentSlug).first<{remaining:number|null}>(),
+      input.db.prepare(`SELECT MIN(limit_minor-COALESCE((SELECT SUM(estimated_cost_minor) FROM financial_usage_events usage WHERE usage.created_at BETWEEN budget.period_start AND budget.period_end AND usage.decision='allowed' AND (budget.agent_slug IS NULL OR usage.agent_slug=budget.agent_slug)),0)) remaining FROM financial_budgets budget WHERE budget.status='active' AND budget.category IN ('general','ai') AND budget.period_start<=? AND budget.period_end>? AND (budget.agent_slug IS NULL OR budget.agent_slug=?)`).bind(decisionTimestamp,decisionTimestamp,input.agentSlug).first<{remaining:number|null}>(),
     ]);
     const remaining = [
       policy.daily_budget_minor === null ? null : policy.daily_budget_minor - (daily?.total || 0),
@@ -107,7 +117,7 @@ export async function reserveAiCost(input: ReserveInput): Promise<AiCostReservat
     });
   }
 
-  const timestamp = now();
+  const persistedAt = now();
   const persist = () => input.db.prepare(
     `INSERT INTO financial_usage_events
       (id,vendor_id,quota_id,agent_slug,project_id,client_id,operation,units,
@@ -118,7 +128,7 @@ export async function reserveAiCost(input: ReserveInput): Promise<AiCostReservat
     input.agentSlug, input.projectId || null, input.clientId || null,
     input.operation.slice(0, 120), input.requestedUnits, input.estimatedCostMinor,
     policy?.currency || "RON", decision.decision, decision.reason,
-    idempotencyHash, input.requestId || null, timestamp,
+    idempotencyHash, input.requestId || null, persistedAt,
   ).run();
 
   try { await persist(); } catch (error) {

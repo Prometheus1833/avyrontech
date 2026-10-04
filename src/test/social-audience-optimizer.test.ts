@@ -37,13 +37,23 @@ describe("Social audience optimizer", () => {
     const proposals = proposeAudienceCandidates([
       profile({ id: "irrelevant", activityState: "inactive", followsBack: false, profileKind: "personal" }),
       profile({
-        id: "business", relationship: "follower", profileKind: "business", websiteState: "none",
-        activityState: "active", followsBack: true, relevanceScore: 85, intentScore: 70,
+        id: "business", relationship: "suggested", profileKind: "business", websiteState: "none",
+        activityState: "active", followsBack: null, relevanceScore: 85, intentScore: 70,
       }),
     ], { cleanup: 25, growth: 25 });
     expect(proposals).toEqual(expect.arrayContaining([
       expect.objectContaining({ relationshipId: "irrelevant", action: "unfollow" }),
-      expect.objectContaining({ relationshipId: "business", action: "follow" }),
+      expect.objectContaining({ relationshipId: "business", action: "friend_request" }),
     ]));
+  });
+
+  it("never proposes follow-back for an existing follower", () => {
+    const proposals = proposeAudienceCandidates([
+      profile({
+        id: "valuable-follower", relationship: "follower", profileKind: "business", websiteState: "none",
+        activityState: "active", followsBack: true, relevanceScore: 100, intentScore: 100,
+      }),
+    ], { cleanup: 25, growth: 25 });
+    expect(proposals).toEqual([]);
   });
 });
