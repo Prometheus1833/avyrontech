@@ -1,4 +1,5 @@
-import { lazy, Suspense, useMemo } from "react";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import { Suspense, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
 import { ITEM_BY_SLUG } from "./data/items";
@@ -6,14 +7,14 @@ import Shell from "./components/Shell";
 import { homePath, langOfPath, parseRoute } from "./lib/paths";
 import "./produse.css";
 
-const Home = lazy(() => import("./pages/Home"));
-const TypePage = lazy(() => import("./pages/TypePage"));
-const ItemPage = lazy(() => import("./pages/ItemPage"));
-const LogoPage = lazy(() => import("./pages/LogoPage"));
-const GuidePage = lazy(() => import("./pages/GuidePage"));
-const FaqPage = lazy(() => import("./pages/FaqPage"));
-const CollectionPage = lazy(() => import("./pages/CollectionPage"));
-const CollectionsIndex = lazy(() => import("./pages/CollectionPage").then((m) => ({ default: m.CollectionsIndex })));
+const Home = lazyWithRetry(() => import("./pages/Home"));
+const TypePage = lazyWithRetry(() => import("./pages/TypePage"));
+const ItemPage = lazyWithRetry(() => import("./pages/ItemPage"));
+const LogoPage = lazyWithRetry(() => import("./pages/LogoPage"));
+const GuidePage = lazyWithRetry(() => import("./pages/GuidePage"));
+const FaqPage = lazyWithRetry(() => import("./pages/FaqPage"));
+const CollectionPage = lazyWithRetry(() => import("./pages/CollectionPage"));
+const CollectionsIndex = lazyWithRetry(() => import("./pages/CollectionPage").then((m) => ({ default: m.CollectionsIndex })));
 
 /**
  * Router-ul intern al paginii Produse Avyron.

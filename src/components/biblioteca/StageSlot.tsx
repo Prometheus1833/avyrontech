@@ -1,6 +1,7 @@
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import {
   Suspense,
-  lazy,
+
   useCallback,
   useEffect,
   useRef,
@@ -97,9 +98,9 @@ export default function StageSlot({
   useEffect(() => {
     if (!near) return;
     if (Effect) return;
-    // lazy() memorează promisiunea, deci chunk-ul se cere o singură dată,
+    // lazyWithRetry() memorează promisiunea, deci chunk-ul se cere o singură dată,
     // chiar dacă efectul e montat și demontat de mai multe ori.
-    const Loaded = lazy(load);
+    const Loaded = lazyWithRetry(load);
     setEffect(() => Loaded);
   }, [near, Effect, load]);
 

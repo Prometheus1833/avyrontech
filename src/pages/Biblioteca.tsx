@@ -1,4 +1,5 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PageBackLink from "@/components/site/PageBackLink";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowDown } from "lucide-react";
@@ -25,7 +26,7 @@ import { useLang } from "@/i18n/LanguageContext";
 import { FEATURES } from "@/config/features";
 import logo from "@/assets/avyron-logo.jpg";
 
-const Backdrop = lazy(() => import("@/components/biblioteca/effects/Backdrop"));
+const Backdrop = lazyWithRetry(() => import("@/components/biblioteca/effects/Backdrop"));
 
 const PATHS = { ro: "/biblioteca", en: "/en/library" };
 

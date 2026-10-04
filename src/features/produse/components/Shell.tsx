@@ -1,4 +1,5 @@
-import { Suspense, lazy, useCallback, useEffect, useState, type ReactNode } from "react";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import { Suspense, useCallback, useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Blocks, BookOpen, Boxes, Handshake, Heart, Layers, Search, Sparkles } from "lucide-react";
 import Nav, { type NavLinkDef } from "@/components/site/Nav";
@@ -11,8 +12,8 @@ import CartDrawer from "./CartDrawer";
 import PageBackLink from "@/components/site/PageBackLink";
 import ProductLocaleSwitcher from "./ProductLocaleSwitcher";
 
-const Backdrop = lazy(() => import("./Backdrop"));
-const SearchPalette = lazy(() => import("./SearchPalette"));
+const Backdrop = lazyWithRetry(() => import("./Backdrop"));
+const SearchPalette = lazyWithRetry(() => import("./SearchPalette"));
 
 /**
  * Cadrul paginii Produse Avyron.

@@ -1,5 +1,6 @@
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { Boxes, Menu, X, LogIn, Newspaper, ShoppingBag, UsersRound } from "lucide-react";
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,8 +10,8 @@ import CurrencySwitch from "./CurrencySwitch";
 import NavDate from "./NavDate";
 import logo from "@/assets/avyron-logo.webp";
 
-const UserMenu = lazy(() => import("@/components/auth/UserMenu"));
-const StaffOsMenu = lazy(() => import("./StaffOsMenu"));
+const UserMenu = lazyWithRetry(() => import("@/components/auth/UserMenu"));
+const StaffOsMenu = lazyWithRetry(() => import("./StaffOsMenu"));
 
 // Routes where prices are shown — the currency toggle belongs in the nav cluster there.
 const CURRENCY_ROUTES = /^\/(en\/)?(servicii|services|produse|products)/;

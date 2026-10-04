@@ -1,4 +1,5 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -8,7 +9,7 @@ import { dprFor, intensityFor, type QualityTier } from "@/lib/stage/capability";
 import type { StageEffectProps } from "@/components/biblioteca/StageSlot";
 import heroImage from "@/assets/avyron-brand-bg.jpg";
 
-const PremiumPostFx = lazy(() => import("@/components/biblioteca/effects/PremiumPostFx"));
+const PremiumPostFx = lazyWithRetry(() => import("@/components/biblioteca/effects/PremiumPostFx"));
 
 type PlaneProps = {
   tier: QualityTier;

@@ -1,4 +1,5 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from "react";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
   Activity, ArrowRight, BadgePercent, BarChart3, CalendarClock, Check, Clock, CreditCard, Cpu,
@@ -28,9 +29,9 @@ import PlanCarousel from "@/components/site/subscriptions/PlanCarousel";
 import PlanProgressBar from "@/components/site/subscriptions/PlanProgressBar";
 import SpaceLoader from "@/components/site/subscriptions/SpaceLoader";
 
-const Footer = lazy(() => import("@/components/site/Footer"));
-const ContactBar = lazy(() => import("@/components/site/ContactBar"));
-const PlanCheckout = lazy(() => import("@/components/site/subscriptions/PlanCheckout"));
+const Footer = lazyWithRetry(() => import("@/components/site/Footer"));
+const ContactBar = lazyWithRetry(() => import("@/components/site/ContactBar"));
+const PlanCheckout = lazyWithRetry(() => import("@/components/site/subscriptions/PlanCheckout"));
 
 const WHATSAPP = "https://wa.me/40734605055?text=";
 

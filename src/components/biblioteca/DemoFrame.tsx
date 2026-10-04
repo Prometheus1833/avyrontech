@@ -1,4 +1,5 @@
-import { Suspense, lazy, useEffect, useRef, useState, type ComponentType } from "react";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import { Suspense, useEffect, useRef, useState, type ComponentType } from "react";
 import StageSlot from "@/components/biblioteca/StageSlot";
 import { DEMO_LOADERS, WEBGL_LOADERS } from "@/components/biblioteca/demos/registry";
 import { isRealBrowser } from "@/lib/stage/capability";
@@ -50,7 +51,7 @@ export default function DemoFrame({ effect, lang, onFocusChange }: Props) {
     if (!near || Demo || webglLoader || !effect.demo) return;
     const loader = DEMO_LOADERS[effect.demo];
     if (!loader) return;
-    setDemo(() => lazy(loader));
+    setDemo(() => lazyWithRetry(loader));
   }, [near, Demo, effect.demo, webglLoader]);
 
   return (
