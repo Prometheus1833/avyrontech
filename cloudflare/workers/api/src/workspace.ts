@@ -73,10 +73,12 @@ workspaceRouter.use('/api/workspace/*',async (c,next) => {
 });
 
 workspaceRouter.get('/api/workspace/clients',async c => {
+  if (!staff(c)) await linkClientsByEmail(c.env.DB,c.get('userId'));
   const {results} = await c.env.DB.prepare(`SELECT record.id,record.company_name FROM clients record WHERE ${clientScope.replace('record.client_id','record.id')} ORDER BY record.company_name`).bind(c.get('userId')).all();
   return c.json({data:results});
 });
 workspaceRouter.get('/api/workspace/invoices',async c => {
+  if (!staff(c)) await linkClientsByEmail(c.env.DB,c.get('userId'));
   const {limit,offset}=page(c);
   const {results}=await c.env.DB.prepare(`SELECT record.id,record.invoice_number,record.gross_amount_minor amount_cents,record.currency,record.status,record.invoice_date,record.due_date
     FROM financial_revenues record WHERE ${clientScope} AND record.archived_at IS NULL AND record.status NOT IN ('draft','archived') ORDER BY record.invoice_date DESC,record.id LIMIT ? OFFSET ?`)
@@ -84,6 +86,7 @@ workspaceRouter.get('/api/workspace/invoices',async c => {
   return c.json({data:results.map(r=>({...r,invoice_number:r.invoice_number||r.id,status:r.status==='paid'?'paid':r.status==='overdue'?'overdue':['cancelled','refunded'].includes(String(r.status))?'cancelled':'pending',issued_at:iso(r.invoice_date),due_at:iso(r.due_date),pdf_url:null}))});
 });
 workspaceRouter.get('/api/workspace/subscriptions',async c => {
+  if (!staff(c)) await linkClientsByEmail(c.env.DB,c.get('userId'));
   const {limit,offset}=page(c);
   const {results}=await c.env.DB.prepare(`SELECT record.id,service.service_name product_name,service.price,service.billing_cycle,record.status,record.next_billing_date
     FROM subscriptions record JOIN services service ON service.id=record.service_id WHERE ${clientScope} ORDER BY record.next_billing_date,record.id LIMIT ? OFFSET ?`)
@@ -116,13 +119,40 @@ workspaceRouter.put('/api/workspace/account-access/:userId',async c => {
   ]);
 });
 
+// Support is a team workflow: staff and admins work the whole queue.
+/** Links a verified account to the client with the same email (unverified emails never gain client data); creates a client record when none exists yet. */
+export async function linkClientsByEmail(db: D1Database,userId: string) {
+  await db.prepare(`INSERT OR IGNORE INTO client_account_access(client_id,user_id,granted_by,created_at)
+    SELECT cl.id,u.id,u.id,? FROM users u JOIN clients cl ON lower(trim(cl.email))=lower(trim(u.email)) WHERE u.id=? AND u.email_verified=1`).bind(Date.now(),userId).run();
+}
+async function ensureClientForUser(c: Ctx,requested?: string): Promise<string|null> {
+  const userId=c.get('userId'), db=c.env.DB;
+  const linked=async()=>{
+    const row=requested
+      ? await db.prepare('SELECT client_id FROM client_account_access WHERE client_id=? AND user_id=?').bind(requested,userId).first<{client_id:string}>()
+      : await db.prepare('SELECT client_id FROM client_account_access WHERE user_id=? ORDER BY created_at LIMIT 1').bind(userId).first<{client_id:string}>();
+    return row?.client_id ?? null;
+  };
+  let id=await linked(); if (id) return id;
+  await linkClientsByEmail(db,userId);
+  id=await linked(); if (id || requested) return id;
+  const user=await db.prepare('SELECT email,display_name FROM users WHERE id=?').bind(userId).first<{email:string;display_name:string|null}>();
+  if (!user) return null;
+  const clientId=crypto.randomUUID(), t=Date.now();
+  await db.batch([
+    db.prepare("INSERT INTO clients(id,company_name,contact_name,email,status,created_at) VALUES (?,?,?,?,'active',?)").bind(clientId,user.display_name||user.email,user.display_name,user.email,t),
+    db.prepare('INSERT OR IGNORE INTO client_account_access(client_id,user_id,granted_by,created_at) VALUES (?,?,?,?)').bind(clientId,userId,userId,t),
+  ]);
+  return clientId;
+}
+
 async function ticketAccess(c: Ctx,id: string) {
-  const principal=await platformRoleForUser(c.env.DB,c.get('userId'));
+  const principal=staff(c);
   return c.env.DB.prepare(`SELECT record.* FROM support_tickets record WHERE record.id=? AND (${principal?'1':clientScope})`)
     .bind(...(principal?[id]:[id,c.get('userId')])).first<{id:string;status:string;revision:number;client_id:string}>();
 }
 workspaceRouter.get('/api/workspace/tickets',async c => {
-  const principal=await platformRoleForUser(c.env.DB,c.get('userId'));
+  const principal=staff(c);
   const {limit,offset}=page(c);
   const {results}=await c.env.DB.prepare(`SELECT record.id,record.subject,record.description,record.priority,record.status,record.created_at,record.revision
     FROM support_tickets record WHERE ${principal?'1':clientScope} ORDER BY record.created_at DESC,record.id LIMIT ? OFFSET ?`)
@@ -130,13 +160,14 @@ workspaceRouter.get('/api/workspace/tickets',async c => {
   return c.json({data:results.map(r=>({...r,status:r.status==='pending'?'in_progress':r.status,created_at:iso(r.created_at)}))});
 });
 workspaceRouter.post('/api/workspace/tickets',async c => {
-  const parsed=z.object({client_id:z.string().min(1),subject:z.string().trim().min(1).max(200),description:z.string().trim().max(2000),priority:z.enum(['low','medium','high','urgent'])}).strict().safeParse(await c.req.json().catch(()=>null));
+  const parsed=z.object({client_id:z.string().optional(),subject:z.string().trim().min(1).max(200),description:z.string().trim().max(2000),priority:z.enum(['low','medium','high','urgent'])}).strict().safeParse(await c.req.json().catch(()=>null));
   if (!parsed.success) return fail(c,'invalid_input');
   const b=parsed.data;
-  if (!(await c.env.DB.prepare('SELECT 1 FROM client_account_access WHERE client_id=? AND user_id=?').bind(b.client_id,c.get('userId')).first())) return fail(c,'client_access_required',403);
+  const clientId=await ensureClientForUser(c,b.client_id);
+  if (!clientId) return fail(c,'client_access_required',403);
   const id=crypto.randomUUID(), t=Date.now();
   return mutate(c,b,{id},[
-    c.env.DB.prepare('INSERT INTO support_tickets(id,client_id,subject,description,priority,requester_user_id,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)').bind(id,b.client_id,b.subject,b.description,b.priority,c.get('userId'),t,t),
+    c.env.DB.prepare('INSERT INTO support_tickets(id,client_id,subject,description,priority,requester_user_id,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)').bind(id,clientId,b.subject,b.description,b.priority,c.get('userId'),t,t),
     audit(c,'workspace.ticket.created',id),
   ]);
 });
@@ -160,7 +191,7 @@ workspaceRouter.post('/api/workspace/tickets/:id/messages',async c => {
   ]);
 });
 workspaceRouter.patch('/api/workspace/tickets/:id',async c => {
-  if (!(await platformRoleForUser(c.env.DB,c.get('userId')))) return fail(c,'forbidden',403);
+  if (!staff(c)) return fail(c,'forbidden',403);
   const ticket=await ticketAccess(c,c.req.param('id'));
   if (!ticket) return fail(c,'not_found',404);
   const parsed=z.object({status:z.enum(['open','in_progress','resolved','closed']),revision:z.number().int().positive()}).strict().safeParse(await c.req.json().catch(()=>null));

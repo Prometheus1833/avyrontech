@@ -303,7 +303,7 @@ describe("fișierele care trebuie să existe pe disc", () => {
     const files = new Set(readdirSync(resolve(root, "demos")));
     const registry = readFileSync(resolve(root, "demos/registry.ts"), "utf8");
     for (const key of Object.keys(DEMOS)) {
-      const match = registry.match(new RegExp(`"?${key.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")}"?:\\s*lazy\\(\\(\\) => import\\("\\./([\\w-]+)"\\)\\)`));
+      const match = registry.match(new RegExp(`"?${key.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")}"?:\\s*(?:lazy|lazyWithRetry)\\(\\(\\) => import\\("\\./([\\w-]+)"\\)\\)`));
       expect(match, `nu găsesc modulul demo pentru ${key}`).toBeTruthy();
       expect(files.has(`${match![1]}.tsx`), `lipsește fișierul demo ${match![1]}.tsx`).toBe(true);
     }

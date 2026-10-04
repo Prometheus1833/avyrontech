@@ -72,9 +72,9 @@ export function TicketsTab({ staffMode = false }: { staffMode?: boolean }) {
 
   const submit = async () => {
     if (!user || !form.subject.trim()) return;
-    if (!clientId || creating) return;
+    if (creating) return;
     setCreating(true);
-    try { await workspaceApi.write("tickets", { ...form, client_id: clientId }); }
+    try { await workspaceApi.write("tickets", clientId ? { ...form, client_id: clientId } : { ...form }); }
     catch (error) { return toast.error(error instanceof Error ? error.message : "Solicitarea nu poate fi salvată."); }
     finally { setCreating(false); }
     toast.success(t.auth.dash.tickets.created);
@@ -105,8 +105,8 @@ export function TicketsTab({ staffMode = false }: { staffMode?: boolean }) {
             <DialogContent>
               <DialogHeader><DialogTitle>{t.auth.dash.tickets.newTicket}</DialogTitle></DialogHeader>
               <div className="space-y-3">
-                <label className="block text-sm">Cont client<select aria-label="Cont client" className="mt-1 w-full rounded border bg-background p-2" value={clientId} onChange={e=>setClientId(e.target.value)}><option value="">Selectează clientul</option>{clients.map(client=><option key={client.id} value={client.id}>{client.company_name}</option>)}</select></label>
-                {!clients.length && <p className="text-sm text-muted-foreground">Administratorul trebuie să asocieze contul tău unui client pentru a deschide solicitări.</p>}
+                {clients.length > 1 && <label className="block text-sm">Cont client<select aria-label="Cont client" className="mt-1 w-full rounded border bg-background p-2" value={clientId} onChange={e=>setClientId(e.target.value)}><option value="">Selectează clientul</option>{clients.map(client=><option key={client.id} value={client.id}>{client.company_name}</option>)}</select></label>}
+                
                 <div className="space-y-1.5">
                   <Label>{t.auth.dash.tickets.subject}</Label>
                   <Input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} maxLength={200} />
@@ -129,7 +129,7 @@ export function TicketsTab({ staffMode = false }: { staffMode?: boolean }) {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpen(false)}>{t.auth.dash.common.cancel}</Button>
-                <Button onClick={submit} disabled={creating || !clientId || !form.subject.trim()}>{t.auth.dash.tickets.send}</Button>
+                <Button onClick={submit} disabled={creating || !form.subject.trim()}>{t.auth.dash.tickets.send}</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

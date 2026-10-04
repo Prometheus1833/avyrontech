@@ -43,6 +43,20 @@ type SessionResponse = {
   mfa_enrollment_required?: boolean;
 };
 export type MfaChallengeResponse = { mfa_required: true; challenge_token: string; expires_in: number };
+
+/** Privileged accounts without a confirmed second factor must enroll before team areas open. */
+const MFA_ENROLL_KEY = "avyron:mfa-enroll-needed";
+export const MFA_ENROLL_EVENT = "avyron:mfa-enroll";
+export function markMfaEnrollmentNeeded(needed: boolean) {
+  try {
+    if (needed) sessionStorage.setItem(MFA_ENROLL_KEY, "1");
+    else sessionStorage.removeItem(MFA_ENROLL_KEY);
+  } catch { /* storage unavailable */ }
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(MFA_ENROLL_EVENT));
+}
+export function isMfaEnrollmentNeeded() {
+  try { return sessionStorage.getItem(MFA_ENROLL_KEY) === "1"; } catch { return false; }
+}
 export type AuthSession = {
   id: string;
   device_name: string | null;
@@ -139,6 +153,7 @@ class CfAuth {
     let msg = `HTTP ${res.status}`;
     try {
       const j = await res.json() as ApiErrorBody;
+      if (j?.error?.code === "mfa_required") markMfaEnrollmentNeeded(true);
       msg = j?.error?.message || j?.error?.code || msg;
     } catch {
       // Keep the HTTP status fallback when the body is not JSON.
@@ -201,7 +216,10 @@ class CfAuth {
     });
     const j = await res.json() as (SessionResponse | MfaChallengeResponse) & ApiErrorBody;
     if (!res.ok) throw new Error(j?.error?.message || j?.error?.code || "login_failed");
-    if ("access_token" in j) this.setSession(j.access_token, j.expires_in);
+    if ("access_token" in j) {
+      this.setSession(j.access_token, j.expires_in);
+      markMfaEnrollmentNeeded(Boolean(j.mfa_enrollment_required));
+    }
     return j;
   }
 
@@ -295,6 +313,7 @@ class CfAuth {
       { method: "POST", body: JSON.stringify({ factorId, code }) },
     );
     this.setSession(result.access_token, result.expires_in);
+    markMfaEnrollmentNeeded(false);
     return result;
   }
 
