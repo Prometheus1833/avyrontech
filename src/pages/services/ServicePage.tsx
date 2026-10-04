@@ -51,6 +51,7 @@ import ServiceCinematicIntro from "@/components/services/ServiceCinematicIntro";
 import { isServiceIntroKey } from "@/data/serviceIntros";
 import WebsitePriceCalculator from "@/components/services/WebsitePriceCalculator";
 import TechnologyPartnersCarousel from "@/components/services/TechnologyPartnersCarousel";
+import WebsiteIntroScrollScene from "@/components/services/WebsiteIntroScrollScene";
 import { useAuth } from "@/hooks/useAuth";
 import { addLocalAccountCartItem, syncLocalAccountCartSource } from "@/lib/accountCart";
 import { setPageMeta } from "@/lib/seo";
@@ -330,16 +331,18 @@ const ServicePage = () => {
 
 
         {/* Intro */}
-        <Reveal as="section" className="mt-14 border-t border-foreground/10 pt-10">
-          <h2 className="font-display text-2xl md:text-3xl font-extrabold">{c.tagline}</h2>
-          <div className="mt-5 space-y-4 max-w-3xl">
-            {c.intro.map((p) => (
-              <p key={p.slice(0, 40)} className="text-sm md:text-base text-foreground/75 leading-relaxed">
-                {p}
-              </p>
-            ))}
-          </div>
-        </Reveal>
+        {product.key === "premium-website" ? (
+          <WebsiteIntroScrollScene title={c.tagline} paragraphs={c.intro} />
+        ) : (
+          <Reveal as="section" className="mt-14 border-t border-foreground/10 pt-10">
+            <h2 className="font-display text-2xl md:text-3xl font-extrabold">{c.tagline}</h2>
+            <div className="mt-5 space-y-4 max-w-3xl">
+              {c.intro.map((p) => (
+                <p key={p.slice(0, 40)} className="text-sm md:text-base text-foreground/75 leading-relaxed">{p}</p>
+              ))}
+            </div>
+          </Reveal>
+        )}
 
         {/* Highlights */}
         <section id="beneficii" className="mt-14 scroll-mt-28">
@@ -353,8 +356,8 @@ const ServicePage = () => {
               const Icon = ICONS[h.icon];
               return (
                 <Reveal key={h.title} delay={i * 60} as="article">
-                  <div className="group h-full rounded-lg border border-foreground/10 bg-foreground/[0.03] p-4 transition-[transform,border-color,background-color,box-shadow] duration-300 [transform:perspective(850px)_rotateX(0deg)_rotateY(0deg)] hover:border-foreground/25 hover:bg-foreground/[0.06] hover:shadow-lg hover:[transform:perspective(850px)_rotateX(1.5deg)_rotateY(-1.5deg)_translateY(-4px)] active:scale-[0.99] motion-reduce:transform-none md:backdrop-blur">
-                    <div className={`size-8 rounded-lg bg-gradient-to-br ${a.from} ${a.to} grid place-items-center text-white transition-transform duration-300 group-hover:scale-110`}>
+                    <div className="group flex h-full flex-col items-center rounded-lg border border-foreground/10 bg-foreground/[0.03] p-4 text-center transition-[transform,border-color,background-color,box-shadow] duration-300 [transform:perspective(850px)_rotateX(0deg)_rotateY(0deg)] hover:border-foreground/25 hover:bg-foreground/[0.06] hover:shadow-lg hover:[transform:perspective(850px)_rotateX(1.5deg)_rotateY(-1.5deg)_translateY(-4px)] active:scale-[0.99] motion-reduce:transform-none md:backdrop-blur">
+                     <div className={`size-8 rounded-lg bg-gradient-to-br ${a.from} ${a.to} grid place-items-center text-white transition-transform duration-300 group-hover:scale-110`}>
                       <Icon className="size-4" aria-hidden />
                     </div>
                     <h3 className="mt-3 font-display text-sm font-bold">{h.title}</h3>
@@ -380,7 +383,7 @@ const ServicePage = () => {
                 const Icon = ICONS[it.icon];
                 return (
                   <Reveal key={it.title} delay={i * 50} as="article">
-                    <div className="group h-full rounded-lg border border-foreground/10 bg-foreground/[0.03] p-4 transition-[transform,border-color,background-color,box-shadow] duration-300 [transform:perspective(850px)_rotateX(0deg)_rotateY(0deg)] hover:border-foreground/25 hover:bg-foreground/[0.06] hover:shadow-lg hover:[transform:perspective(850px)_rotateX(1.5deg)_rotateY(-1.5deg)_translateY(-4px)] active:scale-[0.99] motion-reduce:transform-none md:backdrop-blur">
+                     <div className="group flex h-full flex-col items-center rounded-lg border border-foreground/10 bg-foreground/[0.03] p-4 text-center transition-[transform,border-color,background-color,box-shadow] duration-300 [transform:perspective(850px)_rotateX(0deg)_rotateY(0deg)] hover:border-foreground/25 hover:bg-foreground/[0.06] hover:shadow-lg hover:[transform:perspective(850px)_rotateX(1.5deg)_rotateY(-1.5deg)_translateY(-4px)] active:scale-[0.99] motion-reduce:transform-none md:backdrop-blur">
                       <div className={`inline-grid place-items-center size-9 rounded-lg border ${a.chipBg} ${a.chipText} transition-transform duration-300 group-hover:scale-110`}>
                         <Icon className="size-4" aria-hidden />
                       </div>
@@ -403,14 +406,15 @@ const ServicePage = () => {
                 {c.tech.lead}
               </p>
             </Reveal>
-            <div className="mt-7 grid sm:grid-cols-2 gap-4">
+            <div className="mt-7 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {c.tech.groups.map((g, i) => (
-                <Reveal key={g.name} delay={i * 60}>
-                  <div className="h-full rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 md:backdrop-blur">
-                    <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-foreground/45">
+                <Reveal key={g.name} delay={i * 60} className="w-[82vw] max-w-[20rem] shrink-0 snap-center sm:w-[19rem]">
+                  <div className="flex h-full flex-col items-center rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 text-center md:backdrop-blur">
+                    <div className={`grid size-10 place-items-center rounded-xl bg-gradient-to-br ${a.from} ${a.to} text-white`}><Code2 className="size-5" aria-hidden /></div>
+                    <div className="mt-3 text-[10px] font-mono uppercase tracking-[0.25em] text-foreground/55">
                       {g.name}
                     </div>
-                    <ul className="mt-3 flex flex-wrap gap-2">
+                    <ul className="mt-4 flex flex-wrap justify-center gap-2">
                       {g.items.map((t) => (
                         <li
                           key={t}
@@ -545,6 +549,7 @@ const ServicePage = () => {
             accent={{ from: a.from, to: a.to, text: a.text, border: a.border }}
             productName={c.name}
             productKey={product.key}
+            hideAskButton={product.key === "premium-website"}
           />
         )}
 

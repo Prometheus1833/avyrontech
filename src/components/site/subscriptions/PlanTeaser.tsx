@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Check, Clock, Crown, MessageCircle, Shield, Sparkles, Zap } from "lucide-react";
+import { ArrowRight, Check, Clock, Crown, Shield, Sparkles, Zap } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import Reveal from "@/components/site/Reveal";
 import { useDualPrice } from "@/hooks/useDualPrice";
@@ -106,6 +106,7 @@ type Props = {
   accent: TeaserAccent;
   productName: string;
   productKey: string;
+  hideAskButton?: boolean;
 };
 
 /**
@@ -113,7 +114,7 @@ type Props = {
  * potrivite produsului, cu treapta din mijloc scoasă în față. Prețurile vin din
  * același catalog ca pagina dedicată, deci nu pot ieși din sincron.
  */
-const PlanTeaser = ({ category, accent, productName, productKey }: Props) => {
+const PlanTeaser = ({ category, accent, productName, productKey, hideAskButton = false }: Props) => {
   const { lang } = useLang();
   const ro = lang === "ro";
   const { primary, secondary, converted, setCurrency } = useDualPrice(ro ? "ro-RO" : "en-IE");
@@ -169,18 +170,19 @@ const PlanTeaser = ({ category, accent, productName, productKey }: Props) => {
             {ro ? "Vezi toate abonamentele" : "See all plans"}
             <ArrowRight className="size-4" aria-hidden />
           </Link>
-          <a
-            href={`${WHATSAPP}${encodeURIComponent(
-              ro ? `Bună! Aș dori un abonament de mentenanță pentru ${productName}.` : `Hi! I'd like a maintenance plan for ${productName}.`,
-            )}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "plan_teaser", product: productKey })}
-            className="inline-flex items-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold transition-all hover:-translate-y-0.5 hover:bg-foreground/[0.1]"
-          >
-            <MessageCircle className="size-4" aria-hidden />
-            {ro ? "Întreabă un coleg" : "Ask a colleague"}
-          </a>
+          {!hideAskButton && (
+            <a
+              href={`${WHATSAPP}${encodeURIComponent(
+                ro ? `Bună! Aș dori un abonament de mentenanță pentru ${productName}.` : `Hi! I'd like a maintenance plan for ${productName}.`,
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "plan_teaser", product: productKey })}
+              className="inline-flex items-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold transition-all hover:-translate-y-0.5 hover:bg-foreground/[0.1]"
+            >
+              {ro ? "Întreabă un coleg" : "Ask a colleague"}
+            </a>
+          )}
           <span className="inline-flex items-center gap-1.5 text-[11px] text-foreground/65">
             <Clock className="size-3" aria-hidden />
             {ro ? "Fără contract pe termen lung · schimbi treapta oricând" : "No long-term contract · change tier any time"}
