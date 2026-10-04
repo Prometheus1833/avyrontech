@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import LibraryLink from "@/components/site/LibraryLink";
 import PortfolioCarousel from "@/components/site/PortfolioCarousel";
@@ -25,6 +25,7 @@ import {
   Share2,
   Shield,
   ShoppingBag,
+  ShoppingCart,
   Smartphone,
   Users,
   Zap,
@@ -49,6 +50,8 @@ import { categoryForService } from "@/data/subscriptionPlans";
 import ServiceCinematicIntro from "@/components/services/ServiceCinematicIntro";
 import { isServiceIntroKey } from "@/data/serviceIntros";
 import WebsitePriceCalculator from "@/components/services/WebsitePriceCalculator";
+import { useAuth } from "@/hooks/useAuth";
+import { addLocalAccountCartItem, syncLocalAccountCartSource } from "@/lib/accountCart";
 
 const ICONS: Record<IconKey, React.ComponentType<{ className?: string }>> = {
   globe: Globe,
@@ -81,6 +84,8 @@ const ServicePage = () => {
   const { lang } = useLang();
   const ro = lang === "ro";
   const { formatFixedPrice } = useCurrency(ro ? "ro-RO" : "en-IE");
+  const { user } = useAuth();
+  const [addedToCart, setAddedToCart] = useState(false);
   const product = getServiceByPath(pathname);
 
   useEffect(() => {
@@ -133,6 +138,20 @@ const ServicePage = () => {
   // where its protected request flow has the necessary context and anti-spam checks.
   const others = SERVICES.filter((p) => p.key !== product.key && p.key !== "audit");
   const planCategory = categoryForService(product.key);
+  const addServiceToCart = () => {
+    addLocalAccountCartItem({
+      id: `service-${product.key}`,
+      source: "services",
+      sku: "custom-request",
+      type: "service",
+      name: c.name,
+      notes: ro ? `Cerere pentru serviciul ${c.name}` : `Request for ${c.name}`,
+      ...(product.priceRon > 0 ? { price_estimate: product.priceRon * 100, price_currency: "RON" as const } : {}),
+    });
+    setAddedToCart(true);
+    if (user) void syncLocalAccountCartSource("services").catch(() => undefined);
+    trackEvent("service_add_to_cart", { product: product.key, signed_in: Boolean(user) });
+  };
 
   const quickNavItems: QuickNavItem[] = [
     { id: "prezentare", label: ro ? "Prezentare" : "Overview", icon: HeroIcon },
@@ -233,6 +252,24 @@ const ServicePage = () => {
             >
               {ro ? "Cere ofertă" : "Request a quote"}
             </Link>
+            {addedToCart ? (
+              <Link
+                to={user ? "/profil?tab=cart" : "/auth"}
+                className="col-span-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 text-sm font-semibold text-emerald-600 transition-colors hover:bg-emerald-400/15 dark:text-emerald-300"
+              >
+                <ShoppingCart className="size-4" aria-hidden />
+                {user ? (ro ? "În coșul sincronizat · Vezi coșul" : "In your synced cart · View cart") : (ro ? "În coș · Autentifică-te pentru sincronizare" : "In cart · Sign in to sync")}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={addServiceToCart}
+                className="col-span-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-foreground/15 bg-foreground/[0.035] px-4 text-sm font-semibold transition-colors hover:border-foreground/30 hover:bg-foreground/[0.07]"
+              >
+                <ShoppingCart className="size-4" aria-hidden />
+                {ro ? "Adaugă serviciul în coș" : "Add service to cart"}
+              </button>
+            )}
           </div>
 
           <dl data-testid="product-hero-facts" className="mx-auto mt-7 grid w-full max-w-xl grid-cols-3 gap-1.5 sm:gap-2">

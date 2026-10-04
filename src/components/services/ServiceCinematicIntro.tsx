@@ -9,6 +9,7 @@ import {
   type ServiceIntroKey,
   type ServiceIntroMotif,
 } from "@/data/serviceIntros";
+import { motionProfile } from "@/lib/stage/capability";
 
 type Vec3 = { x: number; y: number; z: number };
 type Edge = [number, number];
@@ -188,9 +189,11 @@ const ServiceCinematicIntro = ({ service }: { service: ServiceIntroKey }) => {
   const { lang } = useLang();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const barRef = useRef<HTMLSpanElement>(null);
+  const copyRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef(motionProfile());
   const [visible, setVisible] = useState(() => {
     if (typeof window === "undefined" || /jsdom/i.test(window.navigator.userAgent)) return false;
-    return !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    return motionProfile().tier !== "none";
   });
   const [leaving, setLeaving] = useState(false);
   const spec = SERVICE_INTRO_SPECS[service];
@@ -215,7 +218,9 @@ const ServiceCinematicIntro = ({ service }: { service: ServiceIntroKey }) => {
     const duration = repeat ? SERVICE_INTRO_REPEAT_MS : SERVICE_INTRO_DURATION_MS;
     const geometry = buildGeometry(spec.motif);
     const mobile = window.innerWidth < 768;
-    const particles = buildParticles(mobile ? 52 : 92, geometry.points.length, service.length * 2026 + 17);
+    const profile = profileRef.current;
+    const baseParticles = mobile ? 52 : 92;
+    const particles = buildParticles(Math.max(22, Math.round(baseParticles * profile.particleScale)), geometry.points.length, service.length * 2026 + 17);
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -224,17 +229,24 @@ const ServiceCinematicIntro = ({ service }: { service: ServiceIntroKey }) => {
     let dpr = 1;
     let animationFrame = 0;
     let start = 0;
+    let lastDraw = 0;
     let exitTimer = 0;
     let finished = false;
+    let gsapCleanup: (() => void) | undefined;
+    const frameInterval = 1000 / Math.max(1, profile.targetFps);
+    let vignette: CanvasGradient | null = null;
 
     const resize = () => {
       width = window.innerWidth;
       height = window.innerHeight;
-      dpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 1.75);
+      dpr = Math.min(window.devicePixelRatio || 1, mobile ? Math.min(1.35, profile.maxDpr) : profile.maxDpr);
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
+      vignette = context.createRadialGradient(width / 2, height * 0.46, Math.min(width, height) * 0.2, width / 2, height * 0.5, Math.max(width, height) * 0.72);
+      vignette.addColorStop(0, "rgba(3, 4, 11, 0)");
+      vignette.addColorStop(1, "rgba(3, 4, 11, 0.72)");
     };
 
     const finish = () => {
@@ -342,6 +354,12 @@ const ServiceCinematicIntro = ({ service }: { service: ServiceIntroKey }) => {
         context.stroke();
       }
 
+      if (profile.postProcessing && vignette) {
+        context.globalCompositeOperation = "source-over";
+        context.fillStyle = vignette;
+        context.fillRect(0, 0, width, height);
+      }
+
       context.shadowBlur = 0;
       context.globalCompositeOperation = "source-over";
       if (barRef.current) barRef.current.style.transform = `scaleX(${clamp01(progress)})`;
@@ -349,6 +367,11 @@ const ServiceCinematicIntro = ({ service }: { service: ServiceIntroKey }) => {
 
     const frame = (now: number) => {
       if (!start) start = now;
+      if (now - lastDraw < frameInterval) {
+        animationFrame = window.requestAnimationFrame(frame);
+        return;
+      }
+      lastDraw = now;
       const progress = Math.min(1, (now - start) / duration);
       draw(progress);
       if (progress >= 1) {
@@ -363,11 +386,26 @@ const ServiceCinematicIntro = ({ service }: { service: ServiceIntroKey }) => {
     animationFrame = window.requestAnimationFrame(frame);
     const guard = window.setTimeout(finish, duration + SERVICE_INTRO_GUARD_MS);
 
+    // GSAP este cerut dinamic doar pe hardware-ul de top și animează exclusiv
+    // copy-ul. Canvas-ul critic pornește imediat, fără să aștepte chunk-ul.
+    if (profile.tier === "ultra" && copyRef.current) {
+      void import("gsap").then(({ default: gsap }) => {
+        if (finished || !copyRef.current) return;
+        const tween = gsap.fromTo(
+          copyRef.current,
+          { autoAlpha: 0, y: 14, filter: "blur(7px)" },
+          { autoAlpha: 1, y: 0, filter: "blur(0px)", duration: 0.72, ease: "power3.out", delay: 0.08 },
+        );
+        gsapCleanup = () => tween.kill();
+      });
+    }
+
     return () => {
       window.cancelAnimationFrame(animationFrame);
       window.clearTimeout(guard);
       window.clearTimeout(exitTimer);
       window.removeEventListener("resize", resize);
+      gsapCleanup?.();
       document.body.style.overflow = previousOverflow;
       context.clearRect(0, 0, width, height);
     };
@@ -381,6 +419,7 @@ const ServiceCinematicIntro = ({ service }: { service: ServiceIntroKey }) => {
       aria-label={lang === "ro" ? `Se deschide ${spec.label.ro}` : `Opening ${spec.label.en}`}
       data-service-intro={service}
       data-state={leaving ? "leaving" : "active"}
+      data-quality={profileRef.current.tier}
       style={{ transitionDuration: `${SERVICE_INTRO_EXIT_MS}ms` }}
       className={`fixed inset-0 z-[100] overflow-hidden bg-[#050713] text-white transition ease-out ${
         leaving ? "pointer-events-none scale-[1.015] opacity-0 blur-sm" : "opacity-100"
@@ -404,7 +443,7 @@ const ServiceCinematicIntro = ({ service }: { service: ServiceIntroKey }) => {
       />
       <canvas ref={canvasRef} aria-hidden className="absolute inset-0 size-full" />
 
-      <div className="absolute inset-x-0 bottom-[10%] flex flex-col items-center px-5 text-center sm:bottom-[12%]">
+      <div ref={copyRef} className="absolute inset-x-0 bottom-[10%] flex flex-col items-center px-5 text-center sm:bottom-[12%]">
         <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.55em] text-white/45">AVYRON · DIGITAL SYSTEM</p>
         <p className="mt-3 font-display text-base font-bold tracking-[0.06em] text-white sm:text-lg">{spec.label[lang]}</p>
         <p className="mt-1 text-[11px] tracking-[0.12em] text-white/45">{spec.micro[lang]}</p>

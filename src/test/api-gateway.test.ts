@@ -42,6 +42,7 @@ describe("api.avyron.ro gateway", () => {
     expect(openApiDocument.paths["/public/domain-check"]).toBeTruthy();
     expect(openApiDocument.paths["/public/exchange-rate"]).toBeTruthy();
     expect(openApiDocument.paths["/commerce/quote"]).toBeTruthy();
+    expect(openApiDocument.paths["/commerce/cart"]).toBeTruthy();
     expect(apiDiscovery.modules.platform).toContain("promotions");
   });
 });

@@ -34,6 +34,47 @@ type OrderItemInput = {
   description?: unknown;
 };
 
+export type AccountCartSource = "dashboard" | "subscriptions" | "services" | "products";
+export type AccountCartItem = {
+  id: string;
+  source: AccountCartSource;
+  sku: string;
+  type: "package" | "subscription" | "website" | "service" | "product" | "custom" | "partnership";
+  name: string;
+  period?: "monthly" | "annual";
+  notes?: string;
+  productSlug?: string;
+};
+
+const CART_SOURCES = new Set<AccountCartSource>(["dashboard", "subscriptions", "services", "products"]);
+const CART_TYPES = new Set<AccountCartItem["type"]>(["package", "subscription", "website", "service", "product", "custom", "partnership"]);
+
+/** Normalizează coșul fără să accepte prețuri din browser. */
+export function normalizeAccountCartItems(value: unknown, forcedSource?: AccountCartSource): AccountCartItem[] | null {
+  if (!Array.isArray(value) || value.length > MAX_ORDER_ITEMS) return null;
+  const items: AccountCartItem[] = [];
+  const seen = new Set<string>();
+  for (const raw of value as Array<Record<string, unknown>>) {
+    const source = forcedSource ?? String(raw?.source ?? "dashboard") as AccountCartSource;
+    const type = String(raw?.type ?? "custom") as AccountCartItem["type"];
+    const id = String(raw?.id ?? "").trim().slice(0, 100);
+    const sku = String(raw?.sku ?? "custom-request").trim().slice(0, 80);
+    const name = String(raw?.name ?? "").trim().slice(0, 120);
+    const periodValue = String(raw?.period ?? "");
+    const notes = String(raw?.notes ?? "").trim().slice(0, 1000) || undefined;
+    const productSlug = String(raw?.productSlug ?? "").trim().slice(0, 100) || undefined;
+    if (!CART_SOURCES.has(source) || !CART_TYPES.has(type) || !id || !sku || !name) return null;
+    const period = periodValue === "monthly" || periodValue === "annual" ? periodValue : undefined;
+    if ((type === "subscription" || type === "partnership") && !period) return null;
+    if (type === "product" && !productSlug) return null;
+    const identity = `${source}:${id}`;
+    if (seen.has(identity)) continue;
+    seen.add(identity);
+    items.push({ id, source, sku, type, name, ...(period ? { period } : {}), ...(notes ? { notes } : {}), ...(productSlug ? { productSlug } : {}) });
+  }
+  return items;
+}
+
 type PricedOrderItem = {
   sku: string;
   type: string;
@@ -286,6 +327,58 @@ promotionsRouter.get("/api/commerce/orders", async (c) => {
        FROM commerce_orders WHERE user_id = ? ORDER BY created_at DESC LIMIT 100`,
   ).bind(c.get("userId")).all();
   return c.json({ data: results });
+});
+
+promotionsRouter.get("/api/commerce/cart", async (c) => {
+  try {
+    const row = await c.env.DB.prepare("SELECT items_json,updated_at FROM account_carts WHERE user_id=?")
+      .bind(c.get("userId")).first<{ items_json: string; updated_at: number }>();
+    const items = normalizeAccountCartItems(row ? JSON.parse(row.items_json) : []) ?? [];
+    return c.json({ data: items, updatedAt: row?.updated_at ?? null });
+  } catch (error) {
+    if (/no such table: account_carts/i.test(String(error))) return c.json({ data: [], updatedAt: null, unavailable: "migration_pending" });
+    throw error;
+  }
+});
+
+promotionsRouter.put("/api/commerce/cart", async (c) => {
+  const body = await c.req.json().catch(() => ({})) as { items?: unknown };
+  const items = normalizeAccountCartItems(body.items);
+  if (!items) return c.json({ error: { code: "invalid_cart", message: "Conținutul coșului nu este valid" } }, 400);
+  const timestamp = now();
+  try {
+    await c.env.DB.prepare(
+      `INSERT INTO account_carts(user_id,items_json,updated_at) VALUES (?,?,?)
+       ON CONFLICT(user_id) DO UPDATE SET items_json=excluded.items_json,updated_at=excluded.updated_at`,
+    ).bind(c.get("userId"), JSON.stringify(items), timestamp).run();
+    return c.json({ data: items, updatedAt: timestamp });
+  } catch (error) {
+    if (/no such table: account_carts/i.test(String(error))) return c.json({ error: { code: "cart_unavailable" } }, 503);
+    throw error;
+  }
+});
+
+promotionsRouter.post("/api/commerce/cart/sync", async (c) => {
+  const body = await c.req.json().catch(() => ({})) as { source?: unknown; items?: unknown };
+  const source = String(body.source ?? "") as AccountCartSource;
+  if (!CART_SOURCES.has(source)) return c.json({ error: { code: "invalid_cart_source" } }, 400);
+  const incoming = normalizeAccountCartItems(body.items, source);
+  if (!incoming) return c.json({ error: { code: "invalid_cart" } }, 400);
+  try {
+    const current = await c.env.DB.prepare("SELECT items_json FROM account_carts WHERE user_id=?")
+      .bind(c.get("userId")).first<{ items_json: string }>();
+    const existing = normalizeAccountCartItems(current ? JSON.parse(current.items_json) : []) ?? [];
+    const items = [...existing.filter((item) => item.source !== source), ...incoming].slice(0, MAX_ORDER_ITEMS);
+    const timestamp = now();
+    await c.env.DB.prepare(
+      `INSERT INTO account_carts(user_id,items_json,updated_at) VALUES (?,?,?)
+       ON CONFLICT(user_id) DO UPDATE SET items_json=excluded.items_json,updated_at=excluded.updated_at`,
+    ).bind(c.get("userId"), JSON.stringify(items), timestamp).run();
+    return c.json({ data: items, updatedAt: timestamp });
+  } catch (error) {
+    if (/no such table: account_carts/i.test(String(error))) return c.json({ error: { code: "cart_unavailable" } }, 503);
+    throw error;
+  }
 });
 
 promotionsRouter.use("/api/promotions/admin", requirePromotionOwner);

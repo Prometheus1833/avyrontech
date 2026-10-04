@@ -87,6 +87,7 @@ const AvyLauncher = () => {
 import CookieBanner from "@/components/site/CookieBanner";
 import AppHostGuard from "@/components/auth/AppHostGuard";
 import RouteTransition from "@/components/site/RouteTransition";
+import PerformanceGovernor from "@/components/site/PerformanceGovernor";
 
 const Notifications = lazyWithRetry(() =>
   import("@/components/ui/sonner").then(({ Toaster }) => ({ default: Toaster })),
@@ -154,6 +155,7 @@ const App = () => (
   <LanguageProvider>
     <AuthProvider>
       <BrowserRouter>
+        <PerformanceGovernor />
         <HeadManager />
         <LangRouteSync />
         <AnalyticsTracker />

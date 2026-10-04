@@ -1,3 +1,5 @@
+import { addLocalAccountCartItem } from "@/lib/accountCart";
+
 /**
  * Punctul unic prin care trece selectarea unui abonament.
  *
@@ -14,7 +16,6 @@
 export const PAYMENT_GATEWAY_ENABLED = false;
 export const ANNUAL_DISCOUNT_PERCENT = 20;
 export const ANNUAL_PROMOTION_CODE = "ANUALAVY20";
-const CART_STORAGE_KEY = "avyron_cart_v2";
 
 export type BillingPeriodValue = "monthly" | "annual";
 
@@ -48,18 +49,12 @@ export const annualSubscriptionTotal = (monthlyPriceCents: number) =>
 
 export function addAnnualSubscriptionToCart(input: { sku: string; name: string; monthlyPriceCents: number }) {
   if (typeof window === "undefined") return false;
-  const raw = window.localStorage.getItem(CART_STORAGE_KEY);
-  let items: Array<Record<string, unknown>> = [];
-  try { items = raw ? JSON.parse(raw) : []; } catch { items = []; }
-  if (!Array.isArray(items)) items = [];
-  items = items.filter((item) => item?.type !== "subscription");
-  items.push({
+  addLocalAccountCartItem({
     id: crypto.randomUUID(), sku: input.sku, type: "subscription", name: input.name,
+    source: "subscriptions",
     period: "annual", price_estimate: input.monthlyPriceCents, price_currency: "RON",
     notes: `Pachet anual · ${ANNUAL_DISCOUNT_PERCENT}% avantaj aplicat la validarea comenzii`,
   });
-  window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items.slice(0, 20)));
-  window.dispatchEvent(new CustomEvent("avyron:cart-updated"));
   return true;
 }
 

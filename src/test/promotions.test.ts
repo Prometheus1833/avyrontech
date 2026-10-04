@@ -8,6 +8,7 @@ import {
   normalizePromotionCode,
   priceOrderItems,
   promotionDiscountFor,
+  normalizeAccountCartItems,
 } from "../../cloudflare/workers/api/src/promotions";
 import { ANNUAL_DISCOUNT_PERCENT, annualSubscriptionTotal } from "@/lib/subscriptionCheckout";
 
@@ -110,5 +111,23 @@ describe("promotion controls", () => {
     expect(annualMigration).toContain("'ANUALAVY20'");
     expect(annualMigration).toContain("'annual_subscription'");
     expect(annualMigration).toContain("discount_base_cents");
+  });
+});
+
+describe("registered account cart", () => {
+  it("keeps products, subscriptions and services while dropping browser prices", () => {
+    const cart = normalizeAccountCartItems([
+      { id: "s1", source: "subscriptions", sku: "sub-site-plus", type: "subscription", name: "Site Plus", period: "annual", price_estimate: 1 },
+      { id: "p1", source: "products", sku: "product-button", type: "product", name: "Button", productSlug: "button", price_estimate: 1 },
+      { id: "v1", source: "services", sku: "custom-request", type: "service", name: "Website profesional", price_estimate: 1 },
+    ]);
+    expect(cart).toHaveLength(3);
+    expect(cart?.[0]).not.toHaveProperty("price_estimate");
+    expect(cart?.map((item) => item.type)).toEqual(["subscription", "product", "service"]);
+  });
+
+  it("rejects malformed product and subscription lines", () => {
+    expect(normalizeAccountCartItems([{ id: "p", source: "products", sku: "p", type: "product", name: "P" }])).toBeNull();
+    expect(normalizeAccountCartItems([{ id: "s", source: "subscriptions", sku: "s", type: "subscription", name: "S" }])).toBeNull();
   });
 });

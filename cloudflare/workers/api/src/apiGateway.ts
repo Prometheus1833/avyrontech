@@ -195,6 +195,13 @@ export const openApiDocument = {
       get: { tags: ["Platform"], summary: "Listează comenzile contului curent", security: [{ bearerAuth: [] }], responses: { "200": { description: "Listă de comenzi" } } },
       post: { tags: ["Platform"], summary: "Creează o comandă folosind prețurile validate de Worker", security: [{ bearerAuth: [] }], responses: { "201": { description: "Comandă creată" }, "400": { $ref: "#/components/responses/Problem" } } },
     },
+    "/commerce/cart": {
+      get: { tags: ["Platform"], summary: "Încarcă coșul sincronizat al contului", security: [{ bearerAuth: [] }], responses: { "200": { description: "Coș sincronizat" } } },
+      put: { tags: ["Platform"], summary: "Înlocuiește coșul sincronizat după validare", security: [{ bearerAuth: [] }], responses: { "200": { description: "Coș salvat" }, "400": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/commerce/cart/sync": {
+      post: { tags: ["Platform"], summary: "Sincronizează controlat o sursă publică a coșului", security: [{ bearerAuth: [] }], responses: { "200": { description: "Sursă sincronizată" }, "400": { $ref: "#/components/responses/Problem" } } },
+    },
     "/promotions/admin": {
       get: { tags: ["Platform"], summary: "Administrare promoții rezervată contului desemnat", security: [{ bearerAuth: [] }], responses: { "200": { description: "Listă promoții" }, "403": { $ref: "#/components/responses/Problem" } } },
       post: { tags: ["Platform"], summary: "Creează o promoție nouă", security: [{ bearerAuth: [] }], responses: { "201": { description: "Promoție creată" }, "403": { $ref: "#/components/responses/Problem" } } },

@@ -2,7 +2,7 @@ import BlogProInsights from "@/components/intern/BlogProInsights";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { internApi, type AccountOption, type BannerStatus, type ClientOption, type ProjectKind } from "@/lib/internApi";
+import { internApi, type AccountOption, type BannerStatus, type ClientOption, type ProjectKind, type ProjectPurchase } from "@/lib/internApi";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, ArrowUpRight, ExternalLink, FolderKanban, BookOpen, Settings2 } from "lucide-react";
+import { Plus, ArrowUpRight, ExternalLink, FolderKanban, BookOpen, Settings2, CheckCircle2, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import ContactRail from "@/components/intern/ContactRail";
 import PageBackLink from "@/components/site/PageBackLink";
@@ -41,6 +41,7 @@ const KINDS: { value: ProjectKind; label: string }[] = [
 export default function InternHome({ embedded = false }: { embedded?: boolean }) {
   const { user, isStaff, loading: authLoading } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
+  const [purchases, setPurchases] = useState<ProjectPurchase[]>([]);
   const [loading, setLoading] = useState(true);
   const [openCreate, setOpenCreate] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -53,6 +54,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
     try {
       const res = await internApi.listProjects();
       setRows(res.data as Row[]);
+      setPurchases(res.purchases ?? []);
     } catch (e) {
       toast.error((e as Error).message);
     } finally { setLoading(false); }
@@ -200,7 +202,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
 
       {loading ? (
         <div className="text-sm text-muted-foreground">Se încarcă proiectele…</div>
-      ) : rows.length === 0 ? (
+      ) : rows.length === 0 && purchases.length === 0 ? (
         <Card><CardContent className="p-8 text-center text-muted-foreground">
           {isStaff ? "Nu există proiecte încă. Folosește butonul „Creează proiect”." : "Nu ai încă proiecte asignate. Vei fi anunțat când unul e disponibil."}
         </CardContent></Card>
@@ -253,6 +255,38 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
               );
             })}
           </div>
+
+          {!isStaff && purchases.length > 0 && (
+            <section className="space-y-3" aria-labelledby="activated-purchases-title">
+              <div className="flex flex-wrap items-end justify-between gap-2">
+                <div>
+                  <h2 id="activated-purchases-title" className="text-lg font-semibold">Produse și servicii activate</h2>
+                  <p className="text-xs text-muted-foreground">Achizițiile confirmate sunt sincronizate automat cu contul și rămân vizibile aici.</p>
+                </div>
+                <Link to="/profil?tab=subscriptions" className="text-xs font-medium text-primary hover:underline">Facturi și abonamente</Link>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {purchases.map((purchase) => (
+                  <article key={purchase.id} className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] p-4">
+                    <div className="flex items-start gap-3">
+                      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-emerald-500/12 text-emerald-500"><CheckCircle2 className="size-4" /></span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-medium leading-snug">{purchase.name}</h3>
+                          <Badge variant="secondary" className="bg-emerald-500/12 text-emerald-600 dark:text-emerald-300">Plătit</Badge>
+                        </div>
+                        <p className="mt-1 text-xs capitalize text-muted-foreground">{purchase.kind === "subscription" ? "Abonament" : purchase.kind === "product" ? "Produs" : "Serviciu"}</p>
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-emerald-500/10 pt-3 text-xs">
+                          <span className="inline-flex items-center gap-1.5 text-muted-foreground"><Receipt className="size-3.5" /> {purchase.id.slice(0, 8).toUpperCase()}</span>
+                          <span className="font-semibold">{new Intl.NumberFormat("ro-RO", { style: "currency", currency: purchase.currency }).format(purchase.total_cents / 100)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
         </>
       )}
 

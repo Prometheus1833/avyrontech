@@ -183,6 +183,21 @@ html {
   html { scroll-behavior: auto; }
 }
 
+/* Hardware lent: păstrăm identitatea vizuală, dar oprim straturile perpetue. */
+html[data-motion-tier="usor"] .avyron-backdrop-drift,
+html[data-motion-tier="usor"] .avyron-backdrop-pulse,
+html[data-motion-tier="usor"] .avyron-mote,
+html[data-motion-tier="none"] .avyron-backdrop-drift,
+html[data-motion-tier="none"] .avyron-backdrop-pulse,
+html[data-motion-tier="none"] .avyron-mote {
+  animation: none !important;
+}
+
+html[data-motion-tier="usor"] .avy-route-transition {
+  animation-duration: 190ms;
+  transform: none;
+}
+
 /* Firefox — thin + branded colors */
 * {
   scrollbar-width: thin;

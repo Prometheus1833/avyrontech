@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -7,6 +7,8 @@ import vertexShader from "@/shaders/heroDisplacement.vert";
 import { dprFor, intensityFor, type QualityTier } from "@/lib/stage/capability";
 import type { StageEffectProps } from "@/components/biblioteca/StageSlot";
 import heroImage from "@/assets/avyron-brand-bg.jpg";
+
+const PremiumPostFx = lazy(() => import("@/components/biblioteca/effects/PremiumPostFx"));
 
 type PlaneProps = {
   tier: QualityTier;
@@ -94,6 +96,7 @@ export default function HeroDisplacement({ tier, active, onReady }: StageEffectP
     >
       <Suspense fallback={null}>
         <DisplacedPlane tier={tier} hovered={hovered} onReady={onReady} />
+        {tier === "ultra" && <PremiumPostFx />}
       </Suspense>
     </Canvas>
   );

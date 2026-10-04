@@ -8,6 +8,8 @@ import { useLang } from "@/i18n/LanguageContext";
 import { SPEC_LABELS, type SpecKey, type SubscriptionCategory, type SubscriptionPlan } from "@/data/subscriptionPlans";
 import { useDualPrice } from "@/hooks/useDualPrice";
 import { ANNUAL_DISCOUNT_PERCENT, addAnnualSubscriptionToCart, annualSubscriptionTotal } from "@/lib/subscriptionCheckout";
+import { syncLocalAccountCartSource } from "@/lib/accountCart";
+import { useAuth } from "@/hooks/useAuth";
 
 const SPEC_ICONS: Record<SpecKey, React.ComponentType<{ className?: string }>> = {
   response: Clock,
@@ -37,12 +39,18 @@ type Props = {
  */
 const PlanMiniDash = ({ plan, category, caretX, onClose, onSelect }: Props) => {
   const { lang } = useLang();
+  const { user } = useAuth();
   const ro = lang === "ro";
   const { primary, secondary, converted } = useDualPrice(ro ? "ro-RO" : "en-IE");
   const text = plan.copy[lang];
   const t = category.theme;
   const [added, setAdded] = useState(false);
   const annualTotal = annualSubscriptionTotal(plan.priceCents);
+  const addAnnual = () => {
+    const ok = addAnnualSubscriptionToCart({ sku: plan.sku, name: `${category.copy.ro.title} · ${plan.name}`, monthlyPriceCents: plan.priceCents });
+    setAdded(ok);
+    if (ok && user) void syncLocalAccountCartSource("subscriptions").catch(() => undefined);
+  };
 
   return (
     <div
@@ -137,7 +145,7 @@ const PlanMiniDash = ({ plan, category, caretX, onClose, onSelect }: Props) => {
             <p className={`font-mono text-[10px] uppercase tracking-[0.2em] ${t.text}`}>{ro ? "Pachet anual avantajos" : "Better-value annual package"}</p>
             <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
               <div><p className="font-display text-xl font-extrabold">{primary(annualTotal)} / {ro ? "an" : "year"}</p><p className="text-xs text-foreground/70">{ro ? `Reducere ${ANNUAL_DISCOUNT_PERCENT}% față de 12 plăți lunare.` : `${ANNUAL_DISCOUNT_PERCENT}% less than 12 monthly payments.`}</p></div>
-              {added ? <Link to="/profil?tab=cart" className={`text-sm font-semibold ${t.text}`}>{ro ? "Vezi coșul →" : "View cart →"}</Link> : <button type="button" onClick={() => setAdded(addAnnualSubscriptionToCart({ sku: plan.sku, name: `${category.copy.ro.title} · ${plan.name}`, monthlyPriceCents: plan.priceCents }))} className={`rounded-full border ${t.border} px-4 py-2 text-sm font-bold ${t.text} transition hover:bg-foreground/[0.06]`}>{ro ? "Adaugă anual în coș" : "Add annual plan to cart"}</button>}
+              {added ? <Link to="/profil?tab=cart" className={`text-sm font-semibold ${t.text}`}>{ro ? "Vezi coșul →" : "View cart →"}</Link> : <button type="button" onClick={addAnnual} className={`rounded-full border ${t.border} px-4 py-2 text-sm font-bold ${t.text} transition hover:bg-foreground/[0.06]`}>{ro ? "Adaugă anual în coș" : "Add annual plan to cart"}</button>}
             </div>
           </div>
 

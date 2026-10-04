@@ -99,7 +99,39 @@ projectsRouter.get("/api/projects", async (c) => {
         ORDER BY project.updated_at DESC`,
     ).bind(userId, userId).all();
   }
-  return c.json({ data: rows.results });
+  let purchases: Array<Record<string, unknown>> = [];
+  if (!isStaff) {
+    try {
+      const { results } = await c.env.DB.prepare(
+        `SELECT id,items_json,total_cents,currency,status,updated_at
+           FROM commerce_orders
+          WHERE user_id=? AND status='paid'
+          ORDER BY updated_at DESC LIMIT 100`,
+      ).bind(userId).all<{ id: string; items_json: string; total_cents: number; currency: string; status: string; updated_at: number }>();
+      purchases = results.map((order) => {
+        let items: Array<Record<string, unknown>> = [];
+        try {
+          const parsed = JSON.parse(order.items_json);
+          if (Array.isArray(parsed)) items = parsed.slice(0, 20);
+        } catch { /* Order remains visible with its reference. */ }
+        const names = items.map((item) => String(item.name ?? item.id ?? item.sku ?? "").trim()).filter(Boolean);
+        const types = new Set(items.map((item) => String(item.type ?? item.kind ?? "")));
+        const kind = types.has("subscription") || types.has("plan") ? "subscription" : types.has("item") || types.has("product") ? "product" : "service";
+        return {
+          id: order.id,
+          name: names.join(" · ") || `Achiziție ${order.id.slice(0, 8).toUpperCase()}`,
+          kind,
+          total_cents: order.total_cents,
+          currency: order.currency,
+          status: order.status,
+          updated_at: order.updated_at,
+        };
+      });
+    } catch (error) {
+      if (!/no such table: commerce_orders/i.test(String(error))) throw error;
+    }
+  }
+  return c.json({ data: rows.results, purchases });
 });
 
 // ─── CREARE (staff only — via floating button "Creează proiect") ─────────
