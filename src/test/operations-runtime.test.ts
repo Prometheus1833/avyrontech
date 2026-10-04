@@ -128,6 +128,12 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
  it('charges a duplicate concurrent AI reservation exactly once',async()=>{
   budget();const result=await Promise.all([reserve('same-key'),reserve('same-key')]);expect(result.every(r=>r.decision==='allowed')).toBe(true);expect(db.prepare('SELECT quota_used FROM financial_provider_quotas').get()!.quota_used).toBe(60);expect(db.prepare('SELECT COUNT(*) n FROM financial_usage_events').get()!.n).toBe(1);
  });
+ it('resets an expired hard-stopped daily quota before reserving free units',async()=>{
+  budget();db.exec("UPDATE financial_provider_quotas SET quota_used=100,status='exhausted',reset_frequency='daily',reset_date=1,hard_stop_before_paid=1");
+  expect(await reserve('daily-reset',10)).toMatchObject({decision:'allowed'});
+  const quota=db.prepare('SELECT quota_used,status,reset_date FROM financial_provider_quotas').get()!;
+  expect(quota).toMatchObject({quota_used:10,status:'active'});expect(Number(quota.reset_date)).toBeGreaterThan(Date.now());
+ });
  it('rejects reservation replay with different units, cost, agent or tenant',async()=>{
   budget();await reserve('bound-key');
   const input={db:env.DB,agentSlug:'avy',vendorId:'fin_vendor_cloudflare_ai',operation:'public_chat_generation',requestedUnits:60,estimatedCostMinor:0,idempotencyKey:'bound-key'};

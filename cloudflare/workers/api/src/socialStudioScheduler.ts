@@ -1,6 +1,7 @@
 import type { Env } from "./types";
 import { reserveAiCost } from "./aiCostGuard";
 import { resolveAgentModel } from "./agentRuntimePolicy";
+import { resolveSocialModelRoute } from "./socialModelRouting";
 import { contentExpiry, parseGeneratedContent } from "./aiProjectPolicy";
 import { now } from "./security";
 import { enqueueAudienceReviewRuns } from "./socialAudienceOptimizer";
@@ -390,12 +391,22 @@ async function generateJobDraft(env: Env, job: JobRow, timestamp: number) {
     memories.results.length ? `Memorie aprobata:\n${memories.results.map((memory) => `- ${memory.kind}: ${memory.summary}`).join("\n")}` : "Memorie aprobata: indisponibila. Nu inventa date.",
   ].filter(Boolean).join("\n\n");
 
-  const maxTokens = Math.max(400, Math.min(job.format === "article" ? 1_800 : 1_200, agent.max_tokens));
+  const route = await resolveSocialModelRoute(env.DB, job.project_id, job.kind);
+  if (!route) {
+    await env.DB.prepare("UPDATE ai_social_jobs SET status='awaiting_budget',last_error_code='free_model_route_unavailable',updated_at=? WHERE id=?")
+      .bind(now(), job.id).run();
+    return;
+  }
+  const maxTokens = Math.max(400, Math.min(
+    job.format === "article" ? 1_800 : 1_200,
+    agent.max_tokens,
+    route.max_output_tokens || agent.max_tokens,
+  ));
   const reservation = await reserveAiCost({
     db: env.DB,
     agentSlug: agent.slug,
     vendorId: "fin_vendor_cloudflare_ai",
-    operation: "social_studio_scheduled_draft",
+    operation: `social_model_${route.route_key}`,
     requestedUnits: Math.max(1, Math.ceil(prompt.length / 4)) + maxTokens,
     estimatedCostMinor: 0,
     idempotencyKey: `social-job:${job.id}`,
@@ -408,7 +419,7 @@ async function generateJobDraft(env: Env, job: JobRow, timestamp: number) {
   }
 
   try {
-    const output = await env.AI.run(resolveAgentModel(agent.model), {
+    const output = await env.AI.run(resolveAgentModel(route.model_id), {
       max_tokens: maxTokens,
       temperature: Math.max(0, Math.min(0.7, agent.temperature || 0.4)),
       messages: [{ role: "system", content: prompt }, { role: "user", content: "Creeaza ciorna programata si variantele native." }],

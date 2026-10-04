@@ -4,6 +4,7 @@ import type { AppBindings } from "./types";
 import { platformRoleForUser } from "./authorization";
 import { resolveAgentModel } from "./agentRuntimePolicy";
 import { reserveAiCost } from "./aiCostGuard";
+import { resolveSocialModelRoute } from "./socialModelRouting";
 import { now, sha256 } from "./security";
 import { runSocialStudioScheduler } from "./socialStudioScheduler";
 import { proposeAudienceCandidates, type AudienceProfile } from "./socialAudienceOptimizer";
@@ -114,7 +115,7 @@ aiProjectsRouter.get("/api/ai-projects/:slug", async (c) => {
   if (!access) return c.json({ error: { code: "not_found" } }, 404);
   const project = await c.env.DB.prepare("SELECT * FROM ai_projects WHERE id = ?")
     .bind(access.project.id).first();
-  const [channels, agents, content, memories, competitors, members, events, socialPolicy, socialJobs, socialSources, socialOpportunities, socialTools, socialAccounts, audienceRuns, audienceCandidates, socialDesignProfiles, socialBackups, socialAssets] = await Promise.all([
+  const [channels, agents, content, memories, competitors, members, events, socialPolicy, socialJobs, socialSources, socialOpportunities, socialTools, socialModelRoutes, socialAccounts, audienceRuns, audienceCandidates, socialDesignProfiles, socialBackups, socialAssets] = await Promise.all([
     c.env.DB.prepare(
       `SELECT channel.*, connection.provider AS verified_provider,
               connection.status AS verified_connection_status, connection.last_validated_at
@@ -180,6 +181,11 @@ aiProjectsRouter.get("/api/ai-projects/:slug", async (c) => {
          FROM ai_social_tool_policies WHERE project_id=? ORDER BY provider,capability`,
     ).bind(access.project.id).all(),
     c.env.DB.prepare(
+      `SELECT route_key,provider,model_id,modality,execution_mode,billing_mode,status,priority,
+              max_output_tokens,daily_unit_limit,source_url,license_spdx,storage_policy,notes,last_verified_at
+         FROM ai_social_model_routes WHERE project_id=? ORDER BY route_key,priority`,
+    ).bind(access.project.id).all(),
+    c.env.DB.prepare(
       `SELECT id,provider,surface,label,external_account_id,connection_status,review_status,timezone,
               daily_review_hour,daily_review_minute,cleanup_limit,growth_limit,require_approval,
               last_snapshot_at,last_review_at,last_error_code,created_at,updated_at
@@ -235,6 +241,7 @@ aiProjectsRouter.get("/api/ai-projects/:slug", async (c) => {
     socialSources: socialSources.results,
     socialOpportunities: socialOpportunities.results,
     socialTools: socialTools.results,
+    socialModelRoutes: socialModelRoutes.results,
     socialAccounts: socialAccounts.results,
     audienceRuns: audienceRuns.results,
     audienceCandidates: audienceCandidates.results,
@@ -875,12 +882,26 @@ aiProjectsRouter.post("/api/ai-projects/:projectId/content/generate", async (c) 
 
   let raw = "";
   try {
-    const maxTokens = Math.max(128, Math.min(request.format === "article" ? 1_800 : 1_000, agent.max_tokens || 800));
+    const route = await resolveSocialModelRoute(
+      c.env.DB,
+      access.project.id,
+      request.format === "article" || request.format === "reel" ? "weekly_article" : "daily_post",
+    );
+    if (!route) {
+      await c.env.DB.prepare("UPDATE ai_runs SET status='awaiting_approval',error_code='free_model_route_unavailable',completed_at=? WHERE id=?")
+        .bind(now(), runId).run();
+      return c.json({ error: { code: "free_model_route_unavailable" } }, 409);
+    }
+    const maxTokens = Math.max(128, Math.min(
+      request.format === "article" ? 1_800 : 1_000,
+      agent.max_tokens || 800,
+      route.max_output_tokens || agent.max_tokens || 800,
+    ));
     const reservation = await reserveAiCost({
       db: c.env.DB,
       agentSlug: agent.slug,
       vendorId: "fin_vendor_cloudflare_ai",
-      operation: "ai_project_content_draft",
+      operation: `social_model_${route.route_key}`,
       requestedUnits: Math.max(1, Math.ceil(prompt.length / 4)) + maxTokens,
       estimatedCostMinor: 0,
       idempotencyKey: `ai-run:${runId}`,
@@ -891,7 +912,7 @@ aiProjectsRouter.post("/api/ai-projects/:projectId/content/generate", async (c) 
         .bind(reservation.decision === "waiting_for_budget_approval" || reservation.decision === "approval_required" ? "awaiting_approval" : "denied", reservation.reason, now(), runId).run();
       return c.json({ error: { code: reservation.decision, reason: reservation.reason } }, 409);
     }
-    const output = await c.env.AI.run(resolveAgentModel(agent.model), {
+    const output = await c.env.AI.run(resolveAgentModel(route.model_id), {
       max_tokens: maxTokens,
       temperature: Math.max(0, Math.min(0.8, agent.temperature || 0.4)),
       messages: [{ role: "system", content: prompt }, { role: "user", content: "Creează ciorna solicitată." }],

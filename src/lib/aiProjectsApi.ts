@@ -83,6 +83,17 @@ export type AiSocialToolPolicy = {
   requires_approval: number; max_calls_per_day: number; notes: string; last_checked_at: number | null;
 };
 
+export type AiSocialModelRoute = {
+  route_key: string; provider: string; model_id: string;
+  modality: "text" | "image" | "audio" | "video";
+  execution_mode: "remote_api" | "catalog_only";
+  billing_mode: "free_only";
+  status: "available" | "catalog_only" | "blocked_paid" | "disabled";
+  priority: number; max_output_tokens: number; daily_unit_limit: number;
+  source_url: string; license_spdx: string | null; storage_policy: "metadata_only";
+  notes: string; last_verified_at: number | null;
+};
+
 export type AiSocialJob = {
   id: string; schedule_key: string; kind: "daily_post" | "daily_image" | "story" | "reel" | "weekly_article" | "research" | "engagement_review";
   format: string; primary_channel: string; topic: string; brief_json: string;
@@ -170,6 +181,7 @@ export type AiProjectDetail = {
   socialSources: AiSocialSource[];
   socialOpportunities: AiSocialOpportunity[];
   socialTools: AiSocialToolPolicy[];
+  socialModelRoutes: AiSocialModelRoute[];
   socialAccounts: AiSocialAccount[];
   audienceRuns: AiAudienceRun[];
   audienceCandidates: AiAudienceCandidate[];
