@@ -36,13 +36,14 @@ import CurrencySwitch from "@/components/site/CurrencySwitch";
 import logo from "@/assets/avyron-logo.jpg";
 import { trackEvent } from "@/lib/analytics";
 import { useCurrency } from "@/hooks/useCurrency";
+import ServiceCinematicIntro from "@/components/services/ServiceCinematicIntro";
 
 const WHATSAPP = "https://wa.me/40734605055?text=";
 
 const QaTestingPage = () => {
   const { lang } = useLang();
   const ro = lang === "ro";
-  const { formatEur: fmt } = useCurrency(ro ? "ro-RO" : "en-IE");
+  const { formatFixedPrice: fmt } = useCurrency(ro ? "ro-RO" : "en-IE");
   const [mode, setMode] = useState<"manual" | "auto">("manual");
 
   const path = ro ? "/servicii/qa-testing-web-mobile" : "/en/services/web-mobile-qa-testing";
@@ -55,7 +56,7 @@ const QaTestingPage = () => {
         { q: "Ce primesc la final?", a: "Un raport de defecte cu severitate, pași de reproducere, capturi sau înregistrări video, impactul asupra utilizatorului și recomandarea de remediere, plus setul de scenarii de test care rămâne al tău." },
         { q: "Reparați și defectele găsite?", a: "Putem. Remedierea se cotează separat, în funcție de complexitate. Dacă lucrezi cu altă echipă de dezvoltare, raportul este suficient de detaliat ca ei să intervină direct." },
         { q: "Cât durează o rundă de testare?", a: "Între 3 și 10 zile lucrătoare pentru majoritatea proiectelor. Un site de prezentare se acoperă în 3–4 zile, un magazin online sau o aplicație cu conturi și plăți în 7–10 zile." },
-        { q: "Cât costă?", a: "De la 300€ pentru o rundă completă pe un site de prezentare. Pentru magazine online, aplicații și platforme cotăm în funcție de numărul de fluxuri critice și de dispozitivele acoperite." },
+        { q: "Cât costă?", a: "De la 1.600 lei pentru o rundă completă pe un site de prezentare. Pentru magazine online, aplicații și platforme cotăm în funcție de numărul de fluxuri critice și de dispozitivele acoperite." },
       ]
     : [
         { q: "Is this a monthly subscription?", a: "No. QA testing is contracted per project or per sprint, at a fixed price agreed before we start. You pay once for the testing round, and retesting of reported defects is included." },
@@ -64,17 +65,17 @@ const QaTestingPage = () => {
         { q: "What do I receive at the end?", a: "A defect report with severity, reproduction steps, screenshots or video recordings, user impact and a fix recommendation, plus the test case set which stays yours." },
         { q: "Do you also fix the defects you find?", a: "We can. Fixing is quoted separately based on complexity. If you work with another development team, the report is detailed enough for them to act directly." },
         { q: "How long does a testing round take?", a: "Between 3 and 10 working days for most projects. A presentation website is covered in 3–4 days; an online store or an app with accounts and payments in 7–10 days." },
-        { q: "How much does it cost?", a: "From €300 for a full round on a presentation website. For stores, apps and platforms we quote based on the number of critical flows and the devices covered." },
+        { q: "How much does it cost?", a: "From 1,600 RON (€300 when displayed in euro) for a full round on a presentation website. For stores, apps and platforms we quote based on the number of critical flows and the devices covered." },
       ];
 
   useEffect(() => {
     window.scrollTo(0, 0);
     const title = ro
-      ? "QA Testing Web/Mobile — testare manuală și automată, de la 300€ | Avyron"
-      : "QA Testing Web/Mobile — manual and automated testing, from €300 | Avyron";
+      ? "QA Testing Web/Mobile — testare manuală și automată, de la 1.600 lei | Avyron"
+      : "QA Testing Web/Mobile — manual and automated testing, from 1,600 RON | Avyron";
     const description = ro
-      ? "Servicii QA Testing pentru web și mobile: testare funcțională, regresie, cross-browser, dispozitive reale, performanță, securitate, accesibilitate și automatizare end-to-end. Pe proiect, fără abonament, de la 300€."
-      : "QA testing services for web and mobile: functional, regression, cross-browser, real devices, performance, security, accessibility and end-to-end automation. Per project, no subscription, from €300.";
+      ? "Servicii QA Testing pentru web și mobile: testare funcțională, regresie, cross-browser, dispozitive reale, performanță, securitate, accesibilitate și automatizare end-to-end. Pe proiect, fără abonament, de la 1.600 lei."
+      : "QA testing services for web and mobile: functional, regression, cross-browser, real devices, performance, security, accessibility and end-to-end automation. Per project, no subscription, from 1,600 RON.";
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
       ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd, serviceLd, offerCatalogLd, faqPageLd }]) => {
         setPageMeta({
@@ -93,6 +94,7 @@ const QaTestingPage = () => {
             name: ro ? "QA Testing Web/Mobile" : "QA Testing Web/Mobile",
             description,
             path,
+            priceRon: 1600,
             priceEur: 300,
           }),
         );
@@ -242,6 +244,7 @@ const QaTestingPage = () => {
   const packages = [
     {
       key: "esential",
+      ron: 1600,
       eur: 300,
       icon: Bug,
       accent: "from-lime-400 to-emerald-600",
@@ -254,6 +257,7 @@ const QaTestingPage = () => {
     },
     {
       key: "complet",
+      ron: 3700,
       eur: 700,
       icon: FlaskConical,
       highlight: true,
@@ -267,6 +271,7 @@ const QaTestingPage = () => {
     },
     {
       key: "automat",
+      ron: 6300,
       eur: 1200,
       icon: Workflow,
       accent: "from-cyan-400 to-blue-600",
@@ -283,6 +288,7 @@ const QaTestingPage = () => {
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
+      <ServiceCinematicIntro service="qa-testing" />
       <QuickNav
         items={[
           { id: "moduri", label: ro ? "Moduri de testare" : "Testing modes", icon: FlaskConical },
@@ -375,12 +381,12 @@ const QaTestingPage = () => {
             >
               {ro ? "Vezi prețurile" : "See pricing"}
             </a>
-            <CurrencySwitch compact accent="emerald" />
+            <CurrencySwitch compact fixedPricing accent="emerald" />
           </div>
 
           <dl className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              { k: ro ? "De la" : "From", v: fmt(300) },
+              { k: ro ? "De la" : "From", v: fmt(1600, 300) },
               { k: ro ? "Durată" : "Duration", v: ro ? "3–10 zile" : "3–10 days" },
               { k: ro ? "Retestare" : "Retesting", v: ro ? "Inclusă" : "Included" },
               { k: ro ? "Abonament" : "Subscription", v: ro ? "Niciunul" : "None" },
@@ -579,7 +585,7 @@ const QaTestingPage = () => {
                   </p>
                   <div className="mt-4 flex items-baseline gap-1.5">
                     <span className="text-xs text-foreground/50">{ro ? "de la" : "from"}</span>
-                    <span className="font-display text-3xl font-extrabold">{fmt(p.eur)}</span>
+                    <span className="font-display text-3xl font-extrabold">{fmt(p.ron, p.eur)}</span>
                     <span className="text-xs text-foreground/50">{ro ? "· o singură plată" : "· one-time"}</span>
                   </div>
                   <p className="mt-4 text-sm text-foreground/70">

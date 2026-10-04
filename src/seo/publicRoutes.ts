@@ -6,6 +6,7 @@
 
 import { ROUTE_ALTERNATES } from "../i18n/routes";
 import { BLOG_SLUGS } from "../data/blogSlugs";
+import { INTERNATIONAL_PRODUCT_HUB_ROUTES } from "../features/produse/data/productLocales";
 
 /** Example demo slugs — mirrored from src/examples/registry.tsx (asserted in tests). */
 export const EXAMPLE_SLUGS = [
@@ -20,6 +21,7 @@ export const STANDALONE_PUBLIC_ROUTES = [
   "/en/privacy",
   "/blog",
   "/en/blog",
+  ...INTERNATIONAL_PRODUCT_HUB_ROUTES,
   ...BLOG_SLUGS.flatMap((slug) => [`/blog/${slug}`, `/en/blog/${slug}`]),
   "/exemple/flawlesstudio",
   "/exemple/retuvo",

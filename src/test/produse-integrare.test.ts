@@ -90,6 +90,7 @@ describe("cablajul dintre magazin și D1", () => {
 
 describe("cablajul dintre magazin și dashboardul intern", () => {
   const profile = read("src/pages/Profile.tsx");
+  const navigation = read("src/components/dashboard/dashboardNavigation.ts");
 
   it("are o categorie proprie de produse, separată de facturare", () => {
     const produse = SECTIONS.filter((section) => section.group === "produse");
@@ -107,8 +108,8 @@ describe("cablajul dintre magazin și dashboardul intern", () => {
   it("randează ambele panouri în dashboard", () => {
     expect(profile).toContain('<TabsContent value="collection"');
     expect(profile).toContain('<TabsContent value="produse-avyron"');
-    expect(profile).toContain('servicii: "Servicii AVYRON"');
-    expect(profile).toContain('produse: "Produse AVYRON"');
+    expect(navigation).toContain('servicii: "Servicii AVYRON"');
+    expect(navigation).toContain('produse: "Produse AVYRON"');
     expect(profile).toContain('<TabsContent value="servicii-avyron"');
   });
 

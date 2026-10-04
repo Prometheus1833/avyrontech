@@ -1,11 +1,11 @@
 const CACHEABLE_PUBLIC_PATHS = [
-  /^\/api\/ai\/agents$/,
   /^\/api\/blog\/posts(?:\/[^/]+)?$/,
   /^\/api\/blog\/sitemap$/,
   /^\/api\/blog\/media\/[a-f0-9-]{36}\.(?:png|jpe?g|webp|avif)$/i,
   /^\/api\/profile\/avatar\/[a-zA-Z0-9-]+$/,
   /^\/api\/public\/domain-check$/,
   /^\/api\/public\/exchange-rate$/,
+  /^\/api\/newsletter\/config$/,
 ];
 
 const allowedParamsFor = (pathname: string) => {

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { motionProfile } from "@/lib/stage/capability";
 
 type Props = {
   /** Nuanța secțiunii, în formatul „190 92% 55%". */
@@ -23,23 +24,26 @@ const ParticleLayer = ({ hue, density = 46, className = "" }: Props) => {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const profile = motionProfile();
+    if (profile.tier === "none") return;
     const canvas = canvasRef.current;
     const wrap = wrapRef.current;
     if (!canvas || !wrap) return;
     const context = canvas.getContext("2d", { alpha: true });
     if (!context) return;
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, profile.maxDpr);
     let width = 0;
     let height = 0;
     let particles: Particle[] = [];
     let visible = false;
     let frame = 0;
     let last = performance.now();
+    let lastDraw = 0;
+    const frameInterval = 1000 / Math.max(1, profile.targetFps);
 
     const seed = () => {
-      const count = Math.max(14, Math.round(density * Math.min(1, width / 1100)));
+      const count = Math.max(10, Math.round(density * profile.particleScale * Math.min(1, width / 1100)));
       particles = Array.from({ length: count }, () => ({
         x: Math.random(),
         y: Math.random(),
@@ -61,6 +65,11 @@ const ParticleLayer = ({ hue, density = 46, className = "" }: Props) => {
     };
 
     const render = (now: number) => {
+      if (now - lastDraw < frameInterval) {
+        frame = requestAnimationFrame(render);
+        return;
+      }
+      lastDraw = now;
       const delta = Math.min(48, now - last);
       last = now;
       context.clearRect(0, 0, width, height);

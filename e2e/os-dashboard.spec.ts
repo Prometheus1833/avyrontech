@@ -90,6 +90,18 @@ const mockAuthenticatedSuperAdmin = async (page: Page) => {
         { name: "Cloudflare", category: "infrastructure", status: "conectat", checkedAt: now, errorCode: null },
         { name: "GitHub", category: "development", status: "în_verificare", checkedAt: now, errorCode: null },
       ],
+      leadPipeline: [
+        { status: "new", total: 42 },
+        { status: "contacted", total: 28 },
+        { status: "qualified", total: 24 },
+        { status: "won", total: 16 },
+        { status: "lost", total: 18 },
+      ],
+      activeProjects: [
+        { id: "project-a", slug: "website-redesign", name: "Website redesign", status: "in_progress", bannerStatus: "in_progress", updatedAt: now - 15 * 60_000 },
+        { id: "project-b", slug: "platforma-comert", name: "Platformă e-commerce", status: "in_progress", bannerStatus: "testing", updatedAt: now - 60 * 60_000 },
+        { id: "project-c", slug: "brand-strategy", name: "Identitate de brand", status: "maintenance", bannerStatus: "revizuire", updatedAt: now - 4 * 60 * 60_000 },
+      ],
     }),
   }));
 };
@@ -109,11 +121,13 @@ test.describe("dashboard AVYRON OS în română", () => {
   test("afișează sumarul operațional și centrele principale pe desktop", async ({ page }, testInfo) => {
     await page.goto("/profil?tab=overview");
 
-    await expect(page.getByRole("heading", { name: "Bun venit, Andrei." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Bună (dimineața|ziua|seara), Andrei\./ })).toBeVisible();
     await expect(page.getByText("Necesită atenție · Azi")).toBeVisible();
     await expect(page.getByText("Centru de aprobări")).toBeVisible();
     await expect(page.getByText("Activitatea agenților")).toBeVisible();
-    await expect(page.getByText("Infrastructură", { exact: true })).toBeVisible();
+    await expect(page.getByText("Infrastructură și integrări", { exact: true })).toBeVisible();
+    await expect(page.getByText("Pipeline leaduri", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Proiecte active", exact: true })).toBeVisible();
     await expect(page.getByText("Încasări luna aceasta")).toBeVisible();
     await expect(page.getByText("Informare AVY", { exact: false })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Navigare AVYRON OS" })).toBeVisible();
@@ -152,15 +166,20 @@ test.describe("dashboard AVYRON OS în română", () => {
     await page.screenshot({ path: testInfo.outputPath("landing-os-quick-menu-mobile.png") });
   });
 
-  test("rămâne utilizabil pe mobil și oferă Command Center", async ({ page }) => {
+  test("rămâne utilizabil pe mobil și oferă Command Center", async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/profil?tab=overview");
 
     await expect(page.getByRole("navigation", { name: "Navigare mobilă" })).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath("overview-mobile.png"), fullPage: true });
     await page.getByRole("button", { name: /Caută clienți, proiecte/ }).click();
     await expect(page.getByPlaceholder("Caută proiecte, leaduri, facturi, agenți…")).toBeVisible();
     await expect(page.getByText("Comenzi disponibile", { exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "Deschide mai multe secțiuni" }).click();
+    await expect(page.getByRole("navigation", { name: "Toate secțiunile AVYRON OS" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Newsletter" })).toBeVisible();
   });
 
   test("separă serviciile personalizate de catalogul de produse", async ({ page }) => {
@@ -186,7 +205,7 @@ test.describe("dashboard AVYRON OS în română", () => {
     await expect(page.getByRole('heading',{name:'Contracte și reînnoiri',exact:true})).toBeVisible();
     await page.getByLabel('Caută funcționalități').fill('aprobari');
     await page.getByRole('button',{name:'Deschide funcțiile disponibile'}).click();
-    await expect(page.getByRole('heading',{name:'Bun venit, Andrei.'})).toBeVisible();
+    await expect(page.getByRole('heading',{name:/Bună (dimineața|ziua|seara), Andrei\./})).toBeVisible();
   });
 
   test("Super Admin poate gestiona controlat accesul unui membru", async ({ page }) => {

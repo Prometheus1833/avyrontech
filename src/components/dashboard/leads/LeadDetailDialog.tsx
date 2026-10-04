@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Bell, Check, Clock3, ExternalLink, LoaderCircle, Mail, MessageCircle, Phone, Save, Star } from "lucide-react";
+import { Bell, Check, Clock3, ExternalLink, LoaderCircle, Mail, MessageCircle, Phone, Save, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   leadsApi,
   type LeadChannel,
+  type LeadDeletionReasonCode,
   type LeadDetailResponse,
   type LeadStage,
 } from "@/lib/leadsApi";
+import { LeadDeleteDialog } from "@/components/dashboard/leads/LeadDeletionDialogs";
 
 const field = "w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/40";
 const stageOptions: Array<[LeadStage, string]> = [
@@ -39,8 +41,8 @@ const formatDate = (value: number) => new Intl.DateTimeFormat("ro-RO", {
   dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Bucharest",
 }).format(value);
 
-export function LeadDetailDialog({ leadId, onOpenChange, onChanged }: {
-  leadId: string | null; onOpenChange: (open: boolean) => void; onChanged: () => void;
+export function LeadDetailDialog({ leadId, onOpenChange, onChanged, onDeleted }: {
+  leadId: string | null; onOpenChange: (open: boolean) => void; onChanged: () => void; onDeleted: () => void;
 }) {
   const [detail, setDetail] = useState<LeadDetailResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -54,6 +56,7 @@ export function LeadDetailDialog({ leadId, onOpenChange, onChanged }: {
   const [activityText, setActivityText] = useState("");
   const [reminderAt, setReminderAt] = useState("");
   const [reminderNote, setReminderNote] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const load = useCallback(async () => {
     if (!leadId) return;
@@ -143,13 +146,21 @@ export function LeadDetailDialog({ leadId, onOpenChange, onChanged }: {
   };
 
   const recordContact = (kind: ActivityKind, label: string) => void addActivity(kind, `Contactare ${label} confirmată manual.`);
+  const removeLead = async (reasonCode: LeadDeletionReasonCode, reasonDetail: string) => {
+    if (!leadId || !detail?.canEdit) return;
+    setSaving(true);
+    try { await leadsApi.remove(leadId, { reasonCode, reasonDetail }); setDeleteOpen(false); toast.success("Lead-ul a fost șters."); onDeleted(); }
+    catch { toast.error("Lead-ul nu a putut fi șters."); }
+    finally { setSaving(false); }
+  };
   const lead = detail?.data;
 
   return (
-    <Dialog open={leadId !== null} onOpenChange={onOpenChange}>
+    <>
+    <Dialog open={leadId !== null && !deleteOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[94vh] max-w-5xl overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle>{lead?.name || lead?.business || "Fișă lead"}</DialogTitle>
+          <div className="flex items-center justify-between gap-3"><DialogTitle>{lead?.name || lead?.business || "Fișă lead"}</DialogTitle>{detail?.canEdit && <Button type="button" variant="ghost" size="sm" disabled={saving} onClick={() => setDeleteOpen(true)} className="text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="mr-2 size-4" /> Șterge</Button>}</div>
           <DialogDescription>{lead?.business && lead?.name ? lead.business : "Istoric, contactări, responsabilitate și următorul pas."}</DialogDescription>
         </DialogHeader>
         {loading && <div className="grid min-h-64 place-items-center"><LoaderCircle className="size-6 animate-spin" /></div>}
@@ -233,5 +244,7 @@ export function LeadDetailDialog({ leadId, onOpenChange, onChanged }: {
         )}
       </DialogContent>
     </Dialog>
+    <LeadDeleteDialog lead={lead || null} open={deleteOpen} busy={saving} onOpenChange={setDeleteOpen} onConfirm={removeLead} />
+    </>
   );
 }

@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { setPageMeta, setJsonLd, resetManagedHead } from "@/lib/seo";
 import { productLd, organizationLd, breadcrumbLd } from "@/lib/structuredData";
+import { productHubAlternates } from "@/features/produse/data/productLocales";
 
 const graph = () => {
   const el = document.getElementById("ld-graph");
@@ -63,5 +64,22 @@ describe("SPA head cleanup between routes", () => {
     expect(document.querySelector('meta[name="robots"]')!.getAttribute("content")).toBe(
       "noindex, follow",
     );
+  });
+
+  it("writes all reciprocal language signals for the international Products hub", () => {
+    setPageMeta({
+      title: "Avyron Produkte",
+      description: "Digitale Produkte für europäische Teams.",
+      path: "/de/produkte",
+      locale: "de_DE",
+      alternates: productHubAlternates(),
+    });
+
+    expect(document.documentElement.lang).toBe("de");
+    expect(document.querySelector('link[rel="canonical"]')!.getAttribute("href")).toBe("https://avyron.ro/de/produkte");
+    expect(document.querySelectorAll('link[rel="alternate"][hreflang]').length).toBe(8);
+    expect(document.querySelector('link[hreflang="fr"]')!.getAttribute("href")).toBe("https://avyron.ro/fr/produits");
+    expect(document.querySelector('link[hreflang="x-default"]')!.getAttribute("href")).toBe("https://avyron.ro/en/products");
+    expect(document.querySelectorAll('meta[property="og:locale:alternate"]').length).toBe(6);
   });
 });

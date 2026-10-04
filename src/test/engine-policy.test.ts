@@ -57,4 +57,14 @@ describe("AVY Engine policy", () => {
     expect(migration).toContain("'uiprompts-app', 'UI Prompts'");
     expect(migration).toContain("'reviewing', 'unverified'");
   });
+
+  it("keeps prompted private documentation as an editable draft until explicit approval", () => {
+    const api = readFileSync(resolve(process.cwd(), "cloudflare/workers/api/src/engine.ts"), "utf8");
+    const migration = readFileSync(resolve(process.cwd(), "cloudflare/d1/migrations/0038_internal_platform_19.sql"), "utf8");
+    expect(api).toContain('engineRouter.post("/api/engine/documentation/prompts"');
+    expect(api).toContain('allowed(c, "engine.approve")');
+    expect(api).toContain("reviewedContent");
+    expect(migration).toContain("engine_documentation_drafts");
+    expect(migration).toContain("status IN ('draft','applied','rejected')");
+  });
 });

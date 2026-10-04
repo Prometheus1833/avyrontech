@@ -1,3 +1,5 @@
+import { addLocalAccountCartItem } from "@/lib/accountCart";
+
 /**
  * Punctul unic prin care trece selectarea unui abonament.
  *
@@ -12,6 +14,8 @@
  */
 
 export const PAYMENT_GATEWAY_ENABLED = false;
+export const ANNUAL_DISCOUNT_PERCENT = 20;
+export const ANNUAL_PROMOTION_CODE = "ANUALAVY20";
 
 export type BillingPeriodValue = "monthly" | "annual";
 
@@ -39,6 +43,20 @@ export type OrderItemPayload = {
 export const buildOrderItems = (sku: string, period: BillingPeriod, notes?: string): OrderItemPayload[] => [
   { sku, quantity: 1, period: period.value, notes },
 ];
+
+export const annualSubscriptionTotal = (monthlyPriceCents: number) =>
+  Math.round(monthlyPriceCents * 12 * (1 - ANNUAL_DISCOUNT_PERCENT / 100));
+
+export function addAnnualSubscriptionToCart(input: { sku: string; name: string; monthlyPriceCents: number }) {
+  if (typeof window === "undefined") return false;
+  addLocalAccountCartItem({
+    id: crypto.randomUUID(), sku: input.sku, type: "subscription", name: input.name,
+    source: "subscriptions",
+    period: "annual", price_estimate: input.monthlyPriceCents, price_currency: "RON",
+    notes: `Pachet anual · ${ANNUAL_DISCOUNT_PERCENT}% avantaj aplicat la validarea comenzii`,
+  });
+  return true;
+}
 
 /**
  * Starea trimisă către /auth ca vizitatorul să revină exact la abonamentul

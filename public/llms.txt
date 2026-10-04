@@ -22,7 +22,7 @@ Contact: contact@avyron.ro · +40 734 605 055 · WhatsApp · https://avyron.ro
 ## Services
 
 - [Solicită audit gratuit](/?request=audit#cta) — [Request an audit EN](/en?request=audit#cta): Evaluare concisă a performanței, SEO, securității, accesibilității și UI/UX, cu recomandări prioritizate.
-- [Website Prezentare Premium](/servicii/website-prezentare-profesional) — [EN](/en/services/professional-presentation-website): De la 300€, cu termen și suport stabilite prin ofertă. Design custom, SEO tehnic, panou de administrare, email pe domeniu și consiliere post-lansare.
+- [Website Prezentare Premium](/servicii/website-prezentare-profesional) — [EN](/en/services/professional-presentation-website): De la 1.150 lei (220€ la afișarea în euro), cu termen și suport stabilite prin ofertă. Design custom, SEO tehnic, panou de administrare, email pe domeniu și consiliere post-lansare.
 - [Identitate Social Media](/servicii/identitate-social-media) — [EN](/en/services/social-media-identity): Configurare și identitate vizuală pentru Facebook, Instagram și TikTok.
 - [Magazin Online (eCommerce / Shopify)](/servicii/magazin-online) — [EN](/en/services/online-store): Magazin complet, plăți, livrare, facturare și optimizare pentru conversie.
 - [Aplicații Web și Mobile](/servicii/aplicatii-si-platforme) — [EN](/en/services/apps-and-platforms): Aplicații iOS, Android și PWA, cu backend și panou de administrare.
@@ -57,7 +57,7 @@ Contact: contact@avyron.ro · +40 734 605 055 · WhatsApp · https://avyron.ro
 ## Facts
 
 - Livrare tipică: 2–5 zile lucrătoare pentru un site de prezentare.
-- Prețuri de start: site de prezentare de la 300€, testare QA de la 300€, mentenanță de la 50€/lună.
+- Prețuri de start: site de prezentare de la 1.150 lei (220€ la afișarea în euro), testare QA de la 300€, mentenanță de la 50€/lună.
 - Include: design custom, conținut, SEO tehnic, hosting și domeniu în primul an, email pe domeniu, panou de administrare, instruire live.
 - Nivelul și durata suportului tehnic sunt stabilite transparent în oferta și contractul fiecărui proiect.
 - Zone deservite: România și Uniunea Europeană. Limbi: română și engleză.

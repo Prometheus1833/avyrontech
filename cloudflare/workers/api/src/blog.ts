@@ -217,6 +217,35 @@ blogRouter.get("/api/blog/staff/posts", async (c) => {
   return c.json({ data: results.map(serialize) });
 });
 
+blogRouter.get("/api/blog/staff/settings", async (c) => {
+  const data = await c.env.DB.prepare(
+    "SELECT publication_name,editorial_description,default_language,default_category,updated_at FROM blog_settings WHERE id='global'",
+  ).first();
+  if (!data) return c.json({ error: { code: "settings_not_found" } }, 404);
+  c.header("cache-control", "private, no-store");
+  return c.json({ data });
+});
+
+blogRouter.patch("/api/blog/staff/settings", async (c) => {
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>));
+  const publicationName = clean(body.publicationName, 100);
+  const editorialDescription = clean(body.editorialDescription, 500);
+  const defaultLanguage = clean(body.defaultLanguage, 2);
+  const defaultCategory = slugify(clean(body.defaultCategory, 48));
+  if (publicationName.length < 3 || editorialDescription.length < 20 || !["ro", "en"].includes(defaultLanguage) || !defaultCategory) {
+    return c.json({ error: { code: "invalid_blog_settings" } }, 400);
+  }
+  const timestamp = now();
+  await c.env.DB.batch([
+    c.env.DB.prepare(
+      `UPDATE blog_settings SET publication_name=?,editorial_description=?,default_language=?,default_category=?,updated_by=?,updated_at=? WHERE id='global'`,
+    ).bind(publicationName, editorialDescription, defaultLanguage, defaultCategory, c.get("userId"), timestamp),
+    c.env.DB.prepare("INSERT INTO audit_log (user_id,action,meta_json,created_at) VALUES (?,?,?,?)")
+      .bind(c.get("userId"), "blog_settings_update", JSON.stringify({ targetType: "blog_settings", targetId: "global" }), timestamp),
+  ]);
+  return c.json({ ok: true });
+});
+
 blogRouter.post("/api/blog/staff/posts", async (c) => {
   const input = normalizedInput(await c.req.json().catch(() => ({})) as BlogInput);
   if ("error" in input) return c.json({ error: { code: input.error } }, 400);

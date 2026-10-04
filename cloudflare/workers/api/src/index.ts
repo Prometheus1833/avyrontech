@@ -31,6 +31,8 @@ import { EXCHANGE_RATE_REFRESH_CRON, getPublicExchangeRate, refreshExchangeRate 
 import { platformRoleForUser } from "./authorization";
 import { base32Encode, decryptTotpSecret, encryptTotpSecret, generateTotpSecret, totpUri, verifyTotp } from "./totp";
 import { engineRouter, runDueEngineDiscovery } from "./engine";
+import { newsletterRouter } from "./newsletter";
+import { runSocialStudioScheduler } from "./socialStudioScheduler";
 
 export { AvyronAgentRuntime } from "./agents/AvyronAgentRuntime";
 
@@ -1118,7 +1120,7 @@ import { leadsRouter } from "./leads";
 import { aiProjectsRouter } from "./aiProjects";
 import { financeRouter } from "./finance";
 import { workspaceRouter } from "./workspace";
-import { operationsRouter } from "./operations";
+import { operationsOAuthRouter, operationsRouter } from "./operations";
 import { runOperationJobs } from "./operationJobs";
 import { dashboardRouter } from "./osDashboard";
 import { seedRouter } from "./seed";
@@ -1142,6 +1144,7 @@ app.use("/api/links/*", requireAuth);
 app.use("/api/metadata/*", requireAuth);
 app.use("/api/media/*", requireAuth);
 app.use("/api/commerce/*", requireAuth);
+app.use("/api/logo-studio/generate", requireAuth);
 app.use("/api/promotions/*", requireAuth);
 app.use("/api/leads", requireAuth);
 app.use("/api/leads/*", requireAuth);
@@ -1170,10 +1173,14 @@ app.use("/api/blog/staff/*", requireAuth, requireRole("staff", "admin"));
 // AI OS: consola de administrare este rezervată super adminilor; scrierile sunt
 // limitate suplimentar la contul owner în interiorul routerului.
 app.use("/api/ai/admin/*", requireAuth, requireSuperAdmin);
+app.use("/api/newsletter/admin", requireAuth, requireSuperAdmin);
+app.use("/api/newsletter/admin/*", requireAuth, requireSuperAdmin);
 app.route("/", aiOsRouter);
+app.route("/", newsletterRouter);
 app.route("/", leadsRouter);
 app.route("/", aiProjectsRouter);
 app.route("/", financeRouter);
+app.route("/", operationsOAuthRouter);
 app.use("/api/workspace/*", requireAuth, requirePrivilegedMfa);
 app.route("/", workspaceRouter);
 app.use("/api/operations/*", requireAuth, requirePrivilegedMfa);
@@ -1327,6 +1334,8 @@ async function cleanupExpiredData(env: AppBindings["Bindings"]) {
     env.DB.prepare("DELETE FROM sessions WHERE expires_at < ?").bind(timestamp),
     env.DB.prepare("DELETE FROM password_resets WHERE expires_at < ? AND (used_at IS NULL OR used_at < ?)").bind(timestamp, timestamp - 24 * 60 * 60 * 1000),
     env.DB.prepare("DELETE FROM email_verifications WHERE expires_at < ? AND (used_at IS NULL OR used_at < ?)").bind(timestamp, timestamp - 24 * 60 * 60 * 1000),
+    env.DB.prepare("UPDATE newsletter_subscribers SET confirmation_token_hash = NULL, confirmation_expires_at = NULL, updated_at = ? WHERE status = 'pending' AND confirmation_expires_at < ?")
+      .bind(timestamp, timestamp),
   ]);
 }
 
@@ -1334,7 +1343,10 @@ export default {
   fetch: (request, env, ctx) => app.fetch(normalizeVersionedApiRequest(request), env, ctx),
   scheduled: (controller, env, ctx) => {
     if (controller.cron === "0,15,30,45 * * * *") {
-      ctx.waitUntil(runOperationJobs(env));
+      ctx.waitUntil(Promise.all([
+        runOperationJobs(env),
+        runSocialStudioScheduler(env),
+      ]).then(() => undefined));
       return;
     }
     if (controller.cron === EXCHANGE_RATE_REFRESH_CRON) {

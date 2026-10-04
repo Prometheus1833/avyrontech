@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { motionProfile } from "@/lib/stage/capability";
 
 type Props = {
   /** Durata animației înainte de estompare, în ms. Total ≤ 2s. */
@@ -18,7 +19,8 @@ const FADE = 420;
  */
 const SpaceLoader = ({ duration = 1400, label = "Avyron" }: Props) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [phase, setPhase] = useState<"run" | "fade" | "gone">("run");
+  const profileRef = useRef(motionProfile());
+  const [phase, setPhase] = useState<"run" | "fade" | "gone">(() => profileRef.current.tier === "none" ? "gone" : "run");
 
   useEffect(() => {
     const fadeTimer = window.setTimeout(() => setPhase("fade"), duration);
@@ -31,13 +33,15 @@ const SpaceLoader = ({ duration = 1400, label = "Avyron" }: Props) => {
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    const profile = profileRef.current;
+    if (profile.tier === "none") return;
     if (!canvas) return;
     const context = canvas.getContext("2d", { alpha: true });
     if (!context) return;
 
     let width = 0;
     let height = 0;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, profile.maxDpr);
 
     const resize = () => {
       width = canvas.clientWidth;
@@ -48,7 +52,7 @@ const SpaceLoader = ({ duration = 1400, label = "Avyron" }: Props) => {
     };
     resize();
 
-    const particles: Particle[] = Array.from({ length: PARTICLE_COUNT }, () => ({
+    const particles: Particle[] = Array.from({ length: Math.max(60, Math.round(PARTICLE_COUNT * profile.particleScale)) }, () => ({
       x: (Math.random() - 0.5) * 2,
       y: (Math.random() - 0.5) * 2,
       z: Math.random(),
@@ -59,8 +63,15 @@ const SpaceLoader = ({ duration = 1400, label = "Avyron" }: Props) => {
     let frame = 0;
     let start = performance.now();
     let last = start;
+    let lastDraw = 0;
+    const frameInterval = 1000 / Math.max(1, profile.targetFps);
 
     const render = (now: number) => {
+      if (now - lastDraw < frameInterval) {
+        frame = requestAnimationFrame(render);
+        return;
+      }
+      lastDraw = now;
       const delta = Math.min(48, now - last);
       last = now;
       const elapsed = now - start;
@@ -132,6 +143,7 @@ const SpaceLoader = ({ duration = 1400, label = "Avyron" }: Props) => {
     <div
       aria-hidden
       data-testid="space-loader"
+      data-quality={profileRef.current.tier}
       className="pointer-events-none fixed inset-0 z-[70] grid place-items-center bg-[#07040f] transition-opacity duration-500 ease-out"
       style={{ opacity: phase === "fade" ? 0 : 1 }}
     >

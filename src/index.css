@@ -183,6 +183,21 @@ html {
   html { scroll-behavior: auto; }
 }
 
+/* Hardware lent: păstrăm identitatea vizuală, dar oprim straturile perpetue. */
+html[data-motion-tier="usor"] .avyron-backdrop-drift,
+html[data-motion-tier="usor"] .avyron-backdrop-pulse,
+html[data-motion-tier="usor"] .avyron-mote,
+html[data-motion-tier="none"] .avyron-backdrop-drift,
+html[data-motion-tier="none"] .avyron-backdrop-pulse,
+html[data-motion-tier="none"] .avyron-mote {
+  animation: none !important;
+}
+
+html[data-motion-tier="usor"] .avy-route-transition {
+  animation-duration: 190ms;
+  transform: none;
+}
+
 /* Firefox — thin + branded colors */
 * {
   scrollbar-width: thin;
@@ -490,4 +505,27 @@ html {
   animation-name: avyron-mote;
   animation-timing-function: cubic-bezier(0.33, 0, 0.2, 1);
   animation-iteration-count: infinite;
+}
+/* Fast page reveal: no navigation delay, JS animation work or layout shift. */
+.avy-route-transition {
+  animation: avy-route-reveal 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: 50% 12%;
+}
+
+@keyframes avy-route-reveal {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0) scale(0.997);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avy-route-transition {
+    animation: none;
+    transform: none;
+  }
 }

@@ -2,9 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import PageBackLink from "@/components/site/PageBackLink";
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+import { apiUrl } from "@/lib/apiBase";
 
 type State = "loading" | "valid" | "already" | "invalid" | "done" | "error";
 
@@ -21,10 +19,7 @@ export default function Unsubscribe() {
     }
     (async () => {
       try {
-        const res = await fetch(
-          `${SUPABASE_URL}/functions/v1/handle-email-unsubscribe?token=${encodeURIComponent(token)}`,
-          { headers: { apikey: SUPABASE_ANON_KEY } },
-        );
+        const res = await fetch(apiUrl(`/api/newsletter/unsubscribe?token=${encodeURIComponent(token)}`));
         const data = (await res.json()) as { valid?: boolean; reason?: string };
         if (data.valid) setState("valid");
         else if (data.reason === "already_unsubscribed") setState("already");
@@ -38,16 +33,14 @@ export default function Unsubscribe() {
   const confirm = async () => {
     setBusy(true);
     try {
-      const res = await fetch(
-        `${SUPABASE_URL}/functions/v1/handle-email-unsubscribe`,
-        {
+      const res = await fetch(apiUrl("/api/newsletter/unsubscribe"), {
           method: "POST",
-          headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token }),
-        },
-      );
-      const data = (await res.json()) as { success?: boolean; reason?: string };
-      if (data.success) setState("done");
+        });
+      const data = (await res.json()) as { ok?: boolean; reason?: string };
+      if (data.ok && data.reason === "already_unsubscribed") setState("already");
+      else if (data.ok) setState("done");
       else if (data.reason === "already_unsubscribed") setState("already");
       else setState("error");
     } catch {

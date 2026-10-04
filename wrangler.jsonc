@@ -97,6 +97,9 @@
     "SMTP_USER": "api_token",
     "SMTP_FROM": "contact@avyron.ro",
     "LEAD_TO": "avyrontech@gmail.com",
+    "SUPABASE_DATA_OPERATIONS_ENABLED": "false",
+    "GOOGLE_DRIVE_DATA_OPERATIONS_ENABLED": "false",
+    "BACKUP_JOBS_ENABLED": "false",
     "TURNSTILE_ALLOWED_HOSTNAMES": "avyron.ro,www.avyron.ro,app.avyron.ro,avyrontech.pages.dev,*.avyrontech.pages.dev,*.avyrontech.workers.dev,avyrontech.lovable.app,localhost"
   },
 
@@ -161,6 +164,9 @@
         "SMTP_USER": "api_token",
         "SMTP_FROM": "contact@avyron.ro",
         "LEAD_TO": "avyrontech@gmail.com",
+        "SUPABASE_DATA_OPERATIONS_ENABLED": "false",
+        "GOOGLE_DRIVE_DATA_OPERATIONS_ENABLED": "false",
+        "BACKUP_JOBS_ENABLED": "false",
         "TURNSTILE_ALLOWED_HOSTNAMES": "app.avyron.ro,*.avyrontech.workers.dev,avyrontech.lovable.app,localhost"
       }
     }

@@ -60,6 +60,13 @@ describe("multi-domain demo registry", () => {
     );
     expect(eu?.status).toBe(301);
     expect(eu?.headers.get("location")).toBe("https://avyron.ro/servicii?utm_source=eu");
+
+    const internationalProducts = await handleMappedHostname(
+      new Request("https://avyron.eu/de/produkte?utm_source=eu-products&token=secret"),
+      unusedAssets,
+    );
+    expect(internationalProducts?.status).toBe(301);
+    expect(internationalProducts?.headers.get("location")).toBe("https://avyron.ro/de/produkte?utm_source=eu-products");
   });
 
   it("fails closed before API routing for configured and unknown demo hosts", async () => {

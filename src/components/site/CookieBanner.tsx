@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Cookie, Settings2, Check, X } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { updateConsent } from "@/lib/analytics";
 import {
   COOKIE_CONSENT_STORAGE_KEY,
@@ -37,11 +38,73 @@ const COPY = {
     policy: "Cookie policy", policyHref: "/en/cookie-policy",
     version: "Policy version",
   },
+  it: {
+    dialog: "Impostazioni cookie", title: "Utilizziamo i cookie",
+    body: "I cookie necessari mantengono operativo il sito. Con il tuo consenso utilizziamo anche cookie di analisi e marketing per migliorare l'esperienza.",
+    details: "Dettagli", detailsHref: "/en/privacy",
+    necessary: "Necessari", necessaryDesc: "Indispensabili per il funzionamento del sito.",
+    analytics: "Analisi", analyticsDesc: "Ci aiutano a capire come viene utilizzato il sito.",
+    marketing: "Marketing", marketingDesc: "Contenuti e offerte personalizzati.",
+    save: "Salva preferenze", acceptAll: "Accetta tutti", onlyNecessary: "Solo necessari",
+    hideSettings: "Nascondi impostazioni", settings: "Impostazioni",
+    policy: "Informativa sui cookie", policyHref: "/en/cookie-policy",
+    version: "Versione dell'informativa",
+  },
+  hu: {
+    dialog: "Cookie-beállítások", title: "Cookie-kat használunk",
+    body: "A szükséges cookie-k biztosítják a webhely működését. Hozzájárulásoddal elemzési és marketing cookie-kat is használunk az élmény javításához.",
+    details: "Részletek", detailsHref: "/en/privacy",
+    necessary: "Szükséges", necessaryDesc: "Nélkülözhetetlenek a webhely működéséhez.",
+    analytics: "Elemzés", analyticsDesc: "Segítenek megérteni a webhely használatát.",
+    marketing: "Marketing", marketingDesc: "Személyre szabott tartalmak és ajánlatok.",
+    save: "Beállítások mentése", acceptAll: "Összes elfogadása", onlyNecessary: "Csak szükséges",
+    hideSettings: "Beállítások elrejtése", settings: "Beállítások",
+    policy: "Cookie-szabályzat", policyHref: "/en/cookie-policy",
+    version: "Szabályzat verziója",
+  },
+  de: {
+    dialog: "Cookie-Einstellungen", title: "Wir verwenden Cookies",
+    body: "Notwendige Cookies halten die Website funktionsfähig. Mit deiner Zustimmung verwenden wir außerdem Analyse- und Marketing-Cookies, um das Erlebnis zu verbessern.",
+    details: "Details", detailsHref: "/en/privacy",
+    necessary: "Notwendig", necessaryDesc: "Für den Betrieb der Website unverzichtbar.",
+    analytics: "Analyse", analyticsDesc: "Hilft uns zu verstehen, wie die Website genutzt wird.",
+    marketing: "Marketing", marketingDesc: "Personalisierte Inhalte und Angebote.",
+    save: "Auswahl speichern", acceptAll: "Alle akzeptieren", onlyNecessary: "Nur notwendige",
+    hideSettings: "Einstellungen ausblenden", settings: "Einstellungen",
+    policy: "Cookie-Richtlinie", policyHref: "/en/cookie-policy",
+    version: "Version der Richtlinie",
+  },
+  fr: {
+    dialog: "Paramètres des cookies", title: "Nous utilisons des cookies",
+    body: "Les cookies nécessaires assurent le fonctionnement du site. Avec votre accord, nous utilisons aussi des cookies d'analyse et de marketing pour améliorer l'expérience.",
+    details: "Détails", detailsHref: "/en/privacy",
+    necessary: "Nécessaires", necessaryDesc: "Indispensables au fonctionnement du site.",
+    analytics: "Analyse", analyticsDesc: "Nous aident à comprendre l'utilisation du site.",
+    marketing: "Marketing", marketingDesc: "Contenus et offres personnalisés.",
+    save: "Enregistrer les préférences", acceptAll: "Tout accepter", onlyNecessary: "Nécessaires seulement",
+    hideSettings: "Masquer les paramètres", settings: "Paramètres",
+    policy: "Politique des cookies", policyHref: "/en/cookie-policy",
+    version: "Version de la politique",
+  },
+  pl: {
+    dialog: "Ustawienia plików cookie", title: "Używamy plików cookie",
+    body: "Niezbędne pliki cookie zapewniają działanie witryny. Za Twoją zgodą używamy też plików analitycznych i marketingowych, aby ulepszać doświadczenie.",
+    details: "Szczegóły", detailsHref: "/en/privacy",
+    necessary: "Niezbędne", necessaryDesc: "Konieczne do prawidłowego działania witryny.",
+    analytics: "Analityczne", analyticsDesc: "Pomagają nam zrozumieć sposób korzystania z witryny.",
+    marketing: "Marketing", marketingDesc: "Spersonalizowane treści i oferty.",
+    save: "Zapisz preferencje", acceptAll: "Akceptuj wszystkie", onlyNecessary: "Tylko niezbędne",
+    hideSettings: "Ukryj ustawienia", settings: "Ustawienia",
+    policy: "Polityka cookie", policyHref: "/en/cookie-policy",
+    version: "Wersja polityki",
+  },
 } as const;
 
 const CookieBanner = () => {
-  const isEn = typeof window !== "undefined" && window.location.pathname.startsWith("/en");
-  const c = isEn ? COPY.en : COPY.ro;
+  const { pathname } = useLocation();
+  const pathLocale = pathname.split("/")[1];
+  const copyLocale = pathLocale in COPY ? pathLocale as keyof typeof COPY : "ro";
+  const c = COPY[copyLocale];
   const [open, setOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [prefs, setPrefs] = useState<CookieConsentPreferences>({ necessary: true, analytics: false, marketing: false });

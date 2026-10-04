@@ -79,6 +79,26 @@ dashboardRouter.get("/api/os/overview", async (c) => {
       ])
     : [null, null, null, null];
 
+  const [leadPipelineRows, activeProjectRows] = await Promise.all([
+    staff
+      ? c.env.DB.prepare(
+          `SELECT status, COUNT(*) AS total
+             FROM leads
+            WHERE status IN ('new','contacted','qualified','won','lost')
+            GROUP BY status`,
+        ).all<{ status: "new" | "contacted" | "qualified" | "won" | "lost"; total: number }>()
+      : Promise.resolve({ results: [] }),
+    c.env.DB.prepare(
+      `SELECT id, slug, name, status, COALESCE(banner_status, 'in_progress') AS banner_status, updated_at
+         FROM projects
+        WHERE status IN ('in_progress','maintenance') AND (? = 1 OR owner_user_id = ?)
+        ORDER BY CASE COALESCE(banner_status, 'in_progress')
+          WHEN 'revizuire' THEN 0 WHEN 'testing' THEN 1 WHEN 'in_progress' THEN 2
+          WHEN 'online' THEN 3 ELSE 4 END, updated_at DESC
+        LIMIT 6`,
+    ).bind(staff ? 1 : 0, userId).all<{ id: string; slug: string; name: string; status: string; banner_status: string; updated_at: number }>(),
+  ]);
+
   const [legacyOverdue, finance, approvals, agentRuns, financialAlerts, connections, securityWarnings] = superAdmin
     ? await Promise.all([
         c.env.DB.prepare(
@@ -208,6 +228,15 @@ dashboardRouter.get("/api/os/overview", async (c) => {
       { id: "ai", label: "Workers AI", status: c.env.AI ? "configurat" : "neconfigurat", detail: "Nu se consumă resurse AI pentru verificarea stării. Utilizarea necesită Cost Guard." },
     ],
     integrations: integrationRows,
+    leadPipeline: leadPipelineRows.results.map((row) => ({ status: row.status, total: Number(row.total || 0) })),
+    activeProjects: activeProjectRows.results.map((row) => ({
+      id: row.id,
+      slug: row.slug,
+      name: row.name,
+      status: row.status,
+      bannerStatus: row.banner_status,
+      updatedAt: Number(row.updated_at || 0),
+    })),
   });
 });
 

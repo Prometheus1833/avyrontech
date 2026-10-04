@@ -36,6 +36,8 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
   const cases: Array<[string, string, string]> = [
     ["/", "ro", "https://avyron.ro/"],
     ["/servicii", "ro", "https://avyron.ro/servicii"],
+    ["/configurator", "ro", "https://avyron.ro/configurator"],
+    ["/en/configurator", "en", "https://avyron.ro/en/configurator"],
     ["/servicii/website-prezentare-profesional", "ro", "https://avyron.ro/servicii/website-prezentare-profesional"],
     ["/en/services/professional-presentation-website", "en", "https://avyron.ro/en/services/professional-presentation-website"],
     ["/en/services", "en", "https://avyron.ro/en/services"],
@@ -43,6 +45,11 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     ["/en/about", "en", "https://avyron.ro/en/about"],
     ["/termeni", "ro", "https://avyron.ro/termeni"],
     ["/en/terms", "en", "https://avyron.ro/en/terms"],
+    ["/it/prodotti", "it", "https://avyron.ro/it/prodotti"],
+    ["/hu/termekek", "hu", "https://avyron.ro/hu/termekek"],
+    ["/de/produkte", "de", "https://avyron.ro/de/produkte"],
+    ["/fr/produits", "fr", "https://avyron.ro/fr/produits"],
+    ["/pl/produkty", "pl", "https://avyron.ro/pl/produkty"],
   ];
 
   it.each(cases)("%s ships lang, title, description and self-canonical", (route, lang, canonical) => {
@@ -78,6 +85,25 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     }
   });
 
+  it("international Products hubs publish reciprocal seven-language hreflang", () => {
+    const expected = {
+      ro: "/produse",
+      en: "/en/products",
+      it: "/it/prodotti",
+      hu: "/hu/termekek",
+      de: "/de/produkte",
+      fr: "/fr/produits",
+      pl: "/pl/produkty",
+    };
+    for (const route of Object.values(expected)) {
+      const h = head(read(route));
+      for (const [language, alternate] of Object.entries(expected)) {
+        expect(h).toContain(`hreflang="${language}" href="https://avyron.ro${alternate}"`);
+      }
+      expect(h).toContain('hreflang="x-default" href="https://avyron.ro/en/products"');
+    }
+  });
+
   it("publishes reciprocal language alternates and representative images in the sitemap", () => {
     const sitemap = readFileSync(resolve(distDir, "sitemap.xml"), "utf8");
     expect(sitemap).toContain('xmlns:xhtml="http://www.w3.org/1999/xhtml"');
@@ -88,11 +114,28 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     expect(sitemap).toContain(
       '<xhtml:link rel="alternate" hreflang="en" href="https://avyron.ro/en/services" />',
     );
+    expect(sitemap).toContain('<loc>https://avyron.ro/de/produkte</loc>');
+    expect(sitemap).toContain(
+      '<xhtml:link rel="alternate" hreflang="pl" href="https://avyron.ro/pl/produkty" />',
+    );
     expect(sitemap).toContain("<loc>https://avyron.ro/</loc>");
     expect(sitemap).toContain(
       "<image:loc>https://avyron.ro/og/produse/logo-studio-3d.jpg</image:loc>",
     );
     expect(sitemap).not.toContain("<image:loc>https://avyron.ro/og/home.jpg</image:loc>");
+    const locations = [...sitemap.matchAll(/<loc>https:\/\/avyron\.ro([^<]*)<\/loc>/g)].map((match) => match[1] || "/");
+    const expected = PRERENDER_ROUTES.filter((route) => !isNoindexPath(route));
+    expect(new Set(locations).size).toBe(locations.length);
+    expect(new Set(locations)).toEqual(new Set(expected));
+    expect(locations.some((route) => isNoindexPath(route))).toBe(false);
+  });
+
+  it("keeps public metadata free of private implementation details", () => {
+    const forbidden = /(?:localhost|127\.0\.0\.1|service_role|sb_secret_|MFA_ENCRYPTION_KEY|Lovable|instrucțiuni interne)/i;
+    for (const route of PRERENDER_ROUTES.filter((path) => !isNoindexPath(path))) {
+      const description = attr(head(read(route)), /<meta name="description"[^>]*content="([^"]+)"/)!;
+      expect(description, route).not.toMatch(forbidden);
+    }
   });
 
   it("keeps the About page entity with reciprocal hreflang", () => {
@@ -221,6 +264,18 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     expect(body).toContain("Soluții digitale gândite pentru rezultate");
     expect(body).not.toContain("Agenție web Iași · site-uri pentru afaceri din România și UE");
     expect(body).not.toContain("Agenție web din Iași · proiecte în România și UE");
+  });
+
+  it("ships a professional, location-neutral homepage social preview", () => {
+    const roHead = head(read("/"));
+    const enHead = head(read("/en"));
+
+    expect(roHead).toContain('property="og:title" content="Avyron — Website-uri, aplicații și produse digitale"');
+    expect(roHead).toContain('property="og:description" content="Avyron creează experiențe digitale premium');
+    expect(enHead).toContain('property="og:title" content="Avyron — Websites, apps and digital products"');
+    expect(enHead).toContain('property="og:description" content="Avyron creates premium digital experiences');
+    expect(roHead).not.toContain("Agenție web din Iași");
+    expect(enHead).not.toContain("Web agency in Iași");
   });
 
   it("keeps non-critical third-party and private UI code out of the homepage critical path", () => {

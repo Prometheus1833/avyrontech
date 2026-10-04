@@ -17,6 +17,7 @@ const CookiePolicy = lazyWithRetry(() => import("./pages/CookiePolicy.tsx"));
 const Services = lazyWithRetry(() => import("./pages/Services.tsx"));
 const Configurator = lazyWithRetry(() => import("./pages/Configurator.tsx"));
 const AboutUs = lazyWithRetry(() => import("./pages/AboutUs.tsx"));
+const Careers = lazyWithRetry(() => import("./pages/Careers.tsx"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound.tsx"));
 const ErrorPage = lazyWithRetry(() => import("./pages/ErrorPage.tsx"));
 const FlawlesstudioDemo = lazyWithRetry(() => import("./pages/demos/FlawlesstudioDemo.tsx"));
@@ -30,6 +31,7 @@ const ExamplePage = lazyWithRetry(() => import("./pages/ExamplePage.tsx"));
 const Unsubscribe = lazyWithRetry(() => import("./pages/Unsubscribe.tsx"));
 const ProjectPage = lazyWithRetry(() => import("./pages/intern/ProjectPage.tsx"));
 const InternHome = lazyWithRetry(() => import("./pages/intern/InternHome.tsx"));
+const InternBlog = lazyWithRetry(() => import("./pages/intern/InternBlog.tsx"));
 const ServiceDetail = lazyWithRetry(() => import("./pages/services/ServicePage.tsx"));
 const QaTesting = lazyWithRetry(() => import("./pages/services/QaTestingPage.tsx"));
 const MaintenancePartnerships = lazyWithRetry(() => import("./pages/MaintenancePartnerships.tsx"));
@@ -38,6 +40,7 @@ const LogoDinamic3D = lazyWithRetry(() => import("./pages/services/LogoDinamic3D
 const LogoStudio = lazyWithRetry(() => import("./pages/services/LogoStudioPage.tsx"));
 const AiOsConsole = lazyWithRetry(() => import("./pages/intern/AiOs.tsx"));
 const ProduseApp = lazyWithRetry(() => import("./features/produse/ProduseApp.tsx"));
+const InternationalProductsHome = lazyWithRetry(() => import("./features/produse/pages/InternationalHome.tsx"));
 const AiProjects = lazyWithRetry(() => import("./pages/intern/AiProjects.tsx"));
 const AiProjectPage = lazyWithRetry(() => import("./pages/intern/AiProjectPage.tsx"));
 const Finance = lazyWithRetry(() => import("./pages/intern/Finance.tsx"));
@@ -46,6 +49,21 @@ const ServiciiAvyronOs = lazyWithRetry(() => import("./pages/intern/ServiciiAvyr
 const AvyEngine = lazyWithRetry(() => import("./pages/intern/AvyEngine.tsx"));
 const Biblioteca = lazyWithRetry(() => import("./pages/Biblioteca.tsx"));
 const AvyChat = lazyWithRetry(() => import("@/components/ai/AvyChat"));
+const NewsletterPrompt = lazyWithRetry(() => import("@/components/site/NewsletterPrompt"));
+
+const DeferredNewsletterPrompt = () => {
+  const { pathname } = useLocation();
+  const [ready, setReady] = useState(false);
+  const excluded = /^\/(auth|autentificare|profil|intern|finance|gdpr|en\/privacy|termeni|en\/terms|politica-cookies|en\/cookie-policy|unsubscribe|403|500|offline|mentenanta|exemple|examples|demo)(\/|$)/.test(pathname);
+  useEffect(() => {
+    setReady(false);
+    if (excluded) return;
+    const timer = window.setTimeout(() => setReady(true), 3000);
+    return () => window.clearTimeout(timer);
+  }, [excluded, pathname]);
+  if (!ready || excluded) return null;
+  return <Suspense fallback={null}><NewsletterPrompt /></Suspense>;
+};
 
 /** Butonul AVY apare pe paginile comerciale, nu pe cele private sau pe demo-uri. */
 const AvyLauncher = () => {
@@ -68,6 +86,8 @@ const AvyLauncher = () => {
 
 import CookieBanner from "@/components/site/CookieBanner";
 import AppHostGuard from "@/components/auth/AppHostGuard";
+import RouteTransition from "@/components/site/RouteTransition";
+import PerformanceGovernor from "@/components/site/PerformanceGovernor";
 
 const Notifications = lazyWithRetry(() =>
   import("@/components/ui/sonner").then(({ Toaster }) => ({ default: Toaster })),
@@ -135,14 +155,17 @@ const App = () => (
   <LanguageProvider>
     <AuthProvider>
       <BrowserRouter>
+        <PerformanceGovernor />
         <HeadManager />
         <LangRouteSync />
         <AnalyticsTracker />
         <AvyLauncher />
+        <DeferredNewsletterPrompt />
 
         <AppHostGuard>
           <Suspense fallback={<div className="min-h-screen" />}>
-            <Routes>
+            <RouteTransition>
+              <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/en" element={<Index />} />
                 <Route path="/gdpr" element={<Gdpr />} />
@@ -157,6 +180,11 @@ const App = () => (
                   <>
                     <Route path="/produse/*" element={<ProduseApp />} />
                     <Route path="/en/products/*" element={<ProduseApp />} />
+                    <Route path="/it/prodotti" element={<InternationalProductsHome lang="it" />} />
+                    <Route path="/hu/termekek" element={<InternationalProductsHome lang="hu" />} />
+                    <Route path="/de/produkte" element={<InternationalProductsHome lang="de" />} />
+                    <Route path="/fr/produits" element={<InternationalProductsHome lang="fr" />} />
+                    <Route path="/pl/produkty" element={<InternationalProductsHome lang="pl" />} />
                   </>
                 )}
                 <Route path="/configurator" element={<Configurator />} />
@@ -223,6 +251,8 @@ const App = () => (
                 <Route path="/despre-si-portofoliu" element={<Navigate to="/servicii/website-prezentare-profesional#portofoliu" replace />} />
                 <Route path="/despre-noi" element={<AboutUs />} />
                 <Route path="/en/about" element={<AboutUs />} />
+                <Route path="/cariere" element={<Careers />} />
+                <Route path="/en/careers" element={<Careers />} />
                 <Route path="/portofoliu" element={<Navigate to="/servicii/website-prezentare-profesional#portofoliu" replace />} />
                 <Route path="/en/portfolio" element={<Navigate to="/en/services/professional-presentation-website#portofoliu" replace />} />
                 <Route path="/exemple/flawlesstudio" element={<FlawlesstudioDemo />} />
@@ -264,6 +294,14 @@ const App = () => (
                   element={
                     <ProtectedRoute>
                       <InternHome />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/intern/blog"
+                  element={
+                    <ProtectedRoute>
+                      <InternBlog />
                     </ProtectedRoute>
                   }
                 />
@@ -329,11 +367,12 @@ const App = () => (
                 />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
-            </Routes>
+              </Routes>
+            </RouteTransition>
           </Suspense>
         </AppHostGuard>
+        <CookieBanner />
       </BrowserRouter>
-      <CookieBanner />
       <DeferredGlobalUi />
     </AuthProvider>
   </LanguageProvider>

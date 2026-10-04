@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 4,
+  "project": {
+    "id": "aip_avyron_web",
+    "slug": "avyron-web",
+    "agent": "ai-prod-content"
+  },
+  "identity": {
+    "tone": ["premium", "tech", "minimalist", "clar", "uman", "profesionist", "orientat spre conversii"],
+    "primaryOffer": "Website-uri de prezentare premium, rapide, accesibile si optimizate pentru conversii.",
+    "website": "https://avyron.ro",
+    "email": "contact@avyron.ro",
+    "phone": "0734 605 055",
+    "contactRule": "Datele de contact apar numai cand sprijina intentia si nu aglomereaza compozitia."
+  },
+  "publishing": {
+    "timezone": "Europe/Bucharest",
+    "humanApprovalRequired": true,
+    "verifiedConnectorRequired": true,
+    "freeOnly": true,
+    "cadence": {
+      "postsPerDay": 1,
+      "imagesPerDay": 1,
+      "reelEveryDays": 3,
+      "weeklyArticle": { "weekday": 5, "time": "16:00" }
+    },
+    "hashtags": { "feedMin": 5, "feedMax": 10, "storyMax": 0 }
+  },
+  "composition": {
+    "storyCanvas": { "width": 1080, "height": 1920 },
+    "storySafeZonePx": { "top": 180, "bottom": 250, "left": 72, "right": 72 },
+    "feedSafeZonePercent": 8,
+    "rules": [
+      "Mesajul principal ramane lizibil dupa afisarea numelui contului si a controalelor platformei.",
+      "CTA-ul nu se plaseaza in treimea inferioara rezervata raspunsurilor si reactiilor.",
+      "Vizualul arata clar produsul digital sau rezultatul unui website, nu doar decor abstract.",
+      "Se verifica previzualizarea publicata pe mobil inainte de reutilizare."
+    ]
+  },
+  "links": {
+    "storyPriority": ["native_link_sticker", "profile_link", "visible_avyron_ro"],
+    "feedPriority": ["native_clickable_url", "first_comment_when_appropriate", "visible_avyron_ro"],
+    "defaultUrl": "https://avyron.ro",
+    "defaultServiceUrl": "https://avyron.ro/servicii/website-prezentare-profesional",
+    "allowedConversionRoots": ["/", "/servicii", "/produse", "/blog"],
+    "facebook": {
+      "maximumVisibleLinks": 1,
+      "stripQueryAndFragment": true,
+      "forbidExampleUrls": true,
+      "forbidExternalConversionUrls": true,
+      "placement": "caption_end",
+      "selectionOrder": ["exact_service_or_product", "service_category", "professional_website_service", "homepage"]
+    }
+  },
+  "nativeElements": {
+    "instagram": ["music", "link_sticker", "poll", "captions", "subtle_emoji"],
+    "facebook": ["music", "link_sticker", "poll", "subtle_emoji"],
+    "tiktok": ["native_music", "captions", "transitions", "motion_effects", "text_timing"],
+    "threads": ["concise_hook", "conversation_prompt", "native_reply"],
+    "linkedin": ["professional_hook", "document_carousel", "external_link_when_relevant"],
+    "whatsapp": ["short_status_copy", "visible_domain"]
+  },
+  "quality": {
+    "minimumScore": 90,
+    "checks": ["brand_fit", "clarity", "website_offer_visible", "mobile_legibility", "safe_zones", "native_adaptation", "cta", "link", "accessibility", "truthfulness", "originality"]
+  },
+  "backup": {
+    "metadataStore": "D1",
+    "objectStore": "private R2 FILES",
+    "localFormat": "versioned JSON manifest with SHA-256 checksums",
+    "excluded": ["access_tokens", "refresh_tokens", "cookies", "session_data", "connector_secrets", "private_messages"],
+    "retentionDays": 90
+  }
+}

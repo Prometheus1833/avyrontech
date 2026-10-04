@@ -60,13 +60,17 @@ export default defineConfig(({ mode }) => ({
           ) {
             return "react";
           }
-          // Motorul 3D al Bibliotecii. three + R3F + postprocessing stau într-un
-          // singur chunk, cerut abia când o secțiune îl activează. Nimic din
-          // graful inițial nu îl importă, deci rămâne complet asincron.
+          // Post-procesarea premium rămâne separată de motorul 3D și se cere
+          // doar pe dispozitivele capabile. Niciunul nu intră în graful critic.
+          if (
+            id.includes("/node_modules/@react-three/postprocessing/") ||
+            id.includes("/node_modules/postprocessing/")
+          ) {
+            return "postfx";
+          }
           if (
             id.includes("/node_modules/three/") ||
-            id.includes("/node_modules/@react-three/") ||
-            id.includes("/node_modules/postprocessing/")
+            id.includes("/node_modules/@react-three/")
           ) {
             return "three";
           }

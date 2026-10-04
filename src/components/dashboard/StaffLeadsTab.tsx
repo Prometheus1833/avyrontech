@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, Building2, Clock3, Mail, Phone, Plus, RefreshCw, Search, Star } from "lucide-react";
+import { AlertCircle, Building2, Clock3, History, Mail, Phone, Plus, RefreshCw, Search, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { leadsApi, type LeadListRow, type LeadStage } from "@/lib/leadsApi";
+import { leadsApi, type LeadDeletionReasonCode, type LeadListRow, type LeadStage } from "@/lib/leadsApi";
 import { LeadDetailDialog } from "@/components/dashboard/leads/LeadDetailDialog";
 import { NewLeadDialog } from "@/components/dashboard/leads/NewLeadDialog";
+import { LeadDeleteDialog, LeadDeletionLogDialog } from "@/components/dashboard/leads/LeadDeletionDialogs";
 
 const STAGES = [
   ["new_lead", "Lead nou"], ["contacted", "Contactat"], ["discussion", "Discuție"],
@@ -21,12 +22,16 @@ export const StaffLeadsTab = () => {
   const [saving, setSaving] = useState<string | null>(null);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [newLeadOpen, setNewLeadOpen] = useState(false);
+  const [deletingLead, setDeletingLead] = useState<LeadListRow | null>(null);
+  const [deletionLogOpen, setDeletionLogOpen] = useState(false);
+  const [platformRole, setPlatformRole] = useState<"platform_owner" | "superadmin" | null>(null);
 
   const load = async () => {
     setLoading(true);
     try {
       const result = await leadsApi.list();
       setRows(result.data);
+      setPlatformRole(result.platformRole);
     } catch {
       toast.error("Nu am putut încărca pipeline-ul Leads. Verifică sesiunea MFA.");
     } finally {
@@ -52,6 +57,20 @@ export const StaffLeadsTab = () => {
     }
   };
 
+  const remove = async (reasonCode: LeadDeletionReasonCode, reasonDetail: string) => {
+    if (!deletingLead) return;
+    const lead = deletingLead;
+    setSaving(lead.id);
+    try {
+      await leadsApi.remove(lead.id, { reasonCode, reasonDetail });
+      setRows((current) => current.filter((row) => row.id !== lead.id));
+      if (selectedLeadId === lead.id) setSelectedLeadId(null);
+      setDeletingLead(null);
+      toast.success("Lead-ul a fost șters din pipeline.");
+    } catch { toast.error("Lead-ul nu a putut fi șters."); }
+    finally { setSaving(null); }
+  };
+
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return rows;
@@ -71,6 +90,7 @@ export const StaffLeadsTab = () => {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button type="button" onClick={() => setNewLeadOpen(true)} className="rounded-xl"><Plus /> Lead nou</Button>
+          {platformRole && <Button type="button" variant="outline" onClick={() => setDeletionLogOpen(true)} className="rounded-xl"><History /> Jurnal ștergeri</Button>}
           <Button type="button" variant="outline" onClick={() => void load()} className="rounded-xl"><RefreshCw /> Reîmprospătează</Button>
         </div>
       </header>
@@ -88,8 +108,8 @@ export const StaffLeadsTab = () => {
       </div>
 
       {loading ? <div className="h-48 animate-pulse rounded-2xl bg-muted/50" aria-label="Se încarcă" /> : (
-        <div className="overflow-x-auto pb-3">
-          <div className="grid min-w-[1320px] grid-cols-8 gap-3">
+        <div className="pb-3 lg:overflow-x-auto">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:min-w-[1320px] lg:grid-cols-8">
             {STAGES.map(([stage, label]) => {
               const leads = filtered.filter((lead) => lead.lifecycle_stage === stage);
               return (
@@ -105,11 +125,10 @@ export const StaffLeadsTab = () => {
                             <p className="truncate text-sm font-medium">{lead.name || lead.business || "Lead fără nume"}</p>
                             {lead.business && lead.name && <p className="truncate text-[11px] text-muted-foreground">{lead.business}</p>}
                           </button>
-                          <button type="button" disabled={saving === lead.id} aria-label={lead.urgent ? "Elimină urgența" : "Marchează urgent"}
-                            onClick={() => void update(lead, { urgent: !lead.urgent })}
-                            className={`rounded-md p-1 ${lead.urgent ? "text-amber-500" : "text-muted-foreground hover:text-foreground"}`}>
-                            <Star className="size-4" fill={lead.urgent ? "currentColor" : "none"} />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button type="button" disabled={saving === lead.id} aria-label={lead.urgent ? "Elimină urgența" : "Marchează urgent"} onClick={() => void update(lead, { urgent: !lead.urgent })} className={`rounded-md p-1 ${lead.urgent ? "text-amber-500" : "text-muted-foreground hover:text-foreground"}`}><Star className="size-4" fill={lead.urgent ? "currentColor" : "none"} /></button>
+                            <button type="button" disabled={saving === lead.id} aria-label="Șterge lead-ul" onClick={() => setDeletingLead(lead)} className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="size-4" /></button>
+                          </div>
                         </div>
                         <p className="flex items-center gap-1 truncate text-[11px] text-muted-foreground">
                           <Building2 className="size-3" /> {lead.product || lead.source || "Sursă neclasificată"}
@@ -139,7 +158,9 @@ export const StaffLeadsTab = () => {
         </div>
       )}
       <NewLeadDialog open={newLeadOpen} onOpenChange={setNewLeadOpen} onCreated={(id) => { void load(); setSelectedLeadId(id); }} />
-      <LeadDetailDialog leadId={selectedLeadId} onOpenChange={(open) => !open && setSelectedLeadId(null)} onChanged={() => void load()} />
+      <LeadDetailDialog leadId={selectedLeadId} onOpenChange={(open) => !open && setSelectedLeadId(null)} onChanged={() => void load()} onDeleted={() => { setSelectedLeadId(null); void load(); }} />
+      <LeadDeleteDialog lead={deletingLead} open={deletingLead !== null} busy={Boolean(deletingLead && saving === deletingLead.id)} onOpenChange={(open) => !open && setDeletingLead(null)} onConfirm={remove} />
+      <LeadDeletionLogDialog open={deletionLogOpen} onOpenChange={setDeletionLogOpen} />
     </div>
   );
 };

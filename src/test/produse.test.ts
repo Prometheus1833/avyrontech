@@ -18,6 +18,9 @@ import { searchItems } from "@/features/produse/lib/search";
 import { metaFrom, productOgImage } from "@/features/produse/lib/seo";
 import { DEMOS as DEMO_REGISTRY } from "@/features/produse/demos/registry";
 import { SOURCE_FILE } from "@/features/produse/lib/source";
+import { INTERNATIONAL_HUB_COPY } from "@/features/produse/data/internationalCopy";
+import { PRODUCT_HUB_LOCALES, productHubAlternates } from "@/features/produse/data/productLocales";
+import { PRERENDER_ROUTES } from "@/seo/publicRoutes";
 
 /**
  * Testele paginii Produse Avyron.
@@ -124,6 +127,35 @@ describe("catalogul de produse", () => {
 });
 
 describe("rutele paginii", () => {
+  it("publică șapte hub-uri localizate, cu alternante reciproce", () => {
+    expect(PRODUCT_HUB_LOCALES.map((locale) => locale.code)).toEqual(["ro", "en", "it", "hu", "de", "fr", "pl"]);
+    expect(new Set(PRODUCT_HUB_LOCALES.map((locale) => locale.path)).size).toBe(7);
+    expect(productHubAlternates()).toMatchObject({
+      ro: "/produse",
+      en: "/en/products",
+      it: "/it/prodotti",
+      hu: "/hu/termekek",
+      de: "/de/produkte",
+      fr: "/fr/produits",
+      pl: "/pl/produkty",
+      "x-default": "/en/products",
+    });
+    for (const locale of PRODUCT_HUB_LOCALES) expect(PRERENDER_ROUTES).toContain(locale.path);
+  });
+
+  it("ține conținutul principal complet în fiecare limbă internațională", () => {
+    for (const copy of Object.values(INTERNATIONAL_HUB_COPY)) {
+      expect(copy.metaTitle.length).toBeGreaterThan(35);
+      expect(copy.metaDescription.length).toBeGreaterThan(100);
+      expect(copy.intro.length).toBeGreaterThan(100);
+      expect(copy.categories).toHaveLength(6);
+      expect(copy.principles).toHaveLength(3);
+      for (const slug of ["logo-studio-3d", "hero-spatial-particule", "template-landing-saas", "calculator-cost-proiect", "generator-json-ld", "api-open-meteo"]) {
+        expect(copy.cards[slug]?.summary.length).toBeGreaterThan(50);
+      }
+    }
+  });
+
   it("ține lista de rute sincronă cu catalogul", () => {
     const fromRoutes = PRODUSE_ITEM_ROUTES.map((entry) => entry.slug).sort();
     const fromCatalog = ITEMS.map((item) => item.slug).sort();

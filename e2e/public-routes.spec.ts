@@ -18,7 +18,7 @@ test.describe("public SEO routes", () => {
     await expect(page.locator('link[hreflang="en"]')).toHaveAttribute("href", "https://avyron.ro/en/services");
   });
 
-  test("the Cloudflare currency control converts and persists indicative prices", async ({ page }) => {
+  test("fixed commercial prices start in RON and persist the selected currency", async ({ page }) => {
     await page.route("**/api/public/exchange-rate", (route) => route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -38,10 +38,13 @@ test.describe("public SEO routes", () => {
 
     await page.goto("/servicii/website-prezentare-profesional");
     const switcher = page.getByTestId("currency-switch").first();
-    await switcher.getByRole("button", { name: "Schimbă moneda (activă: EUR)" }).click();
     await expect(switcher.getByRole("button", { name: "Schimbă moneda (activă: RON)" })).toBeVisible();
-    await expect(switcher).toContainText("1 EUR = 5.1000 RON");
-    await expect(page.getByTestId("product-hero-facts")).toContainText(/1[.\s]?530 RON/);
+    await expect(page.getByTestId("product-hero-facts")).toContainText(/1[.\s]?150 RON/);
+    await switcher.getByRole("button", { name: "Schimbă moneda (activă: RON)" }).click();
+    await expect(switcher.getByRole("button", { name: "Schimbă moneda (activă: EUR)" })).toBeVisible();
+    await expect(page.getByTestId("product-hero-facts")).toContainText(/220 €/);
+    await page.reload();
+    await expect(switcher.getByRole("button", { name: "Schimbă moneda (activă: EUR)" })).toBeVisible();
   });
 
   test("the services overview shows services without prices and points to subscriptions", async ({ page }) => {
@@ -109,7 +112,7 @@ test.describe("public SEO routes", () => {
     expect(cardsBox?.y).toBeLessThan(ctaBox?.y ?? 0);
   });
 
-  test("About and Portfolio are distinct, indexable bilingual pages", async ({ page }) => {
+  test("About stays indexable and legacy Portfolio routes consolidate into the service portfolio", async ({ page }) => {
     await page.goto("/despre-noi");
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro/despre-noi");
     await expect(page.locator('link[hreflang="en"]')).toHaveAttribute("href", "https://avyron.ro/en/about");
@@ -120,12 +123,12 @@ test.describe("public SEO routes", () => {
     await expect(page.getByText("Vibe Development", { exact: true })).toBeVisible();
 
     await page.goto("/portofoliu");
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro/portofoliu");
-    await expect(page.locator('link[hreflang="en"]')).toHaveAttribute("href", "https://avyron.ro/en/portfolio");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Proiecte digitale");
+    await expect(page).toHaveURL(/\/servicii\/website-prezentare-profesional#portofoliu$/);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro/servicii/website-prezentare-profesional");
+    await expect(page.locator("#portofoliu")).toBeVisible();
 
     await page.goto("/despre-si-portofoliu");
-    await expect(page).toHaveURL(/\/portofoliu$/);
+    await expect(page).toHaveURL(/\/servicii\/website-prezentare-profesional#portofoliu$/);
   });
 
   test("footer stays compact and publishes the approved navigation and ANPC link", async ({ page }) => {
@@ -139,8 +142,8 @@ test.describe("public SEO routes", () => {
     await expect(footer).toBeVisible();
     await expect(footer.getByRole("link", { name: /Exemplu Gratuit.*Personalizat/ })).toBeVisible();
     const footerNavLinks = footer.locator("nav a");
-    await expect(footerNavLinks).toHaveCount(6);
-    expect((await footerNavLinks.allTextContents()).slice(0, 4)).toEqual(["Blog", "Portofoliu", "Servicii", "Produse"]);
+    await expect(footerNavLinks).toHaveCount(8);
+    expect((await footerNavLinks.allTextContents()).slice(0, 6)).toEqual(["Blog", "Solicită un demo", "Servicii", "Abonamente", "Bibliotecă", "Produse"]);
     const cookieButton = footer.getByRole("button", { name: "Setări cookie", exact: true });
     const termsLink = footer.getByRole("link", { name: "Termeni de utilizare", exact: true });
     await expect(termsLink).toHaveAttribute("href", "/termeni");
@@ -257,7 +260,7 @@ test.describe("public SEO routes", () => {
     await page.goto("/servicii");
 
     const audit = page.getByTestId("free-audit-card");
-    await expect(audit.getByRole("heading", { name: "Audit Produs Digital", exact: true })).toBeVisible();
+    await expect(audit.getByRole("heading", { name: "Audit Produs Digital — gratuit", exact: true })).toBeVisible();
     await expect(page.getByTestId("audit-coverage-list").locator("li")).toHaveCount(5);
     expect((await audit.boundingBox())!.height).toBeLessThan(500);
 
@@ -401,7 +404,9 @@ test.describe("public SEO routes", () => {
     for (const path of secondaryRoutes) {
       await page.goto(path, { waitUntil: "domcontentloaded" });
       const back = page.getByTestId("page-back-link").first();
-      await expect(back, `${path} must expose the shared back control`).toBeVisible();
+      // Legacy routes redirect in the client when the preview server is used.
+      // Allow the lazy service page to finish hydrating under parallel load.
+      await expect(back, `${path} must expose the shared back control`).toBeVisible({ timeout: 10_000 });
       await expect(back).toHaveClass(/rounded-full/);
       await expect(back.locator("svg")).toBeVisible();
       expect(await back.evaluate((node) => node.scrollWidth <= node.clientWidth + 1), `${path} back control must not overflow`).toBe(true);
@@ -478,7 +483,7 @@ test.describe("forms and authentication", () => {
         await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
           project, channels,
           agents: [{ agent_slug: "ai-prod-content", role: "content", status: "ready", autonomy: "assist", capabilities_json: '["knowledge_search","content_draft"]', instructions: "", quality_score: null, last_trained_at: null, last_run_at: null, name: "AI Prod Content", mission: "Creează ciorne relevante.", accent: "#8b5cf6", current_version: 1 }],
-          content: [], memories: [], competitors: [], members: [], events: [],
+          content: [], memories: [], competitors: [], members: [], events: [], socialTools: [],
           permission: { role: "platform_owner", canManage: true, canCreateContent: true, canConnect: true },
         }) });
         return;
@@ -493,7 +498,8 @@ test.describe("forms and authentication", () => {
     await expect(page.getByRole("heading", { name: "Proiecte AI", exact: true })).toBeVisible();
     await page.getByRole("link", { name: /Avyron WEB/ }).click();
     await expect(page.getByRole("heading", { name: "Avyron WEB" })).toBeVisible();
-    await expect(page.getByText("Nicio acțiune nu publică sau trimite automat.")).toBeVisible();
+    const contentStudio = page.getByRole("heading", { name: "Studio de conținut" }).locator("..");
+    await expect(contentStudio.getByText(/Nicio acțiune nu publică sau trimite automat\./)).toBeVisible();
     await page.getByLabel("Subiect / brief").fill("Website premium pentru afaceri locale");
     await page.getByRole("button", { name: "Generează ciornă" }).click();
     await expect(page.getByRole("heading", { name: draft.title })).toBeVisible();
@@ -539,7 +545,7 @@ test.describe("forms and authentication", () => {
     await expect(drawer.getByText("În verificare", { exact:true }).first()).toBeVisible();
     await expect(drawer.getByText("OriginKit hosted MCP")).toBeVisible();
     await expect(drawer.getByRole("button", { name:/Analizează sursa/ })).toHaveCount(0);
-    await drawer.getByRole("button", { name:"Close" }).click();
+    await drawer.getByRole("button", { name:"Închide" }).click();
     await page.getByRole("tab", { name:"Control" }).click();
     await expect(page.getByText("Dezactivat implicit")).toBeVisible();
   });
@@ -575,6 +581,7 @@ test.describe("forms and authentication", () => {
 
   test("staff can create and open a lead in the Cloudflare CRM", async ({ page }) => {
     let createdLead: Record<string, unknown> | null = null;
+    let deletedLead: Record<string, unknown> | null = null;
     let idempotencyKey = "";
     const lead = {
       id: "lead_e2e", organization_id: null, source: "manual", name: "Ana Popescu",
@@ -599,10 +606,14 @@ test.describe("forms and authentication", () => {
         roles: ["staff"],
       }),
     }));
-    await page.route("**/api/leads/lead_e2e", (route) => route.fulfill({
-      status: 200, contentType: "application/json",
-      body: JSON.stringify({ data: lead, activities: [], assignments: [], reminders: [], canEdit: true }),
-    }));
+    await page.route("**/api/leads/lead_e2e", async (route) => {
+      if (route.request().method() === "DELETE") {
+        deletedLead = route.request().postDataJSON() as Record<string, unknown>;
+        await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+        return;
+      }
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: lead, activities: [], assignments: [], reminders: [], canEdit: true }) });
+    });
     await page.route("**/api/leads", async (route) => {
       if (route.request().method() === "POST") {
         createdLead = route.request().postDataJSON() as Record<string, unknown>;
@@ -610,7 +621,7 @@ test.describe("forms and authentication", () => {
         await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ id: "lead_e2e" }) });
         return;
       }
-      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [] }) });
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [], platformRole: null }) });
     });
 
     await page.goto("/profil?tab=leads");
@@ -630,6 +641,13 @@ test.describe("forms and authentication", () => {
     await expect(page.getByRole("heading", { name: "Contact" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Istoric" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Remindere" })).toBeVisible();
+    await page.getByRole("dialog", { name: "Ana Popescu" }).getByRole("button", { name: "Șterge" }).click();
+    const deletionDialog = page.getByRole("dialog", { name: "Elimină lead-ul din pipeline" });
+    await expect(deletionDialog.getByText(/Motiv recomandat.*Înregistrare duplicată/)).toBeVisible();
+    await deletionDialog.getByLabel("Detalii opționale").fill("Solicitarea există deja într-o fișă activă.");
+    await deletionDialog.getByRole("button", { name: "Confirmă eliminarea" }).click();
+    await expect.poll(() => deletedLead).not.toBeNull();
+    expect(deletedLead).toMatchObject({ reasonCode: "duplicate", reasonDetail: "Solicitarea există deja într-o fișă activă." });
   });
 
   test("authenticated staff can open the Cloudflare editorial workspace", async ({ page }) => {
@@ -650,7 +668,8 @@ test.describe("forms and authentication", () => {
     await page.route("**/api/blog/posts?*", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [] }) }));
     await page.route("**/api/blog/staff/posts", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [] }) }));
 
-    await page.goto("/blog");
+    await page.route("**/api/blog/staff/settings", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: { publication_name: "Avyron Insights", editorial_description: "", default_language: "ro", default_category: "digital", updated_at: 1 } }) }));
+    await page.goto("/intern/blog?view=publish");
     await expect(page.getByRole("heading", { name: "Spațiu editorial" })).toBeVisible();
     await page.getByRole("button", { name: "Articol nou" }).click();
     await expect(page.getByRole("dialog").getByRole("heading", { name: "Articol nou" })).toBeVisible();

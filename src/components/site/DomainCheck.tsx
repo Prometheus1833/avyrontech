@@ -13,7 +13,8 @@ const slugify = (s: string) =>
 const tlds = [".ro", ".com", ".eu", ".net", ".org", ".io", ".app", ".dev", ".tech", ".store", ".online", ".biz", ".info", ".co", ".shop"];
 
 type Status = "available" | "registered" | "unknown";
-type Result = { tld: string; status: Status; label: string; message: string; cached?: boolean };
+type LookupSource = "iana-rdap" | "cloudflare-doh" | "unavailable";
+type Result = { tld: string; status: Status; label: string; message: string; source?: LookupSource; cached?: boolean };
 
 const DomainCheck = () => {
   const { t, lang } = useLang();
@@ -41,6 +42,7 @@ const DomainCheck = () => {
       });
       const data = await response.json() as {
         status?: Status;
+        source?: LookupSource;
         label?: Partial<Record<"ro" | "en", string>>;
         message?: Partial<Record<"ro" | "en", string>>;
         error?: { message?: string; code?: string };
@@ -52,6 +54,7 @@ const DomainCheck = () => {
         status,
         label: data.label?.[lang] ?? status,
         message: data.message?.[lang] ?? "",
+        source: data.source,
         cached: response.headers.get("X-Avyron-Cache") === "HIT",
       }]);
     } catch (e: unknown) {
@@ -179,6 +182,13 @@ const DomainCheck = () => {
                           <div className="text-xs text-white/70">
                             <span className="font-semibold">{r.label}</span>
                             {r.message ? <span className="opacity-80"> — {r.message}</span> : null}
+                            {r.source && r.source !== "unavailable" ? (
+                              <span className="ml-1 opacity-55">
+                                · {r.source === "iana-rdap"
+                                  ? (lang === "ro" ? "registru public RDAP" : "public RDAP registry")
+                                  : (lang === "ro" ? "DNS public" : "public DNS")}
+                              </span>
+                            ) : null}
                             {r.cached ? <span className="ml-1 opacity-50">(cache)</span> : null}
                           </div>
                         </div>

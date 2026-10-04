@@ -5,6 +5,7 @@ export type EngineSource = {
   access_mode: string; pricing_model: string; lifecycle_status: string;
   verification_status: string; security_status: string; account_label: string | null;
   summary: string; robots_reviewed: number; terms_reviewed: number; discovery_enabled: number;
+  private_documentation: string;
   last_observed_at: number | null; last_verified_at: number | null; next_review_at: number | null;
   approved_at: number | null; updated_at: number; capability_count?: number; document_count?: number;
 };
@@ -14,12 +15,14 @@ export type EngineCapability = {
   delivery_method: string; availability: string; implementation_status: string; risk_level: string;
   documentation_url: string | null; repository_url: string | null; license_spdx: string | null;
   requirements_json: string; tags_json: string; evidence_json: string; approved_at: number | null;
+  private_documentation: string;
 };
 
 export type EngineConnector = {
   id: string; capability_id: string | null; kind: string; name: string; endpoint_url: string | null;
   repository_url: string | null; auth_type: string; status: string; scopes_json: string;
   last_validated_at: number | null; last_error_code: string | null; approved_at: number | null;
+  private_documentation: string;
 };
 
 export type EngineDocument = {
@@ -96,4 +99,8 @@ export const engineApi = {
   updateBinding: (id: string, status: string) => mutate<{ ok: true }>(`/api/engine/bindings/${encodeURIComponent(id)}`, "PATCH", { status }),
   discover: (sourceId: string) => mutate<{ runId: string; decision: string; count: number }>(`/api/engine/sources/${encodeURIComponent(sourceId)}/discover`, "POST"),
   updateDiscoveryPolicy: (input: { enabled: boolean; frequencyDays: number; maxSourcesPerRun: number }) => mutate<{ ok: true }>("/api/engine/discovery-policy", "PATCH", input),
+  promptDocumentation: (input: { sourceId: string; targetType: "source" | "capability" | "connector"; targetId: string; prompt: string }) =>
+    mutate<{ draft: { id: string; content: string; status: "draft" } }>("/api/engine/documentation/prompts", "POST", input),
+  reviewDocumentation: (draftId: string, action: "apply" | "reject", content?: string) =>
+    mutate<{ ok: true }>(`/api/engine/documentation/drafts/${encodeURIComponent(draftId)}`, "PATCH", { action, content }),
 };

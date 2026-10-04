@@ -5,6 +5,9 @@ import { cfAuth } from "./cfAuth";
 export type PublicAgent = {
   slug: string; name: string; mission: string; accent: string;
   greeting_ro: string; greeting_en: string; channel: string;
+  starterQuestions: { ro: string[]; en: string[] };
+  proactivePrompts: { ro: string[]; en: string[] };
+  updatedAt: number;
 };
 
 export type ChatReply = {
@@ -22,6 +25,8 @@ export type AiAgent = {
   visibility: string; model: string; temperature: number; max_tokens: number; autonomy: string;
   language: string; accent: string; greeting_ro: string; greeting_en: string;
   system_prompt: string; guardrails: string; tools_json: string; handoff_email: string | null;
+  starter_questions_ro: string; starter_questions_en: string;
+  proactive_prompts_ro: string; proactive_prompts_en: string;
   current_version: number; updated_at: number;
 };
 

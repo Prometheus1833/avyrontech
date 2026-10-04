@@ -114,7 +114,8 @@ const sections = [
         <p>Datele pot fi transmise către:</p>
         <ul className="list-disc pl-5 space-y-1 mt-2">
           <li>Între entitățile care colaborează sub marca Avyron, numai în măsura necesară furnizării serviciului</li>
-          <li>Furnizori de servicii IT (hosting, mentenanță)</li>
+          <li>Cloudflare pentru infrastructură, securitate și emailurile esențiale sau tranzacționale</li>
+          <li>Resend exclusiv pentru newslettere și campanii către persoane care și-au exprimat consimțământul</li>
           <li>Procesatori de plăți</li>
           <li>Autorități publice (în baza obligațiilor legale)</li>
           <li>Parteneri contractuali (doar în limita necesară)</li>
@@ -301,7 +302,8 @@ const sectionsEn = [
       <>
         <p>Data may be disclosed only as necessary to:</p>
         <ul className="list-disc pl-5 space-y-1 mt-2">
-          <li>the entities collaborating under the Avyron brand</li><li>IT, hosting, maintenance, email, and analytics providers</li>
+          <li>the entities collaborating under the Avyron brand</li><li>Cloudflare for infrastructure, security, and essential or transactional email</li>
+          <li>Resend solely for newsletters and campaigns sent to people who have consented</li><li>other IT, maintenance, and analytics providers where necessary</li>
           <li>payment processors where a paid service is used</li><li>public authorities where disclosure is legally required</li>
           <li>contractual partners strictly within the scope needed to deliver the service</li>
         </ul>
@@ -433,7 +435,7 @@ const Gdpr = () => {
               : "Transparență totală asupra modului în care colectăm, prelucrăm și protejăm datele tale."}
           </p>
           <p className="mt-8 text-xs uppercase tracking-widest text-muted-foreground/80">
-            {isEn ? "Policy version · 2026-08-23" : "Versiunea politicii · 2026-08-23"}
+            {isEn ? "Policy version · 2026-10-04" : "Versiunea politicii · 2026-10-04"}
           </p>
 
 
