@@ -72,12 +72,12 @@ projectsRouter.get("/api/projects", async (c) => {
   let rows;
   if (await platformRoleForUser(c.env.DB, userId)) {
     rows = await c.env.DB.prepare(
-      "SELECT id, organization_id, slug, name, kind, banner_status, url, favicon_url, updated_at FROM projects ORDER BY updated_at DESC LIMIT 200"
+      "SELECT id, organization_id, slug, name, kind, banner_status, status, url, favicon_url, updated_at FROM projects ORDER BY updated_at DESC LIMIT 200"
     ).all();
   } else if (isAdmin || isStaff) {
     rows = await c.env.DB.prepare(
       `SELECT DISTINCT project.id, project.organization_id, project.slug, project.name,
-              project.kind, project.banner_status, project.url, project.favicon_url, project.updated_at
+              project.kind, project.banner_status, project.status, project.url, project.favicon_url, project.updated_at
          FROM projects AS project
          LEFT JOIN organization_memberships AS membership
            ON membership.organization_id = project.organization_id
@@ -90,7 +90,7 @@ projectsRouter.get("/api/projects", async (c) => {
   } else {
     rows = await c.env.DB.prepare(
       `SELECT DISTINCT project.id, project.organization_id, project.slug, project.name,
-              project.kind, project.banner_status, project.url, project.favicon_url, project.updated_at
+              project.kind, project.banner_status, project.status, project.url, project.favicon_url, project.updated_at
          FROM projects AS project
          LEFT JOIN organization_memberships AS membership
            ON membership.organization_id = project.organization_id
@@ -100,6 +100,7 @@ projectsRouter.get("/api/projects", async (c) => {
     ).bind(userId, userId).all();
   }
   let purchases: Array<Record<string, unknown>> = [];
+  let sales: Array<Record<string, unknown>> = [];
   if (!isStaff) {
     try {
       const { results } = await c.env.DB.prepare(
@@ -131,7 +132,25 @@ projectsRouter.get("/api/projects", async (c) => {
       if (!/no such table: commerce_orders/i.test(String(error))) throw error;
     }
   }
-  return c.json({ data: rows.results, purchases });
+  if (isStaff) {
+    try {
+      const { results } = await c.env.DB.prepare(
+        `SELECT revenue.id,revenue.project_id,project.name AS project_name,
+                revenue.service_name AS name,revenue.revenue_type,
+                COALESCE(revenue.amount_ron_minor,revenue.gross_amount_minor) AS total_cents,
+                CASE WHEN revenue.amount_ron_minor IS NOT NULL THEN 'RON' ELSE revenue.currency END AS currency,
+                revenue.status,revenue.updated_at
+           FROM financial_revenues AS revenue
+           LEFT JOIN projects AS project ON project.id=revenue.project_id
+          WHERE revenue.archived_at IS NULL AND revenue.status IN ('paid','partially_paid')
+          ORDER BY revenue.updated_at DESC LIMIT 100`,
+      ).all();
+      sales = results;
+    } catch (error) {
+      if (!/no such table: financial_revenues/i.test(String(error))) throw error;
+    }
+  }
+  return c.json({ data: rows.results, purchases, sales });
 });
 
 // ─── CREARE (staff only — via floating button "Creează proiect") ─────────

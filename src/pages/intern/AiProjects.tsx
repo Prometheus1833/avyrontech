@@ -23,7 +23,7 @@ const statusStyle: Record<AiProjectListRow["status"], string> = {
   archived: "border-border bg-muted text-muted-foreground",
 };
 
-export default function AiProjects() {
+export default function AiProjects({ embedded = false }: { embedded?: boolean }) {
   const [projects, setProjects] = useState<AiProjectListRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -55,9 +55,9 @@ export default function AiProjects() {
   const readyAgents = projects.reduce((total, project) => total + project.agents_ready, 0);
 
   return (
-    <main className="min-h-screen bg-secondary/30 px-4 py-7 sm:px-6">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <PageBackLink to="/profil" label="Înapoi" title="Înapoi la dashboard" />
+    <main className={embedded ? "space-y-6" : "min-h-screen bg-secondary/30 px-4 py-7 sm:px-6"}>
+      <div className={embedded ? "space-y-6" : "mx-auto max-w-6xl space-y-6"}>
+        {!embedded && <PageBackLink to="/profil" label="Înapoi" title="Înapoi la dashboard" />}
 
         <header className="relative overflow-hidden rounded-3xl border border-violet-500/20 bg-card/70 p-6 shadow-sm backdrop-blur-md sm:p-8">
           <div className="pointer-events-none absolute -right-24 -top-32 size-80 rounded-full bg-violet-500/10 blur-3xl" />

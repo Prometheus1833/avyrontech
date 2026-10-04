@@ -1,8 +1,8 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import {
-  Bell, Bot, ChevronLeft, Command, Ellipsis, Lock, LogOut, Menu,
+  ChevronDown, ChevronLeft, Ellipsis, Lock, LogOut, Menu,
   PanelLeftClose, PanelLeftOpen, Search, ShieldCheck, Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -32,7 +32,6 @@ const StaffExampleRequestsTab = lazy(() => import("@/components/dashboard/StaffE
 const SettingsTab = lazy(() => import("@/components/dashboard/SettingsTab").then((m) => ({ default: m.SettingsTab })));
 const CartTab = lazy(() => import("@/components/dashboard/CartTab").then((m) => ({ default: m.CartTab })));
 const StaffFinanceTab = lazy(() => import("@/components/dashboard/StaffFinanceTab").then((m) => ({ default: m.StaffFinanceTab })));
-const StaffPaymentsTab = lazy(() => import("@/components/dashboard/StaffPaymentsTab").then((m) => ({ default: m.StaffPaymentsTab })));
 const StaffMediaTab = lazy(() => import("@/components/dashboard/StaffMediaTab").then((m) => ({ default: m.StaffMediaTab })));
 const StaffLeadsTab = lazy(() => import("@/components/dashboard/StaffLeadsTab").then((m) => ({ default: m.StaffLeadsTab })));
 const StaffPromotionsTab = lazy(() => import("@/components/dashboard/StaffPromotionsTab").then((m) => ({ default: m.StaffPromotionsTab })));
@@ -47,6 +46,12 @@ const ProductCollectionTab = lazy(() => import("@/components/dashboard/ProductCo
 const StaffProduseTab = lazy(() => import("@/components/dashboard/StaffProduseTab").then((m) => ({ default: m.StaffProduseTab })));
 const StaffServicesTab = lazy(() => import("@/components/dashboard/StaffServicesTab").then((m) => ({ default: m.StaffServicesTab })));
 const StaffNewsletterTab = lazy(() => import("@/components/dashboard/StaffNewsletterTab"));
+const AiProjects = lazy(() => import("@/pages/intern/AiProjects"));
+const PlatformLeadTab = lazy(() => import("@/components/dashboard/PlatformLeadTab"));
+const SurveysTab = lazy(() => import("@/components/dashboard/SurveysTab"));
+const CommercialCodesTab = lazy(() => import("@/components/dashboard/CommercialCodesTab"));
+const OtherModulesTab = lazy(() => import("@/components/dashboard/OtherModulesTab"));
+const NotificationCenter = lazy(() => import("@/components/dashboard/NotificationCenter"));
 
 export default function Profile() {
   const { user, profile, roles, isSuperAdmin, isStaff, isAdmin, signOut } = useAuth();
@@ -57,15 +62,21 @@ export default function Profile() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    if (typeof window === "undefined") return {};
+    try { return JSON.parse(localStorage.getItem("avyron-os-open-groups") || "{}") as Record<string, boolean>; }
+    catch { return {}; }
+  });
 
   const allowed = useMemo(() => sectionsFor(access), [access]);
-  const groups = DASHBOARD_GROUP_ORDER.map((group) => ({ id: group, label: DASHBOARD_GROUP_LABELS[group], items: allowed.filter((section) => section.group === group) })).filter((group) => group.items.length);
+  const groups = DASHBOARD_GROUP_ORDER.map((group) => ({ id: group, label: DASHBOARD_GROUP_LABELS[group], items: allowed.filter((section) => section.group === group && section.navigation !== false && !(access.isStaff && section.id === "collection")) })).filter((group) => group.items.length);
   const mobilePrimary = new Set<SectionId>(["overview", "projects", access.isStaff ? "leads" : "invoices", ...(access.isSuperAdmin ? ["ai-os" as SectionId] : [])]);
   const mobileMoreGroups = groups
     .map((group) => ({ ...group, items: group.items.filter((section) => !mobilePrimary.has(section.id)) }))
     .filter((group) => group.items.length);
   const displayName = profile?.display_name || user?.display_name || user?.email?.split("@")[0] || "utilizator";
   const roleLabel = isSuperAdmin ? "Super administrator" : isAdmin ? "Administrator" : isStaff ? "Membru al echipei" : "Client";
+  const activeGroup = groups.find((group) => group.items.some((section) => section.id === tab))?.id;
 
   useEffect(() => {
     if (!canOpenSection(tab, access)) setTab(defaultSection(access));
@@ -73,6 +84,10 @@ export default function Profile() {
   useEffect(() => {
     if (params.get("tab") !== tab) setParams({ tab }, { replace: true });
   }, [tab, params, setParams]);
+  useEffect(() => {
+    if (activeGroup && openGroups[activeGroup] === undefined) setOpenGroups((current) => ({ ...current, [activeGroup]: true }));
+  }, [activeGroup, openGroups]);
+  useEffect(() => { if (typeof window !== "undefined") localStorage.setItem("avyron-os-open-groups", JSON.stringify(openGroups)); }, [openGroups]);
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setCommandOpen(true); }
@@ -87,10 +102,16 @@ export default function Profile() {
   }, []);
 
   const openSection = (section: SectionId) => {
-    if (canOpenSection(section, access)) setTab(section);
+    if (canOpenSection(section, access)) {
+      setTab(section);
+      const group = allowed.find((item) => item.id === section)?.group;
+      if (group) setOpenGroups((current) => ({ ...current, [group]: true }));
+    }
     else if (["security", "automations"].includes(String(section)) && access.isStaff) setTab("os-centers");
     setMobileMenuOpen(false);
   };
+
+  const toggleGroup = (group: string) => setOpenGroups((current) => ({ ...current, [group]: !(current[group] ?? true) }));
 
   const NavButton = ({ section, mobile = false }: { section: SectionId; mobile?: boolean }) => {
     const sectionMeta = DASHBOARD_SECTION_META[section];
@@ -118,15 +139,14 @@ export default function Profile() {
         </div>
         {sidebarCollapsed && <button type="button" onClick={() => setSidebarCollapsed(false)} aria-label="Extinde meniul" className="mx-auto mt-2 rounded-lg p-2 text-slate-600 hover:bg-white/[0.05] hover:text-slate-300"><PanelLeftOpen className="size-4" /></button>}
 
-        <nav className="mt-5 min-h-0 flex-1 space-y-4 overflow-y-auto pb-4" aria-label="Navigare AVYRON OS">
-          {groups.map((group) => <div key={group.id}>
-            {!sidebarCollapsed && <p className="mb-1.5 px-3 font-mono text-[9px] uppercase tracking-[0.18em] text-slate-700">{group.label}</p>}
-            <div className="space-y-1">{group.items.map((section) => <NavButton key={section.id} section={section.id} />)}</div>
-          </div>)}
-          {access.isSuperAdmin && <div className="space-y-1 border-t border-white/[0.06] pt-4">
-            <Link to="/intern/ai-projects" title="Proiecte AI" className={`flex items-center rounded-xl px-3 py-2.5 text-xs font-medium text-slate-500 transition hover:bg-white/[0.05] hover:text-slate-200 ${sidebarCollapsed ? "justify-center" : "gap-2"}`}><Bot className="size-4" />{!sidebarCollapsed && "Proiecte AI"}</Link>
-            <Link to="/intern/avy-engine" title="AVY Engine" className={`flex items-center rounded-xl px-3 py-2.5 text-xs font-medium text-slate-500 transition hover:bg-white/[0.05] hover:text-slate-200 ${sidebarCollapsed ? "justify-center" : "gap-2"}`}><Command className="size-4" />{!sidebarCollapsed && "AVY Engine"}</Link>
-          </div>}
+        <nav className="avyron-sidebar-scroll mt-5 min-h-0 flex-1 space-y-2 overflow-y-auto pb-4 pr-1" aria-label="Navigare AVYRON OS">
+          {groups.map((group) => {
+            const expanded = sidebarCollapsed || (openGroups[group.id] ?? true);
+            return <div key={group.id} className="rounded-xl">
+              {!sidebarCollapsed && <button type="button" onClick={() => toggleGroup(group.id)} aria-expanded={expanded} className="mb-1 flex w-full items-center justify-between rounded-lg px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-slate-600 transition hover:bg-white/[0.035] hover:text-slate-400"><span>{group.label}</span><ChevronDown className={`size-3 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} /></button>}
+              <div className={`grid transition-[grid-template-rows,opacity] duration-200 ${expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-60"}`}><div className="min-h-0 overflow-hidden"><div className="space-y-1">{group.items.map((section) => <NavButton key={section.id} section={section.id} />)}</div></div></div>
+            </div>;
+          })}
         </nav>
 
         <div className="border-t border-white/[0.07] pt-3"><div className={`flex items-center ${sidebarCollapsed ? "justify-center" : "gap-2.5"}`}><span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-xl bg-violet-500/15 text-xs font-semibold text-violet-200">{user?.avatar_url ? <img src={user.avatar_url} alt="" className="size-full object-cover" /> : displayName.slice(0, 2).toUpperCase()}</span>{!sidebarCollapsed && <div className="min-w-0 flex-1"><p className="truncate text-xs font-medium text-slate-300">{displayName}</p><p className="truncate text-[10px] text-slate-600">{roleLabel}</p></div>}</div></div>
@@ -144,7 +164,7 @@ export default function Profile() {
             <button type="button" onClick={() => setCommandOpen(true)} aria-label="Caută clienți, proiecte, leaduri, facturi" className="rounded-xl p-2 text-slate-500 transition hover:bg-white/[0.05] hover:text-slate-200 lg:hidden"><Search className="size-4" /></button>
             <button type="button" onClick={() => setCommandOpen(true)} className="hidden min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2.5 text-left text-xs text-slate-600 transition hover:border-violet-400/25 hover:text-slate-400 sm:max-w-xl lg:flex"><Search className="size-4 shrink-0" /><span className="truncate">Caută clienți, proiecte, leaduri, facturi…</span><kbd className="ml-auto rounded border border-white/10 bg-black/20 px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd></button>
             {access.isSuperAdmin && <button type="button" onClick={() => openSection("ai-os")} className="hidden items-center gap-2 rounded-xl border border-violet-400/20 bg-violet-500/10 px-3 py-2.5 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/20 sm:inline-flex"><Sparkles className="size-4" /> Întreabă AVY</button>}
-            <button type="button" onClick={() => openSection("overview")} aria-label="Vezi prioritățile de azi" title="Priorități și alerte" className="relative rounded-xl p-2 text-slate-500 hover:bg-white/[0.05] hover:text-slate-200"><Bell className="size-4" /><span aria-hidden className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-fuchsia-400 ring-2 ring-[#080d1b]" /></button>
+            <Suspense fallback={<span className="size-8" />}><NotificationCenter enabled={access.isSuperAdmin} /></Suspense>
             <button type="button" onClick={() => openSection("profile")} aria-label="Deschide profilul" className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-xl bg-violet-500/15 text-[10px] font-semibold text-violet-100 ring-1 ring-white/10">{user?.avatar_url ? <img src={user.avatar_url} alt="" className="size-full object-cover" /> : displayName.slice(0, 2).toUpperCase()}</button>
             <button type="button" onClick={() => void signOut().then(() => window.location.assign("/"))} aria-label="Deconectare" title="Deconectare" className="hidden rounded-xl p-2.5 text-slate-600 hover:bg-rose-400/10 hover:text-rose-300 lg:inline-flex"><LogOut className="size-4" /></button>
             <span className="hidden items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1.5 text-[10px] text-slate-500 xl:inline-flex">{isSuperAdmin ? <Lock className="size-3" /> : <ShieldCheck className="size-3" />}{roleLabel}</span>
@@ -159,6 +179,7 @@ export default function Profile() {
           {access.isStaff && <>
             <TabsContent value="servicii-avyron" className="mt-0"><StaffServicesTab /></TabsContent>
             <TabsContent value="maintenance" className="mt-0"><StaffMaintenanceTab /></TabsContent>
+            <TabsContent value="ai-projects" className="mt-0"><AiProjects embedded /></TabsContent>
             <TabsContent value="clients" className="mt-0"><StaffClientsTab /></TabsContent>
             <TabsContent value="domains" className="mt-0"><StaffDomainStatsTab /></TabsContent>
             <TabsContent value="media" className="mt-0"><StaffMediaTab /></TabsContent>
@@ -169,9 +190,13 @@ export default function Profile() {
             <TabsContent value="announcements" className="mt-0"><StaffAnnouncementsTab /></TabsContent>
             <TabsContent value="resources" className="mt-0"><StaffResourcesTab /></TabsContent>
             <TabsContent value="team-staff" className="mt-0"><TeamStaffTab /></TabsContent>
+            <TabsContent value="logo-simulations" className="mt-0"><PlatformLeadTab kind="logo" /></TabsContent>
+            <TabsContent value="surveys" className="mt-0"><SurveysTab /></TabsContent>
+            <TabsContent value="configurator" className="mt-0"><PlatformLeadTab kind="configurator" /></TabsContent>
             <TabsContent value="os-centers" className="mt-0"><OsCentersTab access={access} onNavigate={openSection} /></TabsContent>
+            <TabsContent value="other-hub" className="mt-0"><OtherModulesTab onNavigate={openSection} /></TabsContent>
           </>}
-          {access.isSuperAdmin && <><TabsContent value="payments" className="mt-0"><StaffPaymentsTab /></TabsContent><TabsContent value="finance" className="mt-0"><StaffFinanceTab /></TabsContent><TabsContent value="promotions" className="mt-0"><StaffPromotionsTab /></TabsContent><TabsContent value="newsletter" className="mt-0"><StaffNewsletterTab /></TabsContent><TabsContent value="produse-avyron" className="mt-0"><StaffProduseTab /></TabsContent><TabsContent value="ai-os" className="mt-0"><AiOsConsole embedded /></TabsContent></>}
+          {access.isSuperAdmin && <><TabsContent value="finance" className="mt-0"><StaffFinanceTab /></TabsContent><TabsContent value="commercial-codes" className="mt-0"><CommercialCodesTab /></TabsContent><TabsContent value="promotions" className="mt-0"><StaffPromotionsTab /></TabsContent><TabsContent value="newsletter" className="mt-0"><StaffNewsletterTab /></TabsContent><TabsContent value="produse-avyron" className="mt-0"><StaffProduseTab /></TabsContent><TabsContent value="ai-os" className="mt-0"><AiOsConsole embedded /></TabsContent></>}
           </Suspense>
           {access.isSuperAdmin && (tab === "overview" || tab === "profile") && <Suspense fallback={contentFallback}><div className="mt-4 grid gap-3 lg:grid-cols-2"><AiProductionEntryCard /><EngineEntryCard /></div></Suspense>}
         </div>
@@ -198,8 +223,8 @@ export default function Profile() {
         </SheetHeader>
         <nav className="space-y-5 p-4 pb-28" aria-label="Toate secțiunile AVYRON OS">
           {mobileMoreGroups.map((group) => <section key={group.id}>
-            <p className="mb-2 px-2 font-mono text-[9px] uppercase tracking-[0.18em] text-slate-600">{group.label}</p>
-            <div className="grid grid-cols-2 gap-2">
+            <button type="button" onClick={() => toggleGroup(group.id)} aria-expanded={openGroups[group.id] ?? true} className="mb-2 flex w-full items-center justify-between rounded-lg px-2 py-2 font-mono text-[9px] uppercase tracking-[0.18em] text-slate-500 hover:bg-white/[0.04]"><span>{group.label}</span><ChevronDown className={`size-3 transition-transform ${(openGroups[group.id] ?? true) ? "rotate-180" : ""}`} /></button>
+            <div className={`${(openGroups[group.id] ?? true) ? "grid" : "hidden"} grid-cols-2 gap-2`}>
               {group.items.map((section) => {
                 const sectionMeta = DASHBOARD_SECTION_META[section.id];
                 const Icon = sectionMeta.icon;
@@ -208,10 +233,6 @@ export default function Profile() {
               })}
             </div>
           </section>)}
-          <div className="grid grid-cols-2 gap-2 border-t border-white/[0.07] pt-4">
-            {access.isSuperAdmin && <Link to="/intern/ai-projects" onClick={() => setMobileMenuOpen(false)} className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3 text-xs text-slate-300"><Bot className="mb-3 size-4 text-cyan-300" />Proiecte AI</Link>}
-            {access.isSuperAdmin && <Link to="/intern/avy-engine" onClick={() => setMobileMenuOpen(false)} className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3 text-xs text-slate-300"><Command className="mb-3 size-4 text-fuchsia-300" />AVY Engine</Link>}
-          </div>
           <button type="button" onClick={() => void signOut().then(() => window.location.assign("/"))} className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-400/15 bg-rose-400/[0.06] px-4 py-3 text-xs font-semibold text-rose-200"><LogOut className="size-4" /> Deconectare</button>
         </nav>
       </SheetContent>

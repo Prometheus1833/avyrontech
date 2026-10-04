@@ -30,6 +30,7 @@ export type ProjectUpdate = { id: string; project_id: string; author_id: string 
 export type ProjectStaff = { user_id: string; role: string; email: string; display_name: string | null; avatar_url: string | null };
 export type ProjectLog = { id: string; actor_name: string | null; action: string; target_type: string | null; target_id: string | null; meta_json: string | null; created_at: number };
 export type ProjectPurchase = { id: string; name: string; kind: "subscription" | "product" | "service"; total_cents: number; currency: string; status: "paid"; updated_at: number };
+export type ProjectSale = { id: string; project_id: string | null; project_name: string | null; name: string; revenue_type: string; total_cents: number; currency: string; status: "paid" | "partially_paid"; updated_at: number };
 
 export type ProjectDetail = {
   project: Project;
@@ -98,7 +99,7 @@ export type LeadPipeline = {
 };
 
 export const internApi = {
-  listProjects: () => cfAuth.request<{ data: Array<Pick<Project, "id"|"slug"|"name"|"kind"|"banner_status"|"url"|"favicon_url"|"updated_at">>; purchases?: ProjectPurchase[] }>("/api/projects"),
+  listProjects: () => cfAuth.request<{ data: Array<Pick<Project, "id"|"slug"|"name"|"kind"|"banner_status"|"status"|"url"|"favicon_url"|"updated_at">>; purchases?: ProjectPurchase[]; sales?: ProjectSale[] }>("/api/projects"),
   getProject: (slug: string) => cfAuth.request<ProjectDetail>(`/api/projects/${encodeURIComponent(slug)}`),
   createProject: (body: { name: string; slug: string; kind?: ProjectKind; url?: string; description?: string; client_id: string; owner_user_id?: string }) =>
     cfAuth.request<{ id: string; slug: string }>("/api/projects", { method: "POST", body: JSON.stringify(body) }),

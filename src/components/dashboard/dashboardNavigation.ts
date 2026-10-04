@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
-  Bell,
+  Bot,
   BookOpen,
   Boxes,
   BriefcaseBusiness,
@@ -25,6 +25,11 @@ import {
   Wallet,
   Wrench,
   BadgePercent,
+  Calculator,
+  ClipboardList,
+  FileCode2,
+  PackageSearch,
+  ScanSearch,
 } from "lucide-react";
 import type { SectionId } from "@/lib/access";
 
@@ -38,10 +43,11 @@ export type DashboardSectionMeta = {
 
 export const DASHBOARD_GROUP_LABELS: Record<string, string> = {
   overview: "Principal",
-  work: "Clienți și livrare",
+  projects: "Proiecte",
   activity: "Activitate",
-  team: "Echipă și cunoaștere",
-  control: "Control AVYRON OS",
+  platform: "Platformă",
+  os: "AVYRON OS",
+  other: "Altele",
   billing: "Facturare",
   servicii: "Servicii AVYRON",
   produse: "Produse AVYRON",
@@ -50,12 +56,13 @@ export const DASHBOARD_GROUP_LABELS: Record<string, string> = {
 
 export const DASHBOARD_GROUP_ORDER = [
   "overview",
-  "work",
+  "projects",
   "servicii",
   "produse",
   "activity",
-  "team",
-  "control",
+  "platform",
+  "os",
+  "other",
   "billing",
   "account",
 ];
@@ -65,6 +72,7 @@ export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
   profile: { label: "Profil", commandLabel: "Deschide profilul", hint: "Date personale și identitatea contului", icon: User },
   settings: { label: "Setări", commandLabel: "Deschide setările", hint: "Preferințe și configurarea contului", icon: Settings },
   projects: { label: "Proiecte", commandLabel: "Deschide proiectele", hint: "Livrări, termene și progres", icon: FolderKanban },
+  "ai-projects": { label: "Proiecte AI", commandLabel: "Deschide proiectele AI", hint: "Strategie, agenți și producție controlată", icon: Bot },
   maintenance: { label: "Mentenanță", commandLabel: "Deschide mentenanța", hint: "Monitorizare, intervenții și continuitate", icon: Wrench },
   clients: { label: "Clienți", commandLabel: "Deschide clienții", hint: "Companii, contacte și relații active", icon: Users },
   domains: { label: "Domenii", commandLabel: "Deschide domeniile", hint: "DNS, SSL și active digitale", icon: Globe },
@@ -83,11 +91,15 @@ export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
   intern: { label: "Chat intern", commandLabel: "Deschide chatul intern", hint: "Conversațiile echipei AVYRON", icon: MessagesSquare },
   announcements: { label: "Anunțuri", commandLabel: "Deschide anunțurile", hint: "Actualizări și comunicări interne", icon: Megaphone },
   resources: { label: "Documente și resurse", commandLabel: "Deschide documentele", hint: "Cunoaștere și materiale interne", icon: BookOpen },
-  "team-staff": { label: "Echipă și personal", commandLabel: "Deschide echipa", hint: "Roluri, permisiuni și acces", icon: Users },
-  payments: { label: "Plăți", commandLabel: "Deschide plățile", hint: "Încasări și reconciliere", icon: Wallet },
-  finance: { label: "Financiar", commandLabel: "Deschide situația financiară", hint: "Costuri, venituri și bugete", icon: Wallet },
+  "team-staff": { label: "STAFF", commandLabel: "Deschide STAFF", hint: "Echipă, roluri, permisiuni și acces", icon: Users },
+  finance: { label: "Financiar", commandLabel: "Deschide situația financiară", hint: "Costuri, venituri, plăți și bugete", icon: Wallet },
+  "commercial-codes": { label: "Coduri servicii și produse", commandLabel: "Deschide nomenclatorul comercial", hint: "Coduri, TVA și trasee de plată", icon: FileCode2 },
   promotions: { label: "Promoții", commandLabel: "Deschide promoțiile", hint: "Campanii și reguli comerciale", icon: BadgePercent },
   newsletter: { label: "Newsletter", commandLabel: "Deschide newsletterul", hint: "Abonați, campanii și consimțământ", icon: Mail },
-  "ai-os": { label: "Agenți AI", mobileLabel: "AVY", commandLabel: "Deschide agenții AVY", hint: "Agenți, activitate și cunoaștere", icon: Sparkles },
+  "ai-os": { label: "Agenți AI", mobileLabel: "AVY", commandLabel: "Deschide agenții AVY", hint: "Agenți, activitate și cunoaștere din Centre AVYRON OS", icon: Sparkles },
   "os-centers": { label: "Centre AVYRON OS", mobileLabel: "Mai multe", commandLabel: "Vezi toate centrele AVYRON OS", hint: "Integrări, automatizări și operațiuni", icon: ShieldCheck },
+  "logo-simulations": { label: "Simulări Logo 3D", commandLabel: "Deschide simulările Logo 3D", hint: "Cereri Logo Studio, configurații și rezultate", icon: ScanSearch },
+  surveys: { label: "Surveys", commandLabel: "Deschide Surveys", hint: "Chestionare, pipeline și briefuri", icon: ClipboardList },
+  configurator: { label: "Configurator", commandLabel: "Deschide Configurator", hint: "Estimări, cereri și rezultate comerciale", icon: Calculator },
+  "other-hub": { label: "Altele", commandLabel: "Deschide inventarul de module", hint: "Funcții, statistici și rapoarte fără secțiune dedicată", icon: PackageSearch },
 };

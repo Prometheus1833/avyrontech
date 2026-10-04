@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Building2, Clock3, History, Mail, Phone, Plus, RefreshCw, Search, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,19 @@ const STAGES = [
 
 const field = "rounded-lg border border-border/60 bg-background/80 px-2.5 py-1.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-primary/40";
 
-export const StaffLeadsTab = () => {
+type StaffLeadsTabProps = {
+  title?: string;
+  description?: string;
+  sourceFilter?: (lead: LeadListRow) => boolean;
+  allowCreate?: boolean;
+};
+
+export const StaffLeadsTab = ({
+  title = "Leaduri",
+  description = "Pipeline unic, surse, priorități și următorul pas comercial.",
+  sourceFilter,
+  allowCreate = true,
+}: StaffLeadsTabProps = {}) => {
   const [rows, setRows] = useState<LeadListRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -26,20 +38,20 @@ export const StaffLeadsTab = () => {
   const [deletionLogOpen, setDeletionLogOpen] = useState(false);
   const [platformRole, setPlatformRole] = useState<"platform_owner" | "superadmin" | null>(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const result = await leadsApi.list();
-      setRows(result.data);
+      setRows(sourceFilter ? result.data.filter(sourceFilter) : result.data);
       setPlatformRole(result.platformRole);
     } catch {
       toast.error("Nu am putut încărca pipeline-ul Leads. Verifică sesiunea MFA.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [sourceFilter]);
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); }, [load]);
 
   const update = async (lead: LeadListRow, patch: { lifecycleStage?: LeadStage; urgent?: boolean }) => {
     setSaving(lead.id);
@@ -85,11 +97,11 @@ export const StaffLeadsTab = () => {
     <div className="space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold">Leads</h2>
-          <p className="text-sm text-muted-foreground">Pipeline unic, surse, priorități și următorul pas comercial.</p>
+          <h2 className="text-xl font-semibold">{title}</h2>
+          <p className="text-sm text-muted-foreground">{description}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={() => setNewLeadOpen(true)} className="rounded-xl"><Plus /> Lead nou</Button>
+          {allowCreate && <Button type="button" onClick={() => setNewLeadOpen(true)} className="rounded-xl"><Plus /> Lead nou</Button>}
           {platformRole && <Button type="button" variant="outline" onClick={() => setDeletionLogOpen(true)} className="rounded-xl"><History /> Jurnal ștergeri</Button>}
           <Button type="button" variant="outline" onClick={() => void load()} className="rounded-xl"><RefreshCw /> Reîmprospătează</Button>
         </div>
@@ -157,7 +169,7 @@ export const StaffLeadsTab = () => {
           </div>
         </div>
       )}
-      <NewLeadDialog open={newLeadOpen} onOpenChange={setNewLeadOpen} onCreated={(id) => { void load(); setSelectedLeadId(id); }} />
+      {allowCreate && <NewLeadDialog open={newLeadOpen} onOpenChange={setNewLeadOpen} onCreated={(id) => { void load(); setSelectedLeadId(id); }} />}
       <LeadDetailDialog leadId={selectedLeadId} onOpenChange={(open) => !open && setSelectedLeadId(null)} onChanged={() => void load()} onDeleted={() => { setSelectedLeadId(null); void load(); }} />
       <LeadDeleteDialog lead={deletingLead} open={deletingLead !== null} busy={Boolean(deletingLead && saving === deletingLead.id)} onOpenChange={(open) => !open && setDeletingLead(null)} onConfirm={remove} />
       <LeadDeletionLogDialog open={deletionLogOpen} onOpenChange={setDeletionLogOpen} />

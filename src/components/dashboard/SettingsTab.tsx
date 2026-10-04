@@ -302,7 +302,7 @@ export const SettingsTab = () => {
   };
 
   return (
-    <div className="space-y-3">
+    <div className="mx-auto max-w-5xl space-y-3">
       <p className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-muted-foreground">
         Preferințele de notificare și metadatele mascate de plată sunt salvate doar pe acest dispozitiv; profilul și parola sunt persistate în contul Cloudflare.
       </p>

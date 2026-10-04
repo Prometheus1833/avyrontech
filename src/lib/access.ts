@@ -49,15 +49,18 @@ export const canSee = (audience: Audience, a: Access) => {
 
 export type SectionId =
   | "overview" | "profile" | "settings" | "projects" | "subscriptions" | "invoices" | "cart" | "collection"
-  | "stats" | "tickets" | "maintenance" | "clients" | "domains" | "payments"
+  | "stats" | "tickets" | "maintenance" | "clients" | "domains"
   | "finance" | "media" | "leads" | "staff-tickets" | "demo-requests" | "intern"
   | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "servicii-avyron" | "produse-avyron"
-  | "newsletter";
+  | "newsletter" | "ai-projects" | "logo-simulations" | "surveys" | "configurator"
+  | "commercial-codes" | "other-hub";
 
 export type SectionDef = {
   id: SectionId;
-  group: "overview" | "account" | "work" | "billing" | "servicii" | "produse" | "activity" | "team" | "control";
+  group: "overview" | "account" | "projects" | "billing" | "servicii" | "produse" | "activity" | "platform" | "os" | "other";
   audience: Audience;
+  /** Secțiunile false rămân accesibile din huburi și căutare, fără duplicate în sidebar. */
+  navigation?: boolean;
   /** Cuvinte pentru căutarea rapidă. */
   keywords: string[];
 };
@@ -71,12 +74,12 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "profile", group: "account", audience: "everyone", keywords: ["cont", "profil", "date", "account"] },
   { id: "settings", group: "account", audience: "everyone", keywords: ["setari", "preferinte", "settings", "tema", "limba"] },
 
-  { id: "projects", group: "work", audience: "everyone", keywords: ["proiecte", "site", "projects", "livrare"] },
-  { id: "maintenance", group: "work", audience: "staff", keywords: ["mentenanta", "uptime", "maintenance"] },
-  { id: "clients", group: "work", audience: "staff", keywords: ["clienti", "clients", "companii"] },
-  { id: "domains", group: "work", audience: "staff", keywords: ["domenii", "dns", "domains"] },
-  { id: "media", group: "work", audience: "staff", keywords: ["media", "imagini", "fisiere"] },
-  { id: "leads", group: "work", audience: "staff", keywords: ["leads", "crm", "vanzari", "oferta", "prospecti"] },
+  { id: "projects", group: "projects", audience: "everyone", keywords: ["proiecte", "site", "projects", "livrare", "vanzari"] },
+  { id: "ai-projects", group: "projects", audience: "superadmin", keywords: ["proiecte ai", "productie ai", "continut"] },
+  { id: "maintenance", group: "projects", audience: "staff", keywords: ["mentenanta", "uptime", "maintenance"] },
+  { id: "leads", group: "projects", audience: "staff", keywords: ["leads", "crm", "vanzari", "oferta", "prospecti"] },
+  { id: "domains", group: "projects", audience: "staff", keywords: ["domenii", "dns", "domains"] },
+  { id: "media", group: "projects", audience: "staff", keywords: ["media", "imagini", "fisiere"] },
 
   { id: "subscriptions", group: "billing", audience: "client", keywords: ["abonament", "plan", "subscriptions"] },
   { id: "cart", group: "billing", audience: "client", keywords: ["cos", "comanda", "cart"] },
@@ -95,19 +98,25 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "stats", group: "activity", audience: "client", keywords: ["statistici", "vizite", "stats"] },
   { id: "tickets", group: "activity", audience: "client", keywords: ["suport", "tichete", "tickets", "mesaje"] },
 
-  { id: "staff-tickets", group: "team", audience: "staff", keywords: ["suport", "tichete clienti", "tickets"] },
-  { id: "demo-requests", group: "team", audience: "staff", keywords: ["demo", "solicitari", "leaduri"] },
-  { id: "intern", group: "team", audience: "staff", keywords: ["chat", "echipa", "intern"] },
-  { id: "announcements", group: "team", audience: "staff", keywords: ["anunturi", "noutati"] },
-  { id: "resources", group: "team", audience: "staff", keywords: ["resurse", "documente", "ghid"] },
-  { id: "team-staff", group: "team", audience: "staff", keywords: ["echipa", "staff", "roluri", "permisiuni", "acces"] },
+  { id: "team-staff", group: "platform", audience: "staff", keywords: ["echipa", "staff", "roluri", "permisiuni", "acces"] },
+  { id: "clients", group: "platform", audience: "staff", keywords: ["clienti", "clients", "companii"] },
+  { id: "demo-requests", group: "platform", audience: "staff", keywords: ["demo", "solicitari", "leaduri"] },
+  { id: "logo-simulations", group: "platform", audience: "staff", keywords: ["logo", "simulari", "3d", "logo studio"] },
+  { id: "surveys", group: "platform", audience: "staff", keywords: ["surveys", "chestionare", "brief", "rezultate"] },
+  { id: "configurator", group: "platform", audience: "staff", keywords: ["configurator", "estimari", "oferte", "rezultate"] },
 
-  { id: "payments", group: "control", audience: "superadmin", keywords: ["plati", "payments", "incasari"] },
-  { id: "finance", group: "control", audience: "superadmin", keywords: ["financiar", "facturare", "venituri", "finance"] },
-  { id: "promotions", group: "control", audience: "superadmin", keywords: ["promotii", "reduceri", "campanii"] },
-  { id: "newsletter", group: "control", audience: "superadmin", keywords: ["newsletter", "abonati", "email", "campanii", "consimtamant"] },
-  { id: "ai-os", group: "control", audience: "superadmin", keywords: ["ai", "avy", "agenti", "chatbot", "automatizare"] },
-  { id: "os-centers", group: "control", audience: "staff", keywords: ["securitate", "automatizari", "integrari", "backup", "erori", "newsletter", "programari", "comentarii", "pluginuri"] },
+  { id: "finance", group: "os", audience: "superadmin", keywords: ["financiar", "facturare", "venituri", "plati", "incasari", "finance"] },
+  { id: "commercial-codes", group: "os", audience: "superadmin", keywords: ["coduri", "sku", "contabilitate", "servicii", "produse", "tva", "plata"] },
+  { id: "newsletter", group: "os", audience: "superadmin", keywords: ["newsletter", "abonati", "email", "campanii", "consimtamant"] },
+  { id: "os-centers", group: "os", audience: "staff", keywords: ["securitate", "automatizari", "integrari", "backup", "erori", "agenti ai", "programari", "comentarii", "pluginuri"] },
+  { id: "ai-os", group: "os", audience: "superadmin", navigation: false, keywords: ["ai", "avy", "agenti", "chatbot", "automatizare"] },
+  { id: "promotions", group: "os", audience: "superadmin", navigation: false, keywords: ["promotii", "reduceri", "campanii"] },
+
+  { id: "other-hub", group: "other", audience: "staff", keywords: ["altele", "module", "rapoarte", "functii", "roadmap"] },
+  { id: "staff-tickets", group: "other", audience: "staff", navigation: false, keywords: ["suport", "tichete clienti", "tickets"] },
+  { id: "intern", group: "other", audience: "staff", navigation: false, keywords: ["chat", "echipa", "intern"] },
+  { id: "announcements", group: "other", audience: "staff", navigation: false, keywords: ["anunturi", "noutati"] },
+  { id: "resources", group: "other", audience: "staff", navigation: false, keywords: ["resurse", "documente", "ghid"] },
 ];
 
 export const sectionsFor = (a: Access) => SECTIONS.filter((s) => canSee(s.audience, a));

@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { ArrowUpRight, BookOpen, Boxes, Clock3, ExternalLink, Library, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowUpRight, BadgePercent, BarChart3, BookOpen, Boxes, Clock3, ExternalLink, FileCode2, Library, List, Settings2, Sparkles } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,7 @@ const GROUPS: Record<string, { label: string; order: number }> = {
 };
 
 export default function ServiciiAvyron({ embedded = false }: { embedded?: boolean }) {
+  const [view, setView] = useState<"dashboard" | "list" | "settings">("dashboard");
   useEffect(() => {
     if (embedded) return;
     void import("@/lib/seo").then(({ setPageMeta }) => setPageMeta({
@@ -50,7 +51,25 @@ export default function ServiciiAvyron({ embedded = false }: { embedded?: boolea
         </div>
       </section>
 
-      {groups.map((group) => (
+      <nav className="flex gap-1 overflow-x-auto rounded-2xl border border-white/[0.08] bg-white/[0.025] p-1.5" aria-label="Secțiuni Servicii AVYRON">
+        {[
+          { id: "dashboard" as const, label: "Dashboard", icon: BarChart3 },
+          { id: "list" as const, label: "Listă servicii", icon: List },
+          { id: "settings" as const, label: "Setări comerciale", icon: Settings2 },
+        ].map((item) => <button key={item.id} type="button" onClick={() => setView(item.id)} className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium ${view === item.id ? "bg-violet-500/15 text-violet-200" : "text-slate-500 hover:text-slate-200"}`}><item.icon className="size-3.5" />{item.label}</button>)}
+      </nav>
+
+      {view === "dashboard" && <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {[{ label: "Servicii publice", value: SERVICES.length + 1 }, { label: "Categorii", value: groups.length }, { label: "Limbi sincronizate", value: 2 }, { label: "Configurare comercială", value: "Centralizată" }].map((item) => <div key={item.label} className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4"><p className="text-xs text-slate-500">{item.label}</p><p className="mt-1 text-xl font-semibold text-white">{item.value}</p></div>)}
+      </section>}
+
+      {view === "settings" && <section className="grid gap-3 md:grid-cols-3">
+        <a href="/profil?tab=commercial-codes" className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 transition hover:border-violet-400/30"><FileCode2 className="size-5 text-violet-300"/><h2 className="mt-3 text-sm font-semibold text-white">Prețuri, coduri și plată</h2><p className="mt-1 text-xs text-slate-500">Configurează codul contabil, TVA, prețul și traseul de plată pentru fiecare serviciu.</p></a>
+        <a href="/profil?tab=promotions" className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 transition hover:border-violet-400/30"><BadgePercent className="size-5 text-cyan-300"/><h2 className="mt-3 text-sm font-semibold text-white">Promoții</h2><p className="mt-1 text-xs text-slate-500">Reguli comerciale și coduri promoționale administrate separat, fără dublarea prețurilor.</p></a>
+        <a href="/profil?tab=leads" className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 transition hover:border-violet-400/30"><BarChart3 className="size-5 text-emerald-300"/><h2 className="mt-3 text-sm font-semibold text-white">Pipeline și rezultate</h2><p className="mt-1 text-xs text-slate-500">Cererile și conversiile serviciilor rămân în CRM și Financiar.</p></a>
+      </section>}
+
+      {view === "list" && groups.map((group) => (
         <section key={group.key} aria-labelledby={`service-group-${group.key}`}>
           <h2 id={`service-group-${group.key}`} className="mb-2 px-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{group.label}</h2>
           <div className="grid gap-3 lg:grid-cols-2">
@@ -78,12 +97,12 @@ export default function ServiciiAvyron({ embedded = false }: { embedded?: boolea
         </section>
       ))}
 
-      <Card className="border-white/[0.07] bg-white/[0.025]">
+      {view === "list" && <Card className="border-white/[0.07] bg-white/[0.025]">
         <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
           <div><p className="flex items-center gap-2 text-sm font-semibold text-slate-200"><BookOpen className="size-4 text-rose-300" /> Blog profesional</p><p className="mt-1 text-xs text-slate-500">Pagină specializată, inclusă în oferta de servicii și sincronizată cu planurile editoriale.</p></div>
           <a href="/servicii/blog-profesional" className="inline-flex items-center gap-1 text-xs font-medium text-violet-300">Deschide pagina <ArrowUpRight className="size-3.5" /></a>
         </CardContent>
-      </Card>
+      </Card>}
     </div>
   );
 }
