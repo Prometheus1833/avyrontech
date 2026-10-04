@@ -1,15 +1,28 @@
 import type { LucideIcon } from "lucide-react";
 import {
   CalendarDays,
+  Bot,
+  BriefcaseBusiness,
+  Building2,
   ChefHat,
   Coffee,
   ConciergeBell,
+  Dumbbell,
+  GraduationCap,
+  Hammer,
+  HeartPulse,
   Hotel,
   Languages,
   MapPin,
   Menu,
   PackageCheck,
+  PanelsTopLeft,
+  Scissors,
+  SearchCheck,
+  Settings2,
   ShoppingBag,
+  Smartphone,
+  Store,
   UtensilsCrossed,
   Wine,
 } from "lucide-react";
@@ -39,6 +52,13 @@ export type StyleOption = {
   hint: Localized;
   swatches: [string, string, string];
   preview: string;
+};
+
+export type ConfiguratorChoice = {
+  id: string;
+  icon: LucideIcon;
+  label: Localized;
+  hint: Localized;
 };
 
 export const HORECA_BUSINESSES: BusinessOption[] = [
@@ -95,6 +115,94 @@ export const HORECA_BUSINESSES: BusinessOption[] = [
     menu: [
       { ro: "Mic dejun local inclus", en: "Local breakfast included" },
       { ro: "Cină sezonieră la cerere", en: "Seasonal dinner on request" },
+    ],
+  },
+  {
+    id: "clinic",
+    icon: HeartPulse,
+    label: { ro: "Clinică / cabinet", en: "Clinic / practice" },
+    previewName: "Clinica Nova",
+    category: { ro: "Servicii medicale și programări", en: "Medical services and appointments" },
+    menu: [
+      { ro: "Servicii explicate clar", en: "Clearly explained services" },
+      { ro: "Programare rapidă online", en: "Fast online appointments" },
+    ],
+  },
+  {
+    id: "beauty",
+    icon: Scissors,
+    label: { ro: "Salon / beauty", en: "Salon / beauty" },
+    previewName: "Atelier Aura",
+    category: { ro: "Frumusețe și programări", en: "Beauty and appointments" },
+    menu: [
+      { ro: "Galerie și servicii", en: "Gallery and services" },
+      { ro: "Programare fără apel", en: "Book without a call" },
+    ],
+  },
+  {
+    id: "professional",
+    icon: BriefcaseBusiness,
+    label: { ro: "Consultanță / profesii", en: "Consulting / professionals" },
+    previewName: "Nord Consult",
+    category: { ro: "Expertiză și servicii profesionale", en: "Expertise and professional services" },
+    menu: [
+      { ro: "Expertiză și studii de caz", en: "Expertise and case studies" },
+      { ro: "Solicitare de consultanță", en: "Consulting enquiry" },
+    ],
+  },
+  {
+    id: "construction",
+    icon: Hammer,
+    label: { ro: "Construcții / producție", en: "Construction / manufacturing" },
+    previewName: "Structura Pro",
+    category: { ro: "Portofoliu și cereri de ofertă", en: "Portfolio and quote requests" },
+    menu: [
+      { ro: "Proiecte și capacități", en: "Projects and capabilities" },
+      { ro: "Cerere de ofertă structurată", en: "Structured quote request" },
+    ],
+  },
+  {
+    id: "real-estate",
+    icon: Building2,
+    label: { ro: "Imobiliare / cazare", en: "Real estate / accommodation" },
+    previewName: "Habitat Urban",
+    category: { ro: "Proprietăți, tururi și contacte", en: "Properties, tours and contacts" },
+    menu: [
+      { ro: "Proprietăți ușor de filtrat", en: "Easy-to-filter properties" },
+      { ro: "Vizionări și solicitări", en: "Viewings and enquiries" },
+    ],
+  },
+  {
+    id: "education",
+    icon: GraduationCap,
+    label: { ro: "Educație / cursuri", en: "Education / courses" },
+    previewName: "Academia Vector",
+    category: { ro: "Programe, înscrieri și resurse", en: "Programs, enrolment and resources" },
+    menu: [
+      { ro: "Cursuri și calendar", en: "Courses and calendar" },
+      { ro: "Înscriere și resurse", en: "Enrolment and resources" },
+    ],
+  },
+  {
+    id: "fitness",
+    icon: Dumbbell,
+    label: { ro: "Fitness / wellness", en: "Fitness / wellness" },
+    previewName: "Core Studio",
+    category: { ro: "Clase, abonamente și comunitate", en: "Classes, memberships and community" },
+    menu: [
+      { ro: "Programul claselor", en: "Class schedule" },
+      { ro: "Abonamente și înscrieri", en: "Memberships and enrolment" },
+    ],
+  },
+  {
+    id: "retail",
+    icon: Store,
+    label: { ro: "Comerț / brand local", en: "Retail / local brand" },
+    previewName: "Atelier Local",
+    category: { ro: "Produse, poveste și vânzare", en: "Products, story and sales" },
+    menu: [
+      { ro: "Colecții și produse", en: "Collections and products" },
+      { ro: "Comandă sau solicitare", en: "Order or enquiry" },
     ],
   },
 ];
@@ -158,4 +266,29 @@ export const HORECA_MODULES: Array<{ id: string; icon: LucideIcon; label: Locali
   { id: "languages", icon: Languages, label: { ro: "RO / EN", en: "RO / EN" } },
   { id: "location", icon: MapPin, label: { ro: "Hartă și program", en: "Map and hours" } },
   { id: "confirmation", icon: PackageCheck, label: { ro: "Confirmări automate", en: "Automated confirmations" } },
+];
+
+export const AVYRON_SERVICE_OPTIONS: ConfiguratorChoice[] = [
+  { id: "presentation", icon: PanelsTopLeft, label: { ro: "Site de prezentare", en: "Business website" }, hint: { ro: "Pagini clare, conversie, SEO și administrare simplă", en: "Clear pages, conversion, SEO and simple management" } },
+  { id: "store", icon: ShoppingBag, label: { ro: "Magazin online", en: "Online store" }, hint: { ro: "Catalog, coș, plăți și livrare", en: "Catalog, cart, payments and delivery" } },
+  { id: "application", icon: Smartphone, label: { ro: "Aplicație / platformă", en: "App / platform" }, hint: { ro: "Conturi, automatizări și fluxuri proprii", en: "Accounts, automations and custom flows" } },
+  { id: "automation", icon: Bot, label: { ro: "Automatizări și AI", en: "Automation and AI" }, hint: { ro: "Procese repetitive, asistenți și integrări", en: "Repetitive processes, assistants and integrations" } },
+  { id: "maintenance", icon: Settings2, label: { ro: "Mentenanță și abonament", en: "Maintenance and subscription" }, hint: { ro: "Actualizări, monitorizare și suport după lansare", en: "Updates, monitoring and post-launch support" } },
+];
+
+export const WEBSITE_FEATURE_OPTIONS: ConfiguratorChoice[] = [
+  { id: "contact", icon: BriefcaseBusiness, label: { ro: "Formulare și leaduri", en: "Forms and leads" }, hint: { ro: "Solicitări salvate direct în AVYRON OS", en: "Enquiries saved directly in AVYRON OS" } },
+  { id: "booking", icon: CalendarDays, label: { ro: "Programări / rezervări", en: "Appointments / bookings" }, hint: { ro: "Calendar, intervale și confirmări", en: "Calendar, slots and confirmations" } },
+  { id: "multilingual", icon: Languages, label: { ro: "Mai multe limbi", en: "Multiple languages" }, hint: { ro: "Structură RO, EN sau alte piețe", en: "RO, EN or additional markets" } },
+  { id: "local", icon: MapPin, label: { ro: "Hartă și prezență locală", en: "Map and local presence" }, hint: { ro: "Locații, program și acțiuni rapide", en: "Locations, hours and quick actions" } },
+  { id: "seo", icon: SearchCheck, label: { ro: "SEO și măsurare", en: "SEO and measurement" }, hint: { ro: "Date structurate, conversii și rapoarte", en: "Structured data, conversions and reports" } },
+  { id: "client-area", icon: PackageCheck, label: { ro: "Cont / zonă client", en: "Account / client area" }, hint: { ro: "Documente, comenzi, abonamente sau status", en: "Documents, orders, subscriptions or status" } },
+];
+
+export const DOMAIN_PREFERENCES: ConfiguratorChoice[] = [
+  { id: "ro", icon: MapPin, label: { ro: ".ro — România", en: ".ro — Romania" }, hint: { ro: "Potrivit pentru publicul local", en: "A strong fit for a Romanian audience" } },
+  { id: "com", icon: Building2, label: { ro: ".com — internațional", en: ".com — international" }, hint: { ro: "Recunoscut ușor pe mai multe piețe", en: "Easy to recognize across markets" } },
+  { id: "eu", icon: Languages, label: { ro: ".eu — european", en: ".eu — European" }, hint: { ro: "Poziționare pentru clienți din UE", en: "Positioning for EU customers" } },
+  { id: "tech", icon: Bot, label: { ro: ".io / .app — digital", en: ".io / .app — digital" }, hint: { ro: "Produse software și aplicații", en: "Software products and applications" } },
+  { id: "shop", icon: ShoppingBag, label: { ro: ".store / .shop — comerț", en: ".store / .shop — commerce" }, hint: { ro: "Magazine și colecții de produse", en: "Stores and product collections" } },
 ];

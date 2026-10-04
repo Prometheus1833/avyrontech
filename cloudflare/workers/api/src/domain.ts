@@ -110,6 +110,16 @@ const copy = {
   },
 } as const;
 
+const payloadFor = (domain: string, result: LookupResult) => ({
+  domain,
+  status: result.status,
+  source: result.source,
+  label: copy[result.status].label,
+  message: copy[result.status].message,
+  checkedAt: new Date().toISOString(),
+  disclaimer: "Rezultatul este informativ și nu rezervă domeniul.",
+});
+
 domainRouter.get("/api/public/domain-check", async (c) => {
   const domain = normalizeDomain(c.req.query("domain") || "");
   if (!domain) return c.json({ error: { code: "invalid_domain", message: "Domeniul nu este valid" } }, 400);
@@ -121,15 +131,27 @@ domainRouter.get("/api/public/domain-check", async (c) => {
   const result = await lookupDomain(domain);
   const ttl = result.status === "registered" ? 3600 : result.status === "available" ? 300 : 60;
   c.header("cache-control", `public, max-age=${ttl}, stale-while-revalidate=${ttl}`);
-  return c.json({
-    domain,
-    status: result.status,
-    source: result.source,
-    label: copy[result.status].label,
-    message: copy[result.status].message,
-    checkedAt: new Date().toISOString(),
-    disclaimer: "Rezultatul este informativ și nu rezervă domeniul.",
-  });
+  return c.json(payloadFor(domain, result));
+});
+
+domainRouter.post("/api/public/domain-check", async (c) => {
+  const body = await c.req.json<{ domain?: unknown; language?: unknown; surface?: unknown }>().catch(() => null);
+  const domain = normalizeDomain(String(body?.domain || ""));
+  if (!domain) return c.json({ error: { code: "invalid_domain", message: "Domeniul nu este valid" } }, 400);
+
+  const rateKey = await hashKey(clientIp(c.req.raw));
+  const { success } = await c.env.PUBLIC_API_RATE_LIMITER.limit({ key: `domain-check-write:${rateKey}` });
+  if (!success) return c.json({ error: { code: "rate_limited", message: "Prea multe verificări" } }, 429, { "Retry-After": "60" });
+
+  const result = await lookupDomain(domain);
+  const language = body?.language === "en" ? "en" : "ro";
+  const surface = String(body?.surface || "landing").trim().slice(0, 40) || "landing";
+  await c.env.DB.prepare(
+    "INSERT INTO public_domain_checks(id,domain,status,source,language,surface,created_at) VALUES(?,?,?,?,?,?,?)",
+  ).bind(crypto.randomUUID(), domain, result.status, result.source, language, surface, Date.now()).run();
+
+  c.header("cache-control", "private, no-store");
+  return c.json(payloadFor(domain, result), 201);
 });
 
 export { domainRouter };

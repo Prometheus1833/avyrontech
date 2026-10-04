@@ -72,12 +72,12 @@ projectsRouter.get("/api/projects", async (c) => {
   let rows;
   if (await platformRoleForUser(c.env.DB, userId)) {
     rows = await c.env.DB.prepare(
-      "SELECT id, organization_id, slug, name, kind, banner_status, url, favicon_url, updated_at FROM projects ORDER BY updated_at DESC LIMIT 200"
+      "SELECT id, organization_id, slug, name, kind, banner_status, status, url, favicon_url, updated_at FROM projects ORDER BY updated_at DESC LIMIT 200"
     ).all();
   } else if (isAdmin || isStaff) {
     rows = await c.env.DB.prepare(
       `SELECT DISTINCT project.id, project.organization_id, project.slug, project.name,
-              project.kind, project.banner_status, project.url, project.favicon_url, project.updated_at
+              project.kind, project.banner_status, project.status, project.url, project.favicon_url, project.updated_at
          FROM projects AS project
          LEFT JOIN organization_memberships AS membership
            ON membership.organization_id = project.organization_id
@@ -90,7 +90,7 @@ projectsRouter.get("/api/projects", async (c) => {
   } else {
     rows = await c.env.DB.prepare(
       `SELECT DISTINCT project.id, project.organization_id, project.slug, project.name,
-              project.kind, project.banner_status, project.url, project.favicon_url, project.updated_at
+              project.kind, project.banner_status, project.status, project.url, project.favicon_url, project.updated_at
          FROM projects AS project
          LEFT JOIN organization_memberships AS membership
            ON membership.organization_id = project.organization_id
@@ -100,6 +100,7 @@ projectsRouter.get("/api/projects", async (c) => {
     ).bind(userId, userId).all();
   }
   let purchases: Array<Record<string, unknown>> = [];
+  let sales: Array<Record<string, unknown>> = [];
   if (!isStaff) {
     try {
       const { results } = await c.env.DB.prepare(
@@ -131,7 +132,25 @@ projectsRouter.get("/api/projects", async (c) => {
       if (!/no such table: commerce_orders/i.test(String(error))) throw error;
     }
   }
-  return c.json({ data: rows.results, purchases });
+  if (isStaff) {
+    try {
+      const { results } = await c.env.DB.prepare(
+        `SELECT revenue.id,revenue.project_id,project.name AS project_name,
+                revenue.service_name AS name,revenue.revenue_type,
+                COALESCE(revenue.amount_ron_minor,revenue.gross_amount_minor) AS total_cents,
+                CASE WHEN revenue.amount_ron_minor IS NOT NULL THEN 'RON' ELSE revenue.currency END AS currency,
+                revenue.status,revenue.updated_at
+           FROM financial_revenues AS revenue
+           LEFT JOIN projects AS project ON project.id=revenue.project_id
+          WHERE revenue.archived_at IS NULL AND revenue.status IN ('paid','partially_paid')
+          ORDER BY revenue.updated_at DESC LIMIT 100`,
+      ).all();
+      sales = results;
+    } catch (error) {
+      if (!/no such table: financial_revenues/i.test(String(error))) throw error;
+    }
+  }
+  return c.json({ data: rows.results, purchases, sales });
 });
 
 // ─── CREARE (staff only — via floating button "Creează proiect") ─────────
@@ -142,6 +161,10 @@ projectsRouter.post("/api/projects", async (c) => {
   const b = (await c.req.json().catch(() => ({}))) as {
     name?: string; slug?: string; kind?: string; url?: string; description?: string;
     client_id?: string; owner_user_id?: string; organization_id?: string;
+    recurring_service?: {
+      enabled?: boolean; service_name?: string; price?: number; billing_cycle?: string;
+      next_billing_date?: number; subscription_status?: string;
+    };
   };
   if (!b.name || !b.slug || !b.client_id) return c.json({ error: { code: "invalid_input", message: "name, slug, client_id required" } }, 400);
   const id = uuid();
@@ -159,7 +182,7 @@ projectsRouter.post("/api/projects", async (c) => {
     }
   }
   try {
-    await c.env.DB.prepare(
+    const statements = [c.env.DB.prepare(
       `INSERT INTO projects
          (id, client_id, organization_id, name, slug, kind, url, description,
           owner_user_id, banner_status, status, created_at, updated_at)
@@ -168,10 +191,29 @@ projectsRouter.post("/api/projects", async (c) => {
       id, b.client_id, b.organization_id ?? null, b.name, b.slug,
       b.kind ?? "website_prezentare", b.url ?? null, b.description ?? null,
       b.owner_user_id ?? null, "in_progress", "in_progress", t, t,
-    ).run();
-    await c.env.DB.prepare("INSERT INTO project_staff (project_id, user_id, role, assigned_at) VALUES (?,?,?,?)")
-      .bind(id, userId, "owner", t).run();
-    await log(c.env.DB, id, userId, "project.create");
+    ), c.env.DB.prepare("INSERT INTO project_staff (project_id, user_id, role, assigned_at) VALUES (?,?,?,?)")
+      .bind(id, userId, "owner", t)];
+    const recurring = b.recurring_service;
+    if (recurring?.enabled) {
+      const serviceName = String(recurring.service_name || "Mentenanță AVYRON").trim().slice(0, 160);
+      const price = Number(recurring.price);
+      const billingCycle = String(recurring.billing_cycle || "monthly");
+      const subscriptionStatus = String(recurring.subscription_status || "active");
+      const nextBillingDate = Number(recurring.next_billing_date || t + 30 * 86_400_000);
+      if (!serviceName || !Number.isFinite(price) || price < 0 || !["monthly", "yearly"].includes(billingCycle) || !["active", "paused"].includes(subscriptionStatus) || !Number.isFinite(nextBillingDate)) {
+        return c.json({ error: { code: "invalid_recurring_service", message: "Datele de mentenanță și abonament nu sunt valide." } }, 400);
+      }
+      const serviceId = uuid();
+      const subscriptionId = uuid();
+      statements.push(
+        c.env.DB.prepare("INSERT INTO services (id,project_id,service_name,price,billing_cycle) VALUES (?,?,?,?,?)").bind(serviceId, id, serviceName, price, billingCycle),
+        c.env.DB.prepare("INSERT INTO subscriptions (id,client_id,service_id,next_billing_date,status) VALUES (?,?,?,?,?)").bind(subscriptionId, b.client_id, serviceId, nextBillingDate, subscriptionStatus),
+      );
+    }
+    statements.push(c.env.DB.prepare(
+      "INSERT INTO project_logs (id,project_id,actor_id,action,target_type,target_id,meta_json,created_at) VALUES (?,?,?,?,?,?,?,?)",
+    ).bind(uuid(), id, userId, "project.create", "project", id, JSON.stringify({ recurringService: Boolean(recurring?.enabled) }), t));
+    await c.env.DB.batch(statements);
     return c.json({ id, slug: b.slug }, 201);
   } catch (e) {
     return c.json({ error: { code: "create_failed", message: String((e as Error).message) } }, 400);

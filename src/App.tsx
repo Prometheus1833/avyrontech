@@ -69,7 +69,7 @@ const DeferredNewsletterPrompt = () => {
 const AvyLauncher = () => {
   const { pathname } = useLocation();
   const [ready, setReady] = useState(false);
-  const excluded = /^\/(auth|autentificare|profil|intern|exemple|examples|demo|forgot-password|reset-password|403|500|offline|mentenanta|unsubscribe)/.test(pathname);
+  const excluded = /^\/(auth|autentificare|profil|intern|finance|exemple|examples|demo|forgot-password|reset-password|403|500|offline|mentenanta|unsubscribe)/.test(pathname);
   useEffect(() => {
     if (excluded) return;
     const timer = window.setTimeout(() => setReady(true), 1800);

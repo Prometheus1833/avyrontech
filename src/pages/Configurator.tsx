@@ -5,9 +5,11 @@ import {
   Check,
   ExternalLink,
   Languages,
+  Loader2,
   MapPin,
   Menu,
   MessageCircle,
+  Send,
   Sparkles,
 } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
@@ -16,70 +18,85 @@ import PageBackLink from "@/components/site/PageBackLink";
 import LangSwitch from "@/components/site/LangSwitch";
 import ThemeToggle from "@/components/site/ThemeToggle";
 import Footer from "@/components/site/Footer";
-import restaurantImage from "@/assets/work-restaurant-new.jpg";
+import websitePreviewImage from "@/assets/premium-website-mockup-704.webp";
 import { cn } from "@/lib/utils";
 import {
+  AVYRON_SERVICE_OPTIONS,
+  DOMAIN_PREFERENCES,
   HORECA_BUSINESSES,
   HORECA_GOALS,
   HORECA_MODULES,
   HORECA_STYLES,
+  WEBSITE_FEATURE_OPTIONS,
   type Localized,
 } from "@/data/horecaConfigurator";
+import { Input } from "@/components/ui/input";
+import Turnstile from "@/components/site/Turnstile";
+import { TURNSTILE_SITE_KEY } from "@/config/turnstile";
+import { apiUrl } from "@/lib/apiBase";
+import { trackFunnel } from "@/lib/siteAnalytics";
+import { toast } from "sonner";
 
 type L = Localized;
 type LangKey = keyof L;
 
 const PAGE_COPY = {
   ro: {
-    eyebrow: "Concept digital HoReCa",
-    title: "Dintr-un local bun, într-o experiență care începe online.",
+    eyebrow: "Configurator website AVYRON",
+    title: "Construiește direcția digitală potrivită afacerii tale.",
     description:
-      "Acesta este un concept demonstrativ AVYRON, creat pentru a arăta cum poate deveni o afacere HoReCa o experiență digitală clară, premium și ușor de folosit.",
-    helper: "Alege trei repere. Preview-ul se adaptează instant, fără să trimită date și fără să plaseze o comandă reală.",
-    business: "1. Ce tip de afacere ai?",
-    objective: "2. Care este obiectivul principal?",
-    atmosphere: "3. Ce atmosferă te reprezintă?",
-    modules: "Module utile incluse în concept",
+      "Combină domeniul de activitate, serviciile AVYRON și funcțiile de care ai nevoie. Primești un concept coerent, iar configurația poate ajunge direct în dashboardul echipei.",
+    helper: "Poți selecta mai multe variante. Preview-ul se adaptează instant; datele de contact sunt trimise doar când confirmi formularul.",
+    business: "1. Domenii și activități",
+    objective: "2. Obiectivele proiectului",
+    services: "3. Servicii AVYRON",
+    features: "4. Funcții pentru website",
+    domains: "5. Preferințe pentru domeniu",
+    atmosphere: "6. Direcția vizuală",
+    modules: "Detalii utile suplimentare",
     preview: "Preview live",
     demo: "Brand demonstrativ",
     today: "Deschis astăzi · 12:00–23:00",
     popular: "Selecția casei",
     conceptSummary: "Conceptul tău",
     builtFor: "Experiență gândită pentru",
-    cta: "Vreau un proiect HoReCa real",
-    ctaHint: "Trimite configurația pe WhatsApp și discută direct cu echipa AVYRON.",
+    cta: "Trimite configurația",
+    ctaHint: "Configurația este salvată în AVYRON OS și apare în pipeline-ul Configurator.",
     proofTitle: "Ce demonstrează această experiență",
-    proofLead: "Un website HoReCa bun scurtează drumul dintre poftă, încredere și acțiune.",
+    proofLead: "Un website bine configurat scurtează drumul dintre interes, încredere și acțiune.",
     proof: [
-      ["Decizia devine simplă", "Meniul, programul, locația și acțiunea principală sunt vizibile fără căutări inutile."],
-      ["Brandul se simte coerent", "Fotografia, vocea și detaliile de interacțiune susțin aceeași atmosferă pe orice ecran."],
-      ["Conversia rămâne directă", "Rezervarea, comanda sau cererea pentru eveniment pornesc dintr-un singur punct clar."],
+      ["Decizia devine simplă", "Serviciile, avantajele și acțiunea principală sunt vizibile fără căutări inutile."],
+      ["Brandul rămâne coerent", "Conținutul, direcția vizuală și interacțiunile susțin aceeași identitate pe orice ecran."],
+      ["Conversia rămâne directă", "Solicitarea, programarea sau comanda pornesc dintr-un singur punct clar."],
     ],
   },
   en: {
-    eyebrow: "Digital HoReCa concept",
-    title: "From a great venue to an experience that starts online.",
+    eyebrow: "AVYRON website configurator",
+    title: "Build the right digital direction for your business.",
     description:
-      "This AVYRON demonstration concept shows how a HoReCa business can become a clear, premium and easy-to-use digital experience.",
-    helper: "Choose three directions. The preview adapts instantly without sending data or placing a real order.",
-    business: "1. What kind of business do you run?",
-    objective: "2. What is your main goal?",
-    atmosphere: "3. Which atmosphere fits you?",
-    modules: "Useful modules included in the concept",
+      "Combine your field of activity, AVYRON services and the features you need. You get a coherent concept and can send the configuration directly to the team dashboard.",
+    helper: "You can select multiple options. The preview updates instantly; contact details are sent only when you confirm the form.",
+    business: "1. Fields and activities",
+    objective: "2. Project goals",
+    services: "3. AVYRON services",
+    features: "4. Website features",
+    domains: "5. Domain preferences",
+    atmosphere: "6. Visual direction",
+    modules: "Additional useful details",
     preview: "Live preview",
     demo: "Demonstration brand",
     today: "Open today · 12:00–23:00",
     popular: "House selection",
     conceptSummary: "Your concept",
     builtFor: "Experience designed for",
-    cta: "I want a real HoReCa project",
-    ctaHint: "Send this configuration on WhatsApp and speak directly with the AVYRON team.",
+    cta: "Send configuration",
+    ctaHint: "Your configuration is saved in AVYRON OS and appears in the Configurator pipeline.",
     proofTitle: "What this experience demonstrates",
-    proofLead: "A strong HoReCa website shortens the path between appetite, trust and action.",
+    proofLead: "A well-configured website shortens the path between interest, trust and action.",
     proof: [
-      ["The decision feels simple", "Menu, hours, location and the main action are visible without unnecessary searching."],
-      ["The brand feels coherent", "Photography, voice and interaction details support the same atmosphere on every screen."],
-      ["Conversion stays direct", "Booking, ordering or an event enquiry starts from one clear point."],
+      ["The decision feels simple", "Services, benefits and the primary action stay visible without unnecessary searching."],
+      ["The brand stays coherent", "Content, visual direction and interactions support one identity across every screen."],
+      ["Conversion stays direct", "An enquiry, booking or order starts from one clear point."],
     ],
   },
 } as const;
@@ -137,13 +154,28 @@ export default function Configurator() {
   const copy = PAGE_COPY[language];
   const tx = (value: L) => value[language];
 
-  const [businessId, setBusinessId] = useState("restaurant");
-  const [goalId, setGoalId] = useState("booking");
+  const [businessIds, setBusinessIds] = useState<string[]>(["restaurant"]);
+  const [goalIds, setGoalIds] = useState<string[]>(["booking"]);
+  const [serviceIds, setServiceIds] = useState<string[]>(["presentation"]);
+  const [featureIds, setFeatureIds] = useState<string[]>(["contact", "seo"]);
+  const [domainIds, setDomainIds] = useState<string[]>(["ro"]);
   const [styleId, setStyleId] = useState("warm");
   const [modules, setModules] = useState<string[]>(["languages", "location"]);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [submittedId, setSubmittedId] = useState<string | null>(null);
 
-  const business = HORECA_BUSINESSES.find((item) => item.id === businessId) ?? HORECA_BUSINESSES[0];
-  const goal = HORECA_GOALS.find((item) => item.id === goalId) ?? HORECA_GOALS[0];
+  const selectedBusinesses = HORECA_BUSINESSES.filter((item) => businessIds.includes(item.id));
+  const selectedGoals = HORECA_GOALS.filter((item) => goalIds.includes(item.id));
+  const selectedServices = AVYRON_SERVICE_OPTIONS.filter((item) => serviceIds.includes(item.id));
+  const selectedFeatures = WEBSITE_FEATURE_OPTIONS.filter((item) => featureIds.includes(item.id));
+  const selectedDomains = DOMAIN_PREFERENCES.filter((item) => domainIds.includes(item.id));
+  const business = selectedBusinesses[0] ?? HORECA_BUSINESSES[0];
+  const goal = selectedGoals[0] ?? HORECA_GOALS[0];
   const style = HORECA_STYLES.find((item) => item.id === styleId) ?? HORECA_STYLES[0];
   const selectedModules = HORECA_MODULES.filter((item) => modules.includes(item.id));
 
@@ -152,19 +184,19 @@ export default function Configurator() {
     const path = ro ? "/configurator" : "/en/configurator";
     import("@/lib/seo").then(({ setPageMeta, setJsonLd }) => {
       setPageMeta({
-        title: ro ? "Configurator HoReCa demonstrativ | AVYRON" : "HoReCa concept configurator | AVYRON",
+        title: ro ? "Configurator website pentru afaceri | AVYRON" : "Business website configurator | AVYRON",
         description: copy.description,
         path,
         alternates: { ro: "/configurator", en: "/en/configurator" },
-        image: restaurantImage,
+        image: websitePreviewImage,
         imageAlt: ro
-          ? "Concept digital demonstrativ pentru o afacere HoReCa"
-          : "Demonstration digital concept for a HoReCa business",
+          ? "Configurator pentru website, servicii și funcții digitale AVYRON"
+          : "AVYRON configurator for websites, services and digital features",
       });
       setJsonLd("ld-configurator", {
         "@type": "WebApplication",
         "@id": `https://avyron.ro${path}#configurator`,
-        name: ro ? "Configurator demonstrativ HoReCa AVYRON" : "AVYRON HoReCa demonstration configurator",
+        name: ro ? "Configurator website AVYRON" : "AVYRON website configurator",
         description: copy.description,
         url: `https://avyron.ro${path}`,
         applicationCategory: "DesignApplication",
@@ -174,16 +206,74 @@ export default function Configurator() {
         creator: { "@id": "https://avyron.ro/#organization" },
       });
     });
-    trackEvent("configurator_view", { lang: language, concept: "horeca" });
+    trackEvent("configurator_view", { lang: language, concept: "business-website" });
+    trackFunnel("page_view", "configurator", { language });
+    trackFunnel("view_configurator", "configurator", { language });
   }, [copy.description, language, ro]);
 
   const message = ro
-    ? `Bună! Vreau să discutăm despre un proiect HoReCa. Am configurat: ${tx(business.label)}, obiectiv „${tx(goal.label)}”, stil „${tx(style.label)}”, module: ${selectedModules.map((item) => tx(item.label)).join(", ") || "de stabilit"}.`
-    : `Hello! I would like to discuss a HoReCa project. My configuration: ${tx(business.label)}, goal “${tx(goal.label)}”, style “${tx(style.label)}”, modules: ${selectedModules.map((item) => tx(item.label)).join(", ") || "to be decided"}.`;
+    ? `Bună! Am configurat un proiect AVYRON pentru ${selectedBusinesses.map((item) => tx(item.label)).join(", ")}. Servicii: ${selectedServices.map((item) => tx(item.label)).join(", ")}. Funcții: ${selectedFeatures.map((item) => tx(item.label)).join(", ")}.`
+    : `Hello! I configured an AVYRON project for ${selectedBusinesses.map((item) => tx(item.label)).join(", ")}. Services: ${selectedServices.map((item) => tx(item.label)).join(", ")}. Features: ${selectedFeatures.map((item) => tx(item.label)).join(", ")}.`;
   const whatsappHref = `https://wa.me/40734605055?text=${encodeURIComponent(message)}`;
 
   const toggleModule = (id: string) =>
     setModules((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+  const toggleRequired = (id: string, current: string[], update: (next: string[]) => void) => {
+    if (current.includes(id)) {
+      if (current.length > 1) update(current.filter((item) => item !== id));
+      return;
+    }
+    update([...current, id]);
+  };
+  const toggleOptional = (id: string, current: string[], update: (next: string[]) => void) =>
+    update(current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+
+  const submitConfiguration = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (name.trim().length < 2 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim()) || phone.trim().length < 6) {
+      toast.error(ro ? "Completează numele, e-mailul și telefonul." : "Complete your name, email and phone number.");
+      return;
+    }
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      toast.error(ro ? "Confirmă verificarea anti-spam." : "Complete the anti-spam check.");
+      return;
+    }
+    const configuration = {
+      businesses: selectedBusinesses.map((item) => item.id),
+      goals: selectedGoals.map((item) => item.id),
+      services: selectedServices.map((item) => item.id),
+      features: selectedFeatures.map((item) => item.id),
+      domains: selectedDomains.map((item) => item.id),
+      style: style.id,
+      modules,
+    };
+    const form = new FormData();
+    form.set("name", name.trim());
+    form.set("business", selectedBusinesses.map((item) => tx(item.label)).join(", "));
+    form.set("phone", phone.trim());
+    form.set("email", email.trim());
+    form.set("description", message);
+    form.set("lang", language);
+    form.set("product", "configurator-website");
+    form.set("config", JSON.stringify(configuration));
+    form.set("turnstileToken", turnstileToken);
+    form.set("company_url", "");
+    setSubmitting(true);
+    try {
+      const response = await fetch(apiUrl("/api/contact/demo"), { method: "POST", body: form });
+      const result = await response.json().catch(() => ({})) as { leadId?: string; error?: string };
+      if (!response.ok && !result.leadId) throw new Error(result.error || "request_failed");
+      setSubmittedId(result.leadId || "saved");
+      trackFunnel("generate_lead", "configurator", { language, services: selectedServices.length, features: selectedFeatures.length });
+      toast.success(ro ? "Configurația a fost salvată în AVYRON OS." : "Your configuration was saved in AVYRON OS.");
+    } catch {
+      setTurnstileToken("");
+      setTurnstileResetKey((value) => value + 1);
+      toast.error(ro ? "Configurația nu a putut fi trimisă. Încearcă din nou." : "The configuration could not be sent. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-background text-foreground">
@@ -216,7 +306,7 @@ export default function Configurator() {
               <legend className="font-display text-xl font-bold tracking-tight">{copy.business}</legend>
               <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                 {HORECA_BUSINESSES.map((item) => (
-                  <OptionCard key={item.id} active={businessId === item.id} icon={item.icon} title={tx(item.label)} onClick={() => setBusinessId(item.id)} />
+                  <OptionCard key={item.id} active={businessIds.includes(item.id)} icon={item.icon} title={tx(item.label)} onClick={() => toggleRequired(item.id, businessIds, setBusinessIds)} />
                 ))}
               </div>
             </fieldset>
@@ -229,11 +319,65 @@ export default function Configurator() {
                 {HORECA_GOALS.map((item) => (
                   <OptionCard
                     key={item.id}
-                    active={goalId === item.id}
+                    active={goalIds.includes(item.id)}
                     icon={item.icon}
                     title={tx(item.label)}
                     hint={tx(item.hint)}
-                    onClick={() => setGoalId(item.id)}
+                    onClick={() => toggleRequired(item.id, goalIds, setGoalIds)}
+                  />
+                ))}
+              </div>
+            </fieldset>
+
+            <div className="my-6 h-px bg-border/70" />
+
+            <fieldset>
+              <legend className="font-display text-xl font-bold tracking-tight">{copy.services}</legend>
+              <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+                {AVYRON_SERVICE_OPTIONS.map((item) => (
+                  <OptionCard
+                    key={item.id}
+                    active={serviceIds.includes(item.id)}
+                    icon={item.icon}
+                    title={tx(item.label)}
+                    hint={tx(item.hint)}
+                    onClick={() => toggleRequired(item.id, serviceIds, setServiceIds)}
+                  />
+                ))}
+              </div>
+            </fieldset>
+
+            <div className="my-6 h-px bg-border/70" />
+
+            <fieldset>
+              <legend className="font-display text-xl font-bold tracking-tight">{copy.features}</legend>
+              <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+                {WEBSITE_FEATURE_OPTIONS.map((item) => (
+                  <OptionCard
+                    key={item.id}
+                    active={featureIds.includes(item.id)}
+                    icon={item.icon}
+                    title={tx(item.label)}
+                    hint={tx(item.hint)}
+                    onClick={() => toggleOptional(item.id, featureIds, setFeatureIds)}
+                  />
+                ))}
+              </div>
+            </fieldset>
+
+            <div className="my-6 h-px bg-border/70" />
+
+            <fieldset>
+              <legend className="font-display text-xl font-bold tracking-tight">{copy.domains}</legend>
+              <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+                {DOMAIN_PREFERENCES.map((item) => (
+                  <OptionCard
+                    key={item.id}
+                    active={domainIds.includes(item.id)}
+                    icon={item.icon}
+                    title={tx(item.label)}
+                    hint={tx(item.hint)}
+                    onClick={() => toggleOptional(item.id, domainIds, setDomainIds)}
                   />
                 ))}
               </div>
@@ -308,8 +452,8 @@ export default function Configurator() {
               <div className="overflow-hidden rounded-[1.45rem] bg-[#f5efe2] text-[#172018]">
                 <div className="relative min-h-[23rem] overflow-hidden">
                   <img
-                    src={restaurantImage}
-                    alt={ro ? "Interior de restaurant folosit în conceptul demonstrativ" : "Restaurant interior used in the demonstration concept"}
+                    src={websitePreviewImage}
+                    alt={ro ? "Previzualizare pentru un website de prezentare profesional" : "Professional business website preview"}
                     width={1024}
                     height={768}
                     className="absolute inset-0 h-full w-full object-cover"
@@ -342,15 +486,15 @@ export default function Configurator() {
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#9b6948]">{copy.popular}</p>
-                      <p className="mt-1 font-display text-xl font-black">{ro ? "Gust, fără zgomot." : "Taste, without noise."}</p>
+                      <p className="mt-1 font-display text-xl font-black">{ro ? "Clar, relevant, pregătit pentru conversie." : "Clear, relevant and ready to convert."}</p>
                     </div>
                     <span className="rounded-full border border-[#172018]/10 px-3 py-1.5 text-[10px] font-semibold">{tx(business.label)}</span>
                   </div>
                   <div className="mt-4 space-y-2.5">
-                    {business.menu.map((item, index) => (
+                    {business.menu.map((item) => (
                       <div key={item.ro} className="flex items-center justify-between gap-4 rounded-xl bg-white/55 px-3.5 py-3">
                         <span className="text-xs font-semibold">{tx(item)}</span>
-                        <span className="shrink-0 text-[10px] font-bold text-[#9b6948]">{index === 0 ? "49" : "42"} RON</span>
+                        <span className="shrink-0 text-[10px] font-bold text-[#9b6948]">{ro ? "INCLUS" : "INCLUDED"}</span>
                       </div>
                     ))}
                   </div>
@@ -365,22 +509,40 @@ export default function Configurator() {
             <div className="mt-4 rounded-[1.75rem] border border-border/70 bg-card/75 p-5 shadow-soft backdrop-blur">
               <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-brand">{copy.conceptSummary}</p>
               <p className="mt-2 text-sm font-semibold">
-                {copy.builtFor} {tx(business.label).toLocaleLowerCase(language === "ro" ? "ro-RO" : "en-US")}
+                {copy.builtFor} {selectedBusinesses.map((item) => tx(item.label)).join(", ").toLocaleLowerCase(language === "ro" ? "ro-RO" : "en-US")}
               </p>
               <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
-                <span className="rounded-full bg-muted px-2.5 py-1">{tx(goal.label)}</span>
+                {selectedGoals.map((item) => <span key={item.id} className="rounded-full bg-muted px-2.5 py-1">{tx(item.label)}</span>)}
+                {selectedServices.map((item) => <span key={item.id} className="rounded-full bg-brand/10 px-2.5 py-1 text-foreground">{tx(item.label)}</span>)}
                 <span className="rounded-full bg-muted px-2.5 py-1">{tx(style.label)}</span>
                 {selectedModules.map((item) => <span key={item.id} className="rounded-full bg-muted px-2.5 py-1">{tx(item.label)}</span>)}
               </div>
+              {submittedId ? (
+                <div className="mt-5 rounded-2xl border border-emerald-400/25 bg-emerald-400/10 p-4 text-sm text-emerald-700 dark:text-emerald-200">
+                  <p className="font-semibold">{ro ? "Configurație sincronizată" : "Configuration synced"}</p>
+                  <p className="mt-1 text-xs opacity-80">{ro ? "Rezultatul este acum disponibil în AVYRON OS → Configurator." : "The result is now available in AVYRON OS → Configurator."}</p>
+                </div>
+              ) : (
+                <form onSubmit={submitConfiguration} className="mt-5 space-y-2.5">
+                  <Input value={name} onChange={(event) => setName(event.target.value)} maxLength={80} required placeholder={ro ? "Numele tău" : "Your name"} className="h-11 rounded-xl" />
+                  <Input value={email} onChange={(event) => setEmail(event.target.value)} type="email" maxLength={120} required placeholder="email@exemplu.ro" className="h-11 rounded-xl" />
+                  <Input value={phone} onChange={(event) => setPhone(event.target.value)} type="tel" maxLength={30} required placeholder={ro ? "Telefon" : "Phone"} className="h-11 rounded-xl" />
+                  <Turnstile action="contact-demo" onToken={setTurnstileToken} resetKey={turnstileResetKey} />
+                  <button type="submit" disabled={submitting} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 py-3 text-sm font-bold text-background transition hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60">
+                    {submitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
+                    {copy.cta}
+                  </button>
+                </form>
+              )}
               <a
                 href={whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => trackEvent("cta_click", { location: "horeca_configurator", action: "whatsapp", business: business.id, goal: goal.id })}
-                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 py-3 text-sm font-bold text-background transition hover:opacity-90 active:scale-[0.98]"
+                onClick={() => trackEvent("cta_click", { location: "website_configurator", action: "whatsapp", business: business.id, goal: goal.id })}
+                className="mt-2.5 inline-flex w-full items-center justify-center gap-2 rounded-full border border-border bg-background/65 px-5 py-3 text-sm font-bold text-foreground transition hover:border-brand/35 hover:bg-brand/[0.05] active:scale-[0.98]"
               >
                 <MessageCircle className="size-4" aria-hidden />
-                {copy.cta}
+                {ro ? "Discută pe WhatsApp" : "Continue on WhatsApp"}
                 <ExternalLink className="size-3.5" aria-hidden />
               </a>
               <p className="mt-2 text-center text-[11px] leading-relaxed text-muted-foreground">{copy.ctaHint}</p>
@@ -392,7 +554,7 @@ export default function Configurator() {
       <section className="border-y border-border/65 bg-muted/25">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
           <div className="max-w-2xl">
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-brand">AVYRON · HoReCa</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-brand">AVYRON · Website profesional</p>
             <h2 className="mt-3 font-display text-3xl font-black tracking-[-0.035em] sm:text-4xl">{copy.proofTitle}</h2>
             <p className="mt-3 leading-7 text-muted-foreground">{copy.proofLead}</p>
           </div>

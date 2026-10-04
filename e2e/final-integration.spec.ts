@@ -94,6 +94,6 @@ test("AVYRON OS quick access and dashboard fit key breakpoints", async ({ page }
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/profil?tab=overview", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Bună ziua, Audit final." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Bună (dimineața|ziua|seara), Audit final\./ })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
 });

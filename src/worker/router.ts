@@ -74,6 +74,7 @@ export function decide(url: URL): Decision {
 /** Routes that exist in the SPA router but are not prerendered (auth, dashboard…). */
 export const SPA_ONLY_PREFIXES = [
   "/auth",
+  "/autentificare",
   "/forgot-password",
   "/reset-password",
   "/profil",

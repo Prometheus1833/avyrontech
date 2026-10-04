@@ -46,8 +46,8 @@ const Deferred = ({
   // toate secțiunile deja afișate, pagina se scurta și browserul arunca
   // vizitatorul înapoi la zona de servicii.
   return (
-    <div ref={ref} style={!ready ? { minHeight } : undefined}>
-      {ready ? <Suspense fallback={<div style={{ minHeight }} />}>{children}</Suspense> : null}
+    <div ref={ref} data-deferred-pending={ready ? undefined : "true"} style={!ready ? { minHeight } : undefined}>
+      {ready ? <Suspense fallback={<div data-deferred-lazy="true" style={{ minHeight }} />}>{children}</Suspense> : null}
     </div>
   );
 };

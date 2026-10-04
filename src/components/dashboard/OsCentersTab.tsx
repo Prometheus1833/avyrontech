@@ -1,7 +1,7 @@
 import {
   Activity, ArchiveRestore, Beaker, Blocks, BookOpen, Bot, CalendarClock, Cloud,
   FileCheck2, FileKey2, Gauge, Globe2, HeartHandshake, Mail, MessageSquare, Plug,
-  RefreshCcw, ShieldCheck, TimerReset, UserRoundCheck, Workflow,
+  RefreshCcw, ShieldCheck, Sparkles, TimerReset, UserRoundCheck, Wallet, Workflow, FileCode2,
 } from "lucide-react";
 import { useState } from "react";
 import OperationsConsole from "./OperationsConsole";
@@ -58,9 +58,18 @@ export default function OsCentersTab({ access, onNavigate }: {access: Access; on
   const normalize = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const visible = modules.filter(module => normalize(`${module.name} ${module.detail}`).includes(normalize(search)));
   return <div className="space-y-4 text-slate-100">
-    {access.isSuperAdmin && <OperationsConsole/>}
+    <header className="rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.14] via-[#11182d] to-cyan-400/[0.06] p-5 sm:p-6"><p className="font-mono text-[10px] uppercase tracking-[0.24em] text-violet-200/70">Arhitectură modulară</p><h1 className="mt-2 font-display text-2xl font-bold text-white">Centre AVYRON OS</h1><p className="mt-1 max-w-3xl text-sm leading-relaxed text-slate-400">Punct unic pentru agenți, automatizări, integrări, infrastructură și inventarul modulelor operaționale.</p></header>
+    <section className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4" aria-label="Acces rapid Centre AVYRON OS">
+      {[
+        { id: "ai-os" as SectionId, label: "Agenți AI", detail: "Configurații, cunoaștere și conversații", icon: Sparkles },
+        { id: "finance" as SectionId, label: "Financiar", detail: "Costuri, venituri, plăți și bugete", icon: Wallet },
+        { id: "commercial-codes" as SectionId, label: "Coduri comerciale", detail: "SKU, TVA și trasee de plată", icon: FileCode2 },
+        { id: "newsletter" as SectionId, label: "Newsletter", detail: "Campanii, abonați și consimțământ", icon: Mail },
+      ].filter(item=>canOpenSection(item.id,access)).map(item=>{const Icon=item.icon;return <button key={item.id} type="button" onClick={()=>onNavigate(item.id)} className="rounded-xl border border-white/[0.08] bg-white/[0.025] p-4 text-left transition hover:border-violet-400/30 hover:bg-violet-500/[0.08]"><Icon className="size-4 text-violet-300"/><p className="mt-3 text-sm font-semibold">{item.label}</p><p className="mt-1 text-xs text-slate-500">{item.detail}</p></button>;})}
+    </section>
+    {access.isSuperAdmin && <details open className="rounded-2xl border border-white/10 bg-[#0d1425]/70 p-4"><summary className="cursor-pointer text-sm font-semibold text-slate-200">Centrul operațional · registre, automatizări, integrări și evaluări</summary><div className="mt-5"><OperationsConsole/></div></details>}
     <details className="rounded-2xl border border-white/10 p-4"><summary className="cursor-pointer text-sm">Inventarul extins al platformei și module planificate</summary>
-    <header className="rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.14] via-[#11182d] to-cyan-400/[0.06] p-5 sm:p-6"><p className="font-mono text-[10px] uppercase tracking-[0.24em] text-violet-200/70">Arhitectură modulară</p><h1 className="mt-2 font-display text-2xl font-bold text-white">Centre AVYRON OS</h1><p className="mt-1 max-w-3xl text-sm leading-relaxed text-slate-400">Inventarul unic al capabilităților operaționale. Statusurile separă funcțiile active de fundațiile existente și modulele care urmează să primească fluxuri complete.</p></header>
+    <p className="mt-3 text-sm text-slate-400">Statusurile separă funcțiile active de fundațiile existente și modulele care urmează să primească fluxuri complete.</p>
     <input aria-label="Caută funcționalități" value={search} onChange={event=>setSearch(event.target.value)} placeholder="Caută funcționalități…" className="w-full rounded-xl border border-white/10 bg-[#10162a] px-4 py-3 text-sm" />
     {visible.length === 0 && <p className="text-sm text-slate-400">Nicio funcționalitate găsită.</p>}
     {groups.filter(group => visible.some(module => module.group === group)).map(group => <details key={`${group}-${Boolean(search)}`} open={Boolean(search) || group === groups[0]} className="rounded-2xl border border-white/[0.08] bg-[#10162a]/90 p-4 sm:p-5">

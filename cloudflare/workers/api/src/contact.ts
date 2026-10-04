@@ -262,7 +262,7 @@ contactRouter.post("/api/contact/example", async (c) => {
   const to = c.env.LEAD_TO || c.env.SMTP_FROM;
   if (!to) {
     await c.env.DB.prepare("UPDATE example_requests SET delivery_status='failed',delivery_error=?,updated_at=? WHERE id=?").bind("LEAD_TO is not configured", Date.now(), id).run();
-    return c.json({ error: "Livrarea emailului nu este configurată", requestId: id }, 503);
+    return c.json({ ok: true, saved: true, delivered: false, warning: "email_unconfigured", requestId: id }, 202);
   }
   const result = await deliverMail(c.env, {
     to,
@@ -273,6 +273,6 @@ contactRouter.post("/api/contact/example", async (c) => {
   await c.env.DB.prepare("UPDATE example_requests SET delivery_status=?,delivery_error=?,updated_at=? WHERE id=?")
     .bind(result.delivered ? "sent" : "failed", result.delivered ? null : result.error, Date.now(), id).run();
   await logDelivery(c.env, { kind: "example_request", entityId: id, recipient: to, result }).catch(() => undefined);
-  if (!result.delivered) return c.json({ error: "Solicitarea a fost salvată, dar emailul nu a fost livrat", requestId: id }, 502);
-  return c.json({ ok: true, requestId: id }, 201);
+  if (!result.delivered) return c.json({ ok: true, saved: true, delivered: false, warning: "email_delivery_failed", requestId: id }, 202);
+  return c.json({ ok: true, saved: true, delivered: true, requestId: id }, 201);
 });

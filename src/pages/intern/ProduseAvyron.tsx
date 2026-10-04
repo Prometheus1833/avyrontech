@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CalendarClock, Layers, LineChart, RefreshCw, ShoppingBag, Users } from "lucide-react";
+import { AlertTriangle, BadgePercent, CalendarClock, Database, FileCode2, Layers, LineChart, List, RefreshCw, Settings2, ShoppingBag, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ const date = (value: number | null) => (value ? new Intl.DateTimeFormat("ro-RO",
 export default function ProduseAvyron({ embedded = false }: { embedded?: boolean }) {
   const [data, setData] = useState<AdminOverview>(EMPTY_OVERVIEW);
   const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<"dashboard" | "catalog" | "collection" | "sources" | "settings">("dashboard");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -122,7 +123,17 @@ export default function ProduseAvyron({ embedded = false }: { embedded?: boolean
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <nav className="flex gap-1 overflow-x-auto rounded-2xl border border-white/[0.08] bg-white/[0.025] p-1.5" aria-label="Secțiuni Produse AVYRON">
+        {[
+          { id: "dashboard" as const, label: "Dashboard", icon: LineChart },
+          { id: "catalog" as const, label: "Listă produse", icon: List },
+          { id: "collection" as const, label: "Colecție", icon: Layers },
+          { id: "sources" as const, label: "Surse", icon: Database },
+          { id: "settings" as const, label: "Setări", icon: Settings2 },
+        ].map((item) => <button key={item.id} type="button" onClick={() => setView(item.id)} className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium ${view === item.id ? "bg-violet-500/15 text-violet-200" : "text-slate-500 hover:text-slate-200"}`}><item.icon className="size-3.5" />{item.label}</button>)}
+      </nav>
+
+      {view === "catalog" && <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-base">Catalog</CardTitle>
@@ -182,9 +193,9 @@ export default function ProduseAvyron({ embedded = false }: { embedded?: boolean
             )}
           </CardContent>
         </Card>
-      </div>
+      </div>}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      {(view === "dashboard" || view === "collection") && <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Comenzi recente</CardTitle>
@@ -229,9 +240,9 @@ export default function ProduseAvyron({ embedded = false }: { embedded?: boolean
             )}
           </CardContent>
         </Card>
-      </div>
+      </div>}
 
-      <Card>
+      {view === "sources" && <Card>
         <CardHeader>
           <CardTitle className="text-base">Cereri din pagină</CardTitle>
         </CardHeader>
@@ -252,7 +263,13 @@ export default function ProduseAvyron({ embedded = false }: { embedded?: boolean
             </ul>
           )}
         </CardContent>
-      </Card>
+      </Card>}
+
+      {view === "settings" && <section className="grid gap-3 md:grid-cols-3">
+        <a href="/profil?tab=commercial-codes" className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 transition hover:border-violet-400/30"><FileCode2 className="size-5 text-violet-300"/><h2 className="mt-3 text-sm font-semibold text-white">Coduri, prețuri și plată</h2><p className="mt-1 text-xs text-slate-500">SKU, cod contabil, TVA, preț și traseul de plată pentru fiecare produs.</p></a>
+        <a href="/profil?tab=promotions" className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 transition hover:border-violet-400/30"><BadgePercent className="size-5 text-cyan-300"/><h2 className="mt-3 text-sm font-semibold text-white">Promoții</h2><p className="mt-1 text-xs text-slate-500">Campanii și reguli comerciale fără duplicarea catalogului.</p></a>
+        <a href="/produse" className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 transition hover:border-violet-400/30"><ShoppingBag className="size-5 text-emerald-300"/><h2 className="mt-3 text-sm font-semibold text-white">Verifică magazinul</h2><p className="mt-1 text-xs text-slate-500">Deschide traseul public și verifică oferta înainte de activarea plății.</p></a>
+      </section>}
     </div>
   );
 }

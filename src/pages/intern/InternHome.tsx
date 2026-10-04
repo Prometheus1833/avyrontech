@@ -1,8 +1,7 @@
-import BlogProInsights from "@/components/intern/BlogProInsights";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { internApi, type AccountOption, type BannerStatus, type ClientOption, type ProjectKind, type ProjectPurchase } from "@/lib/internApi";
+import { internApi, type AccountOption, type BannerStatus, type ClientOption, type ProjectKind, type ProjectPurchase, type ProjectSale } from "@/lib/internApi";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,14 +10,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, ArrowUpRight, ExternalLink, FolderKanban, BookOpen, Settings2, CheckCircle2, Receipt } from "lucide-react";
+import { Plus, ArrowUpRight, ExternalLink, FolderKanban, CheckCircle2, Receipt, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import ContactRail from "@/components/intern/ContactRail";
 import PageBackLink from "@/components/site/PageBackLink";
 
 type Row = {
   id: string; slug: string; name: string; kind: ProjectKind;
-  banner_status: BannerStatus; url: string | null; favicon_url: string | null; updated_at: number;
+  banner_status: BannerStatus; status: string; url: string | null; favicon_url: string | null; updated_at: number;
 };
 
 const BANNER: Record<BannerStatus, { label: string; cls: string }> = {
@@ -42,12 +41,13 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
   const { user, isStaff, loading: authLoading } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [purchases, setPurchases] = useState<ProjectPurchase[]>([]);
+  const [sales, setSales] = useState<ProjectSale[]>([]);
   const [loading, setLoading] = useState(true);
   const [openCreate, setOpenCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [accounts, setAccounts] = useState<AccountOption[]>([]);
-  const [form, setForm] = useState({ name: "", slug: "", kind: "website_prezentare" as ProjectKind, url: "", description: "", client_id: "", owner_user_id: "" });
+  const [form, setForm] = useState({ name: "", slug: "", kind: "website_prezentare" as ProjectKind, url: "", description: "", client_id: "", owner_user_id: "", recurring_enabled: false, recurring_name: "Mentenanță AVYRON", recurring_price: "", recurring_cycle: "monthly" as "monthly" | "yearly", next_billing_date: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10) });
 
   const load = async () => {
     setLoading(true);
@@ -55,6 +55,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
       const res = await internApi.listProjects();
       setRows(res.data as Row[]);
       setPurchases(res.purchases ?? []);
+      setSales(res.sales ?? []);
     } catch (e) {
       toast.error((e as Error).message);
     } finally { setLoading(false); }
@@ -88,10 +89,14 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
         description: form.description || undefined,
         client_id: form.client_id.trim(),
         owner_user_id: form.owner_user_id.trim() || undefined,
+        recurring_service: form.recurring_enabled ? {
+          enabled: true, service_name: form.recurring_name.trim(), price: Number(form.recurring_price),
+          billing_cycle: form.recurring_cycle, next_billing_date: new Date(`${form.next_billing_date}T12:00:00`).getTime(), subscription_status: "active",
+        } : undefined,
       });
       toast.success("Proiect creat");
       setOpenCreate(false);
-      setForm({ name: "", slug: "", kind: "website_prezentare", url: "", description: "", client_id: "", owner_user_id: "" });
+      setForm({ name: "", slug: "", kind: "website_prezentare", url: "", description: "", client_id: "", owner_user_id: "", recurring_enabled: false, recurring_name: "Mentenanță AVYRON", recurring_price: "", recurring_cycle: "monthly", next_billing_date: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10) });
       await load();
     } catch (e) {
       toast.error((e as Error).message);
@@ -100,24 +105,13 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
 
   if (authLoading) return <div className="min-h-screen grid place-items-center text-sm text-muted-foreground">Se încarcă…</div>;
 
+  const activeRows = isStaff
+    ? rows.filter((project) => !["archived", "cancelled", "done", "completed"].includes(project.status) && project.banner_status !== "online")
+    : rows;
+
   return (
     <div className={embedded ? "space-y-6" : "max-w-5xl mx-auto p-4 sm:p-6 space-y-6"}>
       {!embedded && <PageBackLink to="/profil" label="Înapoi" title="Înapoi la profil" />}
-      {isStaff && <BlogProInsights />}
-      {isStaff && (
-        <section className="grid gap-3 sm:grid-cols-2" aria-label="Administrare blog">
-          <Link to="/intern/blog?view=publish" className="group rounded-2xl border bg-card p-4 transition hover:border-primary/40 hover:shadow-md">
-            <BookOpen className="size-5 text-primary" />
-            <h2 className="mt-3 font-semibold">Publicare blog</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Ciorne, articole publicate și arhivare într-un flux separat.</p>
-          </Link>
-          <Link to="/intern/blog?view=settings" className="group rounded-2xl border bg-card p-4 transition hover:border-primary/40 hover:shadow-md">
-            <Settings2 className="size-5 text-primary" />
-            <h2 className="mt-3 font-semibold">Setări blog</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Identitate editorială, limbă și categorie implicită.</p>
-          </Link>
-        </section>
-      )}
       <header className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold flex items-center gap-2">
@@ -126,7 +120,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             {isStaff
-              ? "Toate proiectele Avyron. Dă click pe unul pentru detalii, propuneri și linkuri."
+              ? "Proiecte în desfășurare și vânzări concretizate, fără date editoriale sau trafic."
               : "Aici vezi proiectele tale, statusul lor și poți propune modificări."}
           </p>
         </div>
@@ -190,6 +184,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
                   </Select>
                 </div>
                 {clients.length === 0 && <p className="text-[11px] text-muted-foreground">Creează sau importă mai întâi un client din secțiunea Clienți.</p>}
+                <fieldset className="rounded-xl border border-border/60 p-3"><label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" checked={form.recurring_enabled} onChange={(event) => setForm({ ...form, recurring_enabled: event.target.checked })} /> Pornește proiectul cu mentenanță și abonament</label><p className="mt-1 text-[11px] text-muted-foreground">Proiectul, serviciul recurent și abonamentul clientului sunt create atomic și rămân sincronizate.</p>{form.recurring_enabled && <div className="mt-3 grid gap-3 sm:grid-cols-2"><div className="sm:col-span-2"><Label>Serviciu recurent</Label><Input value={form.recurring_name} onChange={(event) => setForm({ ...form, recurring_name: event.target.value })} /></div><div><Label>Preț RON</Label><Input type="number" min="0" step="1" value={form.recurring_price} onChange={(event) => setForm({ ...form, recurring_price: event.target.value })} /></div><div><Label>Ciclu</Label><Select value={form.recurring_cycle} onValueChange={(value) => setForm({ ...form, recurring_cycle: value as "monthly" | "yearly" })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="monthly">Lunar</SelectItem><SelectItem value="yearly">Anual</SelectItem></SelectContent></Select></div><div className="sm:col-span-2"><Label>Prima facturare</Label><Input type="date" value={form.next_billing_date} onChange={(event) => setForm({ ...form, next_billing_date: event.target.value })} /></div></div>}</fieldset>
               </div>
               <DialogFooter>
                 <Button variant="ghost" onClick={() => setOpenCreate(false)}>Anulează</Button>
@@ -202,7 +197,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
 
       {loading ? (
         <div className="text-sm text-muted-foreground">Se încarcă proiectele…</div>
-      ) : rows.length === 0 && purchases.length === 0 ? (
+      ) : activeRows.length === 0 && purchases.length === 0 && sales.length === 0 ? (
         <Card><CardContent className="p-8 text-center text-muted-foreground">
           {isStaff ? "Nu există proiecte încă. Folosește butonul „Creează proiect”." : "Nu ai încă proiecte asignate. Vei fi anunțat când unul e disponibil."}
         </CardContent></Card>
@@ -228,7 +223,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
           })()}
 
           <div className="grid gap-3 sm:grid-cols-2">
-            {rows.map((p) => {
+            {activeRows.map((p) => {
               const B = BANNER[p.banner_status] ?? BANNER.in_progress;
               return (
                 <Link key={p.id} to={`/intern/projects/${p.slug}`} className="group rounded-xl border bg-card p-4 hover:border-primary/50 hover:shadow-md transition">
@@ -255,6 +250,26 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
               );
             })}
           </div>
+
+          {isStaff && sales.length > 0 && (
+            <section className="space-y-3" aria-labelledby="confirmed-sales-title">
+              <div>
+                <h2 id="confirmed-sales-title" className="flex items-center gap-2 text-lg font-semibold"><TrendingUp className="size-4 text-emerald-500" /> Vânzări concretizate</h2>
+                <p className="text-xs text-muted-foreground">Încasări confirmate sau parțial confirmate pentru website-uri, aplicații, identitate, logo și alte servicii.</p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {sales.map((sale) => (
+                  <article key={sale.id} className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0"><h3 className="truncate font-medium">{sale.project_name || sale.name}</h3><p className="mt-1 text-xs text-muted-foreground">{sale.name} · {sale.revenue_type.replace(/_/g, " ")}</p></div>
+                      <Badge variant="secondary" className="bg-emerald-500/12 text-emerald-600 dark:text-emerald-300">{sale.status === "paid" ? "Încasat" : "Parțial"}</Badge>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between border-t border-emerald-500/10 pt-3 text-xs"><span className="text-muted-foreground">{new Date(sale.updated_at).toLocaleDateString("ro-RO")}</span><span className="font-semibold">{new Intl.NumberFormat("ro-RO", { style: "currency", currency: sale.currency }).format(sale.total_cents / 100)}</span></div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
 
           {!isStaff && purchases.length > 0 && (
             <section className="space-y-3" aria-labelledby="activated-purchases-title">

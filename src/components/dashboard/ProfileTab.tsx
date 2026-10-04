@@ -96,7 +96,7 @@ export function ProfileTab() {
   const isCompany = form.entity_type !== "individual";
 
   return (
-    <div className="space-y-3">
+    <div className="mx-auto max-w-5xl space-y-3">
       <div>
         <h2 className="text-xl font-display font-bold leading-tight">{t.auth.profile.title}</h2>
         <p className="text-xs text-muted-foreground">{t.auth.profile.subtitle}</p>

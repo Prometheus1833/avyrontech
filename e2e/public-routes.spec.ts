@@ -625,7 +625,7 @@ test.describe("forms and authentication", () => {
     });
 
     await page.goto("/profil?tab=leads");
-    await expect(page.getByRole("heading", { name: "Leads", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Leaduri", exact: true })).toBeVisible({ timeout: 10_000 });
     await page.getByRole("button", { name: "Lead nou", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "Lead nou" });
     await dialog.getByLabel("Persoană").fill("Ana Popescu");
@@ -724,8 +724,8 @@ test.describe("forms and authentication", () => {
     }));
 
     await page.goto("/profil?tab=promotions");
-    await expect(page.getByRole("tab", { name: "Promoții" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Promoții" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Promoții" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Promoții" })).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText("AVY10", { exact: true })).toBeVisible();
     await expect(page.getByText("ANUALAVY20", { exact: true })).toBeVisible();
     await expect(page.getByText("Numai abonament anual", { exact: true })).toBeVisible();
