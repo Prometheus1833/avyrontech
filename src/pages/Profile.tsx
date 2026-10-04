@@ -52,6 +52,9 @@ const SurveysTab = lazy(() => import("@/components/dashboard/SurveysTab"));
 const CommercialCodesTab = lazy(() => import("@/components/dashboard/CommercialCodesTab"));
 const OtherModulesTab = lazy(() => import("@/components/dashboard/OtherModulesTab"));
 const NotificationCenter = lazy(() => import("@/components/dashboard/NotificationCenter"));
+const SocialMediaManagerTab = lazy(() => import("@/components/dashboard/SocialMediaManagerTab"));
+const StaffSubscriptionsAdminTab = lazy(() => import("@/components/dashboard/StaffSubscriptionsAdminTab"));
+const ResourceSurfaceTab = lazy(() => import("@/components/dashboard/ResourceSurfaceTab"));
 
 export default function Profile() {
   const { user, profile, roles, isSuperAdmin, isStaff, isAdmin, signOut } = useAuth();
@@ -174,6 +177,7 @@ export default function Profile() {
         <div className="mx-auto max-w-[1500px] p-3 sm:p-5 lg:p-6">
           <Suspense fallback={contentFallback}>
           <TabsContent value="overview" className="mt-0"><AvyronOverview access={access} displayName={displayName} onOpenSection={openSection} onOpenCommand={() => setCommandOpen(true)} /></TabsContent>
+          {access.isSuperAdmin && <TabsContent value="social-manager" className="mt-0"><SocialMediaManagerTab /></TabsContent>}
           <TabsContent value="profile" className="mt-0"><ProfileTab /></TabsContent><TabsContent value="settings" className="mt-0"><SettingsTab /></TabsContent><TabsContent value="collection" className="mt-0"><ProductCollectionTab /></TabsContent><TabsContent value="projects" className="mt-0"><CloudflareProjects embedded /></TabsContent>
           {access.isClient && <><TabsContent value="subscriptions" className="mt-0"><SubscriptionsTab /></TabsContent><TabsContent value="invoices" className="mt-0"><InvoicesTab /></TabsContent><TabsContent value="cart" className="mt-0"><CartTab /></TabsContent><TabsContent value="stats" className="mt-0"><StatsTab /></TabsContent><TabsContent value="tickets" className="mt-0"><TicketsTab /></TabsContent></>}
           {access.isStaff && <>
@@ -189,6 +193,8 @@ export default function Profile() {
             <TabsContent value="intern" className="mt-0"><StaffChatTab /></TabsContent>
             <TabsContent value="announcements" className="mt-0"><StaffAnnouncementsTab /></TabsContent>
             <TabsContent value="resources" className="mt-0"><StaffResourcesTab /></TabsContent>
+            <TabsContent value="careers" className="mt-0"><ResourceSurfaceTab kind="career" /></TabsContent>
+            <TabsContent value="library" className="mt-0"><ResourceSurfaceTab kind="library" /></TabsContent>
             <TabsContent value="team-staff" className="mt-0"><TeamStaffTab /></TabsContent>
             <TabsContent value="logo-simulations" className="mt-0"><PlatformLeadTab kind="logo" /></TabsContent>
             <TabsContent value="surveys" className="mt-0"><SurveysTab /></TabsContent>
@@ -196,7 +202,7 @@ export default function Profile() {
             <TabsContent value="os-centers" className="mt-0"><OsCentersTab access={access} onNavigate={openSection} /></TabsContent>
             <TabsContent value="other-hub" className="mt-0"><OtherModulesTab onNavigate={openSection} /></TabsContent>
           </>}
-          {access.isSuperAdmin && <><TabsContent value="finance" className="mt-0"><StaffFinanceTab /></TabsContent><TabsContent value="commercial-codes" className="mt-0"><CommercialCodesTab /></TabsContent><TabsContent value="promotions" className="mt-0"><StaffPromotionsTab /></TabsContent><TabsContent value="newsletter" className="mt-0"><StaffNewsletterTab /></TabsContent><TabsContent value="produse-avyron" className="mt-0"><StaffProduseTab /></TabsContent><TabsContent value="ai-os" className="mt-0"><AiOsConsole embedded /></TabsContent></>}
+          {access.isSuperAdmin && <><TabsContent value="finance" className="mt-0"><StaffFinanceTab /></TabsContent><TabsContent value="commercial-codes" className="mt-0"><CommercialCodesTab /></TabsContent><TabsContent value="promotions" className="mt-0"><StaffPromotionsTab /></TabsContent><TabsContent value="newsletter" className="mt-0"><StaffNewsletterTab /></TabsContent><TabsContent value="produse-avyron" className="mt-0"><StaffProduseTab /></TabsContent><TabsContent value="subscriptions-admin" className="mt-0"><StaffSubscriptionsAdminTab /></TabsContent><TabsContent value="ai-os" className="mt-0"><AiOsConsole embedded /></TabsContent></>}
           </Suspense>
           {access.isSuperAdmin && (tab === "overview" || tab === "profile") && <Suspense fallback={contentFallback}><div className="mt-4 grid gap-3 lg:grid-cols-2"><AiProductionEntryCard /><EngineEntryCard /></div></Suspense>}
         </div>

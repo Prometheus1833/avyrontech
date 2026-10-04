@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, Building2, Clock3, History, Mail, Phone, Plus, RefreshCw, Search, Star, Trash2 } from "lucide-react";
+import { AlertCircle, ArrowRight, Building2, CalendarDays, Columns3, Clock3, History, List, Mail, Phone, Plus, RefreshCw, Search, Star, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { leadsApi, type LeadDeletionReasonCode, type LeadListRow, type LeadStage } from "@/lib/leadsApi";
@@ -37,12 +37,16 @@ export const StaffLeadsTab = ({
   const [deletingLead, setDeletingLead] = useState<LeadListRow | null>(null);
   const [deletionLogOpen, setDeletionLogOpen] = useState(false);
   const [platformRole, setPlatformRole] = useState<"platform_owner" | "superadmin" | null>(null);
+  const [view, setView] = useState<"list" | "pipeline">("list");
+  const [previewLeadId, setPreviewLeadId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const result = await leadsApi.list();
-      setRows(sourceFilter ? result.data.filter(sourceFilter) : result.data);
+      const next = (sourceFilter ? result.data.filter(sourceFilter) : result.data).sort((a, b) => b.created_at - a.created_at);
+      setRows(next);
+      setPreviewLeadId((current) => current && next.some((lead) => lead.id === current) ? current : next[0]?.id || null);
       setPlatformRole(result.platformRole);
     } catch {
       toast.error("Nu am putut încărca pipeline-ul Leads. Verifică sesiunea MFA.");
@@ -85,10 +89,11 @@ export const StaffLeadsTab = ({
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    if (!needle) return rows;
-    return rows.filter((lead) => [lead.name, lead.business, lead.email, lead.phone, lead.product, lead.source]
+    const matches = !needle ? rows : rows.filter((lead) => [lead.name, lead.business, lead.email, lead.phone, lead.product, lead.source]
       .filter(Boolean).some((value) => value!.toLowerCase().includes(needle)));
+    return [...matches].sort((a, b) => b.created_at - a.created_at);
   }, [query, rows]);
+  const previewLead = filtered.find((lead) => lead.id === previewLeadId) || filtered[0] || null;
 
   const urgentCount = rows.filter((lead) => lead.urgent === 1).length;
   const waitingCount = rows.filter((lead) => lead.lifecycle_stage === "new_lead").length;
@@ -113,14 +118,50 @@ export const StaffLeadsTab = ({
         <Metric label="Urgente" value={urgentCount} alert={urgentCount > 0} />
       </div>
 
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Caută după client, contact, produs sau sursă…"
-          className="w-full rounded-xl border border-border/60 bg-background/80 py-2.5 pl-9 pr-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/40" />
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <label className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <span className="sr-only">Caută leaduri</span>
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Caută după client, contact, serviciu sau sursă…"
+            className="w-full rounded-xl border border-border/60 bg-background/80 py-2.5 pl-9 pr-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/40" />
+        </label>
+        <div className="inline-flex self-start rounded-xl border border-border/60 bg-card p-1" aria-label="Mod de afișare">
+          <button type="button" onClick={() => setView("list")} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ${view === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}><List className="size-3.5" /> Listă</button>
+          <button type="button" onClick={() => setView("pipeline")} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ${view === "pipeline" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}><Columns3 className="size-3.5" /> Pipeline</button>
+        </div>
       </div>
 
       {loading ? <div className="h-48 animate-pulse rounded-2xl bg-muted/50" aria-label="Se încarcă" /> : (
-        <div className="pb-3 lg:overflow-x-auto">
+        view === "list" ? <div className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(300px,.7fr)]">
+          <section className="overflow-hidden rounded-2xl border border-border/60 bg-card/50">
+            <div className="hidden grid-cols-[minmax(180px,1.3fr)_minmax(130px,.8fr)_120px_130px_84px] gap-3 border-b border-border/60 px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground md:grid">
+              <span>Client</span><span>Interes</span><span>Etapă</span><span>Introdus</span><span>Acțiuni</span>
+            </div>
+            <div className="divide-y divide-border/50">
+              {filtered.map((lead) => <article key={lead.id} className={`grid gap-3 p-3 transition md:grid-cols-[minmax(180px,1.3fr)_minmax(130px,.8fr)_120px_130px_84px] md:items-center md:px-4 ${previewLead?.id === lead.id ? "bg-primary/[0.06]" : "hover:bg-muted/30"}`}>
+                <button type="button" onClick={() => setPreviewLeadId(lead.id)} className="min-w-0 text-left">
+                  <span className="flex items-center gap-2"><span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"><UserRound className="size-3.5" /></span><span className="min-w-0"><strong className="block truncate text-sm">{lead.name || lead.business || "Lead fără nume"}</strong><span className="block truncate text-[11px] text-muted-foreground">{lead.business || lead.email || lead.phone || "Contact necompletat"}</span></span></span>
+                </button>
+                <div className="min-w-0"><p className="truncate text-xs font-medium">{lead.product || "Serviciu neclasificat"}</p><p className="truncate text-[10px] text-muted-foreground">{lead.source || "Sursă necunoscută"}</p></div>
+                <select value={lead.lifecycle_stage} disabled={saving === lead.id || lead.lifecycle_stage === "converted"} onChange={(event) => void update(lead, { lifecycleStage: event.target.value as LeadStage })} className={field}>
+                  {STAGES.filter(([value]) => value !== "converted").map(([value, stageLabel]) => <option key={value} value={value}>{stageLabel}</option>)}
+                  {lead.lifecycle_stage === "converted" && <option value="converted">Proiect</option>}
+                </select>
+                <div className="text-[11px] text-muted-foreground"><span className="inline-flex items-center gap-1"><CalendarDays className="size-3" /> {new Date(lead.created_at).toLocaleDateString("ro-RO")}</span>{lead.next_follow_up_at && <p className={lead.next_follow_up_at < Date.now() ? "mt-1 text-red-500" : "mt-1"}>Follow-up {new Date(lead.next_follow_up_at).toLocaleDateString("ro-RO")}</p>}</div>
+                <div className="flex items-center justify-end gap-1"><button type="button" aria-label="Marchează urgent" onClick={() => void update(lead, { urgent: !lead.urgent })} className={`rounded-lg p-2 ${lead.urgent ? "text-amber-500" : "text-muted-foreground hover:bg-muted"}`}><Star className="size-3.5" fill={lead.urgent ? "currentColor" : "none"} /></button><button type="button" aria-label="Șterge" onClick={() => setDeletingLead(lead)} className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="size-3.5" /></button></div>
+              </article>)}
+              {filtered.length === 0 && <p className="p-8 text-center text-sm text-muted-foreground">Nu există leaduri pentru filtrul curent.</p>}
+            </div>
+          </section>
+          <aside className="h-fit rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/[0.08] to-card p-4 xl:sticky xl:top-20">
+            {previewLead ? <div className="space-y-4">
+              <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/70">Mini-profil client</p><h3 className="mt-1 text-lg font-semibold">{previewLead.name || previewLead.business || "Lead fără nume"}</h3><p className="text-xs text-muted-foreground">{previewLead.business || "Persoană fizică / necompletat"}</p></div>{previewLead.urgent === 1 && <span className="rounded-full bg-amber-500/10 px-2 py-1 text-[10px] font-medium text-amber-600">Urgent</span>}</div>
+              <div className="grid gap-2 text-xs"><p className="rounded-xl border border-border/60 bg-background/60 p-3"><span className="block text-[10px] uppercase text-muted-foreground">Interes</span>{previewLead.product || "Neclasificat"}</p><p className="rounded-xl border border-border/60 bg-background/60 p-3"><span className="block text-[10px] uppercase text-muted-foreground">Sursă</span>{previewLead.source || "Necunoscută"}</p></div>
+              <div className="flex flex-wrap gap-2">{previewLead.email && <a href={`mailto:${previewLead.email}`} className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-2.5 py-2 text-xs hover:bg-muted"><Mail className="size-3.5" /> Email</a>}{previewLead.phone && <a href={`tel:${previewLead.phone}`} className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-2.5 py-2 text-xs hover:bg-muted"><Phone className="size-3.5" /> Telefon</a>}</div>
+              <Button type="button" className="w-full rounded-xl" onClick={() => setSelectedLeadId(previewLead.id)}>Deschide fișa completă <ArrowRight className="size-4" /></Button>
+            </div> : <p className="text-sm text-muted-foreground">Selectează un lead pentru mini-profil.</p>}
+          </aside>
+        </div> : <div className="pb-3 lg:overflow-x-auto">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:min-w-[1320px] lg:grid-cols-8">
             {STAGES.map(([stage, label]) => {
               const leads = filtered.filter((lead) => lead.lifecycle_stage === stage);

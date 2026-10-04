@@ -101,7 +101,7 @@ export type LeadPipeline = {
 export const internApi = {
   listProjects: () => cfAuth.request<{ data: Array<Pick<Project, "id"|"slug"|"name"|"kind"|"banner_status"|"status"|"url"|"favicon_url"|"updated_at">>; purchases?: ProjectPurchase[]; sales?: ProjectSale[] }>("/api/projects"),
   getProject: (slug: string) => cfAuth.request<ProjectDetail>(`/api/projects/${encodeURIComponent(slug)}`),
-  createProject: (body: { name: string; slug: string; kind?: ProjectKind; url?: string; description?: string; client_id: string; owner_user_id?: string }) =>
+  createProject: (body: { name: string; slug: string; kind?: ProjectKind; url?: string; description?: string; client_id: string; owner_user_id?: string; recurring_service?: { enabled: boolean; service_name: string; price: number; billing_cycle: "monthly" | "yearly"; next_billing_date: number; subscription_status: "active" | "paused" } }) =>
     cfAuth.request<{ id: string; slug: string }>("/api/projects", { method: "POST", body: JSON.stringify(body) }),
   listClients: () => cfAuth.request<{ data: ClientOption[] }>("/api/clients"),
   listAccounts: () => cfAuth.request<{ data: AccountOption[] }>("/api/admin/users"),

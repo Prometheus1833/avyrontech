@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { adminOperationsApi, type AdminProjectOption } from "@/lib/adminOperationsApi";
 
 const roleLabels: Record<string, string> = {
   admin: "Administrator",
@@ -26,15 +27,19 @@ export default function TeamStaffTab() {
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [clientIds, setClientIds] = useState<string[]>([]);
   const [linksReady, setLinksReady] = useState(false);
+  const [projects, setProjects] = useState<AdminProjectOption[]>([]);
+  const [projectIds, setProjectIds] = useState<string[]>([]);
 
   const loadAccounts = useCallback(async () => {
     setLoading(true);
     setError("");
-    await internApi.listAccounts()
-      .then((result) => setAccounts(result.data))
+    await (isSuperAdmin ? adminOperationsApi.staff().then((result) => {
+      setProjects(result.projects);
+      setAccounts(result.data);
+    }) : internApi.listAccounts().then((result) => setAccounts(result.data.filter((account) => /(^|,)(staff|admin)(,|$)/.test(account.roles || "")))))
       .catch((cause) => setError(cause instanceof Error ? cause.message : "Echipa nu a putut fi încărcată."))
       .finally(() => setLoading(false));
-  }, []);
+  }, [isSuperAdmin]);
 
   useEffect(() => {
     void loadAccounts();
@@ -43,8 +48,10 @@ export default function TeamStaffTab() {
   const openAccess = async (account: AccountOption) => {
     setLinksReady(false);setClientIds([]);
     try {
-      const [list, linked] = await Promise.all([internApi.listClients(),workspaceApi.list<{client_id:string}>(`account-access/${account.id}`)]);
+      const [list, linked, staffData] = await Promise.all([internApi.listClients(),workspaceApi.list<{client_id:string}>(`account-access/${account.id}`),adminOperationsApi.staff()]);
       setClients(list.data);setClientIds(linked.data.map(r=>r.client_id));setLinksReady(true);
+      const staff = staffData.data.find((item) => item.id === account.id);
+      setProjects(staffData.projects); setProjectIds((staff?.project_ids || "").split(",").filter(Boolean));
     } catch (error) { toast.error(error instanceof Error ? error.message : "Asocierile nu pot fi încărcate."); }
     const roles = (account.roles || "").split(",");
     setAccessLevel(roles.includes("admin") ? "admin" : roles.includes("staff") ? "staff" : "user");
@@ -56,6 +63,7 @@ export default function TeamStaffTab() {
     setSaving(true);
     try {
       await workspaceApi.write(`account-access/${selected.id}`, {client_ids:clientIds,access_level:accessLevel}, "PUT");
+      if (accessLevel === "staff" || accessLevel === "admin") await adminOperationsApi.setStaffProjects(selected.id, projectIds);
       toast.success("Accesul și asocierile client au fost actualizate și auditate.");
       setSelected(null);
       await loadAccounts();
@@ -78,7 +86,7 @@ export default function TeamStaffTab() {
       <header className="rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.14] via-[#11182d] to-cyan-400/[0.06] p-5 sm:p-6">
         <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-violet-200/70">Organizație și acces</p>
         <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div><h1 className="font-display text-2xl font-bold text-white">Echipă și personal</h1><p className="mt-1 max-w-2xl text-sm text-slate-400">Membri, roluri și acces operațional. Permisiunile reale sunt validate în Worker, nu doar ascunse în interfață.</p></div>
+          <div><h1 className="font-display text-2xl font-bold text-white">STAFF</h1><p className="mt-1 max-w-2xl text-sm text-slate-400">Personal operațional, drepturi și proiecte alocate. Utilizatorii-client sunt gestionați separat, iar permisiunile sunt validate în Worker.</p></div>
           <span className="inline-flex items-center gap-2 self-start rounded-full border border-emerald-300/15 bg-emerald-400/10 px-3 py-1.5 text-xs text-emerald-300"><ShieldCheck className="size-3.5" /> RBAC server-side activ</span>
         </div>
       </header>
@@ -93,7 +101,7 @@ export default function TeamStaffTab() {
 
       <section className="rounded-2xl border border-white/[0.08] bg-[#10162a]/90 p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div><h2 className="font-display text-lg font-semibold text-white">Conturi și membri</h2><p className="text-xs text-slate-500">Datele personale sunt mascate pentru rolurile fără acces complet.</p></div>
+          <div><h2 className="font-display text-lg font-semibold text-white">Membri STAFF</h2><p className="text-xs text-slate-500">Utilizatorii-client nu apar aici. Lista conține exclusiv personalul operațional și administratorii.</p></div>
           <label className="relative block sm:w-72"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-600" /><span className="sr-only">Caută membru</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Caută membru sau rol…" className="w-full rounded-xl border border-white/[0.08] bg-black/20 py-2.5 pl-9 pr-3 text-sm text-slate-200 outline-none placeholder:text-slate-600 focus:border-violet-400/40" /></label>
         </div>
         <div className="mt-4 space-y-2">
@@ -136,6 +144,11 @@ export default function TeamStaffTab() {
             {!linksReady && <p className="text-xs text-muted-foreground">Asocierile se încarcă sau nu sunt disponibile.</p>}
             {clients.map(client=><label key={client.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={clientIds.includes(client.id)} onChange={e=>setClientIds(current=>e.target.checked?[...current,client.id]:current.filter(id=>id!==client.id))}/>{client.company_name}</label>)}
           </fieldset>
+          {(accessLevel === "staff" || accessLevel === "admin") && <fieldset disabled={!linksReady || saving} className="max-h-52 space-y-2 overflow-y-auto rounded-xl border border-white/[0.07] p-3">
+            <legend className="px-1 text-sm font-medium text-slate-200">Proiecte alocate</legend>
+            <p className="pb-1 text-[11px] text-slate-500">Alocările controlează accesul operațional real în Worker.</p>
+            {projects.map((project) => <label key={project.id} className="flex items-center gap-2 rounded-lg px-1 py-1.5 text-sm text-slate-300"><input type="checkbox" checked={projectIds.includes(project.id)} onChange={(event) => setProjectIds((current) => event.target.checked ? [...current, project.id] : current.filter((id) => id !== project.id))} /> <span className="min-w-0 flex-1 truncate">{project.name}</span><span className="text-[10px] text-slate-600">{project.status}</span></label>)}
+          </fieldset>}
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => setSelected(null)} disabled={saving}>Anulează</Button>
             <Button type="button" onClick={() => void saveAccess()} disabled={saving || !linksReady} className="bg-violet-600 hover:bg-violet-500">{saving ? "Se salvează…" : "Salvează accesul"}</Button>

@@ -30,6 +30,9 @@ import {
   FileCode2,
   PackageSearch,
   ScanSearch,
+  LibraryBig,
+  UserRoundSearch,
+  Share2,
 } from "lucide-react";
 import type { SectionId } from "@/lib/access";
 
@@ -69,6 +72,7 @@ export const DASHBOARD_GROUP_ORDER = [
 
 export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
   overview: { label: "Prezentare generală", mobileLabel: "Acasă", commandLabel: "Deschide prezentarea generală", hint: "Priorități, indicatori și starea sistemului", icon: LayoutDashboard },
+  "social-manager": { label: "Manager Social Media", mobileLabel: "Social", commandLabel: "Deschide Manager Social Media", hint: "Propuneri AI, rezultate și aprobări editoriale", icon: Share2 },
   profile: { label: "Profil", commandLabel: "Deschide profilul", hint: "Date personale și identitatea contului", icon: User },
   settings: { label: "Setări", commandLabel: "Deschide setările", hint: "Preferințe și configurarea contului", icon: Settings },
   projects: { label: "Proiecte", commandLabel: "Deschide proiectele", hint: "Livrări, termene și progres", icon: FolderKanban },
@@ -84,6 +88,7 @@ export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
   collection: { label: "Colecția mea", commandLabel: "Deschide colecția", hint: "Produsele și artefactele tale digitale", icon: Boxes },
   "servicii-avyron": { label: "Servicii AVYRON", commandLabel: "Deschide serviciile AVYRON", hint: "Pagini publice, oferte și livrare", icon: BriefcaseBusiness },
   "produse-avyron": { label: "Produse AVYRON", commandLabel: "Deschide produsele AVYRON", hint: "Catalog, parteneriate și comenzi", icon: Boxes },
+  "subscriptions-admin": { label: "Abonamente", commandLabel: "Administrează abonamentele", hint: "Prețuri, clienți, trafic și servicii recurente", icon: CreditCard },
   stats: { label: "Vizite și statistici", commandLabel: "Deschide statisticile", hint: "Trafic și activitatea proprietăților", icon: BarChart3 },
   tickets: { label: "Suport", commandLabel: "Deschide suportul", hint: "Solicitări și conversații de suport", icon: MessageSquare },
   "staff-tickets": { label: "Solicitări clienți", commandLabel: "Deschide solicitările clienților", hint: "Tichete care necesită răspuns", icon: MessageSquare },
@@ -102,4 +107,6 @@ export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
   surveys: { label: "Surveys", commandLabel: "Deschide Surveys", hint: "Chestionare, pipeline și briefuri", icon: ClipboardList },
   configurator: { label: "Configurator", commandLabel: "Deschide Configurator", hint: "Estimări, cereri și rezultate comerciale", icon: Calculator },
   "other-hub": { label: "Altele", commandLabel: "Deschide inventarul de module", hint: "Funcții, statistici și rapoarte fără secțiune dedicată", icon: PackageSearch },
+  careers: { label: "Cariere", commandLabel: "Deschide Cariere", hint: "Roluri, candidați și resurse pentru recrutare", icon: UserRoundSearch },
+  library: { label: "Bibliotecă", commandLabel: "Deschide Biblioteca", hint: "Surse, referințe și active de cunoaștere", icon: LibraryBig },
 };

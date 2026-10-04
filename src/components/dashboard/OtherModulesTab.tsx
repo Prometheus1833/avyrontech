@@ -1,4 +1,4 @@
-import { ArrowUpRight, BookOpen, Command, MessageSquare, MessagesSquare, Megaphone, Radar, Wrench } from "lucide-react";
+import { ArrowUpRight, Command, MessageSquare, MessagesSquare, Megaphone, Radar, Wrench } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { SectionId } from "@/lib/access";
 
@@ -13,7 +13,6 @@ const internalModules: Array<{
   { title: "Solicitări clienți", detail: "Tichete și conversații care necesită răspuns.", status: "Activ", icon: MessageSquare, destination: "staff-tickets" },
   { title: "Chat intern", detail: "Conversațiile operaționale ale echipei AVYRON.", status: "Activ", icon: MessagesSquare, destination: "intern" },
   { title: "Anunțuri", detail: "Actualizări și comunicări interne pentru echipă.", status: "Activ", icon: Megaphone, destination: "announcements" },
-  { title: "Documente și resurse", detail: "Materiale interne și cunoaștere partajată.", status: "Activ", icon: BookOpen, destination: "resources" },
   { title: "AVY Engine", detail: "Registru de capabilități, surse, conectori și documentație privată.", status: "Activ parțial", icon: Command, href: "/intern/avy-engine" },
   { title: "Rapoarte transversale", detail: "Rapoarte unificate între proiecte, vânzări, mentenanță și platformă.", status: "De dezvoltat", icon: Radar },
 ];

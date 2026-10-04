@@ -14,6 +14,7 @@ import PaymentMethods from "@/components/site/PaymentMethods";
 import QuickNav, { type QuickNavItem } from "@/components/site/QuickNav";
 import { useLang } from "@/i18n/LanguageContext";
 import { trackEvent } from "@/lib/analytics";
+import { trackFunnel } from "@/lib/siteAnalytics";
 import { useDualPrice } from "@/hooks/useDualPrice";
 import { hasStoredCurrency } from "@/hooks/useCurrency";
 import {
@@ -54,6 +55,10 @@ const MaintenancePartnerships = () => {
 
   const path = ro ? SUBSCRIPTION_PATH.ro : SUBSCRIPTION_PATH.en;
   const cheapest = lowestPlanPriceCents();
+
+  useEffect(() => {
+    trackFunnel("page_view", "abonamente", { language: lang, surface: "maintenance_partnerships" });
+  }, [lang]);
 
   // Intro-ul rulează o singură dată pe sesiune: cine se întoarce pe pagină din
   // alt loc al site-ului intră direct în conținut.

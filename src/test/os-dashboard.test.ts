@@ -34,6 +34,48 @@ describe("AVYRON OS dashboard", () => {
     expect(canOpenSection("ai-os", staff)).toBe(false);
     expect(canOpenSection("finance", owner)).toBe(true);
     expect(canOpenSection("ai-os", owner)).toBe(true);
+    expect(canOpenSection("social-manager", owner)).toBe(true);
+    expect(canOpenSection("subscriptions-admin", owner)).toBe(true);
+    expect(canOpenSection("social-manager", staff)).toBe(false);
+  });
+
+  it("separă STAFF de clienți și expune resursele solicitate în Altele", () => {
+    const staff = buildAccess({ roles: ["staff"] });
+    const sections = sectionsFor(staff).map((item) => item.id);
+    expect(sections).toContain("team-staff");
+    expect(sections).toContain("clients");
+    expect(sections).toContain("careers");
+    expect(sections).toContain("library");
+    expect(sections).toContain("resources");
+  });
+
+  it("protejează operațiunile sincronizate ale Super Adminului și registrul de resurse", () => {
+    const index = readFileSync(resolve(process.cwd(), "cloudflare/workers/api/src/index.ts"), "utf8");
+    const operations = readFileSync(resolve(process.cwd(), "cloudflare/workers/api/src/adminOperations.ts"), "utf8");
+    const migration = readFileSync(resolve(process.cwd(), "cloudflare/d1/migrations/0054_internal_resource_registry.sql"), "utf8");
+    expect(index).toContain('app.use("/api/admin/operations/*", requireAuth, requireRole("staff", "admin"))');
+    expect(operations).toContain('c.req.path === "/api/admin/operations/resources"');
+    expect(operations).toContain("platformRoleForUser");
+    expect(operations).toContain("staff_cannot_be_client");
+    expect(operations).toContain("staff.projects.replace");
+    expect(operations).toContain("subscription.update");
+    expect(operations).toContain("UPDATE subscriptions SET client_id=?");
+    expect(operations).toContain("security_events");
+    expect(migration).toContain("CREATE TABLE IF NOT EXISTS internal_resources");
+    expect(migration).not.toMatch(/\b(password|token|secret)\b/i);
+  });
+
+  it("măsoară first-party pagina publică de abonamente doar prin mecanismul de consimțământ existent", () => {
+    const page = readFileSync(resolve(process.cwd(), "src/pages/MaintenancePartnerships.tsx"), "utf8");
+    expect(page).toContain('trackFunnel("page_view", "abonamente"');
+  });
+
+  it("creează atomic proiectul cu mentenanță și abonament opțional", () => {
+    const projects = readFileSync(resolve(process.cwd(), "cloudflare/workers/api/src/projects.ts"), "utf8");
+    expect(projects).toContain("recurring_service");
+    expect(projects).toContain("INSERT INTO services");
+    expect(projects).toContain("INSERT INTO subscriptions");
+    expect(projects).toContain("c.env.DB.batch(statements)");
   });
 
   it("protejează server-side API-ul dashboardului și deciziile AI", () => {

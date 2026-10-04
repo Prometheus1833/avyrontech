@@ -53,7 +53,7 @@ export type SectionId =
   | "finance" | "media" | "leads" | "staff-tickets" | "demo-requests" | "intern"
   | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "servicii-avyron" | "produse-avyron"
   | "newsletter" | "ai-projects" | "logo-simulations" | "surveys" | "configurator"
-  | "commercial-codes" | "other-hub";
+  | "commercial-codes" | "other-hub" | "social-manager" | "subscriptions-admin" | "careers" | "library";
 
 export type SectionDef = {
   id: SectionId;
@@ -71,6 +71,7 @@ export type SectionDef = {
  */
 export const SECTIONS: readonly SectionDef[] = [
   { id: "overview", group: "overview", audience: "everyone", keywords: ["acasa", "azi", "overview", "dashboard", "briefing", "atentie"] },
+  { id: "social-manager", group: "overview", audience: "superadmin", keywords: ["social media", "publicare", "aprobari", "continut ai", "facebook", "instagram"] },
   { id: "profile", group: "account", audience: "everyone", keywords: ["cont", "profil", "date", "account"] },
   { id: "settings", group: "account", audience: "everyone", keywords: ["setari", "preferinte", "settings", "tema", "limba"] },
 
@@ -94,6 +95,7 @@ export const SECTIONS: readonly SectionDef[] = [
   // super adminul centrul magazinului — două fețe ale aceluiași lucru.
   { id: "collection", group: "produse", audience: "everyone", keywords: ["colectia mea", "produse avyron", "componente", "parteneriat", "avy", "collection", "artefacte"] },
   { id: "produse-avyron", group: "produse", audience: "superadmin", keywords: ["produse avyron", "artefacte", "catalog", "parteneriate", "magazin", "componente"] },
+  { id: "subscriptions-admin", group: "produse", audience: "superadmin", keywords: ["abonamente", "mentenanta", "preturi", "clienti abonati", "trafic"] },
 
   { id: "stats", group: "activity", audience: "client", keywords: ["statistici", "vizite", "stats"] },
   { id: "tickets", group: "activity", audience: "client", keywords: ["suport", "tichete", "tickets", "mesaje"] },
@@ -113,10 +115,12 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "promotions", group: "os", audience: "superadmin", navigation: false, keywords: ["promotii", "reduceri", "campanii"] },
 
   { id: "other-hub", group: "other", audience: "staff", keywords: ["altele", "module", "rapoarte", "functii", "roadmap"] },
+  { id: "careers", group: "other", audience: "staff", keywords: ["cariere", "joburi", "roluri", "recrutare"] },
+  { id: "library", group: "other", audience: "staff", keywords: ["biblioteca", "resurse", "surse", "referinte"] },
   { id: "staff-tickets", group: "other", audience: "staff", navigation: false, keywords: ["suport", "tichete clienti", "tickets"] },
   { id: "intern", group: "other", audience: "staff", navigation: false, keywords: ["chat", "echipa", "intern"] },
   { id: "announcements", group: "other", audience: "staff", navigation: false, keywords: ["anunturi", "noutati"] },
-  { id: "resources", group: "other", audience: "staff", navigation: false, keywords: ["resurse", "documente", "ghid"] },
+  { id: "resources", group: "other", audience: "staff", keywords: ["resurse", "documente", "ghid", "siteuri", "campuri"] },
 ];
 
 export const sectionsFor = (a: Access) => SECTIONS.filter((s) => canSee(s.audience, a));

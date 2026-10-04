@@ -47,7 +47,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
   const [creating, setCreating] = useState(false);
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [accounts, setAccounts] = useState<AccountOption[]>([]);
-  const [form, setForm] = useState({ name: "", slug: "", kind: "website_prezentare" as ProjectKind, url: "", description: "", client_id: "", owner_user_id: "" });
+  const [form, setForm] = useState({ name: "", slug: "", kind: "website_prezentare" as ProjectKind, url: "", description: "", client_id: "", owner_user_id: "", recurring_enabled: false, recurring_name: "Mentenanță AVYRON", recurring_price: "", recurring_cycle: "monthly" as "monthly" | "yearly", next_billing_date: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10) });
 
   const load = async () => {
     setLoading(true);
@@ -89,10 +89,14 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
         description: form.description || undefined,
         client_id: form.client_id.trim(),
         owner_user_id: form.owner_user_id.trim() || undefined,
+        recurring_service: form.recurring_enabled ? {
+          enabled: true, service_name: form.recurring_name.trim(), price: Number(form.recurring_price),
+          billing_cycle: form.recurring_cycle, next_billing_date: new Date(`${form.next_billing_date}T12:00:00`).getTime(), subscription_status: "active",
+        } : undefined,
       });
       toast.success("Proiect creat");
       setOpenCreate(false);
-      setForm({ name: "", slug: "", kind: "website_prezentare", url: "", description: "", client_id: "", owner_user_id: "" });
+      setForm({ name: "", slug: "", kind: "website_prezentare", url: "", description: "", client_id: "", owner_user_id: "", recurring_enabled: false, recurring_name: "Mentenanță AVYRON", recurring_price: "", recurring_cycle: "monthly", next_billing_date: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10) });
       await load();
     } catch (e) {
       toast.error((e as Error).message);
@@ -180,6 +184,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
                   </Select>
                 </div>
                 {clients.length === 0 && <p className="text-[11px] text-muted-foreground">Creează sau importă mai întâi un client din secțiunea Clienți.</p>}
+                <fieldset className="rounded-xl border border-border/60 p-3"><label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" checked={form.recurring_enabled} onChange={(event) => setForm({ ...form, recurring_enabled: event.target.checked })} /> Pornește proiectul cu mentenanță și abonament</label><p className="mt-1 text-[11px] text-muted-foreground">Proiectul, serviciul recurent și abonamentul clientului sunt create atomic și rămân sincronizate.</p>{form.recurring_enabled && <div className="mt-3 grid gap-3 sm:grid-cols-2"><div className="sm:col-span-2"><Label>Serviciu recurent</Label><Input value={form.recurring_name} onChange={(event) => setForm({ ...form, recurring_name: event.target.value })} /></div><div><Label>Preț RON</Label><Input type="number" min="0" step="1" value={form.recurring_price} onChange={(event) => setForm({ ...form, recurring_price: event.target.value })} /></div><div><Label>Ciclu</Label><Select value={form.recurring_cycle} onValueChange={(value) => setForm({ ...form, recurring_cycle: value as "monthly" | "yearly" })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="monthly">Lunar</SelectItem><SelectItem value="yearly">Anual</SelectItem></SelectContent></Select></div><div className="sm:col-span-2"><Label>Prima facturare</Label><Input type="date" value={form.next_billing_date} onChange={(event) => setForm({ ...form, next_billing_date: event.target.value })} /></div></div>}</fieldset>
               </div>
               <DialogFooter>
                 <Button variant="ghost" onClick={() => setOpenCreate(false)}>Anulează</Button>

@@ -1121,6 +1121,7 @@ import { aiProjectsRouter } from "./aiProjects";
 import { financeRouter } from "./finance";
 import { catalogCodesRouter } from "./catalogCodes";
 import { surveyAdminRouter } from "./surveyAdmin";
+import { adminOperationsRouter } from "./adminOperations";
 import { workspaceRouter } from "./workspace";
 import { operationsOAuthRouter, operationsRouter } from "./operations";
 import { runOperationJobs } from "./operationJobs";
@@ -1171,6 +1172,7 @@ app.use("/api/finance/*", requirePrivilegedMfa);
 app.use("/api/engine/*", requirePrivilegedMfa);
 app.use("/api/os/*", requirePrivilegedMfa);
 app.use("/api/surveys/admin/*", requirePrivilegedMfa);
+app.use("/api/admin/operations/*", requireAuth, requireRole("staff", "admin"));
 // Editorial mutations are authorized server-side. Public article reads and
 // immutable R2 cover images remain accessible to crawlers and visitors.
 app.use("/api/blog/staff/*", requireAuth, requireRole("staff", "admin"));
@@ -1185,6 +1187,7 @@ app.route("/", leadsRouter);
 app.route("/", aiProjectsRouter);
 app.route("/", catalogCodesRouter);
 app.route("/", surveyAdminRouter);
+app.route("/", adminOperationsRouter);
 app.route("/", financeRouter);
 app.route("/", operationsOAuthRouter);
 app.use("/api/workspace/*", requireAuth, requirePrivilegedMfa);
