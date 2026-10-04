@@ -52,6 +52,7 @@ const WebsiteIntroScrollScene = ({ title, paragraphs }: Props) => {
               return (
                 <p
                   key={paragraph.slice(0, 40)}
+                  data-testid="website-intro-paragraph"
                   aria-hidden={visibility < 0.12}
                   className="col-start-1 row-start-1 max-w-2xl text-lg leading-relaxed text-foreground/80 transition-[opacity,transform,filter] duration-150 ease-linear sm:text-xl md:text-2xl"
                   style={{
