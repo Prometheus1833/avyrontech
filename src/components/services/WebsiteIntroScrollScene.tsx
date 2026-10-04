@@ -39,8 +39,8 @@ const WebsiteIntroScrollScene = ({ title, paragraphs }: Props) => {
   }, []);
 
   return (
-    <section ref={sectionRef} className="relative mt-14 h-[210vh] border-t border-foreground/10" aria-labelledby="website-intro-title">
-      <div className="sticky top-0 flex min-h-screen items-center py-20">
+    <section ref={sectionRef} data-testid="website-intro-scene" data-progress={progress.toFixed(2)} className="relative mt-14 h-[210vh] border-t border-foreground/10" aria-labelledby="website-intro-title">
+      <div data-testid="website-intro-sticky" className="sticky top-0 flex min-h-screen items-center py-20">
         <div className="mx-auto w-full max-w-3xl text-center">
           <h2 id="website-intro-title" className="font-display text-2xl font-extrabold md:text-3xl">
             {title}
