@@ -101,9 +101,11 @@ export function redirectTarget(pathname: string): string | null {
 /** Private / auth / error areas: never indexed (X-Robots-Tag: noindex, nofollow). */
 export const NOINDEX_PREFIXES = [
   "/auth",
+  "/autentificare",
   "/forgot-password",
   "/reset-password",
   "/profil",
+  "/finance",
   "/intern",
   "/unsubscribe",
   "/offline",

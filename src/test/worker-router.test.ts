@@ -159,7 +159,7 @@ describe("worker HTTP statuses", () => {
   });
 
   it("marks private/auth routes noindex without breaking them", async () => {
-    for (const p of ["/auth", "/profil", "/intern/projects/x"]) {
+    for (const p of ["/auth", "/autentificare", "/profil", "/finance", "/intern/projects/x"]) {
       const res = await get(p);
       expect(res.status).toBe(200);
       expect(res.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");

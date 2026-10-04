@@ -184,9 +184,10 @@ test.describe("dashboard AVYRON OS în română", () => {
 
   test("separă serviciile personalizate de catalogul de produse", async ({ page }) => {
     await page.goto("/profil?tab=servicii-avyron");
-    await expect(page.getByRole("heading", { name: "Servicii AVYRON", exact: true })).toBeVisible();
-    await expect(page.getByText("Prezență digitală", { exact: true })).toBeVisible();
-    await expect(page.getByText("Software, automatizări și AI", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Servicii AVYRON", exact: true })).toBeVisible({ timeout: 10_000 });
+    await page.getByRole("button", { name: "Listă servicii", exact: true }).click();
+    await expect(page.getByText("Prezență digitală", { exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Software, automatizări și AI", { exact: true })).toBeVisible({ timeout: 10_000 });
     await expect(page.getByRole("link", { name: /Produse AVYRON/ })).toHaveAttribute("href", "/produse");
     await expect(page.getByRole("tab", { name: "Produse AVYRON", exact: true }).first()).toBeVisible();
   });
@@ -210,13 +211,15 @@ test.describe("dashboard AVYRON OS în română", () => {
 
   test("Super Admin poate gestiona controlat accesul unui membru", async ({ page }) => {
     let submitted: { access_level?: string; client_ids?: string[] } | null = null;
-    await page.route("**/api/admin/users", (route) => route.fulfill({
+    await page.route("**/api/admin/operations/staff", (route) => route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
         data: [{ id: "staff-1", email: "coleg@avyron.ro", display_name: "Coleg Avyron", company_name: "Avyron", staff_role: "marketing", disabled_at: null, roles: "user,staff" }],
+        projects: [],
       }),
     }));
+    await page.route("**/api/admin/operations/staff/staff-1/projects", (route) => route.fulfill({ json: { ok: true } }));
     await page.route("**/api/clients", route=>route.fulfill({json:{data:[{id:'client-a',company_name:'Client A'}]}}));
     await page.route("**/api/workspace/account-access/staff-1", async (route) => {
       if (route.request().method()==='GET') return route.fulfill({json:{data:[]}});
@@ -225,7 +228,7 @@ test.describe("dashboard AVYRON OS în română", () => {
     });
 
     await page.goto("/profil?tab=team-staff");
-    await expect(page.getByRole("heading", { name: "Echipă și personal" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "STAFF", exact: true })).toBeVisible({ timeout: 10_000 });
     await page.getByRole("button", { name: "Gestionează" }).click();
     await page.getByLabel("Nivel de acces").selectOption("admin");
     await page.getByLabel("Client A", {exact:true}).check();
@@ -260,7 +263,8 @@ test.describe("dashboard AVYRON OS în română", () => {
       if(r.request().method()==='POST'){payload=r.request().postDataJSON();return r.fulfill({json:{id:'receipt'}});}
       return r.fulfill({json:{data:[],totals:[],canWrite:true}});
     });
-    await page.goto('/profil?tab=payments');
+    await page.goto('/profil?tab=finance');
+    await page.getByRole('button',{name:'Încasări și plăți',exact:true}).click();
     await page.getByRole('combobox',{name:'Document',exact:true}).selectOption('r1');
     await page.getByLabel('Suma primită (RON)',{exact:true}).fill('30,25');
     await page.getByLabel('Referință unică încasare').fill('bank-fixture');

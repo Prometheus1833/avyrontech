@@ -168,7 +168,8 @@ async function renderRoute(route) {
     const hasH1 = !!container.querySelector("h1");
     const hasLd = !!doc.getElementById("ld-graph");
     const hasCanonical = !!doc.querySelector('link[rel="canonical"]');
-    if (hasH1 && hasCanonical && (hasLd || i > 20)) break;
+    const deferredSettled = !container.querySelector('[data-deferred-pending="true"], [data-deferred-lazy="true"]');
+    if (hasH1 && hasCanonical && deferredSettled && (hasLd || i > 20)) break;
   }
   await tick(120);
 

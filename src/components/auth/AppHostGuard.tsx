@@ -8,6 +8,7 @@ const PLATFORM_PATHS = [
   "/forgot-password",
   "/reset-password",
   "/profil",
+  "/finance",
   "/intern",
   "/403",
   "/500",
