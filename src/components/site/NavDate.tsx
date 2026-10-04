@@ -7,7 +7,7 @@ import { formatLocalDateTime } from "@/lib/localDateTime";
  * Doar data, discret, în bara de sus. Ora și locația au fost scoase din hero;
  * calendarul rămâne vizibil aici, pe toate paginile care au bara de sus.
  */
-const NavDate = () => {
+const NavDate = ({ className = "" }: { className?: string }) => {
   const { lang } = useLang();
   const [today, setToday] = useState<Date>(() => new Date());
 
@@ -38,7 +38,7 @@ const NavDate = () => {
       data-testid="nav-date"
       aria-label={lang === "ro" ? `Astăzi, ${local.date}` : `Today, ${local.date}`}
       title={local.timeZone}
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-1.5 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-foreground/50 transition-colors duration-200 hover:text-foreground/80"
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-1.5 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-foreground/50 transition-colors duration-200 hover:text-foreground/80 ${className}`}
     >
       <CalendarDays className="size-3.5 shrink-0 text-brand/75" aria-hidden="true" focusable="false" />
       <span className="hidden sm:inline whitespace-nowrap tabular-nums">{local.date}</span>

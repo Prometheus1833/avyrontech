@@ -69,14 +69,26 @@ const esc = (value) => value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").re
 function pageMetadata(route) {
   const file = route === "/" ? join(dist, "index.html") : join(dist, route.slice(1), "index.html");
   const html = readFileSync(file, "utf8");
-  const alternates = [...html.matchAll(/<link\s+rel="alternate"\s+hreflang="([^"]+)"\s+href="([^"]+)"[^>]*>/g)]
+  const alternates = [...html.matchAll(/<link\b[^>]*\brel="alternate"[^>]*\bhreflang="([^"]+)"[^>]*\bhref="([^"]+)"[^>]*>/g)]
     .map((match) => ({ language: match[1], href: match[2] }))
     .filter(({ href }) => href.startsWith(`${base}/`) || href === `${base}/`);
   const image = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"[^>]*>/)?.[1] || null;
-  return { alternates, image };
+  const robots = html.match(/<meta\s+name="robots"\s+content="([^"]+)"[^>]*>/i)?.[1] || "";
+  const canonical = html.match(/<link\b[^>]*\brel="canonical"[^>]*\bhref="([^"]+)"[^>]*>/i)?.[1] || null;
+  return { alternates, image, noindex: /(?:^|[\s,])noindex(?:$|[\s,])/i.test(robots), canonical };
 }
 
-const body = routes.map((route) => {
+const indexableRoutes = routes.filter((route) => {
+  const metadata = pageMetadata(route);
+  if (metadata.noindex) return false;
+  const expectedCanonical = `${base}${route === "/" ? "/" : route}`;
+  if (metadata.canonical !== expectedCanonical) {
+    throw new Error(`sitemap: canonical mismatch for ${route}: ${metadata.canonical || "missing"}`);
+  }
+  return true;
+});
+
+const body = indexableRoutes.map((route) => {
   const slug = route.startsWith("/blog/")
     ? route.slice("/blog/".length)
     : route.startsWith("/en/blog/")
@@ -101,4 +113,4 @@ const body = routes.map((route) => {
 }).join("\n");
 
 writeFileSync(join(dist, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${body}\n</urlset>\n`);
-console.log(`sitemap: ${routes.length} indexable URLs written with route-specific lastmod values`);
+console.log(`sitemap: ${indexableRoutes.length} indexable URLs written with route-specific lastmod values`);

@@ -85,7 +85,7 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
                 <StaffOsMenu />
               </Suspense>
             )}
-            <NavDate />
+            <NavDate className={isStaff ? "max-[419px]:hidden" : ""} />
             <div className="hidden xl:inline-flex items-center gap-1.5">
               {showCurrency && <CurrencySwitch compact showDetails={false} />}
               <LangSwitch />

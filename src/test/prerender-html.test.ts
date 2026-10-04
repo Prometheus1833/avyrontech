@@ -123,6 +123,19 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
       "<image:loc>https://avyron.ro/og/produse/logo-studio-3d.jpg</image:loc>",
     );
     expect(sitemap).not.toContain("<image:loc>https://avyron.ro/og/home.jpg</image:loc>");
+    const locations = [...sitemap.matchAll(/<loc>https:\/\/avyron\.ro([^<]*)<\/loc>/g)].map((match) => match[1] || "/");
+    const expected = PRERENDER_ROUTES.filter((route) => !isNoindexPath(route));
+    expect(new Set(locations).size).toBe(locations.length);
+    expect(new Set(locations)).toEqual(new Set(expected));
+    expect(locations.some((route) => isNoindexPath(route))).toBe(false);
+  });
+
+  it("keeps public metadata free of private implementation details", () => {
+    const forbidden = /(?:localhost|127\.0\.0\.1|service_role|sb_secret_|MFA_ENCRYPTION_KEY|Lovable|instrucțiuni interne)/i;
+    for (const route of PRERENDER_ROUTES.filter((path) => !isNoindexPath(path))) {
+      const description = attr(head(read(route)), /<meta name="description"[^>]*content="([^"]+)"/)!;
+      expect(description, route).not.toMatch(forbidden);
+    }
   });
 
   it("keeps the About page entity with reciprocal hreflang", () => {

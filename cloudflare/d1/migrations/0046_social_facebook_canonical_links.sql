@@ -1,4 +1,4 @@
--- 0039_social_facebook_canonical_links.sql
+-- 0046_social_facebook_canonical_links.sql
 -- Linkuri de conversie AVYRON scurte si canonice, in special pe Facebook.
 
 PRAGMA foreign_keys = ON;

@@ -19,6 +19,32 @@ interface Env {
 }
 
 const NOINDEX = "noindex, nofollow";
+const PRIVATE_TITLE = "Avyron — Acces securizat";
+const PRIVATE_DESCRIPTION = "Spațiu securizat pentru autentificare și administrarea contului Avyron.";
+
+function replaceMeta(html: string, attribute: "name" | "property", key: string, value: string) {
+  const expression = new RegExp(`<meta\\s+${attribute}=["']${key}["'][^>]*>`, "i");
+  const tag = `<meta ${attribute}="${key}" content="${value}">`;
+  return expression.test(html) ? html.replace(expression, tag) : html.replace("</head>", `  ${tag}\n</head>`);
+}
+
+function privateShellHtml(html: string, url: URL) {
+  let result = html
+    .replace(/<title>[\s\S]*?<\/title>/i, `<title>${PRIVATE_TITLE}</title>`)
+    .replace(/\s*<meta\s+name=["']keywords["'][^>]*>/gi, "")
+    .replace(/\s*<meta\s+name=["']geo\.[^"']+["'][^>]*>/gi, "")
+    .replace(/\s*<link\s+rel=["']canonical["'][^>]*>/gi, "")
+    .replace(/\s*<link\s+rel=["']alternate["'][^>]*>/gi, "")
+    .replace(/\s*<script[^>]+type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi, "");
+  result = replaceMeta(result, "name", "description", PRIVATE_DESCRIPTION);
+  result = replaceMeta(result, "name", "robots", NOINDEX);
+  result = replaceMeta(result, "property", "og:title", PRIVATE_TITLE);
+  result = replaceMeta(result, "property", "og:description", PRIVATE_DESCRIPTION);
+  result = replaceMeta(result, "property", "og:url", `${url.origin}${url.pathname}`);
+  result = replaceMeta(result, "name", "twitter:title", PRIVATE_TITLE);
+  result = replaceMeta(result, "name", "twitter:description", PRIVATE_DESCRIPTION);
+  return result;
+}
 
 async function serveFile(env: Env, url: URL, file: string, status: number, noindex: boolean) {
   const res = await env.ASSETS.fetch(new Request(new URL(file, url.origin), { method: "GET" }));
@@ -26,6 +52,15 @@ async function serveFile(env: Env, url: URL, file: string, status: number, noind
   headers.set("content-type", "text/html; charset=utf-8");
   if (noindex) headers.set("X-Robots-Tag", NOINDEX);
   return new Response(res.body, { status, headers });
+}
+
+async function servePrivateShell(env: Env, url: URL) {
+  const res = await env.ASSETS.fetch(new Request(new URL("/_shell.html", url.origin), { method: "GET" }));
+  const headers = new Headers(res.headers);
+  headers.set("content-type", "text/html; charset=utf-8");
+  headers.set("cache-control", "private, no-store");
+  headers.set("X-Robots-Tag", NOINDEX);
+  return new Response(privateShellHtml(await res.text(), url), { status: 200, headers });
 }
 
 async function apiFetch(env: Env, path: string) {
@@ -104,7 +139,7 @@ export default {
         if (assetRes.status === 404) {
           // Known SPA-only route (auth, dashboard) -> plain shell, noindex.
           if (isKnownSpaRoute(path)) {
-            return serveFile(env, url, "/_shell.html", 200, true);
+            return servePrivateShell(env, url);
           }
           // Anything else is a real 404 — never a soft 404.
           return serveFile(env, url, "/404.html", 404, true);

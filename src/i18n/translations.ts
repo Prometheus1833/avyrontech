@@ -237,7 +237,7 @@ export const translations = {
       available: "Disponibil",
       taken: "Probabil ocupat",
       success: "✨ Îți rezervăm domeniul ales direct în pachet. Fără bătăi de cap.",
-      disclaimer: "* Verificare demonstrativă. Disponibilitatea reală se confirmă la rezervare.",
+      disclaimer: "* Verificare informativă în timp real prin registre publice. Disponibilitatea finală se confirmă la rezervare.",
       tldLabel: "Extensie",
     },
     benefits: {
@@ -754,7 +754,7 @@ export const translations = {
       available: "Available",
       taken: "Likely taken",
       success: "✨ We reserve your chosen domain directly in the package. No hassle.",
-      disclaimer: "* Demo check. Real availability is confirmed at reservation.",
+      disclaimer: "* Informational real-time check through public registries. Final availability is confirmed when reserving.",
       tldLabel: "Extension",
     },
     benefits: {
