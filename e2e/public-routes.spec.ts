@@ -143,7 +143,7 @@ test.describe("public SEO routes", () => {
     await expect(footer.getByRole("link", { name: /Exemplu Gratuit.*Personalizat/ })).toBeVisible();
     const footerNavLinks = footer.locator("nav a");
     await expect(footerNavLinks).toHaveCount(8);
-    expect((await footerNavLinks.allTextContents()).slice(0, 6)).toEqual(["Blog", "Solicită un demo", "Servicii", "Abonamente", "Bibliotecă", "Produse"]);
+    expect((await footerNavLinks.allTextContents()).slice(0, 6)).toEqual(["Blog", "Produse", "Servicii", "Despre Noi", "Abonamente", "Bibliotecă"]);
     const cookieButton = footer.getByRole("button", { name: "Setări cookie", exact: true });
     const termsLink = footer.getByRole("link", { name: "Termeni de utilizare", exact: true });
     await expect(termsLink).toHaveAttribute("href", "/termeni");
