@@ -13,17 +13,15 @@ import { cfAuth } from "@/lib/cfAuth";
 import { COMMERCE_CATALOG, commerceItemByName, commerceItemBySku, type CommerceCurrency, type CommerceItemType } from "@/data/commerceCatalog";
 import CurrencySwitch from "@/components/site/CurrencySwitch";
 import { useCurrency } from "@/hooks/useCurrency";
-
-type CartItem = {
-  id: string;
-  sku: string;
-  type: CommerceItemType;
-  name: string;
-  period?: string;
-  notes?: string;
-  price_estimate?: number;
-  price_currency?: CommerceCurrency;
-};
+import { ANNUAL_PROMOTION_CODE } from "@/lib/subscriptionCheckout";
+import {
+  ACCOUNT_CART_KEY,
+  accountCartApi,
+  mergeAccountCartItems,
+  writeLocalAccountCart,
+  type AccountCartItem,
+  type AccountCartType,
+} from "@/lib/accountCart";
 
 type Quote = {
   currency: "RON";
@@ -35,7 +33,6 @@ type Quote = {
   requiresManualQuote: boolean;
 };
 
-const STORAGE_KEY = "avyron_cart_v2";
 const LEGACY_STORAGE_KEY = "avyron_cart_v1";
 const PRESET_PACKAGES = COMMERCE_CATALOG.filter((item) => item.type === "package" && item.unitPriceCents !== null);
 const SUBSCRIPTION_PLANS = COMMERCE_CATALOG.filter((item) => item.type === "subscription" && item.unitPriceCents !== null);
@@ -44,16 +41,16 @@ const PERIODS = [
   { value: "annual", label: "12 luni" },
 ] as const;
 
-const toApiItems = (items: CartItem[]) => items.map((item) => ({
-  sku: item.sku,
+const toApiItems = (items: AccountCartItem[]) => items.map((item) => ({
+  sku: item.type === "product" || item.type === "service" ? "custom-request" : item.sku,
   quantity: 1,
   period: item.period,
   notes: item.notes,
-  description: item.sku === "custom-request" ? item.name : undefined,
+  description: item.sku === "custom-request" || item.type === "product" || item.type === "service" ? item.name : undefined,
 }));
 
-const restoreItems = (raw: string): CartItem[] => {
-  const parsed = JSON.parse(raw) as Array<Partial<CartItem>>;
+const restoreItems = (raw: string): AccountCartItem[] => {
+  const parsed = JSON.parse(raw) as Array<Partial<AccountCartItem>>;
   if (!Array.isArray(parsed)) return [];
   return parsed.slice(0, 20).flatMap((item) => {
     const catalogItem = commerceItemBySku(String(item.sku ?? "")) || commerceItemByName(String(item.name ?? ""));
@@ -61,23 +58,25 @@ const restoreItems = (raw: string): CartItem[] => {
     if (!name) return [];
     return [{
       id: String(item.id || crypto.randomUUID()),
+      source: item.source || "dashboard",
       sku: catalogItem?.sku || "custom-request",
-      type: catalogItem?.type || item.type || "custom",
+      type: item.type === "product" || item.type === "service" || item.type === "partnership" ? item.type : catalogItem?.type || item.type || "custom",
       name: catalogItem?.name || name,
       period: catalogItem?.type === "subscription"
         ? ["annual", "12 luni"].includes(String(item.period ?? "")) ? "annual" : "monthly"
         : undefined,
       notes: item.notes ? String(item.notes).slice(0, 1000) : undefined,
+      productSlug: item.productSlug ? String(item.productSlug).slice(0, 100) : undefined,
       price_estimate: catalogItem?.unitPriceCents ?? undefined,
       price_currency: catalogItem?.currency,
-    } satisfies CartItem];
+    } satisfies AccountCartItem];
   });
 };
 
 export function CartTab() {
   const { user } = useAuth();
   const { currency, formatEur, formatRonCents, rate } = useCurrency("ro-RO");
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<AccountCartItem[]>([]);
   const [type, setType] = useState<CommerceItemType>("package");
   const [name, setName] = useState("");
   const [period, setPeriod] = useState<(typeof PERIODS)[number]["value"]>(PERIODS[0].value);
@@ -86,21 +85,46 @@ export function CartTab() {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [quoting, setQuoting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+  const [cloudSynced, setCloudSynced] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
-      if (raw) setItems(restoreItems(raw));
-      localStorage.removeItem(LEGACY_STORAGE_KEY);
-    } catch {
-      // Start with an empty local cart when storage is unavailable or invalid.
-    }
-  }, []);
+    let active = true;
+    const load = async () => {
+      let local: AccountCartItem[] = [];
+      try {
+        const raw = localStorage.getItem(ACCOUNT_CART_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+        if (raw) local = restoreItems(raw);
+        localStorage.removeItem(LEGACY_STORAGE_KEY);
+      } catch { /* storage optional */ }
+      let cloud: AccountCartItem[] = [];
+      if (user) {
+        try {
+          cloud = restoreItems(JSON.stringify(await accountCartApi.load()));
+          if (active) setCloudSynced(true);
+        } catch {
+          if (active) setCloudSynced(false);
+        }
+      }
+      if (!active) return;
+      setItems(mergeAccountCartItems(cloud, local));
+      setHydrated(true);
+    };
+    void load();
+    return () => { active = false; };
+  }, [user]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    if (!hydrated) return;
+    writeLocalAccountCart(items);
     setQuote(null);
-  }, [items]);
+    if (items.some((item) => item.type === "subscription" && item.period === "annual")) setPromotionCode(ANNUAL_PROMOTION_CODE);
+    if (!user) return;
+    const timer = window.setTimeout(() => {
+      void accountCartApi.save(items).then(() => setCloudSynced(true)).catch(() => setCloudSynced(false));
+    }, 320);
+    return () => window.clearTimeout(timer);
+  }, [hydrated, items, user]);
 
   const addItem = () => {
     if (!name.trim()) return toast.error("Adaugă o denumire pentru element.");
@@ -109,8 +133,9 @@ export function CartTab() {
     if (type === "subscription" && items.some((item) => item.type === "subscription")) {
       return toast.error("O comandă poate conține un singur abonament selectat.");
     }
-    const newItem: CartItem = {
+    const newItem: AccountCartItem = {
       id: crypto.randomUUID(),
+      source: "dashboard",
       sku: preset?.sku || "custom-request",
       type,
       name: name.trim().slice(0, 120),
@@ -177,7 +202,7 @@ export function CartTab() {
     return itemCurrency === "EUR" ? formatEur((amountCents / 100) * months) : formatRonCents(amountCents * months);
   };
 
-  const typeIcon = (itemType: CommerceItemType) =>
+  const typeIcon = (itemType: AccountCartType) =>
     itemType === "package" ? <Package className="size-4" aria-hidden="true" /> : itemType === "website" ? <Globe className="size-4" aria-hidden="true" /> : itemType === "subscription" ? <Repeat className="size-4" aria-hidden="true" /> : <Wrench className="size-4" aria-hidden="true" />;
 
   return (
@@ -185,7 +210,7 @@ export function CartTab() {
       <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
         <div>
           <h2 className="text-2xl font-display font-bold flex items-center gap-2"><ShoppingCart className="size-6" /> Coșul meu</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Coșul rămâne local până la trimitere; prețul și orice reducere sunt recalculate securizat de Avyron API.</p>
+          <p className="mt-1 text-xs text-muted-foreground">{cloudSynced ? "Coș sincronizat securizat în contul tău Avyron, disponibil și pe celelalte dispozitive." : "Coșul este păstrat local; sincronizarea în cont se reia automat când API-ul este disponibil."}</p>
           <p className="text-sm text-muted-foreground">Adaugă pachete, abonamente sau cereri personalizate și trimite o singură comandă echipei.</p>
         </div>
         <CurrencySwitch compact className="shrink-0 sm:items-end" />

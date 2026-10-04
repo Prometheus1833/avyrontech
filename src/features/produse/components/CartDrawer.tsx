@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ShoppingCart, Trash2, X } from "lucide-react";
 import type { Lang } from "@/i18n/translations";
 import { ITEM_BY_SLUG } from "../data/items";
@@ -6,6 +6,7 @@ import { PLAN_BY_ID } from "../data/plans";
 import { EUR_FOR_RON } from "../data/taxonomy";
 import { store, useProduseStore } from "../lib/store";
 import { useProduseAccount } from "../lib/account";
+import { accountCartApi, type AccountCartItem } from "@/lib/accountCart";
 
 /**
  * Coșul paginii. Alegerile stau local; plata trece prin Worker, care
@@ -19,6 +20,36 @@ export default function CartDrawer({ lang, open, onOpenChange }: { lang: Lang; o
   const account = useProduseAccount();
   const [paying, setPaying] = useState(false);
   const [payNotice, setPayNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!account.signedIn) return;
+    const lines: AccountCartItem[] = cart.map((line) => {
+      if (line.kind === "plan") {
+        const plan = PLAN_BY_ID.get(line.plan);
+        return {
+          id: `partnership-${line.plan}`,
+          source: "products",
+          sku: `partnership-${line.plan}`,
+          type: "partnership",
+          name: plan?.name ?? line.plan,
+          period: "annual",
+        };
+      }
+      const item = ITEM_BY_SLUG.get(line.slug);
+      return {
+        id: `product-${line.slug}`,
+        source: "products",
+        sku: `product-${line.slug}`,
+        type: "product",
+        name: item?.name[lang] ?? line.slug,
+        productSlug: line.slug,
+      };
+    });
+    const timer = window.setTimeout(() => {
+      void accountCartApi.replaceSource("products", lines).catch(() => undefined);
+    }, 320);
+    return () => window.clearTimeout(timer);
+  }, [account.signedIn, cart, lang]);
 
   /**
    * Plata pornește de la prima linie din coș: Worker-ul creează o comandă pe

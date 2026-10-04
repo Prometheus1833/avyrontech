@@ -2,6 +2,7 @@ import { Check, ChevronDown, Crown, Shield, Sparkle, Zap } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { usePointerGlow } from "@/hooks/usePointerGlow";
 import type { PlanTier, SubscriptionCategory, SubscriptionPlan } from "@/data/subscriptionPlans";
+import { ANNUAL_DISCOUNT_PERCENT } from "@/lib/subscriptionCheckout";
 
 const TIER_ICONS: Record<PlanTier, React.ComponentType<{ className?: string }>> = {
   plus: Shield,
@@ -16,6 +17,7 @@ type Props = {
   /** Copiile din bandă nu intră în ordinea de tabulare. */
   duplicate?: boolean;
   price: string;
+  annualPrice: string;
   secondaryPrice: string;
   converted: boolean;
   onOpen: (plan: SubscriptionPlan, element: HTMLElement) => void;
@@ -25,7 +27,7 @@ type Props = {
  * Cardul unui abonament din carusel: urmărește cursorul cu o lumină discretă și
  * se înclină foarte puțin, ca să pară un obiect fizic, nu o casetă.
  */
-const PlanCard = ({ plan, category, active, duplicate, price, secondaryPrice, converted, onOpen }: Props) => {
+const PlanCard = ({ plan, category, active, duplicate, price, annualPrice, secondaryPrice, converted, onOpen }: Props) => {
   const { lang } = useLang();
   const ro = lang === "ro";
   const glowRef = usePointerGlow<HTMLDivElement>();
@@ -86,6 +88,9 @@ const PlanCard = ({ plan, category, active, duplicate, price, secondaryPrice, co
         </div>
         <p className="relative mt-1 text-[11px] text-foreground/65">
           {converted ? `${ro ? "facturat" : "billed"} ` : "≈ "}{secondaryPrice} {ro ? "pe lună" : "per month"}
+        </p>
+        <p className={`relative mt-2 text-xs font-semibold ${theme.text}`}>
+          {ro ? `Anual: ${annualPrice} · economisești ${ANNUAL_DISCOUNT_PERCENT}%` : `Annual: ${annualPrice} · save ${ANNUAL_DISCOUNT_PERCENT}%`}
         </p>
 
         <p className="relative mt-3 line-clamp-3 text-sm leading-relaxed text-foreground/70">{text.summary}</p>

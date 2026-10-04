@@ -1,4 +1,4 @@
--- 0051_social_follow_back_admin_only.sql
+-- 0052_social_follow_back_admin_only.sql
 -- Follow-back-ul este exclusiv o decizie manuala a administratorilor.
 
 PRAGMA foreign_keys = ON;

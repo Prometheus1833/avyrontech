@@ -137,6 +137,7 @@ export function serviceLd({
   name,
   description,
   path,
+  priceRon,
   priceEur,
   offers,
   areaServed = "RO",
@@ -144,6 +145,7 @@ export function serviceLd({
   name: string;
   description: string;
   path: string;
+  priceRon?: number;
   priceEur?: number;
   offers?: Record<string, unknown>;
   areaServed?: string;
@@ -160,12 +162,12 @@ export function serviceLd({
     areaServed,
     ...(offers
       ? { offers }
-      : priceEur
+      : priceRon || priceEur
       ? {
           offers: {
             "@type": "Offer",
-            price: priceEur,
-            priceCurrency: "EUR",
+            price: priceRon || priceEur,
+            priceCurrency: priceRon ? "RON" : "EUR",
             availability: "https://schema.org/InStock",
             url: `${BASE_URL}${path}`,
           },

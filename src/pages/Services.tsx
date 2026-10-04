@@ -721,13 +721,15 @@ const ServiceBlock = ({ service, lang }: { service: ServiceDef; lang: Lang }) =>
     <section
       id={service.key}
       data-service={service.key}
-      className="mt-6 scroll-mt-28 grid items-start gap-4 md:grid-cols-5"
+      data-testid="service-card"
+      aria-labelledby={`service-${service.key}-title`}
+      className={`group relative mt-6 scroll-mt-28 overflow-hidden rounded-[2rem] border ${a.border} bg-card/70 shadow-[0_26px_80px_-58px_rgba(0,0,0,0.75)] backdrop-blur transition duration-500 hover:-translate-y-0.5 hover:shadow-[0_32px_90px_-55px_rgba(0,0,0,0.85)]`}
     >
-      <div
-        className={`md:col-span-2 rounded-2xl border ${a.border} bg-gradient-to-br from-card to-background p-5 sm:p-6 relative overflow-hidden text-center`}
-      >
-        <div aria-hidden className={`absolute -top-16 -right-16 size-48 rounded-full ${a.glow} blur-3xl`} />
-        <div className="relative">
+      <div aria-hidden className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${a.tile}`} />
+      <div aria-hidden className={`absolute -left-20 -top-24 size-64 rounded-full ${a.glow} blur-3xl transition-transform duration-700 group-hover:scale-110`} />
+
+      <div className="relative grid md:grid-cols-5">
+        <div className="p-5 text-center sm:p-6 md:col-span-2 md:p-7">
           <div
             className={`inline-flex items-center gap-2 rounded-full border ${a.pill} px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.25em]`}
           >
@@ -739,9 +741,11 @@ const ServiceBlock = ({ service, lang }: { service: ServiceDef; lang: Lang }) =>
           >
             <service.icon className="size-8 text-white" aria-hidden />
           </div>
-          <h2 className="mt-4 font-display text-2xl sm:text-3xl font-extrabold">{t(service.title)}</h2>
+          <h2 id={`service-${service.key}-title`} className="mt-4 font-display text-2xl font-extrabold sm:text-3xl">
+            {t(service.title)}
+          </h2>
           <p className="mt-2 text-xs uppercase tracking-[0.25em] text-foreground/50">{t(service.tagline)}</p>
-          <p className="mt-3 text-xs sm:text-sm text-foreground/70 leading-snug text-left">{t(service.desc)}</p>
+          <p className="mt-4 text-left text-xs leading-relaxed text-foreground/70 sm:text-sm">{t(service.desc)}</p>
           <div
             className={`mt-4 inline-flex items-center gap-2 rounded-full border ${a.border} bg-foreground/[0.04] px-3 py-1.5 text-[11px] text-foreground/70`}
           >
@@ -749,39 +753,58 @@ const ServiceBlock = ({ service, lang }: { service: ServiceDef; lang: Lang }) =>
             {t(service.time)}
           </div>
         </div>
-      </div>
 
-      <div className="md:col-span-3 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 backdrop-blur">
-        <div className="text-[11px] uppercase tracking-[0.3em] text-foreground/50">{t(service.includes)}</div>
-        <ul className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-3">
-          {service.features.slice(0, SERVICE_SUMMARY_LIMIT).map((feature) => (
-            <li key={feature.text[lang]} className="flex items-start gap-2 text-sm text-foreground/85">
-              <span className={`mt-0.5 size-5 rounded-md grid place-items-center shrink-0 ${a.check}`}>
-                <feature.icon className="size-3.5" aria-hidden />
-              </span>
-              <span>{t(feature.text)}</span>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          <a
-            href={`https://wa.me/40734605055?text=${encodeURIComponent(t(service.wa))}`}
-            onClick={() => trackEvent("contact_click", { method: "whatsapp", location: service.analytics })}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`inline-flex items-center justify-center gap-2 rounded-full ${a.button} px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90`}
+        <div className="relative border-t border-foreground/10 bg-foreground/[0.025] p-5 sm:p-6 md:col-span-3 md:border-l md:border-t-0 md:p-7">
+          <span
+            aria-hidden
+            className={`absolute left-8 top-0 grid size-6 -translate-y-1/2 place-items-center rounded-full border ${a.border} bg-card shadow-sm md:left-0 md:top-8 md:-translate-x-1/2 md:translate-y-0`}
           >
-            <MessageCircle className="size-4" aria-hidden />
-            {t(service.cta)}
-          </a>
-          <Link
-            to={t(service.details)}
-            onClick={() => trackEvent("product_details_click", { product: service.details.ro })}
-            className="group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold hover:bg-foreground/[0.12] hover:border-foreground/35 transition-all duration-300"
-          >
-            {lang === "ro" ? "Vezi detalii" : "See details"}
-            <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
-          </Link>
+            <span className={`size-2 rounded-full bg-gradient-to-br ${a.tile}`} />
+          </span>
+
+          <div className="flex items-center gap-3">
+            <span className={`grid size-8 shrink-0 place-items-center rounded-xl ${a.check}`}>
+              <Check className="size-4" aria-hidden />
+            </span>
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-foreground/45">
+                {lang === "ro" ? "Beneficii și integrări" : "Benefits and integrations"}
+              </div>
+              <div className="mt-0.5 text-sm font-semibold text-foreground/85">{t(service.includes)}</div>
+            </div>
+          </div>
+
+          <ul className="mt-5 grid gap-x-6 gap-y-3 sm:grid-cols-2">
+            {service.features.slice(0, SERVICE_SUMMARY_LIMIT).map((feature) => (
+              <li key={feature.text[lang]} className="flex items-start gap-2.5 text-sm leading-snug text-foreground/85">
+                <span className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-md ${a.check}`}>
+                  <feature.icon className="size-3.5" aria-hidden />
+                </span>
+                <span>{t(feature.text)}</span>
+              </li>
+            ))}
+          </ul>
+
+          <div className="mt-6 flex flex-col gap-2.5 border-t border-foreground/10 pt-5 sm:flex-row sm:flex-wrap sm:items-center">
+            <a
+              href={`https://wa.me/40734605055?text=${encodeURIComponent(t(service.wa))}`}
+              onClick={() => trackEvent("contact_click", { method: "whatsapp", location: service.analytics })}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`inline-flex items-center justify-center gap-2 rounded-full ${a.button} px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 active:scale-[0.98]`}
+            >
+              <MessageCircle className="size-4" aria-hidden />
+              {t(service.cta)}
+            </a>
+            <Link
+              to={t(service.details)}
+              onClick={() => trackEvent("product_details_click", { product: service.details.ro })}
+              className="group/details inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-2.5 text-sm font-semibold transition-all duration-300 hover:border-foreground/35 hover:bg-foreground/[0.12] active:scale-[0.98]"
+            >
+              {lang === "ro" ? "Vezi detalii" : "See details"}
+              <ArrowRight className="size-4 transition-transform duration-300 group-hover/details:translate-x-1" aria-hidden />
+            </Link>
+          </div>
         </div>
       </div>
     </section>
@@ -1085,4 +1108,3 @@ const Services = () => {
 };
 
 export default Services;
-

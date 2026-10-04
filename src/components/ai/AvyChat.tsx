@@ -1,10 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { Bot, Send, X, Sparkles, ThumbsUp, ThumbsDown, MessageCircle } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
-import { avyApi, type ChatReply } from "@/lib/aiOsApi";
+import { avyApi, type ChatReply, type PublicAgent } from "@/lib/aiOsApi";
 import { trackEvent } from "@/lib/analytics";
+import {
+  AVY_PROMPT_DELAY_MS,
+  canShowProactivePrompt,
+  normalizePromptList,
+  selectProactivePrompt,
+} from "./avyChatExperience";
 
 type Msg = { id: string; role: "user" | "assistant"; text: string; rated?: boolean };
+
+type StoredChat = { conversationId: string | null; messages: Msg[] };
 
 /** Numărul real de WhatsApp AVYRON (format internațional, fără spații). */
 export const AVYRON_WHATSAPP = "40734605055";
@@ -27,6 +36,8 @@ const COPY = {
     waIntro: "Bună! Am discutat cu AVY pe site și vreau să continuăm aici.",
     waYou: "Eu",
     waPage: "Pagina",
+    connected: "Conectat la AVY OS",
+    dismissPrompt: "Ascunde invitația",
   },
   en: {
     open: "Chat with AVY, the Avyron assistant",
@@ -45,6 +56,8 @@ const COPY = {
     waIntro: "Hi! I chatted with AVY on your site and I would like to continue here.",
     waYou: "Me",
     waPage: "Page",
+    connected: "Connected to AVY OS",
+    dismissPrompt: "Dismiss prompt",
   },
 } as const;
 
@@ -63,20 +76,140 @@ const visitorId = () => {
   }
 };
 
+const chatStorageKey = (agent: string) => `avy_chat_state:${agent}`;
+const promptStorageKey = (agent: string) => `avy_prompt_seen:${agent}`;
+
+const readStoredChat = (agent: string): StoredChat => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(chatStorageKey(agent)) || "null") as Partial<StoredChat> | null;
+    const conversationId = typeof parsed?.conversationId === "string" && /^conv_[a-z0-9]+$/.test(parsed.conversationId)
+      ? parsed.conversationId
+      : null;
+    const messages = Array.isArray(parsed?.messages)
+      ? parsed.messages.filter((message): message is Msg => Boolean(
+        message
+        && typeof message.id === "string"
+        && (message.role === "user" || message.role === "assistant")
+        && typeof message.text === "string"
+        && message.text.length <= 10_000,
+      )).slice(-30)
+      : [];
+    return { conversationId, messages };
+  } catch {
+    return { conversationId: null, messages: [] };
+  }
+};
+
+const writeStoredChat = (agent: string, state: StoredChat) => {
+  try {
+    localStorage.setItem(chatStorageKey(agent), JSON.stringify({
+      conversationId: state.conversationId,
+      messages: state.messages.filter((message) => message.id !== "welcome").slice(-30),
+    }));
+  } catch {
+    /* Browser storage may be unavailable. The current chat still works. */
+  }
+};
+
 /** Buton flotant (stânga, mijloc) + panou de chat conectat la AI OS "AVY". */
 const AvyChat = ({ agent = "avy" }: { agent?: string }) => {
   const { lang } = useLang();
+  const { pathname } = useLocation();
   const t = COPY[lang === "en" ? "en" : "ro"];
+  const language = lang === "en" ? "en" : "ro";
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [publicAgent, setPublicAgent] = useState<PublicAgent | null>(null);
+  const [connected, setConnected] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+  const [proactivePrompt, setProactivePrompt] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const bubbleRef = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const [dragging, setDragging] = useState(false);
   const dragState = useRef<{ dx: number; dy: number; moved: boolean } | null>(null);
+
+  const greeting = language === "en"
+    ? publicAgent?.greeting_en || t.hello
+    : publicAgent?.greeting_ro || t.hello;
+  const chips = useMemo(
+    () => normalizePromptList(publicAgent?.starterQuestions?.[language], t.chips),
+    [language, publicAgent, t.chips],
+  );
+  const proactivePrompts = useMemo(
+    () => normalizePromptList(publicAgent?.proactivePrompts?.[language], [
+      language === "en" ? "Do you need a website?" : "Ai nevoie de un site?",
+    ]),
+    [language, publicAgent],
+  );
+
+  useEffect(() => {
+    const stored = readStoredChat(agent);
+    setConversationId(stored.conversationId);
+    setMessages(stored.messages);
+    setHydrated(true);
+
+    let active = true;
+    void avyApi.agents()
+      .then((agents) => {
+        if (!active) return;
+        const configured = agents.find((candidate) => candidate.slug === agent) ?? null;
+        setPublicAgent(configured);
+        setConnected(Boolean(configured));
+      })
+      .catch(() => {
+        if (active) setConnected(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [agent]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    writeStoredChat(agent, { conversationId, messages });
+  }, [agent, conversationId, hydrated, messages]);
+
+  useEffect(() => {
+    if (!open || messages.length !== 0) return;
+    setMessages([{ id: "welcome", role: "assistant", text: greeting, rated: true }]);
+    trackEvent("avy_open", { agent });
+  }, [agent, greeting, messages.length, open]);
+
+  useEffect(() => {
+    setMessages((current) => current.map((message) => (
+      message.id === "welcome" ? { ...message, text: greeting } : message
+    )));
+  }, [greeting]);
+
+  useEffect(() => {
+    if (!hydrated || open || conversationId || messages.some((message) => message.role === "user")) return;
+    let lastShown: number | null = null;
+    try {
+      const stored = Number(localStorage.getItem(promptStorageKey(agent)));
+      lastShown = Number.isFinite(stored) && stored > 0 ? stored : null;
+    } catch {
+      /* A prompt can still appear once without persistence. */
+    }
+    if (!canShowProactivePrompt(lastShown)) return;
+
+    const timer = window.setTimeout(() => {
+      if (document.visibilityState !== "visible") return;
+      const prompt = selectProactivePrompt(proactivePrompts, pathname);
+      if (!prompt) return;
+      setProactivePrompt(prompt);
+      try {
+        localStorage.setItem(promptStorageKey(agent), String(Date.now()));
+      } catch {
+        /* ignore */
+      }
+      trackEvent("avy_prompt_view", { agent, page: pathname });
+    }, AVY_PROMPT_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [agent, conversationId, hydrated, messages, open, pathname, proactivePrompts]);
 
   const clamp = useCallback((x: number, y: number) => {
     const el = bubbleRef.current;
@@ -148,6 +281,7 @@ const AvyChat = ({ agent = "avy" }: { agent?: string }) => {
       dragState.current = null;
       return;
     }
+    setProactivePrompt(null);
     setOpen((v) => !v);
   }, []);
 
@@ -176,15 +310,6 @@ const AvyChat = ({ agent = "avy" }: { agent?: string }) => {
     [clamp, pos],
   );
 
-
-
-  useEffect(() => {
-    if (open && messages.length === 0) {
-      setMessages([{ id: "welcome", role: "assistant", text: t.hello, rated: true }]);
-      trackEvent("avy_open", { agent });
-    }
-  }, [open, messages.length, t.hello, agent]);
-
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, busy]);
@@ -201,8 +326,8 @@ const AvyChat = ({ agent = "avy" }: { agent?: string }) => {
           agent,
           message: text,
           conversationId,
-          language: lang === "en" ? "en" : "ro",
-          page: window.location.pathname,
+          language,
+          page: pathname,
           visitorId: visitorId(),
         });
         setConversationId(reply.conversationId);
@@ -214,7 +339,7 @@ const AvyChat = ({ agent = "avy" }: { agent?: string }) => {
         setBusy(false);
       }
     },
-    [agent, busy, conversationId, lang, t.error],
+    [agent, busy, conversationId, language, pathname, t.error],
   );
 
   const waHref = useMemo(() => {
@@ -236,6 +361,34 @@ const AvyChat = ({ agent = "avy" }: { agent?: string }) => {
 
   return (
     <>
+      {proactivePrompt && !open && (
+        <div
+          role="status"
+          className={`fixed z-40 flex max-w-[min(18rem,calc(100vw-5.5rem))] items-start gap-2 rounded-2xl border border-primary/30 bg-background/92 p-2 pl-3 text-sm shadow-xl backdrop-blur-xl motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-left-2 ${
+            pos ? "" : "left-[4.75rem] top-20"
+          }`}
+          style={pos ? {
+            left: Math.min(pos.x + 64, Math.max(8, window.innerWidth - 288)),
+            top: Math.min(pos.y, Math.max(8, window.innerHeight - 96)),
+          } : undefined}
+        >
+          <button
+            type="button"
+            className="min-w-0 flex-1 text-left font-medium leading-5 text-foreground"
+            onClick={() => {
+              setProactivePrompt(null);
+              setOpen(true);
+              trackEvent("avy_prompt_open", { agent, page: pathname });
+            }}
+          >
+            <span className="mr-1 text-primary" aria-hidden>✦</span>{proactivePrompt}
+          </button>
+          <button type="button" onClick={() => setProactivePrompt(null)} aria-label={t.dismissPrompt} className="rounded-md p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground">
+            <X className="size-3.5" />
+          </button>
+        </div>
+      )}
+
       <button
         ref={bubbleRef}
         type="button"
@@ -269,6 +422,11 @@ const AvyChat = ({ agent = "avy" }: { agent?: string }) => {
                 <Sparkles className="size-4 text-primary" aria-hidden /> {t.title}
               </p>
               <p className="truncate text-xs text-muted-foreground">{t.subtitle}</p>
+              {connected && (
+                <p className="mt-1 flex items-center gap-1.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                  <span className="size-1.5 rounded-full bg-current" aria-hidden /> {t.connected}
+                </p>
+              )}
             </div>
             <button type="button" onClick={() => setOpen(false)} aria-label={t.close} className="rounded-md p-1 hover:bg-muted">
               <X className="size-4" />
@@ -301,7 +459,7 @@ const AvyChat = ({ agent = "avy" }: { agent?: string }) => {
             {busy && <div className="text-xs text-muted-foreground">AVY…</div>}
             {messages.length <= 1 && (
               <div className="flex flex-wrap gap-2 pt-2">
-                {t.chips.map((chip) => (
+                {chips.map((chip) => (
                   <button
                     key={chip}
                     type="button"

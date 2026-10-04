@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Activity, AlertTriangle, ArrowRight, Bot, Check, CircleDollarSign, Clock3,
+  Activity, AlertTriangle, ArrowRight, Bot, Check, CircleDollarSign,
   Cloud, FolderKanban, Gauge, RefreshCw, ShieldCheck, Sparkles, Target, Users, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Access, SectionId } from "@/lib/access";
-import { canOpenSection } from "@/lib/access";
 import { osApi, type OsOverview } from "@/lib/osApi";
 
 type Props = {
@@ -50,6 +49,29 @@ const actionLabel = (action: OsOverview["approvals"][number]["action_class"]) =>
   financial: "acțiune financiară",
   publish: "publicare",
 }[action]);
+
+const greeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Bună dimineața";
+  if (hour < 18) return "Bună ziua";
+  return "Bună seara";
+};
+
+const leadStages = [
+  { status: "new", label: "Noi", tone: "bg-cyan-400" },
+  { status: "contacted", label: "Contactate", tone: "bg-blue-400" },
+  { status: "qualified", label: "Calificate", tone: "bg-violet-400" },
+  { status: "won", label: "Câștigate", tone: "bg-emerald-400" },
+  { status: "lost", label: "Închise", tone: "bg-slate-500" },
+] as const;
+
+const projectStatus = (status: string) => ({
+  online: { label: "Online", className: "text-emerald-300 bg-emerald-400/10" },
+  testing: { label: "Testare", className: "text-cyan-300 bg-cyan-400/10" },
+  revizuire: { label: "Revizuire", className: "text-fuchsia-300 bg-fuchsia-400/10" },
+  in_progress: { label: "În lucru", className: "text-violet-300 bg-violet-400/10" },
+  offline: { label: "Offline", className: "text-slate-400 bg-slate-400/10" },
+}[status] || { label: status.replace(/_/g, " "), className: "text-slate-400 bg-white/[0.05]" });
 
 const Panel = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
   <section className={`rounded-2xl border border-white/[0.08] bg-[#10162a]/90 shadow-[0_24px_70px_-46px_rgba(124,58,237,0.9)] ${className}`}>
@@ -116,6 +138,12 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
     ];
   }, [access, data]);
 
+  const pipeline = useMemo(() => leadStages.map((stage) => ({
+    ...stage,
+    total: data?.leadPipeline?.find((item) => item.status === stage.status)?.total || 0,
+  })), [data]);
+  const pipelineMax = Math.max(1, ...pipeline.map((stage) => stage.total));
+
   if (loading) return (
     <div className="grid gap-4 lg:grid-cols-12" aria-label="Se încarcă dashboardul AVYRON OS">
       <div className="h-40 animate-pulse rounded-2xl bg-white/[0.05] lg:col-span-12" />
@@ -136,6 +164,8 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
     </Panel>
   );
 
+  const activeProjects = data.activeProjects ?? [];
+
   return (
     <div className="flex flex-col gap-4 text-slate-100">
       <header className="relative overflow-hidden rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-600/[0.16] via-[#11182d] to-cyan-500/[0.08] p-5 sm:p-6">
@@ -143,7 +173,7 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-violet-200/70">Informare AVY · actualizată {relativeTime(data.generatedAt)}</p>
-            <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">Bun venit, {displayName}.</h1>
+            <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">{greeting()}, {displayName}.</h1>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-300">{data.briefing}</p>
           </div>
           <button type="button" onClick={onOpenCommand} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-violet-300/25 bg-violet-500/15 px-4 py-2.5 text-sm font-semibold text-violet-100 transition hover:bg-violet-500/25">
@@ -225,64 +255,72 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
       </div>
 
       <div className="grid gap-4 xl:grid-cols-12">
-        <Panel className="p-4 sm:p-5 xl:col-span-7">
+        {access.isStaff && <Panel className="p-4 sm:p-5 xl:col-span-4">
           <div className="mb-4 flex items-center justify-between">
-            <div><p className="font-mono text-[10px] uppercase tracking-[0.22em] text-cyan-200/70">Observabilitate AI</p><h2 className="mt-1 font-display text-lg font-semibold text-white">Activitatea agenților</h2></div>
-            {access.isSuperAdmin && <button type="button" onClick={() => onOpenSection("ai-os")} className="text-xs font-medium text-violet-300 hover:text-violet-200">Vezi agenții</button>}
+            <div><p className="font-mono text-[10px] uppercase tracking-[0.22em] text-cyan-200/70">CRM sincronizat</p><h2 className="mt-1 font-display text-lg font-semibold text-white">Pipeline leaduri</h2></div>
+            <button type="button" onClick={() => onOpenSection("leads")} className="text-xs font-medium text-violet-300 hover:text-violet-200">Deschide</button>
+          </div>
+          <div className="space-y-3">
+            {pipeline.map((stage) => <div key={stage.status}>
+              <div className="mb-1.5 flex items-center justify-between text-xs"><span className="text-slate-400">{stage.label}</span><span className="font-semibold text-slate-200">{stage.total}</span></div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.05]"><div className={`h-full rounded-full ${stage.tone} transition-[width] duration-500`} style={{ width: `${stage.total ? Math.max(8, Math.round((stage.total / pipelineMax) * 100)) : 0}%` }} /></div>
+            </div>)}
+          </div>
+        </Panel>}
+
+        <Panel className={`p-4 sm:p-5 ${access.isStaff ? "xl:col-span-4" : "xl:col-span-6"}`}>
+          <div className="mb-4 flex items-center justify-between">
+            <div><p className="font-mono text-[10px] uppercase tracking-[0.22em] text-violet-200/70">Livrare conectată</p><h2 className="mt-1 font-display text-lg font-semibold text-white">Proiecte active</h2></div>
+            <button type="button" onClick={() => onOpenSection("projects")} className="text-xs font-medium text-violet-300 hover:text-violet-200">Vezi toate</button>
           </div>
           <div className="space-y-2">
-            {data.agentRuns.length === 0 && <EmptyState>{access.isSuperAdmin ? "Nu există rulări recente." : "Activitatea AI detaliată este rezervată rolurilor autorizate."}</EmptyState>}
-            {data.agentRuns.slice(0, 6).map((run) => (
-              <div key={run.id} className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
-                <span className="grid size-8 place-items-center rounded-lg bg-cyan-400/10 text-cyan-300"><Bot className="size-4" /></span>
-                <div className="min-w-0"><p className="truncate text-sm font-medium text-slate-200">{run.agent_slug}</p><p className="text-[11px] text-slate-500">{run.steps} pași · {run.input_tokens + run.output_tokens} tokeni · {relativeTime(run.created_at)}</p></div>
-                <div className="flex items-center gap-2 text-[11px] text-slate-400"><span className={`size-2 rounded-full ${statusTone(run.status)}`} />{agentStatusLabel(run.status)}</div>
-              </div>
-            ))}
+            {activeProjects.length === 0 && <EmptyState>Nu există proiecte active pentru acest cont.</EmptyState>}
+            {activeProjects.slice(0, 5).map((project) => {
+              const state = projectStatus(project.bannerStatus);
+              return <button key={project.id} type="button" onClick={() => onOpenSection("projects")} className="group flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5 text-left transition hover:border-violet-400/25">
+                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-violet-400/10 text-violet-300"><FolderKanban className="size-4" /></span>
+                <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium text-slate-200">{project.name}</span><span className="block text-[11px] text-slate-600">actualizat {relativeTime(project.updatedAt)}</span></span>
+                <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${state.className}`}>{state.label}</span>
+              </button>;
+            })}
           </div>
         </Panel>
 
-        <Panel className="p-4 sm:p-5 xl:col-span-5">
-          <div className="mb-4 flex items-center justify-between"><div><p className="font-mono text-[10px] uppercase tracking-[0.22em] text-emerald-200/70">Stare sistem</p><h2 className="mt-1 font-display text-lg font-semibold text-white">Infrastructură</h2></div><Cloud className="size-5 text-emerald-300" /></div>
-          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-            {data.health.map((item) => (
-              <div key={item.id} title={item.detail} className="flex items-center gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
-                <span className={`size-2 rounded-full ${statusTone(item.status)}`} />
-                <span className="min-w-0 flex-1 truncate text-xs text-slate-300">{item.label}</span>
-                <span className="text-[10px] text-slate-600">{item.status}</span>
+        <Panel className={`p-4 sm:p-5 ${access.isStaff ? "xl:col-span-4" : "xl:col-span-6"}`}>
+          <div className="mb-4 flex items-center justify-between">
+            <div><p className="font-mono text-[10px] uppercase tracking-[0.22em] text-fuchsia-200/70">Observabilitate AI</p><h2 className="mt-1 font-display text-lg font-semibold text-white">Activitatea agenților</h2></div>
+            {access.isSuperAdmin && <button type="button" onClick={() => onOpenSection("ai-os")} className="text-xs font-medium text-violet-300 hover:text-violet-200">Controlează</button>}
+          </div>
+          <div className="space-y-2">
+            {data.agentRuns.length === 0 && <EmptyState>{access.isSuperAdmin ? "Nu există rulări recente." : "Activitatea AI detaliată este rezervată rolurilor autorizate."}</EmptyState>}
+            {data.agentRuns.slice(0, 5).map((run) => (
+              <div key={run.id} className="grid grid-cols-[auto_1fr] items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
+                <span className="grid size-8 place-items-center rounded-lg bg-fuchsia-400/10 text-fuchsia-300"><Bot className="size-4" /></span>
+                <div className="min-w-0"><div className="flex items-center justify-between gap-2"><p className="truncate text-sm font-medium text-slate-200">{run.agent_slug}</p><span className="flex shrink-0 items-center gap-1.5 text-[10px] text-slate-500"><span className={`size-1.5 rounded-full ${statusTone(run.status)}`} />{agentStatusLabel(run.status)}</span></div><p className="text-[11px] text-slate-600">{run.steps} pași · {relativeTime(run.created_at)}</p></div>
               </div>
             ))}
-          </div>
-          <div className="mt-4 border-t border-white/[0.06] pt-4">
-            <div className="mb-2 flex items-center justify-between"><h3 className="text-xs font-semibold text-slate-300">Registrul integrărilor</h3><span className="text-[10px] text-slate-600">{data.integrations.length} înregistrate</span></div>
-            {data.integrations.length === 0 ? <EmptyState>Nu există conectori externi validați. Aceștia vor apărea după configurare.</EmptyState> : (
-              <div className="flex flex-wrap gap-2">
-                {data.integrations.slice(0, 8).map((item, index) => <span key={`${item.name}-${index}`} className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[11px] text-slate-400"><span className={`size-1.5 rounded-full ${statusTone(item.status)}`} />{item.name}</span>)}
-              </div>
-            )}
           </div>
         </Panel>
       </div>
 
       <Panel className="p-4 sm:p-5">
-        <div className="mb-4 flex items-end justify-between gap-3">
-          <div><p className="font-mono text-[10px] uppercase tracking-[0.22em] text-violet-200/70">Acces rapid</p><h2 className="mt-1 font-display text-lg font-semibold text-white">Centre AVYRON OS</h2></div>
-          <p className="hidden text-xs text-slate-500 sm:block">Detaliile apar numai după deschiderea modulului.</p>
+        <div className="mb-4 flex items-center justify-between"><div><p className="font-mono text-[10px] uppercase tracking-[0.22em] text-emerald-200/70">Stare verificată</p><h2 className="mt-1 font-display text-lg font-semibold text-white">Infrastructură și integrări</h2></div><Cloud className="size-5 text-emerald-300" /></div>
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {data.health.map((item) => (
+            <div key={item.id} title={item.detail} className="flex items-center gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
+              <span className={`size-2 rounded-full ${statusTone(item.status)}`} />
+              <span className="min-w-0 flex-1 truncate text-xs text-slate-300">{item.label}</span>
+              <span className="text-[10px] text-slate-600">{item.status}</span>
+            </div>
+          ))}
         </div>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            { label: "Proiecte", helper: "Livrări și progres", icon: FolderKanban, section: "projects" },
-            { label: "Leaduri & CRM", helper: "Pipeline și răspunsuri", icon: Target, section: "leads" },
-            { label: "Financiar", helper: "Costuri și profitabilitate", icon: CircleDollarSign, section: "finance" },
-            { label: "Agenți AI", helper: "Control și activitate", icon: Bot, section: "ai-os" },
-            { label: "Domenii", helper: "DNS, SSL și active", icon: Cloud, section: "domains" },
-            { label: "Echipă", helper: "Roluri și permisiuni", icon: Users, section: "team-staff" },
-            { label: "Securitate", helper: "Incidente și audit", icon: ShieldCheck, section: "security" },
-            { label: "Automatizări", helper: "Execuții și economie", icon: Clock3, section: "automations" },
-          ].filter((item) => canOpenSection(item.section, access) || (access.isStaff && ["security", "automations"].includes(item.section))).map((item) => {
-            const Icon = item.icon;
-            return <button key={item.label} type="button" onClick={() => onOpenSection(item.section as SectionId)} className="group flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 text-left transition hover:border-violet-400/25 hover:bg-violet-400/[0.06]"><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-violet-400/10 text-violet-300"><Icon className="size-4" /></span><span className="min-w-0"><span className="block text-sm font-medium text-slate-200">{item.label}</span><span className="block truncate text-[11px] text-slate-600">{item.helper}</span></span><ArrowRight className="ml-auto size-4 text-slate-700 transition group-hover:translate-x-0.5 group-hover:text-violet-300" /></button>;
-          })}
+        <div className="mt-4 border-t border-white/[0.06] pt-4">
+          <div className="mb-2 flex items-center justify-between"><h3 className="text-xs font-semibold text-slate-300">Registrul integrărilor</h3><span className="text-[10px] text-slate-600">{data.integrations.length} înregistrate</span></div>
+          {data.integrations.length === 0 ? <EmptyState>Nu există conectori externi validați. Aceștia vor apărea după configurare.</EmptyState> : (
+            <div className="flex flex-wrap gap-2">
+              {data.integrations.slice(0, 12).map((item, index) => <span key={`${item.name}-${index}`} className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[11px] text-slate-400"><span className={`size-1.5 rounded-full ${statusTone(item.status)}`} />{item.name}</span>)}
+            </div>
+          )}
         </div>
       </Panel>
     </div>

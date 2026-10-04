@@ -1,4 +1,4 @@
--- 0035_avyron_social_orchestration.sql
+-- 0042_avyron_social_orchestration.sql
 -- Calendar editorial, cercetare cu provenienta, variante pe canal si
 -- oportunitati sociale controlate pentru AVYRON Social Studio.
 

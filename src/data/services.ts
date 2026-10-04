@@ -95,8 +95,11 @@ export type Service = {
   icon: IconKey;
   /** RO path (canonical) and EN path. */
   path: { ro: string; en: string };
+  /** Primary, fixed commercial price in RON. */
+  priceRon: number;
+  /** Fixed, rounded EUR display price; never a live conversion. */
   priceEur: number;
-  /** Displayed as "de la X€" when true. */
+  /** Displayed as "de la / from" when true. */
   from: boolean;
   duration: { ro: string; en: string };
   /** Tailwind accent tokens for gradients/borders. */
@@ -150,6 +153,7 @@ function logoService(): Service {
     category: "brand",
     icon: "palette",
     path: SERVICE_ROUTES.logo3d,
+    priceRon: 500,
     priceEur: 100,
     from: true,
     duration: { ro: "5–15 zile", en: "5–15 days" },
@@ -173,7 +177,8 @@ const CATALOG: Service[] = [
     category: "presence",
     icon: "globe",
     path: SERVICE_ROUTES.website,
-    priceEur: 300,
+    priceRon: 1150,
+    priceEur: 220,
     from: true,
     duration: { ro: "2–5 zile", en: "2–5 days" },
     accent: {
@@ -191,9 +196,9 @@ const CATALOG: Service[] = [
         kicker: "Produs principal",
         subtitle: "Site de prezentare la cheie, optimizat pentru clienți",
         tagline: "Un site care vinde, nu doar arată bine.",
-        metaTitle: "Site Prezentare Profesional — site profesional de la 300€ | Avyron",
+        metaTitle: "Site Prezentare Profesional — site profesional de la 1.150 lei | Avyron",
         metaDescription:
-          "Site de prezentare premium, livrat la cheie într-un termen agreat: design custom, SEO tehnic, panou de administrare, email pe domeniu și suport definit în ofertă. De la 300€.",
+          "Site de prezentare premium, livrat la cheie într-un termen agreat: design custom, SEO tehnic, panou de administrare, email pe domeniu și suport definit în ofertă. De la 1.150 lei.",
         heroTitle: "Site Prezentare Profesional",
         heroLead:
           "Site complet, construit de la zero pe identitatea afacerii tale — rapid, sigur, pregătit tehnic pentru indexare și pentru campanii de atragere a clienților după lansare.",
@@ -274,7 +279,7 @@ const CATALOG: Service[] = [
         faq: [
           {
             q: "Cât costă un site de prezentare profesional?",
-            a: "Pachetul Site Prezentare Profesional pornește de la 300€ și include design custom, conținut, SEO tehnic, panou de administrare și email pe domeniu. Durata suportului și prețul final depind de numărul de pagini, funcționalități și oferta agreată.",
+            a: "Pachetul Site Prezentare Profesional pornește de la 1.150 lei (220€ la afișarea în euro) și include design custom, conținut, SEO tehnic, panou de administrare și email pe domeniu. Durata suportului și prețul final depind de numărul de pagini, funcționalități și oferta agreată.",
           },
           {
             q: "În cât timp este gata site-ul?",
@@ -399,9 +404,9 @@ const CATALOG: Service[] = [
         kicker: "Main product",
         subtitle: "Turnkey presentation website, built to convert",
         tagline: "A website that sells, not just looks good.",
-        metaTitle: "Premium Presentation Website — professional site from €300 | Avyron",
+        metaTitle: "Professional Presentation Website — from 1,150 RON | Avyron",
         metaDescription:
-          "Turnkey premium presentation website delivered on an agreed schedule: custom design, technical SEO, admin panel, domain email and support defined in the proposal. From €300.",
+          "Turnkey premium presentation website delivered on an agreed schedule: custom design, technical SEO, admin panel, domain email and support defined in the proposal. From 1,150 RON.",
         heroTitle: "Premium Presentation Website",
         heroLead:
           "A complete website built from scratch around your brand — fast, secure, technically ready for indexing and for customer-acquisition campaigns after launch.",
@@ -482,7 +487,7 @@ const CATALOG: Service[] = [
         faq: [
           {
             q: "How much does a professional presentation website cost?",
-            a: "The Premium Presentation Website package starts at €300 and includes custom design, content, technical SEO, an admin panel and domain email. Support duration and final pricing depend on the agreed scope.",
+            a: "The Professional Presentation Website package starts at 1,150 RON (a fixed €220 display price) and includes custom design, content, technical SEO, an admin panel and domain email. Support duration and final pricing depend on the agreed scope.",
           },
           {
             q: "How long does it take?",
@@ -609,6 +614,7 @@ const CATALOG: Service[] = [
     category: "presence",
     icon: "share",
     path: SERVICE_ROUTES.socialIdentity,
+    priceRon: 1300,
     priceEur: 250,
     from: true,
     duration: { ro: "2–5 zile", en: "2–5 days" },
@@ -773,6 +779,7 @@ const CATALOG: Service[] = [
     category: "commerce",
     icon: "store",
     path: SERVICE_ROUTES.onlineStore,
+    priceRon: 5250,
     priceEur: 1000,
     from: true,
     duration: { ro: "7–21 zile", en: "7–21 days" },
@@ -905,6 +912,7 @@ const CATALOG: Service[] = [
     category: "software",
     icon: "smartphone",
     path: SERVICE_ROUTES.apps,
+    priceRon: 7900,
     priceEur: 1500,
     from: true,
     duration: { ro: "7–30 zile", en: "7–30 days" },
@@ -1035,6 +1043,7 @@ const CATALOG: Service[] = [
     category: "software",
     icon: "cpu",
     path: SERVICE_ROUTES.automationAi,
+    priceRon: 2650,
     priceEur: 500,
     from: true,
     duration: { ro: "5–14 zile", en: "5–14 days" },
@@ -1165,6 +1174,7 @@ const CATALOG: Service[] = [
     category: "quality",
     icon: "scan",
     path: SERVICE_ROUTES.audit,
+    priceRon: 0,
     priceEur: 0,
     from: false,
     duration: { ro: "2–4 zile", en: "2–4 days" },
@@ -1295,6 +1305,7 @@ const CATALOG: Service[] = [
     category: "quality",
     icon: "bug",
     path: SERVICE_ROUTES.qa,
+    priceRon: 1600,
     priceEur: 300,
     from: true,
     duration: { ro: "3–10 zile", en: "3–10 days" },
@@ -1313,9 +1324,9 @@ const CATALOG: Service[] = [
         kicker: "Calitate garantată",
         subtitle: "Funcțional · Regresie · Performanță · Securitate · Mobil",
         tagline: "Găsim bug-urile înaintea clienților tăi.",
-        metaTitle: "Testare QA Web & Mobile — servicii de testare software de la 300€ | Avyron",
+        metaTitle: "Testare QA Web & Mobile — servicii de testare de la 1.600 lei | Avyron",
         metaDescription:
-          "Servicii profesionale de testare QA pentru site-uri, magazine online și aplicații mobile: testare funcțională, regresie, performanță, securitate și compatibilitate. De la 300€.",
+          "Servicii profesionale de testare QA pentru site-uri, magazine online și aplicații mobile: testare funcțională, regresie, performanță, securitate și compatibilitate. De la 1.600 lei.",
         heroTitle: "Testare QA Web & Mobile",
         heroLead:
           "Testăm site-ul, magazinul sau aplicația ta exact cum o face un client real — pe telefoane, tablete și desktop — și îți livrăm un raport clar cu fiecare defect, reprodus pas cu pas.",
@@ -1356,7 +1367,7 @@ const CATALOG: Service[] = [
           { q: "Testați și aplicații mobile native?", a: "Da. Testăm aplicații Android și iOS, native sau hibride, inclusiv build-uri de test din TestFlight sau Google Play Internal Testing." },
           { q: "Ce înseamnă testare automată?", a: "Scriem teste end-to-end care simulează un utilizator real și pot fi rulate oricând, automat, la fiecare modificare de cod — astfel prinzi regresiile imediat." },
           { q: "Reparați și defectele găsite?", a: "Putem. Remedierea se cotează separat, în funcție de complexitate, iar dacă lucrezi cu altă echipă raportul nostru este suficient de detaliat pentru ca ei să intervină direct." },
-          { q: "Cât costă?", a: "De la 300€ pentru un site de prezentare. Pentru magazine online și aplicații complexe cotăm în funcție de numărul de fluxuri și de dispozitivele acoperite." },
+          { q: "Cât costă?", a: "De la 1.600 lei (300€ la afișarea în euro) pentru un site de prezentare. Pentru magazine online și aplicații complexe cotăm în funcție de numărul de fluxuri și de dispozitivele acoperite." },
         ],
         ctaTitle: "Lansezi în curând sau ai deja probleme raportate?",
         ctaDesc: "Spune-ne ce produs ai și primești un plan de testare și o cotație clară în 24 de ore.",
@@ -1368,9 +1379,9 @@ const CATALOG: Service[] = [
         kicker: "Guaranteed quality",
         subtitle: "Functional · Regression · Performance · Security · Mobile",
         tagline: "We find the bugs before your customers do.",
-        metaTitle: "QA Testing Web & Mobile — software testing services from €300 | Avyron",
+        metaTitle: "QA Testing Web & Mobile — software testing from 1,600 RON | Avyron",
         metaDescription:
-          "Professional QA testing for websites, online stores and mobile apps: functional testing, regression, performance, security and compatibility. From €300.",
+          "Professional QA testing for websites, online stores and mobile apps: functional testing, regression, performance, security and compatibility. From 1,600 RON.",
         heroTitle: "QA Testing Web & Mobile",
         heroLead:
           "We test your site, store or app exactly the way a real customer would — on phones, tablets and desktop — and deliver a clear report with every defect reproduced step by step.",
@@ -1411,7 +1422,7 @@ const CATALOG: Service[] = [
           { q: "Do you test native mobile apps?", a: "Yes. We test Android and iOS apps, native or hybrid, including test builds from TestFlight or Google Play Internal Testing." },
           { q: "What does automated testing mean?", a: "We write end-to-end tests that simulate a real user and can run automatically on every code change — so regressions surface immediately." },
           { q: "Do you also fix the defects?", a: "We can. Fixes are quoted separately based on complexity, and if you work with another team our report is detailed enough for them to act on directly." },
-          { q: "How much does it cost?", a: "From €300 for a presentation website. For online stores and complex apps we quote based on the number of flows and the devices covered." },
+          { q: "How much does it cost?", a: "From 1,600 RON (a fixed €300 display price) for a presentation website. For online stores and complex apps we quote based on the number of flows and the devices covered." },
         ],
         ctaTitle: "Launching soon, or already getting bug reports?",
         ctaDesc: "Tell us what product you have and receive a test plan and a clear quote within 24 hours.",

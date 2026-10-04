@@ -1,4 +1,4 @@
--- 0038_social_studio_library_backup.sql
+-- 0045_social_studio_library_backup.sql
 -- Profil de design versionat, registru de active si backupuri verificabile.
 
 PRAGMA foreign_keys = ON;

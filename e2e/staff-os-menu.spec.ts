@@ -25,11 +25,14 @@ for (const role of [null, "user", "staff", "admin"] as const) {
     const trigger = page.getByRole("button", { name: "Deschide accesul rapid AVYRON OS" });
     if (!role || role === "user") return expect(trigger).toHaveCount(0);
     await trigger.click();
+    await expect(page.getByRole("menu")).toHaveAttribute("data-state", "open");
     await expect(page.getByRole("menuitem", { name: /Proiecte/ })).toBeVisible();
     await expect(page.getByRole("menuitem", { name: /Agenți AI|Financiar/ })).toHaveCount(0);
-    await page.getByRole("menuitem", { name: "Către Panoul de comandă" }).click();
+    const dashboard = page.getByRole("menuitem", { name: "Către Panoul de comandă" });
+    await expect(dashboard).toBeVisible();
+    await dashboard.click();
     await expect(page).toHaveURL(/\/profil\?tab=overview$/);
-    await expect(page.getByRole("heading", { name: "Bun venit, Membru de test." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Bună (dimineața|ziua|seara), Membru de test\./ })).toBeVisible();
   });
 }
 
@@ -57,18 +60,23 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }
         await page.evaluate(value => document.documentElement.classList.toggle("dark", value === "dark"), theme);
         await trigger.click();
         const menu = page.getByRole("menu");
-        await expect(menu).toHaveCSS("opacity", "1");
+        await expect(menu).toHaveAttribute("data-state", "open");
+        await expect(menu).toBeVisible();
         const box = (await menu.boundingBox())!;
         expect(box.x).toBeGreaterThanOrEqual(0);
         expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
         expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
         const dashboard = page.getByRole("menuitem", { name: /Către Panoul de comandă|Go to Command Dashboard/ });
-        await dashboard.scrollIntoViewIfNeeded();
-        await expect(dashboard).toBeInViewport();
+        await expect(dashboard).toBeVisible();
+        const dashboardBox = (await dashboard.boundingBox())!;
+        expect(dashboardBox.y).toBeGreaterThanOrEqual(0);
+        expect(dashboardBox.y + dashboardBox.height).toBeLessThanOrEqual(viewport.height);
         await page.screenshot({ path: info.outputPath(`${path === "/" ? "ro" : "en"}-${theme}.png`) });
         await page.keyboard.press("Escape");
-        await expect(menu).toHaveCount(0);
-        await expect(trigger).toBeFocused();
+        await expect(menu).not.toBeVisible();
+        const restoredTrigger = page.getByRole("button", { name: /Deschide accesul rapid AVYRON OS|Open AVYRON OS quick access/ });
+        await expect(restoredTrigger).toBeVisible();
+        await expect(restoredTrigger).toBeFocused();
       }
     }
   });

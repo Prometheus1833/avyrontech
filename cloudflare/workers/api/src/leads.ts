@@ -15,11 +15,14 @@ const identifier = (prefix: string) => `${prefix}_${crypto.randomUUID().replace(
 const LEAD_STAGE_SET = new Set<string>(LEAD_STAGES);
 const CHANNELS = new Set<string>(LEAD_CHANNELS);
 const ACTIVITY_KINDS = new Set<string>(LEAD_ACTIVITY_KINDS);
+const LEAD_DELETION_REASONS = new Set([
+  "duplicate", "spam", "test_entry", "invalid_contact", "withdrawn", "outside_scope", "other",
+]);
 
 type LeadAccess = { read: boolean; write: boolean; organizationId: string | null };
 
 async function leadAccess(c: Context<AppBindings>, leadId: string): Promise<LeadAccess | null> {
-  const lead = await c.env.DB.prepare("SELECT organization_id FROM leads WHERE id = ?")
+  const lead = await c.env.DB.prepare("SELECT organization_id FROM leads WHERE id = ? AND deleted_at IS NULL")
     .bind(leadId).first<{ organization_id: string | null }>();
   if (!lead) return null;
   const userId = c.get("userId");
@@ -175,7 +178,7 @@ leadsRouter.get("/api/leads", async (c) => {
   }
 
   const values: unknown[] = [];
-  const filters: string[] = [];
+  const filters: string[] = ["lead.deleted_at IS NULL"];
   if (organizationId) { filters.push("lead.organization_id = ?"); values.push(organizationId); }
   if (stage) { filters.push("lead.lifecycle_stage = ?"); values.push(stage); }
   if (!platformRole) {
@@ -203,6 +206,27 @@ leadsRouter.get("/api/leads", async (c) => {
       LIMIT 250`,
   ).bind(...values).all();
   return c.json({ data: results, platformRole });
+});
+
+leadsRouter.get("/api/leads/deletions", async (c) => {
+  if (!(await platformRoleForUser(c.env.DB, c.get("userId")))) {
+    return c.json({ error: { code: "forbidden" } }, 403);
+  }
+  const { results } = await c.env.DB.prepare(
+    `SELECT event.id, event.target_id AS lead_id, event.actor_user_id,
+            actor.email AS actor_email,
+            COALESCE(NULLIF(lead.name,''), NULLIF(lead.business,''), 'Lead fără nume') AS lead_label,
+            lead.business, lead.source, lead.lifecycle_stage,
+            lead.deletion_reason_code AS reason_code,
+            lead.deletion_reason_detail AS reason_detail,
+            event.created_at
+       FROM security_events AS event
+       LEFT JOIN users AS actor ON actor.id = event.actor_user_id
+       LEFT JOIN leads AS lead ON lead.id = event.target_id
+      WHERE event.action = 'lead.delete' AND event.outcome = 'allowed'
+      ORDER BY event.created_at DESC LIMIT 100`,
+  ).all();
+  return c.json({ data: results });
 });
 
 leadsRouter.get("/api/leads/:leadId", async (c) => {
@@ -264,6 +288,45 @@ leadsRouter.patch("/api/leads/:leadId", async (c) => {
   sets.push("updated_at = ?"); values.push(now(), leadId);
   await c.env.DB.prepare(`UPDATE leads SET ${sets.join(", ")} WHERE id = ?`).bind(...values).run();
   await audit(c, leadId, "lead.update", "allowed");
+  return c.json({ ok: true });
+});
+
+leadsRouter.delete("/api/leads/:leadId", async (c) => {
+  const leadId = c.req.param("leadId");
+  const access = await leadAccess(c, leadId);
+  if (!access) return c.json({ error: { code: "not_found" } }, 404);
+  if (!access.write) { await audit(c, leadId, "lead.delete", "denied"); return c.json({ error: { code: "forbidden" } }, 403); }
+  const body = await c.req.json<{ reasonCode?: string; reasonDetail?: string }>().catch(() => null);
+  const reasonCode = String(body?.reasonCode || "");
+  const reasonDetail = String(body?.reasonDetail || "").trim().slice(0, 500);
+  if (!LEAD_DELETION_REASONS.has(reasonCode) || (reasonCode === "other" && reasonDetail.length < 5)) {
+    return c.json({ error: { code: "invalid_deletion_reason" } }, 400);
+  }
+  const lead = await c.env.DB.prepare(
+    "SELECT organization_id,name,business,source,lifecycle_stage FROM leads WHERE id=? AND deleted_at IS NULL",
+  ).bind(leadId).first<{ organization_id: string | null; name: string | null; business: string | null; source: string | null; lifecycle_stage: string }>();
+  if (!lead) return c.json({ error: { code: "not_found" } }, 404);
+  const timestamp = now();
+  const eventId = identifier("evt");
+  const metadata = JSON.stringify({
+    reasonCode, reasonDetail: reasonDetail || null,
+    label: lead.name || lead.business || "Lead fără nume", source: lead.source, lifecycleStage: lead.lifecycle_stage,
+  });
+  const results = await c.env.DB.batch([
+    c.env.DB.prepare(
+      `UPDATE leads SET deleted_at=?,deleted_by=?,deletion_reason_code=?,deletion_reason_detail=?,updated_at=?
+        WHERE id=? AND deleted_at IS NULL`,
+    ).bind(timestamp, c.get("userId"), reasonCode, reasonDetail || null, timestamp, leadId),
+    c.env.DB.prepare(
+      `INSERT INTO security_events
+         (id,organization_id,actor_user_id,actor_type,action,target_type,target_id,outcome,severity,request_id,metadata_json,created_at)
+       SELECT ?,organization_id,?,'user','lead.delete','lead',?,'allowed','info',?,?,?
+         FROM leads WHERE id=? AND deleted_at=? AND deleted_by=?`,
+    ).bind(eventId, c.get("userId"), leadId, c.get("requestId") || null, metadata, timestamp, leadId, timestamp, c.get("userId")),
+  ]);
+  if (!(results[0].meta.changes ?? 0) || !(results[1].meta.changes ?? 0)) {
+    return c.json({ error: { code: "not_found" } }, 404);
+  }
   return c.json({ ok: true });
 });
 

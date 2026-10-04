@@ -48,6 +48,14 @@ export type BlogPostInput = {
   status: BlogStatus;
 };
 
+export type BlogSettings = {
+  publication_name: string;
+  editorial_description: string;
+  default_language: BlogLanguage;
+  default_category: string;
+  updated_at: number;
+};
+
 async function publicRequest<T>(path: string): Promise<T> {
   const response = await fetch(apiUrl(path), { headers: { accept: "application/json" } });
   if (!response.ok) throw new Error(response.status === 404 ? "not_found" : `HTTP ${response.status}`);
@@ -62,6 +70,9 @@ export const blogApi = {
   getPublished: (language: BlogLanguage, slug: string) =>
     publicRequest<{ data: BlogPost }>(`/api/blog/posts/${encodeURIComponent(slug)}?lang=${language}`),
   listStaff: () => cfAuth.request<{ data: BlogPost[] }>("/api/blog/staff/posts"),
+  settings: () => cfAuth.request<{ data: BlogSettings }>("/api/blog/staff/settings"),
+  updateSettings: (input: { publicationName: string; editorialDescription: string; defaultLanguage: BlogLanguage; defaultCategory: string }) =>
+    cfAuth.request<{ ok: true }>("/api/blog/staff/settings", { method: "PATCH", body: JSON.stringify(input) }),
   create: (body: BlogPostInput) => cfAuth.request<{ id: string; slug: string; status: BlogStatus }>("/api/blog/staff/posts", {
     method: "POST",
     body: JSON.stringify(body),

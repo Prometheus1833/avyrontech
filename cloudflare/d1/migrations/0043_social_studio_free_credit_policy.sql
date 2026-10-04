@@ -1,4 +1,4 @@
--- 0036_social_studio_free_credit_policy.sql
+-- 0043_social_studio_free_credit_policy.sql
 -- Politica explicita: instrumentele externe folosesc numai nivelul gratuit
 -- pana la o aprobare separata a platform owner-ului.
 

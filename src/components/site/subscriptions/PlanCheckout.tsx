@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, BadgePercent, CheckCircle2, CreditCard, Loader2, LogIn, Repeat, ShieldCheck } from "lucide-react";
+import { ArrowRight, BadgePercent, CheckCircle2, CreditCard, Loader2, LogIn, Repeat, ShieldCheck, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -11,8 +11,9 @@ import { trackEvent } from "@/lib/analytics";
 import { useDualPrice } from "@/hooks/useDualPrice";
 import type { SubscriptionCategory, SubscriptionPlan } from "@/data/subscriptionPlans";
 import {
-  BILLING_PERIODS, PAYMENT_GATEWAY_ENABLED, authStateFor, buildOrderItems, type BillingPeriod,
+  ANNUAL_PROMOTION_CODE, BILLING_PERIODS, PAYMENT_GATEWAY_ENABLED, authStateFor, buildOrderItems, type BillingPeriod,
 } from "@/lib/subscriptionCheckout";
+import { addLocalAccountCartItem, syncLocalAccountCartSource } from "@/lib/accountCart";
 
 type Quote = {
   currency: "RON";
@@ -42,6 +43,7 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [addedToCart, setAddedToCart] = useState(false);
 
   const plan = selection?.plan ?? null;
   const category = selection?.category ?? null;
@@ -51,6 +53,7 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
     setOrderId(null);
     setPromotionCode("");
     setPeriod(BILLING_PERIODS[0]);
+    setAddedToCart(false);
   }, [plan?.sku]);
 
   const refreshQuote = useCallback(async (code?: string) => {
@@ -84,7 +87,9 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
 
   useEffect(() => {
     if (!plan || !user) return;
-    void refreshQuote();
+    const automaticCode = period.value === "annual" ? ANNUAL_PROMOTION_CODE : undefined;
+    setPromotionCode(automaticCode || "");
+    void refreshQuote(automaticCode);
   }, [plan, user, period, refreshQuote]);
 
   const submitOrder = async () => {
@@ -112,6 +117,22 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const addToCart = () => {
+    if (!plan || !category) return;
+    addLocalAccountCartItem({
+      id: `subscription-${plan.sku}`,
+      source: "subscriptions",
+      sku: plan.sku,
+      type: "subscription",
+      name: `${category.copy.ro.title} · ${plan.name}`,
+      period: period.value,
+      price_estimate: plan.priceCents,
+      price_currency: "RON",
+    });
+    setAddedToCart(true);
+    if (user) void syncLocalAccountCartSource("subscriptions").catch(() => undefined);
   };
 
   if (!plan || !category) return null;
@@ -289,6 +310,17 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
                 {submitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <CheckCircle2 className="size-4" aria-hidden />}
                 {ro ? "Activează abonamentul" : "Activate the subscription"}
               </button>
+              {addedToCart ? (
+                <Link to="/profil?tab=cart" className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-600 dark:text-emerald-300">
+                  <CheckCircle2 className="size-4" aria-hidden />
+                  {ro ? "În coșul sincronizat · Vezi coșul" : "In your synced cart · View cart"}
+                </Link>
+              ) : (
+                <button type="button" onClick={addToCart} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-foreground/15 px-4 py-3 text-sm font-bold transition-colors hover:bg-foreground/[0.06]">
+                  <ShoppingCart className="size-4" aria-hidden />
+                  {ro ? "Adaugă în coș" : "Add to cart"}
+                </button>
+              )}
               <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-foreground/70">
                 <ShieldCheck className="mt-0.5 size-3.5 shrink-0" aria-hidden />
                 {ro

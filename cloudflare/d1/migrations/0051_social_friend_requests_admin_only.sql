@@ -1,4 +1,4 @@
--- 0050_social_friend_requests_admin_only.sql
+-- 0051_social_friend_requests_admin_only.sql
 -- Cererile de prietenie primite sunt gestionate exclusiv de administratori.
 -- Agentul nu primeste capabilitate, ruta sau coada pentru acceptare/respingere.
 

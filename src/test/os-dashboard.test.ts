@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildAccess, canOpenSection, defaultSection, sectionsFor } from "@/lib/access";
+import { buildAccess, canOpenSection, defaultSection, sectionsFor, SECTIONS } from "@/lib/access";
+import { DASHBOARD_SECTION_META } from "@/components/dashboard/dashboardNavigation";
 
 describe("AVYRON OS dashboard", () => {
   it("deschide prezentarea generală pentru toate rolurile", () => {
@@ -10,6 +11,11 @@ describe("AVYRON OS dashboard", () => {
     expect(defaultSection(client)).toBe("overview");
     expect(defaultSection(staff)).toBe("overview");
     expect(canOpenSection("overview", client)).toBe(true);
+  });
+
+  it("folosește un singur registru de prezentare pentru toate secțiunile", () => {
+    expect(Object.keys(DASHBOARD_SECTION_META).sort()).toEqual(SECTIONS.map((section) => section.id).sort());
+    expect(new Set(SECTIONS.map((section) => section.id)).size).toBe(SECTIONS.length);
   });
 
   it("păstrează centrele operaționale și echipa în afara dashboardului client", () => {

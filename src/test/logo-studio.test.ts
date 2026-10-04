@@ -124,6 +124,11 @@ describe("Logo Studio — renderer", () => {
 });
 
 describe("Logo Studio — page", () => {
+  it("protects AI generation at the Worker boundary", () => {
+    const api = readFileSync(resolve(process.cwd(), "cloudflare/workers/api/src/index.ts"), "utf8");
+    expect(api).toContain('app.use("/api/logo-studio/generate", requireAuth)');
+  });
+
   it("is a bilingual, prerendered route", () => {
     expect(ROUTE_ALTERNATES).toContainEqual({ ro: STUDIO_PATHS.ro, en: STUDIO_PATHS.en });
     expect(PRERENDER_ROUTES).toEqual(expect.arrayContaining([STUDIO_PATHS.ro, STUDIO_PATHS.en]));

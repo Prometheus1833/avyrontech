@@ -1,4 +1,4 @@
--- 0037_social_audience_optimizer.sql
+-- 0044_social_audience_optimizer.sql
 -- Audit zilnic separat pe cont/pagina, liste aprobabile si protectii pentru
 -- conversatii, interactiuni, clienti si contacte anterioare.
 

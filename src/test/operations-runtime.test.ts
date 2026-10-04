@@ -10,7 +10,7 @@ import {operationsRouter} from '../../cloudflare/workers/api/src/operations';
 import {runOperationJobs} from '../../cloudflare/workers/api/src/operationJobs';
 import {retrieveKnowledge,boundedKnowledgeContext} from '../../cloudflare/workers/api/src/knowledgeRetrieval';
 import {reserveAiCost} from '../../cloudflare/workers/api/src/aiCostGuard';
-import {sealCredential,openCredential,boundedProviderJson,readIntegration} from '../../cloudflare/workers/api/src/integrationAdapters';
+import {sealCredential,openCredential,boundedProviderJson,readIntegration,googleOAuthAuthorization,completeGoogleOAuth} from '../../cloudflare/workers/api/src/integrationAdapters';
 import type {Env} from '../../cloudflare/workers/api/src/types';
 const {DatabaseSync}=createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
 class Statement {
@@ -33,7 +33,7 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
   kv=new Map();pending=[];actor='owner';
   env={DB:{prepare:(sql:string)=>new Statement(db,sql),batch:async(statements:Statement[])=>{
    db.exec('BEGIN');try{const result=statements.map(s=>({meta:db.prepare(s.sql).run(...s.values)}));db.exec('COMMIT');return result;}catch(e){db.exec('ROLLBACK');throw e;}
-  }},KV:{get:async(key:string)=>kv.get(key)||null,put:async(key:string,value:string)=>{kv.set(key,value);},delete:async(key:string)=>{kv.delete(key);}},FILES:{list:async()=>({objects:[]})},MEDIA:{list:async()=>({objects:[]})},ADMIN_MFA_POLICY:'optional_until_enrollment',MFA_ENCRYPTION_KEY:master} as unknown as Env;
+  }},KV:{get:async(key:string)=>kv.get(key)||null,put:async(key:string,value:string)=>{kv.set(key,value);},delete:async(key:string)=>{kv.delete(key);}},FILES:{list:async()=>({objects:[]})},MEDIA:{list:async()=>({objects:[]})},ADMIN_MFA_POLICY:'optional_until_enrollment',MFA_ENCRYPTION_KEY:master,SUPABASE_DATA_OPERATIONS_ENABLED:'false',GOOGLE_DRIVE_DATA_OPERATIONS_ENABLED:'false',BACKUP_JOBS_ENABLED:'false'} as unknown as Env;
   app=new Hono();app.use('*',async(c,next)=>{Object.assign(c.env,env);c.set('userId',actor);c.set('roles',actor==='client'?['user']:actor==='staff'?['staff']:['admin']);c.set('mfaVerified',false);await next();});app.route('/',operationsRouter);app.route('/',aiOsRouter);app.onError(()=>new Response('safe failure',{status:500}));
  });
  afterEach(async()=>{await Promise.allSettled(pending);db.close();vi.restoreAllMocks();});
@@ -99,6 +99,26 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
   db.prepare("INSERT INTO integration_documents VALUES (?,'in_1','invoice','{}',1)").run(id);
   expect((await req(`integrations/${id}/credential`,{token:'sk_test_replacement_fixture',revision:2},'PUT')).status).toBe(200);await Promise.all(pending);expect(kv.size).toBe(1);expect(db.prepare('SELECT COUNT(*) n FROM integration_documents').get()!.n).toBe(0);
  });
+ it('registers optional Supabase and Drive accounts without activating data use',async()=>{
+  const supabase=await req('integrations',{provider:'supabase',label:'Arhivă proiect',environment:'live',projectUrl:'https://projectref123.supabase.co'});expect(supabase.status).toBe(200);
+  const drive=await req('integrations',{provider:'google_drive',label:'Drive documente',environment:'live'});expect(drive.status).toBe(200);
+  const rows=db.prepare("SELECT provider,status,config_json,secret_reference,owner_user_id FROM integration_accounts WHERE provider IN ('supabase','google_drive') ORDER BY provider").all();
+  expect(rows).toHaveLength(2);expect(rows.every(row=>row.status==='configured'&&row.secret_reference===null)).toBe(true);
+  expect(rows.every(row=>row.owner_user_id==='owner')).toBe(true);
+  expect(JSON.parse(String(rows.find(row=>row.provider==='supabase')?.config_json))).toEqual({projectUrl:'https://projectref123.supabase.co'});
+  const listing=await (await req('integrations')).json() as {data:Record<string,unknown>[]};
+  const optional=listing.data.filter(row=>['supabase','google_drive'].includes(String(row.provider)));
+  expect(optional.every(row=>row.owner_user_id==='owner'&&row.owner_email==='prometheus@avyron.ro')).toBe(true);
+  expect(JSON.stringify(optional)).not.toContain('secret_reference');
+  expect(optional.every(row=>row.data_operations_enabled===false)).toBe(true);
+  expect((await req('integrations',{provider:'supabase',label:'Invalid',environment:'test',projectUrl:'https://projectref123.supabase.co'})).status).toBe(400);
+  expect((await req('integrations',{provider:'supabase',label:'Invalid',environment:'live',projectUrl:'https://evil.test'})).status).toBe(400);
+  const supabaseId=String((await supabase.json()).id),driveId=String((await drive.json()).id);
+  await req(`integrations/${supabaseId}/credential`,{token:'sb_publishable_fixture_key_with_enough_length',revision:1},'PUT');
+  expect((await req(`integrations/${supabaseId}/sync`,{})).status).toBe(409);
+  expect((await req(`integrations/${driveId}/credential`,{token:'fixture-google-access-token',revision:1},'PUT')).status).toBe(409);
+  expect((await req(`integrations/${driveId}/google-oauth/start`,{revision:1})).status).toBe(503);
+ });
  it('fails closed without a vault key or with an unenrolled unauthorized actor',async()=>{
   const {id}=await (await req('integrations',{provider:'stripe',label:'Billing',environment:'test'})).json();env.MFA_ENCRYPTION_KEY='';expect((await req(`integrations/${id}/credential`,{token:'sk_test_fixture_secret',revision:1},'PUT')).status).toBe(503);expect(kv.size).toBe(0);
  });
@@ -157,7 +177,7 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
   const response=await save({question:'Termen verificat',answer:'Detaliu public',review_after:Date.now()+86400000});expect(response.status).toBe(200);const {id}=await response.json();expect(Number(db.prepare('SELECT review_after FROM ai_knowledge WHERE id=?').get(id)!.review_after)).toBeGreaterThan(Date.now());
   expect((await save({question:{bad:true},answer:'No'})).status).toBe(400);expect((await save({question:'Invalid',answer:'No',review_after:-1})).status).toBe(400);
  });
- const chat=(message:string)=>app.request('/api/ai/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({message,agent:'avy',visitorId:'fixture-visitor'})},env,{waitUntil:(p:Promise<unknown>)=>pending.push(p),passThroughOnException:()=>{}} as ExecutionContext);
+ const chat=(message:string,extra:Record<string,unknown>={})=>app.request('/api/ai/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({message,agent:'avy',visitorId:'fixture-visitor',...extra})},env,{waitUntil:(p:Promise<unknown>)=>pending.push(p),passThroughOnException:()=>{}} as ExecutionContext);
  const chatSeed=()=>{db.exec("DELETE FROM ai_knowledge; UPDATE ai_agents SET status='active',visibility='public' WHERE slug='avy'; UPDATE financial_provider_quotas SET quota_total=100000,quota_used=0,status='active'; UPDATE financial_agent_provider_policies SET status='active' WHERE agent_slug='avy'");knowledge('valid','Optimizare Cloudflare pentru agenți');};
  it('rejects malformed public AI input before rate limiting, persistence or model use',async()=>{
   const model=vi.fn();env.AI={run:model} as unknown as Ai;
@@ -174,7 +194,13 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
  });
  it('uses the approved prompt snapshot and provider-reported token usage',async()=>{
   chatSeed();db.exec("UPDATE ai_agents SET system_prompt='UNAPPROVED_CHANGE' WHERE slug='avy'; UPDATE ai_agent_versions SET system_prompt='APPROVED_SNAPSHOT' WHERE agent_slug='avy'");const model=vi.fn(async()=>({response:'Grounded reply',usage:{prompt_tokens:123,completion_tokens:12}}));env.AI={run:model} as unknown as Ai;
-  const response=await chat('Cloudflare optimizare');expect(response.status).toBe(200);expect((await response.json()).reply).toBe('Grounded reply');expect(model).toHaveBeenCalledTimes(1);const input=model.mock.calls[0] as unknown as [string,{messages:{content:string}[]}];expect(input[1].messages[0].content).toContain('APPROVED_SNAPSHOT');expect(input[1].messages[0].content).not.toContain('UNAPPROVED_CHANGE');expect(db.prepare('SELECT input_tokens,output_tokens,usage_source FROM ai_runs').get()).toMatchObject({input_tokens:123,output_tokens:12,usage_source:'provider'});
+  const response=await chat('Cloudflare optimizare',{page:'/servicii/website-prezentare-profesional'});expect(response.status).toBe(200);expect((await response.json()).reply).toBe('Grounded reply');expect(model).toHaveBeenCalledTimes(1);const input=model.mock.calls[0] as unknown as [string,{messages:{content:string}[]}];expect(input[1].messages[0].content).toContain('APPROVED_SNAPSHOT');expect(input[1].messages[0].content).not.toContain('UNAPPROVED_CHANGE');expect(input[1].messages[0].content).toContain('pagina serviciului Website Prezentare Profesional');expect(db.prepare('SELECT input_tokens,output_tokens,usage_source FROM ai_runs').get()).toMatchObject({input_tokens:123,output_tokens:12,usage_source:'provider'});
+ });
+ it('publishes dashboard-managed chat prompts and rejects malformed prompt lists',async()=>{
+  const publicResponse=await app.request('/api/ai/agents',{},env);expect(publicResponse.status).toBe(200);expect(publicResponse.headers.get('cache-control')).toBe('no-store');const publicBody=await publicResponse.json() as {data:Array<{starterQuestions:{ro:string[]};proactivePrompts:{ro:string[]}}>};expect(publicBody.data[0].starterQuestions.ro).toContain('Vreau un site');expect(publicBody.data[0].proactivePrompts.ro).toContain('Ai nevoie de un site?');
+  const update=(body:unknown)=>app.request('/api/ai/admin/agents/avy',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(body)},env);
+  expect((await update({starter_questions_ro:'["Întrebare clară"]',proactive_prompts_ro:'["Ai nevoie de ajutor?"]'})).status).toBe(200);expect(db.prepare("SELECT starter_questions_ro FROM ai_agents WHERE slug='avy'").get()!.starter_questions_ro).toBe('["Întrebare clară"]');
+  expect((await update({starter_questions_ro:'not-json'})).status).toBe(400);expect((await update({proactive_prompts_ro:JSON.stringify(['x'.repeat(121)])})).status).toBe(400);
  });
  it('keeps conservative usage and a failed model step when generation fails',async()=>{
   chatSeed();env.AI={run:async()=>{throw new Error('provider error');}} as unknown as Ai;const response=await chat('Cloudflare optimizare');expect(response.status).toBe(200);expect((await response.json()).reply).toBe('Validated answer');const run=db.prepare('SELECT input_tokens,output_tokens,usage_source FROM ai_runs').get()!;expect(run.usage_source).toBe('estimated');expect(Number(run.input_tokens)).toBeGreaterThan(0);expect(Number(run.output_tokens)).toBeGreaterThan(0);expect(db.prepare("SELECT status FROM ai_run_steps WHERE kind='model'").get()!.status).toBe('failed');
@@ -187,6 +213,17 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
  });
 });
 describe('Integration adapter boundaries',()=>{
+ it('uses single-use PKCE state and the minimum Drive OAuth scope',async()=>{
+  const stateStore=new Map<string,string>();
+  const oauthEnv={APP_URL:'https://avyron.ro',GOOGLE_OAUTH_CLIENT_ID:'fixture-client',GOOGLE_OAUTH_CLIENT_SECRET:'fixture-secret',KV:{get:async(key:string)=>stateStore.get(key)||null,put:async(key:string,value:string)=>{stateStore.set(key,value);},delete:async(key:string)=>{stateStore.delete(key);}}} as unknown as Env;
+  const authorization=new URL(await googleOAuthAuthorization(oauthEnv,'account-1','owner-1',7));
+  expect(authorization.origin).toBe('https://accounts.google.com');expect(authorization.searchParams.get('scope')).toBe('https://www.googleapis.com/auth/drive.file');expect(authorization.searchParams.get('code_challenge_method')).toBe('S256');expect(authorization.searchParams.get('login_hint')).toBe('avyrontech@gmail.com');
+  const state=authorization.searchParams.get('state')!;
+  const fetcher=vi.fn(async(url:string,init?:RequestInit)=>url.includes('/token')?Response.json({access_token:'fixture-access',refresh_token:'fixture-refresh',expires_in:3600,scope:'https://www.googleapis.com/auth/drive.file'}):Response.json({user:{displayName:'AVYRON',emailAddress:'avyrontech@gmail.com'},storageQuota:{limit:'1000',usage:'100',usageInDrive:'80'}})) as unknown as typeof fetch;
+  const completed=await completeGoogleOAuth(oauthEnv,state,'fixture-authorization-code',fetcher);
+  expect(completed).toMatchObject({accountId:'account-1',userId:'owner-1',revision:7,summary:{account_email:'avyrontech@gmail.com',mode:'verification_only'}});expect(stateStore.size).toBe(0);expect(fetcher).toHaveBeenCalledTimes(2);
+  await expect(completeGoogleOAuth(oauthEnv,state,'fixture-authorization-code',fetcher)).rejects.toThrow('google_oauth_state_invalid');
+ });
  it('binds ciphertext to its key reference and master key',async()=>{
   const master='fixture-master-key-with-at-least-32-characters',sealed=await sealCredential('fixture-token',master,'ref-a');await expect(openCredential(sealed,master,'ref-b')).rejects.toThrow();await expect(openCredential(sealed,master+'different','ref-a')).rejects.toThrow();expect(await openCredential(sealed,master,'ref-a')).toBe('fixture-token');
  });
@@ -204,5 +241,25 @@ describe('Integration adapter boundaries',()=>{
  it('rejects a Stripe test/live mismatch before calling the provider',async()=>{
   const master='fixture-master-key-with-at-least-32-characters',cipher=await sealCredential('sk_live_fixture',master,'ref'),fetcher=vi.fn() as unknown as typeof fetch;
   await expect(readIntegration({KV:{get:async()=>cipher},MFA_ENCRYPTION_KEY:master} as unknown as Env,{id:'a',provider:'stripe',environment:'test',secret_reference:'ref',revision:1,status:'configured'},true,fetcher)).rejects.toThrow('credential_environment_mismatch');expect(fetcher).not.toHaveBeenCalled();
+ });
+ it('reads only Supabase schema metadata and rejects privileged keys',async()=>{
+  const master='fixture-master-key-with-at-least-32-characters',token='sb_publishable_fixture_key_with_enough_length',cipher=await sealCredential(token,master,'ref'),fetcher=vi.fn(async()=>Response.json({openapi:'3.0.0',paths:{'/public_items':{get:{}},'/private_notes':{get:{}}},definitions:{secret:{}}})) as unknown as typeof fetch;
+  const result=await readIntegration({KV:{get:async()=>cipher},MFA_ENCRYPTION_KEY:master} as unknown as Env,{id:'a',provider:'supabase',environment:'live',secret_reference:'ref',revision:1,status:'configured',config_json:'{"projectUrl":"https://projectref123.supabase.co"}'},false,fetcher);
+  expect(result.summary).toMatchObject({project_host:'projectref123.supabase.co',data_api_available:true,mode:'verification_only'});expect(result.documents).toEqual([]);
+  expect(fetcher).toHaveBeenCalledWith('https://projectref123.supabase.co/rest/v1/',expect.objectContaining({headers:expect.objectContaining({apikey:token})}));expect(JSON.stringify(result)).not.toContain('definitions');
+  const privileged=await sealCredential('sb_secret_fixture_privileged_key',master,'ref');await expect(readIntegration({KV:{get:async()=>privileged},MFA_ENCRYPTION_KEY:master} as unknown as Env,{id:'a',provider:'supabase',environment:'live',secret_reference:'ref',revision:1,status:'configured',config_json:'{"projectUrl":"https://projectref123.supabase.co"}'},false,fetcher)).rejects.toThrow('supabase_privileged_key_denied');
+ });
+ it('verifies only the expected Google Drive account and quota without listing files',async()=>{
+  const master='fixture-master-key-with-at-least-32-characters',credential=JSON.stringify({type:'google_oauth_v1',access_token:'fixture-google-oauth-token',refresh_token:'fixture-refresh-token',expires_at:Date.now()+3600000,scope:'https://www.googleapis.com/auth/drive.file'}),cipher=await sealCredential(credential,master,'ref');const urls:string[]=[];
+  const fetcher=vi.fn(async(url:string)=>{urls.push(url);return Response.json({user:{displayName:'Avyron',emailAddress:'avyrontech@gmail.com'},storageQuota:{limit:'1000',usage:'100',usageInDrive:'80'}});}) as unknown as typeof fetch;
+  const result=await readIntegration({KV:{get:async()=>cipher,put:async()=>{}},MFA_ENCRYPTION_KEY:master} as unknown as Env,{id:'a',provider:'google_drive',environment:'live',secret_reference:'ref',revision:1,status:'configured'},false,fetcher);
+  expect(result.summary).toMatchObject({account_email:'avyrontech@gmail.com',display_name:'Avyron',storage_limit_bytes:'1000',mode:'verification_only'});expect(result.documents).toEqual([]);expect(urls).toHaveLength(1);expect(urls[0]).toContain('/drive/v3/about');
+  const wrong=vi.fn(async()=>Response.json({user:{displayName:'Other',emailAddress:'other@example.test'},storageQuota:{}})) as unknown as typeof fetch;
+  await expect(readIntegration({KV:{get:async()=>cipher,put:async()=>{}},MFA_ENCRYPTION_KEY:master} as unknown as Env,{id:'a',provider:'google_drive',environment:'live',secret_reference:'ref',revision:1,status:'configured'},false,wrong)).rejects.toThrow('google_account_mismatch');
+ });
+ it('maps provider quota and scope failures without exposing response bodies',async()=>{
+  const quota=vi.fn(async()=>new Response('private quota detail',{status:429})) as unknown as typeof fetch;await expect(boundedProviderJson('https://www.googleapis.com/drive/v3/files','token','google_drive',quota)).rejects.toThrow('provider_quota_exceeded');
+  const denied=vi.fn(async()=>new Response('private policy detail',{status:403})) as unknown as typeof fetch;await expect(boundedProviderJson('https://projectref123.supabase.co/rest/v1/','token','supabase',denied)).rejects.toThrow('provider_scope_or_access_denied');
+  await expect(boundedProviderJson('https://projectref123.supabase.co.evil.test/rest/v1/','token','supabase',vi.fn() as unknown as typeof fetch)).rejects.toThrow('provider_url_denied');
  });
 });

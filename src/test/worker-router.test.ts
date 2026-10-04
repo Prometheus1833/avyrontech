@@ -163,6 +163,12 @@ describe("worker HTTP statuses", () => {
       const res = await get(p);
       expect(res.status).toBe(200);
       expect(res.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
+      expect(res.headers.get("cache-control")).toBe("private, no-store");
+      const html = await res.text();
+      expect(html).toContain('<meta name="robots" content="noindex, nofollow">');
+      expect(html).toContain("Avyron — Acces securizat");
+      expect(html).toContain("Spațiu securizat pentru autentificare");
+      expect(html).not.toContain('content="default"');
     }
   });
 

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import LibraryLink from "@/components/site/LibraryLink";
 import PortfolioCarousel from "@/components/site/PortfolioCarousel";
@@ -7,6 +7,7 @@ import {
   ArrowRight,
   BarChart3,
   Bug,
+  Calculator,
   Check,
   FlaskConical,
 
@@ -24,6 +25,7 @@ import {
   Share2,
   Shield,
   ShoppingBag,
+  ShoppingCart,
   Smartphone,
   Users,
   Zap,
@@ -45,6 +47,12 @@ import PaymentMethods from "@/components/site/PaymentMethods";
 import QuickNav, { type QuickNavItem } from "@/components/site/QuickNav";
 import PlanTeaser from "@/components/site/subscriptions/PlanTeaser";
 import { categoryForService } from "@/data/subscriptionPlans";
+import ServiceCinematicIntro from "@/components/services/ServiceCinematicIntro";
+import { isServiceIntroKey } from "@/data/serviceIntros";
+import WebsitePriceCalculator from "@/components/services/WebsitePriceCalculator";
+import { useAuth } from "@/hooks/useAuth";
+import { addLocalAccountCartItem, syncLocalAccountCartSource } from "@/lib/accountCart";
+import { setPageMeta } from "@/lib/seo";
 
 const ICONS: Record<IconKey, React.ComponentType<{ className?: string }>> = {
   globe: Globe,
@@ -76,7 +84,9 @@ const ServicePage = () => {
   const { pathname } = useLocation();
   const { lang } = useLang();
   const ro = lang === "ro";
-  const { formatEur } = useCurrency(ro ? "ro-RO" : "en-IE");
+  const { formatFixedPrice } = useCurrency(ro ? "ro-RO" : "en-IE");
+  const { user } = useAuth();
+  const [addedToCart, setAddedToCart] = useState(false);
   const product = getServiceByPath(pathname);
 
   useEffect(() => {
@@ -84,14 +94,17 @@ const ServicePage = () => {
     window.scrollTo(0, 0);
     const c = product.copy[lang];
     const path = product.path[lang];
-    Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
-      ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd, serviceLd, faqPageLd }]) => {
-        setPageMeta({
-          title: c.metaTitle,
-          description: c.metaDescription,
-          path,
-          alternates: { ro: product.path.ro, en: product.path.en },
-        });
+    // Update the canonical synchronously on SPA redirects. The structured-data
+    // helpers can stay deferred, but metadata must never retain the previous
+    // route while a service chunk is loading.
+    setPageMeta({
+      title: c.metaTitle,
+      description: c.metaDescription,
+      path,
+      alternates: { ro: product.path.ro, en: product.path.en },
+    });
+    void Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
+      ([{ setJsonLd }, { organizationLd, breadcrumbLd, serviceLd, faqPageLd }]) => {
         setJsonLd("ld-organization", organizationLd);
         setJsonLd(
           "ld-service",
@@ -99,6 +112,7 @@ const ServicePage = () => {
             name: c.name,
             description: c.metaDescription,
             path,
+            priceRon: product.priceRon || undefined,
             priceEur: product.priceEur || undefined,
           }),
         );
@@ -128,12 +142,27 @@ const ServicePage = () => {
   // where its protected request flow has the necessary context and anti-spam checks.
   const others = SERVICES.filter((p) => p.key !== product.key && p.key !== "audit");
   const planCategory = categoryForService(product.key);
+  const addServiceToCart = () => {
+    addLocalAccountCartItem({
+      id: `service-${product.key}`,
+      source: "services",
+      sku: "custom-request",
+      type: "service",
+      name: c.name,
+      notes: ro ? `Cerere pentru serviciul ${c.name}` : `Request for ${c.name}`,
+      ...(product.priceRon > 0 ? { price_estimate: product.priceRon * 100, price_currency: "RON" as const } : {}),
+    });
+    setAddedToCart(true);
+    if (user) void syncLocalAccountCartSource("services").catch(() => undefined);
+    trackEvent("service_add_to_cart", { product: product.key, signed_in: Boolean(user) });
+  };
 
   const quickNavItems: QuickNavItem[] = [
     { id: "prezentare", label: ro ? "Prezentare" : "Overview", icon: HeroIcon },
     ...(c.audiences ? [{ id: "pentru-cine", label: ro ? "Pentru cine" : "Who it's for", icon: Users }] : []),
     { id: "pachet", label: ro ? "Ce include" : "What's included", icon: ShoppingBag },
     { id: "proces", label: ro ? "Proces" : "Process", icon: Clock },
+    ...(product.key === "premium-website" ? [{ id: "calculator", label: ro ? "Calculator" : "Estimator", icon: Calculator }] : []),
     ...(product.key === "premium-website" ? [{ id: "portofoliu", label: ro ? "Portofoliu" : "Portfolio", icon: Globe }] : []),
     { id: "faq", label: "FAQ", icon: MessageCircle },
     ...(planCategory ? [{ id: "abonamente", label: ro ? "Abonamente" : "Plans", icon: HeartHandshake }] : []),
@@ -143,6 +172,7 @@ const ServicePage = () => {
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
+      {isServiceIntroKey(product.key) && <ServiceCinematicIntro service={product.key} />}
       <QuickNav items={quickNavItems} />
       {/* Ambient background */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
@@ -226,6 +256,24 @@ const ServicePage = () => {
             >
               {ro ? "Cere ofertă" : "Request a quote"}
             </Link>
+            {addedToCart ? (
+              <Link
+                to={user ? "/profil?tab=cart" : "/auth"}
+                className="col-span-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 text-sm font-semibold text-emerald-600 transition-colors hover:bg-emerald-400/15 dark:text-emerald-300"
+              >
+                <ShoppingCart className="size-4" aria-hidden />
+                {user ? (ro ? "În coșul sincronizat · Vezi coșul" : "In your synced cart · View cart") : (ro ? "În coș · Autentifică-te pentru sincronizare" : "In cart · Sign in to sync")}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={addServiceToCart}
+                className="col-span-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-foreground/15 bg-foreground/[0.035] px-4 text-sm font-semibold transition-colors hover:border-foreground/30 hover:bg-foreground/[0.07]"
+              >
+                <ShoppingCart className="size-4" aria-hidden />
+                {ro ? "Adaugă serviciul în coș" : "Add service to cart"}
+              </button>
+            )}
           </div>
 
           <dl data-testid="product-hero-facts" className="mx-auto mt-7 grid w-full max-w-xl grid-cols-3 gap-1.5 sm:gap-2">
@@ -234,7 +282,7 @@ const ServicePage = () => {
                 {ro ? "Investiție" : "Investment"}
               </dt>
               <dd className="mt-0.5 text-[10px] font-bold leading-tight sm:text-xs">
-                {product.priceEur > 0 ? `${ro ? "de la" : "from"} ${formatEur(product.priceEur)}` : ro ? "Gratuit" : "Free"}
+                {product.priceRon > 0 ? `${ro ? "de la" : "from"} ${formatFixedPrice(product.priceRon, product.priceEur)}` : ro ? "Gratuit" : "Free"}
               </dd>
             </div>
             <div className="flex min-w-0 flex-col items-center justify-center rounded-xl border border-foreground/15 bg-foreground/[0.04] px-1.5 py-2.5 text-center text-foreground/70">
@@ -255,7 +303,7 @@ const ServicePage = () => {
             </div>
           </dl>
 
-          {product.priceEur > 0 && <CurrencySwitch compact className="mt-4" />}
+          {product.priceRon > 0 && <CurrencySwitch compact fixedPricing className="mt-4" />}
 
           {c.heroStats && (
             <dl className="mx-auto mt-8 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
@@ -448,16 +496,18 @@ const ServicePage = () => {
           </section>
         )}
 
-
         {product.key === "premium-website" && (
-          <section id="portofoliu" data-testid="portfolio-section" className="mt-14 scroll-mt-28">
-            <div className="text-center">
-              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-brand">{ro ? "Portofoliu" : "Portfolio"}</p>
-              <h2 className="mt-2 font-display text-2xl font-bold tracking-tight sm:text-3xl">{ro ? "Site-uri create de noi" : "Websites we've built"}</h2>
-              <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">{ro ? "Proiecte live, afișate cu acordul clienților, și exemple găzduite de Avyron. Apasă pe oricare ca să-l deschizi." : "Live projects shown with client consent, plus examples hosted by Avyron. Tap any card to open it."}</p>
-            </div>
-            <div className="mt-6"><PortfolioCarousel lang={ro ? "ro" : "en"} /></div>
-          </section>
+          <>
+            <WebsitePriceCalculator />
+            <section id="portofoliu" data-testid="portfolio-section" className="mt-14 scroll-mt-28">
+              <div className="text-center">
+                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-brand">{ro ? "Portofoliu" : "Portfolio"}</p>
+                <h2 className="mt-2 font-display text-2xl font-bold tracking-tight sm:text-3xl">{ro ? "Site-uri create de noi" : "Websites we've built"}</h2>
+                <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">{ro ? "Website-uri din industrii diferite, construite pentru obiective comerciale reale. Apasă pe oricare pentru a vedea experiența completă." : "Websites across different industries, built for real commercial goals. Open any project to explore the complete experience."}</p>
+              </div>
+              <div className="mt-6"><PortfolioCarousel lang={ro ? "ro" : "en"} /></div>
+            </section>
+          </>
         )}
 
         {/* FAQ */}

@@ -28,6 +28,19 @@ const Card = ({ label, value, hint }: { label: string; value: string | number; h
 
 const field = "w-full rounded-xl border border-border/60 bg-background/70 px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/40";
 
+const promptLines = (value: unknown) => {
+  try {
+    const parsed = JSON.parse(typeof value === "string" ? value : "[]") as unknown;
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string").join("\n") : "";
+  } catch {
+    return "";
+  }
+};
+
+const promptJson = (value: string) => JSON.stringify(
+  value.split("\n").map((line) => line.trim()).filter(Boolean).slice(0, 8),
+);
+
 /** Consola AI OS "AVY". Vizibilă super adminilor, editabilă doar de contul owner. */
 const AiOs = ({ embedded = false }: { embedded?: boolean }) => {
   const { user, isSuperAdmin, loading: authLoading } = useAuth();
@@ -284,6 +297,28 @@ const AiOs = ({ embedded = false }: { embedded?: boolean }) => {
                     </label>
                     <label className="text-sm">Salut EN
                       <input className={field} value={draft.greeting_en ?? ""} onChange={(e) => setDraft({ ...draft, greeting_en: e.target.value })} disabled={!canEdit} />
+                    </label>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="text-sm">Întrebări rapide RO
+                      <textarea rows={4} className={field} value={promptLines(draft.starter_questions_ro)}
+                        onChange={(e) => setDraft({ ...draft, starter_questions_ro: promptJson(e.target.value) })} disabled={!canEdit} />
+                      <span className="text-xs text-muted-foreground">Una pe linie, maximum 8.</span>
+                    </label>
+                    <label className="text-sm">Întrebări rapide EN
+                      <textarea rows={4} className={field} value={promptLines(draft.starter_questions_en)}
+                        onChange={(e) => setDraft({ ...draft, starter_questions_en: promptJson(e.target.value) })} disabled={!canEdit} />
+                      <span className="text-xs text-muted-foreground">One per line, maximum 8.</span>
+                    </label>
+                    <label className="text-sm">Invitații rare RO
+                      <textarea rows={3} className={field} value={promptLines(draft.proactive_prompts_ro)}
+                        onChange={(e) => setDraft({ ...draft, proactive_prompts_ro: promptJson(e.target.value) })} disabled={!canEdit} />
+                      <span className="text-xs text-muted-foreground">Apar discret, fără deschiderea automată a chatului.</span>
+                    </label>
+                    <label className="text-sm">Invitații rare EN
+                      <textarea rows={3} className={field} value={promptLines(draft.proactive_prompts_en)}
+                        onChange={(e) => setDraft({ ...draft, proactive_prompts_en: promptJson(e.target.value) })} disabled={!canEdit} />
+                      <span className="text-xs text-muted-foreground">Displayed discreetly without opening chat automatically.</span>
                     </label>
                   </div>
                   {canEdit && (

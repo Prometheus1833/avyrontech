@@ -1,314 +1,413 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, Check, Loader2, Send } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { LucideIcon } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  ExternalLink,
+  Languages,
+  MapPin,
+  Menu,
+  MessageCircle,
+  Sparkles,
+} from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
-import { apiUrl } from "@/lib/apiBase";
 import { trackEvent } from "@/lib/analytics";
-import Turnstile from "@/components/site/Turnstile";
-import { TURNSTILE_SITE_KEY } from "@/config/turnstile";
 import PageBackLink from "@/components/site/PageBackLink";
 import LangSwitch from "@/components/site/LangSwitch";
 import ThemeToggle from "@/components/site/ThemeToggle";
 import Footer from "@/components/site/Footer";
+import restaurantImage from "@/assets/work-restaurant-new.jpg";
 import { cn } from "@/lib/utils";
+import {
+  HORECA_BUSINESSES,
+  HORECA_GOALS,
+  HORECA_MODULES,
+  HORECA_STYLES,
+  type Localized,
+} from "@/data/horecaConfigurator";
 
-type L = { ro: string; en: string };
-type Svc = { key: string; title: L; types: L[]; features: L[] };
+type L = Localized;
+type LangKey = keyof L;
 
-// Doar servicii (fără produse) — tipuri + caracteristici, scurt.
-const SERVICES: Svc[] = [
-  { key: "website", title: { ro: "Website prezentare", en: "Presentation website" },
-    types: [{ ro: "Profesional", en: "Professional" }, { ro: "Cinematic 3D", en: "Cinematic 3D" }, { ro: "Landing page", en: "Landing page" }],
-    features: [{ ro: "Bilingv", en: "Bilingual" }, { ro: "Formular contact", en: "Contact form" }, { ro: "Programări online", en: "Online booking" }, { ro: "SEO avansat", en: "Advanced SEO" }, { ro: "Animații", en: "Animations" }] },
-  { key: "shop", title: { ro: "Magazin online", en: "Online store" },
-    types: [{ ro: "Sub 100 produse", en: "Under 100 products" }, { ro: "100–1000 produse", en: "100–1000 products" }, { ro: "Peste 1000", en: "Over 1000" }],
-    features: [{ ro: "Plăți card", en: "Card payments" }, { ro: "Curierat integrat", en: "Courier integration" }, { ro: "Facturare automată", en: "Auto invoicing" }, { ro: "Import produse", en: "Product import" }, { ro: "Multi-monedă", en: "Multi-currency" }] },
-  { key: "apps", title: { ro: "Aplicație mobilă", en: "Mobile app" },
-    types: [{ ro: "iOS + Android", en: "iOS + Android" }, { ro: "Web app / PWA", en: "Web app / PWA" }, { ro: "Platformă internă", en: "Internal platform" }],
-    features: [{ ro: "Conturi utilizatori", en: "User accounts" }, { ro: "Notificări push", en: "Push notifications" }, { ro: "Plăți in-app", en: "In-app payments" }, { ro: "Panou admin", en: "Admin panel" }, { ro: "API extern", en: "External API" }] },
-  { key: "blog", title: { ro: "Blog profesional", en: "Professional blog" },
-    types: [{ ro: "Blog nou", en: "New blog" }, { ro: "Integrat în site", en: "Added to site" }],
-    features: [{ ro: "Articole scrise de noi", en: "Articles written by us" }, { ro: "SEO pe articol", en: "Per-article SEO" }, { ro: "Newsletter", en: "Newsletter" }] },
-  { key: "logo", title: { ro: "Logo 3D dinamic", en: "Dynamic 3D logo" },
-    types: [{ ro: "Logo nou", en: "New logo" }, { ro: "Animare logo existent", en: "Animate existing logo" }],
-    features: [{ ro: "Variante video", en: "Video variants" }, { ro: "Manual de brand", en: "Brand guide" }] },
-  { key: "social", title: { ro: "Identitate social media", en: "Social media identity" },
-    types: [{ ro: "Set vizual", en: "Visual kit" }, { ro: "Administrare lunară", en: "Monthly management" }],
-    features: [{ ro: "Instagram", en: "Instagram" }, { ro: "Facebook", en: "Facebook" }, { ro: "TikTok", en: "TikTok" }, { ro: "LinkedIn", en: "LinkedIn" }] },
-  { key: "ai", title: { ro: "Automatizări AI", en: "AI automation" },
-    types: [{ ro: "Chatbot site", en: "Website chatbot" }, { ro: "Asistent WhatsApp", en: "WhatsApp assistant" }, { ro: "Fluxuri interne", en: "Internal workflows" }],
-    features: [{ ro: "Răspuns lead-uri", en: "Lead replies" }, { ro: "Integrare CRM", en: "CRM integration" }, { ro: "Bază de cunoștințe", en: "Knowledge base" }] },
-  { key: "qa", title: { ro: "QA Testing Web/Mobile", en: "QA Testing Web/Mobile" },
-    types: [{ ro: "Manual", en: "Manual" }, { ro: "Automat", en: "Automated" }, { ro: "Mixt", en: "Mixed" }],
-    features: [{ ro: "Performanță", en: "Performance" }, { ro: "Securitate", en: "Security" }, { ro: "Accesibilitate", en: "Accessibility" }, { ro: "Multi-device", en: "Multi-device" }] },
-];
+const PAGE_COPY = {
+  ro: {
+    eyebrow: "Concept digital HoReCa",
+    title: "Dintr-un local bun, într-o experiență care începe online.",
+    description:
+      "Acesta este un concept demonstrativ AVYRON, creat pentru a arăta cum poate deveni o afacere HoReCa o experiență digitală clară, premium și ușor de folosit.",
+    helper: "Alege trei repere. Preview-ul se adaptează instant, fără să trimită date și fără să plaseze o comandă reală.",
+    business: "1. Ce tip de afacere ai?",
+    objective: "2. Care este obiectivul principal?",
+    atmosphere: "3. Ce atmosferă te reprezintă?",
+    modules: "Module utile incluse în concept",
+    preview: "Preview live",
+    demo: "Brand demonstrativ",
+    today: "Deschis astăzi · 12:00–23:00",
+    popular: "Selecția casei",
+    conceptSummary: "Conceptul tău",
+    builtFor: "Experiență gândită pentru",
+    cta: "Vreau un proiect HoReCa real",
+    ctaHint: "Trimite configurația pe WhatsApp și discută direct cu echipa AVYRON.",
+    proofTitle: "Ce demonstrează această experiență",
+    proofLead: "Un website HoReCa bun scurtează drumul dintre poftă, încredere și acțiune.",
+    proof: [
+      ["Decizia devine simplă", "Meniul, programul, locația și acțiunea principală sunt vizibile fără căutări inutile."],
+      ["Brandul se simte coerent", "Fotografia, vocea și detaliile de interacțiune susțin aceeași atmosferă pe orice ecran."],
+      ["Conversia rămâne directă", "Rezervarea, comanda sau cererea pentru eveniment pornesc dintr-un singur punct clar."],
+    ],
+  },
+  en: {
+    eyebrow: "Digital HoReCa concept",
+    title: "From a great venue to an experience that starts online.",
+    description:
+      "This AVYRON demonstration concept shows how a HoReCa business can become a clear, premium and easy-to-use digital experience.",
+    helper: "Choose three directions. The preview adapts instantly without sending data or placing a real order.",
+    business: "1. What kind of business do you run?",
+    objective: "2. What is your main goal?",
+    atmosphere: "3. Which atmosphere fits you?",
+    modules: "Useful modules included in the concept",
+    preview: "Live preview",
+    demo: "Demonstration brand",
+    today: "Open today · 12:00–23:00",
+    popular: "House selection",
+    conceptSummary: "Your concept",
+    builtFor: "Experience designed for",
+    cta: "I want a real HoReCa project",
+    ctaHint: "Send this configuration on WhatsApp and speak directly with the AVYRON team.",
+    proofTitle: "What this experience demonstrates",
+    proofLead: "A strong HoReCa website shortens the path between appetite, trust and action.",
+    proof: [
+      ["The decision feels simple", "Menu, hours, location and the main action are visible without unnecessary searching."],
+      ["The brand feels coherent", "Photography, voice and interaction details support the same atmosphere on every screen."],
+      ["Conversion stays direct", "Booking, ordering or an event enquiry starts from one clear point."],
+    ],
+  },
+} as const;
 
-type TL = L & { hint: L };
-const TIMELINES: TL[] = [
-  { ro: "3–7 zile", en: "3–7 days", hint: { ro: "Când nu mai poate aștepta", en: "When it can't wait" } },
-  { ro: "1–2 săptămâni", en: "1–2 weeks", hint: { ro: "Cel mai des ales", en: "Most common" } },
-  { ro: "2–3 săptămâni", en: "2–3 weeks", hint: { ro: "Timp pentru conținut și finisaje", en: "Room for content and polish" } },
-  { ro: "3–4 săptămâni", en: "3–4 weeks", hint: { ro: "Proiect mare, mai multe servicii", en: "Bigger project, more services" } },
-];
-const BUDGETS: L[] = [
-  { ro: "200–500 €", en: "€200–500" },
-  { ro: "500–1.000 €", en: "€500–1,000" },
-  { ro: "1.000–2.500 €", en: "€1,000–2,500" },
-  { ro: "2.500–5.000 €", en: "€2,500–5,000" },
-  { ro: "Nu știu încă", en: "Not sure yet" },
-];
-// Întrebări scurt care îl ajută pe vizitator să descrie proiectul concret.
-const PROMPTS: L[] = [
-  { ro: "Ce vinzi", en: "What you sell" },
-  { ro: "Cui te adresezi", en: "Who you serve" },
-  { ro: "Ce te deranjează acum", en: "What bothers you now" },
-  { ro: "Ce vrei să obții", en: "What you want from it" },
-];
-
-type Pick = { type?: string; features: string[] };
-
-const Chip = ({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) => (
-  <button type="button" onClick={onClick} aria-pressed={on}
-    className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-all active:scale-[0.97]",
-      on ? "border-brand bg-brand/10 text-foreground shadow-soft" : "border-border bg-card/60 text-muted-foreground hover:border-brand/50 hover:text-foreground")}>
-    {on && <Check className="size-3.5 text-brand" aria-hidden />}{children}
-  </button>
-);
+function OptionCard({
+  active,
+  icon: Icon,
+  title,
+  hint,
+  onClick,
+}: {
+  active: boolean;
+  icon: LucideIcon;
+  title: string;
+  hint?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={cn(
+        "group flex min-h-24 w-full items-start gap-3 rounded-2xl border p-3.5 text-left transition duration-300 active:scale-[0.98]",
+        active
+          ? "border-brand/70 bg-brand/[0.08] shadow-[0_18px_45px_-30px_hsl(var(--brand)/0.9)]"
+          : "border-border/70 bg-card/55 hover:border-brand/35 hover:bg-card",
+      )}
+    >
+      <span
+        className={cn(
+          "grid size-9 shrink-0 place-items-center rounded-xl border transition",
+          active
+            ? "border-brand/30 bg-brand text-primary-foreground"
+            : "border-border bg-background/75 text-muted-foreground group-hover:text-foreground",
+        )}
+      >
+        <Icon className="size-4" aria-hidden />
+      </span>
+      <span className="min-w-0">
+        <span className="flex items-center gap-1.5 text-sm font-semibold">
+          {title}
+          {active && <Check className="size-3.5 text-brand" aria-hidden />}
+        </span>
+        {hint && <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">{hint}</span>}
+      </span>
+    </button>
+  );
+}
 
 export default function Configurator() {
   const { lang } = useLang();
-  const ro = lang === "ro";
-  const tx = (l: L) => l[lang as "ro" | "en"] ?? l.ro;
-  const [step, setStep] = useState(0);
-  const [picks, setPicks] = useState<Record<string, Pick>>({});
-  const [timeline, setTimeline] = useState("");
-  const [budget, setBudget] = useState("");
-  const [c, setC] = useState({ name: "", business: "", phone: "", email: "", website: "", notes: "" });
-  const [token, setToken] = useState("");
-  const [resetKey, setResetKey] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState<string | null>(null);
-  const honeypot = useRef<HTMLInputElement>(null);
+  const language: LangKey = lang === "en" ? "en" : "ro";
+  const ro = language === "ro";
+  const copy = PAGE_COPY[language];
+  const tx = (value: L) => value[language];
+
+  const [businessId, setBusinessId] = useState("restaurant");
+  const [goalId, setGoalId] = useState("booking");
+  const [styleId, setStyleId] = useState("warm");
+  const [modules, setModules] = useState<string[]>(["languages", "location"]);
+
+  const business = HORECA_BUSINESSES.find((item) => item.id === businessId) ?? HORECA_BUSINESSES[0];
+  const goal = HORECA_GOALS.find((item) => item.id === goalId) ?? HORECA_GOALS[0];
+  const style = HORECA_STYLES.find((item) => item.id === styleId) ?? HORECA_STYLES[0];
+  const selectedModules = HORECA_MODULES.filter((item) => modules.includes(item.id));
 
   useEffect(() => {
-    document.title = ro ? "Configurator ofertă | AVYRON" : "Quote configurator | AVYRON";
-    trackEvent("configurator_view", { lang });
-  }, [ro, lang]);
+    window.scrollTo(0, 0);
+    const path = ro ? "/configurator" : "/en/configurator";
+    import("@/lib/seo").then(({ setPageMeta, setJsonLd }) => {
+      setPageMeta({
+        title: ro ? "Configurator HoReCa demonstrativ | AVYRON" : "HoReCa concept configurator | AVYRON",
+        description: copy.description,
+        path,
+        alternates: { ro: "/configurator", en: "/en/configurator" },
+        image: restaurantImage,
+        imageAlt: ro
+          ? "Concept digital demonstrativ pentru o afacere HoReCa"
+          : "Demonstration digital concept for a HoReCa business",
+      });
+      setJsonLd("ld-configurator", {
+        "@type": "WebApplication",
+        "@id": `https://avyron.ro${path}#configurator`,
+        name: ro ? "Configurator demonstrativ HoReCa AVYRON" : "AVYRON HoReCa demonstration configurator",
+        description: copy.description,
+        url: `https://avyron.ro${path}`,
+        applicationCategory: "DesignApplication",
+        operatingSystem: "Web",
+        inLanguage: ro ? "ro-RO" : "en",
+        isAccessibleForFree: true,
+        creator: { "@id": "https://avyron.ro/#organization" },
+      });
+    });
+    trackEvent("configurator_view", { lang: language, concept: "horeca" });
+  }, [copy.description, language, ro]);
 
-  const chosen = SERVICES.filter((s) => picks[s.key]);
-  const steps = ro ? ["Servicii", "Detalii", "Proiect", "Contact"] : ["Services", "Details", "Project", "Contact"];
+  const message = ro
+    ? `Bună! Vreau să discutăm despre un proiect HoReCa. Am configurat: ${tx(business.label)}, obiectiv „${tx(goal.label)}”, stil „${tx(style.label)}”, module: ${selectedModules.map((item) => tx(item.label)).join(", ") || "de stabilit"}.`
+    : `Hello! I would like to discuss a HoReCa project. My configuration: ${tx(business.label)}, goal “${tx(goal.label)}”, style “${tx(style.label)}”, modules: ${selectedModules.map((item) => tx(item.label)).join(", ") || "to be decided"}.`;
+  const whatsappHref = `https://wa.me/40734605055?text=${encodeURIComponent(message)}`;
 
-  const toggleSvc = (k: string) => setPicks((p) => { const n = { ...p }; if (n[k]) delete n[k]; else n[k] = { features: [] }; return n; });
-  const setType = (k: string, t: string) => setPicks((p) => ({ ...p, [k]: { ...p[k], type: t } }));
-  const toggleFeat = (k: string, f: string) => setPicks((p) => {
-    const cur = p[k].features; return { ...p, [k]: { ...p[k], features: cur.includes(f) ? cur.filter((x) => x !== f) : [...cur, f] } };
-  });
-  // Adaugă o întrebare-ghid în descriere, ca vizitatorul să o poată completa.
-  const addPrompt = (p: L) => setC((s) => {
-    const line = `${tx(p)}: `;
-    if (s.notes.includes(line)) return s;
-    const cur = s.notes.trim();
-    return { ...s, notes: (cur ? `${cur.replace(/\s+$/, "")}\n${line}` : line).slice(0, 1200) };
-  });
-
-  const summary = useMemo(() => {
-    const lines = chosen.map((s) => `• ${tx(s.title)}${picks[s.key].type ? ` — ${picks[s.key].type}` : ""}${picks[s.key].features.length ? ` (${picks[s.key].features.join(", ")})` : ""}`);
-    lines.push(`${ro ? "Termen" : "Timeline"}: ${timeline || "—"}`, `${ro ? "Buget" : "Budget"}: ${budget || "—"}`);
-    if (c.notes.trim()) lines.push(`${ro ? "Descriere" : "Description"}: ${c.notes.trim()}`);
-    return lines.join("\n");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [picks, timeline, budget, c.notes, lang]);
-
-  const canNext = step === 0 ? chosen.length > 0 : step === 1 ? chosen.every((s) => picks[s.key].type) : step === 2 ? !!timeline && !!budget : true;
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (c.name.trim().length < 2 || c.business.trim().length < 2 || c.phone.trim().length < 6 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email)) {
-      toast.error(ro ? "Completează nume, firmă, telefon și email valid." : "Fill in name, company, phone and a valid email."); return;
-    }
-    if (TURNSTILE_SITE_KEY && !token) { toast.error(ro ? "Confirmă verificarea anti-spam." : "Please complete the anti-spam check."); return; }
-    setLoading(true);
-    try {
-      const fd = new FormData();
-      fd.append("name", c.name.trim()); fd.append("business", c.business.trim());
-      fd.append("phone", c.phone.trim()); fd.append("email", c.email.trim());
-      fd.append("website", c.website.trim()); fd.append("description", `[Configurator]\n${summary}`.slice(0, 2000));
-      fd.append("lang", lang); fd.append("product", "configurator");
-      fd.append("config", JSON.stringify({ services: picks, timeline, budget }).slice(0, 4000));
-      fd.append("company_url", honeypot.current?.value ?? "");
-      if (token) fd.append("cf-turnstile-response", token);
-      const res = await fetch(apiUrl("/api/contact/demo"), { method: "POST", body: fd });
-      const body = (await res.json().catch(() => ({}))) as { leadId?: string; error?: string };
-      if (res.status === 429) { toast.error(ro ? "Prea multe cereri. Încearcă mai târziu." : "Too many requests. Try later."); return; }
-      if (res.status === 403) { toast.error(ro ? "Verificarea anti-spam a eșuat." : "Anti-spam check failed."); setToken(""); setResetKey((k) => k + 1); return; }
-      if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
-      trackEvent("generate_lead", { source: "configurator", services: chosen.map((s) => s.key).join(",") });
-      setDone(body.leadId ?? "—");
-    } catch {
-      toast.error(ro ? "Nu am putut trimite. Încearcă din nou." : "Couldn't send. Please try again.");
-    } finally { setLoading(false); }
-  };
-
-  const input = "w-full rounded-xl border border-border bg-background/70 px-3.5 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-ring/30";
+  const toggleModule = (id: string) =>
+    setModules((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
-      <header className="mx-auto flex max-w-3xl items-center justify-between px-4 pt-5">
-        <PageBackLink to={ro ? "/" : "/en"} label={ro ? "Înapoi" : "Back"} />
-        <div className="flex items-center gap-2"><LangSwitch /><ThemeToggle /></div>
+    <main className="min-h-screen overflow-x-hidden bg-background text-foreground">
+      <header className="relative z-30 mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8">
+        <PageBackLink to={ro ? "/" : "/en"} label={ro ? "Înapoi la AVYRON" : "Back to AVYRON"} />
+        <div className="flex items-center gap-2">
+          <LangSwitch />
+          <ThemeToggle />
+        </div>
       </header>
 
-      <section className="mx-auto max-w-3xl px-4 pb-16 pt-8">
-        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-brand">{ro ? "Configurator" : "Configurator"}</p>
-        <h1 className="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl">
-          {ro ? "Solicită o ofertă" : "Request a quote"} <span className="text-gradient">{ro ? "personalizată" : "tailored to you"}</span>
-        </h1>
-        <p className="mt-2 text-muted-foreground">{ro ? "4 pași scurți, sub 2 minute. Primim rezultatul și revenim cu oferta." : "4 short steps, under 2 minutes. We receive the result and reply with a quote."}</p>
+      <section className="relative mx-auto max-w-7xl px-4 pb-14 pt-7 sm:px-6 sm:pb-20 sm:pt-12 lg:px-8">
+        <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[32rem] bg-[radial-gradient(circle_at_18%_10%,hsl(var(--brand)/0.16),transparent_34%),radial-gradient(circle_at_80%_0%,hsl(var(--foreground)/0.08),transparent_28%)]" />
 
-        {done ? (
-          <div data-testid="configurator-done" className="mt-8 rounded-3xl border border-border bg-card/70 p-6 shadow-soft">
-            <div className="flex items-center gap-2 text-lg font-semibold"><Check className="size-5 text-brand" />{ro ? "Cerere trimisă!" : "Request sent!"}</div>
-            <p className="mt-1 text-sm text-muted-foreground">{ro ? "Am primit configurația ta. Iată rezumatul:" : "We received your configuration. Summary:"}</p>
-            <pre className="mt-4 whitespace-pre-wrap rounded-2xl bg-muted/50 p-4 text-sm">{summary}</pre>
-            <p className="mt-3 font-mono text-[11px] text-muted-foreground">ID: {done}</p>
-            <Link to={ro ? "/" : "/en"} className="mt-5 inline-flex rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background">{ro ? "Înapoi acasă" : "Back home"}</Link>
+        <div className="mx-auto max-w-4xl text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand/[0.07] px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.22em] text-brand sm:text-[11px]">
+            <Sparkles className="size-3.5" aria-hidden />
+            {copy.eyebrow}
           </div>
-        ) : (
-          <>
-            <ol className="mt-7 grid grid-cols-4 gap-2" aria-label={ro ? "Pași" : "Steps"}>
-              {steps.map((s, i) => (
-                <li key={s} className="text-center">
-                  <div className={cn("h-1.5 rounded-full transition-colors duration-500", i <= step ? "bg-brand" : "bg-border")} />
-                  <span className={cn("mt-1.5 block text-[11px] font-medium", i === step ? "text-foreground" : "text-muted-foreground")}>{s}</span>
-                </li>
-              ))}
-            </ol>
+          <h1 className="mx-auto mt-5 max-w-4xl font-display text-4xl font-black leading-[0.98] tracking-[-0.045em] sm:text-6xl lg:text-7xl">
+            {copy.title}
+          </h1>
+          <p className="mx-auto mt-6 max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">{copy.description}</p>
+          <p className="mx-auto mt-3 max-w-2xl text-xs leading-5 text-muted-foreground/80 sm:text-sm">{copy.helper}</p>
+        </div>
 
-            <form onSubmit={submit} className="mt-6 rounded-3xl border border-border bg-card/70 p-5 shadow-soft backdrop-blur sm:p-6">
-              <div key={step} className="animate-in fade-in slide-in-from-right-2 duration-300">
-                {step === 0 && (
-                  <>
-                    <h2 className="font-semibold">{ro ? "De ce servicii ai nevoie?" : "Which services do you need?"}</h2>
-                    <p className="text-sm text-muted-foreground">{ro ? "Poți alege mai multe." : "Pick one or more."}</p>
-                    <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                      {SERVICES.map((s) => {
-                        const on = !!picks[s.key];
-                        return (
-                          <button type="button" key={s.key} onClick={() => toggleSvc(s.key)} aria-pressed={on}
-                            className={cn("flex items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all active:scale-[0.98]",
-                              on ? "border-brand bg-brand/10" : "border-border hover:border-brand/50")}>
-                            {tx(s.title)}
-                            <span className={cn("grid size-5 place-items-center rounded-full border", on ? "border-brand bg-brand text-primary-foreground" : "border-border")}>{on && <Check className="size-3" />}</span>
-                          </button>
-                        );
-                      })}
+        <div className="mt-10 grid items-start gap-5 lg:mt-14 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] lg:gap-8">
+          <div className="rounded-[2rem] border border-border/70 bg-card/65 p-4 shadow-[0_30px_90px_-58px_hsl(var(--foreground)/0.45)] backdrop-blur sm:p-6">
+            <fieldset>
+              <legend className="font-display text-xl font-bold tracking-tight">{copy.business}</legend>
+              <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                {HORECA_BUSINESSES.map((item) => (
+                  <OptionCard key={item.id} active={businessId === item.id} icon={item.icon} title={tx(item.label)} onClick={() => setBusinessId(item.id)} />
+                ))}
+              </div>
+            </fieldset>
+
+            <div className="my-6 h-px bg-border/70" />
+
+            <fieldset>
+              <legend className="font-display text-xl font-bold tracking-tight">{copy.objective}</legend>
+              <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+                {HORECA_GOALS.map((item) => (
+                  <OptionCard
+                    key={item.id}
+                    active={goalId === item.id}
+                    icon={item.icon}
+                    title={tx(item.label)}
+                    hint={tx(item.hint)}
+                    onClick={() => setGoalId(item.id)}
+                  />
+                ))}
+              </div>
+            </fieldset>
+
+            <div className="my-6 h-px bg-border/70" />
+
+            <fieldset>
+              <legend className="font-display text-xl font-bold tracking-tight">{copy.atmosphere}</legend>
+              <div className="mt-4 grid gap-2.5 sm:grid-cols-3">
+                {HORECA_STYLES.map((item) => {
+                  const active = styleId === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => setStyleId(item.id)}
+                      className={cn(
+                        "rounded-2xl border p-3.5 text-left transition duration-300 active:scale-[0.98]",
+                        active ? "border-brand/70 bg-brand/[0.08]" : "border-border/70 bg-card/55 hover:border-brand/35",
+                      )}
+                    >
+                      <span className="flex -space-x-1.5" aria-hidden>
+                        {item.swatches.map((color) => <span key={color} className="size-6 rounded-full border-2 border-card" style={{ backgroundColor: color }} />)}
+                      </span>
+                      <span className="mt-3 flex items-center gap-1.5 text-sm font-semibold">
+                        {tx(item.label)}
+                        {active && <Check className="size-3.5 text-brand" aria-hidden />}
+                      </span>
+                      <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">{tx(item.hint)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+
+            <div className="mt-6 rounded-2xl border border-border/70 bg-background/60 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">{copy.modules}</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {HORECA_MODULES.map((item) => {
+                  const active = modules.includes(item.id);
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => toggleModule(item.id)}
+                      className={cn(
+                        "inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-medium transition",
+                        active ? "border-brand/40 bg-brand/10 text-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <Icon className="size-3.5" aria-hidden />
+                      {tx(item.label)}
+                      {active && <Check className="size-3.5 text-brand" aria-hidden />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <aside className="lg:sticky lg:top-5">
+            <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#101713] p-3 text-[#f8f3e8] shadow-[0_38px_100px_-45px_rgba(0,0,0,0.9)] sm:p-4">
+              <div className="flex items-center justify-between px-2 py-2 text-[10px] uppercase tracking-[0.18em] text-white/55">
+                <span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-[#8fd19e]" />{copy.preview}</span>
+                <span>{copy.demo}</span>
+              </div>
+
+              <div className="overflow-hidden rounded-[1.45rem] bg-[#f5efe2] text-[#172018]">
+                <div className="relative min-h-[23rem] overflow-hidden">
+                  <img
+                    src={restaurantImage}
+                    alt={ro ? "Interior de restaurant folosit în conceptul demonstrativ" : "Restaurant interior used in the demonstration concept"}
+                    width={1024}
+                    height={768}
+                    className="absolute inset-0 h-full w-full object-cover"
+                    loading="eager"
+                  />
+                  <div className={cn("absolute inset-0 bg-gradient-to-b", style.preview)} />
+                  <div className="relative flex min-h-[23rem] flex-col p-5 text-white sm:p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-display text-xl font-black tracking-[-0.035em]">{business.previewName}</p>
+                        <p className="mt-0.5 text-[9px] uppercase tracking-[0.2em] text-white/65">{tx(business.category)}</p>
+                      </div>
+                      <span className="grid size-9 place-items-center rounded-full border border-white/20 bg-black/20 backdrop-blur"><Menu className="size-4" /></span>
                     </div>
-                  </>
-                )}
 
-                {step === 1 && (
-                  <div className="space-y-5">
-                    <h2 className="font-semibold">{ro ? "Alege varianta și caracteristicile" : "Choose type and features"}</h2>
-                    {chosen.map((s) => (
-                      <div key={s.key} className="border-t border-border pt-4 first-of-type:border-0 first-of-type:pt-0">
-                        <p className="text-sm font-semibold">{tx(s.title)}</p>
-                        <p className="mt-2 text-[11px] uppercase tracking-wider text-muted-foreground">{ro ? "Variantă" : "Type"}</p>
-                        <div className="mt-1.5 flex flex-wrap gap-2">{s.types.map((t) => <Chip key={t.ro} on={picks[s.key].type === tx(t)} onClick={() => setType(s.key, tx(t))}>{tx(t)}</Chip>)}</div>
-                        <p className="mt-3 text-[11px] uppercase tracking-wider text-muted-foreground">{ro ? "Caracteristici (opțional)" : "Features (optional)"}</p>
-                        <div className="mt-1.5 flex flex-wrap gap-2">{s.features.map((f) => <Chip key={f.ro} on={picks[s.key].features.includes(tx(f))} onClick={() => toggleFeat(s.key, tx(f))}>{tx(f)}</Chip>)}</div>
+                    <div className="mt-auto max-w-sm">
+                      <p className="text-xs font-medium text-white/75">{copy.today}</p>
+                      <h2 className="mt-2 font-display text-4xl font-black leading-[0.96] tracking-[-0.04em] sm:text-5xl">
+                        {tx(goal.label)}<span className="text-[#f0ad78]">.</span>
+                      </h2>
+                      <p className="mt-3 max-w-xs text-sm leading-6 text-white/78">{tx(goal.hint)}</p>
+                      <button type="button" className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#f5efe2] px-4 py-2.5 text-xs font-bold text-[#172018] shadow-lg">
+                        {tx(goal.cta)} <ArrowRight className="size-3.5" aria-hidden />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-5 sm:p-6">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#9b6948]">{copy.popular}</p>
+                      <p className="mt-1 font-display text-xl font-black">{ro ? "Gust, fără zgomot." : "Taste, without noise."}</p>
+                    </div>
+                    <span className="rounded-full border border-[#172018]/10 px-3 py-1.5 text-[10px] font-semibold">{tx(business.label)}</span>
+                  </div>
+                  <div className="mt-4 space-y-2.5">
+                    {business.menu.map((item, index) => (
+                      <div key={item.ro} className="flex items-center justify-between gap-4 rounded-xl bg-white/55 px-3.5 py-3">
+                        <span className="text-xs font-semibold">{tx(item)}</span>
+                        <span className="shrink-0 text-[10px] font-bold text-[#9b6948]">{index === 0 ? "49" : "42"} RON</span>
                       </div>
                     ))}
                   </div>
-                )}
-
-                {step === 2 && (
-                  <div className="space-y-6">
-                    <div>
-                      <h2 className="font-semibold">{ro ? "Cât de repede?" : "How soon?"}</h2>
-                      <p className="text-sm text-muted-foreground">{ro ? "Alege cel mai apropiat termen. Îl confirmăm împreună." : "Pick the closest match. We confirm it together."}</p>
-                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                        {TIMELINES.map((t) => {
-                          const on = timeline === tx(t);
-                          return (
-                            <button type="button" key={t.ro} onClick={() => setTimeline(tx(t))} aria-pressed={on}
-                              className={cn("rounded-2xl border px-3.5 py-2.5 text-left transition-all active:scale-[0.98]",
-                                on ? "border-brand bg-brand/10 shadow-soft" : "border-border hover:border-brand/50")}>
-                              <span className="flex items-center gap-1.5 text-sm font-medium">
-                                {on && <Check className="size-3.5 shrink-0 text-brand" aria-hidden />}{tx(t)}
-                              </span>
-                              <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">{tx(t.hint)}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h2 className="font-semibold">{ro ? "Buget estimativ" : "Estimated budget"}</h2>
-                      <p className="text-sm text-muted-foreground">{ro ? "Valoarea totală a proiectului, nu o rată lunară." : "Total project value, not a monthly fee."}</p>
-                      <div className="mt-3 flex flex-wrap gap-2">{BUDGETS.map((b) => <Chip key={b.ro} on={budget === tx(b)} onClick={() => setBudget(tx(b))}>{tx(b)}</Chip>)}</div>
-                    </div>
-
-                    <div>
-                      <h2 className="font-semibold">{ro ? "Descrie proiectul" : "Describe your project"}</h2>
-                      <p className="text-sm text-muted-foreground">{ro ? "Două rânduri concrete valorează mai mult decât zece generice: ce vinzi, cui, ce vrei să facă proiectul." : "Two concrete lines beat ten generic ones: what you sell, to whom, and what the project must do."}</p>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {PROMPTS.map((p) => (
-                          <button type="button" key={p.ro} onClick={() => addPrompt(p)}
-                            className="rounded-full border border-dashed border-border px-2.5 py-1 text-[11px] text-muted-foreground transition hover:border-brand/60 hover:text-foreground active:scale-[0.97]">
-                            + {tx(p)}
-                          </button>
-                        ))}
-                      </div>
-                      <textarea value={c.notes} maxLength={1200} onChange={(e) => setC({ ...c, notes: e.target.value })} rows={5} className={cn(input, "mt-2 leading-relaxed")}
-                        aria-label={ro ? "Descrierea proiectului" : "Project description"}
-                        placeholder={ro
-                          ? "Ex: cabinet stomatologic în Cluj, clienți de 25–50 ani. Vreau site nou cu programări online și pagină pentru fiecare serviciu. Am logo și poze, site-ul vechi e lent și nu apare în Google."
-                          : "E.g. dental clinic in Cluj, clients aged 25–50. I need a new site with online booking and a page per service. I have a logo and photos, the old site is slow and invisible on Google."} />
-                      <p className="mt-1 text-right font-mono text-[10px] text-muted-foreground">{c.notes.length}/1200</p>
-                    </div>
+                  <div className="mt-4 flex items-center justify-between rounded-xl border border-[#172018]/10 px-3.5 py-3 text-[10px] font-semibold">
+                    <span className="inline-flex items-center gap-1.5"><MapPin className="size-3.5" />{ro ? "Iași · centru" : "Iași · city centre"}</span>
+                    <span className="inline-flex items-center gap-1.5"><Languages className="size-3.5" />RO / EN</span>
                   </div>
-                )}
-
-                {step === 3 && (
-                  <div className="space-y-3">
-                    <h2 className="font-semibold">{ro ? "Unde îți trimitem oferta?" : "Where should we send the quote?"}</h2>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <input className={input} autoComplete="name" placeholder={ro ? "Nume *" : "Name *"} value={c.name} onChange={(e) => setC({ ...c, name: e.target.value })} maxLength={80} />
-                      <input className={input} autoComplete="organization" placeholder={ro ? "Firmă / domeniu *" : "Company / field *"} value={c.business} onChange={(e) => setC({ ...c, business: e.target.value })} maxLength={80} />
-                      <input className={input} type="tel" autoComplete="tel" placeholder={ro ? "Telefon *" : "Phone *"} value={c.phone} onChange={(e) => setC({ ...c, phone: e.target.value })} maxLength={30} />
-                      <input className={input} type="email" autoComplete="email" placeholder="Email *" value={c.email} onChange={(e) => setC({ ...c, email: e.target.value })} maxLength={120} />
-                    </div>
-                    <input className={input} placeholder={ro ? "Website actual (opțional)" : "Current website (optional)"} value={c.website} onChange={(e) => setC({ ...c, website: e.target.value })} maxLength={200} />
-                    <input ref={honeypot} name="company_url" tabIndex={-1} autoComplete="off" aria-hidden className="hidden" />
-                    <pre className="whitespace-pre-wrap rounded-2xl bg-muted/50 p-3 text-xs text-muted-foreground">{summary}</pre>
-                    <Turnstile onToken={setToken} resetKey={resetKey} action="contact-demo" />
-                  </div>
-                )}
+                </div>
               </div>
+            </div>
 
-              <div className="mt-6 flex items-center justify-between gap-3">
-                <button type="button" onClick={() => setStep((s) => s - 1)} disabled={step === 0}
-                  className="inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm text-muted-foreground transition hover:text-foreground disabled:invisible">
-                  <ArrowLeft className="size-4" />{ro ? "Înapoi" : "Back"}
-                </button>
-                {step < 3 ? (
-                  <button type="button" disabled={!canNext} onClick={() => setStep((s) => s + 1)}
-                    className="inline-flex items-center gap-1 rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background transition active:scale-[0.98] disabled:opacity-40">
-                    {ro ? "Continuă" : "Continue"}<ArrowRight className="size-4" />
-                  </button>
-                ) : (
-                  <button type="submit" disabled={loading}
-                    className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background transition active:scale-[0.98] disabled:opacity-60">
-                    {loading ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}{ro ? "Trimite cererea" : "Send request"}
-                  </button>
-                )}
+            <div className="mt-4 rounded-[1.75rem] border border-border/70 bg-card/75 p-5 shadow-soft backdrop-blur">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-brand">{copy.conceptSummary}</p>
+              <p className="mt-2 text-sm font-semibold">
+                {copy.builtFor} {tx(business.label).toLocaleLowerCase(language === "ro" ? "ro-RO" : "en-US")}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
+                <span className="rounded-full bg-muted px-2.5 py-1">{tx(goal.label)}</span>
+                <span className="rounded-full bg-muted px-2.5 py-1">{tx(style.label)}</span>
+                {selectedModules.map((item) => <span key={item.id} className="rounded-full bg-muted px-2.5 py-1">{tx(item.label)}</span>)}
               </div>
-            </form>
-          </>
-        )}
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackEvent("cta_click", { location: "horeca_configurator", action: "whatsapp", business: business.id, goal: goal.id })}
+                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 py-3 text-sm font-bold text-background transition hover:opacity-90 active:scale-[0.98]"
+              >
+                <MessageCircle className="size-4" aria-hidden />
+                {copy.cta}
+                <ExternalLink className="size-3.5" aria-hidden />
+              </a>
+              <p className="mt-2 text-center text-[11px] leading-relaxed text-muted-foreground">{copy.ctaHint}</p>
+            </div>
+          </aside>
+        </div>
       </section>
+
+      <section className="border-y border-border/65 bg-muted/25">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+          <div className="max-w-2xl">
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-brand">AVYRON · HoReCa</p>
+            <h2 className="mt-3 font-display text-3xl font-black tracking-[-0.035em] sm:text-4xl">{copy.proofTitle}</h2>
+            <p className="mt-3 leading-7 text-muted-foreground">{copy.proofLead}</p>
+          </div>
+          <div className="mt-8 grid gap-3 md:grid-cols-3">
+            {copy.proof.map(([title, description], index) => (
+              <article key={title} className="rounded-[1.5rem] border border-border/70 bg-card/65 p-5 sm:p-6">
+                <span className="font-mono text-[10px] text-brand">0{index + 1}</span>
+                <h3 className="mt-5 font-display text-xl font-bold tracking-tight">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <Footer />
     </main>
   );

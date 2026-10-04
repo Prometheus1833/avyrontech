@@ -8,6 +8,18 @@
 const SEO_ATTR = "data-seo";
 const DEFAULT_ROBOTS = "index, follow, max-image-preview:large, max-snippet:-1";
 
+export type PageAlternates = Record<string, string>;
+
+const OG_LOCALE_BY_LANGUAGE: Record<string, string> = {
+  ro: "ro_RO",
+  en: "en_US",
+  it: "it_IT",
+  hu: "hu_HU",
+  de: "de_DE",
+  fr: "fr_FR",
+  pl: "pl_PL",
+};
+
 export const BASE_URL = "https://avyron.ro";
 const BASE = BASE_URL;
 
@@ -60,8 +72,8 @@ export function setPageMeta({
   description: string;
   /** Current page path (should match the URL the user is on). */
   path: string;
-  /** Optional RO/EN alternate paths for hreflang. When omitted, only the canonical is set. */
-  alternates?: { ro: string; en: string };
+  /** Language alternate paths for hreflang. x-default is optional. */
+  alternates?: PageAlternates;
   /** Absolute or root-relative image URL (1200x630 recommended) for og:image / twitter:image. */
   image?: string;
   /** Alt text for the social image. */
@@ -90,20 +102,27 @@ export function setPageMeta({
   upsertMeta("property", "og:url", url);
   upsertMeta("property", "og:type", type);
   upsertMeta("property", "og:site_name", "Avyron");
-  const inferredLocale =
-    locale ?? (path === "/en" || path.startsWith("/en/") ? "en_US" : "ro_RO");
+  const pathLanguage = path.match(/^\/(en|it|hu|de|fr|pl)(?:\/|$)/)?.[1] ?? "ro";
+  const inferredLocale = locale ?? OG_LOCALE_BY_LANGUAGE[pathLanguage] ?? "ro_RO";
   upsertMeta("property", "og:locale", inferredLocale);
-  document.documentElement.lang = inferredLocale === "en_US" ? "en" : "ro";
+  document.documentElement.lang = inferredLocale.split(/[_-]/)[0].toLowerCase();
   if (alternates) {
-    const alt = inferredLocale === "ro_RO" ? "en_US" : "ro_RO";
     document.head
       .querySelectorAll('meta[property="og:locale:alternate"]')
       .forEach((el) => el.remove());
-    const el = document.createElement("meta");
-    el.setAttribute("property", "og:locale:alternate");
-    el.setAttribute(SEO_ATTR, "1");
-    el.setAttribute("content", alt);
-    document.head.appendChild(el);
+    const alternateLocales = new Set(
+      Object.keys(alternates)
+        .filter((code) => code !== "x-default")
+        .map((code) => OG_LOCALE_BY_LANGUAGE[code])
+        .filter((value): value is string => Boolean(value) && value !== inferredLocale),
+    );
+    for (const alternateLocale of alternateLocales) {
+      const el = document.createElement("meta");
+      el.setAttribute("property", "og:locale:alternate");
+      el.setAttribute(SEO_ATTR, "1");
+      el.setAttribute("content", alternateLocale);
+      document.head.appendChild(el);
+    }
   }
   upsertMeta("name", "twitter:card", "summary_large_image");
   upsertMeta("name", "twitter:title", title);
@@ -154,10 +173,12 @@ export function setPageMeta({
     .forEach((el) => el.remove());
 
   if (alternates) {
+    const absoluteUrl = (value: string) => value.startsWith("http") ? value : `${BASE}${value}`;
+    const entries = Object.entries(alternates).filter(([code]) => code !== "x-default");
+    const fallback = alternates["x-default"] ?? alternates.ro ?? path;
     const map: Array<[string, string]> = [
-      ["ro", `${BASE}${alternates.ro}`],
-      ["en", `${BASE}${alternates.en}`],
-      ["x-default", `${BASE}${alternates.ro}`],
+      ...entries.map(([code, value]) => [code, absoluteUrl(value)] as [string, string]),
+      ["x-default", absoluteUrl(fallback)],
     ];
     for (const [code, href] of map) {
       const link = document.createElement("link");

@@ -16,6 +16,7 @@ type ExchangeRate = {
 };
 
 export const CURRENCY_STORAGE_KEY = "avyron-display-currency";
+export const DEFAULT_DISPLAY_CURRENCY: DisplayCurrency = "RON";
 
 const CURRENCY_EVENT = "avyron:currency-change";
 const FALLBACK_RATE = 5.25;
@@ -35,12 +36,12 @@ export const hasStoredCurrency = () => {
 };
 
 const readPreferredCurrency = (): DisplayCurrency => {
-  if (typeof window === "undefined") return "EUR";
+  if (typeof window === "undefined") return DEFAULT_DISPLAY_CURRENCY;
   try {
     const stored = window.localStorage.getItem(CURRENCY_STORAGE_KEY);
-    return isDisplayCurrency(stored) ? stored : "EUR";
+    return isDisplayCurrency(stored) ? stored : DEFAULT_DISPLAY_CURRENCY;
   } catch {
-    return "EUR";
+    return DEFAULT_DISPLAY_CURRENCY;
   }
 };
 
@@ -143,6 +144,11 @@ export function useCurrency(locale = "ro-RO") {
     ? `${numberFormatter.format(amountCents / 100)} RON`
     : `${numberFormatter.format(amountCents / 100 / exchangeRate.rate)} €`, [currency, exchangeRate.rate, numberFormatter]);
 
+  /** Folosește perechea comercială fixă; RON rămâne sursa principală. */
+  const formatFixedPrice = useCallback((amountRon: number, amountEur: number) => currency === "RON"
+    ? `${numberFormatter.format(amountRon)} RON`
+    : `${numberFormatter.format(amountEur)} €`, [currency, numberFormatter]);
+
   return {
     currency,
     setCurrency,
@@ -152,5 +158,6 @@ export function useCurrency(locale = "ro-RO") {
     rateStatus,
     formatEur,
     formatRonCents,
+    formatFixedPrice,
   };
 }

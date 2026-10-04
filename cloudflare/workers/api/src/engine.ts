@@ -16,6 +16,7 @@ type SourceRow = {
   access_mode: string; pricing_model: string; lifecycle_status: string;
   verification_status: string; security_status: string; account_label: string | null;
   summary: string; robots_reviewed: number; terms_reviewed: number;
+  private_documentation: string;
   discovery_enabled: number; last_observed_at: number | null; last_verified_at: number | null;
   next_review_at: number | null; approved_at: number | null; updated_at: number;
 };
@@ -48,7 +49,7 @@ async function audit(
 }
 
 const sourceSelect = `id,slug,name,canonical_url,source_type,access_mode,pricing_model,
- lifecycle_status,verification_status,security_status,account_label,summary,
+ lifecycle_status,verification_status,security_status,account_label,summary,private_documentation,
  robots_reviewed,terms_reviewed,discovery_enabled,last_observed_at,last_verified_at,
  next_review_at,approved_at,updated_at`;
 
@@ -91,7 +92,7 @@ engineRouter.get("/api/engine/sources/:sourceId", async (c) => {
   if (!source) return c.json({ error: { code: "not_found" } }, 404);
   const [capabilities, connectors, documents, history] = await Promise.all([
     c.env.DB.prepare("SELECT * FROM engine_capabilities WHERE source_id=? ORDER BY updated_at DESC").bind(c.req.param("sourceId")).all(),
-    c.env.DB.prepare("SELECT id,capability_id,kind,name,endpoint_url,repository_url,auth_type,status,scopes_json,last_validated_at,last_error_code,approved_at FROM engine_connectors WHERE source_id=? ORDER BY created_at").bind(c.req.param("sourceId")).all(),
+    c.env.DB.prepare("SELECT id,capability_id,kind,name,endpoint_url,repository_url,auth_type,status,scopes_json,last_validated_at,last_error_code,approved_at,private_documentation FROM engine_connectors WHERE source_id=? ORDER BY created_at").bind(c.req.param("sourceId")).all(),
     c.env.DB.prepare("SELECT id,capability_id,document_type,title,file_name,content_type,size_bytes,sha256,version,status,trust_level,agent_usable,notes,created_at,updated_at FROM engine_documents WHERE source_id=? AND status<>'archived' ORDER BY updated_at DESC").bind(c.req.param("sourceId")).all(),
     c.env.DB.prepare("SELECT action,resource_type,resource_id,source,created_at FROM engine_audit_events WHERE resource_id=? ORDER BY created_at DESC LIMIT 50").bind(c.req.param("sourceId")).all(),
   ]);
@@ -297,6 +298,52 @@ engineRouter.patch("/api/engine/documents/:documentId", async (c) => {
   await c.env.DB.prepare("UPDATE engine_documents SET status=?,trust_level=?,agent_usable=?,approved_by=?,approved_at=?,updated_at=?,archived_at=? WHERE id=?")
     .bind(status, trust, Number(agentUsable), approved ? c.get("userId") : null, approved ? now() : null, now(), status === "archived" ? now() : null, c.req.param("documentId")).run();
   await audit(c, "engine.document.update", "document", c.req.param("documentId"), before, { status, trustLevel: trust, agentUsable });
+  return c.json({ ok: true });
+});
+
+engineRouter.post("/api/engine/documentation/prompts", async (c) => {
+  if (!(await allowed(c, "engine.manage"))) return deny(c);
+  const body = await objectBody(c);
+  const sourceId = String(body.sourceId || ""), targetType = String(body.targetType || ""), targetId = String(body.targetId || "");
+  const promptText = typeof body.prompt === "string" ? body.prompt.trim().slice(0, 4_000) : "";
+  if (!sourceId || !["source","capability","connector"].includes(targetType) || !targetId || promptText.length < 10) return c.json({ error: { code: "invalid_documentation_prompt" } }, 400);
+  const table = targetType === "source" ? "engine_sources" : targetType === "capability" ? "engine_capabilities" : "engine_connectors";
+  const target = await c.env.DB.prepare(`SELECT id,name,private_documentation FROM ${table} WHERE id=?${targetType === "source" ? "" : " AND source_id=?"}`)
+    .bind(...(targetType === "source" ? [targetId] : [targetId, sourceId])).first<{ id: string; name: string; private_documentation: string }>();
+  if (!target || (targetType === "source" && target.id !== sourceId)) return c.json({ error: { code: "not_found" } }, 404);
+  const requestPrompt = `Ești AVY, agentul intern AVYRON OS. Scrie documentație privată profesională în limba română pentru obiectul indicat. Păstrează doar fapte oferite, marchează necunoscutele ca "De verificat", nu inventa chei, permisiuni, prețuri, endpoint-uri sau capabilități. Returnează numai Markdown clar, maximum 1200 de cuvinte.\nTIP: ${targetType}\nNUME: ${target.name}\nDOCUMENTAȚIE CURENTĂ:\n${target.private_documentation || "Nu există."}\nCERINȚĂ OPERATOR:\n${promptText}`;
+  const draftId = id("engdocdraft");
+  const reservation = await reserveAiCost({ db: c.env.DB, agentSlug: "avy-engine-scout", vendorId: "fin_vendor_cloudflare_ai", operation: "engine_documentation_prompt", requestedUnits: Math.ceil(requestPrompt.length / 4) + 1_800, estimatedCostMinor: 0, idempotencyKey: c.req.header("idempotency-key") || draftId, requestId: c.get("requestId") || null });
+  if (reservation.decision !== "allowed") return c.json({ error: { code: reservation.reason }, decision: reservation.decision }, 409);
+  if (!c.env.AI) return c.json({ error: { code: "ai_binding_unavailable" } }, 503);
+  const output = await c.env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", { messages: [{ role: "user", content: requestPrompt }], max_tokens: 1_800, temperature: 0.2 });
+  const generated = (typeof output === "string" ? output : String((output as { response?: unknown })?.response || ""))
+    .trim().replace(/^```(?:markdown|md)?\s*/i, "").replace(/\s*```$/, "").slice(0, 12_000);
+  if (generated.length < 20) return c.json({ error: { code: "empty_model_response" } }, 502);
+  const timestamp = now();
+  await c.env.DB.prepare(`INSERT INTO engine_documentation_drafts (id,source_id,target_type,target_id,prompt,generated_content,status,requested_by,created_at) VALUES (?,?,?,?,?,?,'draft',?,?)`)
+    .bind(draftId, sourceId, targetType, targetId, promptText, generated, c.get("userId"), timestamp).run();
+  await audit(c, "engine.documentation.generated", targetType, targetId, null, { draftId }, "agent");
+  return c.json({ draft: { id: draftId, targetType, targetId, content: generated, status: "draft" } }, 201);
+});
+
+engineRouter.patch("/api/engine/documentation/drafts/:draftId", async (c) => {
+  if (!(await allowed(c, "engine.approve"))) return deny(c, "approval_required");
+  const body = await objectBody(c), action = String(body.action || "");
+  if (!['apply','reject'].includes(action)) return c.json({ error: { code: "invalid_action" } }, 400);
+  const reviewedContent = typeof body.content === "string" ? body.content.trim() : "";
+  if (action === "apply" && (reviewedContent.length < 20 || reviewedContent.length > 12_000)) return c.json({ error: { code: "invalid_documentation" } }, 400);
+  const draft = await c.env.DB.prepare("SELECT * FROM engine_documentation_drafts WHERE id=? AND status='draft'")
+    .bind(c.req.param("draftId")).first<{ id: string; target_type: string; target_id: string; generated_content: string }>();
+  if (!draft) return c.json({ error: { code: "not_found" } }, 404);
+  const table = draft.target_type === "source" ? "engine_sources" : draft.target_type === "capability" ? "engine_capabilities" : "engine_connectors";
+  const timestamp = now();
+  const statements = action === "apply" ? [
+    c.env.DB.prepare(`UPDATE ${table} SET private_documentation=?,updated_at=? WHERE id=?`).bind(reviewedContent, timestamp, draft.target_id),
+    c.env.DB.prepare("UPDATE engine_documentation_drafts SET generated_content=?,status='applied',applied_by=?,applied_at=? WHERE id=? AND status='draft'").bind(reviewedContent, c.get("userId"), timestamp, draft.id),
+  ] : [c.env.DB.prepare("UPDATE engine_documentation_drafts SET status='rejected',applied_by=?,applied_at=? WHERE id=? AND status='draft'").bind(c.get("userId"), timestamp, draft.id)];
+  await c.env.DB.batch(statements);
+  await audit(c, `engine.documentation.${action}`, draft.target_type, draft.target_id, null, { draftId: draft.id });
   return c.json({ ok: true });
 });
 

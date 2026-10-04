@@ -51,7 +51,8 @@ export type SectionId =
   | "overview" | "profile" | "settings" | "projects" | "subscriptions" | "invoices" | "cart" | "collection"
   | "stats" | "tickets" | "maintenance" | "clients" | "domains" | "payments"
   | "finance" | "media" | "leads" | "staff-tickets" | "demo-requests" | "intern"
-  | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "servicii-avyron" | "produse-avyron";
+  | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "servicii-avyron" | "produse-avyron"
+  | "newsletter";
 
 export type SectionDef = {
   id: SectionId;
@@ -104,6 +105,7 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "payments", group: "control", audience: "superadmin", keywords: ["plati", "payments", "incasari"] },
   { id: "finance", group: "control", audience: "superadmin", keywords: ["financiar", "facturare", "venituri", "finance"] },
   { id: "promotions", group: "control", audience: "superadmin", keywords: ["promotii", "reduceri", "campanii"] },
+  { id: "newsletter", group: "control", audience: "superadmin", keywords: ["newsletter", "abonati", "email", "campanii", "consimtamant"] },
   { id: "ai-os", group: "control", audience: "superadmin", keywords: ["ai", "avy", "agenti", "chatbot", "automatizare"] },
   { id: "os-centers", group: "control", audience: "staff", keywords: ["securitate", "automatizari", "integrari", "backup", "erori", "newsletter", "programari", "comentarii", "pluginuri"] },
 ];
