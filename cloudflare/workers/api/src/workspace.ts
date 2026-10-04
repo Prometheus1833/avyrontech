@@ -73,10 +73,12 @@ workspaceRouter.use('/api/workspace/*',async (c,next) => {
 });
 
 workspaceRouter.get('/api/workspace/clients',async c => {
+  if (!staff(c)) await linkClientsByEmail(c.env.DB,c.get('userId'));
   const {results} = await c.env.DB.prepare(`SELECT record.id,record.company_name FROM clients record WHERE ${clientScope.replace('record.client_id','record.id')} ORDER BY record.company_name`).bind(c.get('userId')).all();
   return c.json({data:results});
 });
 workspaceRouter.get('/api/workspace/invoices',async c => {
+  if (!staff(c)) await linkClientsByEmail(c.env.DB,c.get('userId'));
   const {limit,offset}=page(c);
   const {results}=await c.env.DB.prepare(`SELECT record.id,record.invoice_number,record.gross_amount_minor amount_cents,record.currency,record.status,record.invoice_date,record.due_date
     FROM financial_revenues record WHERE ${clientScope} AND record.archived_at IS NULL AND record.status NOT IN ('draft','archived') ORDER BY record.invoice_date DESC,record.id LIMIT ? OFFSET ?`)
@@ -84,6 +86,7 @@ workspaceRouter.get('/api/workspace/invoices',async c => {
   return c.json({data:results.map(r=>({...r,invoice_number:r.invoice_number||r.id,status:r.status==='paid'?'paid':r.status==='overdue'?'overdue':['cancelled','refunded'].includes(String(r.status))?'cancelled':'pending',issued_at:iso(r.invoice_date),due_at:iso(r.due_date),pdf_url:null}))});
 });
 workspaceRouter.get('/api/workspace/subscriptions',async c => {
+  if (!staff(c)) await linkClientsByEmail(c.env.DB,c.get('userId'));
   const {limit,offset}=page(c);
   const {results}=await c.env.DB.prepare(`SELECT record.id,service.service_name product_name,service.price,service.billing_cycle,record.status,record.next_billing_date
     FROM subscriptions record JOIN services service ON service.id=record.service_id WHERE ${clientScope} ORDER BY record.next_billing_date,record.id LIMIT ? OFFSET ?`)
@@ -117,10 +120,10 @@ workspaceRouter.put('/api/workspace/account-access/:userId',async c => {
 });
 
 // Support is a team workflow: staff and admins work the whole queue.
-/** Links the account to the client with its email; creates a client record when none exists yet. */
+/** Links a verified account to the client with the same email (unverified emails never gain client data); creates a client record when none exists yet. */
 export async function linkClientsByEmail(db: D1Database,userId: string) {
   await db.prepare(`INSERT OR IGNORE INTO client_account_access(client_id,user_id,granted_by,created_at)
-    SELECT cl.id,u.id,u.id,? FROM users u JOIN clients cl ON lower(trim(cl.email))=lower(trim(u.email)) WHERE u.id=?`).bind(Date.now(),userId).run();
+    SELECT cl.id,u.id,u.id,? FROM users u JOIN clients cl ON lower(trim(cl.email))=lower(trim(u.email)) WHERE u.id=? AND u.email_verified=1`).bind(Date.now(),userId).run();
 }
 async function ensureClientForUser(c: Ctx,requested?: string): Promise<string|null> {
   const userId=c.get('userId'), db=c.env.DB;
