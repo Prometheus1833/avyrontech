@@ -175,15 +175,6 @@ const Footer = () => {
               <Phone className="size-3 text-cyan-300" />
               <span className="text-xs text-white/90 font-medium hidden sm:inline">{lang === "en" ? "Call us" : "Sună-ne"}</span>
             </a>
-            <a
-              href="mailto:contact@avyron.ro"
-              aria-label={t.footer.emailLabel}
-              onClick={() => trackEvent("cta_click", { location: "footer", page: cta.page, channel: "email" })}
-              className="inline-flex items-center gap-1.5 rounded-full border border-pink-300/30 bg-gradient-to-br from-pink-500/15 to-rose-600/15 hover:from-pink-500/25 hover:to-rose-600/25 hover:border-pink-300/60 px-3 py-1.5 transition-all"
-            >
-              <Mail className="size-3 text-pink-300" />
-              <span className="text-xs text-white/90 font-medium hidden sm:inline">E-mail</span>
-            </a>
 
           </div>
         </div>
