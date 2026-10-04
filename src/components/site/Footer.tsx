@@ -1,6 +1,6 @@
 import { useLang } from "@/i18n/LanguageContext";
 import { Link, useLocation } from "react-router-dom";
-import { Mail, Phone, MessageCircle, ArrowRight, Sparkles, Wrench, ShieldCheck, MessagesSquare, Briefcase } from "lucide-react";
+import { Phone, MessageCircle, ArrowRight, Sparkles, Wrench, ShieldCheck, MessagesSquare, Briefcase } from "lucide-react";
 import { COOKIE_SETTINGS_EVENT } from "@/components/site/CookieBanner";
 import { trackEvent } from "@/lib/analytics";
 import logo from "@/assets/avyron-logo.webp";
@@ -134,7 +134,7 @@ const Footer = () => {
             </div>
           </a>
 
-          {/* CTA + WhatsApp + Phone + Email — compact pill cluster */}
+          {/* CTA + WhatsApp + Phone — compact pill cluster */}
           <div className="flex flex-wrap items-center justify-center md:justify-end gap-1.5 flex-1">
             {cta.external ? (
               <a
