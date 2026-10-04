@@ -173,7 +173,7 @@ const ServicePage = () => {
 
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
+    <main className="relative min-h-screen overflow-x-clip bg-background text-foreground">
       {isServiceIntroKey(product.key) && <ServiceCinematicIntro service={product.key} />}
       <QuickNav items={quickNavItems} />
       {/* Ambient background */}
