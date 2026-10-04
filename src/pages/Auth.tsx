@@ -110,6 +110,11 @@ const Auth = () => {
         return;
       }
       await refreshProfile();
+      if (result.mfa_enrollment_required) {
+        toast.info("Activează autentificarea în doi pași ca să deschizi zonele echipei.");
+        if (!emailChangeToken) navigate("/profil?tab=settings", { replace: true });
+        return;
+      }
       toast.success(t.auth.welcomeBack);
       if (!emailChangeToken) navigate(from, { replace: true });
     } catch (error: unknown) {
