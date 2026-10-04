@@ -1,4 +1,4 @@
--- 0040_social_remote_models.sql
+-- 0049_social_remote_models.sql
 -- Registru compact pentru modele remote. Nu stocheaza greutati, binare, media
 -- sau raspunsuri brute in D1. Toate rutele executabile sunt free_only.
 
