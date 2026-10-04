@@ -1,77 +1,23 @@
-# Rute prefixate pe limbă pentru SEO bilingv
+# Repararea accesului în portalul clienților și în panoul echipei
 
-Google va putea indexa separat varianta RO (URL curent) și EN (prefixat `/en/`) pentru paginile cheie. RO rămâne canonical la rădăcină (fără prefix), EN primește prefix.
+## Ce e confirmat
+1. **Portalul clienților e gol.** Facturile, abonamentele, statisticile și tichetele apar doar pentru conturile legate manual de un client. Momentan nu există nicio legătură, iar clienții nu pot deschide tichete.
+2. **Echipa e blocată de codurile în doi pași.** Conturile de staff și admin primesc erori peste tot până își activează o aplicație de autentificare. Nimic din ecran nu le spune să facă asta.
+3. **Staff-ul nu vede tichetele.** Lista de suport și schimbarea statusului merg doar pentru cei doi super admini.
 
-## Pagini incluse
-
-| RO (canonical)              | EN                             |
-| --------------------------- | ------------------------------ |
-| `/`                         | `/en`                          |
-| `/costurisiproduse`         | `/en/pricing`                  |
-| `/despre-si-portofoliu`     | `/en/about`                    |
-| `/blog`                     | `/en/blog`                     |
-| `/gdpr`                     | `/en/privacy`                  |
-
-Exclus (rămân doar RO): rute demo `/exemple/*`, pagini interne (`/auth`, `/profil`, `/intern`, `/reset-password`, etc.), pagini de eroare.
-
-## Ce se schimbă
-
-### 1. Router (`src/App.tsx`)
-- Adaug rutele `/en`, `/en/pricing`, `/en/about`, `/en/blog`, `/en/privacy` mapate pe aceleași componente ca RO.
-- Wrap-uiesc cele două grupuri (RO + EN) într-o componentă `LanguageRoute` care detectează prefixul din URL și forțează limba corectă în `LanguageContext` la mount.
-
-### 2. `LanguageContext` (`src/i18n/LanguageContext.tsx`)
-- Adaug o metodă internă `setLangFromRoute(lang)` care schimbă limba fără a scrie în `localStorage` (URL-ul e sursa de adevăr când există prefix).
-- Când nu există prefix `/en`, se păstrează comportamentul actual (localStorage).
-
-### 3. SEO (`src/lib/seo.ts` + pagini)
-- `setPageMeta` primește un nou parametru opțional `altPath` (URL-ul variantei alternative).
-- `canonical` = URL-ul curent (RO fără prefix / EN cu prefix).
-- `hreflang` alternates devin URL-uri distincte:
-  - `ro` → varianta RO
-  - `en` → varianta EN
-  - `x-default` → varianta RO
-- Fiecare pagină cheie transmite ambele path-uri (RO + EN) către `setPageMeta`.
-
-### 4. Language switch (`src/components/site/LangSwitch.tsx`)
-- La schimbarea limbii, navighez la URL-ul echivalent (map RO↔EN) în loc să setez doar localStorage.
-- Folosesc un map simplu `pathname → equivalent` pentru cele 5 pagini traduse; alte rute rămân neschimbate cu update pe context.
-
-### 5. Sitemap (`public/sitemap.xml`)
-- Adaug intrări pentru variantele `/en/*`.
-- Fiecare `<url>` primește `<xhtml:link rel="alternate" hreflang="...">` pentru RO/EN/x-default (standard sitemap i18n Google).
-
-### 6. `robots.txt`
-- Nicio schimbare — noile rute sunt sub `Allow: /` implicit.
+## Ce schimb
+1. **Legare automată client–cont:** printr-o migrare, fiecare cont existent se leagă de clientul cu același email, verificat cu majuscule ignorate. La crearea unui cont nou, legătura se face automat după email. Pentru clienții fără legătură, tichetul se creează pe contul lor, nu pe un client, deci trimiterea nu mai e blocată. Legarea manuală din echipă rămâne disponibilă.
+2. **Activarea codurilor în doi pași:**
+   - La autentificare, când serverul cere activarea, contul ajunge direct la pasul de configurare, cu cod QR și verificare.
+   - În panou, orice eroare de tip „confirmare în doi pași necesară” afișează un banner cu butonul „Activează acum”.
+   - Regula de securitate rămâne neschimbată.
+3. **Tichete pentru staff:** staff-ul și adminii pot vedea toată coada de suport și pot schimba statusul tichetelor. Facturile și finanțele rămân doar pentru super admini.
 
 ## Detalii tehnice
-
-**Detecție limbă din URL:** un helper `getLangFromPath(pathname)` returnează `"en"` dacă începe cu `/en` (sau este exact `/en`), altfel `"ro"`.
-
-**LangSwitch map:**
-```
-{ "/": "/en",
-  "/costurisiproduse": "/en/pricing",
-  "/despre-si-portofoliu": "/en/about",
-  "/blog": "/en/blog",
-  "/gdpr": "/en/privacy" }
-```
-(și invers pentru EN→RO)
-
-**setPageMeta actualizat:**
-```
-setPageMeta({
-  title, description,
-  path: "/costurisiproduse",       // curent
-  alternates: {
-    ro: "/costurisiproduse",
-    en: "/en/pricing",
-  },
-})
-```
-
-**Ce NU fac:** nu introduc `react-i18next`, nu schimb `LanguageProvider` la nivel de tip, nu creez SSR. Traducerile existente din `translations.ts` rămân neschimbate — doar sursa limbii (URL în loc de localStorage) se schimbă pentru rutele prefixate.
-
-## Confirmare
-
-E o schimbare mai amplă (router + context + SEO + sitemap + switch). Confirmi să continui cu implementarea?
+- Migrare D1 nouă: populează `client_account_access` prin potrivirea `users.email` cu `clients.email`; aceeași potrivire rulează la signup.
+- `workspace.ts`:
+  - pe ruta de tichete, scope-ul de principal devine `role IN ('staff','admin')`;
+  - PATCH folosește `requireRole`;
+  - POST permite `client_id` null, cu `user_id` setat pe autor.
+- `Auth.tsx` tratează `mfa_enrollment_required`; un `MfaEnrollBanner` partajat apare în `Profile.tsx`.
+- Verificare: typecheck, `build`, `build:pages`, `build:worker`, teste.
