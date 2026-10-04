@@ -51,5 +51,24 @@ for (const vp of viewports) {
       const fontSize = await para.evaluate((p) => parseFloat(getComputedStyle(p).fontSize));
       expect(fontSize).toBeGreaterThanOrEqual(16);
     }
+
+    // Sweep the whole scene: away from hand-offs exactly one paragraph is fully legible,
+    // and at no point do two paragraphs overlap at a readable opacity.
+    for (let step = 0; step <= 20; step++) {
+      const target = step / 20;
+      await scrollToProgress(page, target);
+      const progress = Number(await scene.getAttribute("data-progress"));
+      const opacities = await visibleIndex(page);
+      const readable = opacities.filter((o) => o > 0.3);
+      expect(readable.length, `overlap at progress ${progress}`).toBeLessThanOrEqual(1);
+      const nearHandOff = [1 / 3, 2 / 3].some((b) => Math.abs(progress - b) < 0.08);
+      if (!nearHandOff) {
+        const best = opacities.indexOf(Math.max(...opacities));
+        expect(opacities[best], `not legible at progress ${progress}`).toBeGreaterThan(0.95);
+        const box = await page.getByTestId("website-intro-paragraph").nth(best).boundingBox();
+        expect(box!.y).toBeGreaterThanOrEqual(56); // clear of the fixed top menu
+        expect(box!.y + box!.height).toBeLessThanOrEqual(vp.height);
+      }
+    }
   });
 }
