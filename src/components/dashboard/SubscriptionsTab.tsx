@@ -4,10 +4,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, Package, Receipt, Repeat } from "lucide-react";
 import { cfAuth } from "@/lib/cfAuth";
 import { commerceItemBySku } from "@/data/commerceCatalog";
+import { billingApi, type BillingSubscription } from "@/lib/billingApi";
+import { toast } from "sonner";
 
 type Subscription = {
   id: string;
@@ -63,6 +66,7 @@ export function SubscriptionsTab() {
   const { t, lang } = useLang();
   const ro = lang === "ro";
   const [items, setItems] = useState<Subscription[]>([]);
+  const [billingItems, setBillingItems] = useState<BillingSubscription[]>([]);
   const [orders, setOrders] = useState<CommerceOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -75,6 +79,15 @@ export function SubscriptionsTab() {
       .then(({ data }) => { if (active) setItems(data); })
       .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : "Datele nu pot fi încărcate."); })
       .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    billingApi.account()
+      .then((account) => { if (active) setBillingItems(account.subscriptions); })
+      .catch(() => { if (active) setBillingItems([]); });
     return () => { active = false; };
   }, [user]);
 
@@ -100,6 +113,17 @@ export function SubscriptionsTab() {
 
   const pending = orders.filter((order) => order.status !== "cancelled");
 
+  const cancelBillingSubscription = async (subscription: BillingSubscription) => {
+    try {
+      await billingApi.cancelSubscription(subscription.id);
+      const account = await billingApi.account();
+      setBillingItems(account.subscriptions);
+      toast.success(ro ? "Anularea a fost trimisă furnizorului de plată." : "Cancellation was sent to the payment provider.");
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : (ro ? "Abonamentul nu a putut fi actualizat." : "The subscription could not be updated."));
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -108,6 +132,45 @@ export function SubscriptionsTab() {
       </div>
 
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+
+      {billingItems.length > 0 && (
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            {ro ? "Plăți recurente" : "Recurring payments"}
+          </h3>
+          <div className="grid gap-4">
+            {billingItems.map((subscription) => {
+              const catalogItem = commerceItemBySku(subscription.sku);
+              const canCancel = !["cancelled", "expired"].includes(subscription.status) && !subscription.cancel_at_period_end;
+              return (
+                <Card key={subscription.id} className="overflow-hidden">
+                  <CardHeader className="flex flex-row items-start justify-between gap-4 pb-3">
+                    <div className="flex items-start gap-3">
+                      <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><Repeat className="size-5 text-primary" /></div>
+                      <div>
+                        <CardTitle className="text-lg">{catalogItem?.name || subscription.sku}</CardTitle>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {subscription.provider === "revolut" ? "Revolut Pay" : "Stripe"} · {subscription.period === "annual" ? (ro ? "anual" : "annual") : (ro ? "lunar" : "monthly")}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant={subscription.status === "active" ? "default" : subscription.status === "past_due" ? "destructive" : "secondary"}>
+                      {subscription.cancel_at_period_end ? (ro ? "Se oprește la finalul perioadei" : "Ends after current period") : subscription.status.replace(/_/g, " ")}
+                    </Badge>
+                  </CardHeader>
+                  <CardContent className="flex flex-wrap items-end justify-between gap-4 border-t pt-4 text-sm">
+                    <div className="grid min-w-[16rem] flex-1 grid-cols-2 gap-4">
+                      <div><div className="text-xs text-muted-foreground">{ro ? "Valoare" : "Amount"}</div><div className="mt-0.5 font-semibold">{fmt(subscription.amount_minor, subscription.currency)}</div></div>
+                      <div><div className="text-xs text-muted-foreground">{ro ? "Următoarea reînnoire" : "Next renewal"}</div><div className="mt-0.5 font-medium">{subscription.current_period_end ? fmtDate(new Date(subscription.current_period_end).toISOString()) : "—"}</div></div>
+                    </div>
+                    {canCancel && <Button size="sm" variant="outline" onClick={() => void cancelBillingSubscription(subscription)}>{ro ? "Oprește reînnoirea" : "Stop renewal"}</Button>}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section className="space-y-3">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">

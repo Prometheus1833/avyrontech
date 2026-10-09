@@ -36,28 +36,34 @@ export function Reveal({
   children,
   as: Tag = "div",
   index = 0,
+  immediate = false,
   className = "",
   ...rest
 }: {
   children: ReactNode;
   as?: keyof JSX.IntrinsicElements;
   index?: number;
+  immediate?: boolean;
   className?: string;
 } & Record<string, unknown>) {
   const ref = useRef<HTMLElement>(null);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    if (immediate) {
+      el.dataset.in = "1";
+      return;
+    }
     if (reducedMotion()) {
       el.dataset.in = "1";
       return;
     }
     ensureObserver()?.observe(el);
     return () => observer?.unobserve(el);
-  }, []);
+  }, [immediate]);
   const Component = Tag as unknown as React.ElementType;
   return (
-    <Component ref={ref} className={`pa-reveal ${className}`} style={{ "--i": index } as never} {...rest}>
+    <Component ref={ref} className={`pa-reveal ${className}`} data-in={immediate ? "1" : undefined} style={{ "--i": index } as never} {...rest}>
       {children}
     </Component>
   );

@@ -1,11 +1,10 @@
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { bucketForType, dayKey, effectiveAccess } from "../../cloudflare/workers/api/src/produseShop";
-import { stripeSignatureValid } from "../../cloudflare/workers/api/src/produseCheckout";
-import { issueFgoInvoice } from "../../cloudflare/workers/api/src/invoicingFgo";
+import { revolutSignatureValid, stripeSignatureValid } from "../../cloudflare/workers/api/src/billingSignatures";
+import { issueOblioInvoice } from "../../cloudflare/workers/api/src/invoicingOblio";
 import { ITEMS } from "@/features/produse/data/items";
 import { PLANS, PROGRESSION } from "@/features/produse/data/plans";
 
@@ -114,62 +113,37 @@ describe("semnătura Stripe", () => {
   });
 });
 
-describe("facturarea FGO", () => {
-  const input = {
-    buyer: { name: "Client Test", email: "client@example.com" },
-    lines: [{ name: "Parteneriat AVY pro", quantity: 1, unitPriceMinor: 27000 }],
-    currency: "RON" as const,
-    issuedAt: Date.UTC(2026, 8, 24),
+describe("semnătura Revolut", () => {
+  const secret = "revolut_webhook_test";
+  const payload = JSON.stringify({ event: "ORDER_COMPLETED", order_id: "order-1" });
+  const sign = async (timestamp: string) => {
+    const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+    const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`v1.${timestamp}.${payload}`));
+    return [...new Uint8Array(mac)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
   };
-
-  it("nu trimite nimic fără chei", async () => {
-    const result = await issueFgoInvoice({}, input, () => {
-      throw new Error("nu trebuia apelat");
-    });
-    expect(result).toEqual({ issued: false, reason: "fgo_not_configured" });
+  it("acceptă semnături proaspete și refuză reluările vechi", async () => {
+    const now = Date.now(), timestamp = String(Math.floor(now / 1000)), signature = await sign(timestamp);
+    expect(await revolutSignatureValid(secret, timestamp, `v1=${signature}`, payload, now)).toBe(true);
+    expect(await revolutSignatureValid(secret, String(Math.floor(now / 1000) - 400), `v1=${signature}`, payload, now)).toBe(false);
+    expect(await revolutSignatureValid(secret, timestamp, `v1=${"0".repeat(64)}`, payload, now)).toBe(false);
   });
+});
 
-  it("nu ghicește cota de TVA", async () => {
-    const env = { FGO_CUI: "RO123", FGO_PRIVATE_KEY: "k", FGO_CLIENT_NAME: "Avyron", FGO_PLATFORM_URL: "https://avyron.ro" };
-    const result = await issueFgoInvoice(env, input, () => {
-      throw new Error("nu trebuia apelat");
-    });
-    expect(result).toEqual({ issued: false, reason: "fgo_vat_rate_missing" });
+describe("facturarea Oblio", () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const input = { orderId:"order-test", buyer:{name:"Client Test",email:"client@example.com"}, lines:[{name:"Abonament AVY",code:"sub-avy",quantity:1,unitPriceMinor:27000}], currency:"RON", issuedAt:Date.UTC(2026,8,24) };
+  it("nu trimite nimic fără configurare completă", async () => {
+    const fetchMock=vi.fn();vi.stubGlobal("fetch",fetchMock);
+    expect(await issueOblioInvoice({} as never,input)).toEqual({issued:false,reason:"unconfigured"});expect(fetchMock).not.toHaveBeenCalled();
   });
-
-  it("trimite hash-ul și liniile în formatul cerut de FGO", async () => {
-    const env = {
-      FGO_CUI: "RO123",
-      FGO_PRIVATE_KEY: "cheie",
-      FGO_CLIENT_NAME: "Avyron",
-      FGO_PLATFORM_URL: "https://avyron.ro",
-      FGO_VAT_RATE: "21",
-      FGO_API_URL: "https://api-testuat.fgo.ro/v1/",
-    };
-    let seen: { url: string; body: Record<string, unknown> } | null = null;
-    const result = await issueFgoInvoice(env, input, (async (url: string, init: RequestInit) => {
-      seen = { url, body: JSON.parse(String(init.body)) };
-      return new Response(JSON.stringify({ Success: true, Factura: { Serie: "AVY", Numar: "1042", Link: "https://fgo.ro/f.pdf" } }), {
-        headers: { "content-type": "application/json" },
-      });
-    }) as unknown as typeof fetch);
-
-    expect(seen!.url).toBe("https://api-testuat.fgo.ro/v1/factura/emitere");
-    expect(seen!.body).toMatchObject({
-      CodUnic: "RO123",
-      Hash: createHash("sha1").update("RO123cheieAvyron").digest("hex"),
-      PlatformaUrl: "https://avyron.ro",
-      Valuta: "RON",
-      Client: { Denumire: "Client Test", Tip: "PF" },
-      Continut: [{ Denumire: "Parteneriat AVY pro", NrProduse: 1, UM: "buc", CotaTVA: 21, PretUnitar: 270 }],
-    });
-    expect(result).toMatchObject({ issued: true, series: "AVY", number: "1042" });
-  });
-
-  it("raportează refuzul FGO în loc să arunce", async () => {
-    const env = { FGO_CUI: "RO1", FGO_PRIVATE_KEY: "k", FGO_CLIENT_NAME: "A", FGO_PLATFORM_URL: "https://a.ro", FGO_VAT_RATE: "21" };
-    const result = await issueFgoInvoice(env, input, (async () =>
-      new Response(JSON.stringify({ Success: false, Message: "CUI invalid" }), { headers: { "content-type": "application/json" } })) as unknown as typeof fetch);
-    expect(result).toEqual({ issued: false, reason: "fgo_refuzat: CUI invalid" });
+  it("folosește OAuth, idempotencyKey și emite numai cu răspuns valid", async () => {
+    const fetchMock=vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({access_token:"token"}),{status:200,headers:{"content-type":"application/json"}}))
+      .mockResolvedValueOnce(new Response(JSON.stringify({data:{seriesName:"AVY",number:"1042",link:"https://www.oblio.eu/factura.pdf"}}),{status:200,headers:{"content-type":"application/json"}}));
+    vi.stubGlobal("fetch",fetchMock);
+    const env={OBLIO_CLIENT_ID:"client",OBLIO_CLIENT_SECRET:"secret",OBLIO_CIF:"RO123",OBLIO_SERIES:"AVY",OBLIO_VAT_NAME:"Normala",OBLIO_VAT_PERCENTAGE:"21"};
+    const result=await issueOblioInvoice(env as never,input);expect(result).toMatchObject({issued:true,series:"AVY",number:"1042"});
+    expect(fetchMock.mock.calls[0][0]).toBe("https://www.oblio.eu/api/authorize/token");
+    const invoiceBody=JSON.parse(String(fetchMock.mock.calls[1][1]?.body));expect(invoiceBody).toMatchObject({cif:"RO123",orderNumber:"order-test",idempotencyKey:"avyron-order-test",sendEmail:true,products:[{code:"sub-avy",price:270,vatPercentage:21,vatIncluded:true}]});
   });
 });

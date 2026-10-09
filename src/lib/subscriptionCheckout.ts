@@ -7,13 +7,10 @@ import { addLocalAccountCartItem } from "@/lib/accountCart";
  * „monthly" sau „annual"; el recalculează prețul din catalog, deci valorile de
  * aici sunt doar pentru afișare.
  *
- * Plata cu cardul este pregătită, dar dezactivată până la integrarea
- * procesatorului (Stripe / Netopia): când gateway-ul intră în funcțiune se
- * schimbă `PAYMENT_GATEWAY_ENABLED` și implementarea din `startCardPayment`,
- * restul fluxului rămâne neatins.
+ * După crearea comenzii, fluxul continuă prin API-ul unificat de billing către
+ * checkout-ul găzduit Revolut sau Stripe. Netopia poate fi adăugat ca adaptor.
  */
 
-export const PAYMENT_GATEWAY_ENABLED = false;
 export const ANNUAL_DISCOUNT_PERCENT = 20;
 export const ANNUAL_PROMOTION_CODE = "ANUALAVY20";
 
@@ -63,11 +60,3 @@ export function addAnnualSubscriptionToCart(input: { sku: string; name: string; 
  * ales după autentificare. Pagina de login navighează pe `state.from`.
  */
 export const authStateFor = (path: string, sku: string) => ({ from: `${path}?plan=${sku}` });
-
-/**
- * Locul în care se va cupla procesatorul de plăți. Până atunci, apelul aruncă
- * intenționat, ca nicio interfață să nu poată pretinde că a încasat ceva.
- */
-export async function startCardPayment(): Promise<never> {
-  throw new Error("payment_gateway_unavailable");
-}

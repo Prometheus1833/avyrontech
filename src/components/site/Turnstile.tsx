@@ -80,7 +80,7 @@ const Turnstile = ({ onToken, resetKey = 0, action }: Props) => {
   }, [resetKey]);
 
   if (!TURNSTILE_SITE_KEY) return null;
-  return <div ref={ref} className="mt-1" role="group" aria-label="Verificare anti-spam" />;
+  return <div ref={ref} className="mt-1 min-h-[65px]" role="group" aria-label="Verificare anti-spam" />;
 };
 
 export default Turnstile;

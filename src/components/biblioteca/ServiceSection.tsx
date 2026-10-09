@@ -38,7 +38,7 @@ export default function ServiceSection({
     <section id={section.id} className="scroll-mt-16 py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <header className="max-w-3xl">
-          <p className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.2em] text-white/40">
+          <p className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.2em] text-white/55">
             <span className="tabular-nums">{String(index + 1).padStart(2, "0")}</span>
             <span className="h-px w-8 bg-white/25" />
             <span className="text-amber-300/90">{lang === "ro" ? "Serviciu digital" : "Digital service"}</span>

@@ -7,7 +7,8 @@ import { Pill, Reveal } from "./Primitives";
 /**
  * Parteneriatele AVY. Prețurile sunt anuale, afișate în lei și euro, iar
  * limitele zilnice sunt puse una sub alta ca să se compare din prima privire.
- * Butonul adaugă în coș; plata se activează la F2 (Stripe + FGO).
+ * Butonul adaugă în coș; plata continuă prin Revolut Pay sau Stripe, iar
+ * factura se emite prin Oblio numai după confirmarea încasării.
  */
 export default function Plans({ lang }: { lang: Lang }) {
   const ro = lang === "ro";

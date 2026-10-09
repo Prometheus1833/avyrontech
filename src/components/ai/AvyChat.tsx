@@ -112,12 +112,12 @@ const writeStoredChat = (agent: string, state: StoredChat) => {
 };
 
 /** Buton flotant (stânga, mijloc) + panou de chat conectat la AI OS "AVY". */
-const AvyChat = ({ agent = "avy" }: { agent?: string }) => {
+const AvyChat = ({ agent = "avy", initiallyOpen = false }: { agent?: string; initiallyOpen?: boolean }) => {
   const { lang } = useLang();
   const { pathname } = useLocation();
   const t = COPY[lang === "en" ? "en" : "ro"];
   const language = lang === "en" ? "en" : "ro";
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initiallyOpen);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);

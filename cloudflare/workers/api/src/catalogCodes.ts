@@ -14,6 +14,8 @@ const bodySchema = z.object({
   currency: z.string().trim().regex(/^[A-Z]{3,8}$/),
   vatBasisPoints: z.number().int().min(0).max(10_000),
   paymentRoute: z.enum(["unconfigured", "invoice", "payment_link", "stripe", "bank_transfer", "manual"]),
+  preferredPaymentProvider: z.enum(["stripe", "revolut", "netopia"]).nullable(),
+  invoiceProvider: z.enum(["oblio", "manual"]).nullable(),
   paymentStatus: z.enum(["needs_configuration", "test", "active", "paused"]),
   promotionCode: z.string().trim().min(2).max(80).nullable(),
   active: z.boolean(),
@@ -58,25 +60,25 @@ catalogCodesRouter.put("/api/finance/commercial-codes/:entityType/:entityKey", a
     entityType, entityKey, displayName: value.displayName, accountingCode: value.accountingCode,
     sku: value.sku, category: value.category, basePriceMinor: value.basePriceMinor,
     currency: value.currency, vatBasisPoints: value.vatBasisPoints,
-    paymentRoute: value.paymentRoute, paymentStatus: value.paymentStatus,
+    paymentRoute: value.paymentRoute, preferredPaymentProvider: value.preferredPaymentProvider, invoiceProvider: value.invoiceProvider, paymentStatus: value.paymentStatus,
     promotionCode: value.promotionCode, active: value.active, notes: value.notes,
   };
   try {
     await c.env.DB.batch([
       c.env.DB.prepare(
         `INSERT INTO commercial_catalog_codes
-          (id,entity_type,entity_key,display_name,accounting_code,sku,category,base_price_minor,currency,vat_basis_points,payment_route,payment_status,promotion_code,active,notes,created_by,updated_by,created_at,updated_at)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+          (id,entity_type,entity_key,display_name,accounting_code,sku,category,base_price_minor,currency,vat_basis_points,payment_route,preferred_payment_provider,invoice_provider,payment_status,promotion_code,active,notes,created_by,updated_by,created_at,updated_at)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
          ON CONFLICT(entity_type,entity_key) DO UPDATE SET
           display_name=excluded.display_name,accounting_code=excluded.accounting_code,sku=excluded.sku,
           category=excluded.category,base_price_minor=excluded.base_price_minor,currency=excluded.currency,
-          vat_basis_points=excluded.vat_basis_points,payment_route=excluded.payment_route,
+          vat_basis_points=excluded.vat_basis_points,payment_route=excluded.payment_route,preferred_payment_provider=excluded.preferred_payment_provider,invoice_provider=excluded.invoice_provider,
           payment_status=excluded.payment_status,promotion_code=excluded.promotion_code,active=excluded.active,
           notes=excluded.notes,updated_by=excluded.updated_by,updated_at=excluded.updated_at`,
       ).bind(
         id, entityType, entityKey, value.displayName, value.accountingCode, value.sku,
         value.category, value.basePriceMinor, value.currency, value.vatBasisPoints,
-        value.paymentRoute, value.paymentStatus, value.promotionCode, value.active ? 1 : 0,
+        value.paymentRoute, value.preferredPaymentProvider, value.invoiceProvider, value.paymentStatus, value.promotionCode, value.active ? 1 : 0,
         value.notes, c.get("userId"), c.get("userId"), Number(before?.created_at || timestamp), timestamp,
       ),
       c.env.DB.prepare("INSERT INTO commercial_catalog_audit (id,catalog_id,actor_user_id,before_json,after_json,created_at) VALUES (?,?,?,?,?,?)")

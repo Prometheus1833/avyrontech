@@ -4,7 +4,7 @@
   // branch builds must explicitly use `--env preview` (see package.json).
   "name": "avyrontech",
   "main": "cloudflare/workers/api/src/index.ts",
-  "compatibility_date": "2026-08-27",
+  "compatibility_date": "2026-10-09",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
   "preview_urls": true,

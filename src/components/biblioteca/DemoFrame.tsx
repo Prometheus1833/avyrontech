@@ -60,7 +60,7 @@ export default function DemoFrame({ effect, lang, onFocusChange }: Props) {
       className="overflow-hidden rounded-xl border border-white/10 bg-[#0a0c12]/80 backdrop-blur-md"
     >
       <figcaption className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-white/10 px-5 py-3">
-        <h4 className="text-sm font-semibold text-white">{effect.name[lang]}</h4>
+        <h3 className="text-sm font-semibold text-white">{effect.name[lang]}</h3>
         <p className="w-full text-xs text-white/50">{effect.desc[lang]}</p>
       </figcaption>
 

@@ -10,7 +10,7 @@ export interface FinancialProviderAdapter {
 }
 
 export const SUPPORTED_FINANCIAL_ADAPTERS = [
-  "revolut_business", "fgo", "stripe", "netopia", "google_ads", "meta_ads",
+  "revolut_business", "revolut_merchant", "stripe", "oblio", "netopia", "google_ads", "meta_ads",
   "openai", "anthropic", "cloudflare", "supabase", "resend", "github", "lovable",
 ] as const;
 

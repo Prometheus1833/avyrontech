@@ -115,7 +115,7 @@ const Footer = () => {
         {/* Top row: brand + CTA + WhatsApp + contact — single compact bar */}
         <div className="flex flex-col md:flex-row md:items-center gap-3">
           {/* Brand */}
-          <a href={lang === "en" ? "/en#hero" : "/#hero"} className="flex shrink-0 items-center gap-2" aria-label={lang === "en" ? "Avyron — go to hero" : "Avyron — mergi la hero"}>
+          <a href={lang === "en" ? "/en#hero" : "/#hero"} className="flex shrink-0 items-center gap-2">
             <img
               src={logo}
               alt="Avyron"
@@ -240,7 +240,6 @@ const Footer = () => {
             href="https://anpc.ro/ce-este-sal/"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="ANPC — Soluționarea alternativă și online a litigiilor"
             className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/[0.07] px-2.5 py-1.5 transition-colors hover:border-cyan-200/35 hover:bg-white/[0.12]"
           >
             <span className="grid size-6 shrink-0 place-items-center rounded bg-white font-display text-[9px] font-extrabold tracking-tight text-[#0a0612]">ANPC</span>

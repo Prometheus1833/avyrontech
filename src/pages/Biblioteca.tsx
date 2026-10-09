@@ -310,7 +310,7 @@ const Biblioteca = () => {
 
       <ClosingCta codes={codes} lang={lang} origin={origin} />
 
-      <footer className="mx-auto max-w-6xl px-4 pb-40 text-sm text-white/40 sm:px-6">
+      <footer className="mx-auto max-w-6xl px-4 pb-40 text-sm text-white/55 sm:px-6">
         <p className="max-w-[70ch]">
           {lang === "ro"
             ? "Fiecare efect de aici a fost construit de noi, cu tehnici publice și biblioteci open-source. Nu copiem lucrări ale altor studiouri — le studiem tehnicile și le implementăm pe identitatea clientului."

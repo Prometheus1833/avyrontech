@@ -1132,8 +1132,9 @@ import { contactRouter } from "./contact";
 import { logoStudioRouter } from "./logoStudio";
 import { produseRouter } from "./produse";
 import { produseShopRouter } from "./produseShop";
-import { produseCheckoutRouter } from "./produseCheckout";
+import { produseCheckoutRouter } from "./produseCheckoutV2";
 import { produseAdminRouter } from "./produseAdmin";
+import { billingRouter, runBillingReconciliation } from "./billing";
 import { blogRouter, getBlogSitemapEntries, getPublishedBlogPost } from "./blog";
 import { headersForTransformedBody, injectBlogHtml, mergeBlogSitemap } from "../../../../src/worker/blogHtml";
 import { BLOG_SLUGS } from "../../../../src/data/blogSlugs";
@@ -1210,9 +1211,20 @@ app.route("/", produseRouter);
 app.use("/api/produse/account/*", requireAuth);
 app.use("/api/produse/admin/*", requireAuth);
 app.use("/api/produse/admin/*", requirePrivilegedMfa);
+// Billing account routes are private. Only the two cryptographically signed
+// webhook endpoints remain public; the admin status also requires role + MFA.
+app.use("/api/billing/config", requireAuth);
+app.use("/api/billing/checkout", requireAuth);
+app.use("/api/billing/account", requireAuth);
+app.use("/api/billing/profile", requireAuth);
+app.use("/api/billing/payment-methods/*", requireAuth);
+app.use("/api/billing/portal", requireAuth);
+app.use("/api/billing/subscriptions/*", requireAuth);
+app.use("/api/billing/admin/*", requireAuth, requireRole("staff", "admin"), requirePrivilegedMfa);
 app.route("/", produseShopRouter);
 app.route("/", produseCheckoutRouter);
 app.route("/", produseAdminRouter);
+app.route("/", billingRouter);
 // Importul administrativ are propria gardă constant-time X-Seed-Token.
 app.route("/", seedRouter);
 
@@ -1371,6 +1383,7 @@ export default {
     ctx.waitUntil(Promise.all([
       cleanupExpiredData(env),
       runDueEngineDiscovery(env),
+      runBillingReconciliation(env),
     ]).then(() => undefined).catch((error) => {
       console.error(JSON.stringify({ event: "maintenance_job_failed", error: String(error) }));
       throw error;

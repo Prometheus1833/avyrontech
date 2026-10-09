@@ -31,7 +31,7 @@ export function bucketOf(item: Pick<CatalogItem, "type">): LimitBucket {
   return "components";
 }
 
-export function useProduseAccount() {
+export function useProduseAccount(enabled = true) {
   const [snapshot, setSnapshot] = useState<AccountSnapshot>(EMPTY);
 
   const refresh = useCallback(async () => {
@@ -47,11 +47,11 @@ export function useProduseAccount() {
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (!enabled || typeof window === "undefined") return;
     // Lăsăm pagina să se așeze: starea contului nu e necesară la primul cadru.
     const timer = window.setTimeout(() => void refresh(), 1200);
     return () => window.clearTimeout(timer);
-  }, [refresh]);
+  }, [enabled, refresh]);
 
   const copy = useCallback(
     async (slug: string, channel: CopyChannel): Promise<CopyResult | null> => {
@@ -75,7 +75,7 @@ export function useProduseAccount() {
   );
 
   const checkout = useCallback(
-    async (input: { kind: "plan" | "item"; id: string }) => {
+    async (input: { kind: "plan" | "item"; id: string; provider: "revolut" | "stripe"; savePaymentMethod?: boolean }) => {
       const api = await loadApi();
       return api.checkout(input);
     },

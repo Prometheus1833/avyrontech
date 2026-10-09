@@ -70,7 +70,7 @@ export default function ClosingCta({ codes, lang, origin }: Props) {
         </div>
 
         <div className="mt-10 border-t border-white/10 pt-6">
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-white/40">
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-white/55">
             {ro ? "Mergi direct la produs" : "Go straight to the product"}
           </p>
           <ul className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">

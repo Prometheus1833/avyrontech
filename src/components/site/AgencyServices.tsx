@@ -198,7 +198,7 @@ const AgencyServices = () => {
                     {inner}
                   </button>
                 ) : (
-                  <Link key={key} to={path} aria-label={`${content.cta}: ${title}`} onPointerMove={tilt} onPointerLeave={resetTilt} className={tileBase}>
+                  <Link key={key} to={path} onPointerMove={tilt} onPointerLeave={resetTilt} className={tileBase}>
                     {inner}
                   </Link>
                 );
@@ -293,7 +293,6 @@ const AgencyServices = () => {
                   <Link
                     key={key}
                     to={path}
-                    aria-label={`${content.cta}: ${title}`}
                     className="group grid grid-cols-[2.1rem_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/60 sm:px-4"
                   >
                     <span className={`grid size-8 place-items-center rounded-lg bg-gradient-to-br ${tone(key)}`}>

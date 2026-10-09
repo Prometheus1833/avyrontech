@@ -31,13 +31,19 @@ describe("cablajul dintre pagină și Worker", () => {
     expect(index).toContain('app.use("/api/produse/admin/*", requirePrivilegedMfa);');
   });
 
-  it("lasă webhook-ul Stripe public, dar semnat", () => {
-    const checkout = read("cloudflare/workers/api/src/produseCheckout.ts");
-    // Nu e sub `/account/`, deci nu cere sesiune — Stripe nu are una.
-    expect(checkout).toContain('"/api/produse/stripe/webhook"');
-    expect(checkout).not.toContain('"/api/produse/account/stripe/webhook"');
-    // În schimb, verifică semnătura înainte de orice scriere.
-    expect(checkout).toMatch(/stripeSignatureValid\([\s\S]{0,200}return c\.json\(\{ error: \{ code: "invalid_signature" \} \}, 400\);/);
+  it("lasă webhook-urile providerilor publice, dar semnate", () => {
+    const billing = read("cloudflare/workers/api/src/billing.ts");
+    expect(billing).toContain('"/api/billing/webhooks/stripe"');
+    expect(billing).toContain('"/api/billing/webhooks/revolut"');
+    expect(billing).toContain("stripeSignatureValid");
+    expect(billing).toContain("revolutSignatureValid");
+    expect(billing).toContain('code:"invalid_signature"');
+    expect(billing).toContain("previous.status===\"processed\"||previous.status===\"ignored\"");
+    expect(billing.match(/INSERT OR IGNORE INTO billing_webhook_events/g)).toHaveLength(3);
+    expect(billing).toContain('event.type==="invoice.paid"');
+    expect(billing).toContain('event.type.startsWith("customer.subscription.")');
+    expect(billing).toContain("/cycles?limit=100");
+    expect(index).toContain("runBillingReconciliation(env)");
   });
 
   it("documentează în gateway rutele noi", () => {
@@ -71,13 +77,14 @@ describe("cablajul dintre magazin și D1", () => {
     expect(shop).toContain("FROM product_copy_events");
   });
 
-  it("acordă o singură dată dreptul cumpărat și validează comanda Stripe", () => {
+  it("acordă o singură dată dreptul cumpărat și validează comanda providerului", () => {
     const migration = read("cloudflare/d1/migrations/0034_produse_checkout_idempotency.sql");
-    const checkout = read("cloudflare/workers/api/src/produseCheckout.ts");
+    const checkout = read("cloudflare/workers/api/src/billing.ts");
     expect(migration).toContain("CREATE UNIQUE INDEX IF NOT EXISTS idx_product_entitlements_order");
-    expect(checkout).toContain("SELECT user_id, items_json, total_cents, status FROM commerce_orders WHERE id = ?");
-    expect(checkout).toContain('code: "order_mismatch"');
-    expect(checkout).toMatch(/const statements = \[[\s\S]*INSERT INTO idempotency_keys[\s\S]*INSERT INTO product_entitlements/);
+    expect(checkout).toContain("FROM commerce_orders WHERE id=?");
+    expect(checkout).toContain('code:"order_mismatch"');
+    expect(checkout).toContain("billing_webhook_events");
+    expect(checkout).toContain("INSERT OR IGNORE INTO product_entitlements");
   });
 
   it("nu servește cod plătit din bundle-ul public", () => {

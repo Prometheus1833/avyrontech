@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, BadgePercent, CheckCircle2, CreditCard, Loader2, LogIn, Repeat, ShieldCheck, ShoppingCart } from "lucide-react";
+import { ArrowRight, BadgePercent, CheckCircle2, CreditCard, Loader2, LogIn, Repeat, ShieldCheck, ShoppingCart, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -11,9 +11,10 @@ import { trackEvent } from "@/lib/analytics";
 import { useDualPrice } from "@/hooks/useDualPrice";
 import type { SubscriptionCategory, SubscriptionPlan } from "@/data/subscriptionPlans";
 import {
-  ANNUAL_PROMOTION_CODE, BILLING_PERIODS, PAYMENT_GATEWAY_ENABLED, authStateFor, buildOrderItems, type BillingPeriod,
+  ANNUAL_PROMOTION_CODE, BILLING_PERIODS, authStateFor, buildOrderItems, type BillingPeriod,
 } from "@/lib/subscriptionCheckout";
 import { addLocalAccountCartItem, syncLocalAccountCartSource } from "@/lib/accountCart";
+import { billingApi } from "@/lib/billingApi";
 
 type Quote = {
   currency: "RON";
@@ -92,7 +93,7 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
     void refreshQuote(automaticCode);
   }, [plan, user, period, refreshQuote]);
 
-  const submitOrder = async () => {
+  const submitOrder = async (provider?: "revolut" | "stripe") => {
     if (!plan || !category || !user) return;
     setSubmitting(true);
     try {
@@ -110,6 +111,11 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
         tier: plan.tier,
         months: period.months,
       });
+      if (provider) {
+        const checkout = await billingApi.checkout({ orderId: response.order.id, provider, savePaymentMethod: true });
+        if (!checkout.url) throw new Error(ro ? "Procesatorul nu a returnat pagina de plată." : "The provider did not return a checkout page.");
+        window.location.assign(checkout.url);
+      }
     } catch (error) {
       toast.error(error instanceof Error && error.message
         ? error.message
@@ -170,8 +176,8 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
                 </p>
                 <p className="mt-1 text-foreground/70">
                   {ro
-                    ? "Ai primit confirmarea pe email. Un coleg îți trimite factura și detaliile de plată în cel mult o zi lucrătoare."
-                    : "You have the confirmation by email. A colleague sends the invoice and payment details within one working day."}
+                    ? "Comanda este în cont. Abonamentul devine activ după confirmarea plății, iar factura Oblio este emisă automat după încasare."
+                    : "The order is in your account. The subscription becomes active after payment confirmation, and the Oblio invoice is issued automatically after collection."}
                 </p>
               </div>
             </div>
@@ -289,27 +295,23 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
             <div className="space-y-2">
               <button
                 type="button"
-                disabled={!PAYMENT_GATEWAY_ENABLED}
-                title={PAYMENT_GATEWAY_ENABLED ? undefined : ro ? "Plata cu cardul se activează în curând" : "Card payment is coming soon"}
+                onClick={() => void submitOrder("revolut")}
+                disabled={submitting}
                 className={`inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r ${theme.from} ${theme.to} px-4 py-3 text-sm font-bold text-white transition-transform disabled:cursor-not-allowed disabled:opacity-45`}
               >
-                <CreditCard className="size-4" aria-hidden />
-                {ro ? "Plătește cu cardul" : "Pay by card"}
-                {!PAYMENT_GATEWAY_ENABLED && (
-                  <span className="rounded-full bg-white/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em]">
-                    {ro ? "În curând" : "Soon"}
-                  </span>
-                )}
+                {submitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <WalletCards className="size-4" aria-hidden />}
+                {ro ? "Abonează-te cu Revolut Pay" : "Subscribe with Revolut Pay"}
               </button>
               <button
                 type="button"
-                onClick={submitOrder}
+                onClick={() => void submitOrder("stripe")}
                 disabled={submitting}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-foreground px-4 py-3 text-sm font-bold text-background transition-colors hover:bg-foreground/90 disabled:opacity-50"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-foreground/15 px-4 py-3 text-sm font-bold transition-colors hover:bg-foreground/[0.06] disabled:opacity-50"
               >
-                {submitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <CheckCircle2 className="size-4" aria-hidden />}
-                {ro ? "Activează abonamentul" : "Activate the subscription"}
+                <CreditCard className="size-4" aria-hidden />
+                {ro ? "Abonează-te prin Stripe" : "Subscribe with Stripe"}
               </button>
+              <button type="button" onClick={() => void submitOrder()} disabled={submitting} className="w-full px-4 py-2 text-xs font-semibold text-foreground/65 underline underline-offset-4 disabled:opacity-50">{ro ? "Înregistrează comanda pentru ofertă / proformă" : "Record order for quote / proforma"}</button>
               {addedToCart ? (
                 <Link to="/profil?tab=cart" className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-600 dark:text-emerald-300">
                   <CheckCircle2 className="size-4" aria-hidden />
@@ -324,8 +326,8 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
               <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-foreground/70">
                 <ShieldCheck className="mt-0.5 size-3.5 shrink-0" aria-hidden />
                 {ro
-                  ? "Prețul este recalculat de serverul Avyron în RON; conversia în euro este informativă. Primești factura pe email, iar abonamentul apare în cont la Produse & Servicii."
-                  : "The price is recalculated by the Avyron server in RON; the euro conversion is informative. You get the invoice by email and the subscription shows up in your account under Products & Services."}
+                  ? "Prețul este recalculat de server în RON. Plata și salvarea cardului au loc la Revolut sau Stripe; AVYRON nu stochează numărul cardului. Factura se emite prin Oblio după confirmarea încasării."
+                  : "The server recalculates the price in RON. Payment and card storage happen at Revolut or Stripe; AVYRON never stores the card number. Oblio issues the invoice after payment confirmation."}
               </p>
             </div>
           </div>

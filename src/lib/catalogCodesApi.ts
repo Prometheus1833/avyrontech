@@ -12,6 +12,8 @@ export type CommercialCode = {
   currency: string;
   vat_basis_points: number;
   payment_route: "unconfigured" | "invoice" | "payment_link" | "stripe" | "bank_transfer" | "manual";
+  preferred_payment_provider: "stripe" | "revolut" | "netopia" | null;
+  invoice_provider: "oblio" | "manual" | null;
   payment_status: "needs_configuration" | "test" | "active" | "paused";
   promotion_code: string | null;
   active: number;
@@ -36,6 +38,8 @@ export type CommercialCodeDraft = {
   currency: string;
   vatBasisPoints: number;
   paymentRoute: CommercialCode["payment_route"];
+  preferredPaymentProvider: CommercialCode["preferred_payment_provider"];
+  invoiceProvider: CommercialCode["invoice_provider"];
   paymentStatus: CommercialCode["payment_status"];
   promotionCode: string | null;
   active: boolean;
