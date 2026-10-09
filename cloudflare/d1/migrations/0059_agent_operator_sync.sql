@@ -87,15 +87,12 @@ DELETE FROM user_capabilities
 
 INSERT OR IGNORE INTO user_capabilities
   (id,user_id,capability,organization_id,granted_by,reason,created_at)
-SELECT 'codex_cap_' || replace(capability,'.','_'),account.id,capability,NULL,NULL,
+SELECT 'codex_cap_' || replace(CAST(grants.value AS TEXT),'.','_'),account.id,
+       CAST(grants.value AS TEXT),NULL,NULL,
        'agent_operator_profile:codex-v1',CAST(strftime('%s','now') AS INTEGER)*1000
   FROM users account
-  CROSS JOIN (
-    SELECT 'leads.read' capability UNION ALL
-    SELECT 'leads.create' UNION ALL SELECT 'leads.write' UNION ALL
-    SELECT 'leads.activity.create' UNION ALL SELECT 'leads.reminder.manage' UNION ALL
-    SELECT 'ai_projects.read' UNION ALL SELECT 'ai_content.create' UNION ALL
-    SELECT 'social.source.propose' UNION ALL SELECT 'social.lead_handoff'
+  CROSS JOIN json_each(
+    '["leads.read","leads.create","leads.write","leads.activity.create","leads.reminder.manage","ai_projects.read","ai_content.create","social.source.propose","social.lead_handoff"]'
   ) grants
  WHERE lower(account.email)='codexagent@avyron.ro' AND account.disabled_at IS NULL;
 
