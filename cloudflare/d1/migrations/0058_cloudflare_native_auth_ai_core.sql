@@ -82,19 +82,19 @@ CREATE INDEX idx_ai_core_reservations_day ON ai_core_reservations(usage_day, mod
 CREATE TRIGGER ai_core_role_limit_insert
 BEFORE INSERT ON ai_core_reservations
 BEGIN
-  SELECT CASE WHEN
+  SELECT (CASE WHEN
     COALESCE((SELECT SUM(estimated_neurons) FROM ai_core_reservations
       WHERE usage_day=new.usage_day AND model_role=new.model_role),0) + new.estimated_neurons
     > COALESCE((SELECT daily_neuron_limit FROM ai_model_registry WHERE role=new.model_role),0)
-  THEN RAISE(ABORT,'ai_role_daily_limit_exceeded') END;
-  SELECT CASE WHEN
+  THEN RAISE(ABORT,'ai_role_daily_limit_exceeded') END);
+  SELECT (CASE WHEN
     COALESCE((SELECT SUM(estimated_neurons) FROM ai_core_reservations WHERE usage_day=new.usage_day),0)
       + new.estimated_neurons > 5000
-  THEN RAISE(ABORT,'ai_global_daily_limit_exceeded') END;
-  SELECT CASE WHEN new.priority='background' AND
+  THEN RAISE(ABORT,'ai_global_daily_limit_exceeded') END);
+  SELECT (CASE WHEN new.priority='background' AND
     COALESCE((SELECT SUM(estimated_neurons) FROM ai_core_reservations
       WHERE usage_day=new.usage_day AND priority='background'),0) + new.estimated_neurons > 400
-  THEN RAISE(ABORT,'ai_background_daily_limit_exceeded') END;
+  THEN RAISE(ABORT,'ai_background_daily_limit_exceeded') END);
 END;
 
 CREATE TRIGGER ai_core_usage_after_insert
