@@ -102,6 +102,8 @@ const CTA = () => {
         summary?: Summary;
         error?: string;
         leadId?: string;
+        saved?: boolean;
+        delivered?: boolean;
       };
 
       if (res.status === 429) {
@@ -114,23 +116,22 @@ const CTA = () => {
         setResetKey((k) => k + 1);
         return;
       }
-      if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
+      if (!res.ok && !body.saved) throw new Error(body.error || `HTTP ${res.status}`);
 
-      toast.success(t.cta.success);
-      setSummary(
-        body.summary ?? {
-          leadId: body.leadId ?? "—",
-          submittedAt: new Date().toISOString(),
-          name: parsed.data.name,
-          business: parsed.data.business,
-          phone: parsed.data.phone,
-          email: parsed.data.email,
-          website: parsed.data.website,
-          description: parsed.data.description,
-          files: files.map((f) => ({ name: f.name, size: f.size })),
-        },
-
-      );
+      const receipt = body.summary ?? {
+        leadId: body.leadId ?? "—",
+        submittedAt: new Date().toISOString(),
+        name: parsed.data.name,
+        business: parsed.data.business,
+        phone: parsed.data.phone,
+        email: parsed.data.email,
+        website: parsed.data.website,
+        description: parsed.data.description,
+        files: files.map((f) => ({ name: f.name, size: f.size })),
+      };
+      if (body.saved && body.delivered === false) toast.warning(t.cta.savedWarning);
+      else toast.success(t.cta.success);
+      setSummary(receipt);
       setData(emptyData);
       setFiles([]);
       setToken("");

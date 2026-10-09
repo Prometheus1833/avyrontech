@@ -90,7 +90,7 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
       className="fixed inset-x-0 top-0 z-50 transition-transform duration-300 ease-out motion-reduce:transform-none"
       style={{ transform: `translate3d(0, ${scrollLift}px, 0)` }}
     >
-      <div className="mx-auto max-w-6xl px-3 sm:px-4 mt-3">
+      <div className="mx-auto max-w-7xl px-3 sm:px-4 mt-3">
         <nav className={`flex items-center justify-between gap-2 rounded-full border pl-3 pr-2 py-2 backdrop-blur-2xl transition-[background-color,border-color,box-shadow] duration-500 ${scrollLift > 2 ? "border-white/20 bg-background/[0.72] shadow-[0_18px_55px_-25px_rgba(15,23,42,0.65),inset_0_1px_0_rgba(255,255,255,0.18)]" : "glass border-white/10 shadow-soft"}`}>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <a href={`${homePath}#hero`} className="flex items-center gap-2" aria-label={isRo ? "Avyron — mergi la hero" : "Avyron — go to hero"}>
@@ -114,14 +114,14 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
               <ThemeToggle />
             </div>
           </div>
-          <ul className="hidden xl:flex items-center gap-4 text-sm font-medium">
+          <ul className="hidden xl:flex min-w-0 items-center gap-1.5 2xl:gap-3 text-sm font-medium">
             {links.map((l) => (
-              <li key={l.href ?? l.to}>
+              <li key={l.href ?? l.to} className="shrink-0">
                 {l.isRoute && l.to ? (
                   <Link
                     to={l.to}
                     title={l.label}
-                    className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-foreground/80 transition-all duration-200 ease-out hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    className="group inline-flex items-center gap-1.5 whitespace-nowrap px-2 2xl:px-3 py-1.5 rounded-full text-foreground/80 transition-all duration-200 ease-out hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   >
                     {l.icon && (
                       <l.icon
@@ -137,8 +137,8 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
                     href={l.href}
                     className={
                       l.highlight
-                        ? "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand text-brand-foreground hover:opacity-90 transition-opacity shadow-elev"
-                        : "inline-flex items-center px-3 py-1.5 rounded-full text-foreground/70 transition-all duration-200 ease-out hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        ? "inline-flex items-center gap-1.5 whitespace-nowrap px-2 2xl:px-3 py-1.5 rounded-full bg-brand text-brand-foreground hover:opacity-90 transition-opacity shadow-elev"
+                        : "inline-flex items-center whitespace-nowrap px-2 2xl:px-3 py-1.5 rounded-full text-foreground/70 transition-all duration-200 ease-out hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     }
                   >
                     {l.label}
@@ -147,14 +147,14 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
               </li>
             ))}
           </ul>
-          <div className="hidden xl:flex items-center gap-2">
+          <div className="hidden xl:flex shrink-0 items-center gap-2">
             <a
               href={ctaHref}
               title={ctaLabel}
-              className="inline-flex h-10 items-center justify-center rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="inline-flex h-11 min-w-[9.5rem] shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              <span className="flex flex-col items-center leading-none">
-                <span>{ctaLabel}</span>
+              <span className="flex flex-col items-center leading-tight">
+                <span className="whitespace-nowrap">{ctaLabel}</span>
                 <span className="mt-0.5 text-[9px] font-normal opacity-70">{ctaSub}</span>
               </span>
             </a>
@@ -164,7 +164,7 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
               <Link
                 to="/auth"
                 title={t.auth.login}
-                className="group inline-flex h-10 items-center justify-center rounded-full border border-input bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="group inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-input bg-background px-3 2xl:px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 <LogIn className="size-4 mr-1.5 transition-transform duration-200 ease-out group-hover:translate-x-0.5" aria-hidden="true" focusable="false" />{t.auth.login}
               </Link>
@@ -229,10 +229,10 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
             <a
               href={ctaHref}
               onClick={() => setOpen(false)}
-              className="inline-flex h-10 w-full items-center justify-center rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="inline-flex h-12 w-full items-center justify-center rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              <span className="flex flex-col items-center leading-none">
-                <span>{ctaLabel}</span>
+              <span className="flex flex-col items-center leading-tight">
+                <span className="whitespace-nowrap">{ctaLabel}</span>
                 <span className="mt-0.5 text-[9px] font-normal opacity-70">{ctaSub}</span>
               </span>
             </a>

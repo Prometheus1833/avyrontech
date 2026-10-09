@@ -202,7 +202,14 @@ contactRouter.post("/api/contact/demo", async (c) => {
   if (!to) {
     await c.env.DB.prepare("UPDATE leads SET delivery_status='failed',delivery_error=?,updated_at=? WHERE id=?")
       .bind("LEAD_TO is not configured", Date.now(), leadId).run();
-    return c.json({ error: "Livrarea emailului nu este configurată", leadId, delivered: false, summary }, 503);
+    return c.json({
+      ok: false,
+      saved: true,
+      error: "Solicitarea a fost salvată, dar notificarea email nu este configurată",
+      leadId,
+      delivered: false,
+      summary,
+    }, 503);
   }
 
   const result = await deliverMail(c.env, {
@@ -221,10 +228,17 @@ contactRouter.post("/api/contact/demo", async (c) => {
   );
   if (!result.delivered) {
     console.error(JSON.stringify({ event: "lead_smtp_failed", leadId, error: result.error }));
-    return c.json({ error: "Solicitarea a fost salvată, dar notificarea email nu a putut fi livrată", leadId, delivered: false, summary }, 502);
+    return c.json({
+      ok: false,
+      saved: true,
+      error: "Solicitarea a fost salvată, dar notificarea email nu a putut fi livrată",
+      leadId,
+      delivered: false,
+      summary,
+    }, 502);
   }
 
-  return c.json({ ok: true, leadId, delivered: true, summary }, 201);
+  return c.json({ ok: true, saved: true, leadId, delivered: true, summary }, 201);
 });
 
 contactRouter.post("/api/contact/example", async (c) => {

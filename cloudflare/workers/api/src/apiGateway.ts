@@ -80,7 +80,10 @@ export const openApiDocument = {
       get: {
         tags: ["Public"],
         summary: "Verifică prudent starea unui domeniu prin surse oficiale RDAP/DNS",
-        parameters: [{ name: "domain", in: "query", required: true, schema: { type: "string", maxLength: 253 }, example: "exemplu.ro" }],
+        parameters: [
+          { name: "domain", in: "query", required: true, schema: { type: "string", maxLength: 253 }, example: "exemplu.ro" },
+          { name: "language", in: "query", required: false, schema: { type: "string", enum: ["ro", "en"], default: "ro" } },
+        ],
         responses: { "200": { description: "Stare verificată" }, "400": { $ref: "#/components/responses/Problem" }, "429": { $ref: "#/components/responses/Problem" } },
       },
     },
@@ -92,10 +95,10 @@ export const openApiDocument = {
       },
     },
     "/contact/demo": {
-      post: { tags: ["Public"], summary: "Trimite formularul principal protejat cu Turnstile", responses: { "201": { description: "Cerere salvată și notificată" }, "400": { $ref: "#/components/responses/Problem" }, "429": { $ref: "#/components/responses/Problem" } } },
+      post: { tags: ["Public"], summary: "Salvează formularul principal protejat cu Turnstile și încearcă notificarea email", responses: { "201": { description: "Cerere salvată și notificată" }, "400": { $ref: "#/components/responses/Problem" }, "429": { $ref: "#/components/responses/Problem" }, "502": { description: "Cerere salvată; notificarea email a eșuat" }, "503": { description: "Cerere salvată; notificarea email nu este configurată" } } },
     },
     "/contact/example": {
-      post: { tags: ["Public"], summary: "Solicită un exemplu de produs", responses: { "201": { description: "Solicitare creată" }, "400": { $ref: "#/components/responses/Problem" } } },
+      post: { tags: ["Public"], summary: "Salvează o solicitare de exemplu și încearcă notificarea email", responses: { "201": { description: "Solicitare salvată și notificată" }, "202": { description: "Solicitare salvată; notificarea email necesită reverificare" }, "400": { $ref: "#/components/responses/Problem" } } },
     },
     "/logo-studio/generate": {
       post: { tags: ["Public"], summary: "Logo Studio: 4 concepte alese de Workers AI dintr-un vocabular închis (plafonat pe IP și zilnic)", responses: { "200": { description: "Concepte validate" }, "429": { $ref: "#/components/responses/Problem" }, "503": { description: "Workers AI indisponibil; clientul folosește generatorul local" } } },

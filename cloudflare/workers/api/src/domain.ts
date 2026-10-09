@@ -5,6 +5,7 @@ import type { AppBindings } from "./types";
 type DomainStatus = "available" | "registered" | "unknown";
 type Bootstrap = { services?: Array<[string[], string[]]> };
 type LookupResult = { status: DomainStatus; source: "iana-rdap" | "cloudflare-doh" | "unavailable" };
+type SupportedLanguage = "ro" | "en";
 
 const IANA_BOOTSTRAP_URL = "https://data.iana.org/rdap/dns.json";
 const DOH_URL = "https://cloudflare-dns.com/dns-query";
@@ -110,7 +111,15 @@ const copy = {
   },
 } as const;
 
-const payloadFor = (domain: string, result: LookupResult) => ({
+export function officialDomainVerificationUrl(domain: string, language: SupportedLanguage): string | null {
+  if (!domain.endsWith(".ro")) return null;
+  const url = new URL("https://forms.rotld.ro/whois/");
+  url.searchParams.set("fqdn", domain);
+  url.searchParams.set("lang", language);
+  return url.toString();
+}
+
+const payloadFor = (domain: string, result: LookupResult, language: SupportedLanguage = "ro") => ({
   domain,
   status: result.status,
   source: result.source,
@@ -118,6 +127,7 @@ const payloadFor = (domain: string, result: LookupResult) => ({
   message: copy[result.status].message,
   checkedAt: new Date().toISOString(),
   disclaimer: "Rezultatul este informativ și nu rezervă domeniul.",
+  officialVerificationUrl: officialDomainVerificationUrl(domain, language),
 });
 
 domainRouter.get("/api/public/domain-check", async (c) => {
@@ -131,7 +141,8 @@ domainRouter.get("/api/public/domain-check", async (c) => {
   const result = await lookupDomain(domain);
   const ttl = result.status === "registered" ? 3600 : result.status === "available" ? 300 : 60;
   c.header("cache-control", `public, max-age=${ttl}, stale-while-revalidate=${ttl}`);
-  return c.json(payloadFor(domain, result));
+  const language = c.req.query("language") === "en" ? "en" : "ro";
+  return c.json(payloadFor(domain, result, language));
 });
 
 domainRouter.post("/api/public/domain-check", async (c) => {
@@ -151,7 +162,7 @@ domainRouter.post("/api/public/domain-check", async (c) => {
   ).bind(crypto.randomUUID(), domain, result.status, result.source, language, surface, Date.now()).run();
 
   c.header("cache-control", "private, no-store");
-  return c.json(payloadFor(domain, result), 201);
+  return c.json(payloadFor(domain, result, language), 201);
 });
 
 export { domainRouter };

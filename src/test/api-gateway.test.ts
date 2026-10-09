@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   API_CANONICAL_ORIGIN,
   API_HOSTNAME,
@@ -9,7 +9,9 @@ import {
   openApiDocument,
 } from "../../cloudflare/workers/api/src/apiGateway";
 import { publicApiCacheRequest } from "../../cloudflare/workers/api/src/apiCache";
-import { normalizeDomain } from "../../cloudflare/workers/api/src/domain";
+import { lookupDomain, normalizeDomain, officialDomainVerificationUrl } from "../../cloudflare/workers/api/src/domain";
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe("api.avyron.ro gateway", () => {
   it("recognizes only the exact API hostname", () => {
@@ -73,5 +75,30 @@ describe("domain lookup input", () => {
     expect(normalizeDomain("www.avyron.ro")).toBeNull();
     expect(normalizeDomain("-avyron.ro")).toBeNull();
     expect(normalizeDomain("user@example.com")).toBeNull();
+  });
+
+  it("links .ro results to the official RoTLD confirmation without presenting it as an API result", () => {
+    expect(officialDomainVerificationUrl("atelier-avyron.ro", "ro"))
+      .toBe("https://forms.rotld.ro/whois/?fqdn=atelier-avyron.ro&lang=ro");
+    expect(officialDomainVerificationUrl("atelier-avyron.com", "ro")).toBeNull();
+  });
+
+  it("uses authoritative IANA RDAP first and keeps DNS-only .ro results conservative", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "https://data.iana.org/rdap/dns.json") {
+        return Response.json({ services: [[['com'], ['https://rdap.registry.test/']]] });
+      }
+      if (url === "https://rdap.registry.test/domain/nume-liber.com") return new Response(null, { status: 404 });
+      if (url === "https://rdap.registry.test/domain/avyron.com") return Response.json({ objectClassName: "domain" });
+      if (url.includes("cloudflare-dns.com") && url.includes("nume-liber.ro")) {
+        return Response.json({ Status: 3 });
+      }
+      throw new Error(`Unexpected test request: ${url}`);
+    }));
+
+    await expect(lookupDomain("nume-liber.com")).resolves.toEqual({ status: "available", source: "iana-rdap" });
+    await expect(lookupDomain("avyron.com")).resolves.toEqual({ status: "registered", source: "iana-rdap" });
+    await expect(lookupDomain("nume-liber.ro")).resolves.toEqual({ status: "unknown", source: "cloudflare-doh" });
   });
 });
