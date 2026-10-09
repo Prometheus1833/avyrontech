@@ -62,6 +62,10 @@ export default function Home({ lang }: { lang: Lang }) {
       description: homeDescription(lang),
       path: homeUrl(lang),
       lang,
+      image: lang === "ro" ? "/og/produse/logo-studio-3d.jpg" : "/og/produse/logo-studio-3d-en.jpg",
+      imageAlt: ro
+        ? "Catalogul Avyron de componente React și produse digitale pentru site-uri"
+        : "Avyron catalogue of React components and digital products for websites",
       jsonLd: [
         ["collection", itemListLd(lang, ITEMS, homeTitle(lang), homeUrl(lang))],
         ["breadcrumb", breadcrumb(lang, [{ name: ro ? "Produse Avyron" : "Avyron Products", path: homeUrl(lang) }])],

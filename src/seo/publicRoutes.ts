@@ -7,6 +7,7 @@
 import { ROUTE_ALTERNATES } from "../i18n/routes";
 import { BLOG_SLUGS } from "../data/blogSlugs";
 import { INTERNATIONAL_PRODUCT_HUB_ROUTES } from "../features/produse/data/productLocales";
+import { PRODUSE_NOINDEX_ROUTES } from "../features/produse/data/routes";
 
 /** Example demo slugs — mirrored from src/examples/registry.tsx (asserted in tests). */
 export const EXAMPLE_SLUGS = [
@@ -28,7 +29,7 @@ export const STANDALONE_PUBLIC_ROUTES = [
   ...EXAMPLE_SLUGS.map((s) => `/examples/${s}`),
 ];
 
-/** Every canonical public route that must be prerendered as indexable HTML. */
+/** Every canonical public route that must be prerendered as complete HTML. */
 export const PRERENDER_ROUTES: string[] = [
   ...ROUTE_ALTERNATES.flatMap((r) => [r.ro, r.en]),
   ...STANDALONE_PUBLIC_ROUTES,
@@ -115,6 +116,19 @@ export const NOINDEX_PREFIXES = [
   "/404",
 ];
 
+const PUBLIC_NOINDEX_PATHS = new Set(PRODUSE_NOINDEX_ROUTES);
+
+/** Pagini utile în catalog, accesibile public, dar fără rezultat Google propriu. */
+export function isPublicNoindexPath(pathname: string): boolean {
+  return PUBLIC_NOINDEX_PATHS.has(pathname);
+}
+
+export function robotsDirectiveForPath(pathname: string): "noindex, follow" | "noindex, nofollow" | null {
+  if (isPublicNoindexPath(pathname)) return "noindex, follow";
+  if (NOINDEX_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return "noindex, nofollow";
+  return null;
+}
+
 export function isNoindexPath(pathname: string): boolean {
-  return NOINDEX_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  return robotsDirectiveForPath(pathname) !== null;
 }

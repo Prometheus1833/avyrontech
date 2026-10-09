@@ -2,6 +2,7 @@ import { FEATURES } from "@/config/features";
 import type { Lang } from "@/i18n/translations";
 import { ITEMS } from "../data/items";
 import { PRODUCT_HUB_PATHS, productHubAlternates } from "../data/productLocales";
+import { isProduseIndexablePath } from "../data/routes";
 import { EUR_FOR_RON, TYPE_BY_ID } from "../data/taxonomy";
 import type { CatalogItem } from "../data/types";
 import { alternatePath, homePath, itemPath } from "./paths";
@@ -30,20 +31,25 @@ export async function applySeo({ title, description, path, lang, image = "/og/ho
   const [{ setPageMeta, setJsonLd }] = await Promise.all([import("@/lib/seo")]);
   const alt = alternatePath(path, lang === "ro" ? "en" : "ro");
   const isProductsHub = path === PRODUCT_HUB_PATHS.ro || path === PRODUCT_HUB_PATHS.en;
+  const isIndexable = FEATURES.produseLive && isProduseIndexablePath(path);
   setPageMeta({
     title,
     description,
     path,
-    alternates: isProductsHub
-      ? productHubAlternates()
-      : lang === "ro"
-        ? { ro: path, en: alt ?? path }
-        : { ro: alt ?? path, en: path },
+    alternates: isIndexable
+      ? isProductsHub
+        ? productHubAlternates()
+        : lang === "ro"
+          ? { ro: path, en: alt ?? path }
+          : { ro: alt ?? path, en: path }
+      : undefined,
     image,
     imageAlt,
-    ...(FEATURES.produseLive ? {} : { robots: "noindex, nofollow" }),
+    robots: isIndexable ? undefined : FEATURES.produseLive ? "noindex, follow" : "noindex, nofollow",
   });
-  for (const [id, value] of jsonLd) setJsonLd(`produse-${id}`, value as never);
+  if (isIndexable) {
+    for (const [id, value] of jsonLd) setJsonLd(`produse-${id}`, value as never);
+  }
 }
 
 export const productOgImage = (lang: Lang, item: CatalogItem) =>
@@ -160,12 +166,12 @@ export const STATS = {
 
 export const homeTitle = (lang: Lang) =>
   lang === "ro"
-    ? `Produse Avyron — ${STATS.total} componente, secțiuni și efecte 3D pentru site-uri`
-    : `Avyron Products — ${STATS.total} components, sections and 3D effects for websites`;
+    ? "Produse digitale pentru site-uri — componente React | Avyron"
+    : "Digital products for websites — React components | Avyron";
 
 export const homeDescription = (lang: Lang) =>
   lang === "ro"
-    ? `Componente React animate, secțiuni gata de lansat, efecte 3D cu Three.js, unelte și integrări API — ${STATS.free} gratuite. Copiezi codul, îl instalezi din CLI sau îl ceri asistentului tău AI.`
-    : `Animated React components, launch-ready sections, Three.js 3D effects, tools and API integrations — ${STATS.free} free. Copy the code, install from the CLI or ask your AI assistant.`;
+    ? `Catalog Avyron cu ${STATS.total} produse digitale: componente React, secțiuni, efecte 3D, unelte și integrări API, dintre care ${STATS.free} gratuite.`
+    : `Avyron catalogue with ${STATS.total} digital products: React components, sections, 3D effects, tools and API integrations, including ${STATS.free} free resources.`;
 
 export const homeUrl = (lang: Lang) => homePath(lang);

@@ -1321,11 +1321,13 @@ app.all("*", async (c) => {
     }
     return siteFile(c, "/404.html", 404, true);
   }
-  if (!decision.noindex) return asset;
+  if (!decision.robots) return asset;
   const headers = new Headers(asset.headers);
-  headers.set("X-Robots-Tag", "noindex, nofollow");
-  headers.set("Cache-Control", "private, no-store");
-  headers.set("Pragma", "no-cache");
+  headers.set("X-Robots-Tag", decision.robots);
+  if (decision.robots === "noindex, nofollow") {
+    headers.set("Cache-Control", "private, no-store");
+    headers.set("Pragma", "no-cache");
+  }
   return new Response(asset.body, { status: asset.status, headers });
 });
 

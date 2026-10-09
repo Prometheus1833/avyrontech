@@ -145,9 +145,9 @@ export default {
           return serveFile(env, url, "/404.html", 404, true);
         }
 
-        if (!decision.noindex) return assetRes;
+        if (!decision.robots) return assetRes;
         const headers = new Headers(assetRes.headers);
-        headers.set("X-Robots-Tag", NOINDEX);
+        headers.set("X-Robots-Tag", decision.robots);
         return new Response(assetRes.body, { status: assetRes.status, headers });
       }
     }

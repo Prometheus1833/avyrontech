@@ -6,7 +6,7 @@
 // duplicated Organization / WebSite / Product nodes.
 
 const SEO_ATTR = "data-seo";
-const DEFAULT_ROBOTS = "index, follow, max-image-preview:large, max-snippet:-1";
+const DEFAULT_ROBOTS = "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1";
 
 export type PageAlternates = Record<string, string>;
 

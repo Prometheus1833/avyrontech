@@ -8,6 +8,8 @@ import { decide } from "@/worker/router";
 const FILES: Record<string, string> = {
   "/index.html": "<html lang=ro><h1>home</h1>",
   "/servicii/index.html": "<html lang=ro><h1>pricing</h1>",
+  "/produse/index.html": "<html lang=ro><h1>products</h1>",
+  "/produse/componente/buton-magnetic/index.html": "<html lang=ro><h1>product</h1>",
   "/termeni/index.html": "<html lang=ro><h1>terms</h1>",
   "/404.html": "<html lang=ro><h1>404</h1>",
   "/403.html": "<html lang=ro><h1>403</h1>",
@@ -88,6 +90,15 @@ describe("worker redirects", () => {
     expect((await get(loc.pathname)).status).toBe(200);
   });
 
+  it("consolidates the obsolete homepage search parameter and preserves campaign data", async () => {
+    const res = await get("/?q={search_term_string}&utm_source=google");
+    const loc = new URL(res.headers.get("location")!, "https://avyron.ro");
+    expect(res.status).toBe(301);
+    expect(loc.pathname).toBe("/");
+    expect(loc.searchParams.has("q")).toBe(false);
+    expect(loc.searchParams.get("utm_source")).toBe("google");
+  });
+
   it.each([
     ["/costurisiproduse", "/servicii"],
     ["/en/pricing", "/en/services"],
@@ -149,6 +160,15 @@ describe("worker HTTP statuses", () => {
     const res = await get("/servicii");
     expect(res.status).toBe(200);
     expect(res.headers.get("X-Robots-Tag")).toBeNull();
+  });
+
+  it("keeps the product hub indexable and product detail pages noindex, follow", async () => {
+    const hub = await get("/produse");
+    const detail = await get("/produse/componente/buton-magnetic");
+    expect(hub.status).toBe(200);
+    expect(hub.headers.get("X-Robots-Tag")).toBeNull();
+    expect(detail.status).toBe(200);
+    expect(detail.headers.get("X-Robots-Tag")).toBe("noindex, follow");
   });
 
   it("serves the terms page as an indexable public document", async () => {
