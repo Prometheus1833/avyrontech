@@ -1049,12 +1049,12 @@ const Services = () => {
           </div>
         </section>
 
-        {/* Self-serve note */}
+        {/* Product handover note */}
         <section className="mt-10 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-6 backdrop-blur">
           <p className="text-sm md:text-base text-foreground/75 leading-relaxed">
             {ro
-              ? "Dacă alegi să administrezi singur site-ul, totul este pregătit pentru asta. Fiecare client primește la livrare un produs complet funcțional, optimizat și gata de scalare, găzduit la partenerii noștri de încredere cu care colaborăm de mulți ani — fără costuri suplimentare ascunse. Securitatea, viteza de încărcare și performanța pe toate dispozitivele sunt validate riguros prin testări automate și manuale în mediile noastre de dezvoltare, iar la predare primești documentație clară și acces complet la panoul de administrare."
-              : "If you choose to manage the site yourself, everything is set up for it. Each client receives a fully functional, optimized and scale-ready product on delivery, hosted with our long-trusted partners — with no hidden additional costs. Security, load speed and cross-device performance are rigorously validated through automated and manual testing in our development environments, and at handover you receive clear documentation and full access to the admin panel."}
+              ? "Vrei să gestionezi intern produsul digital? Îl livrăm pregătit pentru utilizare și administrare independentă. Primești o soluție complet funcțională, optimizată pentru obiectivele proiectului și construită pentru a putea evolua. Atunci când produsul necesită găzduire sau servicii externe, folosim furnizori de încredere și comunicăm transparent, înainte de lansare, toate costurile recurente. Securitatea, viteza, stabilitatea și experiența pe dispozitivele relevante sunt verificate prin teste automate și manuale. La predare primești documentația, fișierele și accesurile convenite, precum și panoul de administrare, dacă soluția include unul."
+              : "Want to manage your digital product in-house? We deliver it ready for independent use and administration. You receive a fully functional solution, optimized for the project's objectives and built to evolve. When the product requires hosting or external services, we use trusted providers and disclose all recurring costs before launch. Security, speed, stability and the experience across relevant devices are verified through automated and manual testing. At handover, you receive the agreed documentation, files and access credentials, as well as the admin panel whenever the solution includes one."}
           </p>
         </section>
 
