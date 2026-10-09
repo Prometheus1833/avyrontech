@@ -5,7 +5,7 @@
  */
 
 import { decide, isKnownSpaRoute, normalizePath } from "./router";
-import { injectBlogHtml, mergeBlogSitemap, type EdgeBlogPost, type EdgeSitemapEntry } from "./blogHtml";
+import { headersForTransformedBody, injectBlogHtml, mergeBlogSitemap, type EdgeBlogPost, type EdgeSitemapEntry } from "./blogHtml";
 import { serveCachedAsset } from "./assetCache";
 
 interface Fetcher {
@@ -56,7 +56,7 @@ async function serveFile(env: Env, url: URL, file: string, status: number, noind
 
 async function servePrivateShell(env: Env, url: URL) {
   const res = await env.ASSETS.fetch(new Request(new URL("/_shell.html", url.origin), { method: "GET" }));
-  const headers = new Headers(res.headers);
+  const headers = headersForTransformedBody(res.headers);
   headers.set("content-type", "text/html; charset=utf-8");
   headers.set("cache-control", "private, no-store");
   headers.set("X-Robots-Tag", NOINDEX);
@@ -71,7 +71,7 @@ async function apiFetch(env: Env, path: string) {
   }));
 }
 
-async function serveBlog(env: Env, url: URL, language: "ro" | "en", slug: string) {
+async function serveBlog(env: Env, request: Request, url: URL, language: "ro" | "en", slug: string) {
   const apiRes = await apiFetch(env, `/api/blog/posts/${encodeURIComponent(slug)}?lang=${language}`);
   if (!apiRes || apiRes.status === 404) return serveFile(env, url, "/404.html", 404, true);
   if (!apiRes.ok) return new Response("Blog service temporarily unavailable", {
@@ -83,11 +83,12 @@ async function serveBlog(env: Env, url: URL, language: "ro" | "en", slug: string
   if (!payload.data) return serveFile(env, url, "/404.html", 404, true);
   const shell = await env.ASSETS.fetch(new Request(new URL("/_shell.html", url.origin)));
   if (!shell.ok) return new Response("Site shell unavailable", { status: 503, headers: { "X-Robots-Tag": NOINDEX } });
-  const headers = new Headers(shell.headers);
+  const headers = headersForTransformedBody(shell.headers);
   headers.set("content-type", "text/html; charset=utf-8");
   headers.set("cache-control", "public, max-age=60, s-maxage=300, stale-while-revalidate=86400");
   headers.set("Vary", "Accept-Encoding");
-  return new Response(injectBlogHtml(await shell.text(), payload.data), { status: 200, headers });
+  const html = injectBlogHtml(await shell.text(), payload.data);
+  return new Response(request.method === "HEAD" ? null : html, { status: 200, headers });
 }
 
 async function serveSitemap(env: Env, request: Request) {
@@ -97,10 +98,11 @@ async function serveSitemap(env: Env, request: Request) {
   if (!apiRes?.ok) return asset;
   let payload: { data?: EdgeSitemapEntry[] } = {};
   try { payload = await apiRes.json(); } catch { /* Keep the generated static sitemap. */ }
-  const headers = new Headers(asset.headers);
+  const headers = headersForTransformedBody(asset.headers);
   headers.set("content-type", "application/xml; charset=utf-8");
   headers.set("cache-control", "public, max-age=300, s-maxage=900, stale-while-revalidate=86400");
-  return new Response(mergeBlogSitemap(await asset.text(), payload.data || []), { status: 200, headers });
+  const xml = mergeBlogSitemap(await asset.text(), payload.data || []);
+  return new Response(request.method === "HEAD" ? null : xml, { status: 200, headers });
 }
 
 export default {
@@ -124,7 +126,7 @@ export default {
         return env.API.fetch(request);
 
       case "blog":
-        return serveBlog(env, url, decision.language, decision.slug);
+        return serveBlog(env, request, url, decision.language, decision.slug);
 
       case "asset":
         return serveCachedAsset(env.ASSETS, request);

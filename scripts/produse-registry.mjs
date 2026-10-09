@@ -1,5 +1,5 @@
 /**
- * Publică registrul public al produselor gratuite și `llms.txt`.
+ * Publică registrul public al produselor gratuite.
  *
  * Registrul e în formatul shadcn, deci comanda din pagină funcționează
  * întocmai:  npx shadcn@latest add https://avyron.ro/r/<slug>.json
@@ -90,31 +90,4 @@ writeFileSync(
   )}\n`,
 );
 
-// llms.txt — cum descoperă asistenții AI catalogul, fără să ghicească din HTML.
-const byType = new Map();
-for (const item of ITEMS) {
-  if (!byType.has(item.type)) byType.set(item.type, []);
-  byType.get(item.type).push(item);
-}
-const lines = [
-  "# Produse Avyron (Avyron Products)",
-  "",
-  "> Componente, secțiuni, template-uri, efecte 3D, unelte și integrări API pentru site-uri, de la agenția Avyron (avyron.ro). Produsele gratuite au cod public; cele din parteneriate se obțin cu un cont AVY.",
-  "",
-  `Catalog: ${ITEMS.length} produse, dintre care ${ITEMS.filter((item) => item.access === "free").length} gratuite.`,
-  `Registru pentru CLI: ${BASE}/r/index.json — instalare: npx shadcn@latest add ${BASE}/r/<slug>.json`,
-  "",
-];
-for (const type of TYPES) {
-  const items = byType.get(type.id);
-  if (!items?.length) continue;
-  lines.push(`## ${type.plural.ro} (${type.plural.en})`, "");
-  for (const item of items) {
-    lines.push(`- [${item.name.ro}](${BASE}/produse/${type.seg.ro}/${item.slug}): ${item.short.ro}`);
-  }
-  lines.push("");
-}
-lines.push("## Documentație", "", `- [Ghid de instalare](${BASE}/produse/ghid)`, `- [Întrebări frecvente](${BASE}/produse/intrebari-frecvente)`, `- [Parteneriate AVY](${BASE}/produse#parteneriate)`, "");
-writeFileSync(join(dist, "llms.txt"), lines.join("\n"));
-
-console.log(`registru Produse: ${published.length} produse publicate în /r, plus llms.txt`);
+console.log(`registru Produse: ${published.length} produse publicate în /r`);

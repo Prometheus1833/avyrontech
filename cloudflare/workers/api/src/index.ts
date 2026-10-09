@@ -1135,7 +1135,7 @@ import { produseShopRouter } from "./produseShop";
 import { produseCheckoutRouter } from "./produseCheckout";
 import { produseAdminRouter } from "./produseAdmin";
 import { blogRouter, getBlogSitemapEntries, getPublishedBlogPost } from "./blog";
-import { injectBlogHtml, mergeBlogSitemap } from "../../../../src/worker/blogHtml";
+import { headersForTransformedBody, injectBlogHtml, mergeBlogSitemap } from "../../../../src/worker/blogHtml";
 import { BLOG_SLUGS } from "../../../../src/data/blogSlugs";
 import { decide, isKnownSpaRoute, normalizePath } from "../../../../src/worker/router";
 import { serveCachedAsset } from "../../../../src/worker/assetCache";
@@ -1242,7 +1242,7 @@ async function publicBlogPage(c: Context<AppBindings>, language: "ro" | "en", re
   }
   const shell = await c.env.ASSETS.fetch(new Request(new URL("/_shell.html", c.req.url)));
   if (!shell.ok) return c.text("Site shell unavailable", 503, { "X-Robots-Tag": "noindex, nofollow" });
-  const headers = new Headers(shell.headers);
+  const headers = headersForTransformedBody(shell.headers);
   headers.set("content-type", "text/html; charset=utf-8");
   headers.set("cache-control", "public, max-age=60, s-maxage=300, stale-while-revalidate=86400");
   headers.set("Vary", "Accept-Encoding");
@@ -1261,10 +1261,11 @@ app.get("/sitemap.xml", async (c) => {
   } catch (error) {
     console.error(JSON.stringify({ event: "blog_sitemap_database_unavailable", error: String(error) }));
   }
-  const headers = new Headers(asset.headers);
+  const headers = headersForTransformedBody(asset.headers);
   headers.set("content-type", "application/xml; charset=utf-8");
   headers.set("cache-control", "public, max-age=300, s-maxage=900, stale-while-revalidate=86400");
-  return new Response(mergeBlogSitemap(await asset.text(), entries), { status: 200, headers });
+  const xml = mergeBlogSitemap(await asset.text(), entries);
+  return new Response(c.req.method === "HEAD" ? null : xml, { status: 200, headers });
 });
 
 // `app.avyron.ro` is the dedicated entry point for AVYRON OS. The complete

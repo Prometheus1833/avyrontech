@@ -131,10 +131,10 @@ describe("cablajul dintre magazin și dashboardul intern", () => {
 });
 
 describe("indexarea", () => {
-  it("publică registrul și llms.txt implicit, cu kill switch comun", () => {
+  it("publică registrul implicit, fără să suprascrie sursa editorială llms.txt", () => {
     const script = read("scripts/produse-registry.mjs");
     expect(script).toContain('process.env.VITE_PRODUSE_LIVE === "0"');
-    expect(script).toContain("llms.txt");
+    expect(script).not.toContain('join(dist, "llms.txt")');
     // Registrul public conține exclusiv produse gratuite.
     expect(script).toContain('item.access !== "free"');
   });

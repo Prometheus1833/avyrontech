@@ -24,6 +24,7 @@ export type EdgeSitemapEntry = {
   language: "ro" | "en";
   slug: string;
   alternate_slug?: string | null;
+  cover_image_url?: string | null;
   updated_at: string | number;
 };
 
@@ -45,6 +46,28 @@ const isoDate = (value: string | number | null | undefined) => {
   const date = new Date(typeof value === "number" ? value : value || Date.now());
   return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
 };
+
+const validIsoDate = (value: string | number | null | undefined) => {
+  if (value === null || value === undefined || value === "") return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+};
+
+const sitemapImage = (value?: string | null) => {
+  if (!value) return null;
+  if (/^https:\/\//i.test(value)) return value;
+  if (value.startsWith("/")) return `${SITE_URL}${value}`;
+  return null;
+};
+
+/** Static-asset validators describe the shell, not the transformed response. */
+export function headersForTransformedBody(input: Headers) {
+  const headers = new Headers(input);
+  for (const name of ["etag", "content-length", "content-encoding", "last-modified", "accept-ranges"]) {
+    headers.delete(name);
+  }
+  return headers;
+}
 
 const inlineMarkdown = (value: string) => escapeHtml(value)
   .replace(/\[([^\]]+)]\(((?:https?:\/\/|\/)[^)]+)\)/gi, '<a href="$2" rel="noopener noreferrer">$1</a>')
@@ -180,7 +203,7 @@ export function injectBlogHtml(shell: string, post: EdgeBlogPost) {
 
   html = insertHead(html, `
     <meta name="description" content="${escapeHtml(description)}" />
-    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <link rel="canonical" href="${canonical}" />
     ${alternateLinks}
     <meta property="og:type" content="article" />
@@ -221,16 +244,34 @@ export function injectBlogHtml(shell: string, post: EdgeBlogPost) {
 
 /** Adds database-backed canonical articles to the generated static sitemap. */
 export function mergeBlogSitemap(xml: string, entries: EdgeSitemapEntry[]) {
-  const additions: string[] = [];
+  const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+  const normalized = new Map<string, EdgeSitemapEntry>();
   for (const entry of entries) {
-    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(entry.slug)) continue;
+    if ((entry.language !== "ro" && entry.language !== "en") || !slugPattern.test(entry.slug)) continue;
+    if (!validIsoDate(entry.updated_at)) continue;
+    const key = `${entry.language}:${entry.slug}`;
+    if (!normalized.has(key)) normalized.set(key, entry);
+  }
+
+  const additions: string[] = [];
+  const seen = new Set<string>();
+  for (const entry of normalized.values()) {
     const path = `${entry.language === "en" ? "/en/blog" : "/blog"}/${entry.slug}`;
     const loc = `${SITE_URL}${path}`;
-    if (xml.includes(`<loc>${loc}</loc>`)) continue;
-    const alternate = entry.alternate_slug
-      ? `${SITE_URL}${entry.language === "en" ? "/blog" : "/en/blog"}/${entry.alternate_slug}`
+    if (seen.has(loc) || xml.includes(`<loc>${loc}</loc>`)) continue;
+    seen.add(loc);
+
+    const otherLanguage = entry.language === "en" ? "ro" : "en";
+    const counterpart = entry.alternate_slug && slugPattern.test(entry.alternate_slug)
+      ? normalized.get(`${otherLanguage}:${entry.alternate_slug}`)
       : null;
-    additions.push(`  <url>\n    <loc>${loc}</loc>\n    <lastmod>${isoDate(entry.updated_at)}</lastmod>${alternate ? `\n    <xhtml:link rel="alternate" hreflang="${entry.language}" href="${loc}"/>\n    <xhtml:link rel="alternate" hreflang="${entry.language === "en" ? "ro" : "en"}" href="${alternate}"/>\n    <xhtml:link rel="alternate" hreflang="x-default" href="${entry.language === "ro" ? loc : alternate}"/>` : ""}\n  </url>`);
+    const reciprocal = counterpart?.alternate_slug === entry.slug;
+    const alternate = reciprocal
+      ? `${SITE_URL}${entry.language === "en" ? "/blog" : "/en/blog"}/${counterpart.slug}`
+      : null;
+    const lastmod = validIsoDate(entry.updated_at)!;
+    const image = sitemapImage(entry.cover_image_url);
+    additions.push(`  <url>\n    <loc>${loc}</loc>\n    <lastmod>${lastmod}</lastmod>${alternate ? `\n    <xhtml:link rel="alternate" hreflang="${entry.language}" href="${loc}"/>\n    <xhtml:link rel="alternate" hreflang="${otherLanguage}" href="${alternate}"/>\n    <xhtml:link rel="alternate" hreflang="x-default" href="${entry.language === "ro" ? loc : alternate}"/>` : ""}${image ? `\n    <image:image><image:loc>${escapeHtml(image)}</image:loc></image:image>` : ""}\n  </url>`);
   }
   return additions.length ? xml.replace(/<\/urlset>\s*$/i, `${additions.join("\n")}\n</urlset>`) : xml;
 }
