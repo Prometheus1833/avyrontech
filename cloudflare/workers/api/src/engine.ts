@@ -3,6 +3,7 @@ import type { AppBindings } from "./types";
 import { hasCapability, platformRoleForUser } from "./authorization";
 import { now } from "./security";
 import { reserveAiCost } from "./aiCostGuard";
+import { runAiCore } from "./aiCore";
 import {
   ENGINE_CAPABILITY_CATEGORIES, ENGINE_SOURCE_TYPES, extractPageEvidence,
   inspectEngineDocument, normalizeEngineUrl, parseScoutSuggestions,
@@ -315,8 +316,14 @@ engineRouter.post("/api/engine/documentation/prompts", async (c) => {
   const draftId = id("engdocdraft");
   const reservation = await reserveAiCost({ db: c.env.DB, agentSlug: "avy-engine-scout", vendorId: "fin_vendor_cloudflare_ai", operation: "engine_documentation_prompt", requestedUnits: Math.ceil(requestPrompt.length / 4) + 1_800, estimatedCostMinor: 0, idempotencyKey: c.req.header("idempotency-key") || draftId, requestId: c.get("requestId") || null });
   if (reservation.decision !== "allowed") return c.json({ error: { code: reservation.reason }, decision: reservation.decision }, 409);
-  if (!c.env.AI) return c.json({ error: { code: "ai_binding_unavailable" } }, 503);
-  const output = await c.env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", { messages: [{ role: "user", content: requestPrompt }], max_tokens: 1_800, temperature: 0.2 });
+  const core = await runAiCore({
+    env: c.env, agentSlug: "avy-engine-scout", operation: "engine_documentation_prompt",
+    idempotencyKey: c.req.header("idempotency-key") || draftId,
+    requestId: c.get("requestId") || null, promptCharacters: requestPrompt.length,
+    tier: "special", requestedMaxTokens: 1_800, financialReserved: true,
+    input: { messages: [{ role: "user", content: requestPrompt }], temperature: 0.2 },
+  });
+  const output = core.output;
   const generated = (typeof output === "string" ? output : String((output as { response?: unknown })?.response || ""))
     .trim().replace(/^```(?:markdown|md)?\s*/i, "").replace(/\s*```$/, "").slice(0, 12_000);
   if (generated.length < 20) return c.json({ error: { code: "empty_model_response" } }, 502);
@@ -506,8 +513,14 @@ async function executeDiscovery(env: AppBindings["Bindings"], runId: string, sou
       .bind(reservation.decision === "blocked" ? "awaiting_approval" : "awaiting_budget", reservation.reason, now(), runId).run();
     return { decision: reservation.decision, count: 0 };
   }
-  if (!env.AI) throw new Error("ai_binding_unavailable");
-  const output = await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", { messages: [{ role: "user", content: prompt }], max_tokens: 700, temperature: 0.2 });
+  const core = await runAiCore({
+    env, agentSlug: "avy-engine-scout", operation: "engine_source_discovery",
+    idempotencyKey: `engine-discovery:${runId}`, requestId, promptCharacters: prompt.length,
+    tier: "default", requestedMaxTokens: 700, financialReserved: true,
+    priority: "background",
+    input: { messages: [{ role: "user", content: prompt }], temperature: 0.2 },
+  });
+  const output = core.output;
   const raw = typeof output === "string" ? output : String((output as { response?: unknown })?.response || "");
   const suggestions = parseScoutSuggestions(raw, allowedLinks);
   const timestamp = now(); let count = 0;

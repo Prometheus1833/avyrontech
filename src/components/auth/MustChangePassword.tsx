@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -14,13 +13,10 @@ import { cfAuth } from "@/lib/cfAuth";
  */
 export const MustChangePassword = () => {
   const { user, signOut } = useAuth();
-  const [open, setOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => setOpen(Boolean(user?.must_change_password)), [user]);
 
   const submit = async () => {
     if (newPassword.length < 10) return toast.error("Parola nouă trebuie să aibă minimum 10 caractere.");
@@ -29,7 +25,6 @@ export const MustChangePassword = () => {
     try {
       await cfAuth.changePassword(currentPassword, newPassword);
       toast.success("Parola a fost schimbată. Autentifică-te din nou.");
-      setOpen(false);
       await signOut();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Parola nu a putut fi schimbată.");
@@ -38,15 +33,15 @@ export const MustChangePassword = () => {
     }
   };
 
-  if (!user || !open) return null;
+  if (!user?.must_change_password) return null;
   return (
-    <Dialog open={open}>
-      <DialogContent onEscapeKeyDown={(event) => event.preventDefault()} onPointerDownOutside={(event) => event.preventDefault()}>
-        <DialogHeader>
+    <main className="grid min-h-screen place-items-center bg-background px-4 py-12">
+      <section className="w-full max-w-lg space-y-6 rounded-3xl border border-border/70 bg-card p-6 shadow-xl sm:p-8" aria-labelledby="temporary-password-title">
+        <header className="space-y-2">
           <ShieldAlert className="size-6" />
-          <DialogTitle>Schimbă parola</DialogTitle>
-          <DialogDescription>Contul folosește o parolă temporară. Alege o parolă personală înainte să continui.</DialogDescription>
-        </DialogHeader>
+          <h1 id="temporary-password-title" className="text-2xl font-semibold">Schimbă parola</h1>
+          <p className="text-sm text-muted-foreground">Contul folosește o parolă temporară. Alege o parolă personală înainte să continui.</p>
+        </header>
         <Alert><KeyRound className="size-4" /><AlertDescription>După schimbare vei fi delogat de pe toate dispozitivele.</AlertDescription></Alert>
         <div className="space-y-2">
           <Label htmlFor="current-password">Parola temporară</Label>
@@ -59,8 +54,8 @@ export const MustChangePassword = () => {
         <Button onClick={submit} disabled={saving || !currentPassword || !newPassword || !confirm}>
           {saving ? "Se salvează…" : "Schimbă parola"}
         </Button>
-      </DialogContent>
-    </Dialog>
+      </section>
+    </main>
   );
 };
 

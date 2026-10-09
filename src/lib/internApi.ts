@@ -50,10 +50,13 @@ export type ClientOption = { id: string; company_name: string; contact_name: str
 export type AccountOption = {
   id: string;
   email: string;
+  username?: string | null;
   display_name: string | null;
   company_name: string | null;
   staff_role?: string | null;
   disabled_at?: number | null;
+  must_change_password?: 0 | 1;
+  active_sessions?: number;
   roles: string | null;
 };
 
@@ -111,6 +114,14 @@ export const internApi = {
       headers: { "Idempotency-Key": crypto.randomUUID() },
       body: JSON.stringify({ accessLevel }),
     }),
+  createAccount: (body: { email: string; username: string; displayName: string; temporaryPassword: string; accessLevel: "user" | "staff" | "admin" }) =>
+    cfAuth.request<{ data: AccountOption }>("/api/admin/users", { method: "POST", body: JSON.stringify(body) }),
+  setAccountEnabled: (userId: string, enabled: boolean) =>
+    cfAuth.request<{ ok: true; enabled: boolean }>(`/api/admin/users/${encodeURIComponent(userId)}/status`, { method: "PATCH", body: JSON.stringify({ enabled }) }),
+  setTemporaryPassword: (userId: string, temporaryPassword: string) =>
+    cfAuth.request<{ ok: true }>(`/api/admin/users/${encodeURIComponent(userId)}/temporary-password`, { method: "POST", body: JSON.stringify({ temporaryPassword }) }),
+  revokeAccountSessions: (userId: string) =>
+    cfAuth.request<{ ok: true; revoked: number }>(`/api/admin/users/${encodeURIComponent(userId)}/sessions`, { method: "DELETE" }),
   updateProject: (id: string, patch: Partial<Project>) =>
     cfAuth.request<{ ok: true }>(`/api/projects/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   addProposal: (id: string, body: { title: string; description?: string }) =>

@@ -2,8 +2,8 @@ import { privilegedMfaSatisfied } from "./mfaPolicy";
 import { Hono, type Context } from "hono";
 import type { AppBindings } from "./types";
 import { platformRoleForUser } from "./authorization";
-import { resolveAgentModel } from "./agentRuntimePolicy";
 import { reserveAiCost } from "./aiCostGuard";
+import { runAiCore } from "./aiCore";
 import { resolveSocialModelRoute } from "./socialModelRouting";
 import { now, sha256 } from "./security";
 import { runSocialStudioScheduler } from "./socialStudioScheduler";
@@ -912,11 +912,18 @@ aiProjectsRouter.post("/api/ai-projects/:projectId/content/generate", async (c) 
         .bind(reservation.decision === "waiting_for_budget_approval" || reservation.decision === "approval_required" ? "awaiting_approval" : "denied", reservation.reason, now(), runId).run();
       return c.json({ error: { code: reservation.decision, reason: reservation.reason } }, 409);
     }
-    const output = await c.env.AI.run(resolveAgentModel(route.model_id), {
-      max_tokens: maxTokens,
-      temperature: Math.max(0, Math.min(0.8, agent.temperature || 0.4)),
-      messages: [{ role: "system", content: prompt }, { role: "user", content: "Creează ciorna solicitată." }],
-    }) as { response?: string };
+    const core = await runAiCore({
+      env: c.env, agentSlug: agent.slug, operation: `social_model_${route.route_key}`,
+      idempotencyKey: `ai-run:${runId}`, requestId: c.get("requestId") || null,
+      projectId: access.project.id, promptCharacters: prompt.length + 28,
+      tier: request.format === "article" ? "special" : "normal", requestedMaxTokens: maxTokens,
+      financialReserved: true,
+      input: {
+        temperature: Math.max(0, Math.min(0.8, agent.temperature || 0.4)),
+        messages: [{ role: "system", content: prompt }, { role: "user", content: "Creează ciorna solicitată." }],
+      },
+    });
+    const output = core.output as { response?: string };
     raw = String(output?.response || "").trim();
     if (!raw) throw new Error("empty_model_response");
   } catch (error) {

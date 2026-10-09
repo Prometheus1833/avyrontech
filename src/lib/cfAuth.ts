@@ -8,6 +8,7 @@ export type Role = "user" | "staff" | "admin";
 export type CfUser = {
   id: string;
   email: string;
+  username: string | null;
   display_name: string | null;
   avatar_url: string | null;
   email_verified: 0 | 1;
@@ -41,6 +42,7 @@ type SessionResponse = {
   expires_in: number;
   user: { id: string; roles: Role[] };
   mfa_enrollment_required?: boolean;
+  must_change_password?: boolean;
 };
 export type MfaChallengeResponse = { mfa_required: true; challenge_token: string; expires_in: number };
 
@@ -207,12 +209,12 @@ class CfAuth {
     });
   }
 
-  async login(email: string, password: string) {
+  async login(identifier: string, password: string) {
     const res = await fetch(apiUrl("/api/auth/login"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ identifier, password }),
     });
     const j = await res.json() as (SessionResponse | MfaChallengeResponse) & ApiErrorBody;
     if (!res.ok) throw new Error(j?.error?.message || j?.error?.code || "login_failed");

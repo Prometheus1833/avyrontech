@@ -14,6 +14,7 @@ import { Hono } from "hono";
 import type { Env } from "./types";
 import { checkRateLimit, verifyTurnstile, clientIp, hashKey } from "./antispam";
 import { deliverMail, logDelivery } from "./mailer";
+import { runAiCore } from "./aiCore";
 import {
   CONCEPT_JSON_SCHEMA,
   STUDIO_PRICES,
@@ -27,10 +28,9 @@ import {
 
 export const logoStudioRouter = new Hono<{ Bindings: Env }>();
 
-const DEFAULT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const clean = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 
-type StudioEnv = Env & { LOGO_STUDIO_MODEL?: string; LOGO_STUDIO_DAILY_CAP?: string };
+type StudioEnv = Env & { LOGO_STUDIO_DAILY_CAP?: string };
 
 function parseModelOutput(output: unknown): unknown[] {
   const o = output as { response?: unknown } | null;
@@ -64,15 +64,20 @@ logoStudioRouter.post("/api/logo-studio/generate", async (c) => {
   const { system, user } = buildPrompt(brief);
   const fallback = localConcepts(brief, 4, "ai-fallback");
   try {
-    const output = await env.AI.run(env.LOGO_STUDIO_MODEL || DEFAULT_MODEL, {
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-      response_format: { type: "json_schema", json_schema: CONCEPT_JSON_SCHEMA },
-      max_tokens: 1100,
-      temperature: 0.85,
+    const core = await runAiCore({
+      env, agentSlug: "avy-logo-studio", operation: "logo_concept_generation",
+      idempotencyKey: `logo:${ip}:${await hashKey(JSON.stringify(brief))}`,
+      promptCharacters: system.length + user.length, tier: "normal", requestedMaxTokens: 1100,
+      input: {
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+        response_format: { type: "json_schema", json_schema: CONCEPT_JSON_SCHEMA },
+        temperature: 0.85,
+      },
     });
+    const output = core.output;
     const raw = parseModelOutput(output).slice(0, 4);
     if (raw.length === 0) return c.json({ error: "ai_empty" }, 502);
     const concepts: LogoConcept[] = raw.map((r, i) => cleanConcept(r, brief, fallback[i % fallback.length]));

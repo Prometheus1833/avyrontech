@@ -100,7 +100,6 @@ import PerformanceGovernor from "@/components/site/PerformanceGovernor";
 const Notifications = lazyWithRetry(() =>
   import("@/components/ui/sonner").then(({ Toaster }) => ({ default: Toaster })),
 );
-const MustChangePassword = lazyWithRetry(() => import("@/components/auth/MustChangePassword"));
 
 /**
  * Notification and account-dialog packages are useful only after interaction
@@ -130,7 +129,6 @@ const DeferredGlobalUi = () => {
   return (
     <Suspense fallback={null}>
       {ready && <Notifications />}
-      {user && <MustChangePassword />}
     </Suspense>
   );
 };

@@ -19,6 +19,7 @@ import type { AppBindings } from "./types";
 import type { AvyronAgentRuntime } from "./agents/AvyronAgentRuntime";
 import { resolveAgentModel } from "./agentRuntimePolicy";
 import { reserveAiCost } from "./aiCostGuard";
+import { runAiCore } from "./aiCore";
 import { checkRateLimit, clientIp, hashKey } from "./antispam";
 import { platformRoleForUser } from "./authorization";
 import { now, sha256 } from "./security";
@@ -75,7 +76,6 @@ const parsePublicPromptList = (value: unknown): string[] => {
 async function generate(c: Context<AppBindings>, agent: AiAgent, context: string, history: { role: string; content: string }[], language: string, runId: string, pageContext: string) {
   const ai = aiBinding(c.env);
   if (!ai) return null;
-  const runtimeModel = resolveAgentModel(agent.model);
   const system = [
     agent.system_prompt.slice(0,6000),
     agent.guardrails.slice(0,3000),
@@ -105,19 +105,29 @@ async function generate(c: Context<AppBindings>, agent: AiAgent, context: string
       return null;
     }
     attempted = true;
-    const output = (await ai.run(runtimeModel, {
+    const core = await runAiCore({
+      env: c.env,
+      agentSlug: agent.slug,
+      operation: "public_chat_generation",
+      idempotencyKey: `ai-run:${runId}`,
+      promptCharacters: system.length + history.slice(-6).reduce((sum, item) => sum + item.content.length, 0),
+      tier: "default",
+      requestedMaxTokens: maxTokens,
+      financialReserved: true,
+      input: {
       // A database edit can tune an agent, but cannot remove platform-level
       // output/cost boundaries.
-      max_tokens: maxTokens,
       temperature: Math.max(0, Math.min(1, Number(agent.temperature) || 0.3)),
       messages: [{ role: "system", content: system }, ...history.slice(-6)],
-    })) as { response?: string; usage?: {prompt_tokens?:number;completion_tokens?:number} };
+      },
+    });
+    const output = core.output as { response?: string; usage?: {prompt_tokens?:number;completion_tokens?:number} };
     const text = typeof output?.response==='string'?output.response.trim().slice(0,10000):'';
     const inputTokens=output?.usage?.prompt_tokens,outputTokens=output?.usage?.completion_tokens;
     const measured=Number.isSafeInteger(inputTokens)&&Number(inputTokens)>=0&&Number.isSafeInteger(outputTokens)&&Number(outputTokens)>=0;
     return {text: text || null,inputTokens:measured?Number(inputTokens):estimatedInput,outputTokens:measured?Number(outputTokens):text?Math.ceil(text.length/3):maxTokens,usageSource:measured?'provider':'estimated'};
   } catch (error) {
-    console.error(JSON.stringify({ event: "ai_generate_failed", agent: agent.slug, reason: error instanceof Error ? error.name : "unknown" }));
+    console.error(JSON.stringify({ event: "ai_generate_failed", agent: agent.slug, reason: error instanceof Error ? `${error.name}:${error.message}`.slice(0, 240) : "unknown" }));
     return attempted ? {text:null,inputTokens:estimatedInput,outputTokens:maxTokens,usageSource:"estimated"} : null;
   }
 }

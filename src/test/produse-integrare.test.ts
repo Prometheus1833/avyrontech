@@ -43,7 +43,8 @@ describe("cablajul dintre pagină și Worker", () => {
     expect(billing).toContain('event.type==="invoice.paid"');
     expect(billing).toContain('event.type.startsWith("customer.subscription.")');
     expect(billing).toContain("/cycles?limit=100");
-    expect(index).toContain("runBillingReconciliation(env)");
+    expect(index).toContain('enqueueAsyncJobs(env, ["billing_reconcile"])');
+    expect(read("cloudflare/workers/api/src/asyncJobs.ts")).toContain("runBillingReconciliation(env)");
   });
 
   it("documentează în gateway rutele noi", () => {

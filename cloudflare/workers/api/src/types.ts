@@ -44,6 +44,14 @@ type OptionalIntegrations = {
   GOOGLE_OAUTH_CLIENT_ID?: string;
   GOOGLE_OAUTH_CLIENT_SECRET?: string;
   GOOGLE_OAUTH_REDIRECT_URI?: string;
+  GITHUB_OAUTH_CLIENT_ID?: string;
+  GITHUB_OAUTH_CLIENT_SECRET?: string;
+  GITHUB_OAUTH_REDIRECT_URI?: string;
+  MFA_AUTH_ENABLED?: string;
+  TURNSTILE_AUTH_ENABLED?: string;
+  PAID_AI_ENABLED?: string;
+  ALLOW_AI_OVERAGE?: string;
+  AUTO_AI_UPGRADE?: string;
 };
 
 export type Env = CloudflareBindings & OptionalIntegrations;
