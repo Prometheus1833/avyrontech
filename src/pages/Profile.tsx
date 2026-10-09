@@ -59,8 +59,8 @@ const StaffSubscriptionsAdminTab = lazyWithRetry(() => import("@/components/dash
 const ResourceSurfaceTab = lazyWithRetry(() => import("@/components/dashboard/ResourceSurfaceTab"));
 
 export default function Profile() {
-  const { user, profile, roles, isSuperAdmin, isStaff, isAdmin, signOut } = useAuth();
-  const access = useMemo(() => buildAccess({ roles, email: user?.email, superadmin: isSuperAdmin }), [roles, user?.email, isSuperAdmin]);
+  const { user, profile, roles, capabilities, isSuperAdmin, isStaff, isAdmin, signOut } = useAuth();
+  const access = useMemo(() => buildAccess({ roles, capabilities, email: user?.email, superadmin: isSuperAdmin }), [roles, capabilities, user?.email, isSuperAdmin]);
   const [params, setParams] = useSearchParams();
   const requested = params.get("tab") ?? "";
   const [tab, setTab] = useState<SectionId>(canOpenSection(requested, access) ? requested as SectionId : defaultSection(access));

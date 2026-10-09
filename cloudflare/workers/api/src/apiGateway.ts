@@ -80,7 +80,10 @@ export const openApiDocument = {
       get: {
         tags: ["Public"],
         summary: "Verifică prudent starea unui domeniu prin surse oficiale RDAP/DNS",
-        parameters: [{ name: "domain", in: "query", required: true, schema: { type: "string", maxLength: 253 }, example: "exemplu.ro" }],
+        parameters: [
+          { name: "domain", in: "query", required: true, schema: { type: "string", maxLength: 253 }, example: "exemplu.ro" },
+          { name: "language", in: "query", required: false, schema: { type: "string", enum: ["ro", "en"], default: "ro" } },
+        ],
         responses: { "200": { description: "Stare verificată" }, "400": { $ref: "#/components/responses/Problem" }, "429": { $ref: "#/components/responses/Problem" } },
       },
     },
@@ -92,10 +95,10 @@ export const openApiDocument = {
       },
     },
     "/contact/demo": {
-      post: { tags: ["Public"], summary: "Trimite formularul principal protejat cu Turnstile", responses: { "201": { description: "Cerere salvată și notificată" }, "400": { $ref: "#/components/responses/Problem" }, "429": { $ref: "#/components/responses/Problem" } } },
+      post: { tags: ["Public"], summary: "Salvează formularul principal protejat cu Turnstile și încearcă notificarea email", responses: { "201": { description: "Cerere salvată și notificată" }, "400": { $ref: "#/components/responses/Problem" }, "429": { $ref: "#/components/responses/Problem" }, "502": { description: "Cerere salvată; notificarea email a eșuat" }, "503": { description: "Cerere salvată; notificarea email nu este configurată" } } },
     },
     "/contact/example": {
-      post: { tags: ["Public"], summary: "Solicită un exemplu de produs", responses: { "201": { description: "Solicitare creată" }, "400": { $ref: "#/components/responses/Problem" } } },
+      post: { tags: ["Public"], summary: "Salvează o solicitare de exemplu și încearcă notificarea email", responses: { "201": { description: "Solicitare salvată și notificată" }, "202": { description: "Solicitare salvată; notificarea email necesită reverificare" }, "400": { $ref: "#/components/responses/Problem" } } },
     },
     "/logo-studio/generate": {
       post: { tags: ["Public"], summary: "Logo Studio: 4 concepte alese de Workers AI dintr-un vocabular închis (plafonat pe IP și zilnic)", responses: { "200": { description: "Concepte validate" }, "429": { $ref: "#/components/responses/Problem" }, "503": { description: "Workers AI indisponibil; clientul folosește generatorul local" } } },
@@ -128,6 +131,24 @@ export const openApiDocument = {
     },
     "/produse/account/checkout": {
       post: { tags: ["Commerce"], summary: "Creează comanda și sesiunea de plată pentru un parteneriat sau un produs", responses: { "201": { description: "Sesiune de plată creată" }, "404": { $ref: "#/components/responses/Problem" }, "503": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/billing/config": {
+      get: { tags: ["Commerce"], summary: "Capabilitățile de plată și facturare disponibile contului", security: [{ bearerAuth: [] }], responses: { "200": { description: "Revolut, Stripe, Oblio și extensiile planificate, fără secrete" } } },
+    },
+    "/billing/checkout": {
+      post: { tags: ["Commerce"], summary: "Deschide checkout-ul găzduit pentru o comandă calculată pe server", security: [{ bearerAuth: [] }], responses: { "201": { description: "Checkout creat" }, "409": { $ref: "#/components/responses/Problem" }, "503": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/billing/account": {
+      get: { tags: ["Commerce"], summary: "Profilul de facturare, metodele tokenizate, abonamentele și facturile contului", security: [{ bearerAuth: [] }], responses: { "200": { description: "Date de billing fără date complete de card" } } },
+    },
+    "/billing/profile": {
+      put: { tags: ["Commerce"], summary: "Actualizează datele beneficiarului pentru facturare Oblio", security: [{ bearerAuth: [] }], responses: { "200": { description: "Profil actualizat" } } },
+    },
+    "/billing/payment-methods/setup": {
+      post: { tags: ["Commerce"], summary: "Creează o sesiune găzduită pentru tokenizarea sigură a cardului", security: [{ bearerAuth: [] }], responses: { "201": { description: "Sesiune de configurare creată" } } },
+    },
+    "/billing/portal": {
+      post: { tags: ["Commerce"], summary: "Creează o sesiune temporară în portalul procesatorului", security: [{ bearerAuth: [] }], responses: { "201": { description: "Portal securizat creat" } } },
     },
     "/auth/signup": {
       post: { tags: ["Auth"], summary: "Creează un cont și trimite verificarea emailului", responses: { "202": { description: "Cont creat; verificare necesară" }, "400": { $ref: "#/components/responses/Problem" }, "429": { $ref: "#/components/responses/Problem" } } },

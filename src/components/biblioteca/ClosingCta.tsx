@@ -19,7 +19,7 @@ type Props = {
  * Închiderea paginii.
  *
  * O bibliotecă fără ieșire e o galerie. Aici se termină drumul: fie trimiți
- * efectele alese, fie te întorci în pagina produsului care te interesează.
+ * direcțiile alese, fie te întorci în pagina produsului care te interesează.
  * Legăturile către produse sunt și cel mai bun lucru pe care îl putem face
  * pentru autoritatea internă a acelor pagini.
  */
@@ -28,8 +28,8 @@ export default function ClosingCta({ codes, lang, origin }: Props) {
   const ro = lang === "ro";
 
   const message = ro
-    ? `Bună! Am parcurs biblioteca de efecte${codes.length ? ` și am ales ${codes.length} efecte` : ""}.`
-    : `Hi! I went through the effects library${codes.length ? ` and picked ${codes.length} effects` : ""}.`;
+    ? `Bună! Am parcurs Biblioteca Avyron${codes.length ? ` și am selectat ${codes.length} direcții` : ""}.`
+    : `Hi! I explored the Avyron Library${codes.length ? ` and selected ${codes.length} directions` : ""}.`;
 
   return (
     <section className="mx-auto max-w-6xl px-4 pb-24 pt-8 sm:px-6">
@@ -42,11 +42,11 @@ export default function ClosingCta({ codes, lang, origin }: Props) {
         <p className="mt-4 max-w-[62ch] text-white/60">
           {codes.length > 0
             ? ro
-              ? `Ai ${codes.length} efecte în brief. Le trimitem împreună cu produsul de la care ai pornit, iar tu primești o estimare cu termen și cost, nu o listă de prețuri generale.`
-              : `You have ${codes.length} effects in your brief. We send them together with the product you started from, and you get an estimate with timing and cost, not a generic price list.`
+              ? `Ai selectat ${codes.length} direcții. Le trimitem împreună cu serviciul de la care ai pornit, iar tu primești o recomandare adaptată și o estimare clară.`
+              : `You selected ${codes.length} directions. We send them together with the service you started from, and you receive a tailored recommendation and a clear estimate.`
             : ro
-              ? "Alege efectele care ți-au plăcut cu butonul de lângă fiecare, apoi trimite-ne lista. Sau scrie-ne direct — începem de la ce vrei să obții, nu de la ce putem noi."
-              : "Pick the effects you liked with the button next to each one, then send us the list. Or write to us directly — we start from what you want to achieve, not from what we can do."}
+              ? "Selectează direcțiile potrivite cu butonul de lângă fiecare, apoi trimite-ne lista. Sau scrie-ne direct — începem de la ce vrei să obții."
+              : "Select the directions that fit using the button beside each one, then send us the list. Or write to us directly — we start from what you want to achieve."}
         </p>
 
         <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -70,7 +70,7 @@ export default function ClosingCta({ codes, lang, origin }: Props) {
         </div>
 
         <div className="mt-10 border-t border-white/10 pt-6">
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-white/40">
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-white/55">
             {ro ? "Mergi direct la produs" : "Go straight to the product"}
           </p>
           <ul className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">

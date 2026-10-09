@@ -17,7 +17,7 @@ type Props = {
  * Coșul de efecte, ca bară de jos.
  *
  * Partea care transformă vitrina în cerere de ofertă: efectele alese pleacă
- * spre formular cu codurile lor și cu produsul de proveniență, deci discuția
+ * spre formular cu denumirile lor și cu produsul de proveniență, deci discuția
  * începe de la ce a vrut clientul, nu de la zero.
  */
 export default function BriefBar({ codes, lang, origin, onRemove }: Props) {
@@ -42,14 +42,17 @@ export default function BriefBar({ codes, lang, origin, onRemove }: Props) {
                   const entry = EFFECTS_BY_CODE.get(code);
                   return (
                     <li key={code} className="flex items-center gap-3 text-sm text-white/80">
-                      <span className="font-mono text-[11px] text-white/45">{code}</span>
                       <span className="min-w-0 flex-1 truncate">
-                        {entry ? entry.effect.name[lang] : code}
+                        {entry ? entry.effect.name[lang] : lang === "ro" ? "Opțiune selectată" : "Selected option"}
                       </span>
                       <button
                         type="button"
                         onClick={() => onRemove(code)}
-                        aria-label={lang === "ro" ? `Scoate ${code}` : `Remove ${code}`}
+                        aria-label={
+                          lang === "ro"
+                            ? `Scoate ${entry?.effect.name.ro ?? "opțiunea"}`
+                            : `Remove ${entry?.effect.name.en ?? "option"}`
+                        }
                         className="rounded p-1 text-white/40 transition-colors hover:text-white"
                       >
                         <X className="size-3.5" aria-hidden="true" />

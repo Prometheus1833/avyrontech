@@ -1,6 +1,6 @@
 import type { Env } from "./types";
 import { reserveAiCost } from "./aiCostGuard";
-import { resolveAgentModel } from "./agentRuntimePolicy";
+import { runAiCore } from "./aiCore";
 import { resolveSocialModelRoute } from "./socialModelRouting";
 import { contentExpiry, parseGeneratedContent } from "./aiProjectPolicy";
 import { now } from "./security";
@@ -419,11 +419,19 @@ async function generateJobDraft(env: Env, job: JobRow, timestamp: number) {
   }
 
   try {
-    const output = await env.AI.run(resolveAgentModel(route.model_id), {
-      max_tokens: maxTokens,
-      temperature: Math.max(0, Math.min(0.7, agent.temperature || 0.4)),
-      messages: [{ role: "system", content: prompt }, { role: "user", content: "Creeaza ciorna programata si variantele native." }],
-    }) as { response?: string };
+    const core = await runAiCore({
+      env, agentSlug: agent.slug, operation: `social_model_${route.route_key}`,
+      idempotencyKey: `social-job:${job.id}`, projectId: job.project_id,
+      promptCharacters: prompt.length + 50,
+      tier: job.format === "article" ? "special" : "normal", requestedMaxTokens: maxTokens,
+      financialReserved: true,
+      priority: "background",
+      input: {
+        temperature: Math.max(0, Math.min(0.7, agent.temperature || 0.4)),
+        messages: [{ role: "system", content: prompt }, { role: "user", content: "Creeaza ciorna programata si variantele native." }],
+      },
+    });
+    const output = core.output as { response?: string };
     const raw = String(output?.response || "").trim();
     if (!raw) throw new Error("empty_model_response");
     const generated = parseGeneratedContent(raw);

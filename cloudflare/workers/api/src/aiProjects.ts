@@ -1,9 +1,9 @@
 import { privilegedMfaSatisfied } from "./mfaPolicy";
 import { Hono, type Context } from "hono";
 import type { AppBindings } from "./types";
-import { platformRoleForUser } from "./authorization";
-import { resolveAgentModel } from "./agentRuntimePolicy";
+import { hasCapability, platformRoleForUser } from "./authorization";
 import { reserveAiCost } from "./aiCostGuard";
+import { runAiCore } from "./aiCore";
 import { resolveSocialModelRoute } from "./socialModelRouting";
 import { now, sha256 } from "./security";
 import { runSocialStudioScheduler } from "./socialStudioScheduler";
@@ -32,6 +32,8 @@ type ProjectAccess = {
   canManage: boolean;
   canCreateContent: boolean;
   canConnect: boolean;
+  canHandoff: boolean;
+  canProposeSource: boolean;
 };
 
 async function projectAccess(c: Context<AppBindings>, key: string, bySlug = false): Promise<ProjectAccess | null> {
@@ -49,17 +51,26 @@ async function projectAccess(c: Context<AppBindings>, key: string, bySlug = fals
     canManage: platformRole === "platform_owner",
     canCreateContent: platformRole === "platform_owner",
     canConnect: platformRole === "platform_owner",
+    canHandoff: platformRole === "platform_owner",
+    canProposeSource: platformRole === "platform_owner",
   };
   const member = await c.env.DB.prepare(
     "SELECT role FROM ai_project_members WHERE project_id = ? AND user_id = ? AND status = 'active'",
   ).bind(project.id, c.get("userId")).first<{ role: "owner" | "manager" | "editor" | "viewer" }>();
   if (!member) return null;
+  const [canCreateContent, canHandoff, canProposeSource] = await Promise.all([
+    hasCapability(c.env.DB, c.get("userId"), "ai_content.create", project.organization_id || undefined),
+    hasCapability(c.env.DB, c.get("userId"), "social.lead_handoff", project.organization_id || undefined),
+    hasCapability(c.env.DB, c.get("userId"), "social.source.propose", project.organization_id || undefined),
+  ]);
   return {
     project,
     role: member.role,
     canManage: member.role === "owner" || member.role === "manager",
-    canCreateContent: member.role !== "viewer",
+    canCreateContent: member.role !== "viewer" || canCreateContent,
     canConnect: false,
+    canHandoff,
+    canProposeSource,
   };
 }
 
@@ -115,7 +126,7 @@ aiProjectsRouter.get("/api/ai-projects/:slug", async (c) => {
   if (!access) return c.json({ error: { code: "not_found" } }, 404);
   const project = await c.env.DB.prepare("SELECT * FROM ai_projects WHERE id = ?")
     .bind(access.project.id).first();
-  const [channels, agents, content, memories, competitors, members, events, socialPolicy, socialJobs, socialSources, socialOpportunities, socialTools, socialModelRoutes, socialAccounts, audienceRuns, audienceCandidates, socialDesignProfiles, socialBackups, socialAssets] = await Promise.all([
+  const [channels, agents, content, memories, competitors, members, events, socialPolicy, socialJobs, socialSources, socialOpportunities, socialTools, socialModelRoutes, socialAccounts, audienceRuns, audienceCandidates, socialDesignProfiles, socialBackups, socialAssets, operatorBindings, executionRoutes] = await Promise.all([
     c.env.DB.prepare(
       `SELECT channel.*, connection.provider AS verified_provider,
               connection.status AS verified_connection_status, connection.last_validated_at
@@ -226,6 +237,22 @@ aiProjectsRouter.get("/api/ai-projects/:slug", async (c) => {
               width,height,duration_ms,byte_size,sha256,provenance_json,status,created_at,updated_at
          FROM ai_social_assets WHERE project_id=? AND status<>'deleted' ORDER BY created_at DESC LIMIT 120`,
     ).bind(access.project.id).all(),
+    c.env.DB.prepare(
+      `SELECT binding.agent_slug,binding.operator_role,binding.status,binding.permissions_json,binding.synced_at,
+              account.display_name,account.email
+         FROM agent_operator_bindings binding
+         JOIN users account ON account.id=binding.user_id
+        WHERE binding.project_id=? AND account.disabled_at IS NULL
+        ORDER BY binding.agent_slug`,
+    ).bind(access.project.id).all(),
+    c.env.DB.prepare(
+      `SELECT route.agent_slug,route.task_key,route.action_class,route.executor,
+              route.requires_approval,route.max_daily_runs,route.status,route.notes
+         FROM agent_execution_routes route
+        WHERE route.agent_slug IN (SELECT agent_slug FROM ai_project_agents WHERE project_id=?)
+           OR route.agent_slug='leads'
+        ORDER BY route.agent_slug,route.executor,route.task_key`,
+    ).bind(access.project.id).all(),
   ]);
   return c.json({
     project,
@@ -248,9 +275,12 @@ aiProjectsRouter.get("/api/ai-projects/:slug", async (c) => {
     socialDesignProfiles: socialDesignProfiles.results,
     socialBackups: socialBackups.results,
     socialAssets: socialAssets.results,
+    operatorBindings: operatorBindings.results,
+    executionRoutes: executionRoutes.results,
     permission: {
       role: access.role, canManage: access.canManage,
       canCreateContent: access.canCreateContent, canConnect: access.canConnect,
+      canHandoff: access.canHandoff, canProposeSource: access.canProposeSource,
     },
   });
 });
@@ -687,7 +717,7 @@ aiProjectsRouter.post("/api/ai-projects/:projectId/social-jobs/:jobId/retry", as
 aiProjectsRouter.post("/api/ai-projects/:projectId/social-sources", async (c) => {
   const access = await projectAccess(c, c.req.param("projectId"));
   if (!access) return c.json({ error: { code: "not_found" } }, 404);
-  if (!access.canManage) return c.json({ error: { code: "forbidden" } }, 403);
+  if (!access.canManage && !access.canProposeSource) return c.json({ error: { code: "forbidden" } }, 403);
   const body = await c.req.json<Record<string, unknown>>().catch(() => null);
   const kind = String(body?.kind || "");
   const scope = String(body?.scope || "national");
@@ -736,10 +766,12 @@ aiProjectsRouter.patch("/api/ai-projects/:projectId/social-sources/:sourceId", a
 aiProjectsRouter.patch("/api/ai-projects/:projectId/social-opportunities/:opportunityId", async (c) => {
   const access = await projectAccess(c, c.req.param("projectId"));
   if (!access) return c.json({ error: { code: "not_found" } }, 404);
-  if (!access.canManage) return c.json({ error: { code: "forbidden" } }, 403);
   const body = await c.req.json<{ decision?: string }>().catch(() => null);
   const decision = String(body?.decision || "");
   if (!['approved','rejected','handed_off'].includes(decision)) return c.json({ error: { code: "invalid_opportunity_state" } }, 400);
+  if (decision === "handed_off" ? !access.canHandoff && !access.canManage : !access.canManage) {
+    return c.json({ error: { code: "forbidden" } }, 403);
+  }
   const opportunity = await c.env.DB.prepare(
     `SELECT * FROM ai_social_opportunities WHERE id=? AND project_id=? AND status='pending'`,
   ).bind(c.req.param("opportunityId"), access.project.id).first<{
@@ -912,11 +944,18 @@ aiProjectsRouter.post("/api/ai-projects/:projectId/content/generate", async (c) 
         .bind(reservation.decision === "waiting_for_budget_approval" || reservation.decision === "approval_required" ? "awaiting_approval" : "denied", reservation.reason, now(), runId).run();
       return c.json({ error: { code: reservation.decision, reason: reservation.reason } }, 409);
     }
-    const output = await c.env.AI.run(resolveAgentModel(route.model_id), {
-      max_tokens: maxTokens,
-      temperature: Math.max(0, Math.min(0.8, agent.temperature || 0.4)),
-      messages: [{ role: "system", content: prompt }, { role: "user", content: "Creează ciorna solicitată." }],
-    }) as { response?: string };
+    const core = await runAiCore({
+      env: c.env, agentSlug: agent.slug, operation: `social_model_${route.route_key}`,
+      idempotencyKey: `ai-run:${runId}`, requestId: c.get("requestId") || null,
+      projectId: access.project.id, promptCharacters: prompt.length + 28,
+      tier: request.format === "article" ? "special" : "normal", requestedMaxTokens: maxTokens,
+      financialReserved: true,
+      input: {
+        temperature: Math.max(0, Math.min(0.8, agent.temperature || 0.4)),
+        messages: [{ role: "system", content: prompt }, { role: "user", content: "Creează ciorna solicitată." }],
+      },
+    });
+    const output = core.output as { response?: string };
     raw = String(output?.response || "").trim();
     if (!raw) throw new Error("empty_model_response");
   } catch (error) {

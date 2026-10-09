@@ -38,23 +38,16 @@ export default function ServiceSection({
     <section id={section.id} className="scroll-mt-16 py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <header className="max-w-3xl">
-          <p className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.2em] text-white/40">
+          <p className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.2em] text-white/55">
             <span className="tabular-nums">{String(index + 1).padStart(2, "0")}</span>
             <span className="h-px w-8 bg-white/25" />
-            <span className="text-amber-300/90">{section.code}</span>
+            <span className="text-amber-300/90">{lang === "ro" ? "Serviciu digital" : "Digital service"}</span>
           </p>
           <h2 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-5xl">
             {section.name[lang]}
           </h2>
           <p className="mt-4 text-base leading-relaxed text-white/60">{section.claim[lang]}</p>
 
-          <ul className="mt-6 flex flex-col gap-2 border-l border-white/12 pl-4">
-            {section.cases.map((example) => (
-              <li key={example.ro} className="text-sm leading-relaxed text-white/45">
-                {example[lang]}
-              </li>
-            ))}
-          </ul>
         </header>
 
         {demos.length > 0 && (
@@ -68,7 +61,7 @@ export default function ServiceSection({
         <div className="mt-12 grid gap-10 lg:grid-cols-2">
           <div>
             <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-amber-300/90">
-              {lang === "ro" ? "Semnătură — efectele rare" : "Signature — the rare ones"}
+              {lang === "ro" ? "Experiențe distinctive" : "Distinctive experiences"}
             </h3>
             <ul className="mt-3">
               {signature.map((effect) => (
@@ -85,7 +78,7 @@ export default function ServiceSection({
 
           <div>
             <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-white/45">
-              {lang === "ro" ? "Fundație — comune, bine făcute" : "Foundation — common, done well"}
+              {lang === "ro" ? "Elemente esențiale" : "Essential elements"}
             </h3>
             <ul className="mt-3">
               {foundation.map((effect) => (

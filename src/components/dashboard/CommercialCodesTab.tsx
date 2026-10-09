@@ -26,6 +26,8 @@ const blank = (row: Row): CommercialCodeDraft => ({
   currency: row.config?.currency ?? row.sourceCurrency,
   vatBasisPoints: row.config?.vat_basis_points ?? 1900,
   paymentRoute: row.config?.payment_route ?? "unconfigured",
+  preferredPaymentProvider: row.config?.preferred_payment_provider ?? "revolut",
+  invoiceProvider: row.config?.invoice_provider ?? "oblio",
   paymentStatus: row.config?.payment_status ?? "needs_configuration",
   promotionCode: row.config?.promotion_code ?? null,
   active: row.config ? Boolean(row.config.active) : true,
@@ -130,6 +132,8 @@ export default function CommercialCodesTab() {
         <Field label="TVA %"><Input type="number" min="0" max="100" step="0.01" value={draft.vatBasisPoints / 100} onChange={(e) => setDraft({ ...draft, vatBasisPoints: Math.round(Number(e.target.value) * 100) })} /></Field>
         <Field label="Cod promoție"><Input value={draft.promotionCode || ""} onChange={(e) => setDraft({ ...draft, promotionCode: e.target.value || null })} /></Field>
         <Field label="Traseu de plată"><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={draft.paymentRoute} onChange={(e) => setDraft({ ...draft, paymentRoute: e.target.value as CommercialCodeDraft["paymentRoute"] })}>{["unconfigured", "invoice", "payment_link", "stripe", "bank_transfer", "manual"].map((value) => <option key={value} value={value}>{value}</option>)}</select></Field>
+        <Field label="Procesator preferat"><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={draft.preferredPaymentProvider || "revolut"} onChange={(e) => setDraft({ ...draft, preferredPaymentProvider: e.target.value as CommercialCodeDraft["preferredPaymentProvider"] })}><option value="revolut">Revolut Pay</option><option value="stripe">Stripe</option><option value="netopia">Netopia (viitor)</option></select></Field>
+        <Field label="Facturare"><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={draft.invoiceProvider || "oblio"} onChange={(e) => setDraft({ ...draft, invoiceProvider: e.target.value as CommercialCodeDraft["invoiceProvider"] })}><option value="oblio">Oblio</option><option value="manual">Manual</option></select></Field>
         <Field label="Starea plății"><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={draft.paymentStatus} onChange={(e) => setDraft({ ...draft, paymentStatus: e.target.value as CommercialCodeDraft["paymentStatus"] })}>{["needs_configuration", "test", "active", "paused"].map((value) => <option key={value} value={value}>{value}</option>)}</select></Field>
       </div><label className="mt-3 grid gap-1 text-xs text-slate-400">Note<textarea rows={3} maxLength={2000} value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} className="rounded-xl border border-white/[0.08] bg-black/20 p-3 text-sm text-slate-200" /></label><div className="mt-4 flex justify-end"><Button disabled={saving} onClick={() => void save()}><Save className="size-4" /> {saving ? "Se salvează…" : "Salvează configurarea"}</Button></div></section>}
     </div>

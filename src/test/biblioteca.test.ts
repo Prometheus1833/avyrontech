@@ -78,9 +78,17 @@ describe("catalogul Bibliotecii", () => {
     }
   });
 
-  it("nu leagă biblioteca de paginile de serviciu excluse", () => {
-    const excluse = LIBRARY_SECTIONS.filter((section) => !section.entry).map((section) => section.id);
-    expect(excluse.sort()).toEqual(["agent-ai-personalizat", "aplicatii-web-si-mobile"]);
+  it("pune serviciile principale în ordinea publică stabilită", () => {
+    expect(LIBRARY_SECTIONS.slice(0, 4).map((section) => section.id)).toEqual([
+      "website-prezentare-premium",
+      "magazin-online",
+      "aplicatii-web-si-mobile",
+      "agent-ai-personalizat",
+    ]);
+  });
+
+  it("leagă toate secțiunile de paginile publice eligibile", () => {
+    expect(LIBRARY_SECTIONS.filter((section) => !section.entry)).toEqual([]);
   });
 
   it("are exemple concrete în ambele limbi pentru fiecare secțiune", () => {

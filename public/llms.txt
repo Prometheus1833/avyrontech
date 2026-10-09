@@ -12,7 +12,7 @@ Contact: contact@avyron.ro · +40 734 605 055 · WhatsApp · https://avyron.ro
 
 - [Acasă](/) — [Home EN](/en): Servicii, proces de lucru, exemple și avantaje Avyron.
 - [Despre noi](/despre-noi) — [About EN](/en/about): Echipa Avyron, specializări și modul de colaborare.
-- [Portofoliu](/portofoliu) — [Portfolio EN](/en/portfolio): Proiecte web și produse digitale publicate cu acordul clienților.
+- [Portofoliu](/servicii/website-prezentare-profesional#portofoliu) — [Portfolio EN](/en/services/professional-presentation-website#portofoliu): Proiecte web și produse digitale publicate cu acordul clienților.
 - [Servicii AVYRON](/servicii) — [Services EN](/en/services): Servicii personalizate și repere transparente de buget.
 - [Produse AVYRON](/produse) — [Products EN](/en/products): Componente, template-uri, efecte 3D, unelte și integrări reutilizabile.
 - [Blog](/blog) — [Blog EN](/en/blog): Articole despre web, SEO, securitate și digitalizare.
@@ -21,7 +21,7 @@ Contact: contact@avyron.ro · +40 734 605 055 · WhatsApp · https://avyron.ro
 
 ## Services
 
-- [Solicită audit gratuit](/?request=audit#cta) — [Request an audit EN](/en?request=audit#cta): Evaluare concisă a performanței, SEO, securității, accesibilității și UI/UX, cu recomandări prioritizate.
+- [Solicită audit gratuit](/#cta) — [Request an audit EN](/en#cta): Evaluare concisă a performanței, SEO, securității, accesibilității și UI/UX, cu recomandări prioritizate.
 - [Website Prezentare Premium](/servicii/website-prezentare-profesional) — [EN](/en/services/professional-presentation-website): De la 1.150 lei (220€ la afișarea în euro), cu termen și suport stabilite prin ofertă. Design custom, SEO tehnic, panou de administrare, email pe domeniu și consiliere post-lansare.
 - [Identitate Social Media](/servicii/identitate-social-media) — [EN](/en/services/social-media-identity): Configurare și identitate vizuală pentru Facebook, Instagram și TikTok.
 - [Magazin Online (eCommerce / Shopify)](/servicii/magazin-online) — [EN](/en/services/online-store): Magazin complet, plăți, livrare, facturare și optimizare pentru conversie.
@@ -29,7 +29,7 @@ Contact: contact@avyron.ro · +40 734 605 055 · WhatsApp · https://avyron.ro
 - [Agent AI Personalizat](/servicii/automatizari-si-ai) — [EN](/en/services/automation-and-ai): Asistent AI antrenat pe datele afacerii, pentru suport, vânzări și automatizări.
 - [Testare QA Web & Mobile](/servicii/qa-testing-web-mobile) — [EN](/en/services/web-mobile-qa-testing): De la 300€. Testare funcțională, de performanță, securitate și accesibilitate, cu raport și retestare.
 - [Logo 3D Dinamic Cinematic](/servicii/creare-logo-3d-dinamic-cinematic) — [EN](/en/services/cinematic-dynamic-3d-logo-design): Identitate originală pregătită pentru print, web, volum și animație.
-- [Pachete de Mentenanță](/pachete-mentenanta) — [EN](/en/care-plans): Plus (50€/lună) pentru site-uri de prezentare, cataloage și bloguri; Pro (150€/lună) pentru magazine online, primării și organizații; Pro Activ (300€/lună) pentru instituții publice și platforme. Codul ANUALAVY20 reduce cu 20% exclusiv abonamentul ales pentru 12 luni.
+- [Mentenanță și colaborări](/mentenanta-si-colaborari) — [EN](/en/maintenance-and-partnerships): Opțiuni de mentenanță, suport și colaborare adaptate tipului de proiect; condițiile actuale sunt cele publicate pe paginile canonice.
 
 ## Examples
 

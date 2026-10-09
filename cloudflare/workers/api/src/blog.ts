@@ -62,6 +62,7 @@ const PUBLIC_SELECT = `
   (SELECT alt.slug FROM blog_posts alt
     WHERE alt.translation_key=p.translation_key AND alt.language<>p.language
       AND alt.status='published' AND alt.published_at IS NOT NULL
+      AND alt.published_at<=CAST(strftime('%s','now') AS INTEGER)*1000
     ORDER BY alt.published_at DESC LIMIT 1) AS alternate_slug`;
 
 const now = () => Date.now();
@@ -125,15 +126,16 @@ export async function getPublishedBlogPost(db: D1Database, language: BlogLanguag
 
 export async function getBlogSitemapEntries(db: D1Database) {
   const { results } = await db.prepare(
-    `SELECT p.language,p.slug,p.updated_at,
+    `SELECT p.language,p.slug,p.updated_at,p.cover_image_url,
       (SELECT alt.slug FROM blog_posts alt
         WHERE alt.translation_key=p.translation_key AND alt.language<>p.language
           AND alt.status='published' AND alt.published_at IS NOT NULL
+          AND alt.published_at<=CAST(strftime('%s','now') AS INTEGER)*1000
         ORDER BY alt.published_at DESC LIMIT 1) AS alternate_slug
       FROM blog_posts p
       WHERE p.status='published' AND p.published_at IS NOT NULL AND p.published_at<=?
       ORDER BY p.updated_at DESC LIMIT 5000`,
-  ).bind(now()).all<{ language: BlogLanguage; slug: string; alternate_slug: string | null; updated_at: number }>();
+  ).bind(now()).all<{ language: BlogLanguage; slug: string; alternate_slug: string | null; cover_image_url: string | null; updated_at: number }>();
   return results;
 }
 

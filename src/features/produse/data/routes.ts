@@ -1,10 +1,11 @@
 /**
- * Rutele publice ale paginii Produse, pentru prerender, sitemap și hreflang.
+ * Rutele publice ale paginii Produse, pentru prerender și control SEO.
  *
  * Fișierul e intenționat „prost": doar liste de segmente, fără catalogul
  * complet. Motivul e că Worker-ul Cloudflare împachetează `publicRoutes.ts`,
  * iar acolo nu vrem zeci de kB de descrieri bilingve. Testul
- * `src/test/produse.test.ts` verifică ca listele să fie identice cu catalogul.
+ * `src/test/produse.test.ts` verifică atât sincronizarea cu catalogul, cât și
+ * separarea dintre paginile recomandate pentru indexare și paginile utilitare.
  */
 
 export const PRODUSE_BASE = { ro: "/produse", en: "/en/products" } as const;
@@ -138,11 +139,31 @@ export const PRODUSE_ITEM_ROUTES: Array<{ type: string; slug: string }> = [
 
 const segmentFor = (roSegment: string) => PRODUSE_TYPE_SEGMENTS.find((entry) => entry.ro === roSegment)!;
 
-/** Toate perechile RO/EN ale paginii, în ordinea în care intră în sitemap. */
-export function produseRoutePairs(): Array<{ ro: string; en: string }> {
+export type ProduseRoutePair = { ro: string; en: string };
+
+/**
+ * Suprafața Produse pe care o recomandăm motoarelor de căutare.
+ *
+ * Hubul, ghidul și FAQ-ul răspund unor intenții distincte. Listele de tip,
+ * colecțiile și paginile individuale rămân utile în aplicație, dar nu merită
+ * câte un rezultat Google separat: catalogul principal le explică și le leagă
+ * deja pe toate.
+ */
+export function produseIndexableRoutePairs(): ProduseRoutePair[] {
   return [
     { ro: PRODUSE_BASE.ro, en: PRODUSE_BASE.en },
-    ...PRODUSE_STATIC_SEGMENTS.map((entry) => ({ ro: `${PRODUSE_BASE.ro}/${entry.ro}`, en: `${PRODUSE_BASE.en}/${entry.en}` })),
+    ...PRODUSE_STATIC_SEGMENTS
+      .filter((entry) => entry.ro !== "colectii")
+      .map((entry) => ({ ro: `${PRODUSE_BASE.ro}/${entry.ro}`, en: `${PRODUSE_BASE.en}/${entry.en}` })),
+  ];
+}
+
+/** Rute publice pentru utilizatori, dar excluse controlat din indexare. */
+export function produseUtilityRoutePairs(): ProduseRoutePair[] {
+  return [
+    ...PRODUSE_STATIC_SEGMENTS
+      .filter((entry) => entry.ro === "colectii")
+      .map((entry) => ({ ro: `${PRODUSE_BASE.ro}/${entry.ro}`, en: `${PRODUSE_BASE.en}/${entry.en}` })),
     ...PRODUSE_TYPE_SEGMENTS.map((entry) => ({ ro: `${PRODUSE_BASE.ro}/${entry.ro}`, en: `${PRODUSE_BASE.en}/${entry.en}` })),
     ...PRODUSE_COLLECTION_SEGMENTS.map((entry) => ({
       ro: `${PRODUSE_BASE.ro}/colectii/${entry.ro}`,
@@ -154,3 +175,16 @@ export function produseRoutePairs(): Array<{ ro: string; en: string }> {
     }),
   ];
 }
+
+/** Toate perechile RO/EN care trebuie să rămână accesibile și prerenderizate. */
+export function produseRoutePairs(): ProduseRoutePair[] {
+  return [...produseIndexableRoutePairs(), ...produseUtilityRoutePairs()];
+}
+
+const PRODUSE_INDEXABLE_PATHS = new Set(produseIndexableRoutePairs().flatMap((pair) => [pair.ro, pair.en]));
+
+export function isProduseIndexablePath(pathname: string): boolean {
+  return PRODUSE_INDEXABLE_PATHS.has(pathname);
+}
+
+export const PRODUSE_NOINDEX_ROUTES = produseUtilityRoutePairs().flatMap((pair) => [pair.ro, pair.en]);

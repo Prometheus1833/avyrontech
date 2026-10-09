@@ -8,6 +8,8 @@ import { decide } from "@/worker/router";
 const FILES: Record<string, string> = {
   "/index.html": "<html lang=ro><h1>home</h1>",
   "/servicii/index.html": "<html lang=ro><h1>pricing</h1>",
+  "/produse/index.html": "<html lang=ro><h1>products</h1>",
+  "/produse/componente/buton-magnetic/index.html": "<html lang=ro><h1>product</h1>",
   "/termeni/index.html": "<html lang=ro><h1>terms</h1>",
   "/404.html": "<html lang=ro><h1>404</h1>",
   "/403.html": "<html lang=ro><h1>403</h1>",
@@ -17,6 +19,8 @@ const FILES: Record<string, string> = {
   "/assets/app.js": "console.log(1)",
   "/assets/app-Ab12cd34.js": "console.log(2)",
   "/robots.txt": "User-agent: *",
+  "/llms.txt": "# Avyron",
+  "/r/index.json": '{"name":"avyron"}',
   "/sitemap.xml": "<?xml version=\"1.0\"?><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\"><url><loc>https://avyron.ro/</loc></url></urlset>",
 };
 
@@ -48,7 +52,10 @@ const env = {
       }
       if (url.pathname.startsWith("/api/blog/posts/")) return Response.json({ error: { code: "not_found" } }, { status: 404 });
       if (url.pathname === "/api/blog/sitemap") {
-        return Response.json({ data: [{ language: "ro", slug: "edge-article", alternate_slug: "edge-article-en", updated_at: "2026-08-24T10:00:00.000Z" }] });
+        return Response.json({ data: [
+          { language: "ro", slug: "edge-article", alternate_slug: "edge-article-en", cover_image_url: "/og/home.jpg", updated_at: "2026-08-24T10:00:00.000Z" },
+          { language: "en", slug: "edge-article-en", alternate_slug: "edge-article", cover_image_url: "/og/home-en.jpg", updated_at: "2026-08-24T10:00:00.000Z" },
+        ] });
       }
       return new Response(JSON.stringify({ ok: true, from: "api", url: req.url }), {
         status: 200,
@@ -86,6 +93,15 @@ describe("worker redirects", () => {
     const loc = new URL(res.headers.get("location")!);
     expect(loc.pathname + loc.search).toBe("/servicii?utm_source=google");
     expect((await get(loc.pathname)).status).toBe(200);
+  });
+
+  it("consolidates the obsolete homepage search parameter and preserves campaign data", async () => {
+    const res = await get("/?q={search_term_string}&utm_source=google");
+    const loc = new URL(res.headers.get("location")!, "https://avyron.ro");
+    expect(res.status).toBe(301);
+    expect(loc.pathname).toBe("/");
+    expect(loc.searchParams.has("q")).toBe(false);
+    expect(loc.searchParams.get("utm_source")).toBe("google");
   });
 
   it.each([
@@ -151,6 +167,15 @@ describe("worker HTTP statuses", () => {
     expect(res.headers.get("X-Robots-Tag")).toBeNull();
   });
 
+  it("keeps the product hub indexable and product detail pages noindex, follow", async () => {
+    const hub = await get("/produse");
+    const detail = await get("/produse/componente/buton-magnetic");
+    expect(hub.status).toBe(200);
+    expect(hub.headers.get("X-Robots-Tag")).toBeNull();
+    expect(detail.status).toBe(200);
+    expect(detail.headers.get("X-Robots-Tag")).toBe("noindex, follow");
+  });
+
   it("serves the terms page as an indexable public document", async () => {
     const res = await get("/termeni");
     expect(res.status).toBe(200);
@@ -182,6 +207,14 @@ describe("worker HTTP statuses", () => {
     const unhashed = await get("/assets/app.js");
     expect(hashed.headers.get("cache-control")).toBe("public, max-age=31536000, immutable");
     expect(unhashed.headers.get("cache-control")).toBeNull();
+  });
+
+  it("keeps AI and registry files crawlable but out of search results", async () => {
+    for (const path of ["/llms.txt", "/r/index.json"]) {
+      const response = await get(path);
+      expect(response.status).toBe(200);
+      expect(response.headers.get("X-Robots-Tag")).toBe("noindex");
+    }
   });
 });
 
@@ -228,6 +261,14 @@ describe("database-backed blog pages", () => {
     expect(res.headers.get("content-type")).toContain("application/xml");
     expect(xml).toContain("<loc>https://avyron.ro/blog/edge-article</loc>");
     expect(xml).toContain('hreflang="en" href="https://avyron.ro/en/blog/edge-article-en"');
+    expect(xml).toContain("<image:loc>https://avyron.ro/og/home.jpg</image:loc>");
+  });
+
+  it("returns no transformed body for HEAD article and sitemap requests", async () => {
+    const article = await worker.fetch(new Request("https://avyron.ro/blog/edge-article", { method: "HEAD" }), env as never);
+    const map = await worker.fetch(new Request("https://avyron.ro/sitemap.xml", { method: "HEAD" }), env as never);
+    expect(await article.text()).toBe("");
+    expect(await map.text()).toBe("");
   });
 });
 

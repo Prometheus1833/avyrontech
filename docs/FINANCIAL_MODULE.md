@@ -52,7 +52,7 @@ duplicate cunoscute și stocarea unor stări invalide. Ștergerea unei cheltuiel
 este arhivare, nu `DELETE` fizic.
 
 Seed-urile sunt Necesit, Contabilitate, Meștero, Lovable, Claude Subscription,
-Claude API, FGO și Google Ads, plus contul conceptual Revolut Business AVYRON
+Claude API, Oblio și Google Ads, plus conturile distincte Revolut Business și Revolut Merchant AVYRON
 RON. Toate sumele/datele necunoscute sunt `NULL`, iar starea este
 `needs_configuration`.
 
@@ -133,7 +133,7 @@ până la configurarea planului, limitei și bugetului real.
 
 `FinancialProviderAdapter` definește `fetchTransactions`, `fetchInvoices`,
 `fetchUsage`, `fetchSubscription`, `fetchBalance` și `sync`. Registry-ul este
-pregătit pentru Revolut Business, FGO, Stripe, NETOPIA, Google/Meta Ads,
+pregătit pentru Revolut Business, Revolut Merchant, Stripe, Oblio, NETOPIA, Google/Meta Ads,
 OpenAI, Anthropic, Cloudflare, Supabase, Resend, GitHub și Lovable.
 
 Niciun adapter nu este conectat și niciun API extern nu a fost apelat. Tokenul

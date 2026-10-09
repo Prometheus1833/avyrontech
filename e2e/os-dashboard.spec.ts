@@ -141,7 +141,7 @@ test.describe("dashboard AVYRON OS în română", () => {
     const osButton = page.getByRole("button", { name: "Deschide accesul rapid AVYRON OS" });
     await expect(osButton).toBeVisible();
     await expect(osButton).toHaveText(/OS/);
-    const brandBox = await page.locator("header").getByRole("link", { name: /Avyron — mergi la hero/ }).boundingBox();
+    const brandBox = await page.locator("header").getByRole("link", { name: "AVYRON", exact: true }).boundingBox();
     const osBox = await osButton.boundingBox();
     const languageBox = await page.getByRole("button", { name: /Schimbă limba/ }).boundingBox();
     expect(brandBox!.x + brandBox!.width).toBeLessThan(osBox!.x);
@@ -219,6 +219,13 @@ test.describe("dashboard AVYRON OS în română", () => {
         projects: [],
       }),
     }));
+    await page.route("**/api/admin/users", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: [{ id: "staff-1", email: "coleg@avyron.ro", username: "coleg", display_name: "Coleg Avyron", company_name: "Avyron", staff_role: "marketing", disabled_at: null, roles: "user,staff", must_change_password: 0, active_sessions: 1 }],
+      }),
+    }));
     await page.route("**/api/admin/operations/staff/staff-1/projects", (route) => route.fulfill({ json: { ok: true } }));
     await page.route("**/api/clients", route=>route.fulfill({json:{data:[{id:'client-a',company_name:'Client A'}]}}));
     await page.route("**/api/workspace/account-access/staff-1", async (route) => {
@@ -228,7 +235,7 @@ test.describe("dashboard AVYRON OS în română", () => {
     });
 
     await page.goto("/profil?tab=team-staff");
-    await expect(page.getByRole("heading", { name: "STAFF", exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("heading", { name: "Utilizatori și STAFF", exact: true })).toBeVisible({ timeout: 10_000 });
     await page.getByRole("button", { name: "Gestionează" }).click();
     await page.getByLabel("Nivel de acces").selectOption("admin");
     await page.getByLabel("Client A", {exact:true}).check();

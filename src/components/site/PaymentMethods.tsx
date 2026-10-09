@@ -11,24 +11,24 @@ const PaymentMethods = ({ compact = false }: { compact?: boolean }) => {
 
   const methods = [
     {
+      icon: Link2,
+      label: "Revolut Pay",
+      hint: ro ? "plată și abonamente" : "payments & subscriptions",
+    },
+    {
       icon: CreditCard,
-      label: ro ? "Card bancar" : "Bank card",
-      hint: ro ? "rapid & securizat" : "fast & secure",
+      label: "Stripe",
+      hint: ro ? "card securizat & recurent" : "secure & recurring card",
     },
     {
       icon: Building2,
       label: ro ? "Transfer bancar" : "Bank transfer",
-      hint: ro ? "pe bază de factură" : "against invoice",
-    },
-    {
-      icon: Link2,
-      label: ro ? "Link de plată" : "Payment link",
-      hint: ro ? "servicii & abonamente" : "services & subscriptions",
+      hint: ro ? "proformă & ordin de plată" : "pro forma & bank order",
     },
     {
       icon: FileText,
-      label: ro ? "Factură & OP" : "Invoice & PO",
-      hint: ro ? "clienți business" : "business clients",
+      label: "Oblio",
+      hint: ro ? "factură & e-Factura" : "invoice & e-Invoice",
     },
   ];
 
@@ -77,8 +77,8 @@ const PaymentMethods = ({ compact = false }: { compact?: boolean }) => {
 
       <p className="mt-3 text-center text-[10px] leading-relaxed text-foreground/50">
         {ro
-          ? "Facturile se emit în RON la cursul BNR din ziua emiterii sau al plății. În curând: plată direct din contul de client pe platformă."
-          : "Invoices are issued in RON at the BNR rate on the day of issue or payment. Coming soon: pay directly from your client account on the platform."}
+          ? "La checkout sunt afișate numai metodele active pentru serviciul sau produsul ales. Datele complete ale cardului rămân la furnizorul de plată, iar taxarea recurentă se activează doar cu acord explicit. Factura se emite prin Oblio după confirmarea plății și validarea datelor de facturare."
+          : "Checkout shows only the active methods for the selected service or product. Full card data stays with the payment provider, and recurring charges require explicit consent. Oblio issues the invoice after payment confirmation and billing-data validation."}
       </p>
     </section>
   );

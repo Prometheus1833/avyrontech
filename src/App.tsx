@@ -9,6 +9,7 @@ import LangRouteSync from "@/components/site/LangRouteSync";
 import { pageView } from "@/lib/analytics";
 import { resetManagedHead } from "@/lib/seo";
 import { FEATURES } from "@/config/features";
+import { Bot } from "lucide-react";
 
 
 const Gdpr = lazyWithRetry(() => import("./pages/Gdpr.tsx"));
@@ -69,16 +70,23 @@ const DeferredNewsletterPrompt = () => {
 const AvyLauncher = () => {
   const { pathname } = useLocation();
   const [ready, setReady] = useState(false);
+  const [openOnLoad, setOpenOnLoad] = useState(false);
   const excluded = /^\/(auth|autentificare|profil|intern|finance|exemple|examples|demo|forgot-password|reset-password|403|500|offline|mentenanta|unsubscribe)/.test(pathname);
   useEffect(() => {
     if (excluded) return;
     const timer = window.setTimeout(() => setReady(true), 1800);
     return () => window.clearTimeout(timer);
   }, [excluded, pathname]);
-  if (excluded || !ready) return null;
+  if (excluded) return null;
+  if (!ready) return <button
+    type="button"
+    aria-label="Discută cu AVY, asistentul Avyron"
+    onClick={() => { setOpenOnLoad(true); setReady(true); }}
+    className="fixed left-3 top-20 z-40 select-none rounded-2xl border border-border/60 bg-background/70 p-3 shadow-lg backdrop-blur-xl transition hover:scale-105 hover:bg-background/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+  ><span className="relative flex items-center gap-2"><span className="absolute -inset-2 -z-10 rounded-2xl bg-primary/20 blur-xl" aria-hidden /><Bot className="size-5 text-primary" strokeWidth={2.25} /><span className="hidden text-xs font-semibold tracking-wide sm:inline">AVY</span></span></button>;
   return (
     <Suspense fallback={null}>
-      <AvyChat />
+      <AvyChat initiallyOpen={openOnLoad} />
     </Suspense>
   );
 };
@@ -92,7 +100,6 @@ import PerformanceGovernor from "@/components/site/PerformanceGovernor";
 const Notifications = lazyWithRetry(() =>
   import("@/components/ui/sonner").then(({ Toaster }) => ({ default: Toaster })),
 );
-const MustChangePassword = lazyWithRetry(() => import("@/components/auth/MustChangePassword"));
 
 /**
  * Notification and account-dialog packages are useful only after interaction
@@ -122,7 +129,6 @@ const DeferredGlobalUi = () => {
   return (
     <Suspense fallback={null}>
       {ready && <Notifications />}
-      {user && <MustChangePassword />}
     </Suspense>
   );
 };

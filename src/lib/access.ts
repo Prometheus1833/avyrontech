@@ -8,24 +8,31 @@ export type Access = {
   isStaff: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  isOperator: boolean;
+  capabilities: string[];
 };
 
 export const buildAccess = (input: {
   roles: AppRole[];
   email?: string | null;
   superadmin?: boolean;
+  capabilities?: string[];
 }): Access => {
   const roles = input.roles ?? [];
   const isAdmin = roles.includes("admin");
   const isStaff = isAdmin || roles.includes("staff");
+  const capabilities = input.capabilities ?? [];
+  const isOperator = capabilities.length > 0;
   return {
     roles,
-    isClient: !isStaff,
+    isClient: !isStaff && !isOperator,
     isStaff,
     isAdmin,
     // Elevated access is asserted only by the server after a fresh D1 lookup.
     // Email addresses are identity attributes, never authorization rules.
     isSuperAdmin: isAdmin && input.superadmin === true,
+    isOperator,
+    capabilities,
   };
 };
 
@@ -63,6 +70,7 @@ export type SectionDef = {
   navigation?: boolean;
   /** Cuvinte pentru căutarea rapidă. */
   keywords: string[];
+  requiredCapability?: string;
 };
 
 /**
@@ -71,14 +79,14 @@ export type SectionDef = {
  */
 export const SECTIONS: readonly SectionDef[] = [
   { id: "overview", group: "overview", audience: "everyone", keywords: ["acasa", "azi", "overview", "dashboard", "briefing", "atentie"] },
-  { id: "social-manager", group: "overview", audience: "superadmin", keywords: ["social media", "publicare", "aprobari", "continut ai", "facebook", "instagram"] },
+  { id: "social-manager", group: "overview", audience: "superadmin", requiredCapability: "ai_projects.read", keywords: ["social media", "publicare", "aprobari", "continut ai", "facebook", "instagram"] },
   { id: "profile", group: "account", audience: "everyone", keywords: ["cont", "profil", "date", "account"] },
   { id: "settings", group: "account", audience: "everyone", keywords: ["setari", "preferinte", "settings", "tema", "limba"] },
 
   { id: "projects", group: "projects", audience: "everyone", keywords: ["proiecte", "site", "projects", "livrare", "vanzari"] },
-  { id: "ai-projects", group: "projects", audience: "superadmin", keywords: ["proiecte ai", "productie ai", "continut"] },
+  { id: "ai-projects", group: "projects", audience: "superadmin", requiredCapability: "ai_projects.read", keywords: ["proiecte ai", "productie ai", "continut"] },
   { id: "maintenance", group: "projects", audience: "staff", keywords: ["mentenanta", "uptime", "maintenance"] },
-  { id: "leads", group: "projects", audience: "staff", keywords: ["leads", "crm", "vanzari", "oferta", "prospecti"] },
+  { id: "leads", group: "projects", audience: "staff", requiredCapability: "leads.read", keywords: ["leads", "crm", "vanzari", "oferta", "prospecti"] },
   { id: "domains", group: "projects", audience: "staff", keywords: ["domenii", "dns", "domains"] },
   { id: "media", group: "projects", audience: "staff", keywords: ["media", "imagini", "fisiere"] },
 
@@ -123,11 +131,15 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "resources", group: "other", audience: "staff", keywords: ["resurse", "documente", "ghid", "siteuri", "campuri"] },
 ];
 
-export const sectionsFor = (a: Access) => SECTIONS.filter((s) => canSee(s.audience, a));
+const canOpenDefinition = (section: SectionDef, access: Access) =>
+  canSee(section.audience, access)
+  || Boolean(section.requiredCapability && access.capabilities.includes(section.requiredCapability));
+
+export const sectionsFor = (a: Access) => SECTIONS.filter((s) => canOpenDefinition(s, a));
 
 export const canOpenSection = (id: string, a: Access) => {
   const s = SECTIONS.find((x) => x.id === id);
-  return !!s && canSee(s.audience, a);
+  return !!s && canOpenDefinition(s, a);
 };
 
 export const defaultSection = (_a: Access): SectionId => "overview";

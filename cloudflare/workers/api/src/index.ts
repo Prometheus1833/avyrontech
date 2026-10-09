@@ -32,9 +32,10 @@ import { platformRoleForUser } from "./authorization";
 import { base32Encode, decryptTotpSecret, encryptTotpSecret, generateTotpSecret, totpUri, verifyTotp } from "./totp";
 import { engineRouter, runDueEngineDiscovery } from "./engine";
 import { newsletterRouter } from "./newsletter";
-import { runSocialStudioScheduler } from "./socialStudioScheduler";
+import { forcedPasswordAllowedPath, mfaAuthEnabled, normalizeUsername, turnstileAuthEnabled } from "./authPolicy";
 
 export { AvyronAgentRuntime } from "./agents/AvyronAgentRuntime";
+export { AvyronMaintenanceWorkflow } from "./workflows/AvyronMaintenanceWorkflow";
 
 const app = new Hono<AppBindings>();
 
@@ -183,14 +184,17 @@ async function requireAuth(c: Context<AppBindings>, next: Next) {
   const payload = await verifyJwt<{ sub: string; sid?: string }>(token, c.env.JWT_SECRET);
   if (!payload?.sub || !payload.sid) return c.json({ error: { code: "unauthenticated", message: "Invalid token" } }, 401);
   const session = await c.env.DB.prepare(
-    `SELECT session.mfa_verified_at, group_concat(role.role) AS roles_csv
+    `SELECT session.mfa_verified_at, account.must_change_password, group_concat(role.role) AS roles_csv
        FROM sessions AS session
        JOIN users AS account ON account.id = session.user_id AND account.disabled_at IS NULL
        LEFT JOIN user_roles AS role ON role.user_id = account.id
       WHERE session.id = ? AND session.user_id = ? AND session.revoked_at IS NULL AND session.expires_at > ?
       GROUP BY session.id`,
-  ).bind(payload.sid, payload.sub, now()).first<{ mfa_verified_at: number | null; roles_csv: string | null }>();
+  ).bind(payload.sid, payload.sub, now()).first<{ mfa_verified_at: number | null; must_change_password: number; roles_csv: string | null }>();
   if (!session) return c.json({ error: { code: "session_revoked", message: "Sesiunea nu mai este activă" } }, 401);
+  if (session.must_change_password === 1 && !forcedPasswordAllowedPath(c.req.path)) {
+    return c.json({ error: { code: "password_change_required", message: "Schimbă parola temporară înainte de a continua" } }, 428);
+  }
   const liveRoles = (session.roles_csv || "user").split(",").filter((role): role is Role => ["user", "staff", "admin"].includes(role));
   c.set("userId", payload.sub);
   c.set("sessionId", payload.sid);
@@ -202,7 +206,7 @@ const requireRole = (...roles: Role[]) => async (c: Context<AppBindings>, next: 
   const userRoles: Role[] = c.get("roles") ?? [];
   if (!userRoles.some((r) => roles.includes(r)))
     return c.json({ error: { code: "forbidden", message: "Insufficient role" } }, 403);
-  if (roles.some((role) => role === "staff" || role === "admin") && !(await privilegedMfaSatisfied(c)))
+  if (mfaAuthEnabled(c.env) && roles.some((role) => role === "staff" || role === "admin") && !(await privilegedMfaSatisfied(c)))
     return c.json({ error: { code: "mfa_required", message: "Confirmă autentificarea în doi pași" } }, 403);
   await next();
 };
@@ -213,7 +217,7 @@ async function isSuperAdmin(c: Context<AppBindings>): Promise<boolean> {
 const requireSuperAdmin = async (c: Context<AppBindings>, next: Next) => {
   if (!(await isSuperAdmin(c)))
     return c.json({ error: { code: "forbidden", message: "Doar super adminul are acces" } }, 403);
-  if (!(await privilegedMfaSatisfied(c)))
+  if (mfaAuthEnabled(c.env) && !(await privilegedMfaSatisfied(c)))
     return c.json({ error: { code: "mfa_required", message: "MFA este obligatoriu pentru acces privilegiat" } }, 403);
   await next();
 };
@@ -232,6 +236,7 @@ const privilegedAccount = async (db: D1Database, userId: string, roles: Role[]):
 };
 
 const requirePrivilegedMfa = async (c: Context<AppBindings>, next: Next) => {
+  if (!mfaAuthEnabled(c.env)) return next();
   if (["GET", "HEAD", "OPTIONS"].includes(c.req.method)) return next();
   if (await privilegedAccount(c.env.DB, c.get("userId"), c.get("roles") ?? []) && !(await privilegedMfaSatisfied(c))) {
     return c.json({ error: { code: "mfa_required", message: "MFA este obligatoriu pentru această acțiune" } }, 403);
@@ -245,14 +250,18 @@ async function recordSecurityEvent(
   action: string,
   outcome: "allowed" | "denied" | "failed",
   severity: "info" | "warning" | "critical" = "info",
+  metadata: Record<string, unknown> = {},
 ) {
+  const userAgent = (c.req.header("user-agent") || "unknown").slice(0, 160);
+  const device = /mobile|android|iphone|ipad/i.test(userAgent) ? "mobile" : /bot|crawler|spider/i.test(userAgent) ? "bot" : "desktop_or_unknown";
   await c.env.DB.prepare(
     `INSERT INTO security_events
       (id,actor_user_id,actor_type,action,outcome,severity,request_id,ip_hash,metadata_json,created_at)
-     VALUES (?,?,?, ?,?,?,?,?, '{}',?)`,
+     VALUES (?,?,?, ?,?,?,?,?, ?,?)`,
   ).bind(
     uuid(), userId, userId ? "user" : "anonymous", action, outcome, severity,
-    c.get("requestId") || null, await hashKey(clientIp(c.req.raw)), now(),
+    c.get("requestId") || null, await hashKey(clientIp(c.req.raw)),
+    JSON.stringify({ device, userAgent, country: c.req.header("cf-ipcountry") || null, ...metadata }), now(),
   ).run();
 }
 
@@ -288,6 +297,21 @@ app.get("/api/health", (c) => {
   c.header("cache-control", "no-store");
   return c.json(healthPayload());
 });
+app.get("/api/health/:component", async (c) => {
+  const component = c.req.param("component");
+  const bindings = c.env as unknown as Record<string, unknown>;
+  if (component === "auth") {
+    try { await c.env.DB.prepare("SELECT 1").first(); return c.json({ ok: true, component, status: "HEALTHY" }); }
+    catch { return c.json({ ok: false, component, status: "ERROR" }, 503); }
+  }
+  const bindingName: Record<string, string> = {
+    ai: "AI", storage: "FILES", queues: "ASYNC_JOBS", workflows: "AVYRON_WORKFLOW", agents: "AVYRON_AGENT_RUNTIME",
+  };
+  const binding = bindingName[component];
+  if (!binding) return c.json({ error: { code: "unknown_component" } }, 404);
+  const configured = Boolean(bindings[binding]);
+  return c.json({ ok: configured, component, status: configured ? "HEALTHY" : "NOT_CONFIGURED" }, configured ? 200 : 503);
+});
 
 app.get("/api/public/exchange-rate", async (c) => {
   const exchangeRate = await getPublicExchangeRate(c.env);
@@ -317,11 +341,13 @@ app.post("/api/auth/signup", async (c) => {
     { key: `signup:ip:${signupIpKey}:h`, limit: 5, windowSec: 3600 },
   ], { limiter: c.env.PUBLIC_API_RATE_LIMITER, key: `signup:${signupIpKey}` });
   if (!signupRate.ok) return c.json({ error: { code: "rate_limited" } }, 429, { "Retry-After": String(signupRate.retryAfter) });
-  const captcha = await verifyTurnstile(c.env.TURNSTILE_SECRET, turnstileToken, clientIp(c.req.raw), {
-    expectedAction: "signup",
-    allowedHostnames: c.env.TURNSTILE_ALLOWED_HOSTNAMES,
-  });
-  if (!captcha.ok) return c.json({ error: { code: "captcha_failed", message: "Verificarea anti-spam a eșuat" } }, 403);
+  if (turnstileAuthEnabled(c.env)) {
+    const captcha = await verifyTurnstile(c.env.TURNSTILE_SECRET, turnstileToken, clientIp(c.req.raw), {
+      expectedAction: "signup",
+      allowedHostnames: c.env.TURNSTILE_ALLOWED_HOSTNAMES,
+    });
+    if (!captcha.ok) return c.json({ error: { code: "captcha_failed", message: "Verificarea anti-spam a eșuat" } }, 403);
+  }
   if (!/^\S+@\S+\.\S+$/.test(email)) return c.json({ error: { code: "invalid_email" } }, 400);
   if (password.length < 8) return c.json({ error: { code: "weak_password", message: "Min 8 chars" } }, 400);
 
@@ -379,26 +405,38 @@ app.post("/api/auth/verify-email", async (c) => {
 
 app.post("/api/auth/login", async (c) => {
   const body = await c.req.json().catch(() => ({}));
-  const email = String(body.email || "").trim().toLowerCase();
+  const identifier = String(body.identifier || body.email || "").trim().toLowerCase();
   const password = String(body.password || "");
-  const loginEmailKey = await hashKey(email);
+  const loginEmailKey = await hashKey(identifier);
   const loginRate = await checkRateLimit(c.env.DB, [
     { key: `login:ip:${await hashKey(clientIp(c.req.raw))}:15m`, limit: 20, windowSec: 900 },
     { key: `login:mail:${loginEmailKey}:15m`, limit: 8, windowSec: 900 },
   ], { limiter: c.env.PUBLIC_API_RATE_LIMITER, key: `login:${loginEmailKey}` });
   if (!loginRate.ok) return c.json({ error: { code: "rate_limited", message: "Prea multe încercări" } }, 429, { "Retry-After": String(loginRate.retryAfter) });
-  const row = await c.env.DB.prepare("SELECT id, password_hash, disabled_at, email_verified FROM users WHERE email = ?").bind(email).first<{ id: string; password_hash: string; disabled_at: number | null; email_verified: number }>();
+  const row = await c.env.DB.prepare(
+    "SELECT id,password_hash,disabled_at,email_verified,must_change_password FROM users WHERE lower(email)=? OR lower(username)=? LIMIT 1",
+  ).bind(identifier, identifier).first<{ id: string; password_hash: string; disabled_at: number | null; email_verified: number; must_change_password: number }>();
   if (!row) {
     await hashPassword(password); // Keep missing-user timing close to a real password check.
+    await recordSecurityEvent(c, null, "auth.login", "denied", "warning", { reason: "invalid_credentials" });
     return c.json({ error: { code: "invalid_credentials" } }, 401);
   }
-  if (!(await verifyPassword(password, row.password_hash)))
+  if (!(await verifyPassword(password, row.password_hash))) {
+    await recordSecurityEvent(c, row.id, "auth.login", "denied", "warning", { reason: "invalid_credentials" });
     return c.json({ error: { code: "invalid_credentials" } }, 401);
-  if (row.disabled_at) return c.json({ error: { code: "account_disabled", message: "Contul este dezactivat" } }, 403);
-  if (!row.email_verified) return c.json({ error: { code: "verification_required", message: "Confirmă adresa de email înainte de autentificare" } }, 403);
+  }
+  if (row.disabled_at) {
+    await recordSecurityEvent(c, row.id, "auth.login", "denied", "warning", { reason: "account_disabled" });
+    return c.json({ error: { code: "account_disabled", message: "Contul este dezactivat" } }, 403);
+  }
   const roles = await rolesFor(c.env.DB, row.id);
   const resolvedRoles = roles.length ? roles : ["user"] as Role[];
-  if (await privilegedAccount(c.env.DB, row.id, resolvedRoles)) {
+  const privileged = await privilegedAccount(c.env.DB, row.id, resolvedRoles);
+  if (!row.email_verified && !privileged) {
+    await recordSecurityEvent(c, row.id, "auth.login", "denied", "info", { reason: "verification_required" });
+    return c.json({ error: { code: "verification_required", message: "Confirmă adresa de email înainte de autentificare" } }, 403);
+  }
+  if (mfaAuthEnabled(c.env) && privileged) {
     const factor = await c.env.DB.prepare(
       "SELECT id FROM mfa_factors WHERE user_id = ? AND kind = 'totp' AND status = 'active' LIMIT 1",
     ).bind(row.id).first<{ id: string }>();
@@ -418,7 +456,7 @@ app.post("/api/auth/login", async (c) => {
     }
     return createSession(c, row.id, resolvedRoles, false, { mfa_enrollment_required: true });
   }
-  return createSession(c, row.id, resolvedRoles, false);
+  return createSession(c, row.id, resolvedRoles, false, { must_change_password: row.must_change_password === 1 });
 });
 
 async function createSession(
@@ -444,8 +482,9 @@ async function createSession(
     c.env.DB.prepare("INSERT INTO audit_log (user_id,action,ip,created_at) VALUES (?,?,?,?)")
       .bind(userId, mfaVerified ? "login_mfa" : "login", c.req.header("cf-connecting-ip") || null, t),
   ]);
-  setCookie(c, "sid", sid, { httpOnly: true, secure: true, sameSite: "None", path: "/", maxAge: 30 * 24 * 60 * 60 });
+  setCookie(c, "sid", sid, { httpOnly: true, secure: true, sameSite: c.env.APP_ENV === "production" ? "Lax" : "None", path: "/", maxAge: 30 * 24 * 60 * 60 });
   const access = await signJwt({ sub: userId, sid: sessionId }, c.env.JWT_SECRET, 900);
+  await recordSecurityEvent(c, userId, "auth.login", "allowed", "info", { mfaVerified });
   return c.json({ user: { id: userId, roles }, access_token: access, expires_in: 900, ...extra });
 }
 
@@ -626,9 +665,15 @@ app.post("/api/auth/logout", async (c) => {
   const origin = c.req.header("origin");
   if (origin && !allowedOrigin(c.env, origin)) return c.json({ error: { code: "forbidden_origin" } }, 403);
   const sid = getCookie(c, "sid");
-  if (sid) await c.env.DB.prepare(
-    "UPDATE sessions SET revoked_at = ?, revoked_reason = 'logout' WHERE id IN (?, ?) AND revoked_at IS NULL",
-  ).bind(now(), await sha256(sid), sid).run();
+  if (sid) {
+    const hashedSid = await sha256(sid);
+    const session = await c.env.DB.prepare("SELECT user_id FROM sessions WHERE id IN (?,?) LIMIT 1")
+      .bind(hashedSid, sid).first<{ user_id: string }>();
+    await c.env.DB.prepare(
+      "UPDATE sessions SET revoked_at = ?, revoked_reason = 'logout' WHERE id IN (?, ?) AND revoked_at IS NULL",
+    ).bind(now(), hashedSid, sid).run();
+    if (session) await recordSecurityEvent(c, session.user_id, "auth.logout", "allowed");
+  }
   deleteCookie(c, "sid", { path: "/" });
   return c.json({ ok: true });
 });
@@ -637,27 +682,49 @@ app.post("/api/auth/refresh", async (c) => {
   const origin = c.req.header("origin");
   if (origin && !allowedOrigin(c.env, origin)) return c.json({ error: { code: "forbidden_origin" } }, 403);
   const sid = getCookie(c, "sid");
-  if (!sid) return c.json({ error: { code: "no_session" } }, 401);
+  // Lipsa unei sesiuni este starea normală pentru vizitatorii publici. Un
+  // răspuns gol reușit evită o eroare falsă în consolă, fără a emite token.
+  if (!sid) return c.body(null, 204);
   const hashedSid = await sha256(sid);
   const row = await c.env.DB.prepare(
-    "SELECT id,user_id,expires_at,mfa_verified_at FROM sessions WHERE id IN (?, ?) AND revoked_at IS NULL LIMIT 1",
-  ).bind(hashedSid, sid).first<{ id: string; user_id: string; expires_at: number; mfa_verified_at: number | null }>();
+    `SELECT session.id,session.user_id,session.expires_at,session.mfa_verified_at,session.last_seen_at,account.must_change_password
+       FROM sessions session JOIN users account ON account.id=session.user_id AND account.disabled_at IS NULL
+      WHERE session.id IN (?, ?) AND session.revoked_at IS NULL LIMIT 1`,
+  ).bind(hashedSid, sid).first<{ id: string; user_id: string; expires_at: number; mfa_verified_at: number | null; last_seen_at: number; must_change_password: number }>();
   if (!row || row.expires_at < now()) {
     if (row) await c.env.DB.prepare(
       "UPDATE sessions SET revoked_at = ?, revoked_reason = 'expired' WHERE id = ? AND revoked_at IS NULL",
     ).bind(now(), row.id).run();
     deleteCookie(c, "sid", { path: "/" });
-    return c.json({ error: { code: "expired" } }, 401);
+    return c.body(null, 204);
   }
-  await c.env.DB.prepare("UPDATE sessions SET last_seen_at = ? WHERE id = ?").bind(now(), row.id).run();
+  const refreshedAt = now();
+  if (row.last_seen_at < refreshedAt - 15 * 60_000) {
+    await c.env.DB.prepare("UPDATE sessions SET last_seen_at = ? WHERE id = ? AND last_seen_at < ?")
+      .bind(refreshedAt, row.id, refreshedAt - 15 * 60_000).run();
+  }
   const roles = await rolesFor(c.env.DB, row.user_id);
   const resolvedRoles = roles.length ? roles : ["user"] as Role[];
   const access = await signJwt({ sub: row.user_id, sid: row.id }, c.env.JWT_SECRET, 900);
-  return c.json({ access_token: access, expires_in: 900, user: { id: row.user_id, roles: resolvedRoles } });
+  return c.json({ access_token: access, expires_in: 900, user: { id: row.user_id, roles: resolvedRoles }, must_change_password: row.must_change_password === 1 });
+});
+
+app.get("/api/auth/providers", async (c) => {
+  const google = Boolean(c.env.GOOGLE_OAUTH_CLIENT_ID?.trim() && c.env.GOOGLE_OAUTH_CLIENT_SECRET?.trim());
+  const github = Boolean(c.env.GITHUB_OAUTH_CLIENT_ID?.trim() && c.env.GITHUB_OAUTH_CLIENT_SECRET?.trim());
+  return c.json({
+    data: [
+      { provider: "password", status: "ACTIVE", enabled: true },
+      { provider: "google", status: google ? "CREDENTIALS_CONFIGURED" : "NOT_CONFIGURED", enabled: false },
+      { provider: "github", status: github ? "CREDENTIALS_CONFIGURED" : "NOT_CONFIGURED", enabled: false },
+      { provider: "mfa", status: mfaAuthEnabled(c.env) ? "ACTIVE" : "DISABLED", enabled: mfaAuthEnabled(c.env) },
+      { provider: "turnstile", status: turnstileAuthEnabled(c.env) ? "ACTIVE" : "DISABLED", enabled: turnstileAuthEnabled(c.env) },
+    ],
+  });
 });
 
 app.get("/api/auth/me", requireAuth, async (c) => {
-  const u = await c.env.DB.prepare("SELECT id,email,display_name,avatar_url,email_verified,must_change_password,created_at FROM users WHERE id = ? AND disabled_at IS NULL")
+  const u = await c.env.DB.prepare("SELECT id,email,username,display_name,avatar_url,email_verified,must_change_password,created_at FROM users WHERE id = ? AND disabled_at IS NULL")
     .bind(c.get("userId")).first();
   if (!u) return c.json({ error: { code: "account_unavailable" } }, 401);
   let profile = await c.env.DB.prepare(`SELECT ${PROFILE_SELECT} FROM profiles WHERE id = ?`).bind(c.get("userId")).first();
@@ -666,7 +733,15 @@ app.get("/api/auth/me", requireAuth, async (c) => {
       .bind(c.get("userId"), (u as { display_name?: string }).display_name || null, now()).run();
     profile = await c.env.DB.prepare(`SELECT ${PROFILE_SELECT} FROM profiles WHERE id = ?`).bind(c.get("userId")).first();
   }
-  return c.json({ user: u, profile, roles: c.get("roles"), superadmin: await isSuperAdmin(c) });
+  const { results: capabilityRows } = await c.env.DB.prepare(
+    `SELECT DISTINCT capability FROM user_capabilities
+      WHERE user_id=? AND organization_id IS NULL AND revoked_at IS NULL
+        AND (expires_at IS NULL OR expires_at>?) ORDER BY capability`,
+  ).bind(c.get("userId"), now()).all<{ capability: string }>();
+  return c.json({
+    user: u, profile, roles: c.get("roles"), superadmin: await isSuperAdmin(c),
+    capabilities: capabilityRows.map((row) => row.capability),
+  });
 });
 
 app.get("/api/auth/sessions", requireAuth, async (c) => {
@@ -938,6 +1013,13 @@ const maskEmail = (email: string) => {
   return `${name.slice(0, 2)}${"*".repeat(Math.max(1, name.length - 2))}@${domain}`;
 };
 
+const CODEX_OPERATOR_EMAIL = "codexagent@avyron.ro";
+const CODEX_OPERATOR_USERNAME = "codex-agent";
+const CODEX_OPERATOR_CAPABILITIES = [
+  "leads.read", "leads.create", "leads.write", "leads.activity.create", "leads.reminder.manage",
+  "ai_projects.read", "ai_content.create", "social.source.propose", "social.lead_handoff",
+] as const;
+
 // ─── Business CRUD (exemplu: clients) ───────────────────────────────────
 app.get("/api/clients", requireAuth, requireRole("staff", "admin"), async (c) => {
   const { results } = await c.env.DB.prepare("SELECT id,company_name,contact_name,email,phone,status,created_at FROM clients ORDER BY created_at DESC LIMIT 200").all();
@@ -946,15 +1028,17 @@ app.get("/api/clients", requireAuth, requireRole("staff", "admin"), async (c) =>
 
 app.get("/api/admin/users", requireAuth, requireRole("staff", "admin"), async (c) => {
   const { results } = await c.env.DB.prepare(
-    `SELECT u.id,u.email,u.display_name,u.avatar_url,u.email_verified,u.must_change_password,u.disabled_at,u.last_login_at,u.created_at,
+    `SELECT u.id,u.email,u.username,u.display_name,u.avatar_url,u.email_verified,u.must_change_password,u.disabled_at,u.last_login_at,u.created_at,
             p.phone,p.entity_type,p.company_name,p.pseudonym,p.staff_role,
-            GROUP_CONCAT(r.role) AS roles
+            GROUP_CONCAT(DISTINCT r.role) AS roles,
+            COUNT(DISTINCT CASE WHEN s.revoked_at IS NULL AND s.expires_at > ? THEN s.id END) AS active_sessions
        FROM users u
        LEFT JOIN profiles p ON p.id=u.id
        LEFT JOIN user_roles r ON r.user_id=u.id
+       LEFT JOIN sessions s ON s.user_id=u.id
       GROUP BY u.id
       ORDER BY COALESCE(p.display_name,u.display_name,u.email) COLLATE NOCASE`,
-  ).all<Record<string, unknown>>();
+  ).bind(now()).all<Record<string, unknown>>();
   if (await isSuperAdmin(c)) return c.json({ data: results });
   // Staff-ul vede doar ce îi trebuie pentru alocare; fără date personale complete.
   const masked = results.map((r) => ({
@@ -967,6 +1051,244 @@ app.get("/api/admin/users", requireAuth, requireRole("staff", "admin"), async (c
     email: maskEmail(String(r.email ?? "")),
   }));
   return c.json({ data: masked });
+});
+
+app.post("/api/admin/users", requireAuth, requireSuperAdmin, async (c) => {
+  const actorUserId = c.get("userId");
+  const body = await c.req.json().catch(() => ({})) as {
+    email?: string; username?: string; displayName?: string; temporaryPassword?: string; accessLevel?: string;
+  };
+  const email = String(body.email || "").trim().toLowerCase();
+  const username = normalizeUsername(body.username);
+  const displayName = String(body.displayName || "").trim().slice(0, 100);
+  const temporaryPassword = String(body.temporaryPassword || "");
+  const accessLevel = body.accessLevel;
+  if (!/^\S+@\S+\.\S+$/.test(email) || !username || !displayName) {
+    return c.json({ error: { code: "invalid_identity", message: "Emailul, username-ul și numele sunt obligatorii" } }, 400);
+  }
+  if (!/^[a-z0-9][a-z0-9._-]{2,39}$/.test(username)) {
+    return c.json({ error: { code: "invalid_username", message: "Username-ul trebuie să aibă 3–40 caractere: litere mici, cifre, punct, minus sau underscore" } }, 400);
+  }
+  if (temporaryPassword.length < 10 || !/[A-Z]/.test(temporaryPassword) || !/[0-9]/.test(temporaryPassword)) {
+    return c.json({ error: { code: "weak_temporary_password", message: "Parola temporară trebuie să aibă minimum 10 caractere, o literă mare și o cifră" } }, 400);
+  }
+  if (accessLevel !== "user" && accessLevel !== "staff" && accessLevel !== "admin") {
+    return c.json({ error: { code: "invalid_access_level", message: "Nivelul de acces nu este valid" } }, 400);
+  }
+  const existing = await c.env.DB.prepare(
+    "SELECT id FROM users WHERE lower(email)=? OR lower(username)=? LIMIT 1",
+  ).bind(email, username).first();
+  if (existing) return c.json({ error: { code: "identity_taken", message: "Emailul sau username-ul este deja folosit" } }, 409);
+
+  const userId = uuid();
+  const timestamp = now();
+  const roles: Role[] = accessLevel === "user" ? ["user"] : ["user", accessLevel];
+  await c.env.DB.batch([
+    c.env.DB.prepare(
+      `INSERT INTO users
+        (id,email,username,password_hash,display_name,email_verified,must_change_password,created_at,updated_at)
+       VALUES (?,?,?,?,?,1,1,?,?)`,
+    ).bind(userId, email, username, await hashPassword(temporaryPassword), displayName, timestamp, timestamp),
+    c.env.DB.prepare(
+      `INSERT INTO profiles (id,display_name,entity_type,language,theme,updated_at)
+       VALUES (?,?,'individual','ro','system',?)`,
+    ).bind(userId, displayName, timestamp),
+    ...roles.map((role) => c.env.DB.prepare("INSERT INTO user_roles (user_id,role) VALUES (?,?)").bind(userId, role)),
+    c.env.DB.prepare(
+      `INSERT INTO security_events
+        (id,actor_user_id,actor_type,action,target_type,target_id,outcome,severity,request_id,ip_hash,metadata_json,created_at)
+       VALUES (?,?,'user','admin.user_created','user',?,'allowed','warning',?,?,?,?)`,
+    ).bind(uuid(), actorUserId, userId, c.get("requestId") || null, await hashKey(clientIp(c.req.raw)), JSON.stringify({ email, username, roles }), timestamp),
+  ]);
+  return c.json({ data: { id: userId, email, username, display_name: displayName, roles, must_change_password: 1 } }, 201);
+});
+
+app.get("/api/admin/agent-operators/codex", requireAuth, requireSuperAdmin, async (c) => {
+  const account = await c.env.DB.prepare(
+    `SELECT id,email,username,display_name,must_change_password,disabled_at,updated_at
+       FROM users WHERE lower(email)=? LIMIT 1`,
+  ).bind(CODEX_OPERATOR_EMAIL).first<Record<string, unknown>>();
+  if (!account) return c.json({ data: { exists: false, synchronized: false } });
+  const [roles, capabilities, bindings, routes] = await Promise.all([
+    c.env.DB.prepare("SELECT role FROM user_roles WHERE user_id=? ORDER BY role").bind(account.id).all(),
+    c.env.DB.prepare(
+      `SELECT capability,revoked_at,expires_at,reason FROM user_capabilities
+        WHERE user_id=? ORDER BY capability`,
+    ).bind(account.id).all(),
+    c.env.DB.prepare(
+      `SELECT project_id,agent_slug,operator_role,status,permissions_json,synced_at
+         FROM agent_operator_bindings WHERE user_id=? ORDER BY agent_slug`,
+    ).bind(account.id).all(),
+    c.env.DB.prepare(
+      `SELECT agent_slug,task_key,action_class,executor,requires_approval,max_daily_runs,status,notes
+         FROM agent_execution_routes WHERE agent_slug IN ('leads','ai-prod-content')
+        ORDER BY agent_slug,task_key`,
+    ).all(),
+  ]);
+  const activeCapabilities = new Set(capabilities.results
+    .filter((row) => row.revoked_at === null && (row.expires_at === null || Number(row.expires_at) > now()))
+    .map((row) => String(row.capability)));
+  const synchronized = account.disabled_at === null
+    && roles.results.length === 1 && roles.results[0]?.role === "user"
+    && activeCapabilities.size === CODEX_OPERATOR_CAPABILITIES.length
+    && CODEX_OPERATOR_CAPABILITIES.every((capability) => activeCapabilities.has(capability))
+    && bindings.results.length === 2
+    && bindings.results.every((binding) => binding.status === "active"
+      && binding.project_id === "aip_avyron_web"
+      && ["leads", "ai-prod-content"].includes(String(binding.agent_slug)));
+  return c.json({ data: { exists: true, synchronized, account, roles: roles.results, capabilities: capabilities.results, bindings: bindings.results, routes: routes.results } });
+});
+
+app.post("/api/admin/agent-operators/codex/synchronize", requireAuth, requireSuperAdmin, async (c) => {
+  const body = await c.req.json().catch(() => ({})) as { temporaryPassword?: unknown };
+  const temporaryPassword = typeof body.temporaryPassword === "string" ? body.temporaryPassword : "";
+  let account = await c.env.DB.prepare(
+    "SELECT id,email,disabled_at FROM users WHERE lower(email)=? LIMIT 1",
+  ).bind(CODEX_OPERATOR_EMAIL).first<{ id: string; email: string; disabled_at: number | null }>();
+  const accountCreated = !account;
+  if (!account && (temporaryPassword.length < 10 || !/[A-Z]/.test(temporaryPassword) || !/[0-9]/.test(temporaryPassword))) {
+    return c.json({ error: { code: "temporary_password_required", message: "Pentru contul nou este necesară o parolă temporară sigură" } }, 400);
+  }
+  if (temporaryPassword && (temporaryPassword.length < 10 || !/[A-Z]/.test(temporaryPassword) || !/[0-9]/.test(temporaryPassword))) {
+    return c.json({ error: { code: "weak_temporary_password" } }, 400);
+  }
+  if (account && await c.env.DB.prepare(
+    "SELECT 1 FROM platform_principals WHERE email=? COLLATE NOCASE AND status='active' LIMIT 1",
+  ).bind(account.email).first()) {
+    return c.json({ error: { code: "platform_principal_protected" } }, 409);
+  }
+  if (!account) {
+    const usernameTaken = await c.env.DB.prepare("SELECT 1 FROM users WHERE lower(username)=? LIMIT 1")
+      .bind(CODEX_OPERATOR_USERNAME).first();
+    if (usernameTaken) return c.json({ error: { code: "identity_taken", field: "username" } }, 409);
+    const userId = uuid();
+    const timestamp = now();
+    await c.env.DB.batch([
+      c.env.DB.prepare(
+        `INSERT INTO users
+          (id,email,username,password_hash,display_name,email_verified,must_change_password,created_at,updated_at)
+         VALUES (?,?,?,?,?,1,1,?,?)`,
+      ).bind(userId, CODEX_OPERATOR_EMAIL, CODEX_OPERATOR_USERNAME, await hashPassword(temporaryPassword), "Codex Agent", timestamp, timestamp),
+      c.env.DB.prepare(
+        `INSERT INTO profiles (id,display_name,entity_type,language,theme,staff_role,updated_at)
+         VALUES (?,?,'individual','ro','system',NULL,?)`,
+      ).bind(userId, "Codex Agent", timestamp),
+    ]);
+    account = { id: userId, email: CODEX_OPERATOR_EMAIL, disabled_at: null };
+  }
+
+  const usernameConflict = await c.env.DB.prepare(
+    "SELECT 1 FROM users WHERE lower(username)=? AND id<>? LIMIT 1",
+  ).bind(CODEX_OPERATOR_USERNAME, account.id).first();
+  if (usernameConflict) return c.json({ error: { code: "identity_taken", field: "username" } }, 409);
+
+  const timestamp = now();
+  const statements = [
+    c.env.DB.prepare("UPDATE users SET username=?,display_name='Codex Agent',disabled_at=NULL,updated_at=? WHERE id=?")
+      .bind(CODEX_OPERATOR_USERNAME, timestamp, account.id),
+    c.env.DB.prepare("DELETE FROM user_roles WHERE user_id=?").bind(account.id),
+    c.env.DB.prepare("INSERT INTO user_roles(user_id,role) VALUES (?,'user')").bind(account.id),
+    c.env.DB.prepare("DELETE FROM client_account_access WHERE user_id=?").bind(account.id),
+    c.env.DB.prepare("DELETE FROM user_capabilities WHERE user_id=?").bind(account.id),
+    c.env.DB.prepare("UPDATE ai_project_members SET status='revoked',updated_at=? WHERE user_id=? AND project_id<>'aip_avyron_web'")
+      .bind(timestamp, account.id),
+    c.env.DB.prepare(
+      `INSERT INTO ai_project_members(project_id,user_id,role,status,granted_by,granted_at,updated_at)
+       VALUES ('aip_avyron_web',?,'editor','active',?,?,?)
+       ON CONFLICT(project_id,user_id) DO UPDATE SET role='editor',status='active',granted_by=excluded.granted_by,updated_at=excluded.updated_at`,
+    ).bind(account.id, c.get("userId"), timestamp, timestamp),
+    c.env.DB.prepare(
+      `INSERT INTO agent_operator_bindings(user_id,project_id,agent_slug,operator_role,status,permissions_json,synced_at)
+       VALUES (?,'aip_avyron_web','leads','lead_operator','active',?,?)
+       ON CONFLICT(user_id,project_id,agent_slug) DO UPDATE SET operator_role=excluded.operator_role,status='active',permissions_json=excluded.permissions_json,synced_at=excluded.synced_at`,
+    ).bind(account.id, JSON.stringify(["read_leads", "create_leads", "update_leads", "add_activities", "manage_reminders"]), timestamp),
+    c.env.DB.prepare(
+      `INSERT INTO agent_operator_bindings(user_id,project_id,agent_slug,operator_role,status,permissions_json,synced_at)
+       VALUES (?,'aip_avyron_web','ai-prod-content','social_manager','active',?,?)
+       ON CONFLICT(user_id,project_id,agent_slug) DO UPDATE SET operator_role=excluded.operator_role,status='active',permissions_json=excluded.permissions_json,synced_at=excluded.synced_at`,
+    ).bind(account.id, JSON.stringify(["read_project", "create_drafts", "propose_sources", "handoff_lead", "manual_publish_after_approval"]), timestamp),
+    ...CODEX_OPERATOR_CAPABILITIES.map((capability) => c.env.DB.prepare(
+      `INSERT INTO user_capabilities(id,user_id,capability,organization_id,granted_by,reason,expires_at,revoked_at,created_at)
+       VALUES (?,?,?,?,?,'agent_operator_profile:codex-v1',NULL,NULL,?)`,
+    ).bind(`codex_cap_${capability.replaceAll(".", "_")}`, account.id, capability, null, c.get("userId"), timestamp)),
+    c.env.DB.prepare(
+      `INSERT INTO security_events
+        (id,actor_user_id,actor_type,action,target_type,target_id,outcome,severity,request_id,metadata_json,created_at)
+       VALUES (?,?,'user','admin.agent_operator_synchronized','user',?,'allowed','warning',?,?,?)`,
+    ).bind(uuid(), c.get("userId"), account.id, c.get("requestId") || null, JSON.stringify({ email: CODEX_OPERATOR_EMAIL, agents: ["leads", "ai-prod-content"] }), timestamp),
+  ];
+  if (temporaryPassword) {
+    statements.splice(1, 0,
+      c.env.DB.prepare("UPDATE users SET password_hash=?,must_change_password=1,updated_at=? WHERE id=?")
+        .bind(await hashPassword(temporaryPassword), timestamp, account.id),
+      c.env.DB.prepare("UPDATE sessions SET revoked_at=?,revoked_reason='agent_operator_resync' WHERE user_id=? AND revoked_at IS NULL")
+        .bind(timestamp, account.id),
+    );
+  }
+  await c.env.DB.batch(statements);
+  return c.json({ data: { id: account.id, email: CODEX_OPERATOR_EMAIL, username: CODEX_OPERATOR_USERNAME, synchronized: true, passwordRotated: Boolean(temporaryPassword) } }, accountCreated ? 201 : 200);
+});
+
+app.patch("/api/admin/users/:userId/status", requireAuth, requireSuperAdmin, async (c) => {
+  const targetUserId = String(c.req.param("userId") || "");
+  const body = await c.req.json().catch(() => ({})) as { enabled?: unknown };
+  if (typeof body.enabled !== "boolean") return c.json({ error: { code: "invalid_status" } }, 400);
+  if (targetUserId === c.get("userId") && !body.enabled) {
+    return c.json({ error: { code: "cannot_disable_self", message: "Nu îți poți dezactiva propriul cont" } }, 409);
+  }
+  const target = await c.env.DB.prepare("SELECT id,email FROM users WHERE id=?").bind(targetUserId).first<{ id: string; email: string }>();
+  if (!target) return c.json({ error: { code: "user_not_found" } }, 404);
+  if (!body.enabled && await platformRoleForUser(c.env.DB, targetUserId)) {
+    return c.json({ error: { code: "platform_principal_protected", message: "Identitatea platformei nu poate fi dezactivată" } }, 409);
+  }
+  const timestamp = now();
+  const statements = [
+    c.env.DB.prepare("UPDATE users SET disabled_at=?,updated_at=? WHERE id=?").bind(body.enabled ? null : timestamp, timestamp, targetUserId),
+    c.env.DB.prepare(
+      `INSERT INTO security_events
+        (id,actor_user_id,actor_type,action,target_type,target_id,outcome,severity,request_id,ip_hash,metadata_json,created_at)
+       VALUES (?,?,'user',?,'user',?,'allowed','warning',?,?,?,?)`,
+    ).bind(uuid(), c.get("userId"), body.enabled ? "admin.user_enabled" : "admin.user_disabled", targetUserId, c.get("requestId") || null, await hashKey(clientIp(c.req.raw)), JSON.stringify({ email: target.email }), timestamp),
+  ];
+  if (!body.enabled) statements.splice(1, 0, c.env.DB.prepare(
+    "UPDATE sessions SET revoked_at=?,revoked_reason='account_disabled' WHERE user_id=? AND revoked_at IS NULL",
+  ).bind(timestamp, targetUserId));
+  await c.env.DB.batch(statements);
+  return c.json({ ok: true, enabled: body.enabled });
+});
+
+app.post("/api/admin/users/:userId/temporary-password", requireAuth, requireSuperAdmin, async (c) => {
+  const targetUserId = c.req.param("userId");
+  const body = await c.req.json().catch(() => ({})) as { temporaryPassword?: string };
+  const temporaryPassword = String(body.temporaryPassword || "");
+  if (temporaryPassword.length < 10 || !/[A-Z]/.test(temporaryPassword) || !/[0-9]/.test(temporaryPassword)) {
+    return c.json({ error: { code: "weak_temporary_password" } }, 400);
+  }
+  const target = await c.env.DB.prepare("SELECT id FROM users WHERE id=? AND disabled_at IS NULL").bind(targetUserId).first();
+  if (!target) return c.json({ error: { code: "user_not_found" } }, 404);
+  const timestamp = now();
+  await c.env.DB.batch([
+    c.env.DB.prepare("UPDATE users SET password_hash=?,must_change_password=1,updated_at=? WHERE id=?")
+      .bind(await hashPassword(temporaryPassword), timestamp, targetUserId),
+    c.env.DB.prepare("UPDATE sessions SET revoked_at=?,revoked_reason='admin_password_reset' WHERE user_id=? AND revoked_at IS NULL")
+      .bind(timestamp, targetUserId),
+    c.env.DB.prepare(
+      `INSERT INTO security_events
+        (id,actor_user_id,actor_type,action,target_type,target_id,outcome,severity,request_id,ip_hash,metadata_json,created_at)
+       VALUES (?,?,'user','admin.temporary_password_set','user',?,'allowed','warning',?,?, '{}',?)`,
+    ).bind(uuid(), c.get("userId"), targetUserId, c.get("requestId") || null, await hashKey(clientIp(c.req.raw)), timestamp),
+  ]);
+  return c.json({ ok: true, must_change_password: true, sessions_revoked: true });
+});
+
+app.delete("/api/admin/users/:userId/sessions", requireAuth, requireSuperAdmin, async (c) => {
+  const targetUserId = c.req.param("userId");
+  const timestamp = now();
+  const result = await c.env.DB.prepare(
+    "UPDATE sessions SET revoked_at=?,revoked_reason='admin_revoked' WHERE user_id=? AND revoked_at IS NULL",
+  ).bind(timestamp, targetUserId).run();
+  await recordSecurityEvent(c, c.get("userId"), "admin.user_sessions_revoked", "allowed", "warning");
+  return c.json({ ok: true, revoked: result.meta.changes ?? 0 });
 });
 
 app.patch("/api/admin/users/:userId/roles", requireAuth, requireSuperAdmin, async (c) => {
@@ -1124,7 +1446,6 @@ import { surveyAdminRouter } from "./surveyAdmin";
 import { adminOperationsRouter } from "./adminOperations";
 import { workspaceRouter } from "./workspace";
 import { operationsOAuthRouter, operationsRouter } from "./operations";
-import { runOperationJobs } from "./operationJobs";
 import { dashboardRouter } from "./osDashboard";
 import { seedRouter } from "./seed";
 import { mediaRouter } from "./media";
@@ -1132,10 +1453,13 @@ import { contactRouter } from "./contact";
 import { logoStudioRouter } from "./logoStudio";
 import { produseRouter } from "./produse";
 import { produseShopRouter } from "./produseShop";
-import { produseCheckoutRouter } from "./produseCheckout";
+import { produseCheckoutRouter } from "./produseCheckoutV2";
 import { produseAdminRouter } from "./produseAdmin";
+import { billingRouter } from "./billing";
+import { systemDiagnosticsRouter } from "./systemDiagnostics";
+import { consumeAsyncJobs, enqueueAsyncJobs } from "./asyncJobs";
 import { blogRouter, getBlogSitemapEntries, getPublishedBlogPost } from "./blog";
-import { injectBlogHtml, mergeBlogSitemap } from "../../../../src/worker/blogHtml";
+import { headersForTransformedBody, injectBlogHtml, mergeBlogSitemap } from "../../../../src/worker/blogHtml";
 import { BLOG_SLUGS } from "../../../../src/data/blogSlugs";
 import { decide, isKnownSpaRoute, normalizePath } from "../../../../src/worker/router";
 import { serveCachedAsset } from "../../../../src/worker/assetCache";
@@ -1173,6 +1497,9 @@ app.use("/api/engine/*", requirePrivilegedMfa);
 app.use("/api/os/*", requirePrivilegedMfa);
 app.use("/api/surveys/admin/*", requirePrivilegedMfa);
 app.use("/api/admin/operations/*", requireAuth, requireRole("staff", "admin"));
+app.use("/api/admin/system/*", requireAuth, requireSuperAdmin);
+app.use("/api/admin/codex-work-items", requireAuth, requireSuperAdmin);
+app.use("/api/admin/codex-work-items/*", requireAuth, requireSuperAdmin);
 // Editorial mutations are authorized server-side. Public article reads and
 // immutable R2 cover images remain accessible to crawlers and visitors.
 app.use("/api/blog/staff/*", requireAuth, requireRole("staff", "admin"));
@@ -1195,6 +1522,7 @@ app.route("/", workspaceRouter);
 app.use("/api/operations/*", requireAuth, requirePrivilegedMfa);
 app.route("/", operationsRouter);
 app.route("/", dashboardRouter);
+app.route("/", systemDiagnosticsRouter);
 app.route("/", engineRouter);
 app.route("/", organizationsRouter);
 app.route("/", projectsRouter);
@@ -1210,9 +1538,20 @@ app.route("/", produseRouter);
 app.use("/api/produse/account/*", requireAuth);
 app.use("/api/produse/admin/*", requireAuth);
 app.use("/api/produse/admin/*", requirePrivilegedMfa);
+// Billing account routes are private. Only the two cryptographically signed
+// webhook endpoints remain public; the admin status also requires role + MFA.
+app.use("/api/billing/config", requireAuth);
+app.use("/api/billing/checkout", requireAuth);
+app.use("/api/billing/account", requireAuth);
+app.use("/api/billing/profile", requireAuth);
+app.use("/api/billing/payment-methods/*", requireAuth);
+app.use("/api/billing/portal", requireAuth);
+app.use("/api/billing/subscriptions/*", requireAuth);
+app.use("/api/billing/admin/*", requireAuth, requireRole("staff", "admin"), requirePrivilegedMfa);
 app.route("/", produseShopRouter);
 app.route("/", produseCheckoutRouter);
 app.route("/", produseAdminRouter);
+app.route("/", billingRouter);
 // Importul administrativ are propria gardă constant-time X-Seed-Token.
 app.route("/", seedRouter);
 
@@ -1242,7 +1581,7 @@ async function publicBlogPage(c: Context<AppBindings>, language: "ro" | "en", re
   }
   const shell = await c.env.ASSETS.fetch(new Request(new URL("/_shell.html", c.req.url)));
   if (!shell.ok) return c.text("Site shell unavailable", 503, { "X-Robots-Tag": "noindex, nofollow" });
-  const headers = new Headers(shell.headers);
+  const headers = headersForTransformedBody(shell.headers);
   headers.set("content-type", "text/html; charset=utf-8");
   headers.set("cache-control", "public, max-age=60, s-maxage=300, stale-while-revalidate=86400");
   headers.set("Vary", "Accept-Encoding");
@@ -1261,10 +1600,11 @@ app.get("/sitemap.xml", async (c) => {
   } catch (error) {
     console.error(JSON.stringify({ event: "blog_sitemap_database_unavailable", error: String(error) }));
   }
-  const headers = new Headers(asset.headers);
+  const headers = headersForTransformedBody(asset.headers);
   headers.set("content-type", "application/xml; charset=utf-8");
   headers.set("cache-control", "public, max-age=300, s-maxage=900, stale-while-revalidate=86400");
-  return new Response(mergeBlogSitemap(await asset.text(), entries), { status: 200, headers });
+  const xml = mergeBlogSitemap(await asset.text(), entries);
+  return new Response(c.req.method === "HEAD" ? null : xml, { status: 200, headers });
 });
 
 // `app.avyron.ro` is the dedicated entry point for AVYRON OS. The complete
@@ -1321,11 +1661,13 @@ app.all("*", async (c) => {
     }
     return siteFile(c, "/404.html", 404, true);
   }
-  if (!decision.noindex) return asset;
+  if (!decision.robots) return asset;
   const headers = new Headers(asset.headers);
-  headers.set("X-Robots-Tag", "noindex, nofollow");
-  headers.set("Cache-Control", "private, no-store");
-  headers.set("Pragma", "no-cache");
+  headers.set("X-Robots-Tag", decision.robots);
+  if (decision.robots === "noindex, nofollow") {
+    headers.set("Cache-Control", "private, no-store");
+    headers.set("Pragma", "no-cache");
+  }
   return new Response(asset.body, { status: asset.status, headers });
 });
 
@@ -1350,16 +1692,16 @@ async function cleanupExpiredData(env: AppBindings["Bindings"]) {
 
 export default {
   fetch: (request, env, ctx) => app.fetch(normalizeVersionedApiRequest(request), env, ctx),
+  queue: (batch, env, ctx) => {
+    ctx.waitUntil(consumeAsyncJobs(batch, env));
+  },
   scheduled: (controller, env, ctx) => {
     if (controller.cron === "0,15,30,45 * * * *") {
-      ctx.waitUntil(Promise.all([
-        runOperationJobs(env),
-        runSocialStudioScheduler(env),
-      ]).then(() => undefined));
+      ctx.waitUntil(enqueueAsyncJobs(env, ["operation_drain", "social_drain"]));
       return;
     }
     if (controller.cron === EXCHANGE_RATE_REFRESH_CRON) {
-      ctx.waitUntil(refreshExchangeRate(env).catch((error) => {
+      ctx.waitUntil(enqueueAsyncJobs(env, ["exchange_rate_refresh"]).catch((error) => {
         console.error(JSON.stringify({ event: "exchange_rate_refresh_failed", error: String(error) }));
         throw error;
       }));
@@ -1368,6 +1710,7 @@ export default {
     ctx.waitUntil(Promise.all([
       cleanupExpiredData(env),
       runDueEngineDiscovery(env),
+      enqueueAsyncJobs(env, ["billing_reconcile"]),
     ]).then(() => undefined).catch((error) => {
       console.error(JSON.stringify({ event: "maintenance_job_failed", error: String(error) }));
       throw error;

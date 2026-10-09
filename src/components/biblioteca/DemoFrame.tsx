@@ -16,7 +16,7 @@ type Props = {
 /**
  * Rama unui demo live.
  *
- * Ține chrome-ul comun (cod, nume, explicație) și alege calea de montare:
+ * Ține prezentarea comună (nume, explicație) și alege calea de montare:
  * WebGL prin StageSlot, restul direct. Până când demo-ul se încarcă, locul e
  * ocupat de un panou cu aceeași înălțime, deci nu sare layout-ul.
  */
@@ -60,15 +60,13 @@ export default function DemoFrame({ effect, lang, onFocusChange }: Props) {
       className="overflow-hidden rounded-xl border border-white/10 bg-[#0a0c12]/80 backdrop-blur-md"
     >
       <figcaption className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-white/10 px-5 py-3">
-        <span className="font-mono text-[11px] text-amber-300/90">{effect.code}</span>
-        <h4 className="text-sm font-semibold text-white">{effect.name[lang]}</h4>
+        <h3 className="text-sm font-semibold text-white">{effect.name[lang]}</h3>
         <p className="w-full text-xs text-white/50">{effect.desc[lang]}</p>
       </figcaption>
 
       <div className="relative">
         {webglLoader ? (
           <StageSlot
-            code={effect.code}
             className="h-[360px] w-full"
             load={webglLoader}
             poster={

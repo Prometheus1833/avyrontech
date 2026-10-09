@@ -1,5 +1,5 @@
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
-import { Suspense, useCallback, useEffect, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Blocks, BookOpen, Boxes, Handshake, Heart, Layers, Search, Sparkles } from "lucide-react";
 import Nav, { type NavLinkDef } from "@/components/site/Nav";
@@ -7,7 +7,6 @@ import Footer from "@/components/site/Footer";
 import type { Lang } from "@/i18n/translations";
 import { detectTier, finePointer, reducedMotion } from "../lib/capability";
 import { collectionsPath, faqPath, guidePath, homePath, typePath } from "../lib/paths";
-import Preloader from "./Preloader";
 import CartDrawer from "./CartDrawer";
 import PageBackLink from "@/components/site/PageBackLink";
 import ProductLocaleSwitcher from "./ProductLocaleSwitcher";
@@ -29,7 +28,6 @@ export default function Shell({ lang, children }: { lang: Lang; children: ReactN
   const ro = lang === "ro";
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const [loading, setLoading] = useState(true);
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [tier] = useState(() => detectTier());
@@ -53,7 +51,7 @@ export default function Shell({ lang, children }: { lang: Lang; children: ReactN
 
   // Scroll neted, doar când utilizatorul nu a cerut mai puțină mișcare.
   useEffect(() => {
-    if (reducedMotion() || loading) return;
+    if (reducedMotion()) return;
     let cancelled = false;
     let stop: (() => void) | undefined;
     void import("lenis").then(({ default: Lenis }) => {
@@ -74,7 +72,7 @@ export default function Shell({ lang, children }: { lang: Lang; children: ReactN
       cancelled = true;
       stop?.();
     };
-  }, [loading]);
+  }, []);
 
   // Unda de la apăsare, pentru butoanele marcate cu data-ripple.
   useEffect(() => {
@@ -107,17 +105,13 @@ export default function Shell({ lang, children }: { lang: Lang; children: ReactN
 
   // La schimbarea rutei, sus.
   useEffect(() => {
-    if (loading) return;
     window.scrollTo({ top: 0, behavior: reducedMotion() ? "auto" : "smooth" });
-  }, [pathname, loading]);
+  }, [pathname]);
 
-  const onDone = useCallback(() => setLoading(false), []);
   const showBackdrop = tier !== "none";
 
   return (
     <div className="pa-root min-h-screen bg-background text-foreground">
-      {loading && <Preloader onDone={onDone} lang={ro ? "ro" : "en"} />}
-
       {showBackdrop ? (
         <Suspense fallback={null}>
           <Backdrop tier={tier} />
@@ -161,6 +155,7 @@ export default function Shell({ lang, children }: { lang: Lang; children: ReactN
             <Link
               to={`${typePath(lang, "component")}`}
               className="pa-glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] text-muted-foreground transition hover:text-foreground"
+              aria-label={ro ? "Vezi colecția de componente" : "View the component collection"}
             >
               <Heart className="size-3.5" aria-hidden />
               <span className="hidden sm:inline">{ro ? "Colecția mea" : "My collection"}</span>
@@ -168,6 +163,7 @@ export default function Shell({ lang, children }: { lang: Lang; children: ReactN
             <Link
               to={faqPath(lang)}
               className="pa-glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] text-muted-foreground transition hover:text-foreground"
+              aria-label={ro ? "Întrebări frecvente despre produsele Avyron" : "Frequently asked questions about Avyron products"}
             >
               <Handshake className="size-3.5" aria-hidden />
               <span className="hidden sm:inline">{ro ? "Întrebări" : "FAQ"}</span>

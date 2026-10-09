@@ -8,7 +8,16 @@ import { ITEMS, ITEM_BY_SLUG, FEATURED_SLUG } from "@/features/produse/data/item
 import { PRODUSE_COUNTS } from "@/features/produse/data/counts";
 import { OFFER } from "@/features/produse/data/offer";
 import { PLANS } from "@/features/produse/data/plans";
-import { PRODUSE_COLLECTION_SEGMENTS, PRODUSE_ITEM_ROUTES, PRODUSE_STATIC_SEGMENTS, PRODUSE_TYPE_SEGMENTS, produseRoutePairs } from "@/features/produse/data/routes";
+import {
+  PRODUSE_COLLECTION_SEGMENTS,
+  PRODUSE_ITEM_ROUTES,
+  PRODUSE_STATIC_SEGMENTS,
+  PRODUSE_TYPE_SEGMENTS,
+  isProduseIndexablePath,
+  produseIndexableRoutePairs,
+  produseRoutePairs,
+  produseUtilityRoutePairs,
+} from "@/features/produse/data/routes";
 import { COLLECTIONS } from "@/features/produse/data/collections";
 import { CATEGORIES, EUR_FOR_RON, TYPES, TYPE_BY_ID } from "@/features/produse/data/taxonomy";
 import { DEMOS } from "@/features/produse/demos/registry";
@@ -182,6 +191,24 @@ describe("rutele paginii", () => {
       expect(pair.en.startsWith("/en/products")).toBe(true);
     }
     expect(new Set(pairs.map((pair) => pair.ro)).size).toBe(pairs.length);
+  });
+
+  it("recomandă pentru indexare doar hubul, ghidul și FAQ-ul", () => {
+    const indexable = produseIndexableRoutePairs();
+    const utility = produseUtilityRoutePairs();
+    const all = produseRoutePairs();
+
+    expect(indexable).toEqual([
+      { ro: "/produse", en: "/en/products" },
+      { ro: "/produse/ghid", en: "/en/products/guide" },
+      { ro: "/produse/intrebari-frecvente", en: "/en/products/faq" },
+    ]);
+    expect(new Set([...indexable, ...utility].map((pair) => pair.ro)).size).toBe(all.length);
+    expect(utility).toHaveLength(PRODUSE_STATIC_SEGMENTS.length - 2 + TYPES.length + PRODUSE_COLLECTION_SEGMENTS.length + ITEMS.length);
+    expect(isProduseIndexablePath("/produse")).toBe(true);
+    expect(isProduseIndexablePath("/en/products/faq")).toBe(true);
+    expect(isProduseIndexablePath("/produse/componente/buton-magnetic")).toBe(false);
+    expect(isProduseIndexablePath("/en/products/collections/landing-page-kit")).toBe(false);
   });
 
   it("citește corect rutele și găsește echivalentul în cealaltă limbă", () => {

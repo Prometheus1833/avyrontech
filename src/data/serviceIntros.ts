@@ -68,9 +68,9 @@ export const SERVICE_INTRO_SPECS: Record<ServiceIntroKey, ServiceIntroSpec> = {
     secondary: "139 92 246",
   },
   "ai-agent": {
-    label: { ro: "Agent AI Personalizat", en: "Personalized AI Agent" },
-    micro: { ro: "Cunoașterea devine acțiune.", en: "Knowledge becomes action." },
-    sequence: { ro: ["context", "raționament", "răspuns"], en: ["context", "reasoning", "response"] },
+    label: { ro: "Agenți AI Personalizați", en: "Custom AI Agents" },
+    micro: { ro: "Procese clare, acțiuni controlate.", en: "Clear workflows, controlled actions." },
+    sequence: { ro: ["context", "aprobare", "acțiune"], en: ["context", "approval", "action"] },
     motif: "neural",
     primary: "217 70 239",
     secondary: "147 51 234",

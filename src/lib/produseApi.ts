@@ -45,7 +45,7 @@ export type CopyResult = {
   download?: string | null;
 };
 
-/** `payments_unconfigured` = comanda există, cardul se activează la lansare. */
+/** Checkout-ul returnează numai un URL găzduit de procesator. */
 export type CheckoutResult = {
   ok: boolean;
   code?: string;
@@ -147,8 +147,8 @@ export const produseApi = {
     },
   },
 
-  /** Creează comanda și, dacă plata e configurată, sesiunea Stripe. */
-  async checkout(input: { kind: "plan" | "item"; id: string; taxId?: string }): Promise<CheckoutResult> {
+  /** Creează comanda și sesiunea providerului ales, fără date de card în AVYRON. */
+  async checkout(input: { kind: "plan" | "item"; id: string; taxId?: string; provider: "revolut" | "stripe"; savePaymentMethod?: boolean }): Promise<CheckoutResult> {
     const { ok, body } = await call<{ orderId: string; url: string | null; amountMinor: number }>("/api/produse/account/checkout", {
       method: "POST",
       body: JSON.stringify(input),

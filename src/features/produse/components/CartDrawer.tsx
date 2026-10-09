@@ -10,14 +10,13 @@ import { accountCartApi, type AccountCartItem } from "@/lib/accountCart";
 
 /**
  * Coșul paginii. Alegerile stau local; plata trece prin Worker, care
- * recalculează prețul din catalog și deschide o sesiune Stripe. Cât timp
- * cheile de plată lipsesc, comanda tot se înregistrează și rămâne calea pe
- * WhatsApp, ca să nu pierdem cererea.
+ * recalculează prețul din catalog și deschide checkout-ul găzduit de Revolut
+ * sau Stripe. Browserul nu primește și nu stochează date complete de card.
  */
 export default function CartDrawer({ lang, open, onOpenChange }: { lang: Lang; open: boolean; onOpenChange: (v: boolean) => void }) {
   const ro = lang === "ro";
   const cart = useProduseStore((s) => s.cart);
-  const account = useProduseAccount();
+  const account = useProduseAccount(open);
   const [paying, setPaying] = useState(false);
   const [payNotice, setPayNotice] = useState<string | null>(null);
 
@@ -56,7 +55,7 @@ export default function CartDrawer({ lang, open, onOpenChange }: { lang: Lang; o
    * produs sau pe parteneriat. Fără cont nu există comandă, deci trimitem
    * întâi la autentificare; fără chei Stripe comanda rămâne înregistrată.
    */
-  const pay = async () => {
+  const pay = async (provider: "revolut" | "stripe") => {
     const first = cart[0];
     if (!first) return;
     if (account.signedIn === false) {
@@ -69,16 +68,16 @@ export default function CartDrawer({ lang, open, onOpenChange }: { lang: Lang; o
     setPaying(true);
     setPayNotice(null);
     try {
-      const result = await account.checkout(first.kind === "plan" ? { kind: "plan", id: first.plan } : { kind: "item", id: first.slug });
+      const result = await account.checkout(first.kind === "plan" ? { kind: "plan", id: first.plan, provider, savePaymentMethod: true } : { kind: "item", id: first.slug, provider, savePaymentMethod: true });
       if (result.ok && result.url) {
         window.location.href = result.url;
         return;
       }
-      if (result.code === "payments_unconfigured") {
+      if (result.code === "provider_unconfigured") {
         setPayNotice(
           ro
-            ? "Comanda a fost înregistrată. Plata cu cardul se activează la lansare — îți trimitem link de plată sau proformă."
-            : "Your order is recorded. Card payment goes live at launch — we will send a payment link or a proforma.",
+            ? "Comanda a fost înregistrată, dar procesatorul ales nu este încă activ. Poți folosi celălalt procesator sau solicita o proformă."
+            : "Your order is recorded, but the selected provider is not active yet. Use the other provider or request a proforma.",
         );
         return;
       }
@@ -180,12 +179,15 @@ export default function CartDrawer({ lang, open, onOpenChange }: { lang: Lang; o
 
                 <button
                   type="button"
-                  onClick={() => void pay()}
+                  onClick={() => void pay("revolut")}
                   disabled={paying || cart.length === 0}
                   className="mt-3 w-full rounded-full bg-gradient-to-br from-brand to-brand-2 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-55"
                   data-ripple
                 >
-                  {paying ? (ro ? "Se pregătește plata…" : "Preparing payment…") : ro ? "Plătește cu cardul" : "Pay by card"}
+                  {paying ? (ro ? "Se pregătește plata…" : "Preparing payment…") : ro ? "Continuă cu Revolut Pay" : "Continue with Revolut Pay"}
+                </button>
+                <button type="button" onClick={() => void pay("stripe")} disabled={paying || cart.length === 0} className="mt-2 w-full rounded-full border border-foreground/15 px-4 py-2.5 text-sm font-semibold text-foreground disabled:opacity-55">
+                  {ro ? "Plătește prin Stripe" : "Pay with Stripe"}
                 </button>
                 {payNotice && (
                   <p className="mt-2 rounded-xl border border-brand/25 bg-brand/[0.07] px-3 py-2 text-[11.5px] text-foreground" role="status">
@@ -200,8 +202,8 @@ export default function CartDrawer({ lang, open, onOpenChange }: { lang: Lang; o
                 </button>
                 <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground/80">
                   {ro
-                    ? "La lansare: card, Apple Pay, Google Pay și Revolut Pay prin Stripe, factură automată și e-Factura. Firmele pot cere proformă."
-                    : "At launch: card, Apple Pay, Google Pay and Revolut Pay through Stripe, automatic invoicing and e-Invoice. Companies can request a proforma."}
+                    ? "Plata are loc pe pagina securizată Revolut sau Stripe. După confirmarea încasării, factura este emisă prin Oblio; firmele pot solicita și proformă."
+                    : "Payment takes place on Revolut's or Stripe's secure page. After payment confirmation, the invoice is issued through Oblio; companies can also request a proforma."}
                 </p>
               </>
             )}

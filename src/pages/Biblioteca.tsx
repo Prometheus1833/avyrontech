@@ -16,8 +16,6 @@ import { useSignals } from "@/components/biblioteca/useSignals";
 import {
   LIBRARY_SECTIONS,
   SECTION_BY_ID,
-  TOTAL_EFFECTS,
-  TOTAL_SIGNATURE,
   type LibrarySection,
 } from "@/data/bibliotecaCatalog";
 import { detectTier, type QualityTier } from "@/lib/stage/capability";
@@ -30,19 +28,12 @@ const Backdrop = lazyWithRetry(() => import("@/components/biblioteca/effects/Bac
 
 const PATHS = { ro: "/biblioteca", en: "/en/library" };
 
-const TIER_LABEL: Record<QualityTier, { ro: string; en: string }> = {
-  ultra: { ro: "maximă", en: "maximum" },
-  standard: { ro: "standard", en: "standard" },
-  usor: { ro: "ușoară", en: "light" },
-  none: { ro: "statică", en: "static" },
-};
-
 /**
  * Biblioteca Avyron.
  *
  * Vitrina de efecte, organizată pe ordinea produselor din site. Se intră din
  * pagina unui serviciu, se aterizează direct în secțiunea potrivită, iar la
- * final efectele alese pleacă spre ofertă cu codurile lor.
+ * final opțiunile alese pleacă spre cererea de ofertă cu denumirile publice.
  *
  * Trei reguli care țin pagina în bugetul de performanță: un singur context
  * WebGL pentru fundal, demo-urile se încarcă abia când secțiunea se apropie,
@@ -79,12 +70,12 @@ const Biblioteca = () => {
   useEffect(() => {
     const title =
       lang === "ro"
-        ? "Biblioteca Avyron — efecte, animații și integrări pentru site-uri"
-        : "Avyron Library — effects, animations and integrations for websites";
+        ? "Biblioteca Avyron — experiențe pentru produse digitale"
+        : "Avyron Library — experiences for digital products";
     const description =
       lang === "ro"
-        ? `Vitrina cu ${TOTAL_EFFECTS} de efecte pe care le construim pentru clienți: animații la scroll, configuratoare 3D, tranziții cinematice, demo-uri live pe fiecare serviciu.`
-        : `A showcase of ${TOTAL_EFFECTS} effects we build for clients: scroll animations, 3D configurators, cinematic transitions and live demos for every service.`;
+        ? "Explorează demonstrații și direcții de interacțiune pentru website-uri, magazine online, aplicații și automatizări AI, adaptate fiecărui proiect."
+        : "Explore demos and interaction directions for websites, online stores, applications and AI automation, adapted to each project.";
 
     void Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
       ([{ setPageMeta, setJsonLd }, { breadcrumbLd }]) => {
@@ -106,14 +97,13 @@ const Biblioteca = () => {
             "@type": "ItemList",
             name: section.name[lang],
             numberOfItems: section.effects.length,
-            itemListElement: section.effects.map((effect, index) => ({
-              "@type": "ListItem",
-              position: index + 1,
-              item: {
-                "@type": "CreativeWork",
-                identifier: effect.code,
-                name: effect.name[lang],
-                description: effect.desc[lang],
+              itemListElement: section.effects.map((effect, index) => ({
+                "@type": "ListItem",
+                position: index + 1,
+                item: {
+                  "@type": "CreativeWork",
+                  name: effect.name[lang],
+                  description: effect.desc[lang],
               },
             })),
           })),
@@ -270,37 +260,29 @@ const Biblioteca = () => {
 
       <header className="mx-auto max-w-6xl px-4 pb-8 pt-16 sm:px-6 sm:pt-24">
         <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-white/45">
-          {lang === "ro" ? "Bibliotecă de efecte" : "Effects library"}
+          {lang === "ro" ? "Bibliotecă de experiențe digitale" : "Digital experience library"}
         </p>
         <h1 className="mt-5 max-w-4xl text-4xl font-extrabold leading-[1.02] tracking-tight sm:text-7xl">
           {lang === "ro"
-            ? "Tot ce putem construi, la un click distanță de proiectul tău"
-            : "Everything we can build, one click away from your project"}
+            ? "Descoperă cum poate prinde viață produsul tău digital"
+            : "Discover how your digital product can come to life"}
         </h1>
         <p className="mt-6 max-w-[62ch] text-lg leading-relaxed text-white/60">
           {lang === "ro"
-            ? "Efectele de mai jos nu sunt inspirație. Sunt lucruri pe care le implementăm, cu cost și complexitate cunoscute. Atinge-le, alege-le, trimite-ne lista."
-            : "The effects below are not inspiration. They are things we implement, with known cost and complexity. Touch them, pick them, send us the list."}
+            ? "Explorează demonstrații, interacțiuni și funcții pe care le putem adapta identității, obiectivelor și publicului tău. Selectează direcțiile potrivite, iar noi le transformăm într-o soluție coerentă."
+            : "Explore demos, interactions and features we can adapt to your identity, goals and audience. Select the directions that fit and we turn them into a coherent solution."}
         </p>
 
-        <dl className="mt-10 flex flex-wrap gap-x-10 gap-y-4 border-t border-white/10 pt-6 font-mono text-xs">
-          <div>
-            <dt className="uppercase tracking-wider text-white/40">{lang === "ro" ? "Efecte" : "Effects"}</dt>
-            <dd className="mt-1 text-2xl font-semibold tabular-nums text-white">{TOTAL_EFFECTS}</dd>
-          </div>
-          <div>
-            <dt className="uppercase tracking-wider text-white/40">{lang === "ro" ? "Semnătură" : "Signature"}</dt>
-            <dd className="mt-1 text-2xl font-semibold tabular-nums text-white">{TOTAL_SIGNATURE}</dd>
-          </div>
-          <div>
-            <dt className="uppercase tracking-wider text-white/40">{lang === "ro" ? "Servicii" : "Services"}</dt>
-            <dd className="mt-1 text-2xl font-semibold tabular-nums text-white">{LIBRARY_SECTIONS.length}</dd>
-          </div>
-          <div>
-            <dt className="uppercase tracking-wider text-white/40">{lang === "ro" ? "Calitate" : "Quality"}</dt>
-            <dd className="mt-1 text-2xl font-semibold text-white">{TIER_LABEL[tier][lang]}</dd>
-          </div>
-        </dl>
+        <ul className="mt-10 flex flex-wrap gap-2 border-t border-white/10 pt-6 text-xs text-white/65">
+          {(lang === "ro"
+            ? ["Demonstrații interactive", "Adaptare la identitatea brandului", "Performanță verificată"]
+            : ["Interactive demos", "Adapted to your brand identity", "Verified performance"]
+          ).map((item) => (
+            <li key={item} className="rounded-full border border-white/12 bg-white/[0.03] px-3 py-1.5">
+              {item}
+            </li>
+          ))}
+        </ul>
 
         <button
           type="button"
@@ -328,7 +310,7 @@ const Biblioteca = () => {
 
       <ClosingCta codes={codes} lang={lang} origin={origin} />
 
-      <footer className="mx-auto max-w-6xl px-4 pb-40 text-sm text-white/40 sm:px-6">
+      <footer className="mx-auto max-w-6xl px-4 pb-40 text-sm text-white/55 sm:px-6">
         <p className="max-w-[70ch]">
           {lang === "ro"
             ? "Fiecare efect de aici a fost construit de noi, cu tehnici publice și biblioteci open-source. Nu copiem lucrări ale altor studiouri — le studiem tehnicile și le implementăm pe identitatea clientului."

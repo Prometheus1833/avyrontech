@@ -3,7 +3,7 @@
  * Kept free of Cloudflare APIs so it can be unit-tested directly.
  */
 
-import { redirectTarget, STATUS_PAGES, isNoindexPath, PRERENDER_ROUTES } from "../seo/publicRoutes";
+import { redirectTarget, STATUS_PAGES, isNoindexPath, PRERENDER_ROUTES, robotsDirectiveForPath } from "../seo/publicRoutes";
 
 export type Decision =
   | { kind: "redirect"; location: string; status: 301 }
@@ -11,7 +11,7 @@ export type Decision =
   | { kind: "api" }
   | { kind: "blog"; language: "ro" | "en"; slug: string }
   | { kind: "static"; file: string; status: number; noindex: boolean }
-  | { kind: "page"; noindex: boolean };
+  | { kind: "page"; robots: "noindex, follow" | "noindex, nofollow" | null };
 
 /** Removes a trailing slash (except for the root). */
 export function normalizePath(pathname: string): string {
@@ -25,6 +25,14 @@ export function decide(url: URL): Decision {
   const path = normalizePath(url.pathname);
 
   if (path.startsWith("/api/")) return { kind: "api" };
+
+  // SearchAction-ul vechi a lăsat în Search Console /?q={search_term_string}.
+  // Îl consolidăm permanent pe homepage și păstrăm doar parametrii de campanie.
+  if (path === "/" && url.searchParams.has("q")) {
+    const clean = new URL(url);
+    clean.searchParams.delete("q");
+    return { kind: "redirect", location: `${path}${clean.search}${clean.hash}`, status: 301 };
+  }
 
   // Legacy URLs -> canonical URLs, query string preserved, no loops.
   const target = redirectTarget(path);
@@ -57,7 +65,7 @@ export function decide(url: URL): Decision {
   // Real files (hashed bundles, images, robots.txt, sitemap.xml…).
   if (ASSET_RE.test(path) && !PRERENDER_ROUTES.includes(path)) return { kind: "asset" };
 
-  if (PRERENDER_ROUTES.includes(path)) return { kind: "page", noindex: isNoindexPath(path) };
+  if (PRERENDER_ROUTES.includes(path)) return { kind: "page", robots: robotsDirectiveForPath(path) };
 
   // Database-backed articles do not exist as build-time files. The edge
   // Worker renders their public HTML and metadata from the API response.
@@ -65,10 +73,10 @@ export function decide(url: URL): Decision {
     return { kind: "blog", language: blogMatch[1] ? "en" : "ro", slug: blogMatch[2] };
   }
 
-  if (isNoindexPath(path)) return { kind: "page", noindex: true };
+  if (isNoindexPath(path)) return { kind: "page", robots: robotsDirectiveForPath(path) };
 
   // Known private/app routes that are not prerendered still serve the SPA shell.
-  return { kind: "page", noindex: true };
+  return { kind: "page", robots: "noindex, nofollow" };
 }
 
 /** Routes that exist in the SPA router but are not prerendered (auth, dashboard…). */

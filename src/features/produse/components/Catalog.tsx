@@ -28,6 +28,7 @@ const SORTS: Array<{ id: Sort; ro: string; en: string }> = [
 ];
 
 const ACCESS: Access[] = ["free", "pro", "studio"];
+const PAGE_SIZE = 18;
 
 export default function Catalog({
   lang,
@@ -47,6 +48,7 @@ export default function Catalog({
   const [onlyFavorites, setOnlyFavorites] = useState(false);
   const [sort, setSort] = useState<Sort>("relevance");
   const [openFilters, setOpenFilters] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const favorites = useProduseStore((s) => s.favorites);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -74,6 +76,9 @@ export default function Catalog({
   }, []);
 
   const activeFilters = (tech ? 1 : 0) + (access ? 1 : 0) + (onlyFavorites ? 1 : 0);
+  const visibleResults = results.slice(0, visibleCount);
+
+  useEffect(() => setVisibleCount(PAGE_SIZE), [query, activeType, tech, access, onlyFavorites, sort]);
 
   return (
     <div>
@@ -227,12 +232,20 @@ export default function Catalog({
         </div>
       ) : (
         <ul className="grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
-          {results.map((item, index) => (
+          {visibleResults.map((item, index) => (
             <Reveal as="li" key={item.slug} index={Math.min(index, 6)}>
               <ItemCard item={item} lang={lang} index={index} />
             </Reveal>
           ))}
         </ul>
+      )}
+
+      {visibleCount < results.length && (
+        <div className="mt-5 flex justify-center">
+          <button type="button" onClick={() => setVisibleCount((count) => count + PAGE_SIZE)} className="pa-edge rounded-full border border-foreground/15 bg-card/60 px-5 py-2.5 text-sm font-semibold text-foreground transition hover:border-brand/40 hover:bg-card">
+            {ro ? `Arată încă ${Math.min(PAGE_SIZE, results.length - visibleCount)} produse` : `Show ${Math.min(PAGE_SIZE, results.length - visibleCount)} more products`}
+          </button>
+        </div>
       )}
 
       {!activeType && results.length > 0 && (

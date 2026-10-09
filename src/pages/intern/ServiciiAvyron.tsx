@@ -50,6 +50,7 @@ export default function ServiciiAvyron({ embedded = false }: { embedded?: boolea
         displayName: existing?.display_name || name, accountingCode: existing?.accounting_code || null, sku: existing?.sku || null,
         category: existing?.category || category, basePriceMinor: Math.round(price * 100), currency: existing?.currency || "RON",
         vatBasisPoints: existing?.vat_basis_points ?? 1900, paymentRoute: existing?.payment_route || "unconfigured",
+        preferredPaymentProvider: existing?.preferred_payment_provider || "revolut", invoiceProvider: existing?.invoice_provider || "oblio",
         paymentStatus: active ? (existing?.payment_status === "active" ? "active" : "needs_configuration") : "paused",
         promotionCode: existing?.promotion_code || null, active, notes: existing?.notes || "",
       });

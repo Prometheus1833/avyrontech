@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, X, Activity, Globe, Loader2, AlertTriangle } from "lucide-react";
+import { Check, X, Activity, Globe, Loader2, AlertTriangle, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useLang } from "@/i18n/LanguageContext";
 import { apiUrl } from "@/lib/apiBase";
@@ -14,7 +14,15 @@ const tlds = [".ro", ".com", ".eu", ".net", ".org", ".io", ".app", ".dev", ".tec
 
 type Status = "available" | "registered" | "unknown";
 type LookupSource = "iana-rdap" | "cloudflare-doh" | "unavailable";
-type Result = { tld: string; status: Status; label: string; message: string; source?: LookupSource; cached?: boolean };
+type Result = {
+  tld: string;
+  status: Status;
+  label: string;
+  message: string;
+  source?: LookupSource;
+  cached?: boolean;
+  officialVerificationUrl?: string | null;
+};
 
 const DomainCheck = () => {
   const { t, lang } = useLang();
@@ -47,6 +55,7 @@ const DomainCheck = () => {
         source?: LookupSource;
         label?: Partial<Record<"ro" | "en", string>>;
         message?: Partial<Record<"ro" | "en", string>>;
+        officialVerificationUrl?: string | null;
         error?: { message?: string; code?: string };
       };
       if (!response.ok) throw new Error(data.error?.message || data.error?.code || "Verificare eșuată");
@@ -58,6 +67,7 @@ const DomainCheck = () => {
         message: data.message?.[lang] ?? "",
         source: data.source,
         cached: response.headers.get("X-Avyron-Cache") === "HIT",
+        officialVerificationUrl: data.officialVerificationUrl,
       }]);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Verificare eșuată";
@@ -160,13 +170,13 @@ const DomainCheck = () => {
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: i * 0.08 }}
-                      className={`rounded-2xl border p-4 flex items-center justify-between backdrop-blur ${
+                      className={`rounded-2xl border p-4 flex items-start backdrop-blur ${
                         ok ? "bg-accent/15 border-accent/30"
                           : unknown ? "bg-amber-500/10 border-amber-500/30"
                           : "bg-white/5 border-white/10"
                       }`}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex min-w-0 items-start gap-3">
                         <span
                           className={`size-8 rounded-full grid place-items-center ${
                             ok ? "bg-accent text-accent-foreground"
@@ -176,12 +186,12 @@ const DomainCheck = () => {
                         >
                           {unknown ? <AlertTriangle className="size-4" /> : ok ? <Check className="size-4" /> : <X className="size-4" />}
                         </span>
-                        <div className="text-left">
-                          <div className="font-mono font-semibold">
+                        <div className="min-w-0 text-left">
+                          <div className="break-all font-mono font-semibold">
                             {slug}
                             <span className="opacity-70">{r.tld}</span>
                           </div>
-                          <div className="text-xs text-white/70">
+                          <div className="mt-0.5 text-xs leading-relaxed text-white/70">
                             <span className="font-semibold">{r.label}</span>
                             {r.message ? <span className="opacity-80"> — {r.message}</span> : null}
                             {r.source && r.source !== "unavailable" ? (
@@ -193,6 +203,17 @@ const DomainCheck = () => {
                             ) : null}
                             {r.cached ? <span className="ml-1 opacity-50">(cache)</span> : null}
                           </div>
+                          {r.officialVerificationUrl ? (
+                            <a
+                              href={r.officialVerificationUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-glow"
+                            >
+                              {t.domain.confirmOfficial}
+                              <ExternalLink className="size-3.5" aria-hidden="true" />
+                            </a>
+                          ) : null}
                         </div>
                       </div>
                     </motion.div>

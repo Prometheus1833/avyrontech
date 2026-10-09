@@ -92,7 +92,7 @@ const Auth = () => {
 
   const loginForm = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { identifier: "", password: "" },
   });
 
   const registerForm = useForm<RegisterInput>({
@@ -103,7 +103,7 @@ const Auth = () => {
   const onLogin = async (data: LoginInput) => {
     setSubmitting(true);
     try {
-      const result = await cfAuth.login(data.email, data.password);
+      const result = await cfAuth.login(data.identifier, data.password);
       if ("mfa_required" in result) {
         setMfaChallenge(result.challenge_token);
         setMfaCode("");
@@ -273,10 +273,10 @@ const Auth = () => {
               ) : (
               <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="li-email">{t.auth.email}</Label>
-                  <Input id="li-email" type="email" autoComplete="email" {...loginForm.register("email")} />
-                  {loginForm.formState.errors.email && (
-                    <p className="text-xs text-destructive">{loginForm.formState.errors.email.message}</p>
+                  <Label htmlFor="li-identifier">Email sau username</Label>
+                  <Input id="li-identifier" type="text" autoComplete="username" {...loginForm.register("identifier")} />
+                  {loginForm.formState.errors.identifier && (
+                    <p className="text-xs text-destructive">{loginForm.formState.errors.identifier.message}</p>
                   )}
                 </div>
                 <div className="space-y-1.5">

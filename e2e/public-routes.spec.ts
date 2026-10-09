@@ -91,7 +91,7 @@ test.describe("public SEO routes", () => {
     await expect(navDate).not.toContainText(/\d{2}:\d{2}:\d{2}/);
     await expect(hero.getByTestId("local-date-time")).toHaveCount(0);
     await expect(hero.getByRole("link", { name: /Solicită ofertă.*Personalizată/ })).toHaveAttribute("href", "/configurator");
-    await expect(hero.getByTestId("hero-quick-links").getByRole("link", { name: "Servicii", exact: true })).toHaveAttribute("href", "#servicii");
+    await expect(hero.getByTestId("hero-quick-links").getByRole("link", { name: "Servicii", exact: true })).toHaveAttribute("href", "/servicii");
     await expect(hero.getByTestId("hero-quick-links").getByRole("link", { name: "Produse", exact: true })).toHaveAttribute("href", "/produse");
 
     const servicesCard = page.getByTestId("services-examples-card");
@@ -747,6 +747,10 @@ test.describe("forms and authentication", () => {
 
   test("signup waits for email verification", async ({ page }) => {
     await page.addInitScript(() => {
+      localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
+        necessary: true, analytics: false, marketing: false,
+        savedAt: new Date().toISOString(), policyVersion: "2026-09-12",
+      }));
       window.turnstile = {
         render: (_element, options) => {
           queueMicrotask(() => (options.callback as (token: string) => void)("playwright-turnstile-token"));
@@ -788,7 +792,7 @@ test.describe("forms and authentication", () => {
     let payload: Record<string, unknown> | undefined;
     await page.route("**/api/contact/example", async (route) => {
       payload = route.request().postDataJSON() as Record<string, unknown>;
-      await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ ok: true, requestId: "test" }) });
+      await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ ok: true, saved: true, delivered: true, requestId: "test" }) });
     });
     // The hash is the public navigation contract and forces the deferred
     // industry section to mount before Playwright interacts with it.
@@ -802,7 +806,7 @@ test.describe("forms and authentication", () => {
     await page.locator("#request-example-email").fill("lead@example.com");
     await page.locator("#request-example-phone").fill("0712345678");
     await page.getByRole("button", { name: "Trimite solicitarea" }).click();
-    await expect(page.getByText("Solicitarea a fost trimisă!")).toBeVisible();
+    await expect(page.getByText("Solicitarea a fost înregistrată!")).toBeVisible();
     expect(payload).toMatchObject({ email: "lead@example.com", phone: "0712345678", source_category: "beauty" });
   });
 });

@@ -4,7 +4,7 @@
   // branch builds must explicitly use `--env preview` (see package.json).
   "name": "avyrontech",
   "main": "cloudflare/workers/api/src/index.ts",
-  "compatibility_date": "2026-08-27",
+  "compatibility_date": "2026-10-09",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
   "preview_urls": true,
@@ -54,6 +54,23 @@
   "migrations": [
     { "tag": "agents-v1", "new_sqlite_classes": ["AvyronAgentRuntime"] }
   ],
+  "queues": {
+    "producers": [
+      { "binding": "ASYNC_JOBS", "queue": "avyron-async-jobs" }
+    ],
+    "consumers": [
+      {
+        "queue": "avyron-async-jobs",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 3,
+        "dead_letter_queue": "avyron-async-jobs-dlq"
+      }
+    ]
+  },
+  "workflows": [
+    { "name": "avyron-maintenance", "binding": "AVYRON_WORKFLOW", "class_name": "AvyronMaintenanceWorkflow" }
+  ],
 
   "d1_databases": [
     {
@@ -81,15 +98,19 @@
     }
   ],
 
-  // Authentication and bot protection are mandatory. SMTP remains optional
-  // until Cloudflare Email Sending is enabled on the account; delivery errors
-  // are persisted in D1 and returned explicitly instead of being reported as sent.
+  // Secrets may be provisioned while MFA and auth Turnstile stay disabled by
+  // feature flag. They also protect existing forms and the integration vault.
   "secrets": {
     "required": ["JWT_SECRET", "TURNSTILE_SECRET", "MFA_ENCRYPTION_KEY"]
   },
   "vars": {
     "APP_ENV": "production",
-    "ADMIN_MFA_POLICY": "optional_until_enrollment",
+    "ADMIN_MFA_POLICY": "disabled",
+    "MFA_AUTH_ENABLED": "false",
+    "TURNSTILE_AUTH_ENABLED": "false",
+    "PAID_AI_ENABLED": "false",
+    "ALLOW_AI_OVERAGE": "false",
+    "AUTO_AI_UPGRADE": "false",
     "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://app.avyron.ro,https://api.avyron.ro,https://avyrontech.lovable.app,https://id-preview--3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovable.app,https://3432ba2d-bd12-41f5-9dc2-a3e04fe788d0.lovableproject.com,http://localhost:8080",
     "APP_URL": "https://avyron.ro",
     "SMTP_HOST": "smtp.mx.cloudflare.net",
@@ -128,6 +149,23 @@
           { "name": "AVYRON_AGENT_RUNTIME", "class_name": "AvyronAgentRuntime" }
         ]
       },
+      "queues": {
+        "producers": [
+          { "binding": "ASYNC_JOBS", "queue": "avyron-async-jobs-preview" }
+        ],
+        "consumers": [
+          {
+            "queue": "avyron-async-jobs-preview",
+            "max_batch_size": 5,
+            "max_batch_timeout": 5,
+            "max_retries": 2,
+            "dead_letter_queue": "avyron-async-jobs-preview-dlq"
+          }
+        ]
+      },
+      "workflows": [
+        { "name": "avyron-maintenance-preview", "binding": "AVYRON_WORKFLOW", "class_name": "AvyronMaintenanceWorkflow" }
+      ],
       "d1_databases": [
         {
           "binding": "DB",
@@ -156,7 +194,12 @@
       },
       "vars": {
         "APP_ENV": "preview",
-        "ADMIN_MFA_POLICY": "optional_until_enrollment",
+        "ADMIN_MFA_POLICY": "disabled",
+        "MFA_AUTH_ENABLED": "false",
+        "TURNSTILE_AUTH_ENABLED": "false",
+        "PAID_AI_ENABLED": "false",
+        "ALLOW_AI_OVERAGE": "false",
+        "AUTO_AI_UPGRADE": "false",
         "ALLOWED_ORIGINS": "https://avyron.ro,https://www.avyron.ro,https://app.avyron.ro,https://api.avyron.ro,https://avyrontech-preview.avyrontech.workers.dev,https://avyrontech.lovable.app,http://localhost:8080",
         "APP_URL": "https://avyrontech-preview.avyrontech.workers.dev",
         "SMTP_HOST": "smtp.mx.cloudflare.net",

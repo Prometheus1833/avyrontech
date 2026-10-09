@@ -130,6 +130,25 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     expect(locations.some((route) => isNoindexPath(route))).toBe(false);
   });
 
+  it("keeps product utility pages usable without publishing them as separate search results", () => {
+    const routes = [
+      "/produse/componente",
+      "/produse/colectii/kit-landing-page",
+      "/produse/componente/buton-magnetic",
+      "/en/products/components/buton-magnetic",
+    ];
+    const sitemap = readFileSync(resolve(distDir, "sitemap.xml"), "utf8");
+
+    for (const route of routes) {
+      const html = read(route);
+      const h = head(html);
+      expect(h, route).toContain('name="robots" content="noindex, follow"');
+      expect(h, route).not.toContain('rel="alternate" hreflang=');
+      expect(html, route).toMatch(/<h1[\s>]/);
+      expect(sitemap, route).not.toContain(`<loc>https://avyron.ro${route}</loc>`);
+    }
+  });
+
   it("keeps public metadata free of private implementation details", () => {
     const forbidden = /(?:localhost|127\.0\.0\.1|service_role|sb_secret_|MFA_ENCRYPTION_KEY|Lovable|instrucțiuni interne)/i;
     for (const route of PRERENDER_ROUTES.filter((path) => !isNoindexPath(path))) {

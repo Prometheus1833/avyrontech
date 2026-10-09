@@ -76,11 +76,18 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
       toast.error("Verificarea anti-spam a expirat. Încearcă din nou.");
       return;
     }
-    if (!response?.ok) {
+    const body = response ? await response.json().catch(() => ({})) as {
+      saved?: boolean;
+      delivered?: boolean;
+    } : null;
+    if (!response?.ok || !body?.saved) {
       toast.error("A apărut o eroare. Te rugăm încearcă din nou.");
       return;
     }
 
+    if (body.delivered === false) {
+      toast.warning("Solicitarea a fost înregistrată în sistemul Avyron; notificarea email va fi verificată separat.");
+    }
     setDone(true);
     setTimeout(() => onClose(), 2400);
   };
@@ -121,7 +128,7 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
                 >
                   <Check className="size-7" />
                 </motion.div>
-                <h3 className="font-display font-bold text-xl">Solicitarea a fost trimisă!</h3>
+                <h3 className="font-display font-bold text-xl">Solicitarea a fost înregistrată!</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Te contactăm în maxim 24 de ore cu un exemplu personalizat asemănător cu <span className="font-semibold text-foreground">{source?.name}</span>.
                 </p>

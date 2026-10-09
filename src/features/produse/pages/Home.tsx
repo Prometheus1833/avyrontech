@@ -12,7 +12,7 @@ import { FeatureRequest, OfferSelector } from "../components/Forms";
 import ParticleLabStudio from "../components/ParticleLabStudio";
 import Plans from "../components/Plans";
 import { PageFaq, Pill, Reveal, Seam, Section, SectionHead } from "../components/Primitives";
-import { defaultValues } from "../lib/item";
+import { defaultValues, sortItems } from "../lib/item";
 import { collectionPath, collectionsPath, faqPath, guidePath, itemPath, typePath } from "../lib/paths";
 import { applySeo, breadcrumb, faqLd, homeDescription, homeTitle, homeUrl, itemListLd, STATS } from "../lib/seo";
 
@@ -48,6 +48,7 @@ const WHY: Array<{ icon: typeof ShieldCheck; ro: [string, string]; en: [string, 
     en: ["Accessible from the start", "Checked contrast, visible focus, reduced motion respected — not bolted on at the end."],
   },
 ];
+const HOME_CATALOG_ITEMS = sortItems(ITEMS, "popular").slice(0, 18);
 
 export default function Home({ lang }: { lang: Lang }) {
   const ro = lang === "ro";
@@ -62,8 +63,12 @@ export default function Home({ lang }: { lang: Lang }) {
       description: homeDescription(lang),
       path: homeUrl(lang),
       lang,
+      image: lang === "ro" ? "/og/produse/logo-studio-3d.jpg" : "/og/produse/logo-studio-3d-en.jpg",
+      imageAlt: ro
+        ? "Catalogul Avyron de componente React și produse digitale pentru site-uri"
+        : "Avyron catalogue of React components and digital products for websites",
       jsonLd: [
-        ["collection", itemListLd(lang, ITEMS, homeTitle(lang), homeUrl(lang))],
+        ["collection", itemListLd(lang, HOME_CATALOG_ITEMS, homeTitle(lang), homeUrl(lang))],
         ["breadcrumb", breadcrumb(lang, [{ name: ro ? "Produse Avyron" : "Avyron Products", path: homeUrl(lang) }])],
         ["faq", faqLd(faqTop.map((entry) => ({ q: entry.q[lang], a: entry.a[lang] })))],
       ],
@@ -74,7 +79,7 @@ export default function Home({ lang }: { lang: Lang }) {
     <div className="pb-16">
       {/* 1 — Hero */}
       <Section id="hero" hue={265} label={ro ? "Produse Avyron" : "Avyron Products"}>
-        <Reveal className="text-center">
+        <Reveal immediate className="text-center">
           <p className="pa-mono text-[11px] uppercase tracking-[0.28em] text-brand">{ro ? "Artefacte Avyron · produse digitale" : "Avyron Artefacts · digital products"}</p>
           <h1 className="mx-auto mt-4 max-w-4xl font-display text-[2.1rem] font-extrabold leading-[1.02] tracking-tight sm:text-5xl lg:text-[3.6rem]">
             {ro ? "Componente, secțiuni și efecte 3D " : "Components, sections and 3D effects "}
@@ -140,7 +145,7 @@ export default function Home({ lang }: { lang: Lang }) {
       {/* 2 — Produsul principal: Logo Studio */}
       <Section id="logo" hue={330}>
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-center">
-          <Reveal>
+          <Reveal immediate>
             <Pill tone="new">{ro ? "Produs principal" : "Flagship product"}</Pill>
             <h2 className="mt-3 font-display text-2xl font-bold leading-tight tracking-tight sm:text-3xl lg:text-[2.4rem]">{featured.name[lang]}</h2>
             <p className="mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground">{featured.short[lang]}</p>

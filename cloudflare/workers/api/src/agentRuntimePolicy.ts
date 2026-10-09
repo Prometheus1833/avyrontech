@@ -1,10 +1,11 @@
 export type AgentActionClass = "read" | "write" | "external" | "financial" | "publish";
 export type ToolMode = "disabled" | "read" | "approval" | "execute";
 
-export const DEFAULT_AGENT_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
+export const DEFAULT_AGENT_MODEL = "@cf/qwen/qwen3-30b-a3b-fp8";
 
 const AGENT_MODEL_ALIASES: Readonly<Record<string, string>> = {
   "@cf/meta/llama-3.1-8b-instruct": DEFAULT_AGENT_MODEL,
+  "@cf/meta/llama-3.1-8b-instruct-fast": DEFAULT_AGENT_MODEL,
 };
 
 /** Keep stored legacy configurations operational after a provider deprecation. */

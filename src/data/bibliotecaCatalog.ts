@@ -80,7 +80,18 @@ export type LibrarySection = {
   effects: LibraryEffect[];
 };
 
-export const LIBRARY_SECTIONS: LibrarySection[] = [
+const PUBLIC_SECTION_ORDER = [
+  "website-prezentare-premium",
+  "magazin-online",
+  "aplicatii-web-si-mobile",
+  "agent-ai-personalizat",
+  "identitate-social-media",
+  "blog-profesional",
+  "logo-identitate-vizuala",
+  "testare-qa-web-mobile",
+] as const;
+
+export const LIBRARY_SECTIONS: LibrarySection[] = ([
   {
     id: "website-prezentare-premium",
     code: "PRZ",
@@ -92,9 +103,9 @@ export const LIBRARY_SECTIONS: LibrarySection[] = [
     service: { ro: "/servicii/website-prezentare-profesional", en: "/en/services/professional-presentation-website" },
     entry: true,
     cases: [
-      { ro: "Cabinet stomatologic: coborârea cinematică devine drumul de la stradă la scaunul din cabinet.", en: "Dental clinic: the cinematic descent becomes the walk from the street to the chair." },
-      { ro: "Firmă de construcții: parallax pe trei straturi peste fotografiile de șantier, fără să încetinească pagina.", en: "Construction firm: three-layer parallax over site photos, without slowing the page." },
-      { ro: "Cabinet de avocatură: titluri 3D doar în hero, restul paginii sobru și rapid.", en: "Law firm: 3D headlines only in the hero, the rest of the page sober and fast." },
+      { ro: "O prezentare clară a serviciilor, construită în jurul întrebărilor reale ale clienților.", en: "A clear presentation of services, built around the questions customers actually ask." },
+      { ro: "Animații discrete care susțin povestea brandului fără să încetinească experiența.", en: "Subtle motion that supports the brand story without slowing the experience." },
+      { ro: "Un traseu simplu de la prima impresie la contact, ofertă sau programare.", en: "A simple path from the first impression to contact, quote or booking." },
     ],
     hue: 265,
     effects: [
@@ -237,7 +248,7 @@ export const LIBRARY_SECTIONS: LibrarySection[] = [
       en: "In an app, motion is not decoration: it explains where you are, what changed and what comes next.",
     },
     service: { ro: "/servicii/aplicatii-si-platforme", en: "/en/services/apps-and-platforms" },
-    entry: false,
+    entry: true,
     cases: [
       { ro: "Aplicație de livrare: fluxul de comandă jucabil direct în pagina de prezentare.", en: "Delivery app: the ordering flow playable right in the landing page." },
       { ro: "Platformă de rezervări: device 3D care parcurge cele patru ecrane principale.", en: "Booking platform: a 3D device walking through the four main screens." },
@@ -274,13 +285,13 @@ export const LIBRARY_SECTIONS: LibrarySection[] = [
   {
     id: "agent-ai-personalizat",
     code: "AIA",
-    name: { ro: "Agent AI personalizat", en: "Custom AI agent" },
+    name: { ro: "Agenți AI și automatizări", en: "AI agents and automation" },
     claim: {
-      ro: "Un agent se vinde prin ritm: cât de repede răspunde, cât de firesc scrie, cât de clar se vede munca pe care o preia.",
-      en: "An agent sells on rhythm: how fast it answers, how naturally it writes, how clearly you see the work it takes over.",
+      ro: "Agenți specializați pot prelua conversații, emailuri, activități social media, calificarea leadurilor și procese repetitive, cu reguli clare și control uman.",
+      en: "Specialized agents can handle conversations, email, social media activity, lead qualification and repetitive processes, with clear rules and human control.",
     },
     service: { ro: "/servicii/automatizari-si-ai", en: "/en/services/automation-and-ai" },
-    entry: false,
+    entry: true,
     cases: [
       { ro: "Clinică: agentul preia programările din afara programului.", en: "Clinic: the agent takes bookings outside working hours." },
       { ro: "Firmă de curățenie: fișa de lead se completează singură din conversație.", en: "Cleaning company: the lead card fills itself from the conversation." },
@@ -289,14 +300,14 @@ export const LIBRARY_SECTIONS: LibrarySection[] = [
     hue: 160,
     effects: [
       { code: "AIA-S1", tier: "signature", cost: "M", demo: "ai-orb",
-        name: { ro: "Orb conversațional", en: "Conversational orb" },
-        desc: { ro: "Sferă cu zgomot animat care pulsează după ritmul scrisului sau al vocii.", en: "A noise-driven sphere pulsing to the rhythm of typing or speech." } },
+        name: { ro: "Centru conversațional inteligent", en: "Intelligent conversation hub" },
+        desc: { ro: "Conversațiile de pe site și din canalele conectate sunt gestionate coerent, cu transfer către echipă atunci când este necesar.", en: "Website and connected-channel conversations are handled consistently, with handoff to the team whenever needed." } },
       { code: "AIA-S2", tier: "signature", cost: "L",
-        name: { ro: "Demo live cu date de test", en: "Live demo on test data" },
-        desc: { ro: "Pui o întrebare, agentul răspunde din baza unui client fictiv complet populat.", en: "Ask a question and the agent answers from a fully populated fictional client base." } },
+        name: { ro: "Demonstrație pe informații aprobate", en: "Demo using approved information" },
+        desc: { ro: "Agentul răspunde numai din sursele și regulile pregătite pentru demonstrație, fără promisiuni inventate.", en: "The agent answers only from sources and rules prepared for the demo, without invented claims." } },
       { code: "AIA-S3", tier: "signature", cost: "M",
-        name: { ro: "Graf de automatizări", en: "Automation graph" },
-        desc: { ro: "Noduri conectate care se aprind pe traseul unui lead, de la formular la CRM.", en: "Connected nodes lighting up along a lead's path, from form to CRM." } },
+        name: { ro: "Hartă vie a automatizărilor", en: "Live automation map" },
+        desc: { ro: "Arată transparent cum trece o solicitare prin validare, aprobare, CRM și notificarea echipei.", en: "Transparently shows how a request moves through validation, approval, CRM and team notification." } },
       { code: "AIA-S4", tier: "signature", cost: "M",
         name: { ro: "Undă de voce și transcriere", en: "Voice wave and transcript" },
         desc: { ro: "Waveform în timp real, text care apare cuvânt cu cuvânt.", en: "A real-time waveform with text appearing word by word." } },
@@ -304,14 +315,14 @@ export const LIBRARY_SECTIONS: LibrarySection[] = [
         name: { ro: "Bulă de chat cu streaming", en: "Streaming chat bubble" },
         desc: { ro: "Indicator de tastare și text care curge, nu apare dintr-o dată.", en: "A typing indicator and text that flows instead of appearing all at once." } },
       { code: "AIA-F2", tier: "foundation", cost: "S",
-        name: { ro: "Fișă de lead care se completează", en: "Self-filling lead card" },
-        desc: { ro: "Câmpurile se umplu pe măsură ce discuția scoate informația.", en: "Fields fill in as the conversation surfaces the information." } },
+        name: { ro: "Calificare asistată a leadurilor", en: "Assisted lead qualification" },
+        desc: { ro: "Datele relevante sunt structurate din conversație și pregătite pentru verificarea echipei.", en: "Relevant details are structured from the conversation and prepared for team review." } },
       { code: "AIA-F3", tier: "foundation", cost: "S",
-        name: { ro: "Contor de ore economisite", en: "Hours-saved counter" },
-        desc: { ro: "Crește la scroll, pe baza numărului de conversații preluate.", en: "It climbs on scroll, based on the conversations taken over." } },
+        name: { ro: "Activitate și rezultate măsurabile", en: "Measurable activity and outcomes" },
+        desc: { ro: "Panoul arată acțiunile efectuate, aprobările, transferurile către oameni și rezultatele verificabile.", en: "The dashboard shows completed actions, approvals, human handoffs and verifiable outcomes." } },
       { code: "AIA-F4", tier: "foundation", cost: "S",
-        name: { ro: "Coloane sincronizate om / agent", en: "Synced human / agent columns" },
-        desc: { ro: "Aceeași cerere, două viteze de răspuns, rulate în paralel.", en: "The same request at two response speeds, running side by side." } },
+        name: { ro: "Aprobare umană și escaladare", en: "Human approval and escalation" },
+        desc: { ro: "Acțiunile sensibile așteaptă aprobarea, iar cazurile neclare ajung la persoana potrivită cu tot contextul.", en: "Sensitive actions wait for approval, while unclear cases reach the right person with full context." } },
     ],
   },
   {
@@ -443,7 +454,10 @@ export const LIBRARY_SECTIONS: LibrarySection[] = [
         desc: { ro: "Paletă, tipografie și spațieri, prezentate ca document livrabil.", en: "Palette, typography and spacing, presented as a deliverable document." } },
     ],
   },
-];
+] satisfies LibrarySection[]).sort(
+  (left, right) => PUBLIC_SECTION_ORDER.indexOf(left.id as typeof PUBLIC_SECTION_ORDER[number])
+    - PUBLIC_SECTION_ORDER.indexOf(right.id as typeof PUBLIC_SECTION_ORDER[number]),
+);
 
 /** Toate efectele, indexate după cod — pentru coșul de brief. */
 export const EFFECTS_BY_CODE = new Map<string, { effect: LibraryEffect; section: LibrarySection }>(
