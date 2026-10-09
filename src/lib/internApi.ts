@@ -116,6 +116,16 @@ export const internApi = {
     }),
   createAccount: (body: { email: string; username: string; displayName: string; temporaryPassword: string; accessLevel: "user" | "staff" | "admin" }) =>
     cfAuth.request<{ data: AccountOption }>("/api/admin/users", { method: "POST", body: JSON.stringify(body) }),
+  codexOperator: () => cfAuth.request<{ data: {
+    exists: boolean; synchronized: boolean; account?: AccountOption;
+    roles?: Array<{ role: string }>; capabilities?: Array<{ capability: string; revoked_at: number | null }>;
+    bindings?: Array<{ agent_slug: string; operator_role: string; status: string; synced_at: number }>;
+  } }>("/api/admin/agent-operators/codex"),
+  synchronizeCodexOperator: (temporaryPassword?: string) =>
+    cfAuth.request<{ data: { id: string; email: string; username: string; synchronized: true; passwordRotated: boolean } }>(
+      "/api/admin/agent-operators/codex/synchronize",
+      { method: "POST", body: JSON.stringify({ temporaryPassword: temporaryPassword || undefined }) },
+    ),
   setAccountEnabled: (userId: string, enabled: boolean) =>
     cfAuth.request<{ ok: true; enabled: boolean }>(`/api/admin/users/${encodeURIComponent(userId)}/status`, { method: "PATCH", body: JSON.stringify({ enabled }) }),
   setTemporaryPassword: (userId: string, temporaryPassword: string) =>

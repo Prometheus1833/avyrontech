@@ -11,6 +11,7 @@ type AuthContextValue = {
   session: { access_token: string | null } | null;
   profile: Profile | null;
   roles: AppRole[];
+  capabilities: string[];
   isStaff: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
@@ -28,6 +29,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
+  const [capabilities, setCapabilities] = useState<string[]>([]);
   const [superadmin, setSuperadmin] = useState(false);
   // Start in loading state on every route so signed-in visitors never see a
   // "Log in" CTA flash while the (possibly deferred) session bootstrap runs.
@@ -39,11 +41,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(me.user);
       setProfile(me.profile);
       setRoles(me.roles ?? []);
+      setCapabilities(me.capabilities ?? []);
       setSuperadmin(me.superadmin === true);
     } else {
       setUser(null);
       setProfile(null);
       setRoles([]);
+      setCapabilities([]);
       setSuperadmin(false);
     }
   }, []);
@@ -80,7 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = useCallback(async () => {
     await cfAuth.logout();
-    setUser(null); setProfile(null); setRoles([]); setSuperadmin(false);
+    setUser(null); setProfile(null); setRoles([]); setCapabilities([]); setSuperadmin(false);
   }, []);
 
   const value: AuthContextValue = {
@@ -88,6 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     session: user ? { access_token: cfAuth.getToken() } : null,
     profile,
     roles,
+    capabilities,
     isStaff: roles.includes("staff") || roles.includes("admin"),
     isAdmin: roles.includes("admin"),
     isSuperAdmin: roles.includes("admin") && superadmin,

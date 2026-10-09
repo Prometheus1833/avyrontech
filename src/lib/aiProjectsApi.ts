@@ -190,7 +190,18 @@ export type AiProjectDetail = {
   socialDesignProfiles: AiSocialDesignProfile[];
   socialBackups: AiSocialBackup[];
   socialAssets: AiSocialAsset[];
-  permission: { role: string; canManage: boolean; canCreateContent: boolean; canConnect: boolean };
+  operatorBindings?: Array<{
+    agent_slug: string; operator_role: string; status: string; permissions_json: string;
+    synced_at: number; display_name: string | null; email: string;
+  }>;
+  executionRoutes?: Array<{
+    agent_slug: string; task_key: string; action_class: string; executor: "workers_ai" | "codex_review" | "codex_manual";
+    requires_approval: number; max_daily_runs: number; status: string; notes: string;
+  }>;
+  permission: {
+    role: string; canManage: boolean; canCreateContent: boolean; canConnect: boolean;
+    canHandoff: boolean; canProposeSource: boolean;
+  };
 };
 
 export const aiProjectsApi = {

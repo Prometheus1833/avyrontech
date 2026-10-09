@@ -171,6 +171,7 @@ class CfAuth {
   async refresh(): Promise<boolean> {
     try {
       const res = await fetch(apiUrl("/api/auth/refresh"), { method: "POST", credentials: "include" });
+      if (res.status === 204) return false;
       if (!res.ok) return false;
       const j = await res.json() as SessionResponse;
       this.setSession(j.access_token, j.expires_in);
@@ -243,9 +244,9 @@ class CfAuth {
     this.clearSession();
   }
 
-  async me(): Promise<{ user: CfUser; profile: CfProfile; roles: Role[]; superadmin?: boolean } | null> {
+  async me(): Promise<{ user: CfUser; profile: CfProfile; roles: Role[]; superadmin?: boolean; capabilities?: string[] } | null> {
     try {
-      const result = await this.request<{ user: CfUser; profile: CfProfile; roles: Role[]; superadmin?: boolean }>("/api/auth/me");
+      const result = await this.request<{ user: CfUser; profile: CfProfile; roles: Role[]; superadmin?: boolean; capabilities?: string[] }>("/api/auth/me");
       if (result.user.avatar_url?.startsWith("/")) result.user.avatar_url = apiUrl(result.user.avatar_url);
       if (result.profile.avatar_url?.startsWith("/")) result.profile.avatar_url = apiUrl(result.profile.avatar_url);
       return result;

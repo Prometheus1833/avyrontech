@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { KeyRound, LockKeyhole, LogOut, Power, RotateCcw, Search, Settings2, ShieldCheck, UserCheck, UserPlus, Users } from "lucide-react";
+import { Bot, KeyRound, LockKeyhole, LogOut, Power, RotateCcw, Search, Settings2, ShieldCheck, UserCheck, UserPlus, Users } from "lucide-react";
 import { workspaceApi } from "@/lib/workspaceApi";
 import { internApi, type AccountOption, type ClientOption } from "@/lib/internApi";
 import { useAuth } from "@/hooks/useAuth";
@@ -31,6 +31,10 @@ export default function TeamStaffTab() {
   const [projectIds, setProjectIds] = useState<string[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [temporaryPassword, setTemporaryPassword] = useState("");
+  const [operatorOpen, setOperatorOpen] = useState(false);
+  const [operatorPassword, setOperatorPassword] = useState("");
+  const [operatorSyncing, setOperatorSyncing] = useState(false);
+  const [codexOperator, setCodexOperator] = useState<{ exists: boolean; synchronized: boolean; bindings?: Array<{ agent_slug: string; status: string }> } | null>(null);
   const [create, setCreate] = useState({ email: "", username: "", displayName: "", temporaryPassword: "", accessLevel: "user" as "user" | "staff" | "admin" });
 
   const loadAccounts = useCallback(async () => {
@@ -47,6 +51,30 @@ export default function TeamStaffTab() {
   useEffect(() => {
     void loadAccounts();
   }, [loadAccounts]);
+
+  const loadCodexOperator = useCallback(async () => {
+    if (!isSuperAdmin) return;
+    await internApi.codexOperator().then((result) => setCodexOperator(result.data)).catch(() => setCodexOperator(null));
+  }, [isSuperAdmin]);
+
+  useEffect(() => { void loadCodexOperator(); }, [loadCodexOperator]);
+
+  const synchronizeCodexOperator = async () => {
+    if (!codexOperator?.exists && operatorPassword.length < 10) {
+      toast.error("Pentru contul nou este necesară o parolă temporară sigură.");
+      return;
+    }
+    setOperatorSyncing(true);
+    try {
+      await internApi.synchronizeCodexOperator(operatorPassword || undefined);
+      toast.success("Contul Codex a fost sincronizat cu Leads și AI AVY Prod, cu privilegii minime.");
+      setOperatorPassword("");
+      setOperatorOpen(false);
+      await Promise.all([loadAccounts(), loadCodexOperator()]);
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : "Sincronizarea contului Codex nu a reușit.");
+    } finally { setOperatorSyncing(false); }
+  };
 
   const openAccess = async (account: AccountOption) => {
     setLinksReady(false);setClientIds([]);
@@ -120,15 +148,16 @@ export default function TeamStaffTab() {
         <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-violet-200/70">Organizație și acces</p>
         <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div><h1 className="font-display text-2xl font-bold text-white">Utilizatori și STAFF</h1><p className="mt-1 max-w-2xl text-sm text-slate-400">Conturi, roluri, stare, sesiuni și proiecte alocate. Toate acțiunile privilegiate sunt validate și auditate în Worker.</p></div>
-          <div className="flex flex-wrap gap-2"><span className="inline-flex items-center gap-2 self-start rounded-full border border-emerald-300/15 bg-emerald-400/10 px-3 py-1.5 text-xs text-emerald-300"><ShieldCheck className="size-3.5" /> RBAC server-side activ</span>{isSuperAdmin && <Button type="button" size="sm" onClick={() => setCreateOpen(true)} className="gap-2 bg-violet-600 hover:bg-violet-500"><UserPlus className="size-4" /> Cont nou</Button>}</div>
+          <div className="flex flex-wrap gap-2"><span className="inline-flex items-center gap-2 self-start rounded-full border border-emerald-300/15 bg-emerald-400/10 px-3 py-1.5 text-xs text-emerald-300"><ShieldCheck className="size-3.5" /> RBAC server-side activ</span>{isSuperAdmin && <Button type="button" size="sm" variant="outline" onClick={() => setOperatorOpen(true)} className="gap-2 border-cyan-300/20 bg-cyan-400/5 text-cyan-200 hover:bg-cyan-400/10"><Bot className="size-4" /> Agent Codex</Button>}{isSuperAdmin && <Button type="button" size="sm" onClick={() => setCreateOpen(true)} className="gap-2 bg-violet-600 hover:bg-violet-500"><UserPlus className="size-4" /> Cont nou</Button>}</div>
         </div>
       </header>
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-4">
         {[
           { label: "Conturi", value: accounts.length, icon: Users },
           { label: "Administratori", value: accounts.filter((item) => (item.roles || "").split(",").includes("admin")).length, icon: LockKeyhole },
           { label: "Politică acces", value: "Privilegii minime", icon: KeyRound },
+          { label: "Codex · 2 agenți", value: codexOperator?.synchronized ? "Sincronizat" : codexOperator?.exists ? "Necesită sincronizare" : "Neconfigurat", icon: Bot },
         ].map((item) => <div key={item.label} className="rounded-2xl border border-white/[0.08] bg-[#10162a]/90 p-4"><div className="flex items-start justify-between"><div><p className="text-xs text-slate-500">{item.label}</p><p className="mt-2 font-display text-xl font-semibold text-white">{item.value}</p></div><span className="grid size-9 place-items-center rounded-xl bg-violet-400/10 text-violet-300"><item.icon className="size-4" /></span></div></div>)}
       </div>
 
@@ -205,6 +234,17 @@ export default function TeamStaffTab() {
             <Label>Rol<select value={create.accessLevel} onChange={(event) => setCreate({ ...create, accessLevel: event.target.value as typeof create.accessLevel })} className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm"><option value="user">Client</option><option value="staff">STAFF</option><option value="admin">Administrator</option></select></Label>
           </div>
           <DialogFooter><Button type="button" variant="ghost" onClick={() => setCreateOpen(false)} disabled={saving}>Anulează</Button><Button type="button" onClick={() => void createAccount()} disabled={saving || !create.email || !create.username || !create.displayName || create.temporaryPassword.length < 10}>{saving ? "Se creează…" : "Creează cont"}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={operatorOpen} onOpenChange={(open) => { if (!operatorSyncing) setOperatorOpen(open); }}>
+        <DialogContent className="border-white/10 bg-[#10162a] text-slate-100 sm:max-w-md">
+          <DialogHeader><DialogTitle className="font-display text-white">Cont operațional Codex</DialogTitle><DialogDescription className="text-slate-400">Un singur cont dedicat, legat de agenții canonici Leads și AI AVY Prod. Nu primește administrare utilizatori, financiar, secrete, conectare de conturi sau publicare automată.</DialogDescription></DialogHeader>
+          <div className="rounded-xl border border-cyan-300/10 bg-cyan-400/5 p-3 text-xs leading-relaxed text-cyan-100/80">
+            Rutina de cercetare, clasificare și redactare este delegată AI Core. Codex rămâne pentru verificare, aprobare și publicarea manuală exactă.
+          </div>
+          <Label>Parolă temporară {codexOperator?.exists ? "(opțional, pentru rotire)" : "(obligatorie)"}<input type="password" autoComplete="new-password" value={operatorPassword} onChange={(event) => setOperatorPassword(event.target.value)} placeholder="Minimum 10 caractere, literă mare și cifră" className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm" /></Label>
+          <DialogFooter><Button type="button" variant="ghost" onClick={() => setOperatorOpen(false)} disabled={operatorSyncing}>Anulează</Button><Button type="button" onClick={() => void synchronizeCodexOperator()} disabled={operatorSyncing || (!codexOperator?.exists && operatorPassword.length < 10)}>{operatorSyncing ? "Se sincronizează…" : codexOperator?.exists ? "Sincronizează accesul" : "Creează și sincronizează"}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

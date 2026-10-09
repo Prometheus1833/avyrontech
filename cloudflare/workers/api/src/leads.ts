@@ -1,6 +1,6 @@
 import { Hono, type Context } from "hono";
 import type { AppBindings } from "./types";
-import { organizationRoleForUser, platformRoleForUser } from "./authorization";
+import { hasCapability, organizationRoleForUser, platformRoleForUser } from "./authorization";
 import { now, sha256 } from "./security";
 import {
   LEAD_ACTIVITY_KINDS,
@@ -28,6 +28,13 @@ async function leadAccess(c: Context<AppBindings>, leadId: string): Promise<Lead
   const userId = c.get("userId");
   const platformRole = await platformRoleForUser(c.env.DB, userId);
   if (platformRole) return { read: true, write: true, organizationId: lead.organization_id };
+  const [capabilityRead, capabilityWrite] = await Promise.all([
+    hasCapability(c.env.DB, userId, "leads.read", lead.organization_id || undefined),
+    hasCapability(c.env.DB, userId, "leads.write", lead.organization_id || undefined),
+  ]);
+  if (capabilityRead || capabilityWrite) {
+    return { read: true, write: capabilityWrite, organizationId: lead.organization_id };
+  }
 
   if (lead.organization_id) {
     const role = await organizationRoleForUser(c.env.DB, lead.organization_id, userId);
@@ -95,13 +102,14 @@ leadsRouter.post("/api/leads", async (c) => {
   }
   const platformRole = await platformRoleForUser(c.env.DB, userId);
   const legacyStaff = (c.get("roles") || []).some((role) => role === "staff" || role === "admin");
+  const canCreate = await hasCapability(c.env.DB, userId, "leads.create", lead.organizationId || undefined);
 
   if (lead.organizationId) {
     const organizationRole = await organizationRoleForUser(c.env.DB, lead.organizationId, userId);
-    if (!platformRole && !["owner", "admin", "manager", "specialist"].includes(organizationRole || "")) {
+    if (!platformRole && !canCreate && !["owner", "admin", "manager", "specialist"].includes(organizationRole || "")) {
       return c.json({ error: { code: "organization_scope_denied" } }, 403);
     }
-  } else if (!platformRole && !legacyStaff) {
+  } else if (!platformRole && !legacyStaff && !canCreate) {
     return c.json({ error: { code: "forbidden" } }, 403);
   }
 
@@ -170,9 +178,10 @@ leadsRouter.get("/api/leads", async (c) => {
   const userId = c.get("userId");
   const platformRole = await platformRoleForUser(c.env.DB, userId);
   const organizationId = (c.req.query("organizationId") || "").slice(0, 96) || null;
+  const capabilityRead = await hasCapability(c.env.DB, userId, "leads.read", organizationId || undefined);
   const stage = (c.req.query("stage") || "").slice(0, 40) || null;
   if (stage && !LEAD_STAGE_SET.has(stage)) return c.json({ error: { code: "invalid_stage" } }, 400);
-  if (organizationId && !platformRole) {
+  if (organizationId && !platformRole && !capabilityRead) {
     const role = await organizationRoleForUser(c.env.DB, organizationId, userId);
     if (!role) return c.json({ error: { code: "forbidden" } }, 403);
   }
@@ -181,7 +190,7 @@ leadsRouter.get("/api/leads", async (c) => {
   const filters: string[] = ["lead.deleted_at IS NULL"];
   if (organizationId) { filters.push("lead.organization_id = ?"); values.push(organizationId); }
   if (stage) { filters.push("lead.lifecycle_stage = ?"); values.push(stage); }
-  if (!platformRole) {
+  if (!platformRole && !capabilityRead) {
     filters.push(`(
       EXISTS (SELECT 1 FROM lead_assignments assignment WHERE assignment.lead_id = lead.id AND assignment.user_id = ?)
       OR EXISTS (SELECT 1 FROM organization_memberships membership
@@ -295,7 +304,9 @@ leadsRouter.delete("/api/leads/:leadId", async (c) => {
   const leadId = c.req.param("leadId");
   const access = await leadAccess(c, leadId);
   if (!access) return c.json({ error: { code: "not_found" } }, 404);
-  if (!access.write) { await audit(c, leadId, "lead.delete", "denied"); return c.json({ error: { code: "forbidden" } }, 403); }
+  const destructiveAccess = Boolean(await platformRoleForUser(c.env.DB, c.get("userId")))
+    || await hasCapability(c.env.DB, c.get("userId"), "leads.delete", access.organizationId || undefined);
+  if (!access.write || !destructiveAccess) { await audit(c, leadId, "lead.delete", "denied"); return c.json({ error: { code: "forbidden" } }, 403); }
   const body = await c.req.json<{ reasonCode?: string; reasonDetail?: string }>().catch(() => null);
   const reasonCode = String(body?.reasonCode || "");
   const reasonDetail = String(body?.reasonDetail || "").trim().slice(0, 500);

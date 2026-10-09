@@ -76,13 +76,29 @@ unsafe_lead_agent_state=$(sqlite3 "$audit_database" \
         AND instr(version.guardrails, 'soliciți intervenția echipei') > 0
         AND instr(version.guardrails, '2026-10-03 18:57:16 Europe/Bucharest') > 0
     ) THEN 0 ELSE 1 END;")
+agent_execution_route_count=$(sqlite3 "$audit_database" \
+  "SELECT COUNT(*) FROM agent_execution_routes
+    WHERE status='active' AND agent_slug IN ('leads','ai-prod-content');")
+unsafe_codex_operator_state=$(sqlite3 "$audit_database" \
+  "SELECT CASE WHEN NOT EXISTS (SELECT 1 FROM users WHERE lower(email)='codexagent@avyron.ro') THEN 0
+    ELSE
+      (SELECT COUNT(*) FROM user_roles r JOIN users u ON u.id=r.user_id
+        WHERE lower(u.email)='codexagent@avyron.ro' AND r.role<>'user')
+      + CASE WHEN (SELECT COUNT(*) FROM agent_operator_bindings b JOIN users u ON u.id=b.user_id
+                    WHERE lower(u.email)='codexagent@avyron.ro' AND b.status='active'
+                      AND b.agent_slug IN ('leads','ai-prod-content'))=2 THEN 0 ELSE 1 END
+      + (SELECT COUNT(*) FROM user_capabilities c JOIN users u ON u.id=c.user_id
+          WHERE lower(u.email)='codexagent@avyron.ro' AND c.revoked_at IS NULL
+            AND c.capability IN ('leads.delete','users.manage','billing.manage','secrets.manage','social.publish','social.approve'))
+    END;")
 
 if [[ "$foreign_key_issues" != "0" || "$integrity" != "ok" || "$legacy_ai_timestamps" != "0" \
    || "$platform_owners" != "1" || "$unsafe_social_sources" != "0" || "$invalid_lead_state" != "0" \
    || "$unsafe_engine_state" != "0" || "$unsafe_audience_state" != "0" \
    || "$unsafe_social_backup_state" != "0" || "$unsafe_admin_only_audience_state" != "0" \
-   || "$unsafe_lead_agent_state" != "0" ]]; then
-  echo "D1 schema audit failed: foreign_keys=$foreign_key_issues integrity=$integrity legacy_ai_timestamps=$legacy_ai_timestamps platform_owners=$platform_owners unsafe_social_sources=$unsafe_social_sources invalid_lead_state=$invalid_lead_state unsafe_engine_state=$unsafe_engine_state unsafe_audience_state=$unsafe_audience_state unsafe_social_backup_state=$unsafe_social_backup_state unsafe_admin_only_audience_state=$unsafe_admin_only_audience_state unsafe_lead_agent_state=$unsafe_lead_agent_state" >&2
+   || "$unsafe_lead_agent_state" != "0" || "$agent_execution_route_count" != "9" \
+   || "$unsafe_codex_operator_state" != "0" ]]; then
+  echo "D1 schema audit failed: foreign_keys=$foreign_key_issues integrity=$integrity legacy_ai_timestamps=$legacy_ai_timestamps platform_owners=$platform_owners unsafe_social_sources=$unsafe_social_sources invalid_lead_state=$invalid_lead_state unsafe_engine_state=$unsafe_engine_state unsafe_audience_state=$unsafe_audience_state unsafe_social_backup_state=$unsafe_social_backup_state unsafe_admin_only_audience_state=$unsafe_admin_only_audience_state unsafe_lead_agent_state=$unsafe_lead_agent_state agent_execution_routes=$agent_execution_route_count unsafe_codex_operator_state=$unsafe_codex_operator_state" >&2
   exit 1
 fi
 

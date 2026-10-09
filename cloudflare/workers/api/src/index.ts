@@ -682,7 +682,9 @@ app.post("/api/auth/refresh", async (c) => {
   const origin = c.req.header("origin");
   if (origin && !allowedOrigin(c.env, origin)) return c.json({ error: { code: "forbidden_origin" } }, 403);
   const sid = getCookie(c, "sid");
-  if (!sid) return c.json({ error: { code: "no_session" } }, 401);
+  // Lipsa unei sesiuni este starea normală pentru vizitatorii publici. Un
+  // răspuns gol reușit evită o eroare falsă în consolă, fără a emite token.
+  if (!sid) return c.body(null, 204);
   const hashedSid = await sha256(sid);
   const row = await c.env.DB.prepare(
     `SELECT session.id,session.user_id,session.expires_at,session.mfa_verified_at,session.last_seen_at,account.must_change_password
@@ -694,7 +696,7 @@ app.post("/api/auth/refresh", async (c) => {
       "UPDATE sessions SET revoked_at = ?, revoked_reason = 'expired' WHERE id = ? AND revoked_at IS NULL",
     ).bind(now(), row.id).run();
     deleteCookie(c, "sid", { path: "/" });
-    return c.json({ error: { code: "expired" } }, 401);
+    return c.body(null, 204);
   }
   const refreshedAt = now();
   if (row.last_seen_at < refreshedAt - 15 * 60_000) {
@@ -731,7 +733,15 @@ app.get("/api/auth/me", requireAuth, async (c) => {
       .bind(c.get("userId"), (u as { display_name?: string }).display_name || null, now()).run();
     profile = await c.env.DB.prepare(`SELECT ${PROFILE_SELECT} FROM profiles WHERE id = ?`).bind(c.get("userId")).first();
   }
-  return c.json({ user: u, profile, roles: c.get("roles"), superadmin: await isSuperAdmin(c) });
+  const { results: capabilityRows } = await c.env.DB.prepare(
+    `SELECT DISTINCT capability FROM user_capabilities
+      WHERE user_id=? AND organization_id IS NULL AND revoked_at IS NULL
+        AND (expires_at IS NULL OR expires_at>?) ORDER BY capability`,
+  ).bind(c.get("userId"), now()).all<{ capability: string }>();
+  return c.json({
+    user: u, profile, roles: c.get("roles"), superadmin: await isSuperAdmin(c),
+    capabilities: capabilityRows.map((row) => row.capability),
+  });
 });
 
 app.get("/api/auth/sessions", requireAuth, async (c) => {
@@ -1003,6 +1013,13 @@ const maskEmail = (email: string) => {
   return `${name.slice(0, 2)}${"*".repeat(Math.max(1, name.length - 2))}@${domain}`;
 };
 
+const CODEX_OPERATOR_EMAIL = "codexagent@avyron.ro";
+const CODEX_OPERATOR_USERNAME = "codex-agent";
+const CODEX_OPERATOR_CAPABILITIES = [
+  "leads.read", "leads.create", "leads.write", "leads.activity.create", "leads.reminder.manage",
+  "ai_projects.read", "ai_content.create", "social.source.propose", "social.lead_handoff",
+] as const;
+
 // ─── Business CRUD (exemplu: clients) ───────────────────────────────────
 app.get("/api/clients", requireAuth, requireRole("staff", "admin"), async (c) => {
   const { results } = await c.env.DB.prepare("SELECT id,company_name,contact_name,email,phone,status,created_at FROM clients ORDER BY created_at DESC LIMIT 200").all();
@@ -1084,6 +1101,132 @@ app.post("/api/admin/users", requireAuth, requireSuperAdmin, async (c) => {
     ).bind(uuid(), actorUserId, userId, c.get("requestId") || null, await hashKey(clientIp(c.req.raw)), JSON.stringify({ email, username, roles }), timestamp),
   ]);
   return c.json({ data: { id: userId, email, username, display_name: displayName, roles, must_change_password: 1 } }, 201);
+});
+
+app.get("/api/admin/agent-operators/codex", requireAuth, requireSuperAdmin, async (c) => {
+  const account = await c.env.DB.prepare(
+    `SELECT id,email,username,display_name,must_change_password,disabled_at,updated_at
+       FROM users WHERE lower(email)=? LIMIT 1`,
+  ).bind(CODEX_OPERATOR_EMAIL).first<Record<string, unknown>>();
+  if (!account) return c.json({ data: { exists: false, synchronized: false } });
+  const [roles, capabilities, bindings, routes] = await Promise.all([
+    c.env.DB.prepare("SELECT role FROM user_roles WHERE user_id=? ORDER BY role").bind(account.id).all(),
+    c.env.DB.prepare(
+      `SELECT capability,revoked_at,expires_at,reason FROM user_capabilities
+        WHERE user_id=? ORDER BY capability`,
+    ).bind(account.id).all(),
+    c.env.DB.prepare(
+      `SELECT project_id,agent_slug,operator_role,status,permissions_json,synced_at
+         FROM agent_operator_bindings WHERE user_id=? ORDER BY agent_slug`,
+    ).bind(account.id).all(),
+    c.env.DB.prepare(
+      `SELECT agent_slug,task_key,action_class,executor,requires_approval,max_daily_runs,status,notes
+         FROM agent_execution_routes WHERE agent_slug IN ('leads','ai-prod-content')
+        ORDER BY agent_slug,task_key`,
+    ).all(),
+  ]);
+  const activeCapabilities = new Set(capabilities.results
+    .filter((row) => row.revoked_at === null && (row.expires_at === null || Number(row.expires_at) > now()))
+    .map((row) => String(row.capability)));
+  const synchronized = account.disabled_at === null
+    && roles.results.length === 1 && roles.results[0]?.role === "user"
+    && activeCapabilities.size === CODEX_OPERATOR_CAPABILITIES.length
+    && CODEX_OPERATOR_CAPABILITIES.every((capability) => activeCapabilities.has(capability))
+    && bindings.results.length === 2
+    && bindings.results.every((binding) => binding.status === "active"
+      && binding.project_id === "aip_avyron_web"
+      && ["leads", "ai-prod-content"].includes(String(binding.agent_slug)));
+  return c.json({ data: { exists: true, synchronized, account, roles: roles.results, capabilities: capabilities.results, bindings: bindings.results, routes: routes.results } });
+});
+
+app.post("/api/admin/agent-operators/codex/synchronize", requireAuth, requireSuperAdmin, async (c) => {
+  const body = await c.req.json().catch(() => ({})) as { temporaryPassword?: unknown };
+  const temporaryPassword = typeof body.temporaryPassword === "string" ? body.temporaryPassword : "";
+  let account = await c.env.DB.prepare(
+    "SELECT id,email,disabled_at FROM users WHERE lower(email)=? LIMIT 1",
+  ).bind(CODEX_OPERATOR_EMAIL).first<{ id: string; email: string; disabled_at: number | null }>();
+  const accountCreated = !account;
+  if (!account && (temporaryPassword.length < 10 || !/[A-Z]/.test(temporaryPassword) || !/[0-9]/.test(temporaryPassword))) {
+    return c.json({ error: { code: "temporary_password_required", message: "Pentru contul nou este necesară o parolă temporară sigură" } }, 400);
+  }
+  if (temporaryPassword && (temporaryPassword.length < 10 || !/[A-Z]/.test(temporaryPassword) || !/[0-9]/.test(temporaryPassword))) {
+    return c.json({ error: { code: "weak_temporary_password" } }, 400);
+  }
+  if (account && await c.env.DB.prepare(
+    "SELECT 1 FROM platform_principals WHERE email=? COLLATE NOCASE AND status='active' LIMIT 1",
+  ).bind(account.email).first()) {
+    return c.json({ error: { code: "platform_principal_protected" } }, 409);
+  }
+  if (!account) {
+    const usernameTaken = await c.env.DB.prepare("SELECT 1 FROM users WHERE lower(username)=? LIMIT 1")
+      .bind(CODEX_OPERATOR_USERNAME).first();
+    if (usernameTaken) return c.json({ error: { code: "identity_taken", field: "username" } }, 409);
+    const userId = uuid();
+    const timestamp = now();
+    await c.env.DB.batch([
+      c.env.DB.prepare(
+        `INSERT INTO users
+          (id,email,username,password_hash,display_name,email_verified,must_change_password,created_at,updated_at)
+         VALUES (?,?,?,?,?,1,1,?,?)`,
+      ).bind(userId, CODEX_OPERATOR_EMAIL, CODEX_OPERATOR_USERNAME, await hashPassword(temporaryPassword), "Codex Agent", timestamp, timestamp),
+      c.env.DB.prepare(
+        `INSERT INTO profiles (id,display_name,entity_type,language,theme,staff_role,updated_at)
+         VALUES (?,?,'individual','ro','system',NULL,?)`,
+      ).bind(userId, "Codex Agent", timestamp),
+    ]);
+    account = { id: userId, email: CODEX_OPERATOR_EMAIL, disabled_at: null };
+  }
+
+  const usernameConflict = await c.env.DB.prepare(
+    "SELECT 1 FROM users WHERE lower(username)=? AND id<>? LIMIT 1",
+  ).bind(CODEX_OPERATOR_USERNAME, account.id).first();
+  if (usernameConflict) return c.json({ error: { code: "identity_taken", field: "username" } }, 409);
+
+  const timestamp = now();
+  const statements = [
+    c.env.DB.prepare("UPDATE users SET username=?,display_name='Codex Agent',disabled_at=NULL,updated_at=? WHERE id=?")
+      .bind(CODEX_OPERATOR_USERNAME, timestamp, account.id),
+    c.env.DB.prepare("DELETE FROM user_roles WHERE user_id=?").bind(account.id),
+    c.env.DB.prepare("INSERT INTO user_roles(user_id,role) VALUES (?,'user')").bind(account.id),
+    c.env.DB.prepare("DELETE FROM client_account_access WHERE user_id=?").bind(account.id),
+    c.env.DB.prepare("DELETE FROM user_capabilities WHERE user_id=?").bind(account.id),
+    c.env.DB.prepare("UPDATE ai_project_members SET status='revoked',updated_at=? WHERE user_id=? AND project_id<>'aip_avyron_web'")
+      .bind(timestamp, account.id),
+    c.env.DB.prepare(
+      `INSERT INTO ai_project_members(project_id,user_id,role,status,granted_by,granted_at,updated_at)
+       VALUES ('aip_avyron_web',?,'editor','active',?,?,?)
+       ON CONFLICT(project_id,user_id) DO UPDATE SET role='editor',status='active',granted_by=excluded.granted_by,updated_at=excluded.updated_at`,
+    ).bind(account.id, c.get("userId"), timestamp, timestamp),
+    c.env.DB.prepare(
+      `INSERT INTO agent_operator_bindings(user_id,project_id,agent_slug,operator_role,status,permissions_json,synced_at)
+       VALUES (?,'aip_avyron_web','leads','lead_operator','active',?,?)
+       ON CONFLICT(user_id,project_id,agent_slug) DO UPDATE SET operator_role=excluded.operator_role,status='active',permissions_json=excluded.permissions_json,synced_at=excluded.synced_at`,
+    ).bind(account.id, JSON.stringify(["read_leads", "create_leads", "update_leads", "add_activities", "manage_reminders"]), timestamp),
+    c.env.DB.prepare(
+      `INSERT INTO agent_operator_bindings(user_id,project_id,agent_slug,operator_role,status,permissions_json,synced_at)
+       VALUES (?,'aip_avyron_web','ai-prod-content','social_manager','active',?,?)
+       ON CONFLICT(user_id,project_id,agent_slug) DO UPDATE SET operator_role=excluded.operator_role,status='active',permissions_json=excluded.permissions_json,synced_at=excluded.synced_at`,
+    ).bind(account.id, JSON.stringify(["read_project", "create_drafts", "propose_sources", "handoff_lead", "manual_publish_after_approval"]), timestamp),
+    ...CODEX_OPERATOR_CAPABILITIES.map((capability) => c.env.DB.prepare(
+      `INSERT INTO user_capabilities(id,user_id,capability,organization_id,granted_by,reason,expires_at,revoked_at,created_at)
+       VALUES (?,?,?,?,?,'agent_operator_profile:codex-v1',NULL,NULL,?)`,
+    ).bind(`codex_cap_${capability.replaceAll(".", "_")}`, account.id, capability, null, c.get("userId"), timestamp)),
+    c.env.DB.prepare(
+      `INSERT INTO security_events
+        (id,actor_user_id,actor_type,action,target_type,target_id,outcome,severity,request_id,metadata_json,created_at)
+       VALUES (?,?,'user','admin.agent_operator_synchronized','user',?,'allowed','warning',?,?,?)`,
+    ).bind(uuid(), c.get("userId"), account.id, c.get("requestId") || null, JSON.stringify({ email: CODEX_OPERATOR_EMAIL, agents: ["leads", "ai-prod-content"] }), timestamp),
+  ];
+  if (temporaryPassword) {
+    statements.splice(1, 0,
+      c.env.DB.prepare("UPDATE users SET password_hash=?,must_change_password=1,updated_at=? WHERE id=?")
+        .bind(await hashPassword(temporaryPassword), timestamp, account.id),
+      c.env.DB.prepare("UPDATE sessions SET revoked_at=?,revoked_reason='agent_operator_resync' WHERE user_id=? AND revoked_at IS NULL")
+        .bind(timestamp, account.id),
+    );
+  }
+  await c.env.DB.batch(statements);
+  return c.json({ data: { id: account.id, email: CODEX_OPERATOR_EMAIL, username: CODEX_OPERATOR_USERNAME, synchronized: true, passwordRotated: Boolean(temporaryPassword) } }, accountCreated ? 201 : 200);
 });
 
 app.patch("/api/admin/users/:userId/status", requireAuth, requireSuperAdmin, async (c) => {
