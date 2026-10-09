@@ -23,8 +23,6 @@ export type StageEffectProps = {
 };
 
 type StageSlotProps = {
-  /** Codul din catalog, ex. „PRZ-S2". Ajunge în DOM pentru depanare. */
-  code: string;
   /** Ce se vede întotdeauna, inclusiv fără WebGL sau în HTML-ul prerenderat. */
   poster: ReactNode;
   /** Efectul, ca import dinamic — ajunge în chunk-ul 3D, nu în bundle-ul inițial. */
@@ -43,7 +41,6 @@ type StageSlotProps = {
  * fără WebGL2 sau cu mișcare redusă efectul nu se cere niciodată.
  */
 export default function StageSlot({
-  code,
   poster,
   load,
   className,
@@ -107,7 +104,6 @@ export default function StageSlot({
   return (
     <div
       ref={hostRef}
-      data-effect={code}
       data-tier={tier}
       className={cn("relative isolate overflow-hidden", className)}
     >

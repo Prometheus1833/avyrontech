@@ -534,12 +534,12 @@ const SERVICES: ServiceDef[] = [
   {
     key: "ai",
     icon: Cpu,
-    badge: { ro: "Serviciu AI dedicat", en: "Dedicated AI service" },
-    title: { ro: "Agentul tău AI personalizat", en: "Your personalized AI Agent" },
-    tagline: { ro: "Chat site · WhatsApp · Automatizări", en: "Site chat · WhatsApp · Automations" },
+    badge: { ro: "Agenți și automatizări", en: "Agents and automation" },
+    title: { ro: "Agenți AI personalizați", en: "Custom AI agents" },
+    tagline: { ro: "Conversații · Email · Social media · Leaduri", en: "Conversations · Email · Social media · Leads" },
     desc: {
-      ro: "Un asistent AI construit special pentru afacerea ta — răspunde clienților 24/7 pe site și WhatsApp, preia comenzi, programează întâlniri și automatizează sarcini repetitive. Antrenat pe baza ta de date, produsele, prețurile și tonul brandului tău, devine un coleg digital care nu doarme niciodată.",
-      en: "An AI assistant built specifically for your business — replies to clients 24/7 on your site and WhatsApp, takes orders, books appointments and automates repetitive tasks. Trained on your database, products, prices and brand tone, it becomes a digital teammate that never sleeps.",
+      ro: "Configurăm unul sau mai mulți agenți AI pentru procesele reale ale afacerii: conversații cu clienții, emailuri și follow-up, pregătirea și publicarea controlată a conținutului social, identificarea și calificarea leadurilor, programări, comenzi și actualizarea CRM-ului. Fiecare agent lucrează pe surse aprobate, cu permisiuni clare, jurnal de activitate și predare către echipă.",
+      en: "We configure one or more AI agents for real business workflows: customer conversations, email and follow-up, controlled social content preparation and publishing, lead discovery and qualification, bookings, orders and CRM updates. Every agent works from approved sources, with clear permissions, activity logs and human handoff.",
     },
     time: { ro: "Timp aproximativ implementare: 5–14 zile", en: "Approx. implementation time: 5–14 days" },
     includes: { ro: "Include:", en: "Includes:" },
@@ -547,64 +547,64 @@ const SERVICES: ServiceDef[] = [
       {
         icon: MessageCircle,
         text: {
-          ro: "Chat AI interactiv pe site, integrabil în orice pagină",
-          en: "Interactive AI chat on your site, embeddable on any page",
+          ro: "Agent conversațional pentru site, WhatsApp și canalele conectate",
+          en: "Conversation agent for your website, WhatsApp and connected channels",
         },
       },
       {
         icon: Share2,
         text: {
-          ro: "Integrare WhatsApp Business — același agent, același ton",
-          en: "WhatsApp Business integration — same agent, same voice",
+          ro: "Agent social media pentru idei, calendar, postări, programare și raportare",
+          en: "Social media agent for ideas, calendars, posts, scheduling and reporting",
         },
       },
       {
         icon: Cloud,
         text: {
-          ro: "Bază de date privată cu produsele, prețurile și politicile tale",
-          en: "Private database with your products, pricing and policies",
+          ro: "Agent pentru emailuri, răspunsuri, follow-up și notificări operaționale",
+          en: "Agent for email, replies, follow-ups and operational notifications",
         },
       },
       {
         icon: BadgeCheck,
         text: {
-          ro: "Personalitate, ton și răspunsuri configurate pe brandul tău",
-          en: "Personality, tone and replies tuned to your brand",
+          ro: "Căutare și calificare de leaduri din surse permise, sincronizate cu CRM-ul",
+          en: "Lead discovery and qualification from permitted sources, synced with your CRM",
         },
       },
       {
         icon: Cpu,
         text: {
-          ro: "Automatizări: comenzi, programări, lead-uri, follow-up",
-          en: "Automations: orders, bookings, leads, follow-ups",
+          ro: "Automatizări pentru comenzi, programări, documente și actualizări de status",
+          en: "Automation for orders, bookings, documents and status updates",
         },
       },
       {
         icon: Bell,
         text: {
-          ro: "Notificări către echipă când clientul cere intervenție umană",
-          en: "Notifications to your team when human handoff is needed",
+          ro: "Aprobări înaintea acțiunilor sensibile și transfer rapid către un om",
+          en: "Approvals before sensitive actions and fast human handoff",
         },
       },
       {
         icon: BarChart3,
         text: {
-          ro: "Dashboard cu conversații, conversii și subiecte frecvente",
-          en: "Dashboard with conversations, conversions and hot topics",
+          ro: "Panou cu activitate, rezultate, erori, costuri și trasabilitatea acțiunilor",
+          en: "Dashboard for activity, outcomes, errors, costs and action traceability",
         },
       },
       {
         icon: RefreshCw,
         text: {
-          ro: "Reantrenare periodică pe noile informații din afacerea ta",
-          en: "Periodic retraining on new information from your business",
+          ro: "Cunoștințe și reguli actualizabile fără a reconstrui întregul sistem",
+          en: "Updatable knowledge and rules without rebuilding the entire system",
         },
       },
     ],
-    cta: { ro: "Vreau un Agent AI", en: "I want an AI Agent" },
+    cta: { ro: "Vreau agenți AI personalizați", en: "I want custom AI agents" },
     wa: {
-      ro: "Bună! Sunt interesat de un Agent AI personalizat pentru afacerea mea.",
-      en: "Hi! I'm interested in a personalized AI Agent for my business.",
+      ro: "Bună! Sunt interesat de agenți AI personalizați și automatizări pentru afacerea mea.",
+      en: "Hi! I'm interested in custom AI agents and automation for my business.",
     },
     details: { ro: "/servicii/automatizari-si-ai", en: "/en/services/automation-and-ai" },
     analytics: "services_ai",
@@ -705,7 +705,7 @@ const SERVICES: ServiceDef[] = [
   },
 ];
 
-const SERVICE_ORDER = ["website", "shop", "apps", "logo", "blog", "social", "ai", "qa"] as const;
+const SERVICE_ORDER = ["website", "shop", "apps", "ai", "logo", "blog", "social", "qa"] as const;
 const ORDERED_SERVICES = SERVICE_ORDER.flatMap((key) => {
   const service = SERVICES.find((candidate) => candidate.key === key);
   return service ? [service] : [];

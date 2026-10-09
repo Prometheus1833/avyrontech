@@ -26,7 +26,6 @@ export default function LibraryLink({ sectionId }: { sectionId?: string } = {}) 
   // componenta nu randează nimic acolo.
   if (!section || !section.entry) return null;
 
-  const demos = section.effects.filter((effect) => effect.demo).length;
   const href = `${LIBRARY_PATH[lang]}?de-la=${section.id}#${section.id}`;
 
   return (
@@ -48,8 +47,8 @@ export default function LibraryLink({ sectionId }: { sectionId?: string } = {}) 
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-foreground/70">
               {lang === "ro"
-                ? `${section.effects.length} efecte documentate, din care ${demos} le poți încerca direct în pagină. Alegi ce vrei, noi primim lista.`
-                : `${section.effects.length} documented effects, ${demos} of which you can try right in the page. Pick what you want and we get the list.`}
+                ? "Explorează demonstrații și direcții vizuale potrivite acestui serviciu. Alegi ce te interesează, iar noi adaptăm soluția proiectului tău."
+                : "Explore demos and visual directions suited to this service. Choose what interests you and we adapt the solution to your project."}
             </p>
           </div>
 

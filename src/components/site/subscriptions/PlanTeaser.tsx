@@ -139,8 +139,8 @@ const PlanTeaser = ({ category, accent, productName, productKey, hideAskButton =
         </h2>
         <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-foreground/70 md:text-base">
           {ro
-            ? `Livrarea e doar începutul. Alege ritmul în care ținem ${productName.toLowerCase()} actualizat, sigur și în creștere — schimbi treapta oricând.`
-            : `Delivery is only the start. Pick the pace at which we keep ${productName.toLowerCase()} updated, secure and growing — change tier any time.`}
+            ? "Livrarea e doar începutul. Alege ritmul de mentenanță, actualizare și dezvoltare potrivit produsului tău — schimbi treapta oricând."
+            : "Delivery is only the start. Choose the maintenance, update and development pace that fits your product — change tier at any time."}
         </p>
       </Reveal>
 
