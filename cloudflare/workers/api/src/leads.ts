@@ -244,7 +244,7 @@ leadsRouter.get("/api/leads/:leadId", async (c) => {
   if (!access) return c.json({ error: { code: "not_found" } }, 404);
   if (!access.read) return c.json({ error: { code: "forbidden" } }, 403);
   const lead = await c.env.DB.prepare("SELECT * FROM leads WHERE id = ?").bind(leadId).first();
-  const [activities, assignments, reminders] = await Promise.all([
+  const [activities, assignments, reminders, followUps] = await Promise.all([
     c.env.DB.prepare("SELECT * FROM lead_activities WHERE lead_id = ? ORDER BY occurred_at DESC LIMIT 200").bind(leadId).all(),
     c.env.DB.prepare(
       `SELECT assignment.user_id, assignment.assignment_role, assignment.assigned_at,
@@ -253,8 +253,13 @@ leadsRouter.get("/api/leads/:leadId", async (c) => {
         WHERE assignment.lead_id = ? ORDER BY assignment.assigned_at`,
     ).bind(leadId).all(),
     c.env.DB.prepare("SELECT * FROM lead_reminders WHERE lead_id = ? ORDER BY due_at DESC LIMIT 100").bind(leadId).all(),
+    c.env.DB.prepare(
+      `SELECT id,sequence,due_at,status,whatsapp_body,email_subject,email_body,
+              generated_by_model,generated_at,sent_at,expires_at,updated_at
+         FROM lead_follow_up_drafts WHERE lead_id=? ORDER BY sequence DESC LIMIT 10`,
+    ).bind(leadId).all(),
   ]);
-  return c.json({ data: lead, activities: activities.results, assignments: assignments.results, reminders: reminders.results, canEdit: access.write });
+  return c.json({ data: lead, activities: activities.results, assignments: assignments.results, reminders: reminders.results, followUps: followUps.results, canEdit: access.write });
 });
 
 leadsRouter.patch("/api/leads/:leadId", async (c) => {

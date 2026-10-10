@@ -1458,6 +1458,7 @@ import { produseAdminRouter } from "./produseAdmin";
 import { billingRouter } from "./billing";
 import { systemDiagnosticsRouter } from "./systemDiagnostics";
 import { consumeAsyncJobs, enqueueAsyncJobs } from "./asyncJobs";
+import { cleanupLeadFollowUpDrafts } from "./leadFollowUps";
 import { blogRouter, getBlogSitemapEntries, getPublishedBlogPost } from "./blog";
 import { headersForTransformedBody, injectBlogHtml, mergeBlogSitemap } from "../../../../src/worker/blogHtml";
 import { BLOG_SLUGS } from "../../../../src/data/blogSlugs";
@@ -1688,6 +1689,7 @@ async function cleanupExpiredData(env: AppBindings["Bindings"]) {
     env.DB.prepare("UPDATE newsletter_subscribers SET confirmation_token_hash = NULL, confirmation_expires_at = NULL, updated_at = ? WHERE status = 'pending' AND confirmation_expires_at < ?")
       .bind(timestamp, timestamp),
   ]);
+  await cleanupLeadFollowUpDrafts(env, timestamp);
 }
 
 export default {
@@ -1697,7 +1699,7 @@ export default {
   },
   scheduled: (controller, env, ctx) => {
     if (controller.cron === "0,15,30,45 * * * *") {
-      ctx.waitUntil(enqueueAsyncJobs(env, ["operation_drain", "social_drain"]));
+      ctx.waitUntil(enqueueAsyncJobs(env, ["operation_drain", "social_drain", "lead_follow_up_drain"]));
       return;
     }
     if (controller.cron === EXCHANGE_RATE_REFRESH_CRON) {

@@ -38,11 +38,20 @@ export type LeadReminder = {
   created_at: number;
 };
 
+export type LeadFollowUpDraft = {
+  id: string; sequence: number; due_at: number;
+  status: "queued" | "generating" | "ready" | "sent" | "cancelled" | "failed" | "expired";
+  whatsapp_body: string | null; email_subject: string | null; email_body: string | null;
+  generated_by_model: string | null; generated_at: number | null; sent_at: number | null;
+  expires_at: number; updated_at: number;
+};
+
 export type LeadDetailResponse = {
   data: LeadDetail;
   activities: LeadActivity[];
   assignments: LeadAssignment[];
   reminders: LeadReminder[];
+  followUps: LeadFollowUpDraft[];
   canEdit: boolean;
 };
 

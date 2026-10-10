@@ -230,6 +230,16 @@ export function LeadDetailDialog({ leadId, onOpenChange, onChanged, onDeleted }:
                 {pendingReminders.length === 0 && <p className="text-sm text-muted-foreground">Niciun reminder activ.</p>}
               </section>
 
+              {detail.followUps.length > 0 && <section className="space-y-3 rounded-2xl border border-border/60 bg-card/60 p-4">
+                <h3 className="font-medium">Reveniri Necesit pregătite</h3>
+                {detail.followUps.map((draft) => <article key={draft.id} className="space-y-2 rounded-xl border border-border/50 p-3 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2"><span className="font-medium">Revenirea {draft.sequence} · {draft.status}</span><time className="text-xs text-muted-foreground">{formatDate(draft.due_at)}</time></div>
+                  {draft.whatsapp_body && <div><p className="text-xs font-medium text-muted-foreground">WhatsApp</p><p className="mt-1 whitespace-pre-wrap">{draft.whatsapp_body}</p></div>}
+                  {draft.email_body && <div className="border-t border-border/50 pt-2"><p className="text-xs font-medium text-muted-foreground">E-mail · {draft.email_subject}</p><p className="mt-1 whitespace-pre-wrap">{draft.email_body}</p></div>}
+                  <p className="text-[11px] text-muted-foreground">Ciornă temporară. Trimiterea se confirmă numai în canalul oficial.</p>
+                </article>)}
+              </section>}
+
               <section className="space-y-2 rounded-2xl border border-border/60 bg-card/60 p-4">
                 <h3 className="font-medium">Responsabili</h3>
                 <ul className="space-y-2">{detail.assignments.map((item) => <li key={item.user_id} className="rounded-xl bg-muted/50 px-3 py-2 text-sm"><span className="font-medium">{item.display_name || item.email}</span><span className="block text-xs text-muted-foreground">{item.assignment_role}</span></li>)}</ul>
