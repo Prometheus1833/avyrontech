@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Bell, Check, Clock3, ExternalLink, LoaderCircle, Mail, MessageCircle, Phone, Save, Star, Trash2 } from "lucide-react";
+import { Bell, Check, CheckCircle2, Clock3, ExternalLink, LoaderCircle, Mail, MessageCircle, Pencil, Phone, Save, Send, Star, Trash2, UserCheck, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -8,6 +8,7 @@ import {
   type LeadChannel,
   type LeadDeletionReasonCode,
   type LeadDetailResponse,
+  type LeadFollowUpDraft,
   type LeadStage,
 } from "@/lib/leadsApi";
 import { LeadDeleteDialog } from "@/components/dashboard/leads/LeadDeletionDialogs";
@@ -57,6 +58,11 @@ export function LeadDetailDialog({ leadId, onOpenChange, onChanged, onDeleted }:
   const [reminderAt, setReminderAt] = useState("");
   const [reminderNote, setReminderNote] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [revisionDraftId, setRevisionDraftId] = useState<string | null>(null);
+  const [revisionSection, setRevisionSection] = useState<"whatsapp" | "email">("whatsapp");
+  const [revisionInstruction, setRevisionInstruction] = useState("");
+  const [sendDraftId, setSendDraftId] = useState<string | null>(null);
+  const [sendChannels, setSendChannels] = useState<Array<"whatsapp" | "email">>([]);
 
   const load = useCallback(async () => {
     if (!leadId) return;
@@ -145,6 +151,74 @@ export function LeadDetailDialog({ leadId, onOpenChange, onChanged, onDeleted }:
     onChanged();
   };
 
+  const claimLead = async () => {
+    if (!leadId || !detail?.canEdit) return;
+    setSaving(true);
+    try {
+      await leadsApi.claim(leadId);
+      toast.success("Ai preluat responsabilitatea principală pentru acest lead.");
+      await load(); onChanged();
+    } catch { toast.error("Responsabilitatea nu a putut fi preluată."); }
+    finally { setSaving(false); }
+  };
+
+  const reviewDraft = async (draft: LeadFollowUpDraft, decision: "approved" | "rejected") => {
+    if (!leadId) return;
+    setSaving(true);
+    try {
+      await leadsApi.reviewFollowUp(leadId, draft.id, decision, draft.revision);
+      toast.success(decision === "approved"
+        ? "Ciorna a fost aprobată intern. Nu a fost trimisă extern."
+        : "Ciorna a fost respinsă și rămâne netrimisă.");
+      await load(); onChanged();
+    } catch { toast.error("Decizia nu a putut fi salvată. Reîncarcă versiunea curentă."); }
+    finally { setSaving(false); }
+  };
+
+  const openRevision = (draft: LeadFollowUpDraft) => {
+    setRevisionDraftId(draft.id);
+    setRevisionSection(draft.whatsapp_body ? "whatsapp" : "email");
+    setRevisionInstruction("");
+  };
+
+  const requestRevision = async () => {
+    if (!leadId || !revisionDraftId || revisionInstruction.trim().length < 5) return;
+    const draft = detail?.followUps.find((item) => item.id === revisionDraftId);
+    if (!draft) return;
+    setSaving(true);
+    try {
+      await leadsApi.reviseFollowUp(leadId, draft.id, {
+        section: revisionSection, instruction: revisionInstruction.trim(), revision: draft.revision,
+      });
+      toast.success(`Workers AI a modificat numai secțiunea ${revisionSection === "whatsapp" ? "WhatsApp" : "e-mail"}. Ciorna necesită o nouă aprobare.`);
+      setRevisionDraftId(null); setRevisionInstruction("");
+      await load(); onChanged();
+    } catch { toast.error("Revizia nu a putut fi generată. Verifică limita AI și versiunea ciornei."); }
+    finally { setSaving(false); }
+  };
+
+  const openSendConfirmation = (draft: LeadFollowUpDraft) => {
+    setSendDraftId(draft.id);
+    setSendChannels([
+      ...(draft.whatsapp_body ? ["whatsapp" as const] : []),
+      ...(draft.email_body ? ["email" as const] : []),
+    ]);
+  };
+
+  const confirmSent = async () => {
+    if (!leadId || !sendDraftId || sendChannels.length === 0) return;
+    const draft = detail?.followUps.find((item) => item.id === sendDraftId);
+    if (!draft) return;
+    setSaving(true);
+    try {
+      await leadsApi.markFollowUpSent(leadId, draft.id, draft.revision, sendChannels);
+      toast.success("Trimiterea manuală a fost înregistrată pentru canalele selectate.");
+      setSendDraftId(null); setSendChannels([]);
+      await load(); onChanged();
+    } catch { toast.error("Confirmarea nu a putut fi salvată. Ciorna trebuie să fie aprobată și actuală."); }
+    finally { setSaving(false); }
+  };
+
   const recordContact = (kind: ActivityKind, label: string) => void addActivity(kind, `Contactare ${label} confirmată manual.`);
   const removeLead = async (reasonCode: LeadDeletionReasonCode, reasonDetail: string) => {
     if (!leadId || !detail?.canEdit) return;
@@ -154,6 +228,9 @@ export function LeadDetailDialog({ leadId, onOpenChange, onChanged, onDeleted }:
     finally { setSaving(false); }
   };
   const lead = detail?.data;
+  const currentUserIsOwner = detail?.assignments.some((item) => item.user_id === detail.currentUserId && item.assignment_role === "owner") ?? false;
+  const revisionDraft = detail?.followUps.find((item) => item.id === revisionDraftId) || null;
+  const sendDraft = detail?.followUps.find((item) => item.id === sendDraftId) || null;
 
   return (
     <>
@@ -230,8 +307,24 @@ export function LeadDetailDialog({ leadId, onOpenChange, onChanged, onDeleted }:
                 {pendingReminders.length === 0 && <p className="text-sm text-muted-foreground">Niciun reminder activ.</p>}
               </section>
 
+              {detail.followUps.length > 0 && <section className="space-y-3 rounded-2xl border border-border/60 bg-card/60 p-4">
+                <div><h3 className="font-medium">Reveniri Necesit pregătite</h3><p className="mt-1 text-xs text-muted-foreground">Aprobarea este internă. Trimiterea se face separat, în canalul oficial, și se confirmă aici numai după executare.</p></div>
+                {detail.followUps.map((draft) => <article key={draft.id} className="space-y-2 rounded-xl border border-border/50 p-3 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2"><span className="font-medium">Revenirea {draft.sequence} · {draft.status}</span><div className="flex items-center gap-2"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${draft.approval_status === "approved" ? "bg-emerald-500/10 text-emerald-600" : draft.approval_status === "rejected" ? "bg-red-500/10 text-red-600" : "bg-amber-500/10 text-amber-600"}`}>{draft.approval_status === "approved" ? "Aprobată" : draft.approval_status === "rejected" ? "Respinsă" : "De aprobat"} · v{draft.revision}</span><time className="text-xs text-muted-foreground">{formatDate(draft.due_at)}</time></div></div>
+                  {draft.whatsapp_body && <div><p className="text-xs font-medium text-muted-foreground">WhatsApp</p><p className="mt-1 whitespace-pre-wrap">{draft.whatsapp_body}</p></div>}
+                  {draft.email_body && <div className="border-t border-border/50 pt-2"><p className="text-xs font-medium text-muted-foreground">E-mail · {draft.email_subject}</p><p className="mt-1 whitespace-pre-wrap">{draft.email_body}</p></div>}
+                  <p className="text-[11px] text-muted-foreground">Ciornă temporară. O revizie AI schimbă exclusiv secțiunea aleasă și resetează aprobarea.</p>
+                  {detail.canEdit && draft.status === "ready" && <div className="flex flex-wrap gap-2 border-t border-border/50 pt-2">
+                    {draft.approval_status !== "approved" && <Button type="button" size="sm" disabled={saving} onClick={() => void reviewDraft(draft, "approved")}><CheckCircle2 /> Aprobă</Button>}
+                    {draft.approval_status !== "rejected" && <Button type="button" size="sm" variant="outline" disabled={saving} onClick={() => void reviewDraft(draft, "rejected")}><XCircle /> Respinge</Button>}
+                    <Button type="button" size="sm" variant="outline" disabled={saving} onClick={() => openRevision(draft)}><Pencil /> Propune modificare</Button>
+                    {draft.approval_status === "approved" && <Button type="button" size="sm" variant="secondary" disabled={saving} onClick={() => openSendConfirmation(draft)}><Send /> Confirmă trimiterea</Button>}
+                  </div>}
+                </article>)}
+              </section>}
+
               <section className="space-y-2 rounded-2xl border border-border/60 bg-card/60 p-4">
-                <h3 className="font-medium">Responsabili</h3>
+                <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-medium">Responsabili</h3>{detail.canEdit && !currentUserIsOwner && <Button type="button" size="sm" variant="outline" disabled={saving} onClick={() => void claimLead()}><UserCheck /> Preia sarcina</Button>}</div>
                 <ul className="space-y-2">{detail.assignments.map((item) => <li key={item.user_id} className="rounded-xl bg-muted/50 px-3 py-2 text-sm"><span className="font-medium">{item.display_name || item.email}</span><span className="block text-xs text-muted-foreground">{item.assignment_role}</span></li>)}</ul>
               </section>
 
@@ -242,6 +335,35 @@ export function LeadDetailDialog({ leadId, onOpenChange, onChanged, onDeleted }:
             </div>
           </div>
         )}
+      </DialogContent>
+    </Dialog>
+    <Dialog open={revisionDraftId !== null} onOpenChange={(open) => !open && setRevisionDraftId(null)}>
+      <DialogContent className="sm:max-w-xl">
+        <DialogHeader><DialogTitle>Propune modificare</DialogTitle><DialogDescription>Workers AI primește și modifică numai secțiunea selectată. Orice aprobare existentă va fi resetată.</DialogDescription></DialogHeader>
+        {revisionDraft && <div className="space-y-4">
+          <label className="block text-xs text-muted-foreground">Secțiune
+            <select className={`${field} mt-1`} value={revisionSection} onChange={(event) => setRevisionSection(event.target.value as "whatsapp" | "email")}>
+              {revisionDraft.whatsapp_body && <option value="whatsapp">WhatsApp</option>}
+              {revisionDraft.email_body && <option value="email">E-mail</option>}
+            </select>
+          </label>
+          <label className="block text-xs text-muted-foreground">Instrucțiune punctuală
+            <textarea className={`${field} mt-1 min-h-28`} value={revisionInstruction} onChange={(event) => setRevisionInstruction(event.target.value)} maxLength={1200} placeholder="Ex.: Scurtează introducerea și păstrează întrebarea finală." />
+          </label>
+          <Button type="button" disabled={saving || revisionInstruction.trim().length < 5} onClick={() => void requestRevision()}>{saving ? <LoaderCircle className="animate-spin" /> : <Pencil />} Generează revizia secțiunii</Button>
+        </div>}
+      </DialogContent>
+    </Dialog>
+    <Dialog open={sendDraftId !== null} onOpenChange={(open) => !open && setSendDraftId(null)}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader><DialogTitle>Confirmă trimiterea manuală</DialogTitle><DialogDescription>Bifează numai canalele în care mesajul este deja vizibil ca trimis. Această confirmare permite planificarea următoarei reveniri.</DialogDescription></DialogHeader>
+        {sendDraft && <div className="space-y-4">
+          <div className="space-y-2">
+            {sendDraft.whatsapp_body && <label className="flex items-center gap-2 rounded-xl border p-3 text-sm"><input type="checkbox" checked={sendChannels.includes("whatsapp")} onChange={(event) => setSendChannels((current) => event.target.checked ? [...new Set([...current, "whatsapp" as const])] : current.filter((item) => item !== "whatsapp"))} /> WhatsApp este trimis</label>}
+            {sendDraft.email_body && <label className="flex items-center gap-2 rounded-xl border p-3 text-sm"><input type="checkbox" checked={sendChannels.includes("email")} onChange={(event) => setSendChannels((current) => event.target.checked ? [...new Set([...current, "email" as const])] : current.filter((item) => item !== "email"))} /> E-mailul este trimis</label>}
+          </div>
+          <Button type="button" disabled={saving || sendChannels.length === 0} onClick={() => void confirmSent()}>{saving ? <LoaderCircle className="animate-spin" /> : <CheckCircle2 />} Salvează confirmarea</Button>
+        </div>}
       </DialogContent>
     </Dialog>
     <LeadDeleteDialog lead={lead || null} open={deleteOpen} busy={saving} onOpenChange={setDeleteOpen} onConfirm={removeLead} />

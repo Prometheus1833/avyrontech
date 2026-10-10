@@ -38,12 +38,23 @@ export type LeadReminder = {
   created_at: number;
 };
 
+export type LeadFollowUpDraft = {
+  id: string; sequence: number; due_at: number;
+  status: "queued" | "generating" | "ready" | "sent" | "cancelled" | "failed" | "expired";
+  whatsapp_body: string | null; email_subject: string | null; email_body: string | null;
+  generated_by_model: string | null; generated_at: number | null; sent_at: number | null;
+  expires_at: number; approval_status: "pending" | "approved" | "rejected";
+  approved_by: string | null; approved_at: number | null; revision: number; updated_at: number;
+};
+
 export type LeadDetailResponse = {
   data: LeadDetail;
   activities: LeadActivity[];
   assignments: LeadAssignment[];
   reminders: LeadReminder[];
+  followUps: LeadFollowUpDraft[];
   canEdit: boolean;
+  currentUserId: string;
 };
 
 export type LeadDeletionLog = {
@@ -76,6 +87,22 @@ export const leadsApi = {
   deletionLog: () => cfAuth.request<{ data: LeadDeletionLog[] }>("/api/leads/deletions"),
   addActivity: (id: string, input: { kind: string; direction?: string; outcome?: string; content?: string }) =>
     cfAuth.request<{ id: string }>(`/api/leads/${id}/activities`, { method: "POST", body: JSON.stringify(input) }),
+  claim: (id: string) => cfAuth.request<{ ok: true }>(`/api/leads/${id}/claim`, { method: "POST" }),
+  reviewFollowUp: (leadId: string, draftId: string, decision: "approved" | "rejected", revision: number) =>
+    cfAuth.request<{ ok: true; revision: number }>(`/api/leads/${leadId}/follow-ups/${draftId}/review`, {
+      method: "POST", body: JSON.stringify({ decision, revision }),
+    }),
+  reviseFollowUp: (leadId: string, draftId: string, input: {
+    section: "whatsapp" | "email"; instruction: string; revision: number;
+  }) => cfAuth.request<{ ok: true; revision: number }>(`/api/leads/${leadId}/follow-ups/${draftId}/revise`, {
+    method: "POST",
+    headers: { "Idempotency-Key": crypto.randomUUID() },
+    body: JSON.stringify(input),
+  }),
+  markFollowUpSent: (leadId: string, draftId: string, revision: number, channels: Array<"whatsapp" | "email">) =>
+    cfAuth.request<{ ok: true; revision: number }>(`/api/leads/${leadId}/follow-ups/${draftId}/sent`, {
+      method: "POST", body: JSON.stringify({ revision, channels }),
+    }),
   addReminder: (id: string, input: { dueAt: number; note: string; assignedTo?: string }) =>
     cfAuth.request<{ id: string }>(`/api/leads/${id}/reminders`, { method: "POST", body: JSON.stringify(input) }),
   closeReminder: (leadId: string, reminderId: string, status: "done" | "cancelled") =>

@@ -74,7 +74,18 @@ unsafe_lead_agent_state=$(sqlite3 "$audit_database" \
         AND agent.handoff_email = 'avyrontech@gmail.com'
         AND version.status = 'approved'
         AND instr(version.guardrails, 'soliciți intervenția echipei') > 0
-        AND instr(version.guardrails, '2026-10-03 18:57:16 Europe/Bucharest') > 0
+        AND agent.current_version = 5
+        AND instr(version.system_prompt, '48 de ore') > 0
+        AND instr(version.system_prompt, 'ziua 7') > 0
+        AND instr(version.system_prompt, 'revizie AI modifică exclusiv secțiunea selectată') > 0
+        AND instr(version.guardrails, 'AI Core cu plafon gratuit') > 0
+        AND instr(version.guardrails, '2026-10-03 18:57:16 Europe/Bucharest') = 0
+        AND EXISTS (
+          SELECT 1 FROM financial_agent_provider_policies policy
+           WHERE policy.agent_slug='leads' AND policy.vendor_id='fin_vendor_cloudflare_ai'
+             AND policy.status='active' AND policy.daily_budget_minor=0
+             AND policy.monthly_budget_minor=0 AND policy.max_request_cost_minor=0
+        )
     ) THEN 0 ELSE 1 END;")
 agent_execution_route_count=$(sqlite3 "$audit_database" \
   "SELECT COUNT(*) FROM agent_execution_routes
@@ -96,7 +107,7 @@ if [[ "$foreign_key_issues" != "0" || "$integrity" != "ok" || "$legacy_ai_timest
    || "$platform_owners" != "1" || "$unsafe_social_sources" != "0" || "$invalid_lead_state" != "0" \
    || "$unsafe_engine_state" != "0" || "$unsafe_audience_state" != "0" \
    || "$unsafe_social_backup_state" != "0" || "$unsafe_admin_only_audience_state" != "0" \
-   || "$unsafe_lead_agent_state" != "0" || "$agent_execution_route_count" != "9" \
+   || "$unsafe_lead_agent_state" != "0" || "$agent_execution_route_count" != "14" \
    || "$unsafe_codex_operator_state" != "0" ]]; then
   echo "D1 schema audit failed: foreign_keys=$foreign_key_issues integrity=$integrity legacy_ai_timestamps=$legacy_ai_timestamps platform_owners=$platform_owners unsafe_social_sources=$unsafe_social_sources invalid_lead_state=$invalid_lead_state unsafe_engine_state=$unsafe_engine_state unsafe_audience_state=$unsafe_audience_state unsafe_social_backup_state=$unsafe_social_backup_state unsafe_admin_only_audience_state=$unsafe_admin_only_audience_state unsafe_lead_agent_state=$unsafe_lead_agent_state agent_execution_routes=$agent_execution_route_count unsafe_codex_operator_state=$unsafe_codex_operator_state" >&2
   exit 1
