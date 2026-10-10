@@ -5,6 +5,7 @@
  */
 
 import { decide, isKnownSpaRoute, normalizePath } from "./router";
+import { serveSurveyHost } from "./surveyHost";
 import { headersForTransformedBody, injectBlogHtml, mergeBlogSitemap, type EdgeBlogPost, type EdgeSitemapEntry } from "./blogHtml";
 import { serveCachedAsset } from "./assetCache";
 
@@ -107,6 +108,8 @@ async function serveSitemap(env: Env, request: Request) {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const surveyResponse = await serveSurveyHost(request, env.ASSETS);
+    if (surveyResponse) return surveyResponse;
     const url = new URL(request.url);
     if (url.pathname === "/sitemap.xml") return serveSitemap(env, request);
     const decision = decide(url);

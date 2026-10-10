@@ -24,6 +24,10 @@ const ASSET_RE = /\.[a-z0-9]{2,5}$/i;
 export function decide(url: URL): Decision {
   const path = normalizePath(url.pathname);
 
+  if ((url.hostname === "avyron.ro" || url.hostname === "www.avyron.ro") && path === "/surveys") {
+    return { kind: "redirect", location: `https://surveys.avyron.ro/${url.search}`, status: 301 };
+  }
+
   if (path.startsWith("/api/")) return { kind: "api" };
 
   // SearchAction-ul vechi a lăsat în Search Console /?q={search_term_string}.
@@ -81,6 +85,7 @@ export function decide(url: URL): Decision {
 
 /** Routes that exist in the SPA router but are not prerendered (auth, dashboard…). */
 export const SPA_ONLY_PREFIXES = [
+  "/s",
   "/auth",
   "/autentificare",
   "/forgot-password",

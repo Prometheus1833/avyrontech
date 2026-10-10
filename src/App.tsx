@@ -51,11 +51,15 @@ const AvyEngine = lazyWithRetry(() => import("./pages/intern/AvyEngine.tsx"));
 const Biblioteca = lazyWithRetry(() => import("./pages/Biblioteca.tsx"));
 const AvyChat = lazyWithRetry(() => import("@/components/ai/AvyChat"));
 const NewsletterPrompt = lazyWithRetry(() => import("@/components/site/NewsletterPrompt"));
+const SurveyLanding = lazyWithRetry(() => import("./pages/surveys/Landing.tsx"));
+const SurveyInterview = lazyWithRetry(() => import("./pages/surveys/Interview.tsx"));
+
+const surveyHost = typeof window !== "undefined" && window.location.hostname === "surveys.avyron.ro";
 
 const DeferredNewsletterPrompt = () => {
   const { pathname } = useLocation();
   const [ready, setReady] = useState(false);
-  const excluded = /^\/(auth|autentificare|profil|intern|finance|gdpr|en\/privacy|termeni|en\/terms|politica-cookies|en\/cookie-policy|unsubscribe|403|500|offline|mentenanta|exemple|examples|demo)(\/|$)/.test(pathname);
+  const excluded = surveyHost || pathname === "/surveys" || pathname.startsWith("/s/") || /^\/(auth|autentificare|profil|intern|finance|gdpr|en\/privacy|termeni|en\/terms|politica-cookies|en\/cookie-policy|unsubscribe|403|500|offline|mentenanta|exemple|examples|demo)(\/|$)/.test(pathname);
   useEffect(() => {
     setReady(false);
     if (excluded) return;
@@ -71,7 +75,7 @@ const AvyLauncher = () => {
   const { pathname } = useLocation();
   const [ready, setReady] = useState(false);
   const [openOnLoad, setOpenOnLoad] = useState(false);
-  const excluded = /^\/(auth|autentificare|profil|intern|finance|exemple|examples|demo|forgot-password|reset-password|403|500|offline|mentenanta|unsubscribe)/.test(pathname);
+  const excluded = surveyHost || pathname === "/surveys" || pathname.startsWith("/s/") || /^\/(auth|autentificare|profil|intern|finance|exemple|examples|demo|forgot-password|reset-password|403|500|offline|mentenanta|unsubscribe)/.test(pathname);
   useEffect(() => {
     if (excluded) return;
     const timer = window.setTimeout(() => setReady(true), 1800);
@@ -172,7 +176,9 @@ const App = () => (
           <Suspense fallback={<div className="min-h-screen" />}>
             <RouteTransition>
               <Routes>
-                <Route path="/" element={<Index />} />
+                <Route path="/" element={surveyHost ? <SurveyLanding /> : <Index />} />
+                <Route path="/surveys" element={<SurveyLanding />} />
+                <Route path="/s/:token" element={<SurveyInterview />} />
                 <Route path="/en" element={<Index />} />
                 <Route path="/gdpr" element={<Gdpr />} />
                 <Route path="/en/privacy" element={<Gdpr />} />
@@ -377,9 +383,9 @@ const App = () => (
             </RouteTransition>
           </Suspense>
         </AppHostGuard>
-        <CookieBanner />
+        {!surveyHost && <CookieBanner />}
       </BrowserRouter>
-      <DeferredGlobalUi />
+      {!surveyHost && <DeferredGlobalUi />}
     </AuthProvider>
   </LanguageProvider>
 );

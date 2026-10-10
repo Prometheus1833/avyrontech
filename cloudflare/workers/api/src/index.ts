@@ -1,4 +1,6 @@
 import { privilegedMfaSatisfied } from "./mfaPolicy";
+import { serveSurveyHost } from "../../../../src/worker/surveyHost";
+import { surveyPublic } from "./surveys/public";
 // Avyron API — Cloudflare Workers + D1 + KV + R2
 // Auth: PBKDF2-SHA256 password hashing + signed JWT (HS256) + rolling sessions.
 //
@@ -42,6 +44,8 @@ const app = new Hono<AppBindings>();
 // Hostname routing runs before API/auth middleware. Demo hosts therefore cannot
 // fall through to the production API, D1, KV or private assets.
 app.use("*", async (c, next) => {
+  const surveyResponse = await serveSurveyHost(c.req.raw, c.env.ASSETS);
+  if (surveyResponse) return surveyResponse;
   const mapped = await handleMappedHostname(c.req.raw, c.env.ASSETS);
   if (mapped) return mapped;
   await next();
@@ -110,7 +114,7 @@ app.use("*", async (c, next) => {
     origin: (origin) => allowedOrigin(c.env, origin),
     credentials: true,
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "X-Request-Id", "Idempotency-Key"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Request-Id", "Idempotency-Key", "X-Survey-Token", "X-File-Name"],
     exposeHeaders: ["X-Request-Id", "X-API-Version", "X-Avyron-Cache"],
     maxAge: 86_400,
   })(c, next);
@@ -1480,6 +1484,12 @@ app.use("/api/ai-projects/*", requireAuth);
 app.use("/api/finance/*", requireAuth);
 app.use("/api/engine/*", requireAuth);
 app.use("/api/os/*", requireAuth);
+app.use("/api/surveys/*", async (c, next) => {
+  if (!c.req.path.startsWith("/api/surveys/admin") && c.req.header("authorization")) {
+    return requireAuth(c, next);
+  }
+  await next();
+});
 app.use("/api/surveys/admin/*", requireAuth);
 app.use("/api/projects/*", requirePrivilegedMfa);
 app.use("/api/media/*", requirePrivilegedMfa);
@@ -1513,6 +1523,7 @@ app.route("/", newsletterRouter);
 app.route("/", leadsRouter);
 app.route("/", aiProjectsRouter);
 app.route("/", catalogCodesRouter);
+app.route("/", surveyPublic);
 app.route("/", surveyAdminRouter);
 app.route("/", adminOperationsRouter);
 app.route("/", financeRouter);
@@ -1697,7 +1708,7 @@ export default {
   },
   scheduled: (controller, env, ctx) => {
     if (controller.cron === "0,15,30,45 * * * *") {
-      ctx.waitUntil(enqueueAsyncJobs(env, ["operation_drain", "social_drain"]));
+      ctx.waitUntil(enqueueAsyncJobs(env, ["operation_drain", "social_drain", "survey_delivery", "survey_ai"]));
       return;
     }
     if (controller.cron === EXCHANGE_RATE_REFRESH_CRON) {
@@ -1711,6 +1722,7 @@ export default {
       cleanupExpiredData(env),
       runDueEngineDiscovery(env),
       enqueueAsyncJobs(env, ["billing_reconcile"]),
+      enqueueAsyncJobs(env, ["survey_cleanup"]),
     ]).then(() => undefined).catch((error) => {
       console.error(JSON.stringify({ event: "maintenance_job_failed", error: String(error) }));
       throw error;
