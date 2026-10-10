@@ -91,14 +91,37 @@ unsafe_codex_operator_state=$(sqlite3 "$audit_database" \
           WHERE lower(u.email)='codexagent@avyron.ro' AND c.revoked_at IS NULL
             AND c.capability IN ('leads.delete','users.manage','billing.manage','secrets.manage','social.publish','social.approve'))
     END;")
+unsafe_social_content_strategy=$(sqlite3 "$audit_database" \
+  "SELECT CASE WHEN EXISTS (
+      SELECT 1 FROM ai_agents agent
+      JOIN ai_agent_versions version
+        ON version.agent_slug=agent.slug AND version.version=agent.current_version
+      JOIN ai_project_agents assigned
+        ON assigned.agent_slug=agent.slug AND assigned.project_id='aip_avyron_web' AND assigned.role='content'
+      WHERE agent.slug='ai-prod-content' AND agent.current_version=8
+        AND version.status='approved' AND assigned.status='ready'
+        AND instr(version.system_prompt,'5-8 cadre')>0
+        AND instr(version.system_prompt,'URL-ul AVYRON cel mai specific')>0
+    ) AND EXISTS (
+      SELECT 1 FROM ai_social_design_profiles
+      WHERE project_id='aip_avyron_web' AND version=5 AND status='approved'
+        AND json_extract(profile_json,'$.schemaVersion')=5
+        AND json_extract(profile_json,'$.contentSystem.story.microcopyRequiredPerFrame')=1
+        AND json_extract(profile_json,'$.contentSystem.shortVideo.singleStaticImageVideoForbidden')=1
+    ) AND (
+      SELECT COUNT(*) FROM ai_social_sources
+      WHERE project_id='aip_avyron_web' AND id IN (
+        'aiss_content_lessons_2026','aiss_baboon_promotion_2026','aiss_gomag_blog_2026'
+      ) AND status='approved'
+    )=3 THEN 0 ELSE 1 END;")
 
 if [[ "$foreign_key_issues" != "0" || "$integrity" != "ok" || "$legacy_ai_timestamps" != "0" \
    || "$platform_owners" != "1" || "$unsafe_social_sources" != "0" || "$invalid_lead_state" != "0" \
    || "$unsafe_engine_state" != "0" || "$unsafe_audience_state" != "0" \
    || "$unsafe_social_backup_state" != "0" || "$unsafe_admin_only_audience_state" != "0" \
-   || "$unsafe_lead_agent_state" != "0" || "$agent_execution_route_count" != "9" \
-   || "$unsafe_codex_operator_state" != "0" ]]; then
-  echo "D1 schema audit failed: foreign_keys=$foreign_key_issues integrity=$integrity legacy_ai_timestamps=$legacy_ai_timestamps platform_owners=$platform_owners unsafe_social_sources=$unsafe_social_sources invalid_lead_state=$invalid_lead_state unsafe_engine_state=$unsafe_engine_state unsafe_audience_state=$unsafe_audience_state unsafe_social_backup_state=$unsafe_social_backup_state unsafe_admin_only_audience_state=$unsafe_admin_only_audience_state unsafe_lead_agent_state=$unsafe_lead_agent_state agent_execution_routes=$agent_execution_route_count unsafe_codex_operator_state=$unsafe_codex_operator_state" >&2
+   || "$unsafe_lead_agent_state" != "0" || "$agent_execution_route_count" != "13" \
+   || "$unsafe_codex_operator_state" != "0" || "$unsafe_social_content_strategy" != "0" ]]; then
+  echo "D1 schema audit failed: foreign_keys=$foreign_key_issues integrity=$integrity legacy_ai_timestamps=$legacy_ai_timestamps platform_owners=$platform_owners unsafe_social_sources=$unsafe_social_sources invalid_lead_state=$invalid_lead_state unsafe_engine_state=$unsafe_engine_state unsafe_audience_state=$unsafe_audience_state unsafe_social_backup_state=$unsafe_social_backup_state unsafe_admin_only_audience_state=$unsafe_admin_only_audience_state unsafe_lead_agent_state=$unsafe_lead_agent_state agent_execution_routes=$agent_execution_route_count unsafe_codex_operator_state=$unsafe_codex_operator_state unsafe_social_content_strategy=$unsafe_social_content_strategy" >&2
   exit 1
 fi
 
