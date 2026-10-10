@@ -582,6 +582,8 @@ test.describe("forms and authentication", () => {
   test("staff can create and open a lead in the Cloudflare CRM", async ({ page }) => {
     let createdLead: Record<string, unknown> | null = null;
     let deletedLead: Record<string, unknown> | null = null;
+    let reviewedDraft: Record<string, unknown> | null = null;
+    let claimedLead = false;
     let idempotencyKey = "";
     const lead = {
       id: "lead_e2e", organization_id: null, source: "manual", name: "Ana Popescu",
@@ -606,13 +608,30 @@ test.describe("forms and authentication", () => {
         roles: ["staff"],
       }),
     }));
+    await page.route("**/api/leads/lead_e2e/follow-ups/draft-e2e/review", async (route) => {
+      reviewedDraft = route.request().postDataJSON() as Record<string, unknown>;
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, revision: 2 }) });
+    });
+    await page.route("**/api/leads/lead_e2e/claim", async (route) => {
+      claimedLead = true;
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+    });
     await page.route("**/api/leads/lead_e2e", async (route) => {
       if (route.request().method() === "DELETE") {
         deletedLead = route.request().postDataJSON() as Record<string, unknown>;
         await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
         return;
       }
-      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: lead, activities: [], assignments: [], reminders: [], canEdit: true }) });
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+        data: lead, activities: [], assignments: [], reminders: [], canEdit: true, currentUserId: "staff-1",
+        followUps: [{
+          id: "draft-e2e", sequence: 1, due_at: 1_788_800_000_000, status: "ready",
+          whatsapp_body: "Bună, Ana! Revenim cu o clarificare.", email_subject: null, email_body: null,
+          generated_by_model: "fixture", generated_at: 1_788_800_000_000, sent_at: null,
+          expires_at: 1_799_800_000_000, approval_status: "pending", approved_by: null,
+          approved_at: null, revision: 1, updated_at: 1_788_800_000_000,
+        }],
+      }) });
     });
     await page.route("**/api/leads", async (route) => {
       if (route.request().method() === "POST") {
@@ -641,6 +660,16 @@ test.describe("forms and authentication", () => {
     await expect(page.getByRole("heading", { name: "Contact" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Istoric" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Remindere" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Aprobă", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Propune modificare", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Preia sarcina", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Aprobă", exact: true }).click();
+    await expect.poll(() => reviewedDraft).toMatchObject({ decision: "approved", revision: 1 });
+    await page.getByRole("button", { name: "Preia sarcina", exact: true }).click();
+    await expect.poll(() => claimedLead).toBe(true);
+    await page.getByRole("button", { name: "Propune modificare", exact: true }).click();
+    await expect(page.getByRole("dialog", { name: "Propune modificare" })).toBeVisible();
+    await page.getByRole("dialog", { name: "Propune modificare" }).getByRole("button", { name: "Close" }).click();
     await page.getByRole("dialog", { name: "Ana Popescu" }).getByRole("button", { name: "Șterge" }).click();
     const deletionDialog = page.getByRole("dialog", { name: "Elimină lead-ul din pipeline" });
     await expect(deletionDialog.getByText(/Motiv recomandat.*Înregistrare duplicată/)).toBeVisible();
