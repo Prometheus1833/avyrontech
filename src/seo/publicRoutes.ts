@@ -18,6 +18,7 @@ export const EXAMPLE_SLUGS = [
 
 /** Standalone public routes that have no RO/EN pair. */
 export const STANDALONE_PUBLIC_ROUTES = [
+  "/surveys",
   "/gdpr",
   "/en/privacy",
   "/blog",
@@ -28,6 +29,11 @@ export const STANDALONE_PUBLIC_ROUTES = [
   "/exemple/retuvo",
   ...EXAMPLE_SLUGS.map((s) => `/examples/${s}`),
 ];
+
+/** Public pages whose canonical hostname is intentionally outside avyron.ro. */
+export const DELEGATED_PUBLIC_ROUTES: Readonly<Record<string, string>> = {
+  "/surveys": "https://surveys.avyron.ro/",
+};
 
 /** Every canonical public route that must be prerendered as complete HTML. */
 export const PRERENDER_ROUTES: string[] = [
@@ -101,6 +107,7 @@ export function redirectTarget(pathname: string): string | null {
 
 /** Private / auth / error areas: never indexed (X-Robots-Tag: noindex, nofollow). */
 export const NOINDEX_PREFIXES = [
+  "/s",
   "/auth",
   "/autentificare",
   "/forgot-password",
