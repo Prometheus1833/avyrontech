@@ -113,7 +113,10 @@ const Footer = () => {
 
       <div className="relative mx-auto max-w-6xl px-4 pt-5 pb-4">
         {/* Top row: brand + CTA + WhatsApp + contact — single compact bar */}
-        <div className="flex flex-col md:flex-row md:items-center gap-3">
+        <div
+          data-testid="footer-primary-row"
+          className="mx-auto grid w-full max-w-5xl gap-3 md:grid-cols-[minmax(0,auto)_minmax(0,1fr)] md:items-center"
+        >
           {/* Brand */}
           <a href={lang === "en" ? "/en#hero" : "/#hero"} className="flex shrink-0 items-center gap-2">
             <img
@@ -135,7 +138,7 @@ const Footer = () => {
           </a>
 
           {/* CTA + WhatsApp + Phone — compact pill cluster */}
-          <div className="flex flex-wrap items-center justify-center md:justify-end gap-1.5 flex-1">
+          <div className="flex min-w-0 max-w-full flex-wrap items-center justify-center gap-1.5 md:justify-self-end md:justify-end">
             {cta.external ? (
               <a
                 href={cta.to}
