@@ -42,7 +42,7 @@ const AboutUs = () => {
   const imageY = useTransform(scrollYProgress, [0, 1], [0, 90]);
   const copyY = useTransform(scrollYProgress, [0, 1], [0, 28]);
   const homeHref = ro ? "/#hero" : "/en#hero";
-  const portfolioPath = ro ? "/servicii/website-prezentare-profesional#portofoliu" : "/en/services/professional-presentation-website#portofoliu";
+  const libraryPath = ro ? "/biblioteca" : "/en/library";
   const productsPath = ro ? "/servicii" : "/en/services";
 
   useEffect(() => {
@@ -131,8 +131,8 @@ const AboutUs = () => {
             </a>
           </div>
           <div className="flex items-center gap-2">
-            <Link to={portfolioPath} className="hidden rounded-full border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/70 transition-colors hover:border-cyan-300/40 hover:text-white sm:inline-flex">
-              {ro ? "Portofoliu" : "Portfolio"}
+            <Link to={libraryPath} className="hidden rounded-full border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/70 transition-colors hover:border-cyan-300/40 hover:text-white sm:inline-flex">
+              {ro ? "Bibliotecă" : "Library"}
             </Link>
             <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.05] px-2 py-1">
               <LangSwitch />
@@ -181,8 +181,8 @@ const AboutUs = () => {
               <a href="#expertiza" className="inline-flex min-h-12 items-center justify-center rounded-full bg-white px-4 text-sm font-bold text-slate-950 transition-transform hover:-translate-y-0.5">
                 {ro ? "Cunoaște echipa" : "Meet the team"}
               </a>
-              <Link to={portfolioPath} className="inline-flex min-h-12 items-center justify-center gap-1.5 rounded-full border border-white/20 bg-white/[0.06] px-4 text-sm font-semibold text-white transition-colors hover:bg-white/[0.11]">
-                {ro ? "Vezi portofoliul" : "View portfolio"}
+              <Link to={libraryPath} className="inline-flex min-h-12 items-center justify-center gap-1.5 rounded-full border border-white/20 bg-white/[0.06] px-4 text-sm font-semibold text-white transition-colors hover:bg-white/[0.11]">
+                {ro ? "Vezi biblioteca" : "View library"}
                 <ArrowRight className="size-4" aria-hidden />
               </Link>
             </div>

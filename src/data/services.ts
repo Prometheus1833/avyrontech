@@ -177,8 +177,8 @@ const CATALOG: Service[] = [
     category: "presence",
     icon: "globe",
     path: SERVICE_ROUTES.website,
-    priceRon: 1150,
-    priceEur: 220,
+    priceRon: 1450,
+    priceEur: 280,
     from: true,
     duration: { ro: "2–5 zile", en: "2–5 days" },
     accent: {
@@ -279,7 +279,7 @@ const CATALOG: Service[] = [
         faq: [
           {
             q: "Cât costă un site de prezentare profesional?",
-            a: "Configurația de bază pornește de la 1.150 lei și include design personalizat, conținut, SEO tehnic, panou de administrare și email pe domeniu. Prețul final depinde de structură, funcționalități și oferta agreată.",
+            a: "Configurația de bază pornește de la 1.450 lei și include design personalizat, conținut, SEO tehnic, panou de administrare și email pe domeniu. Prețul final depinde de structură, funcționalități și oferta agreată.",
           },
           {
             q: "În cât timp este gata site-ul?",
@@ -487,7 +487,7 @@ const CATALOG: Service[] = [
         faq: [
           {
             q: "How much does a professional presentation website cost?",
-            a: "The base configuration starts at 1,150 RON and includes custom design, content, technical SEO, an admin panel and domain email. Final pricing depends on the agreed structure and features.",
+            a: "The base configuration starts at 1,450 RON and includes custom design, content, technical SEO, an admin panel and domain email. Final pricing depends on the agreed structure and features.",
           },
           {
             q: "How long does it take?",

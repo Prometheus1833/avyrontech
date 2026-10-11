@@ -20,7 +20,7 @@ async function mockFreeAccount(page: Page) {
     }
     if (path === "/api/projects") return route.fulfill({ json: {
       data: [],
-      purchases: [{ id: "paid-order-12345678", name: "Website profesional", kind: "service", total_cents: 115_000, currency: "RON", status: "paid", updated_at: Date.now(), items: [] }],
+      purchases: [{ id: "paid-order-12345678", name: "Website profesional", kind: "service", total_cents: 145_000, currency: "RON", status: "paid", updated_at: Date.now(), items: [] }],
     } });
     if (path === "/api/workspace/subscriptions") return route.fulfill({ json: { data: [] } });
     return route.fulfill({ json: { data: [] } });
@@ -46,5 +46,5 @@ test("paid purchases are visible in Projects for the registered user", async ({ 
   await page.goto("/profil?tab=projects", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "Produse și servicii activate" })).toBeVisible();
   await expect(page.getByText("Website profesional")).toBeVisible();
-  await expect(page.getByText("1.150,00 RON")).toBeVisible();
+  await expect(page.getByText("1.450,00 RON")).toBeVisible();
 });

@@ -39,10 +39,10 @@ test.describe("public SEO routes", () => {
     await page.goto("/servicii/website-prezentare-profesional");
     const switcher = page.getByTestId("currency-switch").first();
     await expect(switcher.getByRole("button", { name: "Schimbă moneda (activă: RON)" })).toBeVisible();
-    await expect(page.getByTestId("product-hero-facts")).toContainText(/1[.\s]?150 RON/);
+    await expect(page.getByTestId("product-hero-facts")).toContainText(/1[.\s]?450 RON/);
     await switcher.getByRole("button", { name: "Schimbă moneda (activă: RON)" }).click();
     await expect(switcher.getByRole("button", { name: "Schimbă moneda (activă: EUR)" })).toBeVisible();
-    await expect(page.getByTestId("product-hero-facts")).toContainText(/220 €/);
+    await expect(page.getByTestId("product-hero-facts")).toContainText(/280 €/);
     await page.reload();
     await expect(switcher.getByRole("button", { name: "Schimbă moneda (activă: EUR)" })).toBeVisible();
   });
@@ -121,6 +121,9 @@ test.describe("public SEO routes", () => {
     await expect(page.getByText("Cybersecurity", { exact: true })).toBeVisible();
     await expect(page.getByText("QA Testing", { exact: true })).toBeVisible();
     await expect(page.getByText("Vibe Development", { exact: true })).toBeVisible();
+    await expect(page.locator("header").getByRole("link", { name: "Bibliotecă", exact: true })).toHaveAttribute("href", "/biblioteca");
+    await expect(page.getByRole("link", { name: "Vezi biblioteca", exact: true })).toHaveAttribute("href", "/biblioteca");
+    await expect(page.getByRole("link", { name: /portofoliu/i })).toHaveCount(0);
 
     await page.goto("/portofoliu");
     await expect(page).toHaveURL(/\/servicii\/website-prezentare-profesional#portofoliu$/);
@@ -140,6 +143,9 @@ test.describe("public SEO routes", () => {
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     const footer = page.locator("footer");
     await expect(footer).toBeVisible();
+    const primaryRow = footer.getByTestId("footer-primary-row");
+    const primaryRowBox = await primaryRow.boundingBox();
+    expect(primaryRowBox?.width).toBeLessThanOrEqual(1024);
     await expect(footer.getByRole("link", { name: /Exemplu Gratuit.*Personalizat/ })).toBeVisible();
     const footerNavLinks = footer.locator("nav a");
     await expect(footerNavLinks).toHaveCount(8);
