@@ -73,8 +73,12 @@ unsafe_lead_agent_state=$(sqlite3 "$audit_database" \
         AND agent.visibility = 'private'
         AND agent.handoff_email = 'avyrontech@gmail.com'
         AND version.status = 'approved'
+        AND agent.current_version = 3
+        AND instr(version.system_prompt, 'Nu transformi descoperirea într-un chestionar') > 0
+        AND instr(version.system_prompt, 'Stările conversației sunt') > 0
         AND instr(version.guardrails, 'soliciți intervenția echipei') > 0
-        AND instr(version.guardrails, '2026-10-03 18:57:16 Europe/Bucharest') > 0
+        AND instr(version.guardrails, 'Nu comunica și nu estima autonom bugete') > 0
+        AND instr(version.guardrails, '2026-10-03 18:57:16 Europe/Bucharest') = 0
     ) THEN 0 ELSE 1 END;")
 agent_execution_route_count=$(sqlite3 "$audit_database" \
   "SELECT COUNT(*) FROM agent_execution_routes
