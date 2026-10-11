@@ -6,6 +6,9 @@ import { JSDOM } from "jsdom";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = existsSync(join(root, "dist/client/index.html")) ? join(root, "dist/client") : join(root, "dist");
 const origin = "https://avyron.ro";
+const delegatedCanonicals = new Map([
+  ["/surveys", { canonical: "https://surveys.avyron.ro/", sitemap: "surveys-sitemap.xml" }],
+]);
 
 if (!existsSync(join(dist, "index.html"))) {
   throw new Error("SEO audit: dist/index.html is missing; run the production build first");
@@ -45,7 +48,8 @@ const pages = htmlFiles(dist).map((file) => {
 
   if (!title) failures.push(`${route}: missing title`);
   if (!description) failures.push(`${route}: missing meta description`);
-  if (canonical !== `${origin}${route}`) failures.push(`${route}: canonical is ${canonical || "missing"}`);
+  const expectedCanonical = delegatedCanonicals.get(route)?.canonical || `${origin}${route}`;
+  if (canonical !== expectedCanonical) failures.push(`${route}: canonical is ${canonical || "missing"}`);
   if (h1 !== 1) failures.push(`${route}: expected exactly one H1, found ${h1}`);
   if (!noindex && !/(?:^|[\s,])index(?:$|[\s,])/i.test(robots)) failures.push(`${route}: indexable page lacks explicit index directive`);
   if (!noindex && !/(?:^|[\s,])follow(?:$|[\s,])/i.test(robots)) failures.push(`${route}: indexable page lacks explicit follow directive`);
@@ -98,11 +102,43 @@ const sitemapEntries = [...sitemapDocument.querySelectorAll("url")].map((node) =
 const sitemapRoutes = sitemapEntries.map((entry) => entry.route).filter(Boolean);
 const sitemapSet = new Set(sitemapRoutes);
 const sitemapByUrl = new Map(sitemapEntries.map((entry) => [entry.loc, entry]));
+const delegatedSitemapUrls = new Map();
+
+for (const [route, delegated] of delegatedCanonicals) {
+  const delegatedPath = join(dist, delegated.sitemap);
+  if (!existsSync(delegatedPath)) {
+    failures.push(`${route}: delegated sitemap ${delegated.sitemap} is missing`);
+    continue;
+  }
+  const delegatedDocument = new JSDOM(readFileSync(delegatedPath, "utf8"), { contentType: "application/xml" }).window.document;
+  if (delegatedDocument.querySelector("parsererror")) {
+    failures.push(`${delegated.sitemap} is not valid XML`);
+    continue;
+  }
+  const urls = [...delegatedDocument.querySelectorAll("url")];
+  if (urls.length !== 1) failures.push(`${delegated.sitemap} must contain exactly one public URL`);
+  for (const node of urls) {
+    const loc = child(node, "loc")?.textContent?.trim() || "";
+    const lastmod = child(node, "lastmod")?.textContent?.trim() || "";
+    if (loc !== delegated.canonical) failures.push(`${delegated.sitemap}: unexpected URL ${loc || "missing"}`);
+    const modified = Date.parse(lastmod);
+    if (!lastmod || Number.isNaN(modified)) failures.push(`${delegated.sitemap}: invalid or missing lastmod`);
+    else if (modified > Date.now() + 300_000) failures.push(`${delegated.sitemap}: lastmod is in the future`);
+    delegatedSitemapUrls.set(route, loc);
+  }
+}
 const indexable = pages.filter((page) => !page.noindex);
 const noindex = pages.filter((page) => page.noindex);
 
 for (const page of indexable) {
-  if (!sitemapSet.has(page.route)) failures.push(`${page.route}: indexable page missing from sitemap`);
+  const delegated = delegatedCanonicals.get(page.route);
+  if (delegated) {
+    if (delegatedSitemapUrls.get(page.route) !== delegated.canonical) {
+      failures.push(`${page.route}: indexable delegated page missing from ${delegated.sitemap}`);
+    }
+  } else if (!sitemapSet.has(page.route)) {
+    failures.push(`${page.route}: indexable page missing from sitemap`);
+  }
 }
 for (const page of noindex) {
   if (sitemapSet.has(page.route)) failures.push(`${page.route}: noindex page present in sitemap`);

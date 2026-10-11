@@ -202,6 +202,14 @@ describe("worker HTTP statuses", () => {
     expect((await get("/robots.txt")).status).toBe(200);
   });
 
+  it("redirects the legacy main-site Surveys route to its canonical host", () => {
+    expect(decide(new URL("https://avyron.ro/surveys?campaign=site"))).toEqual({
+      kind: "redirect",
+      location: "https://surveys.avyron.ro/?campaign=site",
+      status: 301,
+    });
+  });
+
   it("caches only content-hashed build assets as immutable", async () => {
     const hashed = await get("/assets/app-Ab12cd34.js");
     const unhashed = await get("/assets/app.js");

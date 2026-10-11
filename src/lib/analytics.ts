@@ -6,7 +6,12 @@ const MEASUREMENT_ID =
 export const GA_ENABLED = Boolean(MEASUREMENT_ID);
 let initialized = false;
 
+const isPrivateSurveySurface = () => typeof window !== "undefined" && (
+  window.location.hostname === "surveys.avyron.ro" || window.location.pathname.startsWith("/s/")
+);
+
 function ensureAnalytics() {
+  if (isPrivateSurveySurface()) return;
   if (!GA_ENABLED || initialized || typeof window === "undefined") return;
   initialized = true;
   const state = window as unknown as { dataLayer: unknown[][]; gtag: (...args: unknown[]) => void };
@@ -30,7 +35,7 @@ function ensureAnalytics() {
  * Safe gtag wrapper. No-ops when GA is not configured or when running server-side.
  */
 export function gtag(...args: unknown[]) {
-  if (typeof window === "undefined" || !GA_ENABLED || !initialized) return;
+  if (isPrivateSurveySurface() || typeof window === "undefined" || !GA_ENABLED || !initialized) return;
   const w = window as unknown as { gtag?: (...a: unknown[]) => void };
   w.gtag?.(...args);
 }
@@ -39,7 +44,7 @@ export function gtag(...args: unknown[]) {
  * Send a GA4 page_view event. Should be called on every client-side route change.
  */
 export function pageView(path: string, title?: string) {
-  if (!GA_ENABLED) return;
+  if (!GA_ENABLED || isPrivateSurveySurface()) return;
   gtag("event", "page_view", {
     page_path: path,
     page_title: title || document.title,
@@ -54,7 +59,7 @@ export function trackEvent(
   name: string,
   params: Record<string, string | number | boolean | undefined> = {},
 ) {
-  if (!GA_ENABLED) return;
+  if (!GA_ENABLED || isPrivateSurveySurface()) return;
   gtag("event", name, params);
 }
 
@@ -68,7 +73,7 @@ export type ConsentPreferences = {
 };
 
 export function updateConsent({ analytics, marketing }: ConsentPreferences) {
-  if (!GA_ENABLED) return;
+  if (!GA_ENABLED || isPrivateSurveySurface()) return;
   if (analytics || marketing) ensureAnalytics();
   if (!initialized) return;
   gtag("consent", "update", {

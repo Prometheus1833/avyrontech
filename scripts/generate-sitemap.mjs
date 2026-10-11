@@ -6,6 +6,9 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = existsSync(join(root, "dist/client/index.html")) ? join(root, "dist/client") : join(root, "dist");
 const base = "https://avyron.ro";
+const delegatedCanonicals = new Map([
+  ["/surveys", "https://surveys.avyron.ro/"],
+]);
 
 function routeFor(file) {
   const rel = relative(dist, file).replaceAll("\\", "/");
@@ -22,6 +25,7 @@ function htmlFiles(dir) {
 }
 
 function sourceFiles(route) {
+  if (route === "/surveys") return ["src/pages/surveys/Landing.tsx", "src/shared/surveys/catalog.ts", "src/shared/surveys/templates.ts"];
   if (route === "/" || route === "/en") return ["src/pages/Index.tsx", "src/i18n/translations.ts"];
   if (route.includes("/blog")) return ["src/pages/Blog.tsx", "src/data/blogIndex.ts"];
   if (route === "/servicii/creare-logo-3d-dinamic-cinematic/creeaza" || route === "/en/services/cinematic-dynamic-3d-logo-design/create") return ["src/pages/services/LogoStudioPage.tsx", "src/data/logoStudioCopy.ts", "src/data/logoStudio.ts"];
@@ -82,6 +86,13 @@ const indexableRoutes = routes.filter((route) => {
   const metadata = pageMetadata(route);
   if (metadata.noindex) return false;
   const expectedCanonical = `${base}${route === "/" ? "/" : route}`;
+  const delegatedCanonical = delegatedCanonicals.get(route);
+  if (delegatedCanonical) {
+    if (metadata.canonical !== delegatedCanonical) {
+      throw new Error(`sitemap: delegated canonical mismatch for ${route}: ${metadata.canonical || "missing"}`);
+    }
+    return false;
+  }
   if (metadata.canonical !== expectedCanonical) {
     throw new Error(`sitemap: canonical mismatch for ${route}: ${metadata.canonical || "missing"}`);
   }
@@ -113,4 +124,6 @@ const body = indexableRoutes.map((route) => {
 }).join("\n");
 
 writeFileSync(join(dist, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${body}\n</urlset>\n`);
-console.log(`sitemap: ${indexableRoutes.length} indexable URLs written with route-specific lastmod values`);
+const surveyLastModified = lastModified("/surveys").toISOString();
+writeFileSync(join(dist, "surveys-sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url>\n    <loc>https://surveys.avyron.ro/</loc>\n    <lastmod>${surveyLastModified}</lastmod>\n  </url>\n</urlset>\n`);
+console.log(`sitemap: ${indexableRoutes.length} avyron.ro URLs and ${delegatedCanonicals.size} delegated URLs written with route-specific lastmod values`);

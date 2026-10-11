@@ -5,7 +5,7 @@
 import { describe, it, expect } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { isNoindexPath, PRERENDER_ROUTES } from "@/seo/publicRoutes";
+import { DELEGATED_PUBLIC_ROUTES, isNoindexPath, PRERENDER_ROUTES } from "@/seo/publicRoutes";
 import { BLOG_INDEX } from "@/data/blogIndex";
 import { BLOG_SLUGS } from "@/data/blogSlugs";
 
@@ -50,6 +50,7 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     ["/de/produkte", "de", "https://avyron.ro/de/produkte"],
     ["/fr/produits", "fr", "https://avyron.ro/fr/produits"],
     ["/pl/produkty", "pl", "https://avyron.ro/pl/produkty"],
+    ["/surveys", "ro", "https://surveys.avyron.ro/"],
   ];
 
   it.each(cases)("%s ships lang, title, description and self-canonical", (route, lang, canonical) => {
@@ -124,10 +125,15 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     );
     expect(sitemap).not.toContain("<image:loc>https://avyron.ro/og/home.jpg</image:loc>");
     const locations = [...sitemap.matchAll(/<loc>https:\/\/avyron\.ro([^<]*)<\/loc>/g)].map((match) => match[1] || "/");
-    const expected = PRERENDER_ROUTES.filter((route) => !isNoindexPath(route));
+    const expected = PRERENDER_ROUTES.filter((route) => !isNoindexPath(route) && !DELEGATED_PUBLIC_ROUTES[route]);
     expect(new Set(locations).size).toBe(locations.length);
     expect(new Set(locations)).toEqual(new Set(expected));
     expect(locations.some((route) => isNoindexPath(route))).toBe(false);
+
+    const surveysSitemap = readFileSync(resolve(distDir, "surveys-sitemap.xml"), "utf8");
+    expect(surveysSitemap).toContain("<loc>https://surveys.avyron.ro/</loc>");
+    expect(surveysSitemap).toMatch(/<lastmod>\d{4}-\d{2}-\d{2}T/);
+    expect(surveysSitemap).not.toContain("/s/");
   });
 
   it("keeps product utility pages usable without publishing them as separate search results", () => {
