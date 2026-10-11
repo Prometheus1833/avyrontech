@@ -403,8 +403,8 @@ const SERVICES: ServiceDef[] = [
       {
         icon: FileText,
         text: {
-          ro: "Facturare automată (SmartBill / Oblio) și conformitate ANAF",
-          en: "Automated invoicing (SmartBill / Oblio) and tax compliance",
+          ro: "Facturare automată și conformitate ANAF, prin integrarea agreată",
+          en: "Automated invoicing and tax compliance through the agreed integration",
         },
       },
       {

@@ -1824,8 +1824,8 @@ export const ITEMS: CatalogItem[] = [
       en: "A storefront for 10–60 products: listing, filters, product page, local cart and an order form.",
     },
     desc: {
-      ro: "Gândit pentru producători mici și magazine de cartier care vând prin WhatsApp și transfer, nu prin card: comanda pleacă pe e-mail și WhatsApp, cu lista completă. Dacă mai târziu vrei plată online, structura e pregătită pentru Stripe.",
-      en: "Built for small makers and neighbourhood shops that sell over WhatsApp and bank transfer, not cards: the order goes out by email and WhatsApp with the full list. If you later want online payment, the structure is ready for Stripe.",
+      ro: "Gândit pentru producători mici și magazine de cartier care vând prin WhatsApp și transfer, nu prin card: comanda pleacă pe e-mail și WhatsApp, cu lista completă. Dacă mai târziu vrei plată online, structura poate fi conectată la un procesator agreat.",
+      en: "Built for small makers and neighbourhood shops that sell over WhatsApp and bank transfer, not cards: the order goes out by email and WhatsApp with the full list. If you later need online payment, the structure can connect to an agreed processor.",
     },
     features: {
       ro: ["Listă cu filtre pe categorie și preț", "Pagină de produs cu galerie și variante", "Coș în browser, fără cont", "Comandă pe e-mail și WhatsApp", "JSON-LD Product pe fiecare pagină"],
