@@ -26,7 +26,7 @@ const COPY = {
     placeholder: "Scrie întrebarea ta…",
     send: "Trimite",
     close: "Închide conversația",
-    error: "Nu am putut răspunde acum. Scrie-ne la contact@avyron.ro.",
+    error: "Conexiunea AVY nu a răspuns. Mesajul a rămas în câmp; încearcă din nou sau scrie-ne la contact@avyron.ro.",
     hello: "Salut! Sunt AVY. Te ajut cu prețuri, produse sau o estimare rapidă.",
     chips: ["Cât costă un site?", "Vreau o ofertă", "Audit gratuit la site-ul meu", "În cât timp e gata?"],
     helpful: "Ți-a fost util?",
@@ -36,7 +36,7 @@ const COPY = {
     waIntro: "Bună! Am discutat cu AVY pe site și vreau să continuăm aici.",
     waYou: "Eu",
     waPage: "Pagina",
-    connected: "Conectat la AVY OS",
+    connected: "Asistent disponibil",
     dismissPrompt: "Ascunde invitația",
   },
   en: {
@@ -46,7 +46,7 @@ const COPY = {
     placeholder: "Type your question…",
     send: "Send",
     close: "Close chat",
-    error: "I could not answer right now. Write to contact@avyron.ro.",
+    error: "The AVY connection did not answer. Your message is still in the field; try again or write to contact@avyron.ro.",
     hello: "Hi! I am AVY. Ask me about pricing, products or a quick estimate.",
     chips: ["How much is a website?", "I want a quote", "Free audit of my site", "How long does it take?"],
     helpful: "Was this helpful?",
@@ -56,7 +56,7 @@ const COPY = {
     waIntro: "Hi! I chatted with AVY on your site and I would like to continue here.",
     waYou: "Me",
     waPage: "Page",
-    connected: "Connected to AVY OS",
+    connected: "Assistant available",
     dismissPrompt: "Dismiss prompt",
   },
 } as const;
@@ -330,10 +330,13 @@ const AvyChat = ({ agent = "avy", initiallyOpen = false }: { agent?: string; ini
           page: pathname,
           visitorId: visitorId(),
         });
+        setConnected(true);
         setConversationId(reply.conversationId);
         setMessages((prev) => [...prev, { id: reply.messageId, role: "assistant", text: reply.reply }]);
         trackEvent("avy_message", { agent, confidence: reply.confidence });
       } catch {
+        setConnected(false);
+        setInput((current) => current || text);
         setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", text: t.error, rated: true }]);
       } finally {
         setBusy(false);

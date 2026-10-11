@@ -1,9 +1,9 @@
-import { Building2, CreditCard, FileText, Link2, ShieldCheck } from "lucide-react";
+import { Building2, CreditCard, FileCheck2, ReceiptText, ShieldCheck } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 
 /**
- * Compact, SEO-friendly payment methods strip.
- * Used on the pricing page and on every individual product page.
+ * Public payment guidance. Provider identities and configuration state belong
+ * to authenticated checkout/account surfaces, not to marketing pages.
  */
 const PaymentMethods = ({ compact = false }: { compact?: boolean }) => {
   const { lang } = useLang();
@@ -11,24 +11,24 @@ const PaymentMethods = ({ compact = false }: { compact?: boolean }) => {
 
   const methods = [
     {
-      icon: Link2,
-      label: "Revolut Pay",
-      hint: ro ? "plată și abonamente" : "payments & subscriptions",
-    },
-    {
       icon: CreditCard,
-      label: "Stripe",
-      hint: ro ? "card securizat & recurent" : "secure & recurring card",
+      label: ro ? "Plată cu cardul" : "Card payment",
+      hint: ro ? "doar prin checkout securizat" : "secure checkout only",
     },
     {
       icon: Building2,
       label: ro ? "Transfer bancar" : "Bank transfer",
-      hint: ro ? "proformă & ordin de plată" : "pro forma & bank order",
+      hint: ro ? "pentru persoane și companii" : "for people and companies",
     },
     {
-      icon: FileText,
-      label: "Oblio",
-      hint: ro ? "factură & e-Factura" : "invoice & e-Invoice",
+      icon: ReceiptText,
+      label: ro ? "Proformă la cerere" : "Pro forma on request",
+      hint: ro ? "înainte de plată" : "before payment",
+    },
+    {
+      icon: FileCheck2,
+      label: ro ? "Factură fiscală" : "Tax invoice",
+      hint: ro ? "după confirmarea încasării" : "after payment confirmation",
     },
   ];
 
@@ -52,8 +52,8 @@ const PaymentMethods = ({ compact = false }: { compact?: boolean }) => {
         {!compact && (
           <p className="w-full text-xs text-foreground/60">
             {ro
-              ? "Metode rapide și sigure, pentru persoane fizice și companii."
-              : "Fast, secure methods for individuals and companies."}
+              ? "Opțiunile disponibile sunt confirmate înainte de comandă, fără promisiuni despre integrări neactivate."
+              : "Available options are confirmed before ordering, without claims about inactive integrations."}
           </p>
         )}
       </div>
@@ -77,8 +77,8 @@ const PaymentMethods = ({ compact = false }: { compact?: boolean }) => {
 
       <p className="mt-3 text-center text-[10px] leading-relaxed text-foreground/50">
         {ro
-          ? "La checkout sunt afișate numai metodele active pentru serviciul sau produsul ales. Datele complete ale cardului rămân la furnizorul de plată, iar taxarea recurentă se activează doar cu acord explicit. Factura se emite prin Oblio după confirmarea plății și validarea datelor de facturare."
-          : "Checkout shows only the active methods for the selected service or product. Full card data stays with the payment provider, and recurring charges require explicit consent. Oblio issues the invoice after payment confirmation and billing-data validation."}
+          ? "Procesatorul este afișat numai în checkout, dacă este activ pentru comanda respectivă. Avyron nu stochează datele complete ale cardului, iar plățile recurente cer acord explicit."
+          : "The processor is shown only in checkout when active for that order. Avyron does not store full card details, and recurring payments require explicit consent."}
       </p>
     </section>
   );

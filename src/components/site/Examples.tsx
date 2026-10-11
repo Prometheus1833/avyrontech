@@ -4,6 +4,7 @@ import { Check, ChevronDown, ExternalLink, Globe, MessageSquarePlus } from "luci
 import { useLang } from "@/i18n/LanguageContext";
 import { useExamples, publicImageUrl, type ExampleRow } from "@/hooks/useExamples";
 import { RequestExampleModal } from "./RequestExampleModal";
+import IndustryDeviceShowcase from "./IndustryDeviceShowcase";
 import { Link } from "react-router-dom";
 import examplesBg from "@/assets/examples-section-bg.jpg";
 
@@ -45,7 +46,7 @@ const Examples = () => {
   const showCard = active !== null;
 
   return (
-    <section id="exemple" className="relative py-14 md:py-24 overflow-hidden">
+    <section id="exemple" className="relative overflow-x-clip py-14 md:py-24">
       {/* Background image (enlarged) */}
       <img
         aria-hidden
@@ -161,6 +162,13 @@ const Examples = () => {
             </motion.div>
           )}
         </AnimatePresence>
+
+        <IndustryDeviceShowcase
+          domainKey={displayCat}
+          domainLabel={currentCat.label}
+          websiteTitle={current.title}
+          websiteDescription={current.benefit}
+        />
 
         {/* ===== CARD EXEMPLU + FEATURES — only after a category is selected ===== */}
         <AnimatePresence mode="wait">

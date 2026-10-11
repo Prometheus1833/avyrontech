@@ -14,7 +14,7 @@ import {
   ANNUAL_PROMOTION_CODE, BILLING_PERIODS, authStateFor, buildOrderItems, type BillingPeriod,
 } from "@/lib/subscriptionCheckout";
 import { addLocalAccountCartItem, syncLocalAccountCartSource } from "@/lib/accountCart";
-import { billingApi } from "@/lib/billingApi";
+import { billingApi, type BillingAccount } from "@/lib/billingApi";
 
 type Quote = {
   currency: "RON";
@@ -45,6 +45,7 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
   const [submitting, setSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [providers, setProviders] = useState<BillingAccount["providers"] | null>(null);
 
   const plan = selection?.plan ?? null;
   const category = selection?.category ?? null;
@@ -92,6 +93,24 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
     setPromotionCode(automaticCode || "");
     void refreshQuote(automaticCode);
   }, [plan, user, period, refreshQuote]);
+
+  useEffect(() => {
+    if (!plan || !user) {
+      setProviders(null);
+      return;
+    }
+    let active = true;
+    void billingApi.account()
+      .then((result) => {
+        if (active) setProviders(result.providers);
+      })
+      .catch(() => {
+        if (active) setProviders(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [plan, user]);
 
   const submitOrder = async (provider?: "revolut" | "stripe") => {
     if (!plan || !category || !user) return;
@@ -176,8 +195,8 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
                 </p>
                 <p className="mt-1 text-foreground/70">
                   {ro
-                    ? "Comanda este în cont. Abonamentul devine activ după confirmarea plății, iar factura Oblio este emisă automat după încasare."
-                    : "The order is in your account. The subscription becomes active after payment confirmation, and the Oblio invoice is issued automatically after collection."}
+                    ? "Comanda este în cont. Abonamentul devine activ după confirmarea plății, iar factura este emisă după încasare."
+                    : "The order is in your account. The subscription becomes active after payment confirmation, and the invoice is issued after collection."}
                 </p>
               </div>
             </div>
@@ -293,24 +312,33 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
             </div>
 
             <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => void submitOrder("revolut")}
-                disabled={submitting}
-                className={`inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r ${theme.from} ${theme.to} px-4 py-3 text-sm font-bold text-white transition-transform disabled:cursor-not-allowed disabled:opacity-45`}
-              >
-                {submitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <WalletCards className="size-4" aria-hidden />}
-                {ro ? "Abonează-te cu Revolut Pay" : "Subscribe with Revolut Pay"}
-              </button>
-              <button
-                type="button"
-                onClick={() => void submitOrder("stripe")}
-                disabled={submitting}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-foreground/15 px-4 py-3 text-sm font-bold transition-colors hover:bg-foreground/[0.06] disabled:opacity-50"
-              >
-                <CreditCard className="size-4" aria-hidden />
-                {ro ? "Abonează-te prin Stripe" : "Subscribe with Stripe"}
-              </button>
+              {providers?.revolut.enabled && (
+                <button
+                  type="button"
+                  onClick={() => void submitOrder("revolut")}
+                  disabled={submitting}
+                  className={`inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r ${theme.from} ${theme.to} px-4 py-3 text-sm font-bold text-white transition-transform disabled:cursor-not-allowed disabled:opacity-45`}
+                >
+                  {submitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <WalletCards className="size-4" aria-hidden />}
+                  {ro ? "Abonează-te cu plata online" : "Subscribe with online payment"}
+                </button>
+              )}
+              {providers?.stripe.enabled && (
+                <button
+                  type="button"
+                  onClick={() => void submitOrder("stripe")}
+                  disabled={submitting}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-foreground/15 px-4 py-3 text-sm font-bold transition-colors hover:bg-foreground/[0.06] disabled:opacity-50"
+                >
+                  <CreditCard className="size-4" aria-hidden />
+                  {ro ? "Abonează-te cu cardul" : "Subscribe by card"}
+                </button>
+              )}
+              {providers && !providers.revolut.enabled && !providers.stripe.enabled && (
+                <p className="rounded-xl border border-foreground/10 bg-foreground/[0.03] px-3 py-2 text-xs leading-relaxed text-foreground/70">
+                  {ro ? "Plata online nu este activă pentru acest abonament. Înregistrează comanda, iar echipa îți confirmă oferta și proforma." : "Online payment is not active for this subscription. Record the order and the team will confirm the quote and pro forma."}
+                </p>
+              )}
               <button type="button" onClick={() => void submitOrder()} disabled={submitting} className="w-full px-4 py-2 text-xs font-semibold text-foreground/65 underline underline-offset-4 disabled:opacity-50">{ro ? "Înregistrează comanda pentru ofertă / proformă" : "Record order for quote / proforma"}</button>
               {addedToCart ? (
                 <Link to="/profil?tab=cart" className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-600 dark:text-emerald-300">
@@ -326,8 +354,8 @@ const PlanCheckout = ({ selection, pagePath, onClose }: Props) => {
               <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-foreground/70">
                 <ShieldCheck className="mt-0.5 size-3.5 shrink-0" aria-hidden />
                 {ro
-                  ? "Prețul este recalculat de server în RON. Plata și salvarea cardului au loc la Revolut sau Stripe; AVYRON nu stochează numărul cardului. Factura se emite prin Oblio după confirmarea încasării."
-                  : "The server recalculates the price in RON. Payment and card storage happen at Revolut or Stripe; AVYRON never stores the card number. Oblio issues the invoice after payment confirmation."}
+                  ? "Prețul este recalculat de server în RON. Procesatorul activ este afișat numai în checkout; AVYRON nu stochează numărul complet al cardului. Factura se emite după confirmarea încasării."
+                  : "The server recalculates the price in RON. The active processor is shown only in checkout; AVYRON never stores the full card number. The invoice is issued after payment confirmation."}
               </p>
             </div>
           </div>

@@ -114,14 +114,19 @@ test.describe("public SEO routes", () => {
 
   test("homepage turns the selected field into website, app and AI device stages", async ({ page }) => {
     await page.goto("/");
-    const showcase = page.getByTestId("industry-device-showcase");
+    const examples = page.locator("#exemple");
+    const showcase = examples.getByTestId("industry-device-showcase");
+    await examples.scrollIntoViewIfNeeded();
+    await expect(showcase).toBeAttached();
     await showcase.scrollIntoViewIfNeeded();
 
-    await expect(showcase.getByRole("heading", { name: "Alege domeniul tău și vezi cum ar arăta." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Alege domeniul tău și vezi cum ar arăta." })).toHaveCount(1);
+    await examples.getByRole("button", { name: "Vezi domenii", exact: true }).click();
+    await examples.getByRole("button", { name: /Restaurante & cafenele/ }).click();
+    await expect(showcase).toHaveAttribute("data-domain", "resto");
     await showcase.getByRole("button", { name: "Website", exact: true }).click();
     await expect(showcase).toHaveAttribute("data-active-stage", "laptop");
-    await showcase.getByRole("button", { name: "Clinică", exact: true }).click();
-    await expect(showcase.getByRole("heading", { name: "Consultația ta, la ora ta.", exact: true })).toBeVisible();
+    await expect(showcase.getByRole("heading", { name: "Meniu, rezervări și comenzi într-un singur loc", exact: true })).toBeVisible();
     await expect(showcase.getByRole("link", { name: "Vezi serviciul de website" })).toHaveAttribute("href", "/servicii/website-prezentare-profesional");
 
     await showcase.getByRole("button", { name: "Aplicație", exact: true }).click();
@@ -138,15 +143,16 @@ test.describe("public SEO routes", () => {
     await expect(showcase.getByRole("link", { name: "Vezi agenții AI" })).toHaveAttribute("href", "/servicii/automatizari-si-ai");
 
     await page.goto("/en");
-    const englishShowcase = page.getByTestId("industry-device-showcase");
+    const englishExamples = page.locator("#exemple");
+    const englishShowcase = englishExamples.getByTestId("industry-device-showcase");
     await englishShowcase.scrollIntoViewIfNeeded();
-    await expect(englishShowcase.getByRole("heading", { name: "Choose your field and see what it could look like." })).toBeVisible();
-    await expect(englishShowcase.getByRole("button", { name: "Law firm", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Pick your industry and see how it would look." })).toHaveCount(1);
+    await expect(englishShowcase.getByRole("button", { name: "AI agent", exact: true })).toBeVisible();
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/#domenii");
     const mobileShowcase = page.getByTestId("industry-device-showcase");
-    await expect(mobileShowcase.getByRole("heading", { name: "Alege domeniul tău și vezi cum ar arăta." })).toBeInViewport();
+    await expect(mobileShowcase).toBeInViewport();
     await mobileShowcase.getByRole("button", { name: "Agent AI", exact: true }).click();
     await expect(mobileShowcase).toHaveAttribute("data-active-stage", "tablet");
     await expect(mobileShowcase.getByRole("link", { name: "Vezi agenții AI" })).toBeInViewport();
@@ -348,6 +354,23 @@ test.describe("public SEO routes", () => {
     expect(graph).toContain("BlogPosting");
     expect(graph).not.toContain("#importanta-website-afacere-2026");
     await expect(page.getByRole("heading", { level: 2, name: "Ce face un website util, nu doar frumos" })).toBeVisible();
+  });
+
+  test("blog landing uses a balanced editorial hierarchy", async ({ page }) => {
+    await page.goto("/blog");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("produse digitale");
+    await expect(page.locator('[data-blog-card="lead"]')).toHaveCount(1);
+    await expect(page.locator('[data-blog-card="compact"]')).toHaveCount(2);
+    expect(await page.locator('[data-blog-card="standard"]').count()).toBeGreaterThanOrEqual(3);
+    await expect(page.getByTestId("blog-filter-console")).toBeVisible();
+  });
+
+  test("public service pages do not expose internal billing providers", async ({ page }) => {
+    await page.goto("/servicii");
+    await expect(page.getByText("Modalități de plată flexibile")).toBeVisible();
+    const publicCopy = await page.locator("body").innerText();
+    expect(publicCopy).not.toMatch(/Oblio|Stripe|Revolut Pay/i);
+    expect(publicCopy).toContain("Procesatorul este afișat numai în checkout");
   });
 
   test("complete English legal and blog variants are indexable", async ({ page }) => {
