@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   canonicalAvyronConversionUrl,
   plannedSocialJobs,
+  recoverStaleSocialGenerationJobs,
+  removeSocialPriceDetails,
   sanitizeFacebookCaptionLinks,
+  sanitizeInstagramCaptionLinks,
   type SocialPolicy,
 } from "../../cloudflare/workers/api/src/socialStudioScheduler";
 
@@ -34,12 +37,16 @@ describe("Social Studio scheduler", () => {
     expect(jobs.find((job) => job.kind === "story")?.brief).toMatchObject({
       shortCopy: true,
       nativeLinkPreferred: true,
-      defaultLink: "https://avyron.ro",
+      defaultLink: "https://avyron.ro/servicii/website-prezentare-profesional",
+      frameCount: 3,
+      storyMicrocopyRequired: true,
       safeZone: { top: 180, bottom: 250, left: 72, right: 72 },
     });
     expect(jobs.find((job) => job.kind === "daily_post")?.brief).toMatchObject({
       websiteOfferVisible: true,
       linkRequired: true,
+      prohibitPrices: true,
+      targetUrl: "https://avyron.ro/servicii/website-prezentare-profesional",
     });
     expect(jobs.find((job) => job.kind === "engagement_review")?.brief).toMatchObject({
       storyLikeTarget: 8,
@@ -76,5 +83,37 @@ describe("Social Studio scheduler", () => {
       "Descoperă proiectul https://example.com/demo?utm_source=facebook și discută cu noi.",
       "https://avyron.ro/servicii/website-prezentare-profesional?utm_campaign=demo",
     )).toBe("Descoperă proiectul și discută cu noi.\n\nhttps://avyron.ro/servicii/website-prezentare-profesional");
+  });
+
+  it("keeps Instagram honest about link behavior and removes price details", () => {
+    const caption = removeSocialPriceDetails("Website clar pentru rezervări.\nPreț de la 999 lei.\nDiscutăm despre structură și conținut.");
+    expect(caption).toBe("Website clar pentru rezervări.\nDiscutăm despre structură și conținut.");
+    expect(sanitizeInstagramCaptionLinks(
+      caption,
+      "https://avyron.ro/servicii/website-prezentare-profesional?utm_source=instagram",
+    )).toBe(
+      "Website clar pentru rezervări.\nDiscutăm despre structură și conținut.\n\n" +
+      "Vezi serviciul: https://avyron.ro/servicii/website-prezentare-profesional\nLink în bio.",
+    );
+  });
+
+  it("requeues stale generation leases and stops automatic retries after three attempts", async () => {
+    const calls: Array<{ sql: string; values: unknown[] }> = [];
+    const db = {
+      prepare(sql: string) {
+        return {
+          bind(...values: unknown[]) {
+            calls.push({ sql, values });
+            return { run: async () => ({ meta: { changes: sql.includes("attempt_count>=") ? 1 : 2 } }) };
+          },
+        };
+      },
+    };
+    const timestamp = Date.UTC(2026, 9, 11, 10, 0);
+    const recovered = await recoverStaleSocialGenerationJobs({ DB: db as never }, timestamp);
+    expect(recovered).toEqual({ requeued: 2, failed: 1 });
+    expect(calls).toHaveLength(2);
+    expect(calls[0].values).toEqual([timestamp, timestamp - 15 * 60_000, 3]);
+    expect(calls[1].values).toEqual([timestamp, timestamp - 15 * 60_000, 3]);
   });
 });

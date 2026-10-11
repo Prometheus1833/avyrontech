@@ -8,6 +8,9 @@ import { enqueueAudienceReviewRuns } from "./socialAudienceOptimizer";
 
 const identifier = (prefix: string) => `${prefix}_${crypto.randomUUID().replace(/-/g, "")}`;
 const DAY_MS = 86_400_000;
+const SOCIAL_GENERATION_LEASE_MS = 15 * 60_000;
+const SOCIAL_MAX_AUTOMATIC_ATTEMPTS = 3;
+const DEFAULT_WEBSITE_SERVICE_URL = "https://avyron.ro/servicii/website-prezentare-profesional";
 
 export type SocialPolicy = {
   project_id: string;
@@ -54,6 +57,7 @@ type JobRow = {
   topic: string;
   brief_json: string;
   due_at: number;
+  attempt_count: number;
 };
 
 type ProjectRow = {
@@ -165,7 +169,11 @@ export function plannedSocialJobs(policy: SocialPolicy, timestamp = now()): Plan
   if (policy.daily_post_count > 0) append(
     "post", "daily_post", "post", "multi", slotMinutes(slots, "post", "10:15"),
     `Website de prezentare pentru ${industry}`,
-    { industry, objective: "conversie si educatie", mediaRequired: true, platformVariants: true, websiteOfferVisible: true, linkRequired: true },
+    {
+      industry, objective: "conversie si educatie", mediaRequired: true, platformVariants: true,
+      websiteOfferVisible: true, linkRequired: true, targetUrl: DEFAULT_WEBSITE_SERVICE_URL,
+      prohibitPrices: true, editorialMechanism: "information_gap",
+    },
   );
   if (policy.daily_image_count > 0) append(
     "image", "daily_image", "post", "instagram", slotMinutes(slots, "image", "13:15"),
@@ -179,7 +187,8 @@ export function plannedSocialJobs(policy: SocialPolicy, timestamp = now()): Plan
       industry, objective: "comunitate", shortCopy: true, mediaRequired: true,
       canvas: { width: 1080, height: 1920 },
       safeZone: { top: 180, bottom: 250, left: 72, right: 72 },
-      nativeLinkPreferred: true, defaultLink: "https://avyron.ro",
+      nativeLinkPreferred: true, defaultLink: DEFAULT_WEBSITE_SERVICE_URL,
+      targetUrl: DEFAULT_WEBSITE_SERVICE_URL, frameCount: 3, storyMicrocopyRequired: true,
       maxInteractiveElements: 1, maxSecondaryAccents: 1,
     },
   );
@@ -243,8 +252,8 @@ async function enqueueDueJobs(env: Env, timestamp: number) {
 }
 
 const allowedChannels = new Set(["facebook", "instagram", "tiktok", "threads", "linkedin", "whatsapp", "messenger", "blog"]);
-const DEFAULT_WEBSITE_SERVICE_URL = "https://avyron.ro/servicii/website-prezentare-profesional";
 const FACEBOOK_URL_PATTERN = /https?:\/\/[^\s<>()]+/gi;
+const PRICE_DETAIL_PATTERN = /(?:preț(?:ul|uri|urile)?|costă|\b(?:pret(?:ul|uri|urile)?|costa|costul|costuri|costurile|tarif(?:ul|e|ele)?|lei|ron|eur|usd)\b|[€$£]|\b\d[\d\s.,]*(?:lei|ron|eur|usd)\b)/iu;
 
 export function canonicalAvyronConversionUrl(raw: unknown, fallback = DEFAULT_WEBSITE_SERVICE_URL) {
   const candidate = String(raw || "").trim();
@@ -268,6 +277,19 @@ export function sanitizeFacebookCaptionLinks(caption: string, rawLink: unknown, 
   return includeLink ? `${cleanCaption}\n\n${canonicalLink}`.trim() : cleanCaption;
 }
 
+export function removeSocialPriceDetails(caption: string) {
+  return caption.split("\n").filter((line) => !PRICE_DETAIL_PATTERN.test(line))
+    .join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+export function sanitizeInstagramCaptionLinks(caption: string, rawLink: unknown, includeLink = true) {
+  const cleanCaption = caption.replace(FACEBOOK_URL_PATTERN, "").replace(/[ \t]{2,}/g, " ")
+    .replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  if (!includeLink) return cleanCaption;
+  const canonicalLink = canonicalAvyronConversionUrl(rawLink);
+  return `${cleanCaption}\n\nVezi serviciul: ${canonicalLink}\nLink în bio.`.trim();
+}
+
 function parseVariants(raw: string, fallback: ReturnType<typeof parseGeneratedContent>) {
   const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
   let parsed: Record<string, unknown> = {};
@@ -286,7 +308,7 @@ function parseVariants(raw: string, fallback: ReturnType<typeof parseGeneratedCo
       ? [...new Set(item.nativeElements.filter((value): value is string => typeof value === "string")
         .map((value) => value.trim().slice(0, 80)).filter(Boolean))].slice(0, 8)
       : [];
-    const linkStrategy = ["native_clickable", "profile_link", "first_comment", "visible_fallback", "none"]
+    let linkStrategy = ["native_clickable", "profile_link", "first_comment", "visible_fallback", "none"]
       .includes(String(item.linkStrategy)) ? String(item.linkStrategy) : "visible_fallback";
     const requestedLink = String(item.linkUrl || "").trim().slice(0, 1_000) || null;
     let linkUrl = requestedLink;
@@ -296,10 +318,14 @@ function parseVariants(raw: string, fallback: ReturnType<typeof parseGeneratedCo
     const safeZone = item.safeZone && typeof item.safeZone === "object" && !Array.isArray(item.safeZone)
       ? item.safeZone as Record<string, unknown> : {};
     const linkIsExpected = linkStrategy !== "none" && Boolean(requestedLink);
+    const priceSafeCaption = removeSocialPriceDetails(String(item.caption || fallback.caption));
     const caption = channel === "facebook"
-      ? sanitizeFacebookCaptionLinks(String(item.caption || fallback.caption), requestedLink, linkIsExpected)
-      : String(item.caption || fallback.caption).trim().slice(0, 8_000);
-    if (channel === "facebook" && linkIsExpected) linkUrl = canonicalAvyronConversionUrl(requestedLink);
+      ? sanitizeFacebookCaptionLinks(priceSafeCaption, requestedLink, linkIsExpected)
+      : channel === "instagram"
+        ? sanitizeInstagramCaptionLinks(priceSafeCaption, requestedLink, linkIsExpected)
+        : priceSafeCaption.trim().slice(0, 8_000);
+    if (linkIsExpected) linkUrl = canonicalAvyronConversionUrl(requestedLink);
+    if (channel === "instagram" && linkIsExpected) linkStrategy = "profile_link";
     return [{
       channel,
       caption: caption.slice(0, 8_000),
@@ -331,6 +357,7 @@ async function generateJobDraft(env: Env, job: JobRow, timestamp: number) {
     "UPDATE ai_social_jobs SET status='generating',attempt_count=attempt_count+1,updated_at=? WHERE id=? AND status='queued'",
   ).bind(timestamp, job.id).run();
   if (!claimed.meta.changes) return;
+  const attemptNumber = Math.max(1, Number(job.attempt_count || 0) + 1);
 
   const project = await env.DB.prepare(
     `SELECT id,name,brand_tone,target_audience,core_offer,agent_instructions,content_retention_days
@@ -371,20 +398,25 @@ async function generateJobDraft(env: Env, job: JobRow, timestamp: number) {
     : job.primary_channel === "blog"
       ? ["blog", "linkedin", "facebook", "threads"]
       : [job.primary_channel];
+  const jobBrief = safeJsonObject(job.brief_json);
+  const targetUrl = canonicalAvyronConversionUrl(jobBrief.targetUrl || jobBrief.defaultLink);
   const prompt = [
     agent.system_prompt,
     agent.guardrails,
     "Returneaza exclusiv JSON valid cu cheile title, caption, visualDirection, cta, hashtags si variants.",
     "variants este un array; fiecare element are channel, caption, hashtags, cta, mediaBrief, altText, linkUrl, linkStrategy, nativeElements, safeZone si backgroundDirection.",
     "linkStrategy este una dintre native_clickable, profile_link, first_comment, visible_fallback sau none. nativeElements descrie numai functii disponibile nativ pe canal.",
-    "Pentru Facebook foloseste maximum un URL canonic, scurt, fara query, fragment sau UTM vizibil. Sunt permise numai avyron.ro, pagina serviciilor, serviciul exact, produsul exact sau articolul relevant. Nu folosi URL-uri de exemple/demo ori domenii externe ca destinatie de conversie. Daca nu exista o destinatie mai exacta, foloseste https://avyron.ro/servicii/website-prezentare-profesional.",
+    `Destinatia unica de conversie pentru acest job este ${targetUrl}. Nu folosi homepage-ul, un demo, preview sau un domeniu extern in locul paginii exacte.`,
+    "Nu include preturi, tarife, reduceri, termene comerciale sau alte detalii de pret in descrieri.",
+    "Pentru Facebook pune exact un singur URL canonic clicabil, pe linie separata, fara query, fragment sau UTM vizibil.",
+    "Pentru Instagram afiseaza URL-ul exact in descriere si spune corect «Link în bio»; seteaza linkStrategy=profile_link si nu pretinde ca URL-ul din caption este clicabil.",
     `Proiect: ${project.name}. Ton: ${project.brand_tone}.`,
     `Audienta: ${project.target_audience}. Oferta: ${project.core_offer}.`,
     `Reguli proiect: ${project.agent_instructions}.`,
     `Job: ${job.kind}; format: ${job.format}; subiect: ${job.topic}; canale: ${channels.join(", ")}.`,
     `Brief: ${job.brief_json}.`,
     designProfile?.profile_json ? `Profil de design aprobat: ${designProfile.profile_json}.` : "Aplica design premium, minimalist si verificare mobila.",
-    job.format === "story" ? "Textul Story trebuie sa fie scurt, tematic si usor de citit. Protejeaza zonele platformei si prefera stickerul nativ de link catre https://avyron.ro." : "",
+    job.format === "story" ? `Livreaza trei cadre distincte cu story_microcopy separat: recunoastere, mecanism/dovada si actiune. Protejeaza zonele platformei si foloseste un singur sticker nativ catre ${targetUrl}.` : "",
     job.format === "article" ? "Scrie un articol original, editorial, jurnalistic si uman, cu titlu SEO, introducere, subtitluri, concluzie si CTA discret. Nu publica." : "",
     job.format === "post" || job.format === "reel" ? `Fiecare varianta de feed foloseste intre ${policy?.tag_min || 5} si ${policy?.tag_max || 10} hashtaguri relevante, fara umplutura.` : "",
     sources.results.length ? `Surse aprobate:\n${sources.results.map((source) => `- ${source.source_label}: ${source.title}; ${source.insight}; ${source.canonical_url || "fara URL"}`).join("\n")}` : "Surse aprobate: nu exista. Evita afirmatiile despre tendinte si performanta altora.",
@@ -409,7 +441,7 @@ async function generateJobDraft(env: Env, job: JobRow, timestamp: number) {
     operation: `social_model_${route.route_key}`,
     requestedUnits: Math.max(1, Math.ceil(prompt.length / 4)) + maxTokens,
     estimatedCostMinor: 0,
-    idempotencyKey: `social-job:${job.id}`,
+    idempotencyKey: `social-job:${job.id}:attempt:${attemptNumber}`,
     projectId: job.project_id,
   });
   if (reservation.decision !== "allowed") {
@@ -421,7 +453,7 @@ async function generateJobDraft(env: Env, job: JobRow, timestamp: number) {
   try {
     const core = await runAiCore({
       env, agentSlug: agent.slug, operation: `social_model_${route.route_key}`,
-      idempotencyKey: `social-job:${job.id}`, projectId: job.project_id,
+      idempotencyKey: `social-job:${job.id}:attempt:${attemptNumber}`, projectId: job.project_id,
       promptCharacters: prompt.length + 50,
       tier: job.format === "article" ? "special" : "normal", requestedMaxTokens: maxTokens,
       financialReserved: true,
@@ -435,8 +467,9 @@ async function generateJobDraft(env: Env, job: JobRow, timestamp: number) {
     const raw = String(output?.response || "").trim();
     if (!raw) throw new Error("empty_model_response");
     const generated = parseGeneratedContent(raw);
-    if (!generated.caption) throw new Error("invalid_model_output");
-    const variants = parseVariants(raw, generated);
+    const priceSafeGenerated = { ...generated, caption: removeSocialPriceDetails(generated.caption) };
+    if (!priceSafeGenerated.caption) throw new Error("invalid_model_output");
+    const variants = parseVariants(raw, priceSafeGenerated);
     const contentId = identifier("aic");
     const completedAt = now();
     const format = job.format === "article" ? "article" : job.format === "story" ? "story" : job.format === "reel" ? "reel" : "post";
@@ -449,8 +482,8 @@ async function generateJobDraft(env: Env, job: JobRow, timestamp: number) {
          VALUES (?,?,?,?,?,?,?,?,?,?,?,'draft',?,?,?)`,
       ).bind(
         contentId, job.project_id, agent.slug, format, objective, JSON.stringify(channels),
-        generated.title, generated.caption, generated.visualDirection, generated.cta,
-        JSON.stringify(generated.hashtags.slice(0, 10)), contentExpiry(completedAt, project.content_retention_days),
+        priceSafeGenerated.title, priceSafeGenerated.caption, priceSafeGenerated.visualDirection, priceSafeGenerated.cta,
+        JSON.stringify(priceSafeGenerated.hashtags.slice(0, 10)), contentExpiry(completedAt, project.content_retention_days),
         completedAt, completedAt,
       ),
       ...variants.map((variant) => env.DB.prepare(
@@ -481,16 +514,35 @@ async function generateJobDraft(env: Env, job: JobRow, timestamp: number) {
   }
 }
 
+export async function recoverStaleSocialGenerationJobs(env: Pick<Env, "DB">, timestamp = now()) {
+  const staleBefore = timestamp - SOCIAL_GENERATION_LEASE_MS;
+  const failed = await env.DB.prepare(
+    `UPDATE ai_social_jobs
+        SET status='failed',last_error_code='stale_generation_attempts_exhausted',updated_at=?
+      WHERE status='generating' AND updated_at<=? AND attempt_count>=?`,
+  ).bind(timestamp, staleBefore, SOCIAL_MAX_AUTOMATIC_ATTEMPTS).run();
+  const requeued = await env.DB.prepare(
+    `UPDATE ai_social_jobs
+        SET status='queued',last_error_code='stale_generation_requeued',updated_at=?
+      WHERE status='generating' AND updated_at<=? AND attempt_count<?`,
+  ).bind(timestamp, staleBefore, SOCIAL_MAX_AUTOMATIC_ATTEMPTS).run();
+  return {
+    requeued: Number(requeued.meta.changes || 0),
+    failed: Number(failed.meta.changes || 0),
+  };
+}
+
 export async function runSocialStudioScheduler(env: Env, timestamp = now()) {
-  const [created, audienceCreated] = await Promise.all([
+  const [created, audienceCreated, recovered] = await Promise.all([
     enqueueDueJobs(env, timestamp),
     enqueueAudienceReviewRuns(env, timestamp),
+    recoverStaleSocialGenerationJobs(env, timestamp),
   ]);
   const due = await env.DB.prepare(
-    `SELECT id,project_id,kind,format,primary_channel,topic,brief_json,due_at
+    `SELECT id,project_id,kind,format,primary_channel,topic,brief_json,due_at,attempt_count
        FROM ai_social_jobs WHERE status='queued' AND due_at<=?
       ORDER BY due_at ASC LIMIT 3`,
   ).bind(timestamp).all<JobRow>();
   for (const job of due.results) await generateJobDraft(env, job, timestamp);
-  return { created, processed: due.results.length, audienceCreated };
+  return { created, processed: due.results.length, audienceCreated, recovered };
 }
