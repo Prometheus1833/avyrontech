@@ -3,6 +3,7 @@ import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import Nav from "@/components/site/Nav";
 import Hero from "@/components/site/Hero";
 import AgencyServices from "@/components/site/AgencyServices";
+import IndustryDeviceShowcase from "@/components/site/IndustryDeviceShowcase";
 import { useLocation } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
 
@@ -92,10 +93,11 @@ const Index = () => {
   }, [t.seo.title, t.seo.desc, location.pathname]);
 
   return (
-    <main className="min-h-screen overflow-x-hidden">
+    <main className="min-h-screen overflow-x-clip">
       <Nav />
       <Hero />
       <AgencyServices />
+      <IndustryDeviceShowcase />
       <Deferred minHeight={520}><Problem /></Deferred>
       <Deferred minHeight={720} forceReady={location.hash === "#exemple"}><Examples /></Deferred>
       <div className="h-8 md:h-16" aria-hidden />

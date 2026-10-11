@@ -112,6 +112,48 @@ test.describe("public SEO routes", () => {
     expect(cardsBox?.y).toBeLessThan(ctaBox?.y ?? 0);
   });
 
+  test("homepage turns the selected field into website, app and AI device stages", async ({ page }) => {
+    await page.goto("/");
+    const showcase = page.getByTestId("industry-device-showcase");
+    await showcase.scrollIntoViewIfNeeded();
+
+    await expect(showcase.getByRole("heading", { name: "Alege domeniul tău și vezi cum ar arăta." })).toBeVisible();
+    await showcase.getByRole("button", { name: "Website", exact: true }).click();
+    await expect(showcase).toHaveAttribute("data-active-stage", "laptop");
+    await showcase.getByRole("button", { name: "Clinică", exact: true }).click();
+    await expect(showcase.getByRole("heading", { name: "Consultația ta, la ora ta.", exact: true })).toBeVisible();
+    await expect(showcase.getByRole("link", { name: "Vezi serviciul de website" })).toHaveAttribute("href", "/servicii/website-prezentare-profesional");
+
+    await showcase.getByRole("button", { name: "Aplicație", exact: true }).click();
+    await expect(showcase).toHaveAttribute("data-active-stage", "phone");
+    await expect(showcase.getByRole("link", { name: "Descoperă aplicațiile" })).toHaveAttribute("href", "/servicii/aplicatii-si-platforme");
+    const stickyFrame = showcase.locator(":scope > div").first();
+    await expect.poll(async () => stickyFrame.evaluate((element) => {
+      const frame = element.getBoundingClientRect();
+      return frame.top >= 0 && frame.top <= 81 && frame.bottom >= window.innerHeight - 1;
+    })).toBe(true);
+
+    await showcase.getByRole("button", { name: "Agent AI", exact: true }).click();
+    await expect(showcase).toHaveAttribute("data-active-stage", "tablet");
+    await expect(showcase.getByRole("link", { name: "Vezi agenții AI" })).toHaveAttribute("href", "/servicii/automatizari-si-ai");
+
+    await page.goto("/en");
+    const englishShowcase = page.getByTestId("industry-device-showcase");
+    await englishShowcase.scrollIntoViewIfNeeded();
+    await expect(englishShowcase.getByRole("heading", { name: "Choose your field and see what it could look like." })).toBeVisible();
+    await expect(englishShowcase.getByRole("button", { name: "Law firm", exact: true })).toBeVisible();
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/#domenii");
+    const mobileShowcase = page.getByTestId("industry-device-showcase");
+    await expect(mobileShowcase.getByRole("heading", { name: "Alege domeniul tău și vezi cum ar arăta." })).toBeInViewport();
+    await mobileShowcase.getByRole("button", { name: "Agent AI", exact: true }).click();
+    await expect(mobileShowcase).toHaveAttribute("data-active-stage", "tablet");
+    await expect(mobileShowcase.getByRole("link", { name: "Vezi agenții AI" })).toBeInViewport();
+    const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(horizontalOverflow).toBeLessThanOrEqual(1);
+  });
+
   test("About stays indexable and legacy Portfolio routes consolidate into the service portfolio", async ({ page }) => {
     await page.goto("/despre-noi");
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro/despre-noi");
