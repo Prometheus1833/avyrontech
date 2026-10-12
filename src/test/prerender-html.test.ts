@@ -315,7 +315,7 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     expect(h).not.toContain("challenges.cloudflare.com/turnstile");
     expect(preloads).toHaveLength(2);
     expect(preloads.every((href) => /\/(react|router)-/.test(href))).toBe(true);
-    expect(html).toMatch(/<img[^>]*examples-section-bg[^>]*loading="lazy"/);
+    expect(html).not.toContain("examples-section-bg");
   });
 
   it("keeps Product/Service schema off non-product pages", () => {
