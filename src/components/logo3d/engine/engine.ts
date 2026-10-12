@@ -13,6 +13,7 @@
 
 import { BG_FS, LOGO_FS, QUAD_VS } from "./shaders";
 import { sdfFromMark, sdfFromText, type MarkDraw, type SdfTexture } from "./sdf";
+import { exportDimensions } from "../studioSettings";
 
 export type Tier = "low" | "std" | "ultra";
 export type Rgb = [number, number, number];
@@ -35,6 +36,10 @@ export type ViewParams = {
   yaw: number;
   pitch: number;
   scale: number;
+  roughness: number;
+  exposure: number;
+  emission: number;
+  lighting: number;
 };
 
 export type ViewHandle = {
@@ -60,6 +65,10 @@ const DEFAULTS: ViewParams = {
   yaw: 0,
   pitch: 0,
   scale: 1,
+  roughness: .24,
+  exposure: 1,
+  emission: 1,
+  lighting: 0,
 };
 
 type Tex = { tex: WebGLTexture; info: SdfTexture };
@@ -81,6 +90,10 @@ type View = {
     yaw: number;
     pitch: number;
     scale: number;
+    roughness: number;
+    exposure: number;
+    emission: number;
+    lighting: number;
   };
   pointer: { x: number; y: number; active: boolean };
   visible: boolean;
@@ -106,9 +119,9 @@ export function detectTier(): Tier {
 }
 
 const TIER_CFG: Record<Tier, { dpr: number; steps: number; quality: number }> = {
-  low: { dpr: 1.25, steps: 56, quality: 0 },
-  std: { dpr: 1.5, steps: 68, quality: 1 },
-  ultra: { dpr: 2, steps: 76, quality: 2 },
+  low: { dpr: 1.5, steps: 64, quality: 0 },
+  std: { dpr: 2, steps: 80, quality: 1 },
+  ultra: { dpr: 2, steps: 96, quality: 2 },
 };
 
 function compile(gl: WebGL2RenderingContext, type: number, src: string) {
@@ -310,6 +323,10 @@ export class Stage {
         yaw: target.yaw,
         pitch: target.pitch,
         scale: target.scale,
+        roughness: target.roughness,
+        exposure: target.exposure,
+        emission: target.emission,
+        lighting: target.lighting,
       },
       pointer: { x: 0, y: 0, active: false },
       visible: false,
@@ -340,25 +357,31 @@ export class Stage {
   }
 
   /** Render one view into a standalone 2D canvas (for the watermarked preview download). */
-  snapshot(el: HTMLElement): HTMLCanvasElement | null {
+  snapshot(el: HTMLElement, edge: 1920 | 3840 = 1920): HTMLCanvasElement | null {
     const view = [...this.views].find((v) => v.el === el);
     if (!view) return null;
     const rect = el.getBoundingClientRect();
-    const ratio = Math.min(2, 1536 / Math.max(rect.width, rect.height));
-    const w = Math.max(1, Math.round(rect.width * ratio));
-    const h = Math.max(1, Math.round(rect.height * ratio));
+    const { width: w, height: h } = exportDimensions(rect.width / rect.height, edge);
+    const ratio = w / rect.width;
+    const maxSize = this.gl.getParameter(this.gl.MAX_RENDERBUFFER_SIZE) as number;
+    if (Math.max(w, h) > maxSize) throw new Error("EXPORT_SIZE_UNSUPPORTED");
     const previousWidth = this.canvas.width;
     const previousHeight = this.canvas.height;
-    this.canvas.width = w;
-    this.canvas.height = h;
-    // Export the complete view, even when part of its DOM rectangle is off screen.
-    this.renderFrame(0, true, { view, width: rect.width, height: rect.height, ratio });
     const gl = this.gl;
     const px = new Uint8Array(w * h * 4);
-    gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
-    this.canvas.width = previousWidth;
-    this.canvas.height = previousHeight;
-    this.renderFrame(0, true);
+    try {
+      this.canvas.width = w;
+      this.canvas.height = h;
+      this.snap(view);
+      // Re-render from distance fields, not an enlarged screenshot. Export can be off screen.
+      this.renderFrame(0, true, { view, width: rect.width, height: rect.height, ratio });
+      gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      if (gl.isContextLost()) throw new Error("EXPORT_CONTEXT_LOST");
+    } finally {
+      this.canvas.width = previousWidth;
+      this.canvas.height = previousHeight;
+      if (!gl.isContextLost()) this.renderFrame(0, true);
+    }
     const out = document.createElement("canvas");
     out.width = w;
     out.height = h;
@@ -389,14 +412,16 @@ export class Stage {
 
   // ---------------------------------------------------------------- internals
 
-  private texture(key: string): Tex | null {
-    const hit = this.textures.get(key);
+  private texture(key: string, capture = false): Tex | null {
+    const cacheKey = `${key}${capture ? "|export" : ""}`;
+    const hit = this.textures.get(cacheKey);
     if (hit) return hit;
     let info: SdfTexture | null = null;
-    if (key.startsWith("text:")) info = sdfFromText(key.slice(5));
+    const text = key.match(/^text(?:@(display|editorial|mono))?:(.*)$/s);
+    if (text) info = sdfFromText(text[2], capture ? 512 : this.tier === "low" ? 256 : 384, (text[1] ?? "display") as "display" | "editorial" | "mono");
     else {
       const mark = this.marks.get(key);
-      if (mark) info = sdfFromMark(mark.draw, this.tier === "low" ? 320 : 512, mark.aspect);
+      if (mark) info = sdfFromMark(mark.draw, capture ? 1024 : this.tier === "low" ? 384 : 768, mark.aspect);
     }
     if (!info) return null;
     const gl = this.gl;
@@ -408,13 +433,13 @@ export class Stage {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     const entry = { tex, info };
-    this.textures.set(key, entry);
+    this.textures.set(cacheKey, entry);
     // Text fields are throwaway: keep the cache from growing while someone types.
-    const texts = [...this.textures.keys()].filter((k) => k.startsWith("text:"));
+    const texts = [...this.textures.keys()].filter((k) => k.startsWith("text"));
     if (texts.length > 6) {
       const inUse = new Set([...this.views].flatMap((v) => [v.target.mark, v.target.markB]));
       for (const k of texts.slice(0, texts.length - 6)) {
-        if (inUse.has(k)) continue;
+        if (inUse.has(k.replace(/\|export$/, ""))) continue;
         gl.deleteTexture(this.textures.get(k)!.tex);
         this.textures.delete(k);
       }
@@ -482,6 +507,10 @@ export class Stage {
     v.cur.fill = t.fill;
     v.cur.reveal = t.reveal;
     v.cur.scale = t.scale;
+    v.cur.roughness = t.roughness;
+    v.cur.exposure = t.exposure;
+    v.cur.emission = t.emission;
+    v.cur.lighting = t.lighting;
   }
 
   private ease(v: View, dt: number): boolean {
@@ -510,6 +539,10 @@ export class Stage {
     c.fill = step(c.fill, t.fill, k * 1.4);
     c.reveal = step(c.reveal, t.reveal, k * 0.6);
     c.scale = step(c.scale, t.scale);
+    c.roughness = step(c.roughness, t.roughness);
+    c.exposure = step(c.exposure, t.exposure);
+    c.emission = step(c.emission, t.emission);
+    c.lighting = step(c.lighting, t.lighting);
 
     // Rotation.
     let yaw = t.yaw;
@@ -582,9 +615,9 @@ export class Stage {
       if (!v.visible && !capture) continue;
       const r = capture ? { left: 0, top: 0, bottom: capture.height, width: capture.width, height: capture.height } : v.el.getBoundingClientRect();
       if (r.bottom < 0 || r.top > vh || r.width < 2 || r.height < 2) continue;
-      const a = this.texture(v.target.mark);
+      const a = this.texture(v.target.mark, Boolean(capture));
       if (!a) continue;
-      const b = v.target.markB ? this.texture(v.target.markB) : null;
+      const b = v.target.markB ? this.texture(v.target.markB, Boolean(capture)) : null;
       const x = Math.round(r.left * ratio);
       const y = Math.round((vh - r.bottom) * ratio);
       const w = Math.round(r.width * ratio);
@@ -629,7 +662,8 @@ export class Stage {
       gl.uniform3fv(this.logo.u("uSide"), c.side);
       gl.uniform3fv(this.logo.u("uGlow"), c.glow);
       gl.uniform1f(this.logo.u("uTime"), this.time);
-      gl.uniform1i(this.logo.u("uSteps"), this.steps);
+      gl.uniform1i(this.logo.u("uSteps"), capture ? 128 : this.steps);
+      gl.uniform4fv(this.logo.u("uSurface"), [c.roughness, c.exposure, c.emission, c.lighting]);
       gl.uniform1f(this.logo.u("uPixel"), visH * 2 / h);
       gl.uniform3fv(this.logo.u("uLightDir"), lightDir);
       gl.drawArrays(gl.TRIANGLES, 0, 6);

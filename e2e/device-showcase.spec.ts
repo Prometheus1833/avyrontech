@@ -14,6 +14,20 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({ necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12" })));
 });
 
+test("homepage keeps six website reasons in three paired cards and a compact demo form", async ({ page }) => {
+  await page.goto("/");
+  await page.locator('[data-deferred-pending]').first().scrollIntoViewIfNeeded();
+  const reasons = page.getByTestId("problem-reasons");
+  await expect(reasons.locator("article")).toHaveCount(3);
+  await expect(reasons.locator("h3, h4")).toHaveCount(6);
+  await reasons.evaluate((el) => el.scrollIntoView({ block: "center", behavior: "instant" }));
+  await expect.poll(() => reasons.locator('article[data-active="true"]').count()).toBe(3);
+  await page.goto("/#cta");
+  const cta = page.locator("#cta");
+  await expect(cta.locator("details")).toHaveCount(1);
+  await expect(cta.getByLabel("Nume", { exact: true })).toBeVisible();
+});
+
 for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720 }, { width: 390, height: 844 }, { width: 390, height: 667 }]) {
   test(`all screen variants fit and reverse scroll restores the selected website at ${viewport.width}x${viewport.height}`, async ({ page }, testInfo) => {
     await page.setViewportSize(viewport);
@@ -53,6 +67,11 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
 
     await showcase.getByRole("button", { name: "Automatizări", exact: true }).click();
     const tablet = await settledDevice(showcase, "tablet");
+    const tabletBounds = await tablet.locator(".tablet-object").boundingBox();
+    const viewportBounds = await showcase.locator(".scene-viewport").boundingBox();
+    const controlsBounds = await showcase.locator(".scene-controls").boundingBox();
+    expect(tabletBounds!.y).toBeGreaterThanOrEqual(viewportBounds!.y - 2);
+    expect(tabletBounds!.y + tabletBounds!.height).toBeLessThanOrEqual(controlsBounds!.y - 2);
     for (const [label, mode, content] of [["Agent AI Social Media", "social", "Calendar editorial"], ["Leads", "leads", "Aprobă mesajul propus"], ["ChatBot AI web și WhatsApp", "chat", "Context salvat · Predare către echipă"], ["Alte automatizări", "other", "CRM actualizat"]]) {
       await showcase.getByRole("button", { name: label, exact: true }).click();
       await expect(tablet.locator("[data-screen-variant]")).toHaveAttribute("data-screen-variant", mode);
@@ -111,6 +130,9 @@ test("English interfaces fit on mobile and the industry picker supports Escape",
   }
   await showcase.getByRole("button", { name: "Automations", exact: true }).click();
   const tablet = await settledDevice(showcase, "tablet");
+  const tabletBounds = await tablet.locator(".tablet-object").boundingBox();
+  const controlsBounds = await showcase.locator(".scene-controls").boundingBox();
+  expect(tabletBounds!.y + tabletBounds!.height).toBeLessThanOrEqual(controlsBounds!.y - 2);
   for (const label of ["Social Media AI Agent", "Leads", "Web & WhatsApp AI ChatBot", "Other automations"]) {
     await showcase.getByRole("button", { name: label, exact: true }).click();
     expect(await tablet.locator(".tablet-workspace").evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(2);

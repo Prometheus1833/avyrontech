@@ -56,6 +56,7 @@ test("WebGL exports a complete nonblank PNG and survives context loss", async ({
   await expect(page.locator("html")).toHaveAttribute("data-logo3d", "on", { timeout: 20_000 });
   await page.locator("#numele-tau").getByLabel("Numele tău sau al afacerii").fill("Nord Atelier");
   await expect(page.locator(".l3d-name-view")).toHaveAttribute("aria-label", /Nord Atelier/);
+  await page.locator("#numele-tau").getByRole("button", { name: "1:1", exact: true }).click();
   const downloadPromise = page.waitForEvent("download");
   await page.locator("#numele-tau").getByRole("button", { name: /Descarcă/ }).click();
   const download = await downloadPromise;
@@ -63,7 +64,8 @@ test("WebGL exports a complete nonblank PNG and survives context loss", async ({
   const png = readFileSync(file!);
   expect(download.suggestedFilename()).toBe("nord-atelier-3d-avyron.png");
   expect(png.subarray(1, 4).toString()).toBe("PNG");
-  expect(png.readUInt32BE(16) / png.readUInt32BE(20)).toBeCloseTo(16 / 9, 1);
+  expect(png.readUInt32BE(16)).toBe(1920);
+  expect(png.readUInt32BE(20)).toBe(1920);
   expect(png.length).toBeGreaterThan(5000);
   await page.evaluate(() => document.querySelector<HTMLCanvasElement>(".l3d-canvas")!.getContext("webgl2")!.getExtension("WEBGL_lose_context")!.loseContext());
   await expect(page.locator("html")).toHaveAttribute("data-logo3d", "off");

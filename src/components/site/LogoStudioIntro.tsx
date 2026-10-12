@@ -76,17 +76,17 @@ export default function LogoStudioIntro() {
       <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_0%,rgba(190,242,100,.13),transparent_32%),radial-gradient(circle_at_90%_100%,rgba(125,211,252,.12),transparent_34%)]" />
       <div className="relative mx-auto max-w-6xl px-4">
         <div className="grid items-center gap-6 lg:grid-cols-[.85fr_1.15fr] lg:gap-10">
-          <div>
-            <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.24em] text-lime-200"><PenTool className="size-4" />Logo Studio</p>
+          <div className="text-center">
+            <p className="flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-[.24em] text-lime-200"><PenTool className="size-4" />Logo Studio</p>
             <h2 id="logo-studio-title" className="mt-2 font-display text-2xl font-bold leading-tight tracking-[-.035em] sm:text-3xl">
               {ro ? "Un nume. Patru direcții." : "One name. Four directions."}
             </h2>
-            <p className="mt-3 max-w-md text-sm leading-relaxed text-white/65">
+            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-white/65">
               {ro
                 ? "Explorează un logo 2D din numele sau inițialele brandului. Alege o variantă și continuă în editor, pentru web, social sau print."
                 : "Explore a 2D logo from your brand name or initials. Choose a direction and continue in the editor for web, social or print."}
             </p>
-            <Link to={LOGO3D_PATHS[lang]} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-white/15 px-4 text-xs font-semibold text-sky-100 transition-colors hover:border-sky-200/50 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-200"><Box className="size-4" aria-hidden />{ro ? "Dincolo de 2D: logo dinamic 3D" : "Beyond 2D: dynamic 3D logos"}<ArrowUpRight className="size-3.5" aria-hidden /></Link>
+            <Link to={LOGO3D_PATHS[lang]} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-white/15 px-4 text-xs font-semibold text-sky-100 transition-colors hover:border-sky-200/50 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-200"><Box className="size-4" aria-hidden />{ro ? "Dincolo de 2D: Logo Profesional 3D" : "Beyond 2D: Professional 3D Logo"}<ArrowUpRight className="size-3.5" aria-hidden /></Link>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/[.035] p-4 sm:p-5">

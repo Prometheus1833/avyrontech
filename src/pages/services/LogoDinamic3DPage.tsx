@@ -223,7 +223,7 @@ const LogoDinamic3DPage = () => {
           path,
           alternates: { ...LOGO3D_PATHS },
           image,
-          imageAlt: ro ? "Logo dinamic 3D Avyron — logo metalic extrudat, de la 500 lei" : "Avyron dynamic 3D logo — extruded metal mark, from 500 lei",
+          imageAlt: ro ? "Logo Profesional 3D Avyron — logo metalic extrudat, de la 500 lei" : "Avyron Professional 3D Logo — extruded metal mark, from 500 lei",
         });
         setJsonLd("ld-organization", organizationLd);
         setJsonLd("ld-service", serviceLd({

@@ -109,7 +109,7 @@ export const localBusinessLd = {
     "Website audit",
     "AI automation and integrations",
     "Web and mobile quality assurance testing",
-    "Dynamic 3D logo design",
+    "Professional 3D logo design",
     "Visual identity and graphic design",
     "Website and application maintenance",
     "Cybersecurity",

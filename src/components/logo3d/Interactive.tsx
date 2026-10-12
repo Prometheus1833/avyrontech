@@ -19,6 +19,7 @@ import FlatMark from "./FlatMark";
 import { CONCEPTS, MATERIAL_WEIGHTS, STUDIO_MARK, type MaterialKey, type SegmentKey } from "./marks";
 import { LogoView, useStage } from "./StageProvider";
 import { ripple, useLeiPrice } from "./utils";
+import { STUDIO_PRESETS, type StudioSettings } from "./studioSettings";
 
 const MATERIALS: MaterialKey[] = ["metal", "glass", "neon", "matte"];
 
@@ -35,7 +36,7 @@ export function Hero({ onPreview, heroDelay }: { onPreview: () => void; heroDela
   const concept = CONCEPTS[index];
   const mat = material ?? concept.material;
   const weights = material ? MATERIAL_WEIGHTS[material] : concept.mix ?? MATERIAL_WEIGHTS[concept.material];
-  const lines = lang === "ro" ? ["Logo", "dinamic 3D"] : ["Dynamic", "3D logo"];
+  const lines = lang === "ro" ? ["Logo", "Profesional", "3D"] : ["Professional", "3D Logo"];
   const price = lei(LOGO3D_TIERS[lang][0].priceRon);
 
   return (
@@ -91,6 +92,8 @@ export function Hero({ onPreview, heroDelay }: { onPreview: () => void; heroDela
             pitch={0.08}
             depth={0.22}
             bevel={0.055}
+            roughness={concept.roughness ?? .24}
+            lighting={concept.lighting ?? 0}
             fallback={<FlatMark draw={concept.draw} face={concept.face} side={concept.side} />}
           />
           <div className="mt-3 flex flex-col items-center gap-3">
@@ -285,6 +288,8 @@ export function Gallery() {
                 pitch={0.12}
                 depth={0.2}
                 bevel={0.05}
+                roughness={c.roughness ?? .24}
+                lighting={c.lighting ?? 0}
                 fallback={<FlatMark draw={c.draw} face={c.face} side={c.side} />}
               />
               <div className="l3d-card-caption"><span className="l3d-edition" aria-hidden>{String(i + 1).padStart(2, "0")} / 06</span><h3>{c.name}</h3></div>
@@ -309,8 +314,13 @@ export function NameStudio({ onPreview }: { onPreview: (name: string) => void })
   const { stage, status } = useStage();
   const [name, setName] = useState("");
   const [shown, setShown] = useState("Avyron");
-  const [material, setMaterial] = useState<MaterialKey>("metal");
   const [swatch, setSwatch] = useState(NAME_SWATCHES[0]);
+  const [settings, setSettings] = useState<StudioSettings>(STUDIO_PRESETS[0].settings);
+  const [activePreset, setActivePreset] = useState(STUDIO_PRESETS[0].key);
+  const [aspect, setAspect] = useState<"wide" | "square" | "portrait">("wide");
+  const [exportEdge, setExportEdge] = useState<1920 | 3840>(1920);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState("");
   const viewEl = useRef<HTMLDivElement | null>(null);
   const tracked = useRef(false);
 
@@ -331,27 +341,42 @@ export function NameStudio({ onPreview }: { onPreview: (name: string) => void })
     if (!stage || !viewEl.current) return;
     const view = viewEl.current.querySelector<HTMLElement>(".l3d-view");
     if (!view) return;
-    const shot = stage.snapshot(view);
-    if (!shot) return;
-    const ctx = shot.getContext("2d");
-    if (ctx) {
-      const s = Math.max(12, Math.round(shot.width / 52));
-      ctx.font = `600 ${s}px system-ui, sans-serif`;
-      ctx.fillStyle = "rgba(244,241,250,0.6)";
-      ctx.textAlign = "right";
-      ctx.fillText(lang === "ro" ? "avyron.ro · previzualizare" : "avyron.ro · preview", shot.width - s, shot.height - s);
-    }
-    shot.toBlob((blob) => {
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${shown.replace(/[^\p{L}\p{N}]+/gu, "-").toLowerCase() || "logo"}-3d-avyron.png`;
-      a.click();
-      window.setTimeout(() => URL.revokeObjectURL(url), 2000);
-    }, "image/png");
-    trackEvent("logo3d_download_preview", { material });
-  }, [stage, shown, lang, material]);
+    setExporting(true);
+    setExportError("");
+    requestAnimationFrame(() => window.setTimeout(() => {
+      try {
+        const shot = stage.snapshot(view, exportEdge);
+        if (!shot) throw new Error("EXPORT_UNAVAILABLE");
+        const ctx = shot.getContext("2d");
+        if (ctx) {
+          const s = Math.max(12, Math.round(shot.width / 52));
+          ctx.font = `600 ${s}px system-ui, sans-serif`;
+          ctx.fillStyle = "rgba(244,241,250,0.6)";
+          ctx.textAlign = "right";
+          ctx.fillText(lang === "ro" ? "avyron.ro · previzualizare" : "avyron.ro · preview", shot.width - s, shot.height - s);
+        }
+        shot.toBlob((blob) => {
+          if (!blob) { setExporting(false); setExportError(lang === "ro" ? "Exportul nu a reușit. Încearcă HD." : "Export failed. Try HD."); return; }
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${shown.replace(/[^\p{L}\p{N}]+/gu, "-").toLowerCase() || "logo"}-3d-avyron.png`;
+          a.click();
+          window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+          setExporting(false);
+        }, "image/png");
+        trackEvent("logo3d_download_preview", { material: settings.material, resolution: exportEdge, format: aspect });
+      } catch {
+        setExporting(false);
+        setExportError(lang === "ro" ? "Dispozitivul nu poate reda această rezoluție. Alege HD." : "This device cannot render that resolution. Choose HD.");
+      }
+    }, 0));
+  }, [stage, shown, lang, settings.material, exportEdge, aspect]);
+
+  const update = (next: Partial<StudioSettings>) => {
+    setSettings((current) => ({ ...current, ...next }));
+    setActivePreset("");
+  };
 
   return (
     <section id="numele-tau" className="l3d-section" data-palette="#8b5cf6,#bef264" aria-labelledby="name-title">
@@ -364,6 +389,9 @@ export function NameStudio({ onPreview }: { onPreview: (name: string) => void })
             {n.lead}
           </p>
           <div className="mt-7 space-y-5" data-reveal style={{ ["--i" as string]: 1 }}>
+            <div role="group" aria-label={lang === "ro" ? "Direcție vizuală" : "Visual direction"} className="l3d-preset-grid">
+              {STUDIO_PRESETS.map((preset) => <button key={preset.key} type="button" aria-pressed={activePreset === preset.key} onClick={() => { setSettings({ ...preset.settings }); setSwatch(NAME_SWATCHES[preset.swatch]); setActivePreset(preset.key); }}>{preset.label[lang]}</button>)}
+            </div>
             <label className="block">
               <span className="mb-2 block text-sm font-semibold text-[var(--l3d-muted)]">{n.inputLabel}</span>
               <input
@@ -375,13 +403,19 @@ export function NameStudio({ onPreview }: { onPreview: (name: string) => void })
                 onChange={(e) => onType(e.target.value)}
               />
             </label>
+            <p className="l3d-control-label">{lang === "ro" ? "Tipografie" : "Typography"}</p>
+            <div role="group" aria-label={lang === "ro" ? "Tipografie" : "Typography"} className="l3d-control-row">
+              {(["display", "editorial", "mono"] as const).map((font) => <button key={font} type="button" className="l3d-chip" aria-pressed={settings.font === font} onClick={() => update({ font })}>{({ display: { ro: "Modern", en: "Modern" }, editorial: { ro: "Editorial", en: "Editorial" }, mono: { ro: "Tehnic", en: "Technical" } })[font][lang]}</button>)}
+            </div>
+            <p className="l3d-control-label">{LOGO3D_HERO[lang].materialsLabel}</p>
             <div role="group" aria-label={LOGO3D_HERO[lang].materialsLabel} className="flex flex-wrap gap-2">
               {MATERIALS.map((m) => (
-                <button key={m} type="button" className="l3d-chip" aria-pressed={material === m} onClick={() => setMaterial(m)}>
+                <button key={m} type="button" className="l3d-chip" aria-pressed={settings.material === m} onClick={() => update({ material: m })}>
                   {MATERIAL_LABELS[lang][m]}
                 </button>
               ))}
             </div>
+            <p className="l3d-control-label">{n.colorLabel}</p>
             <div role="group" aria-label={n.colorLabel} className="flex flex-wrap gap-2">
               {NAME_SWATCHES.map((s) => (
                 <button
@@ -391,29 +425,53 @@ export function NameStudio({ onPreview }: { onPreview: (name: string) => void })
                   aria-pressed={swatch.key === s.key}
                   aria-label={s.label[lang]}
                   title={s.label[lang]}
-                  onClick={() => setSwatch(s)}
+                  onClick={() => { setSwatch(s); setActivePreset(""); }}
                 >
                   <span style={{ background: `linear-gradient(135deg, ${s.face}, ${s.side})` }} />
                 </button>
               ))}
             </div>
+            <div className="l3d-slider-grid">
+              {([
+                ["depth", lang === "ro" ? "Volum" : "Depth", .08, .34, .01],
+                ["bevel", lang === "ro" ? "Muchii" : "Bevel", .015, .085, .005],
+                ["roughness", lang === "ro" ? "Finisaj" : "Finish", .1, .7, .02],
+                ["exposure", lang === "ro" ? "Lumină" : "Light", .7, 1.35, .05],
+                ["emission", lang === "ro" ? "Strălucire" : "Glow", .45, 1.55, .05],
+              ] as const).map(([key, label, min, max, step]) => <label key={key}><span>{label}<output>{Math.round((settings[key] - min) / (max - min) * 100)}%</output></span><input type="range" min={min} max={max} step={step} value={settings[key]} onChange={(e) => update({ [key]: Number(e.target.value) })} /></label>)}
+            </div>
+            <p className="l3d-control-label">{lang === "ro" ? "Atmosferă" : "Lighting mood"}</p>
+            <div role="group" aria-label={lang === "ro" ? "Atmosferă" : "Lighting mood"} className="l3d-control-row">
+              {[{ key: 0, ro: "Studio", en: "Studio" }, { key: 1, ro: "Apus", en: "Golden hour" }, { key: 2, ro: "Nocturn", en: "Noir" }].map((mood) => <button key={mood.key} type="button" className="l3d-chip" aria-pressed={settings.lighting === mood.key} onClick={() => update({ lighting: mood.key })}>{mood[lang]}</button>)}
+            </div>
+            <p className="l3d-control-label">{lang === "ro" ? "Mișcare" : "Motion"}</p>
+            <div role="group" aria-label={lang === "ro" ? "Mișcare" : "Motion"} className="l3d-control-row">
+              {([{ key: "pointer", ro: "Urmărește cursorul", en: "Follow pointer" }, { key: "idle", ro: "Plutire", en: "Float" }, { key: "spin", ro: "Rotire", en: "Rotate" }, { key: "manual", ro: "Static", en: "Still" }] as const).map((mode) => <button key={mode.key} type="button" className="l3d-chip" aria-pressed={settings.motion === mode.key} onClick={() => update({ motion: mode.key })}>{mode[lang]}</button>)}
+            </div>
           </div>
         </div>
 
         <div data-reveal="scale">
-          <div ref={viewEl}>
+          <div ref={viewEl} style={{ "--studio-aspect": aspect === "wide" ? "16 / 9" : aspect === "square" ? "1" : "4 / 5", "--studio-ratio": aspect === "wide" ? 16 / 9 : aspect === "square" ? 1 : 4 / 5 } as React.CSSProperties}>
             <LogoView
               className="l3d-name-view"
               interactive
-              label={`${shown}, ${MATERIAL_LABELS[lang][material]}`}
-              mark={`text:${shown}`}
-              material={MATERIAL_WEIGHTS[material]}
-              face={material === "neon" ? "#0b1220" : swatch.face}
-              side={material === "neon" ? "#0b1220" : swatch.side}
+              label={`${shown}, ${MATERIAL_LABELS[lang][settings.material]}`}
+              mark={`text@${settings.font}:${shown}`}
+              material={MATERIAL_WEIGHTS[settings.material]}
+              face={settings.material === "neon" ? "#0b1220" : swatch.face}
+              side={settings.material === "neon" ? "#0b1220" : swatch.side}
               glow={swatch.glow}
-              rotation="pointer"
-              depth={0.16}
-              bevel={0.04}
+              rotation={settings.motion}
+              yaw={settings.yaw}
+              pitch={settings.pitch}
+              scale={settings.scale}
+              depth={settings.depth}
+              bevel={settings.bevel}
+              roughness={settings.roughness}
+              exposure={settings.exposure}
+              emission={settings.emission}
+              lighting={settings.lighting}
               fallback={
                 <span className="text-4xl font-extrabold tracking-tight" style={{ color: swatch.face, textShadow: `3px 4px 0 ${swatch.side}` }}>
                   {shown}
@@ -421,10 +479,15 @@ export function NameStudio({ onPreview }: { onPreview: (name: string) => void })
               }
             />
           </div>
+          <p className="l3d-control-label mt-4">{lang === "ro" ? "Format și rezoluție" : "Format and resolution"}</p>
+          <div role="group" aria-label={lang === "ro" ? "Format și rezoluție export" : "Export format and resolution"} className="l3d-export-options">
+            {(["wide", "square", "portrait"] as const).map((format) => <button key={format} type="button" aria-pressed={aspect === format} onClick={() => setAspect(format)}>{({ wide: { ro: "16:9", en: "16:9" }, square: { ro: "1:1", en: "1:1" }, portrait: { ro: "4:5", en: "4:5" } })[format][lang]}</button>)}
+            {([1920, 3840] as const).map((edge) => <button key={edge} type="button" aria-pressed={exportEdge === edge} onClick={() => setExportEdge(edge)}>{edge === 1920 ? "HD" : "4K"}</button>)}
+          </div>
           <div className="mt-5 flex flex-wrap gap-3">
             <a
               className="l3d-btn l3d-btn-primary"
-              href={whatsappUrl(n.whatsapp(shown, MATERIAL_LABELS[lang][material]))}
+              href={whatsappUrl(n.whatsapp(shown, MATERIAL_LABELS[lang][settings.material]))}
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => {
@@ -440,12 +503,13 @@ export function NameStudio({ onPreview }: { onPreview: (name: string) => void })
               {n.preview}
             </button>
             {status === "on" && (
-              <button type="button" className="l3d-btn l3d-btn-ghost" onClick={download}>
+              <button type="button" className="l3d-btn l3d-btn-ghost" onClick={download} disabled={exporting}>
                 <Download className="size-4" aria-hidden />
-                {n.download}
+                {exporting ? (lang === "ro" ? "Se pregătește..." : "Preparing...") : n.download}
               </button>
             )}
           </div>
+          {exportError && <p className="mt-3 text-xs text-red-300" role="alert">{exportError}</p>}
           <p className="mt-3 text-xs text-[var(--l3d-dim)]">{n.downloadNote}</p>
         </div>
       </div>

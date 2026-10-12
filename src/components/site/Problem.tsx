@@ -1,11 +1,30 @@
-import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import { Search, MapPinOff, Instagram, Bot, ShieldCheck, TrendingUp } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 
 const icons = [Search, MapPinOff, Instagram, Bot, ShieldCheck, TrendingUp];
+const pairs = [[0, 3], [1, 5], [2, 4]] as const;
 
 const Problem = () => {
   const { t } = useLang();
+  const cards = useRef<Array<HTMLElement | null>>([]);
+  const [active, setActive] = useState<number[]>([]);
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      setActive((current) => {
+        const next = new Set(current);
+        entries.forEach((entry) => {
+          const index = cards.current.indexOf(entry.target as HTMLElement);
+          if (index < 0) return;
+          if (entry.isIntersecting) next.add(index);
+          else next.delete(index);
+        });
+        return [...next];
+      });
+    }, { rootMargin: "-45% 0px -45% 0px", threshold: 0 });
+    cards.current.forEach((card) => { if (card) observer.observe(card); });
+    return () => observer.disconnect();
+  }, []);
   return (
     <section id="de-ce" className="relative py-10 md:py-16 overflow-hidden">
       <div
@@ -39,25 +58,28 @@ const Problem = () => {
           </p>
         </div>
 
-        <div className="mt-8 grid grid-cols-2 lg:grid-cols-3 gap-2.5 md:gap-3">
-          {t.problem.items.map((it, i) => {
-            const Icon = icons[i];
+        <div className="mt-8 grid gap-3 md:grid-cols-3" data-testid="problem-reasons">
+          {pairs.map(([first, second], i) => {
+            const primary = t.problem.items[first];
+            const secondary = t.problem.items[second];
+            const Icon = icons[first];
+            const SecondaryIcon = icons[second];
             return (
-              <motion.div
-                key={it.t}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.4, delay: i * 0.06 }}
-                className="rounded-2xl bg-cardgrad shadow-soft p-3 md:p-5 border border-border/60 flex flex-col items-center text-center"
-                style={{ fontFamily: '"Times New Roman", Times, serif' }}
+              <article
+                key={primary.t}
+                ref={(node) => { cards.current[i] = node; }}
+                data-active={active.includes(i)}
+                className="problem-pair rounded-2xl bg-cardgrad p-5 md:p-6 border border-border/60 text-center"
               >
-                <div className="size-8 md:size-10 rounded-xl md:rounded-2xl bg-foreground text-background grid place-items-center mb-2 md:mb-3">
-                  <Icon className="size-4 md:size-5" />
+                <div className="mb-3 flex items-center justify-center gap-2 text-brand" aria-hidden="true">
+                  <Icon className="size-5" /><span className="h-px w-6 bg-current/30" /><SecondaryIcon className="size-5" />
                 </div>
-                <h3 className="font-semibold text-sm md:text-base leading-tight">{it.t}</h3>
-                <p className="mt-1 md:mt-1.5 text-xs md:text-sm text-muted-foreground leading-snug">{it.d}</p>
-              </motion.div>
+                <h3 className="font-display font-semibold text-base leading-tight">{primary.t}</h3>
+                <p className="mt-1 text-sm text-muted-foreground leading-snug">{primary.d}</p>
+                <div className="my-4 h-px bg-border/70" aria-hidden="true" />
+                <h4 className="font-display font-semibold text-base leading-tight">{secondary.t}</h4>
+                <p className="mt-1 text-sm text-muted-foreground leading-snug">{secondary.d}</p>
+              </article>
             );
           })}
         </div>
