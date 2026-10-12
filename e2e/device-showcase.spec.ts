@@ -46,10 +46,12 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
         edge: width(".laptop-edge"),
       };
     });
-    expect(laptopWidths.screen / laptopWidths.deck, "screen must sit inside a visibly wider keyboard chassis").toBeGreaterThan(0.75);
-    expect(laptopWidths.screen / laptopWidths.deck, "screen must not overhang the keyboard chassis").toBeLessThan(0.9);
-    expect(laptopWidths.lid / laptopWidths.deck, "lid must be narrower than the keyboard chassis").toBeLessThan(0.95);
-    expect(laptopWidths.edge / laptopWidths.deck, "front edge must align with the keyboard chassis").toBeGreaterThan(0.95);
+    expect(laptopWidths.screen / laptopWidths.deck, "screen must nearly match the chassis without looking undersized").toBeGreaterThan(0.89);
+    expect(laptopWidths.screen / laptopWidths.deck, "screen must not overhang the keyboard chassis").toBeLessThan(0.96);
+    expect(laptopWidths.lid / laptopWidths.deck, "lid and keyboard must meet naturally at the hinge").toBeGreaterThan(0.9);
+    expect(laptopWidths.lid / laptopWidths.deck, "lid must not overhang the keyboard chassis").toBeLessThan(0.99);
+    expect(laptopWidths.edge / laptopWidths.deck, "front edge must not stop short of the keyboard chassis").toBeGreaterThan(0.96);
+    expect(laptopWidths.edge / laptopWidths.deck, "front edge must not extend past the keyboard chassis").toBeLessThan(1.04);
     const heroes = new Set<string>();
     for (const key of ["beauty", "resto", "public", "turism", "pro", "local", "auto", "ecommerce", "national", "other"]) {
       await showcase.getByRole("button", { name: "Domenii", exact: true }).click();
