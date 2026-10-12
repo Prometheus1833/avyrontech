@@ -92,6 +92,7 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
       expect(html).toContain('id="verificare-domeniu"');
       expect(html).toContain('"@type":"WebApplication"');
       expect(html).toContain('"url":"https://avyron.ro/#verificare-domeniu"');
+      expect(html).not.toContain('"@type":"ProfessionalService"');
     }
     const llms = readFileSync(resolve(distDir, "llms.txt"), "utf8");
     expect(llms).toContain("[Verificare disponibilitate domeniu](/#verificare-domeniu)");

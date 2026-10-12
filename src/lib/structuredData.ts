@@ -87,55 +87,6 @@ export const domainCheckLd = {
   isPartOf: { "@id": `${BASE_URL}/#website` },
 };
 
-export const localBusinessLd = {
-  "@context": "https://schema.org",
-  "@type": "ProfessionalService",
-  "@id": `${BASE_URL}/#localbusiness`,
-  name: "Avyron",
-  alternateName: "Avyron Development",
-  legalName: PRIMARY_ENTITY.legalName,
-  identifier: {
-    "@type": "PropertyValue",
-    propertyID: "CUI",
-    value: PRIMARY_ENTITY.taxId,
-  },
-  image: LOGO_URL,
-  logo: LOGO_URL,
-  url: BASE_URL,
-  telephone: PHONE,
-  email: EMAIL,
-  priceRange: "€€",
-  address: {
-    "@type": "PostalAddress",
-    ...(PRIMARY_ENTITY.streetAddress ? { streetAddress: PRIMARY_ENTITY.streetAddress } : {}),
-    addressLocality: PRIMARY_ENTITY.addressLocality,
-    addressRegion: PRIMARY_ENTITY.addressRegion,
-    addressCountry: "RO",
-  },
-  areaServed: [
-    { "@type": "Country", name: "Romania" },
-    { "@type": "AdministrativeArea", name: "European Union" },
-  ],
-  serviceType: [
-    "Professional presentation website design",
-    "Business website development",
-    "Web development",
-    "Mobile app development",
-    "Ecommerce development",
-    "UI/UX design",
-    "Technical SEO",
-    "Website audit",
-    "AI automation and integrations",
-    "Web and mobile quality assurance testing",
-    "Professional 3D logo design",
-    "Visual identity and graphic design",
-    "Website and application maintenance",
-    "Cybersecurity",
-    "DevOps & Hosting",
-  ],
-  sameAs: organizationLd.sameAs,
-};
-
 /** Build a BreadcrumbList JSON-LD from ordered items. */
 export function breadcrumbLd(items: Array<{ name: string; path: string }>) {
   return {

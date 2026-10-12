@@ -72,7 +72,7 @@ const Index = () => {
 
   useEffect(() => {
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
-      ([{ setPageMeta, setJsonLd }, { organizationLd, webSiteLd, localBusinessLd, domainCheckLd }]) => {
+      ([{ setPageMeta, setJsonLd }, { organizationLd, webSiteLd, domainCheckLd }]) => {
         setPageMeta({
           title: t.seo.title,
           description: t.seo.desc,
@@ -87,7 +87,6 @@ const Index = () => {
 
         setJsonLd("ld-organization", organizationLd);
         setJsonLd("ld-website", webSiteLd);
-        setJsonLd("ld-localbusiness", localBusinessLd);
         setJsonLd("ld-domain-check", domainCheckLd);
       },
     );
