@@ -7,7 +7,9 @@ audit_database="$audit_directory/avyron.db"
 trap 'rm -rf "$audit_directory"' EXIT
 
 for migration in "$repository_root"/cloudflare/d1/migrations/*.sql; do
-  sqlite3 "$audit_database" < "$migration"
+  # Apple's SQLite CLI defaults trusted_schema=OFF; the existing FTS5 sync
+  # triggers need it enabled while applying these repository-owned migrations.
+  sqlite3 -cmd "PRAGMA trusted_schema=ON" "$audit_database" < "$migration"
 done
 
 foreign_key_issues=$(sqlite3 "$audit_database" "SELECT COUNT(*) FROM pragma_foreign_key_check;")

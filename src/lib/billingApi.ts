@@ -1,6 +1,6 @@
 import { cfAuth } from "./cfAuth";
 
-export type BillingProviderStatus={enabled:boolean;oneTime?:boolean;subscriptions?:boolean;savedMethods?:boolean;customerPortal?:boolean;invoices?:boolean;status?:"planned"};
+export type BillingProviderStatus={enabled:boolean;configured?:boolean;oneTime?:boolean;subscriptions?:boolean;savedMethods?:boolean;customerPortal?:boolean;invoices?:boolean;status?:"planned"};
 export type BillingSubscription={
   id:string;provider:"stripe"|"revolut"|"netopia";sku:string;
   status:"incomplete"|"trialing"|"active"|"past_due"|"paused"|"cancelled"|"expired";
@@ -17,6 +17,10 @@ export type BillingAdminStatus={
   sessions:Array<{provider:string;status:string;total:number}>;
   subscriptions:Array<{provider:string;status:string;total:number}>;
   invoices:Array<{provider:string;status:string;total:number}>;
+  pendingInvoices:Array<{order_id:string;status:string;error_code:string|null;total_minor:number;currency:string;updated_at:number}>;
+  paymentsByCurrency:Array<{currency:string;amount_minor:number;total:number}>;
+  invoicesByCurrency:Array<{currency:string;amount_minor:number;total:number}>;
+  bankSettlement:{verified:false;reason:string};
   recentFailures:Array<{provider:string;event_type:string;error_code:string|null;received_at:number}>;
 };
 export type BillingAccount={
@@ -33,4 +37,5 @@ export const billingApi={
   portal:()=>cfAuth.request<{url:string|null}>("/api/billing/portal",{method:"POST"}),
   cancelSubscription:(id:string)=>cfAuth.request<{ok:true;status?:string}>(`/api/billing/subscriptions/${encodeURIComponent(id)}/cancel`,{method:"POST"}),
   adminStatus:()=>cfAuth.request<BillingAdminStatus>("/api/billing/admin/status"),
+  retryInvoice:(orderId:string)=>cfAuth.request<{ok:true;invoiced:boolean}>(`/api/billing/admin/invoices/${encodeURIComponent(orderId)}/retry`,{method:"POST"}),
 };
