@@ -37,6 +37,18 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
     const laptop = await settledDevice(showcase, "laptop");
     await expect(laptop.locator(".laptop-key-row")).toHaveCount(6);
     await expect(laptop.locator(".laptop-trackpad")).toBeVisible();
+    const laptopWidths = await laptop.evaluate((el) => {
+      const width = (selector: string) => el.querySelector(selector)!.getBoundingClientRect().width;
+      return {
+        screen: width(".laptop-display"),
+        lid: width(".laptop-lid"),
+        deck: width(".laptop-deck"),
+        edge: width(".laptop-edge"),
+      };
+    });
+    expect(laptopWidths.screen / laptopWidths.deck, "screen must visually match the keyboard chassis width").toBeGreaterThan(0.9);
+    expect(laptopWidths.lid / laptopWidths.deck, "lid must not be narrower than the keyboard chassis").toBeGreaterThan(0.95);
+    expect(laptopWidths.edge / laptopWidths.deck, "front edge must align with the keyboard chassis").toBeGreaterThan(0.95);
     const heroes = new Set<string>();
     for (const key of ["beauty", "resto", "public", "turism", "pro", "local", "auto", "ecommerce", "national", "other"]) {
       await showcase.getByRole("button", { name: "Domenii", exact: true }).click();
@@ -137,7 +149,8 @@ test("English interfaces fit on mobile and the industry picker supports Escape",
     await trigger.click();
     await showcase.getByRole("group", { name: "Website industry" }).getByRole("button").nth(i).click();
     await expect(trigger).toBeFocused();
-    expect(await showcase.locator(".web-hero").evaluate((el) => el.querySelector(".web-hero-action")!.getBoundingClientRect().bottom - el.getBoundingClientRect().bottom)).toBeLessThanOrEqual(2);
+    // Browser subpixel rounding can differ by less than a CSS pixel on CI.
+    expect(await showcase.locator(".web-hero").evaluate((el) => el.querySelector(".web-hero-action")!.getBoundingClientRect().bottom - el.getBoundingClientRect().bottom)).toBeLessThanOrEqual(3);
   }
   await showcase.getByRole("button", { name: "Application", exact: true }).click();
   const phone = await settledDevice(showcase, "phone");
