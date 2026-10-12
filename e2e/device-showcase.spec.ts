@@ -1,5 +1,8 @@
 import { expect, test, type Locator } from "@playwright/test";
 
+// Each journey deliberately visits every variant, including scroll transitions.
+test.setTimeout(60_000);
+
 async function settledDevice(showcase: Locator, stage: string) {
   await expect(showcase).toHaveAttribute("data-active-stage", stage);
   const device = showcase.getByTestId(`showcase-device-${stage}`);

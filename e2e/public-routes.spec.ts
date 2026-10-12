@@ -869,7 +869,7 @@ test.describe("forms and authentication", () => {
     await expect(page.getByRole("status")).toContainText(/verifică emailul|confirmare/i);
   });
 
-  test("example request uses the protected Worker endpoint", async ({ page }) => {
+  test("library example request uses the protected Worker endpoint", async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
         necessary: true, analytics: false, marketing: false,
@@ -889,19 +889,14 @@ test.describe("forms and authentication", () => {
       payload = route.request().postDataJSON() as Record<string, unknown>;
       await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ ok: true, saved: true, delivered: true, requestId: "test" }) });
     });
-    // The hash is the public navigation contract and forces the deferred
-    // industry section to mount before Playwright interacts with it.
-    await page.goto("/#exemple");
-    await page.getByRole("button", { name: "Domenii" }).click();
-    const beauty = page.getByRole("button", { name: /Beauty & Wellness/ });
-    await expect(beauty).toBeVisible();
-    await beauty.evaluate((button) => button.click());
-    await expect(beauty).toHaveAttribute("aria-pressed", "true");
-    await page.getByRole("button", { name: /Solicită (un exemplu|asemănător)/ }).click();
+    // The duplicate landing card was intentionally removed. Keep covering
+    // the real protected request form through its retained Library entry.
+    await page.goto("/biblioteca");
+    await page.getByRole("button", { name: "Cere ofertă", exact: true }).click();
     await page.locator("#request-example-email").fill("lead@example.com");
     await page.locator("#request-example-phone").fill("0712345678");
     await page.getByRole("button", { name: "Trimite solicitarea" }).click();
     await expect(page.getByText("Solicitarea a fost înregistrată!")).toBeVisible();
-    expect(payload).toMatchObject({ email: "lead@example.com", phone: "0712345678", source_category: "beauty" });
+    expect(payload).toMatchObject({ email: "lead@example.com", phone: "0712345678", source_slug: "biblioteca", source_category: "Bibliotecă Avyron" });
   });
 });
