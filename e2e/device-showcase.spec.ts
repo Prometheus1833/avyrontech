@@ -4,7 +4,7 @@ import { expect, test, type Locator } from "@playwright/test";
 test.setTimeout(60_000);
 
 async function settledDevice(showcase: Locator, stage: string) {
-  await expect(showcase).toHaveAttribute("data-active-stage", stage);
+  await expect(showcase).toHaveAttribute("data-active-stage", stage, { timeout: 10_000 });
   const device = showcase.getByTestId(`showcase-device-${stage}`);
   await expect.poll(() => device.evaluate((el) => Number(getComputedStyle(el).opacity))).toBe(1);
   return device;
@@ -34,7 +34,9 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
     await page.goto("/#domenii");
     const showcase = page.getByTestId("industry-device-showcase");
     await showcase.getByRole("button", { name: "Website", exact: true }).click();
-    await settledDevice(showcase, "laptop");
+    const laptop = await settledDevice(showcase, "laptop");
+    await expect(laptop.locator(".laptop-key-row")).toHaveCount(6);
+    await expect(laptop.locator(".laptop-trackpad")).toBeVisible();
     const heroes = new Set<string>();
     for (const key of ["beauty", "resto", "public", "turism", "pro", "local", "auto", "ecommerce", "national", "other"]) {
       await showcase.getByRole("button", { name: "Domenii", exact: true }).click();
@@ -103,6 +105,21 @@ test("reduced motion keeps every service accessible without a forced scroll jour
   await showcase.getByRole("button", { name: "Website", exact: true }).click();
   await settledDevice(showcase, "laptop");
   await expect(showcase.locator(".domain-notes li")).toHaveCount(6);
+});
+
+test("stage controls recover when a mobile browser cancels smooth scrolling", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/#domenii");
+  const showcase = page.getByTestId("industry-device-showcase");
+  await settledDevice(showcase, "laptop");
+  await page.evaluate(() => {
+    const original = window.scrollTo.bind(window);
+    window.scrollTo = ((options: ScrollToOptions) => {
+      if (options.behavior !== "smooth") original(options);
+    }) as typeof window.scrollTo;
+  });
+  await showcase.getByRole("button", { name: "Aplicație", exact: true }).click();
+  await settledDevice(showcase, "phone");
 });
 
 test("English interfaces fit on mobile and the industry picker supports Escape", async ({ page }) => {

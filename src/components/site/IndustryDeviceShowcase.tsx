@@ -17,6 +17,14 @@ const smooth = (start: number, end: number, value: number) => {
 const phaseAt = (progress: number) => smooth(.23, .42, progress) + smooth(.62, .81, progress);
 const anchors = [.10, .52, .90];
 const stageKeys = ["laptop", "phone", "tablet"];
+const keyboardRows = [
+  ["esc", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "⌫"],
+  ["~", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "delete"],
+  ["tab", "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "[", "]", "↵"],
+  ["caps", "A", "S", "D", "F", "G", "H", "J", "K", "L", ";", "'", "return"],
+  ["shift", "Z", "X", "C", "V", "B", "N", "M", ",", ".", "/", "shift"],
+  ["fn", "ctrl", "opt", "cmd", "space", "cmd", "opt", "←", "↑", "↓", "→"],
+] as const;
 
 function Laptop({ domain, ro }: { domain: ShowcaseDomain; ro: boolean }) {
   const content = domainContent(domain.key, ro);
@@ -34,7 +42,15 @@ function Laptop({ domain, ro }: { domain: ShowcaseDomain; ro: boolean }) {
           </div>
           <div className="laptop-hinge" aria-hidden="true" />
           <div className="laptop-deck" aria-hidden="true">
-            <div className="laptop-speaker" /><div className="laptop-keyboard">{Array.from({ length: 60 }, (_, index) => <i key={index} />)}</div><div className="laptop-speaker" />
+            <div className="laptop-speaker" />
+            <div className="laptop-keyboard">
+              {keyboardRows.map((row, rowIndex) => (
+                <div className="laptop-key-row" key={rowIndex}>
+                  {row.map((key, keyIndex) => <kbd className={`laptop-key laptop-key--${key === "space" ? "space" : ["tab", "caps", "shift", "delete", "return", "↵", "⌫"].includes(key) ? "wide" : "standard"}`} key={`${rowIndex}-${keyIndex}`}>{key === "space" ? "" : key}</kbd>)}
+                </div>
+              ))}
+            </div>
+            <div className="laptop-speaker" />
             <span className="laptop-trackpad" />
           </div>
           <div className="laptop-edge" aria-hidden="true"><i /><span /><i /></div>
@@ -116,6 +132,7 @@ export default function IndustryDeviceShowcase({ domains, activeDomain, onDomain
     let active = 0;
     let travel = 1;
     let stickyTop = 80;
+    let stageJumpTimer = 0;
 
     const paint = (progress: number, manualStage?: number) => {
       const phase = manualStage ?? phaseAt(progress);
@@ -186,10 +203,22 @@ export default function IndustryDeviceShowcase({ domains, activeDomain, onDomain
     }, { rootMargin: "10% 0px" });
     observer.observe(section);
     controller.current = (stage: number) => {
+      window.clearTimeout(stageJumpTimer);
       if (reduced.matches) { active = stage; setActiveStage(stage); setDomainsOpen(false); paint(anchors[stage], stage); return; }
       measure();
       const top = window.scrollY + section.getBoundingClientRect().top;
-      window.scrollTo({ top: top - stickyTop + travel * anchors[stage], behavior: "smooth" });
+      const destination = top - stickyTop + travel * anchors[stage];
+      const startY = window.scrollY;
+      window.scrollTo({ top: destination, behavior: "smooth" });
+      // Mobile browsers can cancel a smooth scroll while restoring focus after
+      // the industry picker closes. Recover only if the page never moved.
+      stageJumpTimer = window.setTimeout(() => {
+        if (!section.isConnected || active === stage || Math.abs(window.scrollY - startY) > 12) return;
+        window.scrollTo({ top: destination, behavior: "instant" });
+        readTarget();
+        current = target;
+        paint(current);
+      }, 850);
     };
     modeChanged();
     window.addEventListener("scroll", schedule, { passive: true });
@@ -197,6 +226,7 @@ export default function IndustryDeviceShowcase({ domains, activeDomain, onDomain
     reduced.addEventListener("change", modeChanged);
     return () => {
       if (raf) cancelAnimationFrame(raf);
+      window.clearTimeout(stageJumpTimer);
       observer.disconnect();
       resize.disconnect();
       window.removeEventListener("scroll", schedule);

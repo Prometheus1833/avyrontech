@@ -67,7 +67,7 @@ test.describe("public SEO routes", () => {
   test("homepage displays the approved hero and services wording", async ({ page }) => {
     await page.goto("/#cta");
 
-    await expect(page.getByText("Site-uri care aduc clienți, nu doar vizite", { exact: true })).toBeVisible();
+    await expect(page.getByText("Prezență digitală care lucrează pentru tine", { exact: true })).toBeVisible();
     await expect(
       page.getByRole("heading", {
         level: 1,
@@ -79,6 +79,13 @@ test.describe("public SEO routes", () => {
     const serviceList = page.getByTestId("service-list");
     await expect(serviceList.getByRole("link").first()).toBeVisible();
     await expect(serviceList).toHaveCSS("display", "block");
+    await expect(serviceList.getByRole("link", { name: /Automatizări și AI/ })).toHaveCount(0);
+    const allServices = serviceList.getByRole("button", { name: "Vezi toate serviciile" });
+    await expect(allServices).toHaveAttribute("aria-expanded", "false");
+    await allServices.click();
+    await expect(serviceList.getByRole("link", { name: /Automatizări și AI/ })).toBeVisible();
+    await expect(serviceList.getByRole("link", { name: /Audit Website/ })).toBeVisible();
+    await expect(serviceList.getByRole("link", { name: "Vezi detalii servicii" })).toHaveAttribute("href", "/servicii");
 
     const desktopNav = page.locator("nav ul");
     await expect(desktopNav.locator("li")).toHaveText(["Blog", "Servicii", "Produse", "Despre noi", "Proces"]);

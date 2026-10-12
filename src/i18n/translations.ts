@@ -15,7 +15,7 @@ export const translations = {
       portfolio: "Portofoliu",
     },
     hero: {
-      badge: "Site-uri care aduc clienți, nu doar vizite",
+      badge: "Prezență digitală care lucrează pentru tine",
       title1: "Soluții digitale",
       title2: "care extind online activitatea",
       title3: "automatizând procesele.",
@@ -535,7 +535,7 @@ export const translations = {
       portfolio: "Portfolio",
     },
     hero: {
-      badge: "Websites that bring customers, not just visits",
+      badge: "A digital presence that works for you",
       title1: "Web & app",
       title2: "development",
       title3: "that brings customers.",
