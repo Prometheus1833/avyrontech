@@ -52,6 +52,8 @@ catalogCodesRouter.put("/api/finance/commercial-codes/:entityType/:entityKey", a
   const parsed = bodySchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ error: { code: "invalid_catalog_code" } }, 400);
   const value = parsed.data;
+  if (entityType === "product" && value.currency !== "RON") return c.json({ error: { code: "product_currency_must_be_ron" } }, 400);
+  if (entityType === "product" && !(await c.env.DB.prepare("SELECT 1 FROM product_items WHERE slug=?").bind(entityKey).first())) return c.json({ error: { code: "product_not_found" } }, 404);
   const before = await c.env.DB.prepare("SELECT * FROM commercial_catalog_codes WHERE entity_type=? AND entity_key=?")
     .bind(entityType, entityKey).first<Record<string, unknown>>();
   const id = String(before?.id || `catalog_${crypto.randomUUID().replace(/-/g, "")}`);
@@ -81,6 +83,8 @@ catalogCodesRouter.put("/api/finance/commercial-codes/:entityType/:entityKey", a
         value.paymentRoute, value.preferredPaymentProvider, value.invoiceProvider, value.paymentStatus, value.promotionCode, value.active ? 1 : 0,
         value.notes, c.get("userId"), c.get("userId"), Number(before?.created_at || timestamp), timestamp,
       ),
+      ...(entityType === "product" ? [c.env.DB.prepare("UPDATE product_items SET price_ron_cents=?,updated_at=? WHERE slug=?")
+        .bind(value.basePriceMinor, timestamp, entityKey)] : []),
       c.env.DB.prepare("INSERT INTO commercial_catalog_audit (id,catalog_id,actor_user_id,before_json,after_json,created_at) VALUES (?,?,?,?,?,?)")
         .bind(`catalog_audit_${crypto.randomUUID().replace(/-/g, "")}`, id, c.get("userId"), before ? JSON.stringify(before) : null, JSON.stringify(after), timestamp),
     ]);
