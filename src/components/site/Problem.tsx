@@ -69,9 +69,9 @@ const Problem = () => {
                 key={primary.t}
                 ref={(node) => { cards.current[i] = node; }}
                 data-active={active.includes(i)}
-                className="problem-pair rounded-2xl bg-cardgrad p-5 md:p-6 border border-border/60 text-left"
+                className="problem-pair rounded-2xl bg-cardgrad p-5 md:p-6 border border-border/60 text-center"
               >
-                <div className="flex items-center gap-2 text-brand mb-3" aria-hidden="true">
+                <div className="mb-3 flex items-center justify-center gap-2 text-brand" aria-hidden="true">
                   <Icon className="size-5" /><span className="h-px w-6 bg-current/30" /><SecondaryIcon className="size-5" />
                 </div>
                 <h3 className="font-display font-semibold text-base leading-tight">{primary.t}</h3>
