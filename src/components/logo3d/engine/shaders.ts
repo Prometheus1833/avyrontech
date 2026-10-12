@@ -264,7 +264,6 @@ void main() {
     if (bh.x < bh.y && bh.y > 0.0) {
       float t = max(bh.x, 0.0);
       float minD = 1e3;
-      float edgeDistance = 0.0;
       float epsilon = max(0.0004, uPixel * 0.65);
       bool hit = false;
       for (int i = 0; i < 96; i++) {
@@ -272,7 +271,7 @@ void main() {
         vec3 p = roO + rdO * t;
         float d = map(p);
         minD = min(minD, d);
-        if (d < epsilon) { hit = true; edgeDistance = d; break; }
+        if (d < epsilon) { hit = true; break; }
         t += d * 0.92;
         if (t > bh.y) break;
       }
@@ -322,7 +321,9 @@ void main() {
           if (n3 > edge) { c = vec3(0.0); alpha = 0.0; }
           else c += uGlow * smoothstep(edge - 0.08, edge, n3) * 2.0;
         }
-        float coverage = 1.0 - smoothstep(0.0, epsilon, max(edgeDistance, 0.0));
+        // Soften only grazing silhouettes. Marching residuals are not pixel
+        // coverage: using them here would make entire metal faces translucent.
+        float coverage = smoothstep(0.0, min(0.08, uPixel / uFit * 8.0), nv);
         solid = vec4(c, alpha) * coverage;
       }
     }
