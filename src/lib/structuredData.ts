@@ -69,6 +69,24 @@ export const webSiteLd = {
   publisher: { "@id": `${BASE_URL}/#organization` },
 };
 
+/** The public, free domain-availability checker embedded on the homepage. */
+export const domainCheckLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "@id": `${BASE_URL}/#domain-check`,
+  name: "Verificare disponibilitate domeniu",
+  alternateName: "Domain availability checker",
+  description:
+    "Verifică disponibilitatea unui nume de domeniu prin registre publice și confirmă rezultatul la registrul oficial când este disponibil.",
+  url: `${BASE_URL}/#verificare-domeniu`,
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Any",
+  isAccessibleForFree: true,
+  inLanguage: ["ro-RO", "en"],
+  publisher: { "@id": `${BASE_URL}/#organization` },
+  isPartOf: { "@id": `${BASE_URL}/#website` },
+};
+
 export const localBusinessLd = {
   "@context": "https://schema.org",
   "@type": "ProfessionalService",

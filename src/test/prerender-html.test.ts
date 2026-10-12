@@ -86,6 +86,18 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     }
   });
 
+  it("exposes the real domain checker to search and AI consumers without a separate thin page", () => {
+    for (const route of ["/", "/en"]) {
+      const html = read(route);
+      expect(html).toContain('id="verificare-domeniu"');
+      expect(html).toContain('"@type":"WebApplication"');
+      expect(html).toContain('"url":"https://avyron.ro/#verificare-domeniu"');
+    }
+    const llms = readFileSync(resolve(distDir, "llms.txt"), "utf8");
+    expect(llms).toContain("[Verificare disponibilitate domeniu](/#verificare-domeniu)");
+    expect(llms).toContain("[AVYRON Smart Surveys](https://surveys.avyron.ro/)");
+  });
+
   it("international Products hubs publish reciprocal seven-language hreflang", () => {
     const expected = {
       ro: "/produse",

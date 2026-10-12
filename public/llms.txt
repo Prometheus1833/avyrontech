@@ -16,6 +16,8 @@ Contact: contact@avyron.ro · +40 734 605 055 · WhatsApp · https://avyron.ro
 - [Servicii AVYRON](/servicii) — [Services EN](/en/services): Servicii personalizate și repere transparente de buget.
 - [Produse AVYRON](/produse) — [Products EN](/en/products): Componente, template-uri, efecte 3D, unelte și integrări reutilizabile.
 - [Blog](/blog) — [Blog EN](/en/blog): Articole despre web, SEO, securitate și digitalizare.
+- [Verificare disponibilitate domeniu](/#verificare-domeniu): Instrument gratuit care verifică un nume de domeniu prin surse publice și oferă confirmare la registrul oficial când este disponibilă.
+- [AVYRON Smart Surveys](https://surveys.avyron.ro/): Briefuri publice pentru website, magazin online, aplicație și automatizări; răspunsurile individuale sunt private.
 - [Confidențialitate & GDPR](/gdpr) — [Privacy EN](/en/privacy): Politica de confidențialitate și cookie-uri.
 - [Termeni de utilizare](/termeni) — [Terms of Use EN](/en/terms): Reguli clare pentru utilizarea site-ului, solicitări, conturi și colaborări digitale.
 

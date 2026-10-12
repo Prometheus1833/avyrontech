@@ -28,6 +28,7 @@
     "catalog:produse:check": "node scripts/produse-catalog-sql.mjs --check",
     "og:produse": "node scripts/generate-produse-og.mjs",
     "seo:audit": "node scripts/audit-seo.mjs",
+    "seo:audit:live": "node scripts/audit-live-seo.mjs",
     "validate:cloudflare": "npm run build:pages && npm run build:worker && npm run build:api && npm run build:email",
     "deploy": "npm run deploy:api",
     "deploy:api": "node scripts/release-api.mjs",
