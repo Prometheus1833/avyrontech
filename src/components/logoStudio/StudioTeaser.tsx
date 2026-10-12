@@ -3,14 +3,14 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Layers, Sparkles } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { trackEvent } from "@/lib/analytics";
-import { AI_LOGO_EXPORT_PRICE, cleanBrief, localConcepts } from "@/data/logoStudio";
+import { cleanBrief, localConcepts } from "@/data/logoStudio";
 import { STUDIO_PATHS } from "@/data/logoStudioCopy";
 import { LogoPreview } from "./StudioParts";
 
 const COPY = {
   ro: {
     title: "Sau creează-l rapid în Logo Studio",
-    lead: "Scrii numele, inițialele sau semnul dorit și primești patru variante 2D. Exportul standard este gratuit cu un cont Avyron; pentru un concept creat cu AI, exportul costă 150 lei.",
+    lead: "Explorează patru direcții 2D pentru numele sau inițialele brandului, apoi ajustează-le în editor. Pentru volum și animație, lucrăm împreună la un logo dinamic 3D.",
     label: "Numele afacerii",
     placeholder: "ex. Brava Coffee",
     open: "Deschide Logo Studio",
@@ -19,7 +19,7 @@ const COPY = {
   },
   en: {
     title: "Or create it quickly in Logo Studio",
-    lead: "Enter the name, initials or symbol and receive four 2D options. Standard export is free with an Avyron account; exporting an AI-created concept costs 150 lei.",
+    lead: "Explore four 2D directions for your brand name or initials, then refine them in the editor. For volume and animation, we work together on a dynamic 3D logo.",
     label: "Business name",
     placeholder: "e.g. Brava Coffee",
     open: "Open Logo Studio",
@@ -84,7 +84,7 @@ export default function StudioTeaser() {
                     <ArrowRight className="size-4 text-[var(--l3d-muted)]" aria-hidden />
                   </span>
                   <span className="mt-1 block text-sm text-[var(--l3d-muted)]">
-                    {c.from} <b className="text-[var(--l3d-text)]">{k === "standard" ? (lang === "ro" ? "gratuit cu cont" : "free with account") : `${AI_LOGO_EXPORT_PRICE} lei`}</b>
+                    {k === "standard" ? (lang === "ro" ? "Export standard gratuit cu cont" : "Free standard export with an account") : (lang === "ro" ? "Explorează concepte asistate de AI" : "Explore AI-assisted concepts")}
                   </span>
                 </Link>
               );

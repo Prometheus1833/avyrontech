@@ -41,8 +41,7 @@ html:has(main.l3d) body {
   inset: 0;
   z-index: -1;
   width: 100vw;
-  height: 100vh;
-  height: 100lvh;
+  height: 100%;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.9s var(--l3d-ease, ease);
@@ -51,15 +50,14 @@ html[data-logo3d="on"] .l3d-canvas {
   opacity: 1;
 }
 
-/* Film grain, cheap: a static noise tile nudged in steps. */
+/* Static film grain: no full-viewport animation layer or repaint loop. */
 .l3d-grain {
   position: fixed;
-  inset: -50%;
+  inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.06;
+  opacity: 0.025;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-  animation: l3d-grain 0.9s steps(6) infinite;
 }
 @keyframes l3d-grain {
   0% { transform: translate(0, 0); }
@@ -269,10 +267,10 @@ html[data-logo3d="on"] .l3d-view[data-engine="on"] .l3d-fallback {
 /* ---------------------------------------------------------------- hero */
 
 .l3d-hero {
-  min-height: 100svh;
+  min-height: min(48rem, 88svh);
   display: grid;
   align-items: center;
-  padding: 7.5rem 0 4rem;
+  padding: 3rem 0 4rem;
 }
 .l3d-hero-grid {
   display: grid;
@@ -412,19 +410,19 @@ html[data-logo3d="on"] .l3d-view[data-engine="on"] .l3d-fallback {
 
 /* ---------------------------------------------------------------- reveals */
 
-[data-reveal] {
+.l3d [data-reveal] {
   opacity: 0;
   transform: translate3d(0, 24px, 0);
   transition: opacity 0.9s var(--l3d-ease), transform 0.9s var(--l3d-ease);
   transition-delay: calc(var(--i, 0) * 70ms);
 }
-[data-reveal="left"] { transform: translate3d(-28px, 0, 0); }
-[data-reveal="scale"] { transform: scale(0.94); }
-[data-reveal="flip"] {
+.l3d [data-reveal="left"] { transform: translate3d(-28px, 0, 0); }
+.l3d [data-reveal="scale"] { transform: scale(0.97); }
+.l3d [data-reveal="flip"] {
   transform: perspective(700px) rotateX(-70deg);
   transform-origin: 50% 0;
 }
-[data-reveal].is-in {
+.l3d [data-reveal].is-in {
   opacity: 1;
   transform: none;
 }
@@ -499,14 +497,7 @@ html[data-logo3d="on"] .l3d-view[data-engine="on"] .l3d-fallback {
   margin: 0 auto;
 }
 @media (max-width: 960px) {
-  @media (max-width: 959px) {
-  .l3d-genesis .l3d-h2 { font-size: clamp(1.7rem, 7vw, 2.4rem); }
-  .l3d-genesis .l3d-lead { display: none; }
-  .l3d-genesis ol { margin-top: 1rem; }
-  .l3d-step { padding: 0.45rem 0 0.45rem 1rem; }
-  .l3d-step h3 { font-size: 1rem; }
-}
-.l3d-genesis-stage { max-width: 22rem; }
+  .l3d-genesis-stage { max-width: min(22rem, 42svh); }
 }
 .l3d-grid-overlay {
   position: absolute;
@@ -544,15 +535,15 @@ html[data-logo3d="on"] .l3d-view[data-engine="on"] .l3d-fallback {
   margin-top: 2.5rem;
   display: grid;
   gap: 0.75rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
 }
-@media (min-width: 900px) {
-  .l3d-gallery { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+@media (min-width: 640px) {
+  .l3d-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
 }
 /* Cards stay transparent: the logo is drawn by the canvas underneath the page. */
 .l3d-card {
   position: relative;
-  padding: 0.75rem 1rem 1.25rem;
+  padding: 0.75rem 1.5rem 1.5rem;
   border-radius: 1.5rem;
   border: 1px solid var(--l3d-line);
   background: transparent;
@@ -568,7 +559,7 @@ html[data-logo3d="on"] .l3d-view[data-engine="on"] .l3d-fallback {
   display: none;
 }
 .l3d-card-view {
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4 / 3;
   width: 100%;
 }
 .l3d-card h3 {
@@ -583,9 +574,13 @@ html[data-logo3d="on"] .l3d-view[data-engine="on"] .l3d-fallback {
   line-height: 1.5;
   color: var(--l3d-muted);
 }
-@media (max-width: 520px) {
-  .l3d-card p.l3d-idea { display: none; }
-}
+.l3d-card-caption { display: flex; align-items: baseline; gap: 1rem; }
+.l3d-edition { font: 500 0.65rem ui-monospace, monospace; letter-spacing: .08em; color: var(--l3d-dim); }
+.l3d-concept-picker { display: flex; flex-wrap: wrap; justify-content: center; gap: .35rem; max-width: 32rem; }
+.l3d-concept-picker button { display: flex; align-items: center; gap: .4rem; min-height: 44px; border-bottom: 1px solid transparent; padding: .4rem .6rem; font-size: .75rem; color: var(--l3d-muted); transition: color .2s, border-color .2s; }
+.l3d-concept-picker button span { color: var(--l3d-dim); font: .6rem ui-monospace, monospace; }
+.l3d-concept-picker button[aria-pressed="true"] { color: var(--l3d-text); border-color: var(--l3d-cyan); }
+.l3d-concept-picker button:focus-visible { outline: 2px solid var(--l3d-cyan); outline-offset: 2px; }
 
 /* ---------------------------------------------------------------- name studio */
 
@@ -909,8 +904,12 @@ html[data-logo3d="on"] .l3d-view[data-engine="on"] .l3d-fallback {
 
 .l3d-pause {
   position: fixed;
-  left: 1rem;
-  bottom: 1rem;
+  right: 1rem;
+  top: 12.5rem;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  justify-content: center;
   z-index: 40;
 }
 
@@ -933,7 +932,7 @@ html[data-logo3d-paused] .l3d .l3d-fade {
   .l3d-grain { animation: none; }
   .l3d-h1 .l3d-line > span,
   .l3d-fade { animation: none; transform: none; opacity: 1; }
-  [data-reveal],
+  .l3d [data-reveal],
   .l3d-wipe { opacity: 1; transform: none; clip-path: none; transition: none; }
   .l3d-marquee-track,
   .l3d-mock > *,

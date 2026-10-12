@@ -106,8 +106,8 @@ export function detectTier(): Tier {
 }
 
 const TIER_CFG: Record<Tier, { dpr: number; steps: number; quality: number }> = {
-  low: { dpr: 1, steps: 44, quality: 0 },
-  std: { dpr: 1.5, steps: 60, quality: 1 },
+  low: { dpr: 1.25, steps: 56, quality: 0 },
+  std: { dpr: 1.5, steps: 68, quality: 1 },
   ultra: { dpr: 2, steps: 76, quality: 2 },
 };
 
@@ -148,6 +148,7 @@ export class Stage {
   private bg: ReturnType<typeof program>;
   private logo: ReturnType<typeof program>;
   private vao: WebGLVertexArrayObject;
+  private buffer: WebGLBuffer | null;
   private marks = new Map<string, { draw: MarkDraw; aspect: number }>();
   private textures = new Map<string, Tex>();
   private views = new Set<View>();
@@ -166,6 +167,7 @@ export class Stage {
   private tintTargetB: Rgb = [0.22, 0.71, 0.97];
   private pointer = { x: 0, y: 0, sx: 0, sy: 0 };
   private slowFrames = 0;
+  private frameInterval = 0;
   private watchEnabled = true;
   private beforeFrame: Array<(t: number) => void> = [];
   private dirty = true;
@@ -197,8 +199,8 @@ export class Stage {
     this.logo = program(gl, LOGO_FS);
     this.vao = gl.createVertexArray()!;
     gl.bindVertexArray(this.vao);
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    this.buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0);
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
@@ -275,6 +277,11 @@ export class Stage {
     this.dirty = true;
   }
 
+  setReducedMotion(reduced: boolean) {
+    this.reduced = reduced;
+    this.setPaused(document.documentElement.hasAttribute("data-logo3d-paused"));
+  }
+
   get isPaused() {
     return this.paused;
   }
@@ -311,14 +318,10 @@ export class Stage {
     };
     this.views.add(view);
     this.io.observe(el);
-    this.texture(target.mark);
-    if (target.markB) this.texture(target.markB);
     this.dirty = true;
     return {
       set: (next, instant) => {
         Object.assign(view.target, next);
-        if (next.mark) this.texture(next.mark);
-        if (next.markB) this.texture(next.markB);
         if (instant) this.snap(view);
         this.dirty = true;
       },
@@ -341,15 +344,21 @@ export class Stage {
     const view = [...this.views].find((v) => v.el === el);
     if (!view) return null;
     const rect = el.getBoundingClientRect();
-    this.renderFrame(0, true);
+    const ratio = Math.min(2, 1536 / Math.max(rect.width, rect.height));
+    const w = Math.max(1, Math.round(rect.width * ratio));
+    const h = Math.max(1, Math.round(rect.height * ratio));
+    const previousWidth = this.canvas.width;
+    const previousHeight = this.canvas.height;
+    this.canvas.width = w;
+    this.canvas.height = h;
+    // Export the complete view, even when part of its DOM rectangle is off screen.
+    this.renderFrame(0, true, { view, width: rect.width, height: rect.height, ratio });
     const gl = this.gl;
-    const x = Math.max(0, Math.round(rect.left * this.dpr));
-    const y = Math.max(0, Math.round((window.innerHeight - rect.bottom) * this.dpr));
-    const w = Math.min(this.canvas.width - x, Math.round(rect.width * this.dpr));
-    const h = Math.min(this.canvas.height - y, Math.round(rect.height * this.dpr));
-    if (w <= 0 || h <= 0) return null;
     const px = new Uint8Array(w * h * 4);
-    gl.readPixels(x, y, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    this.canvas.width = previousWidth;
+    this.canvas.height = previousHeight;
+    this.renderFrame(0, true);
     const out = document.createElement("canvas");
     out.width = w;
     out.height = h;
@@ -371,6 +380,10 @@ export class Stage {
     for (const t of this.textures.values()) this.gl.deleteTexture(t.tex);
     this.textures.clear();
     this.views.clear();
+    this.gl.deleteBuffer(this.buffer);
+    this.gl.deleteVertexArray(this.vao);
+    this.gl.deleteProgram(this.bg.p);
+    this.gl.deleteProgram(this.logo.p);
     this.gl.getExtension("WEBGL_lose_context")?.loseContext();
   }
 
@@ -383,7 +396,7 @@ export class Stage {
     if (key.startsWith("text:")) info = sdfFromText(key.slice(5));
     else {
       const mark = this.marks.get(key);
-      if (mark) info = sdfFromMark(mark.draw, this.tier === "low" ? 224 : 320, mark.aspect);
+      if (mark) info = sdfFromMark(mark.draw, this.tier === "low" ? 320 : 512, mark.aspect);
     }
     if (!info) return null;
     const gl = this.gl;
@@ -423,6 +436,7 @@ export class Stage {
     this.last = performance.now();
     const loop = (t: number) => {
       this.raf = requestAnimationFrame(loop);
+      if (t - this.last < this.frameInterval && window.scrollY === this.lastScroll && !this.dirty) return;
       const dt = Math.min(0.1, (t - this.last) / 1000);
       this.last = t;
       for (const cb of this.beforeFrame) cb(t);
@@ -442,11 +456,16 @@ export class Stage {
     if (!this.watchEnabled || this.paused || dt <= 0) return;
     if (dt > 1 / 32) this.slowFrames++;
     else this.slowFrames = Math.max(0, this.slowFrames - 1);
-    if (this.slowFrames > 24 && this.dpr > 0.62) {
-      this.dpr = Math.max(0.62, this.dpr * 0.84);
-      this.steps = Math.max(36, Math.round(this.steps * 0.88));
+    if (this.slowFrames > 24 && this.dpr > 1) {
+      // Keep edges readable. Shed background work and pixel cost, never sub-CSS resolution.
+      this.dpr = Math.max(1, this.dpr * 0.88);
+      this.quality = 0;
       this.slowFrames = 0;
       this.resize();
+    }
+    if (this.slowFrames > 48) {
+      this.frameInterval = 1000 / 30 - 1;
+      this.slowFrames = 0;
     }
   }
 
@@ -500,8 +519,8 @@ export class Stage {
       yaw = t.yaw + Math.sin(this.time * 0.42 + v.seed) * 0.38;
       pitch = t.pitch + Math.sin(this.time * 0.31 + v.seed * 1.7) * 0.12;
     } else if (t.rotation === "pointer") {
-      const px = v.pointer.active ? v.pointer.x : this.pointer.sx;
-      const py = v.pointer.active ? v.pointer.y : this.pointer.sy;
+      const px = !this.reduced && v.pointer.active ? v.pointer.x : 0;
+      const py = !this.reduced && v.pointer.active ? v.pointer.y : 0;
       const drift = live ? Math.sin(this.time * 0.4 + v.seed) * 0.12 : 0;
       yaw = t.yaw + px * 0.55 + drift;
       pitch = t.pitch - py * 0.3;
@@ -515,7 +534,7 @@ export class Stage {
     return moving;
   }
 
-  private renderFrame(dt: number, force: boolean) {
+  private renderFrame(dt: number, force: boolean, capture?: { view: View; width: number; height: number; ratio: number }) {
     const gl = this.gl;
     const scroll = window.scrollY;
     const scrolled = scroll !== this.lastScroll;
@@ -530,7 +549,7 @@ export class Stage {
     }
 
     let moving = false;
-    for (const v of this.views) if (this.ease(v, dt || 1)) moving = true;
+    for (const v of this.views) if (v.visible && this.ease(v, dt || 1)) moving = true;
     const tintMoving =
       Math.abs(this.tintA[0] - this.tintTargetA[0]) + Math.abs(this.tintB[2] - this.tintTargetB[2]) > 0.002;
     if (this.paused && !force && !this.dirty && !scrolled && !moving && !tintMoving) return;
@@ -556,19 +575,20 @@ export class Stage {
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.enable(gl.SCISSOR_TEST);
     gl.useProgram(this.logo.p);
-    const vh = window.innerHeight;
+    const vh = capture?.height ?? window.innerHeight;
+    const ratio = capture?.ratio ?? this.dpr;
     const lightDir = [-0.4, 0.55, 0.73];
-    for (const v of this.views) {
-      if (!v.visible) continue;
-      const r = v.el.getBoundingClientRect();
+    for (const v of capture ? [capture.view] : this.views) {
+      if (!v.visible && !capture) continue;
+      const r = capture ? { left: 0, top: 0, bottom: capture.height, width: capture.width, height: capture.height } : v.el.getBoundingClientRect();
       if (r.bottom < 0 || r.top > vh || r.width < 2 || r.height < 2) continue;
       const a = this.texture(v.target.mark);
       if (!a) continue;
       const b = v.target.markB ? this.texture(v.target.markB) : null;
-      const x = Math.round(r.left * this.dpr);
-      const y = Math.round((vh - r.bottom) * this.dpr);
-      const w = Math.round(r.width * this.dpr);
-      const h = Math.round(r.height * this.dpr);
+      const x = Math.round(r.left * ratio);
+      const y = Math.round((vh - r.bottom) * ratio);
+      const w = Math.round(r.width * ratio);
+      const h = Math.round(r.height * ratio);
       gl.viewport(x, y, w, h);
       gl.scissor(x, y, w, h);
 
@@ -610,6 +630,7 @@ export class Stage {
       gl.uniform3fv(this.logo.u("uGlow"), c.glow);
       gl.uniform1f(this.logo.u("uTime"), this.time);
       gl.uniform1i(this.logo.u("uSteps"), this.steps);
+      gl.uniform1f(this.logo.u("uPixel"), visH * 2 / h);
       gl.uniform3fv(this.logo.u("uLightDir"), lightDir);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     }

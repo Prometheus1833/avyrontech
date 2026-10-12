@@ -133,7 +133,10 @@ test.describe("public SEO routes", () => {
     await examples.getByRole("button", { name: "Domenii", exact: true }).click();
     await examples.getByRole("button", { name: /Restaurante & cafenele/ }).click();
     await expect(showcase).toHaveAttribute("data-domain", "resto");
-    await expect(showcase.getByRole("heading", { name: "Meniu, rezervări și comenzi într-un singur loc", exact: true })).toBeVisible();
+    await expect(showcase.getByRole("heading", { name: "O masă bună. O seară de ținut minte.", exact: true })).toBeVisible();
+    await expect(showcase.locator(".domain-notes li")).toHaveCount(6);
+    // The former standalone domain card must not survive outside the scroll scene.
+    await expect(examples.locator("article")).toHaveCount(0);
     await expect(showcase.getByRole("link", { name: "Serviciul Website" })).toHaveAttribute("href", "/servicii/website-prezentare-profesional");
 
     await showcase.getByRole("button", { name: "Aplicație", exact: true }).click();
@@ -170,7 +173,7 @@ test.describe("public SEO routes", () => {
   test("homepage Logo Studio reveals four standard concepts and protects AI generation", async ({ page }) => {
     await page.goto("/#logo-studio");
     const studio = page.locator("#logo-studio");
-    await expect(studio.getByRole("heading", { name: /Numele tău\. Patru direcții/ })).toBeVisible();
+    await expect(studio.getByRole("heading", { name: /Un nume\. Patru direcții/ })).toBeVisible();
     await studio.getByLabel("Numele brandului *").fill("Nord Atelier");
     await studio.getByLabel("Inițiale / semn").fill("NA · arc");
     await studio.getByRole("button", { name: "Vezi logo-ul tău", exact: true }).click();
@@ -178,7 +181,8 @@ test.describe("public SEO routes", () => {
     await expect(studio.getByTestId("landing-logo-option")).toHaveCount(4);
     await studio.getByRole("button", { name: "Vezi logo-ul cu AI", exact: true }).click();
     await expect(studio.getByText("AI-ul este disponibil în contul gratuit", { exact: true })).toBeVisible();
-    await expect(studio.getByText(/plata de 150 lei se aplică numai/)).toBeVisible();
+    await expect(studio).not.toContainText("150 lei");
+    await expect(studio.getByRole("link", { name: /Dincolo de 2D/ })).toHaveAttribute("href", "/servicii/creare-logo-3d-dinamic-cinematic");
   });
 
   test("About stays indexable and legacy Portfolio routes consolidate into the service portfolio", async ({ page }) => {
@@ -866,7 +870,7 @@ test.describe("forms and authentication", () => {
     await expect(page.getByRole("status")).toContainText(/verifică emailul|confirmare/i);
   });
 
-  test("example request uses the protected Worker endpoint", async ({ page }) => {
+  test("library example request uses the protected Worker endpoint", async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
         necessary: true, analytics: false, marketing: false,
@@ -886,19 +890,14 @@ test.describe("forms and authentication", () => {
       payload = route.request().postDataJSON() as Record<string, unknown>;
       await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ ok: true, saved: true, delivered: true, requestId: "test" }) });
     });
-    // The hash is the public navigation contract and forces the deferred
-    // industry section to mount before Playwright interacts with it.
-    await page.goto("/#exemple");
-    await page.getByRole("button", { name: "Domenii" }).click();
-    const beauty = page.getByRole("button", { name: /Beauty & Wellness/ });
-    await expect(beauty).toBeVisible();
-    await beauty.evaluate((button) => button.click());
-    await expect(beauty).toHaveAttribute("aria-pressed", "true");
-    await page.getByRole("button", { name: /Solicită (un exemplu|asemănător)/ }).click();
+    // The duplicate landing card was intentionally removed. Keep covering
+    // the real protected request form through its retained Library entry.
+    await page.goto("/biblioteca");
+    await page.getByRole("button", { name: "Cere ofertă", exact: true }).click();
     await page.locator("#request-example-email").fill("lead@example.com");
     await page.locator("#request-example-phone").fill("0712345678");
     await page.getByRole("button", { name: "Trimite solicitarea" }).click();
     await expect(page.getByText("Solicitarea a fost înregistrată!")).toBeVisible();
-    expect(payload).toMatchObject({ email: "lead@example.com", phone: "0712345678", source_category: "beauty" });
+    expect(payload).toMatchObject({ email: "lead@example.com", phone: "0712345678", source_slug: "biblioteca", source_category: "Bibliotecă Avyron" });
   });
 });

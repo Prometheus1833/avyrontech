@@ -20,7 +20,7 @@ export default function FlatMark({ draw, face, side, className }: Props) {
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas || !isRealBrowser()) return;
-    const size = 256;
+    const size = 512;
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext("2d");
@@ -58,5 +58,5 @@ export default function FlatMark({ draw, face, side, className }: Props) {
     ctx.restore();
   }, [draw, face, side]);
 
-  return <canvas ref={ref} aria-hidden className={className} width={256} height={256} />;
+  return <canvas ref={ref} aria-hidden className={className} width={512} height={512} />;
 }

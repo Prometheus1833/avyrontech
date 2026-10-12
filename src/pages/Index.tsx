@@ -100,7 +100,7 @@ const Index = () => {
       <Deferred minHeight={1120} forceReady><Examples /></Deferred>
       <Deferred minHeight={520}><Problem /></Deferred>
       <div className="h-8 md:h-16" aria-hidden />
-      <Deferred minHeight={620}><LogoStudioIntro /></Deferred>
+      <Deferred minHeight={300} forceReady={location.hash === "#logo-studio"}><LogoStudioIntro /></Deferred>
       <Deferred minHeight={500} forceReady={location.hash === "#proces"}><Process /></Deferred>
       <Deferred minHeight={360}><DomainCheck /></Deferred>
       <Deferred minHeight={440}><Benefits /></Deferred>
