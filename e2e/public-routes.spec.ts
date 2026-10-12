@@ -133,7 +133,10 @@ test.describe("public SEO routes", () => {
     await examples.getByRole("button", { name: "Domenii", exact: true }).click();
     await examples.getByRole("button", { name: /Restaurante & cafenele/ }).click();
     await expect(showcase).toHaveAttribute("data-domain", "resto");
-    await expect(showcase.getByRole("heading", { name: "Meniu, rezervări și comenzi într-un singur loc", exact: true })).toBeVisible();
+    await expect(showcase.getByRole("heading", { name: "O masă bună. O seară de ținut minte.", exact: true })).toBeVisible();
+    await expect(showcase.locator(".domain-notes li")).toHaveCount(6);
+    // The former standalone domain card must not survive outside the scroll scene.
+    await expect(examples.locator("article")).toHaveCount(0);
     await expect(showcase.getByRole("link", { name: "Serviciul Website" })).toHaveAttribute("href", "/servicii/website-prezentare-profesional");
 
     await showcase.getByRole("button", { name: "Aplicație", exact: true }).click();
