@@ -149,19 +149,19 @@ const CTA = () => {
 
 
   return (
-    <section id="cta" className="py-10 md:py-14">
-      <div className="mx-auto max-w-5xl px-4">
-        <div className="rounded-[2rem] overflow-hidden grid md:grid-cols-2 shadow-elev border border-border/60">
-          <div data-testid="cta-visual-panel" className="cta-panel-bg p-6 sm:p-8 md:p-10 text-background relative overflow-hidden">
+    <section id="cta" className="py-8 md:py-10">
+      <div className="mx-auto max-w-4xl px-4">
+        <div className="rounded-[1.5rem] overflow-hidden grid md:grid-cols-[.8fr_1.2fr] shadow-soft border border-border/60">
+          <div data-testid="cta-visual-panel" className="cta-panel-bg p-5 sm:p-6 md:p-7 text-background relative overflow-hidden">
             <div className="relative">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs font-medium">
                 <Gift className="size-3.5" aria-hidden="true" focusable="false" /> {t.cta.badge}
               </div>
-              <h2 className="mt-4 font-display text-2xl sm:text-3xl md:text-3xl font-bold leading-tight">
+              <h2 className="mt-3 font-display text-xl sm:text-2xl font-bold leading-tight">
                 {t.cta.title}
               </h2>
-              <p className="mt-3 text-sm text-background/90">{t.cta.desc}</p>
-              <ul className="mt-4 space-y-1.5 text-sm text-background/90">
+              <p className="mt-2 text-sm text-background/90">{t.cta.desc}</p>
+              <ul className="mt-3 space-y-1 text-xs text-background/85">
                 {t.cta.bullets.map((b) => <li key={b}>{b}</li>)}
               </ul>
             </div>
@@ -222,9 +222,10 @@ const CTA = () => {
             onSubmit={submit}
             onFocusCapture={() => setCaptchaReady(true)}
             onPointerDownCapture={() => setCaptchaReady(true)}
-            className="bg-card p-5 sm:p-6 md:p-8 space-y-3"
+            className="bg-card p-5 sm:p-6 space-y-3"
           >
 
+            <div className="grid gap-2 sm:grid-cols-2">
             <div>
               <Label htmlFor="name" className="text-xs">{t.cta.name}</Label>
               <Input id="name" value={data.name} onChange={set("name")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.namePh} />
@@ -232,6 +233,7 @@ const CTA = () => {
             <div>
               <Label htmlFor="business" className="text-xs">{t.cta.business}</Label>
               <Input id="business" value={data.business} onChange={set("business")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.businessPh} />
+            </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
@@ -244,6 +246,9 @@ const CTA = () => {
               </div>
             </div>
 
+            <details className="rounded-xl border border-border/60 px-3 py-2 text-sm">
+              <summary className="cursor-pointer font-medium text-muted-foreground">{lang === "ro" ? "Detalii suplimentare (opțional)" : "Additional details (optional)"}</summary>
+              <div className="space-y-3 pt-3">
             <div>
               <Label htmlFor="description" className="text-xs">{t.cta.description}</Label>
               <Textarea
@@ -301,6 +306,8 @@ const CTA = () => {
               <Label htmlFor="website" className="text-xs">{t.cta.website}</Label>
               <Input id="website" value={data.website} onChange={set("website")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.websitePh} />
             </div>
+              </div>
+            </details>
 
             {/* honeypot — invizibil pentru utilizatori, completat doar de boți */}
             <input
@@ -316,7 +323,7 @@ const CTA = () => {
             {captchaReady ? (
               <Turnstile onToken={setToken} resetKey={resetKey} action="contact-demo" />
             ) : (
-              <div className="h-[65px]" aria-hidden />
+              <div className="h-2" aria-hidden />
             )}
 
             <Button type="submit" disabled={loading} aria-busy={loading} className="w-full h-11 rounded-full bg-foreground text-background hover:bg-foreground/90 font-semibold">

@@ -76,7 +76,7 @@ export const KIND_COPY: L<Record<StudioKind, { title: string; lead: string; gets
       ],
     },
     dynamic: {
-      title: "Logo dinamic 3D",
+      title: "Logo Profesional 3D",
       lead: "Același logo, extrudat în 3D și animat.",
       gets: [
         "Tot ce e în logo static",
@@ -100,7 +100,7 @@ export const KIND_COPY: L<Record<StudioKind, { title: string; lead: string; gets
       ],
     },
     dynamic: {
-      title: "Dynamic 3D logo",
+      title: "Professional 3D Logo",
       lead: "The same logo, extruded in 3D and animated.",
       gets: [
         "Everything in the static logo",
@@ -229,7 +229,7 @@ export const STUDIO_UI: L<{
     share: "Distribuie",
     buy: (price) => `Solicită exportul AI — ${price}`,
     pro: "Vrei un logo desenat de designerii noștri, cu concepte originale și revizii?",
-    proLink: "Vezi pachetele Logo Dinamic 3D",
+    proLink: "Vezi pachetele Logo Profesional 3D",
     formTitle: "Date pentru livrare și factură",
     fullName: "Nume și prenume",
     emailLabel: "Email",
@@ -245,7 +245,7 @@ export const STUDIO_UI: L<{
     error: "Nu am putut trimite comanda. Încearcă din nou sau scrie-ne pe WhatsApp.",
     staffTitle: "Export fișiere",
     preview: "PREVIZUALIZARE",
-    back: "Înapoi la Logo Dinamic 3D",
+    back: "Înapoi la Logo Profesional 3D",
   },
   en: {
     h1: "Create your logo with AI",
@@ -296,7 +296,7 @@ export const STUDIO_UI: L<{
     share: "Share",
     buy: (price) => `Request AI export — ${price}`,
     pro: "Want a logo drawn by our designers, with original concepts and revisions?",
-    proLink: "See the Dynamic 3D Logo packages",
+    proLink: "See the Professional 3D Logo packages",
     formTitle: "Delivery and invoice details",
     fullName: "Full name",
     emailLabel: "Email",
@@ -312,7 +312,7 @@ export const STUDIO_UI: L<{
     error: "We couldn't send the order. Please try again or message us on WhatsApp.",
     staffTitle: "Export files",
     preview: "PREVIEW",
-    back: "Back to Dynamic 3D Logo",
+    back: "Back to Professional 3D Logo",
   },
 };
 
@@ -321,14 +321,14 @@ export const STUDIO_FAQ: L<Array<{ q: string; a: string }>> = {
     { q: "E cu adevărat gratuit să creez logo-ul?", a: "Da. Variantele standard, ajustarea și exportul sunt gratuite după înregistrarea unui cont Avyron. Dacă alegi un concept creat cu AI, exportul final costă 150 lei." },
     { q: "Ce AI folosiți?", a: "Un model de limbaj open-source (Llama), rulat pe infrastructura Cloudflare. AI-ul face alegerile de art director — simbol, compoziție, font, culori — iar logo-ul e desenat vectorial de motorul nostru. De aceea literele ies mereu corect și fișierul se poate mări oricât." },
     { q: "Pot folosi logo-ul comercial?", a: "Da, după plată primești dreptul de folosire comercială. Logo-urile generate folosesc forme geometrice simple și fonturi open-source, deci pot semăna cu alte mărci; dacă vrei să-l înregistrezi la OSIM, îți recomandăm o verificare de anterioritate sau un logo desenat de echipa noastră." },
-    { q: "Care e diferența față de pachetele Logo Dinamic 3D?", a: "Aici îți creezi singur logo-ul, rapid și ieftin. În pachetele Logo Dinamic 3D (de la 500 lei) designerii noștri desenează concepte originale, cu runde de revizie, ghid de utilizare și drepturi cedate prin contract." },
+    { q: "Care e diferența față de pachetele Logo Profesional 3D?", a: "Aici îți creezi singur logo-ul, rapid și ieftin. În pachetele Logo Profesional 3D (de la 500 lei) designerii noștri desenează concepte originale, cu runde de revizie, ghid de utilizare și drepturi cedate prin contract." },
     { q: "Cum primesc fișierele?", a: "După ce trimiți comanda primești pe email linkul de plată. După confirmarea plății îți trimitem arhiva cu fișierele finale." },
   ],
   en: [
     { q: "Is creating the logo really free?", a: "Yes. Standard options, editing and export are free after registering an Avyron account. If you choose an AI-created concept, the final export costs 150 lei." },
     { q: "Which AI do you use?", a: "An open-source language model (Llama) running on Cloudflare's infrastructure. The AI makes the art-director choices — symbol, composition, font, colours — and our engine draws the logo as vectors, so the lettering is always correct and the file scales to any size." },
     { q: "Can I use the logo commercially?", a: "Yes, after payment you get commercial usage rights. Generated logos use simple geometric shapes and open-source fonts, so they may resemble other marks; if you plan to register a trademark, we recommend a prior-mark search or a logo drawn by our team." },
-    { q: "How is this different from the Dynamic 3D Logo packages?", a: "Here you create the logo yourself, fast and affordably. In the Dynamic 3D Logo packages (from 500 lei) our designers draw original concepts, with revision rounds, a usage guide and a copyright transfer by contract." },
+    { q: "How is this different from the Professional 3D Logo packages?", a: "Here you create the logo yourself, fast and affordably. In the Professional 3D Logo packages (from 500 lei) our designers draw original concepts, with revision rounds, a usage guide and a copyright transfer by contract." },
     { q: "How do I get the files?", a: "After you send the order you receive a payment link by email. Once payment is confirmed we send you the archive with the final files." },
   ],
 };

@@ -68,7 +68,7 @@ const copy = {
       { key: "apps", title: "Aplicații Web și Mobile", text: "Conturi, fluxuri și API documentat, pe care îl extinzi oricând.", path: "/servicii/aplicatii-si-platforme", Icon: Gauge },
     ],
     rest: [
-      { key: "logo", title: "Logo Dinamic 3D", text: "Logo original pentru print, volum și mișcare.", path: "/servicii/creare-logo-3d-dinamic-cinematic", Icon: Box },
+      { key: "logo", title: "Logo Profesional 3D", text: "Logo original pentru print, volum și mișcare.", path: "/servicii/creare-logo-3d-dinamic-cinematic", Icon: Box },
       { key: "blog", title: "Blog Profesional", text: "Content hub rapid, optimizat SEO, care aduce cereri.", path: "/servicii/blog-profesional", Icon: BookOpen },
       { key: "social", title: "Identitate Social Media", text: "Facebook, Instagram și TikTok, configurate coerent pentru brand.", path: "/servicii/identitate-social-media", Icon: Instagram },
       { key: "ai", title: "Automatizări și AI", text: "Asistenți și procese care reduc munca repetitivă.", path: "/servicii/automatizari-si-ai", Icon: Bot },
@@ -104,7 +104,7 @@ const copy = {
       { key: "apps", title: "Web and Mobile Apps", text: "Accounts, flows and documented APIs you can extend anytime.", path: "/en/services/apps-and-platforms", Icon: Gauge },
     ],
     rest: [
-      { key: "logo", title: "Dynamic 3D Logo", text: "An original logo for print, volume and motion.", path: "/en/services/cinematic-dynamic-3d-logo-design", Icon: Box },
+      { key: "logo", title: "Professional 3D Logo", text: "An original logo for print, volume and motion.", path: "/en/services/cinematic-dynamic-3d-logo-design", Icon: Box },
       { key: "blog", title: "Professional Blog", text: "A fast, SEO-ready hub that turns expertise into leads.", path: "/en/services/professional-blog", Icon: BookOpen },
       { key: "social", title: "Social Media Identity", text: "Facebook, Instagram and TikTok, set up consistently for your brand.", path: "/en/services/social-media-identity", Icon: Instagram },
       { key: "ai", title: "Automation and AI", text: "Assistants and processes that cut repetitive work.", path: "/en/services/automation-and-ai", Icon: Bot },

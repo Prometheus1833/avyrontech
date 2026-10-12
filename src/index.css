@@ -144,6 +144,9 @@
 
 @layer utilities {
   .bg-hero { background-image: var(--gradient-hero); }
+  .problem-pair { box-shadow:0 10px 30px hsl(var(--foreground) / .035); transition:border-color .5s ease,box-shadow .55s ease,transform .55s ease; }
+  .problem-pair[data-active="true"] { border-color:hsl(var(--brand) / .36); box-shadow:0 16px 42px hsl(var(--brand) / .12),inset 0 1px 0 hsl(var(--brand) / .14); transform:translateY(-3px); }
+  @media (prefers-reduced-motion:reduce) { .problem-pair { transition:none; } .problem-pair[data-active="true"] { transform:none; } }
   .bg-brand { background-image: var(--gradient-brand); }
   .bg-lime { background-image: var(--gradient-lime); }
   .bg-pink { background-image: var(--gradient-pink); }

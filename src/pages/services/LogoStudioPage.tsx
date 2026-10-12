@@ -190,7 +190,7 @@ function StudioBody() {
           className="mt-5"
           items={[
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
-            { name: ro ? "Logo Dinamic 3D" : "Dynamic 3D Logo", path: LOGO3D_PATHS[lang] },
+            { name: ro ? "Logo Profesional 3D" : "Professional 3D Logo", path: LOGO3D_PATHS[lang] },
             { name: ro ? "Creează-ți logo-ul" : "Create your logo", path: STUDIO_PATHS[lang] },
           ]}
         />
@@ -575,7 +575,7 @@ const LogoStudioPage = () => {
           "ld-breadcrumb",
           breadcrumbLd([
             { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
-            { name: ro ? "Logo Dinamic 3D" : "Dynamic 3D Logo", path: LOGO3D_PATHS[lang] },
+            { name: ro ? "Logo Profesional 3D" : "Professional 3D Logo", path: LOGO3D_PATHS[lang] },
             { name: ro ? "Creează-ți logo-ul" : "Create your logo", path },
           ]),
         );

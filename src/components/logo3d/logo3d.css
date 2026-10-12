@@ -593,8 +593,9 @@ html[data-logo3d="on"] .l3d-view[data-engine="on"] .l3d-fallback {
   .l3d-name { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 3rem; }
 }
 .l3d-name-view {
-  width: 100%;
-  aspect-ratio: 16 / 9;
+  width: min(100%, calc(70vh * var(--studio-ratio, 1.7778)));
+  aspect-ratio: var(--studio-aspect, 16 / 9);
+  margin-inline: auto;
   border-radius: 1.75rem;
   border: 1px solid var(--l3d-line);
   background: transparent;
@@ -632,6 +633,18 @@ html[data-logo3d="on"] .l3d-view[data-engine="on"] .l3d-fallback {
   height: 28px;
   border-radius: 999px;
 }
+.l3d-preset-grid, .l3d-control-row, .l3d-export-options { display:flex; flex-wrap:wrap; gap:.5rem; }
+.l3d-control-label { margin-bottom:-.75rem; font-size:.68rem; font-weight:700; letter-spacing:.11em; text-transform:uppercase; color:var(--l3d-dim); }
+.l3d-preset-grid button, .l3d-export-options button { min-height:42px; padding:.55rem .8rem; border:1px solid var(--l3d-line-strong); border-radius:.7rem; color:var(--l3d-muted); background:rgba(16,20,31,.62); font-size:.78rem; transition:background .2s,border-color .2s,color .2s; }
+.l3d-preset-grid button:hover, .l3d-export-options button:hover, .l3d-preset-grid button[aria-pressed="true"], .l3d-export-options button[aria-pressed="true"] { color:var(--l3d-text); border-color:var(--l3d-cyan); background:rgba(56,189,248,.11); }
+.l3d-slider-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.75rem 1rem; }
+.l3d-slider-grid label { display:block; font-size:.76rem; color:var(--l3d-muted); }
+.l3d-slider-grid label span { display:flex; justify-content:space-between; gap:.5rem; }
+.l3d-slider-grid output { color:var(--l3d-text); font-variant-numeric:tabular-nums; }
+.l3d-slider-grid input { width:100%; accent-color:#67e8f9; margin-top:.3rem; min-height:20px; }
+.l3d-export-options { margin-top:1rem; }
+.l3d-export-options button { min-width:56px; }
+@media (max-width:540px) { .l3d-slider-grid { grid-template-columns:1fr; } }
 
 /* ---------------------------------------------------------------- audiences */
 

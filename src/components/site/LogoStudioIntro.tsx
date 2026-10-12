@@ -86,7 +86,7 @@ export default function LogoStudioIntro() {
                 ? "Explorează un logo 2D din numele sau inițialele brandului. Alege o variantă și continuă în editor, pentru web, social sau print."
                 : "Explore a 2D logo from your brand name or initials. Choose a direction and continue in the editor for web, social or print."}
             </p>
-            <Link to={LOGO3D_PATHS[lang]} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-white/15 px-4 text-xs font-semibold text-sky-100 transition-colors hover:border-sky-200/50 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-200"><Box className="size-4" aria-hidden />{ro ? "Dincolo de 2D: logo dinamic 3D" : "Beyond 2D: dynamic 3D logos"}<ArrowUpRight className="size-3.5" aria-hidden /></Link>
+            <Link to={LOGO3D_PATHS[lang]} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-white/15 px-4 text-xs font-semibold text-sky-100 transition-colors hover:border-sky-200/50 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-200"><Box className="size-4" aria-hidden />{ro ? "Dincolo de 2D: Logo Profesional 3D" : "Beyond 2D: Professional 3D Logo"}<ArrowUpRight className="size-3.5" aria-hidden /></Link>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/[.035] p-4 sm:p-5">

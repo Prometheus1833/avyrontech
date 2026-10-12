@@ -1,6 +1,7 @@
 import { ArrowRight, ChevronDown, Layers, ShoppingBag, TrendingUp } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { Link } from "react-router-dom";
+import HeroBackdrop from "./HeroBackdrop";
 
 const Hero = () => {
   const { t, lang } = useLang();
@@ -9,7 +10,8 @@ const Hero = () => {
       id="hero"
       className="relative min-h-[100dvh] md:min-h-0 flex flex-col items-center justify-center md:justify-start pt-24 pb-16 md:pt-36 md:pb-24 overflow-hidden bg-hero"
     >
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 text-center flex flex-col items-center justify-center md:justify-start w-full">
+      <HeroBackdrop />
+      <div className="relative z-[1] mx-auto max-w-5xl px-4 sm:px-6 text-center flex flex-col items-center justify-center md:justify-start w-full">
         <div className="flex flex-col items-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/70 backdrop-blur px-3 py-1.5 text-xs font-medium text-foreground/70 shadow-soft">
             <TrendingUp className="size-3.5 text-brand" aria-hidden="true" focusable="false" /> {t.hero.badge}

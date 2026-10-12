@@ -53,7 +53,7 @@ export default function LogoLoader({ elapsed }: { elapsed: number }) {
       className="l3d-loader"
       style={{ ["--lo-delay" as string]: `${-Math.round(elapsed)}ms` }}
       role="status"
-      aria-label={lang === "ro" ? "Se încarcă pagina Logo Dinamic 3D" : "Loading the Dynamic 3D Logo page"}
+      aria-label={lang === "ro" ? "Se încarcă pagina Logo Profesional 3D" : "Loading the Professional 3D Logo page"}
     >
       <div>
         <svg viewBox="0 0 200 200" aria-hidden>

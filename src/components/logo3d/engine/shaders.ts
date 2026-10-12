@@ -116,6 +116,7 @@ uniform float uTime;
 uniform int uSteps;
 uniform float uPixel;
 uniform vec3 uLightDir;
+uniform vec4 uSurface; // roughness, exposure, emission, studio / warm / noir light rig
 
 const float WORLD_H = 2.5;
 
@@ -195,7 +196,7 @@ float mapSmooth(vec3 p) {
 }
 vec3 normalAt(vec3 p) {
   const vec2 k = vec2(1.0, -1.0);
-  float e = 0.006 * uFit;
+  float e = max(0.0025, min(0.006, uPixel / uFit * 1.5)) * uFit;
   return normalize(k.xyy * mapSmooth(p + k.xyy * e) + k.yyx * mapSmooth(p + k.yyx * e) + k.yxy * mapSmooth(p + k.yxy * e) + k.xxx * mapSmooth(p + k.xxx * e));
 }
 vec2 boxHit(vec3 ro, vec3 rd, vec3 b) {
@@ -219,23 +220,32 @@ float vnoise(vec3 x) {
 // Procedural product studio (world space): a large key softbox above-left of the
 // camera, a cool fill on the right, a vertical strip, coloured rims behind.
 vec3 env(vec3 d) {
+  float rough = clamp(uSurface.x, 0.08, 0.8);
+  float warm = max(0.0, 1.0 - abs(uSurface.w - 1.0));
+  float noir = clamp(uSurface.w - 1.0, 0.0, 1.0);
+  vec3 keyColor = mix(vec3(1.0, 0.97, 0.93), vec3(1.0, 0.76, 0.46), warm * 0.7);
   // Room: dark floor, soft grey ceiling.
   vec3 c = mix(vec3(0.02, 0.018, 0.034), vec3(0.2, 0.19, 0.26), smoothstep(-0.5, 1.0, d.y));
   // Big key softbox above-left of the camera: front faces pick it up as a broad sheen.
   float key = smoothstep(0.5, 0.96, dot(d, normalize(vec3(-0.3, 0.42, 0.86))));
-  c += vec3(1.0, 0.97, 0.93) * key * 1.9;
+  c += keyColor * key * mix(1.9, 0.65, noir);
   // Hard spec strip for the crisp line that travels across metal when it turns.
-  float strip = smoothstep(0.05, 0.0, abs(d.x + 0.12 - d.y * 0.18)) * smoothstep(-0.1, 0.7, d.y) * step(0.0, d.z);
-  c += vec3(1.0) * strip * 2.2;
+  float strip = 1.0 - smoothstep(0.012, 0.035 + rough * 0.14, abs(d.x + 0.12 - d.y * 0.18));
+  strip *= smoothstep(-0.25, 0.6, d.y) * smoothstep(-0.1, 0.25, d.z);
+  c += keyColor * strip * mix(2.8, 1.2, rough);
   // Cool fill from the right.
   float fill = smoothstep(0.55, 0.97, dot(d, normalize(vec3(0.7, 0.05, 0.7))));
-  c += vec3(0.75, 0.85, 1.0) * fill * 0.8;
+  c += mix(vec3(0.75, 0.85, 1.0), uGlow, noir * .65) * fill * mix(0.8, 1.5, noir);
   // Coloured rims from behind.
   c += uGlow * smoothstep(0.3, 1.0, dot(d, normalize(vec3(-0.9, 0.15, -0.35)))) * 0.9;
   c += vec3(0.62, 0.45, 1.0) * smoothstep(0.4, 1.0, dot(d, normalize(vec3(0.9, -0.05, -0.3)))) * 0.6;
   return c;
 }
 vec3 toWorld(vec3 v) { return v * uRot; }
+vec3 filmic(vec3 c) {
+  c *= uSurface.y;
+  return pow(clamp((c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14), 0.0, 1.0), vec3(1.0 / 2.2));
+}
 
 void main() {
   float tanHalf = 0.32;
@@ -266,7 +276,7 @@ void main() {
       float minD = 1e3;
       float epsilon = max(0.0004, uPixel * 0.65);
       bool hit = false;
-      for (int i = 0; i < 96; i++) {
+      for (int i = 0; i < 128; i++) {
         if (i >= uSteps) break;
         vec3 p = roO + rdO * t;
         float d = map(p);
@@ -290,31 +300,37 @@ void main() {
         float diff = clamp(dot(nW, normalize(uLightDir)), 0.0, 1.0);
         float wrap = clamp((dot(nW, normalize(uLightDir)) + 0.35) / 1.35, 0.0, 1.0);
         vec3 RW = reflect(-vW, nW);
-        vec3 envR = env(RW);
+        float rough = clamp(uSurface.x, 0.08, 0.8);
+        // Broaden reflections for satin without a second texture or a postprocess buffer.
+        vec3 envR = mix(env(RW), env(normalize(RW + nW * .7)), rough * .65);
         float dIn = field(po.xy);
         float rim = pow(1.0 - nv, 3.0);
 
-        vec3 metal = envR * mix(tint, vec3(1.0), 0.1 + 0.5 * F) * 1.15 + tint * (0.1 + 0.18 * wrap);
+        float cavity = clamp(mapSmooth(p + n * .035 * uFit) / (.035 * uFit), .3, 1.0);
+        vec3 linearTint = pow(tint, vec3(2.2));
+        vec3 metal = (envR * mix(linearTint, vec3(.94), .08 + .35 * F) + linearTint * (.08 + .16 * wrap)) * mix(.72, 1.0, cavity);
         // Glass is see-through: the scene behind shows through a tinted body, and the
         // reflections are added on top (premultiplied), so it never reads as grey plastic.
         vec3 refr = env(refract(-vW, nW, 0.7));
         float thick = smoothstep(0.0, 0.3, -dIn);
         // Faces stay clear; bevels and sides carry the colour, like thick glass seen edge-on.
         float edgeG = 1.0 - faceMask;
-        float glassA = clamp(0.12 + 0.55 * edgeG + 0.6 * F, 0.0, 0.95);
+        float glassA = clamp(0.23 + 0.46 * edgeG + 0.55 * F, 0.0, 0.96);
         vec3 hi = max(envR - vec3(0.24), vec3(0.0));
         float spec = pow(clamp(dot(reflect(-normalize(uLightDir), nW), vW), 0.0, 1.0), 48.0);
-        vec3 glass = uFace * (0.22 + 0.95 * edgeG) * glassA + uFace * refr * 0.06 * thick
-          + hi * (0.35 + 0.9 * F) + vec3(1.0) * spec * 1.6 + uGlow * rim * 0.8;
+        vec3 absorption = exp(-(vec3(1.0) - uFace) * (h * 3.0 + edgeG * 1.6));
+        vec3 glass = (refr * absorption * .25 + uFace * (.12 + .5 * edgeG) + hi * (.3 + .7 * F)
+          + vec3(1.0) * spec * 1.3 + uGlow * rim * .35) * glassA;
         float tube = smoothstep(0.03, 0.0, abs(dIn + 0.05)) * faceMask;
-        vec3 neon = envR * 0.1 + tint * 0.15 * wrap + uGlow * tube * 2.6 + uGlow * rim * 0.5;
-        vec3 matte = tint * (0.26 + 0.82 * wrap) + envR * 0.05 * (0.4 + F) + tint * rim * 0.22;
+        vec3 neon = envR * .035 + linearTint * .12 * wrap + uGlow * (tube * 3.4 + rim * .6) * uSurface.z;
+        vec3 matte = (linearTint * (.16 + .65 * wrap) + envR * mix(.16, .035, rough) * (.4 + F) + linearTint * rim * .15) * mix(.7, 1.0, cavity);
 
         // Every material is expressed premultiplied: opaque ones with alpha 1, glass with glassA.
         float wSum = max(uMat.x + uMat.y + uMat.z + uMat.w, 0.0001);
         vec3 c = (metal * uMat.x + glass * uMat.y + neon * uMat.z + matte * uMat.w) / wSum;
         float alpha = (uMat.x + glassA * uMat.y + uMat.z + uMat.w) / wSum;
-        c = c * (1.0 + c / 4.0) / (1.0 + c);
+        // Tone-map unassociated colour, then restore premultiplication for correct glass blending.
+        c = filmic(c / max(alpha, .001)) * alpha;
         if (uReveal < 0.999) {
           float n3 = vnoise(po * 7.0 + uTime * 0.2);
           float edge = uReveal * 1.15 - 0.075;
@@ -329,7 +345,7 @@ void main() {
     }
   }
 
-  float haloA = clamp((glow * uMat.z * 0.55 + glow * 0.05) * uExtrude * uReveal, 0.0, 0.85);
+  float haloA = clamp((glow * uMat.z * 0.4 * uSurface.z + glow * 0.025) * uExtrude * uReveal, 0.0, 0.7);
   vec4 flat_ = vec4(flatCol * flatA, flatA) * (1.0 - uExtrude);
   vec4 outc = solid * uExtrude + flat_ * (1.0 - solid.a * uExtrude);
   outc.rgb += uGlow * haloA * (1.0 - outc.a);

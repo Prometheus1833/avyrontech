@@ -185,15 +185,15 @@ export function sdfFromMark(draw: MarkDraw, size = 256, aspect = 1): SdfTexture 
 export const TEXT_FONT = '800 {px}px "Avenir Next", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif';
 
 /** A word set in the display face, as a wide field (height 160 texels). */
-export function sdfFromText(text: string, height = 160): SdfTexture | null {
+export function sdfFromText(text: string, height = 256, style: "display" | "editorial" | "mono" = "display"): SdfTexture | null {
   const clean = text.trim().slice(0, 18) || "Avyron";
   const probe = makeCanvas(8, 8);
   if (!probe) return null;
   const px = Math.round(height * 0.5);
-  const font = TEXT_FONT.replace("{px}", String(px));
+  const font = style === "editorial" ? `700 ${px}px Georgia, "Times New Roman", serif` : style === "mono" ? `700 ${px}px "SFMono-Regular", Consolas, monospace` : TEXT_FONT.replace("{px}", String(px));
   probe.font = font;
   const textWidth = probe.measureText(clean).width;
-  const width = Math.min(1024, Math.max(height, Math.ceil(textWidth + height * 0.5)));
+  const width = Math.min(3072, Math.max(height, Math.ceil(textWidth + height * 0.5)));
   const ctx = makeCanvas(width, height);
   if (!ctx) return null;
   ctx.font = font;

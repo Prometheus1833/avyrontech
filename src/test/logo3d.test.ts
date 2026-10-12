@@ -16,8 +16,21 @@ import { PRERENDER_ROUTES } from "@/seo/publicRoutes";
 import { SERVICES } from "@/data/services";
 import { signedDistance } from "@/components/logo3d/engine/sdf";
 import { CONCEPTS } from "@/components/logo3d/marks";
+import { exportDimensions, STUDIO_PRESETS } from "@/components/logo3d/studioSettings";
 
 describe("Logo Dinamic 3D — content", () => {
+  it("uses the new title consistently across both languages", () => {
+    expect(LOGO3D_META.ro.name).toBe("Logo Profesional 3D");
+    expect(LOGO3D_META.en.name).toBe("Professional 3D Logo");
+  });
+
+  it("provides distinct presets and exact HD/4K export dimensions", () => {
+    expect(STUDIO_PRESETS.map((preset) => preset.settings.material)).toContain("glass");
+    expect(new Set(STUDIO_PRESETS.map((preset) => preset.settings.font)).size).toBe(3);
+    expect(exportDimensions(16 / 9, 3840)).toEqual({ width: 3840, height: 2160 });
+    expect(exportDimensions(1, 1920)).toEqual({ width: 1920, height: 1920 });
+    expect(exportDimensions(4 / 5, 3840)).toEqual({ width: 3072, height: 3840 });
+  });
   it("keeps the approved starting prices in lei", () => {
     expect(LOGO3D_TIERS.ro.map((t) => t.priceRon)).toEqual([500, 800, 1500]);
     expect(LOGO3D_TIERS.en.map((t) => t.priceRon)).toEqual([500, 800, 1500]);

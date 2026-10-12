@@ -217,7 +217,7 @@ const SERVICES: ServiceDef[] = [
     key: "logo",
     icon: Box,
     badge: { ro: "Serviciu nou", en: "New service" },
-    title: { ro: "Logo Dinamic 3D", en: "Dynamic 3D Logo" },
+    title: { ro: "Logo Profesional 3D", en: "Professional 3D Logo" },
     tagline: { ro: "Vector · 3D · Animație", en: "Vector · 3D · Motion" },
     desc: {
       ro: "Un logo original gândit din prima pentru print, volum și mișcare: fișiere vectoriale, model 3D, animații și logo interactiv pentru site. Pentru persoane fizice, firme mici și medii, branduri și startupuri.",
@@ -247,7 +247,7 @@ const SERVICES: ServiceDef[] = [
       },
     ],
     cta: { ro: "Vreau un logo 3D", en: "I want a 3D logo" },
-    wa: { ro: "Bună! Sunt interesat de un Logo Dinamic 3D.", en: "Hi! I'm interested in a Dynamic 3D Logo." },
+    wa: { ro: "Bună! Sunt interesat de un Logo Profesional 3D.", en: "Hi! I'm interested in a Professional 3D Logo." },
     details: { ro: LOGO3D_PATHS.ro, en: LOGO3D_PATHS.en },
     analytics: "services_logo_3d",
     accent: {

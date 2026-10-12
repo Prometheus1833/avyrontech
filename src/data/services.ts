@@ -145,7 +145,7 @@ function logoService(): Service {
       ctaTitle: ro ? "Hai să-i dăm volum brandului tău" : "Let's give your brand some volume",
       ctaDesc: hero.delivery,
       ctaButton: hero.primary,
-      whatsapp: ro ? "Bună! Aș vrea un Logo Dinamic 3D." : "Hi! I'd like a Dynamic 3D Logo.",
+      whatsapp: ro ? "Bună! Aș vrea un Logo Profesional 3D." : "Hi! I'd like a Professional 3D Logo.",
     };
   };
   return {
