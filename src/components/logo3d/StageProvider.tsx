@@ -19,6 +19,7 @@ type StageState = {
   /** "pending" until the engine chunk has loaded; "off" when WebGL2 is missing or motion is reduced. */
   status: "pending" | "on" | "off";
   paused: boolean;
+  reducedMotion: boolean;
   setPaused: (paused: boolean) => void;
 };
 
@@ -26,6 +27,7 @@ const StageContext = createContext<StageState>({
   stage: null,
   status: "off",
   paused: false,
+  reducedMotion: false,
   setPaused: () => undefined,
 });
 
@@ -54,6 +56,7 @@ export function StageProvider({ children, onReady }: Props) {
   const [stage, setStage] = useState<Stage | null>(null);
   const [status, setStatus] = useState<StageState["status"]>("pending");
   const [paused, setPausedState] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const readyRef = useRef(onReady);
   readyRef.current = onReady;
 
@@ -67,7 +70,25 @@ export function StageProvider({ children, onReady }: Props) {
     document.documentElement.toggleAttribute("data-logo3d-paused", initialPaused);
     let alive = true;
     let created: Stage | null = null;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const reduced = motionQuery.matches;
+    setReducedMotion(reduced);
+    const canvas = canvasRef.current;
+    const contextLost = (event: Event) => {
+      event.preventDefault();
+      if (!alive) return;
+      created?.destroy();
+      created = null;
+      setStage(null);
+      setStatus("off");
+      document.documentElement.setAttribute("data-logo3d", "off");
+    };
+    canvas?.addEventListener("webglcontextlost", contextLost);
+    const updateMotion = () => {
+      setReducedMotion(motionQuery.matches);
+      created?.setReducedMotion(motionQuery.matches);
+    };
+    motionQuery.addEventListener("change", updateMotion);
     const saveData = Boolean((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData);
 
     const boot = () => {
@@ -77,7 +98,7 @@ export function StageProvider({ children, onReady }: Props) {
           // ?l3d=low|std|ultra forces a tier (QA on specific devices); save-data always means low.
           const forced = new URLSearchParams(window.location.search).get("l3d");
           const tier = saveData ? "low" : forced === "low" || forced === "std" || forced === "ultra" ? forced : undefined;
-          created = Stage.create(canvasRef.current, { reducedMotion: reduced, tier, watch: forced === null });
+          created = Stage.create(canvasRef.current, { reducedMotion: motionQuery.matches, tier, watch: forced === null });
           if (!created) {
             setStatus("off");
             document.documentElement.setAttribute("data-logo3d", "off");
@@ -85,7 +106,8 @@ export function StageProvider({ children, onReady }: Props) {
           }
           created.defineMark("studio", STUDIO_MARK as MarkDraw);
           for (const c of CONCEPTS) created.defineMark(c.key, c.draw);
-          created.setPaused(initialPaused);
+          // A visitor may pause while the engine chunk is still loading.
+          created.setPaused(readPaused());
           setStage(created);
           setStatus("on");
           (window as Window & { __avLogo3d?: () => unknown }).__avLogo3d = () => created?.info;
@@ -109,7 +131,10 @@ export function StageProvider({ children, onReady }: Props) {
     return () => {
       alive = false;
       window.clearTimeout(t);
+      canvas?.removeEventListener("webglcontextlost", contextLost);
+      motionQuery.removeEventListener("change", updateMotion);
       created?.destroy();
+      delete (window as Window & { __avLogo3d?: () => unknown }).__avLogo3d;
       document.documentElement.removeAttribute("data-logo3d");
       document.documentElement.removeAttribute("data-logo3d-paused");
     };
@@ -129,7 +154,7 @@ export function StageProvider({ children, onReady }: Props) {
     [stage],
   );
 
-  const value = useMemo(() => ({ stage, status, paused, setPaused }), [stage, status, paused, setPaused]);
+  const value = useMemo(() => ({ stage, status, paused, reducedMotion, setPaused }), [stage, status, paused, reducedMotion, setPaused]);
 
   return (
     <StageContext.Provider value={value}>

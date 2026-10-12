@@ -114,6 +114,7 @@ uniform vec3 uSide;
 uniform vec3 uGlow;
 uniform float uTime;
 uniform int uSteps;
+uniform float uPixel;
 uniform vec3 uLightDir;
 
 const float WORLD_H = 2.5;
@@ -263,13 +264,15 @@ void main() {
     if (bh.x < bh.y && bh.y > 0.0) {
       float t = max(bh.x, 0.0);
       float minD = 1e3;
+      float edgeDistance = 0.0;
+      float epsilon = max(0.0004, uPixel * 0.65);
       bool hit = false;
       for (int i = 0; i < 96; i++) {
         if (i >= uSteps) break;
         vec3 p = roO + rdO * t;
         float d = map(p);
         minD = min(minD, d);
-        if (d < 0.0012) { hit = true; break; }
+        if (d < epsilon) { hit = true; edgeDistance = d; break; }
         t += d * 0.92;
         if (t > bh.y) break;
       }
@@ -319,7 +322,8 @@ void main() {
           if (n3 > edge) { c = vec3(0.0); alpha = 0.0; }
           else c += uGlow * smoothstep(edge - 0.08, edge, n3) * 2.0;
         }
-        solid = vec4(c, alpha);
+        float coverage = 1.0 - smoothstep(0.0, epsilon, max(edgeDistance, 0.0));
+        solid = vec4(c, alpha) * coverage;
       }
     }
   }

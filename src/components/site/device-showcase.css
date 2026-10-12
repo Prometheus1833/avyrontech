@@ -186,6 +186,11 @@
 }
 @media (max-width:700px) {
   .scene-options { padding-right:48px; width:100%; }
+  /* Leave room for longer English copy with Linux/Android fallback font metrics. */
+  .showcase-web .web-hero h4 { font-size:4.1cqw; }
+  .web-kicker { margin-bottom:1.2cqw; }
+  .web-hero-copy > p:not(.web-kicker) { margin-top:1.2cqw; line-height:1.4; }
+  .web-hero-action { margin-top:1.5cqw; }
   .scene-options button { min-height:44px; }
   .website-controls { position:relative; width:100%; }
   .domain-picker { position:static; }

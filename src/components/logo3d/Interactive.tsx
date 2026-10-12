@@ -30,42 +30,11 @@ export function Hero({ onPreview, heroDelay }: { onPreview: () => void; heroDela
   const { lang } = useLang();
   const c = LOGO3D_HERO[lang];
   const lei = useLeiPrice(lang);
-  const { paused } = useStage();
   const [index, setIndex] = useState(0);
   const [material, setMaterial] = useState<MaterialKey | null>(null);
-  const handle = useRef<ViewHandle | null>(null);
   const concept = CONCEPTS[index];
   const mat = material ?? concept.material;
   const weights = material ? MATERIAL_WEIGHTS[material] : concept.mix ?? MATERIAL_WEIGHTS[concept.material];
-
-  // Every few seconds the mark melts into the next concept (distance-field morph).
-  useEffect(() => {
-    if (paused) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) return;
-    let swap = 0;
-    const t = window.setInterval(() => {
-      const next = (index + 1) % CONCEPTS.length;
-      const n = CONCEPTS[next];
-      handle.current?.set({
-        markB: n.key,
-        morph: 1,
-        face: n.face,
-        side: n.side,
-        glow: n.glow,
-        material: material ? MATERIAL_WEIGHTS[material] : n.mix ?? MATERIAL_WEIGHTS[n.material],
-      });
-      swap = window.setTimeout(() => {
-        handle.current?.set({ mark: n.key, markB: null, morph: 0 }, true);
-        setIndex(next);
-      }, 1500);
-    }, 4600);
-    return () => {
-      window.clearInterval(t);
-      window.clearTimeout(swap);
-    };
-  }, [index, material, paused]);
-
   const lines = lang === "ro" ? ["Logo", "dinamic 3D"] : ["Dynamic", "3D logo"];
   const price = lei(LOGO3D_TIERS[lang][0].priceRon);
 
@@ -117,12 +86,17 @@ export function Hero({ onPreview, heroDelay }: { onPreview: () => void; heroDela
             side={concept.side}
             glow={concept.glow}
             rotation="pointer"
+            interactive
+            yaw={-0.22}
+            pitch={0.08}
             depth={0.22}
             bevel={0.055}
-            onHandle={(h) => (handle.current = h)}
             fallback={<FlatMark draw={concept.draw} face={concept.face} side={concept.side} />}
           />
           <div className="mt-3 flex flex-col items-center gap-3">
+            <div role="group" aria-label={lang === "ro" ? "Alege un concept" : "Choose a concept"} className="l3d-concept-picker">
+              {CONCEPTS.map((item, i) => <button key={item.key} type="button" aria-pressed={index === i} onClick={() => { setIndex(i); setMaterial(null); }}><span aria-hidden>{String(i + 1).padStart(2, "0")}</span>{item.name}</button>)}
+            </div>
             <p className="text-sm text-[var(--l3d-muted)]" aria-live="polite">
               {c.conceptLabel}: <span className="text-[var(--l3d-text)]">{concept.name}</span> · {concept.industry[lang]}
             </p>
@@ -307,11 +281,13 @@ export function Gallery() {
                 side={c.side}
                 glow={c.glow}
                 rotation="pointer"
+                yaw={-0.32}
+                pitch={0.12}
                 depth={0.2}
                 bevel={0.05}
                 fallback={<FlatMark draw={c.draw} face={c.face} side={c.side} />}
               />
-              <h3>{c.name}</h3>
+              <div className="l3d-card-caption"><span className="l3d-edition" aria-hidden>{String(i + 1).padStart(2, "0")} / 06</span><h3>{c.name}</h3></div>
               <p className="text-xs text-[var(--l3d-dim)]">
                 {c.industry[lang]} · {MATERIAL_LABELS[lang][c.material]}
               </p>
@@ -353,7 +329,9 @@ export function NameStudio({ onPreview }: { onPreview: (name: string) => void })
 
   const download = useCallback(() => {
     if (!stage || !viewEl.current) return;
-    const shot = stage.snapshot(viewEl.current);
+    const view = viewEl.current.querySelector<HTMLElement>(".l3d-view");
+    if (!view) return;
+    const shot = stage.snapshot(view);
     if (!shot) return;
     const ctx = shot.getContext("2d");
     if (ctx) {

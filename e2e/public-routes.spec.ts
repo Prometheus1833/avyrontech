@@ -173,7 +173,7 @@ test.describe("public SEO routes", () => {
   test("homepage Logo Studio reveals four standard concepts and protects AI generation", async ({ page }) => {
     await page.goto("/#logo-studio");
     const studio = page.locator("#logo-studio");
-    await expect(studio.getByRole("heading", { name: /Numele tău\. Patru direcții/ })).toBeVisible();
+    await expect(studio.getByRole("heading", { name: /Un nume\. Patru direcții/ })).toBeVisible();
     await studio.getByLabel("Numele brandului *").fill("Nord Atelier");
     await studio.getByLabel("Inițiale / semn").fill("NA · arc");
     await studio.getByRole("button", { name: "Vezi logo-ul tău", exact: true }).click();
@@ -181,7 +181,8 @@ test.describe("public SEO routes", () => {
     await expect(studio.getByTestId("landing-logo-option")).toHaveCount(4);
     await studio.getByRole("button", { name: "Vezi logo-ul cu AI", exact: true }).click();
     await expect(studio.getByText("AI-ul este disponibil în contul gratuit", { exact: true })).toBeVisible();
-    await expect(studio.getByText(/plata de 150 lei se aplică numai/)).toBeVisible();
+    await expect(studio).not.toContainText("150 lei");
+    await expect(studio.getByRole("link", { name: /Dincolo de 2D/ })).toHaveAttribute("href", "/servicii/creare-logo-3d-dinamic-cinematic");
   });
 
   test("About stays indexable and legacy Portfolio routes consolidate into the service portfolio", async ({ page }) => {

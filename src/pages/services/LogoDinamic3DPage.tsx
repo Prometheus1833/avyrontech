@@ -12,7 +12,6 @@ import { RequestExampleModal } from "@/components/site/RequestExampleModal";
 import logo from "@/assets/avyron-logo.jpg";
 import { StageProvider, useStage } from "@/components/logo3d/StageProvider";
 import { isRealBrowser } from "@/components/logo3d/utils";
-import LogoLoader, { useLoaderState } from "@/components/logo3d/LogoLoader";
 import { Gallery, Genesis, Hero, NameStudio } from "@/components/logo3d/Interactive";
 import { Audiences, Faq, FinalCta, Formats, Packages, Process, States, Tools } from "@/components/logo3d/Content";
 import { LOGO3D_FAQ, LOGO3D_META, LOGO3D_PATHS, LOGO3D_TIERS } from "@/data/logo3d";
@@ -46,15 +45,15 @@ const quickNav: Record<"ro" | "en", QuickNavItem[]> = {
 
 function PauseToggle() {
   const { lang } = useLang();
-  const { paused, setPaused } = useStage();
+  const { paused, setPaused, reducedMotion } = useStage();
+  if (reducedMotion) return null;
   const label = paused
     ? lang === "ro" ? "Pornește animațiile" : "Play animations"
     : lang === "ro" ? "Oprește animațiile" : "Pause animations";
   return (
     <button type="button" className="l3d-chip l3d-pause" aria-pressed={paused} onClick={() => setPaused(!paused)}>
       {paused ? <Play className="size-4" aria-hidden /> : <Pause className="size-4" aria-hidden />}
-      <span className="hidden sm:inline">{label}</span>
-      <span className="sr-only sm:hidden">{label}</span>
+      <span className="sr-only">{label}</span>
     </button>
   );
 }
@@ -97,25 +96,6 @@ function useScrollChoreography(lang: string) {
   }, [stage, lang]);
 }
 
-/** Lenis keeps scroll and the fixed canvas in the same frame (no drift between DOM and 3D). */
-function useSmoothScroll() {
-  useEffect(() => {
-    if (!isRealBrowser()) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    if (window.matchMedia("(hover: none)").matches) return;
-    let destroyed = false;
-    let lenis: { destroy: () => void } | null = null;
-    import("lenis").then(({ default: Lenis }) => {
-      if (destroyed) return;
-      lenis = new Lenis({ autoRaf: true, lerp: 0.12, anchors: { offset: -16 } });
-    });
-    return () => {
-      destroyed = true;
-      lenis?.destroy();
-    };
-  }, []);
-}
-
 function Spotlight() {
   useEffect(() => {
     if (!isRealBrowser() || window.matchMedia("(hover: none)").matches) return;
@@ -146,22 +126,16 @@ function PageBody() {
   const { lang } = useLang();
   const ro = lang === "ro";
   const m = LOGO3D_META[lang];
-  const loader = useLoaderState();
   const [modal, setModal] = useState<{ open: boolean; name: string }>({ open: false, name: "" });
   useScrollChoreography(lang);
-  useSmoothScroll();
 
   const openPreview = useCallback((detail = "") => {
     setModal({ open: true, name: detail });
     trackFunnel("view_lead_form", "logo3d", { product: "logo_dinamic_3d" });
   }, []);
 
-  // Hero text waits for the loader, or starts right away when there is none.
-  const heroDelay = loader.show ? Math.max(120, 1700 - loader.elapsed) : 80;
-
   return (
     <>
-      {loader.show && <LogoLoader elapsed={loader.elapsed} />}
       <div className="l3d-grain" aria-hidden />
       <Spotlight />
 
@@ -193,7 +167,7 @@ function PageBody() {
           />
         </div>
 
-        <Hero onPreview={() => openPreview()} heroDelay={heroDelay} />
+        <Hero onPreview={() => openPreview()} heroDelay={0} />
         <States />
         <Genesis />
         <Gallery />
@@ -213,7 +187,7 @@ function PageBody() {
 
       <QuickNav items={quickNav[lang]} showLang />
       <PauseToggle />
-      <FloatingWhatsApp />
+      <FloatingWhatsApp location="logo_dinamic_3d" message={{ ro: "Bună! Mă interesează un logo dinamic 3D pentru brandul meu. Putem discuta?", en: "Hi! I'm interested in a dynamic 3D logo for my brand. Can we discuss it?" }} />
       <RequestExampleModal
         open={modal.open}
         onClose={() => setModal({ open: false, name: "" })}
