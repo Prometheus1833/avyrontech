@@ -30,6 +30,9 @@ describe("financial dashboard contract", () => {
       bankSettlement: { verified: false, reason: "revolut_business_not_connected" },
       recentPayments: [], recentSubscriptions: [], recentInvoices: [], connectionRecords: [],
     });
+    expect(status.providerPlaybooks.map((playbook: { provider: string; phase: string }) => [playbook.provider, playbook.phase])).toEqual([
+      ["stripe", "not_connected"], ["oblio", "not_connected"], ["revolut_business", "not_connected"], ["revolut_merchant", "not_connected"],
+    ]);
     expect(queries.some((query) => query.includes("financial_provider_connections"))).toBe(true);
     expect(queries.some((query) => query.includes("billing_checkout_sessions") && query.includes("ORDER BY updated_at DESC"))).toBe(true);
   });
