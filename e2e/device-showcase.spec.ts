@@ -46,8 +46,9 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
         edge: width(".laptop-edge"),
       };
     });
-    expect(laptopWidths.screen / laptopWidths.deck, "screen must visually match the keyboard chassis width").toBeGreaterThan(0.9);
-    expect(laptopWidths.lid / laptopWidths.deck, "lid must not be narrower than the keyboard chassis").toBeGreaterThan(0.95);
+    expect(laptopWidths.screen / laptopWidths.deck, "screen must sit inside a visibly wider keyboard chassis").toBeGreaterThan(0.75);
+    expect(laptopWidths.screen / laptopWidths.deck, "screen must not overhang the keyboard chassis").toBeLessThan(0.9);
+    expect(laptopWidths.lid / laptopWidths.deck, "lid must be narrower than the keyboard chassis").toBeLessThan(0.95);
     expect(laptopWidths.edge / laptopWidths.deck, "front edge must align with the keyboard chassis").toBeGreaterThan(0.95);
     const heroes = new Set<string>();
     for (const key of ["beauty", "resto", "public", "turism", "pro", "local", "auto", "ecommerce", "national", "other"]) {

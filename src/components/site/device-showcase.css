@@ -56,13 +56,13 @@
 .laptop-space { min-height: 0; position: relative; container-type: size; display: flex; justify-content: center; align-items: center; }
 .laptop-object { position: relative; width: min(90cqw, 178cqh, 850px); aspect-ratio: 1.7; transform-style: preserve-3d; }
 .laptop-object::before { content: ""; position: absolute; inset: 70% -6% -5%; background: radial-gradient(ellipse, #14241a40, transparent 67%); transform: translateZ(-18px); }
-.laptop-lid { position: absolute; inset: 0 0 17%; padding: 2.05% 1.15% 2.25%; border-radius: 15px 15px 5px 5px; background: linear-gradient(130deg,#e1e3e0 0%,#7b8781 .45%,#1a201d 1.5%,#101613 65%,#74817a 99%,#e6e8e3); border: 1px solid #aeb8b0; box-shadow: 0 0 0 1px #28372d, 0 19px 40px -25px #12201a90; transform: translateZ(4px); }
+.laptop-lid { position: absolute; inset: 0 4% 17%; padding: 2.05% 1.15% 2.25%; border-radius: 15px 15px 5px 5px; background: linear-gradient(130deg,#e1e3e0 0%,#7b8781 .45%,#1a201d 1.5%,#101613 65%,#74817a 99%,#e6e8e3); border: 1px solid #aeb8b0; box-shadow: 0 0 0 1px #28372d, 0 19px 40px -25px #12201a90; transform: translateZ(4px); }
 .laptop-display { width: 100%; height: 100%; overflow: hidden; border-radius: 8px; border: 1px solid #070d09; container-type: inline-size; }
 .laptop-webcam { position: absolute; top: .7%; left: 50%; width: 3.5%; height: 1.5%; display: flex; justify-content: center; align-items: center; gap: 4px; }
 .laptop-webcam i { width: 4px; height: 4px; border-radius: 50%; background: radial-gradient(circle at 35% 30%,#5e95a6,#152329 48%,#080c0a 70%); box-shadow: 0 0 0 1px #5c6b6355; }
 .laptop-wordmark { position: absolute; bottom: .6%; left: 0; width: 100%; color: #a2afa6; text-align: center; font-size: 5px; letter-spacing: .27em; }
 .laptop-hinge { position: absolute; left: 4%; right: 4%; top: 81%; height: 2%; border-radius: 3px; background: linear-gradient(#29332f,#929f97 45%,#27352d); }
-.laptop-deck { position: absolute; top: 82%; left: 4%; width: 92%; height: 28%; transform: perspective(900px) rotateX(48deg); transform-origin: 50% 0; display: grid; grid-template-columns: 6% 1fr 6%; gap: 1.5%; padding: 1.1% 5% 2.4%; border: 1px solid #c8d0c8; border-radius: 3px 3px 14px 14px; background: linear-gradient(120deg,#aebbb2,#e5e9e3 24%,#b9c6bd 63%,#e8ebe4); box-shadow: 0 3px 0 #697d6f, 0 9px 17px -9px #0d211a80; }
+.laptop-deck { position: absolute; top: 82%; left: 0; width: 100%; height: 28%; transform: perspective(900px) rotateX(48deg); transform-origin: 50% 0; display: grid; grid-template-columns: 6% 1fr 6%; gap: 1.5%; padding: 1.1% 5% 2.4%; border: 1px solid #c8d0c8; border-radius: 3px 3px 14px 14px; background: linear-gradient(120deg,#aebbb2,#e5e9e3 24%,#b9c6bd 63%,#e8ebe4); box-shadow: 0 3px 0 #697d6f, 0 9px 17px -9px #0d211a80; }
 .laptop-keyboard { display: flex; flex-direction: column; align-self: start; height: 65%; gap: 2px; padding: 3px; border-radius: 5px; background: #7d8b81; box-shadow: inset 0 1px 3px #243b2b70, 0 1px 0 #ffffffaa; }
 .laptop-key-row { display: flex; flex: 1; min-height: 0; gap: 2px; }
 .laptop-key { display: grid; place-items: center; flex: 1; min-width: 0; padding: 0; border-radius: 2px; border: 1px solid #3a453d; background: linear-gradient(#333e36,#1e2922); box-shadow: inset 0 1px 0 #6d7b70a0, 0 1px 0 #e1e7da50; color: #c3cec2; font: 500 clamp(3px, .55cqw, 6px)/1 system-ui, sans-serif; text-transform: uppercase; }
@@ -70,6 +70,7 @@
 .laptop-speaker { align-self: start; height: 65%; border-radius: 3px; background-image: radial-gradient(#5a6a5e99 .45px, transparent .7px); background-size: 3px 3px; opacity: .65; }
 .laptop-trackpad { position: absolute; bottom: 7%; left: 37%; width: 26%; height: 23%; border: 1px solid #86978b; border-radius: 4px; background: linear-gradient(145deg,#d0d9cf80,#b6c5b880); box-shadow: inset 0 1px 1px #f2f4eeaa; }
 .laptop-edge { position: absolute; bottom: -4%; left: 0; width: 100%; height: 1.5%; border-radius: 0 0 50% 50%; background: linear-gradient(#e4e9df,#8ea095 50%,#26392d); box-shadow: 0 4px 8px #1a2f2030; display: flex; justify-content: space-between; padding: 0 7%; }
+@media (min-width:701px) { .laptop-edge { left:-7%; width:114%; } }
 .laptop-edge span { width: 15%; height: 50%; background: #a2b3a4; border-radius: 0 0 5px 5px; }
 .laptop-edge i { width: 3%; height: 35%; margin-top: 2px; border-radius: 3px; background: #213d2a; }
 
