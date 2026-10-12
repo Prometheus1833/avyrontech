@@ -14,12 +14,17 @@ export type BillingInvoice={
 };
 export type BillingAdminStatus={
   providers:{stripe:BillingProviderStatus;revolut:BillingProviderStatus;oblio:BillingProviderStatus;netopia:BillingProviderStatus};
+  security?:{mfaEnabled:boolean;mfaVerified:boolean};
   sessions:Array<{provider:string;status:string;total:number}>;
   subscriptions:Array<{provider:string;status:string;total:number}>;
   invoices:Array<{provider:string;status:string;total:number}>;
   pendingInvoices:Array<{order_id:string;status:string;error_code:string|null;total_minor:number;currency:string;updated_at:number}>;
   paymentsByCurrency:Array<{currency:string;amount_minor:number;total:number}>;
   invoicesByCurrency:Array<{currency:string;amount_minor:number;total:number}>;
+  recentPayments:Array<{id:string;order_id:string;provider:string;mode:string;status:string;amount_minor:number;currency:string;updated_at:number}>;
+  recentSubscriptions:Array<{id:string;sku:string;provider:string;status:string;period:string;amount_minor:number;currency:string;current_period_end:number|null;updated_at:number}>;
+  recentInvoices:Array<{id:string;order_id:string;provider:string;series:string|null;number:string|null;status:string;total_minor:number;currency:string;error_code:string|null;updated_at:number}>;
+  connectionRecords:Array<{provider:string;status:string;last_sync_at:number|null;last_error_code:string|null}>;
   bankSettlement:{verified:false;reason:string};
   recentFailures:Array<{provider:string;event_type:string;error_code:string|null;received_at:number}>;
 };

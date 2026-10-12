@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { AppBindings, Env } from "./types";
 import { issueOblioInvoice } from "./invoicingOblio";
 import { revolutSignatureValid, stripeSignatureValid } from "./billingSignatures";
+import { mfaAuthEnabled } from "./authPolicy";
 
 export const billingRouter = new Hono<AppBindings>();
 const REVOLUT_VERSION = "2026-08-17";
@@ -318,7 +319,7 @@ billingRouter.post("/api/billing/subscriptions/:id/cancel",async(c)=>{
 
 billingRouter.get("/api/billing/admin/status",async(c)=>{
   if(!c.get("roles").some((role)=>role==="staff"||role==="admin"))return c.json({error:{code:"forbidden"}},403);
-  const [sessions,subscriptions,invoices,failed,pendingInvoices,paymentsByCurrency,invoicesByCurrency]=await Promise.all([
+  const [sessions,subscriptions,invoices,failed,pendingInvoices,paymentsByCurrency,invoicesByCurrency,recentPayments,recentSubscriptions,recentInvoices,connectionRecords]=await Promise.all([
     c.env.DB.prepare("SELECT provider,status,COUNT(*) AS total FROM billing_checkout_sessions GROUP BY provider,status").all(),
     c.env.DB.prepare("SELECT provider,status,COUNT(*) AS total FROM billing_subscriptions GROUP BY provider,status").all(),
     c.env.DB.prepare("SELECT provider,status,COUNT(*) AS total FROM billing_invoices GROUP BY provider,status").all(),
@@ -326,11 +327,16 @@ billingRouter.get("/api/billing/admin/status",async(c)=>{
     c.env.DB.prepare("SELECT order_id,status,error_code,total_minor,currency,updated_at FROM billing_invoices WHERE provider='oblio' AND status='pending' ORDER BY updated_at DESC LIMIT 20").all(),
     c.env.DB.prepare("SELECT currency,SUM(gross_amount_minor) AS amount_minor,COUNT(*) AS total FROM financial_revenues WHERE source='system_generated' AND payment_processor IN ('stripe','revolut') AND status='paid' AND archived_at IS NULL GROUP BY currency").all(),
     c.env.DB.prepare("SELECT currency,SUM(total_minor) AS amount_minor,COUNT(*) AS total FROM billing_invoices WHERE status='issued' GROUP BY currency").all(),
-  ]);return c.json({providers:providerCapabilities(c.env),sessions:sessions.results,subscriptions:subscriptions.results,invoices:invoices.results,pendingInvoices:pendingInvoices.results,paymentsByCurrency:paymentsByCurrency.results,invoicesByCurrency:invoicesByCurrency.results,bankSettlement:{verified:false,reason:"revolut_business_not_connected"},recentFailures:failed.results});
+    c.env.DB.prepare("SELECT id,order_id,provider,mode,status,amount_minor,currency,updated_at FROM billing_checkout_sessions WHERE mode!='setup' ORDER BY updated_at DESC LIMIT 12").all(),
+    c.env.DB.prepare("SELECT id,sku,provider,status,period,amount_minor,currency,current_period_end,updated_at FROM billing_subscriptions ORDER BY updated_at DESC LIMIT 12").all(),
+    c.env.DB.prepare("SELECT id,order_id,provider,series,number,status,total_minor,currency,error_code,updated_at FROM billing_invoices ORDER BY updated_at DESC LIMIT 12").all(),
+    c.env.DB.prepare("SELECT provider,status,last_sync_at,last_error_code FROM financial_provider_connections WHERE provider IN ('stripe','oblio','revolut_business') ORDER BY provider").all(),
+  ]);return c.json({providers:providerCapabilities(c.env),security:{mfaEnabled:mfaAuthEnabled(c.env),mfaVerified:Boolean(c.get("mfaVerified"))},sessions:sessions.results,subscriptions:subscriptions.results,invoices:invoices.results,pendingInvoices:pendingInvoices.results,paymentsByCurrency:paymentsByCurrency.results,invoicesByCurrency:invoicesByCurrency.results,recentPayments:recentPayments.results,recentSubscriptions:recentSubscriptions.results,recentInvoices:recentInvoices.results,connectionRecords:connectionRecords.results,bankSettlement:{verified:false,reason:"revolut_business_not_connected"},recentFailures:failed.results});
 });
 
 billingRouter.post("/api/billing/admin/invoices/:orderId/retry",async(c)=>{
   if(!c.get("roles").some((role)=>role==="staff"||role==="admin"))return c.json({error:{code:"forbidden"}},403);
+  if(!c.get("mfaVerified"))return c.json({error:{code:"mfa_required"}},403);
   if(!providerCapabilities(c.env).oblio.enabled)return c.json({error:{code:"oblio_approval_or_configuration_required"}},409);
   const order=await getOrder(c.env.DB,c.req.param("orderId"));
   if(!order||order.status!=="paid")return c.json({error:{code:"paid_order_required"}},409);
