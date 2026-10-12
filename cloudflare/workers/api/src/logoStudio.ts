@@ -4,7 +4,7 @@
 //                                    in JSON mode from a closed vocabulary. The browser
 //                                    draws them; nothing here renders images.
 //   POST /api/logo-studio/orders     a finished concept + contact → lead in the CRM
-//                                    (source logo-studio:static|dynamic) and an email to the
+//                                    (source logo-studio:standard|ai|dynamic) and an email to the
 //                                    agency with a link that reproduces the exact logo.
 //
 // Free by design: the model runs on the account's Workers AI allocation, with per-IP
@@ -17,6 +17,7 @@ import { deliverMail, logDelivery } from "./mailer";
 import { runAiCore } from "./aiCore";
 import {
   CONCEPT_JSON_SCHEMA,
+  AI_LOGO_EXPORT_PRICE,
   STUDIO_PRICES,
   buildPrompt,
   cleanBrief,
@@ -92,6 +93,7 @@ logoStudioRouter.post("/api/logo-studio/orders", async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   const brief = cleanBrief((body.brief ?? {}) as Record<string, unknown>);
   const kind = body.kind === "dynamic" ? "dynamic" : "static";
+  const source = body.source === "ai" ? "ai" : "standard";
   const name = clean(body.name, 120);
   const email = clean(body.email, 255).toLowerCase();
   const phone = clean(body.phone, 30);
@@ -121,14 +123,14 @@ logoStudioRouter.post("/api/logo-studio/orders", async (c) => {
   });
   if (!turnstile.ok) return c.json({ error: "captcha_failed", reason: turnstile.reason }, 403);
 
-  const price = STUDIO_PRICES[kind];
+  const price = source === "ai" ? AI_LOGO_EXPORT_PRICE : STUDIO_PRICES[kind];
   const token = encodeDesign(brief, concept);
   const path = brief.lang === "en" ? "/en/services/cinematic-dynamic-3d-logo-design/create" : "/servicii/creare-logo-3d-dinamic-cinematic/creeaza";
   const link = `https://avyron.ro${path}?design=${token}`;
   const id = crypto.randomUUID();
   const ts = Date.now();
   const message = [
-    `Logo creat în Avyron Logo Studio (${kind === "dynamic" ? "dinamic 3D" : "static"}), ${price} lei.`,
+    `Logo creat în Avyron Logo Studio (${source === "ai" ? "concept AI" : kind === "dynamic" ? "dinamic 3D" : "standard"}), ${price} lei.`,
     `Nume: ${brief.name}${brief.tagline ? ` — ${brief.tagline}` : ""}`,
     `Domeniu: ${brief.industry}, stil: ${brief.style}`,
     company ? `Firmă: ${company}${cui ? ` (CUI ${cui})` : ""}` : "",
@@ -143,7 +145,7 @@ logoStudioRouter.post("/api/logo-studio/orders", async (c) => {
   )
     .bind(
       id,
-      `logo-studio:${kind}`,
+      `logo-studio:${source}`,
       name,
       company || brief.name,
       phone,
@@ -153,7 +155,7 @@ logoStudioRouter.post("/api/logo-studio/orders", async (c) => {
       brief.lang,
       "[]",
       "logo-studio",
-      JSON.stringify({ kind, price, brief, concept, cui: cui || null, link }),
+      JSON.stringify({ kind, source, price, brief, concept, cui: cui || null, link }),
       price,
       ts,
       ts,
@@ -168,7 +170,7 @@ logoStudioRouter.post("/api/logo-studio/orders", async (c) => {
   const result = await deliverMail(c.env, {
     to,
     replyTo: email,
-    subject: `Logo Studio — ${kind === "dynamic" ? "dinamic" : "static"} — ${brief.name} (${price} lei)`,
+    subject: `Logo Studio — ${source === "ai" ? "AI" : kind === "dynamic" ? "dinamic" : "standard"} — ${brief.name} (${price} lei)`,
     text: `${message}\n\nClient: ${name}\nEmail: ${email}\nTelefon: ${phone}\nID: ${id}\n\nDeschide linkul de mai sus logat ca staff pentru a exporta fișierele după confirmarea plății.`,
   });
   await c.env.DB.prepare("UPDATE leads SET delivery_status=?,updated_at=? WHERE id=?")

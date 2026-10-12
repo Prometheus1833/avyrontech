@@ -22,6 +22,7 @@ import {
   LAYOUTS,
   MATERIALS,
   SHAPES,
+  AI_LOGO_EXPORT_PRICE,
   STUDIO_PRICES,
   STYLES,
   cleanBrief,
@@ -92,7 +93,7 @@ function StudioBody() {
         setConcepts([d.concept]);
         setPicked(0);
         setEdit(d.concept);
-        setSource("local");
+        setSource(q.get("source") === "ai" ? "ai" : "local");
         window.setTimeout(() => editorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 400);
         return;
       }
@@ -159,7 +160,9 @@ function StudioBody() {
   const patch = (p: Partial<LogoConcept>) => setEdit((e) => (e ? { ...e, ...p } : e));
   const patchPalette = (k: keyof LogoConcept["palette"], v: string) => setEdit((e) => (e ? { ...e, palette: { ...e.palette, [k]: v } } : e));
 
-  const price = lei(STUDIO_PRICES[kind]);
+  const paidExport = source === "ai" || kind === "dynamic";
+  const exportPrice = source === "ai" ? AI_LOGO_EXPORT_PRICE : STUDIO_PRICES[kind];
+  const price = exportPrice > 0 ? lei(exportPrice) : ro ? "Gratuit cu cont" : "Free with account";
   const openOrder = (via: string) => {
     setOrdering(true);
     trackEvent("logo_studio_checkout", { via, kind });
@@ -209,21 +212,15 @@ function StudioBody() {
               </li>
             ))}
           </ol>
-          <div role="radiogroup" aria-label={t.kindLabel} className="ls-kinds">
-            {(["static", "dynamic"] as const).map((k) => {
-              const c = KIND_COPY[lang][k];
-              return (
-                <button key={k} type="button" role="radio" aria-checked={kind === k} className="ls-kind" onClick={() => setKind(k)}>
-                  <span className="flex items-center justify-between gap-3">
-                    <span className="text-lg font-semibold">{c.title}</span>
-                    <span className="text-sm text-[var(--l3d-muted)]">
-                      {t.from} <b className="text-[var(--l3d-text)]">{lei(STUDIO_PRICES[k])}</b>
-                    </span>
-                  </span>
-                  <span className="mt-1 block text-left text-sm text-[var(--l3d-muted)]">{c.lead}</span>
-                </button>
-              );
-            })}
+          <div className="ls-kinds" aria-label={ro ? "Opțiuni Logo Studio" : "Logo Studio options"}>
+            <div className="ls-kind">
+              <span className="flex items-center justify-between gap-3"><span className="text-lg font-semibold">{ro ? "Logo 2D standard" : "Standard 2D logo"}</span><b className="text-sm text-[var(--l3d-text)]">{ro ? "Gratuit cu cont" : "Free with account"}</b></span>
+              <span className="mt-1 block text-left text-sm text-[var(--l3d-muted)]">{ro ? "Patru variante locale, personalizare și export SVG/PNG după autentificare." : "Four local options, customisation and SVG/PNG export after sign-in."}</span>
+            </div>
+            <div className="ls-kind">
+              <span className="flex items-center justify-between gap-3"><span className="text-lg font-semibold">{ro ? "Logo 2D cu AI" : "AI 2D logo"}</span><b className="text-sm text-[var(--l3d-text)]">{lei(AI_LOGO_EXPORT_PRICE)}</b></span>
+              <span className="mt-1 block text-left text-sm text-[var(--l3d-muted)]">{ro ? "AI-ul intern Cloudflare alege direcția vizuală; plata se aplică doar exportului ales." : "The internal Cloudflare AI chooses the visual direction; payment applies only to the chosen export."}</span>
+            </div>
           </div>
         </div>
       </section>
@@ -454,20 +451,13 @@ function StudioBody() {
                   </div>
                 )}
               </div>
-              {isStaff && <StaffExport concept={edit} brief={brief} lang={lang} />}
+              {(isStaff || (user && !paidExport)) && <StaffExport concept={edit} brief={brief} lang={lang} />}
             </div>
 
             <aside className="ls-checkout" aria-labelledby="checkout-title">
               <h2 id="checkout-title" className="text-xl font-semibold">
                 {t.checkoutTitle}
               </h2>
-              <div role="radiogroup" aria-label={t.kindLabel} className="mt-4 grid grid-cols-2 gap-2">
-                {(["static", "dynamic"] as const).map((k) => (
-                  <button key={k} type="button" role="radio" aria-checked={kind === k} className="l3d-chip ls-radio justify-center" onClick={() => setKind(k)}>
-                    {KIND_COPY[lang][k].title}
-                  </button>
-                ))}
-              </div>
               <p className="mt-5 flex items-baseline gap-2">
                 <span className="l3d-price">{price}</span>
               </p>
@@ -479,7 +469,7 @@ function StudioBody() {
                   </li>
                 ))}
               </ul>
-              <div className="mt-5 grid grid-cols-3 gap-2">
+              {paidExport ? <div className="mt-5 grid grid-cols-3 gap-2">
                 {[
                   { k: "download", Icon: Download, label: t.download },
                   { k: "email", Icon: Mail, label: t.email },
@@ -491,9 +481,11 @@ function StudioBody() {
                     <Lock className="ls-lock size-3" aria-hidden />
                   </button>
                 ))}
-              </div>
-              <p className="mt-2 text-center text-xs text-[var(--l3d-dim)]">{t.locked}</p>
-              {!ordering ? (
+              </div> : null}
+              <p className="mt-2 text-center text-xs text-[var(--l3d-dim)]">{paidExport ? t.locked : user ? (ro ? "Butoanele de export sunt disponibile lângă previzualizare." : "Export buttons are available next to the preview.") : (ro ? "Autentifică-te sau creează un cont gratuit pentru export." : "Sign in or create a free account to export.")}</p>
+              {!paidExport ? (
+                user ? <a href="#editor-title" className="l3d-btn l3d-btn-primary mt-5 w-full">{ro ? "Exportă gratuit" : "Export for free"}</a> : <Link to="/auth" state={{ from: window.location.pathname + window.location.search }} className="l3d-btn l3d-btn-primary mt-5 w-full"><Lock className="size-4" />{ro ? "Creează cont gratuit" : "Create free account"}</Link>
+              ) : !ordering ? (
                 <button
                   type="button"
                   className="l3d-btn l3d-btn-primary mt-5 w-full"
@@ -506,7 +498,7 @@ function StudioBody() {
                 </button>
               ) : (
                 <div id="comanda" className="mt-5">
-                  <OrderForm lang={lang} brief={brief} concept={edit} kind={kind} priceLabel={price} termsPath={ro ? "/termeni" : "/en/terms"} />
+                  <OrderForm lang={lang} brief={brief} concept={edit} kind={kind} source="ai" priceLabel={price} termsPath={ro ? "/termeni" : "/en/terms"} />
                 </div>
               )}
               <p className="mt-6 border-t border-[var(--l3d-line)] pt-4 text-sm text-[var(--l3d-muted)]">
@@ -558,7 +550,7 @@ const LogoStudioPage = () => {
           path,
           alternates: { ...STUDIO_PATHS },
           image,
-          imageAlt: ro ? "Avyron Logo Studio — logo-uri create cu AI, de la 75 lei" : "Avyron Logo Studio — logos made with AI, from 75 lei",
+          imageAlt: ro ? "Avyron Logo Studio — logo 2D standard gratuit și export AI la 150 lei" : "Avyron Logo Studio — free standard 2D logo and AI export for 150 lei",
         });
         setJsonLd("ld-organization", organizationLd);
         setJsonLd("ld-service", {
@@ -573,14 +565,10 @@ const LogoStudioPage = () => {
           operatingSystem: "Web",
           inLanguage: ro ? "ro" : "en",
           provider: { "@id": "https://avyron.ro/#organization" },
-          offers: (["static", "dynamic"] as const).map((k) => ({
-            "@type": "Offer",
-            name: `${KIND_COPY[lang][k].title} — ${m.name}`,
-            price: STUDIO_PRICES[k],
-            priceCurrency: "RON",
-            availability: "https://schema.org/InStock",
-            url,
-          })),
+          offers: [
+            { "@type": "Offer", name: ro ? "Export logo 2D standard" : "Standard 2D logo export", price: 0, priceCurrency: "RON", availability: "https://schema.org/InStock", url },
+            { "@type": "Offer", name: ro ? "Export logo 2D creat cu AI" : "AI-created 2D logo export", price: AI_LOGO_EXPORT_PRICE, priceCurrency: "RON", availability: "https://schema.org/InStock", url },
+          ],
         });
         setJsonLd("ld-faq", faqPageLd([...STUDIO_FAQ[lang]]));
         setJsonLd(

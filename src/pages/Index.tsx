@@ -8,6 +8,7 @@ import { useLang } from "@/i18n/LanguageContext";
 
 const Problem = lazyWithRetry(() => import("@/components/site/Problem"));
 const Process = lazyWithRetry(() => import("@/components/site/Process"));
+const LogoStudioIntro = lazyWithRetry(() => import("@/components/site/LogoStudioIntro"));
 const Examples = lazyWithRetry(() => import("@/components/site/Examples"));
 const DomainCheck = lazyWithRetry(() => import("@/components/site/DomainCheck"));
 const Benefits = lazyWithRetry(() => import("@/components/site/Benefits"));
@@ -99,6 +100,7 @@ const Index = () => {
       <Deferred minHeight={1120} forceReady><Examples /></Deferred>
       <Deferred minHeight={520}><Problem /></Deferred>
       <div className="h-8 md:h-16" aria-hidden />
+      <Deferred minHeight={620}><LogoStudioIntro /></Deferred>
       <Deferred minHeight={500} forceReady={location.hash === "#proces"}><Process /></Deferred>
       <Deferred minHeight={360}><DomainCheck /></Deferred>
       <Deferred minHeight={440}><Benefits /></Deferred>

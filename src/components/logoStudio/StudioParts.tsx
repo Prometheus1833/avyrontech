@@ -4,7 +4,7 @@ import Turnstile from "@/components/site/Turnstile";
 import { apiUrl } from "@/lib/apiBase";
 import { trackEvent } from "@/lib/analytics";
 import type { LogoBrief, LogoConcept, StudioKind } from "@/data/logoStudio";
-import { STUDIO_PRICES } from "@/data/logoStudio";
+import { AI_LOGO_EXPORT_PRICE, STUDIO_PRICES } from "@/data/logoStudio";
 import { STUDIO_UI } from "@/data/logoStudioCopy";
 import { LogoView, useStage } from "@/components/logo3d/StageProvider";
 import { MATERIAL_WEIGHTS } from "@/components/logo3d/marks";
@@ -112,11 +112,12 @@ type OrderProps = {
   brief: LogoBrief;
   concept: LogoConcept;
   kind: StudioKind;
+  source?: "ai";
   priceLabel: string;
   termsPath: string;
 };
 
-export function OrderForm({ lang, brief, concept, kind, priceLabel, termsPath }: OrderProps) {
+export function OrderForm({ lang, brief, concept, kind, source, priceLabel, termsPath }: OrderProps) {
   const t = STUDIO_UI[lang];
   const [fields, setFields] = useState({ name: "", email: "", phone: "", company: "", cui: "" });
   const [consent, setConsent] = useState(false);
@@ -134,11 +135,11 @@ export function OrderForm({ lang, brief, concept, kind, priceLabel, termsPath }:
       const res = await fetch(apiUrl("/api/logo-studio/orders"), {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...fields, brief, concept, kind, consent, turnstileToken: token }),
+        body: JSON.stringify({ ...fields, brief, concept, kind, source, consent, turnstileToken: token }),
       });
       if (!res.ok) throw new Error(String(res.status));
       setState("done");
-      trackEvent("logo_studio_order", { kind, price: STUDIO_PRICES[kind] });
+      trackEvent("logo_studio_order", { kind, source: source ?? "standard", price: source === "ai" ? AI_LOGO_EXPORT_PRICE : STUDIO_PRICES[kind] });
     } catch {
       setState("error");
       setResetKey((k) => k + 1);
