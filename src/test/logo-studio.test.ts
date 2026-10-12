@@ -29,8 +29,8 @@ const fontsFor = (key: keyof typeof FONT_FILES) =>
   });
 
 describe("Logo Studio — model", () => {
-  it("keeps the proposed delivery prices", () => {
-    expect(STUDIO_PRICES).toEqual({ static: 75, dynamic: 150 });
+  it("keeps standard export free and the premium export at 150 lei", () => {
+    expect(STUDIO_PRICES).toEqual({ static: 0, dynamic: 150 });
   });
 
   it("cleans briefs and rejects empty names", () => {

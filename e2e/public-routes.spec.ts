@@ -113,51 +113,72 @@ test.describe("public SEO routes", () => {
   });
 
   test("homepage turns the selected field into website, app and AI device stages", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "avyron-cookie-consent-v2",
+        JSON.stringify({ necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12" }),
+      );
+    });
     await page.goto("/");
     const examples = page.locator("#exemple");
     const showcase = examples.getByTestId("industry-device-showcase");
     await examples.scrollIntoViewIfNeeded();
     await expect(showcase).toBeAttached();
     await showcase.scrollIntoViewIfNeeded();
+    await page.waitForLoadState("networkidle");
 
     await expect(page.getByRole("heading", { name: "Alege domeniul tău și vezi cum ar arăta." })).toHaveCount(1);
-    await examples.getByRole("button", { name: "Vezi domenii", exact: true }).click();
-    await examples.getByRole("button", { name: /Restaurante & cafenele/ }).click();
-    await expect(showcase).toHaveAttribute("data-domain", "resto");
     await showcase.getByRole("button", { name: "Website", exact: true }).click();
     await expect(showcase).toHaveAttribute("data-active-stage", "laptop");
+    await examples.getByRole("button", { name: "Domenii", exact: true }).click();
+    await examples.getByRole("button", { name: /Restaurante & cafenele/ }).click();
+    await expect(showcase).toHaveAttribute("data-domain", "resto");
     await expect(showcase.getByRole("heading", { name: "Meniu, rezervări și comenzi într-un singur loc", exact: true })).toBeVisible();
-    await expect(showcase.getByRole("link", { name: "Vezi serviciul de website" })).toHaveAttribute("href", "/servicii/website-prezentare-profesional");
+    await expect(showcase.getByRole("link", { name: "Serviciul Website" })).toHaveAttribute("href", "/servicii/website-prezentare-profesional");
 
     await showcase.getByRole("button", { name: "Aplicație", exact: true }).click();
     await expect(showcase).toHaveAttribute("data-active-stage", "phone");
-    await expect(showcase.getByRole("link", { name: "Descoperă aplicațiile" })).toHaveAttribute("href", "/servicii/aplicatii-si-platforme");
+    await expect(showcase.getByRole("link", { name: "Aplicații și platforme" })).toHaveAttribute("href", "/servicii/aplicatii-si-platforme");
     const stickyFrame = showcase.locator(":scope > div").first();
     await expect.poll(async () => stickyFrame.evaluate((element) => {
       const frame = element.getBoundingClientRect();
       return frame.top >= 0 && frame.top <= 81 && frame.bottom >= window.innerHeight - 1;
     })).toBe(true);
 
-    await showcase.getByRole("button", { name: "Agent AI", exact: true }).click();
+    await showcase.getByRole("button", { name: "Automatizări", exact: true }).click();
     await expect(showcase).toHaveAttribute("data-active-stage", "tablet");
-    await expect(showcase.getByRole("link", { name: "Vezi agenții AI" })).toHaveAttribute("href", "/servicii/automatizari-si-ai");
+    await expect(showcase.getByRole("link", { name: "Automatizări și AI" })).toHaveAttribute("href", "/servicii/automatizari-si-ai");
 
     await page.goto("/en");
     const englishExamples = page.locator("#exemple");
     const englishShowcase = englishExamples.getByTestId("industry-device-showcase");
     await englishShowcase.scrollIntoViewIfNeeded();
     await expect(page.getByRole("heading", { name: "Pick your industry and see how it would look." })).toHaveCount(1);
-    await expect(englishShowcase.getByRole("button", { name: "AI agent", exact: true })).toBeVisible();
+    await expect(englishShowcase.getByRole("button", { name: "Automations", exact: true })).toBeVisible();
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/#domenii");
     const mobileShowcase = page.getByTestId("industry-device-showcase");
     await expect(mobileShowcase).toBeInViewport();
-    await mobileShowcase.getByRole("button", { name: "Agent AI", exact: true }).click();
+    await mobileShowcase.getByRole("button", { name: "Automatizări", exact: true }).click();
     await expect(mobileShowcase).toHaveAttribute("data-active-stage", "tablet");
-    await expect(mobileShowcase.getByRole("link", { name: "Vezi agenții AI" })).toBeInViewport();
+    await expect(mobileShowcase.getByRole("button", { name: "ChatBot AI web și WhatsApp" })).toBeInViewport();
     const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(horizontalOverflow).toBeLessThanOrEqual(1);
+  });
+
+  test("homepage Logo Studio reveals four standard concepts and protects AI generation", async ({ page }) => {
+    await page.goto("/#logo-studio");
+    const studio = page.locator("#logo-studio");
+    await expect(studio.getByRole("heading", { name: /Numele tău\. Patru direcții/ })).toBeVisible();
+    await studio.getByLabel("Numele brandului *").fill("Nord Atelier");
+    await studio.getByLabel("Inițiale / semn").fill("NA · arc");
+    await studio.getByRole("button", { name: "Vezi logo-ul tău", exact: true }).click();
+    await expect(studio.getByTestId("landing-logo-results")).toContainText("4 variante standard");
+    await expect(studio.getByTestId("landing-logo-option")).toHaveCount(4);
+    await studio.getByRole("button", { name: "Vezi logo-ul cu AI", exact: true }).click();
+    await expect(studio.getByText("AI-ul este disponibil în contul gratuit", { exact: true })).toBeVisible();
+    await expect(studio.getByText(/plata de 150 lei se aplică numai/)).toBeVisible();
   });
 
   test("About stays indexable and legacy Portfolio routes consolidate into the service portfolio", async ({ page }) => {
@@ -868,7 +889,7 @@ test.describe("forms and authentication", () => {
     // The hash is the public navigation contract and forces the deferred
     // industry section to mount before Playwright interacts with it.
     await page.goto("/#exemple");
-    await page.getByRole("button", { name: "Vezi domenii" }).click();
+    await page.getByRole("button", { name: "Domenii" }).click();
     const beauty = page.getByRole("button", { name: /Beauty & Wellness/ });
     await expect(beauty).toBeVisible();
     await beauty.evaluate((button) => button.click());
