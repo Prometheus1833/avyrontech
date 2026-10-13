@@ -56,7 +56,8 @@ export type CheckoutResult = {
 
 export type AdminOverview = {
   catalog: Array<{ type: string; access: string; status: string; count: number }>;
-  plans: Array<{ id: string; name: string; price_ron_cents: number; components_per_day: number; sections_per_day: number; templates_per_day: number }>;
+  items: AdminProductItem[];
+  plans: AdminPartnershipPlan[];
   entitlements: Array<{ kind: string; count: number }>;
   copies: Array<{ day: string; count: number; people: number }>;
   topItems: Array<{ slug: string; name: string; count: number }>;
@@ -67,8 +68,19 @@ export type AdminOverview = {
   unavailable?: string;
 };
 
+export type AdminProductItem = {
+  slug: string; type: string; category: string; access: PlanId; price_ron_cents: number | null;
+  status: "draft" | "live" | "soon" | "archived"; name_ro: string; name_en: string;
+  pro_at: number | null; free_at: number | null; updated_at: number;
+};
+export type AdminPartnershipPlan = {
+  id: PlanId; name: string; price_ron_cents: number; price_eur_cents: number;
+  components_per_day: number; sections_per_day: number; templates_per_day: number;
+};
+
 export const EMPTY_OVERVIEW: AdminOverview = {
   catalog: [],
+  items: [],
   plans: [],
   entitlements: [],
   copies: [],
@@ -141,8 +153,19 @@ export const produseApi = {
       const { ok, body } = await call<AdminOverview>("/api/produse/admin/overview");
       return ok ? body : { ...EMPTY_OVERVIEW, unavailable: String(body.error?.code ?? "forbidden") };
     },
-    async patchItem(patch: { slug: string; access?: PlanId; status?: string; proAt?: number | null; freeAt?: number | null }): Promise<boolean> {
-      const { ok } = await call("/api/produse/admin/items", { method: "POST", body: JSON.stringify(patch) });
+    async patchItem(patch: { slug: string; type?: string; category?: string; nameRo?: string; nameEn?: string; priceRonCents?: number | null; access?: PlanId; status?: string; proAt?: number | null; freeAt?: number | null }): Promise<boolean> {
+      const { ok, body } = await call("/api/produse/admin/items", { method: "POST", body: JSON.stringify(patch) });
+      if (!ok) throw new Error(body.error?.code === "archival_requires_entitlement_review" ? "Produsul are drepturi active sau descărcări în istoric. Verifică obligațiile față de clienți înainte de arhivare." : `Modificarea a fost refuzată (${body.error?.code || "eroare necunoscută"}).`);
+      return ok;
+    },
+    async createItem(item: { slug: string; type: string; category: string; nameRo: string; nameEn: string; access: PlanId; priceRonCents: number | null }): Promise<boolean> {
+      const { ok, body } = await call("/api/produse/admin/items/new", { method: "POST", body: JSON.stringify(item) });
+      if (!ok) throw new Error(body.error?.code === "duplicate_slug" ? "Există deja un produs cu acest cod." : `Produsul nu a putut fi creat (${body.error?.code || "eroare necunoscută"}).`);
+      return ok;
+    },
+    async updatePlan(id: PlanId, plan: { name: string; priceRonCents: number; priceEurCents: number; componentsPerDay: number; sectionsPerDay: number; templatesPerDay: number }): Promise<boolean> {
+      const { ok, body } = await call(`/api/produse/admin/plans/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(plan) });
+      if (!ok) throw new Error(`Planul nu a putut fi salvat (${body.error?.code || "eroare necunoscută"}).`);
       return ok;
     },
   },

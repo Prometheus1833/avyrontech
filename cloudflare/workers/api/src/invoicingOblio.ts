@@ -10,7 +10,7 @@ export type OblioInvoiceInput = {
 
 export type OblioInvoiceResult =
   | { issued: true; providerId: string; series: string; number: string; documentUrl: string | null }
-  | { issued: false; reason: "unconfigured" | "invalid_vat" | "token_failed" | "invoice_failed"; status?: number };
+  | { issued: false; reason: "approval_required" | "unconfigured" | "invalid_vat" | "token_failed" | "invoice_failed"; status?: number };
 
 const API_ROOT = "https://www.oblio.eu/api";
 
@@ -20,6 +20,7 @@ const configured = (env: Env) => Boolean(
 );
 
 export async function issueOblioInvoice(env: Env, input: OblioInvoiceInput): Promise<OblioInvoiceResult> {
+  if (env.OBLIO_AUTO_ISSUE_ENABLED !== "true") return { issued: false, reason: "approval_required" };
   if (!configured(env)) return { issued: false, reason: "unconfigured" };
   const vatPercentage = Number(env.OBLIO_VAT_PERCENTAGE);
   if (!Number.isFinite(vatPercentage) || vatPercentage < 0 || vatPercentage > 100) return { issued: false, reason: "invalid_vat" };
@@ -57,7 +58,7 @@ export async function issueOblioInvoice(env: Env, input: OblioInvoiceInput): Pro
       currency: input.currency.toUpperCase(),
       orderNumber: input.orderId,
       idempotencyKey: `avyron-${input.orderId}`,
-      sendEmail: Boolean(input.buyer.email),
+      sendEmail: env.OBLIO_SEND_EMAIL_ENABLED === "true" && Boolean(input.buyer.email),
       products: input.lines.map((line) => ({
         name: line.name,
         ...(line.code ? { code: line.code } : {}),

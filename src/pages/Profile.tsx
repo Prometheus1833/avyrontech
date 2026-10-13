@@ -87,7 +87,12 @@ export default function Profile() {
     if (!canOpenSection(tab, access)) setTab(defaultSection(access));
   }, [tab, access]);
   useEffect(() => {
-    if (params.get("tab") !== tab) setParams({ tab }, { replace: true });
+    if (params.get("tab") !== tab) {
+      const next = new URLSearchParams(params);
+      next.set("tab", tab);
+      if (tab !== "intern") next.delete("dm");
+      setParams(next, { replace: true });
+    }
   }, [tab, params, setParams]);
   useEffect(() => {
     if (activeGroup && openGroups[activeGroup] === undefined) setOpenGroups((current) => ({ ...current, [activeGroup]: true }));

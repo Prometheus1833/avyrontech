@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Check, Terminal } from "lucide-react";
 import type { Lang } from "@/i18n/translations";
-import { PLANS } from "../data/plans";
+import { useLivePlans } from "../lib/useLivePlans";
 import { CopyButton, Reveal, Seam, Section, SectionHead } from "../components/Primitives";
 import { faqPath, guidePath, homePath } from "../lib/paths";
 import { applySeo, breadcrumb, STATS } from "../lib/seo";
@@ -13,6 +13,7 @@ import { applySeo, breadcrumb, STATS } from "../lib/seo";
  */
 export default function GuidePage({ lang }: { lang: Lang }) {
   const ro = lang === "ro";
+  const plans = useLivePlans();
   const path = guidePath(lang);
 
   useEffect(() => {
@@ -215,7 +216,7 @@ export default function GuidePage({ lang }: { lang: Lang }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {PLANS.map((plan) => (
+                  {plans.map((plan) => (
                     <tr key={plan.id} className="border-t border-foreground/8">
                       <td className="px-2 py-1.5 text-foreground">{plan.name}</td>
                       <td className="pa-mono px-2 py-1.5 text-muted-foreground">{plan.limits.components}</td>

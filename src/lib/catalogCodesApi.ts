@@ -19,6 +19,11 @@ export type CommercialCode = {
   active: number;
   notes: string;
   updated_at: number;
+  unit_label: string;
+  price_model: "unreviewed" | "fixed" | "starting_at" | "quote";
+  billing_cycle: "unreviewed" | "one_time" | "monthly" | "annual" | "custom";
+  tax_status: "unverified" | "verified";
+  tax_verified_at: number | null;
 };
 
 export type ProductCatalogSource = {
@@ -27,6 +32,19 @@ export type ProductCatalogSource = {
   category: string;
   base_price_minor: number | null;
   status: string;
+};
+
+export type ServiceCatalogSource = Omit<ProductCatalogSource, "status">;
+export type CommercialProviderRef = {
+  id: string;
+  catalog_id: string;
+  entity_type: "service" | "product";
+  entity_key: string;
+  provider: "stripe" | "revolut" | "oblio";
+  environment: "test" | "live";
+  reference_type: "product" | "price" | "article";
+  external_id: string;
+  updated_at: number;
 };
 
 export type CommercialCodeDraft = {
@@ -44,14 +62,25 @@ export type CommercialCodeDraft = {
   promotionCode: string | null;
   active: boolean;
   notes: string;
+  unitLabel: string;
+  priceModel: CommercialCode["price_model"];
+  billingCycle: CommercialCode["billing_cycle"];
+  taxStatus: CommercialCode["tax_status"];
 };
 
 export const catalogCodesApi = {
-  list: () => cfAuth.request<{ data: CommercialCode[]; products: ProductCatalogSource[] }>("/api/finance/commercial-codes"),
+  list: () => cfAuth.request<{ data: CommercialCode[]; services: ServiceCatalogSource[]; products: ProductCatalogSource[]; references: CommercialProviderRef[] }>("/api/finance/commercial-codes"),
+  sync: () => cfAuth.request<{ ok: true; created: number; existing: number; requiresSku: number; total: number }>("/api/finance/commercial-codes/sync", { method: "POST", headers: { "Idempotency-Key": crypto.randomUUID() } }),
   save: (entityType: "service" | "product", entityKey: string, body: CommercialCodeDraft) =>
     cfAuth.request<{ ok: true; id: string }>(`/api/finance/commercial-codes/${entityType}/${encodeURIComponent(entityKey)}`, {
       method: "PUT",
       headers: { "Idempotency-Key": crypto.randomUUID() },
       body: JSON.stringify(body),
     }),
+  saveReference: (entityType: "service" | "product", entityKey: string, provider: CommercialProviderRef["provider"], environment: CommercialProviderRef["environment"], referenceType: CommercialProviderRef["reference_type"], externalId: string) =>
+    cfAuth.request<{ ok: true }>(`/api/finance/commercial-codes/${entityType}/${encodeURIComponent(entityKey)}/provider-refs/${provider}/${environment}/${referenceType}`, {
+      method: "PUT", headers: { "Idempotency-Key": crypto.randomUUID() }, body: JSON.stringify({ externalId }),
+    }),
+  removeReference: (entityType: "service" | "product", entityKey: string, provider: CommercialProviderRef["provider"], environment: CommercialProviderRef["environment"], referenceType: CommercialProviderRef["reference_type"]) =>
+    cfAuth.request<{ ok: true }>(`/api/finance/commercial-codes/${entityType}/${encodeURIComponent(entityKey)}/provider-refs/${provider}/${environment}/${referenceType}`, { method: "DELETE" }),
 };

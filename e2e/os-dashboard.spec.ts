@@ -185,11 +185,48 @@ test.describe("dashboard AVYRON OS în română", () => {
   test("separă serviciile personalizate de catalogul de produse", async ({ page }) => {
     await page.goto("/profil?tab=servicii-avyron");
     await expect(page.getByRole("heading", { name: "Servicii AVYRON", exact: true })).toBeVisible({ timeout: 10_000 });
-    await page.getByRole("button", { name: "Listă servicii", exact: true }).click();
-    await expect(page.getByText("Prezență digitală", { exact: true })).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText("Software, automatizări și AI", { exact: true })).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByRole("link", { name: /Produse AVYRON/ })).toHaveAttribute("href", "/produse");
+    await expect(page.getByRole("heading", { name: "Prezență digitală", exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("heading", { name: "Software, automatizări și AI", exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("link", { name: "Deschide serviciile" })).toHaveAttribute("href", "/servicii");
+    await expect(page.getByRole("button", { name: "Configurează" }).first()).toBeVisible();
     await expect(page.getByRole("tab", { name: "Produse AVYRON", exact: true }).first()).toBeVisible();
+  });
+
+  test("nomenclatorul comercial sincronizează lipsurile și separă ID-urile test/live", async ({ page }) => {
+    let synced = false;
+    let referenceSaved = false;
+    const configured = {
+      id: "catalog-test", entity_type: "service", entity_key: "premium-website", display_name: "Site Prezentare Profesional",
+      accounting_code: null, sku: "svc-premium-website", category: "presence", base_price_minor: 145000,
+      currency: "RON", vat_basis_points: 0, payment_route: "unconfigured", preferred_payment_provider: null,
+      invoice_provider: null, payment_status: "needs_configuration", promotion_code: null, active: 1, notes: "",
+      unit_label: "serviciu", price_model: "starting_at", billing_cycle: "unreviewed", tax_status: "unverified", tax_verified_at: null,
+    };
+    await page.route("**/api/finance/commercial-codes", route => route.fulfill({ json: {
+      data: synced ? [configured] : [], products: [], services: [],
+      references: referenceSaved ? [{ id: "ref-test", catalog_id: "catalog-test", entity_type: "service", entity_key: "premium-website", provider: "stripe", environment: "test", reference_type: "product", external_id: "prod_test_avyron", updated_at: now }] : [],
+    } }));
+    await page.route("**/api/finance/commercial-codes/sync", route => { synced = true; return route.fulfill({ json: { ok: true, created: 1, existing: 8, requiresSku: 0, total: 9 } }); });
+    await page.route("**/api/finance/commercial-codes/service/premium-website/provider-refs/stripe/test/product", route => {
+      referenceSaved = true;
+      return route.fulfill({ json: { ok: true } });
+    });
+    await page.goto("/profil?tab=commercial-codes");
+    await expect(page.getByRole("heading", { name: "Coduri servicii și produse" })).toBeVisible();
+    await page.getByRole("button", { name: "Înregistrează lipsurile" }).click();
+    const service = page.locator("article").filter({ has: page.getByRole("heading", { name: "Site Prezentare Profesional", exact: true }) });
+    await expect(service.getByText("svc-premium-website")).toBeVisible();
+    await service.getByRole("button", { name: "Configurează" }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByLabel("Unitate facturabilă")).toHaveValue("serviciu");
+    await expect(dialog.getByLabel("Verificare fiscală")).toHaveValue("unverified");
+    await expect(dialog.getByRole("option", { name: "Activă doar după verificarea integrării" })).toHaveAttribute("disabled", "");
+    await dialog.getByLabel("ID extern").fill("prod_test_avyron");
+    await dialog.getByRole("button", { name: "Salvează ID" }).click();
+    await expect(dialog.getByText("stripe · test · product · prod_test_avyron")).toBeVisible();
+    await page.reload();
+    await service.getByRole("button", { name: "Configurează" }).click();
+    await expect(page.getByRole("dialog").getByText("stripe · test · product · prod_test_avyron")).toBeVisible();
   });
 
   test("pune prioritățile înaintea KPI-urilor și leagă centrele existente", async ({page}) => {
@@ -259,6 +296,7 @@ test.describe("dashboard AVYRON OS în română", () => {
     await page.getByRole('button',{name:'Trimite',exact:true}).click();
     await expect(page.getByText('Status local verificat',{exact:true})).toBeVisible();
     expect(payload).toEqual({content:'Status local verificat',channel:'general',recipient_id:'peer'});
+    await expect(page).toHaveURL(/dm=peer/);
     await page.reload();await page.getByLabel('Conversație',{exact:true}).selectOption('dm:peer');
     await expect(page.getByText('Status local verificat',{exact:true})).toBeVisible();
     await page.screenshot({path:testInfo.outputPath('chat-mobile.png'),fullPage:true});
