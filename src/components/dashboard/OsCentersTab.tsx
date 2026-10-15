@@ -1,5 +1,5 @@
 import {
-  Activity, ArchiveRestore, Beaker, Blocks, BookOpen, Bot, CalendarClock, Cloud,
+  Activity, ArchiveRestore, Beaker, Blocks, BookOpen, Bot, CalendarClock, Cloud, Boxes,
   FileCheck2, FileKey2, Gauge, Globe2, HeartHandshake, Mail, MessageSquare, Plug,
   RefreshCcw, ShieldCheck, Sparkles, TimerReset, UserRoundCheck, Wallet, Workflow, FileCode2,
 } from "lucide-react";
@@ -58,9 +58,15 @@ export default function OsCentersTab({ access, onNavigate }: {access: Access; on
   const normalize = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const visible = modules.filter(module => normalize(`${module.name} ${module.detail}`).includes(normalize(search)));
   return <div className="space-y-4 text-slate-100">
-    <header className="rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.14] via-[#11182d] to-cyan-400/[0.06] p-5 sm:p-6"><p className="font-mono text-[10px] uppercase tracking-[0.24em] text-violet-200/70">Arhitectură modulară</p><h1 className="mt-2 font-display text-2xl font-bold text-white">Centre AVYRON OS</h1><p className="mt-1 max-w-3xl text-sm leading-relaxed text-slate-400">Punct unic pentru agenți, automatizări, integrări, infrastructură și inventarul modulelor operaționale.</p></header>
+    <header className="rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.14] via-[#11182d] to-cyan-400/[0.06] p-5 sm:p-6"><p className="font-mono text-[10px] uppercase tracking-[0.24em] text-violet-200/70">Acces rapid</p><h1 className="mt-2 font-display text-2xl font-bold text-white">Centre AVYRON OS</h1><p className="mt-1 max-w-3xl text-sm leading-relaxed text-slate-400">Deschide direct fluxul de care ai nevoie. Inventarul tehnic rămâne disponibil mai jos, fără să aglomereze lucrul zilnic.</p></header>
     <section className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4" aria-label="Acces rapid Centre AVYRON OS">
       {[
+        { id: "servicii-avyron" as SectionId, label: "Servicii", detail: "Ofertă și configurare individuală", icon: Sparkles },
+        { id: "produse-avyron" as SectionId, label: "Produse", detail: "Catalog, prețuri și acces", icon: Boxes },
+        { id: "subscriptions-admin" as SectionId, label: "Abonamente", detail: "Planuri și clienți activi", icon: CalendarClock },
+        { id: "team-staff" as SectionId, label: "Staff", detail: "Conturi și comunicare", icon: UserRoundCheck },
+        { id: "intern" as SectionId, label: "Chat intern", detail: "Canale și mesaje directe", icon: MessageSquare },
+        { id: "library" as SectionId, label: "Bibliotecă", detail: "Efecte și referințe", icon: BookOpen },
         { id: "ai-os" as SectionId, label: "Agenți AI", detail: "Configurații, cunoaștere și conversații", icon: Sparkles },
         { id: "finance" as SectionId, label: "Financiar", detail: "Costuri, venituri, plăți și bugete", icon: Wallet },
         { id: "commercial-codes" as SectionId, label: "Coduri comerciale", detail: "SKU, TVA și trasee de plată", icon: FileCode2 },

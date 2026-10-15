@@ -1,6 +1,7 @@
 import { Check, Sparkles } from "lucide-react";
 import type { Lang } from "@/i18n/translations";
-import { PLANS, PROGRESSION } from "../data/plans";
+import { PROGRESSION } from "../data/plans";
+import { useLivePlans } from "../lib/useLivePlans";
 import { store } from "../lib/store";
 import { Pill, Reveal } from "./Primitives";
 
@@ -12,10 +13,11 @@ import { Pill, Reveal } from "./Primitives";
  */
 export default function Plans({ lang }: { lang: Lang }) {
   const ro = lang === "ro";
+  const plans = useLivePlans();
   return (
     <div>
       <div className="grid gap-3 lg:grid-cols-3">
-        {PLANS.map((plan, index) => (
+        {plans.map((plan, index) => (
           <Reveal key={plan.id} index={index}>
             <div
               className={`pa-edge relative flex h-full flex-col rounded-3xl border p-5 ${

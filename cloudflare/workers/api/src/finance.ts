@@ -1,4 +1,3 @@
-import { privilegedMfaSatisfied } from "./mfaPolicy";
 import { receiptsRouter } from "./receipts";
 import { Hono, type Context } from "hono";
 import type { AppBindings } from "./types";
@@ -47,7 +46,7 @@ async function idempotency(c: Context<AppBindings>, scope: string, request: unkn
 financeRouter.use("/api/finance/*", async (c, next) => {
   const rate = await checkRateLimit(c.env.DB, [{ key: `finance:${c.get("userId")}:h`, limit: 600, windowSec: 3600 }]);
   if (!rate.ok) return c.json({ error: { code: "rate_limited" } }, 429);
-  if (!["GET", "HEAD", "OPTIONS"].includes(c.req.method) && !(await privilegedMfaSatisfied(c))) return c.json({ error: { code: "mfa_required" } }, 403);
+  if (!["GET", "HEAD", "OPTIONS"].includes(c.req.method) && !c.get("mfaVerified")) return c.json({ error: { code: "mfa_required" } }, 403);
   await next();
 });
 
@@ -231,7 +230,9 @@ financeRouter.post("/api/finance/accounts", async (c) => {
   const name=typeof body?.name==="string"?body.name.trim().slice(0,160):"",institution=typeof body?.institution==="string"?body.institution.trim().slice(0,120):"",alias=typeof body?.internalAlias==="string"?body.internalAlias.trim().slice(0,100):"",currency=String(body?.currency||"RON").toUpperCase(),last4=body?.ibanLast4==null?null:String(body.ibanLast4).toUpperCase();
   if(!name||!institution||!alias||!/^[A-Z]{3,8}$/.test(currency)||(last4!==null&&!/^[A-Z0-9]{2,4}$/.test(last4))) return c.json({error:{code:"invalid_account"}},400);
   const accountId=id("facct"),timestamp=now();
-  await c.env.DB.prepare(`INSERT INTO financial_accounts (id,name,institution,currency,account_type,internal_alias,iban_last4,status,purpose,source,created_by,updated_by,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(accountId,name,institution,currency,["bank","wallet","processor","cash","other"].includes(String(body.accountType))?body.accountType:"other",alias,last4,body.status==="active"?"active":"needs_configuration",typeof body.purpose==="string"?body.purpose.slice(0,300):"","manual",c.get("userId"),c.get("userId"),timestamp,timestamp).run();
+  const result=await c.env.DB.prepare(`INSERT INTO financial_accounts (id,name,institution,currency,account_type,internal_alias,iban_last4,status,purpose,source,created_by,updated_by,created_at,updated_at)
+    SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM financial_accounts WHERE lower(internal_alias)=lower(?) AND archived_at IS NULL)`).bind(accountId,name,institution,currency,["bank","wallet","processor","cash","other"].includes(String(body.accountType))?body.accountType:"other",alias,last4,body.status==="active"?"active":"needs_configuration",typeof body.purpose==="string"?body.purpose.slice(0,300):"","manual",c.get("userId"),c.get("userId"),timestamp,timestamp,alias).run();
+  if(!Number(result.meta.changes||0))return c.json({error:{code:"account_alias_exists"}},409);
   await audit(c,"finance.account.create","account",accountId,null,{name,institution,currency,internalAlias:alias,ibanLast4:last4});
   return c.json({id:accountId},201);
 });
@@ -372,7 +373,8 @@ financeRouter.delete("/api/finance/documents/:documentId", async (c) => {
 });
 
 financeRouter.get("/api/finance/export", async (c) => {
-  if(!(await privilegedMfaSatisfied(c))||!(await allowed(c,"finance.audit.read")))return deny(c);
+  if(!c.get("mfaVerified"))return c.json({error:{code:"mfa_required"}},403);
+  if(!(await allowed(c,"finance.audit.read")))return deny(c);
   const resource=c.req.query("resource")==="revenues"?"revenues":"expenses",format=c.req.query("format")==="json"?"json":"csv";
   const result=resource==="expenses"?await c.env.DB.prepare(`SELECT vendor.name vendor,expense.service_name,expense.category,expense.status,expense.billing_type,expense.billing_cycle,expense.currency,expense.net_amount_minor,expense.vat_amount_minor,expense.gross_amount_minor,expense.amount_ron_minor,expense.invoice_number,expense.invoice_date,expense.due_date,expense.paid_date,expense.next_billing_date,expense.source FROM financial_expenses expense JOIN financial_vendors vendor ON vendor.id=expense.vendor_id WHERE expense.archived_at IS NULL ORDER BY expense.updated_at DESC LIMIT 10000`).all<Record<string,unknown>>():await c.env.DB.prepare(`SELECT service_name,revenue_type,status,currency,net_amount_minor,vat_amount_minor,gross_amount_minor,amount_ron_minor,invoice_number,invoice_date,due_date,payment_date,source FROM financial_revenues WHERE archived_at IS NULL ORDER BY updated_at DESC LIMIT 10000`).all<Record<string,unknown>>();
   await audit(c,"finance.export",resource,null,null,{format,rows:result.results.length});

@@ -30,6 +30,10 @@ type OptionalIntegrations = {
   OBLIO_SERIES?: string;
   OBLIO_VAT_NAME?: string;
   OBLIO_VAT_PERCENTAGE?: string;
+  /** Explicit production release gate; credentials alone never authorize fiscal issuance. */
+  OBLIO_AUTO_ISSUE_ENABLED?: string;
+  /** Sending invoices to customers is a separate opt-in from fiscal issuance. */
+  OBLIO_SEND_EMAIL_ENABLED?: string;
   /** Reserved capability switch; no Netopia traffic is sent before an adapter is configured. */
   NETOPIA_ENABLED?: string;
   /** Resend is used only for consented marketing broadcasts, never essential email. */

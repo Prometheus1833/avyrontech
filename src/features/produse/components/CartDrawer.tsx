@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ShoppingCart, Trash2, X } from "lucide-react";
 import type { Lang } from "@/i18n/translations";
 import { ITEM_BY_SLUG } from "../data/items";
-import { PLAN_BY_ID } from "../data/plans";
+import { useLivePlans } from "../lib/useLivePlans";
 import { EUR_FOR_RON } from "../data/taxonomy";
 import { store, useProduseStore } from "../lib/store";
 import { useProduseAccount } from "../lib/account";
@@ -21,12 +21,14 @@ export default function CartDrawer({ lang, open, onOpenChange }: { lang: Lang; o
   const [paying, setPaying] = useState(false);
   const [payNotice, setPayNotice] = useState<string | null>(null);
   const [providers, setProviders] = useState<BillingAccount["providers"] | null>(null);
+  const plans = useLivePlans();
+  const planById = useMemo(() => new Map(plans.map(plan => [plan.id, plan])), [plans]);
 
   useEffect(() => {
     if (!account.signedIn) return;
     const lines: AccountCartItem[] = cart.map((line) => {
       if (line.kind === "plan") {
-        const plan = PLAN_BY_ID.get(line.plan);
+        const plan = planById.get(line.plan);
         return {
           id: `partnership-${line.plan}`,
           source: "products",
@@ -50,7 +52,7 @@ export default function CartDrawer({ lang, open, onOpenChange }: { lang: Lang; o
       void accountCartApi.replaceSource("products", lines).catch(() => undefined);
     }, 320);
     return () => window.clearTimeout(timer);
-  }, [account.signedIn, cart, lang]);
+  }, [account.signedIn, cart, lang, planById]);
 
   useEffect(() => {
     if (!open || account.signedIn !== true) {
@@ -111,7 +113,7 @@ export default function CartDrawer({ lang, open, onOpenChange }: { lang: Lang; o
     () =>
       cart.map((line, index) => {
         if (line.kind === "plan") {
-          const plan = PLAN_BY_ID.get(line.plan);
+          const plan = planById.get(line.plan);
           return { index, name: plan?.name ?? line.plan, detail: ro ? "parteneriat anual" : "annual partnership", ron: plan?.priceRon ?? 0, eur: plan?.priceEur ?? 0 };
         }
         const item = ITEM_BY_SLUG.get(line.slug);
@@ -123,7 +125,7 @@ export default function CartDrawer({ lang, open, onOpenChange }: { lang: Lang; o
           eur: item?.priceRon ? EUR_FOR_RON[item.priceRon] : 0,
         };
       }),
-    [cart, lang, ro],
+    [cart, lang, ro, planById],
   );
 
   const totalRon = lines.reduce((sum, line) => sum + line.ron, 0);
