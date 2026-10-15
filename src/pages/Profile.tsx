@@ -24,6 +24,7 @@ const StatsTab = lazyWithRetry(() => import("@/components/dashboard/StatsTab").t
 const InvoicesTab = lazyWithRetry(() => import("@/components/dashboard/InvoicesTab").then((m) => ({ default: m.InvoicesTab })));
 const TicketsTab = lazyWithRetry(() => import("@/components/dashboard/TicketsTab").then((m) => ({ default: m.TicketsTab })));
 const StaffClientsTab = lazyWithRetry(() => import("@/components/dashboard/StaffClientsTab").then((m) => ({ default: m.StaffClientsTab })));
+const StaffReviewsTab = lazyWithRetry(() => import("@/components/dashboard/StaffReviewsTab"));
 const StaffAnnouncementsTab = lazyWithRetry(() => import("@/components/dashboard/StaffAnnouncementsTab").then((m) => ({ default: m.StaffAnnouncementsTab })));
 const CloudflareProjects = lazyWithRetry(() => import("@/pages/intern/InternHome"));
 const StaffMaintenanceTab = lazyWithRetry(() => import("@/components/dashboard/StaffMaintenanceTab").then((m) => ({ default: m.StaffMaintenanceTab })));
@@ -193,6 +194,7 @@ export default function Profile() {
             <TabsContent value="maintenance" className="mt-0"><StaffMaintenanceTab /></TabsContent>
             <TabsContent value="ai-projects" className="mt-0"><AiProjects embedded /></TabsContent>
             <TabsContent value="clients" className="mt-0"><StaffClientsTab /></TabsContent>
+            {access.isAdmin && <TabsContent value="reviews" className="mt-0"><StaffReviewsTab /></TabsContent>}
             <TabsContent value="domains" className="mt-0"><StaffDomainStatsTab /></TabsContent>
             <TabsContent value="media" className="mt-0"><StaffMediaTab /></TabsContent>
             <TabsContent value="leads" className="mt-0"><StaffLeadsTab /></TabsContent>

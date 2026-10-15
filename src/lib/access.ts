@@ -60,7 +60,7 @@ export type SectionId =
   | "finance" | "media" | "leads" | "staff-tickets" | "demo-requests" | "intern"
   | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "servicii-avyron" | "produse-avyron"
   | "newsletter" | "ai-projects" | "logo-simulations" | "surveys" | "configurator"
-  | "commercial-codes" | "other-hub" | "social-manager" | "subscriptions-admin" | "careers" | "library";
+  | "commercial-codes" | "other-hub" | "social-manager" | "subscriptions-admin" | "careers" | "library" | "reviews";
 
 export type SectionDef = {
   id: SectionId;
@@ -110,6 +110,7 @@ export const SECTIONS: readonly SectionDef[] = [
 
   { id: "team-staff", group: "platform", audience: "staff", keywords: ["echipa", "staff", "roluri", "permisiuni", "acces"] },
   { id: "clients", group: "platform", audience: "staff", keywords: ["clienti", "clients", "companii"] },
+  { id: "reviews", group: "platform", audience: "admin", keywords: ["recenzii", "review", "testimoniale", "aprobari", "rating"] },
   { id: "demo-requests", group: "platform", audience: "staff", keywords: ["demo", "solicitari", "leaduri"] },
   { id: "logo-simulations", group: "platform", audience: "staff", keywords: ["logo", "simulari", "3d", "logo studio"] },
   { id: "surveys", group: "platform", audience: "staff", keywords: ["surveys", "chestionare", "brief", "rezultate"] },

@@ -38,7 +38,7 @@ import Breadcrumbs from "@/components/site/Breadcrumbs";
 import PageBackLink from "@/components/site/PageBackLink";
 import Reveal from "@/components/site/Reveal";
 import NotFound from "@/pages/NotFound";
-import logo from "@/assets/avyron-logo.jpg";
+import logo from "@/assets/avyron-logo.webp";
 import { trackEvent } from "@/lib/analytics";
 import Footer from "@/components/site/Footer";
 import CurrencySwitch from "@/components/site/CurrencySwitch";
@@ -51,6 +51,7 @@ import ServiceCinematicIntro from "@/components/services/ServiceCinematicIntro";
 import { isServiceIntroKey } from "@/data/serviceIntros";
 import WebsitePriceCalculator from "@/components/services/WebsitePriceCalculator";
 import TechnologyPartnersCarousel from "@/components/services/TechnologyPartnersCarousel";
+import ServiceReviews from "@/components/services/ServiceReviews";
 import WebsiteIntroScrollScene from "@/components/services/WebsiteIntroScrollScene";
 import { useAuth } from "@/hooks/useAuth";
 import { addLocalAccountCartItem, syncLocalAccountCartSource } from "@/lib/accountCart";
@@ -166,10 +167,37 @@ const ServicePage = () => {
     { id: "proces", label: ro ? "Proces" : "Process", icon: Clock },
     ...(product.key === "premium-website" ? [{ id: "calculator", label: ro ? "Calculator" : "Estimator", icon: Calculator }] : []),
     ...(product.key === "premium-website" ? [{ id: "portofoliu", label: ro ? "Portofoliu" : "Portfolio", icon: Globe }] : []),
-    { id: "faq", label: "FAQ", icon: MessageCircle },
+    ...(product.key !== "premium-website" ? [{ id: "faq", label: "FAQ", icon: MessageCircle }] : []),
     ...(planCategory ? [{ id: "abonamente", label: ro ? "Abonamente" : "Plans", icon: HeartHandshake }] : []),
+    ...(product.key === "premium-website" ? [{ id: "recenzii", label: ro ? "Recenzii" : "Reviews", icon: MessageCircle }] : []),
+    ...(product.key === "premium-website" ? [{ id: "faq", label: "FAQ", icon: MessageCircle }] : []),
     { id: "contact", label: ro ? "Contact" : "Contact", icon: ArrowRight },
   ];
+
+  const faqSection = <section id="faq" className="mt-14 scroll-mt-28">
+    <Reveal><h2 className="font-display text-2xl md:text-3xl font-extrabold">{ro ? "Întrebări frecvente" : "Frequently asked questions"}</h2></Reveal>
+    <div className="mt-6 space-y-3">{c.faq.map((f, i) => <Reveal key={f.q} delay={i * 50}>
+      <details className="group rounded-2xl border border-foreground/10 bg-foreground/[0.03] px-5 py-4 md:backdrop-blur transition-colors hover:border-foreground/20 open:border-foreground/25">
+        <summary className="flex cursor-pointer items-center justify-between gap-4 text-sm font-semibold list-none"><span>{f.q}</span><span aria-hidden className={`shrink-0 grid place-items-center size-6 rounded-full border border-foreground/15 transition-transform duration-300 group-open:rotate-90 ${a.text}`}><ArrowRight className="size-3.5" /></span></summary>
+        <p className="mt-3 text-sm text-foreground/70 leading-relaxed">{f.a}</p>
+      </details>
+    </Reveal>)}</div>
+  </section>;
+
+  const relatedSection = <section className="mt-16">
+    <Reveal><h2 className="text-center font-display text-xl font-extrabold md:text-2xl">{ro ? "Alte servicii AVYRON" : "Other AVYRON services"}</h2></Reveal>
+    <div data-testid="related-product-list" className="mt-5 grid gap-2 sm:grid-cols-2">
+      {others.map((p, i) => {
+        const Icon = ICONS[p.icon];
+        const oc = p.copy[lang];
+        return <Reveal key={p.key} delay={i * 50}><Link to={p.path[lang]} className="group grid min-h-16 grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-foreground/10 bg-foreground/[0.03] px-3 py-2.5 transition-all duration-300 hover:-translate-y-0.5 hover:border-foreground/25 hover:bg-foreground/[0.06]">
+          <div className={`grid size-9 place-items-center rounded-lg bg-gradient-to-br ${p.accent.from} ${p.accent.to} text-white`}><Icon className="size-4.5" aria-hidden /></div>
+          <div className="min-w-0 text-left"><h3 className="truncate font-display text-sm font-bold">{oc.name}</h3><p className="mt-0.5 truncate text-[11px] text-foreground/55">{oc.tagline}</p></div>
+          <span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${p.accent.text}`}><span className="hidden min-[370px]:inline">{ro ? "Detalii" : "Details"}</span><ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-1" aria-hidden /></span>
+        </Link></Reveal>;
+      })}
+    </div>
+  </section>;
 
 
   return (
@@ -511,38 +539,12 @@ const ServicePage = () => {
               </div>
               <div className="mt-6"><PortfolioCarousel lang={ro ? "ro" : "en"} /></div>
             </section>
-            <TechnologyPartnersCarousel lang={ro ? "ro" : "en"} />
           </>
         )}
 
-        {/* FAQ */}
-        <section id="faq" className="mt-14 scroll-mt-28">
-          <Reveal>
-            <h2 className="font-display text-2xl md:text-3xl font-extrabold">
-              {ro ? "Întrebări frecvente" : "Frequently asked questions"}
-            </h2>
-          </Reveal>
-          <div className="mt-6 space-y-3">
-            {c.faq.map((f, i) => (
-              <Reveal key={f.q} delay={i * 50}>
-                <details className="group rounded-2xl border border-foreground/10 bg-foreground/[0.03] px-5 py-4 md:backdrop-blur transition-colors hover:border-foreground/20 open:border-foreground/25">
-                  <summary className="flex cursor-pointer items-center justify-between gap-4 text-sm font-semibold list-none">
-                    <span>{f.q}</span>
-                    <span
-                      aria-hidden
-                      className={`shrink-0 grid place-items-center size-6 rounded-full border border-foreground/15 transition-transform duration-300 group-open:rotate-90 ${a.text}`}
-                    >
-                      <ArrowRight className="size-3.5" />
-                    </span>
-                  </summary>
-                  <p className="mt-3 text-sm text-foreground/70 leading-relaxed">{f.a}</p>
-                </details>
-              </Reveal>
-            ))}
-          </div>
-        </section>
+        {product.key !== "premium-website" && faqSection}
 
-        {/* Abonamentele potrivite serviciului sunt afișate imediat după FAQ. */}
+        {/* Abonamente, recenzii și răspunsuri, înainte de opțiunile finale. */}
         {planCategory && (
           <PlanTeaser
             category={planCategory}
@@ -552,6 +554,13 @@ const ServicePage = () => {
             hideAskButton={product.key === "premium-website"}
           />
         )}
+
+        {product.key === "premium-website" && <ServiceReviews lang={ro ? "ro" : "en"} />}
+
+        {product.key === "premium-website" && faqSection}
+        {product.key === "premium-website" && relatedSection}
+
+        {product.key === "premium-website" && <TechnologyPartnersCarousel lang={ro ? "ro" : "en"} />}
 
         {/* Payment methods */}
         <Reveal as="div" className="mt-12">
@@ -594,40 +603,7 @@ const ServicePage = () => {
           </div>
         </Reveal>
 
-        {/* Related services */}
-        <section className="mt-16">
-          <Reveal>
-            <h2 className="text-center font-display text-xl font-extrabold md:text-2xl">
-              {ro ? "Alte servicii AVYRON" : "Other AVYRON services"}
-            </h2>
-          </Reveal>
-          <div data-testid="related-product-list" className="mt-5 grid gap-2 sm:grid-cols-2">
-            {others.map((p, i) => {
-              const Icon = ICONS[p.icon];
-              const oc = p.copy[lang];
-              return (
-                <Reveal key={p.key} delay={i * 50}>
-                  <Link
-                    to={p.path[lang]}
-                    className="group grid min-h-16 grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-foreground/10 bg-foreground/[0.03] px-3 py-2.5 transition-all duration-300 hover:-translate-y-0.5 hover:border-foreground/25 hover:bg-foreground/[0.06]"
-                  >
-                    <div className={`grid size-9 place-items-center rounded-lg bg-gradient-to-br ${p.accent.from} ${p.accent.to} text-white`}>
-                      <Icon className="size-4.5" aria-hidden />
-                    </div>
-                    <div className="min-w-0 text-left">
-                      <h3 className="truncate font-display text-sm font-bold">{oc.name}</h3>
-                      <p className="mt-0.5 truncate text-[11px] text-foreground/55">{oc.tagline}</p>
-                    </div>
-                    <span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${p.accent.text}`}>
-                      <span className="hidden min-[370px]:inline">{ro ? "Detalii" : "Details"}</span>
-                      <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
-                    </span>
-                  </Link>
-                </Reveal>
-              );
-            })}
-          </div>
-        </section>
+        {product.key !== "premium-website" && relatedSection}
 
       </div>
       <Footer />

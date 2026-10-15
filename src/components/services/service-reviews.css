@@ -1,0 +1,11 @@
+.service-reviews-track { display: flex; width: max-content; min-width: 100%; }
+.service-reviews-group { display: flex; gap: 1rem; padding-right: 1rem; }
+.service-reviews-window { mask-image: linear-gradient(90deg, transparent, black 4%, black 96%, transparent); }
+.service-reviews-moving { animation: service-reviews-right var(--review-duration, 36s) linear infinite; will-change: transform; }
+.service-reviews-window:hover .service-reviews-moving,
+.service-reviews-window:focus-within .service-reviews-moving { animation-play-state: paused; }
+@keyframes service-reviews-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .service-reviews-moving { animation: none; will-change: auto; }
+  .service-reviews-moving .service-reviews-group:nth-child(2) { display: none; }
+}
