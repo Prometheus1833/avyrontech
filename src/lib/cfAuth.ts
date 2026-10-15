@@ -210,12 +210,19 @@ class CfAuth {
     });
   }
 
-  async login(identifier: string, password: string) {
+  async signupProtectionEnabled(): Promise<boolean> {
+    const res = await fetch(apiUrl("/api/auth/providers"), { credentials: "include" });
+    if (!res.ok) throw new Error("provider_status_unavailable");
+    const body = await res.json() as { data: Array<{ provider: string; enabled: boolean }> };
+    return body.data.some((provider) => provider.provider === "turnstile" && provider.enabled);
+  }
+
+  async login(identifier: string, password: string, remember = false) {
     const res = await fetch(apiUrl("/api/auth/login"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ identifier, password }),
+      body: JSON.stringify({ identifier, password, remember }),
     });
     const j = await res.json() as (SessionResponse | MfaChallengeResponse) & ApiErrorBody;
     if (!res.ok) throw new Error(j?.error?.message || j?.error?.code || "login_failed");

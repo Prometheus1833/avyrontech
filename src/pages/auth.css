@@ -1,0 +1,148 @@
+html:has(.auth-page) { background: #030611; color-scheme: dark; }
+
+.auth-page {
+  background: #030611;
+}
+
+.auth-scene {
+  isolation: isolate;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at 53% 43%, rgba(26, 100, 177, .14), transparent 43%),
+    radial-gradient(ellipse at 90% 3%, rgba(99, 102, 241, .2), transparent 36%),
+    linear-gradient(145deg, #050916 0%, #0b1330 52%, #050816 100%);
+}
+
+.auth-stars {
+  position: absolute;
+  inset: 0;
+  opacity: .58;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, #d8e6ff 99%, transparent),
+    radial-gradient(2px 2px at 77% 14%, #d8e6ff 99%, transparent),
+    radial-gradient(1px 1px at 35% 68%, #b6c7fc 99%, transparent),
+    radial-gradient(2px 2px at 87% 73%, #d8e6ff 99%, transparent),
+    radial-gradient(1px 1px at 61% 81%, #b6c7fc 99%, transparent);
+  background-size: 310px 280px, 410px 380px, 270px 330px, 470px 420px, 380px 310px;
+}
+
+.auth-planet {
+  position: absolute;
+  left: 50%;
+  top: 35%;
+  width: min(31vw, 460px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 5px solid transparent;
+  background: linear-gradient(#081021, #081021) padding-box, conic-gradient(from 40deg, #1ac9ee, #5365d7, #db4ae5, #1ac9ee) border-box;
+  box-shadow: 0 0 20px #20c3f0, inset 0 0 20px #20c3f0, 0 0 80px rgba(96, 64, 219, .35);
+  animation: auth-float 15s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.auth-planet::before,
+.auth-planet::after,
+.auth-orbit {
+  content: "";
+  position: absolute;
+  border: 1px solid rgba(186, 206, 255, .22);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.auth-planet::before {
+  inset: 6%;
+  border-color: rgba(35, 210, 244, .18);
+}
+
+.auth-planet::after {
+  inset: 20%;
+  border-color: rgba(35, 210, 244, .1);
+}
+
+.auth-orbit-one {
+  width: min(57vw, 800px);
+  aspect-ratio: 1;
+  top: 36%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-24deg) scaleY(.58);
+}
+
+.auth-orbit-two {
+  width: min(68vw, 980px);
+  aspect-ratio: 1;
+  top: 36%;
+  left: 50%;
+  border-color: rgba(186, 206, 255, .1);
+  transform: translate(-50%, -50%) rotate(20deg) scaleY(.7);
+}
+
+.auth-scene-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  padding: .65rem .85rem;
+  border: 1px solid rgba(191, 208, 255, .22);
+  border-radius: 999px;
+  background: rgba(12, 20, 50, .55);
+  backdrop-filter: blur(10px);
+}
+
+.auth-form-side {
+  isolation: isolate;
+  background: radial-gradient(circle at 52% 40%, rgba(45, 80, 158, .18), transparent 50%), #030611;
+}
+
+.auth-panel::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: min(125%, 610px);
+  aspect-ratio: 1;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border: 5px solid transparent;
+  border-radius: 50%;
+  background: linear-gradient(#030611, #030611) padding-box, conic-gradient(from 20deg, #17d3ee, #7955f0, #f059d1, #17d3ee) border-box;
+  box-shadow: 0 0 20px rgba(26, 217, 245, .65), 0 0 65px rgba(102, 87, 229, .4), inset 0 0 24px rgba(36, 190, 241, .4);
+  opacity: .76;
+  pointer-events: none;
+  animation: auth-glow 7s ease-in-out infinite alternate;
+}
+
+.auth-panel {
+  backdrop-filter: blur(20px);
+}
+
+.auth-panel input:not([type="checkbox"]) {
+  border-color: rgba(131, 172, 228, .19);
+  background: rgba(2, 8, 21, .78);
+}
+
+.auth-panel input:not([type="checkbox"]):focus-visible {
+  border-color: rgba(26, 215, 239, .8);
+  box-shadow: 0 0 0 2px rgba(26, 215, 239, .14);
+}
+
+.auth-page input[type="checkbox"] { accent-color: hsl(var(--brand)); }
+
+@keyframes auth-float {
+  from { transform: translate(-50%, -51%); }
+  to { transform: translate(-50%, -48%); }
+}
+
+@keyframes auth-glow {
+  from { opacity: .6; }
+  to { opacity: .9; }
+}
+
+@media (max-width: 1023px) {
+  .auth-panel::before { width: min(122%, 490px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-planet, .auth-panel::before { animation: none; }
+}

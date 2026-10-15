@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Crown, ShieldCheck, LayoutDashboard, MessageCircle, KeyRound } from "lucide-react";
+import { ArrowRight, KeyRound, LockKeyhole, Orbit, ShieldCheck, Sparkles } from "lucide-react";
 import { cfAuth } from "@/lib/cfAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,46 +18,59 @@ import {
   type LoginInput,
   type RegisterInput,
 } from "@/lib/validators/auth";
-import logo from "@/assets/avyron-mark-ai.png";
+import logo from "@/assets/avyron-logo.webp";
 import Turnstile from "@/components/site/Turnstile";
 import { TURNSTILE_SITE_KEY } from "@/config/turnstile";
 import { isPlatformHostname, publicSiteHref } from "@/lib/appHost";
 import PageBackLink from "@/components/site/PageBackLink";
+import { PasswordInput } from "@/components/auth/PasswordInput";
+import "./auth.css";
 
 const Auth = () => {
   const { t, lang } = useLang();
-  const { user, loading, refreshProfile } = useAuth();
+  const { user, loading, isStaff, refreshProfile, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [tab, setTab] = useState<"login" | "register">("login");
+  const [tab, setTab] = useState<"login" | "register">(() => new URLSearchParams(window.location.search).get("tab") === "register" ? "register" : "login");
   const [submitting, setSubmitting] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileReset, setTurnstileReset] = useState(0);
   const [verificationMessage, setVerificationMessage] = useState("");
   const [mfaChallenge, setMfaChallenge] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
+  const [rememberIdentifier, setRememberIdentifier] = useState(() => Boolean(localStorage.getItem("avyron:login-identifier")));
+  const [keepSignedIn, setKeepSignedIn] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState("");
+  const [turnstileEnabled, setTurnstileEnabled] = useState(false);
+  const staffPage = location.pathname === "/staff";
   const emailChangeToken = new URLSearchParams(location.search).get("email_change");
   const platformHost = isPlatformHostname();
   const heroPath = lang === "en" ? "/en#hero" : "/#hero";
   const homeHref = platformHost ? publicSiteHref(heroPath) : heroPath;
 
-  const from = (location.state as { from?: string } | null)?.from ?? "/profil";
+  const requestedFrom = (location.state as { from?: string } | null)?.from;
+  const from = requestedFrom?.startsWith("/") && !requestedFrom.startsWith("//") ? requestedFrom : null;
+  const destination = useCallback((staff: boolean) => from || (staff ? "/profil?tab=overview" : "/profil"), [from]);
+
+  useEffect(() => {
+    cfAuth.signupProtectionEnabled().then(setTurnstileEnabled).catch(() => setTurnstileEnabled(false));
+  }, []);
 
   useEffect(() => {
     import("@/lib/seo").then(({ setPageMeta }) =>
       setPageMeta({
-        title: `${t.auth.login} — Avyron`,
+        title: `${staffPage ? "Acces echipă" : t.auth.login} — Avyron`,
         description:
           "Autentificare și înregistrare în contul Avyron — accesează panoul de proiecte, facturi și mesaje.",
-        path: "/auth",
+        path: staffPage ? "/staff" : "/auth",
         robots: "noindex, nofollow",
       })
     );
-  }, [t.auth.login]);
+  }, [t.auth.login, staffPage]);
 
   useEffect(() => {
-    if (!loading && user && !emailChangeToken) navigate(from, { replace: true });
-  }, [user, loading, from, navigate, emailChangeToken]);
+    if (!loading && user && !emailChangeToken && (!staffPage || isStaff)) navigate(destination(isStaff), { replace: true });
+  }, [user, loading, isStaff, destination, navigate, emailChangeToken, staffPage]);
 
   useEffect(() => {
     if (!user || !emailChangeToken) return;
@@ -92,7 +105,7 @@ const Auth = () => {
 
   const loginForm = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { identifier: "", password: "" },
+    defaultValues: { identifier: localStorage.getItem("avyron:login-identifier") || "", password: "" },
   });
 
   const registerForm = useForm<RegisterInput>({
@@ -103,12 +116,20 @@ const Auth = () => {
   const onLogin = async (data: LoginInput) => {
     setSubmitting(true);
     try {
-      const result = await cfAuth.login(data.identifier, data.password);
+      const result = await cfAuth.login(data.identifier, data.password, keepSignedIn);
       if ("mfa_required" in result) {
         setMfaChallenge(result.challenge_token);
         setMfaCode("");
         return;
       }
+      const staff = result.user.roles.includes("staff") || result.user.roles.includes("admin");
+      if (staffPage && !staff) {
+        await cfAuth.logout();
+        setVerificationMessage("Acest cont este de client. Intră din pagina pentru clienți.");
+        return;
+      }
+      if (rememberIdentifier) localStorage.setItem("avyron:login-identifier", data.identifier.trim());
+      else localStorage.removeItem("avyron:login-identifier");
       await refreshProfile();
       if (result.mfa_enrollment_required) {
         toast.info("Activează autentificarea în doi pași ca să deschizi zonele echipei.");
@@ -116,9 +137,10 @@ const Auth = () => {
         return;
       }
       toast.success(t.auth.welcomeBack);
-      if (!emailChangeToken) navigate(from, { replace: true });
+      if (!emailChangeToken) navigate(destination(staff), { replace: true });
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Autentificarea nu a reușit.");
+      const message = error instanceof Error ? error.message : "";
+      toast.error(message === "invalid_credentials" ? "Datele de autentificare nu sunt corecte." : message || "Autentificarea nu a reușit.");
     } finally {
       setSubmitting(false);
     }
@@ -129,11 +151,20 @@ const Auth = () => {
     if (!mfaChallenge) return;
     setSubmitting(true);
     try {
-      await cfAuth.verifyMfaChallenge(mfaChallenge, mfaCode);
+      const result = await cfAuth.verifyMfaChallenge(mfaChallenge, mfaCode);
+      const staff = result.user.roles.includes("staff") || result.user.roles.includes("admin");
+      if (staffPage && !staff) {
+        await cfAuth.logout();
+        setVerificationMessage("Acest cont este de client. Intră din pagina pentru clienți.");
+        setMfaChallenge(null);
+        return;
+      }
+      if (rememberIdentifier) localStorage.setItem("avyron:login-identifier", loginForm.getValues("identifier").trim());
+      else localStorage.removeItem("avyron:login-identifier");
       await refreshProfile();
       toast.success(t.auth.welcomeBack);
       setMfaChallenge(null);
-      if (!emailChangeToken) navigate(from, { replace: true });
+      if (!emailChangeToken) navigate(destination(staff), { replace: true });
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Codul MFA nu este valid.");
     } finally {
@@ -142,24 +173,29 @@ const Auth = () => {
   };
 
   const onRegister = async (data: RegisterInput) => {
-    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+    if (turnstileEnabled && TURNSTILE_SITE_KEY && !turnstileToken) {
       toast.error("Confirmă verificarea anti-spam.");
       return;
     }
     setSubmitting(true);
     try {
-      await cfAuth.signup({
+      const result = await cfAuth.signup({
         email: data.email,
         password: data.password,
         displayName: data.displayName,
         entityType: data.entityType,
         turnstileToken,
       });
-      setVerificationMessage("Contul a fost creat. Verifică emailul și confirmă adresa înainte de autentificare.");
+      setVerificationEmail(data.email);
+      setVerificationMessage(result.verification_email_sent
+        ? "Contul a fost creat în siguranță. Confirmă adresa din email pentru a intra."
+        : "Contul a fost creat, dar emailul de confirmare nu a putut fi trimis. Reîncearcă trimiterea mai jos.");
+      loginForm.setValue("identifier", data.email);
       setTab("login");
-      toast.success("Ți-am trimis linkul de confirmare.");
+      if (result.verification_email_sent) toast.success("Ți-am trimis linkul de confirmare.");
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Înregistrarea nu a reușit.");
+      const message = error instanceof Error ? error.message : "";
+      toast.error(message === "email_taken" ? "Adresa are deja un cont. Intră în cont sau resetează parola." : message || "Înregistrarea nu a reușit.");
       setTurnstileToken("");
       setTurnstileReset((value) => value + 1);
     } finally {
@@ -167,79 +203,66 @@ const Auth = () => {
     }
   };
 
+  const resendVerification = async () => {
+    setSubmitting(true);
+    try {
+      await cfAuth.resendVerification(verificationEmail);
+      toast.success("Dacă adresa are un cont neconfirmat, am retrimis linkul.");
+    } catch {
+      toast.error("Nu am putut retrimite mesajul acum. Încearcă din nou mai târziu.");
+    } finally { setSubmitting(false); }
+  };
+
   return (
-    <main className="min-h-screen grid lg:grid-cols-2">
-      {/* Left — branded copy */}
-      <section className="relative hidden lg:flex flex-col p-12 bg-gradient-to-br from-foreground via-foreground to-brand text-background overflow-hidden">
-        <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--brand))_0%,transparent_50%),radial-gradient(circle_at_80%_80%,hsl(var(--accent))_0%,transparent_50%)]" />
-        <div
-          aria-hidden
-          className="absolute inset-0 opacity-[0.06] [background-image:linear-gradient(to_right,hsl(var(--background))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--background))_1px,transparent_1px)] [background-size:42px_42px]"
-        />
-        <div className="relative z-10 flex items-center justify-between">
-          <a href={homeHref} className="inline-flex items-center gap-2 font-display font-bold text-xl">
-            <img src={logo} alt="Avyron" width={32} height={32} className="size-8 rounded-lg bg-foreground/95 object-contain p-0.5" />
-            Avyron
-          </a>
-          <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-background/60">
-            v1.0 · secure
-          </span>
-        </div>
-
-        <div className="relative z-10 mt-10 max-w-md">
-          <span className="inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.25em] uppercase text-background/70 mb-5">
-            <span className="size-1.5 rounded-full bg-brand-foreground animate-pulse" />
-            access · granted
-          </span>
-          <h1 className="font-display text-5xl xl:text-6xl font-bold leading-[0.95] tracking-tight">
-            {t.auth.heroTitle}
-          </h1>
-          <p className="mt-5 font-mono text-[13px] leading-relaxed text-background/75">
-            {t.auth.heroDesc}
-          </p>
-
-          <ul className="mt-10 space-y-4">
-            {[
-              { n: "01", Icon: Crown, text: t.auth.clientPerksDesc },
-              { n: "02", Icon: ShieldCheck, text: "Infrastructură Cloudflare — D1, KV, R2, edge auth." },
-              { n: "03", Icon: LayoutDashboard, text: "Mini-dashboard intuitiv pentru produse, mentenanță și plăți recurente." },
-              { n: "04", Icon: MessageCircle, text: "Chat direct cu membrii echipei." },
-            ].map(({ n, Icon, text }) => (
-              <li
-                key={n}
-                className="group relative flex items-start gap-4 rounded-xl border border-background/10 bg-background/[0.04] backdrop-blur-sm p-3.5 transition-colors hover:bg-background/[0.08] hover:border-background/20"
-              >
-                <span className="font-mono text-[10px] tracking-widest text-background/50 pt-0.5 w-6">
-                  {n}
-                </span>
-                <Icon className="size-4 mt-0.5 text-brand-foreground shrink-0" strokeWidth={2.25} />
-                <p className="text-[13px] leading-relaxed text-background/90">{text}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="relative z-10 mt-auto pt-8 font-mono text-[10px] tracking-[0.2em] uppercase text-background/50">
-          © {new Date().getFullYear()} · Avyron Tech
+    <main className="auth-page dark min-h-screen grid lg:grid-cols-[minmax(0,.9fr)_minmax(440px,1.1fr)] text-slate-100">
+      <section className="auth-scene relative hidden lg:flex flex-col overflow-hidden p-10 xl:p-14 text-white">
+        <div className="auth-stars" aria-hidden="true" />
+        <div className="auth-orbit auth-orbit-one" aria-hidden="true" />
+        <div className="auth-orbit auth-orbit-two" aria-hidden="true" />
+        <div className="auth-planet" aria-hidden="true" />
+        <a href={homeHref} className="relative z-10 inline-flex w-fit items-center gap-3 font-display text-xl font-semibold tracking-wide">
+          <img src={logo} alt="" width={40} height={40} className="size-10 rounded-xl object-cover" />AVYRON
+        </a>
+        <div className="relative z-10 mt-auto max-w-[31rem] pb-8">
+          <p className="mb-5 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[.24em] text-indigo-200"><Sparkles className="size-4" /> AVYRON ACCESS</p>
+          <h1 className="font-display text-5xl xl:text-6xl font-semibold leading-[1.03] tracking-tight">{staffPage ? "Spațiul echipei începe aici." : "Spațiul tău pentru ideile care prind formă."}</h1>
+          <p className="mt-6 max-w-md text-base leading-relaxed text-slate-300">{staffPage ? "Intră în AVYRON OS cu identitatea ta de echipă. Accesul se adaptează rolului tău." : "Un singur cont pentru proiectele, serviciile și conversațiile tale cu AVYRON."}</p>
+          <div className="mt-8 flex flex-wrap gap-3 text-xs text-slate-200">
+            <span className="auth-scene-badge"><ShieldCheck className="size-4" /> Cont protejat</span>
+            <span className="auth-scene-badge"><Orbit className="size-4" /> Experiență conectată</span>
+          </div>
         </div>
       </section>
 
-      {/* Right — form */}
-      <section className="flex items-center justify-center p-6 sm:p-12 bg-background">
-        <div className="w-full max-w-md space-y-6">
-          <PageBackLink to={homeHref} label={lang === "en" ? "Back" : "Înapoi"} />
+      <section className="auth-form-side flex items-center justify-center px-5 py-8 sm:px-10 sm:py-12">
+        <div className="auth-panel relative w-full max-w-md space-y-6 rounded-[2rem] border border-white/[.09] bg-[#090e20]/90 px-6 py-8 shadow-2xl sm:px-9 sm:py-10">
+          <div className="flex items-center justify-between gap-4">
+            <PageBackLink to={homeHref} label={lang === "en" ? "Back" : "Înapoi"} />
+            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><LockKeyhole className="size-3.5" /> Acces securizat</span>
+          </div>
+          <div className="lg:hidden"><a href={homeHref} className="inline-flex items-center gap-2 font-display text-lg font-bold"><img src={logo} alt="" width={32} height={32} className="size-8 rounded-lg object-cover" />AVYRON</a></div>
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[.18em] text-brand">{staffPage ? "AVYRON OS" : "Bine ai venit"}</p>
+            <h2 className="font-display text-3xl font-semibold tracking-tight">{staffPage ? "Autentificare echipă" : tab === "register" ? "Creează-ți contul" : "Intră în cont"}</h2>
+            <p className="mt-2 text-sm text-muted-foreground">{staffPage ? "Folosește emailul, username-ul sau telefonul asociat contului staff." : tab === "register" ? "Doar câteva date acum. Restul le poți adăuga mai târziu." : "Continuă de unde ai rămas."}</p>
+          </div>
 
           {verificationMessage && (
             <div role="status" className="rounded-xl border border-brand/25 bg-brand/10 px-4 py-3 text-sm">
               {verificationMessage}
+              {verificationEmail && <button type="button" onClick={() => void resendVerification()} disabled={submitting} className="mt-2 block font-semibold text-brand underline underline-offset-4">Retrimite emailul de confirmare</button>}
             </div>
           )}
 
-          <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="w-full">
+          {staffPage && user && !isStaff && <div role="alert" className="rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm">Ești conectat cu un cont de client. <Link to="/profil" className="font-semibold underline">Deschide contul de client</Link> sau <button type="button" onClick={() => void signOut()} className="font-semibold underline">deconectează-te</button> pentru a intra ca staff.</div>}
+
+          <Tabs value={staffPage ? "login" : tab} onValueChange={(v) => setTab(v as typeof tab)} className="w-full">
+            {!staffPage && (
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">{t.auth.login}</TabsTrigger>
               <TabsTrigger value="register">{t.auth.register}</TabsTrigger>
             </TabsList>
+            )}
 
             <TabsContent value="login" className="space-y-5 mt-6">
               {mfaChallenge ? (
@@ -273,7 +296,7 @@ const Auth = () => {
               ) : (
               <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="li-identifier">Email sau username</Label>
+                  <Label htmlFor="li-identifier">Email, username sau telefon staff</Label>
                   <Input id="li-identifier" type="text" autoComplete="username" {...loginForm.register("identifier")} />
                   {loginForm.formState.errors.identifier && (
                     <p className="text-xs text-destructive">{loginForm.formState.errors.identifier.message}</p>
@@ -286,12 +309,16 @@ const Auth = () => {
                       {t.auth.forgot}
                     </Link>
                   </div>
-                  <Input id="li-pass" type="password" autoComplete="current-password" {...loginForm.register("password")} />
+                  <PasswordInput id="li-pass" autoComplete="current-password" {...loginForm.register("password")} />
                   {loginForm.formState.errors.password && (
                     <p className="text-xs text-destructive">{loginForm.formState.errors.password.message}</p>
                   )}
                 </div>
-                <Button type="submit" className="w-full rounded-full h-11" disabled={submitting}>
+                <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={rememberIdentifier} onChange={(event) => setRememberIdentifier(event.target.checked)} /> Reține identificatorul</label>
+                  <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={keepSignedIn} onChange={(event) => setKeepSignedIn(event.target.checked)} /> Menține-mă conectat</label>
+                </div>
+                <Button type="submit" className="w-full rounded-full h-11" disabled={submitting || (staffPage && Boolean(user && !isStaff))}>
                   {submitting ? "..." : t.auth.login}
                 </Button>
               </form>
@@ -301,8 +328,24 @@ const Auth = () => {
             <TabsContent value="register" className="space-y-5 mt-6">
               <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="rg-name">{t.auth.displayName}</Label>
-                  <Input id="rg-name" {...registerForm.register("displayName")} />
+                  <Label htmlFor="rg-entity">Înregistrezi contul ca</Label>
+                  <Select
+                    value={registerForm.watch("entityType")}
+                    onValueChange={(v) => registerForm.setValue("entityType", v as RegisterInput["entityType"])}
+                  >
+                    <SelectTrigger id="rg-entity"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="individual">Persoană fizică</SelectItem>
+                      <SelectItem value="srl">Firmă (SRL)</SelectItem>
+                      <SelectItem value="pfa">PFA</SelectItem>
+                      <SelectItem value="ii">Întreprindere individuală</SelectItem>
+                      <SelectItem value="other">Alt tip</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="rg-name">{registerForm.watch("entityType") === "individual" ? "Numele tău" : "Persoană de contact"}</Label>
+                  <Input id="rg-name" autoComplete="name" placeholder={registerForm.watch("entityType") === "individual" ? "Numele tău" : "Numele persoanei de contact"} {...registerForm.register("displayName")} />
                   {registerForm.formState.errors.displayName && (
                     <p className="text-xs text-destructive">{registerForm.formState.errors.displayName.message}</p>
                   )}
@@ -316,34 +359,21 @@ const Auth = () => {
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="rg-pass">{t.auth.password}</Label>
-                  <Input id="rg-pass" type="password" autoComplete="new-password" {...registerForm.register("password")} />
+                  <PasswordInput id="rg-pass" autoComplete="new-password" {...registerForm.register("password")} />
+                  <p className="text-xs text-muted-foreground">Minimum 8 caractere, o literă mare și o cifră.</p>
                   {registerForm.formState.errors.password && (
                     <p className="text-xs text-destructive">{registerForm.formState.errors.password.message}</p>
                   )}
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="rg-entity">{t.auth.entityType}</Label>
-                  <Select
-                    value={registerForm.watch("entityType")}
-                    onValueChange={(v) => registerForm.setValue("entityType", v as RegisterInput["entityType"])}
-                  >
-                    <SelectTrigger id="rg-entity"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="individual">{t.auth.entity.individual}</SelectItem>
-                      <SelectItem value="srl">{t.auth.entity.srl}</SelectItem>
-                      <SelectItem value="pfa">{t.auth.entity.pfa}</SelectItem>
-                      <SelectItem value="ii">{t.auth.entity.ii}</SelectItem>
-                      <SelectItem value="other">{t.auth.entity.other}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Turnstile action="signup" onToken={setTurnstileToken} resetKey={turnstileReset} />
+                {turnstileEnabled && <Turnstile action="signup" onToken={setTurnstileToken} resetKey={turnstileReset} />}
                 <Button type="submit" className="w-full rounded-full h-11" disabled={submitting}>
-                  {submitting ? "..." : t.auth.register}
+                  {submitting ? "..." : <>{t.auth.register}<ArrowRight className="ml-2 size-4" /></>}
                 </Button>
+                <p className="text-center text-xs text-muted-foreground">Un email de confirmare verifică adresa. Datele suplimentare se completează în profil.</p>
               </form>
             </TabsContent>
           </Tabs>
+          <div className="border-t pt-5 text-center text-sm text-muted-foreground">{staffPage ? <>Ești client? <Link className="font-semibold text-brand hover:underline" to="/auth">Intră în contul de client</Link></> : <>Faci parte din echipă? <Link className="font-semibold text-brand hover:underline" to="/staff">Acces staff</Link></>}</div>
         </div>
       </section>
     </main>
