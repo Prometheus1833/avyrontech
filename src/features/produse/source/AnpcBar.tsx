@@ -1,8 +1,8 @@
 /**
  * AnpcBar — Avyron Products (avyron.ro/produse)
  * Blocul de conformitate din subsolul magazinelor românești: legăturile către
- * ANPC (SAL și SOL) plus datele firmei. Legăturile sunt cele publice oficiale,
- * iar textul spune limpede ce e fiecare — nu doar două bannere colorate.
+ * ANPC (SAL) plus datele firmei. Legăturile sunt cele publice oficiale,
+ * iar textul spune limpede ce e fiecare.
  * Licență: utilizare nelimitată în proiecte proprii și ale clienților.
  */
 
@@ -16,8 +16,7 @@ export type CompanyInfo = {
 };
 
 const LINKS = [
-  { label: "ANPC — Soluționarea alternativă a litigiilor (SAL)", href: "https://anpc.ro/ce-este-sal/" },
-  { label: "Soluționarea online a litigiilor (SOL)", href: "https://ec.europa.eu/consumers/odr" },
+  { label: "ANPC — Soluționarea alternativă a litigiilor (SAL)", href: "https://reclamatiisal.anpc.ro/" },
   { label: "ANPC — protecția consumatorului", href: "https://anpc.ro/" },
 ];
 

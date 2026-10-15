@@ -46,12 +46,12 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
         edge: width(".laptop-edge"),
       };
     });
-    expect(laptopWidths.screen / laptopWidths.deck, "screen must nearly match the chassis without looking undersized").toBeGreaterThan(0.89);
-    expect(laptopWidths.screen / laptopWidths.deck, "screen must not overhang the keyboard chassis").toBeLessThan(0.96);
-    expect(laptopWidths.lid / laptopWidths.deck, "lid and keyboard must meet naturally at the hinge").toBeGreaterThan(0.9);
-    expect(laptopWidths.lid / laptopWidths.deck, "lid must not overhang the keyboard chassis").toBeLessThan(0.99);
-    expect(laptopWidths.edge / laptopWidths.deck, "front edge must not stop short of the keyboard chassis").toBeGreaterThan(0.96);
-    expect(laptopWidths.edge / laptopWidths.deck, "front edge must not extend past the keyboard chassis").toBeLessThan(1.04);
+    expect(laptopWidths.screen / laptopWidths.deck, "screen and chassis must read as the same width").toBeGreaterThan(0.95);
+    expect(laptopWidths.screen / laptopWidths.deck, "screen must not overhang the chassis").toBeLessThan(1.03);
+    expect(laptopWidths.lid / laptopWidths.deck, "lid and keyboard must meet naturally at the hinge").toBeGreaterThan(0.98);
+    expect(laptopWidths.lid / laptopWidths.deck, "lid must not dwarf the keyboard chassis").toBeLessThan(1.05);
+    expect(laptopWidths.edge / laptopWidths.deck, "front edge must match the keyboard chassis").toBeGreaterThan(0.98);
+    expect(laptopWidths.edge / laptopWidths.deck, "front edge must not extend too far past the chassis").toBeLessThan(1.05);
     const heroes = new Set<string>();
     for (const key of ["beauty", "resto", "public", "turism", "pro", "local", "auto", "ecommerce", "national", "other"]) {
       await showcase.getByRole("button", { name: "Domenii", exact: true }).click();

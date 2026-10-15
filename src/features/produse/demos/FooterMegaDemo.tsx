@@ -18,7 +18,7 @@ export default function FooterMegaDemo({ lang }: DemoProps) {
           { label: "GDPR", href: "#" },
           { label: ro ? "Termeni" : "Terms", href: "#" },
           { label: "ANPC", href: "#" },
-          { label: "SOL · SAL", href: "#" },
+          { label: "SAL", href: "https://reclamatiisal.anpc.ro/" },
         ]}
         onSubscribe={() => new Promise((resolve) => window.setTimeout(resolve, 600))}
       />
