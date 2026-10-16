@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { Component, lazy, Suspense, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowRight, KeyRound, LockKeyhole, Orbit, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, KeyRound, LockKeyhole, ShieldCheck, Sparkles } from "lucide-react";
 import { cfAuth } from "@/lib/cfAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,6 +26,14 @@ import PageBackLink from "@/components/site/PageBackLink";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import "./auth.css";
 
+const AuthPortal3D = lazy(() => import("@/components/auth/AuthPortal3D"));
+
+class OptionalPortalBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  render() { return this.state.failed ? null : this.props.children; }
+}
+
 const Auth = () => {
   const { t, lang } = useLang();
   const { user, loading, isStaff, refreshProfile, signOut } = useAuth();
@@ -42,11 +50,77 @@ const Auth = () => {
   const [keepSignedIn, setKeepSignedIn] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState("");
   const [turnstileEnabled, setTurnstileEnabled] = useState(false);
+  const [portalReady, setPortalReady] = useState(false);
+  const [viewTab, setViewTab] = useState<"login" | "register">(tab);
+  const portalRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const turnRef = useRef(0);
+  const transitionRef = useRef<((syncView?: boolean) => void) | null>(null);
   const staffPage = location.pathname === "/staff";
   const emailChangeToken = new URLSearchParams(location.search).get("email_change");
   const platformHost = isPlatformHostname();
   const heroPath = lang === "en" ? "/en#hero" : "/#hero";
   const homeHref = platformHost ? publicSiteHref(heroPath) : heroPath;
+
+  useEffect(() => {
+    if (typeof window === "undefined" || window.matchMedia("(prefers-reduced-motion: reduce), (max-width: 767px)").matches) return;
+    let webglAvailable = false;
+    try {
+      const canvas = document.createElement("canvas");
+      const gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
+      webglAvailable = Boolean(gl);
+      gl?.getExtension("WEBGL_lose_context")?.loseContext();
+    } catch {
+      webglAvailable = false;
+    }
+    if (!webglAvailable) return;
+    const schedule = window.requestIdleCallback?.(() => setPortalReady(true), { timeout: 1600 });
+    const fallback = schedule === undefined ? window.setTimeout(() => setPortalReady(true), 900) : undefined;
+    return () => {
+      if (schedule !== undefined) window.cancelIdleCallback?.(schedule);
+      if (fallback !== undefined) window.clearTimeout(fallback);
+    };
+  }, []);
+
+  useEffect(() => () => transitionRef.current?.(false), []);
+
+  const changeTab = useCallback((next: "login" | "register") => {
+    if (next === tab || staffPage) return;
+    transitionRef.current?.();
+    setTab(next);
+    const ring = portalRef.current;
+    const content = contentRef.current;
+    if (!ring || !content || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setViewTab(next);
+      return;
+    }
+    let cancelled = false;
+    void import("gsap").then(({ default: gsap }) => {
+      if (cancelled) return;
+      const nextTurn = turnRef.current + 180;
+      const timeline = gsap.timeline({ onComplete: () => { turnRef.current = nextTurn; transitionRef.current = null; } });
+      timeline.to(content, { opacity: 0, y: -10, duration: 0.22, ease: "power2.in" }, 0)
+        .to(ring, { rotateY: nextTurn, rotateZ: next === "register" ? 18 : -18, duration: 0.9, ease: "power3.inOut" }, 0)
+        .call(() => setViewTab(next), [], 0.42)
+        .fromTo(content, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, 0.55);
+      transitionRef.current = (syncView = true) => {
+        cancelled = true;
+        timeline.kill();
+        gsap.set(content, { clearProps: "opacity,transform" });
+        if (syncView) setViewTab(next);
+      };
+    }).catch(() => {
+      if (!cancelled) {
+        transitionRef.current = null;
+        setViewTab(next);
+      }
+    });
+    transitionRef.current = (syncView = true) => { cancelled = true; if (syncView) setViewTab(next); };
+  }, [staffPage, tab]);
+
+  useEffect(() => {
+    if (tab !== viewTab && !transitionRef.current) setViewTab(tab);
+  }, [tab, viewTab]);
 
   const requestedFrom = (location.state as { from?: string } | null)?.from;
   const from = requestedFrom?.startsWith("/") && !requestedFrom.startsWith("//") ? requestedFrom : null;
@@ -191,7 +265,7 @@ const Auth = () => {
         ? "Contul a fost creat în siguranță. Confirmă adresa din email pentru a intra."
         : "Contul a fost creat, dar emailul de confirmare nu a putut fi trimis. Reîncearcă trimiterea mai jos.");
       loginForm.setValue("identifier", data.email);
-      setTab("login");
+      changeTab("login");
       if (result.verification_email_sent) toast.success("Ți-am trimis linkul de confirmare.");
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "";
@@ -214,37 +288,36 @@ const Auth = () => {
   };
 
   return (
-    <main className="auth-page dark min-h-screen grid lg:grid-cols-[minmax(0,.9fr)_minmax(440px,1.1fr)] text-slate-100">
-      <section className="auth-scene relative hidden lg:flex flex-col overflow-hidden p-10 xl:p-14 text-white">
-        <div className="auth-stars" aria-hidden="true" />
-        <div className="auth-orbit auth-orbit-one" aria-hidden="true" />
-        <div className="auth-orbit auth-orbit-two" aria-hidden="true" />
-        <div className="auth-planet" aria-hidden="true" />
-        <a href={homeHref} className="relative z-10 inline-flex w-fit items-center gap-3 font-display text-xl font-semibold tracking-wide">
-          <img src={logo} alt="" width={40} height={40} className="size-10 rounded-xl object-cover" />AVYRON
+    <main className="auth-page dark min-h-screen text-slate-100">
+      <div className="auth-ambient auth-ambient-a" aria-hidden="true" />
+      <div className="auth-ambient auth-ambient-b" aria-hidden="true" />
+      <div className="auth-stars" aria-hidden="true" />
+      <header className="auth-topbar">
+        <a href={homeHref} className="auth-brand font-display" aria-label="AVYRON — pagina principală">
+          <img src={logo} alt="" width={34} height={34} />
+          <span>AVYRON</span>
         </a>
-        <div className="relative z-10 mt-auto max-w-[31rem] pb-8">
-          <p className="mb-5 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[.24em] text-indigo-200"><Sparkles className="size-4" /> AVYRON ACCESS</p>
-          <h1 className="font-display text-5xl xl:text-6xl font-semibold leading-[1.03] tracking-tight">{staffPage ? "Spațiul echipei începe aici." : "Spațiul tău pentru ideile care prind formă."}</h1>
-          <p className="mt-6 max-w-md text-base leading-relaxed text-slate-300">{staffPage ? "Intră în AVYRON OS cu identitatea ta de echipă. Accesul se adaptează rolului tău." : "Un singur cont pentru proiectele, serviciile și conversațiile tale cu AVYRON."}</p>
-          <div className="mt-8 flex flex-wrap gap-3 text-xs text-slate-200">
-            <span className="auth-scene-badge"><ShieldCheck className="size-4" /> Cont protejat</span>
-            <span className="auth-scene-badge"><Orbit className="size-4" /> Experiență conectată</span>
-          </div>
-        </div>
-      </section>
+        <span className="auth-topbar-caption"><ShieldCheck size={15} /> {staffPage ? "ACCES ECHIPĂ" : "CONT AVYRON"}</span>
+      </header>
 
-      <section className="auth-form-side flex items-center justify-center px-5 py-8 sm:px-10 sm:py-12">
-        <div className="auth-panel relative w-full max-w-md space-y-6 rounded-[2rem] border border-white/[.09] bg-[#090e20]/90 px-6 py-8 shadow-2xl sm:px-9 sm:py-10">
+      <section className="auth-stage" aria-label={staffPage ? "Autentificare staff" : "Autentificare și înregistrare"}>
+        <div className="auth-portal" ref={portalRef} aria-hidden="true">
+          <div className="auth-portal-face auth-portal-face-front" />
+          <div className="auth-portal-face auth-portal-face-back" />
+          <div className="auth-portal-halo" />
+        </div>
+        {portalReady && <OptionalPortalBoundary><Suspense fallback={null}><AuthPortal3D /></Suspense></OptionalPortalBoundary>}
+        <div className="auth-orbit-info auth-orbit-info-left"><span className="auth-info-dot" aria-hidden="true" /><span>{staffPage ? "AVYRON OS" : viewTab === "register" ? "PERSOANĂ FIZICĂ · FIRMĂ" : "PROIECTE · SERVICII"}</span></div>
+        <div className="auth-orbit-info auth-orbit-info-right"><span className="auth-info-dot" aria-hidden="true" /><span>{staffPage ? "ACCES PE ROLURI" : viewTab === "register" ? "DATE MINIME" : "CONVERSAȚII · FACTURI"}</span></div>
+        <div className="auth-panel" ref={contentRef}>
           <div className="flex items-center justify-between gap-4">
             <PageBackLink to={homeHref} label={lang === "en" ? "Back" : "Înapoi"} />
             <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><LockKeyhole className="size-3.5" /> Acces securizat</span>
           </div>
-          <div className="lg:hidden"><a href={homeHref} className="inline-flex items-center gap-2 font-display text-lg font-bold"><img src={logo} alt="" width={32} height={32} className="size-8 rounded-lg object-cover" />AVYRON</a></div>
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[.18em] text-brand">{staffPage ? "AVYRON OS" : "Bine ai venit"}</p>
-            <h2 className="font-display text-3xl font-semibold tracking-tight">{staffPage ? "Autentificare echipă" : tab === "register" ? "Creează-ți contul" : "Intră în cont"}</h2>
-            <p className="mt-2 text-sm text-muted-foreground">{staffPage ? "Folosește emailul, username-ul sau telefonul asociat contului staff." : tab === "register" ? "Doar câteva date acum. Restul le poți adăuga mai târziu." : "Continuă de unde ai rămas."}</p>
+            <p className="auth-eyebrow"><Sparkles className="size-3.5" /> {staffPage ? "AVYRON OS" : "SPAȚIUL TĂU AVYRON"}</p>
+            <h1 className="font-display text-3xl font-semibold tracking-tight">{staffPage ? "Bine ai revenit în echipă" : viewTab === "register" ? "Începe aici" : "Bine ai revenit"}</h1>
+            <p className="mt-2 text-sm text-slate-400">{staffPage ? "Intră cu email, username sau telefon." : viewTab === "register" ? "Un cont pentru proiectele tale. Completezi restul mai târziu." : "Proiectele și conversațiile tale te așteaptă."}</p>
           </div>
 
           {verificationMessage && (
@@ -256,7 +329,7 @@ const Auth = () => {
 
           {staffPage && user && !isStaff && <div role="alert" className="rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm">Ești conectat cu un cont de client. <Link to="/profil" className="font-semibold underline">Deschide contul de client</Link> sau <button type="button" onClick={() => void signOut()} className="font-semibold underline">deconectează-te</button> pentru a intra ca staff.</div>}
 
-          <Tabs value={staffPage ? "login" : tab} onValueChange={(v) => setTab(v as typeof tab)} className="w-full">
+          <Tabs value={staffPage ? "login" : viewTab} onValueChange={(v) => changeTab(v as typeof tab)} className="w-full">
             {!staffPage && (
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">{t.auth.login}</TabsTrigger>
@@ -296,7 +369,7 @@ const Auth = () => {
               ) : (
               <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="li-identifier">Email, username sau telefon staff</Label>
+                  <Label htmlFor="li-identifier">Email, username sau telefon</Label>
                   <Input id="li-identifier" type="text" autoComplete="username" {...loginForm.register("identifier")} />
                   {loginForm.formState.errors.identifier && (
                     <p className="text-xs text-destructive">{loginForm.formState.errors.identifier.message}</p>
@@ -376,6 +449,7 @@ const Auth = () => {
           <div className="border-t pt-5 text-center text-sm text-muted-foreground">{staffPage ? <>Ești client? <Link className="font-semibold text-brand hover:underline" to="/auth">Intră în contul de client</Link></> : <>Faci parte din echipă? <Link className="font-semibold text-brand hover:underline" to="/staff">Acces staff</Link></>}</div>
         </div>
       </section>
+      <p className="auth-page-footnote">{staffPage ? "Un spațiu de lucru pentru echipa AVYRON." : "Un spațiu pentru idei, proiecte și lucrurile care urmează."}</p>
     </main>
   );
 };
