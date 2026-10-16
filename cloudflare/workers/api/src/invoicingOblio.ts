@@ -4,6 +4,8 @@ export type OblioInvoiceInput = {
   orderId: string;
   buyer: { name: string; email?: string | null; taxId?: string | null; address?: string | null };
   lines: Array<{ name: string; code?: string; quantity: number; unitPriceMinor: number }>;
+  discountMinor?: number;
+  discountLabel?: string;
   currency: string;
   issuedAt: number;
 };
@@ -59,7 +61,7 @@ export async function issueOblioInvoice(env: Env, input: OblioInvoiceInput): Pro
       orderNumber: input.orderId,
       idempotencyKey: `avyron-${input.orderId}`,
       sendEmail: env.OBLIO_SEND_EMAIL_ENABLED === "true" && Boolean(input.buyer.email),
-      products: input.lines.map((line) => ({
+      products: [...input.lines.map((line) => ({
         name: line.name,
         ...(line.code ? { code: line.code } : {}),
         price: line.unitPriceMinor / 100,
@@ -70,7 +72,7 @@ export async function issueOblioInvoice(env: Env, input: OblioInvoiceInput): Pro
         vatIncluded: true,
         quantity: line.quantity,
         productType: "Serviciu",
-      })),
+      })), ...(input.discountMinor && input.discountMinor > 0 ? [{ name: input.discountLabel || "Reducere aplicată", discountType: "valoric", discount: input.discountMinor / 100, discountAllAbove: 1 }] : [])],
     }),
   });
   if (!invoiceResponse.ok) return { issued: false, reason: "invoice_failed", status: invoiceResponse.status };

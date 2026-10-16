@@ -249,6 +249,12 @@ class CfAuth {
   async logout() {
     await fetch(apiUrl("/api/auth/logout"), { method: "POST", credentials: "include" }).catch(() => {});
     this.clearSession();
+    try {
+      localStorage.removeItem("avyron_cart_v2");
+      localStorage.removeItem("avyron_cart_owner_v1");
+      localStorage.removeItem("avyron-produse-v1");
+    } catch { /* Storage may be unavailable in private mode. */ }
+    if (typeof window !== "undefined") window.dispatchEvent(new Event("avyron:logout"));
   }
 
   async me(): Promise<{ user: CfUser; profile: CfProfile; roles: Role[]; superadmin?: boolean; capabilities?: string[] } | null> {

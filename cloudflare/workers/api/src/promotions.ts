@@ -1,8 +1,9 @@
 import { Hono, type Context, type Next } from "hono";
-import { COMMERCE_CATALOG, commerceItemBySku } from "../../../../src/data/commerceCatalog";
+import { COMMERCE_CATALOG, commerceItemBySku, serviceMatchesSubscription } from "../../../../src/data/commerceCatalog";
 import type { AppBindings } from "./types";
 import { now } from "./security";
 import { FALLBACK_RON_PER_EUR, getPublicExchangeRate, type ExchangeRateStatus } from "./exchangeRate";
+import { SERVICE_COMMERCIAL_SOURCES } from "../../../../src/data/serviceCommercialSources";
 
 export const PROMOTION_OWNER_EMAIL = "prometheus@avyron.ro";
 const MAX_ORDER_ITEMS = 20;
@@ -32,7 +33,11 @@ type OrderItemInput = {
   period?: unknown;
   notes?: unknown;
   description?: unknown;
+  serviceKey?: unknown;
+  productSlug?: unknown;
 };
+
+type CommercialItem = { sku: string; entity_key: string; entity_type: "service" | "product"; display_name: string; accounting_code: string | null; base_price_minor: number | null; currency: string; price_model: string; tax_status: string; payment_status: string; active: number };
 
 export type AccountCartSource = "dashboard" | "subscriptions" | "services" | "products";
 export type AccountCartItem = {
@@ -44,6 +49,7 @@ export type AccountCartItem = {
   period?: "monthly" | "annual";
   notes?: string;
   productSlug?: string;
+  serviceKey?: string;
 };
 
 const CART_SOURCES = new Set<AccountCartSource>(["dashboard", "subscriptions", "services", "products"]);
@@ -63,14 +69,16 @@ export function normalizeAccountCartItems(value: unknown, forcedSource?: Account
     const periodValue = String(raw?.period ?? "");
     const notes = String(raw?.notes ?? "").trim().slice(0, 1000) || undefined;
     const productSlug = String(raw?.productSlug ?? "").trim().slice(0, 100) || undefined;
+    const serviceKey = String(raw?.serviceKey ?? "").trim().slice(0, 120) || undefined;
     if (!CART_SOURCES.has(source) || !CART_TYPES.has(type) || !id || !sku || !name) return null;
     const period = periodValue === "monthly" || periodValue === "annual" ? periodValue : undefined;
     if ((type === "subscription" || type === "partnership") && !period) return null;
     if (type === "product" && !productSlug) return null;
+    if (serviceKey && !SERVICE_COMMERCIAL_SOURCES.some((service) => service.entity_key === serviceKey)) return null;
     const identity = `${source}:${id}`;
     if (seen.has(identity)) continue;
     seen.add(identity);
-    items.push({ id, source, sku, type, name, ...(period ? { period } : {}), ...(notes ? { notes } : {}), ...(productSlug ? { productSlug } : {}) });
+    items.push({ id, source, sku, type, name, ...(period ? { period } : {}), ...(notes ? { notes } : {}), ...(productSlug ? { productSlug } : {}), ...(serviceKey ? { serviceKey } : {}) });
   }
   return items;
 }
@@ -88,6 +96,9 @@ type PricedOrderItem = {
   lineTotalCents: number | null;
   referenceUnitPriceCents: number | null;
   referenceCurrency: "RON" | "EUR";
+  serviceKey: string | null;
+  productSlug: string | null;
+  accountingCode: string | null;
 };
 
 export const normalizePromotionCode = (value: unknown) =>
@@ -98,6 +109,7 @@ export const isValidPromotionCode = (value: string) => /^[A-Z0-9_-]{4,32}$/.test
 export function priceOrderItems(
   value: unknown,
   eurRonRate = FALLBACK_RON_PER_EUR,
+  commercialItems: readonly CommercialItem[] = [],
 ): { items: PricedOrderItem[]; subtotalCents: number; requiresManualQuote: boolean } | null {
   if (!Array.isArray(value) || value.length < 1 || value.length > MAX_ORDER_ITEMS) return null;
   if (!Number.isFinite(eurRonRate) || eurRonRate < 1 || eurRonRate > 20) return null;
@@ -109,32 +121,38 @@ export function priceOrderItems(
   for (const raw of value as OrderItemInput[]) {
     const sku = String(raw?.sku ?? "").trim();
     const catalogItem = commerceItemBySku(sku);
+    const commercial = commercialItems.find((item) => item.sku === sku && item.active === 1);
     const quantity = Number(raw?.quantity ?? 1);
-    if (!catalogItem || !Number.isInteger(quantity) || quantity < 1 || quantity > 10) return null;
+    if ((!catalogItem && !commercial) || !Number.isInteger(quantity) || quantity < 1 || quantity > 10) return null;
     const description = String(raw?.description ?? "").trim().slice(0, 120) || null;
     const rawPeriod = String(raw?.period ?? "").trim();
-    const period = catalogItem.type === "subscription" ? rawPeriod : null;
+    const period = catalogItem?.type === "subscription" ? rawPeriod : null;
     const notes = String(raw?.notes ?? "").trim().slice(0, 1000) || null;
+    const serviceKey = String(raw?.serviceKey ?? "").trim() || null;
+    const productSlug = String(raw?.productSlug ?? "").trim().slice(0, 100) || null;
+    if (commercial?.entity_type === "product" && productSlug && productSlug !== commercial.entity_key) return null;
+    if (serviceKey && (!SERVICE_COMMERCIAL_SOURCES.some((service) => service.entity_key === serviceKey) || (catalogItem?.type === "subscription" ? !serviceMatchesSubscription(sku, serviceKey) : !commercial && sku !== "custom-request"))) return null;
     if (sku === "custom-request" && !description) return null;
-    if (catalogItem.type === "subscription") {
+    if (catalogItem?.type === "subscription") {
       subscriptionCount += 1;
       if (subscriptionCount > 1 || quantity !== 1 || (period !== "monthly" && period !== "annual")) return null;
     } else if (rawPeriod && rawPeriod !== "one_time") {
       return null;
     }
     const billingMonths = period === "annual" ? 12 : 1;
-    const unitPriceCents = catalogItem.unitPriceCents === null
+    const payableCommercial = commercial?.price_model === "fixed" && commercial.tax_status === "verified" && commercial.payment_status === "active" && commercial.currency === "RON";
+    const unitPriceCents = commercial ? payableCommercial ? commercial.base_price_minor : null : catalogItem!.unitPriceCents === null
       ? null
-      : catalogItem.currency === "EUR"
-        ? Math.round(catalogItem.unitPriceCents * eurRonRate)
-        : catalogItem.unitPriceCents;
+      : catalogItem!.currency === "EUR"
+        ? Math.round(catalogItem!.unitPriceCents! * eurRonRate)
+        : catalogItem!.unitPriceCents;
     const lineTotalCents = unitPriceCents === null ? null : unitPriceCents * quantity * billingMonths;
     if (lineTotalCents === null) requiresManualQuote = true;
     else subtotalCents += lineTotalCents;
     items.push({
       sku,
-      type: catalogItem.type,
-      name: catalogItem.name,
+      type: commercial?.entity_type ?? catalogItem!.type,
+      name: commercial?.display_name ?? catalogItem!.name,
       description,
       quantity,
       period,
@@ -142,8 +160,11 @@ export function priceOrderItems(
       notes,
       unitPriceCents,
       lineTotalCents,
-      referenceUnitPriceCents: catalogItem.unitPriceCents,
-      referenceCurrency: catalogItem.currency,
+      referenceUnitPriceCents: commercial ? commercial.base_price_minor : catalogItem!.unitPriceCents,
+      referenceCurrency: commercial ? "RON" : catalogItem!.currency,
+      serviceKey,
+      productSlug: commercial?.entity_type === "product" ? commercial.entity_key : productSlug,
+      accountingCode: commercial?.accounting_code ?? null,
     });
   }
   return { items, subtotalCents, requiresManualQuote };
@@ -179,7 +200,9 @@ async function priceRequest(c: Context<AppBindings>, value: unknown) {
     const snapshot = await getPublicExchangeRate(c.env);
     exchangeRate = { rate: snapshot.rate, referenceDate: snapshot.referenceDate, status: snapshot.status };
   }
-  return { priced: priceOrderItems(value, exchangeRate?.rate), exchangeRate };
+  const requestedSkus = Array.isArray(value) ? [...new Set(value.map((raw) => String((raw as OrderItemInput)?.sku ?? "").trim()).filter((sku) => !commerceItemBySku(sku)))].slice(0, MAX_ORDER_ITEMS) : [];
+  const commercialItems = requestedSkus.length ? (await c.env.DB.prepare(`SELECT c.sku,c.entity_key,c.entity_type,c.display_name,c.accounting_code,c.base_price_minor,c.currency,c.price_model,c.tax_status,c.payment_status,c.active FROM commercial_catalog_codes c LEFT JOIN product_items p ON c.entity_type='product' AND p.slug=c.entity_key WHERE c.sku IN (${requestedSkus.map(() => "?").join(",")}) AND (c.entity_type!='product' OR p.status='live')`).bind(...requestedSkus).all<CommercialItem>()).results : [];
+  return { priced: priceOrderItems(value, exchangeRate?.rate, commercialItems), exchangeRate };
 }
 
 async function requirePromotionOwner(c: Context<AppBindings>, next: Next) {
@@ -237,6 +260,40 @@ const quoteResponse = (
 
 export const promotionsRouter = new Hono<AppBindings>();
 
+promotionsRouter.get("/api/commerce/catalog", async (c) => {
+  const [codes, products] = await Promise.all([
+    c.env.DB.prepare("SELECT entity_type,entity_key,display_name,category,sku,base_price_minor,currency,price_model,tax_status,payment_status,active FROM commercial_catalog_codes WHERE active=1 AND entity_type IN ('service','product') ORDER BY entity_type,display_name").all<CommercialItem & { entity_key: string; category: string }>(),
+    c.env.DB.prepare("SELECT slug,name_ro,type,price_ron_cents,status FROM product_items WHERE status='live' AND price_ron_cents IS NOT NULL ORDER BY name_ro").all<{ slug: string; name_ro: string; type: string; price_ron_cents: number | null; status: string }>(),
+  ]);
+  const mapped = new Map(codes.results.map((item) => [`${item.entity_type}:${item.entity_key}`, item]));
+  const services = SERVICE_COMMERCIAL_SOURCES.map((source) => {
+    const code = mapped.get(`service:${source.entity_key}`);
+    return { key: source.entity_key, name: source.display_name, category: source.category, sku: code?.sku ?? null, priceMinor: code?.base_price_minor ?? source.base_price_minor, currency: code?.currency ?? "RON", payable: Boolean(code?.sku && code.base_price_minor !== null && code.price_model === "fixed" && code.tax_status === "verified" && code.payment_status === "active") };
+  });
+  const availableProducts = products.results.map((product) => {
+    const code = mapped.get(`product:${product.slug}`);
+    return { key: product.slug, name: product.name_ro, category: product.type, sku: code?.sku ?? null, priceMinor: code?.base_price_minor ?? product.price_ron_cents, currency: code?.currency ?? "RON", payable: Boolean(code?.sku && code.base_price_minor !== null && code.price_model === "fixed" && code.tax_status === "verified" && code.payment_status === "active") };
+  });
+  return c.json({ services, products: availableProducts, subscriptions: COMMERCE_CATALOG.filter((item) => item.type === "subscription" && item.sku.startsWith("sub-")) });
+});
+
+promotionsRouter.get("/api/commerce/favorites/services", async (c) => {
+  const { results } = await c.env.DB.prepare("SELECT service_key FROM account_service_favorites WHERE user_id=? ORDER BY created_at DESC").bind(c.get("userId")).all<{ service_key: string }>();
+  return c.json({ data: results.map((row) => row.service_key) });
+});
+
+promotionsRouter.put("/api/commerce/favorites/services/:key", async (c) => {
+  const key = c.req.param("key");
+  if (!SERVICE_COMMERCIAL_SOURCES.some((service) => service.entity_key === key)) return c.json({ error: { code: "unknown_service" } }, 404);
+  await c.env.DB.prepare("INSERT OR IGNORE INTO account_service_favorites(user_id,service_key,created_at) VALUES (?,?,?)").bind(c.get("userId"), key, now()).run();
+  return c.json({ ok: true });
+});
+
+promotionsRouter.delete("/api/commerce/favorites/services/:key", async (c) => {
+  await c.env.DB.prepare("DELETE FROM account_service_favorites WHERE user_id=? AND service_key=?").bind(c.get("userId"), c.req.param("key")).run();
+  return c.json({ ok: true });
+});
+
 promotionsRouter.post("/api/commerce/quote", async (c) => {
   const body = await c.req.json().catch(() => ({})) as { items?: unknown; promotionCode?: unknown };
   const { priced, exchangeRate } = await priceRequest(c, body.items);
@@ -256,10 +313,19 @@ promotionsRouter.post("/api/commerce/quote", async (c) => {
 });
 
 promotionsRouter.post("/api/commerce/orders", async (c) => {
-  const body = await c.req.json().catch(() => ({})) as { items?: unknown; promotionCode?: unknown };
+  const body = await c.req.json().catch(() => ({})) as { items?: unknown; promotionCode?: unknown; clientRequestId?: unknown };
+  const userId = c.get("userId");
+  const clientRequestId = typeof body.clientRequestId === "string" && /^[a-f0-9]{64}$/.test(body.clientRequestId) ? body.clientRequestId : null;
+  if (body.clientRequestId !== undefined && !clientRequestId) return c.json({ error: { code: "invalid_request_id" } }, 400);
+  const clientRequestJson = clientRequestId ? JSON.stringify({ items: body.items, promotionCode: normalizePromotionCode(body.promotionCode) }) : null;
+  const previous = clientRequestId ? await c.env.DB.prepare("SELECT id,status,total_cents,currency,client_request_json FROM commerce_orders WHERE user_id=? AND client_request_id=?")
+    .bind(userId, clientRequestId).first<{ id: string; status: string; total_cents: number; currency: string; client_request_json: string }>() : null;
+  if (previous) {
+    if (previous.client_request_json !== clientRequestJson) return c.json({ error: { code: "request_id_conflict" } }, 409);
+    return c.json({ order: { id: previous.id, status: previous.status, totalCents: previous.total_cents, currency: previous.currency, replay: true } });
+  }
   const { priced, exchangeRate } = await priceRequest(c, body.items);
   if (!priced) return c.json({ error: { code: "invalid_order_items", message: "Elementele comenzii nu sunt valide" } }, 400);
-  const userId = c.get("userId");
   const code = normalizePromotionCode(body.promotionCode);
   const timestamp = now();
   let promotion: PromotionRow | null = null;
@@ -277,8 +343,8 @@ promotionsRouter.post("/api/commerce/orders", async (c) => {
   const orderInsert = promotion
     ? c.env.DB.prepare(
       `INSERT INTO commerce_orders
-         (id,user_id,items_json,subtotal_cents,promotion_id,promotion_code,discount_percent,discount_base_cents,discount_cents,total_cents,currency,requires_manual_quote,status,created_at,updated_at)
-       SELECT ?,?,?,?,p.id,p.code,p.discount_percent,?,?,?,'RON',?,'requested',?,?
+         (id,user_id,items_json,subtotal_cents,promotion_id,promotion_code,discount_percent,discount_base_cents,discount_cents,total_cents,currency,requires_manual_quote,status,created_at,updated_at,client_request_id,client_request_json)
+       SELECT ?,?,?,?,p.id,p.code,p.discount_percent,?,?,?,'RON',?,'requested',?,?,?,?
          FROM promotions p
         WHERE p.id = ?
           AND p.active = 1
@@ -293,15 +359,15 @@ promotionsRouter.post("/api/commerce/orders", async (c) => {
     ).bind(
       orderId, userId, JSON.stringify(priced.items), quote.subtotalCents, quote.discountBaseCents, quote.discountCents,
       quote.totalCents, quote.requiresManualQuote ? 1 : 0, timestamp, timestamp,
-      promotion.id, promotion.discount_percent, promotion.discount_scope, timestamp, timestamp, userId,
+      clientRequestId, clientRequestJson, promotion.id, promotion.discount_percent, promotion.discount_scope, timestamp, timestamp, userId,
     )
     : c.env.DB.prepare(
       `INSERT INTO commerce_orders
-         (id,user_id,items_json,subtotal_cents,promotion_id,promotion_code,discount_percent,discount_base_cents,discount_cents,total_cents,currency,requires_manual_quote,status,created_at,updated_at)
-       VALUES (?,?,?,?,NULL,NULL,0,0,?,?,'RON',?,'requested',?,?)`,
+         (id,user_id,items_json,subtotal_cents,promotion_id,promotion_code,discount_percent,discount_base_cents,discount_cents,total_cents,currency,requires_manual_quote,status,created_at,updated_at,client_request_id,client_request_json)
+       VALUES (?,?,?,?,NULL,NULL,0,0,?,?,'RON',?,'requested',?,?,?,?)`,
     ).bind(
       orderId, userId, JSON.stringify(priced.items), quote.subtotalCents, quote.discountCents,
-      quote.totalCents, quote.requiresManualQuote ? 1 : 0, timestamp, timestamp,
+      quote.totalCents, quote.requiresManualQuote ? 1 : 0, timestamp, timestamp, clientRequestId, clientRequestJson,
     );
   const statements = [orderInsert];
   if (promotion) {
@@ -314,7 +380,16 @@ promotionsRouter.post("/api/commerce/orders", async (c) => {
     `INSERT INTO audit_log (user_id,action,meta_json,created_at)
      SELECT ?,?,?,? WHERE EXISTS (SELECT 1 FROM commerce_orders WHERE id = ?)`,
   ).bind(userId, "commerce_order_created", JSON.stringify({ orderId, promotionCode: promotion?.code ?? null, totalCents: quote.totalCents }), timestamp, orderId));
-  const results = await c.env.DB.batch(statements);
+  let results: D1Result<unknown>[];
+  try { results = await c.env.DB.batch(statements); }
+  catch (error) {
+    if (clientRequestId) {
+      const existing = await c.env.DB.prepare("SELECT id,status,total_cents,currency,client_request_json FROM commerce_orders WHERE user_id=? AND client_request_id=?")
+        .bind(userId, clientRequestId).first<{ id: string; status: string; total_cents: number; currency: string; client_request_json: string }>();
+      if (existing?.client_request_json === clientRequestJson) return c.json({ order: { id: existing.id, status: existing.status, totalCents: existing.total_cents, currency: existing.currency, replay: true } });
+    }
+    throw error;
+  }
   if (!Number(results[0]?.meta.changes || 0)) {
     return c.json({ error: { code: "promotion_unavailable", message: "Codul promoțional a atins limita sau nu mai este activ" } }, 409);
   }

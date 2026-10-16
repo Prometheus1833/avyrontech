@@ -10,6 +10,8 @@ import { collectionsPath, faqPath, guidePath, homePath, typePath } from "../lib/
 import CartDrawer from "./CartDrawer";
 import PageBackLink from "@/components/site/PageBackLink";
 import ProductLocaleSwitcher from "./ProductLocaleSwitcher";
+import { useAuth } from "@/hooks/useAuth";
+import { store } from "../lib/store";
 
 const Backdrop = lazyWithRetry(() => import("./Backdrop"));
 const SearchPalette = lazyWithRetry(() => import("./SearchPalette"));
@@ -31,6 +33,17 @@ export default function Shell({ lang, children }: { lang: Lang; children: ReactN
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [tier] = useState(() => detectTier());
+  const { user, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) { store.setFavorites([]); return; }
+    let active = true;
+    void import("@/lib/produseApi").then(({ produseApi }) => produseApi.state()).then((account) => {
+      if (active && account.day) store.setFavorites(account.collection);
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [user, authLoading]);
 
   const links: NavLinkDef[] = [
     { label: ro ? "Componente" : "Components", to: typePath(lang, "component"), icon: Blocks, isRoute: true },

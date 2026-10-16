@@ -8,7 +8,7 @@ export type FinancialProviderPlaybook={
   phase:"not_connected"|"configuration_only"|"awaiting_approval"|"verification_required"|"synced"|"stale"|"error";
 };
 export type BillingSubscription={
-  id:string;provider:"stripe"|"revolut"|"netopia";sku:string;
+  id:string;order_id:string;provider:"stripe"|"revolut"|"netopia";sku:string;
   status:"incomplete"|"trialing"|"active"|"past_due"|"paused"|"cancelled"|"expired";
   period:"monthly"|"annual";amount_minor:number;currency:string;
   current_period_start:number|null;current_period_end:number|null;cancel_at_period_end:0|1;created_at:number;
@@ -39,6 +39,7 @@ export type BillingAccount={
   profile:null|{entity_type:"individual"|"company"|null;legal_name:string|null;tax_id:string|null;registration_number:string|null;address:string|null;city:string|null;county:string|null;country_code:string;invoice_email:string|null;automatic_charging:0|1;default_provider:"stripe"|"revolut"|"netopia"|null};
   methods:Array<{id:string;provider:string;type:string;brand:string|null;last4:string|null;expiry_month:number|null;expiry_year:number|null;is_default:0|1;status:string}>;
   subscriptions:BillingSubscription[];invoices:BillingInvoice[];
+  revolutPlans:Array<{sku:string;period:string}>;
   providers:{stripe:BillingProviderStatus;revolut:BillingProviderStatus;oblio:BillingProviderStatus;netopia:BillingProviderStatus};
 };
 export const billingApi={

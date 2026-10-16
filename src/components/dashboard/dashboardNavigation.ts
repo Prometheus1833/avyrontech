@@ -84,6 +84,8 @@ export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
   leads: { label: "Leaduri & CRM", mobileLabel: "Leaduri", commandLabel: "Arată leadurile", hint: "Pipeline, oportunități și răspunsuri", icon: Target },
   subscriptions: { label: "Abonamente", commandLabel: "Deschide abonamentele", hint: "Planuri și servicii recurente", icon: CreditCard },
   cart: { label: "Coș", commandLabel: "Deschide coșul", hint: "Produse și servicii pregătite pentru comandă", icon: ShoppingCart },
+  orders: { label: "Istoric și plăți", mobileLabel: "Comenzi", commandLabel: "Deschide comenzile", hint: "Comenzi, stare și finalizarea plății", icon: CreditCard },
+  catalog: { label: "Servicii și produse", mobileLabel: "Catalog", commandLabel: "Explorează catalogul", hint: "Servicii, produse și favorite", icon: Boxes },
   invoices: { label: "Facturi", commandLabel: "Deschide facturile", hint: "Documente, scadențe și plăți", icon: Receipt },
   collection: { label: "Colecția mea", commandLabel: "Deschide colecția", hint: "Produsele și artefactele tale digitale", icon: Boxes },
   "servicii-avyron": { label: "Servicii AVYRON", commandLabel: "Deschide serviciile AVYRON", hint: "Pagini publice, oferte și livrare", icon: BriefcaseBusiness },

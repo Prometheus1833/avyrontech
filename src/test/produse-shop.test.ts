@@ -168,4 +168,14 @@ describe("facturarea Oblio", () => {
     expect(fetchMock.mock.calls[0][0]).toBe("https://www.oblio.eu/api/authorize/token");
     const invoiceBody=JSON.parse(String(fetchMock.mock.calls[1][1]?.body));expect(invoiceBody).toMatchObject({cif:"RO123",orderNumber:"order-test",idempotencyKey:"avyron-order-test",sendEmail:false,products:[{code:"sub-avy",price:270,vatPercentage:21,vatIncluded:true}]});
   });
+  it("păstrează totalul plătit printr-o linie de reducere valorică", async () => {
+    const fetchMock=vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({access_token:"token"}),{status:200}))
+      .mockResolvedValueOnce(new Response(JSON.stringify({data:{seriesName:"AVY",number:"1043"}}),{status:200}));
+    vi.stubGlobal("fetch",fetchMock);
+    const env={OBLIO_CLIENT_ID:"client",OBLIO_CLIENT_SECRET:"secret",OBLIO_CIF:"RO123",OBLIO_SERIES:"AVY",OBLIO_VAT_NAME:"Normala",OBLIO_VAT_PERCENTAGE:"21",OBLIO_AUTO_ISSUE_ENABLED:"true"};
+    await issueOblioInvoice(env as never,{...input,discountMinor:5400,discountLabel:"Reducere ANUALAVY20"});
+    const products=JSON.parse(String(fetchMock.mock.calls[1][1]?.body)).products;
+    expect(products[1]).toEqual({name:"Reducere ANUALAVY20",discountType:"valoric",discount:54,discountAllAbove:1});
+  });
 });

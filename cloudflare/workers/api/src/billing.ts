@@ -9,8 +9,8 @@ import { FINANCIAL_PROVIDER_PLAYBOOKS, financialSyncPhase, type FinancialConnect
 export const billingRouter = new Hono<AppBindings>();
 const REVOLUT_VERSION = "2026-08-17";
 type Provider = "stripe" | "revolut";
-type OrderRow = { id:string; user_id:string; items_json:string; total_cents:number; currency:string; requires_manual_quote:number; status:string };
-type StoredItem = { sku?:string; type?:string; kind?:"plan"|"item"; id?:string; name?:string; quantity?:number; period?:"monthly"|"annual"; lineTotalCents?:number; unitPriceCents?:number; taxId?:string|null };
+type OrderRow = { id:string; user_id:string; items_json:string; total_cents:number; currency:string; requires_manual_quote:number; status:string; promotion_code:string|null };
+type StoredItem = { sku?:string; type?:string; kind?:"plan"|"item"; id?:string; name?:string; quantity?:number; period?:"monthly"|"annual"; lineTotalCents?:number; unitPriceCents?:number; taxId?:string|null; accountingCode?:string|null; serviceKey?:string|null; productSlug?:string|null };
 
 const checkoutSchema = z.object({ orderId:z.string().uuid(), provider:z.enum(["stripe","revolut"]), savePaymentMethod:z.boolean().optional().default(true) }).strict();
 const profileSchema = z.object({
@@ -33,10 +33,11 @@ const stripeHeaders=(env:Env,idempotencyKey?:string)=>{const headers:Record<stri
 const revolutHeaders=(env:Env,idempotencyKey?:string)=>({authorization:`Bearer ${env.REVOLUT_MERCHANT_SECRET_KEY!.trim()}`,"content-type":"application/json","Revolut-Api-Version":env.REVOLUT_MERCHANT_API_VERSION?.trim()||REVOLUT_VERSION,...(idempotencyKey?{"Idempotency-Key":idempotencyKey}:{})});
 const revolutRoot=(env:Env)=>(env.REVOLUT_MERCHANT_API_URL?.trim()||"https://merchant.revolut.com/api").replace(/\/+$/,"");
 
-async function getOrder(db:D1Database,orderId:string,userId?:string){return db.prepare(`SELECT id,user_id,items_json,total_cents,currency,requires_manual_quote,status FROM commerce_orders WHERE id=?${userId?" AND user_id=?":""}`).bind(...(userId?[orderId,userId]:[orderId])).first<OrderRow>();}
+async function getOrder(db:D1Database,orderId:string,userId?:string){return db.prepare(`SELECT id,user_id,items_json,total_cents,currency,requires_manual_quote,status,promotion_code FROM commerce_orders WHERE id=?${userId?" AND user_id=?":""}`).bind(...(userId?[orderId,userId]:[orderId])).first<OrderRow>();}
 function orderItems(order:OrderRow):StoredItem[]{try{return JSON.parse(order.items_json) as StoredItem[];}catch{return[];}}
 function orderDescription(items:StoredItem[]){return items.map((item)=>item.name||item.sku||item.id).filter(Boolean).join(", ").slice(0,180)||"Comandă AVYRON";}
 function subscriptionItem(items:StoredItem[]){return items.length===1&&items[0]?.type==="subscription"&&items[0].sku&&items[0].period?items[0]:null;}
+export const checkoutBillingCompatible=(items:StoredItem[])=>!items.some((item)=>item.type==="subscription")||Boolean(subscriptionItem(items));
 function stripeSubscriptionStatus(status:string,eventType?:string){
   if(eventType==="customer.subscription.deleted")return "cancelled";
   return ({trialing:"trialing",active:"active",past_due:"past_due",paused:"paused",canceled:"cancelled",unpaid:"past_due",incomplete_expired:"expired"} as Record<string,string>)[status]||"incomplete";
@@ -108,6 +109,7 @@ export async function createCheckoutForOrder(c:Context<AppBindings>,input:{order
   const userId=c.get("userId");const order=await getOrder(c.env.DB,input.orderId,userId);
   if(!order)return {status:404 as const,body:{error:{code:"unknown_order"}}};
   if(order.requires_manual_quote||order.total_cents<=0)return {status:409 as const,body:{error:{code:"manual_quote_required"}}};
+  if(!checkoutBillingCompatible(orderItems(order)))return {status:409 as const,body:{error:{code:"mixed_billing_requires_separate_orders"}}};
   if(order.status==="paid")return {status:409 as const,body:{error:{code:"order_already_paid"}}};
   if(!providerCapabilities(c.env)[input.provider].enabled)return {status:503 as const,body:{error:{code:"provider_unconfigured",provider:input.provider}}};
   const otherProvider=await c.env.DB.prepare("SELECT provider FROM billing_checkout_sessions WHERE order_id=? AND provider<>? AND status IN ('created','pending') AND created_at>? LIMIT 1").bind(order.id,input.provider,Date.now()-24*60*60*1000).first<{provider:string}>();
@@ -139,12 +141,13 @@ billingRouter.post("/api/billing/checkout",async(c)=>{const parsed=checkoutSchem
 
 billingRouter.get("/api/billing/account",async(c)=>{
   const userId=c.get("userId");
-  try{const [profile,methods,subscriptions,invoices]=await Promise.all([
+  try{const [profile,methods,subscriptions,invoices,revolutPlans]=await Promise.all([
     c.env.DB.prepare("SELECT entity_type,legal_name,tax_id,registration_number,address,city,county,country_code,invoice_email,automatic_charging,default_provider FROM billing_profiles WHERE user_id=?").bind(userId).first(),
     c.env.DB.prepare("SELECT id,provider,type,brand,last4,expiry_month,expiry_year,is_default,status FROM billing_payment_methods WHERE user_id=? AND status='active' ORDER BY is_default DESC,created_at DESC").bind(userId).all(),
-    c.env.DB.prepare("SELECT id,provider,sku,status,period,amount_minor,currency,current_period_start,current_period_end,cancel_at_period_end,created_at FROM billing_subscriptions WHERE user_id=? ORDER BY created_at DESC").bind(userId).all(),
+    c.env.DB.prepare("SELECT id,order_id,provider,sku,status,period,amount_minor,currency,current_period_start,current_period_end,cancel_at_period_end,created_at FROM billing_subscriptions WHERE user_id=? ORDER BY created_at DESC").bind(userId).all(),
     c.env.DB.prepare("SELECT id,order_id,provider,series,number,status,currency,total_minor,document_url,issued_at,created_at FROM billing_invoices WHERE user_id=? ORDER BY created_at DESC").bind(userId).all(),
-  ]);return c.json({profile,methods:methods.results,subscriptions:subscriptions.results,invoices:invoices.results,providers:providerCapabilities(c.env)});}catch(error){if(/no such table: billing_/i.test(String(error)))return c.json({error:{code:"billing_migration_pending"}},503);throw error;}
+    c.env.DB.prepare("SELECT sku,period FROM billing_provider_products WHERE provider='revolut' AND active=1 AND provider_variation_id IS NOT NULL").all<{sku:string;period:string}>(),
+  ]);return c.json({profile,methods:methods.results,subscriptions:subscriptions.results,invoices:invoices.results,revolutPlans:revolutPlans.results,providers:providerCapabilities(c.env)});}catch(error){if(/no such table: billing_/i.test(String(error)))return c.json({error:{code:"billing_migration_pending"}},503);throw error;}
 });
 
 billingRouter.put("/api/billing/profile",async(c)=>{
@@ -190,6 +193,7 @@ async function recordPaidOrder(env:Env,input:{provider:Provider;providerReferenc
   if(items.length===1&&(legacy?.kind==="plan"||legacy?.kind==="item")&&legacy.id)statements.push(legacy.kind==="plan"
     ?env.DB.prepare("INSERT OR IGNORE INTO product_entitlements(id,user_id,slug,plan,source,order_id,granted_at,expires_at) VALUES (?,?,NULL,?,'purchase',?,?,?)").bind(crypto.randomUUID(),input.order.user_id,legacy.id,input.order.id,timestamp,timestamp+365*86400000)
     :env.DB.prepare("INSERT OR IGNORE INTO product_entitlements(id,user_id,slug,plan,source,order_id,granted_at,expires_at) VALUES (?,?,?,NULL,'purchase',?,?,NULL)").bind(crypto.randomUUID(),input.order.user_id,legacy.id,input.order.id,timestamp));
+  for(const item of items)if(item.type==="product"&&item.productSlug&&item.sku!=="custom-request")statements.push(env.DB.prepare("INSERT OR IGNORE INTO product_entitlements(id,user_id,slug,plan,source,order_id,granted_at,expires_at) VALUES (?,?,?,NULL,'purchase',?,?,NULL)").bind(crypto.randomUUID(),input.order.user_id,item.productSlug,input.order.id,timestamp));
   try{await env.DB.batch(statements);}catch(error){
     const fulfilled=await env.DB.prepare("SELECT order_id FROM billing_order_fulfillments WHERE order_id=?").bind(input.order.id).first();
     const current=await getOrder(env.DB,input.order.id);
@@ -206,10 +210,13 @@ async function syncOblioInvoiceForOrder(env:Env,order:OrderRow){
   const otherInvoice=await env.DB.prepare("SELECT 1 FROM billing_invoices WHERE order_id=? AND provider!='oblio' AND status='issued' LIMIT 1").bind(order.id).first();
   const revenueInvoice=await env.DB.prepare("SELECT 1 FROM financial_revenues WHERE external_reference=? AND invoice_number IS NOT NULL AND invoice_number!='' AND archived_at IS NULL LIMIT 1").bind(order.id).first();
   const timestamp=Date.now(),items=orderItems(order);
-  const identity=await env.DB.prepare("SELECT u.email,COALESCE(bp.legal_name,p.company_name,p.display_name,u.email) AS name,COALESCE(bp.tax_id,p.cui) AS tax_id,COALESCE(bp.address,p.address) AS address FROM users u LEFT JOIN profiles p ON p.id=u.id LEFT JOIN billing_profiles bp ON bp.user_id=u.id WHERE u.id=?").bind(order.user_id).first<{email:string;name:string;tax_id:string|null;address:string|null}>();
-  const invoiceInput={orderId:order.id,buyer:{name:identity?.name||identity?.email||"Client AVYRON",email:identity?.email,taxId:identity?.tax_id,address:identity?.address},lines:items.map((item)=>({name:item.name||item.sku||item.id||"Serviciu AVYRON",code:item.sku||item.id,quantity:item.quantity||1,unitPriceMinor:Math.round((item.lineTotalCents??item.unitPriceCents??order.total_cents)/(item.quantity||1))})),currency:order.currency,issuedAt:timestamp};
-  let invoice:Awaited<ReturnType<typeof issueOblioInvoice>>|{issued:false;reason:"manual_invoice_exists"};
+  const identity=await env.DB.prepare("SELECT COALESCE(bp.invoice_email,u.email) AS email,COALESCE(bp.legal_name,p.company_name,p.display_name,u.email) AS name,COALESCE(bp.tax_id,p.cui) AS tax_id,COALESCE(bp.address,p.address) AS address FROM users u LEFT JOIN profiles p ON p.id=u.id LEFT JOIN billing_profiles bp ON bp.user_id=u.id WHERE u.id=?").bind(order.user_id).first<{email:string;name:string;tax_id:string|null;address:string|null}>();
+  const lines=items.map((item)=>({name:item.name||item.sku||item.id||"Serviciu AVYRON",code:item.accountingCode||item.sku||item.id,quantity:item.quantity||1,unitPriceMinor:Math.round((item.lineTotalCents??item.unitPriceCents??order.total_cents)/(item.quantity||1))}));
+  const grossMinor=lines.reduce((sum,line)=>sum+line.unitPriceMinor*line.quantity,0);
+  const invoiceInput={orderId:order.id,buyer:{name:identity?.name||identity?.email||"Client AVYRON",email:identity?.email,taxId:identity?.tax_id,address:identity?.address},lines,discountMinor:Math.max(0,grossMinor-order.total_cents),discountLabel:order.promotion_code?`Reducere ${order.promotion_code}`:"Reducere aplicată",currency:order.currency,issuedAt:timestamp};
+  let invoice:Awaited<ReturnType<typeof issueOblioInvoice>>|{issued:false;reason:"manual_invoice_exists"|"invoice_amount_mismatch"};
   if(otherInvoice||revenueInvoice)invoice={issued:false,reason:"manual_invoice_exists"};
+  else if(grossMinor<order.total_cents)invoice={issued:false,reason:"invoice_amount_mismatch"};
   else try{invoice=await issueOblioInvoice(env,invoiceInput);}catch{invoice={issued:false,reason:"invoice_failed"};}
   await env.DB.prepare("INSERT INTO billing_invoices(id,user_id,order_id,provider,provider_invoice_id,series,number,status,currency,total_minor,document_url,error_code,issued_at,created_at,updated_at) VALUES (?,?,?,'oblio',?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(order_id,provider) DO UPDATE SET provider_invoice_id=excluded.provider_invoice_id,series=excluded.series,number=excluded.number,status=excluded.status,document_url=excluded.document_url,error_code=excluded.error_code,issued_at=excluded.issued_at,updated_at=excluded.updated_at WHERE billing_invoices.status!='issued'")
     .bind(crypto.randomUUID(),order.user_id,order.id,invoice.issued?invoice.providerId:null,invoice.issued?invoice.series:null,invoice.issued?invoice.number:null,invoice.issued?"issued":"pending",order.currency,order.total_cents,invoice.issued?invoice.documentUrl:null,invoice.issued?null:invoice.reason,invoice.issued?timestamp:null,timestamp,timestamp).run();

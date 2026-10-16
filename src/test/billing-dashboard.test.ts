@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Hono } from "hono";
-import { billingRouter } from "../../cloudflare/workers/api/src/billing";
+import { billingRouter, checkoutBillingCompatible } from "../../cloudflare/workers/api/src/billing";
 import type { AppBindings } from "../../cloudflare/workers/api/src/types";
 
 function adminApp() {
@@ -15,6 +15,11 @@ function adminApp() {
 }
 
 describe("financial dashboard contract", () => {
+  it("prevents a recurring plan and a one-time item from sharing a payment checkout", () => {
+    expect(checkoutBillingCompatible([{ sku: "sub-site-plus", type: "subscription", period: "monthly" }, { sku: "website-starter", type: "package" }])).toBe(false);
+    expect(checkoutBillingCompatible([{ sku: "sub-site-plus", type: "subscription", period: "monthly" }])).toBe(true);
+    expect(checkoutBillingCompatible([{ sku: "website-starter", type: "package" }, { sku: "website-business", type: "package" }])).toBe(true);
+  });
   it("returns separate, empty provider ledgers without inventing a bank balance or a verified connection", async () => {
     const queries: string[] = [];
     const db = { prepare: (query: string) => {

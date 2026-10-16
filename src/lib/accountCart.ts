@@ -13,12 +13,14 @@ export type AccountCartItem = {
   period?: "monthly" | "annual";
   notes?: string;
   productSlug?: string;
+  serviceKey?: string;
   /** Exclusiv pentru afișarea locală; Worker-ul nu îl persistă și nu îl crede. */
   price_estimate?: number;
   price_currency?: CommerceCurrency;
 };
 
 export const ACCOUNT_CART_KEY = "avyron_cart_v2";
+export const ACCOUNT_CART_OWNER_KEY = "avyron_cart_owner_v1";
 export const ACCOUNT_CART_EVENT = "avyron:cart-updated";
 
 const identity = (item: Pick<AccountCartItem, "source" | "id">) => `${item.source}:${item.id}`;
@@ -48,6 +50,7 @@ export function readLocalAccountCart(): AccountCartItem[] {
         ...(item.period === "monthly" || item.period === "annual" ? { period: item.period } : {}),
         ...(item.notes ? { notes: String(item.notes).slice(0, 1000) } : {}),
         ...(item.productSlug ? { productSlug: String(item.productSlug).slice(0, 100) } : {}),
+        ...(item.serviceKey ? { serviceKey: String(item.serviceKey).slice(0, 120) } : {}),
         ...(Number.isFinite(item.price_estimate) ? { price_estimate: Number(item.price_estimate) } : {}),
         ...(item.price_currency === "RON" || item.price_currency === "EUR" ? { price_currency: item.price_currency } : {}),
       } satisfies AccountCartItem];

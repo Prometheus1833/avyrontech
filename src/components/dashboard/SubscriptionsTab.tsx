@@ -11,6 +11,7 @@ import { cfAuth } from "@/lib/cfAuth";
 import { commerceItemBySku } from "@/data/commerceCatalog";
 import { billingApi, type BillingSubscription } from "@/lib/billingApi";
 import { toast } from "sonner";
+import { SERVICE_COMMERCIAL_SOURCES } from "@/data/serviceCommercialSources";
 
 type Subscription = {
   id: string;
@@ -24,7 +25,7 @@ type Subscription = {
   next_renewal_at: string | null;
 };
 
-type OrderItem = { sku?: string; name?: string; quantity?: number; period?: string | null };
+type OrderItem = { sku?: string; name?: string; quantity?: number; period?: string | null; serviceKey?: string | null };
 
 type CommerceOrder = {
   id: string;
@@ -109,9 +110,9 @@ export function SubscriptionsTab() {
     d ? new Date(d).toLocaleDateString(ro ? "ro-RO" : "en-US", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
   const fmtStamp = (seconds: number) =>
-    new Date(seconds * 1000).toLocaleDateString(ro ? "ro-RO" : "en-US", { day: "2-digit", month: "short", year: "numeric" });
+    new Date(seconds).toLocaleDateString(ro ? "ro-RO" : "en-US", { day: "2-digit", month: "short", year: "numeric" });
 
-  const pending = orders.filter((order) => order.status !== "cancelled");
+  const pending = orders.filter((order) => order.status !== "cancelled" && order.status !== "paid" && parseItems(order.items_json).some((item) => item.period));
 
   const cancelBillingSubscription = async (subscription: BillingSubscription) => {
     try {
@@ -129,6 +130,7 @@ export function SubscriptionsTab() {
       <div>
         <h2 className="text-2xl font-display font-bold">{t.auth.dash.subs.title}</h2>
         <p className="text-sm text-muted-foreground">{t.auth.dash.subs.subtitle}</p>
+        <a href="/profil?tab=cart" className="mt-3 inline-flex rounded-lg border border-primary/20 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/5">Adaugă un abonament în coș</a>
       </div>
 
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
@@ -141,6 +143,8 @@ export function SubscriptionsTab() {
           <div className="grid gap-4">
             {billingItems.map((subscription) => {
               const catalogItem = commerceItemBySku(subscription.sku);
+              const linkedServiceKey = parseItems(orders.find((order) => order.id === subscription.order_id)?.items_json)[0]?.serviceKey;
+              const linkedService = SERVICE_COMMERCIAL_SOURCES.find((service) => service.entity_key === linkedServiceKey);
               const canCancel = !["cancelled", "expired"].includes(subscription.status) && !subscription.cancel_at_period_end;
               return (
                 <Card key={subscription.id} className="overflow-hidden">
@@ -152,6 +156,7 @@ export function SubscriptionsTab() {
                         <p className="mt-1 text-xs text-muted-foreground">
                           {subscription.provider === "revolut" ? "Revolut Pay" : "Stripe"} · {subscription.period === "annual" ? (ro ? "anual" : "annual") : (ro ? "lunar" : "monthly")}
                         </p>
+                        {linkedService && <p className="mt-1 text-xs text-muted-foreground">Serviciu asociat: {linkedService.display_name}</p>}
                       </div>
                     </div>
                     <Badge variant={subscription.status === "active" ? "default" : subscription.status === "past_due" ? "destructive" : "secondary"}>
@@ -246,6 +251,7 @@ export function SubscriptionsTab() {
                           {ro ? "Trimisă pe" : "Sent on"} {fmtStamp(order.created_at)}
                           {parsed[0]?.period ? ` · ${parsed[0].period === "annual" ? (ro ? "anual" : "annual") : (ro ? "lunar" : "monthly")}` : ""}
                           {order.promotion_code ? ` · ${order.promotion_code}` : ""}
+                          {parsed[0]?.serviceKey ? ` · ${SERVICE_COMMERCIAL_SOURCES.find((service) => service.entity_key === parsed[0].serviceKey)?.display_name || parsed[0].serviceKey}` : ""}
                         </p>
                       </div>
                     </div>
