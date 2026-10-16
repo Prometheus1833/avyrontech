@@ -110,6 +110,8 @@ export const NOINDEX_PREFIXES = [
   "/s",
   "/auth",
   "/autentificare",
+  "/staff",
+  "/admin",
   "/forgot-password",
   "/reset-password",
   "/profil",
