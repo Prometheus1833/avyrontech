@@ -34,7 +34,8 @@ import { platformRoleForUser } from "./authorization";
 import { base32Encode, decryptTotpSecret, encryptTotpSecret, generateTotpSecret, totpUri, verifyTotp } from "./totp";
 import { engineRouter, runDueEngineDiscovery } from "./engine";
 import { newsletterRouter } from "./newsletter";
-import { forcedPasswordAllowedPath, mfaAuthEnabled, normalizeUsername, turnstileAuthEnabled } from "./authPolicy";
+import { forcedPasswordAllowedPath, mfaAuthEnabled, normalizeLoginPhone, normalizeUsername, turnstileAuthEnabled, uniqueStaffPhoneMatch } from "./authPolicy";
+import { parseReviewSubmission, WEBSITE_REVIEW_SURFACE } from "./reviewsPolicy";
 
 export { AvyronAgentRuntime } from "./agents/AvyronAgentRuntime";
 export { AvyronMaintenanceWorkflow } from "./workflows/AvyronMaintenanceWorkflow";
@@ -231,6 +232,92 @@ async function rolesFor(db: D1Database, userId: string): Promise<Role[]> {
   return results.map((r) => r.role);
 }
 
+// Public reviews are read from an approved-only projection. Contact details never leave staff routes.
+app.get("/api/public/reviews", async (c) => {
+  if (c.req.query("surface") !== WEBSITE_REVIEW_SURFACE) return c.json({ data: [] });
+  const { results } = await c.env.DB.prepare(
+    `SELECT id,surface_key,source_type,source_platform,source_url,display_name,entity_type,brand_name,rating,review_text,reviewed_at
+       FROM service_reviews WHERE surface_key=? AND status='approved'
+       ORDER BY reviewed_at DESC, id DESC LIMIT 12`,
+  ).bind(WEBSITE_REVIEW_SURFACE).all();
+  c.header("Cache-Control", "public, max-age=30, s-maxage=60");
+  return c.json({ data: results });
+});
+
+app.post("/api/public/reviews", async (c) => {
+  const maxReviewPayloadBytes = 8192;
+  const declaredLength = Number(c.req.header("content-length") || 0);
+  if (declaredLength > maxReviewPayloadBytes) return c.json({ error: { code: "payload_too_large" } }, 413);
+  const body = c.req.raw.body;
+  if (!body) return c.json({ error: { code: "invalid_payload" } }, 400);
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let raw = "";
+  let receivedBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    receivedBytes += value.byteLength;
+    if (receivedBytes > maxReviewPayloadBytes) {
+      await reader.cancel();
+      return c.json({ error: { code: "payload_too_large" } }, 413);
+    }
+    raw += decoder.decode(value, { stream: true });
+  }
+  raw += decoder.decode();
+  let payload: unknown = null;
+  try { payload = JSON.parse(raw) as unknown; } catch { /* Invalid JSON is rejected below. */ }
+  const parsed = parseReviewSubmission(payload);
+  if (!parsed.data) return c.json({ error: { code: parsed.error } }, 400);
+  const data = parsed.data;
+  if (data.website) return c.json({ ok: true, status: "pending" }, 202); // Honeypot.
+  const ipKey = await hashKey(clientIp(c.req.raw));
+  const emailKey = await hashKey(data.email);
+  const limit = await checkRateLimit(c.env.DB, [
+    { key: `reviews:ip:${ipKey}:h`, limit: 3, windowSec: 3600 },
+    { key: `reviews:email:${emailKey}:d`, limit: 2, windowSec: 86400 },
+  ], { limiter: c.env.PUBLIC_API_RATE_LIMITER, key: `reviews:${ipKey}` });
+  if (!limit.ok) return c.json({ error: { code: "rate_limited" } }, 429, { "Retry-After": String(limit.retryAfter || 60) });
+  const challenge = await verifyTurnstile(c.env.TURNSTILE_SECRET, data.turnstileToken, clientIp(c.req.raw), {
+    expectedAction: "service-review",
+    allowedHostnames: c.env.TURNSTILE_ALLOWED_HOSTNAMES,
+  });
+  if (!challenge.ok) return c.json({ error: { code: "captcha_failed" } }, 403);
+  const timestamp = now();
+  await c.env.DB.prepare(
+    `INSERT INTO service_reviews
+      (id,surface_key,source_type,display_name,contact_email,entity_type,brand_name,rating,review_text,publish_consent,status,created_at,updated_at)
+     VALUES (?,?,'direct',?,?,?,?,?,?,1,'pending',?,?)`,
+  ).bind(uuid(), data.surfaceKey, data.displayName, data.email, data.entityType, data.brandName,
+    data.rating, data.reviewText, timestamp, timestamp).run();
+  return c.json({ ok: true, status: "pending" }, 202);
+});
+
+app.get("/api/admin/reviews", requireAuth, requireRole("admin"), async (c) => {
+  const status = c.req.query("status") || "pending";
+  if (!["pending", "approved", "rejected"].includes(status)) return c.json({ error: { code: "invalid_status" } }, 400);
+  const { results } = await c.env.DB.prepare(
+    `SELECT id,surface_key,source_type,source_platform,source_url,display_name,contact_email,entity_type,brand_name,
+            rating,review_text,status,moderation_note,reviewed_by,reviewed_at,created_at
+       FROM service_reviews WHERE status=? ORDER BY created_at DESC LIMIT 100`,
+  ).bind(status).all();
+  return c.json({ data: results });
+});
+
+app.patch("/api/admin/reviews/:id", requireAuth, requireRole("admin"), async (c) => {
+  const body = await c.req.json().catch(() => ({})) as { status?: unknown; note?: unknown };
+  if (body.status !== "approved" && body.status !== "rejected") return c.json({ error: { code: "invalid_status" } }, 400);
+  const note = typeof body.note === "string" ? body.note.trim().slice(0, 500) : "";
+  const timestamp = now();
+  const result = await c.env.DB.prepare(
+    `UPDATE service_reviews SET status=?,moderation_note=?,reviewed_by=?,reviewed_at=?,updated_at=?
+       WHERE id=?`,
+  ).bind(body.status, note || null, c.get("userId"), timestamp, timestamp, c.req.param("id")).run();
+  if (!result.meta.changes) return c.json({ error: { code: "not_found" } }, 404);
+  await recordSecurityEvent(c, c.get("userId"), `reviews.${body.status}`, "allowed", "info", { reviewId: c.req.param("id") });
+  return c.json({ ok: true, status: body.status });
+});
+
 const privilegedAccount = async (db: D1Database, userId: string, roles: Role[]): Promise<boolean> => {
   if (roles.includes("staff") || roles.includes("admin") || (await platformRoleForUser(db, userId)) !== null) return true;
   return Boolean(await db.prepare(
@@ -371,7 +458,13 @@ app.post("/api/auth/signup", async (c) => {
       .bind(id, "signup", c.req.header("cf-connecting-ip") || null, t),
   ]);
   const delivery = await sendVerification(c, id, email);
-  return c.json({ ok: true, verification_required: true, verification_email_sent: delivery.delivered }, delivery.delivered ? 202 : 503);
+  if (!delivery.delivered) {
+    // A customer cannot enter an unverified account. Release the email so a
+    // transient delivery outage never strands it in an unusable account.
+    await c.env.DB.prepare("DELETE FROM users WHERE id = ? AND email_verified = 0").bind(id).run();
+    return c.json({ error: { code: "verification_delivery_unavailable" } }, 503);
+  }
+  return c.json({ ok: true, verification_required: true, verification_email_sent: true }, 202);
 });
 
 app.post("/api/auth/resend-verification", async (c) => {
@@ -411,15 +504,29 @@ app.post("/api/auth/login", async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const identifier = String(body.identifier || body.email || "").trim().toLowerCase();
   const password = String(body.password || "");
+  const remember = body.remember === true;
   const loginEmailKey = await hashKey(identifier);
   const loginRate = await checkRateLimit(c.env.DB, [
     { key: `login:ip:${await hashKey(clientIp(c.req.raw))}:15m`, limit: 20, windowSec: 900 },
     { key: `login:mail:${loginEmailKey}:15m`, limit: 8, windowSec: 900 },
   ], { limiter: c.env.PUBLIC_API_RATE_LIMITER, key: `login:${loginEmailKey}` });
   if (!loginRate.ok) return c.json({ error: { code: "rate_limited", message: "Prea multe încercări" } }, 429, { "Retry-After": String(loginRate.retryAfter) });
-  const row = await c.env.DB.prepare(
+  let row = await c.env.DB.prepare(
     "SELECT id,password_hash,disabled_at,email_verified,must_change_password FROM users WHERE lower(email)=? OR lower(username)=? LIMIT 1",
   ).bind(identifier, identifier).first<{ id: string; password_hash: string; disabled_at: number | null; email_verified: number; must_change_password: number }>();
+  if (!row) {
+    const phone = normalizeLoginPhone(identifier);
+    if (phone) {
+      const { results } = await c.env.DB.prepare(
+        `SELECT u.id,u.password_hash,u.disabled_at,u.email_verified,u.must_change_password,p.phone
+           FROM users u JOIN profiles p ON p.id=u.id
+          WHERE p.phone IS NOT NULL AND EXISTS
+            (SELECT 1 FROM user_roles r WHERE r.user_id=u.id AND r.role IN ('staff','admin'))`,
+      ).all<{ id: string; password_hash: string; disabled_at: number | null; email_verified: number; must_change_password: number; phone: string }>();
+      // Ambiguous phone numbers never authenticate either account.
+      row = uniqueStaffPhoneMatch(results, phone);
+    }
+  }
   if (!row) {
     await hashPassword(password); // Keep missing-user timing close to a real password check.
     await recordSecurityEvent(c, null, "auth.login", "denied", "warning", { reason: "invalid_credentials" });
@@ -450,17 +557,17 @@ app.post("/api/auth/login", async (c) => {
       await c.env.DB.batch([
         c.env.DB.prepare("DELETE FROM mfa_challenges WHERE user_id = ? OR expires_at < ?").bind(row.id, timestamp),
         c.env.DB.prepare(
-          `INSERT INTO mfa_challenges
-            (token_hash,user_id,factor_id,ip_hash,attempts,expires_at,created_at)
-           VALUES (?,?,?,?,0,?,?)`,
-        ).bind(await sha256(challenge), row.id, factor.id, await hashKey(clientIp(c.req.raw)), timestamp + 5 * 60_000, timestamp),
+        `INSERT INTO mfa_challenges
+            (token_hash,user_id,factor_id,ip_hash,attempts,expires_at,created_at,remember_session)
+           VALUES (?,?,?,?,0,?,?,?)`,
+        ).bind(await sha256(challenge), row.id, factor.id, await hashKey(clientIp(c.req.raw)), timestamp + 5 * 60_000, timestamp, remember ? 1 : 0),
       ]);
       await recordSecurityEvent(c, row.id, "auth.mfa_challenge_created", "allowed");
       return c.json({ mfa_required: true, challenge_token: challenge, expires_in: 300 });
     }
-    return createSession(c, row.id, resolvedRoles, false, { mfa_enrollment_required: true });
+    return createSession(c, row.id, resolvedRoles, false, { mfa_enrollment_required: true }, remember);
   }
-  return createSession(c, row.id, resolvedRoles, false, { must_change_password: row.must_change_password === 1 });
+  return createSession(c, row.id, resolvedRoles, false, { must_change_password: row.must_change_password === 1 }, remember);
 });
 
 async function createSession(
@@ -469,11 +576,13 @@ async function createSession(
   roles: Role[],
   mfaVerified: boolean,
   extra: Record<string, unknown> = {},
+  remember = false,
 ) {
   const sid = randomHex(32);
   const sessionId = await sha256(sid);
   const t = now();
-  const exp = t + 30 * 24 * 60 * 60 * 1000; // 30d
+  const lifetime = remember ? 30 * 24 * 60 * 60 : 12 * 60 * 60;
+  const exp = t + lifetime * 1000;
   const userAgent = c.req.header("user-agent") || null;
   const deviceName = userAgent ? userAgent.slice(0, 120) : "Dispozitiv necunoscut";
   await c.env.DB.batch([
@@ -486,7 +595,7 @@ async function createSession(
     c.env.DB.prepare("INSERT INTO audit_log (user_id,action,ip,created_at) VALUES (?,?,?,?)")
       .bind(userId, mfaVerified ? "login_mfa" : "login", c.req.header("cf-connecting-ip") || null, t),
   ]);
-  setCookie(c, "sid", sid, { httpOnly: true, secure: true, sameSite: c.env.APP_ENV === "production" ? "Lax" : "None", path: "/", maxAge: 30 * 24 * 60 * 60 });
+  setCookie(c, "sid", sid, { httpOnly: true, secure: true, sameSite: c.env.APP_ENV === "production" ? "Lax" : "None", path: "/", ...(remember ? { maxAge: lifetime } : {}) });
   const access = await signJwt({ sub: userId, sid: sessionId }, c.env.JWT_SECRET, 900);
   await recordSecurityEvent(c, userId, "auth.login", "allowed", "info", { mfaVerified });
   return c.json({ user: { id: userId, roles }, access_token: access, expires_in: 900, ...extra });
@@ -506,13 +615,13 @@ app.post("/api/auth/mfa/challenge", async (c) => {
   if (!rate.ok) return c.json({ error: { code: "rate_limited", message: "Prea multe încercări" } }, 429);
 
   const challenge = await c.env.DB.prepare(
-    `SELECT c.user_id,c.factor_id,c.ip_hash,c.attempts,c.expires_at,f.secret_ciphertext
+    `SELECT c.user_id,c.factor_id,c.ip_hash,c.attempts,c.expires_at,c.remember_session,f.secret_ciphertext
        FROM mfa_challenges c
        JOIN mfa_factors f ON f.id = c.factor_id AND f.status = 'active'
       WHERE c.token_hash = ? AND c.used_at IS NULL AND c.attempts < 5`,
   ).bind(tokenHash).first<{
     user_id: string; factor_id: string; ip_hash: string; attempts: number;
-    expires_at: number; secret_ciphertext: string;
+    expires_at: number; remember_session: number; secret_ciphertext: string;
   }>();
   if (!challenge || challenge.expires_at < now() || challenge.ip_hash !== ipHash) {
     await recordSecurityEvent(c, challenge?.user_id ?? null, "auth.mfa_challenge", "denied", "warning");
@@ -560,7 +669,7 @@ app.post("/api/auth/mfa/challenge", async (c) => {
   await c.env.DB.batch(writes);
   await recordSecurityEvent(c, challenge.user_id, recoveryHash ? "auth.mfa_recovery_used" : "auth.mfa_challenge", "allowed", recoveryHash ? "warning" : "info");
   const roles = await rolesFor(c.env.DB, challenge.user_id);
-  return createSession(c, challenge.user_id, roles.length ? roles : ["user"], true);
+  return createSession(c, challenge.user_id, roles.length ? roles : ["user"], true, {}, challenge.remember_session === 1);
 });
 
 app.get("/api/auth/mfa", requireAuth, async (c) => {
@@ -970,6 +1079,18 @@ app.put("/api/profile", requireAuth, async (c) => {
   if (values.language && !["ro", "en"].includes(values.language)) return c.json({ error: { code: "invalid_language" } }, 400);
   if (values.theme && !["light", "dark", "system"].includes(values.theme)) return c.json({ error: { code: "invalid_theme" } }, 400);
   const userId = c.get("userId");
+  if (values.phone) {
+    const accountRoles = await rolesFor(c.env.DB, userId);
+    if (accountRoles.includes("staff") || accountRoles.includes("admin")) {
+      const phone = normalizeLoginPhone(values.phone);
+      if (!phone) return c.json({ error: { code: "invalid_phone", message: "Introdu un număr de telefon valid." } }, 400);
+      const { results } = await c.env.DB.prepare(
+        `SELECT p.id,p.phone FROM profiles p WHERE p.id <> ? AND p.phone IS NOT NULL
+          AND EXISTS (SELECT 1 FROM user_roles r WHERE r.user_id=p.id AND r.role IN ('staff','admin'))`,
+      ).bind(userId).all<{ id: string; phone: string }>();
+      if (results.some((candidate) => normalizeLoginPhone(candidate.phone) === phone)) return c.json({ error: { code: "phone_taken", message: "Acest telefon aparține deja unui cont staff." } }, 409);
+    }
+  }
   await c.env.DB.prepare(`UPDATE profiles SET ${patch.map(([field]) => `${field} = ?`).join(", ")}, updated_at = ? WHERE id = ?`)
     .bind(...patch.map(([, value]) => value || null), now(), userId).run();
   if (values.display_name !== undefined) await c.env.DB.prepare("UPDATE users SET display_name = ?, updated_at = ? WHERE id = ?")
@@ -1555,6 +1676,7 @@ app.use("/api/billing/config", requireAuth);
 app.use("/api/billing/checkout", requireAuth);
 app.use("/api/billing/account", requireAuth);
 app.use("/api/billing/profile", requireAuth);
+app.use("/api/billing/payment-methods", requireAuth);
 app.use("/api/billing/payment-methods/*", requireAuth);
 app.use("/api/billing/portal", requireAuth);
 app.use("/api/billing/subscriptions/*", requireAuth);

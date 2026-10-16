@@ -24,6 +24,7 @@ const StatsTab = lazyWithRetry(() => import("@/components/dashboard/StatsTab").t
 const InvoicesTab = lazyWithRetry(() => import("@/components/dashboard/InvoicesTab").then((m) => ({ default: m.InvoicesTab })));
 const TicketsTab = lazyWithRetry(() => import("@/components/dashboard/TicketsTab").then((m) => ({ default: m.TicketsTab })));
 const StaffClientsTab = lazyWithRetry(() => import("@/components/dashboard/StaffClientsTab").then((m) => ({ default: m.StaffClientsTab })));
+const StaffReviewsTab = lazyWithRetry(() => import("@/components/dashboard/StaffReviewsTab"));
 const StaffAnnouncementsTab = lazyWithRetry(() => import("@/components/dashboard/StaffAnnouncementsTab").then((m) => ({ default: m.StaffAnnouncementsTab })));
 const CloudflareProjects = lazyWithRetry(() => import("@/pages/intern/InternHome"));
 const StaffMaintenanceTab = lazyWithRetry(() => import("@/components/dashboard/StaffMaintenanceTab").then((m) => ({ default: m.StaffMaintenanceTab })));
@@ -32,6 +33,7 @@ const StaffResourcesTab = lazyWithRetry(() => import("@/components/dashboard/Sta
 const StaffDomainStatsTab = lazyWithRetry(() => import("@/components/dashboard/StaffDomainStatsTab").then((m) => ({ default: m.StaffDomainStatsTab })));
 const StaffExampleRequestsTab = lazyWithRetry(() => import("@/components/dashboard/StaffExampleRequestsTab").then((m) => ({ default: m.StaffExampleRequestsTab })));
 const SettingsTab = lazyWithRetry(() => import("@/components/dashboard/SettingsTab").then((m) => ({ default: m.SettingsTab })));
+const BillingSettingsCard = lazyWithRetry(() => import("@/components/dashboard/BillingSettingsCard"));
 const CartTab = lazyWithRetry(() => import("@/components/dashboard/CartTab").then((m) => ({ default: m.CartTab })));
 const StaffFinanceTab = lazyWithRetry(() => import("@/components/dashboard/StaffFinanceTab").then((m) => ({ default: m.StaffFinanceTab })));
 const StaffMediaTab = lazyWithRetry(() => import("@/components/dashboard/StaffMediaTab").then((m) => ({ default: m.StaffMediaTab })));
@@ -41,6 +43,9 @@ const AiOsConsole = lazyWithRetry(() => import("@/pages/intern/AiOs"));
 const AiProductionEntryCard = lazyWithRetry(() => import("@/components/dashboard/AiProductionEntryCard"));
 const EngineEntryCard = lazyWithRetry(() => import("@/components/dashboard/EngineEntryCard"));
 const AvyronOverview = lazyWithRetry(() => import("@/components/dashboard/AvyronOverview"));
+const CustomerHomeTab = lazyWithRetry(() => import("@/components/dashboard/CustomerHomeTab").then((m) => ({ default: m.CustomerHomeTab })));
+const CustomerCatalogTab = lazyWithRetry(() => import("@/components/dashboard/CustomerCatalogTab").then((m) => ({ default: m.CustomerCatalogTab })));
+const OrdersTab = lazyWithRetry(() => import("@/components/dashboard/OrdersTab").then((m) => ({ default: m.OrdersTab })));
 const TeamStaffTab = lazyWithRetry(() => import("@/components/dashboard/TeamStaffTab"));
 const OsCentersTab = lazyWithRetry(() => import("@/components/dashboard/OsCentersTab"));
 const CommandCenter = lazyWithRetry(() => import("@/components/dashboard/CommandCenter"));
@@ -74,8 +79,8 @@ export default function Profile() {
   });
 
   const allowed = useMemo(() => sectionsFor(access), [access]);
-  const groups = DASHBOARD_GROUP_ORDER.map((group) => ({ id: group, label: DASHBOARD_GROUP_LABELS[group], items: allowed.filter((section) => section.group === group && section.navigation !== false && !(access.isStaff && section.id === "collection")) })).filter((group) => group.items.length);
-  const mobilePrimary = new Set<SectionId>(["overview", "projects", access.isStaff ? "leads" : "invoices", ...(access.isSuperAdmin ? ["ai-os" as SectionId] : [])]);
+  const groups = DASHBOARD_GROUP_ORDER.map((group) => ({ id: group, label: DASHBOARD_GROUP_LABELS[group], items: allowed.filter((section) => section.group === group && section.navigation !== false && !(access.isStaff && section.id === "collection") && (access.isStaff || !["stats"].includes(section.id))) })).filter((group) => group.items.length);
+  const mobilePrimary = new Set<SectionId>(access.isStaff ? ["overview", "projects", "leads", ...(access.isSuperAdmin ? ["ai-os" as SectionId] : [])] : ["overview", "catalog", "cart", "orders"]);
   const mobileMoreGroups = groups
     .map((group) => ({ ...group, items: group.items.filter((section) => !mobilePrimary.has(section.id)) }))
     .filter((group) => group.items.length);
@@ -87,13 +92,8 @@ export default function Profile() {
     if (!canOpenSection(tab, access)) setTab(defaultSection(access));
   }, [tab, access]);
   useEffect(() => {
-    if (params.get("tab") !== tab) {
-      const next = new URLSearchParams(params);
-      next.set("tab", tab);
-      if (tab !== "intern") next.delete("dm");
-      setParams(next, { replace: true });
-    }
-  }, [tab, params, setParams]);
+    if (canOpenSection(requested, access)) setTab((current) => current === requested ? current : requested as SectionId);
+  }, [requested, access]);
   useEffect(() => {
     if (activeGroup && openGroups[activeGroup] === undefined) setOpenGroups((current) => ({ ...current, [activeGroup]: true }));
   }, [activeGroup, openGroups]);
@@ -107,17 +107,21 @@ export default function Profile() {
   }, []);
   useEffect(() => {
     void import("@/lib/seo").then(({ setPageMeta }) => setPageMeta({
-      title: "Dashboard — AVYRON OS", description: "Sistemul operațional intern AVYRON.", path: "/profil", robots: "noindex, nofollow",
+      title: access.isClient ? "Contul meu — AVYRON" : "Dashboard — AVYRON OS", description: access.isClient ? "Servicii, comenzi și documentele contului AVYRON." : "Sistemul operațional intern AVYRON.", path: "/profil", robots: "noindex, nofollow",
     }));
-  }, []);
+  }, [access.isClient]);
 
   const openSection = (section: SectionId) => {
-    if (canOpenSection(section, access)) {
-      setTab(section);
-      const group = allowed.find((item) => item.id === section)?.group;
+    const destination = canOpenSection(section, access) ? section : ["security", "automations"].includes(String(section)) && access.isStaff ? "os-centers" : null;
+    if (destination) {
+      setTab(destination);
+      const next = new URLSearchParams(params);
+      next.set("tab", destination);
+      if (destination !== "intern") next.delete("dm");
+      setParams(next, { replace: false });
+      const group = allowed.find((item) => item.id === destination)?.group;
       if (group) setOpenGroups((current) => ({ ...current, [group]: true }));
     }
-    else if (["security", "automations"].includes(String(section)) && access.isStaff) setTab("os-centers");
     setMobileMenuOpen(false);
   };
 
@@ -138,12 +142,12 @@ export default function Profile() {
 
   return <main className="dark min-h-screen bg-[#060a14] text-slate-100 selection:bg-violet-500/35">
     <div aria-hidden className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_75%_0%,rgba(79,70,229,.15),transparent_34%),radial-gradient(circle_at_20%_100%,rgba(124,58,237,.10),transparent_35%)]" />
-    <Tabs value={tab} onValueChange={(value) => setTab(value as SectionId)} className="relative flex min-h-screen">
+    <Tabs value={tab} onValueChange={(value) => openSection(value as SectionId)} className="relative flex min-h-screen">
       <aside className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r border-white/[0.07] bg-[#090e1d]/95 px-3 py-4 backdrop-blur-xl transition-[width] duration-200 lg:flex ${sidebarCollapsed ? "w-[76px]" : "w-[248px]"}`}>
         <div className={`flex items-center ${sidebarCollapsed ? "justify-center" : "justify-between"}`}>
           <a href={publicSiteHref()} className="flex min-w-0 items-center gap-2.5 rounded-xl p-1.5 hover:bg-white/[0.04]">
             <img src={logo} alt="Avyron" className="size-9 rounded-xl ring-1 ring-white/10" />
-            {!sidebarCollapsed && <div className="min-w-0"><p className="font-display text-sm font-bold tracking-[0.08em] text-white">AVYRON <span className="text-violet-300">OS</span></p><p className="text-[9px] text-slate-600">Sistem operațional intern</p></div>}
+            {!sidebarCollapsed && <div className="min-w-0"><p className="font-display text-sm font-bold tracking-[0.08em] text-white">AVYRON <span className="text-violet-300">{access.isClient ? "CONT" : "OS"}</span></p><p className="text-[9px] text-slate-600">{access.isClient ? "Spațiul tău personal" : "Sistem operațional intern"}</p></div>}
           </a>
           {!sidebarCollapsed && <button type="button" onClick={() => setSidebarCollapsed(true)} aria-label="Restrânge meniul" className="rounded-lg p-2 text-slate-600 hover:bg-white/[0.05] hover:text-slate-300"><PanelLeftClose className="size-4" /></button>}
         </div>
@@ -169,10 +173,10 @@ export default function Profile() {
             <a href={publicSiteHref()} aria-label="Înapoi la site" data-testid="page-back-link" className="hidden rounded-xl p-2 text-slate-600 hover:bg-white/[0.05] hover:text-slate-300 lg:inline-flex"><ChevronLeft className="size-5" /></a>
             <button type="button" onClick={() => openSection("overview")} className="mr-auto flex items-center gap-2 lg:hidden" aria-label="Deschide prezentarea generală">
               <img src={logo} alt="" className="size-7 rounded-lg ring-1 ring-white/10" />
-              <span className="font-display text-xs font-bold tracking-[0.08em] text-white">AVYRON <span className="text-violet-300">OS</span></span>
+              <span className="font-display text-xs font-bold tracking-[0.08em] text-white">AVYRON <span className="text-violet-300">{access.isClient ? "CONT" : "OS"}</span></span>
             </button>
-            <button type="button" onClick={() => setCommandOpen(true)} aria-label="Caută clienți, proiecte, leaduri, facturi" className="rounded-xl p-2 text-slate-500 transition hover:bg-white/[0.05] hover:text-slate-200 lg:hidden"><Search className="size-4" /></button>
-            <button type="button" onClick={() => setCommandOpen(true)} className="hidden min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2.5 text-left text-xs text-slate-600 transition hover:border-violet-400/25 hover:text-slate-400 sm:max-w-xl lg:flex"><Search className="size-4 shrink-0" /><span className="truncate">Caută clienți, proiecte, leaduri, facturi…</span><kbd className="ml-auto rounded border border-white/10 bg-black/20 px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd></button>
+            <button type="button" onClick={() => setCommandOpen(true)} aria-label={access.isClient ? "Caută în cont" : "Caută clienți, proiecte, leaduri, facturi"} className="rounded-xl p-2 text-slate-500 transition hover:bg-white/[0.05] hover:text-slate-200 lg:hidden"><Search className="size-4" /></button>
+            <button type="button" onClick={() => setCommandOpen(true)} className="hidden min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2.5 text-left text-xs text-slate-600 transition hover:border-violet-400/25 hover:text-slate-400 sm:max-w-xl lg:flex"><Search className="size-4 shrink-0" /><span className="truncate">{access.isClient ? "Caută servicii, comenzi, facturi…" : "Caută clienți, proiecte, leaduri, facturi…"}</span><kbd className="ml-auto rounded border border-white/10 bg-black/20 px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd></button>
             {access.isSuperAdmin && <button type="button" onClick={() => openSection("ai-os")} className="hidden items-center gap-2 rounded-xl border border-violet-400/20 bg-violet-500/10 px-3 py-2.5 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/20 sm:inline-flex"><Sparkles className="size-4" /> Întreabă AVY</button>}
             <Suspense fallback={<span className="size-8" />}><NotificationCenter enabled={access.isSuperAdmin} /></Suspense>
             <button type="button" onClick={() => openSection("profile")} aria-label="Deschide profilul" className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-xl bg-violet-500/15 text-[10px] font-semibold text-violet-100 ring-1 ring-white/10">{user?.avatar_url ? <img src={user.avatar_url} alt="" className="size-full object-cover" /> : displayName.slice(0, 2).toUpperCase()}</button>
@@ -184,15 +188,16 @@ export default function Profile() {
         <div className="mx-auto max-w-[1500px] p-3 sm:p-5 lg:p-6">
           <MfaEnrollBanner onOpenSettings={() => openSection("settings")} />
           <Suspense fallback={contentFallback}>
-          <TabsContent value="overview" className="mt-0"><AvyronOverview access={access} displayName={displayName} onOpenSection={openSection} onOpenCommand={() => setCommandOpen(true)} /></TabsContent>
+          <TabsContent value="overview" className="mt-0">{access.isClient ? <CustomerHomeTab displayName={displayName} onOpenSection={openSection} /> : <AvyronOverview access={access} displayName={displayName} onOpenSection={openSection} onOpenCommand={() => setCommandOpen(true)} />}</TabsContent>
           {access.isSuperAdmin && <TabsContent value="social-manager" className="mt-0"><SocialMediaManagerTab /></TabsContent>}
           <TabsContent value="profile" className="mt-0"><ProfileTab /></TabsContent><TabsContent value="settings" className="mt-0"><SettingsTab /></TabsContent><TabsContent value="collection" className="mt-0"><ProductCollectionTab /></TabsContent><TabsContent value="projects" className="mt-0"><CloudflareProjects embedded /></TabsContent>
-          {access.isClient && <><TabsContent value="subscriptions" className="mt-0"><SubscriptionsTab /></TabsContent><TabsContent value="invoices" className="mt-0"><InvoicesTab /></TabsContent><TabsContent value="cart" className="mt-0"><CartTab /></TabsContent><TabsContent value="stats" className="mt-0"><StatsTab /></TabsContent><TabsContent value="tickets" className="mt-0"><TicketsTab /></TabsContent></>}
+          {access.isClient && <><TabsContent value="catalog" className="mt-0"><CustomerCatalogTab /></TabsContent><TabsContent value="orders" className="mt-0"><OrdersTab /></TabsContent><TabsContent value="subscriptions" className="mt-0"><SubscriptionsTab /></TabsContent><TabsContent value="payments" className="mt-0"><BillingSettingsCard /></TabsContent><TabsContent value="invoices" className="mt-0"><InvoicesTab /></TabsContent><TabsContent value="cart" className="mt-0"><CartTab /></TabsContent><TabsContent value="stats" className="mt-0"><StatsTab /></TabsContent><TabsContent value="tickets" className="mt-0"><TicketsTab /></TabsContent></>}
           {access.isStaff && <>
             <TabsContent value="servicii-avyron" className="mt-0"><StaffServicesTab /></TabsContent>
             <TabsContent value="maintenance" className="mt-0"><StaffMaintenanceTab /></TabsContent>
             <TabsContent value="ai-projects" className="mt-0"><AiProjects embedded /></TabsContent>
             <TabsContent value="clients" className="mt-0"><StaffClientsTab /></TabsContent>
+            {access.isAdmin && <TabsContent value="reviews" className="mt-0"><StaffReviewsTab /></TabsContent>}
             <TabsContent value="domains" className="mt-0"><StaffDomainStatsTab /></TabsContent>
             <TabsContent value="media" className="mt-0"><StaffMediaTab /></TabsContent>
             <TabsContent value="leads" className="mt-0"><StaffLeadsTab /></TabsContent>
@@ -218,12 +223,12 @@ export default function Profile() {
 
       <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-white/[0.08] bg-[#080d1b]/95 px-2 pb-[max(.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden" aria-label="Navigare mobilă">
         <NavButton section="overview" mobile />
-        {access.isStaff ? <NavButton section="leads" mobile /> : <NavButton section="invoices" mobile />}
-        <button type="button" aria-label="Deschide AVY" aria-pressed={tab === "ai-os"} onClick={() => access.isSuperAdmin ? openSection("ai-os") : setCommandOpen(true)} className="group -mt-5 flex min-w-0 flex-col items-center justify-center gap-1 text-[9px] font-medium text-violet-100">
+        {access.isStaff ? <NavButton section="leads" mobile /> : <NavButton section="catalog" mobile />}
+        {access.isStaff ? <button type="button" aria-label="Deschide AVY" aria-pressed={tab === "ai-os"} onClick={() => access.isSuperAdmin ? openSection("ai-os") : setCommandOpen(true)} className="group -mt-5 flex min-w-0 flex-col items-center justify-center gap-1 text-[9px] font-medium text-violet-100">
           <span className="grid size-12 place-items-center rounded-full border border-violet-300/30 bg-gradient-to-br from-violet-500 to-indigo-700 shadow-[0_0_28px_rgba(124,58,237,.55)] ring-4 ring-[#080d1b]"><Sparkles className="size-5" /></span>
           <span>AVY</span>
-        </button>
-        <NavButton section="projects" mobile />
+        </button> : <NavButton section="cart" mobile />}
+        {access.isStaff ? <NavButton section="projects" mobile /> : <NavButton section="orders" mobile />}
         <button type="button" aria-label="Deschide mai multe secțiuni" aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(true)} className={`group flex min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[9px] font-medium transition ${mobilePrimary.has(tab) ? "text-slate-500" : "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white"}`}><Ellipsis className="size-4" /><span>Mai multe</span></button>
       </nav>
     </Tabs>
@@ -232,7 +237,7 @@ export default function Profile() {
         <SheetHeader className="border-b border-white/[0.07] p-5 text-left">
           <div className="flex items-center gap-3">
             <img src={logo} alt="" className="size-10 rounded-xl ring-1 ring-white/10" />
-            <div><SheetTitle className="font-display text-base text-white">AVYRON <span className="text-violet-300">OS</span></SheetTitle><SheetDescription className="text-xs text-slate-500">Toate funcțiile autorizate, într-un singur loc.</SheetDescription></div>
+            <div><SheetTitle className="font-display text-base text-white">AVYRON <span className="text-violet-300">{access.isClient ? "CONT" : "OS"}</span></SheetTitle><SheetDescription className="text-xs text-slate-500">{access.isClient ? "Serviciile și documentele tale." : "Toate funcțiile autorizate, într-un singur loc."}</SheetDescription></div>
           </div>
         </SheetHeader>
         <nav className="space-y-5 p-4 pb-28" aria-label="Toate secțiunile AVYRON OS">

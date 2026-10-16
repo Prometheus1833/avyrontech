@@ -63,6 +63,9 @@ export function useProduseStore<T>(select: (s: State) => T): T {
 
 export const store = {
   get: () => state,
+  setFavorites(favorites: string[]) {
+    commit({ ...state, favorites: [...new Set(favorites)].slice(0, 500) });
+  },
   toggleFavorite(slug: string) {
     const has = state.favorites.includes(slug);
     commit({ ...state, favorites: has ? state.favorites.filter((s) => s !== slug) : [slug, ...state.favorites] });
@@ -91,3 +94,5 @@ export const store = {
     commit({ ...state, copied: [{ slug, at: Date.now() }, ...state.copied.filter((c) => c.slug !== slug)].slice(0, 200) });
   },
 };
+
+if (typeof window !== "undefined") window.addEventListener("avyron:logout", () => commit({ ...state, favorites: [], cart: [], copied: [] }));

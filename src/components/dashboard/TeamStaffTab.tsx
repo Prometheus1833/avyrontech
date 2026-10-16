@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 import { toast } from "sonner";
 import { adminOperationsApi, type AdminProjectOption } from "@/lib/adminOperationsApi";
 
@@ -203,7 +204,7 @@ export default function TeamStaffTab() {
           </div>
           <div className="space-y-2 rounded-xl border border-white/[0.07] p-3">
             <Label htmlFor="temporary-password" className="text-slate-300">Parolă temporară nouă</Label>
-            <input id="temporary-password" type="password" autoComplete="new-password" value={temporaryPassword} onChange={(event) => setTemporaryPassword(event.target.value)} placeholder="Minimum 10 caractere, literă mare și cifră" className="w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm outline-none" />
+            <PasswordInput id="temporary-password" autoComplete="new-password" value={temporaryPassword} onChange={(event) => setTemporaryPassword(event.target.value)} placeholder="Minimum 10 caractere, literă mare și cifră" className="w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm outline-none" />
             <div className="grid gap-2 sm:grid-cols-3"><Button type="button" size="sm" variant="outline" onClick={() => void accountAction("password")} disabled={saving || temporaryPassword.length < 10} className="gap-1.5"><RotateCcw className="size-3.5" /> Setează parola</Button><Button type="button" size="sm" variant="outline" onClick={() => void accountAction("sessions")} disabled={saving} className="gap-1.5"><LogOut className="size-3.5" /> Revocă sesiuni</Button><Button type="button" size="sm" variant="outline" onClick={() => void accountAction("status")} disabled={saving} className="gap-1.5"><Power className="size-3.5" /> {selected?.disabled_at ? "Reactivează" : "Dezactivează"}</Button></div>
           </div>
           <fieldset disabled={!linksReady || saving} className="space-y-2 max-h-48 overflow-y-auto">
@@ -230,7 +231,7 @@ export default function TeamStaffTab() {
             <Label>Nume<input value={create.displayName} onChange={(event) => setCreate({ ...create, displayName: event.target.value })} className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm" /></Label>
             <Label>Email<input type="email" value={create.email} onChange={(event) => setCreate({ ...create, email: event.target.value })} className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm" /></Label>
             <Label>Username<input autoComplete="off" value={create.username} onChange={(event) => setCreate({ ...create, username: event.target.value.toLowerCase() })} className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm" /></Label>
-            <Label>Parolă temporară<input type="password" autoComplete="new-password" value={create.temporaryPassword} onChange={(event) => setCreate({ ...create, temporaryPassword: event.target.value })} className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm" /></Label>
+            <Label>Parolă temporară<PasswordInput autoComplete="new-password" value={create.temporaryPassword} onChange={(event) => setCreate({ ...create, temporaryPassword: event.target.value })} className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm" /></Label>
             <Label>Rol<select value={create.accessLevel} onChange={(event) => setCreate({ ...create, accessLevel: event.target.value as typeof create.accessLevel })} className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm"><option value="user">Client</option><option value="staff">STAFF</option><option value="admin">Administrator</option></select></Label>
           </div>
           <DialogFooter><Button type="button" variant="ghost" onClick={() => setCreateOpen(false)} disabled={saving}>Anulează</Button><Button type="button" onClick={() => void createAccount()} disabled={saving || !create.email || !create.username || !create.displayName || create.temporaryPassword.length < 10}>{saving ? "Se creează…" : "Creează cont"}</Button></DialogFooter>
@@ -243,7 +244,7 @@ export default function TeamStaffTab() {
           <div className="rounded-xl border border-cyan-300/10 bg-cyan-400/5 p-3 text-xs leading-relaxed text-cyan-100/80">
             Rutina de cercetare, clasificare și redactare este delegată AI Core. Codex rămâne pentru verificare, aprobare și publicarea manuală exactă.
           </div>
-          <Label>Parolă temporară {codexOperator?.exists ? "(opțional, pentru rotire)" : "(obligatorie)"}<input type="password" autoComplete="new-password" value={operatorPassword} onChange={(event) => setOperatorPassword(event.target.value)} placeholder="Minimum 10 caractere, literă mare și cifră" className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm" /></Label>
+          <Label>Parolă temporară {codexOperator?.exists ? "(opțional, pentru rotire)" : "(obligatorie)"}<PasswordInput autoComplete="new-password" value={operatorPassword} onChange={(event) => setOperatorPassword(event.target.value)} placeholder="Minimum 10 caractere, literă mare și cifră" className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm" /></Label>
           <DialogFooter><Button type="button" variant="ghost" onClick={() => setOperatorOpen(false)} disabled={operatorSyncing}>Anulează</Button><Button type="button" onClick={() => void synchronizeCodexOperator()} disabled={operatorSyncing || (!codexOperator?.exists && operatorPassword.length < 10)}>{operatorSyncing ? "Se sincronizează…" : codexOperator?.exists ? "Sincronizează accesul" : "Creează și sincronizează"}</Button></DialogFooter>
         </DialogContent>
       </Dialog>

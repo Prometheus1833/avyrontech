@@ -8,7 +8,7 @@ export async function operationPreview(env:Env,action:OperationAction) {
       env.DB.prepare('SELECT 1 ok').first(),
       env.FILES.list({limit:1}),env.MEDIA.list({limit:1}),env.KV.get('operations:health:read-only'),
     ]);
-    return {checked_at:timestamp,probes:probes.map((probe,i)=>({service:['D1','R2 documents','R2 media','KV'][i],status:probe.status==='fulfilled'?'ok':'error'})),ai:'not_probed_to_avoid_model_usage',email:env.SMTP_PASS?'configured_delivery_unverified':'not_configured'};
+    return {checked_at:timestamp,probes:probes.map((probe,i)=>({service:['D1','R2 documents','R2 media','KV'][i],status:probe.status==='fulfilled'?'ok':'error'})),ai:'not_probed_to_avoid_model_usage',email:env.SMTP_PASS||env.TRANSACTIONAL_EMAIL?'configured_delivery_unverified':'not_configured'};
   }
   const [work,records]=await Promise.all([
     env.DB.prepare("SELECT item.id,item.title,item.due_at,item.project_id FROM project_work_items item JOIN projects p ON p.id=item.project_id WHERE item.status IN ('open','in_progress','blocked') AND item.due_at<=? AND p.status!='archived' ORDER BY item.due_at LIMIT 100").bind(timestamp+7*86400000).all(),

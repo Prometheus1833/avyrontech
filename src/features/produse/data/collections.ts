@@ -146,9 +146,9 @@ export const COLLECTIONS: Collection[] = [
     id: "conformitate",
     seg: { ro: "conformitate-si-legal", en: "compliance-and-legal" },
     name: { ro: "Conformitate fără bătăi de cap", en: "Compliance without the headache" },
-    hint: { ro: "Cookie-uri, ANPC și SOL, accesibilitate", en: "Cookies, consumer protection, accessibility" },
+    hint: { ro: "Cookie-uri, ANPC și SAL, accesibilitate", en: "Cookies, consumer protection, accessibility" },
     intro: {
-      ro: "Partea de care nimeni nu se ocupă până în ziua lansării: consimțământul pentru cookie-uri cu refuz la fel de ușor ca acceptul, blocul ANPC și SOL din subsol, contrastul verificat și declarația de accesibilitate. Nu e consultanță juridică — sunt piesele tehnice și un model de text pe care juristul îl confirmă.",
+      ro: "Partea de care nimeni nu se ocupă până în ziua lansării: consimțământul pentru cookie-uri cu refuz la fel de ușor ca acceptul, blocul ANPC și SAL din subsol, contrastul verificat și declarația de accesibilitate. Nu e consultanță juridică — sunt piesele tehnice și un model de text pe care juristul îl confirmă.",
       en: "The part nobody handles until launch day: cookie consent where refusing is as easy as accepting, the consumer-protection footer block, checked contrast and an accessibility statement. This is not legal advice — these are the technical pieces and a text template your lawyer confirms.",
     },
     hue: 105,

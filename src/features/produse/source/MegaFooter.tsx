@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 
 /**
  * MegaFooter — Avyron Products (avyron.ro/produse)
- * Subsol complet, cu sloturile cerute de legislația din România (ANPC, SOL/SAL,
+ * Subsol complet, cu sloturi pentru informațiile din România (ANPC, SAL,
  * date de firmă) pregătite, ca să nu fie descoperite la lansare.
  */
 

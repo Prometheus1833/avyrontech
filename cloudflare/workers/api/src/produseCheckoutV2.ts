@@ -8,7 +8,7 @@ export { stripeSignatureValid } from "./billingSignatures";
 
 export const produseCheckoutRouter = new Hono<AppBindings>();
 type Kind = "plan" | "item";
-const checkoutSchema=z.object({kind:z.enum(["plan","item"]),id:z.string().min(1).max(80),taxId:z.string().trim().max(20).optional(),provider:z.enum(["stripe","revolut"]).optional().default("revolut"),savePaymentMethod:z.boolean().optional().default(true)}).strict();
+const checkoutSchema=z.object({kind:z.enum(["plan","item"]),id:z.string().min(1).max(80),taxId:z.string().trim().max(20).optional(),provider:z.enum(["stripe","revolut"]).optional().default("revolut"),savePaymentMethod:z.boolean().optional().default(false)}).strict();
 
 async function priceFor(db:D1Database,kind:Kind,id:string):Promise<{name:string;amountMinor:number}|null>{
   if(kind==="plan"){const row=await db.prepare("SELECT name,price_ron_cents FROM partnership_plans WHERE id=?").bind(id).first<{name:string;price_ron_cents:number}>();return row&&row.price_ron_cents>0?{name:`${row.name} — 12 luni`,amountMinor:row.price_ron_cents}:null;}

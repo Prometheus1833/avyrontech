@@ -8,6 +8,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { EMPTY_STATE, produseApi, type AccountState, type LimitBucket } from "@/lib/produseApi";
 import { PRODUSE_BASE, PRODUSE_ITEM_ROUTES } from "@/features/produse/data/routes";
+import { SERVICE_COMMERCIAL_SOURCES } from "@/data/serviceCommercialSources";
+import { cfAuth } from "@/lib/cfAuth";
+import { toast } from "sonner";
 
 /**
  * „Colecția mea” — partea din cont a paginii Produse Avyron.
@@ -51,6 +54,7 @@ export function ProductCollectionTab() {
   const [state, setState] = useState<AccountState>(EMPTY_STATE);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [serviceFavorites, setServiceFavorites] = useState<string[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -64,7 +68,17 @@ export function ProductCollectionTab() {
   useEffect(() => {
     if (!user) return;
     void load();
+    void cfAuth.request<{ data: string[] }>("/api/commerce/favorites/services").then((response) => setServiceFavorites(response.data ?? [])).catch(() => {});
   }, [user, load]);
+
+  const removeService = async (key: string) => {
+    setBusy(key);
+    try {
+      await cfAuth.request(`/api/commerce/favorites/services/${encodeURIComponent(key)}`, { method: "DELETE" });
+      setServiceFavorites((current) => current.filter((entry) => entry !== key));
+    } catch { toast.error("Serviciul nu a putut fi scos din favorite."); }
+    finally { setBusy(null); }
+  };
 
   // Ce a strâns vizitatorul în browser înainte de login urcă o singură dată în
   // cont; după aceea contul e sursa, iar pagina publică citește de la el.
@@ -119,7 +133,7 @@ export function ProductCollectionTab() {
         <CardContent className="space-y-4">
           {notMigrated ? (
             <p className="text-sm text-muted-foreground">
-              Magazinul de produse se activează odată cu lansarea paginii Produse Avyron. Până atunci, colecția rămâne salvată în browser.
+              Colecția din cont nu poate fi încărcată acum. Reîncearcă peste câteva momente.
             </p>
           ) : (
             <>
@@ -163,6 +177,10 @@ export function ProductCollectionTab() {
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Heart className="h-4 w-4" /> Servicii favorite</CardTitle></CardHeader>
+          <CardContent>{serviceFavorites.length === 0 ? <p className="text-sm text-muted-foreground">Nu ai servicii salvate. Le poți adăuga din catalog.</p> : <ul className="space-y-2">{serviceFavorites.map((key) => <li key={key} className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2"><span className="text-sm">{SERVICE_COMMERCIAL_SOURCES.find((source) => source.entity_key === key)?.display_name || key}</span><Button size="sm" variant="ghost" disabled={busy === key} onClick={() => void removeService(key)}>Scoate</Button></li>)}</ul>}</CardContent>
+        </Card>
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">

@@ -110,8 +110,9 @@ describe("cablajul dintre magazin și dashboardul intern", () => {
 
   it("ține serviciile într-o categorie OS distinctă de produse", () => {
     const servicii = SECTIONS.filter((section) => section.group === "servicii");
-    expect(servicii.map((section) => section.id)).toEqual(["servicii-avyron"]);
-    expect(servicii[0].audience).toBe("staff");
+    expect(servicii.map((section) => section.id)).toEqual(["catalog", "servicii-avyron"]);
+    expect(servicii.find((section) => section.id === "catalog")?.audience).toBe("client");
+    expect(servicii.find((section) => section.id === "servicii-avyron")?.audience).toBe("staff");
   });
 
   it("randează ambele panouri în dashboard", () => {

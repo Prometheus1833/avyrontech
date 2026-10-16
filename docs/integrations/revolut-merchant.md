@@ -6,4 +6,6 @@ Integrarea folosește API-ul curent `2026-08-17`, configurabil prin secret pentr
 
 Semnătura webhook este HMAC SHA-256 peste `v1.{timestamp}.{raw-body}`, cu toleranță de cinci minute și suport pentru rotația semnăturilor. Evenimentul `ORDER_COMPLETED` este urmat de o citire server-to-server a comenzii înainte de acordarea accesului.
 
+Profilul clientului citește metodele asociate Customer din `GET /api/customers/{customer_id}/payment-methods` și păstrează local numai tipul, marca, ultimele patru cifre și expirarea. Pentru un abonament, Hosted Checkout asociază metoda cu Customer la plata inițială; un checkout pentru o plată unică nu este prezentat ca acord pentru debitări recurente.
+
 Revolut Business Banking și Revolut Merchant sunt conectori diferiți și folosesc credențiale diferite.

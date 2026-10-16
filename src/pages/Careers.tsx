@@ -153,7 +153,7 @@ const Careers = () => {
         </div>
       </section>
 
-      <section className="px-4 py-20 sm:py-24">
+      <section id="candidatura" className="scroll-mt-28 px-4 py-20 sm:py-24">
         <div className="mx-auto max-w-6xl">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.25em] text-cyan-300">{ro ? "Zone de colaborare" : "Collaboration areas"}</p>
           <div className="mt-3 grid gap-6 lg:grid-cols-[0.7fr_1.3fr] lg:items-end">

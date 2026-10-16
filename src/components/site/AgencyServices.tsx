@@ -22,7 +22,6 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { FEATURES } from "@/config/features";
 import { homePath as produsePath } from "@/features/produse/lib/paths";
-import { PRODUSE_COUNTS } from "@/features/produse/data/counts";
 import { useLang } from "@/i18n/LanguageContext";
 
 
@@ -47,6 +46,9 @@ const copy = {
       "De la un site de prezentare clar până la un magazin, o aplicație sau o platformă internă, fiecare serviciu pornește de la obiectivul real și rămâne ușor de extins.",
     cta: "Descoperă",
     more: "Alte servicii",
+    showAll: "Vezi toate serviciile",
+    showLess: "Arată mai puține",
+    serviceDetails: "Vezi detalii servicii",
     choose: "Alege tipul de site",
     mainService: "Serviciu principal",
     soon: "În curând",
@@ -83,6 +85,9 @@ const copy = {
       "From a clear business website to a store, an app, or an internal platform, every service starts with the real objective and remains easy to extend.",
     cta: "Discover",
     more: "More services",
+    showAll: "View all services",
+    showLess: "Show fewer",
+    serviceDetails: "Explore services in detail",
     choose: "Choose your website type",
     mainService: "Main service",
     soon: "Coming soon",
@@ -121,7 +126,9 @@ const AgencyServices = () => {
   const { lang } = useLang();
   const content = copy[lang];
   const [open, setOpen] = useState(false);
+  const [showAllServices, setShowAllServices] = useState(false);
   const panelId = useId();
+  const moreServicesId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -283,17 +290,16 @@ const AgencyServices = () => {
               document.body,
             )}
 
-            {/* Restul serviciilor rămân complet vizibile, fără o zonă de scroll separată. */}
             <div className="mt-3 flex items-center justify-between px-1">
               <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{content.more}</span>
             </div>
-            <div className="mt-1.5 rounded-2xl border border-border/60 bg-card/50">
+            <div id={moreServicesId} className="mt-1.5 rounded-2xl border border-border/60 bg-card/50">
               <div className="py-3">
-                {content.rest.map(({ key, title, text, path, Icon }) => (
+                {content.rest.slice(0, showAllServices ? undefined : 3).map(({ key, title, text, path, Icon }, index) => (
                   <Link
                     key={key}
                     to={path}
-                    className="group grid grid-cols-[2.1rem_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/60 sm:px-4"
+                    className={`group grid grid-cols-[2.1rem_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/60 sm:px-4 ${index > 2 ? "motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-top-1 motion-safe:duration-300" : ""}`}
                   >
                     <span className={`grid size-8 place-items-center rounded-lg bg-gradient-to-br ${tone(key)}`}>
                       <Icon className="size-4" aria-hidden />
@@ -306,6 +312,24 @@ const AgencyServices = () => {
                   </Link>
                 ))}
               </div>
+            </div>
+            <div className="mt-2.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-1">
+              <button
+                type="button"
+                aria-expanded={showAllServices}
+                aria-controls={moreServicesId}
+                onClick={() => setShowAllServices((value) => !value)}
+                className="inline-flex min-h-9 items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-brand focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                {showAllServices ? content.showLess : content.showAll}
+                <ChevronDown className={`size-3.5 transition-transform duration-300 ${showAllServices ? "rotate-180" : ""}`} aria-hidden />
+              </button>
+              <Link
+                to={lang === "ro" ? "/servicii" : "/en/services"}
+                className="inline-flex min-h-9 items-center gap-1.5 text-xs font-semibold text-brand transition-colors hover:text-foreground focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                {content.serviceDetails}<span aria-hidden>↗</span>
+              </Link>
             </div>
           </div>
         </div>
@@ -328,8 +352,8 @@ const AgencyServices = () => {
               </span>
               <span className="mt-1 block max-w-xl text-xs leading-relaxed text-muted-foreground sm:text-[13px]">
                 {lang === "ro"
-                  ? `Descoperă ${PRODUSE_COUNTS.total} componente, template-uri, instrumente și experiențe digitale verificate. ${PRODUSE_COUNTS.free} pot fi folosite gratuit, iar fiecare produs explică limpede ce face și cum se integrează.`
-                  : `Explore ${PRODUSE_COUNTS.total} verified components, templates, tools and digital experiences. ${PRODUSE_COUNTS.free} are free to use, with clear guidance for what each product does and how it integrates.`}
+                  ? "Piese digitale care dau formă ideilor tale: explorează, alege ce se potrivește și construiește mai departe în ritmul tău."
+                  : "Digital building blocks for your ideas: explore, find your fit, and build what comes next at your own pace."}
               </span>
               <span className="mt-3 grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap">
                 {([
