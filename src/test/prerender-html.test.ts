@@ -208,7 +208,7 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     }
     expect(ro).toContain("Drepturile consumatorilor");
     expect(en).toContain("Consumer rights");
-    expect(ro).toContain("https://anpc.ro/sal/");
+    expect(ro).toContain("https://reclamatiisal.anpc.ro/");
     expect(ro).not.toContain("ec.europa.eu/consumers/odr");
   });
 
