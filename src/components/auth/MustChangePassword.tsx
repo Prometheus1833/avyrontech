@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -45,11 +45,11 @@ export const MustChangePassword = () => {
         <Alert><KeyRound className="size-4" /><AlertDescription>După schimbare vei fi delogat de pe toate dispozitivele.</AlertDescription></Alert>
         <div className="space-y-2">
           <Label htmlFor="current-password">Parola temporară</Label>
-          <Input id="current-password" type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} />
+          <PasswordInput id="current-password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} />
           <Label htmlFor="new-password">Parola nouă</Label>
-          <Input id="new-password" type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
+          <PasswordInput id="new-password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
           <Label htmlFor="confirm-password">Confirmă parola nouă</Label>
-          <Input id="confirm-password" type="password" autoComplete="new-password" value={confirm} onChange={(event) => setConfirm(event.target.value)} />
+          <PasswordInput id="confirm-password" autoComplete="new-password" value={confirm} onChange={(event) => setConfirm(event.target.value)} />
         </div>
         <Button onClick={submit} disabled={saving || !currentPassword || !newPassword || !confirm}>
           {saving ? "Se salvează…" : "Schimbă parola"}

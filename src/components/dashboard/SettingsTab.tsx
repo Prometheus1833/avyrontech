@@ -4,6 +4,7 @@ import { cfAuth, type AuthSession, type MfaFactor } from "@/lib/cfAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -193,7 +194,7 @@ export const SettingsTab = () => {
             </div>
             <div className="space-y-1">
               <Label htmlFor="email-current-password" className="text-xs">Parola curentă</Label>
-              <Input id="email-current-password" type="password" autoComplete="current-password" className="h-9" value={emailPassword} onChange={(event) => setEmailPassword(event.target.value)} />
+              <PasswordInput id="email-current-password" autoComplete="current-password" className="h-9" value={emailPassword} onChange={(event) => setEmailPassword(event.target.value)} />
             </div>
           </div>
           <Button variant="outline" size="sm" disabled={securityBusy} onClick={requestEmailChange}>Solicită schimbarea emailului</Button>
@@ -222,7 +223,7 @@ export const SettingsTab = () => {
             </div>
           ) : (
             <div className="flex flex-col gap-2 sm:flex-row">
-              <Input type="password" autoComplete="current-password" className="h-9 sm:max-w-xs" value={mfaPassword} onChange={(event) => setMfaPassword(event.target.value)} placeholder="Parola curentă" />
+              <PasswordInput autoComplete="current-password" className="h-9" value={mfaPassword} onChange={(event) => setMfaPassword(event.target.value)} placeholder="Parola curentă" aria-label="Parola curentă pentru MFA" />
               <Button size="sm" disabled={securityBusy} onClick={startMfaEnrollment}>Activează MFA</Button>
             </div>
           )}

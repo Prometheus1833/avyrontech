@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -11,6 +10,7 @@ import { useLang } from "@/i18n/LanguageContext";
 import { resetSchema } from "@/lib/validators/auth";
 import { z } from "zod";
 import PageBackLink from "@/components/site/PageBackLink";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 
 type Input = z.infer<typeof resetSchema>;
 
@@ -62,14 +62,14 @@ const ResetPassword = () => {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="rp-pass">{t.auth.newPassword}</Label>
-            <Input id="rp-pass" type="password" autoComplete="new-password" {...form.register("password")} />
+            <PasswordInput id="rp-pass" autoComplete="new-password" {...form.register("password")} />
             {form.formState.errors.password && (
               <p className="text-xs text-destructive">Min 8, 1 majusculă, 1 cifră</p>
             )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="rp-conf">{t.auth.confirmPassword}</Label>
-            <Input id="rp-conf" type="password" autoComplete="new-password" {...form.register("confirm")} />
+            <PasswordInput id="rp-conf" autoComplete="new-password" {...form.register("confirm")} />
             {form.formState.errors.confirm && (
               <p className="text-xs text-destructive">{form.formState.errors.confirm.message}</p>
             )}

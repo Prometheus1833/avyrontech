@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const loginSchema = z.object({
-  identifier: z.string().trim().min(2, { message: "Introdu emailul sau username-ul" }).max(255),
+  identifier: z.string().trim().min(2, { message: "Introdu emailul, username-ul sau telefonul" }).max(255),
   password: z.string().min(8, { message: "Minim 8 caractere" }).max(128),
 });
 

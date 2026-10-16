@@ -5,6 +5,8 @@ import { isPlatformHostname } from "@/lib/appHost";
 const PLATFORM_PATHS = [
   "/auth",
   "/autentificare",
+  "/staff",
+  "/admin",
   "/forgot-password",
   "/reset-password",
   "/profil",
