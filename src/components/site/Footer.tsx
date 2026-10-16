@@ -234,6 +234,7 @@ const Footer = () => {
             const legal = items.filter((n) => isLegal(n.h));
             const baseClass =
               "inline-flex items-center justify-center text-center rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/[0.14] hover:border-purple-300/50 font-display font-medium text-white/85 hover:text-white transition-all leading-none";
+            const legalClass = `${baseClass} h-8 min-w-0 w-full px-1.5 text-[9px] sm:text-[10px]`;
             return (
               <>
                 <div className="mx-auto grid max-w-3xl grid-cols-3 gap-1.5 px-1">
@@ -251,28 +252,28 @@ const Footer = () => {
                   })}
                 </div>
                 {legal.length > 0 && (
-                  <div className="mt-1.5 flex flex-wrap justify-center gap-1.5">
+                  <div data-testid="footer-legal-row" className="mx-auto mt-1.5 grid w-full max-w-[510px] grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.2fr)] gap-1.5">
                     {legal.map((n) => (
                       <Link
                         key={n.h}
                         to={n.h}
-                        className={`${baseClass} px-3 py-1 text-[10px]`}
+                        className={legalClass}
                       >
-                        {n.l}
+                        <span className="leading-[1.15]">{n.l}</span>
                       </Link>
                     ))}
                     <button
                       type="button"
                       onClick={() => window.dispatchEvent(new Event(COOKIE_SETTINGS_EVENT))}
-                      className={`${baseClass} px-3 py-1 text-[10px]`}
+                      className={legalClass}
                     >
-                      {lang === "en" ? "Cookie settings" : "Setări cookie"}
+                      <span className="leading-[1.15]">{lang === "en" ? "Cookie settings" : "Setări cookie"}</span>
                     </button>
                     <Link
                       to={lang === "en" ? "/en/terms" : "/termeni"}
-                      className={`${baseClass} px-3 py-1 text-[10px]`}
+                      className={legalClass}
                     >
-                      {lang === "en" ? "Terms of use" : "Termeni de utilizare"}
+                      <span className="leading-[1.15]">{lang === "en" ? "Terms of use" : "Termeni de utilizare"}</span>
                     </Link>
                   </div>
                 )}

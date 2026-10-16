@@ -248,6 +248,33 @@ test.describe("public SEO routes", () => {
     await expect(footer.getByText("Întrebări frecvente", { exact: true })).toHaveCount(0);
   });
 
+  test("footer legal actions stay in their established order on one row", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
+      necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12",
+    })));
+    for (const width of [320, 390, 1280]) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto("/");
+      const row = page.getByTestId("footer-legal-row");
+      await row.scrollIntoViewIfNeeded();
+      const actions = row.locator("a, button");
+      await expect(actions).toHaveCount(3);
+      expect((await actions.allTextContents()).map((label) => label.trim())).toEqual([
+        "Confidențialitate & GDPR",
+        "Setări cookie",
+        "Termeni de utilizare",
+      ]);
+      const boxes = await actions.evaluateAll((elements) => elements.map((element) => {
+        const { top, right, left } = element.getBoundingClientRect();
+        return { top, right, left };
+      }));
+      expect(boxes.every((box) => Math.abs(box.top - boxes[0].top) < 1)).toBe(true);
+      expect(boxes[0].right).toBeLessThanOrEqual(boxes[1].left + 1);
+      expect(boxes[1].right).toBeLessThanOrEqual(boxes[2].left + 1);
+      expect(await row.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+    }
+  });
+
   test("footer actions adapt to the page while the SAL and account row remains accessible on mobile", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
