@@ -8,6 +8,7 @@ const actions = [
   { id: "cart", label: "Coșul meu", description: "Pregătește următoarea comandă", icon: ShoppingCart },
   { id: "orders", label: "Istoric și plăți", description: "Urmărește comenzile și plata", icon: CreditCard },
   { id: "subscriptions", label: "Abonamente", description: "Planuri și servicii recurente", icon: Repeat },
+  { id: "payments", label: "Metode de plată", description: "Carduri salvate și preferințe", icon: CreditCard },
   { id: "invoices", label: "Facturi", description: "Documente și date de facturare", icon: Receipt },
   { id: "collection", label: "Favorite și colecție", description: "Produsele salvate și cumpărate", icon: Heart },
 ] as const;

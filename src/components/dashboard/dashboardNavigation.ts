@@ -83,6 +83,7 @@ export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
   media: { label: "Media", commandLabel: "Deschide biblioteca media", hint: "Fișiere, imagini și livrabile", icon: Image },
   leads: { label: "Leaduri & CRM", mobileLabel: "Leaduri", commandLabel: "Arată leadurile", hint: "Pipeline, oportunități și răspunsuri", icon: Target },
   subscriptions: { label: "Abonamente", commandLabel: "Deschide abonamentele", hint: "Planuri și servicii recurente", icon: CreditCard },
+  payments: { label: "Metode de plată", commandLabel: "Deschide metodele de plată", hint: "Carduri salvate și date de facturare", icon: Wallet },
   cart: { label: "Coș", commandLabel: "Deschide coșul", hint: "Produse și servicii pregătite pentru comandă", icon: ShoppingCart },
   orders: { label: "Istoric și plăți", mobileLabel: "Comenzi", commandLabel: "Deschide comenzile", hint: "Comenzi, stare și finalizarea plății", icon: CreditCard },
   catalog: { label: "Servicii și produse", mobileLabel: "Catalog", commandLabel: "Explorează catalogul", hint: "Servicii, produse și favorite", icon: Boxes },

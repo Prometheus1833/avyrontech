@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cfAuth } from "@/lib/cfAuth";
 import { billingApi, type BillingAccount } from "@/lib/billingApi";
 
-type OrderLine = { sku: string; name: string; description?: string | null; period?: string | null; serviceKey?: string | null; quantity: number; lineTotalCents: number | null };
+type OrderLine = { sku: string; type?: string; name: string; description?: string | null; period?: string | null; serviceKey?: string | null; quantity: number; lineTotalCents: number | null };
 type Order = { id: string; items_json: string; total_cents: number; currency: string; status: string; requires_manual_quote: number; created_at: number; promotion_code: string | null };
 const money = (minor: number, currency: string) => new Intl.NumberFormat("ro-RO", { style: "currency", currency }).format(minor / 100);
 const statusLabel: Record<string, string> = { requested: "Înregistrată", quoted: "Ofertată", accepted: "Plată inițiată", paid: "Plătită", cancelled: "Anulată" };
@@ -15,6 +15,7 @@ export function OrdersTab() {
   const [billing, setBilling] = useState<BillingAccount | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState("");
+  const [saveCard, setSaveCard] = useState(false);
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -30,10 +31,10 @@ export function OrdersTab() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  const pay = async (orderId: string, provider: "stripe" | "revolut") => {
+  const pay = async (orderId: string, provider: "stripe" | "revolut", recurring: boolean) => {
     setBusy(`${orderId}:${provider}`);
     try {
-      const checkout = await billingApi.checkout({ orderId, provider, savePaymentMethod: false });
+      const checkout = await billingApi.checkout({ orderId, provider, savePaymentMethod: provider === "stripe" && !recurring && saveCard });
       if (!checkout.url) throw new Error("Procesatorul nu a oferit o pagină de plată.");
       window.location.assign(checkout.url);
     } catch (error) {
@@ -51,18 +52,24 @@ export function OrdersTab() {
       <div className="space-y-3">{orders.map((order) => {
         let lines: OrderLine[] = [];
         try { const parsed = JSON.parse(order.items_json) as OrderLine[]; if (Array.isArray(parsed)) lines = parsed; } catch { /* date istorice */ }
-        const recurring = lines.length === 1 && lines[0]?.period;
+        const recurring = Boolean(lines.length === 1 && lines[0]?.type === "subscription" && lines[0]?.period);
+        const mixedBilling = lines.some((line) => line.type === "subscription") && !recurring;
         const revolutAvailable = !recurring || Boolean(billing?.revolutPlans?.some((plan) => plan.sku === lines[0]?.sku && plan.period === lines[0]?.period));
         const stripeReady = Boolean(billing?.providers.stripe.enabled);
         const revolutReady = Boolean(billing?.providers.revolut.enabled && revolutAvailable);
-        const canPay = order.status !== "paid" && order.status !== "cancelled" && !order.requires_manual_quote && order.total_cents > 0;
+        const canPay = order.status !== "paid" && order.status !== "cancelled" && !order.requires_manual_quote && !mixedBilling && order.total_cents > 0;
         return <article key={order.id} className="rounded-2xl border border-white/10 bg-[#10162a]/90 p-4 sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs text-slate-500">#{order.id.slice(0, 8).toUpperCase()} · {new Date(order.created_at).toLocaleDateString("ro-RO")}</p><h2 className="mt-1 text-base font-semibold">{lines.map((line) => line.name).join(" · ") || "Comandă AVYRON"}</h2></div><span className="rounded-full border border-violet-300/20 bg-violet-400/10 px-3 py-1 text-xs text-violet-200">{statusLabel[order.status] || order.status}</span></div>
           <ul className="mt-4 divide-y divide-white/5 rounded-xl border border-white/5 bg-black/10 px-3">{lines.map((line, index) => <li key={`${line.sku}-${index}`} className="flex flex-wrap justify-between gap-2 py-2.5 text-sm"><div><span>{line.name}</span><span className="ml-2 text-xs text-slate-500">{line.sku}{line.period ? ` · ${line.period === "annual" ? "anual" : "lunar"}` : ""}{line.serviceKey ? ` · ${line.serviceKey}` : ""}</span>{line.description && <p className="text-xs text-slate-400">{line.description}</p>}</div><span className="text-slate-300">{line.lineTotalCents === null ? "Ofertă" : money(line.lineTotalCents, order.currency)}</span></li>)}</ul>
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs text-slate-500">{order.requires_manual_quote ? "Prețul final se stabilește prin ofertă" : "Total verificat la înregistrare"}</p><p className="font-semibold">{order.requires_manual_quote ? "În curs de ofertare" : money(order.total_cents, order.currency)}</p></div><div className="flex flex-wrap gap-2">{canPay && stripeReady && <Button size="sm" disabled={Boolean(busy)} onClick={() => void pay(order.id, "stripe")}><CreditCard className="mr-2 size-4" /> Plătește cu Stripe</Button>}{canPay && revolutReady && <Button size="sm" variant="outline" disabled={Boolean(busy)} onClick={() => void pay(order.id, "revolut")}><CreditCard className="mr-2 size-4" /> Plătește cu Revolut</Button>}</div></div>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs text-slate-500">{order.requires_manual_quote ? "Prețul final se stabilește prin ofertă" : "Total verificat la înregistrare"}</p><p className="font-semibold">{order.requires_manual_quote ? "În curs de ofertare" : money(order.total_cents, order.currency)}</p></div><div className="flex flex-wrap gap-2">{canPay && stripeReady && <Button size="sm" variant={billing?.profile?.default_provider === "revolut" ? "outline" : "default"} disabled={Boolean(busy)} onClick={() => void pay(order.id, "stripe", recurring)}><CreditCard className="mr-2 size-4" /> Continuă la Stripe</Button>}{canPay && revolutReady && <Button size="sm" variant={billing?.profile?.default_provider === "revolut" ? "default" : "outline"} disabled={Boolean(busy)} onClick={() => void pay(order.id, "revolut", recurring)}><CreditCard className="mr-2 size-4" /> Continuă la Revolut Pay</Button>}</div></div>
+          {canPay && (stripeReady || revolutReady) && <div className="mt-3 space-y-2 rounded-xl border border-white/5 bg-white/[.025] p-3 text-xs text-slate-400">
+            <p>Pe pagina securizată a procesatorului poți alege dintre metodele eligibile pentru dispozitivul și țara ta: card, portofele digitale sau Revolut Pay. Disponibilitatea exactă este afișată înainte de autorizare.</p>
+            {recurring ? <p className="text-violet-200">Prima plată activează reînnoirea {lines[0]?.period === "annual" ? "anuală" : "lunară"}. Procesatorul salvează metoda pentru debitările următoare; poți opri reînnoirea din Abonamente.</p> : stripeReady && <label className="flex cursor-pointer items-center gap-2 text-slate-200"><input type="checkbox" checked={saveCard} onChange={(event) => setSaveCard(event.target.checked)} className="size-4 accent-violet-500" /> Salvează cardul folosit prin Stripe pentru plăți viitoare</label>}
+          </div>}
           {canPay && !billing && <p className="mt-3 text-xs text-amber-200">Disponibilitatea plății nu poate fi verificată acum. Reîncarcă istoricul peste câteva momente.</p>}
           {canPay && billing && !stripeReady && !revolutReady && <p className="mt-3 text-xs text-amber-200">Plata online va apărea după configurarea unui procesator pentru această comandă. Comanda este deja salvată în cont.</p>}
           {order.requires_manual_quote === 1 && <p className="mt-3 text-xs text-slate-400">Această comandă conține un serviciu sau produs cu preț de confirmat. Echipa va pregăti oferta înainte de plată.</p>}
+          {mixedBilling && <p className="mt-3 text-xs text-amber-200">Abonamentele trebuie achitate într-o comandă separată de plățile unice.</p>}
           {recurring && <p className="mt-2 text-xs text-slate-500">Abonamentul se activează numai după confirmarea plății.</p>}
         </article>;
       })}</div>

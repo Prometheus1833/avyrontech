@@ -1585,6 +1585,7 @@ app.use("/api/billing/config", requireAuth);
 app.use("/api/billing/checkout", requireAuth);
 app.use("/api/billing/account", requireAuth);
 app.use("/api/billing/profile", requireAuth);
+app.use("/api/billing/payment-methods", requireAuth);
 app.use("/api/billing/payment-methods/*", requireAuth);
 app.use("/api/billing/portal", requireAuth);
 app.use("/api/billing/subscriptions/*", requireAuth);

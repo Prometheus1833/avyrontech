@@ -55,7 +55,7 @@ export const canSee = (audience: Audience, a: Access) => {
 };
 
 export type SectionId =
-  | "overview" | "profile" | "settings" | "projects" | "subscriptions" | "invoices" | "cart" | "orders" | "catalog" | "collection"
+  | "overview" | "profile" | "settings" | "projects" | "subscriptions" | "invoices" | "payments" | "cart" | "orders" | "catalog" | "collection"
   | "stats" | "tickets" | "maintenance" | "clients" | "domains"
   | "finance" | "media" | "leads" | "staff-tickets" | "demo-requests" | "intern"
   | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "servicii-avyron" | "produse-avyron"
@@ -91,6 +91,7 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "media", group: "projects", audience: "staff", keywords: ["media", "imagini", "fisiere"] },
 
   { id: "subscriptions", group: "billing", audience: "client", keywords: ["abonament", "plan", "subscriptions"] },
+  { id: "payments", group: "billing", audience: "client", keywords: ["metode de plata", "card", "stripe", "revolut", "facturare"] },
   { id: "catalog", group: "servicii", audience: "client", keywords: ["catalog", "servicii", "produse", "oferta"] },
   { id: "cart", group: "billing", audience: "client", keywords: ["cos", "comanda", "cart"] },
   { id: "orders", group: "billing", audience: "client", keywords: ["istoric", "comenzi", "plata", "orders"] },

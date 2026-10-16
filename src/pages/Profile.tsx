@@ -32,6 +32,7 @@ const StaffResourcesTab = lazyWithRetry(() => import("@/components/dashboard/Sta
 const StaffDomainStatsTab = lazyWithRetry(() => import("@/components/dashboard/StaffDomainStatsTab").then((m) => ({ default: m.StaffDomainStatsTab })));
 const StaffExampleRequestsTab = lazyWithRetry(() => import("@/components/dashboard/StaffExampleRequestsTab").then((m) => ({ default: m.StaffExampleRequestsTab })));
 const SettingsTab = lazyWithRetry(() => import("@/components/dashboard/SettingsTab").then((m) => ({ default: m.SettingsTab })));
+const BillingSettingsCard = lazyWithRetry(() => import("@/components/dashboard/BillingSettingsCard"));
 const CartTab = lazyWithRetry(() => import("@/components/dashboard/CartTab").then((m) => ({ default: m.CartTab })));
 const StaffFinanceTab = lazyWithRetry(() => import("@/components/dashboard/StaffFinanceTab").then((m) => ({ default: m.StaffFinanceTab })));
 const StaffMediaTab = lazyWithRetry(() => import("@/components/dashboard/StaffMediaTab").then((m) => ({ default: m.StaffMediaTab })));
@@ -189,7 +190,7 @@ export default function Profile() {
           <TabsContent value="overview" className="mt-0">{access.isClient ? <CustomerHomeTab displayName={displayName} onOpenSection={openSection} /> : <AvyronOverview access={access} displayName={displayName} onOpenSection={openSection} onOpenCommand={() => setCommandOpen(true)} />}</TabsContent>
           {access.isSuperAdmin && <TabsContent value="social-manager" className="mt-0"><SocialMediaManagerTab /></TabsContent>}
           <TabsContent value="profile" className="mt-0"><ProfileTab /></TabsContent><TabsContent value="settings" className="mt-0"><SettingsTab /></TabsContent><TabsContent value="collection" className="mt-0"><ProductCollectionTab /></TabsContent><TabsContent value="projects" className="mt-0"><CloudflareProjects embedded /></TabsContent>
-          {access.isClient && <><TabsContent value="catalog" className="mt-0"><CustomerCatalogTab /></TabsContent><TabsContent value="orders" className="mt-0"><OrdersTab /></TabsContent><TabsContent value="subscriptions" className="mt-0"><SubscriptionsTab /></TabsContent><TabsContent value="invoices" className="mt-0"><InvoicesTab /></TabsContent><TabsContent value="cart" className="mt-0"><CartTab /></TabsContent><TabsContent value="stats" className="mt-0"><StatsTab /></TabsContent><TabsContent value="tickets" className="mt-0"><TicketsTab /></TabsContent></>}
+          {access.isClient && <><TabsContent value="catalog" className="mt-0"><CustomerCatalogTab /></TabsContent><TabsContent value="orders" className="mt-0"><OrdersTab /></TabsContent><TabsContent value="subscriptions" className="mt-0"><SubscriptionsTab /></TabsContent><TabsContent value="payments" className="mt-0"><BillingSettingsCard /></TabsContent><TabsContent value="invoices" className="mt-0"><InvoicesTab /></TabsContent><TabsContent value="cart" className="mt-0"><CartTab /></TabsContent><TabsContent value="stats" className="mt-0"><StatsTab /></TabsContent><TabsContent value="tickets" className="mt-0"><TicketsTab /></TabsContent></>}
           {access.isStaff && <>
             <TabsContent value="servicii-avyron" className="mt-0"><StaffServicesTab /></TabsContent>
             <TabsContent value="maintenance" className="mt-0"><StaffMaintenanceTab /></TabsContent>

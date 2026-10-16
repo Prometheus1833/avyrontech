@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, Package, Receipt, Repeat } from "lucide-react";
 import { cfAuth } from "@/lib/cfAuth";
 import { commerceItemBySku } from "@/data/commerceCatalog";
-import { billingApi, type BillingSubscription } from "@/lib/billingApi";
+import { billingApi, type BillingAccount, type BillingSubscription } from "@/lib/billingApi";
 import { toast } from "sonner";
 import { SERVICE_COMMERCIAL_SOURCES } from "@/data/serviceCommercialSources";
 
@@ -25,7 +25,7 @@ type Subscription = {
   next_renewal_at: string | null;
 };
 
-type OrderItem = { sku?: string; name?: string; quantity?: number; period?: string | null; serviceKey?: string | null };
+type OrderItem = { sku?: string; type?: string; name?: string; quantity?: number; period?: string | null; serviceKey?: string | null };
 
 type CommerceOrder = {
   id: string;
@@ -34,6 +34,7 @@ type CommerceOrder = {
   currency: string;
   status: "requested" | "quoted" | "accepted" | "paid" | "cancelled";
   promotion_code: string | null;
+  requires_manual_quote: number;
   created_at: number;
 };
 
@@ -68,6 +69,8 @@ export function SubscriptionsTab() {
   const ro = lang === "ro";
   const [items, setItems] = useState<Subscription[]>([]);
   const [billingItems, setBillingItems] = useState<BillingSubscription[]>([]);
+  const [billingAccount, setBillingAccount] = useState<BillingAccount | null>(null);
+  const [paymentBusy, setPaymentBusy] = useState("");
   const [orders, setOrders] = useState<CommerceOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -87,7 +90,7 @@ export function SubscriptionsTab() {
     if (!user) return;
     let active = true;
     billingApi.account()
-      .then((account) => { if (active) setBillingItems(account.subscriptions); })
+      .then((account) => { if (active) { setBillingItems(account.subscriptions); setBillingAccount(account); } })
       .catch(() => { if (active) setBillingItems([]); });
     return () => { active = false; };
   }, [user]);
@@ -119,9 +122,22 @@ export function SubscriptionsTab() {
       await billingApi.cancelSubscription(subscription.id);
       const account = await billingApi.account();
       setBillingItems(account.subscriptions);
+      setBillingAccount(account);
       toast.success(ro ? "Anularea a fost trimisă furnizorului de plată." : "Cancellation was sent to the payment provider.");
     } catch (cause) {
       toast.error(cause instanceof Error ? cause.message : (ro ? "Abonamentul nu a putut fi actualizat." : "The subscription could not be updated."));
+    }
+  };
+
+  const payPending = async (order: CommerceOrder, provider: "stripe" | "revolut") => {
+    setPaymentBusy(order.id);
+    try {
+      const checkout = await billingApi.checkout({ orderId: order.id, provider, savePaymentMethod: true });
+      if (!checkout.url) throw new Error("Procesatorul nu a oferit pagina de plată.");
+      window.location.assign(checkout.url);
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : "Plata nu a putut fi inițiată.");
+      setPaymentBusy("");
     }
   };
 
@@ -233,6 +249,7 @@ export function SubscriptionsTab() {
           <div className="grid gap-3">
             {pending.map((order) => {
               const parsed = parseItems(order.items_json);
+              const payableSubscription = parsed.length === 1 && parsed[0]?.type === "subscription" && Boolean(parsed[0].period);
               const label = ORDER_STATUS[order.status] ?? ORDER_STATUS.requested;
               return (
                 <Card key={order.id}>
@@ -263,6 +280,10 @@ export function SubscriptionsTab() {
                       {ro ? "Total de plată" : "Amount due"}
                     </span>
                     <span className="font-semibold">{fmt(order.total_cents, order.currency)}</span>
+                    {payableSubscription && !order.requires_manual_quote && order.total_cents > 0 && <div className="flex flex-wrap gap-2">
+                      {billingAccount?.providers.stripe.enabled && <Button size="sm" disabled={Boolean(paymentBusy)} onClick={() => void payPending(order, "stripe")}>Activează prin Stripe</Button>}
+                      {billingAccount?.providers.revolut.enabled && billingAccount.revolutPlans.some((plan) => plan.sku === parsed[0]?.sku && plan.period === parsed[0]?.period) && <Button size="sm" variant="outline" disabled={Boolean(paymentBusy)} onClick={() => void payPending(order, "revolut")}>Activează prin Revolut Pay</Button>}
+                    </div>}
                   </CardContent>
                 </Card>
               );
@@ -270,8 +291,8 @@ export function SubscriptionsTab() {
           </div>
           <p className="text-xs text-muted-foreground">
             {ro
-              ? "Cererile trimise devin abonamente active imediat ce confirmăm plata."
-              : "Requests become active subscriptions as soon as we confirm the payment."}
+              ? "Prima plată se face pe pagina procesatorului. Reînnoirile se debitează automat conform planului ales; starea se actualizează după confirmarea procesatorului."
+              : "The first payment is completed at the provider. Renewals follow your plan automatically; the status updates after provider confirmation."}
           </p>
         </section>
       )}
