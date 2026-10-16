@@ -166,17 +166,19 @@ const Footer = () => {
           </a>
 
           {/* Only this contact row changes with the page; the rows below stay shared. */}
-          <div data-testid="footer-contact-actions" className="grid min-w-0 w-full grid-cols-2 items-stretch gap-1.5 sm:grid-cols-4 lg:justify-self-end">
+          <div data-testid="footer-contact-actions" className={isLanding
+            ? "grid min-w-0 w-full grid-cols-[auto_minmax(0,1fr)_auto_36px] items-stretch gap-1 sm:grid-cols-[auto_minmax(0,1fr)_auto_38px] sm:gap-1.5 lg:justify-self-end"
+            : "grid min-w-0 w-full grid-cols-2 items-stretch gap-1.5 sm:grid-cols-4 lg:justify-self-end"}>
             <a
               href="https://wa.me/40734605055"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="WhatsApp"
               onClick={() => trackEvent("cta_click", { location: "footer", page: cta.page, channel: "whatsapp" })}
-              className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1.5 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] px-2.5 py-1.5 shadow-[0_6px_16px_-6px_rgba(37,211,102,0.5)] transition-transform hover:scale-[1.03]"
+              className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] px-2 py-1.5 shadow-[0_6px_16px_-6px_rgba(37,211,102,0.5)] transition-transform hover:scale-[1.03] sm:px-2.5"
             >
               <MessageCircle className="size-3 shrink-0 text-white" aria-hidden />
-              <span className="font-display text-xs font-semibold text-white">WhatsApp</span>
+              <span className={isLanding ? "hidden font-display text-xs font-semibold text-white min-[370px]:inline" : "font-display text-xs font-semibold text-white"}>WhatsApp</span>
             </a>
             {cta.external || cta.to.startsWith("#") ? (
               <a
@@ -201,19 +203,19 @@ const Footer = () => {
               href="tel:+40734605055"
               aria-label={t.footer.phoneLabel}
               onClick={() => trackEvent("cta_click", { location: "footer", page: cta.page, channel: "phone" })}
-              className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1.5 rounded-full border border-cyan-300/30 bg-gradient-to-br from-cyan-500/15 to-sky-600/15 px-2.5 py-1.5 transition-all hover:border-cyan-300/60 hover:from-cyan-500/25 hover:to-sky-600/25"
+              className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-full border border-cyan-300/30 bg-gradient-to-br from-cyan-500/15 to-sky-600/15 px-2 py-1.5 transition-all hover:border-cyan-300/60 hover:from-cyan-500/25 hover:to-sky-600/25 sm:px-2.5"
             >
               <Phone className="size-3 shrink-0 text-cyan-300" aria-hidden />
-              <span className="text-xs font-medium text-white/90">{lang === "en" ? "Call us" : "Sună-ne"}</span>
+              <span className={isLanding ? "hidden text-xs font-medium text-white/90 min-[370px]:inline" : "text-xs font-medium text-white/90"}>{lang === "en" ? "Call us" : "Sună-ne"}</span>
             </a>
             {isLanding ? (
               <a
                 href="mailto:contact@avyron.ro"
                 aria-label={lang === "en" ? "Email AVYRON" : "E-mail AVYRON"}
                 onClick={() => trackEvent("cta_click", { location: "footer", page: cta.page, channel: "email" })}
-                className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-[#df4055] to-[#aa193c] px-2.5 py-1.5 font-display text-xs font-semibold text-white shadow-[0_6px_16px_-6px_rgba(223,64,85,.55)] transition-all hover:from-[#eb5266] hover:to-[#bc2448]"
+                className="inline-flex size-9 min-w-0 self-center items-center justify-center rounded-full bg-gradient-to-r from-[#df4055] to-[#aa193c] text-white shadow-[0_4px_12px_-5px_rgba(223,64,85,.55)] transition-all hover:from-[#eb5266] hover:to-[#bc2448] sm:size-[38px]"
               >
-                <Mail className="size-3 shrink-0" aria-hidden /> {lang === "en" ? "Email" : "E-mail"}
+                <Mail className="size-4 shrink-0" aria-hidden />
               </a>
             ) : (
               <Link to={secondary.to} className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-full border border-white/20 bg-white/[.07] px-2 py-1.5 text-center font-display text-[11px] font-semibold leading-tight text-white/85 transition-colors hover:border-purple-300/50 hover:bg-white/[.14] hover:text-white">

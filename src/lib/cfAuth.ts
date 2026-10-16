@@ -22,7 +22,7 @@ export type CfProfile = {
   avatar_url: string | null;
   phone: string | null;
   address: string | null;
-  entity_type: "individual" | "srl" | "pfa" | "ii" | "other" | null;
+  entity_type: "individual" | "srl" | "pfa" | "ii" | "startup" | "public_institution" | "avyron_partner" | "other" | null;
   company_name: string | null;
   cui: string | null;
   social_facebook: string | null;
@@ -181,7 +181,7 @@ class CfAuth {
     }
   }
 
-  async signup(input: { email: string; password: string; displayName?: string; entityType?: string; turnstileToken?: string }) {
+  async signup(input: { email: string; password: string; displayName?: string; entityType?: string; organizationName?: string; taxId?: string; language?: "ro" | "en"; turnstileToken?: string }) {
     const res = await fetch(apiUrl("/api/auth/signup"), {
       method: "POST",
       headers: { "content-type": "application/json" },

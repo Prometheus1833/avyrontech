@@ -422,11 +422,14 @@ app.post("/api/auth/signup", async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const email = String(body.email || "").trim().toLowerCase();
   const password = String(body.password || "");
-  const displayName = body.displayName ? String(body.displayName) : null;
+  const displayName = body.displayName ? String(body.displayName).trim().slice(0, 100) : null;
   const turnstileToken = String(body.turnstileToken || "").slice(0, 4000);
-  const entityType = ["individual", "srl", "pfa", "ii", "other"].includes(String(body.entityType))
+  const entityType = ["individual", "srl", "pfa", "ii", "startup", "public_institution", "avyron_partner", "other"].includes(String(body.entityType))
     ? String(body.entityType)
     : "individual";
+  const organizationName = entityType === "individual" ? "" : String(body.organizationName || "").trim().slice(0, 160);
+  const taxId = ["srl", "pfa", "ii"].includes(entityType) ? String(body.taxId || "").trim().toUpperCase().slice(0, 40) : "";
+  const language = body.language === "en" ? "en" : "ro";
   const signupIpKey = await hashKey(clientIp(c.req.raw));
   const signupRate = await checkRateLimit(c.env.DB, [
     { key: `signup:ip:${signupIpKey}:h`, limit: 5, windowSec: 3600 },
@@ -441,6 +444,8 @@ app.post("/api/auth/signup", async (c) => {
   }
   if (!/^\S+@\S+\.\S+$/.test(email)) return c.json({ error: { code: "invalid_email" } }, 400);
   if (password.length < 8) return c.json({ error: { code: "weak_password", message: "Min 8 chars" } }, 400);
+  if (entityType !== "individual" && organizationName.length < 2) return c.json({ error: { code: "organization_name_required" } }, 400);
+  if (["srl", "pfa", "ii"].includes(entityType) && !/^(RO)?[0-9]{2,10}$/i.test(taxId)) return c.json({ error: { code: "invalid_tax_id" } }, 400);
 
   const exists = await c.env.DB.prepare("SELECT 1 FROM users WHERE email = ?").bind(email).first();
   if (exists) return c.json({ error: { code: "email_taken" } }, 409);
@@ -452,8 +457,8 @@ app.post("/api/auth/signup", async (c) => {
     c.env.DB.prepare("INSERT INTO users (id,email,password_hash,display_name,email_verified,created_at,updated_at) VALUES (?,?,?,?,0,?,?)")
       .bind(id, email, hash, displayName, t, t),
     c.env.DB.prepare("INSERT INTO user_roles (user_id, role) VALUES (?, 'user')").bind(id),
-    c.env.DB.prepare("INSERT INTO profiles (id,display_name,entity_type,language,theme,updated_at) VALUES (?,?,?,'ro','system',?)")
-      .bind(id, displayName, entityType, t),
+    c.env.DB.prepare("INSERT INTO profiles (id,display_name,entity_type,company_name,cui,language,theme,updated_at) VALUES (?,?,?,?,?,?,'system',?)")
+      .bind(id, displayName, entityType, organizationName || null, taxId || null, language, t),
     c.env.DB.prepare("INSERT INTO audit_log (user_id,action,ip,created_at) VALUES (?,?,?,?)")
       .bind(id, "signup", c.req.header("cf-connecting-ip") || null, t),
   ]);
@@ -1075,7 +1080,7 @@ app.put("/api/profile", requireAuth, async (c) => {
   if (!patch.length) return c.json({ error: { code: "empty_patch" } }, 400);
 
   const values = Object.fromEntries(patch);
-  if (values.entity_type && !["individual", "srl", "pfa", "ii", "other"].includes(values.entity_type)) return c.json({ error: { code: "invalid_entity_type" } }, 400);
+  if (values.entity_type && !["individual", "srl", "pfa", "ii", "startup", "public_institution", "avyron_partner", "other"].includes(values.entity_type)) return c.json({ error: { code: "invalid_entity_type" } }, 400);
   if (values.language && !["ro", "en"].includes(values.language)) return c.json({ error: { code: "invalid_language" } }, 400);
   if (values.theme && !["light", "dark", "system"].includes(values.theme)) return c.json({ error: { code: "invalid_theme" } }, 400);
   const userId = c.get("userId");
@@ -1154,7 +1159,7 @@ app.get("/api/clients", requireAuth, requireRole("staff", "admin"), async (c) =>
 app.get("/api/admin/users", requireAuth, requireRole("staff", "admin"), async (c) => {
   const { results } = await c.env.DB.prepare(
     `SELECT u.id,u.email,u.username,u.display_name,u.avatar_url,u.email_verified,u.must_change_password,u.disabled_at,u.last_login_at,u.created_at,
-            p.phone,p.entity_type,p.company_name,p.pseudonym,p.staff_role,
+            p.phone,p.entity_type,p.company_name,p.cui,p.pseudonym,p.staff_role,
             GROUP_CONCAT(DISTINCT r.role) AS roles,
             COUNT(DISTINCT CASE WHEN s.revoked_at IS NULL AND s.expires_at > ? THEN s.id END) AS active_sessions
        FROM users u
@@ -1164,7 +1169,7 @@ app.get("/api/admin/users", requireAuth, requireRole("staff", "admin"), async (c
       GROUP BY u.id
       ORDER BY COALESCE(p.display_name,u.display_name,u.email) COLLATE NOCASE`,
   ).bind(now()).all<Record<string, unknown>>();
-  if (await isSuperAdmin(c)) return c.json({ data: results });
+  if ((await rolesFor(c.env.DB, c.get("userId"))).includes("admin")) return c.json({ data: results });
   // Staff-ul vede doar ce îi trebuie pentru alocare; fără date personale complete.
   const masked = results.map((r) => ({
     id: r.id,

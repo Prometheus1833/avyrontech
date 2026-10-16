@@ -53,6 +53,8 @@ export type AccountOption = {
   username?: string | null;
   display_name: string | null;
   company_name: string | null;
+  entity_type?: string | null;
+  cui?: string | null;
   staff_role?: string | null;
   disabled_at?: number | null;
   must_change_password?: 0 | 1;

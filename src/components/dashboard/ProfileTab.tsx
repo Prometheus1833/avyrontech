@@ -15,7 +15,7 @@ import { useLang } from "@/i18n/LanguageContext";
 import { billingApi, type BillingAccount } from "@/lib/billingApi";
 
 export function ProfileTab() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { user, profile, isStaff, refreshProfile } = useAuth();
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -29,7 +29,7 @@ export function ProfileTab() {
     staff_role: "dev" as "dev" | "designer" | "marketing" | "support" | "admin",
     phone: "",
     address: "",
-    entity_type: "individual" as "individual" | "srl" | "pfa" | "ii" | "other",
+    entity_type: "individual" as NonNullable<CfProfile["entity_type"]>,
     company_name: "",
     cui: "",
     social_facebook: "",
@@ -121,12 +121,14 @@ export function ProfileTab() {
     .split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
 
   const isCompany = form.entity_type !== "individual";
+  const entityLabel = t.auth.entity[form.entity_type];
 
   return (
     <div className="mx-auto max-w-5xl space-y-3">
       <div>
         <h2 className="text-xl font-display font-bold leading-tight">{t.auth.profile.title}</h2>
         <p className="text-xs text-muted-foreground">{t.auth.profile.subtitle}</p>
+        {!isStaff && <p className="mt-2 inline-flex rounded-full border border-brand/20 bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">{t.auth.entityType}: {entityLabel}</p>}
       </div>
 
       <Card>
@@ -202,6 +204,9 @@ export function ProfileTab() {
                     <SelectItem value="srl">{t.auth.entity.srl}</SelectItem>
                     <SelectItem value="pfa">{t.auth.entity.pfa}</SelectItem>
                     <SelectItem value="ii">{t.auth.entity.ii}</SelectItem>
+                    <SelectItem value="startup">{t.auth.entity.startup}</SelectItem>
+                    <SelectItem value="public_institution">{t.auth.entity.public_institution}</SelectItem>
+                    <SelectItem value="avyron_partner">{t.auth.entity.avyron_partner}</SelectItem>
                     <SelectItem value="other">{t.auth.entity.other}</SelectItem>
                   </SelectContent>
                 </Select>
@@ -209,7 +214,7 @@ export function ProfileTab() {
               {isCompany && (
                 <>
                   <div className="space-y-1">
-                    <Label className="text-xs">{t.auth.profile.companyName}</Label>
+                    <Label className="text-xs">{form.entity_type === "startup" ? (lang === "ro" ? "Nume start-up" : "Start-up name") : form.entity_type === "public_institution" ? (lang === "ro" ? "Numele instituției" : "Institution name") : form.entity_type === "avyron_partner" ? (lang === "ro" ? "Nume partener / brand" : "Partner / brand name") : t.auth.profile.companyName}</Label>
                     <Input className="h-8 text-sm" value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
                   </div>
                   <div className="space-y-1">
