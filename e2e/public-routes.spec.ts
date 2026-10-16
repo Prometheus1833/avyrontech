@@ -266,9 +266,9 @@ test.describe("public SEO routes", () => {
         await expect(actions.last()).toHaveAttribute("href", "mailto:contact@avyron.ro");
         const positions = await actions.evaluateAll((links) => links.map((link) => {
           const box = link.getBoundingClientRect();
-          return { top: box.top, width: box.width };
+          return { centerY: box.top + box.height / 2, width: box.width };
         }));
-        expect(Math.max(...positions.map((item) => item.top)) - Math.min(...positions.map((item) => item.top))).toBeLessThan(3);
+        expect(Math.max(...positions.map((item) => item.centerY)) - Math.min(...positions.map((item) => item.centerY))).toBeLessThan(3);
         expect(positions[3].width, "the red email control stays a small icon in the contact line").toBeLessThanOrEqual(40);
       }
       else await expect(actions.last()).not.toHaveAttribute("href", /^mailto:/);
