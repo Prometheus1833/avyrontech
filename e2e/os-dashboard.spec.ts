@@ -260,7 +260,10 @@ test.describe("dashboard AVYRON OS în română", () => {
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        data: [{ id: "staff-1", email: "coleg@avyron.ro", username: "coleg", display_name: "Coleg Avyron", company_name: "Avyron", staff_role: "marketing", disabled_at: null, roles: "user,staff", must_change_password: 0, active_sessions: 1 }],
+        data: [
+          { id: "staff-1", email: "coleg@avyron.ro", username: "coleg", display_name: "Coleg Avyron", company_name: "Avyron", staff_role: "marketing", disabled_at: null, roles: "user,staff", must_change_password: 0, active_sessions: 1 },
+          { id: "client-1", email: "fondator@example.test", display_name: "Fondator", entity_type: "startup", company_name: "Atelier Nord", cui: null, disabled_at: null, roles: "user", must_change_password: 0, active_sessions: 0 },
+        ],
       }),
     }));
     await page.route("**/api/admin/operations/staff/staff-1/projects", (route) => route.fulfill({ json: { ok: true } }));
@@ -273,7 +276,8 @@ test.describe("dashboard AVYRON OS în română", () => {
 
     await page.goto("/profil?tab=team-staff");
     await expect(page.getByRole("heading", { name: "Utilizatori și STAFF", exact: true })).toBeVisible({ timeout: 10_000 });
-    await page.getByRole("button", { name: "Gestionează" }).click();
+    await expect(page.getByText("Start-up · Atelier Nord")).toBeVisible();
+    await page.getByRole("button", { name: "Gestionează" }).first().click();
     await page.getByLabel("Nivel de acces").selectOption("admin");
     await page.getByLabel("Client A", {exact:true}).check();
     await page.getByRole("button", { name: "Salvează accesul" }).click();

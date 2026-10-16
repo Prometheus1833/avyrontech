@@ -13,7 +13,7 @@ type ImportUser = {
   /** Pentru conturi existente: aplică rolurile și resetează parola. */
   updateExisting?: boolean;
   profile?: {
-    entityType?: "individual" | "srl" | "pfa" | "ii" | "other";
+    entityType?: "individual" | "srl" | "pfa" | "ii" | "startup" | "public_institution" | "avyron_partner" | "other";
     companyName?: string;
     pseudonym?: string;
     staffRole?: "dev" | "designer" | "marketing" | "support";
@@ -64,7 +64,7 @@ seedRouter.post("/api/admin/import-users", async (c) => {
     const timestamp = Date.now();
     const roles = Array.from(new Set<Role>(["user", ...(item.roles || []).filter((role): role is Role => ["user", "staff", "admin"].includes(role))]));
     const profile = item.profile || {};
-    const entityType = ["individual", "srl", "pfa", "ii", "other"].includes(profile.entityType || "") ? profile.entityType : "individual";
+    const entityType = ["individual", "srl", "pfa", "ii", "startup", "public_institution", "avyron_partner", "other"].includes(profile.entityType || "") ? profile.entityType : "individual";
     const mustChange = item.forcePasswordChange === false ? 0 : 1;
     if (existing && item.updateExisting) {
       // Promovare controlată: rolurile cerute + parolă nouă pentru conturile existente.

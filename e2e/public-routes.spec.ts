@@ -262,7 +262,15 @@ test.describe("public SEO routes", () => {
       await expect(actions.first()).toHaveAttribute("href", "https://wa.me/40734605055");
       await expect(actions.nth(1)).toContainText(primary);
       await expect(actions.nth(2)).toHaveAttribute("href", "tel:+40734605055");
-      if (path === "/") await expect(actions.last()).toHaveAttribute("href", "mailto:contact@avyron.ro");
+      if (path === "/") {
+        await expect(actions.last()).toHaveAttribute("href", "mailto:contact@avyron.ro");
+        const positions = await actions.evaluateAll((links) => links.map((link) => {
+          const box = link.getBoundingClientRect();
+          return { top: box.top, width: box.width };
+        }));
+        expect(Math.max(...positions.map((item) => item.top)) - Math.min(...positions.map((item) => item.top))).toBeLessThan(3);
+        expect(positions[3].width, "the red email control stays a small icon in the contact line").toBeLessThanOrEqual(40);
+      }
       else await expect(actions.last()).not.toHaveAttribute("href", /^mailto:/);
       const utility = footer.getByTestId("footer-utility-row").locator("a");
       await expect(utility).toHaveCount(2);
@@ -569,6 +577,53 @@ test.describe("public SEO routes", () => {
 });
 
 test.describe("forms and authentication", () => {
+  test("mobile registration keeps the portal anchored and submits the chosen account category in English", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
+      necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12",
+    })));
+    let submitted: Record<string, unknown> | undefined;
+    await page.route("**/api/auth/signup", async (route) => {
+      submitted = route.request().postDataJSON() as Record<string, unknown>;
+      await route.fulfill({ status: 202, json: { ok: true, verification_required: true, verification_email_sent: true } });
+    });
+    await page.goto("/auth");
+    await page.evaluate(() => document.fonts.ready);
+    await expect.poll(() => page.locator(".auth-topbar").evaluate((element) => element.getBoundingClientRect().top)).toBe(0);
+    const ringCenter = () => page.locator(".auth-portal").evaluate((element) => {
+      const stage = element.parentElement!.getBoundingClientRect();
+      return stage.top + window.scrollY + Number.parseFloat(getComputedStyle(element).top);
+    });
+    const before = await ringCenter();
+    await page.getByRole("tab", { name: "Înregistrează-te" }).click();
+    await expect(page.locator("#rg-entity")).toBeVisible();
+    await expect.poll(ringCenter).toBeGreaterThan(before - 2);
+    expect(await ringCenter()).toBeLessThan(before + 2);
+
+    await page.getByRole("button", { name: "Schimbă limba (română activă)" }).click();
+    await page.getByRole("option", { name: "en" }).click();
+    await expect(page.getByRole("heading", { name: "Start here" })).toBeVisible();
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await page.locator("#rg-entity").click();
+    await page.getByRole("option", { name: "Avyron Partner" }).click();
+    await expect(page.getByLabel("Partner / brand name")).toBeVisible();
+    await expect(page.getByText(/team administrator grants staff access separately/)).toBeVisible();
+    await page.locator("#rg-entity").click();
+    await page.getByRole("option", { name: "LLC" }).click();
+    await expect(page.getByLabel("Registered company name")).toBeVisible();
+    await expect(page.getByLabel("Tax ID / registration number")).toBeVisible();
+    await page.getByLabel("Contact person").fill("Ana Popescu");
+    await page.getByLabel("Registered company name").fill("Atelier Nord SRL");
+    await page.getByLabel("Tax ID / registration number").fill("RO12345678");
+    await page.locator("#rg-email").fill("ana@example.com");
+    await page.locator("#rg-pass").fill("SecurePass123!");
+    await page.getByRole("button", { name: "Sign up" }).click();
+    await expect.poll(() => submitted?.entityType).toBe("srl");
+    expect(submitted).toMatchObject({ organizationName: "Atelier Nord SRL", taxId: "RO12345678", language: "en" });
+    await page.locator(".auth-page-footnote").scrollIntoViewIfNeeded();
+    await expect(page.locator(".auth-page-footnote")).toBeInViewport();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
+  });
   test("AI AVY Prod opens from the dashboard and creates approval-only drafts", async ({ page }) => {
     let generationPayload: Record<string, unknown> | null = null;
     let generationKey = "";
