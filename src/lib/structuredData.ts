@@ -69,53 +69,22 @@ export const webSiteLd = {
   publisher: { "@id": `${BASE_URL}/#organization` },
 };
 
-export const localBusinessLd = {
+/** The public, free domain-availability checker embedded on the homepage. */
+export const domainCheckLd = {
   "@context": "https://schema.org",
-  "@type": "ProfessionalService",
-  "@id": `${BASE_URL}/#localbusiness`,
-  name: "Avyron",
-  alternateName: "Avyron Development",
-  legalName: PRIMARY_ENTITY.legalName,
-  identifier: {
-    "@type": "PropertyValue",
-    propertyID: "CUI",
-    value: PRIMARY_ENTITY.taxId,
-  },
-  image: LOGO_URL,
-  logo: LOGO_URL,
-  url: BASE_URL,
-  telephone: PHONE,
-  email: EMAIL,
-  priceRange: "€€",
-  address: {
-    "@type": "PostalAddress",
-    ...(PRIMARY_ENTITY.streetAddress ? { streetAddress: PRIMARY_ENTITY.streetAddress } : {}),
-    addressLocality: PRIMARY_ENTITY.addressLocality,
-    addressRegion: PRIMARY_ENTITY.addressRegion,
-    addressCountry: "RO",
-  },
-  areaServed: [
-    { "@type": "Country", name: "Romania" },
-    { "@type": "AdministrativeArea", name: "European Union" },
-  ],
-  serviceType: [
-    "Professional presentation website design",
-    "Business website development",
-    "Web development",
-    "Mobile app development",
-    "Ecommerce development",
-    "UI/UX design",
-    "Technical SEO",
-    "Website audit",
-    "AI automation and integrations",
-    "Web and mobile quality assurance testing",
-    "Professional 3D logo design",
-    "Visual identity and graphic design",
-    "Website and application maintenance",
-    "Cybersecurity",
-    "DevOps & Hosting",
-  ],
-  sameAs: organizationLd.sameAs,
+  "@type": "WebApplication",
+  "@id": `${BASE_URL}/#domain-check`,
+  name: "Verificare disponibilitate domeniu",
+  alternateName: "Domain availability checker",
+  description:
+    "Verifică disponibilitatea unui nume de domeniu prin registre publice și confirmă rezultatul la registrul oficial când este disponibil.",
+  url: `${BASE_URL}/#verificare-domeniu`,
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Any",
+  isAccessibleForFree: true,
+  inLanguage: ["ro-RO", "en"],
+  publisher: { "@id": `${BASE_URL}/#organization` },
+  isPartOf: { "@id": `${BASE_URL}/#website` },
 };
 
 /** Build a BreadcrumbList JSON-LD from ordered items. */
