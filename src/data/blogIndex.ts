@@ -5,8 +5,14 @@ export type BlogIndexEntry = {
   excerpt: string;
   content: string;
   cover_image_url: string | null;
+  cover_image_alt?: string | null;
   tags: string[];
   category: string;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  social_title?: string | null;
+  social_description?: string | null;
+  has_translation?: boolean;
   published_at: string;
   updated_at: string;
 };
@@ -15,6 +21,177 @@ const UPDATED_AT = "2026-08-24T00:00:00.000+03:00";
 
 /** Complete, visible Romanian articles used by prerendering and as a resilient data fallback. */
 export const BLOG_INDEX: BlogIndexEntry[] = [
+  {
+    id: "8c8d67ef-1e11-4b13-a726-b6dd5c15875c",
+    title: "De la Instagram la rezervare directă: ce trebuie să conțină site-ul unei pensiuni în 2026",
+    slug: "site-pensiune-rezervari-directe-2026",
+    excerpt: "Social media poate face o pensiune vizibilă, dar decizia de rezervare are nevoie de un loc clar, credibil și ușor de folosit.",
+    content: `O fotografie bună poate opri scroll-ul. Un Reel poate trezi dorința de a pleca la munte. Dar între „mi-ar plăcea să ajung aici” și o solicitare reală există o etapă pe care multe afaceri din turism o lasă neclară: **locul în care oaspetele verifică dacă proprietatea i se potrivește și face următorul pas**.
+
+Pentru o pensiune, un hotel boutique sau o vilă, website-ul propriu nu concurează cu Instagram, Facebook ori platformele de rezervări. Rolurile sunt diferite. Social media creează interes și menține relația. Platformele terțe pot aduce expunere. Website-ul reunește informația controlată de afacere, explică experiența și poate conduce vizitatorul spre o cerere directă, fără să-l oblige să caute răspunsuri în postări vechi sau conversații fragmentate.
+
+## Interesul nu este încă o rezervare
+
+Un vizitator care ajunge dintr-un Story are, de obicei, câteva întrebări simple:
+
+- Unde se află proprietatea și cum ajung acolo?
+- Ce tipuri de camere există?
+- Ce facilități sunt incluse?
+- Pentru ce fel de sejur este potrivită?
+- Cum verific disponibilitatea?
+- Cum pot cere informații sau rezerva?
+
+Dacă răspunsurile sunt împrăștiate între highlights, comentarii și fotografii, efortul de decizie crește. Website-ul trebuie să reducă acest efort. Nu prin mai mult text, ci prin **o structură care pune informația potrivită în ordinea potrivită**.
+
+## 1. Primul ecran trebuie să explice locul, nu doar să-l arate
+
+Imaginea de deschidere contează, însă nu poate duce singură toată comunicarea. În primele secunde, vizitatorul ar trebui să înțeleagă:
+
+- ce tip de cazare este;
+- unde se află;
+- pentru cine este potrivită;
+- care este principalul motiv pentru care merită explorată;
+- ce poate face în continuare.
+
+Un titlu precum „Cazare în Bucovina pentru familii și grupuri mici” este mai util decât o formulare generică despre relaxare. Atmosfera rămâne importantă, dar trebuie legată de informație și de o acțiune clară: „Vezi camerele”, „Verifică disponibilitatea” sau „Solicită detalii”.
+
+## 2. Camerele au nevoie de pagini care răspund întrebărilor reale
+
+O galerie fără context obligă omul să ghicească. Pentru fiecare tip de cameră sau unitate, o pagină utilă poate include:
+
+- fotografii reale și actuale;
+- capacitatea de cazare;
+- configurația paturilor;
+- facilitățile relevante;
+- condițiile importante ale sejurului;
+- accesul la zone comune;
+- o acțiune simplă pentru disponibilitate sau contact.
+
+Informația trebuie să fie consecventă între desktop și mobil. Oaspetele nu ar trebui să descopere abia într-un mesaj privat că o cameră nu acceptă configurația de care are nevoie.
+
+## 3. Disponibilitatea și contactul trebuie să formeze un singur traseu
+
+Nu orice proprietate are nevoie din prima zi de un motor complex de rezervări. Dar orice proprietate are nevoie de un traseu coerent:
+
+1. alegerea camerei;
+2. selectarea perioadei sau precizarea ei într-un formular;
+3. numărul de persoane;
+4. trimiterea cererii;
+5. confirmarea următorului pas.
+
+Pentru unele afaceri este potrivit un sistem de rezervare. Pentru altele, un formular scurt ori WhatsApp poate fi suficient la început. Decizia se ia după volumul solicitărilor și procesul real al proprietății, nu după lista de funcții a unui șablon.
+
+Important este ca butonul principal să nu schimbe sensul de la o pagină la alta. Dacă obiectivul este verificarea disponibilității, aceasta trebuie să rămână acțiunea dominantă.
+
+## 4. Locația trebuie transformată într-un argument concret
+
+„Aproape de natură” sună bine, dar nu ajută suficient decizia. O pagină de localizare bună explică:
+
+- distanțele față de repere utile;
+- accesul cu mașina și eventualele particularități ale traseului;
+- parcarea;
+- atracțiile relevante pentru publicul proprietății;
+- ce se poate face în zonă în funcție de sezon.
+
+Acest conținut ajută atât oamenii, cât și motoarele de căutare să înțeleagă contextul local. Google recomandă folosirea datelor structurate [LocalBusiness](https://developers.google.com/search/docs/appearance/structured-data/local-business) pentru informații precum numele, adresa, telefonul și URL-ul unei locații, dar precizează că implementarea corectă nu garantează o anumită apariție în rezultate. Datele structurate trebuie să descrie fidel conținutul vizibil al paginii, nu să-l înlocuiască.
+
+## 5. Profilul Google și website-ul trebuie să trimită spre aceeași realitate
+
+Pentru unitățile de cazare, profilul de business din Google poate afișa informații despre proprietate și poate conduce vizitatorii către website. Google explică și mecanismele prin care anumite unități pot furniza [tarife și disponibilitate pentru legături de rezervare directă](https://support.google.com/hotelprices/answer/10684696). Eligibilitatea și implementarea diferă după tipul proprietății și integrarea folosită, deci nu trebuie presupus că orice marcaj sau simplă instalare activează automat aceste funcții.
+
+Practic, merită verificată consecvența dintre:
+
+- denumirea proprietății;
+- adresă și coordonate;
+- telefon;
+- fotografii;
+- facilități;
+- URL-ul paginii de rezervare;
+- informațiile despre camere și disponibilitate.
+
+O diferență aparent mică între profil, website și platformele terțe poate crea îndoială exact înaintea deciziei.
+
+## 6. Mobilul nu este o versiune micșorată a desktopului
+
+O mare parte din descoperirea inițială se întâmplă pe telefon. De aceea, pagina mobilă trebuie proiectată pentru folosire rapidă:
+
+- titluri scurte;
+- imagini optimizate;
+- butoane ușor de apăsat;
+- formular simplu;
+- telefon și adresă accesibile;
+- conținut esențial vizibil fără zoom;
+- elemente stabile, care nu sar în timp ce pagina se încarcă.
+
+Performanța tehnică nu este doar o preocupare de dezvoltare. Ea afectează experiența în momentul în care vizitatorul încearcă să compare camere, să deschidă galeria sau să trimită o cerere. Imaginile trebuie comprimate și dimensionate corect, iar conținutul principal nu ar trebui să depindă de încărcări întârziate sau efecte grele.
+
+## 7. Dovada trebuie să fie reală și verificabilă
+
+În turism, încrederea se construiește din detalii. Fotografii actuale, reguli clare, informații despre gazde, politici explicate simplu și recenzii folosite corect sunt mai valoroase decât superlativele.
+
+Nu este nevoie ca website-ul să promită că proprietatea este „cea mai bună”. Este mai credibil să arate:
+
+- cum arată camerele în realitate;
+- ce experiență oferă zona;
+- ce este inclus;
+- cum se desfășoară rezervarea;
+- cine răspunde solicitărilor;
+- ce trebuie să știe oaspetele înainte să ajungă.
+
+## Un audit de zece minute
+
+Deschide website-ul pe telefon și încearcă să răspunzi fără să cauți în altă parte:
+
+1. Înțeleg în cinci secunde ce tip de cazare este?
+2. Găsesc rapid camerele și capacitatea lor?
+3. Văd fotografii reale și suficient de clare?
+4. Înțeleg locația și accesul?
+5. Pot verifica disponibilitatea sau trimite o cerere fără confuzie?
+6. Există un singur pas principal, vizibil?
+7. Primesc confirmarea că solicitarea a fost trimisă?
+
+Dacă trei sau mai multe răspunsuri sunt „nu”, problema nu este lipsa unei animații. Este traseul de decizie.
+
+## Website-ul propriu devine centrul prezenței digitale
+
+Un website bun pentru turism nu înseamnă mai multe pagini decât sunt necesare. Înseamnă un sistem în care social media, Google, hărțile, conținutul și rezervarea duc spre aceeași experiență coerentă.
+
+La AVYRON pornim de la publicul proprietății și de la procesul real de solicitare, apoi construim structura, designul, conținutul, performanța și acțiunile din jurul acestora. Rezultatul nu este doar o prezentare frumoasă, ci un loc digital clar în care oaspetele poate înțelege oferta și poate face următorul pas.
+
+**[Vezi cum construim website-uri de prezentare pentru afaceri din turism](/servicii/website-prezentare-profesional).**
+
+## Întrebări frecvente
+
+### O pensiune are nevoie de motor de rezervări?
+
+Nu întotdeauna din prima etapă. Unele proprietăți au nevoie de rezervare completă, altele de un formular clar sau de un flux controlat prin WhatsApp. Soluția trebuie aleasă după procesul real și volumul solicitărilor.
+
+### Este suficientă o pagină de Facebook sau Instagram?
+
+Canalele sociale sunt utile pentru descoperire și comunitate, dar nu oferă același control asupra structurii, căutării, conținutului și traseului de rezervare. Website-ul le completează și centralizează informația verificabilă.
+
+### Datele structurate garantează apariții speciale în Google?
+
+Nu. Ele ajută motoarele să înțeleagă informația, dar [Google precizează](https://developers.google.com/search/docs/appearance/structured-data/sd-policies) că implementarea corectă nu garantează afișarea unui rezultat îmbogățit. Conținutul vizibil, eligibilitatea și respectarea ghidurilor rămân esențiale.
+
+## Surse editoriale
+
+- [Google Search Central — LocalBusiness structured data](https://developers.google.com/search/docs/appearance/structured-data/local-business), consultat la 16 octombrie 2026.
+- [Google Business Profile — hotel starter guide](https://support.google.com/business/answer/9178356), consultat la 16 octombrie 2026.
+- [Google Hotel Center — rates and direct booking URL](https://support.google.com/hotelprices/answer/10684696), consultat la 16 octombrie 2026.
+- [Google Search Central — general structured data guidelines](https://developers.google.com/search/docs/appearance/structured-data/sd-policies), consultat la 16 octombrie 2026.`,
+    cover_image_url: "/news/site-pensiune-rezervari-directe-2026.webp",
+    cover_image_alt: "Laptop și telefon afișând website-ul unei pensiuni montane, cu camere, disponibilitate, locație și acțiune de rezervare.",
+    tags: ["turism", "website-pensiune", "rezervari-directe", "seo-local", "ux", "web-design"],
+    category: "business",
+    seo_title: "Site pentru pensiune: cum transformi interesul în rezervări",
+    seo_description: "Ce trebuie să conțină site-ul unei pensiuni pentru a transforma vizitele din social media și Google în cereri și rezervări directe.",
+    social_title: "De la Instagram la rezervare directă",
+    social_description: "Șapte elemente care ajută site-ul unei pensiuni să transforme interesul din social media și Google într-un pas clar spre rezervare.",
+    has_translation: false,
+    published_at: "2026-10-16T16:00:00.000+03:00",
+    updated_at: "2026-10-16T19:30:00.000+03:00",
+  },
   {
     id: "b2da7874-14c4-4c18-afe7-6ef12306090f",
     title: "Abonamentele Meta pe Facebook și Instagram: ce contează pentru branduri",
@@ -272,7 +449,7 @@ Pentru un proiect nou, aceste cerințe pot fi incluse în arhitectură, design �
 /** Full English counterparts use the same stable slugs for reciprocal hreflang. */
 export const BLOG_INDEX_EN: BlogIndexEntry[] = [
   {
-    ...BLOG_INDEX[0],
+    ...BLOG_INDEX[1],
     title: "Meta subscriptions on Facebook and Instagram: what matters for brands",
     excerpt: "How to assess paid Meta options without mistaking a subscription for a durable content, website, and customer-relationship strategy.",
     content: `A new Facebook or Instagram feature can be useful, but it does not replace a business's digital strategy. Benefits, availability, and pricing can vary by country and account type, so decisions should be based on the current terms displayed inside the relevant account.
@@ -299,7 +476,7 @@ Audit the current channels first, align the brand name, logo, contact details, a
     tags: ["meta", "facebook", "instagram", "social-media", "digital-strategy"],
   },
   {
-    ...BLOG_INDEX[1],
+    ...BLOG_INDEX[2],
     title: "Why a professional business website matters in 2026",
     excerpt: "An owned website is the verifiable place where customers understand an offer, compare options, and take the next step without friction.",
     content: `When someone searches for a company, practice, salon, guest house, or local service provider, they need quick answers: what is offered, who it is for, where it is available, whether the business is credible, and how to make contact. A well-structured business website puts those answers in a space controlled by the business.
@@ -328,7 +505,7 @@ Avyron builds [professional presentation websites](/en/services/professional-pre
     tags: ["business-website", "presentation-website", "web-design", "seo", "local-business"],
   },
   {
-    ...BLOG_INDEX[2],
+    ...BLOG_INDEX[3],
     title: "How Avyron works: from a business objective to a digital product",
     excerpt: "Strategy, design, code, SEO, security, and maintenance in a process where deliverables and responsibilities are clear from the outset.",
     content: `Avyron is a digital product agency based in Iași County, working with local businesses, independent professionals, organizations, and growing projects. We do not begin with visual effects. We start with the problem the product must solve: more relevant enquiries, simpler administration, clearer communication, or automation of a repetitive process.
@@ -351,7 +528,7 @@ Explore [services and pricing](/en/services), the [portfolio](/en/services/profe
     tags: ["avyron", "web-agency-romania", "process", "web-development", "cloudflare"],
   },
   {
-    ...BLOG_INDEX[3],
+    ...BLOG_INDEX[4],
     title: "A professional website as digital identity, trust, and conversion",
     excerpt: "A professional website connects visual identity with verifiable information, clear navigation, and a simple journey from question to contact.",
     content: `Digital identity is more than a logo, colours, and a modern typeface. It includes how a business explains its services, proves it is real, answers questions, and helps a visitor make a safe decision.
@@ -374,7 +551,7 @@ Before a redesign, a [website audit](/en?request=audit#cta) can separate content
     tags: ["professional-website", "digital-identity", "web-design", "ux", "conversion"],
   },
   {
-    ...BLOG_INDEX[4],
+    ...BLOG_INDEX[5],
     title: "SEO in 2026: improving visibility in Google and AI answers",
     excerpt: "Technical indexability, useful visible text, a coherent entity, and a good experience form the same foundation for classic and AI search.",
     content: `Visibility does not begin with repeating a phrase. It begins with a page that a search engine can access, understand, and consider useful for a genuine need. Google states that its AI search features rely on the same SEO foundations: a page must be indexable, important information must be available in text, and structured data must match visible content.
@@ -399,7 +576,7 @@ After publication, monitor Page Indexing, sitemaps, selected canonicals, and que
     tags: ["seo-2026", "google", "ai-search", "indexing", "schema-org"],
   },
   {
-    ...BLOG_INDEX[5],
+    ...BLOG_INDEX[6],
     title: "Website security: 7 common small-business mistakes",
     excerpt: "A practical guide to passwords, updates, forms, access, backups, and monitoring for websites and the accounts that manage them.",
     content: `A small website can process important information: enquiries, documents, accounts, bookings, or billing details. Security depends on exposure and impact, not company size.
@@ -436,7 +613,7 @@ For an independent review, start with [web and mobile QA testing](/en/services/w
     tags: ["website-security", "passwords", "backups", "cloudflare", "gdpr"],
   },
   {
-    ...BLOG_INDEX[6],
+    ...BLOG_INDEX[7],
     title: "The AI Act after 2 August 2026: new transparency rules for artificial intelligence",
     excerpt: "AI Act enforcement changes how chatbots, AI-generated content, and deepfakes are presented. What businesses and digital teams should review now.",
     content: `From 2 August 2026, a significant part of the European Artificial Intelligence Act became applicable and designated institutions entered the enforcement phase. For the public, the most visible change is transparency: people should be able to understand when they interact with an AI system and when an image, recording, or text has been generated or manipulated artificially.

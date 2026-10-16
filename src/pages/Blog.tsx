@@ -50,7 +50,8 @@ const absoluteUrl = (value?: string | null) => mediaUrl(value).startsWith("http"
 
 const fromIndex = (entry: BlogIndexEntry, language: BlogLanguage): BlogPost => ({
   ...entry, language, status: "published", author_name: "Echipa Avyron", author_avatar_url: null,
-  cover_image_alt: entry.title, created_at: entry.published_at, alternate_slug: entry.slug,
+  cover_image_alt: entry.cover_image_alt || entry.title, created_at: entry.published_at,
+  alternate_slug: entry.has_translation === false ? null : entry.slug,
   translation_key: entry.slug,
 });
 
