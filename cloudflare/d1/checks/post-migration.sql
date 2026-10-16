@@ -106,3 +106,12 @@ SELECT 'ready_backups_without_manifest' AS check_name, COUNT(*) AS value
 SELECT 'social_assets_without_checksum' AS check_name, COUNT(*) AS value
   FROM ai_social_assets
  WHERE status = 'active' AND length(sha256) < 32;
+
+SELECT 'approved_content_strategy_sources' AS check_name, COUNT(*) AS value
+  FROM ai_social_sources
+ WHERE project_id='aip_avyron_web'
+   AND id IN ('aiss_content_lessons_2026','aiss_baboon_promotion_2026','aiss_gomag_blog_2026')
+   AND status='approved';
+
+SELECT 'current_social_content_agent_version' AS check_name, current_version AS value
+  FROM ai_agents WHERE slug='ai-prod-content';

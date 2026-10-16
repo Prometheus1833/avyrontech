@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "project": {
     "id": "aip_avyron_web",
     "slug": "avyron-web",
@@ -37,11 +37,47 @@
       "Se verifica previzualizarea publicata pe mobil inainte de reutilizare."
     ]
   },
+  "contentSystem": {
+    "sourceQuestionRequired": true,
+    "editorialMechanisms": ["information_gap", "self_reference", "proof_story", "immediate_value"],
+    "longCaption": ["hook", "diagnostic", "concrete_value", "avyron_connection", "single_cta", "specific_target_url"],
+    "story": {
+      "defaultFrameCount": 3,
+      "sequence": ["recognition", "mechanism_or_proof", "action"],
+      "microcopyRequiredPerFrame": true,
+      "specificLinkStickerPreferred": true
+    },
+    "shortVideo": {
+      "hookWindowSeconds": [0, 2],
+      "framesFor15To30Seconds": [5, 8],
+      "framesFor30To45Seconds": [7, 12],
+      "singleStaticImageVideoForbidden": true,
+      "photoModeFallbackFrames": [4, 7],
+      "requiredFieldsPerFrame": ["duration", "purpose", "visual", "screen_text", "voice_over", "transition", "audio_cue", "safe_zone"]
+    },
+    "learning": {
+      "reviewWindowsHours": [24, 72, 168],
+      "singleVariableTests": ["hook", "frame_count", "cta", "cover", "duration", "time"],
+      "minimumComparablePosts": 2
+    }
+  },
   "links": {
     "storyPriority": ["native_link_sticker", "profile_link", "visible_avyron_ro"],
     "feedPriority": ["native_clickable_url", "first_comment_when_appropriate", "visible_avyron_ro"],
     "defaultUrl": "https://avyron.ro",
     "defaultServiceUrl": "https://avyron.ro/servicii/website-prezentare-profesional",
+    "specificTargets": {
+      "services": "https://avyron.ro/servicii",
+      "professionalWebsite": "https://avyron.ro/servicii/website-prezentare-profesional",
+      "onlineStore": "https://avyron.ro/servicii/magazin-online",
+      "professionalBlog": "https://avyron.ro/servicii/blog-profesional",
+      "applications": "https://avyron.ro/servicii/aplicatii-si-platforme",
+      "automationAi": "https://avyron.ro/servicii/automatizari-si-ai",
+      "qa": "https://avyron.ro/servicii/qa-testing-web-mobile",
+      "socialIdentity": "https://avyron.ro/servicii/identitate-social-media",
+      "dynamicLogo": "https://avyron.ro/servicii/creare-logo-3d-dinamic-cinematic",
+      "articlePattern": "https://avyron.ro/blog/<slug>"
+    },
     "allowedConversionRoots": ["/", "/servicii", "/produse", "/blog"],
     "facebook": {
       "maximumVisibleLinks": 1,
@@ -62,7 +98,7 @@
   },
   "quality": {
     "minimumScore": 90,
-    "checks": ["brand_fit", "clarity", "website_offer_visible", "mobile_legibility", "safe_zones", "native_adaptation", "cta", "link", "accessibility", "truthfulness", "originality"]
+    "checks": ["brand_fit", "clarity", "website_offer_visible", "mobile_legibility", "safe_zones", "native_adaptation", "story_microcopy", "video_progression", "specific_target_url", "cta", "link", "accessibility", "truthfulness", "originality"]
   },
   "backup": {
     "metadataStore": "D1",
