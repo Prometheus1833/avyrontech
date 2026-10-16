@@ -229,7 +229,7 @@ const Terms = () => {
               <p>Ne dorim să rezolvăm direct, clar și documentat. Trimite situația, proiectul și rezultatul urmărit la <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>; confirmăm primirea și direcționăm cererea către entitatea contractuală responsabilă.</p>
               <p>Consumatorii pot utiliza și procedurile autorităților competente, inclusiv mecanismul de Soluționare Alternativă a Litigiilor al ANPC. Legea aplicabilă este legea română, iar instanța competentă se determină potrivit normelor obligatorii; alegerea legii nu înlătură protecția acordată consumatorului.</p>
               <div className="legal-links">
-                <a href="https://anpc.ro/sal/" target="_blank" rel="noreferrer">ANPC · SAL</a>
+                <a href="https://reclamatiisal.anpc.ro/" target="_blank" rel="noopener noreferrer">ANPC · SAL</a>
                 <a href="https://legislatie.just.ro/Public/DetaliiDocument/193569" target="_blank" rel="noreferrer">OG nr. 38/2015</a>
               </div>
             </>

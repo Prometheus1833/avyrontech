@@ -1,6 +1,6 @@
 import { useLang } from "@/i18n/LanguageContext";
 import { Link, useLocation } from "react-router-dom";
-import { Phone, MessageCircle, ArrowRight, Sparkles, Wrench, ShieldCheck, MessagesSquare, Briefcase } from "lucide-react";
+import { Phone, MessageCircle, Mail, LogIn, ArrowRight, Sparkles, ShieldCheck, MessagesSquare, Briefcase } from "lucide-react";
 import { COOKIE_SETTINGS_EVENT } from "@/components/site/CookieBanner";
 import { trackEvent } from "@/lib/analytics";
 import logo from "@/assets/avyron-logo.webp";
@@ -24,7 +24,7 @@ const pageCta = (pathname: string, lang: "ro" | "en", fallback: { ctaLabel: stri
     return {
       page: "service",
       label: en ? "Get a quote for this service" : "Cere ofertă pentru acest serviciu",
-      sub: en ? "Free · reply in 24h" : "Gratuit · răspuns în 24h",
+      sub: en ? "Tell us what you need" : "Spune-ne ce ai nevoie",
       to: `https://wa.me/40734605055?text=${encodeURIComponent(
         en ? `Hello! I want a quote for: ${p}` : `Bună! Vreau o ofertă pentru: ${p}`,
       )}`,
@@ -35,9 +35,9 @@ const pageCta = (pathname: string, lang: "ro" | "en", fallback: { ctaLabel: stri
   if (p === "/produse" || p.startsWith("/produse/") || p === "/en/products" || p.startsWith("/en/products/")) {
     return {
       page: "products",
-      label: en ? "Explore all products" : "Explorează toate produsele",
-      sub: en ? "Free and partner editions" : "Gratuite și pentru parteneri",
-      to: en ? "/en/products" : "/produse",
+      label: p === "/produse" || p === "/en/products" ? (en ? "How the products work" : "Cum funcționează produsele") : (en ? "Explore all products" : "Explorează toate produsele"),
+      sub: en ? "AVYRON library" : "Biblioteca AVYRON",
+      to: p === "/produse" || p === "/en/products" ? (en ? "/en/products/guide" : "/produse/ghid") : (en ? "/en/products" : "/produse"),
       Icon: Sparkles,
     };
   }
@@ -77,26 +77,54 @@ const pageCta = (pathname: string, lang: "ro" | "en", fallback: { ctaLabel: stri
       Icon: Briefcase,
     };
   }
+  if (p === "/mentenanta-si-colaborari" || p === "/en/maintenance-and-partnerships") {
+    return { page: "maintenance", label: en ? "Choose a care plan" : "Alege un abonament", sub: en ? "Compare your options" : "Compară opțiunile", to: "#comparatie", Icon: ShieldCheck };
+  }
+  if (p === "/cariere" || p === "/en/careers") {
+    return { page: "careers", label: en ? "Explore collaboration" : "Descoperă colaborarea", sub: en ? "Open applications" : "Candidaturi deschise", to: "#candidatura", Icon: Briefcase };
+  }
+  if (p === "/configurator" || p === "/en/configurator") {
+    return { page: "configurator", label: en ? "See the website service" : "Vezi serviciul website", sub: en ? "Scope and next steps" : "Detalii și pașii următori", to: en ? "/en/services/professional-presentation-website" : "/servicii/website-prezentare-profesional", Icon: Sparkles };
+  }
+  if (["/gdpr", "/en/privacy", "/termeni", "/en/terms", "/politica-cookies", "/en/cookie-policy"].includes(p)) {
+    return { page: "legal", label: en ? "Need help?" : "Ai o întrebare?", sub: en ? "Talk to the team" : "Discută cu echipa", to: home, Icon: MessagesSquare };
+  }
   return { page: "home", label: fallback.ctaLabel, sub: fallback.ctaSub, to: home, Icon: ArrowRight };
+};
+
+const pageSecondary = (pathname: string, lang: "ro" | "en") => {
+  const en = lang === "en";
+  const p = pathname.toLowerCase();
+  if (p.startsWith("/servicii/") || p.startsWith("/en/services/")) return { label: en ? "Other services" : "Alte servicii", to: en ? "/en/services" : "/servicii" };
+  if (p === "/servicii" || p === "/en/services") return { label: en ? "Configure a website" : "Configurează un website", to: en ? "/en/configurator" : "/configurator" };
+  if (p === "/despre-noi" || p === "/en/about") return { label: en ? "See the portfolio" : "Vezi portofoliul", to: en ? "/en/services/professional-presentation-website#portofoliu" : "/servicii/website-prezentare-profesional#portofoliu" };
+  if (p === "/cariere" || p === "/en/careers") return { label: en ? "About AVYRON" : "Despre AVYRON", to: en ? "/en/about" : "/despre-noi" };
+  if (p === "/produse" || p.startsWith("/produse/") || p === "/en/products" || p.startsWith("/en/products/")) return { label: en ? "Product questions" : "Întrebări despre produse", to: en ? "/en/products/faq" : "/produse/intrebari-frecvente" };
+  if (p.includes("/blog")) return { label: en ? "Read more articles" : "Alte articole", to: en ? "/en/blog" : "/blog" };
+  if (p === "/mentenanta-si-colaborari" || p === "/en/maintenance-and-partnerships") return { label: en ? "See services" : "Vezi serviciile", to: en ? "/en/services" : "/servicii" };
+  if (p === "/configurator" || p === "/en/configurator") return { label: en ? "Other services" : "Alte servicii", to: en ? "/en/services" : "/servicii" };
+  return { label: en ? "Explore services" : "Explorează serviciile", to: en ? "/en/services" : "/servicii" };
 };
 
 const Footer = () => {
   const { t, lang } = useLang();
   const { pathname } = useLocation();
   const cta = pageCta(pathname, lang, { ctaLabel: t.footer.ctaLabel, ctaSub: t.footer.ctaSub });
+  const isLanding = pathname === "/" || pathname === "/en" || pathname === "/en/";
+  const secondary = pageSecondary(pathname, lang);
   const ctaClass =
-    "group inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 px-3 py-1.5 shadow-[0_6px_16px_-6px_rgba(168,85,247,0.5)] transition-all";
+    "group inline-flex min-h-10 min-w-0 w-full items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 px-2.5 py-1.5 shadow-[0_6px_16px_-6px_rgba(168,85,247,0.5)] transition-all";
   const ctaInner = (
     <>
       <span className="flex flex-col items-center font-display leading-none text-white">
-        <span className="text-xs font-semibold">{cta.label}</span>
+        <span className="text-center text-[11px] font-semibold leading-tight sm:text-xs">{cta.label}</span>
         <span className="mt-0.5 text-[8px] font-normal text-white/75">{cta.sub}</span>
       </span>
-      <cta.Icon className="size-3 text-white group-hover:translate-x-0.5 transition-transform" aria-hidden />
+      <cta.Icon className="size-3 shrink-0 text-white group-hover:translate-x-0.5 transition-transform" aria-hidden />
     </>
   );
   return (
-    <footer className="relative overflow-hidden border-t border-white/10 bg-[#0a0612] text-white">
+    <footer className="relative z-50 overflow-hidden border-t border-white/10 bg-[#0a0612] text-white">
       {/* Planet background */}
       <img
         src={planetBg}
@@ -115,7 +143,7 @@ const Footer = () => {
         {/* Top row: brand + CTA + WhatsApp + contact — single compact bar */}
         <div
           data-testid="footer-primary-row"
-          className="mx-auto grid w-full max-w-5xl gap-3 md:grid-cols-[minmax(0,auto)_minmax(0,1fr)] md:items-center"
+          className="mx-auto grid w-full max-w-5xl gap-3 lg:grid-cols-[minmax(0,auto)_minmax(0,1fr)] lg:items-center"
         >
           {/* Brand */}
           <a href={lang === "en" ? "/en#hero" : "/#hero"} className="flex shrink-0 items-center gap-2">
@@ -137,13 +165,24 @@ const Footer = () => {
             </div>
           </a>
 
-          {/* CTA + WhatsApp + Phone — compact pill cluster */}
-          <div className="flex min-w-0 max-w-full flex-wrap items-center justify-center gap-1.5 md:justify-self-end md:justify-end">
-            {cta.external ? (
+          {/* Only this contact row changes with the page; the rows below stay shared. */}
+          <div data-testid="footer-contact-actions" className="grid min-w-0 w-full grid-cols-2 items-stretch gap-1.5 sm:grid-cols-4 lg:justify-self-end">
+            <a
+              href="https://wa.me/40734605055"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="WhatsApp"
+              onClick={() => trackEvent("cta_click", { location: "footer", page: cta.page, channel: "whatsapp" })}
+              className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1.5 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] px-2.5 py-1.5 shadow-[0_6px_16px_-6px_rgba(37,211,102,0.5)] transition-transform hover:scale-[1.03]"
+            >
+              <MessageCircle className="size-3 shrink-0 text-white" aria-hidden />
+              <span className="font-display text-xs font-semibold text-white">WhatsApp</span>
+            </a>
+            {cta.external || cta.to.startsWith("#") ? (
               <a
                 href={cta.to}
-                target="_blank"
-                rel="noopener noreferrer"
+                target={cta.external ? "_blank" : undefined}
+                rel={cta.external ? "noopener noreferrer" : undefined}
                 onClick={() => trackEvent("cta_click", { location: "footer", page: cta.page })}
                 className={ctaClass}
               >
@@ -159,26 +198,28 @@ const Footer = () => {
               </Link>
             )}
             <a
-              href="https://wa.me/40734605055"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="WhatsApp"
-              onClick={() => trackEvent("cta_click", { location: "footer", page: cta.page, channel: "whatsapp" })}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] px-3 py-1.5 shadow-[0_6px_16px_-6px_rgba(37,211,102,0.5)] hover:scale-[1.03] transition-transform"
-            >
-              <MessageCircle className="size-3 text-white" />
-              <span className="font-display font-semibold text-xs text-white">WhatsApp</span>
-            </a>
-            <a
               href="tel:+40734605055"
               aria-label={t.footer.phoneLabel}
               onClick={() => trackEvent("cta_click", { location: "footer", page: cta.page, channel: "phone" })}
-              className="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/30 bg-gradient-to-br from-cyan-500/15 to-sky-600/15 hover:from-cyan-500/25 hover:to-sky-600/25 hover:border-cyan-300/60 px-3 py-1.5 transition-all"
+              className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1.5 rounded-full border border-cyan-300/30 bg-gradient-to-br from-cyan-500/15 to-sky-600/15 px-2.5 py-1.5 transition-all hover:border-cyan-300/60 hover:from-cyan-500/25 hover:to-sky-600/25"
             >
-              <Phone className="size-3 text-cyan-300" />
-              <span className="text-xs text-white/90 font-medium hidden sm:inline">{lang === "en" ? "Call us" : "Sună-ne"}</span>
+              <Phone className="size-3 shrink-0 text-cyan-300" aria-hidden />
+              <span className="text-xs font-medium text-white/90">{lang === "en" ? "Call us" : "Sună-ne"}</span>
             </a>
-
+            {isLanding ? (
+              <a
+                href="mailto:contact@avyron.ro"
+                aria-label={lang === "en" ? "Email AVYRON" : "E-mail AVYRON"}
+                onClick={() => trackEvent("cta_click", { location: "footer", page: cta.page, channel: "email" })}
+                className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-[#df4055] to-[#aa193c] px-2.5 py-1.5 font-display text-xs font-semibold text-white shadow-[0_6px_16px_-6px_rgba(223,64,85,.55)] transition-all hover:from-[#eb5266] hover:to-[#bc2448]"
+              >
+                <Mail className="size-3 shrink-0" aria-hidden /> {lang === "en" ? "Email" : "E-mail"}
+              </a>
+            ) : (
+              <Link to={secondary.to} className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-full border border-white/20 bg-white/[.07] px-2 py-1.5 text-center font-display text-[11px] font-semibold leading-tight text-white/85 transition-colors hover:border-purple-300/50 hover:bg-white/[.14] hover:text-white">
+                {secondary.label}<ArrowRight className="size-3 shrink-0" aria-hidden />
+              </Link>
+            )}
           </div>
         </div>
 
@@ -238,16 +279,20 @@ const Footer = () => {
           })()}
         </nav>
 
-        <div className="mt-2 flex justify-center">
+        <div data-testid="footer-utility-row" className="mx-auto mt-2 grid w-full max-w-[510px] grid-cols-2 gap-2">
           <a
-            href="https://anpc.ro/ce-este-sal/"
+            href="https://reclamatiisal.anpc.ro/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/[0.07] px-2.5 py-1.5 transition-colors hover:border-cyan-200/35 hover:bg-white/[0.12]"
+            aria-label={lang === "en" ? "ANPC alternative dispute resolution (SAL)" : "ANPC — Soluționarea Alternativă a Litigiilor (SAL)"}
+            className="flex h-[50px] min-w-0 items-center justify-center overflow-hidden rounded-lg bg-white transition-opacity hover:opacity-90"
           >
-            <span className="grid size-6 shrink-0 place-items-center rounded bg-white font-display text-[9px] font-extrabold tracking-tight text-[#0a0612]">ANPC</span>
-            <span className="text-[10px] font-semibold tracking-wide text-white/70">SOL · SAL</span>
+            <img src="/anpc-sal-pictograma.png" alt="ANPC SAL" width={201} height={50} className="h-full max-w-full object-contain" />
           </a>
+          <Link to="/auth" className="inline-flex h-[50px] min-w-0 items-center justify-center gap-1.5 rounded-lg border border-violet-300/25 bg-gradient-to-r from-violet-700/35 to-indigo-700/35 px-2 text-center font-display text-[10px] font-semibold leading-tight text-white transition-colors hover:border-violet-300/60 hover:from-violet-700/55 hover:to-indigo-700/55 sm:text-xs">
+            <LogIn className="size-4 shrink-0 text-violet-200" aria-hidden />
+            <span>{t.auth.loginCta}</span>
+          </Link>
         </div>
 
         {/* Copyright — single compact row */}
