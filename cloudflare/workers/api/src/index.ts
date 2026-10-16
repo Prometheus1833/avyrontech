@@ -35,6 +35,7 @@ import { base32Encode, decryptTotpSecret, encryptTotpSecret, generateTotpSecret,
 import { engineRouter, runDueEngineDiscovery } from "./engine";
 import { newsletterRouter } from "./newsletter";
 import { forcedPasswordAllowedPath, mfaAuthEnabled, normalizeLoginPhone, normalizeUsername, turnstileAuthEnabled, uniqueStaffPhoneMatch } from "./authPolicy";
+import { parseReviewSubmission, WEBSITE_REVIEW_SURFACE } from "./reviewsPolicy";
 
 export { AvyronAgentRuntime } from "./agents/AvyronAgentRuntime";
 export { AvyronMaintenanceWorkflow } from "./workflows/AvyronMaintenanceWorkflow";
@@ -230,6 +231,92 @@ async function rolesFor(db: D1Database, userId: string): Promise<Role[]> {
   const { results } = await db.prepare("SELECT role FROM user_roles WHERE user_id = ?").bind(userId).all<{ role: Role }>();
   return results.map((r) => r.role);
 }
+
+// Public reviews are read from an approved-only projection. Contact details never leave staff routes.
+app.get("/api/public/reviews", async (c) => {
+  if (c.req.query("surface") !== WEBSITE_REVIEW_SURFACE) return c.json({ data: [] });
+  const { results } = await c.env.DB.prepare(
+    `SELECT id,surface_key,source_type,source_platform,source_url,display_name,entity_type,brand_name,rating,review_text,reviewed_at
+       FROM service_reviews WHERE surface_key=? AND status='approved'
+       ORDER BY reviewed_at DESC, id DESC LIMIT 12`,
+  ).bind(WEBSITE_REVIEW_SURFACE).all();
+  c.header("Cache-Control", "public, max-age=30, s-maxage=60");
+  return c.json({ data: results });
+});
+
+app.post("/api/public/reviews", async (c) => {
+  const maxReviewPayloadBytes = 8192;
+  const declaredLength = Number(c.req.header("content-length") || 0);
+  if (declaredLength > maxReviewPayloadBytes) return c.json({ error: { code: "payload_too_large" } }, 413);
+  const body = c.req.raw.body;
+  if (!body) return c.json({ error: { code: "invalid_payload" } }, 400);
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let raw = "";
+  let receivedBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    receivedBytes += value.byteLength;
+    if (receivedBytes > maxReviewPayloadBytes) {
+      await reader.cancel();
+      return c.json({ error: { code: "payload_too_large" } }, 413);
+    }
+    raw += decoder.decode(value, { stream: true });
+  }
+  raw += decoder.decode();
+  let payload: unknown = null;
+  try { payload = JSON.parse(raw) as unknown; } catch { /* Invalid JSON is rejected below. */ }
+  const parsed = parseReviewSubmission(payload);
+  if (!parsed.data) return c.json({ error: { code: parsed.error } }, 400);
+  const data = parsed.data;
+  if (data.website) return c.json({ ok: true, status: "pending" }, 202); // Honeypot.
+  const ipKey = await hashKey(clientIp(c.req.raw));
+  const emailKey = await hashKey(data.email);
+  const limit = await checkRateLimit(c.env.DB, [
+    { key: `reviews:ip:${ipKey}:h`, limit: 3, windowSec: 3600 },
+    { key: `reviews:email:${emailKey}:d`, limit: 2, windowSec: 86400 },
+  ], { limiter: c.env.PUBLIC_API_RATE_LIMITER, key: `reviews:${ipKey}` });
+  if (!limit.ok) return c.json({ error: { code: "rate_limited" } }, 429, { "Retry-After": String(limit.retryAfter || 60) });
+  const challenge = await verifyTurnstile(c.env.TURNSTILE_SECRET, data.turnstileToken, clientIp(c.req.raw), {
+    expectedAction: "service-review",
+    allowedHostnames: c.env.TURNSTILE_ALLOWED_HOSTNAMES,
+  });
+  if (!challenge.ok) return c.json({ error: { code: "captcha_failed" } }, 403);
+  const timestamp = now();
+  await c.env.DB.prepare(
+    `INSERT INTO service_reviews
+      (id,surface_key,source_type,display_name,contact_email,entity_type,brand_name,rating,review_text,publish_consent,status,created_at,updated_at)
+     VALUES (?,?,'direct',?,?,?,?,?,?,1,'pending',?,?)`,
+  ).bind(uuid(), data.surfaceKey, data.displayName, data.email, data.entityType, data.brandName,
+    data.rating, data.reviewText, timestamp, timestamp).run();
+  return c.json({ ok: true, status: "pending" }, 202);
+});
+
+app.get("/api/admin/reviews", requireAuth, requireRole("admin"), async (c) => {
+  const status = c.req.query("status") || "pending";
+  if (!["pending", "approved", "rejected"].includes(status)) return c.json({ error: { code: "invalid_status" } }, 400);
+  const { results } = await c.env.DB.prepare(
+    `SELECT id,surface_key,source_type,source_platform,source_url,display_name,contact_email,entity_type,brand_name,
+            rating,review_text,status,moderation_note,reviewed_by,reviewed_at,created_at
+       FROM service_reviews WHERE status=? ORDER BY created_at DESC LIMIT 100`,
+  ).bind(status).all();
+  return c.json({ data: results });
+});
+
+app.patch("/api/admin/reviews/:id", requireAuth, requireRole("admin"), async (c) => {
+  const body = await c.req.json().catch(() => ({})) as { status?: unknown; note?: unknown };
+  if (body.status !== "approved" && body.status !== "rejected") return c.json({ error: { code: "invalid_status" } }, 400);
+  const note = typeof body.note === "string" ? body.note.trim().slice(0, 500) : "";
+  const timestamp = now();
+  const result = await c.env.DB.prepare(
+    `UPDATE service_reviews SET status=?,moderation_note=?,reviewed_by=?,reviewed_at=?,updated_at=?
+       WHERE id=?`,
+  ).bind(body.status, note || null, c.get("userId"), timestamp, timestamp, c.req.param("id")).run();
+  if (!result.meta.changes) return c.json({ error: { code: "not_found" } }, 404);
+  await recordSecurityEvent(c, c.get("userId"), `reviews.${body.status}`, "allowed", "info", { reviewId: c.req.param("id") });
+  return c.json({ ok: true, status: body.status });
+});
 
 const privilegedAccount = async (db: D1Database, userId: string, roles: Role[]): Promise<boolean> => {
   if (roles.includes("staff") || roles.includes("admin") || (await platformRoleForUser(db, userId)) !== null) return true;
