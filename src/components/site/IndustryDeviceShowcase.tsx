@@ -208,12 +208,11 @@ export default function IndustryDeviceShowcase({ domains, activeDomain, onDomain
       measure();
       const top = window.scrollY + section.getBoundingClientRect().top;
       const destination = top - stickyTop + travel * anchors[stage];
-      const startY = window.scrollY;
       window.scrollTo({ top: destination, behavior: "smooth" });
       // Mobile browsers can cancel a smooth scroll while restoring focus after
-      // the industry picker closes. Recover only if the page never moved.
+      // the industry picker closes, even after it has moved a few pixels.
       stageJumpTimer = window.setTimeout(() => {
-        if (!section.isConnected || active === stage || Math.abs(window.scrollY - startY) > 12) return;
+        if (!section.isConnected || active === stage || Math.abs(window.scrollY - destination) < 12) return;
         window.scrollTo({ top: destination, behavior: "instant" });
         readTarget();
         current = target;
