@@ -458,9 +458,13 @@ app.post("/api/auth/signup", async (c) => {
       .bind(id, "signup", c.req.header("cf-connecting-ip") || null, t),
   ]);
   const delivery = await sendVerification(c, id, email);
-  // The D1 transaction already created the account. Report the delivery state
-  // without making the client retry signup against an existing email.
-  return c.json({ ok: true, verification_required: true, verification_email_sent: delivery.delivered }, 202);
+  if (!delivery.delivered) {
+    // A customer cannot enter an unverified account. Release the email so a
+    // transient delivery outage never strands it in an unusable account.
+    await c.env.DB.prepare("DELETE FROM users WHERE id = ? AND email_verified = 0").bind(id).run();
+    return c.json({ error: { code: "verification_delivery_unavailable" } }, 503);
+  }
+  return c.json({ ok: true, verification_required: true, verification_email_sent: true }, 202);
 });
 
 app.post("/api/auth/resend-verification", async (c) => {

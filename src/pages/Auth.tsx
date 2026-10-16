@@ -269,7 +269,9 @@ const Auth = () => {
       if (result.verification_email_sent) toast.success("Ți-am trimis linkul de confirmare.");
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "";
-      toast.error(message === "email_taken" ? "Adresa are deja un cont. Intră în cont sau resetează parola." : message || "Înregistrarea nu a reușit.");
+      toast.error(message === "email_taken" ? "Adresa are deja un cont. Intră în cont sau resetează parola."
+        : message === "verification_delivery_unavailable" ? "Nu putem trimite acum emailul de confirmare. Contul nu a fost creat; încearcă din nou mai târziu."
+        : message || "Înregistrarea nu a reușit.");
       setTurnstileToken("");
       setTurnstileReset((value) => value + 1);
     } finally {

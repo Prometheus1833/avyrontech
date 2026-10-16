@@ -917,6 +917,34 @@ test.describe("forms and authentication", () => {
     await expect(page.getByRole("status")).toContainText(/verifică emailul|confirmare/i);
   });
 
+  test("signup explains a failed verification delivery without claiming an account was created", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
+        necessary: true, analytics: false, marketing: false,
+        savedAt: new Date().toISOString(), policyVersion: "2026-09-12",
+      }));
+      window.turnstile = {
+        render: (_element, options) => {
+          queueMicrotask(() => (options.callback as (token: string) => void)("playwright-turnstile-token"));
+          return "playwright-widget";
+        },
+        remove: () => undefined,
+        reset: () => undefined,
+      };
+    });
+    await page.route("**/api/auth/signup", (route) => route.fulfill({
+      status: 503, contentType: "application/json",
+      body: JSON.stringify({ error: { code: "verification_delivery_unavailable" } }),
+    }));
+    await page.goto("/auth");
+    await page.getByRole("tab", { name: /înregistr|register/i }).click();
+    await page.locator("#rg-name").fill("Test Avyron");
+    await page.locator("#rg-email").fill("test@example.com");
+    await page.locator("#rg-pass").fill("SecurePass123!");
+    await page.getByRole("button", { name: /înregistr|register/i }).click();
+    await expect(page.getByText("Nu putem trimite acum emailul de confirmare. Contul nu a fost creat; încearcă din nou mai târziu.")).toBeVisible();
+  });
+
   test("library example request uses the protected Worker endpoint", async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
