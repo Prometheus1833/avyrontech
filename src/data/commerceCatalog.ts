@@ -60,6 +60,22 @@ export const commerceItemBySku = (sku: string) =>
 export const commerceItemByName = (name: string) =>
   COMMERCE_CATALOG.find((item) => item.name === name) ?? null;
 
+const SUBSCRIPTION_SERVICE_PREFIXES: Readonly<Record<string, readonly string[]>> = {
+  "sub-site-": ["premium-website"],
+  "sub-shop-": ["online-store"],
+  "sub-blog-": ["blog-profesional"],
+  "sub-ai-": ["ai-agent"],
+  "sub-app-": ["apps"],
+};
+
+export const subscriptionServiceKeys = (sku: string): readonly string[] | null =>
+  Object.entries(SUBSCRIPTION_SERVICE_PREFIXES).find(([prefix]) => sku.startsWith(prefix))?.[1] ?? null;
+
+export const serviceMatchesSubscription = (sku: string, serviceKey: string) => {
+  const keys = subscriptionServiceKeys(sku);
+  return keys === null || keys.includes(serviceKey);
+};
+
 /** Bani (RON) pentru un abonament din catalog. Aruncă la build pentru SKU necunoscut. */
 export const subscriptionPriceCents = (sku: string): number => {
   const item = commerceItemBySku(sku);

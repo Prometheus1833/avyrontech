@@ -14,7 +14,6 @@ import {
   Bell, Globe, Palette, Shield, Mail, Trash2, KeyRound, MonitorSmartphone
 } from "lucide-react";
 import { toast } from "sonner";
-import BillingSettingsCard from "./BillingSettingsCard";
 export const SettingsTab = () => {
   const { user, isStaff, isAdmin } = useAuth();
   const { lang, setLang } = useLang();
@@ -298,7 +297,6 @@ export const SettingsTab = () => {
         </CardContent>
       </Card>
 
-      <BillingSettingsCard />
 
       {/* Staff-only settings */}
       {isStaff && (

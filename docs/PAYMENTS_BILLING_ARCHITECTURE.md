@@ -15,6 +15,8 @@ Un singur flux comercial deservește serviciile, produsele digitale și abonamen
 7. Oblio emite factura doar după confirmarea încasării, folosind `avyron-{order_id}` drept cheie idempotentă.
 8. Reînnoirile Stripe sunt preluate din `invoice.paid`, iar ciclurile Revolut sunt reconciliate zilnic din API, deoarece Revolut nu emite webhook pentru finalizarea fiecărui ciclu.
 
+Profilul clientului are secțiunea **Metode de plată și facturare**. Metodele sunt citite din conturile clientului de la procesatori și oglindite în D1 doar ca detalii mascate. Dacă o citire la provider eșuează, interfața semnalează că lista nu a fost confirmată recent.
+
 ## Provideri și responsabilități
 
 - **Revolut Merchant / Revolut Pay**: plăți unice, customer vault și abonamente recurente. Planurile recurente cer maparea SKU + perioadă la `provider_variation_id` în `billing_provider_products`.
@@ -32,11 +34,13 @@ Webhook-urile Stripe și Revolut sunt singurele rute publice de billing. Rutele 
 
 ## Activare controlată
 
-1. Se aplică migrarea D1 `0057_billing_payment_orchestration.sql`.
+1. Se aplică migrările D1 în ordine, inclusiv `0057_billing_payment_orchestration.sql` și `0068_payment_method_management.sql`. Ultima reține consimțământul pentru un flux separat de salvare card și scopul metodei salvate.
 2. Se configurează întâi sandbox/test pentru procesator și webhook.
 3. Se adaugă mapările Revolut pentru fiecare abonament lunar/anual.
 4. Se verifică o plată reală cu valoare minimă, factura Oblio și anularea abonamentului.
 5. Abia după reconcilierea sumelor și a documentelor se activează cheile live.
+
+La plata unică Stripe, salvarea pentru plăți viitoare este opt-in. O sesiune deja deschisă nu își schimbă opțiunea de salvare; clientul finalizează sau așteaptă expirarea ei. Salvarea separată a cardului folosește Stripe Checkout `setup` și este confirmată prin webhook înainte de a apărea în profil. Abonamentele folosesc acordul dat la prima plată recurentă. Metodele de checkout sunt alese din cele eligibile activate în contul procesatorului, pentru țară, monedă și dispozitiv; aplicația nu promite afișarea unui portofel anume.
 
 ## Variabile opționale
 
