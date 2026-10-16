@@ -203,7 +203,8 @@ test.describe("public SEO routes", () => {
     await expect(page.getByText("Vibe Development", { exact: true })).toBeVisible();
     await expect(page.locator("header").getByRole("link", { name: "Bibliotecă", exact: true })).toHaveAttribute("href", "/biblioteca");
     await expect(page.getByRole("link", { name: "Vezi biblioteca", exact: true })).toHaveAttribute("href", "/biblioteca");
-    await expect(page.getByRole("link", { name: /portofoliu/i })).toHaveCount(0);
+    await expect(page.locator('a[href="/portofoliu"]')).toHaveCount(0);
+    await expect(page.locator("footer").getByRole("link", { name: "Vezi portofoliul" })).toHaveAttribute("href", "/servicii/website-prezentare-profesional#portofoliu");
 
     await page.goto("/portofoliu");
     await expect(page).toHaveURL(/\/servicii\/website-prezentare-profesional#portofoliu$/);
