@@ -22,7 +22,7 @@ export type CfProfile = {
   avatar_url: string | null;
   phone: string | null;
   address: string | null;
-  entity_type: "individual" | "srl" | "pfa" | "ii" | "other" | null;
+  entity_type: "individual" | "srl" | "pfa" | "ii" | "startup" | "public_institution" | "avyron_partner" | "other" | null;
   company_name: string | null;
   cui: string | null;
   social_facebook: string | null;
@@ -181,7 +181,7 @@ class CfAuth {
     }
   }
 
-  async signup(input: { email: string; password: string; displayName?: string; entityType?: string; turnstileToken?: string }) {
+  async signup(input: { email: string; password: string; displayName?: string; entityType?: string; organizationName?: string; taxId?: string; language?: "ro" | "en"; turnstileToken?: string }) {
     const res = await fetch(apiUrl("/api/auth/signup"), {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -210,12 +210,19 @@ class CfAuth {
     });
   }
 
-  async login(identifier: string, password: string) {
+  async signupProtectionEnabled(): Promise<boolean> {
+    const res = await fetch(apiUrl("/api/auth/providers"), { credentials: "include" });
+    if (!res.ok) throw new Error("provider_status_unavailable");
+    const body = await res.json() as { data: Array<{ provider: string; enabled: boolean }> };
+    return body.data.some((provider) => provider.provider === "turnstile" && provider.enabled);
+  }
+
+  async login(identifier: string, password: string, remember = false) {
     const res = await fetch(apiUrl("/api/auth/login"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ identifier, password }),
+      body: JSON.stringify({ identifier, password, remember }),
     });
     const j = await res.json() as (SessionResponse | MfaChallengeResponse) & ApiErrorBody;
     if (!res.ok) throw new Error(j?.error?.message || j?.error?.code || "login_failed");
@@ -242,6 +249,12 @@ class CfAuth {
   async logout() {
     await fetch(apiUrl("/api/auth/logout"), { method: "POST", credentials: "include" }).catch(() => {});
     this.clearSession();
+    try {
+      localStorage.removeItem("avyron_cart_v2");
+      localStorage.removeItem("avyron_cart_owner_v1");
+      localStorage.removeItem("avyron-produse-v1");
+    } catch { /* Storage may be unavailable in private mode. */ }
+    if (typeof window !== "undefined") window.dispatchEvent(new Event("avyron:logout"));
   }
 
   async me(): Promise<{ user: CfUser; profile: CfProfile; roles: Role[]; superadmin?: boolean; capabilities?: string[] } | null> {

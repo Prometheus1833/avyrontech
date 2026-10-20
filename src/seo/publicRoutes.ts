@@ -5,7 +5,7 @@
  */
 
 import { ROUTE_ALTERNATES } from "../i18n/routes";
-import { BLOG_SLUGS } from "../data/blogSlugs";
+import { BLOG_SLUGS, BLOG_SLUGS_EN } from "../data/blogSlugs";
 import { INTERNATIONAL_PRODUCT_HUB_ROUTES } from "../features/produse/data/productLocales";
 import { PRODUSE_NOINDEX_ROUTES } from "../features/produse/data/routes";
 
@@ -24,7 +24,8 @@ export const STANDALONE_PUBLIC_ROUTES = [
   "/blog",
   "/en/blog",
   ...INTERNATIONAL_PRODUCT_HUB_ROUTES,
-  ...BLOG_SLUGS.flatMap((slug) => [`/blog/${slug}`, `/en/blog/${slug}`]),
+  ...BLOG_SLUGS.map((slug) => `/blog/${slug}`),
+  ...BLOG_SLUGS_EN.map((slug) => `/en/blog/${slug}`),
   "/exemple/flawlesstudio",
   "/exemple/retuvo",
   ...EXAMPLE_SLUGS.map((s) => `/examples/${s}`),
@@ -110,6 +111,8 @@ export const NOINDEX_PREFIXES = [
   "/s",
   "/auth",
   "/autentificare",
+  "/staff",
+  "/admin",
   "/forgot-password",
   "/reset-password",
   "/profil",

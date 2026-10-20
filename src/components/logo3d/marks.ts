@@ -208,6 +208,8 @@ export type Concept = {
   face: string;
   side: string;
   glow: string;
+  roughness?: number;
+  lighting?: number;
   segment: SegmentKey;
   industry: { ro: string; en: string };
   idea: { ro: string; en: string };
@@ -222,6 +224,7 @@ export const CONCEPTS: Concept[] = [
     face: "#c4b5fd",
     side: "#4c1d95",
     glow: "#a78bfa",
+    roughness: 0.18,
     segment: "startup",
     industry: { ro: "Fintech · startup", en: "Fintech · startup" },
     idea: {
@@ -237,6 +240,7 @@ export const CONCEPTS: Concept[] = [
     face: "#99f6e4",
     side: "#0f766e",
     glow: "#5eead4",
+    roughness: 0.1,
     segment: "medium",
     industry: { ro: "Clinică medicală", en: "Medical clinic" },
     idea: {
@@ -253,6 +257,8 @@ export const CONCEPTS: Concept[] = [
     face: "#f1ede4",
     side: "#8a8570",
     glow: "#d9d2bf",
+    roughness: 0.55,
+    lighting: 1,
     segment: "brand",
     industry: { ro: "Modă · brand", en: "Fashion · brand" },
     idea: {
@@ -268,6 +274,7 @@ export const CONCEPTS: Concept[] = [
     face: "#0b1220",
     side: "#0b1220",
     glow: "#38bdf8",
+    lighting: 2,
     segment: "personal",
     industry: { ro: "Fotograf · persoană fizică", en: "Photographer · individual" },
     idea: {
@@ -283,6 +290,8 @@ export const CONCEPTS: Concept[] = [
     face: "#f3d9a4",
     side: "#7a5a22",
     glow: "#e7c27d",
+    roughness: 0.34,
+    lighting: 1,
     segment: "small",
     industry: { ro: "Cabinet de avocatură", en: "Law firm" },
     idea: {
@@ -298,6 +307,8 @@ export const CONCEPTS: Concept[] = [
     face: "#ead8c3",
     side: "#6b4431",
     glow: "#d6a77a",
+    roughness: 0.64,
+    lighting: 1,
     segment: "small",
     industry: { ro: "Cafenea de specialitate", en: "Specialty coffee" },
     idea: {

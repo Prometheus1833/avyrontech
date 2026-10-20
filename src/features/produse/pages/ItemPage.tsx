@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Copy, Gauge, Heart, Info, Lock, MessageCircle, Pause, Play, RotateCcw, Settings2, ShoppingCart, Sparkles } from "lucide-react";
 import type { Lang } from "@/i18n/translations";
 import { ITEMS } from "../data/items";
@@ -15,6 +15,8 @@ import { collectionPath, guidePath, homePath, itemPath, typePath } from "../lib/
 import { applySeo, breadcrumb, productLd, productOgImage } from "../lib/seo";
 import { hasSource } from "../lib/source";
 import { store, useProduseStore } from "../lib/store";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 /**
  * Pagina unui produs: preview mare cu Editor Mode, ce primești, referința de
@@ -23,6 +25,9 @@ import { store, useProduseStore } from "../lib/store";
  */
 export default function ItemPage({ item, lang }: { item: CatalogItem; lang: Lang }) {
   const ro = lang === "ro";
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [values, setValues] = useState<PropValues>(() => defaultValues(item));
   const [showEditor, setShowEditor] = useState(false);
   const [playing, setPlaying] = useState(true);
@@ -30,6 +35,12 @@ export default function ItemPage({ item, lang }: { item: CatalogItem; lang: Lang
   const [resetKey, setResetKey] = useState(0);
   const favorites = useProduseStore((s) => s.favorites);
   const isFav = favorites.includes(item.slug);
+  const saveFavorite = async () => {
+    if (!user) { navigate("/auth", { state: { from: location.pathname } }); return; }
+    const added = store.toggleFavorite(item.slug);
+    try { const { produseApi } = await import("@/lib/produseApi"); if (added) await produseApi.collection.add(item.slug); else await produseApi.collection.remove(item.slug); }
+    catch { store.toggleFavorite(item.slug); toast.error(ro ? "Produsul nu a putut fi salvat în cont." : "Could not save the product to your account."); }
+  };
   const type = TYPE_BY_ID.get(item.type)!;
   const price = priceLabel(item, lang);
   const note = progressionNote(item, lang);
@@ -131,10 +142,10 @@ export default function ItemPage({ item, lang }: { item: CatalogItem; lang: Lang
               )}
               <button
                 type="button"
-                onClick={() => store.toggleFavorite(item.slug)}
+                onClick={() => void saveFavorite()}
                 aria-pressed={isFav}
                 className="grid size-10 place-items-center rounded-full border border-foreground/15 text-muted-foreground transition hover:text-foreground"
-                aria-label={ro ? "Salvează în colecție" : "Save to collection"}
+                aria-label={user ? (ro ? "Salvează în colecție" : "Save to collection") : (ro ? "Conectează-te pentru favorite" : "Sign in for favorites")}
               >
                 <Heart className={`size-4 ${isFav ? "fill-current text-pink-300" : ""}`} aria-hidden />
               </button>

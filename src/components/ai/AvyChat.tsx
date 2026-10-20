@@ -26,7 +26,7 @@ const COPY = {
     placeholder: "Scrie întrebarea ta…",
     send: "Trimite",
     close: "Închide conversația",
-    error: "Nu am putut răspunde acum. Scrie-ne la contact@avyron.ro.",
+    error: "Conexiunea AVY nu a răspuns. Mesajul a rămas în câmp; încearcă din nou sau scrie-ne la contact@avyron.ro.",
     hello: "Salut! Sunt AVY. Te ajut cu prețuri, produse sau o estimare rapidă.",
     chips: ["Cât costă un site?", "Vreau o ofertă", "Audit gratuit la site-ul meu", "În cât timp e gata?"],
     helpful: "Ți-a fost util?",
@@ -36,7 +36,7 @@ const COPY = {
     waIntro: "Bună! Am discutat cu AVY pe site și vreau să continuăm aici.",
     waYou: "Eu",
     waPage: "Pagina",
-    connected: "Conectat la AVY OS",
+    connected: "Asistent disponibil",
     dismissPrompt: "Ascunde invitația",
   },
   en: {
@@ -46,7 +46,7 @@ const COPY = {
     placeholder: "Type your question…",
     send: "Send",
     close: "Close chat",
-    error: "I could not answer right now. Write to contact@avyron.ro.",
+    error: "The AVY connection did not answer. Your message is still in the field; try again or write to contact@avyron.ro.",
     hello: "Hi! I am AVY. Ask me about pricing, products or a quick estimate.",
     chips: ["How much is a website?", "I want a quote", "Free audit of my site", "How long does it take?"],
     helpful: "Was this helpful?",
@@ -56,7 +56,7 @@ const COPY = {
     waIntro: "Hi! I chatted with AVY on your site and I would like to continue here.",
     waYou: "Me",
     waPage: "Page",
-    connected: "Connected to AVY OS",
+    connected: "Assistant available",
     dismissPrompt: "Dismiss prompt",
   },
 } as const;
@@ -115,6 +115,8 @@ const writeStoredChat = (agent: string, state: StoredChat) => {
 const AvyChat = ({ agent = "avy", initiallyOpen = false }: { agent?: string; initiallyOpen?: boolean }) => {
   const { lang } = useLang();
   const { pathname } = useLocation();
+  const onLanding = pathname === "/" || pathname === "/en";
+  const bubblePositionKey = onLanding ? "avy_bubble_pos_home_v2" : "avy_bubble_pos";
   const t = COPY[lang === "en" ? "en" : "ro"];
   const language = lang === "en" ? "en" : "ro";
   const [open, setOpen] = useState(initiallyOpen);
@@ -224,8 +226,9 @@ const AvyChat = ({ agent = "avy", initiallyOpen = false }: { agent?: string; ini
 
   // Poziția salvată (bubble style Messenger) + repoziționare la resize.
   useEffect(() => {
+    setPos(null);
     try {
-      const saved = localStorage.getItem("avy_bubble_pos");
+      const saved = localStorage.getItem(bubblePositionKey);
       if (saved) {
         const parsed = JSON.parse(saved) as { x: number; y: number };
         if (typeof parsed?.x === "number" && typeof parsed?.y === "number") setPos(clamp(parsed.x, parsed.y));
@@ -236,7 +239,7 @@ const AvyChat = ({ agent = "avy", initiallyOpen = false }: { agent?: string; ini
     const onResize = () => setPos((p) => (p ? clamp(p.x, p.y) : p));
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [clamp]);
+  }, [bubblePositionKey, clamp]);
 
   const onBubblePointerDown = useCallback(
     (e: ReactPointerEvent<HTMLButtonElement>) => {
@@ -261,7 +264,7 @@ const AvyChat = ({ agent = "avy", initiallyOpen = false }: { agent?: string; ini
         setPos((p) => {
           if (p) {
             try {
-              localStorage.setItem("avy_bubble_pos", JSON.stringify(p));
+              localStorage.setItem(bubblePositionKey, JSON.stringify(p));
             } catch {
               /* ignore */
             }
@@ -273,7 +276,7 @@ const AvyChat = ({ agent = "avy", initiallyOpen = false }: { agent?: string; ini
       window.addEventListener("pointerup", up);
       window.addEventListener("pointercancel", up);
     },
-    [clamp],
+    [bubblePositionKey, clamp],
   );
 
   const onBubbleClick = useCallback(() => {
@@ -302,12 +305,12 @@ const AvyChat = ({ agent = "avy", initiallyOpen = false }: { agent?: string; ini
       const next = clamp(base.x + delta[0], base.y + delta[1]);
       setPos(next);
       try {
-        localStorage.setItem("avy_bubble_pos", JSON.stringify(next));
+        localStorage.setItem(bubblePositionKey, JSON.stringify(next));
       } catch {
         /* ignore */
       }
     },
-    [clamp, pos],
+    [bubblePositionKey, clamp, pos],
   );
 
   useEffect(() => {
@@ -330,10 +333,13 @@ const AvyChat = ({ agent = "avy", initiallyOpen = false }: { agent?: string; ini
           page: pathname,
           visitorId: visitorId(),
         });
+        setConnected(true);
         setConversationId(reply.conversationId);
         setMessages((prev) => [...prev, { id: reply.messageId, role: "assistant", text: reply.reply }]);
         trackEvent("avy_message", { agent, confidence: reply.confidence });
       } catch {
+        setConnected(false);
+        setInput((current) => current || text);
         setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", text: t.error, rated: true }]);
       } finally {
         setBusy(false);
@@ -365,12 +371,12 @@ const AvyChat = ({ agent = "avy", initiallyOpen = false }: { agent?: string; ini
         <div
           role="status"
           className={`fixed z-40 flex max-w-[min(18rem,calc(100vw-5.5rem))] items-start gap-2 rounded-2xl border border-primary/30 bg-background/92 p-2 pl-3 text-sm shadow-xl backdrop-blur-xl motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-left-2 ${
-            pos ? "" : "left-[4.75rem] top-20"
+            pos || onLanding ? "" : "left-[4.75rem] top-20"
           }`}
           style={pos ? {
             left: Math.min(pos.x + 64, Math.max(8, window.innerWidth - 288)),
             top: Math.min(pos.y, Math.max(8, window.innerHeight - 96)),
-          } : undefined}
+          } : onLanding ? { left: "4.75rem", top: "52dvh" } : undefined}
         >
           <button
             type="button"
@@ -397,9 +403,13 @@ const AvyChat = ({ agent = "avy", initiallyOpen = false }: { agent?: string; ini
         onKeyDown={onBubbleKeyDown}
         aria-label={t.open}
         aria-expanded={open}
-        style={pos ? { left: pos.x, top: pos.y, right: "auto", bottom: "auto" } : undefined}
+        style={pos
+          ? { left: pos.x, top: pos.y, right: "auto", bottom: "auto" }
+          : onLanding
+            ? { left: 12, top: "52dvh", right: "auto", bottom: "auto" }
+            : undefined}
         className={`fixed z-40 touch-none select-none rounded-2xl border border-border/60 bg-background/70 p-3 shadow-lg backdrop-blur-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
-          pos ? "" : "left-3 top-20"
+          pos || onLanding ? "" : "left-3 top-20"
         } ${dragging ? "scale-105 cursor-grabbing" : "cursor-grab transition hover:scale-105 hover:bg-background/90"}`}
       >
         <span className="relative flex items-center gap-2">

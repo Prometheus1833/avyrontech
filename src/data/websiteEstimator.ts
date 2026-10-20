@@ -1,5 +1,5 @@
-export const WEBSITE_BASE_PRICE_RON = 1150;
-export const WEBSITE_BASE_PRICE_EUR = 220;
+export const WEBSITE_BASE_PRICE_RON = 1450;
+export const WEBSITE_BASE_PRICE_EUR = 280;
 
 export type WebsitePageScope = "compact" | "business" | "extended";
 export type WebsiteContentScope = "ready" | "assisted" | "complete";

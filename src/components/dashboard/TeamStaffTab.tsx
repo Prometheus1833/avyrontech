@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Bot, KeyRound, LockKeyhole, LogOut, Power, RotateCcw, Search, Settings2, ShieldCheck, UserCheck, UserPlus, Users } from "lucide-react";
+import { Bot, KeyRound, LockKeyhole, LogOut, MessageSquare, Power, RotateCcw, Search, Settings2, ShieldCheck, UserCheck, UserPlus, Users } from "lucide-react";
 import { workspaceApi } from "@/lib/workspaceApi";
 import { internApi, type AccountOption, type ClientOption } from "@/lib/internApi";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 import { toast } from "sonner";
 import { adminOperationsApi, type AdminProjectOption } from "@/lib/adminOperationsApi";
 
@@ -14,9 +15,13 @@ const roleLabels: Record<string, string> = {
   staff: "Membru staff",
   user: "Client",
 };
+const accountTypeLabels: Record<string, string> = {
+  individual: "Persoană fizică", srl: "SRL", pfa: "PFA", ii: "Întreprindere individuală",
+  startup: "Start-up", public_institution: "Instituție publică", avyron_partner: "Avyron Partner", other: "Alt tip",
+};
 
 export default function TeamStaffTab() {
-  const { isSuperAdmin } = useAuth();
+  const { isAdmin, isSuperAdmin } = useAuth();
   const [accounts, setAccounts] = useState<AccountOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -43,10 +48,10 @@ export default function TeamStaffTab() {
     await (isSuperAdmin ? Promise.all([internApi.listAccounts(), adminOperationsApi.staff()]).then(([users, staff]) => {
       setProjects(staff.projects);
       setAccounts(users.data);
-    }) : internApi.listAccounts().then((result) => setAccounts(result.data.filter((account) => /(^|,)(staff|admin)(,|$)/.test(account.roles || "")))))
+    }) : internApi.listAccounts().then((result) => setAccounts(isAdmin ? result.data : result.data.filter((account) => /(^|,)(staff|admin)(,|$)/.test(account.roles || "")))))
       .catch((cause) => setError(cause instanceof Error ? cause.message : "Echipa nu a putut fi încărcată."))
       .finally(() => setLoading(false));
-  }, [isSuperAdmin]);
+  }, [isAdmin, isSuperAdmin]);
 
   useEffect(() => {
     void loadAccounts();
@@ -138,7 +143,7 @@ export default function TeamStaffTab() {
   const filtered = useMemo(() => {
     const value = query.trim().toLocaleLowerCase("ro");
     if (!value) return accounts;
-    return accounts.filter((account) => [account.display_name, account.company_name, account.email, account.roles]
+    return accounts.filter((account) => [account.display_name, account.company_name, account.email, account.roles, account.entity_type, account.cui]
       .some((field) => String(field || "").toLocaleLowerCase("ro").includes(value)));
   }, [accounts, query]);
 
@@ -163,7 +168,7 @@ export default function TeamStaffTab() {
 
       <section className="rounded-2xl border border-white/[0.08] bg-[#10162a]/90 p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div><h2 className="font-display text-lg font-semibold text-white">Administrare conturi</h2><p className="text-xs text-slate-500">Super Admin vede toate conturile; STAFF primește numai datele operaționale mascate.</p></div>
+          <div><h2 className="font-display text-lg font-semibold text-white">Administrare conturi</h2><p className="text-xs text-slate-500">Administratorii văd tipul și datele contului; STAFF primește numai datele operaționale mascate.</p></div>
           <label className="relative block sm:w-72"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-600" /><span className="sr-only">Caută membru</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Caută membru sau rol…" className="w-full rounded-xl border border-white/[0.08] bg-black/20 py-2.5 pl-9 pr-3 text-sm text-slate-200 outline-none placeholder:text-slate-600 focus:border-violet-400/40" /></label>
         </div>
         <div className="mt-4 space-y-2">
@@ -176,8 +181,8 @@ export default function TeamStaffTab() {
             const name = account.display_name || account.company_name || account.email;
             return <div key={account.id} className="flex flex-col gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 sm:flex-row sm:items-center">
               <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-violet-500/25 to-cyan-400/10 font-display text-sm font-bold text-violet-200">{name.slice(0, 2).toUpperCase()}</span>
-              <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-slate-200">{name}</p><p className="truncate text-xs text-slate-600">{account.email}{account.username ? ` · @${account.username}` : ""}</p><p className="mt-1 text-[10px] text-slate-600">{account.must_change_password ? "Parolă temporară" : "Parolă personală"} · {account.active_sessions || 0} sesiuni active</p></div>
-              <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-violet-300/10 bg-violet-400/[0.08] px-2.5 py-1 text-[11px] text-violet-200">{roleLabels[primaryRole]}</span><span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/[0.08] px-2.5 py-1 text-[11px] text-emerald-300"><UserCheck className="size-3" /> {account.disabled_at ? "Dezactivat" : "Activ"}</span>{isSuperAdmin && <Button type="button" size="sm" variant="outline" className="h-8 gap-1.5 border-white/10 bg-white/[0.03] text-xs text-slate-300 hover:bg-violet-400/10 hover:text-white" onClick={() => openAccess(account)}><Settings2 className="size-3.5" /> Gestionează</Button>}</div>
+              <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-slate-200">{name}</p><p className="truncate text-xs text-slate-600">{account.email}{account.username ? ` · @${account.username}` : ""}</p>{isAdmin && account.entity_type && <p className="mt-1 text-xs text-cyan-200/80">{accountTypeLabels[account.entity_type] || account.entity_type}{account.company_name ? ` · ${account.company_name}` : ""}{account.cui ? ` · CUI ${account.cui}` : ""}</p>}<p className="mt-1 text-[10px] text-slate-600">{account.must_change_password ? "Parolă temporară" : "Parolă personală"} · {account.active_sessions || 0} sesiuni active</p></div>
+              <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-violet-300/10 bg-violet-400/[0.08] px-2.5 py-1 text-[11px] text-violet-200">{roleLabels[primaryRole]}</span><span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/[0.08] px-2.5 py-1 text-[11px] text-emerald-300"><UserCheck className="size-3" /> {account.disabled_at ? "Dezactivat" : "Activ"}</span>{(primaryRole === "staff" || primaryRole === "admin") && !account.disabled_at && <a href={`/profil?tab=intern&dm=${encodeURIComponent(account.id)}`} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-cyan-300/20 bg-cyan-400/5 px-3 text-xs text-cyan-200 hover:bg-cyan-400/10"><MessageSquare className="size-3.5"/> Mesaj direct</a>}{isSuperAdmin && <Button type="button" size="sm" variant="outline" className="h-8 gap-1.5 border-white/10 bg-white/[0.03] text-xs text-slate-300 hover:bg-violet-400/10 hover:text-white" onClick={() => openAccess(account)}><Settings2 className="size-3.5" /> Gestionează</Button>}</div>
             </div>;
           })}
         </div>
@@ -203,7 +208,7 @@ export default function TeamStaffTab() {
           </div>
           <div className="space-y-2 rounded-xl border border-white/[0.07] p-3">
             <Label htmlFor="temporary-password" className="text-slate-300">Parolă temporară nouă</Label>
-            <input id="temporary-password" type="password" autoComplete="new-password" value={temporaryPassword} onChange={(event) => setTemporaryPassword(event.target.value)} placeholder="Minimum 10 caractere, literă mare și cifră" className="w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm outline-none" />
+            <PasswordInput id="temporary-password" autoComplete="new-password" value={temporaryPassword} onChange={(event) => setTemporaryPassword(event.target.value)} placeholder="Minimum 10 caractere, literă mare și cifră" className="w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm outline-none" />
             <div className="grid gap-2 sm:grid-cols-3"><Button type="button" size="sm" variant="outline" onClick={() => void accountAction("password")} disabled={saving || temporaryPassword.length < 10} className="gap-1.5"><RotateCcw className="size-3.5" /> Setează parola</Button><Button type="button" size="sm" variant="outline" onClick={() => void accountAction("sessions")} disabled={saving} className="gap-1.5"><LogOut className="size-3.5" /> Revocă sesiuni</Button><Button type="button" size="sm" variant="outline" onClick={() => void accountAction("status")} disabled={saving} className="gap-1.5"><Power className="size-3.5" /> {selected?.disabled_at ? "Reactivează" : "Dezactivează"}</Button></div>
           </div>
           <fieldset disabled={!linksReady || saving} className="space-y-2 max-h-48 overflow-y-auto">
@@ -230,7 +235,7 @@ export default function TeamStaffTab() {
             <Label>Nume<input value={create.displayName} onChange={(event) => setCreate({ ...create, displayName: event.target.value })} className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm" /></Label>
             <Label>Email<input type="email" value={create.email} onChange={(event) => setCreate({ ...create, email: event.target.value })} className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm" /></Label>
             <Label>Username<input autoComplete="off" value={create.username} onChange={(event) => setCreate({ ...create, username: event.target.value.toLowerCase() })} className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm" /></Label>
-            <Label>Parolă temporară<input type="password" autoComplete="new-password" value={create.temporaryPassword} onChange={(event) => setCreate({ ...create, temporaryPassword: event.target.value })} className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm" /></Label>
+            <Label>Parolă temporară<PasswordInput autoComplete="new-password" value={create.temporaryPassword} onChange={(event) => setCreate({ ...create, temporaryPassword: event.target.value })} className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm" /></Label>
             <Label>Rol<select value={create.accessLevel} onChange={(event) => setCreate({ ...create, accessLevel: event.target.value as typeof create.accessLevel })} className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm"><option value="user">Client</option><option value="staff">STAFF</option><option value="admin">Administrator</option></select></Label>
           </div>
           <DialogFooter><Button type="button" variant="ghost" onClick={() => setCreateOpen(false)} disabled={saving}>Anulează</Button><Button type="button" onClick={() => void createAccount()} disabled={saving || !create.email || !create.username || !create.displayName || create.temporaryPassword.length < 10}>{saving ? "Se creează…" : "Creează cont"}</Button></DialogFooter>
@@ -243,7 +248,7 @@ export default function TeamStaffTab() {
           <div className="rounded-xl border border-cyan-300/10 bg-cyan-400/5 p-3 text-xs leading-relaxed text-cyan-100/80">
             Rutina de cercetare, clasificare și redactare este delegată AI Core. Codex rămâne pentru verificare, aprobare și publicarea manuală exactă.
           </div>
-          <Label>Parolă temporară {codexOperator?.exists ? "(opțional, pentru rotire)" : "(obligatorie)"}<input type="password" autoComplete="new-password" value={operatorPassword} onChange={(event) => setOperatorPassword(event.target.value)} placeholder="Minimum 10 caractere, literă mare și cifră" className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm" /></Label>
+          <Label>Parolă temporară {codexOperator?.exists ? "(opțional, pentru rotire)" : "(obligatorie)"}<PasswordInput autoComplete="new-password" value={operatorPassword} onChange={(event) => setOperatorPassword(event.target.value)} placeholder="Minimum 10 caractere, literă mare și cifră" className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm" /></Label>
           <DialogFooter><Button type="button" variant="ghost" onClick={() => setOperatorOpen(false)} disabled={operatorSyncing}>Anulează</Button><Button type="button" onClick={() => void synchronizeCodexOperator()} disabled={operatorSyncing || (!codexOperator?.exists && operatorPassword.length < 10)}>{operatorSyncing ? "Se sincronizează…" : codexOperator?.exists ? "Sincronizează accesul" : "Creează și sincronizează"}</Button></DialogFooter>
         </DialogContent>
       </Dialog>

@@ -15,18 +15,18 @@ type L<T> = Record<Lang, T>;
 
 export const LOGO3D_META: L<{ title: string; description: string; name: string; short: string }> = {
   ro: {
-    title: "Logo Dinamic 3D — logo 3D și animat, de la 500 lei | AVYRON",
+    title: "Logo Profesional 3D — logo 3D și animat, de la 500 lei | AVYRON",
     description:
       "Creăm logo-uri originale gândite pentru print, 3D și mișcare: variante vectoriale, model 3D, animație și logo interactiv pentru site. Pachete de la 500 lei, drepturi cedate integral.",
-    name: "Logo Dinamic 3D",
-    short: "Logo dinamic 3D",
+    name: "Logo Profesional 3D",
+    short: "Logo profesional 3D",
   },
   en: {
-    title: "Dynamic 3D Logo — 3D and animated logo design from 500 lei | AVYRON",
+    title: "Professional 3D Logo — 3D and animated logo design from 500 lei | AVYRON",
     description:
       "Original logos designed for print, 3D and motion: vector files, a 3D model, animation and an interactive logo for your website. Packages from 500 lei, full rights transferred.",
-    name: "Dynamic 3D Logo",
-    short: "Dynamic 3D logo",
+    name: "Professional 3D Logo",
+    short: "Professional 3D logo",
   },
 };
 
@@ -41,7 +41,7 @@ export const LOGO3D_HERO: L<{
   conceptLabel: string;
 }> = {
   ro: {
-    title: "Logo dinamic 3D",
+    title: "Logo Profesional 3D",
     lead: "Un singur logo, gândit din prima pentru hârtie, pentru volum și pentru mișcare. Îl primești ca fișiere vectoriale, model 3D, animație și ca logo viu pe site-ul tău.",
     from: "de la",
     delivery: "Livrare în 5–15 zile lucrătoare, drepturi cedate integral",
@@ -51,7 +51,7 @@ export const LOGO3D_HERO: L<{
     conceptLabel: "Concept Avyron",
   },
   en: {
-    title: "Dynamic 3D logo",
+    title: "Professional 3D Logo",
     lead: "One logo, designed from day one for paper, for volume and for motion. You get it as vector files, a 3D model, an animation and a living logo on your website.",
     from: "from",
     delivery: "Delivered in 5–15 working days, full rights transferred",
@@ -438,7 +438,7 @@ export const LOGO3D_PACKS_COPY: L<{
     delivery: "Livrare",
     plus: "Plusuri",
     choose: (name) => `Aleg ${name}`,
-    whatsapp: (name) => `Bună! Mă interesează pachetul ${name} pentru Logo Dinamic 3D.`,
+    whatsapp: (name) => `Bună! Mă interesează pachetul ${name} pentru Logo Profesional 3D.`,
     addonsTitle: "Opțiuni la cerere",
     addons: [
       "Logo sonor (2–3 secunde)",
@@ -458,7 +458,7 @@ export const LOGO3D_PACKS_COPY: L<{
     delivery: "Delivery",
     plus: "Extras",
     choose: (name) => `Choose ${name}`,
-    whatsapp: (name) => `Hi! I'm interested in the ${name} package for a Dynamic 3D Logo.`,
+    whatsapp: (name) => `Hi! I'm interested in the ${name} package for a Professional 3D Logo.`,
     addonsTitle: "On request",
     addons: [
       "Sonic logo (2–3 seconds)",
@@ -627,7 +627,7 @@ export const LOGO3D_CTA: L<{ title: string; text: string; primary: string; whats
     text: "Spune-ne ce faci și pentru cine. Primești o previzualizare gratuită și o ofertă fixă, fără nicio obligație.",
     primary: "Cere previzualizarea gratuită",
     whatsapp: "Scrie-ne pe WhatsApp",
-    whatsappText: "Bună! Aș vrea un Logo Dinamic 3D. Putem discuta?",
+    whatsappText: "Bună! Aș vrea un Logo Profesional 3D. Putem discuta?",
     related: "Merge bine împreună cu",
   },
   en: {
@@ -635,7 +635,7 @@ export const LOGO3D_CTA: L<{ title: string; text: string; primary: string; whats
     text: "Tell us what you do and who it's for. You get a free preview and a fixed quote, with no obligation.",
     primary: "Request the free preview",
     whatsapp: "Message us on WhatsApp",
-    whatsappText: "Hi! I'd like a Dynamic 3D Logo. Can we talk?",
+    whatsappText: "Hi! I'd like a Professional 3D Logo. Can we talk?",
     related: "Pairs well with",
   },
 };

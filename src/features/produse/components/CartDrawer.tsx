@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { ShoppingCart, Trash2, X } from "lucide-react";
 import type { Lang } from "@/i18n/translations";
 import { ITEM_BY_SLUG } from "../data/items";
-import { PLAN_BY_ID } from "../data/plans";
+import { useLivePlans } from "../lib/useLivePlans";
 import { EUR_FOR_RON } from "../data/taxonomy";
 import { store, useProduseStore } from "../lib/store";
 import { useProduseAccount } from "../lib/account";
 import { accountCartApi, type AccountCartItem } from "@/lib/accountCart";
+import { billingApi, type BillingAccount } from "@/lib/billingApi";
 
 /**
  * Coșul paginii. Alegerile stau local; plata trece prin Worker, care
@@ -19,12 +20,15 @@ export default function CartDrawer({ lang, open, onOpenChange }: { lang: Lang; o
   const account = useProduseAccount(open);
   const [paying, setPaying] = useState(false);
   const [payNotice, setPayNotice] = useState<string | null>(null);
+  const [providers, setProviders] = useState<BillingAccount["providers"] | null>(null);
+  const plans = useLivePlans();
+  const planById = useMemo(() => new Map(plans.map(plan => [plan.id, plan])), [plans]);
 
   useEffect(() => {
     if (!account.signedIn) return;
     const lines: AccountCartItem[] = cart.map((line) => {
       if (line.kind === "plan") {
-        const plan = PLAN_BY_ID.get(line.plan);
+        const plan = planById.get(line.plan);
         return {
           id: `partnership-${line.plan}`,
           source: "products",
@@ -48,7 +52,25 @@ export default function CartDrawer({ lang, open, onOpenChange }: { lang: Lang; o
       void accountCartApi.replaceSource("products", lines).catch(() => undefined);
     }, 320);
     return () => window.clearTimeout(timer);
-  }, [account.signedIn, cart, lang]);
+  }, [account.signedIn, cart, lang, planById]);
+
+  useEffect(() => {
+    if (!open || account.signedIn !== true) {
+      setProviders(null);
+      return;
+    }
+    let active = true;
+    void billingApi.account()
+      .then((result) => {
+        if (active) setProviders(result.providers);
+      })
+      .catch(() => {
+        if (active) setProviders(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [account.signedIn, open]);
 
   /**
    * Plata pornește de la prima linie din coș: Worker-ul creează o comandă pe
@@ -91,7 +113,7 @@ export default function CartDrawer({ lang, open, onOpenChange }: { lang: Lang; o
     () =>
       cart.map((line, index) => {
         if (line.kind === "plan") {
-          const plan = PLAN_BY_ID.get(line.plan);
+          const plan = planById.get(line.plan);
           return { index, name: plan?.name ?? line.plan, detail: ro ? "parteneriat anual" : "annual partnership", ron: plan?.priceRon ?? 0, eur: plan?.priceEur ?? 0 };
         }
         const item = ITEM_BY_SLUG.get(line.slug);
@@ -103,7 +125,7 @@ export default function CartDrawer({ lang, open, onOpenChange }: { lang: Lang; o
           eur: item?.priceRon ? EUR_FOR_RON[item.priceRon] : 0,
         };
       }),
-    [cart, lang, ro],
+    [cart, lang, ro, planById],
   );
 
   const totalRon = lines.reduce((sum, line) => sum + line.ron, 0);
@@ -177,18 +199,41 @@ export default function CartDrawer({ lang, open, onOpenChange }: { lang: Lang; o
                   </span>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => void pay("revolut")}
-                  disabled={paying || cart.length === 0}
-                  className="mt-3 w-full rounded-full bg-gradient-to-br from-brand to-brand-2 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-55"
-                  data-ripple
-                >
-                  {paying ? (ro ? "Se pregătește plata…" : "Preparing payment…") : ro ? "Continuă cu Revolut Pay" : "Continue with Revolut Pay"}
-                </button>
-                <button type="button" onClick={() => void pay("stripe")} disabled={paying || cart.length === 0} className="mt-2 w-full rounded-full border border-foreground/15 px-4 py-2.5 text-sm font-semibold text-foreground disabled:opacity-55">
-                  {ro ? "Plătește prin Stripe" : "Pay with Stripe"}
-                </button>
+                {account.signedIn !== true ? (
+                  <button
+                    type="button"
+                    onClick={() => void pay("revolut")}
+                    disabled={paying || cart.length === 0}
+                    className="mt-3 w-full rounded-full bg-gradient-to-br from-brand to-brand-2 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-55"
+                    data-ripple
+                  >
+                    {ro ? "Continuă în cont" : "Continue in your account"}
+                  </button>
+                ) : (
+                  <>
+                    {providers?.revolut.enabled && (
+                      <button
+                        type="button"
+                        onClick={() => void pay("revolut")}
+                        disabled={paying || cart.length === 0}
+                        className="mt-3 w-full rounded-full bg-gradient-to-br from-brand to-brand-2 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-55"
+                        data-ripple
+                      >
+                        {paying ? (ro ? "Se pregătește plata…" : "Preparing payment…") : ro ? "Continuă cu plata online" : "Continue with online payment"}
+                      </button>
+                    )}
+                    {providers?.stripe.enabled && (
+                      <button type="button" onClick={() => void pay("stripe")} disabled={paying || cart.length === 0} className="mt-2 w-full rounded-full border border-foreground/15 px-4 py-2.5 text-sm font-semibold text-foreground disabled:opacity-55">
+                        {ro ? "Plătește cu cardul" : "Pay by card"}
+                      </button>
+                    )}
+                    {providers && !providers.revolut.enabled && !providers.stripe.enabled && (
+                      <p className="mt-3 rounded-xl border border-foreground/10 bg-foreground/[0.03] px-3 py-2 text-[11.5px] text-foreground/75">
+                        {ro ? "Plata online nu este disponibilă pentru această comandă. Poți solicita oferta sau proforma pe WhatsApp." : "Online payment is not available for this order. You can request a quote or pro forma on WhatsApp."}
+                      </p>
+                    )}
+                  </>
+                )}
                 {payNotice && (
                   <p className="mt-2 rounded-xl border border-brand/25 bg-brand/[0.07] px-3 py-2 text-[11.5px] text-foreground" role="status">
                     {payNotice}
@@ -202,8 +247,8 @@ export default function CartDrawer({ lang, open, onOpenChange }: { lang: Lang; o
                 </button>
                 <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground/80">
                   {ro
-                    ? "Plata are loc pe pagina securizată Revolut sau Stripe. După confirmarea încasării, factura este emisă prin Oblio; firmele pot solicita și proformă."
-                    : "Payment takes place on Revolut's or Stripe's secure page. After payment confirmation, the invoice is issued through Oblio; companies can also request a proforma."}
+                    ? "Dacă plata online este disponibilă, procesatorul activ apare numai după autentificare. Factura se emite după confirmarea încasării; firmele pot solicita și proformă."
+                    : "When online payment is available, the active processor appears only after sign-in. The invoice is issued after payment confirmation; companies can also request a pro forma."}
                 </p>
               </>
             )}

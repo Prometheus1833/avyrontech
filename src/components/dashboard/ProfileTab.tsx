@@ -12,12 +12,15 @@ import { toast } from "sonner";
 import { cfAuth, type CfProfile } from "@/lib/cfAuth";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
+import { billingApi, type BillingAccount } from "@/lib/billingApi";
 
 export function ProfileTab() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { user, profile, isStaff, refreshProfile } = useAuth();
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [billingProfile, setBillingProfile] = useState<BillingAccount["profile"]>(null);
+  const [invoiceForm, setInvoiceForm] = useState({ invoiceEmail: "", registrationNumber: "", city: "", county: "" });
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
@@ -26,7 +29,7 @@ export function ProfileTab() {
     staff_role: "dev" as "dev" | "designer" | "marketing" | "support" | "admin",
     phone: "",
     address: "",
-    entity_type: "individual" as "individual" | "srl" | "pfa" | "ii" | "other",
+    entity_type: "individual" as NonNullable<CfProfile["entity_type"]>,
     company_name: "",
     cui: "",
     social_facebook: "",
@@ -58,6 +61,17 @@ export function ProfileTab() {
     }
   }, [profile]);
 
+  useEffect(() => {
+    if (!user || isStaff) return;
+    let active = true;
+    void billingApi.account().then((account) => {
+      if (!active) return;
+      setBillingProfile(account.profile);
+      setInvoiceForm({ invoiceEmail: account.profile?.invoice_email || "", registrationNumber: account.profile?.registration_number || "", city: account.profile?.city || "", county: account.profile?.county || "" });
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [user, isStaff]);
+
   const handleAvatar = async (file: File) => {
     if (!user) return;
     if (file.size > 5 * 1024 * 1024) return toast.error("Fișierul depășește 5MB");
@@ -80,6 +94,19 @@ export function ProfileTab() {
       // staff_role is never sent from the client — only admins can change it server-side.
       const { staff_role: _ignoredRole, ...safeForm } = form;
       await cfAuth.updateProfile(safeForm satisfies Partial<CfProfile>);
+      if (!isStaff) await billingApi.saveProfile({
+        entityType: form.entity_type === "individual" ? "individual" : "company",
+        legalName: (form.entity_type === "individual" ? form.display_name : form.company_name).trim() || null,
+        taxId: isCompany ? form.cui.trim() || null : null,
+        registrationNumber: invoiceForm.registrationNumber.trim() || null,
+        address: form.address.trim() || null,
+        city: invoiceForm.city.trim() || null,
+        county: invoiceForm.county.trim() || null,
+        countryCode: billingProfile?.country_code || "RO",
+        invoiceEmail: invoiceForm.invoiceEmail.trim() || user.email,
+        automaticCharging: Boolean(billingProfile?.automatic_charging),
+        defaultProvider: billingProfile?.default_provider || null,
+      });
 
       await refreshProfile();
       toast.success(t.auth.profile.saved);
@@ -94,12 +121,14 @@ export function ProfileTab() {
     .split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
 
   const isCompany = form.entity_type !== "individual";
+  const entityLabel = t.auth.entity[form.entity_type];
 
   return (
     <div className="mx-auto max-w-5xl space-y-3">
       <div>
         <h2 className="text-xl font-display font-bold leading-tight">{t.auth.profile.title}</h2>
         <p className="text-xs text-muted-foreground">{t.auth.profile.subtitle}</p>
+        {!isStaff && <p className="mt-2 inline-flex rounded-full border border-brand/20 bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">{t.auth.entityType}: {entityLabel}</p>}
       </div>
 
       <Card>
@@ -175,6 +204,9 @@ export function ProfileTab() {
                     <SelectItem value="srl">{t.auth.entity.srl}</SelectItem>
                     <SelectItem value="pfa">{t.auth.entity.pfa}</SelectItem>
                     <SelectItem value="ii">{t.auth.entity.ii}</SelectItem>
+                    <SelectItem value="startup">{t.auth.entity.startup}</SelectItem>
+                    <SelectItem value="public_institution">{t.auth.entity.public_institution}</SelectItem>
+                    <SelectItem value="avyron_partner">{t.auth.entity.avyron_partner}</SelectItem>
                     <SelectItem value="other">{t.auth.entity.other}</SelectItem>
                   </SelectContent>
                 </Select>
@@ -182,7 +214,7 @@ export function ProfileTab() {
               {isCompany && (
                 <>
                   <div className="space-y-1">
-                    <Label className="text-xs">{t.auth.profile.companyName}</Label>
+                    <Label className="text-xs">{form.entity_type === "startup" ? (lang === "ro" ? "Nume start-up" : "Start-up name") : form.entity_type === "public_institution" ? (lang === "ro" ? "Numele instituției" : "Institution name") : form.entity_type === "avyron_partner" ? (lang === "ro" ? "Nume partener / brand" : "Partner / brand name") : t.auth.profile.companyName}</Label>
                     <Input className="h-8 text-sm" value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
                   </div>
                   <div className="space-y-1">
@@ -196,7 +228,7 @@ export function ProfileTab() {
         </CardContent>
       </Card>
 
-      <Card>
+      {isStaff && <Card>
         <CardHeader className="py-3"><CardTitle className="text-sm">{t.auth.profile.socials}</CardTitle></CardHeader>
         <CardContent className="grid sm:grid-cols-2 gap-2.5 pt-0 pb-3">
           <div className="space-y-1"><Label className="text-xs">Facebook</Label>
@@ -208,7 +240,17 @@ export function ProfileTab() {
           <div className="space-y-1"><Label className="text-xs">{t.auth.profile.website}</Label>
             <Input className="h-8 text-sm" placeholder="https://..." value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} /></div>
         </CardContent>
-      </Card>
+      </Card>}
+
+      {!isStaff && <Card>
+        <CardHeader className="py-3"><CardTitle className="text-sm">Date pentru facturare</CardTitle><p className="text-xs text-muted-foreground">Completează doar ce este necesar pentru persoana fizică sau organizația ta. Aceste date se folosesc la emiterea facturii după plata confirmată.</p></CardHeader>
+        <CardContent className="grid gap-2.5 pb-3 pt-0 sm:grid-cols-2">
+          <div className="space-y-1"><Label className="text-xs">E-mail pentru facturi</Label><Input type="email" className="h-8 text-sm" value={invoiceForm.invoiceEmail} onChange={(event) => setInvoiceForm((current) => ({ ...current, invoiceEmail: event.target.value }))} placeholder={user?.email || ""} /></div>
+          {isCompany && <div className="space-y-1"><Label className="text-xs">Nr. înregistrare (opțional)</Label><Input className="h-8 text-sm" value={invoiceForm.registrationNumber} onChange={(event) => setInvoiceForm((current) => ({ ...current, registrationNumber: event.target.value }))} /></div>}
+          <div className="space-y-1"><Label className="text-xs">Localitate</Label><Input className="h-8 text-sm" value={invoiceForm.city} onChange={(event) => setInvoiceForm((current) => ({ ...current, city: event.target.value }))} /></div>
+          <div className="space-y-1"><Label className="text-xs">Județ</Label><Input className="h-8 text-sm" value={invoiceForm.county} onChange={(event) => setInvoiceForm((current) => ({ ...current, county: event.target.value }))} /></div>
+        </CardContent>
+      </Card>}
 
       <Card>
         <CardHeader className="py-3"><CardTitle className="text-sm">Preferințe</CardTitle></CardHeader>

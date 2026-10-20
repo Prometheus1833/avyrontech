@@ -1,8 +1,14 @@
 import { cfAuth } from "./cfAuth";
 
-export type BillingProviderStatus={enabled:boolean;oneTime?:boolean;subscriptions?:boolean;savedMethods?:boolean;customerPortal?:boolean;invoices?:boolean;status?:"planned"};
+export type BillingProviderStatus={enabled:boolean;configured?:boolean;oneTime?:boolean;subscriptions?:boolean;savedMethods?:boolean;customerPortal?:boolean;invoices?:boolean;status?:"planned"};
+export type FinancialProviderPlaybook={
+  provider:"stripe"|"oblio"|"revolut_business"|"revolut_merchant";
+  title:string;purpose:string;authentication:string;intake:string;reconciliation:string;gate:string;cadence:string;
+  sources:readonly string[];
+  phase:"not_connected"|"configuration_only"|"awaiting_approval"|"verification_required"|"synced"|"stale"|"error";
+};
 export type BillingSubscription={
-  id:string;provider:"stripe"|"revolut"|"netopia";sku:string;
+  id:string;order_id:string;provider:"stripe"|"revolut"|"netopia";sku:string;
   status:"incomplete"|"trialing"|"active"|"past_due"|"paused"|"cancelled"|"expired";
   period:"monthly"|"annual";amount_minor:number;currency:string;
   current_period_start:number|null;current_period_end:number|null;cancel_at_period_end:0|1;created_at:number;
@@ -14,23 +20,37 @@ export type BillingInvoice={
 };
 export type BillingAdminStatus={
   providers:{stripe:BillingProviderStatus;revolut:BillingProviderStatus;oblio:BillingProviderStatus;netopia:BillingProviderStatus};
+  security?:{mfaEnabled:boolean;mfaVerified:boolean};
   sessions:Array<{provider:string;status:string;total:number}>;
   subscriptions:Array<{provider:string;status:string;total:number}>;
   invoices:Array<{provider:string;status:string;total:number}>;
+  pendingInvoices:Array<{order_id:string;status:string;error_code:string|null;total_minor:number;currency:string;updated_at:number}>;
+  paymentsByCurrency:Array<{currency:string;amount_minor:number;total:number}>;
+  invoicesByCurrency:Array<{currency:string;amount_minor:number;total:number}>;
+  recentPayments:Array<{id:string;order_id:string;provider:string;mode:string;status:string;amount_minor:number;currency:string;updated_at:number}>;
+  recentSubscriptions:Array<{id:string;sku:string;provider:string;status:string;period:string;amount_minor:number;currency:string;current_period_end:number|null;updated_at:number}>;
+  recentInvoices:Array<{id:string;order_id:string;provider:string;series:string|null;number:string|null;status:string;total_minor:number;currency:string;error_code:string|null;updated_at:number}>;
+  connectionRecords:Array<{provider:string;status:string;last_sync_at:number|null;last_error_code:string|null}>;
+  providerPlaybooks:FinancialProviderPlaybook[];
+  bankSettlement:{verified:false;reason:string};
   recentFailures:Array<{provider:string;event_type:string;error_code:string|null;received_at:number}>;
 };
 export type BillingAccount={
   profile:null|{entity_type:"individual"|"company"|null;legal_name:string|null;tax_id:string|null;registration_number:string|null;address:string|null;city:string|null;county:string|null;country_code:string;invoice_email:string|null;automatic_charging:0|1;default_provider:"stripe"|"revolut"|"netopia"|null};
-  methods:Array<{id:string;provider:string;type:string;brand:string|null;last4:string|null;expiry_month:number|null;expiry_year:number|null;is_default:0|1;status:string}>;
+  methods:BillingPaymentMethod[];
   subscriptions:BillingSubscription[];invoices:BillingInvoice[];
+  revolutPlans:Array<{sku:string;period:string}>;
   providers:{stripe:BillingProviderStatus;revolut:BillingProviderStatus;oblio:BillingProviderStatus;netopia:BillingProviderStatus};
 };
+export type BillingPaymentMethod={id:string;provider:"stripe"|"revolut";type:string;brand:string|null;last4:string|null;expiry_month:number|null;expiry_year:number|null;is_default:0|1;usage_scope?:"future"|"recurring";status?:string};
 export const billingApi={
   account:()=>cfAuth.request<BillingAccount>("/api/billing/account"),
+  paymentMethods:()=>cfAuth.request<{methods:BillingPaymentMethod[];refreshed:{stripe:boolean;revolut:boolean}}>("/api/billing/payment-methods"),
   saveProfile:(value:Record<string,unknown>)=>cfAuth.request<{ok:true}>("/api/billing/profile",{method:"PUT",body:JSON.stringify(value)}),
   checkout:(value:{orderId:string;provider:"stripe"|"revolut";savePaymentMethod?:boolean})=>cfAuth.request<{url:string|null;provider:string;mode:string}>("/api/billing/checkout",{method:"POST",body:JSON.stringify(value)}),
   setupMethod:(provider:"stripe")=>cfAuth.request<{url:string|null}>("/api/billing/payment-methods/setup",{method:"POST",body:JSON.stringify({provider})}),
   portal:()=>cfAuth.request<{url:string|null}>("/api/billing/portal",{method:"POST"}),
   cancelSubscription:(id:string)=>cfAuth.request<{ok:true;status?:string}>(`/api/billing/subscriptions/${encodeURIComponent(id)}/cancel`,{method:"POST"}),
   adminStatus:()=>cfAuth.request<BillingAdminStatus>("/api/billing/admin/status"),
+  retryInvoice:(orderId:string)=>cfAuth.request<{ok:true;invoiced:boolean}>(`/api/billing/admin/invoices/${encodeURIComponent(orderId)}/retry`,{method:"POST"}),
 };

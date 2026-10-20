@@ -60,13 +60,14 @@ export default defineConfig(({ mode }) => ({
           ) {
             return "react";
           }
-          // Post-procesarea premium rămâne separată de motorul 3D și se cere
-          // doar pe dispozitivele capabile. Niciunul nu intră în graful critic.
+          // Motorul 3D și post-procesarea sunt încărcate doar de rutele care
+          // le folosesc. Același chunk evită ciclul ESM postfx <-> three,
+          // care ar opri scena în buildul de producție.
           if (
             id.includes("/node_modules/@react-three/postprocessing/") ||
             id.includes("/node_modules/postprocessing/")
           ) {
-            return "postfx";
+            return "three";
           }
           if (
             id.includes("/node_modules/three/") ||

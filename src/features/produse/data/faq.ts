@@ -122,8 +122,8 @@ export const FAQ: FaqItem[] = [
     group: "billing",
     q: { ro: "Cum pot plăti?", en: "How can I pay?" },
     a: {
-      ro: "Cu cardul, Apple Pay, Google Pay sau Revolut Pay prin Stripe, în lei sau euro. Firmele pot cere proformă și plăti prin transfer bancar. Factura se emite automat și ajunge în contul tău, la secțiunea Facturi.",
-      en: "By card, Apple Pay, Google Pay or Revolut Pay through Stripe, in RON or EUR. Companies can request a proforma and pay by bank transfer. The invoice is issued automatically and appears in your account under Invoices.",
+      ro: "Metodele active pentru comanda ta apar în checkout după autentificare. Firmele pot cere proformă și plăti prin transfer bancar, iar documentele emise apar în cont, la secțiunea Facturi.",
+      en: "The payment methods active for your order appear in checkout after sign-in. Companies can request a pro forma and pay by bank transfer, while issued documents appear in the account under Invoices.",
     },
   },
   {

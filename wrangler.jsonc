@@ -9,7 +9,10 @@
   "workers_dev": true,
   "preview_urls": true,
   "upload_source_maps": true,
-  "send_email": [{ "name": "SURVEY_EMAIL", "destination_address": "avyrontech@gmail.com" }],
+  "send_email": [
+    { "name": "SURVEY_EMAIL", "destination_address": "avyrontech@gmail.com" },
+    { "name": "TRANSACTIONAL_EMAIL", "allowed_sender_addresses": ["contact@avyron.ro"] }
+  ],
   "routes": [
     { "pattern": "surveys.avyron.ro", "custom_domain": true },
     { "pattern": "avyron.ro", "custom_domain": true },
@@ -132,7 +135,10 @@
   "env": {
     "preview": {
       "name": "avyrontech-preview",
-      "send_email": [{ "name": "SURVEY_EMAIL", "destination_address": "avyrontech@gmail.com" }],
+      "send_email": [
+        { "name": "SURVEY_EMAIL", "destination_address": "avyrontech@gmail.com" },
+        { "name": "TRANSACTIONAL_EMAIL", "allowed_sender_addresses": ["contact@avyron.ro"] }
+      ],
       "routes": [],
       // Preview is manual-only: never inherit production schedules or run
       // ingestion/maintenance jobs without an explicit test invocation.

@@ -68,8 +68,9 @@ export type LogoConcept = {
   motion: Motion;
 };
 
-/** Prices in lei for the paid delivery of a self-made logo. Proposed — confirm before launch. */
-export const STUDIO_PRICES: Record<StudioKind, number> = { static: 75, dynamic: 150 };
+/** Standard 2D export is free for an authenticated account; AI export is a paid assisted delivery. */
+export const STUDIO_PRICES: Record<StudioKind, number> = { static: 0, dynamic: 150 };
+export const AI_LOGO_EXPORT_PRICE = 150;
 
 // ------------------------------------------------------------------ sanitising
 

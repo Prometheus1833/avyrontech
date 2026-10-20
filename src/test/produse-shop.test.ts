@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { bucketForType, dayKey, effectiveAccess } from "../../cloudflare/workers/api/src/produseShop";
 import { revolutSignatureValid, stripeSignatureValid } from "../../cloudflare/workers/api/src/billingSignatures";
 import { issueOblioInvoice } from "../../cloudflare/workers/api/src/invoicingOblio";
+import { stripeEventModeMatches, stripePaymentConfirmed } from "../../cloudflare/workers/api/src/billing";
 import { ITEMS } from "@/features/produse/data/items";
 import { PLANS, PROGRESSION } from "@/features/produse/data/plans";
 
@@ -113,6 +114,22 @@ describe("semnătura Stripe", () => {
   });
 });
 
+describe("confirmarea plății Stripe", () => {
+  it("nu livrează abonamente ori plăți asincrone înainte de paid", () => {
+    expect(stripePaymentConfirmed(undefined)).toBe(false);
+    expect(stripePaymentConfirmed("unpaid")).toBe(false);
+    expect(stripePaymentConfirmed("no_payment_required")).toBe(false);
+    expect(stripePaymentConfirmed("paid")).toBe(true);
+  });
+  it("nu amestecă evenimentele test și live", () => {
+    expect(stripeEventModeMatches("sk_test_example",false)).toBe(true);
+    expect(stripeEventModeMatches("sk_test_example",true)).toBe(false);
+    expect(stripeEventModeMatches("sk_live_example",false)).toBe(false);
+    expect(stripeEventModeMatches("sk_live_example",true)).toBe(true);
+    expect(stripeEventModeMatches(undefined,true)).toBe(false);
+  });
+});
+
 describe("semnătura Revolut", () => {
   const secret = "revolut_webhook_test";
   const payload = JSON.stringify({ event: "ORDER_COMPLETED", order_id: "order-1" });
@@ -134,16 +151,31 @@ describe("facturarea Oblio", () => {
   const input = { orderId:"order-test", buyer:{name:"Client Test",email:"client@example.com"}, lines:[{name:"Abonament AVY",code:"sub-avy",quantity:1,unitPriceMinor:27000}], currency:"RON", issuedAt:Date.UTC(2026,8,24) };
   it("nu trimite nimic fără configurare completă", async () => {
     const fetchMock=vi.fn();vi.stubGlobal("fetch",fetchMock);
-    expect(await issueOblioInvoice({} as never,input)).toEqual({issued:false,reason:"unconfigured"});expect(fetchMock).not.toHaveBeenCalled();
+    expect(await issueOblioInvoice({} as never,input)).toEqual({issued:false,reason:"approval_required"});expect(fetchMock).not.toHaveBeenCalled();
+  });
+  it("nu emite cu secretele complete dacă aprobarea nu a fost activată explicit", async () => {
+    const fetchMock=vi.fn();vi.stubGlobal("fetch",fetchMock);
+    expect(await issueOblioInvoice({OBLIO_CLIENT_ID:"client",OBLIO_CLIENT_SECRET:"secret",OBLIO_CIF:"RO123",OBLIO_SERIES:"AVY",OBLIO_VAT_NAME:"Normala",OBLIO_VAT_PERCENTAGE:"21"} as never,input)).toEqual({issued:false,reason:"approval_required"});
+    expect(fetchMock).not.toHaveBeenCalled();
   });
   it("folosește OAuth, idempotencyKey și emite numai cu răspuns valid", async () => {
     const fetchMock=vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({access_token:"token"}),{status:200,headers:{"content-type":"application/json"}}))
       .mockResolvedValueOnce(new Response(JSON.stringify({data:{seriesName:"AVY",number:"1042",link:"https://www.oblio.eu/factura.pdf"}}),{status:200,headers:{"content-type":"application/json"}}));
     vi.stubGlobal("fetch",fetchMock);
-    const env={OBLIO_CLIENT_ID:"client",OBLIO_CLIENT_SECRET:"secret",OBLIO_CIF:"RO123",OBLIO_SERIES:"AVY",OBLIO_VAT_NAME:"Normala",OBLIO_VAT_PERCENTAGE:"21"};
+    const env={OBLIO_CLIENT_ID:"client",OBLIO_CLIENT_SECRET:"secret",OBLIO_CIF:"RO123",OBLIO_SERIES:"AVY",OBLIO_VAT_NAME:"Normala",OBLIO_VAT_PERCENTAGE:"21",OBLIO_AUTO_ISSUE_ENABLED:"true"};
     const result=await issueOblioInvoice(env as never,input);expect(result).toMatchObject({issued:true,series:"AVY",number:"1042"});
     expect(fetchMock.mock.calls[0][0]).toBe("https://www.oblio.eu/api/authorize/token");
-    const invoiceBody=JSON.parse(String(fetchMock.mock.calls[1][1]?.body));expect(invoiceBody).toMatchObject({cif:"RO123",orderNumber:"order-test",idempotencyKey:"avyron-order-test",sendEmail:true,products:[{code:"sub-avy",price:270,vatPercentage:21,vatIncluded:true}]});
+    const invoiceBody=JSON.parse(String(fetchMock.mock.calls[1][1]?.body));expect(invoiceBody).toMatchObject({cif:"RO123",orderNumber:"order-test",idempotencyKey:"avyron-order-test",sendEmail:false,products:[{code:"sub-avy",price:270,vatPercentage:21,vatIncluded:true}]});
+  });
+  it("păstrează totalul plătit printr-o linie de reducere valorică", async () => {
+    const fetchMock=vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({access_token:"token"}),{status:200}))
+      .mockResolvedValueOnce(new Response(JSON.stringify({data:{seriesName:"AVY",number:"1043"}}),{status:200}));
+    vi.stubGlobal("fetch",fetchMock);
+    const env={OBLIO_CLIENT_ID:"client",OBLIO_CLIENT_SECRET:"secret",OBLIO_CIF:"RO123",OBLIO_SERIES:"AVY",OBLIO_VAT_NAME:"Normala",OBLIO_VAT_PERCENTAGE:"21",OBLIO_AUTO_ISSUE_ENABLED:"true"};
+    await issueOblioInvoice(env as never,{...input,discountMinor:5400,discountLabel:"Reducere ANUALAVY20"});
+    const products=JSON.parse(String(fetchMock.mock.calls[1][1]?.body)).products;
+    expect(products[1]).toEqual({name:"Reducere ANUALAVY20",discountType:"valoric",discount:54,discountAllAbove:1});
   });
 });

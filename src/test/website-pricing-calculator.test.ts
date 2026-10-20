@@ -17,18 +17,18 @@ describe("website pricing and estimator", () => {
     const website = getService("premium-website");
 
     expect(DEFAULT_DISPLAY_CURRENCY).toBe("RON");
-    expect(website.priceRon).toBe(1150);
-    expect(website.priceEur).toBe(220);
-    expect(WEBSITE_BASE_PRICE_RON).toBe(1150);
-    expect(WEBSITE_BASE_PRICE_EUR).toBe(220);
-    expect(fixedWebsiteEur(1150)).toBe(220);
+    expect(website.priceRon).toBe(1450);
+    expect(website.priceEur).toBe(280);
+    expect(WEBSITE_BASE_PRICE_RON).toBe(1450);
+    expect(WEBSITE_BASE_PRICE_EUR).toBe(280);
+    expect(fixedWebsiteEur(1450)).toBe(280);
   });
 
-  it("uses the 1,150 RON package as the minimum estimate", () => {
+  it("uses the 1,450 RON package as the minimum estimate", () => {
     expect(calculateWebsiteEstimate(DEFAULT_WEBSITE_ESTIMATOR_SELECTION)).toEqual({
-      lowRon: 1150,
-      highRon: 1250,
-      subtotalRon: 1150,
+      lowRon: 1450,
+      highRon: 1580,
+      subtotalRon: 1450,
       discountRon: 0,
       daysMin: 3,
       daysMax: 5,
@@ -43,8 +43,8 @@ describe("website pricing and estimator", () => {
       addons: ["bilingual", "booking", "catalog", "motion", "integrations"],
     });
 
-    expect(result.lowRon).toBe(4_150);
-    expect(result.highRon).toBe(4_730);
+    expect(result.lowRon).toBe(4_450);
+    expect(result.highRon).toBe(5_070);
     expect(result.daysMin).toBe(16);
     expect(result.daysMax).toBe(18);
     expect(result.profile).toBe("signature");
@@ -59,9 +59,9 @@ describe("website pricing and estimator", () => {
       discounts: ["avyron-credit", "nonprofit"],
     });
 
-    expect(result.subtotalRon).toBe(1_450);
-    expect(result.discountRon).toBe(290);
-    expect(result.lowRon).toBe(1_160);
+    expect(result.subtotalRon).toBe(1_750);
+    expect(result.discountRon).toBe(350);
+    expect(result.lowRon).toBe(1_400);
   });
 
   it("places the calculator immediately before the portfolio subsection", () => {

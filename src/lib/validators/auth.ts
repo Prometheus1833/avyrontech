@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const loginSchema = z.object({
-  identifier: z.string().trim().min(2, { message: "Introdu emailul sau username-ul" }).max(255),
+  identifier: z.string().trim().min(2, { message: "Introdu emailul, username-ul sau telefonul" }).max(255),
   password: z.string().min(8, { message: "Minim 8 caractere" }).max(128),
 });
 
@@ -14,7 +14,16 @@ export const registerSchema = z.object({
     .regex(/[A-Z]/, { message: "Cel puțin o literă mare" })
     .regex(/[0-9]/, { message: "Cel puțin o cifră" }),
   displayName: z.string().trim().min(2, { message: "Minim 2 caractere" }).max(100),
-  entityType: z.enum(["individual", "srl", "pfa", "ii", "other"]),
+  entityType: z.enum(["individual", "srl", "pfa", "ii", "startup", "public_institution", "avyron_partner", "other"]),
+  organizationName: z.string().trim().max(160),
+  taxId: z.string().trim().max(40),
+}).superRefine((data, ctx) => {
+  if (data.entityType !== "individual" && data.organizationName.length < 2) {
+    ctx.addIssue({ code: "custom", path: ["organizationName"], message: "organization_name_required" });
+  }
+  if (["srl", "pfa", "ii"].includes(data.entityType) && !/^(RO)?[0-9]{2,10}$/i.test(data.taxId)) {
+    ctx.addIssue({ code: "custom", path: ["taxId"], message: "invalid_tax_id" });
+  }
 });
 
 export const forgotSchema = z.object({

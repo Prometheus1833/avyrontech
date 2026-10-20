@@ -88,6 +88,8 @@ export const SPA_ONLY_PREFIXES = [
   "/s",
   "/auth",
   "/autentificare",
+  "/staff",
+  "/admin",
   "/forgot-password",
   "/reset-password",
   "/profil",

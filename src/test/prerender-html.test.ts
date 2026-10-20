@@ -208,7 +208,7 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     }
     expect(ro).toContain("Drepturile consumatorilor");
     expect(en).toContain("Consumer rights");
-    expect(ro).toContain("https://anpc.ro/sal/");
+    expect(ro).toContain("https://reclamatiisal.anpc.ro/");
     expect(ro).not.toContain("ec.europa.eu/consumers/odr");
   });
 
@@ -282,7 +282,7 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
   it("keeps the approved Romanian hero copy and removes the rejected location-led labels", () => {
     const body = read("/").split("</head>")[1];
 
-    expect(body).toContain("Site-uri care aduc clienți, nu doar vizite");
+    expect(body).toContain("Prezență digitală care lucrează pentru tine");
     expect(body).toContain("Soluții digitale");
     expect(body).toContain("care extind online activitatea");
     expect(body).toContain("automatizând procesele.");
@@ -315,7 +315,7 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     expect(h).not.toContain("challenges.cloudflare.com/turnstile");
     expect(preloads).toHaveLength(2);
     expect(preloads.every((href) => /\/(react|router)-/.test(href))).toBe(true);
-    expect(html).toMatch(/<img[^>]*examples-section-bg[^>]*loading="lazy"/);
+    expect(html).not.toContain("examples-section-bg");
   });
 
   it("keeps Product/Service schema off non-product pages", () => {

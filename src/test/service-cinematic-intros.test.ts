@@ -30,13 +30,14 @@ describe("service cinematic intros", () => {
     expect(SERVICE_INTRO_MAX_MS).toBeLessThanOrEqual(3000);
   });
 
-  it("retains the specialized logo and blog intros", () => {
+  it("shows the logo immediately while retaining the other specialized intros", () => {
     const logoPage = readFileSync(resolve(__dirname, "../pages/services/LogoDinamic3DPage.tsx"), "utf8");
     const blogPage = readFileSync(resolve(__dirname, "../pages/services/BlogProfessional.tsx"), "utf8");
     const servicePage = readFileSync(resolve(__dirname, "../pages/services/ServicePage.tsx"), "utf8");
     const qaPage = readFileSync(resolve(__dirname, "../pages/services/QaTestingPage.tsx"), "utf8");
 
-    expect(logoPage).toContain("<LogoLoader");
+    expect(logoPage).not.toContain("<LogoLoader");
+    expect(logoPage).toContain("heroDelay={0}");
     expect(blogPage).toContain("<BlogPreloader");
     expect(servicePage).toContain("<ServiceCinematicIntro");
     expect(qaPage).toContain('service="qa-testing"');

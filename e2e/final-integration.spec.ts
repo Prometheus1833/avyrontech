@@ -39,7 +39,7 @@ test("public pages remain indexable and fluid on mobile", async ({ page }) => {
   }
 
   await page.goto("/servicii/website-prezentare-profesional", { waitUntil: "domcontentloaded" });
-  await expect(page.getByTestId("product-hero-facts")).toContainText(/1[.\s]?150 RON/, { timeout: 10_000 });
+  await expect(page.getByTestId("product-hero-facts")).toContainText(/1[.\s]?450 RON/, { timeout: 10_000 });
   await expect(page.getByRole("heading", { name: "Alege structura, funcțiile și avantajele" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Site-uri create de noi" })).toBeVisible();
   const portfolioLinks = new Map([

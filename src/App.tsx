@@ -59,7 +59,7 @@ const surveyHost = typeof window !== "undefined" && window.location.hostname ===
 const DeferredNewsletterPrompt = () => {
   const { pathname } = useLocation();
   const [ready, setReady] = useState(false);
-  const excluded = surveyHost || pathname === "/surveys" || pathname.startsWith("/s/") || /^\/(auth|autentificare|profil|intern|finance|gdpr|en\/privacy|termeni|en\/terms|politica-cookies|en\/cookie-policy|unsubscribe|403|500|offline|mentenanta|exemple|examples|demo)(\/|$)/.test(pathname);
+  const excluded = surveyHost || pathname === "/surveys" || pathname.startsWith("/s/") || /^\/(auth|autentificare|staff|admin|profil|intern|finance|gdpr|en\/privacy|termeni|en\/terms|politica-cookies|en\/cookie-policy|unsubscribe|403|500|offline|mentenanta|exemple|examples|demo)(\/|$)/.test(pathname);
   useEffect(() => {
     setReady(false);
     if (excluded) return;
@@ -75,7 +75,7 @@ const AvyLauncher = () => {
   const { pathname } = useLocation();
   const [ready, setReady] = useState(false);
   const [openOnLoad, setOpenOnLoad] = useState(false);
-  const excluded = surveyHost || pathname === "/surveys" || pathname.startsWith("/s/") || /^\/(auth|autentificare|profil|intern|finance|exemple|examples|demo|forgot-password|reset-password|403|500|offline|mentenanta|unsubscribe)/.test(pathname);
+  const excluded = surveyHost || pathname === "/surveys" || pathname.startsWith("/s/") || /^\/(auth|autentificare|staff|admin|profil|intern|finance|exemple|examples|demo|forgot-password|reset-password|403|500|offline|mentenanta|unsubscribe)/.test(pathname);
   useEffect(() => {
     if (excluded) return;
     const timer = window.setTimeout(() => setReady(true), 1800);
@@ -278,6 +278,8 @@ const App = () => (
 
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/autentificare" element={<Auth />} />
+                <Route path="/staff" element={<Auth />} />
+                <Route path="/admin" element={<Navigate to="/staff" replace />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route

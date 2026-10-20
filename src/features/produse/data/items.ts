@@ -764,12 +764,12 @@ export const ITEMS: CatalogItem[] = [
       en: "A complete footer: link columns, newsletter, social, legal details and a huge slogan filling the width.",
     },
     desc: {
-      ro: "Include câmpurile obligatorii pentru România (ANPC, SOL/SAL, date firmă) ca sloturi, deci nu le uiți la lansare.",
-      en: "Includes the legally required slots for Romania (ANPC, SOL/SAL, company details), so you won't forget them at launch.",
+      ro: "Include spații pentru informațiile de contact și protecția consumatorului din România (ANPC, SAL, date firmă).",
+      en: "Includes slots for Romanian company details and consumer-protection links (ANPC, SAL).",
     },
     features: {
-      ro: ["Coloane din JSON", "Newsletter cu validare", "Sloturi legale RO (ANPC, SOL)", "Slogan fluid pe lățime"],
-      en: ["Columns from JSON", "Newsletter with validation", "Romanian legal slots (ANPC, SOL)", "Fluid full-width slogan"],
+      ro: ["Coloane din JSON", "Newsletter cu validare", "Informații RO (ANPC, SAL)", "Slogan fluid pe lățime"],
+      en: ["Columns from JSON", "Newsletter with validation", "Romanian links (ANPC, SAL)", "Fluid full-width slogan"],
     },
     keywords: { ro: ["subsol", "footer", "newsletter", "anpc"], en: ["footer", "mega footer", "newsletter footer"] },
     demo: "footer-mega",
@@ -1824,8 +1824,8 @@ export const ITEMS: CatalogItem[] = [
       en: "A storefront for 10–60 products: listing, filters, product page, local cart and an order form.",
     },
     desc: {
-      ro: "Gândit pentru producători mici și magazine de cartier care vând prin WhatsApp și transfer, nu prin card: comanda pleacă pe e-mail și WhatsApp, cu lista completă. Dacă mai târziu vrei plată online, structura e pregătită pentru Stripe.",
-      en: "Built for small makers and neighbourhood shops that sell over WhatsApp and bank transfer, not cards: the order goes out by email and WhatsApp with the full list. If you later want online payment, the structure is ready for Stripe.",
+      ro: "Gândit pentru producători mici și magazine de cartier care vând prin WhatsApp și transfer, nu prin card: comanda pleacă pe e-mail și WhatsApp, cu lista completă. Dacă mai târziu vrei plată online, structura poate fi conectată la un procesator agreat.",
+      en: "Built for small makers and neighbourhood shops that sell over WhatsApp and bank transfer, not cards: the order goes out by email and WhatsApp with the full list. If you later need online payment, the structure can connect to an agreed processor.",
     },
     features: {
       ro: ["Listă cu filtre pe categorie și preț", "Pagină de produs cu galerie și variante", "Coș în browser, fără cont", "Comandă pe e-mail și WhatsApp", "JSON-LD Product pe fiecare pagină"],
@@ -2185,9 +2185,9 @@ export const ITEMS: CatalogItem[] = [
     hue: 100,
     weightKb: 0.8,
     released: "2026-09-26",
-    name: { ro: "Bara ANPC și SOL pentru subsol", en: "Consumer-protection footer bar (RO)" },
+    name: { ro: "Bara ANPC și SAL pentru subsol", en: "Consumer-protection footer bar (RO)" },
     short: {
-      ro: "Blocul de conformitate din subsolul magazinelor românești: ANPC, SAL, SOL și datele firmei.",
+      ro: "Blocul informativ din subsolul magazinelor românești: ANPC, SAL și datele firmei.",
       en: "The compliance block Romanian shops need in the footer: consumer-protection links and company details.",
     },
     desc: {
@@ -2195,11 +2195,11 @@ export const ITEMS: CatalogItem[] = [
       en: "The links are the official public ones and each carries text that says what it is — not two coloured banners nobody understands. Company details go in as a single object, so you write them once and reuse them across the site.",
     },
     features: {
-      ro: ["Legături ANPC, SAL și SOL, cu `rel=\"nofollow\"`", "Datele firmei într-un singur obiect", "Contact ca `mailto:` și `tel:` funcționale", "Marcat ca secțiune cu etichetă, pentru cititoare de ecran"],
+      ro: ["Legături ANPC și SAL, cu `rel=\"nofollow\"`", "Datele firmei într-un singur obiect", "Contact ca `mailto:` și `tel:` funcționale", "Marcat ca secțiune cu etichetă, pentru cititoare de ecran"],
       en: ["Consumer-protection links with `rel=\"nofollow\"`", "Company details in a single object", "Working `mailto:` and `tel:` contacts", "Labelled section for screen readers"],
     },
     keywords: {
-      ro: ["anpc", "sol", "sal", "subsol magazin", "conformitate", "protectia consumatorului", "date firma subsol"],
+      ro: ["anpc", "sal", "subsol magazin", "conformitate", "protectia consumatorului", "date firma subsol"],
       en: ["consumer protection", "romanian compliance", "shop footer", "company details footer", "anpc"],
     },
     demo: "anpc-bar",

@@ -55,7 +55,7 @@ export const LAUNCH_CHECKLIST: ChecklistGroup[] = [
       "Termeni și condiții publicate",
       "Politica de confidențialitate (GDPR) și politica de cookies",
       "Banner de consimțământ cu refuz real, înainte de scripturi",
-      "Date de firmă, ANPC și SOL/SAL în subsol",
+      "Date de firmă, ANPC și SAL în subsol",
       "Informare privind dreptul de retragere (pentru vânzări online)",
     ],
   },

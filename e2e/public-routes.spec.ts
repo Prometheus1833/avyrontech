@@ -39,10 +39,10 @@ test.describe("public SEO routes", () => {
     await page.goto("/servicii/website-prezentare-profesional");
     const switcher = page.getByTestId("currency-switch").first();
     await expect(switcher.getByRole("button", { name: "Schimbă moneda (activă: RON)" })).toBeVisible();
-    await expect(page.getByTestId("product-hero-facts")).toContainText(/1[.\s]?150 RON/);
+    await expect(page.getByTestId("product-hero-facts")).toContainText(/1[.\s]?450 RON/);
     await switcher.getByRole("button", { name: "Schimbă moneda (activă: RON)" }).click();
     await expect(switcher.getByRole("button", { name: "Schimbă moneda (activă: EUR)" })).toBeVisible();
-    await expect(page.getByTestId("product-hero-facts")).toContainText(/220 €/);
+    await expect(page.getByTestId("product-hero-facts")).toContainText(/280 €/);
     await page.reload();
     await expect(switcher.getByRole("button", { name: "Schimbă moneda (activă: EUR)" })).toBeVisible();
   });
@@ -67,7 +67,7 @@ test.describe("public SEO routes", () => {
   test("homepage displays the approved hero and services wording", async ({ page }) => {
     await page.goto("/#cta");
 
-    await expect(page.getByText("Site-uri care aduc clienți, nu doar vizite", { exact: true })).toBeVisible();
+    await expect(page.getByText("Prezență digitală care lucrează pentru tine", { exact: true })).toBeVisible();
     await expect(
       page.getByRole("heading", {
         level: 1,
@@ -79,6 +79,13 @@ test.describe("public SEO routes", () => {
     const serviceList = page.getByTestId("service-list");
     await expect(serviceList.getByRole("link").first()).toBeVisible();
     await expect(serviceList).toHaveCSS("display", "block");
+    await expect(serviceList.getByRole("link", { name: /Automatizări și AI/ })).toHaveCount(0);
+    const allServices = serviceList.getByRole("button", { name: "Vezi toate serviciile" });
+    await expect(allServices).toHaveAttribute("aria-expanded", "false");
+    await allServices.click();
+    await expect(serviceList.getByRole("link", { name: /Automatizări și AI/ })).toBeVisible();
+    await expect(serviceList.getByRole("link", { name: /Audit Website/ })).toBeVisible();
+    await expect(serviceList.getByRole("link", { name: "Vezi detalii servicii" })).toHaveAttribute("href", "/servicii");
 
     const desktopNav = page.locator("nav ul");
     await expect(desktopNav.locator("li")).toHaveText(["Blog", "Servicii", "Produse", "Despre noi", "Proces"]);
@@ -112,6 +119,79 @@ test.describe("public SEO routes", () => {
     expect(cardsBox?.y).toBeLessThan(ctaBox?.y ?? 0);
   });
 
+  test("homepage turns the selected field into website, app and AI device stages", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "avyron-cookie-consent-v2",
+        JSON.stringify({ necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12" }),
+      );
+    });
+    await page.goto("/");
+    const examples = page.locator("#exemple");
+    const showcase = examples.getByTestId("industry-device-showcase");
+    await examples.scrollIntoViewIfNeeded();
+    await expect(showcase).toBeAttached();
+    await showcase.scrollIntoViewIfNeeded();
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.getByRole("heading", { name: "Alege domeniul tău și vezi cum ar arăta." })).toHaveCount(1);
+    await showcase.getByRole("button", { name: "Website", exact: true }).click();
+    await expect(showcase).toHaveAttribute("data-active-stage", "laptop");
+    await examples.getByRole("button", { name: "Domenii", exact: true }).click();
+    await examples.getByRole("button", { name: /Restaurante & cafenele/ }).click();
+    await expect(showcase).toHaveAttribute("data-domain", "resto");
+    await expect(showcase.getByRole("heading", { name: "O masă bună. O seară de ținut minte.", exact: true })).toBeVisible();
+    await expect(showcase.locator(".domain-notes li")).toHaveCount(6);
+    // The former standalone domain card must not survive outside the scroll scene.
+    await expect(examples.locator("article")).toHaveCount(0);
+    await expect(showcase.getByRole("link", { name: "Serviciul Website" })).toHaveAttribute("href", "/servicii/website-prezentare-profesional");
+
+    await showcase.getByRole("button", { name: "Aplicație", exact: true }).click();
+    await expect(showcase).toHaveAttribute("data-active-stage", "phone");
+    await expect(showcase.getByRole("link", { name: "Aplicații și platforme" })).toHaveAttribute("href", "/servicii/aplicatii-si-platforme");
+    const stickyFrame = showcase.locator(":scope > div").first();
+    await expect.poll(async () => stickyFrame.evaluate((element) => {
+      const frame = element.getBoundingClientRect();
+      return frame.top >= 0 && frame.top <= 81 && frame.bottom >= window.innerHeight - 1;
+    })).toBe(true);
+
+    await showcase.getByRole("button", { name: "Automatizări", exact: true }).click();
+    await expect(showcase).toHaveAttribute("data-active-stage", "tablet");
+    await expect(showcase.getByRole("link", { name: "Automatizări și AI" })).toHaveAttribute("href", "/servicii/automatizari-si-ai");
+
+    await page.goto("/en");
+    const englishExamples = page.locator("#exemple");
+    const englishShowcase = englishExamples.getByTestId("industry-device-showcase");
+    await englishShowcase.scrollIntoViewIfNeeded();
+    await expect(page.getByRole("heading", { name: "Pick your industry and see how it would look." })).toHaveCount(1);
+    await expect(englishShowcase.getByRole("button", { name: "Automations", exact: true })).toBeVisible();
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/#domenii");
+    const mobileShowcase = page.getByTestId("industry-device-showcase");
+    await expect(mobileShowcase).toBeInViewport();
+    await mobileShowcase.getByRole("button", { name: "Automatizări", exact: true }).click();
+    await expect(mobileShowcase).toHaveAttribute("data-active-stage", "tablet");
+    await expect(mobileShowcase.getByRole("button", { name: "ChatBot AI web și WhatsApp" })).toBeInViewport();
+    const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(horizontalOverflow).toBeLessThanOrEqual(1);
+  });
+
+  test("homepage Logo Studio reveals four standard concepts and protects AI generation", async ({ page }) => {
+    await page.goto("/#logo-studio");
+    const studio = page.locator("#logo-studio");
+    await expect(studio.getByRole("heading", { name: /Un nume\. Patru direcții/ })).toBeVisible();
+    await studio.getByLabel("Numele brandului *").fill("Nord Atelier");
+    await studio.getByLabel("Inițiale / semn").fill("NA · arc");
+    await studio.getByRole("button", { name: "Vezi logo-ul tău", exact: true }).click();
+    await expect(studio.getByTestId("landing-logo-results")).toContainText("4 variante standard");
+    await expect(studio.getByTestId("landing-logo-option")).toHaveCount(4);
+    await studio.getByRole("button", { name: "Vezi logo-ul cu AI", exact: true }).click();
+    await expect(studio.getByText("AI-ul este disponibil în contul gratuit", { exact: true })).toBeVisible();
+    await expect(studio).not.toContainText("150 lei");
+    await expect(studio.getByRole("link", { name: /Dincolo de 2D/ })).toHaveAttribute("href", "/servicii/creare-logo-3d-dinamic-cinematic");
+  });
+
   test("About stays indexable and legacy Portfolio routes consolidate into the service portfolio", async ({ page }) => {
     await page.goto("/despre-noi");
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro/despre-noi");
@@ -121,6 +201,10 @@ test.describe("public SEO routes", () => {
     await expect(page.getByText("Cybersecurity", { exact: true })).toBeVisible();
     await expect(page.getByText("QA Testing", { exact: true })).toBeVisible();
     await expect(page.getByText("Vibe Development", { exact: true })).toBeVisible();
+    await expect(page.locator("header").getByRole("link", { name: "Bibliotecă", exact: true })).toHaveAttribute("href", "/biblioteca");
+    await expect(page.getByRole("link", { name: "Vezi biblioteca", exact: true })).toHaveAttribute("href", "/biblioteca");
+    await expect(page.locator('a[href="/portofoliu"]')).toHaveCount(0);
+    await expect(page.locator("footer").getByRole("link", { name: "Vezi portofoliul" })).toHaveAttribute("href", "/servicii/website-prezentare-profesional#portofoliu");
 
     await page.goto("/portofoliu");
     await expect(page).toHaveURL(/\/servicii\/website-prezentare-profesional#portofoliu$/);
@@ -140,6 +224,9 @@ test.describe("public SEO routes", () => {
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     const footer = page.locator("footer");
     await expect(footer).toBeVisible();
+    const primaryRow = footer.getByTestId("footer-primary-row");
+    const primaryRowBox = await primaryRow.boundingBox();
+    expect(primaryRowBox?.width).toBeLessThanOrEqual(1024);
     await expect(footer.getByRole("link", { name: /Exemplu Gratuit.*Personalizat/ })).toBeVisible();
     const footerNavLinks = footer.locator("nav a");
     await expect(footerNavLinks).toHaveCount(8);
@@ -149,13 +236,87 @@ test.describe("public SEO routes", () => {
     await expect(termsLink).toHaveAttribute("href", "/termeni");
     const legalLabels = await footer.locator("nav a, nav button").allTextContents();
     expect(legalLabels.indexOf("Setări cookie")).toBeLessThan(legalLabels.indexOf("Termeni de utilizare"));
-    await expect(footer.getByRole("link", { name: /ANPC/ })).toHaveAttribute("href", "https://anpc.ro/ce-este-sal/");
+    await expect(footer.getByRole("link", { name: /ANPC/ })).toHaveAttribute("href", "https://reclamatiisal.anpc.ro/");
+    await expect(footer.locator('img[src="/anpc-sal-pictograma.png"]')).toBeVisible();
+    await expect(footer.getByRole("link", { name: "E-mail AVYRON" })).toHaveAttribute("href", "mailto:contact@avyron.ro");
+    await expect(footer.getByRole("link", { name: "Conectează-te / Înregistrează-te" })).toHaveAttribute("href", "/auth");
     await expect(footer.getByText("Instagram", { exact: true })).toHaveCount(0);
     await expect(footer.getByText("Facebook", { exact: true })).toHaveCount(0);
     await expect(footer.getByText("TikTok", { exact: true })).toHaveCount(0);
     await expect(footer.getByText("LinkedIn", { exact: true })).toHaveCount(0);
     await expect(footer.getByText("Proces", { exact: true })).toHaveCount(0);
     await expect(footer.getByText("Întrebări frecvente", { exact: true })).toHaveCount(0);
+  });
+
+  test("footer legal actions stay in their established order on one row", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
+      necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12",
+    })));
+    for (const width of [320, 390, 1280]) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto("/");
+      const row = page.getByTestId("footer-legal-row");
+      await row.scrollIntoViewIfNeeded();
+      const actions = row.locator("a, button");
+      await expect(actions).toHaveCount(3);
+      expect((await actions.allTextContents()).map((label) => label.trim())).toEqual([
+        "Confidențialitate & GDPR",
+        "Setări cookie",
+        "Termeni de utilizare",
+      ]);
+      const boxes = await actions.evaluateAll((elements) => elements.map((element) => {
+        const { top, right, left } = element.getBoundingClientRect();
+        return { top, right, left };
+      }));
+      expect(boxes.every((box) => Math.abs(box.top - boxes[0].top) < 1)).toBe(true);
+      expect(boxes[0].right).toBeLessThanOrEqual(boxes[1].left + 1);
+      expect(boxes[1].right).toBeLessThanOrEqual(boxes[2].left + 1);
+      expect(await row.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+    }
+  });
+
+  test("footer actions adapt to the page while the SAL and account row remains accessible on mobile", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
+      necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12",
+    })));
+    for (const [path, primary] of [["/", /Exemplu Gratuit/], ["/servicii", /Cere ofertă personalizată/], ["/servicii/website-prezentare-profesional", /Cere ofertă pentru acest serviciu/], ["/cariere", /Descoperă colaborarea/], ["/termeni", /Ai o întrebare/]] as const) {
+      await page.goto(path);
+      const footer = page.locator("footer");
+      await footer.scrollIntoViewIfNeeded();
+      const actions = footer.getByTestId("footer-contact-actions").locator("a");
+      await expect(actions).toHaveCount(4);
+      await expect(actions.first()).toHaveAttribute("href", "https://wa.me/40734605055");
+      await expect(actions.nth(1)).toContainText(primary);
+      await expect(actions.nth(2)).toHaveAttribute("href", "tel:+40734605055");
+      if (path === "/") {
+        await expect(actions.last()).toHaveAttribute("href", "mailto:contact@avyron.ro");
+        const positions = await actions.evaluateAll((links) => links.map((link) => {
+          const box = link.getBoundingClientRect();
+          return { centerY: box.top + box.height / 2, width: box.width };
+        }));
+        expect(Math.max(...positions.map((item) => item.centerY)) - Math.min(...positions.map((item) => item.centerY))).toBeLessThan(3);
+        expect(positions[3].width, "the red email control stays a small icon in the contact line").toBeLessThanOrEqual(40);
+      }
+      else await expect(actions.last()).not.toHaveAttribute("href", /^mailto:/);
+      const utility = footer.getByTestId("footer-utility-row").locator("a");
+      await expect(utility).toHaveCount(2);
+      await utility.last().scrollIntoViewIfNeeded();
+      const left = (await utility.first().boundingBox())!;
+      const right = (await utility.last().boundingBox())!;
+      expect(Math.abs(left.y - right.y)).toBeLessThan(2);
+      expect(left.x + left.width).toBeLessThanOrEqual(right.x);
+      expect(right.x + right.width).toBeLessThanOrEqual(390);
+      const clickable = await utility.last().evaluate((element) => {
+        const bounds = element.getBoundingClientRect();
+        return element.contains(document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2));
+      });
+      expect(clickable, `${path}: account button must not be covered by the floating contact bar`).toBe(true);
+    }
+    await page.goto("/cariere");
+    await page.locator("footer").getByRole("link", { name: /Descoperă colaborarea/ }).click();
+    await expect(page).toHaveURL(/#candidatura$/);
+    await expect(page.locator("#candidatura")).toBeInViewport();
   });
 
   test("cookie preference switches stay correctly aligned on mobile", async ({ page }) => {
@@ -220,7 +381,7 @@ test.describe("public SEO routes", () => {
     await expect(page.locator('link[hreflang="en"]')).toHaveAttribute("href", "https://avyron.ro/en/terms");
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /index, follow/);
     await expect(page.getByRole("heading", { level: 2, name: "Drepturile consumatorilor" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "ANPC · SAL" })).toHaveAttribute("href", "https://anpc.ro/sal/");
+    await expect(page.getByRole("link", { name: "ANPC · SAL" })).toHaveAttribute("href", "https://reclamatiisal.anpc.ro/");
     expect(await page.locator("#ld-graph").textContent()).toContain("WebPage");
 
     await page.goto("/en/terms");
@@ -300,6 +461,23 @@ test.describe("public SEO routes", () => {
     expect(graph).toContain("BlogPosting");
     expect(graph).not.toContain("#importanta-website-afacere-2026");
     await expect(page.getByRole("heading", { level: 2, name: "Ce face un website util, nu doar frumos" })).toBeVisible();
+  });
+
+  test("blog landing uses a balanced editorial hierarchy", async ({ page }) => {
+    await page.goto("/blog");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("produse digitale");
+    await expect(page.locator('[data-blog-card="lead"]')).toHaveCount(1);
+    await expect(page.locator('[data-blog-card="compact"]')).toHaveCount(2);
+    expect(await page.locator('[data-blog-card="standard"]').count()).toBeGreaterThanOrEqual(3);
+    await expect(page.getByTestId("blog-filter-console")).toBeVisible();
+  });
+
+  test("public service pages do not expose internal billing providers", async ({ page }) => {
+    await page.goto("/servicii");
+    await expect(page.getByText("Modalități de plată flexibile")).toBeVisible();
+    const publicCopy = await page.locator("body").innerText();
+    expect(publicCopy).not.toMatch(/Oblio|Stripe|Revolut Pay/i);
+    expect(publicCopy).toContain("Procesatorul este afișat numai în checkout");
   });
 
   test("complete English legal and blog variants are indexable", async ({ page }) => {
@@ -426,6 +604,53 @@ test.describe("public SEO routes", () => {
 });
 
 test.describe("forms and authentication", () => {
+  test("mobile registration keeps the portal anchored and submits the chosen account category in English", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
+      necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12",
+    })));
+    let submitted: Record<string, unknown> | undefined;
+    await page.route("**/api/auth/signup", async (route) => {
+      submitted = route.request().postDataJSON() as Record<string, unknown>;
+      await route.fulfill({ status: 202, json: { ok: true, verification_required: true, verification_email_sent: true } });
+    });
+    await page.goto("/auth");
+    await page.evaluate(() => document.fonts.ready);
+    await expect.poll(() => page.locator(".auth-topbar").evaluate((element) => element.getBoundingClientRect().top)).toBe(0);
+    const ringCenter = () => page.locator(".auth-portal").evaluate((element) => {
+      const stage = element.parentElement!.getBoundingClientRect();
+      return stage.top + window.scrollY + Number.parseFloat(getComputedStyle(element).top);
+    });
+    const before = await ringCenter();
+    await page.getByRole("tab", { name: "Înregistrează-te" }).click();
+    await expect(page.locator("#rg-entity")).toBeVisible();
+    await expect.poll(ringCenter).toBeGreaterThan(before - 2);
+    expect(await ringCenter()).toBeLessThan(before + 2);
+
+    await page.getByRole("button", { name: "Schimbă limba (română activă)" }).click();
+    await page.getByRole("option", { name: "en" }).click();
+    await expect(page.getByRole("heading", { name: "Start here" })).toBeVisible();
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await page.locator("#rg-entity").click();
+    await page.getByRole("option", { name: "Avyron Partner" }).click();
+    await expect(page.getByLabel("Partner / brand name")).toBeVisible();
+    await expect(page.getByText(/team administrator grants staff access separately/)).toBeVisible();
+    await page.locator("#rg-entity").click();
+    await page.getByRole("option", { name: "LLC" }).click();
+    await expect(page.getByLabel("Registered company name")).toBeVisible();
+    await expect(page.getByLabel("Tax ID / registration number")).toBeVisible();
+    await page.getByLabel("Contact person").fill("Ana Popescu");
+    await page.getByLabel("Registered company name").fill("Atelier Nord SRL");
+    await page.getByLabel("Tax ID / registration number").fill("RO12345678");
+    await page.locator("#rg-email").fill("ana@example.com");
+    await page.locator("#rg-pass").fill("SecurePass123!");
+    await page.getByRole("button", { name: "Sign up" }).click();
+    await expect.poll(() => submitted?.entityType).toBe("srl");
+    expect(submitted).toMatchObject({ organizationName: "Atelier Nord SRL", taxId: "RO12345678", language: "en" });
+    await page.locator(".auth-page-footnote").scrollIntoViewIfNeeded();
+    await expect(page.locator(".auth-page-footnote")).toBeInViewport();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
+  });
   test("AI AVY Prod opens from the dashboard and creates approval-only drafts", async ({ page }) => {
     let generationPayload: Record<string, unknown> | null = null;
     let generationKey = "";
@@ -774,7 +999,35 @@ test.describe("forms and authentication", () => {
     await expect(page.getByRole("status")).toContainText(/verifică emailul|confirmare/i);
   });
 
-  test("example request uses the protected Worker endpoint", async ({ page }) => {
+  test("signup explains a failed verification delivery without claiming an account was created", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
+        necessary: true, analytics: false, marketing: false,
+        savedAt: new Date().toISOString(), policyVersion: "2026-09-12",
+      }));
+      window.turnstile = {
+        render: (_element, options) => {
+          queueMicrotask(() => (options.callback as (token: string) => void)("playwright-turnstile-token"));
+          return "playwright-widget";
+        },
+        remove: () => undefined,
+        reset: () => undefined,
+      };
+    });
+    await page.route("**/api/auth/signup", (route) => route.fulfill({
+      status: 503, contentType: "application/json",
+      body: JSON.stringify({ error: { code: "verification_delivery_unavailable" } }),
+    }));
+    await page.goto("/auth");
+    await page.getByRole("tab", { name: /înregistr|register/i }).click();
+    await page.locator("#rg-name").fill("Test Avyron");
+    await page.locator("#rg-email").fill("test@example.com");
+    await page.locator("#rg-pass").fill("SecurePass123!");
+    await page.getByRole("button", { name: /înregistr|register/i }).click();
+    await expect(page.getByText("Nu putem trimite acum emailul de confirmare. Contul nu a fost creat; încearcă din nou mai târziu.")).toBeVisible();
+  });
+
+  test("library example request uses the protected Worker endpoint", async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
         necessary: true, analytics: false, marketing: false,
@@ -794,19 +1047,14 @@ test.describe("forms and authentication", () => {
       payload = route.request().postDataJSON() as Record<string, unknown>;
       await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ ok: true, saved: true, delivered: true, requestId: "test" }) });
     });
-    // The hash is the public navigation contract and forces the deferred
-    // industry section to mount before Playwright interacts with it.
-    await page.goto("/#exemple");
-    await page.getByRole("button", { name: "Vezi domenii" }).click();
-    const beauty = page.getByRole("button", { name: /Beauty & Wellness/ });
-    await expect(beauty).toBeVisible();
-    await beauty.evaluate((button) => button.click());
-    await expect(beauty).toHaveAttribute("aria-pressed", "true");
-    await page.getByRole("button", { name: /Solicită (un exemplu|asemănător)/ }).click();
+    // The duplicate landing card was intentionally removed. Keep covering
+    // the real protected request form through its retained Library entry.
+    await page.goto("/biblioteca");
+    await page.getByRole("button", { name: "Cere ofertă", exact: true }).click();
     await page.locator("#request-example-email").fill("lead@example.com");
     await page.locator("#request-example-phone").fill("0712345678");
     await page.getByRole("button", { name: "Trimite solicitarea" }).click();
     await expect(page.getByText("Solicitarea a fost înregistrată!")).toBeVisible();
-    expect(payload).toMatchObject({ email: "lead@example.com", phone: "0712345678", source_category: "beauty" });
+    expect(payload).toMatchObject({ email: "lead@example.com", phone: "0712345678", source_slug: "biblioteca", source_category: "Bibliotecă Avyron" });
   });
 });

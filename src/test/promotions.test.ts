@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { Hono } from "hono";
 import {
   PROMOTION_OWNER_EMAIL,
   discountFor,
@@ -9,8 +10,10 @@ import {
   priceOrderItems,
   promotionDiscountFor,
   normalizeAccountCartItems,
+  promotionsRouter,
 } from "../../cloudflare/workers/api/src/promotions";
 import { ANNUAL_DISCOUNT_PERCENT, annualSubscriptionTotal } from "@/lib/subscriptionCheckout";
+import type { AppBindings } from "../../cloudflare/workers/api/src/types";
 
 describe("server-authoritative commerce pricing", () => {
   it("uses catalog prices and never accepts a browser supplied price", () => {
@@ -23,6 +26,27 @@ describe("server-authoritative commerce pricing", () => {
     const quote = priceOrderItems([{ sku: "custom-request", description: "Platformă internă", quantity: 1 }]);
     expect(quote).toMatchObject({ subtotalCents: 0, requiresManualQuote: true });
     expect(quote?.items[0].lineTotalCents).toBeNull();
+  });
+
+  it("uses reviewed commercial codes for payment and keeps unverified codes at manual quote", () => {
+    const approved = { sku: "svc-qa-testing", entity_key: "qa-testing", entity_type: "service" as const, display_name: "Testare QA", accounting_code: "SVC-QA", base_price_minor: 160_000, currency: "RON", price_model: "fixed", tax_status: "verified", payment_status: "active", active: 1 };
+    const paid = priceOrderItems([{ sku: approved.sku, quantity: 1, price: 1 }], 5, [approved]);
+    expect(paid).toMatchObject({ subtotalCents: 160_000, requiresManualQuote: false });
+    expect(paid?.items[0]).toMatchObject({ accountingCode: "SVC-QA", type: "service", lineTotalCents: 160_000 });
+    const unverified = priceOrderItems([{ sku: approved.sku, quantity: 1, price: 1 }], 5, [{ ...approved, tax_status: "unverified" }]);
+    expect(unverified).toMatchObject({ subtotalCents: 0, requiresManualQuote: true });
+    const withoutPrice = priceOrderItems([{ sku: approved.sku, quantity: 1 }], 5, [{ ...approved, base_price_minor: null }]);
+    expect(withoutPrice?.items[0]).toMatchObject({ referenceUnitPriceCents: null, lineTotalCents: null });
+    expect(priceOrderItems([{ sku: approved.sku, quantity: 1 }], 5, [{ ...approved, active: 0 }])).toBeNull();
+    const product = { ...approved, sku: "product-card-holografic", entity_key: "card-holografic", entity_type: "product" as const, display_name: "Card holografic" };
+    expect(priceOrderItems([{ sku: product.sku, quantity: 1, productSlug: "another-product" }], 5, [product])).toBeNull();
+    expect(priceOrderItems([{ sku: product.sku, quantity: 1 }], 5, [product])?.items[0].productSlug).toBe("card-holografic");
+  });
+
+  it("keeps the selected service on an annual subscription without accepting unknown service keys", () => {
+    const valid = priceOrderItems([{ sku: "sub-site-plus", quantity: 1, period: "annual", serviceKey: "premium-website" }]);
+    expect(valid?.items[0].serviceKey).toBe("premium-website");
+    expect(priceOrderItems([{ sku: "sub-site-plus", quantity: 1, period: "annual", serviceKey: "unknown" }])).toBeNull();
   });
 
   it("rejects unknown products and unsafe quantities", () => {
@@ -129,5 +153,41 @@ describe("registered account cart", () => {
   it("rejects malformed product and subscription lines", () => {
     expect(normalizeAccountCartItems([{ id: "p", source: "products", sku: "p", type: "product", name: "P" }])).toBeNull();
     expect(normalizeAccountCartItems([{ id: "s", source: "subscriptions", sku: "s", type: "subscription", name: "S" }])).toBeNull();
+  });
+});
+
+describe("commerce order retry", () => {
+  it("returns the original order for an identical request and rejects reuse with different items", async () => {
+    let saved: { id: string; status: string; total_cents: number; currency: string; client_request_json: string } | null = null;
+    const db = {
+      prepare: (sql: string) => {
+        let params: unknown[] = [];
+        const statement = {
+          bind: (...values: unknown[]) => { params = values; return statement; },
+          first: async () => sql.includes("client_request_id") ? saved : null,
+          params: () => params,
+          sql,
+        };
+        return statement;
+      },
+      batch: async (statements: Array<{ params: () => unknown[]; sql: string }>) => {
+        const insert = statements.find((statement) => statement.sql.includes("INSERT INTO commerce_orders"))!;
+        const values = insert.params();
+        saved = { id: String(values[0]), status: "requested", total_cents: Number(values[5]), currency: "RON", client_request_json: String(values[10]) };
+        return [{ meta: { changes: 1 } }];
+      },
+    };
+    const app = new Hono<AppBindings>();
+    app.use("*", async (c, next) => { c.set("userId", "account-1"); await next(); });
+    app.route("/", promotionsRouter);
+    const env = { DB: db } as unknown as AppBindings["Bindings"];
+    const request = { items: [{ sku: "website-starter", quantity: 1 }], clientRequestId: "a".repeat(64) };
+    const first = await app.request("http://localhost/api/commerce/orders", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(request) }, env);
+    expect(first.status).toBe(201);
+    const repeat = await app.request("http://localhost/api/commerce/orders", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(request) }, env);
+    expect(repeat.status).toBe(200);
+    expect((await repeat.json() as {order: {id: string; replay: boolean}}).order).toMatchObject({ id: saved!.id, replay: true });
+    const conflict = await app.request("http://localhost/api/commerce/orders", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...request, items: [{ sku: "website-business", quantity: 1 }] }) }, env);
+    expect(conflict.status).toBe(409);
   });
 });
