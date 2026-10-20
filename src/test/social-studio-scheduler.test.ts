@@ -40,6 +40,15 @@ describe("Social Studio scheduler", () => {
       defaultLink: "https://avyron.ro/servicii/website-prezentare-profesional",
       frameCount: 3,
       storyMicrocopyRequired: true,
+      storyCaptionRequiredWhenSupported: true,
+      storyCaptionFallback: "unsupported",
+      conversionFrameOptional: true,
+      conversionCta: "Cere o cotație",
+      conversionModes: ["native_organic_form", "verified_hosted_form", "link_sticker", "action_button"],
+      formFields: ["name", "email"],
+      formStatusRequired: true,
+      privacyNoticeRequired: true,
+      freeOnly: true,
       safeZone: { top: 180, bottom: 250, left: 72, right: 72 },
     });
     expect(jobs.find((job) => job.kind === "daily_post")?.brief).toMatchObject({
@@ -47,6 +56,10 @@ describe("Social Studio scheduler", () => {
       linkRequired: true,
       prohibitPrices: true,
       targetUrl: "https://avyron.ro/servicii/website-prezentare-profesional",
+      productionToolPlanRequired: true,
+      realAssetsFirst: true,
+      assetProvenanceRequired: true,
+      visualQaPasses: ["editorial_factual", "visual_mobile", "native_conversion"],
     });
     expect(jobs.find((job) => job.kind === "engagement_review")?.brief).toMatchObject({
       storyLikeTarget: 8,
@@ -65,11 +78,18 @@ describe("Social Studio scheduler", () => {
   });
 
   it("plans exactly one reel across each three-day window", () => {
-    const reelDays = [0, 1, 2].filter((offset) => plannedSocialJobs(
+    const reels = [0, 1, 2].flatMap((offset) => plannedSocialJobs(
       policy,
       Date.UTC(2026, 9, 3 + offset, 16, 0),
-    ).some((job) => job.kind === "reel"));
-    expect(reelDays).toHaveLength(1);
+    ).filter((job) => job.kind === "reel"));
+    expect(reels).toHaveLength(1);
+    expect(reels[0].brief).toMatchObject({
+      nativeVariants: ["instagram_reel", "facebook_reel", "tiktok"],
+      productionToolPlanRequired: true,
+      realAssetsFirst: true,
+      premiumTransitions: true,
+      criticalTextGeneratedInImage: false,
+    });
   });
 
   it("keeps Facebook conversion links canonical and removes demo or tracking URLs", () => {

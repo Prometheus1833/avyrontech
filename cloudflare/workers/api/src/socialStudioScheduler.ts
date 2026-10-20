@@ -173,12 +173,20 @@ export function plannedSocialJobs(policy: SocialPolicy, timestamp = now()): Plan
       industry, objective: "conversie si educatie", mediaRequired: true, platformVariants: true,
       websiteOfferVisible: true, linkRequired: true, targetUrl: DEFAULT_WEBSITE_SERVICE_URL,
       prohibitPrices: true, editorialMechanism: "information_gap",
+      productionToolPlanRequired: true, realAssetsFirst: true, assetProvenanceRequired: true,
+      visualQaPasses: ["editorial_factual", "visual_mobile", "native_conversion"],
     },
   );
   if (policy.daily_image_count > 0) append(
     "image", "daily_image", "post", "instagram", slotMinutes(slots, "image", "13:15"),
     `Concept vizual premium pentru ${industry}`,
-    { industry, objective: "vizibilitate", mediaRequired: true, mediaKind: "image", visualStyle: "premium tech minimalist" },
+    {
+      industry, objective: "vizibilitate", mediaRequired: true, mediaKind: "image",
+      visualStyle: "premium tech minimalist", productionToolPlanRequired: true,
+      realAssetsFirst: true, criticalTextGeneratedInImage: false, assetProvenanceRequired: true,
+      humanRealismChecks: ["anatomy", "hands", "reflections", "perspective", "screen_ui", "lighting"],
+      outputQuality: "maximum_available", mobilePreviewRequired: true,
+    },
   );
   append(
     "story", "story", "story", "instagram", slotMinutes(slots, "story", "20:15"),
@@ -189,6 +197,12 @@ export function plannedSocialJobs(policy: SocialPolicy, timestamp = now()): Plan
       safeZone: { top: 180, bottom: 250, left: 72, right: 72 },
       nativeLinkPreferred: true, defaultLink: DEFAULT_WEBSITE_SERVICE_URL,
       targetUrl: DEFAULT_WEBSITE_SERVICE_URL, frameCount: 3, storyMicrocopyRequired: true,
+      storyCaptionRequiredWhenSupported: true, storyCaptionFallback: "unsupported",
+      conversionFrameOptional: true, conversionCta: "Cere o cotație",
+      conversionModes: ["native_organic_form", "verified_hosted_form", "link_sticker", "action_button"],
+      formFields: ["name", "email"], formStatusRequired: true, privacyNoticeRequired: true,
+      noLeadDataInCommentsPollsOrDm: true, freeOnly: true,
+      productionToolPlanRequired: true, assetProvenanceRequired: true,
       maxInteractiveElements: 1, maxSecondaryAccents: 1,
     },
   );
@@ -197,7 +211,14 @@ export function plannedSocialJobs(policy: SocialPolicy, timestamp = now()): Plan
   if (dayNumber % policy.reel_interval_days === 0) append(
     "reel", "reel", "reel", "tiktok", slotMinutes(slots, "reel", "18:15"),
     `Reel: transformarea prezentei digitale pentru ${industry}`,
-    { industry, objective: "reach si conversie", websiteOfferVisible: true, nativeEffectsReview: true, mobileFinishRequired: true, captionsRequired: true },
+    {
+      industry, objective: "reach si conversie", websiteOfferVisible: true,
+      nativeEffectsReview: true, mobileFinishRequired: true, captionsRequired: true,
+      nativeVariants: ["instagram_reel", "facebook_reel", "tiktok"],
+      productionToolPlanRequired: true, realAssetsFirst: true, assetProvenanceRequired: true,
+      premiumTransitions: true, criticalTextGeneratedInImage: false,
+      visualQaPasses: ["editorial_factual", "visual_mobile", "native_conversion"],
+    },
   );
 
   if (clock.weekday === policy.weekly_article_weekday) append(
@@ -290,6 +311,15 @@ export function sanitizeInstagramCaptionLinks(caption: string, rawLink: unknown,
   return `${cleanCaption}\n\nVezi serviciul: ${canonicalLink}\nLink în bio.`.trim();
 }
 
+const compactJson = (value: unknown, fallback: string, maxLength = 8_000) => {
+  try {
+    const encoded = JSON.stringify(value);
+    return encoded.length <= maxLength ? encoded : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
 function parseVariants(raw: string, fallback: ReturnType<typeof parseGeneratedContent>) {
   const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
   let parsed: Record<string, unknown> = {};
@@ -338,6 +368,11 @@ function parseVariants(raw: string, fallback: ReturnType<typeof parseGeneratedCo
       nativeElements,
       safeZone,
       backgroundDirection: String(item.backgroundDirection || "").trim().slice(0, 1_000),
+      storyCaption: String(item.storyCaption || "").trim().slice(0, 1_200),
+      toolPlanJson: compactJson(item.toolPlan, "[]"),
+      assetProvenanceJson: compactJson(item.assetProvenance, "[]"),
+      visualQaJson: compactJson(item.visualQa, "{}"),
+      conversionJson: compactJson(item.conversion, "{}"),
     }];
   });
 }
@@ -404,7 +439,9 @@ async function generateJobDraft(env: Env, job: JobRow, timestamp: number) {
     agent.system_prompt,
     agent.guardrails,
     "Returneaza exclusiv JSON valid cu cheile title, caption, visualDirection, cta, hashtags si variants.",
-    "variants este un array; fiecare element are channel, caption, hashtags, cta, mediaBrief, altText, linkUrl, linkStrategy, nativeElements, safeZone si backgroundDirection.",
+    "variants este un array; fiecare element are channel, caption, hashtags, cta, mediaBrief, altText, linkUrl, linkStrategy, nativeElements, safeZone, backgroundDirection, storyCaption, toolPlan, assetProvenance, visualQa si conversion.",
+    "toolPlan este o lista de etape cu stage, tool, purpose, input, output si fallback. Nu enumera instrumente fara rol real. assetProvenance declara provenienta fiecarui activ. visualQa consemneaza factualitatea, lizibilitatea mobila, safe-zone, anatomia, mainile, reflexiile, perspectiva, screen_ui, contrastul si verdictul.",
+    "conversion declara mode, status, cta, fields, privacyNotice, targetUrl si separateApprovalRequired. Foloseste formularul scurt cu name si email numai daca este organic, gratuit si verificat; altfel status este unsupported sau awaiting_connection si folosesti linkul AVYRON verificat.",
     "linkStrategy este una dintre native_clickable, profile_link, first_comment, visible_fallback sau none. nativeElements descrie numai functii disponibile nativ pe canal.",
     `Destinatia unica de conversie pentru acest job este ${targetUrl}. Nu folosi homepage-ul, un demo, preview sau un domeniu extern in locul paginii exacte.`,
     "Nu include preturi, tarife, reduceri, termene comerciale sau alte detalii de pret in descrieri.",
@@ -416,7 +453,8 @@ async function generateJobDraft(env: Env, job: JobRow, timestamp: number) {
     `Job: ${job.kind}; format: ${job.format}; subiect: ${job.topic}; canale: ${channels.join(", ")}.`,
     `Brief: ${job.brief_json}.`,
     designProfile?.profile_json ? `Profil de design aprobat: ${designProfile.profile_json}.` : "Aplica design premium, minimalist si verificare mobila.",
-    job.format === "story" ? `Livreaza trei cadre distincte cu story_microcopy separat: recunoastere, mecanism/dovada si actiune. Protejeaza zonele platformei si foloseste un singur sticker nativ catre ${targetUrl}.` : "",
+    job.format === "story" ? `Livreaza trei cadre distincte cu story_microcopy separat: recunoastere, mecanism/dovada si actiune/conversie. Adauga storyCaption specific atunci cand canalul suporta descriere; altfel scrie exact unsupported. Protejeaza zonele platformei. Cadrul final poate folosi un singur formular verificat cu name si email sau un sticker catre ${targetUrl}; nu desena un formular fals si nu cere date in comentarii, poll sau DM.` : "",
+    job.format === "reel" ? "Livreaza variante native distincte pentru Instagram Reel, Facebook Reel si TikTok, cu 5-8 cadre pentru 15-30 secunde, capturi reale sau scene universale credibile, tranzitii fluide, subtitrari, coperta, audio nativ Business si finisare separata in fiecare platforma." : "",
     job.format === "article" ? "Scrie un articol original, editorial, jurnalistic si uman, cu titlu SEO, introducere, subtitluri, concluzie si CTA discret. Nu publica." : "",
     job.format === "post" || job.format === "reel" ? `Fiecare varianta de feed foloseste intre ${policy?.tag_min || 5} si ${policy?.tag_max || 10} hashtaguri relevante, fara umplutura.` : "",
     sources.results.length ? `Surse aprobate:\n${sources.results.map((source) => `- ${source.source_label}: ${source.title}; ${source.insight}; ${source.canonical_url || "fara URL"}`).join("\n")}` : "Surse aprobate: nu exista. Evita afirmatiile despre tendinte si performanta altora.",
@@ -490,13 +528,16 @@ async function generateJobDraft(env: Env, job: JobRow, timestamp: number) {
         `INSERT INTO ai_social_variants
           (id,content_id,channel,caption,hashtags_json,media_brief,accessibility_alt,cta,
            link_url,link_strategy,native_elements_json,safe_zone_json,background_direction,
+           story_caption,tool_plan_json,asset_provenance_json,visual_qa_json,conversion_json,
            status,created_at,updated_at)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?, 'draft',?,?)`,
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'draft',?,?)`,
       ).bind(
         identifier("asv"), contentId, variant.channel, variant.caption,
         JSON.stringify(variant.hashtags), variant.mediaBrief, variant.altText, variant.cta,
         variant.linkUrl, variant.linkStrategy, JSON.stringify(variant.nativeElements),
         JSON.stringify(variant.safeZone), variant.backgroundDirection,
+        variant.storyCaption, variant.toolPlanJson, variant.assetProvenanceJson,
+        variant.visualQaJson, variant.conversionJson,
         completedAt, completedAt,
       )),
       env.DB.prepare(
