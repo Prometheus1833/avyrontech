@@ -1,7 +1,7 @@
 import type { Env } from "./types";
 import { now, sha256 } from "./security";
 
-export const SOCIAL_BACKUP_SCHEMA_VERSION = 42;
+export const SOCIAL_BACKUP_SCHEMA_VERSION = 43;
 
 export type SocialBackupScope = "configuration" | "content" | "full";
 
@@ -87,7 +87,11 @@ async function collectBackupData(env: Env, projectId: string, scope: SocialBacku
                         variant.media_brief,variant.accessibility_alt,variant.cta,variant.scheduled_at,variant.status,
                         variant.remote_id,variant.link_url,variant.link_strategy,variant.native_elements_json,
                         variant.safe_zone_json,variant.background_direction,variant.asset_group_id,
-                        variant.quality_score,variant.published_preview_object_key,variant.created_at,variant.updated_at
+                        variant.quality_score,variant.published_preview_object_key,variant.story_caption,
+                        variant.tool_plan_json,variant.asset_provenance_json,variant.visual_qa_json,
+                        variant.conversion_json,variant.form_ux_json,variant.survey_json,
+                        variant.render_spec_json,variant.universal_domain_json,
+                        variant.created_at,variant.updated_at
                    FROM ai_social_variants variant JOIN ai_content_items content ON content.id=variant.content_id
                   WHERE content.project_id=? ORDER BY variant.created_at`, projectId),
       rows(env, `SELECT id,content_id,asset_group_id,channel,role,r2_bucket,object_key,mime_type,width,height,

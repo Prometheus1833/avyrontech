@@ -41,7 +41,7 @@ describe("AVYRON Social Studio content operations v3", () => {
   });
 
   it("requires complete captions, story descriptions, verified conversion and multi-frame video", () => {
-    expect(config.schemaVersion).toBe(6);
+    expect(config.schemaVersion).toBe(7);
     expect(config.contentSystem.editorialMechanisms).toEqual([
       "information_gap", "self_reference", "proof_story", "immediate_value",
     ]);

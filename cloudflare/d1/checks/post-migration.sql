@@ -121,7 +121,11 @@ SELECT 'social_variants_with_invalid_production_metadata' AS check_name, COUNT(*
  WHERE json_valid(tool_plan_json)=0
     OR json_valid(asset_provenance_json)=0
     OR json_valid(visual_qa_json)=0
-    OR json_valid(conversion_json)=0;
+    OR json_valid(conversion_json)=0
+    OR json_valid(form_ux_json)=0
+    OR json_valid(survey_json)=0
+    OR json_valid(render_spec_json)=0
+    OR json_valid(universal_domain_json)=0;
 
 SELECT 'approved_story_variants_without_caption_status' AS check_name, COUNT(*) AS value
   FROM ai_social_variants AS variant

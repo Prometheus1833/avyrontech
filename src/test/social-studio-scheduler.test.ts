@@ -48,6 +48,18 @@ describe("Social Studio scheduler", () => {
       formFields: ["name", "email"],
       formStatusRequired: true,
       privacyNoticeRequired: true,
+      postStoryForm: true,
+      actualFormOpensAfterTap: true,
+      fakeInteractiveFieldsForbidden: true,
+      formUx: {
+        persistentLabels: true,
+        minimumTouchTargetPx: 44,
+        correctInputTypesAndAutocomplete: true,
+        errorsAfterInteraction: true,
+        loadingAndSuccessStates: true,
+        doubleSubmitProtection: true,
+        readBackTestRequired: true,
+      },
       freeOnly: true,
       safeZone: { top: 180, bottom: 250, left: 72, right: 72 },
     });
@@ -60,11 +72,43 @@ describe("Social Studio scheduler", () => {
       realAssetsFirst: true,
       assetProvenanceRequired: true,
       visualQaPasses: ["editorial_factual", "visual_mobile", "native_conversion"],
+      serviceFocus: "professional_website",
+      renderSpec: {
+        preferredMasterPortrait: { width: 2160, height: 3840 },
+        forbidSyntheticUpscaleClaim: true,
+        nativeExport: { width: 1080, height: 1920 },
+      },
     });
     expect(jobs.find((job) => job.kind === "engagement_review")?.brief).toMatchObject({
       storyLikeTarget: 8,
       feedLikeTarget: 6,
       actionsAreProposals: true,
+    });
+  });
+
+  it("rotates an online-store brief with a real business problem and exact service URL", () => {
+    const jobs = plannedSocialJobs(policy, Date.UTC(2026, 9, 6, 18, 0)); // 21:00 in Bucharest
+    expect(jobs.find((job) => job.kind === "daily_post")).toMatchObject({
+      topic: expect.stringContaining("Magazin online"),
+      brief: {
+        serviceFocus: "online_store",
+        targetUrl: "https://avyron.ro/servicii/magazin-online",
+        conversionCta: "Evaluează magazinul",
+        serviceOfferVisible: true,
+        websiteOfferVisible: false,
+      },
+    });
+    expect(jobs.find((job) => job.kind === "story")?.brief).toMatchObject({
+      serviceFocus: "online_store",
+      defaultLink: "https://avyron.ro/servicii/magazin-online",
+      survey: {
+        publicRoot: "https://surveys.avyron.ro/",
+        exactRouteAndSubmissionTestRequired: true,
+      },
+      universalDomains: {
+        illustrativeOnly: true,
+        neverConversionDestination: true,
+      },
     });
   });
 

@@ -11,6 +11,9 @@ const DAY_MS = 86_400_000;
 const SOCIAL_GENERATION_LEASE_MS = 15 * 60_000;
 const SOCIAL_MAX_AUTOMATIC_ATTEMPTS = 3;
 const DEFAULT_WEBSITE_SERVICE_URL = "https://avyron.ro/servicii/website-prezentare-profesional";
+const ONLINE_STORE_SERVICE_URL = "https://avyron.ro/servicii/magazin-online";
+const ONLINE_STORE_NICHES = ["producatori locali", "boutique retail", "handmade", "beauty", "HoReCa cu produse", "catalog B2B"];
+const ONLINE_STORE_PROBLEMS = ["descoperirea produsului", "variantele", "stocul si livrarea", "filtrele", "cosul si checkout-ul", "confirmarea comenzii"];
 
 export type SocialPolicy = {
   project_id: string;
@@ -137,6 +140,36 @@ const industryForDay = (policy: SocialPolicy, clock: LocalClock) => {
   return industries[Math.abs(dayNumber) % Math.max(1, industries.length)] || "servicii-profesionale";
 };
 
+const serviceFocusForDay = (clock: LocalClock, industry: string) => {
+  const dayNumber = Math.floor(Date.UTC(clock.year, clock.month - 1, clock.day) / DAY_MS);
+  if (dayNumber % 4 !== 0) return {
+    key: "professional_website",
+    label: "Website de prezentare",
+    niche: industry,
+    problem: "claritatea si increderea pe mobil",
+    targetUrl: DEFAULT_WEBSITE_SERVICE_URL,
+    cta: "Cere o cotație",
+  };
+  const niche = ONLINE_STORE_NICHES[Math.abs(dayNumber) % ONLINE_STORE_NICHES.length];
+  const problem = ONLINE_STORE_PROBLEMS[Math.abs(dayNumber) % ONLINE_STORE_PROBLEMS.length];
+  return {
+    key: "online_store",
+    label: "Magazin online",
+    niche,
+    problem,
+    targetUrl: ONLINE_STORE_SERVICE_URL,
+    cta: "Evaluează magazinul",
+  };
+};
+
+const renderSpec = {
+  preferredMasterPortrait: { width: 2160, height: 3840 },
+  allow8kStillMasterOnlyWhenSourceSupports: true,
+  nativeExport: { width: 1080, height: 1920 },
+  forbidSyntheticUpscaleClaim: true,
+  requiredMetadata: ["source_resolution", "master_resolution", "capture_or_generation_method", "native_export", "downsample_method", "compression", "fps", "artifact_verdict"],
+};
+
 const dueAtForSlot = (timestamp: number, currentMinutes: number, targetMinutes: number) =>
   timestamp - (currentMinutes - targetMinutes) * 60_000;
 
@@ -144,6 +177,7 @@ export function plannedSocialJobs(policy: SocialPolicy, timestamp = now()): Plan
   const clock = localClock(timestamp, policy.timezone);
   const slots = safeJsonObject(policy.time_slots_json);
   const industry = industryForDay(policy, clock);
+  const service = serviceFocusForDay(clock, industry);
   const jobs: PlannedJob[] = [];
   const append = (
     suffix: string,
@@ -168,56 +202,71 @@ export function plannedSocialJobs(policy: SocialPolicy, timestamp = now()): Plan
 
   if (policy.daily_post_count > 0) append(
     "post", "daily_post", "post", "multi", slotMinutes(slots, "post", "10:15"),
-    `Website de prezentare pentru ${industry}`,
+    `${service.label} pentru ${service.niche}: ${service.problem}`,
     {
-      industry, objective: "conversie si educatie", mediaRequired: true, platformVariants: true,
-      websiteOfferVisible: true, linkRequired: true, targetUrl: DEFAULT_WEBSITE_SERVICE_URL,
+      industry: service.niche, serviceFocus: service.key, businessProblem: service.problem,
+      objective: "conversie si educatie", mediaRequired: true, platformVariants: true,
+      serviceOfferVisible: true, websiteOfferVisible: service.key === "professional_website",
+      linkRequired: true, targetUrl: service.targetUrl, conversionCta: service.cta,
       prohibitPrices: true, editorialMechanism: "information_gap",
       productionToolPlanRequired: true, realAssetsFirst: true, assetProvenanceRequired: true,
       visualQaPasses: ["editorial_factual", "visual_mobile", "native_conversion"],
+      renderSpec,
     },
   );
   if (policy.daily_image_count > 0) append(
     "image", "daily_image", "post", "instagram", slotMinutes(slots, "image", "13:15"),
-    `Concept vizual premium pentru ${industry}`,
+    `Concept vizual premium: ${service.label.toLowerCase()} pentru ${service.niche}`,
     {
-      industry, objective: "vizibilitate", mediaRequired: true, mediaKind: "image",
+      industry: service.niche, serviceFocus: service.key, businessProblem: service.problem,
+      objective: "vizibilitate", mediaRequired: true, mediaKind: "image",
       visualStyle: "premium tech minimalist", productionToolPlanRequired: true,
       realAssetsFirst: true, criticalTextGeneratedInImage: false, assetProvenanceRequired: true,
       humanRealismChecks: ["anatomy", "hands", "reflections", "perspective", "screen_ui", "lighting"],
       outputQuality: "maximum_available", mobilePreviewRequired: true,
+      renderSpec,
     },
   );
   append(
     "story", "story", "story", "instagram", slotMinutes(slots, "story", "20:15"),
-    `Story scurt: o decizie digitala utila pentru ${industry}`,
+    `Story scurt: ${service.problem} pentru ${service.niche}`,
     {
-      industry, objective: "comunitate", shortCopy: true, mediaRequired: true,
+      industry: service.niche, serviceFocus: service.key, businessProblem: service.problem,
+      objective: "comunitate", shortCopy: true, mediaRequired: true,
       canvas: { width: 1080, height: 1920 },
       safeZone: { top: 180, bottom: 250, left: 72, right: 72 },
-      nativeLinkPreferred: true, defaultLink: DEFAULT_WEBSITE_SERVICE_URL,
-      targetUrl: DEFAULT_WEBSITE_SERVICE_URL, frameCount: 3, storyMicrocopyRequired: true,
+      nativeLinkPreferred: true, defaultLink: service.targetUrl,
+      targetUrl: service.targetUrl, frameCount: 3, storyMicrocopyRequired: true,
       storyCaptionRequiredWhenSupported: true, storyCaptionFallback: "unsupported",
-      conversionFrameOptional: true, conversionCta: "Cere o cotație",
+      conversionFrameOptional: true, conversionCta: service.cta,
       conversionModes: ["native_organic_form", "verified_hosted_form", "link_sticker", "action_button"],
       formFields: ["name", "email"], formStatusRequired: true, privacyNoticeRequired: true,
+      postStoryForm: true, actualFormOpensAfterTap: true, fakeInteractiveFieldsForbidden: true,
+      formUx: { persistentLabels: true, minimumTouchTargetPx: 44, correctInputTypesAndAutocomplete: true, errorsAfterInteraction: true, loadingAndSuccessStates: true, doubleSubmitProtection: true, readBackTestRequired: true },
+      survey: { eligibleIntents: ["diagnostic", "brief", "service_selection", "self_assessment"], publicRoot: "https://surveys.avyron.ro/", exactRouteAndSubmissionTestRequired: true, fallback: service.targetUrl },
+      universalDomains: { allowedPatterns: ["*.test", "example.com", "example.org"], illustrativeOnly: true, neverConversionDestination: true },
       noLeadDataInCommentsPollsOrDm: true, freeOnly: true,
       productionToolPlanRequired: true, assetProvenanceRequired: true,
       maxInteractiveElements: 1, maxSecondaryAccents: 1,
+      renderSpec,
     },
   );
 
   const dayNumber = Math.floor(Date.UTC(clock.year, clock.month - 1, clock.day) / DAY_MS);
   if (dayNumber % policy.reel_interval_days === 0) append(
     "reel", "reel", "reel", "tiktok", slotMinutes(slots, "reel", "18:15"),
-    `Reel: transformarea prezentei digitale pentru ${industry}`,
+    `Reel: ${service.problem} pentru ${service.niche}`,
     {
-      industry, objective: "reach si conversie", websiteOfferVisible: true,
+      industry: service.niche, serviceFocus: service.key, businessProblem: service.problem,
+      targetUrl: service.targetUrl, conversionCta: service.cta,
+      objective: "reach si conversie", serviceOfferVisible: true,
+      websiteOfferVisible: service.key === "professional_website",
       nativeEffectsReview: true, mobileFinishRequired: true, captionsRequired: true,
       nativeVariants: ["instagram_reel", "facebook_reel", "tiktok"],
       productionToolPlanRequired: true, realAssetsFirst: true, assetProvenanceRequired: true,
       premiumTransitions: true, criticalTextGeneratedInImage: false,
       visualQaPasses: ["editorial_factual", "visual_mobile", "native_conversion"],
+      renderSpec,
     },
   );
 
@@ -373,6 +422,10 @@ function parseVariants(raw: string, fallback: ReturnType<typeof parseGeneratedCo
       assetProvenanceJson: compactJson(item.assetProvenance, "[]"),
       visualQaJson: compactJson(item.visualQa, "{}"),
       conversionJson: compactJson(item.conversion, "{}"),
+      formUxJson: compactJson(item.formUx, "{}"),
+      surveyJson: compactJson(item.survey, "{}"),
+      renderSpecJson: compactJson(item.renderSpec, "{}"),
+      universalDomainJson: compactJson(item.universalDomain, "{}"),
     }];
   });
 }
@@ -439,9 +492,13 @@ async function generateJobDraft(env: Env, job: JobRow, timestamp: number) {
     agent.system_prompt,
     agent.guardrails,
     "Returneaza exclusiv JSON valid cu cheile title, caption, visualDirection, cta, hashtags si variants.",
-    "variants este un array; fiecare element are channel, caption, hashtags, cta, mediaBrief, altText, linkUrl, linkStrategy, nativeElements, safeZone, backgroundDirection, storyCaption, toolPlan, assetProvenance, visualQa si conversion.",
+    "variants este un array; fiecare element are channel, caption, hashtags, cta, mediaBrief, altText, linkUrl, linkStrategy, nativeElements, safeZone, backgroundDirection, storyCaption, toolPlan, assetProvenance, visualQa, conversion, formUx, survey, renderSpec si universalDomain.",
     "toolPlan este o lista de etape cu stage, tool, purpose, input, output si fallback. Nu enumera instrumente fara rol real. assetProvenance declara provenienta fiecarui activ. visualQa consemneaza factualitatea, lizibilitatea mobila, safe-zone, anatomia, mainile, reflexiile, perspectiva, screen_ui, contrastul si verdictul.",
     "conversion declara mode, status, cta, fields, privacyNotice, targetUrl si separateApprovalRequired. Foloseste formularul scurt cu name si email numai daca este organic, gratuit si verificat; altfel status este unsupported sau awaiting_connection si folosesti linkul AVYRON verificat.",
+    "formUx declara persistentLabels, inputTypes, autocomplete, touchTargetPx, validationTiming, loadingState, successState, doubleSubmitProtection, privacyUrl, submissionTest si readBackTest. Formularul real se deschide dupa tap; nu desena inputuri false in asset.",
+    "survey declara eligibility, exactPublicUrl, questionCount, publicSessionTest, submissionTest si fallbackUrl. Foloseste https://surveys.avyron.ro/ numai pentru diagnostic, brief, selectie de serviciu sau autoevaluare si numai cu o ruta publica exacta verificata.",
+    "renderSpec declara sourceResolution, masterResolution, captureOrGenerationMethod, nativeExport, downsampleMethod, compression, fps si artifactVerdict. 4K/8K inseamna master real; nu numi 4K/8K un upscale al unei surse slabe.",
+    "universalDomain poate folosi numai un domeniu neutru .test sau example.com ca decor ilustrativ. Nu il prezenta drept client, proiect publicat ori destinatie de conversie.",
     "linkStrategy este una dintre native_clickable, profile_link, first_comment, visible_fallback sau none. nativeElements descrie numai functii disponibile nativ pe canal.",
     `Destinatia unica de conversie pentru acest job este ${targetUrl}. Nu folosi homepage-ul, un demo, preview sau un domeniu extern in locul paginii exacte.`,
     "Nu include preturi, tarife, reduceri, termene comerciale sau alte detalii de pret in descrieri.",
@@ -453,7 +510,7 @@ async function generateJobDraft(env: Env, job: JobRow, timestamp: number) {
     `Job: ${job.kind}; format: ${job.format}; subiect: ${job.topic}; canale: ${channels.join(", ")}.`,
     `Brief: ${job.brief_json}.`,
     designProfile?.profile_json ? `Profil de design aprobat: ${designProfile.profile_json}.` : "Aplica design premium, minimalist si verificare mobila.",
-    job.format === "story" ? `Livreaza trei cadre distincte cu story_microcopy separat: recunoastere, mecanism/dovada si actiune/conversie. Adauga storyCaption specific atunci cand canalul suporta descriere; altfel scrie exact unsupported. Protejeaza zonele platformei. Cadrul final poate folosi un singur formular verificat cu name si email sau un sticker catre ${targetUrl}; nu desena un formular fals si nu cere date in comentarii, poll sau DM.` : "",
+    job.format === "story" ? `Livreaza trei cadre distincte cu story_microcopy separat: recunoastere, mecanism/dovada si actiune/conversie. Adauga storyCaption specific atunci cand canalul suporta descriere; altfel scrie exact unsupported. Protejeaza zonele platformei. Cadrul final poate promite un formular scurt name plus email, dar formularul real trebuie sa se deschida dupa tap prin sticker, action button sau ${targetUrl}; nu desena un formular fals si nu cere date in comentarii, poll sau DM. Aspectul unui formular dintr-un Story sponsorizat nu este dovada unei functii organice gratuite.` : "",
     job.format === "reel" ? "Livreaza variante native distincte pentru Instagram Reel, Facebook Reel si TikTok, cu 5-8 cadre pentru 15-30 secunde, capturi reale sau scene universale credibile, tranzitii fluide, subtitrari, coperta, audio nativ Business si finisare separata in fiecare platforma." : "",
     job.format === "article" ? "Scrie un articol original, editorial, jurnalistic si uman, cu titlu SEO, introducere, subtitluri, concluzie si CTA discret. Nu publica." : "",
     job.format === "post" || job.format === "reel" ? `Fiecare varianta de feed foloseste intre ${policy?.tag_min || 5} si ${policy?.tag_max || 10} hashtaguri relevante, fara umplutura.` : "",
@@ -529,8 +586,9 @@ async function generateJobDraft(env: Env, job: JobRow, timestamp: number) {
           (id,content_id,channel,caption,hashtags_json,media_brief,accessibility_alt,cta,
            link_url,link_strategy,native_elements_json,safe_zone_json,background_direction,
            story_caption,tool_plan_json,asset_provenance_json,visual_qa_json,conversion_json,
+           form_ux_json,survey_json,render_spec_json,universal_domain_json,
            status,created_at,updated_at)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'draft',?,?)`,
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'draft',?,?)`,
       ).bind(
         identifier("asv"), contentId, variant.channel, variant.caption,
         JSON.stringify(variant.hashtags), variant.mediaBrief, variant.altText, variant.cta,
@@ -538,6 +596,7 @@ async function generateJobDraft(env: Env, job: JobRow, timestamp: number) {
         JSON.stringify(variant.safeZone), variant.backgroundDirection,
         variant.storyCaption, variant.toolPlanJson, variant.assetProvenanceJson,
         variant.visualQaJson, variant.conversionJson,
+        variant.formUxJson, variant.surveyJson, variant.renderSpecJson, variant.universalDomainJson,
         completedAt, completedAt,
       )),
       env.DB.prepare(
