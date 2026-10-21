@@ -106,3 +106,30 @@ SELECT 'ready_backups_without_manifest' AS check_name, COUNT(*) AS value
 SELECT 'social_assets_without_checksum' AS check_name, COUNT(*) AS value
   FROM ai_social_assets
  WHERE status = 'active' AND length(sha256) < 32;
+
+SELECT 'approved_content_strategy_sources' AS check_name, COUNT(*) AS value
+  FROM ai_social_sources
+ WHERE project_id='aip_avyron_web'
+   AND id IN ('aiss_content_lessons_2026','aiss_baboon_promotion_2026','aiss_gomag_blog_2026')
+   AND status='approved';
+
+SELECT 'current_social_content_agent_version' AS check_name, current_version AS value
+  FROM ai_agents WHERE slug='ai-prod-content';
+
+SELECT 'social_variants_with_invalid_production_metadata' AS check_name, COUNT(*) AS value
+  FROM ai_social_variants
+ WHERE json_valid(tool_plan_json)=0
+    OR json_valid(asset_provenance_json)=0
+    OR json_valid(visual_qa_json)=0
+    OR json_valid(conversion_json)=0
+    OR json_valid(form_ux_json)=0
+    OR json_valid(survey_json)=0
+    OR json_valid(render_spec_json)=0
+    OR json_valid(universal_domain_json)=0;
+
+SELECT 'approved_story_variants_without_caption_status' AS check_name, COUNT(*) AS value
+  FROM ai_social_variants AS variant
+  JOIN ai_content_items AS content ON content.id=variant.content_id
+ WHERE content.format='story'
+   AND variant.status IN ('approved','scheduled','published')
+   AND length(trim(variant.story_caption))=0;
