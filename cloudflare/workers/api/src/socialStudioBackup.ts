@@ -54,7 +54,9 @@ async function rows(env: Env, query: string, projectId: string) {
 async function collectBackupData(env: Env, projectId: string, scope: SocialBackupScope): Promise<BackupCollections> {
   const [project, policy, designProfiles, channels, agents, toolPolicies, modelRoutes] = await Promise.all([
     rows(env, `SELECT id,slug,name,status,primary_objective,automation_mode,brand_tone,target_audience,
-                      core_offer,agent_instructions,content_retention_days,daily_generation_limit,updated_at
+                      core_offer,agent_instructions,
+                      CASE WHEN slug='avyron-web' THEN 3 ELSE content_retention_days END AS content_retention_days,
+                      daily_generation_limit,updated_at
                  FROM ai_projects WHERE id=?`, projectId),
     rows(env, "SELECT * FROM ai_social_policies WHERE project_id=?", projectId),
     rows(env, `SELECT id,version,status,profile_json,source_sha256,source_object_key,

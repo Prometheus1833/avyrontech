@@ -728,6 +728,7 @@ test.describe("forms and authentication", () => {
     await page.getByLabel("Subiect / brief").fill("Website premium pentru afaceri locale");
     await page.getByRole("button", { name: "Generează ciornă" }).click();
     await expect(page.getByRole("heading", { name: draft.title })).toBeVisible();
+    await page.locator("article").filter({ has: page.getByRole("heading", { name: draft.title }) }).locator("summary").click();
     await expect(page.getByText(draft.caption)).toBeVisible();
     await expect.poll(() => generationPayload).not.toBeNull();
     expect(generationPayload).toMatchObject({ format: "post", channel: "instagram", objective: "visibility" });
