@@ -239,7 +239,10 @@ for (const href of llmsLinks) {
   }
 }
 const llmsRoutes = llmsLinks.filter((href) => {
-  try { return new URL(href, origin).origin === origin; } catch { return false; }
+  try {
+    const target = new URL(href, origin);
+    return target.origin === origin && !target.hash;
+  } catch { return false; }
 }).map((href) => new URL(href, origin).pathname);
 if (llmsRoutes.length !== sitemapSet.size || new Set(llmsRoutes).size !== sitemapSet.size) {
   failures.push(`llms.txt must list exactly the ${sitemapSet.size} canonical sitemap pages`);

@@ -95,7 +95,7 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
       expect(html).not.toContain('"@type":"ProfessionalService"');
     }
     const llms = readFileSync(resolve(distDir, "llms.txt"), "utf8");
-    expect(llms).toContain("[Verificare disponibilitate domeniu](/#verificare-domeniu)");
+    expect(llms).toContain("[Verificare disponibilitate domeniu](https://avyron.ro/#verificare-domeniu)");
     expect(llms).toContain("[AVYRON Smart Surveys](https://surveys.avyron.ro/)");
   });
 

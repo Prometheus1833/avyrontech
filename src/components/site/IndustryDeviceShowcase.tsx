@@ -250,7 +250,7 @@ export default function IndustryDeviceShowcase({ domains, activeDomain, onDomain
             <Link to={stages[activeStage].path}>{stages[activeStage].cta}<ArrowUpRight size={14}/></Link>
           </div>
           <div className="scene-progress" aria-label={ro ? "Progres servicii" : "Services progress"}>
-            {stages.map((stage, index) => <button type="button" key={stage.label} aria-label={stage.label} aria-current={activeStage === index ? "step" : undefined} onClick={() => controller.current(index)}><span><i ref={(el) => { barsRef.current[index] = el; }}/></span><strong>0{index + 1} <b> / </b>{stage.label}</strong></button>)}
+            {stages.map((stage, index) => <button type="button" key={stage.label} aria-current={activeStage === index ? "step" : undefined} onClick={() => controller.current(index)}><span><i ref={(el) => { barsRef.current[index] = el; }}/></span><strong>0{index + 1} <b> / </b>{stage.label}</strong></button>)}
           </div>
           <div className="scene-viewport">
             <div ref={(el) => { deviceRefs.current[0] = el; }} className="scene-device scene-device--laptop" data-testid="showcase-device-laptop"><Laptop domain={domain} ro={ro}/></div>

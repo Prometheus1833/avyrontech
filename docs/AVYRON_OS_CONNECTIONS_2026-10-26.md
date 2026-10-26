@@ -4,7 +4,7 @@
 
 În D1 producție, `source_connections` și `financial_provider_connections` nu conțin conexiuni. Proiectul `aip_avyron_web` are zero canale conectate: două sunt în starea `verifying`, iar cinci `disconnected`. Workerul are doar secretele interne de autentificare (`JWT_SECRET`, `MFA_ENCRYPTION_KEY`, `SEED_TOKEN`, `TURNSTILE_SECRET`); nu sunt instalate cheile Stripe, Oblio, Revolut sau Google OAuth. Etichetele URL ale paginilor sociale nu dovedesc administrarea lor.
 
-Registrul operațional vechi are un rând `Revolut · Avyron` în starea `configured`, fără `secret_reference`, `checked_at` sau `synced_at`. Tabela `integration_accounts_v2` din migrarea 0041 nu există încă în D1 producție. Acestea nu reprezintă o conexiune bancară; verifică ordinea migrațiilor înainte de orice release al Operations Console.
+Registrul operațional are un rând `Revolut · Avyron` în starea `configured`, fără `secret_reference`, `checked_at` sau `synced_at`. Migrarea 0041 apare în istoricul D1; tabela temporară `integration_accounts_v2` este redenumită în `integration_accounts` chiar în acea migrare. Acest rând nu reprezintă o conexiune bancară. Verifică structura și starea tabelului final înainte de activarea Operations Console.
 
 Configurația Worker curentă are `MFA_AUTH_ENABLED=false`. Verificarea conexiunilor financiare din acest PR cere MFA verificat și rămâne indisponibilă până când politica MFA este activată și validată pentru owner.
 

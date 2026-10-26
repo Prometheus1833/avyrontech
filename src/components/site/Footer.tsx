@@ -201,7 +201,7 @@ const Footer = () => {
             )}
             <a
               href="tel:+40734605055"
-              aria-label={t.footer.phoneLabel}
+              aria-label={lang === "en" ? "Call us" : "Sună-ne"}
               onClick={() => trackEvent("cta_click", { location: "footer", page: cta.page, channel: "phone" })}
               className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-full border border-cyan-300/30 bg-gradient-to-br from-cyan-500/15 to-sky-600/15 px-2 py-1.5 transition-all hover:border-cyan-300/60 hover:from-cyan-500/25 hover:to-sky-600/25 sm:px-2.5"
             >
