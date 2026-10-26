@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 const PROVIDER_LABELS: Record<string, string> = { revolut: "Revolut Merchant", stripe: "Stripe", oblio: "Oblio", netopia: "Netopia" };
 const STATUS_LABELS: Record<string, string> = { created: "Creată", pending: "În așteptare", paid: "Plătită", failed: "Eșuată", expired: "Expirată", cancelled: "Anulată", active: "Activ", past_due: "Restant", paused: "În pauză", incomplete: "Incomplet", trialing: "Perioadă de probă", issued: "Emisă", not_connected: "Neconectat", verifying: "În verificare", connected: "Conectat", error: "Eroare" };
-const PHASE_LABELS: Record<string, string> = { not_connected: "Neconectat", configuration_only: "Configurat, neverificat", awaiting_approval: "Așteaptă aprobare", verification_required: "Necesită verificare API", synced: "Sincronizare înregistrată", stale: "Sincronizare veche", error: "Eroare de sincronizare" };
+const PHASE_LABELS: Record<string, string> = { not_connected: "Neconectat", configuration_only: "Configurat, neverificat", awaiting_approval: "Așteaptă aprobare", verification_required: "Necesită verificare API", connected_unsynced: "API verificat, fără sincronizare", synced: "Sincronizare înregistrată", stale: "Sincronizare veche", error: "Eroare de verificare/sincronizare" };
 const statusLabel = (status: string) => STATUS_LABELS[status] || status.replace(/_/g, " ");
 
 export function BillingOperationsPanel() {
@@ -16,6 +16,7 @@ export function BillingOperationsPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retrying, setRetrying] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -31,6 +32,16 @@ export function BillingOperationsPanel() {
     try { const result = await billingApi.retryInvoice(orderId); toast[result.invoiced ? "success" : "warning"](result.invoiced ? "Factura a fost emisă." : "Factura rămâne în așteptare. Verifică setările Oblio."); await load(); }
     catch (cause) { toast.error(cause instanceof Error ? cause.message : "Reîncercarea nu a reușit."); }
     finally { setRetrying(null); }
+  };
+
+  const verifyConnection = async (provider: BillingAdminStatus["providerPlaybooks"][number]["provider"]) => {
+    setVerifying(provider);
+    try {
+      const result = await billingApi.verifyConnection(provider);
+      toast.success(`${provider}: API verificat${result.detail ? ` · ${result.detail}` : ""}. Datele nu sunt încă sincronizate.`);
+      await load();
+    } catch (cause) { toast.error(cause instanceof Error ? cause.message : "Verificarea API nu a reușit."); }
+    finally { setVerifying(null); }
   };
 
   const totals = useMemo(() => ({
@@ -50,7 +61,7 @@ export function BillingOperationsPanel() {
       {data && <>
         {!data.security?.mfaEnabled && <div role="alert" className="mt-4 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs"><AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-500" /><span>MFA nu este confirmat ca activ în Worker. Citirea datelor rămâne disponibilă, dar modificările financiare din această versiune cer MFA verificat și vor fi blocate până la activare.</span></div>}
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          {data.providerPlaybooks?.map((playbook) => { const record = connectionByProvider.get(playbook.provider); return <details key={playbook.provider} className="rounded-xl border border-border/65 p-3 open:bg-muted/20"><summary className="cursor-pointer list-none"><span className="flex flex-wrap items-center justify-between gap-2"><span className="text-sm font-medium">{playbook.title}</span><Badge variant="outline">{PHASE_LABELS[playbook.phase]}</Badge></span><span className="mt-2 block text-[11px] leading-relaxed text-muted-foreground">{playbook.purpose}</span></summary><div className="mt-3 space-y-2 border-t border-border/60 pt-3 text-[11px] leading-relaxed"><p><strong>Acces:</strong> {playbook.authentication}</p><p><strong>Intrare:</strong> {playbook.intake}</p><p><strong>Reconciliere:</strong> {playbook.reconciliation}</p><p><strong>Regulă de activare:</strong> {playbook.gate}</p><p><strong>Ritm:</strong> {playbook.cadence}</p><p className="text-muted-foreground">{record ? `Registru: ${statusLabel(record.status)} · ultima sincronizare ${financeDate(record.last_sync_at)}${record.last_error_code ? ` · ${record.last_error_code}` : ""}` : "Nu există o sincronizare verificată în registrul intern."}</p><div className="flex flex-wrap gap-x-3 gap-y-1">{playbook.sources.map((source, index) => <a key={source} href={source} target="_blank" rel="noopener noreferrer" className="text-violet-600 underline underline-offset-2 dark:text-violet-300">Documentație oficială {index + 1}</a>)}</div></div></details>; })}
+          {data.providerPlaybooks?.map((playbook) => { const record = connectionByProvider.get(playbook.provider); return <details key={playbook.provider} className="rounded-xl border border-border/65 p-3 open:bg-muted/20"><summary className="cursor-pointer list-none"><span className="flex flex-wrap items-center justify-between gap-2"><span className="text-sm font-medium">{playbook.title}</span><Badge variant="outline">{PHASE_LABELS[playbook.phase]}</Badge></span><span className="mt-2 block text-[11px] leading-relaxed text-muted-foreground">{playbook.purpose}</span></summary><div className="mt-3 space-y-2 border-t border-border/60 pt-3 text-[11px] leading-relaxed"><p><strong>Acces:</strong> {playbook.authentication}</p><p><strong>Intrare:</strong> {playbook.intake}</p><p><strong>Reconciliere:</strong> {playbook.reconciliation}</p><p><strong>Regulă de activare:</strong> {playbook.gate}</p><p><strong>Ritm:</strong> {playbook.cadence}</p><p className="text-muted-foreground">{record ? `Registru: ${statusLabel(record.status)} · ultima sincronizare ${financeDate(record.last_sync_at)}${record.last_error_code ? ` · ${record.last_error_code}` : ""}` : "Nu există o sincronizare verificată în registrul intern."}</p>{data.security?.canVerify && <><Button size="sm" variant="outline" disabled={!data.security.mfaVerified || playbook.phase === "not_connected" || playbook.provider === "revolut_business" || verifying === playbook.provider} onClick={() => void verifyConnection(playbook.provider)}>{verifying === playbook.provider ? "Se verifică…" : "Verifică accesul API"}</Button>{playbook.phase === "not_connected" && <p className="text-muted-foreground">Configurează mai întâi accesul furnizorului în secretele Worker.</p>}{playbook.provider === "revolut_business" && <p className="text-muted-foreground">Conectorul bancar read-only necesită OAuth Business și implementarea adapterului.</p>}</>}<div className="flex flex-wrap gap-x-3 gap-y-1">{playbook.sources.map((source, index) => <a key={source} href={source} target="_blank" rel="noopener noreferrer" className="text-violet-600 underline underline-offset-2 dark:text-violet-300">Documentație oficială {index + 1}</a>)}</div></div></details>; })}
         </div>
         <p className="mt-2 text-[11px] text-muted-foreground">Stările provin din configurația Worker și registrul intern, nu dintr-un test live făcut la fiecare afișare. „Sincronizare înregistrată” nu dovedește singură că plata, factura și decontarea sunt reconciliate.</p>
         <div className="mt-3 grid gap-2 sm:grid-cols-3">

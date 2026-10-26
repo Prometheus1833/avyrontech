@@ -8,7 +8,7 @@ vi.mock('../../cloudflare/workers/api/src/agents/resolveAgentRuntime',()=>({reso
 import {aiOsRouter} from '../../cloudflare/workers/api/src/aiOs';
 import {operationsRouter} from '../../cloudflare/workers/api/src/operations';
 import {runOperationJobs} from '../../cloudflare/workers/api/src/operationJobs';
-import {retrieveKnowledge,boundedKnowledgeContext} from '../../cloudflare/workers/api/src/knowledgeRetrieval';
+import {retrieveKnowledge,retrievePublicSources,boundedKnowledgeContext} from '../../cloudflare/workers/api/src/knowledgeRetrieval';
 import {reserveAiCost} from '../../cloudflare/workers/api/src/aiCostGuard';
 import {sealCredential,openCredential,boundedProviderJson,readIntegration,googleOAuthAuthorization,completeGoogleOAuth} from '../../cloudflare/workers/api/src/integrationAdapters';
 import type {Env} from '../../cloudflare/workers/api/src/types';
@@ -191,6 +191,34 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
  });
  it('answers exact verified questions without a model call or token charge',async()=>{
   chatSeed();const model=vi.fn();env.AI={run:model} as unknown as Ai;const response=await chat('Optimizare Cloudflare pentru agenti');expect(response.status).toBe(200);expect((await response.json()).reply).toBe('Validated answer');expect(model).not.toHaveBeenCalled();expect(db.prepare('SELECT input_tokens,output_tokens,usage_source FROM ai_runs').get()).toMatchObject({input_tokens:0,output_tokens:0,usage_source:'retrieval'});
+ });
+ it('uses the current public service catalogue before stale FAQ prices',async()=>{
+  chatSeed();db.prepare("INSERT INTO ai_knowledge(id,category,language,question,answer,keywords,source,priority,status,created_at,updated_at) VALUES('stale-price','preturi','ro','Cât costă un site?','Preț vechi: 300 euro.','site pret','seed',10,'active',1,1)").run();
+  const response=await chat('Cât costă un site?');expect(response.status).toBe(200);
+  const body=await response.json() as {reply:string;sources:Array<{id:string}>};
+  expect(body.reply).toContain('1.450 RON');expect(body.reply).not.toContain('300 euro');expect(body.sources[0].id).toBe('service:premium-website');
+ });
+ it('keeps stale seeded prices out of model context for a matched service',async()=>{
+  chatSeed();db.prepare("INSERT INTO ai_knowledge(id,category,language,question,answer,keywords,source,priority,status,created_at,updated_at) VALUES('stale-price','preturi','ro','Cât costă un site?','Preț vechi: 300 euro.','site pret','seed',10,'active',1,1)").run();
+  const model=vi.fn(async()=>({response:'Descriere actuală'}));env.AI={run:model} as unknown as Ai;
+  const response=await chat('Prezintă-mi un site de prezentare');expect(response.status).toBe(200);expect(model).toHaveBeenCalledTimes(1);
+  const input=model.mock.calls[0] as unknown as [string,{messages:{content:string}[]}];
+  expect(input[1].messages[0].content).toContain('1.450 RON');expect(input[1].messages[0].content).not.toContain('300 euro');
+ });
+ it('discovers published products from D1 for a broad catalogue question',async()=>{
+  const found=await retrievePublicSources(env.DB,'ro','Ce produse aveți?');
+  expect(found.find((item)=>item.entry.id==='product:catalog')?.entry.answer).toContain('produse sunt publicate acum');
+  expect(found.find((item)=>item.entry.id==='product:catalog')?.entry.answer).toContain('/produse');
+ });
+ it('uses only approved documents from verified public sources',async()=>{
+  db.prepare(`INSERT INTO knowledge_documents(id,source_id,language,title,content_hash,content_text,visibility,status,fetched_at,approved_at,created_at,updated_at) VALUES(?,?,?,?,?,?,'public',?,1,1,1,1)`).run('public-doc','ks_avyron_site','ro','Ghid integrare publică','hash-public','Integrare publică verificată','approved');
+  db.prepare(`INSERT INTO knowledge_documents(id,source_id,language,title,content_hash,content_text,visibility,status,fetched_at,approved_at,created_at,updated_at) VALUES(?,?,?,?,?,?,'internal',?,1,1,1,1)`).run('internal-doc','ks_avyron_site','ro','Ghid integrare secretă','hash-private','Integrare secretă internă','approved');
+  const found=await retrievePublicSources(env.DB,'ro','integrare publică');expect(found.map(item=>item.entry.id)).toContain('document:public-doc');expect(found.map(item=>item.entry.id)).not.toContain('document:internal-doc');
+ });
+ it('shows why the public agent is in knowledge-only mode',async()=>{
+  const response=await app.request('/api/ai/admin/runtime',{},env);expect(response.status).toBe(200);
+  const body=await response.json() as {mode:string;blockers:string[];knowledge:{faq:number;publicServices:number}};
+  expect(body.mode).toBe('knowledge_only');expect(body.blockers).toContain('provider_policy_inactive');expect(body.knowledge.publicServices).toBeGreaterThan(0);
  });
  it('uses the approved prompt snapshot and provider-reported token usage',async()=>{
   chatSeed();db.exec("UPDATE ai_agents SET system_prompt='UNAPPROVED_CHANGE' WHERE slug='avy'; UPDATE ai_agent_versions SET system_prompt='APPROVED_SNAPSHOT' WHERE agent_slug='avy'");const model=vi.fn(async()=>({response:'Grounded reply',usage:{prompt_tokens:123,completion_tokens:12}}));env.AI={run:model} as unknown as Ai;

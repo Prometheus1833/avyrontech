@@ -11,7 +11,8 @@ import { proposeAudienceCandidates, type AudienceProfile } from "./socialAudienc
 import { createSocialStudioBackup, type SocialBackupScope } from "./socialStudioBackup";
 import {
   AI_CHANNEL_PROVIDERS,
-  contentExpiry,
+  canTransitionContent,
+  editorialExpiry,
   parseGeneratedContent,
   validateAiProjectPatch,
   validateContentGeneration,
@@ -112,12 +113,12 @@ aiProjectsRouter.get("/api/ai-projects", async (c) => {
             (SELECT COUNT(*) FROM ai_project_channels channel WHERE channel.project_id = project.id AND channel.connection_status = 'connected') AS channels_connected,
             (SELECT COUNT(*) FROM ai_project_agents agent WHERE agent.project_id = project.id) AS agents_total,
             (SELECT COUNT(*) FROM ai_project_agents agent WHERE agent.project_id = project.id AND agent.status = 'ready') AS agents_ready,
-            (SELECT COUNT(*) FROM ai_content_items content WHERE content.project_id = project.id AND content.status IN ('draft','pending_approval')) AS content_pending
+            (SELECT COUNT(*) FROM ai_content_items content WHERE content.project_id = project.id AND content.status IN ('draft','pending_approval') AND content.created_at > CASE WHEN project.slug = 'avyron-web' THEN ? ELSE 0 END) AS content_pending
        FROM ai_projects project ${membershipFilter}
       ORDER BY CASE project.status WHEN 'active' THEN 0 WHEN 'setup' THEN 1 WHEN 'paused' THEN 2 ELSE 3 END,
                project.updated_at DESC`,
   );
-  const rows = platformRole ? await query.all() : await query.bind(c.get("userId")).all();
+  const rows = platformRole ? await query.bind(now() - 3 * 86_400_000).all() : await query.bind(now() - 3 * 86_400_000, c.get("userId")).all();
   return c.json({ data: rows.results, platformRole });
 });
 
@@ -149,8 +150,9 @@ aiProjectsRouter.get("/api/ai-projects/:slug", async (c) => {
               visual_direction, cta, hashtags_json, status, scheduled_at,
               published_at, expires_at, created_at, updated_at
          FROM ai_content_items WHERE project_id = ? AND status <> 'expired'
-        ORDER BY created_at DESC LIMIT 60`,
-    ).bind(access.project.id).all(),
+           AND (status IN ('published','scheduled') OR created_at > CASE WHEN ? = 'avyron-web' THEN ? ELSE 0 END)
+        ORDER BY CASE status WHEN 'pending_approval' THEN 0 ELSE 1 END, created_at DESC LIMIT 60`,
+    ).bind(access.project.id, access.project.slug, now() - 3 * 86_400_000).all(),
     c.env.DB.prepare(
       `SELECT id, kind, summary, source_url, confidence, status, observed_at, expires_at
          FROM ai_project_memories WHERE project_id = ? AND expires_at > ?
@@ -255,7 +257,7 @@ aiProjectsRouter.get("/api/ai-projects/:slug", async (c) => {
     ).bind(access.project.id).all(),
   ]);
   return c.json({
-    project,
+    project: project && access.project.slug === "avyron-web" ? { ...project, content_retention_days: 3 } : project,
     channels: channels.results,
     agents: agents.results,
     content: content.results,
@@ -300,6 +302,9 @@ aiProjectsRouter.patch("/api/ai-projects/:projectId", async (c) => {
   const parsed = validateAiProjectPatch(await c.req.json<unknown>().catch(() => null));
   if (!parsed.ok) return c.json({ error: { code: parsed.code, field: parsed.field } }, 400);
   const patch = parsed.value;
+  if (access.project.slug === "avyron-web" && patch.contentRetentionDays !== undefined) {
+    return c.json({ error: { code: "fixed_editorial_retention" } }, 400);
+  }
   if ((patch.automationMode === "automatic" || patch.allowOutboundMessages === true) && !access.canConnect) {
     return c.json({ error: { code: "platform_owner_approval_required" } }, 403);
   }
@@ -665,6 +670,9 @@ aiProjectsRouter.post("/api/ai-projects/:projectId/social-studio/backups", async
   if (!["configuration", "content", "full"].includes(scope)) {
     return c.json({ error: { code: "invalid_backup_scope" } }, 400);
   }
+  if (access.project.slug === "avyron-web" && scope !== "configuration") {
+    return c.json({ error: { code: "editorial_backup_retention" } }, 400);
+  }
   try {
     const result = await createSocialStudioBackup(c.env, access.project.id, c.get("userId"), scope);
     await event(c, access.project.id, "social_studio.backup.created", "social_backup", result.id, {
@@ -981,7 +989,7 @@ aiProjectsRouter.post("/api/ai-projects/:projectId/content/generate", async (c) 
     title: generated.title, caption: generated.caption, visual_direction: generated.visualDirection,
     cta: generated.cta, hashtags_json: JSON.stringify(generated.hashtags.slice(0, tagMax)), status: "draft",
     scheduled_at: null, published_at: null,
-    expires_at: contentExpiry(completedAt, access.project.content_retention_days),
+    expires_at: editorialExpiry(completedAt, access.project.slug, access.project.content_retention_days),
     created_at: completedAt, updated_at: completedAt,
   };
   const responseJson = JSON.stringify({ data: responseBody, runId });
@@ -1029,20 +1037,31 @@ aiProjectsRouter.patch("/api/ai-projects/:projectId/content/:contentId", async (
   if (!["draft", "pending_approval", "approved", "rejected"].includes(next)) {
     return c.json({ error: { code: "invalid_content_state" } }, 400);
   }
-  if (next === "approved" && !access.canManage) return c.json({ error: { code: "approval_required" } }, 403);
+  if ((next === "approved" || next === "rejected") && !access.canManage) {
+    return c.json({ error: { code: "approval_required" } }, 403);
+  }
   const content = await c.env.DB.prepare(
-    "SELECT id FROM ai_content_items WHERE id = ? AND project_id = ? AND status NOT IN ('published','expired')",
-  ).bind(c.req.param("contentId"), access.project.id).first();
+    "SELECT id, status, created_at FROM ai_content_items WHERE id = ? AND project_id = ? AND status NOT IN ('published','scheduled','expired')",
+  ).bind(c.req.param("contentId"), access.project.id).first<{ id: string; status: string; created_at: number }>();
   if (!content) return c.json({ error: { code: "not_found" } }, 404);
+  if (access.project.slug === "avyron-web" && content.created_at <= now() - 3 * 86_400_000) {
+    return c.json({ error: { code: "content_expired" } }, 410);
+  }
+  if (!canTransitionContent(content.status, next)) {
+    return c.json({ error: { code: "invalid_content_transition" } }, 409);
+  }
   const timestamp = now();
-  await c.env.DB.prepare(
+  const updated = await c.env.DB.prepare(
     `UPDATE ai_content_items SET status = ?, approved_by = ?, approved_at = ?, updated_at = ?
-      WHERE id = ? AND project_id = ?`,
+      WHERE id = ? AND project_id = ? AND status = ?
+        AND (? <> 'avyron-web' OR created_at > ?)`,
   ).bind(
     next, next === "approved" ? c.get("userId") : null,
     next === "approved" ? timestamp : null, timestamp,
-    c.req.param("contentId"), access.project.id,
+    c.req.param("contentId"), access.project.id, content.status,
+    access.project.slug, timestamp - 3 * 86_400_000,
   ).run();
+  if (!updated.meta.changes) return c.json({ error: { code: "content_changed_or_expired" } }, 409);
   await event(c, access.project.id, `ai_project.content.${next}`, "ai_content", c.req.param("contentId"));
   return c.json({ ok: true });
 });

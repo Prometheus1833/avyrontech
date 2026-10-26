@@ -34,6 +34,8 @@ import {
   LibraryBig,
   UserRoundSearch,
   Share2,
+  GitBranch,
+  SlidersHorizontal,
 } from "lucide-react";
 import type { SectionId } from "@/lib/access";
 
@@ -77,6 +79,7 @@ export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
   profile: { label: "Profil", commandLabel: "Deschide profilul", hint: "Date personale și identitatea contului", icon: User },
   settings: { label: "Setări", commandLabel: "Deschide setările", hint: "Preferințe și configurarea contului", icon: Settings },
   projects: { label: "Proiecte", commandLabel: "Deschide proiectele", hint: "Livrări, termene și progres", icon: FolderKanban },
+  workflows: { label: "Fluxuri și pipeline", commandLabel: "Deschide fluxurile de lucru", hint: "Acces rapid la cereri, vânzări, livrare și suport", icon: GitBranch },
   "ai-projects": { label: "Proiecte AI", commandLabel: "Deschide proiectele AI", hint: "Strategie, agenți și producție controlată", icon: Bot },
   maintenance: { label: "Mentenanță", commandLabel: "Deschide mentenanța", hint: "Monitorizare, intervenții și continuitate", icon: Wrench },
   clients: { label: "Clienți", commandLabel: "Deschide clienții", hint: "Companii, contacte și relații active", icon: Users },
@@ -106,6 +109,7 @@ export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
   "commercial-codes": { label: "Coduri servicii și produse", commandLabel: "Deschide nomenclatorul comercial", hint: "Coduri, TVA și trasee de plată", icon: FileCode2 },
   promotions: { label: "Promoții", commandLabel: "Deschide promoțiile", hint: "Campanii și reguli comerciale", icon: BadgePercent },
   newsletter: { label: "Newsletter", commandLabel: "Deschide newsletterul", hint: "Abonați, campanii și consimțământ", icon: Mail },
+  "platform-control": { label: "Control platformă", commandLabel: "Deschide centrul de control", hint: "Instrumente de administrare și modificare", icon: SlidersHorizontal },
   "ai-os": { label: "Agenți AI", mobileLabel: "AVY", commandLabel: "Deschide agenții AVY", hint: "Agenți, activitate și cunoaștere din Centre AVYRON OS", icon: Sparkles },
   "os-centers": { label: "Centre AVYRON OS", mobileLabel: "Mai multe", commandLabel: "Vezi toate centrele AVYRON OS", hint: "Integrări, automatizări și operațiuni", icon: ShieldCheck },
   "logo-simulations": { label: "Simulări Logo 3D", commandLabel: "Deschide simulările Logo 3D", hint: "Cereri Logo Studio, configurații și rezultate", icon: ScanSearch },

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 4,
+  "schemaVersion": 7,
   "project": {
     "id": "aip_avyron_web",
     "slug": "avyron-web",
@@ -30,18 +30,101 @@
     "storyCanvas": { "width": 1080, "height": 1920 },
     "storySafeZonePx": { "top": 180, "bottom": 250, "left": 72, "right": 72 },
     "feedSafeZonePercent": 8,
+    "rendering": {
+      "preferredMasterPortrait": { "width": 2160, "height": 3840 },
+      "preferredMasterLandscape": { "width": 3840, "height": 2160 },
+      "allow8kStillMasterOnlyWhenSourceSupports": true,
+      "nativeExports": {
+        "storyReelTikTok": { "width": 1080, "height": 1920 },
+        "instagramFeedPortrait": { "width": 1080, "height": 1350 }
+      },
+      "forbidSyntheticUpscaleClaim": true,
+      "requiredMetadata": ["source_resolution", "master_resolution", "capture_or_generation_method", "native_export", "downsample_method", "compression", "fps", "artifact_verdict"]
+    },
     "rules": [
       "Mesajul principal ramane lizibil dupa afisarea numelui contului si a controalelor platformei.",
       "CTA-ul nu se plaseaza in treimea inferioara rezervata raspunsurilor si reactiilor.",
       "Vizualul arata clar produsul digital sau rezultatul unui website, nu doar decor abstract.",
+      "Textul critic, logo-ul si interfetele finale se compun separat, nu se lasa in imaginea generata.",
+      "Scenele cu oameni trec verificari pentru anatomie, maini, reflexii, perspectiva, lumina si ecrane credibile.",
       "Se verifica previzualizarea publicata pe mobil inainte de reutilizare."
     ]
+  },
+  "productionOrchestration": {
+    "realAssetsFirst": true,
+    "stages": ["research", "tool_plan", "real_asset_capture", "visual_production", "copy", "platform_finish", "visual_qa", "approval"],
+    "requiredToolPlanFields": ["stage", "tool", "purpose", "input", "output", "fallback"],
+    "assetOrder": ["real_avyron_capture", "verified_client_or_stock_asset", "generated_universal_scene"],
+    "criticalTextGeneratedInImage": false,
+    "threePassQa": ["editorial_factual", "visual_mobile", "native_conversion"],
+    "requiredMetadata": ["tool_plan", "asset_provenance", "creative_fingerprint", "visual_qa"]
+  },
+  "contentSystem": {
+    "sourceQuestionRequired": true,
+    "editorialMechanisms": ["information_gap", "self_reference", "proof_story", "immediate_value"],
+    "longCaption": ["hook", "diagnostic", "concrete_value", "avyron_connection", "single_cta", "specific_target_url"],
+    "story": {
+      "defaultFrameCount": 3,
+      "sequence": ["recognition", "mechanism_or_proof", "action_or_conversion"],
+      "microcopyRequiredPerFrame": true,
+      "storyCaptionRequiredWhenSupported": true,
+      "unsupportedCaptionMustBeExplicit": true,
+      "specificLinkStickerPreferred": true,
+      "finalConversionFrame": {
+        "optional": true,
+        "cta": "Cere o cotație",
+        "fields": ["name", "email"],
+        "privacyNoticeRequired": true,
+        "verifiedNativeOrHostedFormOnly": true,
+        "actualFormOpensAfterTap": true,
+        "fakeInteractiveFieldsForbidden": true
+      }
+    },
+    "serviceModules": {
+      "professionalWebsite": {
+        "targetUrl": "https://avyron.ro/servicii/website-prezentare-profesional",
+        "problemFamilies": ["claritate", "încredere", "mobil", "programare", "formular", "performanță"]
+      },
+      "onlineStore": {
+        "targetUrl": "https://avyron.ro/servicii/magazin-online",
+        "niches": ["producători locali", "boutique retail", "handmade", "beauty", "HoReCa cu produse", "turism cu produse", "catalog B2B"],
+        "problemFamilies": ["descoperirea produsului", "variante", "stoc și livrare", "retur", "filtre", "coș și checkout", "confirmarea comenzii", "operațiuni fragmentate"],
+        "defaultCta": "Evaluează magazinul",
+        "forbiddenClaims": ["invented_client", "invented_conversion", "invented_payment_method", "invented_integration", "invented_stock"]
+      }
+    },
+    "shortVideo": {
+      "hookWindowSeconds": [0, 2],
+      "framesFor15To30Seconds": [5, 8],
+      "framesFor30To45Seconds": [7, 12],
+      "singleStaticImageVideoForbidden": true,
+      "photoModeFallbackFrames": [4, 7],
+      "requiredFieldsPerFrame": ["duration", "purpose", "visual", "screen_text", "voice_over", "transition", "audio_cue", "safe_zone"],
+      "nativeVariants": ["instagram_reel", "facebook_reel", "tiktok"]
+    },
+    "learning": {
+      "reviewWindowsHours": [24, 72, 168],
+      "singleVariableTests": ["hook", "frame_count", "cta", "cover", "duration", "time"],
+      "minimumComparablePosts": 2
+    }
   },
   "links": {
     "storyPriority": ["native_link_sticker", "profile_link", "visible_avyron_ro"],
     "feedPriority": ["native_clickable_url", "first_comment_when_appropriate", "visible_avyron_ro"],
     "defaultUrl": "https://avyron.ro",
     "defaultServiceUrl": "https://avyron.ro/servicii/website-prezentare-profesional",
+    "specificTargets": {
+      "services": "https://avyron.ro/servicii",
+      "professionalWebsite": "https://avyron.ro/servicii/website-prezentare-profesional",
+      "onlineStore": "https://avyron.ro/servicii/magazin-online",
+      "professionalBlog": "https://avyron.ro/servicii/blog-profesional",
+      "applications": "https://avyron.ro/servicii/aplicatii-si-platforme",
+      "automationAi": "https://avyron.ro/servicii/automatizari-si-ai",
+      "qa": "https://avyron.ro/servicii/qa-testing-web-mobile",
+      "socialIdentity": "https://avyron.ro/servicii/identitate-social-media",
+      "dynamicLogo": "https://avyron.ro/servicii/creare-logo-3d-dinamic-cinematic",
+      "articlePattern": "https://avyron.ro/blog/<slug>"
+    },
     "allowedConversionRoots": ["/", "/servicii", "/produse", "/blog"],
     "facebook": {
       "maximumVisibleLinks": 1,
@@ -53,16 +136,51 @@
     }
   },
   "nativeElements": {
-    "instagram": ["music", "link_sticker", "poll", "captions", "subtle_emoji"],
-    "facebook": ["music", "link_sticker", "poll", "subtle_emoji"],
-    "tiktok": ["native_music", "captions", "transitions", "motion_effects", "text_timing"],
+    "instagram": ["music", "link_sticker", "poll", "captions", "subtle_emoji", "story_caption_when_supported"],
+    "facebook": ["music", "link_sticker", "poll", "subtle_emoji", "page_action_button_when_verified"],
+    "tiktok": ["native_music", "captions", "transitions", "motion_effects", "text_timing", "organic_lead_form_when_free_verified"],
     "threads": ["concise_hook", "conversation_prompt", "native_reply"],
     "linkedin": ["professional_hook", "document_carousel", "external_link_when_relevant"],
     "whatsapp": ["short_status_copy", "visible_domain"]
   },
+  "conversion": {
+    "freeOnly": true,
+    "preferredModes": ["native_organic_form", "verified_hosted_form", "link_sticker", "action_button"],
+    "defaultCta": "Cere o cotație",
+    "formFields": ["name", "email"],
+    "optionalField": "need",
+    "privacyNoticeRequired": true,
+    "marketingConsentPrechecked": false,
+    "formStatuses": ["form_candidate", "form_unverified", "ready", "unsupported", "awaiting_connection"],
+    "formUx": {
+      "persistentLabels": true,
+      "minimumTouchTargetPx": 44,
+      "correctInputTypesAndAutocomplete": true,
+      "errorsAfterInteraction": true,
+      "loadingAndSuccessStates": true,
+      "doubleSubmitProtection": true,
+      "readBackTestRequired": true
+    },
+    "surveys": {
+      "publicRoot": "https://surveys.avyron.ro/",
+      "eligibleIntents": ["diagnostic", "brief", "service_selection", "self_assessment"],
+      "questionRange": [3, 5],
+      "exactPublicRouteAndSubmissionTestRequired": true,
+      "fallback": "exact_service_page"
+    },
+    "universalDomains": {
+      "allowedPatterns": ["*.test", "example.com", "example.org"],
+      "illustrativeOnly": true,
+      "neverConversionDestination": true,
+      "metadataFlag": "universal_demo_domain"
+    },
+    "forbidLeadDataCollectionIn": ["comments", "polls", "direct_messages"],
+    "inboundHandoff": "leads_crm",
+    "separateApprovalRequiredFor": ["form_change", "action_button_change", "profile_change", "publish", "schedule"]
+  },
   "quality": {
     "minimumScore": 90,
-    "checks": ["brand_fit", "clarity", "website_offer_visible", "mobile_legibility", "safe_zones", "native_adaptation", "cta", "link", "accessibility", "truthfulness", "originality"]
+    "checks": ["brand_fit", "clarity", "service_offer_visible", "mobile_legibility", "safe_zones", "native_adaptation", "story_microcopy", "story_caption", "video_progression", "specific_target_url", "cta", "form_verification", "form_ux", "survey_route", "universal_domain_truthfulness", "render_spec", "source_resolution", "asset_provenance", "anatomy", "hands", "reflections", "perspective", "screen_ui", "contrast", "accessibility", "truthfulness", "originality"]
   },
   "backup": {
     "metadataStore": "D1",

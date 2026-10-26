@@ -5,7 +5,7 @@ export type FinancialProviderPlaybook={
   provider:"stripe"|"oblio"|"revolut_business"|"revolut_merchant";
   title:string;purpose:string;authentication:string;intake:string;reconciliation:string;gate:string;cadence:string;
   sources:readonly string[];
-  phase:"not_connected"|"configuration_only"|"awaiting_approval"|"verification_required"|"synced"|"stale"|"error";
+  phase:"not_connected"|"configuration_only"|"awaiting_approval"|"verification_required"|"connected_unsynced"|"synced"|"stale"|"error";
 };
 export type BillingSubscription={
   id:string;order_id:string;provider:"stripe"|"revolut"|"netopia";sku:string;
@@ -20,7 +20,7 @@ export type BillingInvoice={
 };
 export type BillingAdminStatus={
   providers:{stripe:BillingProviderStatus;revolut:BillingProviderStatus;oblio:BillingProviderStatus;netopia:BillingProviderStatus};
-  security?:{mfaEnabled:boolean;mfaVerified:boolean};
+  security?:{mfaEnabled:boolean;mfaVerified:boolean;canVerify:boolean};
   sessions:Array<{provider:string;status:string;total:number}>;
   subscriptions:Array<{provider:string;status:string;total:number}>;
   invoices:Array<{provider:string;status:string;total:number}>;
@@ -52,5 +52,6 @@ export const billingApi={
   portal:()=>cfAuth.request<{url:string|null}>("/api/billing/portal",{method:"POST"}),
   cancelSubscription:(id:string)=>cfAuth.request<{ok:true;status?:string}>(`/api/billing/subscriptions/${encodeURIComponent(id)}/cancel`,{method:"POST"}),
   adminStatus:()=>cfAuth.request<BillingAdminStatus>("/api/billing/admin/status"),
+  verifyConnection:(provider:FinancialProviderPlaybook["provider"])=>cfAuth.request<{ok:true;provider:string;account:string;detail:string|null;synchronized:false}>(`/api/billing/admin/connections/${provider}/verify`,{method:"POST"}),
   retryInvoice:(orderId:string)=>cfAuth.request<{ok:true;invoiced:boolean}>(`/api/billing/admin/invoices/${encodeURIComponent(orderId)}/retry`,{method:"POST"}),
 };

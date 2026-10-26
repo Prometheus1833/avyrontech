@@ -123,6 +123,18 @@ export function validateContentGeneration(input: unknown): Valid<ContentGenerati
 export const contentExpiry = (createdAt: number, retentionDays: number) =>
   createdAt + Math.max(7, Math.min(365, retentionDays)) * 86_400_000;
 
+// Avyron WEB keeps temporary editorial material for three days. Published and
+// scheduled items remain part of the delivery/audit record.
+export const editorialExpiry = (createdAt: number, slug: string, retentionDays: number) =>
+  slug === "avyron-web" ? createdAt + 3 * 86_400_000 : contentExpiry(createdAt, retentionDays);
+
+export const canTransitionContent = (current: string, next: string) => ({
+  draft: ["pending_approval", "rejected"],
+  pending_approval: ["approved", "rejected"],
+  rejected: ["draft"],
+  approved: [],
+} as Record<string, string[]>)[current]?.includes(next) ?? false;
+
 export type GeneratedContent = {
   title: string;
   caption: string;

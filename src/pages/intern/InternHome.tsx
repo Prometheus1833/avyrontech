@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, ArrowUpRight, ExternalLink, FolderKanban, CheckCircle2, Receipt, TrendingUp } from "lucide-react";
+import { Plus, ArrowUpRight, ExternalLink, FolderKanban, CheckCircle2, Receipt, TrendingUp, Columns3, List } from "lucide-react";
 import { toast } from "sonner";
 import ContactRail from "@/components/intern/ContactRail";
 import PageBackLink from "@/components/site/PageBackLink";
@@ -45,6 +45,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
   const [loading, setLoading] = useState(true);
   const [openCreate, setOpenCreate] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [projectView, setProjectView] = useState<"pipeline" | "list">("pipeline");
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [accounts, setAccounts] = useState<AccountOption[]>([]);
   const [form, setForm] = useState({ name: "", slug: "", kind: "website_prezentare" as ProjectKind, url: "", description: "", client_id: "", owner_user_id: "", recurring_enabled: false, recurring_name: "Mentenanță AVYRON", recurring_price: "", recurring_cycle: "monthly" as "monthly" | "yearly", next_billing_date: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10) });
@@ -108,6 +109,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
   const activeRows = isStaff
     ? rows.filter((project) => !["archived", "cancelled", "done", "completed"].includes(project.status) && project.banner_status !== "online")
     : rows;
+  const workflowRows = rows.filter((project) => !["archived", "cancelled"].includes(project.status));
 
   return (
     <div className={embedded ? "space-y-6" : "max-w-5xl mx-auto p-4 sm:p-6 space-y-6"}>
@@ -195,9 +197,14 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
         )}
       </header>
 
+      {isStaff && <div className="flex gap-2" aria-label="Afișare proiecte">
+        <Button type="button" size="sm" variant={projectView === "pipeline" ? "default" : "outline"} aria-pressed={projectView === "pipeline"} onClick={() => setProjectView("pipeline")}><Columns3 className="mr-1.5 size-4" />Pipeline</Button>
+        <Button type="button" size="sm" variant={projectView === "list" ? "default" : "outline"} aria-pressed={projectView === "list"} onClick={() => setProjectView("list")}><List className="mr-1.5 size-4" />Listă</Button>
+      </div>}
+
       {loading ? (
         <div className="text-sm text-muted-foreground">Se încarcă proiectele…</div>
-      ) : activeRows.length === 0 && purchases.length === 0 && sales.length === 0 ? (
+      ) : (isStaff ? rows.length === 0 : activeRows.length === 0 && purchases.length === 0 && sales.length === 0) ? (
         <Card><CardContent className="p-8 text-center text-muted-foreground">
           {isStaff ? "Nu există proiecte încă. Folosește butonul „Creează proiect”." : "Nu ai încă proiecte asignate. Vei fi anunțat când unul e disponibil."}
         </CardContent></Card>
@@ -222,7 +229,18 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
             );
           })()}
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          {isStaff && projectView === "pipeline" && <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-5" aria-label="Pipeline proiecte">
+            {(["offline", "in_progress", "revizuire", "testing", "online"] as const).map((status) => {
+              const projects = workflowRows.filter((project) => project.banner_status === status);
+              return <section key={status} aria-label={BANNER[status].label} className="min-w-0 rounded-2xl border border-border/60 bg-card/40 p-3">
+                <h2 className="mb-3 flex items-center justify-between text-sm font-semibold"><span>{BANNER[status].label}</span><span className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">{projects.length}</span></h2>
+                <div className="space-y-2">{projects.map((project) => <Link key={project.id} to={`/intern/projects/${project.slug}`} className="block rounded-xl border border-border/60 bg-card p-3 transition hover:border-primary/50 hover:shadow-sm"><span className="block truncate text-sm font-medium">{project.name}</span><span className="mt-1 block text-xs text-muted-foreground">Actualizat {new Date(project.updated_at).toLocaleDateString("ro-RO")}</span></Link>)}{projects.length === 0 && <p className="rounded-xl border border-dashed border-border/60 p-3 text-xs text-muted-foreground">Niciun proiect.</p>}</div>
+              </section>;
+            })}
+          </div>}
+
+          {isStaff && projectView === "list" && activeRows.length === 0 && <p className="rounded-xl border border-dashed border-border/60 p-4 text-sm text-muted-foreground">Nu există proiecte active în listă. Verifică pipeline-ul pentru cele finalizate sau online.</p>}
+          {(!isStaff || projectView === "list") && <div className="grid gap-3 sm:grid-cols-2">
             {activeRows.map((p) => {
               const B = BANNER[p.banner_status] ?? BANNER.in_progress;
               return (
@@ -249,7 +267,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
                 </Link>
               );
             })}
-          </div>
+          </div>}
 
           {isStaff && sales.length > 0 && (
             <section className="space-y-3" aria-labelledby="confirmed-sales-title">

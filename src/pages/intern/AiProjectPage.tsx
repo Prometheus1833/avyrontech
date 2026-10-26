@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner";
 import PageBackLink from "@/components/site/PageBackLink";
 import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,6 +32,14 @@ const formats: Array<{ value: AiContentFormat; label: string }> = [
   { value: "reel", label: "Reel" }, { value: "carousel", label: "Carusel" },
   { value: "message", label: "Mesaj" }, { value: "article", label: "Articol" },
 ];
+const roleLabels: Record<string, string> = {
+  platform_owner: "Administrator platformă", superadmin: "Superadmin",
+  owner: "Responsabil proiect", manager: "Manager", editor: "Editor", viewer: "Vizualizare",
+};
+const contentStatusLabels: Record<AiContentItem["status"], string> = {
+  draft: "Ciornă", pending_approval: "Așteaptă aprobare", approved: "Aprobat",
+  scheduled: "Programat", published: "Publicat", rejected: "Respins", expired: "Expirat",
+};
 const fieldClass = "w-full rounded-xl border border-border/70 bg-background/70 px-3 py-2.5 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-violet-500/35 disabled:cursor-not-allowed disabled:opacity-60";
 
 const jsonStrings = (raw: string) => {
@@ -50,6 +59,9 @@ const jsonObject = (raw: string) => {
 const dateLabel = (timestamp: number | null) => timestamp
   ? new Intl.DateTimeFormat("ro-RO", { dateStyle: "medium" }).format(timestamp)
   : "Niciodată";
+const expiryLabel = (timestamp: number) => new Intl.DateTimeFormat("ro-RO", {
+  dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Bucharest",
+}).format(timestamp);
 
 const Panel = ({ title, description, icon: Icon, children }: {
   title: string; description: string; icon: typeof Bot; children: React.ReactNode;
@@ -69,6 +81,9 @@ export default function AiProjectPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [section, setSection] = useState<"content" | "calendar" | "channels" | "settings" | "more">("content");
+  const [contentFilter, setContentFilter] = useState<"all" | "pending_approval" | "draft" | "approved">("all");
+  const [pendingAction, setPendingAction] = useState<{ item: AiContentItem; status: "approved" | "rejected" } | null>(null);
   const [strategy, setStrategy] = useState({
     primaryObjective: "visibility" as AiObjective, automationMode: "manual",
     brandTone: "", targetAudience: "", coreOffer: "", agentInstructions: "",
@@ -143,7 +158,8 @@ export default function AiProjectPage() {
     if (!detail) return;
     setBusy(true);
     try {
-      await aiProjectsApi.update(detail.project.id, strategy);
+      const patch = detail.project.slug === "avyron-web" ? { ...strategy, contentRetentionDays: undefined } : strategy;
+      await aiProjectsApi.update(detail.project.id, patch);
       toast.success("Strategia proiectului a fost salvată.");
       await load();
     } catch (cause) { toast.error(cause instanceof Error ? cause.message : "Strategia nu a putut fi salvată."); }
@@ -171,13 +187,14 @@ export default function AiProjectPage() {
     try {
       const result = await aiProjectsApi.generate(detail.project.id, { ...generator, topic: generator.topic.trim(), context: generator.context.trim() });
       setDetail((current) => current ? { ...current, content: [result.data, ...current.content] } : current);
+      setContentFilter("all");
       setGenerator((current) => ({ ...current, topic: "", context: "" }));
       toast.success("Ciorna a fost generată. Nu a fost publicată.");
     } catch (cause) { toast.error(cause instanceof Error ? cause.message : "Ciorna nu a putut fi generată."); }
     finally { setBusy(false); }
   };
 
-  const changeContentStatus = async (item: AiContentItem, status: "pending_approval" | "approved" | "rejected") => {
+  const changeContentStatus = async (item: AiContentItem, status: "draft" | "pending_approval" | "approved" | "rejected") => {
     if (!detail) return;
     setBusy(true);
     try {
@@ -185,7 +202,7 @@ export default function AiProjectPage() {
       setDetail((current) => current ? {
         ...current, content: current.content.map((content) => content.id === item.id ? { ...content, status } : content),
       } : current);
-      toast.success(status === "approved" ? "Ciorna a fost aprobată." : status === "rejected" ? "Ciorna a fost respinsă." : "Ciorna a fost trimisă la aprobare.");
+      toast.success(status === "approved" ? "Ciorna a fost aprobată. Publicarea necesită un pas separat." : status === "rejected" ? "Ciorna a fost respinsă." : status === "draft" ? "Ciorna a fost redeschisă." : "Ciorna a fost trimisă la aprobare.");
     } catch (cause) { toast.error(cause instanceof Error ? cause.message : "Starea nu a putut fi actualizată."); }
     finally { setBusy(false); }
   };
@@ -317,6 +334,10 @@ export default function AiProjectPage() {
   );
 
   const { project, permission } = detail;
+  const pendingCount = detail.content.filter((item) => item.status === "pending_approval").length;
+  const visibleContent = detail.content
+    .filter((item) => contentFilter === "all" || item.status === contentFilter)
+    .sort((a, b) => Number(b.status === "pending_approval") - Number(a.status === "pending_approval") || b.created_at - a.created_at);
   return (
     <main className="min-h-screen bg-secondary/30 px-4 py-7 sm:px-6">
       <div className="mx-auto max-w-6xl space-y-5">
@@ -335,13 +356,23 @@ export default function AiProjectPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-600 dark:text-emerald-300">{project.status === "active" ? "Activ" : "În configurare"}</span>
-              <span className="rounded-full border border-border bg-background/70 px-3 py-1 text-xs">{connected}/{detail.channels.length} canale</span>
-              <span className="rounded-full border border-border bg-background/70 px-3 py-1 text-xs">Rol: {permission.role}</span>
+              <span className={`rounded-full border px-3 py-1 text-xs ${connected ? "border-border bg-background/70" : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"}`}>{connected}/{detail.channels.length} canale conectate</span>
+              <span className="rounded-full border border-border bg-background/70 px-3 py-1 text-xs">{roleLabels[permission.role] || permission.role}</span>
             </div>
           </div>
         </header>
 
-        {detail.socialPolicy && <Panel title="Backup Social Studio" description="Configurație versionată în Git, index verificabil în D1 și manifeste private în R2. Secretele și sesiunile sunt excluse." icon={Database}>
+        <nav aria-label="Secțiuni AI AVY Prod" className="flex gap-2 overflow-x-auto rounded-2xl border border-border/70 bg-card/75 p-2 shadow-sm">
+          {([
+            ["content", `Conținut${pendingCount ? ` · ${pendingCount} de aprobat` : ""}`],
+            ["calendar", "Calendar"], ["channels", `Canale · ${connected}/${detail.channels.length}`],
+            ["settings", "Strategie"], ["more", "Instrumente"],
+          ] as const).map(([key, label]) => <Button key={key} type="button" size="sm" variant={section === key ? "default" : "ghost"} className="shrink-0" aria-pressed={section === key} onClick={() => setSection(key)}>{label}</Button>)}
+        </nav>
+
+        {section === "content" && project.slug === "avyron-web" && <p className="rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3 text-sm text-muted-foreground">Ciornele și materialele nepublicate se șterg după 3 zile. Materialele programate și publicate rămân în evidență. Aprobarea nu publică automat.</p>}
+
+        {section === "more" && detail.socialPolicy && <Panel title="Backup Social Studio" description="Configurație versionată în Git, index verificabil în D1 și manifeste private în R2. Secretele și sesiunile sunt excluse." icon={Database}>
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-border/65 bg-background/55 p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Profil de design</p><p className="mt-1 text-sm font-medium">v{detail.socialDesignProfiles.find((profile) => profile.status === "approved")?.version || "—"} aprobat</p></div>
             <div className="rounded-xl border border-border/65 bg-background/55 p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Active în registru</p><p className="mt-1 text-sm font-medium">{detail.socialAssets.length}</p></div>
@@ -349,7 +380,7 @@ export default function AiProjectPage() {
           </div>
           {permission.canManage && <div className="mt-4 flex flex-wrap gap-2">
             <Button disabled={busy} onClick={() => void createSocialBackup("configuration")}><Database className="mr-2 size-4" />Backup configurație</Button>
-            <Button disabled={busy} variant="outline" onClick={() => void createSocialBackup("content")}>Configurație + conținut</Button>
+            {project.slug !== "avyron-web" && <Button disabled={busy} variant="outline" onClick={() => void createSocialBackup("content")}>Configurație + conținut</Button>}
           </div>}
           <div className="mt-4 space-y-2">
             {detail.socialBackups.slice(0, 6).map((backup) => <div key={backup.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 p-3">
@@ -360,7 +391,7 @@ export default function AiProjectPage() {
           </div>
         </Panel>}
 
-        {detail.socialPolicy && <div className="grid gap-5 xl:grid-cols-[.9fr_1.1fr]">
+        {section === "calendar" && detail.socialPolicy && <div className="grid gap-5 xl:grid-cols-[.9fr_1.1fr]">
           <Panel title="Ritm editorial AVYRON" description="Ore în fusul Europe/Bucharest. Sistemul creează ciorne și păstrează aprobarea umană." icon={CalendarClock}>
             <div className="grid gap-3 sm:grid-cols-2">
               <div><Label htmlFor="social-post-count">Postări / zi</Label><Input id="social-post-count" type="number" min={1} max={8} disabled={!permission.canManage} value={cadence.dailyPostCount} onChange={(e) => setCadence({ ...cadence, dailyPostCount: Number(e.target.value) })} /></div>
@@ -393,7 +424,7 @@ export default function AiProjectPage() {
           </Panel>
         </div>}
 
-        {detail.socialPolicy && <div className="grid gap-5 xl:grid-cols-2">
+        {section === "more" && detail.socialPolicy && <div className="grid gap-5 xl:grid-cols-2">
           <Panel title="Surse și învățare" description="Postări AVYRON, exemple concurențiale, noutăți și cărți PDF intră mai întâi la verificare." icon={BookOpen}>
             {permission.canManage && <div className="grid gap-3 sm:grid-cols-2">
               <div><Label htmlFor="social-source-kind">Tip</Label><select id="social-source-kind" className={fieldClass} value={sourceDraft.kind} onChange={(e) => setSourceDraft({ ...sourceDraft, kind: e.target.value })}><option value="current_post">Postare AVYRON</option><option value="competitor_post">Postare agenție</option><option value="trend">Tendință</option><option value="industry_news">Noutate industrie</option><option value="pdf_book">Carte / ghid PDF</option><option value="website">Website</option><option value="analytics">Analitice</option></select></div>
@@ -412,7 +443,7 @@ export default function AiProjectPage() {
           </Panel>
         </div>}
 
-        {detail.socialPolicy && <Panel title="Optimizarea audienței" description="Audit zilnic la 15:00, separat pentru fiecare cont sau pagină. Protecțiile au prioritate absolută." icon={Users}>
+        {section === "more" && detail.socialPolicy && <Panel title="Optimizarea audienței" description="Audit zilnic la 15:00, separat pentru fiecare cont sau pagină. Protecțiile au prioritate absolută." icon={Users}>
           {permission.canConnect && <div className="grid gap-3 rounded-xl border border-border/60 bg-background/45 p-4 md:grid-cols-[.75fr_.9fr_1.5fr_auto]">
             <div><Label htmlFor="audience-provider">Platformă</Label><select id="audience-provider" className={fieldClass} value={accountDraft.provider} onChange={(e) => setAccountDraft({ ...accountDraft, provider: e.target.value })}><option value="facebook">Facebook</option><option value="instagram">Instagram</option><option value="tiktok">TikTok</option></select></div>
             <div><Label htmlFor="audience-surface">Tip</Label><select id="audience-surface" className={fieldClass} value={accountDraft.surface} onChange={(e) => setAccountDraft({ ...accountDraft, surface: e.target.value })}><option value="profile">Profil</option><option value="page">Pagină</option><option value="professional">Profesional</option><option value="business">Business</option><option value="creator">Creator</option></select></div>
@@ -438,9 +469,9 @@ export default function AiProjectPage() {
           <p className="mt-2 flex gap-2 text-xs leading-relaxed text-muted-foreground"><ShieldCheck className="mt-0.5 size-3.5 shrink-0" />Agentul nu propune și nu execută follow-back. Followerii pot fi observați read-only; administratorii decid manual.</p>
         </Panel>}
 
-        <div className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]">
-          <div className="space-y-5">
-            <Panel title="Strategie configurabilă" description="Direcția după care agenții generează și își calibrează rezultatele." icon={Target}>
+        <div className="grid gap-5">
+          {(section === "content" || section === "settings") && <div className="space-y-5">
+            {section === "settings" && <Panel title="Strategie configurabilă" description="Direcția după care agenții generează și își calibrează rezultatele." icon={Target}>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div><Label htmlFor="ai-objective">Obiectiv principal</Label><select id="ai-objective" className={fieldClass} disabled={!permission.canManage} value={strategy.primaryObjective} onChange={(e) => setStrategy({ ...strategy, primaryObjective: e.target.value as AiObjective })}>{objectives.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
                 <div><Label htmlFor="ai-automation">Nivel automatizare</Label><select id="ai-automation" className={fieldClass} disabled={!permission.canManage} value={strategy.automationMode} onChange={(e) => setStrategy({ ...strategy, automationMode: e.target.value })}><option value="manual">Manual</option><option value="approval">Generare cu aprobare</option><option value="automatic">Automat — owner + conexiune verificată</option></select></div>
@@ -449,12 +480,12 @@ export default function AiProjectPage() {
                 <div><Label htmlFor="ai-offer">Ofertă și diferențiatori</Label><Textarea id="ai-offer" rows={3} disabled={!permission.canManage} value={strategy.coreOffer} onChange={(e) => setStrategy({ ...strategy, coreOffer: e.target.value })} /></div>
                 <div className="sm:col-span-2"><Label htmlFor="ai-instructions">Reguli pentru agenți</Label><Textarea id="ai-instructions" rows={4} disabled={!permission.canManage} value={strategy.agentInstructions} onChange={(e) => setStrategy({ ...strategy, agentInstructions: e.target.value })} /></div>
                 <div><Label htmlFor="ai-limit">Limită generări / 24h</Label><Input id="ai-limit" type="number" min={0} max={100} disabled={!permission.canManage} value={strategy.dailyGenerationLimit} onChange={(e) => setStrategy({ ...strategy, dailyGenerationLimit: Number(e.target.value) })} /></div>
-                <div><Label htmlFor="ai-retention">Păstrare materiale (zile)</Label><Input id="ai-retention" type="number" min={7} max={365} disabled={!permission.canManage} value={strategy.contentRetentionDays} onChange={(e) => setStrategy({ ...strategy, contentRetentionDays: Number(e.target.value) })} /></div>
+                {project.slug === "avyron-web" ? <div className="rounded-xl border border-border/60 bg-muted/40 p-3 text-sm"><strong>Păstrare ciorne:</strong> 3 zile · regulă fixă pentru Avyron WEB</div> : <div><Label htmlFor="ai-retention">Păstrare materiale (zile)</Label><Input id="ai-retention" type="number" min={7} max={365} disabled={!permission.canManage} value={strategy.contentRetentionDays} onChange={(e) => setStrategy({ ...strategy, contentRetentionDays: Number(e.target.value) })} /></div>}
               </div>
               {permission.canManage && <Button className="mt-4" onClick={() => void saveStrategy()} disabled={busy}><Save className="mr-2 size-4" />Salvează strategia</Button>}
-            </Panel>
+            </Panel>}
 
-            <Panel title="Studio de conținut" description="Generează ciorne profesionale. Nicio acțiune nu publică sau trimite automat." icon={Sparkles}>
+            {section === "content" && <Panel title="Studio de conținut" description="Generează ciorne profesionale. Nicio acțiune nu publică sau trimite automat." icon={Sparkles}>
               <div className="grid gap-3 sm:grid-cols-3">
                 <div><Label htmlFor="ai-format">Format</Label><select id="ai-format" className={fieldClass} value={generator.format} onChange={(e) => setGenerator({ ...generator, format: e.target.value as AiContentFormat })}>{formats.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
                 <div><Label htmlFor="ai-channel">Canal</Label><select id="ai-channel" className={fieldClass} value={generator.channel} onChange={(e) => setGenerator({ ...generator, channel: e.target.value as AiChannelProvider })}>{detail.channels.map((channel) => <option key={channel.provider} value={channel.provider}>{providers[channel.provider]}</option>)}</select></div>
@@ -467,32 +498,44 @@ export default function AiProjectPage() {
                 <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><ShieldCheck className="size-3.5 text-emerald-500" /> Human-in-the-loop activ</span>
               </div>
 
-              <div className="mt-6 space-y-3">
+              <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-border/60 pt-5" aria-label="Filtrează materialele">
+                {([
+                  ["all", `Toate · ${detail.content.length}`],
+                  ["pending_approval", `De aprobat · ${pendingCount}`],
+                  ["draft", "Ciorne"], ["approved", "Aprobate"],
+                ] as const).map(([key, label]) => <Button key={key} size="sm" type="button" variant={contentFilter === key ? "secondary" : "ghost"} aria-pressed={contentFilter === key} onClick={() => setContentFilter(key)}>{label}</Button>)}
+              </div>
+              <div className="mt-4 space-y-3">
                 {detail.content.length === 0 && <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Nu există încă materiale. Prima generare va crea exclusiv o ciornă.</div>}
-                {detail.content.map((item) => (
+                {detail.content.length > 0 && visibleContent.length === 0 && <p className="rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">Nu există materiale în acest filtru.</p>}
+                {visibleContent.map((item) => (
                   <article key={item.id} className="rounded-xl border border-border/70 bg-background/55 p-4">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div><p className="font-mono text-[10px] uppercase tracking-wider text-violet-500">{formats.find((entry) => entry.value === item.format)?.label} · {jsonStrings(item.channels_json).map((channel) => providers[channel as AiChannelProvider] || channel).join(", ")}</p><h3 className="mt-1 font-semibold">{item.title}</h3></div>
-                      <span className="rounded-full border border-border bg-muted/60 px-2.5 py-1 text-[10px] uppercase">{item.status.replace("_", " ")}</span>
+                      <span className="rounded-full border border-border bg-muted/60 px-2.5 py-1 text-[10px]">{contentStatusLabels[item.status]}</span>
                     </div>
-                    <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed">{item.caption}</p>
-                    {item.visual_direction && <div className="mt-3 rounded-lg bg-muted/50 p-3 text-xs"><strong>Direcție vizuală:</strong> {item.visual_direction}</div>}
-                    {item.cta && <p className="mt-3 text-sm"><strong>CTA:</strong> {item.cta}</p>}
-                    {jsonStrings(item.hashtags_json).length > 0 && <p className="mt-2 text-xs text-violet-500">{jsonStrings(item.hashtags_json).map((tag) => `#${tag}`).join(" ")}</p>}
+                    <details className="mt-3 group" open={item.status === "pending_approval" ? true : undefined}>
+                      <summary className="cursor-pointer text-xs font-medium text-violet-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500">Vezi textul și detaliile</summary>
+                      <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed">{item.caption}</p>
+                      {item.visual_direction && <div className="mt-3 rounded-lg bg-muted/50 p-3 text-xs"><strong>Direcție vizuală:</strong> {item.visual_direction}</div>}
+                      {item.cta && <p className="mt-3 text-sm"><strong>CTA:</strong> {item.cta}</p>}
+                      {jsonStrings(item.hashtags_json).length > 0 && <p className="mt-2 text-xs text-violet-500">{jsonStrings(item.hashtags_json).map((tag) => `#${tag}`).join(" ")}</p>}
+                    </details>
                     <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border/50 pt-3">
                       {item.status === "draft" && <Button size="sm" variant="outline" disabled={busy} onClick={() => void changeContentStatus(item, "pending_approval")}><Send className="mr-1.5 size-3.5" />Trimite la aprobare</Button>}
-                      {item.status === "pending_approval" && permission.canManage && <Button size="sm" disabled={busy} onClick={() => void changeContentStatus(item, "approved")}><Check className="mr-1.5 size-3.5" />Aprobă</Button>}
-                      {!["approved", "rejected"].includes(item.status) && <Button size="sm" variant="ghost" disabled={busy} onClick={() => void changeContentStatus(item, "rejected")}><Trash2 className="mr-1.5 size-3.5" />Respinge</Button>}
-                      <span className="ml-auto text-[11px] text-muted-foreground">Expiră: {dateLabel(item.expires_at)}</span>
+                      {item.status === "pending_approval" && permission.canManage && <Button size="sm" disabled={busy} onClick={() => setPendingAction({ item, status: "approved" })}><Check className="mr-1.5 size-3.5" />Aprobă</Button>}
+                      {["draft", "pending_approval"].includes(item.status) && permission.canManage && <Button size="sm" variant="ghost" disabled={busy} onClick={() => setPendingAction({ item, status: "rejected" })}><Trash2 className="mr-1.5 size-3.5" />Respinge</Button>}
+                      {item.status === "rejected" && permission.canCreateContent && <Button size="sm" variant="outline" disabled={busy} onClick={() => void changeContentStatus(item, "draft")}>Redeschide ciorna</Button>}
+                      {!["scheduled", "published"].includes(item.status) && <span className="ml-auto text-[11px] text-muted-foreground">{project.slug === "avyron-web" ? "Se șterge" : "Expiră"}: {expiryLabel(project.slug === "avyron-web" ? item.created_at + 3 * 86_400_000 : item.expires_at)}</span>}
                     </div>
                   </article>
                 ))}
               </div>
-            </Panel>
-          </div>
+            </Panel>}
+          </div>}
 
-          <aside className="space-y-5">
-            <Panel title="Canale și conturi" description="Starea reflectă conexiuni API reale, nu simulări vizuale." icon={Radio}>
+          {(section === "channels" || section === "more") && <aside className="space-y-5">
+            {section === "channels" && <Panel title="Canale și conturi" description="Starea reflectă conexiuni API reale, nu simulări vizuale." icon={Radio}>
               <div className="space-y-3">
                 {detail.channels.map((channel) => {
                   const connectedChannel = channel.connection_status === "connected";
@@ -500,40 +543,49 @@ export default function AiProjectPage() {
                   return <div key={channel.provider} className="rounded-xl border border-border/65 bg-background/55 p-3">
                     <div className="flex items-center justify-between gap-3"><p className="font-medium">{providers[channel.provider]}</p><span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] ${connectedChannel ? "bg-emerald-500/10 text-emerald-600" : verifying ? "bg-amber-500/10 text-amber-600" : "bg-muted text-muted-foreground"}`}>{connectedChannel ? <CheckCircle2 className="size-3" /> : <CircleDashed className="size-3" />}{connectedChannel ? "Conectat" : verifying ? "În verificare" : "Neconectat"}</span></div>
                     <p className="mt-1 text-xs text-muted-foreground">{channel.account_label || "Niciun cont asociat"}</p>
-                    {permission.canConnect && !connectedChannel && <div className="mt-3 flex gap-2"><Input aria-label={`Cont ${providers[channel.provider]}`} className="h-9" placeholder="Nume cont / pagină" value={channelLabels[channel.provider] || ""} onChange={(e) => setChannelLabels({ ...channelLabels, [channel.provider]: e.target.value })} /><Button size="sm" variant="outline" disabled={busy || verifying} onClick={() => void verifyChannel(channel.provider)}>{verifying ? "Se verifică" : "Verifică"}</Button></div>}
+                    {permission.canConnect && !connectedChannel && <div className="mt-3 flex flex-wrap gap-2"><Input aria-label={`Cont ${providers[channel.provider]}`} className="h-9 min-w-40 flex-1" placeholder="Nume cont / pagină" value={channelLabels[channel.provider] || ""} onChange={(e) => setChannelLabels({ ...channelLabels, [channel.provider]: e.target.value })} /><Button size="sm" variant="outline" disabled={busy || verifying} onClick={() => void verifyChannel(channel.provider)}>{verifying ? "În așteptare" : "Pregătește verificarea"}</Button></div>}
                   </div>;
                 })}
               </div>
-              <p className="mt-4 flex gap-2 text-xs leading-relaxed text-muted-foreground"><LockKeyhole className="mt-0.5 size-3.5 shrink-0" />Starea „Conectat” poate fi acordată doar după OAuth/API valid și verificarea conexiunii în AI OS de către platform owner.</p>
+              <p className="mt-4 flex gap-2 text-xs leading-relaxed text-muted-foreground"><LockKeyhole className="mt-0.5 size-3.5 shrink-0" />„Pregătește verificarea” salvează doar eticheta contului și starea de așteptare. Conectarea necesită OAuth/API valid și verificare în AI OS.</p>
               <div className="mt-4 border-t border-border/60 pt-4"><p className="mb-2 text-xs font-medium">Instrumente externe · free only</p><div className="space-y-2">{detail.socialTools.map((tool) => <div key={`${tool.provider}:${tool.capability}`} className="rounded-lg bg-muted/45 p-2.5"><div className="flex items-center justify-between gap-2"><p className="text-xs font-medium">{tool.provider} · {tool.capability.replace(/_/g, " ")}</p><span className={`rounded-full px-2 py-0.5 text-[9px] uppercase ${tool.status === "available" ? "bg-emerald-500/10 text-emerald-600" : tool.status === "blocked_paid" ? "bg-rose-500/10 text-rose-600" : "bg-amber-500/10 text-amber-600"}`}>{tool.status.replace(/_/g, " ")}</span></div><p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">{tool.notes}</p></div>)}</div></div>
               <div className="mt-4 border-t border-border/60 pt-4"><p className="mb-2 text-xs font-medium">Modele remote · metadata only</p><div className="space-y-2">{(detail.socialModelRoutes ?? []).map((route) => <div key={`${route.route_key}:${route.model_id}`} className="rounded-lg bg-muted/45 p-2.5"><div className="flex items-start justify-between gap-2"><div><p className="text-xs font-medium">{route.route_key.replace(/_/g, " ")}</p><p className="mt-0.5 break-all font-mono text-[9px] text-muted-foreground">{route.model_id}</p></div><span className={`rounded-full px-2 py-0.5 text-[9px] uppercase ${route.status === "available" ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"}`}>{route.status.replace(/_/g, " ")}</span></div><p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">{route.notes}</p><p className="mt-1 text-[9px] text-cyan-600">{route.license_spdx || "licență de verificat"} · {route.execution_mode === "remote_api" ? "cloud remote" : "doar catalog"} · fără greutăți stocate</p></div>)}</div></div>
-            </Panel>
+            </Panel>}
 
-            <Panel title="Echipa de agenți" description="Roluri independente, capabilități limitate și stare vizibilă." icon={Bot}>
+            {section === "more" && <Panel title="Echipa de agenți" description="Roluri independente, capabilități limitate și stare vizibilă." icon={Bot}>
               <div className="space-y-3">{detail.agents.map((agent) => <div key={agent.agent_slug} className="rounded-xl border border-border/65 bg-background/55 p-3"><div className="flex items-start justify-between gap-3"><div className="flex items-center gap-2"><span className="size-2.5 rounded-full" style={{ backgroundColor: agent.accent }} /><div><p className="text-sm font-medium">{agent.name}</p><p className="text-[11px] text-muted-foreground">{agent.role} · v{agent.current_version}</p></div></div><span className={`rounded-full px-2 py-1 text-[10px] ${agent.status === "ready" ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"}`}>{agent.status === "ready" ? "Pregătit" : "În antrenare"}</span></div><p className="mt-2 text-xs leading-relaxed text-muted-foreground">{agent.mission}</p><div className="mt-2 flex flex-wrap gap-1">{jsonStrings(agent.capabilities_json).map((capability) => <span key={capability} className="rounded-md bg-muted px-2 py-1 font-mono text-[9px]">{capability}</span>)}</div></div>)}</div>
               <div className="mt-4 border-t border-border/60 pt-4"><p className="text-xs font-medium">Rutare eficientă Codex / AI Core</p><p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">Sarcinile repetitive sunt executate de modelele interne; Codex rămâne pentru verificare și pașii manuali aprobați.</p><div className="mt-2 space-y-1.5">{(detail.executionRoutes ?? []).map((route) => <div key={`${route.agent_slug}:${route.task_key}`} className="flex items-start justify-between gap-3 rounded-lg bg-muted/45 p-2"><div><p className="text-[11px] font-medium">{route.task_key.replace(/_/g, " ")}</p><p className="text-[9px] text-muted-foreground">{route.agent_slug} · limită {route.max_daily_runs}/zi</p></div><span className={`rounded-full px-2 py-0.5 text-[9px] ${route.executor === "workers_ai" ? "bg-cyan-500/10 text-cyan-600" : "bg-violet-500/10 text-violet-600"}`}>{route.executor === "workers_ai" ? "AI Core" : route.executor === "codex_review" ? "Codex review" : "Codex manual"}{route.requires_approval ? " · aprobare" : ""}</span></div>)}</div>{(detail.operatorBindings ?? []).map((binding) => <p key={`${binding.email}:${binding.agent_slug}`} className="mt-2 text-[10px] text-emerald-600">{binding.display_name || binding.email} · {binding.agent_slug} · {binding.status}</p>)}</div>
-            </Panel>
+            </Panel>}
 
-            <Panel title="Memorie controlată" description="Sunt păstrate rezumate utile, cu expirare; nu arhive brute nelimitate." icon={BrainCircuit}>
+            {section === "more" && <Panel title="Memorie controlată" description="Sunt păstrate rezumate utile, cu expirare; nu arhive brute nelimitate." icon={BrainCircuit}>
               <div className="grid grid-cols-2 gap-2"><div className="rounded-xl bg-muted/50 p-3"><Database className="size-4 text-violet-500" /><p className="mt-2 text-lg font-semibold">{detail.memories.length}</p><p className="text-[10px] text-muted-foreground">rezumate active</p></div><div className="rounded-xl bg-muted/50 p-3"><CalendarClock className="size-4 text-cyan-500" /><p className="mt-2 text-lg font-semibold">{strategy.rawDataRetentionDays} zile</p><p className="text-[10px] text-muted-foreground">date brute</p></div></div>
               <div className="mt-3 space-y-2">{detail.memories.slice(0, 5).map((memory) => <div key={memory.id} className="rounded-lg border border-border/60 p-3"><p className="font-mono text-[9px] uppercase text-muted-foreground">{memory.kind} · încredere {Math.round(memory.confidence * 100)}%</p><p className="mt-1 text-xs leading-relaxed">{memory.summary}</p></div>)}{detail.memories.length === 0 && <p className="rounded-xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">Memoria se formează numai din surse autorizate și rezultate aprobate.</p>}</div>
-            </Panel>
+            </Panel>}
 
-            <Panel title="Inteligență competitivă" description="Analiză locală, națională și internațională, fără afirmații neverificate." icon={Globe2}>
+            {section === "more" && <Panel title="Inteligență competitivă" description="Analiză locală, națională și internațională, fără afirmații neverificate." icon={Globe2}>
               <div className="space-y-2">{detail.competitors.map((competitor) => <div key={competitor.id} className="flex items-start justify-between gap-3 rounded-lg border border-border/60 p-3"><div><p className="text-sm font-medium">{competitor.name}</p><p className="text-xs text-muted-foreground">{competitor.rationale}</p></div><span className="rounded-full bg-muted px-2 py-1 text-[9px] uppercase">{competitor.scope}</span></div>)}{detail.competitors.length === 0 && <p className="rounded-xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">Nu sunt încă surse competitive aprobate.</p>}</div>
-            </Panel>
+            </Panel>}
 
-            <Panel title="Acces proiect" description="Doar utilizatorii selectați explicit pot vedea proiectul." icon={Users}>
+            {section === "more" && <Panel title="Acces proiect" description="Doar utilizatorii selectați explicit pot vedea proiectul." icon={Users}>
               <div className="space-y-2">{detail.members.map((member) => <div key={member.user_id} className="flex items-center justify-between gap-3 rounded-lg bg-muted/45 p-3"><div><p className="text-sm font-medium">{member.display_name || member.email}</p><p className="text-[11px] text-muted-foreground">{member.email}</p></div><span className="rounded-full border border-border bg-background px-2 py-1 text-[10px]">{member.role}</span></div>)}{detail.members.length === 0 && <p className="text-xs text-muted-foreground">Administrat exclusiv la nivel de platformă.</p>}</div>
               <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground"><Eye className="size-3.5" />Vizibilitatea este filtrată server-side pentru fiecare utilizator.</p>
-            </Panel>
+            </Panel>}
 
-            <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-4 text-xs leading-relaxed text-muted-foreground">
+            {section === "more" && <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-4 text-xs leading-relaxed text-muted-foreground">
               <p className="flex items-center gap-2 font-medium text-foreground"><MessageSquareText className="size-4 text-cyan-500" /> Mesaje și outreach</p>
               <p className="mt-2">Pregătite inițial ca ciorne. Trimiterea automată rămâne dezactivată până la conexiuni autorizate, reguli aprobate și activare explicită de către platform owner.</p>
-            </div>
-          </aside>
+            </div>}
+          </aside>}
         </div>
+        <AlertDialog open={Boolean(pendingAction)} onOpenChange={(open) => { if (!open) setPendingAction(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{pendingAction?.status === "approved" ? "Confirmă aprobarea" : "Confirmă respingerea"}</AlertDialogTitle>
+              <AlertDialogDescription>{pendingAction?.status === "approved" ? `Aprobi „${pendingAction?.item.title}”? Materialul va rămâne nepublicat până la o acțiune separată.` : `Respingi „${pendingAction?.item.title}”? Poate fi redeschis înainte de expirare.`}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter><AlertDialogCancel>Anulează</AlertDialogCancel><AlertDialogAction disabled={busy} onClick={() => { if (pendingAction) void changeContentStatus(pendingAction.item, pendingAction.status); setPendingAction(null); }}>{pendingAction?.status === "approved" ? "Confirmă aprobarea" : "Confirmă respingerea"}</AlertDialogAction></AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </main>
   );

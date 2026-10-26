@@ -2,6 +2,7 @@ import restaurant from "@/assets/work-restaurant-new.jpg";
 import travel from "@/assets/work-hotel-new.jpg";
 import professional from "@/assets/work-lawyer-new.jpg";
 import local from "@/assets/work-local-new.jpg";
+import wellness from "@/assets/showcase-wellness-editorial.jpg";
 
 export type AppMode = "app" | "game" | "crm" | "platform";
 export type AutomationMode = "social" | "leads" | "chat" | "other";
@@ -26,7 +27,7 @@ const detail = (roTitle: string, enTitle: string, roDescription: string, enDescr
 // These are interface examples, not customer results, availability or conversion claims.
 const themes: Record<string, DomainTheme> = {
   beauty: {
-    accent: "#b35348", surface: "#f7eee4", ink: "#392c29", brand: "ATELIER / BEAUTY", visual: "beauty",
+    accent: "#ddc49e", surface: "#221c18", ink: "#fff8ed", image: wellness, brand: "NORD / WELLNESS", visual: "photo",
     hero: ["Frumusețe, în ritmul tău.", "Beauty, at your own pace."],
     intro: ["Un ritual de îngrijire începe cu o alegere simplă.", "A care ritual starts with a simple choice."],
     action: ["Alege un tratament", "Choose a treatment"],

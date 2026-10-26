@@ -23,7 +23,8 @@ import { runAiCore } from "./aiCore";
 import { checkRateLimit, clientIp, hashKey } from "./antispam";
 import { platformRoleForUser } from "./authorization";
 import { now, sha256 } from "./security";
-import { retrieveKnowledge, boundedKnowledgeContext, normalizeQuestion } from "./knowledgeRetrieval";
+import { retrieveKnowledge, retrievePublicSources, boundedKnowledgeContext, normalizeQuestion } from "./knowledgeRetrieval";
+import { SERVICE_COMMERCIAL_SOURCES } from "../../../../src/data/serviceCommercialSources";
 
 const id = (p: string) => `${p}_${crypto.randomUUID().replace(/-/g, "").slice(0, 20)}`;
 
@@ -280,10 +281,24 @@ aiOsRouter.post("/api/ai/chat", async (c) => {
   if(!approved)return c.json({error:{code:'version_unavailable'}},503);
   agent={...agent,...approved};
   const started = Date.now();
-  const matches = await retrieveKnowledge(c.env.DB, slug, language, message);
+  const [faqMatches, sourceMatches] = await Promise.all([
+    retrieveKnowledge(c.env.DB, slug, language, message),
+    retrievePublicSources(c.env.DB, language, message),
+  ]);
+  // The current public catalogue wins over legacy FAQ seed prices.
+  const asksPrice = /\b(?:pret|costa|cost|tarif|price|pricing|much)\b/.test(normalizeQuestion(message));
+  const matchedCatalog = sourceMatches.find((match) =>
+    (match.entry.category === "servicii" || match.entry.category === "produse") && match.score >= 0.5);
+  const safeFaqMatches = matchedCatalog ? faqMatches.filter((match) => match.entry.category !== "preturi") : faqMatches;
+  const catalogPrice = asksPrice ? matchedCatalog : null;
+  const matches = catalogPrice
+    ? [catalogPrice, ...safeFaqMatches, ...sourceMatches.filter((match) => match !== catalogPrice)].slice(0, 4)
+    : [...safeFaqMatches, ...sourceMatches].sort((a, b) => Number(b.exact)-Number(a.exact) || b.score-a.score || b.entry.priority-a.entry.priority).slice(0, 4);
   const best = matches[0]?.score ?? 0;
   const context = boundedKnowledgeContext(matches);
-  const direct = matches[0]?.exact ? matches[0].entry.answer.slice(0,10000) : null;
+  const direct = catalogPrice
+    ? `${catalogPrice.entry.answer} ${language === "en" ? "For a tailored estimate, use the configurator or contact the team." : "Pentru o estimare pe configurația ta, folosește configuratorul sau discută cu echipa."}`
+    : matches[0]?.exact ? matches[0].entry.answer.slice(0,10000) : null;
   const useModel = !direct && best >= 0.34 && Boolean(aiBinding(c.env));
 
   const visitorId = (body.visitorId || "").slice(0, 64) || null;
@@ -358,7 +373,8 @@ aiOsRouter.post("/api/ai/chat", async (c) => {
   const generated = useModel
     ? await generate(c, agent, context, history, language, runId, publicPageContext(body.page, language))
     : null;
-  const reply = direct || generated?.text || (best >= 0.34 ? matches[0].entry.answer.slice(0,10000) : fallbackAnswer(language));
+  const trustedShortAnswer = matches.find((match) => match.score >= 0.34 && match.entry.source !== "approved-public-document")?.entry.answer;
+  const reply = direct || generated?.text || trustedShortAnswer?.slice(0,10000) || fallbackAnswer(language);
   const latency = Date.now() - started;
   const answerId = id("msg");
   const completedAt = now();
@@ -393,7 +409,7 @@ aiOsRouter.post("/api/ai/chat", async (c) => {
     );
   }
 
-  if (matches[0]) {
+  if (matches[0] && !["public-service-catalog", "live-product-catalog", "approved-public-document"].includes(matches[0].entry.source)) {
     c.executionCtx.waitUntil(
       c.env.DB.prepare("UPDATE ai_knowledge SET hits = hits + 1 WHERE id = ?").bind(matches[0].entry.id).run().then(() => undefined),
     );
@@ -438,6 +454,35 @@ async function isOwner(c: Context<AppBindings>) {
 }
 const requireOwner = async (c: Context<AppBindings>) =>
   (await isOwner(c)) ? null : c.json({ error: { code: "forbidden", message: "Doar contul owner poate modifica AI OS" } }, 403);
+
+aiOsRouter.get("/api/ai/admin/runtime", async (c) => {
+  const [agent, version, policy, quota, model, knowledge, documents, products] = await Promise.all([
+    c.env.DB.prepare("SELECT status,visibility,current_version FROM ai_agents WHERE slug='avy'").first<{status:string;visibility:string;current_version:number}>(),
+    c.env.DB.prepare("SELECT status FROM ai_agent_versions WHERE agent_slug='avy' AND version=(SELECT current_version FROM ai_agents WHERE slug='avy')").first<{status:string}>(),
+    c.env.DB.prepare("SELECT status FROM financial_agent_provider_policies WHERE agent_slug='avy' AND vendor_id='fin_vendor_cloudflare_ai'").first<{status:string}>(),
+    c.env.DB.prepare("SELECT status,quota_total,quota_used,hard_stop_before_paid FROM financial_provider_quotas WHERE vendor_id='fin_vendor_cloudflare_ai' AND status<>'archived' ORDER BY updated_at DESC LIMIT 1").first<{status:string;quota_total:number|null;quota_used:number;hard_stop_before_paid:number}>(),
+    c.env.DB.prepare("SELECT status FROM ai_model_registry WHERE role='primary'").first<{status:string}>(),
+    c.env.DB.prepare("SELECT COUNT(*) AS n FROM ai_knowledge WHERE status='active' AND (agent_slug IS NULL OR agent_slug='avy')").first<{n:number}>(),
+    c.env.DB.prepare(`SELECT COUNT(*) AS n FROM knowledge_documents document JOIN knowledge_sources source ON source.id=document.source_id LEFT JOIN source_connections connection ON connection.id=source.connection_id WHERE document.status='approved' AND document.visibility='public' AND document.organization_id IS NULL AND source.status='active' AND source.visibility='public' AND source.organization_id IS NULL AND source.trust_level='verified' AND (source.connection_id IS NULL OR connection.status='active')`).first<{n:number}>(),
+    c.env.DB.prepare("SELECT COUNT(*) AS n FROM product_items WHERE status='live' AND released_at<=?").bind(now()).first<{n:number}>(),
+  ]);
+  const blockers = [
+    !agent || agent.status !== "active" || agent.visibility !== "public" ? "agent_inactive" : null,
+    version?.status !== "approved" ? "version_unapproved" : null,
+    !aiBinding(c.env) ? "ai_binding_unavailable" : null,
+    !model || model.status === "disabled" ? "model_unavailable" : null,
+    policy?.status !== "active" ? "provider_policy_inactive" : null,
+    !quota || !["active", "warning"].includes(quota.status) || quota.quota_total === null ? "provider_quota_unavailable" : null,
+    quota?.hard_stop_before_paid && quota.quota_total !== null && quota.quota_used >= quota.quota_total ? "provider_quota_exhausted" : null,
+  ].filter((item): item is string => Boolean(item));
+  c.header("cache-control", "no-store");
+  return c.json({
+    mode: blockers.length ? "knowledge_only" : "model_ready",
+    blockers,
+    knowledge: { faq: knowledge?.n || 0, approvedPublicDocuments: documents?.n || 0, liveProducts: products?.n || 0, publicServices: SERVICE_COMMERCIAL_SOURCES.length },
+    quota: quota ? { total: quota.quota_total, used: quota.quota_used, hardStopBeforePaid: Boolean(quota.hard_stop_before_paid) } : null,
+  });
+});
 
 aiOsRouter.get("/api/ai/admin/agents", async (c) => {
   const { results } = await c.env.DB.prepare("SELECT * FROM ai_agents ORDER BY status DESC, name").all<AiAgent>();

@@ -33,10 +33,14 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
     await page.setViewportSize(viewport);
     await page.goto("/#domenii");
     const showcase = page.getByTestId("industry-device-showcase");
-    await showcase.getByRole("button", { name: "Website", exact: true }).click();
+    await showcase.getByRole("button", { name: /Website$/ }).click();
     const laptop = await settledDevice(showcase, "laptop");
     await expect(laptop.locator(".laptop-key-row")).toHaveCount(6);
     await expect(laptop.locator(".laptop-trackpad")).toBeVisible();
+    const wellnessImage = laptop.locator('[data-screen-variant="beauty"] .web-hero-photo');
+    await expect(wellnessImage).toBeVisible();
+    await expect.poll(() => wellnessImage.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath("wellness-laptop.png") });
     const laptopWidths = await laptop.evaluate((el) => {
       const width = (selector: string) => el.querySelector(selector)!.getBoundingClientRect().width;
       return {
@@ -71,7 +75,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
     expect(heroes.size).toBe(10);
     await expect(page.locator("#exemple article")).toHaveCount(0);
 
-    await showcase.getByRole("button", { name: "Aplicație", exact: true }).click();
+    await showcase.getByRole("button", { name: /Aplicație$/ }).click();
     const phone = await settledDevice(showcase, "phone");
     await expect(showcase.locator(".domain-notes").first()).not.toBeVisible();
     for (const [label, mode, heading] of [["Web/Mobile App", "app", "Următoarea ta pauză."], ["Joc", "game", "Dincolo de orizont."], ["CRM", "crm", "Fiecare oportunitate, la locul ei."], ["Platformă", "platform", "Echipa ta. Un singur spațiu."]]) {
@@ -82,7 +86,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
     }
     await page.screenshot({ path: testInfo.outputPath("phone.png") });
 
-    await showcase.getByRole("button", { name: "Automatizări", exact: true }).click();
+    await showcase.getByRole("button", { name: /Automatizări$/ }).click();
     const tablet = await settledDevice(showcase, "tablet");
     const tabletBounds = await tablet.locator(".tablet-object").boundingBox();
     const viewportBounds = await showcase.locator(".scene-viewport").boundingBox();
@@ -114,10 +118,10 @@ test("reduced motion keeps every service accessible without a forced scroll jour
   await page.goto("/#domenii");
   const showcase = page.getByTestId("industry-device-showcase");
   await expect(showcase).toHaveAttribute("data-motion", "reduced");
-  await showcase.getByRole("button", { name: "Automatizări", exact: true }).click();
+  await showcase.getByRole("button", { name: /Automatizări$/ }).click();
   await settledDevice(showcase, "tablet");
   await expect(showcase.getByRole("button", { name: "Leads", exact: true })).toBeVisible();
-  await showcase.getByRole("button", { name: "Website", exact: true }).click();
+  await showcase.getByRole("button", { name: /Website$/ }).click();
   await settledDevice(showcase, "laptop");
   await expect(showcase.locator(".domain-notes li")).toHaveCount(6);
 });
@@ -133,7 +137,7 @@ test("stage controls recover when a mobile browser cancels smooth scrolling", as
       if (options.behavior !== "smooth") original(options);
     }) as typeof window.scrollTo;
   });
-  await showcase.getByRole("button", { name: "Aplicație", exact: true }).click();
+  await showcase.getByRole("button", { name: /Aplicație$/ }).click();
   await settledDevice(showcase, "phone");
 });
 
@@ -141,7 +145,7 @@ test("English interfaces fit on mobile and the industry picker supports Escape",
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/en#domenii");
   const showcase = page.getByTestId("industry-device-showcase");
-  await showcase.getByRole("button", { name: "Website", exact: true }).click();
+  await showcase.getByRole("button", { name: /Website$/ }).click();
   await settledDevice(showcase, "laptop");
   const trigger = showcase.getByRole("button", { name: "Industries", exact: true });
   await trigger.click();
@@ -155,13 +159,13 @@ test("English interfaces fit on mobile and the industry picker supports Escape",
     // Browser subpixel rounding can differ by less than a CSS pixel on CI.
     expect(await showcase.locator(".web-hero").evaluate((el) => el.querySelector(".web-hero-action")!.getBoundingClientRect().bottom - el.getBoundingClientRect().bottom)).toBeLessThanOrEqual(3);
   }
-  await showcase.getByRole("button", { name: "Application", exact: true }).click();
+  await showcase.getByRole("button", { name: /Application$/ }).click();
   const phone = await settledDevice(showcase, "phone");
   for (const label of ["Web/Mobile App", "Game", "CRM", "Platform"]) {
     await showcase.getByRole("button", { name: label, exact: true }).click();
     expect(await phone.locator(".phone-app-content").evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(2);
   }
-  await showcase.getByRole("button", { name: "Automations", exact: true }).click();
+  await showcase.getByRole("button", { name: /Automations$/ }).click();
   const tablet = await settledDevice(showcase, "tablet");
   const tabletBounds = await tablet.locator(".tablet-object").boundingBox();
   const controlsBounds = await showcase.locator(".scene-controls").boundingBox();

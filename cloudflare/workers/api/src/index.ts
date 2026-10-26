@@ -36,6 +36,7 @@ import { engineRouter, runDueEngineDiscovery } from "./engine";
 import { newsletterRouter } from "./newsletter";
 import { forcedPasswordAllowedPath, mfaAuthEnabled, normalizeLoginPhone, normalizeUsername, turnstileAuthEnabled, uniqueStaffPhoneMatch } from "./authPolicy";
 import { parseReviewSubmission, WEBSITE_REVIEW_SURFACE } from "./reviewsPolicy";
+import { cleanupAvyronEditorialContent } from "./aiContentRetention";
 
 export { AvyronAgentRuntime } from "./agents/AvyronAgentRuntime";
 export { AvyronMaintenanceWorkflow } from "./workflows/AvyronMaintenanceWorkflow";
@@ -1545,6 +1546,21 @@ app.get("/api/example-requests", requireAuth, requireRole("staff", "admin"), asy
   return c.json({ data: results });
 });
 
+app.patch("/api/example-requests/:id", requireAuth, requireRole("staff", "admin"), async (c) => {
+  const id = c.req.param("id");
+  const body = await c.req.json().catch(() => null);
+  const status = body && typeof body === "object" && "status" in body ? body.status : null;
+  if (typeof status !== "string" || !["new", "contacted", "completed", "spam"].includes(status)) {
+    return c.json({ error: { code: "invalid_status" } }, 400);
+  }
+  const result = await c.env.DB.prepare(
+    "UPDATE example_requests SET status = ?, updated_at = ? WHERE id = ?",
+  ).bind(status, now(), id).run();
+  if (!result.meta.changes) return c.json({ error: { code: "not_found" } }, 404);
+  await recordSecurityEvent(c, c.get("userId"), "example_request.status_updated", "allowed", "info", { requestId: id, status });
+  return c.json({ ok: true, status });
+});
+
 // ─── Content (KV) ───────────────────────────────────────────────────────
 app.get("/api/content/:key", requireAuth, requireRole("staff", "admin"), async (c) => {
   const key = contentConfigKey(c.req.param("key") || "");
@@ -1589,7 +1605,7 @@ import { billingRouter } from "./billing";
 import { systemDiagnosticsRouter } from "./systemDiagnostics";
 import { consumeAsyncJobs, enqueueAsyncJobs } from "./asyncJobs";
 import { blogRouter, getBlogSitemapEntries, getPublishedBlogPost } from "./blog";
-import { headersForTransformedBody, injectBlogHtml, mergeBlogSitemap } from "../../../../src/worker/blogHtml";
+import { headersForTransformedBody, injectBlogHtml, mergeBlogLlms, mergeBlogSitemap } from "../../../../src/worker/blogHtml";
 import { BLOG_SLUGS } from "../../../../src/data/blogSlugs";
 import { decide, isKnownSpaRoute, normalizePath } from "../../../../src/worker/router";
 import { serveCachedAsset } from "../../../../src/worker/assetCache";
@@ -1745,6 +1761,22 @@ app.get("/sitemap.xml", async (c) => {
   return new Response(c.req.method === "HEAD" ? null : xml, { status: 200, headers });
 });
 
+app.get("/llms.txt", async (c) => {
+  const asset = await c.env.ASSETS.fetch(c.req.raw);
+  if (!asset.ok) return asset;
+  let entries: Awaited<ReturnType<typeof getBlogSitemapEntries>> = [];
+  try {
+    entries = await getBlogSitemapEntries(c.env.DB);
+  } catch (error) {
+    console.error(JSON.stringify({ event: "blog_llms_database_unavailable", error: String(error) }));
+  }
+  const headers = headersForTransformedBody(asset.headers);
+  headers.set("content-type", "text/plain; charset=utf-8");
+  headers.set("cache-control", "public, max-age=300, s-maxage=900, stale-while-revalidate=86400");
+  headers.set("X-Robots-Tag", "noindex");
+  return new Response(c.req.method === "HEAD" ? null : mergeBlogLlms(await asset.text(), entries), { status: 200, headers });
+});
+
 // `app.avyron.ro` is the dedicated entry point for AVYRON OS. The complete
 // hostname stays on the same Worker so /api remains same-origin and no second
 // deployment or database boundary is introduced.
@@ -1836,6 +1868,12 @@ export default {
   scheduled: (controller, env, ctx) => {
     if (controller.cron === "0,15,30,45 * * * *") {
       ctx.waitUntil(enqueueAsyncJobs(env, ["operation_drain", "social_drain", "survey_delivery", "survey_ai"]));
+      if (new Date(controller.scheduledTime).getUTCMinutes() === 0) {
+        ctx.waitUntil(cleanupAvyronEditorialContent(env).catch((error) => {
+          console.error(JSON.stringify({ event: "ai_editorial_cleanup_failed", error: String(error) }));
+          throw error;
+        }));
+      }
       return;
     }
     if (controller.cron === EXCHANGE_RATE_REFRESH_CRON) {

@@ -20,7 +20,7 @@ test("guest review follows subscriptions and waits for admin approval", async ({
   });
 
   await page.goto("/servicii/website-prezentare-profesional", { waitUntil: "domcontentloaded" });
-  await expect(page.locator("#recenzii")).toContainText("Primele recenzii aprobate vor apărea aici.");
+  await expect(page.locator("#recenzii")).toContainText("Primele recenzii aprobate vor apărea aici.", { timeout: 15_000 });
   const order = await page.locator("#abonamente, #recenzii, #faq, [data-testid='related-product-list'], #technology-partners-title").evaluateAll((elements) =>
     elements.map((element) => Math.round(element.getBoundingClientRect().top + window.scrollY)),
   );

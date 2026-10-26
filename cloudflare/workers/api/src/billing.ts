@@ -6,6 +6,9 @@ import { revolutSignatureValid, stripeSignatureValid } from "./billingSignatures
 import { mfaAuthEnabled } from "./authPolicy";
 import { FINANCIAL_PROVIDER_PLAYBOOKS, financialSyncPhase, type FinancialConnectionRecord, type FinancialProviderKey } from "./providerSyncPolicy";
 import { listAccountPaymentMethods } from "./billingMethods";
+import { platformRoleForUser } from "./authorization";
+import { checkRateLimit } from "./antispam";
+import { verifyFinancialConnection } from "./financialConnectionVerification";
 
 export const billingRouter = new Hono<AppBindings>();
 const REVOLUT_VERSION = "2026-08-17";
@@ -396,7 +399,30 @@ billingRouter.get("/api/billing/admin/status",async(c)=>{
     const approved=provider==="oblio"?capabilities.oblio.enabled:provider==="revolut_business"?false:configured;
     return {...playbook,phase:financialSyncPhase({provider,configured,approved,connection:records.get(provider),now:Date.now()})};
   });
-  return c.json({providers:capabilities,providerPlaybooks,security:{mfaEnabled:mfaAuthEnabled(c.env),mfaVerified:Boolean(c.get("mfaVerified"))},sessions:sessions.results,subscriptions:subscriptions.results,invoices:invoices.results,pendingInvoices:pendingInvoices.results,paymentsByCurrency:paymentsByCurrency.results,invoicesByCurrency:invoicesByCurrency.results,recentPayments:recentPayments.results,recentSubscriptions:recentSubscriptions.results,recentInvoices:recentInvoices.results,connectionRecords:connectionRecords.results,bankSettlement:{verified:false,reason:"revolut_business_not_connected"},recentFailures:failed.results});
+  return c.json({providers:capabilities,providerPlaybooks,security:{mfaEnabled:mfaAuthEnabled(c.env),mfaVerified:Boolean(c.get("mfaVerified")),canVerify:(await platformRoleForUser(c.env.DB,c.get("userId")))==="platform_owner"},sessions:sessions.results,subscriptions:subscriptions.results,invoices:invoices.results,pendingInvoices:pendingInvoices.results,paymentsByCurrency:paymentsByCurrency.results,invoicesByCurrency:invoicesByCurrency.results,recentPayments:recentPayments.results,recentSubscriptions:recentSubscriptions.results,recentInvoices:recentInvoices.results,connectionRecords:connectionRecords.results,bankSettlement:{verified:false,reason:"revolut_business_not_connected"},recentFailures:failed.results});
+});
+
+billingRouter.post("/api/billing/admin/connections/:provider/verify",async(c)=>{
+  if ((await platformRoleForUser(c.env.DB,c.get("userId")))!=="platform_owner") return c.json({error:{code:"platform_owner_required"}},403);
+  if (!c.get("mfaVerified")) return c.json({error:{code:"mfa_required"}},403);
+  const provider=c.req.param("provider");
+  if (!["stripe","oblio","revolut_merchant","revolut_business"].includes(provider)) return c.json({error:{code:"unsupported_provider"}},404);
+  const rate=await checkRateLimit(c.env.DB,[{key:`billing_verify:${c.get("userId")}:h`,limit:12,windowSec:3600}]);
+  if (!rate.ok) return c.json({error:{code:"rate_limited"}},429);
+  const result=await verifyFinancialConnection(c.env,provider as FinancialProviderKey);
+  const timestamp=Date.now();
+  const existing=await c.env.DB.prepare("SELECT id FROM financial_provider_connections WHERE provider=? AND vendor_id IS NULL ORDER BY updated_at DESC LIMIT 1")
+    .bind(provider).first<{id:string}>();
+  if (existing) {
+    await c.env.DB.prepare("UPDATE financial_provider_connections SET status=?,last_error_code=?,capabilities_json=?,last_sync_at=NULL,updated_by=?,updated_at=? WHERE id=?")
+      .bind(result.ok?"connected":"error",result.ok?null:result.code,result.ok?JSON.stringify(result.capabilities):"[]",c.get("userId"),timestamp,existing.id).run();
+  } else if (result.ok) {
+    await c.env.DB.prepare("INSERT INTO financial_provider_connections(id,provider,status,capabilities_json,secret_binding_reference,created_by,updated_by,created_at,updated_at) VALUES (?,?,'connected',?,?,?,?,?,?)")
+      .bind(`fpc_${crypto.randomUUID().replace(/-/g,"")}`,provider,JSON.stringify(result.capabilities),null,c.get("userId"),c.get("userId"),timestamp,timestamp).run();
+  }
+  await c.env.DB.prepare("INSERT INTO financial_audit_events(id,actor_user_id,action,resource_type,resource_id,before_json,after_json,source,request_id,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)")
+    .bind(`faud_${crypto.randomUUID().replace(/-/g,"")}`,c.get("userId"),"billing.connection.verify","financial_provider_connection",provider,null,JSON.stringify({ok:result.ok,code:result.ok?null:result.code}),"api",c.get("requestId")||null,timestamp).run();
+  return result.ok?c.json({ok:true,provider,account:result.account,capabilities:result.capabilities,detail:result.detail||null,synchronized:false}):c.json({error:{code:result.code}},409);
 });
 
 billingRouter.post("/api/billing/admin/invoices/:orderId/retry",async(c)=>{

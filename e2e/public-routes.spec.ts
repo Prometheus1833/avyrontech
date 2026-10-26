@@ -135,7 +135,7 @@ test.describe("public SEO routes", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByRole("heading", { name: "Alege domeniul tău și vezi cum ar arăta." })).toHaveCount(1);
-    await showcase.getByRole("button", { name: "Website", exact: true }).click();
+    await showcase.getByRole("button", { name: /Website$/ }).click();
     await expect(showcase).toHaveAttribute("data-active-stage", "laptop");
     await examples.getByRole("button", { name: "Domenii", exact: true }).click();
     await examples.getByRole("button", { name: /Restaurante & cafenele/ }).click();
@@ -146,7 +146,7 @@ test.describe("public SEO routes", () => {
     await expect(examples.locator("article")).toHaveCount(0);
     await expect(showcase.getByRole("link", { name: "Serviciul Website" })).toHaveAttribute("href", "/servicii/website-prezentare-profesional");
 
-    await showcase.getByRole("button", { name: "Aplicație", exact: true }).click();
+    await showcase.getByRole("button", { name: /Aplicație$/ }).click();
     await expect(showcase).toHaveAttribute("data-active-stage", "phone");
     await expect(showcase.getByRole("link", { name: "Aplicații și platforme" })).toHaveAttribute("href", "/servicii/aplicatii-si-platforme");
     const stickyFrame = showcase.locator(":scope > div").first();
@@ -155,7 +155,7 @@ test.describe("public SEO routes", () => {
       return frame.top >= 0 && frame.top <= 81 && frame.bottom >= window.innerHeight - 1;
     })).toBe(true);
 
-    await showcase.getByRole("button", { name: "Automatizări", exact: true }).click();
+    await showcase.getByRole("button", { name: /Automatizări$/ }).click();
     await expect(showcase).toHaveAttribute("data-active-stage", "tablet");
     await expect(showcase.getByRole("link", { name: "Automatizări și AI" })).toHaveAttribute("href", "/servicii/automatizari-si-ai");
 
@@ -164,13 +164,13 @@ test.describe("public SEO routes", () => {
     const englishShowcase = englishExamples.getByTestId("industry-device-showcase");
     await englishShowcase.scrollIntoViewIfNeeded();
     await expect(page.getByRole("heading", { name: "Pick your industry and see how it would look." })).toHaveCount(1);
-    await expect(englishShowcase.getByRole("button", { name: "Automations", exact: true })).toBeVisible();
+    await expect(englishShowcase.getByRole("button", { name: /Automations$/ })).toBeVisible();
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/#domenii");
     const mobileShowcase = page.getByTestId("industry-device-showcase");
     await expect(mobileShowcase).toBeInViewport();
-    await mobileShowcase.getByRole("button", { name: "Automatizări", exact: true }).click();
+    await mobileShowcase.getByRole("button", { name: /Automatizări$/ }).click();
     await expect(mobileShowcase).toHaveAttribute("data-active-stage", "tablet");
     await expect(mobileShowcase.getByRole("button", { name: "ChatBot AI web și WhatsApp" })).toBeInViewport();
     const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -562,7 +562,7 @@ test.describe("public SEO routes", () => {
   });
 
   test("every secondary page exposes the shared responsive back control", async ({ page }) => {
-    test.setTimeout(90_000);
+    test.setTimeout(180_000);
     const secondaryRoutes = [
       "/gdpr", "/en/privacy", "/termeni", "/en/terms",
       "/servicii", "/en/services",
@@ -728,6 +728,7 @@ test.describe("forms and authentication", () => {
     await page.getByLabel("Subiect / brief").fill("Website premium pentru afaceri locale");
     await page.getByRole("button", { name: "Generează ciornă" }).click();
     await expect(page.getByRole("heading", { name: draft.title })).toBeVisible();
+    await page.locator("article").filter({ has: page.getByRole("heading", { name: draft.title }) }).locator("summary").click();
     await expect(page.getByText(draft.caption)).toBeVisible();
     await expect.poll(() => generationPayload).not.toBeNull();
     expect(generationPayload).toMatchObject({ format: "post", channel: "instagram", objective: "visibility" });

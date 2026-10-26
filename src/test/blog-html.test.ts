@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { headersForTransformedBody, mergeBlogSitemap } from "@/worker/blogHtml";
+import { headersForTransformedBody, mergeBlogLlms, mergeBlogSitemap } from "@/worker/blogHtml";
 
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
@@ -9,6 +9,18 @@ const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 </urlset>`;
 
 describe("dynamic blog sitemap", () => {
+  it("adds published articles to llms.txt once, without copying Markdown markup", () => {
+    const base = "# AVYRON\n\n- [Existing](https://avyron.ro/blog/existing): Existing article.\n";
+    const result = mergeBlogLlms(base, [
+      { language: "ro", slug: "existing", title: "Existing", excerpt: "Same", updated_at: "2026-10-08" },
+      { language: "en", slug: "new-guide", title: "[New] # guide", excerpt: "Useful (tested) guide", updated_at: "2026-10-08" },
+      { language: "ro", slug: "Invalid Slug", title: "Invalid", excerpt: "Ignore", updated_at: "2026-10-08" },
+    ]);
+    expect(result.match(/https:\/\/avyron.ro\/blog\/existing/g)).toHaveLength(1);
+    expect(result).toContain("[New guide](https://avyron.ro/en/blog/new-guide): Useful tested guide");
+    expect(result).not.toContain("Invalid Slug");
+  });
+
   it("adds only valid canonical articles and reciprocal language alternatives", () => {
     const xml = mergeBlogSitemap(sitemap, [
       {

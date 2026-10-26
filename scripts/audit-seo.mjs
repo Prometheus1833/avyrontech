@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { JSDOM } from "jsdom";
@@ -28,6 +28,7 @@ function routeFor(file) {
 }
 
 const failures = [];
+const recommendations = [];
 const pages = htmlFiles(dist).map((file) => {
   const route = routeFor(file);
   const html = readFileSync(file, "utf8");
@@ -45,6 +46,7 @@ const pages = htmlFiles(dist).map((file) => {
   const ids = new Set([...document.querySelectorAll("[id]")].map((element) => element.id));
   const h1 = document.querySelectorAll("h1").length;
   const jsonLd = [...document.querySelectorAll('script[type="application/ld+json"]')];
+  const schemaTypes = new Set();
 
   if (!title) failures.push(`${route}: missing title`);
   if (!description) failures.push(`${route}: missing meta description`);
@@ -63,12 +65,32 @@ const pages = htmlFiles(dist).map((file) => {
   }
   for (const script of jsonLd) {
     try {
-      JSON.parse(script.textContent || "");
+      const data = JSON.parse(script.textContent || "");
+      for (const node of data["@graph"] || [data]) {
+        const types = Array.isArray(node["@type"]) ? node["@type"] : [node["@type"]];
+        types.filter(Boolean).forEach((type) => schemaTypes.add(type));
+      }
     } catch {
       failures.push(`${route}: invalid JSON-LD`);
     }
   }
-  return { route, title, description, canonical, robots, noindex, ids };
+  const isServicePage = /^\/(?:servicii|en\/services)\//.test(route);
+  const isStudioApp = /\/(?:creeaza|create)$/.test(route);
+  if (!noindex && isServicePage && !schemaTypes.has("Service") && !(isStudioApp && schemaTypes.has("WebApplication"))) {
+    recommendations.push({ route, code: "service_schema", recommendation: "Adaugă date Service conforme cu oferta vizibilă pe pagină." });
+  }
+  if (!noindex && /^\/(?:en\/)?blog\//.test(route) && !schemaTypes.has("Article") && !schemaTypes.has("BlogPosting")) {
+    recommendations.push({ route, code: "article_schema", recommendation: "Adaugă date Article sau BlogPosting conforme cu articolul afișat." });
+  }
+  if (!noindex && ["/", "/en"].includes(route) && !schemaTypes.has("Organization")) {
+    recommendations.push({ route, code: "organization_schema", recommendation: "Adaugă identitatea Organization pe pagina principală." });
+  }
+  const isProductDetail = /^\/produse\/(?!colectii\/)[^/]+\/[^/]+$/.test(route)
+    || /^\/en\/products\/(?!collections\/)[^/]+\/[^/]+$/.test(route);
+  if (isProductDetail && !schemaTypes.has("Product")) {
+    recommendations.push({ route, code: "product_schema", recommendation: "Descrie produsul prin Product și adaugă Offer numai pentru prețul afișat." });
+  }
+  return { route, title, description, canonical, robots, noindex, ids, schemaTypes: [...schemaTypes] };
 });
 
 const sitemap = readFileSync(join(dist, "sitemap.xml"), "utf8");
@@ -216,9 +238,33 @@ for (const href of llmsLinks) {
     if (!pageByRoute.get(route)?.ids.has(id)) failures.push(`llms.txt points to a missing page fragment (${href})`);
   }
 }
+const llmsRoutes = llmsLinks.filter((href) => {
+  try {
+    const target = new URL(href, origin);
+    return target.origin === origin && !target.hash;
+  } catch { return false; }
+}).map((href) => new URL(href, origin).pathname);
+if (llmsRoutes.length !== sitemapSet.size || new Set(llmsRoutes).size !== sitemapSet.size) {
+  failures.push(`llms.txt must list exactly the ${sitemapSet.size} canonical sitemap pages`);
+}
+for (const route of sitemapSet) {
+  if (!llmsRoutes.includes(route)) failures.push(`llms.txt is missing sitemap page ${route}`);
+}
 if (failures.length) {
   throw new Error(`SEO audit failed (${failures.length}):\n${failures.map((item) => `- ${item}`).join("\n")}`);
 }
+
+writeFileSync(join(dist, "seo-audit.json"), JSON.stringify({
+  version: 1,
+  generatedAt: new Date().toISOString(),
+  summary: {
+    indexablePages: sitemapSet.size,
+    noindexPages: noindex.length,
+    strategicProductPages: indexedProductRoutes.length,
+    llmsPages: llmsRoutes.length,
+  },
+  recommendations,
+}, null, 2));
 
 console.log(
   `SEO audit passed: ${indexable.length} indexable pages, ${noindex.length} public noindex pages, ${indexedProductRoutes.length} strategic product URLs.`,

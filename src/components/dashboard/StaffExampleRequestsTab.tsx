@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, Phone, MessageCircle, Copy, ExternalLink, Search } from "lucide-react";
+import { Mail, Phone, MessageCircle, Copy, ExternalLink, Search, Columns3, List } from "lucide-react";
 import { toast } from "sonner";
 
 type Row = {
@@ -15,10 +15,18 @@ type Row = {
   source_category: string | null;
   source_name: string | null;
   user_agent: string | null;
-  status: string;
+  status: Status;
   delivery_status: string;
   created_at: number;
 };
+
+type Status = "new" | "contacted" | "completed" | "spam";
+const stages: Array<{ id: Status; label: string }> = [
+  { id: "new", label: "Nou" },
+  { id: "contacted", label: "Contactat" },
+  { id: "completed", label: "Finalizat" },
+  { id: "spam", label: "Spam" },
+];
 
 const timeAgo = (timestamp: number) => {
   const s = Math.floor((Date.now() - timestamp) / 1000);
@@ -49,6 +57,26 @@ export const StaffExampleRequestsTab = () => {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const [view, setView] = useState<"pipeline" | "list">("pipeline");
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const updateStatus = async (row: Row, status: Status) => {
+    if (row.status === status || busyId) return;
+    setBusyId(row.id);
+    try {
+      await cfAuth.request(`/api/example-requests/${encodeURIComponent(row.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      setRows((current) => current.map((item) => item.id === row.id ? { ...item, status } : item));
+      toast.success("Stadiul solicitării a fost actualizat.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Stadiul nu a putut fi actualizat.");
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   const load = async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -86,6 +114,11 @@ export const StaffExampleRequestsTab = () => {
 
   return (
     <div className="space-y-6">
+      <header className="rounded-2xl border border-violet-400/15 bg-gradient-to-br from-violet-500/10 to-cyan-400/[0.05] p-5">
+        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-violet-300">Pipeline comercial</p>
+        <h1 className="mt-2 font-display text-2xl font-bold text-white">Solicitări demo</h1>
+        <p className="mt-2 text-sm text-slate-400">Urmărește cererile de la preluare până la finalizare. Linkurile de contact pregătesc mesajul; trimiterea se face separat.</p>
+      </header>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         <Card>
           <CardHeader className="pb-2">
@@ -110,6 +143,7 @@ export const StaffExampleRequestsTab = () => {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
         <Input
+          aria-label="Caută solicitări demo"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Caută după email, telefon, sursă…"
@@ -117,7 +151,28 @@ export const StaffExampleRequestsTab = () => {
         />
       </div>
 
-      <Card>
+      <div className="flex gap-2" aria-label="Afișare solicitări">
+        <Button type="button" size="sm" variant={view === "pipeline" ? "default" : "outline"} aria-pressed={view === "pipeline"} onClick={() => setView("pipeline")}><Columns3 className="mr-1.5 size-4" />Pipeline</Button>
+        <Button type="button" size="sm" variant={view === "list" ? "default" : "outline"} aria-pressed={view === "list"} onClick={() => setView("list")}><List className="mr-1.5 size-4" />Listă</Button>
+      </div>
+
+      {!loading && view === "pipeline" && <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-4" aria-label="Pipeline solicitări demo">
+        {stages.map((stage) => {
+          const items = filtered.filter((row) => row.status === stage.id);
+          return <section key={stage.id} aria-label={stage.label} className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.025] p-3">
+            <h2 className="mb-3 flex items-center justify-between text-sm font-semibold text-white">{stage.label}<span className="rounded-full bg-violet-500/15 px-2 py-1 text-xs text-violet-200">{items.length}</span></h2>
+            <div className="space-y-2">{items.map((row) => <article key={row.id} className="min-w-0 rounded-xl border border-white/[0.08] bg-[#111829] p-3 text-slate-100">
+              <h3 className="truncate text-sm font-medium">{row.source_name || row.source_slug || "Exemplu personalizat"}</h3>
+              <p className="mt-1 text-xs text-slate-400">{timeAgo(row.created_at)}</p>
+              <a href={`mailto:${row.email}`} className="mt-2 block break-all text-xs text-violet-200 hover:underline">{row.email}</a>
+              <a href={`tel:${row.phone.replace(/\s/g, "")}`} className="mt-1 block text-xs text-violet-200 hover:underline">{row.phone}</a>
+              <label className="mt-3 block text-xs text-slate-400">Stadiu<select aria-label={`Stadiu pentru ${row.email}`} value={row.status} disabled={busyId === row.id} onChange={(event) => void updateStatus(row, event.target.value as Status)} className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-2 py-2 text-sm text-slate-100">{stages.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label>
+            </article>)}{items.length === 0 && <p className="rounded-xl border border-dashed border-white/10 p-4 text-xs text-slate-500">Nicio cerere în acest stadiu.</p>}</div>
+          </section>;
+        })}
+      </div>}
+
+      {view === "list" && <Card>
         <CardHeader>
           <CardTitle className="text-sm flex items-center gap-2">
             <MessageCircle className="size-4" /> Solicitări demo („vrei să vezi cum ar arăta site-ul tău?")
@@ -163,7 +218,7 @@ export const StaffExampleRequestsTab = () => {
                       </div>
                       <div className="mt-2 flex gap-2">
                         <Badge variant={r.delivery_status === "sent" ? "secondary" : "destructive"}>Email: {r.delivery_status}</Badge>
-                        <Badge variant="outline">{r.status}</Badge>
+                        <label className="text-xs text-muted-foreground">Stadiu <select aria-label={`Stadiu pentru ${r.email}`} value={r.status} disabled={busyId === r.id} onChange={(event) => void updateStatus(r, event.target.value as Status)} className="ml-1 rounded border border-border bg-background px-2 py-1 text-foreground">{stages.map((stage) => <option key={stage.id} value={stage.id}>{stage.label}</option>)}</select></label>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2 shrink-0">
@@ -190,7 +245,7 @@ export const StaffExampleRequestsTab = () => {
             </ul>
           )}
         </CardContent>
-      </Card>
+      </Card>}
     </div>
   );
 };

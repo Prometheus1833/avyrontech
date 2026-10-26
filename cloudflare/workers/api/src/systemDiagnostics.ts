@@ -4,6 +4,57 @@ import { now } from "./security";
 
 export const systemDiagnosticsRouter = new Hono<AppBindings>();
 
+type SeoRecommendation = { route: string; code: string; recommendation: string };
+type SeoAudit = {
+  version: number;
+  generatedAt: string;
+  summary: { indexablePages: number; noindexPages: number; strategicProductPages: number; llmsPages: number };
+  recommendations: SeoRecommendation[];
+};
+
+/** Read the assets packaged with this release, never a third-party URL. */
+async function readSeoAsset(env: AppBindings["Bindings"], path: string): Promise<string | null> {
+  const response = await env.ASSETS.fetch(new Request(`https://avyron.ro/${path}`));
+  return response.ok ? response.text() : null;
+}
+
+systemDiagnosticsRouter.get("/api/admin/system/seo", async (c) => {
+  const [reportText, sitemap, robots, llms] = await Promise.all([
+    readSeoAsset(c.env, "seo-audit.json"),
+    readSeoAsset(c.env, "sitemap.xml"),
+    readSeoAsset(c.env, "robots.txt"),
+    readSeoAsset(c.env, "llms.txt"),
+  ]);
+  if (!reportText) return c.json({ error: { code: "seo_audit_unavailable" } }, 503);
+  let report: SeoAudit;
+  try {
+    report = JSON.parse(reportText) as SeoAudit;
+    if (report.version !== 1 || !report.summary || !Array.isArray(report.recommendations)) throw new Error("invalid_report");
+  } catch {
+    return c.json({ error: { code: "seo_audit_invalid" } }, 503);
+  }
+  const recommendations = [...report.recommendations];
+  const sitemapCount = sitemap?.match(/<url>/g)?.length ?? 0;
+  if (!sitemap || sitemapCount !== report.summary.indexablePages) {
+    recommendations.unshift({ route: "/sitemap.xml", code: "sitemap_mismatch", recommendation: "Regenerază sitemap-ul și verifică rutele canonice publicate." });
+  }
+  if (!robots?.includes("Sitemap: https://avyron.ro/sitemap.xml")) {
+    recommendations.unshift({ route: "/robots.txt", code: "robots_sitemap", recommendation: "Adaugă URL-ul canonic al sitemap-ului în robots.txt." });
+  }
+  const llmsCount = llms?.match(/\]\(https:\/\/avyron\.ro\//g)?.length ?? 0;
+  if (!llms || llmsCount !== report.summary.llmsPages) {
+    recommendations.unshift({ route: "/llms.txt", code: "llms_mismatch", recommendation: "Generează llms.txt din sitemap și paginile canonice ale aceluiași build." });
+  }
+  c.header("Cache-Control", "private, no-store");
+  return c.json({ data: {
+    generatedAt: report.generatedAt,
+    summary: report.summary,
+    checkedAssets: { sitemap: Boolean(sitemap), robots: Boolean(robots), llms: Boolean(llms) },
+    recommendations,
+    indexingEvidence: "Acest diagnostic verifică publicarea tehnică. Indexarea URL-urilor se confirmă separat în Google Search Console.",
+  } });
+});
+
 type DiagnosticStatus = "healthy" | "degraded" | "not_configured" | "limited" | "error" | "unknown";
 type Diagnostic = { component: string; status: DiagnosticStatus; detail: string };
 
