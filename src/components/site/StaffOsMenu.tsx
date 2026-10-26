@@ -1,8 +1,12 @@
 import {
   ArrowUpRight,
+  Bell,
   Bot,
+  ChevronDown,
   FolderKanban,
+  GitBranch,
   LayoutDashboard,
+  MessagesSquare,
   ShieldCheck,
   Target,
   Wallet,
@@ -47,6 +51,24 @@ const StaffOsMenu = () => {
       icon: FolderKanban,
     },
     {
+      label: ro ? "Notificări" : "Notifications",
+      detail: ro ? "Evenimente și anunțuri" : "Events and announcements",
+      to: "/profil?tab=overview&notifications=1",
+      icon: Bell,
+    },
+    {
+      label: ro ? "Fluxuri și pipeline" : "Workflows and pipeline",
+      detail: ro ? "Cereri, vânzări și livrare" : "Requests, sales and delivery",
+      to: "/profil?tab=workflows",
+      icon: GitBranch,
+    },
+    {
+      label: ro ? "Chat intern" : "Team chat",
+      detail: ro ? "Canale și mesaje directe" : "Channels and direct messages",
+      to: "/profil?tab=intern",
+      icon: MessagesSquare,
+    },
+    {
       label: ro ? "Leaduri & CRM" : "Leads & CRM",
       detail: ro ? "Oportunități și răspunsuri" : "Opportunities and replies",
       to: "/profil?tab=leads",
@@ -76,16 +98,16 @@ const StaffOsMenu = () => {
     : isAdmin ? "Administrator" : ro ? "Membru staff" : "Staff member";
 
   return (
+    <div className="inline-flex h-10 shrink-0 items-center rounded-full border border-violet-500/25 bg-violet-500/[0.08] text-violet-700 shadow-sm dark:text-violet-200">
+    <Link to="/profil?tab=overview" className="inline-flex h-full items-center rounded-l-full pl-3 pr-1.5 text-[10px] font-bold tracking-[0.1em] transition hover:text-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:hover:text-white" aria-label={ro ? "Deschide AVYRON OS" : "Open AVYRON OS"}>AVYRON OS</Link>
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
           aria-label={ro ? "Deschide accesul rapid AVYRON OS" : "Open AVYRON OS quick access"}
-          className="group relative inline-flex h-10 shrink-0 items-center justify-center rounded-full border border-violet-500/25 bg-violet-500/[0.08] px-3 font-mono text-[10px] font-bold tracking-[0.16em] text-violet-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-500/45 hover:bg-violet-500/15 hover:text-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:text-violet-200 dark:hover:text-white"
+          className="group relative inline-flex h-full w-8 shrink-0 items-center justify-center rounded-r-full transition hover:bg-violet-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
         >
-          <span className="absolute inset-x-2 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/60 to-transparent" aria-hidden="true" />
-          OS
-          <span className="ml-1.5 size-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,.85)]" aria-hidden="true" />
+          <ChevronDown className="size-3.5" aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
 
@@ -140,6 +162,7 @@ const StaffOsMenu = () => {
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
+    </div>
   );
 };
 

@@ -140,7 +140,7 @@ test.describe("dashboard AVYRON OS în română", () => {
 
     const osButton = page.getByRole("button", { name: "Deschide accesul rapid AVYRON OS" });
     await expect(osButton).toBeVisible();
-    await expect(osButton).toHaveText(/OS/);
+    await expect(page.getByRole("link", { name: "Deschide AVYRON OS" })).toHaveAttribute("href", "/profil?tab=overview");
     const brandBox = await page.locator("header").getByRole("link", { name: "AVYRON", exact: true }).boundingBox();
     const osBox = await osButton.boundingBox();
     const languageBox = await page.getByRole("button", { name: /Schimbă limba/ }).boundingBox();
@@ -156,7 +156,8 @@ test.describe("dashboard AVYRON OS în română", () => {
     await expect(page.getByRole("menu")).toHaveCSS("opacity", "1");
     await page.screenshot({ path: testInfo.outputPath("landing-os-quick-menu.png") });
 
-    await osButton.click();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("menu")).toHaveCount(0);
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(osButton).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
@@ -164,6 +165,10 @@ test.describe("dashboard AVYRON OS în română", () => {
     await expect(page.getByRole("menuitem", { name: "Către Panoul de comandă" })).toBeVisible();
     await expect(page.getByRole("menu")).toHaveCSS("opacity", "1");
     await page.screenshot({ path: testInfo.outputPath("landing-os-quick-menu-mobile.png") });
+    await page.keyboard.press("Escape");
+    await page.setViewportSize({ width: 320, height: 740 });
+    await expect(osButton).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
   });
 
   test("rămâne utilizabil pe mobil și oferă Command Center", async ({ page }, testInfo) => {
@@ -174,12 +179,71 @@ test.describe("dashboard AVYRON OS în română", () => {
     await page.screenshot({ path: testInfo.outputPath("overview-mobile.png"), fullPage: true });
     await page.getByRole("button", { name: "Caută secțiuni și fluxuri" }).click();
     await expect(page.getByPlaceholder("Caută secțiuni și fluxuri…")).toBeVisible();
-    await expect(page.getByText("Comenzi disponibile", { exact: true })).toBeVisible();
+    await expect(page.getByText("Acces rapid", { exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Deschide mai multe secțiuni" }).click();
     await expect(page.getByRole("navigation", { name: "Toate secțiunile AVYRON OS" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Newsletter" })).toBeVisible();
+  });
+
+  test("arată notificările și anunțurile cu filtre utilizabile pe mobil", async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.route("**/api/workspace/announcements**", (route) => route.fulfill({ json: { data: [
+      { id: "announce-1", title: "Ședința echipei", content: "Actualizăm prioritățile astăzi.", priority: "normal", created_at: new Date(now - 60_000).toISOString() },
+    ] } }));
+    await page.route("**/api/operations/notifications**", (route) => route.fulfill({ json: { data: [
+      { id: "notice-1", title: "Brief nou", body: "Un brief a sosit pentru revizuire.", destination: "surveys", read_at: null, created_at: now },
+    ] } }));
+    await page.route("**/api/operations/notifications/notice-1/read", (route) => route.fulfill({ json: { ok: true } }));
+    await page.goto("/profil?tab=overview&notifications=1");
+    const dialog = page.getByRole("dialog", { name: "Notificări și anunțuri" });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText("Brief nou")).toBeVisible();
+    await expect(dialog.getByText("Ședința echipei")).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath("notifications-mobile.png") });
+    await dialog.getByRole("button", { name: "Necitite 1" }).click();
+    await expect(dialog.getByText("Ședința echipei")).not.toBeVisible();
+    await dialog.getByRole("button", { name: "Marchează citită" }).click();
+    await expect(dialog.getByText("Nu ai notificări necitite.")).toBeVisible();
+    await dialog.getByRole("button", { name: "Anunțuri 1" }).click();
+    await expect(dialog.getByText("Ședința echipei")).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
+  });
+
+  test("staff poate citi anunțurile fără acces operațional privilegiat", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.route("**/api/auth/me", (route) => route.fulfill({ json: {
+      user: { id: "staff-1", email: "staff@example.com", display_name: "Mara", avatar_url: null, email_verified: 1, must_change_password: 0, created_at: now },
+      profile: { id: "staff-1", display_name: "Mara", avatar_url: null, language: "ro", theme: "dark" },
+      roles: ["staff"], superadmin: false,
+    } }));
+    let privilegedCalls = 0;
+    await page.route("**/api/operations/notifications", (route) => { privilegedCalls++; return route.fulfill({ status: 403, json: { error: "forbidden" } }); });
+    await page.route("**/api/workspace/announcements**", (route) => route.fulfill({ json: { data: [
+      { id: "team-1", title: "Prioritățile săptămânii", content: "Revizuim proiectele active.", priority: "important", created_at: new Date(now).toISOString() },
+    ] } }));
+    await page.goto("/profil?tab=overview");
+    await page.getByRole("button", { name: "Notificări", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Notificări și anunțuri" });
+    await expect(dialog.getByText("Prioritățile săptămânii")).toBeVisible();
+    await expect(dialog.getByText("Invalid Date")).toHaveCount(0);
+    expect(privilegedCalls).toBe(0);
+  });
+
+  test("filtrele leadurilor arată clar etapa și se pot reseta", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.route("**/api/leads", (route) => route.fulfill({ json: { platformRole: null, data: [
+      { id: "l1", name: "Ana", business: "Atelier Nord", email: "ana@example.com", product: "Website", source: "Site", lifecycle_stage: "new_lead", urgent: 1, created_at: now },
+      { id: "l2", name: "Matei", business: "Studio Aurora", email: "matei@example.com", product: "Aplicație", source: "Recomandare", lifecycle_stage: "offer", urgent: 0, created_at: now - 1000 },
+    ] } }));
+    await page.goto("/profil?tab=leads");
+    const filters = page.getByRole("group", { name: "Filtrează leadurile" });
+    await filters.getByRole("button", { name: "Urgente 1" }).click();
+    await expect(page.getByText("Atelier Nord").first()).toBeVisible();
+    await expect(page.getByText("Studio Aurora")).toHaveCount(0);
+    await filters.getByRole("button", { name: "Resetează" }).click();
+    await expect(page.getByText("Studio Aurora").first()).toBeVisible();
   });
 
   test("deschide fluxurile și mută o solicitare demo în pipeline", async ({ page }, testInfo) => {
@@ -423,7 +487,7 @@ test.describe("dashboard AVYRON OS în română", () => {
   test('păstrează toate modulele operaționale utilizabile pe mobil',async({page},testInfo)=>{
     await page.setViewportSize({width:390,height:844});await page.goto('/profil?tab=os-centers');
     for(const tab of ['Registre','Automatizări','Integrări','Agenți și evaluări','Notificări']){
-      await page.getByRole('button',{name:tab,exact:true}).click();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1)).toBe(true);
+      await page.getByRole('navigation',{name:'Module operaționale'}).getByRole('button',{name:tab,exact:true}).click();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1)).toBe(true);
     }
     await page.getByRole('button',{name:'Registre',exact:true}).click();await page.getByRole('button',{name:'Adaugă înregistrare'}).click();await page.screenshot({path:testInfo.outputPath('operations-mobile.png'),fullPage:true});
   });
