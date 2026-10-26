@@ -60,7 +60,7 @@ export type SectionId =
   | "finance" | "media" | "leads" | "staff-tickets" | "demo-requests" | "intern"
   | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "servicii-avyron" | "produse-avyron"
   | "newsletter" | "ai-projects" | "logo-simulations" | "surveys" | "configurator"
-  | "commercial-codes" | "other-hub" | "social-manager" | "subscriptions-admin" | "careers" | "library" | "reviews";
+  | "commercial-codes" | "other-hub" | "social-manager" | "subscriptions-admin" | "careers" | "library" | "reviews" | "workflows" | "platform-control";
 
 export type SectionDef = {
   id: SectionId;
@@ -84,6 +84,7 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "settings", group: "account", audience: "everyone", keywords: ["setari", "preferinte", "settings", "tema", "limba"] },
 
   { id: "projects", group: "projects", audience: "everyone", keywords: ["proiecte", "site", "projects", "livrare", "vanzari"] },
+  { id: "workflows", group: "projects", audience: "staff", keywords: ["fluxuri", "pipeline", "procese", "lucru", "cereri"] },
   { id: "ai-projects", group: "projects", audience: "superadmin", requiredCapability: "ai_projects.read", keywords: ["proiecte ai", "productie ai", "continut"] },
   { id: "maintenance", group: "projects", audience: "staff", keywords: ["mentenanta", "uptime", "maintenance"] },
   { id: "leads", group: "projects", audience: "staff", requiredCapability: "leads.read", keywords: ["leads", "crm", "vanzari", "oferta", "prospecti"] },
@@ -110,6 +111,9 @@ export const SECTIONS: readonly SectionDef[] = [
 
   { id: "stats", group: "activity", audience: "client", keywords: ["statistici", "vizite", "stats"] },
   { id: "tickets", group: "activity", audience: "client", keywords: ["suport", "tichete", "tickets", "mesaje"] },
+  { id: "staff-tickets", group: "activity", audience: "staff", keywords: ["suport", "tichete clienti", "tickets"] },
+  { id: "intern", group: "activity", audience: "staff", keywords: ["chat", "echipa", "intern", "mesaje"] },
+  { id: "announcements", group: "activity", audience: "staff", keywords: ["anunturi", "noutati"] },
 
   { id: "team-staff", group: "platform", audience: "staff", keywords: ["echipa", "staff", "roluri", "permisiuni", "acces"] },
   { id: "clients", group: "platform", audience: "staff", keywords: ["clienti", "clients", "companii"] },
@@ -122,6 +126,7 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "finance", group: "os", audience: "superadmin", keywords: ["financiar", "facturare", "venituri", "plati", "incasari", "finance"] },
   { id: "commercial-codes", group: "os", audience: "superadmin", keywords: ["coduri", "sku", "contabilitate", "servicii", "produse", "tva", "plata"] },
   { id: "newsletter", group: "os", audience: "superadmin", keywords: ["newsletter", "abonati", "email", "campanii", "consimtamant"] },
+  { id: "platform-control", group: "os", audience: "superadmin", keywords: ["control", "administrare", "modificari", "site", "platforma", "continut"] },
   { id: "os-centers", group: "os", audience: "staff", keywords: ["securitate", "automatizari", "integrari", "backup", "erori", "agenti ai", "programari", "comentarii", "pluginuri"] },
   { id: "ai-os", group: "os", audience: "superadmin", navigation: false, keywords: ["ai", "avy", "agenti", "chatbot", "automatizare"] },
   { id: "promotions", group: "os", audience: "superadmin", navigation: false, keywords: ["promotii", "reduceri", "campanii"] },
@@ -129,9 +134,6 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "other-hub", group: "other", audience: "staff", keywords: ["altele", "module", "rapoarte", "functii", "roadmap"] },
   { id: "careers", group: "other", audience: "staff", keywords: ["cariere", "joburi", "roluri", "recrutare"] },
   { id: "library", group: "other", audience: "staff", keywords: ["biblioteca", "resurse", "surse", "referinte"] },
-  { id: "staff-tickets", group: "other", audience: "staff", navigation: false, keywords: ["suport", "tichete clienti", "tickets"] },
-  { id: "intern", group: "other", audience: "staff", navigation: false, keywords: ["chat", "echipa", "intern"] },
-  { id: "announcements", group: "other", audience: "staff", navigation: false, keywords: ["anunturi", "noutati"] },
   { id: "resources", group: "other", audience: "staff", keywords: ["resurse", "documente", "ghid", "siteuri", "campuri"] },
 ];
 

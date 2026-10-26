@@ -172,14 +172,80 @@ test.describe("dashboard AVYRON OS în română", () => {
 
     await expect(page.getByRole("navigation", { name: "Navigare mobilă" })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("overview-mobile.png"), fullPage: true });
-    await page.getByRole("button", { name: /Caută clienți, proiecte/ }).click();
-    await expect(page.getByPlaceholder("Caută proiecte, leaduri, facturi, agenți…")).toBeVisible();
+    await page.getByRole("button", { name: "Caută secțiuni și fluxuri" }).click();
+    await expect(page.getByPlaceholder("Caută secțiuni și fluxuri…")).toBeVisible();
     await expect(page.getByText("Comenzi disponibile", { exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Deschide mai multe secțiuni" }).click();
     await expect(page.getByRole("navigation", { name: "Toate secțiunile AVYRON OS" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Newsletter" })).toBeVisible();
+  });
+
+  test("deschide fluxurile și mută o solicitare demo în pipeline", async ({ page }, testInfo) => {
+    let updated: unknown;
+    await page.route("**/api/example-requests/**", async (route) => {
+      updated = route.request().postDataJSON();
+      await route.fulfill({ json: { ok: true, status: "contacted" } });
+    });
+    await page.route("**/api/example-requests", (route) => route.fulfill({ json: { data: [{
+      id: "demo-1", email: "demo@example.com", phone: "+40700000000", source_slug: "site-demo",
+      source_category: "website", source_name: "Website", status: "new", delivery_status: "sent", created_at: Date.now(),
+    }] } }));
+    await page.goto("/profil?tab=workflows");
+    await expect(page.getByRole("heading", { name: "Fluxuri și pipeline" })).toBeVisible();
+    await page.getByRole("region", { name: "Fluxuri de lucru" }).getByRole("button", { name: /Solicitări demo/ }).click();
+    await expect(page.getByLabel("Pipeline solicitări demo")).toBeVisible();
+    await page.getByLabel("Stadiu pentru demo@example.com").selectOption("contacted");
+    expect(updated).toEqual({ status: "contacted" });
+    await expect(page.getByRole("region", { name: "Contactat" }).getByText("demo@example.com")).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath("demo-pipeline.png"), fullPage: true });
+  });
+
+  test("staff vede fluxurile și chatul, dar nu centrul superadminului", async ({ page }) => {
+    await page.route("**/api/auth/me", (route) => route.fulfill({ json: {
+      user: { id: "staff-1", email: "staff@example.test", display_name: "Alex", avatar_url: null },
+      profile: { display_name: "Alex", avatar_url: null }, roles: ["staff"], superadmin: false,
+    } }));
+    await page.goto("/profil?tab=workflows");
+    await expect(page.getByRole("heading", { name: "Fluxuri și pipeline" })).toBeVisible();
+    const navigation = page.getByRole("navigation", { name: "Navigare AVYRON OS" });
+    await expect(navigation.getByRole("button", { name: "Chat intern" })).toBeVisible();
+    await expect(navigation.getByRole("button", { name: "Solicitări clienți" })).toBeVisible();
+    await expect(navigation.getByRole("button", { name: "Control platformă" })).toHaveCount(0);
+  });
+
+  test("operatorul cu capabilitate vede panoul leadurilor fără acces financiar", async ({ page }) => {
+    await page.route("**/api/auth/me", (route) => route.fulfill({ json: {
+      user: { id: "operator-1", email: "operator@example.test", display_name: "Operator", avatar_url: null },
+      profile: { display_name: "Operator", avatar_url: null }, roles: ["user"], superadmin: false, capabilities: ["leads.read"],
+    } }));
+    await page.goto("/profil?tab=leads");
+    await expect(page.getByRole("heading", { name: "Leaduri", exact: true })).toBeVisible();
+    const navigation = page.getByRole("navigation", { name: "Navigare AVYRON OS" });
+    await expect(navigation.getByRole("button", { name: "Leaduri & CRM" })).toBeVisible();
+    await expect(navigation.getByRole("button", { name: "Financiar" })).toHaveCount(0);
+  });
+
+  test("superadminul ajunge la instrumentele de modificare din centrul de control", async ({ page }) => {
+    await page.goto("/profil?tab=platform-control");
+    await expect(page.getByRole("heading", { name: "Control platformă" })).toBeVisible();
+    await page.getByRole("button", { name: /Pagini și funcții definite în cod/ }).click();
+    await expect(page.getByRole("heading", { name: "Codex Work Items" })).toBeVisible();
+  });
+
+  test("afișează proiectele în pipeline și permite revenirea la listă", async ({ page }, testInfo) => {
+    await page.route("**/api/projects", (route) => route.fulfill({ json: { data: [{
+      id: "project-one", slug: "site-client", name: "Site Client", kind: "website_prezentare",
+      banner_status: "testing", status: "in_progress", url: null, favicon_url: null, updated_at: Date.now(),
+    }], purchases: [], sales: [] } }));
+    await page.goto("/profil?tab=projects");
+    const pipeline = page.getByLabel("Pipeline proiecte");
+    await expect(pipeline.getByRole("link", { name: /Site Client/ })).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath("projects-pipeline.png"), fullPage: true });
+    await page.getByRole("button", { name: "Listă", exact: true }).click();
+    await expect(pipeline).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /Site Client/ })).toBeVisible();
   });
 
   test("separă serviciile personalizate de catalogul de produse", async ({ page }) => {

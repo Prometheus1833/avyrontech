@@ -1,4 +1,4 @@
-import { ArrowUpRight, Command, MessageSquare, MessagesSquare, Megaphone, Radar, Wrench } from "lucide-react";
+import { ArrowUpRight, Command, Radar, Wrench } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { SectionId } from "@/lib/access";
 
@@ -10,9 +10,6 @@ const internalModules: Array<{
   destination?: SectionId;
   href?: string;
 }> = [
-  { title: "Solicitări clienți", detail: "Tichete și conversații care necesită răspuns.", status: "Activ", icon: MessageSquare, destination: "staff-tickets" },
-  { title: "Chat intern", detail: "Conversațiile operaționale ale echipei AVYRON.", status: "Activ", icon: MessagesSquare, destination: "intern" },
-  { title: "Anunțuri", detail: "Actualizări și comunicări interne pentru echipă.", status: "Activ", icon: Megaphone, destination: "announcements" },
   { title: "AVY Engine", detail: "Registru de capabilități, surse, conectori și documentație privată.", status: "Activ parțial", icon: Command, href: "/intern/avy-engine" },
   { title: "Rapoarte transversale", detail: "Rapoarte unificate între proiecte, vânzări, mentenanță și platformă.", status: "De dezvoltat", icon: Radar },
 ];
@@ -23,7 +20,7 @@ export default function OtherModulesTab({ onNavigate }: { onNavigate: (section: 
       <header className="rounded-2xl border border-violet-400/15 bg-gradient-to-br from-violet-500/10 via-white/[0.025] to-cyan-400/[0.05] p-5 sm:p-6">
         <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-violet-300">Inventar funcțional</p>
         <h1 className="mt-2 font-display text-2xl font-bold text-white">Altele</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">Funcțiile care nu au nevoie de o poziție permanentă în meniu rămân accesibile aici. Starea lor arată clar ce funcționează și ce trebuie dezvoltat în continuare.</p>
+        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">Inventarul funcțiilor fără secțiune dedicată. Starea lor arată clar ce funcționează și ce trebuie dezvoltat în continuare.</p>
       </header>
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3" aria-label="Alte module AVYRON OS">
         {internalModules.map((item) => {
