@@ -202,6 +202,15 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
  it('answers exact verified questions without a model call or token charge',async()=>{
   chatSeed();const model=vi.fn();env.AI={run:model} as unknown as Ai;const response=await chat('Optimizare Cloudflare pentru agenti');expect(response.status).toBe(200);expect((await response.json()).reply).toBe('Validated answer');expect(model).not.toHaveBeenCalled();expect(db.prepare('SELECT input_tokens,output_tokens,usage_source FROM ai_runs').get()).toMatchObject({input_tokens:0,output_tokens:0,usage_source:'retrieval'});
  });
+ it('accepts the null conversation id sent by the public widget on first message',async()=>{
+  chatSeed();const model=vi.fn();env.AI={run:model} as unknown as Ai;
+  const response=await chat('Optimizare Cloudflare pentru agenti',{conversationId:null,page:'/'});
+  expect(response.status).toBe(200);
+  const body=await response.json() as {conversationId:string;reply:string};
+  expect(body.conversationId).toMatch(/^conv_/);
+  expect(body.reply).toBe('Validated answer');
+  expect(model).not.toHaveBeenCalled();
+ });
  it('uses the current public service catalogue before stale FAQ prices',async()=>{
   chatSeed();db.prepare("INSERT INTO ai_knowledge(id,category,language,question,answer,keywords,source,priority,status,created_at,updated_at) VALUES('stale-price','preturi','ro','Cât costă un site?','Preț vechi: 300 euro.','site pret','seed',10,'active',1,1)").run();
   const response=await chat('Cât costă un site?');expect(response.status).toBe(200);
