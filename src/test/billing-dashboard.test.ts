@@ -40,6 +40,7 @@ describe("financial dashboard contract", () => {
       ["stripe", "not_connected"], ["oblio", "not_connected"], ["revolut_merchant", "not_connected"],
     ]);
     expect(queries.some((query) => query.includes("financial_provider_connections"))).toBe(true);
+    expect(queries.some((query) => query.includes("FROM billing_invoices WHERE provider='oblio' AND status='issued'"))).toBe(true);
     expect(queries.some((query) => query.includes("billing_checkout_sessions") && query.includes("ORDER BY updated_at DESC"))).toBe(true);
   });
 
