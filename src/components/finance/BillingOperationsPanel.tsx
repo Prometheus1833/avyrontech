@@ -21,7 +21,7 @@ export function BillingOperationsPanel() {
   const load = useCallback(async () => {
     setLoading(true); setError("");
     try { setData(await billingApi.adminStatus()); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : "Starea plăților nu a putut fi citită."); }
+    catch (cause) { setData(null); setError(cause instanceof Error ? cause.message : "Starea plăților nu a putut fi citită."); }
     finally { setLoading(false); }
   }, []);
 

@@ -34,6 +34,20 @@ export type BillingAdminStatus={
   providerPlaybooks:FinancialProviderPlaybook[];
   recentFailures:Array<{provider:string;event_type:string;error_code:string|null;received_at:number}>;
 };
+
+const requiredAdminLists = [
+  "sessions", "subscriptions", "invoices", "pendingInvoices", "paymentsByCurrency",
+  "invoicesByCurrency", "recentPayments", "recentSubscriptions", "recentInvoices",
+  "connectionRecords", "providerPlaybooks", "recentFailures",
+] as const;
+
+export function validateBillingAdminStatus(value: unknown): BillingAdminStatus {
+  if (!value || typeof value !== "object" || !("providers" in value) || !value.providers ||
+      requiredAdminLists.some((field) => !Array.isArray((value as Record<string, unknown>)[field]))) {
+    throw new Error("Serviciul de facturare a trimis date incomplete. Reîncarcă sau verifică versiunea API.");
+  }
+  return value as BillingAdminStatus;
+}
 export type BillingAccount={
   profile:null|{entity_type:"individual"|"company"|null;legal_name:string|null;tax_id:string|null;registration_number:string|null;address:string|null;city:string|null;county:string|null;country_code:string;invoice_email:string|null;automatic_charging:0|1;default_provider:"stripe"|"revolut"|"netopia"|null};
   methods:BillingPaymentMethod[];
@@ -50,7 +64,7 @@ export const billingApi={
   setupMethod:(provider:"stripe")=>cfAuth.request<{url:string|null}>("/api/billing/payment-methods/setup",{method:"POST",body:JSON.stringify({provider})}),
   portal:()=>cfAuth.request<{url:string|null}>("/api/billing/portal",{method:"POST"}),
   cancelSubscription:(id:string)=>cfAuth.request<{ok:true;status?:string}>(`/api/billing/subscriptions/${encodeURIComponent(id)}/cancel`,{method:"POST"}),
-  adminStatus:()=>cfAuth.request<BillingAdminStatus>("/api/billing/admin/status"),
+  adminStatus:async()=>validateBillingAdminStatus(await cfAuth.request<unknown>("/api/billing/admin/status")),
   verifyConnection:(provider:FinancialProviderPlaybook["provider"])=>cfAuth.request<{ok:true;provider:string;account:string;detail:string|null;synchronized:false}>(`/api/billing/admin/connections/${provider}/verify`,{method:"POST"}),
   retryInvoice:(orderId:string)=>cfAuth.request<{ok:true;invoiced:boolean}>(`/api/billing/admin/invoices/${encodeURIComponent(orderId)}/retry`,{method:"POST"}),
 };
