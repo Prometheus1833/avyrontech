@@ -4,6 +4,7 @@ import {
   Gauge, Plus, Receipt, Search, ShieldCheck, TrendingDown, TrendingUp, Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useSearchParams } from "react-router-dom";
 import PageBackLink from "@/components/site/PageBackLink";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -35,7 +36,8 @@ const views: Array<{ id: View; label: string; icon: typeof Wallet }> = [
 const field="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-violet-500/35";
 
 export default function Finance({ embedded=false }: { embedded?: boolean }) {
-  const [view,setView]=useState<View>("overview"),[overview,setOverview]=useState<FinanceOverview|null>(null);
+  const [searchParams] = useSearchParams();
+  const [view,setView]=useState<View>(() => searchParams.get("view") === "subscriptions" ? "subscriptions" : "overview"),[overview,setOverview]=useState<FinanceOverview|null>(null);
   const [expenses,setExpenses]=useState<FinanceExpense[]>([]),[revenues,setRevenues]=useState<FinanceRevenue[]>([]);
   const [accounts,setAccounts]=useState<FinanceAccount[]>([]),[methods,setMethods]=useState<FinancePaymentMethod[]>([]);
   const [budgets,setBudgets]=useState<FinanceBudget[]>([]),[quotas,setQuotas]=useState<FinanceQuota[]>([]),[alerts,setAlerts]=useState<AlertRow[]>([]);

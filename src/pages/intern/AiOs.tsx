@@ -4,8 +4,9 @@ import {
   Bot, Brain, BarChart3, MessageSquare, Save, Plus, Archive, Sparkles, RefreshCw, Lock, GraduationCap, Database,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { Link } from "react-router-dom";
 import {
-  aiOsAdmin, type AiAgent, type AiStats, type KnowledgeRow, type LearningRow, type KnowledgeSource,
+  aiOsAdmin, type AiAgent, type AiStats, type AvyRuntimeStatus, type KnowledgeRow, type LearningRow, type KnowledgeSource,
 } from "@/lib/aiOsApi";
 
 const TABS = [
@@ -46,6 +47,7 @@ const AiOs = ({ embedded = false }: { embedded?: boolean }) => {
   const { user, isSuperAdmin, loading: authLoading } = useAuth();
   const [tab, setTab] = useState<TabId>("overview");
   const [stats, setStats] = useState<AiStats | null>(null);
+  const [runtime, setRuntime] = useState<AvyRuntimeStatus | null>(null);
   const [agents, setAgents] = useState<AiAgent[]>([]);
   const [knowledge, setKnowledge] = useState<KnowledgeRow[]>([]);
   const [learning, setLearning] = useState<LearningRow[]>([]);
@@ -63,8 +65,8 @@ const AiOs = ({ embedded = false }: { embedded?: boolean }) => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [s, a, k, l, c, sourceResult] = await Promise.all([
-        aiOsAdmin.stats(30), aiOsAdmin.agents(), aiOsAdmin.knowledge(), aiOsAdmin.learning(), aiOsAdmin.conversations(), aiOsAdmin.sources(),
+      const [s, a, k, l, c, sourceResult, runtimeResult] = await Promise.all([
+        aiOsAdmin.stats(30), aiOsAdmin.agents(), aiOsAdmin.knowledge(), aiOsAdmin.learning(), aiOsAdmin.conversations(), aiOsAdmin.sources(), aiOsAdmin.runtime().catch(() => null),
       ]);
       setStats(s);
       setAgents(a.data);
@@ -73,6 +75,7 @@ const AiOs = ({ embedded = false }: { embedded?: boolean }) => {
       setLearning(l.data);
       setConversations(c.data);
       setSources(sourceResult.data);
+      setRuntime(runtimeResult);
     } catch {
       setStatus("Nu am putut încărca datele AI OS.");
     } finally {
@@ -193,6 +196,15 @@ const AiOs = ({ embedded = false }: { embedded?: boolean }) => {
 
         {!loading && tab === "overview" && stats && (
           <div className="space-y-4">
+            {runtime && (
+              <section className="rounded-2xl border border-border/60 bg-card/60 p-4" aria-label="Diagnostic AVY">
+                <h2 className="text-sm font-semibold">AVY · stare reală</h2>
+                <p className="mt-1 text-sm">{runtime.mode === "model_ready" ? "Modelul este pregătit pentru răspunsuri din sursele aprobate." : "AVY răspunde din datele aprobate; generarea AI este oprită."}</p>
+                <p className="mt-2 text-xs text-muted-foreground">{runtime.knowledge.faq} răspunsuri FAQ · {runtime.knowledge.publicServices} servicii · {runtime.knowledge.liveProducts} produse publicate · {runtime.knowledge.approvedPublicDocuments} documente publice aprobate</p>
+                {runtime.blockers.length > 0 && <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">De verificat: {runtime.blockers.map((blocker) => ({ agent_inactive: "agent inactiv", version_unapproved: "versiune neaprobată", ai_binding_unavailable: "conexiune Workers AI absentă", model_unavailable: "model indisponibil", provider_policy_inactive: "permisiunea agentului pentru furnizor", provider_quota_unavailable: "cotă furnizor neconfigurată", provider_quota_exhausted: "cotă epuizată" }[blocker] || blocker)).join(" · ")}</p>}
+                {runtime.blockers.includes("provider_policy_inactive") && <Link to="/finance?view=subscriptions" className="mt-2 inline-block text-xs font-medium text-primary underline underline-offset-2">Deschide Finanțe → permisiuni agent</Link>}
+              </section>
+            )}
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <Card label="Conversații (30z)" value={stats.totals?.conversations ?? 0} />
               <Card label="Mesaje" value={stats.totals?.messages ?? 0} />
