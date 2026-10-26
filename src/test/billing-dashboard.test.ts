@@ -7,6 +7,7 @@ function adminApp() {
   const app = new Hono<AppBindings>();
   app.use("*", async (c, next) => {
     c.set("roles", ["admin"]);
+    c.set("userId", "staff-1");
     c.set("mfaVerified", false);
     await next();
   });
@@ -24,13 +25,13 @@ describe("financial dashboard contract", () => {
     const queries: string[] = [];
     const db = { prepare: (query: string) => {
       queries.push(query);
-      return { all: async () => ({ results: [] }) };
+      return { all: async () => ({ results: [] }), bind: () => ({ first: async () => null }) };
     } };
     const response = await adminApp().request("http://localhost/api/billing/admin/status", undefined, { DB: db, MFA_AUTH_ENABLED: "false" } as unknown as AppBindings["Bindings"]);
     expect(response.status).toBe(200);
     const status = await response.json();
     expect(status).toMatchObject({
-      security: { mfaEnabled: false, mfaVerified: false },
+      security: { mfaEnabled: false, mfaVerified: false, canVerify: false },
       providers: { stripe: { enabled: false }, oblio: { enabled: false } },
       bankSettlement: { verified: false, reason: "revolut_business_not_connected" },
       recentPayments: [], recentSubscriptions: [], recentInvoices: [], connectionRecords: [],

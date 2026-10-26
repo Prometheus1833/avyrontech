@@ -1,6 +1,6 @@
 /** Public API facts and AVYRON-specific gates. Never include credentials in this registry. */
 export type FinancialProviderKey = "stripe" | "oblio" | "revolut_business" | "revolut_merchant";
-export type FinancialSyncPhase = "not_connected" | "configuration_only" | "awaiting_approval" | "verification_required" | "synced" | "stale" | "error";
+export type FinancialSyncPhase = "not_connected" | "configuration_only" | "awaiting_approval" | "verification_required" | "connected_unsynced" | "synced" | "stale" | "error";
 export type FinancialConnectionRecord = { provider: string; status: string; last_sync_at: number | null; last_error_code: string | null };
 
 export const FINANCIAL_PROVIDER_PLAYBOOKS = [
@@ -54,6 +54,8 @@ export function financialSyncPhase(input: {
   const connection = input.connection;
   if (!connection) return "configuration_only";
   if (connection.status === "error" || connection.last_error_code) return "error";
-  if (connection.status !== "connected" || !connection.last_sync_at || connection.last_sync_at > input.now) return "verification_required";
+  if (connection.status !== "connected") return "verification_required";
+  if (!connection.last_sync_at) return "connected_unsynced";
+  if (connection.last_sync_at > input.now) return "verification_required";
   return input.now - connection.last_sync_at > 24 * 60 * 60 * 1000 ? "stale" : "synced";
 }

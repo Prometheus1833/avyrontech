@@ -11,7 +11,7 @@ describe("financial provider sync policy", () => {
   });
 
   it("never treats a connection row without a valid recent sync as synchronized", () => {
-    expect(financialSyncPhase({ provider: "stripe", configured: true, approved: true, now, connection: { provider: "stripe", status: "connected", last_sync_at: null, last_error_code: null } })).toBe("verification_required");
+    expect(financialSyncPhase({ provider: "stripe", configured: true, approved: true, now, connection: { provider: "stripe", status: "connected", last_sync_at: null, last_error_code: null } })).toBe("connected_unsynced");
     expect(financialSyncPhase({ provider: "stripe", configured: true, approved: true, now, connection: { provider: "stripe", status: "connected", last_sync_at: now - 25 * 60 * 60 * 1000, last_error_code: null } })).toBe("stale");
     expect(financialSyncPhase({ provider: "stripe", configured: true, approved: true, now, connection: { provider: "stripe", status: "connected", last_sync_at: now - 60_000, last_error_code: null } })).toBe("synced");
     expect(financialSyncPhase({ provider: "stripe", configured: true, approved: true, now, connection: { provider: "stripe", status: "error", last_sync_at: now - 60_000, last_error_code: "token_expired" } })).toBe("error");
