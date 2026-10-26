@@ -93,10 +93,10 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
       <div className="mx-auto max-w-7xl px-3 sm:px-4 mt-3">
         <nav className={`flex items-center justify-between gap-2 rounded-full border pl-3 pr-2 py-2 backdrop-blur-2xl transition-[background-color,border-color,box-shadow] duration-500 ${scrollLift > 2 ? "border-white/20 bg-background/[0.72] shadow-[0_18px_55px_-25px_rgba(15,23,42,0.65),inset_0_1px_0_rgba(255,255,255,0.18)]" : "glass border-white/10 shadow-soft"}`}>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <a href={`${homePath}#hero`} className="flex items-center gap-2">
+            <a href={`${homePath}#hero`} aria-label="AVYRON" className="flex items-center gap-2">
               <img src={logo} alt="" width={22} height={22} className="size-[1.4rem] rounded-md object-cover" />
               <span
-                className="text-sm sm:text-base md:text-lg font-bold uppercase tracking-[0.18em] bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent"
+                className={`text-sm sm:text-base md:text-lg font-bold uppercase tracking-[0.18em] bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent ${isStaff ? "max-[359px]:hidden" : ""}`}
                 style={{ fontFamily: '"Times New Roman", Times, serif' }}
               >
                 AVYRON
@@ -171,9 +171,9 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
             ))}
           </div>
           <div className="xl:hidden flex shrink-0 items-center gap-1.5">
-            {showCurrency && <span className={isStaff ? "max-[359px]:hidden" : undefined}><CurrencySwitch compact showDetails={false} /></span>}
-            <span className={isStaff ? "max-[359px]:hidden" : undefined}><LangSwitch /></span>
-            <span className={isStaff ? "max-[359px]:hidden" : undefined}><ThemeToggle /></span>
+            {showCurrency && <CurrencySwitch compact showDetails={false} />}
+            <LangSwitch />
+            <ThemeToggle />
             {!loading && user ? (
               <Suspense fallback={<span className="size-10" aria-hidden />}><UserMenu /></Suspense>
             ) : (
