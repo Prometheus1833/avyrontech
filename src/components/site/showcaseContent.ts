@@ -3,6 +3,7 @@ import travel from "@/assets/work-hotel-new.jpg";
 import professional from "@/assets/work-lawyer-new.jpg";
 import local from "@/assets/work-local-new.jpg";
 import wellness from "@/assets/showcase-wellness-editorial.webp";
+import wellnessSmall from "@/assets/showcase-wellness-editorial-960.webp";
 
 export type AppMode = "app" | "game" | "crm" | "platform";
 export type AutomationMode = "social" | "leads" | "chat" | "other";
@@ -14,6 +15,7 @@ type DomainTheme = {
   surface: string;
   ink: string;
   image?: string;
+  imageSet?: string;
   brand: string;
   hero: Translation;
   intro: Translation;
@@ -27,7 +29,8 @@ const detail = (roTitle: string, enTitle: string, roDescription: string, enDescr
 // These are interface examples, not customer results, availability or conversion claims.
 const themes: Record<string, DomainTheme> = {
   beauty: {
-    accent: "#ddc49e", surface: "#221c18", ink: "#fff8ed", image: wellness, brand: "NORD / WELLNESS", visual: "photo",
+    accent: "#ddc49e", surface: "#221c18", ink: "#fff8ed", image: wellness,
+    imageSet: `${wellnessSmall} 960w, ${wellness} 1600w`, brand: "NORD / WELLNESS", visual: "photo",
     hero: ["Frumusețe, în ritmul tău.", "Beauty, at your own pace."],
     intro: ["Un ritual de îngrijire începe cu o alegere simplă.", "A care ritual starts with a simple choice."],
     action: ["Alege un tratament", "Choose a treatment"],
