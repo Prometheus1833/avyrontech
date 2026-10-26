@@ -41,6 +41,15 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
     }
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [open, onClose]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!source) return;
@@ -108,6 +117,9 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
             exit={{ scale: 0.92, y: 20, opacity: 0 }}
             transition={{ type: "spring", damping: 22, stiffness: 220 }}
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="request-example-title"
             className="w-full max-w-md rounded-3xl bg-card border border-border/60 shadow-elev p-6 sm:p-7 relative"
           >
             <button
@@ -128,7 +140,7 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
                 >
                   <Check className="size-7" />
                 </motion.div>
-                <h3 className="font-display font-bold text-xl">Solicitarea a fost înregistrată!</h3>
+                <h3 id="request-example-title" className="font-display font-bold text-xl">Solicitarea a fost înregistrată!</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Te contactăm în maxim 24 de ore cu un exemplu personalizat asemănător cu <span className="font-semibold text-foreground">{source?.name}</span>.
                 </p>
@@ -138,7 +150,7 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
                 <div className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 text-brand px-3 py-1 text-[11px] font-semibold uppercase tracking-wider">
                   <Wand2 className="size-3" /> Exemplu personalizat
                 </div>
-                <h3 className="mt-3 font-display font-bold text-xl sm:text-2xl leading-tight">
+                <h3 id="request-example-title" className="mt-3 font-display font-bold text-xl sm:text-2xl leading-tight">
                   Solicită un exemplu asemănător cu{" "}
                   <span className="text-brand">{source?.name}</span>
                 </h3>
@@ -154,6 +166,9 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
                     <Input
                       type="email"
                       id="request-example-email"
+                      autoFocus
+                      name="email"
+                      autoComplete="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="email@exemplu.ro"
@@ -169,6 +184,8 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
                     <Input
                       type="tel"
                       id="request-example-phone"
+                      name="tel"
+                      autoComplete="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="07XX XXX XXX"

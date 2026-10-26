@@ -1589,7 +1589,7 @@ import { billingRouter } from "./billing";
 import { systemDiagnosticsRouter } from "./systemDiagnostics";
 import { consumeAsyncJobs, enqueueAsyncJobs } from "./asyncJobs";
 import { blogRouter, getBlogSitemapEntries, getPublishedBlogPost } from "./blog";
-import { headersForTransformedBody, injectBlogHtml, mergeBlogSitemap } from "../../../../src/worker/blogHtml";
+import { headersForTransformedBody, injectBlogHtml, mergeBlogLlms, mergeBlogSitemap } from "../../../../src/worker/blogHtml";
 import { BLOG_SLUGS } from "../../../../src/data/blogSlugs";
 import { decide, isKnownSpaRoute, normalizePath } from "../../../../src/worker/router";
 import { serveCachedAsset } from "../../../../src/worker/assetCache";
@@ -1743,6 +1743,22 @@ app.get("/sitemap.xml", async (c) => {
   headers.set("cache-control", "public, max-age=300, s-maxage=900, stale-while-revalidate=86400");
   const xml = mergeBlogSitemap(await asset.text(), entries);
   return new Response(c.req.method === "HEAD" ? null : xml, { status: 200, headers });
+});
+
+app.get("/llms.txt", async (c) => {
+  const asset = await c.env.ASSETS.fetch(c.req.raw);
+  if (!asset.ok) return asset;
+  let entries: Awaited<ReturnType<typeof getBlogSitemapEntries>> = [];
+  try {
+    entries = await getBlogSitemapEntries(c.env.DB);
+  } catch (error) {
+    console.error(JSON.stringify({ event: "blog_llms_database_unavailable", error: String(error) }));
+  }
+  const headers = headersForTransformedBody(asset.headers);
+  headers.set("content-type", "text/plain; charset=utf-8");
+  headers.set("cache-control", "public, max-age=300, s-maxage=900, stale-while-revalidate=86400");
+  headers.set("X-Robots-Tag", "noindex");
+  return new Response(c.req.method === "HEAD" ? null : mergeBlogLlms(await asset.text(), entries), { status: 200, headers });
 });
 
 // `app.avyron.ro` is the dedicated entry point for AVYRON OS. The complete

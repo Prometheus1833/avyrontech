@@ -24,7 +24,7 @@ import { DEMOS } from "@/features/produse/demos/registry";
 import { accessNow, defaultValues } from "@/features/produse/lib/item";
 import { alternatePath, itemPath, parseRoute, typePath } from "@/features/produse/lib/paths";
 import { searchItems } from "@/features/produse/lib/search";
-import { metaFrom, productOgImage } from "@/features/produse/lib/seo";
+import { metaFrom, productLd, productOgImage } from "@/features/produse/lib/seo";
 import { DEMOS as DEMO_REGISTRY } from "@/features/produse/demos/registry";
 import { SOURCE_FILE } from "@/features/produse/lib/source";
 import { INTERNATIONAL_HUB_COPY } from "@/features/produse/data/internationalCopy";
@@ -132,6 +132,21 @@ describe("catalogul de produse", () => {
       const values = defaultValues(item);
       for (const prop of item.props ?? []) expect(values[prop.key]).toBeDefined();
     }
+  });
+});
+
+describe("date structurate pentru produse digitale", () => {
+  it("publică un Product și o ofertă doar pentru prețul afișat în catalog", () => {
+    const paid = ITEMS.find((item) => item.priceRon && EUR_FOR_RON[item.priceRon]);
+    expect(paid).toBeDefined();
+    const schema = productLd("ro", paid!);
+    expect(schema["@type"]).toBe("Product");
+    expect(schema.offers).toMatchObject({
+      "@type": "Offer",
+      price: EUR_FOR_RON[paid!.priceRon!],
+      priceCurrency: "EUR",
+    });
+    expect(schema.isAccessibleForFree).toBe(false);
   });
 });
 

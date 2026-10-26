@@ -6,7 +6,7 @@
 
 import { decide, isKnownSpaRoute, normalizePath } from "./router";
 import { serveSurveyHost } from "./surveyHost";
-import { headersForTransformedBody, injectBlogHtml, mergeBlogSitemap, type EdgeBlogPost, type EdgeSitemapEntry } from "./blogHtml";
+import { headersForTransformedBody, injectBlogHtml, mergeBlogLlms, mergeBlogSitemap, type EdgeBlogPost, type EdgeSitemapEntry } from "./blogHtml";
 import { serveCachedAsset } from "./assetCache";
 
 interface Fetcher {
@@ -106,12 +106,26 @@ async function serveSitemap(env: Env, request: Request) {
   return new Response(request.method === "HEAD" ? null : xml, { status: 200, headers });
 }
 
+async function serveLlms(env: Env, request: Request) {
+  const asset = await serveCachedAsset(env.ASSETS, request);
+  if (!asset.ok) return asset;
+  const apiRes = await apiFetch(env, "/api/blog/sitemap");
+  if (!apiRes?.ok) return asset;
+  let payload: { data?: EdgeSitemapEntry[] } = {};
+  try { payload = await apiRes.json(); } catch { /* Keep the generated static file. */ }
+  const headers = headersForTransformedBody(asset.headers);
+  headers.set("content-type", "text/plain; charset=utf-8");
+  headers.set("cache-control", "public, max-age=300, s-maxage=900, stale-while-revalidate=86400");
+  return new Response(request.method === "HEAD" ? null : mergeBlogLlms(await asset.text(), payload.data || []), { status: 200, headers });
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const surveyResponse = await serveSurveyHost(request, env.ASSETS);
     if (surveyResponse) return surveyResponse;
     const url = new URL(request.url);
     if (url.pathname === "/sitemap.xml") return serveSitemap(env, request);
+    if (url.pathname === "/llms.txt") return serveLlms(env, request);
     const decision = decide(url);
 
     switch (decision.kind) {
