@@ -388,7 +388,7 @@ billingRouter.get("/api/billing/admin/status",async(c)=>{
     c.env.DB.prepare("SELECT provider,event_type,error_code,received_at FROM billing_webhook_events WHERE status='failed' ORDER BY received_at DESC LIMIT 20").all(),
     c.env.DB.prepare("SELECT order_id,status,error_code,total_minor,currency,updated_at FROM billing_invoices WHERE provider='oblio' AND status='pending' ORDER BY updated_at DESC LIMIT 20").all(),
     c.env.DB.prepare("SELECT currency,SUM(gross_amount_minor) AS amount_minor,COUNT(*) AS total FROM financial_revenues WHERE source='system_generated' AND payment_processor IN ('stripe','revolut') AND status='paid' AND archived_at IS NULL GROUP BY currency").all(),
-    c.env.DB.prepare("SELECT currency,SUM(total_minor) AS amount_minor,COUNT(*) AS total FROM billing_invoices WHERE status='issued' GROUP BY currency").all(),
+    c.env.DB.prepare("SELECT currency,SUM(total_minor) AS amount_minor,COUNT(*) AS total FROM billing_invoices WHERE provider='oblio' AND status='issued' GROUP BY currency").all(),
     c.env.DB.prepare("SELECT id,order_id,provider,mode,status,amount_minor,currency,updated_at FROM billing_checkout_sessions WHERE mode!='setup' ORDER BY updated_at DESC LIMIT 12").all(),
     c.env.DB.prepare("SELECT id,sku,provider,status,period,amount_minor,currency,current_period_end,updated_at FROM billing_subscriptions ORDER BY updated_at DESC LIMIT 12").all(),
     c.env.DB.prepare("SELECT id,order_id,provider,series,number,status,total_minor,currency,error_code,updated_at FROM billing_invoices ORDER BY updated_at DESC LIMIT 12").all(),
@@ -402,7 +402,7 @@ billingRouter.get("/api/billing/admin/status",async(c)=>{
     const approved=provider==="oblio"?capabilities.oblio.enabled:configured;
     return {...playbook,phase:financialSyncPhase({provider,configured,approved,connection:records.get(provider),now:Date.now()})};
   });
-  return c.json({providers:capabilities,providerPlaybooks,security:{mfaEnabled:mfaAuthEnabled(c.env),mfaVerified:Boolean(c.get("mfaVerified")),canVerify:(await platformRoleForUser(c.env.DB,c.get("userId")))==="platform_owner"},sessions:sessions.results,subscriptions:subscriptions.results,invoices:invoices.results,pendingInvoices:pendingInvoices.results,paymentsByCurrency:paymentsByCurrency.results,recentPayments:recentPayments.results,recentSubscriptions:recentSubscriptions.results,recentInvoices:recentInvoices.results,connectionRecords:connectionRecords.results,recentFailures:failed.results});
+  return c.json({providers:capabilities,providerPlaybooks,security:{mfaEnabled:mfaAuthEnabled(c.env),mfaVerified:Boolean(c.get("mfaVerified")),canVerify:(await platformRoleForUser(c.env.DB,c.get("userId")))==="platform_owner"},sessions:sessions.results,subscriptions:subscriptions.results,invoices:invoices.results,pendingInvoices:pendingInvoices.results,paymentsByCurrency:paymentsByCurrency.results,invoicesByCurrency:invoicesByCurrency.results,recentPayments:recentPayments.results,recentSubscriptions:recentSubscriptions.results,recentInvoices:recentInvoices.results,connectionRecords:connectionRecords.results,recentFailures:failed.results});
 });
 
 billingRouter.post("/api/billing/admin/connections/:provider/verify",async(c)=>{

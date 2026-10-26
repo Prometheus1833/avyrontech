@@ -33,12 +33,14 @@ describe("financial dashboard contract", () => {
     expect(status).toMatchObject({
       security: { mfaEnabled: false, mfaVerified: false, canVerify: false },
       providers: { stripe: { enabled: false }, oblio: { enabled: false } },
+      paymentsByCurrency: [], invoicesByCurrency: [],
       recentPayments: [], recentSubscriptions: [], recentInvoices: [], connectionRecords: [],
     });
     expect(status.providerPlaybooks.map((playbook: { provider: string; phase: string }) => [playbook.provider, playbook.phase])).toEqual([
       ["stripe", "not_connected"], ["oblio", "not_connected"], ["revolut_merchant", "not_connected"],
     ]);
     expect(queries.some((query) => query.includes("financial_provider_connections"))).toBe(true);
+    expect(queries.some((query) => query.includes("FROM billing_invoices WHERE provider='oblio' AND status='issued'"))).toBe(true);
     expect(queries.some((query) => query.includes("billing_checkout_sessions") && query.includes("ORDER BY updated_at DESC"))).toBe(true);
   });
 
