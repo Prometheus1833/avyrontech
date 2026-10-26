@@ -33,6 +33,7 @@ describe("financial dashboard contract", () => {
     expect(status).toMatchObject({
       security: { mfaEnabled: false, mfaVerified: false, canVerify: false },
       providers: { stripe: { enabled: false }, oblio: { enabled: false } },
+      paymentsByCurrency: [], invoicesByCurrency: [],
       recentPayments: [], recentSubscriptions: [], recentInvoices: [], connectionRecords: [],
     });
     expect(status.providerPlaybooks.map((playbook: { provider: string; phase: string }) => [playbook.provider, playbook.phase])).toEqual([
