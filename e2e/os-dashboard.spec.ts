@@ -210,9 +210,9 @@ test.describe("dashboard AVYRON OS în română", () => {
     await page.goto("/profil?tab=workflows");
     await expect(page.getByRole("heading", { name: "Fluxuri și pipeline" })).toBeVisible();
     const navigation = page.getByRole("navigation", { name: "Navigare AVYRON OS" });
-    await expect(navigation.getByRole("button", { name: "Chat intern" })).toBeVisible();
-    await expect(navigation.getByRole("button", { name: "Solicitări clienți" })).toBeVisible();
-    await expect(navigation.getByRole("button", { name: "Control platformă" })).toHaveCount(0);
+    await expect(navigation.getByRole("tab", { name: "Chat intern" })).toBeVisible();
+    await expect(navigation.getByRole("tab", { name: "Solicitări clienți" })).toBeVisible();
+    await expect(navigation.getByRole("tab", { name: "Control platformă" })).toHaveCount(0);
   });
 
   test("operatorul cu capabilitate vede panoul leadurilor fără acces financiar", async ({ page }) => {
@@ -223,8 +223,8 @@ test.describe("dashboard AVYRON OS în română", () => {
     await page.goto("/profil?tab=leads");
     await expect(page.getByRole("heading", { name: "Leaduri", exact: true })).toBeVisible();
     const navigation = page.getByRole("navigation", { name: "Navigare AVYRON OS" });
-    await expect(navigation.getByRole("button", { name: "Leaduri & CRM" })).toBeVisible();
-    await expect(navigation.getByRole("button", { name: "Financiar" })).toHaveCount(0);
+    await expect(navigation.getByRole("tab", { name: "Leaduri & CRM" })).toBeVisible();
+    await expect(navigation.getByRole("tab", { name: "Financiar" })).toHaveCount(0);
   });
 
   test("superadminul ajunge la instrumentele de modificare din centrul de control", async ({ page }) => {
