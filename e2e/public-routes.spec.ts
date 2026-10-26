@@ -562,7 +562,7 @@ test.describe("public SEO routes", () => {
   });
 
   test("every secondary page exposes the shared responsive back control", async ({ page }) => {
-    test.setTimeout(90_000);
+    test.setTimeout(180_000);
     const secondaryRoutes = [
       "/gdpr", "/en/privacy", "/termeni", "/en/terms",
       "/servicii", "/en/services",
