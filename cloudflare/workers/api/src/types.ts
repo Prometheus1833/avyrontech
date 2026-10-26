@@ -16,6 +16,8 @@ type OptionalIntegrations = {
   /** Plata pentru Produse Avyron. Absente → checkout-ul răspunde `payments_unconfigured`. */
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
+  /** Expected AVYRON account. Checkout fails closed if the key belongs to another Stripe account. */
+  STRIPE_ACCOUNT_ID?: string;
   /** Optional Stripe version pin. When absent, Stripe uses the account default. */
   STRIPE_API_VERSION?: string;
   /** Revolut Merchant API. Business banking credentials are intentionally separate. */
