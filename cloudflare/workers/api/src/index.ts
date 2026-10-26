@@ -1545,6 +1545,21 @@ app.get("/api/example-requests", requireAuth, requireRole("staff", "admin"), asy
   return c.json({ data: results });
 });
 
+app.patch("/api/example-requests/:id", requireAuth, requireRole("staff", "admin"), async (c) => {
+  const id = c.req.param("id");
+  const body = await c.req.json().catch(() => null);
+  const status = body && typeof body === "object" && "status" in body ? body.status : null;
+  if (typeof status !== "string" || !["new", "contacted", "completed", "spam"].includes(status)) {
+    return c.json({ error: { code: "invalid_status" } }, 400);
+  }
+  const result = await c.env.DB.prepare(
+    "UPDATE example_requests SET status = ?, updated_at = ? WHERE id = ?",
+  ).bind(status, now(), id).run();
+  if (!result.meta.changes) return c.json({ error: { code: "not_found" } }, 404);
+  await recordSecurityEvent(c, c.get("userId"), "example_request.status_updated", "allowed", "info", { requestId: id, status });
+  return c.json({ ok: true, status });
+});
+
 // ─── Content (KV) ───────────────────────────────────────────────────────
 app.get("/api/content/:key", requireAuth, requireRole("staff", "admin"), async (c) => {
   const key = contentConfigKey(c.req.param("key") || "");

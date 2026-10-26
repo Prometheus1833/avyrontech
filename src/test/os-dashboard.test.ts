@@ -16,6 +16,8 @@ describe("AVYRON OS dashboard", () => {
   it("folosește un singur registru de prezentare pentru toate secțiunile", () => {
     expect(Object.keys(DASHBOARD_SECTION_META).sort()).toEqual(SECTIONS.map((section) => section.id).sort());
     expect(new Set(SECTIONS.map((section) => section.id)).size).toBe(SECTIONS.length);
+    const profile = readFileSync(resolve(process.cwd(), "src/pages/Profile.tsx"), "utf8");
+    for (const section of SECTIONS) expect(profile).toContain(`value="${section.id}"`);
   });
 
   it("păstrează centrele operaționale și echipa în afara dashboardului client", () => {
@@ -37,6 +39,29 @@ describe("AVYRON OS dashboard", () => {
     expect(canOpenSection("social-manager", owner)).toBe(true);
     expect(canOpenSection("subscriptions-admin", owner)).toBe(true);
     expect(canOpenSection("social-manager", staff)).toBe(false);
+  });
+
+  it("face fluxurile și comunicarea vizibile echipei și rezervă controlul platformei Super Adminului", () => {
+    const client = buildAccess({ roles: ["user"] });
+    const staff = buildAccess({ roles: ["staff"] });
+    const admin = buildAccess({ roles: ["admin"] });
+    const owner = buildAccess({ roles: ["admin"], superadmin: true });
+    for (const section of ["workflows", "intern", "staff-tickets", "announcements"] as const) {
+      expect(canOpenSection(section, staff)).toBe(true);
+      expect(canOpenSection(section, admin)).toBe(true);
+      expect(canOpenSection(section, client)).toBe(false);
+      expect(SECTIONS.find((item) => item.id === section)?.navigation).not.toBe(false);
+    }
+    expect(canOpenSection("platform-control", owner)).toBe(true);
+    expect(canOpenSection("platform-control", admin)).toBe(false);
+    expect(canOpenSection("platform-control", staff)).toBe(false);
+  });
+
+  it("protejează actualizarea pipeline-ului demo pe server și limitează stadiile", () => {
+    const index = readFileSync(resolve(process.cwd(), "cloudflare/workers/api/src/index.ts"), "utf8");
+    expect(index).toContain('app.patch("/api/example-requests/:id", requireAuth, requireRole("staff", "admin")');
+    expect(index).toContain('["new", "contacted", "completed", "spam"].includes(status)');
+    expect(index).toContain('"example_request.status_updated"');
   });
 
   it("separă STAFF de clienți și expune resursele solicitate în Altele", () => {

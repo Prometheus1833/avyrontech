@@ -14,6 +14,13 @@ const STAGES = [
 ] as const;
 
 const field = "rounded-lg border border-border/60 bg-background/80 px-2.5 py-1.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-primary/40";
+type LeadFilter = "all" | "new" | "followup" | "offers" | "urgent" | "closed";
+const matchesFilter = (lead: LeadListRow, filter: LeadFilter) => filter === "all" ||
+  (filter === "new" && lead.lifecycle_stage === "new_lead") ||
+  (filter === "followup" && ["contacted", "discussion", "potential_client"].includes(lead.lifecycle_stage)) ||
+  (filter === "offers" && lead.lifecycle_stage === "offer") ||
+  (filter === "urgent" && lead.urgent === 1) ||
+  (filter === "closed" && ["accepted", "rejected", "converted"].includes(lead.lifecycle_stage));
 
 type StaffLeadsTabProps = {
   title?: string;
@@ -31,6 +38,7 @@ export const StaffLeadsTab = ({
   const [rows, setRows] = useState<LeadListRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [leadFilter, setLeadFilter] = useState<LeadFilter>("all");
   const [saving, setSaving] = useState<string | null>(null);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [newLeadOpen, setNewLeadOpen] = useState(false);
@@ -92,11 +100,12 @@ export const StaffLeadsTab = ({
   };
 
   const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    const matches = !needle ? rows : rows.filter((lead) => [lead.name, lead.business, lead.email, lead.phone, lead.product, lead.source]
-      .filter(Boolean).some((value) => value!.toLowerCase().includes(needle)));
+    const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const needle = normalize(query.trim());
+    const matches = rows.filter((lead) => matchesFilter(lead, leadFilter) && (!needle || [lead.name, lead.business, lead.email, lead.phone, lead.product, lead.source]
+      .filter(Boolean).some((value) => normalize(value!).includes(needle))));
     return [...matches].sort((a, b) => b.created_at - a.created_at);
-  }, [query, rows]);
+  }, [query, rows, leadFilter]);
   const previewLead = filtered.find((lead) => lead.id === previewLeadId) || filtered[0] || null;
 
   const urgentCount = rows.filter((lead) => lead.urgent === 1).length;
@@ -133,6 +142,10 @@ export const StaffLeadsTab = ({
           <button type="button" onClick={() => setView("list")} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ${view === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}><List className="size-3.5" /> Listă</button>
           <button type="button" onClick={() => setView("pipeline")} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ${view === "pipeline" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}><Columns3 className="size-3.5" /> Pipeline</button>
         </div>
+      </div>
+      <div className="flex items-center gap-2 overflow-x-auto pb-1" role="group" aria-label="Filtrează leadurile">
+        {([ ["all", "Toate"], ["new", "Noi"], ["followup", "De urmărit"], ["offers", "Oferte"], ["urgent", "Urgente"], ["closed", "Finalizate"] ] as const).map(([key, label]) => <button key={key} type="button" aria-pressed={leadFilter === key} onClick={() => setLeadFilter(key)} className={`min-h-10 shrink-0 rounded-full border px-3 text-xs font-semibold transition ${leadFilter === key ? "border-primary/40 bg-primary/15 text-foreground" : "border-border/60 text-muted-foreground hover:text-foreground"}`}>{label} <span className="ml-1 opacity-70">{rows.filter((lead) => matchesFilter(lead, key)).length}</span></button>)}
+        {(leadFilter !== "all" || query) && <button type="button" onClick={() => { setLeadFilter("all"); setQuery(""); }} className="min-h-10 shrink-0 px-2 text-xs text-primary hover:underline">Resetează</button>}
       </div>
 
       {loading ? <div className="h-48 animate-pulse rounded-2xl bg-muted/50" aria-label="Se încarcă" /> : (
