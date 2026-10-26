@@ -35,3 +35,10 @@ These rules apply to all work in this repository.
 - Run the relevant tests, type checks, lint checks, and production builds before pushing.
 - Report any check that could not be run and the exact reason.
 - Keep commits focused on the requested task.
+
+## Continuity for Codex, Lovable, and other agents
+
+- Start with `README.md`, `docs/PROJECT_CONTINUITY.md`, and `docs/PROJECT_GLOSSARY.md`. For animation, 3D, or motion work, also read `docs/VISUAL_TECHNIQUES.md` before editing.
+- Treat dated PR inventories and integration states in documentation as handoff snapshots. Recheck GitHub, D1, provider access, and the live site before claiming that work is merged, connected, indexed, or deployed.
+- Leave a reviewable handoff in the PR: base commit, affected surfaces, migrations, checks, preview evidence, external effects, unresolved blockers, and next action. Do not put credentials or private account data in documentation or memory.
+- Internal dashboard tasks must preserve the logged-out public design unless the user explicitly requests a public visual change.
