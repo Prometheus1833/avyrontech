@@ -135,7 +135,7 @@ test.describe("public SEO routes", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByRole("heading", { name: "Alege domeniul tău și vezi cum ar arăta." })).toHaveCount(1);
-    await showcase.getByRole("button", { name: "Website", exact: true }).click();
+    await showcase.getByRole("button", { name: /Website$/ }).click();
     await expect(showcase).toHaveAttribute("data-active-stage", "laptop");
     await examples.getByRole("button", { name: "Domenii", exact: true }).click();
     await examples.getByRole("button", { name: /Restaurante & cafenele/ }).click();
@@ -146,7 +146,7 @@ test.describe("public SEO routes", () => {
     await expect(examples.locator("article")).toHaveCount(0);
     await expect(showcase.getByRole("link", { name: "Serviciul Website" })).toHaveAttribute("href", "/servicii/website-prezentare-profesional");
 
-    await showcase.getByRole("button", { name: "Aplicație", exact: true }).click();
+    await showcase.getByRole("button", { name: /Aplicație$/ }).click();
     await expect(showcase).toHaveAttribute("data-active-stage", "phone");
     await expect(showcase.getByRole("link", { name: "Aplicații și platforme" })).toHaveAttribute("href", "/servicii/aplicatii-si-platforme");
     const stickyFrame = showcase.locator(":scope > div").first();
@@ -155,7 +155,7 @@ test.describe("public SEO routes", () => {
       return frame.top >= 0 && frame.top <= 81 && frame.bottom >= window.innerHeight - 1;
     })).toBe(true);
 
-    await showcase.getByRole("button", { name: "Automatizări", exact: true }).click();
+    await showcase.getByRole("button", { name: /Automatizări$/ }).click();
     await expect(showcase).toHaveAttribute("data-active-stage", "tablet");
     await expect(showcase.getByRole("link", { name: "Automatizări și AI" })).toHaveAttribute("href", "/servicii/automatizari-si-ai");
 
@@ -170,7 +170,7 @@ test.describe("public SEO routes", () => {
     await page.goto("/#domenii");
     const mobileShowcase = page.getByTestId("industry-device-showcase");
     await expect(mobileShowcase).toBeInViewport();
-    await mobileShowcase.getByRole("button", { name: "Automatizări", exact: true }).click();
+    await mobileShowcase.getByRole("button", { name: /Automatizări$/ }).click();
     await expect(mobileShowcase).toHaveAttribute("data-active-stage", "tablet");
     await expect(mobileShowcase.getByRole("button", { name: "ChatBot AI web și WhatsApp" })).toBeInViewport();
     const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
