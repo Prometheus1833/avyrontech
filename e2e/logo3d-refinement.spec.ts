@@ -2,7 +2,8 @@ import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 
 const service = "/servicii/creare-logo-3d-dinamic-cinematic";
-test.setTimeout(60_000);
+// Software-rendered WebGL in CI can spend over a minute on this multi-step journey.
+test.setTimeout(120_000);
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({ necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12" })));
