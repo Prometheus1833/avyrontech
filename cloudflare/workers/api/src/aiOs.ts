@@ -249,7 +249,7 @@ aiOsRouter.get("/api/ai/agents", async (c) => {
 aiOsRouter.post("/api/ai/chat", async (c) => {
   const parsed = z.object({
     agent: z.string().max(80).optional(), message: z.string().max(1000).optional(),
-    conversationId: z.string().max(100).optional(), language: z.enum(['ro', 'en']).optional(),
+    conversationId: z.string().max(100).nullish(), language: z.enum(['ro', 'en']).optional(),
     page: z.string().max(2048).optional(), visitorId: z.string().max(64).optional(),
     website: z.string().max(2048).optional(),
   }).safeParse(await c.req.json().catch(() => null));
