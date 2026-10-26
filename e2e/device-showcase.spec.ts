@@ -37,6 +37,10 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
     const laptop = await settledDevice(showcase, "laptop");
     await expect(laptop.locator(".laptop-key-row")).toHaveCount(6);
     await expect(laptop.locator(".laptop-trackpad")).toBeVisible();
+    const wellnessImage = laptop.locator('[data-screen-variant="beauty"] .web-hero-photo');
+    await expect(wellnessImage).toBeVisible();
+    await expect.poll(() => wellnessImage.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath("wellness-laptop.png") });
     const laptopWidths = await laptop.evaluate((el) => {
       const width = (selector: string) => el.querySelector(selector)!.getBoundingClientRect().width;
       return {
