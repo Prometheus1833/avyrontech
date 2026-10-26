@@ -777,6 +777,7 @@ test.describe("forms and authentication", () => {
   });
 
   test("finance stays concise, opens expense details and masks payment methods", async ({ page }) => {
+    await page.setViewportSize({width:390,height:844});
     const expense = { id:"fin_exp_claude_api",vendor_id:"fin_vendor_claude",vendor_name:"Claude",service_name:"Claude API Usage",category:"ai",subcategory:null,description:"",status:"needs_configuration",billing_type:"usage_based",billing_cycle:"monthly",currency:"USD",net_amount_minor:null,vat_amount_minor:null,gross_amount_minor:null,amount_ron_minor:null,future_amount_minor:null,invoice_number:null,invoice_date:null,due_date:null,paid_date:null,next_billing_date:null,trial_end:null,free_period_end:null,project_id:null,client_id:null,payment_account_id:null,payment_method_id:null,notes:"",source:"manual",updated_at:1_788_800_000_000 };
     await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({ necessary:true,analytics:false,marketing:false,savedAt:new Date().toISOString(),policyVersion:"2026-09-12" })));
     await page.route("**/api/auth/refresh",(route)=>route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({access_token:"finance-e2e",expires_in:900,user:{id:"owner-fin",roles:["admin"]}})}));
@@ -793,6 +794,9 @@ test.describe("forms and authentication", () => {
     await page.keyboard.press("Escape");
     await page.getByRole("button",{name:"Conturi și carduri",exact:true}).click();
     await expect(page.getByText("•••• 4242")).toBeVisible();
+    await expect(page.getByRole("heading",{name:"Încasări și facturare"})).toBeVisible();
+    await expect(page.getByText(/Un cont intern de evidență nu conectează banca/)).toBeVisible();
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await expect(page.getByText(/4242 4242/)).toHaveCount(0);
     await page.getByRole("button",{name:"Venituri",exact:true}).click();
     await page.getByRole("button",{name:"Venit",exact:true}).click();

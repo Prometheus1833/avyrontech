@@ -2,7 +2,7 @@ import { cfAuth } from "./cfAuth";
 
 export type BillingProviderStatus={enabled:boolean;configured?:boolean;oneTime?:boolean;subscriptions?:boolean;savedMethods?:boolean;customerPortal?:boolean;invoices?:boolean;status?:"planned"};
 export type FinancialProviderPlaybook={
-  provider:"stripe"|"oblio"|"revolut_business"|"revolut_merchant";
+  provider:"stripe"|"oblio"|"revolut_merchant";
   title:string;purpose:string;authentication:string;intake:string;reconciliation:string;gate:string;cadence:string;
   sources:readonly string[];
   phase:"not_connected"|"configuration_only"|"awaiting_approval"|"verification_required"|"connected_unsynced"|"synced"|"stale"|"error";
@@ -32,7 +32,6 @@ export type BillingAdminStatus={
   recentInvoices:Array<{id:string;order_id:string;provider:string;series:string|null;number:string|null;status:string;total_minor:number;currency:string;error_code:string|null;updated_at:number}>;
   connectionRecords:Array<{provider:string;status:string;last_sync_at:number|null;last_error_code:string|null}>;
   providerPlaybooks:FinancialProviderPlaybook[];
-  bankSettlement:{verified:false;reason:string};
   recentFailures:Array<{provider:string;event_type:string;error_code:string|null;received_at:number}>;
 };
 export type BillingAccount={

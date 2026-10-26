@@ -1,5 +1,5 @@
 /** Public API facts and AVYRON-specific gates. Never include credentials in this registry. */
-export type FinancialProviderKey = "stripe" | "oblio" | "revolut_business" | "revolut_merchant";
+export type FinancialProviderKey = "stripe" | "oblio" | "revolut_merchant";
 export type FinancialSyncPhase = "not_connected" | "configuration_only" | "awaiting_approval" | "verification_required" | "connected_unsynced" | "synced" | "stale" | "error";
 export type FinancialConnectionRecord = { provider: string; status: string; last_sync_at: number | null; last_error_code: string | null };
 
@@ -21,15 +21,6 @@ export const FINANCIAL_PROVIDER_PLAYBOOKS = [
     gate: "Seria, regimul TVA, datele juridice și trimiterea în SPV sunt confirmate; emiterea și e-mailul rămân comutatoare separate.",
     cadence: "La plată confirmată; reconciliere periodică paginată. Sub 30 emiteri/100 s și 30 citiri/10 s.",
     sources: ["https://www.oblio.eu/api/"],
-  },
-  {
-    provider: "revolut_business", title: "Revolut Business", purpose: "Conturi, solduri și tranzacții bancare; separat de Merchant.",
-    authentication: "Business API cu certificat/JWT și refresh token. READ pentru citire; configurarea webhookului v2 cere WRITE separat, fără PAY sau date sensibile de card.",
-    intake: "Webhooks v2 TransactionCreated/TransactionStateChanged cu semnătură HMAC verificată; nu accepta notificarea ca dovadă unică.",
-    reconciliation: "GET conturi/solduri/tranzacții paginat; potrivește încasările după referință, monedă, sumă și stare finală. Cazurile ambigue cer revizie.",
-    gate: "Conector bancar read-only și webhook v2 verificate în sandbox, apoi aprobate pentru AVYRON; momentan neconectat.",
-    cadence: "Webhook pentru semnal; backfill paginat cu cursor și verificare periodică. Nu iniția transferuri.",
-    sources: ["https://developer.revolut.com/docs/guides/manage-accounts/use-cases/accounts-and-transactions-syncing", "https://developer.revolut.com/docs/guides/manage-accounts/webhooks/about-webhooks", "https://developer.revolut.com/docs/guides/manage-accounts/webhooks/verify-the-payload-signature"],
   },
   {
     provider: "revolut_merchant", title: "Revolut Merchant", purpose: "Checkout și abonamente Revolut; nu dovedește soldul din Revolut Business.",

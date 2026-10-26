@@ -153,11 +153,12 @@ operationsRouter.get('/api/operations/notifications',async c=>c.json({data:(awai
 operationsRouter.post('/api/operations/notifications/:id/read',async c=>write(c,{ok:true},[c.env.DB.prepare('UPDATE operation_notifications SET read_at=? WHERE id=? AND user_id=?').bind(Date.now(),c.req.param('id'),c.get('userId'))]));
 operationsRouter.get('/api/operations/integrations',async c=>{
  const accounts=await c.env.DB.prepare("SELECT account.id,account.provider,account.label,account.environment,account.status,account.revision,account.checked_at,account.synced_at,account.error_code,account.secret_reference IS NOT NULL has_credential,CASE WHEN account.provider='supabase' THEN json_extract(account.config_json,'$.projectUrl') ELSE NULL END project_url,account.owner_user_id,owner.email owner_email,json_extract(snapshot.summary_json,'$.account_email') verified_identity,json_extract(snapshot.summary_json,'$.storage_limit_bytes') storage_limit_bytes,json_extract(snapshot.summary_json,'$.storage_usage_bytes') storage_usage_bytes,json_extract(snapshot.summary_json,'$.storage_usage_drive_bytes') storage_usage_drive_bytes FROM integration_accounts account JOIN users owner ON owner.id=account.owner_user_id LEFT JOIN integration_snapshots snapshot ON snapshot.account_id=account.id ORDER BY account.label").all();
- return c.json({providers:integrationProviders,data:accounts.results.map(account=>({...account,data_operations_enabled:account.provider==='supabase'?String(c.env.SUPABASE_DATA_OPERATIONS_ENABLED)==='true':account.provider==='google_drive'?String(c.env.GOOGLE_DRIVE_DATA_OPERATIONS_ENABLED)==='true':true})),backup_jobs_enabled:String(c.env.BACKUP_JOBS_ENABLED)==='true',canEdit:await platformRoleForUser(c.env.DB,c.get('userId'))==='platform_owner'});
+ return c.json({providers:integrationProviders,data:accounts.results.map(account=>({...account,data_operations_enabled:account.provider==='revolut'?false:account.provider==='supabase'?String(c.env.SUPABASE_DATA_OPERATIONS_ENABLED)==='true':account.provider==='google_drive'?String(c.env.GOOGLE_DRIVE_DATA_OPERATIONS_ENABLED)==='true':true})),backup_jobs_enabled:String(c.env.BACKUP_JOBS_ENABLED)==='true',canEdit:await platformRoleForUser(c.env.DB,c.get('userId'))==='platform_owner'});
 });
 operationsRouter.post('/api/operations/integrations',async c=>{
  if(await platformRoleForUser(c.env.DB,c.get('userId'))!=='platform_owner')return bad(c,'forbidden',403);
  const b=z.object({provider:z.enum(['github','stripe','cloudflare','revolut','supabase','google_drive']),label:z.string().trim().min(1).max(120),environment:z.enum(['test','live']),projectUrl:z.string().trim().max(300).optional()}).strict().safeParse(await c.req.json().catch(()=>null));if(!b.success)return bad(c,'invalid_account');const id=crypto.randomUUID(),t=Date.now();
+ if(b.data.provider==='revolut')return bad(c,'bank_connection_not_required_for_checkout',409);
  if(['github','cloudflare','supabase','google_drive'].includes(b.data.provider)&&b.data.environment!=='live')return bad(c,'invalid_environment');
  let config:Record<string,string>={};if(b.data.provider==='supabase'){try{config={projectUrl:normalizeSupabaseProjectUrl(b.data.projectUrl)};}catch{return bad(c,'supabase_project_url_invalid');}}else if(b.data.projectUrl)return bad(c,'project_url_not_allowed');
  return write(c,{id},[c.env.DB.prepare('INSERT INTO integration_accounts(id,provider,label,environment,config_json,owner_user_id,created_by,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)').bind(id,b.data.provider,b.data.label,b.data.environment,JSON.stringify(config),c.get('userId'),c.get('userId'),t,t),audit(c,'integration.account.created',id)]);
@@ -166,6 +167,7 @@ operationsRouter.put('/api/operations/integrations/:id/credential',async c=>{
  if(await platformRoleForUser(c.env.DB,c.get('userId'))!=='platform_owner')return bad(c,'forbidden',403);
  const b=z.object({token:z.string().trim().min(16).max(8000).regex(/^[^\s]+$/),revision:z.number().int().positive()}).strict().safeParse(await c.req.json().catch(()=>null));if(!b.success)return bad(c,'invalid_credential');
  const account=await c.env.DB.prepare('SELECT * FROM integration_accounts WHERE id=?').bind(c.req.param('id')).first<IntegrationAccount>();if(!account)return bad(c,'not_found',404);if(account.revision!==b.data.revision)return bad(c,'revision_conflict',409);
+ if(account.provider==='revolut')return bad(c,'bank_connection_not_required_for_checkout',409);
  if(account.provider==='google_drive')return bad(c,'google_oauth_required',409);
  if(!c.env.MFA_ENCRYPTION_KEY||c.env.MFA_ENCRYPTION_KEY.length<32)return bad(c,'vault_not_configured',503);
  const reference=`integration:v1:${account.id}:${crypto.randomUUID()}`;
@@ -193,6 +195,7 @@ operationsRouter.post('/api/operations/integrations/:id/:action',async c=>{
   const result=await write(c,{ok:true},[c.env.DB.prepare("UPDATE integration_accounts SET status='disconnected',secret_reference=NULL,updated_at=?,revision=CASE WHEN revision=? THEN revision+1 ELSE NULL END WHERE id=?").bind(Date.now(),account.revision,account.id),audit(c,'integration.disconnected',account.id)]);
   if(result.status===200&&account.secret_reference)c.executionCtx.waitUntil(c.env.KV.delete(account.secret_reference));return result;
  }
+ if(account.provider==='revolut')return bad(c,'bank_connection_not_required_for_checkout',409);
  const rate=await checkRateLimit(c.env.DB,[{key:`integration-probe:${account.id}`,limit:20,windowSec:3600}]);if(!rate.ok)return c.json({error:{code:'rate_limited'}},429);
  try{
   const result=await readIntegration(c.env,account,action==='sync'),t=Date.now();

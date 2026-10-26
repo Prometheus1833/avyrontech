@@ -4,7 +4,7 @@ export const integrationProviders = {
   github: { name: 'GitHub', description: 'Verificare cont și sincronizare repository-uri accesibile', documentation: 'https://docs.github.com/en/rest/users/users' },
   stripe: { name: 'Stripe', description: 'Verificare acces și import facturi pentru reconciliere', documentation: 'https://docs.stripe.com/api/invoices/list' },
   cloudflare: { name: 'Cloudflare', description: 'Verificare token personal și inventar zone DNS', documentation: 'https://developers.cloudflare.com/api/resources/user/subresources/tokens/' },
-  revolut: { name: 'Revolut Business', description: 'Citire conturi și solduri, fără inițiere de plăți', documentation: 'https://developer.revolut.com/docs/business/get-accounts' },
+  revolut: { name: 'Revolut Business (referință veche)', description: 'Conexiunea bancară nu este necesară pentru checkout și nu mai poate fi activată.', documentation: 'https://developer.revolut.com/docs/api/merchant' },
   supabase: { name: 'Supabase', description: 'Verificare Data API fără migrarea autentificării, fișierelor sau datelor', documentation: 'https://supabase.com/docs/guides/api' },
   google_drive: { name: 'Google Drive', description: 'Verificare cont și cotă prin Drive API, fără scanarea sau transferul fișierelor', documentation: 'https://developers.google.com/workspace/drive/api/reference/rest/v3/about/get' },
 } as const;
@@ -62,7 +62,7 @@ export async function completeGoogleOAuth(env:Env,state:string,code:string,fetch
   return {accountId:saved.accountId,userId:saved.userId,revision:saved.revision,credential:JSON.stringify({type:'google_oauth_v1',access_token:access,refresh_token:token.refresh_token,expires_at:Date.now()+Number(token.expires_in)*1000,scope:token.scope} satisfies GoogleOAuthCredential),summary:{account_email:email,display_name:text(user.displayName),storage_limit_bytes:text(object(about.storageQuota).limit),storage_usage_bytes:text(object(about.storageQuota).usage),storage_usage_drive_bytes:text(object(about.storageQuota).usageInDrive),mode:'verification_only'}};
 }
 export async function boundedProviderJson(url:string,token:string,provider:IntegrationProvider,fetcher:typeof fetch=fetch):Promise<unknown> {
-  const allowed:Record<Exclude<IntegrationProvider,'supabase'>,string[]>={github:['api.github.com'],stripe:['api.stripe.com'],cloudflare:['api.cloudflare.com'],revolut:['b2b.revolut.com','sandbox-b2b.revolut.com'],google_drive:['www.googleapis.com']};
+  const allowed:Record<Exclude<IntegrationProvider,'supabase'>,string[]>={github:['api.github.com'],stripe:['api.stripe.com'],cloudflare:['api.cloudflare.com'],revolut:[],google_drive:['www.googleapis.com']};
   const parsed=new URL(url);
   const supabaseHost=provider==='supabase'&&/^[a-z0-9-]{8,63}\.supabase\.co$/.test(parsed.hostname);
   const knownHost=provider!=='supabase'&&allowed[provider].includes(parsed.hostname);
@@ -93,6 +93,7 @@ export const normalizeSupabaseProjectUrl=(value:unknown)=>{
 const jwtRole=(token:string)=>{try{const part=token.split('.')[1];if(!part)return null;const normalized=part.replace(/-/g,'+').replace(/_/g,'/').padEnd(Math.ceil(part.length/4)*4,'=');return text(object(JSON.parse(atob(normalized))).role);}catch{return null;}};
 const assertSafeSupabaseKey=(token:string)=>{if(token.startsWith('sb_secret_')||token.includes('service_role')||jwtRole(token)==='service_role')throw new ProviderError('supabase_privileged_key_denied');};
 export async function readIntegration(env:Env,account:IntegrationAccount,sync:boolean,fetcher:typeof fetch=fetch) {
+  if(account.provider==='revolut')throw new ProviderError('bank_connection_not_required_for_checkout');
   if(!account.secret_reference||account.status==='disconnected')throw new ProviderError('account_not_activated');
   const encrypted=await env.KV.get(account.secret_reference);
   if(!encrypted)throw new ProviderError('credential_unavailable');
@@ -121,10 +122,6 @@ export async function readIntegration(env:Env,account:IntegrationAccount,sync:bo
     summary={status:'active',expires_on:text(tokenInfo.expires_on)};
     if(sync){const zones=object(await read('https://api.cloudflare.com/client/v4/zones?per_page=50'));if(zones.success!==true||!Array.isArray(zones.result))throw new ProviderError('credentials_or_scope_invalid');
       for(const raw of zones.result){const row=object(raw);if(typeof row.id==='string')documents.push({id:row.id,kind:'zone',data:{name:text(row.name),status:text(row.status)}});}summary.limit=50;}
-  } else if(account.provider==='revolut') {
-    const host=account.environment==='test'?'sandbox-b2b.revolut.com':'b2b.revolut.com';
-    const rows=await read(`https://${host}/api/1.0/accounts`);if(!Array.isArray(rows))throw new ProviderError('provider_invalid_response');summary={accounts:rows.length};
-    if(sync)for(const raw of rows.slice(0,100)){const row=object(raw);if(typeof row.id==='string')documents.push({id:row.id,kind:'bank_account',data:{name:text(row.name),currency:text(row.currency),state:text(row.state),balance:typeof row.balance==='number'?row.balance:null}});}
   } else if(account.provider==='supabase') {
     assertSafeSupabaseKey(token);const projectUrl=normalizeSupabaseProjectUrl(jsonConfig(account.config_json).projectUrl);
     const schema=object(await read(`${projectUrl}/rest/v1/`));

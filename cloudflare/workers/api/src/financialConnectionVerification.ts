@@ -66,5 +66,5 @@ export async function verifyFinancialConnection(env: Env, provider: FinancialPro
     return { ok: true, account: "merchant_api", capabilities: ["webhooks_read", "checkout_configured", "webhook_secret_configured"], detail: `${response.data.webhooks.length} webhook(uri)` };
   }
 
-  return { ok: false, code: "revolut_business_oauth_not_configured" };
+  return { ok: false, code: "unsupported_provider" };
 }

@@ -90,6 +90,16 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
   env.FILES.list=async()=>{db.exec("UPDATE operation_jobs SET status='cancelled' WHERE id='j'");return {objects:[]} as R2Objects;};await runOperationJobs(env);
   expect(db.prepare('SELECT status,result_json FROM operation_jobs').get()).toMatchObject({status:'cancelled',result_json:null});expect(db.prepare('SELECT COUNT(*) n FROM operation_notifications').get()!.n).toBe(0);
  });
+ it('blocks new and legacy bank API access while preserving a way to disconnect its old reference',async()=>{
+  expect((await req('integrations',{provider:'revolut',label:'Bank',environment:'live'})).status).toBe(409);
+  db.prepare("INSERT INTO integration_accounts(id,provider,label,environment,config_json,owner_user_id,created_by,created_at,updated_at) VALUES ('legacy-bank','revolut','Old bank reference','live','{}','owner','owner',1,1)").run();
+  const listing=await (await req('integrations')).json() as {data:Array<{id:string;data_operations_enabled:boolean}>};
+  expect(listing.data.find(row=>row.id==='legacy-bank')?.data_operations_enabled).toBe(false);
+  expect((await req('integrations/legacy-bank/credential',{token:'legacy-fixture-token',revision:1},'PUT')).status).toBe(409);
+  expect((await req('integrations/legacy-bank/verify',{})).status).toBe(409);
+  expect((await req('integrations/legacy-bank/sync',{})).status).toBe(409);
+  expect((await req('integrations/legacy-bank/disconnect',{})).status).toBe(200);
+ });
  it('stores only sealed versioned credentials and clears old data on rotation',async()=>{
   const {id}=await (await req('integrations',{provider:'stripe',label:'Billing',environment:'test'})).json();const token='sk_test_fixture_not_real_secret';
   expect((await req(`integrations/${id}/credential`,{token,revision:1},'PUT')).status).toBe(200);
@@ -260,11 +270,16 @@ describe('Integration adapter boundaries',()=>{
   for(const url of ['http://api.github.com/user','https://evil.test/user','https://user@api.github.com/user'])await expect(boundedProviderJson(url,'token','github',fetcher)).rejects.toThrow('provider_url_denied');expect(fetcher).not.toHaveBeenCalled();
   await expect(boundedProviderJson('https://api.github.com/user','token','github',fetcher)).rejects.toThrow('provider_response_too_large');expect(fetcher).toHaveBeenCalledWith(expect.anything(),expect.objectContaining({redirect:'error',headers:expect.objectContaining({'X-GitHub-Api-Version':'2026-03-10'})}));
  });
- it.each(['github','cloudflare','revolut'] as const)('reads %s through fixed provider endpoints and retains only summarized fields',async(provider)=>{
+ it.each(['github','cloudflare'] as const)('reads %s through fixed provider endpoints and retains only summarized fields',async(provider)=>{
   const master='fixture-master-key-with-at-least-32-characters',cipher=await sealCredential('fixture-token',master,'ref');const urls:string[]=[];
-  const fetcher=vi.fn(async(url:string)=>{urls.push(url);return Response.json(provider==='github'?(url.endsWith('/user')?{login:'fixture',id:1}:[{id:11,full_name:'fixture/repo',private:true,default_branch:'main',token:'never-store'}]):provider==='cloudflare'?(url.includes('/verify')?{success:true,result:{status:'active'}}:{success:true,result:[{id:'zone',name:'example.test',status:'active',secret:'never-store'}]}):[{id:'account',name:'Fixture',currency:'EUR',balance:1.25,secret:'never-store'}]);}) as unknown as typeof fetch;
+  const fetcher=vi.fn(async(url:string)=>{urls.push(url);return Response.json(provider==='github'?(url.endsWith('/user')?{login:'fixture',id:1}:[{id:11,full_name:'fixture/repo',private:true,default_branch:'main',token:'never-store'}]):{success:true,result:url.includes('/verify')?{status:'active'}:[{id:'zone',name:'example.test',status:'active',secret:'never-store'}]});}) as unknown as typeof fetch;
   const result=await readIntegration({KV:{get:async()=>cipher},MFA_ENCRYPTION_KEY:master} as unknown as Env,{id:'a',provider,environment:'live',secret_reference:'ref',revision:1,status:'configured'},true,fetcher);
-  expect(result.documents).toHaveLength(1);expect(JSON.stringify(result)).not.toContain('never-store');expect(urls.every(url=>url.startsWith('https://'))).toBe(true);if(provider==='revolut')expect(urls).toEqual(['https://b2b.revolut.com/api/1.0/accounts']);
+  expect(result.documents).toHaveLength(1);expect(JSON.stringify(result)).not.toContain('never-store');expect(urls.every(url=>url.startsWith('https://'))).toBe(true);
+ });
+ it('rejects legacy bank reads before accessing credentials or network',async()=>{
+  const fetcher=vi.fn() as unknown as typeof fetch;
+  await expect(readIntegration({} as Env,{id:'legacy-bank',provider:'revolut',environment:'live',secret_reference:null,revision:1,status:'configured'},true,fetcher)).rejects.toThrow('bank_connection_not_required_for_checkout');
+  expect(fetcher).not.toHaveBeenCalled();
  });
  it('rejects a Stripe test/live mismatch before calling the provider',async()=>{
   const master='fixture-master-key-with-at-least-32-characters',cipher=await sealCredential('sk_live_fixture',master,'ref'),fetcher=vi.fn() as unknown as typeof fetch;

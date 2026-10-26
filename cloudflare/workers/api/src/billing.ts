@@ -177,7 +177,10 @@ export async function createCheckoutForOrder(c:Context<AppBindings>,input:{order
   return {status:201 as const,body:{orderId:order.id,provider:input.provider,mode:checkout.mode,url:checkout.url,amountMinor:order.total_cents,currency:order.currency}};
 }
 
-billingRouter.get("/api/billing/config",(c)=>c.json({providers:providerCapabilities(c.env),preferred:"revolut"}));
+billingRouter.get("/api/billing/config",(c)=>{
+  const providers=providerCapabilities(c.env);
+  return c.json({providers,preferred:providers.stripe.enabled?"stripe":providers.revolut.enabled?"revolut":null});
+});
 billingRouter.post("/api/billing/checkout",async(c)=>{const parsed=checkoutSchema.safeParse(await c.req.json().catch(()=>null));if(!parsed.success)return c.json({error:{code:"invalid_request"}},400);const result=await createCheckoutForOrder(c,parsed.data);return c.json(result.body,result.status);});
 
 billingRouter.get("/api/billing/payment-methods",async(c)=>c.json(await listAccountPaymentMethods(c.env,c.get("userId"))));
@@ -389,24 +392,24 @@ billingRouter.get("/api/billing/admin/status",async(c)=>{
     c.env.DB.prepare("SELECT id,order_id,provider,mode,status,amount_minor,currency,updated_at FROM billing_checkout_sessions WHERE mode!='setup' ORDER BY updated_at DESC LIMIT 12").all(),
     c.env.DB.prepare("SELECT id,sku,provider,status,period,amount_minor,currency,current_period_end,updated_at FROM billing_subscriptions ORDER BY updated_at DESC LIMIT 12").all(),
     c.env.DB.prepare("SELECT id,order_id,provider,series,number,status,total_minor,currency,error_code,updated_at FROM billing_invoices ORDER BY updated_at DESC LIMIT 12").all(),
-    c.env.DB.prepare("SELECT provider,status,last_sync_at,last_error_code FROM financial_provider_connections WHERE provider IN ('stripe','oblio','revolut_business','revolut_merchant') ORDER BY provider").all<FinancialConnectionRecord>(),
+    c.env.DB.prepare("SELECT provider,status,last_sync_at,last_error_code FROM financial_provider_connections WHERE provider IN ('stripe','oblio','revolut_merchant') ORDER BY provider").all<FinancialConnectionRecord>(),
   ]);
   const capabilities=providerCapabilities(c.env);
   const records=new Map(connectionRecords.results.map((record)=>[record.provider,record]));
   const providerPlaybooks=FINANCIAL_PROVIDER_PLAYBOOKS.map((playbook)=>{
     const provider=playbook.provider as FinancialProviderKey;
     const configured=provider==="stripe"?capabilities.stripe.enabled:provider==="oblio"?capabilities.oblio.configured:provider==="revolut_merchant"?capabilities.revolut.enabled:false;
-    const approved=provider==="oblio"?capabilities.oblio.enabled:provider==="revolut_business"?false:configured;
+    const approved=provider==="oblio"?capabilities.oblio.enabled:configured;
     return {...playbook,phase:financialSyncPhase({provider,configured,approved,connection:records.get(provider),now:Date.now()})};
   });
-  return c.json({providers:capabilities,providerPlaybooks,security:{mfaEnabled:mfaAuthEnabled(c.env),mfaVerified:Boolean(c.get("mfaVerified")),canVerify:(await platformRoleForUser(c.env.DB,c.get("userId")))==="platform_owner"},sessions:sessions.results,subscriptions:subscriptions.results,invoices:invoices.results,pendingInvoices:pendingInvoices.results,paymentsByCurrency:paymentsByCurrency.results,invoicesByCurrency:invoicesByCurrency.results,recentPayments:recentPayments.results,recentSubscriptions:recentSubscriptions.results,recentInvoices:recentInvoices.results,connectionRecords:connectionRecords.results,bankSettlement:{verified:false,reason:"revolut_business_not_connected"},recentFailures:failed.results});
+  return c.json({providers:capabilities,providerPlaybooks,security:{mfaEnabled:mfaAuthEnabled(c.env),mfaVerified:Boolean(c.get("mfaVerified")),canVerify:(await platformRoleForUser(c.env.DB,c.get("userId")))==="platform_owner"},sessions:sessions.results,subscriptions:subscriptions.results,invoices:invoices.results,pendingInvoices:pendingInvoices.results,paymentsByCurrency:paymentsByCurrency.results,recentPayments:recentPayments.results,recentSubscriptions:recentSubscriptions.results,recentInvoices:recentInvoices.results,connectionRecords:connectionRecords.results,recentFailures:failed.results});
 });
 
 billingRouter.post("/api/billing/admin/connections/:provider/verify",async(c)=>{
   if ((await platformRoleForUser(c.env.DB,c.get("userId")))!=="platform_owner") return c.json({error:{code:"platform_owner_required"}},403);
   if (!c.get("mfaVerified")) return c.json({error:{code:"mfa_required"}},403);
   const provider=c.req.param("provider");
-  if (!["stripe","oblio","revolut_merchant","revolut_business"].includes(provider)) return c.json({error:{code:"unsupported_provider"}},404);
+  if (!["stripe","oblio","revolut_merchant"].includes(provider)) return c.json({error:{code:"unsupported_provider"}},404);
   const rate=await checkRateLimit(c.env.DB,[{key:`billing_verify:${c.get("userId")}:h`,limit:12,windowSec:3600}]);
   if (!rate.ok) return c.json({error:{code:"rate_limited"}},429);
   const result=await verifyFinancialConnection(c.env,provider as FinancialProviderKey);
