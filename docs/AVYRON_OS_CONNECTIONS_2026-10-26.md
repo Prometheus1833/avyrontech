@@ -12,7 +12,7 @@ Registrul operațional are un rând `Revolut · Avyron` în starea `configured`,
 
 Configurația Worker verificată are `MFA_AUTH_ENABLED=false`. Verificarea conexiunilor financiare cere MFA verificat și rămâne indisponibilă până când politica MFA este activată și validată pentru owner.
 
-Verificare în Opera la 26.10.2026: Oblio a afișat firma DIGITAL ECOTECH SOLUTIONS S.R.L., dar sesiunea a expirat la accesarea paginii **Serii documente**. Seria dedicată AVYRON și începutul `0001` nu au putut fi confirmate și nu s-a creat nicio serie. Fila Revolut Business indica deconectare automată; oricum, accesul bancar nu este necesar pentru checkout. Search Console s-a deschis în browserul intern fără sesiune Google, deci indexarea efectivă rămâne neverificată.
+Verificare în Opera la 26.10.2026: Oblio a afișat firma DIGITAL ECOTECH SOLUTIONS S.R.L., dar sesiunea a expirat la accesarea paginii **Serii documente**. Seria dedicată AVYRON și începutul `0001` nu au putut fi confirmate și nu s-a creat nicio serie. Fila Revolut Business indica deconectare automată; oricum, accesul bancar nu este necesar pentru checkout. În browserul intern, proprietatea Search Console `sc-domain:avyron.ro` era deja autentificată în contul AVYRON. Raportul Google din 23.10.2026 avea 7 URL-uri indexate din sitemapul principal, 62 doar descoperite și 2 erori 404 istorice. La 26.10.2026, cele două URL-uri au răspuns cu 200 și au intrat în validarea remedierii; sitemapul a fost retrimis, iar `/servicii`, `/produse` și `/blog` au trecut testul live și au fost solicitate pentru indexare. Nu considera aceste cereri drept indexare finalizată.
 
 ## Ordinea corectă
 
