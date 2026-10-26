@@ -36,6 +36,7 @@ import { engineRouter, runDueEngineDiscovery } from "./engine";
 import { newsletterRouter } from "./newsletter";
 import { forcedPasswordAllowedPath, mfaAuthEnabled, normalizeLoginPhone, normalizeUsername, turnstileAuthEnabled, uniqueStaffPhoneMatch } from "./authPolicy";
 import { parseReviewSubmission, WEBSITE_REVIEW_SURFACE } from "./reviewsPolicy";
+import { cleanupAvyronEditorialContent } from "./aiContentRetention";
 
 export { AvyronAgentRuntime } from "./agents/AvyronAgentRuntime";
 export { AvyronMaintenanceWorkflow } from "./workflows/AvyronMaintenanceWorkflow";
@@ -1836,6 +1837,12 @@ export default {
   scheduled: (controller, env, ctx) => {
     if (controller.cron === "0,15,30,45 * * * *") {
       ctx.waitUntil(enqueueAsyncJobs(env, ["operation_drain", "social_drain", "survey_delivery", "survey_ai"]));
+      if (new Date(controller.scheduledTime).getUTCMinutes() === 0) {
+        ctx.waitUntil(cleanupAvyronEditorialContent(env).catch((error) => {
+          console.error(JSON.stringify({ event: "ai_editorial_cleanup_failed", error: String(error) }));
+          throw error;
+        }));
+      }
       return;
     }
     if (controller.cron === EXCHANGE_RATE_REFRESH_CRON) {

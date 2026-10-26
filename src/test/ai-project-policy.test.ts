@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contentExpiry, parseGeneratedContent, validateAiProjectPatch, validateContentGeneration } from "../../cloudflare/workers/api/src/aiProjectPolicy";
+import { canTransitionContent, contentExpiry, editorialExpiry, parseGeneratedContent, validateAiProjectPatch, validateContentGeneration } from "../../cloudflare/workers/api/src/aiProjectPolicy";
 
 describe("AI project policy", () => {
   it("validates bounded strategy changes", () => {
@@ -27,5 +27,15 @@ describe("AI project policy", () => {
     const parsed = parseGeneratedContent('```json\n{"title":"Demo","caption":"Text","hashtags":["#avyron","avyron"]}\n```');
     expect(parsed).toMatchObject({ title: "Demo", caption: "Text", hashtags: ["avyron"] });
     expect(contentExpiry(1_000, 30)).toBe(1_000 + 30 * 86_400_000);
+    expect(editorialExpiry(1_000, "avyron-web", 45)).toBe(1_000 + 3 * 86_400_000);
+    expect(editorialExpiry(1_000, "client-project", 45)).toBe(1_000 + 45 * 86_400_000);
+  });
+
+  it("requires editorial review before approval and keeps approved content stable", () => {
+    expect(canTransitionContent("draft", "approved")).toBe(false);
+    expect(canTransitionContent("draft", "pending_approval")).toBe(true);
+    expect(canTransitionContent("pending_approval", "approved")).toBe(true);
+    expect(canTransitionContent("approved", "rejected")).toBe(false);
+    expect(canTransitionContent("rejected", "draft")).toBe(true);
   });
 });

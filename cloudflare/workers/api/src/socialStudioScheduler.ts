@@ -2,7 +2,7 @@ import type { Env } from "./types";
 import { reserveAiCost } from "./aiCostGuard";
 import { runAiCore } from "./aiCore";
 import { resolveSocialModelRoute } from "./socialModelRouting";
-import { contentExpiry, parseGeneratedContent } from "./aiProjectPolicy";
+import { editorialExpiry, parseGeneratedContent } from "./aiProjectPolicy";
 import { now } from "./security";
 import { enqueueAudienceReviewRuns } from "./socialAudienceOptimizer";
 
@@ -64,6 +64,7 @@ type ProjectRow = {
   core_offer: string;
   agent_instructions: string;
   content_retention_days: number;
+  slug: string;
 };
 
 type AgentRow = {
@@ -333,7 +334,7 @@ async function generateJobDraft(env: Env, job: JobRow, timestamp: number) {
   if (!claimed.meta.changes) return;
 
   const project = await env.DB.prepare(
-    `SELECT id,name,brand_tone,target_audience,core_offer,agent_instructions,content_retention_days
+    `SELECT id,slug,name,brand_tone,target_audience,core_offer,agent_instructions,content_retention_days
        FROM ai_projects WHERE id=?`,
   ).bind(job.project_id).first<ProjectRow>();
   const agent = await env.DB.prepare(
@@ -450,7 +451,7 @@ async function generateJobDraft(env: Env, job: JobRow, timestamp: number) {
       ).bind(
         contentId, job.project_id, agent.slug, format, objective, JSON.stringify(channels),
         generated.title, generated.caption, generated.visualDirection, generated.cta,
-        JSON.stringify(generated.hashtags.slice(0, 10)), contentExpiry(completedAt, project.content_retention_days),
+        JSON.stringify(generated.hashtags.slice(0, 10)), editorialExpiry(completedAt, project.slug, project.content_retention_days),
         completedAt, completedAt,
       ),
       ...variants.map((variant) => env.DB.prepare(
