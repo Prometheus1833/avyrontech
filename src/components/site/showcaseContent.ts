@@ -2,7 +2,7 @@ import restaurant from "@/assets/work-restaurant-new.jpg";
 import travel from "@/assets/work-hotel-new.jpg";
 import professional from "@/assets/work-lawyer-new.jpg";
 import local from "@/assets/work-local-new.jpg";
-import wellness from "@/assets/showcase-wellness-editorial.jpg";
+import wellness from "@/assets/showcase-wellness-editorial.webp";
 
 export type AppMode = "app" | "game" | "crm" | "platform";
 export type AutomationMode = "social" | "leads" | "chat" | "other";
