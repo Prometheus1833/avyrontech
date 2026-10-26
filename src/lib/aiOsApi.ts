@@ -60,6 +60,13 @@ export type AiStats = {
   learning: { pending: number };
 };
 
+export type AvyRuntimeStatus = {
+  mode: "knowledge_only" | "model_ready";
+  blockers: string[];
+  knowledge: { faq: number; approvedPublicDocuments: number; liveProducts: number; publicServices: number };
+  quota: { total: number | null; used: number; hardStopBeforePaid: boolean } | null;
+};
+
 async function publicPost<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(apiUrl(path), {
     method: "POST",
@@ -85,6 +92,7 @@ export const avyApi = {
 };
 
 export const aiOsAdmin = {
+  runtime: () => cfAuth.request<AvyRuntimeStatus>("/api/ai/admin/runtime"),
   agents: () => cfAuth.request<{ data: AiAgent[]; canEdit: boolean }>("/api/ai/admin/agents"),
   saveAgent: (slug: string, patch: Partial<AiAgent>) =>
     cfAuth.request<{ ok: true; version: number }>(`/api/ai/admin/agents/${slug}`, { method: "PUT", body: JSON.stringify(patch) }),
