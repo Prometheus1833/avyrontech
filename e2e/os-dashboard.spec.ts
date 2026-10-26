@@ -165,10 +165,15 @@ test.describe("dashboard AVYRON OS în română", () => {
     await expect(page.getByRole("menuitem", { name: "Către Panoul de comandă" })).toBeVisible();
     await expect(page.getByRole("menu")).toHaveCSS("opacity", "1");
     await page.screenshot({ path: testInfo.outputPath("landing-os-quick-menu-mobile.png") });
-    await page.keyboard.press("Escape");
+    await page.getByRole("menuitem", { name: /Notificări/ }).click();
+    await expect(page).toHaveURL(/notifications=1/);
+    await expect(page.getByRole("dialog", { name: "Notificări și anunțuri" })).toBeVisible();
+    await page.goto("/");
     await page.setViewportSize({ width: 320, height: 740 });
     await expect(osButton).toBeVisible();
+    await expect(page.getByRole("button", { name: "Profil" })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath("landing-os-header-320.png") });
   });
 
   test("rămâne utilizabil pe mobil și oferă Command Center", async ({ page }, testInfo) => {

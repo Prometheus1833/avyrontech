@@ -171,9 +171,9 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
             ))}
           </div>
           <div className="xl:hidden flex shrink-0 items-center gap-1.5">
-            {showCurrency && <CurrencySwitch compact showDetails={false} />}
-            <LangSwitch />
-            <ThemeToggle />
+            {showCurrency && <span className={isStaff ? "max-[359px]:hidden" : undefined}><CurrencySwitch compact showDetails={false} /></span>}
+            <span className={isStaff ? "max-[359px]:hidden" : undefined}><LangSwitch /></span>
+            <span className={isStaff ? "max-[359px]:hidden" : undefined}><ThemeToggle /></span>
             {!loading && user ? (
               <Suspense fallback={<span className="size-10" aria-hidden />}><UserMenu /></Suspense>
             ) : (
