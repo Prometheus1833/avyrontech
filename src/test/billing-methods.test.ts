@@ -25,16 +25,19 @@ describe("saved payment methods", () => {
       },
       async batch(rows: Array<{ sql: string; args: unknown[] }>) { statements.push(...rows); return []; },
     };
-    const fetchMock = vi.fn(async (url: string) => new Response(JSON.stringify(url.includes("stripe.com")
-      ? { data: [{ id: "pm_own", type: "card", allow_redisplay: "always", card: { brand: "visa", last4: "4242", exp_month: 12, exp_year: 2030 }, full_pan: "4111111111111111" }], has_more: false }
-      : { payment_methods: [{ id: "rev_method", type: "revolut_pay", saved_for: "merchant", full_pan: "5555555555554444" }] }), { status: 200 }));
+    const fetchMock = vi.fn(async (url: string) => new Response(JSON.stringify(url.endsWith("/v1/account")
+      ? { id: "acct_avyron", charges_enabled: true }
+      : url.includes("stripe.com")
+        ? { data: [{ id: "pm_own", type: "card", allow_redisplay: "always", card: { brand: "visa", last4: "4242", exp_month: 12, exp_year: 2030 }, full_pan: "4111111111111111" }], has_more: false }
+        : { payment_methods: [{ id: "rev_method", type: "revolut_pay", saved_for: "merchant", full_pan: "5555555555554444" }] }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
-    const result = await listAccountPaymentMethods({ DB: db, STRIPE_SECRET_KEY: "sk_test_example", REVOLUT_MERCHANT_SECRET_KEY: "rev_test_example" } as unknown as Env, "own-user");
+    const result = await listAccountPaymentMethods({ DB: db, STRIPE_SECRET_KEY: "sk_test_example", STRIPE_ACCOUNT_ID: "acct_avyron", REVOLUT_MERCHANT_SECRET_KEY: "rev_test_example" } as unknown as Env, "own-user");
     expect(result.refreshed).toEqual({ stripe: true, revolut: true });
-    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(expect.arrayContaining([
+      "https://api.stripe.com/v1/account",
       "https://api.stripe.com/v1/customers/cus_own/payment_methods?type=card&limit=100",
       "https://merchant.revolut.com/api/customers/revolut-own/payment-methods",
-    ]);
+    ]));
     expect(statements.some((row) => row.args.includes("pm_own") && row.args.includes("4242"))).toBe(true);
     expect(statements.some((row) => row.args.includes("rev_method") && row.args.includes("recurring"))).toBe(true);
     expect(JSON.stringify(statements)).not.toContain("4111111111111111");

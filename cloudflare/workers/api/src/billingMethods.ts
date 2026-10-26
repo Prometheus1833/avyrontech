@@ -1,4 +1,5 @@
 import type { Env } from "./types";
+import { checkStripeAccount } from "./stripeAccount";
 
 type Provider = "stripe" | "revolut";
 type StripeMethod = { id: string; type: string; allow_redisplay?: string; card?: { brand?: string; last4?: string; exp_month?: number; exp_year?: number } };
@@ -39,6 +40,8 @@ async function storeMethods(env: Env, userId: string, provider: Provider, method
 }
 
 async function syncStripe(env: Env, userId: string, customerId: string) {
+  const identity = await checkStripeAccount(env);
+  if (!identity.ok) throw new Error(identity.code);
   const response = await fetch(`https://api.stripe.com/v1/customers/${encodeURIComponent(customerId)}/payment_methods?type=card&limit=100`, { headers: stripeHeaders(env) });
   if (!response.ok) throw new Error(`stripe_methods_${response.status}`);
   const data = await response.json() as { data?: StripeMethod[]; has_more?: boolean };

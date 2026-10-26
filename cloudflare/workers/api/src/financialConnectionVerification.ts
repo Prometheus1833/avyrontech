@@ -1,5 +1,6 @@
 import type { Env } from "./types";
 import type { FinancialProviderKey } from "./providerSyncPolicy";
+import { checkStripeAccount } from "./stripeAccount";
 
 type Verification = { ok: true; account: string; capabilities: string[]; detail?: string } | { ok: false; code: string };
 
@@ -20,13 +21,10 @@ export async function verifyFinancialConnection(env: Env, provider: FinancialPro
   if (provider === "stripe") {
     const key = env.STRIPE_SECRET_KEY?.trim();
     if (!key || !env.STRIPE_WEBHOOK_SECRET?.trim()) return { ok: false, code: "stripe_secrets_missing" };
-    const response = await jsonResponse("https://api.stripe.com/v1/account", {
-      headers: { authorization: `Bearer ${key}`, ...(env.STRIPE_API_VERSION?.trim() ? { "stripe-version": env.STRIPE_API_VERSION.trim() } : {}) },
-    });
-    if (!response.ok) return { ok: false, code: `stripe_api_${response.status || "unreachable"}` };
-    const id = response.data.id;
-    if (typeof id !== "string" || !id.startsWith("acct_")) return { ok: false, code: "stripe_account_identity_missing" };
-    return { ok: true, account: id, capabilities: ["account_read", "checkout_configured", "webhook_secret_configured"], detail: response.data.charges_enabled === true ? "charges_enabled" : "charges_unconfirmed" };
+    const account = await checkStripeAccount(env);
+    if (!account.ok) return account;
+    if (!account.chargesEnabled) return { ok: false, code: "stripe_charges_disabled" };
+    return { ok: true, account: account.id, capabilities: ["account_read", "checkout_configured", "webhook_secret_configured"], detail: "charges_enabled" };
   }
 
   if (provider === "oblio") {

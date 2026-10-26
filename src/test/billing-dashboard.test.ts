@@ -47,8 +47,12 @@ describe("financial dashboard contract", () => {
   it("prefers Stripe only when configured and never advertises an unavailable processor", async () => {
     const withoutSecrets = await adminApp().request("http://localhost/api/billing/config", undefined, {} as AppBindings["Bindings"]);
     expect((await withoutSecrets.json()).preferred).toBeNull();
-    const withStripe = await adminApp().request("http://localhost/api/billing/config", undefined, { STRIPE_SECRET_KEY: "sk_test_fixture", STRIPE_WEBHOOK_SECRET: "whsec_fixture" } as AppBindings["Bindings"]);
+    const withoutAccountPin = await adminApp().request("http://localhost/api/billing/config", undefined, { STRIPE_SECRET_KEY: "sk_test_fixture", STRIPE_WEBHOOK_SECRET: "whsec_fixture" } as AppBindings["Bindings"]);
+    expect((await withoutAccountPin.json()).preferred).toBeNull();
+    const withStripe = await adminApp().request("http://localhost/api/billing/config", undefined, { STRIPE_SECRET_KEY: "sk_test_fixture", STRIPE_WEBHOOK_SECRET: "whsec_fixture", STRIPE_ACCOUNT_ID: "acct_avyron" } as AppBindings["Bindings"]);
     expect((await withStripe.json()).preferred).toBe("stripe");
+    const testKeyInProduction = await adminApp().request("http://localhost/api/billing/config", undefined, { APP_ENV: "production", STRIPE_SECRET_KEY: "sk_test_fixture", STRIPE_WEBHOOK_SECRET: "whsec_fixture", STRIPE_ACCOUNT_ID: "acct_avyron" } as AppBindings["Bindings"]);
+    expect((await testKeyInProduction.json()).preferred).toBeNull();
   });
 
   it("blocks invoice issuance retry when MFA was not actually verified, even if the global switch is off", async () => {

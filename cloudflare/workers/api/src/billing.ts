@@ -9,6 +9,7 @@ import { listAccountPaymentMethods } from "./billingMethods";
 import { platformRoleForUser } from "./authorization";
 import { checkRateLimit } from "./antispam";
 import { verifyFinancialConnection } from "./financialConnectionVerification";
+import { checkStripeAccount } from "./stripeAccount";
 
 export const billingRouter = new Hono<AppBindings>();
 const REVOLUT_VERSION = "2026-08-17";
@@ -28,7 +29,7 @@ const profileSchema = z.object({
 
 const stripeForm=(fields:Record<string,string|number|boolean|undefined>)=>{const body=new URLSearchParams();for(const [key,value] of Object.entries(fields))if(value!==undefined&&value!=="")body.set(key,String(value));return body;};
 export const providerCapabilities=(env:Env)=>({
-  stripe:{enabled:Boolean(env.STRIPE_SECRET_KEY?.trim()&&env.STRIPE_WEBHOOK_SECRET?.trim()),oneTime:true,subscriptions:true,savedMethods:true,customerPortal:true},
+  stripe:{enabled:Boolean(env.STRIPE_SECRET_KEY?.trim()&&env.STRIPE_WEBHOOK_SECRET?.trim()&&env.STRIPE_ACCOUNT_ID?.trim()&&(env.APP_ENV!=="production"||/^(sk|rk)_live_/.test(env.STRIPE_SECRET_KEY??""))),oneTime:true,subscriptions:true,savedMethods:true,customerPortal:true},
   revolut:{enabled:Boolean(env.REVOLUT_MERCHANT_SECRET_KEY?.trim()&&env.REVOLUT_MERCHANT_WEBHOOK_SECRET?.trim()),oneTime:true,subscriptions:true,savedMethods:true,customerPortal:false},
   oblio:{enabled:env.OBLIO_AUTO_ISSUE_ENABLED==="true"&&Boolean(env.OBLIO_CLIENT_ID?.trim()&&env.OBLIO_CLIENT_SECRET?.trim()&&env.OBLIO_CIF?.trim()&&env.OBLIO_SERIES?.trim()&&env.OBLIO_VAT_NAME?.trim()&&env.OBLIO_VAT_PERCENTAGE?.trim()),configured:Boolean(env.OBLIO_CLIENT_ID?.trim()&&env.OBLIO_CLIENT_SECRET?.trim()&&env.OBLIO_CIF?.trim()&&env.OBLIO_SERIES?.trim()),invoices:true},
   netopia:{enabled:false,oneTime:true,subscriptions:false,status:"planned" as const},
@@ -98,7 +99,7 @@ async function ensureRevolutCustomer(env:Env,userId:string,email:string,name?:st
 
 async function createStripeCheckout(env:Env,order:OrderRow,items:StoredItem[],email:string,save:boolean,appUrl:string,attemptKey:string){
   const recurring=subscriptionItem(items);const customer=await ensureStripeCustomer(env,order.user_id,email);
-  const fields:Record<string,string|number|boolean|undefined>={mode:recurring?"subscription":"payment",customer,client_reference_id:order.id,
+  const fields:Record<string,string|number|boolean|undefined>={mode:recurring?"subscription":"payment",customer,client_reference_id:order.id,"payment_method_types[0]":"card",
     success_url:`${appUrl}/profil?tab=${recurring?"subscriptions":"orders"}&plata=verificare&order=${order.id}`,
     cancel_url:`${appUrl}/profil?tab=orders&plata=anulata&order=${order.id}`,
     "metadata[order_id]":order.id,"metadata[user_id]":order.user_id,
@@ -149,6 +150,11 @@ export async function createCheckoutForOrder(c:Context<AppBindings>,input:{order
   if(!checkoutBillingCompatible(orderItems(order)))return {status:409 as const,body:{error:{code:"mixed_billing_requires_separate_orders"}}};
   if(order.status==="paid")return {status:409 as const,body:{error:{code:"order_already_paid"}}};
   if(!providerCapabilities(c.env)[input.provider].enabled)return {status:503 as const,body:{error:{code:"provider_unconfigured",provider:input.provider}}};
+  if(input.provider==="stripe"){
+    const identity=await checkStripeAccount(c.env);
+    if(!identity.ok)return {status:503 as const,body:{error:{code:identity.code,provider:"stripe"}}};
+    if(!identity.chargesEnabled)return {status:503 as const,body:{error:{code:"stripe_charges_disabled",provider:"stripe"}}};
+  }
   const otherProvider=await c.env.DB.prepare("SELECT provider FROM billing_checkout_sessions WHERE order_id=? AND provider<>? AND status IN ('created','pending') AND created_at>? LIMIT 1").bind(order.id,input.provider,Date.now()-24*60*60*1000).first<{provider:string}>();
   if(otherProvider)return {status:409 as const,body:{error:{code:"checkout_already_active",provider:otherProvider.provider}}};
   const pending=await c.env.DB.prepare("SELECT id FROM billing_checkout_sessions WHERE order_id=? AND provider=? AND status='pending' LIMIT 1").bind(order.id,input.provider).first();
@@ -209,6 +215,7 @@ billingRouter.post("/api/billing/payment-methods/setup",async(c)=>{
   const body=await c.req.json().catch(()=>({})) as {provider?:unknown};
   if(body.provider!=="stripe")return c.json({error:{code:"setup_requires_supported_provider"}},409);
   if(!providerCapabilities(c.env).stripe.enabled)return c.json({error:{code:"provider_unconfigured",provider:"stripe"}},503);
+  const identity=await checkStripeAccount(c.env);if(!identity.ok)return c.json({error:{code:identity.code,provider:"stripe"}},503);
   const userId=c.get("userId"),user=await c.env.DB.prepare("SELECT email FROM users WHERE id=?").bind(userId).first<{email:string}>();
   if(!user)return c.json({error:{code:"billing_identity_missing"}},409);
   const customer=await ensureStripeCustomer(c.env,userId,user.email),appUrl=(c.env.APP_URL||"https://avyron.ro").replace(/\/+$/,"");
@@ -224,6 +231,7 @@ billingRouter.post("/api/billing/payment-methods/setup",async(c)=>{
 
 billingRouter.post("/api/billing/portal",async(c)=>{
   if(!providerCapabilities(c.env).stripe.enabled)return c.json({error:{code:"provider_unconfigured",provider:"stripe"}},503);
+  const identity=await checkStripeAccount(c.env);if(!identity.ok)return c.json({error:{code:identity.code,provider:"stripe"}},503);
   const customer=await c.env.DB.prepare("SELECT provider_customer_id FROM billing_customers WHERE user_id=? AND provider='stripe'").bind(c.get("userId")).first<{provider_customer_id:string}>();
   if(!customer)return c.json({error:{code:"stripe_customer_missing"}},404);const appUrl=(c.env.APP_URL||"https://avyron.ro").replace(/\/+$/,"");
   const response=await fetch("https://api.stripe.com/v1/billing_portal/sessions",{method:"POST",headers:stripeHeaders(c.env),body:stripeForm({customer:customer.provider_customer_id,return_url:`${appUrl}/profil?tab=payments`})});
@@ -374,7 +382,7 @@ billingRouter.post("/api/billing/webhooks/revolut",async(c)=>{
 billingRouter.post("/api/billing/subscriptions/:id/cancel",async(c)=>{
   const row=await c.env.DB.prepare("SELECT provider,provider_subscription_id,status FROM billing_subscriptions WHERE id=? AND user_id=?").bind(c.req.param("id"),c.get("userId")).first<{provider:string;provider_subscription_id:string;status:string}>();
   if(!row)return c.json({error:{code:"subscription_not_found"}},404);if(row.status==="cancelled"||row.status==="expired")return c.json({ok:true,status:row.status});let response:Response;
-  if(row.provider==="stripe"){response=await fetch(`https://api.stripe.com/v1/subscriptions/${encodeURIComponent(row.provider_subscription_id)}`,{method:"POST",headers:stripeHeaders(c.env),body:stripeForm({cancel_at_period_end:true})});if(response.ok)await c.env.DB.prepare("UPDATE billing_subscriptions SET cancel_at_period_end=1,updated_at=? WHERE id=?").bind(Date.now(),c.req.param("id")).run();}
+  if(row.provider==="stripe"){const identity=await checkStripeAccount(c.env);if(!identity.ok)return c.json({error:{code:identity.code,provider:"stripe"}},503);response=await fetch(`https://api.stripe.com/v1/subscriptions/${encodeURIComponent(row.provider_subscription_id)}`,{method:"POST",headers:stripeHeaders(c.env),body:stripeForm({cancel_at_period_end:true})});if(response.ok)await c.env.DB.prepare("UPDATE billing_subscriptions SET cancel_at_period_end=1,updated_at=? WHERE id=?").bind(Date.now(),c.req.param("id")).run();}
   else if(row.provider==="revolut"){response=await fetch(`${revolutRoot(c.env)}/subscriptions/${encodeURIComponent(row.provider_subscription_id)}/cancel`,{method:"POST",headers:revolutHeaders(c.env)});if(response.ok)await c.env.DB.prepare("UPDATE billing_subscriptions SET status='cancelled',updated_at=? WHERE id=?").bind(Date.now(),c.req.param("id")).run();}
   else return c.json({error:{code:"provider_not_supported"}},409);if(!response.ok)return c.json({error:{code:"provider_cancel_failed"}},502);return c.json({ok:true});
 });
