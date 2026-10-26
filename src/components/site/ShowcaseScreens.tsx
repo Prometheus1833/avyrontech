@@ -58,7 +58,17 @@ export function WebsiteScreen({ domain, ro }: { domain: Domain; ro: boolean }) {
       <div className="web-browser" aria-hidden="true"><span /><span /><span /><div><ShieldCheck size={10} />{ro ? "site-ul-tău.ro" : "your-website.com"}</div><ArrowUpRight size={11} /></div>
       <div className="web-navigation"><strong>{theme.brand}</strong><span>{ro ? "Descoperă · Despre · Contact" : "Discover · About · Contact"}</span><i><MenuDots /></i></div>
       <div className={`web-hero ${photo && theme.visual === "photo" ? "web-hero--photo" : ""}`}>
-        {photo && <img src={photo} alt="" loading="lazy" decoding="async" className="web-hero-photo" />}
+        {photo && (
+          <img
+            src={photo}
+            srcSet={theme.imageSet}
+            sizes={theme.imageSet ? "(max-width: 600px) 100vw, 800px" : undefined}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="web-hero-photo"
+          />
+        )}
         <div className="web-hero-copy">
           <p className="web-kicker">{domain.label}</p>
           <h4>{theme.hero}</h4><p>{theme.intro}</p>
