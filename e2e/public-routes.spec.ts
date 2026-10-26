@@ -164,7 +164,7 @@ test.describe("public SEO routes", () => {
     const englishShowcase = englishExamples.getByTestId("industry-device-showcase");
     await englishShowcase.scrollIntoViewIfNeeded();
     await expect(page.getByRole("heading", { name: "Pick your industry and see how it would look." })).toHaveCount(1);
-    await expect(englishShowcase.getByRole("button", { name: "Automations", exact: true })).toBeVisible();
+    await expect(englishShowcase.getByRole("button", { name: /Automations$/ })).toBeVisible();
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/#domenii");

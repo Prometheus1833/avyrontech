@@ -159,13 +159,13 @@ test("English interfaces fit on mobile and the industry picker supports Escape",
     // Browser subpixel rounding can differ by less than a CSS pixel on CI.
     expect(await showcase.locator(".web-hero").evaluate((el) => el.querySelector(".web-hero-action")!.getBoundingClientRect().bottom - el.getBoundingClientRect().bottom)).toBeLessThanOrEqual(3);
   }
-  await showcase.getByRole("button", { name: "Application", exact: true }).click();
+  await showcase.getByRole("button", { name: /Application$/ }).click();
   const phone = await settledDevice(showcase, "phone");
   for (const label of ["Web/Mobile App", "Game", "CRM", "Platform"]) {
     await showcase.getByRole("button", { name: label, exact: true }).click();
     expect(await phone.locator(".phone-app-content").evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(2);
   }
-  await showcase.getByRole("button", { name: "Automations", exact: true }).click();
+  await showcase.getByRole("button", { name: /Automations$/ }).click();
   const tablet = await settledDevice(showcase, "tablet");
   const tabletBounds = await tablet.locator(".tablet-object").boundingBox();
   const controlsBounds = await showcase.locator(".scene-controls").boundingBox();
