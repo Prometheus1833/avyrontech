@@ -228,21 +228,21 @@ const CTA = () => {
             <div className="grid gap-2 sm:grid-cols-2">
             <div>
               <Label htmlFor="name" className="text-xs">{t.cta.name}</Label>
-              <Input id="name" value={data.name} onChange={set("name")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.namePh} />
+              <Input id="name" name="name" autoComplete="name" required minLength={2} maxLength={80} value={data.name} onChange={set("name")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.namePh} />
             </div>
             <div>
               <Label htmlFor="business" className="text-xs">{t.cta.business}</Label>
-              <Input id="business" value={data.business} onChange={set("business")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.businessPh} />
+              <Input id="business" name="organization" autoComplete="organization" required minLength={2} maxLength={80} value={data.business} onChange={set("business")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.businessPh} />
             </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
                 <Label htmlFor="phone" className="text-xs">{t.cta.phone}</Label>
-                <Input id="phone" value={data.phone} onChange={set("phone")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.phonePh} />
+                <Input id="phone" name="tel" type="tel" autoComplete="tel" required minLength={6} maxLength={30} value={data.phone} onChange={set("phone")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.phonePh} />
               </div>
               <div>
                 <Label htmlFor="email" className="text-xs">{t.cta.email}</Label>
-                <Input id="email" value={data.email} onChange={set("email")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.emailPh} />
+                <Input id="email" name="email" type="email" autoComplete="email" required maxLength={120} value={data.email} onChange={set("email")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.emailPh} />
               </div>
             </div>
 
@@ -253,6 +253,7 @@ const CTA = () => {
               <Label htmlFor="description" className="text-xs">{t.cta.description}</Label>
               <Textarea
                 id="description"
+                name="description"
                 value={data.description}
                 onChange={set("description")}
                 maxLength={2000}
@@ -263,7 +264,7 @@ const CTA = () => {
             </div>
 
             <div>
-              <Label className="text-xs">{t.cta.files}</Label>
+              <Label htmlFor="files" className="text-xs">{t.cta.files}</Label>
               <input
                 ref={fileInput}
                 id="files"
@@ -304,7 +305,7 @@ const CTA = () => {
 
             <div>
               <Label htmlFor="website" className="text-xs">{t.cta.website}</Label>
-              <Input id="website" value={data.website} onChange={set("website")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.websitePh} />
+              <Input id="website" name="url" inputMode="url" autoComplete="url" maxLength={200} value={data.website} onChange={set("website")} className="mt-1 h-10 rounded-xl" placeholder={t.cta.websitePh} />
             </div>
               </div>
             </details>

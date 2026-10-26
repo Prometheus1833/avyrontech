@@ -23,10 +23,32 @@ export type EdgeBlogPost = {
 export type EdgeSitemapEntry = {
   language: "ro" | "en";
   slug: string;
+  title?: string;
+  excerpt?: string;
   alternate_slug?: string | null;
   cover_image_url?: string | null;
   updated_at: string | number;
 };
+
+/** Adds only published database articles missing from the build-time llms.txt. */
+export function mergeBlogLlms(base: string, entries: EdgeSitemapEntry[]) {
+  const seen = new Set([...base.matchAll(/\]\((https:\/\/avyron\.ro\/(?:en\/)?blog\/[a-z0-9-]+)\)/g)].map((match) => match[1]));
+  const additions: string[] = [];
+  const plain = (value: string) => value.replace(/[()[\]#*<>]/g, " ").replace(/\s+/g, " ").trim();
+  for (const entry of entries) {
+    if (entry.language !== "ro" && entry.language !== "en") continue;
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(entry.slug)) continue;
+    if (!validIsoDate(entry.updated_at)) continue;
+    const title = plain(entry.title || "").slice(0, 180);
+    const excerpt = plain(entry.excerpt || "").slice(0, 320);
+    if (!title || !excerpt) continue;
+    const url = `${SITE_URL}${entry.language === "en" ? "/en" : ""}/blog/${entry.slug}`;
+    if (seen.has(url)) continue;
+    seen.add(url);
+    additions.push(`- [${title}](${url}): ${excerpt}`);
+  }
+  return additions.length ? `${base.trimEnd()}\n\n## Articole publicate în AVYRON OS / Articles published in AVYRON OS\n\n${additions.join("\n")}\n` : base;
+}
 
 const escapeHtml = (value: unknown) => String(value ?? "")
   .replace(/&/g, "&amp;")

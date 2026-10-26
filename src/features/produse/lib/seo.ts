@@ -47,7 +47,9 @@ export async function applySeo({ title, description, path, lang, image = "/og/ho
     imageAlt,
     robots: isIndexable ? undefined : FEATURES.produseLive ? "noindex, follow" : "noindex, nofollow",
   });
-  if (isIndexable) {
+  // Structured data describes the public catalog even where the page is
+  // intentionally noindex; the robots directive still controls search eligibility.
+  if (FEATURES.produseLive) {
     for (const [id, value] of jsonLd) setJsonLd(`produse-${id}`, value as never);
   }
 }
@@ -110,17 +112,19 @@ export function itemListLd(lang: Lang, items: CatalogItem[], name: string, path:
   };
 }
 
-/** Produsul individual: SoftwareSourceCode + Offer când e plătit. */
+/** Product plus its digital work type and a visible, priced offer when paid. */
 export function productLd(lang: Lang, item: CatalogItem): LdValue {
   const price = item.priceRon ? EUR_FOR_RON[item.priceRon] : null;
   return {
     "@context": "https://schema.org",
-    "@type": item.type === "doc" ? "CreativeWork" : "SoftwareSourceCode",
+    "@type": "Product",
+    additionalType: item.type === "doc" ? "https://schema.org/CreativeWork" : "https://schema.org/SoftwareSourceCode",
     "@id": `${BASE}${itemPath(lang, item)}#product`,
     name: item.name[lang],
     description: item.short[lang],
     url: `${BASE}${itemPath(lang, item)}`,
     image: `${BASE}${productOgImage(lang, item)}`,
+    brand: { "@type": "Brand", name: "Avyron" },
     inLanguage: lang === "ro" ? "ro-RO" : "en-US",
     programmingLanguage: item.tech.includes("react") ? "TypeScript" : undefined,
     codeSampleType: item.type === "template" ? "full solution" : "code snippet",
@@ -128,14 +132,13 @@ export function productLd(lang: Lang, item: CatalogItem): LdValue {
     keywords: item.keywords[lang].join(", "),
     author: { "@id": `${BASE}/#organization` },
     provider: { "@id": `${BASE}/#organization` },
-    isAccessibleForFree: item.access === "free",
+    isAccessibleForFree: item.access === "free" && !price,
     ...(price
       ? {
           offers: {
             "@type": "Offer",
             price,
             priceCurrency: "EUR",
-            availability: "https://schema.org/InStock",
             url: `${BASE}${itemPath(lang, item)}`,
             seller: { "@id": `${BASE}/#organization` },
           },
