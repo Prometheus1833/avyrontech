@@ -17,8 +17,8 @@ describe("financial provider sync policy", () => {
     expect(financialSyncPhase({ provider: "stripe", configured: true, approved: true, now, connection: { provider: "stripe", status: "error", last_sync_at: now - 60_000, last_error_code: "token_expired" } })).toBe("error");
   });
 
-  it("publishes only official HTTPS references and all four distinct provider roles", () => {
-    expect(FINANCIAL_PROVIDER_PLAYBOOKS.map((playbook) => playbook.provider)).toEqual(["stripe", "oblio", "revolut_business", "revolut_merchant"]);
+  it("publishes only the payment and invoice providers, without a bank API", () => {
+    expect(FINANCIAL_PROVIDER_PLAYBOOKS.map((playbook) => playbook.provider)).toEqual(["stripe", "oblio", "revolut_merchant"]);
     for (const playbook of FINANCIAL_PROVIDER_PLAYBOOKS) {
       expect(playbook.sources.length).toBeGreaterThan(0);
       for (const source of playbook.sources) expect(new URL(source).protocol).toBe("https:");

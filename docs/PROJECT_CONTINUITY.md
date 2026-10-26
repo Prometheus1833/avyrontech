@@ -21,6 +21,10 @@ Acest document permite unui agent să continue lucrul fără să confunde codul 
 
 ## Inventar de predare la 26.10.2026
 
+Actualizare după release: PR-urile #59, #60 și #61 au fost integrate în `main` până la commitul `15d1519`; auditul SEO live a verificat 72 URL-uri din sitemap. Numărul de URL-uri indexate efectiv de Google rămâne de verificat în contul AVYRON Search Console. La verificarea D1/Worker din 26.10.2026 nu existau conexiuni financiare sau sociale active și nu erau instalate cheile Stripe, Oblio ori Revolut Merchant.
+
+Decizie de produs ulterioară: conectează servicii financiare numai pentru încasări. Stripe este procesatorul principal propus, Revolut Merchant este opțional după alegerea și autorizarea contului AVYRON, iar Oblio rămâne flux separat de facturare. Nu conecta API-ul Revolut Business pentru conturi, solduri sau tranzacții bancare; nu este necesar pentru checkout. Vezi [runbookul de conexiuni](./AVYRON_OS_CONNECTIONS_2026-10-26.md). Schimbarea din ramura `codex/payment-only-connections-2026-10-26` blochează activarea conectorului bancar vechi fără a șterge istoricul; verifică PR-ul și producția înainte de a o considera lansată.
+
 La acest moment `origin/main` era `4bd0e90`. PR-urile [#52](https://github.com/Prometheus1833/avyrontech/pull/52) SEO/indexare, [#53](https://github.com/Prometheus1833/avyrontech/pull/53) dashboard staff, [#54](https://github.com/Prometheus1833/avyrontech/pull/54) vizualul scenei cu dispozitive, [#55](https://github.com/Prometheus1833/avyrontech/pull/55) AVY bot, [#56](https://github.com/Prometheus1833/avyrontech/pull/56) AI AVY Prod și [#57](https://github.com/Prometheus1833/avyrontech/pull/57) verificări financiare erau deschise, nu integrate în `main`. Verifică din nou `gh pr list` și diferențele dintre ramuri înainte de a le continua sau combina. Nu trata un check CI verde drept deploy.
 
 Pentru seria Oblio și conexiunile sociale/financiare, [runbookul din PR #57](https://github.com/Prometheus1833/avyrontech/pull/57/files) este o propunere pe ramură până la merge; verifică starea reală a conturilor și D1 înainte de activare.
