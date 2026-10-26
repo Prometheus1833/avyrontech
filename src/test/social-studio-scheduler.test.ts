@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   canonicalAvyronConversionUrl,
   plannedSocialJobs,
+  recoverStaleSocialGenerationJobs,
+  removeSocialPriceDetails,
   sanitizeFacebookCaptionLinks,
+  sanitizeInstagramCaptionLinks,
   type SocialPolicy,
 } from "../../cloudflare/workers/api/src/socialStudioScheduler";
 
@@ -34,17 +37,78 @@ describe("Social Studio scheduler", () => {
     expect(jobs.find((job) => job.kind === "story")?.brief).toMatchObject({
       shortCopy: true,
       nativeLinkPreferred: true,
-      defaultLink: "https://avyron.ro",
+      defaultLink: "https://avyron.ro/servicii/website-prezentare-profesional",
+      frameCount: 3,
+      storyMicrocopyRequired: true,
+      storyCaptionRequiredWhenSupported: true,
+      storyCaptionFallback: "unsupported",
+      conversionFrameOptional: true,
+      conversionCta: "Cere o cotație",
+      conversionModes: ["native_organic_form", "verified_hosted_form", "link_sticker", "action_button"],
+      formFields: ["name", "email"],
+      formStatusRequired: true,
+      privacyNoticeRequired: true,
+      postStoryForm: true,
+      actualFormOpensAfterTap: true,
+      fakeInteractiveFieldsForbidden: true,
+      formUx: {
+        persistentLabels: true,
+        minimumTouchTargetPx: 44,
+        correctInputTypesAndAutocomplete: true,
+        errorsAfterInteraction: true,
+        loadingAndSuccessStates: true,
+        doubleSubmitProtection: true,
+        readBackTestRequired: true,
+      },
+      freeOnly: true,
       safeZone: { top: 180, bottom: 250, left: 72, right: 72 },
     });
     expect(jobs.find((job) => job.kind === "daily_post")?.brief).toMatchObject({
       websiteOfferVisible: true,
       linkRequired: true,
+      prohibitPrices: true,
+      targetUrl: "https://avyron.ro/servicii/website-prezentare-profesional",
+      productionToolPlanRequired: true,
+      realAssetsFirst: true,
+      assetProvenanceRequired: true,
+      visualQaPasses: ["editorial_factual", "visual_mobile", "native_conversion"],
+      serviceFocus: "professional_website",
+      renderSpec: {
+        preferredMasterPortrait: { width: 2160, height: 3840 },
+        forbidSyntheticUpscaleClaim: true,
+        nativeExport: { width: 1080, height: 1920 },
+      },
     });
     expect(jobs.find((job) => job.kind === "engagement_review")?.brief).toMatchObject({
       storyLikeTarget: 8,
       feedLikeTarget: 6,
       actionsAreProposals: true,
+    });
+  });
+
+  it("rotates an online-store brief with a real business problem and exact service URL", () => {
+    const jobs = plannedSocialJobs(policy, Date.UTC(2026, 9, 6, 18, 0)); // 21:00 in Bucharest
+    expect(jobs.find((job) => job.kind === "daily_post")).toMatchObject({
+      topic: expect.stringContaining("Magazin online"),
+      brief: {
+        serviceFocus: "online_store",
+        targetUrl: "https://avyron.ro/servicii/magazin-online",
+        conversionCta: "Evaluează magazinul",
+        serviceOfferVisible: true,
+        websiteOfferVisible: false,
+      },
+    });
+    expect(jobs.find((job) => job.kind === "story")?.brief).toMatchObject({
+      serviceFocus: "online_store",
+      defaultLink: "https://avyron.ro/servicii/magazin-online",
+      survey: {
+        publicRoot: "https://surveys.avyron.ro/",
+        exactRouteAndSubmissionTestRequired: true,
+      },
+      universalDomains: {
+        illustrativeOnly: true,
+        neverConversionDestination: true,
+      },
     });
   });
 
@@ -58,11 +122,18 @@ describe("Social Studio scheduler", () => {
   });
 
   it("plans exactly one reel across each three-day window", () => {
-    const reelDays = [0, 1, 2].filter((offset) => plannedSocialJobs(
+    const reels = [0, 1, 2].flatMap((offset) => plannedSocialJobs(
       policy,
       Date.UTC(2026, 9, 3 + offset, 16, 0),
-    ).some((job) => job.kind === "reel"));
-    expect(reelDays).toHaveLength(1);
+    ).filter((job) => job.kind === "reel"));
+    expect(reels).toHaveLength(1);
+    expect(reels[0].brief).toMatchObject({
+      nativeVariants: ["instagram_reel", "facebook_reel", "tiktok"],
+      productionToolPlanRequired: true,
+      realAssetsFirst: true,
+      premiumTransitions: true,
+      criticalTextGeneratedInImage: false,
+    });
   });
 
   it("keeps Facebook conversion links canonical and removes demo or tracking URLs", () => {
@@ -76,5 +147,37 @@ describe("Social Studio scheduler", () => {
       "Descoperă proiectul https://example.com/demo?utm_source=facebook și discută cu noi.",
       "https://avyron.ro/servicii/website-prezentare-profesional?utm_campaign=demo",
     )).toBe("Descoperă proiectul și discută cu noi.\n\nhttps://avyron.ro/servicii/website-prezentare-profesional");
+  });
+
+  it("keeps Instagram honest about link behavior and removes price details", () => {
+    const caption = removeSocialPriceDetails("Website clar pentru rezervări.\nPreț de la 999 lei.\nDiscutăm despre structură și conținut.");
+    expect(caption).toBe("Website clar pentru rezervări.\nDiscutăm despre structură și conținut.");
+    expect(sanitizeInstagramCaptionLinks(
+      caption,
+      "https://avyron.ro/servicii/website-prezentare-profesional?utm_source=instagram",
+    )).toBe(
+      "Website clar pentru rezervări.\nDiscutăm despre structură și conținut.\n\n" +
+      "Vezi serviciul: https://avyron.ro/servicii/website-prezentare-profesional\nLink în bio.",
+    );
+  });
+
+  it("requeues stale generation leases and stops automatic retries after three attempts", async () => {
+    const calls: Array<{ sql: string; values: unknown[] }> = [];
+    const db = {
+      prepare(sql: string) {
+        return {
+          bind(...values: unknown[]) {
+            calls.push({ sql, values });
+            return { run: async () => ({ meta: { changes: sql.includes("attempt_count>=") ? 1 : 2 } }) };
+          },
+        };
+      },
+    };
+    const timestamp = Date.UTC(2026, 9, 11, 10, 0);
+    const recovered = await recoverStaleSocialGenerationJobs({ DB: db as never }, timestamp);
+    expect(recovered).toEqual({ requeued: 2, failed: 1 });
+    expect(calls).toHaveLength(2);
+    expect(calls[0].values).toEqual([timestamp, timestamp - 15 * 60_000, 3]);
+    expect(calls[1].values).toEqual([timestamp, timestamp - 15 * 60_000, 3]);
   });
 });
