@@ -30,7 +30,7 @@ import { domainRouter } from "./domain";
 import { promotionsRouter } from "./promotions";
 import { recordPageEvent, funnelSummary, leadPipeline } from "./analytics";
 import { EXCHANGE_RATE_REFRESH_CRON, getPublicExchangeRate, refreshExchangeRate } from "./exchangeRate";
-import { platformRoleForUser } from "./authorization";
+import { isReservedPlatformEmail, platformRoleForUser } from "./authorization";
 import { base32Encode, decryptTotpSecret, encryptTotpSecret, generateTotpSecret, totpUri, verifyTotp } from "./totp";
 import { engineRouter, runDueEngineDiscovery } from "./engine";
 import { newsletterRouter } from "./newsletter";
@@ -857,8 +857,9 @@ app.get("/api/auth/me", requireAuth, async (c) => {
       WHERE user_id=? AND organization_id IS NULL AND revoked_at IS NULL
         AND (expires_at IS NULL OR expires_at>?) ORDER BY capability`,
   ).bind(c.get("userId"), now()).all<{ capability: string }>();
+  const platformRole = await platformRoleForUser(c.env.DB, c.get("userId"));
   return c.json({
-    user: u, profile, roles: c.get("roles"), superadmin: await isSuperAdmin(c),
+    user: u, profile, roles: c.get("roles"), superadmin: platformRole !== null, platformRole,
     capabilities: capabilityRows.map((row) => row.capability),
   });
 });
@@ -989,6 +990,9 @@ app.post("/api/auth/change-email/request", requireAuth, async (c) => {
     return c.json({ error: { code: "invalid_password", message: "Parola curentă nu este corectă" } }, 403);
   }
   if (newEmail === user.email.toLowerCase()) return c.json({ error: { code: "email_unchanged" } }, 400);
+  if (await isReservedPlatformEmail(c.env.DB, user.email) || await isReservedPlatformEmail(c.env.DB, newEmail)) {
+    return c.json({ error: { code: "platform_identity_protected" } }, 403);
+  }
   if (await c.env.DB.prepare("SELECT 1 FROM users WHERE email = ?").bind(newEmail).first()) {
     return c.json({ error: { code: "email_taken" } }, 409);
   }
@@ -1040,6 +1044,9 @@ app.post("/api/auth/change-email/confirm", requireAuth, async (c) => {
     token_hash: string; user_id: string; old_email: string; new_email: string; expires_at: number;
   }>();
   if (!request || request.expires_at < now()) return c.json({ error: { code: "invalid_or_expired_token" } }, 400);
+  if (await isReservedPlatformEmail(c.env.DB, request.old_email) || await isReservedPlatformEmail(c.env.DB, request.new_email)) {
+    return c.json({ error: { code: "platform_identity_protected" } }, 403);
+  }
   if (await c.env.DB.prepare("SELECT 1 FROM users WHERE email = ? AND id <> ?").bind(request.new_email, request.user_id).first()) {
     return c.json({ error: { code: "email_taken" } }, 409);
   }
@@ -1047,8 +1054,6 @@ app.post("/api/auth/change-email/confirm", requireAuth, async (c) => {
   await c.env.DB.batch([
     c.env.DB.prepare("UPDATE users SET email = ?, updated_at = ? WHERE id = ? AND email = ?")
       .bind(request.new_email, timestamp, request.user_id, request.old_email),
-    c.env.DB.prepare("UPDATE platform_principals SET email = ?, updated_at = ? WHERE email = ?")
-      .bind(request.new_email, timestamp, request.old_email),
     c.env.DB.prepare("UPDATE email_change_requests SET used_at = ? WHERE token_hash = ? AND used_at IS NULL")
       .bind(timestamp, request.token_hash),
     c.env.DB.prepare("UPDATE sessions SET revoked_at = ?, revoked_reason = 'email_change' WHERE user_id = ? AND revoked_at IS NULL")
@@ -1205,6 +1210,9 @@ app.post("/api/admin/users", requireAuth, requireSuperAdmin, async (c) => {
   }
   if (accessLevel !== "user" && accessLevel !== "staff" && accessLevel !== "admin") {
     return c.json({ error: { code: "invalid_access_level", message: "Nivelul de acces nu este valid" } }, 400);
+  }
+  if (await isReservedPlatformEmail(c.env.DB, email)) {
+    return c.json({ error: { code: "platform_identity_requires_verification" } }, 403);
   }
   const existing = await c.env.DB.prepare(
     "SELECT id FROM users WHERE lower(email)=? OR lower(username)=? LIMIT 1",
@@ -1454,11 +1462,19 @@ app.patch("/api/admin/users/:userId/roles", requireAuth, requireSuperAdmin, asyn
   }
 
   const account = await c.env.DB.prepare(
-    "SELECT id,disabled_at FROM users WHERE id=?",
-  ).bind(targetUserId).first<{ id: string; disabled_at: number | null }>();
+    "SELECT id,email,email_verified,disabled_at FROM users WHERE id=?",
+  ).bind(targetUserId).first<{ id: string; email: string; email_verified: number; disabled_at: number | null }>();
   if (!account) return c.json({ error: { code: "user_not_found", message: "Contul nu există" } }, 404);
   if (account.disabled_at !== null) {
     return c.json({ error: { code: "account_disabled", message: "Contul este dezactivat" } }, 409);
+  }
+
+  if (await isReservedPlatformEmail(c.env.DB, account.email)) {
+    if (accessLevel !== "admin") return c.json({ error: { code: "platform_principal_protected" } }, 409);
+    if (account.email_verified !== 1) return c.json({ error: { code: "verification_required" } }, 409);
+    if ((await platformRoleForUser(c.env.DB, actorUserId)) !== "platform_owner") {
+      return c.json({ error: { code: "platform_owner_required" } }, 403);
+    }
   }
 
   const protectedPlatformRole = await platformRoleForUser(c.env.DB, targetUserId);

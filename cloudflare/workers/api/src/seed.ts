@@ -1,7 +1,8 @@
-// Controlled account importer. No identities or temporary passwords live in source control.
+// Legacy account importer. No temporary passwords live in source control.
 import { Hono } from "hono";
 import type { Env, Role } from "./types";
 import { constantTimeEqual, hashPassword } from "./security";
+import { isReservedPlatformEmail } from "./authorization";
 
 type ImportUser = {
   email: string;
@@ -56,6 +57,11 @@ seedRouter.post("/api/admin/import-users", async (c) => {
   for (const item of body.users) {
     const email = String(item.email || "").trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || String(item.temporaryPassword || "").length < 10) {
+      report.push({ email, status: "invalid" });
+      continue;
+    }
+    // A seed token must not manufacture a verified platform owner or reset its password.
+    if (await isReservedPlatformEmail(c.env.DB, email)) {
       report.push({ email, status: "invalid" });
       continue;
     }

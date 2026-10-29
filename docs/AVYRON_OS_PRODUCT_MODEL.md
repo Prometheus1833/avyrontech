@@ -9,10 +9,11 @@ registru de proiecte și un singur control plane pentru agenți.
 - Mini-dashboardul afișează maximum șase acțiuni relevante rolului: proiecte
   în mentenanță, Leads, chat intern, proiectele Avyron, rapoarte și Domain
   Hunter. Lista completă este în dashboard, nu duplicată în overlay.
-- `prometheus@avyron.ro` este singurul `platform_owner` și singurul cont care
-  poate schimba agenți, knowledge aprobat, politici, bugete, kill switches și
-  conectori. Alți superadmini pot avea vizibilitate/operare delegată, fără
-  control total.
+- Cele trei identități aprobate în migrarea `0073_platform_owner_team.sql` sunt
+  desemnate `platform_owner`. Fiecare cont existent trebuie să aibă
+  e-mail verificat, rol `admin` și principal activ în D1 înainte să poată schimba
+  agenți, knowledge aprobat, politici, bugete, kill switches și conectori.
+  `superadmin` rămâne un rol delegat, cu drepturi mai restrânse.
 - Stafful vede și editează numai organizațiile/proiectele permise. Clientul
   vede proiectele proprii, status, documente, ofertă, conversații și istoric.
 

@@ -39,7 +39,7 @@ describe("administrarea produselor și parteneriatelor", () => {
     for (const file of readdirSync("cloudflare/d1/migrations").filter(file => file.endsWith(".sql")).sort()) {
       db.exec(readFileSync(`cloudflare/d1/migrations/${file}`, "utf8"));
     }
-    db.prepare("INSERT INTO users(id,email,password_hash,created_at,updated_at) VALUES (?,?,?,1,1)").run("owner", "prometheus@avyron.ro", "fixture");
+    db.prepare("INSERT INTO users(id,email,password_hash,email_verified,created_at,updated_at) VALUES (?,?,?,1,1,1)").run("owner", "prometheus@avyron.ro", "fixture");
     db.prepare("INSERT INTO user_roles(user_id,role) VALUES (?,'admin')").run("owner");
     db.prepare("INSERT INTO users(id,email,password_hash,created_at,updated_at) VALUES (?,?,?,1,1)").run("client", "client@example.test", "fixture");
     db.prepare("INSERT INTO user_roles(user_id,role) VALUES (?,'user')").run("client");

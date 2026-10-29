@@ -1,6 +1,14 @@
 export type PlatformRole = "platform_owner" | "superadmin";
 export type OrganizationRole = "owner" | "admin" | "manager" | "specialist" | "client_admin" | "client_member" | "viewer";
 
+/** Email identities designated for the platform control plane, including suspended ones. */
+export async function isReservedPlatformEmail(db: D1Database, email: string): Promise<boolean> {
+  const row = await db.prepare(
+    "SELECT 1 AS reserved FROM platform_principals WHERE email = ? COLLATE NOCASE LIMIT 1",
+  ).bind(email).first<{ reserved: number }>();
+  return row?.reserved === 1;
+}
+
 /**
  * Platform privileges are resolved from D1 on every privileged request. The
  * JWT is an authentication credential, not the source of truth for elevated
@@ -16,6 +24,7 @@ export async function platformRoleForUser(db: D1Database, userId: string): Promi
          ON principal.email = account.email COLLATE NOCASE
       WHERE account.id = ?
         AND account.disabled_at IS NULL
+        AND account.email_verified = 1
         AND principal.status = 'active'
       LIMIT 1`,
   ).bind(userId).first<{ role: PlatformRole }>();

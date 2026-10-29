@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
-import { cfAuth, type CfUser, type CfProfile, type Role } from "@/lib/cfAuth";
+import { cfAuth, type CfUser, type CfProfile, type Role, type PlatformRole } from "@/lib/cfAuth";
 
 export type AppRole = Role;
 export type Profile = CfProfile;
@@ -15,6 +15,7 @@ type AuthContextValue = {
   isStaff: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  platformRole: PlatformRole | null;
   loading: boolean;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -31,6 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [capabilities, setCapabilities] = useState<string[]>([]);
   const [superadmin, setSuperadmin] = useState(false);
+  const [platformRole, setPlatformRole] = useState<PlatformRole | null>(null);
   // Start in loading state on every route so signed-in visitors never see a
   // "Log in" CTA flash while the (possibly deferred) session bootstrap runs.
   const [loading, setLoading] = useState(true);
@@ -43,12 +45,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setRoles(me.roles ?? []);
       setCapabilities(me.capabilities ?? []);
       setSuperadmin(me.superadmin === true);
+      setPlatformRole(me.platformRole ?? null);
     } else {
       setUser(null);
       setProfile(null);
       setRoles([]);
       setCapabilities([]);
       setSuperadmin(false);
+      setPlatformRole(null);
     }
   }, []);
 
@@ -84,7 +88,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = useCallback(async () => {
     await cfAuth.logout();
-    setUser(null); setProfile(null); setRoles([]); setCapabilities([]); setSuperadmin(false);
+    setUser(null); setProfile(null); setRoles([]); setCapabilities([]); setSuperadmin(false); setPlatformRole(null);
   }, []);
 
   const value: AuthContextValue = {
@@ -96,6 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isStaff: roles.includes("staff") || roles.includes("admin"),
     isAdmin: roles.includes("admin"),
     isSuperAdmin: roles.includes("admin") && superadmin,
+    platformRole,
     loading,
     refreshProfile,
     signOut,
