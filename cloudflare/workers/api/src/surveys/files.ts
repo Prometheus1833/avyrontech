@@ -19,11 +19,20 @@ export function inspectUpload(filename:string,mime:string,bytes:Uint8Array){
 export type MalwareVerdict='clean'|'rejected'|'unavailable';
 export async function scanUpload(scanner:{fetch:(request:Request)=>Promise<Response>}|undefined,bytes:Uint8Array,mime:string):Promise<MalwareVerdict>{
  if(!scanner)return 'unavailable';
+ const controller=new AbortController();let timeoutId:ReturnType<typeof setTimeout>|undefined;
  try{
-  const response=await scanner.fetch(new Request('https://malware-scanner.internal/scan',{method:'POST',headers:{'Content-Type':mime,'X-Scan-Protocol':'avyron-upload-v1'},body:new Uint8Array(bytes),signal:AbortSignal.timeout(10000)}));
-  if(!response.ok||Number(response.headers.get('content-length')||0)>1024)return 'unavailable';
-  const verdict=await response.json() as {verdict?:unknown};
-  return verdict?.verdict==='clean'||verdict?.verdict==='rejected'?verdict.verdict:'unavailable';
- }catch{return 'unavailable';}
+  const timeout=new Promise<never>((_,reject)=>{timeoutId=setTimeout(()=>{controller.abort();reject(new Error('scan_timeout'));},10000);});
+  const scan=async():Promise<MalwareVerdict>=>{
+   const response=await scanner.fetch(new Request('https://malware-scanner.internal/scan',{method:'POST',headers:{'Content-Type':mime,'X-Scan-Protocol':'avyron-upload-v1'},body:new Uint8Array(bytes),signal:controller.signal}));
+   if(!response.ok||Number(response.headers.get('content-length')||0)>1024)return 'unavailable';
+   const reader=response.body?.getReader();if(!reader)return 'unavailable';
+   const parts:Uint8Array[]=[];let size=0;
+   for(;;){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>1024){await reader.cancel();return 'unavailable';}parts.push(value);}
+   const body=new Uint8Array(size);let offset=0;for(const part of parts){body.set(part,offset);offset+=part.byteLength;}
+   const verdict=JSON.parse(new TextDecoder().decode(body)) as {verdict?:unknown};
+   return verdict?.verdict==='clean'||verdict?.verdict==='rejected'?verdict.verdict:'unavailable';
+  };
+  return await Promise.race([scan(),timeout]);
+ }catch{return 'unavailable';}finally{if(timeoutId!==undefined)clearTimeout(timeoutId);}
 }
 export function fileResponse(file:FileRow,body:ReadableStream){return new Response(body,{headers:{'Content-Type':file.mime_type,'Content-Disposition':`attachment; filename="${file.original_filename.replace(/[^\x20-\x7E]/g,'_')}"; filename*=UTF-8''${encodeURIComponent(file.original_filename)}`,'X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; sandbox",'Cache-Control':'private, no-store','X-Robots-Tag':'noindex, nofollow','Referrer-Policy':'no-referrer'}});}

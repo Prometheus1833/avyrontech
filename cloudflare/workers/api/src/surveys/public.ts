@@ -99,6 +99,7 @@ surveyPublic.post(`${root}/files`,async c=>{
  const s=await session(c);if(!s)return error(c,'link_unavailable',404);if(!editable(s))return error(c,'survey_read_only',409);
  const question=c.req.query('question')||'',t=await getTemplate(c.env.DB,s.version_id),r=await getResponse(c.env.DB,s.id),q=surveyPath(t,JSON.parse(r.answers_json)).find(q=>q.id===question);if(!q||!uploadTypes.includes(q.type))return error(c,'invalid_question');
  if(!(await checkRateLimit(c.env.DB,[{key:`survey:upload:${s.id}`,limit:40,windowSec:3600}])).ok)return error(c,'rate_limited',429);
+ if(!c.env.MALWARE_SCANNER)return error(c,'file_scan_unavailable',503);
  let filename:string;try{filename=decodeURIComponent(c.req.header('x-file-name')||'');}catch{return error(c,'invalid_filename');}
  const bytes=new Uint8Array(await c.req.arrayBuffer());let inspected;try{inspected=inspectUpload(filename,c.req.header('content-type')||'',bytes);}catch(e){return error(c,e instanceof Error?e.message:'invalid_file');}
  if(['image','logo'].includes(q.type)&&!inspected.mime.startsWith('image/')&&inspected.mime!=='application/pdf')return error(c,'image_required');
