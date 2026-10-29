@@ -27,7 +27,7 @@ describe('Cloudflare workspace: actual handlers, all migrations, atomic writes',
   db=new DatabaseSync(':memory:');
   for(const file of readdirSync('cloudflare/d1/migrations').filter(f=>f.endsWith('.sql')).sort())db.exec(readFileSync(`cloudflare/d1/migrations/${file}`,'utf8'));
   for(const [id,email] of [['owner','prometheus@avyron.ro'],['admin','avyrontech@gmail.com'],['staff','staff@example.test'],['client','client@example.test'],['other','other@example.test']]){
-   db.prepare('INSERT INTO users(id,email,password_hash,created_at,updated_at) VALUES (?,?,?,?,?)').run(id,email,'fixture',stamp,stamp);
+   db.prepare('INSERT INTO users(id,email,password_hash,email_verified,created_at,updated_at) VALUES (?,?,?,?,?,?)').run(id,email,'fixture',['owner','admin','staff'].includes(id)?1:0,stamp,stamp);
    db.prepare('INSERT INTO user_roles VALUES (?,?)').run(id,['owner','admin'].includes(id)?'admin':id==='staff'?'staff':'user');
   }
   db.exec(`INSERT INTO clients(id,company_name,email,created_at) VALUES ('a','Client A','a@example.test',1),('b','Client B','b@example.test',1);

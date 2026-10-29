@@ -29,7 +29,7 @@ describe("lead deletion audit", () => {
       db.exec(readFileSync(`cloudflare/d1/migrations/${file}`, "utf8"));
     }
     for (const [id, email, role] of [["owner", "prometheus@avyron.ro", "admin"], ["staff", "staff@example.test", "staff"]]) {
-      db.prepare("INSERT INTO users(id,email,password_hash,created_at,updated_at) VALUES (?,?,?,1,1)").run(id, email, "fixture");
+      db.prepare("INSERT INTO users(id,email,password_hash,email_verified,created_at,updated_at) VALUES (?,?,?,1,1,1)").run(id, email, "fixture");
       db.prepare("INSERT INTO user_roles(user_id,role) VALUES (?,?)").run(id, role);
     }
     db.prepare(`INSERT INTO leads(id,source,name,business,email,status,lifecycle_stage,delivery_status,created_at,updated_at)

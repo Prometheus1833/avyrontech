@@ -12,8 +12,6 @@ import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
 import { cfAuth } from "@/lib/cfAuth";
 
-const PROMOTION_OWNER_EMAIL = "prometheus@avyron.ro";
-
 type Promotion = {
   id: string;
   code: string;
@@ -41,8 +39,8 @@ const initialForm = {
 };
 
 export function StaffPromotionsTab() {
-  const { user } = useAuth();
-  const isOwner = user?.email?.trim().toLowerCase() === PROMOTION_OWNER_EMAIL;
+  const { platformRole } = useAuth();
+  const isOwner = platformRole === "platform_owner";
   const [items, setItems] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);

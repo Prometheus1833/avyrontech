@@ -4,6 +4,7 @@ import { apiUrl } from "./apiBase";
 
 
 export type Role = "user" | "staff" | "admin";
+export type PlatformRole = "platform_owner" | "superadmin";
 
 export type CfUser = {
   id: string;
@@ -257,9 +258,9 @@ class CfAuth {
     if (typeof window !== "undefined") window.dispatchEvent(new Event("avyron:logout"));
   }
 
-  async me(): Promise<{ user: CfUser; profile: CfProfile; roles: Role[]; superadmin?: boolean; capabilities?: string[] } | null> {
+  async me(): Promise<{ user: CfUser; profile: CfProfile; roles: Role[]; superadmin?: boolean; platformRole?: PlatformRole | null; capabilities?: string[] } | null> {
     try {
-      const result = await this.request<{ user: CfUser; profile: CfProfile; roles: Role[]; superadmin?: boolean; capabilities?: string[] }>("/api/auth/me");
+      const result = await this.request<{ user: CfUser; profile: CfProfile; roles: Role[]; superadmin?: boolean; platformRole?: PlatformRole | null; capabilities?: string[] }>("/api/auth/me");
       if (result.user.avatar_url?.startsWith("/")) result.user.avatar_url = apiUrl(result.user.avatar_url);
       if (result.profile.avatar_url?.startsWith("/")) result.profile.avatar_url = apiUrl(result.profile.avatar_url);
       return result;

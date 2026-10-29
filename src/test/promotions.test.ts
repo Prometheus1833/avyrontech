@@ -3,7 +3,6 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { Hono } from "hono";
 import {
-  PROMOTION_OWNER_EMAIL,
   discountFor,
   isValidPromotionCode,
   normalizePromotionCode,
@@ -114,8 +113,7 @@ describe("promotion controls", () => {
     expect(isValidPromotionCode("<script>")).toBe(false);
   });
 
-  it("reserves management for the requested account and seeds all approved codes", () => {
-    expect(PROMOTION_OWNER_EMAIL).toBe("prometheus@avyron.ro");
+  it("seeds all approved promotion codes", () => {
     const migration = readFileSync(resolve(process.cwd(), "cloudflare/d1/migrations/0009_promotions.sql"), "utf8");
     const annualMigration = readFileSync(resolve(process.cwd(), "cloudflare/d1/migrations/0010_annual_subscription_promotion.sql"), "utf8");
     for (const code of ["AVY10", "AVYONG", "SOCIALAVY", "PROMETHAVY", "EXCEPTIEAVY"]) {

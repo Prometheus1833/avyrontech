@@ -22,7 +22,8 @@ SELECT 'platform_principals' AS check_name, COUNT(*) AS value
 
 SELECT 'platform_owners' AS check_name, COUNT(*) AS value
   FROM platform_principals
- WHERE email = 'prometheus@avyron.ro' AND role = 'platform_owner' AND status = 'active';
+ WHERE email IN ('prometheus@avyron.ro','avyrontech@gmail.com','anisoara@avyron.ro')
+   AND role = 'platform_owner' AND status = 'active';
 
 SELECT 'agent_versions_without_agent' AS check_name, COUNT(*) AS value
   FROM ai_agent_versions AS version

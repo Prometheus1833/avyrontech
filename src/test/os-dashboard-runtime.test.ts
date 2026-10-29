@@ -33,7 +33,7 @@ describe('OS dashboard — migrated SQLite and actual Hono handlers', () => {
     for (const file of readdirSync('cloudflare/d1/migrations').filter(f => f.endsWith('.sql')).sort()) {
       db.exec(readFileSync(`cloudflare/d1/migrations/${file}`, 'utf8'));
     }
-    db.prepare(`INSERT INTO users(id,email,password_hash,created_at,updated_at) VALUES (?,?,?,?,?)`).run('owner','prometheus@avyron.ro','fixture-not-a-password',stamp,stamp);
+    db.prepare(`INSERT INTO users(id,email,password_hash,email_verified,created_at,updated_at) VALUES (?,?,?,1,?,?)`).run('owner','prometheus@avyron.ro','fixture-not-a-password',stamp,stamp);
     db.prepare(`INSERT INTO user_roles VALUES ('owner','admin')`).run();
     db.prepare(`INSERT INTO users(id,email,password_hash,created_at,updated_at) VALUES (?,?,?,?,?)`).run('client','client@example.test','fixture-not-a-password',stamp,stamp);
     actor = 'owner';

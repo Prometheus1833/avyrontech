@@ -942,6 +942,7 @@ test.describe("forms and authentication", () => {
         profile: { id: "promo-owner", display_name: "Prometheus", avatar_url: null, phone: null, address: null, entity_type: "individual", company_name: null, cui: null, social_facebook: null, social_instagram: null, social_tiktok: null, website: null, language: "ro", theme: "system", pseudonym: null, staff_role: null },
         roles: ["admin"],
         superadmin: true,
+        platformRole: "platform_owner",
       }),
     }));
     await page.route("**/api/promotions/admin", (route) => route.fulfill({
