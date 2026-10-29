@@ -22,6 +22,7 @@ import type { AppBindings, Role } from "./types";
 import { hashPassword, now, randomHex, sha256, signJwt, verifyJwt, verifyPassword } from "./security";
 import { deliverMail, logDelivery } from "./mailer";
 import { checkRateLimit, clientIp, hashKey, verifyTurnstile } from "./antispam";
+import { readJsonBodyUpTo } from "./requestBody";
 import { MAX_CONTENT_CONFIG_BYTES, avatarObjectKey, contentConfigKey, jsonByteLength } from "./storage";
 import { handleMappedHostname } from "./sites.config";
 import { apiDiscovery, API_VERSION, isApiHostname, isApiSurfaceRequest, normalizeVersionedApiRequest, openApiDocument } from "./apiGateway";
@@ -1512,10 +1513,12 @@ app.post("/api/clients", requireAuth, requireRole("staff", "admin"), async (c) =
 
 // Măsurare first-party a pâlniei (public, fără date personale).
 app.post("/api/analytics/event", async (c) => {
-  const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+  const parsed = await readJsonBodyUpTo(c.req.raw, 2 * 1024);
+  if (!parsed.ok) return c.json({ ok: false, error: parsed.error }, parsed.error === "payload_too_large" ? 413 : 400);
+  const body = parsed.value && typeof parsed.value === "object" ? parsed.value as Record<string, unknown> : {};
   const ipKey = await hashKey(clientIp(c.req.raw));
   const rate = await checkRateLimit(c.env.DB, [{ key: `evt:${ipKey}:h`, limit: 240, windowSec: 3600 }]);
-  if (!rate.ok) return c.json({ ok: false, error: "rate_limited" }, 429);
+  if (!rate.ok) return c.json({ ok: false, error: "rate_limited" }, 429, { "Retry-After": String(rate.retryAfter || 60) });
   const result = await recordPageEvent(c.env.DB, {
     page: body.page,
     event: body.event,

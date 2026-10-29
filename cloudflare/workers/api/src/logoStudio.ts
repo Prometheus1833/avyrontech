@@ -7,12 +7,13 @@
 //                                    (source logo-studio:standard|ai|dynamic) and an email to the
 //                                    agency with a link that reproduces the exact logo.
 //
-// Free by design: the model runs on the account's Workers AI allocation, with per-IP
-// and global daily caps. When AI is unavailable the page falls back to its local generator.
+// Free by design: the model runs on the account's Workers AI allocation, with
+// per-user, per-IP and global caps. When AI is unavailable the page falls back locally.
 
 import { Hono } from "hono";
-import type { Env } from "./types";
+import type { AppBindings, Env } from "./types";
 import { checkRateLimit, verifyTurnstile, clientIp, hashKey } from "./antispam";
+import { readJsonBodyUpTo } from "./requestBody";
 import { deliverMail, logDelivery } from "./mailer";
 import { runAiCore } from "./aiCore";
 import {
@@ -27,11 +28,18 @@ import {
   type LogoConcept,
 } from "../../../../src/data/logoStudio";
 
-export const logoStudioRouter = new Hono<{ Bindings: Env }>();
+export const logoStudioRouter = new Hono<AppBindings>();
 
 const clean = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 
 type StudioEnv = Env & { LOGO_STUDIO_DAILY_CAP?: string };
+const GENERATE_BODY_MAX = 16 * 1024;
+const ORDER_BODY_MAX = 32 * 1024;
+
+function dailyCap(raw: string | undefined): number {
+  const parsed = Number(raw);
+  return Number.isSafeInteger(parsed) && parsed >= 1 && parsed <= 1_000 ? parsed : 400;
+}
 
 function parseModelOutput(output: unknown): unknown[] {
   const o = output as { response?: unknown } | null;
@@ -48,18 +56,24 @@ function parseModelOutput(output: unknown): unknown[] {
 
 logoStudioRouter.post("/api/logo-studio/generate", async (c) => {
   const env = c.env as StudioEnv;
-  const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+  const userId = c.get("userId");
+  if (!userId) return c.json({ error: "unauthorized" }, 401);
+  const parsed = await readJsonBodyUpTo(c.req.raw, GENERATE_BODY_MAX);
+  if (!parsed.ok) return c.json({ error: parsed.error }, parsed.error === "payload_too_large" ? 413 : 400);
+  const body = parsed.value && typeof parsed.value === "object" ? parsed.value as Record<string, unknown> : {};
   const brief = cleanBrief((body.brief ?? {}) as Record<string, unknown>);
   if (!brief) return c.json({ error: "invalid_brief" }, 400);
 
   const ip = await hashKey(clientIp(c.req.raw));
-  const cap = Math.max(1, Number(env.LOGO_STUDIO_DAILY_CAP) || 400);
+  const userKey = await hashKey(userId);
   const rate = await checkRateLimit(env.DB, [
-    { key: `logo-studio:ip:${ip}:h`, limit: 10, windowSec: 3600 },
-    { key: `logo-studio:ip:${ip}:d`, limit: 30, windowSec: 86400 },
-    { key: "logo-studio:global:d", limit: cap, windowSec: 86400 },
-  ]);
-  if (!rate.ok) return c.json({ error: "rate_limited", retryAfter: rate.retryAfter }, 429);
+    { key: `logo-studio:user:${userKey}:h`, limit: 10, windowSec: 3600 },
+    { key: `logo-studio:user:${userKey}:d`, limit: 30, windowSec: 86400 },
+    { key: `logo-studio:ip:${ip}:h`, limit: 30, windowSec: 3600 },
+    { key: `logo-studio:ip:${ip}:d`, limit: 100, windowSec: 86400 },
+    { key: "logo-studio:global:d", limit: dailyCap(env.LOGO_STUDIO_DAILY_CAP), windowSec: 86400 },
+  ], { limiter: env.PUBLIC_API_RATE_LIMITER, key: `logo-studio:${userKey}` });
+  if (!rate.ok) return c.json({ error: "rate_limited", retryAfter: rate.retryAfter }, 429, { "Retry-After": String(rate.retryAfter || 60) });
   if (!env.AI) return c.json({ error: "ai_unavailable" }, 503);
 
   const { system, user } = buildPrompt(brief);
@@ -67,7 +81,8 @@ logoStudioRouter.post("/api/logo-studio/generate", async (c) => {
   try {
     const core = await runAiCore({
       env, agentSlug: "avy-logo-studio", operation: "logo_concept_generation",
-      idempotencyKey: `logo:${ip}:${await hashKey(JSON.stringify(brief))}`,
+      // Each model invocation consumes a fresh reservation; repeated briefs still incur cost.
+      idempotencyKey: `logo:${crypto.randomUUID()}`,
       promptCharacters: system.length + user.length, tier: "normal", requestedMaxTokens: 1100,
       input: {
         messages: [
@@ -83,14 +98,16 @@ logoStudioRouter.post("/api/logo-studio/generate", async (c) => {
     if (raw.length === 0) return c.json({ error: "ai_empty" }, 502);
     const concepts: LogoConcept[] = raw.map((r, i) => cleanConcept(r, brief, fallback[i % fallback.length]));
     return c.json({ source: "ai", concepts });
-  } catch (error) {
-    console.error("logo-studio generate failed", error);
+  } catch {
+    console.error(JSON.stringify({ event: "logo_studio_generate_failed" }));
     return c.json({ error: "ai_failed" }, 502);
   }
 });
 
 logoStudioRouter.post("/api/logo-studio/orders", async (c) => {
-  const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+  const parsed = await readJsonBodyUpTo(c.req.raw, ORDER_BODY_MAX);
+  if (!parsed.ok) return c.json({ error: parsed.error }, parsed.error === "payload_too_large" ? 413 : 400);
+  const body = parsed.value && typeof parsed.value === "object" ? parsed.value as Record<string, unknown> : {};
   const brief = cleanBrief((body.brief ?? {}) as Record<string, unknown>);
   const kind = body.kind === "dynamic" ? "dynamic" : "static";
   const source = body.source === "ai" ? "ai" : "standard";

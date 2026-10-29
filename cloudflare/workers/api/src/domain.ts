@@ -1,5 +1,7 @@
-import { Hono } from "hono";
-import { clientIp, hashKey } from "./antispam";
+import { Hono, type Context } from "hono";
+import { checkRateLimit, clientIp, hashKey } from "./antispam";
+import { readTextUpTo, validateMetadataUrl } from "./metadata";
+import { readJsonBodyUpTo } from "./requestBody";
 import type { AppBindings } from "./types";
 
 type DomainStatus = "available" | "registered" | "unknown";
@@ -10,13 +12,16 @@ type SupportedLanguage = "ro" | "en";
 const IANA_BOOTSTRAP_URL = "https://data.iana.org/rdap/dns.json";
 const DOH_URL = "https://cloudflare-dns.com/dns-query";
 const UPSTREAM_TIMEOUT_MS = 4_000;
+const RDAP_MAX_REDIRECTS = 2;
+const BOOTSTRAP_MAX_BYTES = 1024 * 1024;
+const DOH_MAX_BYTES = 16 * 1024;
 let bootstrapSnapshot: { expiresAt: number; value: Bootstrap } | undefined;
 
 const domainRouter = new Hono<AppBindings>();
 
 export function normalizeDomain(value: string): string | null {
   const candidate = value.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/[./]+$/, "");
-  if (!candidate || candidate.length > 253 || candidate.includes("/")) return null;
+  if (!candidate || candidate.length > 253 || /[/?#]/.test(candidate)) return null;
   let hostname = "";
   try {
     const parsed = new URL(`https://${candidate}`);
@@ -32,11 +37,12 @@ async function loadBootstrap(): Promise<Bootstrap> {
   if (bootstrapSnapshot && bootstrapSnapshot.expiresAt > Date.now()) return bootstrapSnapshot.value;
   const response = await fetch(IANA_BOOTSTRAP_URL, {
     headers: { accept: "application/json" },
+    redirect: "error",
     signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     cf: { cacheEverything: true, cacheTtl: 86_400 },
   });
   if (!response.ok) throw new Error(`IANA bootstrap returned ${response.status}`);
-  const value = await response.json<Bootstrap>();
+  const value = JSON.parse(await readTextUpTo(response, BOOTSTRAP_MAX_BYTES)) as Bootstrap;
   bootstrapSnapshot = { value, expiresAt: Date.now() + 86_400_000 };
   return value;
 }
@@ -52,14 +58,27 @@ async function rdapEndpoint(tld: string): Promise<string | null> {
 
 async function queryRdap(domain: string, endpoint: string): Promise<LookupResult> {
   const base = endpoint.endsWith("/") ? endpoint : `${endpoint}/`;
-  const response = await fetch(new URL(`domain/${encodeURIComponent(domain)}`, base), {
-    headers: { accept: "application/rdap+json, application/json;q=0.9", "user-agent": "AvyronDomainCheck/1.0 (+https://avyron.ro)" },
-    redirect: "follow",
-    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-  });
-  if (response.status === 404) return { status: "available", source: "iana-rdap" };
-  if (response.ok) return { status: "registered", source: "iana-rdap" };
-  throw new Error(`RDAP returned ${response.status}`);
+  let current = validateMetadataUrl(new URL(`domain/${encodeURIComponent(domain)}`, base));
+  if (current.protocol !== "https:") throw new Error("RDAP requires HTTPS");
+  const signal = AbortSignal.timeout(UPSTREAM_TIMEOUT_MS);
+  for (let redirects = 0; redirects <= RDAP_MAX_REDIRECTS; redirects += 1) {
+    const response = await fetch(current, {
+      headers: { accept: "application/rdap+json, application/json;q=0.9", "user-agent": "AvyronDomainCheck/1.0 (+https://avyron.ro)" },
+      redirect: "manual",
+      signal,
+    });
+    if ([301, 302, 303, 307, 308].includes(response.status)) {
+      const location = response.headers.get("location");
+      if (!location || redirects === RDAP_MAX_REDIRECTS) throw new Error("Invalid RDAP redirect chain");
+      current = validateMetadataUrl(new URL(location, current));
+      if (current.protocol !== "https:") throw new Error("RDAP redirect requires HTTPS");
+      continue;
+    }
+    if (response.status === 404) return { status: "available", source: "iana-rdap" };
+    if (response.ok) return { status: "registered", source: "iana-rdap" };
+    throw new Error(`RDAP returned ${response.status}`);
+  }
+  throw new Error("Too many RDAP redirects");
 }
 
 async function queryDns(domain: string): Promise<LookupResult> {
@@ -68,11 +87,12 @@ async function queryDns(domain: string): Promise<LookupResult> {
   url.searchParams.set("type", "NS");
   const response = await fetch(url, {
     headers: { accept: "application/dns-json" },
+    redirect: "error",
     signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     cf: { cacheEverything: true, cacheTtl: 300 },
   });
   if (!response.ok) throw new Error(`DoH returned ${response.status}`);
-  const data = await response.json<{ Status?: number; Answer?: unknown[]; Authority?: unknown[] }>();
+  const data = JSON.parse(await readTextUpTo(response, DOH_MAX_BYTES)) as { Status?: number; Answer?: unknown[]; Authority?: unknown[] };
   if (data.Status === 0 && ((data.Answer?.length || 0) > 0 || (data.Authority?.length || 0) > 0)) {
     return { status: "registered", source: "cloudflare-doh" };
   }
@@ -85,13 +105,13 @@ export async function lookupDomain(domain: string): Promise<LookupResult> {
   try {
     const endpoint = await rdapEndpoint(tld);
     if (endpoint) return await queryRdap(domain, endpoint);
-  } catch (error) {
-    console.warn(JSON.stringify({ event: "domain_rdap_unavailable", domain, error: String(error) }));
+  } catch {
+    console.warn(JSON.stringify({ event: "domain_rdap_unavailable" }));
   }
   try {
     return await queryDns(domain);
-  } catch (error) {
-    console.warn(JSON.stringify({ event: "domain_doh_unavailable", domain, error: String(error) }));
+  } catch {
+    console.warn(JSON.stringify({ event: "domain_doh_unavailable" }));
     return { status: "unknown", source: "unavailable" };
   }
 }
@@ -130,13 +150,25 @@ const payloadFor = (domain: string, result: LookupResult, language: SupportedLan
   officialVerificationUrl: officialDomainVerificationUrl(domain, language),
 });
 
+async function domainCheckLimit(c: Context<AppBindings>) {
+  const ip = await hashKey(clientIp(c.req.raw));
+  return checkRateLimit(c.env.DB, [
+    { key: `domain-check:ip:${ip}:h`, limit: 60, windowSec: 3600 },
+    { key: `domain-check:ip:${ip}:d`, limit: 200, windowSec: 86400 },
+    { key: "domain-check:global:d", limit: 3_000, windowSec: 86400 },
+  ], { limiter: c.env.PUBLIC_API_RATE_LIMITER, key: `domain-check:${ip}` });
+}
+
+function rateLimited(c: Context<AppBindings>, retryAfter: number | undefined) {
+  return c.json({ error: { code: "rate_limited", message: "Prea multe verificări" } }, 429, { "Retry-After": String(retryAfter || 60) });
+}
+
 domainRouter.get("/api/public/domain-check", async (c) => {
   const domain = normalizeDomain(c.req.query("domain") || "");
   if (!domain) return c.json({ error: { code: "invalid_domain", message: "Domeniul nu este valid" } }, 400);
 
-  const rateKey = await hashKey(clientIp(c.req.raw));
-  const { success } = await c.env.PUBLIC_API_RATE_LIMITER.limit({ key: `domain-check:${rateKey}` });
-  if (!success) return c.json({ error: { code: "rate_limited", message: "Prea multe verificări" } }, 429, { "Retry-After": "60" });
+  const rate = await domainCheckLimit(c);
+  if (!rate.ok) return rateLimited(c, rate.retryAfter);
 
   const result = await lookupDomain(domain);
   const ttl = result.status === "registered" ? 3600 : result.status === "available" ? 300 : 60;
@@ -146,13 +178,16 @@ domainRouter.get("/api/public/domain-check", async (c) => {
 });
 
 domainRouter.post("/api/public/domain-check", async (c) => {
-  const body = await c.req.json<{ domain?: unknown; language?: unknown; surface?: unknown }>().catch(() => null);
+  const parsed = await readJsonBodyUpTo(c.req.raw, 2 * 1024);
+  if (!parsed.ok) return c.json({ error: { code: parsed.error } }, parsed.error === "payload_too_large" ? 413 : 400);
+  const body = parsed.value && typeof parsed.value === "object"
+    ? parsed.value as { domain?: unknown; language?: unknown; surface?: unknown }
+    : null;
   const domain = normalizeDomain(String(body?.domain || ""));
   if (!domain) return c.json({ error: { code: "invalid_domain", message: "Domeniul nu este valid" } }, 400);
 
-  const rateKey = await hashKey(clientIp(c.req.raw));
-  const { success } = await c.env.PUBLIC_API_RATE_LIMITER.limit({ key: `domain-check-write:${rateKey}` });
-  if (!success) return c.json({ error: { code: "rate_limited", message: "Prea multe verificări" } }, 429, { "Retry-After": "60" });
+  const rate = await domainCheckLimit(c);
+  if (!rate.ok) return rateLimited(c, rate.retryAfter);
 
   const result = await lookupDomain(domain);
   const language = body?.language === "en" ? "en" : "ro";
