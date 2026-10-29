@@ -266,7 +266,7 @@ test.describe("dashboard AVYRON OS în română", () => {
     await page.getByRole("region", { name: "Fluxuri de lucru" }).getByRole("button", { name: /Solicitări demo/ }).click();
     await expect(page.getByLabel("Pipeline solicitări demo")).toBeVisible();
     await page.getByLabel("Stadiu pentru demo@example.com").selectOption("contacted");
-    expect(updated).toEqual({ status: "contacted" });
+    await expect.poll(() => updated).toEqual({ status: "contacted" });
     await expect(page.getByRole("region", { name: "Contactat" }).getByText("demo@example.com")).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("demo-pipeline.png"), fullPage: true });
   });
