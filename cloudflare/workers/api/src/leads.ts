@@ -50,9 +50,9 @@ async function leadAccess(c: Context<AppBindings>, leadId: string): Promise<Lead
   ).bind(leadId, userId).first<{ assignment_role: string }>();
   if (assignment) return { read: true, write: assignment.assignment_role !== "reviewer", organizationId: lead.organization_id };
 
-  // Compatibility for legacy leads that predate organizations/assignments.
-  const legacyRole = (c.get("roles") || []).some((role) => role === "staff" || role === "admin");
-  return { read: legacyRole, write: legacyRole, organizationId: lead.organization_id };
+  // Legacy unassigned leads remain available to platform principals and
+  // explicit capability holders above; a staff role alone is not an ACL.
+  return { read: false, write: false, organizationId: lead.organization_id };
 }
 
 async function audit(c: Context<AppBindings>, leadId: string, action: string, outcome: "allowed" | "denied") {
@@ -127,7 +127,10 @@ leadsRouter.post("/api/leads", async (c) => {
       lead.email, lead.email,
       phoneDigits, phoneDigits,
     ).first<{ id: string }>();
-    if (duplicate) return c.json({ error: { code: "duplicate_lead", leadId: duplicate.id } }, 409);
+    if (duplicate) {
+      const access = await leadAccess(c, duplicate.id);
+      return c.json({ error: { code: "duplicate_lead", ...(access?.read ? { leadId: duplicate.id } : {}) } }, 409);
+    }
   }
 
   const leadId = identifier("lead");
@@ -196,10 +199,8 @@ leadsRouter.get("/api/leads", async (c) => {
       OR EXISTS (SELECT 1 FROM organization_memberships membership
                   WHERE membership.organization_id = lead.organization_id
                     AND membership.user_id = ? AND membership.status = 'active')
-      OR (lead.organization_id IS NULL AND ? = 1)
     )`);
-    const legacyStaff = (c.get("roles") || []).some((role) => role === "staff" || role === "admin") ? 1 : 0;
-    values.push(userId, userId, legacyStaff);
+    values.push(userId, userId);
   }
   const where = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
   const { results } = await c.env.DB.prepare(

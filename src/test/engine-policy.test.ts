@@ -9,7 +9,7 @@ import {
 describe("AVY Engine policy", () => {
   it("accepts canonical public HTTPS sources and rejects SSRF targets", () => {
     expect(normalizeEngineUrl("https://WWW.OriginKit.dev/docs/components#install")).toBe("https://www.originkit.dev/docs/components");
-    for (const unsafe of ["http://example.com", "https://127.0.0.1/a", "https://10.0.0.3", "https://[::1]/", "https://user:pass@example.com/"]) {
+    for (const unsafe of ["http://example.com", "https://127.0.0.1/a", "https://10.0.0.3", "https://169.254.169.254/latest/meta-data", "https://100.100.100.100/", "https://[::1]/", "https://user:pass@example.com/"]) {
       expect(normalizeEngineUrl(unsafe)).toBeNull();
     }
     expect(validateEngineSourceCreate({ name: "OriginKit", canonicalUrl: "https://www.originkit.dev/", sourceType: "platform", accessMode: "account_required", pricingModel: "freemium", summary: "Componente." })).toMatchObject({ ok: true });

@@ -12,7 +12,8 @@
 import { Hono } from "hono";
 import { canAccessProject } from "./projects";
 import type { Env } from "./types";
-import { inlineContentDisposition, projectObjectKey, safeFilename } from "./storage";
+import { projectObjectKey, safeFilename } from "./storage";
+import { inspectProjectMedia, projectMediaDisposition } from "./mediaPolicy";
 
 type Role = "user" | "staff" | "admin";
 type Vars = { userId: string; roles: Role[] };
@@ -20,7 +21,7 @@ const uuid = () => crypto.randomUUID();
 const now = () => Date.now();
 
 const MAX_BYTES = 15 * 1024 * 1024; // 15 MB
-const ALLOWED_CT = /^(image\/(png|jpeg|jpg|webp|gif|svg\+xml)|application\/pdf|text\/plain)$/i;
+const ALLOWED_CT = /^(image\/(png|jpeg|webp|gif)|application\/pdf|text\/plain)$/i;
 
 export const mediaRouter = new Hono<{ Bindings: Env; Variables: Vars }>();
 
@@ -31,7 +32,7 @@ mediaRouter.post("/api/projects/:id/media", async (c) => {
   if (!perm.write) return c.json({ error: { code: "forbidden" } }, 403);
 
   const filename = safeFilename(c.req.query("filename") || "file");
-  const contentType = c.req.header("content-type") || c.req.query("content_type") || "application/octet-stream";
+  const contentType = (c.req.header("content-type") || c.req.query("content_type") || "application/octet-stream").toLowerCase();
   if (!ALLOWED_CT.test(contentType)) return c.json({ error: { code: "unsupported_type", message: contentType } }, 415);
 
   const proposalId = c.req.query("proposal_id") || null;
@@ -60,12 +61,13 @@ mediaRouter.post("/api/projects/:id/media", async (c) => {
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
   if (!bytes.byteLength) return c.json({ error: { code: "no_body" } }, 400);
   if (bytes.byteLength > MAX_BYTES) return c.json({ error: { code: "too_large", message: "Max 15MB" } }, 413);
+  if (!inspectProjectMedia(filename, contentType, bytes)) return c.json({ error: { code: "invalid_file" } }, 415);
 
   const mediaId = uuid();
   const r2Key = projectObjectKey(projectId, mediaId, filename);
   const uploaderId = c.get("userId");
   const put = await c.env.FILES.put(r2Key, bytes, {
-    httpMetadata: { contentType, contentDisposition: inlineContentDisposition(filename) },
+    httpMetadata: { contentType, contentDisposition: projectMediaDisposition(filename, contentType) },
     customMetadata: { projectId, mediaId, uploaderId },
   });
   const size = put.size;
@@ -126,7 +128,7 @@ mediaRouter.get("/api/media/:mediaId/file", async (c) => {
   headers.set("x-content-type-options", "nosniff");
   headers.set("cache-control", "private, no-store");
   headers.set("content-security-policy", "sandbox; default-src 'none'");
-  headers.set("content-disposition", inlineContentDisposition(row.filename));
+  headers.set("content-disposition", projectMediaDisposition(row.filename, row.content_type));
   let status = 200;
   if (obj.range) {
     const length = "suffix" in obj.range

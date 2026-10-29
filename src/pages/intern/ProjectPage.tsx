@@ -18,6 +18,7 @@ import { MediaAttachments } from "@/components/intern/MediaAttachments";
 import PaymentMethodCard from "@/components/intern/PaymentMethodCard";
 import ContactRail from "@/components/intern/ContactRail";
 import PageBackLink from "@/components/site/PageBackLink";
+import { normalizeExternalLink } from "@/shared/externalUrl";
 
 const BANNER_LABEL: Record<BannerStatus, { label: string; className: string }> = {
   online:      { label: "Online",              className: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30" },
@@ -116,8 +117,8 @@ export default function ProjectPage() {
               </div>
             </div>
             <div className="flex gap-2 flex-wrap">
-              {project.url && (
-                <a href={project.url} target="_blank" rel="noreferrer">
+              {project.url && normalizeExternalLink(project.url) && (
+                <a href={normalizeExternalLink(project.url)!} target="_blank" rel="noreferrer">
                   <Button variant="default"><ExternalLink className="w-4 h-4 mr-2" />Accesare produs</Button>
                 </a>
               )}
@@ -337,7 +338,7 @@ function LinksSection({ projectId, links, canWrite, onChange }: { projectId: str
             <li key={l.id} className="flex items-center gap-2 flex-wrap border border-border rounded-md p-2">
               <Badge variant="outline">{LINK_KINDS.find((k) => k.value === l.kind)?.label ?? l.kind}</Badge>
               <span className="text-sm truncate flex-1">{l.label}</span>
-              <a href={l.url} target="_blank" rel="noreferrer"><Button size="sm" variant="outline"><ExternalLink className="w-3 h-3 mr-1" />Deschide</Button></a>
+              {normalizeExternalLink(l.url) && <a href={normalizeExternalLink(l.url)!} target="_blank" rel="noreferrer"><Button size="sm" variant="outline"><ExternalLink className="w-3 h-3 mr-1" />Deschide</Button></a>}
               {canWrite && (
                 <Button size="icon" variant="ghost" onClick={async () => { await internApi.deleteLink(l.id); onChange(); }}><Trash2 className="w-4 h-4" /></Button>
               )}

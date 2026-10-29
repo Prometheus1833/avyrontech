@@ -1,16 +1,15 @@
 // Avyron API — Rute Platformă Internă pentru proiecte
 // Import și mount în src/index.ts: `app.route("/", projectsRouter);`
 //
-// Toate rutele necesită auth. Accesul la un proiect e permis dacă:
-//   - user e admin, SAU
-//   - user e staff: poate vedea toate proiectele; poate edita doar dacă este
-//     alocat în project_staff (adminul poate edita orice), SAU
-//   - user.id === projects.owner_user_id (clientul admin)
+// Toate rutele necesită auth. Accesul este evaluat per proiect prin rol de
+// platformă, apartenență activă la organizație, alocare explicită ori grant
+// pentru clientul proiectului; proprietarul client poate citi proiectul.
 
 import { Hono } from "hono";
 import type { Env } from "./types";
 import { fetchMetadataHtml, validateMetadataUrl } from "./metadata";
 import { organizationRoleForUser, platformRoleForUser } from "./authorization";
+import { normalizeExternalLink } from "../../../../src/shared/externalUrl";
 
 type Role = "user" | "staff" | "admin";
 type Vars = { userId: string; roles: Role[] };
@@ -41,13 +40,13 @@ export async function canAccessProject(db: D1Database, projectId: string, userId
     return { read: !!assigned || isOwner, write: !!assigned, isStaff, isOwner };
   }
 
-  // Legacy projects remain available under the pre-tenant policy until they
-  // are explicitly linked through client_organizations.
-  if (isAdmin) return { read: true, write: true, isStaff: true, isOwner };
+  // Legacy records need the same explicit project or client grant as tenant records.
   if (isStaff) {
     const assigned = await db.prepare("SELECT 1 FROM project_staff WHERE project_id = ? AND user_id = ?").bind(projectId, userId).first();
     if (assigned) return { read: true, write: true, isStaff: true, isOwner };
-    return { read: true, write: false, isStaff: true, isOwner };
+    const clientGrant = await db.prepare("SELECT 1 FROM client_account_access WHERE client_id = (SELECT client_id FROM projects WHERE id = ?) AND user_id = ?")
+      .bind(projectId, userId).first();
+    return { read: Boolean(clientGrant) || isOwner, write: isAdmin && Boolean(clientGrant), isStaff: true, isOwner };
   }
   if (isOwner) return { read: true, write: false, isStaff: false, isOwner: true };
   return { read: false, write: false, isStaff, isOwner: false };
@@ -84,9 +83,11 @@ projectsRouter.get("/api/projects", async (c) => {
           AND membership.user_id = ? AND membership.status = 'active'
          LEFT JOIN project_staff AS assignment
            ON assignment.project_id = project.id AND assignment.user_id = ?
-        WHERE project.organization_id IS NULL OR membership.user_id IS NOT NULL OR assignment.user_id IS NOT NULL
+         LEFT JOIN client_account_access AS client_access
+           ON client_access.client_id = project.client_id AND client_access.user_id = ?
+        WHERE membership.user_id IS NOT NULL OR assignment.user_id IS NOT NULL OR client_access.user_id IS NOT NULL
         ORDER BY project.updated_at DESC LIMIT 200`,
-    ).bind(userId, userId).all();
+    ).bind(userId, userId, userId).all();
   } else {
     rows = await c.env.DB.prepare(
       `SELECT DISTINCT project.id, project.organization_id, project.slug, project.name,
@@ -134,6 +135,7 @@ projectsRouter.get("/api/projects", async (c) => {
   }
   if (isStaff) {
     try {
+      const platformPrincipal = Boolean(await platformRoleForUser(c.env.DB, userId));
       const { results } = await c.env.DB.prepare(
         `SELECT revenue.id,revenue.project_id,project.name AS project_name,
                 revenue.service_name AS name,revenue.revenue_type,
@@ -143,8 +145,19 @@ projectsRouter.get("/api/projects", async (c) => {
            FROM financial_revenues AS revenue
            LEFT JOIN projects AS project ON project.id=revenue.project_id
           WHERE revenue.archived_at IS NULL AND revenue.status IN ('paid','partially_paid')
+            AND (? = 1 OR EXISTS (
+              SELECT 1 FROM client_account_access AS access
+               WHERE access.client_id = revenue.client_id AND access.user_id = ?
+            ) OR EXISTS (
+              SELECT 1 FROM project_staff AS assignment
+               WHERE assignment.project_id = revenue.project_id AND assignment.user_id = ?
+            ) OR EXISTS (
+              SELECT 1 FROM organization_memberships AS membership
+               WHERE membership.organization_id = project.organization_id AND membership.user_id = ?
+                 AND membership.status = 'active' AND membership.role IN ('owner','admin','manager','specialist')
+            ))
           ORDER BY revenue.updated_at DESC LIMIT 100`,
-      ).all();
+      ).bind(platformPrincipal ? 1 : 0, userId, userId, userId).all();
       sales = results;
     } catch (error) {
       if (!/no such table: financial_revenues/i.test(String(error))) throw error;
@@ -167,14 +180,32 @@ projectsRouter.post("/api/projects", async (c) => {
     };
   };
   if (!b.name || !b.slug || !b.client_id) return c.json({ error: { code: "invalid_input", message: "name, slug, client_id required" } }, 400);
+  const projectUrl = b.url ? normalizeExternalLink(b.url) : null;
+  if (b.url && !projectUrl) return c.json({ error: { code: "invalid_url" } }, 400);
+  const clientOrganization = await c.env.DB.prepare("SELECT organization_id FROM client_organizations WHERE client_id = ?")
+    .bind(b.client_id).first<{ organization_id: string }>();
+  if (clientOrganization?.organization_id !== (b.organization_id || undefined)) {
+    return c.json({ error: { code: "organization_scope_denied" } }, 403);
+  }
+  if (!b.organization_id && !(await platformRoleForUser(c.env.DB, userId))) {
+    const access = await c.env.DB.prepare("SELECT 1 FROM client_account_access WHERE client_id = ? AND user_id = ?")
+      .bind(b.client_id, userId).first();
+    if (!access) return c.json({ error: { code: "client_scope_denied" } }, 403);
+  }
+  if (b.owner_user_id) {
+    const ownerAccess = await c.env.DB.prepare("SELECT 1 FROM client_account_access WHERE client_id = ? AND user_id = ?")
+      .bind(b.client_id, b.owner_user_id).first();
+    const ownerMembership = b.organization_id
+      ? await organizationRoleForUser(c.env.DB, b.organization_id, b.owner_user_id)
+      : null;
+    if (!ownerAccess && !ownerMembership) return c.json({ error: { code: "owner_scope_denied" } }, 403);
+  }
   const id = uuid();
   const t = now();
   if (b.organization_id) {
-    const [platformRole, membership, clientOrganization] = await Promise.all([
+    const [platformRole, membership] = await Promise.all([
       platformRoleForUser(c.env.DB, userId),
       organizationRoleForUser(c.env.DB, b.organization_id, userId),
-      c.env.DB.prepare("SELECT organization_id FROM client_organizations WHERE client_id = ?")
-        .bind(b.client_id).first<{ organization_id: string }>(),
     ]);
     const canCreate = platformRole !== null || ["owner", "admin", "manager"].includes(membership || "");
     if (!canCreate || clientOrganization?.organization_id !== b.organization_id) {
@@ -189,7 +220,7 @@ projectsRouter.post("/api/projects", async (c) => {
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`
     ).bind(
       id, b.client_id, b.organization_id ?? null, b.name, b.slug,
-      b.kind ?? "website_prezentare", b.url ?? null, b.description ?? null,
+      b.kind ?? "website_prezentare", projectUrl, b.description ?? null,
       b.owner_user_id ?? null, "in_progress", "in_progress", t, t,
     ), c.env.DB.prepare("INSERT INTO project_staff (project_id, user_id, role, assigned_at) VALUES (?,?,?,?)")
       .bind(id, userId, "owner", t)];
@@ -249,7 +280,15 @@ projectsRouter.patch("/api/projects/:id", async (c) => {
   const perm = await canAccessProject(c.env.DB, id, c.get("userId"), c.get("roles"));
   if (!perm.write) return c.json({ error: { code: "forbidden" } }, 403);
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
-  const allowed = ["name", "kind", "description", "banner_status", "url", "favicon_url", "og_title", "og_description", "og_image_url", "cover_image_url", "price_ron", "price_eur", "subscription_plan", "subscription_status", "billing_next", "owner_user_id"];
+  if ("url" in b && b.url !== null && b.url !== "") {
+    if (typeof b.url !== "string") return c.json({ error: { code: "invalid_url" } }, 400);
+    const url = normalizeExternalLink(b.url);
+    if (!url) return c.json({ error: { code: "invalid_url" } }, 400);
+    b.url = url;
+  }
+  // Ownership is an access grant. It must never be mass-assigned by a project editor.
+  if ("owner_user_id" in b) return c.json({ error: { code: "owner_transfer_forbidden" } }, 403);
+  const allowed = ["name", "kind", "description", "banner_status", "url", "favicon_url", "og_title", "og_description", "og_image_url", "cover_image_url", "price_ron", "price_eur", "subscription_plan", "subscription_status", "billing_next"];
   const sets: string[] = [], vals: Array<string | number | null> = [];
   for (const k of allowed) {
     if (!(k in b)) continue;
@@ -315,12 +354,16 @@ projectsRouter.post("/api/projects/:id/links", async (c) => {
   if (!perm.write) return c.json({ error: { code: "forbidden" } }, 403);
   const b = (await c.req.json().catch(() => ({}))) as { kind?: string; label?: string; url?: string; id?: string };
   if (!b.kind || !b.label || !b.url) return c.json({ error: { code: "invalid_input" } }, 400);
+  const url = normalizeExternalLink(b.url);
+  if (!url) return c.json({ error: { code: "invalid_url" } }, 400);
   const linkId = b.id ?? uuid();
   const t = now();
-  await c.env.DB.prepare(
+  const result = await c.env.DB.prepare(
     `INSERT INTO project_links (id, project_id, kind, label, url, updated_by, updated_at) VALUES (?,?,?,?,?,?,?)
-     ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, label=excluded.label, url=excluded.url, updated_by=excluded.updated_by, updated_at=excluded.updated_at`
-  ).bind(linkId, id, b.kind, b.label, b.url, c.get("userId"), t).run();
+     ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, label=excluded.label, url=excluded.url, updated_by=excluded.updated_by, updated_at=excluded.updated_at
+       WHERE project_links.project_id = excluded.project_id`
+  ).bind(linkId, id, b.kind, b.label, url, c.get("userId"), t).run();
+  if (!result.meta.changes) return c.json({ error: { code: "link_scope_denied" } }, 403);
   await log(c.env.DB, id, c.get("userId"), "link.upsert", "link", linkId, b);
   return c.json({ id: linkId });
 });

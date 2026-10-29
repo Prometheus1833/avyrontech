@@ -8,6 +8,13 @@ type App = { Bindings: Env; Variables: Vars };
 const uuid = () => crypto.randomUUID();
 const now = () => Date.now();
 const text = (value: unknown, max = 240) => typeof value === "string" ? value.trim().slice(0, max) : "";
+export const externalUrl = (value: string) => {
+  if (!value) return true;
+  try {
+    const parsed = new URL(value);
+    return ["http:", "https:"].includes(parsed.protocol) && !!parsed.hostname && !parsed.username && !parsed.password;
+  } catch { return false; }
+};
 
 export const adminOperationsRouter = new Hono<App>();
 
@@ -237,7 +244,7 @@ adminOperationsRouter.post("/api/admin/operations/resources", async (c) => {
   const title = text(body.title, 180);
   const status = text(body.status, 20) || "active";
   const url = text(body.url, 600);
-  if (!title || (url && !/^https?:\/\//i.test(url)) || !["website", "field", "tool", "reference", "career", "library"].includes(kind) || !["active", "planned", "archived"].includes(status)) return c.json({ error: { code: "invalid_input" } }, 400);
+  if (!title || !externalUrl(url) || !["website", "field", "tool", "reference", "career", "library"].includes(kind) || !["active", "planned", "archived"].includes(status)) return c.json({ error: { code: "invalid_input" } }, 400);
   const id = uuid();
   const t = now();
   await c.env.DB.batch([
@@ -254,7 +261,7 @@ adminOperationsRouter.patch("/api/admin/operations/resources/:id", async (c) => 
   const title = text(body.title, 180);
   const status = text(body.status, 20);
   const url = text(body.url, 600);
-  if (!title || (url && !/^https?:\/\//i.test(url)) || !["active", "planned", "archived"].includes(status)) return c.json({ error: { code: "invalid_input" } }, 400);
+  if (!title || !externalUrl(url) || !["active", "planned", "archived"].includes(status)) return c.json({ error: { code: "invalid_input" } }, 400);
   await c.env.DB.batch([
     c.env.DB.prepare("UPDATE internal_resources SET title=?,description=?,url=?,category=?,status=?,updated_by=?,updated_at=? WHERE id=?")
       .bind(title, text(body.description, 1200), url || null, text(body.category, 100) || "General", status, c.get("userId"), now(), id),
