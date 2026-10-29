@@ -37,6 +37,8 @@ import { newsletterRouter } from "./newsletter";
 import { forcedPasswordAllowedPath, mfaAuthEnabled, normalizeLoginPhone, normalizeUsername, turnstileAuthEnabled, uniqueStaffPhoneMatch } from "./authPolicy";
 import { parseReviewSubmission, WEBSITE_REVIEW_SURFACE } from "./reviewsPolicy";
 import { cleanupAvyronEditorialContent } from "./aiContentRetention";
+import { enforceApiBodyLimit } from "./requestBodyLimit";
+import { allowedOrigin } from "./originPolicy";
 
 export { AvyronAgentRuntime } from "./agents/AvyronAgentRuntime";
 export { AvyronMaintenanceWorkflow } from "./workflows/AvyronMaintenanceWorkflow";
@@ -53,18 +55,7 @@ app.use("*", async (c, next) => {
   await next();
 });
 
-const allowedOrigin = (env: AppBindings["Bindings"], origin: string | undefined): string => {
-  const configured = (env.ALLOWED_ORIGINS || "").split(",").map((value) => value.trim()).filter(Boolean);
-  if (!origin) return configured[0] || "";
-  if (configured.includes(origin)) return origin;
-  try {
-    const hostname = new URL(origin).hostname;
-    if (hostname === "avyrontech.pages.dev" || hostname.endsWith(".avyrontech.pages.dev")) return origin;
-  } catch {
-    // Invalid Origin is denied below.
-  }
-  return "";
-};
+app.use("/api/*", enforceApiBodyLimit);
 
 const appendVary = (current: string | null, value: string) => {
   const values = (current || "").split(",").map((item) => item.trim()).filter(Boolean);

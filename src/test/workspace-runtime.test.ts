@@ -8,6 +8,7 @@ import { receiptsRouter } from '../../cloudflare/workers/api/src/receipts';
 import { financialTotals } from '../../cloudflare/workers/api/src/financialTotals';
 import { workspaceRouter } from '../../cloudflare/workers/api/src/workspace';
 import { mediaRouter } from '../../cloudflare/workers/api/src/media';
+import { projectsRouter } from '../../cloudflare/workers/api/src/projects';
 import { privilegedMfaSatisfied } from '../../cloudflare/workers/api/src/mfaPolicy';
 const { DatabaseSync }=createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
 class Statement {
@@ -47,7 +48,7 @@ describe('Cloudflare workspace: actual handlers, all migrations, atomic writes',
    await next();
   });
   app.get('/mfa-policy',async c=>c.json({allowed:await privilegedMfaSatisfied(c)}));
-  app.route('/',workspaceRouter);app.route('/',mediaRouter);app.route('/',receiptsRouter);
+  app.route('/',workspaceRouter);app.route('/',projectsRouter);app.route('/',mediaRouter);app.route('/',receiptsRouter);
   app.get('/totals',async c=>c.json(await financialTotals(c.env.DB,stamp-1000,stamp+1000)));app.onError(()=>new Response('safe failure',{status:500}));
  });
  afterEach(()=>db.close());
@@ -73,6 +74,45 @@ describe('Cloudflare workspace: actual handlers, all migrations, atomic writes',
   expect((await request('tickets/ticket-b/messages')).status).toBe(404);
   expect((await request('tickets/ticket-b/messages',{content:'forbidden'})).status).toBe(404);
   expect((await request('account-access/other',{client_ids:['a']},'PUT')).status).toBe(403);
+ });
+ it('blocks legacy project enumeration and owner reassignment while preserving assigned edits',async()=>{
+  actor='staff';
+  expect((await (await app.request('/api/projects',{},{})).json()).data).toEqual([]);
+  expect((await app.request('/api/projects/project-b',{},{})).status).toBe(403);
+  db.exec("INSERT INTO project_staff(project_id,user_id,role,assigned_at) VALUES ('pa','staff','contributor',1)");
+  const edit=(body:unknown)=>app.request('/api/projects/pa',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(body)},{});
+  expect((await edit({owner_user_id:'staff'})).status).toBe(403);
+  expect((await edit({url:'javascript:alert(1)'})).status).toBe(400);
+  expect(db.prepare("SELECT owner_user_id FROM projects WHERE id='pa'").get()!.owner_user_id).toBe('client');
+  expect((await edit({name:'Updated Project A'})).status).toBe(200);
+  expect(db.prepare("SELECT name FROM projects WHERE id='pa'").get()!.name).toBe('Updated Project A');
+  expect((await (await app.request('/api/projects',{},{})).json()).data.map((row:{id:string})=>row.id)).toEqual(['pa']);
+ });
+ it('rejects cross-project link upserts and unauthorized project creation',async()=>{
+  db.exec("INSERT INTO project_staff(project_id,user_id,role,assigned_at) VALUES ('pa','staff','contributor',1);");
+  db.prepare("INSERT INTO project_links(id,project_id,kind,label,url,updated_at) VALUES ('link-b','pb','other','Original','https://example.test',1)").run();
+  actor='staff';
+  const link=(id:string,label:string,url='https://example.test')=>app.request('/api/projects/pa/links',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id,kind:'other',label,url})},{});
+  expect((await link('script-link','Unsafe','javascript:alert(1)')).status).toBe(400);
+  expect((await link('link-b','Hijacked')).status).toBe(403);
+  expect(db.prepare("SELECT label FROM project_links WHERE id='link-b'").get()!.label).toBe('Original');
+  expect((await link('link-a','Allowed')).status).toBe(200);
+  expect(db.prepare("SELECT project_id FROM project_links WHERE id='link-a'").get()!.project_id).toBe('pa');
+  const create=(client_id:string,owner_user_id:string)=>app.request('/api/projects',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:'New',slug:'new-'+client_id,client_id,owner_user_id})},{});
+  expect((await create('b','other')).status).toBe(403);
+  db.prepare("INSERT INTO client_account_access VALUES ('a','staff','staff',1)").run();
+  expect((await create('a','other')).status).toBe(403);
+  expect((await create('a','client')).status).toBe(201);
+ });
+ it('scopes paid project sales to the staff assignment',async()=>{
+  db.exec("INSERT INTO project_staff(project_id,user_id,role,assigned_at) VALUES ('pa','staff','contributor',1)");
+  for(const [id,project] of [['ra','pa'],['rb','pb']])db.prepare("INSERT INTO financial_revenues(id,project_id,revenue_type,service_name,currency,gross_amount_minor,status,created_at,updated_at) VALUES (?,?,'other','Synthetic sale','RON',1000,'paid',1,1)").run(id,project);
+  actor='staff';
+  const staffSales=await (await app.request('/api/projects',{},{})).json();
+  expect(staffSales.sales.map((row:{id:string})=>row.id)).toEqual(['ra']);
+  actor='owner';
+  const ownerSales=await (await app.request('/api/projects',{},{})).json();
+  expect(ownerSales.sales.map((row:{id:string})=>row.id).sort()).toEqual(['ra','rb']);
  });
  it('does not grant financial access just because email matches or project is visible',async()=>{
   actor='client';db.exec("DELETE FROM client_account_access WHERE user_id='client'; UPDATE clients SET email='client@example.test' WHERE id='a'");
@@ -132,6 +172,18 @@ describe('Cloudflare workspace: actual handlers, all migrations, atomic writes',
   expect((await app.request('/api/projects/pa/media?filename=large.txt',{method:'POST',headers:{'content-type':'text/plain'},body:oversized,duplex:'half'} as RequestInit,{})).status).toBe(413);expect(objects.size).toBe(0);
   db.exec("CREATE TRIGGER fail_media BEFORE INSERT ON project_media BEGIN SELECT RAISE(ABORT,'injected persistence failure'); END");
   expect((await app.request('/api/projects/pa/media?filename=note.txt',{method:'POST',headers:{'content-type':'text/plain'},body:'fixture'},{})).status).toBe(500);expect(objects.size).toBe(0);expect(db.prepare('SELECT COUNT(*) n FROM project_media').get()!.n).toBe(0);
+ });
+ it('rejects active SVG and spoofed file types before writing to R2',async()=>{
+  const upload=(filename:string,type:string,body:string)=>app.request(`/api/projects/pa/media?filename=${encodeURIComponent(filename)}`,{method:'POST',headers:{'content-type':type},body},{});
+  expect((await upload('logo.svg','image/svg+xml','<svg><script>alert(1)</script></svg>')).status).toBe(415);
+  expect((await upload('invoice.pdf','application/pdf','<script>not a PDF</script>')).status).toBe(415);
+  expect((await upload('image.svg','image/png','not an image')).status).toBe(415);
+  expect(objects.size).toBe(0);
+  const pdf=await upload('document.pdf','application/pdf','%PDF-1.7 synthetic');
+  expect(pdf.status).toBe(201);
+  const {url}=await pdf.json();
+  const served=await app.request(url,{},{});
+  expect(served.headers.get('content-disposition')).toContain('attachment;');
  });
  const receipt=(body:unknown,key='receipt-test-key-123')=>app.request('/api/finance/receipts',{method:'POST',headers:{'content-type':'application/json','idempotency-key':key},body:JSON.stringify(body)},{});
  it('records partial receipts separately from invoiced revenue and prevents overpayment',async()=>{

@@ -1,3 +1,5 @@
+import { validateMetadataUrl } from "./metadata";
+
 export const ENGINE_SOURCE_TYPES = ["website", "platform", "marketplace", "repository", "documentation", "api", "mcp"] as const;
 export const ENGINE_ACCESS_MODES = ["public", "account_required", "oauth", "api_key", "mixed"] as const;
 export const ENGINE_PRICING_MODELS = ["free", "freemium", "paid", "mixed", "unknown"] as const;
@@ -15,24 +17,13 @@ const boundedText = (value: unknown, max: number, required = false): string | nu
   return normalized || null;
 };
 
-const isPrivateIpv4 = (host: string) => {
-  const parts = host.split(".").map(Number);
-  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return false;
-  return parts[0] === 10 || parts[0] === 127 || parts[0] === 0 ||
-    (parts[0] === 169 && parts[1] === 254) ||
-    (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
-    (parts[0] === 192 && parts[1] === 168) || parts[0] >= 224;
-};
-
 /** Canonicalises externally supplied URLs and blocks obvious SSRF targets. */
 export function normalizeEngineUrl(input: unknown): string | null {
   if (typeof input !== "string" || input.length > 2_048) return null;
   try {
-    const url = new URL(input.trim());
-    const host = url.hostname.toLowerCase();
-    if (url.protocol !== "https:" || url.username || url.password || (url.port && url.port !== "443")) return null;
-    if (!host.includes(".") || host === "localhost" || host.endsWith(".local") || host.endsWith(".internal") || host.startsWith("[") || isPrivateIpv4(host)) return null;
-    url.hostname = host;
+    const url = validateMetadataUrl(input.trim());
+    if (url.protocol !== "https:") return null;
+    url.hostname = url.hostname.toLowerCase();
     url.hash = "";
     return url.toString();
   } catch {
