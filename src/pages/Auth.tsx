@@ -50,7 +50,9 @@ const Auth = () => {
   const [mfaChallenge, setMfaChallenge] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
   const [rememberIdentifier, setRememberIdentifier] = useState(() => Boolean(localStorage.getItem("avyron:login-identifier")));
-  const [keepSignedIn, setKeepSignedIn] = useState(false);
+  // Staff use the dedicated /staff entry and normally need the session after
+  // closing or restarting their computer. The visible checkbox remains opt-out.
+  const [keepSignedIn, setKeepSignedIn] = useState(() => location.pathname === "/staff");
   const [verificationEmail, setVerificationEmail] = useState("");
   const [turnstileEnabled, setTurnstileEnabled] = useState(false);
   const [portalReady, setPortalReady] = useState(false);
@@ -401,6 +403,7 @@ const Auth = () => {
                   <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={rememberIdentifier} onChange={(event) => setRememberIdentifier(event.target.checked)} /> {copy.remember}</label>
                   <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={keepSignedIn} onChange={(event) => setKeepSignedIn(event.target.checked)} /> {copy.staySignedIn}</label>
                 </div>
+                {staffPage && <p className="text-xs text-muted-foreground">{copy.staffSessionDuration}</p>}
                 <Button type="submit" className="w-full rounded-full h-11" disabled={submitting || (staffPage && Boolean(user && !isStaff))}>
                   {submitting ? "..." : t.auth.login}
                 </Button>

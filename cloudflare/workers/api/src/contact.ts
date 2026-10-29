@@ -13,6 +13,7 @@ import { deliverMail, logDelivery } from "./mailer";
 import { checkRateLimit, verifyTurnstile, clientIp, hashKey } from "./antispam";
 import { syncLeadToTable } from "./leadSink";
 import { leadObjectKey, safeFilename } from "./storage";
+import { inspectContactAttachment } from "./mediaPolicy";
 
 export const contactRouter = new Hono<{ Bindings: Env }>();
 
@@ -20,7 +21,7 @@ const MAX_FILES = 5;
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
 const ALLOWED_CT =
-  /^(image\/(png|jpe?g|webp|gif|heic|avif)|application\/pdf|application\/msword|application\/vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet|presentationml\.presentation)|text\/plain|text\/csv)$/i;
+  /^(image\/(png|jpe?g|webp|gif|heic|avif)|application\/pdf|application\/msword|application\/vnd\.ms-excel|application\/vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet|presentationml\.presentation)|text\/plain|text\/csv)$/i;
 
 const clean = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
@@ -100,7 +101,9 @@ contactRouter.post("/api/contact/demo", async (c) => {
     total += f.size;
     if (total > MAX_TOTAL_BYTES) return c.json({ error: "Dimensiune totală prea mare" }, 400);
 
-    attachments.push({ filename: safeFilename(f.name), contentType: ct, content: new Uint8Array(await f.arrayBuffer()) });
+    const bytes = new Uint8Array(await f.arrayBuffer());
+    if (!inspectContactAttachment(f.name, ct, bytes)) return c.json({ error: `Conținutul fișierului nu corespunde tipului: ${f.name}` }, 415);
+    attachments.push({ filename: safeFilename(f.name), contentType: ct, content: bytes });
   }
 
   const stored: string[] = [];

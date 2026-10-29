@@ -2,10 +2,10 @@ import { Hono, type Context, type Next } from "hono";
 import { COMMERCE_CATALOG, commerceItemBySku, serviceMatchesSubscription } from "../../../../src/data/commerceCatalog";
 import type { AppBindings } from "./types";
 import { now } from "./security";
+import { platformRoleForUser } from "./authorization";
 import { FALLBACK_RON_PER_EUR, getPublicExchangeRate, type ExchangeRateStatus } from "./exchangeRate";
 import { SERVICE_COMMERCIAL_SOURCES } from "../../../../src/data/serviceCommercialSources";
 
-export const PROMOTION_OWNER_EMAIL = "prometheus@avyron.ro";
 const MAX_ORDER_ITEMS = 20;
 export type PromotionDiscountScope = "order" | "annual_subscription";
 
@@ -206,9 +206,7 @@ async function priceRequest(c: Context<AppBindings>, value: unknown) {
 }
 
 async function requirePromotionOwner(c: Context<AppBindings>, next: Next) {
-  const row = await c.env.DB.prepare("SELECT email FROM users WHERE id = ? AND disabled_at IS NULL")
-    .bind(c.get("userId")).first<{ email: string }>();
-  if (row?.email?.trim().toLowerCase() !== PROMOTION_OWNER_EMAIL) {
+  if ((await platformRoleForUser(c.env.DB, c.get("userId"))) !== "platform_owner") {
     return c.json({ error: { code: "promotion_owner_required", message: "Acces rezervat administratorului de promoții" } }, 403);
   }
   await next();

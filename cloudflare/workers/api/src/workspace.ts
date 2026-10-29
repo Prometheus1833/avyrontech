@@ -2,7 +2,7 @@ import { normalizeDomain, lookupDomain } from "./domain";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import type { AppBindings } from "./types";
-import { platformRoleForUser } from "./authorization";
+import { isReservedPlatformEmail, platformRoleForUser } from "./authorization";
 import { privilegedMfaSatisfied } from "./mfaPolicy";
 import { checkRateLimit } from "./antispam";
 import { sha256 } from "./security";
@@ -102,13 +102,19 @@ workspaceRouter.get('/api/workspace/account-access/:userId',async c => {
 workspaceRouter.put('/api/workspace/account-access/:userId',async c => {
   const rate=await checkRateLimit(c.env.DB,[{key:`workspace-access:${c.get('userId')}`,limit:30,windowSec:3600}]);
   if(!rate.ok)return c.json({error:{code:'rate_limited'}},429);
-  if (!(await platformRoleForUser(c.env.DB,c.get('userId')))) return fail(c,'forbidden',403);
+  const actorPlatformRole=await platformRoleForUser(c.env.DB,c.get('userId'));
+  if (!actorPlatformRole) return fail(c,'forbidden',403);
   const parsed=z.object({client_ids:z.array(z.string().min(1).max(100)).max(100),access_level:z.enum(['user','staff','admin']).optional()}).strict().safeParse(await c.req.json().catch(()=>null));
   if (!parsed.success) return fail(c,'invalid_input');
   const user=c.req.param('userId');
-  if (!(await c.env.DB.prepare('SELECT id FROM users WHERE id=? AND disabled_at IS NULL').bind(user).first())) return fail(c,'not_found',404);
+  const target=await c.env.DB.prepare('SELECT id,email,email_verified FROM users WHERE id=? AND disabled_at IS NULL').bind(user).first<{id:string;email:string;email_verified:number}>();
+  if (!target) return fail(c,'not_found',404);
   const accessLevel=parsed.data.access_level;
-  if (accessLevel && accessLevel !== 'admin' && await platformRoleForUser(c.env.DB,user)) return fail(c,'platform_principal_protected',409);
+  if (accessLevel && await isReservedPlatformEmail(c.env.DB,target.email)) {
+    if (accessLevel !== 'admin') return fail(c,'platform_principal_protected',409);
+    if (target.email_verified !== 1) return fail(c,'verification_required',409);
+    if (actorPlatformRole !== 'platform_owner') return fail(c,'platform_owner_required',403);
+  }
   const ids=[...new Set(parsed.data.client_ids)];
   for (const id of ids) if (!(await c.env.DB.prepare("SELECT id FROM clients WHERE id=? AND status!='archived'").bind(id).first())) return fail(c,'invalid_client');
   return mutate(c,parsed.data,{ok:true},[

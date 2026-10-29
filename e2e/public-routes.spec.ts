@@ -604,6 +604,15 @@ test.describe("public SEO routes", () => {
 });
 
 test.describe("forms and authentication", () => {
+  test("staff sign-in offers a persistent session by default and lets the user opt out", async ({ page }) => {
+    await page.goto("/staff");
+    const staySignedIn = page.getByRole("checkbox", { name: "Menține-mă conectat" });
+    await expect(staySignedIn).toBeChecked();
+    await expect(page.getByText("sesiunea staff expiră după cel mult 7 zile", { exact: false })).toBeVisible();
+    await staySignedIn.uncheck();
+    await expect(staySignedIn).not.toBeChecked();
+  });
+
   test("mobile registration keeps the portal anchored and submits the chosen account category in English", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
@@ -942,6 +951,7 @@ test.describe("forms and authentication", () => {
         profile: { id: "promo-owner", display_name: "Prometheus", avatar_url: null, phone: null, address: null, entity_type: "individual", company_name: null, cui: null, social_facebook: null, social_instagram: null, social_tiktok: null, website: null, language: "ro", theme: "system", pseudonym: null, staff_role: null },
         roles: ["admin"],
         superadmin: true,
+        platformRole: "platform_owner",
       }),
     }));
     await page.route("**/api/promotions/admin", (route) => route.fulfill({

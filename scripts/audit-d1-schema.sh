@@ -22,7 +22,8 @@ legacy_ai_timestamps=$(sqlite3 "$audit_database" \
         + (SELECT COUNT(*) FROM ai_learning_queue WHERE created_at < 100000000000);")
 platform_owners=$(sqlite3 "$audit_database" \
   "SELECT COUNT(*) FROM platform_principals
-    WHERE email = 'prometheus@avyron.ro' AND role = 'platform_owner' AND status = 'active';")
+    WHERE email IN ('prometheus@avyron.ro','avyrontech@gmail.com','anisoara@avyron.ro')
+      AND role = 'platform_owner' AND status = 'active';")
 unsafe_social_sources=$(sqlite3 "$audit_database" \
   "SELECT COUNT(*) FROM knowledge_sources
     WHERE kind = 'social' AND status = 'active' AND trust_level <> 'verified';")
@@ -134,7 +135,7 @@ unsafe_social_content_strategy=$(sqlite3 "$audit_database" \
     )=3 THEN 0 ELSE 1 END;")
 
 if [[ "$foreign_key_issues" != "0" || "$integrity" != "ok" || "$legacy_ai_timestamps" != "0" \
-   || "$platform_owners" != "1" || "$unsafe_social_sources" != "0" || "$invalid_lead_state" != "0" \
+   || "$platform_owners" != "3" || "$unsafe_social_sources" != "0" || "$invalid_lead_state" != "0" \
    || "$unsafe_engine_state" != "0" || "$unsafe_audience_state" != "0" \
    || "$unsafe_social_backup_state" != "0" || "$unsafe_admin_only_audience_state" != "0" \
    || "$unsafe_lead_agent_state" != "0" || "$agent_execution_route_count" != "21" \

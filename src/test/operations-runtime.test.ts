@@ -26,9 +26,10 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
  const master='fixture-master-key-with-at-least-32-characters';
  beforeEach(()=>{
   db=new DatabaseSync(':memory:');for(const f of readdirSync('cloudflare/d1/migrations').filter(f=>f.endsWith('.sql')).sort())db.exec(readFileSync(`cloudflare/d1/migrations/${f}`,'utf8'));
-  for(const [id,email] of [['owner','prometheus@avyron.ro'],['admin','avyrontech@gmail.com'],['staff','staff@example.test'],['client','client@example.test']]){
-   db.prepare('INSERT INTO users(id,email,password_hash,created_at,updated_at) VALUES (?,?,?,1,1)').run(id,email,'fixture');db.prepare('INSERT INTO user_roles VALUES (?,?)').run(id,['owner','admin'].includes(id)?'admin':id==='staff'?'staff':'user');
+  for(const [id,email] of [['owner','prometheus@avyron.ro'],['admin','avyrontech@gmail.com'],['delegated','delegated@example.test'],['staff','staff@example.test'],['client','client@example.test']]){
+   db.prepare('INSERT INTO users(id,email,password_hash,email_verified,created_at,updated_at) VALUES (?,?,?,1,1,1)').run(id,email,'fixture');db.prepare('INSERT INTO user_roles VALUES (?,?)').run(id,['owner','admin','delegated'].includes(id)?'admin':id==='staff'?'staff':'user');
   }
+  db.exec("INSERT INTO platform_principals(email,role,status,created_at,updated_at) VALUES ('delegated@example.test','superadmin','active',1,1)");
   db.exec("INSERT INTO clients(id,company_name,email,created_at) VALUES ('a','Client A','a@example.test',1),('b','Client B','b@example.test',1); INSERT INTO projects(id,client_id,name,slug,created_at) VALUES ('pa','a','Project A','project-a',1)");
   kv=new Map();pending=[];actor='owner';
   env={DB:{prepare:(sql:string)=>new Statement(db,sql),batch:async(statements:Statement[])=>{
@@ -41,7 +42,7 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
  const record={kind:'contract',title:'Delivery contract',description:'Internal draft',project_id:'pa',client_id:'a',assignee_id:'owner',status:'pending',starts_at:null,due_at:null,amount_minor:15000,currency:'RON'};
  it('isolates platform operations from staff and clients',async()=>{
   for(const id of ['client','staff']){actor=id;for(const path of ['records','integrations','agents','notifications'])expect((await req(path)).status).toBe(403);expect((await req('records',record)).status).toBe(403);}
-  actor='admin';expect((await req('records')).status).toBe(200);expect((await req('integrations',{provider:'stripe',label:'Billing',environment:'test'})).status).toBe(403);
+  actor='delegated';expect((await req('records')).status).toBe(200);expect((await req('integrations',{provider:'stripe',label:'Billing',environment:'test'})).status).toBe(403);
  });
  it('atomically audits and deduplicates record creation',async()=>{
   const key='same-creation-idempotency';const first=await req('records',record,'POST',key);expect(first.status).toBe(200);expect(await (await req('records',record,'POST',key)).json()).toEqual(await first.json());
@@ -50,7 +51,7 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
  });
  it('requires exact owner approval and invalidates it after content edits',async()=>{
   expect((await req('records',{...record,status:'active'})).status).toBe(409);const {id}=await (await req('records',record)).json();
-  actor='admin';expect((await req(`records/${id}/approve`,{revision:1})).status).toBe(403);actor='owner';
+  actor='delegated';expect((await req(`records/${id}/approve`,{revision:1})).status).toBe(403);actor='owner';
   expect((await req(`records/${id}/approve`,{revision:1})).status).toBe(200);
   expect((await req(`records/${id}`,{...record,revision:2,status:'active'},'PATCH')).status).toBe(200);
   expect((await req(`records/${id}`,{...record,revision:3,status:'active',amount_minor:20000},'PATCH')).status).toBe(409);
@@ -72,7 +73,7 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
  it('runs each scheduled job once across concurrent drains and notifies each principal once',async()=>{
   expect((await req('automations',{name:'Briefing',action:'briefing',interval_minutes:15,enabled:true})).status).toBe(200);
   await Promise.all([runOperationJobs(env),runOperationJobs(env)]);
-  expect(db.prepare('SELECT status,attempts FROM operation_jobs').get()).toMatchObject({status:'succeeded',attempts:1});expect(db.prepare('SELECT COUNT(*) n FROM operation_jobs').get()!.n).toBe(1);expect(db.prepare('SELECT COUNT(*) n FROM operation_notifications').get()!.n).toBe(2);
+  expect(db.prepare('SELECT status,attempts FROM operation_jobs').get()).toMatchObject({status:'succeeded',attempts:1});expect(db.prepare('SELECT COUNT(*) n FROM operation_jobs').get()!.n).toBe(1);expect(db.prepare('SELECT COUNT(*) n FROM operation_notifications').get()!.n).toBe(3);
   const own=await (await req('notifications')).json();actor='admin';const other=await (await req('notifications')).json();expect(own.data[0].id).not.toBe(other.data[0].id);await req(`notifications/${own.data[0].id}/read`,{});expect(db.prepare('SELECT read_at FROM operation_notifications WHERE id=?').get(own.data[0].id)!.read_at).toBeNull();
  });
  it('cancels queued jobs when the automation is paused and rejects stale changes',async()=>{
@@ -151,7 +152,7 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
  });
  it('persists configuration/retrieval evaluations and honors owner-only kill switches',async()=>{
   const result=await req('agents/avy/evaluate',{question:'Cloudflare optimizare',expected_knowledge_id:null});expect(result.status).toBe(200);expect((await result.json()).model_called).toBe(false);expect(db.prepare('SELECT COUNT(*) n FROM ai_evaluations').get()!.n).toBe(1);
-  actor='admin';expect((await req('agents/avy/stop',{enabled:true,reason:'Testing'})).status).toBe(403);actor='owner';expect((await req('agents/avy/stop',{enabled:true,reason:'Testing'})).status).toBe(200);expect(db.prepare("SELECT enabled FROM ai_kill_switches WHERE scope_type='agent' AND scope_id='avy'").get()!.enabled).toBe(1);
+  actor='delegated';expect((await req('agents/avy/stop',{enabled:true,reason:'Testing'})).status).toBe(403);actor='owner';expect((await req('agents/avy/stop',{enabled:true,reason:'Testing'})).status).toBe(200);expect(db.prepare("SELECT enabled FROM ai_kill_switches WHERE scope_type='agent' AND scope_id='avy'").get()!.enabled).toBe(1);
  });
  const reserve=(key:string,units=60,cost=0)=>reserveAiCost({db:env.DB,agentSlug:'avy',vendorId:'fin_vendor_cloudflare_ai',operation:'public_chat_generation',requestedUnits:units,estimatedCostMinor:cost,idempotencyKey:key});
  const budget=()=>db.exec("UPDATE financial_provider_quotas SET quota_total=100,quota_used=0,status='active'; UPDATE financial_agent_provider_policies SET status='active',daily_budget_minor=10,monthly_budget_minor=100,max_request_cost_minor=10 WHERE agent_slug='avy'");

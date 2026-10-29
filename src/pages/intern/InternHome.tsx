@@ -14,6 +14,7 @@ import { Plus, ArrowUpRight, ExternalLink, FolderKanban, CheckCircle2, Receipt, 
 import { toast } from "sonner";
 import ContactRail from "@/components/intern/ContactRail";
 import PageBackLink from "@/components/site/PageBackLink";
+import { normalizeExternalLink } from "@/shared/externalUrl";
 
 type Row = {
   id: string; slug: string; name: string; kind: ProjectKind;
@@ -256,8 +257,8 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
                         <h3 className="font-medium truncate group-hover:text-primary">{p.name}</h3>
                         <Badge variant="secondary" className={B.cls}>{B.label}</Badge>
                       </div>
-                      {p.url && (
-                        <a href={p.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
+                      {p.url && normalizeExternalLink(p.url) && (
+                        <a href={normalizeExternalLink(p.url)!} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
                           {p.url.replace(/^https?:\/\//, "")} <ExternalLink className="size-3" />
                         </a>
                       )}

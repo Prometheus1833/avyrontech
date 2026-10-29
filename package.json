@@ -9,7 +9,7 @@
   },
   "scripts": {
     "postinstall": "npm run install:api",
-    "install:api": "npm ci --prefix cloudflare/workers/api --no-audit --no-fund",
+    "install:api": "npm ci --prefix cloudflare/workers/api --legacy-peer-deps --no-audit --no-fund",
     "dev": "vite",
     "build": "npm run og:produse && vite build && node scripts/prerender.mjs && node scripts/produse-registry.mjs && node scripts/generate-sitemap.mjs && node scripts/generate-llms.mjs && npm run seo:audit",
     "build:pages": "npm run build && node scripts/build-pages-worker.mjs",
@@ -44,9 +44,9 @@
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
     "@lovable.dev/cloud-auth-js": "^1.1.2",
-    "@modelcontextprotocol/client": "2.0.0",
-    "@modelcontextprotocol/sdk": "1.30.0",
-    "@modelcontextprotocol/server": "2.0.0",
+    "@modelcontextprotocol/client": "2.4.0",
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "@modelcontextprotocol/server": "2.4.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-aspect-ratio": "^1.1.7",
@@ -111,10 +111,10 @@
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.185.1",
     "vaul": "^0.9.9",
-    "zod": "^3.25.76"
+    "zod": "4.6.7"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "1.54.6",
+    "@cloudflare/vite-plugin": "1.66.0",
     "@cloudflare/workers-types": "5.20260908.1",
     "@eslint/js": "^9.32.0",
     "@playwright/test": "^1.62.1",
@@ -135,16 +135,17 @@
     "jsdom": "^20.0.3",
     "lovable-tagger": "^1.1.13",
     "postcss": "^8.5.6",
-    "sharp": "0.35.4",
+    "sharp": "0.35.5",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
     "vite": "^6.4.2",
     "vite-plugin-glsl": "^1.6.1",
-    "vitest": "5.0.0",
-    "wrangler": "4.130.0"
+    "vitest": "5.0.5",
+    "wrangler": "4.155.0"
   },
   "overrides": {
-    "sharp": "0.35.4"
+    "sharp": "0.35.5",
+    "postcss-selector-parser": "6.1.5"
   }
 }

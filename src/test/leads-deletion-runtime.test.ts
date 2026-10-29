@@ -29,7 +29,7 @@ describe("lead deletion audit", () => {
       db.exec(readFileSync(`cloudflare/d1/migrations/${file}`, "utf8"));
     }
     for (const [id, email, role] of [["owner", "prometheus@avyron.ro", "admin"], ["staff", "staff@example.test", "staff"]]) {
-      db.prepare("INSERT INTO users(id,email,password_hash,created_at,updated_at) VALUES (?,?,?,1,1)").run(id, email, "fixture");
+      db.prepare("INSERT INTO users(id,email,password_hash,email_verified,created_at,updated_at) VALUES (?,?,?,1,1,1)").run(id, email, "fixture");
       db.prepare("INSERT INTO user_roles(user_id,role) VALUES (?,?)").run(id, role);
     }
     db.prepare(`INSERT INTO leads(id,source,name,business,email,status,lifecycle_stage,delivery_status,created_at,updated_at)
@@ -65,5 +65,18 @@ describe("lead deletion audit", () => {
   it("keeps the deletion journal restricted to platform principals", async () => {
     actor = "staff";
     expect((await request("/api/leads/deletions")).status).toBe(403);
+  });
+
+  it("does not expose or mutate unassigned legacy leads through a staff role", async () => {
+    actor = "staff";
+    expect((await (await request("/api/leads")).json() as { data: unknown[] }).data).toEqual([]);
+    expect((await request("/api/leads/lead-1")).status).toBe(403);
+    const update = () => request("/api/leads/lead-1", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ urgent: true }) });
+    expect((await update()).status).toBe(403);
+    expect(db.prepare("SELECT urgent FROM leads WHERE id='lead-1'").get()!.urgent).toBe(0);
+    db.prepare("INSERT INTO lead_assignments(lead_id,user_id,assignment_role,assigned_by,assigned_at) VALUES ('lead-1','staff','owner','owner',1)").run();
+    expect((await request("/api/leads/lead-1")).status).toBe(200);
+    expect((await update()).status).toBe(200);
+    expect(db.prepare("SELECT urgent FROM leads WHERE id='lead-1'").get()!.urgent).toBe(1);
   });
 });

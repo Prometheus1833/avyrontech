@@ -156,7 +156,7 @@ describe("AVYRON OS dashboard", () => {
     expect(aiProjects).toContain('aiProjectsRouter.use("/api/ai-projects/*"');
     expect(finance).not.toContain('financeRouter.use("*"');
     expect(finance).toContain('financeRouter.use("/api/finance/*"');
-    expect(seedScript).toContain("curl -sS --fail-with-body");
+    expect(seedScript).toContain("Legacy superadmin seeding is disabled");
   });
 
   it("publică AVYRON OS pe domeniul dedicat app.avyron.ro", () => {

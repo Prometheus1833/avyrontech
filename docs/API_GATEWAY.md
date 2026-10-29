@@ -44,7 +44,7 @@ Limitele se verifică înaintea unei extinderi în documentația oficială:
 | Public | `/public/domain-check`, `/public/exchange-rate`, `/contact/*`, `/blog/*`, media publică | KV/D1/R2 numai prin Worker | cache la edge; rate limit + Turnstile unde există mutații |
 | Cont | `/auth/*`, `/profile/*` | D1 + R2 avatar | JWT 15 minute legat de sesiune D1 + refresh cookie HttpOnly + MFA privilegiat |
 | Comerț | `/commerce/quote`, `/commerce/orders` | catalog server-side + D1 | cont autentificat; prețurile browserului sunt ignorate |
-| Promoții | `/promotions/admin/*` | D1 + audit log | exclusiv `prometheus@avyron.ro`, verificat server-side |
+| Promoții | `/promotions/admin/*` | D1 + audit log | `platform_owner` activ și verificat, rezolvat server-side |
 | Platformă | `/clients`, `/projects`, `/proposals`, `/links`, `/media` | D1 + R2 | JWT + rol + verificări de ownership |
 | Editorial | `/blog/staff/*` | D1 + R2 | staff/admin; mutații auditate |
 | Config | `/content/*` | KV | staff read, admin write |
@@ -75,8 +75,8 @@ limitele globale/per cont sunt reverificate în tranzacția care creează comand
 
 Codurile inițiale sunt `AVY10` (10%), `AVYONG` (10%), `SOCIALAVY` (5%),
 `PROMETHAVY` (100%) și `EXCEPTIEAVY` (50%). Istoricul comenzilor și al
-utilizărilor nu este șters când un cod este oprit. Numai contul exact
-`prometheus@avyron.ro` poate vedea, crea sau activa/dezactiva promoții din
+utilizărilor nu este șters când un cod este oprit. Numai conturile cu rol
+`platform_owner` activ pot vedea, crea sau activa/dezactiva promoții din
 Dashboard; rolul generic de administrator nu acordă acest drept.
 
 ### Conversie EUR/RON

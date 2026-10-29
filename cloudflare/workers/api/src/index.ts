@@ -22,6 +22,7 @@ import type { AppBindings, Role } from "./types";
 import { hashPassword, now, randomHex, sha256, signJwt, verifyJwt, verifyPassword } from "./security";
 import { deliverMail, logDelivery } from "./mailer";
 import { checkRateLimit, clientIp, hashKey, verifyTurnstile } from "./antispam";
+import { readJsonBodyUpTo } from "./requestBody";
 import { MAX_CONTENT_CONFIG_BYTES, avatarObjectKey, contentConfigKey, jsonByteLength } from "./storage";
 import { handleMappedHostname } from "./sites.config";
 import { apiDiscovery, API_VERSION, isApiHostname, isApiSurfaceRequest, normalizeVersionedApiRequest, openApiDocument } from "./apiGateway";
@@ -30,13 +31,15 @@ import { domainRouter } from "./domain";
 import { promotionsRouter } from "./promotions";
 import { recordPageEvent, funnelSummary, leadPipeline } from "./analytics";
 import { EXCHANGE_RATE_REFRESH_CRON, getPublicExchangeRate, refreshExchangeRate } from "./exchangeRate";
-import { platformRoleForUser } from "./authorization";
+import { isReservedPlatformEmail, platformRoleForUser } from "./authorization";
 import { base32Encode, decryptTotpSecret, encryptTotpSecret, generateTotpSecret, totpUri, verifyTotp } from "./totp";
 import { engineRouter, runDueEngineDiscovery } from "./engine";
 import { newsletterRouter } from "./newsletter";
-import { forcedPasswordAllowedPath, mfaAuthEnabled, normalizeLoginPhone, normalizeUsername, turnstileAuthEnabled, uniqueStaffPhoneMatch } from "./authPolicy";
+import { forcedPasswordAllowedPath, mfaAuthEnabled, normalizeLoginPhone, normalizeUsername, sessionLifetimeSeconds, turnstileAuthEnabled, uniqueStaffPhoneMatch } from "./authPolicy";
 import { parseReviewSubmission, WEBSITE_REVIEW_SURFACE } from "./reviewsPolicy";
 import { cleanupAvyronEditorialContent } from "./aiContentRetention";
+import { enforceApiBodyLimit } from "./requestBodyLimit";
+import { allowedOrigin } from "./originPolicy";
 
 export { AvyronAgentRuntime } from "./agents/AvyronAgentRuntime";
 export { AvyronMaintenanceWorkflow } from "./workflows/AvyronMaintenanceWorkflow";
@@ -53,18 +56,7 @@ app.use("*", async (c, next) => {
   await next();
 });
 
-const allowedOrigin = (env: AppBindings["Bindings"], origin: string | undefined): string => {
-  const configured = (env.ALLOWED_ORIGINS || "").split(",").map((value) => value.trim()).filter(Boolean);
-  if (!origin) return configured[0] || "";
-  if (configured.includes(origin)) return origin;
-  try {
-    const hostname = new URL(origin).hostname;
-    if (hostname === "avyrontech.pages.dev" || hostname.endsWith(".avyrontech.pages.dev")) return origin;
-  } catch {
-    // Invalid Origin is denied below.
-  }
-  return "";
-};
+app.use("/api/*", enforceApiBodyLimit);
 
 const appendVary = (current: string | null, value: string) => {
   const values = (current || "").split(",").map((item) => item.trim()).filter(Boolean);
@@ -571,9 +563,9 @@ app.post("/api/auth/login", async (c) => {
       await recordSecurityEvent(c, row.id, "auth.mfa_challenge_created", "allowed");
       return c.json({ mfa_required: true, challenge_token: challenge, expires_in: 300 });
     }
-    return createSession(c, row.id, resolvedRoles, false, { mfa_enrollment_required: true }, remember);
+    return createSession(c, row.id, resolvedRoles, false, { mfa_enrollment_required: true }, remember, privileged);
   }
-  return createSession(c, row.id, resolvedRoles, false, { must_change_password: row.must_change_password === 1 }, remember);
+  return createSession(c, row.id, resolvedRoles, false, { must_change_password: row.must_change_password === 1 }, remember, privileged);
 });
 
 async function createSession(
@@ -583,11 +575,12 @@ async function createSession(
   mfaVerified: boolean,
   extra: Record<string, unknown> = {},
   remember = false,
+  privileged = false,
 ) {
   const sid = randomHex(32);
   const sessionId = await sha256(sid);
   const t = now();
-  const lifetime = remember ? 30 * 24 * 60 * 60 : 12 * 60 * 60;
+  const lifetime = sessionLifetimeSeconds(roles, remember, privileged);
   const exp = t + lifetime * 1000;
   const userAgent = c.req.header("user-agent") || null;
   const deviceName = userAgent ? userAgent.slice(0, 120) : "Dispozitiv necunoscut";
@@ -675,7 +668,7 @@ app.post("/api/auth/mfa/challenge", async (c) => {
   await c.env.DB.batch(writes);
   await recordSecurityEvent(c, challenge.user_id, recoveryHash ? "auth.mfa_recovery_used" : "auth.mfa_challenge", "allowed", recoveryHash ? "warning" : "info");
   const roles = await rolesFor(c.env.DB, challenge.user_id);
-  return createSession(c, challenge.user_id, roles.length ? roles : ["user"], true, {}, challenge.remember_session === 1);
+  return createSession(c, challenge.user_id, roles.length ? roles : ["user"], true, {}, challenge.remember_session === 1, true);
 });
 
 app.get("/api/auth/mfa", requireAuth, async (c) => {
@@ -857,8 +850,9 @@ app.get("/api/auth/me", requireAuth, async (c) => {
       WHERE user_id=? AND organization_id IS NULL AND revoked_at IS NULL
         AND (expires_at IS NULL OR expires_at>?) ORDER BY capability`,
   ).bind(c.get("userId"), now()).all<{ capability: string }>();
+  const platformRole = await platformRoleForUser(c.env.DB, c.get("userId"));
   return c.json({
-    user: u, profile, roles: c.get("roles"), superadmin: await isSuperAdmin(c),
+    user: u, profile, roles: c.get("roles"), superadmin: platformRole !== null, platformRole,
     capabilities: capabilityRows.map((row) => row.capability),
   });
 });
@@ -989,6 +983,9 @@ app.post("/api/auth/change-email/request", requireAuth, async (c) => {
     return c.json({ error: { code: "invalid_password", message: "Parola curentă nu este corectă" } }, 403);
   }
   if (newEmail === user.email.toLowerCase()) return c.json({ error: { code: "email_unchanged" } }, 400);
+  if (await isReservedPlatformEmail(c.env.DB, user.email) || await isReservedPlatformEmail(c.env.DB, newEmail)) {
+    return c.json({ error: { code: "platform_identity_protected" } }, 403);
+  }
   if (await c.env.DB.prepare("SELECT 1 FROM users WHERE email = ?").bind(newEmail).first()) {
     return c.json({ error: { code: "email_taken" } }, 409);
   }
@@ -1040,6 +1037,9 @@ app.post("/api/auth/change-email/confirm", requireAuth, async (c) => {
     token_hash: string; user_id: string; old_email: string; new_email: string; expires_at: number;
   }>();
   if (!request || request.expires_at < now()) return c.json({ error: { code: "invalid_or_expired_token" } }, 400);
+  if (await isReservedPlatformEmail(c.env.DB, request.old_email) || await isReservedPlatformEmail(c.env.DB, request.new_email)) {
+    return c.json({ error: { code: "platform_identity_protected" } }, 403);
+  }
   if (await c.env.DB.prepare("SELECT 1 FROM users WHERE email = ? AND id <> ?").bind(request.new_email, request.user_id).first()) {
     return c.json({ error: { code: "email_taken" } }, 409);
   }
@@ -1047,8 +1047,6 @@ app.post("/api/auth/change-email/confirm", requireAuth, async (c) => {
   await c.env.DB.batch([
     c.env.DB.prepare("UPDATE users SET email = ?, updated_at = ? WHERE id = ? AND email = ?")
       .bind(request.new_email, timestamp, request.user_id, request.old_email),
-    c.env.DB.prepare("UPDATE platform_principals SET email = ?, updated_at = ? WHERE email = ?")
-      .bind(request.new_email, timestamp, request.old_email),
     c.env.DB.prepare("UPDATE email_change_requests SET used_at = ? WHERE token_hash = ? AND used_at IS NULL")
       .bind(timestamp, request.token_hash),
     c.env.DB.prepare("UPDATE sessions SET revoked_at = ?, revoked_reason = 'email_change' WHERE user_id = ? AND revoked_at IS NULL")
@@ -1205,6 +1203,9 @@ app.post("/api/admin/users", requireAuth, requireSuperAdmin, async (c) => {
   }
   if (accessLevel !== "user" && accessLevel !== "staff" && accessLevel !== "admin") {
     return c.json({ error: { code: "invalid_access_level", message: "Nivelul de acces nu este valid" } }, 400);
+  }
+  if (await isReservedPlatformEmail(c.env.DB, email)) {
+    return c.json({ error: { code: "platform_identity_requires_verification" } }, 403);
   }
   const existing = await c.env.DB.prepare(
     "SELECT id FROM users WHERE lower(email)=? OR lower(username)=? LIMIT 1",
@@ -1454,11 +1455,19 @@ app.patch("/api/admin/users/:userId/roles", requireAuth, requireSuperAdmin, asyn
   }
 
   const account = await c.env.DB.prepare(
-    "SELECT id,disabled_at FROM users WHERE id=?",
-  ).bind(targetUserId).first<{ id: string; disabled_at: number | null }>();
+    "SELECT id,email,email_verified,disabled_at FROM users WHERE id=?",
+  ).bind(targetUserId).first<{ id: string; email: string; email_verified: number; disabled_at: number | null }>();
   if (!account) return c.json({ error: { code: "user_not_found", message: "Contul nu există" } }, 404);
   if (account.disabled_at !== null) {
     return c.json({ error: { code: "account_disabled", message: "Contul este dezactivat" } }, 409);
+  }
+
+  if (await isReservedPlatformEmail(c.env.DB, account.email)) {
+    if (accessLevel !== "admin") return c.json({ error: { code: "platform_principal_protected" } }, 409);
+    if (account.email_verified !== 1) return c.json({ error: { code: "verification_required" } }, 409);
+    if ((await platformRoleForUser(c.env.DB, actorUserId)) !== "platform_owner") {
+      return c.json({ error: { code: "platform_owner_required" } }, 403);
+    }
   }
 
   const protectedPlatformRole = await platformRoleForUser(c.env.DB, targetUserId);
@@ -1512,10 +1521,12 @@ app.post("/api/clients", requireAuth, requireRole("staff", "admin"), async (c) =
 
 // Măsurare first-party a pâlniei (public, fără date personale).
 app.post("/api/analytics/event", async (c) => {
-  const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+  const parsed = await readJsonBodyUpTo(c.req.raw, 2 * 1024);
+  if (!parsed.ok) return c.json({ ok: false, error: parsed.error }, parsed.error === "payload_too_large" ? 413 : 400);
+  const body = parsed.value && typeof parsed.value === "object" ? parsed.value as Record<string, unknown> : {};
   const ipKey = await hashKey(clientIp(c.req.raw));
   const rate = await checkRateLimit(c.env.DB, [{ key: `evt:${ipKey}:h`, limit: 240, windowSec: 3600 }]);
-  if (!rate.ok) return c.json({ ok: false, error: "rate_limited" }, 429);
+  if (!rate.ok) return c.json({ ok: false, error: "rate_limited" }, 429, { "Retry-After": String(rate.retryAfter || 60) });
   const result = await recordPageEvent(c.env.DB, {
     page: body.page,
     event: body.event,
