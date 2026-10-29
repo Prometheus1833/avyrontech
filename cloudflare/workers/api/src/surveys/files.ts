@@ -16,5 +16,14 @@ export function inspectUpload(filename:string,mime:string,bytes:Uint8Array){
  if(ext==='svg'&&(!/<svg\b/i.test(text)||/<!DOCTYPE|<!ENTITY|<\s*(script|foreignObject|iframe|object|embed|image|use|style|animate|set)\b|\bon[a-z]+\s*=|href\s*=|url\s*\(|javascript:|data:/i.test(text)))throw new Error('unsafe_svg');
  return {filename:Array.from(filename,c=>c.charCodeAt(0)<32||'/\\"<>'.includes(c)?'_':c).join('').slice(0,160)||`file.${ext}`,mime:expected};
 }
-export type MalwareScanHook=(file:Pick<FileRow,'id'|'mime_type'|'size'>,stream:ReadableStream)=>Promise<'clean'|'rejected'|'unavailable'>;
+export type MalwareVerdict='clean'|'rejected'|'unavailable';
+export async function scanUpload(scanner:{fetch:(request:Request)=>Promise<Response>}|undefined,bytes:Uint8Array,mime:string):Promise<MalwareVerdict>{
+ if(!scanner)return 'unavailable';
+ try{
+  const response=await scanner.fetch(new Request('https://malware-scanner.internal/scan',{method:'POST',headers:{'Content-Type':mime,'X-Scan-Protocol':'avyron-upload-v1'},body:new Uint8Array(bytes),signal:AbortSignal.timeout(10000)}));
+  if(!response.ok||Number(response.headers.get('content-length')||0)>1024)return 'unavailable';
+  const verdict=await response.json() as {verdict?:unknown};
+  return verdict?.verdict==='clean'||verdict?.verdict==='rejected'?verdict.verdict:'unavailable';
+ }catch{return 'unavailable';}
+}
 export function fileResponse(file:FileRow,body:ReadableStream){return new Response(body,{headers:{'Content-Type':file.mime_type,'Content-Disposition':`attachment; filename="${file.original_filename.replace(/[^\x20-\x7E]/g,'_')}"; filename*=UTF-8''${encodeURIComponent(file.original_filename)}`,'X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; sandbox",'Cache-Control':'private, no-store','X-Robots-Tag':'noindex, nofollow','Referrer-Policy':'no-referrer'}});}

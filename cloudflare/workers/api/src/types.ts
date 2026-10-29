@@ -4,6 +4,8 @@ export type Role = "user" | "staff" | "admin";
 // Wrangler source of truth in worker-configuration.d.ts. Only truly optional
 // integrations are extended here.
 type OptionalIntegrations = {
+  /** Internal scanner service binding. Public survey uploads fail closed when absent. */
+  MALWARE_SCANNER?: { fetch: (request: Request) => Promise<Response> };
   SMTP_PASS?: string;
   SEED_TOKEN?: string;
   AIRTABLE_API_KEY?: string;

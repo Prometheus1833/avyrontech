@@ -7,7 +7,7 @@ import { checkRateLimit, clientIp, hashKey, verifyTurnstile } from '../antispam'
 import { sha256 } from '../security';
 import { surveyPath, evaluate, answerError, deterministicBrief, uploadTypes, type Answers } from '../../../../../src/shared/surveys/engine';
 import { createSurvey, error, event, getTemplate, getResponse, publicAccess, editable, id, readJson, type Ctx, type FileRow } from './data';
-import { inspectUpload, MAX_FILE, MAX_FILES, MAX_TOTAL, fileResponse } from './files';
+import { inspectUpload, scanUpload, MAX_FILE, MAX_FILES, MAX_TOTAL, fileResponse } from './files';
 import { processSurveyEvents, suggestSurveyText } from './tasks';
 export const surveyPublic = new Hono<AppBindings>();
 const root='/api/surveys';
@@ -102,6 +102,9 @@ surveyPublic.post(`${root}/files`,async c=>{
  let filename:string;try{filename=decodeURIComponent(c.req.header('x-file-name')||'');}catch{return error(c,'invalid_filename');}
  const bytes=new Uint8Array(await c.req.arrayBuffer());let inspected;try{inspected=inspectUpload(filename,c.req.header('content-type')||'',bytes);}catch(e){return error(c,e instanceof Error?e.message:'invalid_file');}
  if(['image','logo'].includes(q.type)&&!inspected.mime.startsWith('image/')&&inspected.mime!=='application/pdf')return error(c,'image_required');
+ const verdict=await scanUpload(c.env.MALWARE_SCANNER,bytes,inspected.mime);
+ if(verdict==='rejected')return error(c,'file_rejected',400);
+ if(verdict!=='clean')return error(c,'file_scan_unavailable',503);
  const fileId=id(),key=`surveys/${s.id}/${fileId}`,timestamp=Date.now();
  const reserved=await c.env.DB.prepare(`INSERT INTO survey_files(id,survey_id,question_id,original_filename,storage_key,mime_type,size,category,status,created_at) SELECT ?,?,?,?,?,?,?,?,'reserved',? WHERE (SELECT COUNT(*) FROM survey_files WHERE survey_id=?)<? AND COALESCE((SELECT SUM(size) FROM survey_files WHERE survey_id=?),0)+?<=? AND EXISTS(SELECT 1 FROM surveys WHERE id=? AND status IN('ready','sent','opened','in_progress','needs_information'))`).bind(fileId,s.id,question,inspected.filename,key,inspected.mime,bytes.byteLength,q.type,timestamp,s.id,MAX_FILES,s.id,bytes.byteLength,MAX_TOTAL,s.id).run();if(!reserved.meta.changes)return error(c,'file_quota_exceeded',413);
  try{await c.env.FILES.put(key,bytes,{httpMetadata:{contentType:inspected.mime}});await c.env.DB.prepare("UPDATE survey_files SET status='ready' WHERE id=? AND EXISTS(SELECT 1 FROM surveys WHERE id=? AND status IN('ready','sent','opened','in_progress','needs_information'))").bind(fileId,s.id).run();}catch{await c.env.FILES.delete(key).catch(()=>{});await c.env.DB.prepare('DELETE FROM survey_files WHERE id=?').bind(fileId).run();return error(c,'upload_failed',503);}
