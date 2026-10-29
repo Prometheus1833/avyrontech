@@ -27,3 +27,5 @@ Production Worker version metadata showed `MFA_AUTH_ENABLED=false`, `ADMIN_MFA_P
 3. Route sanitized Worker exceptions, auth lockouts, webhook failures, queue backlogs and AI spend alerts to named responders. Set incident severity, acknowledgement time and fallback contact. Rehearse token/session revocation and secret rotation with secret names only; never copy values into logs.
 
 Release approval should identify the precise PR commits, `main` merge, any Worker/Pages deployment, D1 migration, and each GitHub/Cloudflare setting separately. After authorized rollout, verify live deployment IDs, effective flags/rules, benign auth and webhook health, latency and error rates, and the prepared rollback path. A green PR, preview or repository config is not evidence of a production control.
+
+The file-scanning rollout is specified in [MALWARE_QUARANTINE_DESIGN_2026-10-29.md](./MALWARE_QUARANTINE_DESIGN_2026-10-29.md). PR #69 remains separate until a real scanner, quarantine, legacy-file handling, and negative access tests are ready.
