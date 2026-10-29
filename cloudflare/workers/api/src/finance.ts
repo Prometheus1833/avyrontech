@@ -7,6 +7,7 @@ import { now, sha256 } from "./security";
 import { maskPaymentMethod, projectionFromRecurring, validateExpenseWrite } from "./financePolicy";
 import { reserveAiCost } from "./aiCostGuard";
 import { bucharestMonthStart, financialTotals, RON_AMOUNT_SQL } from "./financialTotals";
+import { scanUpload } from "./surveys/files";
 
 const id = (prefix: string) => `${prefix}_${crypto.randomUUID().replace(/-/g, "")}`;
 type Permission = "finance.read" | "finance.write" | "finance.accounts.read" | "finance.documents.read" | "finance.settings" | "finance.budget.approve" | "finance.integrations.manage" | "finance.audit.read";
@@ -342,16 +343,21 @@ financeRouter.get("/api/finance/audit", async (c) => { if(!(await allowed(c,"fin
 
 financeRouter.post("/api/finance/documents", async (c) => {
   if (!(await allowed(c,"finance.write"))) return deny(c);
+  if (!c.env.MALWARE_SCANNER) return c.json({error:{code:"file_scan_unavailable"}},503);
   const form=await c.req.formData().catch(()=>null),file=form?.get("file"),resourceType=String(form?.get("resourceType")||""),resourceId=String(form?.get("resourceId")||"");
   if(!(file instanceof File)||!['expense','revenue'].includes(resourceType)||!resourceId||file.size<1||file.size>10_000_000)return c.json({error:{code:"invalid_document"}},400);
   const bytes=new Uint8Array(await file.arrayBuffer()),pdf=bytes[0]===0x25&&bytes[1]===0x50&&bytes[2]===0x44&&bytes[3]===0x46,png=bytes[0]===0x89&&bytes[1]===0x50&&bytes[2]===0x4e&&bytes[3]===0x47,jpeg=bytes[0]===0xff&&bytes[1]===0xd8&&bytes[2]===0xff;
   if(!pdf&&!png&&!jpeg)return c.json({error:{code:"unsupported_document"}},415);
+  const detectedMime=pdf?"application/pdf":png?"image/png":"image/jpeg";
   const exists=await c.env.DB.prepare(`SELECT id FROM ${resourceType==='expense'?'financial_expenses':'financial_revenues'} WHERE id=? AND archived_at IS NULL`).bind(resourceId).first();
   if(!exists)return c.json({error:{code:"not_found"}},404);
+  const verdict=await scanUpload(c.env.MALWARE_SCANNER,bytes,detectedMime);
+  if(verdict==='rejected')return c.json({error:{code:"file_rejected"}},400);
+  if(verdict!=='clean')return c.json({error:{code:"file_scan_unavailable"}},503);
   const digest=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",bytes)),(byte)=>byte.toString(16).padStart(2,"0")).join(""),documentId=id("fdoc"),safeName=file.name.replace(/[^A-Za-z0-9._-]/g,"_").slice(0,120)||"document",objectKey=`finance/${resourceType}/${resourceId}/${documentId}-${safeName}`,timestamp=now(),documentType=String(form?.get("documentType")||"supporting_document");
   if(!["invoice","contract","receipt","credit_note","supporting_document"].includes(documentType))return c.json({error:{code:"invalid_document_type"}},400);
-  await c.env.FILES.put(objectKey,bytes,{httpMetadata:{contentType:pdf?"application/pdf":png?"image/png":"image/jpeg"},customMetadata:{schema:"finance-document:v1"}});
-  try{await c.env.DB.batch([c.env.DB.prepare(`INSERT INTO financial_documents (id,expense_id,revenue_id,document_type,r2_object_key,file_name,content_type,size_bytes,sha256,uploaded_by,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).bind(documentId,resourceType==='expense'?resourceId:null,resourceType==='revenue'?resourceId:null,documentType,objectKey,safeName,pdf?"application/pdf":png?"image/png":"image/jpeg",bytes.byteLength,digest,c.get("userId"),timestamp),c.env.DB.prepare(`INSERT INTO financial_audit_events (id,actor_user_id,action,resource_type,resource_id,after_json,source,request_id,created_at) VALUES (?,?,?,?,?,?,'manual',?,?)`).bind(id("faud"),c.get("userId"),"finance.document.upload","document",documentId,JSON.stringify({resourceType,resourceId,documentType,sizeBytes:bytes.byteLength,sha256:digest}),c.get("requestId")||null,timestamp)]);}catch(error){await c.env.FILES.delete(objectKey);throw error;}
+  await c.env.FILES.put(objectKey,bytes,{httpMetadata:{contentType:detectedMime},customMetadata:{schema:"finance-document:v1"}});
+  try{await c.env.DB.batch([c.env.DB.prepare(`INSERT INTO financial_documents (id,expense_id,revenue_id,document_type,r2_object_key,file_name,content_type,size_bytes,sha256,uploaded_by,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).bind(documentId,resourceType==='expense'?resourceId:null,resourceType==='revenue'?resourceId:null,documentType,objectKey,safeName,detectedMime,bytes.byteLength,digest,c.get("userId"),timestamp),c.env.DB.prepare(`INSERT INTO financial_audit_events (id,actor_user_id,action,resource_type,resource_id,after_json,source,request_id,created_at) VALUES (?,?,?,?,?,?,'manual',?,?)`).bind(id("faud"),c.get("userId"),"finance.document.upload","document",documentId,JSON.stringify({resourceType,resourceId,documentType,sizeBytes:bytes.byteLength,sha256:digest}),c.get("requestId")||null,timestamp)]);}catch(error){await c.env.FILES.delete(objectKey);throw error;}
   return c.json({id:documentId},201);
 });
 

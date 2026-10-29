@@ -4,6 +4,7 @@ import { hasCapability, platformRoleForUser } from "./authorization";
 import { now } from "./security";
 import { reserveAiCost } from "./aiCostGuard";
 import { runAiCore } from "./aiCore";
+import { scanUpload } from "./surveys/files";
 import {
   ENGINE_CAPABILITY_CATEGORIES, ENGINE_SOURCE_TYPES, extractPageEvidence,
   inspectEngineDocument, normalizeEngineUrl, parseScoutSuggestions,
@@ -254,12 +255,16 @@ engineRouter.post("/api/engine/sources/:sourceId/documents", async (c) => {
   if (!(await allowed(c, "engine.documents"))) return deny(c);
   const source = await c.env.DB.prepare("SELECT id FROM engine_sources WHERE id=? AND lifecycle_status<>'archived'").bind(c.req.param("sourceId")).first();
   if (!source) return c.json({ error: { code: "not_found" } }, 404);
+  if (!c.env.MALWARE_SCANNER) return c.json({ error: { code: "file_scan_unavailable" } }, 503);
   const form = await c.req.formData().catch(() => null), file = form?.get("file");
   if (!(file instanceof File) || file.size < 1 || file.size > 10_000_000) return c.json({ error: { code: "invalid_document" } }, 400);
   const bytes = new Uint8Array(await file.arrayBuffer()), contentType = inspectEngineDocument(bytes, file.type);
   if (!contentType) return c.json({ error: { code: "unsupported_document" } }, 415);
   const documentType = String(form?.get("documentType") || "documentation");
   if (!["documentation","guide","license","terms","security_review","skill","plugin_manifest","api_spec","reference","other"].includes(documentType)) return c.json({ error: { code: "invalid_document_type" } }, 400);
+  const verdict = await scanUpload(c.env.MALWARE_SCANNER, bytes, contentType);
+  if (verdict === "rejected") return c.json({ error: { code: "file_rejected" } }, 400);
+  if (verdict !== "clean") return c.json({ error: { code: "file_scan_unavailable" } }, 503);
   const safeName = file.name.replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 120) || "document";
   const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), (byte) => byte.toString(16).padStart(2, "0")).join(""), documentId = id("engdoc"), timestamp = now();
   const objectKey = `engine/${c.req.param("sourceId")}/${documentId}-${safeName}`;

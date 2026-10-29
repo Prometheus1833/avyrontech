@@ -1,6 +1,8 @@
 import { privilegedMfaSatisfied } from "./mfaPolicy";
 import { serveSurveyHost } from "../../../../src/worker/surveyHost";
 import { surveyPublic } from "./surveys/public";
+import { scanUpload } from "./surveys/files";
+import { matchesRasterSignature } from "./imageSignature";
 // Avyron API — Cloudflare Workers + D1 + KV + R2
 // Auth: PBKDF2-SHA256 password hashing + signed JWT (HS256) + rolling sessions.
 //
@@ -1106,12 +1108,17 @@ app.put("/api/profile", requireAuth, async (c) => {
 });
 
 app.post("/api/profile/avatar", requireAuth, async (c) => {
-  const type = c.req.header("content-type") || "";
+  const type = (c.req.header("content-type") || "").toLowerCase();
   const length = Number(c.req.header("content-length") || 0);
   if (!/^image\/(png|jpe?g|webp|avif)$/i.test(type)) return c.json({ error: { code: "unsupported_type" } }, 415);
+  if (!c.env.MALWARE_SCANNER) return c.json({ error: { code: "file_scan_unavailable" } }, 503);
   if (length > 5 * 1024 * 1024) return c.json({ error: { code: "too_large" } }, 413);
   const bytes = await c.req.arrayBuffer();
   if (!bytes.byteLength || bytes.byteLength > 5 * 1024 * 1024) return c.json({ error: { code: "too_large" } }, 413);
+  if (!matchesRasterSignature(new Uint8Array(bytes), type)) return c.json({ error: { code: "invalid_image" } }, 415);
+  const verdict = await scanUpload(c.env.MALWARE_SCANNER, new Uint8Array(bytes), type);
+  if (verdict === "rejected") return c.json({ error: { code: "file_rejected" } }, 400);
+  if (verdict !== "clean") return c.json({ error: { code: "file_scan_unavailable" } }, 503);
   const userId = c.get("userId");
   const key = avatarObjectKey(userId);
   await c.env.MEDIA.put(key, bytes, {

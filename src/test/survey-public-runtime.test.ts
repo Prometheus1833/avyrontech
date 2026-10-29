@@ -122,4 +122,42 @@ describe("Smart Surveys public runtime", () => {
     expect(db.prepare("SELECT COUNT(*) AS total FROM outbox_events WHERE event_type='survey.completed'").get()!.total).toBe(1);
     expect(db.prepare("SELECT COUNT(*) AS total FROM outbox_events WHERE event_type='survey.ai_requested'").get()!.total).toBe(1);
   });
+
+  it("stores public attachments only after a clean scanner verdict", async () => {
+    const started = await request("/api/surveys/start", {
+      template: "website",
+      requestKey: crypto.randomUUID(),
+      turnstileToken: "fixture",
+    });
+    expect(started.status).toBe(201);
+    const { token } = await started.json() as { token: string };
+    const put = vi.fn(async () => {});
+    env.FILES = { put, delete: async () => {}, get: async () => null } as unknown as R2Bucket;
+    const upload = () => app.request("/api/surveys/files?question=materials", {
+      method: "POST",
+      headers: {
+        "content-type": "image/png",
+        "x-file-name": "synthetic.png",
+        "x-survey-token": token,
+      },
+      body: new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
+    }, env, { waitUntil: () => {}, passThroughOnException: () => {}, props: {} });
+    const count = () => (db.prepare("SELECT COUNT(*) AS total FROM survey_files").get() as { total: number }).total;
+
+    expect((await upload()).status).toBe(503);
+    expect(count()).toBe(0);
+    expect(put).not.toHaveBeenCalled();
+
+    env.MALWARE_SCANNER = { fetch: async () => Response.json({ verdict: "rejected" }) };
+    expect((await upload()).status).toBe(400);
+    expect(count()).toBe(0);
+    expect(put).not.toHaveBeenCalled();
+
+    env.MALWARE_SCANNER = { fetch: async () => Response.json({ verdict: "clean" }) };
+    const accepted = await upload();
+    expect(accepted.status).toBe(201);
+    expect(count()).toBe(1);
+    expect((db.prepare("SELECT status FROM survey_files").get() as { status: string }).status).toBe("ready");
+    expect(put).toHaveBeenCalledOnce();
+  });
 });
