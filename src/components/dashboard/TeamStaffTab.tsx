@@ -72,7 +72,7 @@ export default function TeamStaffTab() {
     setOperatorSyncing(true);
     try {
       await internApi.synchronizeCodexOperator(operatorPassword || undefined);
-      toast.success("Contul Codex a fost sincronizat cu Leads și AI AVY Prod, cu privilegii minime.");
+      toast.success("Accesul contului Codex la Leads și AI AVY Prod a fost sincronizat.");
       setOperatorPassword("");
       setOperatorOpen(false);
       await Promise.all([loadAccounts(), loadCodexOperator()]);
@@ -162,7 +162,7 @@ export default function TeamStaffTab() {
           { label: "Conturi", value: accounts.length, icon: Users },
           { label: "Administratori", value: accounts.filter((item) => (item.roles || "").split(",").includes("admin")).length, icon: LockKeyhole },
           { label: "Politică acces", value: "Privilegii minime", icon: KeyRound },
-          { label: "Codex · 2 agenți", value: codexOperator?.synchronized ? "Sincronizat" : codexOperator?.exists ? "Necesită sincronizare" : "Neconfigurat", icon: Bot },
+          { label: "Acces operator Codex", value: codexOperator?.synchronized ? "Sincronizat" : codexOperator?.exists ? "Necesită sincronizare" : "Neconfigurat", icon: Bot },
         ].map((item) => <div key={item.label} className="rounded-2xl border border-white/[0.08] bg-[#10162a]/90 p-4"><div className="flex items-start justify-between"><div><p className="text-xs text-slate-500">{item.label}</p><p className="mt-2 font-display text-xl font-semibold text-white">{item.value}</p></div><span className="grid size-9 place-items-center rounded-xl bg-violet-400/10 text-violet-300"><item.icon className="size-4" /></span></div></div>)}
       </div>
 
@@ -248,6 +248,7 @@ export default function TeamStaffTab() {
           <div className="rounded-xl border border-cyan-300/10 bg-cyan-400/5 p-3 text-xs leading-relaxed text-cyan-100/80">
             Rutina de cercetare, clasificare și redactare este delegată AI Core. Codex rămâne pentru verificare, aprobare și publicarea manuală exactă.
           </div>
+          <p className="text-xs leading-relaxed text-slate-400">Acest indicator verifică accesul în AVYRON OS, nu instalarea skillurilor Codex sau execuția unui agent. Sarcinile Codex locale necesită un dispozitiv pornit; automatizările Cloudflare rulează separat, dacă sunt configurate și active.</p>
           <Label>Parolă temporară {codexOperator?.exists ? "(opțional, pentru rotire)" : "(obligatorie)"}<PasswordInput autoComplete="new-password" value={operatorPassword} onChange={(event) => setOperatorPassword(event.target.value)} placeholder="Minimum 10 caractere, literă mare și cifră" className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm" /></Label>
           <DialogFooter><Button type="button" variant="ghost" onClick={() => setOperatorOpen(false)} disabled={operatorSyncing}>Anulează</Button><Button type="button" onClick={() => void synchronizeCodexOperator()} disabled={operatorSyncing || (!codexOperator?.exists && operatorPassword.length < 10)}>{operatorSyncing ? "Se sincronizează…" : codexOperator?.exists ? "Sincronizează accesul" : "Creează și sincronizează"}</Button></DialogFooter>
         </DialogContent>

@@ -34,7 +34,7 @@ import { platformRoleForUser } from "./authorization";
 import { base32Encode, decryptTotpSecret, encryptTotpSecret, generateTotpSecret, totpUri, verifyTotp } from "./totp";
 import { engineRouter, runDueEngineDiscovery } from "./engine";
 import { newsletterRouter } from "./newsletter";
-import { forcedPasswordAllowedPath, mfaAuthEnabled, normalizeLoginPhone, normalizeUsername, turnstileAuthEnabled, uniqueStaffPhoneMatch } from "./authPolicy";
+import { forcedPasswordAllowedPath, mfaAuthEnabled, normalizeLoginPhone, normalizeUsername, sessionLifetimeSeconds, turnstileAuthEnabled, uniqueStaffPhoneMatch } from "./authPolicy";
 import { parseReviewSubmission, WEBSITE_REVIEW_SURFACE } from "./reviewsPolicy";
 import { cleanupAvyronEditorialContent } from "./aiContentRetention";
 
@@ -571,9 +571,9 @@ app.post("/api/auth/login", async (c) => {
       await recordSecurityEvent(c, row.id, "auth.mfa_challenge_created", "allowed");
       return c.json({ mfa_required: true, challenge_token: challenge, expires_in: 300 });
     }
-    return createSession(c, row.id, resolvedRoles, false, { mfa_enrollment_required: true }, remember);
+    return createSession(c, row.id, resolvedRoles, false, { mfa_enrollment_required: true }, remember, privileged);
   }
-  return createSession(c, row.id, resolvedRoles, false, { must_change_password: row.must_change_password === 1 }, remember);
+  return createSession(c, row.id, resolvedRoles, false, { must_change_password: row.must_change_password === 1 }, remember, privileged);
 });
 
 async function createSession(
@@ -583,11 +583,12 @@ async function createSession(
   mfaVerified: boolean,
   extra: Record<string, unknown> = {},
   remember = false,
+  privileged = false,
 ) {
   const sid = randomHex(32);
   const sessionId = await sha256(sid);
   const t = now();
-  const lifetime = remember ? 30 * 24 * 60 * 60 : 12 * 60 * 60;
+  const lifetime = sessionLifetimeSeconds(roles, remember, privileged);
   const exp = t + lifetime * 1000;
   const userAgent = c.req.header("user-agent") || null;
   const deviceName = userAgent ? userAgent.slice(0, 120) : "Dispozitiv necunoscut";
@@ -675,7 +676,7 @@ app.post("/api/auth/mfa/challenge", async (c) => {
   await c.env.DB.batch(writes);
   await recordSecurityEvent(c, challenge.user_id, recoveryHash ? "auth.mfa_recovery_used" : "auth.mfa_challenge", "allowed", recoveryHash ? "warning" : "info");
   const roles = await rolesFor(c.env.DB, challenge.user_id);
-  return createSession(c, challenge.user_id, roles.length ? roles : ["user"], true, {}, challenge.remember_session === 1);
+  return createSession(c, challenge.user_id, roles.length ? roles : ["user"], true, {}, challenge.remember_session === 1, true);
 });
 
 app.get("/api/auth/mfa", requireAuth, async (c) => {

@@ -8,6 +8,14 @@ export const featureEnabled = (value: string | undefined, fallback = false) => {
 export const mfaAuthEnabled = (env: Env) => featureEnabled(env.MFA_AUTH_ENABLED, false);
 export const turnstileAuthEnabled = (env: Env) => featureEnabled(env.TURNSTILE_AUTH_ENABLED, false);
 
+/** Persistent cookies survive browser restarts; privileged sessions expire sooner. */
+export const sessionLifetimeSeconds = (roles: readonly string[], remember: boolean, privileged = false): number => {
+  if (!remember) return 12 * 60 * 60;
+  return privileged || roles.includes("admin") || roles.includes("staff")
+    ? 7 * 24 * 60 * 60
+    : 30 * 24 * 60 * 60;
+};
+
 export const forcedPasswordAllowedPath = (path: string) => [
   "/api/auth/me",
   "/api/auth/change-password",

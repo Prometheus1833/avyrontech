@@ -604,6 +604,15 @@ test.describe("public SEO routes", () => {
 });
 
 test.describe("forms and authentication", () => {
+  test("staff sign-in offers a persistent session by default and lets the user opt out", async ({ page }) => {
+    await page.goto("/staff");
+    const staySignedIn = page.getByRole("checkbox", { name: "Menține-mă conectat" });
+    await expect(staySignedIn).toBeChecked();
+    await expect(page.getByText("sesiunea staff expiră după cel mult 7 zile", { exact: false })).toBeVisible();
+    await staySignedIn.uncheck();
+    await expect(staySignedIn).not.toBeChecked();
+  });
+
   test("mobile registration keeps the portal anchored and submits the chosen account category in English", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
