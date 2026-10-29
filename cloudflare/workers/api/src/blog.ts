@@ -1,5 +1,7 @@
 import { Hono } from "hono";
 import type { AppBindings } from "./types";
+import { scanUpload } from "./surveys/files";
+import { matchesRasterSignature } from "./imageSignature";
 
 type BlogStatus = "draft" | "published" | "archived";
 type BlogLanguage = "ro" | "en";
@@ -86,16 +88,6 @@ const validUrl = (value: string) => {
   if (!value) return true;
   if (value.startsWith("/api/blog/media/") || value.startsWith("/news/") || value.startsWith("/og/")) return true;
   try { return new URL(value).protocol === "https:"; } catch { return false; }
-};
-
-const matchesImageSignature = (bytes: ArrayBuffer, type: string) => {
-  const data = new Uint8Array(bytes, 0, Math.min(bytes.byteLength, 32));
-  if (type === "image/png") return data.length >= 8 && [0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a].every((value, index) => data[index] === value);
-  if (/^image\/jpe?g$/.test(type)) return data.length >= 3 && data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff;
-  const ascii = String.fromCharCode(...data);
-  if (type === "image/webp") return ascii.startsWith("RIFF") && ascii.slice(8, 12) === "WEBP";
-  if (type === "image/avif") return ascii.slice(4, 8) === "ftyp" && /(?:avif|avis)/.test(ascii.slice(8));
-  return false;
 };
 
 const parseTags = (value: unknown): string[] => {
@@ -323,11 +315,15 @@ blogRouter.post("/api/blog/staff/media", async (c) => {
   const type = (c.req.header("content-type") || "").toLowerCase();
   const extension = type === "image/png" ? "png" : type === "image/webp" ? "webp" : type === "image/avif" ? "avif" : /^image\/jpe?g$/.test(type) ? "jpg" : "";
   if (!extension) return c.json({ error: { code: "unsupported_type" } }, 415);
+  if (!c.env.MALWARE_SCANNER) return c.json({ error: { code: "file_scan_unavailable" } }, 503);
   const advertised = Number(c.req.header("content-length") || 0);
   if (advertised > 5 * 1024 * 1024) return c.json({ error: { code: "too_large" } }, 413);
   const bytes = await c.req.arrayBuffer();
   if (!bytes.byteLength || bytes.byteLength > 5 * 1024 * 1024) return c.json({ error: { code: "too_large" } }, 413);
-  if (!matchesImageSignature(bytes, type)) return c.json({ error: { code: "invalid_image" } }, 415);
+  if (!matchesRasterSignature(new Uint8Array(bytes), type)) return c.json({ error: { code: "invalid_image" } }, 415);
+  const verdict = await scanUpload(c.env.MALWARE_SCANNER, new Uint8Array(bytes), type);
+  if (verdict === "rejected") return c.json({ error: { code: "file_rejected" } }, 400);
+  if (verdict !== "clean") return c.json({ error: { code: "file_scan_unavailable" } }, 503);
   const filename = `${crypto.randomUUID()}.${extension}`;
   await c.env.MEDIA.put(`blog/covers/${filename}`, bytes, {
     httpMetadata: { contentType: type, cacheControl: "public, max-age=31536000, immutable" },

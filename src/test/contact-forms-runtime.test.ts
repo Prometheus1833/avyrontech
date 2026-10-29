@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 import { readdirSync, readFileSync } from "node:fs";
 import type { DatabaseSync as SqliteDatabase, SQLInputValue } from "node:sqlite";
 import { Hono } from "hono";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { contactRouter } from "../../cloudflare/workers/api/src/contact";
 import type { AppBindings, Env } from "../../cloudflare/workers/api/src/types";
 
@@ -58,6 +58,47 @@ describe("public free-example forms", () => {
     expect(body).toMatchObject({ saved: true, delivered: false });
     expect(db.prepare("SELECT source,email,delivery_status FROM leads WHERE id=?").get(body.leadId))
       .toMatchObject({ source: "website:cta-demo", email: "ana@example.ro", delivery_status: "failed" });
+  });
+
+  it("never stores or forwards public attachments without a clean scan verdict", async () => {
+    const put = vi.fn(async () => undefined);
+    env.FILES = { put, delete: async () => undefined } as unknown as R2Bucket;
+    let attempt = 0;
+    const submit = (twoFiles = false) => {
+      attempt += 1;
+      const form = new FormData();
+      form.set("name", "Client Test");
+      form.set("business", "Atelier Test");
+      form.set("phone", "0712345678");
+      form.set("email", `client${attempt}@example.test`);
+      form.set("files", new Blob([new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])], { type: "image/png" }), "synthetic.png");
+      if (twoFiles) form.append("files", new Blob([new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])], { type: "image/png" }), "second.png");
+      return app.request("https://avyron.test/api/contact/demo", { method: "POST", headers: { "CF-Connecting-IP": `203.0.113.${attempt}` }, body: form }, env, executionCtx);
+    };
+    const leadCount = () => (db.prepare("SELECT COUNT(*) AS total FROM leads").get() as { total: number }).total;
+
+    expect((await submit()).status).toBe(503);
+    expect(leadCount()).toBe(0);
+    expect(put).not.toHaveBeenCalled();
+
+    env.MALWARE_SCANNER = { fetch: async () => Response.json({ verdict: "rejected" }) };
+    expect((await submit()).status).toBe(400);
+    expect(leadCount()).toBe(0);
+    expect(put).not.toHaveBeenCalled();
+
+    let scanCalls = 0;
+    env.MALWARE_SCANNER = { fetch: async () => Response.json({ verdict: ++scanCalls === 2 ? "rejected" : "clean" }) };
+    expect((await submit(true)).status).toBe(400);
+    expect(scanCalls).toBe(2);
+    expect(leadCount()).toBe(0);
+    expect(put).not.toHaveBeenCalled();
+
+    env.MALWARE_SCANNER = { fetch: async () => Response.json({ verdict: "clean" }) };
+    const accepted = await submit();
+    expect(accepted.status).toBe(503); // No mail destination in this isolated fixture.
+    expect((await accepted.json() as { saved: boolean }).saved).toBe(true);
+    expect(leadCount()).toBe(1);
+    expect(put).toHaveBeenCalledOnce();
   });
 
   it("persists compact example requests in the staff inbox even when email is unavailable", async () => {

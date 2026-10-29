@@ -13,6 +13,7 @@ import { Hono } from "hono";
 import { canAccessProject } from "./projects";
 import type { Env } from "./types";
 import { inlineContentDisposition, projectObjectKey, safeFilename } from "./storage";
+import { scanUpload } from "./surveys/files";
 
 type Role = "user" | "staff" | "admin";
 type Vars = { userId: string; roles: Role[] };
@@ -39,6 +40,7 @@ mediaRouter.post("/api/projects/:id/media", async (c) => {
     const ok = await c.env.DB.prepare("SELECT 1 FROM project_proposals WHERE id = ? AND project_id = ?").bind(proposalId, projectId).first();
     if (!ok) return c.json({ error: { code: "invalid_proposal" } }, 400);
   }
+  if (!c.env.MALWARE_SCANNER) return c.json({ error: { code: "file_scan_unavailable" } }, 503);
 
   const lenHeader = parseInt(c.req.header("content-length") || "0");
   if (lenHeader && lenHeader > MAX_BYTES) return c.json({ error: { code: "too_large", message: "Max 15MB" } }, 413);
@@ -60,6 +62,9 @@ mediaRouter.post("/api/projects/:id/media", async (c) => {
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
   if (!bytes.byteLength) return c.json({ error: { code: "no_body" } }, 400);
   if (bytes.byteLength > MAX_BYTES) return c.json({ error: { code: "too_large", message: "Max 15MB" } }, 413);
+  const verdict = await scanUpload(c.env.MALWARE_SCANNER, bytes, contentType);
+  if (verdict === "rejected") return c.json({ error: { code: "file_rejected" } }, 400);
+  if (verdict !== "clean") return c.json({ error: { code: "file_scan_unavailable" } }, 503);
 
   const mediaId = uuid();
   const r2Key = projectObjectKey(projectId, mediaId, filename);

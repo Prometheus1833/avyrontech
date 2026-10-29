@@ -38,7 +38,7 @@ describe('Cloudflare workspace: actual handlers, all migrations, atomic writes',
    db.exec('BEGIN');try{const results=[];for(const statement of statements)results.push({meta:db.prepare(statement.sql).run(...statement.values)});db.exec('COMMIT');return results;}catch(e){db.exec('ROLLBACK');throw e;}
   }};
   app=new Hono();app.use('*',async(c,next)=>{
-   Object.assign(c.env,{DB:binding,ADMIN_MFA_POLICY:policy,FILES:{
+   Object.assign(c.env,{DB:binding,ADMIN_MFA_POLICY:policy,MALWARE_SCANNER:{fetch:async()=>Response.json({verdict:'clean'})},FILES:{
      put:async(key:string,bytes:Uint8Array)=>{objects.set(key,bytes);return {size:bytes.byteLength};},
      delete:async(key:string)=>{objects.delete(key);},
      get:async(key:string)=>{storageReads++;const bytes=objects.get(key);return bytes?{body:bytes,size:bytes.byteLength,httpEtag:'"fixture-etag"',writeHttpMetadata:()=>{}}:null;},

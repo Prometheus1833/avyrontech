@@ -13,6 +13,7 @@ import { deliverMail, logDelivery } from "./mailer";
 import { checkRateLimit, verifyTurnstile, clientIp, hashKey } from "./antispam";
 import { syncLeadToTable } from "./leadSink";
 import { leadObjectKey, safeFilename } from "./storage";
+import { scanUpload } from "./surveys/files";
 
 export const contactRouter = new Hono<{ Bindings: Env }>();
 
@@ -88,6 +89,7 @@ contactRouter.post("/api/contact/demo", async (c) => {
 
   const files = form.getAll("files").filter((f): f is File => f instanceof File && f.size > 0);
   if (files.length > MAX_FILES) return c.json({ error: `Maxim ${MAX_FILES} fișiere` }, 400);
+  if (files.length && !c.env.MALWARE_SCANNER) return c.json({ error: "file_scan_unavailable" }, 503);
 
   const leadId = crypto.randomUUID();
   const attachments: Attachment[] = [];
@@ -100,8 +102,12 @@ contactRouter.post("/api/contact/demo", async (c) => {
     total += f.size;
     if (total > MAX_TOTAL_BYTES) return c.json({ error: "Dimensiune totală prea mare" }, 400);
 
-    attachments.push({ filename: safeFilename(f.name), contentType: ct, content: new Uint8Array(await f.arrayBuffer()) });
+    const bytes = new Uint8Array(await f.arrayBuffer());
+    attachments.push({ filename: safeFilename(f.name), contentType: ct, content: bytes });
   }
+  const verdicts = await Promise.all(attachments.map((attachment) => scanUpload(c.env.MALWARE_SCANNER, attachment.content, attachment.contentType)));
+  if (verdicts.includes("rejected")) return c.json({ error: "file_rejected" }, 400);
+  if (verdicts.some((verdict) => verdict !== "clean")) return c.json({ error: "file_scan_unavailable" }, 503);
 
   const stored: string[] = [];
   for (const attachment of attachments) {
