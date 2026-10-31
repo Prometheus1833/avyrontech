@@ -44,7 +44,9 @@ for (const node of sitemap.querySelectorAll("url")) {
   const canonical = page.querySelector('link[rel="canonical"]')?.getAttribute("href");
   const robots = page.querySelector('meta[name="robots"]')?.getAttribute("content") || "";
   if (canonical !== loc || /\bnoindex\b/i.test(robots)) throw new Error(`llms.txt: ${path} is not canonical and indexable`);
-  const title = clean(page.querySelector("h1")?.textContent || page.title || "");
+  // Prerendered H1s often split a headline across spans without text nodes
+  // between them; the document title is the stable, readable page label.
+  const title = clean(page.title || "");
   const description = clean(page.querySelector('meta[name="description"]')?.getAttribute("content") || "");
   if (!title || !description) throw new Error(`llms.txt: missing title or description at ${path}`);
   sections.get(sectionFor(path)).push(`- [${title}](${loc}): ${description}`);

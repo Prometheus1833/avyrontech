@@ -39,6 +39,7 @@ const MaintenancePartnerships = lazyWithRetry(() => import("./pages/MaintenanceP
 const BlogProfessional = lazyWithRetry(() => import("./pages/services/BlogProfessional.tsx"));
 const LogoDinamic3D = lazyWithRetry(() => import("./pages/services/LogoDinamic3DPage.tsx"));
 const LogoStudio = lazyWithRetry(() => import("./pages/services/LogoStudioPage.tsx"));
+const GrowthService = lazyWithRetry(() => import("./pages/services/GrowthServicePage.tsx"));
 const AiOsConsole = lazyWithRetry(() => import("./pages/intern/AiOs.tsx"));
 const ProduseApp = lazyWithRetry(() => import("./features/produse/ProduseApp.tsx"));
 const InternationalProductsHome = lazyWithRetry(() => import("./features/produse/pages/InternationalHome.tsx"));
@@ -215,6 +216,8 @@ const App = () => (
                 <Route path="/servicii/automatizari-si-ai" element={<ServiceDetail />} />
                 <Route path="/servicii/audit-website" element={<Navigate to="/?request=audit#cta" replace />} />
                 <Route path="/servicii/qa-testing-web-mobile" element={<QaTesting />} />
+                <Route path="/servicii/seo-ai-visibility-performance" element={<GrowthService kind="seo-ai" />} />
+                <Route path="/servicii/digital-marketing-ads" element={<GrowthService kind="marketing-ads" />} />
                 <Route path="/en/services/professional-presentation-website" element={<ServiceDetail />} />
                 <Route path="/en/services/social-media-identity" element={<ServiceDetail />} />
                 <Route path="/en/services/online-store" element={<ServiceDetail />} />
@@ -223,6 +226,8 @@ const App = () => (
                 <Route path="/en/services/automation-and-ai" element={<ServiceDetail />} />
                 <Route path="/en/services/website-audit" element={<Navigate to="/en?request=audit#cta" replace />} />
                 <Route path="/en/services/web-mobile-qa-testing" element={<QaTesting />} />
+                <Route path="/en/services/seo-ai-visibility-performance" element={<GrowthService kind="seo-ai" />} />
+                <Route path="/en/services/digital-marketing-ads" element={<GrowthService kind="marketing-ads" />} />
                 {/* Client-side safety net for bookmarks; production serves the
                     same mappings as HTTP 301 redirects at the edge. */}
                 <Route path="/costuri" element={<Navigate to="/servicii" replace />} />

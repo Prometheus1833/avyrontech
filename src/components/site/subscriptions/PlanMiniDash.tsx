@@ -79,7 +79,7 @@ const PlanMiniDash = ({ plan, category, caretX, onClose, onSelect }: Props) => {
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <div className="font-display text-2xl font-extrabold leading-none">{primary(plan.priceCents)}</div>
+            <div className="font-display text-2xl font-extrabold leading-none">{plan.startingAt ? (ro ? "de la " : "from ") : ""}{primary(plan.priceCents)}</div>
             <div className="mt-1 text-[11px] text-foreground/70">
               {converted ? `${ro ? "facturat" : "billed"} ` : "≈ "}{secondary(plan.priceCents)} · {ro ? "pe lună" : "per month"}
             </div>
@@ -141,26 +141,29 @@ const PlanMiniDash = ({ plan, category, caretX, onClose, onSelect }: Props) => {
             <p className="mt-1.5 text-sm text-foreground/80">{text.bestFor}</p>
           </div>
 
-          <div className={`mt-4 rounded-2xl border ${t.border} bg-foreground/[0.035] p-3.5`}>
+          {!category.inquiryOnly && <div className={`mt-4 rounded-2xl border ${t.border} bg-foreground/[0.035] p-3.5`}>
             <p className={`font-mono text-[10px] uppercase tracking-[0.2em] ${t.text}`}>{ro ? "Pachet anual avantajos" : "Better-value annual package"}</p>
             <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
               <div><p className="font-display text-xl font-extrabold">{primary(annualTotal)} / {ro ? "an" : "year"}</p><p className="text-xs text-foreground/70">{ro ? `Reducere ${ANNUAL_DISCOUNT_PERCENT}% față de 12 plăți lunare.` : `${ANNUAL_DISCOUNT_PERCENT}% less than 12 monthly payments.`}</p></div>
               {added ? <Link to="/profil?tab=cart" className={`text-sm font-semibold ${t.text}`}>{ro ? "Vezi coșul →" : "View cart →"}</Link> : <button type="button" onClick={addAnnual} className={`rounded-full border ${t.border} px-4 py-2 text-sm font-bold ${t.text} transition hover:bg-foreground/[0.06]`}>{ro ? "Adaugă anual în coș" : "Add annual plan to cart"}</button>}
             </div>
-          </div>
+          </div>}
 
           <div className="mt-4 flex flex-wrap items-center gap-2.5">
-            <button
+            {category.inquiryOnly ? <a
+              href={`mailto:contact@avyron.ro?subject=${encodeURIComponent(`${category.copy.ro.title} — ${plan.name}`)}`}
+              className={`group inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${t.from} ${t.to} px-5 py-2.5 text-sm font-bold text-white`}
+            >{ro ? "Cere o propunere" : "Request a proposal"}<ArrowRight className="size-4" aria-hidden /></a> : <button
               type="button"
               onClick={() => onSelect(plan, category)}
               className={`group inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${t.from} ${t.to} px-5 py-2.5 text-sm font-bold text-white shadow-lg transition-all hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/40`}
             >
               {ro ? `Alege ${plan.name}` : `Choose ${plan.name}`}
               <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden />
-            </button>
+            </button>}
             <span className="inline-flex items-center gap-1.5 text-[11px] text-foreground/70">
               <Sparkles className="size-3.5" aria-hidden />
-              {ro ? "Fără contract pe termen lung" : "No long-term contract"}
+              {category.inquiryOnly ? (ro ? "Ofertă adaptată proiectului" : "Proposal tailored to the project") : (ro ? "Fără contract pe termen lung" : "No long-term contract")}
             </span>
           </div>
         </div>

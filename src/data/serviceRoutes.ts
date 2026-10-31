@@ -42,6 +42,14 @@ export const SERVICE_ROUTES = {
     ro: "/servicii/qa-testing-web-mobile",
     en: "/en/services/web-mobile-qa-testing",
   },
+  seoAi: {
+    ro: "/servicii/seo-ai-visibility-performance",
+    en: "/en/services/seo-ai-visibility-performance",
+  },
+  digitalMarketing: {
+    ro: "/servicii/digital-marketing-ads",
+    en: "/en/services/digital-marketing-ads",
+  },
   audit: {
     ro: "/servicii/audit-website",
     en: "/en/services/website-audit",

@@ -151,7 +151,7 @@ export function priceOrderItems(
     else subtotalCents += lineTotalCents;
     items.push({
       sku,
-      type: commercial?.entity_type ?? catalogItem!.type,
+      type: catalogItem?.type === "subscription" ? "subscription" : commercial?.entity_type ?? catalogItem!.type,
       name: commercial?.display_name ?? catalogItem!.name,
       description,
       quantity,

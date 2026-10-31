@@ -48,6 +48,14 @@ describe("server-authoritative commerce pricing", () => {
     expect(priceOrderItems([{ sku: "sub-site-plus", quantity: 1, period: "annual", serviceKey: "unknown" }])).toBeNull();
   });
 
+  it("keeps growth subscriptions as subscriptions while tax review blocks direct payment", () => {
+    const commercial = { sku: "sub-seo-essential", entity_key: "sub-seo-essential", entity_type: "service" as const, display_name: "SEO Essential", accounting_code: "AVY-SEO-ESS", base_price_minor: 69_000, currency: "RON", price_model: "fixed", tax_status: "unverified", payment_status: "needs_configuration", active: 1 };
+    const quote = priceOrderItems([{ sku: commercial.sku, quantity: 1, period: "monthly", serviceKey: "seo-ai" }], 5, [commercial]);
+    expect(quote).toMatchObject({ subtotalCents: 0, requiresManualQuote: true });
+    expect(quote?.items[0]).toMatchObject({ type: "subscription", accountingCode: "AVY-SEO-ESS", referenceUnitPriceCents: 69_000, lineTotalCents: null });
+    expect(priceOrderItems([{ sku: commercial.sku, quantity: 1, period: "monthly", serviceKey: "marketing-ads" }], 5, [commercial])).toBeNull();
+  });
+
   it("rejects unknown products and unsafe quantities", () => {
     expect(priceOrderItems([{ sku: "unknown", quantity: 1 }])).toBeNull();
     expect(priceOrderItems([{ sku: "website-starter", quantity: 99 }])).toBeNull();

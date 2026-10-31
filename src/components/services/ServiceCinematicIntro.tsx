@@ -144,6 +144,18 @@ function buildGeometry(motif: ServiceIntroMotif): Geometry {
     addSphere(geometry, 102);
     addRing(geometry, 136, 0.55, 0, 34);
     addRing(geometry, 126, -0.48, 0, 32);
+  } else if (motif === "discovery") {
+    addRing(geometry, 112, 0.54, 0, 34);
+    addRing(geometry, 78, -0.36, 0, 30);
+    addBox(geometry, 0, 0, 0, 174, 100, 18);
+    addPath(geometry, [{ x: -65, y: -23, z: 11 }, { x: 66, y: -23, z: 11 }]);
+    addPath(geometry, [{ x: -65, y: 4, z: 11 }, { x: 42, y: 4, z: 11 }]);
+    addPath(geometry, [{ x: -65, y: 30, z: 11 }, { x: 17, y: 30, z: 11 }]);
+  } else if (motif === "campaign") {
+    addBox(geometry, 0, 0, 0, 194, 126, 30);
+    addPath(geometry, [{ x: -75, y: 25, z: 17 }, { x: -30, y: -4, z: 17 }, { x: 17, y: 10, z: 17 }, { x: 74, y: -37, z: 17 }]);
+    [-75, -30, 17, 74].forEach((x, index) => addCircle(geometry, x, [25, -4, 10, -37][index], 18, 5, 12));
+    addRing(geometry, 132, 0.18, 0, 32);
   } else {
     addBox(geometry, 0, 0, 0, 190, 128, 56);
     for (let x = -63; x <= 63; x += 42) addPath(geometry, [{ x, y: -64, z: 29 }, { x, y: 64, z: 29 }]);

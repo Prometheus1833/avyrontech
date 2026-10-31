@@ -275,7 +275,6 @@ export function subscriptionCatalogLd({
       ...(item.category ? { category: item.category } : {}),
       price: item.price,
       priceCurrency: currency,
-      availability: "https://schema.org/InStock",
       url: `${BASE_URL}${path}`,
       priceSpecification: {
         "@type": "UnitPriceSpecification",

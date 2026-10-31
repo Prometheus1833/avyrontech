@@ -69,17 +69,24 @@ describe("administrarea produselor și parteneriatelor", () => {
       expect(commercial).toMatchObject({ display_name: service.copy.ro.name, category: service.category, base_price_minor: service.priceRon > 0 ? service.priceRon * 100 : null });
     }
     // Auditul este o ofertă la cerere, iar blogul are o pagină separată.
-    expect(SERVICE_COMMERCIAL_SOURCES).toHaveLength(SERVICES.length + 2);
+    expect(SERVICE_COMMERCIAL_SOURCES).toHaveLength(SERVICES.length + 15);
   });
 
   it("înregistrează lipsurile idempotent, păstrează codurile editate și separă referințele test/live", async () => {
     const first = await send("/api/finance/commercial-codes/sync", {});
     expect(first.status).toBe(200);
     const firstBody = await first.json() as { created: number; total: number; requiresSku: number };
-    expect(firstBody.created).toBe(firstBody.total);
+    expect(firstBody.created).toBe(firstBody.total - 13);
     expect(firstBody.requiresSku).toBe(0);
     expect(db.prepare("SELECT sku,tax_status,accounting_code,price_model FROM commercial_catalog_codes WHERE entity_type='service' AND entity_key='premium-website'").get())
       .toMatchObject({ sku: "svc-premium-website", tax_status: "unverified", accounting_code: null, price_model: "starting_at" });
+    expect(db.prepare("SELECT sku,tax_status,accounting_code,base_price_minor FROM commercial_catalog_codes WHERE entity_type='service' AND entity_key='sub-seo-essential'").get())
+      .toMatchObject({ sku: "sub-seo-essential", tax_status: "unverified", accounting_code: "AVY-SEO-ESS", base_price_minor: 69000 });
+    for (const source of SERVICE_COMMERCIAL_SOURCES) {
+      if (!("accounting_code" in source)) continue;
+      expect(db.prepare("SELECT sku,accounting_code,base_price_minor,price_model,billing_cycle,tax_status FROM commercial_catalog_codes WHERE entity_type='service' AND entity_key=?").get(source.entity_key))
+        .toMatchObject({ sku: source.sku, accounting_code: source.accounting_code, base_price_minor: source.base_price_minor, price_model: source.price_model, billing_cycle: source.billing_cycle, tax_status: "unverified" });
+    }
     expect(db.prepare("SELECT sku,base_price_minor FROM commercial_catalog_codes WHERE entity_type='product' AND entity_key='logo-studio-3d'").get())
       .toMatchObject({ sku: "product-logo-studio-3d", base_price_minor: 7500 });
     const prematureActivation = {
