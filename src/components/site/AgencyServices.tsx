@@ -60,7 +60,7 @@ const copy = {
     classic: {
       title: "Site Prezentare Profesional",
       text: "Rapid, clar și optimizat pentru solicitări.",
-      cats: ["Clinici", "Studouri fitness", "Construcții", "Restaurante", "Consultanți", "Saloane"],
+      cats: ["Clinici", "Studiouri fitness", "Construcții", "Restaurante", "Consultanți", "Saloane"],
       cta: "Deschide",
     },
     cinematic: {
@@ -320,6 +320,15 @@ const AgencyServices = () => {
                   </Link>
                 ))}
               </div>
+              {!showAllServices && (
+                <nav className="flex flex-wrap gap-1.5 border-t border-border/50 px-3 py-2.5" aria-label={lang === "ro" ? "SEO și publicitate digitală" : "SEO and digital advertising"}>
+                  {content.rest.filter(({ key }) => key === "seo-ai" || key === "marketing-ads").map(({ key, title, path }) => (
+                    <Link key={key} to={path} className="inline-flex min-h-9 items-center rounded-full border border-brand/20 bg-brand/[0.06] px-3 py-1.5 font-display text-[11px] font-semibold leading-tight text-foreground transition-colors hover:border-brand/50 hover:bg-brand/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:text-xs">
+                      {title}<span className="ml-1.5 text-brand" aria-hidden>↗</span>
+                    </Link>
+                  ))}
+                </nav>
+              )}
             </div>
             <div className="mt-2.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-1">
               <button
