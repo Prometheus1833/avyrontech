@@ -5,11 +5,15 @@ const pages = [
     path: "/servicii/seo-ai-visibility-performance",
     name: "SEO & AI Performance and Visibility",
     image: "/og/seo-ai.png",
+    faqQuestion: "De ce Google a descoperit o pagină, dar nu a indexat-o?",
+    faqQuestionEn: "Why has Google discovered a page but not indexed it?",
   },
   {
     path: "/servicii/digital-marketing-ads",
     name: "Digital Marketing & Ads",
     image: "/og/marketing-ads.png",
+    faqQuestion: "Cum aleg între Google Ads și Meta Ads?",
+    faqQuestionEn: "How do I choose between Google Ads and Meta Ads?",
   },
 ] as const;
 
@@ -33,7 +37,7 @@ for (const service of pages) {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(service.path);
     await expect(page.locator("h1")).toContainText(service.name);
-    await expect(page.locator(".growth-faq details")).toHaveCount(service.path.includes("seo-ai") ? 4 : 3);
+    await expect(page.locator(".growth-faq")).toContainText(service.faqQuestion);
     await expect(page.locator(".growth-offer")).toHaveCount(3);
     await expect(page.getByRole("link", { name: /Configuratorul AVYRON/ })).toHaveAttribute("href", "/configurator");
     if (service.path.includes("seo-ai")) {
@@ -73,6 +77,7 @@ test("English service pages retain translated offers and reciprocal language met
     await expect(page.locator('link[rel="alternate"][hreflang="ro"]')).toHaveAttribute("href", "https://avyron.ro" + service.path);
     await expect(page.locator('link[rel="alternate"][hreflang="en"]')).toHaveAttribute("href", "https://avyron.ro" + englishPath);
     await expect(page.locator(".growth-offer")).toHaveCount(3);
+    await expect(page.locator(".growth-faq")).toContainText(service.faqQuestionEn);
     if (service.path.includes("seo-ai")) {
       await expect(page.locator(".growth-pricing")).toContainText("free");
       await expect(page.locator(".growth-one-time-list")).toContainText("1,290 RON");
