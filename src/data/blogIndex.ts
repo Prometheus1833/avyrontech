@@ -22,6 +22,177 @@ const UPDATED_AT = "2026-08-24T00:00:00.000+03:00";
 /** Complete, visible Romanian articles used by prerendering and as a resilient data fallback. */
 export const BLOG_INDEX: BlogIndexEntry[] = [
   {
+    id: "c593004d-6890-4125-8534-ac45ba5f2dcf",
+    title: "PHP2Shell: ce a arătat incidentul din octombrie 2026 despre mentenanța unui website",
+    slug: "php2shell-vulnerabilitati-php-octombrie-2026",
+    excerpt: "Două vulnerabilități critice din PHP au arătat de ce un website profesional are nevoie de inventar tehnic, actualizări testate, backup, monitorizare și responsabilități clare după lansare.",
+    content: `Pe 21 octombrie 2026, echipa PHP a publicat actualizări de securitate pentru două vulnerabilități critice care puteau permite executarea de cod de la distanță fără autentificare. Pentru un antreprenor, detaliul important nu este doar numele incidentului — „PHP2Shell” — ci întrebarea pe care acesta o readuce în prim-plan: **cine urmărește, actualizează și verifică website-ul după lansare?**
+
+Un website poate arăta impecabil și poate funcționa bine în fiecare zi, dar continuă să depindă de un runtime, biblioteci, extensii, servicii de găzduire și configurații care evoluează. Securitatea nu este o bifă pusă la predare. Este un proces cu inventar, alerte, responsabilități și dovezi.
+
+## Ce s-a întâmplat în PHP
+
+Vulnerabilitățile au fost înregistrate ca **CVE-2026-109618** și **CVE-2026-109619**. Ambele au primit clasificarea „critical” în advisories-urile oficiale ale proiectului PHP:
+
+- **CVE-2026-109618** privește o corupere de memorie produsă în anumite condiții de tip out-of-memory. În scenarii vulnerabile, procesarea unei cereri putea ajunge la executare de cod de la distanță.
+- **CVE-2026-109619** privește o stare internă rămasă după eliberarea memoriei. O cerere ulterioară putea folosi acea stare veche înainte ca inițializarea normală să o reseteze.
+
+Versiunile corectate publicate de proiectul PHP sunt:
+
+- PHP 8.2.35;
+- PHP 8.3.36;
+- PHP 8.4.27;
+- PHP 8.5.12.
+
+Echipa PHP a precizat că actualizarea este soluția completă. Măsurile temporare reduc doar anumite căi de atac și nu fac o instalare vulnerabilă sigură. ENISA, CERT-EU, Europol EC3 și rețeaua CSIRT au recomandat organizațiilor să inventarieze aplicațiile PHP, să prioritizeze sistemele expuse la internet și să aplice actualizările publicate.
+
+## De ce problema nu se oprește la „avem sau nu WordPress”
+
+PHP rulează în spatele multor website-uri, CMS-uri, magazine și produse software. Uneori este vizibil în panoul de hosting. Alteori este inclus într-un produs ori administrat de furnizor, iar proprietarul afacerii nu interacționează direct cu el.
+
+De aceea, răspunsul corect nu este o presupunere, ci un inventar:
+
+1. ce domenii și subdomenii publice există;
+2. ce aplicație rulează pe fiecare;
+3. ce versiune PHP folosește efectiv fiecare mediu;
+4. cine administrează runtime-ul: echipa internă, agenția, hostingul sau un furnizor SaaS;
+5. dacă există un update oficial sau un backport documentat de furnizor;
+6. când a fost verificată ultima dată starea live.
+
+Un număr de versiune afișat într-un panou nu este întotdeauna întreaga dovadă. Distribuțiile Linux și furnizorii LTS pot livra corecții prin pachete proprii, păstrând o denumire diferită. Confirmarea trebuie să vină din advisory-ul furnizorului și din pachetul instalat, nu dintr-o captură izolată.
+
+## Ce ar trebui verificat imediat
+
+### 1. Versiunea și expunerea reală
+
+Începe cu sistemele publice. Identifică runtime-ul, modul de rulare și versiunea corectată disponibilă pentru mediul respectiv. Nu limita verificarea la site-ul principal: panourile, API-urile, sistemele vechi și aplicațiile auxiliare pot avea infrastructură separată.
+
+### 2. Backup-ul înaintea intervenției
+
+Un backup util nu înseamnă doar un fișier existent. Trebuie să știi ce conține, când a fost creat, unde este păstrat și cum poate fi restaurat. Actualizarea făcută în grabă, fără punct de revenire, poate transforma o problemă de securitate într-o întrerupere operațională.
+
+### 3. Actualizarea într-un flux controlat
+
+Ideal, update-ul este verificat într-un mediu de test, apoi aplicat controlat în producție. După actualizare se repornesc procesele relevante și se verifică versiunea efectiv încărcată, nu doar setarea din interfață.
+
+### 4. Testele de regresie
+
+Un patch de runtime poate afecta formulare, autentificare, plăți, uploaduri, integrări și joburi programate. Un set scurt de teste pe fluxurile critice oferă mai multă siguranță decât simpla confirmare că homepage-ul se deschide.
+
+### 5. Indiciile unei compromiteri anterioare
+
+Actualizarea închide vulnerabilitatea, dar nu șterge automat efectele unui atac petrecut înainte. Pentru sistemele expuse merită verificate logurile, fișierele modificate, conturile administrative, joburile programate, cheile și conexiunile neobișnuite. Dacă există semnale, investigația și rotația secretelor trebuie tratate separat de update.
+
+### 6. Software-ul care include PHP fără să-l afișeze evident
+
+Recomandările oficiale cer monitorizarea produselor terțe care împachetează PHP. Aici intră aplicații, dispozitive și servicii administrate pentru care patch-ul depinde de producător. Furnizorul trebuie să confirme produsul, versiunea afectată și actualizarea disponibilă.
+
+## De ce un firewall nu înlocuiește patch-ul
+
+Un WAF, un CDN sau reguli la marginea rețelei pot reduce expunerea și pot bloca unele cereri rău intenționate. Ele sunt straturi utile, dar nu schimbă codul vulnerabil de pe server. Payload-urile se pot modifica, iar unele căi de exploatare pot apărea înainte ca aplicația să preia controlul.
+
+Principiul sănătos este apărarea în profunzime: patch la sursă, acces restrâns, configurare corectă, monitorizare, backup și filtre de rețea. Niciun singur strat nu trebuie prezentat drept protecție absolută.
+
+## Lecția pentru un website profesional
+
+Incidentul PHP2Shell arată diferența dintre un website livrat și un sistem digital administrat. La lansare ar trebui să existe răspunsuri clare la câteva întrebări:
+
+- Cine urmărește advisories-urile pentru tehnologiile folosite?
+- În cât timp este evaluată o vulnerabilitate critică?
+- Cine poate aplica update-ul și cine aprobă fereastra de intervenție?
+- Există backup și procedură de restaurare?
+- Care sunt fluxurile care trebuie retestate?
+- Unde sunt documentate domeniul, hostingul, conturile și responsabilitățile?
+- Cum este verificată starea live după intervenție?
+
+Fără această bază, fiecare alertă devine o improvizație. Cu ea, echipa poate separa rapid sistemele afectate de cele neafectate și poate interveni cu un risc operațional mai mic.
+
+## Avantajele unei colaborări cu AVYRON
+
+La AVYRON nu pornim de la ideea că aceeași tehnologie este potrivită pentru orice afacere. Alegem arhitectura după obiective, administrare, integrare, trafic și nivelul de control necesar. PHP poate fi o alegere validă într-un proiect bine întreținut; pentru alte proiecte, o arhitectură statică sau edge poate reduce suprafața de atac și efortul operațional.
+
+O colaborare bine definită aduce câteva avantaje concrete:
+
+### Arhitectură explicată, nu o cutie neagră
+
+Documentăm componentele importante și responsabilitatea fiecărui furnizor. Clientul trebuie să știe unde sunt domeniul, codul, datele și backupurile, fără să depindă de o singură persoană sau de o platformă imposibil de părăsit.
+
+### Securitate integrată cu performanța și experiența
+
+HTTPS, headerele de securitate, protecția formularelor, permisiunile, performanța și accesibilitatea sunt verificate împreună. Un update nu este considerat reușit dacă închide o vulnerabilitate, dar blochează cererile, autentificarea sau experiența pe mobil.
+
+### Modificări versionate și verificabile
+
+Schimbările tehnice sunt urmărite în cod și pot fi revizuite înainte de lansare. Astfel, știm ce s-a modificat, ce teste au rulat și ce versiune trebuie restaurată dacă apare o regresie.
+
+### QA după intervenție
+
+Verificăm fluxurile relevante, nu doar disponibilitatea paginii principale. Pentru proiecte mai complexe putem defini teste repetabile pentru autentificare, formulare, plăți, uploaduri și integrări. [Serviciul de testare QA](/servicii/qa-testing-web-mobile) poate separa problemele critice de îmbunătățirile care pot fi planificate.
+
+### Mentenanță cu stare reală
+
+Un update pregătit nu este același lucru cu un update instalat și verificat. Păstrăm diferența dintre recomandare, implementare, deploy și confirmarea live, astfel încât deciziile să se bazeze pe dovezi.
+
+## Un audit rapid pentru proprietarii de website-uri
+
+Cere furnizorului tehnic răspunsuri verificabile la următoarele întrebări:
+
+1. Website-ul sau un produs asociat folosește PHP?
+2. Care este versiunea activă și cine o administrează?
+3. Versiunea include corecțiile pentru CVE-2026-109618 și CVE-2026-109619?
+4. Există un backup recent și testat?
+5. Au fost verificate logurile și modificările suspecte?
+6. Sunt testate formularele, autentificarea și integrările după update?
+7. Există monitorizare și un responsabil pentru alertele viitoare?
+
+Dacă răspunsurile sunt vagi, problema nu este doar incidentul din octombrie. Lipsește procesul de mentenanță.
+
+## Întrebări frecvente
+
+### Orice site WordPress a fost compromis?
+
+Nu. Faptul că un website folosește PHP nu dovedește compromiterea lui, iar condițiile de exploatare diferă între configurații. Este însă necesară verificarea runtime-ului, aplicarea patch-ului furnizorului și evaluarea semnelor de compromitere pentru sistemele expuse.
+
+### Este suficient să activez un WAF?
+
+Nu. Un WAF poate reduce expunerea, dar proiectul PHP precizează că actualizarea este soluția completă. Protecțiile de rețea rămân straturi complementare.
+
+### Trebuie reconstruit website-ul?
+
+Nu automat. În primul rând se inventariază tehnologia, se actualizează, se verifică integritatea și se testează. O reconstrucție are sens când aplicația este abandonată, rulează pe versiuni fără suport sau costul menținerii în siguranță a depășit valoarea unei arhitecturi moderne.
+
+### Ce câștig printr-un contract de mentenanță?
+
+Un contract bun definește ce este monitorizat, timpul de evaluare, actualizările incluse, backupul, testele, responsabilitățile și raportarea. Nu elimină riscul, dar reduce timpul pierdut și improvizația atunci când apare o problemă critică.
+
+## Concluzie
+
+PHP2Shell nu este un argument că PHP trebuie abandonat și nici un motiv pentru panică. Este o demonstrație clară că tehnologia unui website trebuie cunoscută, menținută și verificată pe tot parcursul vieții sale.
+
+Un website profesional înseamnă design și conversie, dar și ownership, mentenanță, securitate, backup și QA. Aceste lucruri devin cu adevărat valoroase exact în zilele în care o actualizare nu mai poate fi amânată.
+
+**[Vezi cum construim și întreținem website-uri de prezentare profesionale](/servicii/website-prezentare-profesional).**
+
+## Surse editoriale
+
+- [PHP — Security advisory: Critical remote code execution vulnerabilities](https://www.php.net/archive/2026.php#2026-10-21-5), publicat la 21 octombrie 2026, consultat la 31 octombrie 2026.
+- [PHP Security Advisory — RCE via OOM corruption, GHSA-w8hw-w9fx-j79w](https://github.com/php/php-src/security/advisories/GHSA-w8hw-w9fx-j79w), publicat la 21 octombrie 2026, consultat la 31 octombrie 2026.
+- [PHP Security Advisory — RCE via stale global state, GHSA-6wmf-4rv5-p3rp](https://github.com/php/php-src/security/advisories/GHSA-6wmf-4rv5-p3rp), publicat la 21 octombrie 2026, consultat la 31 octombrie 2026.
+- [ENISA — Joint statement on critical PHP vulnerabilities](https://www.enisa.europa.eu/news/joint-statement-on-critical-php-vulnerabilities), publicat la 21 octombrie 2026, consultat la 31 octombrie 2026.
+- [UK NCSC — Critical security issue affecting PHP](https://www.ncsc.gov.uk/news/critical-security-issue-affecting-php), publicat la 21 octombrie 2026, consultat la 31 octombrie 2026.`,
+    cover_image_url: "/news/php2shell-securitate-website-2026.webp",
+    cover_image_alt: "Ilustrație tehnică AVYRON cu runtime PHP protejat de un scut, servere și flux de actualizare verificată.",
+    tags: ["php", "php2shell", "securitate-web", "mentenanta", "vulnerabilitati", "website-profesional"],
+    category: "security",
+    seo_title: "PHP2Shell: ce trebuie să verifice afacerile după incident",
+    seo_description: "Ce au însemnat vulnerabilitățile PHP din octombrie 2026, ce trebuie verificat și cum ajută mentenanța AVYRON un website profesional.",
+    social_title: "PHP2Shell: lecția despre mentenanța unui website",
+    social_description: "Incidentul PHP din octombrie 2026 arată de ce un website profesional are nevoie de update-uri testate, backup, QA și responsabilități clare.",
+    has_translation: false,
+    published_at: "2026-10-31T14:00:00.000+02:00",
+    updated_at: "2026-10-31T14:00:00.000+02:00",
+  },
+  {
     id: "8c8d67ef-1e11-4b13-a726-b6dd5c15875c",
     title: "De la Instagram la rezervare directă: ce trebuie să conțină site-ul unei pensiuni în 2026",
     slug: "site-pensiune-rezervari-directe-2026",
@@ -449,7 +620,7 @@ Pentru un proiect nou, aceste cerințe pot fi incluse în arhitectură, design �
 /** Full English counterparts use the same stable slugs for reciprocal hreflang. */
 export const BLOG_INDEX_EN: BlogIndexEntry[] = [
   {
-    ...BLOG_INDEX[1],
+    ...BLOG_INDEX[2],
     title: "Meta subscriptions on Facebook and Instagram: what matters for brands",
     excerpt: "How to assess paid Meta options without mistaking a subscription for a durable content, website, and customer-relationship strategy.",
     content: `A new Facebook or Instagram feature can be useful, but it does not replace a business's digital strategy. Benefits, availability, and pricing can vary by country and account type, so decisions should be based on the current terms displayed inside the relevant account.
@@ -476,7 +647,7 @@ Audit the current channels first, align the brand name, logo, contact details, a
     tags: ["meta", "facebook", "instagram", "social-media", "digital-strategy"],
   },
   {
-    ...BLOG_INDEX[2],
+    ...BLOG_INDEX[3],
     title: "Why a professional business website matters in 2026",
     excerpt: "An owned website is the verifiable place where customers understand an offer, compare options, and take the next step without friction.",
     content: `When someone searches for a company, practice, salon, guest house, or local service provider, they need quick answers: what is offered, who it is for, where it is available, whether the business is credible, and how to make contact. A well-structured business website puts those answers in a space controlled by the business.
@@ -505,7 +676,7 @@ Avyron builds [professional presentation websites](/en/services/professional-pre
     tags: ["business-website", "presentation-website", "web-design", "seo", "local-business"],
   },
   {
-    ...BLOG_INDEX[3],
+    ...BLOG_INDEX[4],
     title: "How Avyron works: from a business objective to a digital product",
     excerpt: "Strategy, design, code, SEO, security, and maintenance in a process where deliverables and responsibilities are clear from the outset.",
     content: `Avyron is a digital product agency based in Iași County, working with local businesses, independent professionals, organizations, and growing projects. We do not begin with visual effects. We start with the problem the product must solve: more relevant enquiries, simpler administration, clearer communication, or automation of a repetitive process.
@@ -528,7 +699,7 @@ Explore [services and pricing](/en/services), the [portfolio](/en/services/profe
     tags: ["avyron", "web-agency-romania", "process", "web-development", "cloudflare"],
   },
   {
-    ...BLOG_INDEX[4],
+    ...BLOG_INDEX[5],
     title: "A professional website as digital identity, trust, and conversion",
     excerpt: "A professional website connects visual identity with verifiable information, clear navigation, and a simple journey from question to contact.",
     content: `Digital identity is more than a logo, colours, and a modern typeface. It includes how a business explains its services, proves it is real, answers questions, and helps a visitor make a safe decision.
@@ -551,7 +722,7 @@ Before a redesign, a [website audit](/en?request=audit#cta) can separate content
     tags: ["professional-website", "digital-identity", "web-design", "ux", "conversion"],
   },
   {
-    ...BLOG_INDEX[5],
+    ...BLOG_INDEX[6],
     title: "SEO in 2026: improving visibility in Google and AI answers",
     excerpt: "Technical indexability, useful visible text, a coherent entity, and a good experience form the same foundation for classic and AI search.",
     content: `Visibility does not begin with repeating a phrase. It begins with a page that a search engine can access, understand, and consider useful for a genuine need. Google states that its AI search features rely on the same SEO foundations: a page must be indexable, important information must be available in text, and structured data must match visible content.
@@ -576,7 +747,7 @@ After publication, monitor Page Indexing, sitemaps, selected canonicals, and que
     tags: ["seo-2026", "google", "ai-search", "indexing", "schema-org"],
   },
   {
-    ...BLOG_INDEX[6],
+    ...BLOG_INDEX[7],
     title: "Website security: 7 common small-business mistakes",
     excerpt: "A practical guide to passwords, updates, forms, access, backups, and monitoring for websites and the accounts that manage them.",
     content: `A small website can process important information: enquiries, documents, accounts, bookings, or billing details. Security depends on exposure and impact, not company size.
@@ -613,7 +784,7 @@ For an independent review, start with [web and mobile QA testing](/en/services/w
     tags: ["website-security", "passwords", "backups", "cloudflare", "gdpr"],
   },
   {
-    ...BLOG_INDEX[7],
+    ...BLOG_INDEX[8],
     title: "The AI Act after 2 August 2026: new transparency rules for artificial intelligence",
     excerpt: "AI Act enforcement changes how chatbots, AI-generated content, and deepfakes are presented. What businesses and digital teams should review now.",
     content: `From 2 August 2026, a significant part of the European Artificial Intelligence Act became applicable and designated institutions entered the enforcement phase. For the public, the most visible change is transparency: people should be able to understand when they interact with an AI system and when an image, recording, or text has been generated or manipulated artificially.

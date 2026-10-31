@@ -4,6 +4,7 @@
  * the complete article library.
  */
 export const BLOG_SLUGS = [
+  "php2shell-vulnerabilitati-php-octombrie-2026",
   "site-pensiune-rezervari-directe-2026",
   "meta-conturi-platite-facebook-instagram-2026",
   "importanta-website-afacere-2026",
@@ -16,5 +17,8 @@ export const BLOG_SLUGS = [
 
 /** Source-controlled articles that currently have a complete English counterpart. */
 export const BLOG_SLUGS_EN = BLOG_SLUGS.filter(
-  (slug) => slug !== "site-pensiune-rezervari-directe-2026",
+  (slug) => ![
+    "php2shell-vulnerabilitati-php-octombrie-2026",
+    "site-pensiune-rezervari-directe-2026",
+  ].includes(slug),
 );

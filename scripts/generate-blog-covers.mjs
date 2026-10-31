@@ -26,6 +26,28 @@ const shell = ({ start, end, glow, body }) => `
 
 const covers = [
   {
+    file: "php2shell-securitate-website-2026.webp",
+    svg: shell({ start: "#060811", end: "#21103b", glow: "#8b5cf6", body: `
+      <g fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#shadow)">
+        <rect x="118" y="104" width="964" height="422" rx="38" fill="#080d1a" fill-opacity=".84" stroke="#a78bfa" stroke-opacity=".38" stroke-width="3"/>
+        <path d="M118 172h964" stroke="#a78bfa" stroke-opacity=".22" stroke-width="2"/>
+        <circle cx="166" cy="138" r="8" fill="#fb7185" stroke="none"/><circle cx="194" cy="138" r="8" fill="#fbbf24" stroke="none"/><circle cx="222" cy="138" r="8" fill="#34d399" stroke="none"/>
+        <rect x="174" y="226" width="280" height="194" rx="30" fill="#4c1d95" fill-opacity=".22" stroke="#c4b5fd" stroke-opacity=".62" stroke-width="3"/>
+        <path d="M204 274h220M204 321h220M204 368h220" stroke="#ddd6fe" stroke-opacity=".32" stroke-width="12"/>
+        <path d="M244 235v-38M314 235v-38M384 235v-38M244 449v-29M314 449v-29M384 449v-29" stroke="#a78bfa" stroke-width="6"/>
+        <path d="M508 322h114" stroke="#c4b5fd" stroke-opacity=".55" stroke-width="5" stroke-dasharray="9 13"/>
+        <path d="M601 302l23 20-23 20" stroke="#e9d5ff" stroke-width="7"/>
+        <path d="M804 198c75 42 151 36 192 44v88c0 71-45 122-192 151-147-29-192-80-192-151v-88c41-8 117-2 192-44z" fill="#7c3aed" fill-opacity=".18" stroke="#c4b5fd" stroke-width="4"/>
+        <path d="M729 322l49 49 101-113" stroke="#f5f3ff" stroke-width="18"/>
+        <circle cx="804" cy="339" r="119" stroke="#8b5cf6" stroke-opacity=".22" stroke-width="3" stroke-dasharray="7 14"/>
+        <circle cx="543" cy="249" r="12" fill="#fb7185" stroke="none"/><circle cx="543" cy="395" r="12" fill="#34d399" stroke="none"/>
+        <path d="M543 271v102" stroke="#c4b5fd" stroke-opacity=".34" stroke-width="4"/>
+      </g>
+      <g fill="#f5f3ff" font-family="Arial, Helvetica, sans-serif" font-weight="800" text-anchor="middle">
+        <text x="314" y="337" font-size="68" letter-spacing="-4">PHP</text>
+      </g>` }),
+  },
+  {
     file: "meta-abonamente-branduri-2026.webp",
     svg: shell({ start: "#07111f", end: "#29104a", glow: "#d946ef", body: `
       <g fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#shadow)">
