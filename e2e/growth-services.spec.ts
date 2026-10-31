@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 const pages = [
   {
@@ -18,17 +20,30 @@ const pages = [
 ] as const;
 
 test("new services are linked from the catalog and extended homepage list", async ({ page }) => {
+  const homepageHtml = readFileSync(join(process.cwd(), "dist/index.html"), "utf8");
+  for (const service of pages) {
+    expect(homepageHtml).toContain(`href="${service.path}"`);
+  }
+  const englishHomepageHtml = readFileSync(join(process.cwd(), "dist/en/index.html"), "utf8");
+  for (const service of pages) {
+    expect(englishHomepageHtml).toContain(`href="${service.path.replace("/servicii/", "/en/services/")}"`);
+  }
   await page.goto("/servicii");
   for (const service of pages) {
     await expect(page.locator('[data-testid="services-list"] a[href="' + service.path + '"]')).toBeVisible();
   }
 
+  await page.setViewportSize({ width: 320, height: 760 });
   await page.goto("/");
   const serviceList = page.locator('[data-testid="service-list"]');
+  for (const service of pages) {
+    await expect(serviceList.locator('a[href="' + service.path + '"]')).toBeVisible();
+  }
   await serviceList.getByRole("button", { name: "Vezi toate serviciile" }).click();
   for (const service of pages) {
     await expect(serviceList.locator('a[href="' + service.path + '"]')).toBeVisible();
   }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
 
 for (const service of pages) {
