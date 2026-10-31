@@ -8,6 +8,17 @@ const sites = [
   { origin: "https://avyron.ro", sitemap: "/sitemap.xml" },
   { origin: "https://surveys.avyron.ro", sitemap: "/sitemap.xml" },
 ];
+const growthRoutes = [
+  "/servicii/seo-ai-visibility-performance",
+  "/en/services/seo-ai-visibility-performance",
+  "/servicii/digital-marketing-ads",
+  "/en/services/digital-marketing-ads",
+];
+const growthPairs = [
+  [growthRoutes[0], growthRoutes[1]],
+  [growthRoutes[2], growthRoutes[3]],
+];
+const requireGrowthRoutes = process.argv.includes("--require-growth-routes");
 const errors = [];
 
 async function get(url) {
@@ -67,25 +78,47 @@ async function checkPage(location) {
     if (document.querySelectorAll("h1").length !== 1) {
       errors.push(`${location}: expected one H1`);
     }
+    if (requireGrowthRoutes) {
+      const pair = growthPairs.find(([ro, en]) => location === `https://avyron.ro${ro}` || location === `https://avyron.ro${en}`);
+      if (pair) {
+        const [ro, en] = pair;
+        const expectedLang = location.endsWith(en) ? "en" : "ro";
+        if (document.documentElement.lang !== expectedLang) errors.push(`${location}: HTML lang is ${document.documentElement.lang || "missing"}`);
+        const alternates = new Map([...document.querySelectorAll('link[rel="alternate"][hreflang]')]
+          .map((link) => [link.getAttribute("hreflang"), link.getAttribute("href")]));
+        for (const [lang, href] of [["ro", ro], ["en", en], ["x-default", ro]]) {
+          if (alternates.get(lang) !== `https://avyron.ro${href}`) errors.push(`${location}: incorrect ${lang} hreflang`);
+        }
+      }
+    }
   } catch (error) {
     errors.push(`${location}: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
 const urls = [];
+const avyronSitemapUrls = new Set();
 for (const site of sites) {
   const sitemapUrl = `${site.origin}${site.sitemap}`;
   try {
     const { response, body } = await get(sitemapUrl);
     if (response.status !== 200) errors.push(`${sitemapUrl}: HTTP ${response.status}`);
     if (!response.headers.get("content-type")?.includes("xml")) errors.push(`${sitemapUrl}: not served as XML`);
-    urls.push(...parseSitemap(body, sitemapUrl, site.origin));
+    const sitemapUrls = parseSitemap(body, sitemapUrl, site.origin);
+    urls.push(...sitemapUrls);
+    if (site.origin === "https://avyron.ro") sitemapUrls.forEach((url) => avyronSitemapUrls.add(url));
     const robotsUrl = `${site.origin}/robots.txt`;
     const robots = await get(robotsUrl);
     if (robots.response.status !== 200) errors.push(`${robotsUrl}: HTTP ${robots.response.status}`);
     if (!robots.body.includes(`Sitemap: ${sitemapUrl}`)) errors.push(`${robotsUrl}: missing sitemap declaration`);
   } catch (error) {
     errors.push(`${sitemapUrl}: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+if (requireGrowthRoutes) {
+  for (const route of growthRoutes) {
+    const url = `https://avyron.ro${route}`;
+    if (!avyronSitemapUrls.has(url)) errors.push(`${url}: required growth service URL missing from live sitemap`);
   }
 }
 

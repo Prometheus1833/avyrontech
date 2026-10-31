@@ -14,6 +14,7 @@ Website public bilingv și AVYRON OS, construite în același repository. GitHub
 - `src/pages/intern`, `src/components/dashboard`, `src/components/finance`: interfața AVYRON OS.
 - `cloudflare/workers/api/src`: API, autorizare, AI și integrări; `cloudflare/d1/migrations`: istoric D1 cu migrări append-only.
 - `src/seo/publicRoutes.ts`: registrul rutelor publice; `scripts/prerender.mjs`, `scripts/generate-sitemap.mjs`, `scripts/audit-seo.mjs`: ieșirea indexabilă și auditul.
+- `docs/SEO_INDEXATION_RUNBOOK.md`: verificarea indexării în Search Console și controlul post-release al paginilor RO/EN.
 - `docs/AVYRON_OS_PRODUCT_MODEL.md`: modelul funcțional al OS, inclusiv roluri, aprobări și conexiuni.
 
 ## Verificare locală

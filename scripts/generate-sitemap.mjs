@@ -26,13 +26,13 @@ function htmlFiles(dir) {
 
 function sourceFiles(route) {
   if (route === "/surveys") return ["src/pages/surveys/Landing.tsx", "src/shared/surveys/catalog.ts", "src/shared/surveys/templates.ts"];
-  if (route === "/" || route === "/en") return ["src/pages/Index.tsx", "src/i18n/translations.ts"];
+  if (route === "/" || route === "/en") return ["src/pages/Index.tsx", "src/components/site/AgencyServices.tsx", "src/i18n/translations.ts"];
   if (route.includes("/blog")) return ["src/pages/Blog.tsx", "src/data/blogIndex.ts"];
   if (route === "/servicii/creare-logo-3d-dinamic-cinematic/creeaza" || route === "/en/services/cinematic-dynamic-3d-logo-design/create") return ["src/pages/services/LogoStudioPage.tsx", "src/data/logoStudioCopy.ts", "src/data/logoStudio.ts"];
   if (route === "/servicii/creare-logo-3d-dinamic-cinematic" || route === "/en/services/cinematic-dynamic-3d-logo-design") return ["src/pages/services/LogoDinamic3DPage.tsx", "src/data/logo3d.ts"];
   if (route === "/servicii/qa-testing-web-mobile" || route === "/en/services/web-mobile-qa-testing") return ["src/pages/services/QaTestingPage.tsx"];
   if (route === "/servicii/seo-ai-visibility-performance" || route === "/en/services/seo-ai-visibility-performance" || route === "/servicii/digital-marketing-ads" || route === "/en/services/digital-marketing-ads")
-    return ["src/pages/services/GrowthServicePage.tsx", "src/pages/services/growth-service.css", "src/data/growthServices.ts"];
+    return ["src/pages/services/GrowthServicePage.tsx", "src/pages/services/growth-service.css", "src/data/growthServices.ts", "src/data/growthOffers.ts"];
   if (route === "/biblioteca" || route === "/en/library") return ["src/pages/Biblioteca.tsx", "src/data/bibliotecaCatalog.ts"];
   if (route.startsWith("/produse") || route.startsWith("/en/products"))
     return ["src/features/produse/data/items.ts", "src/features/produse/ProduseApp.tsx"];
@@ -44,7 +44,7 @@ function sourceFiles(route) {
   if (route === "/gdpr" || route === "/en/privacy") return ["src/pages/Gdpr.tsx", "src/config/company.ts"];
   if (route === "/termeni" || route === "/en/terms") return ["src/pages/Terms.tsx", "src/config/company.ts"];
   if (route === "/politica-cookies" || route === "/en/cookie-policy") return ["src/pages/CookiePolicy.tsx", "src/lib/cookieConsent.ts", "src/config/company.ts"];
-  if (route.includes("maintenance-and-partnerships") || route === "/mentenanta-si-colaborari") return ["src/pages/MaintenancePartnerships.tsx", "src/data/subscriptionPlans.ts"];
+  if (route.includes("maintenance-and-partnerships") || route === "/mentenanta-si-colaborari") return ["src/pages/MaintenancePartnerships.tsx", "src/data/subscriptionPlans.ts", "src/data/growthOffers.ts"];
   return ["src/App.tsx"];
 }
 
