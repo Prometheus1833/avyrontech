@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { catalogCodesApi, type CommercialCode, type CommercialProviderRef } from "@/lib/catalogCodesApi";
 
 const GROUPS: Record<string, string> = {
-  presence: "Prezență digitală", brand: "Brand și identitate", commerce: "Comerț digital",
+  presence: "Prezență digitală", brand: "Brand și identitate", commerce: "Comerț digital", growth: "SEO și marketing",
   software: "Software, automatizări și AI", quality: "Calitate și validare",
 };
 const ALL_SERVICES = [...SERVICES, {
@@ -20,6 +20,16 @@ const ALL_SERVICES = [...SERVICES, {
   copy: { ro: { name: "Audit Website / Soft Actual", subtitle: "Evaluare la cerere a performanței, securității și experienței." } },
   duration: { ro: "În funcție de evaluare" },
   path: { ro: "/servicii/audit-website", en: "/en/services/website-audit" },
+}, {
+  key: "seo-ai", category: "growth", priceRon: 690,
+  copy: { ro: { name: "SEO & AI Visibility and Performance", subtitle: "Audit gratuit; abonamente și optimizări unice." } },
+  duration: { ro: "Lunar sau lucrare unică" },
+  path: { ro: "/servicii/seo-ai-visibility-performance", en: "/en/services/seo-ai-visibility-performance" },
+}, {
+  key: "marketing-ads", category: "growth", priceRon: 990,
+  copy: { ro: { name: "Digital Marketing & Ads", subtitle: "Campanii Ads, creative, AI și raportare." } },
+  duration: { ro: "Lunar" },
+  path: { ro: "/servicii/digital-marketing-ads", en: "/en/services/digital-marketing-ads" },
 }];
 
 export default function ServiciiAvyron({ embedded = false }: { embedded?: boolean }) {

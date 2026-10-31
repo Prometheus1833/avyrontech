@@ -1002,8 +1002,8 @@ const Services = () => {
           </p>
           <p className="mt-3 text-xs uppercase tracking-[0.22em] text-foreground/45">
             {ro
-              ? "Costurile pentru SEO și marketing se stabilesc ulterior, după audit sau brief"
-              : "SEO and marketing fees will be agreed later, after an audit or brief"}
+              ? "SEO & AI de la 690 lei/lună · Ads de la 990 lei/lună · audit SEO & AI inițial gratuit"
+              : "SEO & AI from 690 RON/month · Ads from 990 RON/month · free initial SEO & AI audit"}
           </p>
         </section>
 

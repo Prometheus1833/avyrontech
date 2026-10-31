@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { ArrowDown, ArrowRight, Check, ExternalLink, Globe2, Layers3, Mail, MousePointer2, Search, Sparkles } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { GROWTH_SERVICES, type GrowthServiceKey } from "@/data/growthServices";
+import { ADS_MONTHLY_OFFERS, ADS_SETUP, GROWTH_BUNDLE_DISCOUNT_PERCENT, SEO_MONTHLY_OFFERS, SEO_ONE_TIME_OFFERS, type GrowthOffer } from "@/data/growthOffers";
+import { SUBSCRIPTION_PATH } from "@/data/subscriptionPlans";
 import ServiceCinematicIntro from "@/components/services/ServiceCinematicIntro";
 import Breadcrumbs from "@/components/site/Breadcrumbs";
 import Footer from "@/components/site/Footer";
@@ -57,6 +59,17 @@ const GrowthServicePage = ({ kind }: { kind: GrowthServiceKey }) => {
   const otherKind: GrowthServiceKey = kind === "seo-ai" ? "marketing-ads" : "seo-ai";
   const other = GROWTH_SERVICES[otherKind];
   const contactHref = `mailto:contact@avyron.ro?subject=${encodeURIComponent(c.name + " — AVYRON")}`;
+  const offers = kind === "seo-ai" ? SEO_MONTHLY_OFFERS : ADS_MONTHLY_OFFERS;
+  const money = (cents: number) => `${(cents / 100).toLocaleString(ro ? "ro-RO" : "en-US")} ${ro ? "lei" : "RON"}`;
+  const offerCard = (offer: GrowthOffer) => (
+    <article className="growth-offer" key={offer.sku}>
+      <span className="growth-offer-code">AVYRON / {kind === "seo-ai" ? "DISCOVERY" : "PERFORMANCE"}</span>
+      <h3>{offer.name}</h3>
+      <p className="growth-offer-price">{offer.startingAt && <small>{ro ? "de la " : "from "}</small>}{money(offer.priceCents)}<span>/{ro ? "lună" : "month"}</span></p>
+      <ul>{offer.features.map((feature) => <li key={feature.ro}><Check size={15} aria-hidden />{feature[lang]}</li>)}</ul>
+      <a href={`mailto:contact@avyron.ro?subject=${encodeURIComponent(`${offer.name} — ${c.name}`)}`} className="growth-offer-link">{ro ? "Cere o propunere" : "Request a proposal"}<ArrowRight size={16} aria-hidden /></a>
+    </article>
+  );
 
   useEffect(() => {
     setPageMeta({
@@ -131,10 +144,18 @@ const GrowthServicePage = ({ kind }: { kind: GrowthServiceKey }) => {
           <ul>{c.deliverables.map((item) => <li key={item}><Check size={16} aria-hidden />{item}</li>)}</ul>
         </section>
 
-        <aside className="growth-measurement"><div><span>05 / {ro ? "MĂSURARE" : "MEASUREMENT"}</span><h2>{c.measurementTitle}</h2></div><p>{c.measurement}</p></aside>
+        <section id="tarife" className="growth-section growth-pricing" aria-labelledby="growth-pricing-title">
+          <div className="growth-section-head"><span>05 / {ro ? "OFERTĂ" : "OFFER"}</span><div><h2 id="growth-pricing-title">{kind === "seo-ai" ? (ro ? "Vizibilitate construită în ritmul tău." : "Visibility built at your pace.") : (ro ? "Campanii cu un cadru comercial clar." : "Campaigns with clear commercial terms.")}</h2><p>{kind === "seo-ai" ? (ro ? "Alege optimizare lunară sau o intervenție punctuală. Auditul SEO & AI inițial este gratuit, fără obligații contractuale." : "Choose a monthly plan or a one-time optimization. The initial SEO & AI audit is free, with no contractual obligation.") : (ro ? "Monitorizarea AI și raportarea sunt incluse în fiecare plan. Bugetele publicitare sunt achitate separat de client, direct către platforme." : "AI assisted monitoring and reporting are included in every plan. Advertising budgets are paid separately by the client to the platforms.")}</p></div></div>
+          <div className="growth-offer-grid">{offers.map(offerCard)}</div>
+          {kind === "seo-ai" ? <div className="growth-one-time"><div><span className="growth-offer-code">{ro ? "LUCRARE UNICĂ" : "ONE-TIME WORK"}</span><h3>{ro ? "Optimizare SEO pentru paginile care contează" : "SEO optimization for the pages that matter"}</h3><p>{ro ? "Volumul de pagini determină pachetul. Conținutul și accesul necesar se stabilesc după audit." : "The number of pages determines the package. Content and access requirements are agreed after the audit."}</p></div><div className="growth-one-time-list">{SEO_ONE_TIME_OFFERS.map(offer => <a href={`mailto:contact@avyron.ro?subject=${encodeURIComponent(`Optimizare SEO ${offer.name} pagini — AVYRON`)}`} key={offer.sku}><span>{offer.name} {ro ? "pagini" : "pages"}</span><strong>{money(offer.priceCents)}</strong><ArrowRight size={16} aria-hidden /></a>)}</div></div> : <div className="growth-one-time"><div><span className="growth-offer-code">{ro ? "CONDIȚII COMERCIALE" : "COMMERCIAL TERMS"}</span><h3>{ro ? "Bugetul media rămâne la tine." : "You control the media budget."}</h3><p>{ro ? "Recomandăm un contract de minimum 3 luni pentru a acumula date și a optimiza campaniile." : "We recommend a minimum 3-month agreement to gather data and optimize campaigns."}</p></div><div className="growth-commercial-note"><strong>{ro ? "Configurare inițială Ads" : "Initial Ads setup"}</strong><span>{ro ? "de la" : "from"} {money(ADS_SETUP.priceCents)}</span></div></div>}
+          <p className="growth-bundle">{ro ? `Contractezi SEO și Ads împreună? Primești ${GROWTH_BUNDLE_DISCOUNT_PERCENT}% reducere la cele două servicii, confirmată în oferta comună.` : `Contract SEO and Ads together? Receive a ${GROWTH_BUNDLE_DISCOUNT_PERCENT}% discount on the two services, confirmed in a combined proposal.`} <Link to={SUBSCRIPTION_PATH[lang] + `#abonamente-${kind === "seo-ai" ? "seo" : "ads"}`}>{ro ? "Vezi toate abonamentele" : "See all plans"}<ArrowRight size={15} aria-hidden /></Link></p>
+          <p className="growth-os-note">{ro ? "Serviciile folosesc infrastructura AVYRON OS și agenții AI existenți pentru monitorizare, automatizare, generare de conținut și raportare, potrivit accesului și configurației proiectului." : "Services use the existing AVYRON OS infrastructure and AI agents for monitoring, automation, content generation and reporting, according to project access and configuration."} <Link to={ro ? "/configurator" : "/en/configurator"}>{ro ? "Alege extraopțiuni în Configuratorul AVYRON" : "Choose extras in the AVYRON Configurator"}<ArrowRight size={14} aria-hidden /></Link></p>
+        </section>
+
+        <aside className="growth-measurement"><div><span>06 / {ro ? "MĂSURARE" : "MEASUREMENT"}</span><h2>{c.measurementTitle}</h2></div><p>{c.measurement}</p></aside>
 
         <section className="growth-section growth-faq" aria-labelledby="growth-faq-title">
-          <div className="growth-section-head"><span>06 / FAQ</span><div><h2 id="growth-faq-title">{ro ? "Întrebări frecvente" : "Frequently asked questions"}</h2></div></div>
+          <div className="growth-section-head"><span>07 / FAQ</span><div><h2 id="growth-faq-title">{ro ? "Întrebări frecvente" : "Frequently asked questions"}</h2></div></div>
           <div>{c.faq.map((item) => <details key={item.q}><summary>{item.q}<span aria-hidden>+</span></summary><p>{item.a}</p></details>)}</div>
         </section>
 

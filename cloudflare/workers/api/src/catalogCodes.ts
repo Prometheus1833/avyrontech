@@ -73,7 +73,7 @@ catalogCodesRouter.post("/api/finance/commercial-codes/sync", async (c) => {
   const known = new Set(current.results.map((row) => `${row.entity_type}:${row.entity_key}`));
   const usedSkus = new Set(current.results.map((row) => row.sku).filter(Boolean));
   const sources = [
-    ...serviceSources.map((source) => ({ ...source, entity_type: "service" as const, active: 1, price_model: source.base_price_minor === null ? "quote" as const : "starting_at" as const, unit_label: "serviciu" })),
+    ...serviceSources.map((source) => ({ ...source, entity_type: "service" as const, active: 1, price_model: "price_model" in source ? source.price_model : source.base_price_minor === null ? "quote" as const : "starting_at" as const, unit_label: "serviciu" })),
     ...products.map((source) => ({ ...source, entity_type: "product" as const, active: source.status === "live" ? 1 : 0, price_model: source.base_price_minor === null ? "unreviewed" as const : "fixed" as const, unit_label: "unitate" })),
   ];
   const statements: D1PreparedStatement[] = [];
@@ -83,15 +83,15 @@ catalogCodesRouter.post("/api/finance/commercial-codes/sync", async (c) => {
   for (const source of sources) {
     if (known.has(`${source.entity_type}:${source.entity_key}`)) continue;
     const id = `catalog_${crypto.randomUUID().replace(/-/g, "")}`;
-    const candidate = suggestedSku(source.entity_type, source.entity_key);
+    const candidate = "sku" in source ? source.sku : suggestedSku(source.entity_type, source.entity_key);
     const sku = candidate && !usedSkus.has(candidate) ? candidate : null;
     if (sku) usedSkus.add(sku);
     else requiresSku++;
     statements.push(c.env.DB.prepare(
       `INSERT INTO commercial_catalog_codes
       (id,entity_type,entity_key,display_name,accounting_code,sku,category,base_price_minor,currency,vat_basis_points,payment_route,payment_status,promotion_code,active,notes,created_by,updated_by,created_at,updated_at,unit_label,price_model,billing_cycle,tax_status)
-      VALUES (?,?,?,?,?,?,?,?,?,0,'unconfigured','needs_configuration',NULL,?,'',?,?,?,?,?,?,'unreviewed','unverified')`,
-    ).bind(id, source.entity_type, source.entity_key, source.display_name, null, sku, source.category, source.base_price_minor, "RON", source.active, c.get("userId"), c.get("userId"), timestamp, timestamp, source.unit_label, source.price_model));
+      VALUES (?,?,?,?,?,?,?,?,?,0,'unconfigured','needs_configuration',NULL,?,'',?,?,?,?,?,?,?,'unverified')`,
+    ).bind(id, source.entity_type, source.entity_key, source.display_name, "accounting_code" in source ? source.accounting_code : null, sku, source.category, source.base_price_minor, "RON", source.active, c.get("userId"), c.get("userId"), timestamp, timestamp, source.unit_label, source.price_model, "billing_cycle" in source ? source.billing_cycle : "unreviewed"));
     statements.push(c.env.DB.prepare("INSERT INTO commercial_catalog_audit (id,catalog_id,actor_user_id,before_json,after_json,created_at) VALUES (?,?,?,NULL,?,?)")
       .bind(`catalog_audit_${crypto.randomUUID().replace(/-/g, "")}`, id, c.get("userId"), JSON.stringify({ source: "catalog_sync", entityType: source.entity_type, entityKey: source.entity_key, sku, taxStatus: "unverified" }), timestamp));
     created++;

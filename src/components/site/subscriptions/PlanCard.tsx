@@ -83,15 +83,15 @@ const PlanCard = ({ plan, category, active, duplicate, price, annualPrice, secon
         <h3 className="relative mt-1 font-display text-2xl font-extrabold">{plan.name}</h3>
 
         <div className="relative mt-3 flex items-baseline gap-2">
-          <span className="font-display text-3xl font-extrabold tabular-nums">{price}</span>
+          <span className="font-display text-3xl font-extrabold tabular-nums">{plan.startingAt ? (ro ? "de la " : "from ") : ""}{price}</span>
           <span className="text-xs text-foreground/65">/{ro ? "lună" : "mo"}</span>
         </div>
         <p className="relative mt-1 text-[11px] text-foreground/65">
           {converted ? `${ro ? "facturat" : "billed"} ` : "≈ "}{secondaryPrice} {ro ? "pe lună" : "per month"}
         </p>
-        <p className={`relative mt-2 text-xs font-semibold ${theme.text}`}>
+        {!category.inquiryOnly && <p className={`relative mt-2 text-xs font-semibold ${theme.text}`}>
           {ro ? `Anual: ${annualPrice} · economisești ${ANNUAL_DISCOUNT_PERCENT}%` : `Annual: ${annualPrice} · save ${ANNUAL_DISCOUNT_PERCENT}%`}
-        </p>
+        </p>}
 
         <p className="relative mt-3 line-clamp-3 text-sm leading-relaxed text-foreground/70">{text.summary}</p>
 

@@ -33,10 +33,42 @@ for (const service of pages) {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(service.path);
     await expect(page.locator("h1")).toContainText(service.name);
-    await expect(page.locator(".growth-faq details")).toHaveCount(3);
+    await expect(page.locator(".growth-faq details")).toHaveCount(service.path.includes("seo-ai") ? 4 : 3);
+    await expect(page.locator(".growth-offer")).toHaveCount(3);
+    await expect(page.getByRole("link", { name: /Configuratorul AVYRON/ })).toHaveAttribute("href", "/configurator");
+    if (service.path.includes("seo-ai")) {
+      await expect(page.locator(".growth-one-time-list a")).toHaveCount(3);
+      await expect(page.locator(".growth-pricing")).toContainText("690 lei");
+      await expect(page.locator(".growth-pricing")).toContainText("550 lei");
+    } else {
+      await expect(page.locator(".growth-pricing")).toContainText("990 lei");
+      await expect(page.locator(".growth-pricing")).toContainText("de la 2.990 lei");
+    }
     await expect(page.locator('[data-service-intro]')).toHaveCount(0);
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro" + service.path);
     await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", "https://avyron.ro" + service.image);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   });
+
+  test(service.name + " keeps a three-column pricing layout on desktop", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto(service.path);
+    const cards = page.locator(".growth-offer");
+    await expect(cards).toHaveCount(3);
+    const positions = await cards.evaluateAll(elements => elements.map(element => Math.round(element.getBoundingClientRect().x)));
+    expect(new Set(positions).size).toBe(3);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(1440);
+  });
 }
+
+test("SEO and Ads plans appear in the subscription catalog", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/mentenanta-si-colaborari#abonamente-seo");
+  await expect(page.locator("#abonamente-seo")).toContainText("Essential");
+  await expect(page.locator("#abonamente-seo")).toContainText("2.490 RON");
+  await expect(page.locator("#abonamente-ads")).toContainText("Ads Performance");
+  await expect(page.locator("#abonamente-ads")).toContainText("de la 2.990 RON");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+});

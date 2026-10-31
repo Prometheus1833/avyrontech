@@ -47,6 +47,17 @@ export const COMMERCE_CATALOG: readonly CommerceCatalogItem[] = [
   { sku: "sub-app-pro", type: "subscription", name: "Mentenanță Aplicație web/mobile — Pro", unitPriceCents: 100_000, currency: "RON", billing: "monthly" },
   { sku: "sub-app-proactiv", type: "subscription", name: "Mentenanță Aplicație web/mobile — Pro Activ", unitPriceCents: 150_000, currency: "RON", billing: "monthly" },
 
+  { sku: "sub-seo-essential", type: "subscription", name: "SEO & AI Visibility — Essential", unitPriceCents: 69_000, currency: "RON", billing: "monthly" },
+  { sku: "sub-seo-growth", type: "subscription", name: "SEO & AI Visibility — Growth", unitPriceCents: 129_000, currency: "RON", billing: "monthly" },
+  { sku: "sub-seo-premium", type: "subscription", name: "SEO & AI Visibility — Premium", unitPriceCents: 249_000, currency: "RON", billing: "monthly" },
+  { sku: "sub-ads-start", type: "subscription", name: "Digital Marketing & Ads — Ads Start", unitPriceCents: 99_000, currency: "RON", billing: "monthly" },
+  { sku: "sub-ads-growth", type: "subscription", name: "Digital Marketing & Ads — Ads Growth", unitPriceCents: 169_000, currency: "RON", billing: "monthly" },
+  { sku: "sub-ads-performance", type: "custom", name: "Digital Marketing & Ads — Ads Performance (de la)", unitPriceCents: null, currency: "RON", billing: "monthly" },
+  { sku: "seo-opt-5-15", type: "package", name: "Optimizare SEO unică — 5–15 pagini", unitPriceCents: 55_000, currency: "RON", billing: "one_time" },
+  { sku: "seo-opt-15-30", type: "package", name: "Optimizare SEO unică — 15–30 pagini", unitPriceCents: 89_000, currency: "RON", billing: "one_time" },
+  { sku: "seo-opt-30-50", type: "package", name: "Optimizare SEO unică — 30–50 pagini", unitPriceCents: 129_000, currency: "RON", billing: "one_time" },
+  { sku: "ads-setup", type: "custom", name: "Configurare inițială Ads (de la)", unitPriceCents: null, currency: "RON", billing: "one_time" },
+
   { sku: "custom-request", type: "custom", name: "Produs personalizat", unitPriceCents: null, currency: "RON", billing: "one_time" },
 ] as const;
 
@@ -66,6 +77,8 @@ const SUBSCRIPTION_SERVICE_PREFIXES: Readonly<Record<string, readonly string[]>>
   "sub-blog-": ["blog-profesional"],
   "sub-ai-": ["ai-agent"],
   "sub-app-": ["apps"],
+  "sub-seo-": ["seo-ai"],
+  "sub-ads-": ["marketing-ads"],
 };
 
 export const subscriptionServiceKeys = (sku: string): readonly string[] | null =>

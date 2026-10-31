@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   CalendarDays,
+  BarChart3,
   Bot,
   BriefcaseBusiness,
   Building2,
@@ -274,6 +275,8 @@ export const AVYRON_SERVICE_OPTIONS: ConfiguratorChoice[] = [
   { id: "application", icon: Smartphone, label: { ro: "Aplicație / platformă", en: "App / platform" }, hint: { ro: "Conturi, automatizări și fluxuri proprii", en: "Accounts, automations and custom flows" } },
   { id: "automation", icon: Bot, label: { ro: "Automatizări și AI", en: "Automation and AI" }, hint: { ro: "Procese repetitive, asistenți și integrări", en: "Repetitive processes, assistants and integrations" } },
   { id: "maintenance", icon: Settings2, label: { ro: "Mentenanță și abonament", en: "Maintenance and subscription" }, hint: { ro: "Actualizări, monitorizare și suport după lansare", en: "Updates, monitoring and post-launch support" } },
+  { id: "seo-ai-visibility", icon: SearchCheck, label: { ro: "SEO & AI Visibility", en: "SEO & AI Visibility" }, hint: { ro: "Audit gratuit, optimizare tehnică și conținut", en: "Free audit, technical optimization and content" } },
+  { id: "digital-marketing-ads", icon: BarChart3, label: { ro: "Digital Marketing & Ads", en: "Digital Marketing & Ads" }, hint: { ro: "Campanii, creative, monitorizare și raportare", en: "Campaigns, creative, monitoring and reporting" } },
 ];
 
 export const WEBSITE_FEATURE_OPTIONS: ConfiguratorChoice[] = [
@@ -282,6 +285,10 @@ export const WEBSITE_FEATURE_OPTIONS: ConfiguratorChoice[] = [
   { id: "multilingual", icon: Languages, label: { ro: "Mai multe limbi", en: "Multiple languages" }, hint: { ro: "Structură RO, EN sau alte piețe", en: "RO, EN or additional markets" } },
   { id: "local", icon: MapPin, label: { ro: "Hartă și prezență locală", en: "Map and local presence" }, hint: { ro: "Locații, program și acțiuni rapide", en: "Locations, hours and quick actions" } },
   { id: "seo", icon: SearchCheck, label: { ro: "SEO și măsurare", en: "SEO and measurement" }, hint: { ro: "Date structurate, conversii și rapoarte", en: "Structured data, conversions and reports" } },
+  { id: "ai-visibility", icon: Bot, label: { ro: "Vizibilitate în căutarea AI", en: "AI search visibility" }, hint: { ro: "Claritate de entitate, surse și mențiuni observabile", en: "Entity clarity, sources and observable mentions" } },
+  { id: "local-seo", icon: MapPin, label: { ro: "SEO local extins", en: "Extended local SEO" }, hint: { ro: "Locații, pagini locale și semnale de încredere", en: "Locations, local pages and trust signals" } },
+  { id: "ads-creative", icon: BarChart3, label: { ro: "Creative și teste A/B", en: "Creative assets and A/B tests" }, hint: { ro: "Variante de mesaj și materiale pentru campanii", en: "Message variants and campaign assets" } },
+  { id: "remarketing-cro", icon: SearchCheck, label: { ro: "Remarketing și CRO", en: "Remarketing and CRO" }, hint: { ro: "Audiențe de revenire și optimizarea conversiilor", en: "Return audiences and conversion optimization" } },
   { id: "client-area", icon: PackageCheck, label: { ro: "Cont / zonă client", en: "Account / client area" }, hint: { ro: "Documente, comenzi, abonamente sau status", en: "Documents, orders, subscriptions or status" } },
 ];
 
