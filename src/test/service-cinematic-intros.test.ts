@@ -20,6 +20,8 @@ describe("service cinematic intros", () => {
       "apps",
       "ai-agent",
       "qa-testing",
+      "seo-ai",
+      "marketing-ads",
     ]);
     expect(Object.keys(SERVICE_INTRO_SPECS)).toEqual(SERVICE_INTRO_KEYS);
   });

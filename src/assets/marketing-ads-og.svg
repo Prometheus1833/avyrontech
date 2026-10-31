@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#180f1a"/><stop offset="1" stop-color="#100b14"/></linearGradient>
+    <linearGradient id="line" x2="1" y2="1"><stop stop-color="#ffbd72"/><stop offset="1" stop-color="#ff6f8f"/></linearGradient>
+    <radialGradient id="glow"><stop stop-color="#ff8d66" stop-opacity=".24"/><stop offset="1" stop-color="#ff8d66" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="915" cy="295" r="330" fill="url(#glow)"/>
+  <g fill="none" stroke="#ffbd72" stroke-opacity=".2"><rect x="706" y="95" width="438" height="420" rx="29" transform="rotate(8 925 305)"/><rect x="760" y="150" width="340" height="320" rx="25" transform="rotate(-7 930 310)"/></g>
+  <rect x="726" y="205" width="389" height="205" rx="23" fill="#30202b" stroke="#ffbd72" stroke-opacity=".5"/>
+  <g fill="#ffbd72" fill-opacity=".9"><rect x="761" y="340" width="19" height="32" rx="5"/><rect x="790" y="322" width="19" height="50" rx="5"/><rect x="819" y="329" width="19" height="43" rx="5"/><rect x="848" y="299" width="19" height="73" rx="5"/><rect x="877" y="309" width="19" height="63" rx="5"/><rect x="906" y="287" width="19" height="85" rx="5"/><rect x="935" y="304" width="19" height="68" rx="5"/><rect x="964" y="275" width="19" height="97" rx="5"/><rect x="993" y="292" width="19" height="80" rx="5"/><rect x="1022" y="263" width="19" height="109" rx="5"/></g>
+  <path d="M755 273l91-26 78 11 115-37" fill="none" stroke="url(#line)" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="1040" cy="221" r="7" fill="#ffbd72"/>
+  <path d="M70 72h72" stroke="url(#line)" stroke-width="5"/>
+  <text x="70" y="119" fill="#c8aeb9" font-family="Arial,sans-serif" font-size="22" font-weight="700" letter-spacing="6">AVYRON / SERVICES</text>
+  <text x="70" y="280" fill="#ffbd72" font-family="Arial,sans-serif" font-size="64" font-weight="700">Digital Marketing</text>
+  <text x="70" y="360" fill="#fdf2f2" font-family="Arial,sans-serif" font-size="64" font-weight="700">&amp; Ads</text>
+  <text x="70" y="431" fill="#c9b4c1" font-family="Arial,sans-serif" font-size="25">Strategy. Campaigns. Conversions.</text>
+  <path d="M70 532h1060" stroke="#ffbd72" stroke-opacity=".32"/>
+  <text x="70" y="578" fill="#f0dee5" font-family="Arial,sans-serif" font-size="22" font-weight="700" letter-spacing="4">AVYRON</text>
+  <text x="957" y="578" fill="#ffbd72" font-family="Arial,sans-serif" font-size="20">avyron.ro</text>
+</svg>

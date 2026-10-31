@@ -31,6 +31,8 @@ function sourceFiles(route) {
   if (route === "/servicii/creare-logo-3d-dinamic-cinematic/creeaza" || route === "/en/services/cinematic-dynamic-3d-logo-design/create") return ["src/pages/services/LogoStudioPage.tsx", "src/data/logoStudioCopy.ts", "src/data/logoStudio.ts"];
   if (route === "/servicii/creare-logo-3d-dinamic-cinematic" || route === "/en/services/cinematic-dynamic-3d-logo-design") return ["src/pages/services/LogoDinamic3DPage.tsx", "src/data/logo3d.ts"];
   if (route === "/servicii/qa-testing-web-mobile" || route === "/en/services/web-mobile-qa-testing") return ["src/pages/services/QaTestingPage.tsx"];
+  if (route === "/servicii/seo-ai-visibility-performance" || route === "/en/services/seo-ai-visibility-performance" || route === "/servicii/digital-marketing-ads" || route === "/en/services/digital-marketing-ads")
+    return ["src/pages/services/GrowthServicePage.tsx", "src/pages/services/growth-service.css", "src/data/growthServices.ts"];
   if (route === "/biblioteca" || route === "/en/library") return ["src/pages/Biblioteca.tsx", "src/data/bibliotecaCatalog.ts"];
   if (route.startsWith("/produse") || route.startsWith("/en/products"))
     return ["src/features/produse/data/items.ts", "src/features/produse/ProduseApp.tsx"];

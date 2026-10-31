@@ -6,7 +6,7 @@ import {
   Bug, Calendar, Check, Cloud, Code2, Cpu, CreditCard, Facebook, FileText,
   FlaskConical, Gauge, Globe, Hourglass, Image as ImageIcon, Instagram, Layers, LibraryBig,
   MessageCircle, Music2, Package, PenTool, RefreshCw, ScanSearch, SearchCheck,
-  Share2, Shield, ShoppingBag, Smartphone, Tag, Truck, Zap,
+  Share2, Shield, ShoppingBag, Smartphone, Sparkles, Tag, Truck, Zap,
 } from "lucide-react";
 import PaymentMethods from "@/components/site/PaymentMethods";
 import { useLang } from "@/i18n/LanguageContext";
@@ -703,9 +703,67 @@ const SERVICES: ServiceDef[] = [
       button: "bg-gradient-to-r from-lime-500 to-emerald-600",
     },
   },
+  {
+    key: "seo-ai",
+    icon: SearchCheck,
+    badge: { ro: "Vizibilitate organică", en: "Organic visibility" },
+    title: { ro: "SEO & AI Visibility and Performance", en: "SEO & AI Visibility and Performance" },
+    tagline: { ro: "SEO · AI Search · Core Web Vitals", en: "SEO · AI Search · Core Web Vitals" },
+    desc: {
+      ro: "O bază tehnică rapidă, conținut clar și semnale de încredere pentru căutarea clasică și experiențele AI, cu progres măsurat realist.",
+      en: "A fast technical foundation, clear content and trust signals for traditional search and AI experiences, with realistically measured progress.",
+    },
+    time: { ro: "Calendar stabilit după audit", en: "Timeline agreed after audit" },
+    includes: { ro: "Acoperim:", en: "We cover:" },
+    features: [
+      { icon: SearchCheck, text: { ro: "Audit SEO tehnic, indexare și arhitectură de pagini", en: "Technical SEO, indexing and page architecture audit" } },
+      { icon: FileText, text: { ro: "Conținut orientat pe intenții și întrebări reale", en: "Content shaped around real intent and questions" } },
+      { icon: Sparkles, text: { ro: "Claritate pentru căutarea AI și citări observabile", en: "Clarity for AI search and observable citations" } },
+      { icon: Gauge, text: { ro: "Core Web Vitals, experiență mobilă și raportare", en: "Core Web Vitals, mobile experience and reporting" } },
+    ],
+    cta: { ro: "Discută despre vizibilitate", en: "Discuss visibility" },
+    wa: { ro: "Bună! Aș vrea să discut despre SEO & AI Visibility and Performance.", en: "Hi! I'd like to discuss SEO & AI Visibility and Performance." },
+    details: { ro: "/servicii/seo-ai-visibility-performance", en: "/en/services/seo-ai-visibility-performance" },
+    analytics: "services_seo_ai",
+    accent: {
+      border: "border-teal-300/25", glow: "bg-teal-400/15",
+      pill: "border-teal-300/30 bg-teal-300/10 text-teal-700 dark:text-teal-200",
+      tile: "from-teal-400 to-sky-500", check: "bg-teal-400/15 text-teal-700 dark:text-teal-300",
+      button: "bg-gradient-to-r from-teal-500 to-sky-600",
+    },
+  },
+  {
+    key: "marketing-ads",
+    icon: BarChart3,
+    badge: { ro: "Creștere măsurabilă", en: "Measurable growth" },
+    title: { ro: "Digital Marketing & Ads", en: "Digital Marketing & Ads" },
+    tagline: { ro: "Strategie · Campanii · Conversii", en: "Strategy · Campaigns · Conversions" },
+    desc: {
+      ro: "Campanii plătite construite în jurul ofertei tale: mesaj, creativ, landing page și măsurare, de la primul click la cererea relevantă.",
+      en: "Paid campaigns built around your offer: message, creative, landing page and measurement, from the first click to a qualified enquiry.",
+    },
+    time: { ro: "Calendar stabilit după brief", en: "Timeline agreed after the brief" },
+    includes: { ro: "Acoperim:", en: "We cover:" },
+    features: [
+      { icon: BarChart3, text: { ro: "Strategie, audiențe și obiective de campanie", en: "Campaign strategy, audiences and objectives" } },
+      { icon: SearchCheck, text: { ro: "Google Ads și Meta Ads, după potrivirea cu afacerea", en: "Google Ads and Meta Ads, when suitable for the business" } },
+      { icon: ImageIcon, text: { ro: "Mesaje, creative și pagini de destinație", en: "Messages, creative and landing pages" } },
+      { icon: Gauge, text: { ro: "Tracking cu consimțământ și optimizare pe rezultate", en: "Consent-aware tracking and outcome-focused optimization" } },
+    ],
+    cta: { ro: "Discută despre campanii", en: "Discuss campaigns" },
+    wa: { ro: "Bună! Aș vrea să discut despre Digital Marketing & Ads.", en: "Hi! I'd like to discuss Digital Marketing & Ads." },
+    details: { ro: "/servicii/digital-marketing-ads", en: "/en/services/digital-marketing-ads" },
+    analytics: "services_marketing_ads",
+    accent: {
+      border: "border-orange-300/25", glow: "bg-orange-400/15",
+      pill: "border-orange-300/30 bg-orange-300/10 text-orange-700 dark:text-orange-200",
+      tile: "from-orange-400 to-rose-500", check: "bg-orange-400/15 text-orange-700 dark:text-orange-300",
+      button: "bg-gradient-to-r from-orange-500 to-rose-600",
+    },
+  },
 ];
 
-const SERVICE_ORDER = ["website", "shop", "apps", "ai", "logo", "blog", "social", "qa"] as const;
+const SERVICE_ORDER = ["website", "shop", "apps", "ai", "seo-ai", "marketing-ads", "logo", "blog", "social", "qa"] as const;
 const ORDERED_SERVICES = SERVICE_ORDER.flatMap((key) => {
   const service = SERVICES.find((candidate) => candidate.key === key);
   return service ? [service] : [];
@@ -827,8 +885,8 @@ const Services = () => {
       ? "Servicii digitale personalizate & costuri | Avyron"
       : "Custom Digital AVYRON Services | Avyron";
     const description = ro
-      ? "Descoperă serviciile digitale Avyron: site-uri profesionale, identitate vizuală, magazine online, bloguri, aplicații, automatizări și soluții AI adaptate fiecărui proiect."
-      : "Explore Avyron digital services: professional websites, visual identity, online stores, blogs, apps, automations and AI solutions tailored to each project.";
+      ? "Descoperă serviciile Avyron: site-uri și aplicații, SEO și vizibilitate AI, marketing digital și reclame, identitate vizuală, automatizări și testare QA."
+      : "Explore Avyron services: websites and apps, SEO and AI visibility, digital marketing and ads, visual identity, automation and QA testing.";
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
       ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd }]) => {
         setPageMeta({
@@ -939,13 +997,13 @@ const Services = () => {
           </h1>
           <p className="mt-5 max-w-2xl mx-auto text-foreground/70 text-base md:text-lg">
             {ro
-              ? "Fiecare serviciu Avyron este configurat în jurul obiectivelor proiectului. Designul, funcționalitățile, infrastructura și integrările sunt adaptate afacerii tale, nu alese dintr-un șablon."
-              : "Every Avyron service is configured around the project's goals. Design, features, infrastructure and integrations are tailored to your business, not selected from a template."}
+              ? "De la website și aplicații până la SEO, vizibilitate AI și campanii plătite, fiecare serviciu Avyron pornește de la obiectivele afacerii tale."
+              : "From websites and apps to SEO, AI visibility and paid campaigns, every Avyron service starts with your business goals."}
           </p>
           <p className="mt-3 text-xs uppercase tracking-[0.22em] text-foreground/45">
             {ro
-              ? "Prețurile se calculează pe pagina fiecărui serviciu, în funcție de configurație"
-              : "Pricing is calculated on each service page, based on the configuration"}
+              ? "Costurile pentru SEO și marketing se stabilesc ulterior, după audit sau brief"
+              : "SEO and marketing fees will be agreed later, after an audit or brief"}
           </p>
         </section>
 

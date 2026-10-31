@@ -26,6 +26,8 @@ export const ROUTE_ALTERNATES: Array<{ ro: string; en: string }> = [
   { ro: "/servicii/aplicatii-si-platforme", en: "/en/services/apps-and-platforms" },
   { ro: "/servicii/automatizari-si-ai", en: "/en/services/automation-and-ai" },
   { ro: "/servicii/qa-testing-web-mobile", en: "/en/services/web-mobile-qa-testing" },
+  { ro: "/servicii/seo-ai-visibility-performance", en: "/en/services/seo-ai-visibility-performance" },
+  { ro: "/servicii/digital-marketing-ads", en: "/en/services/digital-marketing-ads" },
   // Biblioteca este publică; VITE_BIBLIOTECA=0 rămâne kill switch de urgență.
   ...(FEATURES.bibliotecaLive
     ? [{ ro: "/biblioteca", en: "/en/library" }]

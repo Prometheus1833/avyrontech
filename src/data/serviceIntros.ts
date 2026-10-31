@@ -10,9 +10,11 @@ export type ServiceIntroKey =
   | "online-store"
   | "apps"
   | "ai-agent"
-  | "qa-testing";
+  | "qa-testing"
+  | "seo-ai"
+  | "marketing-ads";
 
-export type ServiceIntroMotif = "browser" | "network" | "commerce" | "devices" | "neural" | "scan";
+export type ServiceIntroMotif = "browser" | "network" | "commerce" | "devices" | "neural" | "scan" | "discovery" | "campaign";
 
 type IntroCopy = { ro: string; en: string };
 
@@ -32,6 +34,8 @@ export const SERVICE_INTRO_KEYS: ServiceIntroKey[] = [
   "apps",
   "ai-agent",
   "qa-testing",
+  "seo-ai",
+  "marketing-ads",
 ];
 
 export const SERVICE_INTRO_SPECS: Record<ServiceIntroKey, ServiceIntroSpec> = {
@@ -82,6 +86,22 @@ export const SERVICE_INTRO_SPECS: Record<ServiceIntroKey, ServiceIntroSpec> = {
     motif: "scan",
     primary: "163 230 53",
     secondary: "16 185 129",
+  },
+  "seo-ai": {
+    label: { ro: "SEO & AI Visibility and Performance", en: "SEO & AI Visibility and Performance" },
+    micro: { ro: "Din semnal în înțelegere.", en: "From signal to understanding." },
+    sequence: { ro: ["descoperire", "context", "încredere"], en: ["discovery", "context", "trust"] },
+    motif: "discovery",
+    primary: "113 231 214",
+    secondary: "90 169 248",
+  },
+  "marketing-ads": {
+    label: { ro: "Digital Marketing & Ads", en: "Digital Marketing & Ads" },
+    micro: { ro: "Fiecare semnal are o direcție.", en: "Every signal has a direction." },
+    sequence: { ro: ["mesaj", "click", "acțiune"], en: ["message", "click", "action"] },
+    motif: "campaign",
+    primary: "255 189 114",
+    secondary: "255 111 143",
   },
 };
 
