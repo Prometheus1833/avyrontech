@@ -707,7 +707,7 @@ const SERVICES: ServiceDef[] = [
     key: "seo-ai",
     icon: SearchCheck,
     badge: { ro: "Vizibilitate organică", en: "Organic visibility" },
-    title: { ro: "SEO & AI Visibility and Performance", en: "SEO & AI Visibility and Performance" },
+    title: { ro: "SEO & AI Performance and Visibility", en: "SEO & AI Performance and Visibility" },
     tagline: { ro: "SEO · AI Search · Core Web Vitals", en: "SEO · AI Search · Core Web Vitals" },
     desc: {
       ro: "O bază tehnică rapidă, conținut clar și semnale de încredere pentru căutarea clasică și experiențele AI, cu progres măsurat realist.",
@@ -722,7 +722,7 @@ const SERVICES: ServiceDef[] = [
       { icon: Gauge, text: { ro: "Core Web Vitals, experiență mobilă și raportare", en: "Core Web Vitals, mobile experience and reporting" } },
     ],
     cta: { ro: "Discută despre vizibilitate", en: "Discuss visibility" },
-    wa: { ro: "Bună! Aș vrea să discut despre SEO & AI Visibility and Performance.", en: "Hi! I'd like to discuss SEO & AI Visibility and Performance." },
+    wa: { ro: "Bună! Aș vrea să discut despre SEO & AI Performance and Visibility.", en: "Hi! I'd like to discuss SEO & AI Performance and Visibility." },
     details: { ro: "/servicii/seo-ai-visibility-performance", en: "/en/services/seo-ai-visibility-performance" },
     analytics: "services_seo_ai",
     accent: {

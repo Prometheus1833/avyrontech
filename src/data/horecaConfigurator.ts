@@ -275,8 +275,8 @@ export const AVYRON_SERVICE_OPTIONS: ConfiguratorChoice[] = [
   { id: "application", icon: Smartphone, label: { ro: "Aplicație / platformă", en: "App / platform" }, hint: { ro: "Conturi, automatizări și fluxuri proprii", en: "Accounts, automations and custom flows" } },
   { id: "automation", icon: Bot, label: { ro: "Automatizări și AI", en: "Automation and AI" }, hint: { ro: "Procese repetitive, asistenți și integrări", en: "Repetitive processes, assistants and integrations" } },
   { id: "maintenance", icon: Settings2, label: { ro: "Mentenanță și abonament", en: "Maintenance and subscription" }, hint: { ro: "Actualizări, monitorizare și suport după lansare", en: "Updates, monitoring and post-launch support" } },
-  { id: "seo-ai-visibility", icon: SearchCheck, label: { ro: "SEO & AI Visibility", en: "SEO & AI Visibility" }, hint: { ro: "Audit gratuit, optimizare tehnică și conținut", en: "Free audit, technical optimization and content" } },
-  { id: "digital-marketing-ads", icon: BarChart3, label: { ro: "Digital Marketing & Ads", en: "Digital Marketing & Ads" }, hint: { ro: "Campanii, creative, monitorizare și raportare", en: "Campaigns, creative, monitoring and reporting" } },
+  { id: "seo-ai-visibility", icon: SearchCheck, label: { ro: "SEO & AI Performance and Visibility", en: "SEO & AI Performance and Visibility" }, hint: { ro: "Audit gratuit, optimizare tehnică și conținut", en: "Free audit, technical optimization and content" } },
+  { id: "digital-marketing-ads", icon: BarChart3, label: { ro: "Digital Marketing & Ads", en: "Digital Marketing & Ads" }, hint: { ro: "Campanii, materiale creative, monitorizare și raportare", en: "Campaigns, creative, monitoring and reporting" } },
 ];
 
 export const WEBSITE_FEATURE_OPTIONS: ConfiguratorChoice[] = [

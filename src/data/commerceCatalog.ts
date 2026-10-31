@@ -47,9 +47,9 @@ export const COMMERCE_CATALOG: readonly CommerceCatalogItem[] = [
   { sku: "sub-app-pro", type: "subscription", name: "Mentenanță Aplicație web/mobile — Pro", unitPriceCents: 100_000, currency: "RON", billing: "monthly" },
   { sku: "sub-app-proactiv", type: "subscription", name: "Mentenanță Aplicație web/mobile — Pro Activ", unitPriceCents: 150_000, currency: "RON", billing: "monthly" },
 
-  { sku: "sub-seo-essential", type: "subscription", name: "SEO & AI Visibility — Essential", unitPriceCents: 69_000, currency: "RON", billing: "monthly" },
-  { sku: "sub-seo-growth", type: "subscription", name: "SEO & AI Visibility — Growth", unitPriceCents: 129_000, currency: "RON", billing: "monthly" },
-  { sku: "sub-seo-premium", type: "subscription", name: "SEO & AI Visibility — Premium", unitPriceCents: 249_000, currency: "RON", billing: "monthly" },
+  { sku: "sub-seo-essential", type: "subscription", name: "SEO & AI Performance and Visibility — Essential", unitPriceCents: 69_000, currency: "RON", billing: "monthly" },
+  { sku: "sub-seo-growth", type: "subscription", name: "SEO & AI Performance and Visibility — Growth", unitPriceCents: 129_000, currency: "RON", billing: "monthly" },
+  { sku: "sub-seo-premium", type: "subscription", name: "SEO & AI Performance and Visibility — Premium", unitPriceCents: 249_000, currency: "RON", billing: "monthly" },
   { sku: "sub-ads-start", type: "subscription", name: "Digital Marketing & Ads — Ads Start", unitPriceCents: 99_000, currency: "RON", billing: "monthly" },
   { sku: "sub-ads-growth", type: "subscription", name: "Digital Marketing & Ads — Ads Growth", unitPriceCents: 169_000, currency: "RON", billing: "monthly" },
   { sku: "sub-ads-performance", type: "custom", name: "Digital Marketing & Ads — Ads Performance (de la)", unitPriceCents: null, currency: "RON", billing: "monthly" },

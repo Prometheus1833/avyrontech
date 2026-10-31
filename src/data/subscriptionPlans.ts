@@ -1177,8 +1177,8 @@ const growthPlan = (offer: GrowthOffer, index: number, kind: "seo" | "ads"): Sub
   const ro = featureText("ro");
   const en = featureText("en");
   const details = kind === "seo"
-    ? { ro: ["SEO tehnic și indexare Google", "Performanță web, SEO local și conținut, după nivelul ales", "AI Visibility, monitorizare și rapoarte"], en: ["Technical SEO and Google indexing", "Web performance, local SEO and content, according to tier", "AI Visibility, monitoring and reports"] }
-    : { ro: ["Bugetul media este achitat separat", "Configurare inițială Ads de la 590 lei", "Monitorizare AI și raportare incluse"], en: ["Media spend is paid separately", "Initial Ads setup from 590 RON", "AI assisted monitoring and reporting included"] };
+    ? { ro: ["SEO tehnic și verificarea indexării Google", "Performanță web, SEO local și conținut, după nivelul ales", "AI Visibility, monitorizare și rapoarte"], en: ["Technical SEO and Google indexing review", "Web performance, local SEO and content, according to tier", "AI Visibility, monitoring and reports"] }
+    : { ro: ["Bugetul media este achitat separat", "Configurare inițială Ads de la 590 lei", "Monitorizare AI și raportare incluse"], en: ["Media spend is paid separately", "Initial Ads setup from 590 RON", "AI-assisted monitoring and reporting included"] };
   const copy = (lang: Lang): PlanText => ({
     level: `${lang === "ro" ? "Nivel" : "Tier"} ${index + 1} · ${kind === "seo" ? "SEO & AI" : "Marketing & Ads"}`,
     tagline: index === 1 ? (lang === "ro" ? "Pentru creștere" : "For growth") : "",
@@ -1208,8 +1208,8 @@ const SEO: SubscriptionCategory = {
   internProjectKinds: [], services: ["seo-ai"], servicePath: { ro: "/servicii/seo-ai-visibility-performance", en: "/en/services/seo-ai-visibility-performance" },
   theme: { from: "from-teal-400", to: "to-sky-600", text: "text-teal-600 dark:text-teal-300", border: "border-teal-300/30", glow: "bg-teal-400/15", ring: "ring-teal-300/40", hue: "170 76% 54%", backdrop: "grid" },
   copy: {
-    ro: { title: "SEO & AI Performance and Visibility", kicker: "Vizibilitate organică", lead: "SEO tehnic, viteză, indexare Google, SEO local, conținut și vizibilitate în căutarea AI, în funcție de abonament.", note: "Auditul SEO & AI inițial este gratuit, fără obligații contractuale. Optimizările unice sunt disponibile separat." },
-    en: { title: "SEO & AI Performance and Visibility", kicker: "Organic visibility", lead: "Technical SEO, speed, Google indexing, local SEO, content and AI search visibility according to the selected plan.", note: "The initial SEO & AI audit is free with no contractual obligation. One-time optimization is available separately." },
+    ro: { title: "SEO & AI Performance and Visibility", kicker: "Vizibilitate organică", lead: "SEO tehnic, viteză, verificarea indexării Google, SEO local, conținut și vizibilitate în căutarea AI, în funcție de abonament.", note: "Auditul SEO & AI inițial este gratuit, fără obligații contractuale. Livrabilele exacte se confirmă după audit; optimizările unice sunt disponibile separat." },
+    en: { title: "SEO & AI Performance and Visibility", kicker: "Organic visibility", lead: "Technical SEO, speed, Google indexing review, local SEO, content and AI search visibility according to the selected plan.", note: "The initial SEO & AI audit is free with no contractual obligation. Exact deliverables are agreed after the audit; one-time optimization is available separately." },
   },
   plans: SEO_MONTHLY_OFFERS.map((item, index) => growthPlan(item, index, "seo")),
 };
@@ -1219,8 +1219,8 @@ const ADS: SubscriptionCategory = {
   internProjectKinds: [], services: ["marketing-ads"], servicePath: { ro: "/servicii/digital-marketing-ads", en: "/en/services/digital-marketing-ads" },
   theme: { from: "from-orange-400", to: "to-rose-600", text: "text-orange-600 dark:text-orange-300", border: "border-orange-300/30", glow: "bg-orange-400/15", ring: "ring-orange-300/40", hue: "28 95% 64%", backdrop: "grid" },
   copy: {
-    ro: { title: "Digital Marketing & Ads", kicker: "Campanii și conversii", lead: "Campanii pe platformele potrivite, creative, teste și optimizare, cu monitorizare AI și raportare incluse.", note: "Bugetul publicitar se achită separat. Configurarea inițială începe de la 590 lei. Recomandăm minimum 3 luni." },
-    en: { title: "Digital Marketing & Ads", kicker: "Campaigns and conversions", lead: "Campaigns on relevant platforms, creative assets, testing and optimization, with AI assisted monitoring and reporting included.", note: "Media spend is paid separately. Initial setup starts at 590 RON. We recommend at least 3 months." },
+    ro: { title: "Digital Marketing & Ads", kicker: "Campanii și conversii", lead: "Campanii pe platformele potrivite, materiale creative, teste și optimizare, cu monitorizare AI și raportare incluse.", note: "Bugetul publicitar se achită separat. Configurarea inițială începe de la 590 lei. Recomandăm minimum 3 luni." },
+    en: { title: "Digital Marketing & Ads", kicker: "Campaigns and conversions", lead: "Campaigns on relevant platforms, creative assets, testing and optimization, with AI-assisted monitoring and reporting included.", note: "Media spend is paid separately. Initial setup starts at 590 RON. We recommend at least 3 months." },
   },
   plans: ADS_MONTHLY_OFFERS.map((item, index) => growthPlan(item, index, "ads")),
 };

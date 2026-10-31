@@ -88,7 +88,7 @@ export const SERVICE_INTRO_SPECS: Record<ServiceIntroKey, ServiceIntroSpec> = {
     secondary: "16 185 129",
   },
   "seo-ai": {
-    label: { ro: "SEO & AI Visibility and Performance", en: "SEO & AI Visibility and Performance" },
+    label: { ro: "SEO & AI Performance and Visibility", en: "SEO & AI Performance and Visibility" },
     micro: { ro: "Din semnal în înțelegere.", en: "From signal to understanding." },
     sequence: { ro: ["descoperire", "context", "încredere"], en: ["discovery", "context", "trust"] },
     motif: "discovery",

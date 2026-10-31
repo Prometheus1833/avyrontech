@@ -43,17 +43,17 @@ export const ADS_MONTHLY_OFFERS = [
   offer("sub-ads-start", "AVY-ADS-STR", "Ads Start", [
     { ro: "1 platformă · 2 campanii · 2 materiale creative", en: "1 platform · 2 campaigns · 2 creative assets" },
     { ro: "Optimizare săptămânală", en: "Weekly optimization" },
-    { ro: "Monitorizare AI și raportare", en: "AI assisted monitoring and reporting" },
+    { ro: "Monitorizare AI și raportare", en: "AI-assisted monitoring and reporting" },
   ]),
   offer("sub-ads-growth", "AVY-ADS-GRW", "Ads Growth", [
     { ro: "2 platforme · 4 campanii · 4 postări social media", en: "2 platforms · 4 campaigns · 4 social posts" },
-    { ro: "Teste A/B și optimizare continuă", en: "A/B tests and ongoing optimization" },
-    { ro: "Monitorizare AI și raportare", en: "AI assisted monitoring and reporting" },
+    { ro: "Teste A/B", en: "A/B tests" },
+    { ro: "Monitorizare AI și raportare", en: "AI-assisted monitoring and reporting" },
   ]),
   offer("sub-ads-performance", "AVY-ADS-PRF", "Ads Performance", [
     { ro: "3 platforme · 8 campanii · 8 postări", en: "3 platforms · 8 campaigns · 8 posts" },
     { ro: "Remarketing și optimizarea conversiilor (CRO)", en: "Remarketing and conversion optimization (CRO)" },
-    { ro: "Analiză avansată, monitorizare AI și raportare", en: "Advanced analysis, AI assisted monitoring and reporting" },
+    { ro: "Analiză avansată, monitorizare AI și raportare", en: "Advanced analysis, AI-assisted monitoring and reporting" },
   ], true, 299_000),
 ] as const;
 

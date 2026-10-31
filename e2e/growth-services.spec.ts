@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 const pages = [
   {
     path: "/servicii/seo-ai-visibility-performance",
-    name: "SEO & AI Visibility and Performance",
+    name: "SEO & AI Performance and Visibility",
     image: "/og/seo-ai.png",
   },
   {
@@ -61,6 +61,28 @@ for (const service of pages) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(1440);
   });
 }
+
+test("English service pages retain translated offers and reciprocal language metadata", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  for (const service of pages) {
+    const englishPath = service.path.replace("/servicii/", "/en/services/");
+    await page.goto(englishPath);
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(page.locator("h1")).toContainText(service.name);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro" + englishPath);
+    await expect(page.locator('link[rel="alternate"][hreflang="ro"]')).toHaveAttribute("href", "https://avyron.ro" + service.path);
+    await expect(page.locator('link[rel="alternate"][hreflang="en"]')).toHaveAttribute("href", "https://avyron.ro" + englishPath);
+    await expect(page.locator(".growth-offer")).toHaveCount(3);
+    if (service.path.includes("seo-ai")) {
+      await expect(page.locator(".growth-pricing")).toContainText("free");
+      await expect(page.locator(".growth-one-time-list")).toContainText("1,290 RON");
+    } else {
+      await expect(page.locator(".growth-pricing")).toContainText("990 RON");
+      await expect(page.locator(".growth-pricing")).toContainText("from 2,990 RON");
+      await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /1,690 RON\/month/);
+    }
+  }
+});
 
 test("SEO and Ads plans appear in the subscription catalog", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });

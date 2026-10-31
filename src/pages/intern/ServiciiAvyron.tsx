@@ -22,7 +22,7 @@ const ALL_SERVICES = [...SERVICES, {
   path: { ro: "/servicii/audit-website", en: "/en/services/website-audit" },
 }, {
   key: "seo-ai", category: "growth", priceRon: 690,
-  copy: { ro: { name: "SEO & AI Visibility and Performance", subtitle: "Audit gratuit; abonamente și optimizări unice." } },
+  copy: { ro: { name: "SEO & AI Performance and Visibility", subtitle: "Audit gratuit; abonamente și optimizări unice." } },
   duration: { ro: "Lunar sau lucrare unică" },
   path: { ro: "/servicii/seo-ai-visibility-performance", en: "/en/services/seo-ai-visibility-performance" },
 }, {

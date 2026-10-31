@@ -111,9 +111,9 @@ const MaintenancePartnerships = () => {
     ? [
         { q: "Pot renunța oricând la abonament?", a: "Pentru mentenanță se aplică termenii indicați în plan. Pentru Ads recomandăm un contract de minimum 3 luni; durata exactă se confirmă în propunere." },
         { q: "De ce prețurile sunt afișate în lei?", a: "Facturăm în lei, așa că prețul din abonament este cel real. Poți comuta afișarea în euro oricând — conversia folosește cursul de referință al Băncii Centrale Europene, actualizat zilnic de serverul nostru." },
-        { q: "Pot schimba treapta mai târziu?", a: "Oricând, în ambele sensuri. Diferența se calculează proporțional cu zilele rămase din luna curentă, fără taxe de trecere." },
-        { q: "Ce câștig dacă plătesc anual?", a: "Plata pentru 12 luni se face o singură dată, iar promoția anuală activă îți reduce factura. Vezi reducerea exactă în pasul de selectare, înainte să confirmi ceva." },
-        { q: "Am mai multe produse. Se cumulează abonamentele?", a: "Da, iar din al doilea abonament activ aplicăm o reducere de fidelitate. Ne scrii ce produse ai și îți facem o singură ofertă, cu o singură factură." },
+        { q: "Pot schimba treapta mai târziu?", a: "La abonamentele de mentenanță poți schimba treapta; diferența se calculează proporțional cu zilele rămase din luna curentă, fără taxă de schimbare. Pentru SEO și Ads, modificările se stabilesc în propunere." },
+        { q: "Ce câștig dacă plătesc anual?", a: "Opțiunea anuală se aplică abonamentelor de mentenanță: plătești pentru 12 luni, iar reducerea activă apare înainte de confirmare. Pentru SEO și Ads, condițiile se stabilesc în propunere." },
+        { q: "Am mai multe produse. Se cumulează abonamentele?", a: "Pentru mentenanța mai multor produse putem pregăti o ofertă comună. Dacă alegi împreună SEO și Ads, reducerea este de 10% pentru cele două servicii, confirmată în propunere." },
         { q: "Faceți mentenanță și pentru un produs făcut de altcineva?", a: "Da. Facem întâi o evaluare gratuită, îți spunem exact ce trebuie corectat la preluare și abia apoi pornim abonamentul. Nu preluăm proiecte fără să știm în ce stare sunt." },
         { q: "Ce se întâmplă dacă produsul cade noaptea?", a: "Monitorizarea ne alertează automat. La treptele Pro Activ intervenim și în afara programului, restaurăm din backup dacă e nevoie și îți trimitem un raport cu ce s-a întâmplat și ce am schimbat ca să nu se repete." },
         { q: "Ce înseamnă „modificări nelimitate”?", a: "Înseamnă că nu numărăm cererile obișnuite de conținut și de întreținere. Sunt excluse proiectele noi, refacerea completă a produsului sau funcționalitățile mari, care se estimează separat." },
@@ -121,9 +121,9 @@ const MaintenancePartnerships = () => {
     : [
         { q: "Can I cancel at any time?", a: "Maintenance follows the terms shown in each plan. For Ads, we recommend a minimum 3-month agreement; the exact term is confirmed in the proposal." },
         { q: "Why are prices shown in lei?", a: "We invoice in RON, so the price on the plan is the real one. You can switch the display to euro at any time — the conversion uses the European Central Bank reference rate, refreshed daily by our server." },
-        { q: "Can I change tier later?", a: "Any time, in both directions. The difference is prorated across the days left in the current month, with no switching fees." },
-        { q: "What do I gain by paying annually?", a: "You pay for 12 months once, and the active annual promotion lowers the invoice. You see the exact discount in the selection step, before confirming anything." },
-        { q: "I have several products. Do plans stack?", a: "They do, and from the second active plan we apply a loyalty discount. Tell us what you run and we build a single offer with a single invoice." },
+        { q: "Can I change tier later?", a: "You can change a maintenance tier; the difference is prorated for the days left in the current month, with no switching fee. Changes to SEO and Ads plans are agreed in the proposal." },
+        { q: "What do I gain by paying annually?", a: "Annual billing applies to maintenance plans: you pay for 12 months and see any active discount before confirming. SEO and Ads terms are agreed in the proposal." },
+        { q: "I have several products. Do plans stack?", a: "We can prepare a combined maintenance proposal for multiple products. If you contract SEO and Ads together, the two services receive a 10% discount confirmed in the proposal." },
         { q: "Do you maintain a product built by someone else?", a: "Yes. We first run a free evaluation, tell you exactly what needs fixing at handover and only then start the subscription. We never take over a project blind." },
         { q: "What happens if the product goes down at night?", a: "Monitoring alerts us automatically. On Pro Activ tiers we step in outside working hours too, restore from backup if needed and send you a report on what happened and what we changed so it doesn't repeat." },
         { q: "What does \"unlimited changes\" mean?", a: "It means we don't count ordinary content and upkeep requests. New projects, full rebuilds or large features are excluded and estimated separately." },
@@ -136,7 +136,7 @@ const MaintenancePartnerships = () => {
     const title = ro
       ? `Mentenanță și colaborări — abonamente de la ${fromPrice} lei/lună | Avyron`
       : `Maintenance and partnerships — plans from ${fromPrice} RON/month | Avyron`;
-    // Descrierea stă sub 160 de caractere, ca să intre întreagă în rezultatele Google.
+    // Descriere unică pentru această pagină; motoarele de căutare pot alege alt fragment.
     const description = ro
       ? `Abonamente lunare pentru site, magazin, blog, agent AI, aplicații, SEO & AI și Ads. Compară prețuri și servicii de la ${fromPrice} lei/lună.`
       : `Monthly plans for websites, shops, blogs, AI agents, apps, SEO & AI and Ads. Compare pricing and services from ${fromPrice} RON/month.`;
@@ -156,7 +156,7 @@ const MaintenancePartnerships = () => {
           path,
         }));
         setJsonLd("ld-subscriptions", subscriptionCatalogLd({
-          name: ro ? "Abonamente de mentenanță Avyron" : "Avyron maintenance plans",
+          name: ro ? "Abonamente AVYRON" : "AVYRON plans",
           path,
           currency: "RON",
           items: SUBSCRIPTION_CATEGORIES.flatMap((category) =>
@@ -181,16 +181,16 @@ const MaintenancePartnerships = () => {
 
   const steps = ro
     ? [
-        { icon: Search, title: "Alegi produsul", desc: "Fiecare tip de produs are propriile trepte, pentru că un magazin online și un blog nu au aceleași nevoi." },
-        { icon: CalendarClock, title: "Alegi treapta", desc: "Apeși abonamentul și se deschide un mini-dashboard cu specificațiile exacte: timp de răspuns, backup, ore incluse." },
-        { icon: CreditCard, title: "Activezi din cont", desc: "Te autentifici, alegi ritmul de facturare și abonamentul apare în contul tău, la Produse & Servicii." },
-        { icon: BarChart3, title: "Urmărești din platformă", desc: "Abonamentul se leagă de proiectul tău din platforma Avyron, unde vezi starea, intervențiile și raportul de la final de lună." },
+        { icon: Search, title: "Alegi serviciul", desc: "Compari mentenanța, SEO sau Ads și alegi categoria potrivită proiectului tău." },
+        { icon: CalendarClock, title: "Compari planurile", desc: "Vezi prețul lunar, livrabilele și condițiile fiecărei categorii. Pentru SEO și Ads, detaliile se confirmă după discuție." },
+        { icon: CreditCard, title: "Confirmi colaborarea", desc: "Mentenanța se poate activa din cont. Pentru SEO și Ads soliciți o propunere, fără plată directă pe această pagină." },
+        { icon: BarChart3, title: "Urmărești progresul", desc: "Pentru serviciile contractate, stabilim cum primești actualizări și rapoarte în funcție de proiect și de accesul disponibil." },
       ]
     : [
-        { icon: Search, title: "Pick your product", desc: "Each product type has its own tiers, because an online store and a blog don't have the same needs." },
-        { icon: CalendarClock, title: "Pick your tier", desc: "Tap a plan and a mini dashboard opens with the exact specs: response time, backups, included hours." },
-        { icon: CreditCard, title: "Activate from your account", desc: "Sign in, pick the billing rhythm and the plan shows up in your account under Products & Services." },
-        { icon: BarChart3, title: "Follow it from the platform", desc: "The plan attaches to your project in the Avyron platform, where you see its state, the interventions and the end-of-month report." },
+        { icon: Search, title: "Choose a service", desc: "Compare maintenance, SEO or Ads and select the category that fits your project." },
+        { icon: CalendarClock, title: "Compare plans", desc: "Review monthly prices, deliverables and terms for each category. SEO and Ads details are confirmed after a discussion." },
+        { icon: CreditCard, title: "Confirm the engagement", desc: "Maintenance can be activated from your account. For SEO and Ads, request a proposal; there is no direct payment on this page." },
+        { icon: BarChart3, title: "Track progress", desc: "For contracted services, we agree how updates and reports are delivered based on the project and available access." },
       ];
 
   const pillars = ro
@@ -385,8 +385,8 @@ const MaintenancePartnerships = () => {
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-foreground/70 md:text-base">
               {ro
-                ? "Patru pași, fără telefoane de vânzare și fără oferte care ajung peste o săptămână."
-                : "Four steps, with no sales calls and no quotes that arrive a week later."}
+                  ? "Patru pași pentru a compara și a începe colaborarea, în funcție de serviciul ales."
+                  : "Four steps to compare plans and start working together, depending on the service you choose."}
             </p>
           </Reveal>
           <ol className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -480,7 +480,7 @@ const MaintenancePartnerships = () => {
 
         <aside className="mx-auto max-w-6xl px-4 py-8">
           <div className="flex flex-col gap-4 rounded-3xl border border-teal-300/20 bg-gradient-to-r from-teal-500/[0.08] to-orange-500/[0.08] p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
-            <div><p className="font-mono text-[10px] uppercase tracking-[0.2em] text-teal-600 dark:text-teal-300">SEO + ADS / AVYRON OS</p><h2 className="mt-2 font-display text-xl font-bold">{ro ? "10% reducere când contractezi ambele servicii" : "10% off when you contract both services"}</h2><p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground/70">{ro ? "Reducerea se confirmă în oferta comună. Monitorizarea AI și raportarea sunt incluse; bugetul publicitar se achită separat. Poți adăuga extraopțiuni în Configuratorul AVYRON." : "The discount is confirmed in a combined proposal. AI assisted monitoring and reporting are included; media spend is paid separately. Add extras in the AVYRON Configurator."}</p></div>
+            <div><p className="font-mono text-[10px] uppercase tracking-[0.2em] text-teal-600 dark:text-teal-300">SEO + ADS / AVYRON OS</p><h2 className="mt-2 font-display text-xl font-bold">{ro ? "10% reducere când contractezi ambele servicii" : "10% off when you contract both services"}</h2><p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground/70">{ro ? "Reducerea se confirmă în oferta comună. Monitorizarea AI și raportarea sunt incluse; bugetul publicitar se achită separat. Poți adăuga extraopțiuni în Configuratorul AVYRON." : "The discount is confirmed in a combined proposal. AI-assisted monitoring and reporting are included; media spend is paid separately. Add extras in the AVYRON Configurator."}</p></div>
             <Link to={ro ? "/configurator" : "/en/configurator"} className="inline-flex shrink-0 items-center gap-2 self-start rounded-full border border-foreground/20 px-4 py-2.5 text-sm font-semibold hover:border-brand hover:text-brand">{ro ? "Alege extraopțiuni" : "Choose extras"}<ArrowRight className="size-4" aria-hidden /></Link>
           </div>
         </aside>
