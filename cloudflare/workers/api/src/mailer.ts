@@ -2,7 +2,7 @@ import type { Env } from "./types";
 import { sendMailSmtp, type Attachment, type MailMessage } from "./smtp";
 
 // Câmpuri opționale (nu union discriminat) pentru narrowing corect și fără `strictNullChecks`.
-export type DeliveryResult = { delivered: boolean; error?: string };
+export type DeliveryResult = { delivered: boolean; error?: string; providerMessageId?: string };
 
 const errorMessage = (error: unknown) => error instanceof Error ? error.message.slice(0, 500) : "Unknown email delivery error";
 
@@ -24,7 +24,7 @@ export async function deliverMail(
   if (!env.SMTP_PASS && env.TRANSACTIONAL_EMAIL) {
     try {
       const namedSender = /^\s*([^<>]+?)\s*<([^<>]+)>\s*$/.exec(from);
-      await env.TRANSACTIONAL_EMAIL.send({
+      const response = await env.TRANSACTIONAL_EMAIL.send({
         to: message.to,
         from: namedSender ? { name: namedSender[1].trim(), email: namedSender[2].trim() } : from,
         replyTo: message.replyTo,
@@ -38,7 +38,7 @@ export async function deliverMail(
           content: attachment.content,
         })),
       });
-      return { delivered: true };
+      return { delivered: true, providerMessageId: response?.messageId };
     } catch (error) {
       return { delivered: false, error: errorMessage(error) };
     }

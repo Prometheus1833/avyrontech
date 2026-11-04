@@ -1,0 +1,177 @@
+[
+  {
+    "id": "d1",
+    "title": "Întrebări inițiale client",
+    "subtitle": "Discovery briefing — ce întrebăm la primul contact",
+    "paragraphs": [
+      "Set de întrebări pe care le adresăm clientului în prima discuție pentru a aduna toate informațiile necesare unei oferte și unui prim mockup.",
+      "Cu ce vă ocupați? (domeniu / nișă / piață țintă)",
+      "Aveți deja un site sau prezență online? Link-uri.",
+      "Ce vă doriți de la noul site / aplicație? (vânzări, prezentare, programări, lead-uri)",
+      "Aveți identitate vizuală? (logo, culori, fonturi) sau o creăm noi?",
+      "Aveți texte și poze pregătite sau le generăm/redactăm noi?",
+      "Câte pagini / secțiuni estimați?",
+      "Buget estimat și termen dorit pentru lansare.",
+      "Aveți concurenți / site-uri care vă plac ca model?",
+      "Doriți integrări speciale? (plăți, curieri, AI chat, programări, newsletter)",
+      "Cine va administra ulterior site-ul — voi sau noi (mentenanță)?"
+    ]
+  },
+  {
+    "id": "d2",
+    "title": "Informații generale Avyron",
+    "subtitle": "Pitch deck intern — ce suntem și cum vorbim despre noi",
+    "paragraphs": [
+      "Avyron Tech este un studio digital românesc care construiește site-uri, aplicații și ecosisteme online complete pentru afaceri mici și medii.",
+      "Ce facem: design UI/UX, dezvoltare web (React, Lovable, Supabase), integrări AI, e-commerce, SEO, administrare cont-uri, marketing pentru rețele sociale.",
+      "Diferențiator: livrăm rapid (sub-domenii temporare în Cloudflare pentru testare în timp real), oferim mentenanță continuă, și putem prelua complet administrarea tehnică (Cloudflare, Supabase, Vercel, Hostico).",
+      "Ton: tech-confident, prietenos, orientat pe rezultate. Vorbim clar, nu folosim jargon inutil.",
+      "Contact: contact@avyron.ro · avyron.ro"
+    ]
+  },
+  {
+    "id": "d3",
+    "title": "Modele marketing",
+    "subtitle": "Metode 1–4 pentru achiziție clienți",
+    "paragraphs": [
+      "Conversațiile cu clienții pot avea loc pe orice cont Avyron. În discuții urmărim:",
+      "transmitere clară și informare completă, la obiect;",
+      "aflarea nevoilor clientului, tipul de activitate și dorințele de la site;",
+      "comunicarea intervalului de preț și a timpului după consultare cu un developer;",
+      "accent pe avantajele aduse de site în activitatea sa.",
+      "Metoda 1",
+      "1–2–3 SS de pe profilul FB/Insta al clientului cu activitatea/afacerea + creare imagine vizuală a website-ului în ChatGPT/Gemini + prim mesaj/propunere către client despre oportunitatea de a-i crea o identitate completă online pentru a fi mai vizibil.",
+      "Metoda 2",
+      "Mesaj universal dar personalizabil trimis mai multor potențiali clienți din aceeași nișă.",
+      "Metoda 3",
+      "E-mail către firmele care nu au un site.",
+      "Metoda 4",
+      "Sondaje pe story-urile postate pe rețelele de socializare cu răspunsuri relevante."
+    ]
+  },
+  {
+    "id": "d4",
+    "title": "Creare Website prompt",
+    "subtitle": "Ghid creare site în Lovable — proces standard",
+    "paragraphs": [
+      "Ghid creare site în Lovable.",
+      "După identificarea nevoilor clientului și notarea într-un fișier text a informațiilor și resurselor oferite (imagini sau video) ori create cu AI, se face o descriere completă a site-ului în Lovable și completarea detaliilor cerute. Inițial se aleg cât mai multe integrări vizuale; backend-ul vine mai târziu.",
+      "Regula domeniului",
+      "Domeniul .lovable nu se distribuie niciodată clientului. Se creează un subdomeniu temporar în Cloudflare și se conectează la Lovable, astfel încât clientul să poată vedea și testa în timp real și să propună modificări.",
+      "Tip: pentru proiecte mai mari, mai întâi blochezi paleta de culori și tipografia în briefing, apoi te bazezi pe componente shadcn refolosibile pentru consistență."
+    ]
+  },
+  {
+    "id": "d5",
+    "title": "Conturi",
+    "subtitle": "Acces și administrare cont-uri tehnice",
+    "paragraphs": [
+      "Pentru fiecare client putem prelua administrarea completă a 4 conturi tehnice:",
+      "Cloudflare — DNS, subdomenii, SSL, protecție bot.",
+      "Supabase / Lovable Cloud — bază de date, autentificare, storage.",
+      "Vercel — hosting, deploy automat, monitoring.",
+      "Hostico — domeniu .ro, email-uri profesionale, redirect-uri.",
+      "Toate parolele se țin în vault-ul intern. Niciun cont nu se transferă către client fără cerere scrisă și predare oficială."
+    ]
+  },
+  {
+    "id": "d6",
+    "title": "Prețuri și costuri",
+    "subtitle": "Estimare costuri pentru comunicarea inițială",
+    "paragraphs": [
+      "Costurile sunt orientative și estimative pentru comunicarea inițială cu clientul; pot fi făcute reduceri.",
+      "Site prezentare light — 1500 lei",
+      "Include: cod website, design, descrieri (dacă e necesar), logo (dacă e necesar), optimizare, indexare SEO performantă, securizare, bază de date, 1–3 pagini (în afara celor minime — cookies/politici, 3–6 subsecțiuni), design personalizat, butoane interactive la apăsare, butoane WhatsApp/telefon/Messenger integrate pe ecran, formular de contact.",
+      "Site prezentare Pro — 1500–3000 lei",
+      "Tot din light + 1–5 pagini, animații 3D, chat AI, FAQ interactiv, integrare programări, e-mailuri automate, notificări interactive, chestionare, alte improvements.",
+      "Site de vânzări (mic / mediu) — 2000–5000 lei",
+      "Include: 5–15 pagini, liste de produse, categorii, filtre inteligente, sistem promoții, panou Dashboard admin avansat cu diverse instrumente și statistici, integrare servicii plăți, curieri, ramburs, plăți online. Include: restaurante, magazine online de vânzări.",
+      "Costuri servicii / integrări",
+      "AI chat Flowbotic — 500 lei implem. / 1000 lei lunar",
+      "Amazon AI chat — 2000 lei implem. / 50 lei lunar",
+      "Servicii plăți online — 1000 lei",
+      "Servicii curieri — 1000 lei",
+      "Prezentare prima pagină 3D — 500–1500 lei",
+      "Logo Dinamic Special — 500–1500 lei",
+      "Mai mult de 5 pagini — 100–500 lei / pagină",
+      "Creare 4 conturi admin complet (Cloudflare, Supabase, Vercel, Hostico) — 500 lei"
+    ]
+  },
+  {
+    "id": "d7",
+    "title": "Prompt General Avyron",
+    "subtitle": "ADN-ul vizual și de produs — citește înainte de orice site",
+    "paragraphs": [
+      "Avyron este o echipă care produce produse digitale — în special website-uri. Accent mare pe performanță, fluiditate, intuitivitate și viteză de încărcare. Scroll foarte fluid.",
+      "Identitate vizuală",
+      "Paleta logo — violet, mov.",
+      "Inspirație design — Cursor / Revolut / Uber / Apple / nVidia: tech, modern, minimalist (pot fi incluse și alte stiluri unde se potrivesc).",
+      "Liquid glass de integrat în special la sidebar-ul de sus.",
+      "getdesign.md = sursă bună de inspirație.",
+      "Font principal: Times New Roman, dar și altele în funcție de secțiune.",
+      "Contrast corespunzător pe orice secțiune — totul trebuie să fie lizibil în light & dark.",
+      "Conținut & SEO",
+      "SEO optimizat pentru orice descriere / secțiune.",
+      "Unde e cazul → descrieri generate cu AI sau hint-uri relevante dacă nu sunt oferite de client.",
+      "Mesaje prestabilite personalizate în funcție de secțiune / rol.",
+      "Logo-ul Avyron în subsol — minimalist, „Powered by / Descoperă-ne\" cu buton către avyron.ro.",
+      "Stilul nostru: modern, friendly, orientat spre conversia vizitelor în comenzi.",
+      "Efecte & micro-interacțiuni",
+      "Cursor premium — magnetic, glow, blur, trail discret (fără a afecta fluiditatea).",
+      "Glassmorphism real + blur dinamic.",
+      "Card-urile reacționează la mouse / light movement (nu doar blur static), unde e relevant.",
+      "Micro-animații la hover · butoane, iconițe, carduri care „respiră\" fin, fără aglomerare.",
+      "Scroll reveal inteligent (parțial sau deloc, după caz).",
+      "Text gradient animat — în special pe headline-urile hero.",
+      "Progress scroll bar premium — doar unde e relevant.",
+      "Sound design subtil — întreabă înainte de implementare.",
+      "AI generated illustrations / 3D blobs — fără să încetinească site-ul.",
+      "Background dinamic subtil (gradient animat, aurora, particles, noise layer) — nu wallpaper static.",
+      "Tranziții fluide, premium, la schimbarea paginilor.",
+      "Integrări & secțiuni speciale",
+      "Google Maps — unde afacerea are locație fizică.",
+      "Formulare premium (când se cer) — NU formulare clasice urâte. Folosim: step by step, progress, animații, iconuri.",
+      "Before / after — pentru clinici, detailing, beauty, construcții.",
+      "Spacing optimizat în toată aplicația."
+    ]
+  },
+  {
+    "id": "d8",
+    "title": "Setup workflow",
+    "subtitle": "Stack-ul intern Avyron — tools, librării, comenzi de instalare",
+    "paragraphs": [
+      "Platforme & infrastructură",
+      "Lovable / Claude / Cursor — workflow AI complet.",
+      "Lovable — MVP rapid, landing-uri.",
+      "Atom — supliment la Lovable.",
+      "Claude — baza pentru proiecte mari.",
+      "Supabase — bază de date.",
+      "Cloudflare — DNS și deploy.",
+      "Hostico — domenii .ro.",
+      "GitHub — hub proiect / push.",
+      "Librării de instalat",
+      "# Lenis — scroll fluid cinematic / luxury",
+      "npm install lenis",
+      "# GSAP — parallax, reveal text, tranziții, mouse effects",
+      "npm install gsap",
+      "# Motion (Framer Motion) — hover, page transitions, cards, micro-interacțiuni",
+      "npm install motion",
+      "# Three.js",
+      "npm install three",
+      "# tsParticles React",
+      "npm install @tsparticles/react tsparticles tsparticles-slim",
+      "# Vanta.js",
+      "npm install vanta three",
+      "# React Bits",
+      "npm install reactbits",
+      "# Magic UI (via shadcn)",
+      "npx shadcn@latest init",
+      "npx shadcn@latest add \"https://magicui.design/r/components/all.json\"",
+      "# Spline React",
+      "npm install @splinetool/react-spline",
+      "# React Three Fiber (recomandat cu Three.js)",
+      "npm install @react-three/fiber @react-three/drei",
+      "Tip: instalează doar ce e nevoie pentru proiectul curent — bundle-ul rămâne mic, site-ul rămâne rapid."
+    ]
+  }
+]

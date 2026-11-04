@@ -4,6 +4,13 @@ export type Role = "user" | "staff" | "admin";
 // Wrangler source of truth in worker-configuration.d.ts. Only truly optional
 // integrations are extended here.
 type OptionalIntegrations = {
+  /** Private backup destinations. Provision only after approval; never fall back to FILES. */
+  DOCUMENT_BACKUPS?: R2Bucket;
+  DOCUMENT_COMPANY_BACKUPS?: R2Bucket;
+  /** Set only after an operator verifies private, distinct bucket destinations. */
+  DOCUMENT_BACKUP_ISOLATION_VERIFIED?: string;
+  /** Operator verified that FILES has no public domain or r2.dev exposure. */
+  DOCUMENT_STORAGE_PRIVACY_VERIFIED?: string;
   SMTP_PASS?: string;
   SEED_TOKEN?: string;
   AIRTABLE_API_KEY?: string;
