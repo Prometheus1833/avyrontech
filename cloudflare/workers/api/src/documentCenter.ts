@@ -1781,10 +1781,15 @@ documentCenterRouter.post("/api/documents/:id/import", async (c) => {
   if (c.env.DOCUMENT_STORAGE_PRIVACY_VERIFIED !== "true")
     return error(c, "document_storage_unverified", 503);
   if (d.archived_at) return error(c, "archived_document", 409);
-  const type = (c.req.header("content-type") || "").split(";")[0],
-    name = (c.req.query("name") || "document")
+  const type = (c.req.header("content-type") || "").split(";")[0];
+  let name: string;
+  try {
+    name = decodeURIComponent(c.req.header("X-File-Name") || "document")
       .replace(/[\r\n"\\/]/g, "_")
       .slice(0, 120);
+  } catch {
+    return error(c, "invalid_file");
+  }
   if (
     ![
       "application/pdf",
@@ -2205,6 +2210,7 @@ async function createBackup(c: Ctx, d: DocumentRow, keyScope = c.req.path) {
           : 503,
     );
   }
+  const copiedKeys: string[] = [];
   try {
     const size = await c.env.DB.prepare(
       "SELECT sum(length(payload_json)) bytes FROM document_versions WHERE document_id=?",
@@ -2270,6 +2276,7 @@ async function createBackup(c: Ctx, d: DocumentRow, keyScope = c.req.path) {
       if (file.sha256 !== "legacy_unverified" && checksum !== file.sha256)
         throw new Error("backup_checksum_mismatch");
       const backupKey = `documents/${id}/objects/${file.id}`;
+      copiedKeys.push(backupKey);
       await bucket.put(backupKey, bytes, {
         httpMetadata: { contentType: "application/octet-stream" },
       });
@@ -2309,6 +2316,7 @@ async function createBackup(c: Ctx, d: DocumentRow, keyScope = c.req.path) {
     if (json.length > 8 * 1024 * 1024)
       throw new Error("backup_manifest_too_large");
     const hash = await sha256(json);
+    copiedKeys.push(key);
     await bucket.put(key, json, {
       httpMetadata: { contentType: "application/json" },
     });
@@ -2323,11 +2331,21 @@ async function createBackup(c: Ctx, d: DocumentRow, keyScope = c.req.path) {
     ]);
     return c.json({ id, status: "verified", files: objectCopies.length });
   } catch {
-    await c.env.DB.prepare(
-      "UPDATE document_backup_records SET status='failed',error_code='backup_verification_failed' WHERE id=?",
-    )
-      .bind(id)
-      .run();
+    const cleanup = await Promise.allSettled(
+      copiedKeys.map((key) => bucket.delete(key)),
+    );
+    const code = cleanup.some((result) => result.status === "rejected")
+      ? "backup_cleanup_failed"
+      : "backup_verification_failed";
+    await c.env.DB.batch([
+      c.env.DB.prepare(
+        "UPDATE document_backup_records SET status='failed',error_code=? WHERE id=?",
+      ).bind(code, id),
+      audit(c, d.id, "backup.failed", d.current_version_id, {
+        backupId: id,
+        cleanupComplete: code !== "backup_cleanup_failed",
+      }),
+    ]);
     return error(c, "backup_verification_failed", 503);
   }
 }

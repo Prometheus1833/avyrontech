@@ -57,7 +57,7 @@ Ofertele păstrează prețul de catalog și prețul curent, motivul modificării
 
 ## Editor și export
 
-Editorul folosește un AST validat, fără HTML arbitrar, linkuri active, scripturi sau embeduri. Include titluri, liste, tabele, page-break, formatare, antet/subsol, variabile, deviz editabil, zoom și preview A4 adaptat ecranului. Previzualizarea PDF deschide fișierul real într-un blob local autentificat.
+Editorul folosește un AST validat, fără HTML arbitrar, linkuri active, scripturi sau embeduri. HTML-ul copiat este sanitizat înainte de inserarea în editor; imaginile și elementele de urmărire nu ocolesc carantina prin clipboard sau drag-and-drop. Numele fișierelor importate sunt transmise în antetul existent `X-File-Name`, fără date personale în URL. Include titluri, liste, tabele, page-break, formatare, antet/subsol, variabile, deviz editabil, zoom și preview A4 adaptat ecranului. Previzualizarea PDF deschide fișierul real într-un blob local autentificat.
 
 Autosave serializează cererile și păstrează același idempotency key la retry. Un conflict de revizie nu suprascrie lucrul altui operator. Navigarea între secțiunile dashboardului încearcă salvarea; în caz de eroare editorul păstrează textul și oferă o copie locală privată. Versiunile sunt imuabile; editarea și restaurarea emit versiuni noi. Editarea masterului este o acțiune separată. Modificarea masterului nu rescrie documentele existente.
 
@@ -96,7 +96,7 @@ Fișierele sunt sub chei opace `documents/<id>/...`, în bindingul existent `FIL
 
 Backupurile necesită bindinguri private distincte `DOCUMENT_BACKUPS` și, separat pentru firmă, `DOCUMENT_COMPANY_BACKUPS`, plus `DOCUMENT_BACKUP_ISOLATION_VERIFIED=true`. Ele nu au fallback la bucketul primar. Niciun bucket sau serviciu plătit nu este creat de implementare.
 
-Un backup face o copie separată a fiecărui fișier permanent, verifică SHA-256 înainte și după copiere și salvează manifestul cu versiuni, tipizatul folosit, asocieri, politici, granturi, destinatari pe versiune, aprobări, distribuiri și audit. Citirile de metadate sunt într-un batch D1 tranzacțional; schimbarea reviziei pe durata copiei invalidează backupul. Manifestul este recitit și verificat înainte de `verified`.
+Un backup face o copie separată a fiecărui fișier permanent, verifică SHA-256 înainte și după copiere și salvează manifestul cu versiuni, tipizatul folosit, asocieri, politici, granturi, destinatari pe versiune, aprobări, distribuiri și audit. Citirile de metadate sunt într-un batch D1 tranzacțional; schimbarea reviziei pe durata copiei invalidează backupul. Manifestul este recitit și verificat înainte de `verified`. Copiile parțiale ale unui backup eșuat sunt eliminate fără a șterge originale sau backupuri deja verificate; o eroare de curățare este înregistrată distinct.
 
 Restaurarea individuală verifică manifestul, beneficiarul și fiecare obiect, scrie chei noi și creează o **ciornă nouă**. Nu reactivează granturi revocate, nu republică și nu suprascrie versiuni istorice. Exporturile vechi restaurate sunt atașamente istorice și nu sunt reutilizate ca export al versiunii noi. La conflict sau eroare, obiectele noi neînregistrate sunt eliminate.
 
@@ -133,8 +133,8 @@ Rollbackul aplicației poate ascunde modulul; tabelele și fișierele se păstre
 
 | Verificare | Rezultat |
 | --- | --- |
-| Suita completă Vitest | 77 fișiere, 599 teste trecute; un benchmark existent este sărit implicit deoarece `AVYRON_BENCH_PUBLIC_LIMITS` nu este activat |
-| Integrare Document Center | 40 cazuri cu handler-ele reale, inclusiv contract complet, aprobarea modelului, ambele exporturi și retry de e-mail fără a doua transmitere |
+| Suita completă Vitest | 78 fișiere, 601 teste trecute; un benchmark existent este sărit implicit deoarece `AVYRON_BENCH_PUBLIC_LIMITS` nu este activat |
+| Integrare Document Center | 41 cazuri cu handler-ele reale, inclusiv contract complet, aprobarea modelului, ambele exporturi și retry de e-mail fără a doua transmitere |
 | TypeScript aplicație și Worker | Trecut |
 | ESLint | Zero erori; 4 avertizări React Refresh preexistente în componentele Logo |
 | D1, toate migrațiile | Integritate `ok`, fără încălcări FK |

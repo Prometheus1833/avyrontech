@@ -13,6 +13,7 @@ import {
 } from "@/shared/documents/model";
 import { FIELD_LABELS, templateFields } from "@/shared/documents/templates";
 import { registerDocumentSave } from "./navigation";
+import { sanitizeDocumentPaste } from "./sanitizePaste";
 
 const PageBreakNode = Node.create({
   name: "pageBreak",
@@ -73,6 +74,9 @@ export default function DocumentEditor({
     onUpdate: ({ editor: e }) =>
       setDraft((v) => ({ ...v, body: e.getJSON() as DocumentNode })),
     editorProps: {
+      transformPastedHTML: sanitizeDocumentPaste,
+      handlePaste: (_view, event) => !!event.clipboardData?.files.length,
+      handleDrop: (_view, event) => !!event.dataTransfer?.files.length,
       attributes: {
         "aria-label": "Conținutul documentului",
         "aria-multiline": "true",
@@ -389,6 +393,10 @@ export default function DocumentEditor({
             <p className="text-[11px] text-slate-500">
               Valorile modificate nu rescriu textul personalizat. Completează
               variabilele sau adaptează textul înainte de aprobare.
+            </p>
+            <p className="text-[11px] text-slate-400">
+              Copierea din Word păstrează textul și tabelele. Imaginile se
+              încarcă separat și rămân în carantină până la scanare.
             </p>
           </aside>
         )}

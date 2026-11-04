@@ -55,7 +55,10 @@ export type DocumentDetail = {
     status: string;
     error_code: string | null;
     created_at: number;
-    version_id:string;provider_id:string|null;actor_email:string;recipient_email:string;
+    version_id: string;
+    provider_id: string | null;
+    actor_email: string;
+    recipient_email: string;
   }[];
   approvals: { legal_review_reference: string; approved_by: string }[];
   grants: {
@@ -77,7 +80,7 @@ export type DocumentTemplate = {
   payload: DocumentPayload;
   required: string[];
   review_status: string;
-  visibility?: 'shared'|'private_proposal';
+  visibility?: "shared" | "private_proposal";
 };
 export type DocumentClient = {
   id: string;
@@ -185,7 +188,7 @@ export type DocumentBootstrap = {
   channels: { email: boolean; whatsapp: string; telegram: string };
   scanner: string;
   backup: string;
-  storage: 'verified'|'unverified';
+  storage: "verified" | "unverified";
 };
 const root = "/api/documents";
 export const documentsApi = {
@@ -244,17 +247,15 @@ export const documentsApi = {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   },
   import: (id: string, file: File) =>
-    cfAuth.request<{ id: string; status: string }>(
-      `${root}/${id}/import?name=${encodeURIComponent(file.name)}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": file.type || "application/octet-stream",
-          "Idempotency-Key": crypto.randomUUID(),
-        },
-        body: file,
+    cfAuth.request<{ id: string; status: string }>(`${root}/${id}/import`, {
+      method: "POST",
+      headers: {
+        "Content-Type": file.type || "application/octet-stream",
+        "X-File-Name": encodeURIComponent(file.name),
+        "Idempotency-Key": crypto.randomUUID(),
       },
-    ),
+      body: file,
+    }),
   recipients: (id: string) =>
     cfAuth.request<{
       data: { id: string; email: string; display_name: string | null }[];

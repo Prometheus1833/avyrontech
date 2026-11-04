@@ -435,11 +435,12 @@ describe("Document Center actual handlers, immutable records and private storage
   it("quarantines imports and never serves their bytes or changes their scan status", async () => {
     const d = await create();
     const r = await app.request(
-      `/api/documents/${d.id}/import?name=test.pdf`,
+      `/api/documents/${d.id}/import`,
       {
         method: "POST",
         headers: {
           "content-type": "application/pdf",
+          "X-File-Name": "test.pdf",
           "idempotency-key": crypto.randomUUID(),
         },
         body: "%PDF-1.7\nfixture",
@@ -1298,5 +1299,30 @@ describe("Document Center actual handlers, immutable records and private storage
       mkdirSync("/tmp/avyron-document-qa", { recursive: true });
       writeFileSync(`/tmp/avyron-document-qa/contract.${format}`, bytes);
     }
+  });
+  it("cleans only partial backup copies when a source fails, preserving verified backups and original files", async () => {
+    const d = await create();
+    await approve(d.id);
+    await req(`/${d.id}/export/pdf`);
+    await req(`/${d.id}/export/docx`);
+    expect((await req(`/${d.id}/backups`, {})).status).toBe(200);
+    const count = backups.data.size,
+      originals = files.data.size,
+      get = files.get;
+    let calls = 0;
+    files.get = async (key) => {
+      calls++;
+      return calls === 2 ? null : get(key);
+    };
+    expect((await req(`/${d.id}/backups`, {})).status).toBe(503);
+    expect(backups.data.size).toBe(count);
+    expect(files.data.size).toBe(originals);
+    expect(
+      db
+        .prepare(
+          "SELECT count(*) n FROM document_backup_records WHERE status='failed'",
+        )
+        .get()!.n,
+    ).toBe(1);
   });
 });
