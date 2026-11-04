@@ -43,6 +43,6 @@ Pentru seria Oblio și conexiunile sociale/financiare, [runbookul din PR #57](ht
 
 Pentru Lovable: lucrează din `main` după merge-ul PR-ului relevant. Cât timp o ramură GitHub este în review, evită editarea acelorași fișiere în Lovable. Dacă Lovable produce un commit între timp, adu-l în ramura de lucru înainte de a continua.
 
-## Document Center — implementare propusă, neactivată în producție
+## Document Center — release autorizat la 4 noiembrie 2026
 
-Modulul este documentat în [DOCUMENT_CENTER.md](./DOCUMENT_CENTER.md): cinci zone compacte, tipizate și generator împreună, editor și exporturi reale, acces pe resursă și versiune, integrare cu entitățile existente. Migrațiile 0075/0076 și flagurile de confidențialitate/izolare a backupului necesită fluxul de release autorizat. Nu activați stocarea ori backupurile numai pe baza existenței bindingurilor și nu considerați modelele juridice aprobate. Inventarul operațional privat nu este inclus în repository-ul public.
+Modulul este documentat în [DOCUMENT_CENTER.md](./DOCUMENT_CENTER.md): cinci zone compacte, tipizate și generator împreună, editor și exporturi reale, acces pe resursă și versiune, integrare cu entitățile existente. Utilizatorul a autorizat push/deploy. Privatizarea `FILES` a fost confirmată în Cloudflare și s-au creat două destinații private distincte de backup în R2 existent; configurația de producție activează explicit operațiile pe fișiere și backupul manual. Preview nu moștenește destinațiile de producție. Verificați rezultatul migrărilor 0075/0076 și revizia live în jurnalul release-ului. Modelele juridice nu sunt aprobate; importurile rămân în carantină fără scanner. Inventarul și copiile de recuperare private nu sunt incluse în repository-ul public.

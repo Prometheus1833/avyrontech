@@ -814,7 +814,7 @@ export default function DocumentCenter({
               </button>
             )}
             {detail.actions.edit && !readonly && (
-              <label className="dc-button cursor-pointer">
+              <label className="dc-button cursor-pointer" title="PDF, DOCX, TXT, PNG sau JPEG, maximum 15 MiB. Importurile sunt izolate până la scanarea antimalware.">
                 Import fișier
                 <input
                   type="file"
@@ -822,7 +822,9 @@ export default function DocumentCenter({
                   accept=".pdf,.docx,.txt,.png,.jpg,.jpeg"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file)
+                    if (file && file.size > 15 * 1024 * 1024)
+                      setError("Fișierul depășește limita de 15 MiB.");
+                    else if (file)
                       void transact(async () => {
                         await documentsApi.import(detail.document.id, file);
                         setMessage(
@@ -835,6 +837,13 @@ export default function DocumentCenter({
               </label>
             )}
           </div>
+          {detail.actions.edit && !readonly && (
+            <p className="text-xs text-slate-400">
+              Import: PDF, DOCX, TXT, PNG sau JPEG · maximum 15 MiB.
+              Fișierele încărcate rămân în carantină până la scanarea antimalware,
+              încă neconfigurată. PDF și Word generate pot fi descărcate separat.
+            </p>
+          )}
           {detail.files.length > 0 && (
             <section className="dc-panel">
               <h3 className="mb-3 font-semibold">Fișierele versiunii</h3>
@@ -847,7 +856,11 @@ export default function DocumentCenter({
                     {f.file_name} · {Math.ceil(f.size_bytes / 1024)} KB ·{" "}
                     {f.scan_status === "quarantined"
                       ? "Carantină · indisponibil pentru distribuire"
-                      : f.scan_status}
+                      : f.scan_status === "clean_generated"
+                        ? "Generat securizat"
+                        : f.scan_status === "clean_scanned"
+                          ? "Scanat și verificat"
+                          : "Indisponibil"}
                   </span>
                   {!["quarantined", "rejected"].includes(f.scan_status) && (
                     <button

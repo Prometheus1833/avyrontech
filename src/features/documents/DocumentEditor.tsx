@@ -189,7 +189,7 @@ export default function DocumentEditor({
           {localOnly
             ? "Model în editare · salvarea creează o versiune nouă"
             : readonly
-              ? "Versiune istorică · numai citire"
+              ? "Document protejat · numai citire"
               : saving
                 ? "Se salvează…"
                 : saveError

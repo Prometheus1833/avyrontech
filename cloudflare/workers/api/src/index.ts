@@ -43,6 +43,7 @@ import { allowedOrigin } from "./originPolicy";
 import { documentCenterRouter, cleanupDocumentExports } from "./documentCenter";
 
 export { AvyronAgentRuntime } from "./agents/AvyronAgentRuntime";
+export { DocumentExportRuntime } from "./DocumentExportRuntime";
 export { AvyronMaintenanceWorkflow } from "./workflows/AvyronMaintenanceWorkflow";
 
 const app = new Hono<AppBindings>();

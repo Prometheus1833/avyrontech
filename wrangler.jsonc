@@ -53,11 +53,13 @@
   },
   "durable_objects": {
     "bindings": [
-      { "name": "AVYRON_AGENT_RUNTIME", "class_name": "AvyronAgentRuntime" }
+      { "name": "AVYRON_AGENT_RUNTIME", "class_name": "AvyronAgentRuntime" },
+      { "name": "DOCUMENT_EXPORTS", "class_name": "DocumentExportRuntime" }
     ]
   },
   "migrations": [
-    { "tag": "agents-v1", "new_sqlite_classes": ["AvyronAgentRuntime"] }
+    { "tag": "agents-v1", "new_sqlite_classes": ["AvyronAgentRuntime"] },
+    { "tag": "documents-export-v1", "new_sqlite_classes": ["DocumentExportRuntime"] }
   ],
   "queues": {
     "producers": [
@@ -93,7 +95,9 @@
   ],
   "r2_buckets": [
     { "binding": "FILES", "bucket_name": "avyron-files" },
-    { "binding": "MEDIA", "bucket_name": "avyron-media" }
+    { "binding": "MEDIA", "bucket_name": "avyron-media" },
+    { "binding": "DOCUMENT_BACKUPS", "bucket_name": "avyron-document-backups" },
+    { "binding": "DOCUMENT_COMPANY_BACKUPS", "bucket_name": "avyron-company-document-backups" }
   ],
   "ratelimits": [
     {
@@ -126,6 +130,10 @@
     "SUPABASE_DATA_OPERATIONS_ENABLED": "false",
     "GOOGLE_DRIVE_DATA_OPERATIONS_ENABLED": "false",
     "BACKUP_JOBS_ENABLED": "false",
+    // Verified in the Avyron R2 dashboard on 2026-11-04: all three
+    // destinations have public access disabled and distinct bucket names.
+    "DOCUMENT_STORAGE_PRIVACY_VERIFIED": "true",
+    "DOCUMENT_BACKUP_ISOLATION_VERIFIED": "true",
     "TURNSTILE_ALLOWED_HOSTNAMES": "surveys.avyron.ro,avyron.ro,www.avyron.ro,app.avyron.ro,avyrontech.pages.dev,*.avyrontech.pages.dev,*.avyrontech.workers.dev,avyrontech.lovable.app,localhost"
   },
 
@@ -155,7 +163,8 @@
       },
       "durable_objects": {
         "bindings": [
-          { "name": "AVYRON_AGENT_RUNTIME", "class_name": "AvyronAgentRuntime" }
+          { "name": "AVYRON_AGENT_RUNTIME", "class_name": "AvyronAgentRuntime" },
+          { "name": "DOCUMENT_EXPORTS", "class_name": "DocumentExportRuntime" }
         ]
       },
       "queues": {

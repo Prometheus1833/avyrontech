@@ -1,12 +1,14 @@
 # AVYRON OS — Document Center
 
-Stare: implementare pe branch, cu verificări locale. Nu reprezintă o activare în producție. Nu s-au aplicat migrații remote, nu s-au activat furnizori și nu s-au trimis documente reale.
+Stare: release autorizat pentru producție la 4 noiembrie 2026. Verificările locale și CI sunt trecute; rezultatul migrării și revizia efectiv servită trebuie confirmate în jurnalul release-ului. Nu s-au trimis documente reale către destinatari externi.
 
 ## Structură și arhitectură
 
 Categoria **Documente** este în meniul central, după Produse AVYRON și înainte de Activitate. Are cinci zone: Bibliotecă, Tipizate și generator, Documente staff, Documents Hub și Documentele firmei. Ofertele, documentele clienților, documentele independente și arhiva sunt filtre în Bibliotecă. Zona firmei este eliminată din navigare, rezultate, căutare, numărători și acces direct pentru utilizatorii neautorizați.
 
 React/Tiptap folosește API-ul Hono existent, autentificarea `cfAuth`, rolurile și capabilitățile D1 existente. Nu se introduc autentificare, CRM, produse ori abonamente paralele și nu se adaugă Supabase. Editorul și generatorul sunt încărcate la cerere; bibliotecile PDF/Word rulează în Worker și nu sunt descărcate de paginile publice.
+
+Exporturile noi sunt randate prin RPC în `DocumentExportRuntime`, separat de runtime-ul agenților AI. Contul Workers Free are un buget CPU mai mic decât cel necesar randării; runtime-ul Durable Object folosește infrastructura Cloudflare existentă, fără upgrade de plan. Un obiect per versiune/format/stare de aprobare coordonează randările simultane. Conținutul nu este persistat în obiect și nu este expus prin HTTP; API-ul verifică accesul înaintea apelului și din nou înaintea descărcării. Exporturile existente sunt reutilizate direct din R2. Lipsa bindingului produce o eroare explicită, fără fallback costisitor în Workerul HTTP. Referințe: [limite Workers](https://developers.cloudflare.com/workers/platform/limits/), [limite Durable Objects](https://developers.cloudflare.com/durable-objects/platform/limits/).
 
 ```mermaid
 flowchart LR
@@ -92,9 +94,9 @@ Lipsa configurației e-mail este `failed/email_unconfigured`. O întrerupere dup
 
 Fișierele sunt sub chei opace `documents/<id>/...`, în bindingul existent `FILES`. Metadatele și conținutul editabil/versionat sunt în D1. Exporturile sunt generate la cerere și reutilizate pentru aceeași versiune/stare; ciornele exportate expiră după o zi. Exporturile oficiale, importurile, aprobările, istoricul și documentele arhivate nu au o regulă generală de ștergere.
 
-**Activare fail-closed:** operațiile pe fișiere necesită `DOCUMENT_STORAGE_PRIVACY_VERIFIED=true`. Acest flag poate fi setat numai după verificarea de către operator că bucketul `FILES` nu are domeniu public sau acces `r2.dev`. Nu este adăugat în configurația de producție prin acest branch. În audit, citirea configurației bucketurilor a fost refuzată de permisiunile conectorului; privatizarea efectivă nu este declarată verificată.
+**Activare fail-closed:** operațiile pe fișiere necesită `DOCUMENT_STORAGE_PRIVACY_VERIFIED=true`. La 4 noiembrie 2026, verificarea directă în dashboardul Cloudflare Avyron a confirmat că `avyron-files` nu are domeniu public și are `r2.dev` dezactivat. Flagul este activat explicit în configurația de producție. CLI-ul nu are scope R2 de administrare; verificarea s-a făcut în sesiunea existentă Cloudflare, fără emiterea unui token nou.
 
-Backupurile necesită bindinguri private distincte `DOCUMENT_BACKUPS` și, separat pentru firmă, `DOCUMENT_COMPANY_BACKUPS`, plus `DOCUMENT_BACKUP_ISOLATION_VERIFIED=true`. Ele nu au fallback la bucketul primar. Niciun bucket sau serviciu plătit nu este creat de implementare.
+Backupurile folosesc bindingurile distincte `DOCUMENT_BACKUPS` → `avyron-document-backups` și `DOCUMENT_COMPANY_BACKUPS` → `avyron-company-document-backups`, plus `DOCUMENT_BACKUP_ISOLATION_VERIFIED=true`. Destinațiile au fost create în serviciul R2 existent, în clasa Standard, cu acces public dezactivat, fără abonament sau serviciu nou. Nu au fallback la bucketul primar și nu sunt moștenite de mediul preview. Nu s-au activat joburi automate de backup sau reguli de ștergere.
 
 Un backup face o copie separată a fiecărui fișier permanent, verifică SHA-256 înainte și după copiere și salvează manifestul cu versiuni, tipizatul folosit, asocieri, politici, granturi, destinatari pe versiune, aprobări, distribuiri și audit. Citirile de metadate sunt într-un batch D1 tranzacțional; schimbarea reviziei pe durata copiei invalidează backupul. Manifestul este recitit și verificat înainte de `verified`. Copiile parțiale ale unui backup eșuat sunt eliminate fără a șterge originale sau backupuri deja verificate; o eroare de curățare este înregistrată distinct.
 
@@ -116,7 +118,11 @@ Testele de integrare folosesc handler-ele reale Hono, toate migrațiile aplicate
 
 Sunt acoperite izolarea A/B, rolurile firmei, revocarea, destinatarii pe versiune, URL-uri directe, mastere imuabile, idempotency/CAS, identități PF/PJ/PFA/ONG, proiecte multiple, catalog, licențe fără beneficiar ambiguu, carantina, e-mail indisponibil și furnizor simulat, backup cu integritate/restaurare, limitele editorului și PDF/DOCX autentice cu mai multe pagini. Interfața este verificată în browser pe desktop și viewport de telefon; acestea nu sunt teste pe dispozitive Android/iOS fizice.
 
-Limitări explicite: scanare malware și inserare de imagini importate inactive; destinații de backup și privatizarea bucketului neverificate live; niciun mesaj extern real de probă; fără confirmare inbox/webhook; fără integrare automată WhatsApp/Telegram; fără AI pe documente private; fără generare automată pornită de toate evenimentele de lead/proiect/abonament; fără retenție automată configurată pe categorii sau restaurare atomică de proiect; datele fiscale și modelele juridice necesită completare/revizuire. Selecția contextuală inițială este limitată la 250 de clienți și 500 de proiecte/instanțe; extinderea la volume mai mari necesită căutare server-side dedicată în generator. Nu se declară acceptanță finală în producție înainte de închiderea acestor puncte.
+Limitări explicite: scanare malware și inserare de imagini importate inactive; niciun mesaj extern real de probă; fără confirmare inbox/webhook; fără integrare automată WhatsApp/Telegram; fără AI pe documente private; fără generare automată pornită de toate evenimentele de lead/proiect/abonament; fără retenție automată configurată pe categorii sau restaurare atomică de proiect; datele fiscale și modelele juridice necesită completare/revizuire. Selecția contextuală inițială este limitată la 250 de clienți și 500 de proiecte/instanțe; extinderea la volume mai mari necesită căutare server-side dedicată în generator.
+
+Înainte de migrare s-au salvat privat bookmarkul D1 și exportul celor 210 tabele nevirtuale, restaurat local cu integritate `ok` și zero încălcări FK. Exportul integral standard D1 refuză baza cu FTS5; indexurile virtuale reconstruibile sunt inventariate separat, iar bookmarkul Time Travel rămâne punctul pentru recuperarea integrală. Singurul obiect R2 existent a fost descărcat într-o copie locală privată. Artefactele și URL-urile temporare de export nu se publică în Git.
+
+Reverificarea pentru release a inclus și reconstruirea ambelor indexuri FTS în copia D1 restaurată, cu interogări funcționale; editare în browser și păstrarea după reload; descărcare PDF și DOCX prin butoanele reale; upload prin selectorul de fișiere și afișarea carantinei. Fluxul Worker/D1/R2 local a fost repetat după mutarea randării în runtime-ul RPC, inclusiv backup și restaurare.
 
 ## Ordinea de activare, numai după aprobarea release-ului
 
@@ -133,8 +139,8 @@ Rollbackul aplicației poate ascunde modulul; tabelele și fișierele se păstre
 
 | Verificare | Rezultat |
 | --- | --- |
-| Suita completă Vitest | 78 fișiere, 601 teste trecute; un benchmark existent este sărit implicit deoarece `AVYRON_BENCH_PUBLIC_LIMITS` nu este activat |
-| Integrare Document Center | 41 cazuri cu handler-ele reale, inclusiv contract complet, aprobarea modelului, ambele exporturi și retry de e-mail fără a doua transmitere |
+| Suita completă Vitest | 78 fișiere, 602 teste trecute; un benchmark existent este sărit implicit deoarece `AVYRON_BENCH_PUBLIC_LIMITS` nu este activat |
+| Integrare Document Center | 42 cazuri cu handler-ele reale, plus test clipboard; inclusiv runtime RPC obligatoriu, contract complet, aprobarea modelului, ambele exporturi și retry de e-mail fără a doua transmitere |
 | TypeScript aplicație și Worker | Trecut |
 | ESLint | Zero erori; 4 avertizări React Refresh preexistente în componentele Logo |
 | D1, toate migrațiile | Integritate `ok`, fără încălcări FK |

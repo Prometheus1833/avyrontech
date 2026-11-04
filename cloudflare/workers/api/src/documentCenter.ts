@@ -44,6 +44,8 @@ documentCenterRouter.onError((cause, c) => {
     return error(c, "document_center_unavailable", 503);
   if (/assignment_scope_denied/.test(String(cause)))
     return error(c, "assignment_scope_denied", 403);
+  if (/document_export_runtime_unconfigured/.test(String(cause)))
+    return error(c, "document_export_runtime_unconfigured", 503);
   if (/constraint failed/.test(String(cause)))
     return error(c, "integrity_conflict", 409);
   console.error(
@@ -82,6 +84,8 @@ const error = (
                 "Destinația privată separată pentru backup nu este configurată.",
               document_storage_unverified:
                 "Stocarea documentelor necesită verificarea accesului privat înainte de activare.",
+              document_export_runtime_unconfigured:
+                "Runtime-ul securizat pentru export nu este configurat. Documentul rămâne salvat.",
               quarantined: "Fișier în carantină. Scanarea nu este configurată.",
               document_center_unavailable:
                 "Document Center necesită migrațiile aprobate înainte de activare.",
@@ -1677,8 +1681,9 @@ async function generatedFile(
       .bind(old.id, stamp())
       .run();
   }
-  const { exportDocument, exportFilename } = await import("./documentExports");
-  const bytes = await exportDocument(
+  if (!c.env.DOCUMENT_EXPORTS) throw new Error("document_export_runtime_unconfigured");
+  const renderer = c.env.DOCUMENT_EXPORTS.getByName(`${version.id}:${format}:${approved ? "final" : "draft"}`);
+  const bytes = await renderer.render(
     JSON.parse(version.payload_json),
     d.number,
     version.version,
@@ -1688,7 +1693,7 @@ async function generatedFile(
   if (bytes.length > 15 * 1024 * 1024) throw new Error("export_too_large");
   const id = uid(),
     objectKey = `documents/${d.id}/exports/${id}`,
-    name = exportFilename(d.number, version.version, format),
+    name = `${d.number.replace(/[^A-Za-z0-9-]/g, "")}-v${version.version}.${format}`,
     ct =
       format === "pdf"
         ? "application/pdf"

@@ -19,6 +19,7 @@ import {
   templateFields,
 } from "../shared/documents/templates";
 import { unzipSync } from "fflate";
+import { exportDocument } from "../../cloudflare/workers/api/src/documentExports";
 import { filterPrivateDocumentNotices } from "../../cloudflare/workers/api/src/documentPolicy";
 class Statement {
   values: SQLInputValue[] = [];
@@ -136,6 +137,9 @@ describe("Document Center actual handlers, immutable records and private storage
       DOCUMENT_BACKUP_ISOLATION_VERIFIED: "true",
       DOCUMENT_STORAGE_PRIVACY_VERIFIED: "true",
       DOCUMENT_COMPANY_BACKUPS: store(),
+      DOCUMENT_EXPORTS: {
+        getByName: () => ({ render: exportDocument }),
+      },
       MFA_AUTH_ENABLED: "false",
     };
     app = new Hono();
@@ -1053,6 +1057,27 @@ describe("Document Center actual handlers, immutable records and private storage
         .prepare("SELECT provider_id FROM document_shares WHERE document_id=?")
         .get(d.id)!.provider_id,
     ).toBe("fixture-provider-message");
+  });
+  it("routes rendering through the private version runtime and fails closed without it", async () => {
+    const d = await create();
+    delete env.DOCUMENT_EXPORTS;
+    const unavailable = await req(`/${d.id}/export/pdf`);
+    expect(unavailable.status).toBe(503);
+    expect((await unavailable.json()).error.code).toBe("document_export_runtime_unconfigured");
+    const names: string[] = [];
+    env.DOCUMENT_EXPORTS = { getByName: (name: string) => {
+      names.push(name);
+      return { render: exportDocument };
+    } };
+    expect((await req(`/${d.id}/export/pdf`)).status).toBe(200);
+    expect((await req(`/${d.id}/export/pdf`)).status).toBe(200);
+    expect(names).toEqual([`${d.versionId}:pdf:draft`]);
+    await approve(d.id);
+    expect((await req(`/${d.id}/export/pdf`)).status).toBe(200);
+    expect(names[1]).toBe(`${d.versionId}:pdf:final`);
+    actor = "b";
+    expect((await req(`/${d.id}/export/pdf`)).status).toBe(404);
+    expect(names).toHaveLength(2);
   });
   it("blocks storage before privacy verification and rechecks access before download begins", async () => {
     const d = await create();
