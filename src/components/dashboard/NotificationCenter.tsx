@@ -18,11 +18,10 @@ export default function NotificationCenter({ access, onNavigate, autoOpen = fals
   const [error, setError] = useState(false);
 
   const load = useCallback(async () => {
-    if (!access.isStaff) return;
     setLoading(true);
     const results = await Promise.allSettled([
-      cfAuth.request<{ data: Announcement[] }>("/api/workspace/announcements?limit=50"),
-      access.isSuperAdmin ? cfAuth.request<{ data: OperationNotice[] }>("/api/operations/notifications") : Promise.resolve({ data: [] as OperationNotice[] }),
+      access.isStaff ? cfAuth.request<{ data: Announcement[] }>("/api/workspace/announcements?limit=50") : Promise.resolve({data: [] as Announcement[]}),
+      access.isSuperAdmin ? cfAuth.request<{ data: OperationNotice[] }>("/api/operations/notifications") : cfAuth.request<{ data: OperationNotice[] }>("/api/documents/notices"),
     ]);
     if (results[0].status === "fulfilled") setAnnouncements(results[0].value.data);
     if (results[1].status === "fulfilled") setOperations(results[1].value.data);
@@ -31,14 +30,13 @@ export default function NotificationCenter({ access, onNavigate, autoOpen = fals
   }, [access.isStaff, access.isSuperAdmin]);
 
   useEffect(() => {
-    if (!access.isStaff) return;
     void load();
     const interval = window.setInterval(() => { if (!document.hidden) void load(); }, 60_000);
     return () => window.clearInterval(interval);
   }, [access.isStaff, load]);
 
   const items = useMemo<FeedItem[]>(() => [
-    ...(access.isSuperAdmin ? operations : []).map((row): FeedItem => ({
+    ...operations.map((row): FeedItem => ({
       id: row.id, title: row.title, body: row.body, createdAt: row.created_at,
       read: Boolean(row.read_at), kind: "operation",
       destination: row.destination && canOpenSection(row.destination, access) ? row.destination as SectionId : null,
@@ -48,19 +46,18 @@ export default function NotificationCenter({ access, onNavigate, autoOpen = fals
       read: true, kind: "announcement", destination: "announcements",
     })),
   ].sort((a, b) => b.createdAt - a.createdAt), [operations, announcements, access]);
-  const unread = access.isSuperAdmin ? operations.filter((row) => !row.read_at).length : 0;
+  const unread = operations.filter((row) => !row.read_at).length;
   const visible = items.filter((item) => filter === "all" || (filter === "unread" ? !item.read : item.kind === "announcement"));
 
   const markRead = async (id: string) => {
     try {
-      await cfAuth.request(`/api/operations/notifications/${id}/read`, {
+      await cfAuth.request(access.isSuperAdmin ? `/api/operations/notifications/${id}/read` : `/api/documents/notices/${id}/read`, {
         method: "POST", headers: { "Idempotency-Key": crypto.randomUUID() }, body: "{}",
       });
       setOperations((current) => current.map((row) => row.id === id ? { ...row, read_at: Date.now() } : row));
     } catch { setError(true); }
   };
   const navigate = (section: SectionId) => { setOpen(false); onNavigate(section); };
-  if (!access.isStaff) return null;
 
   return <Dialog open={open} onOpenChange={setOpen}>
     <DialogTrigger asChild>

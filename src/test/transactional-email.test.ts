@@ -16,7 +16,7 @@ describe("transactional account email", () => {
     const send = vi.fn().mockResolvedValue({ messageId: "email-1" });
     const env = { SMTP_FROM: "contact@avyron.ro", TRANSACTIONAL_EMAIL: { send } } as unknown as Env;
 
-    expect(await deliverMail(env, message)).toEqual({ delivered: true });
+    expect(await deliverMail(env, message)).toEqual({ delivered: true, providerMessageId: "email-1" });
     expect(send).toHaveBeenCalledWith({ ...message, from: "contact@avyron.ro", replyTo: undefined, attachments: undefined });
   });
 

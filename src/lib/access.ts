@@ -55,7 +55,7 @@ export const canSee = (audience: Audience, a: Access) => {
 };
 
 export type SectionId =
-  | "overview" | "profile" | "settings" | "projects" | "subscriptions" | "invoices" | "payments" | "cart" | "orders" | "catalog" | "collection"
+  | "documents" | "overview" | "profile" | "settings" | "projects" | "subscriptions" | "invoices" | "payments" | "cart" | "orders" | "catalog" | "collection"
   | "stats" | "tickets" | "maintenance" | "clients" | "domains"
   | "finance" | "media" | "leads" | "staff-tickets" | "demo-requests" | "intern"
   | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "servicii-avyron" | "produse-avyron"
@@ -64,7 +64,7 @@ export type SectionId =
 
 export type SectionDef = {
   id: SectionId;
-  group: "overview" | "account" | "projects" | "billing" | "servicii" | "produse" | "activity" | "platform" | "os" | "other";
+  group: "overview" | "account" | "projects" | "billing" | "documents" | "servicii" | "produse" | "activity" | "platform" | "os" | "other";
   audience: Audience;
   /** Secțiunile false rămân accesibile din huburi și căutare, fără duplicate în sidebar. */
   navigation?: boolean;
@@ -98,6 +98,8 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "orders", group: "billing", audience: "client", keywords: ["istoric", "comenzi", "plata", "orders"] },
   { id: "invoices", group: "billing", audience: "client", keywords: ["facturi", "invoices", "plata"] },
 
+
+  { id: "documents", group: "documents", audience: "everyone", keywords: ["documente", "contracte", "oferte", "tipizate", "generator", "staff"] },
 
   // Serviciile sunt angajamente personalizate pentru clienți; produsele sunt
   // artefacte digitale reutilizabile. Categoriile rămân deliberat separate.
@@ -134,7 +136,7 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "other-hub", group: "other", audience: "staff", keywords: ["altele", "module", "rapoarte", "functii", "roadmap"] },
   { id: "careers", group: "other", audience: "staff", keywords: ["cariere", "joburi", "roluri", "recrutare"] },
   { id: "library", group: "other", audience: "staff", keywords: ["biblioteca", "resurse", "surse", "referinte"] },
-  { id: "resources", group: "other", audience: "staff", keywords: ["resurse", "documente", "ghid", "siteuri", "campuri"] },
+  { id: "resources", group: "documents", audience: "staff", navigation: false, keywords: ["resurse", "documente", "ghid", "siteuri", "campuri"] },
 ];
 
 const canOpenDefinition = (section: SectionDef, access: Access) =>

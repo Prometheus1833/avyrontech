@@ -40,6 +40,7 @@ import { parseReviewSubmission, WEBSITE_REVIEW_SURFACE } from "./reviewsPolicy";
 import { cleanupAvyronEditorialContent } from "./aiContentRetention";
 import { enforceApiBodyLimit } from "./requestBodyLimit";
 import { allowedOrigin } from "./originPolicy";
+import { documentCenterRouter, cleanupDocumentExports } from "./documentCenter";
 
 export { AvyronAgentRuntime } from "./agents/AvyronAgentRuntime";
 export { AvyronMaintenanceWorkflow } from "./workflows/AvyronMaintenanceWorkflow";
@@ -1676,6 +1677,9 @@ app.route("/", newsletterRouter);
 app.route("/", leadsRouter);
 app.route("/", aiProjectsRouter);
 app.route("/", catalogCodesRouter);
+app.use("/api/documents", requireAuth);
+app.use("/api/documents/*", requireAuth);
+app.route("/", documentCenterRouter);
 app.route("/", surveyPublic);
 app.route("/", surveyAdminRouter);
 app.route("/", adminOperationsRouter);
@@ -1896,6 +1900,7 @@ export default {
     }
     ctx.waitUntil(Promise.all([
       cleanupExpiredData(env),
+      cleanupDocumentExports(env).catch(error=>{if(!/no such table: document_(files|shares)/.test(String(error)))throw error;}),
       runDueEngineDiscovery(env),
       enqueueAsyncJobs(env, ["billing_reconcile"]),
       enqueueAsyncJobs(env, ["survey_cleanup"]),

@@ -1,4 +1,5 @@
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import {flushDocumentEditors} from '@/features/documents/navigation';
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import MfaEnrollBanner from "@/components/dashboard/MfaEnrollBanner";
@@ -29,7 +30,7 @@ const StaffAnnouncementsTab = lazyWithRetry(() => import("@/components/dashboard
 const CloudflareProjects = lazyWithRetry(() => import("@/pages/intern/InternHome"));
 const StaffMaintenanceTab = lazyWithRetry(() => import("@/components/dashboard/StaffMaintenanceTab").then((m) => ({ default: m.StaffMaintenanceTab })));
 const StaffChatTab = lazyWithRetry(() => import("@/components/dashboard/StaffChatTab").then((m) => ({ default: m.StaffChatTab })));
-const StaffResourcesTab = lazyWithRetry(() => import("@/components/dashboard/StaffResourcesTab").then((m) => ({ default: m.StaffResourcesTab })));
+const DocumentCenter = lazyWithRetry(() => import("@/features/documents/DocumentCenter"));
 const StaffDomainStatsTab = lazyWithRetry(() => import("@/components/dashboard/StaffDomainStatsTab").then((m) => ({ default: m.StaffDomainStatsTab })));
 const StaffExampleRequestsTab = lazyWithRetry(() => import("@/components/dashboard/StaffExampleRequestsTab").then((m) => ({ default: m.StaffExampleRequestsTab })));
 const SettingsTab = lazyWithRetry(() => import("@/components/dashboard/SettingsTab").then((m) => ({ default: m.SettingsTab })));
@@ -113,7 +114,8 @@ export default function Profile() {
     }));
   }, [access.isClient]);
 
-  const openSection = (section: SectionId) => {
+  const openSection = async (section: SectionId) => {
+    if(!await flushDocumentEditors())return;
     const destination = canOpenSection(section, access) ? section : ["security", "automations"].includes(String(section)) && access.isStaff ? "os-centers" : null;
     if (destination) {
       setTab(destination);
@@ -181,7 +183,7 @@ export default function Profile() {
             <button type="button" onClick={() => setCommandOpen(true)} className="hidden min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2.5 text-left text-xs text-slate-600 transition hover:border-violet-400/25 hover:text-slate-400 sm:max-w-xl lg:flex"><Search className="size-4 shrink-0" /><span className="truncate">{access.isClient ? "Caută secțiuni din cont…" : "Caută secțiuni și fluxuri…"}</span><kbd className="ml-auto rounded border border-white/10 bg-black/20 px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd></button>
             {access.isStaff && <button type="button" onClick={() => openSection("intern")} aria-label="Deschide chatul intern" title="Chat intern" className="rounded-xl border border-white/[0.08] p-2.5 text-slate-400 transition hover:border-violet-400/25 hover:text-violet-200"><MessagesSquare className="size-4" /></button>}
             {access.isSuperAdmin && <button type="button" onClick={() => openSection("ai-os")} className="hidden items-center gap-2 rounded-xl border border-violet-400/20 bg-violet-500/10 px-3 py-2.5 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/20 sm:inline-flex"><Sparkles className="size-4" /> Întreabă AVY</button>}
-            {access.isStaff && <Suspense fallback={<span className="size-10" />}><NotificationCenter access={access} onNavigate={openSection} autoOpen={params.get("notifications") === "1"} /></Suspense>}
+            {<Suspense fallback={<span className="size-10" />}><NotificationCenter access={access} onNavigate={openSection} autoOpen={params.get("notifications") === "1"} /></Suspense>}
             <button type="button" onClick={() => openSection("profile")} aria-label="Deschide profilul" className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-xl bg-violet-500/15 text-[10px] font-semibold text-violet-100 ring-1 ring-white/10">{user?.avatar_url ? <img src={user.avatar_url} alt="" className="size-full object-cover" /> : displayName.slice(0, 2).toUpperCase()}</button>
             <button type="button" onClick={() => void signOut().then(() => window.location.assign("/"))} aria-label="Deconectare" title="Deconectare" className="hidden rounded-xl p-2.5 text-slate-600 hover:bg-rose-400/10 hover:text-rose-300 lg:inline-flex"><LogOut className="size-4" /></button>
             <span className="hidden items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1.5 text-[10px] text-slate-500 xl:inline-flex">{isSuperAdmin ? <Lock className="size-3" /> : <ShieldCheck className="size-3" />}{roleLabel}</span>
@@ -195,6 +197,7 @@ export default function Profile() {
           {canOpenSection("social-manager", access) && <TabsContent value="social-manager" className="mt-0"><SocialMediaManagerTab /></TabsContent>}
           <TabsContent value="profile" className="mt-0"><ProfileTab /></TabsContent><TabsContent value="settings" className="mt-0"><SettingsTab /></TabsContent><TabsContent value="collection" className="mt-0"><ProductCollectionTab /></TabsContent><TabsContent value="projects" className="mt-0"><CloudflareProjects embedded /></TabsContent>
           {access.isClient && <><TabsContent value="catalog" className="mt-0"><CustomerCatalogTab /></TabsContent><TabsContent value="orders" className="mt-0"><OrdersTab /></TabsContent><TabsContent value="subscriptions" className="mt-0"><SubscriptionsTab /></TabsContent><TabsContent value="payments" className="mt-0"><BillingSettingsCard /></TabsContent><TabsContent value="invoices" className="mt-0"><InvoicesTab /></TabsContent><TabsContent value="cart" className="mt-0"><CartTab /></TabsContent><TabsContent value="stats" className="mt-0"><StatsTab /></TabsContent><TabsContent value="tickets" className="mt-0"><TicketsTab /></TabsContent></>}
+          <TabsContent value="documents" className="mt-0"><DocumentCenter /></TabsContent>
           {canOpenSection("ai-projects", access) && <TabsContent value="ai-projects" className="mt-0"><AiProjects embedded /></TabsContent>}
           {canOpenSection("leads", access) && <TabsContent value="leads" className="mt-0"><StaffLeadsTab /></TabsContent>}
           {access.isStaff && <>
@@ -209,7 +212,7 @@ export default function Profile() {
             <TabsContent value="demo-requests" className="mt-0"><StaffExampleRequestsTab /></TabsContent>
             <TabsContent value="intern" className="mt-0"><StaffChatTab /></TabsContent>
             <TabsContent value="announcements" className="mt-0"><StaffAnnouncementsTab /></TabsContent>
-            <TabsContent value="resources" className="mt-0"><StaffResourcesTab /></TabsContent>
+            <TabsContent value="resources" className="mt-0"><DocumentCenter initialView="staff" /></TabsContent>
             <TabsContent value="careers" className="mt-0"><ResourceSurfaceTab kind="career" /></TabsContent>
             <TabsContent value="library" className="mt-0"><ResourceSurfaceTab kind="library" /></TabsContent>
             <TabsContent value="team-staff" className="mt-0"><TeamStaffTab /></TabsContent>

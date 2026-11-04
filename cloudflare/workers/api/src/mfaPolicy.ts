@@ -6,7 +6,7 @@ import { platformRoleForUser } from "./authorization";
  * Only active platform principals without an enrolled factor are eligible.
  * Missing/unknown configuration fails closed. Existing factors still challenge.
  */
-export async function privilegedMfaSatisfied(c: Context<AppBindings>): Promise<boolean> {
+export async function privilegedMfaSatisfied(c: Pick<Context<AppBindings>, 'env' | 'get'>): Promise<boolean> {
   const configured = (c.env as { MFA_AUTH_ENABLED?: string }).MFA_AUTH_ENABLED?.trim().toLowerCase();
   if (configured === "false") return true;
   if (c.get("mfaVerified")) return true;

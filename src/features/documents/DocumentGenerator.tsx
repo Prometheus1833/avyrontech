@@ -1,0 +1,1092 @@
+import { useMemo, useState } from "react";
+import { cfAuth } from "@/lib/cfAuth";
+import { internApi } from "@/lib/internApi";
+import {
+  documentsApi,
+  type DocumentContext,
+  type DocumentTemplate,
+} from "@/lib/documentsApi";
+import {
+  blankPayload,
+  heading,
+  paragraph,
+  replaceVariables,
+  documentIssues,
+  type DocumentPayload,
+  type DocumentScope,
+  type Assignment,
+  type CommercialLine,
+} from "@/shared/documents/model";
+import { serviceDocumentProfile } from "@/shared/documents/services";
+import { FIELD_LABELS, templateFields } from "@/shared/documents/templates";
+
+function applicablePayload(
+  model: DocumentTemplate,
+  mode: string,
+): DocumentPayload {
+  if (model.id !== "privacy" || mode === "DPA") return model.payload;
+  const content = model.payload.body.content || [];
+  const boundary = content.findIndex(
+    (node) =>
+      node.type === "heading" &&
+      node.content?.some((text) => text.text?.startsWith("Art. 3.")),
+  );
+  return boundary < 0
+    ? model.payload
+    : {
+        ...model.payload,
+        body: { ...model.payload.body, content: content.slice(0, boundary) },
+      };
+}
+const steps = [
+  "Context",
+  "Documente recomandate",
+  "Date și valori",
+  "Personalizare",
+  "Verificare",
+  "Creare",
+];
+export default function DocumentGenerator({
+  context,
+  projectId,
+  company = false,
+  initialScope,
+  onCreated,
+  onCancel,
+  onContextRefresh,
+}: {
+  context: DocumentContext;
+  projectId?: string;
+  company?: boolean;
+  initialScope?: DocumentScope;
+  onCreated: (id: string) => void;
+  onCancel: () => void;
+  onContextRefresh: () => Promise<void>;
+}) {
+  const initialProject = context.projects.find((p) => p.id === projectId);
+  const [step, setStep] = useState(0),
+    [clientId, setClientId] = useState(initialProject?.client_id || ""),
+    [projects, setProjects] = useState<string[]>(projectId ? [projectId] : []),
+    [scope, setScope] = useState<DocumentScope>(
+      initialScope || (initialProject ? "client" : "internal"),
+    ),
+    [selected, setSelected] = useState<string[]>([]),
+    [catalogIds, setCatalogIds] = useState<string[]>([]),
+    [instanceIds, setInstanceIds] = useState<string[]>(
+      context.services
+        .filter((s) => s.project_id === projectId)
+        .map((s) => s.id),
+    ),
+    [subscriptionIds, setSubscriptionIds] = useState<string[]>(
+      context.subscriptions
+        .filter((s) => s.project_id === projectId)
+        .map((s) => s.id),
+    ),
+    [productIds, setProductIds] = useState<string[]>([]),
+    [purchases, setPurchases] = useState<string[]>([]),
+    [entitlements, setEntitlements] = useState<string[]>([]),
+    [billingSubscriptions, setBillingSubscriptions] = useState<string[]>([]),
+    [fields, setFields] = useState<Record<string, string>>({}),
+    [lines, setLines] = useState<CommercialLine[]>([]),
+    [titles, setTitles] = useState<Record<string, string>>({}),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState(""),
+    [created, setCreated] = useState<string[]>([]),
+    [newClient, setNewClient] = useState({
+      company_name: "",
+      email: "",
+      contact_name: "",
+    }),
+    [newProject, setNewProject] = useState(""),
+    [newMode, setNewMode] = useState<"client" | "project" | null>(null);
+  const [batchKey] = useState(() => crypto.randomUUID());
+  const [documentDate] = useState(() => new Date().toLocaleDateString("ro-RO"));
+  const [creationStarted, setCreationStarted] = useState(false);
+  const [legalDocument, setLegalDocument] = useState(false);
+  const client = context.clients.find((c) => c.id === clientId);
+  const models = useMemo(
+    () =>
+      selected.length
+        ? context.templates.filter((t) => selected.includes(t.version_id))
+        : [
+            {
+              id: "blank",
+              name: "Document nou",
+              version_id: "",
+              payload: blankPayload(),
+              required: [],
+              legal: 0,
+              version: 1,
+              family: "custom",
+              review_status: "review_required",
+            } as DocumentTemplate,
+          ],
+    [selected, context.templates],
+  );
+  const automatic: Record<string, string> = {
+    date: documentDate,
+    "provider.legal_name": context.company.legal_name || "",
+    "provider.tax_id": context.company.tax_id || "",
+    "provider.address": context.company.address || "",
+    "provider.contact_email": context.company.contact_email || "",
+    "beneficiary.legal_name":
+      client?.legal_name ||
+      client?.company_name ||
+      (scope === "company" || scope === "internal"
+        ? "DIGITAL ECOTECH SOLUTIONS S.R.L."
+        : ""),
+    "beneficiary.entity_type": client?.entity_type || "",
+    "beneficiary.identification":
+      client?.entity_type === "PF"
+        ? "Persoană fizică identificată prin numele și adresa înscrise în document"
+        : [
+            client?.tax_id ? `Cod fiscal: ${client.tax_id}` : "",
+            client?.registration_number
+              ? `Înregistrare: ${client.registration_number}`
+              : "",
+          ]
+            .filter(Boolean)
+            .join("; "),
+    "beneficiary.address": client?.address || "",
+    scope: [
+      ...catalogIds.map(
+        (id) => context.catalog.find((c) => c.id === id)?.display_name,
+      ),
+      ...productIds.map(
+        (id) => context.products.find((p) => p.slug === id)?.name_ro,
+      ),
+    ]
+      .filter(Boolean)
+      .join("; "),
+    contacts: client?.contact_name || "",
+    privacy_mode: "Confidențialitate",
+    ...fields,
+  };
+  const serviceFields = Object.fromEntries(
+    catalogIds.flatMap((id) => {
+      const item = context.catalog.find((c) => c.id === id);
+      if (!item) return [];
+      const profile = serviceDocumentProfile(
+        item,
+        context.serviceProfiles.find((p) => p.catalog_id === id)
+          ?.configuration_json,
+      );
+      return Object.entries(profile.fields).map(([key, label]) => [
+        `service.${id}.${key}`,
+        `${item.display_name} · ${label}`,
+      ]);
+    }),
+  );
+  const allFields = [
+    ...new Set([
+      ...models.flatMap((t) => [
+        ...t.required,
+        ...templateFields(applicablePayload(t, automatic.privacy_mode)),
+      ]),
+      ...Object.keys(serviceFields),
+      ...(productIds.length ||
+      entitlements.length ||
+      billingSubscriptions.length
+        ? ["license_terms"]
+        : []),
+    ]),
+  ];
+  const recommended = new Set([
+    ...(catalogIds.length
+      ? catalogIds.flatMap((id) => {
+          const item = context.catalog.find((c) => c.id === id);
+          return item
+            ? serviceDocumentProfile(
+                item,
+                context.serviceProfiles.find((p) => p.catalog_id === id)
+                  ?.configuration_json,
+              ).documents
+            : [];
+        })
+      : ["brief", "offer"]),
+    ...(subscriptionIds.length || billingSubscriptions.length ? ["sla"] : []),
+    ...(projects.some((id) =>
+      context.projects.some(
+        (p) =>
+          p.id === id && /completed|delivered|finalizat|predat/.test(p.status),
+      ),
+    )
+      ? ["handover", "report"]
+      : []),
+  ]);
+  const build = (model: DocumentTemplate): DocumentPayload => {
+    const original = applicablePayload(model, automatic.privacy_mode);
+    const relevantFields = new Set([
+      ...model.required,
+      ...templateFields(original),
+      ...Object.keys(serviceFields),
+      ...(productIds.length ||
+      entitlements.length ||
+      billingSubscriptions.length
+        ? ["license_terms"]
+        : []),
+    ]);
+    const modelFields = Object.fromEntries(
+      Object.entries(automatic).filter(([key]) => relevantFields.has(key)),
+    );
+    const value = replaceVariables(
+      {
+        ...original,
+        title: titles[model.version_id] || model.payload.title,
+        lines: lines.filter(
+          (line) => !line.package || line.package === automatic.package_variant,
+        ),
+      },
+      modelFields,
+    );
+    const sections = catalogIds.flatMap((id) => {
+      const item = context.catalog.find((c) => c.id === id);
+      if (!item) return [];
+      const profile = serviceDocumentProfile(
+        item,
+        context.serviceProfiles.find((p) => p.catalog_id === id)
+          ?.configuration_json,
+      );
+      return [
+        heading(`Serviciu: ${item.display_name}`),
+        paragraph(profile.deliverables),
+        ...Object.entries(profile.fields).map(([key, label]) =>
+          paragraph(
+            `${label}: ${automatic[`service.${id}.${key}`] || `{{service.${id}.${key}}}`}`,
+          ),
+        ),
+      ];
+    });
+    const productSections = productIds.flatMap((id) => {
+      const p = context.products.find((p) => p.slug === id);
+      return p
+        ? [
+            heading(`Produs: ${p.name_ro}`),
+            paragraph(
+              `Produs ${p.slug} · acces ${p.access}. Licența, utilizările permise, perioada și actualizările sunt cele aprobate expres: ${automatic.license_terms || "{{license_terms}}"}. Achiziția și contul sunt asociate numai după verificarea beneficiarului; nu se transferă implicit drepturi suplimentare.`,
+            ),
+          ]
+        : [];
+    });
+    return {
+      ...value,
+      labels: { ...value.labels, ...FIELD_LABELS, ...serviceFields },
+      body: {
+        ...value.body,
+        content: [
+          ...(value.body.content || []),
+          ...sections,
+          ...productSections,
+          ...(purchases.length ||
+          entitlements.length ||
+          billingSubscriptions.length
+            ? [
+                heading("Achiziții și accesuri asociate"),
+                ...context.purchases
+                  .filter((p) => purchases.includes(p.id))
+                  .map((p) =>
+                    paragraph(
+                      `Achiziție înregistrată la ${new Date(p.created_at).toLocaleDateString("ro-RO")}, valoare ${(p.total_cents / 100).toLocaleString("ro-RO")} ${p.currency}, stare ${p.status}. Asocierea nu modifică starea plății.`,
+                    ),
+                  ),
+                ...context.entitlements
+                  .filter((p) => entitlements.includes(p.id))
+                  .map((p) =>
+                    paragraph(
+                      `Acces pentru ${p.slug || p.plan}, acordat la ${new Date(p.granted_at).toLocaleDateString("ro-RO")}${p.expires_at ? `, valabil până la ${new Date(p.expires_at).toLocaleDateString("ro-RO")}` : ""}${p.revoked_at ? ", revocat" : ""}. Drepturi și condiții aprobate: ${automatic.license_terms || "{{license_terms}}"}.`,
+                    ),
+                  ),
+                ...context.billingSubscriptions
+                  .filter((p) => billingSubscriptions.includes(p.id))
+                  .map((p) =>
+                    paragraph(
+                      `Abonament ${p.sku}, perioadă ${p.period}, stare ${p.status}${p.current_period_end ? `, perioadă curentă până la ${new Date(p.current_period_end).toLocaleDateString("ro-RO")}` : ""}. Condiții de utilizare aprobate: ${automatic.license_terms || "{{license_terms}}"}.`,
+                    ),
+                  ),
+              ]
+            : []),
+        ],
+      },
+    };
+  };
+  const toggle = (
+    setter: (updater: (current: string[]) => string[]) => void,
+    id: string,
+  ) =>
+    setter((current) =>
+      current.includes(id) ? current.filter((v) => v !== id) : [...current, id],
+    );
+  const addLine = (id: string) => {
+    const item = context.catalog.find((c) => c.id === id);
+    if (!item) return;
+    setCatalogIds((value) => (value.includes(id) ? value : [...value, id]));
+    setLines((value) =>
+      value.some((line) => line.catalogId === id)
+        ? value
+        : [
+            ...value,
+            {
+              catalogId: id,
+              label: item.display_name,
+              sku: item.sku || "",
+              quantity: 1,
+              catalogPriceMinor: item.base_price_minor,
+              priceConfirmed: item.base_price_minor !== null,
+              offeredPriceMinor: item.base_price_minor ?? 0,
+              discountReason: "",
+              currency: item.currency,
+              vatBasisPoints: item.vat_basis_points,
+              taxVerified: item.tax_status === "verified",
+              billingCycle: item.billing_cycle,
+              priceModel: item.price_model,
+              package: "",
+            },
+          ],
+    );
+  };
+  const createContext = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      if (newMode === "client") {
+        const r = await cfAuth.request<{ id: string }>("/api/clients", {
+          method: "POST",
+          body: JSON.stringify(newClient),
+        });
+        await onContextRefresh();
+        setClientId(r.id);
+        setScope("client");
+        setProjects([]);
+      } else if (clientId && newProject.trim()) {
+        const r = await internApi.createProject({
+          name: newProject,
+          slug:
+            newProject
+              .toLowerCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/^-|-$/g, "") +
+            "-" +
+            crypto.randomUUID().slice(0, 6),
+          client_id: clientId,
+          organization_id: client?.organization_id || undefined,
+        });
+        await onContextRefresh();
+        setProjects((value) => [...value, r.id]);
+      }
+      setNewMode(null);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const create = async () => {
+    setCreationStarted(true);
+    setBusy(true);
+    setError("");
+    const results = [...created];
+    try {
+      for (const [i, model] of models.entries()) {
+        if (results[i]) continue;
+        const assignments: Assignment[] = [
+          ...projects.map((id) => ({ kind: "project" as const, id })),
+          ...instanceIds.map((id) => ({ kind: "service" as const, id })),
+          ...subscriptionIds.map((id) => ({
+            kind: "subscription" as const,
+            id,
+          })),
+          ...productIds.map((id) => ({ kind: "product" as const, id })),
+          ...catalogIds.map((id) => ({ kind: "catalog" as const, id })),
+          ...purchases.map((id) => ({ kind: "order" as const, id })),
+          ...entitlements.map((id) => ({ kind: "entitlement" as const, id })),
+          ...billingSubscriptions.map((id) => ({
+            kind: "billing_subscription" as const,
+            id,
+          })),
+        ];
+        const result = await documentsApi.create(
+          {
+            payload: build(model),
+            scope,
+            collection: "library",
+            beneficiaryId: scope === "client" ? clientId : null,
+            templateVersionId: model.version_id || null,
+            legal: !!model.legal || legalDocument,
+            assignments,
+          },
+          `${batchKey}_${i}`,
+        );
+        results[i] = result.id;
+        setCreated([...results]);
+      }
+      onCreated(results[0]);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const contextError =
+    scope === "client" && !clientId
+      ? "Selectează beneficiarul juridic."
+      : scope !== "client" && projects.length
+        ? "Documentele asociate proiectelor trebuie să aibă beneficiarul proiectelor."
+        : "";
+  return (
+    <section className="dc-grid" aria-label="Generator de documente">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold">Tipizate și generator</h2>
+          <p className="mt-1 text-sm text-slate-400">
+            O singură instanță centrală, asociată contextelor potrivite.
+          </p>
+        </div>
+        <button type="button" className="dc-button" onClick={onCancel}>
+          Înapoi la bibliotecă
+        </button>
+      </div>
+      <ol className="flex flex-wrap gap-2" aria-label="Etapele generatorului">
+        {steps.map((name, i) => (
+          <li key={name}>
+            <button
+              className="dc-button"
+              type="button"
+              aria-current={step === i ? "step" : undefined}
+              disabled={
+                busy ||
+                (creationStarted && i !== 5) ||
+                i > step + 1 ||
+                (!!contextError && i > 0)
+              }
+              onClick={() => setStep(i)}
+            >
+              {i + 1}. {name}
+            </button>
+          </li>
+        ))}
+      </ol>
+      {error && (
+        <p role="alert" className="dc-notice">
+          {error}
+        </p>
+      )}
+      {step === 0 && (
+        <div className="dc-panel dc-grid md:grid-cols-2">
+          <label className="dc-label">
+            Vizibilitate
+            <select
+              className="dc-input"
+              value={scope}
+              onChange={(e) => {
+                setScope(e.target.value as DocumentScope);
+                if (e.target.value !== "client") {
+                  setProjects([]);
+                  setInstanceIds([]);
+                  setSubscriptionIds([]);
+                  setPurchases([]);
+                  setEntitlements([]);
+                  setBillingSubscriptions([]);
+                }
+              }}
+            >
+              <option value="internal">Intern / independent</option>
+              <option value="client">Pentru client</option>
+              <option value="staff">Pentru staff</option>
+              {company && (
+                <option value="company">Documentele firmei · owner</option>
+              )}
+            </select>
+          </label>
+          {scope === "client" && (
+            <>
+              <label className="dc-label">
+                Beneficiar juridic
+                <select
+                  className="dc-input"
+                  value={clientId}
+                  onChange={(e) => {
+                    setClientId(e.target.value);
+                    setProjects([]);
+                    setInstanceIds([]);
+                    setSubscriptionIds([]);
+                    setPurchases([]);
+                    setEntitlements([]);
+                    setBillingSubscriptions([]);
+                    setFields({});
+                  }}
+                >
+                  <option value="">Selectează clientul</option>
+                  {context.clients.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.company_name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="dc-grid">
+                <div className="flex gap-2">
+                  <button
+                    className="dc-button"
+                    onClick={() => setNewMode("client")}
+                  >
+                    Client nou în CRM
+                  </button>
+                  <button
+                    className="dc-button"
+                    disabled={!clientId}
+                    onClick={() => setNewMode("project")}
+                  >
+                    Proiect nou
+                  </button>
+                </div>
+                {context.projects
+                  .filter((p) => p.client_id === clientId)
+                  .map((p) => (
+                    <label className="dc-check" key={p.id}>
+                      <input
+                        type="checkbox"
+                        checked={projects.includes(p.id)}
+                        onChange={() => toggle(setProjects, p.id)}
+                      />
+                      {p.name}
+                    </label>
+                  ))}
+              </div>
+              <div className="dc-grid">
+                <p className="dc-label">Instanțe de servicii și abonamente</p>
+                {context.services
+                  .filter(
+                    (s) =>
+                      s.client_id === clientId &&
+                      (!projects.length || projects.includes(s.project_id)),
+                  )
+                  .map((s) => (
+                    <label key={s.id} className="dc-check">
+                      <input
+                        type="checkbox"
+                        checked={instanceIds.includes(s.id)}
+                        onChange={() => toggle(setInstanceIds, s.id)}
+                      />
+                      {s.service_name}
+                    </label>
+                  ))}
+                {context.subscriptions
+                  .filter(
+                    (s) =>
+                      s.client_id === clientId &&
+                      (!projects.length || projects.includes(s.project_id)),
+                  )
+                  .map((s) => (
+                    <label key={s.id} className="dc-check">
+                      <input
+                        type="checkbox"
+                        checked={subscriptionIds.includes(s.id)}
+                        onChange={() => toggle(setSubscriptionIds, s.id)}
+                      />
+                      {s.service_name} · {s.status}
+                    </label>
+                  ))}
+                {[
+                  {
+                    label: "Achiziție",
+                    items: context.purchases
+                      .filter((p) => p.client_id === clientId)
+                      .map((p) => ({
+                        id: p.id,
+                        label: `${new Date(p.created_at).toLocaleDateString("ro-RO")} · ${(p.total_cents / 100).toLocaleString("ro-RO")} ${p.currency} · ${p.status}`,
+                      })),
+                    selected: purchases,
+                    set: setPurchases,
+                  },
+                  {
+                    label: "Licență / acces",
+                    items: context.entitlements
+                      .filter((p) => p.client_id === clientId)
+                      .map((p) => ({
+                        id: p.id,
+                        label: `${p.slug || p.plan} · ${p.revoked_at ? "revocat" : p.expires_at ? `până la ${new Date(p.expires_at).toLocaleDateString("ro-RO")}` : "conform licenței aprobate"}`,
+                      })),
+                    selected: entitlements,
+                    set: setEntitlements,
+                  },
+                  {
+                    label: "Abonament AVY Studio",
+                    items: context.billingSubscriptions
+                      .filter((p) => p.client_id === clientId)
+                      .map((p) => ({
+                        id: p.id,
+                        label: `${p.sku} · ${p.period} · ${p.status}`,
+                      })),
+                    selected: billingSubscriptions,
+                    set: setBillingSubscriptions,
+                  },
+                ].flatMap((group) =>
+                  group.items.map((item) => (
+                    <label
+                      key={`${group.label}:${item.id}`}
+                      className="dc-check"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={group.selected.includes(item.id)}
+                        onChange={() => toggle(group.set, item.id)}
+                      />
+                      {group.label}: {item.label}
+                    </label>
+                  )),
+                )}
+              </div>
+            </>
+          )}
+          <div className="md:col-span-2 dc-grid md:grid-cols-2">
+            <label className="dc-label">
+              Serviciu / produs din catalog
+              <select
+                className="dc-input"
+                value=""
+                onChange={(e) => addLine(e.target.value)}
+              >
+                <option value="">Adaugă în selecție și deviz</option>
+                {context.catalog.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.display_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="dc-label">
+              Produs AVYRON / AVY Studio
+              <select
+                className="dc-input"
+                value=""
+                onChange={(e) => toggle(setProductIds, e.target.value)}
+              >
+                <option value="">Asociază un produs</option>
+                {context.products.map((p) => (
+                  <option key={p.slug} value={p.slug}>
+                    {p.name_ro} · {p.access}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="flex flex-wrap gap-2 md:col-span-2">
+            {catalogIds.map((id) => (
+              <button
+                className="dc-button"
+                key={id}
+                onClick={() => {
+                  setCatalogIds((v) => v.filter((x) => x !== id));
+                  setLines((v) => v.filter((x) => x.catalogId !== id));
+                }}
+              >
+                {context.catalog.find((c) => c.id === id)?.display_name} ×
+              </button>
+            ))}
+            {productIds.map((id) => (
+              <button
+                className="dc-button"
+                key={id}
+                onClick={() => toggle(setProductIds, id)}
+              >
+                {context.products.find((p) => p.slug === id)?.name_ro} ×
+              </button>
+            ))}
+          </div>
+          {context.unreconciledServices.length > 0 && (
+            <p className="dc-notice md:col-span-2">
+              {context.unreconciledServices.length} servicii publice necesită
+              reconciliere în nomenclator. Prețurile lor nu sunt preluate
+              automat din textele publice.{" "}
+              <a className="underline" href="/profil?tab=commercial-codes">
+                Deschide nomenclatorul
+              </a>
+              .
+            </p>
+          )}
+          {contextError && (
+            <p role="alert" className="dc-notice md:col-span-2">
+              {contextError}
+            </p>
+          )}
+          {newMode && (
+            <div className="dc-panel md:col-span-2 dc-grid">
+              <h3>
+                {newMode === "client"
+                  ? "Client nou · CRM existent"
+                  : "Proiect nou · registru existent"}
+              </h3>
+              {newMode === "client" ? (
+                <>
+                  <label className="dc-label">
+                    Denumire
+                    <input
+                      className="dc-input"
+                      value={newClient.company_name}
+                      onChange={(e) =>
+                        setNewClient((v) => ({
+                          ...v,
+                          company_name: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className="dc-label">
+                    E-mail
+                    <input
+                      type="email"
+                      className="dc-input"
+                      value={newClient.email}
+                      onChange={(e) =>
+                        setNewClient((v) => ({ ...v, email: e.target.value }))
+                      }
+                    />
+                  </label>
+                </>
+              ) : (
+                <label className="dc-label">
+                  Numele proiectului
+                  <input
+                    className="dc-input"
+                    value={newProject}
+                    onChange={(e) => setNewProject(e.target.value)}
+                  />
+                </label>
+              )}
+              <div className="flex gap-2">
+                <button
+                  className="dc-button dc-primary"
+                  disabled={busy}
+                  onClick={() => void createContext()}
+                >
+                  Creează
+                </button>
+                <button className="dc-button" onClick={() => setNewMode(null)}>
+                  Renunță
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      {step === 1 && (
+        <div className="dc-grid">
+          <p className="text-sm text-slate-400">
+            Alege unul sau mai multe modele. Oferta și anexa pot reuni
+            serviciile aceluiași beneficiar. Pentru început sunt potrivite
+            brief-ul și oferta; pentru livrare, raportul și recepția.
+          </p>
+          <div className="dc-card-list">
+            {context.templates.map((t) => (
+              <label key={t.version_id} className="dc-panel dc-card">
+                <span className="dc-check">
+                  <input
+                    type="checkbox"
+                    disabled={
+                      t.visibility === "private_proposal" &&
+                      t.review_status !== "approved"
+                    }
+                    checked={selected.includes(t.version_id)}
+                    onChange={() => toggle(setSelected, t.version_id)}
+                  />
+                  <strong>{t.name}</strong>
+                  {t.visibility === "private_proposal" && (
+                    <span className="text-[10px] text-amber-200">
+                      Model privat · accesul urmează documentul sursă
+                    </span>
+                  )}
+                  {recommended.has(t.id) && (
+                    <span className="text-[10px] text-violet-200">
+                      Recomandat
+                    </span>
+                  )}
+                </span>
+                <p>
+                  {t.legal
+                    ? "Model juridic · verificare de specialitate necesară"
+                    : "Model profesional editabil"}{" "}
+                  · v{t.version}
+                </p>
+                <small>
+                  {t.review_status === "approved"
+                    ? "Model revizuit"
+                    : "Model pregătit pentru revizuire"}
+                </small>
+              </label>
+            ))}
+          </div>
+          {!selected.length && (
+            <label className="dc-check">
+              <input
+                type="checkbox"
+                checked={legalDocument}
+                onChange={(e) => setLegalDocument(e.target.checked)}
+              />
+              Document juridic nou · necesită revizuire umană
+            </label>
+          )}
+          <button
+            type="button"
+            className="dc-button"
+            onClick={() => setSelected([])}
+          >
+            Document de la zero
+          </button>
+        </div>
+      )}
+      {(step === 2 || step === 3) && (
+        <div className="dc-grid">
+          <div className="dc-panel dc-grid sm:grid-cols-2">
+            {models.map((t) => (
+              <label key={t.version_id} className="dc-label">
+                Titlu · {t.name}
+                <input
+                  className="dc-input"
+                  value={titles[t.version_id] || t.payload.title}
+                  onChange={(e) =>
+                    setTitles((v) => ({ ...v, [t.version_id]: e.target.value }))
+                  }
+                />
+              </label>
+            ))}
+            {allFields.map((key) => (
+              <label key={key} className="dc-label">
+                {FIELD_LABELS[key] || serviceFields[key] || key}
+                {models.some((t) => t.required.includes(key)) ? " *" : ""}
+                {key === "privacy_mode" ? (
+                  <select
+                    className="dc-input"
+                    value={automatic[key] || "Confidențialitate"}
+                    onChange={(e) =>
+                      setFields((v) => ({ ...v, [key]: e.target.value }))
+                    }
+                  >
+                    <option>Confidențialitate</option>
+                    <option value="DPA">
+                      DPA · necesită analiza rolurilor și anexe
+                    </option>
+                  </select>
+                ) : key === "beneficiary.entity_type" ? (
+                  <select
+                    className="dc-input"
+                    value={automatic[key] || ""}
+                    onChange={(e) =>
+                      setFields((v) => ({ ...v, [key]: e.target.value }))
+                    }
+                  >
+                    <option value="">Selectează</option>
+                    {context.entityTypes.map((type) => (
+                      <option key={type}>{type}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <textarea
+                    className="dc-input"
+                    rows={key.includes("name") || key === "date" ? 1 : 2}
+                    value={automatic[key] || ""}
+                    onChange={(e) =>
+                      setFields((v) => ({ ...v, [key]: e.target.value }))
+                    }
+                  />
+                )}
+              </label>
+            ))}
+            {lines.some((l) => l.package) && (
+              <label className="dc-label">
+                Varianta de pachet ofertată
+                <select
+                  className="dc-input"
+                  value={fields.package_variant || ""}
+                  onChange={(e) =>
+                    setFields((v) => ({
+                      ...v,
+                      package_variant: e.target.value,
+                    }))
+                  }
+                >
+                  <option value="">Alege varianta</option>
+                  {[
+                    ...new Set(lines.map((l) => l.package).filter(Boolean)),
+                  ].map((p) => (
+                    <option key={p}>{p}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {productIds.length > 0 && (
+              <label className="dc-label">
+                Drepturile din licența aprobată
+                <textarea
+                  className="dc-input"
+                  value={fields.license_terms || ""}
+                  onChange={(e) =>
+                    setFields((v) => ({ ...v, license_terms: e.target.value }))
+                  }
+                />
+              </label>
+            )}
+          </div>
+          {lines.map((line, i) => (
+            <div
+              className="dc-panel dc-grid sm:grid-cols-4"
+              key={line.catalogId}
+            >
+              <h3 className="sm:col-span-4 font-semibold">{line.label}</h3>
+              <p className="sm:col-span-4 text-xs text-slate-400">
+                Catalog:{" "}
+                {line.catalogPriceMinor === null
+                  ? "La ofertare"
+                  : (line.catalogPriceMinor / 100).toLocaleString("ro-RO")}{" "}
+                {line.currency} · {line.billingCycle} ·{" "}
+                {line.taxVerified
+                  ? "Fiscalitate verificată"
+                  : "Fiscalitate de verificat în nomenclator"}
+              </p>
+              {(
+                [
+                  ["quantity", "Cantitate"],
+                  ["offeredPriceMinor", "Preț ofertat / unitate"],
+                  ["discountReason", "Motivul modificării"],
+                  ["billingCycle", "Recurență confirmată"],
+                  ["package", "Variantă de pachet (opțional)"],
+                ] as const
+              ).map(([key, label]) => (
+                <label key={key} className="dc-label">
+                  {label}
+                  <input
+                    type={
+                      key === "quantity" || key === "offeredPriceMinor"
+                        ? "number"
+                        : "text"
+                    }
+                    min="0"
+                    step={key === "offeredPriceMinor" ? ".01" : "1"}
+                    className="dc-input"
+                    value={
+                      key === "offeredPriceMinor" ? line[key] / 100 : line[key]
+                    }
+                    onChange={(e) =>
+                      setLines((v) =>
+                        v.map((item, j) =>
+                          j !== i
+                            ? item
+                            : {
+                                ...item,
+                                ...(key === "offeredPriceMinor"
+                                  ? { priceConfirmed: true }
+                                  : {}),
+                                [key]:
+                                  key === "quantity"
+                                    ? Number(e.target.value)
+                                    : key === "offeredPriceMinor"
+                                      ? Math.round(Number(e.target.value) * 100)
+                                      : e.target.value,
+                              },
+                        ),
+                      )
+                    }
+                  />
+                </label>
+              ))}
+            </div>
+          ))}
+          <p className="dc-notice">
+            Textul complet, tabelele, articolele, antetul și subsolul se
+            editează vizual după crearea ciornei. Niciun model original nu este
+            modificat.
+          </p>
+        </div>
+      )}
+      {step === 4 && (
+        <div className="dc-grid">
+          {models.map((t) => {
+            const draft = build(t),
+              issues = documentIssues(draft, t.required);
+            return (
+              <article key={t.version_id} className="dc-panel">
+                <h3 className="font-semibold">{draft.title}</h3>
+                <p className="mt-2 text-xs text-slate-400">
+                  Beneficiar:{" "}
+                  {automatic["beneficiary.legal_name"] || "Independent"} ·{" "}
+                  {projects.length} proiecte · {catalogIds.length} servicii ·
+                  vizibilitate {scope}
+                </p>
+                {issues.length ? (
+                  <ul className="mt-3 space-y-1 text-xs text-amber-200">
+                    {issues.map((issue) => (
+                      <li key={issue}>{issue}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-3 text-sm text-emerald-300">
+                    Verificările automate sunt complete.
+                  </p>
+                )}
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-sm text-violet-300">
+                    Previzualizare conținut
+                  </summary>
+                  <div className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-300">
+                    {draft.body.content?.map((node, i) => (
+                      <p className="mb-2" key={i}>
+                        {node.content?.map((n) => n.text || "").join("")}
+                      </p>
+                    ))}
+                  </div>
+                </details>
+              </article>
+            );
+          })}
+          <p className="dc-notice">
+            Câmpurile lipsă permit salvarea ciornei, dar blochează aprobarea.
+            Documentele nu sunt publicate sau trimise în acest pas.
+          </p>
+        </div>
+      )}
+      {step === 5 && (
+        <div className="dc-panel dc-grid">
+          <h3 className="text-lg font-semibold">
+            Creează {models.length === 1 ? "ciorna" : `${models.length} ciorne`}
+          </h3>
+          <p className="text-sm text-slate-400">
+            Deschidem editorul vizual. Pentru aprobare, export și publicare,
+            urmează verificările documentului.
+          </p>
+          {created.length > 0 && (
+            <p role="status">
+              {created.length} documente create. Reîncercarea continuă lotul
+              fără duplicare.
+            </p>
+          )}
+          <button
+            className="dc-button dc-primary justify-self-start"
+            disabled={busy || !!contextError}
+            onClick={() => void create()}
+          >
+            {busy ? "Se creează…" : "Creează și deschide editorul"}
+          </button>
+        </div>
+      )}
+      <div className="flex justify-between gap-2">
+        <button
+          className="dc-button"
+          disabled={step === 0 || busy || creationStarted}
+          onClick={() => setStep((v) => v - 1)}
+        >
+          Înapoi
+        </button>
+        {step < 5 && (
+          <button
+            className="dc-button dc-primary"
+            disabled={busy || !!contextError}
+            onClick={() => setStep((v) => v + 1)}
+          >
+            Continuă
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}

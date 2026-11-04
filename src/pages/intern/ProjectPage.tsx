@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -62,6 +63,8 @@ const SUB_PLANS = [
 const subscriptionPlanLabel = (value: string | null) => value === "100e"
   ? "100€ / lună · plan anterior"
   : SUB_PLANS.find((plan) => plan.value === value)?.label ?? value;
+
+const ProjectDocuments = lazy(() => import("@/features/documents/DocumentCenter"));
 
 export default function ProjectPage() {
   const { slug = "" } = useParams();
@@ -278,6 +281,7 @@ export default function ProjectPage() {
 
       {/* Bara de contact — mereu utilă */}
       <div className="mt-5"><ContactRail /></div>
+      <section className="mt-6 dark rounded-2xl bg-[#0b1120] p-4 sm:p-6" aria-label="Documentele proiectului"><Suspense fallback={<p>Se încarcă documentele proiectului…</p>}><ProjectDocuments embedded projectId={project.id} /></Suspense></section>
     </PageShell>
   );
 }

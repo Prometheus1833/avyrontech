@@ -1,0 +1,1302 @@
+// @vitest-environment node
+import { DatabaseSync, type SQLInputValue } from "node:sqlite";
+import { readdirSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { Hono } from "hono";
+import { beforeEach, afterEach, describe, it, expect } from "vitest";
+import {
+  documentCenterRouter,
+  cleanupDocumentExports,
+} from "../../cloudflare/workers/api/src/documentCenter";
+import {
+  blankPayload,
+  paragraph,
+  documentIssues,
+  payloadSchema,
+  replaceVariables,
+} from "../shared/documents/model";
+import {
+  DOCUMENT_TEMPLATES,
+  templateFields,
+} from "../shared/documents/templates";
+import { unzipSync } from "fflate";
+import { filterPrivateDocumentNotices } from "../../cloudflare/workers/api/src/documentPolicy";
+class Statement {
+  values: SQLInputValue[] = [];
+  constructor(
+    readonly db: DatabaseSync,
+    readonly sql: string,
+  ) {}
+  bind(...v: SQLInputValue[]) {
+    this.values = v;
+    return this;
+  }
+  async first() {
+    return this.db.prepare(this.sql).get(...this.values) ?? null;
+  }
+  async all() {
+    return { results: this.db.prepare(this.sql).all(...this.values) };
+  }
+  async run() {
+    return { meta: this.db.prepare(this.sql).run(...this.values) };
+  }
+}
+function store() {
+  const data = new Map<string, Uint8Array>();
+  return {
+    data,
+    put: async (key: string, value: Uint8Array | string) => {
+      const bytes =
+        typeof value === "string" ? new TextEncoder().encode(value) : value;
+      data.set(key, bytes);
+      return { size: bytes.length };
+    },
+    get: async (key: string) => {
+      const b = data.get(key);
+      return b
+        ? {
+            size: b.length,
+            body: new Response(b).body,
+            arrayBuffer: async () =>
+              b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength),
+            text: async () => new TextDecoder().decode(b),
+          }
+        : null;
+    },
+    delete: async (key: string) => {
+      data.delete(key);
+    },
+  };
+}
+describe("Document Center actual handlers, immutable records and private storage", () => {
+  let db: DatabaseSync,
+    app: Hono,
+    actor: string,
+    env: Record<string, unknown>,
+    files: ReturnType<typeof store>,
+    backups: ReturnType<typeof store>;
+  const payload = {
+    ...blankPayload("Ofertă pentru Client A"),
+    body: {
+      type: "doc",
+      content: [
+        paragraph(
+          "Document de verificare pentru servicii profesionale. Condițiile și livrabilele sunt confirmate de reprezentanții autorizați. Documentul nu conține date fictive folosite în producție.",
+        ),
+      ],
+    },
+  };
+  beforeEach(() => {
+    db = new DatabaseSync(":memory:");
+    for (const file of readdirSync("cloudflare/d1/migrations")
+      .filter((f) => f.endsWith(".sql"))
+      .sort())
+      db.exec(readFileSync(`cloudflare/d1/migrations/${file}`, "utf8"));
+    for (const [id, email, role] of [
+      ["owner", "prometheus@avyron.ro", "admin"],
+      ["super", "super@example.test", "admin"],
+      ["staff", "staff@example.test", "staff"],
+      ["a", "a@example.test", "user"],
+      ["b", "b@example.test", "user"],
+    ]) {
+      db.prepare(
+        "INSERT INTO users(id,email,password_hash,email_verified,created_at,updated_at) VALUES(?,?,?,1,1,1)",
+      ).run(id, email, "fixture-not-credential");
+      db.prepare("INSERT INTO user_roles VALUES(?,?)").run(id, role);
+    }
+    db.exec(
+      "INSERT INTO platform_principals(email,role,status,created_at,updated_at) VALUES('super@example.test','superadmin','active',1,1); INSERT INTO clients(id,company_name,email,created_at) VALUES('ca','Client A','a@example.test',1),('cb','Client B','b@example.test',1); INSERT INTO client_account_access VALUES('ca','a','owner',1),('cb','b','owner',1); INSERT INTO projects(id,client_id,name,slug,created_at) VALUES('pa','ca','Project A','project-a',1),('pb','cb','Project B','project-b',1);",
+    );
+    actor = "owner";
+    files = store();
+    backups = store();
+    const binding = {
+      prepare: (sql: string) => new Statement(db, sql),
+      batch: async (statements: Statement[]) => {
+        db.exec("BEGIN");
+        try {
+          const out = [];
+          for (const s of statements)
+            out.push(
+              /^\s*SELECT/i.test(s.sql)
+                ? { results: db.prepare(s.sql).all(...s.values) }
+                : { meta: db.prepare(s.sql).run(...s.values) },
+            );
+          db.exec("COMMIT");
+          return out;
+        } catch (e) {
+          db.exec("ROLLBACK");
+          throw e;
+        }
+      },
+    };
+    env = {
+      DB: binding,
+      FILES: files,
+      DOCUMENT_BACKUPS: backups,
+      DOCUMENT_BACKUP_ISOLATION_VERIFIED: "true",
+      DOCUMENT_STORAGE_PRIVACY_VERIFIED: "true",
+      DOCUMENT_COMPANY_BACKUPS: store(),
+      MFA_AUTH_ENABLED: "false",
+    };
+    app = new Hono();
+    app.use("*", async (c, next) => {
+      Object.assign(c.env, env);
+      c.set("userId", actor);
+      c.set(
+        "roles",
+        actor === "owner" || actor === "super"
+          ? ["admin"]
+          : actor === "staff"
+            ? ["staff"]
+            : ["user"],
+      );
+      c.set("mfaVerified", false);
+      await next();
+    });
+    app.route("/", documentCenterRouter);
+    app.onError((e) => {
+      console.error(e);
+      return new Response("safe failure", { status: 500 });
+    });
+  });
+  afterEach(() => db.close());
+  const req = (
+    path = "",
+    body?: unknown,
+    method = "POST",
+    key = crypto.randomUUID(),
+  ) =>
+    app.request(
+      "/api/documents" + path,
+      body === undefined
+        ? {}
+        : {
+            method,
+            headers: {
+              "content-type": "application/json",
+              "idempotency-key": key,
+            },
+            body: JSON.stringify(body),
+          },
+      {},
+    );
+  const create = async (
+    scope = "client",
+    beneficiaryId: string | null = "ca",
+    assignments: unknown[] = [],
+  ) => {
+    const r = await req("", {
+      payload,
+      scope,
+      collection: "library",
+      beneficiaryId,
+      templateVersionId: null,
+      assignments,
+    });
+    expect(r.status, await r.clone().text()).toBe(200);
+    return await r.json();
+  };
+  const revision = (id: string) =>
+    Number(
+      db.prepare("SELECT revision FROM documents WHERE id=?").get(id)!.revision,
+    );
+  const approve = async (id: string) => {
+    const r = await req("/" + id + "/approve", {
+      revision: revision(id),
+      legalReviewReference: "",
+    });
+    expect(r.status, await r.clone().text()).toBe(200);
+  };
+  const publish = async (
+    id: string,
+    recipients = ["a"],
+    allowClientShare = false,
+  ) => {
+    const r = await req("/" + id + "/publish", {
+      revision: revision(id),
+      recipients,
+      allowClientShare,
+      allowAttachments: false,
+    });
+    expect(r.status, await r.clone().text()).toBe(200);
+  };
+  it("keeps unpublished documents invisible; isolates search, IDs, counts and downloads", async () => {
+    const d = await create();
+    actor = "a";
+    expect((await (await req()).json()).total).toBe(0);
+    expect((await req("/" + d.id)).status).toBe(404);
+    actor = "owner";
+    await approve(d.id);
+    await publish(d.id);
+    actor = "a";
+    expect((await req("/" + d.id)).status).toBe(200);
+    actor = "b";
+    expect((await req("/" + d.id)).status).toBe(404);
+    expect((await req("/" + d.id + "/export/pdf")).status).toBe(404);
+    expect((await (await req("?q=Client")).json()).total).toBe(0);
+  });
+  it("company metadata, history, storage, shares and backups remain owner-only", async () => {
+    const d = await create("company", null);
+    for (const who of ["super", "staff", "a", "b"]) {
+      actor = who;
+      expect((await (await req("?scope=company")).json()).total).toBe(0);
+      for (const path of ["", "/export/pdf", "/backups", "/recipients"])
+        expect((await req("/" + d.id + path)).status).toBe(404);
+    }
+  });
+  it("rechecks disabled accounts and membership revocation on every resource operation", async () => {
+    const d = await create();
+    await approve(d.id);
+    await publish(d.id);
+    actor = "a";
+    expect((await req("/" + d.id)).status).toBe(200);
+    db.exec("DELETE FROM client_account_access WHERE user_id='a'");
+    expect((await req("/" + d.id)).status).toBe(404);
+    actor = "owner";
+    db.exec("UPDATE users SET disabled_at=1 WHERE id='owner'");
+    expect((await req("/" + d.id)).status).toBe(403);
+  });
+  it("rejects cross-beneficiary consolidation and references to unknown projects", async () => {
+    for (const id of ["pb", "missing"])
+      expect(
+        (
+          await req("", {
+            payload,
+            scope: "client",
+            collection: "library",
+            beneficiaryId: "ca",
+            templateVersionId: null,
+            assignments: [{ kind: "project", id }],
+          })
+        ).status,
+      ).toBe(403);
+    expect(db.prepare("SELECT count(*) n FROM documents").get()!.n).toBe(0);
+  });
+  it("does not mutate the master or published version; rejects stale writes atomically", async () => {
+    const d = await create();
+    await approve(d.id);
+    await publish(d.id);
+    const rev = revision(d.id),
+      original = db
+        .prepare("SELECT published_version_id FROM documents WHERE id=?")
+        .get(d.id)!.published_version_id;
+    const body = {
+      payload: { ...payload, title: "Noua ciornă" },
+      revision: rev,
+    };
+    expect((await req("/" + d.id, body, "PUT")).status).toBe(200);
+    expect(
+      (
+        await req(
+          "/" + d.id,
+          { ...body, payload: { ...payload, title: "Stale" } },
+          "PUT",
+        )
+      ).status,
+    ).toBe(409);
+    expect(
+      db
+        .prepare("SELECT count(*) n FROM document_versions WHERE document_id=?")
+        .get(d.id)!.n,
+    ).toBe(2);
+    actor = "a";
+    const view = await (await req("/" + d.id)).json();
+    expect(view.version.id).toBe(original);
+    expect(view.version.payload.title).toBe(payload.title);
+    expect(
+      (
+        await req(
+          "/" +
+            d.id +
+            "?version=" +
+            db
+              .prepare("SELECT current_version_id FROM documents WHERE id=?")
+              .get(d.id)!.current_version_id,
+        )
+      ).status,
+    ).toBe(404);
+    expect(() =>
+      db
+        .prepare("UPDATE document_versions SET search_text=? WHERE id=?")
+        .run("changed", original),
+    ).toThrow("document_version_immutable");
+  });
+  it("is idempotent and preserves immutable template content across edits", async () => {
+    const input = {
+      payload,
+      scope: "client",
+      collection: "library",
+      beneficiaryId: "ca",
+      templateVersionId: "offer_v1",
+      assignments: [],
+    };
+    const key = crypto.randomUUID();
+    const a = await (await req("", input, "POST", key)).json();
+    const b = await (await req("", input, "POST", key)).json();
+    expect(a.id).toBe(b.id);
+    expect(
+      (
+        await req(
+          "",
+          { ...input, payload: { ...payload, title: "Different" } },
+          "POST",
+          key,
+        )
+      ).status,
+    ).toBe(409);
+    const master = db
+      .prepare(
+        "SELECT payload_json FROM document_template_versions WHERE id='offer_v1'",
+      )
+      .get()!.payload_json;
+    await req(
+      "/" + a.id,
+      { revision: 1, payload: { ...payload, title: "Instance" } },
+      "PUT",
+    );
+    expect(
+      db
+        .prepare(
+          "SELECT payload_json FROM document_template_versions WHERE id='offer_v1'",
+        )
+        .get()!.payload_json,
+    ).toBe(master);
+  });
+  it("provides all 11 substantial families, and blocks unresolved legal documents", async () => {
+    expect(DOCUMENT_TEMPLATES).toHaveLength(11);
+    for (const t of DOCUMENT_TEMPLATES) {
+      expect(JSON.stringify(t.payload).length).toBeGreaterThan(1800);
+      expect(documentIssues(t.payload, t.required).length).toBeGreaterThan(0);
+    }
+    actor = "staff";
+    expect(
+      (
+        await req("/templates/framework/versions", {
+          name: "No",
+          payload,
+          required: [],
+          legal: true,
+        })
+      ).status,
+    ).toBe(403);
+    actor = "owner";
+    const d = await req("", {
+      payload,
+      scope: "client",
+      collection: "library",
+      beneficiaryId: "ca",
+      templateVersionId: "framework_v1",
+      assignments: [],
+    });
+    const id = (await d.json()).id;
+    expect(
+      (
+        await req("/" + id + "/approve", {
+          revision: 1,
+          legalReviewReference: "Specialist review",
+        })
+      ).status,
+    ).toBe(409);
+  });
+  it("requires share permission, explicit confirmation and an authorized recipient", async () => {
+    const d = await create();
+    await approve(d.id);
+    await publish(d.id);
+    const share = {
+      versionId: d.versionId,
+      recipientId: "b",
+      channel: "link",
+      subject: "",
+      message: "",
+      attachment: "none",
+      confirmed: true,
+    };
+    expect((await req("/" + d.id + "/share", share)).status).toBe(403);
+    actor = "a";
+    expect(
+      (await req("/" + d.id + "/share", { ...share, recipientId: "a" })).status,
+    ).toBe(404);
+    actor = "owner";
+    await publish(d.id, ["a"], true);
+    actor = "a";
+    const recipients = await (await req("/" + d.id + "/recipients")).json();
+    expect(recipients.data.map((r: { id: string }) => r.id)).toEqual(["a"]);
+    const response = await req("/" + d.id + "/share", {
+      ...share,
+      recipientId: "a",
+      channel: "whatsapp",
+    });
+    expect(response.status, await response.clone().text()).toBe(200);
+    const body = await response.json();
+    expect(body.status).toBe("prepared");
+    expect(body.manualUrl).toContain("wa.me");
+    expect(body.link).toContain("app.avyron.ro/profil");
+  });
+  it("quarantines imports and never serves their bytes or changes their scan status", async () => {
+    const d = await create();
+    const r = await app.request(
+      `/api/documents/${d.id}/import?name=test.pdf`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/pdf",
+          "idempotency-key": crypto.randomUUID(),
+        },
+        body: "%PDF-1.7\nfixture",
+      },
+      {},
+    );
+    expect(r.status).toBe(202);
+    const f = await r.json();
+    expect((await req(`/${d.id}/files/${f.id}`)).status).toBe(423);
+    expect(
+      db.prepare("SELECT scan_status FROM document_files WHERE id=?").get(f.id)!
+        .scan_status,
+    ).toBe("quarantined");
+  });
+  it("rejects unconfigured mail and forbidden external attachments without claiming delivery", async () => {
+    const d = await create();
+    await approve(d.id);
+    await publish(d.id);
+    const share = {
+      versionId: d.versionId,
+      recipientId: "a",
+      channel: "email",
+      subject: "Document",
+      message: "Private",
+      attachment: "pdf",
+      confirmed: true,
+      attachmentConfirmed: false,
+    };
+    expect((await req("/" + d.id + "/share", share)).status).toBe(409);
+    const r = await req("/" + d.id + "/share", {
+      ...share,
+      attachment: "none",
+    });
+    expect((await r.json()).status).toBe("failed");
+  });
+  it("backs up object bytes separately; restores a new draft and preserves current access/publication", async () => {
+    const d = await create();
+    await approve(d.id);
+    await publish(d.id);
+    const backup = await req("/" + d.id + "/backups", {});
+    expect(backup.status, await backup.clone().text()).toBe(200);
+    const b = await backup.json();
+    expect(b.status).toBe("verified");
+    const publication = db
+      .prepare("SELECT published_version_id FROM documents WHERE id=?")
+      .get(d.id)!.published_version_id;
+    const restore = await req(`/${d.id}/backups/${b.id}/restore`, {
+      revision: revision(d.id),
+      confirmed: true,
+    });
+    expect(restore.status, await restore.clone().text()).toBe(200);
+    expect(
+      db
+        .prepare("SELECT published_version_id FROM documents WHERE id=?")
+        .get(d.id)!.published_version_id,
+    ).toBe(publication);
+    expect(
+      db
+        .prepare("SELECT count(*) n FROM document_versions WHERE document_id=?")
+        .get(d.id)!.n,
+    ).toBe(2);
+    delete env.DOCUMENT_BACKUPS;
+    expect((await req("/" + d.id + "/backups", {})).status).toBe(503);
+  });
+  it("generates genuine PDF/DOCX exports with Romanian text, tables and several pages", async () => {
+    const long = {
+      ...payload,
+      body: {
+        type: "doc",
+        content: [
+          ...Array.from({ length: 65 }, (_, i) =>
+            paragraph(
+              `Articol ${i + 1}. Știință, țară, îmbunătățire și obligații. Acesta este un paragraf de verificare a diacriticelor și a paginării. `.repeat(
+                3,
+              ),
+            ),
+          ),
+          {
+            type: "table",
+            content: [
+              {
+                type: "tableRow",
+                content: ["Serviciu", "Livrabil"].map((text) => ({
+                  type: "tableHeader",
+                  content: [paragraph(text)],
+                })),
+              },
+              ...Array.from({ length: 30 }, (_, i) => ({
+                type: "tableRow",
+                content: [
+                  { type: "tableCell", content: [paragraph("Serviciu " + i)] },
+                  {
+                    type: "tableCell",
+                    content: [
+                      paragraph("Livrabil verificabil, fără date personale."),
+                    ],
+                  },
+                ],
+              })),
+            ],
+          },
+        ],
+      },
+    };
+    const r = await req("", {
+      payload: long,
+      scope: "internal",
+      collection: "library",
+      beneficiaryId: null,
+      templateVersionId: null,
+      assignments: [],
+    });
+    const d = await r.json();
+    mkdirSync("/tmp/avyron-document-qa", { recursive: true });
+    for (const format of ["pdf", "docx"]) {
+      const exportResponse = await req(`/${d.id}/export/${format}`);
+      expect(
+        exportResponse.status,
+        await exportResponse
+          .clone()
+          .text()
+          .then((s) => s.slice(0, 500)),
+      ).toBe(200);
+      const bytes = new Uint8Array(await exportResponse.arrayBuffer());
+      writeFileSync(`/tmp/avyron-document-qa/multipage.${format}`, bytes);
+      if (format === "pdf")
+        expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe("%PDF-");
+      else {
+        const zip = unzipSync(bytes);
+        expect(zip["word/document.xml"]).toBeDefined();
+        expect(new TextDecoder().decode(zip["word/document.xml"])).toContain(
+          "Știință",
+        );
+      }
+    }
+  });
+  it("rejects executable editor nodes, arbitrary attributes and missing discount justifications", () => {
+    expect(
+      payloadSchema.safeParse({
+        ...payload,
+        body: { type: "doc", content: [{ type: "script", text: "alert(1)" }] },
+      }).success,
+    ).toBe(false);
+    expect(
+      payloadSchema.safeParse({
+        ...payload,
+        body: { type: "doc", attrs: { onclick: "alert(1)" } },
+      }).success,
+    ).toBe(false);
+  });
+  it("revokes a published client grant independently from email-based CRM links", async () => {
+    const d = await create();
+    await approve(d.id);
+    await publish(d.id, ["a"], true);
+    const revoked = await req(`/${d.id}/access`, {
+      revision: revision(d.id),
+      userId: "a",
+      revoke: true,
+      canEdit: false,
+      canShare: false,
+    });
+    expect(revoked.status).toBe(200);
+    actor = "a";
+    expect((await req("/" + d.id)).status).toBe(404);
+    expect((await (await req("/notices")).json()).data).toEqual([]);
+  });
+  it("never leaks an unpublished version pointer, file count or internal review notes in the client list", async () => {
+    const d = await create();
+    await approve(d.id);
+    await publish(d.id);
+    const result = await req(
+      "/" + d.id,
+      {
+        revision: revision(d.id),
+        payload: { ...payload, title: "Private unpublished revision" },
+      },
+      "PUT",
+    );
+    expect(result.status).toBe(200);
+    const privateVersion = db
+      .prepare("SELECT current_version_id FROM documents WHERE id=?")
+      .get(d.id)!.current_version_id;
+    actor = "a";
+    const list = await (await req()).json();
+    expect(JSON.stringify(list)).not.toContain(privateVersion);
+    expect(list.data[0].title).toBe(payload.title);
+    expect(list.data[0].current_version_id).toBe(
+      list.data[0].published_version_id,
+    );
+    const detail = await (await req("/" + d.id)).json();
+    expect(detail.approvals[0]).toEqual({ approved: true });
+  });
+  it("requires a distinct owner delegation for a superadmin, and expires it immediately", async () => {
+    const d = await create("company", null);
+    actor = "super";
+    expect((await req("/" + d.id)).status).toBe(404);
+    db.prepare(
+      "INSERT INTO user_capabilities(id,user_id,capability,granted_by,reason,expires_at,created_at) VALUES('company-grant','super','documents.company.owner','owner','explicit fixture delegation',?,1)",
+    ).run(Date.now() + 60000);
+    expect((await req("/" + d.id)).status).toBe(200);
+    db.exec(
+      "UPDATE user_capabilities SET expires_at=1 WHERE id='company-grant'",
+    );
+    expect((await req("/" + d.id)).status).toBe(404);
+  });
+  it("supports several projects and stable service/subscription instances for the same beneficiary", async () => {
+    db.exec(
+      "INSERT INTO projects(id,client_id,name,slug,created_at) VALUES('pa2','ca','Second project','project-a2',1); INSERT INTO services(id,project_id,service_name,price,billing_cycle) VALUES('sa','pa','Service A',100,'monthly'); INSERT INTO subscriptions(id,client_id,service_id,next_billing_date) VALUES('suba','ca','sa',1)",
+    );
+    const d = await create("client", "ca", [
+      { kind: "project", id: "pa" },
+      { kind: "project", id: "pa2" },
+      { kind: "service", id: "sa" },
+      { kind: "subscription", id: "suba" },
+    ]);
+    for (const filter of [
+      "project=pa",
+      "project=pa2",
+      "service=sa",
+      "subscription=suba",
+    ])
+      expect(
+        (await (await req("?" + filter)).json()).data.map(
+          (row: { id: string }) => row.id,
+        ),
+      ).toContain(d.id);
+    expect(() =>
+      db
+        .prepare(
+          "INSERT INTO document_assignments(id,document_id,project_id,created_by,created_at) VALUES(?,?,?,?,1)",
+        )
+        .run("bad-reference", d.id, "pb", "owner"),
+    ).toThrow("document_beneficiary_mismatch");
+  });
+  it("keeps commercial catalog snapshots stable and rejects forged tax or catalog values", async () => {
+    const source = db
+      .prepare(
+        "SELECT * FROM commercial_catalog_codes WHERE entity_type='service' LIMIT 1",
+      )
+      .get()!;
+    const line = {
+      catalogId: source.id,
+      label: source.display_name,
+      sku: source.sku || "",
+      quantity: 1,
+      catalogPriceMinor: source.base_price_minor,
+      offeredPriceMinor: source.base_price_minor || 0,
+      priceConfirmed: source.base_price_minor !== null,
+      discountReason: "",
+      currency: source.currency,
+      vatBasisPoints: source.vat_basis_points,
+      taxVerified: source.tax_status === "verified",
+      billingCycle: source.billing_cycle,
+      priceModel: source.price_model,
+      package: "",
+    };
+    const input = {
+      payload: { ...payload, lines: [line] },
+      scope: "client",
+      collection: "library",
+      beneficiaryId: "ca",
+      templateVersionId: null,
+      assignments: [],
+    };
+    expect(
+      (
+        await req("", {
+          ...input,
+          payload: {
+            ...input.payload,
+            lines: [{ ...line, taxVerified: !line.taxVerified }],
+          },
+        })
+      ).status,
+    ).toBe(409);
+    const created = await req("", input);
+    expect(created.status).toBe(200);
+    const d = await created.json();
+    const before = source.base_price_minor;
+    const changed = {
+      ...input.payload,
+      lines: [
+        {
+          ...line,
+          offeredPriceMinor: 5000,
+          priceConfirmed: true,
+          discountReason: "Ofertă specială de verificare",
+        },
+      ],
+    };
+    expect(
+      (await req("/" + d.id, { payload: changed, revision: 1 }, "PUT")).status,
+    ).toBe(200);
+    expect(
+      db
+        .prepare(
+          "SELECT base_price_minor FROM commercial_catalog_codes WHERE id=?",
+        )
+        .get(source.id)!.base_price_minor,
+    ).toBe(before);
+    expect(
+      (
+        await req(
+          "/" + d.id,
+          {
+            payload: {
+              ...changed,
+              lines: [{ ...line, catalogPriceMinor: 999 }],
+            },
+            revision: 2,
+          },
+          "PUT",
+        )
+      ).status,
+    ).toBe(409);
+  });
+  it.each(["PF", "PJ", "PFA", "ONG"])(
+    "preserves the independently selected legal identity %s",
+    async (type) => {
+      const d = await req("", {
+        payload: {
+          ...payload,
+          fields: {
+            "beneficiary.entity_type": type,
+            "beneficiary.legal_name": "Beneficiar de verificare",
+          },
+        },
+        scope: "client",
+        collection: "library",
+        beneficiaryId: "ca",
+        templateVersionId: null,
+        assignments: [],
+      });
+      expect(d.status).toBe(200);
+      const result = await (await req("/" + (await d.json()).id)).json();
+      expect(result.version.payload.fields["beneficiary.entity_type"]).toBe(
+        type,
+      );
+    },
+  );
+  it("keeps the MFA policy effective for private reads and mutations without applying it to clients", async () => {
+    const d = await create();
+    env.MFA_AUTH_ENABLED = "true";
+    env.ADMIN_MFA_POLICY = "required";
+    expect((await req("/" + d.id)).status).toBe(403);
+    expect(
+      (await req("/" + d.id, { payload, revision: 1 }, "PUT")).status,
+    ).toBe(403);
+    actor = "a";
+    expect((await req("/notices")).status).toBe(200);
+  });
+  it("rejects a corrupt backup manifest and never overwrites historical content", async () => {
+    const d = await create();
+    const backup = await (await req("/" + d.id + "/backups", {})).json();
+    const row = db
+      .prepare("SELECT object_key FROM document_backup_records WHERE id=?")
+      .get(backup.id)!;
+    backups.data.set(String(row.object_key), new TextEncoder().encode("{}"));
+    expect(
+      (
+        await req(`/${d.id}/backups/${backup.id}/restore`, {
+          revision: revision(d.id),
+          confirmed: true,
+        })
+      ).status,
+    ).toBe(409);
+    expect(
+      db
+        .prepare("SELECT count(*) n FROM document_versions WHERE document_id=?")
+        .get(d.id)!.n,
+    ).toBe(1);
+  });
+  it("does not permit data URI images to bypass import quarantine", async () => {
+    const image = {
+      ...payload,
+      body: {
+        type: "doc",
+        content: [
+          {
+            type: "image",
+            attrs: { src: "data:image/png;base64,iVBORw0KGgo=" },
+          },
+        ],
+      },
+    };
+    expect(
+      (
+        await req("", {
+          payload: image,
+          scope: "internal",
+          collection: "library",
+          beneficiaryId: null,
+          templateVersionId: null,
+          assignments: [],
+        })
+      ).status,
+    ).toBe(423);
+  });
+  it("rebuilds an approved export instead of reusing the draft watermark and preserves official files", async () => {
+    const d = await create();
+    expect((await req("/" + d.id + "/export/pdf")).status).toBe(200);
+    await approve(d.id);
+    expect((await req("/" + d.id + "/export/pdf")).status).toBe(200);
+    const rows = db
+      .prepare(
+        "SELECT expires_at,object_key FROM document_files WHERE document_id=? ORDER BY created_at",
+      )
+      .all(d.id);
+    expect(rows).toHaveLength(2);
+    expect(rows.some((row) => row.expires_at === null)).toBe(true);
+    const official = rows.find((row) => row.expires_at === null)!;
+    await cleanupDocumentExports(env as never, Date.now() + 3 * 86400000);
+    expect(files.data.has(String(official.object_key))).toBe(true);
+  });
+  it("requires verified separate destinations and isolates corporate backups", async () => {
+    const d = await create();
+    env.DOCUMENT_BACKUP_ISOLATION_VERIFIED = "false";
+    expect((await req(`/${d.id}/backups`, {})).status).toBe(503);
+    env.DOCUMENT_BACKUP_ISOLATION_VERIFIED = "true";
+    env.DOCUMENT_BACKUPS = files;
+    expect((await req(`/${d.id}/backups`, {})).status).toBe(503);
+    env.DOCUMENT_BACKUPS = backups;
+    const company = await (
+      await req("", {
+        payload,
+        scope: "company",
+        collection: "library",
+        beneficiaryId: null,
+        templateVersionId: null,
+        assignments: [],
+      })
+    ).json();
+    env.DOCUMENT_COMPANY_BACKUPS = backups;
+    expect((await req(`/${company.id}/backups`, {})).status).toBe(503);
+  });
+  it("reports the persisted backup state on retries and batches only the selected project", async () => {
+    const d = await create("client", "ca", [{ kind: "project", id: "pa" }]);
+    const key = crypto.randomUUID();
+    const first = await (await req(`/${d.id}/backups`, {}, "POST", key)).json();
+    const second = await (
+      await req(`/${d.id}/backups`, {}, "POST", key)
+    ).json();
+    expect(second).toEqual({ id: first.id, status: "verified" });
+    expect(
+      db.prepare("SELECT count(*) n FROM document_backup_records").get()!.n,
+    ).toBe(1);
+    const result = await req("/project-backups", {
+      projectId: "pa",
+      confirmed: true,
+    });
+    expect(result.status, await result.clone().text()).toBe(200);
+    expect((await result.json()).data).toHaveLength(1);
+    actor = "b";
+    expect(
+      (await req("/project-backups", { projectId: "pa", confirmed: true }))
+        .status,
+    ).toBe(404);
+  });
+  it("keeps approvals immutable and filters states on the server", async () => {
+    const d = await create();
+    await approve(d.id);
+    expect(() =>
+      db
+        .prepare("DELETE FROM document_approvals WHERE document_id=?")
+        .run(d.id),
+    ).toThrow("document_approval_immutable");
+    expect((await (await req("?state=Ciornă")).json()).data).toHaveLength(0);
+    expect((await (await req("?state=Aprobat")).json()).data).toHaveLength(1);
+    expect(
+      (
+        await req("/templates/missing/review", {
+          reference: "Reviewed by specialist",
+        })
+      ).status,
+    ).toBe(404);
+  });
+  it("supports bounded merged tables and rejects malformed geometry", async () => {
+    const cell = (text: string, attrs = {}) => ({
+      type: "tableCell",
+      attrs,
+      content: [paragraph(text)],
+    });
+    const content = {
+      ...payload,
+      body: {
+        type: "doc",
+        content: [
+          {
+            type: "table",
+            content: [
+              {
+                type: "tableRow",
+                content: [cell("A", { rowspan: 2 }), cell("B")],
+              },
+              { type: "tableRow", content: [cell("C")] },
+            ],
+          },
+        ],
+      },
+    };
+    expect(payloadSchema.safeParse(content).success).toBe(true);
+    const r = await req("", {
+      payload: content,
+      scope: "internal",
+      collection: "library",
+      beneficiaryId: null,
+      templateVersionId: null,
+      assignments: [],
+    });
+    expect(r.status).toBe(200);
+    const d = await r.json();
+    expect((await req(`/${d.id}/export/pdf`)).status).toBe(200);
+    content.body.content[0].content[1].content.push(cell("Extra"));
+    expect(payloadSchema.safeParse(content).success).toBe(false);
+  });
+  it("keeps service profiles on catalog IDs and purchase contexts on a single legal beneficiary", async () => {
+    const catalog = db
+      .prepare("SELECT id FROM commercial_catalog_codes WHERE active=1 LIMIT 1")
+      .get()!;
+    const config = {
+      fields: { scope: "Livrabile aprobate" },
+      deliverables: "Livrabilele și limitele se confirmă cu beneficiarul.",
+      documents: ["brief", "annex"],
+    };
+    actor = "staff";
+    expect(
+      (await req(`/service-profiles/${catalog.id}`, config, "PUT")).status,
+    ).toBe(403);
+    actor = "owner";
+    expect(
+      (await req(`/service-profiles/${catalog.id}`, config, "PUT")).status,
+    ).toBe(200);
+    db.exec(
+      "INSERT INTO commerce_orders(id,user_id,items_json,subtotal_cents,total_cents,created_at,updated_at) VALUES('oa','a','[]',100,100,1,1)",
+    );
+    expect((await (await req("/context")).json()).purchases).toHaveLength(1);
+    db.exec("INSERT INTO client_account_access VALUES('cb','a','owner',1)");
+    expect((await (await req("/context")).json()).purchases).toHaveLength(0);
+  });
+
+  it("requires authorization for each published version and never carries a recipient into the next publication", async () => {
+    const d = await create();
+    await approve(d.id);
+    await publish(d.id);
+    const initial = db
+      .prepare("SELECT current_version_id FROM documents WHERE id=?")
+      .get(d.id)!.current_version_id;
+    db.exec(
+      "INSERT INTO users(id,email,password_hash,email_verified,created_at,updated_at) VALUES('a2','a2@example.test','fixture',1,1,1); INSERT INTO user_roles VALUES('a2','user'); INSERT INTO client_account_access VALUES('ca','a2','owner',1)",
+    );
+    await req(
+      "/" + d.id,
+      {
+        payload: { ...payload, title: "Versiunea pentru alt reprezentant" },
+        revision: revision(d.id),
+      },
+      "PUT",
+    );
+    await approve(d.id);
+    expect(
+      (
+        await req("/" + d.id + "/publish", {
+          revision: revision(d.id),
+          recipients: ["a2"],
+          allowClientShare: false,
+          allowAttachments: false,
+        })
+      ).status,
+    ).toBe(200);
+    actor = "a";
+    expect((await req("/" + d.id)).status).toBe(404);
+    actor = "a2";
+    const detail = await (await req("/" + d.id)).json();
+    expect(detail.versions).toHaveLength(1);
+    expect((await req("/" + d.id + "?version=" + initial)).status).toBe(404);
+    expect(
+      (await req("/" + d.id + "/export/pdf?version=" + initial)).status,
+    ).toBe(404);
+  });
+  it("stores the actual provider message ID without claiming mailbox delivery", async () => {
+    const d = await create();
+    await approve(d.id);
+    await publish(d.id);
+    env.SMTP_FROM = "document@example.test";
+    let calls = 0;
+    env.TRANSACTIONAL_EMAIL = {
+      send: async () => {
+        calls++;
+        return { messageId: "fixture-provider-message" };
+      },
+    };
+    const key = crypto.randomUUID();
+    const body = {
+      versionId: d.versionId,
+      recipientId: "a",
+      channel: "email",
+      subject: "Verificare locală",
+      message: "Date sintetice",
+      attachment: "none",
+      confirmed: true,
+    };
+    const response = await req(`/${d.id}/share`, body, "POST", key);
+    expect((await response.json()).status).toBe("sent");
+    expect(
+      (await (await req(`/${d.id}/share`, body, "POST", key)).json()).status,
+    ).toBe("sent");
+    expect(calls).toBe(1);
+    expect(
+      db
+        .prepare("SELECT provider_id FROM document_shares WHERE document_id=?")
+        .get(d.id)!.provider_id,
+    ).toBe("fixture-provider-message");
+  });
+  it("blocks storage before privacy verification and rechecks access before download begins", async () => {
+    const d = await create();
+    await approve(d.id);
+    await publish(d.id);
+    env.DOCUMENT_STORAGE_PRIVACY_VERIFIED = "false";
+    expect((await req(`/${d.id}/export/pdf`)).status).toBe(503);
+    env.DOCUMENT_STORAGE_PRIVACY_VERIFIED = "true";
+    actor = "a";
+    const put = files.put;
+    files.put = async (key, value) => {
+      const result = await put(key, value);
+      db.prepare(
+        "UPDATE document_access_grants SET revoked_at=? WHERE document_id=? AND user_id=?",
+      ).run(Date.now(), d.id, "a");
+      return result;
+    };
+    expect((await req(`/${d.id}/export/pdf`)).status).toBe(404);
+  });
+  it("uses the private version search index without revealing another beneficiary", async () => {
+    const d = await create();
+    await approve(d.id);
+    await publish(d.id);
+    actor = "a";
+    expect((await (await req("?q=profesionale")).json()).data).toHaveLength(1);
+    actor = "b";
+    expect((await (await req("?q=profesionale")).json()).data).toHaveLength(0);
+    expect((await req("?q=%22%27%25")).status).toBe(200);
+  });
+  it("deduplicates concurrent exports and keeps restored historical files out of the new export cache", async () => {
+    const d = await create();
+    await approve(d.id);
+    const exports = await Promise.all([
+      req(`/${d.id}/export/pdf`),
+      req(`/${d.id}/export/pdf`),
+    ]);
+    expect(exports.map((r) => r.status)).toEqual([200, 200]);
+    expect(
+      db
+        .prepare(
+          "SELECT count(*) n FROM document_files WHERE document_id=? AND kind='pdf'",
+        )
+        .get(d.id)!.n,
+    ).toBe(1);
+    expect(files.data.size).toBe(1);
+    const backup = await (await req(`/${d.id}/backups`, {})).json();
+    const restored = await (
+      await req(`/${d.id}/backups/${backup.id}/restore`, {
+        revision: revision(d.id),
+        confirmed: true,
+      })
+    ).json();
+    expect(
+      db
+        .prepare("SELECT kind FROM document_files WHERE version_id=?")
+        .get(restored.versionId)!.kind,
+    ).toBe("import");
+    await approve(d.id);
+    expect((await req(`/${d.id}/export/pdf`)).status).toBe(200);
+    expect(
+      db
+        .prepare(
+          "SELECT count(*) n FROM document_files WHERE version_id=? AND kind='pdf'",
+        )
+        .get(restored.versionId)!.n,
+    ).toBe(1);
+  });
+  it("keeps proposed templates private, de-identifies known variables and follows source access revocation", async () => {
+    const data = {
+      ...payload,
+      fields: { "beneficiary.legal_name": "Beneficiar confidențial" },
+      body: {
+        type: "doc",
+        content: [
+          paragraph(
+            "Document profesional destinat Beneficiar confidențial, cu livrabile și condiții pentru verificarea modelului reutilizabil.",
+          ),
+        ],
+      },
+    };
+    const d = await (
+      await req("", {
+        payload: data,
+        scope: "client",
+        collection: "library",
+        beneficiaryId: "ca",
+        templateVersionId: null,
+        assignments: [],
+      })
+    ).json();
+    const proposal = await (await req(`/${d.id}/save-template`, {})).json();
+    const ownerContext = await (await req("/context")).json();
+    const template = ownerContext.templates.find(
+      (t: { id: string }) => t.id === proposal.id,
+    );
+    expect(template.visibility).toBe("private_proposal");
+    expect(template.payload.fields["beneficiary.legal_name"]).toBe("");
+    expect(JSON.stringify(template.payload)).not.toContain(
+      "Beneficiar confidențial",
+    );
+    db.exec(
+      "INSERT INTO user_capabilities(id,user_id,capability,granted_by,reason,created_at) VALUES('template-manager','staff','documents.templates.manage','owner','fixture',1),('document-creator','staff','documents.create','owner','fixture',1)",
+    );
+    actor = "staff";
+    expect(
+      (await (await req("/context")).json()).templates.some(
+        (t: { id: string }) => t.id === proposal.id,
+      ),
+    ).toBe(false);
+    expect(
+      (
+        await req(`/templates/${proposal.id}/versions`, {
+          name: "Unauthorized change",
+          payload,
+          required: [],
+          legal: false,
+        })
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await req("", {
+          payload,
+          scope: "internal",
+          collection: "library",
+          beneficiaryId: null,
+          templateVersionId: proposal.versionId,
+          assignments: [],
+        })
+      ).status,
+    ).toBe(400);
+    db.exec(
+      `INSERT INTO client_account_access VALUES('ca','staff','owner',1); INSERT INTO document_access_grants(document_id,user_id,granted_by,created_at) VALUES('${d.id}','staff','owner',1)`,
+    );
+    expect(
+      (await (await req("/context")).json()).templates.some(
+        (t: { id: string }) => t.id === proposal.id,
+      ),
+    ).toBe(true);
+    db.exec("DELETE FROM client_account_access WHERE user_id='staff'");
+    expect(
+      (await (await req("/context")).json()).templates.some(
+        (t: { id: string }) => t.id === proposal.id,
+      ),
+    ).toBe(false);
+  });
+  it("also removes revoked corporate notices from the existing operations feed", async () => {
+    const d = await create("company", null);
+    await approve(d.id);
+    await req(`/${d.id}/share`, {
+      versionId: d.versionId,
+      recipientId: "owner",
+      channel: "internal",
+      subject: "Fixture",
+      message: "",
+      attachment: "none",
+      confirmed: true,
+    });
+    const notices = db
+      .prepare(
+        "SELECT id,deduplication_key FROM operation_notifications WHERE user_id=?",
+      )
+      .all("owner") as { id: string; deduplication_key: string }[];
+    const original = { id: "ordinary", deduplication_key: "ordinary" };
+    notices.push(original);
+    expect(
+      await filterPrivateDocumentNotices(env.DB as never, "owner", notices),
+    ).toHaveLength(2);
+    db.exec(
+      "UPDATE platform_principals SET role='superadmin' WHERE email='prometheus@avyron.ro'",
+    );
+    expect(
+      await filterPrivateDocumentNotices(env.DB as never, "owner", notices),
+    ).toEqual([original]);
+  });
+  it("allows a scoped publisher to select recipients without granting external share permission", async () => {
+    const d = await create();
+    await approve(d.id);
+    db.exec(
+      `INSERT INTO client_account_access VALUES('ca','staff','owner',1); INSERT INTO document_access_grants(document_id,user_id,can_edit,granted_by,created_at) VALUES('${d.id}','staff',1,'owner',1); INSERT INTO user_capabilities(id,user_id,capability,granted_by,reason,created_at) VALUES('publisher','staff','documents.publish','owner','fixture',1)`,
+    );
+    actor = "staff";
+    expect((await req(`/${d.id}/recipients`)).status).toBe(200);
+    expect(
+      (
+        await req(`/${d.id}/publish`, {
+          revision: revision(d.id),
+          recipients: ["a"],
+          allowClientShare: false,
+          allowAttachments: false,
+        })
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await req(`/${d.id}/share`, {
+          versionId: d.versionId,
+          recipientId: "a",
+          channel: "link",
+          subject: "",
+          message: "",
+          attachment: "none",
+          confirmed: true,
+        })
+      ).status,
+    ).toBe(404);
+  });
+  it("completes a legal master review and a fully populated contract through approval and both exports", async () => {
+    const model = DOCUMENT_TEMPLATES.find((t) => t.id === "framework")!;
+    const fields = Object.fromEntries(
+      [...new Set([...model.required, ...templateFields(model.payload)])].map(
+        (key) => [key, "Date sintetice pentru verificarea locală"],
+      ),
+    );
+    const content = replaceVariables(model.payload, fields);
+    expect(documentIssues(content, model.required)).toHaveLength(0);
+    expect(
+      (
+        await req("/templates/framework_v1/review", {
+          reference: "Referință sintetică de revizuire a modelului în test",
+        })
+      ).status,
+    ).toBe(200);
+    const created = await req("", {
+      payload: content,
+      scope: "client",
+      collection: "library",
+      beneficiaryId: "ca",
+      templateVersionId: "framework_v1",
+      assignments: [{ kind: "project", id: "pa" }],
+    });
+    expect(created.status, await created.clone().text()).toBe(200);
+    const d = await created.json();
+    const approval = await req(`/${d.id}/approve`, {
+      revision: revision(d.id),
+      legalReviewReference:
+        "Referință sintetică pentru versiunea contractului, numai în test",
+    });
+    expect(approval.status, await approval.clone().text()).toBe(200);
+    for (const format of ["pdf", "docx"]) {
+      const response = await req(`/${d.id}/export/${format}`);
+      expect(response.status).toBe(200);
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      mkdirSync("/tmp/avyron-document-qa", { recursive: true });
+      writeFileSync(`/tmp/avyron-document-qa/contract.${format}`, bytes);
+    }
+  });
+});

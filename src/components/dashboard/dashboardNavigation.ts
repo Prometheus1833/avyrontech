@@ -48,6 +48,7 @@ export type DashboardSectionMeta = {
 };
 
 export const DASHBOARD_GROUP_LABELS: Record<string, string> = {
+  documents: "Documente",
   overview: "Principal",
   projects: "Proiecte",
   activity: "Activitate",
@@ -65,6 +66,7 @@ export const DASHBOARD_GROUP_ORDER = [
   "projects",
   "servicii",
   "produse",
+  "documents",
   "activity",
   "platform",
   "os",
@@ -74,6 +76,7 @@ export const DASHBOARD_GROUP_ORDER = [
 ];
 
 export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
+  documents: {label:"Documente",commandLabel:"Deschide Document Center",hint:"Bibliotecă, tipizate, generator și documente pentru staff",icon:BookOpen},
   overview: { label: "Prezentare generală", mobileLabel: "Acasă", commandLabel: "Deschide prezentarea generală", hint: "Priorități, indicatori și starea sistemului", icon: LayoutDashboard },
   "social-manager": { label: "Manager Social Media", mobileLabel: "Social", commandLabel: "Deschide Manager Social Media", hint: "Propuneri AI, rezultate și aprobări editoriale", icon: Share2 },
   profile: { label: "Profil", commandLabel: "Deschide profilul", hint: "Date personale și identitatea contului", icon: User },
