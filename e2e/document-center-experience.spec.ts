@@ -1,0 +1,636 @@
+import { expect, test, type Page } from "@playwright/test";
+import { DOCUMENT_TEMPLATES } from "../src/shared/documents/templates";
+import {
+  DOCUMENT_PERMISSIONS,
+  ENTITY_TYPES,
+  blankPayload,
+  paragraph,
+} from "../src/shared/documents/model";
+const context = {
+  company: {
+    legal_name: "DIGITAL ECOTECH SOLUTIONS S.R.L.",
+    tax_id: "55055976",
+    address: "Sediu configurat în profil",
+    contact_email: "contact@avyron.ro",
+    registration_number: null,
+    representative: null,
+  },
+  clients: [
+    {
+      id: "ca",
+      company_name: "Client A demonstrativ",
+      legal_name: "Beneficiar A",
+      email: "a@example.test",
+      entity_type: "PJ",
+      address: "Adresă A",
+      tax_id: "SYNTHETIC-A",
+      contact_name: "Contact A",
+    },
+    {
+      id: "cb",
+      company_name: "Client B demonstrativ",
+      legal_name: "Beneficiar B",
+      email: "b@example.test",
+      entity_type: "PF",
+      address: "Adresă B",
+      tax_id: null,
+    },
+  ],
+  projects: [
+    {
+      id: "pa",
+      client_id: "ca",
+      name: "Website demonstrativ",
+      kind: "development",
+      status: "in_progress",
+    },
+  ],
+  services: [
+    {
+      id: "sa",
+      project_id: "pa",
+      client_id: "ca",
+      catalog_code_id: "web",
+      service_name: "Website Profesional",
+      price: 1000,
+    },
+  ],
+  subscriptions: [
+    {
+      id: "sub-a",
+      client_id: "ca",
+      project_id: "pa",
+      service_name: "Mentenanță Website",
+      status: "active",
+      billing: {
+        entity_type: "company",
+        legal_name: "Beneficiar A",
+        tax_id: "SYNTHETIC-A",
+        billing_address: "Adresă A",
+        invoice_email: "billing@example.test",
+        payment_terms_days: 15,
+      },
+    },
+  ],
+  catalog: [
+    {
+      id: "web",
+      entity_type: "service",
+      entity_key: "website",
+      display_name: "Website Profesional",
+      sku: "WEB-DEMO",
+      base_price_minor: 100000,
+      currency: "RON",
+      vat_basis_points: 0,
+      tax_status: "verified",
+      billing_cycle: "one_time",
+      price_model: "fixed",
+      category: "Website",
+    },
+  ],
+  templates: DOCUMENT_TEMPLATES.map((t) => ({
+    ...t,
+    legal: Number(t.legal),
+    family: t.id,
+    version_id: `tv-${t.id}`,
+    version: 1,
+    review_status: "review_required",
+    visibility: "shared",
+  })),
+  serviceProfiles: [],
+  unreconciledServices: [],
+  products: [],
+  plans: [],
+  purchases: [],
+  entitlements: [],
+  billingSubscriptions: [],
+  entityTypes: ENTITY_TYPES,
+};
+const summary = {
+  id: "doc-a",
+  number: "DOC-2026-0042",
+  title: "Ofertă Website · Client A",
+  scope: "client",
+  collection: "library",
+  beneficiary_id: "ca",
+  company_name: "Client A demonstrativ",
+  current_version_id: "v-a",
+  published_version_id: null,
+  revision: 1,
+  archived_at: null,
+  approved: "v-a",
+  updated_at: Date.now(),
+  legal: 0,
+  template_family: "offer",
+};
+const line = {
+  catalogId: "web",
+  label: "Website Profesional",
+  sku: "WEB-DEMO",
+  quantity: 1,
+  catalogPriceMinor: 100000,
+  offeredPriceMinor: 100000,
+  discountReason: "",
+  currency: "RON",
+  vatBasisPoints: 0,
+  taxVerified: true,
+  priceConfirmed: true,
+  billingCycle: "one_time",
+  priceModel: "fixed",
+  package: "",
+};
+function detail() {
+  return {
+    document: summary,
+    version: {
+      id: "v-a",
+      version: 1,
+      sha256: "synthetic",
+      payload: {
+        ...blankPayload(summary.title),
+        body: {
+          type: "doc",
+          content: [
+            paragraph(
+              "Conținut sintetic pentru verificarea documentelor, a exporturilor și a condițiilor comerciale aprobate.",
+            ),
+          ],
+        },
+        lines: [line],
+      },
+    },
+    versions: [{ id: "v-a", version: 1, approved_at: 1, created_at: 1 }],
+    assignments: [],
+    files: [],
+    events: [],
+    shares: [],
+    approvals: [{ approved_by: "owner", legal_review_reference: "" }],
+    grants: [],
+    actions: { read: true, export: true, "billing.prepare": true },
+    issues: [],
+    billingPreparation: null,
+  };
+}
+async function setup(page: Page, role: "owner" | "staff" | "client" = "owner") {
+  const lists: URL[] = [];
+  let created: Record<string, unknown> | null = null,
+    prepared: Record<string, unknown> | null = null,
+    contextFail = false;
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      "avyron-cookie-consent-v2",
+      JSON.stringify({
+        necessary: true,
+        analytics: false,
+        marketing: false,
+        savedAt: new Date().toISOString(),
+        policyVersion: "2026-09-12",
+      }),
+    ),
+  );
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url()),
+      p = url.pathname,
+      m = route.request().method();
+    if (p === "/api/auth/refresh")
+      return route.fulfill({
+        json: { access_token: "synthetic-local-session", expires_in: 900 },
+      });
+    if (p === "/api/auth/me")
+      return route.fulfill({
+        json: {
+          user: {
+            id: role,
+            email:
+              role === "owner"
+                ? "prometheus@avyron.ro"
+                : `${role}@example.test`,
+            display_name: "Operator demonstrativ",
+            email_verified: 1,
+            must_change_password: 0,
+          },
+          profile: { display_name: "Operator demonstrativ" },
+          roles: [
+            role === "owner" ? "admin" : role === "staff" ? "staff" : "user",
+          ],
+          superadmin: role === "owner",
+        },
+      });
+    if (p === "/api/documents/bootstrap")
+      return route.fulfill({
+        json: {
+          permissions: Object.fromEntries(
+            DOCUMENT_PERMISSIONS.map((key) => [
+              key,
+              role === "owner" ||
+                (role === "staff" &&
+                  [
+                    "documents.read",
+                    "documents.create",
+                    "documents.export",
+                  ].includes(key)),
+            ]),
+          ),
+          staff: role !== "client",
+          platformRole: role === "owner" ? "platform_owner" : null,
+          mfaVerified: true,
+          channels: { email: false, whatsapp: "manual", telegram: "manual" },
+          storage: "verified",
+          backup: "configured",
+          scanner: "unconfigured",
+        },
+      });
+    if (p === "/api/documents/context")
+      return contextFail
+        ? route.fulfill({
+            status: 503,
+            json: {
+              error: {
+                code: "context_unavailable",
+                message: "Context indisponibil temporar",
+              },
+            },
+          })
+        : route.fulfill({ json: context });
+    if (p === "/api/documents/staff-guides")
+      return route.fulfill({
+        json: {
+          data: [
+            {
+              id: "staff-guide",
+              title: "Ghid activitate STAFF",
+              subtitle: "Resursă internă",
+              paragraphs: ["Instrucțiuni demonstrative pentru echipă."],
+            },
+          ],
+        },
+      });
+    if (p === "/api/documents" && m === "GET") {
+      lists.push(url);
+      return route.fulfill({
+        json: {
+          data:
+            url.searchParams.get("q") === "inexistent"
+              ? []
+              : [
+                  {
+                    ...summary,
+                    scope: url.searchParams.get("scope") || "client",
+                  },
+                ],
+          total: url.searchParams.get("q") === "inexistent" ? 0 : 1,
+          nextOffset: null,
+        },
+      });
+    }
+    if (p === "/api/documents" && m === "POST") {
+      created = route.request().postDataJSON();
+      return route.fulfill({ json: { id: "doc-a", number: summary.number } });
+    }
+    if (p === "/api/documents/doc-a/prepare-billing") {
+      prepared = route.request().postDataJSON();
+      return route.fulfill({
+        json: { revenue_id: "revenue-demo", status: "draft" },
+      });
+    }
+    if (p === "/api/documents/doc-a")
+      return route.fulfill({
+        json: {
+          ...detail(),
+          ...(prepared
+            ? {
+                billingPreparation: {
+                  revenue_id: "revenue-demo",
+                  status: "draft",
+                  invoice_number: null,
+                },
+              }
+            : {}),
+        },
+      });
+    if (p.endsWith("/export/pdf"))
+      return route.fulfill({
+        contentType: "application/pdf",
+        body: "%PDF-1.7 synthetic browser fixture",
+      });
+    if (p === "/api/produse/admin/overview")
+      return route.fulfill({
+        json: {
+          plans: [],
+          items: [],
+          analytics: [],
+          revenue: [],
+          invoices: [],
+          monthlySales: [],
+        },
+      });
+    return route.fulfill({ json: { data: [] } });
+  });
+  return {
+    lists,
+    created: () => created,
+    prepared: () => prepared,
+    contextFail: (value: boolean) => {
+      contextFail = value;
+    },
+  };
+}
+const nav = (page: Page) =>
+  page.getByRole("navigation", { name: "Zone Document Center" });
+test("separate views, compact library, contextual search and safe download", async ({
+  page,
+}, info) => {
+  const state = await setup(page);
+  await page.goto("/profil?tab=documents");
+  await expect(
+    page.getByRole("heading", { name: "Centru Documente", exact: true }),
+  ).toBeVisible();
+  await expect(
+    nav(page).getByRole("button", { name: /Bibliotecă Agenție/ }),
+  ).toHaveAttribute("aria-current", "page");
+  await expect(page.locator(".dc-document-row")).toHaveCount(1);
+  await page.getByRole("button", { name: "Carduri documente" }).click();
+  await expect(page.locator(".dc-document-card")).toHaveCount(1);
+  await page.getByRole("button", { name: "Listă compactă" }).click();
+  await page.getByLabel("Caută în documentele autorizate").fill("inexistent");
+  await expect(
+    page.getByText("Niciun document pentru această selecție"),
+  ).toBeVisible();
+  expect(state.lists.at(-1)?.searchParams.get("q")).toBe("inexistent");
+  await page.getByLabel("Caută în documentele autorizate").fill("");
+  await page.getByText("Filtrează după context").click();
+  await page.getByLabel("Tipul documentului").selectOption("offer");
+  await expect
+    .poll(() => state.lists.at(-1)?.searchParams.get("family"))
+    .toBe("offer");
+  await page.getByLabel("Clientul documentelor").selectOption("ca");
+  await expect
+    .poll(() => state.lists.at(-1)?.searchParams.get("client"))
+    .toBe("ca");
+  const downloaded = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: `Descarcă PDF · ${summary.title}` })
+    .click();
+  expect((await downloaded).suggestedFilename()).toBe(`${summary.number}.pdf`);
+  await page.screenshot({
+    path: info.outputPath("agency-desktop.png"),
+    fullPage: true,
+  });
+  await nav(page)
+    .getByRole("button", { name: /Documente SC/ })
+    .click();
+  await expect
+    .poll(() => state.lists.at(-1)?.searchParams.get("scope"))
+    .toBe("company");
+  await expect(page.getByLabel("Clientul documentelor")).toHaveCount(0);
+  await nav(page)
+    .getByRole("button", { name: /Tipizate/ })
+    .click();
+  await expect(page).toHaveURL(/documentView=templates/);
+  await expect(
+    page.getByRole("heading", { name: "Alege modelul potrivit" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Generator de documente" }),
+  ).toHaveCount(0);
+  await page.getByLabel("Caută un tipizat").fill("Ofertă");
+  await expect(page.locator(".dc-template-card")).toHaveCount(1);
+  await page
+    .getByRole("button", { name: "Previzualizează", exact: true })
+    .click();
+  const preview = page.getByRole("dialog");
+  await expect(preview.locator(".dc-template-paper")).toContainText(
+    "AVYRON propune",
+  );
+  await page.screenshot({ path: info.outputPath("template-preview.png") });
+  await preview
+    .getByRole("button", {
+      name: "Personalizează pentru un client sau proiect",
+    })
+    .click();
+  await expect(page).toHaveURL(/documentView=generator/);
+  await expect(page).toHaveURL(/documentTemplate=tv-offer/);
+  await expect(
+    page.getByRole("checkbox", { name: /Ofertă comercială/ }),
+  ).toBeChecked();
+});
+test("four-step generator prepopulates issuer, inherits project context and clears previous beneficiary edits", async ({
+  page,
+}, info) => {
+  const state = await setup(page);
+  await page.goto(
+    "/profil?tab=documents&documentView=generator&documentTemplate=tv-framework&client=ca&project=pa",
+  );
+  await expect(page.getByLabel("Beneficiar juridic")).toHaveValue("ca");
+  await expect(
+    page.getByRole("checkbox", { name: "Website demonstrativ" }),
+  ).toBeChecked();
+  await page.getByRole("button", { name: "Continuă", exact: true }).click();
+  await expect(
+    page.getByRole("textbox", { name: "Beneficiar *", exact: true }),
+  ).toHaveValue("Beneficiar A");
+  await page.getByText(/Emitent AVYRON · DIGITAL/).click();
+  await expect(page.getByLabel("Denumirea juridică AVYRON *")).toHaveValue(
+    context.company.legal_name,
+  );
+  await expect(page.getByLabel("CUI AVYRON *")).toHaveValue("55055976");
+  await expect(page.getByLabel("Reprezentant AVYRON")).toHaveValue("");
+  await page
+    .getByRole("textbox", { name: "Beneficiar *", exact: true })
+    .fill("Editare exclusiv Client A");
+  await page.getByRole("button", { name: "Înapoi", exact: true }).click();
+  await page.getByLabel("Beneficiar juridic").selectOption("cb");
+  await page.getByRole("button", { name: "Continuă", exact: true }).click();
+  await expect(
+    page.getByRole("textbox", { name: "Beneficiar *", exact: true }),
+  ).toHaveValue("Beneficiar B");
+  await page.getByRole("button", { name: "Continuă", exact: true }).click();
+  await page.getByRole("button", { name: "Continuă", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Creează și deschide editorul" })
+    .click();
+  await expect.poll(() => state.created()).not.toBeNull();
+  expect(state.created()).toMatchObject({
+    scope: "client",
+    beneficiaryId: "cb",
+    templateVersionId: "tv-framework",
+    assignments: [],
+  });
+  const payload = (
+    state.created() as { payload: { fields: Record<string, string> } }
+  ).payload;
+  expect(payload.fields["provider.tax_id"]).toBe("55055976");
+  expect(payload.fields["beneficiary.legal_name"]).toBe("Beneficiar B");
+  await expect(
+    page.getByRole("button", { name: "Word", exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: info.outputPath("document-editor.png"),
+    fullPage: true,
+  });
+});
+test("approved document requires an explicit confirmation before financial draft preparation", async ({
+  page,
+}) => {
+  const state = await setup(page);
+  await page.goto("/profil?tab=documents&document=doc-a");
+  await page.getByRole("button", { name: "Pregătește factura" }).click();
+  const dialog = page.getByRole("dialog", { name: "Pregătire factură" });
+  await expect(
+    dialog.getByRole("button", { name: "Creează ciorna în Financiar" }),
+  ).toBeDisabled();
+  await dialog.getByRole("checkbox").check();
+  await dialog
+    .getByRole("button", { name: "Creează ciorna în Financiar" })
+    .click();
+  await expect(dialog).toBeHidden();
+  expect(state.prepared()).toMatchObject({ versionId: "v-a", confirmed: true });
+  await page.getByRole("button", { name: "Ciorna de factură" }).click();
+  await expect(
+    page.getByRole("link", { name: "Deschide Financiar" }),
+  ).toBeVisible();
+});
+for (const role of ["staff", "client"] as const)
+  test(`${role}: company section is absent and direct section selection does not query it`, async ({
+    page,
+  }) => {
+    const state = await setup(page, role);
+    await page.goto("/profil?tab=documents&documentView=company");
+    await expect(nav(page)).toBeVisible();
+    await expect(
+      nav(page).getByRole("button", { name: /Documente SC/ }),
+    ).toHaveCount(0);
+    await expect.poll(() => state.lists.length).toBeGreaterThan(0);
+    expect(
+      state.lists.every((url) => url.searchParams.get("scope") !== "company"),
+    ).toBe(true);
+    if (role === "staff") {
+      await nav(page)
+        .getByRole("button", { name: /Documente STAFF/ })
+        .click();
+      await expect(page.getByText("Ghid activitate STAFF")).toBeVisible();
+    }
+  });
+test("context failure can be retried on the templates page", async ({
+  page,
+}) => {
+  const state = await setup(page);
+  state.contextFail(true);
+  await page.goto("/profil?tab=documents&documentView=templates");
+  await expect(page.getByRole("alert")).toBeVisible();
+  state.contextFail(false);
+  await page.getByRole("button", { name: "Reîncearcă încărcarea" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Alege modelul potrivit" }),
+  ).toBeVisible();
+});
+for (const width of [320, 390, 768])
+  test(`responsive accessible document library and template picker at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 844 });
+    await setup(page);
+    await page.goto("/profil?tab=documents");
+    await expect(
+      page.getByRole("region", { name: "Bibliotecă Agenție" }),
+    ).toBeVisible();
+    const overflow = () =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth > innerWidth + 1,
+      );
+    expect(await overflow()).toBe(false);
+    await page.screenshot({
+      path: info.outputPath(`agency-${width}.png`),
+      fullPage: true,
+    });
+    await nav(page)
+      .getByRole("button", { name: /Tipizate/ })
+      .click();
+    await expect(page.locator(".dc-template-card")).toHaveCount(11);
+    expect(await overflow()).toBe(false);
+    await page.screenshot({
+      path: info.outputPath(`templates-${width}.png`),
+      fullPage: true,
+    });
+    await page.getByLabel("Caută un tipizat").focus();
+    await page.keyboard.type("SLA");
+    await expect(page.locator(".dc-template-card")).toHaveCount(1);
+  });
+
+test("document views meet basic WCAG AA checks and artifact library is named distinctly", async ({
+  page,
+}) => {
+  await setup(page);
+  await page.goto("/profil?tab=documents");
+  await expect(nav(page)).toBeVisible();
+  const { createRequire } = await import("node:module");
+  await page.addScriptTag({
+    path: createRequire(import.meta.url).resolve("axe-core/axe.min.js"),
+  });
+  const check = async () => {
+    const violations = await page.evaluate(async () => {
+      const { violations } = await (
+        window as unknown as {
+          axe: {
+            run: (
+              selector: string,
+              options: object,
+            ) => Promise<{
+              violations: {
+                id: string;
+                impact: string;
+                nodes: { target: string[] }[];
+              }[];
+            }>;
+          };
+        }
+      ).axe.run(".document-center", {
+        runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21aa"] },
+      });
+      return violations.map((v) => ({
+        id: v.id,
+        impact: v.impact,
+        targets: v.nodes.map((n) => n.target),
+      }));
+    });
+    expect(violations).toEqual([]);
+  };
+  await check();
+  await nav(page)
+    .getByRole("button", { name: /Tipizate/ })
+    .click();
+  await expect(page.locator(".dc-template-card")).toHaveCount(11);
+  await check();
+  await page.goto("/profil?tab=library");
+  await expect(
+    page.getByRole("heading", { name: "Biblioteca Artefacte", exact: true }),
+  ).toBeVisible();
+});
+
+test("company and staff libraries ignore a previous project's client context", async ({
+  page,
+}) => {
+  const state = await setup(page);
+  for (const view of ["company", "staff"]) {
+    await page.goto(
+      `/profil?tab=documents&documentView=${view}&project=pa&client=ca&service=sa&subscription=sub-a`,
+    );
+    await expect
+      .poll(() => state.lists.at(-1)?.searchParams.get("scope"))
+      .toBe(view);
+    const query = state.lists.at(-1)!.searchParams;
+    for (const field of ["client", "project", "service", "subscription"])
+      expect(query.has(field)).toBe(false);
+    await page
+      .getByRole("button", { name: "Creează document", exact: true })
+      .click();
+    await expect(
+      page.getByRole("combobox", { name: "Vizibilitate", exact: true }),
+    ).toHaveValue(view);
+    await page.getByRole("button", { name: "Continuă", exact: true }).click();
+    await expect(
+      page.getByRole("textbox", { name: "Titlu · Document nou" }),
+    ).toBeVisible();
+    await expect(page.getByRole("alert")).toHaveCount(0);
+  }
+});

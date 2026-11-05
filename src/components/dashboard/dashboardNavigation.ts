@@ -75,7 +75,7 @@ export const DASHBOARD_GROUP_ORDER = [
 ];
 
 export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
-  documents: {label:"Documente",commandLabel:"Deschide Document Center",hint:"Bibliotecă, tipizate, generator și documente pentru staff",icon:BookOpen},
+  documents: {label:"Centru Documente",mobileLabel:"Documente",commandLabel:"Deschide Centrul de Documente",hint:"Bibliotecă Agenție, tipizate, generator și documente pentru staff",icon:BookOpen},
   overview: { label: "Prezentare generală", mobileLabel: "Acasă", commandLabel: "Deschide prezentarea generală", hint: "Priorități, indicatori și starea sistemului", icon: LayoutDashboard },
   "social-manager": { label: "Manager Social Media", mobileLabel: "Social", commandLabel: "Deschide Manager Social Media", hint: "Propuneri AI, rezultate și aprobări editoriale", icon: Share2 },
   profile: { label: "Profil", commandLabel: "Deschide profilul", hint: "Date personale și identitatea contului", icon: User },
@@ -119,5 +119,5 @@ export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
   configurator: { label: "Configurator", commandLabel: "Deschide Configurator", hint: "Estimări, cereri și rezultate comerciale", icon: Calculator },
   "other-hub": { label: "Altele", commandLabel: "Deschide inventarul de module", hint: "Funcții, statistici și rapoarte fără secțiune dedicată", icon: PackageSearch },
   careers: { label: "Cariere", commandLabel: "Deschide Cariere", hint: "Roluri, candidați și resurse pentru recrutare", icon: UserRoundSearch },
-  library: { label: "Bibliotecă", commandLabel: "Deschide Biblioteca", hint: "Surse, referințe și active de cunoaștere", icon: LibraryBig },
+  library: { label: "Biblioteca Artefacte", commandLabel: "Deschide Biblioteca Artefacte", hint: "Efecte, artefacte, integrări și referințe digitale", icon: LibraryBig },
 };

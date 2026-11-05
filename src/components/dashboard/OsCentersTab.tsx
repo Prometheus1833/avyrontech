@@ -66,7 +66,7 @@ export default function OsCentersTab({ access, onNavigate }: {access: Access; on
         { id: "subscriptions-admin" as SectionId, label: "Abonamente", detail: "Planuri și clienți activi", icon: CalendarClock },
         { id: "team-staff" as SectionId, label: "Staff", detail: "Conturi și comunicare", icon: UserRoundCheck },
         { id: "intern" as SectionId, label: "Chat intern", detail: "Canale și mesaje directe", icon: MessageSquare },
-        { id: "library" as SectionId, label: "Bibliotecă", detail: "Efecte și referințe", icon: BookOpen },
+        { id: "library" as SectionId, label: "Biblioteca Artefacte", detail: "Efecte, integrări și referințe", icon: BookOpen },
         { id: "ai-os" as SectionId, label: "Agenți AI", detail: "Configurații, cunoaștere și conversații", icon: Sparkles },
         { id: "finance" as SectionId, label: "Financiar", detail: "Costuri, venituri, plăți și bugete", icon: Wallet },
         { id: "commercial-codes" as SectionId, label: "Coduri comerciale", detail: "SKU, TVA și trasee de plată", icon: FileCode2 },

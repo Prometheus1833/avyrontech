@@ -60,3 +60,7 @@ Lucrări locale pe `codex/leads-services-config-2026-11-05`, după checkpointul 
 ## Abonamente Clienți și AVYRON — 5 noiembrie 2026
 
 Continuare locală după `8fa9b41`, pe `codex/client-internal-subscriptions-2026-11-05`. [SUBSCRIPTION_OPERATIONS.md](./SUBSCRIPTION_OPERATIONS.md) descrie alocările pe CRM/proiecte/conturi existente, calendarul lunar și ciornele în registrul financiar, plus evidența conturilor interne din `financial_expenses`. Migrarea aditivă 0081 nu activează furnizori, facturare externă sau plăți automate. Accesul clientului, staffului și financiarului este separat în backend. Push și deploy rămân amânate până la încheierea taskurilor.
+
+## Centru Documente — organizare și personalizare, 5 noiembrie 2026
+
+Continuare locală după `24b8957`, pe `codex/document-center-experience-2026-11-05`. [DOCUMENT_CENTER_EXPERIENCE.md](./DOCUMENT_CENTER_EXPERIENCE.md) descrie Biblioteca Agenție, Documente SC/STAFF, paginile separate Tipizate și Generator, precompletarea emitentului, contextul CRM/abonament și ciorna de factură din registrul existent. Biblioteca efectelor/integrărilor din dashboard se numește Biblioteca Artefacte. Migrarea aditivă 0082 completează exclusiv date goale ale emitentului cunoscut și păstrează referințele financiare cu integritate tranzacțională. Nu emite facturi și nu debitează conturi. Push, PR, merge, migrare remote și deploy rămân amânate conform utilizatorului.

@@ -2,9 +2,11 @@
 
 Stare: release autorizat pentru producție la 4 noiembrie 2026. Verificările locale și CI sunt trecute; rezultatul migrării și revizia efectiv servită trebuie confirmate în jurnalul release-ului. Nu s-au trimis documente reale către destinatari externi.
 
+Actualizare locală la 5 noiembrie: [organizare și personalizare](./DOCUMENT_CENTER_EXPERIENCE.md), încă fără push/deploy pentru această etapă. Inventarul de release de mai sus nu dovedește publicarea schimbărilor noi.
+
 ## Structură și arhitectură
 
-Categoria **Documente** este în meniul central, după Produse AVYRON și înainte de Activitate. Are cinci zone: Bibliotecă, Tipizate și generator, Documente staff, Documents Hub și Documentele firmei. Ofertele, documentele clienților, documentele independente și arhiva sunt filtre în Bibliotecă. Zona firmei este eliminată din navigare, rezultate, căutare, numărători și acces direct pentru utilizatorii neautorizați.
+Categoria **Documente** este în meniul central, după Produse AVYRON și înainte de Activitate. În organizarea locală actuală, intrarea este Centru Documente, cu Bibliotecă Agenție, Documente SC, Documente STAFF, Tipizate și Generator. Documents Hub rămâne accesibil din zona STAFF. Ofertele, documentele clienților, documentele independente și arhiva sunt filtre în Biblioteca Agenției. Zona firmei este eliminată din navigare, rezultate, căutare, numărători și acces direct pentru utilizatorii neautorizați.
 
 React/Tiptap folosește API-ul Hono existent, autentificarea `cfAuth`, rolurile și capabilitățile D1 existente. Nu se introduc autentificare, CRM, produse ori abonamente paralele și nu se adaugă Supabase. Editorul și generatorul sunt încărcate la cerere; bibliotecile PDF/Word rulează în Worker și nu sunt descărcate de paginile publice.
 

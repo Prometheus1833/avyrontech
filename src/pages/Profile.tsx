@@ -127,6 +127,7 @@ export default function Profile() {
       const next = new URLSearchParams(params);
       next.set("tab", destination);
       next.delete("core");
+      if(destination!=="documents")for(const key of ["documentView","documentTemplate","template","document","version"])next.delete(key);
       if(destination!=="servicii-avyron"){next.delete("service");next.delete("serviceGroup");}
       if(extraParams)for(const [key,value] of Object.entries(extraParams)){if(value)next.set(key,value);else next.delete(key);}
       if (destination !== "intern") next.delete("dm");
