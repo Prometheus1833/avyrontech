@@ -176,7 +176,6 @@ const Services = () => {
           description,
           path: ro ? "/servicii" : "/en/services",
           alternates: { ro: "/servicii", en: "/en/services" },
-          image: "/og/pricing.jpg",
           imageAlt: ro
             ? "Pachete de prețuri Avyron — site-uri web, magazine online și mentenanță"
             : "Avyron pricing packages — websites, online stores and care plans",

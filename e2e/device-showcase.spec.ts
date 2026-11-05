@@ -141,6 +141,30 @@ test("stage controls recover when a mobile browser cancels smooth scrolling", as
   await settledDevice(showcase, "phone");
 });
 
+test("stage controls recalculate their destination after a layout shift interrupts scrolling", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/#domenii");
+  const showcase = page.getByTestId("industry-device-showcase");
+  await settledDevice(showcase, "laptop");
+  await page.evaluate(() => {
+    const original = window.scrollTo.bind(window);
+    let shifted = false;
+    window.scrollTo = ((options: ScrollToOptions) => {
+      if (options.behavior !== "smooth") return original(options);
+      if (!shifted) {
+        shifted = true;
+        const spacer = document.createElement("div");
+        spacer.style.height = "1400px";
+        document.getElementById("domenii")!.before(spacer);
+      }
+      // Reproduce a cancelled native smooth scroll and late content above it.
+    }) as typeof window.scrollTo;
+  });
+  await showcase.getByRole("button", { name: /Aplicație$/ }).click();
+  await settledDevice(showcase, "phone");
+  await expect(showcase.getByRole("button", { name: "Web/Mobile App", exact: true })).toBeVisible();
+});
+
 test("English interfaces fit on mobile and the industry picker supports Escape", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/en#domenii");

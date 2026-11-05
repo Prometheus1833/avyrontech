@@ -41,6 +41,9 @@ jobs:
       - name: Audit all D1 migrations
         run: npm run audit:d1
 
+      - name: Check editable service content and effective product catalog
+        run: npm run service-content:check && npm run catalog:produse:check
+
       - name: Build Cloudflare Pages output
         run: npm run build:pages
 

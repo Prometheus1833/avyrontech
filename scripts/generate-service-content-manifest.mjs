@@ -1,6 +1,7 @@
 import { createServer } from "vite";
 import { readFile, writeFile } from "node:fs/promises";
 const server = await createServer({
+  optimizeDeps: { noDiscovery: true, include: [] },
   server: { middlewareMode: true },
   appType: "custom",
 });

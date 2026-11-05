@@ -1628,6 +1628,7 @@ app.put("/api/content/:key", requireAuth, requireRole("admin"), async (c) => {
 // ─── Platformă internă (proiecte + propuneri + linkuri + metadata) ──────
 import { BLOG_SLUGS } from "../../../../src/data/blogSlugs";
 import { serveCachedAsset } from "../../../../src/worker/assetCache";
+import { servePrivateShell } from "../../../../src/worker/privateShell";
 import { headersForTransformedBody,injectBlogHtml,mergeBlogLlms,mergeBlogSitemap } from "../../../../src/worker/blogHtml";
 import { decide,isKnownSpaRoute,normalizePath } from "../../../../src/worker/router";
 import { adminOperationsRouter } from "./adminOperations";
@@ -1878,23 +1879,12 @@ app.all("*", async (c) => {
   if (decision.kind === "static") return siteFile(c, decision.file, decision.status, decision.noindex);
   if (decision.kind === "blog") return publicBlogPage(c, decision.language, decision.slug);
 
-  if (url.searchParams.has("servicePreview")) {
-    const shell = await siteFile(c, "/_shell.html", 200, true);
-    const headers = new Headers(shell.headers);
-    headers.set("Cache-Control", "private, no-store");
-    return new Response(shell.body, { status: shell.status, headers });
-  }
-
   const path = normalizePath(url.pathname);
+  if (url.searchParams.has("servicePreview") || isKnownSpaRoute(path)) {
+    return servePrivateShell(c.env, url, c.req.method);
+  }
   const asset = await c.env.ASSETS.fetch(c.req.raw);
   if (asset.status === 404) {
-    if (isKnownSpaRoute(path)) {
-      const shell = await siteFile(c, "/_shell.html", 200, true);
-      const headers = new Headers(shell.headers);
-      headers.set("Cache-Control", "private, no-store");
-      headers.set("Pragma", "no-cache");
-      return new Response(shell.body, { status: shell.status, headers });
-    }
     return siteFile(c, "/404.html", 404, true);
   }
   if (!decision.robots) return asset;

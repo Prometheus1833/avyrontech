@@ -84,7 +84,6 @@ const GrowthServicePage = ({ kind }: { kind: GrowthServiceKey }) => {
       description: c.metaDescription,
       path,
       alternates: service.path,
-      image: kind === "seo-ai" ? "/og/seo-ai.png" : "/og/marketing-ads.png",
       imageAlt: c.name,
     });
     void Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
