@@ -94,6 +94,7 @@ export const engineApi = {
   createSuggestion: (input: { name: string; canonicalUrl: string; sourceType: string; rationale: string }) => mutate<{ id: string }>("/api/engine/suggestions", "POST", input),
   reviewSuggestion: (id: string, status: "reviewing" | "approved" | "rejected", note = "") => mutate<{ ok: true }>(`/api/engine/suggestions/${encodeURIComponent(id)}`, "PATCH", { status, note }),
   promoteSuggestion: (id: string) => mutate<{ sourceId: string }>(`/api/engine/suggestions/${encodeURIComponent(id)}/promote`, "POST"),
+  reconcile: () => mutate<{ok:true;paused:number;externalCalls:0}>("/api/engine/bindings/reconcile","POST",{confirmed:true}),
   bindings: () => cfAuth.request<{ data: EngineBinding[] }>("/api/engine/bindings"),
   createBinding: (input: { capabilityId: string; targetType: string; targetKey: string; purpose: string; visibility: string }) => mutate<{ id: string }>("/api/engine/bindings", "POST", input),
   updateBinding: (id: string, status: string) => mutate<{ ok: true }>(`/api/engine/bindings/${encodeURIComponent(id)}`, "PATCH", { status }),

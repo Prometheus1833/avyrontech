@@ -1,3 +1,4 @@
+import {visualAssetsRouter} from "./visualAssets";
 import {provisionAccountPlan} from "./accountProvisioning";
 import { staffAccessRouter, planStaffAssignment, staffAssignmentSchema, type StaffAssignmentInput } from "./staffAccess";
 import { STAFF_OPERATIONAL_EMAIL, staffRequestAllowed, canManageStaffTarget, managedStaff } from "./staffAccessPolicy";
@@ -1729,6 +1730,8 @@ app.use("/api/operations/*", requireAuth, requirePrivilegedMfa);
 app.route("/", operationsRouter);
 app.route("/", dashboardRouter);
 app.route("/", systemDiagnosticsRouter);
+app.use("/api/visual-assets*",requireAuth);
+app.route("/",visualAssetsRouter);
 app.route("/", engineRouter);
 app.route("/", organizationsRouter);
 app.route("/", projectsRouter);

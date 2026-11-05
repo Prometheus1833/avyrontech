@@ -28,3 +28,5 @@ Pentru procedura de predare și statutul ramurilor, vezi [PROJECT_CONTINUITY.md]
 
 - **Fișa clientului**: mini-dashboard din registrul Clienți; reunește identitatea comercială/fiscală, conturile autorizate, proiectele, abonamentele, situația financiară și documentele centrale. Identitatea fiscală este în `client_legal_profiles`; autentificarea rămâne în contul nativ, separat de identitatea firmei.
 - **Acces client gestionat explicit**: `clients.access_managed=1`; accesul se bazează pe asocieri aprobate, iar reconcilierea legacy prin email nu reface automat granturile revocate. Alte granturi independente sunt administrate separat.
+- **Media / resurse vizuale**: catalog privat pentru identitatea AVYRON și resursele beneficiarilor, legat de CRM/proiectele native. Uploadul în carantină și verificarea de format nu echivalează cu scanarea antimalware.
+- **Sincronizare fluxuri Engine**: reconciliere internă confirmată care pune în pauză legăturile neeligibile; nu activează servicii, discovery sau apeluri externe.

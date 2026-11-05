@@ -174,9 +174,9 @@ test("Leaduri: pipeline compact, priorități, etape și motive comerciale de el
   await page.goto("/profil?tab=leads");
   const nav = page.getByRole("navigation", { name: "Navigare AVYRON OS" });
   await expect(
-    nav.getByRole("tab", { name: "Leaduri", exact: true }),
+    nav.getByRole("button", { name: "Leaduri", exact: true }),
   ).toBeVisible();
-  await expect(nav.getByRole("tab", { name: "Leaduri & CRM" })).toHaveCount(0);
+  await expect(nav.getByRole("button", { name: "Leaduri & CRM" })).toHaveCount(0);
   await page.getByRole("button", { name: "Pipeline", exact: true }).click();
   const board = page.getByRole("region", { name: "Pipeline leaduri" });
   await expect(
@@ -222,7 +222,8 @@ test("Servicii deschide mini-lista și configurări individuale pentru toate pag
   await page.goto("/profil?tab=leads");
   await page
     .getByRole("navigation", { name: "Navigare AVYRON OS" })
-    .getByRole("tab", { name: "Servicii AVYRON", exact: true })
+    .getByRole("button", { name: "Servicii AVYRON", exact: true })
+    .and(page.locator("[data-os-section]"))
     .click();
   const mini = page.getByRole("navigation", { name: "Mini-listă servicii" });
   await expect(mini.getByRole("button")).toHaveCount(12);
@@ -388,7 +389,7 @@ test("un conflict de salvare păstrează textul și împiedică pierderea sa la 
     .fill("Ciornă care trebuie păstrată");
   await page
     .getByRole("navigation", { name: "Navigare AVYRON OS" })
-    .getByRole("tab", { name: "Leaduri", exact: true })
+    .getByRole("button", { name: "Leaduri", exact: true })
     .click();
   await expect(page.getByRole("alert")).toContainText("Pagina s-a modificat");
   await expect(page.getByLabel("Titlu principal", { exact: true })).toHaveValue(

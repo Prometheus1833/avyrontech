@@ -61,7 +61,7 @@ export type SectionId =
   | "finance" | "media" | "leads" | "staff-tickets" | "demo-requests" | "intern"
   | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "servicii-avyron" | "produse-avyron"
   | "newsletter" | "ai-projects" | "logo-simulations" | "surveys" | "configurator"
-  | "commercial-codes" | "other-hub" | "social-manager" | "subscriptions-admin" | "internal-subscriptions" | "careers" | "library" | "reviews" | "platform-control";
+  | "commercial-codes" | "other-hub" | "social-manager" | "subscriptions-admin" | "internal-subscriptions" | "careers" | "library" | "reviews" | "avy-engine";
 
 export type SectionDef = {
   id: SectionId;
@@ -89,7 +89,6 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "ai-projects", group: "projects", audience: "superadmin", requiredCapability: "ai_projects.read", keywords: ["proiecte ai", "productie ai", "continut"] },
   { id: "maintenance", group: "projects", audience: "everyone", keywords: ["mentenanta", "uptime", "maintenance"] },
   { id: "leads", group: "projects", audience: "staff", requiredCapability: "leads.read", keywords: ["leads", "crm", "vanzari", "oferta", "prospecti"] },
-  { id: "domains", group: "projects", audience: "staff", keywords: ["domenii", "dns", "domains"] },
   { id: "media", group: "projects", audience: "staff", keywords: ["media", "imagini", "fisiere"] },
 
   { id: "subscriptions", group: "billing", audience: "client", keywords: ["abonament", "plan", "subscriptions"] },
@@ -124,20 +123,21 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "reviews", group: "platform", audience: "admin", keywords: ["recenzii", "review", "testimoniale", "aprobari", "rating"] },
   { id: "demo-requests", group: "platform", audience: "staff", keywords: ["demo", "solicitari", "leaduri"] },
   { id: "logo-simulations", group: "platform", audience: "staff", keywords: ["logo", "simulari", "3d", "logo studio"] },
+  { id: "domains", group: "platform", audience: "staff", keywords: ["domenii", "dns", "domains"] },
   { id: "surveys", group: "platform", audience: "staff", keywords: ["surveys", "chestionare", "brief", "rezultate"] },
   { id: "configurator", group: "platform", audience: "staff", keywords: ["configurator", "estimari", "oferte", "rezultate"] },
+  { id: "careers", group: "platform", audience: "staff", keywords: ["cariere", "joburi", "roluri", "recrutare"] },
+  { id: "library", group: "platform", audience: "staff", keywords: ["biblioteca", "resurse", "surse", "referinte"] },
 
   { id: "finance", group: "os", audience: "superadmin", keywords: ["financiar", "facturare", "venituri", "plati", "incasari", "finance"] },
   { id: "commercial-codes", group: "os", audience: "superadmin", keywords: ["coduri", "sku", "contabilitate", "servicii", "produse", "tva", "plata"] },
   { id: "newsletter", group: "os", audience: "superadmin", keywords: ["newsletter", "abonati", "email", "campanii", "consimtamant"] },
-  { id: "platform-control", group: "os", audience: "superadmin", keywords: ["control", "administrare", "modificari", "site", "platforma", "continut"] },
+  { id: "avy-engine", group: "os", audience: "superadmin", keywords: ["avy engine", "surse", "capabilitati", "conectori", "fluxuri", "documentatie"] },
   { id: "os-centers", group: "os", audience: "staff", keywords: ["securitate", "automatizari", "integrari", "backup", "erori", "agenti ai", "programari", "comentarii", "pluginuri"] },
   { id: "ai-os", group: "os", audience: "superadmin", navigation: false, keywords: ["ai", "avy", "agenti", "chatbot", "automatizare"] },
   { id: "promotions", group: "os", audience: "superadmin", navigation: false, keywords: ["promotii", "reduceri", "campanii"] },
 
   { id: "other-hub", group: "other", audience: "staff", keywords: ["altele", "module", "rapoarte", "functii", "roadmap"] },
-  { id: "careers", group: "other", audience: "staff", keywords: ["cariere", "joburi", "roluri", "recrutare"] },
-  { id: "library", group: "other", audience: "staff", keywords: ["biblioteca", "resurse", "surse", "referinte"] },
   { id: "resources", group: "documents", audience: "staff", navigation: false, keywords: ["resurse", "documente", "ghid", "siteuri", "campuri"] },
 ];
 

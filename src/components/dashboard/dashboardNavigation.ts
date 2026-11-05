@@ -69,9 +69,9 @@ export const DASHBOARD_GROUP_ORDER = [
   "activity",
   "platform",
   "os",
-  "other",
   "billing",
   "account",
+  "other",
 ];
 
 export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
@@ -111,7 +111,7 @@ export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
   "commercial-codes": { label: "Coduri servicii și produse", commandLabel: "Deschide nomenclatorul comercial", hint: "Coduri, TVA și trasee de plată", icon: FileCode2 },
   promotions: { label: "Promoții", commandLabel: "Deschide promoțiile", hint: "Campanii și reguli comerciale", icon: BadgePercent },
   newsletter: { label: "Newsletter", commandLabel: "Deschide newsletterul", hint: "Abonați, campanii și consimțământ", icon: Mail },
-  "platform-control": { label: "Control platformă", commandLabel: "Deschide centrul de control", hint: "Instrumente de administrare și modificare", icon: SlidersHorizontal },
+  "avy-engine": { label: "AVY Engine", commandLabel: "Deschide AVY Engine", hint: "Surse, capabilități, statusuri și legături de flux", icon: Sparkles },
   "ai-os": { label: "Agenți AI", mobileLabel: "AVY", commandLabel: "Deschide agenții AVY", hint: "Agenți, activitate și cunoaștere din Centre AVYRON OS", icon: Sparkles },
   "os-centers": { label: "Centre AVYRON OS", mobileLabel: "Mai multe", commandLabel: "Vezi toate centrele AVYRON OS", hint: "Integrări, automatizări și operațiuni", icon: ShieldCheck },
   "logo-simulations": { label: "Simulări Logo 3D", commandLabel: "Deschide simulările Logo 3D", hint: "Cereri Logo Studio, configurații și rezultate", icon: ScanSearch },

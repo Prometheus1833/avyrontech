@@ -58,7 +58,8 @@ describe("AVYRON OS dashboard", () => {
     }
     expect(canOpenSection("workflows", owner)).toBe(false);
     expect(canOpenSection("maintenance", client)).toBe(true);
-    expect(canOpenSection("platform-control", owner)).toBe(true);
+    expect(canOpenSection("platform-control", owner)).toBe(false);
+    expect(canOpenSection("avy-engine", owner)).toBe(true);
     expect(canOpenSection("platform-control", admin)).toBe(false);
     expect(canOpenSection("platform-control", staff)).toBe(false);
   });

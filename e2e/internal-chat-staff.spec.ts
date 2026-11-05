@@ -187,13 +187,13 @@ test("AvyContabil primește navigare financiară, fără proiecte sau marketing"
     page.getByRole("button", { name: "Cont nou", exact: true }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("tab", { name: "Financiar", exact: true }),
+    page.getByRole("button", { name: "Financiar", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("tab", { name: "Proiecte", exact: true }),
+    page.getByRole("button", { name: "Proiecte", exact: true }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("tab", { name: "Social Media Manager", exact: true }),
+    page.getByRole("button", { name: "Social Media Manager", exact: true }),
   ).toHaveCount(0);
 });
 
@@ -375,13 +375,11 @@ test("AvyContabil folosește registrul financiar fără panourile de conectare a
     page.getByRole("heading", { name: "Financiar", exact: true }),
   ).toBeVisible();
   await expect(page.getByText("Costuri AI/API", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Cheltuieli", exact: true }).click();
+  await page.getByRole("button", { name: "Cheltuieli și limite", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Cheltuială", exact: true }),
   ).toBeEnabled();
-  await page
-    .getByRole("button", { name: "Conturi și carduri", exact: true })
-    .click();
+  await page.getByRole("button",{name:"Conturi și facturare",exact:true}).click();
   await expect(
     page.getByRole("button", { name: "Cont intern", exact: true }),
   ).toBeDisabled();

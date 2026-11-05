@@ -314,10 +314,10 @@ test("alocă unui cont existent planul și calendarul lunar numai după verifica
   ).toBeVisible();
   const nav = page.getByRole("navigation", { name: "Navigare AVYRON OS" });
   await expect(
-    nav.getByRole("tab", { name: "Abonamente Clienți", exact: true }),
+    nav.getByRole("button", { name: "Abonamente Clienți", exact: true }),
   ).toBeVisible();
   await expect(
-    nav.getByRole("tab", { name: "Abonamente AVYRON", exact: true }),
+    nav.getByRole("button", { name: "Abonamente AVYRON", exact: true }),
   ).toBeVisible();
   const dialog = await allocationForm(page);
   const contrast = await dialog
@@ -470,7 +470,7 @@ test("staff vede evidența operațională fără costuri, note private sau modif
     page.getByRole("button", { name: "Editează evidența" }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("tab", { name: "Abonamente Clienți", exact: true }),
+    page.getByRole("button", { name: "Abonamente Clienți", exact: true }),
   ).toHaveCount(0);
   await expect(page.getByText("200,00", { exact: false })).toHaveCount(0);
 });
@@ -490,7 +490,7 @@ test("clientul vede planul și condițiile alocate fără navigare internă", as
     }),
   ).toBeVisible();
   await expect(
-    page.getByRole("tab", { name: "Abonamente AVYRON", exact: true }),
+    page.getByRole("button", { name: "Abonamente AVYRON", exact: true }),
   ).toHaveCount(0);
 });
 for (const width of [320, 390])

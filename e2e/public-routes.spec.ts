@@ -726,7 +726,7 @@ test.describe("forms and authentication", () => {
     });
 
     await page.goto("/profil?tab=profile");
-    const entry = page.getByRole("link", { name: /Deschide AI AVY Prod/ });
+    const entry = page.getByRole("navigation", {name:"Navigare AVYRON OS"}).getByRole("button", { name: "Proiecte AI", exact:true });
     await expect(entry).toBeVisible();
     await entry.click();
     await expect(page.getByRole("heading", { name: "Proiecte AI", exact: true })).toBeVisible();
@@ -770,7 +770,7 @@ test.describe("forms and authentication", () => {
     });
 
     await page.goto("/profil?tab=profile");
-    const card = page.getByRole("link", { name: "Deschide AVY Engine" });
+    const card = page.getByRole("navigation", {name:"Navigare AVYRON OS"}).getByRole("button", { name: "AVY Engine", exact:true });
     await expect(card).toBeVisible();
     await card.click();
     await expect(page.getByRole("heading", { name:"AVY Engine", exact:true })).toBeVisible();
@@ -781,7 +781,7 @@ test.describe("forms and authentication", () => {
     await expect(drawer.getByText("OriginKit hosted MCP")).toBeVisible();
     await expect(drawer.getByRole("button", { name:/Analizează sursa/ })).toHaveCount(0);
     await drawer.getByRole("button", { name:"Închide" }).click();
-    await page.getByRole("tab", { name:"Control" }).click();
+    await page.getByRole("button", { name:"Control" }).click();
     await expect(page.getByText("Dezactivat implicit")).toBeVisible();
   });
 
@@ -796,23 +796,24 @@ test.describe("forms and authentication", () => {
     await page.goto("/finance");
     await expect(page.getByRole("heading",{name:"Financiar",exact:true})).toBeVisible();
     await expect(page.getByText("Profit estimat")).toBeVisible();
-    await page.getByRole("button",{name:"Cheltuieli",exact:true}).click();
+    await page.getByRole("button",{name:"Cheltuieli și limite",exact:true}).click();
     await page.getByRole("button",{name:/Claude API Usage/}).click();
     await expect(page.getByRole("dialog").getByText("Claude",{exact:true})).toBeVisible();
     await expect(page.getByRole("dialog").getByText("Atașează",{exact:true})).toBeVisible();
     await page.keyboard.press("Escape");
-    await page.getByRole("button",{name:"Conturi și carduri",exact:true}).click();
+    await page.getByRole("button",{name:"Conturi și facturare",exact:true}).click();
     await expect(page.getByText("•••• 4242")).toBeVisible();
     await expect(page.getByRole("heading",{name:"Încasări și facturare"})).toBeVisible();
     await expect(page.getByText(/Un cont intern de evidență nu conectează banca/)).toBeVisible();
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await expect(page.getByText(/4242 4242/)).toHaveCount(0);
-    await page.getByRole("button",{name:"Venituri",exact:true}).click();
+    await page.getByRole("button",{name:"Venituri și încasări",exact:true}).click();
     await page.getByRole("button",{name:"Venit",exact:true}).click();
     const revenueDialog=page.getByRole("dialog",{name:"Venit nou"});
     await expect(revenueDialog).toBeVisible();
     await revenueDialog.getByRole("button",{name:"Close"}).click();
     await expect(revenueDialog).toBeHidden();
+    await page.getByRole("button",{name:"Cheltuieli și limite",exact:true}).click();
     await page.getByRole("button",{name:"Bugete",exact:true}).click();
     await page.getByRole("button",{name:"Buget",exact:true}).click();
     await expect(page.getByRole("dialog",{name:"Buget nou"})).toBeVisible();

@@ -1,2 +1,2 @@
-import { ProjectWorkspacePicker } from '@/components/intern/ProjectWorkspacePicker';
-export const StaffMediaTab = () => <ProjectWorkspacePicker mode="media"/>;
+import MediaWorkspace from './media/MediaWorkspace';
+export const StaffMediaTab=MediaWorkspace;
