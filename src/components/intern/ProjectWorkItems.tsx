@@ -11,9 +11,9 @@ export function ProjectWorkItems({projectId, onlyKind}:{projectId:string;onlyKin
   const [editing,setEditing]=useState<WorkItem|null>(null),[title,setTitle]=useState(''),[description,setDescription]=useState(''),[due,setDue]=useState(''),[kind,setKind]=useState<WorkItem['kind']>(onlyKind || 'task');
   const load=useCallback(async()=>{
     setError('');
-    try { const result=await cfAuth.request<{data:WorkItem[];canWrite:boolean}>(`/api/workspace/work-items/${encodeURIComponent(projectId)}`);setItems(result.data);setCanWrite(result.canWrite); }
+    try { const result=await cfAuth.request<{data:WorkItem[];canWrite:boolean}>(`/api/workspace/work-items/${encodeURIComponent(projectId)}${onlyKind==='maintenance'?'?kind=maintenance':''}`);setItems(result.data);setCanWrite(result.canWrite); }
     catch(e){setError(e instanceof Error?e.message:'Datele nu pot fi încărcate.');}
-  },[projectId]);
+  },[projectId,onlyKind]);
   useEffect(()=>{void load();},[load]);
   const reset=()=>{setEditing(null);setTitle('');setDescription('');setDue('');};
   async function save(event:React.FormEvent) {

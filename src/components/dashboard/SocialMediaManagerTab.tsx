@@ -1,39 +1,548 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowUpRight, Bot, CalendarClock, CheckCircle2, FileCheck2, RefreshCw, Send, XCircle } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ArrowUpRight,
+  CalendarClock,
+  CheckCircle2,
+  RefreshCw,
+  XCircle,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { aiProjectsApi, type AiProjectDetail } from "@/lib/aiProjectsApi";
+import {
+  aiProjectsApi,
+  type AiContentItem,
+  type AiProjectListRow,
+} from "@/lib/aiProjectsApi";
+import { socialManagerApi, type SocialSnapshot } from "@/lib/socialManagerApi";
 import { Button } from "@/components/ui/button";
-
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+const labels: Record<string, string> = {
+  draft: "Ciornă",
+  pending_approval: "Așteaptă aprobarea",
+  approved: "Aprobat",
+  scheduled: "Programat",
+  published: "Publicat",
+  rejected: "Respins",
+  queued: "În coadă",
+  generating: "În pregătire",
+  draft_ready: "Ciornă pregătită",
+  awaiting_budget: "Așteaptă buget autorizat",
+  awaiting_approval: "Așteaptă aprobarea",
+  failed: "Eșuat",
+  completed: "Finalizat",
+  skipped: "Oprit",
+};
+const field =
+  "w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2 text-sm text-slate-100";
+const values = (raw: string) => {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? parsed.filter((x) => typeof x === "string").join(" · ")
+      : "";
+  } catch {
+    return "";
+  }
+};
+type Decision = "draft" | "pending_approval" | "approved" | "rejected";
 export default function SocialMediaManagerTab() {
-  const [data, setData] = useState<AiProjectDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState<string | null>(null);
-  const load = useCallback(async () => {
-    setLoading(true);
-    try { setData(await aiProjectsApi.detail("avyron-web")); }
-    catch { toast.error("Managerul Social Media nu a putut încărca proiectul AI AVYRON."); }
-    finally { setLoading(false); }
+  const [projects, setProjects] = useState<AiProjectListRow[]>([]),
+    [slug, setSlug] = useState("avyron-web"),
+    [filter, setFilter] = useState("review");
+  const [data, setData] = useState<SocialSnapshot | null>(null),
+    [loading, setLoading] = useState(false),
+    [error, setError] = useState("");
+  const [selected, setSelected] = useState<AiContentItem | null>(null),
+    [decision, setDecision] = useState<Decision | null>(null),
+    [confirmed, setConfirmed] = useState(false),
+    [busy, setBusy] = useState(false),
+    [upcoming, setUpcoming] = useState(false);
+  const sequence = useRef(0),
+    alive = useRef(true);
+  useEffect(() => {
+    let active = true;
+    void aiProjectsApi
+      .list()
+      .then((r) => {
+        if (active) {
+          setProjects(r.data);
+          if (r.data.length && !r.data.some((p) => p.slug === "avyron-web"))
+            setSlug(r.data[0].slug);
+        }
+      })
+      .catch(() => {
+        if (active) setError("Lista proiectelor nu a putut fi încărcată.");
+      });
+    return () => {
+      active = false;
+    };
   }, []);
-  useEffect(() => { void load(); }, [load]);
-  const content = useMemo(() => [...(data?.content || [])].sort((a, b) => b.created_at - a.created_at), [data]);
-  const pending = content.filter((item) => item.status === "pending_approval" || item.status === "draft");
-  const approve = async (id: string, status: "approved" | "rejected") => {
-    if (!data) return;
-    setSaving(id);
-    try { await aiProjectsApi.updateContent(data.project.id, id, status); toast.success(status === "approved" ? "Propunerea este aprobată pentru următorul pas; nu a fost publicată automat." : "Propunerea a fost respinsă."); await load(); }
-    catch { toast.error("Decizia nu a putut fi salvată."); }
-    finally { setSaving(null); }
+  const load = useCallback(
+    async (offset = 0) => {
+      const current = ++sequence.current;
+      setLoading(true);
+      setError("");
+      try {
+        const next = await socialManagerApi.snapshot(slug, filter, offset);
+        if (alive.current && current === sequence.current)
+          setData((old) =>
+            offset && old
+              ? { ...next, content: [...old.content, ...next.content] }
+              : next,
+          );
+      } catch (e) {
+        if (alive.current && current === sequence.current)
+          setError(
+            e instanceof Error
+              ? e.message
+              : "Datele editoriale nu pot fi încărcate.",
+          );
+      } finally {
+        if (alive.current && current === sequence.current) setLoading(false);
+      }
+    },
+    [slug, filter],
+  );
+  useEffect(() => {
+    alive.current = true;
+    setData(null);
+    setSelected(null);
+    void load();
+    const refresh = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    const timer = setInterval(refresh, 30000);
+    window.addEventListener("focus", refresh);
+    window.addEventListener("avyron:approvals-changed", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      alive.current = false;
+      clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("avyron:approvals-changed", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [load]);
+  const review = (item: AiContentItem, next: Decision | null) => {
+    setSelected(item);
+    setDecision(next);
+    setConfirmed(false);
   };
-
-  return <div className="space-y-4 text-slate-100">
-    <header className="rounded-2xl border border-fuchsia-300/15 bg-gradient-to-br from-fuchsia-500/[0.13] via-[#11182d] to-cyan-400/[0.07] p-5 sm:p-6"><div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="font-mono text-[10px] uppercase tracking-[0.24em] text-fuchsia-200/70">AI AVY Prod · aprobare umană</p><h1 className="mt-2 font-display text-2xl font-bold text-white">Manager Social Media</h1><p className="mt-1 max-w-3xl text-sm text-slate-400">Propuneri, rezultate și activități planificate pentru proiectul canonic AVYRON. Aprobarea pregătește pasul următor, fără publicare automată.</p></div><div className="flex gap-2"><Button variant="outline" onClick={() => void load()} className="border-white/10 bg-white/[0.03] text-slate-300"><RefreshCw className="size-4" /> Actualizează</Button><Button asChild className="bg-fuchsia-600 hover:bg-fuchsia-500"><Link to="/intern/ai-projects/avyron-web">Studio complet <ArrowUpRight className="size-4" /></Link></Button></div></div></header>
-    {loading ? <div className="h-40 animate-pulse rounded-2xl bg-white/[0.04]" /> : <>
-      <div className="grid gap-3 sm:grid-cols-4"><Metric icon={FileCheck2} label="De revizuit" value={pending.length} /><Metric icon={CheckCircle2} label="Aprobate" value={content.filter((item) => item.status === "approved").length} /><Metric icon={CalendarClock} label="Activități viitoare" value={(data?.socialJobs || []).filter((job) => ["queued","generating","draft_ready","awaiting_approval"].includes(job.status)).length} /><Metric icon={Bot} label="Agenți pregătiți" value={(data?.agents || []).filter((agent) => agent.status === "ready").length} /></div>
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,.7fr)]"><section className="rounded-2xl border border-white/[0.08] bg-[#10162a]/90 p-4 sm:p-5"><div className="mb-4"><h2 className="font-display text-lg font-semibold text-white">Următoarele aprobări</h2><p className="text-xs text-slate-500">Drafturile sunt ordonate de la cel mai recent. Nicio acțiune externă nu pleacă de aici fără aprobare.</p></div><div className="space-y-2">{pending.slice(0, 12).map((item) => <article key={item.id} className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3"><div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><p className="text-[10px] uppercase tracking-[0.14em] text-fuchsia-300/70">{item.format} · {item.objective}</p><h3 className="mt-1 truncate text-sm font-semibold text-slate-200">{item.title}</h3></div><span className="rounded-full bg-amber-400/10 px-2 py-1 text-[10px] text-amber-200">{item.status === "draft" ? "Draft" : "Așteaptă aprobarea"}</span></div><p className="mt-2 line-clamp-3 text-xs leading-relaxed text-slate-500">{item.caption}</p><div className="mt-3 flex flex-wrap items-center justify-between gap-2"><span className="text-[10px] text-slate-600">{new Date(item.created_at).toLocaleString("ro-RO")}</span><div className="flex gap-1.5"><button type="button" disabled={saving === item.id} onClick={() => void approve(item.id, "rejected")} className="inline-flex items-center gap-1 rounded-lg bg-rose-400/10 px-2.5 py-1.5 text-[11px] text-rose-200"><XCircle className="size-3.5" /> Respinge</button><button type="button" disabled={saving === item.id} onClick={() => void approve(item.id, "approved")} className="inline-flex items-center gap-1 rounded-lg bg-emerald-400/10 px-2.5 py-1.5 text-[11px] text-emerald-200"><CheckCircle2 className="size-3.5" /> Aprobă</button></div></div></article>)}{pending.length === 0 && <p className="rounded-xl border border-dashed border-white/10 p-6 text-center text-sm text-slate-500">Nu există propuneri care așteaptă decizia.</p>}</div></section>
-      <aside className="h-fit rounded-2xl border border-white/[0.08] bg-[#10162a]/90 p-4 sm:p-5"><h2 className="font-display text-lg font-semibold text-white">Plan și rezultate</h2><div className="mt-3 space-y-2">{(data?.socialJobs || []).slice(0, 10).map((job) => <div key={job.id} className="rounded-xl border border-white/[0.06] p-3"><div className="flex items-center justify-between gap-2"><p className="truncate text-xs font-medium text-slate-300">{job.topic}</p><span className="text-[10px] text-cyan-300">{job.primary_channel}</span></div><p className="mt-1 text-[10px] text-slate-600">{job.kind} · {new Date(job.due_at).toLocaleString("ro-RO")} · {job.status}</p></div>)}{(data?.socialJobs || []).length === 0 && <p className="text-xs text-slate-600">Nu există activități planificate.</p>}</div><div className="mt-4 rounded-xl border border-emerald-300/10 bg-emerald-400/[0.05] p-3"><p className="flex items-center gap-2 text-xs font-medium text-emerald-200"><Send className="size-3.5" /> Control editorial</p><p className="mt-1 text-[11px] leading-relaxed text-slate-500">Mod: {data?.project.automation_mode || "approval"}. Publicarea reală rămâne separată și cere conector verificat plus autorizare.</p></div></aside></div>
-    </>}
-  </div>;
+  const save = async () => {
+    if (!data || !selected || !decision || !confirmed || busy) return;
+    setBusy(true);
+    try {
+      await aiProjectsApi.updateContent(
+        data.project.id,
+        selected.id,
+        decision,
+        selected.updated_at,
+      );
+      setSelected(null);
+      toast.success(
+        decision === "approved"
+          ? "Aprobarea a fost salvată. Publicarea se verifică separat."
+          : "Starea editorială a fost actualizată.",
+      );
+      window.dispatchEvent(new Event("avyron:approvals-changed"));
+      await load();
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "Decizia nu a fost salvată.",
+      );
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  };
+  const scheduled = new Set(data?.scheduled.map((item) => item.id));
+  const activities = [
+    ...(data?.activities
+      .filter((job) => !job.content_id || !scheduled.has(job.content_id))
+      .map((job) => ({
+        id: "job-" + job.id,
+        title: job.topic,
+        status: job.status,
+        at: job.due_at,
+        channel: job.primary_channel,
+        error: job.last_error_code,
+      })) || []),
+    ...(data?.scheduled.map((item) => ({
+      id: "content-" + item.id,
+      title: item.title,
+      status: item.status,
+      at: item.scheduled_at || 0,
+      channel: values(item.channels_json),
+      error: null,
+    })) || []),
+  ].sort((a, b) => a.at - b.at);
+  const pending =
+    (data?.counts.draft || 0) + (data?.counts.pending_approval || 0);
+  return (
+    <div className="space-y-4 text-slate-100">
+      <header className="rounded-2xl border border-fuchsia-300/15 bg-gradient-to-br from-fuchsia-500/[0.13] via-[#11182d] to-cyan-400/[0.07] p-5 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-fuchsia-200/70">
+              AI AVY Prod · control editorial
+            </p>
+            <h1 className="mt-2 font-display text-2xl font-bold">
+              Manager Social Media
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm text-slate-400">
+              Revizuiește materialele, confirmă deciziile și urmărește
+              activitățile proiectului.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            disabled={loading}
+            onClick={() => void load()}
+          >
+            <RefreshCw
+              className={`mr-2 size-4 ${loading ? "animate-spin" : ""}`}
+            />
+            Actualizează
+          </Button>
+        </div>
+        <label className="mt-4 block max-w-lg text-xs text-slate-300">
+          Proiect social
+          <select
+            className={field + " mt-1"}
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+          >
+            {projects.length ? (
+              projects.map((project) => (
+                <option key={project.id} value={project.slug}>
+                  {project.name}
+                </option>
+              ))
+            ) : (
+              <option value="avyron-web">AVYRON WEB</option>
+            )}
+          </select>
+        </label>
+      </header>
+      {error && (
+        <p
+          role="alert"
+          className="rounded-xl border border-amber-400/20 p-3 text-sm text-amber-200"
+        >
+          {error}{" "}
+          <button className="underline" onClick={() => void load()}>
+            Reîncearcă
+          </button>
+        </p>
+      )}
+      {!data && loading && (
+        <p role="status">Se sincronizează datele proiectului…</p>
+      )}
+      {data && (
+        <>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Metric label="De revizuit" value={pending} />
+            <Metric label="Aprobate" value={data.counts.approved || 0} />
+            <button
+              type="button"
+              aria-expanded={upcoming}
+              aria-controls="social-upcoming"
+              onClick={() => setUpcoming(true)}
+              className="rounded-2xl border border-cyan-300/20 bg-cyan-400/[0.06] p-4 text-left hover:bg-cyan-400/10"
+            >
+              <p className="flex items-center gap-2 text-xs text-cyan-200">
+                <CalendarClock className="size-4" />
+                Activități viitoare
+              </p>
+              <p className="mt-2 text-2xl font-semibold">{activities.length}</p>
+              <p className="mt-1 text-xs text-slate-400">
+                Deschide planul și activitățile în lucru
+              </p>
+            </button>
+          </div>
+          <section className="rounded-2xl border border-white/10 bg-[#10162a]/90 p-4 sm:p-5">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="font-display text-lg font-semibold">
+                  Materiale și decizii
+                </h2>
+                <p className="mt-1 text-xs text-slate-400">
+                  Citit {new Date(data.generatedAt).toLocaleTimeString("ro-RO")}{" "}
+                  · actualizare la 30 secunde
+                </p>
+              </div>
+              <label className="text-xs">
+                Stare editorială
+                <select
+                  aria-label="Stare editorială"
+                  className={field + " mt-1"}
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                >
+                  <option value="review">Ciorne și aprobări</option>
+                  {[
+                    "draft",
+                    "pending_approval",
+                    "approved",
+                    "scheduled",
+                    "published",
+                    "rejected",
+                  ].map((status) => (
+                    <option key={status} value={status}>
+                      {labels[status]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            {!data.permission.canReview && (
+              <p className="mb-3 text-xs text-amber-200">
+                Aprobarea și respingerea sunt disponibile responsabilului
+                autorizat al proiectului.
+              </p>
+            )}
+            <div className="space-y-3">
+              {data.content.map((item) => (
+                <article
+                  key={item.id}
+                  className="min-w-0 rounded-xl border border-white/[0.07] bg-white/[0.025] p-4"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-wider text-fuchsia-200/70">
+                        {item.format} · {values(item.channels_json)}
+                      </p>
+                      <h3 className="mt-1 break-words font-medium">
+                        {item.title}
+                      </h3>
+                    </div>
+                    <span className="rounded-full bg-white/5 px-2 py-1 text-xs text-slate-300">
+                      {labels[item.status]}
+                    </span>
+                  </div>
+                  <p className="mt-2 line-clamp-3 whitespace-pre-wrap break-words text-sm text-slate-400">
+                    {item.caption}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => review(item, null)}
+                    >
+                      Previzualizează
+                    </Button>
+                    {data.permission.canCreate && item.status === "draft" && (
+                      <Button
+                        size="sm"
+                        onClick={() => review(item, "pending_approval")}
+                      >
+                        Trimite la aprobare
+                      </Button>
+                    )}
+                    {data.permission.canReview &&
+                      ["draft", "pending_approval"].includes(item.status) && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => review(item, "rejected")}
+                        >
+                          <XCircle className="mr-1 size-4" />
+                          Respinge
+                        </Button>
+                      )}
+                    {data.permission.canReview &&
+                      item.status === "pending_approval" && (
+                        <Button
+                          size="sm"
+                          onClick={() => review(item, "approved")}
+                        >
+                          <CheckCircle2 className="mr-1 size-4" />
+                          Aprobă
+                        </Button>
+                      )}
+                    {data.permission.canCreate &&
+                      item.status === "rejected" && (
+                        <Button size="sm" onClick={() => review(item, "draft")}>
+                          Reia ciorna
+                        </Button>
+                      )}
+                  </div>
+                </article>
+              ))}
+            </div>
+            {!data.content.length && !error && (
+              <p className="rounded-xl border border-dashed border-white/10 p-5 text-sm text-slate-400">
+                Nu există materiale pentru starea selectată.
+              </p>
+            )}
+            {data.nextOffset !== null && (
+              <Button
+                className="mt-3"
+                disabled={loading}
+                variant="outline"
+                onClick={() => void load(data.nextOffset!)}
+              >
+                Încarcă următoarele
+              </Button>
+            )}
+            <Button asChild variant="link" className="mt-3">
+              <Link to={`/intern/ai-projects/${encodeURIComponent(slug)}`}>
+                Deschide studioul proiectului
+                <ArrowUpRight className="ml-1 size-4" />
+              </Link>
+            </Button>
+          </section>
+        </>
+      )}
+      <Dialog
+        open={!!selected}
+        onOpenChange={(open) => {
+          if (!open && !busy) setSelected(null);
+        }}
+      >
+        <DialogContent className="max-h-[85vh] overflow-y-auto border-white/10 bg-[#10162a] text-slate-100 sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{selected?.title || "Revizuire material"}</DialogTitle>
+            <DialogDescription>
+              {selected && labels[selected.status]} ·{" "}
+              {selected && values(selected.channels_json)}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+            {selected?.caption}
+          </div>
+          {selected?.visual_direction && (
+            <p className="whitespace-pre-wrap break-words text-sm text-slate-400">
+              Direcție vizuală: {selected.visual_direction}
+            </p>
+          )}
+          {selected?.cta && (
+            <p className="break-words text-sm">Îndemn: {selected.cta}</p>
+          )}
+          {selected && (
+            <p className="break-words text-xs text-slate-400">
+              {values(selected.hashtags_json)}
+            </p>
+          )}
+          {decision && (
+            <>
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={confirmed}
+                  onChange={(e) => setConfirmed(e.target.checked)}
+                />
+                Am verificat textul, canalele și versiunea prezentată.
+              </label>
+              <Button disabled={!confirmed || busy} onClick={() => void save()}>
+                {busy
+                  ? "Se salvează…"
+                  : decision === "approved"
+                    ? "Confirmă aprobarea"
+                    : decision === "rejected"
+                      ? "Confirmă respingerea"
+                      : decision === "draft"
+                        ? "Reia ciorna"
+                        : "Confirmă trimiterea la aprobare"}
+              </Button>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+      <Dialog open={upcoming} onOpenChange={setUpcoming}>
+        <DialogContent
+          id="social-upcoming"
+          className="max-h-[85vh] overflow-y-auto border-white/10 bg-[#10162a] text-slate-100 sm:max-w-3xl"
+        >
+          <DialogHeader>
+            <DialogTitle>Activități viitoare și în lucru</DialogTitle>
+            <DialogDescription>
+              Coada de producție și programările reale ale proiectului.
+              Aprobarea, programarea și publicarea au stări distincte.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <Metric
+              label="În pregătire"
+              value={
+                activities.filter((a) =>
+                  ["queued", "generating"].includes(a.status),
+                ).length
+              }
+            />
+            <Metric
+              label="Necesită decizie"
+              value={
+                activities.filter((a) =>
+                  [
+                    "draft_ready",
+                    "awaiting_approval",
+                    "awaiting_budget",
+                  ].includes(a.status),
+                ).length
+              }
+            />
+            <Metric
+              label="Blocaje"
+              value={activities.filter((a) => a.status === "failed").length}
+            />
+          </div>
+          {activities.map((activity) => (
+            <article
+              key={activity.id}
+              className="rounded-xl border border-white/10 p-3"
+            >
+              <h3 className="break-words text-sm font-medium">
+                {activity.title}
+              </h3>
+              <p className="mt-1 text-xs text-slate-400">
+                {activity.channel} ·{" "}
+                {activity.at
+                  ? new Date(activity.at).toLocaleString("ro-RO")
+                  : "Fără dată confirmată"}
+              </p>
+              <p className="mt-1 text-xs text-cyan-200">
+                {labels[activity.status] || activity.status}
+              </p>
+              {activity.error && (
+                <p className="mt-1 break-words text-xs text-amber-200">
+                  Necesită verificare: {activity.error}
+                </p>
+              )}
+              {activity.at > 0 &&
+                activity.at < Date.now() &&
+                activity.status !== "failed" && (
+                  <p className="mt-1 text-xs text-amber-200">
+                    Termen trecut; execuția sau publicarea nu sunt confirmate.
+                  </p>
+                )}
+            </article>
+          ))}
+          {!activities.length && (
+            <p className="text-sm text-slate-400">
+              Nu există activități în coada curentă.
+            </p>
+          )}
+          <p className="text-xs text-slate-500">
+            Sunt afișate până la 60 de activități de producție și 60 de
+            programări.
+          </p>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }
-
-const Metric = ({ icon: Icon, label, value }: { icon: typeof Bot; label: string; value: number }) => <div className="rounded-2xl border border-white/[0.08] bg-[#10162a]/90 p-4"><p className="flex items-center gap-2 text-xs text-slate-500"><Icon className="size-4 text-fuchsia-300" /> {label}</p><p className="mt-2 font-display text-2xl font-semibold text-white">{value}</p></div>;
+function Metric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="min-w-0 rounded-2xl border border-white/10 bg-[#10162a]/90 p-4">
+      <p className="text-xs text-slate-400">{label}</p>
+      <p className="mt-2 text-2xl font-semibold">{value}</p>
+    </div>
+  );
+}

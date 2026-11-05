@@ -60,7 +60,7 @@ export type SectionId =
   | "finance" | "media" | "leads" | "staff-tickets" | "demo-requests" | "intern"
   | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "servicii-avyron" | "produse-avyron"
   | "newsletter" | "ai-projects" | "logo-simulations" | "surveys" | "configurator"
-  | "commercial-codes" | "other-hub" | "social-manager" | "subscriptions-admin" | "careers" | "library" | "reviews" | "workflows" | "platform-control";
+  | "commercial-codes" | "other-hub" | "social-manager" | "subscriptions-admin" | "careers" | "library" | "reviews" | "platform-control";
 
 export type SectionDef = {
   id: SectionId;
@@ -84,9 +84,8 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "settings", group: "account", audience: "everyone", keywords: ["setari", "preferinte", "settings", "tema", "limba"] },
 
   { id: "projects", group: "projects", audience: "everyone", keywords: ["proiecte", "site", "projects", "livrare", "vanzari"] },
-  { id: "workflows", group: "projects", audience: "staff", keywords: ["fluxuri", "pipeline", "procese", "lucru", "cereri"] },
   { id: "ai-projects", group: "projects", audience: "superadmin", requiredCapability: "ai_projects.read", keywords: ["proiecte ai", "productie ai", "continut"] },
-  { id: "maintenance", group: "projects", audience: "staff", keywords: ["mentenanta", "uptime", "maintenance"] },
+  { id: "maintenance", group: "projects", audience: "everyone", keywords: ["mentenanta", "uptime", "maintenance"] },
   { id: "leads", group: "projects", audience: "staff", requiredCapability: "leads.read", keywords: ["leads", "crm", "vanzari", "oferta", "prospecti"] },
   { id: "domains", group: "projects", audience: "staff", keywords: ["domenii", "dns", "domains"] },
   { id: "media", group: "projects", audience: "staff", keywords: ["media", "imagini", "fisiere"] },

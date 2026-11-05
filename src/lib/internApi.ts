@@ -4,6 +4,7 @@ import { cfAuth } from "./cfAuth";
 
 export type BannerStatus = "online" | "offline" | "revizuire" | "in_progress" | "testing";
 export type ProjectKind =
+  | "external_asset"
   | "website_prezentare"
   | "prezentare_premium"
   | "magazin_online"

@@ -30,6 +30,7 @@ const BANNER: Record<BannerStatus, { label: string; cls: string }> = {
 };
 
 const KINDS: { value: ProjectKind; label: string }[] = [
+  {value:"external_asset",label:"Proiect / produs extern"},
   { value: "website_prezentare",  label: "Website prezentare" },
   { value: "prezentare_premium",  label: "Prezentare premium" },
   { value: "magazin_online",      label: "Magazin online" },
@@ -233,19 +234,19 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
           {isStaff && projectView === "pipeline" && <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-5" aria-label="Pipeline proiecte">
             {(["offline", "in_progress", "revizuire", "testing", "online"] as const).map((status) => {
               const projects = workflowRows.filter((project) => project.banner_status === status);
-              return <section key={status} aria-label={BANNER[status].label} className="min-w-0 rounded-2xl border border-border/60 bg-card/40 p-3">
-                <h2 className="mb-3 flex items-center justify-between text-sm font-semibold"><span>{BANNER[status].label}</span><span className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">{projects.length}</span></h2>
+              return <details open key={status} aria-label={BANNER[status].label} className="min-w-0 rounded-2xl border border-border/60 bg-card/40 p-3">
+                <summary className="mb-3 flex cursor-pointer items-center justify-between gap-2 text-sm font-semibold"><span>{BANNER[status].label}</span><span className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">{projects.length} ▾</span></summary>
                 <div className="space-y-2">{projects.map((project) => <Link key={project.id} to={`/intern/projects/${project.slug}`} className="block rounded-xl border border-border/60 bg-card p-3 transition hover:border-primary/50 hover:shadow-sm"><span className="block truncate text-sm font-medium">{project.name}</span><span className="mt-1 block text-xs text-muted-foreground">Actualizat {new Date(project.updated_at).toLocaleDateString("ro-RO")}</span></Link>)}{projects.length === 0 && <p className="rounded-xl border border-dashed border-border/60 p-3 text-xs text-muted-foreground">Niciun proiect.</p>}</div>
-              </section>;
+              </details>;
             })}
           </div>}
 
           {isStaff && projectView === "list" && activeRows.length === 0 && <p className="rounded-xl border border-dashed border-border/60 p-4 text-sm text-muted-foreground">Nu există proiecte active în listă. Verifică pipeline-ul pentru cele finalizate sau online.</p>}
           {(!isStaff || projectView === "list") && <div className="grid gap-3 sm:grid-cols-2">
-            {activeRows.map((p) => {
+            {[...new Set(activeRows.map(row=>row.kind))].map(category=><details open key={category} className="min-w-0 rounded-xl border bg-card/30 p-3"><summary className="mb-3 cursor-pointer text-sm font-semibold">{KINDS.find(kind=>kind.value===category)?.label||category} · {activeRows.filter(row=>row.kind===category).length}</summary><div className="space-y-3">{activeRows.filter(row=>row.kind===category).map((p) => {
               const B = BANNER[p.banner_status] ?? BANNER.in_progress;
               return (
-                <Link key={p.id} to={`/intern/projects/${p.slug}`} className="group rounded-xl border bg-card p-4 hover:border-primary/50 hover:shadow-md transition">
+                <Link key={p.id} to={`/intern/projects/${p.slug}`} className="group block rounded-xl border bg-card p-4 hover:border-primary/50 hover:shadow-md transition">
                   <div className="flex items-start gap-3">
                     {p.favicon_url ? (
                       <img src={p.favicon_url} alt="" className="size-8 rounded-md border bg-background object-contain" onError={(e) => (e.currentTarget.style.display = "none")} />
@@ -267,7 +268,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
                   </div>
                 </Link>
               );
-            })}
+            })}</div></details>)}
           </div>}
 
           {isStaff && sales.length > 0 && (

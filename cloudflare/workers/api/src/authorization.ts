@@ -64,3 +64,10 @@ export async function organizationRoleForUser(
   ).bind(organizationId, userId).first<{ role: OrganizationRole }>();
   return row?.role ?? null;
 }
+
+/** A client grant can cover tenant projects only when that tenant is the
+ * client's mapped legal entity. It never grants staff/project write access. */
+export const clientProjectGrantSql=(alias:'p'|'project')=>`EXISTS(SELECT 1 FROM client_account_access cg WHERE cg.client_id=${alias}.client_id AND cg.user_id=? AND (${alias}.organization_id IS NULL OR EXISTS(SELECT 1 FROM client_organizations co WHERE co.client_id=${alias}.client_id AND co.organization_id=${alias}.organization_id)))`;
+export async function hasClientProjectGrant(db:D1Database,projectId:string,userId:string){
+  return !!await db.prepare(`SELECT 1 FROM projects p WHERE p.id=? AND ${clientProjectGrantSql('p')}`).bind(projectId,userId).first();
+}

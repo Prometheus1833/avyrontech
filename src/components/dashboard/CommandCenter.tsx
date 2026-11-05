@@ -27,7 +27,7 @@ export default function CommandCenter({ open, onOpenChange, access, onNavigate }
   const terms = normalize(query.trim()).split(/\s+/).filter(Boolean);
   const filtered = commands.filter((command) => (group === "all" || command.group === group) && terms.every((term) => normalize(command.searchText).includes(term)))
     .sort((a, b) => {
-      const order = ["overview", "workflows", "leads", "projects", "intern", "os-centers", "ai-os"];
+      const order = ["overview", "leads", "projects", "intern", "os-centers", "ai-os"];
       return (order.indexOf(a.section) < 0 ? 100 : order.indexOf(a.section)) - (order.indexOf(b.section) < 0 ? 100 : order.indexOf(b.section));
     });
   const groups = Array.from(new Set(commands.map((command) => command.group)));

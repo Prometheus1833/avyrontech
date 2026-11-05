@@ -1,3 +1,5 @@
+import { createMaintenanceRouter } from "./maintenance";
+import {maintenanceWorkAccess,maintenanceProjectScope} from "./maintenancePolicy";
 import { normalizeDomain, lookupDomain } from "./domain";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
@@ -43,8 +45,9 @@ async function mutate(c: Ctx, _value: unknown, result: Record<string,unknown>, s
   } catch (error) {
     const concurrent = await lookup();
     if (concurrent) return replay(concurrent);
-    if (/NOT NULL constraint failed: (support_tickets|project_work_items)\.revision/.test(String(error))) return fail(c,'revision_conflict',409);
+    if (/NOT NULL constraint failed: (support_tickets|project_work_items|subscriptions)\.revision/.test(String(error))) return fail(c,'revision_conflict',409);
     if (/NOT NULL constraint failed: support_messages\.ticket_id/.test(String(error))) return fail(c,'ticket_closed',409);
+    if (/UNIQUE constraint failed: subscriptions\.maintenance_key/.test(String(error))) return fail(c,'maintenance_exists',409);
     throw error;
   }
   return c.json(result);
@@ -59,6 +62,19 @@ workspaceRouter.use('/api/workspace/*',async (c,next) => {
   const rate = await checkRateLimit(c.env.DB,[{key:`workspace:${c.get('userId')}`,limit:600,windowSec:3600}]);
   if (!rate.ok) return c.json({error:{code:'rate_limited'}},429);
   if (c.req.method !== 'GET' && staff(c) && !(await privilegedMfaSatisfied(c))) return fail(c,'mfa_required',403);
+  if(!['GET','HEAD','OPTIONS'].includes(c.req.method)&&c.req.path.startsWith('/api/workspace/maintenance')){
+    if(!await platformRoleForUser(c.env.DB,c.get('userId')))return fail(c,'forbidden',403);
+    if(!await privilegedMfaSatisfied(c))return fail(c,'mfa_required',403);
+  }
+  // Revalidate assignments before returning a cached write result after revocation.
+  const workPath=c.req.path.match(/^\/api\/workspace\/work-items\/([^/]+)(?:\/([^/]+))?$/);
+  if(workPath&&['POST','PATCH'].includes(c.req.method)){
+    const body=await c.req.json<{kind?:unknown}>().catch(()=>null);
+    const original=workPath[2]?await c.env.DB.prepare('SELECT kind FROM project_work_items WHERE project_id=? AND id=?').bind(workPath[1],workPath[2]).first<{kind:string}>():null;
+    const maintenance=body?.kind==='maintenance'&&(!workPath[2]||original?.kind==='maintenance');
+    const access=maintenance?await maintenanceWorkAccess(c.env,workPath[1],c.get('userId'),c.get('roles')):await canAccessProject(c.env.DB,workPath[1],c.get('userId'),c.get('roles'));
+    if(!access.write)return fail(c,'forbidden',403);
+  }
   if (!['GET','HEAD','OPTIONS'].includes(c.req.method)) {
     const key=c.req.header('idempotency-key') || '';
     if (!/^[A-Za-z0-9_.:-]{16,128}$/.test(key)) return fail(c,'idempotency_key_required');
@@ -87,11 +103,13 @@ workspaceRouter.get('/api/workspace/invoices',async c => {
 });
 workspaceRouter.get('/api/workspace/subscriptions',async c => {
   if (!staff(c)) await linkClientsByEmail(c.env.DB,c.get('userId'));
-  const {limit,offset}=page(c);
-  const {results}=await c.env.DB.prepare(`SELECT record.id,service.service_name product_name,service.price,service.billing_cycle,record.status,record.next_billing_date
-    FROM subscriptions record JOIN services service ON service.id=record.service_id WHERE ${clientScope} ORDER BY record.next_billing_date,record.id LIMIT ? OFFSET ?`)
-    .bind(c.get('userId'),limit,offset).all<Record<string,unknown>>();
-  return c.json({data:results.map(r=>({...r,price_cents:Math.round(Number(r.price)*100),currency:'RON',status:r.status==='paused'?'suspended':r.status,description:null,started_at:null,next_renewal_at:iso(r.next_billing_date)}))});
+  const {limit,offset}=page(c),scope=maintenanceProjectScope(c.get('userId'),false);
+  const {results}=await c.env.DB.prepare(`SELECT record.id,service.service_name product_name,service.price,service.billing_cycle,record.status,record.next_billing_date,
+   record.maintenance_enabled,record.plan_sku,record.specifications_json,record.target_label,record.product_slug,record.external_url,record.created_at,p.id project_id,
+   (SELECT group_concat(COALESCE(profile.pseudonym,profile.display_name,u.display_name,'Membru staff'),', ') FROM subscription_staff ss JOIN users u ON u.id=ss.user_id LEFT JOIN profiles profile ON profile.id=u.id WHERE ss.subscription_id=record.id AND u.disabled_at IS NULL AND EXISTS(SELECT 1 FROM user_roles ur WHERE ur.user_id=u.id AND ur.role IN('staff','admin'))) staff_names
+    FROM subscriptions record JOIN services service ON service.id=record.service_id JOIN projects p ON p.id=service.project_id WHERE record.client_id=p.client_id AND ${scope.sql} ORDER BY record.next_billing_date,record.id LIMIT ? OFFSET ?`)
+    .bind(...scope.values,limit,offset).all<Record<string,unknown>>();
+  return c.json({data:results.map(r=>({...r,price_cents:Math.round(Number(r.price)*100),currency:'RON',status:r.status==='paused'?'suspended':r.status,description:r.target_label||null,started_at:r.created_at?iso(r.created_at):null,next_renewal_at:iso(r.next_billing_date)}))});
 });
 
 workspaceRouter.get('/api/workspace/account-access/:userId',async c => {
@@ -232,28 +250,31 @@ workspaceRouter.delete('/api/workspace/announcements/:id',async c => {
 });
 
 workspaceRouter.get('/api/workspace/work-items/:projectId',async c => {
-  const perm=await canAccessProject(c.env.DB,c.req.param('projectId'),c.get('userId'),c.get('roles'));
+  const onlyMaintenance=c.req.query('kind')==='maintenance';
+  const perm=onlyMaintenance?await maintenanceWorkAccess(c.env,c.req.param('projectId'),c.get('userId'),c.get('roles')):await canAccessProject(c.env.DB,c.req.param('projectId'),c.get('userId'),c.get('roles'));
   if (!perm.read) return fail(c,'not_found',404);
-  const {results}=await c.env.DB.prepare('SELECT id,project_id,kind,title,description,status,assignee_id,due_at,completed_at,revision FROM project_work_items WHERE project_id=? ORDER BY due_at IS NULL,due_at,id LIMIT 200').bind(c.req.param('projectId')).all();
+  const {results}=await c.env.DB.prepare("SELECT id,project_id,kind,title,description,status,assignee_id,due_at,completed_at,revision FROM project_work_items WHERE project_id=? AND (?=0 OR kind='maintenance') ORDER BY due_at IS NULL,due_at,id LIMIT 200").bind(c.req.param('projectId'),onlyMaintenance?1:0).all();
   return c.json({data:results,canWrite:perm.write});
 });
 const itemSchema=z.object({kind:z.enum(['task','deliverable','onboarding','offboarding','maintenance']),title:z.string().trim().min(1).max(200),description:z.string().max(4000).nullable().optional(),due_at:z.number().int().min(0).nullable(),status:z.enum(['open','in_progress','blocked','done','cancelled'])}).strict();
 workspaceRouter.post('/api/workspace/work-items/:projectId',async c => {
   const project=c.req.param('projectId');
-  if (!(await canAccessProject(c.env.DB,project,c.get('userId'),c.get('roles'))).write) return fail(c,'forbidden',403);
   const parsed=itemSchema.safeParse(await c.req.json().catch(()=>null));
   if (!parsed.success) return fail(c,'invalid_input');
   const b=parsed.data,id=crypto.randomUUID(),t=Date.now();
+  const permission=b.kind==='maintenance'?await maintenanceWorkAccess(c.env,project,c.get('userId'),c.get('roles')):await canAccessProject(c.env.DB,project,c.get('userId'),c.get('roles'));
+  if(!permission.write)return fail(c,'forbidden',403);
   return mutate(c,b,{id},[c.env.DB.prepare(`INSERT INTO project_work_items(id,project_id,kind,title,description,status,due_at,completed_at,created_by,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).bind(id,project,b.kind,b.title,b.description||null,b.status,b.due_at,b.status==='done'?t:null,c.get('userId'),t,t),audit(c,'workspace.work.created',id)]);
 });
 workspaceRouter.patch('/api/workspace/work-items/:projectId/:id',async c => {
   const project=c.req.param('projectId');
-  if (!(await canAccessProject(c.env.DB,project,c.get('userId'),c.get('roles'))).write) return fail(c,'forbidden',403);
-  const row=await c.env.DB.prepare('SELECT revision FROM project_work_items WHERE project_id=? AND id=?').bind(project,c.req.param('id')).first<{revision:number}>();
+  const row=await c.env.DB.prepare('SELECT revision,kind FROM project_work_items WHERE project_id=? AND id=?').bind(project,c.req.param('id')).first<{revision:number;kind:string}>();
   if (!row) return fail(c,'not_found',404);
   const parsed=itemSchema.extend({revision:z.number().int().positive()}).safeParse(await c.req.json().catch(()=>null));
   if (!parsed.success) return fail(c,'invalid_input');
   const b=parsed.data,t=Date.now();
+  const permission=b.kind==='maintenance'&&row.kind==='maintenance'?await maintenanceWorkAccess(c.env,project,c.get('userId'),c.get('roles')):await canAccessProject(c.env.DB,project,c.get('userId'),c.get('roles'));
+  if(!permission.write)return fail(c,'forbidden',403);
   if (b.revision!==row.revision) return fail(c,'revision_conflict',409);
   return mutate(c,b,{ok:true},[c.env.DB.prepare(`UPDATE project_work_items SET kind=?,title=?,description=?,status=?,due_at=?,completed_at=?,updated_at=?,revision=CASE WHEN revision=? THEN revision+1 ELSE NULL END WHERE project_id=? AND id=?`).bind(b.kind,b.title,b.description||null,b.status,b.due_at,b.status==='done'?t:null,t,b.revision,project,c.req.param('id')),audit(c,'workspace.work.updated',c.req.param('id'))]);
 });
@@ -322,3 +343,5 @@ workspaceRouter.post('/api/workspace/statistics/:projectId',async c=>{
   const b=parsed.data,id=crypto.randomUUID();
   return mutate(c,b,{id},[c.env.DB.prepare('INSERT INTO project_statistics(id,project_id,period_start,period_end,visits,unique_visitors,uptime_percent,avg_response_ms,source,recorded_by,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').bind(id,c.req.param('projectId'),b.period_start,b.period_end,b.visits,b.unique_visitors,b.uptime_percent,b.avg_response_ms,b.source,c.get('userId'),Date.now()),audit(c,'workspace.statistics.recorded',id)]);
 });
+
+workspaceRouter.route("/",createMaintenanceRouter(mutate));

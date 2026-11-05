@@ -1,6 +1,6 @@
 import { Hono, type Context } from "hono";
 import type { AppBindings, Role } from "./types";
-import { platformRoleForUser } from "./authorization";
+import { platformRoleForUser,clientProjectGrantSql } from "./authorization";
 import { now } from "./security";
 import { bucharestMonthStart, financialTotals } from "./financialTotals";
 import { approvalSources, readApprovalCenter, readApprovalDetail, type ApprovalSource } from "./approvalCenter";
@@ -84,8 +84,8 @@ dashboardRouter.get("/api/os/overview", async (c) => {
   // Match the project resource boundary: platform, owner, organization, or
   // an explicit staff assignment/client grant for legacy projects.
   const projectScope = superAdmin ? {sql:"1=1",values:[] as string[]} : {
-    sql:`(project.owner_user_id=? OR EXISTS(SELECT 1 FROM organization_memberships membership WHERE membership.organization_id=project.organization_id AND membership.user_id=? AND membership.status='active')${staff ? " OR EXISTS(SELECT 1 FROM project_staff assigned WHERE assigned.project_id=project.id AND assigned.user_id=?) OR (project.organization_id IS NULL AND EXISTS(SELECT 1 FROM client_account_access granted WHERE granted.client_id=project.client_id AND granted.user_id=?))" : ""})`,
-    values: staff ? [userId,userId,userId,userId] : [userId,userId],
+    sql:`(project.owner_user_id=? OR EXISTS(SELECT 1 FROM organization_memberships membership WHERE membership.organization_id=project.organization_id AND membership.user_id=? AND membership.status='active') OR ${staff ? "(project.organization_id IS NULL AND EXISTS(SELECT 1 FROM client_account_access granted WHERE granted.client_id=project.client_id AND granted.user_id=?)) OR EXISTS(SELECT 1 FROM project_staff assigned WHERE assigned.project_id=project.id AND assigned.user_id=?)" : clientProjectGrantSql('project')})`,
+    values: staff ? [userId,userId,userId,userId] : [userId,userId,userId],
   };
   const projectSummary = await c.env.DB.prepare(
     `SELECT COUNT(*) total,SUM(CASE WHEN status IN ('in_progress','maintenance') THEN 1 ELSE 0 END) active,

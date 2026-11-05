@@ -1,3 +1,4 @@
+import {Link} from "react-router-dom";
 import { useEffect, useState } from "react";
 import { workspaceApi } from "@/lib/workspaceApi";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +15,7 @@ import { toast } from "sonner";
 import { SERVICE_COMMERCIAL_SOURCES } from "@/data/serviceCommercialSources";
 
 type Subscription = {
+  maintenance_enabled?:number; plan_sku?:string|null; specifications_json?:string; staff_names?:string|null;project_id?:string;
   id: string;
   product_name: string;
   description: string | null;
@@ -219,6 +221,7 @@ export function SubscriptionsTab() {
                   </div>
                   <Badge variant={statusVariant[s.status]}>{t.auth.dash.subs.statuses[s.status]}</Badge>
                 </CardHeader>
+                {s.maintenance_enabled===1&&<div className="px-6 pb-4 text-sm"><details><summary className="cursor-pointer text-primary">Plan și specificații · {s.plan_sku||"Personalizat"}</summary><dl className="mt-3 space-y-2">{readSpecifications(s.specifications_json).map(([key,value])=><div key={key}><dt className="font-medium">{key}</dt><dd className="whitespace-pre-wrap break-words text-muted-foreground">{value}</dd></div>)}</dl></details>{s.staff_names&&<p className="mt-2 text-xs text-muted-foreground">Echipa de mentenanță: {s.staff_names}</p>}<Link className="mt-3 inline-block text-primary underline" to={`/profil?tab=maintenance&project=${encodeURIComponent(s.project_id||'')}`}>Activități și materiale · AVY Core</Link></div>}
                 <CardContent className="grid sm:grid-cols-3 gap-4 text-sm border-t pt-4">
                   <div>
                     <div className="text-muted-foreground text-xs">{t.auth.dash.subs.price}</div>
@@ -299,3 +302,5 @@ export function SubscriptionsTab() {
     </div>
   );
 }
+
+function readSpecifications(raw?:string):[string,string][]{try{const value:unknown=JSON.parse(raw||'{}');return value&&typeof value==='object'&&!Array.isArray(value)?Object.entries(value).filter((row):row is [string,string]=>typeof row[1]==='string'):[];}catch{return [];}}

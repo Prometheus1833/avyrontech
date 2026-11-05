@@ -57,7 +57,7 @@ adminOperationsRouter.get("/api/admin/operations/clients/:id", async (c) => {
       `SELECT id,name,slug,kind,status,url,updated_at FROM projects WHERE client_id=? ORDER BY updated_at DESC,created_at DESC`,
     ).bind(id).all(),
     c.env.DB.prepare(
-      `SELECT subscription.id,subscription.status,subscription.next_billing_date,
+      `SELECT subscription.id,subscription.status,subscription.next_billing_date,subscription.maintenance_enabled,subscription.plan_sku,
               service.id AS service_id,service.service_name,service.price,service.billing_cycle,
               project.id AS project_id,project.name AS project_name
          FROM subscriptions AS subscription
@@ -193,7 +193,7 @@ adminOperationsRouter.put("/api/admin/operations/staff/:id/projects", async (c) 
 adminOperationsRouter.get("/api/admin/operations/subscriptions", async (c) => {
   const [subscriptions, traffic] = await Promise.all([
     c.env.DB.prepare(
-      `SELECT subscription.id,subscription.status,subscription.next_billing_date,
+      `SELECT subscription.id,subscription.status,subscription.next_billing_date,subscription.maintenance_enabled,subscription.plan_sku,
               service.id AS service_id,service.service_name,service.price,service.billing_cycle,
               client.id AS client_id,client.company_name,project.id AS project_id,project.name AS project_name,project.status AS project_status
          FROM subscriptions AS subscription
@@ -213,8 +213,9 @@ adminOperationsRouter.get("/api/admin/operations/subscriptions", async (c) => {
 adminOperationsRouter.patch("/api/admin/operations/subscriptions/:id", async (c) => {
   const id = c.req.param("id");
   const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>));
-  const current = await c.env.DB.prepare("SELECT service_id FROM subscriptions WHERE id=?").bind(id).first<{ service_id: string }>();
+  const current = await c.env.DB.prepare("SELECT service_id,maintenance_enabled,revision FROM subscriptions WHERE id=?").bind(id).first<{ service_id: string; maintenance_enabled:number; revision:number }>();
   if (!current) return c.json({ error: { code: "not_found" } }, 404);
+  if(current.maintenance_enabled)return c.json({error:{code:"use_avy_core",message:"Editează acest abonament în AVY Core pentru a păstra sincronizarea planului și alocărilor."}},409);
   const status = text(body.status, 20);
   const billingCycle = text(body.billingCycle, 20);
   const price = Number(body.price);
@@ -223,11 +224,14 @@ adminOperationsRouter.patch("/api/admin/operations/subscriptions/:id", async (c)
   if (!serviceName || !Number.isFinite(price) || price < 0 || !Number.isFinite(nextBillingDate) || !["active", "paused", "cancelled"].includes(status) || !["one_time", "monthly", "yearly"].includes(billingCycle)) {
     return c.json({ error: { code: "invalid_input" } }, 400);
   }
-  await c.env.DB.batch([
+  try { await c.env.DB.batch([
     c.env.DB.prepare("UPDATE services SET service_name=?,price=?,billing_cycle=? WHERE id=?").bind(serviceName, price, billingCycle, current.service_id),
-    c.env.DB.prepare("UPDATE subscriptions SET status=?,next_billing_date=? WHERE id=?").bind(status, nextBillingDate, id),
+    c.env.DB.prepare("UPDATE subscriptions SET status=?,next_billing_date=?,revision=CASE WHEN maintenance_enabled=0 AND revision=? THEN revision+1 ELSE NULL END,updated_at=? WHERE id=?").bind(status, nextBillingDate, current.revision, now(), id),
     audit(c, "subscription.update", "subscription", id, { status, price, billingCycle }),
-  ]);
+  ]); } catch (error) {
+    if (/NOT NULL constraint failed: subscriptions\.revision/.test(String(error))) return c.json({error:{code:"revision_conflict",message:"Abonamentul s-a modificat. Reîncarcă datele și folosește AVY Core dacă a fost configurat pentru mentenanță."}},409);
+    throw error;
+  }
   return c.json({ ok: true });
 });
 

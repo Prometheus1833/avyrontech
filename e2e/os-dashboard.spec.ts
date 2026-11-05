@@ -294,7 +294,7 @@ test.describe("dashboard AVYRON OS în română", () => {
     await expect(page.getByText("Studio Aurora").first()).toBeVisible();
   });
 
-  test("deschide fluxurile și mută o solicitare demo în pipeline", async ({ page }, testInfo) => {
+  test("gestionează solicitările demo în categoria lor existentă", async ({ page }, testInfo) => {
     let updated: unknown;
     await page.route("**/api/example-requests/**", async (route) => {
       updated = route.request().postDataJSON();
@@ -304,9 +304,8 @@ test.describe("dashboard AVYRON OS în română", () => {
       id: "demo-1", email: "demo@example.com", phone: "+40700000000", source_slug: "site-demo",
       source_category: "website", source_name: "Website", status: "new", delivery_status: "sent", created_at: Date.now(),
     }] } }));
-    await page.goto("/profil?tab=workflows");
-    await expect(page.getByRole("heading", { name: "Fluxuri și pipeline" })).toBeVisible();
-    await page.getByRole("region", { name: "Fluxuri de lucru" }).getByRole("button", { name: /Solicitări demo/ }).click();
+    await page.goto("/profil?tab=demo-requests");
+    await expect(page.getByRole("heading", { name: "Solicitări demo",exact:true })).toBeVisible();
     await expect(page.getByLabel("Pipeline solicitări demo")).toBeVisible();
     await page.getByLabel("Stadiu pentru demo@example.com").selectOption("contacted");
     await expect.poll(() => updated).toEqual({ status: "contacted" });
@@ -314,13 +313,13 @@ test.describe("dashboard AVYRON OS în română", () => {
     await page.screenshot({ path: testInfo.outputPath("demo-pipeline.png"), fullPage: true });
   });
 
-  test("staff vede fluxurile și chatul, dar nu centrul superadminului", async ({ page }) => {
+  test("linkul vechi deschide proiectele, iar staff vede chatul fără controlul superadminului", async ({ page }) => {
     await page.route("**/api/auth/me", (route) => route.fulfill({ json: {
       user: { id: "staff-1", email: "staff@example.test", display_name: "Alex", avatar_url: null },
       profile: { display_name: "Alex", avatar_url: null }, roles: ["staff"], superadmin: false,
     } }));
     await page.goto("/profil?tab=workflows");
-    await expect(page.getByRole("heading", { name: "Fluxuri și pipeline" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Platformă internă — Proiecte",exact:true })).toBeVisible();
     const navigation = page.getByRole("navigation", { name: "Navigare AVYRON OS" });
     await expect(navigation.getByRole("tab", { name: "Chat intern" })).toBeVisible();
     await expect(navigation.getByRole("tab", { name: "Solicitări clienți" })).toBeVisible();

@@ -30,6 +30,7 @@ const BANNER_LABEL: Record<BannerStatus, { label: string; className: string }> =
 };
 
 const KIND_LABEL: Record<ProjectKind, string> = {
+  external_asset:"Proiect / produs extern",
   website_prezentare: "Website Prezentare",
   prezentare_premium: "Prezentare Premium",
   magazin_online: "Magazin Online",

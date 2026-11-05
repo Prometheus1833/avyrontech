@@ -4,7 +4,6 @@ import {
   Bot,
   ChevronDown,
   FolderKanban,
-  GitBranch,
   LayoutDashboard,
   MessagesSquare,
   ShieldCheck,
@@ -55,12 +54,6 @@ const StaffOsMenu = () => {
       detail: ro ? "Evenimente și anunțuri" : "Events and announcements",
       to: "/profil?tab=overview&notifications=1",
       icon: Bell,
-    },
-    {
-      label: ro ? "Fluxuri și pipeline" : "Workflows and pipeline",
-      detail: ro ? "Cereri, vânzări și livrare" : "Requests, sales and delivery",
-      to: "/profil?tab=workflows",
-      icon: GitBranch,
     },
     {
       label: ro ? "Chat intern" : "Team chat",

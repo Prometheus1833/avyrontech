@@ -34,7 +34,6 @@ import {
   LibraryBig,
   UserRoundSearch,
   Share2,
-  GitBranch,
   SlidersHorizontal,
 } from "lucide-react";
 import type { SectionId } from "@/lib/access";
@@ -82,9 +81,8 @@ export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
   profile: { label: "Profil", commandLabel: "Deschide profilul", hint: "Date personale și identitatea contului", icon: User },
   settings: { label: "Setări", commandLabel: "Deschide setările", hint: "Preferințe și configurarea contului", icon: Settings },
   projects: { label: "Proiecte", commandLabel: "Deschide proiectele", hint: "Livrări, termene și progres", icon: FolderKanban },
-  workflows: { label: "Fluxuri și pipeline", commandLabel: "Deschide fluxurile de lucru", hint: "Acces rapid la cereri, vânzări, livrare și suport", icon: GitBranch },
   "ai-projects": { label: "Proiecte AI", commandLabel: "Deschide proiectele AI", hint: "Strategie, agenți și producție controlată", icon: Bot },
-  maintenance: { label: "Mentenanță", commandLabel: "Deschide mentenanța", hint: "Monitorizare, intervenții și continuitate", icon: Wrench },
+  maintenance: { label: "AVY Core", commandLabel: "Deschide AVY Core", hint: "Sistem, mentenanță lunară și abonamente pe proiect", icon: Wrench },
   clients: { label: "Clienți", commandLabel: "Deschide clienții", hint: "Companii, contacte și relații active", icon: Users },
   reviews: { label: "Recenzii", commandLabel: "Deschide recenziile", hint: "Colectare și aprobare pentru servicii și surse conectate", icon: Star },
   domains: { label: "Domenii", commandLabel: "Deschide domeniile", hint: "DNS, SSL și active digitale", icon: Globe },

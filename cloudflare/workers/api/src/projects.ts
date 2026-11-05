@@ -8,7 +8,7 @@
 import { Hono } from "hono";
 import type { Env } from "./types";
 import { fetchMetadataHtml, validateMetadataUrl } from "./metadata";
-import { organizationRoleForUser, platformRoleForUser } from "./authorization";
+import { organizationRoleForUser, platformRoleForUser,hasClientProjectGrant,clientProjectGrantSql } from "./authorization";
 import { normalizeExternalLink } from "../../../../src/shared/externalUrl";
 
 type Role = "user" | "staff" | "admin";
@@ -37,7 +37,7 @@ export async function canAccessProject(db: D1Database, projectId: string, userId
     const assigned = isStaff
       ? await db.prepare("SELECT 1 FROM project_staff WHERE project_id = ? AND user_id = ?").bind(projectId, userId).first()
       : null;
-    return { read: !!assigned || isOwner, write: !!assigned, isStaff, isOwner };
+    return { read: !!assigned || isOwner || (!isStaff && await hasClientProjectGrant(db,projectId,userId)), write: !!assigned, isStaff, isOwner };
   }
 
   // Legacy records need the same explicit project or client grant as tenant records.
@@ -49,7 +49,8 @@ export async function canAccessProject(db: D1Database, projectId: string, userId
     return { read: Boolean(clientGrant) || isOwner, write: isAdmin && Boolean(clientGrant), isStaff: true, isOwner };
   }
   if (isOwner) return { read: true, write: false, isStaff: false, isOwner: true };
-  return { read: false, write: false, isStaff, isOwner: false };
+  const clientGrant = await hasClientProjectGrant(db,projectId,userId);
+  return { read: !!clientGrant, write: false, isStaff, isOwner: false };
 }
 
 async function log(db: D1Database, projectId: string, actorId: string, action: string, targetType?: string, targetId?: string, meta?: unknown) {
@@ -97,8 +98,9 @@ projectsRouter.get("/api/projects", async (c) => {
            ON membership.organization_id = project.organization_id
           AND membership.user_id = ? AND membership.status = 'active'
         WHERE project.owner_user_id = ? OR membership.user_id IS NOT NULL
+          OR ${clientProjectGrantSql('project')}
         ORDER BY project.updated_at DESC`,
-    ).bind(userId, userId).all();
+    ).bind(userId, userId,userId).all();
   }
   let purchases: Array<Record<string, unknown>> = [];
   let sales: Array<Record<string, unknown>> = [];

@@ -215,9 +215,9 @@ export const aiProjectsApi = {
     cfAuth.request<{ data: AiContentItem; runId: string }>(`/api/ai-projects/${id}/content/generate`, {
       method: "POST", headers: { "Idempotency-Key": crypto.randomUUID() }, body: JSON.stringify(input),
     }),
-  updateContent: (projectId: string, contentId: string, status: "draft" | "pending_approval" | "approved" | "rejected") =>
+  updateContent: (projectId: string, contentId: string, status: "draft" | "pending_approval" | "approved" | "rejected", expectedUpdatedAt?: number) =>
     cfAuth.request<{ ok: true }>(`/api/ai-projects/${projectId}/content/${contentId}`, {
-      method: "PATCH", body: JSON.stringify({ status }),
+      method: "PATCH", body: JSON.stringify({ status, expectedUpdatedAt }),
     }),
   updateSocialPolicy: (projectId: string, patch: Record<string, unknown>) =>
     cfAuth.request<{ ok: true }>(`/api/ai-projects/${projectId}/social-policy`, {

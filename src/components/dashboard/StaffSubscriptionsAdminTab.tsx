@@ -1,3 +1,4 @@
+import {useNavigate} from "react-router-dom";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Activity, CreditCard, Search, Users } from "lucide-react";
 import { toast } from "sonner";
@@ -10,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 const field = "w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-violet-400/50";
 
 export default function StaffSubscriptionsAdminTab() {
+  const navigate=useNavigate();
   const [rows, setRows] = useState<AdminSubscription[]>([]);
   const [traffic, setTraffic] = useState({ events: 0, sessions: 0 });
   const [query, setQuery] = useState("");
@@ -27,6 +29,7 @@ export default function StaffSubscriptionsAdminTab() {
   useEffect(() => { void load(); }, [load]);
 
   const open = (item: AdminSubscription) => {
+    if(item.maintenance_enabled){navigate(`/profil?tab=maintenance&project=${encodeURIComponent(item.project_id)}`);return;}
     setSelected(item);
     setDraft({ serviceName: item.service_name, price: String(item.price), billingCycle: item.billing_cycle, status: item.status, nextBillingDate: new Date(item.next_billing_date).toISOString().slice(0, 10) });
   };

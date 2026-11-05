@@ -41,17 +41,19 @@ describe("AVYRON OS dashboard", () => {
     expect(canOpenSection("social-manager", staff)).toBe(false);
   });
 
-  it("face fluxurile și comunicarea vizibile echipei și rezervă controlul platformei Super Adminului", () => {
+  it("face comunicarea vizibilă echipei și rezervă controlul platformei Super Adminului", () => {
     const client = buildAccess({ roles: ["user"] });
     const staff = buildAccess({ roles: ["staff"] });
     const admin = buildAccess({ roles: ["admin"] });
     const owner = buildAccess({ roles: ["admin"], superadmin: true });
-    for (const section of ["workflows", "intern", "staff-tickets", "announcements"] as const) {
+    for (const section of ["intern", "staff-tickets", "announcements"] as const) {
       expect(canOpenSection(section, staff)).toBe(true);
       expect(canOpenSection(section, admin)).toBe(true);
       expect(canOpenSection(section, client)).toBe(false);
       expect(SECTIONS.find((item) => item.id === section)?.navigation).not.toBe(false);
     }
+    expect(canOpenSection("workflows", owner)).toBe(false);
+    expect(canOpenSection("maintenance", client)).toBe(true);
     expect(canOpenSection("platform-control", owner)).toBe(true);
     expect(canOpenSection("platform-control", admin)).toBe(false);
     expect(canOpenSection("platform-control", staff)).toBe(false);
