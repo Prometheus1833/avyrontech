@@ -176,7 +176,9 @@ test("Leaduri: pipeline compact, priorități, etape și motive comerciale de el
   await expect(
     nav.getByRole("button", { name: "Leaduri", exact: true }),
   ).toBeVisible();
-  await expect(nav.getByRole("button", { name: "Leaduri & CRM" })).toHaveCount(0);
+  await expect(nav.getByRole("button", { name: "Leaduri & CRM" })).toHaveCount(
+    0,
+  );
   await page.getByRole("button", { name: "Pipeline", exact: true }).click();
   const board = page.getByRole("region", { name: "Pipeline leaduri" });
   await expect(
@@ -213,7 +215,10 @@ test("Leaduri: pipeline compact, priorități, etape și motive comerciale de el
   await dialog.getByRole("button", { name: "Confirmă eliminarea" }).click();
   expect(state.removed()).toMatchObject({ reasonCode: "unwilling_to_pay" });
   await expect(dialog).toBeHidden();
-  await page.screenshot({ path: info.outputPath("leads-pipeline.png"), fullPage: true });
+  await page.screenshot({
+    path: info.outputPath("leads-pipeline.png"),
+    fullPage: true,
+  });
 });
 test("Servicii deschide mini-lista și configurări individuale pentru toate paginile", async ({
   page,
@@ -276,10 +281,12 @@ test("configurează o pagină, previzualizează ciorna și publică numai după 
     'iframe[title="Previzualizare pagină Site Prezentare Profesional"]',
   );
   // Wait for the authenticated frame and its existing public cinematic entrance.
-  await expect(frame.getByText(
-    "Previzualizare privată · versiunea 1 · fără publicare automată",
-    { exact: true },
-  )).toBeVisible({ timeout: 15000 });
+  await expect(
+    frame.getByText(
+      "Previzualizare privată · versiunea 1 · fără publicare automată",
+      { exact: true },
+    ),
+  ).toBeVisible({ timeout: 15000 });
   await expect(
     frame.getByRole("heading", {
       name: "Website configurat în AVYRON OS",
@@ -311,7 +318,7 @@ test("configurează o pagină, previzualizează ciorna și publică numai după 
       name: "Website configurat în AVYRON OS",
       exact: true,
     }),
-  ).toBeVisible({timeout:15000});
+  ).toBeVisible({ timeout: 15000 });
   await page.goto("/en/services/professional-presentation-website");
   await expect(
     page.getByRole("heading", {
@@ -396,6 +403,11 @@ test("un conflict de salvare păstrează textul și împiedică pierderea sa la 
     "Ciornă care trebuie păstrată",
   );
   await expect(page).toHaveURL(/tab=servicii-avyron/);
+  await page.getByRole("link", { name: "Mentenanță · AVY Core" }).click();
+  await expect(page.getByLabel("Titlu principal", { exact: true })).toHaveValue(
+    "Ciornă care trebuie păstrată",
+  );
+  await expect(page).toHaveURL(/tab=servicii-avyron/);
 });
 for (const width of [320, 390])
   test(`configurarea serviciului și pipeline-ul încap la ${width}px`, async ({
@@ -421,7 +433,10 @@ for (const width of [320, 390])
       fullPage: true,
     });
     await page.goto("/profil?tab=leads");
-    await page.getByRole("button", { name: "Pipeline", exact: true }).click();
+    await expect(page.getByRole('button',{name:'Toate 3',exact:true})).toBeVisible();
+    const pipeline=page.getByRole("button", { name: "Pipeline", exact: true });
+    await pipeline.click();
+    await expect(pipeline).toHaveAttribute('aria-pressed','true');
     await expect(
       page.getByRole("region", { name: "Pipeline leaduri" }),
     ).toBeVisible();

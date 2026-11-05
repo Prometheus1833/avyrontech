@@ -18,6 +18,8 @@ import { staffRankLabel, STAFF_MANAGED } from "@/shared/staffAccess";
 import { toast } from "sonner";
 import { useSearchParams } from "react-router-dom";
 import "./staffChat.css";
+import ProjectConversations from "./ProjectConversations";
+import {buildAccess,canOpenSection} from "@/lib/access";
 type Member = {
   id: string;
   display_name: string;
@@ -63,14 +65,14 @@ const day = (s: string) =>
 function lastItem<T>(items: T[]) {
   return items[items.length - 1];
 }
-export function StaffChatTab() {
+function StaffTeamChat({compact=false}:{compact?:boolean}) {
   const { user, capabilities } = useAuth(),
     [params, setParams] = useSearchParams();
   const [members, setMembers] = useState<Member[]>([]),
     [threads, setThreads] = useState<Thread[]>([]),
     [messages, setMessages] = useState<Message[]>([]);
   const [target, setTarget] = useState(() =>
-      params.get("dm") ? `dm:${params.get("dm")}` : "channel:general",
+      !compact&&params.get("dm") ? `dm:${params.get("dm")}` : "channel:general",
     ),
     [mobileOpen, setMobileOpen] = useState(() => !!params.get("dm"));
   const [query, setQuery] = useState(""),
@@ -113,7 +115,7 @@ export function StaffChatTab() {
     (!recipient || !!member);
   const loadDirectory = useCallback(async () => {
     try {
-      setMembers((await workspaceApi.list<Member>("staff")).data);
+      setMembers((await workspaceApi.list<Member>("chat/members")).data);
       setDirectoryError("");
     } catch (e) {
       setDirectoryError((e as Error).message);
@@ -161,6 +163,7 @@ export function StaffChatTab() {
     [mobileOpen],
   );
   useEffect(() => {
+    if(compact)return;
     const dm = params.get("dm");
     if (dm && targetRef.current !== `dm:${dm}`) {
       drafts.current.set(targetRef.current, contentRef.current);
@@ -172,7 +175,7 @@ export function StaffChatTab() {
       setContent(drafts.current.get(next) || "");
       setMobileOpen(true);
     }
-  }, [params]);
+  }, [params,compact]);
   useEffect(() => {
     let active = true;
     const current = ++sequence.current;
@@ -252,7 +255,7 @@ export function StaffChatTab() {
     const p = new URLSearchParams(params);
     if (next.startsWith("dm:")) p.set("dm", next.slice(3));
     else p.delete("dm");
-    setParams(p, { replace: true });
+    if(!compact)setParams(p, { replace: true });
   };
   const send = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -385,8 +388,8 @@ export function StaffChatTab() {
         (Date.parse(previews.get(a.target)?.last_at || "") || 0),
     );
   return (
-    <section className="agency-chat" aria-label="Chat intern AVYRON">
-      <header className="chat-page-heading">
+    <section className={"agency-chat "+(compact?"agency-chat--compact":"")} aria-label="Chat intern AVYRON">
+      {!compact&&<header className="chat-page-heading">
         <div>
           <p>AVYRON OS · ECHIPĂ</p>
           <h1>Chat intern</h1>
@@ -394,7 +397,7 @@ export function StaffChatTab() {
         <span>
           <MessageCircle size={15} /> Conversațiile agenției
         </span>
-      </header>
+      </header>}
       <div className={`chat-shell ${mobileOpen ? "chat-show-thread" : ""}`}>
         <aside className="chat-sidebar" aria-label="Lista conversațiilor">
           <div className="chat-sidebar-title">
@@ -720,4 +723,18 @@ export function StaffChatTab() {
       </div>
     </section>
   );
+}
+
+export function StaffChatTab({compact=false}:{compact?:boolean}){
+ const {user,isStaff,roles,isSuperAdmin,capabilities}=useAuth();
+ const [params]=useSearchParams();
+ const access=buildAccess({roles,superadmin:isSuperAdmin,capabilities});
+ const team=isStaff&&canOpenSection('intern',access);
+ const projects=!isStaff||canOpenSection('projects',access);
+ const [mode,setMode]=useState(team&&!params.get('chatProject')?'team':'projects');
+ if(!user)return null;
+ return <div className="staff-message-workspace">
+ {team&&projects&&<nav aria-label="Tip conversație" className="staff-chat-modes"><button aria-current={mode==='team'?'page':undefined} onClick={()=>setMode('team')}>Echipă</button><button aria-current={mode==='projects'?'page':undefined} onClick={()=>setMode('projects')}>Proiecte și clienți</button></nav>}
+ {team&&mode==='team'?<StaffTeamChat compact={compact}/>:projects?<ProjectConversations compact={compact}/>:<p>Nu ai acces la conversațiile de proiect.</p>}
+ </div>;
 }

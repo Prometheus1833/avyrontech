@@ -86,7 +86,7 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "settings", group: "account", audience: "everyone", keywords: ["setari", "preferinte", "settings", "tema", "limba"] },
 
   { id: "projects", group: "projects", audience: "everyone", keywords: ["proiecte", "site", "projects", "livrare", "vanzari"] },
-  { id: "ai-projects", group: "projects", audience: "superadmin", requiredCapability: "ai_projects.read", keywords: ["proiecte ai", "productie ai", "continut"] },
+  { id: "ai-projects", group: "projects", audience: "staff", requiredCapability: "ai_projects.read", keywords: ["proiecte ai", "productie ai", "continut"] },
   { id: "maintenance", group: "projects", audience: "everyone", keywords: ["mentenanta", "uptime", "maintenance"] },
   { id: "leads", group: "projects", audience: "staff", requiredCapability: "leads.read", keywords: ["leads", "crm", "vanzari", "oferta", "prospecti"] },
   { id: "media", group: "projects", audience: "staff", keywords: ["media", "imagini", "fisiere"] },
@@ -115,7 +115,7 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "stats", group: "activity", audience: "client", keywords: ["statistici", "vizite", "stats"] },
   { id: "tickets", group: "activity", audience: "client", keywords: ["suport", "tichete", "tickets", "mesaje"] },
   { id: "staff-tickets", group: "activity", audience: "staff", keywords: ["suport", "tichete clienti", "tickets"] },
-  { id: "intern", group: "activity", audience: "staff", keywords: ["chat", "echipa", "intern", "mesaje"] },
+  { id: "intern", group: "activity", audience: "everyone", keywords: ["chat", "echipa", "intern", "mesaje"] },
   { id: "announcements", group: "activity", audience: "staff", keywords: ["anunturi", "noutati"] },
 
   { id: "team-staff", group: "platform", audience: "staff", keywords: ["echipa", "staff", "roluri", "permisiuni", "acces"] },

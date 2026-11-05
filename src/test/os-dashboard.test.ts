@@ -53,7 +53,7 @@ describe("AVYRON OS dashboard", () => {
     for (const section of ["intern", "staff-tickets", "announcements"] as const) {
       expect(canOpenSection(section, staff)).toBe(true);
       expect(canOpenSection(section, admin)).toBe(true);
-      expect(canOpenSection(section, client)).toBe(false);
+      expect(canOpenSection(section, client)).toBe(section==="intern");
       expect(SECTIONS.find((item) => item.id === section)?.navigation).not.toBe(false);
     }
     expect(canOpenSection("workflows", owner)).toBe(false);

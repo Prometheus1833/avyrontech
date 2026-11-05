@@ -525,3 +525,12 @@
     scroll-behavior: auto;
   }
 }
+
+.staff-chat-modes{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;color:#aebdd4}
+.staff-chat-modes button{padding:8px 14px;border:1px solid #aebde233;border-radius:20px;font-size:12px}
+.staff-chat-modes button[aria-current=page]{background:#bba3f0;color:#1c1330;border-color:#bba3f0}
+.agency-chat--compact .chat-shell{height:min(560px,calc(100dvh - 220px));min-height:240px}
+.staff-message-workspace{min-width:0;min-height:0}
+
+.staff-message-workspace .agency-chat:not(.agency-chat--compact) .chat-shell{height:clamp(300px,calc(100dvh - 240px),800px);min-height:300px}
+@media(max-width:1023px){.staff-message-workspace .agency-chat:not(.agency-chat--compact) .chat-shell{height:calc(100dvh - 340px);min-height:260px}}

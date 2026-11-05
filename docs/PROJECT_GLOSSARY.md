@@ -30,3 +30,6 @@ Pentru procedura de predare și statutul ramurilor, vezi [PROJECT_CONTINUITY.md]
 - **Acces client gestionat explicit**: `clients.access_managed=1`; accesul se bazează pe asocieri aprobate, iar reconcilierea legacy prin email nu reface automat granturile revocate. Alte granturi independente sunt administrate separat.
 - **Media / resurse vizuale**: catalog privat pentru identitatea AVYRON și resursele beneficiarilor, legat de CRM/proiectele native. Uploadul în carantină și verificarea de format nu echivalează cu scanarea antimalware.
 - **Sincronizare fluxuri Engine**: reconciliere internă confirmată care pune în pauză legăturile neeligibile; nu activează servicii, discovery sau apeluri externe.
+- **INTERN OS**: intrarea directă din bara staff către prima secțiune permisă a dashboardului; nu este alt sistem de autentificare sau alt dashboard.
+- **Conversație de proiect**: mesaje comune participanților autorizați ai unui proiect, inclusiv clientului; context separat de canalele echipei și de mesajele directe, în aceeași stocare nativă.
+- **Proiectele mele**: filtru după implicare explicită; un drept global de administrare nu echivalează cu alocarea personală la toate proiectele.

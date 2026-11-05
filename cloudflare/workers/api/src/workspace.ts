@@ -285,12 +285,15 @@ workspaceRouter.patch('/api/workspace/work-items/:projectId/:id',async c => {
   return mutate(c,b,{ok:true},[c.env.DB.prepare(`UPDATE project_work_items SET kind=?,title=?,description=?,status=?,due_at=?,completed_at=?,updated_at=?,revision=CASE WHEN revision=? THEN revision+1 ELSE NULL END WHERE project_id=? AND id=?`).bind(b.kind,b.title,b.description||null,b.status,b.due_at,b.status==='done'?t:null,t,b.revision,project,c.req.param('id')),audit(c,'workspace.work.updated',c.req.param('id'))]);
 });
 
-workspaceRouter.get('/api/workspace/staff',async c => {
+const staffDirectory=async (c:Ctx) => {
   if (!staff(c)) return fail(c,'forbidden',403);
   const {results}=await c.env.DB.prepare(`SELECT u.id,COALESCE(p.pseudonym,p.display_name,u.display_name,'Membru') display_name,p.staff_role,COALESCE(CASE WHEN u.email_verified=1 AND EXISTS(SELECT 1 FROM user_roles ar WHERE ar.user_id=u.id AND ar.role='admin') THEN principal.role END,rank.rank_id) rank_id
     FROM users u LEFT JOIN profiles p ON p.id=u.id LEFT JOIN staff_rank_assignments rank ON rank.user_id=u.id LEFT JOIN platform_principals principal ON principal.email=u.email COLLATE NOCASE AND principal.status='active' WHERE u.disabled_at IS NULL AND EXISTS (SELECT 1 FROM user_roles r WHERE r.user_id=u.id AND r.role IN ('staff','admin')) ORDER BY display_name LIMIT 200`).all();
   return c.json({data:results});
-});
+};
+workspaceRouter.get('/api/workspace/staff',staffDirectory);
+workspaceRouter.get('/api/workspace/chat/members',staffDirectory);
+
 const chatSchema=z.object({recipient_id:z.string().min(1).max(100).nullable(),channel:z.enum(['general','dev','design','marketing','random']),content:z.string().trim().min(1).max(4000)}).strict();
 workspaceRouter.get('/api/workspace/chat',async c => {
   if (!staff(c)) return fail(c,'forbidden',403);
@@ -302,7 +305,7 @@ workspaceRouter.get('/api/workspace/chat',async c => {
   const before=c.req.query('before');
   let cursorSql='';
   if(before){const separator=before.indexOf(':');const at=Number(before.slice(0,separator)),id=before.slice(separator+1);if(separator<1||!Number.isSafeInteger(at)||at<0||!/^[-a-zA-Z0-9_.:]{1,160}$/.test(id))return fail(c,'invalid_cursor');cursorSql=' AND (created_at<? OR(created_at=? AND id<?))';binds.push(at,at,id);}
-  const {results}=await c.env.DB.prepare(`SELECT id,author_id,recipient_id,channel,content,created_at FROM staff_chat_messages WHERE (${where}) ${cursorSql} ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?`).bind(...binds,limit,before?0:offset).all<Record<string,unknown>>();
+  const {results}=await c.env.DB.prepare(`SELECT id,author_id,recipient_id,channel,content,created_at FROM staff_chat_messages WHERE project_id IS NULL AND (${where}) ${cursorSql} ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?`).bind(...binds,limit,before?0:offset).all<Record<string,unknown>>();
   return c.json({data:results.reverse().map(r=>({...r,created_at:iso(r.created_at)}))});
 });
 workspaceRouter.post('/api/workspace/chat',async c => {
@@ -361,7 +364,7 @@ workspaceRouter.get('/api/workspace/chat/conversations',async c=>{
  if(!staff(c))return fail(c,'forbidden',403);
  const user=c.get('userId');
  const rows=await c.env.DB.prepare(`WITH visible AS(
-  SELECT *,CASE WHEN recipient_id IS NULL THEN 'channel:'||channel WHEN author_id=? THEN 'dm:'||recipient_id ELSE 'dm:'||author_id END target FROM staff_chat_messages WHERE recipient_id IS NULL OR author_id=? OR recipient_id=?
+  SELECT *,CASE WHEN recipient_id IS NULL THEN 'channel:'||channel WHEN author_id=? THEN 'dm:'||recipient_id ELSE 'dm:'||author_id END target FROM staff_chat_messages WHERE project_id IS NULL AND (recipient_id IS NULL OR author_id=? OR recipient_id=?)
  ),ranked AS(SELECT *,row_number() OVER(PARTITION BY target ORDER BY created_at DESC,id DESC) rn FROM visible)
  SELECT v.target,max(CASE WHEN rn=1 THEN v.id END) last_id,max(CASE WHEN rn=1 THEN v.content END) last_content,max(v.created_at) last_at,
  sum(CASE WHEN v.author_id<>? AND (r.message_at IS NULL OR v.created_at>r.message_at OR(v.created_at=r.message_at AND v.id>r.message_id)) THEN 1 ELSE 0 END) unread
@@ -372,7 +375,7 @@ workspaceRouter.post('/api/workspace/chat/read',async c=>{
  if(!staff(c))return fail(c,'forbidden',403);
  const parsed=z.object({target:z.string().regex(/^(channel:(general|dev|design|marketing|random)|dm:[-a-zA-Z0-9_.:]{1,160})$/),messageId:z.string().min(1).max(160)}).strict().safeParse(await c.req.json().catch(()=>null));if(!parsed.success)return fail(c,'invalid_input');
  const b=parsed.data,user=c.get('userId');
- const row=await c.env.DB.prepare("SELECT created_at,author_id,recipient_id,channel FROM staff_chat_messages WHERE id=? AND (recipient_id IS NULL OR author_id=? OR recipient_id=?)").bind(b.messageId,user,user).first<{created_at:number;author_id:string;recipient_id:string|null;channel:string}>();
+ const row=await c.env.DB.prepare("SELECT created_at,author_id,recipient_id,channel FROM staff_chat_messages WHERE id=? AND project_id IS NULL AND (recipient_id IS NULL OR author_id=? OR recipient_id=?)").bind(b.messageId,user,user).first<{created_at:number;author_id:string;recipient_id:string|null;channel:string}>();
  if(!row)return fail(c,'not_found',404);
  const target=row.recipient_id===null?'channel:'+row.channel:'dm:'+(row.author_id===user?row.recipient_id:row.author_id);if(target!==b.target)return fail(c,'invalid_scope',403);
  return mutate(c,b,{ok:true},[c.env.DB.prepare(`INSERT INTO staff_chat_reads(user_id,target,message_id,message_at,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(user_id,target) DO UPDATE SET message_id=excluded.message_id,message_at=excluded.message_at,updated_at=excluded.updated_at WHERE excluded.message_at>staff_chat_reads.message_at OR(excluded.message_at=staff_chat_reads.message_at AND excluded.message_id>staff_chat_reads.message_id)`).bind(user,b.target,b.messageId,row.created_at,Date.now())]);

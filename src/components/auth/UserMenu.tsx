@@ -18,9 +18,6 @@ import {
   MessageSquare,
   LogOut,
   Briefcase,
-  Wrench,
-  Users as UsersIcon,
-  FolderKanban,
   ShoppingCart,
   Boxes,
   UsersRound,
@@ -30,6 +27,7 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
+import {buildAccess,canOpenSection} from "@/lib/access";
 import { ContactDialog } from "./ContactDialog";
 
 type MenuItem = {
@@ -42,7 +40,7 @@ type MenuItem = {
 };
 
 const UserMenu = () => {
-  const { user, profile, isStaff, signOut } = useAuth();
+  const { user, profile, isStaff, isSuperAdmin, roles, capabilities, signOut } = useAuth();
   const { t, lang } = useLang();
   const [contactOpen, setContactOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -77,19 +75,12 @@ const UserMenu = () => {
     { label: t.auth.menu.contact, icon: MessageSquare, dot: "340, 80%, 60%", onSelect: () => setContactOpen(true) },
   ];
 
+  const access=buildAccess({roles,superadmin:isSuperAdmin,capabilities});
   const staffItems: MenuItem[] = [
-    { label: t.auth.menu.profile, icon: UserIcon, dot: "264, 90%, 62%", to: "/profil?tab=profile" },
-    { label: "AI AVY Prod", icon: Bot, dot: "270, 88%, 62%", to: "/intern/ai-projects" },
-    { label: "Financiar", icon: Wallet, dot: "155, 72%, 42%", to: "/finance" },
-    { label: productsLabel, icon: Boxes, dot: "200, 95%, 55%", to: productsPath },
-    { label: aboutLabel, icon: UsersRound, dot: "86, 78%, 60%", to: aboutPath },
-    { label: careersLabel, icon: Briefcase, dot: "44, 90%, 58%", to: careersPath },
-    { label: t.auth.menu.projects, icon: FolderKanban, dot: "210, 90%, 55%", to: "/profil?tab=projects" },
-    { label: t.auth.menu.maintenance, icon: Wrench, dot: "30, 90%, 55%", to: "/profil?tab=maintenance" },
-    { label: t.auth.menu.internal, icon: UsersIcon, dot: "260, 80%, 60%", to: "/profil?tab=intern" },
-    { label: t.auth.menu.resources, icon: Briefcase, dot: "150, 70%, 45%", to: "/profil?tab=resources" },
-    { label: t.auth.menu.contact, icon: MessageSquare, dot: "340, 80%, 60%", onSelect: () => setContactOpen(true) },
-    { label: t.auth.menu.settings, icon: Settings, dot: "222, 25%, 40%", to: "/profil?tab=settings" },
+    {label:t.auth.menu.profile,icon:UserIcon,dot:"264, 90%, 62%",to:"/profil?tab=profile"},
+    ...(canOpenSection("ai-projects",access)?[{label:"Proiecte AI",icon:Bot,dot:"270, 88%, 62%",to:"/profil?tab=ai-projects"}]:[]),
+    ...(canOpenSection("finance",access)?[{label:"Financiar",icon:Wallet,dot:"155, 72%, 42%",to:"/profil?tab=finance"}]:[]),
+    {label:t.auth.menu.settings,icon:Settings,dot:"222, 25%, 40%",to:"/profil?tab=settings"},
   ];
 
   const items = isStaff ? staffItems : userItems;

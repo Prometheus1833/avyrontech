@@ -393,7 +393,7 @@ test("editorul de mesaje rămâne în panou pe desktop cu o listă lungă de col
   page,
 }) => {
   await staffFixture(page);
-  await page.route("**/api/workspace/staff", (r) =>
+  await page.route("**/api/workspace/chat/members", (r) =>
     r.fulfill({
       json: {
         data: Array.from({ length: 40 }, (_, i) => ({

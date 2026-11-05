@@ -5,6 +5,7 @@ import { STAFF_OPERATIONAL_EMAIL, staffRequestAllowed, canManageStaffTarget, man
 import { subscriptionOperationsRouter } from "./subscriptionOperations";
 import { serveSurveyHost } from "../../../../src/worker/surveyHost";
 import { privilegedMfaSatisfied } from "./mfaPolicy";
+import {projectChatRouter} from './projectChat';
 import { servicePagesRouter } from "./servicePages";
 import { surveyPublic } from "./surveys/public";
 // Avyron API — Cloudflare Workers + D1 + KV + R2
@@ -1669,6 +1670,8 @@ app.use("/api/ai-projects", requireAuth);
 app.use("/api/ai-projects/*", requireAuth);
 app.use("/api/finance/*", requireAuth);
 app.use("/api/engine/*", requireAuth);
+app.use('/api/project-chat*',requireAuth);
+app.route('/',projectChatRouter);
 app.use("/api/os/*", requireAuth);
 app.use("/api/surveys/*", async (c, next) => {
   if (!c.req.path.startsWith("/api/surveys/admin") && c.req.header("authorization")) {

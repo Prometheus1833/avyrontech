@@ -479,6 +479,7 @@ export function staffRequestPermission(
   if (path.startsWith("/api/staff-access")) return "team.read";
   if (path === "/api/workspace/staff") return "team.read";
   if (path === "/api/admin/users") return "team.options";
+  if (path.startsWith("/api/project-chat")) return path.endsWith("/read") || !write ? "chat.read" : "chat.write";
   if (path.startsWith("/api/workspace/chat"))
     return path.endsWith("/read")
       ? "chat.read"

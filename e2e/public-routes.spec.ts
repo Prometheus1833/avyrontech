@@ -925,7 +925,8 @@ test.describe("forms and authentication", () => {
     await page.getByRole("button", { name: "Profil" }).click();
     const userMenu = page.getByRole("menu");
     await expect(userMenu).toBeVisible();
-    await expect(userMenu.getByRole("menuitem", { name: "Despre noi", exact: true })).toBeVisible();
+    await expect(userMenu.getByRole("menuitem", { name: "Despre noi", exact: true })).toHaveCount(0);
+    await expect(userMenu.getByRole("menuitem", { name: "Proiecte AI", exact: true })).toBeVisible();
     const menuBox = await userMenu.boundingBox();
     expect(menuBox).not.toBeNull();
     expect(menuBox!.y).toBeGreaterThanOrEqual(0);

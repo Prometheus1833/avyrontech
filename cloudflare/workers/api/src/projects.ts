@@ -100,6 +100,12 @@ projectsRouter.get("/api/projects", async (c) => {
   const isAdmin = roles.includes("admin");
 
   let rows;
+  if(c.req.query('scope')==='mine'){
+    const result=await c.env.DB.prepare(`SELECT p.id,p.slug,p.name,p.kind,p.status,p.banner_status,p.url,p.favicon_url,p.updated_at,
+      (SELECT count(*) FROM project_staff ps JOIN users u ON u.id=ps.user_id WHERE ps.project_id=p.id AND u.disabled_at IS NULL) member_count
+      FROM projects p WHERE p.owner_user_id=? ${isStaff?'OR EXISTS(SELECT 1 FROM project_staff ps WHERE ps.project_id=p.id AND ps.user_id=?)':''} OR EXISTS(SELECT 1 FROM organization_memberships m WHERE m.organization_id=p.organization_id AND m.user_id=? AND m.status='active') ${isStaff?'':`OR ${clientProjectGrantSql('p')}`} ORDER BY p.updated_at DESC,p.id LIMIT 200`).bind(userId,userId,userId).all();
+    return c.json({data:result.results,purchases:[],sales:[],scope:'mine'});
+  }
   if (
     (await platformRoleForUser(c.env.DB, userId)) ||
     (await hasCapability(c.env.DB, userId, "projects.all"))) {

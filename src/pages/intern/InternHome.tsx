@@ -1,6 +1,6 @@
 import { STAFF_MANAGED } from "@/shared/staffAccess";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { internApi, type AccountOption, type BannerStatus, type ClientOption, type ProjectKind, type ProjectPurchase, type ProjectSale } from "@/lib/internApi";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,6 +43,8 @@ const KINDS: { value: ProjectKind; label: string }[] = [
 export default function InternHome({ embedded = false }: { embedded?: boolean;
 }) {
   const { user, isStaff, capabilities, loading: authLoading } = useAuth();
+  const [params,setParams]=useSearchParams();
+  const mine=params.get("scope")==="mine";
   const canCreate =
     isStaff &&
     (!capabilities.includes(STAFF_MANAGED) ||
@@ -63,7 +65,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
     const seq=++loadSeq.current;
     setLoading(true);
     try {
-      const res = await internApi.listProjects();
+      const res = await internApi.listProjects(mine);
       if(seq!==loadSeq.current)return;
       setRows(res.data as Row[]);
       setPurchases(res.purchases ?? []);
@@ -71,7 +73,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
     } catch (e) {
       if(seq===loadSeq.current){setRows([]);setPurchases([]);setSales([]);toast.error((e as Error).message);}
     } finally { if(seq===loadSeq.current)setLoading(false); }
-  }, []);
+  }, [mine]);
   const userId=user?.id;
   useEffect(() => {
     if (!userId) return;
@@ -142,10 +144,10 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
         <div>
           <h1 className="text-2xl font-semibold flex items-center gap-2">
             <FolderKanban className="size-5 text-primary" />
-            {isStaff ? "Platformă internă — Proiecte" : "Proiectele mele"}
+            {isStaff && !mine ? "Platformă internă — Proiecte" : "Proiectele mele"}
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {isStaff
+            {isStaff && mine ? "Proiectele în care ești implicat, cu progresul și materialele lor." : isStaff
               ? "Proiecte în desfășurare și vânzări concretizate, fără date editoriale sau trafic."
               : "Aici vezi proiectele tale, statusul lor și poți propune modificări."}
           </p>
@@ -230,7 +232,8 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
       </header>
 
       {isStaff && (
-        <div className="flex gap-2" aria-label="Afișare proiecte">
+        <div className="flex flex-wrap gap-2" aria-label="Afișare proiecte">
+        {isStaff&&mine&&<Button type="button" size="sm" variant="outline" onClick={()=>setParams(current=>{const next=new URLSearchParams(current);next.delete('scope');return next},{replace:true})}>Vezi toate proiectele autorizate</Button>}
         <Button type="button" size="sm" variant={projectView === "pipeline" ? "default" : "outline"} aria-pressed={projectView === "pipeline"} onClick={() => setProjectView("pipeline")}><Columns3 className="mr-1.5 size-4" />Pipeline</Button>
         <Button type="button" size="sm" variant={projectView === "list" ? "default" : "outline"} aria-pressed={projectView === "list"} onClick={() => setProjectView("list")}><List className="mr-1.5 size-4" />Listă</Button>
       </div>

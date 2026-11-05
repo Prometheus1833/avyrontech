@@ -183,42 +183,15 @@ test.describe("dashboard AVYRON OS în română", () => {
   test("oferă staffului acces rapid OS din bara landing page", async ({ page }, testInfo) => {
     await page.goto("/");
 
-    const osButton = page.getByRole("button", { name: "Deschide accesul rapid AVYRON OS" });
-    await expect(osButton).toBeVisible();
-    await expect(page.getByRole("link", { name: "Deschide AVYRON OS" })).toHaveAttribute("href", "/profil?tab=overview");
-    const brandBox = await page.locator("header").getByRole("link", { name: "AVYRON", exact: true }).boundingBox();
-    const osBox = await osButton.boundingBox();
-    const languageBox = await page.getByRole("button", { name: /Schimbă limba/ }).boundingBox();
-    expect(brandBox!.x + brandBox!.width).toBeLessThan(osBox!.x);
-    expect(osBox!.x + osBox!.width).toBeLessThan(languageBox!.x);
+    const osButton=page.getByRole("link",{name:"Deschide INTERN OS"});
+    await expect(osButton).toHaveAttribute("href","/profil?tab=overview");
+    const brandBox=await page.locator("header").getByRole("link",{name:"AVYRON",exact:true}).boundingBox();
+    const osBox=await osButton.boundingBox();
+    expect(brandBox!.x+brandBox!.width).toBeLessThan(osBox!.x);
     await osButton.click();
-
-    const quickAccess = page.getByLabel("Acces rapid OS");
-    await expect(quickAccess.getByRole("menuitem", { name: /Privire de ansamblu/ })).toHaveAttribute("href", "/profil?tab=overview");
-    await expect(quickAccess.getByRole("menuitem", { name: /Leaduri/ })).toHaveAttribute("href", "/profil?tab=leads");
-    await expect(quickAccess.getByRole("menuitem", { name: /Agenți AI/ })).toHaveAttribute("href", "/profil?tab=ai-os");
-    await expect(page.getByRole("menuitem", { name: "Către Panoul de comandă" })).toHaveAttribute("href", "/profil?tab=overview");
-    await expect(page.getByRole("menu")).toHaveCSS("opacity", "1");
-    await page.screenshot({ path: testInfo.outputPath("landing-os-quick-menu.png") });
-
-    await page.keyboard.press("Escape");
-    await expect(page.getByRole("menu")).toHaveCount(0);
-    await page.setViewportSize({ width: 390, height: 844 });
-    await expect(osButton).toBeVisible();
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
-    await osButton.click();
-    await expect(page.getByRole("menuitem", { name: "Către Panoul de comandă" })).toBeVisible();
-    await expect(page.getByRole("menu")).toHaveCSS("opacity", "1");
-    await page.screenshot({ path: testInfo.outputPath("landing-os-quick-menu-mobile.png") });
-    await page.getByRole("menuitem", { name: /Notificări/ }).click();
-    await expect(page).toHaveURL(/notifications=1/);
-    await expect(page.getByRole("dialog", { name: "Notificări și anunțuri" })).toBeVisible();
-    await page.goto("/");
-    await page.setViewportSize({ width: 320, height: 740 });
-    await expect(osButton).toBeVisible();
-    await expect(page.getByRole("button", { name: "Profil" })).toBeVisible();
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
-    await page.screenshot({ path: testInfo.outputPath("landing-os-header-320.png") });
+    await expect(page).toHaveURL(/tab=overview/);
+    await expect(page.getByRole("heading",{name:/Bună (dimineața|ziua|seara)/})).toBeVisible();
+    await page.screenshot({path:testInfo.outputPath('intern-os-direct.png')});
   });
 
   test("rămâne utilizabil pe mobil și oferă Command Center", async ({ page }, testInfo) => {

@@ -647,7 +647,7 @@ describe("Agency ranks and private chat: real Hono/D1 handlers", () => {
       t: number,
     ) =>
       db
-        .prepare("INSERT INTO staff_chat_messages VALUES(?,?,?,?,?,?)")
+        .prepare("INSERT INTO staff_chat_messages(id,author_id,recipient_id,channel,content,created_at) VALUES(?,?,?,?,?,?)")
         .run(id, author, recipient, "general", content, t);
     put("general", "other", null, "Anunț comun", 100);
     put("mine", "other", "dev", "Mesaj privat pentru dev", 200);
@@ -699,7 +699,7 @@ describe("Agency ranks and private chat: real Hono/D1 handlers", () => {
       ["b", 100],
       ["c", 200],
     ] as const)
-      db.prepare("INSERT INTO staff_chat_messages VALUES(?,?,?,?,?,?)").run(
+      db.prepare("INSERT INTO staff_chat_messages(id,author_id,recipient_id,channel,content,created_at) VALUES(?,?,?,?,?,?)").run(
         id,
         "other",
         "dev",

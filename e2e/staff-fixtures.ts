@@ -189,7 +189,7 @@ export async function staffFixture(
     });
     return r.fulfill({ status: 201, json: { data: { id: "created" } } });
   });
-  await page.route("**/api/workspace/staff", (r) =>
+  await page.route("**/api/workspace/chat/members", (r) =>
     r.fulfill({
       json: { data: data.filter((d) => d.id !== "self" && d.id !== "client") },
     }),
@@ -208,6 +208,8 @@ export async function staffFixture(
     ],
   };
   await page.route("**/api/workspace/chat**", async (r) => {
+    if (new URL(r.request().url()).pathname.endsWith("/members"))
+      return r.fallback();
     const url = new URL(r.request().url());
     if (url.pathname.endsWith("/conversations"))
       return r.fulfill({

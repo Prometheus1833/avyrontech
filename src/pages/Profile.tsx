@@ -1,3 +1,4 @@
+import StaffWorkspaceActions from "@/components/site/StaffWorkspaceActions";
 import { capabilityRank, staffRankLabel } from "@/shared/staffAccess";
 import logo from "@/assets/avyron-logo.webp";
 import {
@@ -137,7 +138,8 @@ export default function Profile() {
       if(destination!=="documents")for(const key of ["documentView","documentTemplate","template","document","version"])next.delete(key);
       if(destination!=="servicii-avyron"){next.delete("service");next.delete("serviceGroup");}
       if(extraParams)for(const [key,value] of Object.entries(extraParams)){if(value)next.set(key,value);else next.delete(key);}
-      if (destination !== "intern") next.delete("dm");
+      if (destination !== "intern") {next.delete("dm");next.delete("chatProject");}
+      if (destination !== "projects") next.delete("scope");
       setParams(next, { replace: false });
       const group = allowed.find((item) => item.id === destination)?.group;
       if (group) setOpenGroups((current) => ({ ...current, [group]: true }));
@@ -152,7 +154,7 @@ export default function Profile() {
     if (!canOpenSection(section, access)) return null;
     const sectionMeta = DASHBOARD_SECTION_META[section];
     const Icon = sectionMeta.icon;
-    const label = section === "projects" && !access.isStaff ? "Proiectele mele" : sectionMeta.label;
+    const label = section === "projects" && !access.isStaff ? "Proiectele mele" : section === "intern" && !access.isStaff ? "Mesaje proiecte" : sectionMeta.label;
     const active = tab === section;
     return (
       <><button type="button" data-os-section={section} aria-current={active?"page":undefined} aria-label={label} title={sidebarCollapsed ? label : undefined} aria-expanded={section==="servicii-avyron"?servicesExpanded:undefined} onClick={() => {if(section==="servicii-avyron"){setServicesExpanded((current) =>tab===section?!current:true);if(tab!==section)void openSection(section);}else void openSection(section);}} className={`${mobile ? "flex min-w-0 flex-1 flex-col" : "w-full flex-row"} group flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-left text-xs font-medium transition lg:justify-start ${active ? "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white shadow-[0_10px_30px_-16px_rgba(124,58,237,.9)]" : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"}`}>
@@ -235,9 +237,7 @@ export default function Profile() {
             </button>
             <button type="button" onClick={() => setCommandOpen(true)} aria-label={access.isClient ? "Caută secțiuni din cont" : "Caută secțiuni și fluxuri"} className="grid size-10 shrink-0 place-items-center rounded-xl border border-white/[0.08] text-slate-300 transition hover:border-violet-400/35 hover:bg-violet-500/10 lg:hidden"><Search className="size-[18px]" /></button>
             <button type="button" onClick={() => setCommandOpen(true)} className="hidden min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2.5 text-left text-xs text-slate-400 transition hover:border-violet-400/25 hover:text-slate-400 sm:max-w-xl lg:flex"><Search className="size-4 shrink-0" /><span className="truncate">{access.isClient ? "Caută secțiuni din cont…" : "Caută secțiuni și fluxuri…"}</span><kbd className="ml-auto rounded border border-white/10 bg-black/20 px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd></button>
-            {access.isStaff && (
-                <button type="button" onClick={() => openSection("intern")} aria-label="Deschide chatul intern" title="Chat intern" className="rounded-xl border border-white/[0.08] p-2.5 text-slate-400 transition hover:border-violet-400/25 hover:text-violet-200"><MessagesSquare className="size-4" /></button>
-              )}
+            {access.isStaff&&<StaffWorkspaceActions compact className="staff-dashboard-actions-desktop"/>}
             {access.isSuperAdmin && (
                 <button type="button" onClick={() => openSection("ai-os")} className="hidden items-center gap-2 rounded-xl border border-violet-400/20 bg-violet-500/10 px-3 py-2.5 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/20 sm:inline-flex"><Sparkles className="size-4" /> Întreabă AVY</button>
               )}
@@ -254,6 +254,7 @@ export default function Profile() {
                   <ShieldCheck className="size-3" />
                 )}{roleLabel}</span>
           </div>
+          {access.isStaff&&<StaffWorkspaceActions compact className="staff-dashboard-actions-mobile"/>}
         </header>
 
         <div className="mx-auto max-w-[1500px] p-3 sm:p-5 lg:p-6">
@@ -274,6 +275,7 @@ export default function Profile() {
           {access.isClient && (
                 <><TabsContent value="catalog" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["catalog"].label} className="mt-0"><CustomerCatalogTab /></TabsContent><TabsContent value="orders" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["orders"].label} className="mt-0"><OrdersTab /></TabsContent><TabsContent value="subscriptions" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["subscriptions"].label} className="mt-0"><SubscriptionsTab /></TabsContent><TabsContent value="payments" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["payments"].label} className="mt-0"><BillingSettingsCard /></TabsContent><TabsContent value="invoices" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["invoices"].label} className="mt-0"><InvoicesTab /></TabsContent><TabsContent value="cart" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["cart"].label} className="mt-0"><CartTab /></TabsContent><TabsContent value="stats" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["stats"].label} className="mt-0"><StatsTab /></TabsContent><TabsContent value="tickets" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["tickets"].label} className="mt-0"><TicketsTab /></TabsContent></>
               )}
+          {canOpenSection("intern",access)&&<TabsContent value="intern" role="region" aria-label="Mesaje"><StaffChatTab /></TabsContent>}
           <TabsContent value="documents" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["documents"].label} className="mt-0"><DocumentCenter /></TabsContent>
           {canOpenSection("ai-projects", access) && (
                 <TabsContent value="ai-projects" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["ai-projects"].label} className="mt-0"><AiProjects embedded /></TabsContent>
@@ -293,7 +295,7 @@ export default function Profile() {
             <TabsContent value="media" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["media"].label} className="mt-0"><StaffMediaTab /></TabsContent>
             <TabsContent value="staff-tickets" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["staff-tickets"].label} className="mt-0"><TicketsTab staffMode /></TabsContent>
             <TabsContent value="demo-requests" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["demo-requests"].label} className="mt-0"><StaffExampleRequestsTab /></TabsContent>
-            <TabsContent value="intern" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["intern"].label} className="mt-0"><StaffChatTab /></TabsContent>
+
             <TabsContent value="announcements" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["announcements"].label} className="mt-0"><StaffAnnouncementsTab /></TabsContent>
             <TabsContent value="resources" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["resources"].label} className="mt-0"><DocumentCenter initialView="staff" /></TabsContent>
             <TabsContent value="careers" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["careers"].label} className="mt-0"><ResourceSurfaceTab kind="career" /></TabsContent>
