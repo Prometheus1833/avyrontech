@@ -157,6 +157,16 @@ export default function DocumentCenter({
     };
   }, []);
   const requestVersion = params.get("version") || undefined;
+  const requestedTemplate = params.get("template");
+  const handledTemplate = useRef<string | null>(null);
+  useEffect(() => {
+    if (!requestedTemplate) { handledTemplate.current = null; return; }
+    if (embedded || !context || !bootstrap?.permissions["documents.templates.manage"] || handledTemplate.current === requestedTemplate) return;
+    handledTemplate.current = requestedTemplate;
+    const template = context.templates.find(t => t.id === requestedTemplate);
+    if (!template) { setError("Model indisponibil sau acces neautorizat."); return; }
+    setView("generator"); setTemplateEdit(template); setLegalReference(""); setAction("template");
+  }, [requestedTemplate, embedded, context, bootstrap]);
   const requestedSubscription = params.get("subscription") || undefined;
   const contextualFilters = new URLSearchParams(
     [
@@ -1178,6 +1188,7 @@ export default function DocumentCenter({
           if (!value && !busy) {
             setAction(null);
             setTemplateEdit(null);
+            if (params.has("template")) setParams(current => { const next = new URLSearchParams(current); next.delete("template"); return next; }, {replace:true});
           }
         }}
       >

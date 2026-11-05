@@ -1032,7 +1032,10 @@ aiProjectsRouter.patch("/api/ai-projects/:projectId/content/:contentId", async (
   const access = await projectAccess(c, c.req.param("projectId"));
   if (!access) return c.json({ error: { code: "not_found" } }, 404);
   if (!access.canCreateContent) return c.json({ error: { code: "forbidden" } }, 403);
-  const body = await c.req.json<{ status?: string }>().catch(() => null);
+  const body = await c.req.json<{ status?: string; expectedUpdatedAt?: number }>().catch(() => null);
+  if (body?.expectedUpdatedAt !== undefined && (!Number.isSafeInteger(body.expectedUpdatedAt) || body.expectedUpdatedAt < 0)) {
+    return c.json({ error: { code: "invalid_revision" } }, 400);
+  }
   const next = String(body?.status || "");
   if (!["draft", "pending_approval", "approved", "rejected"].includes(next)) {
     return c.json({ error: { code: "invalid_content_state" } }, 400);
@@ -1041,10 +1044,11 @@ aiProjectsRouter.patch("/api/ai-projects/:projectId/content/:contentId", async (
     return c.json({ error: { code: "approval_required" } }, 403);
   }
   const content = await c.env.DB.prepare(
-    "SELECT id, status, created_at FROM ai_content_items WHERE id = ? AND project_id = ? AND status NOT IN ('published','scheduled','expired')",
-  ).bind(c.req.param("contentId"), access.project.id).first<{ id: string; status: string; created_at: number }>();
+    "SELECT id, status, created_at, updated_at, expires_at FROM ai_content_items WHERE id = ? AND project_id = ? AND status NOT IN ('published','scheduled','expired')",
+  ).bind(c.req.param("contentId"), access.project.id).first<{ id: string; status: string; created_at: number; updated_at: number; expires_at: number | null }>();
   if (!content) return c.json({ error: { code: "not_found" } }, 404);
-  if (access.project.slug === "avyron-web" && content.created_at <= now() - 3 * 86_400_000) {
+  if (body?.expectedUpdatedAt !== undefined && content.updated_at !== body.expectedUpdatedAt) return c.json({error:{code:"content_changed_or_expired",message:"Materialul s-a modificat. Deschide din nou solicitarea înainte de decizie."}},409);
+  if ((content.expires_at !== null && content.expires_at <= now()) || (access.project.slug === "avyron-web" && content.created_at <= now() - 3 * 86_400_000)) {
     return c.json({ error: { code: "content_expired" } }, 410);
   }
   if (!canTransitionContent(content.status, next)) {
@@ -1053,15 +1057,15 @@ aiProjectsRouter.patch("/api/ai-projects/:projectId/content/:contentId", async (
   const timestamp = now();
   const updated = await c.env.DB.prepare(
     `UPDATE ai_content_items SET status = ?, approved_by = ?, approved_at = ?, updated_at = ?
-      WHERE id = ? AND project_id = ? AND status = ?
-        AND (? <> 'avyron-web' OR created_at > ?)`,
+      WHERE id = ? AND project_id = ? AND status = ? AND updated_at = ?
+        AND (? <> 'avyron-web' OR created_at > ?) AND (expires_at IS NULL OR expires_at > ?)`,
   ).bind(
     next, next === "approved" ? c.get("userId") : null,
     next === "approved" ? timestamp : null, timestamp,
-    c.req.param("contentId"), access.project.id, content.status,
-    access.project.slug, timestamp - 3 * 86_400_000,
+    c.req.param("contentId"), access.project.id, content.status, content.updated_at,
+    access.project.slug, timestamp - 3 * 86_400_000, timestamp,
   ).run();
-  if (!updated.meta.changes) return c.json({ error: { code: "content_changed_or_expired" } }, 409);
+  if (!updated.meta.changes) return c.json({ error: { code: "content_changed_or_expired", message: "Materialul s-a modificat sau a expirat. Actualizează solicitarea." } }, 409);
   await event(c, access.project.id, `ai_project.content.${next}`, "ai_content", c.req.param("contentId"));
   return c.json({ ok: true });
 });

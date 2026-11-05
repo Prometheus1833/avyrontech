@@ -9,6 +9,9 @@ import {
  * D1/R2 remain authoritative; an eviction simply permits a safe render retry. */
 export class DocumentExportRuntime extends DurableObject {
   private pending: Promise<Uint8Array> | null = null;
+  async health(): Promise<{ ok: boolean }> {
+    return { ok: this.ctx.storage.sql.exec<{ ok: number }>("SELECT 1 AS ok").one().ok === 1 };
+  }
 
   async render(
     payload: DocumentPayload,

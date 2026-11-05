@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import PageBackLink from "@/components/site/PageBackLink";
 import {
   Bot, Brain, BarChart3, MessageSquare, Save, Plus, Archive, Sparkles, RefreshCw, Lock, GraduationCap, Database,
@@ -45,7 +46,10 @@ const promptJson = (value: string) => JSON.stringify(
 /** Consola AI OS "AVY". Vizibilă super adminilor, editabilă doar de contul owner. */
 const AiOs = ({ embedded = false }: { embedded?: boolean }) => {
   const { user, isSuperAdmin, loading: authLoading } = useAuth();
-  const [tab, setTab] = useState<TabId>("overview");
+  const [params] = useSearchParams();
+  const [tab, setTab] = useState<TabId>(params.get("ai_panel") === "learning" ? "learning" : "overview");
+  const requestedPanel = params.get("ai_panel");
+  useEffect(() => { if (requestedPanel === "learning") setTab("learning"); }, [requestedPanel]);
   const [stats, setStats] = useState<AiStats | null>(null);
   const [runtime, setRuntime] = useState<AvyRuntimeStatus | null>(null);
   const [agents, setAgents] = useState<AiAgent[]>([]);

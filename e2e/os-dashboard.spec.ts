@@ -51,6 +51,10 @@ const mockAuthenticatedSuperAdmin = async (page: Page) => {
     const path=new URL(r.request().url()).pathname;
     return r.fulfill({json:path.endsWith('/config')?{clients:[],projects:[],staff:[{id:'user-superadmin',name:'Andrei'}],canManageIntegrations:true}:path.endsWith('/integrations')?{providers:{},data:[],canEdit:false}:path.endsWith('/automations')?{data:[],jobs:[]}:path.endsWith('/agents')?{data:[],runs:[],evaluations:[]}:{data:[],total:0}});
   });
+  await page.route("**/api/os/approval-center*", route => route.fulfill({ json: {
+    generatedAt: now, data: [], total: 0,
+    counts: { agent: 0, content: 0, operation: 0, template: 0, learning: 0 }, nextCursor: null,
+  } }));
   await page.route("**/api/os/overview", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
@@ -116,6 +120,45 @@ test.describe("dashboard AVYRON OS în română", () => {
       savedAt: new Date().toISOString(),
       policyVersion: "2026-09-12",
     })));
+  });
+
+  test("revizuiește versiunea curentă și sincronizează decizia în lista centrală", async ({ page }) => {
+    const request = { id: "review-1", source: "content", title: "Material sintetic în aprobare", summary: "Proiect local", requestedAt: now, revision: 17, href: "/intern/ai-projects/test", canDecide: true, canReject: true };
+    let approved = false;
+    let submitted: unknown;
+    await page.route("**/api/os/approval-center*", route => route.fulfill({ json: {
+      generatedAt: now, data: approved ? [] : [request], total: approved ? 0 : 1,
+      counts: { agent: 0, content: approved ? 0 : 1, operation: 0, template: 0, learning: 0 }, nextCursor: null,
+    } }));
+    await page.route("**/api/os/approval-center/content/review-1", route => route.fulfill({ json: { ...request, contextId: "project-1", detail: "Textul exact care necesită decizia umană." } }));
+    await page.route("**/api/ai-projects/project-1/content/review-1", route => {
+      submitted = route.request().postDataJSON(); approved = true;
+      return route.fulfill({ json: { ok: true } });
+    });
+    await page.goto("/profil?tab=overview");
+    await page.getByRole("button", { name: "Revizuiește", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: request.title });
+    await expect(dialog.getByText("Textul exact care necesită decizia umană.")).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Confirmă aprobarea" })).toBeDisabled();
+    await dialog.getByRole("checkbox").press("Space");
+    await dialog.getByRole("button", { name: "Confirmă aprobarea" }).click();
+    await expect(page.getByText("Nu există solicitări active de aprobat sau revizuit.")).toBeVisible();
+    expect(submitted).toEqual({ status: "approved", expectedUpdatedAt: 17 });
+  });
+
+  test("prioritățile sunt compacte și prezentarea generală încape pe ecrane mici", async ({ page }, testInfo) => {
+    await page.goto("/profil?tab=overview");
+    const lead = page.getByRole("button", { name: /3 leaduri fierbinți/ });
+    const project = page.getByRole("button", { name: /2 proiecte necesită actualizare/ });
+    for (const width of [1440, 390, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect(lead).toBeVisible();
+      const a = (await lead.boundingBox())!, b = (await project.boundingBox())!;
+      expect(a.height).toBeLessThan(150);
+      if (width === 1440) expect(Math.abs(a.y - b.y)).toBeLessThan(2);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
+      await page.screenshot({ path: testInfo.outputPath(`compact-overview-${width}.png`), fullPage: true });
+    }
   });
 
   test("afișează sumarul operațional și centrele principale pe desktop", async ({ page }, testInfo) => {
