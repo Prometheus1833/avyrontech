@@ -79,13 +79,15 @@ export function SubscriptionsTab() {
 
   useEffect(() => {
     if (!user) return;
-    let active = true;
-    setLoading(true); setError("");
-    workspaceApi.list<Subscription>("subscriptions")
-      .then(({ data }) => { if (active) setItems(data); })
-      .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : "Datele nu pot fi încărcate."); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+    let active = true,sequence=0;
+    setLoading(true); setError("");setItems([]);
+    const load=()=>{const seq=++sequence;workspaceApi.list<Subscription>("subscriptions")
+      .then(({ data }) => { if (active&&seq===sequence) {setItems(data);setError("");} })
+      .catch((cause) => { if (active&&seq===sequence) {setItems([]);setError(cause instanceof Error ? cause.message : "Datele nu pot fi încărcate.");} })
+      .finally(() => { if (active&&seq===sequence) setLoading(false); });};
+    const update=()=>{if(document.visibilityState==="visible")load()};
+    load();const timer=setInterval(update,30000);window.addEventListener("focus",update);window.addEventListener("avyron:subscriptions-changed",update);
+    return () => { active = false;++sequence;clearInterval(timer);window.removeEventListener("focus",update);window.removeEventListener("avyron:subscriptions-changed",update); };
   }, [user]);
 
   useEffect(() => {

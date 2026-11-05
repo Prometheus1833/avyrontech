@@ -1,3 +1,4 @@
+import {provisionAccountPlan} from "./accountProvisioning";
 import { staffAccessRouter, planStaffAssignment, staffAssignmentSchema, type StaffAssignmentInput } from "./staffAccess";
 import { STAFF_OPERATIONAL_EMAIL, staffRequestAllowed, canManageStaffTarget, managedStaff } from "./staffAccessPolicy";
 import { subscriptionOperationsRouter } from "./subscriptionOperations";
@@ -1245,22 +1246,8 @@ app.post("/api/admin/users", requireAuth, requireSuperAdmin, async (c) => {
   const createdResponse={data:{id:userId,email,username,display_name:displayName,roles,must_change_password:1}};
   try { await c.env.DB.batch([
     ...(staffAssignment?[c.env.DB.prepare("INSERT INTO idempotency_keys(scope,idempotency_key,request_hash,response_status,response_json,created_at,expires_at) VALUES(?,?,?,201,?,?,?)").bind("staff-create:"+actorUserId,creationKey,creationHash,JSON.stringify(createdResponse),timestamp,timestamp+86400000)]:[]),
-    c.env.DB.prepare(
-      `INSERT INTO users
-        (id,email,username,password_hash,display_name,email_verified,must_change_password,created_at,updated_at)
-       VALUES (?,?,?,?,?,1,1,?,?)`,
-    ).bind(userId, email, username, await hashPassword(temporaryPassword), displayName, timestamp, timestamp),
-    c.env.DB.prepare(
-      `INSERT INTO profiles (id,display_name,entity_type,language,theme,updated_at)
-       VALUES (?,?,'individual','ro','system',?)`,
-    ).bind(userId, displayName, timestamp),
-    ...roles.map((role) => c.env.DB.prepare("INSERT INTO user_roles (user_id,role) VALUES (?,?)").bind(userId, role)),
+    ...await provisionAccountPlan(c.env.DB,{id:userId,email,username,displayName,temporaryPassword,roles,actorUserId,timestamp,requestId:c.get("requestId"),ipHash:await hashKey(clientIp(c.req.raw))}),
     ...assignmentPlan,
-    c.env.DB.prepare(
-      `INSERT INTO security_events
-        (id,actor_user_id,actor_type,action,target_type,target_id,outcome,severity,request_id,ip_hash,metadata_json,created_at)
-       VALUES (?,?,'user','admin.user_created','user',?,'allowed','warning',?,?,?,?)`,
-    ).bind(uuid(), actorUserId, userId, c.get("requestId") || null, await hashKey(clientIp(c.req.raw)), JSON.stringify({ email, username, roles }), timestamp),
   ]);
   } catch (cause) {
     if (/UNIQUE constraint failed/.test(String(cause))) {

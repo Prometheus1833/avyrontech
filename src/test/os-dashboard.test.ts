@@ -87,10 +87,10 @@ describe("AVYRON OS dashboard", () => {
     expect(index).toContain('app.use("/api/admin/operations/*", requireAuth, requireRole("staff", "admin"))');
     expect(operations).toContain('c.req.path === "/api/admin/operations/resources"');
     expect(operations).toContain("platformRoleForUser");
-    expect(operations).toContain("staff_cannot_be_client");
+    expect(operations).toContain("clientWorkspaceRouter");
     expect(operations).toContain("staff.projects.replace");
     expect(operations).toContain("subscription.update");
-    expect(operations).toContain("UPDATE subscriptions SET client_id=?");
+    expect(operations).not.toContain("UPDATE subscriptions SET client_id=?");
     expect(operations).toContain("security_events");
     expect(migration).toContain("CREATE TABLE IF NOT EXISTS internal_resources");
     expect(migration).not.toMatch(/\b(password|token|secret)\b/i);

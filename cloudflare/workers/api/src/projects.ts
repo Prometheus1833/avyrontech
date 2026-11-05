@@ -255,6 +255,13 @@ projectsRouter.post("/api/projects", async (c) => {
       return c.json({ error: { code: "organization_scope_denied" } }, 403);
     }
   }
+  const key = c.req.header("Idempotency-Key");
+  if (key && !/^[a-zA-Z0-9_-]{16,128}$/.test(key)) return c.json({error:{code:"invalid_idempotency_key"}},400);
+  const scope = `project-create:${userId}`;
+  const hash = key ? Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(JSON.stringify(b))))).map(v=>v.toString(16).padStart(2,"0")).join("") : "";
+  const previous = async () => key ? c.env.DB.prepare("SELECT request_hash,response_json FROM idempotency_keys WHERE scope=? AND idempotency_key=? AND expires_at>?").bind(scope,key,Date.now()).first<{request_hash:string;response_json:string}>() : null;
+  const cached = await previous();
+  if(cached) return cached.request_hash === hash ? c.json(JSON.parse(cached.response_json),201) : c.json({error:{code:"idempotency_key_reused"}},409);
   try {
     const statements = [c.env.DB.prepare(
       `INSERT INTO projects
@@ -287,10 +294,13 @@ projectsRouter.post("/api/projects", async (c) => {
     statements.push(c.env.DB.prepare(
       "INSERT INTO project_logs (id,project_id,actor_id,action,target_type,target_id,meta_json,created_at) VALUES (?,?,?,?,?,?,?,?)",
     ).bind(uuid(), id, userId, "project.create", "project", id, JSON.stringify({ recurringService: Boolean(recurring?.enabled) }), t));
+    if(key) statements.unshift(c.env.DB.prepare("INSERT INTO idempotency_keys(scope,idempotency_key,request_hash,response_status,response_json,created_at,expires_at) VALUES(?,?,?,201,?,?,?)").bind(scope,key,hash,JSON.stringify({id,slug:b.slug}),t,t+86400000));
     await c.env.DB.batch(statements);
     return c.json({ id, slug: b.slug }, 201);
-  } catch (e) {
-    return c.json({ error: { code: "create_failed", message: String((e as Error).message) } }, 400);
+  } catch {
+    const replay = await previous();
+    if(replay) return replay.request_hash === hash ? c.json(JSON.parse(replay.response_json),201) : c.json({error:{code:"idempotency_key_reused"}},409);
+    return c.json({ error: { code: "create_failed", message: "Proiectul nu a putut fi creat. Verifică identificatorul și contextul clientului." } }, 409);
   }
 });
 

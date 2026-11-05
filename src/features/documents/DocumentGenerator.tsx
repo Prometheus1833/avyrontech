@@ -50,6 +50,7 @@ const steps = [
 ];
 export default function DocumentGenerator({
   context,
+  lockedClientId,
   projectId,
   initialTemplateVersion,
   initialClientId,
@@ -62,6 +63,7 @@ export default function DocumentGenerator({
   onContextRefresh,
 }: {
   context: DocumentContext;
+  lockedClientId?: string;
   projectId?: string;
   initialTemplateVersion?: string;
   initialClientId?: string;
@@ -89,19 +91,23 @@ export default function DocumentGenerator({
             seedService?.project_id),
       );
   const seedProjectId = initialProject?.id;
-  const seedClientId = initialScope
-    ? ""
-    : initialProject?.client_id ||
-      seedSubscription?.client_id ||
-      seedService?.client_id ||
-      initialClientId ||
-      "";
+  const seedClientId =
+    lockedClientId ||
+    (initialScope
+      ? ""
+      : initialProject?.client_id ||
+        seedSubscription?.client_id ||
+        seedService?.client_id ||
+        initialClientId ||
+        "");
   const [step, setStep] = useState(0),
     [clientId, setClientId] = useState(seedClientId),
     [projects, setProjects] = useState<string[]>(
       seedProjectId ? [seedProjectId] : [],
     ),
-    [scope, setScope] = useState<DocumentScope>(initialScope || "client"),
+    [scope, setScope] = useState<DocumentScope>(
+      lockedClientId ? "client" : initialScope || "client",
+    ),
     [selected, setSelected] = useState<string[]>(
       initialTemplateVersion &&
         context.templates.some((t) => t.version_id === initialTemplateVersion)
@@ -605,6 +611,8 @@ export default function DocumentGenerator({
             <select
               className="dc-input"
               value={scope}
+              aria-label="Vizibilitate"
+              disabled={!!lockedClientId}
               onChange={(e) => {
                 setScope(e.target.value as DocumentScope);
                 if (e.target.value !== "client") {
@@ -637,6 +645,7 @@ export default function DocumentGenerator({
                 <select
                   className="dc-input"
                   value={clientId}
+                  disabled={!!lockedClientId}
                   onChange={(e) => {
                     setClientId(e.target.value);
                     setLines([]);
@@ -663,6 +672,7 @@ export default function DocumentGenerator({
                 <div className="flex gap-2">
                   <button
                     className="dc-button"
+                    disabled={!!lockedClientId}
                     onClick={() => setNewMode("client")}
                   >
                     Client nou în CRM

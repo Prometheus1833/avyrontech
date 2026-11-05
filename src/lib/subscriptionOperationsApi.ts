@@ -13,11 +13,15 @@ const write = <T>(url: string, body: unknown, key: string, method = "POST") =>
     body: JSON.stringify(body),
   });
 export const subscriptionOperationsApi = {
-  clients: () =>
-    cfAuth.request<SubscriptionOptions>("/api/admin/client-subscriptions"),
-  allocate: (input: AllocationInput, key: string) =>
+  clients: (clientId?: string) =>
+    cfAuth.request<SubscriptionOptions>(
+      "/api/admin/client-subscriptions" +
+        (clientId ? "?client=" + encodeURIComponent(clientId) : ""),
+    ),
+  allocate: (input: AllocationInput, key: string, clientId?: string) =>
     write<{ id: string; clientId: string; projectId: string }>(
-      "/api/admin/client-subscriptions",
+      "/api/admin/client-subscriptions" +
+        (clientId ? "?client=" + encodeURIComponent(clientId) : ""),
       input,
       key,
     ),

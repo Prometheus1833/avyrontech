@@ -1,5 +1,5 @@
 import type { AdminSubscription } from "@/lib/adminOperationsApi";
-import { useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useMemo, useRef, useState, type FormEvent } from "react";
 import { Plus, RefreshCw, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -62,10 +62,17 @@ const readSpecs = (raw: string) => {
 };
 export default function ClientSubscriptionsPanel({
   onConfigureSubscription,
+  clientId,
+  onChanged,
+  onDocuments,
 }: {
-  onConfigureSubscription: (value: AdminSubscription) => void;
+  onConfigureSubscription?: (value: AdminSubscription) => void;
+  clientId?: string;
+  onChanged?: () => void;
+  onDocuments?: (subscriptionId: string) => void;
 }) {
-  const { data, error, loading, refresh } = useSubscriptionData(api.clients),
+  const loader = useCallback(() => api.clients(clientId), [clientId]);
+  const { data, error, loading, refresh } = useSubscriptionData(loader),
     [query, setQuery] = useState(""),
     [filter, setFilter] = useState("active"),
     [open, setOpen] = useState(false),
@@ -120,6 +127,8 @@ export default function ClientSubscriptionsPanel({
     const p = data?.plans.find((x) => x.sku === sku);
     setDraft({
       ...blank(),
+      clientId: clientId || "",
+      billing: billingFor(clientId || ""),
       planSku: sku,
       name: p?.name || "",
       price: p ? String(p.priceMinor / 100) : "",
@@ -150,6 +159,27 @@ export default function ClientSubscriptionsPanel({
         : v.specifications,
     }));
   };
+  const billingFor = (id: string) => {
+    const c = data?.clients.find((v) => v.id === id);
+    const entityType =
+      c?.entity_type === "PF"
+        ? "individual"
+        : ["PFA", "II", "IF"].includes(c?.entity_type || "")
+          ? "pfa"
+          : ["ONG", "Asociație", "Fundație"].includes(c?.entity_type || "")
+            ? "ngo"
+            : c?.entity_type === "PJ"
+              ? "company"
+              : "other";
+    return {
+      ...blankBilling(),
+      entityType,
+      legalName: c?.legal_name || c?.company_name || "",
+      taxId: c?.tax_id || "",
+      address: c?.address || "",
+      invoiceEmail: c?.email || "",
+    } as ReturnType<typeof blankBilling>;
+  };
   const selectClient = (id: string) => {
     const c = data?.clients.find((v) => v.id === id);
     setDraft((v) => ({
@@ -160,11 +190,7 @@ export default function ClientSubscriptionsPanel({
         data?.accounts.find(
           (a) => a.email.toLowerCase() === c?.email.toLowerCase(),
         )?.id || "",
-      billing: {
-        ...blankBilling(),
-        legalName: c?.company_name || "",
-        invoiceEmail: c?.email || "",
-      },
+      billing: billingFor(id),
     }));
   };
   const payload = (): AllocationInput => ({
@@ -196,6 +222,7 @@ export default function ClientSubscriptionsPanel({
   const changed = async () => {
     await refresh();
     window.dispatchEvent(new Event("avyron:subscriptions-changed"));
+    onChanged?.();
   };
   const allocate = async () => {
     if (!confirmed) return;
@@ -203,7 +230,7 @@ export default function ClientSubscriptionsPanel({
     setFormError("");
     try {
       const value = payload();
-      await api.allocate(value, keyFor(value));
+      await api.allocate(value, keyFor(value), clientId);
       setOpen(false);
       toast.success(
         "Abonamentul a fost alocat. Calendarul lunar este pregătit.",
@@ -306,7 +333,7 @@ export default function ClientSubscriptionsPanel({
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-bold">
-            Abonamente Clienți
+            {clientId ? "Abonamentele clientului" : "Abonamente Clienți"}
           </h1>
           <p className="mt-1 text-sm text-slate-400">
             Alocări, specificații și calendar de facturare, în același loc.
@@ -322,7 +349,7 @@ export default function ClientSubscriptionsPanel({
           </Button>
           <Button disabled={!data} onClick={() => start()}>
             <Plus className="mr-2 size-4" />
-            Alocă client
+            {clientId ? "Adaugă abonament" : "Alocă client"}
           </Button>
         </div>
       </header>
@@ -475,21 +502,31 @@ export default function ClientSubscriptionsPanel({
                         >
                           Plan și echipă · AVY Core
                         </Link>
-                      ) : (
+                      ) : onConfigureSubscription ? (
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => onConfigureSubscription(s)}
+                          onClick={() => onConfigureSubscription?.(s)}
                         >
                           Configurează serviciul
                         </Button>
+                      ) : null}
+                      {onDocuments ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onDocuments(s.id)}
+                        >
+                          Documente
+                        </Button>
+                      ) : (
+                        <Link
+                          className="inline-flex min-h-9 items-center underline"
+                          to={`/profil?tab=documents&subscription=${encodeURIComponent(s.id)}`}
+                        >
+                          Documente
+                        </Link>
                       )}
-                      <Link
-                        className="inline-flex min-h-9 items-center underline"
-                        to={`/profil?tab=documents&subscription=${encodeURIComponent(s.id)}`}
-                      >
-                        Documente
-                      </Link>
                       {s.status === "active" &&
                         s.billing_cycle === "monthly" && (
                           <Button
@@ -634,6 +671,7 @@ export default function ClientSubscriptionsPanel({
                 <Field label="Beneficiar">
                   <select
                     className={inputClass}
+                    disabled={!!clientId}
                     value={draft.clientMode}
                     onChange={(e) =>
                       setDraft((v) => ({
@@ -657,6 +695,7 @@ export default function ClientSubscriptionsPanel({
                     <select
                       required
                       className={inputClass}
+                      disabled={!!clientId}
                       value={draft.clientId}
                       onChange={(e) => selectClient(e.target.value)}
                     >

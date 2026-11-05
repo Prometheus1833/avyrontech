@@ -208,20 +208,24 @@ export default function DocumentCenter({
       setError("Secțiune indisponibilă pentru accesul curent.");
     }
   }, [requestedView, bootstrap, embedded]);
-  const requestedSubscription = params.get("subscription") || undefined;
-  const contextualFilters = new URLSearchParams(
-    [
-      "client",
-      "project",
-      "service",
-      "subscription",
-      "product",
-      "catalog",
-      "order",
-      "entitlement",
-      "billing_subscription",
-    ].flatMap((key) => (params.get(key) ? [[key, params.get(key)!]] : [])),
-  ).toString();
+  const requestedSubscription = !embedded
+    ? params.get("subscription") || undefined
+    : undefined;
+  const contextualFilters = embedded
+    ? ""
+    : new URLSearchParams(
+        [
+          "client",
+          "project",
+          "service",
+          "subscription",
+          "product",
+          "catalog",
+          "order",
+          "entitlement",
+          "billing_subscription",
+        ].flatMap((key) => (params.get(key) ? [[key, params.get(key)!]] : [])),
+      ).toString();
   const open = useCallback(
     async (id: string, version?: string) => {
       const key = id + ":" + (version || "");
@@ -399,7 +403,9 @@ export default function DocumentCenter({
     setTemplateEdit(null);
     if (next === "generator") {
       setGeneratorClient(
-        clientFilter || clientId || params.get("client") || undefined,
+        clientFilter ||
+          clientId ||
+          (!embedded ? params.get("client") || undefined : undefined),
       );
       setGeneratorScope(
         view === "company" ? "company" : view === "staff" ? "staff" : undefined,
@@ -706,7 +712,10 @@ export default function DocumentCenter({
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <button className="dc-button" onClick={() => void close()}>
-              <ArrowLeft className="size-4" /> Bibliotecă Agenție
+              <ArrowLeft className="size-4" />{" "}
+              {embedded && clientId
+                ? "Documentele clientului"
+                : "Bibliotecă Agenție"}
             </button>
             <div className="flex flex-wrap gap-2">
               {detail.actions.export && (
@@ -1027,18 +1036,33 @@ export default function DocumentCenter({
       ) : bootstrap && view === "generator" && context ? (
         <Suspense fallback={<p>Se încarcă generatorul…</p>}>
           <DocumentGenerator
-            key={params.get("documentTemplate") || "blank-generator"}
-            initialTemplateVersion={params.get("documentTemplate") || undefined}
+            key={
+              (!embedded && params.get("documentTemplate")) || "blank-generator"
+            }
+            initialTemplateVersion={
+              !embedded
+                ? params.get("documentTemplate") || undefined
+                : undefined
+            }
             initialClientId={
-              generatorClient || clientId || params.get("client") || undefined
+              generatorClient ||
+              clientId ||
+              (!embedded ? params.get("client") || undefined : undefined)
             }
-            initialServiceId={serviceId || params.get("service") || undefined}
-            initialSubscriptionId={
-              subscriptionId || params.get("subscription") || undefined
+            initialServiceId={
+              serviceId ||
+              (!embedded ? params.get("service") || undefined : undefined)
             }
+            initialSubscriptionId={subscriptionId || requestedSubscription}
             context={context}
-            projectId={projectId || params.get("project") || undefined}
-            company={!!bootstrap.permissions["documents.company.owner"]}
+            projectId={
+              projectId ||
+              (!embedded ? params.get("project") || undefined : undefined)
+            }
+            company={
+              !embedded && !!bootstrap.permissions["documents.company.owner"]
+            }
+            lockedClientId={embedded ? clientId : undefined}
             initialScope={generatorScope}
             onCreated={(id) => void open(id)}
             onCancel={() => void switchView("library")}
@@ -1052,7 +1076,9 @@ export default function DocumentCenter({
               <h2 className="flex items-center gap-2 text-lg font-semibold">
                 <FileText className="size-5" />
                 {embedded
-                  ? "Documentele proiectului"
+                  ? clientId && !projectId
+                    ? "Documentele clientului"
+                    : "Documentele proiectului"
                   : labels[
                       bootstrap &&
                       allowedDocumentViews(bootstrap).includes(view)
@@ -1172,7 +1198,11 @@ export default function DocumentCenter({
                 setClientFilter(v);
                 setOffset(0);
               }}
-              lockedScope={view === "company" || view === "staff"}
+              lockedScope={
+                !!(embedded && clientId) ||
+                view === "company" ||
+                view === "staff"
+              }
               onDownload={async (item) => {
                 setBusy(true);
                 setError("");

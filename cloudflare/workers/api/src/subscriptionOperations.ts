@@ -240,27 +240,29 @@ subscriptionOperationsRouter.use(
 subscriptionOperationsRouter.get(
   "/api/admin/client-subscriptions",
   async (c) => {
+    const scope=c.req.query('client')||'';
+    if(scope&&!await c.env.DB.prepare('SELECT 1 FROM clients WHERE id=?').bind(scope).first())return fail(c,'client_not_found',404);
     const [rows, clients, accounts, projects, products, providers] =
       await Promise.all([
         c.env.DB.prepare(
           `SELECT s.*,v.service_name,v.price,v.billing_cycle,cl.company_name,p.id project_id,p.name project_name,p.status project_status,(SELECT count(*) FROM client_account_access g JOIN users u ON u.id=g.user_id WHERE g.client_id=s.client_id AND u.disabled_at IS NULL AND u.email_verified=1 AND NOT EXISTS(SELECT 1 FROM user_roles ur WHERE ur.user_id=u.id AND ur.role IN('staff','admin'))) account_count,
  (SELECT json_object('entityType',b.entity_type,'legalName',b.legal_name,'taxId',coalesce(b.tax_id,''),'address',b.billing_address,'invoiceEmail',b.invoice_email,'paymentTermsDays',b.payment_terms_days,'clientId',b.client_id) FROM subscription_billing_settings b WHERE b.subscription_id=s.id) billing_json,
  (SELECT json_group_array(json_object('billing_date',q.billing_date,'period_end',q.period_end,'due_date',q.due_date,'revenue_id',q.revenue_id,'status',q.status,'invoice_number',q.invoice_number)) FROM (SELECT q.*,r.status,r.invoice_number FROM subscription_invoice_periods q JOIN financial_revenues r ON r.id=q.revenue_id WHERE q.subscription_id=s.id ORDER BY q.billing_date DESC LIMIT 12) q) periods_json
- FROM subscriptions s JOIN services v ON v.id=s.service_id JOIN projects p ON p.id=v.project_id JOIN clients cl ON cl.id=s.client_id WHERE p.client_id=s.client_id ORDER BY s.status='active' DESC,s.next_billing_date,s.id LIMIT 500`,
-        ).all<Record<string, unknown>>(),
+ FROM subscriptions s JOIN services v ON v.id=s.service_id JOIN projects p ON p.id=v.project_id JOIN clients cl ON cl.id=s.client_id WHERE p.client_id=s.client_id ${scope?'AND s.client_id=?':''} ORDER BY s.status='active' DESC,s.next_billing_date,s.id LIMIT 500`,
+        ).bind(...(scope?[scope]:[])).all<Record<string, unknown>>(),
         c.env.DB.prepare(
-          "SELECT id,company_name,email,contact_name FROM clients WHERE status<>'archived' ORDER BY company_name LIMIT 1000",
-        ).all(),
+          `SELECT c.id,c.company_name,c.email,c.contact_name,l.entity_type,l.legal_name,l.tax_id,l.address FROM clients c LEFT JOIN client_legal_profiles l ON l.client_id=c.id WHERE ${scope?'c.id=?':"c.status<>'archived'"} ORDER BY c.company_name LIMIT 1000`,
+        ).bind(...(scope?[scope]:[])).all(),
         c.env.DB.prepare(
-          "SELECT u.id,u.email,coalesce(p.display_name,u.display_name,u.email) name,(SELECT json_group_array(g.client_id) FROM client_account_access g WHERE g.user_id=u.id) client_ids_json FROM users u LEFT JOIN profiles p ON p.id=u.id WHERE u.disabled_at IS NULL AND u.email_verified=1 AND NOT EXISTS(SELECT 1 FROM user_roles r WHERE r.user_id=u.id AND r.role IN('staff','admin')) ORDER BY u.email LIMIT 1000",
-        ).all<{ id: string; client_ids_json: string }>(),
+          `SELECT u.id,u.email,coalesce(p.display_name,u.display_name,u.email) name,(SELECT json_group_array(g.client_id) FROM client_account_access g WHERE g.user_id=u.id) client_ids_json FROM users u LEFT JOIN profiles p ON p.id=u.id WHERE u.disabled_at IS NULL AND u.email_verified=1 AND NOT EXISTS(SELECT 1 FROM user_roles r WHERE r.user_id=u.id AND r.role IN('staff','admin')) ${scope?'AND (EXISTS(SELECT 1 FROM client_account_access ac WHERE ac.user_id=u.id AND ac.client_id=?) OR lower(u.email)=(SELECT lower(email) FROM clients WHERE id=?))':''} ORDER BY u.email LIMIT 1000`,
+        ).bind(...(scope?[scope,scope]:[])).all<{ id: string; client_ids_json: string }>(),
         c.env.DB.prepare(
-          "SELECT id,name,client_id FROM projects WHERE status<>'archived' ORDER BY name LIMIT 1000",
-        ).all(),
+          `SELECT id,name,client_id FROM projects WHERE status<>'archived' ${scope?'AND client_id=?':''} ORDER BY name LIMIT 1000`,
+        ).bind(...(scope?[scope]:[])).all(),
         c.env.DB.prepare(
           "SELECT slug,name_ro name FROM product_items WHERE status='live' ORDER BY name_ro LIMIT 500",
         ).all(),
-        c.env.DB.prepare(
+        scope?Promise.resolve({results:[]}):c.env.DB.prepare(
           "SELECT bs.id,bs.provider,bs.sku,bs.status,bs.amount_minor,bs.currency,bs.current_period_end,u.email FROM billing_subscriptions bs JOIN users u ON u.id=bs.user_id ORDER BY bs.updated_at DESC LIMIT 500",
         ).all(),
       ]);
@@ -299,6 +301,7 @@ subscriptionOperationsRouter.post(
         400,
         "Completează clientul, specificațiile, datele de facturare și confirmarea alocării.",
       );
+    if(c.req.query('client')&&c.req.query('client')!==parsed.data.clientId)return fail(c,'client_scope_mismatch',409);
     const replay = await previousMutation(c, parsed.data);
     if (replay) return replay;
     const b = parsed.data,

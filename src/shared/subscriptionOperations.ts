@@ -55,6 +55,7 @@ export type SubscriptionOptions = {
     company_name: string;
     email: string;
     contact_name: string | null;
+    entity_type?:string|null;legal_name?:string|null;tax_id?:string|null;address?:string|null;
   }[];
   accounts: { id: string; email: string; name: string; client_ids: string[] }[];
   projects: { id: string; name: string; client_id: string }[];

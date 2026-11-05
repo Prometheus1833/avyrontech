@@ -140,6 +140,8 @@ workspaceRouter.put('/api/workspace/account-access/:userId',async c => {
   for (const id of ids) if (!(await c.env.DB.prepare("SELECT id FROM clients WHERE id=? AND status!='archived'").bind(id).first())) return fail(c,'invalid_client');
   return mutate(c,parsed.data,{ok:true},[
     ...(accessLevel ? [c.env.DB.prepare('DELETE FROM user_roles WHERE user_id=?').bind(user), ...(['user',...(accessLevel==='user'?[]:[accessLevel])].map(role=>c.env.DB.prepare('INSERT INTO user_roles(user_id,role) VALUES (?,?)').bind(user,role)))] : []),
+    c.env.DB.prepare('UPDATE clients SET access_managed=1 WHERE id IN(SELECT client_id FROM client_account_access WHERE user_id=?)').bind(user),
+    ...ids.map(id=>c.env.DB.prepare('UPDATE clients SET access_managed=1 WHERE id=?').bind(id)),
     c.env.DB.prepare('DELETE FROM client_account_access WHERE user_id=?').bind(user),
     ...ids.map(id=>c.env.DB.prepare('INSERT INTO client_account_access(client_id,user_id,granted_by,created_at) VALUES (?,?,?,?)').bind(id,user,c.get('userId'),Date.now())),
     audit(c,'workspace.client_access.updated',user,{client_ids:ids,access_level:accessLevel}),
@@ -150,7 +152,7 @@ workspaceRouter.put('/api/workspace/account-access/:userId',async c => {
 /** Links a verified account to the client with the same email (unverified emails never gain client data); creates a client record when none exists yet. */
 export async function linkClientsByEmail(db: D1Database,userId: string) {
   await db.prepare(`INSERT OR IGNORE INTO client_account_access(client_id,user_id,granted_by,created_at)
-    SELECT cl.id,u.id,u.id,? FROM users u JOIN clients cl ON lower(trim(cl.email))=lower(trim(u.email)) WHERE u.id=? AND u.email_verified=1`).bind(Date.now(),userId).run();
+    SELECT cl.id,u.id,u.id,? FROM users u JOIN clients cl ON lower(trim(cl.email))=lower(trim(u.email)) WHERE u.id=? AND u.email_verified=1 AND cl.access_managed=0`).bind(Date.now(),userId).run();
 }
 async function ensureClientForUser(c: Ctx,requested?: string): Promise<string|null> {
   const userId=c.get('userId'), db=c.env.DB;
@@ -165,6 +167,7 @@ async function ensureClientForUser(c: Ctx,requested?: string): Promise<string|nu
   id=await linked(); if (id || requested) return id;
   const user=await db.prepare('SELECT email,display_name FROM users WHERE id=?').bind(userId).first<{email:string;display_name:string|null}>();
   if (!user) return null;
+  if(await db.prepare("SELECT 1 FROM clients WHERE lower(trim(email))=lower(trim(?)) AND access_managed=1").bind(user.email).first())return null;
   const clientId=crypto.randomUUID(), t=Date.now();
   await db.batch([
     db.prepare("INSERT INTO clients(id,company_name,contact_name,email,status,created_at) VALUES (?,?,?,?,'active',?)").bind(clientId,user.display_name||user.email,user.display_name,user.email,t),

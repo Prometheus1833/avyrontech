@@ -1,5 +1,5 @@
 import { STAFF_MANAGED } from "@/shared/staffAccess";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { internApi, type AccountOption, type BannerStatus, type ClientOption, type ProjectKind, type ProjectPurchase, type ProjectSale } from "@/lib/internApi";
@@ -58,18 +58,30 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
   const [accounts, setAccounts] = useState<AccountOption[]>([]);
   const [form, setForm] = useState({ name: "", slug: "", kind: "website_prezentare" as ProjectKind, url: "", description: "", client_id: "", owner_user_id: "", recurring_enabled: false, recurring_name: "Mentenanță AVYRON", recurring_price: "", recurring_cycle: "monthly" as "monthly" | "yearly", next_billing_date: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10) });
 
-  const load = async () => {
+  const loadSeq=useRef(0);
+  const load = useCallback(async () => {
+    const seq=++loadSeq.current;
     setLoading(true);
     try {
       const res = await internApi.listProjects();
+      if(seq!==loadSeq.current)return;
       setRows(res.data as Row[]);
       setPurchases(res.purchases ?? []);
       setSales(res.sales ?? []);
     } catch (e) {
-      toast.error((e as Error).message);
-    } finally { setLoading(false); }
-  };
-  useEffect(() => { if (user) void load(); }, [user]);
+      if(seq===loadSeq.current){setRows([]);setPurchases([]);setSales([]);toast.error((e as Error).message);}
+    } finally { if(seq===loadSeq.current)setLoading(false); }
+  }, []);
+  const userId=user?.id;
+  useEffect(() => {
+    if (!userId) return;
+    const counter=loadSeq;
+    setRows([]);setPurchases([]);setSales([]);void load();
+    const update=()=>{if(document.visibilityState==="visible")void load()};
+    const timer=setInterval(update,30000);
+    window.addEventListener("focus",update);window.addEventListener("avyron:projects-changed",update);
+    return()=>{++counter.current;clearInterval(timer);window.removeEventListener("focus",update);window.removeEventListener("avyron:projects-changed",update)};
+  }, [userId,load]);
   useEffect(() => {
     if (!user || !canCreate) return;
     Promise.all([internApi.listClients(), internApi.listAccounts()])
