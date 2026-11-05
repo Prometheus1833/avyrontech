@@ -241,9 +241,9 @@ describe("Document Center actual handlers, immutable records and private storage
     expect((await req("/" + d.id + "/export/pdf")).status).toBe(404);
     expect((await (await req("?q=Client")).json()).total).toBe(0);
   });
-  it("company metadata, history, storage, shares and backups remain owner-only", async () => {
+  it("company metadata, history, storage, shares and backups remain restricted to platform principals", async () => {
     const d = await create("company", null);
-    for (const who of ["super", "staff", "a", "b"]) {
+    for (const who of ["staff", "a", "b"]) {
       actor = who;
       expect((await (await req("?scope=company")).json()).total).toBe(0);
       for (const path of ["", "/export/pdf", "/backups", "/recipients"])
@@ -645,16 +645,18 @@ describe("Document Center actual handlers, immutable records and private storage
     const detail = await (await req("/" + d.id)).json();
     expect(detail.approvals[0]).toEqual({ approved: true });
   });
-  it("requires a distinct owner delegation for a superadmin, and expires it immediately", async () => {
+  it("gives an active Super Admin company access and revokes it immediately with the principal", async () => {
     const d = await create("company", null);
     actor = "super";
-    expect((await req("/" + d.id)).status).toBe(404);
-    db.prepare(
-      "INSERT INTO user_capabilities(id,user_id,capability,granted_by,reason,expires_at,created_at) VALUES('company-grant','super','documents.company.owner','owner','explicit fixture delegation',?,1)",
-    ).run(Date.now() + 60000);
     expect((await req("/" + d.id)).status).toBe(200);
+    expect((await (await req("?scope=company")).json()).total).toBe(1);
     db.exec(
-      "UPDATE user_capabilities SET expires_at=1 WHERE id='company-grant'",
+      "UPDATE platform_principals SET status='revoked' WHERE email='super@example.test'",
+    );
+    expect((await req("/" + d.id)).status).toBe(404);
+    actor = "staff";
+    db.exec(
+      "INSERT INTO user_capabilities(id,user_id,capability,reason,created_at) VALUES('forged-company','staff','documents.company.owner','insufficient non-principal grant',1)",
     );
     expect((await req("/" + d.id)).status).toBe(404);
   });
@@ -866,6 +868,32 @@ describe("Document Center actual handlers, immutable records and private storage
     const official = rows.find((row) => row.expires_at === null)!;
     await cleanupDocumentExports(env as never, Date.now() + 3 * 86400000);
     expect(files.data.has(String(official.object_key))).toBe(true);
+  });
+  it("allows active Super Admin to back up and restore company documents while excluding staff", async () => {
+    const d = await create("company", null);
+    actor = "super";
+    const response = await req(`/${d.id}/backups`, {});
+    expect(response.status, await response.clone().text()).toBe(200);
+    const backup = await response.json();
+    expect(backups.data.size).toBe(0);
+    expect(
+      (env.DOCUMENT_COMPANY_BACKUPS as ReturnType<typeof store>).data.size,
+    ).toBeGreaterThan(0);
+    const restored = await req(`/${d.id}/backups/${backup.id}/restore`, {
+      revision: revision(d.id),
+      confirmed: true,
+    });
+    expect(restored.status, await restored.clone().text()).toBe(200);
+    actor = "staff";
+    expect((await req(`/${d.id}/backups`)).status).toBe(404);
+    expect(
+      (
+        await req(`/${d.id}/backups/${backup.id}/restore`, {
+          revision: revision(d.id),
+          confirmed: true,
+        })
+      ).status,
+    ).toBe(404);
   });
   it("requires verified separate destinations and isolates corporate backups", async () => {
     const d = await create();
@@ -1259,7 +1287,7 @@ describe("Document Center actual handlers, immutable records and private storage
       await filterPrivateDocumentNotices(env.DB as never, "owner", notices),
     ).toHaveLength(2);
     db.exec(
-      "UPDATE platform_principals SET role='superadmin' WHERE email='prometheus@avyron.ro'",
+      "UPDATE platform_principals SET status='revoked' WHERE email='prometheus@avyron.ro'",
     );
     expect(
       await filterPrivateDocumentNotices(env.DB as never, "owner", notices),

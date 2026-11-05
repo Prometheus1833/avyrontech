@@ -109,15 +109,15 @@ describe('OS dashboard — migrated SQLite and actual Hono handlers', () => {
     expect((await inbox()).counts.agent).toBe(0);
     expect((await app.request('/api/os/approval-center/agent/approval',{},{})).status).toBe(404);
   });
-  it('denies client listings and details, and hides corporate proposals from an undelegated superadmin',async()=>{
+  it('denies client listings and details, and grants corporate proposals to an authorized Super Admin',async()=>{
     db.prepare("INSERT INTO users(id,email,password_hash,email_verified,created_at,updated_at) VALUES ('super','super@fixture.test','fixture',1,?,?)").run(stamp,stamp);
     db.exec("INSERT INTO user_roles VALUES('super','admin'); INSERT INTO platform_principals(email,role,status,created_at,updated_at) VALUES('super@fixture.test','superadmin','active',1,1)");
     db.prepare("INSERT INTO documents(id,number,scope,created_by,created_at,updated_at) VALUES ('company-doc','PRIVATE-TEST','company','owner',?,?)").run(stamp,stamp);
     db.prepare("INSERT INTO document_templates(id,family,name,visibility,source_document_id,created_at) VALUES ('private-model','custom','Secret model de test','private_proposal','company-doc',?)").run(stamp);
     db.prepare("INSERT INTO document_template_versions(id,template_id,version,payload_json,required_fields_json,created_at) VALUES ('private-version','private-model',1,'{}','[]',?)").run(stamp);
     expect((await inbox()).counts.template).toBe(12);
-    actor='super';expect((await inbox()).counts.template).toBe(11);
-    expect((await app.request('/api/os/approval-center/template/private-version',{},{})).status).toBe(404);
+    actor='super';expect((await inbox()).counts.template).toBe(12);
+    expect((await app.request('/api/os/approval-center/template/private-version',{},{})).status).toBe(200);
     actor='client';expect((await app.request('/api/os/approval-center',{},{})).status).toBe(403);
     expect((await app.request('/api/os/approval-center/template/private-version',{},{})).status).toBe(404);
   });

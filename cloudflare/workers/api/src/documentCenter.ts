@@ -1291,7 +1291,7 @@ documentCenterRouter.get("/api/documents/:id/recipients", async (c) => {
     return c.json({ data: peers.results });
   }
   const result = await c.env.DB.prepare(
-    `SELECT DISTINCT u.id,u.email,u.display_name FROM users u WHERE u.email_verified=1 AND u.disabled_at IS NULL AND (EXISTS(SELECT 1 FROM client_account_access ca WHERE ca.user_id=u.id AND ca.client_id=?) OR EXISTS(SELECT 1 FROM client_organizations co JOIN organization_memberships om ON om.organization_id=co.organization_id JOIN organizations o ON o.id=co.organization_id WHERE co.client_id=? AND om.user_id=u.id AND om.status='active' AND o.status='active') OR EXISTS(SELECT 1 FROM platform_principals pp JOIN user_roles ur ON ur.user_id=u.id AND ur.role='admin' WHERE pp.email=u.email COLLATE NOCASE AND pp.status='active' AND (pp.role='platform_owner' OR ?<>'company' OR EXISTS(SELECT 1 FROM user_capabilities pc WHERE pc.user_id=u.id AND pc.capability='documents.company.owner' AND pc.organization_id IS NULL AND pc.revoked_at IS NULL AND (pc.expires_at IS NULL OR pc.expires_at>?))))) ORDER BY u.email LIMIT 100`,
+    `SELECT DISTINCT u.id,u.email,u.display_name FROM users u WHERE u.email_verified=1 AND u.disabled_at IS NULL AND (EXISTS(SELECT 1 FROM client_account_access ca WHERE ca.user_id=u.id AND ca.client_id=?) OR EXISTS(SELECT 1 FROM client_organizations co JOIN organization_memberships om ON om.organization_id=co.organization_id JOIN organizations o ON o.id=co.organization_id WHERE co.client_id=? AND om.user_id=u.id AND om.status='active' AND o.status='active') OR EXISTS(SELECT 1 FROM platform_principals pp JOIN user_roles ur ON ur.user_id=u.id AND ur.role='admin' WHERE pp.email=u.email COLLATE NOCASE AND pp.status='active' AND (pp.role IN('platform_owner','superadmin') OR ?<>'company' OR EXISTS(SELECT 1 FROM user_capabilities pc WHERE pc.user_id=u.id AND pc.capability='documents.company.owner' AND pc.organization_id IS NULL AND pc.revoked_at IS NULL AND (pc.expires_at IS NULL OR pc.expires_at>?))))) ORDER BY u.email LIMIT 100`,
   )
     .bind(d.beneficiary_id, d.beneficiary_id, d.scope, stamp())
     .all();
@@ -1544,7 +1544,7 @@ documentCenterRouter.post("/api/documents/:id/save-template", async (c) => {
 });
 
 documentCenterRouter.put("/api/documents/settings/company", async (c) => {
-  if (c.get("documentActor").platform !== "platform_owner")
+  if (!c.get("documentActor").platform)
     return error(c, "forbidden", 403);
   const schema = z
     .object({

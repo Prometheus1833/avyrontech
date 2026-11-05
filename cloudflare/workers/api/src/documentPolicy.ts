@@ -64,16 +64,14 @@ export function documentCapability(
   permission: DocumentPermission,
   organizationId: string | null = null,
 ) {
-  if (actor.platform === "platform_owner") return true;
-  if (permission === "documents.company.owner")
-    return (
-      actor.platform === "superadmin" &&
-      actor.capabilities.some(
-        (row) => row.capability === permission && row.organization_id === null,
-      )
-    );
-  if (actor.platform === "superadmin") return true;
-  if (["documents.read", "documents.export"].includes(permission)) return true;
+  if (actor.platform === "platform_owner" || actor.platform === "superadmin")
+    return true;
+  if (permission === "documents.company.owner") return false;
+  if (
+    ["documents.read", "documents.export"].includes(permission) &&
+    !actor.capabilities.some((row) => row.capability === "staff.access.managed")
+  )
+    return true;
   return actor.capabilities.some(
     (row) =>
       row.capability === permission &&

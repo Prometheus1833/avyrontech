@@ -106,7 +106,7 @@ export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
   intern: { label: "Chat intern", commandLabel: "Deschide chatul intern", hint: "Conversațiile echipei AVYRON", icon: MessagesSquare },
   announcements: { label: "Anunțuri", commandLabel: "Deschide anunțurile", hint: "Actualizări și comunicări interne", icon: Megaphone },
   resources: { label: "Documente și resurse", commandLabel: "Deschide documentele", hint: "Cunoaștere și materiale interne", icon: BookOpen },
-  "team-staff": { label: "STAFF", commandLabel: "Deschide STAFF", hint: "Echipă, roluri, permisiuni și acces", icon: Users },
+  "team-staff": { label: "Membrii Agenției", mobileLabel: "Echipă", commandLabel: "Deschide membrii Agenției AVYRON", hint: "Echipă, roluri, permisiuni și acces", icon: Users },
   finance: { label: "Financiar", commandLabel: "Deschide situația financiară", hint: "Costuri, venituri, plăți și bugete", icon: Wallet },
   "commercial-codes": { label: "Coduri servicii și produse", commandLabel: "Deschide nomenclatorul comercial", hint: "Coduri, TVA și trasee de plată", icon: FileCode2 },
   promotions: { label: "Promoții", commandLabel: "Deschide promoțiile", hint: "Campanii și reguli comerciale", icon: BadgePercent },

@@ -64,7 +64,7 @@ export default function OsCentersTab({ access, onNavigate }: {access: Access; on
         { id: "servicii-avyron" as SectionId, label: "Servicii", detail: "Ofertă și configurare individuală", icon: Sparkles },
         { id: "produse-avyron" as SectionId, label: "Produse", detail: "Catalog, prețuri și acces", icon: Boxes },
         { id: "subscriptions-admin" as SectionId, label: "Abonamente", detail: "Planuri și clienți activi", icon: CalendarClock },
-        { id: "team-staff" as SectionId, label: "Staff", detail: "Conturi și comunicare", icon: UserRoundCheck },
+        { id: "team-staff" as SectionId, label: "Membrii Agenției", detail: "Conturi și comunicare", icon: UserRoundCheck },
         { id: "intern" as SectionId, label: "Chat intern", detail: "Canale și mesaje directe", icon: MessageSquare },
         { id: "library" as SectionId, label: "Biblioteca Artefacte", detail: "Efecte, integrări și referințe", icon: BookOpen },
         { id: "ai-os" as SectionId, label: "Agenți AI", detail: "Configurații, cunoaștere și conversații", icon: Sparkles },

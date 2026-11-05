@@ -1,7 +1,7 @@
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import type { AppBindings } from "./types";
-import { platformRoleForUser } from "./authorization";
+import { hasCapability, platformRoleForUser } from "./authorization";
 import { privilegedMfaSatisfied } from "./mfaPolicy";
 import { checkRateLimit } from "./antispam";
 import { readJsonBodyUpTo } from "./requestBody";
@@ -62,14 +62,20 @@ servicePagesRouter.use("/api/admin/service-pages/*", async (c, next) => {
   c.header("Cache-Control", "private, no-store");
   if (
     !c.get("roles").some((role) => role === "staff" || role === "admin") &&
-    !(await platformRoleForUser(c.env.DB, c.get("userId")))
+    !(await platformRoleForUser(c.env.DB, c.get("userId"))) &&
+    !(await hasCapability(c.env.DB, c.get("userId"), "services.pages.manage"))
   )
     return fail(c, "forbidden", 403);
   if (!Object.hasOwn(pages, c.req.path.split("/")[4] || ""))
     return fail(c, "not_found", 404);
   if (c.req.method !== "GET") {
     if (
-      !(await platformRoleForUser(c.env.DB, c.get("userId"))) ||
+      (!(await platformRoleForUser(c.env.DB, c.get("userId"))) &&
+        !(await hasCapability(
+          c.env.DB,
+          c.get("userId"),
+          "services.pages.manage",
+        ))) ||
       !(await privilegedMfaSatisfied(c))
     )
       return fail(c, "forbidden", 403);
@@ -103,7 +109,9 @@ servicePagesRouter.get("/api/admin/service-pages/:key", async (c) => {
     values: row ? JSON.parse(row.draft_json) : {},
     publishedRevision: row?.published_revision ?? null,
     updatedAt: row?.updated_at ?? null,
-    canManage: !!(await platformRoleForUser(c.env.DB, c.get("userId"))),
+    canManage:
+      !!(await platformRoleForUser(c.env.DB, c.get("userId"))) ||
+      (await hasCapability(c.env.DB, c.get("userId"), "services.pages.manage")),
     history: history.results,
   });
 });

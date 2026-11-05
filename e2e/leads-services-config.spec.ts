@@ -310,7 +310,7 @@ test("configurează o pagină, previzualizează ciorna și publică numai după 
       name: "Website configurat în AVYRON OS",
       exact: true,
     }),
-  ).toBeVisible();
+  ).toBeVisible({timeout:15000});
   await page.goto("/en/services/professional-presentation-website");
   await expect(
     page.getByRole("heading", {

@@ -1,3 +1,4 @@
+import { capabilityRank, staffRankLabel } from "@/shared/staffAccess";
 import logo from "@/assets/avyron-logo.webp";
 import {
 DASHBOARD_GROUP_LABELS,
@@ -7,7 +8,7 @@ DASHBOARD_SECTION_META,
 import MfaEnrollBanner from "@/components/dashboard/MfaEnrollBanner";
 import { Sheet,SheetContent,SheetDescription,SheetHeader,SheetTitle } from "@/components/ui/sheet";
 import { Tabs,TabsContent } from "@/components/ui/tabs";
-import { flushDocumentEditors } from '@/features/documents/navigation';
+import { flushDocumentEditors } from "@/features/documents/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { buildAccess,canOpenSection,defaultSection,sectionsFor,type SectionId } from "@/lib/access";
 import { publicSiteHref } from "@/lib/appHost";
@@ -71,11 +72,14 @@ const ResourceSurfaceTab = lazyWithRetry(() => import("@/components/dashboard/Re
 const SuperAdminControlHub = lazyWithRetry(() => import("@/components/dashboard/SuperAdminControlHub"));
 
 export default function Profile() {
-  const { user, profile, roles, capabilities, isSuperAdmin, isStaff, isAdmin, signOut } = useAuth();
+  const { user, profile, roles, capabilities,
+    platformRole,
+    isSuperAdmin, isStaff, isAdmin, signOut } = useAuth();
   const access = useMemo(() => buildAccess({ roles, capabilities, email: user?.email, superadmin: isSuperAdmin }), [roles, capabilities, user?.email, isSuperAdmin]);
   const [params, setParams] = useSearchParams();
-  const requested = params.get("tab") === "workflows" ? "projects" : params.get("tab") ?? "";
-  const [tab, setTab] = useState<SectionId>(canOpenSection(requested, access) ? requested as SectionId : defaultSection(access));
+  const requested = params.get("tab") === "workflows" ? "projects" : (params.get("tab") ?? "");
+  const [tab, setTab] = useState<SectionId>(canOpenSection(requested, access) ? (requested as SectionId)
+      : defaultSection(access));
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [servicesExpanded,setServicesExpanded]=useState(requested==="servicii-avyron");
   const [commandOpen, setCommandOpen] = useState(false);
@@ -93,14 +97,18 @@ export default function Profile() {
     .map((group) => ({ ...group, items: group.items.filter((section) => !mobilePrimary.has(section.id)) }))
     .filter((group) => group.items.length);
   const displayName = profile?.display_name || user?.display_name || user?.email?.split("@")[0] || "utilizator";
-  const roleLabel = isSuperAdmin ? "Super administrator" : isAdmin ? "Administrator" : isStaff ? "Membru al echipei" : "Client";
+  const currentRank = capabilityRank(capabilities, platformRole);
+  const roleLabel = currentRank
+    ? staffRankLabel(currentRank)
+    : isSuperAdmin ? "Super administrator" : isAdmin ? "Administrator" : isStaff ? "Membru al echipei" : "Client";
   const activeGroup = groups.find((group) => group.items.some((section) => section.id === tab))?.id;
 
   useEffect(() => {
     if (!canOpenSection(tab, access)) setTab(defaultSection(access));
   }, [tab, access]);
   useEffect(() => {
-    if (canOpenSection(requested, access)) setTab((current) => current === requested ? current : requested as SectionId);
+    if (canOpenSection(requested, access)) setTab((current) => current === requested ? current : (requested as SectionId),
+      );
   }, [requested, access]);
   useEffect(() => {
     if (activeGroup && openGroups[activeGroup] === undefined) setOpenGroups((current) => ({ ...current, [activeGroup]: true }));
@@ -120,7 +128,7 @@ export default function Profile() {
   }, [access.isClient]);
 
   const openSection = async (section: SectionId,extraParams?:Record<string,string>) => {
-    if(!await flushDocumentEditors() || !await flushServicePageEdits())return;
+    if(!(await flushDocumentEditors()) || !(await flushServicePageEdits()))return;
     const destination = canOpenSection(section, access) ? section : ["security", "automations"].includes(String(section)) && access.isStaff ? "os-centers" : null;
     if (destination) {
       setTab(destination);
@@ -140,44 +148,78 @@ export default function Profile() {
 
   const toggleGroup = (group: string) => setOpenGroups((current) => ({ ...current, [group]: !(current[group] ?? true) }));
 
-  const NavButton = ({ section, mobile = false }: { section: SectionId; mobile?: boolean }) => {
+  const NavButton = ({ section, mobile = false }: { section: SectionId; mobile?: boolean;
+  }) => {
+    if (!canOpenSection(section, access)) return null;
     const sectionMeta = DASHBOARD_SECTION_META[section];
     const Icon = sectionMeta.icon;
     const label = section === "projects" && !access.isStaff ? "Proiectele mele" : sectionMeta.label;
     const active = tab === section;
-    return <><button type="button" role="tab" aria-selected={active} aria-label={label} title={sidebarCollapsed ? label : undefined} aria-expanded={section==="servicii-avyron"?servicesExpanded:undefined} onClick={() => {if(section==="servicii-avyron"){setServicesExpanded(current=>tab===section?!current:true);if(tab!==section)void openSection(section);}else void openSection(section);}} className={`${mobile ? "flex min-w-0 flex-1 flex-col" : "w-full flex-row"} group flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-left text-xs font-medium transition lg:justify-start ${active ? "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white shadow-[0_10px_30px_-16px_rgba(124,58,237,.9)]" : "text-slate-500 hover:bg-white/[0.05] hover:text-slate-200"}`}>
+    return (
+      <><button type="button" role="tab" aria-selected={active} aria-label={label} title={sidebarCollapsed ? label : undefined} aria-expanded={section==="servicii-avyron"?servicesExpanded:undefined} onClick={() => {if(section==="servicii-avyron"){setServicesExpanded((current) =>tab===section?!current:true);if(tab!==section)void openSection(section);}else void openSection(section);}} className={`${mobile ? "flex min-w-0 flex-1 flex-col" : "w-full flex-row"} group flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-left text-xs font-medium transition lg:justify-start ${active ? "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white shadow-[0_10px_30px_-16px_rgba(124,58,237,.9)]" : "text-slate-500 hover:bg-white/[0.05] hover:text-slate-200"}`}>
       <Icon className="size-4 shrink-0" strokeWidth={2.1} />
-      {mobile ? <span className="max-w-full truncate text-[9px]">{sectionMeta.mobileLabel || label}</span> : !sidebarCollapsed && <span className="truncate">{label}</span>}
-    {section==="servicii-avyron"&&!sidebarCollapsed&&<ChevronDown className={`ml-auto size-3 ${servicesExpanded?"rotate-180":""}`}/>}
-    </button>{section==="servicii-avyron"&&servicesExpanded&&!sidebarCollapsed&&!mobile&&<nav aria-label="Mini-listă servicii" className="ml-3 mt-1 space-y-1 border-l border-white/10 pl-2">{SERVICE_PAGES.map(page=><button key={page.key} type="button" aria-current={tab===section&&(page.key==="overview"?!params.get("service"):params.get("service")===page.key)?"page":undefined} onClick={()=>void openSection(section,{service:page.key==="overview"?"":page.key,serviceGroup:""})} className="block min-h-9 w-full rounded-lg px-2 py-2 text-left text-[11px] leading-relaxed text-slate-400 hover:bg-white/5 hover:text-white aria-[current=page]:bg-violet-500/10 aria-[current=page]:text-violet-200">{page.name}</button>)}</nav>}</>;
+      {mobile ? (
+            <span className="max-w-full truncate text-[9px]">{sectionMeta.mobileLabel || label}</span>
+          ) : (
+            !sidebarCollapsed && <span className="truncate">{label}</span>
+          )}
+    {section==="servicii-avyron"&&!sidebarCollapsed&& (
+            <ChevronDown className={`ml-auto size-3 ${servicesExpanded?"rotate-180":""}`}/>
+          )}
+    </button>{section==="servicii-avyron"&&servicesExpanded&&!sidebarCollapsed&&!mobile&& (
+            <nav aria-label="Mini-listă servicii" className="ml-3 mt-1 space-y-1 border-l border-white/10 pl-2">{SERVICE_PAGES.map((page) => (
+                <button key={page.key} type="button" aria-current={tab===section&&(page.key==="overview"?!params.get("service"):params.get("service")===page.key)?"page":undefined} onClick={()=>void openSection(section,{service:page.key==="overview"?"":page.key,serviceGroup:""})} className="block min-h-9 w-full rounded-lg px-2 py-2 text-left text-[11px] leading-relaxed text-slate-400 hover:bg-white/5 hover:text-white aria-[current=page]:bg-violet-500/10 aria-[current=page]:text-violet-200">{page.name}</button>))}</nav>
+          )}</>
+    );
   };
 
-  const contentFallback = <div className="min-h-56 animate-pulse rounded-2xl border border-white/[0.06] bg-white/[0.035]" aria-label="Se încarcă secțiunea" />;
+  const contentFallback = (
+    <div className="min-h-56 animate-pulse rounded-2xl border border-white/[0.06] bg-white/[0.035]" aria-label="Se încarcă secțiunea" />
+  );
 
-  return <main className="dark min-h-screen bg-[#060a14] text-slate-100 selection:bg-violet-500/35">
+  return (
+    <main className="dark min-h-screen bg-[#060a14] text-slate-100 selection:bg-violet-500/35">
     <div aria-hidden className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_75%_0%,rgba(79,70,229,.15),transparent_34%),radial-gradient(circle_at_20%_100%,rgba(124,58,237,.10),transparent_35%)]" />
     <Tabs value={tab} onValueChange={(value) => openSection(value as SectionId)} className="relative flex min-h-screen">
       <aside className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r border-white/[0.07] bg-[#090e1d]/95 px-3 py-4 backdrop-blur-xl transition-[width] duration-200 lg:flex ${sidebarCollapsed ? "w-[76px]" : "w-[248px]"}`}>
         <div className={`flex items-center ${sidebarCollapsed ? "justify-center" : "justify-between"}`}>
           <a href={publicSiteHref()} className="flex min-w-0 items-center gap-2.5 rounded-xl p-1.5 hover:bg-white/[0.04]">
             <img src={logo} alt="Avyron" className="size-9 rounded-xl ring-1 ring-white/10" />
-            {!sidebarCollapsed && <div className="min-w-0"><p className="font-display text-sm font-bold tracking-[0.08em] text-white">AVYRON <span className="text-violet-300">{access.isClient ? "CONT" : "OS"}</span></p><p className="text-[9px] text-slate-600">{access.isClient ? "Spațiul tău personal" : "Sistem operațional intern"}</p></div>}
+            {!sidebarCollapsed && (
+                <div className="min-w-0"><p className="font-display text-sm font-bold tracking-[0.08em] text-white">AVYRON {" "}
+                    <span className="text-violet-300">{access.isClient ? "CONT" : "OS"}</span></p><p className="text-[9px] text-slate-600">{access.isClient ? "Spațiul tău personal" : "Sistem operațional intern"}</p></div>
+              )}
           </a>
-          {!sidebarCollapsed && <button type="button" onClick={() => setSidebarCollapsed(true)} aria-label="Restrânge meniul" className="rounded-lg p-2 text-slate-600 hover:bg-white/[0.05] hover:text-slate-300"><PanelLeftClose className="size-4" /></button>}
+          {!sidebarCollapsed && (
+              <button type="button" onClick={() => setSidebarCollapsed(true)} aria-label="Restrânge meniul" className="rounded-lg p-2 text-slate-600 hover:bg-white/[0.05] hover:text-slate-300"><PanelLeftClose className="size-4" /></button>
+            )}
         </div>
-        {sidebarCollapsed && <button type="button" onClick={() => setSidebarCollapsed(false)} aria-label="Extinde meniul" className="mx-auto mt-2 rounded-lg p-2 text-slate-600 hover:bg-white/[0.05] hover:text-slate-300"><PanelLeftOpen className="size-4" /></button>}
+        {sidebarCollapsed && (
+            <button type="button" onClick={() => setSidebarCollapsed(false)} aria-label="Extinde meniul" className="mx-auto mt-2 rounded-lg p-2 text-slate-600 hover:bg-white/[0.05] hover:text-slate-300"><PanelLeftOpen className="size-4" /></button>
+          )}
 
         <nav className="avyron-sidebar-scroll mt-5 min-h-0 flex-1 space-y-2 overflow-y-auto pb-4 pr-1" aria-label="Navigare AVYRON OS">
           {groups.map((group) => {
             const expanded = sidebarCollapsed || (openGroups[group.id] ?? true);
-            return <div key={group.id} className="rounded-xl">
-              {!sidebarCollapsed && <button type="button" onClick={() => toggleGroup(group.id)} aria-expanded={expanded} className="mb-1 flex w-full items-center justify-between rounded-lg px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-slate-600 transition hover:bg-white/[0.035] hover:text-slate-400"><span>{group.label}</span><ChevronDown className={`size-3 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} /></button>}
-              <div className={`grid transition-[grid-template-rows,opacity] duration-200 ${expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-60"}`}><div className="min-h-0 overflow-hidden"><div className="space-y-1">{expanded && group.items.map((section) => <NavButton key={section.id} section={section.id} />)}</div></div></div>
-            </div>;
+            return (
+                <div key={group.id} className="rounded-xl">
+              {!sidebarCollapsed && (
+                    <button type="button" onClick={() => toggleGroup(group.id)} aria-expanded={expanded} className="mb-1 flex w-full items-center justify-between rounded-lg px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-slate-600 transition hover:bg-white/[0.035] hover:text-slate-400"><span>{group.label}</span><ChevronDown className={`size-3 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} /></button>
+                  )}
+              <div className={`grid transition-[grid-template-rows,opacity] duration-200 ${expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-60"}`}><div className="min-h-0 overflow-hidden"><div className="space-y-1">{expanded && group.items.map((section) => (
+                            <NavButton key={section.id} section={section.id} />))}</div></div></div>
+            </div>
+              );
           })}
         </nav>
 
-        <div className="border-t border-white/[0.07] pt-3"><div className={`flex items-center ${sidebarCollapsed ? "justify-center" : "gap-2.5"}`}><span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-xl bg-violet-500/15 text-xs font-semibold text-violet-200">{user?.avatar_url ? <img src={user.avatar_url} alt="" className="size-full object-cover" /> : displayName.slice(0, 2).toUpperCase()}</span>{!sidebarCollapsed && <div className="min-w-0 flex-1"><p className="truncate text-xs font-medium text-slate-300">{displayName}</p><p className="truncate text-[10px] text-slate-600">{roleLabel}</p></div>}</div></div>
+        <div className="border-t border-white/[0.07] pt-3"><div className={`flex items-center ${sidebarCollapsed ? "justify-center" : "gap-2.5"}`}><span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-xl bg-violet-500/15 text-xs font-semibold text-violet-200">{user?.avatar_url ? (
+                  <img src={user.avatar_url} alt="" className="size-full object-cover" />
+                ) : (
+                  displayName.slice(0, 2).toUpperCase()
+                )}</span>{!sidebarCollapsed && (
+                <div className="min-w-0 flex-1"><p className="truncate text-xs font-medium text-slate-300">{displayName}</p><p className="truncate text-[10px] text-slate-600">{roleLabel}</p></div>
+              )}</div></div>
       </aside>
 
       <div className="min-w-0 flex-1 pb-20 lg:pb-0">
@@ -187,35 +229,65 @@ export default function Profile() {
             <a href={publicSiteHref()} aria-label="Înapoi la site" data-testid="page-back-link" className="hidden rounded-xl p-2 text-slate-600 hover:bg-white/[0.05] hover:text-slate-300 lg:inline-flex"><ChevronLeft className="size-5" /></a>
             <button type="button" onClick={() => openSection("overview")} className="mr-auto flex items-center gap-2 lg:hidden" aria-label="Deschide prezentarea generală">
               <img src={logo} alt="" className="size-7 rounded-lg ring-1 ring-white/10" />
-              <span className="hidden font-display text-xs font-bold tracking-[0.08em] text-white min-[360px]:inline">AVYRON <span className="text-violet-300">{access.isClient ? "CONT" : "OS"}</span></span>
+              <span className="hidden font-display text-xs font-bold tracking-[0.08em] text-white min-[360px]:inline">AVYRON {" "}
+                  <span className="text-violet-300">{access.isClient ? "CONT" : "OS"}</span></span>
             </button>
             <button type="button" onClick={() => setCommandOpen(true)} aria-label={access.isClient ? "Caută secțiuni din cont" : "Caută secțiuni și fluxuri"} className="grid size-10 shrink-0 place-items-center rounded-xl border border-white/[0.08] text-slate-300 transition hover:border-violet-400/35 hover:bg-violet-500/10 lg:hidden"><Search className="size-[18px]" /></button>
             <button type="button" onClick={() => setCommandOpen(true)} className="hidden min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2.5 text-left text-xs text-slate-600 transition hover:border-violet-400/25 hover:text-slate-400 sm:max-w-xl lg:flex"><Search className="size-4 shrink-0" /><span className="truncate">{access.isClient ? "Caută secțiuni din cont…" : "Caută secțiuni și fluxuri…"}</span><kbd className="ml-auto rounded border border-white/10 bg-black/20 px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd></button>
-            {access.isStaff && <button type="button" onClick={() => openSection("intern")} aria-label="Deschide chatul intern" title="Chat intern" className="rounded-xl border border-white/[0.08] p-2.5 text-slate-400 transition hover:border-violet-400/25 hover:text-violet-200"><MessagesSquare className="size-4" /></button>}
-            {access.isSuperAdmin && <button type="button" onClick={() => openSection("ai-os")} className="hidden items-center gap-2 rounded-xl border border-violet-400/20 bg-violet-500/10 px-3 py-2.5 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/20 sm:inline-flex"><Sparkles className="size-4" /> Întreabă AVY</button>}
+            {access.isStaff && (
+                <button type="button" onClick={() => openSection("intern")} aria-label="Deschide chatul intern" title="Chat intern" className="rounded-xl border border-white/[0.08] p-2.5 text-slate-400 transition hover:border-violet-400/25 hover:text-violet-200"><MessagesSquare className="size-4" /></button>
+              )}
+            {access.isSuperAdmin && (
+                <button type="button" onClick={() => openSection("ai-os")} className="hidden items-center gap-2 rounded-xl border border-violet-400/20 bg-violet-500/10 px-3 py-2.5 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/20 sm:inline-flex"><Sparkles className="size-4" /> Întreabă AVY</button>
+              )}
             {<Suspense fallback={<span className="size-10" />}><NotificationCenter access={access} onNavigate={openSection} autoOpen={params.get("notifications") === "1"} /></Suspense>}
-            <button type="button" onClick={() => openSection("profile")} aria-label="Deschide profilul" className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-xl bg-violet-500/15 text-[10px] font-semibold text-violet-100 ring-1 ring-white/10">{user?.avatar_url ? <img src={user.avatar_url} alt="" className="size-full object-cover" /> : displayName.slice(0, 2).toUpperCase()}</button>
+            <button type="button" onClick={() => openSection("profile")} aria-label="Deschide profilul" className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-xl bg-violet-500/15 text-[10px] font-semibold text-violet-100 ring-1 ring-white/10">{user?.avatar_url ? (
+                  <img src={user.avatar_url} alt="" className="size-full object-cover" />
+                ) : (
+                  displayName.slice(0, 2).toUpperCase()
+                )}</button>
             <button type="button" onClick={() => void signOut().then(() => window.location.assign("/"))} aria-label="Deconectare" title="Deconectare" className="hidden rounded-xl p-2.5 text-slate-600 hover:bg-rose-400/10 hover:text-rose-300 lg:inline-flex"><LogOut className="size-4" /></button>
-            <span className="hidden items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1.5 text-[10px] text-slate-500 xl:inline-flex">{isSuperAdmin ? <Lock className="size-3" /> : <ShieldCheck className="size-3" />}{roleLabel}</span>
+            <span className="hidden items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1.5 text-[10px] text-slate-500 xl:inline-flex">{isSuperAdmin ? (
+                  <Lock className="size-3" />
+                ) : (
+                  <ShieldCheck className="size-3" />
+                )}{roleLabel}</span>
           </div>
         </header>
 
         <div className="mx-auto max-w-[1500px] p-3 sm:p-5 lg:p-6">
           <MfaEnrollBanner onOpenSettings={() => openSection("settings")} />
           <Suspense fallback={contentFallback}>
-          <TabsContent value="overview" className="mt-0">{access.isClient ? <CustomerHomeTab displayName={displayName} onOpenSection={openSection} /> : <AvyronOverview access={access} displayName={displayName} onOpenSection={openSection} onOpenCommand={() => setCommandOpen(true)} />}</TabsContent>
-          {canOpenSection("maintenance", access) && <TabsContent value="maintenance" className="mt-0"><StaffMaintenanceTab /></TabsContent>}
-          {canOpenSection("social-manager", access) && <TabsContent value="social-manager" className="mt-0"><SocialMediaManagerTab /></TabsContent>}
+          <TabsContent value="overview" className="mt-0">{access.isClient ? (
+                  <CustomerHomeTab displayName={displayName} onOpenSection={openSection} />
+                ) : (
+                  <AvyronOverview access={access} displayName={displayName} onOpenSection={openSection} onOpenCommand={() => setCommandOpen(true)} />
+                )}</TabsContent>
+          {canOpenSection("maintenance", access) && (
+                <TabsContent value="maintenance" className="mt-0"><StaffMaintenanceTab /></TabsContent>
+              )}
+          {canOpenSection("social-manager", access) && (
+                <TabsContent value="social-manager" className="mt-0"><SocialMediaManagerTab /></TabsContent>
+              )}
           <TabsContent value="profile" className="mt-0"><ProfileTab /></TabsContent><TabsContent value="settings" className="mt-0"><SettingsTab /></TabsContent><TabsContent value="collection" className="mt-0"><ProductCollectionTab /></TabsContent><TabsContent value="projects" className="mt-0"><CloudflareProjects embedded /></TabsContent>
-          {access.isClient && <><TabsContent value="catalog" className="mt-0"><CustomerCatalogTab /></TabsContent><TabsContent value="orders" className="mt-0"><OrdersTab /></TabsContent><TabsContent value="subscriptions" className="mt-0"><SubscriptionsTab /></TabsContent><TabsContent value="payments" className="mt-0"><BillingSettingsCard /></TabsContent><TabsContent value="invoices" className="mt-0"><InvoicesTab /></TabsContent><TabsContent value="cart" className="mt-0"><CartTab /></TabsContent><TabsContent value="stats" className="mt-0"><StatsTab /></TabsContent><TabsContent value="tickets" className="mt-0"><TicketsTab /></TabsContent></>}
+          {access.isClient && (
+                <><TabsContent value="catalog" className="mt-0"><CustomerCatalogTab /></TabsContent><TabsContent value="orders" className="mt-0"><OrdersTab /></TabsContent><TabsContent value="subscriptions" className="mt-0"><SubscriptionsTab /></TabsContent><TabsContent value="payments" className="mt-0"><BillingSettingsCard /></TabsContent><TabsContent value="invoices" className="mt-0"><InvoicesTab /></TabsContent><TabsContent value="cart" className="mt-0"><CartTab /></TabsContent><TabsContent value="stats" className="mt-0"><StatsTab /></TabsContent><TabsContent value="tickets" className="mt-0"><TicketsTab /></TabsContent></>
+              )}
           <TabsContent value="documents" className="mt-0"><DocumentCenter /></TabsContent>
-          {canOpenSection("ai-projects", access) && <TabsContent value="ai-projects" className="mt-0"><AiProjects embedded /></TabsContent>}
-          {canOpenSection("leads", access) && <TabsContent value="leads" className="mt-0"><StaffLeadsTab /></TabsContent>}
-          {access.isStaff && <>
+          {canOpenSection("ai-projects", access) && (
+                <TabsContent value="ai-projects" className="mt-0"><AiProjects embedded /></TabsContent>
+              )}
+          {canOpenSection("leads", access) && (
+                <TabsContent value="leads" className="mt-0"><StaffLeadsTab /></TabsContent>
+              )}
+          {access.isStaff && (
+                <>
             <TabsContent value="servicii-avyron" className="mt-0"><StaffServicesTab /></TabsContent>
 
             <TabsContent value="clients" className="mt-0"><StaffClientsTab /></TabsContent>
-            {access.isAdmin && <TabsContent value="reviews" className="mt-0"><StaffReviewsTab /></TabsContent>}
+            {access.isAdmin && (
+                    <TabsContent value="reviews" className="mt-0"><StaffReviewsTab /></TabsContent>
+                  )}
             <TabsContent value="domains" className="mt-0"><StaffDomainStatsTab /></TabsContent>
             <TabsContent value="media" className="mt-0"><StaffMediaTab /></TabsContent>
             <TabsContent value="staff-tickets" className="mt-0"><TicketsTab staffMode /></TabsContent>
@@ -231,22 +303,70 @@ export default function Profile() {
             <TabsContent value="configurator" className="mt-0"><PlatformLeadTab kind="configurator" /></TabsContent>
             <TabsContent value="os-centers" className="mt-0"><OsCentersTab access={access} onNavigate={openSection} /></TabsContent>
             <TabsContent value="other-hub" className="mt-0"><OtherModulesTab onNavigate={openSection} /></TabsContent>
-          </>}
-          {access.isStaff && <TabsContent value="internal-subscriptions" className="mt-0"><InternalSubscriptionsTab /></TabsContent>}
-          {access.isSuperAdmin && <><TabsContent value="platform-control" className="mt-0"><SuperAdminControlHub onNavigate={openSection} /></TabsContent><TabsContent value="finance" className="mt-0"><StaffFinanceTab /></TabsContent><TabsContent value="commercial-codes" className="mt-0"><CommercialCodesTab /></TabsContent><TabsContent value="promotions" className="mt-0"><StaffPromotionsTab /></TabsContent><TabsContent value="newsletter" className="mt-0"><StaffNewsletterTab /></TabsContent><TabsContent value="produse-avyron" className="mt-0"><StaffProduseTab /></TabsContent><TabsContent value="subscriptions-admin" className="mt-0"><StaffSubscriptionsAdminTab /></TabsContent><TabsContent value="ai-os" className="mt-0"><AiOsConsole embedded /></TabsContent></>}
+          </>
+              )}
+              {canOpenSection("finance", access) && (
+                <TabsContent value="finance" className="mt-0">
+                  <StaffFinanceTab />
+                </TabsContent>
+              )}
+              {canOpenSection("newsletter", access) && (
+                <TabsContent value="newsletter" className="mt-0">
+                  <StaffNewsletterTab />
+                </TabsContent>
+              )}
+          {access.isStaff && (
+                <TabsContent value="internal-subscriptions" className="mt-0"><InternalSubscriptionsTab /></TabsContent>
+              )}
+          {access.isSuperAdmin && (
+                <><TabsContent value="platform-control" className="mt-0"><SuperAdminControlHub onNavigate={openSection} /></TabsContent><TabsContent value="commercial-codes" className="mt-0"><CommercialCodesTab /></TabsContent><TabsContent value="promotions" className="mt-0"><StaffPromotionsTab /></TabsContent><TabsContent value="produse-avyron" className="mt-0"><StaffProduseTab /></TabsContent><TabsContent value="subscriptions-admin" className="mt-0"><StaffSubscriptionsAdminTab /></TabsContent><TabsContent value="ai-os" className="mt-0"><AiOsConsole embedded /></TabsContent></>
+              )}
           </Suspense>
-          {access.isSuperAdmin && (tab === "overview" || tab === "profile") && <Suspense fallback={contentFallback}><div className="mt-4 grid gap-3 lg:grid-cols-2"><AiProductionEntryCard /><EngineEntryCard /></div></Suspense>}
+          {access.isSuperAdmin && (tab === "overview" || tab === "profile") && (
+                <Suspense fallback={contentFallback}><div className="mt-4 grid gap-3 lg:grid-cols-2"><AiProductionEntryCard /><EngineEntryCard /></div></Suspense>
+              )}
         </div>
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-white/[0.08] bg-[#080d1b]/95 px-2 pb-[max(.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden" aria-label="Navigare mobilă">
         <NavButton section="overview" mobile />
-        {access.isStaff ? <NavButton section="leads" mobile /> : <NavButton section="catalog" mobile />}
-        {access.isStaff ? <button type="button" aria-label={access.isSuperAdmin ? "Deschide AVY" : "Deschide AVY Core"} aria-pressed={tab === (access.isSuperAdmin ? "ai-os" : "maintenance")} onClick={() => openSection(access.isSuperAdmin ? "ai-os" : "maintenance")} className="group -mt-5 flex min-w-0 flex-col items-center justify-center gap-1 text-[9px] font-medium text-violet-100">
-          <span className="grid size-12 place-items-center rounded-full border border-violet-300/30 bg-gradient-to-br from-violet-500 to-indigo-700 shadow-[0_0_28px_rgba(124,58,237,.55)] ring-4 ring-[#080d1b]">{access.isSuperAdmin?<Sparkles className="size-5" />:<Wrench className="size-5" />}</span>
+        {access.isStaff ? (
+            <NavButton section={
+                canOpenSection("leads", access)
+                  ? "leads"
+                  : canOpenSection("finance", access)
+                    ? "finance"
+                    : "intern"
+              }
+              mobile
+            />
+          ) : (
+            <NavButton section="catalog" mobile />
+          )}
+        {access.isStaff &&
+          (access.isSuperAdmin || canOpenSection("maintenance", access)) ? (
+            <button type="button" aria-label={access.isSuperAdmin ? "Deschide AVY" : "Deschide AVY Core"} aria-pressed={tab === (access.isSuperAdmin ? "ai-os" : "maintenance")} onClick={() => openSection(access.isSuperAdmin ? "ai-os" : "maintenance")} className="group -mt-5 flex min-w-0 flex-col items-center justify-center gap-1 text-[9px] font-medium text-violet-100">
+          <span className="grid size-12 place-items-center rounded-full border border-violet-300/30 bg-gradient-to-br from-violet-500 to-indigo-700 shadow-[0_0_28px_rgba(124,58,237,.55)] ring-4 ring-[#080d1b]">{access.isSuperAdmin? (
+                  <Sparkles className="size-5" />
+                ) : (
+                  <Wrench className="size-5" />
+                )}</span>
           <span>{access.isSuperAdmin ? "AVY" : "AVY Core"}</span>
-        </button> : <NavButton section="cart" mobile />}
-        {access.isStaff ? <NavButton section="projects" mobile /> : <NavButton section="orders" mobile />}
+        </button>
+          ) : access.isStaff ? (
+            <NavButton section="intern" mobile />
+          ) : (
+            <NavButton section="cart" mobile />
+          )}
+        {access.isStaff ? (
+            <NavButton section={
+                canOpenSection("projects", access) ? "projects" : "team-staff"
+              }
+              mobile
+            />
+          ) : (
+            <NavButton section="orders" mobile />
+          )}
         <button type="button" aria-label="Deschide mai multe secțiuni" aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(true)} className={`group flex min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[9px] font-medium transition ${mobilePrimary.has(tab) ? "text-slate-500" : "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white"}`}><Ellipsis className="size-4" /><span>Mai multe</span></button>
       </nav>
     </Tabs>
@@ -255,27 +375,36 @@ export default function Profile() {
         <SheetHeader className="border-b border-white/[0.07] p-5 text-left">
           <div className="flex items-center gap-3">
             <img src={logo} alt="" className="size-10 rounded-xl ring-1 ring-white/10" />
-            <div><SheetTitle className="font-display text-base text-white">AVYRON <span className="text-violet-300">{access.isClient ? "CONT" : "OS"}</span></SheetTitle><SheetDescription className="text-xs text-slate-500">{access.isClient ? "Serviciile și documentele tale." : "Toate funcțiile autorizate, într-un singur loc."}</SheetDescription></div>
+            <div><SheetTitle className="font-display text-base text-white">AVYRON {" "}
+                  <span className="text-violet-300">{access.isClient ? "CONT" : "OS"}</span></SheetTitle><SheetDescription className="text-xs text-slate-500">{access.isClient ? "Serviciile și documentele tale." : "Toate funcțiile autorizate, într-un singur loc."}</SheetDescription></div>
           </div>
         </SheetHeader>
         <nav className="space-y-5 p-4 pb-28" aria-label="Toate secțiunile AVYRON OS">
           <button type="button" onClick={() => { setMobileMenuOpen(false); setCommandOpen(true); }} className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-violet-400/20 bg-violet-500/[0.08] px-4 text-left text-sm text-slate-200"><Search className="size-4 text-violet-300" /> Caută o secțiune sau un flux</button>
-          {access.isStaff && <section aria-label="Scurtături pentru echipă"><p className="mb-2 px-2 font-mono text-[9px] uppercase tracking-[0.18em] text-slate-500">Acces rapid</p><div className="grid grid-cols-2 gap-2">{([ ["projects", "Proiecte"], ["intern", "Chat intern"], ["os-centers", "Centre OS"], ["announcements", "Anunțuri"] ] as const).filter(([section]) => canOpenSection(section, access)).map(([section, label]) => <button key={section} type="button" onClick={() => openSection(section)} className="min-h-12 rounded-xl border border-white/[0.09] bg-white/[0.035] px-3 text-left text-xs font-semibold text-slate-200 hover:border-violet-400/30">{label}</button>)}</div></section>}
-          {mobileMoreGroups.map((group) => <section key={group.id}>
+          {access.isStaff && (
+              <section aria-label="Scurtături pentru echipă"><p className="mb-2 px-2 font-mono text-[9px] uppercase tracking-[0.18em] text-slate-500">Acces rapid</p><div className="grid grid-cols-2 gap-2">{([ ["projects", "Proiecte"], ["intern", "Chat intern"], ["os-centers", "Centre OS"], ["announcements", "Anunțuri"] ] as const).filter(([section]) => canOpenSection(section, access)).map(([section, label]) => (
+                      <button key={section} type="button" onClick={() => openSection(section)} className="min-h-12 rounded-xl border border-white/[0.09] bg-white/[0.035] px-3 text-left text-xs font-semibold text-slate-200 hover:border-violet-400/30">{label}</button>))}</div></section>
+            )}
+          {mobileMoreGroups.map((group) => (
+              <section key={group.id}>
             <button type="button" onClick={() => toggleGroup(group.id)} aria-expanded={openGroups[group.id] ?? true} className="mb-2 flex w-full items-center justify-between rounded-lg px-2 py-2 font-mono text-[9px] uppercase tracking-[0.18em] text-slate-500 hover:bg-white/[0.04]"><span>{group.label}</span><ChevronDown className={`size-3 transition-transform ${(openGroups[group.id] ?? true) ? "rotate-180" : ""}`} /></button>
             <div className={`${(openGroups[group.id] ?? true) ? "grid" : "hidden"} grid-cols-2 gap-2`}>
               {group.items.map((section) => {
                 const sectionMeta = DASHBOARD_SECTION_META[section.id];
                 const Icon = sectionMeta.icon;
                 const active = tab === section.id;
-                return <button key={section.id} type="button" onClick={() => openSection(section.id)} aria-current={active ? "page" : undefined} className={`flex min-h-20 flex-col items-start justify-between rounded-xl border p-3 text-left transition ${active ? "border-violet-400/35 bg-violet-500/15 text-white" : "border-white/[0.07] bg-white/[0.025] text-slate-300 hover:border-violet-400/25"}`}><Icon className="size-4 text-violet-300" /><span className="mt-3 text-xs font-medium leading-tight">{sectionMeta.label}</span></button>;
+                return (
+                      <button key={section.id} type="button" onClick={() => openSection(section.id)} aria-current={active ? "page" : undefined} className={`flex min-h-20 flex-col items-start justify-between rounded-xl border p-3 text-left transition ${active ? "border-violet-400/35 bg-violet-500/15 text-white" : "border-white/[0.07] bg-white/[0.025] text-slate-300 hover:border-violet-400/25"}`}><Icon className="size-4 text-violet-300" /><span className="mt-3 text-xs font-medium leading-tight">{sectionMeta.label}</span></button>
+                    );
               })}
             </div>
-          </section>)}
+          </section>
+            ))}
           <button type="button" onClick={() => void signOut().then(() => window.location.assign("/"))} className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-400/15 bg-rose-400/[0.06] px-4 py-3 text-xs font-semibold text-rose-200"><LogOut className="size-4" /> Deconectare</button>
         </nav>
       </SheetContent>
     </Sheet>
     <Suspense fallback={null}><CommandCenter open={commandOpen} onOpenChange={setCommandOpen} access={access} onNavigate={openSection} /></Suspense>
-  </main>;
+  </main>
+  );
 }

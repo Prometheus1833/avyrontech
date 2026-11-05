@@ -72,7 +72,7 @@ Imaginile importate rămân în carantină până la o scanare reală. Nicio ima
 ## Securitate și distribuire
 
 - Conturile și rolurile sunt revalidate din D1; JWT-ul nu constituie sursă de privilegii. Conturile nominalizate folosesc rolurile existente. O identitate rezervată fără cont înregistrat trebuie activată prin fluxul existent de onboarding, fără creare automată de identitate.
-- Owner are acces la zona firmei. Un Super Admin primește această zonă numai dacă are și capabilitatea globală activă `documents.company.owner`. Admin/Staff nu o moștenesc.
+- Politica locală actualizată explicit de utilizator la 5 noiembrie: Owner și orice Super Admin activ și verificat au acces la Documente SC și backupurile firmei. Înlocuiește delegarea separată prin `documents.company.owner`; Admin/Staff/Client rămân excluși. Detalii și starea de release: [Membrii Agenției și chat](./STAFF_RANKS_INTERNAL_CHAT.md).
 - Citirea, crearea, editarea, ștergerea logică/arhivarea, exportul, partajarea, aprobarea, publicarea, administrarea modelelor și backupurile sunt capabilități distincte. Accesul de citire nu autorizează distribuirea.
 - Clientul are nevoie de grant activ, apartenență curentă la beneficiar și publicare explicită pentru versiunea curentă. Istoricul este filtrat și după destinatarul fiecărei versiuni. Republicarea pentru alt destinatar nu acordă acces la versiunile anterioare și nu păstrează automat vechiul destinatar pe noua versiune.
 - Verificările acoperă listare, căutare, numărători, URL direct, versiuni, fișiere, export, notificări și distribuire. Accesul este revalidat înainte de pornirea descărcării. Răspunsurile private folosesc `private, no-store`, `nosniff` și `noindex`.

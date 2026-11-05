@@ -1110,7 +1110,7 @@ export default function DocumentCenter({
                     <Plus className="size-4" /> Creează document
                   </button>
                 )}
-                {bootstrap.platformRole === "platform_owner" && !embedded && (
+                {!!bootstrap.platformRole && !embedded && (
                   <button
                     className="dc-button"
                     onClick={() => void prepareAction("settings")}

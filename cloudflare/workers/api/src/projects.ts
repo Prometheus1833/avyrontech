@@ -1,3 +1,5 @@
+import { managedStaff, managedPermission } from "./staffAccessPolicy";
+import { hasCapability } from "./authorization";
 // Avyron API — Rute Platformă Internă pentru proiecte
 // Import și mount în src/index.ts: `app.route("/", projectsRouter);`
 //
@@ -17,7 +19,8 @@ type Vars = { userId: string; roles: Role[] };
 const uuid = () => crypto.randomUUID();
 const now = () => Date.now();
 
-export async function canAccessProject(db: D1Database, projectId: string, userId: string, roles: Role[]): Promise<{ read: boolean; write: boolean; isStaff: boolean; isOwner: boolean }> {
+async function originalProjectAccess(db: D1Database, projectId: string, userId: string, roles: Role[]): Promise<{ read: boolean; write: boolean; isStaff: boolean; isOwner: boolean;
+}> {
   const isAdmin = roles.includes("admin");
   const isStaff = roles.includes("staff") || isAdmin;
   const proj = await db.prepare("SELECT owner_user_id, organization_id FROM projects WHERE id = ?").bind(projectId)
@@ -37,7 +40,7 @@ export async function canAccessProject(db: D1Database, projectId: string, userId
     const assigned = isStaff
       ? await db.prepare("SELECT 1 FROM project_staff WHERE project_id = ? AND user_id = ?").bind(projectId, userId).first()
       : null;
-    return { read: !!assigned || isOwner || (!isStaff && await hasClientProjectGrant(db,projectId,userId)), write: !!assigned, isStaff, isOwner };
+    return { read: !!assigned || isOwner || (!isStaff && (await hasClientProjectGrant(db,projectId,userId))), write: !!assigned, isStaff, isOwner };
   }
 
   // Legacy records need the same explicit project or client grant as tenant records.
@@ -51,6 +54,33 @@ export async function canAccessProject(db: D1Database, projectId: string, userId
   if (isOwner) return { read: true, write: false, isStaff: false, isOwner: true };
   const clientGrant = await hasClientProjectGrant(db,projectId,userId);
   return { read: !!clientGrant, write: false, isStaff, isOwner: false };
+}
+
+export async function canAccessProject(
+  db: D1Database,
+  projectId: string,
+  userId: string,
+  roles: Role[],
+) {
+  const access = await originalProjectAccess(db, projectId, userId, roles);
+  if (await platformRoleForUser(db, userId)) return access;
+  const policy = await managedStaff(db, userId);
+  if (!policy) return access;
+  const all = managedPermission(policy, "projects.all");
+  const exists = all
+    ? !!(await db
+        .prepare("SELECT id FROM projects WHERE id=?")
+        .bind(projectId)
+        .first())
+    : access.read;
+  return {
+    ...access,
+    read: !!exists && managedPermission(policy, "projects.read"),
+    write:
+      !!exists &&
+      (all || access.write) &&
+      managedPermission(policy, "projects.write"),
+  };
 }
 
 async function log(db: D1Database, projectId: string, actorId: string, action: string, targetType?: string, targetId?: string, meta?: unknown) {
@@ -70,7 +100,9 @@ projectsRouter.get("/api/projects", async (c) => {
   const isAdmin = roles.includes("admin");
 
   let rows;
-  if (await platformRoleForUser(c.env.DB, userId)) {
+  if (
+    (await platformRoleForUser(c.env.DB, userId)) ||
+    (await hasCapability(c.env.DB, userId, "projects.all"))) {
     rows = await c.env.DB.prepare(
       "SELECT id, organization_id, slug, name, kind, banner_status, status, url, favicon_url, updated_at FROM projects ORDER BY updated_at DESC LIMIT 200"
     ).all();
@@ -98,7 +130,7 @@ projectsRouter.get("/api/projects", async (c) => {
            ON membership.organization_id = project.organization_id
           AND membership.user_id = ? AND membership.status = 'active'
         WHERE project.owner_user_id = ? OR membership.user_id IS NOT NULL
-          OR ${clientProjectGrantSql('project')}
+          OR ${clientProjectGrantSql("project")}
         ORDER BY project.updated_at DESC`,
     ).bind(userId, userId,userId).all();
   }
@@ -111,7 +143,8 @@ projectsRouter.get("/api/projects", async (c) => {
            FROM commerce_orders
           WHERE user_id=? AND status='paid'
           ORDER BY updated_at DESC LIMIT 100`,
-      ).bind(userId).all<{ id: string; items_json: string; total_cents: number; currency: string; status: string; updated_at: number }>();
+      ).bind(userId).all<{ id: string; items_json: string; total_cents: number; currency: string; status: string; updated_at: number;
+        }>();
       purchases = results.map((order) => {
         let items: Array<Record<string, unknown>> = [];
         try {
@@ -172,6 +205,8 @@ projectsRouter.get("/api/projects", async (c) => {
 projectsRouter.post("/api/projects", async (c) => {
   const roles = c.get("roles");
   if (!roles.includes("staff") && !roles.includes("admin")) return c.json({ error: { code: "forbidden" } }, 403);
+  const ranked = await managedStaff(c.env.DB, c.get("userId"));
+  if (ranked && !managedPermission(ranked, "projects.create")) return c.json({ error: { code: "forbidden" } }, 403);
   const userId = c.get("userId");
   const b = (await c.req.json().catch(() => ({}))) as {
     name?: string; slug?: string; kind?: string; url?: string; description?: string;
@@ -189,7 +224,12 @@ projectsRouter.post("/api/projects", async (c) => {
   if (clientOrganization?.organization_id !== (b.organization_id || undefined)) {
     return c.json({ error: { code: "organization_scope_denied" } }, 403);
   }
-  if (!b.organization_id && !(await platformRoleForUser(c.env.DB, userId))) {
+  const broadCreation =
+    (await hasCapability(c.env.DB, userId, "projects.create")) &&
+    (await hasCapability(c.env.DB, userId, "projects.all"));
+  if (!b.organization_id && !(await platformRoleForUser(c.env.DB, userId)) &&
+    !broadCreation
+  ) {
     const access = await c.env.DB.prepare("SELECT 1 FROM client_account_access WHERE client_id = ? AND user_id = ?")
       .bind(b.client_id, userId).first();
     if (!access) return c.json({ error: { code: "client_scope_denied" } }, 403);
@@ -209,7 +249,8 @@ projectsRouter.post("/api/projects", async (c) => {
       platformRoleForUser(c.env.DB, userId),
       organizationRoleForUser(c.env.DB, b.organization_id, userId),
     ]);
-    const canCreate = platformRole !== null || ["owner", "admin", "manager"].includes(membership || "");
+    const canCreate = platformRole !== null ||
+      broadCreation || ["owner", "admin", "manager"].includes(membership || "");
     if (!canCreate || clientOrganization?.organization_id !== b.organization_id) {
       return c.json({ error: { code: "organization_scope_denied" } }, 403);
     }
@@ -313,7 +354,8 @@ projectsRouter.post("/api/projects/:id/proposals", async (c) => {
   const id = c.req.param("id");
   const perm = await canAccessProject(c.env.DB, id, c.get("userId"), c.get("roles"));
   if (!perm.read) return c.json({ error: { code: "forbidden" } }, 403);
-  const b = (await c.req.json().catch(() => ({}))) as { title?: string; description?: string };
+  const b = (await c.req.json().catch(() => ({}))) as { title?: string; description?: string;
+  };
   if (!b.title) return c.json({ error: { code: "invalid_input" } }, 400);
   const pid = uuid();
   const t = now();
@@ -330,7 +372,8 @@ projectsRouter.patch("/api/proposals/:id", async (c) => {
   if (!prop) return c.json({ error: { code: "not_found" } }, 404);
   const perm = await canAccessProject(c.env.DB, prop.project_id, c.get("userId"), c.get("roles"));
   if (!perm.write) return c.json({ error: { code: "forbidden", message: "Doar staff-ul poate schimba starea propunerilor" } }, 403);
-  const b = (await c.req.json().catch(() => ({}))) as { status?: string; title?: string; description?: string };
+  const b = (await c.req.json().catch(() => ({}))) as { status?: string; title?: string; description?: string;
+  };
   const allowed = ["status", "title", "description"];
   const sets: string[] = [], vals: Array<string | number | null> = [];
   for (const k of allowed) {
@@ -354,7 +397,8 @@ projectsRouter.post("/api/projects/:id/links", async (c) => {
   const id = c.req.param("id");
   const perm = await canAccessProject(c.env.DB, id, c.get("userId"), c.get("roles"));
   if (!perm.write) return c.json({ error: { code: "forbidden" } }, 403);
-  const b = (await c.req.json().catch(() => ({}))) as { kind?: string; label?: string; url?: string; id?: string };
+  const b = (await c.req.json().catch(() => ({}))) as { kind?: string; label?: string; url?: string; id?: string;
+  };
   if (!b.kind || !b.label || !b.url) return c.json({ error: { code: "invalid_input" } }, 400);
   const url = normalizeExternalLink(b.url);
   if (!url) return c.json({ error: { code: "invalid_url" } }, 400);
@@ -406,7 +450,8 @@ projectsRouter.get("/api/metadata/extract", async (c) => {
   try {
     const { html, url } = await fetchMetadataHtml(target);
     const pick = (re: RegExp) => html.match(re)?.[1]?.trim();
-    const abs = (value?: string) => (value ? new URL(value, url).toString() : undefined);
+    const abs = (value?: string) =>
+      value ? new URL(value, url).toString() : undefined;
     const title = pick(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) ?? pick(/<title[^>]*>([^<]+)<\/title>/i);
     const description = pick(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i) ?? pick(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i);
     const image = abs(pick(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i));

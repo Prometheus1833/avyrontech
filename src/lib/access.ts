@@ -1,3 +1,4 @@
+import { STAFF_MANAGED, STAFF_SECTION_PERMISSIONS } from "@/shared/staffAccess";
 // Model central de acces pentru platforma internă.
 // Un singur loc definește cine vede ce: butoane, secțiuni și date sensibile.
 export type AppRole = "user" | "staff" | "admin";
@@ -64,7 +65,8 @@ export type SectionId =
 
 export type SectionDef = {
   id: SectionId;
-  group: "overview" | "account" | "projects" | "billing" | "documents" | "servicii" | "produse" | "activity" | "platform" | "os" | "other";
+  group:
+    | "overview" | "account" | "projects" | "billing" | "documents" | "servicii" | "produse" | "activity" | "platform" | "os" | "other";
   audience: Audience;
   /** Secțiunile false rămân accesibile din huburi și căutare, fără duplicate în sidebar. */
   navigation?: boolean;
@@ -139,9 +141,25 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "resources", group: "documents", audience: "staff", navigation: false, keywords: ["resurse", "documente", "ghid", "siteuri", "campuri"] },
 ];
 
-const canOpenDefinition = (section: SectionDef, access: Access) =>
-  canSee(section.audience, access)
-  || Boolean(section.requiredCapability && access.capabilities.includes(section.requiredCapability));
+const canOpenDefinition = (section: SectionDef, access: Access) => {
+  if (access.capabilities.includes(STAFF_MANAGED) && !access.isSuperAdmin) {
+    if (["profile", "settings"].includes(section.id)) return true;
+    return (STAFF_SECTION_PERMISSIONS[section.id] || []).some((key) =>
+      access.capabilities.includes(key),
+    );
+  }
+  if (section.id === "finance" && access.capabilities.includes("finance.read"))
+    return true;
+  if (
+    section.id === "newsletter" &&
+    access.capabilities.includes("newsletter.manage")
+  )
+    return true;
+  return (
+    canSee(section.audience, access)
+  || Boolean(section.requiredCapability && access.capabilities.includes(section.requiredCapability))
+  );
+};
 
 export const sectionsFor = (a: Access) => SECTIONS.filter((s) => canOpenDefinition(s, a));
 
@@ -150,4 +168,10 @@ export const canOpenSection = (id: string, a: Access) => {
   return !!s && canOpenDefinition(s, a);
 };
 
-export const defaultSection = (_a: Access): SectionId => "overview";
+export const defaultSection = (a: Access): SectionId =>
+  a.capabilities.includes("staff.rank.avy_contabil") &&
+  canOpenSection("finance", a)
+    ? "finance"
+    : a.capabilities.includes(STAFF_MANAGED) && !canOpenSection("overview", a)
+      ? "profile"
+      : "overview";

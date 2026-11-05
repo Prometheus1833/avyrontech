@@ -1,3 +1,5 @@
+import { staffAccessRouter, planStaffAssignment, staffAssignmentSchema, type StaffAssignmentInput } from "./staffAccess";
+import { STAFF_OPERATIONAL_EMAIL, staffRequestAllowed, canManageStaffTarget, managedStaff } from "./staffAccessPolicy";
 import { subscriptionOperationsRouter } from "./subscriptionOperations";
 import { serveSurveyHost } from "../../../../src/worker/surveyHost";
 import { privilegedMfaSatisfied } from "./mfaPolicy";
@@ -25,7 +27,7 @@ import { funnelSummary,leadPipeline,recordPageEvent } from "./analytics";
 import { checkRateLimit,clientIp,hashKey,verifyTurnstile } from "./antispam";
 import { publicApiCacheRequest } from "./apiCache";
 import { API_VERSION,apiDiscovery,isApiHostname,isApiSurfaceRequest,normalizeVersionedApiRequest,openApiDocument } from "./apiGateway";
-import { isReservedPlatformEmail,platformRoleForUser } from "./authorization";
+import { hasCapability,isReservedPlatformEmail,platformRoleForUser } from "./authorization";
 import { forcedPasswordAllowedPath,mfaAuthEnabled,normalizeLoginPhone,normalizeUsername,sessionLifetimeSeconds,turnstileAuthEnabled,uniqueStaffPhoneMatch } from "./authPolicy";
 import { cleanupDocumentExports,documentCenterRouter } from "./documentCenter";
 import { domainRouter } from "./domain";
@@ -202,6 +204,7 @@ async function requireAuth(c: Context<AppBindings>, next: Next) {
   c.set("sessionId", payload.sid);
   c.set("roles", liveRoles.length ? liveRoles : ["user"]);
   c.set("mfaVerified", session.mfa_verified_at !== null);
+  if (!await staffRequestAllowed(c.env.DB, payload.sub, c.req.path, c.req.method)) return c.json({error:{code:"staff_permission_required",message:"Rangul curent nu permite această operațiune."}},403);
   await next();
 }
 const requireRole = (...roles: Role[]) => async (c: Context<AppBindings>, next: Next) => {
@@ -217,7 +220,7 @@ async function isSuperAdmin(c: Context<AppBindings>): Promise<boolean> {
   return (await platformRoleForUser(c.env.DB, c.get("userId"))) !== null;
 }
 const requireSuperAdmin = async (c: Context<AppBindings>, next: Next) => {
-  if (!(await isSuperAdmin(c)))
+  if (!(await isSuperAdmin(c)) && !(c.req.path.startsWith("/api/newsletter/admin") && await hasCapability(c.env.DB,c.get("userId"),"newsletter.manage")))
     return c.json({ error: { code: "forbidden", message: "Doar super adminul are acces" } }, 403);
   if (mfaAuthEnabled(c.env) && !(await privilegedMfaSatisfied(c)))
     return c.json({ error: { code: "mfa_required", message: "MFA este obligatoriu pentru acces privilegiat" } }, 403);
@@ -1146,7 +1149,7 @@ const maskEmail = (email: string) => {
   return `${name.slice(0, 2)}${"*".repeat(Math.max(1, name.length - 2))}@${domain}`;
 };
 
-const CODEX_OPERATOR_EMAIL = "codexagent@avyron.ro";
+const CODEX_OPERATOR_EMAIL = STAFF_OPERATIONAL_EMAIL;
 const CODEX_OPERATOR_USERNAME = "codex-agent";
 const CODEX_OPERATOR_CAPABILITIES = [
   "leads.read", "leads.create", "leads.write", "leads.activity.create", "leads.reminder.manage",
@@ -1155,7 +1158,10 @@ const CODEX_OPERATOR_CAPABILITIES = [
 
 // ─── Business CRUD (exemplu: clients) ───────────────────────────────────
 app.get("/api/clients", requireAuth, requireRole("staff", "admin"), async (c) => {
-  const { results } = await c.env.DB.prepare("SELECT id,company_name,contact_name,email,phone,status,created_at FROM clients ORDER BY created_at DESC LIMIT 200").all();
+  const narrow=!!await managedStaff(c.env.DB,c.get("userId"))&&!await hasCapability(c.env.DB,c.get("userId"),"clients.read");
+  const all=await hasCapability(c.env.DB,c.get("userId"),"projects.all");
+  const scope=narrow&&!all?"WHERE EXISTS(SELECT 1 FROM client_account_access ca WHERE ca.client_id=clients.id AND ca.user_id=?) OR EXISTS(SELECT 1 FROM client_organizations co JOIN organization_memberships om ON om.organization_id=co.organization_id WHERE co.client_id=clients.id AND om.user_id=? AND om.status='active')":"";
+  const {results}=await c.env.DB.prepare(`SELECT id,company_name,${narrow?"NULL contact_name,NULL email,NULL phone":"contact_name,email,phone"},status,created_at FROM clients ${scope} ORDER BY created_at DESC LIMIT 200`).bind(...(scope?[c.get("userId"),c.get("userId")]:[])).all();
   return c.json({ data: results });
 });
 
@@ -1174,7 +1180,9 @@ app.get("/api/admin/users", requireAuth, requireRole("staff", "admin"), async (c
   ).bind(now()).all<Record<string, unknown>>();
   if ((await rolesFor(c.env.DB, c.get("userId"))).includes("admin")) return c.json({ data: results });
   // Staff-ul vede doar ce îi trebuie pentru alocare; fără date personale complete.
-  const masked = results.map((r) => ({
+  const projectOptions=await hasCapability(c.env.DB,c.get("userId"),"projects.create");
+  const restrictedDirectory=await managedStaff(c.env.DB,c.get("userId"))&&!await hasCapability(c.env.DB,c.get("userId"),"clients.read")&&!projectOptions;
+  const masked = results.filter(r=>!restrictedDirectory||/(^|,)(staff|admin)(,|$)/.test(String(r.roles||""))).map((r) => ({
     id: r.id,
     display_name: r.display_name ?? r.pseudonym ?? null,
     avatar_url: r.avatar_url,
@@ -1189,7 +1197,7 @@ app.get("/api/admin/users", requireAuth, requireRole("staff", "admin"), async (c
 app.post("/api/admin/users", requireAuth, requireSuperAdmin, async (c) => {
   const actorUserId = c.get("userId");
   const body = await c.req.json().catch(() => ({})) as {
-    email?: string; username?: string; displayName?: string; temporaryPassword?: string; accessLevel?: string;
+    email?: string; username?: string; displayName?: string; temporaryPassword?: string; accessLevel?: string; staffAssignment?: unknown;
   };
   const email = String(body.email || "").trim().toLowerCase();
   const username = normalizeUsername(body.username);
@@ -1208,6 +1216,18 @@ app.post("/api/admin/users", requireAuth, requireSuperAdmin, async (c) => {
   if (accessLevel !== "user" && accessLevel !== "staff" && accessLevel !== "admin") {
     return c.json({ error: { code: "invalid_access_level", message: "Nivelul de acces nu este valid" } }, 400);
   }
+  let staffAssignment: StaffAssignmentInput | null = null;
+  if (body.staffAssignment !== undefined) {
+    const parsed=staffAssignmentSchema.safeParse(body.staffAssignment);
+    if(!parsed.success || !parsed.data.rankId || parsed.data.revision!==0) return c.json({error:{code:"invalid_staff_assignment"}},400);
+    staffAssignment=parsed.data;
+    if(!await privilegedMfaSatisfied(c))return c.json({error:{code:"mfa_required"}},403);
+    if(["platform_owner","superadmin"].includes(staffAssignment.rankId!)&&await platformRoleForUser(c.env.DB,actorUserId)!=="platform_owner")return c.json({error:{code:"platform_owner_required"}},403);
+  }
+  const creationKey=c.req.header("idempotency-key")||"";
+  if(staffAssignment&&!/^[A-Za-z0-9_.:-]{16,128}$/.test(creationKey))return c.json({error:{code:"idempotency_key_required"}},400);
+  const creationHash=staffAssignment?await sha256(await c.req.text()):null;
+  if(staffAssignment){const old=await c.env.DB.prepare("SELECT request_hash,response_json FROM idempotency_keys WHERE scope=? AND idempotency_key=? AND expires_at>?").bind("staff-create:"+actorUserId,creationKey,now()).first<{request_hash:string;response_json:string}>();if(old)return old.request_hash===creationHash?c.json(JSON.parse(old.response_json),201):c.json({error:{code:"idempotency_key_reused"}},409);}
   if (await isReservedPlatformEmail(c.env.DB, email)) {
     return c.json({ error: { code: "platform_identity_requires_verification" } }, 403);
   }
@@ -1218,8 +1238,13 @@ app.post("/api/admin/users", requireAuth, requireSuperAdmin, async (c) => {
 
   const userId = uuid();
   const timestamp = now();
-  const roles: Role[] = accessLevel === "user" ? ["user"] : ["user", accessLevel];
-  await c.env.DB.batch([
+  const selectedLevel=staffAssignment?(["platform_owner","superadmin"].includes(staffAssignment.rankId!)?"admin":"staff"):accessLevel;
+  const roles: Role[] = selectedLevel === "user" ? ["user"] : ["user", selectedLevel as Role];
+  let assignmentPlan:D1PreparedStatement[]=[];
+  try{if(staffAssignment)assignmentPlan=await planStaffAssignment(c,{id:userId,email,email_verified:1},staffAssignment,true);}catch(cause){return c.json({error:{code:String(cause).replace("Error: staff_access_","")}},403);}
+  const createdResponse={data:{id:userId,email,username,display_name:displayName,roles,must_change_password:1}};
+  try { await c.env.DB.batch([
+    ...(staffAssignment?[c.env.DB.prepare("INSERT INTO idempotency_keys(scope,idempotency_key,request_hash,response_status,response_json,created_at,expires_at) VALUES(?,?,?,201,?,?,?)").bind("staff-create:"+actorUserId,creationKey,creationHash,JSON.stringify(createdResponse),timestamp,timestamp+86400000)]:[]),
     c.env.DB.prepare(
       `INSERT INTO users
         (id,email,username,password_hash,display_name,email_verified,must_change_password,created_at,updated_at)
@@ -1230,13 +1255,24 @@ app.post("/api/admin/users", requireAuth, requireSuperAdmin, async (c) => {
        VALUES (?,?,'individual','ro','system',?)`,
     ).bind(userId, displayName, timestamp),
     ...roles.map((role) => c.env.DB.prepare("INSERT INTO user_roles (user_id,role) VALUES (?,?)").bind(userId, role)),
+    ...assignmentPlan,
     c.env.DB.prepare(
       `INSERT INTO security_events
         (id,actor_user_id,actor_type,action,target_type,target_id,outcome,severity,request_id,ip_hash,metadata_json,created_at)
        VALUES (?,?,'user','admin.user_created','user',?,'allowed','warning',?,?,?,?)`,
     ).bind(uuid(), actorUserId, userId, c.get("requestId") || null, await hashKey(clientIp(c.req.raw)), JSON.stringify({ email, username, roles }), timestamp),
   ]);
-  return c.json({ data: { id: userId, email, username, display_name: displayName, roles, must_change_password: 1 } }, 201);
+  } catch (cause) {
+    if (/UNIQUE constraint failed/.test(String(cause))) {
+      if (staffAssignment) {
+        const replay = await c.env.DB.prepare("SELECT request_hash,response_json FROM idempotency_keys WHERE scope=? AND idempotency_key=? AND expires_at>?").bind("staff-create:"+actorUserId,creationKey,now()).first<{request_hash:string;response_json:string}>();
+        if (replay) return replay.request_hash === creationHash ? c.json(JSON.parse(replay.response_json),201) : c.json({error:{code:"idempotency_key_reused"}},409);
+      }
+      return c.json({error:{code:"identity_taken",message:"Emailul sau username-ul este deja folosit"}},409);
+    }
+    throw cause;
+  }
+  return c.json(createdResponse, 201);
 });
 
 app.get("/api/admin/agent-operators/codex", requireAuth, requireSuperAdmin, async (c) => {
@@ -1367,6 +1403,7 @@ app.post("/api/admin/agent-operators/codex/synchronize", requireAuth, requireSup
 
 app.patch("/api/admin/users/:userId/status", requireAuth, requireSuperAdmin, async (c) => {
   const targetUserId = String(c.req.param("userId") || "");
+  if(!await canManageStaffTarget(c.env.DB,c.get("userId"),targetUserId))return c.json({error:{code:"platform_owner_required"}},403);
   const body = await c.req.json().catch(() => ({})) as { enabled?: unknown };
   if (typeof body.enabled !== "boolean") return c.json({ error: { code: "invalid_status" } }, 400);
   if (targetUserId === c.get("userId") && !body.enabled) {
@@ -1394,7 +1431,8 @@ app.patch("/api/admin/users/:userId/status", requireAuth, requireSuperAdmin, asy
 });
 
 app.post("/api/admin/users/:userId/temporary-password", requireAuth, requireSuperAdmin, async (c) => {
-  const targetUserId = c.req.param("userId");
+  const targetUserId = String(c.req.param("userId") || "");
+  if(!await canManageStaffTarget(c.env.DB,c.get("userId"),targetUserId))return c.json({error:{code:"platform_owner_required"}},403);
   const body = await c.req.json().catch(() => ({})) as { temporaryPassword?: string };
   const temporaryPassword = String(body.temporaryPassword || "");
   if (temporaryPassword.length < 10 || !/[A-Z]/.test(temporaryPassword) || !/[0-9]/.test(temporaryPassword)) {
@@ -1418,7 +1456,8 @@ app.post("/api/admin/users/:userId/temporary-password", requireAuth, requireSupe
 });
 
 app.delete("/api/admin/users/:userId/sessions", requireAuth, requireSuperAdmin, async (c) => {
-  const targetUserId = c.req.param("userId");
+  const targetUserId = String(c.req.param("userId") || "");
+  if(!await canManageStaffTarget(c.env.DB,c.get("userId"),targetUserId))return c.json({error:{code:"platform_owner_required"}},403);
   const timestamp = now();
   const result = await c.env.DB.prepare(
     "UPDATE sessions SET revoked_at=?,revoked_reason='admin_revoked' WHERE user_id=? AND revoked_at IS NULL",
@@ -1434,8 +1473,10 @@ app.patch("/api/admin/users/:userId/roles", requireAuth, requireSuperAdmin, asyn
     await recordSecurityEvent(c, actorUserId, "admin.user_roles_rate_limited", "denied", "warning");
     return c.json({ error: { code: "rate_limited", message: "Prea multe modificări de acces. Încearcă mai târziu." } }, 429);
   }
-  const targetUserId = c.req.param("userId");
+  const targetUserId = String(c.req.param("userId") || "");
   if (!targetUserId) return c.json({ error: { code: "user_id_required", message: "Identificatorul contului lipsește" } }, 400);
+  if(!await canManageStaffTarget(c.env.DB,c.get("userId"),targetUserId))return c.json({error:{code:"platform_owner_required"}},403);
+  if(await managedStaff(c.env.DB,targetUserId))return c.json({error:{code:"use_staff_access_manager"}},409);
   const body = await c.req.json<{ accessLevel?: unknown }>().catch(() => null);
   const accessLevel = body?.accessLevel;
   if (accessLevel !== "user" && accessLevel !== "staff" && accessLevel !== "admin") {
@@ -1693,6 +1734,8 @@ app.route("/", subscriptionOperationsRouter);
 app.route("/", adminOperationsRouter);
 app.route("/", financeRouter);
 app.route("/", operationsOAuthRouter);
+app.use("/api/staff-access*", requireAuth, requirePrivilegedMfa);
+app.route("/",staffAccessRouter);
 app.use("/api/workspace/*", requireAuth, requirePrivilegedMfa);
 app.route("/", workspaceRouter);
 app.use("/api/operations/*", requireAuth, requirePrivilegedMfa);

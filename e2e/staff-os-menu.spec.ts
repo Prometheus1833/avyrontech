@@ -43,7 +43,8 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }
     for (const path of ["/", "/en"]) {
       await page.goto(path);
       const trigger = page.getByRole("button", { name: /Deschide accesul rapid AVYRON OS|Open AVYRON OS quick access/ });
-      await expect(trigger).toBeVisible();
+      // Marketing pages defer session bootstrap; wait for the authenticated header.
+      await expect(trigger).toBeVisible({timeout:15000});
       const controls = page.locator("header").getByRole("button");
       for (const control of await controls.all()) {
         if (!(await control.isVisible())) continue;

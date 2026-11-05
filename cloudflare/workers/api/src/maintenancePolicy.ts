@@ -1,3 +1,5 @@
+import { hasCapability } from "./authorization";
+import { managedStaff, managedPermission } from "./staffAccessPolicy";
 import type { Env, Role } from "./types";
 import {
   platformRoleForUser,
@@ -20,8 +22,27 @@ export async function maintenanceWorkAccess(
   userId: string,
   roles: Role[],
 ) {
+  const policy = await managedStaff(env.DB, userId);
+  if (policy && !managedPermission(policy, "maintenance.read"))
+    return { read: false, write: false };
   const original = await canAccessProject(env.DB, projectId, userId, roles);
-  if (original.write) return { read: true, write: true };
+  if (policy && (await hasCapability(env.DB, userId, "maintenance.manage"))) {
+    const exists = !!(await env.DB.prepare("SELECT 1 FROM projects WHERE id=?")
+      .bind(projectId)
+      .first());
+    return { read: exists, write: exists };
+  }
+  const canWork = !policy || managedPermission(policy, "maintenance.work");
+  if (
+    policy &&
+    (await env.DB.prepare(
+      "SELECT 1 FROM project_staff WHERE project_id=? AND user_id=?",
+    )
+      .bind(projectId, userId)
+      .first())
+  )
+    return { read: true, write: canWork };
+  if (original.write) return { read: true, write: canWork };
   const staff = roles.some((r) => r === "staff" || r === "admin");
   const assigned =
     staff &&
@@ -30,7 +51,8 @@ export async function maintenanceWorkAccess(
     )
       .bind(projectId, userId)
       .first());
-  if (original.read || assigned) return { read: true, write: assigned };
+  if (original.read || assigned)
+    return { read: true, write: assigned && canWork };
   const grant =
     !staff && (await hasClientProjectGrant(env.DB, projectId, userId));
   return { read: !!grant, write: false };
@@ -41,7 +63,9 @@ export async function maintenanceActor(
   roles: Role[],
 ) {
   return {
-    manage: !!(await platformRoleForUser(env.DB, userId)),
+    manage:
+      !!(await platformRoleForUser(env.DB, userId)) ||
+      (await hasCapability(env.DB, userId, "maintenance.manage")),
     staff: roles.some((r) => r === "staff" || r === "admin"),
   };
 }

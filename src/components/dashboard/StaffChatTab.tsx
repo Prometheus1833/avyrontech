@@ -1,48 +1,723 @@
-import { useEffect, useRef, useState } from 'react';
-import { workspaceApi } from '@/lib/workspaceApi';
-import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { useSearchParams } from 'react-router-dom';
-type Member={id:string;display_name:string;staff_role:string|null};
-type Message={id:string;author_id:string;content:string;created_at:string};
-const channels={general:'General',dev:'Dezvoltare',design:'Design',marketing:'Marketing',random:'Pauză'};
-export function StaffChatTab(){
- const {user}=useAuth();
- const [params,setParams]=useSearchParams();
- const [members,setMembers]=useState<Member[]>([]),[messages,setMessages]=useState<Message[]>([]),[target,setTarget]=useState(()=>params.get('dm')?`dm:${params.get('dm')}`:'channel:general'),[content,setContent]=useState(''),[error,setError]=useState(''),[sending,setSending]=useState(false);
- const [older,setOlder]=useState(false),[offset,setOffset]=useState(0);
- const [refreshTick,setRefreshTick]=useState(0);
- const [memberQuery,setMemberQuery]=useState('');
- const messageListRef=useRef<HTMLDivElement>(null);
- const keepAtBottomRef=useRef(true);
- const channel=target.startsWith('channel:')?target.slice(8):'general',recipient=target.startsWith('dm:')?target.slice(3):null;
- useEffect(()=>{void workspaceApi.list<Member>('staff').then(r=>setMembers(r.data)).catch(e=>setError(e.message));},[]);
- useEffect(()=>{const dm=params.get('dm');if(dm)setTarget(`dm:${dm}`);},[params]);
- useEffect(()=>{
-  let active=true;
-  let latest=0;
-  const load=async()=>{
-   const version=++latest;
-   try{const query=new URLSearchParams({channel,limit:'50',offset:String(offset)});if(recipient)query.set('recipient_id',recipient);
-    const r=await workspaceApi.list<Message>(`chat?${query}`);if(!active||version!==latest)return;setMessages(r.data);setOlder(r.data.length===50);setError('');
-   }catch(e){if(!active||version!==latest)return;setError(e instanceof Error?e.message:'Chatul nu poate fi încărcat.');}
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ArrowDown,
+  ArrowLeft,
+  Check,
+  Hash,
+  MessageCircle,
+  RefreshCw,
+  Search,
+  Send,
+  Smile,
+  Users,
+  X,
+} from "lucide-react";
+import { workspaceApi } from "@/lib/workspaceApi";
+import { useAuth } from "@/hooks/useAuth";
+import { staffRankLabel, STAFF_MANAGED } from "@/shared/staffAccess";
+import { toast } from "sonner";
+import { useSearchParams } from "react-router-dom";
+import "./staffChat.css";
+type Member = {
+  id: string;
+  display_name: string;
+  staff_role: string | null;
+  rank_id?: string | null;
+};
+type Message = {
+  id: string;
+  author_id: string;
+  content: string;
+  created_at: string;
+};
+type Thread = {
+  target: string;
+  last_id: string;
+  last_content: string;
+  last_at: string;
+  unread: number;
+};
+const channels = {
+  general: "General",
+  dev: "Dezvoltare",
+  design: "Design",
+  marketing: "Marketing",
+  random: "Pauză",
+};
+const fold = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("ro");
+const clock = (s: string) =>
+  new Date(s).toLocaleTimeString("ro-RO", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+const day = (s: string) =>
+  new Date(s).toLocaleDateString("ro-RO", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+function lastItem<T>(items: T[]) {
+  return items[items.length - 1];
+}
+export function StaffChatTab() {
+  const { user, capabilities } = useAuth(),
+    [params, setParams] = useSearchParams();
+  const [members, setMembers] = useState<Member[]>([]),
+    [threads, setThreads] = useState<Thread[]>([]),
+    [messages, setMessages] = useState<Message[]>([]);
+  const [target, setTarget] = useState(() =>
+      params.get("dm") ? `dm:${params.get("dm")}` : "channel:general",
+    ),
+    [mobileOpen, setMobileOpen] = useState(() => !!params.get("dm"));
+  const [query, setQuery] = useState(""),
+    [messageSearch, setMessageSearch] = useState(""),
+    [searchOpen, setSearchOpen] = useState(false),
+    [emojiOpen, setEmojiOpen] = useState(false);
+  const [content, setContent] = useState(""),
+    [loading, setLoading] = useState(true),
+    [error, setError] = useState(""),
+    [directoryError, setDirectoryError] = useState(""),
+    [sendingTarget, setSendingTarget] = useState<string | null>(null),
+    [older, setOlder] = useState(false),
+    [loadingOlder, setLoadingOlder] = useState(false),
+    [tick, setTick] = useState(0),
+    [newMessages, setNewMessages] = useState(false);
+  const drafts = useRef(new Map<string, string>()),
+    attempts = useRef(new Map<string, { content: string; key: string }>()),
+    targetRef = useRef(target),
+    contentRef = useRef(content),
+    listRef = useRef<HTMLDivElement>(null),
+    inputRef = useRef<HTMLTextAreaElement>(null),
+    keepBottom = useRef(true),
+    read = useRef(new Map<string, string>()),
+    sendLock = useRef(false),
+    sequence = useRef(0),
+    loadedTarget = useRef("");
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+  targetRef.current = target;
+  contentRef.current = content;
+  const channel = target.startsWith("channel:") ? target.slice(8) : "general",
+    recipient = target.startsWith("dm:") ? target.slice(3) : null;
+  const member = members.find((m) => m.id === recipient),
+    name = recipient
+      ? member?.display_name || "Membru indisponibil"
+      : channels[channel as keyof typeof channels] || "Conversație";
+  const canSend =
+    (!capabilities.includes(STAFF_MANAGED) ||
+      capabilities.includes("chat.write")) &&
+    (!recipient || !!member);
+  const loadDirectory = useCallback(async () => {
+    try {
+      setMembers((await workspaceApi.list<Member>("staff")).data);
+      setDirectoryError("");
+    } catch (e) {
+      setDirectoryError((e as Error).message);
+    }
+  }, []);
+  const loadThreads = useCallback(async () => {
+    try {
+      setThreads((await workspaceApi.list<Thread>("chat/conversations")).data);
+    } catch {
+      /* The selected conversation reports its own network state; keep the last previews. */
+    }
+  }, []);
+  useEffect(() => {
+    void loadDirectory();
+    void loadThreads();
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") void loadThreads();
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [loadDirectory, loadThreads]);
+  const markRead = useCallback(
+    async (last: Message) => {
+      if (
+        loadedTarget.current !== targetRef.current ||
+        document.visibilityState !== "visible" ||
+        !keepBottom.current ||
+        read.current.get(targetRef.current) === last.id
+      )
+        return;
+      if (matchMedia("(max-width: 700px)").matches && !mobileOpen) return;
+      const key = targetRef.current;
+      read.current.set(key, last.id);
+      try {
+        await workspaceApi.write("chat/read", {
+          target: key,
+          messageId: last.id,
+        });
+        setThreads((old) =>
+          old.map((t) => (t.target === key ? { ...t, unread: 0 } : t)),
+        );
+      } catch {
+        read.current.delete(key);
+      }
+    },
+    [mobileOpen],
+  );
+  useEffect(() => {
+    const dm = params.get("dm");
+    if (dm && targetRef.current !== `dm:${dm}`) {
+      drafts.current.set(targetRef.current, contentRef.current);
+      const next = `dm:${dm}`;
+      setMessages([]);
+      setLoading(true);
+      loadedTarget.current = "";
+      setTarget(next);
+      setContent(drafts.current.get(next) || "");
+      setMobileOpen(true);
+    }
+  }, [params]);
+  useEffect(() => {
+    let active = true;
+    const current = ++sequence.current;
+    loadedTarget.current = "";
+    setMessages([]);
+    setLoading(true);
+    setError("");
+    keepBottom.current = true;
+    setNewMessages(false);
+    const load = async () => {
+      try {
+        const q = new URLSearchParams({ channel, limit: "50" });
+        if (recipient) q.set("recipient_id", recipient);
+        const result = await workspaceApi.list<Message>(`chat?${q}`);
+        if (!active || sequence.current !== current) return;
+        loadedTarget.current = targetRef.current;
+        setMessages((old) => {
+          const merged = new Map(old.map((m) => [m.id, m]));
+          for (const m of result.data) merged.set(m.id, m);
+          return [...merged.values()].sort(
+            (a, b) =>
+              a.created_at.localeCompare(b.created_at) ||
+              a.id.localeCompare(b.id),
+          );
+        });
+        setOlder((old) =>
+          messagesRef.current.length > 50 ? old : result.data.length === 50,
+        );
+        setLoading(false);
+        setError("");
+        if (
+          result.data.length &&
+          !keepBottom.current &&
+          lastItem(result.data)?.id !== lastItem(messagesRef.current)?.id
+        )
+          setNewMessages(true);
+      } catch (e) {
+        if (active && sequence.current === current) {
+          setError((e as Error).message);
+          setLoading(false);
+        }
+      }
+    };
+    void load();
+    const visible = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    const timer = setInterval(visible, 15000);
+    document.addEventListener("visibilitychange", visible);
+    return () => {
+      active = false;
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", visible);
+    };
+  }, [channel, recipient, tick]);
+  useEffect(() => {
+    if (keepBottom.current) {
+      const list = listRef.current;
+      if (list) list.scrollTop = list.scrollHeight;
+    }
+    const last = lastItem(messages);
+    if (last) void markRead(last);
+  }, [messages, markRead]);
+  const choose = (next: string) => {
+    if (next !== target) {
+      drafts.current.set(target, content);
+      setMessages([]);
+      setLoading(true);
+      loadedTarget.current = "";
+      setTarget(next);
+      setContent(drafts.current.get(next) || "");
+      setMessageSearch("");
+      setSearchOpen(false);
+      setEmojiOpen(false);
+    }
+    setMobileOpen(true);
+    const p = new URLSearchParams(params);
+    if (next.startsWith("dm:")) p.set("dm", next.slice(3));
+    else p.delete("dm");
+    setParams(p, { replace: true });
   };
-  void load();
-  const onVisible=()=>{if(document.visibilityState==='visible')void load();};
-  const timer=setInterval(onVisible,15000);
-  document.addEventListener('visibilitychange',onVisible);
-  return()=>{active=false;clearInterval(timer);document.removeEventListener('visibilitychange',onVisible);};
- },[channel,recipient,offset,refreshTick]);
- useEffect(()=>{if(offset===0&&keepAtBottomRef.current){const list=messageListRef.current;if(list)list.scrollTop=list.scrollHeight;}},[messages,offset]);
- async function send(e:React.FormEvent){e.preventDefault();if(!content.trim()||sending)return;setSending(true);try{await workspaceApi.write('chat',{content:content.trim(),channel,recipient_id:recipient});setContent('');if(offset) setOffset(0);else setRefreshTick(value=>value+1);}catch(e){toast.error(e instanceof Error?e.message:'Mesajul nu poate fi trimis.');}finally{setSending(false);}}
- const changeTarget=(value:string)=>{if(value===target)return;setTarget(value);setOffset(0);setMessages([]);keepAtBottomRef.current=true;const next=new URLSearchParams(params);if(value.startsWith('dm:'))next.set('dm',value.slice(3));else next.delete('dm');setParams(next,{replace:true});};
- return <section className="space-y-4"><header className="rounded-2xl border border-white/10 bg-gradient-to-br from-violet-500/10 to-cyan-400/5 p-5"><h2 className="text-2xl font-semibold text-white">Chat intern</h2><p className="mt-1 text-sm text-slate-400">Canale și mesaje directe ale echipei. Mesajele se actualizează la 15 secunde când pagina este activă.</p></header>
- <nav aria-label="Canale de echipă" className="flex flex-wrap gap-2">{Object.entries(channels).map(([id,name])=><button key={id} type="button" aria-current={target===`channel:${id}`?'page':undefined} onClick={()=>changeTarget(`channel:${id}`)} className={`rounded-full border px-3 py-2 text-xs transition ${target===`channel:${id}`?'border-violet-400/40 bg-violet-500/20 text-violet-100':'border-white/10 text-slate-400 hover:border-violet-400/30 hover:text-slate-200'}`}># {name}</button>)}</nav>
- <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]"><label className="block text-sm text-slate-300">Conversație<select aria-label="Conversație" value={target} onChange={e=>changeTarget(e.target.value)} className="mt-1 w-full rounded-lg border border-white/10 bg-[#10162a] p-3 text-slate-100"><optgroup label="Canale">{Object.entries(channels).map(([id,name])=><option key={id} value={`channel:${id}`}>{name}</option>)}</optgroup><optgroup label="Mesaj direct">{members.filter(m=>m.id!==user?.id).map(m=><option key={m.id} value={`dm:${m.id}`}>{m.display_name}</option>)}</optgroup></select></label><Button type="button" variant="outline" className="self-end" onClick={()=>setRefreshTick(value=>value+1)}>Actualizează</Button></div>
- <div className="space-y-2"><label htmlFor="chat-member-search" className="text-xs text-slate-400">Găsește un coleg</label><input id="chat-member-search" value={memberQuery} onChange={e=>setMemberQuery(e.target.value)} placeholder="Caută după nume…" className="w-full rounded-lg border border-white/10 bg-[#10162a] p-2.5 text-sm text-slate-100 sm:max-w-sm" />{memberQuery.trim()&&<div className="flex flex-wrap gap-2">{members.filter(m=>m.id!==user?.id&&m.display_name.toLocaleLowerCase('ro').includes(memberQuery.trim().toLocaleLowerCase('ro'))).map(m=><button key={m.id} type="button" onClick={()=>{changeTarget(`dm:${m.id}`);setMemberQuery('');}} className="rounded-lg border border-violet-400/20 px-3 py-2 text-xs text-violet-200 hover:bg-violet-500/10">{m.display_name}</button>)}</div>}</div>
- {error&&<p role="alert" className="text-destructive">{error}</p>}
- <div className="flex gap-2"><Button size="sm" variant="outline" disabled={!older} onClick={()=>setOffset(v=>v+50)}>Mai vechi</Button><Button size="sm" variant="outline" disabled={!offset} onClick={()=>setOffset(v=>Math.max(0,v-50))}>Mai recente</Button></div>
- <div ref={messageListRef} onScroll={e=>{const list=e.currentTarget;keepAtBottomRef.current=list.scrollHeight-list.scrollTop-list.clientHeight<80;}} role="log" aria-label={recipient?'Mesaje directe':'Mesaje de canal'} aria-live="polite" className="min-h-48 max-h-[50vh] space-y-3 overflow-y-auto rounded-xl border border-white/10 bg-[#10162a]/90 p-3 sm:p-4">{messages.map(m=><article key={m.id} className={`rounded-lg p-3 ${m.author_id===user?.id?'ml-4 bg-violet-500/15 sm:ml-8':'mr-4 bg-white/[0.04] sm:mr-8'}`}><p className="text-xs text-slate-400">{m.author_id===user?.id?'Tu':members.find(u=>u.id===m.author_id)?.display_name||'Membru'} · {new Date(m.created_at).toLocaleString('ro-RO')}</p><p className="whitespace-pre-wrap break-words text-sm text-slate-100">{m.content}</p></article>)}{!messages.length&&!error&&<p className="text-sm text-slate-400">Niciun mesaj în această conversație.</p>}</div>
- <form onSubmit={send} className="space-y-2"><div className="flex flex-col gap-2 sm:flex-row"><textarea aria-label="Mesaj" value={content} onChange={e=>setContent(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();e.currentTarget.form?.requestSubmit();}}} maxLength={4000} className="min-h-20 min-w-0 flex-1 rounded-lg border border-white/10 bg-[#10162a] p-3 text-slate-100" placeholder="Scrie un mesaj…"/><Button className="w-full sm:w-auto" disabled={sending||!content.trim()}>{sending?'Se trimite…':'Trimite'}</Button></div><p className="flex justify-between text-xs text-slate-500"><span>Enter trimite · Shift+Enter adaugă un rând</span><span>{content.length}/4000</span></p></form></section>;
+  const send = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = content.trim(),
+      destination = target;
+    if (!text || sendLock.current || !canSend) return;
+    sendLock.current = true;
+    setSendingTarget(destination);
+    const previous = attempts.current.get(destination),
+      attempt =
+        previous?.content === text
+          ? previous
+          : { content: text, key: crypto.randomUUID() };
+    attempts.current.set(destination, attempt);
+    try {
+      await workspaceApi.write(
+        "chat",
+        {
+          content: text,
+          channel: destination.startsWith("channel:")
+            ? destination.slice(8)
+            : "general",
+          recipient_id: destination.startsWith("dm:")
+            ? destination.slice(3)
+            : null,
+        },
+        "POST",
+        attempt.key,
+      );
+      if (drafts.current.get(destination)?.trim() === text)
+        drafts.current.delete(destination);
+      if (
+        targetRef.current === destination &&
+        contentRef.current.trim() === text
+      ) {
+        setContent("");
+        drafts.current.delete(destination);
+      }
+      if (targetRef.current === destination) {
+        keepBottom.current = true;
+        setTick((v) => v + 1);
+      }
+      void loadThreads();
+      attempts.current.delete(destination);
+    } catch (e) {
+      toast.error(
+        (e as Error).message ||
+          "Mesajul nu a putut fi trimis. Ciorna a fost păstrată.",
+      );
+    } finally {
+      sendLock.current = false;
+      setSendingTarget(null);
+      if (targetRef.current === destination) inputRef.current?.focus();
+    }
+  };
+  const loadOlder = async () => {
+    const first = messages[0],
+      selected = target;
+    if (!first || loadingOlder) return;
+    setLoadingOlder(true);
+    const height = listRef.current?.scrollHeight || 0;
+    try {
+      const q = new URLSearchParams({
+        channel,
+        limit: "50",
+        before: `${Date.parse(first.created_at)}:${first.id}`,
+      });
+      if (recipient) q.set("recipient_id", recipient);
+      const result = await workspaceApi.list<Message>(`chat?${q}`);
+      if (targetRef.current !== selected) return;
+      keepBottom.current = false;
+      setOlder(result.data.length === 50);
+      setMessages((old) =>
+        [...result.data, ...old].filter(
+          (m, i, a) => a.findIndex((n) => n.id === m.id) === i,
+        ),
+      );
+      requestAnimationFrame(() => {
+        if (listRef.current)
+          listRef.current.scrollTop = listRef.current.scrollHeight - height;
+      });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setLoadingOlder(false);
+    }
+  };
+  const visible = messages.filter(
+    (m) => !messageSearch || fold(m.content).includes(fold(messageSearch)),
+  );
+  const previews = new Map(threads.map((t) => [t.target, t]));
+  const entries = [
+    ...Object.entries(channels).map(([id, label]) => ({
+      target: `channel:${id}`,
+      label,
+      rank: "Canal de echipă",
+      channel: true,
+    })),
+    ...members
+      .filter((m) => m.id !== user?.id)
+      .map((m) => ({
+        target: `dm:${m.id}`,
+        label: m.display_name,
+        rank: staffRankLabel(m.rank_id),
+        channel: false,
+      })),
+    ...threads
+      .filter(
+        (t) =>
+          t.target.startsWith("dm:") &&
+          !members.some((m) => `dm:${m.id}` === t.target),
+      )
+      .map((t) => ({
+        target: t.target,
+        label: "Membru indisponibil",
+        rank: "Istoric autorizat",
+        channel: false,
+      })),
+  ]
+    .filter(
+      (e) =>
+        !query ||
+        fold(
+          `${e.label} ${e.rank} ${previews.get(e.target)?.last_content || ""}`,
+        ).includes(fold(query)),
+    )
+    .sort(
+      (a, b) =>
+        (Date.parse(previews.get(b.target)?.last_at || "") || 0) -
+        (Date.parse(previews.get(a.target)?.last_at || "") || 0),
+    );
+  return (
+    <section className="agency-chat" aria-label="Chat intern AVYRON">
+      <header className="chat-page-heading">
+        <div>
+          <p>AVYRON OS · ECHIPĂ</p>
+          <h1>Chat intern</h1>
+        </div>
+        <span>
+          <MessageCircle size={15} /> Conversațiile agenției
+        </span>
+      </header>
+      <div className={`chat-shell ${mobileOpen ? "chat-show-thread" : ""}`}>
+        <aside className="chat-sidebar" aria-label="Lista conversațiilor">
+          <div className="chat-sidebar-title">
+            <h2>Conversații</h2>
+            <button
+              className="chat-icon"
+              aria-label="Actualizează conversațiile"
+              onClick={() => {
+                void loadDirectory();
+                void loadThreads();
+                setTick((v) => v + 1);
+              }}
+            >
+              <RefreshCw size={17} />
+            </button>
+          </div>
+          <label className="chat-search">
+            <Search size={17} />
+            <input
+              aria-label="Caută conversație sau coleg"
+              placeholder="Caută un coleg sau o conversație"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            {query && (
+              <button aria-label="Șterge căutarea" onClick={() => setQuery("")}>
+                <X size={15} />
+              </button>
+            )}
+          </label>
+          {directoryError && (
+            <p className="chat-error" role="alert">
+              {directoryError}
+              <button onClick={() => void loadDirectory()}>Reîncearcă</button>
+            </p>
+          )}
+          <nav className="chat-conversations" aria-label="Canale și colegi">
+            {entries.map((entry) => {
+              const t = previews.get(entry.target);
+              return (
+                <button
+                  key={entry.target}
+                  className="chat-thread-button"
+                  aria-current={target === entry.target ? "page" : undefined}
+                  onClick={() => choose(entry.target)}
+                  aria-label={`${entry.label}${t?.unread ? ` · ${t.unread} necitite` : ""}`}
+                >
+                  <span
+                    className={`chat-avatar ${entry.channel ? "chat-channel-avatar" : ""}`}
+                  >
+                    {entry.channel ? (
+                      <Hash size={21} />
+                    ) : (
+                      entry.label.slice(0, 2).toUpperCase()
+                    )}
+                  </span>
+                  <span className="chat-thread-copy">
+                    <strong>{entry.label}</strong>
+                    <small>{t?.last_content || entry.rank}</small>
+                  </span>
+                  <span className="chat-thread-meta">
+                    {t && <time>{clock(t.last_at)}</time>}
+                    {!!t?.unread && <b>{t.unread > 99 ? "99+" : t.unread}</b>}
+                  </span>
+                </button>
+              );
+            })}
+            {!entries.length && (
+              <p className="chat-empty-list">
+                Nu există conversații pentru această căutare.
+              </p>
+            )}
+          </nav>
+          <p className="chat-sidebar-foot">
+            <Users size={14} />
+            {members.length} membri · acces intern
+          </p>
+        </aside>
+        <section
+          className="chat-conversation"
+          aria-label={`Conversație · ${name}`}
+        >
+          <header className="chat-conversation-head">
+            <button
+              className="chat-icon chat-mobile-back"
+              aria-label="Înapoi la conversații"
+              onClick={() => setMobileOpen(false)}
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <span className="chat-avatar">
+              {recipient ? name.slice(0, 2).toUpperCase() : <Hash size={21} />}
+            </span>
+            <div className="chat-active-title">
+              <h2>{name}</h2>
+              <p>
+                {recipient
+                  ? staffRankLabel(member?.rank_id)
+                  : "Canal intern al echipei"}
+              </p>
+            </div>
+            <button
+              className="chat-icon"
+              aria-label="Caută în mesajele încărcate"
+              aria-expanded={searchOpen}
+              onClick={() => setSearchOpen((v) => !v)}
+            >
+              <Search size={19} />
+            </button>
+            <button
+              className="chat-icon"
+              aria-label="Actualizează mesajele"
+              onClick={() => setTick((v) => v + 1)}
+            >
+              <RefreshCw size={17} />
+            </button>
+          </header>
+          {searchOpen && (
+            <label className="chat-message-search">
+              <Search size={16} />
+              <input
+                autoFocus
+                aria-label="Caută în mesajele încărcate"
+                placeholder="Caută în mesajele încărcate…"
+                value={messageSearch}
+                onChange={(e) => setMessageSearch(e.target.value)}
+              />
+              <button
+                className="chat-icon"
+                aria-label="Închide căutarea mesajelor"
+                onClick={() => {
+                  setSearchOpen(false);
+                  setMessageSearch("");
+                }}
+              >
+                <X size={17} />
+              </button>
+            </label>
+          )}
+          {error && (
+            <div className="chat-error" role="alert">
+              {error}
+              <button onClick={() => setTick((v) => v + 1)}>Reîncearcă</button>
+            </div>
+          )}
+          <div
+            className="chat-messages"
+            ref={listRef}
+            role="log"
+            aria-label={recipient ? "Mesaje directe" : "Mesaje de canal"}
+            aria-live="polite"
+            aria-busy={loading}
+            onScroll={(e) => {
+              const l = e.currentTarget;
+              keepBottom.current =
+                l.scrollHeight - l.scrollTop - l.clientHeight < 60;
+              if (keepBottom.current) {
+                setNewMessages(false);
+                const last = lastItem(messages);
+                if (last) void markRead(last);
+              }
+            }}
+          >
+            {older && !messageSearch && (
+              <button
+                className="chat-older"
+                disabled={loadingOlder}
+                onClick={() => void loadOlder()}
+              >
+                {loadingOlder ? "Se încarcă…" : "Mesaje mai vechi"}
+              </button>
+            )}
+            {loading && (
+              <p className="chat-system" role="status">
+                Se încarcă mesajele…
+              </p>
+            )}
+            {!loading && !visible.length && !error && (
+              <div className="chat-welcome">
+                <MessageCircle size={32} />
+                <h3>
+                  {messageSearch
+                    ? "Niciun mesaj pentru căutare"
+                    : "Începe conversația"}
+                </h3>
+                <p>
+                  {messageSearch
+                    ? "Căutarea se aplică mesajelor încărcate."
+                    : "Un mesaj clar, o echipă conectată."}
+                </p>
+              </div>
+            )}
+            {visible.map((m, i) => {
+              const own = m.author_id === user?.id;
+              return (
+                <div key={m.id}>
+                  {(!i ||
+                    day(visible[i - 1].created_at) !== day(m.created_at)) && (
+                    <div className="chat-day">
+                      <span>{day(m.created_at)}</span>
+                    </div>
+                  )}
+                  <article
+                    className={`chat-bubble ${own ? "chat-own" : "chat-other"}`}
+                    aria-label={own ? "Mesaj trimis" : "Mesaj primit"}
+                  >
+                    {!own && !recipient && (
+                      <p className="chat-author">
+                        {members.find((u) => u.id === m.author_id)
+                          ?.display_name || "Membru al agenției"}
+                      </p>
+                    )}
+                    <p className="chat-message-text">{m.content}</p>
+                    <footer>
+                      <time
+                        dateTime={m.created_at}
+                        title={new Date(m.created_at).toLocaleString("ro-RO")}
+                      >
+                        {clock(m.created_at)}
+                      </time>
+                      {own && (
+                        <span title="Salvat pe server" aria-label="Trimis">
+                          <Check size={14} />
+                        </span>
+                      )}
+                    </footer>
+                  </article>
+                </div>
+              );
+            })}
+          </div>
+          {newMessages && (
+            <button
+              className="chat-new"
+              onClick={() => {
+                keepBottom.current = true;
+                setNewMessages(false);
+                if (listRef.current)
+                  listRef.current.scrollTop = listRef.current.scrollHeight;
+                const last = lastItem(messages);
+                if (last) void markRead(last);
+              }}
+            >
+              <ArrowDown size={15} /> Mesaje noi
+            </button>
+          )}
+          <form className="chat-composer" onSubmit={send}>
+            {emojiOpen && (
+              <div
+                className="chat-emojis"
+                role="group"
+                aria-label="Reacții de inserat"
+              >
+                {["👍", "✅", "😊", "👏", "🎯", "💜"].map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => {
+                      setContent((c) => c + emoji);
+                      setEmojiOpen(false);
+                      inputRef.current?.focus();
+                    }}
+                    aria-label={`Inserează ${emoji}`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="chat-compose-row">
+              <button
+                type="button"
+                className="chat-icon"
+                aria-label="Adaugă emoji"
+                aria-expanded={emojiOpen}
+                disabled={!canSend}
+                onClick={() => setEmojiOpen((v) => !v)}
+              >
+                <Smile size={21} />
+              </button>
+              <textarea
+                ref={inputRef}
+                aria-label="Mesaj"
+                value={content}
+                rows={1}
+                onChange={(e) => setContent(e.target.value)}
+                disabled={!canSend}
+                onKeyDown={(e) => {
+                  if (
+                    e.key === "Enter" &&
+                    !e.shiftKey &&
+                    !e.nativeEvent.isComposing
+                  ) {
+                    e.preventDefault();
+                    e.currentTarget.form?.requestSubmit();
+                  }
+                }}
+                maxLength={4000}
+                placeholder={
+                  canSend
+                    ? "Scrie un mesaj…"
+                    : "Această conversație poate fi doar consultată"
+                }
+              />
+              <button
+                className="chat-send"
+                aria-label="Trimite"
+                disabled={!!sendingTarget || !content.trim() || !canSend}
+              >
+                <Send size={19} />
+              </button>
+            </div>
+            <div className="chat-compose-foot">
+              <span>
+                {sendingTarget === target
+                  ? "Se trimite…"
+                  : "Enter trimite · Shift+Enter adaugă un rând"}
+              </span>
+              <span>{content.length}/4000</span>
+            </div>
+          </form>
+        </section>
+      </div>
+    </section>
+  );
 }

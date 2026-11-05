@@ -1,6 +1,7 @@
+import { managedStaff, canManageStaffTarget } from "./staffAccessPolicy";
 import { Hono, type Context } from "hono";
 import type { Env, Role } from "./types";
-import { platformRoleForUser } from "./authorization";
+import { hasCapability, platformRoleForUser } from "./authorization";
 
 type Vars = { userId: string; roles: Role[]; requestId: string };
 type App = { Bindings: Env; Variables: Vars };
@@ -12,7 +13,9 @@ export const externalUrl = (value: string) => {
   if (!value) return true;
   try {
     const parsed = new URL(value);
-    return ["http:", "https:"].includes(parsed.protocol) && !!parsed.hostname && !parsed.username && !parsed.password;
+    return (
+      ["http:", "https:"].includes(parsed.protocol) && !!parsed.hostname && !parsed.username && !parsed.password
+    );
   } catch { return false; }
 };
 
@@ -20,7 +23,18 @@ export const adminOperationsRouter = new Hono<App>();
 
 adminOperationsRouter.use("/api/admin/operations/*", async (c, next) => {
   const resourcesRead = c.req.method === "GET" && c.req.path === "/api/admin/operations/resources";
-  if (!resourcesRead && !(await platformRoleForUser(c.env.DB, c.get("userId")))) {
+  const clientCrud = /^\/api\/admin\/operations\/clients(?:\/[^/]+)?$/.test(
+    c.req.path,
+  );
+  const delegated =
+    clientCrud &&
+    (await hasCapability(
+      c.env.DB,
+      c.get("userId"),
+      c.req.method === "GET" ? "clients.read" : "clients.write",
+    ));
+  if (!resourcesRead &&
+    !delegated && !(await platformRoleForUser(c.env.DB, c.get("userId")))) {
     return c.json({ error: { code: "forbidden", message: "Doar Super Adminul poate modifica registrul operațional." } }, 403);
   }
   await next();
@@ -101,12 +115,18 @@ adminOperationsRouter.get("/api/admin/operations/clients/:id", async (c) => {
         ORDER BY COALESCE(profile.display_name,profile.company_name,account.email) COLLATE NOCASE`,
     ).all(),
   ]);
-  return c.json({ client, projects: projects.results, subscriptions: subscriptions.results, accounts: accounts.results, orders: orders.results, carts: carts.results, availableProjects: availableProjects.results, accountOptions: accountOptions.results });
+  return c.json({ client, projects: projects.results, subscriptions: subscriptions.results, accounts: accounts.results, orders: orders.results, carts: carts.results, availableProjects: (await platformRoleForUser(c.env.DB, c.get("userId")))
+      ? availableProjects.results
+      : [],
+    accountOptions: (await platformRoleForUser(c.env.DB, c.get("userId")))
+      ? accountOptions.results
+      : [],
+  });
 });
 
 adminOperationsRouter.patch("/api/admin/operations/clients/:id", async (c) => {
   const id = c.req.param("id");
-  const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>));
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({}) as Record<string, unknown>);
   const companyName = text(body.companyName, 160);
   const email = text(body.email, 254).toLowerCase();
   const status = text(body.status, 20);
@@ -122,7 +142,7 @@ adminOperationsRouter.patch("/api/admin/operations/clients/:id", async (c) => {
 
 adminOperationsRouter.put("/api/admin/operations/clients/:id/accounts", async (c) => {
   const clientId = c.req.param("id");
-  const body = await c.req.json<{ userIds?: unknown }>().catch(() => ({} as { userIds?: unknown }));
+  const body = await c.req.json<{ userIds?: unknown }>().catch(() => ({}) as { userIds?: unknown });
   const userIds = Array.isArray(body.userIds) ? [...new Set(body.userIds.filter((value): value is string => typeof value === "string"))].slice(0, 20) : [];
   if (userIds.length) {
     const placeholders = userIds.map(() => "?").join(",");
@@ -141,7 +161,7 @@ adminOperationsRouter.put("/api/admin/operations/clients/:id/accounts", async (c
 
 adminOperationsRouter.put("/api/admin/operations/clients/:id/projects", async (c) => {
   const clientId = c.req.param("id");
-  const body = await c.req.json<{ projectIds?: unknown }>().catch(() => ({} as { projectIds?: unknown }));
+  const body = await c.req.json<{ projectIds?: unknown }>().catch(() => ({}) as { projectIds?: unknown });
   const projectIds = Array.isArray(body.projectIds) ? [...new Set(body.projectIds.filter((value): value is string => typeof value === "string"))].slice(0, 100) : [];
   if (!projectIds.length) return c.json({ error: { code: "invalid_input", message: "Selectează cel puțin un proiect." } }, 400);
   const t = now();
@@ -173,7 +193,11 @@ adminOperationsRouter.get("/api/admin/operations/staff", async (c) => {
 
 adminOperationsRouter.put("/api/admin/operations/staff/:id/projects", async (c) => {
   const staffId = c.req.param("id");
-  const body = await c.req.json<{ projectIds?: unknown }>().catch(() => ({} as { projectIds?: unknown }));
+    if (!(await canManageStaffTarget(c.env.DB, c.get("userId"), staffId)))
+      return c.json({ error: { code: "platform_owner_required" } }, 403);
+    if (await managedStaff(c.env.DB, staffId))
+      return c.json({ error: { code: "use_staff_access_manager" } }, 409);
+    const body = await c.req.json<{ projectIds?: unknown }>().catch(() => ({}) as { projectIds?: unknown });
   const projectIds = Array.isArray(body.projectIds) ? [...new Set(body.projectIds.filter((value): value is string => typeof value === "string"))].slice(0, 250) : [];
   const isStaff = await c.env.DB.prepare("SELECT 1 FROM user_roles WHERE user_id=? AND role IN ('staff','admin') LIMIT 1").bind(staffId).first();
   if (!isStaff) return c.json({ error: { code: "not_staff" } }, 409);
@@ -212,8 +236,9 @@ adminOperationsRouter.get("/api/admin/operations/subscriptions", async (c) => {
 
 adminOperationsRouter.patch("/api/admin/operations/subscriptions/:id", async (c) => {
   const id = c.req.param("id");
-  const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>));
-  const current = await c.env.DB.prepare("SELECT service_id,maintenance_enabled,revision FROM subscriptions WHERE id=?").bind(id).first<{ service_id: string; maintenance_enabled:number; revision:number }>();
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({}) as Record<string, unknown>);
+  const current = await c.env.DB.prepare("SELECT service_id,maintenance_enabled,revision FROM subscriptions WHERE id=?").bind(id).first<{ service_id: string; maintenance_enabled:number; revision:number;
+      }>();
   if (!current) return c.json({ error: { code: "not_found" } }, 404);
   if(current.maintenance_enabled)return c.json({error:{code:"use_avy_core",message:"Editează acest abonament în AVY Core pentru a păstra sincronizarea planului și alocărilor."}},409);
   const status = text(body.status, 20);
@@ -243,7 +268,7 @@ adminOperationsRouter.get("/api/admin/operations/resources", async (c) => {
 });
 
 adminOperationsRouter.post("/api/admin/operations/resources", async (c) => {
-  const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>));
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({}) as Record<string, unknown>);
   const kind = text(body.kind, 20);
   const title = text(body.title, 180);
   const status = text(body.status, 20) || "active";
@@ -261,7 +286,7 @@ adminOperationsRouter.post("/api/admin/operations/resources", async (c) => {
 
 adminOperationsRouter.patch("/api/admin/operations/resources/:id", async (c) => {
   const id = c.req.param("id");
-  const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>));
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({}) as Record<string, unknown>);
   const title = text(body.title, 180);
   const status = text(body.status, 20);
   const url = text(body.url, 600);

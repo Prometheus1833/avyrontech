@@ -9,7 +9,9 @@ Folosește acești termeni consecvent în cod, UI, PR-uri și documentație. St�
 | **AVY / Avy bot** | Asistentul conversațional; răspunsurile sale trebuie să folosească surse și oferte aprobate, cu handoff când nu poate confirma un fapt. |
 | **AI AVY Prod** | Portofoliul de proiecte de producție AI din `/intern/ai-projects`; nu este același registru cu proiectele operaționale. |
 | **Avyron WEB** | Proiectul AI pentru prezența digitală și produsele agenției AVYRON. Etichetele sale sociale nu dovedesc conexiuni API. |
-| **`platform_owner`** | Rolul cu controlul cel mai extins asupra politicilor, conectorilor și agenților; `superadmin` nu implică automat aceleași drepturi. |
+| **`platform_owner`** | Principal cu acces operațional complet și controlul ierarhiei platformei; identitatea Owner rămâne protejată. |
+| **`superadmin`** | În implementarea locală din 05.11.2026: acces operațional complet, inclusiv Documente SC și backupurile firmei, fără controlul identităților Owner. [Politica și starea de release](./STAFF_RANKS_INTERNAL_CHAT.md). |
+| **Rang staff** | Profil de drepturi peste RBAC-ul existent (`user`, `staff`, `admin`), fără autentificare paralelă. Cele șapte ranguri și alocările sunt descrise în [Membrii Agenției](./STAFF_RANKS_INTERNAL_CHAT.md). |
 | **Pipeline** | Succesiune explicită de stări și acțiuni pentru Leads, conținut, proiecte sau facturi; UI trebuie să arate unde se află elementul și următoarea acțiune permisă. |
 | **Conexiune configurată / verificată / sincronizată** | Configurată: există setări sau referințe. Verificată: identitatea și accesul API au fost testate. Sincronizată: importul/reconcilierea reală are timestamp și rezultat. |
 | **`source_connections`** | Registrul OS pentru surse/conectori. Un URL sau un `account_label` nu poate înlocui autorizarea OAuth/API. |

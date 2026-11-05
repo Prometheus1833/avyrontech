@@ -1,5 +1,7 @@
 import { expect,test,type Page } from "@playwright/test";
 
+import {staffFixture} from "./staff-fixtures";
+
 const now = Date.now();
 
 const mockAuthenticatedSuperAdmin = async (page: Page) => {
@@ -424,62 +426,32 @@ test.describe("dashboard AVYRON OS în română", () => {
   });
 
   test("Super Admin poate gestiona controlat accesul unui membru", async ({ page }) => {
-    let submitted: { access_level?: string; client_ids?: string[] } | null = null;
-    await page.route("**/api/admin/operations/staff", (route) => route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        data: [{ id: "staff-1", email: "coleg@avyron.ro", display_name: "Coleg Avyron", company_name: "Avyron", staff_role: "marketing", disabled_at: null, roles: "user,staff" }],
-        projects: [],
-      }),
-    }));
-    await page.route("**/api/admin/users", (route) => route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        data: [
-          { id: "staff-1", email: "coleg@avyron.ro", username: "coleg", display_name: "Coleg Avyron", company_name: "Avyron", staff_role: "marketing", disabled_at: null, roles: "user,staff", must_change_password: 0, active_sessions: 1 },
-          { id: "client-1", email: "fondator@example.test", display_name: "Fondator", entity_type: "startup", company_name: "Atelier Nord", cui: null, disabled_at: null, roles: "user", must_change_password: 0, active_sessions: 0 },
-        ],
-      }),
-    }));
-    await page.route("**/api/admin/operations/staff/staff-1/projects", (route) => route.fulfill({ json: { ok: true } }));
-    await page.route("**/api/clients", route=>route.fulfill({json:{data:[{id:'client-a',company_name:'Client A'}]}}));
-    await page.route("**/api/workspace/account-access/staff-1", async (route) => {
-      if (route.request().method()==='GET') return route.fulfill({json:{data:[]}});
-      submitted = route.request().postDataJSON() as { access_level?: string; client_ids?: string[] };
-      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, userId: "staff-1", roles: ["user", "admin"] }) });
-    });
-
+    const {captures}=await staffFixture(page);
     await page.goto("/profil?tab=team-staff");
-    await expect(page.getByRole("heading", { name: "Utilizatori și STAFF", exact: true })).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText("Start-up · Atelier Nord")).toBeVisible();
-    await page.getByRole("button", { name: "Gestionează" }).first().click();
-    await page.getByLabel("Nivel de acces").selectOption("admin");
-    await page.getByLabel("Client A", {exact:true}).check();
-    await page.getByRole("button", { name: "Salvează accesul" }).click();
-
-    await expect(page.getByText("Accesul și asocierile client au fost actualizate și auditate.")).toBeVisible();
-    expect(submitted).toEqual({ access_level: "admin", client_ids:["client-a"] });
+    await expect(page.getByRole("heading",{name:"Membrii Agenției AVYRON",exact:true})).toBeVisible();
+    await page.locator(".agency-member").filter({hasText:"Anișoara Test"}).getByRole("button",{name:"Gestionează"}).click();
+    const dialog=page.getByRole("dialog");
+    await dialog.getByLabel("Rang în agenție").selectOption("avy_consultant");
+    await dialog.getByRole("button",{name:"Clienți",exact:true}).click();
+    await dialog.getByLabel("Beneficiar sintetic",{exact:true}).check();
+    await dialog.getByLabel("Motivul alocării sau modificării").fill("Alocare CRM verificată");
+    await dialog.getByLabel("Am verificat rangul, drepturile, alocările și efectul asupra sesiunilor.").check();
+    await dialog.getByRole("button",{name:"Salvează accesurile"}).click();
+    await expect(page.getByText("Membrul și accesurile au fost salvate. Sesiunile sale anterioare au fost închise.")).toBeVisible();
+    expect(captures[0].body).toMatchObject({rankId:"avy_consultant",clientIds:["client-a"],confirmed:true});
   });
   test('chatul mobil trimite către destinatarul ales și păstrează mesajul după reload', async ({page},testInfo)=>{
     await page.setViewportSize({width:390,height:844});
-    await page.route('**/api/workspace/staff',r=>r.fulfill({json:{data:[{id:'peer',display_name:'Coleg',staff_role:'dev'}]}}));
-    const messages:{id:string;author_id:string;content:string;created_at:string}[]=[];
-    let payload:unknown;
-    await page.route('**/api/workspace/chat**',async r=>{
-      if(r.request().method()==='POST'){payload=r.request().postDataJSON();messages.push({id:'m1',author_id:'user-superadmin',content:'Status local verificat',created_at:new Date().toISOString()});return r.fulfill({json:{id:'m1'}});}
-      return r.fulfill({json:{data:r.request().url().includes('recipient_id=peer')?messages:[]}});
-    });
+    const {captures}=await staffFixture(page);
     await page.goto('/profil?tab=intern');
-    await page.getByLabel('Conversație',{exact:true}).selectOption('dm:peer');
+    await page.getByRole('button',{name:/Anișoara Test/}).click();
     await page.getByLabel('Mesaj',{exact:true}).fill('Status local verificat');
     await page.getByRole('button',{name:'Trimite',exact:true}).click();
-    await expect(page.getByText('Status local verificat',{exact:true})).toBeVisible();
-    expect(payload).toEqual({content:'Status local verificat',channel:'general',recipient_id:'peer'});
+    await expect(page.locator('.chat-conversation').getByText('Status local verificat',{exact:true})).toBeVisible();
+    expect(captures[0].body).toEqual({content:'Status local verificat',channel:'general',recipient_id:'peer'});
     await expect(page).toHaveURL(/dm=peer/);
-    await page.reload();await page.getByLabel('Conversație',{exact:true}).selectOption('dm:peer');
-    await expect(page.getByText('Status local verificat',{exact:true})).toBeVisible();
+    await page.reload();
+    await expect(page.locator('.chat-conversation').getByText('Status local verificat',{exact:true})).toBeVisible();
     await page.screenshot({path:testInfo.outputPath('chat-mobile.png'),fullPage:true});
   });
   test('înregistrează o plată parțială cu suma în unități minore',async({page})=>{
