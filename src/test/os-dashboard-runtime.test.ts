@@ -88,7 +88,7 @@ describe('OS dashboard — migrated SQLite and actual Hono handlers', () => {
     db.prepare("INSERT INTO operation_records(id,kind,title,status,created_by,created_at,updated_at) VALUES ('op','contract','Contract în aprobare','pending','owner',?,?)").run(stamp,stamp);
     db.prepare("INSERT INTO ai_learning_queue(id,agent_slug,question,created_at,updated_at) VALUES ('learn','avy','Întrebare de verificat',?,?)").run(stamp,stamp);
     const page=await inbox();
-    expect(page.counts).toEqual({agent:1,content:1,operation:1,template:11,learning:1});
+    expect(page.counts).toEqual({agent:1,content:1,operation:1,template:11,learning:1,carousel:0});
     expect(page.total).toBe(15);
     expect(page.data.some(row=>row.source==='learning')).toBe(true);
     const content=await (await app.request('/api/os/approval-center/content/content',{},{})).json();

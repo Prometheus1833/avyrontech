@@ -1,0 +1,367 @@
+{
+  "enabled": true,
+  "autoplay": true,
+  "speed": 40,
+  "cardWidth": 304,
+  "gap": 16,
+  "imageFit": "cover",
+  "arrows": true,
+  "heading": {
+    "eyebrow": {
+      "ro": "",
+      "en": ""
+    },
+    "title": {
+      "ro": "",
+      "en": ""
+    },
+    "description": {
+      "ro": "",
+      "en": ""
+    }
+  },
+  "items": [
+    {
+      "key": "cutiutamagica",
+      "name": "Cutiutamagica.eu",
+      "href": "https://cutiutamagica.eu",
+      "image": "builtin:cutiutamagica",
+      "tag": {
+        "ro": "Magazin online + comenzi",
+        "en": "Online store + orders"
+      },
+      "desc": {
+        "ro": "Cutiuțe muzicale artizanale din lemn: catalog, poveste de brand, livrare prin curier sau Easybox.",
+        "en": "Artisan wooden music boxes: catalog, brand story, courier or Easybox delivery."
+      },
+      "alt": {
+        "ro": "Captură Cutiutamagica.eu",
+        "en": "Cutiutamagica.eu screenshot"
+      },
+      "visibility": "visible"
+    },
+    {
+      "key": "ruller",
+      "name": "Ruller.eu",
+      "href": "https://ruller.eu",
+      "image": "builtin:ruller",
+      "tag": {
+        "ro": "Site + programări",
+        "en": "Site + bookings"
+      },
+      "desc": {
+        "ro": "Barber shop premium din Iași: meniu servicii, galerie și programări prin Mero și WhatsApp.",
+        "en": "Premium barber shop in Iași: services, gallery and bookings via Mero and WhatsApp."
+      },
+      "alt": {
+        "ro": "Captură Ruller.eu",
+        "en": "Ruller.eu screenshot"
+      },
+      "visibility": "visible"
+    },
+    {
+      "key": "clarlumanari",
+      "name": "Clarlumanari.ro",
+      "href": "https://clarlumanari.ro",
+      "image": "builtin:clarlumanari",
+      "tag": {
+        "ro": "Brand artizanal",
+        "en": "Artisan brand"
+      },
+      "desc": {
+        "ro": "Lumânări parfumate turnate manual: catalog, poveste de brand și comenzi rapide.",
+        "en": "Hand-poured scented candles: catalog, brand story and quick orders."
+      },
+      "alt": {
+        "ro": "Captură Clarlumanari.ro",
+        "en": "Clarlumanari.ro screenshot"
+      },
+      "visibility": "visible"
+    },
+    {
+      "key": "flawlesstudio",
+      "name": "Flawlesstudio.ro",
+      "href": "https://www.flawlesstudio.ro",
+      "image": "builtin:flawlesstudio",
+      "tag": {
+        "ro": "Site + programări multi-sediu",
+        "en": "Site + multi-location bookings"
+      },
+      "desc": {
+        "ro": "Studio de epilare și tratamente faciale din Iași, cu identitate vizuală premium.",
+        "en": "Laser hair removal and facial studio in Iași with a premium visual identity."
+      },
+      "alt": {
+        "ro": "Captură Flawlesstudio.ro",
+        "en": "Flawlesstudio.ro screenshot"
+      },
+      "visibility": "visible"
+    },
+    {
+      "key": "plaseieftineiasi",
+      "name": "Plaseieftineiasi.ro",
+      "href": "https://plaseieftineiasi.ro",
+      "image": "builtin:plaseieftineiasi",
+      "tag": {
+        "ro": "E-commerce local",
+        "en": "Local e-commerce"
+      },
+      "desc": {
+        "ro": "Plase anti-insecte la comandă în Iași: comenzi rapide, contact WhatsApp și montaj.",
+        "en": "Custom insect screens in Iași: quick orders, WhatsApp contact and installation."
+      },
+      "alt": {
+        "ro": "Captură Plaseieftineiasi.ro",
+        "en": "Plaseieftineiasi.ro screenshot"
+      },
+      "visibility": "visible"
+    },
+    {
+      "key": "retuvo",
+      "name": "Retuvo.ro",
+      "href": "https://retuvo.ro",
+      "image": "builtin:retuvo",
+      "tag": {
+        "ro": "Site + aplicație",
+        "en": "Site + app"
+      },
+      "desc": {
+        "ro": "Digitalizează SGR: scanezi bonul și primești valoarea garanției direct în cont.",
+        "en": "Digital deposit-return: scan the receipt and get the deposit straight to your account."
+      },
+      "alt": {
+        "ro": "Captură Retuvo.ro",
+        "en": "Retuvo.ro screenshot"
+      },
+      "visibility": "visible"
+    },
+    {
+      "key": "miago",
+      "name": "Miago.ro",
+      "href": "https://miago.ro",
+      "image": "builtin:miago",
+      "tag": {
+        "ro": "Platformă web + aplicație",
+        "en": "Web platform + app"
+      },
+      "desc": {
+        "ro": "Anunțuri auto (autoturisme, camioane, utilaje) într-un concept nou și intuitiv.",
+        "en": "Vehicle listings (cars, trucks, machinery) in a fresh, intuitive concept."
+      },
+      "alt": {
+        "ro": "Captură Miago.ro",
+        "en": "Miago.ro screenshot"
+      },
+      "visibility": "visible"
+    },
+    {
+      "key": "lumina-botez",
+      "name": "Lumina Botez",
+      "href": "https://demo1.avyron.eu",
+      "image": "builtin:lumina-botez",
+      "tag": {
+        "ro": "Atelier pentru evenimente",
+        "en": "Event atelier"
+      },
+      "desc": {
+        "ro": "Lumânări pentru botez și cununie, mărturii și trusouri personalizate, cu ofertare directă.",
+        "en": "Baptism and wedding candles, favors and personalized sets, with direct quote requests."
+      },
+      "alt": {
+        "ro": "Captură Lumina Botez",
+        "en": "Lumina Botez screenshot"
+      },
+      "visibility": "visible"
+    },
+    {
+      "key": "verdia",
+      "name": "VERDIA",
+      "href": "https://demo2.avyron.eu",
+      "image": "builtin:verdia",
+      "tag": {
+        "ro": "Magazin naturist",
+        "en": "Natural products store"
+      },
+      "desc": {
+        "ro": "Suplimente din plante organizate după nevoie, catalog clar, ghid de alegere și cumpărare online.",
+        "en": "Plant-based supplements organized by need, with a clear catalog, selection guide and online shopping."
+      },
+      "alt": {
+        "ro": "Captură VERDIA",
+        "en": "VERDIA screenshot"
+      },
+      "visibility": "visible"
+    },
+    {
+      "key": "pungiplast",
+      "name": "PungiPlast",
+      "href": "https://exemplu1.avyron.eu",
+      "image": "builtin:pungiplast",
+      "tag": {
+        "ro": "Producător și distribuție",
+        "en": "Manufacturing and distribution"
+      },
+      "desc": {
+        "ro": "Catalog B2B de pungi pentru magazine și distribuitori, cu producție proprie și ofertare rapidă.",
+        "en": "B2B bag catalog for retailers and distributors, with in-house manufacturing and fast quotes."
+      },
+      "alt": {
+        "ro": "Captură PungiPlast",
+        "en": "PungiPlast screenshot"
+      },
+      "visibility": "visible"
+    },
+    {
+      "key": "detectiv-icm",
+      "name": "Detectiv ICM",
+      "href": "https://detectiv-icm.avyron.eu",
+      "image": "builtin:detectiv-icm",
+      "tag": {
+        "ro": "Investigații private",
+        "en": "Private investigations"
+      },
+      "desc": {
+        "ro": "Servicii de detectiv licențiat și consultanță criminologică, prezentate sobru și confidențial.",
+        "en": "Licensed private investigation and criminology consulting services, presented discreetly and professionally."
+      },
+      "alt": {
+        "ro": "Captură Detectiv ICM",
+        "en": "Detectiv ICM screenshot"
+      },
+      "visibility": "visible"
+    },
+    {
+      "key": "craita-dinulescu",
+      "name": "Crăița Dinulescu",
+      "href": "https://dinulescu-craita-consultant-financiar.avyron.eu",
+      "image": "builtin:craita-dinulescu",
+      "tag": {
+        "ro": "Consultanță financiară",
+        "en": "Financial consulting"
+      },
+      "desc": {
+        "ro": "Consultanță financiară, fiscală și contabilă pentru antreprenori, cu programare directă a discuției.",
+        "en": "Financial, tax and accounting consulting for entrepreneurs, with direct consultation booking."
+      },
+      "alt": {
+        "ro": "Captură Crăița Dinulescu",
+        "en": "Crăița Dinulescu screenshot"
+      },
+      "visibility": "visible"
+    },
+    {
+      "key": "tipografia-umc",
+      "name": "Tipografia UMC",
+      "href": "https://umc.avyron.eu",
+      "image": "builtin:tipografia-umc",
+      "tag": {
+        "ro": "Tipografie industrială",
+        "en": "Industrial printing"
+      },
+      "desc": {
+        "ro": "Tipar offset, digital și large format, ambalaje și finisări premium într-un flux complet de producție.",
+        "en": "Offset, digital and large-format printing, packaging and premium finishing in one production workflow."
+      },
+      "alt": {
+        "ro": "Captură Tipografia UMC",
+        "en": "Tipografia UMC screenshot"
+      },
+      "visibility": "visible"
+    },
+    {
+      "key": "cgc-imobiliare",
+      "name": "CGC Imobiliare",
+      "href": "https://demo3.avyron.eu",
+      "image": "builtin:cgc-imobiliare",
+      "tag": {
+        "ro": "Consultanță imobiliară",
+        "en": "Property advisory"
+      },
+      "desc": {
+        "ro": "Proprietăți atent selectate, consultanță și coordonarea clară a tranzacției, într-o prezentare premium.",
+        "en": "Carefully selected properties, advisory and clear transaction coordination in a premium presentation."
+      },
+      "alt": {
+        "ro": "Captură CGC Imobiliare",
+        "en": "CGC Imobiliare screenshot"
+      },
+      "visibility": "visible"
+    },
+    {
+      "key": "cabane-sucevita",
+      "name": "Cabane Sucevița",
+      "href": "https://demo4.avyron.eu",
+      "image": "builtin:cabane-sucevita",
+      "tag": {
+        "ro": "Construcții din lemn",
+        "en": "Timber construction"
+      },
+      "desc": {
+        "ro": "Case și cabane din bușteni, foișoare și sculpturi în lemn realizate în Bucovina.",
+        "en": "Log homes, cabins, gazebos and wood sculptures crafted in Bucovina."
+      },
+      "alt": {
+        "ro": "Captură Cabane Sucevița",
+        "en": "Cabane Sucevița screenshot"
+      },
+      "visibility": "visible"
+    },
+    {
+      "key": "cofetariadulcedor",
+      "name": "Cofetăria Dulce Dor",
+      "href": "/examples/cofetariadulcedor.ro",
+      "image": "builtin:cofetariadulcedor",
+      "tag": {
+        "ro": "Cofetărie artizanală",
+        "en": "Artisan pastry shop"
+      },
+      "desc": {
+        "ro": "Meniu sezonier, torturi pe comandă și comenzi instant prin WhatsApp.",
+        "en": "Seasonal menu, custom cakes and instant WhatsApp orders."
+      },
+      "alt": {
+        "ro": "Captură Cofetăria Dulce Dor",
+        "en": "Cofetăria Dulce Dor screenshot"
+      },
+      "visibility": "visible"
+    },
+    {
+      "key": "studiomaradesign",
+      "name": "Studio Mara Design",
+      "href": "/examples/studiomaradesign.ro",
+      "image": "builtin:studiomaradesign",
+      "tag": {
+        "ro": "Design interior",
+        "en": "Interior design"
+      },
+      "desc": {
+        "ro": "Proiecte rezidențiale și comerciale, proces transparent și formular de consultanță.",
+        "en": "Residential and commercial projects, clear process and consultation form."
+      },
+      "alt": {
+        "ro": "Captură Studio Mara Design",
+        "en": "Studio Mara Design screenshot"
+      },
+      "visibility": "visible"
+    },
+    {
+      "key": "pensiuneacerbul",
+      "name": "Pensiunea Cerbul",
+      "href": "/examples/pensiuneacerbul.ro",
+      "image": "builtin:pensiuneacerbul",
+      "tag": {
+        "ro": "Turism și rezervări",
+        "en": "Travel and bookings"
+      },
+      "desc": {
+        "ro": "Camere, facilități și rezervări directe pentru o pensiune montană.",
+        "en": "Rooms, amenities and direct bookings for a mountain guesthouse."
+      },
+      "alt": {
+        "ro": "Captură Pensiunea Cerbul",
+        "en": "Pensiunea Cerbul screenshot"
+      },
+      "visibility": "visible"
+    }
+  ]
+}

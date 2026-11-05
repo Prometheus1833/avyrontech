@@ -1,5 +1,9 @@
 /** Registered permissions map to enforced API operations; rank labels never authorize requests. */
 export const STAFF_PERMISSIONS = [
+  ["examples.read", "Platformă", "Citire carusele exemple", "Configurări, ciorne și istoric pentru exemplele publice."],
+  ["examples.edit", "Platformă", "Editare carusele exemple", "Exemple, ordine, imagini și setări; nu publică automat."],
+  ["examples.approve", "Platformă", "Aprobare exemple", "Verificare sau respingere a versiunii trimise."],
+  ["examples.publish", "Platformă", "Publicare exemple", "Publicare explicită a versiunii aprobate."],
   [
     "dashboard.read",
     "Echipă",
@@ -464,6 +468,7 @@ export const STAFF_SECTION_PERMISSIONS: Record<string, string[]> = {
   "other-hub": ["team.read"],
   library: ["services.read"],
   careers: ["services.read"],
+  "example-carousels": ["examples.read"],
 };
 export function staffRequestPermission(
   path: string,
@@ -540,6 +545,12 @@ export function staffRequestPermission(
     path.startsWith("/api/services")
   )
     return write ? "services.pages.manage" : "services.read";
+  if (path.startsWith("/api/admin/example-carousels")) {
+    if (!write) return "examples.read";
+    if (path.endsWith("/publish")) return "examples.publish";
+    if (/\/(approve|reject)$/.test(path)) return "examples.approve";
+    return "examples.edit";
+  }
   if (path.startsWith("/api/ai-projects"))
     return write ? "marketing.write" : "ai_projects.read";
   if (path.startsWith("/api/blog/staff")) return "blog.manage";
@@ -583,6 +594,9 @@ export function staffPermissionIssues(keys: readonly string[]) {
     "leads.create": ["leads.read"],
     "leads.delete": ["leads.read"],
     "services.pages.manage": ["services.read"],
+    "examples.edit": ["examples.read"],
+    "examples.approve": ["examples.read"],
+    "examples.publish": ["examples.read"],
     "marketing.write": ["marketing.read"],
     "ai_content.create": ["ai_projects.read", "marketing.write"],
     "social.approve": ["ai_projects.read", "marketing.write"],

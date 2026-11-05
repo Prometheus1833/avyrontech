@@ -1,3 +1,5 @@
+import { exampleCarouselsRouter, publishedCarousel } from "./exampleCarousels";
+import { rewriteExampleCarousels } from "../../../../src/worker/exampleCarousels";
 import {visualAssetsRouter} from "./visualAssets";
 import {provisionAccountPlan} from "./accountProvisioning";
 import { staffAccessRouter, planStaffAssignment, staffAssignmentSchema, type StaffAssignmentInput } from "./staffAccess";
@@ -1714,6 +1716,8 @@ app.route("/", leadsRouter);
 app.route("/", aiProjectsRouter);
 app.use("/api/admin/service-pages/*", requireAuth);
 app.route("/", servicePagesRouter);
+app.use("/api/admin/example-carousels*", requireAuth);
+app.route("/", exampleCarouselsRouter);
 app.route("/", catalogCodesRouter);
 app.use("/api/documents", requireAuth);
 app.use("/api/documents/*", requireAuth);
@@ -1887,7 +1891,7 @@ app.all("*", async (c) => {
   if (asset.status === 404) {
     return siteFile(c, "/404.html", 404, true);
   }
-  if (!decision.robots) return asset;
+  if (!decision.robots) return rewriteExampleCarousels(asset, url, key => publishedCarousel(c.env.DB, key));
   const headers = new Headers(asset.headers);
   headers.set("X-Robots-Tag", decision.robots);
   if (decision.robots === "noindex, nofollow") {

@@ -1,3 +1,4 @@
+import PortfolioCarousel from "@/components/site/PortfolioCarousel";
 import ServiceContentProvider from "@/components/services/ServiceContentProvider";
 import BlogPreloader from "@/components/blogpro/BlogPreloader";
 import LibraryLink from "@/components/site/LibraryLink";
@@ -223,6 +224,7 @@ const BlogProfessional = () => {
 
       <QuickNav items={quickNav[lang] as unknown as QuickNavItem[]} showLang />
       <FloatingWhatsApp />
+      <div className="mx-auto max-w-5xl px-4"><PortfolioCarousel lang={ro ? "ro" : "en"} carouselKey={"blog-profesional"} /></div>
       <Footer />
     </main>
   );

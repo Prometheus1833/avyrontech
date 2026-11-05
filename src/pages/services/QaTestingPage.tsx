@@ -1,3 +1,4 @@
+import PortfolioCarousel from "@/components/site/PortfolioCarousel";
 import ServiceContentProvider from "@/components/services/ServiceContentProvider";
 import logo from "@/assets/avyron-logo.jpg";
 import ServiceCinematicIntro from "@/components/services/ServiceCinematicIntro";
@@ -560,6 +561,7 @@ const QaTestingPage = () => {
         <LibraryLink />
       </div>
 
+      <div className="mx-auto max-w-5xl px-4"><PortfolioCarousel lang={ro ? "ro" : "en"} carouselKey={"qa-testing"} /></div>
       <Footer />
     </main>
   );

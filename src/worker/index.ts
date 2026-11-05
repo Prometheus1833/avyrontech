@@ -1,3 +1,4 @@
+import { rewriteExampleCarousels } from "./exampleCarousels";
 /**
  * Site edge runtime (Cloudflare Pages advanced mode or standalone Worker) —
  * serves the prerendered static build and applies correct HTTP semantics: 301
@@ -130,7 +131,12 @@ export default {
           return serveFile(env, url, "/404.html", 404, true);
         }
 
-        if (!decision.robots) return assetRes;
+        if (!decision.robots) return rewriteExampleCarousels(assetRes, url, async key => {
+          const res = await apiFetch(env, `/api/public/example-carousels/${encodeURIComponent(key)}`);
+          if (!res?.ok) throw Error("Public carousel unavailable");
+          const data = await res.json() as { config: import("../shared/exampleCarousels").CarouselConfig | null };
+          return data.config;
+        });
         const headers = new Headers(assetRes.headers);
         headers.set("X-Robots-Tag", decision.robots);
         return new Response(assetRes.body, { status: assetRes.status, headers });

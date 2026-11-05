@@ -66,6 +66,7 @@ const PlatformLeadTab = lazyWithRetry(() => import("@/components/dashboard/Platf
 const SurveysTab = lazyWithRetry(() => import("@/components/dashboard/SurveysTab"));
 const CommercialCodesTab = lazyWithRetry(() => import("@/components/dashboard/CommercialCodesTab"));
 const OtherModulesTab = lazyWithRetry(() => import("@/components/dashboard/OtherModulesTab"));
+const ExampleCarouselsTab = lazyWithRetry(() => import("@/components/dashboard/ExampleCarouselsTab"));
 const NotificationCenter = lazyWithRetry(() => import("@/components/dashboard/NotificationCenter"));
 const SocialMediaManagerTab = lazyWithRetry(() => import("@/components/dashboard/SocialMediaManagerTab"));
 const StaffSubscriptionsAdminTab = lazyWithRetry(() => import("@/components/dashboard/StaffSubscriptionsAdminTab"));
@@ -138,6 +139,7 @@ export default function Profile() {
       if(destination!=="documents")for(const key of ["documentView","documentTemplate","template","document","version"])next.delete(key);
       if(destination!=="servicii-avyron"){next.delete("service");next.delete("serviceGroup");}
       if(extraParams)for(const [key,value] of Object.entries(extraParams)){if(value)next.set(key,value);else next.delete(key);}
+      if (destination !== "example-carousels") next.delete("carousel");
       if (destination !== "intern") {next.delete("dm");next.delete("chatProject");}
       if (destination !== "projects") next.delete("scope");
       setParams(next, { replace: false });
@@ -298,6 +300,7 @@ export default function Profile() {
 
             <TabsContent value="announcements" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["announcements"].label} className="mt-0"><StaffAnnouncementsTab /></TabsContent>
             <TabsContent value="resources" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["resources"].label} className="mt-0"><DocumentCenter initialView="staff" /></TabsContent>
+            {canOpenSection("example-carousels", access) && <TabsContent value="example-carousels" role="region" aria-label="Carusele Exemple" className="mt-0"><ExampleCarouselsTab /></TabsContent>}
             <TabsContent value="careers" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["careers"].label} className="mt-0"><ResourceSurfaceTab kind="career" /></TabsContent>
             <TabsContent value="library" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["library"].label} className="mt-0"><ResourceSurfaceTab kind="library" /></TabsContent>
             <TabsContent value="team-staff" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["team-staff"].label} className="mt-0"><TeamStaffTab /></TabsContent>

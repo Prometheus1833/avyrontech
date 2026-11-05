@@ -75,6 +75,7 @@ export const DASHBOARD_GROUP_ORDER = [
 ];
 
 export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
+  "example-carousels": { label: "Carusele Exemple", commandLabel: "Deschide Carusele Exemple", hint: "Exemple publice, configurări, verificare și publicare pe servicii", icon: Image },
   documents: {label:"Centru Documente",mobileLabel:"Documente",commandLabel:"Deschide Centrul de Documente",hint:"Bibliotecă Agenție, tipizate, generator și documente pentru staff",icon:BookOpen},
   overview: { label: "Prezentare generală", mobileLabel: "Acasă", commandLabel: "Deschide prezentarea generală", hint: "Priorități, indicatori și starea sistemului", icon: LayoutDashboard },
   "social-manager": { label: "Manager Social Media", mobileLabel: "Social", commandLabel: "Deschide Manager Social Media", hint: "Propuneri AI, rezultate și aprobări editoriale", icon: Share2 },

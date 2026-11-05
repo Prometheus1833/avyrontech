@@ -1,4 +1,5 @@
 import { expect,test } from "@playwright/test";
+import { readFileSync } from "node:fs";
 
 const canonical = (path: string) => `https://avyron.ro${path === "/" ? "/" : path}`;
 
@@ -193,6 +194,10 @@ test.describe("public SEO routes", () => {
   });
 
   test("About stays indexable and legacy Portfolio routes consolidate into the service portfolio", async ({ page }) => {
+    // The static preview server does not emulate the public D1 carousel API.
+    await page.route("**/api/public/example-carousels/premium-website", route => route.fulfill({
+      json: { config: JSON.parse(readFileSync("src/shared/exampleCarouselDefaults.json", "utf8")) },
+    }));
     await page.goto("/despre-noi");
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro/despre-noi");
     await expect(page.locator('link[hreflang="en"]')).toHaveAttribute("href", "https://avyron.ro/en/about");

@@ -1,3 +1,4 @@
+import PortfolioCarousel from "@/components/site/PortfolioCarousel";
 import ServiceContentProvider from "@/components/services/ServiceContentProvider";
 import ServiceCinematicIntro from "@/components/services/ServiceCinematicIntro";
 import Breadcrumbs from "@/components/site/Breadcrumbs";
@@ -169,6 +170,7 @@ const GrowthServicePage = ({ kind }: { kind: GrowthServiceKey }) => {
 
         <nav className="growth-related" aria-label={ro ? "Alte servicii" : "Other services"}><Link to={other.path[lang]}><span>{(ro ? serviceInlineCopy.text_6c32d817605c.ro : serviceInlineCopy.text_6c32d817605c.en)}</span><strong>{other.copy[lang].name}</strong><ArrowRight size={20} aria-hidden /></Link><Link to={ro ? "/servicii" : "/en/services"}>{(ro ? serviceInlineCopy.text_58127860376b.ro : serviceInlineCopy.text_58127860376b.en)}<ArrowRight size={17} aria-hidden /></Link></nav>
       </div>
+      <div className="mx-auto max-w-5xl px-4"><PortfolioCarousel lang={ro ? "ro" : "en"} carouselKey={kind} /></div>
       <Footer />
     </main>
   );

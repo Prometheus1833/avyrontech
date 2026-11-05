@@ -33,3 +33,4 @@ Pentru procedura de predare și statutul ramurilor, vezi [PROJECT_CONTINUITY.md]
 - **INTERN OS**: intrarea directă din bara staff către prima secțiune permisă a dashboardului; nu este alt sistem de autentificare sau alt dashboard.
 - **Conversație de proiect**: mesaje comune participanților autorizați ai unui proiect, inclusiv clientului; context separat de canalele echipei și de mesajele directe, în aceeași stocare nativă.
 - **Proiectele mele**: filtru după implicare explicită; un drept global de administrare nu echivalează cu alocarea personală la toate proiectele.
+- **Carusele Exemple**: administrarea exemplelor publice pe pagini native de servicii, în Platformă; configurațiile au revizii imuabile și publicare explicită după aprobare. Nu reprezintă Biblioteca Artefacte, Media sau documentele private.

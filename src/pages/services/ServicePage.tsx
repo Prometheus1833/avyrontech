@@ -537,16 +537,13 @@ const ServicePage = () => {
           <>
             <WebsitePriceCalculator />
             <LibraryLink />
-            <section id="portofoliu" data-testid="portfolio-section" className="mt-14 scroll-mt-28">
-              <div className="text-center">
-                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-brand">{(ro ? serviceInlineCopy.text_ac6ac9de0060.ro : serviceInlineCopy.text_ac6ac9de0060.en)}</p>
-                <h2 className="mt-2 font-display text-2xl font-bold tracking-tight sm:text-3xl">{(ro ? serviceInlineCopy.text_ae32a95869c2.ro : serviceInlineCopy.text_ae32a95869c2.en)}</h2>
-                <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">{(ro ? serviceInlineCopy.text_af843ee5535c.ro : serviceInlineCopy.text_af843ee5535c.en)}</p>
-              </div>
-              <div className="mt-6"><PortfolioCarousel lang={ro ? "ro" : "en"} /></div>
-            </section>
+
           </>
         )}
+
+        <PortfolioCarousel lang={ro ? "ro" : "en"} carouselKey={product.key} heading={product.key === "premium-website" ? {
+          eyebrow: serviceInlineCopy.text_ac6ac9de0060[lang], title: serviceInlineCopy.text_ae32a95869c2[lang], description: serviceInlineCopy.text_af843ee5535c[lang],
+        } : undefined} />
 
         {product.key !== "premium-website" && faqSection}
 

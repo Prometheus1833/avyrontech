@@ -457,6 +457,7 @@ describe("OS refinement: scoped visual resources and real Engine state", () => {
       (s) => s.id,
     );
     expect(rows.slice(rows.indexOf("configurator") + 1)).toEqual([
+      "example-carousels",
       "careers",
       "library",
     ]);

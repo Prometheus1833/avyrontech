@@ -61,7 +61,7 @@ export type SectionId =
   | "finance" | "media" | "leads" | "staff-tickets" | "demo-requests" | "intern"
   | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "servicii-avyron" | "produse-avyron"
   | "newsletter" | "ai-projects" | "logo-simulations" | "surveys" | "configurator"
-  | "commercial-codes" | "other-hub" | "social-manager" | "subscriptions-admin" | "internal-subscriptions" | "careers" | "library" | "reviews" | "avy-engine";
+  | "example-carousels" | "commercial-codes" | "other-hub" | "social-manager" | "subscriptions-admin" | "internal-subscriptions" | "careers" | "library" | "reviews" | "avy-engine";
 
 export type SectionDef = {
   id: SectionId;
@@ -126,6 +126,7 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "domains", group: "platform", audience: "staff", keywords: ["domenii", "dns", "domains"] },
   { id: "surveys", group: "platform", audience: "staff", keywords: ["surveys", "chestionare", "brief", "rezultate"] },
   { id: "configurator", group: "platform", audience: "staff", keywords: ["configurator", "estimari", "oferte", "rezultate"] },
+  { id: "example-carousels", group: "platform", audience: "staff", keywords: ["carusele", "exemple", "portofoliu", "galerie", "publicare" ] },
   { id: "careers", group: "platform", audience: "staff", keywords: ["cariere", "joburi", "roluri", "recrutare"] },
   { id: "library", group: "platform", audience: "staff", keywords: ["biblioteca", "resurse", "surse", "referinte"] },
 

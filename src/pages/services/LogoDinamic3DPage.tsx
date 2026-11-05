@@ -1,3 +1,4 @@
+import PortfolioCarousel from "@/components/site/PortfolioCarousel";
 import ServiceContentProvider from "@/components/services/ServiceContentProvider";
 import logo from "@/assets/avyron-logo.jpg";
 import { Audiences,Faq,FinalCta,Formats,Packages,Process,States,Tools } from "@/components/logo3d/Content";
@@ -202,7 +203,8 @@ function PageBody() {
         }}
       />
       <div className="relative z-[1]">
-        <Footer />
+        <div className="mx-auto max-w-5xl px-4"><PortfolioCarousel lang={ro ? "ro" : "en"} carouselKey={"logo-3d"} /></div>
+      <Footer />
       </div>
     </>
   );
