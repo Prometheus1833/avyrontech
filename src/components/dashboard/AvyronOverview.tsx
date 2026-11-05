@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Activity, AlertTriangle, ArrowRight, Bot, Check, CircleDollarSign,
-  Cloud, FolderKanban, Gauge, RefreshCw, ShieldCheck, Sparkles, Target, Users, X,
+  Activity, AlertTriangle, ArrowRight, Bot, CircleDollarSign,
+  Cloud, FolderKanban, Gauge, RefreshCw, Sparkles, Target, Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Access, SectionId } from "@/lib/access";
 import { osApi, type OsOverview } from "@/lib/osApi";
+import ApprovalCenter from "./ApprovalCenter";
+import StorageStatus from "./StorageStatus";
 
 type Props = {
   access: Access;
@@ -43,13 +45,6 @@ const agentStatusLabel = (status: string) => ({
   denied: "respins",
 }[status] || status.replace(/_/g, " "));
 
-const actionLabel = (action: OsOverview["approvals"][number]["action_class"]) => ({
-  write: "scriere",
-  external: "acțiune externă",
-  financial: "acțiune financiară",
-  publish: "publicare",
-}[action]);
-
 const greeting = () => {
   const hour = new Date().getHours();
   if (hour < 12) return "Bună dimineața";
@@ -74,7 +69,7 @@ const projectStatus = (status: string) => ({
 }[status] || { label: status.replace(/_/g, " "), className: "text-slate-400 bg-white/[0.05]" });
 
 const Panel = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <section className={`rounded-2xl border border-white/[0.08] bg-[#10162a]/90 shadow-[0_24px_70px_-46px_rgba(124,58,237,0.9)] ${className}`}>
+  <section className={`min-w-0 rounded-2xl border border-white/[0.08] bg-[#10162a]/90 shadow-[0_24px_70px_-46px_rgba(124,58,237,0.9)] ${className}`}>
     {children}
   </section>
 );
@@ -89,34 +84,33 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
   const [data, setData] = useState<OsOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [busyApproval, setBusyApproval] = useState<string | null>(null);
+  const request = useRef(0);
+  const alive = useRef(true);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (quiet = false) => {
+    const version = ++request.current;
+    if (!quiet) setLoading(true);
     setError("");
     try {
-      setData(await osApi.overview());
+      const next = await osApi.overview();
+      if (alive.current && version === request.current) setData(next);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Dashboardul nu a putut fi încărcat.");
+      if (alive.current && version === request.current) setError(cause instanceof Error ? cause.message : "Dashboardul nu a putut fi încărcat.");
     } finally {
-      setLoading(false);
+      if (alive.current && version === request.current) setLoading(false);
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
-
-  const decide = async (id: string, decision: "approved" | "rejected", revision: number) => {
-    setBusyApproval(id);
-    try {
-      await osApi.decideApproval(id, decision, revision);
-      toast.success(decision === "approved" ? "Acțiunea a fost aprobată." : "Acțiunea a fost respinsă.");
-      await load();
-    } catch (cause) {
-      toast.error(cause instanceof Error ? cause.message : "Decizia nu a putut fi salvată.");
-    } finally {
-      setBusyApproval(null);
-    }
-  };
+  useEffect(() => {
+    alive.current = true;
+    void load();
+    const refresh = () => { if (document.visibilityState === "visible") void load(true); };
+    const timer = window.setInterval(refresh, 60000);
+    window.addEventListener("focus", refresh);
+    window.addEventListener("avyron:approvals-changed", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => { alive.current = false; clearInterval(timer); window.removeEventListener("focus", refresh); window.removeEventListener("avyron:approvals-changed", refresh); document.removeEventListener("visibilitychange", refresh); };
+  }, [load]);
 
   const metrics = useMemo(() => {
     if (!data) return [];
@@ -153,7 +147,7 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
     </div>
   );
 
-  if (error || !data) return (
+  if (!data) return (
     <Panel className="p-8 text-center">
       <AlertTriangle className="mx-auto size-8 text-amber-300" />
       <h2 className="mt-3 font-display text-lg font-semibold text-white">Dashboard indisponibil temporar</h2>
@@ -168,6 +162,7 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
 
   return (
     <div className="flex flex-col gap-4 text-slate-100">
+      {error && <p role="alert" className="rounded-xl border border-amber-300/20 p-3 text-xs text-amber-200">{error} Datele afișate sunt cele de la ultima citire reușită. <button className="underline" onClick={() => void load(true)}>Reîncearcă</button></p>}
       <header className="relative overflow-hidden rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-600/[0.16] via-[#11182d] to-cyan-500/[0.08] p-5 sm:p-6">
         <div aria-hidden className="absolute -right-20 -top-24 size-64 rounded-full bg-violet-500/20 blur-3xl" />
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
@@ -182,7 +177,7 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
         </div>
       </header>
 
-      <div className="grid gap-4 xl:grid-cols-12">
+      <div className="grid items-start gap-4 xl:grid-cols-12">
         <Panel className="p-4 sm:p-5 xl:col-span-7">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
@@ -191,10 +186,10 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
             </div>
             <span className="rounded-full bg-amber-300/10 px-2.5 py-1 text-xs font-semibold text-amber-200">{data.attention.length}</span>
           </div>
-          <div className="space-y-2">
+          <div className="grid items-start gap-2 sm:grid-cols-2">
             {data.attention.length === 0 && <EmptyState>Nu există urgențe confirmate în modulele conectate.</EmptyState>}
             {data.attention.map((item) => (
-              <button key={item.id} type="button" onClick={() => onOpenSection(item.destination as SectionId)} className="group flex w-full items-start gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 text-left transition hover:border-violet-400/25 hover:bg-violet-400/[0.06]">
+              <button key={item.id} type="button" onClick={() => onOpenSection(item.destination as SectionId)} className="group flex min-w-0 w-full items-start gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 text-left transition hover:border-violet-400/25 hover:bg-violet-400/[0.06]">
                 <span className={`mt-1 size-2 shrink-0 rounded-full ${item.severity === "critic" ? "bg-rose-400 shadow-[0_0_14px_rgba(251,113,133,.7)]" : "bg-amber-300"}`} />
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-medium text-slate-100">{item.title}</span>
@@ -206,34 +201,7 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
           </div>
         </Panel>
 
-        <Panel className="p-4 sm:p-5 xl:col-span-5">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-fuchsia-200/70">Control uman</p>
-              <h2 className="mt-1 font-display text-lg font-semibold text-white">Centru de aprobări</h2>
-            </div>
-            <ShieldCheck className="size-5 text-fuchsia-300" />
-          </div>
-          <div className="space-y-3">
-            {data.approvals.length === 0 && <EmptyState>{access.isSuperAdmin ? "Nicio acțiune AI nu așteaptă aprobare." : "Aprobările sunt vizibile utilizatorilor autorizați."}</EmptyState>}
-            {data.approvals.slice(0, 4).map((approval) => (
-              <div key={approval.id} className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3">
-                <div className="flex items-start gap-3">
-                  <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-fuchsia-400/10 text-fuchsia-300"><Bot className="size-4" /></span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] uppercase tracking-wide text-slate-500">{approval.agent_slug} · {actionLabel(approval.action_class)}</p>
-                    <p className="mt-1 text-sm leading-snug text-slate-200">{approval.summary}</p>
-                  </div>
-                </div>
-                <div className="mt-3 grid grid-cols-3 gap-2">
-                  <button disabled={busyApproval === approval.id} onClick={() => void decide(approval.id, "approved", approval.revision)} className="inline-flex items-center justify-center gap-1 rounded-lg bg-emerald-400/12 px-2 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-400/20 disabled:opacity-50"><Check className="size-3" /> Aprobă</button>
-                  <button onClick={() => onOpenSection("ai-os")} className="rounded-lg bg-white/[0.05] px-2 py-1.5 text-xs font-semibold text-slate-300 hover:bg-white/[0.1]">Revizuiește</button>
-                  <button disabled={busyApproval === approval.id} onClick={() => void decide(approval.id, "rejected", approval.revision)} className="inline-flex items-center justify-center gap-1 rounded-lg bg-rose-400/10 px-2 py-1.5 text-xs font-semibold text-rose-300 hover:bg-rose-400/20 disabled:opacity-50"><X className="size-3" /> Respinge</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Panel>
+        <ApprovalCenter authorized={access.isSuperAdmin} />
       </div>
 
       <div className={`grid gap-3 ${metrics.length > 2 ? "sm:grid-cols-2 xl:grid-cols-4" : "sm:grid-cols-2"}`}>
@@ -256,7 +224,7 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
 
       <div className="grid gap-4 xl:grid-cols-12">
         {access.isStaff && <Panel className="p-4 sm:p-5 xl:col-span-4">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <div><p className="font-mono text-[10px] uppercase tracking-[0.22em] text-cyan-200/70">CRM sincronizat</p><h2 className="mt-1 font-display text-lg font-semibold text-white">Pipeline leaduri</h2></div>
             <button type="button" onClick={() => onOpenSection("leads")} className="text-xs font-medium text-violet-300 hover:text-violet-200">Deschide</button>
           </div>
@@ -269,7 +237,7 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
         </Panel>}
 
         <Panel className={`p-4 sm:p-5 ${access.isStaff ? "xl:col-span-4" : "xl:col-span-6"}`}>
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <div><p className="font-mono text-[10px] uppercase tracking-[0.22em] text-violet-200/70">Livrare conectată</p><h2 className="mt-1 font-display text-lg font-semibold text-white">Proiecte active</h2></div>
             <button type="button" onClick={() => onOpenSection("projects")} className="text-xs font-medium text-violet-300 hover:text-violet-200">Vezi toate</button>
           </div>
@@ -287,7 +255,7 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
         </Panel>
 
         <Panel className={`p-4 sm:p-5 ${access.isStaff ? "xl:col-span-4" : "xl:col-span-6"}`}>
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <div><p className="font-mono text-[10px] uppercase tracking-[0.22em] text-fuchsia-200/70">Observabilitate AI</p><h2 className="mt-1 font-display text-lg font-semibold text-white">Activitatea agenților</h2></div>
             {access.isSuperAdmin && <button type="button" onClick={() => onOpenSection("ai-os")} className="text-xs font-medium text-violet-300 hover:text-violet-200">Controlează</button>}
           </div>
@@ -304,7 +272,7 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
       </div>
 
       <Panel className="p-4 sm:p-5">
-        <div className="mb-4 flex items-center justify-between"><div><p className="font-mono text-[10px] uppercase tracking-[0.22em] text-emerald-200/70">Stare verificată</p><h2 className="mt-1 font-display text-lg font-semibold text-white">Infrastructură și integrări</h2></div><Cloud className="size-5 text-emerald-300" /></div>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div><p className="font-mono text-[10px] uppercase tracking-[0.22em] text-emerald-200/70">Stare verificată</p><h2 className="mt-1 font-display text-lg font-semibold text-white">Infrastructură și integrări</h2></div><Cloud className="size-5 text-emerald-300" /></div>
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {data.health.map((item) => (
             <div key={item.id} title={item.detail} className="flex items-center gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
@@ -314,6 +282,7 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
             </div>
           ))}
         </div>
+        {access.isSuperAdmin && <StorageStatus />}
         <div className="mt-4 border-t border-white/[0.06] pt-4">
           <div className="mb-2 flex items-center justify-between"><h3 className="text-xs font-semibold text-slate-300">Registrul integrărilor</h3><span className="text-[10px] text-slate-600">{data.integrations.length} înregistrate</span></div>
           {data.integrations.length === 0 ? <EmptyState>Nu există conectori externi validați. Aceștia vor apărea după configurare.</EmptyState> : (

@@ -3,6 +3,9 @@ import type { AppBindings, Role } from "./types";
 import { platformRoleForUser } from "./authorization";
 import { now } from "./security";
 import { bucharestMonthStart, financialTotals } from "./financialTotals";
+import { approvalSources, readApprovalCenter, readApprovalDetail, type ApprovalSource } from "./approvalCenter";
+import { readStorageStatus } from "./storageStatus";
+import { checkRateLimit } from "./antispam";
 
 type AttentionItem = {
   id: string;
@@ -16,6 +19,36 @@ type AttentionItem = {
 type CountRow = { total: number };
 
 const dashboardRouter = new Hono<AppBindings>();
+dashboardRouter.use("/api/os/*", async (c, next) => {
+  c.header("Cache-Control", "private, no-store");
+  await next();
+});
+dashboardRouter.get("/api/os/approval-center", async c => {
+  const source = c.req.query("source");
+  if (source && !approvalSources.includes(source as ApprovalSource)) return c.json({error:{code:"invalid_approval_source"}},400);
+  const cursor = c.req.query("cursor");
+  if (cursor && cursor.length>400) return c.json({error:{code:"invalid_approval_cursor"}},400);
+  try {
+    const result = await readApprovalCenter(c.env,c.get("userId"),{source:source as ApprovalSource|undefined,cursor});
+    return result ? c.json(result) : c.json({error:{code:"forbidden"}},403);
+  } catch(error) {
+    if (error instanceof Error && error.message==="invalid_approval_cursor") return c.json({error:{code:error.message}},400);
+    throw error;
+  }
+});
+dashboardRouter.get("/api/os/storage", async c => {
+  if (!await platformRoleForUser(c.env.DB,c.get("userId"))) return c.json({error:{code:"forbidden"}},403);
+  const rate=await checkRateLimit(c.env.DB,[{key:`storage-health:${c.get("userId")}`,limit:12,windowSec:3600}]);
+  if(!rate.ok)return c.json({error:{code:"rate_limited",message:"Verificarea surselor este limitată la 12 citiri pe oră."}},429);
+  const result=await readStorageStatus(c.env,c.get("userId"));
+  return result?c.json(result):c.json({error:{code:"forbidden"}},403);
+});
+dashboardRouter.get("/api/os/approval-center/:source/:id", async c => {
+  const source = c.req.param("source") as ApprovalSource;
+  if (!approvalSources.includes(source) || c.req.param("id").length>160) return c.json({error:{code:"not_found"}},404);
+  const result = await readApprovalDetail(c.env,c.get("userId"),source,c.req.param("id"));
+  return result ? c.json(result) : c.json({error:{code:"not_found"}},404);
+});
 
 const isStaffRole = (roles: Role[]) => roles.includes("staff") || roles.includes("admin");
 
@@ -48,19 +81,17 @@ dashboardRouter.get("/api/os/overview", async (c) => {
   const monthStart = bucharestMonthStart(timestamp);
   const thirtyDaysAgo = timestamp - 30 * 24 * 60 * 60 * 1000;
 
-  const projectSummary = staff
-    ? await c.env.DB.prepare(
-        `SELECT COUNT(*) AS total,
-                SUM(CASE WHEN status IN ('in_progress','maintenance') THEN 1 ELSE 0 END) AS active,
-                SUM(CASE WHEN banner_status IN ('revizuire','testing') THEN 1 ELSE 0 END) AS review
-           FROM projects WHERE status <> 'archived'`,
-      ).first<{ total: number; active: number; review: number }>()
-    : await c.env.DB.prepare(
-        `SELECT COUNT(*) AS total,
-                SUM(CASE WHEN status IN ('in_progress','maintenance') THEN 1 ELSE 0 END) AS active,
-                SUM(CASE WHEN banner_status IN ('revizuire','testing') THEN 1 ELSE 0 END) AS review
-           FROM projects WHERE owner_user_id = ? AND status <> 'archived'`,
-      ).bind(userId).first<{ total: number; active: number; review: number }>();
+  // Match the project resource boundary: platform, owner, organization, or
+  // an explicit staff assignment/client grant for legacy projects.
+  const projectScope = superAdmin ? {sql:"1=1",values:[] as string[]} : {
+    sql:`(project.owner_user_id=? OR EXISTS(SELECT 1 FROM organization_memberships membership WHERE membership.organization_id=project.organization_id AND membership.user_id=? AND membership.status='active')${staff ? " OR EXISTS(SELECT 1 FROM project_staff assigned WHERE assigned.project_id=project.id AND assigned.user_id=?) OR (project.organization_id IS NULL AND EXISTS(SELECT 1 FROM client_account_access granted WHERE granted.client_id=project.client_id AND granted.user_id=?))" : ""})`,
+    values: staff ? [userId,userId,userId,userId] : [userId,userId],
+  };
+  const projectSummary = await c.env.DB.prepare(
+    `SELECT COUNT(*) total,SUM(CASE WHEN status IN ('in_progress','maintenance') THEN 1 ELSE 0 END) active,
+      SUM(CASE WHEN banner_status IN ('revizuire','testing') THEN 1 ELSE 0 END) review
+      FROM projects project WHERE status<>'archived' AND ${projectScope.sql}`,
+  ).bind(...projectScope.values).first<{total:number;active:number;review:number}>();
 
   const [leadSummary, clientSummary, ticketSummary, visitsSummary] = staff
     ? await Promise.all([
@@ -90,13 +121,13 @@ dashboardRouter.get("/api/os/overview", async (c) => {
       : Promise.resolve({ results: [] }),
     c.env.DB.prepare(
       `SELECT id, slug, name, status, COALESCE(banner_status, 'in_progress') AS banner_status, updated_at
-         FROM projects
-        WHERE status IN ('in_progress','maintenance') AND (? = 1 OR owner_user_id = ?)
+         FROM projects project
+        WHERE status IN ('in_progress','maintenance') AND ${projectScope.sql}
         ORDER BY CASE COALESCE(banner_status, 'in_progress')
           WHEN 'revizuire' THEN 0 WHEN 'testing' THEN 1 WHEN 'in_progress' THEN 2
           WHEN 'online' THEN 3 ELSE 4 END, updated_at DESC
         LIMIT 6`,
-    ).bind(staff ? 1 : 0, userId).all<{ id: string; slug: string; name: string; status: string; banner_status: string; updated_at: number }>(),
+    ).bind(...projectScope.values).all<{ id: string; slug: string; name: string; status: string; banner_status: string; updated_at: number }>(),
   ]);
 
   const [legacyOverdue, finance, approvals, agentRuns, financialAlerts, connections, securityWarnings] = superAdmin
@@ -149,9 +180,8 @@ dashboardRouter.get("/api/os/overview", async (c) => {
   const deadlines=await c.env.DB.prepare(`SELECT COUNT(*) total, SUM(CASE WHEN item.due_at<? THEN 1 ELSE 0 END) overdue
     FROM project_work_items item JOIN projects project ON project.id=item.project_id
     WHERE item.status IN ('open','in_progress','blocked') AND item.due_at<=? AND project.status!='archived'
-      AND (?=1 OR project.owner_user_id=? OR EXISTS(SELECT 1 FROM project_staff WHERE project_id=project.id AND user_id=?)
-        OR EXISTS(SELECT 1 FROM organization_memberships WHERE organization_id=project.organization_id AND user_id=? AND status='active'))`)
-    .bind(timestamp,timestamp+48*3600000,superAdmin?1:0,userId,userId,userId).first<{total:number;overdue:number}>();
+      AND ${projectScope.sql}`)
+    .bind(timestamp,timestamp+48*3600000,...projectScope.values).first<{total:number;overdue:number}>();
   if(deadlines?.total)attention.push({id:'termene-proiecte',kind:'proiect',severity:deadlines.overdue?'critic':'atenție',title:`${deadlines.total} termene necesită atenție`,detail:`${deadlines.overdue||0} depășite; celelalte în următoarele 48 de ore.`,destination:'projects'});
 
   const waitingLeads = Number(leadSummary?.waiting || 0);

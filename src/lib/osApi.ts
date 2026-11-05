@@ -1,4 +1,5 @@
 import { cfAuth } from "./cfAuth";
+import type { ApprovalDetail, ApprovalInbox, ApprovalItem, ApprovalSource } from "@/shared/approvals";
 
 export type OsAttention = {
   id: string;
@@ -88,6 +89,22 @@ export type OsOverview = {
 };
 
 export const osApi = {
+  approvals: (source?: ApprovalSource, cursor?: string) => {
+    const query = new URLSearchParams();
+    if (source) query.set("source", source);
+    if (cursor) query.set("cursor", cursor);
+    return cfAuth.request<ApprovalInbox>(`/api/os/approval-center?${query}`);
+  },
+  approval: (item: ApprovalItem) => cfAuth.request<ApprovalDetail>(`/api/os/approval-center/${item.source}/${encodeURIComponent(item.id)}`),
+  decideItem: (item: ApprovalDetail, decision: "approved" | "rejected", key: string) => {
+    const path = item.source === "agent" ? `/api/os/approvals/${encodeURIComponent(item.id)}`
+      : item.source === "operation" ? `/api/operations/records/${encodeURIComponent(item.id)}/approve`
+      : item.source === "content" ? `/api/ai-projects/${encodeURIComponent(item.contextId!)}/content/${encodeURIComponent(item.id)}` : null;
+    if (!path || !item.canDecide || (decision==="rejected" && !item.canReject)) throw new Error("Deschide modulul pentru revizuirea necesară.");
+    return cfAuth.request(path, {method:item.source==="operation"?"POST":"PATCH",headers:{"Idempotency-Key":key},body:JSON.stringify(
+      item.source==="agent" ? {decision,revision:item.revision}
+        : item.source==="operation" ? {revision:item.revision} : {status:decision,expectedUpdatedAt:item.revision})});
+  },
   overview: () => cfAuth.request<OsOverview>("/api/os/overview"),
   decideApproval: (id: string, decision: "approved" | "rejected", revision: number, note?: string) =>
     cfAuth.request<{ ok: true; status: string }>(`/api/os/approvals/${encodeURIComponent(id)}`, {
