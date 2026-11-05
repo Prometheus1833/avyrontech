@@ -1,23 +1,27 @@
-import { lazyWithRetry } from "@/lib/lazyWithRetry";
-import {flushDocumentEditors} from '@/features/documents/navigation';
-import { Suspense, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import MfaEnrollBanner from "@/components/dashboard/MfaEnrollBanner";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
-import {
-  ChevronDown, ChevronLeft, Ellipsis, Lock, LogOut, Menu,
-  PanelLeftClose, PanelLeftOpen, Search, ShieldCheck, Sparkles, MessagesSquare, Wrench,
-} from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import { buildAccess, canOpenSection, defaultSection, sectionsFor, type SectionId } from "@/lib/access";
 import logo from "@/assets/avyron-logo.webp";
-import { publicSiteHref } from "@/lib/appHost";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
-  DASHBOARD_GROUP_LABELS,
-  DASHBOARD_GROUP_ORDER,
-  DASHBOARD_SECTION_META,
+DASHBOARD_GROUP_LABELS,
+DASHBOARD_GROUP_ORDER,
+DASHBOARD_SECTION_META,
 } from "@/components/dashboard/dashboardNavigation";
+import MfaEnrollBanner from "@/components/dashboard/MfaEnrollBanner";
+import { Sheet,SheetContent,SheetDescription,SheetHeader,SheetTitle } from "@/components/ui/sheet";
+import { Tabs,TabsContent } from "@/components/ui/tabs";
+import { flushDocumentEditors } from '@/features/documents/navigation';
+import { useAuth } from "@/hooks/useAuth";
+import { buildAccess,canOpenSection,defaultSection,sectionsFor,type SectionId } from "@/lib/access";
+import { publicSiteHref } from "@/lib/appHost";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import { flushServicePageEdits } from "@/lib/servicePageNavigation";
+import { SERVICE_PAGES } from "@/shared/servicePagePolicy";
+import {
+ChevronDown,ChevronLeft,Ellipsis,Lock,LogOut,Menu,
+MessagesSquare,
+PanelLeftClose,PanelLeftOpen,Search,ShieldCheck,Sparkles,
+Wrench,
+} from "lucide-react";
+import { Suspense,useEffect,useMemo,useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 const ProfileTab = lazyWithRetry(() => import("@/components/dashboard/ProfileTab").then((m) => ({ default: m.ProfileTab })));
 const SubscriptionsTab = lazyWithRetry(() => import("@/components/dashboard/SubscriptionsTab").then((m) => ({ default: m.SubscriptionsTab })));
@@ -72,6 +76,7 @@ export default function Profile() {
   const requested = params.get("tab") === "workflows" ? "projects" : params.get("tab") ?? "";
   const [tab, setTab] = useState<SectionId>(canOpenSection(requested, access) ? requested as SectionId : defaultSection(access));
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [servicesExpanded,setServicesExpanded]=useState(requested==="servicii-avyron");
   const [commandOpen, setCommandOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
@@ -114,14 +119,15 @@ export default function Profile() {
   }, [access.isClient]);
 
   const openSection = async (section: SectionId,extraParams?:Record<string,string>) => {
-    if(!await flushDocumentEditors())return;
+    if(!await flushDocumentEditors() || !await flushServicePageEdits())return;
     const destination = canOpenSection(section, access) ? section : ["security", "automations"].includes(String(section)) && access.isStaff ? "os-centers" : null;
     if (destination) {
       setTab(destination);
       const next = new URLSearchParams(params);
       next.set("tab", destination);
       next.delete("core");
-      if(extraParams)for(const [key,value] of Object.entries(extraParams))next.set(key,value);
+      if(destination!=="servicii-avyron"){next.delete("service");next.delete("serviceGroup");}
+      if(extraParams)for(const [key,value] of Object.entries(extraParams)){if(value)next.set(key,value);else next.delete(key);}
       if (destination !== "intern") next.delete("dm");
       setParams(next, { replace: false });
       const group = allowed.find((item) => item.id === destination)?.group;
@@ -137,10 +143,11 @@ export default function Profile() {
     const Icon = sectionMeta.icon;
     const label = section === "projects" && !access.isStaff ? "Proiectele mele" : sectionMeta.label;
     const active = tab === section;
-    return <button type="button" role="tab" aria-selected={active} aria-label={label} title={sidebarCollapsed ? label : undefined} onClick={() => openSection(section)} className={`${mobile ? "flex min-w-0 flex-1 flex-col" : "w-full flex-row"} group flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-left text-xs font-medium transition lg:justify-start ${active ? "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white shadow-[0_10px_30px_-16px_rgba(124,58,237,.9)]" : "text-slate-500 hover:bg-white/[0.05] hover:text-slate-200"}`}>
+    return <><button type="button" role="tab" aria-selected={active} aria-label={label} title={sidebarCollapsed ? label : undefined} aria-expanded={section==="servicii-avyron"?servicesExpanded:undefined} onClick={() => {if(section==="servicii-avyron"){setServicesExpanded(current=>tab===section?!current:true);if(tab!==section)void openSection(section);}else void openSection(section);}} className={`${mobile ? "flex min-w-0 flex-1 flex-col" : "w-full flex-row"} group flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-left text-xs font-medium transition lg:justify-start ${active ? "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white shadow-[0_10px_30px_-16px_rgba(124,58,237,.9)]" : "text-slate-500 hover:bg-white/[0.05] hover:text-slate-200"}`}>
       <Icon className="size-4 shrink-0" strokeWidth={2.1} />
       {mobile ? <span className="max-w-full truncate text-[9px]">{sectionMeta.mobileLabel || label}</span> : !sidebarCollapsed && <span className="truncate">{label}</span>}
-    </button>;
+    {section==="servicii-avyron"&&!sidebarCollapsed&&<ChevronDown className={`ml-auto size-3 ${servicesExpanded?"rotate-180":""}`}/>}
+    </button>{section==="servicii-avyron"&&servicesExpanded&&!sidebarCollapsed&&!mobile&&<nav aria-label="Mini-listă servicii" className="ml-3 mt-1 space-y-1 border-l border-white/10 pl-2">{SERVICE_PAGES.map(page=><button key={page.key} type="button" aria-current={tab===section&&(page.key==="overview"?!params.get("service"):params.get("service")===page.key)?"page":undefined} onClick={()=>void openSection(section,{service:page.key==="overview"?"":page.key,serviceGroup:""})} className="block min-h-9 w-full rounded-lg px-2 py-2 text-left text-[11px] leading-relaxed text-slate-400 hover:bg-white/5 hover:text-white aria-[current=page]:bg-violet-500/10 aria-[current=page]:text-violet-200">{page.name}</button>)}</nav>}</>;
   };
 
   const contentFallback = <div className="min-h-56 animate-pulse rounded-2xl border border-white/[0.06] bg-white/[0.035]" aria-label="Se încarcă secțiunea" />;

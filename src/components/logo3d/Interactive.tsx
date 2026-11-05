@@ -1,25 +1,22 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Download, MessageCircle, Sparkles, Wand2 } from "lucide-react";
+import {
+MATERIAL_LABELS,
+NAME_SWATCHES,
+SEGMENT_LABELS,
+whatsappUrl
+} from "@/data/logo3d";
+import { LOGO_PAGE_COPY } from '@/data/managedServiceCopy/logo';
+import { useServicePageContent } from '@/hooks/useServicePageContent';
 import { useLang } from "@/i18n/LanguageContext";
 import { trackEvent } from "@/lib/analytics";
 import { trackFunnel } from "@/lib/siteAnalytics";
-import {
-  LOGO3D_GALLERY,
-  LOGO3D_GENESIS,
-  LOGO3D_HERO,
-  LOGO3D_NAME,
-  LOGO3D_TIERS,
-  MATERIAL_LABELS,
-  NAME_SWATCHES,
-  SEGMENT_LABELS,
-  whatsappUrl,
-} from "@/data/logo3d";
+import { Download,MessageCircle,Sparkles,Wand2 } from "lucide-react";
+import { useCallback,useEffect,useMemo,useRef,useState } from "react";
 import type { ViewHandle } from "./engine/engine";
 import FlatMark from "./FlatMark";
-import { CONCEPTS, MATERIAL_WEIGHTS, STUDIO_MARK, type MaterialKey, type SegmentKey } from "./marks";
-import { LogoView, useStage } from "./StageProvider";
-import { ripple, useLeiPrice } from "./utils";
-import { STUDIO_PRESETS, type StudioSettings } from "./studioSettings";
+import { CONCEPTS,MATERIAL_WEIGHTS,STUDIO_MARK,type MaterialKey,type SegmentKey } from "./marks";
+import { LogoView,useStage } from "./StageProvider";
+import { STUDIO_PRESETS,type StudioSettings } from "./studioSettings";
+import { ripple,useLeiPrice } from "./utils";
 
 const MATERIALS: MaterialKey[] = ["metal", "glass", "neon", "matte"];
 
@@ -28,8 +25,9 @@ const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 // ------------------------------------------------------------------ hero
 
 export function Hero({ onPreview, heroDelay }: { onPreview: () => void; heroDelay: number }) {
+ const logoCopy=useServicePageContent("logo-3d","logo",LOGO_PAGE_COPY);
   const { lang } = useLang();
-  const c = LOGO3D_HERO[lang];
+  const c = logoCopy.LOGO3D_HERO[lang];
   const lei = useLeiPrice(lang);
   const [index, setIndex] = useState(0);
   const [material, setMaterial] = useState<MaterialKey | null>(null);
@@ -37,7 +35,7 @@ export function Hero({ onPreview, heroDelay }: { onPreview: () => void; heroDela
   const mat = material ?? concept.material;
   const weights = material ? MATERIAL_WEIGHTS[material] : concept.mix ?? MATERIAL_WEIGHTS[concept.material];
   const lines = lang === "ro" ? ["Logo", "Profesional", "3D"] : ["Professional", "3D Logo"];
-  const price = lei(LOGO3D_TIERS[lang][0].priceRon);
+  const price = lei(logoCopy.LOGO3D_TIERS[lang][0].priceRon);
 
   return (
     <section id="prezentare" className="l3d-hero" data-palette="#8b5cf6,#38bdf8" style={{ ["--hero-delay" as string]: `${heroDelay}ms` }}>
@@ -129,8 +127,9 @@ export function Hero({ onPreview, heroDelay }: { onPreview: () => void; heroDela
 // ------------------------------------------------------------------ genesis
 
 export function Genesis() {
+ const logoCopy=useServicePageContent("logo-3d","logo",LOGO_PAGE_COPY);
   const { lang } = useLang();
-  const g = LOGO3D_GENESIS[lang];
+  const g = logoCopy.LOGO3D_GENESIS[lang];
   const section = useRef<HTMLElement>(null);
   const bar = useRef<HTMLElement>(null);
   const grid = useRef<SVGSVGElement>(null);
@@ -241,8 +240,9 @@ export function Genesis() {
 // ------------------------------------------------------------------ gallery
 
 export function Gallery() {
+ const logoCopy=useServicePageContent("logo-3d","logo",LOGO_PAGE_COPY);
   const { lang } = useLang();
-  const g = LOGO3D_GALLERY[lang];
+  const g = logoCopy.LOGO3D_GALLERY[lang];
   const [filter, setFilter] = useState<SegmentKey | "all">("all");
   const segments = useMemo(() => {
     const present = new Set(CONCEPTS.map((c) => c.segment));
@@ -309,8 +309,9 @@ export function Gallery() {
 // ------------------------------------------------------------------ your name in 3D
 
 export function NameStudio({ onPreview }: { onPreview: (name: string) => void }) {
+ const logoCopy=useServicePageContent("logo-3d","logo",LOGO_PAGE_COPY);
   const { lang } = useLang();
-  const n = LOGO3D_NAME[lang];
+  const n = logoCopy.LOGO3D_NAME[lang];
   const { stage, status } = useStage();
   const [name, setName] = useState("");
   const [shown, setShown] = useState("Avyron");
@@ -407,8 +408,8 @@ export function NameStudio({ onPreview }: { onPreview: (name: string) => void })
             <div role="group" aria-label={lang === "ro" ? "Tipografie" : "Typography"} className="l3d-control-row">
               {(["display", "editorial", "mono"] as const).map((font) => <button key={font} type="button" className="l3d-chip" aria-pressed={settings.font === font} onClick={() => update({ font })}>{({ display: { ro: "Modern", en: "Modern" }, editorial: { ro: "Editorial", en: "Editorial" }, mono: { ro: "Tehnic", en: "Technical" } })[font][lang]}</button>)}
             </div>
-            <p className="l3d-control-label">{LOGO3D_HERO[lang].materialsLabel}</p>
-            <div role="group" aria-label={LOGO3D_HERO[lang].materialsLabel} className="flex flex-wrap gap-2">
+            <p className="l3d-control-label">{logoCopy.LOGO3D_HERO[lang].materialsLabel}</p>
+            <div role="group" aria-label={logoCopy.LOGO3D_HERO[lang].materialsLabel} className="flex flex-wrap gap-2">
               {MATERIALS.map((m) => (
                 <button key={m} type="button" className="l3d-chip" aria-pressed={settings.material === m} onClick={() => update({ material: m })}>
                   {MATERIAL_LABELS[lang][m]}

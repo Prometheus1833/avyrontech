@@ -1,26 +1,26 @@
 import {
-  ArrowUpRight,
-  Bell,
-  Bot,
-  ChevronDown,
-  FolderKanban,
-  LayoutDashboard,
-  MessagesSquare,
-  ShieldCheck,
-  Target,
-  Wallet,
-} from "lucide-react";
-import { Link } from "react-router-dom";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+DropdownMenu,
+DropdownMenuContent,
+DropdownMenuItem,
+DropdownMenuLabel,
+DropdownMenuSeparator,
+DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
+import {
+ArrowUpRight,
+Bell,
+Bot,
+ChevronDown,
+FolderKanban,
+LayoutDashboard,
+MessagesSquare,
+ShieldCheck,
+Target,
+Wallet,
+} from "lucide-react";
+import { Link } from "react-router-dom";
 
 type QuickLink = {
   label: string;
@@ -62,7 +62,7 @@ const StaffOsMenu = () => {
       icon: MessagesSquare,
     },
     {
-      label: ro ? "Leaduri & CRM" : "Leads & CRM",
+      label: ro ? "Leaduri" : "Leads",
       detail: ro ? "Oportunități și răspunsuri" : "Opportunities and replies",
       to: "/profil?tab=leads",
       icon: Target,

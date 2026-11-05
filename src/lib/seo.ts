@@ -96,7 +96,7 @@ export function setPageMeta({
   const url = `${BASE}${path}`;
   document.title = title;
   upsertMeta("name", "description", description);
-  upsertMeta("name", "robots", robots);
+  upsertMeta("name", "robots", typeof window !== "undefined" && new URLSearchParams(window.location.search).has("servicePreview") ? "noindex, nofollow" : robots);
   upsertMeta("property", "og:title", title);
   upsertMeta("property", "og:description", description);
   upsertMeta("property", "og:url", url);

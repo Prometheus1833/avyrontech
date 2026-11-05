@@ -127,6 +127,9 @@ export default {
     if (url.pathname === "/sitemap.xml") return serveSitemap(env, request);
     if (url.pathname === "/llms.txt") return serveLlms(env, request);
     const decision = decide(url);
+    if (decision.kind === "page" && url.searchParams.has("servicePreview")) {
+      return servePrivateShell(env, url);
+    }
 
     switch (decision.kind) {
       case "redirect":

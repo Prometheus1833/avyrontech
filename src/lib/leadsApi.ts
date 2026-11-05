@@ -1,10 +1,11 @@
+import type { LeadDeletionReasonCode } from "@/shared/leadDeletionReasons";
 import { cfAuth } from "./cfAuth";
 
 export type LeadStage =
   | "new_lead" | "contacted" | "discussion" | "potential_client" | "offer"
   | "accepted" | "rejected" | "converted";
 export type LeadChannel = "phone" | "whatsapp" | "email" | "sms" | "social";
-export type LeadDeletionReasonCode = "duplicate" | "spam" | "test_entry" | "invalid_contact" | "withdrawn" | "outside_scope" | "other";
+export type { LeadDeletionReasonCode } from "@/shared/leadDeletionReasons";
 
 export type LeadListRow = {
   id: string; organization_id: string | null; source: string | null;

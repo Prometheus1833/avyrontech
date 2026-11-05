@@ -1,5 +1,6 @@
-import { privilegedMfaSatisfied } from "./mfaPolicy";
 import { serveSurveyHost } from "../../../../src/worker/surveyHost";
+import { privilegedMfaSatisfied } from "./mfaPolicy";
+import { servicePagesRouter } from "./servicePages";
 import { surveyPublic } from "./surveys/public";
 // Avyron API — Cloudflare Workers + D1 + KV + R2
 // Auth: PBKDF2-SHA256 password hashing + signed JWT (HS256) + rolling sessions.
@@ -15,32 +16,32 @@ import { surveyPublic } from "./surveys/public";
 //   GET  /api/clients           (staff/admin)
 //   ... extinde după nevoie (vezi cloudflare/workers/README.md)
 
-import { Hono, type Context, type Next } from "hono";
+import { Hono,type Context,type Next } from "hono";
+import { deleteCookie,getCookie,setCookie } from "hono/cookie";
 import { cors } from "hono/cors";
-import { getCookie, setCookie, deleteCookie } from "hono/cookie";
-import type { AppBindings, Role } from "./types";
-import { hashPassword, now, randomHex, sha256, signJwt, verifyJwt, verifyPassword } from "./security";
-import { deliverMail, logDelivery } from "./mailer";
-import { checkRateLimit, clientIp, hashKey, verifyTurnstile } from "./antispam";
-import { readJsonBodyUpTo } from "./requestBody";
-import { MAX_CONTENT_CONFIG_BYTES, avatarObjectKey, contentConfigKey, jsonByteLength } from "./storage";
-import { handleMappedHostname } from "./sites.config";
-import { apiDiscovery, API_VERSION, isApiHostname, isApiSurfaceRequest, normalizeVersionedApiRequest, openApiDocument } from "./apiGateway";
-import { publicApiCacheRequest } from "./apiCache";
-import { domainRouter } from "./domain";
-import { promotionsRouter } from "./promotions";
-import { recordPageEvent, funnelSummary, leadPipeline } from "./analytics";
-import { EXCHANGE_RATE_REFRESH_CRON, getPublicExchangeRate, refreshExchangeRate } from "./exchangeRate";
-import { isReservedPlatformEmail, platformRoleForUser } from "./authorization";
-import { base32Encode, decryptTotpSecret, encryptTotpSecret, generateTotpSecret, totpUri, verifyTotp } from "./totp";
-import { engineRouter, runDueEngineDiscovery } from "./engine";
-import { newsletterRouter } from "./newsletter";
-import { forcedPasswordAllowedPath, mfaAuthEnabled, normalizeLoginPhone, normalizeUsername, sessionLifetimeSeconds, turnstileAuthEnabled, uniqueStaffPhoneMatch } from "./authPolicy";
-import { parseReviewSubmission, WEBSITE_REVIEW_SURFACE } from "./reviewsPolicy";
 import { cleanupAvyronEditorialContent } from "./aiContentRetention";
-import { enforceApiBodyLimit } from "./requestBodyLimit";
+import { funnelSummary,leadPipeline,recordPageEvent } from "./analytics";
+import { checkRateLimit,clientIp,hashKey,verifyTurnstile } from "./antispam";
+import { publicApiCacheRequest } from "./apiCache";
+import { API_VERSION,apiDiscovery,isApiHostname,isApiSurfaceRequest,normalizeVersionedApiRequest,openApiDocument } from "./apiGateway";
+import { isReservedPlatformEmail,platformRoleForUser } from "./authorization";
+import { forcedPasswordAllowedPath,mfaAuthEnabled,normalizeLoginPhone,normalizeUsername,sessionLifetimeSeconds,turnstileAuthEnabled,uniqueStaffPhoneMatch } from "./authPolicy";
+import { cleanupDocumentExports,documentCenterRouter } from "./documentCenter";
+import { domainRouter } from "./domain";
+import { engineRouter,runDueEngineDiscovery } from "./engine";
+import { EXCHANGE_RATE_REFRESH_CRON,getPublicExchangeRate,refreshExchangeRate } from "./exchangeRate";
+import { deliverMail,logDelivery } from "./mailer";
+import { newsletterRouter } from "./newsletter";
 import { allowedOrigin } from "./originPolicy";
-import { documentCenterRouter, cleanupDocumentExports } from "./documentCenter";
+import { promotionsRouter } from "./promotions";
+import { readJsonBodyUpTo } from "./requestBody";
+import { enforceApiBodyLimit } from "./requestBodyLimit";
+import { parseReviewSubmission,WEBSITE_REVIEW_SURFACE } from "./reviewsPolicy";
+import { hashPassword,now,randomHex,sha256,signJwt,verifyJwt,verifyPassword } from "./security";
+import { handleMappedHostname } from "./sites.config";
+import { avatarObjectKey,contentConfigKey,jsonByteLength,MAX_CONTENT_CONFIG_BYTES } from "./storage";
+import { base32Encode,decryptTotpSecret,encryptTotpSecret,generateTotpSecret,totpUri,verifyTotp } from "./totp";
+import type { AppBindings,Role } from "./types";
 
 export { AvyronAgentRuntime } from "./agents/AvyronAgentRuntime";
 export { DocumentExportRuntime } from "./DocumentExportRuntime";
@@ -1594,34 +1595,34 @@ app.put("/api/content/:key", requireAuth, requireRole("admin"), async (c) => {
 });
 
 // ─── Platformă internă (proiecte + propuneri + linkuri + metadata) ──────
-import { projectsRouter } from "./projects";
-import { organizationsRouter } from "./organizations";
-import { aiOsRouter } from "./aiOs";
-import { leadsRouter } from "./leads";
-import { aiProjectsRouter } from "./aiProjects";
-import { financeRouter } from "./finance";
-import { catalogCodesRouter } from "./catalogCodes";
-import { surveyAdminRouter } from "./surveyAdmin";
-import { adminOperationsRouter } from "./adminOperations";
-import { workspaceRouter } from "./workspace";
-import { operationsOAuthRouter, operationsRouter } from "./operations";
-import { dashboardRouter } from "./osDashboard";
-import { seedRouter } from "./seed";
-import { mediaRouter } from "./media";
-import { contactRouter } from "./contact";
-import { logoStudioRouter } from "./logoStudio";
-import { produseRouter } from "./produse";
-import { produseShopRouter } from "./produseShop";
-import { produseCheckoutRouter } from "./produseCheckoutV2";
-import { produseAdminRouter } from "./produseAdmin";
-import { billingRouter } from "./billing";
-import { systemDiagnosticsRouter } from "./systemDiagnostics";
-import { consumeAsyncJobs, enqueueAsyncJobs } from "./asyncJobs";
-import { blogRouter, getBlogSitemapEntries, getPublishedBlogPost } from "./blog";
-import { headersForTransformedBody, injectBlogHtml, mergeBlogLlms, mergeBlogSitemap } from "../../../../src/worker/blogHtml";
 import { BLOG_SLUGS } from "../../../../src/data/blogSlugs";
-import { decide, isKnownSpaRoute, normalizePath } from "../../../../src/worker/router";
 import { serveCachedAsset } from "../../../../src/worker/assetCache";
+import { headersForTransformedBody,injectBlogHtml,mergeBlogLlms,mergeBlogSitemap } from "../../../../src/worker/blogHtml";
+import { decide,isKnownSpaRoute,normalizePath } from "../../../../src/worker/router";
+import { adminOperationsRouter } from "./adminOperations";
+import { aiOsRouter } from "./aiOs";
+import { aiProjectsRouter } from "./aiProjects";
+import { consumeAsyncJobs,enqueueAsyncJobs } from "./asyncJobs";
+import { billingRouter } from "./billing";
+import { blogRouter,getBlogSitemapEntries,getPublishedBlogPost } from "./blog";
+import { catalogCodesRouter } from "./catalogCodes";
+import { contactRouter } from "./contact";
+import { financeRouter } from "./finance";
+import { leadsRouter } from "./leads";
+import { logoStudioRouter } from "./logoStudio";
+import { mediaRouter } from "./media";
+import { operationsOAuthRouter,operationsRouter } from "./operations";
+import { organizationsRouter } from "./organizations";
+import { dashboardRouter } from "./osDashboard";
+import { produseRouter } from "./produse";
+import { produseAdminRouter } from "./produseAdmin";
+import { produseCheckoutRouter } from "./produseCheckoutV2";
+import { produseShopRouter } from "./produseShop";
+import { projectsRouter } from "./projects";
+import { seedRouter } from "./seed";
+import { surveyAdminRouter } from "./surveyAdmin";
+import { systemDiagnosticsRouter } from "./systemDiagnostics";
+import { workspaceRouter } from "./workspace";
 app.use("/api/projects/*", requireAuth);
 app.use("/api/organizations/*", requireAuth);
 app.use("/api/organization-invitations/*", requireAuth);
@@ -1677,6 +1678,8 @@ app.route("/", aiOsRouter);
 app.route("/", newsletterRouter);
 app.route("/", leadsRouter);
 app.route("/", aiProjectsRouter);
+app.use("/api/admin/service-pages/*", requireAuth);
+app.route("/", servicePagesRouter);
 app.route("/", catalogCodesRouter);
 app.use("/api/documents", requireAuth);
 app.use("/api/documents/*", requireAuth);
@@ -1834,6 +1837,13 @@ app.all("*", async (c) => {
   if (decision.kind === "asset") return serveCachedAsset(c.env.ASSETS, c.req.raw);
   if (decision.kind === "static") return siteFile(c, decision.file, decision.status, decision.noindex);
   if (decision.kind === "blog") return publicBlogPage(c, decision.language, decision.slug);
+
+  if (url.searchParams.has("servicePreview")) {
+    const shell = await siteFile(c, "/_shell.html", 200, true);
+    const headers = new Headers(shell.headers);
+    headers.set("Cache-Control", "private, no-store");
+    return new Response(shell.body, { status: shell.status, headers });
+  }
 
   const path = normalizePath(url.pathname);
   const asset = await c.env.ASSETS.fetch(c.req.raw);

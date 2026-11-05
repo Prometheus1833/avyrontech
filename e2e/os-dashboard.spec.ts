@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect,test,type Page } from "@playwright/test";
 
 const now = Date.now();
 
@@ -193,7 +193,7 @@ test.describe("dashboard AVYRON OS în română", () => {
 
     const quickAccess = page.getByLabel("Acces rapid OS");
     await expect(quickAccess.getByRole("menuitem", { name: /Privire de ansamblu/ })).toHaveAttribute("href", "/profil?tab=overview");
-    await expect(quickAccess.getByRole("menuitem", { name: /Leaduri & CRM/ })).toHaveAttribute("href", "/profil?tab=leads");
+    await expect(quickAccess.getByRole("menuitem", { name: /Leaduri/ })).toHaveAttribute("href", "/profil?tab=leads");
     await expect(quickAccess.getByRole("menuitem", { name: /Agenți AI/ })).toHaveAttribute("href", "/profil?tab=ai-os");
     await expect(page.getByRole("menuitem", { name: "Către Panoul de comandă" })).toHaveAttribute("href", "/profil?tab=overview");
     await expect(page.getByRole("menu")).toHaveCSS("opacity", "1");
@@ -334,7 +334,7 @@ test.describe("dashboard AVYRON OS în română", () => {
     await page.goto("/profil?tab=leads");
     await expect(page.getByRole("heading", { name: "Leaduri", exact: true })).toBeVisible();
     const navigation = page.getByRole("navigation", { name: "Navigare AVYRON OS" });
-    await expect(navigation.getByRole("tab", { name: "Leaduri & CRM" })).toBeVisible();
+    await expect(navigation.getByRole("tab", { name: "Leaduri" })).toBeVisible();
     await expect(navigation.getByRole("tab", { name: "Financiar" })).toHaveCount(0);
   });
 
@@ -361,11 +361,11 @@ test.describe("dashboard AVYRON OS în română", () => {
 
   test("separă serviciile personalizate de catalogul de produse", async ({ page }) => {
     await page.goto("/profil?tab=servicii-avyron");
-    await expect(page.getByRole("heading", { name: "Servicii AVYRON", exact: true })).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByRole("heading", { name: "Prezență digitală", exact: true })).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByRole("heading", { name: "Software, automatizări și AI", exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("heading", { name: "Servicii", exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("heading", { name: "Pagina Toate serviciile", exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("heading", { name: "Site Prezentare Profesional", exact: true })).toBeVisible({ timeout: 10_000 });
     await expect(page.getByRole("link", { name: "Deschide serviciile" })).toHaveAttribute("href", "/servicii");
-    await expect(page.getByRole("button", { name: "Configurează" }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Configurează pagina", exact: true }).first()).toBeVisible();
     await expect(page.getByRole("tab", { name: "Produse AVYRON", exact: true }).first()).toBeVisible();
   });
 

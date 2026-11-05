@@ -120,7 +120,7 @@ describe("AVYRON OS dashboard", () => {
     expect(services).toContain('mainService: "Serviciu principal"');
     expect(services).toContain('"Produse AVYRON"');
     expect(servicePage).toContain('product.key === "premium-website"');
-    expect(servicePage).toContain('"Serviciu principal"');
+    expect(readFileSync(resolve(process.cwd(), "src/data/managedServiceCopy/inline-generic.ts"), "utf8")).toContain('"Serviciu principal"');
   });
 
   it("creează atomic proiectul cu mentenanță și abonament opțional", () => {

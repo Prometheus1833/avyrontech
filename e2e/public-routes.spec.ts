@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect,test } from "@playwright/test";
 
 const canonical = (path: string) => `https://avyron.ro${path === "/" ? "/" : path}`;
 
@@ -881,8 +881,9 @@ test.describe("forms and authentication", () => {
     await expect(page.getByRole("heading", { name: "Istoric" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Remindere" })).toBeVisible();
     await page.getByRole("dialog", { name: "Ana Popescu" }).getByRole("button", { name: "Șterge" }).click();
-    const deletionDialog = page.getByRole("dialog", { name: "Elimină lead-ul din pipeline" });
-    await expect(deletionDialog.getByText(/Motiv recomandat.*Înregistrare duplicată/)).toBeVisible();
+    const deletionDialog = page.getByRole("dialog", { name: "Elimină lead-ul" });
+    await expect(deletionDialog.getByText(/Alege motivul verificat/)).toBeVisible();
+    await deletionDialog.getByText("Înregistrare duplicată", {exact:true}).click();
     await deletionDialog.getByLabel("Detalii opționale").fill("Solicitarea există deja într-o fișă activă.");
     await deletionDialog.getByRole("button", { name: "Confirmă eliminarea" }).click();
     await expect.poll(() => deletedLead).not.toBeNull();

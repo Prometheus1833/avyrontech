@@ -1,33 +1,25 @@
-import { useEffect, useMemo, useState } from "react";
-import { LoaderCircle, ShieldCheck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Dialog,DialogContent,DialogDescription,DialogHeader,DialogTitle } from "@/components/ui/dialog";
+import { RadioGroup,RadioGroupItem } from "@/components/ui/radio-group";
 import {
-  leadsApi,
-  type LeadDeletionLog,
-  type LeadDeletionReasonCode,
-  type LeadListRow,
+leadsApi,
+type LeadDeletionLog,
+type LeadDeletionReasonCode,
+type LeadListRow,
 } from "@/lib/leadsApi";
+import { LEAD_DELETION_REASONS } from "@/shared/leadDeletionReasons";
+import { LoaderCircle,ShieldCheck,Trash2 } from "lucide-react";
+import { useEffect,useMemo,useState } from "react";
 
-const reasons: Array<{ code: LeadDeletionReasonCode; label: string; hint: string }> = [
-  { code: "duplicate", label: "Înregistrare duplicată", hint: "Același contact există deja într-o fișă activă." },
-  { code: "spam", label: "Spam sau solicitare abuzivă", hint: "Mesaj automat, irelevant sau rău intenționat." },
-  { code: "test_entry", label: "Înregistrare de test", hint: "Date create doar pentru verificarea platformei." },
-  { code: "invalid_contact", label: "Date de contact nevalide", hint: "Contactul nu poate fi identificat sau verificat." },
-  { code: "withdrawn", label: "Solicitare retrasă", hint: "Persoana a cerut închiderea solicitării comerciale." },
-  { code: "outside_scope", label: "În afara serviciilor AVYRON", hint: "Cererea nu poate fi preluată în pipeline-ul comercial." },
-  { code: "other", label: "Alt motiv", hint: "Descrie clar motivul pentru jurnalul de audit." },
-];
+const reasons = LEAD_DELETION_REASONS;
 
 const leadDeletionReasonLabel = (code: string | null) => reasons.find((item) => item.code === code)?.label || "Motiv indisponibil";
 
-const suggestLeadDeletionReason = (lead: Pick<LeadListRow, "name" | "business" | "email" | "phone" | "source" | "lifecycle_stage">): LeadDeletionReasonCode => {
+const suggestLeadDeletionReason = (lead: Pick<LeadListRow, "name" | "business" | "email" | "phone" | "source" | "lifecycle_stage">): LeadDeletionReasonCode | null => {
   const searchable = [lead.name, lead.business, lead.email, lead.source].filter(Boolean).join(" ").toLowerCase();
   if (/\b(test|demo|fixture|exemplu)\b/.test(searchable)) return "test_entry";
   if (!lead.email && !lead.phone) return "invalid_contact";
-  if (lead.lifecycle_stage === "rejected") return "withdrawn";
-  return "duplicate";
+  return null;
 };
 
 export function LeadDeleteDialog({ lead, open, busy, onOpenChange, onConfirm }: {
@@ -37,24 +29,24 @@ export function LeadDeleteDialog({ lead, open, busy, onOpenChange, onConfirm }: 
   onOpenChange: (open: boolean) => void;
   onConfirm: (reasonCode: LeadDeletionReasonCode, reasonDetail: string) => Promise<void>;
 }) {
-  const suggested = useMemo(() => lead ? suggestLeadDeletionReason(lead) : "duplicate", [lead]);
-  const [reasonCode, setReasonCode] = useState<LeadDeletionReasonCode>(suggested);
+  const suggested = useMemo(() => lead ? suggestLeadDeletionReason(lead) : null, [lead]);
+  const [reasonCode, setReasonCode] = useState<LeadDeletionReasonCode | "">(suggested || "");
   const [reasonDetail, setReasonDetail] = useState("");
 
-  useEffect(() => { if (open) { setReasonCode(suggested); setReasonDetail(""); } }, [open, suggested]);
+  useEffect(() => { if (open) { setReasonCode(suggested || ""); setReasonDetail(""); } }, [open, suggested]);
   const label = lead?.name || lead?.business || "acest lead";
   const detailRequired = reasonCode === "other";
 
   return <Dialog open={open} onOpenChange={(next) => !busy && onOpenChange(next)}>
     <DialogContent className="max-h-[92vh] max-w-xl overflow-y-auto p-4 sm:p-6">
       <DialogHeader>
-        <DialogTitle className="flex items-center gap-2"><Trash2 className="size-5 text-destructive" /> Elimină lead-ul din pipeline</DialogTitle>
+        <DialogTitle className="flex items-center gap-2"><Trash2 className="size-5 text-destructive" /> Elimină lead-ul</DialogTitle>
         <DialogDescription>
           {label} va dispărea din liste și din sumarul CRM. Fișa rămâne ca înregistrare restricționată, iar motivul și autorul sunt păstrate în jurnalul vizibil super-adminilor.
         </DialogDescription>
       </DialogHeader>
       <div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.06] px-3 py-2 text-xs text-amber-700 dark:text-amber-200">
-        Motiv recomandat pe baza fișei: <strong>{leadDeletionReasonLabel(suggested)}</strong>. Verifică alegerea înainte de confirmare.
+        {suggested ? <>Motiv sugerat de datele fișei: <strong>{leadDeletionReasonLabel(suggested)}</strong>. Verifică alegerea înainte de confirmare.</> : <>Alege motivul verificat. Starea lead-ului nu stabilește automat cauza închiderii.</>}
       </div>
       <RadioGroup value={reasonCode} onValueChange={(value) => setReasonCode(value as LeadDeletionReasonCode)} className="gap-2">
         {reasons.map((reason) => <label key={reason.code} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition ${reasonCode === reason.code ? "border-primary/45 bg-primary/[0.06]" : "border-border/60 hover:bg-muted/50"}`}>
@@ -69,7 +61,7 @@ export function LeadDeleteDialog({ lead, open, busy, onOpenChange, onConfirm }: 
       </label>
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" disabled={busy} onClick={() => onOpenChange(false)}>Anulează</Button>
-        <Button type="button" variant="destructive" disabled={busy || (detailRequired && reasonDetail.trim().length < 5)} onClick={() => void onConfirm(reasonCode, reasonDetail.trim())}>
+        <Button type="button" variant="destructive" disabled={busy || !reasonCode || (detailRequired && reasonDetail.trim().length < 5)} onClick={() => {if(reasonCode)void onConfirm(reasonCode, reasonDetail.trim());}}>
           {busy && <LoaderCircle className="animate-spin" />} Confirmă eliminarea
         </Button>
       </div>
@@ -89,7 +81,7 @@ export function LeadDeletionLogDialog({ open, onOpenChange }: { open: boolean; o
   }, [open]);
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="max-h-[92vh] max-w-3xl overflow-y-auto p-4 sm:p-6">
-      <DialogHeader><DialogTitle className="flex items-center gap-2"><ShieldCheck className="size-5 text-emerald-600" /> Jurnal leaduri eliminate</DialogTitle><DialogDescription>Acces restricționat super-adminilor. Intrările sunt recuperabile din D1 și nu reapar în pipeline.</DialogDescription></DialogHeader>
+      <DialogHeader><DialogTitle className="flex items-center gap-2"><ShieldCheck className="size-5 text-emerald-600" /> Jurnal leaduri eliminate</DialogTitle><DialogDescription>Acces restricționat super-adminilor. Intrările sunt recuperabile din D1 și nu reapar în listele active.</DialogDescription></DialogHeader>
       {loading && <div className="grid min-h-32 place-items-center"><LoaderCircle className="size-6 animate-spin" /></div>}
       {error && <p role="alert" className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
       {!loading && !error && <div className="space-y-2">

@@ -1,24 +1,27 @@
-import { useCallback, useEffect, useState } from "react";
-import { Pause, Play } from "lucide-react";
+import ServiceContentProvider from "@/components/services/ServiceContentProvider";
+import logo from "@/assets/avyron-logo.jpg";
+import { Audiences,Faq,FinalCta,Formats,Packages,Process,States,Tools } from "@/components/logo3d/Content";
+import { Gallery,Genesis,Hero,NameStudio } from "@/components/logo3d/Interactive";
+import "@/components/logo3d/logo3d.css";
+import { StageProvider,useStage } from "@/components/logo3d/StageProvider";
+import { isRealBrowser } from "@/components/logo3d/utils";
+import "@/components/logoStudio/studio.css";
+import StudioTeaser from "@/components/logoStudio/StudioTeaser";
+import Breadcrumbs from "@/components/site/Breadcrumbs";
+import FloatingWhatsApp from "@/components/site/FloatingWhatsApp";
+import Footer from "@/components/site/Footer";
+import LangSwitch from "@/components/site/LangSwitch";
+import LibraryLink from "@/components/site/LibraryLink";
+import PageBackLink from "@/components/site/PageBackLink";
+import QuickNav,{ type QuickNavItem } from "@/components/site/QuickNav";
+import { RequestExampleModal } from "@/components/site/RequestExampleModal";
+import { LOGO3D_PATHS } from "@/data/logo3d";
+import { LOGO_PAGE_COPY } from '@/data/managedServiceCopy/logo';
+import { useServicePageContent } from '@/hooks/useServicePageContent';
 import { useLang } from "@/i18n/LanguageContext";
 import { trackFunnel } from "@/lib/siteAnalytics";
-import LangSwitch from "@/components/site/LangSwitch";
-import Breadcrumbs from "@/components/site/Breadcrumbs";
-import PageBackLink from "@/components/site/PageBackLink";
-import Footer from "@/components/site/Footer";
-import QuickNav, { type QuickNavItem } from "@/components/site/QuickNav";
-import FloatingWhatsApp from "@/components/site/FloatingWhatsApp";
-import { RequestExampleModal } from "@/components/site/RequestExampleModal";
-import logo from "@/assets/avyron-logo.jpg";
-import { StageProvider, useStage } from "@/components/logo3d/StageProvider";
-import { isRealBrowser } from "@/components/logo3d/utils";
-import { Gallery, Genesis, Hero, NameStudio } from "@/components/logo3d/Interactive";
-import { Audiences, Faq, FinalCta, Formats, Packages, Process, States, Tools } from "@/components/logo3d/Content";
-import { LOGO3D_FAQ, LOGO3D_META, LOGO3D_PATHS, LOGO3D_TIERS } from "@/data/logo3d";
-import StudioTeaser from "@/components/logoStudio/StudioTeaser";
-import LibraryLink from "@/components/site/LibraryLink";
-import "@/components/logoStudio/studio.css";
-import "@/components/logo3d/logo3d.css";
+import { Pause,Play } from "lucide-react";
+import { useCallback,useEffect,useState } from "react";
 
 const quickNav: Record<"ro" | "en", QuickNavItem[]> = {
   ro: [
@@ -123,9 +126,10 @@ function Spotlight() {
 }
 
 function PageBody() {
+ const logoCopy=useServicePageContent("logo-3d","logo",LOGO_PAGE_COPY);
   const { lang } = useLang();
   const ro = lang === "ro";
-  const m = LOGO3D_META[lang];
+  const m = logoCopy.LOGO3D_META[lang];
   const [modal, setModal] = useState<{ open: boolean; name: string }>({ open: false, name: "" });
   useScrollChoreography(lang);
 
@@ -205,15 +209,17 @@ function PageBody() {
 }
 
 const LogoDinamic3DPage = () => {
+ const logoCopy=useServicePageContent("logo-3d","logo",LOGO_PAGE_COPY);
   const { lang } = useLang();
   const ro = lang === "ro";
-  const m = LOGO3D_META[lang];
+  const m = logoCopy.LOGO3D_META[lang];
 
+  useEffect(() => {window.scrollTo(0, 0);}, [lang]);
   useEffect(() => {
-    window.scrollTo(0, 0);
+
     const path = LOGO3D_PATHS[lang];
     const url = `https://avyron.ro${path}`;
-    const tiers = LOGO3D_TIERS[lang];
+    const tiers = logoCopy.LOGO3D_TIERS[lang];
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
       ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd, serviceLd, faqPageLd }]) => {
         const image = ro ? "/og/logo-dinamic-3d.jpg" : "/og/logo-dinamic-3d-en.jpg";
@@ -249,7 +255,7 @@ const LogoDinamic3DPage = () => {
             })),
           },
         }));
-        setJsonLd("ld-faq", faqPageLd([...LOGO3D_FAQ[lang]]));
+        setJsonLd("ld-faq", faqPageLd([...logoCopy.LOGO3D_FAQ[lang]]));
         setJsonLd(
           "ld-breadcrumb",
           breadcrumbLd([
@@ -260,7 +266,7 @@ const LogoDinamic3DPage = () => {
         );
       },
     );
-  }, [lang, ro, m]);
+  }, [lang, ro, m, logoCopy]);
 
   useEffect(() => {
     trackFunnel("page_view", "logo3d", { product: "logo_dinamic_3d" });
@@ -276,4 +282,4 @@ const LogoDinamic3DPage = () => {
   );
 };
 
-export default LogoDinamic3DPage;
+export default function ManagedLogoDinamic3DPage(){return <ServiceContentProvider><LogoDinamic3DPage/></ServiceContentProvider>;}

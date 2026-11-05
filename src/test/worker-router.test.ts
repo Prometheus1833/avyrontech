@@ -76,6 +76,16 @@ const env = {
 const get = (path: string) =>
   worker.fetch(new Request(`https://avyron.ro${path}`), env as never);
 
+describe("service draft preview isolation", () => {
+  it.each(["/servicii", "/servicii/website-prezentare-profesional"])("serves a private, noindex shell for %s previews", async path => {
+    const response=await get(path+"?servicePreview=premium-website&revision=1");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+    const html=await response.text();expect(html).toContain('id="root"');expect(html).not.toContain("<h1>pricing</h1>");
+  });
+});
+
 describe("worker redirects", () => {
   it.each([
     ["/costuri", "/servicii"],

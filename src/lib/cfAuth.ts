@@ -131,6 +131,7 @@ class CfAuth {
   }
 
   async requestResponse(path: string, init: RequestInit = {}): Promise<Response> {
+    if(typeof window!=="undefined"&&new URLSearchParams(window.location.search).has("servicePreview")&&!["GET","HEAD","OPTIONS"].includes((init.method||"GET").toUpperCase()))throw new Error("Previzualizare: acțiunile care modifică datele sunt dezactivate.");
     const token = await this.ensureToken();
     const headers = new Headers(init.headers);
     if (token) headers.set("authorization", `Bearer ${token}`);

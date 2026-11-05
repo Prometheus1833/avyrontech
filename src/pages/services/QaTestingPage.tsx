@@ -1,81 +1,57 @@
-import { useEffect, useState } from "react";
-import {
-  Accessibility,
-  ArrowRight,
-  Bug,
-  Check,
-  ClipboardList,
-  Clock,
-  Cpu,
-  FileSearch,
-  FlaskConical,
-  Gauge,
-  Globe,
-  Hand,
-  Layers,
-  Lock,
-  MessageCircle,
-  Monitor,
-  RefreshCw,
-  Repeat,
-  Smartphone,
-  Sparkles,
-  Terminal,
-  Workflow,
-} from "lucide-react";
-import { useLang } from "@/i18n/LanguageContext";
-import LangSwitch from "@/components/site/LangSwitch";
-import ThemeToggle from "@/components/site/ThemeToggle";
+import ServiceContentProvider from "@/components/services/ServiceContentProvider";
+import logo from "@/assets/avyron-logo.jpg";
+import ServiceCinematicIntro from "@/components/services/ServiceCinematicIntro";
 import Breadcrumbs from "@/components/site/Breadcrumbs";
+import CurrencySwitch from "@/components/site/CurrencySwitch";
+import Footer from "@/components/site/Footer";
+import LangSwitch from "@/components/site/LangSwitch";
+import LibraryLink from "@/components/site/LibraryLink";
 import PageBackLink from "@/components/site/PageBackLink";
 import QuickNav from "@/components/site/QuickNav";
 import Reveal from "@/components/site/Reveal";
-import LibraryLink from "@/components/site/LibraryLink";
-import Footer from "@/components/site/Footer";
-import CurrencySwitch from "@/components/site/CurrencySwitch";
-import logo from "@/assets/avyron-logo.jpg";
-import { trackEvent } from "@/lib/analytics";
+import ThemeToggle from "@/components/site/ThemeToggle";
+import { SERVICE_INLINE_QA } from '@/data/managedServiceCopy/inline-qa';
+import { QA_PAGE_COPY } from '@/data/managedServiceCopy/qa';
 import { useCurrency } from "@/hooks/useCurrency";
-import ServiceCinematicIntro from "@/components/services/ServiceCinematicIntro";
+import { useServicePageContent } from '@/hooks/useServicePageContent';
+import { useLang } from "@/i18n/LanguageContext";
+import { trackEvent } from "@/lib/analytics";
+import {
+ArrowRight,
+Bug,
+Check,
+Clock,
+FlaskConical,
+Globe,
+Layers,
+MessageCircle,
+Monitor,
+RefreshCw,
+Smartphone,
+Sparkles,
+Workflow
+} from "lucide-react";
+import { useEffect,useState } from "react";
 
 const WHATSAPP = "https://wa.me/40734605055?text=";
 
 const QaTestingPage = () => {
+ const serviceInlineCopy=useServicePageContent("qa-testing","inline",SERVICE_INLINE_QA);
+
   const { lang } = useLang();
   const ro = lang === "ro";
+  const {faq,modes,types,steps,packages}=useServicePageContent("qa-testing","qa",QA_PAGE_COPY)[lang];
   const { formatFixedPrice: fmt } = useCurrency(ro ? "ro-RO" : "en-IE");
   const [mode, setMode] = useState<"manual" | "auto">("manual");
 
   const path = ro ? "/servicii/qa-testing-web-mobile" : "/en/services/web-mobile-qa-testing";
 
-  const faq = ro
-    ? [
-        { q: "Este un abonament lunar?", a: "Nu. Testarea QA se contractează pe proiect sau pe sprint, cu preț fix agreat înainte de start. Plătești o singură dată pentru runda de testare, iar retestarea defectelor raportate este inclusă." },
-        { q: "Ce înseamnă testare manuală și ce înseamnă testare automată?", a: "Testarea manuală înseamnă că un tester parcurge fluxurile ca un client real, pe dispozitive fizice, și caută inclusiv problemele pe care un script nu le vede. Testarea automată înseamnă scripturi end-to-end care repetă aceleași verificări la fiecare actualizare, în câteva minute." },
-        { q: "Testați și aplicații mobile native?", a: "Da. Testăm aplicații Android și iOS, native sau hibride, inclusiv build-uri din TestFlight sau Google Play Internal Testing, pe dispozitive reale și emulatoare." },
-        { q: "Ce primesc la final?", a: "Un raport de defecte cu severitate, pași de reproducere, capturi sau înregistrări video, impactul asupra utilizatorului și recomandarea de remediere, plus setul de scenarii de test care rămâne al tău." },
-        { q: "Reparați și defectele găsite?", a: "Putem. Remedierea se cotează separat, în funcție de complexitate. Dacă lucrezi cu altă echipă de dezvoltare, raportul este suficient de detaliat ca ei să intervină direct." },
-        { q: "Cât durează o rundă de testare?", a: "Între 3 și 10 zile lucrătoare pentru majoritatea proiectelor. Un site de prezentare se acoperă în 3–4 zile, un magazin online sau o aplicație cu conturi și plăți în 7–10 zile." },
-        { q: "Cât costă?", a: "De la 1.600 lei pentru o rundă completă pe un site de prezentare. Pentru magazine online, aplicații și platforme cotăm în funcție de numărul de fluxuri critice și de dispozitivele acoperite." },
-      ]
-    : [
-        { q: "Is this a monthly subscription?", a: "No. QA testing is contracted per project or per sprint, at a fixed price agreed before we start. You pay once for the testing round, and retesting of reported defects is included." },
-        { q: "What is manual testing and what is automated testing?", a: "Manual testing means a tester walks your flows like a real customer, on physical devices, catching issues a script never sees. Automated testing means end-to-end scripts that repeat the same checks on every release, in minutes." },
-        { q: "Do you test native mobile apps?", a: "Yes. We test Android and iOS apps, native or hybrid, including TestFlight and Google Play Internal Testing builds, on real devices and emulators." },
-        { q: "What do I receive at the end?", a: "A defect report with severity, reproduction steps, screenshots or video recordings, user impact and a fix recommendation, plus the test case set which stays yours." },
-        { q: "Do you also fix the defects you find?", a: "We can. Fixing is quoted separately based on complexity. If you work with another development team, the report is detailed enough for them to act directly." },
-        { q: "How long does a testing round take?", a: "Between 3 and 10 working days for most projects. A presentation website is covered in 3–4 days; an online store or an app with accounts and payments in 7–10 days." },
-        { q: "How much does it cost?", a: "From 1,600 RON (€300 when displayed in euro) for a full round on a presentation website. For stores, apps and platforms we quote based on the number of critical flows and the devices covered." },
-      ];
+
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    const title = ro
-      ? "QA Testing Web/Mobile — testare manuală și automată, de la 1.600 lei | Avyron"
-      : "QA Testing Web/Mobile — manual and automated testing, from 1,600 RON | Avyron";
-    const description = ro
-      ? "Servicii QA Testing pentru web și mobile: testare funcțională, regresie, cross-browser, dispozitive reale, performanță, securitate, accesibilitate și automatizare end-to-end. Pe proiect, fără abonament, de la 1.600 lei."
-      : "QA testing services for web and mobile: functional, regression, cross-browser, real devices, performance, security, accessibility and end-to-end automation. Per project, no subscription, from 1,600 RON.";
+    const title = (ro ? serviceInlineCopy.text_25c9845c7fee.ro : serviceInlineCopy.text_25c9845c7fee.en);
+    const description = (ro ? serviceInlineCopy.text_0cbfe04e1470.ro : serviceInlineCopy.text_0cbfe04e1470.en);
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
       ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd, serviceLd, offerCatalogLd, faqPageLd }]) => {
         setPageMeta({
@@ -142,147 +118,13 @@ const QaTestingPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ro]);
 
-  const modes = {
-    manual: {
-      label: ro ? "Testare manuală" : "Manual testing",
-      icon: Hand,
-      lead: ro
-        ? "Un tester parcurge produsul exact ca un client real: greșește, se răzgândește, pierde semnalul, apasă butonul de două ori. Aici apar problemele pe care niciun script nu le anticipează."
-        : "A tester walks your product exactly like a real customer: makes mistakes, changes their mind, loses signal, taps a button twice. This is where the issues no script anticipates show up.",
-      points: ro
-        ? [
-            "Testare exploratorie pe fluxurile tale de business",
-            "Scenarii negative: date greșite, stoc epuizat, plată refuzată",
-            "Verificare pe dispozitive fizice Android și iOS",
-            "Control vizual: layout, texte, imagini, stări de eroare",
-            "Testare de acceptanță (UAT) împreună cu tine",
-            "Verificarea emailurilor tranzacționale și a facturilor",
-          ]
-        : [
-            "Exploratory testing across your business flows",
-            "Negative scenarios: bad data, out of stock, declined payment",
-            "Checks on physical Android and iOS devices",
-            "Visual control: layout, copy, images, error states",
-            "User acceptance testing (UAT) together with you",
-            "Transactional email and invoice verification",
-          ],
-      tools: ["Dispozitive fizice", "BrowserStack", "Charles Proxy", "TestRail / Notion", "DevTools"],
-    },
-    auto: {
-      label: ro ? "Testare automată" : "Automated testing",
-      icon: Terminal,
-      lead: ro
-        ? "Scripturile rulează aceleași verificări la fiecare actualizare, în câteva minute, și prind regresiile înainte să ajungă la clienți. Suita rămâne a ta și poate fi extinsă oricând."
-        : "Scripts run the same checks on every release, in minutes, catching regressions before they reach customers. The suite stays yours and can be extended any time.",
-      points: ro
-        ? [
-            "Teste end-to-end pe fluxurile critice (Playwright)",
-            "Testare de regresie automată la fiecare deploy",
-            "Verificări API și contract pentru integrări",
-            "Teste de performanță și încărcare simultană (k6)",
-            "Audit automat de accesibilitate (axe) și Lighthouse",
-            "Rulare în pipeline CI, cu raport și capturi la fiecare eșec",
-          ]
-        : [
-            "End-to-end tests on critical flows (Playwright)",
-            "Automated regression testing on every deploy",
-            "API and contract checks for your integrations",
-            "Performance and concurrent load tests (k6)",
-            "Automated accessibility (axe) and Lighthouse audits",
-            "CI pipeline runs, with a report and screenshots on each failure",
-          ],
-      tools: ["Playwright", "Vitest", "k6", "axe-core", "Lighthouse CI", "GitHub Actions"],
-    },
-  } as const;
 
-  const types = ro
-    ? [
-        { icon: Check, title: "Funcțional", desc: "Cont, căutare, coș, checkout, plată, formulare, notificări, zona de administrare." },
-        { icon: Repeat, title: "Regresie", desc: "Ne asigurăm că o modificare nouă nu strică ce funcționa deja înainte." },
-        { icon: FileSearch, title: "Exploratoriu", desc: "Testare liberă, fără scenariu fix, exact acolo unde apar defectele neașteptate." },
-        { icon: Monitor, title: "Cross-browser", desc: "Chrome, Safari, Firefox și Edge, pe rezoluții și sisteme de operare diferite." },
-        { icon: Smartphone, title: "Mobil real", desc: "Telefoane Android și iPhone fizice, tablete, ecrane mici și telefoane vechi." },
-        { icon: Gauge, title: "Performanță", desc: "Core Web Vitals, timpi de răspuns, internet lent și trafic simultan crescut." },
-        { icon: Lock, title: "Securitate de bază", desc: "Validări de input, protecția formularelor, roluri, sesiuni și expunerea datelor." },
-        { icon: Accessibility, title: "Accesibilitate", desc: "Navigare din tastatură, contrast, etichete pentru cititoare de ecran, criterii WCAG." },
-        { icon: Layers, title: "API și integrări", desc: "Plăți, curierat, facturare, CRM, email — verificate inclusiv pe erorile lor." },
-        { icon: Globe, title: "Localizare și SEO tehnic", desc: "Limbi, monede, formate de dată, titluri, meta, canonice și date structurate." },
-        { icon: Cpu, title: "Compatibilitate", desc: "Comportament pe conexiuni instabile, browsere vechi și moduri de economisire." },
-        { icon: ClipboardList, title: "Acceptanță (UAT)", desc: "Validarea finală înainte de lansare, împreună cu tine, pe criterii agreate." },
-      ]
-    : [
-        { icon: Check, title: "Functional", desc: "Account, search, cart, checkout, payment, forms, notifications, admin area." },
-        { icon: Repeat, title: "Regression", desc: "We make sure a new change doesn't break what already worked." },
-        { icon: FileSearch, title: "Exploratory", desc: "Free-form testing with no fixed script, right where unexpected defects live." },
-        { icon: Monitor, title: "Cross-browser", desc: "Chrome, Safari, Firefox and Edge across resolutions and operating systems." },
-        { icon: Smartphone, title: "Real mobile", desc: "Physical Android phones and iPhones, tablets, small screens and older devices." },
-        { icon: Gauge, title: "Performance", desc: "Core Web Vitals, response times, slow networks and increased concurrent traffic." },
-        { icon: Lock, title: "Baseline security", desc: "Input validation, form protection, roles, sessions and data exposure." },
-        { icon: Accessibility, title: "Accessibility", desc: "Keyboard navigation, contrast, screen reader labels, WCAG criteria." },
-        { icon: Layers, title: "API and integrations", desc: "Payments, shipping, invoicing, CRM, email — including their failure paths." },
-        { icon: Globe, title: "Localization and technical SEO", desc: "Languages, currencies, date formats, titles, meta, canonicals, structured data." },
-        { icon: Cpu, title: "Compatibility", desc: "Behaviour on unstable connections, older browsers and data-saving modes." },
-        { icon: ClipboardList, title: "Acceptance (UAT)", desc: "The final validation before launch, together with you, on agreed criteria." },
-      ];
 
-  const steps = ro
-    ? [
-        { title: "Analiză și plan", desc: "Stabilim ce testăm, pe ce dispozitive și care sunt fluxurile critice pentru afacere." },
-        { title: "Scenarii de test", desc: "Scriem cazurile de test, inclusiv cele negative, și le agreăm împreună înainte de start." },
-        { title: "Execuție", desc: "Rulăm manual pe dispozitive reale și automat acolo unde repetabilitatea aduce valoare." },
-        { title: "Raportare", desc: "Fiecare defect primește severitate, pași de reproducere, dovadă vizuală și impact." },
-        { title: "Retestare", desc: "După remedieri retestăm defectele și rulăm o rundă de regresie pe zonele atinse." },
-      ]
-    : [
-        { title: "Analysis and plan", desc: "We define what we test, on which devices, and which flows are business critical." },
-        { title: "Test scenarios", desc: "We write the test cases, negative ones included, and agree them before we start." },
-        { title: "Execution", desc: "We run manually on real devices and automatically where repeatability pays off." },
-        { title: "Reporting", desc: "Every defect gets severity, reproduction steps, visual evidence and impact." },
-        { title: "Retesting", desc: "After fixes we retest the defects and run a regression pass on the affected areas." },
-      ];
 
-  const packages = [
-    {
-      key: "esential",
-      ron: 1600,
-      eur: 300,
-      icon: Bug,
-      accent: "from-lime-400 to-emerald-600",
-      name: ro ? "Rundă esențială" : "Essential round",
-      time: ro ? "3–4 zile" : "3–4 days",
-      bestFor: ro ? "Site de prezentare, blog, pagină de campanie" : "Presentation site, blog, campaign page",
-      features: ro
-        ? ["Testare manuală funcțională", "Cross-browser desktop + mobil", "Formulare, emailuri, SEO tehnic de bază", "Raport de defecte cu severitate", "O retestare inclusă"]
-        : ["Manual functional testing", "Cross-browser desktop + mobile", "Forms, emails, baseline technical SEO", "Defect report with severity", "One retest included"],
-    },
-    {
-      key: "complet",
-      ron: 3700,
-      eur: 700,
-      icon: FlaskConical,
-      highlight: true,
-      accent: "from-emerald-400 to-cyan-600",
-      name: ro ? "Rundă completă" : "Full round",
-      time: ro ? "7–10 zile" : "7–10 days",
-      bestFor: ro ? "Magazin online, aplicație cu conturi și plăți" : "Online store, app with accounts and payments",
-      features: ro
-        ? ["Tot din runda esențială", "Conturi, coș, checkout, plăți, facturare", "Dispozitive fizice Android și iOS", "Performanță, securitate de bază, accesibilitate", "Două retestări și regresie inclusă"]
-        : ["Everything in the essential round", "Accounts, cart, checkout, payments, invoicing", "Physical Android and iOS devices", "Performance, baseline security, accessibility", "Two retests and regression included"],
-    },
-    {
-      key: "automat",
-      ron: 6300,
-      eur: 1200,
-      icon: Workflow,
-      accent: "from-cyan-400 to-blue-600",
-      name: ro ? "Automatizare end-to-end" : "End-to-end automation",
-      time: ro ? "10–15 zile" : "10–15 days",
-      bestFor: ro ? "Produse cu lansări frecvente și echipă de dezvoltare" : "Products with frequent releases and a dev team",
-      features: ro
-        ? ["Suită Playwright pe fluxurile critice", "Rulare automată în pipeline la fiecare deploy", "Teste API și verificări de performanță", "Rapoarte cu capturi la fiecare eșec", "Cod și documentație predate ție"]
-        : ["Playwright suite on your critical flows", "Automatic pipeline runs on every deploy", "API tests and performance checks", "Reports with screenshots on every failure", "Code and documentation handed over to you"],
-    },
-  ];
+
+
+
+
 
   const active = modes[mode];
 
@@ -342,7 +184,7 @@ const QaTestingPage = () => {
         <Reveal as="section" className="mt-8 sm:mt-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-lime-300/30 bg-lime-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-lime-700 dark:text-lime-200">
             <Bug className="size-3.5" aria-hidden />
-            {ro ? "Pe proiect · fără abonament" : "Per project · no subscription"}
+            {(ro ? serviceInlineCopy.text_ba5b15e4766b.ro : serviceInlineCopy.text_ba5b15e4766b.en)}
           </div>
           <h1 className="mt-5 font-display text-3xl sm:text-4xl md:text-5xl font-extrabold leading-[1.08] tracking-tight">
             <span className="bg-gradient-to-r from-lime-400 to-cyan-500 bg-clip-text text-transparent">
@@ -350,14 +192,10 @@ const QaTestingPage = () => {
             </span>
           </h1>
           <p className="mt-2 text-xs uppercase tracking-[0.25em] text-foreground/50">
-            {ro
-              ? "Manual · Automat · Funcțional · Regresie · Performanță · Securitate"
-              : "Manual · Automated · Functional · Regression · Performance · Security"}
+            {(ro ? serviceInlineCopy.text_8c090dd5849a.ro : serviceInlineCopy.text_8c090dd5849a.en)}
           </p>
           <p className="mt-5 max-w-2xl text-base md:text-lg text-foreground/75 leading-relaxed">
-            {ro
-              ? "Testăm site-ul, magazinul sau aplicația ta exact cum o face un client real — manual, pe telefoane și browsere adevărate, și automat, prin scripturi care se repetă la fiecare actualizare. Primești un raport clar, cu fiecare defect reprodus pas cu pas și cu prioritatea de remediere."
-              : "We test your site, store or app exactly the way a real customer does — manually, on real phones and browsers, and automatically, through scripts that repeat on every release. You get a clear report with every defect reproduced step by step and a fix priority."}
+            {(ro ? serviceInlineCopy.text_1ab37e15fdbe.ro : serviceInlineCopy.text_1ab37e15fdbe.en)}
           </p>
 
           <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -372,24 +210,24 @@ const QaTestingPage = () => {
               onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "qa_hero" })}
               className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-lime-500 to-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/40"
             >
-              {ro ? "Vreau o ofertă de testare" : "I want a testing quote"}
+              {(ro ? serviceInlineCopy.text_c5594aef05cf.ro : serviceInlineCopy.text_c5594aef05cf.en)}
               <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
             </a>
             <a
               href="#preturi"
               className="inline-flex items-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-5 py-3 text-sm font-semibold transition-all hover:bg-foreground/[0.12]"
             >
-              {ro ? "Vezi prețurile" : "See pricing"}
+              {(ro ? serviceInlineCopy.text_6c33a40d7f61.ro : serviceInlineCopy.text_6c33a40d7f61.en)}
             </a>
             <CurrencySwitch compact fixedPricing accent="emerald" />
           </div>
 
           <dl className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              { k: ro ? "De la" : "From", v: fmt(1600, 300) },
-              { k: ro ? "Durată" : "Duration", v: ro ? "3–10 zile" : "3–10 days" },
-              { k: ro ? "Retestare" : "Retesting", v: ro ? "Inclusă" : "Included" },
-              { k: ro ? "Abonament" : "Subscription", v: ro ? "Niciunul" : "None" },
+              { k: (ro ? serviceInlineCopy.text_805afc9c847a.ro : serviceInlineCopy.text_805afc9c847a.en), v: fmt(1600, 300) },
+              { k: (ro ? serviceInlineCopy.text_859e040a3ae9.ro : serviceInlineCopy.text_859e040a3ae9.en), v: (ro ? serviceInlineCopy.text_7ec4f9454d36.ro : serviceInlineCopy.text_7ec4f9454d36.en) },
+              { k: (ro ? serviceInlineCopy.text_7df636a75c6b.ro : serviceInlineCopy.text_7df636a75c6b.en), v: (ro ? serviceInlineCopy.text_c1e79fc2295c.ro : serviceInlineCopy.text_c1e79fc2295c.en) },
+              { k: (ro ? serviceInlineCopy.text_2e77f60b61a3.ro : serviceInlineCopy.text_2e77f60b61a3.en), v: (ro ? serviceInlineCopy.text_d437510b768d.ro : serviceInlineCopy.text_d437510b768d.en) },
             ].map((s) => (
               <div key={s.k} className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-3 text-center backdrop-blur">
                 <dt className="text-[10px] uppercase tracking-[0.2em] text-foreground/50">{s.k}</dt>
@@ -403,12 +241,10 @@ const QaTestingPage = () => {
         <section id="moduri" className="mt-16 scroll-mt-28">
           <Reveal>
             <h2 className="font-display text-2xl md:text-3xl font-extrabold">
-              {ro ? "Două moduri de testare, un singur raport" : "Two testing modes, one report"}
+              {(ro ? serviceInlineCopy.text_a8789a9f2a91.ro : serviceInlineCopy.text_a8789a9f2a91.en)}
             </h2>
             <p className="mt-3 max-w-2xl text-sm text-foreground/70 leading-relaxed">
-              {ro
-                ? "Testarea manuală găsește ce nu poate fi anticipat. Testarea automată se asigură că nu revine. Pe proiectele reale le folosim împreună, în proporția potrivită produsului tău."
-                : "Manual testing finds what can't be anticipated. Automated testing makes sure it doesn't come back. On real projects we combine them in the proportion your product needs."}
+              {(ro ? serviceInlineCopy.text_4af6a27b93ca.ro : serviceInlineCopy.text_4af6a27b93ca.en)}
             </p>
           </Reveal>
 
@@ -464,7 +300,7 @@ const QaTestingPage = () => {
         <section id="tipuri" className="mt-16 scroll-mt-28">
           <Reveal>
             <h2 className="font-display text-2xl md:text-3xl font-extrabold">
-              {ro ? "Ce testăm, concret" : "What we test, concretely"}
+              {(ro ? serviceInlineCopy.text_d14bf9279135.ro : serviceInlineCopy.text_d14bf9279135.en)}
             </h2>
           </Reveal>
           <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -487,14 +323,14 @@ const QaTestingPage = () => {
           <Reveal>
             <div className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-6 backdrop-blur">
               <h2 className="font-display text-xl md:text-2xl font-extrabold">
-                {ro ? "Pe ce testăm" : "Where we test"}
+                {(ro ? serviceInlineCopy.text_52c8ef8178b5.ro : serviceInlineCopy.text_52c8ef8178b5.en)}
               </h2>
               <div className="mt-5 grid gap-5 sm:grid-cols-3">
                 {[
                   {
                     icon: Smartphone,
-                    title: ro ? "Mobil" : "Mobile",
-                    list: ["iPhone (Safari, iOS)", "Android (Chrome, Samsung Internet)", ro ? "Telefoane vechi și ecrane mici" : "Older phones and small screens"],
+                    title: (ro ? serviceInlineCopy.text_c21d155b91d3.ro : serviceInlineCopy.text_c21d155b91d3.en),
+                    list: ["iPhone (Safari, iOS)", "Android (Chrome, Samsung Internet)", (ro ? serviceInlineCopy.text_d311c76bc945.ro : serviceInlineCopy.text_d311c76bc945.en)],
                   },
                   {
                     icon: Monitor,
@@ -503,8 +339,8 @@ const QaTestingPage = () => {
                   },
                   {
                     icon: Globe,
-                    title: ro ? "Condiții reale" : "Real conditions",
-                    list: [ro ? "Internet lent (3G)" : "Slow network (3G)", ro ? "Trafic simultan" : "Concurrent traffic", ro ? "Mod întunecat și zoom 200%" : "Dark mode and 200% zoom"],
+                    title: (ro ? serviceInlineCopy.text_5ea5a40715ee.ro : serviceInlineCopy.text_5ea5a40715ee.en),
+                    list: [(ro ? serviceInlineCopy.text_b26bf67235e0.ro : serviceInlineCopy.text_b26bf67235e0.en), (ro ? serviceInlineCopy.text_aa4ab03eeac1.ro : serviceInlineCopy.text_aa4ab03eeac1.en), (ro ? serviceInlineCopy.text_9ecc7f9698ff.ro : serviceInlineCopy.text_9ecc7f9698ff.en)],
                   },
                 ].map((d) => (
                   <div key={d.title}>
@@ -528,7 +364,7 @@ const QaTestingPage = () => {
         <section id="proces" className="mt-16 scroll-mt-28">
           <Reveal>
             <h2 className="font-display text-2xl md:text-3xl font-extrabold">
-              {ro ? "Cum decurge o rundă de testare" : "How a testing round works"}
+              {(ro ? serviceInlineCopy.text_b296e1b9359a.ro : serviceInlineCopy.text_b296e1b9359a.en)}
             </h2>
           </Reveal>
           <ol className="mt-7 space-y-3">
@@ -552,12 +388,10 @@ const QaTestingPage = () => {
         <section id="preturi" className="mt-16 scroll-mt-28">
           <Reveal>
             <h2 className="font-display text-2xl md:text-3xl font-extrabold">
-              {ro ? "Preț fix pe rundă, fără abonament" : "Fixed price per round, no subscription"}
+              {(ro ? serviceInlineCopy.text_39b11b386e26.ro : serviceInlineCopy.text_39b11b386e26.en)}
             </h2>
             <p className="mt-3 max-w-2xl text-sm text-foreground/70 leading-relaxed">
-              {ro
-                ? "Plătești o singură dată pentru runda de testare agreată. Nu există reînnoire automată și nici costuri lunare — dacă vrei o nouă rundă după o lansare, o comanzi atunci."
-                : "You pay once for the agreed testing round. There is no automatic renewal and no monthly cost — if you want another round after a release, you order it then."}
+              {(ro ? serviceInlineCopy.text_f4bdd7d241b5.ro : serviceInlineCopy.text_f4bdd7d241b5.en)}
             </p>
           </Reveal>
           <div className="mt-7 grid gap-5 md:grid-cols-3">
@@ -572,7 +406,7 @@ const QaTestingPage = () => {
                 >
                   {p.highlight && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-emerald-400 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-background">
-                      {ro ? "Cel mai ales" : "Most chosen"}
+                      {(ro ? serviceInlineCopy.text_ec3e71150dd9.ro : serviceInlineCopy.text_ec3e71150dd9.en)}
                     </div>
                   )}
                   <div className={`grid size-11 place-items-center rounded-xl bg-gradient-to-br ${p.accent} text-white`}>
@@ -584,12 +418,12 @@ const QaTestingPage = () => {
                     {p.time}
                   </p>
                   <div className="mt-4 flex items-baseline gap-1.5">
-                    <span className="text-xs text-foreground/50">{ro ? "de la" : "from"}</span>
+                    <span className="text-xs text-foreground/50">{(ro ? serviceInlineCopy.text_d9e6b8bc2f02.ro : serviceInlineCopy.text_d9e6b8bc2f02.en)}</span>
                     <span className="font-display text-3xl font-extrabold">{fmt(p.ron, p.eur)}</span>
-                    <span className="text-xs text-foreground/50">{ro ? "· o singură plată" : "· one-time"}</span>
+                    <span className="text-xs text-foreground/50">{(ro ? serviceInlineCopy.text_0669bd572317.ro : serviceInlineCopy.text_0669bd572317.en)}</span>
                   </div>
                   <p className="mt-4 text-sm text-foreground/70">
-                    <span className="font-semibold text-foreground/85">{ro ? "Potrivit pentru: " : "Best for: "}</span>
+                    <span className="font-semibold text-foreground/85">{(ro ? serviceInlineCopy.text_fb351a39ff8d.ro : serviceInlineCopy.text_fb351a39ff8d.en)}</span>
                     {p.bestFor}
                   </p>
                   <ul className="mt-5 space-y-2.5">
@@ -613,16 +447,14 @@ const QaTestingPage = () => {
                         : "border border-foreground/15 bg-foreground/[0.06] hover:bg-foreground/[0.12]"
                     }`}
                   >
-                    {ro ? "Cere ofertă" : "Request a quote"}
+                    {(ro ? serviceInlineCopy.text_b16a46159d55.ro : serviceInlineCopy.text_b16a46159d55.en)}
                   </a>
                 </div>
               </Reveal>
             ))}
           </div>
           <p className="mt-5 rounded-xl border border-lime-300/25 bg-lime-400/[0.06] p-3 text-center text-xs text-foreground/70">
-            {ro
-              ? "Prețurile sunt orientative și se confirmă după o discuție scurtă despre fluxurile critice. Remedierea defectelor se cotează separat."
-              : "Prices are indicative and confirmed after a short discussion about your critical flows. Fixing defects is quoted separately."}
+            {(ro ? serviceInlineCopy.text_ec6aada91f16.ro : serviceInlineCopy.text_ec6aada91f16.en)}
           </p>
         </section>
 
@@ -631,7 +463,7 @@ const QaTestingPage = () => {
           <Reveal>
             <div className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-6 backdrop-blur">
               <h2 className="font-display text-xl md:text-2xl font-extrabold">
-                {ro ? "Ce primești la final" : "What you receive"}
+                {(ro ? serviceInlineCopy.text_fffd7d37dbc5.ro : serviceInlineCopy.text_fffd7d37dbc5.en)}
               </h2>
               <ul className="mt-5 grid gap-2.5 sm:grid-cols-2">
                 {(ro
@@ -670,7 +502,7 @@ const QaTestingPage = () => {
         <section id="intrebari" className="mt-16 scroll-mt-28">
           <Reveal>
             <h2 className="font-display text-2xl md:text-3xl font-extrabold">
-              {ro ? "Întrebări frecvente" : "Frequently asked questions"}
+              {(ro ? serviceInlineCopy.text_48a83c853f46.ro : serviceInlineCopy.text_48a83c853f46.en)}
             </h2>
           </Reveal>
           <div className="mt-6 space-y-3">
@@ -695,12 +527,10 @@ const QaTestingPage = () => {
           <Reveal>
             <div className="rounded-3xl border border-lime-300/25 bg-gradient-to-br from-lime-400/10 to-cyan-500/[0.06] p-7 text-center backdrop-blur">
               <h2 className="font-display text-2xl md:text-3xl font-extrabold">
-                {ro ? "Lansezi în curând sau ai deja probleme raportate?" : "Launching soon or already getting bug reports?"}
+                {(ro ? serviceInlineCopy.text_cc6ea0ed3d71.ro : serviceInlineCopy.text_cc6ea0ed3d71.en)}
               </h2>
               <p className="mx-auto mt-3 max-w-2xl text-sm text-foreground/75 leading-relaxed">
-                {ro
-                  ? "Spune-ne ce produs ai și primești un plan de testare și o cotație clară în 24 de ore. Fără abonament și fără costuri ascunse."
-                  : "Tell us about your product and get a test plan and a clear quote within 24 hours. No subscription, no hidden costs."}
+                {(ro ? serviceInlineCopy.text_3b3ccec80a6b.ro : serviceInlineCopy.text_3b3ccec80a6b.en)}
               </p>
               <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                 <a
@@ -713,7 +543,7 @@ const QaTestingPage = () => {
                   className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-lime-500 to-emerald-600 px-6 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
                 >
                   <MessageCircle className="size-4" aria-hidden />
-                  {ro ? "Discută pe WhatsApp" : "Chat on WhatsApp"}
+                  {(ro ? serviceInlineCopy.text_559b84309428.ro : serviceInlineCopy.text_559b84309428.en)}
                 </a>
                 <a
                   href="mailto:contact@avyron.ro?subject=QA%20Testing"
@@ -735,4 +565,4 @@ const QaTestingPage = () => {
   );
 };
 
-export default QaTestingPage;
+export default function ManagedQaTestingPage(){return <ServiceContentProvider><QaTestingPage/></ServiceContentProvider>;}

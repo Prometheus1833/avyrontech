@@ -1,57 +1,15 @@
-import {
-  Activity,
-  BarChart3,
-  BellRing,
-  BrainCircuit,
-  CalendarCheck,
-  FileSearch,
-  Languages,
-  Mail,
-  MessageCircle,
-  MousePointerClick,
-  Plug,
-  RefreshCcw,
-  Sparkles,
-  Target,
-  Users,
-} from "lucide-react";
+import { ai,analytics,conversion,integrations } from '@/data/managedServiceCopy/blogGrowth';
+import { useServicePageContent } from '@/hooks/useServicePageContent';
 import { useLang } from "@/i18n/LanguageContext";
-import { Chip, Panel, Section, SectionHead } from "./ui";
+import { Chip,Panel,Section,SectionHead } from "./ui";
 
 /* SCENE 08 — conversion. SCENE 09 — analytics. SCENE 10 — AI. SCENE 11 — integrations. */
 
-const conversion = {
-  ro: {
-    eyebrow: "De la cititor la lead",
-    title: "Fiecare articol are un drum clar spre conversie",
-    lead: "Nu adăugăm butoane la întâmplare. Punem îndemnul potrivit în momentul potrivit al lecturii.",
-    steps: [
-      { icon: FileSearch, t: "Citește", d: "Ajunge din căutare pe un articol relevant." },
-      { icon: Target, t: "Se identifică", d: "Recunoaște problema descrisă în conținut." },
-      { icon: MousePointerClick, t: "Acționează", d: "CTA contextual în articol, la final sau lateral." },
-      { icon: Mail, t: "Lasă datele", d: "Formular scurt sau abonare la newsletter." },
-      { icon: CalendarCheck, t: "Devine client", d: "Lead calificat, urmărit până la discuție." },
-    ],
-    tools: ["CTA în articol", "Formular contextual", "Newsletter", "WhatsApp", "Programare", "Resurse descărcabile"],
-  },
-  en: {
-    eyebrow: "From reader to lead",
-    title: "Every article has a clear path to conversion",
-    lead: "We do not scatter buttons around. We place the right prompt at the right moment of the read.",
-    steps: [
-      { icon: FileSearch, t: "Reads", d: "Arrives from search on a relevant article." },
-      { icon: Target, t: "Identifies", d: "Recognises the problem described in the content." },
-      { icon: MousePointerClick, t: "Acts", d: "Contextual CTA inside, at the end or beside the article." },
-      { icon: Mail, t: "Shares details", d: "A short form or a newsletter subscription." },
-      { icon: CalendarCheck, t: "Becomes a client", d: "A qualified lead, tracked through to the conversation." },
-    ],
-    tools: ["In-article CTA", "Contextual form", "Newsletter", "WhatsApp", "Booking", "Downloadable resources"],
-  },
-} as const;
+
 
 export const ConversionFlow = () => {
   const { lang } = useLang();
-  const c = conversion[lang];
+  const c = useServicePageContent('blog-profesional','blogGrowth.conversion',conversion)[lang];
   return (
     <Section id="conversie" scene="conversion" tone="soft" labelledBy="conversion-title">
       <SectionHead id="conversion-title" eyebrow={c.eyebrow} title={c.title} lead={c.lead} />
@@ -80,38 +38,11 @@ export const ConversionFlow = () => {
   );
 };
 
-const analytics = {
-  ro: {
-    eyebrow: "Măsurare",
-    title: "Vezi exact ce conținut aduce clienți",
-    lead: "Fără estimări. Fiecare articol are cifrele lui: audiență, atenție, conversie.",
-    metrics: [
-      { icon: Users, label: "Vizitatori", hint: "Trafic organic și direct" },
-      { icon: Activity, label: "Timp de lectură", hint: "Atenția reală pe articol" },
-      { icon: BarChart3, label: "Articole de top", hint: "Ce subiecte performează" },
-      { icon: Target, label: "Conversii", hint: "Lead-uri atribuite articolului" },
-    ],
-    bars: [72, 54, 88, 41, 63, 95, 78],
-    note: "Rapoartele se conectează la Google Analytics 4 și Search Console.",
-  },
-  en: {
-    eyebrow: "Measurement",
-    title: "See exactly which content brings clients",
-    lead: "No guessing. Every article has its own numbers: audience, attention, conversion.",
-    metrics: [
-      { icon: Users, label: "Visitors", hint: "Organic and direct traffic" },
-      { icon: Activity, label: "Reading time", hint: "Real attention per article" },
-      { icon: BarChart3, label: "Top articles", hint: "Which topics perform" },
-      { icon: Target, label: "Conversions", hint: "Leads attributed to the article" },
-    ],
-    bars: [72, 54, 88, 41, 63, 95, 78],
-    note: "Reports connect to Google Analytics 4 and Search Console.",
-  },
-} as const;
+
 
 export const AnalyticsSection = () => {
   const { lang } = useLang();
-  const c = analytics[lang];
+  const c = useServicePageContent('blog-profesional','blogGrowth.analytics',analytics)[lang];
   return (
     <Section id="analytics" scene="analytics" labelledBy="analytics-title">
       <div className="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)] lg:items-center">
@@ -149,124 +80,11 @@ export const AnalyticsSection = () => {
   );
 };
 
-const ai = {
-  ro: {
-    eyebrow: "AVYRON AI · opțional",
-    title: "Inteligență care ajută redacția, nu o înlocuiește",
-    lead: "Folosim modele consacrate — Claude, ChatGPT și Gemini — alese pentru fiecare sarcină. Modulele sunt opționale, iar publicarea rămâne o decizie umană.",
-    modelsLabel: "Modele folosite",
-    models: [
-      { n: "Claude", d: "Texte lungi, ton editorial, rescriere" },
-      { n: "ChatGPT", d: "Idei, titluri, structuri, meta" },
-      { n: "Gemini", d: "Analiză SERP, imagini, multilingv" },
-    ],
-    items: [
-      {
-        icon: Sparkles,
-        t: "Asistent de scriere",
-        m: "Claude 4.5 · GPT-5",
-        d: "Structuri, titluri și variante de introducere.",
-        e: "Exemplu: „Scrie 5 titluri pentru un ghid despre facturare electronică”.",
-      },
-      {
-        icon: FileSearch,
-        t: "Brief de conținut",
-        m: "Gemini · GPT-5",
-        d: "Ce trebuie să acopere un articol pentru subiectul ales.",
-        e: "Exemplu: analizează primele 10 rezultate Google și propune structura H2.",
-      },
-      {
-        icon: BrainCircuit,
-        t: "Asistent SEO",
-        m: "GPT-5 mini",
-        d: "Sugestii pentru titluri, descrieri și structură.",
-        e: "Exemplu: meta description de 155 caractere, cu cuvântul-cheie principal.",
-      },
-      {
-        icon: RefreshCcw,
-        t: "Content refresh",
-        m: "Claude 4.5",
-        d: "Identifică articolele care merită actualizate.",
-        e: "Exemplu: „Articolul are date din 2024 — actualizează cifrele și concluzia”.",
-      },
-      {
-        icon: Languages,
-        t: "Traducere asistată",
-        m: "Gemini 3",
-        d: "Versiuni în alte limbi, revizuite de om.",
-        e: "Exemplu: versiune EN a ghidului, cu terminologie păstrată.",
-      },
-      {
-        icon: BellRing,
-        t: "Recomandări conexe",
-        m: "Embeddings",
-        d: "Articole relevante propuse automat cititorului.",
-        e: "Exemplu: la finalul articolului apar 3 texte pe aceeași temă.",
-      },
-    ],
-    note: "Modelele pot fi schimbate oricând, iar costurile de consum API se facturează separat, transparent.",
-  },
-  en: {
-    eyebrow: "AVYRON AI · optional",
-    title: "Intelligence that helps the editorial team, not replaces it",
-    lead: "We use proven models — Claude, ChatGPT and Gemini — matched to each task. Modules are optional and publishing stays a human decision.",
-    modelsLabel: "Models we use",
-    models: [
-      { n: "Claude", d: "Long-form, editorial tone, rewriting" },
-      { n: "ChatGPT", d: "Ideas, headlines, outlines, meta" },
-      { n: "Gemini", d: "SERP analysis, images, multilingual" },
-    ],
-    items: [
-      {
-        icon: Sparkles,
-        t: "Writing assistant",
-        m: "Claude 4.5 · GPT-5",
-        d: "Structures, headlines and intro variations.",
-        e: "Example: “Write 5 headlines for a guide on e-invoicing”.",
-      },
-      {
-        icon: FileSearch,
-        t: "Content brief",
-        m: "Gemini · GPT-5",
-        d: "What an article should cover for the chosen topic.",
-        e: "Example: analyse the top 10 Google results and propose the H2 outline.",
-      },
-      {
-        icon: BrainCircuit,
-        t: "SEO assistant",
-        m: "GPT-5 mini",
-        d: "Suggestions for titles, descriptions and structure.",
-        e: "Example: a 155-character meta description with the main keyword.",
-      },
-      {
-        icon: RefreshCcw,
-        t: "Content refresh",
-        m: "Claude 4.5",
-        d: "Spots the articles worth updating.",
-        e: "Example: “This article uses 2024 data — refresh figures and conclusion”.",
-      },
-      {
-        icon: Languages,
-        t: "Assisted translation",
-        m: "Gemini 3",
-        d: "Versions in other languages, reviewed by a human.",
-        e: "Example: an EN version of the guide with terminology preserved.",
-      },
-      {
-        icon: BellRing,
-        t: "Related recommendations",
-        m: "Embeddings",
-        d: "Relevant articles proposed to the reader automatically.",
-        e: "Example: 3 articles on the same topic appear at the end of the read.",
-      },
-    ],
-    note: "Models can be swapped at any time, and API usage costs are billed separately and transparently.",
-  },
-} as const;
+
 
 export const AiSection = () => {
   const { lang } = useLang();
-  const c = ai[lang];
+  const c = useServicePageContent('blog-profesional','blogGrowth.ai',ai)[lang];
   return (
     <Section id="ai" scene="ai" tone="graphite" labelledBy="ai-title">
       <SectionHead id="ai-title" eyebrow={c.eyebrow} title={c.title} lead={c.lead} invert />
@@ -310,34 +128,11 @@ export const AiSection = () => {
 };
 
 
-const integrations = {
-  ro: {
-    eyebrow: "Integrări",
-    title: "Se conectează cu instrumentele pe care le folosești deja",
-    lead: "Alegi doar ce ai nevoie. Restul rămâne curat.",
-    groups: [
-      { icon: BarChart3, t: "Analiză", items: ["Google Analytics 4", "Search Console", "Meta Pixel", "TikTok Pixel"] },
-      { icon: Mail, t: "Email & CRM", items: ["Newsletter", "Automatizări email", "CRM", "Webhooks"] },
-      { icon: MessageCircle, t: "Comunicare", items: ["WhatsApp", "Formulare contextuale", "Programări"] },
-      { icon: Plug, t: "Tehnic", items: ["API custom", "Export conținut", "Redirecturi", "RSS"] },
-    ],
-  },
-  en: {
-    eyebrow: "Integrations",
-    title: "It connects with the tools you already use",
-    lead: "Pick only what you need. Everything else stays clean.",
-    groups: [
-      { icon: BarChart3, t: "Analytics", items: ["Google Analytics 4", "Search Console", "Meta Pixel", "TikTok Pixel"] },
-      { icon: Mail, t: "Email & CRM", items: ["Newsletter", "Email automation", "CRM", "Webhooks"] },
-      { icon: MessageCircle, t: "Communication", items: ["WhatsApp", "Contextual forms", "Booking"] },
-      { icon: Plug, t: "Technical", items: ["Custom API", "Content export", "Redirects", "RSS"] },
-    ],
-  },
-} as const;
+
 
 export const Integrations = () => {
   const { lang } = useLang();
-  const c = integrations[lang];
+  const c = useServicePageContent('blog-profesional','blogGrowth.integrations',integrations)[lang];
   return (
     <Section id="integrari" scene="integrations" tone="soft" labelledBy="integrations-title">
       <SectionHead id="integrations-title" eyebrow={c.eyebrow} title={c.title} lead={c.lead} />

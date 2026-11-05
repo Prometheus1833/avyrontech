@@ -1,23 +1,22 @@
-import { Hono, type Context } from "hono";
-import type { AppBindings } from "./types";
-import { hasCapability, organizationRoleForUser, platformRoleForUser } from "./authorization";
-import { now, sha256 } from "./security";
+import { Hono,type Context } from "hono";
+import { LEAD_DELETION_REASONS } from "../../../../src/shared/leadDeletionReasons";
+import { hasCapability,organizationRoleForUser,platformRoleForUser } from "./authorization";
 import {
-  LEAD_ACTIVITY_KINDS,
-  LEAD_CHANNELS,
-  LEAD_STAGES,
-  coarseLeadStatus,
-  normalizedLeadPhone,
-  validateNewLead,
+LEAD_ACTIVITY_KINDS,
+LEAD_CHANNELS,
+LEAD_STAGES,
+coarseLeadStatus,
+normalizedLeadPhone,
+validateNewLead,
 } from "./leadPolicy";
+import { now,sha256 } from "./security";
+import type { AppBindings } from "./types";
 
 const identifier = (prefix: string) => `${prefix}_${crypto.randomUUID().replace(/-/g, "")}`;
 const LEAD_STAGE_SET = new Set<string>(LEAD_STAGES);
 const CHANNELS = new Set<string>(LEAD_CHANNELS);
 const ACTIVITY_KINDS = new Set<string>(LEAD_ACTIVITY_KINDS);
-const LEAD_DELETION_REASONS = new Set([
-  "duplicate", "spam", "test_entry", "invalid_contact", "withdrawn", "outside_scope", "other",
-]);
+const deletionReasons = new Set<string>(LEAD_DELETION_REASONS.map(reason => reason.code));
 
 type LeadAccess = { read: boolean; write: boolean; organizationId: string | null };
 
@@ -227,7 +226,7 @@ leadsRouter.get("/api/leads/deletions", async (c) => {
             actor.email AS actor_email,
             COALESCE(NULLIF(lead.name,''), NULLIF(lead.business,''), 'Lead fără nume') AS lead_label,
             lead.business, lead.source, lead.lifecycle_stage,
-            lead.deletion_reason_code AS reason_code,
+            COALESCE(lead.deletion_reason_key,lead.deletion_reason_code) AS reason_code,
             lead.deletion_reason_detail AS reason_detail,
             event.created_at
        FROM security_events AS event
@@ -311,7 +310,7 @@ leadsRouter.delete("/api/leads/:leadId", async (c) => {
   const body = await c.req.json<{ reasonCode?: string; reasonDetail?: string }>().catch(() => null);
   const reasonCode = String(body?.reasonCode || "");
   const reasonDetail = String(body?.reasonDetail || "").trim().slice(0, 500);
-  if (!LEAD_DELETION_REASONS.has(reasonCode) || (reasonCode === "other" && reasonDetail.length < 5)) {
+  if (!deletionReasons.has(reasonCode) || (reasonCode === "other" && reasonDetail.length < 5)) {
     return c.json({ error: { code: "invalid_deletion_reason" } }, 400);
   }
   const lead = await c.env.DB.prepare(
@@ -326,9 +325,9 @@ leadsRouter.delete("/api/leads/:leadId", async (c) => {
   });
   const results = await c.env.DB.batch([
     c.env.DB.prepare(
-      `UPDATE leads SET deleted_at=?,deleted_by=?,deletion_reason_code=?,deletion_reason_detail=?,updated_at=?
+      `UPDATE leads SET deleted_at=?,deleted_by=?,deletion_reason_code=?,deletion_reason_key=?,deletion_reason_detail=?,updated_at=?
         WHERE id=? AND deleted_at IS NULL`,
-    ).bind(timestamp, c.get("userId"), reasonCode, reasonDetail || null, timestamp, leadId),
+    ).bind(timestamp, c.get("userId"), ["changed_mind","unwilling_to_pay","requirements_not_met"].includes(reasonCode) ? "other" : reasonCode, reasonCode, reasonDetail || null, timestamp, leadId),
     c.env.DB.prepare(
       `INSERT INTO security_events
          (id,organization_id,actor_user_id,actor_type,action,target_type,target_id,outcome,severity,request_id,metadata_json,created_at)
