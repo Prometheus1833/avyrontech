@@ -1,3 +1,4 @@
+import { subscriptionOperationsRouter } from "./subscriptionOperations";
 import { serveSurveyHost } from "../../../../src/worker/surveyHost";
 import { privilegedMfaSatisfied } from "./mfaPolicy";
 import { servicePagesRouter } from "./servicePages";
@@ -1686,6 +1687,9 @@ app.use("/api/documents/*", requireAuth);
 app.route("/", documentCenterRouter);
 app.route("/", surveyPublic);
 app.route("/", surveyAdminRouter);
+app.use("/api/admin/client-subscriptions*", requireAuth);
+app.use("/api/internal/subscriptions*", requireAuth);
+app.route("/", subscriptionOperationsRouter);
 app.route("/", adminOperationsRouter);
 app.route("/", financeRouter);
 app.route("/", operationsOAuthRouter);

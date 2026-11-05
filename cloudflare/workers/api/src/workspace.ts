@@ -105,11 +105,11 @@ workspaceRouter.get('/api/workspace/subscriptions',async c => {
   if (!staff(c)) await linkClientsByEmail(c.env.DB,c.get('userId'));
   const {limit,offset}=page(c),scope=maintenanceProjectScope(c.get('userId'),false);
   const {results}=await c.env.DB.prepare(`SELECT record.id,service.service_name product_name,service.price,service.billing_cycle,record.status,record.next_billing_date,
-   record.maintenance_enabled,record.plan_sku,record.specifications_json,record.target_label,record.product_slug,record.external_url,record.created_at,p.id project_id,
+   (SELECT payment_terms_days FROM subscription_billing_settings b WHERE b.subscription_id=record.id AND b.client_id=record.client_id) payment_terms_days,record.maintenance_enabled,record.plan_sku,record.specifications_json,record.target_label,record.product_slug,record.external_url,record.created_at,p.id project_id,
    (SELECT group_concat(COALESCE(profile.pseudonym,profile.display_name,u.display_name,'Membru staff'),', ') FROM subscription_staff ss JOIN users u ON u.id=ss.user_id LEFT JOIN profiles profile ON profile.id=u.id WHERE ss.subscription_id=record.id AND u.disabled_at IS NULL AND EXISTS(SELECT 1 FROM user_roles ur WHERE ur.user_id=u.id AND ur.role IN('staff','admin'))) staff_names
     FROM subscriptions record JOIN services service ON service.id=record.service_id JOIN projects p ON p.id=service.project_id WHERE record.client_id=p.client_id AND ${scope.sql} ORDER BY record.next_billing_date,record.id LIMIT ? OFFSET ?`)
     .bind(...scope.values,limit,offset).all<Record<string,unknown>>();
-  return c.json({data:results.map(r=>({...r,price_cents:Math.round(Number(r.price)*100),currency:'RON',status:r.status==='paused'?'suspended':r.status,description:r.target_label||null,started_at:r.created_at?iso(r.created_at):null,next_renewal_at:iso(r.next_billing_date)}))});
+  return c.json({data:results.map(r=>({...r,billing_ready:r.payment_terms_days!==null,price_cents:Math.round(Number(r.price)*100),currency:'RON',status:r.status==='paused'?'suspended':r.status,description:r.target_label||null,started_at:r.created_at?iso(r.created_at):null,next_renewal_at:iso(r.next_billing_date)}))});
 });
 
 workspaceRouter.get('/api/workspace/account-access/:userId',async c => {

@@ -56,3 +56,7 @@ Ramura de rafinare pornește din `c4403abc`: carduri compacte, centru unic de ci
 ## Leaduri și configurarea serviciilor — 5 noiembrie 2026
 
 Lucrări locale pe `codex/leads-services-config-2026-11-05`, după checkpointul local `01c12f3`. Vezi [LEADS_SERVICE_CONFIGURATION.md](./LEADS_SERVICE_CONFIGURATION.md): pipeline compact, motive comerciale de eliminare și editori separați pentru prezentarea comună și paginile serviciilor. Migrațiile 0079/0080 sunt aditive. Push, PR și deploy rămân amânate conform utilizatorului; nicio publicare reală sau migrare remote nu a fost executată pentru această etapă.
+
+## Abonamente Clienți și AVYRON — 5 noiembrie 2026
+
+Continuare locală după `8fa9b41`, pe `codex/client-internal-subscriptions-2026-11-05`. [SUBSCRIPTION_OPERATIONS.md](./SUBSCRIPTION_OPERATIONS.md) descrie alocările pe CRM/proiecte/conturi existente, calendarul lunar și ciornele în registrul financiar, plus evidența conturilor interne din `financial_expenses`. Migrarea aditivă 0081 nu activează furnizori, facturare externă sau plăți automate. Accesul clientului, staffului și financiarului este separat în backend. Push și deploy rămân amânate până la încheierea taskurilor.

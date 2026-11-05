@@ -23,6 +23,7 @@ Wrench,
 import { Suspense,useEffect,useMemo,useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
+const InternalSubscriptionsTab = lazyWithRetry(() => import("@/components/dashboard/subscriptions/InternalSubscriptionsTab"));
 const ProfileTab = lazyWithRetry(() => import("@/components/dashboard/ProfileTab").then((m) => ({ default: m.ProfileTab })));
 const SubscriptionsTab = lazyWithRetry(() => import("@/components/dashboard/SubscriptionsTab").then((m) => ({ default: m.SubscriptionsTab })));
 const StatsTab = lazyWithRetry(() => import("@/components/dashboard/StatsTab").then((m) => ({ default: m.StatsTab })));
@@ -230,6 +231,7 @@ export default function Profile() {
             <TabsContent value="os-centers" className="mt-0"><OsCentersTab access={access} onNavigate={openSection} /></TabsContent>
             <TabsContent value="other-hub" className="mt-0"><OtherModulesTab onNavigate={openSection} /></TabsContent>
           </>}
+          {access.isStaff && <TabsContent value="internal-subscriptions" className="mt-0"><InternalSubscriptionsTab /></TabsContent>}
           {access.isSuperAdmin && <><TabsContent value="platform-control" className="mt-0"><SuperAdminControlHub onNavigate={openSection} /></TabsContent><TabsContent value="finance" className="mt-0"><StaffFinanceTab /></TabsContent><TabsContent value="commercial-codes" className="mt-0"><CommercialCodesTab /></TabsContent><TabsContent value="promotions" className="mt-0"><StaffPromotionsTab /></TabsContent><TabsContent value="newsletter" className="mt-0"><StaffNewsletterTab /></TabsContent><TabsContent value="produse-avyron" className="mt-0"><StaffProduseTab /></TabsContent><TabsContent value="subscriptions-admin" className="mt-0"><StaffSubscriptionsAdminTab /></TabsContent><TabsContent value="ai-os" className="mt-0"><AiOsConsole embedded /></TabsContent></>}
           </Suspense>
           {access.isSuperAdmin && (tab === "overview" || tab === "profile") && <Suspense fallback={contentFallback}><div className="mt-4 grid gap-3 lg:grid-cols-2"><AiProductionEntryCard /><EngineEntryCard /></div></Suspense>}

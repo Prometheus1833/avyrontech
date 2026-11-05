@@ -39,6 +39,10 @@ describe("AVYRON OS dashboard", () => {
     expect(canOpenSection("social-manager", owner)).toBe(true);
     expect(canOpenSection("subscriptions-admin", owner)).toBe(true);
     expect(canOpenSection("social-manager", staff)).toBe(false);
+    expect(canOpenSection("internal-subscriptions", staff)).toBe(true);
+    expect(canOpenSection("internal-subscriptions", buildAccess({ roles: ["user"] }))).toBe(false);
+    const order = sectionsFor(owner).map(section => section.id);
+    expect(order.indexOf("internal-subscriptions")).toBe(order.indexOf("subscriptions-admin") + 1);
   });
 
   it("face comunicarea vizibilă echipei și rezervă controlul platformei Super Adminului", () => {

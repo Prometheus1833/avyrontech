@@ -60,7 +60,7 @@ export type SectionId =
   | "finance" | "media" | "leads" | "staff-tickets" | "demo-requests" | "intern"
   | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "servicii-avyron" | "produse-avyron"
   | "newsletter" | "ai-projects" | "logo-simulations" | "surveys" | "configurator"
-  | "commercial-codes" | "other-hub" | "social-manager" | "subscriptions-admin" | "careers" | "library" | "reviews" | "platform-control";
+  | "commercial-codes" | "other-hub" | "social-manager" | "subscriptions-admin" | "internal-subscriptions" | "careers" | "library" | "reviews" | "platform-control";
 
 export type SectionDef = {
   id: SectionId;
@@ -109,6 +109,7 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "collection", group: "produse", audience: "everyone", keywords: ["colectia mea", "produse avyron", "componente", "parteneriat", "avy", "collection", "artefacte"] },
   { id: "produse-avyron", group: "produse", audience: "superadmin", keywords: ["produse avyron", "artefacte", "catalog", "parteneriate", "magazin", "componente"] },
   { id: "subscriptions-admin", group: "produse", audience: "superadmin", keywords: ["abonamente", "mentenanta", "preturi", "clienti abonati", "trafic"] },
+  { id: "internal-subscriptions", group: "produse", audience: "staff", keywords: ["abonamente avyron", "conturi interne", "lovable", "codex", "cloudflare", "github", "reinnoiri"] },
 
   { id: "stats", group: "activity", audience: "client", keywords: ["statistici", "vizite", "stats"] },
   { id: "tickets", group: "activity", audience: "client", keywords: ["suport", "tichete", "tickets", "mesaje"] },

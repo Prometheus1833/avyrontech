@@ -47,7 +47,7 @@ const form = z
   })
   .strict()
   .refine((x) => Boolean(x.projectId) !== Boolean(x.externalProject));
-async function plans(db: D1Database) {
+export async function subscriptionPlans(db: D1Database) {
   const base = SUBSCRIPTION_CATEGORIES.flatMap((category) =>
     category.plans.map((plan) => ({
       sku: plan.sku,
@@ -139,7 +139,7 @@ export function createMaintenanceRouter(mutate: Mutation) {
       clients: clients.results,
       products: products.results,
       staff: staff.results,
-      plans: await plans(c.env.DB),
+      plans: await subscriptionPlans(c.env.DB),
     });
   });
   router.get("/api/workspace/maintenance", async (c) => {
@@ -198,7 +198,7 @@ export function createMaintenanceRouter(mutate: Mutation) {
     const b = parsed.data,
       t = Date.now(),
       plan = b.planSku
-        ? (await plans(c.env.DB)).find((p) => p.sku === b.planSku)
+        ? (await subscriptionPlans(c.env.DB)).find((p) => p.sku === b.planSku)
         : null;
     if (b.planSku && !plan)
       return problem(c, "invalid_plan", "Planul nu mai există în catalog.");
