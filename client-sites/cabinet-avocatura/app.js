@@ -10,6 +10,41 @@
  document.addEventListener('click',e => { if(!e.target.closest('.header')) closeMenu(); });
  window.matchMedia('(min-width: 1021px)').addEventListener('change',e => { if(e.matches) closeMenu(); });
 
+ const accessibilityToggle=document.querySelector('#accessibility-toggle');
+ const accessibilityPanel=document.querySelector('#accessibility-panel');
+ const contrastToggle=document.querySelector('#contrast-toggle');
+ const textIncrease=document.querySelector('#text-increase');
+ const textDecrease=document.querySelector('#text-decrease');
+ const sizeLabel=document.querySelector('#text-size-label');
+ const preferenceKey='mg-accessibility-v1';
+ const sizes=['normal','large','largest'];
+ let textLevel=0,highContrast=false;
+ function applyDisplay(save=true){
+  document.documentElement.dataset.textSize=sizes[textLevel];
+  document.documentElement.dataset.contrast=highContrast?'high':'normal';
+  if(sizeLabel)sizeLabel.textContent=[100,115,130][textLevel]+'%';
+  if(textIncrease)textIncrease.disabled=textLevel===2;
+  if(textDecrease)textDecrease.disabled=textLevel===0;
+  contrastToggle?.setAttribute('aria-pressed',String(highContrast));
+  if(save)try{localStorage.setItem(preferenceKey,JSON.stringify({textLevel,highContrast}));}catch{}
+ }
+ function closeAccessibility(restore=false){
+  if(!accessibilityPanel||!accessibilityToggle)return;
+  accessibilityPanel.hidden=true;accessibilityToggle.setAttribute('aria-expanded','false');
+  if(restore)accessibilityToggle.focus();
+ }
+ try{const saved=JSON.parse(localStorage.getItem(preferenceKey)||'null');if(saved&&typeof saved==='object'){if(Number.isInteger(saved.textLevel)&&saved.textLevel>=0&&saved.textLevel<=2)textLevel=saved.textLevel;highContrast=saved.highContrast===true;}}catch{}
+ applyDisplay(false);
+ accessibilityToggle?.addEventListener('click',()=>{const open=accessibilityPanel.hidden;closeMenu();accessibilityPanel.hidden=!open;accessibilityToggle.setAttribute('aria-expanded',String(open));});
+ document.querySelector('#accessibility-close')?.addEventListener('click',()=>closeAccessibility(true));
+ textIncrease?.addEventListener('click',()=>{textLevel=Math.min(2,textLevel+1);applyDisplay();});
+ textDecrease?.addEventListener('click',()=>{textLevel=Math.max(0,textLevel-1);applyDisplay();});
+ contrastToggle?.addEventListener('click',()=>{highContrast=!highContrast;applyDisplay();});
+ document.querySelector('#accessibility-reset')?.addEventListener('click',()=>{textLevel=0;highContrast=false;applyDisplay(false);try{localStorage.removeItem(preferenceKey);}catch{}});
+ menu?.addEventListener('click',()=>closeAccessibility());
+ document.addEventListener('click',e=>{if(!e.target.closest('.accessibility-control'))closeAccessibility();});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&accessibilityPanel&&!accessibilityPanel.hidden)closeAccessibility(true);});
+
  const booking = document.querySelector('[data-booking]');
  if (booking) {
   const todayParts = new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Bucharest',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());

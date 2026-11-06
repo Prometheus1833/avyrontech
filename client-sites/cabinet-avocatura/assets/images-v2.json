@@ -1,0 +1,86 @@
+{
+  "consultation-v2": {
+    "source": {
+      "width": 1536,
+      "height": 1024
+    },
+    "desktopRatio": "4:3",
+    "mobileRatio": "3:2",
+    "focalPoint": [
+      0.6,
+      0.58
+    ]
+  },
+  "family-v2": {
+    "source": {
+      "width": 1536,
+      "height": 1024
+    },
+    "desktopRatio": "4:3",
+    "mobileRatio": "3:2",
+    "focalPoint": [
+      0.5,
+      0.62
+    ]
+  },
+  "inheritance-v2": {
+    "source": {
+      "width": 1536,
+      "height": 1024
+    },
+    "desktopRatio": "4:3",
+    "mobileRatio": "3:2",
+    "focalPoint": [
+      0.48,
+      0.54
+    ]
+  },
+  "property-v2": {
+    "source": {
+      "width": 1536,
+      "height": 1024
+    },
+    "desktopRatio": "4:3",
+    "mobileRatio": "3:2",
+    "focalPoint": [
+      0.5,
+      0.5
+    ]
+  },
+  "civil-v2": {
+    "source": {
+      "width": 1536,
+      "height": 1024
+    },
+    "desktopRatio": "4:3",
+    "mobileRatio": "3:2",
+    "focalPoint": [
+      0.5,
+      0.55
+    ]
+  },
+  "employment-v2": {
+    "source": {
+      "width": 1536,
+      "height": 1024
+    },
+    "desktopRatio": "4:3",
+    "mobileRatio": "3:2",
+    "focalPoint": [
+      0.52,
+      0.53
+    ]
+  },
+  "commercial-v2": {
+    "source": {
+      "width": 1536,
+      "height": 1024
+    },
+    "desktopRatio": "4:3",
+    "mobileRatio": "3:2",
+    "focalPoint": [
+      0.5,
+      0.6
+    ]
+  }
+}

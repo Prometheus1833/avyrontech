@@ -18,13 +18,17 @@ for(const route of routes) {
  const title=html.match(/<title>(.*?)<\/title>/)?.[1];
  check(!!title&&!titles.has(title),'unique title');titles.add(title);
  check(html.includes('name="description"'),'description');
+ check(!/Sector 6|District 6|Cabinet de avocat(?:<| )/i.test(html),'outdated identity or location');
+ check(html.includes('id="accessibility-toggle"'),'accessibility control');
+ check(html.includes('id="language-toggle"'),'compact language switch');
+ check(html.includes('hero-mobile')||route.key!=='home','mobile hero art direction');
  check(html.includes('name="robots" content="noindex, follow"'),'demo noindex');
  check(html.includes('href="#main"'),'skip link');
  check(html.includes(`rel="canonical" href="${firm.origin}${route.path}"`),'canonical');
  for(const language of ['ro','en','x-default']) check(html.includes(`hreflang="${language}"`),'hreflang '+language);
  check(html.includes('property="og:image"'),'social image');
  const json=html.match(/<script type="application\/ld\+json">(.*?)<\/script>/)?.[1];
- try{JSON.parse(json);}catch{check(false,'valid structured data');}
+ try{const data=JSON.parse(json);if(route.key==='home'||route.key==='practice')check(data.mainEntity?.areaServed?.name==='Romania','nationwide service area');}catch{check(false,'valid structured data');}
  for(const match of html.matchAll(/(?:href|src)="([^"#?]+)(?:[?#][^"]*)?"/g)) {
   const target=match[1];
   if(!target.startsWith('/'))continue;
@@ -40,14 +44,14 @@ for(const route of routes) {
  check(!/https:\/\/(?:fonts\.googleapis|fonts\.gstatic|images\.unsplash)/.test(html),'no third-party runtime media');
 }
 for(const name of ['editorial','sans']) {
- const css=await readFile(`dist/assets/fonts/${name}.css`,'utf8');
+ const css=await readFile(`dist/assets/fonts-v2/${name}.css`,'utf8');
  assert(!css.includes('https://'),'Fonts must be self-hosted');
- for(const m of css.matchAll(/url\(([^)]+)\)/g))await access(`dist/assets/fonts/${m[1]}`);
+ for(const m of css.matchAll(/url\(([^)]+)\)/g))await access(`dist/assets/fonts-v2/${m[1]}`);
 }
 const budgets=[['app.js',6000],['styles.css',10000]];
 for(const [file,budget] of budgets){const size=gzipSync(await readFile('dist/'+file)).length;assert(size<=budget,`${file}: ${size} gzip bytes > ${budget}`);console.log(`${file}: ${size} bytes gzip (budget ${budget})`);}
-assert((await stat('dist/assets/architecture-720.avif')).size<100000,'mobile hero exceeds 100KB');
-assert((await stat('dist/assets/architecture-1672.avif')).size<260000,'desktop hero exceeds 260KB');
+assert((await stat('dist/assets/consultation-v2-hero-mobile-480.avif')).size<100000,'mobile hero exceeds 100KB');
+assert((await stat('dist/assets/consultation-v2-hero-desktop-800.avif')).size<260000,'desktop hero exceeds 260KB');
 assert.equal(routes.filter(r=>r.lang==='ro').length,routes.filter(r=>r.lang==='en').length,'bilingual route parity');
 assert.equal(routes.filter(r=>r.key==='practice').length,12,'all six bilingual practices');
 assert.equal(routes.filter(r=>r.key==='article').length,6,'all three bilingual articles');
