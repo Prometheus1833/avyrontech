@@ -1,3 +1,4 @@
+import {projectSummaryColumns} from "./projectSummary";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import type { AppBindings } from "./types";
@@ -489,7 +490,7 @@ clientWorkspaceRouter.get(root + "/:id", async (c) => {
     carts,
   ] = await Promise.all([
     c.env.DB.prepare(
-      "SELECT id,name,slug,kind,status,url,client_id,organization_id,owner_user_id,coalesce(updated_at,0) updated_at FROM projects WHERE client_id=? ORDER BY updated_at DESC,id LIMIT 500",
+      `SELECT ${projectSummaryColumns("p",permissions.finance)},p.owner_user_id FROM projects p WHERE p.client_id=? ORDER BY p.updated_at DESC,p.id LIMIT 500`,
     )
       .bind(id)
       .all(),
@@ -566,7 +567,7 @@ clientWorkspaceRouter.get(root + "/:id", async (c) => {
   return c.json({
     client,
     organizationId: mapping?.organization_id || null,
-    projects: projects.results,
+    projects: projects.results.map(row=>({...row,budget_visible:permissions.finance})),
     subscriptions: subscriptions.results,
     accounts: accounts.results,
     availableProjects: available.results.map((p: Record<string, unknown>) => ({

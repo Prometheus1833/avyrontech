@@ -388,6 +388,20 @@ describe("Client workspace: real SQLite, Hono and existing portal authorization"
       ).status,
     ).toBe(400);
   });
+  it("reconciles a verified legacy account once before projects and subscriptions, without reviving managed grants",async()=>{
+    db.exec("DELETE FROM client_account_access WHERE user_id='client-a'; UPDATE clients SET access_managed=0 WHERE id='ca'");
+    await linkClientsByEmail(binding,'client-a');await linkClientsByEmail(binding,'client-a');
+    expect(db.prepare("SELECT count(*) n FROM client_account_access WHERE client_id='ca' AND user_id='client-a'").get()!.n).toBe(1);
+    actor='client-a';expect((await ok(await req('/api/projects'))).data.map((p:{id:string})=>p.id)).toEqual(['pa']);
+    expect((await ok(await req('/api/workspace/subscriptions'))).data.map((p:{id:string})=>p.id)).toEqual(['sub-a']);
+    db.exec("UPDATE clients SET access_managed=1 WHERE id='ca'; DELETE FROM client_account_access WHERE user_id='client-a'");
+    await linkClientsByEmail(binding,'client-a');expect((await ok(await req('/api/projects'))).data).toEqual([]);expect((await ok(await req('/api/workspace/subscriptions'))).data).toEqual([]);
+  });
+  it("never auto-links disabled, unverified, staff or platform accounts by email",async()=>{
+    db.exec("DELETE FROM client_account_access; UPDATE clients SET access_managed=0,email='unverified@example.test' WHERE id='ca'");
+    await linkClientsByEmail(binding,'unverified');expect(db.prepare('SELECT count(*) n FROM client_account_access').get()!.n).toBe(0);
+    for(const who of ['staff','owner','client-a']){const u=db.prepare('SELECT email FROM users WHERE id=?').get(who)!;db.prepare("UPDATE clients SET email=? WHERE id='ca'").run(u.email!);if(who==='client-a')db.exec("UPDATE users SET disabled_at=1 WHERE id='client-a'");await linkClientsByEmail(binding,who);expect(db.prepare('SELECT count(*) n FROM client_account_access').get()!.n).toBe(0);}
+  });
   it("revokes access immediately, survives email fallback and rejects stale or raced grant replacement", async () => {
     expect(
       (await canAccessProject(binding, "pa", "client-a", ["user"])).read,

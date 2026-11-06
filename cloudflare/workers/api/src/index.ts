@@ -1,3 +1,4 @@
+import { linkClientsByEmail } from "./clientAccountSync";
 import {collaboratorsRouter} from "./collaborators";
 import {collaborationIdentity} from "./collaboratorPolicy";
 import { antivirusRouter } from "./antivirus";
@@ -857,6 +858,7 @@ app.get("/api/auth/me", requireAuth, async (c) => {
   const u = await c.env.DB.prepare("SELECT id,email,username,display_name,avatar_url,email_verified,must_change_password,created_at FROM users WHERE id = ? AND disabled_at IS NULL")
     .bind(c.get("userId")).first();
   if (!u) return c.json({ error: { code: "account_unavailable" } }, 401);
+  if (!c.get("roles").some(role=>role==="staff"||role==="admin")) await linkClientsByEmail(c.env.DB,c.get("userId"));
   let profile = await c.env.DB.prepare(`SELECT ${PROFILE_SELECT} FROM profiles WHERE id = ?`).bind(c.get("userId")).first();
   if (!profile) {
     await c.env.DB.prepare("INSERT INTO profiles (id,display_name,entity_type,language,theme,updated_at) VALUES (?,?,'individual','ro','system',?)")

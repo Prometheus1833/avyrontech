@@ -1,3 +1,5 @@
+import {projectSummaryColumns,projectBudgetAccess} from "./projectSummary";
+import {PROJECT_KIND_LABELS} from "../../../../src/shared/projectSummary";
 import { managedStaff, managedPermission } from "./staffAccessPolicy";
 import { hasCapability } from "./authorization";
 // Avyron API — Rute Platformă Internă pentru proiecte
@@ -101,23 +103,27 @@ projectsRouter.get("/api/projects", async (c) => {
   const isStaff = roles.includes("staff") || roles.includes("admin");
   const isAdmin = roles.includes("admin");
 
+  const principal=!!await platformRoleForUser(c.env.DB,userId);
+  const policy=principal?null:await managedStaff(c.env.DB,userId);
+  if(policy&&!managedPermission(policy,"projects.read"))return c.json({error:{code:"forbidden"}},403);
+  const finance=await projectBudgetAccess(c.env.DB,userId,roles);
+  const projection=(alias:"p"|"project")=>projectSummaryColumns(alias,finance);
   let rows;
   if(c.req.query('scope')==='mine'){
-    const result=await c.env.DB.prepare(`SELECT p.id,p.slug,p.name,p.kind,p.status,p.banner_status,p.url,p.favicon_url,p.updated_at,
+    const result=await c.env.DB.prepare(`SELECT ${projection("p")},
       (SELECT count(*) FROM project_staff ps JOIN users u ON u.id=ps.user_id WHERE ps.project_id=p.id AND u.disabled_at IS NULL) member_count
       FROM projects p WHERE p.owner_user_id=? ${isStaff?'OR EXISTS(SELECT 1 FROM project_staff ps WHERE ps.project_id=p.id AND ps.user_id=?)':''} OR EXISTS(SELECT 1 FROM organization_memberships m WHERE m.organization_id=p.organization_id AND m.user_id=? AND m.status='active') ${isStaff?'':`OR ${clientProjectGrantSql('p')}`} ORDER BY p.updated_at DESC,p.id LIMIT 200`).bind(userId,userId,userId).all();
-    return c.json({data:result.results,purchases:[],sales:[],scope:'mine'});
+    return c.json({data:result.results.map(row=>({...row,budget_visible:finance})),purchases:[],sales:[],scope:'mine'});
   }
   if (
-    (await platformRoleForUser(c.env.DB, userId)) ||
+    principal ||
     (await hasCapability(c.env.DB, userId, "projects.all"))) {
     rows = await c.env.DB.prepare(
-      "SELECT id, organization_id, slug, name, kind, banner_status, status, url, favicon_url, updated_at FROM projects ORDER BY updated_at DESC LIMIT 200"
+      `SELECT ${projection("p")} FROM projects p ORDER BY p.updated_at DESC LIMIT 200`
     ).all();
   } else if (isAdmin || isStaff) {
     rows = await c.env.DB.prepare(
-      `SELECT DISTINCT project.id, project.organization_id, project.slug, project.name,
-              project.kind, project.banner_status, project.status, project.url, project.favicon_url, project.updated_at
+      `SELECT DISTINCT ${projection("project")}
          FROM projects AS project
          LEFT JOIN organization_memberships AS membership
            ON membership.organization_id = project.organization_id
@@ -126,13 +132,12 @@ projectsRouter.get("/api/projects", async (c) => {
            ON assignment.project_id = project.id AND assignment.user_id = ?
          LEFT JOIN client_account_access AS client_access
            ON client_access.client_id = project.client_id AND client_access.user_id = ?
-        WHERE membership.user_id IS NOT NULL OR assignment.user_id IS NOT NULL OR client_access.user_id IS NOT NULL
+        WHERE project.owner_user_id=? OR membership.user_id IS NOT NULL OR assignment.user_id IS NOT NULL OR (project.organization_id IS NULL AND client_access.user_id IS NOT NULL)
         ORDER BY project.updated_at DESC LIMIT 200`,
-    ).bind(userId, userId, userId).all();
+    ).bind(userId, userId, userId, userId).all();
   } else {
     rows = await c.env.DB.prepare(
-      `SELECT DISTINCT project.id, project.organization_id, project.slug, project.name,
-              project.kind, project.banner_status, project.status, project.url, project.favicon_url, project.updated_at
+      `SELECT DISTINCT ${projection("project")}
          FROM projects AS project
          LEFT JOIN organization_memberships AS membership
            ON membership.organization_id = project.organization_id
@@ -176,7 +181,7 @@ projectsRouter.get("/api/projects", async (c) => {
       if (!/no such table: commerce_orders/i.test(String(error))) throw error;
     }
   }
-  if (isStaff) {
+  if (isStaff && finance) {
     try {
       const platformPrincipal = Boolean(await platformRoleForUser(c.env.DB, userId));
       const { results } = await c.env.DB.prepare(
@@ -206,7 +211,7 @@ projectsRouter.get("/api/projects", async (c) => {
       if (!/no such table: financial_revenues/i.test(String(error))) throw error;
     }
   }
-  return c.json({ data: rows.results, purchases, sales });
+  return c.json({ data: rows.results.map(row=>({...row,budget_visible:finance})), purchases, sales });
 });
 
 // ─── CREARE (staff only — via floating button "Creează proiect") ─────────
@@ -230,7 +235,7 @@ projectsRouter.post("/api/projects", async (c) => {
       (b.url != null && typeof b.url !== "string") ||
       (b.organization_id != null && (typeof b.organization_id !== "string" || b.organization_id.length > 160)) ||
       (b.owner_user_id != null && (typeof b.owner_user_id !== "string" || b.owner_user_id.length > 160)) ||
-      (b.kind !== undefined && !["external_asset", "website_prezentare", "prezentare_premium", "magazin_online", "retele_sociale", "identitate_completa", "aplicatie"].includes(b.kind)) ||
+      (b.kind !== undefined && !Object.hasOwn(PROJECT_KIND_LABELS,b.kind)) ||
       (b.recurring_service != null && (typeof b.recurring_service !== "object" || Array.isArray(b.recurring_service))) ||
       typeof b.name !== "string" || !b.name.trim() || b.name.length > 180 ||
       (b.slug !== undefined && (typeof b.slug !== "string" || !/^[a-z0-9][a-z0-9_-]{0,99}$/.test(b.slug))) ||
@@ -335,13 +340,17 @@ projectsRouter.post("/api/projects", async (c) => {
 projectsRouter.get("/api/projects/:slug", async (c) => {
   const slug = c.req.param("slug");
   const proj = await c.env.DB.prepare(
-    "SELECT id,client_id,organization_id,name,domain,status,created_at,slug,kind,description,owner_user_id,banner_status,url,favicon_url,og_title,og_description,og_image_url,cover_image_url,price_ron,price_eur,subscription_plan,subscription_status,billing_next,updated_at FROM projects WHERE slug = ?",
+    `SELECT ${projectSummaryColumns("p",true)},p.domain,p.description,p.owner_user_id,p.og_title,p.og_description,p.og_image_url,p.cover_image_url,p.subscription_plan,p.subscription_status,p.billing_next FROM projects p WHERE p.slug = ?`,
   ).bind(slug).first<Record<string, unknown> & { id: string }>();
   if (!proj) return c.json({ error: { code: "not_found" } }, 404);
   const perm = await canAccessProject(c.env.DB, proj.id, c.get("userId"), c.get("roles"));
   if (!perm.read) return c.json({ error: { code: "forbidden" } }, 403);
+  const finance=await projectBudgetAccess(c.env.DB,c.get("userId"),c.get("roles"));
+  if(!finance){proj.price_ron=null;proj.price_eur=null;proj.subscription_plan=null;}
+  proj.budget_visible=finance;
+  const financeWrite=!!await platformRoleForUser(c.env.DB,c.get("userId"))||await hasCapability(c.env.DB,c.get("userId"),"finance.write");
 
-  const [links, proposals, updates, staff] = await Promise.all([
+  const [links, proposals, updates, staff, subscriptions] = await Promise.all([
     c.env.DB.prepare("SELECT id,project_id,kind,label,url,updated_by,updated_at FROM project_links WHERE project_id = ? ORDER BY updated_at DESC").bind(proj.id).all(),
     c.env.DB.prepare("SELECT id,project_id,author_id,title,description,status,created_at,updated_at FROM project_proposals WHERE project_id = ? ORDER BY created_at DESC LIMIT 100").bind(proj.id).all(),
     c.env.DB.prepare("SELECT id,project_id,author_id,proposal_id,title,body,created_at FROM project_updates WHERE project_id = ? ORDER BY created_at DESC LIMIT 20").bind(proj.id).all(),
@@ -350,8 +359,9 @@ projectsRouter.get("/api/projects/:slug", async (c) => {
        FROM project_staff ps JOIN users u ON u.id = ps.user_id
        LEFT JOIN profiles p ON p.id = ps.user_id WHERE ps.project_id = ?`
     ).bind(proj.id).all(),
+    c.env.DB.prepare(`SELECT s.id,s.status,s.next_billing_date,s.plan_sku,v.service_name,v.billing_cycle,${finance?"v.price":"NULL price"} FROM subscriptions s JOIN services v ON v.id=s.service_id JOIN projects p ON p.id=v.project_id WHERE p.id=? AND s.client_id=p.client_id ORDER BY s.status='active' DESC,s.next_billing_date,s.id LIMIT 100`).bind(proj.id).all(),
   ]);
-  return c.json({ project: proj, links: links.results, proposals: proposals.results, updates: updates.results, staff: staff.results, permission: perm });
+  return c.json({ subscriptions:subscriptions.results, project: proj, links: links.results, proposals: proposals.results, updates: updates.results, staff: staff.results, permission: {...perm,finance:financeWrite} });
 });
 
 // ─── UPDATE proiect (staff/admin doar) ────────────────────────────────────
@@ -366,6 +376,14 @@ projectsRouter.patch("/api/projects/:id", async (c) => {
     if (!url) return c.json({ error: { code: "invalid_url" } }, 400);
     b.url = url;
   }
+  const financeFields=["price_ron","price_eur"];
+  if(financeFields.some(key=>key in b)&&!await platformRoleForUser(c.env.DB,c.get("userId"))&&!await hasCapability(c.env.DB,c.get("userId"),"finance.write"))return c.json({error:{code:"finance_permission_required"}},403);
+  for(const key of financeFields)if(key in b&&b[key]!==null&&(typeof b[key]!=="number"||!Number.isFinite(b[key])||Number(b[key])<0||Number(b[key])>1e12))return c.json({error:{code:"invalid_budget"}},400);
+  if("kind" in b&&(typeof b.kind!=="string"||!Object.hasOwn(PROJECT_KIND_LABELS,b.kind)))return c.json({error:{code:"invalid_kind"}},400);
+  for(const key of ["planned_start_at","planned_end_at"])if(key in b&&b[key]!==null&&(!Number.isSafeInteger(b[key])||Number(b[key])<0||Number(b[key])>8640000000000000))return c.json({error:{code:"invalid_schedule"}},400);
+  const schedule=await c.env.DB.prepare("SELECT planned_start_at,planned_end_at FROM projects WHERE id=?").bind(id).first<{planned_start_at:number|null;planned_end_at:number|null}>();
+  const start="planned_start_at" in b?b.planned_start_at:schedule?.planned_start_at,end="planned_end_at" in b?b.planned_end_at:schedule?.planned_end_at;
+  if(typeof start==="number"&&typeof end==="number"&&start>end)return c.json({error:{code:"invalid_schedule"}},400);
   delete b.status;
   if ("banner_status" in b) {
     const stage = PROJECT_STAGES.find(stage => stage.banner === b.banner_status);
@@ -374,7 +392,7 @@ projectsRouter.patch("/api/projects/:id", async (c) => {
   }
   // Ownership is an access grant. It must never be mass-assigned by a project editor.
   if ("owner_user_id" in b) return c.json({ error: { code: "owner_transfer_forbidden" } }, 403);
-  const allowed = ["name", "kind", "description", "status", "banner_status", "url", "favicon_url", "og_title", "og_description", "og_image_url", "cover_image_url", "price_ron", "price_eur", "subscription_plan", "subscription_status", "billing_next"];
+  const allowed = ["planned_start_at", "planned_end_at", "name", "kind", "description", "status", "banner_status", "url", "favicon_url", "og_title", "og_description", "og_image_url", "cover_image_url", "price_ron", "price_eur", "subscription_plan", "subscription_status", "billing_next"];
   const sets: string[] = [], vals: Array<string | number | null> = [];
   for (const k of allowed) {
     if (!(k in b)) continue;
@@ -388,7 +406,7 @@ projectsRouter.patch("/api/projects/:id", async (c) => {
   if (!sets.length) return c.json({ ok: true });
   sets.push("updated_at = ?"); vals.push(now()); vals.push(id);
   await c.env.DB.prepare(`UPDATE projects SET ${sets.join(", ")} WHERE id = ?`).bind(...vals).run();
-  await log(c.env.DB, id, c.get("userId"), "project.update", "project", id, b);
+  await log(c.env.DB, id, c.get("userId"), "project.update", "project", id, Object.fromEntries(allowed.filter(key=>key in b).map(key=>[key,b[key]])));
   return c.json({ ok: true });
 });
 
@@ -478,7 +496,8 @@ projectsRouter.get("/api/projects/:id/logs", async (c) => {
      LEFT JOIN profiles p ON p.id = l.actor_id
      WHERE l.project_id = ? ORDER BY l.created_at DESC LIMIT 100`
   ).bind(id).all();
-  return c.json({ data: results });
+  const finance=await projectBudgetAccess(c.env.DB,c.get("userId"),c.get("roles"));
+  return c.json({ data: finance?results:results.map(row=>({...row,meta_json:null})) });
 });
 
 // ─── METADATA extract (favicon + OG) ─────────────────────────────────────

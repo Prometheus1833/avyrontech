@@ -1,3 +1,5 @@
+import { linkClientsByEmail } from "./clientAccountSync";
+export { linkClientsByEmail } from "./clientAccountSync";
 import { dashboardActivityRouter } from "./dashboardActivity";
 import {managedStaff,canManageStaffTarget} from "./staffAccessPolicy";
 import { createMaintenanceRouter } from "./maintenance";
@@ -151,11 +153,6 @@ workspaceRouter.put('/api/workspace/account-access/:userId',async c => {
 });
 
 // Support is a team workflow: staff and admins work the whole queue.
-/** Links a verified account to the client with the same email (unverified emails never gain client data); creates a client record when none exists yet. */
-export async function linkClientsByEmail(db: D1Database,userId: string) {
-  await db.prepare(`INSERT OR IGNORE INTO client_account_access(client_id,user_id,granted_by,created_at)
-    SELECT cl.id,u.id,u.id,? FROM users u JOIN clients cl ON lower(trim(cl.email))=lower(trim(u.email)) WHERE u.id=? AND u.email_verified=1 AND cl.access_managed=0`).bind(Date.now(),userId).run();
-}
 async function ensureClientForUser(c: Ctx,requested?: string): Promise<string|null> {
   const userId=c.get('userId'), db=c.env.DB;
   const linked=async()=>{

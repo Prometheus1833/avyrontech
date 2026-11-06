@@ -106,10 +106,36 @@ describe('Cloudflare workspace: actual handlers, all migrations, atomic writes',
   expect((await create('a','other')).status).toBe(403);
   expect((await create('a','client')).status).toBe(201);
  });
+ it('projects expose compact native summaries while staff without finance never receive budgets',async()=>{
+  db.exec("UPDATE projects SET price_ron=0,price_eur=500,url='https://example.test',planned_start_at=1800000000000,planned_end_at=1801000000000 WHERE id='pa'; INSERT INTO services(id,project_id,service_name,price,billing_cycle) VALUES('summary-service','pa','SEO lunar',125,'monthly'); INSERT INTO subscriptions(id,client_id,service_id,status,next_billing_date) VALUES('summary-sub','a','summary-service','active',1802000000000)");
+  let body=await (await app.request('/api/projects',{},{})).json();expect(body.data.find((p:{id:string})=>p.id==='pa')).toMatchObject({client_name:'Client A',price_ron:0,price_eur:500,budget_visible:true,service_names:'SEO lunar',planned_start_at:1800000000000});
+  actor='client';body=await (await app.request('/api/projects',{},{})).json();expect(body.data.map((p:{id:string})=>p.id)).toEqual(['pa']);expect(body.data[0].price_ron).toBe(0);
+  actor='staff';db.exec("INSERT INTO project_staff VALUES('pa','staff','contributor',1)");body=await (await app.request('/api/projects',{},{})).json();expect(body.data[0]).toMatchObject({price_ron:null,price_eur:null,budget_visible:false,client_name:'Client A'});
+  expect(body.sales).toEqual([]);db.exec("INSERT INTO project_logs(id,project_id,actor_id,action,meta_json,created_at) VALUES('budget-log','pa','owner','project.update','{\"price_ron\":1450}',1)");const logs=await (await app.request('/api/projects/pa/logs',{},{})).json();expect(logs.data[0].meta_json).toBeNull();
+  const detail=await (await app.request('/api/projects/project-a',{},{})).json();expect(detail.project.price_eur).toBeNull();expect(detail.subscriptions[0]).toMatchObject({id:'summary-sub',service_name:'SEO lunar',price:null});
+  db.exec("DELETE FROM project_staff WHERE project_id='pa' AND user_id='staff'");expect((await (await app.request('/api/projects?scope=mine',{},{})).json()).data).toEqual([]);
+ });
+ it('reports cross-beneficiary subscription drift through a read-only aggregate audit',()=>{
+  const queries=readFileSync('cloudflare/d1/checks/account-integration-audit.sql','utf8').split(';').filter(q=>q.trim());
+  expect(queries.slice(0,3).map(query=>db.prepare(query).get()!.issues)).toEqual([0,0,0]);
+  db.exec("INSERT INTO services(id,project_id,service_name,price,billing_cycle) VALUES('audit-service','pa','Serviciu',100,'monthly'); INSERT INTO subscriptions(id,client_id,service_id,status,next_billing_date) VALUES('bad-beneficiary','b','audit-service','active',1800000000000)");
+  expect(db.prepare(queries[2]).get()!.issues).toBe(1);
+ });
+ it('does not infer finance rights from a user-only operational project grant',async()=>{
+  db.exec("UPDATE projects SET price_ron=1450; INSERT INTO user_capabilities(id,user_id,capability,granted_by,reason,created_at) VALUES('operator-projects','client','projects.all','owner','Operational project access',1)");actor='client';
+  const body=await (await app.request('/api/projects',{},{})).json();expect(body.data).toHaveLength(2);for(const row of body.data)expect(row).toMatchObject({price_ron:null,budget_visible:false});
+ });
+ it('validates a project schedule and requires an explicit financial permission for budget changes',async()=>{
+  const update=(body:unknown)=>app.request('/api/projects/pa',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(body)},{});
+  expect((await update({planned_start_at:1800000000000,planned_end_at:1801000000000})).status).toBe(200);
+  expect((await update({planned_start_at:1802000000000})).status).toBe(400);expect((await update({planned_end_at:'invalid'})).status).toBe(400);expect((await update({price_ron:-1})).status).toBe(400);expect((await update({kind:'blog_profesional'})).status).toBe(200);
+  actor='staff';db.exec("INSERT INTO project_staff VALUES('pa','staff','contributor',1)");expect((await update({price_ron:100})).status).toBe(403);expect((await update({planned_end_at:null})).status).toBe(200);
+  expect(db.prepare("SELECT planned_start_at,planned_end_at FROM projects WHERE id='pa'").get()).toMatchObject({planned_start_at:1800000000000,planned_end_at:null});
+ });
  it('scopes paid project sales to the staff assignment',async()=>{
   db.exec("INSERT INTO project_staff(project_id,user_id,role,assigned_at) VALUES ('pa','staff','contributor',1)");
   for(const [id,project] of [['ra','pa'],['rb','pb']])db.prepare("INSERT INTO financial_revenues(id,project_id,revenue_type,service_name,currency,gross_amount_minor,status,created_at,updated_at) VALUES (?,?,'other','Synthetic sale','RON',1000,'paid',1,1)").run(id,project);
-  actor='staff';
+  actor='staff';db.exec("INSERT INTO user_capabilities(id,user_id,capability,granted_by,reason,created_at) VALUES('finance-staff','staff','finance.read','owner','Authorized financial scope',1)");
   const staffSales=await (await app.request('/api/projects',{},{})).json();
   expect(staffSales.sales.map((row:{id:string})=>row.id)).toEqual(['ra']);
   actor='owner';

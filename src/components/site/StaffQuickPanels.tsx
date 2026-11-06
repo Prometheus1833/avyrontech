@@ -1,3 +1,4 @@
+import {projectBudget,projectKindLabel,projectPeriod,projectStageLabel,type ProjectSummary} from "@/shared/projectSummary";
 import { useEffect, useState } from "react";
 import Link from "./WorkspaceLink";
 import {
@@ -143,14 +144,7 @@ export default function StaffQuickPanels({
     </Dialog>
   );
 }
-type Project = {
-  id: string;
-  slug: string;
-  name: string;
-  kind: string;
-  status: string;
-  member_count: number;
-};
+type Project = ProjectSummary;
 function MyProjects({ onNavigate }: { onNavigate: () => void }) {
   const [rows, setRows] = useState<Project[]>([]),
     [error, setError] = useState(""),
@@ -224,8 +218,10 @@ function MyProjects({ onNavigate }: { onNavigate: () => void }) {
             <span>
               <strong>{r.name}</strong>
               <small>
-                {r.status} · <Users size={12} /> {r.member_count} membri staff
+                {projectKindLabel(r.kind)} · {projectStageLabel(r)} · <Users size={12} /> {r.member_count??0} membri staff
               </small>
+              <small className="break-words">{r.client_name||"Fără client alocat"} · {projectBudget(r)}</small>
+              <small>{projectPeriod(r)}</small><small className="break-words">{r.url||"Site necompletat"}{r.service_names?` · ${r.service_names}`:""}</small>
             </span>
             <ArrowUpRight size={16} />
           </Link>

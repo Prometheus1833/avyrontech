@@ -1,3 +1,4 @@
+import type {ProjectSummary} from "./projectSummary";
 export const CLIENT_ENTITY_TYPES = [
   "PF",
   "PJ",
@@ -58,7 +59,7 @@ export type ClientAccount = {
   must_change_password: number;
   last_login_at: number | null;
 };
-export type ClientProject = {
+export type ClientProject = ProjectSummary & {
   id: string;
   name: string;
   slug: string;

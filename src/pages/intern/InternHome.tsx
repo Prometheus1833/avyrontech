@@ -1,3 +1,5 @@
+import ProjectSummaryCard from "@/components/intern/ProjectSummaryCard";
+import {PROJECT_KIND_LABELS,type ProjectSummary} from "@/shared/projectSummary";
 import { PROJECT_STAGES, projectStage, type ProjectStage } from "@/shared/projectLifecycle";
 import { clientWorkspaceApi } from "@/lib/clientWorkspaceApi";
 import { CLIENT_ENTITY_TYPES, type ClientEntityType } from "@/shared/clientWorkspace";
@@ -18,12 +20,9 @@ import { Plus, ArrowUpRight, ExternalLink, FolderKanban, CheckCircle2, Receipt, 
 import { toast } from "sonner";
 import ContactRail from "@/components/intern/ContactRail";
 import PageBackLink from "@/components/site/PageBackLink";
-import { normalizeExternalLink } from "@/shared/externalUrl";
 
-type Row = {
-  id: string; slug: string; name: string; kind: ProjectKind;
-  banner_status: BannerStatus; status: string; url: string | null; favicon_url: string | null; updated_at: number;
-};
+
+type Row = ProjectSummary & {favicon_url?:string|null};
 
 const BANNER: Record<BannerStatus, { label: string; cls: string }> = {
   proposed: { label: "Propus", cls: "bg-slate-500/15 text-muted-foreground" },
@@ -34,15 +33,7 @@ const BANNER: Record<BannerStatus, { label: string; cls: string }> = {
   offline:     { label: "Offline",             cls: "bg-muted text-muted-foreground" },
 };
 
-const KINDS: { value: ProjectKind; label: string }[] = [
-  {value:"external_asset",label:"Proiect / produs extern"},
-  { value: "website_prezentare",  label: "Website prezentare" },
-  { value: "prezentare_premium",  label: "Prezentare premium" },
-  { value: "magazin_online",      label: "Magazin online" },
-  { value: "retele_sociale",      label: "Rețele sociale" },
-  { value: "identitate_completa", label: "Identitate completă" },
-  { value: "aplicatie",           label: "Aplicație" },
-];
+const KINDS=Object.entries(PROJECT_KIND_LABELS).map(([value,label])=>({value:value as ProjectKind,label}));
 
 export default function InternHome({ embedded = false }: { embedded?: boolean;
 }) {
@@ -315,8 +306,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
                   <details open key={status} aria-label={stage.label} className="min-w-0 rounded-2xl border border-border/60 bg-card/40 p-3">
                 <summary className="mb-3 flex cursor-pointer items-center justify-between gap-2 text-sm font-semibold"><span>{stage.label}</span><span className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">{projects.length} ▾</span></summary>
                 <div className="space-y-2">{projects.map((project) => (
-                        <Link key={project.id} to={`/intern/projects/${project.slug}`} className="block rounded-xl border border-border/60 bg-card p-3 transition hover:border-primary/50 hover:shadow-sm"><span className="block truncate text-sm font-medium">{project.name}</span><span className="mt-1 block text-xs text-muted-foreground">Actualizat {" "}
-                            {new Date(project.updated_at).toLocaleDateString("ro-RO")}</span></Link>))}{projects.length === 0 && (
+                        <ProjectSummaryCard key={project.id} project={project}/>))}{projects.length === 0 && (
                         <p className="rounded-xl border border-dashed border-border/60 p-3 text-xs text-muted-foreground">Niciun proiect.</p>
                       )}</div>
               </details>
@@ -334,34 +324,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
                 (category) => (
                   <details open key={category} className="min-w-0 rounded-xl border bg-card/30 p-3"><summary className="mb-3 cursor-pointer text-sm font-semibold">{KINDS.find((kind) =>kind.value===category)?.label||category}{" "}
                       ·{" "}
-                      {activeRows.filter((row) =>row.kind===category).length}</summary><div className="space-y-3">{activeRows.filter((row) =>row.kind===category).map((p) => {
-              const B = BANNER[p.banner_status] ?? BANNER.in_progress;
-              return (
-                <Link key={p.id} to={`/intern/projects/${p.slug}`} className="group block rounded-xl border bg-card p-4 hover:border-primary/50 hover:shadow-md transition">
-                  <div className="flex items-start gap-3">
-                    {p.favicon_url ? (
-                      <img src={p.favicon_url} alt="" className="size-8 rounded-md border bg-background object-contain" onError={(e) => (e.currentTarget.style.display = "none")} />
-                    ) : (
-                      <div className="size-8 rounded-md border bg-muted grid place-items-center text-[10px] text-muted-foreground">{p.slug.slice(0, 2).toUpperCase()}</div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-medium truncate group-hover:text-primary">{p.name}</h3>
-                        <Badge variant="secondary" className={B.cls}>{B.label}</Badge>
-                      </div>
-                      {p.url && normalizeExternalLink(p.url) && (
-                        <a href={normalizeExternalLink(p.url)!} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
-                          {p.url.replace(/^https?:\/\//, "")}{" "}
-                                      <ExternalLink className="size-3" />
-                        </a>
-                      )}
-                      <p className="mt-2 text-[11px] text-muted-foreground">Actualizat {" "}
-                                    {new Date(p.updated_at).toLocaleDateString("ro-RO")}</p>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}</div></details>),
+                      {activeRows.filter((row) =>row.kind===category).length}</summary><div className="space-y-3">{activeRows.filter((row) =>row.kind===category).map((p) => <ProjectSummaryCard key={p.id} project={p}/>)}</div></details>),
               )}
           </div>
           )}

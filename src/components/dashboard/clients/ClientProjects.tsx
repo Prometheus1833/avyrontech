@@ -1,12 +1,13 @@
+import {statusName} from "./clientPresentation";
+import ProjectSummaryCard from "@/components/intern/ProjectSummaryCard";
+import {PROJECT_KIND_LABELS} from "@/shared/projectSummary";
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { internApi, type ProjectKind } from "@/lib/internApi";
 import { clientWorkspaceApi as api } from "@/lib/clientWorkspaceApi";
 import type { ClientFile } from "@/shared/clientWorkspace";
 import { Confirm, Field } from "./ClientFields";
-import { statusName } from "./clientPresentation";
 import { useClientMutation } from "./useClientMutation";
 export default function ClientProjects({
   file,
@@ -66,19 +67,7 @@ export default function ClientProjects({
       </div>
       <div className="cw-grid">
         {file.projects.map((p) => (
-          <article className="cw-card" key={p.id}>
-            <h3>{p.name}</h3>
-            <div className="cw-meta">
-              <span className="cw-pill">{statusName(p.status)}</span>
-              <span>{p.kind}</span>
-            </div>
-            <Link
-              className="mt-3 inline-flex min-h-10 items-center text-sm text-violet-300 underline"
-              to={`/intern/projects/${encodeURIComponent(p.slug)}`}
-            >
-              Deschide proiectul
-            </Link>
-          </article>
+          <ProjectSummaryCard key={p.id} project={{...p,client_name:file.client.company_name}}/>
         ))}
       </div>
       {!file.projects.length && (
@@ -136,21 +125,7 @@ export default function ClientProjects({
                     value={kind}
                     onChange={(e) => setKind(e.target.value as ProjectKind)}
                   >
-                    <option value="website_prezentare">
-                      Website de prezentare
-                    </option>
-                    <option value="magazin_online">Magazin online</option>
-                    <option value="aplicatie">Aplicație web / mobilă</option>
-                    <option value="retele_sociale">Social media</option>
-                    <option value="identitate_completa">
-                      Identitate completă
-                    </option>
-                    <option value="prezentare_premium">
-                      Prezentare premium
-                    </option>
-                    <option value="external_asset">
-                      Proiect / produs extern
-                    </option>
+                    {Object.entries(PROJECT_KIND_LABELS).map(([value,label])=><option key={value} value={value}>{label}</option>)}
                   </select>
                 </Field>
                 <Field label="URL proiect, dacă există">
