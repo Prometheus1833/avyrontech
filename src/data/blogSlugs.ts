@@ -13,6 +13,7 @@ export const BLOG_SLUGS = [
   "seo-2026-google-ai-search",
   "securitate-internet-greseli-afaceri-mici",
   "ai-act-reguli-transparenta-2-august-2026",
+  "variante-produs-magazin-online-ux-seo",
 ] as const;
 
 /** Source-controlled articles that currently have a complete English counterpart. */
@@ -20,5 +21,6 @@ export const BLOG_SLUGS_EN = BLOG_SLUGS.filter(
   (slug) => ![
     "php2shell-vulnerabilitati-php-octombrie-2026",
     "site-pensiune-rezervari-directe-2026",
+    "variante-produs-magazin-online-ux-seo",
   ].includes(slug),
 );
