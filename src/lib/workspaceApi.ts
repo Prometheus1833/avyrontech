@@ -1,3 +1,4 @@
+import { refreshDashboardActivity } from "./dashboardActivity";
 import { cfAuth } from "./cfAuth";
 export const workspaceApi = {
   list: <T>(path: string) => cfAuth.request<{data:T[]}>(`/api/workspace/${path}`),
@@ -9,7 +10,7 @@ export const workspaceApi = {
   ) =>
     cfAuth.request<T>(`/api/workspace/${path}`, {method,headers:{ "Idempotency-Key": key },
       ...(body === undefined ? {}:{body: JSON.stringify(body) }),
-    }),
+    }).then(result=>{refreshDashboardActivity();return result;}),
 };
 export type WorkItem = {
   id: string;

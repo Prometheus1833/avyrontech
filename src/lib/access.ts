@@ -1,4 +1,4 @@
-import { STAFF_MANAGED, STAFF_SECTION_PERMISSIONS } from "@/shared/staffAccess";
+import { STAFF_MANAGED, STAFF_SECTION_PERMISSIONS } from "../shared/staffAccess";
 // Model central de acces pentru platforma internă.
 // Un singur loc definește cine vede ce: butoane, secțiuni și date sensibile.
 export type AppRole = "user" | "staff" | "admin";
@@ -63,7 +63,7 @@ export type SectionId =
   | "stats" | "tickets" | "maintenance" | "client-maintenance" | "clients" | "domains"
   | "finance" | "media" | "leads" | "staff-tickets" | "demo-requests" | "intern"
   | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "servicii-avyron" | "produse-avyron"
-  | "newsletter" | "ai-projects" | "logo-simulations" | "surveys" | "configurator"
+  | "newsletter" | "ai-projects" | "logo-simulations" | "logo-2d-simulations" | "surveys" | "configurator"
   | "collaborators" | "my-collaborations" | "antivirus" | "example-carousels" | "commercial-codes" | "other-hub" | "social-manager" | "subscriptions-admin" | "internal-subscriptions" | "careers" | "library" | "reviews" | "avy-engine";
 
 export type SectionDef = {
@@ -84,8 +84,8 @@ export type SectionDef = {
  */
 export const SECTIONS: readonly SectionDef[] = [
   { id: "overview", group: "overview", audience: "everyone", keywords: ["acasa", "azi", "overview", "dashboard", "briefing", "atentie"] },
-  { id: "social-manager", group: "overview", audience: "superadmin", requiredCapability: "ai_projects.read", keywords: ["social media", "publicare", "aprobari", "continut ai", "facebook", "instagram"] },
-  { id: "antivirus", group: "overview", audience: "superadmin", keywords: ["antivirus", "bouncer", "malware", "carantina", "scanare", "cote"] },
+  { id: "social-manager", group: "activity", audience: "superadmin", requiredCapability: "ai_projects.read", keywords: ["social media", "publicare", "aprobari", "continut ai", "facebook", "instagram"] },
+  { id: "antivirus", group: "os", audience: "superadmin", keywords: ["antivirus", "bouncer", "malware", "carantina", "scanare", "cote"] },
   { id:"collaborators",group:"overview",audience:"staff",requiredCapability:"collaborators.read",keywords:["colaboratori","parteneri","juridic","economic","financiar"] },
   { id:"my-collaborations",group:"account",audience:"everyone",navigation:false,keywords:["colaborarile mele","parteneriat"] },
   { id: "profile", group: "account", audience: "everyone", keywords: ["cont", "profil", "date", "account"] },
@@ -129,13 +129,14 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "clients", group: "platform", audience: "staff", keywords: ["clienti", "clients", "companii"] },
   { id: "reviews", group: "platform", audience: "admin", keywords: ["recenzii", "review", "testimoniale", "aprobari", "rating"] },
   { id: "demo-requests", group: "platform", audience: "staff", keywords: ["demo", "solicitari", "leaduri"] },
-  { id: "logo-simulations", group: "platform", audience: "staff", keywords: ["logo", "simulari", "3d", "logo studio"] },
+  { id: "logo-2d-simulations", group: "platform", audience: "staff", requiredCapability: "leads.read", keywords: ["logo", "2d", "gratuit", "simulator", "ai"] },
+  { id: "logo-simulations", group: "produse", audience: "staff", keywords: ["logo", "simulari", "3d", "logo studio"] },
   { id: "domains", group: "platform", audience: "staff", keywords: ["domenii", "dns", "domains"] },
   { id: "surveys", group: "platform", audience: "staff", keywords: ["surveys", "chestionare", "brief", "rezultate"] },
   { id: "configurator", group: "platform", audience: "staff", keywords: ["configurator", "estimari", "oferte", "rezultate"] },
   { id: "example-carousels", group: "platform", audience: "staff", keywords: ["carusele", "exemple", "portofoliu", "galerie", "publicare" ] },
-  { id: "careers", group: "platform", audience: "staff", keywords: ["cariere", "joburi", "roluri", "recrutare"] },
-  { id: "library", group: "platform", audience: "staff", keywords: ["biblioteca", "resurse", "surse", "referinte"] },
+  { id: "careers", group: "os", audience: "staff", keywords: ["cariere", "joburi", "roluri", "recrutare"] },
+  { id: "library", group: "os", audience: "staff", keywords: ["biblioteca", "resurse", "surse", "referinte"] },
 
   { id: "finance", group: "os", audience: "superadmin", keywords: ["financiar", "facturare", "venituri", "plati", "incasari", "finance"] },
   { id: "commercial-codes", group: "os", audience: "superadmin", keywords: ["coduri", "sku", "contabilitate", "servicii", "produse", "tva", "plata"] },

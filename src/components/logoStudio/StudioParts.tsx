@@ -1,7 +1,7 @@
+import { cfAuth } from "@/lib/cfAuth";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import Turnstile from "@/components/site/Turnstile";
-import { apiUrl } from "@/lib/apiBase";
 import { trackEvent } from "@/lib/analytics";
 import type { LogoBrief, LogoConcept, StudioKind } from "@/data/logoStudio";
 import { AI_LOGO_EXPORT_PRICE, STUDIO_PRICES } from "@/data/logoStudio";
@@ -113,11 +113,12 @@ type OrderProps = {
   concept: LogoConcept;
   kind: StudioKind;
   source?: "ai";
+  simulationId?: string;
   priceLabel: string;
   termsPath: string;
 };
 
-export function OrderForm({ lang, brief, concept, kind, source, priceLabel, termsPath }: OrderProps) {
+export function OrderForm({ lang, brief, concept, kind, source, simulationId, priceLabel, termsPath }: OrderProps) {
   const t = STUDIO_UI[lang];
   const [fields, setFields] = useState({ name: "", email: "", phone: "", company: "", cui: "" });
   const [consent, setConsent] = useState(false);
@@ -132,10 +133,10 @@ export function OrderForm({ lang, brief, concept, kind, source, priceLabel, term
     if (!consent) return;
     setState("sending");
     try {
-      const res = await fetch(apiUrl("/api/logo-studio/orders"), {
+      const res = await cfAuth.requestResponse("/api/logo-studio/orders", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...fields, brief, concept, kind, source, consent, turnstileToken: token }),
+        body: JSON.stringify({ ...fields, brief, concept, kind, source, simulationId, consent, turnstileToken: token }),
       });
       if (!res.ok) throw new Error(String(res.status));
       setState("done");

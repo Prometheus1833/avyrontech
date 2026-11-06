@@ -1,3 +1,4 @@
+import LogoLeadDetails from "./LogoLeadDetails";
 import { leadWhatsAppUrl } from "@/shared/leadArchive";
 import LeadWhatsApp from "./LeadWhatsApp";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -212,6 +213,7 @@ export function LeadDetailDialog({ leadId, onOpenChange, onChanged, onDeleted, o
                   {lead.phone && <><button type="button" onClick={() => recordContact("call", "telefonică")} className="rounded-lg border px-2 py-1">Telefon ✓</button><button type="button" onClick={() => recordContact("whatsapp", "WhatsApp")} className="rounded-lg border px-2 py-1">WhatsApp ✓</button><button type="button" onClick={() => recordContact("sms", "SMS")} className="rounded-lg border px-2 py-1">SMS ✓</button></>}
                   {lead.email && <button type="button" onClick={() => recordContact("email", "prin email")} className="rounded-lg border px-2 py-1">Email ✓</button>}
                 </div>}
+                <LogoLeadDetails lead={lead}/>
                 {lead.message && <p className="whitespace-pre-wrap rounded-xl bg-muted/50 p-3 text-sm text-muted-foreground">{lead.message}</p>}
               </section>
 

@@ -1653,7 +1653,8 @@ import { catalogCodesRouter } from "./catalogCodes";
 import { contactRouter } from "./contact";
 import { financeRouter } from "./finance";
 import { leadsRouter } from "./leads";
-import { logoStudioRouter } from "./logoStudio";
+import { logoOperationsRouter } from "./logoOperations";
+import { cleanupLogoSimulations, logoStudioRouter } from "./logoStudio";
 import { mediaRouter } from "./media";
 import { operationsOAuthRouter,operationsRouter } from "./operations";
 import { organizationsRouter } from "./organizations";
@@ -1676,6 +1677,10 @@ app.use("/api/metadata/*", requireAuth);
 app.use("/api/media/*", requireAuth);
 app.use("/api/commerce/*", requireAuth);
 app.use("/api/logo-studio/generate", requireAuth);
+app.use("/api/logo-studio/simulations", requireAuth);
+app.use("/api/logo-studio/product-interest", requireAuth);
+app.use("/api/logo-studio/admin/*", requireAuth, requirePrivilegedMfa);
+app.use("/api/logo-studio/orders", async(c,next)=>c.req.header("authorization")?requireAuth(c,next):next());
 app.use("/api/promotions/*", requireAuth);
 app.use("/api/leads", requireAuth);
 app.use("/api/leads/*", requireAuth);
@@ -1767,6 +1772,7 @@ app.route("/", promotionsRouter);
 // Formularul public (fără auth)
 app.route("/", contactRouter);
 app.route("/", logoStudioRouter);
+app.route("/", logoOperationsRouter);
 app.route("/", produseRouter);
 // Magazinul cere cont; webhook-ul Stripe rămâne public, semnat criptografic.
 app.use("/api/produse/account/*", requireAuth);
@@ -1947,6 +1953,7 @@ export default {
       ctx.waitUntil(maintainMalwareScans(env).catch(() => console.error(JSON.stringify({event:"antivirus_poll_failed",code:"maintenance_unavailable"}))));
       ctx.waitUntil(enqueueAsyncJobs(env, ["operation_drain", "social_drain", "survey_delivery", "survey_ai"]));
       if (new Date(controller.scheduledTime).getUTCMinutes() === 0) {
+        ctx.waitUntil(cleanupLogoSimulations(env.DB).catch(()=>console.error(JSON.stringify({event:"logo_metadata_cleanup_failed"}))));
         ctx.waitUntil(cleanupAvyronEditorialContent(env).catch((error) => {
           console.error(JSON.stringify({ event: "ai_editorial_cleanup_failed", error: String(error) }));
           throw error;

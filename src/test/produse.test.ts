@@ -79,8 +79,9 @@ describe("catalogul de produse", () => {
 
   it("nu pune preț de cumpărare separată pe produsele gratuite fără motiv", () => {
     const freeWithPrice = ITEMS.filter((item) => item.access === "free" && item.priceRon);
-    // Excepția intenționată: Logo Studio e gratuit la previzualizare, plătit la descărcare.
-    expect(freeWithPrice.map((item) => item.slug)).toEqual(["logo-studio-3d"]);
+    // Previzualizarea gratuită nu transformă pachetul Logo 3D într-un produs Free.
+    expect(freeWithPrice.map((item) => item.slug)).toEqual([]);
+    expect(ITEM_BY_SLUG.get("logo-studio-3d")).toMatchObject({access:"pro",priceRon:75});
   });
 
   it("are produsul principal în catalog", () => {

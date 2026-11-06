@@ -1,3 +1,5 @@
+import ActivityBadge from "@/components/dashboard/ActivityBadge";
+import { useDashboardActivity } from "@/hooks/useDashboardActivity";
 import StaffWorkspaceActions from "@/components/site/StaffWorkspaceActions";
 import { capabilityRank, staffRankLabel } from "@/shared/staffAccess";
 import logo from "@/assets/avyron-logo.webp";
@@ -66,6 +68,7 @@ const StaffProduseTab = lazyWithRetry(() => import("@/components/dashboard/Staff
 const StaffServicesTab = lazyWithRetry(() => import("@/components/dashboard/StaffServicesTab").then((m) => ({ default: m.StaffServicesTab })));
 const StaffNewsletterTab = lazyWithRetry(() => import("@/components/dashboard/StaffNewsletterTab"));
 const AiProjects = lazyWithRetry(() => import("@/pages/intern/AiProjects"));
+const LogoOperationsTab = lazyWithRetry(() => import("@/components/dashboard/LogoOperationsTab"));
 const PlatformLeadTab = lazyWithRetry(() => import("@/components/dashboard/PlatformLeadTab"));
 const SurveysTab = lazyWithRetry(() => import("@/components/dashboard/SurveysTab"));
 const CommercialCodesTab = lazyWithRetry(() => import("@/components/dashboard/CommercialCodesTab"));
@@ -86,6 +89,7 @@ function ProfileDashboard() {
     platformRole, hasCollaborations,
     isSuperAdmin, isStaff, isAdmin, signOut } = useAuth();
   const access = useMemo(() => buildAccess({ roles, capabilities, email: user?.email, superadmin: isSuperAdmin,hasCollaborations }), [roles, capabilities, user?.email, isSuperAdmin,hasCollaborations]);
+  const activityCounts = useDashboardActivity(user?.id, access.isStaff, `${platformRole||""}:${[...capabilities].sort().join(",")}`);
   const [params, setParams] = useSearchParams();
   const legacyMaintenance = params.get("tab") === "maintenance" && (!access.isSuperAdmin || (params.has("project") && params.get("core") !== "system"));
   const requested = legacyMaintenance ? "client-maintenance" : params.get("tab") === "workflows" ? "projects" : params.get("tab") === "platform-control" ? "os-centers" : (params.get("tab") ?? "");
@@ -170,8 +174,8 @@ function ProfileDashboard() {
     const label = section === "projects" && !access.isStaff ? "Proiectele mele" : section === "intern" && !access.isStaff ? "Mesaje proiecte" : sectionMeta.label;
     const active = tab === section;
     return (
-      <><button type="button" data-os-section={section} aria-current={active?"page":undefined} aria-label={label} title={sidebarCollapsed ? label : undefined} aria-expanded={section==="servicii-avyron"?servicesExpanded:undefined} onClick={() => {if(section==="servicii-avyron"){setServicesExpanded((current) =>tab===section?!current:true);if(tab!==section)void openSection(section);}else void openSection(section);}} className={`${mobile ? "flex min-w-0 flex-1 flex-col" : "w-full flex-row"} group flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-left text-xs font-medium transition lg:justify-start ${active ? "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white shadow-[0_10px_30px_-16px_rgba(124,58,237,.9)]" : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"}`}>
-      <Icon className="size-4 shrink-0" strokeWidth={2.1} />
+      <><button type="button" data-os-section={section} aria-current={active?"page":undefined} aria-label={`${label}${activityCounts[section] ? `, ${activityCounts[section]} activități de văzut` : ""}`} title={sidebarCollapsed ? label : undefined} aria-expanded={section==="servicii-avyron"?servicesExpanded:undefined} onClick={() => {if(section==="servicii-avyron"){setServicesExpanded((current) =>tab===section?!current:true);if(tab!==section)void openSection(section);}else void openSection(section);}} className={`${mobile ? "flex min-w-0 flex-1 flex-col" : "w-full flex-row"} group flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-left text-xs font-medium transition lg:justify-start ${active ? "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white shadow-[0_10px_30px_-16px_rgba(124,58,237,.9)]" : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"}`}>
+      <span className={`relative inline-flex shrink-0 ${activityCounts[section] ? "mr-1.5" : ""}`}><Icon className="size-4 shrink-0" strokeWidth={2.1} /><ActivityBadge count={activityCounts[section]} label={section === "intern" || section === "announcements" ? "necitite" : "activități de văzut"} /></span>
       {mobile ? (
             <span className="max-w-full truncate text-[9px]">{sectionMeta.mobileLabel || label}</span>
           ) : (
@@ -250,7 +254,7 @@ function ProfileDashboard() {
             </button>
             <button type="button" onClick={() => setCommandOpen(true)} aria-label={access.isClient ? "Caută secțiuni din cont" : "Caută secțiuni și fluxuri"} className="grid size-10 shrink-0 place-items-center rounded-xl border border-white/[0.08] text-slate-300 transition hover:border-violet-400/35 hover:bg-violet-500/10 lg:hidden"><Search className="size-[18px]" /></button>
             <button type="button" onClick={() => setCommandOpen(true)} className="hidden min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2.5 text-left text-xs text-slate-400 transition hover:border-violet-400/25 hover:text-slate-400 sm:max-w-xl lg:flex"><Search className="size-4 shrink-0" /><span className="truncate">{access.isClient ? "Caută secțiuni din cont…" : "Caută secțiuni și fluxuri…"}</span><kbd className="ml-auto rounded border border-white/10 bg-black/20 px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd></button>
-            {access.isStaff&&<StaffWorkspaceActions compact className="staff-dashboard-actions-desktop"/>}
+            {access.isStaff&&<StaffWorkspaceActions counts={activityCounts} compact className="staff-dashboard-actions-desktop"/>}
             {access.isSuperAdmin && (
                 <button type="button" onClick={() => openSection("ai-os")} className="hidden items-center gap-2 rounded-xl border border-violet-400/20 bg-violet-500/10 px-3 py-2.5 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/20 sm:inline-flex"><Sparkles className="size-4" /> Întreabă AVY</button>
               )}
@@ -267,7 +271,7 @@ function ProfileDashboard() {
                   <ShieldCheck className="size-3" />
                 )}{roleLabel}</span>
           </div>
-          {access.isStaff&&<StaffWorkspaceActions compact className="staff-dashboard-actions-mobile"/>}
+          {access.isStaff&&<StaffWorkspaceActions counts={activityCounts} compact className="staff-dashboard-actions-mobile"/>}
         </header>
 
         <div className="mx-auto max-w-[1500px] p-3 sm:p-5 lg:p-6">
@@ -319,7 +323,8 @@ function ProfileDashboard() {
             <TabsContent value="careers" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["careers"].label} className="mt-0"><ResourceSurfaceTab kind="career" /></TabsContent>
             <TabsContent value="library" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["library"].label} className="mt-0"><ResourceSurfaceTab kind="library" /></TabsContent>
             <TabsContent value="team-staff" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["team-staff"].label} className="mt-0"><TeamStaffTab /></TabsContent>
-            <TabsContent value="logo-simulations" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["logo-simulations"].label} className="mt-0"><PlatformLeadTab kind="logo" /></TabsContent>
+            <TabsContent value="logo-2d-simulations" role="region" aria-label="Simulări Logo 2D" className="mt-0"><LogoOperationsTab mode="2d" /></TabsContent>
+            <TabsContent value="logo-simulations" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["logo-simulations"].label} className="mt-0"><LogoOperationsTab mode="3d" /></TabsContent>
             <TabsContent value="surveys" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["surveys"].label} className="mt-0"><SurveysTab /></TabsContent>
             <TabsContent value="configurator" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["configurator"].label} className="mt-0"><PlatformLeadTab kind="configurator" /></TabsContent>
             <TabsContent value="os-centers" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["os-centers"].label} className="mt-0"><OsCentersTab access={access} onNavigate={openSection} /></TabsContent>
@@ -406,7 +411,7 @@ function ProfileDashboard() {
           <button type="button" onClick={() => { setMobileMenuOpen(false); setCommandOpen(true); }} className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-violet-400/20 bg-violet-500/[0.08] px-4 text-left text-sm text-slate-200"><Search className="size-4 text-violet-300" /> Caută o secțiune sau un flux</button>
           {access.isStaff && (
               <section aria-label="Scurtături pentru echipă"><p className="mb-2 px-2 font-mono text-[9px] uppercase tracking-[0.18em] text-slate-500">Acces rapid</p><div className="grid grid-cols-2 gap-2">{([ ["projects", "Proiecte"], ["intern", "Chat intern"], ["os-centers", "Centre OS"], ["announcements", "Anunțuri"] ] as const).filter(([section]) => canOpenSection(section, access)).map(([section, label]) => (
-                      <button key={section} type="button" onClick={() => openSection(section)} className="min-h-12 rounded-xl border border-white/[0.09] bg-white/[0.035] px-3 text-left text-xs font-semibold text-slate-200 hover:border-violet-400/30">{label}</button>))}</div></section>
+                      <button key={section} type="button" onClick={() => openSection(section)} className="relative min-h-12 rounded-xl border border-white/[0.09] bg-white/[0.035] px-3 text-left text-xs font-semibold text-slate-200 hover:border-violet-400/30">{label}<ActivityBadge count={activityCounts[section]} label="activități de văzut" /></button>))}</div></section>
             )}
           {mobileMoreGroups.map((group) => (
               <section key={group.id}>
@@ -417,7 +422,7 @@ function ProfileDashboard() {
                 const Icon = sectionMeta.icon;
                 const active = tab === section.id;
                 return (
-                      <button key={section.id} type="button" onClick={() => openSection(section.id)} aria-current={active ? "page" : undefined} className={`flex min-h-20 flex-col items-start justify-between rounded-xl border p-3 text-left transition ${active ? "border-violet-400/35 bg-violet-500/15 text-white" : "border-white/[0.07] bg-white/[0.025] text-slate-300 hover:border-violet-400/25"}`}><Icon className="size-4 text-violet-300" /><span className="mt-3 text-xs font-medium leading-tight">{sectionMeta.label}</span></button>
+                      <button key={section.id} type="button" onClick={() => openSection(section.id)} aria-current={active ? "page" : undefined} className={`flex min-h-20 flex-col items-start justify-between rounded-xl border p-3 text-left transition ${active ? "border-violet-400/35 bg-violet-500/15 text-white" : "border-white/[0.07] bg-white/[0.025] text-slate-300 hover:border-violet-400/25"}`}><span className="relative inline-flex"><Icon className="size-4 text-violet-300" /><ActivityBadge count={activityCounts[section.id]} label="activități de văzut" /></span><span className="mt-3 text-xs font-medium leading-tight">{sectionMeta.label}</span></button>
                     );
               })}
             </div>

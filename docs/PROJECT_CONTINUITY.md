@@ -107,3 +107,7 @@ Lotul precedent a fost integrat prin [PR #93](https://github.com/Prometheus1833/
 ## Creare proiect AI, arhivă de leaduri și beneficiari direcți — 6 noiembrie 2026
 
 Continuare de la `05ced74` (PR #94 verificat verde în GitHub la începutul acestui task), pe `codex/ai-leads-document-workflows-2026-11-06`. [Runbookul fluxurilor](./AI_LEAD_DOCUMENT_WORKFLOWS.md) descrie crearea AI cu aprobare/MFA/idempotency, arhivarea reversibilă a leadurilor cu cinci motive și listă în pagină, contactarea manuală WhatsApp validată, rezumatul editabil Documente SC, beneficiarul completat direct și proiectele viitoare cu exporturi reale private. 0093 adaugă numai metadatele arhivării în tabela existentă. Nu există merge, migrare remote sau deploy nou în această etapă; conturile, serviciile plătite și cheile rămân neatinse.
+
+## Contoare de activitate și separarea Logo — 6 noiembrie 2026
+
+Continuare din `c6f2865` (#95, incluzând #94), pe `codex/dashboard-activity-logo-products-2026-11-06`. [Runbookul](./DASHBOARD_ACTIVITY_LOGO_MODULES.md) descrie contoarele autorizate desktop/mobil, confirmările individuale ale anunțurilor, AVY STAFF și mutările cerute, produsul 3D plătit în Produse și simulatorul 2D în Platformă, istoricul privat al briefurilor, tariful asistat AI păstrat și situația comercială nativă. 0094–0096 sunt append-only; prețurile și achizițiile existente nu sunt suprascrise. D1 remote a refuzat citirea cu 7403; nu există reverificare a datelor live, migrare remote, merge, deploy sau activare de furnizori în acest task.

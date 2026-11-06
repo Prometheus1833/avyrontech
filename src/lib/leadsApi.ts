@@ -16,6 +16,7 @@ export type LeadListRow = {
   next_follow_up_at: number | null; urgent: number; converted_project_id: string | null;
   estimate_ron: number | null; delivery_status: string | null;
   created_at: number; updated_at: number | null;
+  config_json?: string | null;
   can_archive?: number; archived_at?: number | null; archived_by?: string | null; archive_reason?: LeadArchiveReason | null; archive_note?: string | null;
 };
 

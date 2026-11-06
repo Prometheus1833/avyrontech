@@ -5,6 +5,10 @@ import { Hono } from "hono";
 import { afterEach, beforeEach, describe, it, expect } from "vitest";
 import { staffAccessRouter } from "../../cloudflare/workers/api/src/staffAccess";
 import { aiProjectsRouter } from "../../cloudflare/workers/api/src/aiProjects";
+import { produseShopRouter } from "../../cloudflare/workers/api/src/produseShop";
+import { logoOperationsRouter } from "../../cloudflare/workers/api/src/logoOperations";
+import { logoStudioRouter,persistLogoOrder } from "../../cloudflare/workers/api/src/logoStudio";
+import { DEFAULT_LOGO } from "../features/produse/components/logoConfig";
 import { workspaceRouter } from "../../cloudflare/workers/api/src/workspace";
 import { visualAssetsRouter } from "../../cloudflare/workers/api/src/visualAssets";
 import {
@@ -121,6 +125,9 @@ describe("Agency ranks and private chat: real Hono/D1 handlers", () => {
     });
     app.route("/", staffAccessRouter);
     app.route("/", workspaceRouter);
+    app.route("/", logoOperationsRouter);
+    app.route("/", logoStudioRouter);
+    app.route("/", produseShopRouter);
     app.route("/", aiProjectsRouter);
     app.route("/", visualAssetsRouter);
     app.onError((e) => {
@@ -182,6 +189,90 @@ describe("Agency ranks and private chat: real Hono/D1 handlers", () => {
     expect(response.status, await response.clone().text()).toBe(200);
     return response;
   }
+  it("counts only unread messages and acknowledgements visible to this staff account",async()=>{
+    await grant("dev","vibe_dev",{permissions:["dashboard.read","chat.read","chat.write","announcements.read","projects.read"],projectIds:["pa"]});
+    db.exec("INSERT INTO staff_announcements(id,author_id,title,content,priority,created_at) VALUES('an-a','owner','Nou','Detalii','normal',10),('an-own','dev','Propriu','Detalii','normal',11); INSERT INTO staff_chat_messages(id,author_id,recipient_id,channel,content,created_at) VALUES('m-a','owner','dev','general','Mesaj pentru dev',20),('m-hidden','owner','other','general','Privat',21),('m-self','dev','owner','general','Trimis',22),('m-public','owner',NULL,'general','Canal',23); INSERT INTO staff_chat_messages(id,author_id,recipient_id,channel,project_id,content,created_at) VALUES('m-pa','owner','owner','general','pa','Proiect A',24),('m-pb','owner','owner','general','pb','Proiect B',25);");
+    actor="dev";
+    const before=await(await req("/api/workspace/activity-counts")).json();
+    expect(before.counts.intern).toBe(3);expect(before.counts.announcements).toBe(1);expect(before.counts["staff-tickets"]).toBeUndefined();
+    const response=await req("/api/workspace/announcements/an-a/read",{},"POST");expect(response.status).toBe(200);
+    expect((await(await req("/api/workspace/activity-counts")).json()).counts.announcements).toBe(0);
+    expect((await req("/api/workspace/announcements",{title:"Nu",content:"Nu",priority:"normal"},"POST")).status).toBe(403);
+    await req("/api/workspace/chat/read",{target:"dm:owner",messageId:"m-a"},"POST");
+    expect((await(await req("/api/workspace/activity-counts")).json()).counts.intern).toBe(2);
+    db.prepare("DELETE FROM project_staff WHERE user_id='dev'").run();
+    expect((await(await req("/api/workspace/activity-counts")).json()).counts.intern).toBe(1);
+    actor="client";expect((await req("/api/workspace/activity-counts")).status).toBe(403);
+  });
+  it("does not mark future announcements read and excludes archived or authored announcements",async()=>{
+    db.exec("INSERT INTO staff_announcements(id,author_id,title,content,priority,created_at) VALUES('first','dev','Primul','Detalii','normal',10)");
+    expect((await(await req("/api/workspace/activity-counts")).json()).counts.announcements).toBe(1);
+    const key=crypto.randomUUID();await req("/api/workspace/announcements/first/read",{},"POST",key);await req("/api/workspace/announcements/first/read",{},"POST",key);
+    expect(db.prepare("SELECT count(*) n FROM staff_announcement_reads").get()!.n).toBe(1);
+    db.exec("INSERT INTO staff_announcements(id,author_id,title,content,priority,created_at) VALUES('future','dev','Următor','Detalii','normal',10)");
+    expect((await(await req("/api/workspace/activity-counts")).json()).counts.announcements).toBe(1);
+    expect((await req("/api/workspace/announcements/missing/read",{},"POST")).status).toBe(404);
+  });
+  it("records four standard variants without AI and isolates the private brief history",async()=>{
+    actor="client";
+    const generated=await req("/api/logo-studio/simulations",{brief:{name:"Brand viitor",industry:"law",notes:"Detalii private"}},"POST");
+    expect(generated.status).toBe(200);const r=await generated.json();expect(r.concepts).toHaveLength(4);
+    expect(db.prepare("SELECT user_id,source,concept_count FROM logo_studio_simulations WHERE id=?").get(r.simulationId)).toMatchObject({user_id:"client",source:"standard",concept_count:4});
+    expect(db.prepare("SELECT count(*) n FROM leads").get()!.n).toBe(0);
+    expect((await req("/api/logo-studio/admin/overview?mode=2d")).status).toBe(403);
+    actor="dev";const own=await(await req("/api/logo-studio/admin/overview?mode=2d")).json();expect(own.simulations).toEqual([]);expect(own.finances).toBeNull();
+    actor="owner";const all=await(await req("/api/logo-studio/admin/overview?mode=2d")).json();expect(all.simulations).toHaveLength(1);expect(all.simulations[0].brief_json).toContain("Detalii private");
+    db.prepare("UPDATE logo_studio_simulations SET expires_at=1").run();expect((await(await req("/api/logo-studio/admin/overview?mode=2d")).json()).simulations).toEqual([]);
+  });
+  it("records product 3D intent once with catalog pricing, without confirming payment",async()=>{
+    actor="client";db.prepare("UPDATE product_items SET price_ron_cents=12300 WHERE slug='logo-studio-3d'").run();
+    const key=crypto.randomUUID();const response=await req("/api/logo-studio/product-interest",{config:DEFAULT_LOGO},"POST",key);expect(response.status).toBe(201);const saved=await response.json();
+    expect(await(await req("/api/logo-studio/product-interest",{config:DEFAULT_LOGO},"POST",key)).json()).toEqual(saved);
+    expect((await req("/api/logo-studio/product-interest",{config:{...DEFAULT_LOGO,text:"Altul"}},"POST",key)).status).toBe(409);
+    expect(db.prepare("SELECT source,product,status,estimate_ron FROM leads WHERE id=?").get(saved.id)).toMatchObject({source:"logo-product:3d",product:"logo-studio-3d",status:"new",estimate_ron:123});
+    expect(db.prepare("SELECT count(*) n FROM commerce_orders").get()!.n).toBe(0);
+    expect((await req("/api/logo-studio/product-interest",{config:{...DEFAULT_LOGO,depth:-1}},"POST")).status).toBe(400);
+    actor="owner";const data=await(await req("/api/logo-studio/admin/overview?mode=3d")).json();expect(data.product.price_ron_cents).toBe(12300);expect(data.product.access).toBe("pro");expect(data.finances.totals).toEqual([]);
+  });
+  it("keeps paid Logo 3D protected even with a stale Free catalog row and separates commercial totals",async()=>{
+    actor="client";db.prepare("UPDATE product_items SET access='free',free_at=1 WHERE slug='logo-studio-3d'").run();
+    expect((await req("/api/produse/account/copy",{slug:"logo-studio-3d",channel:"zip"},"POST")).status).toBe(402);
+    expect((await req("/api/produse/account/download/logo-studio-3d")).status).toBe(402);
+    const items=JSON.stringify([{kind:"item",id:"logo-studio-3d",quantity:1,unitPriceCents:7500},{kind:"item",id:"other",quantity:1,unitPriceCents:2500}]);
+    db.prepare("INSERT INTO commerce_orders(id,user_id,items_json,subtotal_cents,total_cents,currency,status,created_at,updated_at) VALUES('logo-paid','client',?,10000,8000,'RON','paid',1,1),('logo-requested','client',?,10000,8000,'RON','requested',2,2)").run(items,items);
+    actor="owner";const result=await(await req("/api/logo-studio/admin/overview?mode=3d")).json();
+    expect(result.finances.totals).toEqual([{currency:"RON",paid_orders:1,paid_minor:6000}]);expect(result.finances.orders).toHaveLength(2);
+    mfa=false;expect((await req("/api/logo-studio/admin/overview")).status).toBe(403);
+  });
+  it("keeps lead and logo badges inside the list ACL and removes archived activity",async()=>{
+    for(const [id,product,source,config] of [["badge-a","logo-studio-3d","logo-product:3d","{}"],["badge-b","logo-studio","logo-studio:ai",JSON.stringify({kind:"static"})]])db.prepare("INSERT INTO leads(id,source,product,config_json,status,lifecycle_stage,created_at,updated_at) VALUES(?,?,?,?,'new','new_lead',1,1)").run(id,source,product,config);
+    db.prepare("INSERT INTO lead_assignments(lead_id,user_id,assignment_role,assigned_at) VALUES('badge-a','dev','reviewer',1)").run();
+    actor="dev";const scoped=await(await req("/api/workspace/activity-counts")).json();expect(scoped.counts.leads).toBe(1);expect(scoped.counts["logo-simulations"]).toBe(1);expect(scoped.counts["logo-2d-simulations"]).toBe(0);
+    actor="owner";expect((await(await req("/api/workspace/activity-counts")).json()).counts.leads).toBe(2);
+    db.prepare("UPDATE leads SET archived_at=1 WHERE id='badge-a'").run();
+    actor="dev";expect((await(await req("/api/workspace/activity-counts")).json()).counts.leads).toBe(0);
+  });
+  it("links only account-owned simulations and rolls back the CRM insert if linking fails",async()=>{
+    db.prepare("INSERT INTO logo_studio_simulations(id,user_id,kind,source,brief_json,concept_count,created_at,expires_at) VALUES('tx-sim','client','static','standard','{}',4,1,9999999999999)").run();
+    const insert=(id:string)=>binding.prepare("INSERT INTO leads(id,source,status,created_at,updated_at) VALUES(?,'logo-studio:ai','new',1,1)").bind(id);
+    await persistLogoOrder(binding,insert("wrong-owner-order"),"wrong-owner-order","tx-sim","dev");
+    expect(db.prepare("SELECT lead_id FROM logo_studio_simulations WHERE id='tx-sim'").get()!.lead_id).toBeNull();
+    db.exec("CREATE TRIGGER tx_failure BEFORE UPDATE ON logo_studio_simulations WHEN NEW.lead_id='tx-failed' BEGIN SELECT RAISE(ABORT,'synthetic_link_failure'); END");
+    await expect(persistLogoOrder(binding,insert("tx-failed"),"tx-failed","tx-sim","client")).rejects.toThrow("synthetic_link_failure");
+    expect(db.prepare("SELECT id FROM leads WHERE id='tx-failed'").get()).toBeUndefined();
+    await persistLogoOrder(binding,insert("own-order"),"own-order","tx-sim","client");
+    expect(db.prepare("SELECT lead_id FROM logo_studio_simulations WHERE id='tx-sim'").get()!.lead_id).toBe("own-order");
+  });
+  it("counts future social plans awaiting human approval and excludes already reviewed or running plans",async()=>{
+    const t=Date.now();db.prepare("INSERT OR IGNORE INTO ai_projects(id,slug,name,product_key,status,created_at,updated_at) VALUES('badge-social','avyron-web','Avyron WEB','other','active',?,?)").run(t,t);
+    const project=db.prepare("SELECT id FROM ai_projects WHERE slug='avyron-web'").get()!.id;
+    db.prepare("INSERT INTO ai_social_jobs(id,project_id,schedule_key,kind,format,primary_channel,topic,due_at,created_at,updated_at) VALUES('badge-plan',?,'badge-plan','daily_post','post','instagram','Activitate viitoare',?,?,?)").run(project,t+86400000,t,t);
+    expect((await(await req("/api/workspace/activity-counts")).json()).counts["social-manager"]).toBe(1);
+    db.prepare("UPDATE ai_social_jobs SET plan_review_state='approved' WHERE id='badge-plan'").run();
+    expect((await(await req("/api/workspace/activity-counts")).json()).counts["social-manager"]).toBe(0);
+    db.prepare("UPDATE ai_social_jobs SET plan_review_state='pending',status='generating' WHERE id='badge-plan'").run();
+    expect((await(await req("/api/workspace/activity-counts")).json()).counts["social-manager"]).toBe(0);
+  });
   it("seeds the seven ranks without reassigning existing users or inventing permissions", async () => {
     const c = await (await req("/api/staff-access")).json();
     expect(c.profiles).toHaveLength(7);

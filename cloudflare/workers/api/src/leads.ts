@@ -20,6 +20,11 @@ const CHANNELS = new Set<string>(LEAD_CHANNELS);
 const ACTIVITY_KINDS = new Set<string>(LEAD_ACTIVITY_KINDS);
 const deletionReasons = new Set<string>(LEAD_DELETION_REASONS.map(reason => reason.code));
 
+/** Same row predicate for the active list and navigation activity counts. */
+export function leadReadPredicate(userId:string,unrestricted:boolean){
+  return unrestricted?{sql:"1=1",values:[] as string[]}:{sql:`(EXISTS (SELECT 1 FROM lead_assignments assignment WHERE assignment.lead_id=lead.id AND assignment.user_id=?) OR EXISTS(SELECT 1 FROM organization_memberships membership WHERE membership.organization_id=lead.organization_id AND membership.user_id=? AND membership.status='active'))`,values:[userId,userId]};
+}
+
 type LeadAccess = { read: boolean; write: boolean; organizationId: string | null; archived: boolean };
 
 async function leadAccess(c: Context<AppBindings>, leadId: string): Promise<LeadAccess | null> {
@@ -200,21 +205,15 @@ leadsRouter.get("/api/leads", async (c) => {
   const filters: string[] = ["lead.deleted_at IS NULL", archived === "1" ? "lead.archived_at IS NOT NULL" : "lead.archived_at IS NULL"];
   if (organizationId) { filters.push("lead.organization_id = ?"); values.push(organizationId); }
   if (stage) { filters.push("lead.lifecycle_stage = ?"); values.push(stage); }
-  if (!platformRole && !capabilityRead) {
-    filters.push(`(
-      EXISTS (SELECT 1 FROM lead_assignments assignment WHERE assignment.lead_id = lead.id AND assignment.user_id = ?)
-      OR EXISTS (SELECT 1 FROM organization_memberships membership
-                  WHERE membership.organization_id = lead.organization_id
-                    AND membership.user_id = ? AND membership.status = 'active')
-    )`);
-    values.push(userId, userId);
-  }
+  const visibility=leadReadPredicate(userId,!!platformRole||capabilityRead);
+  filters.push(visibility.sql);values.push(...visibility.values);
   const where = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
   const { results } = await c.env.DB.prepare(
     `SELECT lead.id, lead.organization_id, lead.source, lead.name, lead.business,
             lead.phone, lead.email, lead.product, lead.status, lead.lifecycle_stage,
             lead.preferred_channel, lead.next_follow_up_at, lead.urgent,
             lead.converted_project_id, lead.estimate_ron, lead.delivery_status,
+            CASE WHEN lead.product IN ('logo-studio','logo-studio-3d') THEN lead.config_json ELSE NULL END config_json,
             lead.created_at, lead.updated_at,lead.archived_at,lead.archived_by,lead.archive_reason,lead.archive_note,
             CASE WHEN ?=1 OR EXISTS(SELECT 1 FROM lead_assignments a WHERE a.lead_id=lead.id AND a.user_id=? AND a.assignment_role<>'reviewer') OR EXISTS(SELECT 1 FROM organization_memberships m WHERE m.organization_id=lead.organization_id AND m.user_id=? AND m.status='active' AND m.role IN ('owner','admin','manager','specialist')) THEN 1 ELSE 0 END can_archive
        FROM leads AS lead ${where}

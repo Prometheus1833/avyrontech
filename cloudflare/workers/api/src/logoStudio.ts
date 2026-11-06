@@ -29,6 +29,34 @@ import {
 } from "../../../../src/data/logoStudio";
 
 export const logoStudioRouter = new Hono<AppBindings>();
+export async function cleanupLogoSimulations(db:D1Database){
+  return db.prepare("DELETE FROM logo_studio_simulations WHERE id IN(SELECT id FROM logo_studio_simulations WHERE expires_at<? LIMIT 500)").bind(Date.now()).run();
+}
+/** Keep the CRM snapshot and an optional account-owned history link in one transaction. */
+export async function persistLogoOrder(db:D1Database,lead:D1PreparedStatement,leadId:string,simulationId:unknown,userId:string|undefined){
+  const statements=[lead];
+  if(typeof simulationId==="string"&&userId)statements.push(db.prepare("UPDATE logo_studio_simulations SET lead_id=? WHERE id=? AND user_id=? AND lead_id IS NULL").bind(leadId,simulationId,userId));
+  await db.batch(statements);
+}
+async function recordSimulation(db: D1Database,user: string,brief: ReturnType<typeof cleanBrief>,source: "standard"|"ai",count: number) {
+  const id=crypto.randomUUID(),t=Date.now();
+  await db.batch([
+    db.prepare("DELETE FROM logo_studio_simulations WHERE id IN(SELECT id FROM logo_studio_simulations WHERE expires_at<? AND lead_id IS NULL LIMIT 50)").bind(t),
+    db.prepare("INSERT INTO logo_studio_simulations(id,user_id,kind,source,brief_json,concept_count,created_at,expires_at) VALUES(?,?,?,?,?,?,?,?)").bind(id,user,brief!.kind,source,JSON.stringify(brief),count,t,t+90*86400000),
+  ]);
+  return id;
+}
+logoStudioRouter.post("/api/logo-studio/simulations",async c=>{
+  const user=c.get("userId");if(!user)return c.json({error:"unauthorized"},401);
+  const input=await readJsonBodyUpTo(c.req.raw,4096);if(!input.ok)return c.json({error:input.error},400);
+  const b=input.value as {brief?:Record<string,unknown>;salt?:unknown}|null;
+  const brief=cleanBrief(b?.brief||{});if(!brief)return c.json({error:"invalid_brief"},400);
+  const rate=await checkRateLimit(c.env.DB,[{key:`logo-standard:${user}:h`,limit:60,windowSec:3600},{key:`logo-standard:${user}:d`,limit:200,windowSec:86400},{key:"logo-standard:global:d",limit:2000,windowSec:86400}]);
+  if(!rate.ok)return c.json({error:"rate_limited"},429);
+  const concepts=localConcepts(brief,4,typeof b?.salt==="number"?String(b.salt).slice(0,20):"0");
+  const simulationId=await recordSimulation(c.env.DB,user,brief,"standard",concepts.length);
+  c.header("Cache-Control","private, no-store");return c.json({source:"local",concepts,simulationId});
+});
 
 const clean = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 
@@ -95,9 +123,11 @@ logoStudioRouter.post("/api/logo-studio/generate", async (c) => {
     });
     const output = core.output;
     const raw = parseModelOutput(output).slice(0, 4);
-    if (raw.length === 0) return c.json({ error: "ai_empty" }, 502);
+    if (raw.length !== 4) return c.json({ error: "ai_incomplete" }, 502);
     const concepts: LogoConcept[] = raw.map((r, i) => cleanConcept(r, brief, fallback[i % fallback.length]));
-    return c.json({ source: "ai", concepts });
+    const simulationId=await recordSimulation(env.DB,userId,brief,"ai",concepts.length);
+    c.header("Cache-Control","private, no-store");
+    return c.json({ source: "ai", concepts, simulationId });
   } catch {
     console.error(JSON.stringify({ event: "logo_studio_generate_failed" }));
     return c.json({ error: "ai_failed" }, 502);
@@ -156,7 +186,7 @@ logoStudioRouter.post("/api/logo-studio/orders", async (c) => {
     .filter(Boolean)
     .join("\n");
 
-  await c.env.DB.prepare(
+  const leadStatement=c.env.DB.prepare(
     `INSERT INTO leads (id,source,name,business,phone,email,message,website,language,attachments_json,product,config_json,estimate_ron,status,delivery_status,created_at,updated_at)
      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?, 'new','pending',?,?)`,
   )
@@ -176,9 +206,9 @@ logoStudioRouter.post("/api/logo-studio/orders", async (c) => {
       price,
       ts,
       ts,
-    )
-    .run();
+    );
 
+  await persistLogoOrder(c.env.DB,leadStatement,id,body.simulationId,c.get("userId"));
   const to = c.env.LEAD_TO || c.env.SMTP_FROM;
   if (!to) {
     await c.env.DB.prepare("UPDATE leads SET delivery_status='failed',updated_at=? WHERE id=?").bind(Date.now(), id).run();

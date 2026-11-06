@@ -211,14 +211,15 @@ test.describe("dashboard AVYRON OS în română", () => {
   });
 
   test("arată notificările și anunțurile cu filtre utilizabile pe mobil", async ({ page }, testInfo) => {
+    let operationRead=false;
     await page.setViewportSize({ width: 390, height: 844 });
     await page.route("**/api/workspace/announcements**", (route) => route.fulfill({ json: { data: [
-      { id: "announce-1", title: "Ședința echipei", content: "Actualizăm prioritățile astăzi.", priority: "normal", created_at: new Date(now - 60_000).toISOString() },
+      { id: "announce-1", read_at: now, title: "Ședința echipei", content: "Actualizăm prioritățile astăzi.", priority: "normal", created_at: new Date(now - 60_000).toISOString() },
     ] } }));
     await page.route("**/api/operations/notifications**", (route) => route.fulfill({ json: { data: [
-      { id: "notice-1", title: "Brief nou", body: "Un brief a sosit pentru revizuire.", destination: "surveys", read_at: null, created_at: now },
+      { id: "notice-1", title: "Brief nou", body: "Un brief a sosit pentru revizuire.", destination: "surveys", read_at: operationRead?now:null, created_at: now },
     ] } }));
-    await page.route("**/api/operations/notifications/notice-1/read", (route) => route.fulfill({ json: { ok: true } }));
+    await page.route("**/api/operations/notifications/notice-1/read", (route) => {operationRead=true;return route.fulfill({ json: { ok: true } });});
     await page.goto("/profil?tab=overview&notifications=1");
     const dialog = page.getByRole("dialog", { name: "Notificări și anunțuri" });
     await expect(dialog).toBeVisible();
@@ -244,7 +245,7 @@ test.describe("dashboard AVYRON OS în română", () => {
     let privilegedCalls = 0;
     await page.route("**/api/operations/notifications", (route) => { privilegedCalls++; return route.fulfill({ status: 403, json: { error: "forbidden" } }); });
     await page.route("**/api/workspace/announcements**", (route) => route.fulfill({ json: { data: [
-      { id: "team-1", title: "Prioritățile săptămânii", content: "Revizuim proiectele active.", priority: "important", created_at: new Date(now).toISOString() },
+      { id: "team-1", read_at: now, title: "Prioritățile săptămânii", content: "Revizuim proiectele active.", priority: "important", created_at: new Date(now).toISOString() },
     ] } }));
     await page.goto("/profil?tab=overview");
     await page.getByRole("button", { name: "Notificări", exact: true }).click();
@@ -400,7 +401,7 @@ test.describe("dashboard AVYRON OS în română", () => {
   test("Super Admin poate gestiona controlat accesul unui membru", async ({ page }) => {
     const {captures}=await staffFixture(page);
     await page.goto("/profil?tab=team-staff");
-    await expect(page.getByRole("heading",{name:"Membrii Agenției AVYRON",exact:true})).toBeVisible();
+    await expect(page.getByRole("heading",{name:"AVY STAFF",exact:true})).toBeVisible();
     await page.locator(".agency-member").filter({hasText:"Anișoara Test"}).getByRole("button",{name:"Gestionează"}).click();
     const dialog=page.getByRole("dialog");
     await dialog.getByLabel("Rang în agenție").selectOption("avy_consultant");

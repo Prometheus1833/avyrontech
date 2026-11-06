@@ -53,7 +53,8 @@ export type CatalogRow = { slug: string; type: string; access: PlanId; price_ron
  * după `pro_at`, Pro → Free după `free_at`. Datele sunt stocate explicit, ca
  * un produs anume să poată fi ținut pe loc fără să schimbăm regula.
  */
-export function effectiveAccess(item: Pick<CatalogRow, "access" | "pro_at" | "free_at">, timestamp = Date.now()): PlanId {
+export function effectiveAccess(item: Pick<CatalogRow, "access" | "pro_at" | "free_at"> & {slug?: string}, timestamp = Date.now()): PlanId {
+  if(item.slug === "logo-studio-3d") return item.access === "studio" ? "studio" : "pro";
   let access = item.access;
   if (item.pro_at !== null && timestamp >= item.pro_at) access = "pro";
   if (item.free_at !== null && timestamp >= item.free_at) access = "free";

@@ -19,6 +19,7 @@ export function priceLabel(item: CatalogItem, lang: Lang): string | null {
 
 /** Ce plan deblochează produsul azi, ținând cont de progresia automată. */
 export function accessNow(item: CatalogItem, today = new Date()): "free" | "pro" | "studio" {
+  if (item.slug === "logo-studio-3d") return "pro";
   const days = (today.getTime() - new Date(item.released).getTime()) / 86400000;
   if (item.access === "free") return "free";
   if (item.access === "studio") return days >= PROGRESSION.proAfterDays ? "pro" : "studio";
@@ -27,6 +28,7 @@ export function accessNow(item: CatalogItem, today = new Date()): "free" | "pro"
 
 /** Textul care explică, pe pagina produsului, când coboară în planul următor. */
 export function progressionNote(item: CatalogItem, lang: Lang, today = new Date()): string | null {
+  if (item.slug === "logo-studio-3d") return lang === "ro" ? "Previzualizare gratuită. Pachet contra cost sau acces printr-un plan eligibil; nu trece automat în Free." : "Free preview. Paid download or eligible plan access; no automatic move to Free.";
   if (item.access === "free") return null;
   const days = Math.max(0, Math.round(PROGRESSION.proAfterDays - (today.getTime() - new Date(item.released).getTime()) / 86400000));
   if (item.access === "studio" && days > 0) {

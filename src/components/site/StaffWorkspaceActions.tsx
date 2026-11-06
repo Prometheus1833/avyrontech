@@ -1,3 +1,4 @@
+import ActivityBadge from "@/components/dashboard/ActivityBadge";
 import { Suspense, useEffect, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import Link from "./WorkspaceLink";
@@ -12,9 +13,11 @@ const Panels = lazyWithRetry(() => import("./StaffQuickPanels"));
 export default function StaffWorkspaceActions({
   className = "",
   compact = false,
+  counts = {},
 }: {
   className?: string;
   compact?: boolean;
+  counts?: Record<string,number>;
 }) {
   const { roles, isSuperAdmin, capabilities } = useAuth(),
     access = buildAccess({ roles, superadmin: isSuperAdmin, capabilities }),
@@ -38,7 +41,7 @@ export default function StaffWorkspaceActions({
       {canOpenSection("intern", access) && (
         <button
           className="staff-header-action"
-          aria-label="Deschide mesaje"
+          aria-label={`Deschide mesaje${counts.intern ? `, ${counts.intern} necitite` : ""}`}
           title="Mesaje"
           aria-haspopup="dialog"
           aria-expanded={panel === "chat"}
@@ -47,7 +50,7 @@ export default function StaffWorkspaceActions({
             setPanel((p) => (p === "chat" ? null : "chat"));
           }}
         >
-          <MessagesSquare size={18} />
+          <span data-staff-action-icon className="relative inline-flex"><MessagesSquare size={18} /><ActivityBadge count={counts.intern} label="mesaje necitite" /></span>
           <span>Chat</span>
         </button>
       )}

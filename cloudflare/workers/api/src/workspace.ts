@@ -1,3 +1,4 @@
+import { dashboardActivityRouter } from "./dashboardActivity";
 import {managedStaff,canManageStaffTarget} from "./staffAccessPolicy";
 import { createMaintenanceRouter } from "./maintenance";
 import {maintenanceWorkAccess,maintenanceProjectScope} from "./maintenancePolicy";
@@ -12,6 +13,7 @@ import { sha256 } from "./security";
 import { canAccessProject } from "./projects";
 
 export const workspaceRouter = new Hono<AppBindings>();
+workspaceRouter.route("/", dashboardActivityRouter);
 type Ctx = Context<AppBindings>;
 const staff = (c: Ctx) => c.get("roles").some(r => r === "staff" || r === "admin");
 const fail = (c: Ctx, code: string, status: 400 | 403 | 404 | 409 = 400) => c.json({error:{code}},status);
@@ -238,8 +240,15 @@ workspaceRouter.patch('/api/workspace/tickets/:id',async c => {
 workspaceRouter.get('/api/workspace/announcements',async c => {
   if (!staff(c)) return fail(c,'forbidden',403);
   const {limit,offset}=page(c);
-  const {results}=await c.env.DB.prepare('SELECT id,author_id,title,content,priority,created_at FROM staff_announcements WHERE archived_at IS NULL ORDER BY created_at DESC,id LIMIT ? OFFSET ?').bind(limit,offset).all<Record<string,unknown>>();
+  const {results}=await c.env.DB.prepare('SELECT a.id,a.author_id,a.title,a.content,a.priority,a.created_at,r.read_at FROM staff_announcements a LEFT JOIN staff_announcement_reads r ON r.announcement_id=a.id AND r.user_id=? WHERE a.archived_at IS NULL ORDER BY a.created_at DESC,a.id LIMIT ? OFFSET ?').bind(c.get('userId'),limit,offset).all<Record<string,unknown>>();
   return c.json({data:results.map(r=>({...r,created_at:iso(r.created_at)}))});
+});
+workspaceRouter.post('/api/workspace/announcements/:id/read',async c => {
+  if (!staff(c)) return fail(c,'forbidden',403);
+  const id=c.req.param('id');
+  const row=await c.env.DB.prepare('SELECT 1 FROM staff_announcements WHERE id=? AND archived_at IS NULL').bind(id).first();
+  if(!row)return fail(c,'not_found',404);
+  return mutate(c,{id},{ok:true},[c.env.DB.prepare('INSERT INTO staff_announcement_reads(user_id,announcement_id,read_at) VALUES(?,?,?) ON CONFLICT(user_id,announcement_id) DO NOTHING').bind(c.get('userId'),id,Date.now())]);
 });
 workspaceRouter.post('/api/workspace/announcements',async c => {
   if (!staff(c)) return fail(c,'forbidden',403);

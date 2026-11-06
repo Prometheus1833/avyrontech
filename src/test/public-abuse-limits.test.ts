@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import type { DatabaseSync as SqliteDatabase, SQLInputValue } from "node:sqlite";
 import { Hono } from "hono";
@@ -38,16 +39,18 @@ describe("public cost and abuse boundaries", () => {
       count INTEGER NOT NULL, expires_at INTEGER NOT NULL, PRIMARY KEY(scope_key,window_start));
       CREATE TABLE public_domain_checks(id TEXT PRIMARY KEY, domain TEXT NOT NULL, status TEXT NOT NULL,
       source TEXT NOT NULL, language TEXT NOT NULL, surface TEXT NOT NULL, created_at INTEGER NOT NULL);`);
+    db.exec("CREATE TABLE users(id TEXT PRIMARY KEY); CREATE TABLE leads(id TEXT PRIMARY KEY); INSERT INTO users(id) VALUES('user-1'),('user-2')");
+    db.exec(readFileSync("cloudflare/d1/migrations/0096_logo_simulation_history.sql","utf8"));
     edgeKeys = [];
     env = {
-      DB: { prepare: (sql: string) => new Statement(db, sql) },
+      DB: { prepare: (sql: string) => new Statement(db, sql), batch: async(statements:Statement[])=>{db.exec("BEGIN");try{const results=[];for(const s of statements)results.push(await s.run());db.exec("COMMIT");return results;}catch(e){db.exec("ROLLBACK");throw e;}} },
       PUBLIC_API_RATE_LIMITER: { limit: async ({ key }: { key: string }) => { edgeKeys.push(key); return { success: true }; } },
       AI: { run: async () => ({}) },
     } as unknown as Env;
     app = new Hono<AppBindings>();
     app.use("/api/logo-studio/generate", async (c, next) => {
       const userId = c.req.header("x-test-user");
-      if (userId) c.set("userId", userId);
+      if (userId) {db.prepare("INSERT OR IGNORE INTO users(id) VALUES(?)").run(userId);c.set("userId", userId); }
       await next();
     });
     app.route("/", domainRouter);
@@ -67,6 +70,7 @@ describe("public cost and abuse boundaries", () => {
       const response = await request(app, env, "/api/logo-studio/generate", logo());
       expect(response.status).toBe(200);
     }
+    expect(db.prepare("SELECT count(*) n FROM logo_studio_simulations WHERE source='ai' AND concept_count=4").get()!.n).toBe(10);
     const keys = vi.mocked(runAiCore).mock.calls.map(([input]) => input.idempotencyKey);
     expect(new Set(keys).size).toBe(10);
     const blocked = await request(app, env, "/api/logo-studio/generate", logo());
@@ -77,6 +81,13 @@ describe("public cost and abuse boundaries", () => {
     expect(edgeKeys.every((key) => !key.includes("192.0.2.10"))).toBe(true);
   });
 
+  it("does not label incomplete model output as four AI concepts or save a false AI history",async()=>{
+    const b=cleanBrief({name:"Model incomplet"})!;
+    vi.mocked(runAiCore).mockResolvedValue({output:{response:{concepts:localConcepts(b,3)}}} as Awaited<ReturnType<typeof runAiCore>>);
+    const response=await request(app,env,"/api/logo-studio/generate",logo());
+    expect(response.status).toBe(502);expect((await response.json()).error).toBe("ai_incomplete");
+    expect(db.prepare("SELECT count(*) n FROM logo_studio_simulations").get()!.n).toBe(0);
+  });
   it("rejects an oversized logo body before invoking AI, and requires an authenticated user", async () => {
     expect((await request(app, env, "/api/logo-studio/generate", logo("user-1", `{"brief":{"name":"${"a".repeat(17_000)}"}}`))).status).toBe(413);
     expect((await request(app, env, "/api/logo-studio/orders", {

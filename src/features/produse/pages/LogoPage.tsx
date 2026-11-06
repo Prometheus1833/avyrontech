@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { logoOperationsApi } from "@/lib/logoOperationsApi";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Check, Download, PenTool, Sparkles } from "lucide-react";
 import type { Lang } from "@/i18n/translations";
@@ -7,7 +9,7 @@ import DemoStage from "../components/DemoStage";
 import { FeatureRequest } from "../components/Forms";
 import LogoStudio from "../components/LogoStudio";
 import { Pill, Reveal, Seam, Section, SectionHead } from "../components/Primitives";
-import { defaultValues } from "../lib/item";
+import { defaultValues,priceLabel } from "../lib/item";
 import { homePath, itemPath, typePath } from "../lib/paths";
 import { applySeo, breadcrumb, productLd } from "../lib/seo";
 import { store } from "../lib/store";
@@ -25,6 +27,9 @@ export default function LogoPage({ lang }: { lang: Lang }) {
   const kit = ITEM_BY_SLUG.get("kit-monograme")!;
   const path = typePath(lang, "logo");
   const [added, setAdded] = useState(false);
+  const {user}=useAuth();
+  const [trackingError,setTrackingError]=useState(false);
+  const attempts=useRef(new Map<string,string>());
 
   useEffect(() => {
     const title = ro ? "Logo Studio 3D și creare logo profesional — Avyron" : "Logo Studio 3D and professional logo design — Avyron";
@@ -81,15 +86,19 @@ export default function LogoPage({ lang }: { lang: Lang }) {
         <Reveal index={1} className="mt-6">
           <LogoStudio
             lang={ro ? "ro" : "en"}
-            onBuy={() => {
+            exportPriceLabel={priceLabel(studio,lang)||undefined}
+            onBuy={async(config) => {
               store.addToCart({ kind: "item", slug: studio.slug });
               setAdded(true);
+              setTrackingError(false);
+              if(user){const signature=JSON.stringify(config);const key=attempts.current.get(signature)||crypto.randomUUID();attempts.current.set(signature,key);try{await logoOperationsApi.interest(config,key);}catch{setTrackingError(true);}}
             }}
           />
+          {trackingError && <p role="status" className="mt-3 text-xs text-amber-200">{ro?"Produsul este în coș, dar configurația nu a putut fi salvată. Reapasă butonul pentru a reîncerca salvarea.":"The product is in your cart, but the configuration could not be saved. Use the button again to retry saving."}</p>}
           {added && (
             <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-lime-400/30 bg-lime-400/10 px-3 py-1.5 text-xs text-lime-200">
               <Check className="size-3.5" aria-hidden />
-              {ro ? "Pachetul e în coș. Plata cu cardul se activează la lansare; până atunci trimitem link de plată." : "The pack is in your cart. Card payment goes live at launch; until then we send a payment link."}
+              {ro ? "Pachetul este în coș. Prețul și disponibilitatea plății se verifică la checkout; accesul se acordă după confirmarea plății." : "The pack is in your cart. Price and payment availability are checked at checkout; access follows payment confirmation."}
             </p>
           )}
         </Reveal>

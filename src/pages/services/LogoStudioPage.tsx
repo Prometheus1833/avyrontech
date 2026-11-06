@@ -65,6 +65,8 @@ function StudioBody() {
   const [form, setForm] = useState({ name: "", tagline: "", industry: "other" as Industry, style: "modern" as Style, color: "", notes: "" });
   const [useColor, setUseColor] = useState(false);
   const [concepts, setConcepts] = useState<LogoConcept[]>([]);
+  const [simulationId,setSimulationId]=useState<string>();
+  const [historyWarning,setHistoryWarning]=useState(false);
   const [source, setSource] = useState<Source>(null);
   const [busy, setBusy] = useState(false);
   const [picked, setPicked] = useState<number | null>(null);
@@ -105,7 +107,8 @@ function StudioBody() {
     if (k === "dinamic" || k === "dynamic") setKind("dynamic");
   }, []);
 
-  const show = useCallback((list: LogoConcept[], src: Source) => {
+  const show = useCallback((list: LogoConcept[], src: Source, id?:string) => {
+    setSimulationId(id);
     setConcepts(list);
     setSource(src);
     setPicked(null);
@@ -114,11 +117,15 @@ function StudioBody() {
     window.setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
   }, []);
 
-  const quick = () => {
-    if (!brief) return;
-    const next = salt + 1;
-    setSalt(next);
-    show(localConcepts(brief, 6, String(next)), "local");
+  const quick = async () => {
+    if (!brief || busy) return;
+    const next = salt + 1;setSalt(next);setHistoryWarning(false);
+    if(user){
+      setBusy(true);
+      try { const result=await cfAuth.request<{concepts:LogoConcept[];simulationId:string}>("/api/logo-studio/simulations",{method:"POST",body:JSON.stringify({brief,salt:next})});show(result.concepts,"local",result.simulationId); }
+      catch { show(localConcepts(brief,4,String(next)),"local");setHistoryWarning(true); }
+      finally {setBusy(false);}
+    }else show(localConcepts(brief,4,String(next)),"local");
     trackEvent("logo_studio_generate", { source: "local", kind });
   };
 
@@ -136,16 +143,19 @@ function StudioBody() {
         body: JSON.stringify({ brief }),
       });
       if (res.status === 429) {
-        show(localConcepts(brief, 6, String(salt)), "limit");
+        show(localConcepts(brief, 4, String(salt)), "limit");
+        setHistoryWarning(true);
         return;
       }
       if (!res.ok) throw new Error(String(res.status));
-      const data = (await res.json()) as { concepts?: LogoConcept[] };
+      const data = (await res.json()) as { concepts?: LogoConcept[]; simulationId?:string };
       if (!data.concepts?.length) throw new Error("empty");
-      show(data.concepts, "ai");
+      show(data.concepts, "ai",data.simulationId);
+      setHistoryWarning(false);
       trackEvent("logo_studio_generate", { source: "ai", kind });
     } catch {
-      show(localConcepts(brief, 6, String(salt)), "local");
+      show(localConcepts(brief, 4, String(salt)), "local");
+      setHistoryWarning(true);
     } finally {
       setBusy(false);
     }
@@ -200,11 +210,13 @@ function StudioBody() {
       {/* ---------------------------------------------------------- hero + kind */}
       <section id="studio" className="l3d-section ls-hero" data-palette="#8b5cf6,#bef264" aria-labelledby="studio-title">
         <div className="l3d-wrap">
-          <p className="ls-kicker">Avyron Logo Studio · AI</p>
+          <p className="ls-kicker">Avyron Logo Studio · 2D / AI</p>
           <h1 id="studio-title" className="l3d-h2 ls-h1">
             {t.h1}
           </h1>
           <p className="l3d-lead">{t.lead}</p>
+          <p className="mt-3 text-xs text-[var(--l3d-muted)]">{ro?"4 variante standard fără AI, export standard gratuit cu cont. 4 variante AI în limita cotei; livrarea asistată AI are tarif separat. Cu cont, briefurile generate sunt păstrate privat 90 de zile și pot fi consultate de echipa autorizată. Previzualizările anonime rămân locale.":"4 standard variants without AI, free standard export with an account. 4 AI variants within quota; assisted AI delivery is billed separately. Signed-in briefs are stored privately for 90 days and available to authorized staff. Anonymous previews remain local."}</p>
+          {kind==="dynamic"&&<p className="mt-3 text-sm text-[var(--l3d-muted)]">{ro?"Previzualizare pentru serviciul profesional de logo dinamic. Produsul digital Logo Studio 3D are un flux separat în Produse.":"Preview for the professional dynamic logo service. The Logo Studio 3D digital product has its own Products flow."} <Link className="underline" to={ro?"/produse/logo":"/en/products/logo"}>{ro?"Vezi produsul 3D":"View the 3D product"}</Link></p>}
           <ol className="ls-how">
             {t.how.map((h, i) => (
               <li key={h}>
@@ -219,8 +231,8 @@ function StudioBody() {
               <span className="mt-1 block text-left text-sm text-[var(--l3d-muted)]">{ro ? "Patru variante locale, personalizare și export SVG/PNG după autentificare." : "Four local options, customisation and SVG/PNG export after sign-in."}</span>
             </div>
             <div className="ls-kind">
-              <span className="flex items-center justify-between gap-3"><span className="text-lg font-semibold">{ro ? "Logo 2D cu AI" : "AI 2D logo"}</span><b className="text-sm text-[var(--l3d-text)]">{lei(AI_LOGO_EXPORT_PRICE)}</b></span>
-              <span className="mt-1 block text-left text-sm text-[var(--l3d-muted)]">{ro ? "AI-ul intern Cloudflare alege direcția vizuală; plata se aplică doar exportului ales." : "The internal Cloudflare AI chooses the visual direction; payment applies only to the chosen export."}</span>
+              <span className="flex items-center justify-between gap-3"><span className="text-lg font-semibold">{ro ? "Logo 2D cu AI" : "AI 2D logo"}</span><b className="text-sm text-[var(--l3d-text)]">{ro?"Generare gratuită":"Free generation"}</b></span>
+              <span className="mt-1 block text-left text-sm text-[var(--l3d-muted)]">{ro ? "AI-ul intern alege direcția vizuală; livrarea asistată / exportul ales are tarif separat." : "The internal AI selects a visual direction; assisted delivery / the chosen export is billed separately."}</span>
             </div>
           </div>
         </div>
@@ -340,6 +352,7 @@ function StudioBody() {
                   </p>
                 )}
               </div>
+              {historyWarning && <p role="status" className="text-xs text-amber-200">{ro?"Previzualizare locală. Istoricul nu a putut fi salvat; poți reîncerca.":"Local preview. History could not be saved; you can retry."}</p>}
               {!busy && (
                 <button type="button" className="l3d-chip" onClick={source === "ai" ? () => void generate() : quick}>
                   <Wand2 className="size-4" aria-hidden />
@@ -499,7 +512,7 @@ function StudioBody() {
                 </button>
               ) : (
                 <div id="comanda" className="mt-5">
-                  <OrderForm lang={lang} brief={brief} concept={edit} kind={kind} source="ai" priceLabel={price} termsPath={ro ? "/termeni" : "/en/terms"} />
+                  <OrderForm lang={lang} brief={brief} concept={edit} kind={kind} source={source === "ai" ? "ai" : undefined} simulationId={simulationId} priceLabel={price} termsPath={ro ? "/termeni" : "/en/terms"} />
                 </div>
               )}
               <p className="mt-6 border-t border-[var(--l3d-line)] pt-4 text-sm text-[var(--l3d-muted)]">

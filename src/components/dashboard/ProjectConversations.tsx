@@ -1,3 +1,4 @@
+import { refreshDashboardActivity } from "@/lib/dashboardActivity";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
@@ -340,6 +341,7 @@ function ProjectRoom({
         body: JSON.stringify({ messageId: last.id }),
       });
       if (alive.current) onReadRef.current();
+      refreshDashboardActivity();
     } catch {
       read.current = "";
     }

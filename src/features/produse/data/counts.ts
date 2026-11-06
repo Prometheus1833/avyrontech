@@ -8,5 +8,5 @@
  */
 export const PRODUSE_COUNTS = {
   total: 87,
-  free: 62,
+  free: 61,
 } as const;

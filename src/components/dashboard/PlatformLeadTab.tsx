@@ -2,7 +2,7 @@ import { ExternalLink, Settings2 } from "lucide-react";
 import { StaffLeadsTab } from "@/components/dashboard/StaffLeadsTab";
 import type { LeadListRow } from "@/lib/leadsApi";
 
-type PlatformKind = "logo" | "configurator";
+type PlatformKind = "configurator";
 
 const CONFIG: Record<PlatformKind, {
   eyebrow: string;
@@ -12,14 +12,6 @@ const CONFIG: Record<PlatformKind, {
   action: string;
   matches: (lead: LeadListRow) => boolean;
 }> = {
-  logo: {
-    eyebrow: "Platformă · Logo Studio",
-    title: "Simulări Logo 3D",
-    description: "Configurațiile trimise din Logo Studio, contactele asociate și rezultatul comercial rămân în același pipeline CRM.",
-    href: "/servicii/creare-logo-3d-dinamic-cinematic/creeaza",
-    action: "Deschide Logo Studio",
-    matches: (lead) => `${lead.source || ""} ${lead.product || ""}`.toLowerCase().includes("logo"),
-  },
   configurator: {
     eyebrow: "Platformă · Configuratoare",
     title: "Configurator",
