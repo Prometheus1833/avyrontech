@@ -122,6 +122,24 @@ if (requireGrowthRoutes) {
   }
 }
 
+// A public route reused on the application hostname must never become a
+// competing indexable copy. Check the served HTTP policy, not client JS.
+for (const path of ["/en/library", "/auth", "/profil"]) {
+  const location = `https://app.avyron.ro${path}`;
+  try {
+    const { response } = await get(location);
+    if (response.status !== 200) errors.push(`${location}: HTTP ${response.status}`);
+    if (!/\bnoindex\b/i.test(response.headers.get("x-robots-tag") || "")) errors.push(`${location}: application hostname is missing HTTP noindex`);
+    const cache = response.headers.get("cache-control") || "";
+    if (!/\bprivate\b/.test(cache) || !/\bno-store\b/.test(cache)) errors.push(`${location}: application HTML must be private, no-store`);
+  } catch (error) { errors.push(`${location}: ${error instanceof Error ? error.message : String(error)}`); }
+}
+try {
+  const { response } = await get("https://api.avyron.ro/api/documents/context");
+  if (response.status !== 401) errors.push("Private document context must reject anonymous access with HTTP 401");
+  if (!/\bno-store\b/.test(response.headers.get("cache-control") || "")) errors.push("Private document context must not be cached");
+} catch (error) { errors.push(`Private document access check: ${error instanceof Error ? error.message : String(error)}`); }
+
 // Keep the live check polite and bounded; the same sitemap URL is never fetched twice.
 const queue = [...new Set(urls)];
 await Promise.all(Array.from({ length: Math.min(4, queue.length) }, async () => {
@@ -135,5 +153,5 @@ if (errors.length) {
   console.error(`Live SEO audit failed (${errors.length}):\n${errors.map((error) => `- ${error}`).join("\n")}`);
   process.exitCode = 1;
 } else {
-  console.log(`Live SEO audit passed: ${urls.length} public sitemap URLs, 2 robots.txt files.`);
+  console.log(`Live SEO audit passed: ${urls.length} public sitemap URLs, 2 robots.txt files, 3 application-host exclusions and anonymous document isolation.`);
 }

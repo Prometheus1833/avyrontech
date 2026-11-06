@@ -234,7 +234,10 @@ test.describe("public SEO routes", () => {
     expect(primaryRowBox?.width).toBeLessThanOrEqual(1024);
     await expect(footer.getByRole("link", { name: /Exemplu Gratuit.*Personalizat/ })).toBeVisible();
     const footerNavLinks = footer.locator("nav a");
-    await expect(footerNavLinks).toHaveCount(8);
+    await expect(footerNavLinks).toHaveCount(11);
+    await expect(footer.getByRole("link", { name: "Colaborări & cariere", exact: true })).toHaveAttribute("href", "/cariere");
+    await expect(footer.getByRole("link", { name: "Demo beauty", exact: true })).toHaveAttribute("href", "/exemple/flawlesstudio");
+    await expect(footer.getByRole("link", { name: "Demo reciclare", exact: true })).toHaveAttribute("href", "/exemple/retuvo");
     expect((await footerNavLinks.allTextContents()).slice(0, 6)).toEqual(["Blog", "Produse", "Servicii", "Despre Noi", "Abonamente", "Bibliotecă"]);
     const cookieButton = footer.getByRole("button", { name: "Setări cookie", exact: true });
     const termsLink = footer.getByRole("link", { name: "Termeni de utilizare", exact: true });

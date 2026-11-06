@@ -42,3 +42,25 @@ Cele patru pagini noi trebuie să apară separat după release:
 - [Google: funcțiile AI din Search](https://developers.google.com/search/docs/appearance/ai-features)
 - [Google: rolul tokenului Google-Extended](https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers)
 - [Cloudflare: reguli robots.txt administrate](https://developers.cloudflare.com/bots/additional-configurations/managed-robots-txt/)
+
+## Descoperire și măsurare — actualizare 6 noiembrie 2026
+
+`seo:audit` urmărește acum și linkurile HTML din pagina principală, inclusiv huburile publice `noindex, follow`. Un URL prezent doar în sitemap, fără traseu prin linkuri, oprește buildul. Raportul `seo-audit.json` include `discovery.orphanPages`, numărul de pagini accesibile și traseele de peste trei linkuri. Legăturile spre alte gazde nu sunt folosite pentru a ascunde o pagină orfană. Navigarea publică include carierele și demonstrațiile interactive, identificate explicit drept demo-uri.
+
+Politica comună a Workerelor aplică `X-Robots-Tag: noindex, nofollow` tuturor răspunsurilor de pe `app.avyron.ro`, inclusiv replicilor unor rute publice. HTML-ul aplicației este `private, no-store`; bundle-urile statice păstrează cache-ul existent. Pe gazda canonică publică nu se schimbă eligibilitatea. Headerul HTTP prevalează asupra unui meta tag mai permisiv dintr-un fișier public reutilizat; autorizarea documentelor rămâne separată și obligatorie.
+
+Tagul GA4 folosește coada `Arguments` cerută de Google. Descărcarea cu succes a `gtag.js` singură nu dovedește primirea evenimentelor. După lansare, verificați cererea `g/collect`, ID-ul fluxului și pagina de timp real din proprietatea corectă. Un test tehnic trebuie identificat drept test, nu raportat drept creștere organică.
+
+Analiza rămâne condiționată de consimțământ. Codul exclude subdomeniile aplicației/API/Surveys, rutele private și preview-urile serviciilor; scoate query-ul și fragmentul din locația trimisă și păstrează doar originea referrerului. La retragerea acordului sau intrarea în cont, semnalul oficial `ga-disable-<ID>` suprimă și tagul deja încărcat. În GA4, păstrați măsurarea îmbunătățită automată oprită pentru acest flux: aplicația trimite explicit afișările și acțiunile publice, fără dubluri prin history și fără autocaptura formularelor/descărcărilor private. Nu înlocuiți lipsa acordului printr-un proxy de tracking.
+
+## Bing și celelalte motoare
+
+Meta tagul public `msvalidate.01` din `index.html` este dovada Bing pentru domeniul AVYRON, nu o cheie API. După deploy, în contul corect Bing Webmaster Tools confirmați verificarea prin HTML, trimiteți sitemapul canonic și verificați rezultatul real. Adăugarea unui domeniu cu starea `Not verified` nu înseamnă conexiune finalizată. Nu importați alte proprietăți Google și nu creați credențiale sau servicii plătite pentru această verificare.
+
+Cloudflare Crawler Hints este mecanismul nativ ales pentru notificările IndexNow. În configurația domeniului AVYRON a fost găsit activ pe planul Free; revalidați starea înainte de a o raporta ulterior. Nu se adaugă alt serviciu, cheie publicată, cron sau registru de notificări paralel. Semnalele Crawler Hints și acceptarea unui sitemap reprezintă notificare/descoperire, nu confirmarea indexării de către fiecare motor. Google se verifică separat în Search Console.
+
+Nu publicați în Git rapoarte Analytics private, exporturi brute de cont sau tokenuri. Păstrați dovezile operaționale în raportul privat al sesiunii. Dispozitivele reale, traficul organic, datele de laborator și rapoartele Core Web Vitals sunt dovezi distincte.
+
+- [Google: instalarea tagului și coada Arguments](https://developers.google.com/tag-platform/gtagjs)
+- [Google: dezactivarea măsurării](https://developers.google.com/tag-platform/security/guides/privacy)
+- [Cloudflare: Crawler Hints și disponibilitatea Free](https://developers.cloudflare.com/cache/advanced-configuration/crawler-hints/)

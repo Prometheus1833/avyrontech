@@ -7,6 +7,7 @@ import { matchesRasterSignature } from "./imageSignature";
 import { scanUpload, antivirusFailure, putScannedObject, getScannedObject } from "./malware";
 import { exampleCarouselsRouter, publishedCarousel } from "./exampleCarousels";
 import { rewriteExampleCarousels } from "../../../../src/worker/exampleCarousels";
+import { applicationHostResponse } from "../../../../src/worker/applicationHost";
 import {visualAssetsRouter} from "./visualAssets";
 import {provisionAccountPlan} from "./accountProvisioning";
 import { staffAccessRouter, planStaffAssignment, staffAssignmentSchema, type StaffAssignmentInput } from "./staffAccess";
@@ -1946,7 +1947,7 @@ async function cleanupExpiredData(env: AppBindings["Bindings"]) {
 }
 
 export default {
-  fetch: (request, env, ctx) => app.fetch(normalizeVersionedApiRequest(request), env, ctx),
+  fetch: async (request, env, ctx) => applicationHostResponse(request, await app.fetch(normalizeVersionedApiRequest(request), env, ctx)),
   queue: (batch, env, ctx) => {
     ctx.waitUntil(consumeAsyncJobs(batch, env));
   },
