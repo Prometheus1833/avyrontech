@@ -62,6 +62,13 @@ async function queries(
       FROM operation_records WHERE status='pending' AND kind IN('contract','change_request') AND archived_at IS NULL`,
     },
     {
+      source: "carousel", values: [],
+      sql: `SELECT page_key id,coalesce(nullif(json_extract(draft_json,'$.heading.title.ro'),''),page_key) title,
+      'Carusel de exemple — verificare înainte de publicare' summary,updated_at requested_at,revision,page_key context_id,NULL context_slug,
+      'Verifică exemplele, imaginile și ordinea în modulul Carusele Exemple. Aprobarea și publicarea sunt acțiuni distincte.' detail
+      FROM example_carousel_configs WHERE review_state='in_review'`,
+    },
+    {
       source: "learning",
       values: [],
       sql: `SELECT id,question title,agent_slug summary,updated_at requested_at,updated_at revision,NULL context_id,NULL context_slug,
@@ -98,7 +105,9 @@ const item = (
   requestedAt: row.requested_at,
   revision: row.revision,
   href:
-    source === "template"
+    source === "carousel"
+      ? `/profil?tab=example-carousels&carousel=${encodeURIComponent(row.context_id!)}`
+      : source === "template"
       ? `/profil?tab=documents&template=${encodeURIComponent(row.context_id!)}`
       : source === "content"
         ? `/intern/ai-projects/${encodeURIComponent(row.context_slug!)}`
@@ -132,7 +141,7 @@ export async function readApprovalCenter(
         !Number.isSafeInteger(parsed.time) ||
         parsed.time < 0 ||
         typeof parsed.key !== "string" ||
-        !/^(agent|content|operation|template|learning):[A-Za-z0-9_.:-]{1,160}$/.test(
+        !/^(agent|content|operation|template|learning|carousel):[A-Za-z0-9_.:-]{1,160}$/.test(
           parsed.key,
         )
       )
@@ -144,6 +153,7 @@ export async function readApprovalCenter(
   }
   const role = await platformRoleForUser(env.DB, userId);
   const counts: Record<ApprovalSource, number> = {
+    carousel: 0,
     agent: 0,
     content: 0,
     operation: 0,

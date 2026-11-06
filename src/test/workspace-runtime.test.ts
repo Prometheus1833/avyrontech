@@ -1,14 +1,16 @@
+import {bouncerFixture,fixtureScannerSettings,malwareBucket} from "./helpers/bouncerFixture";
 // @vitest-environment node
 import type { DatabaseSync as SqliteDatabase, SQLInputValue } from 'node:sqlite';
 import { createRequire } from 'node:module';
 import { readdirSync, readFileSync } from 'node:fs';
 import { Hono } from 'hono';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { receiptsRouter } from '../../cloudflare/workers/api/src/receipts';
 import { financialTotals } from '../../cloudflare/workers/api/src/financialTotals';
 import { workspaceRouter } from '../../cloudflare/workers/api/src/workspace';
 import { mediaRouter } from '../../cloudflare/workers/api/src/media';
 import { projectsRouter } from '../../cloudflare/workers/api/src/projects';
+import { adminOperationsRouter } from '../../cloudflare/workers/api/src/adminOperations';
 import { privilegedMfaSatisfied } from '../../cloudflare/workers/api/src/mfaPolicy';
 const { DatabaseSync }=createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
 class Statement {
@@ -22,6 +24,7 @@ class Statement {
 describe('Cloudflare workspace: actual handlers, all migrations, atomic writes',()=>{
  let db:SqliteDatabase,app:Hono,actor:string,verified:boolean,policy:string;
  let objects:Map<string,Uint8Array>,storageReads:number;
+ let beforeBatch:(()=>void)|null;
  const stamp=Date.now();
  beforeEach(()=>{
   db=new DatabaseSync(':memory:');
@@ -34,24 +37,23 @@ describe('Cloudflare workspace: actual handlers, all migrations, atomic writes',
     INSERT INTO client_account_access VALUES ('a','client','owner',1),('b','other','owner',1);
     INSERT INTO projects(id,client_id,name,slug,owner_user_id,created_at) VALUES ('pa','a','Project A','project-a','client',1),('pb','b','Project B','project-b','other',1);
     INSERT INTO support_tickets(id,client_id,subject,created_at) VALUES ('ticket-a','a','A',1),('ticket-b','b','B',1);`);
-  actor='owner';verified=false;policy='optional_until_enrollment';objects=new Map();storageReads=0;
+  actor='owner';verified=false;policy='optional_until_enrollment';const bucket=malwareBucket();objects=bucket.data;storageReads=0;beforeBatch=null;bouncerFixture();
   const binding={prepare:(sql:string)=>new Statement(db,sql),batch:async(statements:Statement[])=>{
+   const hook=beforeBatch;beforeBatch=null;hook?.();
    db.exec('BEGIN');try{const results=[];for(const statement of statements)results.push({meta:db.prepare(statement.sql).run(...statement.values)});db.exec('COMMIT');return results;}catch(e){db.exec('ROLLBACK');throw e;}
   }};
   app=new Hono();app.use('*',async(c,next)=>{
-   Object.assign(c.env,{DB:binding,ADMIN_MFA_POLICY:policy,FILES:{
-     put:async(key:string,bytes:Uint8Array)=>{objects.set(key,bytes);return {size:bytes.byteLength};},
-     delete:async(key:string)=>{objects.delete(key);},
-     get:async(key:string)=>{storageReads++;const bytes=objects.get(key);return bytes?{body:bytes,size:bytes.byteLength,httpEtag:'"fixture-etag"',writeHttpMetadata:()=>{}}:null;},
+   Object.assign(c.env,{...fixtureScannerSettings,DB:binding,ADMIN_MFA_POLICY:policy,FILES:{...bucket,
+     get:async(key:string)=>{storageReads++;return bucket.get(key);},
    }});
    c.set('userId',actor);c.set('roles',['owner','admin'].includes(actor)?['admin']:actor==='staff'?['staff']:['user']);c.set('mfaVerified',verified);
    await next();
   });
   app.get('/mfa-policy',async c=>c.json({allowed:await privilegedMfaSatisfied(c)}));
-  app.route('/',workspaceRouter);app.route('/',projectsRouter);app.route('/',mediaRouter);app.route('/',receiptsRouter);
+  app.route('/',workspaceRouter);app.route('/',projectsRouter);app.route('/',mediaRouter);app.route('/',receiptsRouter);app.route('/',adminOperationsRouter);
   app.get('/totals',async c=>c.json(await financialTotals(c.env.DB,stamp-1000,stamp+1000)));app.onError(()=>new Response('safe failure',{status:500}));
  });
- afterEach(()=>db.close());
+ afterEach(()=>{vi.unstubAllGlobals();db.close();});
  const request=(path:string,body?:unknown,method='POST',key='test-idempotency-key-123')=>app.request(`/api/workspace/${path}`,body===undefined?{}:{method,headers:{'content-type':'application/json','idempotency-key':key},body:JSON.stringify(body)},{});
  const announcement={title:'Release',content:'Internal note',priority:'normal'};
  it('allows only unenrolled platform principals under the temporary policy',async()=>{
@@ -248,6 +250,90 @@ describe('Cloudflare workspace: actual handlers, all migrations, atomic writes',
   const response=await request('statistics');expect(response.status).toBe(200);
   const {data}=await response.json();expect(data).toHaveLength(1);expect(data[0]).toMatchObject({id:'metric-a',visits:100,uptime_percent:null});
   expect((await request('statistics/pb',{period_start:1,period_end:2,visits:1,unique_visitors:null,uptime_percent:null,avg_response_ms:null,source:'Fake'})).status).toBe(403);
+ });
+
+ const maintenance=(patch:Record<string,unknown>={})=>({projectId:'pa',planSku:null,name:'Mentenanță verificată',priceMinor:12550,specifications:{'Servicii incluse':'Actualizări și verificări aprobate','Ore incluse':'2 ore/lună'},productSlug:null,externalUrl:null,targetLabel:'Website client A',staffIds:['staff'],nextBillingDate:stamp+86400000,status:'active',...patch});
+ const createMaintenance=async(patch:Record<string,unknown>={},key='maintenance-create-fixture')=>{
+  const response=await request('maintenance',maintenance(patch),'POST',key);expect(response.status).toBe(200);return response.json();
+ };
+ it('reads real maintenance and partnership plans without exposing management options to clients',async()=>{
+  const config=await (await request('maintenance/config')).json();expect(config.canManage).toBe(true);expect(config.plans.length).toBeGreaterThanOrEqual(24);expect(config.plans.some(p=>p.sku==='pro')).toBe(true);
+  actor='client';const own=await (await request('maintenance/config')).json();expect(own.canManage).toBe(false);expect(own.projects.map(p=>p.id)).toEqual(['pa']);expect(own.clients).toEqual([]);expect(own.staff).toEqual([]);
+ });
+ it('creates one canonical monthly subscription, synchronizes its project and is idempotent',async()=>{
+  const created=await createMaintenance();const replay=await createMaintenance();expect(replay.id).toBe(created.id);
+  expect(db.prepare('SELECT count(*) total FROM subscriptions').get()!.total).toBe(1);expect(db.prepare('SELECT count(*) total FROM services').get()!.total).toBe(1);
+  expect(db.prepare("SELECT status FROM projects WHERE id='pa'").get()!.status).toBe('maintenance');
+  const service=db.prepare('SELECT * FROM services').get()!;expect(service.price).toBe(125.5);expect(service.billing_cycle).toBe('monthly');
+  actor='client';const client=await (await request('subscriptions')).json();expect(client.data).toHaveLength(1);expect(client.data[0].price_cents).toBe(12550);expect(client.data[0].specifications_json).toContain('2 ore/lună');expect(client.data[0].maintenance_enabled).toBe(1);
+  actor='other';expect((await (await request('maintenance')).json()).data).toHaveLength(0);
+  actor='owner';expect((await request('maintenance',maintenance(),'POST','different-maintenance-key')).status).toBe(409);expect(db.prepare('SELECT count(*) total FROM services').get()!.total).toBe(1);
+ });
+ it('configures a legacy subscription in place and rejects stale edits without partial price changes',async()=>{
+  db.exec("INSERT INTO services(id,project_id,service_name,price,billing_cycle) VALUES('legacy-service','pa','Legacy',100,'yearly'); INSERT INTO subscriptions(id,client_id,service_id,next_billing_date) VALUES('legacy','a','legacy-service',1)");
+  const response=await request('maintenance/legacy',maintenance({revision:1}),'PATCH','configure-legacy-fixture');expect(response.status).toBe(200);
+  expect(db.prepare("SELECT service_id,revision,maintenance_enabled FROM subscriptions WHERE id='legacy'").get()).toEqual(expect.objectContaining({service_id:'legacy-service',revision:2,maintenance_enabled:1}));
+  const conflict=await request('maintenance/legacy',maintenance({revision:1,priceMinor:99900}),'PATCH','stale-legacy-fixture');expect(conflict.status).toBe(409);expect(db.prepare("SELECT price FROM services WHERE id='legacy-service'").get()!.price).toBe(125.5);
+ });
+ it('blocks the legacy editor even when a subscription becomes Core-managed between read and write',async()=>{
+  db.exec("INSERT INTO services(id,project_id,service_name,price,billing_cycle) VALUES('legacy-service','pa','Legacy',100,'monthly'); INSERT INTO subscriptions(id,client_id,service_id,next_billing_date) VALUES('legacy','a','legacy-service',1)");
+  const edit=()=>app.request('/api/admin/operations/subscriptions/legacy',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({serviceName:'Late edit',price:900,billingCycle:'monthly',status:'active',nextBillingDate:1})},{});
+  beforeBatch=()=>db.exec("UPDATE subscriptions SET maintenance_enabled=1,revision=revision+1 WHERE id='legacy'");
+  expect((await edit()).status).toBe(409);
+  expect(db.prepare("SELECT price,service_name FROM services WHERE id='legacy-service'").get()).toEqual(expect.objectContaining({price:100,service_name:'Legacy'}));
+  expect(db.prepare("SELECT maintenance_enabled,revision FROM subscriptions WHERE id='legacy'").get()).toEqual(expect.objectContaining({maintenance_enabled:1,revision:2}));
+  expect((await edit()).status).toBe(409);
+  expect(db.prepare("SELECT count(*) total FROM security_events WHERE action='subscription.update'").get()!.total).toBe(0);
+ });
+ it('creates an external project and subscription atomically with the real beneficiary',async()=>{
+  const body=maintenance({projectId:undefined,externalProject:{clientId:'a',name:'Produs extern de test'},externalUrl:'https://product.example.test/',targetLabel:'Aplicație externă'});
+  const response=await request('maintenance',body,'POST','external-maintenance-fixture');expect(response.status).toBe(200);const result=await response.json();
+  expect(db.prepare('SELECT client_id,kind,status FROM projects WHERE id=?').get(result.projectId)).toEqual(expect.objectContaining({client_id:'a',kind:'external_asset',status:'maintenance'}));
+  actor='client';expect((await (await request('maintenance')).json()).data.map(r=>r.id)).toContain(result.id);
+  actor='other';expect((await (await request('maintenance')).json()).data).toEqual([]);
+  actor='owner';const bad=await request('maintenance',maintenance({externalUrl:'javascript:alert(1)'}),'POST','bad-maintenance-url');expect(bad.status).toBe(400);
+ });
+ it('limits assigned staff to maintenance activities and revokes access immediately',async()=>{
+  const created=await createMaintenance();actor='staff';verified=true;
+  expect((await (await request('maintenance')).json()).data).toHaveLength(1);
+  expect((await request('work-items/pa')).status).toBe(404);
+  const work={kind:'maintenance',title:'Verificare backup',description:'Test sintetic',due_at:null,status:'open'};
+  const response=await request('work-items/pa',work,'POST','staff-maintenance-task');expect(response.status).toBe(200);const item=await response.json();
+  const scoped=await (await request('work-items/pa?kind=maintenance')).json();expect(scoped.canWrite).toBe(true);expect(scoped.data).toHaveLength(1);
+  expect((await request('work-items/pa',{...work,kind:'task'},'POST','staff-forbidden-task')).status).toBe(403);
+  expect((await request('work-items/pa/'+item.id,{...work,kind:'task',revision:1},'PATCH','staff-change-task-kind')).status).toBe(403);
+  actor='owner';const update=await request('maintenance/'+created.id,maintenance({revision:1,staffIds:[]}),'PATCH','remove-maintenance-staff');expect(update.status).toBe(200);
+  actor='staff';expect((await request('work-items/pa?kind=maintenance')).status).toBe(404);expect((await (await request('maintenance')).json()).data).toEqual([]);
+  expect((await request('work-items/pa',work,'POST','staff-maintenance-task')).status).toBe(403);
+ });
+ it('rejects client plan changes, invalid staff, wrong beneficiaries and stale client grants',async()=>{
+  actor='client';expect((await request('maintenance',maintenance(),'POST','client-write-maintenance')).status).toBe(403);
+  actor='owner';expect((await request('maintenance',maintenance({staffIds:['client']}),'POST','invalid-maintenance-staff')).status).toBe(400);
+  const created=await createMaintenance();expect((await request('maintenance/'+created.id,maintenance({projectId:'pb',revision:1}),'PATCH','wrong-maintenance-client')).status).toBe(404);
+  db.exec("UPDATE projects SET owner_user_id=NULL WHERE id='pa'");actor='client';expect((await (await request('maintenance')).json()).data).toHaveLength(1);
+  db.exec("DELETE FROM client_account_access WHERE user_id='client'");expect((await (await request('maintenance')).json()).data).toEqual([]);expect((await request('work-items/pa?kind=maintenance')).status).toBe(404);
+ });
+ it('revalidates platform authorization before replaying an idempotent maintenance response',async()=>{
+  await createMaintenance();db.exec("DELETE FROM user_roles WHERE user_id='owner'");
+  const response=await request('maintenance',maintenance(),'POST','maintenance-create-fixture');expect(response.status).toBe(403);expect(db.prepare('SELECT count(*) total FROM subscriptions').get()!.total).toBe(1);
+ });
+ it('rolls back the service, external project, assignments and idempotency reservation when auditing fails',async()=>{
+  db.exec("CREATE TRIGGER reject_maintenance_audit BEFORE INSERT ON security_events WHEN NEW.action='maintenance.created' BEGIN SELECT RAISE(ABORT,'fixture_audit_failure'); END");
+  const response=await request('maintenance',maintenance({projectId:undefined,externalProject:{clientId:'a',name:'Rollback asset'}}),'POST','rollback-maintenance-create');expect(response.status).toBe(500);
+  expect(db.prepare('SELECT count(*) total FROM services').get()!.total).toBe(0);expect(db.prepare("SELECT count(*) total FROM projects WHERE kind='external_asset'").get()!.total).toBe(0);expect(db.prepare('SELECT count(*) total FROM subscription_staff').get()!.total).toBe(0);expect(db.prepare("SELECT count(*) total FROM idempotency_keys WHERE idempotency_key='rollback-maintenance-create'").get()!.total).toBe(0);
+ });
+ it('accepts a mapped legal-entity grant without exposing a different tenant or retaining a revoked grant',async()=>{
+  db.exec("INSERT INTO organizations(id,slug,name,created_at,updated_at) VALUES('org-a','org-a','Org A',1,1),('org-b','org-b','Org B',1,1); INSERT INTO client_organizations(client_id,organization_id,linked_at) VALUES('a','org-a',1); UPDATE projects SET organization_id='org-a',owner_user_id=NULL WHERE id='pa'");
+  await createMaintenance();actor='client';expect((await (await request('maintenance')).json()).data).toHaveLength(1);expect((await request('work-items/pa?kind=maintenance')).status).toBe(200);
+  db.exec("UPDATE projects SET organization_id='org-b' WHERE id='pa'");expect((await (await request('maintenance')).json()).data).toEqual([]);expect((await request('work-items/pa?kind=maintenance')).status).toBe(404);
+ });
+
+ it('associates catalog products with distinct beneficiaries without changing the product catalog',async()=>{
+  const product=db.prepare("SELECT slug,price_ron_cents FROM product_items WHERE status='live' LIMIT 1").get()!;
+  const a=await createMaintenance({productSlug:product.slug,targetLabel:'Produs client A'},'product-maintenance-a');
+  const b=await createMaintenance({projectId:'pb',productSlug:product.slug,targetLabel:'Produs client B'},'product-maintenance-b');
+  expect(a.id).not.toBe(b.id);expect(db.prepare('SELECT price_ron_cents FROM product_items WHERE slug=?').get(product.slug)!.price_ron_cents).toBe(product.price_ron_cents);
+  actor='client';const own=await (await request('maintenance')).json();expect(own.data).toHaveLength(1);expect(own.data[0].id).toBe(a.id);expect(own.data[0].product_slug).toBe(product.slug);
  });
 
 });

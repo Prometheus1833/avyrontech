@@ -1,7 +1,7 @@
-import type { Lang } from "@/i18n/translations";
-import type { ServiceKey } from "@/data/services";
-import { subscriptionPriceCents } from "@/data/commerceCatalog";
-import { ADS_MONTHLY_OFFERS, SEO_MONTHLY_OFFERS, type GrowthOffer } from "@/data/growthOffers";
+import type { Lang } from "../i18n/translations";
+import type { ServiceKey } from "../shared/serviceTypes";
+import { subscriptionPriceCents } from "./commerceCatalog";
+import { ADS_MONTHLY_OFFERS, SEO_MONTHLY_OFFERS, type GrowthOffer } from "./growthOffers";
 
 /**
  * Abonamentele de mentenanță și colaborare Avyron.

@@ -1,3 +1,5 @@
+import AntivirusSummary from "./AntivirusSummary";
+import { STAFF_MANAGED } from "@/shared/staffAccess";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity, AlertTriangle, ArrowRight, Bot, CircleDollarSign,
@@ -43,7 +45,7 @@ const agentStatusLabel = (status: string) => ({
   queued: "în așteptare",
   awaiting_approval: "așteaptă aprobare",
   denied: "respins",
-}[status] || status.replace(/_/g, " "));
+})[status] || status.replace(/_/g, " ");
 
 const greeting = () => {
   const hour = new Date().getHours();
@@ -66,9 +68,10 @@ const projectStatus = (status: string) => ({
   revizuire: { label: "Revizuire", className: "text-fuchsia-300 bg-fuchsia-400/10" },
   in_progress: { label: "În lucru", className: "text-violet-300 bg-violet-400/10" },
   offline: { label: "Offline", className: "text-slate-400 bg-slate-400/10" },
-}[status] || { label: status.replace(/_/g, " "), className: "text-slate-400 bg-white/[0.05]" });
+})[status] || { label: status.replace(/_/g, " "), className: "text-slate-400 bg-white/[0.05]" };
 
-const Panel = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
+const Panel = ({ children, className = "" }: { children: React.ReactNode; className?: string;
+}) => (
   <section className={`min-w-0 rounded-2xl border border-white/[0.08] bg-[#10162a]/90 shadow-[0_24px_70px_-46px_rgba(124,58,237,0.9)] ${className}`}>
     {children}
   </section>
@@ -125,7 +128,28 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
       { label: "Proiecte active", value: data.metrics.activeProjects, helper: `${data.metrics.projects} în portofoliu`, icon: FolderKanban, tone: "from-blue-500/20" },
       { label: "Clienți activi", value: data.metrics.clients, helper: "relații active", icon: Users, tone: "from-fuchsia-500/20" },
       { label: "Vizitatori", value: data.metrics.visits, helper: "ultimele 30 de zile", icon: Activity, tone: "from-emerald-500/20" },
-    ];
+    ].filter(
+        (metric) =>
+          !access.capabilities.includes(STAFF_MANAGED) ||
+          ((
+            {
+              "Leaduri deschise": "leads.read",
+              "Proiecte active": "projects.read",
+              "Clienți activi": "clients.read",
+              Vizitatori: "marketing.read",
+            } as Record<string, string>
+          )[metric.label] &&
+            access.capabilities.includes(
+              (
+                {
+                  "Leaduri deschise": "leads.read",
+                  "Proiecte active": "projects.read",
+                  "Clienți activi": "clients.read",
+                  Vizitatori: "marketing.read",
+                } as Record<string, string>
+              )[metric.label],
+            )),
+      );
     return [
       { label: "Proiectele mele", value: data.metrics.projects, helper: "acces autorizat", icon: FolderKanban, tone: "from-blue-500/20" },
       { label: "În lucru", value: data.metrics.activeProjects, helper: "proiecte active", icon: Activity, tone: "from-violet-500/20" },
@@ -141,7 +165,9 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
   if (loading) return (
     <div className="grid gap-4 lg:grid-cols-12" aria-label="Se încarcă dashboardul AVYRON OS">
       <div className="h-40 animate-pulse rounded-2xl bg-white/[0.05] lg:col-span-12" />
-      {[1, 2, 3, 4].map((item) => <div key={item} className="h-28 animate-pulse rounded-2xl bg-white/[0.05] lg:col-span-3" />)}
+      {[1, 2, 3, 4].map((item) => (
+          <div key={item} className="h-28 animate-pulse rounded-2xl bg-white/[0.05] lg:col-span-3" />
+        ))}
       <div className="h-80 animate-pulse rounded-2xl bg-white/[0.05] lg:col-span-7" />
       <div className="h-80 animate-pulse rounded-2xl bg-white/[0.05] lg:col-span-5" />
     </div>
@@ -162,7 +188,10 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
 
   return (
     <div className="flex flex-col gap-4 text-slate-100">
-      {error && <p role="alert" className="rounded-xl border border-amber-300/20 p-3 text-xs text-amber-200">{error} Datele afișate sunt cele de la ultima citire reușită. <button className="underline" onClick={() => void load(true)}>Reîncearcă</button></p>}
+      {error && (
+        <p role="alert" className="rounded-xl border border-amber-300/20 p-3 text-xs text-amber-200">{error} Datele afișate sunt cele de la ultima citire reușită. {" "}
+          <button className="underline" onClick={() => void load(true)}>Reîncearcă</button></p>
+      )}
       <header className="relative overflow-hidden rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-600/[0.16] via-[#11182d] to-cyan-500/[0.08] p-5 sm:p-6">
         <div aria-hidden className="absolute -right-20 -top-24 size-64 rounded-full bg-violet-500/20 blur-3xl" />
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
@@ -172,10 +201,13 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-300">{data.briefing}</p>
           </div>
           <button type="button" onClick={onOpenCommand} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-violet-300/25 bg-violet-500/15 px-4 py-2.5 text-sm font-semibold text-violet-100 transition hover:bg-violet-500/25">
-            <Sparkles className="size-4" /> Deschide centrul de comandă <kbd className="ml-1 rounded border border-white/10 bg-black/20 px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd>
+            <Sparkles className="size-4" /> Deschide centrul de comandă {" "}
+            <kbd className="ml-1 rounded border border-white/10 bg-black/20 px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd>
           </button>
         </div>
       </header>
+
+      {access.isSuperAdmin && <AntivirusSummary onOpen={() => onOpenSection("antivirus")} />}
 
       <div className="grid items-start gap-4 xl:grid-cols-12">
         <Panel className="p-4 sm:p-5 xl:col-span-7">
@@ -187,7 +219,9 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
             <span className="rounded-full bg-amber-300/10 px-2.5 py-1 text-xs font-semibold text-amber-200">{data.attention.length}</span>
           </div>
           <div className="grid items-start gap-2 sm:grid-cols-2">
-            {data.attention.length === 0 && <EmptyState>Nu există urgențe confirmate în modulele conectate.</EmptyState>}
+            {data.attention.length === 0 && (
+              <EmptyState>Nu există urgențe confirmate în modulele conectate.</EmptyState>
+            )}
             {data.attention.map((item) => (
               <button key={item.id} type="button" onClick={() => onOpenSection(item.destination as SectionId)} className="group flex min-w-0 w-full items-start gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 text-left transition hover:border-violet-400/25 hover:bg-violet-400/[0.06]">
                 <span className={`mt-1 size-2 shrink-0 rounded-full ${item.severity === "critic" ? "bg-rose-400 shadow-[0_0_14px_rgba(251,113,133,.7)]" : "bg-amber-300"}`} />
@@ -223,18 +257,23 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
       </div>
 
       <div className="grid gap-4 xl:grid-cols-12">
-        {access.isStaff && <Panel className="p-4 sm:p-5 xl:col-span-4">
+        {access.isStaff &&
+          (!access.capabilities.includes(STAFF_MANAGED) ||
+            access.capabilities.includes("leads.read")) && (
+            <Panel className="p-4 sm:p-5 xl:col-span-4">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <div><p className="font-mono text-[10px] uppercase tracking-[0.22em] text-cyan-200/70">CRM sincronizat</p><h2 className="mt-1 font-display text-lg font-semibold text-white">Pipeline leaduri</h2></div>
             <button type="button" onClick={() => onOpenSection("leads")} className="text-xs font-medium text-violet-300 hover:text-violet-200">Deschide</button>
           </div>
           <div className="space-y-3">
-            {pipeline.map((stage) => <div key={stage.status}>
+            {pipeline.map((stage) => (
+                  <div key={stage.status}>
               <div className="mb-1.5 flex items-center justify-between text-xs"><span className="text-slate-400">{stage.label}</span><span className="font-semibold text-slate-200">{stage.total}</span></div>
               <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.05]"><div className={`h-full rounded-full ${stage.tone} transition-[width] duration-500`} style={{ width: `${stage.total ? Math.max(8, Math.round((stage.total / pipelineMax) * 100)) : 0}%` }} /></div>
-            </div>)}
+            </div>))}
           </div>
-        </Panel>}
+        </Panel>
+          )}
 
         <Panel className={`p-4 sm:p-5 ${access.isStaff ? "xl:col-span-4" : "xl:col-span-6"}`}>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -242,14 +281,18 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
             <button type="button" onClick={() => onOpenSection("projects")} className="text-xs font-medium text-violet-300 hover:text-violet-200">Vezi toate</button>
           </div>
           <div className="space-y-2">
-            {activeProjects.length === 0 && <EmptyState>Nu există proiecte active pentru acest cont.</EmptyState>}
+            {activeProjects.length === 0 && (
+              <EmptyState>Nu există proiecte active pentru acest cont.</EmptyState>
+            )}
             {activeProjects.slice(0, 5).map((project) => {
               const state = projectStatus(project.bannerStatus);
-              return <button key={project.id} type="button" onClick={() => onOpenSection("projects")} className="group flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5 text-left transition hover:border-violet-400/25">
+              return (
+                <button key={project.id} type="button" onClick={() => onOpenSection("projects")} className="group flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5 text-left transition hover:border-violet-400/25">
                 <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-violet-400/10 text-violet-300"><FolderKanban className="size-4" /></span>
                 <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium text-slate-200">{project.name}</span><span className="block text-[11px] text-slate-600">actualizat {relativeTime(project.updatedAt)}</span></span>
                 <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${state.className}`}>{state.label}</span>
-              </button>;
+              </button>
+              );
             })}
           </div>
         </Panel>
@@ -257,10 +300,14 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
         <Panel className={`p-4 sm:p-5 ${access.isStaff ? "xl:col-span-4" : "xl:col-span-6"}`}>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <div><p className="font-mono text-[10px] uppercase tracking-[0.22em] text-fuchsia-200/70">Observabilitate AI</p><h2 className="mt-1 font-display text-lg font-semibold text-white">Activitatea agenților</h2></div>
-            {access.isSuperAdmin && <button type="button" onClick={() => onOpenSection("ai-os")} className="text-xs font-medium text-violet-300 hover:text-violet-200">Controlează</button>}
+            {access.isSuperAdmin && (
+              <button type="button" onClick={() => onOpenSection("ai-os")} className="text-xs font-medium text-violet-300 hover:text-violet-200">Controlează</button>
+            )}
           </div>
           <div className="space-y-2">
-            {data.agentRuns.length === 0 && <EmptyState>{access.isSuperAdmin ? "Nu există rulări recente." : "Activitatea AI detaliată este rezervată rolurilor autorizate."}</EmptyState>}
+            {data.agentRuns.length === 0 && (
+              <EmptyState>{access.isSuperAdmin ? "Nu există rulări recente." : "Activitatea AI detaliată este rezervată rolurilor autorizate."}</EmptyState>
+            )}
             {data.agentRuns.slice(0, 5).map((run) => (
               <div key={run.id} className="grid grid-cols-[auto_1fr] items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
                 <span className="grid size-8 place-items-center rounded-lg bg-fuchsia-400/10 text-fuchsia-300"><Bot className="size-4" /></span>
@@ -285,9 +332,12 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
         {access.isSuperAdmin && <StorageStatus />}
         <div className="mt-4 border-t border-white/[0.06] pt-4">
           <div className="mb-2 flex items-center justify-between"><h3 className="text-xs font-semibold text-slate-300">Registrul integrărilor</h3><span className="text-[10px] text-slate-600">{data.integrations.length} înregistrate</span></div>
-          {data.integrations.length === 0 ? <EmptyState>Nu există conectori externi validați. Aceștia vor apărea după configurare.</EmptyState> : (
+          {data.integrations.length === 0 ? (
+            <EmptyState>Nu există conectori externi validați. Aceștia vor apărea după configurare.</EmptyState>
+          ) : (
             <div className="flex flex-wrap gap-2">
-              {data.integrations.slice(0, 12).map((item, index) => <span key={`${item.name}-${index}`} className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[11px] text-slate-400"><span className={`size-1.5 rounded-full ${statusTone(item.status)}`} />{item.name}</span>)}
+              {data.integrations.slice(0, 12).map((item, index) => (
+                <span key={`${item.name}-${index}`} className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[11px] text-slate-400"><span className={`size-1.5 rounded-full ${statusTone(item.status)}`} />{item.name}</span>))}
             </div>
           )}
         </div>

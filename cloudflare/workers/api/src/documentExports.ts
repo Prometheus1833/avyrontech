@@ -16,6 +16,8 @@ import {
   PageNumber,
   PageBreak,
   WidthType,
+  TableLayoutType,
+  BorderStyle,
   ImageRun,
 } from "docx";
 import { documentBrandPng } from "./documentBrand";
@@ -358,10 +360,25 @@ export async function exportDocument(
         new Paragraph({ text: "Deviz", heading: HeadingLevel.HEADING_2 }),
         new Table({
           width: { size: 100, type: WidthType.PERCENTAGE },
+          layout: TableLayoutType.FIXED,
+          columnWidths: [4400, 800, 1800, 1800, 1206],
+          borders: Object.fromEntries(
+            [
+              "top",
+              "bottom",
+              "left",
+              "right",
+              "insideHorizontal",
+              "insideVertical",
+            ].map((edge) => [
+              edge,
+              { style: BorderStyle.SINGLE, size: 4, color: "DDE3EF" },
+            ]),
+          ),
           rows: [
             [
               "Serviciu / produs",
-              "Cantitate",
+              "Cant.",
               "Catalog / unitate",
               "Ofertat / unitate",
               "TVA",
@@ -381,33 +398,66 @@ export async function exportDocument(
                 tableHeader: i === 0,
                 cantSplit: true,
                 children: row.map(
-                  (text) =>
-                    new TableCell({ children: [new Paragraph({ text })] }),
+                  (text, column) =>
+                    new TableCell({
+                      width: {
+                        size: [4400, 800, 1800, 1800, 1206][column],
+                        type: WidthType.DXA,
+                      },
+                      shading: i === 0 ? { fill: "EDF0F8" } : undefined,
+                      margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                      children: [
+                        new Paragraph({
+                          children: [
+                            new TextRun({ text, bold: i === 0, size: 18 }),
+                          ],
+                          spacing: { after: 0 },
+                        }),
+                      ],
+                    }),
                 ),
               }),
           ),
         }),
         new Paragraph({
-          text: `Total cu taxele înscrise: ${money(
-            payload.lines.reduce(
-              (sum, l) =>
-                sum +
-                Math.round(
-                  l.quantity *
-                    l.offeredPriceMinor *
-                    (1 + l.vatBasisPoints / 10000),
+          spacing: { before: 160 },
+          children: [
+            new TextRun({
+              bold: true,
+              text: `Total cu taxele înscrise: ${money(
+                payload.lines.reduce(
+                  (sum, l) =>
+                    sum +
+                    Math.round(
+                      l.quantity *
+                        l.offeredPriceMinor *
+                        (1 + l.vatBasisPoints / 10000),
+                    ),
+                  0,
                 ),
-              0,
-            ),
-            payload.lines[0].currency,
-          )}`,
+                payload.lines[0].currency,
+              )}`,
+            }),
+          ],
         }),
       ]
     : [];
   const doc = new Document({
     creator: "AVYRON",
     title: payload.title,
-    styles: { default: { document: { run: { font: "Arial", size: 21 } } } },
+    styles: {
+      default: {
+        document: { run: { font: "Arial", size: 21, color: "263046" } },
+        heading1: {
+          run: { font: "Arial", size: 34, bold: true, color: "222B50" },
+          paragraph: { spacing: { before: 280, after: 180 }, keepNext: true },
+        },
+        heading2: {
+          run: { font: "Arial", size: 26, bold: true, color: "3D377B" },
+          paragraph: { spacing: { before: 240, after: 140 }, keepNext: true },
+        },
+      },
+    },
     sections: [
       {
         properties: {
@@ -434,7 +484,7 @@ export async function exportDocument(
                     transformation: { width: 28, height: 28 },
                   }),
                   new TextRun({
-                    text: `  AVYRON · ${payload.header}`,
+                    text: `  ${payload.header}`,
                     size: 17,
                     color: "3D377B",
                   }),

@@ -1,7 +1,9 @@
 import { lazy, Suspense } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import Link from "@/components/site/WorkspaceLink";
 import { useAuth } from "@/hooks/useAuth";
+import {buildAccess,canOpenSection} from '@/lib/access';
 import { internApi, type ProjectDetail, type ProposalStatus, type BannerStatus, type ProjectKind, type LinkKind } from "@/lib/internApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +32,7 @@ const BANNER_LABEL: Record<BannerStatus, { label: string; className: string }> =
 };
 
 const KIND_LABEL: Record<ProjectKind, string> = {
+  external_asset:"Proiect / produs extern",
   website_prezentare: "Website Prezentare",
   prezentare_premium: "Prezentare Premium",
   magazin_online: "Magazin Online",
@@ -68,7 +71,8 @@ const ProjectDocuments = lazy(() => import("@/features/documents/DocumentCenter"
 
 export default function ProjectPage() {
   const { slug = "" } = useParams();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading,roles,isSuperAdmin,capabilities } = useAuth();
+  const access=buildAccess({roles,superadmin:isSuperAdmin,capabilities});
   const { toast } = useToast();
   const [data, setData] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -120,6 +124,7 @@ export default function ProjectPage() {
               </div>
             </div>
             <div className="flex gap-2 flex-wrap">
+              {canOpenSection('intern',access)&&<Button variant="outline" asChild><Link to={'/profil?tab=intern&chatProject='+encodeURIComponent(project.id)}>Conversația proiectului</Link></Button>}
               {project.url && normalizeExternalLink(project.url) && (
                 <a href={normalizeExternalLink(project.url)!} target="_blank" rel="noreferrer">
                   <Button variant="default"><ExternalLink className="w-4 h-4 mr-2" />Accesare produs</Button>

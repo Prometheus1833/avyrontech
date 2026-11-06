@@ -1,258 +1,1196 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Bot, KeyRound, LockKeyhole, LogOut, MessageSquare, Power, RotateCcw, Search, Settings2, ShieldCheck, UserCheck, UserPlus, Users } from "lucide-react";
-import { workspaceApi } from "@/lib/workspaceApi";
-import { internApi, type AccountOption, type ClientOption } from "@/lib/internApi";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  BadgeCheck,
+  Crown,
+  MessageCircle,
+  Plus,
+  Search,
+  Settings2,
+  Shield,
+  UserPlus,
+  Users,
+  X,
+} from "lucide-react";
+import {
+  staffAccessApi,
+  type AgencyMember,
+  type Assignment,
+  type StaffAccessConfig,
+} from "@/lib/staffAccessApi";
+import { cfAuth } from "@/lib/cfAuth";
+import { internApi } from "@/lib/internApi";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import {
+  STAFF_PERMISSION_KEYS,
+  STAFF_RANKS,
+  staffRankLabel,
+  staffPermissionIssues,
+  type StaffRankId,
+  type StaffRankProfile,
+} from "@/shared/staffAccess";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { PasswordInput } from "@/components/auth/PasswordInput";
-import { toast } from "sonner";
-import { adminOperationsApi, type AdminProjectOption } from "@/lib/adminOperationsApi";
-
-const roleLabels: Record<string, string> = {
-  admin: "Administrator",
-  staff: "Membru staff",
-  user: "Client",
-};
-const accountTypeLabels: Record<string, string> = {
-  individual: "Persoană fizică", srl: "SRL", pfa: "PFA", ii: "Întreprindere individuală",
-  startup: "Start-up", public_institution: "Instituție publică", avyron_partner: "Avyron Partner", other: "Alt tip",
-};
-
+import { StaffPermissionMatrix, StaffScopeList } from "./StaffPermissionMatrix";
+import "./staffAgency.css";
+const CodexOperatorControl = lazy(() => import("./CodexOperatorControl"));
+const emptyAssignment = (rankId: StaffRankId | null = null): Assignment => ({
+  rankId,
+  permissions: [],
+  projectIds: [],
+  subscriptionIds: [],
+  clientIds: [],
+  aiProjectIds: [],
+  revision: 0,
+  expiresAt: null,
+  reason: "",
+  confirmed: false,
+});
+const rankOf = (m: AgencyMember) => m.platform_role || m.rank_id;
+const isMember = (m: AgencyMember) =>
+  !!rankOf(m) || /(^|,)(staff|admin)(,|$)/.test(m.roles || "");
+const fold = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("ro");
 export default function TeamStaffTab() {
-  const { isAdmin, isSuperAdmin } = useAuth();
-  const [accounts, setAccounts] = useState<AccountOption[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState<AccountOption | null>(null);
-  const [accessLevel, setAccessLevel] = useState<"user" | "staff" | "admin">("staff");
-  const [saving, setSaving] = useState(false);
-  const [clients, setClients] = useState<ClientOption[]>([]);
-  const [clientIds, setClientIds] = useState<string[]>([]);
-  const [linksReady, setLinksReady] = useState(false);
-  const [projects, setProjects] = useState<AdminProjectOption[]>([]);
-  const [projectIds, setProjectIds] = useState<string[]>([]);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [temporaryPassword, setTemporaryPassword] = useState("");
-  const [operatorOpen, setOperatorOpen] = useState(false);
-  const [operatorPassword, setOperatorPassword] = useState("");
-  const [operatorSyncing, setOperatorSyncing] = useState(false);
-  const [codexOperator, setCodexOperator] = useState<{ exists: boolean; synchronized: boolean; bindings?: Array<{ agent_slug: string; status: string }> } | null>(null);
-  const [create, setCreate] = useState({ email: "", username: "", displayName: "", temporaryPassword: "", accessLevel: "user" as "user" | "staff" | "admin" });
-
-  const loadAccounts = useCallback(async () => {
+  const { user } = useAuth();
+  const [config, setConfig] = useState<StaffAccessConfig | null>(null),
+    [error, setError] = useState(""),
+    [loading, setLoading] = useState(true),
+    [query, setQuery] = useState(""),
+    [rankFilter, setRankFilter] = useState(""),
+    [showAccounts, setShowAccounts] = useState(false),
+    [message, setMessage] = useState("");
+  const [mode, setMode] = useState<
+      "manage" | "create" | "assign" | "profile" | null
+    >(null),
+    [selected, setSelected] = useState<AgencyMember | null>(null),
+    [profile, setProfile] = useState<StaffRankProfile | null>(null),
+    [draft, setDraft] = useState<Assignment>(emptyAssignment()),
+    [panel, setPanel] = useState<
+      "permissions" | "projects" | "clients" | "security"
+    >("permissions"),
+    [ready, setReady] = useState(false),
+    [targetCanManage, setTargetCanManage] = useState(true),
+    [rankChosen, setRankChosen] = useState(true),
+    [saving, setSaving] = useState(false),
+    [dialogError, setDialogError] = useState(""),
+    [scopeQuery, setScopeQuery] = useState("");
+  const [identity, setIdentity] = useState({
+      email: "",
+      username: "",
+      displayName: "",
+      temporaryPassword: "",
+    }),
+    [password, setPassword] = useState(""),
+    [securityAction, setSecurityAction] = useState<
+      "password" | "sessions" | "status" | null
+    >(null),
+    [securityConfirmed, setSecurityConfirmed] = useState(false);
+  const sequence = useRef(0),
+    request = useRef({ body: "", key: crypto.randomUUID() });
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
-    await (isSuperAdmin ? Promise.all([internApi.listAccounts(), adminOperationsApi.staff()]).then(([users, staff]) => {
-      setProjects(staff.projects);
-      setAccounts(users.data);
-    }) : internApi.listAccounts().then((result) => setAccounts(isAdmin ? result.data : result.data.filter((account) => /(^|,)(staff|admin)(,|$)/.test(account.roles || "")))))
-      .catch((cause) => setError(cause instanceof Error ? cause.message : "Echipa nu a putut fi încărcată."))
-      .finally(() => setLoading(false));
-  }, [isAdmin, isSuperAdmin]);
-
-  useEffect(() => {
-    void loadAccounts();
-  }, [loadAccounts]);
-
-  const loadCodexOperator = useCallback(async () => {
-    if (!isSuperAdmin) return;
-    await internApi.codexOperator().then((result) => setCodexOperator(result.data)).catch(() => setCodexOperator(null));
-  }, [isSuperAdmin]);
-
-  useEffect(() => { void loadCodexOperator(); }, [loadCodexOperator]);
-
-  const synchronizeCodexOperator = async () => {
-    if (!codexOperator?.exists && operatorPassword.length < 10) {
-      toast.error("Pentru contul nou este necesară o parolă temporară sigură.");
-      return;
+    try {
+      const data = await staffAccessApi.config();
+      if (!Array.isArray(data.profiles))
+        throw Error(
+          "Administrarea rangurilor nu este disponibilă. Verifică migrațiile aplicației.",
+        );
+      setConfig(data);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
     }
-    setOperatorSyncing(true);
-    try {
-      await internApi.synchronizeCodexOperator(operatorPassword || undefined);
-      toast.success("Accesul contului Codex la Leads și AI AVY Prod a fost sincronizat.");
-      setOperatorPassword("");
-      setOperatorOpen(false);
-      await Promise.all([loadAccounts(), loadCodexOperator()]);
-    } catch (cause) {
-      toast.error(cause instanceof Error ? cause.message : "Sincronizarea contului Codex nu a reușit.");
-    } finally { setOperatorSyncing(false); }
+  }, []);
+  useEffect(() => {
+    void load();
+  }, [load]);
+  const members = config?.data.filter(isMember) || [],
+    profiles = config?.profiles || [];
+  const full =
+      draft.rankId === "platform_owner" || draft.rankId === "superadmin",
+    protectedTarget =
+      !!selected &&
+      (selected.platform_role === "platform_owner" || selected.id === user?.id),
+    canSave =
+      !!config?.canManage &&
+      !!config?.mfaSatisfied &&
+      ready &&
+      targetCanManage &&
+      rankChosen &&
+      !saving &&
+      !protectedTarget;
+  const setPermissions = (permissions: string[]) =>
+    setDraft((d) => ({ ...d, permissions, confirmed: false }));
+  const chooseRank = (rankId: StaffRankId | null) => {
+    setRankChosen(true);
+    const permissions =
+      profiles.find((p) => p.id === rankId)?.permissions || [];
+    setDraft((d) => ({
+      ...d,
+      rankId,
+      permissions: [...permissions],
+      expiresAt: null,
+      projectIds:
+        permissions.includes("projects.read") ||
+        permissions.includes("maintenance.read")
+          ? d.projectIds
+          : [],
+      subscriptionIds: permissions.includes("maintenance.read")
+        ? d.subscriptionIds
+        : [],
+      aiProjectIds: permissions.includes("ai_projects.read")
+        ? d.aiProjectIds
+        : [],
+      confirmed: false,
+    }));
   };
-
-  const openAccess = async (account: AccountOption) => {
-    setLinksReady(false);setClientIds([]);
-    try {
-      const [list, linked, staffData] = await Promise.all([internApi.listClients(),workspaceApi.list<{client_id:string}>(`account-access/${account.id}`),adminOperationsApi.staff()]);
-      setClients(list.data);setClientIds(linked.data.map(r=>r.client_id));setLinksReady(true);
-      const staff = staffData.data.find((item) => item.id === account.id);
-      setProjects(staffData.projects); setProjectIds((staff?.project_ids || "").split(",").filter(Boolean));
-    } catch (error) { toast.error(error instanceof Error ? error.message : "Asocierile nu pot fi încărcate."); }
-    const roles = (account.roles || "").split(",");
-    setAccessLevel(roles.includes("admin") ? "admin" : roles.includes("staff") ? "staff" : "user");
-    setSelected(account);
+  const begin = (next: typeof mode, rankId: StaffRankId = "vibe_dev") => {
+    ++sequence.current;
+    setMode(next);
+    setSelected(null);
+    setTargetCanManage(true);
+    setProfile(null);
+    setPanel("permissions");
+    setDialogError("");
+    setScopeQuery("");
+    setReady(next === "create");
+    setRankChosen(true);
+    setDraft({
+      ...emptyAssignment(rankId),
+      permissions: [
+        ...(profiles.find((p) => p.id === rankId)?.permissions || []),
+      ],
+    });
+    setIdentity({
+      email: "",
+      username: "",
+      displayName: "",
+      temporaryPassword: "",
+    });
+    setPassword("");
+    setSecurityAction(null);
+    setSecurityConfirmed(false);
   };
-
-  const saveAccess = async () => {
-    if (!selected || !isSuperAdmin || !linksReady) return;
+  const openMember = async (member: AgencyMember, forcedRank?: StaffRankId) => {
+    const current = ++sequence.current;
+    setSelected(member);
+    setRankChosen(!!forcedRank || !!rankOf(member) || !isMember(member));
+    setTargetCanManage(false);
+    setMode("manage");
+    setReady(false);
+    setDialogError("");
+    setPanel("permissions");
+    setScopeQuery("");
+    setPassword("");
+    setSecurityAction(null);
+    setSecurityConfirmed(false);
+    try {
+      const data = await staffAccessApi.detail(member.id);
+      if (current !== sequence.current) return;
+      const rankId =
+        forcedRank || rankOf(member) || data.assignment?.rankId || null;
+      const permissions = forcedRank
+        ? [...(profiles.find((p) => p.id === rankId)?.permissions || [])]
+        : member.platform_role
+          ? [...STAFF_PERMISSION_KEYS]
+          : data.assignment?.permissions ||
+            data.capabilities
+              .filter(
+                (c) =>
+                  !c.organization_id &&
+                  STAFF_PERMISSION_KEYS.includes(c.capability),
+              )
+              .map((c) => c.capability);
+      setDraft({
+        rankId,
+        permissions,
+        projectIds:
+          permissions.includes("projects.read") ||
+          permissions.includes("maintenance.read")
+            ? data.projects.map((p) => p.id)
+            : [],
+        subscriptionIds: permissions.includes("maintenance.read")
+          ? data.subscriptions.map((p) => p.id)
+          : [],
+        aiProjectIds: permissions.includes("ai_projects.read")
+          ? data.aiProjects.map((p) => p.id)
+          : [],
+        clientIds: data.clients.map((p) => p.id),
+        revision: data.assignment?.revision || 0,
+        expiresAt: data.assignment?.expiresAt || null,
+        reason: "",
+        confirmed: false,
+      });
+      setTargetCanManage(data.canManage);
+      setReady(true);
+    } catch (e) {
+      if (current === sequence.current) setDialogError((e as Error).message);
+    }
+  };
+  const keyFor = async (body: unknown) => {
+    const digest = await crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(JSON.stringify(body)),
+    );
+    const json = Array.from(new Uint8Array(digest), (n) =>
+      n.toString(16).padStart(2, "0"),
+    ).join("");
+    if (request.current.body !== json)
+      request.current = { body: json, key: crypto.randomUUID() };
+    return request.current.key;
+  };
+  const save = async () => {
+    if (!config?.mfaSatisfied || saving || !ready) return;
     setSaving(true);
+    setDialogError("");
     try {
-      await workspaceApi.write(`account-access/${selected.id}`, {client_ids:clientIds,access_level:accessLevel}, "PUT");
-      if (accessLevel === "staff" || accessLevel === "admin") await adminOperationsApi.setStaffProjects(selected.id, projectIds);
-      toast.success("Accesul și asocierile client au fost actualizate și auditate.");
+      if (mode === "profile" && profile)
+        await staffAccessApi.profile(
+          profile.id,
+          {
+            permissions: draft.permissions,
+            revision: profile.revision,
+            confirmed: true,
+          },
+          await keyFor({
+            permissions: draft.permissions,
+            revision: profile.revision,
+          }),
+        );
+      else if (mode === "create") {
+        const body = {
+          ...identity,
+          accessLevel: full ? "admin" : "staff",
+          staffAssignment: draft,
+        };
+        await cfAuth.request("/api/admin/users", {
+          method: "POST",
+          headers: { "Idempotency-Key": await keyFor(body) },
+          body: JSON.stringify(body),
+        });
+        setIdentity({
+          email: "",
+          username: "",
+          displayName: "",
+          temporaryPassword: "",
+        });
+      } else if (selected)
+        await staffAccessApi.save(selected.id, draft, await keyFor(draft));
+      setMode(null);
       setSelected(null);
-      await loadAccounts();
-    } catch (cause) {
-      toast.error(cause instanceof Error ? cause.message : "Nivelul de acces nu a putut fi actualizat.");
+      setMessage(
+        mode === "profile"
+          ? "Profilul inițial al rangului a fost salvat. Membrii existenți păstrează drepturile lor până la o modificare explicită."
+          : "Membrul și accesurile au fost salvate. Sesiunile sale anterioare au fost închise.",
+      );
+      await load();
+    } catch (e) {
+      setDialogError((e as Error).message);
     } finally {
       setSaving(false);
     }
   };
-
-  const createAccount = async () => {
+  const security = async () => {
+    if (!selected || !securityAction || !securityConfirmed) return;
     setSaving(true);
+    setDialogError("");
     try {
-      await internApi.createAccount(create);
-      toast.success("Contul a fost creat cu parolă temporară.");
-      setCreateOpen(false);
-      setCreate({ email: "", username: "", displayName: "", temporaryPassword: "", accessLevel: "user" });
-      await loadAccounts();
-    } catch (cause) { toast.error(cause instanceof Error ? cause.message : "Contul nu a putut fi creat."); }
-    finally { setSaving(false); }
-  };
-
-  const accountAction = async (action: "status" | "password" | "sessions") => {
-    if (!selected) return;
-    setSaving(true);
-    try {
-      if (action === "status") await internApi.setAccountEnabled(selected.id, Boolean(selected.disabled_at));
-      if (action === "password") {
-        if (temporaryPassword.length < 10) throw new Error("Parola temporară trebuie să aibă minimum 10 caractere.");
-        await internApi.setTemporaryPassword(selected.id, temporaryPassword);
-        setTemporaryPassword("");
-      }
-      if (action === "sessions") await internApi.revokeAccountSessions(selected.id);
-      toast.success(action === "status" ? "Starea contului a fost actualizată." : action === "password" ? "Parola temporară a fost setată, iar sesiunile au fost revocate." : "Sesiunile active au fost revocate.");
-      await loadAccounts();
+      if (securityAction === "password")
+        await internApi.setTemporaryPassword(selected.id, password);
+      if (securityAction === "sessions")
+        await internApi.revokeAccountSessions(selected.id);
+      if (securityAction === "status")
+        await internApi.setAccountEnabled(selected.id, !!selected.disabled_at);
+      setPassword("");
+      setMode(null);
       setSelected(null);
-    } catch (cause) { toast.error(cause instanceof Error ? cause.message : "Acțiunea nu a reușit."); }
-    finally { setSaving(false); }
+      setMessage("Operațiunea de securitate a fost înregistrată.");
+      await load();
+    } catch (e) {
+      setDialogError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
   };
-
-  const filtered = useMemo(() => {
-    const value = query.trim().toLocaleLowerCase("ro");
-    if (!value) return accounts;
-    return accounts.filter((account) => [account.display_name, account.company_name, account.email, account.roles, account.entity_type, account.cui]
-      .some((field) => String(field || "").toLocaleLowerCase("ro").includes(value)));
-  }, [accounts, query]);
-
+  const rows = useMemo(() => {
+    const q = fold(query);
+    return (config?.data || []).filter(
+      (m) =>
+        (showAccounts || isMember(m)) &&
+        (!rankFilter || rankOf(m) === rankFilter) &&
+        (!q ||
+          fold(
+            `${m.display_name} ${m.email || ""} ${m.username || ""} ${staffRankLabel(rankOf(m))}`,
+          ).includes(q)),
+    );
+  }, [config, query, rankFilter, showAccounts]);
+  const permissionIssues = staffPermissionIssues(draft.permissions);
+  const filtered = <T extends { id: string; name: string }>(items: T[]) =>
+    items.filter((p) => !scopeQuery || fold(p.name).includes(fold(scopeQuery)));
+  const accountChoices = (config?.data || []).filter(
+    (m) =>
+      !m.disabled_at &&
+      m.id !== user?.id &&
+      m.platform_role !== "platform_owner",
+  );
+  const rankOptions = profiles.filter(
+    (p) =>
+      config?.platformRole === "platform_owner" ||
+      !["platform_owner", "superadmin"].includes(p.id),
+  );
   return (
-    <div className="space-y-4 text-slate-100">
-      <header className="rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.14] via-[#11182d] to-cyan-400/[0.06] p-5 sm:p-6">
-        <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-violet-200/70">Organizație și acces</p>
-        <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div><h1 className="font-display text-2xl font-bold text-white">Utilizatori și STAFF</h1><p className="mt-1 max-w-2xl text-sm text-slate-400">Conturi, roluri, stare, sesiuni și proiecte alocate. Toate acțiunile privilegiate sunt validate și auditate în Worker.</p></div>
-          <div className="flex flex-wrap gap-2"><span className="inline-flex items-center gap-2 self-start rounded-full border border-emerald-300/15 bg-emerald-400/10 px-3 py-1.5 text-xs text-emerald-300"><ShieldCheck className="size-3.5" /> RBAC server-side activ</span>{isSuperAdmin && <Button type="button" size="sm" variant="outline" onClick={() => setOperatorOpen(true)} className="gap-2 border-cyan-300/20 bg-cyan-400/5 text-cyan-200 hover:bg-cyan-400/10"><Bot className="size-4" /> Agent Codex</Button>}{isSuperAdmin && <Button type="button" size="sm" onClick={() => setCreateOpen(true)} className="gap-2 bg-violet-600 hover:bg-violet-500"><UserPlus className="size-4" /> Cont nou</Button>}</div>
+    <section className="agency-team" aria-label="Membrii Agenției AVYRON">
+      <header className="agency-team-heading">
+        <div>
+          <p className="agency-kicker">AVYRON OS · ORGANIZAȚIE</p>
+          <h1>Membrii Agenției AVYRON</h1>
+          <p className="agency-muted">
+            O echipă, roluri clare. Ranguri, responsabilități și accesuri
+            într-un singur loc.
+          </p>
         </div>
+        {config?.canManage && (
+          <div className="agency-actions">
+            <button className="agency-button" onClick={() => begin("assign")}>
+              <Users size={16} />
+              Alocă membru existent
+            </button>
+            <button
+              className="agency-button agency-primary"
+              onClick={() => begin("create")}
+            >
+              <UserPlus size={16} />
+              Cont nou
+            </button>
+          </div>
+        )}
       </header>
-
-      <div className="grid gap-3 md:grid-cols-4">
-        {[
-          { label: "Conturi", value: accounts.length, icon: Users },
-          { label: "Administratori", value: accounts.filter((item) => (item.roles || "").split(",").includes("admin")).length, icon: LockKeyhole },
-          { label: "Politică acces", value: "Privilegii minime", icon: KeyRound },
-          { label: "Acces operator Codex", value: codexOperator?.synchronized ? "Sincronizat" : codexOperator?.exists ? "Necesită sincronizare" : "Neconfigurat", icon: Bot },
-        ].map((item) => <div key={item.label} className="rounded-2xl border border-white/[0.08] bg-[#10162a]/90 p-4"><div className="flex items-start justify-between"><div><p className="text-xs text-slate-500">{item.label}</p><p className="mt-2 font-display text-xl font-semibold text-white">{item.value}</p></div><span className="grid size-9 place-items-center rounded-xl bg-violet-400/10 text-violet-300"><item.icon className="size-4" /></span></div></div>)}
-      </div>
-
-      <section className="rounded-2xl border border-white/[0.08] bg-[#10162a]/90 p-4 sm:p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div><h2 className="font-display text-lg font-semibold text-white">Administrare conturi</h2><p className="text-xs text-slate-500">Administratorii văd tipul și datele contului; STAFF primește numai datele operaționale mascate.</p></div>
-          <label className="relative block sm:w-72"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-600" /><span className="sr-only">Caută membru</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Caută membru sau rol…" className="w-full rounded-xl border border-white/[0.08] bg-black/20 py-2.5 pl-9 pr-3 text-sm text-slate-200 outline-none placeholder:text-slate-600 focus:border-violet-400/40" /></label>
-        </div>
-        <div className="mt-4 space-y-2">
-          {loading && <div className="h-20 animate-pulse rounded-xl bg-white/[0.04]" />}
-          {error && <div className="rounded-xl border border-rose-400/20 bg-rose-400/10 p-4 text-sm text-rose-200">{error}</div>}
-          {!loading && !error && filtered.length === 0 && <div className="rounded-xl border border-dashed border-white/10 p-6 text-center text-sm text-slate-500">Nu există membri care corespund căutării.</div>}
-          {filtered.map((account) => {
-            const roles = (account.roles || "user").split(",").filter(Boolean);
-            const primaryRole = roles.includes("admin") ? "admin" : roles.includes("staff") ? "staff" : "user";
-            const name = account.display_name || account.company_name || account.email;
-            return <div key={account.id} className="flex flex-col gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 sm:flex-row sm:items-center">
-              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-violet-500/25 to-cyan-400/10 font-display text-sm font-bold text-violet-200">{name.slice(0, 2).toUpperCase()}</span>
-              <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-slate-200">{name}</p><p className="truncate text-xs text-slate-600">{account.email}{account.username ? ` · @${account.username}` : ""}</p>{isAdmin && account.entity_type && <p className="mt-1 text-xs text-cyan-200/80">{accountTypeLabels[account.entity_type] || account.entity_type}{account.company_name ? ` · ${account.company_name}` : ""}{account.cui ? ` · CUI ${account.cui}` : ""}</p>}<p className="mt-1 text-[10px] text-slate-600">{account.must_change_password ? "Parolă temporară" : "Parolă personală"} · {account.active_sessions || 0} sesiuni active</p></div>
-              <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-violet-300/10 bg-violet-400/[0.08] px-2.5 py-1 text-[11px] text-violet-200">{roleLabels[primaryRole]}</span><span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/[0.08] px-2.5 py-1 text-[11px] text-emerald-300"><UserCheck className="size-3" /> {account.disabled_at ? "Dezactivat" : "Activ"}</span>{(primaryRole === "staff" || primaryRole === "admin") && !account.disabled_at && <a href={`/profil?tab=intern&dm=${encodeURIComponent(account.id)}`} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-cyan-300/20 bg-cyan-400/5 px-3 text-xs text-cyan-200 hover:bg-cyan-400/10"><MessageSquare className="size-3.5"/> Mesaj direct</a>}{isSuperAdmin && <Button type="button" size="sm" variant="outline" className="h-8 gap-1.5 border-white/10 bg-white/[0.03] text-xs text-slate-300 hover:bg-violet-400/10 hover:text-white" onClick={() => openAccess(account)}><Settings2 className="size-3.5" /> Gestionează</Button>}</div>
-            </div>;
-          })}
-        </div>
-        {!isSuperAdmin && <p className="mt-4 text-[11px] leading-relaxed text-slate-600">Modificarea rolurilor și privilegiilor este disponibilă exclusiv Super Adminului cu verificare și audit.</p>}
-      </section>
-
-      <Dialog open={selected !== null} onOpenChange={(open) => { if (!open && !saving) setSelected(null); }}>
-        <DialogContent className="border-white/10 bg-[#10162a] text-slate-100 sm:max-w-md">
+      {error && (
+        <p className="agency-notice" role="alert">
+          {error} <button onClick={() => void load()}>Reîncearcă</button>
+        </p>
+      )}
+      {message && (
+        <p className="agency-success" role="status">
+          {message}
+        </p>
+      )}
+      {loading && !config && (
+        <p role="status" className="agency-panel">
+          Se încarcă echipa și accesurile…
+        </p>
+      )}
+      {config && (
+        <>
+          <div className="agency-team-stats">
+            <span>
+              <Users size={15} />
+              {members.length} membri
+            </span>
+            <span>
+              <BadgeCheck size={15} />
+              {profiles.length} ranguri
+            </span>
+            <span>
+              <Shield size={15} />
+              Drepturi verificate la fiecare operațiune
+            </span>
+          </div>
+          <div className="agency-rank-grid" aria-label="Ierarhia agenției">
+            {profiles.map((rank) => (
+              <article
+                key={rank.id}
+                className={`agency-rank ${rankFilter === rank.id ? "agency-rank-selected" : ""}`}
+              >
+                <button
+                  className="agency-rank-heading"
+                  aria-pressed={rankFilter === rank.id}
+                  onClick={() =>
+                    setRankFilter((v) => (v === rank.id ? "" : rank.id))
+                  }
+                >
+                  <span className="agency-rank-symbol">
+                    {rank.level >= 90 ? (
+                      <Crown size={18} />
+                    ) : (
+                      <Shield size={18} />
+                    )}
+                  </span>
+                  <span>
+                    <strong>{rank.label}</strong>
+                    <small>
+                      {members.filter((m) => rankOf(m) === rank.id).length}{" "}
+                      membri
+                    </small>
+                  </span>
+                </button>
+                <p>{rank.description}</p>
+                {config.canManage && (
+                  <div className="agency-rank-actions">
+                    <button
+                      aria-label={`Alocă membru · ${rank.label}`}
+                      disabled={
+                        rank.level >= 90 &&
+                        config.platformRole !== "platform_owner"
+                      }
+                      onClick={() => begin("assign", rank.id)}
+                    >
+                      Alocă
+                    </button>
+                    <button
+                      aria-label={`Cont nou · ${rank.label}`}
+                      disabled={
+                        rank.level >= 90 &&
+                        config.platformRole !== "platform_owner"
+                      }
+                      onClick={() => begin("create", rank.id)}
+                    >
+                      <Plus size={12} />
+                      Cont nou
+                    </button>
+                    {rank.level < 90 && (
+                      <button
+                        aria-label={`Configurează drepturile · ${rank.label}`}
+                        onClick={() => {
+                          begin("profile", rank.id);
+                          setProfile(rank);
+                          setReady(true);
+                        }}
+                      >
+                        Drepturi
+                      </button>
+                    )}
+                  </div>
+                )}
+              </article>
+            ))}
+          </div>
+          <section className="agency-panel">
+            <div className="agency-list-tools">
+              <h2>
+                {rankFilter ? staffRankLabel(rankFilter) : "Echipa agenției"}{" "}
+                <span>{rows.length}</span>
+              </h2>
+              <label className="agency-search">
+                <Search size={16} />
+                <input
+                  aria-label="Caută membru"
+                  placeholder="Nume, rang sau cont…"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+              </label>
+              {rankFilter && (
+                <button
+                  className="agency-button"
+                  onClick={() => setRankFilter("")}
+                >
+                  <X size={14} />
+                  Toate rangurile
+                </button>
+              )}
+            </div>
+            {config.canManage && (
+              <label className="agency-check agency-small">
+                <input
+                  type="checkbox"
+                  checked={showAccounts}
+                  onChange={(e) => setShowAccounts(e.target.checked)}
+                />
+                Include conturile fără rang în agenție
+              </label>
+            )}
+            <div className="agency-member-list">
+              {rows.map((member) => (
+                <article key={member.id} className="agency-member">
+                  <span className="agency-member-avatar">
+                    {member.display_name.slice(0, 2).toUpperCase()}
+                  </span>
+                  <div className="agency-member-name">
+                    <h3>{member.display_name}</h3>
+                    {member.email && (
+                      <p>
+                        {member.email}
+                        {member.username ? ` · @${member.username}` : ""}
+                      </p>
+                    )}
+                    <span className="agency-rank-badge">
+                      {rankOf(member)
+                        ? staffRankLabel(rankOf(member))
+                        : "Rang nealocat"}
+                    </span>
+                    {!!member.expires_at && (
+                      <small>
+                        Acces{" "}
+                        {member.expires_at <= Date.now()
+                          ? "expirat la"
+                          : "până la"}{" "}
+                        {new Date(member.expires_at).toLocaleDateString(
+                          "ro-RO",
+                        )}
+                      </small>
+                    )}
+                  </div>
+                  <span
+                    className={`agency-member-state ${member.disabled_at ? "agency-state-off" : ""}`}
+                  >
+                    {member.disabled_at ? "Dezactivat" : "Activ"}
+                  </span>
+                  <div className="agency-actions">
+                    {isMember(member) &&
+                      !member.disabled_at &&
+                      member.id !== user?.id && (
+                        <a
+                          className="agency-button"
+                          href={`/profil?tab=intern&dm=${encodeURIComponent(member.id)}`}
+                        >
+                          <MessageCircle size={15} />
+                          Mesaj
+                        </a>
+                      )}
+                    {config.canManage && (
+                      <button
+                        className="agency-button"
+                        aria-label={`Gestionează · ${member.display_name}`}
+                        onClick={() => void openMember(member)}
+                      >
+                        <Settings2 size={15} />
+                        Gestionează
+                      </button>
+                    )}
+                  </div>
+                </article>
+              ))}
+              {!rows.length && (
+                <p className="agency-empty">
+                  Nu există membri pentru selecția curentă. Schimbă filtrul sau
+                  alocă un cont existent.
+                </p>
+              )}
+            </div>
+          </section>
+          {config.canManage && (
+            <details className="agency-panel">
+              <summary>Conturi operaționale și automatizări</summary>
+              <p className="agency-muted">
+                Conturile agenților păstrează politica lor dedicată, distinctă
+                de rangurile membrilor umani.
+              </p>
+              <Suspense fallback={<p>Se încarcă…</p>}>
+                <CodexOperatorControl />
+              </Suspense>
+            </details>
+          )}
+        </>
+      )}
+      <Dialog
+        open={!!mode}
+        onOpenChange={(open) => {
+          if (!open && !saving) {
+            ++sequence.current;
+            setMode(null);
+            setSelected(null);
+            setPassword("");
+            setIdentity({
+              email: "",
+              username: "",
+              displayName: "",
+              temporaryPassword: "",
+            });
+          }
+        }}
+      >
+        <DialogContent className="agency-dialog dark sm:max-w-4xl">
           <DialogHeader>
-            <DialogTitle className="font-display text-white">Gestionează accesul</DialogTitle>
-            <DialogDescription className="text-slate-400">
-              {selected?.display_name || selected?.company_name || selected?.email}. Modificarea este verificată server-side și înregistrată în audit.
+            <DialogTitle>
+              {mode === "create"
+                ? "Cont nou în agenție"
+                : mode === "assign"
+                  ? "Alocă un membru existent"
+                  : mode === "profile"
+                    ? `Drepturi inițiale · ${profile?.label || ""}`
+                    : `Gestionează · ${selected?.display_name || "membru"}`}
+            </DialogTitle>
+            <DialogDescription className="text-slate-300">
+              {mode === "profile"
+                ? "Definește setul inițial pentru viitoarele alocări. Membrii existenți se modifică explicit, din fișa lor."
+                : "Selectează rangul, verifică drepturile și alocările, apoi confirmă salvarea."}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 py-2">
-            <Label htmlFor="team-access-level" className="text-slate-300">Nivel de acces</Label>
-            <select id="team-access-level" value={accessLevel} onChange={(event) => setAccessLevel(event.target.value as "user" | "staff" | "admin")} className="w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-violet-400/50">
-              <option value="user">Client — fără acces operațional implicit</option>
-              <option value="staff">Membru staff — acces operațional limitat</option>
-              <option value="admin">Administrator — acces operațional extins</option>
-            </select>
-            <p className="text-xs leading-relaxed text-amber-200/70">Identitățile protejate ale platformei nu pot fi retrogradate. Super Admin rămâne o atribuire separată, controlată de infrastructură.</p>
+          <div className="agency-modal-body">
+            {config?.canManage &&
+              config.mfaSatisfied &&
+              !config.mfaVerified && (
+                <p className="agency-notice" role="status">
+                  Politica platformei permite excepția MFA de rollout. Sesiunea
+                  curentă nu este verificată în doi pași; alocările rămân
+                  confirmate și auditate.
+                </p>
+              )}
+            {config?.canManage && !config.mfaSatisfied && (
+              <p role="alert" className="agency-notice">
+                Confirmă autentificarea în doi pași din Setări înainte de
+                modificarea accesului.
+              </p>
+            )}
+            {mode === "assign" ? (
+              <div className="agency-form-grid">
+                <label className="agency-label">
+                  Cont existent
+                  <select
+                    className="agency-input"
+                    aria-label="Membru de alocat"
+                    defaultValue=""
+                    onChange={(e) => {
+                      const member = accountChoices.find(
+                        (m) => m.id === e.target.value,
+                      );
+                      if (member)
+                        void openMember(member, draft.rankId || "vibe_dev");
+                    }}
+                  >
+                    <option value="">Selectează un cont</option>
+                    {accountChoices.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.display_name} · {m.email}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="agency-label">
+                  Rang pentru alocare
+                  <select
+                    className="agency-input"
+                    value={draft.rankId || ""}
+                    onChange={(e) => chooseRank(e.target.value as StaffRankId)}
+                  >
+                    {rankOptions.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            ) : (
+              <>
+                {mode === "create" && (
+                  <fieldset className="agency-form-grid">
+                    <legend className="agency-form-title">
+                      Identitatea contului
+                    </legend>
+                    <label className="agency-label">
+                      Nume afișat
+                      <input
+                        className="agency-input"
+                        autoComplete="name"
+                        value={identity.displayName}
+                        onChange={(e) =>
+                          setIdentity((v) => ({
+                            ...v,
+                            displayName: e.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label className="agency-label">
+                      E-mail
+                      <input
+                        type="email"
+                        autoComplete="email"
+                        className="agency-input"
+                        value={identity.email}
+                        onChange={(e) =>
+                          setIdentity((v) => ({ ...v, email: e.target.value }))
+                        }
+                      />
+                    </label>
+                    <label className="agency-label">
+                      Username
+                      <input
+                        className="agency-input"
+                        autoComplete="off"
+                        aria-label="Username"
+                        value={identity.username}
+                        onChange={(e) =>
+                          setIdentity((v) => ({
+                            ...v,
+                            username: e.target.value,
+                          }))
+                        }
+                      />
+                      <small>
+                        3–40 caractere: litere mici, cifre, punct, minus sau
+                        underscore.
+                      </small>
+                    </label>
+                    <label className="agency-label">
+                      Parolă temporară
+                      <PasswordInput
+                        className="agency-input"
+                        autoComplete="new-password"
+                        aria-label="Parolă temporară"
+                        value={identity.temporaryPassword}
+                        onChange={(e) =>
+                          setIdentity((v) => ({
+                            ...v,
+                            temporaryPassword: e.target.value,
+                          }))
+                        }
+                      />
+                      <small>
+                        Minimum 10 caractere, o literă mare și o cifră. Se
+                        schimbă la prima autentificare.
+                      </small>
+                    </label>
+                  </fieldset>
+                )}
+                {mode === "manage" && (
+                  <nav
+                    className="agency-manage-tabs"
+                    aria-label="Gestionare membru"
+                  >
+                    {(
+                      [
+                        ["permissions", "Rang și drepturi"],
+                        ["projects", "Proiecte și mentenanță"],
+                        ["clients", "Clienți"],
+                        ["security", "Securitate"],
+                      ] as const
+                    ).map(([id, label]) => (
+                      <button
+                        key={id}
+                        aria-current={panel === id ? "page" : undefined}
+                        onClick={() => {
+                          setPanel(id);
+                          setSecurityConfirmed(false);
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </nav>
+                )}
+                {!ready && mode === "manage" && !dialogError && (
+                  <p role="status" className="agency-notice">
+                    Se verifică accesurile actuale…
+                  </p>
+                )}
+                {panel === "permissions" && (
+                  <>
+                    <div className="agency-form-grid">
+                      <label className="agency-label">
+                        Rang în agenție
+                        <select
+                          className="agency-input"
+                          aria-label="Rang în agenție"
+                          value={rankChosen ? draft.rankId || "" : "legacy"}
+                          disabled={
+                            mode === "profile" ||
+                            protectedTarget ||
+                            saving ||
+                            !ready
+                          }
+                          onChange={(e) =>
+                            chooseRank(
+                              (e.target.value || null) as StaffRankId | null,
+                            )
+                          }
+                        >
+                          {!rankChosen && (
+                            <option value="legacy" disabled>
+                              Rang neconfigurat · alege un profil
+                            </option>
+                          )}
+                          {mode !== "create" && (
+                            <option value="">Fără rang · cont client</option>
+                          )}
+                          {profiles
+                            .filter(
+                              (p) =>
+                                config?.platformRole === "platform_owner" ||
+                                p.level < 90 ||
+                                p.id === draft.rankId,
+                            )
+                            .map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {p.label}
+                              </option>
+                            ))}
+                        </select>
+                      </label>
+                      <div className="agency-rank-summary">
+                        <strong>
+                          {draft.permissions.length} drepturi selectate
+                        </strong>
+                        <p>
+                          {profiles.find((p) => p.id === draft.rankId)
+                            ?.description ||
+                            "Contul nu primește acces operațional implicit."}
+                        </p>
+                        {mode === "manage" && !full && draft.rankId && (
+                          <button onClick={() => chooseRank(draft.rankId)}>
+                            Reia drepturile inițiale ale rangului
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {protectedTarget && (
+                      <p className="agency-notice">
+                        Identitatea Owner și propriul rang sunt protejate.
+                        Accesul afișat poate fi consultat; modificarea se face
+                        printr-un alt Owner autorizat, în limitele politicii
+                        platformei.
+                      </p>
+                    )}
+                    {full && (
+                      <p className="agency-notice">
+                        Acces total: proiecte, financiar, marketing, Documente
+                        SC și backupurile firmei. Numai Owner Platform poate
+                        atribui rangurile platformei. Identitățile Owner rămân
+                        protejate de retrogradare în acest flux.
+                      </p>
+                    )}
+                    <StaffPermissionMatrix
+                      value={draft.permissions}
+                      onChange={setPermissions}
+                      disabled={full || protectedTarget || saving || !ready}
+                    />
+                  </>
+                )}
+                {(panel === "projects" || mode === "create") && (
+                  <details className="agency-panel" open={panel === "projects"}>
+                    <summary>
+                      Alocări pe proiecte, mentenanță și marketing
+                    </summary>
+                    <p className="agency-muted">
+                      Dreptul de lucru și aria de acces sunt separate. „Toate
+                      proiectele” extinde aria; altfel se respectă alocările și
+                      apartenențele existente.
+                    </p>
+                    <label className="agency-label">
+                      Caută în alocări
+                      <input
+                        type="search"
+                        className="agency-input"
+                        value={scopeQuery}
+                        onChange={(e) => setScopeQuery(e.target.value)}
+                      />
+                    </label>
+                    <div className="agency-form-grid">
+                      <StaffScopeList
+                        title="Proiecte"
+                        items={filtered(config?.projects || [])}
+                        value={draft.projectIds}
+                        disabled={
+                          !ready ||
+                          protectedTarget ||
+                          saving ||
+                          (!draft.permissions.includes("projects.read") &&
+                            !draft.permissions.includes("maintenance.read"))
+                        }
+                        onChange={(projectIds) =>
+                          setDraft((d) => ({
+                            ...d,
+                            projectIds,
+                            confirmed: false,
+                          }))
+                        }
+                      />
+                      <StaffScopeList
+                        title="Abonamente de mentenanță"
+                        items={filtered(
+                          (config?.subscriptions || []).map((s) => ({
+                            ...s,
+                            name: `${s.project_name} · ${s.name}`,
+                          })),
+                        )}
+                        value={draft.subscriptionIds}
+                        disabled={
+                          !ready ||
+                          protectedTarget ||
+                          saving ||
+                          !draft.permissions.includes("maintenance.read")
+                        }
+                        onChange={(subscriptionIds) =>
+                          setDraft((d) => ({
+                            ...d,
+                            subscriptionIds,
+                            confirmed: false,
+                          }))
+                        }
+                      />
+                      <StaffScopeList
+                        title="Proiecte AI și Social Media"
+                        items={filtered(config?.aiProjects || [])}
+                        value={draft.aiProjectIds}
+                        disabled={
+                          !ready ||
+                          protectedTarget ||
+                          saving ||
+                          !draft.permissions.includes("ai_projects.read")
+                        }
+                        onChange={(aiProjectIds) =>
+                          setDraft((d) => ({
+                            ...d,
+                            aiProjectIds,
+                            confirmed: false,
+                          }))
+                        }
+                      />
+                    </div>
+                  </details>
+                )}
+                {panel === "clients" && (
+                  <>
+                    <p className="agency-notice">
+                      Asocierile de beneficiar pot permite acces la datele și
+                      proiectele clientului, conform politicilor resurselor.
+                      Selectează numai relațiile de lucru autorizate.
+                    </p>
+                    <StaffScopeList
+                      title="Clienți autorizați"
+                      items={config?.clients || []}
+                      value={draft.clientIds}
+                      disabled={!ready || protectedTarget || saving}
+                      onChange={(clientIds) =>
+                        setDraft((d) => ({ ...d, clientIds, confirmed: false }))
+                      }
+                    />
+                  </>
+                )}
+                {panel === "security" && (
+                  <section className="agency-security">
+                    <h3>Securitatea contului</h3>
+                    <p className="agency-muted">
+                      Aceste operațiuni se aplică imediat, separat de salvarea
+                      rangului.
+                    </p>
+                    <label className="agency-label">
+                      Operațiune
+                      <select
+                        className="agency-input"
+                        value={securityAction || ""}
+                        onChange={(e) => {
+                          setSecurityAction(
+                            (e.target.value || null) as typeof securityAction,
+                          );
+                          setSecurityConfirmed(false);
+                        }}
+                      >
+                        <option value="">Selectează</option>
+                        <option value="sessions">
+                          Închide sesiunile active
+                        </option>
+                        <option value="password">
+                          Setează o parolă temporară
+                        </option>
+                        <option value="status">
+                          {selected?.disabled_at
+                            ? "Reactivează contul"
+                            : "Dezactivează contul"}
+                        </option>
+                      </select>
+                    </label>
+                    {securityAction === "password" && (
+                      <label className="agency-label">
+                        Parolă temporară nouă
+                        <PasswordInput
+                          className="agency-input"
+                          autoComplete="new-password"
+                          value={password}
+                          onChange={(e) => {
+                            setPassword(e.target.value);
+                            setSecurityConfirmed(false);
+                          }}
+                        />
+                      </label>
+                    )}
+                    {securityAction && (
+                      <label className="agency-check">
+                        <input
+                          type="checkbox"
+                          checked={securityConfirmed}
+                          onChange={(e) =>
+                            setSecurityConfirmed(e.target.checked)
+                          }
+                        />
+                        Confirm operațiunea asupra contului{" "}
+                        {selected?.display_name}.
+                      </label>
+                    )}
+                    <button
+                      className="agency-button"
+                      disabled={
+                        saving ||
+                        !config?.mfaSatisfied ||
+                        !ready ||
+                        !targetCanManage ||
+                        !securityAction ||
+                        !securityConfirmed ||
+                        (securityAction === "password" &&
+                          (password.length < 10 ||
+                            !/[A-Z]/.test(password) ||
+                            !/[0-9]/.test(password)))
+                      }
+                      onClick={() => void security()}
+                    >
+                      Execută operațiunea confirmată
+                    </button>
+                  </section>
+                )}
+                {panel !== "security" && (
+                  <div className="agency-save-review">
+                    {mode !== "profile" && (
+                      <div className="agency-form-grid">
+                        <label className="agency-label">
+                          Motivul alocării sau modificării
+                          <textarea
+                            className="agency-input"
+                            maxLength={600}
+                            value={draft.reason}
+                            onChange={(e) =>
+                              setDraft((d) => ({
+                                ...d,
+                                reason: e.target.value,
+                                confirmed: false,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label className="agency-label">
+                          Acces valabil până la (opțional)
+                          <input
+                            type="datetime-local"
+                            className="agency-input"
+                            disabled={full || protectedTarget}
+                            value={
+                              draft.expiresAt
+                                ? new Date(
+                                    draft.expiresAt -
+                                      new Date(
+                                        draft.expiresAt,
+                                      ).getTimezoneOffset() *
+                                        60000,
+                                  )
+                                    .toISOString()
+                                    .slice(0, 16)
+                                : ""
+                            }
+                            onChange={(e) =>
+                              setDraft((d) => ({
+                                ...d,
+                                expiresAt: e.target.value
+                                  ? Date.parse(e.target.value)
+                                  : null,
+                                confirmed: false,
+                              }))
+                            }
+                          />
+                          <small>
+                            Fără dată: acces până la revocare explicită.
+                          </small>
+                        </label>
+                      </div>
+                    )}
+                    <label className="agency-check">
+                      <input
+                        type="checkbox"
+                        checked={draft.confirmed}
+                        disabled={!ready || protectedTarget || saving}
+                        onChange={(e) =>
+                          setDraft((d) => ({
+                            ...d,
+                            confirmed: e.target.checked,
+                          }))
+                        }
+                      />
+                      {mode === "profile"
+                        ? "Confirm setul inițial de drepturi al rangului."
+                        : "Am verificat rangul, drepturile, alocările și efectul asupra sesiunilor."}
+                    </label>
+                  </div>
+                )}
+              </>
+            )}
+            {dialogError && (
+              <p className="agency-notice" role="alert">
+                {dialogError}
+                {selected && !ready && (
+                  <button onClick={() => void openMember(selected)}>
+                    Reîncearcă încărcarea accesurilor
+                  </button>
+                )}
+              </p>
+            )}
           </div>
-          <div className="space-y-2 rounded-xl border border-white/[0.07] p-3">
-            <Label htmlFor="temporary-password" className="text-slate-300">Parolă temporară nouă</Label>
-            <PasswordInput id="temporary-password" autoComplete="new-password" value={temporaryPassword} onChange={(event) => setTemporaryPassword(event.target.value)} placeholder="Minimum 10 caractere, literă mare și cifră" className="w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm outline-none" />
-            <div className="grid gap-2 sm:grid-cols-3"><Button type="button" size="sm" variant="outline" onClick={() => void accountAction("password")} disabled={saving || temporaryPassword.length < 10} className="gap-1.5"><RotateCcw className="size-3.5" /> Setează parola</Button><Button type="button" size="sm" variant="outline" onClick={() => void accountAction("sessions")} disabled={saving} className="gap-1.5"><LogOut className="size-3.5" /> Revocă sesiuni</Button><Button type="button" size="sm" variant="outline" onClick={() => void accountAction("status")} disabled={saving} className="gap-1.5"><Power className="size-3.5" /> {selected?.disabled_at ? "Reactivează" : "Dezactivează"}</Button></div>
-          </div>
-          <fieldset disabled={!linksReady || saving} className="space-y-2 max-h-48 overflow-y-auto">
-            <legend className="text-sm font-medium">Acces la facturarea și suportul clienților</legend>
-            {!linksReady && <p className="text-xs text-muted-foreground">Asocierile se încarcă sau nu sunt disponibile.</p>}
-            {clients.map(client=><label key={client.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={clientIds.includes(client.id)} onChange={e=>setClientIds(current=>e.target.checked?[...current,client.id]:current.filter(id=>id!==client.id))}/>{client.company_name}</label>)}
-          </fieldset>
-          {(accessLevel === "staff" || accessLevel === "admin") && <fieldset disabled={!linksReady || saving} className="max-h-52 space-y-2 overflow-y-auto rounded-xl border border-white/[0.07] p-3">
-            <legend className="px-1 text-sm font-medium text-slate-200">Proiecte alocate</legend>
-            <p className="pb-1 text-[11px] text-slate-500">Alocările controlează accesul operațional real în Worker.</p>
-            {projects.map((project) => <label key={project.id} className="flex items-center gap-2 rounded-lg px-1 py-1.5 text-sm text-slate-300"><input type="checkbox" checked={projectIds.includes(project.id)} onChange={(event) => setProjectIds((current) => event.target.checked ? [...current, project.id] : current.filter((id) => id !== project.id))} /> <span className="min-w-0 flex-1 truncate">{project.name}</span><span className="text-[10px] text-slate-600">{project.status}</span></label>)}
-          </fieldset>}
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => setSelected(null)} disabled={saving}>Anulează</Button>
-            <Button type="button" onClick={() => void saveAccess()} disabled={saving || !linksReady} className="bg-violet-600 hover:bg-violet-500">{saving ? "Se salvează…" : "Salvează accesul"}</Button>
-          </DialogFooter>
+          <footer className="agency-dialog-footer">
+            <button
+              className="agency-button"
+              disabled={saving}
+              onClick={() => {
+                setMode(null);
+                setSelected(null);
+                setPassword("");
+                setIdentity({
+                  email: "",
+                  username: "",
+                  displayName: "",
+                  temporaryPassword: "",
+                });
+              }}
+            >
+              Închide
+            </button>
+            {mode !== "assign" && panel !== "security" && (
+              <button
+                className="agency-button agency-primary"
+                disabled={
+                  !canSave ||
+                  !draft.confirmed ||
+                  permissionIssues.length > 0 ||
+                  (mode !== "profile" && draft.reason.trim().length < 3) ||
+                  (mode === "create" &&
+                    (!identity.displayName.trim() ||
+                      !/^\S+@\S+\.\S+$/.test(identity.email) ||
+                      !/^[a-z0-9][a-z0-9._-]{2,39}$/.test(identity.username) ||
+                      identity.temporaryPassword.length < 10 ||
+                      !/[A-Z]/.test(identity.temporaryPassword) ||
+                      !/[0-9]/.test(identity.temporaryPassword)))
+                }
+                onClick={() => void save()}
+              >
+                {saving
+                  ? "Se salvează…"
+                  : mode === "create"
+                    ? "Creează contul și alocă rangul"
+                    : mode === "profile"
+                      ? "Salvează profilul rangului"
+                      : "Salvează accesurile"}
+              </button>
+            )}
+          </footer>
         </DialogContent>
       </Dialog>
-
-      <Dialog open={createOpen} onOpenChange={(open) => { if (!saving) setCreateOpen(open); }}>
-        <DialogContent className="border-white/10 bg-[#10162a] text-slate-100 sm:max-w-md">
-          <DialogHeader><DialogTitle className="font-display text-white">Creează cont</DialogTitle><DialogDescription className="text-slate-400">Contul este confirmat administrativ și va cere schimbarea parolei la prima autentificare.</DialogDescription></DialogHeader>
-          <div className="grid gap-3">
-            <Label>Nume<input value={create.displayName} onChange={(event) => setCreate({ ...create, displayName: event.target.value })} className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm" /></Label>
-            <Label>Email<input type="email" value={create.email} onChange={(event) => setCreate({ ...create, email: event.target.value })} className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm" /></Label>
-            <Label>Username<input autoComplete="off" value={create.username} onChange={(event) => setCreate({ ...create, username: event.target.value.toLowerCase() })} className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm" /></Label>
-            <Label>Parolă temporară<PasswordInput autoComplete="new-password" value={create.temporaryPassword} onChange={(event) => setCreate({ ...create, temporaryPassword: event.target.value })} className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm" /></Label>
-            <Label>Rol<select value={create.accessLevel} onChange={(event) => setCreate({ ...create, accessLevel: event.target.value as typeof create.accessLevel })} className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm"><option value="user">Client</option><option value="staff">STAFF</option><option value="admin">Administrator</option></select></Label>
-          </div>
-          <DialogFooter><Button type="button" variant="ghost" onClick={() => setCreateOpen(false)} disabled={saving}>Anulează</Button><Button type="button" onClick={() => void createAccount()} disabled={saving || !create.email || !create.username || !create.displayName || create.temporaryPassword.length < 10}>{saving ? "Se creează…" : "Creează cont"}</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={operatorOpen} onOpenChange={(open) => { if (!operatorSyncing) setOperatorOpen(open); }}>
-        <DialogContent className="border-white/10 bg-[#10162a] text-slate-100 sm:max-w-md">
-          <DialogHeader><DialogTitle className="font-display text-white">Cont operațional Codex</DialogTitle><DialogDescription className="text-slate-400">Un singur cont dedicat, legat de agenții canonici Leads și AI AVY Prod. Nu primește administrare utilizatori, financiar, secrete, conectare de conturi sau publicare automată.</DialogDescription></DialogHeader>
-          <div className="rounded-xl border border-cyan-300/10 bg-cyan-400/5 p-3 text-xs leading-relaxed text-cyan-100/80">
-            Rutina de cercetare, clasificare și redactare este delegată AI Core. Codex rămâne pentru verificare, aprobare și publicarea manuală exactă.
-          </div>
-          <p className="text-xs leading-relaxed text-slate-400">Acest indicator verifică accesul în AVYRON OS, nu instalarea skillurilor Codex sau execuția unui agent. Sarcinile Codex locale necesită un dispozitiv pornit; automatizările Cloudflare rulează separat, dacă sunt configurate și active.</p>
-          <Label>Parolă temporară {codexOperator?.exists ? "(opțional, pentru rotire)" : "(obligatorie)"}<PasswordInput autoComplete="new-password" value={operatorPassword} onChange={(event) => setOperatorPassword(event.target.value)} placeholder="Minimum 10 caractere, literă mare și cifră" className="mt-1 w-full rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2.5 text-sm" /></Label>
-          <DialogFooter><Button type="button" variant="ghost" onClick={() => setOperatorOpen(false)} disabled={operatorSyncing}>Anulează</Button><Button type="button" onClick={() => void synchronizeCodexOperator()} disabled={operatorSyncing || (!codexOperator?.exists && operatorPassword.length < 10)}>{operatorSyncing ? "Se sincronizează…" : codexOperator?.exists ? "Sincronizează accesul" : "Creează și sincronizează"}</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+    </section>
   );
 }

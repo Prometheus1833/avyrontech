@@ -1,3 +1,4 @@
+import { STAFF_MANAGED, STAFF_SECTION_PERMISSIONS } from "@/shared/staffAccess";
 // Model central de acces pentru platforma internă.
 // Un singur loc definește cine vede ce: butoane, secțiuni și date sensibile.
 export type AppRole = "user" | "staff" | "admin";
@@ -10,6 +11,7 @@ export type Access = {
   isSuperAdmin: boolean;
   isOperator: boolean;
   capabilities: string[];
+  hasCollaborations?: boolean;
 };
 
 export const buildAccess = (input: {
@@ -17,6 +19,7 @@ export const buildAccess = (input: {
   email?: string | null;
   superadmin?: boolean;
   capabilities?: string[];
+  hasCollaborations?: boolean;
 }): Access => {
   const roles = input.roles ?? [];
   const isAdmin = roles.includes("admin");
@@ -33,6 +36,7 @@ export const buildAccess = (input: {
     isSuperAdmin: isAdmin && input.superadmin === true,
     isOperator,
     capabilities,
+    hasCollaborations:input.hasCollaborations===true,
   };
 };
 
@@ -60,11 +64,12 @@ export type SectionId =
   | "finance" | "media" | "leads" | "staff-tickets" | "demo-requests" | "intern"
   | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "servicii-avyron" | "produse-avyron"
   | "newsletter" | "ai-projects" | "logo-simulations" | "surveys" | "configurator"
-  | "commercial-codes" | "other-hub" | "social-manager" | "subscriptions-admin" | "careers" | "library" | "reviews" | "workflows" | "platform-control";
+  | "collaborators" | "my-collaborations" | "antivirus" | "example-carousels" | "commercial-codes" | "other-hub" | "social-manager" | "subscriptions-admin" | "internal-subscriptions" | "careers" | "library" | "reviews" | "avy-engine";
 
 export type SectionDef = {
   id: SectionId;
-  group: "overview" | "account" | "projects" | "billing" | "documents" | "servicii" | "produse" | "activity" | "platform" | "os" | "other";
+  group:
+    | "overview" | "account" | "projects" | "billing" | "documents" | "servicii" | "produse" | "activity" | "platform" | "os" | "other";
   audience: Audience;
   /** Secțiunile false rămân accesibile din huburi și căutare, fără duplicate în sidebar. */
   navigation?: boolean;
@@ -80,15 +85,16 @@ export type SectionDef = {
 export const SECTIONS: readonly SectionDef[] = [
   { id: "overview", group: "overview", audience: "everyone", keywords: ["acasa", "azi", "overview", "dashboard", "briefing", "atentie"] },
   { id: "social-manager", group: "overview", audience: "superadmin", requiredCapability: "ai_projects.read", keywords: ["social media", "publicare", "aprobari", "continut ai", "facebook", "instagram"] },
+  { id: "antivirus", group: "overview", audience: "superadmin", keywords: ["antivirus", "bouncer", "malware", "carantina", "scanare", "cote"] },
+  { id:"collaborators",group:"overview",audience:"staff",requiredCapability:"collaborators.read",keywords:["colaboratori","parteneri","juridic","economic","financiar"] },
+  { id:"my-collaborations",group:"account",audience:"everyone",navigation:false,keywords:["colaborarile mele","parteneriat"] },
   { id: "profile", group: "account", audience: "everyone", keywords: ["cont", "profil", "date", "account"] },
   { id: "settings", group: "account", audience: "everyone", keywords: ["setari", "preferinte", "settings", "tema", "limba"] },
 
   { id: "projects", group: "projects", audience: "everyone", keywords: ["proiecte", "site", "projects", "livrare", "vanzari"] },
-  { id: "workflows", group: "projects", audience: "staff", keywords: ["fluxuri", "pipeline", "procese", "lucru", "cereri"] },
-  { id: "ai-projects", group: "projects", audience: "superadmin", requiredCapability: "ai_projects.read", keywords: ["proiecte ai", "productie ai", "continut"] },
-  { id: "maintenance", group: "projects", audience: "staff", keywords: ["mentenanta", "uptime", "maintenance"] },
+  { id: "ai-projects", group: "projects", audience: "staff", requiredCapability: "ai_projects.read", keywords: ["proiecte ai", "productie ai", "continut"] },
+  { id: "maintenance", group: "projects", audience: "everyone", keywords: ["mentenanta", "uptime", "maintenance"] },
   { id: "leads", group: "projects", audience: "staff", requiredCapability: "leads.read", keywords: ["leads", "crm", "vanzari", "oferta", "prospecti"] },
-  { id: "domains", group: "projects", audience: "staff", keywords: ["domenii", "dns", "domains"] },
   { id: "media", group: "projects", audience: "staff", keywords: ["media", "imagini", "fisiere"] },
 
   { id: "subscriptions", group: "billing", audience: "client", keywords: ["abonament", "plan", "subscriptions"] },
@@ -110,11 +116,12 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "collection", group: "produse", audience: "everyone", keywords: ["colectia mea", "produse avyron", "componente", "parteneriat", "avy", "collection", "artefacte"] },
   { id: "produse-avyron", group: "produse", audience: "superadmin", keywords: ["produse avyron", "artefacte", "catalog", "parteneriate", "magazin", "componente"] },
   { id: "subscriptions-admin", group: "produse", audience: "superadmin", keywords: ["abonamente", "mentenanta", "preturi", "clienti abonati", "trafic"] },
+  { id: "internal-subscriptions", group: "produse", audience: "staff", keywords: ["abonamente avyron", "conturi interne", "lovable", "codex", "cloudflare", "github", "reinnoiri"] },
 
   { id: "stats", group: "activity", audience: "client", keywords: ["statistici", "vizite", "stats"] },
   { id: "tickets", group: "activity", audience: "client", keywords: ["suport", "tichete", "tickets", "mesaje"] },
   { id: "staff-tickets", group: "activity", audience: "staff", keywords: ["suport", "tichete clienti", "tickets"] },
-  { id: "intern", group: "activity", audience: "staff", keywords: ["chat", "echipa", "intern", "mesaje"] },
+  { id: "intern", group: "activity", audience: "everyone", keywords: ["chat", "echipa", "intern", "mesaje"] },
   { id: "announcements", group: "activity", audience: "staff", keywords: ["anunturi", "noutati"] },
 
   { id: "team-staff", group: "platform", audience: "staff", keywords: ["echipa", "staff", "roluri", "permisiuni", "acces"] },
@@ -122,26 +129,46 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "reviews", group: "platform", audience: "admin", keywords: ["recenzii", "review", "testimoniale", "aprobari", "rating"] },
   { id: "demo-requests", group: "platform", audience: "staff", keywords: ["demo", "solicitari", "leaduri"] },
   { id: "logo-simulations", group: "platform", audience: "staff", keywords: ["logo", "simulari", "3d", "logo studio"] },
+  { id: "domains", group: "platform", audience: "staff", keywords: ["domenii", "dns", "domains"] },
   { id: "surveys", group: "platform", audience: "staff", keywords: ["surveys", "chestionare", "brief", "rezultate"] },
   { id: "configurator", group: "platform", audience: "staff", keywords: ["configurator", "estimari", "oferte", "rezultate"] },
+  { id: "example-carousels", group: "platform", audience: "staff", keywords: ["carusele", "exemple", "portofoliu", "galerie", "publicare" ] },
+  { id: "careers", group: "platform", audience: "staff", keywords: ["cariere", "joburi", "roluri", "recrutare"] },
+  { id: "library", group: "platform", audience: "staff", keywords: ["biblioteca", "resurse", "surse", "referinte"] },
 
   { id: "finance", group: "os", audience: "superadmin", keywords: ["financiar", "facturare", "venituri", "plati", "incasari", "finance"] },
   { id: "commercial-codes", group: "os", audience: "superadmin", keywords: ["coduri", "sku", "contabilitate", "servicii", "produse", "tva", "plata"] },
   { id: "newsletter", group: "os", audience: "superadmin", keywords: ["newsletter", "abonati", "email", "campanii", "consimtamant"] },
-  { id: "platform-control", group: "os", audience: "superadmin", keywords: ["control", "administrare", "modificari", "site", "platforma", "continut"] },
+  { id: "avy-engine", group: "os", audience: "superadmin", keywords: ["avy engine", "surse", "capabilitati", "conectori", "fluxuri", "documentatie"] },
   { id: "os-centers", group: "os", audience: "staff", keywords: ["securitate", "automatizari", "integrari", "backup", "erori", "agenti ai", "programari", "comentarii", "pluginuri"] },
   { id: "ai-os", group: "os", audience: "superadmin", navigation: false, keywords: ["ai", "avy", "agenti", "chatbot", "automatizare"] },
   { id: "promotions", group: "os", audience: "superadmin", navigation: false, keywords: ["promotii", "reduceri", "campanii"] },
 
   { id: "other-hub", group: "other", audience: "staff", keywords: ["altele", "module", "rapoarte", "functii", "roadmap"] },
-  { id: "careers", group: "other", audience: "staff", keywords: ["cariere", "joburi", "roluri", "recrutare"] },
-  { id: "library", group: "other", audience: "staff", keywords: ["biblioteca", "resurse", "surse", "referinte"] },
   { id: "resources", group: "documents", audience: "staff", navigation: false, keywords: ["resurse", "documente", "ghid", "siteuri", "campuri"] },
 ];
 
-const canOpenDefinition = (section: SectionDef, access: Access) =>
-  canSee(section.audience, access)
-  || Boolean(section.requiredCapability && access.capabilities.includes(section.requiredCapability));
+const canOpenDefinition = (section: SectionDef, access: Access) => {
+  if(section.id==="my-collaborations")return access.hasCollaborations===true;
+  if(section.id==="collaborators")return access.isSuperAdmin || (access.isStaff&&access.capabilities.some(c=>["collaborators.read","collaborators.manage"].includes(c)));
+  if (access.capabilities.includes(STAFF_MANAGED) && !access.isSuperAdmin) {
+    if (["profile", "settings"].includes(section.id)) return true;
+    return (STAFF_SECTION_PERMISSIONS[section.id] || []).some((key) =>
+      access.capabilities.includes(key),
+    );
+  }
+  if (section.id === "finance" && access.capabilities.includes("finance.read"))
+    return true;
+  if (
+    section.id === "newsletter" &&
+    access.capabilities.includes("newsletter.manage")
+  )
+    return true;
+  return (
+    canSee(section.audience, access)
+  || Boolean(section.requiredCapability && access.capabilities.includes(section.requiredCapability))
+  );
+};
 
 export const sectionsFor = (a: Access) => SECTIONS.filter((s) => canOpenDefinition(s, a));
 
@@ -150,4 +177,10 @@ export const canOpenSection = (id: string, a: Access) => {
   return !!s && canOpenDefinition(s, a);
 };
 
-export const defaultSection = (_a: Access): SectionId => "overview";
+export const defaultSection = (a: Access): SectionId =>
+  a.capabilities.includes("staff.rank.avy_contabil") &&
+  canOpenSection("finance", a)
+    ? "finance"
+    : a.capabilities.includes(STAFF_MANAGED) && !canOpenSection("overview", a)
+      ? "profile"
+      : "overview";

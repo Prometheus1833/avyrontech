@@ -76,6 +76,16 @@ const env = {
 const get = (path: string) =>
   worker.fetch(new Request(`https://avyron.ro${path}`), env as never);
 
+describe("service draft preview isolation", () => {
+  it.each(["/servicii", "/servicii/website-prezentare-profesional"])("serves a private, noindex shell for %s previews", async path => {
+    const response=await get(path+"?servicePreview=premium-website&revision=1");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+    const html=await response.text();expect(html).toContain('id="root"');expect(html).not.toContain("<h1>pricing</h1>");
+  });
+});
+
 describe("worker redirects", () => {
   it.each([
     ["/costuri", "/servicii"],
@@ -195,6 +205,46 @@ describe("worker HTTP statuses", () => {
       expect(html).toContain("Spațiu securizat pentru autentificare");
       expect(html).not.toContain('content="default"');
     }
+  });
+
+  it("overrides a hosting provider's 200 public fallback for private routes and supports HEAD", async () => {
+    const fallbackEnv = { ASSETS: { fetch: async (req: Request) => new Response(
+      new URL(req.url).pathname === "/_shell.html" ? FILES["/_shell.html"] : '<html><head><title>Public homepage</title><meta name="robots" content="index, follow"><link rel="canonical" href="https://avyron.ro/"></head></html>',
+      { status: 200, headers: { "cache-control": "public, max-age=3600" } },
+    ) } };
+    for (const path of ["/profil", "/intern/projects/x", "/auth"]) {
+      const response = await worker.fetch(new Request(`https://avyron.ro${path}`), fallbackEnv);
+      expect(response.headers.get("cache-control")).toBe("private, no-store");
+      expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+      const html = await response.text();
+      expect(html).toContain('name="robots" content="noindex, nofollow"');
+      expect(html).not.toContain("Public homepage");
+      expect(html).not.toContain('rel="canonical"');
+      const head = await worker.fetch(new Request(`https://avyron.ro${path}`, { method: "HEAD" }), fallbackEnv);
+      expect(head.status).toBe(200);
+      expect(await head.text()).toBe("");
+      expect(head.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+    }
+  });
+
+  it("removes nested structured data and treats private metadata values as literal HTML attributes", async () => {
+    const shell = `<html><head><title>Public</title><meta property="og:url" content="public"><script type="application/ld+json"><script type="application/ld+json">{}</script></script><script type="module" src="/assets/app.js"></script></head><body><div id="root"></div></body></html>`;
+    const response = await worker.fetch(new Request("https://avyron.ro/profil/$&token"), {
+      ASSETS: { fetch: async () => new Response(shell, { headers: { "content-type": "text/html" } }) },
+    });
+    const html = await response.text();
+    expect(html).not.toContain("application/ld+json");
+    expect(html).toContain('content="https://avyron.ro/profil/$&amp;token"');
+    expect(html).toContain('type="module" src="/assets/app.js"');
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+  });
+  it("fails closed with noindex and no-store if the private shell is missing", async () => {
+    const response = await worker.fetch(new Request("https://avyron.ro/profil"), {
+      ASSETS: { fetch: async () => new Response("Missing", { status: 404 }) },
+    });
+    expect(response.status).toBe(503);
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
   });
 
   it("passes assets straight through", async () => {

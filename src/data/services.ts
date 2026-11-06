@@ -18,15 +18,8 @@ import {
  * intro copy, benefit blocks, a delivery process and an FAQ (rendered as FAQPage JSON-LD).
  */
 
-export type ServiceKey =
-  | "premium-website"
-  | "logo-3d"
-  | "social-identity"
-  | "online-store"
-  | "apps"
-  | "ai-agent"
-  | "qa-testing"
-  | "audit";
+export type {ServiceKey} from "../shared/serviceTypes";
+import type {ServiceKey} from "../shared/serviceTypes";
 
 export type IconKey =
   | "globe"

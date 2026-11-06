@@ -52,12 +52,16 @@ describe("api.avyron.ro gateway", () => {
 describe("public API cache policy", () => {
   it("normalizes safe public query parameters", () => {
     const key = publicApiCacheRequest(new Request("https://api.avyron.ro/api/blog/posts?utm_source=x&lang=en&limit=20"));
-    expect(key?.url).toBe("https://api.avyron.ro/api/blog/posts?lang=en&limit=20");
+    expect(key?.url).toBe("https://api.avyron.ro/api/blog/posts?_av_cache=20261106&lang=en&limit=20");
     const exchangeKey = publicApiCacheRequest(new Request("https://api.avyron.ro/api/public/exchange-rate?utm_source=x"));
     expect(exchangeKey?.url).toBe("https://api.avyron.ro/api/public/exchange-rate");
     expect(publicApiCacheRequest(new Request("https://avyrontech-preview.avyrontech.workers.dev/api/ai/agents?utm_source=x"))).toBeNull();
   });
 
+  it("never bypasses antivirus verification through cached uploaded-image responses",()=>{
+    expect(publicApiCacheRequest(new Request("https://api.avyron.ro/api/blog/media/00000000-0000-0000-0000-000000000001.png"))).toBeNull();
+    expect(publicApiCacheRequest(new Request("https://api.avyron.ro/api/profile/avatar/user-123?v=1"))).toBeNull();
+  });
   it("never caches authenticated or mutating requests", () => {
     expect(publicApiCacheRequest(new Request("https://api.avyron.ro/api/blog/posts", { headers: { authorization: "Bearer x" } }))).toBeNull();
     expect(publicApiCacheRequest(new Request("https://api.avyron.ro/api/public/domain-check?domain=avyron.ro", { method: "POST" }))).toBeNull();
@@ -91,7 +95,8 @@ describe("domain lookup input", () => {
       }
       if (url === "https://rdap.registry.test/domain/nume-liber.com") return new Response(null, { status: 404 });
       if (url === "https://rdap.registry.test/domain/avyron.com") return Response.json({ objectClassName: "domain" });
-      if (url.includes("cloudflare-dns.com") && url.includes("nume-liber.ro")) {
+      const parsed = new URL(url);
+      if (parsed.origin === "https://cloudflare-dns.com" && parsed.pathname === "/dns-query" && parsed.searchParams.get("name") === "nume-liber.ro") {
         return Response.json({ Status: 3 });
       }
       throw new Error(`Unexpected test request: ${url}`);

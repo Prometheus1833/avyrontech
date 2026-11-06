@@ -67,7 +67,7 @@ describe("website pricing and estimator", () => {
   it("places the calculator immediately before the portfolio subsection", () => {
     const page = readFileSync(resolve(__dirname, "../pages/services/ServicePage.tsx"), "utf8");
     const calculator = page.indexOf("<WebsitePriceCalculator />");
-    const portfolio = page.indexOf('id="portofoliu"');
+    const portfolio = page.indexOf("<PortfolioCarousel ");
 
     expect(calculator).toBeGreaterThan(-1);
     expect(portfolio).toBeGreaterThan(calculator);

@@ -1,3 +1,4 @@
+import {Link} from "react-router-dom";
 import { useEffect, useState } from "react";
 import { workspaceApi } from "@/lib/workspaceApi";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +15,7 @@ import { toast } from "sonner";
 import { SERVICE_COMMERCIAL_SOURCES } from "@/data/serviceCommercialSources";
 
 type Subscription = {
+  billing_ready?:boolean; payment_terms_days?:number|null; maintenance_enabled?:number; plan_sku?:string|null; specifications_json?:string; staff_names?:string|null;project_id?:string;
   id: string;
   product_name: string;
   description: string | null;
@@ -77,13 +79,15 @@ export function SubscriptionsTab() {
 
   useEffect(() => {
     if (!user) return;
-    let active = true;
-    setLoading(true); setError("");
-    workspaceApi.list<Subscription>("subscriptions")
-      .then(({ data }) => { if (active) setItems(data); })
-      .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : "Datele nu pot fi încărcate."); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+    let active = true,sequence=0;
+    setLoading(true); setError("");setItems([]);
+    const load=()=>{const seq=++sequence;workspaceApi.list<Subscription>("subscriptions")
+      .then(({ data }) => { if (active&&seq===sequence) {setItems(data);setError("");} })
+      .catch((cause) => { if (active&&seq===sequence) {setItems([]);setError(cause instanceof Error ? cause.message : "Datele nu pot fi încărcate.");} })
+      .finally(() => { if (active&&seq===sequence) setLoading(false); });};
+    const update=()=>{if(document.visibilityState==="visible")load()};
+    load();const timer=setInterval(update,30000);window.addEventListener("focus",update);window.addEventListener("avyron:subscriptions-changed",update);
+    return () => { active = false;++sequence;clearInterval(timer);window.removeEventListener("focus",update);window.removeEventListener("avyron:subscriptions-changed",update); };
   }, [user]);
 
   useEffect(() => {
@@ -219,6 +223,7 @@ export function SubscriptionsTab() {
                   </div>
                   <Badge variant={statusVariant[s.status]}>{t.auth.dash.subs.statuses[s.status]}</Badge>
                 </CardHeader>
+                {(s.maintenance_enabled===1||!!s.plan_sku||readSpecifications(s.specifications_json).length>0)&&<div className="px-6 pb-4 text-sm"><details><summary className="cursor-pointer text-primary">Plan și specificații · {s.plan_sku||"Personalizat"}</summary><dl className="mt-3 space-y-2">{readSpecifications(s.specifications_json).map(([key,value])=><div key={key}><dt className="font-medium">{key}</dt><dd className="whitespace-pre-wrap break-words text-muted-foreground">{value}</dd></div>)}</dl></details>{s.staff_names&&<p className="mt-2 text-xs text-muted-foreground">Echipa de mentenanță: {s.staff_names}</p>}{s.maintenance_enabled===1&&<Link className="mt-3 inline-block text-primary underline" to={`/profil?tab=maintenance&project=${encodeURIComponent(s.project_id||'')}`}>Activități și materiale · AVY Core</Link>}</div>}
                 <CardContent className="grid sm:grid-cols-3 gap-4 text-sm border-t pt-4">
                   <div>
                     <div className="text-muted-foreground text-xs">{t.auth.dash.subs.price}</div>
@@ -232,7 +237,7 @@ export function SubscriptionsTab() {
                   </div>
                   <div>
                     <div className="text-muted-foreground text-xs flex items-center gap-1"><Calendar className="size-3" /> {t.auth.dash.subs.nextRenewal}</div>
-                    <div className="font-medium mt-0.5">{fmtDate(s.next_renewal_at)}</div>
+                    <div className="font-medium mt-0.5">{fmtDate(s.next_renewal_at)}</div>{s.billing_ready&&<p className="mt-1 text-xs text-muted-foreground">{ro?`Calendar lunar configurat · termen ${s.payment_terms_days ?? 0} zile`:`Monthly schedule configured · ${s.payment_terms_days ?? 0} days payment terms`}</p>}
                   </div>
                 </CardContent>
               </Card>
@@ -299,3 +304,5 @@ export function SubscriptionsTab() {
     </div>
   );
 }
+
+function readSpecifications(raw?:string):[string,string][]{try{const value:unknown=JSON.parse(raw||'{}');return value&&typeof value==='object'&&!Array.isArray(value)?Object.entries(value).filter((row):row is [string,string]=>typeof row[1]==='string'):[];}catch{return [];}}

@@ -9,7 +9,9 @@ Folosește acești termeni consecvent în cod, UI, PR-uri și documentație. St�
 | **AVY / Avy bot** | Asistentul conversațional; răspunsurile sale trebuie să folosească surse și oferte aprobate, cu handoff când nu poate confirma un fapt. |
 | **AI AVY Prod** | Portofoliul de proiecte de producție AI din `/intern/ai-projects`; nu este același registru cu proiectele operaționale. |
 | **Avyron WEB** | Proiectul AI pentru prezența digitală și produsele agenției AVYRON. Etichetele sale sociale nu dovedesc conexiuni API. |
-| **`platform_owner`** | Rolul cu controlul cel mai extins asupra politicilor, conectorilor și agenților; `superadmin` nu implică automat aceleași drepturi. |
+| **`platform_owner`** | Principal cu acces operațional complet și controlul ierarhiei platformei; identitatea Owner rămâne protejată. |
+| **`superadmin`** | În implementarea locală din 05.11.2026: acces operațional complet, inclusiv Documente SC și backupurile firmei, fără controlul identităților Owner. [Politica și starea de release](./STAFF_RANKS_INTERNAL_CHAT.md). |
+| **Rang staff** | Profil de drepturi peste RBAC-ul existent (`user`, `staff`, `admin`), fără autentificare paralelă. Cele șapte ranguri și alocările sunt descrise în [Membrii Agenției](./STAFF_RANKS_INTERNAL_CHAT.md). |
 | **Pipeline** | Succesiune explicită de stări și acțiuni pentru Leads, conținut, proiecte sau facturi; UI trebuie să arate unde se află elementul și următoarea acțiune permisă. |
 | **Conexiune configurată / verificată / sincronizată** | Configurată: există setări sau referințe. Verificată: identitatea și accesul API au fost testate. Sincronizată: importul/reconcilierea reală are timestamp și rezultat. |
 | **`source_connections`** | Registrul OS pentru surse/conectori. Un URL sau un `account_label` nu poate înlocui autorizarea OAuth/API. |
@@ -23,3 +25,14 @@ Folosește acești termeni consecvent în cod, UI, PR-uri și documentație. St�
 | **Poster static / motion tier** | Conținut vizibil fără WebGL și în prerender / buget de animație stabilit după capabilitatea dispozitivului. |
 
 Pentru procedura de predare și statutul ramurilor, vezi [PROJECT_CONTINUITY.md](./PROJECT_CONTINUITY.md). Pentru implementarea efectelor, vezi [VISUAL_TECHNIQUES.md](./VISUAL_TECHNIQUES.md).
+
+- **Fișa clientului**: mini-dashboard din registrul Clienți; reunește identitatea comercială/fiscală, conturile autorizate, proiectele, abonamentele, situația financiară și documentele centrale. Identitatea fiscală este în `client_legal_profiles`; autentificarea rămâne în contul nativ, separat de identitatea firmei.
+- **Acces client gestionat explicit**: `clients.access_managed=1`; accesul se bazează pe asocieri aprobate, iar reconcilierea legacy prin email nu reface automat granturile revocate. Alte granturi independente sunt administrate separat.
+- **Media / resurse vizuale**: catalog privat pentru identitatea AVYRON și resursele beneficiarilor, legat de CRM/proiectele native. Uploadul în carantină și verificarea de format nu echivalează cu scanarea antimalware.
+- **Sincronizare fluxuri Engine**: reconciliere internă confirmată care pune în pauză legăturile neeligibile; nu activează servicii, discovery sau apeluri externe.
+- **INTERN OS**: intrarea directă din bara staff către prima secțiune permisă a dashboardului; nu este alt sistem de autentificare sau alt dashboard.
+- **Conversație de proiect**: mesaje comune participanților autorizați ai unui proiect, inclusiv clientului; context separat de canalele echipei și de mesajele directe, în aceeași stocare nativă.
+- **Proiectele mele**: filtru după implicare explicită; un drept global de administrare nu echivalează cu alocarea personală la toate proiectele.
+- **Carusele Exemple**: administrarea exemplelor publice pe pagini native de servicii, în Platformă; configurațiile au revizii imuabile și publicare explicită după aprobare. Nu reprezintă Biblioteca Artefacte, Media sau documentele private.
+- **Antivirus / Bouncer Free**: registru central de scanare pentru uploadurile native, cu cotă atomică și acces numai la versiunea R2 asociată unui verdict CLEAN. Configurarea cheii, scanarea reală, verificarea conformității și activarea în producție sunt stări distincte. [Politică și starea implementării](./security/ANTIVIRUS_BOUNCER.md).
+- **Colaboratori / Parteneri**: registrul relațiilor profesionale ale agenției, cu cod intern, fișă, asociere opțională la CRM/cont și documente centrale. Nu reprezintă planurile de produse AVY Partener. Badge-ul **Avyron Partener** este informativ și derivat din asocierea autorizată, fără privilegii de staff sau licențe.

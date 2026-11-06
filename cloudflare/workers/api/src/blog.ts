@@ -1,3 +1,4 @@
+import { scanUpload, antivirusFailure, putScannedObject, getScannedObject } from "./malware";
 import { Hono } from "hono";
 import type { AppBindings } from "./types";
 
@@ -328,25 +329,27 @@ blogRouter.post("/api/blog/staff/media", async (c) => {
   const bytes = await c.req.arrayBuffer();
   if (!bytes.byteLength || bytes.byteLength > 5 * 1024 * 1024) return c.json({ error: { code: "too_large" } }, 413);
   if (!matchesImageSignature(bytes, type)) return c.json({ error: { code: "invalid_image" } }, 415);
+  const scan = await scanUpload(c.env, new Uint8Array(bytes), {source:"blog",scope:c.get("userId"),mimeType:type,actorId:c.get("userId")});
+  if(scan.status!=="clean")return antivirusFailure(c,scan);
   const filename = `${crypto.randomUUID()}.${extension}`;
-  await c.env.MEDIA.put(`blog/covers/${filename}`, bytes, {
-    httpMetadata: { contentType: type, cacheControl: "public, max-age=31536000, immutable" },
+  await putScannedObject(c.env, "MEDIA", `blog/covers/${filename}`, new Uint8Array(bytes), {
+    httpMetadata: { contentType: type, cacheControl: "private, no-store" },
     customMetadata: { uploadedBy: c.get("userId"), kind: "blog-cover" },
-  });
-  return c.json({ url: `/api/blog/media/${filename}` }, 201);
+  }, scan);
+  return c.json({ url: `/api/blog/media/${filename}?av=20261106` }, 201);
 });
 
 blogRouter.get("/api/blog/media/:filename", async (c) => {
   const filename = c.req.param("filename");
   if (!/^[a-f0-9-]{36}\.(?:png|jpe?g|webp|avif)$/i.test(filename)) return c.body(null, 404);
-  const object = await c.env.MEDIA.get(`blog/covers/${filename}`);
+  const object = await getScannedObject(c.env, "MEDIA", `blog/covers/${filename}`);
   if (!object) return c.body(null, 404);
   const headers = new Headers();
   object.writeHttpMetadata(headers);
   headers.set("etag", object.httpEtag);
   headers.set("content-length", String(object.size));
   headers.set("x-content-type-options", "nosniff");
-  headers.set("cache-control", "public, max-age=31536000, immutable");
+  headers.set("cache-control", "private, no-store");
   return new Response(object.body, { headers });
 });
 

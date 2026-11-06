@@ -1,4 +1,5 @@
-import { expect, test } from "@playwright/test";
+import { expect,test } from "@playwright/test";
+import { readFileSync } from "node:fs";
 
 const canonical = (path: string) => `https://avyron.ro${path === "/" ? "/" : path}`;
 
@@ -193,6 +194,10 @@ test.describe("public SEO routes", () => {
   });
 
   test("About stays indexable and legacy Portfolio routes consolidate into the service portfolio", async ({ page }) => {
+    // The static preview server does not emulate the public D1 carousel API.
+    await page.route("**/api/public/example-carousels/premium-website", route => route.fulfill({
+      json: { config: JSON.parse(readFileSync("src/shared/exampleCarouselDefaults.json", "utf8")) },
+    }));
     await page.goto("/despre-noi");
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro/despre-noi");
     await expect(page.locator('link[hreflang="en"]')).toHaveAttribute("href", "https://avyron.ro/en/about");
@@ -726,7 +731,7 @@ test.describe("forms and authentication", () => {
     });
 
     await page.goto("/profil?tab=profile");
-    const entry = page.getByRole("link", { name: /Deschide AI AVY Prod/ });
+    const entry = page.getByRole("navigation", {name:"Navigare AVYRON OS"}).getByRole("button", { name: "Proiecte AI", exact:true });
     await expect(entry).toBeVisible();
     await entry.click();
     await expect(page.getByRole("heading", { name: "Proiecte AI", exact: true })).toBeVisible();
@@ -770,7 +775,7 @@ test.describe("forms and authentication", () => {
     });
 
     await page.goto("/profil?tab=profile");
-    const card = page.getByRole("link", { name: "Deschide AVY Engine" });
+    const card = page.getByRole("navigation", {name:"Navigare AVYRON OS"}).getByRole("button", { name: "AVY Engine", exact:true });
     await expect(card).toBeVisible();
     await card.click();
     await expect(page.getByRole("heading", { name:"AVY Engine", exact:true })).toBeVisible();
@@ -781,7 +786,7 @@ test.describe("forms and authentication", () => {
     await expect(drawer.getByText("OriginKit hosted MCP")).toBeVisible();
     await expect(drawer.getByRole("button", { name:/Analizează sursa/ })).toHaveCount(0);
     await drawer.getByRole("button", { name:"Închide" }).click();
-    await page.getByRole("tab", { name:"Control" }).click();
+    await page.getByRole("button", { name:"Control" }).click();
     await expect(page.getByText("Dezactivat implicit")).toBeVisible();
   });
 
@@ -796,23 +801,24 @@ test.describe("forms and authentication", () => {
     await page.goto("/finance");
     await expect(page.getByRole("heading",{name:"Financiar",exact:true})).toBeVisible();
     await expect(page.getByText("Profit estimat")).toBeVisible();
-    await page.getByRole("button",{name:"Cheltuieli",exact:true}).click();
+    await page.getByRole("button",{name:"Cheltuieli și limite",exact:true}).click();
     await page.getByRole("button",{name:/Claude API Usage/}).click();
     await expect(page.getByRole("dialog").getByText("Claude",{exact:true})).toBeVisible();
     await expect(page.getByRole("dialog").getByText("Atașează",{exact:true})).toBeVisible();
     await page.keyboard.press("Escape");
-    await page.getByRole("button",{name:"Conturi și carduri",exact:true}).click();
+    await page.getByRole("button",{name:"Conturi și facturare",exact:true}).click();
     await expect(page.getByText("•••• 4242")).toBeVisible();
     await expect(page.getByRole("heading",{name:"Încasări și facturare"})).toBeVisible();
     await expect(page.getByText(/Un cont intern de evidență nu conectează banca/)).toBeVisible();
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await expect(page.getByText(/4242 4242/)).toHaveCount(0);
-    await page.getByRole("button",{name:"Venituri",exact:true}).click();
+    await page.getByRole("button",{name:"Venituri și încasări",exact:true}).click();
     await page.getByRole("button",{name:"Venit",exact:true}).click();
     const revenueDialog=page.getByRole("dialog",{name:"Venit nou"});
     await expect(revenueDialog).toBeVisible();
     await revenueDialog.getByRole("button",{name:"Close"}).click();
     await expect(revenueDialog).toBeHidden();
+    await page.getByRole("button",{name:"Cheltuieli și limite",exact:true}).click();
     await page.getByRole("button",{name:"Bugete",exact:true}).click();
     await page.getByRole("button",{name:"Buget",exact:true}).click();
     await expect(page.getByRole("dialog",{name:"Buget nou"})).toBeVisible();
@@ -881,8 +887,9 @@ test.describe("forms and authentication", () => {
     await expect(page.getByRole("heading", { name: "Istoric" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Remindere" })).toBeVisible();
     await page.getByRole("dialog", { name: "Ana Popescu" }).getByRole("button", { name: "Șterge" }).click();
-    const deletionDialog = page.getByRole("dialog", { name: "Elimină lead-ul din pipeline" });
-    await expect(deletionDialog.getByText(/Motiv recomandat.*Înregistrare duplicată/)).toBeVisible();
+    const deletionDialog = page.getByRole("dialog", { name: "Elimină lead-ul" });
+    await expect(deletionDialog.getByText(/Alege motivul verificat/)).toBeVisible();
+    await deletionDialog.getByText("Înregistrare duplicată", {exact:true}).click();
     await deletionDialog.getByLabel("Detalii opționale").fill("Solicitarea există deja într-o fișă activă.");
     await deletionDialog.getByRole("button", { name: "Confirmă eliminarea" }).click();
     await expect.poll(() => deletedLead).not.toBeNull();
@@ -923,7 +930,8 @@ test.describe("forms and authentication", () => {
     await page.getByRole("button", { name: "Profil" }).click();
     const userMenu = page.getByRole("menu");
     await expect(userMenu).toBeVisible();
-    await expect(userMenu.getByRole("menuitem", { name: "Despre noi", exact: true })).toBeVisible();
+    await expect(userMenu.getByRole("menuitem", { name: "Despre noi", exact: true })).toHaveCount(0);
+    await expect(userMenu.getByRole("menuitem", { name: "Proiecte AI", exact: true })).toBeVisible();
     const menuBox = await userMenu.boundingBox();
     expect(menuBox).not.toBeNull();
     expect(menuBox!.y).toBeGreaterThanOrEqual(0);

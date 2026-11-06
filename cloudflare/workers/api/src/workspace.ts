@@ -1,8 +1,11 @@
+import {managedStaff,canManageStaffTarget} from "./staffAccessPolicy";
+import { createMaintenanceRouter } from "./maintenance";
+import {maintenanceWorkAccess,maintenanceProjectScope} from "./maintenancePolicy";
 import { normalizeDomain, lookupDomain } from "./domain";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import type { AppBindings } from "./types";
-import { isReservedPlatformEmail, platformRoleForUser } from "./authorization";
+import { hasCapability, isReservedPlatformEmail, platformRoleForUser } from "./authorization";
 import { privilegedMfaSatisfied } from "./mfaPolicy";
 import { checkRateLimit } from "./antispam";
 import { sha256 } from "./security";
@@ -43,8 +46,9 @@ async function mutate(c: Ctx, _value: unknown, result: Record<string,unknown>, s
   } catch (error) {
     const concurrent = await lookup();
     if (concurrent) return replay(concurrent);
-    if (/NOT NULL constraint failed: (support_tickets|project_work_items)\.revision/.test(String(error))) return fail(c,'revision_conflict',409);
+    if (/NOT NULL constraint failed: (support_tickets|project_work_items|subscriptions)\.revision/.test(String(error))) return fail(c,'revision_conflict',409);
     if (/NOT NULL constraint failed: support_messages\.ticket_id/.test(String(error))) return fail(c,'ticket_closed',409);
+    if (/UNIQUE constraint failed: subscriptions\.maintenance_key/.test(String(error))) return fail(c,'maintenance_exists',409);
     throw error;
   }
   return c.json(result);
@@ -59,6 +63,19 @@ workspaceRouter.use('/api/workspace/*',async (c,next) => {
   const rate = await checkRateLimit(c.env.DB,[{key:`workspace:${c.get('userId')}`,limit:600,windowSec:3600}]);
   if (!rate.ok) return c.json({error:{code:'rate_limited'}},429);
   if (c.req.method !== 'GET' && staff(c) && !(await privilegedMfaSatisfied(c))) return fail(c,'mfa_required',403);
+  if(!['GET','HEAD','OPTIONS'].includes(c.req.method)&&c.req.path.startsWith('/api/workspace/maintenance')){
+    if(!await platformRoleForUser(c.env.DB,c.get('userId'))&&!await hasCapability(c.env.DB,c.get('userId'),'maintenance.manage'))return fail(c,'forbidden',403);
+    if(!await privilegedMfaSatisfied(c))return fail(c,'mfa_required',403);
+  }
+  // Revalidate assignments before returning a cached write result after revocation.
+  const workPath=c.req.path.match(/^\/api\/workspace\/work-items\/([^/]+)(?:\/([^/]+))?$/);
+  if(workPath&&['POST','PATCH'].includes(c.req.method)){
+    const body=await c.req.json<{kind?:unknown}>().catch(()=>null);
+    const original=workPath[2]?await c.env.DB.prepare('SELECT kind FROM project_work_items WHERE project_id=? AND id=?').bind(workPath[1],workPath[2]).first<{kind:string}>():null;
+    const maintenance=body?.kind==='maintenance'&&(!workPath[2]||original?.kind==='maintenance');
+    const access=maintenance?await maintenanceWorkAccess(c.env,workPath[1],c.get('userId'),c.get('roles')):await canAccessProject(c.env.DB,workPath[1],c.get('userId'),c.get('roles'));
+    if(!access.write)return fail(c,'forbidden',403);
+  }
   if (!['GET','HEAD','OPTIONS'].includes(c.req.method)) {
     const key=c.req.header('idempotency-key') || '';
     if (!/^[A-Za-z0-9_.:-]{16,128}$/.test(key)) return fail(c,'idempotency_key_required');
@@ -87,11 +104,13 @@ workspaceRouter.get('/api/workspace/invoices',async c => {
 });
 workspaceRouter.get('/api/workspace/subscriptions',async c => {
   if (!staff(c)) await linkClientsByEmail(c.env.DB,c.get('userId'));
-  const {limit,offset}=page(c);
-  const {results}=await c.env.DB.prepare(`SELECT record.id,service.service_name product_name,service.price,service.billing_cycle,record.status,record.next_billing_date
-    FROM subscriptions record JOIN services service ON service.id=record.service_id WHERE ${clientScope} ORDER BY record.next_billing_date,record.id LIMIT ? OFFSET ?`)
-    .bind(c.get('userId'),limit,offset).all<Record<string,unknown>>();
-  return c.json({data:results.map(r=>({...r,price_cents:Math.round(Number(r.price)*100),currency:'RON',status:r.status==='paused'?'suspended':r.status,description:null,started_at:null,next_renewal_at:iso(r.next_billing_date)}))});
+  const {limit,offset}=page(c),scope=maintenanceProjectScope(c.get('userId'),false);
+  const {results}=await c.env.DB.prepare(`SELECT record.id,service.service_name product_name,service.price,service.billing_cycle,record.status,record.next_billing_date,
+   (SELECT payment_terms_days FROM subscription_billing_settings b WHERE b.subscription_id=record.id AND b.client_id=record.client_id) payment_terms_days,record.maintenance_enabled,record.plan_sku,record.specifications_json,record.target_label,record.product_slug,record.external_url,record.created_at,p.id project_id,
+   (SELECT group_concat(COALESCE(profile.pseudonym,profile.display_name,u.display_name,'Membru staff'),', ') FROM subscription_staff ss JOIN users u ON u.id=ss.user_id LEFT JOIN profiles profile ON profile.id=u.id WHERE ss.subscription_id=record.id AND u.disabled_at IS NULL AND EXISTS(SELECT 1 FROM user_roles ur WHERE ur.user_id=u.id AND ur.role IN('staff','admin'))) staff_names
+    FROM subscriptions record JOIN services service ON service.id=record.service_id JOIN projects p ON p.id=service.project_id WHERE record.client_id=p.client_id AND ${scope.sql} ORDER BY record.next_billing_date,record.id LIMIT ? OFFSET ?`)
+    .bind(...scope.values,limit,offset).all<Record<string,unknown>>();
+  return c.json({data:results.map(r=>({...r,billing_ready:r.payment_terms_days!==null,price_cents:Math.round(Number(r.price)*100),currency:'RON',status:r.status==='paused'?'suspended':r.status,description:r.target_label||null,started_at:r.created_at?iso(r.created_at):null,next_renewal_at:iso(r.next_billing_date)}))});
 });
 
 workspaceRouter.get('/api/workspace/account-access/:userId',async c => {
@@ -110,6 +129,8 @@ workspaceRouter.put('/api/workspace/account-access/:userId',async c => {
   const target=await c.env.DB.prepare('SELECT id,email,email_verified FROM users WHERE id=? AND disabled_at IS NULL').bind(user).first<{id:string;email:string;email_verified:number}>();
   if (!target) return fail(c,'not_found',404);
   const accessLevel=parsed.data.access_level;
+  if(!await canManageStaffTarget(c.env.DB,c.get('userId'),user))return fail(c,'platform_owner_required',403);
+  if(await managedStaff(c.env.DB,user))return fail(c,'use_staff_access_manager',409);
   if (accessLevel && await isReservedPlatformEmail(c.env.DB,target.email)) {
     if (accessLevel !== 'admin') return fail(c,'platform_principal_protected',409);
     if (target.email_verified !== 1) return fail(c,'verification_required',409);
@@ -119,6 +140,8 @@ workspaceRouter.put('/api/workspace/account-access/:userId',async c => {
   for (const id of ids) if (!(await c.env.DB.prepare("SELECT id FROM clients WHERE id=? AND status!='archived'").bind(id).first())) return fail(c,'invalid_client');
   return mutate(c,parsed.data,{ok:true},[
     ...(accessLevel ? [c.env.DB.prepare('DELETE FROM user_roles WHERE user_id=?').bind(user), ...(['user',...(accessLevel==='user'?[]:[accessLevel])].map(role=>c.env.DB.prepare('INSERT INTO user_roles(user_id,role) VALUES (?,?)').bind(user,role)))] : []),
+    c.env.DB.prepare('UPDATE clients SET access_managed=1 WHERE id IN(SELECT client_id FROM client_account_access WHERE user_id=?)').bind(user),
+    ...ids.map(id=>c.env.DB.prepare('UPDATE clients SET access_managed=1 WHERE id=?').bind(id)),
     c.env.DB.prepare('DELETE FROM client_account_access WHERE user_id=?').bind(user),
     ...ids.map(id=>c.env.DB.prepare('INSERT INTO client_account_access(client_id,user_id,granted_by,created_at) VALUES (?,?,?,?)').bind(id,user,c.get('userId'),Date.now())),
     audit(c,'workspace.client_access.updated',user,{client_ids:ids,access_level:accessLevel}),
@@ -129,7 +152,7 @@ workspaceRouter.put('/api/workspace/account-access/:userId',async c => {
 /** Links a verified account to the client with the same email (unverified emails never gain client data); creates a client record when none exists yet. */
 export async function linkClientsByEmail(db: D1Database,userId: string) {
   await db.prepare(`INSERT OR IGNORE INTO client_account_access(client_id,user_id,granted_by,created_at)
-    SELECT cl.id,u.id,u.id,? FROM users u JOIN clients cl ON lower(trim(cl.email))=lower(trim(u.email)) WHERE u.id=? AND u.email_verified=1`).bind(Date.now(),userId).run();
+    SELECT cl.id,u.id,u.id,? FROM users u JOIN clients cl ON lower(trim(cl.email))=lower(trim(u.email)) WHERE u.id=? AND u.email_verified=1 AND cl.access_managed=0`).bind(Date.now(),userId).run();
 }
 async function ensureClientForUser(c: Ctx,requested?: string): Promise<string|null> {
   const userId=c.get('userId'), db=c.env.DB;
@@ -144,6 +167,7 @@ async function ensureClientForUser(c: Ctx,requested?: string): Promise<string|nu
   id=await linked(); if (id || requested) return id;
   const user=await db.prepare('SELECT email,display_name FROM users WHERE id=?').bind(userId).first<{email:string;display_name:string|null}>();
   if (!user) return null;
+  if(await db.prepare("SELECT 1 FROM clients WHERE lower(trim(email))=lower(trim(?)) AND access_managed=1").bind(user.email).first())return null;
   const clientId=crypto.randomUUID(), t=Date.now();
   await db.batch([
     db.prepare("INSERT INTO clients(id,company_name,contact_name,email,status,created_at) VALUES (?,?,?,?,'active',?)").bind(clientId,user.display_name||user.email,user.display_name,user.email,t),
@@ -232,46 +256,56 @@ workspaceRouter.delete('/api/workspace/announcements/:id',async c => {
 });
 
 workspaceRouter.get('/api/workspace/work-items/:projectId',async c => {
-  const perm=await canAccessProject(c.env.DB,c.req.param('projectId'),c.get('userId'),c.get('roles'));
+  const onlyMaintenance=c.req.query('kind')==='maintenance';
+  const perm=onlyMaintenance?await maintenanceWorkAccess(c.env,c.req.param('projectId'),c.get('userId'),c.get('roles')):await canAccessProject(c.env.DB,c.req.param('projectId'),c.get('userId'),c.get('roles'));
   if (!perm.read) return fail(c,'not_found',404);
-  const {results}=await c.env.DB.prepare('SELECT id,project_id,kind,title,description,status,assignee_id,due_at,completed_at,revision FROM project_work_items WHERE project_id=? ORDER BY due_at IS NULL,due_at,id LIMIT 200').bind(c.req.param('projectId')).all();
+  const {results}=await c.env.DB.prepare("SELECT id,project_id,kind,title,description,status,assignee_id,due_at,completed_at,revision FROM project_work_items WHERE project_id=? AND (?=0 OR kind='maintenance') ORDER BY due_at IS NULL,due_at,id LIMIT 200").bind(c.req.param('projectId'),onlyMaintenance?1:0).all();
   return c.json({data:results,canWrite:perm.write});
 });
 const itemSchema=z.object({kind:z.enum(['task','deliverable','onboarding','offboarding','maintenance']),title:z.string().trim().min(1).max(200),description:z.string().max(4000).nullable().optional(),due_at:z.number().int().min(0).nullable(),status:z.enum(['open','in_progress','blocked','done','cancelled'])}).strict();
 workspaceRouter.post('/api/workspace/work-items/:projectId',async c => {
   const project=c.req.param('projectId');
-  if (!(await canAccessProject(c.env.DB,project,c.get('userId'),c.get('roles'))).write) return fail(c,'forbidden',403);
   const parsed=itemSchema.safeParse(await c.req.json().catch(()=>null));
   if (!parsed.success) return fail(c,'invalid_input');
   const b=parsed.data,id=crypto.randomUUID(),t=Date.now();
+  const permission=b.kind==='maintenance'?await maintenanceWorkAccess(c.env,project,c.get('userId'),c.get('roles')):await canAccessProject(c.env.DB,project,c.get('userId'),c.get('roles'));
+  if(!permission.write)return fail(c,'forbidden',403);
   return mutate(c,b,{id},[c.env.DB.prepare(`INSERT INTO project_work_items(id,project_id,kind,title,description,status,due_at,completed_at,created_by,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).bind(id,project,b.kind,b.title,b.description||null,b.status,b.due_at,b.status==='done'?t:null,c.get('userId'),t,t),audit(c,'workspace.work.created',id)]);
 });
 workspaceRouter.patch('/api/workspace/work-items/:projectId/:id',async c => {
   const project=c.req.param('projectId');
-  if (!(await canAccessProject(c.env.DB,project,c.get('userId'),c.get('roles'))).write) return fail(c,'forbidden',403);
-  const row=await c.env.DB.prepare('SELECT revision FROM project_work_items WHERE project_id=? AND id=?').bind(project,c.req.param('id')).first<{revision:number}>();
+  const row=await c.env.DB.prepare('SELECT revision,kind FROM project_work_items WHERE project_id=? AND id=?').bind(project,c.req.param('id')).first<{revision:number;kind:string}>();
   if (!row) return fail(c,'not_found',404);
   const parsed=itemSchema.extend({revision:z.number().int().positive()}).safeParse(await c.req.json().catch(()=>null));
   if (!parsed.success) return fail(c,'invalid_input');
   const b=parsed.data,t=Date.now();
+  const permission=b.kind==='maintenance'&&row.kind==='maintenance'?await maintenanceWorkAccess(c.env,project,c.get('userId'),c.get('roles')):await canAccessProject(c.env.DB,project,c.get('userId'),c.get('roles'));
+  if(!permission.write)return fail(c,'forbidden',403);
   if (b.revision!==row.revision) return fail(c,'revision_conflict',409);
   return mutate(c,b,{ok:true},[c.env.DB.prepare(`UPDATE project_work_items SET kind=?,title=?,description=?,status=?,due_at=?,completed_at=?,updated_at=?,revision=CASE WHEN revision=? THEN revision+1 ELSE NULL END WHERE project_id=? AND id=?`).bind(b.kind,b.title,b.description||null,b.status,b.due_at,b.status==='done'?t:null,t,b.revision,project,c.req.param('id')),audit(c,'workspace.work.updated',c.req.param('id'))]);
 });
 
-workspaceRouter.get('/api/workspace/staff',async c => {
+const staffDirectory=async (c:Ctx) => {
   if (!staff(c)) return fail(c,'forbidden',403);
-  const {results}=await c.env.DB.prepare(`SELECT u.id,COALESCE(p.pseudonym,p.display_name,u.display_name,'Membru') display_name,p.staff_role
-    FROM users u LEFT JOIN profiles p ON p.id=u.id WHERE u.disabled_at IS NULL AND EXISTS (SELECT 1 FROM user_roles r WHERE r.user_id=u.id AND r.role IN ('staff','admin')) ORDER BY display_name LIMIT 200`).all();
+  const {results}=await c.env.DB.prepare(`SELECT u.id,COALESCE(p.pseudonym,p.display_name,u.display_name,'Membru') display_name,p.staff_role,COALESCE(CASE WHEN u.email_verified=1 AND EXISTS(SELECT 1 FROM user_roles ar WHERE ar.user_id=u.id AND ar.role='admin') THEN principal.role END,rank.rank_id) rank_id
+    FROM users u LEFT JOIN profiles p ON p.id=u.id LEFT JOIN staff_rank_assignments rank ON rank.user_id=u.id LEFT JOIN platform_principals principal ON principal.email=u.email COLLATE NOCASE AND principal.status='active' WHERE u.disabled_at IS NULL AND EXISTS (SELECT 1 FROM user_roles r WHERE r.user_id=u.id AND r.role IN ('staff','admin')) ORDER BY display_name LIMIT 200`).all();
   return c.json({data:results});
-});
+};
+workspaceRouter.get('/api/workspace/staff',staffDirectory);
+workspaceRouter.get('/api/workspace/chat/members',staffDirectory);
+
 const chatSchema=z.object({recipient_id:z.string().min(1).max(100).nullable(),channel:z.enum(['general','dev','design','marketing','random']),content:z.string().trim().min(1).max(4000)}).strict();
 workspaceRouter.get('/api/workspace/chat',async c => {
   if (!staff(c)) return fail(c,'forbidden',403);
   const recipient=c.req.query('recipient_id'), channel=c.req.query('channel')||'general';
   const {limit,offset}=page(c);
   const where=recipient?'((author_id=? AND recipient_id=?) OR (author_id=? AND recipient_id=?))':'recipient_id IS NULL AND channel=?';
-  const binds=recipient?[c.get('userId'),recipient,recipient,c.get('userId')]:[channel];
-  const {results}=await c.env.DB.prepare(`SELECT id,author_id,recipient_id,channel,content,created_at FROM staff_chat_messages WHERE ${where} ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?`).bind(...binds,limit,offset).all<Record<string,unknown>>();
+  const binds:(string|number)[]=recipient?[c.get('userId'),recipient,recipient,c.get('userId')]:[channel];
+  if(!['general','dev','design','marketing','random'].includes(channel))return fail(c,'invalid_channel');
+  const before=c.req.query('before');
+  let cursorSql='';
+  if(before){const separator=before.indexOf(':');const at=Number(before.slice(0,separator)),id=before.slice(separator+1);if(separator<1||!Number.isSafeInteger(at)||at<0||!/^[-a-zA-Z0-9_.:]{1,160}$/.test(id))return fail(c,'invalid_cursor');cursorSql=' AND (created_at<? OR(created_at=? AND id<?))';binds.push(at,at,id);}
+  const {results}=await c.env.DB.prepare(`SELECT id,author_id,recipient_id,channel,content,created_at FROM staff_chat_messages WHERE project_id IS NULL AND (${where}) ${cursorSql} ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?`).bind(...binds,limit,before?0:offset).all<Record<string,unknown>>();
   return c.json({data:results.reverse().map(r=>({...r,created_at:iso(r.created_at)}))});
 });
 workspaceRouter.post('/api/workspace/chat',async c => {
@@ -321,4 +355,28 @@ workspaceRouter.post('/api/workspace/statistics/:projectId',async c=>{
   if(!parsed.success||parsed.data.period_end<=parsed.data.period_start||parsed.data.period_end>Date.now())return fail(c,'invalid_statistics');
   const b=parsed.data,id=crypto.randomUUID();
   return mutate(c,b,{id},[c.env.DB.prepare('INSERT INTO project_statistics(id,project_id,period_start,period_end,visits,unique_visitors,uptime_percent,avg_response_ms,source,recorded_by,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').bind(id,c.req.param('projectId'),b.period_start,b.period_end,b.visits,b.unique_visitors,b.uptime_percent,b.avg_response_ms,b.source,c.get('userId'),Date.now()),audit(c,'workspace.statistics.recorded',id)]);
+});
+
+workspaceRouter.route("/",createMaintenanceRouter(mutate));
+
+// Thread previews contain only shared channels and the caller's own direct messages.
+workspaceRouter.get('/api/workspace/chat/conversations',async c=>{
+ if(!staff(c))return fail(c,'forbidden',403);
+ const user=c.get('userId');
+ const rows=await c.env.DB.prepare(`WITH visible AS(
+  SELECT *,CASE WHEN recipient_id IS NULL THEN 'channel:'||channel WHEN author_id=? THEN 'dm:'||recipient_id ELSE 'dm:'||author_id END target FROM staff_chat_messages WHERE project_id IS NULL AND (recipient_id IS NULL OR author_id=? OR recipient_id=?)
+ ),ranked AS(SELECT *,row_number() OVER(PARTITION BY target ORDER BY created_at DESC,id DESC) rn FROM visible)
+ SELECT v.target,max(CASE WHEN rn=1 THEN v.id END) last_id,max(CASE WHEN rn=1 THEN v.content END) last_content,max(v.created_at) last_at,
+ sum(CASE WHEN v.author_id<>? AND (r.message_at IS NULL OR v.created_at>r.message_at OR(v.created_at=r.message_at AND v.id>r.message_id)) THEN 1 ELSE 0 END) unread
+ FROM ranked v LEFT JOIN staff_chat_reads r ON r.user_id=? AND r.target=v.target GROUP BY v.target ORDER BY last_at DESC LIMIT 500`).bind(user,user,user,user,user).all<Record<string,unknown>>();
+ return c.json({data:rows.results.map(r=>({...r,last_at:iso(r.last_at)}))});
+});
+workspaceRouter.post('/api/workspace/chat/read',async c=>{
+ if(!staff(c))return fail(c,'forbidden',403);
+ const parsed=z.object({target:z.string().regex(/^(channel:(general|dev|design|marketing|random)|dm:[-a-zA-Z0-9_.:]{1,160})$/),messageId:z.string().min(1).max(160)}).strict().safeParse(await c.req.json().catch(()=>null));if(!parsed.success)return fail(c,'invalid_input');
+ const b=parsed.data,user=c.get('userId');
+ const row=await c.env.DB.prepare("SELECT created_at,author_id,recipient_id,channel FROM staff_chat_messages WHERE id=? AND project_id IS NULL AND (recipient_id IS NULL OR author_id=? OR recipient_id=?)").bind(b.messageId,user,user).first<{created_at:number;author_id:string;recipient_id:string|null;channel:string}>();
+ if(!row)return fail(c,'not_found',404);
+ const target=row.recipient_id===null?'channel:'+row.channel:'dm:'+(row.author_id===user?row.recipient_id:row.author_id);if(target!==b.target)return fail(c,'invalid_scope',403);
+ return mutate(c,b,{ok:true},[c.env.DB.prepare(`INSERT INTO staff_chat_reads(user_id,target,message_id,message_at,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(user_id,target) DO UPDATE SET message_id=excluded.message_id,message_at=excluded.message_at,updated_at=excluded.updated_at WHERE excluded.message_at>staff_chat_reads.message_at OR(excluded.message_at=staff_chat_reads.message_at AND excluded.message_id>staff_chat_reads.message_id)`).bind(user,b.target,b.messageId,row.created_at,Date.now())]);
 });

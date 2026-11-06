@@ -205,15 +205,21 @@ export default function IndustryDeviceShowcase({ domains, activeDomain, onDomain
     controller.current = (stage: number) => {
       window.clearTimeout(stageJumpTimer);
       if (reduced.matches) { active = stage; setActiveStage(stage); setDomainsOpen(false); paint(anchors[stage], stage); return; }
-      measure();
-      const top = window.scrollY + section.getBoundingClientRect().top;
-      const destination = top - stickyTop + travel * anchors[stage];
+      const destinationForStage = () => {
+        measure();
+        return window.scrollY + section.getBoundingClientRect().top - stickyTop + travel * anchors[stage];
+      };
+      const destination = destinationForStage();
       window.scrollTo({ top: destination, behavior: "smooth" });
       // Mobile browsers can cancel a smooth scroll while restoring focus after
       // the industry picker closes, even after it has moved a few pixels.
       stageJumpTimer = window.setTimeout(() => {
-        if (!section.isConnected || active === stage || Math.abs(window.scrollY - destination) < 12) return;
-        window.scrollTo({ top: destination, behavior: "instant" });
+        if (!section.isConnected || active === stage) return;
+        // Deferred sections/images above this scene may have changed its
+        // position since the click. Never retry an obsolete page coordinate.
+        const latestDestination = destinationForStage();
+        if (Math.abs(window.scrollY - latestDestination) < 12) return;
+        window.scrollTo({ top: latestDestination, behavior: "instant" });
         readTarget();
         current = target;
         paint(current);

@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { STAFF_MANAGED } from "@/shared/staffAccess";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { internApi, type AccountOption, type BannerStatus, type ClientOption, type ProjectKind, type ProjectPurchase, type ProjectSale } from "@/lib/internApi";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,6 +31,7 @@ const BANNER: Record<BannerStatus, { label: string; cls: string }> = {
 };
 
 const KINDS: { value: ProjectKind; label: string }[] = [
+  {value:"external_asset",label:"Proiect / produs extern"},
   { value: "website_prezentare",  label: "Website prezentare" },
   { value: "prezentare_premium",  label: "Prezentare premium" },
   { value: "magazin_online",      label: "Magazin online" },
@@ -38,8 +40,15 @@ const KINDS: { value: ProjectKind; label: string }[] = [
   { value: "aplicatie",           label: "Aplicație" },
 ];
 
-export default function InternHome({ embedded = false }: { embedded?: boolean }) {
-  const { user, isStaff, loading: authLoading } = useAuth();
+export default function InternHome({ embedded = false }: { embedded?: boolean;
+}) {
+  const { user, isStaff, capabilities, loading: authLoading } = useAuth();
+  const [params,setParams]=useSearchParams();
+  const mine=params.get("scope")==="mine";
+  const canCreate =
+    isStaff &&
+    (!capabilities.includes(STAFF_MANAGED) ||
+      capabilities.includes("projects.create"));
   const [rows, setRows] = useState<Row[]>([]);
   const [purchases, setPurchases] = useState<ProjectPurchase[]>([]);
   const [sales, setSales] = useState<ProjectSale[]>([]);
@@ -51,20 +60,32 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
   const [accounts, setAccounts] = useState<AccountOption[]>([]);
   const [form, setForm] = useState({ name: "", slug: "", kind: "website_prezentare" as ProjectKind, url: "", description: "", client_id: "", owner_user_id: "", recurring_enabled: false, recurring_name: "Mentenanță AVYRON", recurring_price: "", recurring_cycle: "monthly" as "monthly" | "yearly", next_billing_date: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10) });
 
-  const load = async () => {
+  const loadSeq=useRef(0);
+  const load = useCallback(async () => {
+    const seq=++loadSeq.current;
     setLoading(true);
     try {
-      const res = await internApi.listProjects();
+      const res = await internApi.listProjects(mine);
+      if(seq!==loadSeq.current)return;
       setRows(res.data as Row[]);
       setPurchases(res.purchases ?? []);
       setSales(res.sales ?? []);
     } catch (e) {
-      toast.error((e as Error).message);
-    } finally { setLoading(false); }
-  };
-  useEffect(() => { if (user) void load(); }, [user]);
+      if(seq===loadSeq.current){setRows([]);setPurchases([]);setSales([]);toast.error((e as Error).message);}
+    } finally { if(seq===loadSeq.current)setLoading(false); }
+  }, [mine]);
+  const userId=user?.id;
   useEffect(() => {
-    if (!user || !isStaff) return;
+    if (!userId) return;
+    const counter=loadSeq;
+    setRows([]);setPurchases([]);setSales([]);void load();
+    const update=()=>{if(document.visibilityState==="visible")void load()};
+    const timer=setInterval(update,30000);
+    window.addEventListener("focus",update);window.addEventListener("avyron:projects-changed",update);
+    return()=>{++counter.current;clearInterval(timer);window.removeEventListener("focus",update);window.removeEventListener("avyron:projects-changed",update)};
+  }, [userId,load]);
+  useEffect(() => {
+    if (!user || !canCreate) return;
     Promise.all([internApi.listClients(), internApi.listAccounts()])
       .then(([clientResult, accountResult]) => {
         setClients(clientResult.data);
@@ -74,7 +95,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
         setClients([]);
         setAccounts([]);
       });
-  }, [user, isStaff]);
+  }, [user, canCreate]);
 
   const handleCreate = async () => {
     if (!form.name.trim() || !form.slug.trim() || !form.client_id.trim()) {
@@ -105,7 +126,9 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
     } finally { setCreating(false); }
   };
 
-  if (authLoading) return <div className="min-h-screen grid place-items-center text-sm text-muted-foreground">Se încarcă…</div>;
+  if (authLoading) return (
+      <div className="min-h-screen grid place-items-center text-sm text-muted-foreground">Se încarcă…</div>
+    );
 
   const activeRows = isStaff
     ? rows.filter((project) => !["archived", "cancelled", "done", "completed"].includes(project.status) && project.banner_status !== "online")
@@ -114,21 +137,23 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
 
   return (
     <div className={embedded ? "space-y-6" : "max-w-5xl mx-auto p-4 sm:p-6 space-y-6"}>
-      {!embedded && <PageBackLink to="/profil" label="Înapoi" title="Înapoi la profil" />}
+      {!embedded && (
+        <PageBackLink to="/profil" label="Înapoi" title="Înapoi la profil" />
+      )}
       <header className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold flex items-center gap-2">
             <FolderKanban className="size-5 text-primary" />
-            {isStaff ? "Platformă internă — Proiecte" : "Proiectele mele"}
+            {isStaff && !mine ? "Platformă internă — Proiecte" : "Proiectele mele"}
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {isStaff
+            {isStaff && mine ? "Proiectele în care ești implicat, cu progresul și materialele lor." : isStaff
               ? "Proiecte în desfășurare și vânzări concretizate, fără date editoriale sau trafic."
               : "Aici vezi proiectele tale, statusul lor și poți propune modificări."}
           </p>
         </div>
 
-        {isStaff && (
+        {canCreate && (
           <Dialog open={openCreate} onOpenChange={setOpenCreate}>
             <DialogTrigger asChild>
               <button className="group relative inline-flex items-center gap-2.5 rounded-full bg-zinc-950 px-5 py-2.5 text-sm font-medium text-white shadow-[0_8px_30px_-12px_rgba(0,0,0,0.6)] ring-1 ring-white/10 transition-all hover:bg-zinc-900 hover:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.8)] hover:scale-[1.02] active:scale-[0.98] dark:bg-white dark:text-zinc-950 dark:ring-zinc-900/10 dark:hover:bg-zinc-100">
@@ -142,7 +167,8 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2"><Plus className="size-4 text-primary" /> Proiect nou</DialogTitle>
-                <DialogDescription>Slug-ul apare în URL: <code>/intern/projects/&lt;slug&gt;</code>.</DialogDescription>
+                <DialogDescription>Slug-ul apare în URL: {" "}
+                  <code>/intern/projects/&lt;slug&gt;</code>.</DialogDescription>
               </DialogHeader>
               <div className="space-y-3">
                 <div><Label>Nume *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Clar Lumânări" /></div>
@@ -151,7 +177,8 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
                   <Label>Tip</Label>
                   <Select value={form.kind} onValueChange={(v) => setForm({ ...form, kind: v as ProjectKind })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{KINDS.map((k) => <SelectItem key={k.value} value={k.value}>{k.label}</SelectItem>)}</SelectContent>
+                    <SelectContent>{KINDS.map((k) => (
+                        <SelectItem key={k.value} value={k.value}>{k.label}</SelectItem>))}</SelectContent>
                   </Select>
                 </div>
                 <div><Label>URL live</Label><Input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} placeholder="https://clarlumanari.ro" /></div>
@@ -181,13 +208,19 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
                     <SelectContent>
                       <SelectItem value="unassigned">Fără cont asociat</SelectItem>
                       {accounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id}>{account.display_name || account.company_name || account.email} · {account.email}</SelectItem>
+                        <SelectItem key={account.id} value={account.id}>{account.display_name || account.company_name || account.email}{" "}
+                          · {account.email}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                {clients.length === 0 && <p className="text-[11px] text-muted-foreground">Creează sau importă mai întâi un client din secțiunea Clienți.</p>}
-                <fieldset className="rounded-xl border border-border/60 p-3"><label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" checked={form.recurring_enabled} onChange={(event) => setForm({ ...form, recurring_enabled: event.target.checked })} /> Pornește proiectul cu mentenanță și abonament</label><p className="mt-1 text-[11px] text-muted-foreground">Proiectul, serviciul recurent și abonamentul clientului sunt create atomic și rămân sincronizate.</p>{form.recurring_enabled && <div className="mt-3 grid gap-3 sm:grid-cols-2"><div className="sm:col-span-2"><Label>Serviciu recurent</Label><Input value={form.recurring_name} onChange={(event) => setForm({ ...form, recurring_name: event.target.value })} /></div><div><Label>Preț RON</Label><Input type="number" min="0" step="1" value={form.recurring_price} onChange={(event) => setForm({ ...form, recurring_price: event.target.value })} /></div><div><Label>Ciclu</Label><Select value={form.recurring_cycle} onValueChange={(value) => setForm({ ...form, recurring_cycle: value as "monthly" | "yearly" })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="monthly">Lunar</SelectItem><SelectItem value="yearly">Anual</SelectItem></SelectContent></Select></div><div className="sm:col-span-2"><Label>Prima facturare</Label><Input type="date" value={form.next_billing_date} onChange={(event) => setForm({ ...form, next_billing_date: event.target.value })} /></div></div>}</fieldset>
+                {clients.length === 0 && (
+                  <p className="text-[11px] text-muted-foreground">Creează sau importă mai întâi un client din secțiunea Clienți.</p>
+                )}
+                <fieldset className="rounded-xl border border-border/60 p-3"><label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" checked={form.recurring_enabled} onChange={(event) => setForm({ ...form, recurring_enabled: event.target.checked })} />{" "}
+                    Pornește proiectul cu mentenanță și abonament</label><p className="mt-1 text-[11px] text-muted-foreground">Proiectul, serviciul recurent și abonamentul clientului sunt create atomic și rămân sincronizate.</p>{form.recurring_enabled && (
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2"><div className="sm:col-span-2"><Label>Serviciu recurent</Label><Input value={form.recurring_name} onChange={(event) => setForm({ ...form, recurring_name: event.target.value })} /></div><div><Label>Preț RON</Label><Input type="number" min="0" step="1" value={form.recurring_price} onChange={(event) => setForm({ ...form, recurring_price: event.target.value })} /></div><div><Label>Ciclu</Label><Select value={form.recurring_cycle} onValueChange={(value) => setForm({ ...form, recurring_cycle: value as "monthly" | "yearly" })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="monthly">Lunar</SelectItem><SelectItem value="yearly">Anual</SelectItem></SelectContent></Select></div><div className="sm:col-span-2"><Label>Prima facturare</Label><Input type="date" value={form.next_billing_date} onChange={(event) => setForm({ ...form, next_billing_date: event.target.value })} /></div></div>
+                  )}</fieldset>
               </div>
               <DialogFooter>
                 <Button variant="ghost" onClick={() => setOpenCreate(false)}>Anulează</Button>
@@ -198,16 +231,20 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
         )}
       </header>
 
-      {isStaff && <div className="flex gap-2" aria-label="Afișare proiecte">
+      {isStaff && (
+        <div className="flex flex-wrap gap-2" aria-label="Afișare proiecte">
+        {isStaff&&mine&&<Button type="button" size="sm" variant="outline" onClick={()=>setParams(current=>{const next=new URLSearchParams(current);next.delete('scope');return next},{replace:true})}>Vezi toate proiectele autorizate</Button>}
         <Button type="button" size="sm" variant={projectView === "pipeline" ? "default" : "outline"} aria-pressed={projectView === "pipeline"} onClick={() => setProjectView("pipeline")}><Columns3 className="mr-1.5 size-4" />Pipeline</Button>
         <Button type="button" size="sm" variant={projectView === "list" ? "default" : "outline"} aria-pressed={projectView === "list"} onClick={() => setProjectView("list")}><List className="mr-1.5 size-4" />Listă</Button>
-      </div>}
+      </div>
+      )}
 
       {loading ? (
         <div className="text-sm text-muted-foreground">Se încarcă proiectele…</div>
       ) : (isStaff ? rows.length === 0 : activeRows.length === 0 && purchases.length === 0 && sales.length === 0) ? (
         <Card><CardContent className="p-8 text-center text-muted-foreground">
-          {isStaff ? "Nu există proiecte încă. Folosește butonul „Creează proiect”." : "Nu ai încă proiecte asignate. Vei fi anunțat când unul e disponibil."}
+          {canCreate
+              ? "Nu există proiecte încă. Folosește butonul „Creează proiect”." : "Nu ai încă proiecte asignate. Vei fi anunțat când unul e disponibil."}
         </CardContent></Card>
       ) : (
         <>
@@ -230,22 +267,37 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
             );
           })()}
 
-          {isStaff && projectView === "pipeline" && <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-5" aria-label="Pipeline proiecte">
+          {isStaff && projectView === "pipeline" && (
+            <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-5" aria-label="Pipeline proiecte">
             {(["offline", "in_progress", "revizuire", "testing", "online"] as const).map((status) => {
               const projects = workflowRows.filter((project) => project.banner_status === status);
-              return <section key={status} aria-label={BANNER[status].label} className="min-w-0 rounded-2xl border border-border/60 bg-card/40 p-3">
-                <h2 className="mb-3 flex items-center justify-between text-sm font-semibold"><span>{BANNER[status].label}</span><span className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">{projects.length}</span></h2>
-                <div className="space-y-2">{projects.map((project) => <Link key={project.id} to={`/intern/projects/${project.slug}`} className="block rounded-xl border border-border/60 bg-card p-3 transition hover:border-primary/50 hover:shadow-sm"><span className="block truncate text-sm font-medium">{project.name}</span><span className="mt-1 block text-xs text-muted-foreground">Actualizat {new Date(project.updated_at).toLocaleDateString("ro-RO")}</span></Link>)}{projects.length === 0 && <p className="rounded-xl border border-dashed border-border/60 p-3 text-xs text-muted-foreground">Niciun proiect.</p>}</div>
-              </section>;
+              return (
+                  <details open key={status} aria-label={BANNER[status].label} className="min-w-0 rounded-2xl border border-border/60 bg-card/40 p-3">
+                <summary className="mb-3 flex cursor-pointer items-center justify-between gap-2 text-sm font-semibold"><span>{BANNER[status].label}</span><span className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">{projects.length} ▾</span></summary>
+                <div className="space-y-2">{projects.map((project) => (
+                        <Link key={project.id} to={`/intern/projects/${project.slug}`} className="block rounded-xl border border-border/60 bg-card p-3 transition hover:border-primary/50 hover:shadow-sm"><span className="block truncate text-sm font-medium">{project.name}</span><span className="mt-1 block text-xs text-muted-foreground">Actualizat {" "}
+                            {new Date(project.updated_at).toLocaleDateString("ro-RO")}</span></Link>))}{projects.length === 0 && (
+                        <p className="rounded-xl border border-dashed border-border/60 p-3 text-xs text-muted-foreground">Niciun proiect.</p>
+                      )}</div>
+              </details>
+                );
             })}
-          </div>}
+          </div>
+          )}
 
-          {isStaff && projectView === "list" && activeRows.length === 0 && <p className="rounded-xl border border-dashed border-border/60 p-4 text-sm text-muted-foreground">Nu există proiecte active în listă. Verifică pipeline-ul pentru cele finalizate sau online.</p>}
-          {(!isStaff || projectView === "list") && <div className="grid gap-3 sm:grid-cols-2">
-            {activeRows.map((p) => {
+          {isStaff && projectView === "list" && activeRows.length === 0 && (
+            <p className="rounded-xl border border-dashed border-border/60 p-4 text-sm text-muted-foreground">Nu există proiecte active în listă. Verifică pipeline-ul pentru cele finalizate sau online.</p>
+          )}
+          {(!isStaff || projectView === "list") && (
+            <div className="grid gap-3 sm:grid-cols-2">
+            {[...new Set(activeRows.map((row) =>row.kind))].map(
+                (category) => (
+                  <details open key={category} className="min-w-0 rounded-xl border bg-card/30 p-3"><summary className="mb-3 cursor-pointer text-sm font-semibold">{KINDS.find((kind) =>kind.value===category)?.label||category}{" "}
+                      ·{" "}
+                      {activeRows.filter((row) =>row.kind===category).length}</summary><div className="space-y-3">{activeRows.filter((row) =>row.kind===category).map((p) => {
               const B = BANNER[p.banner_status] ?? BANNER.in_progress;
               return (
-                <Link key={p.id} to={`/intern/projects/${p.slug}`} className="group rounded-xl border bg-card p-4 hover:border-primary/50 hover:shadow-md transition">
+                <Link key={p.id} to={`/intern/projects/${p.slug}`} className="group block rounded-xl border bg-card p-4 hover:border-primary/50 hover:shadow-md transition">
                   <div className="flex items-start gap-3">
                     {p.favicon_url ? (
                       <img src={p.favicon_url} alt="" className="size-8 rounded-md border bg-background object-contain" onError={(e) => (e.currentTarget.style.display = "none")} />
@@ -259,16 +311,20 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
                       </div>
                       {p.url && normalizeExternalLink(p.url) && (
                         <a href={normalizeExternalLink(p.url)!} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
-                          {p.url.replace(/^https?:\/\//, "")} <ExternalLink className="size-3" />
+                          {p.url.replace(/^https?:\/\//, "")}{" "}
+                                      <ExternalLink className="size-3" />
                         </a>
                       )}
-                      <p className="mt-2 text-[11px] text-muted-foreground">Actualizat {new Date(p.updated_at).toLocaleDateString("ro-RO")}</p>
+                      <p className="mt-2 text-[11px] text-muted-foreground">Actualizat {" "}
+                                    {new Date(p.updated_at).toLocaleDateString("ro-RO")}</p>
                     </div>
                   </div>
                 </Link>
               );
-            })}
-          </div>}
+            })}</div></details>),
+              )}
+          </div>
+          )}
 
           {isStaff && sales.length > 0 && (
             <section className="space-y-3" aria-labelledby="confirmed-sales-title">
@@ -311,7 +367,8 @@ export default function InternHome({ embedded = false }: { embedded?: boolean })
                         </div>
                         <p className="mt-1 text-xs capitalize text-muted-foreground">{purchase.kind === "subscription" ? "Abonament" : purchase.kind === "product" ? "Produs" : "Serviciu"}</p>
                         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-emerald-500/10 pt-3 text-xs">
-                          <span className="inline-flex items-center gap-1.5 text-muted-foreground"><Receipt className="size-3.5" /> {purchase.id.slice(0, 8).toUpperCase()}</span>
+                          <span className="inline-flex items-center gap-1.5 text-muted-foreground"><Receipt className="size-3.5" /> {" "}
+                            {purchase.id.slice(0, 8).toUpperCase()}</span>
                           <span className="font-semibold">{new Intl.NumberFormat("ro-RO", { style: "currency", currency: purchase.currency }).format(purchase.total_cents / 100)}</span>
                         </div>
                       </div>

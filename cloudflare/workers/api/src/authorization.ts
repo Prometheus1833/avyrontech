@@ -1,5 +1,7 @@
+import { STAFF_PERMISSION_KEYS } from "../../../../src/shared/staffAccess";
 export type PlatformRole = "platform_owner" | "superadmin";
-export type OrganizationRole = "owner" | "admin" | "manager" | "specialist" | "client_admin" | "client_member" | "viewer";
+export type OrganizationRole =
+  | "owner" | "admin" | "manager" | "specialist" | "client_admin" | "client_member" | "viewer";
 
 /** Email identities designated for the platform control plane, including suspended ones. */
 export async function isReservedPlatformEmail(db: D1Database, email: string): Promise<boolean> {
@@ -38,6 +40,11 @@ export async function hasCapability(
   organizationId?: string,
   timestamp = Date.now(),
 ): Promise<boolean> {
+  if (
+    STAFF_PERMISSION_KEYS.includes(capability) &&
+    (await platformRoleForUser(db, userId))
+  )
+    return true;
   const row = await db.prepare(
     `SELECT 1 AS allowed
        FROM user_capabilities
@@ -63,4 +70,11 @@ export async function organizationRoleForUser(
       LIMIT 1`,
   ).bind(organizationId, userId).first<{ role: OrganizationRole }>();
   return row?.role ?? null;
+}
+
+/** A client grant can cover tenant projects only when that tenant is the
+ * client's mapped legal entity. It never grants staff/project write access. */
+export const clientProjectGrantSql=(alias: "p" | "project")=>`EXISTS(SELECT 1 FROM client_account_access cg WHERE cg.client_id=${alias}.client_id AND cg.user_id=? AND (${alias}.organization_id IS NULL OR EXISTS(SELECT 1 FROM client_organizations co WHERE co.client_id=${alias}.client_id AND co.organization_id=${alias}.organization_id)))`;
+export async function hasClientProjectGrant(db:D1Database,projectId:string,userId:string){
+  return !!(await db.prepare(`SELECT 1 FROM projects p WHERE p.id=? AND ${clientProjectGrantSql("p")}`).bind(projectId,userId).first());
 }

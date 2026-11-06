@@ -48,6 +48,14 @@ describe("lead deletion audit", () => {
 
   const request = (path: string, init?: RequestInit) => app.request(`https://avyron.test${path}`, init, env);
 
+  it.each(['changed_mind','unwilling_to_pay','requirements_not_met'])('persists the commercial removal reason %s without deleting its history', async reasonCode => {
+    const response=await request('/api/leads/lead-1',{method:'DELETE',headers:{'content-type':'application/json'},body:JSON.stringify({reasonCode})});
+    expect(response.status).toBe(200);
+    expect(db.prepare("SELECT deletion_reason_key FROM leads WHERE id='lead-1'").get()!.deletion_reason_key).toBe(reasonCode);
+    expect((await (await request('/api/leads')).json()).data).toEqual([]);
+    expect((await (await request('/api/leads/deletions')).json()).data[0].reason_code).toBe(reasonCode);
+  });
+
   it("requires a bounded reason, removes the lead from active lists and keeps a superadmin log", async () => {
     expect((await request("/api/leads/lead-1", { method: "DELETE", headers: { "content-type": "application/json" }, body: "{}" })).status).toBe(400);
     const deletion = await request("/api/leads/lead-1", { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ reasonCode: "duplicate", reasonDetail: "Aceeași solicitare a fost înregistrată de două ori." }) });

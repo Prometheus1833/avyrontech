@@ -11,7 +11,8 @@ import NavDate from "./NavDate";
 import logo from "@/assets/avyron-logo.webp";
 
 const UserMenu = lazyWithRetry(() => import("@/components/auth/UserMenu"));
-const StaffOsMenu = lazyWithRetry(() => import("./StaffOsMenu"));
+const StaffHeader = lazyWithRetry(() => import("./StaffHeader"));
+const ClientChatButton=lazyWithRetry(()=>import("./ClientChatButton"));
 
 // Routes where prices are shown — the currency toggle belongs in the nav cluster there.
 const CURRENCY_ROUTES = /^\/(en\/)?(servicii|services|produse|products)/;
@@ -85,6 +86,8 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
     };
   }, []);
 
+  if(!loading&&user&&isStaff)return <Suspense fallback={<header className="fixed inset-x-0 top-0 z-50 p-4"><span className="rounded-full bg-background px-4 py-3">INTERN OS</span></header>}><StaffHeader scrollLift={scrollLift}/></Suspense>;
+
   return (
     <header
       className="fixed inset-x-0 top-0 z-50 transition-transform duration-300 ease-out motion-reduce:transform-none"
@@ -96,18 +99,14 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
             <a href={`${homePath}#hero`} aria-label="AVYRON" className="flex items-center gap-2">
               <img src={logo} alt="" width={22} height={22} className="size-[1.4rem] rounded-md object-cover" />
               <span
-                className={`text-sm sm:text-base md:text-lg font-bold uppercase tracking-[0.18em] bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent ${isStaff ? "max-[359px]:hidden" : ""}`}
+                className={`text-sm sm:text-base md:text-lg font-bold uppercase tracking-[0.18em] bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent ${user ? "max-[359px]:hidden" : ""}`}
                 style={{ fontFamily: '"Times New Roman", Times, serif' }}
               >
                 AVYRON
               </span>
             </a>
-            {!loading && isStaff && (
-              <Suspense fallback={<span className="h-10 w-12" aria-hidden="true" />}>
-                <StaffOsMenu />
-              </Suspense>
-            )}
-            <NavDate className={isStaff ? "max-[419px]:hidden" : ""} />
+            <NavDate className={user ? "max-[419px]:hidden" : ""} />
+            {!loading&&user&&!isStaff&&<Suspense fallback={null}><ClientChatButton/></Suspense>}
             <div className="hidden xl:inline-flex items-center gap-1.5">
               {showCurrency && <CurrencySwitch compact showDetails={false} />}
               <LangSwitch />

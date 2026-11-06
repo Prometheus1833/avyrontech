@@ -1,61 +1,63 @@
-import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import LibraryLink from "@/components/site/LibraryLink";
-import PortfolioCarousel from "@/components/site/PortfolioCarousel";
-import {
-  Accessibility,
-  ArrowRight,
-  BarChart3,
-  Bug,
-  Calculator,
-  Check,
-  FlaskConical,
-
-  Clock,
-  Cloud,
-  Code2,
-  Cpu,
-  Gauge,
-  Globe,
-  HeartHandshake,
-  MessageCircle,
-  Palette,
-  ScanSearch,
-  Search,
-  Share2,
-  Shield,
-  ShoppingBag,
-  ShoppingCart,
-  Smartphone,
-  Users,
-  Zap,
-} from "lucide-react";
-import { useLang } from "@/i18n/LanguageContext";
-import { getServiceByPath, SERVICES, type IconKey } from "@/data/services";
-import LangSwitch from "@/components/site/LangSwitch";
-import ThemeToggle from "@/components/site/ThemeToggle";
-import Breadcrumbs from "@/components/site/Breadcrumbs";
-import PageBackLink from "@/components/site/PageBackLink";
-import Reveal from "@/components/site/Reveal";
-import NotFound from "@/pages/NotFound";
+import ServiceContentProvider from "@/components/services/ServiceContentProvider";
 import logo from "@/assets/avyron-logo.webp";
-import { trackEvent } from "@/lib/analytics";
-import Footer from "@/components/site/Footer";
-import CurrencySwitch from "@/components/site/CurrencySwitch";
-import { useCurrency } from "@/hooks/useCurrency";
-import PaymentMethods from "@/components/site/PaymentMethods";
-import QuickNav, { type QuickNavItem } from "@/components/site/QuickNav";
-import PlanTeaser from "@/components/site/subscriptions/PlanTeaser";
-import { categoryForService } from "@/data/subscriptionPlans";
 import ServiceCinematicIntro from "@/components/services/ServiceCinematicIntro";
-import { isServiceIntroKey } from "@/data/serviceIntros";
-import WebsitePriceCalculator from "@/components/services/WebsitePriceCalculator";
-import TechnologyPartnersCarousel from "@/components/services/TechnologyPartnersCarousel";
 import ServiceReviews from "@/components/services/ServiceReviews";
+import TechnologyPartnersCarousel from "@/components/services/TechnologyPartnersCarousel";
 import WebsiteIntroScrollScene from "@/components/services/WebsiteIntroScrollScene";
+import WebsitePriceCalculator from "@/components/services/WebsitePriceCalculator";
+import Breadcrumbs from "@/components/site/Breadcrumbs";
+import CurrencySwitch from "@/components/site/CurrencySwitch";
+import Footer from "@/components/site/Footer";
+import LangSwitch from "@/components/site/LangSwitch";
+import LibraryLink from "@/components/site/LibraryLink";
+import PageBackLink from "@/components/site/PageBackLink";
+import PaymentMethods from "@/components/site/PaymentMethods";
+import PortfolioCarousel from "@/components/site/PortfolioCarousel";
+import QuickNav,{ type QuickNavItem } from "@/components/site/QuickNav";
+import Reveal from "@/components/site/Reveal";
+import PlanTeaser from "@/components/site/subscriptions/PlanTeaser";
+import ThemeToggle from "@/components/site/ThemeToggle";
+import { SERVICE_INLINE_GENERIC } from '@/data/managedServiceCopy/inline-generic';
+import { isServiceIntroKey } from "@/data/serviceIntros";
+import { getServiceByPath,SERVICES,type IconKey } from "@/data/services";
+import { categoryForService } from "@/data/subscriptionPlans";
 import { useAuth } from "@/hooks/useAuth";
-import { addLocalAccountCartItem, syncLocalAccountCartSource } from "@/lib/accountCart";
+import { useCurrency } from "@/hooks/useCurrency";
+import { useServicePageContent } from '@/hooks/useServicePageContent';
+import { useLang } from "@/i18n/LanguageContext";
+import { addLocalAccountCartItem,syncLocalAccountCartSource } from "@/lib/accountCart";
+import { trackEvent } from "@/lib/analytics";
 import { setPageMeta } from "@/lib/seo";
+import NotFound from "@/pages/NotFound";
+import {
+Accessibility,
+ArrowRight,
+BarChart3,
+Bug,
+Calculator,
+Check,
+Clock,
+Cloud,
+Code2,
+Cpu,
+FlaskConical,
+Gauge,
+Globe,
+HeartHandshake,
+MessageCircle,
+Palette,
+ScanSearch,
+Search,
+Share2,
+Shield,
+ShoppingBag,
+ShoppingCart,
+Smartphone,
+Users,
+Zap,
+} from "lucide-react";
+import { useEffect,useState } from "react";
+import { Link,useLocation } from "react-router-dom";
 
 const ICONS: Record<IconKey, React.ComponentType<{ className?: string }>> = {
   globe: Globe,
@@ -90,11 +92,15 @@ const ServicePage = () => {
   const { formatFixedPrice } = useCurrency(ro ? "ro-RO" : "en-IE");
   const { user } = useAuth();
   const [addedToCart, setAddedToCart] = useState(false);
-  const product = getServiceByPath(pathname);
+  const sourceProduct = getServiceByPath(pathname);
+ const serviceInlineCopy=useServicePageContent(sourceProduct?.key || "","inline",SERVICE_INLINE_GENERIC);
 
+  const product = useServicePageContent(sourceProduct?.key || "", "service", sourceProduct);
+
+  useEffect(() => {window.scrollTo(0, 0);}, [pathname]);
   useEffect(() => {
     if (!product) return;
-    window.scrollTo(0, 0);
+
     const c = product.copy[lang];
     const path = product.path[lang];
     // Update the canonical synchronously on SPA redirects. The structured-data
@@ -175,7 +181,7 @@ const ServicePage = () => {
   ];
 
   const faqSection = <section id="faq" className="mt-14 scroll-mt-28">
-    <Reveal><h2 className="font-display text-2xl md:text-3xl font-extrabold">{ro ? "Întrebări frecvente" : "Frequently asked questions"}</h2></Reveal>
+    <Reveal><h2 className="font-display text-2xl md:text-3xl font-extrabold">{(ro ? serviceInlineCopy.text_48a83c853f46.ro : serviceInlineCopy.text_48a83c853f46.en)}</h2></Reveal>
     <div className="mt-6 space-y-3">{c.faq.map((f, i) => <Reveal key={f.q} delay={i * 50}>
       <details className="group rounded-2xl border border-foreground/10 bg-foreground/[0.03] px-5 py-4 md:backdrop-blur transition-colors hover:border-foreground/20 open:border-foreground/25">
         <summary className="flex cursor-pointer items-center justify-between gap-4 text-sm font-semibold list-none"><span>{f.q}</span><span aria-hidden className={`shrink-0 grid place-items-center size-6 rounded-full border border-foreground/15 transition-transform duration-300 group-open:rotate-90 ${a.text}`}><ArrowRight className="size-3.5" /></span></summary>
@@ -185,7 +191,7 @@ const ServicePage = () => {
   </section>;
 
   const relatedSection = <section className="mt-16">
-    <Reveal><h2 className="text-center font-display text-xl font-extrabold md:text-2xl">{ro ? "Alte servicii AVYRON" : "Other AVYRON services"}</h2></Reveal>
+    <Reveal><h2 className="text-center font-display text-xl font-extrabold md:text-2xl">{(ro ? serviceInlineCopy.text_d993123bfb95.ro : serviceInlineCopy.text_d993123bfb95.en)}</h2></Reveal>
     <div data-testid="related-product-list" className="mt-5 grid gap-2 sm:grid-cols-2">
       {others.map((p, i) => {
         const Icon = ICONS[p.icon];
@@ -193,7 +199,7 @@ const ServicePage = () => {
         return <Reveal key={p.key} delay={i * 50}><Link to={p.path[lang]} className="group grid min-h-16 grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-foreground/10 bg-foreground/[0.03] px-3 py-2.5 transition-all duration-300 hover:-translate-y-0.5 hover:border-foreground/25 hover:bg-foreground/[0.06]">
           <div className={`grid size-9 place-items-center rounded-lg bg-gradient-to-br ${p.accent.from} ${p.accent.to} text-white`}><Icon className="size-4.5" aria-hidden /></div>
           <div className="min-w-0 text-left"><h3 className="truncate font-display text-sm font-bold">{oc.name}</h3><p className="mt-0.5 truncate text-[11px] text-foreground/55">{oc.tagline}</p></div>
-          <span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${p.accent.text}`}><span className="hidden min-[370px]:inline">{ro ? "Detalii" : "Details"}</span><ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-1" aria-hidden /></span>
+          <span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${p.accent.text}`}><span className="hidden min-[370px]:inline">{(ro ? serviceInlineCopy.text_757b697da745.ro : serviceInlineCopy.text_757b697da745.en)}</span><ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-1" aria-hidden /></span>
         </Link></Reveal>;
       })}
     </div>
@@ -259,7 +265,7 @@ const ServicePage = () => {
         <section id="prezentare" className="mt-8 scroll-mt-28 text-center sm:mt-10">
           <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.25em] ${a.chipBg} ${a.chipText}`}>
             <HeroIcon className="size-3.5" aria-hidden />
-            {product.key === "premium-website" ? (ro ? "Serviciu principal" : "Main service") : c.kicker}
+            {product.key === "premium-website" ? ((ro ? serviceInlineCopy.text_82a7863bd746.ro : serviceInlineCopy.text_82a7863bd746.en)) : c.kicker}
           </div>
           <h1 className="mt-5 font-display text-3xl sm:text-4xl md:text-5xl font-extrabold leading-[1.08] tracking-tight">
             <span className={`bg-gradient-to-r ${a.from} ${a.to} bg-clip-text text-transparent`}>
@@ -284,7 +290,7 @@ const ServicePage = () => {
               to={ro ? "/servicii#cta" : "/en/services#cta"}
               className="inline-flex min-h-12 min-w-0 items-center justify-center rounded-2xl border border-foreground/20 bg-foreground/[0.05] px-2.5 py-2.5 text-center text-xs font-semibold leading-tight transition-colors hover:bg-foreground/[0.1] sm:rounded-full sm:px-5 sm:text-sm"
             >
-              {ro ? "Cere ofertă" : "Request a quote"}
+              {(ro ? serviceInlineCopy.text_b16a46159d55.ro : serviceInlineCopy.text_b16a46159d55.en)}
             </Link>
             {addedToCart ? (
               <Link
@@ -292,7 +298,7 @@ const ServicePage = () => {
                 className="col-span-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 text-sm font-semibold text-emerald-600 transition-colors hover:bg-emerald-400/15 dark:text-emerald-300"
               >
                 <ShoppingCart className="size-4" aria-hidden />
-                {user ? (ro ? "În coșul sincronizat · Vezi coșul" : "In your synced cart · View cart") : (ro ? "În coș · Autentifică-te pentru sincronizare" : "In cart · Sign in to sync")}
+                {user ? ((ro ? serviceInlineCopy.text_d36f7aeb6d04.ro : serviceInlineCopy.text_d36f7aeb6d04.en)) : ((ro ? serviceInlineCopy.text_56e4844c87b3.ro : serviceInlineCopy.text_56e4844c87b3.en))}
               </Link>
             ) : (
               <button
@@ -301,7 +307,7 @@ const ServicePage = () => {
                 className="col-span-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-foreground/15 bg-foreground/[0.035] px-4 text-sm font-semibold transition-colors hover:border-foreground/30 hover:bg-foreground/[0.07]"
               >
                 <ShoppingCart className="size-4" aria-hidden />
-                {ro ? "Adaugă serviciul în coș" : "Add service to cart"}
+                {(ro ? serviceInlineCopy.text_1bcbe7ffecee.ro : serviceInlineCopy.text_1bcbe7ffecee.en)}
               </button>
             )}
           </div>
@@ -309,26 +315,26 @@ const ServicePage = () => {
           <dl data-testid="product-hero-facts" className="mx-auto mt-7 grid w-full max-w-xl grid-cols-3 gap-1.5 sm:gap-2">
             <div className={`flex min-w-0 flex-col items-center justify-center rounded-xl border px-1.5 py-2.5 text-center ${a.chipBg} ${a.chipText}`}>
               <dt className="text-[8px] font-semibold uppercase tracking-[0.12em] opacity-70 sm:text-[9px]">
-                {ro ? "Investiție" : "Investment"}
+                {(ro ? serviceInlineCopy.text_f3c081d88d28.ro : serviceInlineCopy.text_f3c081d88d28.en)}
               </dt>
               <dd className="mt-0.5 text-[10px] font-bold leading-tight sm:text-xs">
-                {product.priceRon > 0 ? `${ro ? "de la" : "from"} ${formatFixedPrice(product.priceRon, product.priceEur)}` : ro ? "Gratuit" : "Free"}
+                {product.priceRon > 0 ? `${(ro ? serviceInlineCopy.text_d9e6b8bc2f02.ro : serviceInlineCopy.text_d9e6b8bc2f02.en)} ${formatFixedPrice(product.priceRon, product.priceEur)}` : (ro ? serviceInlineCopy.text_bdef36ada3ae.ro : serviceInlineCopy.text_bdef36ada3ae.en)}
               </dd>
             </div>
             <div className="flex min-w-0 flex-col items-center justify-center rounded-xl border border-foreground/15 bg-foreground/[0.04] px-1.5 py-2.5 text-center text-foreground/70">
               <dt className="inline-flex items-center gap-1 text-[8px] font-semibold uppercase tracking-[0.12em] sm:text-[9px]">
                 <Clock className="size-3 shrink-0" aria-hidden />
-                {ro ? "Durată" : "Duration"}
+                {(ro ? serviceInlineCopy.text_859e040a3ae9.ro : serviceInlineCopy.text_859e040a3ae9.en)}
               </dt>
               <dd className="mt-0.5 text-[10px] font-bold leading-tight sm:text-xs">{product.duration[lang]}</dd>
             </div>
             <div className="flex min-w-0 flex-col items-center justify-center rounded-xl border border-foreground/15 bg-foreground/[0.04] px-1.5 py-2.5 text-center text-foreground/70">
               <dt className="inline-flex items-center gap-1 text-[8px] font-semibold uppercase tracking-[0.12em] sm:text-[9px]">
                 <Shield className="size-3 shrink-0" aria-hidden />
-                {ro ? "Suport" : "Support"}
+                {(ro ? serviceInlineCopy.text_9e0aa5eb7d13.ro : serviceInlineCopy.text_9e0aa5eb7d13.en)}
               </dt>
               <dd className="mt-0.5 text-[10px] font-bold leading-tight sm:text-xs">
-                {ro ? "Conform ofertei" : "Per proposal"}
+                {(ro ? serviceInlineCopy.text_d27a1fa7e879.ro : serviceInlineCopy.text_d27a1fa7e879.en)}
               </dd>
             </div>
           </dl>
@@ -376,7 +382,7 @@ const ServicePage = () => {
         <section id="beneficii" className="mt-14 scroll-mt-28">
           <Reveal>
             <h2 className="font-display text-2xl md:text-3xl font-extrabold">
-              {ro ? "Ce primești, pe scurt" : "What you get, in short"}
+              {(ro ? serviceInlineCopy.text_c09f6c952661.ro : serviceInlineCopy.text_c09f6c952661.en)}
             </h2>
           </Reveal>
           <div className="mt-5 grid gap-2 sm:grid-cols-2">
@@ -463,7 +469,7 @@ const ServicePage = () => {
         <section id="pachet" className="mt-14 scroll-mt-28">
           <Reveal>
             <h2 className="font-display text-2xl md:text-3xl font-extrabold">
-              {ro ? "Include în pachet" : "Included in the package"}
+              {(ro ? serviceInlineCopy.text_ee718e0f6fe0.ro : serviceInlineCopy.text_ee718e0f6fe0.en)}
             </h2>
           </Reveal>
           <Reveal delay={80}>
@@ -482,7 +488,7 @@ const ServicePage = () => {
         <section id="proces" className="mt-14 scroll-mt-28">
           <Reveal>
             <h2 className="font-display text-2xl md:text-3xl font-extrabold">
-              {ro ? "Cum lucrăm" : "How we work"}
+              {(ro ? serviceInlineCopy.text_f28c5aafd5cb.ro : serviceInlineCopy.text_f28c5aafd5cb.en)}
             </h2>
           </Reveal>
           <ol className="mt-7 relative border-l border-foreground/15 pl-6 space-y-6">
@@ -531,16 +537,13 @@ const ServicePage = () => {
           <>
             <WebsitePriceCalculator />
             <LibraryLink />
-            <section id="portofoliu" data-testid="portfolio-section" className="mt-14 scroll-mt-28">
-              <div className="text-center">
-                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-brand">{ro ? "Portofoliu" : "Portfolio"}</p>
-                <h2 className="mt-2 font-display text-2xl font-bold tracking-tight sm:text-3xl">{ro ? "Site-uri create de noi" : "Websites we've built"}</h2>
-                <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">{ro ? "Website-uri din industrii diferite, construite pentru obiective comerciale reale. Apasă pe oricare pentru a vedea experiența completă." : "Websites across different industries, built for real commercial goals. Open any project to explore the complete experience."}</p>
-              </div>
-              <div className="mt-6"><PortfolioCarousel lang={ro ? "ro" : "en"} /></div>
-            </section>
+
           </>
         )}
+
+        <PortfolioCarousel lang={ro ? "ro" : "en"} carouselKey={product.key} heading={product.key === "premium-website" ? {
+          eyebrow: serviceInlineCopy.text_ac6ac9de0060[lang], title: serviceInlineCopy.text_ae32a95869c2[lang], description: serviceInlineCopy.text_af843ee5535c[lang],
+        } : undefined} />
 
         {product.key !== "premium-website" && faqSection}
 
@@ -596,7 +599,7 @@ const ServicePage = () => {
                   to={ro ? "/servicii" : "/en/services"}
                   className="inline-flex items-center gap-2 rounded-full border border-foreground/20 bg-foreground/[0.05] px-6 py-3 text-sm font-semibold hover:bg-foreground/[0.1] transition-colors"
                 >
-                  {ro ? "Vezi toate prețurile" : "See all pricing"}
+                  {(ro ? serviceInlineCopy.text_ef6b02f3cb05.ro : serviceInlineCopy.text_ef6b02f3cb05.en)}
                 </Link>
               </div>
             </div>
@@ -611,4 +614,4 @@ const ServicePage = () => {
   );
 };
 
-export default ServicePage;
+export default function ManagedServicePage(){return <ServiceContentProvider><ServicePage/></ServiceContentProvider>;}

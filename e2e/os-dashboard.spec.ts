@@ -1,4 +1,6 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect,test,type Page } from "@playwright/test";
+
+import {staffFixture} from "./staff-fixtures";
 
 const now = Date.now();
 
@@ -181,42 +183,15 @@ test.describe("dashboard AVYRON OS în română", () => {
   test("oferă staffului acces rapid OS din bara landing page", async ({ page }, testInfo) => {
     await page.goto("/");
 
-    const osButton = page.getByRole("button", { name: "Deschide accesul rapid AVYRON OS" });
-    await expect(osButton).toBeVisible();
-    await expect(page.getByRole("link", { name: "Deschide AVYRON OS" })).toHaveAttribute("href", "/profil?tab=overview");
-    const brandBox = await page.locator("header").getByRole("link", { name: "AVYRON", exact: true }).boundingBox();
-    const osBox = await osButton.boundingBox();
-    const languageBox = await page.getByRole("button", { name: /Schimbă limba/ }).boundingBox();
-    expect(brandBox!.x + brandBox!.width).toBeLessThan(osBox!.x);
-    expect(osBox!.x + osBox!.width).toBeLessThan(languageBox!.x);
+    const osButton=page.getByRole("link",{name:"Deschide INTERN OS"});
+    await expect(osButton).toHaveAttribute("href","/profil?tab=overview");
+    const brandBox=await page.locator("header").getByRole("link",{name:"AVYRON",exact:true}).boundingBox();
+    const osBox=await osButton.boundingBox();
+    expect(brandBox!.x+brandBox!.width).toBeLessThan(osBox!.x);
     await osButton.click();
-
-    const quickAccess = page.getByLabel("Acces rapid OS");
-    await expect(quickAccess.getByRole("menuitem", { name: /Privire de ansamblu/ })).toHaveAttribute("href", "/profil?tab=overview");
-    await expect(quickAccess.getByRole("menuitem", { name: /Leaduri & CRM/ })).toHaveAttribute("href", "/profil?tab=leads");
-    await expect(quickAccess.getByRole("menuitem", { name: /Agenți AI/ })).toHaveAttribute("href", "/profil?tab=ai-os");
-    await expect(page.getByRole("menuitem", { name: "Către Panoul de comandă" })).toHaveAttribute("href", "/profil?tab=overview");
-    await expect(page.getByRole("menu")).toHaveCSS("opacity", "1");
-    await page.screenshot({ path: testInfo.outputPath("landing-os-quick-menu.png") });
-
-    await page.keyboard.press("Escape");
-    await expect(page.getByRole("menu")).toHaveCount(0);
-    await page.setViewportSize({ width: 390, height: 844 });
-    await expect(osButton).toBeVisible();
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
-    await osButton.click();
-    await expect(page.getByRole("menuitem", { name: "Către Panoul de comandă" })).toBeVisible();
-    await expect(page.getByRole("menu")).toHaveCSS("opacity", "1");
-    await page.screenshot({ path: testInfo.outputPath("landing-os-quick-menu-mobile.png") });
-    await page.getByRole("menuitem", { name: /Notificări/ }).click();
-    await expect(page).toHaveURL(/notifications=1/);
-    await expect(page.getByRole("dialog", { name: "Notificări și anunțuri" })).toBeVisible();
-    await page.goto("/");
-    await page.setViewportSize({ width: 320, height: 740 });
-    await expect(osButton).toBeVisible();
-    await expect(page.getByRole("button", { name: "Profil" })).toBeVisible();
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
-    await page.screenshot({ path: testInfo.outputPath("landing-os-header-320.png") });
+    await expect(page).toHaveURL(/tab=overview/);
+    await expect(page.getByRole("heading",{name:/Bună (dimineața|ziua|seara)/})).toBeVisible();
+    await page.screenshot({path:testInfo.outputPath('intern-os-direct.png')});
   });
 
   test("rămâne utilizabil pe mobil și oferă Command Center", async ({ page }, testInfo) => {
@@ -294,7 +269,7 @@ test.describe("dashboard AVYRON OS în română", () => {
     await expect(page.getByText("Studio Aurora").first()).toBeVisible();
   });
 
-  test("deschide fluxurile și mută o solicitare demo în pipeline", async ({ page }, testInfo) => {
+  test("gestionează solicitările demo în categoria lor existentă", async ({ page }, testInfo) => {
     let updated: unknown;
     await page.route("**/api/example-requests/**", async (route) => {
       updated = route.request().postDataJSON();
@@ -304,9 +279,8 @@ test.describe("dashboard AVYRON OS în română", () => {
       id: "demo-1", email: "demo@example.com", phone: "+40700000000", source_slug: "site-demo",
       source_category: "website", source_name: "Website", status: "new", delivery_status: "sent", created_at: Date.now(),
     }] } }));
-    await page.goto("/profil?tab=workflows");
-    await expect(page.getByRole("heading", { name: "Fluxuri și pipeline" })).toBeVisible();
-    await page.getByRole("region", { name: "Fluxuri de lucru" }).getByRole("button", { name: /Solicitări demo/ }).click();
+    await page.goto("/profil?tab=demo-requests");
+    await expect(page.getByRole("heading", { name: "Solicitări demo",exact:true })).toBeVisible();
     await expect(page.getByLabel("Pipeline solicitări demo")).toBeVisible();
     await page.getByLabel("Stadiu pentru demo@example.com").selectOption("contacted");
     await expect.poll(() => updated).toEqual({ status: "contacted" });
@@ -314,17 +288,17 @@ test.describe("dashboard AVYRON OS în română", () => {
     await page.screenshot({ path: testInfo.outputPath("demo-pipeline.png"), fullPage: true });
   });
 
-  test("staff vede fluxurile și chatul, dar nu centrul superadminului", async ({ page }) => {
+  test("linkul vechi deschide proiectele, iar staff vede chatul fără controlul superadminului", async ({ page }) => {
     await page.route("**/api/auth/me", (route) => route.fulfill({ json: {
       user: { id: "staff-1", email: "staff@example.test", display_name: "Alex", avatar_url: null },
       profile: { display_name: "Alex", avatar_url: null }, roles: ["staff"], superadmin: false,
     } }));
     await page.goto("/profil?tab=workflows");
-    await expect(page.getByRole("heading", { name: "Fluxuri și pipeline" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Platformă internă — Proiecte",exact:true })).toBeVisible();
     const navigation = page.getByRole("navigation", { name: "Navigare AVYRON OS" });
-    await expect(navigation.getByRole("tab", { name: "Chat intern" })).toBeVisible();
-    await expect(navigation.getByRole("tab", { name: "Solicitări clienți" })).toBeVisible();
-    await expect(navigation.getByRole("tab", { name: "Control platformă" })).toHaveCount(0);
+    await expect(navigation.getByRole("button", { name: "Chat intern" })).toBeVisible();
+    await expect(navigation.getByRole("button", { name: "Solicitări clienți" })).toBeVisible();
+    await expect(navigation.getByRole("button", { name: "Control platformă" })).toHaveCount(0);
   });
 
   test("operatorul cu capabilitate vede panoul leadurilor fără acces financiar", async ({ page }) => {
@@ -335,15 +309,16 @@ test.describe("dashboard AVYRON OS în română", () => {
     await page.goto("/profil?tab=leads");
     await expect(page.getByRole("heading", { name: "Leaduri", exact: true })).toBeVisible();
     const navigation = page.getByRole("navigation", { name: "Navigare AVYRON OS" });
-    await expect(navigation.getByRole("tab", { name: "Leaduri & CRM" })).toBeVisible();
-    await expect(navigation.getByRole("tab", { name: "Financiar" })).toHaveCount(0);
+    await expect(navigation.getByRole("button", { name: "Leaduri" })).toBeVisible();
+    await expect(navigation.getByRole("button", { name: "Financiar" })).toHaveCount(0);
   });
 
-  test("superadminul ajunge la instrumentele de modificare din centrul de control", async ({ page }) => {
+  test("ruta veche de control deschide centrul unic cu instrumentele existente", async ({ page }) => {
     await page.goto("/profil?tab=platform-control");
-    await expect(page.getByRole("heading", { name: "Control platformă" })).toBeVisible();
-    await page.getByRole("button", { name: /Pagini și funcții definite în cod/ }).click();
-    await expect(page.getByRole("heading", { name: "Codex Work Items" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Centre AVYRON OS",exact:true })).toBeVisible();
+    await page.getByLabel("Caută un flux sau o secțiune").fill("servicii");
+    await page.getByRole("button",{name:"Deschide Servicii AVYRON",exact:true}).click();
+    await expect(page.getByRole("heading",{name:"Servicii",exact:true})).toBeVisible();
   });
 
   test("afișează proiectele în pipeline și permite revenirea la listă", async ({ page }, testInfo) => {
@@ -362,12 +337,12 @@ test.describe("dashboard AVYRON OS în română", () => {
 
   test("separă serviciile personalizate de catalogul de produse", async ({ page }) => {
     await page.goto("/profil?tab=servicii-avyron");
-    await expect(page.getByRole("heading", { name: "Servicii AVYRON", exact: true })).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByRole("heading", { name: "Prezență digitală", exact: true })).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByRole("heading", { name: "Software, automatizări și AI", exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("heading", { name: "Servicii", exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("heading", { name: "Pagina Toate serviciile", exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("heading", { name: "Site Prezentare Profesional", exact: true })).toBeVisible({ timeout: 10_000 });
     await expect(page.getByRole("link", { name: "Deschide serviciile" })).toHaveAttribute("href", "/servicii");
-    await expect(page.getByRole("button", { name: "Configurează" }).first()).toBeVisible();
-    await expect(page.getByRole("tab", { name: "Produse AVYRON", exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Configurează pagina", exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Produse AVYRON", exact: true }).first()).toBeVisible();
   });
 
   test("nomenclatorul comercial sincronizează lipsurile și separă ID-urile test/live", async ({ page }) => {
@@ -415,72 +390,40 @@ test.describe("dashboard AVYRON OS în română", () => {
     const revenueBox = await page.getByText('Încasări luna aceasta').boundingBox();
     expect(priorityBox!.y).toBeLessThan(revenueBox!.y);
     await expect(page.getByTestId('page-back-link')).toHaveAttribute('href','https://avyron.ro');
-    await page.getByRole('tab',{name:'Centre AVYRON OS',exact:true}).first().click();
-    await page.getByText('Inventarul extins al platformei și module planificate',{exact:true}).click();
-    await page.getByLabel('Caută funcționalități').fill('reinnoiri');
-    await expect(page.getByRole('heading',{name:'Contracte și reînnoiri',exact:true})).toBeVisible();
-    await page.getByLabel('Caută funcționalități').fill('aprobari');
-    await page.getByRole('button',{name:'Deschide funcțiile disponibile'}).click();
-    await expect(page.getByRole('heading',{name:/Bună (dimineața|ziua|seara), Andrei\./})).toBeVisible();
+    await page.getByRole('button',{name:'Centre AVYRON OS',exact:true}).first().click();
+    await page.getByLabel('Caută un flux sau o secțiune').fill('documente');
+    await expect(page.getByRole('heading',{name:'Centru Documente',exact:true})).toBeVisible();
+    await page.getByRole('button',{name:'Bibliotecă',exact:true}).click();
+    await expect(page).toHaveURL(/tab=documents/);
   });
 
   test("Super Admin poate gestiona controlat accesul unui membru", async ({ page }) => {
-    let submitted: { access_level?: string; client_ids?: string[] } | null = null;
-    await page.route("**/api/admin/operations/staff", (route) => route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        data: [{ id: "staff-1", email: "coleg@avyron.ro", display_name: "Coleg Avyron", company_name: "Avyron", staff_role: "marketing", disabled_at: null, roles: "user,staff" }],
-        projects: [],
-      }),
-    }));
-    await page.route("**/api/admin/users", (route) => route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        data: [
-          { id: "staff-1", email: "coleg@avyron.ro", username: "coleg", display_name: "Coleg Avyron", company_name: "Avyron", staff_role: "marketing", disabled_at: null, roles: "user,staff", must_change_password: 0, active_sessions: 1 },
-          { id: "client-1", email: "fondator@example.test", display_name: "Fondator", entity_type: "startup", company_name: "Atelier Nord", cui: null, disabled_at: null, roles: "user", must_change_password: 0, active_sessions: 0 },
-        ],
-      }),
-    }));
-    await page.route("**/api/admin/operations/staff/staff-1/projects", (route) => route.fulfill({ json: { ok: true } }));
-    await page.route("**/api/clients", route=>route.fulfill({json:{data:[{id:'client-a',company_name:'Client A'}]}}));
-    await page.route("**/api/workspace/account-access/staff-1", async (route) => {
-      if (route.request().method()==='GET') return route.fulfill({json:{data:[]}});
-      submitted = route.request().postDataJSON() as { access_level?: string; client_ids?: string[] };
-      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, userId: "staff-1", roles: ["user", "admin"] }) });
-    });
-
+    const {captures}=await staffFixture(page);
     await page.goto("/profil?tab=team-staff");
-    await expect(page.getByRole("heading", { name: "Utilizatori și STAFF", exact: true })).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText("Start-up · Atelier Nord")).toBeVisible();
-    await page.getByRole("button", { name: "Gestionează" }).first().click();
-    await page.getByLabel("Nivel de acces").selectOption("admin");
-    await page.getByLabel("Client A", {exact:true}).check();
-    await page.getByRole("button", { name: "Salvează accesul" }).click();
-
-    await expect(page.getByText("Accesul și asocierile client au fost actualizate și auditate.")).toBeVisible();
-    expect(submitted).toEqual({ access_level: "admin", client_ids:["client-a"] });
+    await expect(page.getByRole("heading",{name:"Membrii Agenției AVYRON",exact:true})).toBeVisible();
+    await page.locator(".agency-member").filter({hasText:"Anișoara Test"}).getByRole("button",{name:"Gestionează"}).click();
+    const dialog=page.getByRole("dialog");
+    await dialog.getByLabel("Rang în agenție").selectOption("avy_consultant");
+    await dialog.getByRole("button",{name:"Clienți",exact:true}).click();
+    await dialog.getByLabel("Beneficiar sintetic",{exact:true}).check();
+    await dialog.getByLabel("Motivul alocării sau modificării").fill("Alocare CRM verificată");
+    await dialog.getByLabel("Am verificat rangul, drepturile, alocările și efectul asupra sesiunilor.").check();
+    await dialog.getByRole("button",{name:"Salvează accesurile"}).click();
+    await expect(page.getByText("Membrul și accesurile au fost salvate. Sesiunile sale anterioare au fost închise.")).toBeVisible();
+    expect(captures[0].body).toMatchObject({rankId:"avy_consultant",clientIds:["client-a"],confirmed:true});
   });
   test('chatul mobil trimite către destinatarul ales și păstrează mesajul după reload', async ({page},testInfo)=>{
     await page.setViewportSize({width:390,height:844});
-    await page.route('**/api/workspace/staff',r=>r.fulfill({json:{data:[{id:'peer',display_name:'Coleg',staff_role:'dev'}]}}));
-    const messages:{id:string;author_id:string;content:string;created_at:string}[]=[];
-    let payload:unknown;
-    await page.route('**/api/workspace/chat**',async r=>{
-      if(r.request().method()==='POST'){payload=r.request().postDataJSON();messages.push({id:'m1',author_id:'user-superadmin',content:'Status local verificat',created_at:new Date().toISOString()});return r.fulfill({json:{id:'m1'}});}
-      return r.fulfill({json:{data:r.request().url().includes('recipient_id=peer')?messages:[]}});
-    });
+    const {captures}=await staffFixture(page);
     await page.goto('/profil?tab=intern');
-    await page.getByLabel('Conversație',{exact:true}).selectOption('dm:peer');
+    await page.getByRole('button',{name:/Anișoara Test/}).click();
     await page.getByLabel('Mesaj',{exact:true}).fill('Status local verificat');
     await page.getByRole('button',{name:'Trimite',exact:true}).click();
-    await expect(page.getByText('Status local verificat',{exact:true})).toBeVisible();
-    expect(payload).toEqual({content:'Status local verificat',channel:'general',recipient_id:'peer'});
+    await expect(page.locator('.chat-conversation').getByText('Status local verificat',{exact:true})).toBeVisible();
+    expect(captures[0].body).toEqual({content:'Status local verificat',channel:'general',recipient_id:'peer'});
     await expect(page).toHaveURL(/dm=peer/);
-    await page.reload();await page.getByLabel('Conversație',{exact:true}).selectOption('dm:peer');
-    await expect(page.getByText('Status local verificat',{exact:true})).toBeVisible();
+    await page.reload();
+    await expect(page.locator('.chat-conversation').getByText('Status local verificat',{exact:true})).toBeVisible();
     await page.screenshot({path:testInfo.outputPath('chat-mobile.png'),fullPage:true});
   });
   test('înregistrează o plată parțială cu suma în unități minore',async({page})=>{
@@ -491,7 +434,7 @@ test.describe("dashboard AVYRON OS în română", () => {
       return r.fulfill({json:{data:[],totals:[],canWrite:true}});
     });
     await page.goto('/profil?tab=finance');
-    await page.getByRole('button',{name:'Încasări și plăți',exact:true}).click();
+    await page.getByRole('button',{name:'Venituri și încasări',exact:true}).click();await page.getByRole('button',{name:'Încasări și plăți',exact:true}).click();
     await page.getByRole('combobox',{name:'Document',exact:true}).selectOption('r1');
     await page.getByLabel('Suma primită (RON)',{exact:true}).fill('30,25');
     await page.getByLabel('Referință unică încasare').fill('bank-fixture');
@@ -501,7 +444,7 @@ test.describe("dashboard AVYRON OS în română", () => {
     expect(payload).toMatchObject({revenue_id:'r1',amount_minor:3025,reference:'bank-fixture'});
   });
 
-  test('creează și aprobă versiunea unui contract din centrul operațional',async({page},testInfo)=>{
+  test('creează și aprobă o înregistrare operațională pe versiunea exactă',async({page},testInfo)=>{
     const records:Record<string,unknown>[]=[];let approved:unknown;
     await page.route(/\/api\/operations\/records/,async r=>{
       if(r.request().method()==='POST'){
@@ -510,9 +453,9 @@ test.describe("dashboard AVYRON OS în română", () => {
       }
       return r.fulfill({json:{data:records,total:records.length}});
     });
-    await page.goto('/profil?tab=os-centers');await expect(page.getByRole('heading',{name:'Centrul operațional',exact:true})).toBeVisible();
-    await page.getByRole('button',{name:'Adaugă înregistrare',exact:true}).click();await page.getByLabel('Titlu',{exact:true}).fill('Contract de mentenanță');await page.getByRole('combobox',{name:'Stare',exact:true}).selectOption('pending');await page.getByLabel('Valoare',{exact:true}).fill('1200,25');await page.getByRole('button',{name:'Salvează înregistrarea'}).click();
-    await expect(page.getByRole('heading',{name:'Contract de mentenanță'})).toBeVisible();expect(records[0].amount_minor).toBe(120025);await page.getByRole('button',{name:'Aprobă versiunea 1'}).click();await expect(page.getByText(/aprobare v1/)).toBeVisible();expect(approved).toEqual({revision:1});await page.screenshot({path:testInfo.outputPath('operations-desktop.png'),fullPage:true});
+    await page.goto('/profil?tab=os-centers');await expect(page.getByRole('heading',{name:'Centre AVYRON OS',exact:true})).toBeVisible();await page.getByRole('button',{name:'Registre operaționale',exact:true}).click();
+    await page.getByRole('button',{name:'Cereri de modificare',exact:true}).click();await page.getByRole('button',{name:'Adaugă înregistrare',exact:true}).click();await page.getByLabel('Titlu',{exact:true}).fill('Solicitare suplimentară');await page.getByRole('combobox',{name:'Stare',exact:true}).selectOption('pending');await page.getByLabel('Valoare',{exact:true}).fill('1200,25');await page.getByRole('button',{name:'Salvează înregistrarea'}).click();
+    await expect(page.getByRole('heading',{name:'Solicitare suplimentară'})).toBeVisible();expect(records[0].amount_minor).toBe(120025);await page.getByRole('button',{name:'Aprobă versiunea 1'}).click();await expect(page.getByText(/aprobare v1/)).toBeVisible();expect(approved).toEqual({revision:1});await page.screenshot({path:testInfo.outputPath('operations-desktop.png'),fullPage:true});
   });
   test('simulează și programează rapoarte fără apel de model',async({page})=>{
     let rule:unknown,job:unknown;
@@ -534,10 +477,10 @@ test.describe("dashboard AVYRON OS în română", () => {
   });
   test('păstrează toate modulele operaționale utilizabile pe mobil',async({page},testInfo)=>{
     await page.setViewportSize({width:390,height:844});await page.goto('/profil?tab=os-centers');
-    for(const tab of ['Registre','Automatizări','Integrări','Agenți și evaluări','Notificări']){
+    for(const tab of ['Registre operaționale','Automatizări','Integrări','Agenți și evaluări','Notificări']){
       await page.getByRole('navigation',{name:'Module operaționale'}).getByRole('button',{name:tab,exact:true}).click();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1)).toBe(true);
     }
-    await page.getByRole('button',{name:'Registre',exact:true}).click();await page.getByRole('button',{name:'Adaugă înregistrare'}).click();await page.screenshot({path:testInfo.outputPath('operations-mobile.png'),fullPage:true});
+    await page.getByRole('button',{name:'Registre operaționale',exact:true}).click();await page.getByRole('button',{name:'Adaugă înregistrare'}).click();await page.screenshot({path:testInfo.outputPath('operations-mobile.png'),fullPage:true});
   });
 
 });

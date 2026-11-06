@@ -1,8 +1,9 @@
+import { bouncerFixture, fixtureScannerSettings, malwareBucket } from "./helpers/bouncerFixture";
 // @vitest-environment node
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { readdirSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { Hono } from "hono";
-import { beforeEach, afterEach, describe, it, expect } from "vitest";
+import { beforeEach, afterEach, describe, it, expect, vi } from "vitest";
 import {
   documentCenterRouter,
   cleanupDocumentExports,
@@ -72,6 +73,7 @@ describe("Document Center actual handlers, immutable records and private storage
   let db: DatabaseSync,
     app: Hono,
     actor: string,
+    mfa: boolean,
     env: Record<string, unknown>,
     files: ReturnType<typeof store>,
     backups: ReturnType<typeof store>;
@@ -108,6 +110,7 @@ describe("Document Center actual handlers, immutable records and private storage
       "INSERT INTO platform_principals(email,role,status,created_at,updated_at) VALUES('super@example.test','superadmin','active',1,1); INSERT INTO clients(id,company_name,email,created_at) VALUES('ca','Client A','a@example.test',1),('cb','Client B','b@example.test',1); INSERT INTO client_account_access VALUES('ca','a','owner',1),('cb','b','owner',1); INSERT INTO projects(id,client_id,name,slug,created_at) VALUES('pa','ca','Project A','project-a',1),('pb','cb','Project B','project-b',1);",
     );
     actor = "owner";
+    mfa = false;
     files = store();
     backups = store();
     const binding = {
@@ -154,7 +157,7 @@ describe("Document Center actual handlers, immutable records and private storage
             ? ["staff"]
             : ["user"],
       );
-      c.set("mfaVerified", false);
+      c.set("mfaVerified", mfa);
       await next();
     });
     app.route("/", documentCenterRouter);
@@ -239,9 +242,9 @@ describe("Document Center actual handlers, immutable records and private storage
     expect((await req("/" + d.id + "/export/pdf")).status).toBe(404);
     expect((await (await req("?q=Client")).json()).total).toBe(0);
   });
-  it("company metadata, history, storage, shares and backups remain owner-only", async () => {
+  it("company metadata, history, storage, shares and backups remain restricted to platform principals", async () => {
     const d = await create("company", null);
-    for (const who of ["super", "staff", "a", "b"]) {
+    for (const who of ["staff", "a", "b"]) {
       actor = who;
       expect((await (await req("?scope=company")).json()).total).toBe(0);
       for (const path of ["", "/export/pdf", "/backups", "/recipients"])
@@ -436,28 +439,25 @@ describe("Document Center actual handlers, immutable records and private storage
     expect(body.manualUrl).toContain("wa.me");
     expect(body.link).toContain("app.avyron.ro/profil");
   });
-  it("quarantines imports and never serves their bytes or changes their scan status", async () => {
+  it("blocks confidential imports before storage until provider compliance is configured", async () => {
     const d = await create();
-    const r = await app.request(
-      `/api/documents/${d.id}/import`,
-      {
-        method: "POST",
-        headers: {
-          "content-type": "application/pdf",
-          "X-File-Name": "test.pdf",
-          "idempotency-key": crypto.randomUUID(),
-        },
-        body: "%PDF-1.7\nfixture",
-      },
-      {},
-    );
-    expect(r.status).toBe(202);
-    const f = await r.json();
-    expect((await req(`/${d.id}/files/${f.id}`)).status).toBe(423);
-    expect(
-      db.prepare("SELECT scan_status FROM document_files WHERE id=?").get(f.id)!
-        .scan_status,
-    ).toBe("quarantined");
+    const r = await app.request(`/api/documents/${d.id}/import`, {
+      method: "POST", headers: {"content-type":"application/pdf","X-File-Name":"test.pdf","idempotency-key":crypto.randomUUID()},body:"%PDF-1.7\nfixture",
+    }, {});
+    expect(r.status).toBe(503);
+    expect((await r.json()).error.code).toBe("antivirus_compliance_blocked");
+    expect(db.prepare("SELECT count(*) n FROM document_files WHERE document_id=?").get(d.id)!.n).toBe(0);
+    expect(files.data.size).toBe(0);
+  });
+  it("admits imported bytes only after Bouncer CLEAN and keeps malware out of the document record", async () => {
+    files=malwareBucket();Object.assign(env,fixtureScannerSettings,{FILES:files});const provider=bouncerFixture();
+    const d=await create();
+    const upload=(text:string)=>app.request(`/api/documents/${d.id}/import`,{method:"POST",headers:{"content-type":"application/pdf","X-File-Name":"fixture.pdf","idempotency-key":crypto.randomUUID()},body:text},{});
+    const response=await upload("%PDF-1.7\nSynthetic CLEAN fixture");expect(response.status).toBe(201);
+    const f=await response.json();expect(f.status).toBe("clean_scanned");const downloaded=await req(`/${d.id}/files/${f.id}`);expect(downloaded.status).toBe(200);expect(await downloaded.text()).toContain("Synthetic CLEAN");
+    provider.setVerdict("malicious");expect((await upload("%PDF-1.7\nDifferent malware fixture")).status).toBe(400);
+    expect(db.prepare("SELECT count(*) n FROM document_files WHERE document_id=?").get(d.id)!.n).toBe(1);
+    expect((await req(`/${d.id}/files/${f.id}`)).status).toBe(200);
   });
   it("rejects unconfigured mail and forbidden external attachments without claiming delivery", async () => {
     const d = await create();
@@ -575,6 +575,12 @@ describe("Document Center actual handlers, immutable records and private storage
       else {
         const zip = unzipSync(bytes);
         expect(zip["word/document.xml"]).toBeDefined();
+        expect(new TextDecoder().decode(zip["word/header1.xml"])).not.toContain(
+          "AVYRON · AVYRON",
+        );
+        expect(new TextDecoder().decode(zip["word/styles.xml"])).toContain(
+          "3D377B",
+        );
         expect(new TextDecoder().decode(zip["word/document.xml"])).toContain(
           "Știință",
         );
@@ -637,16 +643,18 @@ describe("Document Center actual handlers, immutable records and private storage
     const detail = await (await req("/" + d.id)).json();
     expect(detail.approvals[0]).toEqual({ approved: true });
   });
-  it("requires a distinct owner delegation for a superadmin, and expires it immediately", async () => {
+  it("gives an active Super Admin company access and revokes it immediately with the principal", async () => {
     const d = await create("company", null);
     actor = "super";
-    expect((await req("/" + d.id)).status).toBe(404);
-    db.prepare(
-      "INSERT INTO user_capabilities(id,user_id,capability,granted_by,reason,expires_at,created_at) VALUES('company-grant','super','documents.company.owner','owner','explicit fixture delegation',?,1)",
-    ).run(Date.now() + 60000);
     expect((await req("/" + d.id)).status).toBe(200);
+    expect((await (await req("?scope=company")).json()).total).toBe(1);
     db.exec(
-      "UPDATE user_capabilities SET expires_at=1 WHERE id='company-grant'",
+      "UPDATE platform_principals SET status='revoked' WHERE email='super@example.test'",
+    );
+    expect((await req("/" + d.id)).status).toBe(404);
+    actor = "staff";
+    db.exec(
+      "INSERT INTO user_capabilities(id,user_id,capability,reason,created_at) VALUES('forged-company','staff','documents.company.owner','insufficient non-principal grant',1)",
     );
     expect((await req("/" + d.id)).status).toBe(404);
   });
@@ -859,6 +867,32 @@ describe("Document Center actual handlers, immutable records and private storage
     await cleanupDocumentExports(env as never, Date.now() + 3 * 86400000);
     expect(files.data.has(String(official.object_key))).toBe(true);
   });
+  it("allows active Super Admin to back up and restore company documents while excluding staff", async () => {
+    const d = await create("company", null);
+    actor = "super";
+    const response = await req(`/${d.id}/backups`, {});
+    expect(response.status, await response.clone().text()).toBe(200);
+    const backup = await response.json();
+    expect(backups.data.size).toBe(0);
+    expect(
+      (env.DOCUMENT_COMPANY_BACKUPS as ReturnType<typeof store>).data.size,
+    ).toBeGreaterThan(0);
+    const restored = await req(`/${d.id}/backups/${backup.id}/restore`, {
+      revision: revision(d.id),
+      confirmed: true,
+    });
+    expect(restored.status, await restored.clone().text()).toBe(200);
+    actor = "staff";
+    expect((await req(`/${d.id}/backups`)).status).toBe(404);
+    expect(
+      (
+        await req(`/${d.id}/backups/${backup.id}/restore`, {
+          revision: revision(d.id),
+          confirmed: true,
+        })
+      ).status,
+    ).toBe(404);
+  });
   it("requires verified separate destinations and isolates corporate backups", async () => {
     const d = await create();
     env.DOCUMENT_BACKUP_ISOLATION_VERIFIED = "false";
@@ -1063,12 +1097,16 @@ describe("Document Center actual handlers, immutable records and private storage
     delete env.DOCUMENT_EXPORTS;
     const unavailable = await req(`/${d.id}/export/pdf`);
     expect(unavailable.status).toBe(503);
-    expect((await unavailable.json()).error.code).toBe("document_export_runtime_unconfigured");
+    expect((await unavailable.json()).error.code).toBe(
+      "document_export_runtime_unconfigured",
+    );
     const names: string[] = [];
-    env.DOCUMENT_EXPORTS = { getByName: (name: string) => {
-      names.push(name);
-      return { render: exportDocument };
-    } };
+    env.DOCUMENT_EXPORTS = {
+      getByName: (name: string) => {
+        names.push(name);
+        return { render: exportDocument };
+      },
+    };
     expect((await req(`/${d.id}/export/pdf`)).status).toBe(200);
     expect((await req(`/${d.id}/export/pdf`)).status).toBe(200);
     expect(names).toEqual([`${d.versionId}:pdf:draft`]);
@@ -1247,7 +1285,7 @@ describe("Document Center actual handlers, immutable records and private storage
       await filterPrivateDocumentNotices(env.DB as never, "owner", notices),
     ).toHaveLength(2);
     db.exec(
-      "UPDATE platform_principals SET role='superadmin' WHERE email='prometheus@avyron.ro'",
+      "UPDATE platform_principals SET status='revoked' WHERE email='prometheus@avyron.ro'",
     );
     expect(
       await filterPrivateDocumentNotices(env.DB as never, "owner", notices),
@@ -1349,5 +1387,214 @@ describe("Document Center actual handlers, immutable records and private storage
         )
         .get()!.n,
     ).toBe(1);
+  });
+  const billingSource = async () => {
+    const source = db
+      .prepare(
+        "SELECT * FROM commercial_catalog_codes WHERE entity_type='service' LIMIT 1",
+      )
+      .get()!;
+    db.prepare(
+      "UPDATE commercial_catalog_codes SET base_price_minor=10000,vat_basis_points=2100,tax_status='verified' WHERE id=?",
+    ).run(source.id);
+    const line = {
+      catalogId: source.id,
+      label: source.display_name,
+      sku: source.sku || "",
+      quantity: 2,
+      catalogPriceMinor: 10000,
+      offeredPriceMinor: 9000,
+      priceConfirmed: true,
+      discountReason: "Reducere confirmată pentru test",
+      currency: source.currency,
+      vatBasisPoints: 2100,
+      taxVerified: true,
+      billingCycle: source.billing_cycle,
+      priceModel: source.price_model,
+      package: "",
+    };
+    const result = await req("", {
+      payload: { ...payload, lines: [line] },
+      scope: "client",
+      beneficiaryId: "ca",
+      templateVersionId: null,
+      collection: "library",
+      assignments: [{ kind: "project", id: "pa" }],
+    });
+    expect(result.status, await result.clone().text()).toBe(200);
+    const created = await result.json();
+    const versionId = db
+      .prepare("SELECT current_version_id FROM documents WHERE id=?")
+      .get(created.id)!.current_version_id;
+    return { ...created, versionId };
+  };
+  const billingBody = (versionId: string) => ({
+    versionId,
+    invoiceDate: Date.UTC(2026, 10, 5),
+    dueDate: Date.UTC(2026, 10, 15),
+    confirmed: true,
+  });
+  it("prepares one financial draft per approved version with correct totals and no fiscal number or payment", async () => {
+    const d = await billingSource();
+    mfa = true;
+    expect(
+      (await req(`/${d.id}/prepare-billing`, billingBody(d.versionId))).status,
+    ).toBe(409);
+    await approve(d.id);
+    const key = crypto.randomUUID();
+    const first = await req(
+      `/${d.id}/prepare-billing`,
+      billingBody(d.versionId),
+      "POST",
+      key,
+    );
+    expect(first.status, await first.clone().text()).toBe(200);
+    const result = await first.json();
+    expect(
+      (
+        await (
+          await req(
+            `/${d.id}/prepare-billing`,
+            billingBody(d.versionId),
+            "POST",
+            key,
+          )
+        ).json()
+      ).revenue_id,
+    ).toBe(result.revenue_id);
+    expect(
+      (
+        await (
+          await req(`/${d.id}/prepare-billing`, billingBody(d.versionId))
+        ).json()
+      ).revenue_id,
+    ).toBe(result.revenue_id);
+    const row = db
+      .prepare("SELECT * FROM financial_revenues WHERE id=?")
+      .get(result.revenue_id);
+    expect(row).toMatchObject({
+      client_id: "ca",
+      project_id: "pa",
+      status: "draft",
+      invoice_number: null,
+      payment_date: null,
+      net_amount_minor: 18000,
+      vat_amount_minor: 3780,
+      gross_amount_minor: 21780,
+    });
+    expect(
+      db.prepare("SELECT count(*) n FROM financial_revenues").get()!.n,
+    ).toBe(1);
+    expect(
+      db
+        .prepare(
+          "SELECT count(*) n FROM financial_audit_events WHERE action='document.billing.prepared'",
+        )
+        .get()!.n,
+    ).toBe(1);
+    expect(
+      (await (await req(`/${d.id}`)).json()).billingPreparation.revenue_id,
+    ).toBe(result.revenue_id);
+    await publish(d.id);
+    actor = "a";
+    expect(
+      (await (await req(`/${d.id}`)).json()).billingPreparation,
+    ).toBeNull();
+    expect(
+      (await req(`/${d.id}/prepare-billing`, billingBody(d.versionId))).status,
+    ).toBe(403);
+    actor = "b";
+    expect((await req(`/${d.id}`)).status).toBe(404);
+  });
+  it("rejects unverified finance permissions, invalid dates, obsolete approvals and cross-client IDs", async () => {
+    const d = await billingSource();
+    await approve(d.id);
+    expect(
+      (await req(`/${d.id}/prepare-billing`, billingBody(d.versionId))).status,
+    ).toBe(403);
+    mfa = true;
+    actor = "staff";
+    expect(
+      (await req(`/${d.id}/prepare-billing`, billingBody(d.versionId))).status,
+    ).toBe(403);
+    actor = "owner";
+    expect(
+      (
+        await req(`/${d.id}/prepare-billing`, {
+          ...billingBody(d.versionId),
+          dueDate: 1,
+        })
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await req(`/${d.id}/prepare-billing`, {
+          ...billingBody(d.versionId),
+          dueDate: 4102444800001,
+        })
+      ).status,
+    ).toBe(400);
+    const other = await create();
+    expect(
+      (await req(`/${other.id}/prepare-billing`, billingBody(d.versionId)))
+        .status,
+    ).toBe(409);
+    const changed = await req(
+      `/${d.id}`,
+      {
+        payload: { ...payload, title: "Corecție neaprobată" },
+        revision: revision(d.id),
+      },
+      "PUT",
+    );
+    expect(changed.status).toBe(200);
+    expect(
+      (await req(`/${d.id}/prepare-billing`, billingBody(d.versionId))).status,
+    ).toBe(409);
+    expect(
+      db.prepare("SELECT count(*) n FROM financial_revenues").get()!.n,
+    ).toBe(0);
+  });
+  it("rolls back the financial draft if the approved source changes during the atomic operation", async () => {
+    const d = await billingSource();
+    await approve(d.id);
+    mfa = true;
+    db.exec(
+      `CREATE TRIGGER simulate_document_race BEFORE INSERT ON financial_revenues BEGIN UPDATE documents SET archived_at=1 WHERE id='${d.id}'; END;`,
+    );
+    const response = await req(
+      `/${d.id}/prepare-billing`,
+      billingBody(d.versionId),
+    );
+    expect(response.status, await response.clone().text()).toBe(409);
+    expect(
+      db.prepare("SELECT count(*) n FROM financial_revenues").get()!.n,
+    ).toBe(0);
+    expect(
+      db.prepare("SELECT archived_at FROM documents WHERE id=?").get(d.id)!
+        .archived_at,
+    ).toBeNull();
+    expect(
+      db.prepare("SELECT count(*) n FROM document_billing_preparations").get()!
+        .n,
+    ).toBe(0);
+  });
+  it("filters families and number order without revealing company documents to other roles", async () => {
+    const d = await create();
+    await create("company", null);
+    expect(
+      (await (await req("?family=custom&sort=number")).json()).data.map(
+        (r: { id: string }) => r.id,
+      ),
+    ).toContain(d.id);
+    expect((await (await req("?family=offer")).json()).total).toBe(0);
+    actor = "staff";
+    const list = await (await req("?family=custom&sort=number")).json();
+    expect(
+      list.data.every((r: { scope: string }) => r.scope !== "company"),
+    ).toBe(true);
+    expect(
+      (await (await req("?scope=company&family=custom")).json()).total,
+    ).toBe(0);
   });
 });

@@ -1,15 +1,15 @@
-import { Suspense, useEffect, useRef, useState } from "react";
-import { lazyWithRetry, clearChunkReloadFlag } from "@/lib/lazyWithRetry";
-import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
-import { LanguageProvider } from "@/i18n/LanguageContext";
-import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import Index from "./pages/Index.tsx";
 import LangRouteSync from "@/components/site/LangRouteSync";
-import { pageView } from "@/lib/analytics";
-import { resetManagedHead } from "@/lib/seo";
 import { FEATURES } from "@/config/features";
+import { AuthProvider,useAuth } from "@/hooks/useAuth";
+import { LanguageProvider } from "@/i18n/LanguageContext";
+import { pageView } from "@/lib/analytics";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import { resetManagedHead } from "@/lib/seo";
 import { Bot } from "lucide-react";
+import { Suspense,useEffect,useRef,useState } from "react";
+import { BrowserRouter,Navigate,Route,Routes,useLocation } from "react-router-dom";
+import Index from "./pages/Index.tsx";
 
 
 const Gdpr = lazyWithRetry(() => import("./pages/Gdpr.tsx"));
@@ -97,10 +97,10 @@ const AvyLauncher = () => {
 };
 
 
-import CookieBanner from "@/components/site/CookieBanner";
 import AppHostGuard from "@/components/auth/AppHostGuard";
-import RouteTransition from "@/components/site/RouteTransition";
+import CookieBanner from "@/components/site/CookieBanner";
 import PerformanceGovernor from "@/components/site/PerformanceGovernor";
+import RouteTransition from "@/components/site/RouteTransition";
 
 const Notifications = lazyWithRetry(() =>
   import("@/components/ui/sonner").then(({ Toaster }) => ({ default: Toaster })),
@@ -162,16 +162,17 @@ const HeadManager = () => {
   return null;
 };
 
-const App = () => (
-  <LanguageProvider>
+const App = () => {
+ const servicePreview=typeof window!=="undefined"&&new URLSearchParams(window.location.search).has("servicePreview");
+ return <LanguageProvider>
     <AuthProvider>
       <BrowserRouter>
         <PerformanceGovernor />
         <HeadManager />
         <LangRouteSync />
-        <AnalyticsTracker />
-        <AvyLauncher />
-        <DeferredNewsletterPrompt />
+        {!servicePreview&&<AnalyticsTracker />}
+        {!servicePreview&&<AvyLauncher />}
+        {!servicePreview&&<DeferredNewsletterPrompt />}
 
         <AppHostGuard>
           <Suspense fallback={<div className="min-h-screen" />}>
@@ -390,11 +391,11 @@ const App = () => (
             </RouteTransition>
           </Suspense>
         </AppHostGuard>
-        {!surveyHost && <CookieBanner />}
+        {!surveyHost&&!servicePreview && <CookieBanner />}
       </BrowserRouter>
-      {!surveyHost && <DeferredGlobalUi />}
+      {!surveyHost&&!servicePreview && <DeferredGlobalUi />}
     </AuthProvider>
-  </LanguageProvider>
-);
+  </LanguageProvider>;
+};
 
 export default App;

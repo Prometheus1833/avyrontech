@@ -1,5 +1,20 @@
-import { privilegedMfaSatisfied } from "./mfaPolicy";
+import {collaboratorsRouter} from "./collaborators";
+import {collaborationIdentity} from "./collaboratorPolicy";
+import { antivirusRouter } from "./antivirus";
+import { maintainMalwareScans } from "./malware";
+import { matchesRasterSignature } from "./imageSignature";
+import { scanUpload, antivirusFailure, putScannedObject, getScannedObject } from "./malware";
+import { exampleCarouselsRouter, publishedCarousel } from "./exampleCarousels";
+import { rewriteExampleCarousels } from "../../../../src/worker/exampleCarousels";
+import {visualAssetsRouter} from "./visualAssets";
+import {provisionAccountPlan} from "./accountProvisioning";
+import { staffAccessRouter, planStaffAssignment, staffAssignmentSchema, type StaffAssignmentInput } from "./staffAccess";
+import { STAFF_OPERATIONAL_EMAIL, staffRequestAllowed, canManageStaffTarget, managedStaff } from "./staffAccessPolicy";
+import { subscriptionOperationsRouter } from "./subscriptionOperations";
 import { serveSurveyHost } from "../../../../src/worker/surveyHost";
+import { privilegedMfaSatisfied } from "./mfaPolicy";
+import {projectChatRouter} from './projectChat';
+import { servicePagesRouter } from "./servicePages";
 import { surveyPublic } from "./surveys/public";
 // Avyron API — Cloudflare Workers + D1 + KV + R2
 // Auth: PBKDF2-SHA256 password hashing + signed JWT (HS256) + rolling sessions.
@@ -15,32 +30,32 @@ import { surveyPublic } from "./surveys/public";
 //   GET  /api/clients           (staff/admin)
 //   ... extinde după nevoie (vezi cloudflare/workers/README.md)
 
-import { Hono, type Context, type Next } from "hono";
+import { Hono,type Context,type Next } from "hono";
+import { deleteCookie,getCookie,setCookie } from "hono/cookie";
 import { cors } from "hono/cors";
-import { getCookie, setCookie, deleteCookie } from "hono/cookie";
-import type { AppBindings, Role } from "./types";
-import { hashPassword, now, randomHex, sha256, signJwt, verifyJwt, verifyPassword } from "./security";
-import { deliverMail, logDelivery } from "./mailer";
-import { checkRateLimit, clientIp, hashKey, verifyTurnstile } from "./antispam";
-import { readJsonBodyUpTo } from "./requestBody";
-import { MAX_CONTENT_CONFIG_BYTES, avatarObjectKey, contentConfigKey, jsonByteLength } from "./storage";
-import { handleMappedHostname } from "./sites.config";
-import { apiDiscovery, API_VERSION, isApiHostname, isApiSurfaceRequest, normalizeVersionedApiRequest, openApiDocument } from "./apiGateway";
-import { publicApiCacheRequest } from "./apiCache";
-import { domainRouter } from "./domain";
-import { promotionsRouter } from "./promotions";
-import { recordPageEvent, funnelSummary, leadPipeline } from "./analytics";
-import { EXCHANGE_RATE_REFRESH_CRON, getPublicExchangeRate, refreshExchangeRate } from "./exchangeRate";
-import { isReservedPlatformEmail, platformRoleForUser } from "./authorization";
-import { base32Encode, decryptTotpSecret, encryptTotpSecret, generateTotpSecret, totpUri, verifyTotp } from "./totp";
-import { engineRouter, runDueEngineDiscovery } from "./engine";
-import { newsletterRouter } from "./newsletter";
-import { forcedPasswordAllowedPath, mfaAuthEnabled, normalizeLoginPhone, normalizeUsername, sessionLifetimeSeconds, turnstileAuthEnabled, uniqueStaffPhoneMatch } from "./authPolicy";
-import { parseReviewSubmission, WEBSITE_REVIEW_SURFACE } from "./reviewsPolicy";
 import { cleanupAvyronEditorialContent } from "./aiContentRetention";
-import { enforceApiBodyLimit } from "./requestBodyLimit";
+import { funnelSummary,leadPipeline,recordPageEvent } from "./analytics";
+import { checkRateLimit,clientIp,hashKey,verifyTurnstile } from "./antispam";
+import { publicApiCacheRequest } from "./apiCache";
+import { API_VERSION,apiDiscovery,isApiHostname,isApiSurfaceRequest,normalizeVersionedApiRequest,openApiDocument } from "./apiGateway";
+import { hasCapability,isReservedPlatformEmail,platformRoleForUser } from "./authorization";
+import { forcedPasswordAllowedPath,mfaAuthEnabled,normalizeLoginPhone,normalizeUsername,sessionLifetimeSeconds,turnstileAuthEnabled,uniqueStaffPhoneMatch } from "./authPolicy";
+import { cleanupDocumentExports,documentCenterRouter } from "./documentCenter";
+import { domainRouter } from "./domain";
+import { engineRouter,runDueEngineDiscovery } from "./engine";
+import { EXCHANGE_RATE_REFRESH_CRON,getPublicExchangeRate,refreshExchangeRate } from "./exchangeRate";
+import { deliverMail,logDelivery } from "./mailer";
+import { newsletterRouter } from "./newsletter";
 import { allowedOrigin } from "./originPolicy";
-import { documentCenterRouter, cleanupDocumentExports } from "./documentCenter";
+import { promotionsRouter } from "./promotions";
+import { readJsonBodyUpTo } from "./requestBody";
+import { enforceApiBodyLimit } from "./requestBodyLimit";
+import { parseReviewSubmission,WEBSITE_REVIEW_SURFACE } from "./reviewsPolicy";
+import { hashPassword,now,randomHex,sha256,signJwt,verifyJwt,verifyPassword } from "./security";
+import { handleMappedHostname } from "./sites.config";
+import { avatarObjectKey,contentConfigKey,jsonByteLength,MAX_CONTENT_CONFIG_BYTES } from "./storage";
+import { base32Encode,decryptTotpSecret,encryptTotpSecret,generateTotpSecret,totpUri,verifyTotp } from "./totp";
+import type { AppBindings,Role } from "./types";
 
 export { AvyronAgentRuntime } from "./agents/AvyronAgentRuntime";
 export { DocumentExportRuntime } from "./DocumentExportRuntime";
@@ -200,6 +215,7 @@ async function requireAuth(c: Context<AppBindings>, next: Next) {
   c.set("sessionId", payload.sid);
   c.set("roles", liveRoles.length ? liveRoles : ["user"]);
   c.set("mfaVerified", session.mfa_verified_at !== null);
+  if (!await staffRequestAllowed(c.env.DB, payload.sub, c.req.path, c.req.method)) return c.json({error:{code:"staff_permission_required",message:"Rangul curent nu permite această operațiune."}},403);
   await next();
 }
 const requireRole = (...roles: Role[]) => async (c: Context<AppBindings>, next: Next) => {
@@ -215,7 +231,7 @@ async function isSuperAdmin(c: Context<AppBindings>): Promise<boolean> {
   return (await platformRoleForUser(c.env.DB, c.get("userId"))) !== null;
 }
 const requireSuperAdmin = async (c: Context<AppBindings>, next: Next) => {
-  if (!(await isSuperAdmin(c)))
+  if (!(await isSuperAdmin(c)) && !(c.req.path.startsWith("/api/newsletter/admin") && await hasCapability(c.env.DB,c.get("userId"),"newsletter.manage")))
     return c.json({ error: { code: "forbidden", message: "Doar super adminul are acces" } }, 403);
   if (mfaAuthEnabled(c.env) && !(await privilegedMfaSatisfied(c)))
     return c.json({ error: { code: "mfa_required", message: "MFA este obligatoriu pentru acces privilegiat" } }, 403);
@@ -361,7 +377,7 @@ app.get("/", async (c, next) => {
 });
 app.get("/openapi.json", async (c, next) => {
   if (!isApiHostname(new URL(c.req.url).hostname)) return next();
-  c.header("cache-control", "public, max-age=3600, stale-while-revalidate=86400");
+  c.header("cache-control", "private, no-store");
   return c.json(openApiDocument);
 });
 app.get("/healthz", async (c, next) => {
@@ -855,6 +871,7 @@ app.get("/api/auth/me", requireAuth, async (c) => {
   const platformRole = await platformRoleForUser(c.env.DB, c.get("userId"));
   return c.json({
     user: u, profile, roles: c.get("roles"), superadmin: platformRole !== null, platformRole,
+    ...await collaborationIdentity(c.env.DB,c.get("userId")),
     capabilities: capabilityRows.map((row) => row.capability),
   });
 });
@@ -1113,11 +1130,14 @@ app.post("/api/profile/avatar", requireAuth, async (c) => {
   const bytes = await c.req.arrayBuffer();
   if (!bytes.byteLength || bytes.byteLength > 5 * 1024 * 1024) return c.json({ error: { code: "too_large" } }, 413);
   const userId = c.get("userId");
+  if(!matchesRasterSignature(new Uint8Array(bytes),type))return c.json({error:{code:"invalid_image"}},415);
+  const scan=await scanUpload(c.env,new Uint8Array(bytes),{source:"avatar",scope:userId,mimeType:type,actorId:userId});
+  if(scan.status!=="clean")return antivirusFailure(c,scan);
   const key = avatarObjectKey(userId);
-  await c.env.MEDIA.put(key, bytes, {
-    httpMetadata: { contentType: type, cacheControl: "public, max-age=3600" },
+  await putScannedObject(c.env,"MEDIA",key,new Uint8Array(bytes), {
+    httpMetadata: { contentType: type, cacheControl: "private, no-store" },
     customMetadata: { userId, kind: "avatar" },
-  });
+  },scan);
   const avatarUrl = `/api/profile/avatar/${userId}?v=${now()}`;
   await c.env.DB.batch([
     c.env.DB.prepare("UPDATE users SET avatar_url = ?, updated_at = ? WHERE id = ?").bind(avatarUrl, now(), userId),
@@ -1127,14 +1147,14 @@ app.post("/api/profile/avatar", requireAuth, async (c) => {
 });
 
 app.get("/api/profile/avatar/:userId", async (c) => {
-  const object = await c.env.MEDIA.get(avatarObjectKey(c.req.param("userId")));
+  const object = await getScannedObject(c.env,"MEDIA",avatarObjectKey(c.req.param("userId")));
   if (!object) return c.body(null, 404);
   const headers = new Headers();
   object.writeHttpMetadata(headers);
   headers.set("etag", object.httpEtag);
   headers.set("content-length", String(object.size));
   headers.set("x-content-type-options", "nosniff");
-  headers.set("cache-control", "public, max-age=3600, stale-while-revalidate=86400");
+  headers.set("cache-control", "private, no-store");
   return new Response(object.body, { headers });
 });
 
@@ -1144,7 +1164,7 @@ const maskEmail = (email: string) => {
   return `${name.slice(0, 2)}${"*".repeat(Math.max(1, name.length - 2))}@${domain}`;
 };
 
-const CODEX_OPERATOR_EMAIL = "codexagent@avyron.ro";
+const CODEX_OPERATOR_EMAIL = STAFF_OPERATIONAL_EMAIL;
 const CODEX_OPERATOR_USERNAME = "codex-agent";
 const CODEX_OPERATOR_CAPABILITIES = [
   "leads.read", "leads.create", "leads.write", "leads.activity.create", "leads.reminder.manage",
@@ -1153,7 +1173,10 @@ const CODEX_OPERATOR_CAPABILITIES = [
 
 // ─── Business CRUD (exemplu: clients) ───────────────────────────────────
 app.get("/api/clients", requireAuth, requireRole("staff", "admin"), async (c) => {
-  const { results } = await c.env.DB.prepare("SELECT id,company_name,contact_name,email,phone,status,created_at FROM clients ORDER BY created_at DESC LIMIT 200").all();
+  const narrow=!!await managedStaff(c.env.DB,c.get("userId"))&&!await hasCapability(c.env.DB,c.get("userId"),"clients.read");
+  const all=await hasCapability(c.env.DB,c.get("userId"),"projects.all");
+  const scope=narrow&&!all?"WHERE EXISTS(SELECT 1 FROM client_account_access ca WHERE ca.client_id=clients.id AND ca.user_id=?) OR EXISTS(SELECT 1 FROM client_organizations co JOIN organization_memberships om ON om.organization_id=co.organization_id WHERE co.client_id=clients.id AND om.user_id=? AND om.status='active')":"";
+  const {results}=await c.env.DB.prepare(`SELECT id,company_name,${narrow?"NULL contact_name,NULL email,NULL phone":"contact_name,email,phone"},status,created_at FROM clients ${scope} ORDER BY created_at DESC LIMIT 200`).bind(...(scope?[c.get("userId"),c.get("userId")]:[])).all();
   return c.json({ data: results });
 });
 
@@ -1172,7 +1195,9 @@ app.get("/api/admin/users", requireAuth, requireRole("staff", "admin"), async (c
   ).bind(now()).all<Record<string, unknown>>();
   if ((await rolesFor(c.env.DB, c.get("userId"))).includes("admin")) return c.json({ data: results });
   // Staff-ul vede doar ce îi trebuie pentru alocare; fără date personale complete.
-  const masked = results.map((r) => ({
+  const projectOptions=await hasCapability(c.env.DB,c.get("userId"),"projects.create");
+  const restrictedDirectory=await managedStaff(c.env.DB,c.get("userId"))&&!await hasCapability(c.env.DB,c.get("userId"),"clients.read")&&!projectOptions;
+  const masked = results.filter(r=>!restrictedDirectory||/(^|,)(staff|admin)(,|$)/.test(String(r.roles||""))).map((r) => ({
     id: r.id,
     display_name: r.display_name ?? r.pseudonym ?? null,
     avatar_url: r.avatar_url,
@@ -1187,7 +1212,7 @@ app.get("/api/admin/users", requireAuth, requireRole("staff", "admin"), async (c
 app.post("/api/admin/users", requireAuth, requireSuperAdmin, async (c) => {
   const actorUserId = c.get("userId");
   const body = await c.req.json().catch(() => ({})) as {
-    email?: string; username?: string; displayName?: string; temporaryPassword?: string; accessLevel?: string;
+    email?: string; username?: string; displayName?: string; temporaryPassword?: string; accessLevel?: string; staffAssignment?: unknown;
   };
   const email = String(body.email || "").trim().toLowerCase();
   const username = normalizeUsername(body.username);
@@ -1206,6 +1231,18 @@ app.post("/api/admin/users", requireAuth, requireSuperAdmin, async (c) => {
   if (accessLevel !== "user" && accessLevel !== "staff" && accessLevel !== "admin") {
     return c.json({ error: { code: "invalid_access_level", message: "Nivelul de acces nu este valid" } }, 400);
   }
+  let staffAssignment: StaffAssignmentInput | null = null;
+  if (body.staffAssignment !== undefined) {
+    const parsed=staffAssignmentSchema.safeParse(body.staffAssignment);
+    if(!parsed.success || !parsed.data.rankId || parsed.data.revision!==0) return c.json({error:{code:"invalid_staff_assignment"}},400);
+    staffAssignment=parsed.data;
+    if(!await privilegedMfaSatisfied(c))return c.json({error:{code:"mfa_required"}},403);
+    if(["platform_owner","superadmin"].includes(staffAssignment.rankId!)&&await platformRoleForUser(c.env.DB,actorUserId)!=="platform_owner")return c.json({error:{code:"platform_owner_required"}},403);
+  }
+  const creationKey=c.req.header("idempotency-key")||"";
+  if(staffAssignment&&!/^[A-Za-z0-9_.:-]{16,128}$/.test(creationKey))return c.json({error:{code:"idempotency_key_required"}},400);
+  const creationHash=staffAssignment?await sha256(await c.req.text()):null;
+  if(staffAssignment){const old=await c.env.DB.prepare("SELECT request_hash,response_json FROM idempotency_keys WHERE scope=? AND idempotency_key=? AND expires_at>?").bind("staff-create:"+actorUserId,creationKey,now()).first<{request_hash:string;response_json:string}>();if(old)return old.request_hash===creationHash?c.json(JSON.parse(old.response_json),201):c.json({error:{code:"idempotency_key_reused"}},409);}
   if (await isReservedPlatformEmail(c.env.DB, email)) {
     return c.json({ error: { code: "platform_identity_requires_verification" } }, 403);
   }
@@ -1216,25 +1253,27 @@ app.post("/api/admin/users", requireAuth, requireSuperAdmin, async (c) => {
 
   const userId = uuid();
   const timestamp = now();
-  const roles: Role[] = accessLevel === "user" ? ["user"] : ["user", accessLevel];
-  await c.env.DB.batch([
-    c.env.DB.prepare(
-      `INSERT INTO users
-        (id,email,username,password_hash,display_name,email_verified,must_change_password,created_at,updated_at)
-       VALUES (?,?,?,?,?,1,1,?,?)`,
-    ).bind(userId, email, username, await hashPassword(temporaryPassword), displayName, timestamp, timestamp),
-    c.env.DB.prepare(
-      `INSERT INTO profiles (id,display_name,entity_type,language,theme,updated_at)
-       VALUES (?,?,'individual','ro','system',?)`,
-    ).bind(userId, displayName, timestamp),
-    ...roles.map((role) => c.env.DB.prepare("INSERT INTO user_roles (user_id,role) VALUES (?,?)").bind(userId, role)),
-    c.env.DB.prepare(
-      `INSERT INTO security_events
-        (id,actor_user_id,actor_type,action,target_type,target_id,outcome,severity,request_id,ip_hash,metadata_json,created_at)
-       VALUES (?,?,'user','admin.user_created','user',?,'allowed','warning',?,?,?,?)`,
-    ).bind(uuid(), actorUserId, userId, c.get("requestId") || null, await hashKey(clientIp(c.req.raw)), JSON.stringify({ email, username, roles }), timestamp),
+  const selectedLevel=staffAssignment?(["platform_owner","superadmin"].includes(staffAssignment.rankId!)?"admin":"staff"):accessLevel;
+  const roles: Role[] = selectedLevel === "user" ? ["user"] : ["user", selectedLevel as Role];
+  let assignmentPlan:D1PreparedStatement[]=[];
+  try{if(staffAssignment)assignmentPlan=await planStaffAssignment(c,{id:userId,email,email_verified:1},staffAssignment,true);}catch(cause){return c.json({error:{code:String(cause).replace("Error: staff_access_","")}},403);}
+  const createdResponse={data:{id:userId,email,username,display_name:displayName,roles,must_change_password:1}};
+  try { await c.env.DB.batch([
+    ...(staffAssignment?[c.env.DB.prepare("INSERT INTO idempotency_keys(scope,idempotency_key,request_hash,response_status,response_json,created_at,expires_at) VALUES(?,?,?,201,?,?,?)").bind("staff-create:"+actorUserId,creationKey,creationHash,JSON.stringify(createdResponse),timestamp,timestamp+86400000)]:[]),
+    ...await provisionAccountPlan(c.env.DB,{id:userId,email,username,displayName,temporaryPassword,roles,actorUserId,timestamp,requestId:c.get("requestId"),ipHash:await hashKey(clientIp(c.req.raw))}),
+    ...assignmentPlan,
   ]);
-  return c.json({ data: { id: userId, email, username, display_name: displayName, roles, must_change_password: 1 } }, 201);
+  } catch (cause) {
+    if (/UNIQUE constraint failed/.test(String(cause))) {
+      if (staffAssignment) {
+        const replay = await c.env.DB.prepare("SELECT request_hash,response_json FROM idempotency_keys WHERE scope=? AND idempotency_key=? AND expires_at>?").bind("staff-create:"+actorUserId,creationKey,now()).first<{request_hash:string;response_json:string}>();
+        if (replay) return replay.request_hash === creationHash ? c.json(JSON.parse(replay.response_json),201) : c.json({error:{code:"idempotency_key_reused"}},409);
+      }
+      return c.json({error:{code:"identity_taken",message:"Emailul sau username-ul este deja folosit"}},409);
+    }
+    throw cause;
+  }
+  return c.json(createdResponse, 201);
 });
 
 app.get("/api/admin/agent-operators/codex", requireAuth, requireSuperAdmin, async (c) => {
@@ -1365,6 +1404,7 @@ app.post("/api/admin/agent-operators/codex/synchronize", requireAuth, requireSup
 
 app.patch("/api/admin/users/:userId/status", requireAuth, requireSuperAdmin, async (c) => {
   const targetUserId = String(c.req.param("userId") || "");
+  if(!await canManageStaffTarget(c.env.DB,c.get("userId"),targetUserId))return c.json({error:{code:"platform_owner_required"}},403);
   const body = await c.req.json().catch(() => ({})) as { enabled?: unknown };
   if (typeof body.enabled !== "boolean") return c.json({ error: { code: "invalid_status" } }, 400);
   if (targetUserId === c.get("userId") && !body.enabled) {
@@ -1392,7 +1432,8 @@ app.patch("/api/admin/users/:userId/status", requireAuth, requireSuperAdmin, asy
 });
 
 app.post("/api/admin/users/:userId/temporary-password", requireAuth, requireSuperAdmin, async (c) => {
-  const targetUserId = c.req.param("userId");
+  const targetUserId = String(c.req.param("userId") || "");
+  if(!await canManageStaffTarget(c.env.DB,c.get("userId"),targetUserId))return c.json({error:{code:"platform_owner_required"}},403);
   const body = await c.req.json().catch(() => ({})) as { temporaryPassword?: string };
   const temporaryPassword = String(body.temporaryPassword || "");
   if (temporaryPassword.length < 10 || !/[A-Z]/.test(temporaryPassword) || !/[0-9]/.test(temporaryPassword)) {
@@ -1416,7 +1457,8 @@ app.post("/api/admin/users/:userId/temporary-password", requireAuth, requireSupe
 });
 
 app.delete("/api/admin/users/:userId/sessions", requireAuth, requireSuperAdmin, async (c) => {
-  const targetUserId = c.req.param("userId");
+  const targetUserId = String(c.req.param("userId") || "");
+  if(!await canManageStaffTarget(c.env.DB,c.get("userId"),targetUserId))return c.json({error:{code:"platform_owner_required"}},403);
   const timestamp = now();
   const result = await c.env.DB.prepare(
     "UPDATE sessions SET revoked_at=?,revoked_reason='admin_revoked' WHERE user_id=? AND revoked_at IS NULL",
@@ -1432,8 +1474,10 @@ app.patch("/api/admin/users/:userId/roles", requireAuth, requireSuperAdmin, asyn
     await recordSecurityEvent(c, actorUserId, "admin.user_roles_rate_limited", "denied", "warning");
     return c.json({ error: { code: "rate_limited", message: "Prea multe modificări de acces. Încearcă mai târziu." } }, 429);
   }
-  const targetUserId = c.req.param("userId");
+  const targetUserId = String(c.req.param("userId") || "");
   if (!targetUserId) return c.json({ error: { code: "user_id_required", message: "Identificatorul contului lipsește" } }, 400);
+  if(!await canManageStaffTarget(c.env.DB,c.get("userId"),targetUserId))return c.json({error:{code:"platform_owner_required"}},403);
+  if(await managedStaff(c.env.DB,targetUserId))return c.json({error:{code:"use_staff_access_manager"}},409);
   const body = await c.req.json<{ accessLevel?: unknown }>().catch(() => null);
   const accessLevel = body?.accessLevel;
   if (accessLevel !== "user" && accessLevel !== "staff" && accessLevel !== "admin") {
@@ -1594,34 +1638,35 @@ app.put("/api/content/:key", requireAuth, requireRole("admin"), async (c) => {
 });
 
 // ─── Platformă internă (proiecte + propuneri + linkuri + metadata) ──────
-import { projectsRouter } from "./projects";
-import { organizationsRouter } from "./organizations";
-import { aiOsRouter } from "./aiOs";
-import { leadsRouter } from "./leads";
-import { aiProjectsRouter } from "./aiProjects";
-import { financeRouter } from "./finance";
-import { catalogCodesRouter } from "./catalogCodes";
-import { surveyAdminRouter } from "./surveyAdmin";
-import { adminOperationsRouter } from "./adminOperations";
-import { workspaceRouter } from "./workspace";
-import { operationsOAuthRouter, operationsRouter } from "./operations";
-import { dashboardRouter } from "./osDashboard";
-import { seedRouter } from "./seed";
-import { mediaRouter } from "./media";
-import { contactRouter } from "./contact";
-import { logoStudioRouter } from "./logoStudio";
-import { produseRouter } from "./produse";
-import { produseShopRouter } from "./produseShop";
-import { produseCheckoutRouter } from "./produseCheckoutV2";
-import { produseAdminRouter } from "./produseAdmin";
-import { billingRouter } from "./billing";
-import { systemDiagnosticsRouter } from "./systemDiagnostics";
-import { consumeAsyncJobs, enqueueAsyncJobs } from "./asyncJobs";
-import { blogRouter, getBlogSitemapEntries, getPublishedBlogPost } from "./blog";
-import { headersForTransformedBody, injectBlogHtml, mergeBlogLlms, mergeBlogSitemap } from "../../../../src/worker/blogHtml";
 import { BLOG_SLUGS } from "../../../../src/data/blogSlugs";
-import { decide, isKnownSpaRoute, normalizePath } from "../../../../src/worker/router";
 import { serveCachedAsset } from "../../../../src/worker/assetCache";
+import { servePrivateShell } from "../../../../src/worker/privateShell";
+import { headersForTransformedBody,injectBlogHtml,mergeBlogLlms,mergeBlogSitemap } from "../../../../src/worker/blogHtml";
+import { decide,isKnownSpaRoute,normalizePath } from "../../../../src/worker/router";
+import { adminOperationsRouter } from "./adminOperations";
+import { aiOsRouter } from "./aiOs";
+import { aiProjectsRouter } from "./aiProjects";
+import { consumeAsyncJobs,enqueueAsyncJobs } from "./asyncJobs";
+import { billingRouter } from "./billing";
+import { blogRouter,getBlogSitemapEntries,getPublishedBlogPost } from "./blog";
+import { catalogCodesRouter } from "./catalogCodes";
+import { contactRouter } from "./contact";
+import { financeRouter } from "./finance";
+import { leadsRouter } from "./leads";
+import { logoStudioRouter } from "./logoStudio";
+import { mediaRouter } from "./media";
+import { operationsOAuthRouter,operationsRouter } from "./operations";
+import { organizationsRouter } from "./organizations";
+import { dashboardRouter } from "./osDashboard";
+import { produseRouter } from "./produse";
+import { produseAdminRouter } from "./produseAdmin";
+import { produseCheckoutRouter } from "./produseCheckoutV2";
+import { produseShopRouter } from "./produseShop";
+import { projectsRouter } from "./projects";
+import { seedRouter } from "./seed";
+import { surveyAdminRouter } from "./surveyAdmin";
+import { systemDiagnosticsRouter } from "./systemDiagnostics";
+import { workspaceRouter } from "./workspace";
 app.use("/api/projects/*", requireAuth);
 app.use("/api/organizations/*", requireAuth);
 app.use("/api/organization-invitations/*", requireAuth);
@@ -1638,6 +1683,8 @@ app.use("/api/ai-projects", requireAuth);
 app.use("/api/ai-projects/*", requireAuth);
 app.use("/api/finance/*", requireAuth);
 app.use("/api/engine/*", requireAuth);
+app.use('/api/project-chat*',requireAuth);
+app.route('/',projectChatRouter);
 app.use("/api/os/*", requireAuth);
 app.use("/api/surveys/*", async (c, next) => {
   if (!c.req.path.startsWith("/api/surveys/admin") && c.req.header("authorization")) {
@@ -1677,21 +1724,39 @@ app.route("/", aiOsRouter);
 app.route("/", newsletterRouter);
 app.route("/", leadsRouter);
 app.route("/", aiProjectsRouter);
+app.use("/api/admin/service-pages/*", requireAuth);
+app.route("/", servicePagesRouter);
+app.use("/api/admin/example-carousels*", requireAuth);
+app.use("/api/antivirus/*", requireAuth);
+app.use("/api/antivirus", requireAuth);
+app.route("/", antivirusRouter);
+app.use("/api/collaborators*",requireAuth);
+app.use("/api/collaborations*",requireAuth);
+app.use("/api/my/collaborations",requireAuth);
+app.route("/",collaboratorsRouter);
+app.route("/", exampleCarouselsRouter);
 app.route("/", catalogCodesRouter);
 app.use("/api/documents", requireAuth);
 app.use("/api/documents/*", requireAuth);
 app.route("/", documentCenterRouter);
 app.route("/", surveyPublic);
 app.route("/", surveyAdminRouter);
+app.use("/api/admin/client-subscriptions*", requireAuth);
+app.use("/api/internal/subscriptions*", requireAuth);
+app.route("/", subscriptionOperationsRouter);
 app.route("/", adminOperationsRouter);
 app.route("/", financeRouter);
 app.route("/", operationsOAuthRouter);
+app.use("/api/staff-access*", requireAuth, requirePrivilegedMfa);
+app.route("/",staffAccessRouter);
 app.use("/api/workspace/*", requireAuth, requirePrivilegedMfa);
 app.route("/", workspaceRouter);
 app.use("/api/operations/*", requireAuth, requirePrivilegedMfa);
 app.route("/", operationsRouter);
 app.route("/", dashboardRouter);
 app.route("/", systemDiagnosticsRouter);
+app.use("/api/visual-assets*",requireAuth);
+app.route("/",visualAssetsRouter);
 app.route("/", engineRouter);
 app.route("/", organizationsRouter);
 app.route("/", projectsRouter);
@@ -1836,18 +1901,14 @@ app.all("*", async (c) => {
   if (decision.kind === "blog") return publicBlogPage(c, decision.language, decision.slug);
 
   const path = normalizePath(url.pathname);
+  if (url.searchParams.has("servicePreview") || isKnownSpaRoute(path)) {
+    return servePrivateShell(c.env, url, c.req.method);
+  }
   const asset = await c.env.ASSETS.fetch(c.req.raw);
   if (asset.status === 404) {
-    if (isKnownSpaRoute(path)) {
-      const shell = await siteFile(c, "/_shell.html", 200, true);
-      const headers = new Headers(shell.headers);
-      headers.set("Cache-Control", "private, no-store");
-      headers.set("Pragma", "no-cache");
-      return new Response(shell.body, { status: shell.status, headers });
-    }
     return siteFile(c, "/404.html", 404, true);
   }
-  if (!decision.robots) return asset;
+  if (!decision.robots) return rewriteExampleCarousels(asset, url, key => publishedCarousel(c.env.DB, key));
   const headers = new Headers(asset.headers);
   headers.set("X-Robots-Tag", decision.robots);
   if (decision.robots === "noindex, nofollow") {
@@ -1883,6 +1944,7 @@ export default {
   },
   scheduled: (controller, env, ctx) => {
     if (controller.cron === "0,15,30,45 * * * *") {
+      ctx.waitUntil(maintainMalwareScans(env).catch(() => console.error(JSON.stringify({event:"antivirus_poll_failed",code:"maintenance_unavailable"}))));
       ctx.waitUntil(enqueueAsyncJobs(env, ["operation_drain", "social_drain", "survey_delivery", "survey_ai"]));
       if (new Date(controller.scheduledTime).getUTCMinutes() === 0) {
         ctx.waitUntil(cleanupAvyronEditorialContent(env).catch((error) => {

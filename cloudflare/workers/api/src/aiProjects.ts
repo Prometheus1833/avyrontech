@@ -1,3 +1,5 @@
+import {managedStaff,managedPermission} from "./staffAccessPolicy";
+import { editorialStates, socialManagerSnapshot } from "./socialManager";
 import { privilegedMfaSatisfied } from "./mfaPolicy";
 import { Hono, type Context } from "hono";
 import type { AppBindings } from "./types";
@@ -49,16 +51,18 @@ async function projectAccess(c: Context<AppBindings>, key: string, bySlug = fals
   if (platformRole) return {
     project,
     role: platformRole,
-    canManage: platformRole === "platform_owner",
-    canCreateContent: platformRole === "platform_owner",
-    canConnect: platformRole === "platform_owner",
-    canHandoff: platformRole === "platform_owner",
-    canProposeSource: platformRole === "platform_owner",
+    canManage: !!platformRole,
+    canCreateContent: !!platformRole,
+    canConnect: !!platformRole,
+    canHandoff: !!platformRole,
+    canProposeSource: !!platformRole,
   };
   const member = await c.env.DB.prepare(
     "SELECT role FROM ai_project_members WHERE project_id = ? AND user_id = ? AND status = 'active'",
   ).bind(project.id, c.get("userId")).first<{ role: "owner" | "manager" | "editor" | "viewer" }>();
   if (!member) return null;
+  const ranked=await managedStaff(c.env.DB,c.get("userId"));
+  if(ranked&&!managedPermission(ranked,"ai_projects.read"))return null;
   const [canCreateContent, canHandoff, canProposeSource] = await Promise.all([
     hasCapability(c.env.DB, c.get("userId"), "ai_content.create", project.organization_id || undefined),
     hasCapability(c.env.DB, c.get("userId"), "social.lead_handoff", project.organization_id || undefined),
@@ -67,8 +71,8 @@ async function projectAccess(c: Context<AppBindings>, key: string, bySlug = fals
   return {
     project,
     role: member.role,
-    canManage: member.role === "owner" || member.role === "manager",
-    canCreateContent: member.role !== "viewer" || canCreateContent,
+    canManage: (member.role === "owner" || member.role === "manager")&&(!ranked||managedPermission(ranked,"social.approve")),
+    canCreateContent: (member.role !== "viewer" || canCreateContent)&&(!ranked||managedPermission(ranked,"ai_content.create")),
     canConnect: false,
     canHandoff,
     canProposeSource,
@@ -120,6 +124,15 @@ aiProjectsRouter.get("/api/ai-projects", async (c) => {
   );
   const rows = platformRole ? await query.bind(now() - 3 * 86_400_000).all() : await query.bind(now() - 3 * 86_400_000, c.get("userId")).all();
   return c.json({ data: rows.results, platformRole });
+});
+
+aiProjectsRouter.get("/api/ai-projects/:slug/social-manager", async c => {
+  c.header("Cache-Control", "private, no-store");
+  const access=await projectAccess(c,c.req.param("slug"),true);
+  if(!access)return c.json({error:{code:"not_found"}},404);
+  const status=c.req.query("status"),raw=c.req.query("offset")||"0";
+  if((status&&!editorialStates.includes(status as typeof editorialStates[number]))||!/^\d{1,6}$/.test(raw))return c.json({error:{code:"invalid_filter"}},400);
+  return c.json(await socialManagerSnapshot(c.env,access.project,{status,offset:Number(raw)},access.canManage,access.canCreateContent));
 });
 
 aiProjectsRouter.get("/api/ai-projects/:slug", async (c) => {
@@ -1031,7 +1044,7 @@ aiProjectsRouter.post("/api/ai-projects/:projectId/content/generate", async (c) 
 aiProjectsRouter.patch("/api/ai-projects/:projectId/content/:contentId", async (c) => {
   const access = await projectAccess(c, c.req.param("projectId"));
   if (!access) return c.json({ error: { code: "not_found" } }, 404);
-  if (!access.canCreateContent) return c.json({ error: { code: "forbidden" } }, 403);
+  if (!access.canCreateContent && !access.canManage) return c.json({ error: { code: "forbidden" } }, 403);
   const body = await c.req.json<{ status?: string; expectedUpdatedAt?: number }>().catch(() => null);
   if (body?.expectedUpdatedAt !== undefined && (!Number.isSafeInteger(body.expectedUpdatedAt) || body.expectedUpdatedAt < 0)) {
     return c.json({ error: { code: "invalid_revision" } }, 400);
@@ -1042,6 +1055,9 @@ aiProjectsRouter.patch("/api/ai-projects/:projectId/content/:contentId", async (
   }
   if ((next === "approved" || next === "rejected") && !access.canManage) {
     return c.json({ error: { code: "approval_required" } }, 403);
+  }
+  if ((next === "draft" || next === "pending_approval") && !access.canCreateContent) {
+    return c.json({ error: { code: "content_edit_required" } }, 403);
   }
   const content = await c.env.DB.prepare(
     "SELECT id, status, created_at, updated_at, expires_at FROM ai_content_items WHERE id = ? AND project_id = ? AND status NOT IN ('published','scheduled','expired')",
@@ -1054,8 +1070,8 @@ aiProjectsRouter.patch("/api/ai-projects/:projectId/content/:contentId", async (
   if (!canTransitionContent(content.status, next)) {
     return c.json({ error: { code: "invalid_content_transition" } }, 409);
   }
-  const timestamp = now();
-  const updated = await c.env.DB.prepare(
+  const timestamp = Math.max(now(), content.updated_at + 1);
+  const decisionUpdate = c.env.DB.prepare(
     `UPDATE ai_content_items SET status = ?, approved_by = ?, approved_at = ?, updated_at = ?
       WHERE id = ? AND project_id = ? AND status = ? AND updated_at = ?
         AND (? <> 'avyron-web' OR created_at > ?) AND (expires_at IS NULL OR expires_at > ?)`,
@@ -1064,8 +1080,11 @@ aiProjectsRouter.patch("/api/ai-projects/:projectId/content/:contentId", async (
     next === "approved" ? timestamp : null, timestamp,
     c.req.param("contentId"), access.project.id, content.status, content.updated_at,
     access.project.slug, timestamp - 3 * 86_400_000, timestamp,
-  ).run();
+  );
+  const [updated] = await c.env.DB.batch([decisionUpdate, c.env.DB.prepare(
+    `INSERT INTO ai_project_events(id,project_id,actor_user_id,action,target_type,target_id,metadata_json,created_at)
+     SELECT ?,?,?,?,'ai_content',?,'{}',? WHERE changes()=1`,
+  ).bind(identifier("aipe"),access.project.id,c.get("userId"),`ai_project.content.${next}`,c.req.param("contentId"),timestamp)]);
   if (!updated.meta.changes) return c.json({ error: { code: "content_changed_or_expired", message: "Materialul s-a modificat sau a expirat. Actualizează solicitarea." } }, 409);
-  await event(c, access.project.id, `ai_project.content.${next}`, "ai_content", c.req.param("contentId"));
   return c.json({ ok: true });
 });

@@ -4,6 +4,7 @@ export const approvalSources = [
   "operation",
   "template",
   "learning",
+  "carousel",
 ] as const;
 export type ApprovalSource = (typeof approvalSources)[number];
 export type ApprovalItem = {
@@ -29,6 +30,7 @@ export type ApprovalInbox = {
   nextCursor: string | null;
 };
 export const approvalLabels: Record<ApprovalSource, string> = {
+  carousel: "Carusele exemple",
   agent: "Acțiuni AI",
   content: "Materiale",
   operation: "Contracte și modificări",

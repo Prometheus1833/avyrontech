@@ -2,18 +2,20 @@ import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
+const socialImages: Record<string, string> = JSON.parse(readFileSync(join(process.cwd(), "src/seo/serviceSocialImages.json"), "utf8"));
+
 const pages = [
   {
     path: "/servicii/seo-ai-visibility-performance",
     name: "SEO & AI Performance and Visibility",
-    image: "/og/seo-ai.png",
+    image: socialImages["seo:ro"],
     faqQuestion: "De ce Google a descoperit o pagină, dar nu a indexat-o?",
     faqQuestionEn: "Why has Google discovered a page but not indexed it?",
   },
   {
     path: "/servicii/digital-marketing-ads",
     name: "Digital Marketing & Ads",
-    image: "/og/marketing-ads.png",
+    image: socialImages["ads:ro"],
     faqQuestion: "Cum aleg între Google Ads și Meta Ads?",
     faqQuestionEn: "How do I choose between Google Ads and Meta Ads?",
   },

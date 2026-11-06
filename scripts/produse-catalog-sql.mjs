@@ -8,7 +8,7 @@
  * devine copia exactă a celui din cod.
  *
  * Rulare:
- *   node scripts/produse-catalog-sql.mjs            → scrie migrarea curentă
+ *   node scripts/produse-catalog-sql.mjs --output 0088_produse_catalog_update.sql
  *   node scripts/produse-catalog-sql.mjs --check    → verifică doar că e la zi
  *
  * Migrarea e append-only ca toate celelalte: când catalogul se schimbă, se
@@ -20,6 +20,7 @@ import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { DatabaseSync } from "node:sqlite";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const MIGRATIONS = join(root, "cloudflare/d1/migrations");
@@ -162,7 +163,6 @@ const generatedAt = Date.UTC(2026, 8, 24);
 const sql = catalogSql({ ITEMS, PLANS, PROGRESSION, generatedAt });
 
 const existing = readdirSync(MIGRATIONS).find((file) => file === SEED_NAME);
-const target = join(MIGRATIONS, SEED_NAME);
 const digest = (value) => createHash("sha256").update(value).digest("hex").slice(0, 12);
 
 if (process.argv.includes("--check")) {
@@ -170,17 +170,32 @@ if (process.argv.includes("--check")) {
     console.error(`lipsește ${SEED_NAME}; rulează: node scripts/produse-catalog-sql.mjs`);
     process.exit(1);
   }
-  const current = readFileSync(target, "utf8");
-  if (current !== sql) {
-    console.error(`${SEED_NAME} nu mai corespunde catalogului (${digest(current)} ≠ ${digest(sql)}); regenerează-l.`);
-    process.exit(1);
-  }
+  // Compare the effective schema after ALL append-only migrations, ignoring
+  // timestamps and SQL formatting. The historical seed is not a mutable file.
+  const db = new DatabaseSync(":memory:");
+  try {
+    for (const file of readdirSync(MIGRATIONS).filter(name => name.endsWith(".sql")).sort()) db.exec(readFileSync(join(MIGRATIONS, file), "utf8"));
+    const state = () => JSON.stringify({
+      products: db.prepare("SELECT slug,type,category,access,price_ron_cents,status,released_at,pro_at,free_at,name_ro,name_en,weight_kb,requires_gpu FROM product_items ORDER BY slug").all(),
+      plans: db.prepare("SELECT id,name,price_ron_cents,price_eur_cents,components_per_day,sections_per_day,templates_per_day FROM partnership_plans ORDER BY id").all(),
+    });
+    const current = state();
+    db.exec(sql); // Only this temporary in-memory database is modified.
+    if (current !== state()) throw Error(`Catalogul rezultat din migrații nu corespunde sursei (${digest(current)} ≠ ${digest(state())}). Adaugă o migrare nouă; nu rescrie ${SEED_NAME}.`);
+  } finally { db.close(); }
   console.log(`catalog D1: la zi (${ITEMS.length} produse, ${PLANS.length} parteneriate)`);
 } else {
-  writeFileSync(target, sql);
+  const option = process.argv.indexOf("--output");
+  const name = option >= 0 ? process.argv[option + 1] : SEED_NAME;
+  if (!/^\d{4}_produse_catalog_[a-z0-9_]+\.sql$/.test(name || "")) throw Error("Nume de migrare invalid.");
+  const names = readdirSync(MIGRATIONS).filter(file => file.endsWith(".sql")).sort();
+  if (existing && (name === SEED_NAME || names.includes(name) || Number(name.slice(0, 4)) <= Number(names.at(-1).slice(0, 4)))) {
+    throw Error("Migrațiile istorice sunt nemodificabile. Folosește --output cu un număr nou, apoi verifică diferențele comerciale înainte de aplicare.");
+  }
+  writeFileSync(join(MIGRATIONS, name), sql, { flag: "wx" });
   const routed = writeItemRoutes(ITEMS, TYPES);
   const counted = writeCounts(ITEMS);
   console.log(
-    `catalog D1: ${ITEMS.length} produse și ${PLANS.length} parteneriate scrise în ${SEED_NAME}${routed ? "; rute actualizate" : ""}${counted ? "; cifre actualizate" : ""}`,
+    `catalog D1: ${ITEMS.length} produse și ${PLANS.length} parteneriate scrise în ${name}${routed ? "; rute actualizate" : ""}${counted ? "; cifre actualizate" : ""}`,
   );
 }

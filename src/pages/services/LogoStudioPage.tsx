@@ -1,3 +1,4 @@
+import { serviceSocialForPath } from "@/seo/serviceSocial";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Download, Loader2, Lock, Mail, Share2, Sparkles, Wand2, Zap } from "lucide-react";
@@ -543,14 +544,13 @@ const LogoStudioPage = () => {
     const url = `https://avyron.ro${path}`;
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
       ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd, faqPageLd }]) => {
-        const image = ro ? "/og/logo-studio.jpg" : "/og/logo-studio-en.jpg";
+        const image = serviceSocialForPath(path)?.image ?? "/og/home.jpg";
         setPageMeta({
           title: m.title,
           description: m.description,
           path,
           alternates: { ...STUDIO_PATHS },
           image,
-          imageAlt: ro ? "Avyron Logo Studio — logo 2D standard gratuit și export AI la 150 lei" : "Avyron Logo Studio — free standard 2D logo and AI export for 150 lei",
         });
         setJsonLd("ld-organization", organizationLd);
         setJsonLd("ld-service", {
@@ -561,7 +561,7 @@ const LogoStudioPage = () => {
           url,
           description: m.description,
           applicationCategory: "DesignApplication",
-          image: `https://avyron.ro${ro ? "/og/logo-studio.jpg" : "/og/logo-studio-en.jpg"}`,
+          image: `https://avyron.ro${image}`,
           operatingSystem: "Web",
           inLanguage: ro ? "ro" : "en",
           provider: { "@id": "https://avyron.ro/#organization" },

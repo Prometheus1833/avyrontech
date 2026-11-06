@@ -11,9 +11,9 @@
     "postinstall": "npm run install:api",
     "install:api": "npm ci --prefix cloudflare/workers/api --legacy-peer-deps --no-audit --no-fund",
     "dev": "vite",
-    "build": "npm run og:produse && vite build && node scripts/prerender.mjs && node scripts/produse-registry.mjs && node scripts/generate-sitemap.mjs && node scripts/generate-llms.mjs && npm run seo:audit",
+    "build": "npm run service-content:snapshot && npm run og:produse && npm run og:services && vite build && node scripts/prerender.mjs && node scripts/produse-registry.mjs && node scripts/generate-sitemap.mjs && node scripts/generate-llms.mjs && npm run seo:audit",
     "build:pages": "npm run build && node scripts/build-pages-worker.mjs",
-    "build:worker": "WRANGLER_LOG_PATH=/tmp/avyron-wrangler-build.log AVYRON_WORKER=1 vite build && AVYRON_WORKER=1 node scripts/prerender.mjs && node scripts/produse-registry.mjs && node scripts/generate-sitemap.mjs && node scripts/generate-llms.mjs && npm run seo:audit",
+    "build:worker": "npm run service-content:snapshot && npm run og:services && WRANGLER_LOG_PATH=/tmp/avyron-wrangler-build.log AVYRON_WORKER=1 vite build && AVYRON_WORKER=1 node scripts/prerender.mjs && node scripts/produse-registry.mjs && node scripts/generate-sitemap.mjs && node scripts/generate-llms.mjs && npm run seo:audit",
     "build:dev": "vite build --mode development",
     "typecheck": "npm run typecheck:app && npm run typecheck:worker",
     "typecheck:app": "tsc -p tsconfig.app.json --noEmit",
@@ -39,7 +39,11 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "service-content:generate": "node scripts/generate-service-content-manifest.mjs",
+    "service-content:check": "node scripts/generate-service-content-manifest.mjs --check",
+    "service-content:snapshot": "node scripts/snapshot-service-content.mjs",
+    "og:services": "node scripts/generate-service-og.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -155,6 +159,9 @@
   },
   "overrides": {
     "sharp": "0.35.5",
-    "postcss-selector-parser": "6.1.5"
+    "postcss-selector-parser": "6.1.5",
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "11.0.1"
+    }
   }
 }

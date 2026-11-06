@@ -1,95 +1,12 @@
-import {
-  Activity, ArchiveRestore, Beaker, Blocks, BookOpen, Bot, CalendarClock, Cloud, Boxes,
-  FileCheck2, FileKey2, Gauge, Globe2, HeartHandshake, Mail, MessageSquare, Plug,
-  RefreshCcw, ShieldCheck, Sparkles, TimerReset, UserRoundCheck, Wallet, Workflow, FileCode2,
-} from "lucide-react";
-import { useState } from "react";
 import OperationsConsole from "./OperationsConsole";
-import { Link } from "react-router-dom";
-import { canOpenSection, type Access, type SectionId } from "@/lib/access";
-
-const modules = [
-  { group: "AI și automatizare", name: "Centru de aprobări", detail: "Aprobă, revizuiește sau respinge acțiunile propuse de agenți.", status: "activ", icon: UserRoundCheck },
-  { group: "AI și automatizare", name: "Activitate agenți", detail: "Rulări, pași, resurse, cost estimat și rezultat.", status: "activ", icon: Bot },
-  { group: "AI și automatizare", name: "Centru de automatizări", detail: "Rapoarte programate, execuție manuală, istoric, retry și oprire; disponibile în consola de mai sus.", status: "în dezvoltare", icon: Workflow },
-  { group: "AI și automatizare", name: "Pluginuri", detail: "Registru verificat de capabilități, versiuni și permisiuni.", status: "fundație existentă", icon: Blocks },
-  { group: "Clienți și livrare", name: "Profitabilitate clienți", detail: "Venit, cost alocat, marjă estimată, upsell și risc.", status: "fundație existentă", icon: Gauge },
-  { group: "Clienți și livrare", name: "Contracte și reînnoiri", detail: "Registru cu termene, responsabil și aprobare pe versiune. Semnarea și facturarea se activează separat.", status: "în dezvoltare", icon: CalendarClock },
-  { group: "Clienți și livrare", name: "SLA și termene", detail: "Răspuns, livrare și suport cu avertizare înainte de depășire.", status: "în dezvoltare", icon: TimerReset },
-  { group: "Clienți și livrare", name: "Solicitări de modificare", detail: "Solicitări legate de proiect, valoare și aprobare pe versiune în consola operațională.", status: "în dezvoltare", icon: RefreshCcw },
-  { group: "Clienți și livrare", name: "Urmărirea livrabilelor", detail: "Livrabile, responsabil, termen, aprobare și predare.", status: "în dezvoltare", icon: FileCheck2 },
-  { group: "Clienți și livrare", name: "Onboarding / Offboarding", detail: "Checklisturi controlate pentru pornire, predare și arhivare.", status: "în dezvoltare", icon: HeartHandshake },
-  { group: "Infrastructură și siguranță", name: "Stare infrastructură", detail: "Site, app, API, auth, baze de date, Workers, Pages și email.", status: "activ parțial", icon: Cloud },
-  { group: "Infrastructură și siguranță", name: "Stare integrări", detail: "Cloudflare, GitHub, financiar, email, Google, Meta și altele.", status: "activ parțial", icon: Plug },
-  { group: "Infrastructură și siguranță", name: "Centru de securitate", detail: "Autentificări, rate limits, incidente, chei, domenii și SSL.", status: "fundație existentă", icon: ShieldCheck },
-  { group: "Infrastructură și siguranță", name: "Centru de erori", detail: "Cloudflare, API, formulare, email, webhookuri, plăți și agenți.", status: "în dezvoltare", icon: Activity },
-  { group: "Infrastructură și siguranță", name: "Backup și recuperare", detail: "Starea copiilor, teste de restaurare și recovery controlat.", status: "în dezvoltare", icon: ArchiveRestore },
-  { group: "Infrastructură și siguranță", name: "Domenii și active digitale", detail: "Expirări, DNS, SSL, redirecturi, subdomenii și oportunități.", status: "fundație existentă", icon: Globe2 },
-  { group: "Cunoaștere și active", name: "Centru de documente și cunoaștere", detail: "Oferte, contracte, briefuri, facturi și documentație cu căutare AI.", status: "fundație existentă", icon: BookOpen },
-  { group: "Cunoaștere și active", name: "Seif de active", detail: "Elemente de brand și documente private; secretele rămân în configurările securizate Cloudflare.", status: "în dezvoltare", icon: FileKey2 },
-  { group: "Creștere și conformitate", name: "Comentarii", detail: "Moderarea centralizată a comentariilor din blog și pagini.", status: "în dezvoltare", icon: MessageSquare },
-  { group: "Creștere și conformitate", name: "Vizite și analytics", detail: "Trafic first-party în overview; rapoartele complete necesită conectarea interfeței la D1.", status: "activ parțial", icon: Activity },
-  { group: "Creștere și conformitate", name: "Abonați / Newsletter", detail: "Double opt-in, surse și interese, configurarea notificării, drafturi, export și dezabonare.", status: "activ", icon: Mail },
-  { group: "Creștere și conformitate", name: "Programări", detail: "Programări cu responsabil și client, verificarea suprapunerilor și raport de termene.", status: "în dezvoltare", icon: CalendarClock },
-  { group: "Creștere și conformitate", name: "Centru de experimente", detail: "Teste A/B, CTA-uri, prețuri, conversii și rezultate.", status: "în dezvoltare", icon: Beaker },
-  { group: "Creștere și conformitate", name: "Confidențialitate și consimțământ", detail: "GDPR, cereri de export/ștergere, consimțăminte și politici active.", status: "fundație existentă", icon: ShieldCheck },
-  { group: "Creștere și conformitate", name: "Calendar juridic", detail: "Contracte, politici, accesibilitate și obligații care expiră.", status: "în dezvoltare", icon: CalendarClock },
-  { group: "AI și automatizare", name: "AVY Briefing", detail: "Sinteză din D1, cu programare configurabilă și notificări interne în centrul operațional.", status: "activ parțial", icon: Bot },
-] as const;
-
-const destinations: Record<string, SectionId> = {
-  "Centru de aprobări": "overview", "Activitate agenți": "overview",
-  "Stare infrastructură": "overview", "Stare integrări": "overview",
-  "AVY Briefing": "overview", "Vizite și analytics": "overview",
-  "Profitabilitate clienți": "finance",
-  "Abonați / Newsletter": "newsletter",
-};
-
-const tones: Record<string, string> = {
-  "activ": "bg-emerald-400/10 text-emerald-300 border-emerald-300/15",
-  "activ parțial": "bg-cyan-400/10 text-cyan-300 border-cyan-300/15",
-  "fundație existentă": "bg-violet-400/10 text-violet-300 border-violet-300/15",
-  "în dezvoltare": "bg-amber-300/10 text-amber-200 border-amber-200/15",
-};
-
-export default function OsCentersTab({ access, onNavigate }: {access: Access; onNavigate: (section: SectionId) => void}) {
-  const [search,setSearch] = useState("");
-  const groups = Array.from(new Set(modules.map((module) => module.group)));
-  const normalize = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  const visible = modules.filter(module => normalize(`${module.name} ${module.detail}`).includes(normalize(search)));
-  return <div className="space-y-4 text-slate-100">
-    <header className="rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.14] via-[#11182d] to-cyan-400/[0.06] p-5 sm:p-6"><p className="font-mono text-[10px] uppercase tracking-[0.24em] text-violet-200/70">Acces rapid</p><h1 className="mt-2 font-display text-2xl font-bold text-white">Centre AVYRON OS</h1><p className="mt-1 max-w-3xl text-sm leading-relaxed text-slate-400">Deschide direct fluxul de care ai nevoie. Inventarul tehnic rămâne disponibil mai jos, fără să aglomereze lucrul zilnic.</p></header>
-    <section className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4" aria-label="Acces rapid Centre AVYRON OS">
-      {[
-        { id: "servicii-avyron" as SectionId, label: "Servicii", detail: "Ofertă și configurare individuală", icon: Sparkles },
-        { id: "produse-avyron" as SectionId, label: "Produse", detail: "Catalog, prețuri și acces", icon: Boxes },
-        { id: "subscriptions-admin" as SectionId, label: "Abonamente", detail: "Planuri și clienți activi", icon: CalendarClock },
-        { id: "team-staff" as SectionId, label: "Staff", detail: "Conturi și comunicare", icon: UserRoundCheck },
-        { id: "intern" as SectionId, label: "Chat intern", detail: "Canale și mesaje directe", icon: MessageSquare },
-        { id: "library" as SectionId, label: "Bibliotecă", detail: "Efecte și referințe", icon: BookOpen },
-        { id: "ai-os" as SectionId, label: "Agenți AI", detail: "Configurații, cunoaștere și conversații", icon: Sparkles },
-        { id: "finance" as SectionId, label: "Financiar", detail: "Costuri, venituri, plăți și bugete", icon: Wallet },
-        { id: "commercial-codes" as SectionId, label: "Coduri comerciale", detail: "SKU, TVA și trasee de plată", icon: FileCode2 },
-        { id: "newsletter" as SectionId, label: "Newsletter", detail: "Campanii, abonați și consimțământ", icon: Mail },
-      ].filter(item=>canOpenSection(item.id,access)).map(item=>{const Icon=item.icon;return <button key={item.id} type="button" onClick={()=>onNavigate(item.id)} className="rounded-xl border border-white/[0.08] bg-white/[0.025] p-4 text-left transition hover:border-violet-400/30 hover:bg-violet-500/[0.08]"><Icon className="size-4 text-violet-300"/><p className="mt-3 text-sm font-semibold">{item.label}</p><p className="mt-1 text-xs text-slate-500">{item.detail}</p></button>;})}
-    </section>
-    {access.isSuperAdmin && <details open className="rounded-2xl border border-white/10 bg-[#0d1425]/70 p-4"><summary className="cursor-pointer text-sm font-semibold text-slate-200">Centrul operațional · registre, automatizări, integrări și evaluări</summary><div className="mt-5"><OperationsConsole/></div></details>}
-    <details className="rounded-2xl border border-white/10 p-4"><summary className="cursor-pointer text-sm">Inventarul extins al platformei și module planificate</summary>
-    <p className="mt-3 text-sm text-slate-400">Statusurile separă funcțiile active de fundațiile existente și modulele care urmează să primească fluxuri complete.</p>
-    <input aria-label="Caută funcționalități" value={search} onChange={event=>setSearch(event.target.value)} placeholder="Caută funcționalități…" className="w-full rounded-xl border border-white/10 bg-[#10162a] px-4 py-3 text-sm" />
-    {visible.length === 0 && <p className="text-sm text-slate-400">Nicio funcționalitate găsită.</p>}
-    {groups.filter(group => visible.some(module => module.group === group)).map(group => <details key={`${group}-${Boolean(search)}`} open={Boolean(search) || group === groups[0]} className="rounded-2xl border border-white/[0.08] bg-[#10162a]/90 p-4 sm:p-5">
-      <summary className="cursor-pointer font-display text-base font-semibold text-white">{group} <span className="text-xs text-slate-400">· {visible.filter(module=>module.group===group).length}</span></summary>
-      <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">{visible.filter(module=>module.group===group).map(module=>{
-        const Icon=module.icon, destination=destinations[module.name];
-        return <article key={module.name} className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3.5">
-          <div className="flex items-start gap-3"><Icon className="size-5 shrink-0 text-violet-300" /><div><h3 className="text-sm font-medium text-slate-200">{module.name}</h3><p className="mt-1 text-xs leading-relaxed text-slate-400">{module.detail}</p></div></div>
-          <span className={`mt-3 inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${tones[module.status]}`}>{module.status}</span>
-          {destination && canOpenSection(destination,access) && <button type="button" onClick={()=>onNavigate(destination)} className="mt-3 block text-xs text-violet-300 hover:underline">Deschide funcțiile disponibile →</button>}
-          {module.name === "Pluginuri" && access.isSuperAdmin && <Link to="/intern/avy-engine" className="mt-3 block text-xs text-violet-300 hover:underline">Deschide registrul AVY Engine →</Link>}
-        </article>;
-      })}</div>
-    </details>)}
-    </details>
-  </div>;
+import type { Access } from "@/lib/access";
+import type { OsNavigate } from "./OsWorkspaceDirectory";
+export default function OsCentersTab({
+  access,
+  onNavigate,
+}: {
+  access: Access;
+  onNavigate: OsNavigate;
+}) {
+  return <OperationsConsole access={access} onNavigate={onNavigate} />;
 }

@@ -1,3 +1,7 @@
+import { scanUpload, antivirusFailure, putScannedObject, getScannedObject } from "./malware";
+import {readJsonBodyUpTo} from "./requestBody";
+import {checkRateLimit} from "./antispam";
+import {privilegedMfaSatisfied} from "./mfaPolicy";
 import { Hono, type Context } from "hono";
 import type { AppBindings } from "./types";
 import { hasCapability, platformRoleForUser } from "./authorization";
@@ -31,8 +35,7 @@ const objectBody = async (c: Context<AppBindings>): Promise<Record<string, unkno
 
 async function allowed(c: Context<AppBindings>, permission: EnginePermission) {
   const role = await platformRoleForUser(c.env.DB, c.get("userId"));
-  if (role === "platform_owner") return true;
-  if (permission === "engine.read" && (role === "superadmin" || c.get("roles").includes("admin"))) return true;
+  if (role) return true;
   return hasCapability(c.env.DB, c.get("userId"), permission);
 }
 
@@ -263,7 +266,9 @@ engineRouter.post("/api/engine/sources/:sourceId/documents", async (c) => {
   const safeName = file.name.replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 120) || "document";
   const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), (byte) => byte.toString(16).padStart(2, "0")).join(""), documentId = id("engdoc"), timestamp = now();
   const objectKey = `engine/${c.req.param("sourceId")}/${documentId}-${safeName}`;
-  await c.env.FILES.put(objectKey, bytes, { httpMetadata: { contentType }, customMetadata: { schema: "avy-engine-document:v1", trust: "untrusted" } });
+  const scan=await scanUpload(c.env,bytes,{source:"engine",scope:c.req.param("sourceId"),mimeType:contentType,actorId:c.get("userId")});
+  if(scan.status!=="clean")return antivirusFailure(c,scan);
+  await putScannedObject(c.env,"FILES",objectKey, bytes, { httpMetadata: { contentType }, customMetadata: { schema: "avy-engine-document:v1", trust: "untrusted" } },scan);
   try {
     await c.env.DB.prepare(`INSERT INTO engine_documents
       (id,source_id,document_type,title,r2_object_key,file_name,content_type,size_bytes,sha256,status,trust_level,agent_usable,uploaded_by,created_at,updated_at)
@@ -280,7 +285,7 @@ engineRouter.get("/api/engine/documents/:documentId/content", async (c) => {
   if (!(await allowed(c, "engine.documents"))) return deny(c);
   const row = await c.env.DB.prepare("SELECT r2_object_key,file_name,content_type FROM engine_documents WHERE id=? AND status<>'archived'").bind(c.req.param("documentId")).first<{ r2_object_key: string; file_name: string; content_type: string }>();
   if (!row) return c.json({ error: { code: "not_found" } }, 404);
-  const object = await c.env.FILES.get(row.r2_object_key);
+  const object = await getScannedObject(c.env,"FILES",row.r2_object_key);
   if (!object) return c.json({ error: { code: "object_missing" } }, 404);
   const headers = new Headers({ "Content-Type": row.content_type, "Content-Disposition": `attachment; filename="${row.file_name.replace(/["\\]/g, "_")}"`, "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" });
   return new Response(object.body, { headers });
@@ -417,6 +422,19 @@ engineRouter.get("/api/engine/bindings", async (c) => {
   return c.json({ data: result.results });
 });
 
+// Reconcile internal eligibility only: never activate a connector or perform an external discovery.
+engineRouter.post("/api/engine/bindings/reconcile",async c=>{
+ if(!await allowed(c,"engine.manage")||!await privilegedMfaSatisfied(c))return deny(c);
+ const body=await readJsonBodyUpTo(c.req.raw,4096);if(!body.ok||(body.value as {confirmed?:boolean}|null)?.confirmed!==true)return c.json({error:{code:"confirmation_required"}},400);
+ if(!(await checkRateLimit(c.env.DB,[{key:`engine-reconcile:${c.get('userId')}`,limit:30,windowSec:3600}])).ok)return c.json({error:{code:"rate_limited"}},429);
+ const timestamp=now();
+ const result=await c.env.DB.batch([
+  c.env.DB.prepare(`UPDATE engine_resource_bindings SET status='paused',updated_at=? WHERE status='active' AND NOT EXISTS(SELECT 1 FROM engine_capabilities cap JOIN engine_sources src ON src.id=cap.source_id WHERE cap.id=engine_resource_bindings.capability_id AND cap.implementation_status='ready' AND src.lifecycle_status='active' AND src.security_status='reviewed' AND src.robots_reviewed=1 AND src.terms_reviewed=1)`).bind(timestamp),
+  c.env.DB.prepare(`INSERT INTO engine_audit_events(id,actor_user_id,action,resource_type,after_json,request_id,source,created_at) VALUES(?,?,'engine.bindings.reconciled','binding',json_object('paused',changes()),?,'manual',?)`).bind(id('engaud'),c.get('userId'),c.get('requestId')||null,timestamp)
+ ]);
+ return c.json({ok:true,paused:result[0].meta.changes,externalCalls:0});
+});
+
 engineRouter.post("/api/engine/bindings", async (c) => {
   if (!(await allowed(c, "engine.manage"))) return deny(c);
   const body = await objectBody(c);
@@ -441,7 +459,7 @@ engineRouter.patch("/api/engine/bindings/:bindingId", async (c) => {
     const ready = await c.env.DB.prepare(`SELECT 1 ok FROM engine_resource_bindings binding
       JOIN engine_capabilities capability ON capability.id=binding.capability_id
       JOIN engine_sources source ON source.id=capability.source_id
-      WHERE binding.id=? AND capability.implementation_status='ready' AND source.lifecycle_status='active' LIMIT 1`).bind(c.req.param("bindingId")).first();
+      WHERE binding.id=? AND capability.implementation_status='ready' AND source.lifecycle_status='active' AND source.security_status='reviewed' AND source.robots_reviewed=1 AND source.terms_reviewed=1 LIMIT 1`).bind(c.req.param("bindingId")).first();
     if (!ready) return c.json({ error: { code: "source_or_capability_not_ready" } }, 409);
   }
   const result = await c.env.DB.prepare("UPDATE engine_resource_bindings SET status=?,approved_by=?,approved_at=?,updated_at=? WHERE id=? AND status<>'archived'")
@@ -461,7 +479,7 @@ engineRouter.get("/api/engine/projections/:targetType/:targetKey", async (c) => 
     FROM engine_resource_bindings binding JOIN engine_capabilities capability ON capability.id=binding.capability_id
     JOIN engine_sources source ON source.id=capability.source_id
     WHERE binding.target_type=? AND binding.target_key=? AND binding.status='active'
-      AND capability.implementation_status='ready' AND source.lifecycle_status='active'
+      AND capability.implementation_status='ready' AND source.lifecycle_status='active' AND source.security_status='reviewed' AND source.robots_reviewed=1 AND source.terms_reviewed=1
     ORDER BY capability.category,capability.name LIMIT 100`).bind(targetType, targetKey).all();
   return c.json({ target: { type: targetType, key: targetKey }, resources: result.results });
 });

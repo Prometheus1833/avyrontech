@@ -1,3 +1,7 @@
+import {
+  automaticDocumentFields,
+  consistentSubscriptionBilling,
+} from "@/shared/documents/autofill";
 import { useMemo, useState } from "react";
 import { cfAuth } from "@/lib/cfAuth";
 import { internApi } from "@/lib/internApi";
@@ -39,16 +43,19 @@ function applicablePayload(
       };
 }
 const steps = [
-  "Context",
-  "Documente recomandate",
-  "Date și valori",
-  "Personalizare",
+  "Context și model",
+  "Date și personalizare",
   "Verificare",
   "Creare",
 ];
 export default function DocumentGenerator({
   context,
+  lockedClientId,
   projectId,
+  initialTemplateVersion,
+  initialClientId,
+  initialServiceId,
+  initialSubscriptionId,
   company = false,
   initialScope,
   onCreated,
@@ -56,30 +63,83 @@ export default function DocumentGenerator({
   onContextRefresh,
 }: {
   context: DocumentContext;
+  lockedClientId?: string;
   projectId?: string;
+  initialTemplateVersion?: string;
+  initialClientId?: string;
+  initialServiceId?: string;
+  initialSubscriptionId?: string;
   company?: boolean;
   initialScope?: DocumentScope;
   onCreated: (id: string) => void;
   onCancel: () => void;
   onContextRefresh: () => Promise<void>;
 }) {
-  const initialProject = context.projects.find((p) => p.id === projectId);
+  const seedServiceId = initialScope ? undefined : initialServiceId;
+  const seedSubscriptionId = initialScope ? undefined : initialSubscriptionId;
+  const seedSubscription = context.subscriptions.find(
+    (s) => s.id === seedSubscriptionId,
+  );
+  const seedService = context.services.find((s) => s.id === seedServiceId);
+  const initialProject = initialScope
+    ? undefined
+    : context.projects.find(
+        (p) =>
+          p.id ===
+          (projectId ||
+            seedSubscription?.project_id ||
+            seedService?.project_id),
+      );
+  const seedProjectId = initialProject?.id;
+  const seedClientId =
+    lockedClientId ||
+    (initialScope
+      ? ""
+      : initialProject?.client_id ||
+        seedSubscription?.client_id ||
+        seedService?.client_id ||
+        initialClientId ||
+        "");
   const [step, setStep] = useState(0),
-    [clientId, setClientId] = useState(initialProject?.client_id || ""),
-    [projects, setProjects] = useState<string[]>(projectId ? [projectId] : []),
-    [scope, setScope] = useState<DocumentScope>(
-      initialScope || (initialProject ? "client" : "internal"),
+    [clientId, setClientId] = useState(seedClientId),
+    [projects, setProjects] = useState<string[]>(
+      seedProjectId ? [seedProjectId] : [],
     ),
-    [selected, setSelected] = useState<string[]>([]),
-    [catalogIds, setCatalogIds] = useState<string[]>([]),
+    [scope, setScope] = useState<DocumentScope>(
+      lockedClientId ? "client" : initialScope || "client",
+    ),
+    [selected, setSelected] = useState<string[]>(
+      initialTemplateVersion &&
+        context.templates.some((t) => t.version_id === initialTemplateVersion)
+        ? [initialTemplateVersion]
+        : [],
+    ),
+    [catalogIds, setCatalogIds] = useState<string[]>(
+      context.services
+        .filter(
+          (s) =>
+            (s.id === seedServiceId ||
+              (!!seedProjectId && s.project_id === seedProjectId)) &&
+            s.catalog_code_id,
+        )
+        .map((s) => s.catalog_code_id!),
+    ),
     [instanceIds, setInstanceIds] = useState<string[]>(
       context.services
-        .filter((s) => s.project_id === projectId)
+        .filter(
+          (s) =>
+            s.id === seedServiceId ||
+            (!!seedProjectId && s.project_id === seedProjectId),
+        )
         .map((s) => s.id),
     ),
     [subscriptionIds, setSubscriptionIds] = useState<string[]>(
       context.subscriptions
-        .filter((s) => s.project_id === projectId)
+        .filter(
+          (s) =>
+            s.id === seedSubscriptionId ||
+            (!!seedProjectId && s.project_id === seedProjectId),
+        )
         .map((s) => s.id),
     ),
     [productIds, setProductIds] = useState<string[]>([]),
@@ -123,42 +183,38 @@ export default function DocumentGenerator({
           ],
     [selected, context.templates],
   );
+  const subscriptionBilling = consistentSubscriptionBilling(
+    context.subscriptions
+      .filter(
+        (s) =>
+          s.client_id === clientId &&
+          subscriptionIds.includes(s.id) &&
+          s.billing,
+      )
+      .map((s) => s.billing!),
+  );
   const automatic: Record<string, string> = {
-    date: documentDate,
-    "provider.legal_name": context.company.legal_name || "",
-    "provider.tax_id": context.company.tax_id || "",
-    "provider.address": context.company.address || "",
-    "provider.contact_email": context.company.contact_email || "",
-    "beneficiary.legal_name":
-      client?.legal_name ||
-      client?.company_name ||
-      (scope === "company" || scope === "internal"
-        ? "DIGITAL ECOTECH SOLUTIONS S.R.L."
-        : ""),
-    "beneficiary.entity_type": client?.entity_type || "",
-    "beneficiary.identification":
-      client?.entity_type === "PF"
-        ? "Persoană fizică identificată prin numele și adresa înscrise în document"
-        : [
-            client?.tax_id ? `Cod fiscal: ${client.tax_id}` : "",
-            client?.registration_number
-              ? `Înregistrare: ${client.registration_number}`
-              : "",
-          ]
-            .filter(Boolean)
-            .join("; "),
-    "beneficiary.address": client?.address || "",
+    ...automaticDocumentFields(
+      context.company,
+      client,
+      documentDate,
+      scope !== "client",
+      subscriptionBilling,
+    ),
     scope: [
       ...catalogIds.map(
         (id) => context.catalog.find((c) => c.id === id)?.display_name,
       ),
+      ...instanceIds.map(
+        (id) => context.services.find((s) => s.id === id)?.service_name,
+      ),
+      ...projects.map((id) => context.projects.find((p) => p.id === id)?.name),
       ...productIds.map(
         (id) => context.products.find((p) => p.slug === id)?.name_ro,
       ),
     ]
       .filter(Boolean)
       .join("; "),
-    contacts: client?.contact_name || "",
     privacy_mode: "Confidențialitate",
     ...fields,
   };
@@ -184,6 +240,7 @@ export default function DocumentGenerator({
         ...templateFields(applicablePayload(t, automatic.privacy_mode)),
       ]),
       ...Object.keys(serviceFields),
+      ...Object.keys(automatic).filter((key) => key.startsWith("provider.")),
       ...(productIds.length ||
       entitlements.length ||
       billingSubscriptions.length
@@ -191,6 +248,79 @@ export default function DocumentGenerator({
         : []),
     ]),
   ];
+  const groupedFields = [
+    [
+      "Beneficiar și contact",
+      allFields.filter(
+        (k) =>
+          k.startsWith("beneficiary.") ||
+          k === "contacts" ||
+          k === "signatories",
+      ),
+    ],
+    [
+      "Conținut și condiții",
+      allFields.filter(
+        (k) =>
+          !k.startsWith("provider.") &&
+          !k.startsWith("beneficiary.") &&
+          !k.startsWith("service.") &&
+          !["contacts", "signatories"].includes(k),
+      ),
+    ],
+    [
+      "Detalii pentru activitatea selectată",
+      allFields.filter((k) => k.startsWith("service.")),
+    ],
+    ["Emitent AVYRON", allFields.filter((k) => k.startsWith("provider."))],
+  ] as [string, string[]][];
+  const extraLabels: Record<string, string> = {
+    "provider.registration_number": "Registrul Comerțului AVYRON",
+    "provider.representative": "Reprezentant AVYRON",
+    "beneficiary.tax_id": "CUI beneficiar",
+    "beneficiary.contact_email": "E-mail beneficiar",
+  };
+  const selectProject = (id: string) => {
+    const included = projects.includes(id);
+    setProjects((v) => (included ? v.filter((x) => x !== id) : [...v, id]));
+    const services = context.services.filter((s) => s.project_id === id);
+    setInstanceIds((v) =>
+      included
+        ? v.filter((x) => !services.some((s) => s.id === x))
+        : [...new Set([...v, ...services.map((s) => s.id)])],
+    );
+    setSubscriptionIds((v) =>
+      included
+        ? v.filter(
+            (x) =>
+              !context.subscriptions.some(
+                (s) => s.id === x && s.project_id === id,
+              ),
+          )
+        : [
+            ...new Set([
+              ...v,
+              ...context.subscriptions
+                .filter((s) => s.project_id === id)
+                .map((s) => s.id),
+            ]),
+          ],
+    );
+    const removedCatalog = services
+      .map((s) => s.catalog_code_id)
+      .filter((id): id is string => !!id);
+    const remainingCatalog = new Set(
+      context.services
+        .filter((s) => s.project_id !== id && instanceIds.includes(s.id))
+        .map((s) => s.catalog_code_id),
+    );
+    if (included) {
+      const remove = (catalogId: string) =>
+        removedCatalog.includes(catalogId) && !remainingCatalog.has(catalogId);
+      setCatalogIds((v) => v.filter((catalogId) => !remove(catalogId)));
+      setLines((v) => v.filter((line) => !remove(line.catalogId)));
+    } else setCatalogIds((v) => [...new Set([...v, ...removedCatalog])]);
+  };
   const recommended = new Set([
     ...(catalogIds.length
       ? catalogIds.flatMap((id) => {
@@ -220,6 +350,7 @@ export default function DocumentGenerator({
       ...model.required,
       ...templateFields(original),
       ...Object.keys(serviceFields),
+      ...Object.keys(automatic).filter((key) => key.startsWith("provider.")),
       ...(productIds.length ||
       entitlements.length ||
       billingSubscriptions.length
@@ -438,13 +569,14 @@ export default function DocumentGenerator({
     <section className="dc-grid" aria-label="Generator de documente">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold">Tipizate și generator</h2>
+          <h2 className="text-xl font-semibold">Generator de documente</h2>
           <p className="mt-1 text-sm text-slate-400">
-            O singură instanță centrală, asociată contextelor potrivite.
+            Alege contextul și modelul. Datele AVYRON sunt precompletate;
+            personalizezi doar ce este necesar.
           </p>
         </div>
         <button type="button" className="dc-button" onClick={onCancel}>
-          Înapoi la bibliotecă
+          Înapoi la Biblioteca Agenției
         </button>
       </div>
       <ol className="flex flex-wrap gap-2" aria-label="Etapele generatorului">
@@ -456,7 +588,7 @@ export default function DocumentGenerator({
               aria-current={step === i ? "step" : undefined}
               disabled={
                 busy ||
-                (creationStarted && i !== 5) ||
+                (creationStarted && i !== 3) ||
                 i > step + 1 ||
                 (!!contextError && i > 0)
               }
@@ -479,9 +611,16 @@ export default function DocumentGenerator({
             <select
               className="dc-input"
               value={scope}
+              aria-label="Vizibilitate"
+              disabled={!!lockedClientId}
               onChange={(e) => {
                 setScope(e.target.value as DocumentScope);
                 if (e.target.value !== "client") {
+                  setClientId("");
+                  setFields({});
+                  setLines([]);
+                  setCatalogIds([]);
+                  setTitles({});
                   setProjects([]);
                   setInstanceIds([]);
                   setSubscriptionIds([]);
@@ -495,7 +634,7 @@ export default function DocumentGenerator({
               <option value="client">Pentru client</option>
               <option value="staff">Pentru staff</option>
               {company && (
-                <option value="company">Documentele firmei · owner</option>
+                <option value="company">Documente SC · acces autorizat</option>
               )}
             </select>
           </label>
@@ -506,8 +645,12 @@ export default function DocumentGenerator({
                 <select
                   className="dc-input"
                   value={clientId}
+                  disabled={!!lockedClientId}
                   onChange={(e) => {
                     setClientId(e.target.value);
+                    setLines([]);
+                    setCatalogIds([]);
+                    setTitles({});
                     setProjects([]);
                     setInstanceIds([]);
                     setSubscriptionIds([]);
@@ -529,6 +672,7 @@ export default function DocumentGenerator({
                 <div className="flex gap-2">
                   <button
                     className="dc-button"
+                    disabled={!!lockedClientId}
                     onClick={() => setNewMode("client")}
                   >
                     Client nou în CRM
@@ -548,7 +692,7 @@ export default function DocumentGenerator({
                       <input
                         type="checkbox"
                         checked={projects.includes(p.id)}
-                        onChange={() => toggle(setProjects, p.id)}
+                        onChange={() => selectProject(p.id)}
                       />
                       {p.name}
                     </label>
@@ -771,14 +915,14 @@ export default function DocumentGenerator({
           )}
         </div>
       )}
-      {step === 1 && (
+      {step === 0 && (
         <div className="dc-grid">
           <p className="text-sm text-slate-400">
             Alege unul sau mai multe modele. Oferta și anexa pot reuni
             serviciile aceluiași beneficiar. Pentru început sunt potrivite
             brief-ul și oferta; pentru livrare, raportul și recepția.
           </p>
-          <div className="dc-card-list">
+          <div className="dc-card-list dc-model-picker">
             {context.templates.map((t) => (
               <label key={t.version_id} className="dc-panel dc-card">
                 <span className="dc-check">
@@ -836,7 +980,7 @@ export default function DocumentGenerator({
           </button>
         </div>
       )}
-      {(step === 2 || step === 3) && (
+      {step === 1 && (
         <div className="dc-grid">
           <div className="dc-panel dc-grid sm:grid-cols-2">
             {models.map((t) => (
@@ -851,48 +995,88 @@ export default function DocumentGenerator({
                 />
               </label>
             ))}
-            {allFields.map((key) => (
-              <label key={key} className="dc-label">
-                {FIELD_LABELS[key] || serviceFields[key] || key}
-                {models.some((t) => t.required.includes(key)) ? " *" : ""}
-                {key === "privacy_mode" ? (
-                  <select
-                    className="dc-input"
-                    value={automatic[key] || "Confidențialitate"}
-                    onChange={(e) =>
-                      setFields((v) => ({ ...v, [key]: e.target.value }))
-                    }
-                  >
-                    <option>Confidențialitate</option>
-                    <option value="DPA">
-                      DPA · necesită analiza rolurilor și anexe
-                    </option>
-                  </select>
-                ) : key === "beneficiary.entity_type" ? (
-                  <select
-                    className="dc-input"
-                    value={automatic[key] || ""}
-                    onChange={(e) =>
-                      setFields((v) => ({ ...v, [key]: e.target.value }))
-                    }
-                  >
-                    <option value="">Selectează</option>
-                    {context.entityTypes.map((type) => (
-                      <option key={type}>{type}</option>
+            {groupedFields
+              .filter(([, keys]) => keys.length > 0)
+              .map(([title, keys]) => (
+                <details
+                  key={title}
+                  className="dc-field-group sm:col-span-2"
+                  open={title !== "Emitent AVYRON"}
+                >
+                  <summary>
+                    {title}
+                    {title === "Emitent AVYRON"
+                      ? ` · ${context.company.legal_name || "Date de completat"}${context.company.tax_id ? ` · CUI ${context.company.tax_id}` : ""}`
+                      : ""}
+                  </summary>
+                  {title === "Emitent AVYRON" && (
+                    <p className="mt-2 text-xs text-slate-400">
+                      Date preluate din profilul AVYRON. Modificările de mai jos
+                      se aplică numai acestui document.
+                    </p>
+                  )}
+                  <div className="dc-grid sm:grid-cols-2 mt-3">
+                    {keys.map((key) => (
+                      <label key={key} className="dc-label">
+                        {FIELD_LABELS[key] ||
+                          extraLabels[key] ||
+                          serviceFields[key] ||
+                          key}
+                        {models.some((t) => t.required.includes(key))
+                          ? " *"
+                          : ""}
+                        {key === "privacy_mode" ? (
+                          <select
+                            className="dc-input"
+                            value={automatic[key] || "Confidențialitate"}
+                            onChange={(e) =>
+                              setFields((v) => ({
+                                ...v,
+                                [key]: e.target.value,
+                              }))
+                            }
+                          >
+                            <option>Confidențialitate</option>
+                            <option value="DPA">
+                              DPA · necesită analiza rolurilor și anexe
+                            </option>
+                          </select>
+                        ) : key === "beneficiary.entity_type" ? (
+                          <select
+                            className="dc-input"
+                            value={automatic[key] || ""}
+                            onChange={(e) =>
+                              setFields((v) => ({
+                                ...v,
+                                [key]: e.target.value,
+                              }))
+                            }
+                          >
+                            <option value="">Selectează</option>
+                            {context.entityTypes.map((type) => (
+                              <option key={type}>{type}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <textarea
+                            className="dc-input"
+                            rows={
+                              key.includes("name") || key === "date" ? 1 : 2
+                            }
+                            value={automatic[key] || ""}
+                            onChange={(e) =>
+                              setFields((v) => ({
+                                ...v,
+                                [key]: e.target.value,
+                              }))
+                            }
+                          />
+                        )}
+                      </label>
                     ))}
-                  </select>
-                ) : (
-                  <textarea
-                    className="dc-input"
-                    rows={key.includes("name") || key === "date" ? 1 : 2}
-                    value={automatic[key] || ""}
-                    onChange={(e) =>
-                      setFields((v) => ({ ...v, [key]: e.target.value }))
-                    }
-                  />
-                )}
-              </label>
-            ))}
+                  </div>
+                </details>
+              ))}
             {lines.some((l) => l.package) && (
               <label className="dc-label">
                 Varianta de pachet ofertată
@@ -999,7 +1183,7 @@ export default function DocumentGenerator({
           </p>
         </div>
       )}
-      {step === 4 && (
+      {step === 2 && (
         <div className="dc-grid">
           {models.map((t) => {
             const draft = build(t),
@@ -1045,7 +1229,7 @@ export default function DocumentGenerator({
           </p>
         </div>
       )}
-      {step === 5 && (
+      {step === 3 && (
         <div className="dc-panel dc-grid">
           <h3 className="text-lg font-semibold">
             Creează {models.length === 1 ? "ciorna" : `${models.length} ciorne`}
@@ -1077,7 +1261,7 @@ export default function DocumentGenerator({
         >
           Înapoi
         </button>
-        {step < 5 && (
+        {step < 3 && (
           <button
             className="dc-button dc-primary"
             disabled={busy || !!contextError}

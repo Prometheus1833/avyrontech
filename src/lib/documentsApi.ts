@@ -1,3 +1,4 @@
+import type { SubscriptionBillingContext } from "@/shared/documents/autofill";
 import { cfAuth } from "./cfAuth";
 import type {
   DocumentPayload,
@@ -20,6 +21,7 @@ export type DocumentSummary = {
   updated_at: number;
   legal: number;
   template_version_id?: string | null;
+  template_family?: string | null;
 };
 export type DocumentDetail = {
   document: DocumentSummary;
@@ -69,6 +71,11 @@ export type DocumentDetail = {
   }[];
   actions: Record<string, boolean>;
   issues: string[];
+  billingPreparation?: {
+    revenue_id: string;
+    status: string;
+    invoice_number: string | null;
+  } | null;
 };
 export type DocumentTemplate = {
   id: string;
@@ -128,6 +135,7 @@ export type DocumentContext = {
     billing_cycle: string;
   }[];
   subscriptions: {
+    billing?: SubscriptionBillingContext | null;
     id: string;
     client_id: string;
     project_id: string;

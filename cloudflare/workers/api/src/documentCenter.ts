@@ -1,3 +1,5 @@
+import { scanUpload, antivirusFailure, putScannedObject, getScannedObject } from "./malware";
+import { hasCapability } from "./authorization";
 import { Hono, type Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
@@ -40,7 +42,7 @@ type Bindings = {
 type Ctx = Context<Bindings>;
 export const documentCenterRouter = new Hono<Bindings>();
 documentCenterRouter.onError((cause, c) => {
-  if (/no such table: (documents|document_|client_legal)/.test(String(cause)))
+  if (/no such table: (documents|document_|client_legal|agency_collaborators)/.test(String(cause)))
     return error(c, "document_center_unavailable", 503);
   if (/assignment_scope_denied/.test(String(cause)))
     return error(c, "assignment_scope_denied", 403);
@@ -86,7 +88,7 @@ const error = (
                 "Stocarea documentelor necesită verificarea accesului privat înainte de activare.",
               document_export_runtime_unconfigured:
                 "Runtime-ul securizat pentru export nu este configurat. Documentul rămâne salvat.",
-              quarantined: "Fișier în carantină. Scanarea nu este configurată.",
+              quarantined: "Fișier în carantină. Verdictul antivirus CLEAN nu este confirmat.",
               document_center_unavailable:
                 "Document Center necesită migrațiile aprobate înainte de activare.",
               image_quarantine_required:
@@ -410,7 +412,7 @@ async function embeddedImagesAllowed(
     const checksum = await digestBytes(bytes);
     if (
       !(await c.env.DB.prepare(
-        "SELECT 1 FROM document_files WHERE document_id=? AND sha256=? AND content_type IN('image/png','image/jpeg') AND scan_status='clean_scanned'",
+        "SELECT 1 FROM document_files f JOIN malware_object_verdicts o ON o.bucket='FILES' AND o.object_key=f.object_key JOIN malware_scan_jobs s ON s.id=o.scan_id AND s.status='clean' AND s.sha256=f.sha256 WHERE f.document_id=? AND f.sha256=? AND f.content_type IN('image/png','image/jpeg') AND f.scan_status='clean_scanned'",
       )
         .bind(documentId, checksum)
         .first())
@@ -519,6 +521,9 @@ for (const path of ["/api/documents", "/api/documents/*"]) {
     const actor = await documentActor(c.env.DB, c.get("userId"));
     if (!actor) return error(c, "forbidden", 403);
     c.set("documentActor", actor);
+    const managedId = /^\/api\/documents\/([^/]+)(?:\/|$)/.exec(c.req.path)?.[1];
+    if(c.req.method!=="GET" && managedId && !c.req.path.includes('/backups') && await c.env.DB.prepare('SELECT 1 FROM agency_collaborators WHERE document_id=?').bind(managedId).first())
+      return c.json({error:{code:'collaboration_documents_managed',message:'Gestionează acest dosar din fișa colaboratorului.'}},409);
     if (actor.staff && !(await privilegedMfaSatisfied(c)))
       return error(c, "mfa_required", 403);
     if (c.req.method !== "GET") {
@@ -536,7 +541,7 @@ for (const path of ["/api/documents", "/api/documents/*"]) {
       await next();
     } catch (cause) {
       if (
-        /no such table: (documents|document_|client_legal)/.test(String(cause))
+        /no such table: (documents|document_|client_legal|agency_collaborators)/.test(String(cause))
       )
         return error(c, "document_center_unavailable", 503);
       if (/assignment_scope_denied/.test(String(cause)))
@@ -636,7 +641,7 @@ documentCenterRouter.get("/api/documents/context", async (c) => {
       .bind(...ids)
       .all(),
     c.env.DB.prepare(
-      `SELECT s.*,sv.project_id,sv.service_name FROM subscriptions s JOIN services sv ON sv.id=s.service_id WHERE s.client_id ${inSql} LIMIT 500`,
+      `SELECT s.*,sv.project_id,sv.service_name,(SELECT json_object('entity_type',b.entity_type,'legal_name',b.legal_name,'tax_id',b.tax_id,'billing_address',b.billing_address,'invoice_email',b.invoice_email,'payment_terms_days',b.payment_terms_days) FROM subscription_billing_settings b WHERE b.subscription_id=s.id AND b.client_id=s.client_id) billing_json FROM subscriptions s JOIN services sv ON sv.id=s.service_id JOIN projects p ON p.id=sv.project_id WHERE s.client_id=p.client_id AND s.client_id ${inSql} LIMIT 500`,
     )
       .bind(...ids)
       .all(),
@@ -688,7 +693,13 @@ documentCenterRouter.get("/api/documents/context", async (c) => {
     clients: clients.results,
     projects: projects.results,
     services: services.results,
-    subscriptions: subscriptions.results,
+    subscriptions: subscriptions.results.map((row) => {
+      const { billing_json, ...value } = row as Record<string, unknown>;
+      return {
+        ...value,
+        billing: billing_json ? JSON.parse(String(billing_json)) : null,
+      };
+    }),
     catalog: catalog.results,
     products: products.results,
     plans: plans.results,
@@ -837,6 +848,14 @@ documentCenterRouter.get("/api/documents", async (c) => {
     const term = `%${search.replace(/[\\%_]/g, "\\$&")}%`;
     values.push(searchIndexQuery, term, term, term, term);
   }
+  const family = c.req.query("family");
+  if (family === "custom") conditions.push("d.template_version_id IS NULL");
+  else if (family) {
+    conditions.push(
+      "EXISTS(SELECT 1 FROM document_template_versions tv JOIN document_templates t ON t.id=tv.template_id WHERE tv.id=d.template_version_id AND t.family=?)",
+    );
+    values.push(family.slice(0, 80));
+  }
   const offset = Math.max(
     0,
     Math.min(100000, Number(c.req.query("offset")) || 0),
@@ -844,7 +863,9 @@ documentCenterRouter.get("/api/documents", async (c) => {
   const sort =
     c.req.query("sort") === "title"
       ? "title COLLATE NOCASE ASC"
-      : "d.updated_at DESC,d.id";
+      : c.req.query("sort") === "number"
+        ? "d.number DESC,d.id"
+        : "d.updated_at DESC,d.id";
   const view =
     a.staff || a.platform ? "d.current_version_id" : "d.published_version_id";
   const state = c.req.query("state");
@@ -861,7 +882,7 @@ documentCenterRouter.get("/api/documents", async (c) => {
   const where = conditions.join(" AND ");
   const [list, count] = await Promise.all([
     c.env.DB.prepare(
-      `SELECT d.*,json_extract(v.payload_json,'$.title') title,cl.company_name,ap.id approved, (SELECT count(*) FROM document_files f WHERE f.document_id=d.id AND f.version_id=v.id AND f.scan_status<>'rejected') file_count FROM documents d JOIN document_versions v ON v.id=${view} LEFT JOIN clients cl ON cl.id=d.beneficiary_id LEFT JOIN document_approvals ap ON ap.version_id=v.id WHERE ${where} ORDER BY ${sort} LIMIT 50 OFFSET ?`,
+      `SELECT d.*,json_extract(v.payload_json,'$.title') title,cl.company_name,ap.id approved,(SELECT t.family FROM document_template_versions tv JOIN document_templates t ON t.id=tv.template_id WHERE tv.id=d.template_version_id) template_family, (SELECT count(*) FROM document_files f WHERE f.document_id=d.id AND f.version_id=v.id AND f.scan_status<>'rejected') file_count FROM documents d JOIN document_versions v ON v.id=${view} LEFT JOIN clients cl ON cl.id=d.beneficiary_id LEFT JOIN document_approvals ap ON ap.version_id=v.id WHERE ${where} ORDER BY ${sort} LIMIT 50 OFFSET ?`,
     )
       .bind(...values, offset)
       .all(),
@@ -889,6 +910,7 @@ documentCenterRouter.get("/api/documents", async (c) => {
             approved: row.approved,
             updated_at: row.updated_at,
             legal: row.legal,
+            template_family: row.template_family,
           })),
     total: count?.total || 0,
     offset,
@@ -1092,7 +1114,14 @@ documentCenterRouter.get("/api/documents/:id", async (c) => {
       ? approvals.results
       : approvals.results.map(() => ({ approved: true })),
     grants: grants.results,
-    actions,
+    actions: {
+      ...actions,
+      "billing.prepare":
+        d.scope === "client" &&
+        !d.archived_at &&
+        (await canPrepareDocumentBilling(c)),
+    },
+    billingPreparation: await documentBillingLink(c, d.id, version.id),
     issues: documentIssues(
       JSON.parse(version.payload_json),
       await requiredFields(c, d),
@@ -1266,7 +1295,7 @@ documentCenterRouter.get("/api/documents/:id/recipients", async (c) => {
     return c.json({ data: peers.results });
   }
   const result = await c.env.DB.prepare(
-    `SELECT DISTINCT u.id,u.email,u.display_name FROM users u WHERE u.email_verified=1 AND u.disabled_at IS NULL AND (EXISTS(SELECT 1 FROM client_account_access ca WHERE ca.user_id=u.id AND ca.client_id=?) OR EXISTS(SELECT 1 FROM client_organizations co JOIN organization_memberships om ON om.organization_id=co.organization_id JOIN organizations o ON o.id=co.organization_id WHERE co.client_id=? AND om.user_id=u.id AND om.status='active' AND o.status='active') OR EXISTS(SELECT 1 FROM platform_principals pp JOIN user_roles ur ON ur.user_id=u.id AND ur.role='admin' WHERE pp.email=u.email COLLATE NOCASE AND pp.status='active' AND (pp.role='platform_owner' OR ?<>'company' OR EXISTS(SELECT 1 FROM user_capabilities pc WHERE pc.user_id=u.id AND pc.capability='documents.company.owner' AND pc.organization_id IS NULL AND pc.revoked_at IS NULL AND (pc.expires_at IS NULL OR pc.expires_at>?))))) ORDER BY u.email LIMIT 100`,
+    `SELECT DISTINCT u.id,u.email,u.display_name FROM users u WHERE u.email_verified=1 AND u.disabled_at IS NULL AND (EXISTS(SELECT 1 FROM client_account_access ca WHERE ca.user_id=u.id AND ca.client_id=?) OR EXISTS(SELECT 1 FROM client_organizations co JOIN organization_memberships om ON om.organization_id=co.organization_id JOIN organizations o ON o.id=co.organization_id WHERE co.client_id=? AND om.user_id=u.id AND om.status='active' AND o.status='active') OR EXISTS(SELECT 1 FROM platform_principals pp JOIN user_roles ur ON ur.user_id=u.id AND ur.role='admin' WHERE pp.email=u.email COLLATE NOCASE AND pp.status='active' AND (pp.role IN('platform_owner','superadmin') OR ?<>'company' OR EXISTS(SELECT 1 FROM user_capabilities pc WHERE pc.user_id=u.id AND pc.capability='documents.company.owner' AND pc.organization_id IS NULL AND pc.revoked_at IS NULL AND (pc.expires_at IS NULL OR pc.expires_at>?))))) ORDER BY u.email LIMIT 100`,
   )
     .bind(d.beneficiary_id, d.beneficiary_id, d.scope, stamp())
     .all();
@@ -1519,7 +1548,7 @@ documentCenterRouter.post("/api/documents/:id/save-template", async (c) => {
 });
 
 documentCenterRouter.put("/api/documents/settings/company", async (c) => {
-  if (c.get("documentActor").platform !== "platform_owner")
+  if (!c.get("documentActor").platform)
     return error(c, "forbidden", 403);
   const schema = z
     .object({
@@ -1681,8 +1710,11 @@ async function generatedFile(
       .bind(old.id, stamp())
       .run();
   }
-  if (!c.env.DOCUMENT_EXPORTS) throw new Error("document_export_runtime_unconfigured");
-  const renderer = c.env.DOCUMENT_EXPORTS.getByName(`${version.id}:${format}:${approved ? "final" : "draft"}`);
+  if (!c.env.DOCUMENT_EXPORTS)
+    throw new Error("document_export_runtime_unconfigured");
+  const renderer = c.env.DOCUMENT_EXPORTS.getByName(
+    `${version.id}:${format}:${approved ? "final" : "draft"}`,
+  );
   const bytes = await renderer.render(
     JSON.parse(version.payload_json),
     d.number,
@@ -1869,13 +1901,15 @@ documentCenterRouter.post("/api/documents/:id/import", async (c) => {
     return old.request_hash === hash
       ? c.json(JSON.parse(old.response_json))
       : error(c, "idempotency_key_reused", 409);
+  const scan=await scanUpload(c.env,bytes,{source:"documents",scope:d.id,mimeType:type,actorId:c.get("userId")});
+  if(scan.status!=="clean")return antivirusFailure(c,scan);
   const id = uid(),
     objectKey = `documents/${d.id}/quarantine/${id}`,
     time = stamp(),
-    response = { id, status: "quarantined", scanner: "unconfigured" };
-  await c.env.FILES.put(objectKey, bytes, {
+    response = { id, status: "clean_scanned", scanner: "bouncer" };
+  await putScannedObject(c.env,"FILES",objectKey,bytes,{
     httpMetadata: { contentType: "application/octet-stream" },
-  });
+  },scan);
   try {
     await c.env.DB.batch([
       c.env.DB.prepare(
@@ -1889,7 +1923,7 @@ documentCenterRouter.post("/api/documents/:id/import", async (c) => {
         time + 30 * 86400000,
       ),
       c.env.DB.prepare(
-        "INSERT INTO document_files(id,document_id,version_id,kind,object_key,file_name,content_type,sha256,size_bytes,scan_status,created_at) VALUES(?,?,?,'import',?,?,?,?,?,'quarantined',?)",
+        "INSERT INTO document_files(id,document_id,version_id,kind,object_key,file_name,content_type,sha256,size_bytes,scan_status,scanner_reference,created_at) VALUES(?,?,?,'import',?,?,?,?,?,'clean_scanned',?,?)",
       ).bind(
         id,
         d.id,
@@ -1899,9 +1933,10 @@ documentCenterRouter.post("/api/documents/:id/import", async (c) => {
         type,
         hash,
         size,
+        scan.id,
         time,
       ),
-      audit(c, d.id, "import.quarantined", d.current_version_id, {
+      audit(c, d.id, "import.clean_scanned", d.current_version_id, {
         sizeBytes: size,
       }),
     ]);
@@ -1909,7 +1944,7 @@ documentCenterRouter.post("/api/documents/:id/import", async (c) => {
     await c.env.FILES.delete(objectKey);
     throw cause;
   }
-  return c.json(response, 202);
+  return c.json(response, 201);
 });
 documentCenterRouter.get("/api/documents/:id/files/:fileId", async (c) => {
   const d = await current(c, c.req.param("id"), "documents.export");
@@ -1922,6 +1957,7 @@ documentCenterRouter.get("/api/documents/:id/files/:fileId", async (c) => {
     .bind(c.req.param("fileId"), d.id, stamp())
     .first<{
       scan_status: string;
+      kind: string;
       object_key: string;
       version_id: string;
       content_type: string;
@@ -1931,7 +1967,8 @@ documentCenterRouter.get("/api/documents/:id/files/:fileId", async (c) => {
     return error(c, "not_found", 404);
   if (!["clean_generated", "clean_scanned"].includes(f.scan_status))
     return error(c, "quarantined", 423);
-  const obj = await c.env.FILES.get(f.object_key);
+  if(f.kind==='import'&&f.scan_status!=='clean_scanned')return error(c,'quarantined',423);
+  const obj = f.scan_status === "clean_generated" && f.kind!=='import' ? await c.env.FILES.get(f.object_key) : await getScannedObject(c.env,"FILES",f.object_key);
   if (
     !(await revalidateVersionAccess(c, d.id, f.version_id, "documents.export"))
   )
@@ -2584,3 +2621,134 @@ export async function cleanupDocumentExports(
       .run();
   }
 }
+
+async function canPrepareDocumentBilling(c: Ctx) {
+  return (
+    c.get("documentActor").staff &&
+    !!c.get("mfaVerified") &&
+    (c.get("documentActor").platform === "platform_owner" ||
+      (await hasCapability(c.env.DB, c.get("userId"), "finance.write")))
+  );
+}
+async function documentBillingLink(
+  c: Ctx,
+  documentId: string,
+  versionId: string,
+) {
+  const a = c.get("documentActor");
+  if (
+    !a.platform &&
+    !(await hasCapability(c.env.DB, a.id, "finance.read")) &&
+    !(await hasCapability(c.env.DB, a.id, "finance.write"))
+  )
+    return null;
+  return c.env.DB.prepare(
+    "SELECT b.revenue_id,r.status,r.invoice_number FROM document_billing_preparations b JOIN financial_revenues r ON r.id=b.revenue_id WHERE b.document_id=? AND b.version_id=?",
+  )
+    .bind(documentId, versionId)
+    .first();
+}
+documentCenterRouter.post("/api/documents/:id/prepare-billing", async (c) => {
+  if (!(await canPrepareDocumentBilling(c)))
+    return error(c, "financial_permission_and_mfa_required", 403);
+  const d = await current(c, c.req.param("id"));
+  if (!d || d.scope !== "client" || !d.beneficiary_id)
+    return error(c, "not_found", 404);
+  const b = z
+    .object({
+      versionId: z.string().min(1).max(160),
+      invoiceDate: z.number().int().min(0).max(4102444800000),
+      dueDate: z.number().int().min(0).max(4102444800000),
+      confirmed: z.literal(true),
+    })
+    .strict()
+    .refine((value) => value.dueDate >= value.invoiceDate)
+    .safeParse(await c.req.json().catch(() => null));
+  if (!b.success) return error(c, "invalid_billing_dates");
+  const replay = await replayWrite(c);
+  if (replay) return replay;
+  const old = await documentBillingLink(c, d.id, b.data.versionId);
+  if (old) return c.json({ ...old, reused: true });
+  if (d.archived_at || d.current_version_id !== b.data.versionId)
+    return error(c, "billing_source_changed", 409);
+  const version = await readVersion(c, d, b.data.versionId);
+  if (!version) return error(c, "not_found", 404);
+  if (
+    !(await c.env.DB.prepare(
+      "SELECT 1 FROM document_approvals WHERE document_id=? AND version_id=?",
+    )
+      .bind(d.id, version.id)
+      .first())
+  )
+    return error(c, "approved_document_required", 409);
+  const payload = payloadSchema.parse(JSON.parse(version.payload_json));
+  if (
+    !payload.lines.length ||
+    documentIssues(payload, await requiredFields(c, d)).length
+  )
+    return error(c, "verified_commercial_lines_required", 409);
+  const totals = payload.lines.reduce(
+    (total, line) => {
+      const amount = line.quantity * line.offeredPriceMinor;
+      total.net += Math.round(amount);
+      total.gross += Math.round(amount * (1 + line.vatBasisPoints / 10000));
+      return total;
+    },
+    { net: 0, gross: 0 },
+  );
+  if (!Number.isSafeInteger(totals.gross) || totals.gross <= 0)
+    return error(c, "positive_billing_amount_required", 409);
+  const currency = payload.lines[0].currency;
+  const projects = await c.env.DB.prepare(
+    "SELECT project_id FROM document_assignments WHERE document_id=? AND project_id IS NOT NULL",
+  )
+    .bind(d.id)
+    .all<{ project_id: string }>();
+  const projectId =
+    projects.results.length === 1 ? projects.results[0].project_id : null;
+  const revenueId = uid(),
+    t = stamp();
+  try {
+    return await write(c, { revenue_id: revenueId, status: "draft" }, [
+      c.env.DB.prepare(
+        "INSERT INTO financial_revenues(id,revenue_type,client_id,project_id,service_name,invoice_date,due_date,status,currency,net_amount_minor,vat_amount_minor,gross_amount_minor,amount_ron_minor,notes,source,created_by,updated_by,created_at,updated_at) VALUES(?,'digital_services',?,?,?,?,?,'draft',?,?,?,?,?,?,'system_generated',?,?,?,?)",
+      ).bind(
+        revenueId,
+        d.beneficiary_id,
+        projectId,
+        payload.title,
+        b.data.invoiceDate,
+        b.data.dueDate,
+        currency,
+        totals.net,
+        totals.gross - totals.net,
+        totals.gross,
+        currency === "RON" ? totals.gross : null,
+        `Pregătit din documentul ${d.number}, versiunea ${version.version}. Verifică datele fiscale înainte de emitere.`,
+        c.get("userId"),
+        c.get("userId"),
+        t,
+        t,
+      ),
+      c.env.DB.prepare(
+        "INSERT INTO document_billing_preparations(version_id,document_id,client_id,revenue_id,created_by,created_at) VALUES(?,?,?,?,?,?)",
+      ).bind(version.id, d.id, d.beneficiary_id, revenueId, c.get("userId"), t),
+      c.env.DB.prepare(
+        "INSERT INTO financial_audit_events(id,actor_user_id,action,resource_type,resource_id,source,created_at) VALUES(?,?,'document.billing.prepared','revenue',?,'manual',?)",
+      ).bind(uid(), c.get("userId"), revenueId, t),
+      audit(c, d.id, "billing.prepared", version.id, { revenueId }),
+    ]);
+  } catch (cause) {
+    if (/document_billing_source_changed/.test(String(cause)))
+      return error(c, "billing_source_changed", 409);
+    if (
+      /UNIQUE constraint failed: document_billing_preparations/.test(
+        String(cause),
+      )
+    ) {
+      const existing = await documentBillingLink(c, d.id, version.id);
+      if (existing) return c.json({ ...existing, reused: true });
+    }
+    throw cause;
+  }
+});

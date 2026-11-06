@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, ArrowRight, Building2, CalendarDays, Columns3, Clock3, History, List, Mail, Phone, Plus, RefreshCw, Search, Star, Trash2, UserRound } from "lucide-react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { leadsApi, type LeadDeletionReasonCode, type LeadListRow, type LeadStage } from "@/lib/leadsApi";
+import { LeadDeleteDialog,LeadDeletionLogDialog } from "@/components/dashboard/leads/LeadDeletionDialogs";
 import { LeadDetailDialog } from "@/components/dashboard/leads/LeadDetailDialog";
 import { NewLeadDialog } from "@/components/dashboard/leads/NewLeadDialog";
-import { LeadDeleteDialog, LeadDeletionLogDialog } from "@/components/dashboard/leads/LeadDeletionDialogs";
+import { Button } from "@/components/ui/button";
+import { leadsApi,type LeadDeletionReasonCode,type LeadListRow,type LeadStage } from "@/lib/leadsApi";
+import { AlertCircle,ArrowRight,CalendarDays,Columns3,History,List,Mail,Phone,Plus,RefreshCw,Search,Star,Trash2,UserRound } from "lucide-react";
+import { useCallback,useEffect,useMemo,useState } from "react";
+import { toast } from "sonner";
+import LeadPipeline from "./leads/LeadPipeline";
 
 const STAGES = [
   ["new_lead", "Lead nou"], ["contacted", "Contactat"], ["discussion", "Discuție"],
@@ -94,7 +95,7 @@ export const StaffLeadsTab = ({
       setRows((current) => current.filter((row) => row.id !== lead.id));
       if (selectedLeadId === lead.id) setSelectedLeadId(null);
       setDeletingLead(null);
-      toast.success("Lead-ul a fost șters din pipeline.");
+      toast.success("Lead-ul a fost eliminat din listele active.");
     } catch { toast.error("Lead-ul nu a putut fi șters."); }
     finally { setSaving(null); }
   };
@@ -139,8 +140,8 @@ export const StaffLeadsTab = ({
             className="w-full rounded-xl border border-border/60 bg-background/80 py-2.5 pl-9 pr-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/40" />
         </label>
         <div className="inline-flex self-start rounded-xl border border-border/60 bg-card p-1" aria-label="Mod de afișare">
-          <button type="button" onClick={() => setView("list")} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ${view === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}><List className="size-3.5" /> Listă</button>
-          <button type="button" onClick={() => setView("pipeline")} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ${view === "pipeline" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}><Columns3 className="size-3.5" /> Pipeline</button>
+          <button type="button" aria-pressed={view === "list"} onClick={() => setView("list")} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ${view === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}><List className="size-3.5" /> Listă</button>
+          <button type="button" aria-pressed={view === "pipeline"} onClick={() => setView("pipeline")} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ${view === "pipeline" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}><Columns3 className="size-3.5" /> Pipeline</button>
         </div>
       </div>
       <div className="flex items-center gap-2 overflow-x-auto pb-1" role="group" aria-label="Filtrează leadurile">
@@ -178,54 +179,7 @@ export const StaffLeadsTab = ({
               <Button type="button" className="w-full rounded-xl" onClick={() => setSelectedLeadId(previewLead.id)}>Deschide fișa completă <ArrowRight className="size-4" /></Button>
             </div> : <p className="text-sm text-muted-foreground">Selectează un lead pentru mini-profil.</p>}
           </aside>
-        </div> : <div className="pb-3 lg:overflow-x-auto">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:min-w-[1320px] lg:grid-cols-8">
-            {STAGES.map(([stage, label]) => {
-              const leads = filtered.filter((lead) => lead.lifecycle_stage === stage);
-              return (
-                <section key={stage} className="min-h-64 rounded-2xl border border-border/60 bg-muted/20 p-2.5">
-                  <h3 className="mb-2 flex items-center justify-between px-1 text-xs font-medium">
-                    <span>{label}</span><span className="rounded-full bg-background px-2 py-0.5 text-muted-foreground">{leads.length}</span>
-                  </h3>
-                  <div className="space-y-2">
-                    {leads.map((lead) => (
-                      <article key={lead.id} className="space-y-2 rounded-xl border border-border/60 bg-card p-3 shadow-sm">
-                        <div className="flex items-start justify-between gap-2">
-                          <button type="button" onClick={() => setSelectedLeadId(lead.id)} className="min-w-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
-                            <p className="truncate text-sm font-medium">{lead.name || lead.business || "Lead fără nume"}</p>
-                            {lead.business && lead.name && <p className="truncate text-[11px] text-muted-foreground">{lead.business}</p>}
-                          </button>
-                          <div className="flex items-center gap-1">
-                            <button type="button" disabled={saving === lead.id} aria-label={lead.urgent ? "Elimină urgența" : "Marchează urgent"} onClick={() => void update(lead, { urgent: !lead.urgent })} className={`rounded-md p-1 ${lead.urgent ? "text-amber-500" : "text-muted-foreground hover:text-foreground"}`}><Star className="size-4" fill={lead.urgent ? "currentColor" : "none"} /></button>
-                            <button type="button" disabled={saving === lead.id} aria-label="Șterge lead-ul" onClick={() => setDeletingLead(lead)} className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="size-4" /></button>
-                          </div>
-                        </div>
-                        <p className="flex items-center gap-1 truncate text-[11px] text-muted-foreground">
-                          <Building2 className="size-3" /> {lead.product || lead.source || "Sursă neclasificată"}
-                        </p>
-                        <div className="flex gap-1">
-                          {lead.email && <a href={`mailto:${lead.email}`} aria-label="Trimite email" className="rounded-md border border-border/60 p-1.5 hover:bg-muted"><Mail className="size-3.5" /></a>}
-                          {lead.phone && <a href={`tel:${lead.phone}`} aria-label="Apelează" className="rounded-md border border-border/60 p-1.5 hover:bg-muted"><Phone className="size-3.5" /></a>}
-                        </div>
-                        <select value={lead.lifecycle_stage} disabled={saving === lead.id || lead.lifecycle_stage === "converted"}
-                          onChange={(event) => void update(lead, { lifecycleStage: event.target.value as LeadStage })} className={`w-full ${field}`}>
-                          {STAGES.filter(([value]) => value !== "converted").map(([value, stageLabel]) => <option key={value} value={value}>{stageLabel}</option>)}
-                          {lead.lifecycle_stage === "converted" && <option value="converted">Proiect</option>}
-                        </select>
-                        <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground">
-                          <span>{new Date(lead.created_at).toLocaleDateString("ro-RO")}</span>
-                          {lead.next_follow_up_at && <span className={`inline-flex items-center gap-1 ${lead.next_follow_up_at < Date.now() ? "text-red-500" : ""}`}><Clock3 className="size-3" /> {new Date(lead.next_follow_up_at).toLocaleDateString("ro-RO")}</span>}
-                        </div>
-                        <button type="button" onClick={() => setSelectedLeadId(lead.id)} className="w-full rounded-lg border border-border/60 px-2 py-1.5 text-xs font-medium hover:bg-muted">Deschide fișa</button>
-                      </article>
-                    ))}
-                    {leads.length === 0 && <p className="rounded-xl border border-dashed border-border/60 p-3 text-center text-[11px] text-muted-foreground">Niciun lead în această etapă.</p>}
-                  </div>
-                </section>
-              );
-            })}
-          </div>
-        </div>
+        </div> : <LeadPipeline rows={filtered} saving={saving} onOpen={setSelectedLeadId} onRemove={setDeletingLead} onUpdate={(lead,patch)=>void update(lead,patch)} />
       )}
       {allowCreate && <NewLeadDialog open={newLeadOpen} onOpenChange={setNewLeadOpen} onCreated={(id) => { void load(); setSelectedLeadId(id); }} />}
       <LeadDetailDialog leadId={selectedLeadId} onOpenChange={(open) => !open && setSelectedLeadId(null)} onChanged={() => void load()} onDeleted={() => { setSelectedLeadId(null); void load(); }} />

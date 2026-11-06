@@ -17,7 +17,7 @@ const tools: Array<{ group: string; title: string; description: string; destinat
   { group: "Acces și operațiuni", title: "Centre AVYRON OS", description: "Integrări, automatizări și instrumente operaționale.", destination: "os-centers" },
 ];
 
-export default function SuperAdminControlHub({ onNavigate }: { onNavigate: (section: SectionId) => void }) {
+export default function SuperAdminControlHub({ onNavigate }: { onNavigate: (section: SectionId,params?:Record<string,string>) => void }) {
   return <div className="space-y-5">
     <header className="rounded-2xl border border-violet-400/15 bg-gradient-to-br from-violet-500/10 via-white/[0.025] to-cyan-400/[0.05] p-5 sm:p-6">
       <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-violet-300">Super administrator</p>
@@ -28,7 +28,7 @@ export default function SuperAdminControlHub({ onNavigate }: { onNavigate: (sect
       <h2 className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate-500">{group}</h2>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{tools.filter((tool) => tool.group === group).map((tool) => {
         const Icon = DASHBOARD_SECTION_META[tool.destination].icon;
-        return <button key={tool.destination} type="button" onClick={() => onNavigate(tool.destination)} className="group rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 text-left transition hover:border-violet-400/30 hover:bg-violet-500/[0.06] focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-400">
+        return <button key={tool.destination} type="button" onClick={() => onNavigate(tool.destination,tool.destination==="maintenance"?{core:"system"}:undefined)} className="group rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 text-left transition hover:border-violet-400/30 hover:bg-violet-500/[0.06] focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-400">
           <span className="grid size-10 place-items-center rounded-xl bg-violet-400/10 text-violet-300"><Icon className="size-5" /></span>
           <span className="mt-3 block text-sm font-semibold text-slate-100">{tool.title}</span>
           <span className="mt-1 block min-h-9 text-xs text-slate-400">{tool.description}</span>

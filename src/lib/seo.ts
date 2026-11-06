@@ -1,3 +1,5 @@
+import { serviceSocialForPath } from "../seo/serviceSocial";
+
 // Route-scoped head management.
 //
 // Every tag written here is tagged with data-seo="1" so it can be removed
@@ -96,7 +98,7 @@ export function setPageMeta({
   const url = `${BASE}${path}`;
   document.title = title;
   upsertMeta("name", "description", description);
-  upsertMeta("name", "robots", robots);
+  upsertMeta("name", "robots", typeof window !== "undefined" && new URLSearchParams(window.location.search).has("servicePreview") ? "noindex, nofollow" : robots);
   upsertMeta("property", "og:title", title);
   upsertMeta("property", "og:description", description);
   upsertMeta("property", "og:url", url);
@@ -144,18 +146,19 @@ export function setPageMeta({
     }
   }
 
-  if (image) {
-    const absImage = image.startsWith("http") ? image : `${BASE}${image}`;
+  {
+    const social = serviceSocialForPath(path);
+    const resolvedImage = image ?? social?.image ?? "/og/home.jpg";
+    const resolvedAlt = imageAlt ?? social?.imageAlt ?? title;
+    const absImage = resolvedImage.startsWith("http") ? resolvedImage : `${BASE}${resolvedImage}`;
     upsertMeta("property", "og:image", absImage);
     upsertMeta("property", "og:image:secure_url", absImage);
     upsertMeta("property", "og:image:width", "1200");
     upsertMeta("property", "og:image:height", "630");
     upsertMeta("property", "og:image:type", /\.png(?:$|\?)/i.test(absImage) ? "image/png" : "image/jpeg");
     upsertMeta("name", "twitter:image", absImage);
-    if (imageAlt) {
-      upsertMeta("property", "og:image:alt", imageAlt);
-      upsertMeta("name", "twitter:image:alt", imageAlt);
-    }
+    upsertMeta("property", "og:image:alt", resolvedAlt);
+    upsertMeta("name", "twitter:image:alt", resolvedAlt);
   }
 
   let canonical = document.head.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;

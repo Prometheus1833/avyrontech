@@ -28,13 +28,14 @@ describe('OS dashboard — migrated SQLite and actual Hono handlers', () => {
   let db: SqliteDatabase;
   let app: Hono;
   let actor: 'owner' | 'client' | 'super' | 'staff';
-  const stamp = Date.now();
+  let stamp: number;
 
   beforeEach(() => {
     db = new DatabaseSync(':memory:');
     for (const file of readdirSync('cloudflare/d1/migrations').filter(f => f.endsWith('.sql')).sort()) {
       db.exec(readFileSync(`cloudflare/d1/migrations/${file}`, 'utf8'));
     }
+    stamp = Date.now();
     db.prepare(`INSERT INTO users(id,email,password_hash,email_verified,created_at,updated_at) VALUES (?,?,?,1,?,?)`).run('owner','prometheus@avyron.ro','fixture-not-a-password',stamp,stamp);
     db.prepare(`INSERT INTO user_roles VALUES ('owner','admin')`).run();
     db.prepare(`INSERT INTO users(id,email,password_hash,created_at,updated_at) VALUES (?,?,?,?,?)`).run('client','client@example.test','fixture-not-a-password',stamp,stamp);
@@ -87,7 +88,7 @@ describe('OS dashboard — migrated SQLite and actual Hono handlers', () => {
     db.prepare("INSERT INTO operation_records(id,kind,title,status,created_by,created_at,updated_at) VALUES ('op','contract','Contract în aprobare','pending','owner',?,?)").run(stamp,stamp);
     db.prepare("INSERT INTO ai_learning_queue(id,agent_slug,question,created_at,updated_at) VALUES ('learn','avy','Întrebare de verificat',?,?)").run(stamp,stamp);
     const page=await inbox();
-    expect(page.counts).toEqual({agent:1,content:1,operation:1,template:11,learning:1});
+    expect(page.counts).toEqual({agent:1,content:1,operation:1,template:11,learning:1,carousel:0});
     expect(page.total).toBe(15);
     expect(page.data.some(row=>row.source==='learning')).toBe(true);
     const content=await (await app.request('/api/os/approval-center/content/content',{},{})).json();
@@ -109,15 +110,15 @@ describe('OS dashboard — migrated SQLite and actual Hono handlers', () => {
     expect((await inbox()).counts.agent).toBe(0);
     expect((await app.request('/api/os/approval-center/agent/approval',{},{})).status).toBe(404);
   });
-  it('denies client listings and details, and hides corporate proposals from an undelegated superadmin',async()=>{
+  it('denies client listings and details, and grants corporate proposals to an authorized Super Admin',async()=>{
     db.prepare("INSERT INTO users(id,email,password_hash,email_verified,created_at,updated_at) VALUES ('super','super@fixture.test','fixture',1,?,?)").run(stamp,stamp);
     db.exec("INSERT INTO user_roles VALUES('super','admin'); INSERT INTO platform_principals(email,role,status,created_at,updated_at) VALUES('super@fixture.test','superadmin','active',1,1)");
     db.prepare("INSERT INTO documents(id,number,scope,created_by,created_at,updated_at) VALUES ('company-doc','PRIVATE-TEST','company','owner',?,?)").run(stamp,stamp);
     db.prepare("INSERT INTO document_templates(id,family,name,visibility,source_document_id,created_at) VALUES ('private-model','custom','Secret model de test','private_proposal','company-doc',?)").run(stamp);
     db.prepare("INSERT INTO document_template_versions(id,template_id,version,payload_json,required_fields_json,created_at) VALUES ('private-version','private-model',1,'{}','[]',?)").run(stamp);
     expect((await inbox()).counts.template).toBe(12);
-    actor='super';expect((await inbox()).counts.template).toBe(11);
-    expect((await app.request('/api/os/approval-center/template/private-version',{},{})).status).toBe(404);
+    actor='super';expect((await inbox()).counts.template).toBe(12);
+    expect((await app.request('/api/os/approval-center/template/private-version',{},{})).status).toBe(200);
     actor='client';expect((await app.request('/api/os/approval-center',{},{})).status).toBe(403);
     expect((await app.request('/api/os/approval-center/template/private-version',{},{})).status).toBe(404);
   });
@@ -233,4 +234,28 @@ describe('OS dashboard — migrated SQLite and actual Hono handlers', () => {
     const data = await overview();
     expect(data.metrics.revenuesMinor).toBe(15000);
   });
+  it('keeps the Social Manager, production task and central approvals synchronized without publishing variants',async()=>{
+    const project=seedContent();
+    db.prepare("INSERT INTO ai_social_jobs(id,project_id,schedule_key,kind,format,primary_channel,topic,status,due_at,content_id,created_at,updated_at) VALUES('social-job',?,'fixture-editorial','daily_post','post','facebook','Activitate viitoare','awaiting_approval',?,'content',?,?)").run(project,stamp+3600000,stamp,stamp);
+    let response=await app.request('/api/ai-projects/avyron-web/social-manager',{},{});expect(response.status).toBe(200);let result=await response.json();expect(result.permission.canReview).toBe(true);expect(result.counts.pending_approval).toBe(1);expect(result.activities[0].status).toBe('awaiting_approval');
+    response=await app.request(`/api/ai-projects/${project}/content/content`,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({status:'approved',expectedUpdatedAt:stamp})},{});expect(response.status).toBe(200);
+    result=await (await app.request('/api/ai-projects/avyron-web/social-manager?status=approved',{},{})).json();expect(result.counts.approved).toBe(1);expect(result.activities[0].status).toBe('approved');expect((await inbox()).counts.content).toBe(0);
+    expect(db.prepare("SELECT count(*) total FROM ai_project_events WHERE action='ai_project.content.approved'").get()!.total).toBe(1);
+  });
+  it('moves drafts through review before approval and synchronizes rejection and reopening',async()=>{
+    const project=seedContent();db.exec("UPDATE ai_content_items SET status='draft' WHERE id='content'");
+    db.prepare("INSERT INTO ai_social_jobs(id,project_id,schedule_key,kind,format,primary_channel,topic,status,due_at,content_id,created_at,updated_at) VALUES('social-job',?,'fixture-editorial','daily_post','post','facebook','Material','draft_ready',?,'content',?,?)").run(project,stamp+3600000,stamp,stamp);
+    const action=async(status:string,revision:number)=>(await app.request(`/api/ai-projects/${project}/content/content`,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({status,expectedUpdatedAt:revision})},{}));
+    expect((await action('approved',stamp)).status).toBe(409);
+    expect((await action('pending_approval',stamp)).status).toBe(200);let current=db.prepare("SELECT updated_at FROM ai_content_items WHERE id='content'").get()!.updated_at as number;
+    expect((await action('rejected',current)).status).toBe(200);expect(db.prepare("SELECT status FROM ai_social_jobs WHERE id='social-job'").get()!.status).toBe('skipped');current=db.prepare("SELECT updated_at FROM ai_content_items WHERE id='content'").get()!.updated_at as number;
+    expect((await action('draft',current)).status).toBe(200);expect(db.prepare("SELECT status FROM ai_social_jobs WHERE id='social-job'").get()!.status).toBe('draft_ready');
+  });
+  it('filters expired editorial material, validates filters and refuses an unrelated client',async()=>{
+    seedContent('expired',4*86400000);
+    const result=await (await app.request('/api/ai-projects/avyron-web/social-manager',{},{})).json();expect(result.content).toEqual([]);
+    expect((await app.request('/api/ai-projects/avyron-web/social-manager?status=private',{},{})).status).toBe(400);
+    actor='client';expect((await app.request('/api/ai-projects/avyron-web/social-manager',{},{})).status).toBe(404);
+  });
+
 });

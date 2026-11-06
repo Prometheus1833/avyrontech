@@ -91,7 +91,7 @@ describe("cablajul dintre magazin și D1", () => {
   it("nu servește cod plătit din bundle-ul public", () => {
     // Sursele publice sunt doar pentru produse gratuite (verificat în
     // produse.test.ts); aici verificăm că descărcarea plătită trece prin R2.
-    expect(shop).toContain("c.env.FILES.get(version.r2_key)");
+    expect(shop).toContain('getScannedObject(c.env,"FILES",version.r2_key)');
     expect(shop).toContain("product_versions");
   });
 });
@@ -102,10 +102,11 @@ describe("cablajul dintre magazin și dashboardul intern", () => {
 
   it("are o categorie proprie de produse, separată de facturare", () => {
     const produse = SECTIONS.filter((section) => section.group === "produse");
-    expect(produse.map((section) => section.id).sort()).toEqual(["collection", "produse-avyron", "subscriptions-admin"]);
+    expect(produse.map((section) => section.id).sort()).toEqual(["collection", "internal-subscriptions", "produse-avyron", "subscriptions-admin"]);
     expect(produse.find((section) => section.id === "collection")!.audience).toBe("everyone");
     expect(produse.find((section) => section.id === "produse-avyron")!.audience).toBe("superadmin");
     expect(produse.find((section) => section.id === "subscriptions-admin")!.audience).toBe("superadmin");
+    expect(produse.find((section) => section.id === "internal-subscriptions")!.audience).toBe("staff");
   });
 
   it("ține serviciile într-o categorie OS distinctă de produse", () => {

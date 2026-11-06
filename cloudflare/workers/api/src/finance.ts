@@ -1,3 +1,4 @@
+import { scanUpload, antivirusFailure, putScannedObject, getScannedObject } from "./malware";
 import { receiptsRouter } from "./receipts";
 import { Hono, type Context } from "hono";
 import type { AppBindings } from "./types";
@@ -350,7 +351,9 @@ financeRouter.post("/api/finance/documents", async (c) => {
   if(!exists)return c.json({error:{code:"not_found"}},404);
   const digest=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",bytes)),(byte)=>byte.toString(16).padStart(2,"0")).join(""),documentId=id("fdoc"),safeName=file.name.replace(/[^A-Za-z0-9._-]/g,"_").slice(0,120)||"document",objectKey=`finance/${resourceType}/${resourceId}/${documentId}-${safeName}`,timestamp=now(),documentType=String(form?.get("documentType")||"supporting_document");
   if(!["invoice","contract","receipt","credit_note","supporting_document"].includes(documentType))return c.json({error:{code:"invalid_document_type"}},400);
-  await c.env.FILES.put(objectKey,bytes,{httpMetadata:{contentType:pdf?"application/pdf":png?"image/png":"image/jpeg"},customMetadata:{schema:"finance-document:v1"}});
+  const scan=await scanUpload(c.env,bytes,{source:"finance",scope:resourceType+":"+resourceId,mimeType:pdf?"application/pdf":png?"image/png":"image/jpeg",actorId:c.get("userId")});
+  if(scan.status!=="clean")return antivirusFailure(c,scan);
+  await putScannedObject(c.env,"FILES",objectKey,bytes,{httpMetadata:{contentType:pdf?"application/pdf":png?"image/png":"image/jpeg"},customMetadata:{schema:"finance-document:v1"}},scan);
   try{await c.env.DB.batch([c.env.DB.prepare(`INSERT INTO financial_documents (id,expense_id,revenue_id,document_type,r2_object_key,file_name,content_type,size_bytes,sha256,uploaded_by,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).bind(documentId,resourceType==='expense'?resourceId:null,resourceType==='revenue'?resourceId:null,documentType,objectKey,safeName,pdf?"application/pdf":png?"image/png":"image/jpeg",bytes.byteLength,digest,c.get("userId"),timestamp),c.env.DB.prepare(`INSERT INTO financial_audit_events (id,actor_user_id,action,resource_type,resource_id,after_json,source,request_id,created_at) VALUES (?,?,?,?,?,?,'manual',?,?)`).bind(id("faud"),c.get("userId"),"finance.document.upload","document",documentId,JSON.stringify({resourceType,resourceId,documentType,sizeBytes:bytes.byteLength,sha256:digest}),c.get("requestId")||null,timestamp)]);}catch(error){await c.env.FILES.delete(objectKey);throw error;}
   return c.json({id:documentId},201);
 });
@@ -359,7 +362,7 @@ financeRouter.get("/api/finance/documents/:documentId/content", async (c) => {
   if (!(await allowed(c,"finance.documents.read"))) return deny(c);
   const row=await c.env.DB.prepare("SELECT r2_object_key,file_name,content_type FROM financial_documents WHERE id=? AND status='active'").bind(c.req.param("documentId")).first<{r2_object_key:string;file_name:string;content_type:string}>();
   if(!row)return c.json({error:{code:"not_found"}},404);
-  const object=await c.env.FILES.get(row.r2_object_key);
+  const object=await getScannedObject(c.env,"FILES",row.r2_object_key);
   if(!object)return c.json({error:{code:"not_found"}},404);
   return new Response(object.body,{headers:{"content-type":"application/octet-stream","content-disposition":`attachment; filename="${row.file_name.replace(/["\\\r\n]/g,"_")}"`,"cache-control":"private, no-store","x-content-type-options":"nosniff"}});
 });

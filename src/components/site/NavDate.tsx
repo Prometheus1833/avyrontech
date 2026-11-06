@@ -36,13 +36,13 @@ const NavDate = ({ className = "" }: { className?: string }) => {
     <time
       dateTime={today.toISOString().slice(0, 10)}
       data-testid="nav-date"
-      aria-label={lang === "ro" ? `Astăzi, ${local.date}` : `Today, ${local.date}`}
       title={local.timeZone}
       className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-1.5 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-foreground/50 transition-colors duration-200 hover:text-foreground/80 ${className}`}
     >
+      <span data-nav-date-label className="sr-only">{lang === "ro" ? `Astăzi, ${local.date}` : `Today, ${local.date}`}</span>
       <CalendarDays className="size-3.5 shrink-0 text-brand/75" aria-hidden="true" focusable="false" />
-      <span className="hidden sm:inline whitespace-nowrap tabular-nums">{local.date}</span>
-      <span className="sm:hidden whitespace-nowrap tabular-nums">{short}</span>
+      <span aria-hidden="true" className="hidden sm:inline whitespace-nowrap tabular-nums">{local.date}</span>
+      <span aria-hidden="true" className="sm:hidden whitespace-nowrap tabular-nums">{short}</span>
     </time>
   );
 };

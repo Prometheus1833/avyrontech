@@ -1,6 +1,7 @@
+import {useSearchParams} from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 import { Activity, Bot, CheckCircle2, Play, RefreshCw, SearchCheck, ShieldAlert } from "lucide-react";
-import { ProjectWorkspacePicker } from "@/components/intern/ProjectWorkspacePicker";
+import MaintenanceSubscriptions from "./MaintenanceSubscriptions";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { cfAuth } from "@/lib/cfAuth";
@@ -28,6 +29,9 @@ const statusClass: Record<string, string> = {
 
 export const StaffMaintenanceTab = () => {
   const { isSuperAdmin } = useAuth();
+  const [params,setParams]=useSearchParams();
+  const section=isSuperAdmin&&params.get("core")==="system"?"system":"maintenance";
+  const setSection=(value:"maintenance"|"system")=>setParams(previous=>{const next=new URLSearchParams(previous);if(value==="system")next.set("core","system");else next.delete("core");return next;},{replace:true});
   const [diagnostics, setDiagnostics] = useState<Diagnostic[]>([]);
   const [seo, setSeo] = useState<SeoAudit | null>(null);
   const [workItems, setWorkItems] = useState<WorkItem[]>([]);
@@ -35,18 +39,19 @@ export const StaffMaintenanceTab = () => {
   const [draft, setDraft] = useState({ title: "", problem: "", affectedModule: "", acceptanceCriteria: "", priority: "medium", risk: "medium" });
 
   const load = useCallback(async () => {
-    if (!isSuperAdmin) return;
+    if (!isSuperAdmin || section!=="system") return;
     try {
       const [diag, items, seoResult] = await Promise.all([
         cfAuth.request<DiagnosticPayload>("/api/admin/system/diagnostics"),
         cfAuth.request<{ data: WorkItem[] }>("/api/admin/codex-work-items"),
         cfAuth.request<{ data: SeoAudit }>("/api/admin/system/seo").catch(() => null),
       ]);
+      if(!diag.data||!Array.isArray(diag.data.results)||!Array.isArray(items.data))throw new Error("Răspunsul diagnosticelor este invalid. Reîncearcă verificarea.");
       setDiagnostics(diag.data.results);
       setWorkItems(items.data);
-      setSeo(seoResult?.data ?? null);
+      setSeo(seoResult?.data?.summary ? seoResult.data : null);
     } catch (error) { toast.error(error instanceof Error ? error.message : "Starea sistemului nu a putut fi încărcată."); }
-  }, [isSuperAdmin]);
+  }, [isSuperAdmin,section]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -78,7 +83,10 @@ export const StaffMaintenanceTab = () => {
   };
 
   return <div className="space-y-6 text-slate-100">
-    {isSuperAdmin && <>
+    <header><p className="font-mono text-[10px] uppercase tracking-[0.2em] text-cyan-200/70">Continuitate și suport</p><h1 className="mt-2 font-display text-2xl font-bold">AVY Core</h1></header>
+    {isSuperAdmin&&<nav aria-label="Subsecțiuni AVY Core" className="flex flex-wrap gap-2"><Button variant={section==='maintenance'?'default':'outline'} onClick={()=>setSection('maintenance')}>Mentenanța clienților</Button><Button variant={section==='system'?'default':'outline'} onClick={()=>setSection('system')}>Sistem AVYRON</Button></nav>}
+    {section==='maintenance'&&<MaintenanceSubscriptions/>}
+    {isSuperAdmin && section==='system' && <>
       <section className="rounded-2xl border border-cyan-400/15 bg-gradient-to-br from-cyan-400/[0.08] via-[#10162a] to-violet-500/[0.08] p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-mono text-[10px] uppercase tracking-[0.2em] text-cyan-300">Cloudflare control plane</p><h2 className="mt-1 flex items-center gap-2 font-display text-xl font-semibold"><Activity className="size-5" /> Diagnostice sistem</h2><p className="mt-1 text-xs text-slate-400">Teste de citire și configurare, fără inferențe AI scumpe și fără a afișa secrete.</p></div><Button onClick={() => void runDiagnostics()} disabled={running} className="gap-2"><RefreshCw className={`size-4 ${running ? "animate-spin" : ""}`} /> {running ? "Se verifică…" : "Rulează verificările"}</Button></div>
         <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{diagnostics.map((item) => <article key={item.component} className="rounded-xl border border-white/[0.07] bg-black/15 p-3"><div className="flex items-center justify-between gap-2"><h3 className="text-xs font-semibold">{item.component}</h3><span className={`rounded-full border px-2 py-0.5 text-[9px] uppercase ${statusClass[item.status] || statusClass.unknown}`}>{item.status.replace(/_/g, " ")}</span></div><p className="mt-2 text-[11px] leading-relaxed text-slate-500">{item.detail}</p></article>)}</div>
@@ -107,6 +115,6 @@ export const StaffMaintenanceTab = () => {
         <div className="mt-4 space-y-2">{workItems.map((item) => <article key={item.id} className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h3 className="text-sm font-medium">{item.title}</h3><p className="mt-1 text-xs text-slate-500">{item.affected_module} · prioritate {item.priority} · risc {item.risk}</p><p className="mt-2 text-[11px] text-slate-400">{item.acceptance_criteria}</p></div><div className="flex shrink-0 items-center gap-2"><span className="rounded-full border border-white/10 px-2 py-1 text-[9px] uppercase text-slate-400">{item.status}</span>{item.status === "proposed" && <><Button size="sm" variant="outline" onClick={() => void decide(item.id, "rejected")}><ShieldAlert className="mr-1 size-3.5" /> Respinge</Button><Button size="sm" onClick={() => void decide(item.id, "approved")}><CheckCircle2 className="mr-1 size-3.5" /> Aprobă</Button></>}</div></div></article>)}</div>
       </section>
     </>}
-    <ProjectWorkspacePicker mode="maintenance" />
+
   </div>;
 };

@@ -39,20 +39,27 @@ describe("AVYRON OS dashboard", () => {
     expect(canOpenSection("social-manager", owner)).toBe(true);
     expect(canOpenSection("subscriptions-admin", owner)).toBe(true);
     expect(canOpenSection("social-manager", staff)).toBe(false);
+    expect(canOpenSection("internal-subscriptions", staff)).toBe(true);
+    expect(canOpenSection("internal-subscriptions", buildAccess({ roles: ["user"] }))).toBe(false);
+    const order = sectionsFor(owner).map(section => section.id);
+    expect(order.indexOf("internal-subscriptions")).toBe(order.indexOf("subscriptions-admin") + 1);
   });
 
-  it("face fluxurile și comunicarea vizibile echipei și rezervă controlul platformei Super Adminului", () => {
+  it("face comunicarea vizibilă echipei și rezervă controlul platformei Super Adminului", () => {
     const client = buildAccess({ roles: ["user"] });
     const staff = buildAccess({ roles: ["staff"] });
     const admin = buildAccess({ roles: ["admin"] });
     const owner = buildAccess({ roles: ["admin"], superadmin: true });
-    for (const section of ["workflows", "intern", "staff-tickets", "announcements"] as const) {
+    for (const section of ["intern", "staff-tickets", "announcements"] as const) {
       expect(canOpenSection(section, staff)).toBe(true);
       expect(canOpenSection(section, admin)).toBe(true);
-      expect(canOpenSection(section, client)).toBe(false);
+      expect(canOpenSection(section, client)).toBe(section==="intern");
       expect(SECTIONS.find((item) => item.id === section)?.navigation).not.toBe(false);
     }
-    expect(canOpenSection("platform-control", owner)).toBe(true);
+    expect(canOpenSection("workflows", owner)).toBe(false);
+    expect(canOpenSection("maintenance", client)).toBe(true);
+    expect(canOpenSection("platform-control", owner)).toBe(false);
+    expect(canOpenSection("avy-engine", owner)).toBe(true);
     expect(canOpenSection("platform-control", admin)).toBe(false);
     expect(canOpenSection("platform-control", staff)).toBe(false);
   });
@@ -81,10 +88,10 @@ describe("AVYRON OS dashboard", () => {
     expect(index).toContain('app.use("/api/admin/operations/*", requireAuth, requireRole("staff", "admin"))');
     expect(operations).toContain('c.req.path === "/api/admin/operations/resources"');
     expect(operations).toContain("platformRoleForUser");
-    expect(operations).toContain("staff_cannot_be_client");
+    expect(operations).toContain("clientWorkspaceRouter");
     expect(operations).toContain("staff.projects.replace");
     expect(operations).toContain("subscription.update");
-    expect(operations).toContain("UPDATE subscriptions SET client_id=?");
+    expect(operations).not.toContain("UPDATE subscriptions SET client_id=?");
     expect(operations).toContain("security_events");
     expect(migration).toContain("CREATE TABLE IF NOT EXISTS internal_resources");
     expect(migration).not.toMatch(/\b(password|token|secret)\b/i);
@@ -118,7 +125,7 @@ describe("AVYRON OS dashboard", () => {
     expect(services).toContain('mainService: "Serviciu principal"');
     expect(services).toContain('"Produse AVYRON"');
     expect(servicePage).toContain('product.key === "premium-website"');
-    expect(servicePage).toContain('"Serviciu principal"');
+    expect(readFileSync(resolve(process.cwd(), "src/data/managedServiceCopy/inline-generic.ts"), "utf8")).toContain('"Serviciu principal"');
   });
 
   it("creează atomic proiectul cu mentenanță și abonament opțional", () => {

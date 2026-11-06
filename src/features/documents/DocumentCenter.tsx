@@ -1,3 +1,10 @@
+import DocumentLibrary from "./DocumentLibrary";
+import {
+  DOCUMENT_VIEWS,
+  allowedDocumentViews,
+  companyFieldLabels,
+  type DocumentView,
+} from "./presentation";
 import {
   lazy,
   Suspense,
@@ -10,15 +17,16 @@ import { useSearchParams } from "react-router-dom";
 import {
   FileText,
   Plus,
-  Search,
   ShieldCheck,
   Library,
   Wand2,
+  BookOpen,
   Users,
   Layers,
   Building2,
   ArrowLeft,
   Download,
+  Receipt,
   Share2,
   History,
   Archive,
@@ -45,30 +53,21 @@ import { documentIssues, type DocumentPayload } from "@/shared/documents/model";
 import "./documents.css";
 const DocumentEditor = lazy(() => import("./DocumentEditor"));
 const DocumentGenerator = lazy(() => import("./DocumentGenerator"));
+const DocumentBilling = lazy(() => import("./DocumentBilling"));
+const DocumentTemplates = lazy(() => import("./DocumentTemplates"));
 const ServiceProfiles = lazy(() => import("./ServiceProfiles"));
-type View = "library" | "generator" | "staff" | "hub" | "company";
-const labels: Record<View, string> = {
-  library: "Bibliotecă",
-  generator: "Tipizate și generator",
-  staff: "Documente staff",
-  hub: "Documents Hub",
-  company: "Documentele firmei",
-};
+type View = DocumentView;
+const labels = Object.fromEntries(
+  Object.entries(DOCUMENT_VIEWS).map(([key, value]) => [key, value.label]),
+) as Record<View, string>;
 const icons = {
   library: Library,
   generator: Wand2,
+  templates: BookOpen,
   staff: Users,
   hub: Layers,
   company: Building2,
 };
-const states = (item: DocumentSummary) =>
-  item.archived_at
-    ? "Arhivat"
-    : item.published_version_id === item.current_version_id
-      ? "Publicat"
-      : item.approved
-        ? "Aprobat"
-        : "Ciornă";
 export default function DocumentCenter({
   projectId,
   clientId,
@@ -85,11 +84,23 @@ export default function DocumentCenter({
   embedded?: boolean;
 }) {
   const { user } = useAuth();
-  const [generatorCompany, setGeneratorCompany] = useState(false);
+  const [generatorClient, setGeneratorClient] = useState<string>();
+  const [generatorScope, setGeneratorScope] = useState<
+    "company" | "staff" | undefined
+  >();
   const [params, setParams] = useSearchParams();
   const [bootstrap, setBootstrap] = useState<DocumentBootstrap | null>(null),
     [context, setContext] = useState<DocumentContext | null>(null),
-    [view, setView] = useState<View>(initialView),
+    [view, setView] = useState<View>(() =>
+      !embedded &&
+      params.get("documentView") &&
+      Object.prototype.hasOwnProperty.call(
+        DOCUMENT_VIEWS,
+        params.get("documentView")!,
+      )
+        ? (params.get("documentView") as View)
+        : initialView,
+    ),
     [items, setItems] = useState<DocumentSummary[]>([]),
     [total, setTotal] = useState(0),
     [offset, setOffset] = useState(0),
@@ -99,6 +110,8 @@ export default function DocumentCenter({
     [scopeFilter, setScopeFilter] = useState(""),
     [stateFilter, setStateFilter] = useState(""),
     [sort, setSort] = useState("recent"),
+    [familyFilter, setFamilyFilter] = useState(""),
+    [clientFilter, setClientFilter] = useState(""),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [detail, setDetail] = useState<DocumentDetail | null>(null),
@@ -111,6 +124,7 @@ export default function DocumentCenter({
       | "template"
       | "backup"
       | "settings"
+      | "billing"
       | null
     >(null),
     [recipients, setRecipients] = useState<
@@ -160,27 +174,58 @@ export default function DocumentCenter({
   const requestedTemplate = params.get("template");
   const handledTemplate = useRef<string | null>(null);
   useEffect(() => {
-    if (!requestedTemplate) { handledTemplate.current = null; return; }
-    if (embedded || !context || !bootstrap?.permissions["documents.templates.manage"] || handledTemplate.current === requestedTemplate) return;
+    if (!requestedTemplate) {
+      handledTemplate.current = null;
+      return;
+    }
+    if (
+      embedded ||
+      !context ||
+      !bootstrap?.permissions["documents.templates.manage"] ||
+      handledTemplate.current === requestedTemplate
+    )
+      return;
     handledTemplate.current = requestedTemplate;
-    const template = context.templates.find(t => t.id === requestedTemplate);
-    if (!template) { setError("Model indisponibil sau acces neautorizat."); return; }
-    setView("generator"); setTemplateEdit(template); setLegalReference(""); setAction("template");
+    const template = context.templates.find((t) => t.id === requestedTemplate);
+    if (!template) {
+      setError("Model indisponibil sau acces neautorizat.");
+      return;
+    }
+    setView("templates");
+    setTemplateEdit(template);
+    setLegalReference("");
+    setAction("template");
   }, [requestedTemplate, embedded, context, bootstrap]);
-  const requestedSubscription = params.get("subscription") || undefined;
-  const contextualFilters = new URLSearchParams(
-    [
-      "client",
-      "project",
-      "service",
-      "subscription",
-      "product",
-      "catalog",
-      "order",
-      "entitlement",
-      "billing_subscription",
-    ].flatMap((key) => (params.get(key) ? [[key, params.get(key)!]] : [])),
-  ).toString();
+  const requestedView = params.get("documentView") || initialView;
+  useEffect(() => {
+    if (embedded || !bootstrap) return;
+    const allowed = allowedDocumentViews(bootstrap);
+    if (allowed.includes(requestedView as View)) {
+      setView(requestedView as View);
+    } else {
+      setView("library");
+      setItems([]);
+      setError("Secțiune indisponibilă pentru accesul curent.");
+    }
+  }, [requestedView, bootstrap, embedded]);
+  const requestedSubscription = !embedded
+    ? params.get("subscription") || undefined
+    : undefined;
+  const contextualFilters = embedded
+    ? ""
+    : new URLSearchParams(
+        [
+          "client",
+          "project",
+          "service",
+          "subscription",
+          "product",
+          "catalog",
+          "order",
+          "entitlement",
+          "billing_subscription",
+        ].flatMap((key) => (params.get(key) ? [[key, params.get(key)!]] : [])),
+      ).toString();
   const open = useCallback(
     async (id: string, version?: string) => {
       const key = id + ":" + (version || "");
@@ -225,21 +270,22 @@ export default function DocumentCenter({
   const refreshContext = useCallback(async () => {
     const data = await documentsApi.context();
     setContext(data);
+    setError("");
   }, []);
-  useEffect(() => {
-    let active = true;
-    void documentsApi
-      .bootstrap()
-      .then(async (data) => {
-        if (!active) return;
-        setBootstrap(data);
-        if (data.staff) await refreshContext();
-      })
-      .catch((e) => active && setError((e as Error).message));
-    return () => {
-      active = false;
-    };
+  const initialize = useCallback(async () => {
+    setError("");
+    try {
+      const data = await documentsApi.bootstrap();
+      if (!mounted.current) return;
+      setBootstrap(data);
+      if (data.staff) await refreshContext();
+    } catch (cause) {
+      if (mounted.current) setError((cause as Error).message);
+    }
   }, [refreshContext]);
+  useEffect(() => {
+    void initialize();
+  }, [initialize]);
   useEffect(() => {
     const id = params.get("document");
     if (!id) suppressUrlOpen.current = false;
@@ -254,7 +300,12 @@ export default function DocumentCenter({
     return () => clearTimeout(timer);
   }, [query]);
   const load = useCallback(async () => {
-    if (!bootstrap || view === "generator") return;
+    if (
+      !bootstrap ||
+      ["generator", "templates"].includes(view) ||
+      !allowedDocumentViews(bootstrap).includes(view)
+    )
+      return;
     const sequence = ++listSequence.current;
     setBusy(true);
     setError("");
@@ -264,15 +315,20 @@ export default function DocumentCenter({
       offset: String(offset),
       sort,
       state: stateFilter,
+      family: familyFilter,
     });
-    for (const [key, value] of new URLSearchParams(contextualFilters))
-      p.set(key, value);
-    if (projectId) p.set("project", projectId);
-    if (clientId) p.set("client", clientId);
-    if (serviceId) p.set("service", serviceId);
-    if (subscriptionId || requestedSubscription)
-      p.set("subscription", subscriptionId || requestedSubscription!);
+    if (view !== "company" && view !== "staff") {
+      for (const [key, value] of new URLSearchParams(contextualFilters))
+        p.set(key, value);
+      if (projectId) p.set("project", projectId);
+      if (clientId) p.set("client", clientId);
+      if (serviceId) p.set("service", serviceId);
+      if (subscriptionId || requestedSubscription)
+        p.set("subscription", subscriptionId || requestedSubscription!);
+      if (clientFilter && !p.has("client")) p.set("client", clientFilter);
+    }
     if (view === "company") p.set("scope", "company");
+    else if (view === "staff") p.set("scope", "staff");
     else if (scopeFilter) p.set("scope", scopeFilter);
     if (view === "hub") p.set("collection", "hub");
     try {
@@ -302,9 +358,11 @@ export default function DocumentCenter({
     requestedSubscription,
     contextualFilters,
     stateFilter,
+    familyFilter,
+    clientFilter,
   ]);
   useEffect(() => {
-    if (!detail && view !== "staff") void load();
+    if (!detail) void load();
   }, [load, detail, view]);
   useEffect(
     () => () => {
@@ -333,7 +391,7 @@ export default function DocumentCenter({
         { replace: true },
       );
   };
-  const switchView = async (next: View) => {
+  const switchView = async (next: View, templateVersion?: string) => {
     if (detail && !(await save.current())) {
       setError("Salvează ciorna înainte de navigare.");
       return;
@@ -343,8 +401,22 @@ export default function DocumentCenter({
     suppressUrlOpen.current = true;
     setDetail(null);
     setTemplateEdit(null);
-    if (next === "generator") setGeneratorCompany(view === "company");
+    if (next === "generator") {
+      setGeneratorClient(
+        clientFilter ||
+          clientId ||
+          (!embedded ? params.get("client") || undefined : undefined),
+      );
+      setGeneratorScope(
+        view === "company" ? "company" : view === "staff" ? "staff" : undefined,
+      );
+    }
     setView(next);
+    setItems([]);
+    setQuery("");
+    setDebounced("");
+    setFamilyFilter("");
+    setClientFilter("");
     setOffset(0);
     setScopeFilter("");
     setStateFilter("");
@@ -354,6 +426,10 @@ export default function DocumentCenter({
           const nextParams = new URLSearchParams(current);
           nextParams.delete("document");
           nextParams.delete("version");
+          nextParams.set("documentView", next);
+          if (next === "generator" && templateVersion)
+            nextParams.set("documentTemplate", templateVersion);
+          else nextParams.delete("documentTemplate");
           return nextParams;
         },
         { replace: true },
@@ -464,6 +540,25 @@ export default function DocumentCenter({
       setError("Salvează ciorna înainte de continuare.");
       return;
     }
+    if (detail && next === "billing") {
+      try {
+        const fresh = await documentsApi.get(detail.document.id);
+        if (
+          !fresh.actions["billing.prepare"] ||
+          !fresh.approvals.length ||
+          !fresh.version.payload.lines.length
+        ) {
+          setError(
+            "Aprobă versiunea curentă și verifică devizul înainte de pregătirea facturii.",
+          );
+          return;
+        }
+        setDetail(fresh);
+      } catch (e) {
+        setError((e as Error).message);
+        return;
+      }
+    }
     if (detail && (next === "publish" || next === "share")) {
       try {
         setRecipients((await documentsApi.recipients(detail.document.id)).data);
@@ -519,7 +614,6 @@ export default function DocumentCenter({
       setBusy(false);
     }
   };
-  const visible = items;
   const readonly =
     !!detail &&
     (!detail.actions.edit ||
@@ -530,16 +624,16 @@ export default function DocumentCenter({
       (t) => t.version_id === detail?.document.template_version_id,
     )?.required || [];
   return (
-    <div className="document-center dc-grid" aria-label="Document Center">
+    <div className="document-center dc-grid" aria-label="Centru Documente">
       {!embedded && (
-        <header className="dc-panel bg-gradient-to-br from-violet-500/10 via-transparent to-cyan-400/5 !p-5 sm:!p-6">
+        <header className="dc-center-header">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[.22em] text-violet-300">
-                AVYRON OS · Document Center
+                AVYRON OS · Documente
               </p>
               <h1 className="mt-2 font-display text-2xl font-semibold">
-                Documente
+                Centru Documente
               </h1>
               <p className="mt-2 max-w-2xl text-sm text-slate-400">
                 De la prima propunere la predare. Conținut, versiuni și acces
@@ -554,33 +648,23 @@ export default function DocumentCenter({
         </header>
       )}
       {!embedded && bootstrap && (
-        <nav
-          className="dc-tabs"
-          aria-label="Zone Document Center"
-          role="tablist"
-        >
-          {(Object.keys(labels) as View[])
-            .filter(
-              (v) =>
-                v === "library" ||
-                (v === "generator" &&
-                  bootstrap.permissions["documents.create"]) ||
-                (["staff", "hub"].includes(v) && bootstrap.staff) ||
-                (v === "company" &&
-                  bootstrap.permissions["documents.company.owner"]),
-            )
+        <nav className="dc-section-nav" aria-label="Zone Document Center">
+          {allowedDocumentViews(bootstrap)
+            .filter((v) => v !== "hub")
             .map((v) => {
               const Icon = icons[v];
               return (
                 <button
                   key={v}
-                  role="tab"
-                  className="dc-button"
-                  aria-selected={view === v && !detail}
+                  className="dc-section-link"
+                  aria-current={view === v && !detail ? "page" : undefined}
                   onClick={() => void switchView(v)}
                 >
                   <Icon className="size-4" />
-                  {labels[v]}
+                  <span>
+                    <strong>{labels[v]}</strong>
+                    <small>{DOCUMENT_VIEWS[v].description}</small>
+                  </span>
                 </button>
               );
             })}
@@ -599,7 +683,15 @@ export default function DocumentCenter({
             className="underline"
             type="button"
             onClick={() =>
-              detail ? void open(detail.document.id) : void load()
+              !bootstrap
+                ? void initialize()
+                : detail
+                  ? void open(detail.document.id)
+                  : bootstrap.staff && !context
+                    ? void refreshContext().catch((e) =>
+                        setError((e as Error).message),
+                      )
+                    : void load()
             }
           >
             Reîncearcă încărcarea
@@ -620,7 +712,10 @@ export default function DocumentCenter({
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <button className="dc-button" onClick={() => void close()}>
-              <ArrowLeft className="size-4" /> Bibliotecă
+              <ArrowLeft className="size-4" />{" "}
+              {embedded && clientId
+                ? "Documentele clientului"
+                : "Bibliotecă Agenție"}
             </button>
             <div className="flex flex-wrap gap-2">
               {detail.actions.export && (
@@ -666,6 +761,21 @@ export default function DocumentCenter({
                   Publică pentru client
                 </button>
               )}
+              {detail.actions["billing.prepare"] &&
+                detail.approvals.length > 0 &&
+                detail.version.payload.lines.length > 0 &&
+                detail.version.id === detail.document.current_version_id && (
+                  <button
+                    className="dc-button"
+                    disabled={busy}
+                    onClick={() => void prepareAction("billing")}
+                  >
+                    <Receipt className="size-4" />
+                    {detail.billingPreparation
+                      ? "Ciorna de factură"
+                      : "Pregătește factura"}
+                  </button>
+                )}
               {detail.actions.share && (
                 <button
                   className="dc-button"
@@ -824,7 +934,10 @@ export default function DocumentCenter({
               </button>
             )}
             {detail.actions.edit && !readonly && (
-              <label className="dc-button cursor-pointer" title="PDF, DOCX, TXT, PNG sau JPEG, maximum 15 MiB. Importurile sunt izolate până la scanarea antimalware.">
+              <label
+                className="dc-button cursor-pointer"
+                title="PDF, DOCX, TXT, PNG sau JPEG, maximum 15 MiB. Importurile sunt izolate până la scanarea antimalware."
+              >
                 Import fișier
                 <input
                   type="file"
@@ -836,9 +949,9 @@ export default function DocumentCenter({
                       setError("Fișierul depășește limita de 15 MiB.");
                     else if (file)
                       void transact(async () => {
-                        await documentsApi.import(detail.document.id, file);
+                        const imported=await documentsApi.import(detail.document.id, file);
                         setMessage(
-                          "Fișier încărcat în carantină. Scanarea necesită configurare.",
+                          imported.status === "clean_scanned" ? "Fișier verificat CLEAN și importat privat." : "Fișier în carantină, fără acces până la verificare.",
                         );
                       });
                     e.target.value = "";
@@ -849,9 +962,9 @@ export default function DocumentCenter({
           </div>
           {detail.actions.edit && !readonly && (
             <p className="text-xs text-slate-400">
-              Import: PDF, DOCX, TXT, PNG sau JPEG · maximum 15 MiB.
-              Fișierele încărcate rămân în carantină până la scanarea antimalware,
-              încă neconfigurată. PDF și Word generate pot fi descărcate separat.
+              Import: PDF, DOCX, TXT, PNG sau JPEG · maximum 15 MiB. Fișierele
+              încărcate necesită verdict CLEAN. Fără furnizor configurat sau verificarea
+              conformității, importurile reale sunt blocate. PDF și Word generate pot fi descărcate separat.
             </p>
           )}
           {detail.files.length > 0 && (
@@ -872,7 +985,7 @@ export default function DocumentCenter({
                           ? "Scanat și verificat"
                           : "Indisponibil"}
                   </span>
-                  {!["quarantined", "rejected"].includes(f.scan_status) && (
+                  {["clean_generated", "clean_scanned"].includes(f.scan_status) && (
                     <button
                       className="dc-button"
                       onClick={() =>
@@ -892,55 +1005,86 @@ export default function DocumentCenter({
             </section>
           )}
         </>
+      ) : bootstrap && ["templates", "generator"].includes(view) && !context ? (
+        <p role="status" className="dc-panel">
+          {error
+            ? "Contextul documentelor nu a putut fi încărcat. Folosește Reîncearcă încărcarea."
+            : "Se încarcă datele și modelele autorizate…"}
+        </p>
+      ) : bootstrap && view === "templates" && context ? (
+        <Suspense fallback={<p>Se încarcă tipizatele…</p>}>
+          <DocumentTemplates
+            context={context}
+            canCreate={!!bootstrap.permissions["documents.create"]}
+            canManage={!!bootstrap.permissions["documents.templates.manage"]}
+            onUse={(version) => void switchView("generator", version)}
+            onEdit={(t) => {
+              setTemplateEdit(t);
+              setLegalReference("");
+              setAction("template");
+            }}
+          />
+          {bootstrap.permissions["documents.templates.manage"] && (
+            <details className="dc-panel mt-4">
+              <summary className="cursor-pointer text-sm">
+                Configurări pentru documentele activităților
+              </summary>
+              <ServiceProfiles context={context} onSaved={refreshContext} />
+            </details>
+          )}
+        </Suspense>
       ) : bootstrap && view === "generator" && context ? (
         <Suspense fallback={<p>Se încarcă generatorul…</p>}>
           <DocumentGenerator
+            key={
+              (!embedded && params.get("documentTemplate")) || "blank-generator"
+            }
+            initialTemplateVersion={
+              !embedded
+                ? params.get("documentTemplate") || undefined
+                : undefined
+            }
+            initialClientId={
+              generatorClient ||
+              clientId ||
+              (!embedded ? params.get("client") || undefined : undefined)
+            }
+            initialServiceId={
+              serviceId ||
+              (!embedded ? params.get("service") || undefined : undefined)
+            }
+            initialSubscriptionId={subscriptionId || requestedSubscription}
             context={context}
-            projectId={projectId || params.get("project") || undefined}
-            company={!!bootstrap.permissions["documents.company.owner"]}
-            initialScope={generatorCompany ? "company" : undefined}
+            projectId={
+              projectId ||
+              (!embedded ? params.get("project") || undefined : undefined)
+            }
+            company={
+              !embedded && !!bootstrap.permissions["documents.company.owner"]
+            }
+            lockedClientId={embedded ? clientId : undefined}
+            initialScope={generatorScope}
             onCreated={(id) => void open(id)}
             onCancel={() => void switchView("library")}
             onContextRefresh={refreshContext}
           />
-          {bootstrap.permissions["documents.templates.manage"] && (
-            <section className="dc-panel mt-4">
-              <h3 className="mb-3 font-semibold">
-                Administrarea modelelor originale
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {context.templates.map((t) => (
-                  <button
-                    key={t.version_id}
-                    className="dc-button"
-                    onClick={() => {
-                      setTemplateEdit(t);
-                      setAction("template");
-                    }}
-                  >
-                    {t.name} · v{t.version}
-                  </button>
-                ))}
-              </div>
-              <p className="mt-3 text-xs text-slate-500">
-                Modificarea creează o versiune nouă. Documentele existente
-                păstrează versiunea lor.
-              </p>
-            </section>
-          )}
-          {bootstrap.permissions["documents.templates.manage"] && (
-            <ServiceProfiles context={context} onSaved={refreshContext} />
-          )}
         </Suspense>
-      ) : bootstrap && view === "staff" ? (
-        <StaffGuides />
       ) : (
         bootstrap && (
           <>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="flex items-center gap-2 text-lg font-semibold">
                 <FileText className="size-5" />
-                {embedded ? "Documentele proiectului" : labels[view]}{" "}
+                {embedded
+                  ? clientId && !projectId
+                    ? "Documentele clientului"
+                    : "Documentele proiectului"
+                  : labels[
+                      bootstrap &&
+                      allowedDocumentViews(bootstrap).includes(view)
+                        ? view
+                        : "library"
+                    ]}{" "}
                 <span className="text-sm text-slate-500">{total}</span>
               </h2>
               <div className="flex gap-2">
@@ -992,7 +1136,7 @@ export default function DocumentCenter({
                     <Plus className="size-4" /> Creează document
                   </button>
                 )}
-                {bootstrap.platformRole === "platform_owner" && !embedded && (
+                {!!bootstrap.platformRole && !embedded && (
                   <button
                     className="dc-button"
                     onClick={() => void prepareAction("settings")}
@@ -1010,135 +1154,81 @@ export default function DocumentCenter({
                 </button>
               </div>
             </div>
-            <div className="dc-panel flex flex-wrap gap-3">
-              <label className="dc-label flex-1 min-w-48">
-                <span className="flex items-center gap-2">
-                  <Search className="size-3" /> Caută documente autorizate
-                </span>
-                <input
-                  className="dc-input"
-                  type="search"
-                  placeholder="Nume, număr, client, proiect, serviciu sau conținut"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-              </label>
-              <label className="dc-label">
-                Vizualizare
-                <select
-                  className="dc-input"
-                  value={scopeFilter}
-                  onChange={(e) => {
-                    setScopeFilter(e.target.value);
-                    setOffset(0);
-                  }}
-                >
-                  <option value="">Toate</option>
-                  <option value="client">Clienți</option>
-                  <option value="internal">Interne / independente</option>
-                  <option value="staff">Staff</option>
-                </select>
-              </label>
-              <label className="dc-label">
-                Stare
-                <select
-                  className="dc-input"
-                  value={stateFilter}
-                  onChange={(e) => {
-                    setStateFilter(e.target.value);
-                    setOffset(0);
-                  }}
-                >
-                  <option value="">Toate</option>
-                  {["Ciornă", "Aprobat", "Publicat", "Arhivat"].map((s) => (
-                    <option key={s}>{s}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="dc-label">
-                Ordine
-                <select
-                  className="dc-input"
-                  value={sort}
-                  onChange={(e) => {
-                    setSort(e.target.value);
-                    setOffset(0);
-                  }}
-                >
-                  <option value="recent">Recent actualizate</option>
-                  <option value="title">Titlu</option>
-                </select>
-              </label>
-              <label className="dc-check self-center">
-                <input
-                  type="checkbox"
-                  checked={archive}
-                  onChange={(e) => {
-                    setArchive(e.target.checked);
-                    setOffset(0);
-                  }}
-                />{" "}
-                Arhivă
-              </label>
-            </div>
-            {busy && !items.length && (
-              <p role="status" className="dc-panel">
-                Se încarcă documentele…
-              </p>
-            )}
-            <div className="dc-card-list">
-              {visible.map((item) => (
+            <DocumentLibrary
+              items={items}
+              total={total}
+              offset={offset}
+              busy={busy}
+              error={error}
+              query={query}
+              onQuery={setQuery}
+              scope={scopeFilter}
+              onScope={(v) => {
+                setScopeFilter(v);
+                setOffset(0);
+              }}
+              state={stateFilter}
+              onState={(v) => {
+                setStateFilter(v);
+                setOffset(0);
+              }}
+              sort={sort}
+              onSort={(v) => {
+                setSort(v);
+                setOffset(0);
+              }}
+              archive={archive}
+              onArchive={(v) => {
+                setArchive(v);
+                setOffset(0);
+              }}
+              onPage={setOffset}
+              onOpen={(id) => void open(id)}
+              canExport={
+                !bootstrap.staff || !!bootstrap.permissions["documents.export"]
+              }
+              context={context}
+              family={familyFilter}
+              onFamily={(v) => {
+                setFamilyFilter(v);
+                setOffset(0);
+              }}
+              client={clientFilter}
+              onClient={(v) => {
+                setClientFilter(v);
+                setOffset(0);
+              }}
+              lockedScope={
+                !!(embedded && clientId) ||
+                view === "company" ||
+                view === "staff"
+              }
+              onDownload={async (item) => {
+                setBusy(true);
+                setError("");
+                try {
+                  await documentsApi.download(
+                    `/${item.id}/export/pdf?version=${item.current_version_id}`,
+                    `${item.number}.pdf`,
+                  );
+                } catch (e) {
+                  setError((e as Error).message);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            />
+            {view === "staff" && (
+              <>
+                <StaffGuides query={query} />
                 <button
-                  type="button"
-                  className="dc-panel dc-card hover:border-violet-400/40"
-                  key={item.id}
-                  onClick={() => void open(item.id)}
+                  className="dc-button justify-self-start"
+                  onClick={() => void switchView("hub")}
                 >
-                  <span className="dc-tag">{states(item)}</span>
-                  <h3 className="font-semibold">{item.title}</h3>
-                  <p>
-                    {item.company_name ||
-                      (item.scope === "company" && "Arhivă corporativă") ||
-                      "Document independent"}
-                  </p>
-                  <small className="mt-auto">
-                    {item.number} ·{" "}
-                    {new Date(item.updated_at).toLocaleDateString("ro-RO")}
-                  </small>
+                  Deschide Documents Hub · arhiva existentă
                 </button>
-              ))}
-            </div>
-            {!busy && !error && !visible.length && (
-              <div className="dc-panel py-10 text-center">
-                <Library className="mx-auto mb-3 size-8 text-violet-300" />
-                <h3 className="font-semibold">
-                  {query || stateFilter
-                    ? "Niciun rezultat pentru filtrele alese"
-                    : "Biblioteca este pregătită"}
-                </h3>
-                <p className="mt-2 text-sm text-slate-400">
-                  {bootstrap.staff
-                    ? "Creează o ciornă dintr-un tipizat sau pornește de la un document nou."
-                    : "Documentele publicate pentru tine vor apărea aici."}
-                </p>
-              </div>
+              </>
             )}
-            <div className="flex justify-between">
-              <button
-                className="dc-button"
-                disabled={!offset || busy}
-                onClick={() => setOffset((v) => Math.max(0, v - 50))}
-              >
-                Pagina anterioară
-              </button>
-              <button
-                className="dc-button"
-                disabled={offset + 50 >= total || busy}
-                onClick={() => setOffset((v) => v + 50)}
-              >
-                Pagina următoare
-              </button>
-            </div>
             {view === "hub" && (
               <LegacyHub
                 onOpen={(id) => void open(id)}
@@ -1188,7 +1278,15 @@ export default function DocumentCenter({
           if (!value && !busy) {
             setAction(null);
             setTemplateEdit(null);
-            if (params.has("template")) setParams(current => { const next = new URLSearchParams(current); next.delete("template"); return next; }, {replace:true});
+            if (params.has("template"))
+              setParams(
+                (current) => {
+                  const next = new URLSearchParams(current);
+                  next.delete("template");
+                  return next;
+                },
+                { replace: true },
+              );
           }
         }}
       >
@@ -1197,23 +1295,41 @@ export default function DocumentCenter({
         >
           <DialogHeader>
             <DialogTitle>
-              {action === "approve"
-                ? "Aprobarea versiunii"
-                : action === "publish"
-                  ? "Publicare în contul clientului"
-                  : action === "share"
-                    ? "Distribuie documentul"
-                    : action === "backup"
-                      ? "Backup și restaurare"
-                      : action === "settings"
-                        ? "Datele emitentului AVYRON"
-                        : "Modele originale"}
+              {action === "billing"
+                ? "Pregătire factură"
+                : action === "approve"
+                  ? "Aprobarea versiunii"
+                  : action === "publish"
+                    ? "Publicare în contul clientului"
+                    : action === "share"
+                      ? "Distribuie documentul"
+                      : action === "backup"
+                        ? "Backup și restaurare"
+                        : action === "settings"
+                          ? "Datele emitentului AVYRON"
+                          : "Modele originale"}
             </DialogTitle>
             <DialogDescription className="text-slate-400">
               Verifică documentul, versiunea și efectele operațiunii înainte de
               confirmare.
             </DialogDescription>
           </DialogHeader>
+          {action === "billing" && detail && (
+            <Suspense
+              fallback={<p role="status">Se încarcă datele de facturare…</p>}
+            >
+              <DocumentBilling
+                detail={detail}
+                onSaved={async () => {
+                  await open(detail.document.id);
+                  setAction(null);
+                  setMessage(
+                    "Ciorna de factură este disponibilă în Financiar pentru verificare.",
+                  );
+                }}
+              />
+            </Suspense>
+          )}
           {action === "approve" && detail && (
             <div className="dc-grid">
               <p className="text-sm">
@@ -1652,18 +1768,7 @@ export default function DocumentCenter({
             <div className="dc-grid">
               {Object.keys(companyDraft).map((key) => (
                 <label className="dc-label" key={key}>
-                  {
-                    (
-                      {
-                        legal_name: "Denumire juridică",
-                        tax_id: "CUI",
-                        registration_number: "Registrul comerțului",
-                        address: "Sediu",
-                        representative: "Reprezentant",
-                        contact_email: "E-mail",
-                      } as Record<string, string>
-                    )[key]
-                  }
+                  {companyFieldLabels[key] || key}
                   <input
                     className="dc-input"
                     value={companyDraft[key]}
@@ -1696,7 +1801,7 @@ export default function DocumentCenter({
     </div>
   );
 }
-function StaffGuides() {
+function StaffGuides({ query = "" }: { query?: string }) {
   const [guides, setGuides] = useState<
       Awaited<ReturnType<typeof documentsApi.staffGuides>>["data"]
     >([]),
@@ -1710,7 +1815,7 @@ function StaffGuides() {
   return (
     <section className="dc-grid">
       <h2 className="text-lg font-semibold">
-        Documentele operaționale pentru staff
+        Ghiduri operaționale pentru echipă
       </h2>
       <p className="text-sm text-slate-400">
         {guides.length} documente existente. Prețurile și referințele istorice
@@ -1722,21 +1827,30 @@ function StaffGuides() {
         </p>
       )}
       <div className="dc-grid md:grid-cols-2">
-        {guides.map((g, i) => (
-          <details className="dc-panel" key={g.id}>
-            <summary className="cursor-pointer">
-              <strong>
-                {String(i + 1).padStart(2, "0")} · {g.title}
-              </strong>
-              <p className="mt-1 text-xs text-slate-400">{g.subtitle}</p>
-            </summary>
-            <div className="mt-4 space-y-3 text-sm leading-relaxed text-slate-300">
-              {g.paragraphs.map((p, j) => (
-                <p key={j}>{p}</p>
-              ))}
-            </div>
-          </details>
-        ))}
+        {guides
+          .filter(
+            (g) =>
+              !query.trim() ||
+              [g.title, g.subtitle, ...g.paragraphs]
+                .join(" ")
+                .toLocaleLowerCase("ro")
+                .includes(query.trim().toLocaleLowerCase("ro")),
+          )
+          .map((g, i) => (
+            <details className="dc-panel" key={g.id}>
+              <summary className="cursor-pointer">
+                <strong>
+                  {String(i + 1).padStart(2, "0")} · {g.title}
+                </strong>
+                <p className="mt-1 text-xs text-slate-400">{g.subtitle}</p>
+              </summary>
+              <div className="mt-4 space-y-3 text-sm leading-relaxed text-slate-300">
+                {g.paragraphs.map((p, j) => (
+                  <p key={j}>{p}</p>
+                ))}
+              </div>
+            </details>
+          ))}
       </div>
       <details className="dc-panel">
         <summary className="cursor-pointer text-sm">

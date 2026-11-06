@@ -1,4 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+const exampleDefaults = JSON.parse(readFileSync("src/shared/exampleCarouselDefaults.json", "utf8"));
 
 const consent = () => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
   necessary: true,
@@ -28,6 +30,9 @@ async function mockStaff(page: Page) {
 
 test("public pages remain indexable and fluid on mobile", async ({ page }) => {
   test.setTimeout(120_000);
+  await page.route("**/api/public/example-carousels/premium-website", route =>
+    route.fulfill({ json: { config: exampleDefaults } }),
+  );
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(consent);
 
@@ -74,7 +79,7 @@ test("AVYRON OS quick access and dashboard fit key breakpoints", async ({ page }
   for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }, { width: 1440, height: 900 }]) {
     await page.setViewportSize(viewport);
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    const trigger = page.getByRole("button", { name: "Deschide accesul rapid AVYRON OS" });
+    const trigger=page.getByRole("button",{name:"Resurse și template-uri"});
     await expect(trigger).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
     const triggerBox = await trigger.boundingBox();
@@ -82,7 +87,7 @@ test("AVYRON OS quick access and dashboard fit key breakpoints", async ({ page }
     expect(triggerBox!.x + triggerBox!.width).toBeLessThanOrEqual(viewport.width);
 
     await trigger.click();
-    const menu = page.getByRole("menu");
+    const menu=page.getByRole("dialog",{name:"Resurse și template-uri"});
     await expect(menu).toBeVisible();
     const menuBox = await menu.boundingBox();
     expect(menuBox).not.toBeNull();

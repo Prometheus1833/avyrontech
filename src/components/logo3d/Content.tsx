@@ -1,33 +1,26 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Box, Check, Gauge, Layers, MessageCircle, Plus, ShieldCheck, Sparkles, Sun } from "lucide-react";
+import {
+whatsappUrl
+} from "@/data/logo3d";
+import { LOGO_PAGE_COPY } from '@/data/managedServiceCopy/logo';
+import { useServicePageContent } from '@/hooks/useServicePageContent';
 import { useLang } from "@/i18n/LanguageContext";
 import { trackEvent } from "@/lib/analytics";
-import {
-  LOGO3D_AUDIENCES,
-  LOGO3D_CTA,
-  LOGO3D_FAQ,
-  LOGO3D_FORMATS,
-  LOGO3D_PACKS_COPY,
-  LOGO3D_PROCESS,
-  LOGO3D_STATES,
-  LOGO3D_TIERS,
-  LOGO3D_TOOLS,
-  LOGO3D_TRUST,
-  whatsappUrl,
-} from "@/data/logo3d";
+import { Box,Check,Gauge,Layers,MessageCircle,Plus,ShieldCheck,Sparkles,Sun } from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import FlatMark from "./FlatMark";
-import { conceptByKey, type SegmentKey } from "./marks";
 import { ClosingMark } from "./Interactive";
-import { ripple, useLeiPrice } from "./utils";
+import { conceptByKey,type SegmentKey } from "./marks";
+import { ripple,useLeiPrice } from "./utils";
 
 // ------------------------------------------------------------------ three states
 
 const STATE_ICONS = [Layers, Box, Sparkles];
 
 export function States() {
+ const logoCopy=useServicePageContent("logo-3d","logo",LOGO_PAGE_COPY);
   const { lang } = useLang();
-  const s = LOGO3D_STATES[lang];
+  const s = logoCopy.LOGO3D_STATES[lang];
   return (
     <section id="ce-este" className="l3d-section" data-palette="#8b5cf6,#38bdf8" aria-labelledby="states-title">
       <div className="l3d-wrap">
@@ -100,9 +93,10 @@ function Mockups({ segment }: { segment: SegmentKey }) {
 }
 
 export function Audiences() {
+ const logoCopy=useServicePageContent("logo-3d","logo",LOGO_PAGE_COPY);
   const { lang } = useLang();
-  const a = LOGO3D_AUDIENCES[lang];
-  const tiers = LOGO3D_TIERS[lang];
+  const a = logoCopy.LOGO3D_AUDIENCES[lang];
+  const tiers = logoCopy.LOGO3D_TIERS[lang];
   const [active, setActive] = useState<SegmentKey>("small");
   const item = a.items.find((i) => i.key === active) ?? a.items[0];
   const tier = tiers.find((t) => t.key === item.pack)!;
@@ -169,10 +163,11 @@ export function Audiences() {
 // ------------------------------------------------------------------ packages
 
 export function Packages({ onPreview }: { onPreview: (tier: string) => void }) {
+ const logoCopy=useServicePageContent("logo-3d","logo",LOGO_PAGE_COPY);
   const { lang } = useLang();
-  const p = LOGO3D_PACKS_COPY[lang];
-  const tiers = LOGO3D_TIERS[lang];
-  const trust = LOGO3D_TRUST[lang];
+  const p = logoCopy.LOGO3D_PACKS_COPY[lang];
+  const tiers = logoCopy.LOGO3D_TIERS[lang];
+  const trust = logoCopy.LOGO3D_TRUST[lang];
   const lei = useLeiPrice(lang);
 
   return (
@@ -284,8 +279,9 @@ export function Packages({ onPreview }: { onPreview: (tier: string) => void }) {
 // ------------------------------------------------------------------ formats
 
 export function Formats() {
+ const logoCopy=useServicePageContent("logo-3d","logo",LOGO_PAGE_COPY);
   const { lang } = useLang();
-  const f = LOGO3D_FORMATS[lang];
+  const f = logoCopy.LOGO3D_FORMATS[lang];
   return (
     <section id="livrabile" className="l3d-section" data-palette="#38bdf8,#a78bfa" aria-labelledby="formats-title">
       <div className="l3d-wrap">
@@ -311,8 +307,9 @@ export function Formats() {
 // ------------------------------------------------------------------ tools
 
 export function Tools() {
+ const logoCopy=useServicePageContent("logo-3d","logo",LOGO_PAGE_COPY);
   const { lang } = useLang();
-  const t = LOGO3D_TOOLS[lang];
+  const t = logoCopy.LOGO3D_TOOLS[lang];
   const names = t.items.map((i) => i.name);
   return (
     <section id="tehnologii" className="l3d-section" data-palette="#a78bfa,#bef264" aria-labelledby="tools-title">
@@ -362,8 +359,9 @@ export function Tools() {
 // ------------------------------------------------------------------ process
 
 export function Process() {
+ const logoCopy=useServicePageContent("logo-3d","logo",LOGO_PAGE_COPY);
   const { lang } = useLang();
-  const p = LOGO3D_PROCESS[lang];
+  const p = logoCopy.LOGO3D_PROCESS[lang];
   return (
     <section id="proces" className="l3d-section" data-palette="#8b5cf6,#38bdf8" aria-labelledby="process-title">
       <div className="l3d-wrap">
@@ -390,8 +388,9 @@ export function Process() {
 // ------------------------------------------------------------------ FAQ
 
 export function Faq() {
+ const logoCopy=useServicePageContent("logo-3d","logo",LOGO_PAGE_COPY);
   const { lang } = useLang();
-  const items = LOGO3D_FAQ[lang];
+  const items = logoCopy.LOGO3D_FAQ[lang];
   return (
     <section id="faq" className="l3d-section" data-palette="#a78bfa,#38bdf8" aria-labelledby="faq-title">
       <div className="l3d-wrap grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
@@ -417,8 +416,9 @@ export function Faq() {
 // ------------------------------------------------------------------ final CTA
 
 export function FinalCta({ onPreview }: { onPreview: () => void }) {
+ const logoCopy=useServicePageContent("logo-3d","logo",LOGO_PAGE_COPY);
   const { lang } = useLang();
-  const c = LOGO3D_CTA[lang];
+  const c = logoCopy.LOGO3D_CTA[lang];
   const related = lang === "ro"
     ? [
         { to: "/servicii/website-prezentare-profesional", label: "Site Prezentare Profesional" },

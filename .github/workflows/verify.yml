@@ -6,7 +6,6 @@ on:
   push:
     branches:
       - main
-      - "codex/**"
 
 concurrency:
   group: verify-${{ github.ref }}
@@ -41,7 +40,14 @@ jobs:
       - name: Audit all D1 migrations
         run: npm run audit:d1
 
+      - name: Check editable service content and effective product catalog
+        run: npm run service-content:check && npm run catalog:produse:check
+
       - name: Build Cloudflare Pages output
+        # CI verifies the committed snapshot. Production builds still fetch
+        # published content; GitHub runners must not depend on public WAF access.
+        env:
+          SERVICE_CONTENT_SNAPSHOT_SKIP: "1"
         run: npm run build:pages
 
       - name: Run tests against prerendered output
@@ -54,6 +60,8 @@ jobs:
         run: npm run test:e2e
 
       - name: Validate standalone site Worker build
+        env:
+          SERVICE_CONTENT_SNAPSHOT_SKIP: "1"
         run: npm run build:worker
 
       - name: Validate API and email Workers

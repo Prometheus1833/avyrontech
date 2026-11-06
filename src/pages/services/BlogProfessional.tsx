@@ -1,57 +1,48 @@
-import { trackFunnel } from "@/lib/siteAnalytics";
-import LibraryLink from "@/components/site/LibraryLink";
-import { useCallback, useEffect, useState } from "react";
-import { useLang } from "@/i18n/LanguageContext";
+import PortfolioCarousel from "@/components/site/PortfolioCarousel";
+import ServiceContentProvider from "@/components/services/ServiceContentProvider";
 import BlogPreloader from "@/components/blogpro/BlogPreloader";
+import LibraryLink from "@/components/site/LibraryLink";
+import { FAQ_ITEMS } from "@/data/managedServiceCopy/blogClosing";
+import { meta } from '@/data/managedServiceCopy/blogMeta';
+import { useServicePageContent } from '@/hooks/useServicePageContent';
+import { useLang } from "@/i18n/LanguageContext";
+import { trackFunnel } from "@/lib/siteAnalytics";
+import { useCallback,useEffect,useState } from "react";
 
-import LangSwitch from "@/components/site/LangSwitch";
-import ThemeToggle from "@/components/site/ThemeToggle";
-import Breadcrumbs from "@/components/site/Breadcrumbs";
-import PageBackLink from "@/components/site/PageBackLink";
-import Footer from "@/components/site/Footer";
-import QuickNav, { type QuickNavItem } from "@/components/site/QuickNav";
-import FloatingWhatsApp from "@/components/site/FloatingWhatsApp";
 import logo from "@/assets/avyron-logo.jpg";
-import ScrollProgress from "@/components/blogpro/ScrollProgress";
-import ScrollNudges from "@/components/blogpro/ScrollNudges";
 import BlogProHero from "@/components/blogpro/BlogProHero";
-import { BlogAudiences, ContentJourney } from "@/components/blogpro/Story";
-import { CmsExperience, ReaderExperience } from "@/components/blogpro/Product";
-import { ContentArchitecture, SeoEngine } from "@/components/blogpro/SeoSection";
-import { AiSection, AnalyticsSection, ConversionFlow, Integrations } from "@/components/blogpro/Growth";
 import {
-  DeviceExperience,
-  IncludedFeatures,
-  ProcessTimeline,
-  TechnicalQuality,
-} from "@/components/blogpro/Foundations";
+AvyronBlogPreview,
+BlogFaq,
+ContentServices,
+FinalCta,
+} from "@/components/blogpro/Closing";
 import Configurator from "@/components/blogpro/Configurator";
 import {
-  AvyronBlogPreview,
-  BlogFaq,
-  ContentServices,
-  FAQ_ITEMS,
-  FinalCta,
-} from "@/components/blogpro/Closing";
+DeviceExperience,
+IncludedFeatures,
+ProcessTimeline,
+TechnicalQuality,
+} from "@/components/blogpro/Foundations";
+import { AiSection,AnalyticsSection,ConversionFlow,Integrations } from "@/components/blogpro/Growth";
+import { CmsExperience,ReaderExperience } from "@/components/blogpro/Product";
+import ScrollNudges from "@/components/blogpro/ScrollNudges";
+import ScrollProgress from "@/components/blogpro/ScrollProgress";
+import { ContentArchitecture,SeoEngine } from "@/components/blogpro/SeoSection";
+import { BlogAudiences,ContentJourney } from "@/components/blogpro/Story";
+import Breadcrumbs from "@/components/site/Breadcrumbs";
+import FloatingWhatsApp from "@/components/site/FloatingWhatsApp";
+import Footer from "@/components/site/Footer";
+import LangSwitch from "@/components/site/LangSwitch";
+import PageBackLink from "@/components/site/PageBackLink";
+import QuickNav,{ type QuickNavItem } from "@/components/site/QuickNav";
 import PlanTeaser from "@/components/site/subscriptions/PlanTeaser";
+import ThemeToggle from "@/components/site/ThemeToggle";
 import { categoryByKey } from "@/data/subscriptionPlans";
 
 const PATHS = { ro: "/servicii/blog-profesional", en: "/en/services/professional-blog" };
 
-const meta = {
-  ro: {
-    title: "Creare Blog Profesional & Content Hub | AVYRON",
-    description:
-      "Blog profesional și content hub cu CMS propriu, SEO tehnic, analytics și module AI opționale. Configurează-ți platforma editorială și vezi estimarea de preț, de la 1.500 lei.",
-    name: "Creare blog profesional și content hub",
-  },
-  en: {
-    title: "Professional Blog & Content Hub Development | AVYRON",
-    description:
-      "A professional blog and content hub with its own CMS, technical SEO, analytics and optional AI modules. Configure your editorial platform and see the price estimate.",
-    name: "Professional blog and content hub development",
-  },
-} as const;
+
 
 const quickNav = {
   ro: [
@@ -79,7 +70,8 @@ const quickNav = {
 const BlogProfessional = () => {
   const { lang } = useLang();
   const ro = lang === "ro";
-  const m = meta[lang];
+  const m = useServicePageContent("blog-profesional","meta",meta)[lang];
+  const managedFaq = useServicePageContent("blog-profesional","blogClosing.FAQ_ITEMS",FAQ_ITEMS);
   /* The intro is decorative: content stays in the DOM for users and crawlers. */
   const [introDone, setIntroDone] = useState(() => typeof window === "undefined");
   const [showIntro, setShowIntro] = useState(() => typeof window !== "undefined");
@@ -91,6 +83,7 @@ const BlogProfessional = () => {
 
 
 
+  useEffect(() => {window.scrollTo(0, 0);}, [lang]);
   useEffect(() => {
     const els = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
     const io = new IntersectionObserver(
@@ -108,7 +101,7 @@ const BlogProfessional = () => {
   }, [lang]);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
       ([{ setPageMeta, setJsonLd }, { organizationLd, breadcrumbLd, serviceLd, faqPageLd }]) => {
         setPageMeta({
@@ -122,7 +115,7 @@ const BlogProfessional = () => {
           "ld-service",
           serviceLd({ name: m.name, description: m.description, path: PATHS[lang] }),
         );
-        setJsonLd("ld-faq", faqPageLd([...FAQ_ITEMS[lang]]));
+        setJsonLd("ld-faq", faqPageLd([...managedFaq[lang]]));
 
         setJsonLd(
           "ld-breadcrumb",
@@ -134,7 +127,7 @@ const BlogProfessional = () => {
         );
       },
     );
-  }, [lang, ro, m]);
+  }, [lang, ro, m, managedFaq]);
 
   const blogPlans = categoryByKey("blog");
 
@@ -231,9 +224,10 @@ const BlogProfessional = () => {
 
       <QuickNav items={quickNav[lang] as unknown as QuickNavItem[]} showLang />
       <FloatingWhatsApp />
+      <div className="mx-auto max-w-5xl px-4"><PortfolioCarousel lang={ro ? "ro" : "en"} carouselKey={"blog-profesional"} /></div>
       <Footer />
     </main>
   );
 };
 
-export default BlogProfessional;
+export default function ManagedBlogProfessional(){return <ServiceContentProvider><BlogProfessional/></ServiceContentProvider>;}

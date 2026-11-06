@@ -80,7 +80,7 @@ test("the customer dashboard keeps staff controls out and combines service and p
   await expect(page.getByRole("button", { name: "Scoate Site Prezentare Profesional din favorite" })).toBeVisible();
   await page.getByRole("button", { name: "Adaugă în coș" }).first().click();
   await page.getByRole("button", { name: "Adaugă în coș" }).last().click();
-  await page.getByRole("tab", { name: "Coș" }).first().click();
+  await page.getByRole("button", { name: "Coș" }).first().click();
   await expect(page.getByRole("heading", { name: "Conținutul coșului (2)" })).toBeVisible();
   await expect(page.getByText("Card holografic").first()).toBeVisible();
 });

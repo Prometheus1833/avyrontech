@@ -49,4 +49,52 @@ Modulul este documentat în [DOCUMENT_CENTER.md](./DOCUMENT_CENTER.md): cinci zo
 
 ## Dashboard și aprobări — 5 noiembrie 2026
 
+Continuare locală: [Manager Social Media și AVY Core](./SOCIAL_AVY_CORE.md) documentează deciziile editoriale sincronizate, mini-dashboardul activităților, eliminarea navigării duplicate și abonamentele de mentenanță pe înregistrările existente. Migrarea aditivă 0078 este verificată local. Conform ultimei instrucțiuni a utilizatorului, push și deploy sunt amânate până la încheierea taskurilor; nu prezentați aceste schimbări drept live.
+
 Ramura de rafinare pornește din `c4403abc`: carduri compacte, centru unic de citire pentru cinci surse originale, revizuire contextuală, actualizare automată și verificare reală a bindingurilor. Vezi [DASHBOARD_APPROVALS_SYNC.md](./DASHBOARD_APPROVALS_SYNC.md). În mandatul explicit de sincronizare, D1 preview a fost aliniat de la 24 la 75 de migrații după backup restaurat și verificat; zero erori FK, `quick_check=ok`, datele preview rămân separate. Codul nou și indexurile de producție nu sunt live doar pentru că baza preview a fost aliniată. Nu s-a activat un serviciu plătit, un index Vectorize sau un conector extern fictiv.
+
+## Leaduri și configurarea serviciilor — 5 noiembrie 2026
+
+Lucrări locale pe `codex/leads-services-config-2026-11-05`, după checkpointul local `01c12f3`. Vezi [LEADS_SERVICE_CONFIGURATION.md](./LEADS_SERVICE_CONFIGURATION.md): pipeline compact, motive comerciale de eliminare și editori separați pentru prezentarea comună și paginile serviciilor. Migrațiile 0079/0080 sunt aditive. Push, PR și deploy rămân amânate conform utilizatorului; nicio publicare reală sau migrare remote nu a fost executată pentru această etapă.
+
+## Abonamente Clienți și AVYRON — 5 noiembrie 2026
+
+Continuare locală după `8fa9b41`, pe `codex/client-internal-subscriptions-2026-11-05`. [SUBSCRIPTION_OPERATIONS.md](./SUBSCRIPTION_OPERATIONS.md) descrie alocările pe CRM/proiecte/conturi existente, calendarul lunar și ciornele în registrul financiar, plus evidența conturilor interne din `financial_expenses`. Migrarea aditivă 0081 nu activează furnizori, facturare externă sau plăți automate. Accesul clientului, staffului și financiarului este separat în backend. Push și deploy rămân amânate până la încheierea taskurilor.
+
+## Centru Documente — organizare și personalizare, 5 noiembrie 2026
+
+Continuare locală după `24b8957`, pe `codex/document-center-experience-2026-11-05`. [DOCUMENT_CENTER_EXPERIENCE.md](./DOCUMENT_CENTER_EXPERIENCE.md) descrie Biblioteca Agenție, Documente SC/STAFF, paginile separate Tipizate și Generator, precompletarea emitentului, contextul CRM/abonament și ciorna de factură din registrul existent. Biblioteca efectelor/integrărilor din dashboard se numește Biblioteca Artefacte. Migrarea aditivă 0082 completează exclusiv date goale ale emitentului cunoscut și păstrează referințele financiare cu integritate tranzacțională. Nu emite facturi și nu debitează conturi. Push, PR, merge, migrare remote și deploy rămân amânate conform utilizatorului.
+
+## Membrii Agenției și chat — 05.11.2026, local
+
+Continuare după `27a66a3`, pe `codex/internal-chat-staff-access-2026-11-05`. [STAFF_RANKS_INTERNAL_CHAT.md](./STAFF_RANKS_INTERNAL_CHAT.md) descrie chatul adaptat desktop/mobil, cele șapte ranguri, permisiunile granulare pe infrastructura existentă, alocările și crearea atomică a conturilor, cu politica MFA existentă și evidențierea explicită a excepției de rollout. Configurația MFA globală nu a fost schimbată. Utilizatorul a confirmat explicit accesul Super Admin la Documente SC și backupurile firmei, înlocuind politica anterioară de delegare. 0083 este aditivă și nu realocă automat conturile existente; migrarea trebuie să preceadă API-ul. Push, PR, merge, migrare remote și deploy rămân amânate până la finalizarea taskurilor.
+
+## Clienți — fișă și alocări, 05.11.2026 (local)
+
+Ramura `codex/client-workspace-2026-11-05`, de la `51960ce`, extinde Clienți cu creare CRM/cont nativ, schimbare obligatorie a parolei, profil fiscal canonic, proiecte multiple, abonamente contextuale, plăți și Document Center în mini-dashboard. Migrarea aditivă `0084` adaugă revizii și mod explicit de acces; previne reapariția unei asocieri revocate prin reconciliere pe email pentru clienții administrați explicit. Nu schimbă autentificarea, furnizorii sau designul public. Vezi [CLIENT_WORKSPACE.md](./CLIENT_WORKSPACE.md) pentru API, limite și lansare. Nu presupune push/PR/merge/migrare remote/deploy: utilizatorul a cerut lansarea numai la sfârșitul lotului și va face testul final în contul real ulterior.
+
+## Organizare OS, Financiar și Media — 05.11.2026 (local)
+
+Continuare de la `3aa2ead` pe `codex/os-workspace-refinement-2026-11-05`. [OS_WORKSPACE_REFINEMENT.md](./OS_WORKSPACE_REFINEMENT.md) descrie meniul reorganizat, eliminarea Control platformă, directorul căutabil de destinații, cele cinci grupe financiare, scrollurile interne accesibile, AVY Engine și bibliotecile Media AVYRON/clienți. 0085 este aditivă și trebuie să preceadă API-ul. Media reutilizează CRM, RBAC, FILES și destinațiile private de backup; uploadurile rămân în carantină fără scanner. Reconcilierea Engine modifică numai eligibilitatea legăturilor interne, fără activare de furnizori. Backupul verifică fișierul și manifestul; restaurarea automată completă D1 nu este inclusă. Nicio migrare remote, publicare, activare plătită, push sau deploy în această etapă.
+
+## INTERN OS și bară staff — 05.11.2026 (local)
+
+Continuare de la `9940346`, pe `codex/staff-upbar-navigation-2026-11-05`. [STAFF_UPBAR_NAVIGATION.md](./STAFF_UPBAR_NAVIGATION.md) descrie intrarea directă INTERN OS, meniul personal redus, resursele/proiectele contextuale și chatul echipă/proiect-client, reutilizând identitatea, permisiunile și mesajele existente. 0086 adaugă contextul proiectului și previne expunerea lui în canale/DM vechi pe durata actualizării; trebuie aplicată înainte de Worker. Nu confundă proiectele operaționale cu alocările AI. Mesajele salvate folosesc D1 existent; nu există furnizori, notificări externe sau servicii plătite noi. Push, PR, migrare remote și deploy rămân amânate până la finalul taskurilor, iar utilizatorul păstrează testul final în contul real pentru mai târziu.
+
+## Previzualizări servicii și verificări finale — 06.11.2026, local
+
+Continuare de la `faf94f8`, pe `codex/service-link-previews-2026-11-05`. [Previzualizări și pregătirea lansării](./LINK_PREVIEWS_RELEASE_READINESS.md) descrie cele 26 de imagini publice tematice RO/EN, metadatele specifice, prevenirea imaginilor rămase la navigare, corecția comună a HTML-ului rutelor private și remedierea alertei de dezvoltare `minimatch`. La cererea explicită s-a creat și verificat live un cont client gratuit nativ, fără privilegii sau abonamente; datele de acces nu se înscriu în repository. D1 producție este integră, la 0077, cu zece migrări locale încă neaplicate (0078–0087, ultima aliniază numai eticheta SAL a unui artefact, fără schimbări comerciale). Push, PR, merge, migrări remote și deploy rămân pentru etapa finală autorizată; nu prezentați metadatele noi și modulele locale drept live.
+
+Verificările finale au inclus și o corecție restrânsă a selectorului de dispozitive de pe homepage: la scroll anulat și layout deplasat, fallbackul recalculează destinația. Testul nou reproduce problema pe codul vechi și trece după corecție. Raportul de pregătire include rezultatele combinate pentru 197 de scenarii browser, 757 de teste de cod, verificări native Worker/ASSETS și limitele reale de release. Acestea sunt verificări locale; release-ul rămâne neexecutat.
+
+## Carusele Exemple și notificări — 06.11.2026, local
+
+Continuare de la `520c42e`, pe `codex/example-carousels-notifications-2026-11-06`. [EXAMPLE_CAROUSELS.md](./EXAMPLE_CAROUSELS.md) descrie registrul din Platformă, cele zece contexte de servicii, păstrarea exemplelor existente, editarea și istoricul, pipeline-ul ciornă/verificare/aprobare/publicare și integrarea cu centrul de aprobări/notificările native. 0088 este aditivă și trebuie să preceadă API-ul; în lot sunt acum unsprezece migrații locale, 0078–0088, fără o aplicare remote în această etapă. Publicarea rescrie și HTML-ul servit prin Worker, fără a păstra exemplele ascunse în snapshotul prerandat. Clopoțelul folosește un popover nemodal sub buton, adaptat mobilului. Se reutilizează RBAC/D1 și politica MFA; nu există servicii, credite Lovable sau bucketuri publice noi. Push, PR, merge și deploy rămân amânate până la finalul taskurilor.
+
+## Antivirus Bouncer — 06.11.2026, local, acceptanță externă nefinalizată
+
+Continuare de la `1397ce3`, pe `codex/bouncer-antivirus-2026-11-06`. [ANTIVIRUS_BOUNCER.md](./security/ANTIVIRUS_BOUNCER.md) înlocuiește propunerea cu scanner generic din PR #69: furnizor unic Bouncer Free prin API v2, D1/R2 existente, carantină, cote rezervate atomic, legarea versiunii R2 la verdict, citiri fail-closed și inventariere istorică. Principal → Antivirus este ultimul buton din prima grupă; control plane exclusiv Owner/Super Admin. Migrarea 0089 este aditivă; lotul local ajunge la 0078–0089. Nu există servere/ClamAV/Oracle/bucketuri noi ori servicii plătite activate. Nu s-a găsit cheia Bouncer în inventarul numelor de secrete; documentele publice indică Mumbai și nu confirmă un DPA/garanțiile transferului. Citirea API a setărilor publice R2 a fost refuzată cu 10000. Până la verificări, fără date reale transmise și fără afirmație de scanare live; PR #69 rămâne draft. Push, PR update, merge, migrări remote și deploy sunt amânate.
+
+## Colaboratori / Parteneri — 06.11.2026, local
+
+Continuare de la `0dd2286`, pe `codex/collaborators-partners-2026-11-06`. [COLLABORATORS_PARTNERS.md](./COLLABORATORS_PARTNERS.md) descrie ultimul buton din Principal, fișele compacte cu mini-dashboard, contactele, codurile interne și legăturile explicite la CRM/conturi existente. Registrul este distinct de planurile de produse AVY Partener. Badge-ul și Colaborările mele sunt derivate server-side; nu acordă roluri sau licențe. 0090 adaugă numai metadate și asocieri, cu maximum trei fișiere active × 5 MB, în Document Center/R2 existente, supuse porții antivirus. Notele interne, permisiunile granulare și revocarea sunt verificate în backend; schimbarea contului retrage publicarea documentelor. Uploadurile reale rămân blocate până la configurarea/verificarea Bouncer. Lotul ajunge la 0078–0090; push, PR, merge, migrări remote și deploy rămân amânate.
