@@ -3,9 +3,9 @@
 ## Publicare verificată
 
 - URL: https://cabinet-avocatura.avyron.eu/; pagini revizuite: /programari/ și /en/appointments/.
-- Sites: versiunea 13, `appgprj_6aee16d68fcc8191a51c7f828bcfab51~appgver_93669584d8088191865c0e2a7b5e7e9b`.
-- Deployment: `appgdep_6aee4c2aef3c8191bbae61c664729ec8`, `succeeded`.
-- Sursă Sites: `12dd4c64d84dd193e882d286c9575e9cd0034d07`; runtime `bc9b71d4df`.
+- Sites: versiunea 14, `appgprj_6aee16d68fcc8191a51c7f828bcfab51~appgver_5a6b481815ec819195ea324684513aa3`.
+- Deployment: `appgdep_6aee4e01a214819182876f40455d65ea`, `succeeded`.
+- Sursă Sites: `f56c5e63be9a8e1ebc55c5a63ba5d600aeaca375`; runtime `8c7ed7702a`.
 - AVYRON: `client-sites/cabinet-avocatura/`, ramura `codex/cabinet-avocatura-2026-11-06`, PR #102, fără merge în main.
 - DNS existent păstrat; HTTPS public verificat cu validarea normală a certificatului.
 
@@ -31,7 +31,7 @@ Fotografii ilustrative native 1536×1024, fără mărire artificială; nu reprez
 - Validator: 42 pagini, 1862 referințe interne, 514 resurse directe; metadate, srcset/fonturi, ancore, paritate și destinatari.
 - Teste RO/EN: date/intervale, chestionar, termene condiționale, text sigur, mesaje contextuale, selecție și limite de fișiere, fără citire/transmitere fișiere, resetare. Editorul, caruselul, mișcarea redusă, progresul și acoperirea brief-ului rămân verificate.
 - Browser: 16 combinații RO/EN la opt dimensiuni 320–1440 px, fără overflow; câmpuri 16 px. Rezumat EN cu text 130% + contrast la cinci dimensiuni: fără overflow, câmpuri 20,8 px. Tableta ajustată verificată din nou la 768/844 px și mobilul la 320 px.
-- Public: formular, navigare, rezumat, fingerprint și capturi pe domeniul final. Cele 42 HTML și cele două fișiere motion CSS/JS comparate în această revizie cu build-ul local: 44/44 identice. Normalizarea exclude numai scriptul Cloudflare injectat de hosting. Dovezi în output/appointments-proof/.
+- Public: formular, navigare, rezumat, fingerprint și capturi pe domeniul final. Home RO/EN și cele două CSS modificate comparate în această revizie cu build-ul local: 4/4 identice. Normalizarea exclude numai scriptul Cloudflare injectat de hosting. Dovezi în output/appointments-proof/.
 - Gzip: booking.js 3389 B și booking.css 2908 B, numai pe programări; app.js comun redus la 2813 B.
 - Build-urile aplicației AVYRON nu au fost rulate local, site-ul fiind autonom. CI verifică separat aplicația și site-ul.
 
@@ -64,3 +64,9 @@ Secțiunea de articole de pe home RO/EN este un carusel cu sens automat stânga 
 Bucla are trei articole originale. Copiile vizuale sunt aria-hidden și toate legăturile descendente sunt excluse din ordinea de tabulare. ID-urile celor două carusele și aria-controls sunt unice. Nu se adaugă imagini, dependențe sau solicitări de rețea pentru un motor separat.
 
 Verificări: build/check/toate testele trecute. Testele RO/EN rulează pentru ambele carusele, în sensuri opuse, incluzând controale/input, buclă, copii, reduced-motion și idle. Browser: 12 combinații RO/EN la 320/390/430/768/1024/1440 px, fără overflow; text 130% + contrast la trei dimensiuni. Derulare orizontală nativă verificată, precum și comenzi independente pe public (articole în pauză, arii neafectate). Mișcare inversă observată în browser: -256,5 px, normalizată după perioada buclei. Nu se pretinde testare fizică iOS/Android. Dovezi: output/articles-carousel-proof/. Public: 42 HTML + motion.js/motion.css identice cu build-ul local, după excluderea exclusivă a scriptului Cloudflare injectat.
+
+## Contacte plutitoare — 7 noiembrie 2026
+
+Apel, WhatsApp și e-mail sunt circulare și verticale, unul sub altul în dreapta jos, pe desktop, tabletă și mobil. Mobil 48×48 px, gap 8 px; desktop 50×50 px, gap 10 px. Respectă safe-area. Bara orizontală și spațiul rezervat acesteia au fost eliminate. Înapoi sus este în stânga jos pe home, separat de contactele din dreapta. Destinatarii, aria-label și mesajele precompletate sunt păstrate.
+
+Build/check/toate testele trecute. Browser: 320×568, 390×844, 430×932, 844×390, 768×1024 și 1440×1000: flex-direction column, exact trei butoane cu aceeași coordonată x și coordonate y crescătoare, fără overlap între ele sau overflow. EN la 320 px confirmat. Public la 390×844: x 315 px, y 672/728/784 px, 48×48 px, runtime 8c7ed7702a. Home RO/EN și CSS motion/editorial corespund build-ului. Dovezi: output/floating-proof/. Gzip motion.css 4094 B, editorial.css 3176 B. Fără modificări JS, imagini, DNS sau integrări.
