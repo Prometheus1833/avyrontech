@@ -42,7 +42,7 @@ type Bindings = {
 type Ctx = Context<Bindings>;
 export const documentCenterRouter = new Hono<Bindings>();
 documentCenterRouter.onError((cause, c) => {
-  if (/no such table: (documents|document_|client_legal)/.test(String(cause)))
+  if (/no such table: (documents|document_|client_legal|agency_collaborators)/.test(String(cause)))
     return error(c, "document_center_unavailable", 503);
   if (/assignment_scope_denied/.test(String(cause)))
     return error(c, "assignment_scope_denied", 403);
@@ -521,6 +521,9 @@ for (const path of ["/api/documents", "/api/documents/*"]) {
     const actor = await documentActor(c.env.DB, c.get("userId"));
     if (!actor) return error(c, "forbidden", 403);
     c.set("documentActor", actor);
+    const managedId = /^\/api\/documents\/([^/]+)(?:\/|$)/.exec(c.req.path)?.[1];
+    if(c.req.method!=="GET" && managedId && !c.req.path.includes('/backups') && await c.env.DB.prepare('SELECT 1 FROM agency_collaborators WHERE document_id=?').bind(managedId).first())
+      return c.json({error:{code:'collaboration_documents_managed',message:'Gestionează acest dosar din fișa colaboratorului.'}},409);
     if (actor.staff && !(await privilegedMfaSatisfied(c)))
       return error(c, "mfa_required", 403);
     if (c.req.method !== "GET") {
@@ -538,7 +541,7 @@ for (const path of ["/api/documents", "/api/documents/*"]) {
       await next();
     } catch (cause) {
       if (
-        /no such table: (documents|document_|client_legal)/.test(String(cause))
+        /no such table: (documents|document_|client_legal|agency_collaborators)/.test(String(cause))
       )
         return error(c, "document_center_unavailable", 503);
       if (/assignment_scope_denied/.test(String(cause)))

@@ -40,7 +40,7 @@ type MenuItem = {
 };
 
 const UserMenu = () => {
-  const { user, profile, isStaff, isSuperAdmin, roles, capabilities, signOut } = useAuth();
+  const { user, profile, isStaff, isSuperAdmin, roles, capabilities, hasCollaborations, isAgencyPartner,refreshProfile, signOut } = useAuth();
   const { t, lang } = useLang();
   const [contactOpen, setContactOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -83,7 +83,7 @@ const UserMenu = () => {
     {label:t.auth.menu.settings,icon:Settings,dot:"222, 25%, 40%",to:"/profil?tab=settings"},
   ];
 
-  const items = isStaff ? staffItems : userItems;
+  const items = [...(isStaff ? staffItems : userItems),...(hasCollaborations?[{label:lang==="en"?"My collaborations":"Colaborările mele",icon:UsersRound,dot:"264, 90%, 62%",to:"/profil?tab=my-collaborations"}]:[])];
 
   const handleSignOut = async () => {
     setMenuOpen(false);
@@ -94,7 +94,7 @@ const UserMenu = () => {
 
   return (
     <>
-      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen} modal={false}>
+      <DropdownMenu open={menuOpen} onOpenChange={(open)=>{setMenuOpen(open);if(open)void refreshProfile();}} modal={false}>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
@@ -122,6 +122,7 @@ const UserMenu = () => {
           <DropdownMenuLabel className="flex flex-col">
             <span className="font-medium truncate">{profile?.display_name || user.email}</span>
             <span className="text-xs text-muted-foreground truncate">{user.email}</span>
+            {isAgencyPartner&&<span className="mt-1 w-fit rounded-full bg-brand/10 px-2 py-0.5 text-xs font-semibold text-brand">Avyron Partener</span>}
             {isStaff && (
               <span className="mt-1 inline-flex w-fit text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-brand/10 text-brand">
                 Staff

@@ -16,6 +16,8 @@ type AuthContextValue = {
   isAdmin: boolean;
   isSuperAdmin: boolean;
   platformRole: PlatformRole | null;
+  hasCollaborations: boolean;
+  isAgencyPartner: boolean;
   loading: boolean;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -32,6 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [capabilities, setCapabilities] = useState<string[]>([]);
   const [superadmin, setSuperadmin] = useState(false);
+  const [collaboration,setCollaboration]=useState({hasCollaborations:false,isAgencyPartner:false});
   const [platformRole, setPlatformRole] = useState<PlatformRole | null>(null);
   // Start in loading state on every route so signed-in visitors never see a
   // "Log in" CTA flash while the (possibly deferred) session bootstrap runs.
@@ -46,6 +49,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setCapabilities(me.capabilities ?? []);
       setSuperadmin(me.superadmin === true);
       setPlatformRole(me.platformRole ?? null);
+      setCollaboration({hasCollaborations:me.hasCollaborations===true,isAgencyPartner:me.isAgencyPartner===true});
     } else {
       setUser(null);
       setProfile(null);
@@ -53,6 +57,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setCapabilities([]);
       setSuperadmin(false);
       setPlatformRole(null);
+      setCollaboration({hasCollaborations:false,isAgencyPartner:false});
     }
   }, []);
 
@@ -88,6 +93,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = useCallback(async () => {
     await cfAuth.logout();
+    setCollaboration({hasCollaborations:false,isAgencyPartner:false});
     setUser(null); setProfile(null); setRoles([]); setCapabilities([]); setSuperadmin(false); setPlatformRole(null);
   }, []);
 
@@ -101,6 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isAdmin: roles.includes("admin"),
     isSuperAdmin: roles.includes("admin") && superadmin,
     platformRole,
+    ...collaboration,
     loading,
     refreshProfile,
     signOut,

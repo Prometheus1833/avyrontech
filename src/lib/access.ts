@@ -11,6 +11,7 @@ export type Access = {
   isSuperAdmin: boolean;
   isOperator: boolean;
   capabilities: string[];
+  hasCollaborations?: boolean;
 };
 
 export const buildAccess = (input: {
@@ -18,6 +19,7 @@ export const buildAccess = (input: {
   email?: string | null;
   superadmin?: boolean;
   capabilities?: string[];
+  hasCollaborations?: boolean;
 }): Access => {
   const roles = input.roles ?? [];
   const isAdmin = roles.includes("admin");
@@ -34,6 +36,7 @@ export const buildAccess = (input: {
     isSuperAdmin: isAdmin && input.superadmin === true,
     isOperator,
     capabilities,
+    hasCollaborations:input.hasCollaborations===true,
   };
 };
 
@@ -61,7 +64,7 @@ export type SectionId =
   | "finance" | "media" | "leads" | "staff-tickets" | "demo-requests" | "intern"
   | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "servicii-avyron" | "produse-avyron"
   | "newsletter" | "ai-projects" | "logo-simulations" | "surveys" | "configurator"
-  | "antivirus" | "example-carousels" | "commercial-codes" | "other-hub" | "social-manager" | "subscriptions-admin" | "internal-subscriptions" | "careers" | "library" | "reviews" | "avy-engine";
+  | "collaborators" | "my-collaborations" | "antivirus" | "example-carousels" | "commercial-codes" | "other-hub" | "social-manager" | "subscriptions-admin" | "internal-subscriptions" | "careers" | "library" | "reviews" | "avy-engine";
 
 export type SectionDef = {
   id: SectionId;
@@ -83,6 +86,8 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "overview", group: "overview", audience: "everyone", keywords: ["acasa", "azi", "overview", "dashboard", "briefing", "atentie"] },
   { id: "social-manager", group: "overview", audience: "superadmin", requiredCapability: "ai_projects.read", keywords: ["social media", "publicare", "aprobari", "continut ai", "facebook", "instagram"] },
   { id: "antivirus", group: "overview", audience: "superadmin", keywords: ["antivirus", "bouncer", "malware", "carantina", "scanare", "cote"] },
+  { id:"collaborators",group:"overview",audience:"staff",requiredCapability:"collaborators.read",keywords:["colaboratori","parteneri","juridic","economic","financiar"] },
+  { id:"my-collaborations",group:"account",audience:"everyone",navigation:false,keywords:["colaborarile mele","parteneriat"] },
   { id: "profile", group: "account", audience: "everyone", keywords: ["cont", "profil", "date", "account"] },
   { id: "settings", group: "account", audience: "everyone", keywords: ["setari", "preferinte", "settings", "tema", "limba"] },
 
@@ -144,6 +149,8 @@ export const SECTIONS: readonly SectionDef[] = [
 ];
 
 const canOpenDefinition = (section: SectionDef, access: Access) => {
+  if(section.id==="my-collaborations")return access.hasCollaborations===true;
+  if(section.id==="collaborators")return access.isSuperAdmin || (access.isStaff&&access.capabilities.some(c=>["collaborators.read","collaborators.manage"].includes(c)));
   if (access.capabilities.includes(STAFF_MANAGED) && !access.isSuperAdmin) {
     if (["profile", "settings"].includes(section.id)) return true;
     return (STAFF_SECTION_PERMISSIONS[section.id] || []).some((key) =>

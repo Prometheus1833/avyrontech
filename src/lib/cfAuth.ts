@@ -259,9 +259,9 @@ class CfAuth {
     if (typeof window !== "undefined") window.dispatchEvent(new Event("avyron:logout"));
   }
 
-  async me(): Promise<{ user: CfUser; profile: CfProfile; roles: Role[]; superadmin?: boolean; platformRole?: PlatformRole | null; capabilities?: string[] } | null> {
+  async me(): Promise<{ user: CfUser; profile: CfProfile; roles: Role[]; superadmin?: boolean; platformRole?: PlatformRole | null; capabilities?: string[]; hasCollaborations?:boolean; isAgencyPartner?:boolean } | null> {
     try {
-      const result = await this.request<{ user: CfUser; profile: CfProfile; roles: Role[]; superadmin?: boolean; platformRole?: PlatformRole | null; capabilities?: string[] }>("/api/auth/me");
+      const result = await this.request<{ user: CfUser; profile: CfProfile; roles: Role[]; superadmin?: boolean; platformRole?: PlatformRole | null; capabilities?: string[]; hasCollaborations?:boolean; isAgencyPartner?:boolean }>("/api/auth/me");
       if (result.user.avatar_url?.startsWith("/")) result.user.avatar_url = apiUrl(result.user.avatar_url);
       if (result.profile.avatar_url?.startsWith("/")) result.profile.avatar_url = apiUrl(result.profile.avatar_url);
       return result;

@@ -16,7 +16,7 @@ import { billingApi, type BillingAccount } from "@/lib/billingApi";
 
 export function ProfileTab() {
   const { t, lang } = useLang();
-  const { user, profile, isStaff, refreshProfile } = useAuth();
+  const { user, profile, isStaff, isAgencyPartner,hasCollaborations, refreshProfile } = useAuth();
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [billingProfile, setBillingProfile] = useState<BillingAccount["profile"]>(null);
@@ -125,6 +125,7 @@ export function ProfileTab() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-3">
+      {hasCollaborations&&<Link to="/profil?tab=my-collaborations" className="inline-flex min-h-10 items-center gap-2 rounded-full border border-violet-400/30 bg-violet-500/10 px-4 text-sm text-violet-200">{isAgencyPartner?"Avyron Partener":"Colaborările mele"}<span aria-hidden="true">→</span></Link>}
       <div>
         <h2 className="text-xl font-display font-bold leading-tight">{t.auth.profile.title}</h2>
         <p className="text-xs text-muted-foreground">{t.auth.profile.subtitle}</p>

@@ -1,5 +1,7 @@
 /** Registered permissions map to enforced API operations; rank labels never authorize requests. */
 export const STAFF_PERMISSIONS = [
+  ["collaborators.read", "Comercial", "Citire colaboratori / parteneri", "Registrul profesional, fișe și documente autorizate."],
+  ["collaborators.manage", "Comercial", "Administrare colaboratori / parteneri", "Fișe, asocieri explicite de cont și vizibilitatea documentelor; nu acordă acces la produse."],
   ["examples.read", "Platformă", "Citire carusele exemple", "Configurări, ciorne și istoric pentru exemplele publice."],
   ["examples.edit", "Platformă", "Editare carusele exemple", "Exemple, ordine, imagini și setări; nu publică automat."],
   ["examples.approve", "Platformă", "Aprobare exemple", "Verificare sau respingere a versiunii trimise."],
@@ -443,6 +445,7 @@ export function capabilityRank(
 }
 /** Navigation and request categories share the same registered permission keys. */
 export const STAFF_SECTION_PERMISSIONS: Record<string, string[]> = {
+  collaborators:["collaborators.read","collaborators.manage"],
   overview: ["dashboard.read"],
   projects: ["projects.read"],
   maintenance: ["maintenance.read"],
@@ -551,6 +554,7 @@ export function staffRequestPermission(
     if (/\/(approve|reject)$/.test(path)) return "examples.approve";
     return "examples.edit";
   }
+  if (path.startsWith("/api/collaborators")) return write ? "collaborators.manage" : "collaborators.read";
   if (path.startsWith("/api/ai-projects"))
     return write ? "marketing.write" : "ai_projects.read";
   if (path.startsWith("/api/blog/staff")) return "blog.manage";
@@ -590,6 +594,7 @@ export function staffPermissionIssues(keys: readonly string[]) {
     "maintenance.work": ["maintenance.read"],
     "maintenance.manage": ["maintenance.read"],
     "clients.write": ["clients.read"],
+    "collaborators.manage": ["collaborators.read"],
     "leads.write": ["leads.read"],
     "leads.create": ["leads.read"],
     "leads.delete": ["leads.read"],

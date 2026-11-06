@@ -75,6 +75,8 @@ export const DASHBOARD_GROUP_ORDER = [
 ];
 
 export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
+  collaborators:{label:"Colaboratori/Parteneri",commandLabel:"Deschide Colaboratori/Parteneri",hint:"Relații profesionale, fișe și documente de colaborare",icon:Users},
+  "my-collaborations":{label:"Colaborările mele",commandLabel:"Deschide colaborările mele",hint:"Detaliile și documentele colaborărilor proprii cu AVYRON",icon:BriefcaseBusiness},
   antivirus: {label:"Antivirus",commandLabel:"Deschide Antivirus",hint:"Bouncer Free, carantină, cote, conformitate și istoricul scanărilor",icon:ShieldCheck},
   "example-carousels": { label: "Carusele Exemple", commandLabel: "Deschide Carusele Exemple", hint: "Exemple publice, configurări, verificare și publicare pe servicii", icon: Image },
   documents: {label:"Centru Documente",mobileLabel:"Documente",commandLabel:"Deschide Centrul de Documente",hint:"Bibliotecă Agenție, tipizate, generator și documente pentru staff",icon:BookOpen},

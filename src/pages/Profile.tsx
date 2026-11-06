@@ -51,6 +51,7 @@ const StaffPromotionsTab = lazyWithRetry(() => import("@/components/dashboard/St
 const AiOsConsole = lazyWithRetry(() => import("@/pages/intern/AiOs"));
 const AiProductionEntryCard = lazyWithRetry(() => import("@/components/dashboard/AiProductionEntryCard"));
 const AvyEngine = lazyWithRetry(() => import("@/pages/intern/AvyEngine"));
+const CollaboratorsTab = lazyWithRetry(() => import("@/components/dashboard/collaborators/CollaboratorsTab"));
 const AntivirusTab = lazyWithRetry(() => import("@/components/dashboard/AntivirusTab"));
 const AvyronOverview = lazyWithRetry(() => import("@/components/dashboard/AvyronOverview"));
 const CustomerHomeTab = lazyWithRetry(() => import("@/components/dashboard/CustomerHomeTab").then((m) => ({ default: m.CustomerHomeTab })));
@@ -81,9 +82,9 @@ export default function Profile() {
 
 function ProfileDashboard() {
   const { user, profile, roles, capabilities,
-    platformRole,
+    platformRole, hasCollaborations,
     isSuperAdmin, isStaff, isAdmin, signOut } = useAuth();
-  const access = useMemo(() => buildAccess({ roles, capabilities, email: user?.email, superadmin: isSuperAdmin }), [roles, capabilities, user?.email, isSuperAdmin]);
+  const access = useMemo(() => buildAccess({ roles, capabilities, email: user?.email, superadmin: isSuperAdmin,hasCollaborations }), [roles, capabilities, user?.email, isSuperAdmin,hasCollaborations]);
   const [params, setParams] = useSearchParams();
   const requested = params.get("tab") === "workflows" ? "projects" : params.get("tab") === "platform-control" ? "os-centers" : (params.get("tab") ?? "");
   const [tab, setTab] = useState<SectionId>(canOpenSection(requested, access) ? (requested as SectionId)
@@ -284,6 +285,7 @@ function ProfileDashboard() {
           {access.isClient && (
                 <><TabsContent value="catalog" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["catalog"].label} className="mt-0"><CustomerCatalogTab /></TabsContent><TabsContent value="orders" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["orders"].label} className="mt-0"><OrdersTab /></TabsContent><TabsContent value="subscriptions" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["subscriptions"].label} className="mt-0"><SubscriptionsTab /></TabsContent><TabsContent value="payments" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["payments"].label} className="mt-0"><BillingSettingsCard /></TabsContent><TabsContent value="invoices" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["invoices"].label} className="mt-0"><InvoicesTab /></TabsContent><TabsContent value="cart" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["cart"].label} className="mt-0"><CartTab /></TabsContent><TabsContent value="stats" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["stats"].label} className="mt-0"><StatsTab /></TabsContent><TabsContent value="tickets" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["tickets"].label} className="mt-0"><TicketsTab /></TabsContent></>
               )}
+            {canOpenSection("my-collaborations",access)&&<TabsContent value="my-collaborations" role="region" aria-label="Colaborările mele" className="mt-0"><CollaboratorsTab portal /></TabsContent>}
           {canOpenSection("intern",access)&&<TabsContent value="intern" role="region" aria-label="Mesaje"><StaffChatTab /></TabsContent>}
           <TabsContent value="documents" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["documents"].label} className="mt-0"><DocumentCenter /></TabsContent>
           {canOpenSection("ai-projects", access) && (
@@ -307,6 +309,7 @@ function ProfileDashboard() {
 
             <TabsContent value="announcements" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["announcements"].label} className="mt-0"><StaffAnnouncementsTab /></TabsContent>
             <TabsContent value="resources" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["resources"].label} className="mt-0"><DocumentCenter initialView="staff" /></TabsContent>
+            {canOpenSection("collaborators",access)&&<TabsContent value="collaborators" role="region" aria-label="Colaboratori și parteneri" className="mt-0"><CollaboratorsTab /></TabsContent>}
             {canOpenSection("antivirus", access) && <TabsContent value="antivirus" role="region" aria-label="Antivirus" className="mt-0"><AntivirusTab /></TabsContent>}
             {canOpenSection("example-carousels", access) && <TabsContent value="example-carousels" role="region" aria-label="Carusele Exemple" className="mt-0"><ExampleCarouselsTab /></TabsContent>}
             <TabsContent value="careers" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["careers"].label} className="mt-0"><ResourceSurfaceTab kind="career" /></TabsContent>

@@ -1,3 +1,5 @@
+import {collaboratorsRouter} from "./collaborators";
+import {collaborationIdentity} from "./collaboratorPolicy";
 import { antivirusRouter } from "./antivirus";
 import { maintainMalwareScans } from "./malware";
 import { matchesRasterSignature } from "./imageSignature";
@@ -869,6 +871,7 @@ app.get("/api/auth/me", requireAuth, async (c) => {
   const platformRole = await platformRoleForUser(c.env.DB, c.get("userId"));
   return c.json({
     user: u, profile, roles: c.get("roles"), superadmin: platformRole !== null, platformRole,
+    ...await collaborationIdentity(c.env.DB,c.get("userId")),
     capabilities: capabilityRows.map((row) => row.capability),
   });
 });
@@ -1727,6 +1730,10 @@ app.use("/api/admin/example-carousels*", requireAuth);
 app.use("/api/antivirus/*", requireAuth);
 app.use("/api/antivirus", requireAuth);
 app.route("/", antivirusRouter);
+app.use("/api/collaborators*",requireAuth);
+app.use("/api/collaborations*",requireAuth);
+app.use("/api/my/collaborations",requireAuth);
+app.route("/",collaboratorsRouter);
 app.route("/", exampleCarouselsRouter);
 app.route("/", catalogCodesRouter);
 app.use("/api/documents", requireAuth);

@@ -25,6 +25,7 @@ export type DocumentRow = {
   created_by: string;
   created_at: number;
   updated_at: number;
+  collaborator_id?: string | null;
 };
 export async function documentActor(
   db: D1Database,
@@ -90,7 +91,7 @@ export function documentVisibility(
   const beneficiary = `(${alias}.beneficiary_id IS NULL OR EXISTS(SELECT 1 FROM client_account_access ca WHERE ca.client_id=${alias}.beneficiary_id AND ca.user_id=?) OR EXISTS(SELECT 1 FROM organization_memberships om JOIN client_organizations co ON co.organization_id=om.organization_id JOIN organizations o ON o.id=om.organization_id WHERE co.client_id=${alias}.beneficiary_id AND om.user_id=? AND om.status='active' AND o.status='active'))`;
   if (actor.staff)
     return {
-      sql: `(${alias}.scope<>'company' AND (${alias}.scope='staff' OR ((${alias}.created_by=? OR ${grant}) AND ${beneficiary})))`,
+      sql: `(${alias}.scope<>'company' AND (${alias}.scope='staff' OR ((${alias}.created_by=? OR ${grant}) AND ${beneficiary})))${actor.capabilities.some(c=>c.organization_id===null&&['collaborators.read','collaborators.manage'].includes(c.capability))?'':` AND NOT EXISTS(SELECT 1 FROM agency_collaborators ac WHERE ac.document_id=${alias}.id)`}`,
       values: [actor.id, actor.id, actor.id, actor.id],
     };
   return {
@@ -104,10 +105,12 @@ export async function accessibleDocument(
   id: string,
 ) {
   const filter = documentVisibility(actor);
-  return db
+  const row = await db
     .prepare(`SELECT d.* FROM documents d WHERE d.id=? AND ${filter.sql}`)
     .bind(id, ...filter.values)
     .first<DocumentRow>();
+  if (row?.number.startsWith('COL-AVP-')) row.collaborator_id=(await db.prepare('SELECT id FROM agency_collaborators WHERE document_id=?').bind(row.id).first<{id:string}>())?.id || null;
+  return row;
 }
 export async function documentActionAllowed(
   db: D1Database,
@@ -115,6 +118,7 @@ export async function documentActionAllowed(
   document: DocumentRow,
   permission: DocumentPermission,
 ) {
+  if(document.collaborator_id&&!['documents.read','documents.export','documents.backups.manage'].includes(permission)) return false;
   if (
     document.scope === "company" &&
     !documentCapability(actor, "documents.company.owner")
