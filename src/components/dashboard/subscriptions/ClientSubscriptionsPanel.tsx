@@ -986,7 +986,7 @@ export default function ClientSubscriptionsPanel({
                 poate primi acces prin fluxul existent. Nu trimitem invitații
                 sau facturi automat.
               </p>
-              <div className="flex justify-end gap-2">
+              <div className="flex flex-wrap justify-end gap-2">
                 <Button
                   type="button"
                   variant="ghost"
@@ -1046,7 +1046,7 @@ export default function ClientSubscriptionsPanel({
                 Asocierea contului acordă acces la fișa acestui client conform
                 politicilor existente.
               </label>
-              <div className="flex justify-end gap-2">
+              <div className="flex flex-wrap justify-end gap-2">
                 <Button
                   variant="outline"
                   disabled={busy}

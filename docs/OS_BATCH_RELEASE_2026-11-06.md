@@ -46,6 +46,8 @@ Suita completă următoare a trecut 220/224 scenarii și a identificat patru reg
 
 Review-ul automat a identificat și trei probleme corectate înainte de merge: maparea rutelor Media la permisiunile de proiect, marcarea clienților vechi/noi ca gestionați în aceeași tranzacție cu înlocuirea asocierilor staff (pentru ca o revocare să nu fie anulată de asocierea legacy prin e-mail) și reîmprospătarea snapshotului public în buildul Worker standalone. Regresiile folosesc handler-ele Hono, verificarea permisiunilor și SQLite reale, inclusiv o demotare urmată de accesarea facturilor/abonamentelor. Decodarea entităților SVG este într-o singură trecere; metadatele shellului privat folosesc atribute escapate și substituții literale, iar eliminarea JSON-LD se repetă până la stabilizare. Cele 70 de teste țintite au trecut înaintea reluării buildurilor și CI.
 
+Suita GitHub se execută pe PR și pe `main`, eliminând dublarea aceleiași verificări la fiecare push pe o ramură cu PR. Buildurile și testele obligatorii rămân în aceeași suită. Testul suplimentar de 304 px a identificat și butoanele formularului de alocare; acestea se încadrează acum pe mai multe rânduri, ca în evidența abonamentelor interne.
+
 ## Configurare amânată și limite explicite
 
 Utilizatorul a confirmat că **nu există încă un cont Bouncer și nici DPA/evaluare aprobată a transferului**. Cheia, aprobarea procesării sensibile și verificarea confidențialității stocării rămân neconfigurate. Nicio scanare reală și niciun document al clientului nu au fost trimise furnizorului. Uploadurile care necesită aceste verificări rămân blocate; încărcările istorice nu devin CLEAN prin migrare. Limitele Free sunt plafonate la 500/lună și 25.000.000 bytes/fișier, fără depășire automată ori abonament nou.
