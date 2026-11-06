@@ -600,3 +600,25 @@
 .dc-history .text-slate-500 {
   color: #94a3b8;
 }
+
+/* Document layout uses the same hierarchy as the PDF and editable Word export. */
+.dc-output-actions { display: flex; flex-wrap: wrap; gap: .55rem; }
+.dc-modern-paper { --paper-ink: #17243b; --paper-accent: #6550a3; background: #fff; color: var(--paper-ink); overflow-wrap: anywhere; }
+.dc-paper-brand { display: flex; align-items: baseline; flex-wrap: wrap; gap: .7rem; padding: 0 0 .85rem; margin-bottom: .85rem; border-bottom: 3px solid #6550a3; }
+.dc-paper-brand strong { letter-spacing: .15em; color: #493773; font-size: .95rem; }
+.dc-paper-brand span { color: #526078; font: 10px monospace; letter-spacing: .1em; }
+.dc-modern-paper .dc-paper-title { font-size: clamp(1.3rem, 3vw, 1.85rem); font-weight: 700; line-height: 1.2; color: #111827; margin-bottom: 1.1rem; }
+.dc-modern-paper .dc-paper-body { line-height: 1.7; }
+.dc-modern-paper .dc-paper-body > p:first-child { color: #374761; font-size: .95rem; }
+.dc-modern-paper .dc-paper-body h3, .dc-modern-paper .dc-paper-body h4, .dc-modern-paper .tiptap h2, .dc-modern-paper .tiptap h3 { color: var(--paper-accent); font-weight: 700; margin-top: 1.4rem; margin-bottom: .65rem; break-after: avoid; }
+.dc-modern-paper table { border-collapse: collapse; width: 100%; }
+.dc-modern-paper th { background: #f2f0f8; color: #43346b; font-weight: 700; }
+.dc-modern-paper td, .dc-modern-paper th { border: 1px solid #dce1ed; padding: .65rem; vertical-align: top; }
+.dc-modern-paper td p, .dc-modern-paper th p { margin: 0 0 .4rem; line-height: 1.55; }
+.dc-modern-paper td p:last-child, .dc-modern-paper th p:last-child { margin-bottom: 0; }
+.dc-paper-totals { display: grid; gap: .65rem; margin-top: 1rem; }
+.dc-paper-totals > div { border-left: 3px solid #6550a3; background: #f7f6fb; padding: .8rem 1rem; }
+.dc-paper-totals h4 { color: #6550a3; font-weight: 700; font-size: .8rem; }
+.dc-paper-totals small { display: block; color: #526078; margin-top: .35rem; line-height: 1.6; }
+@media (max-width: 640px) { .dc-output-actions { display: grid; grid-template-columns: 1fr; } .dc-output-actions .dc-button { width: 100%; justify-content: center; white-space: normal; } .dc-modern-paper td, .dc-modern-paper th { padding: .45rem; } }
+.dc-field-placeholder { display: inline; padding: .05rem .2rem; border-radius: .2rem; background: #fff4d9; color: #73520d; font-size: .9em; box-decoration-break: clone; -webkit-box-decoration-break: clone; }

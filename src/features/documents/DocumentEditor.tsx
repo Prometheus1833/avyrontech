@@ -12,6 +12,7 @@ import {
   type DocumentNode,
 } from "@/shared/documents/model";
 import { FIELD_LABELS, templateFields } from "@/shared/documents/templates";
+import { isModernDocument } from "@/shared/documents/design";
 import { registerDocumentSave } from "./navigation";
 import { sanitizeDocumentPaste } from "./sanitizePaste";
 
@@ -315,6 +316,7 @@ export default function DocumentEditor({
                     />
                   </label>
                 ))}
+                <label className="dc-check sm:col-span-3 !text-slate-300"><input type="checkbox" disabled={readonly} checked={line.priceConfirmed} onChange={(e) => setDraft((value) => ({ ...value, lines: value.lines.map((item, i) => i === index ? { ...item, priceConfirmed: e.target.checked } : item) }))} />Confirm prețul ofertat pentru această poziție</label>
               </div>
             ))}
           </div>
@@ -402,6 +404,12 @@ export default function DocumentEditor({
         )}
         <div className="min-w-0">
           <div className="dc-toolbar" aria-label="Instrumente de editare">
+            <label className="dc-label">
+              Design document
+              <select className="dc-input !mt-0 !py-1" disabled={readonly} value={isModernDocument(draft) ? "avyron-2026" : "classic"} onChange={(e) => setDraft((v) => { const labels = { ...v.labels }; if (e.target.value === "avyron-2026") labels.__avyron_design = "2026"; else delete labels.__avyron_design; return { ...v, labels }; })}>
+                <option value="avyron-2026">AVYRON modern</option><option value="classic">Aspect original</option>
+              </select>
+            </label>
             {tool(
               "Aldin",
               () => editor?.chain().focus().toggleBold().run(),
@@ -477,7 +485,8 @@ export default function DocumentEditor({
             className="overflow-auto rounded-lg bg-slate-950/50 p-2 sm:p-4"
             style={{ maxHeight: "78vh" }}
           >
-            <div className="dc-page" style={{ zoom: `${zoom}%` }}>
+            <div className={`dc-page ${isModernDocument(draft) ? "dc-modern-paper" : ""}`} style={{ zoom: `${zoom}%` }}>
+              {isModernDocument(draft) && <div className="dc-paper-brand"><strong>AVYRON</strong><span>DOCUMENT CENTER</span></div>}
               <label className="dc-label !text-slate-500">
                 Antet
                 <input

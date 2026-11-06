@@ -20,6 +20,7 @@ import {
   BorderStyle,
   ImageRun,
 } from "docx";
+import { DOCUMENT_DESIGN, commercialTotalReady, commercialTotals, billingLabel, isModernDocument, readableDocumentDraft } from "../../../../src/shared/documents/design";
 import { documentBrandPng } from "./documentBrand";
 import {
   plainText,
@@ -28,7 +29,16 @@ import {
   type DocumentPayload,
 } from "../../../../src/shared/documents/model";
 pdfMake.addVirtualFileSystem(fonts);
-const pdfNode = (node: DocumentNode): Content => {
+const modernTableLayout = {
+  hLineWidth: () => 0.5,
+  vLineWidth: () => 0,
+  hLineColor: () => `#${DOCUMENT_DESIGN.rule}`,
+  paddingLeft: () => 7,
+  paddingRight: () => 7,
+  paddingTop: () => 6,
+  paddingBottom: () => 6,
+};
+const pdfNode = (node: DocumentNode, modern = false): Content => {
   if (node.type === "text")
     return {
       text: node.text || "",
@@ -74,24 +84,24 @@ const pdfNode = (node: DocumentNode): Content => {
           row.map((cell) =>
             cell
               ? {
-                  stack: (cell.content || []).map(pdfNode),
+                  stack: (cell.content || []).map((child) => pdfNode(child, modern)),
                   colSpan: cell.attrs?.colspan || 1,
                   rowSpan: cell.attrs?.rowspan || 1,
                   fillColor:
-                    cell.type === "tableHeader" ? "#edf0f8" : undefined,
+                    cell.type === "tableHeader" ? (modern ? `#${DOCUMENT_DESIGN.tint}` : "#edf0f8") : undefined,
                 }
               : { text: "" },
           ),
         ),
       },
-      layout: "lightHorizontalLines",
+      layout: modern ? modernTableLayout : "lightHorizontalLines",
       margin: [0, 8, 0, 12],
     };
   if (["bulletList", "orderedList"].includes(node.type))
     return node.type === "bulletList"
-      ? { ul: (node.content || []).map(pdfNode), margin: [0, 3, 0, 9] }
+      ? { ul: (node.content || []).map((child) => pdfNode(child, modern)), margin: [0, 3, 0, 9] }
       : {
-          ol: (node.content || []).map(pdfNode),
+          ol: (node.content || []).map((child) => pdfNode(child, modern)),
           start: node.attrs?.start || 1,
           margin: [0, 3, 0, 9],
         };
@@ -100,18 +110,18 @@ const pdfNode = (node: DocumentNode): Content => {
       node.type,
     )
   )
-    return { stack: (node.content || []).map(pdfNode) };
+    return { stack: (node.content || []).map((child) => pdfNode(child, modern)) };
   return {
-    text: (node.content || []).map(pdfNode),
+    text: (node.content || []).map((child) => pdfNode(child, modern)),
     fontSize:
-      node.type === "heading" ? (node.attrs?.level === 1 ? 19 : 13) : 10.5,
+      node.type === "heading" ? (node.attrs?.level === 1 ? 19 : modern ? 12 : 13) : 10.5,
     bold: node.type === "heading",
-    color: node.type === "heading" ? "#26314d" : "#222b3e",
+    color: modern ? `#${node.type === "heading" ? DOCUMENT_DESIGN.accent : DOCUMENT_DESIGN.ink}` : node.type === "heading" ? "#26314d" : "#222b3e",
     margin: node.type === "heading" ? [0, 14, 0, 7] : [0, 0, 0, 7],
     ...(node.type === "heading"
       ? { headlineLevel: node.attrs?.level || 2 }
       : {}),
-    lineHeight: 1.2,
+    lineHeight: modern ? 1.16 : 1.2,
   };
 };
 const money = (value: number, currency: string) =>
@@ -124,12 +134,26 @@ export function pdfDefinition(
   version: number,
   draft: boolean,
 ): TDocumentDefinitions {
+  const modern = isModernDocument(payload);
+  if (modern && draft) payload = readableDocumentDraft(payload);
+  const body: Content[] = [];
+  const nodes = payload.body.content || [];
+  for (let i = 0; i < nodes.length; i++) {
+    const next = nodes[i + 1];
+    if (modern && nodes[i].type === "heading" && next?.type === "paragraph" && plainText(next).length <= 900) {
+      // Bound the group so a long contractual clause can still flow over pages.
+      body.push({ stack: [pdfNode(nodes[i], modern), pdfNode(next, modern)], unbreakable: true });
+      i++;
+    } else body.push(pdfNode(nodes[i], modern));
+  }
+  const keepCommercialTogether = modern && payload.lines.length <= 6 && commercialTotals(payload.lines).length <= 3 && payload.lines.reduce((n,l) => n+l.label.length+l.sku.length+l.discountReason.length,0) <= 900;
   const table: Content[] = payload.lines.length
     ? [
         {
           text: "Deviz · valori în unități monetare",
+          ...(modern ? { id: "commercial-estimate" } : {}),
           bold: true,
-          margin: [0, 16, 0, 7],
+          margin: [0, 16, 0, 7] as [number, number, number, number],
         },
         {
           table: {
@@ -143,21 +167,30 @@ export function pdfDefinition(
                 "Catalog / unit.",
                 "Ofertat / unit.",
                 "TVA",
-              ],
+              ].map((text) => modern ? { text, bold: true, fillColor: `#${DOCUMENT_DESIGN.tint}`, color: `#${DOCUMENT_DESIGN.accent}` } : text),
               ...payload.lines.map((line) => [
-                `${line.label}\n${line.sku} · ${line.billingCycle}${line.discountReason ? "\n" + line.discountReason : ""}`,
+                `${line.label}\n${line.sku} · ${modern ? billingLabel(line.billingCycle) : line.billingCycle}${line.discountReason ? "\n" + line.discountReason : ""}`,
                 line.quantity,
                 line.catalogPriceMinor === null
                   ? "La ofertare"
                   : money(line.catalogPriceMinor, line.currency),
-                money(line.offeredPriceMinor, line.currency),
-                `${line.vatBasisPoints / 100}%`,
+                modern && line.priceConfirmed === false ? "De confirmat" : money(line.offeredPriceMinor, line.currency),
+                modern && line.taxVerified === false ? "De verificat" : `${line.vatBasisPoints / 100}%`,
               ]),
             ],
           },
-          layout: "lightHorizontalLines",
+          layout: modern ? modernTableLayout : "lightHorizontalLines",
         },
-        {
+        ...(modern ? commercialTotals(payload.lines).map((total, index, totals): Content => ({
+          stack: !commercialTotalReady(payload.lines, total) ? [
+            { text: billingLabel(total.cycle), bold: true },
+            { text: "Totalul se calculează după confirmarea prețurilor și a regimului fiscal.", ...(index === totals.length - 1 ? { id: "commercial-total-final" } : {}) },
+          ] : [
+            { text: `${billingLabel(total.cycle)} · ${total.currency}`, color: `#${DOCUMENT_DESIGN.accent}`, bold: true, fontSize: 10 },
+            { text: `Valoare fără taxe: ${money(total.net, total.currency)} · Taxe înscrise: ${money(total.tax, total.currency)}`, fontSize: 9, margin: [0, 4, 0, 3] },
+            { text: `Total cu taxele înscrise: ${money(total.gross, total.currency)}`, bold: true, fontSize: 12, ...(index === totals.length - 1 ? { id: "commercial-total-final" } : {}) },
+          ], margin: [0, 12, 0, 0],
+        })) : [        {
           text: `Total cu taxele înscrise: ${money(
             payload.lines.reduce(
               (sum, line) =>
@@ -172,22 +205,27 @@ export function pdfDefinition(
             payload.lines[0].currency,
           )}`,
           bold: true,
-          margin: [0, 10, 0, 0],
-        },
+          margin: [0, 10, 0, 0] as [number, number, number, number],
+        },]),
       ]
     : [];
   return {
     pageSize: "A4",
-    pageMargins: [48, 86, 48, 66],
+    pageMargins: modern ? [44, 82, 44, 66] : [48, 86, 48, 66],
+    ...(modern ? { pageBreakBefore: (node, queries) => {
+      if (node.id === "commercial-estimate" && keepCommercialTogether && queries.getPreviousNodesOnPage().length > 0)
+        return !queries.getFollowingNodesOnPage().some((following) => following.id === "commercial-total-final");
+      return !!node.headlineLevel && queries.getFollowingNodesOnPage().length === 0;
+    } } satisfies Partial<TDocumentDefinitions> : {}),
     defaultStyle: { font: "Roboto", fontSize: 10.5 },
     info: {
       title: payload.title,
       author: "AVYRON",
       subject: `${number} · v${version}`,
     },
-    header: {
-      margin: [48, 24, 48, 12],
-      columns: [
+    header: () => ({
+      margin: modern ? [44, 22, 44, 12] : [48, 24, 48, 12],
+      stack: [{ columns: [
         { image: documentBrandPng, width: 28 },
         {
           stack: [
@@ -196,10 +234,10 @@ export function pdfDefinition(
           ],
           margin: [10, 0, 0, 0],
         },
-      ],
-    },
+      ] }, ...(modern ? [{ canvas: [{ type: "line" as const, x1: 0, y1: 0, x2: 507, y2: 0, lineWidth: 1.5, lineColor: `#${DOCUMENT_DESIGN.accent}` }], margin: [0, 9, 0, 0] as [number,number,number,number] }] : [])],
+    }),
     footer: (page, pages) => ({
-      margin: [48, 15, 48, 15],
+      margin: modern ? [44, 15, 44, 15] : [48, 15, 48, 15],
       columns: [
         {
           text: `${payload.footer}\n${number} · v${version}`,
@@ -225,7 +263,7 @@ export function pdfDefinition(
         text: payload.title,
         fontSize: 22,
         bold: true,
-        color: "#222b50",
+        color: modern ? "#111827" : "#222b50",
         margin: [0, 0, 0, 8],
       },
       {
@@ -234,17 +272,17 @@ export function pdfDefinition(
         color: "#596477",
         margin: [0, 0, 0, 16],
       },
-      ...(payload.body.content || []).map(pdfNode),
+      ...body,
       ...table,
     ],
   };
 }
-const textRuns = (node: DocumentNode): TextRun[] =>
+const textRuns = (node: DocumentNode, forceBold = false): TextRun[] =>
   node.type === "text"
     ? [
         new TextRun({
           text: node.text || "",
-          bold: node.marks?.some((m) => m.type === "bold"),
+          bold: forceBold || node.marks?.some((m) => m.type === "bold"),
           italics: node.marks?.some((m) => m.type === "italic"),
           underline: node.marks?.some((m) => m.type === "underline")
             ? {}
@@ -252,8 +290,8 @@ const textRuns = (node: DocumentNode): TextRun[] =>
           strike: node.marks?.some((m) => m.type === "strike"),
         }),
       ]
-    : (node.content || []).flatMap(textRuns);
-function wordNodes(node: DocumentNode, depth = 0): Array<Paragraph | Table> {
+    : (node.content || []).flatMap((child) => textRuns(child, forceBold));
+function wordNodes(node: DocumentNode, depth = 0, modern = false, forceBold = false): Array<Paragraph | Table> {
   if (node.type === "pageBreak")
     return [new Paragraph({ children: [new PageBreak()] })];
   if (node.type === "image" && node.attrs?.src)
@@ -274,6 +312,11 @@ function wordNodes(node: DocumentNode, depth = 0): Array<Paragraph | Table> {
     return [
       new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
+        ...(modern ? {
+          layout: TableLayoutType.FIXED,
+          columnWidths: documentTableGrid(node)[0].map(() => Math.floor(10006 / documentTableGrid(node)[0].length)),
+          borders: Object.fromEntries(["top", "bottom", "left", "right", "insideHorizontal", "insideVertical"].map(edge => [edge, { style: BorderStyle.SINGLE, size: 4, color: DOCUMENT_DESIGN.rule }])),
+        } : {}),
         rows: (node.content || []).map(
           (row) =>
             new TableRow({
@@ -282,14 +325,15 @@ function wordNodes(node: DocumentNode, depth = 0): Array<Paragraph | Table> {
               children: (row.content || []).map(
                 (cell) =>
                   new TableCell({
+                    ...(modern ? { margins: { top: 100, bottom: 100, left: 120, right: 120 } } : {}),
                     columnSpan: cell.attrs?.colspan || 1,
                     rowSpan: cell.attrs?.rowspan || 1,
                     shading:
                       cell.type === "tableHeader"
-                        ? { fill: "EDF0F8" }
+                        ? { fill: modern ? DOCUMENT_DESIGN.tint : "EDF0F8" }
                         : undefined,
                     children: (cell.content || []).flatMap((child) =>
-                      wordNodes(child),
+                      wordNodes(child, depth, modern, modern && cell.type === "tableHeader"),
                     ),
                   }),
               ),
@@ -299,7 +343,7 @@ function wordNodes(node: DocumentNode, depth = 0): Array<Paragraph | Table> {
     ];
   if (node.type === "bulletList")
     return (node.content || []).flatMap((child) => {
-      const result = wordNodes(child, depth + 1);
+      const result = wordNodes(child, depth + 1, modern);
       return result;
     });
   if (node.type === "orderedList")
@@ -315,19 +359,19 @@ function wordNodes(node: DocumentNode, depth = 0): Array<Paragraph | Table> {
   if (node.type === "listItem")
     return [
       new Paragraph({
-        children: textRuns(node),
+        children: textRuns(node, forceBold),
         bullet: { level: Math.min(depth - 1, 3) },
         spacing: { after: 100 },
       }),
     ];
   if (["doc", "blockquote"].includes(node.type))
-    return (node.content || []).flatMap((n) => wordNodes(n, depth));
+    return (node.content || []).flatMap((n) => wordNodes(n, depth, modern));
   return [
     new Paragraph({
       children:
         node.type === "hardBreak"
           ? [new TextRun({ break: 1 })]
-          : textRuns(node),
+          : textRuns(node, forceBold),
       heading:
         node.type === "heading"
           ? node.attrs?.level === 1
@@ -352,6 +396,8 @@ export async function exportDocument(
         .createPdf(pdfDefinition(payload, number, version, draft))
         .getBuffer(),
     );
+  const modern = isModernDocument(payload);
+  if (modern && draft) payload = readableDocumentDraft(payload);
   const logo = Uint8Array.from(atob(documentBrandPng.split(",")[1]), (c) =>
     c.charCodeAt(0),
   );
@@ -384,13 +430,13 @@ export async function exportDocument(
               "TVA",
             ],
             ...payload.lines.map((l) => [
-              `${l.label} · ${l.sku}\n${l.billingCycle}\n${l.discountReason}`,
+              `${l.label} · ${l.sku}\n${modern ? billingLabel(l.billingCycle) : l.billingCycle}\n${l.discountReason}`,
               String(l.quantity),
               l.catalogPriceMinor === null
                 ? "La ofertare"
                 : money(l.catalogPriceMinor, l.currency),
-              money(l.offeredPriceMinor, l.currency),
-              `${l.vatBasisPoints / 100}%`,
+              modern && l.priceConfirmed === false ? "De confirmat" : money(l.offeredPriceMinor, l.currency),
+              modern && l.taxVerified === false ? "De verificat" : `${l.vatBasisPoints / 100}%`,
             ]),
           ].map(
             (row, i) =>
@@ -404,7 +450,7 @@ export async function exportDocument(
                         size: [4400, 800, 1800, 1800, 1206][column],
                         type: WidthType.DXA,
                       },
-                      shading: i === 0 ? { fill: "EDF0F8" } : undefined,
+                      shading: i === 0 ? { fill: modern ? DOCUMENT_DESIGN.tint : "EDF0F8" } : undefined,
                       margins: { top: 100, bottom: 100, left: 100, right: 100 },
                       children: [
                         new Paragraph({
@@ -419,7 +465,14 @@ export async function exportDocument(
               }),
           ),
         }),
-        new Paragraph({
+        ...(modern ? commercialTotals(payload.lines).flatMap((total) => !commercialTotalReady(payload.lines, total) ? [
+          new Paragraph({ text: billingLabel(total.cycle), heading: HeadingLevel.HEADING_2 }),
+          new Paragraph("Totalul se calculează după confirmarea prețurilor și a regimului fiscal."),
+        ] : [
+          new Paragraph({ text: `${billingLabel(total.cycle)} · ${total.currency}`, heading: HeadingLevel.HEADING_2 }),
+          new Paragraph({ text: `Valoare fără taxe: ${money(total.net, total.currency)} · Taxe înscrise: ${money(total.tax, total.currency)}`, spacing: { after: 80 } }),
+          new Paragraph({ children: [new TextRun({ text: `Total cu taxele înscrise: ${money(total.gross, total.currency)}`, bold: true, size: 24 })], spacing: { after: 160 } }),
+        ]) : [        new Paragraph({
           spacing: { before: 160 },
           children: [
             new TextRun({
@@ -439,7 +492,7 @@ export async function exportDocument(
               )}`,
             }),
           ],
-        }),
+        }),]),
       ]
     : [];
   const doc = new Document({
@@ -447,13 +500,14 @@ export async function exportDocument(
     title: payload.title,
     styles: {
       default: {
-        document: { run: { font: "Arial", size: 21, color: "263046" } },
+        document: { run: { font: "Arial", size: 21, color: modern ? DOCUMENT_DESIGN.ink : "263046" }, ...(modern ? { paragraph: { spacing: { line: 290, after: 140 } } } : {}) },
+        ...(modern ? { title: { run: { font: "Arial", size: 44, bold: true, color: "111827" }, paragraph: { keepNext: true, spacing: { before: 0, after: 160 } } } } : {}),
         heading1: {
           run: { font: "Arial", size: 34, bold: true, color: "222B50" },
           paragraph: { spacing: { before: 280, after: 180 }, keepNext: true },
         },
         heading2: {
-          run: { font: "Arial", size: 26, bold: true, color: "3D377B" },
+          run: { font: "Arial", size: 26, bold: true, color: modern ? DOCUMENT_DESIGN.accent : "3D377B" },
           paragraph: { spacing: { before: 240, after: 140 }, keepNext: true },
         },
       },
@@ -477,6 +531,7 @@ export async function exportDocument(
           default: new Header({
             children: [
               new Paragraph({
+                ...(modern ? { border: { bottom: { style: BorderStyle.SINGLE, color: DOCUMENT_DESIGN.accent, size: 12, space: 8 } }, spacing: { after: 120 } } : {}),
                 children: [
                   new ImageRun({
                     type: "png",
@@ -486,7 +541,7 @@ export async function exportDocument(
                   new TextRun({
                     text: `  ${payload.header}`,
                     size: 17,
-                    color: "3D377B",
+                    color: modern ? DOCUMENT_DESIGN.accent : "3D377B",
                   }),
                 ],
               }),
@@ -500,7 +555,7 @@ export async function exportDocument(
                 alignment: AlignmentType.RIGHT,
                 children: [
                   new TextRun({
-                    text: `${payload.footer} · ${number} · v${version} · `,
+                    text: `${payload.footer} · ${number} · v${version}${modern && draft ? " · CIORNĂ NEAPROBATĂ" : ""} · `,
                     size: 16,
                   }),
                   new TextRun({
@@ -525,7 +580,7 @@ export async function exportDocument(
             text: `${number} · v${version}${draft ? " · CIORNĂ NEAPROBATĂ" : ""}`,
             spacing: { after: 240 },
           }),
-          ...wordNodes(payload.body),
+          ...wordNodes(payload.body, 0, modern),
           ...lines,
         ],
       },

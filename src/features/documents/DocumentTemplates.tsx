@@ -8,7 +8,10 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { plainText } from "@/shared/documents/model";
+import { replaceVariables } from "@/shared/documents/model";
+import { automaticDocumentFields } from "@/shared/documents/autofill";
+import DocumentReader from "./DocumentReader";
+import { FIELD_LABELS } from "@/shared/documents/templates";
 import { serviceDocumentProfile } from "@/shared/documents/services";
 import { TEMPLATE_META } from "./presentation";
 export default function DocumentTemplates({
@@ -57,7 +60,7 @@ export default function DocumentTemplates({
           <h2 className="text-xl font-semibold">Alege modelul potrivit</h2>
           <p className="mt-1 text-sm text-slate-400">
             Citește modelul, apoi creează o copie personalizată. Originalul
-            rămâne neschimbat.
+            rămâne neschimbat. Datele emitentului se preiau din Documente SC.
           </p>
         </div>
         <span className="dc-tag">{matching.length} modele</span>
@@ -206,28 +209,7 @@ export default function DocumentTemplates({
           </DialogHeader>
           {preview && (
             <>
-              <article className="dc-template-paper">
-                <p className="dc-kicker">AVYRON · Model de document</p>
-                <h2 className="mt-2 font-display text-2xl font-semibold">
-                  {preview.name}
-                </h2>
-                <div className="mt-5 space-y-4">
-                  {preview.payload.body.content?.map((node, i) =>
-                    node.type === "heading" ? (
-                      <h3 key={i} className="font-semibold text-violet-950">
-                        {plainText(node)}
-                      </h3>
-                    ) : (
-                      <p
-                        key={i}
-                        className="whitespace-pre-wrap text-sm leading-7"
-                      >
-                        {plainText(node)}
-                      </p>
-                    ),
-                  )}
-                </div>
-              </article>
+              <DocumentReader fieldLabels={FIELD_LABELS} payload={replaceVariables(preview.payload, { ...preview.payload.fields, ...automaticDocumentFields(context.company, undefined, new Date().toLocaleDateString("ro-RO"), false) })} />
               <button
                 className="dc-button dc-primary justify-self-start"
                 disabled={

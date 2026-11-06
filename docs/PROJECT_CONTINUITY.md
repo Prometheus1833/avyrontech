@@ -135,3 +135,7 @@ Continuare din `efccced` (#100, incluzând #94–#99), pe `codex/client-account-
 ## Creează Logo și produse Development achitate — 6 noiembrie 2026
 
 Continuare din `4924253` (#101, întregul lot #94–#101 verificat verde), pe `codex/client-logo-paid-products-2026-11-06`. [Runbookul](./CLIENT_LOGO_PAID_PRODUCTS.md) descrie intrarea către simulatorul existent, autentificarea comună site/cont pe hostul API fără extinderea cookie-ului la subdomenii, recenziile precompletate cu aprobare păstrată și istoricul paginat al produselor cu plată confirmată. Nu adaugă migrări, roluri, tarife sau furnizori. Sesiunile vechi pot necesita reautentificare o dată. Utilizatorul a omis Hugging Face și a autorizat explicit D1 Write pentru backup/migrări. Starea release-ului și verificările finale se consemnează în PR; această notă nu dovedește merge/deploy.
+
+## Generator Documente — structură și exporturi AVYRON, 06.11.2026
+
+Continuare de la PR #103 (`b6c4f7b`) pe ramură dedicată: [DOCUMENT_GENERATOR_EDITORIAL.md](./DOCUMENT_GENERATOR_EDITORIAL.md). Acțiuni directe de salvare/PDF/Word/pregătire distribuire, previzualizare comună și 11 familii cu structură modernă, cu noi versiuni de master și păstrarea personalizărilor/istoricului. 0099 este aditivă. Utilizatorul a confirmat păstrarea sediului din OS și completarea ulterioară a ONRC/reprezentant/capital în Documente SC. Consultați PR-ul pentru verificări și starea efectivă a migrării/deployului; documentul de continuitate nu dovedește o lansare.

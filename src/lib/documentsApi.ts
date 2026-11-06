@@ -251,8 +251,12 @@ export const documentsApi = {
       link = document.createElement("a");
     link.href = url;
     link.download = name;
+    link.style.display = "none";
+    document.body.appendChild(link);
     link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    link.remove();
+    // Safari may consume the blob after the async export response has completed.
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
   },
   import: (id: string, file: File) =>
     cfAuth.request<{ id: string; status: string }>(`${root}/${id}/import`, {

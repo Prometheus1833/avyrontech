@@ -116,6 +116,7 @@ export const companyFieldLabels: Record<string, string> = {
   legal_name: "Denumire juridică",
   tax_id: "CUI / identificator fiscal",
   registration_number: "Registrul Comerțului",
+  share_capital: "Capital social (valoare și monedă)",
   address: "Sediu social",
   representative: "Reprezentant autorizat",
   contact_email: "E-mail de contact",

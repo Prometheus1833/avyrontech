@@ -256,6 +256,7 @@ export default function AgencyDocumentCenter({
             },
             { replace: true },
           );
+        return data;
       } catch (e) {
         if (sequence === openSequence.current && mounted.current)
           setError((e as Error).message);
@@ -520,7 +521,7 @@ export default function AgencyDocumentCenter({
     share.message,
     share.attachment,
   ]);
-  const prepareAction = async (next: typeof action) => {
+  const prepareAction = async (next: typeof action, source = detail) => {
     if (next === "share") {
       shareRequestKey.current = crypto.randomUUID();
       setShare((v) => ({
@@ -537,7 +538,7 @@ export default function AgencyDocumentCenter({
     }
     setShareResult(null);
     setError("");
-    if (detail && !(await save.current())) {
+    if (source && source === detail && !(await save.current())) {
       setError("Salvează ciorna înainte de continuare.");
       return;
     }
@@ -560,9 +561,9 @@ export default function AgencyDocumentCenter({
         return;
       }
     }
-    if (detail && (next === "publish" || next === "share")) {
+    if (source && (next === "publish" || next === "share")) {
       try {
-        setRecipients((await documentsApi.recipients(detail.document.id)).data);
+        setRecipients((await documentsApi.recipients(source.document.id)).data);
       } catch (e) {
         setError((e as Error).message);
         return;
@@ -586,19 +587,20 @@ export default function AgencyDocumentCenter({
             "address",
             "representative",
             "contact_email",
+            "share_capital",
           ].map((key) => [key, context?.company[key] || ""]),
         ),
       );
     setAction(next);
   };
-  const download = async (format: "pdf" | "docx", asPreview = false) => {
-    if (!detail) return;
+  const download = async (format: "pdf" | "docx", asPreview = false, source = detail) => {
+    if (!source) return;
     setBusy(true);
     setError("");
     try {
-      if (!(await save.current()))
+      if (source === detail && !(await save.current()))
         throw new Error("Documentul nu a putut fi salvat.");
-      const data = await documentsApi.get(detail.document.id, requestVersion);
+      const data = await documentsApi.get(source.document.id, source === detail ? requestVersion : source.version.id);
       if (asPreview) {
         const blob = await documentsApi.blob(
           `/${data.document.id}/export/pdf?version=${data.version.id}&preview=1`,
@@ -1066,7 +1068,14 @@ export default function AgencyDocumentCenter({
             }
             lockedClientId={embedded ? clientId : undefined}
             initialScope={generatorScope}
-            onCreated={(id) => void open(id)}
+            canExport={!!bootstrap.permissions["documents.export"]}
+            canShare={!!bootstrap.permissions["documents.share"]}
+            onCreated={(id, action) => void (async () => {
+              const data = await open(id);
+              if (!data) return;
+              if (action === "pdf" || action === "docx") await download(action, false, data);
+              else if (action === "share") await prepareAction("share", data);
+            })()}
             onCancel={() => void switchView("library")}
             onContextRefresh={refreshContext}
           />
@@ -1438,6 +1447,7 @@ export default function AgencyDocumentCenter({
           )}
           {action === "share" && detail && (
             <div className="dc-grid">
+              {!detail.approvals.length && <p className="dc-notice">Poți pregăti mesajul, dar documentul trebuie verificat și aprobat înainte de trimitere. Publicarea pentru client se face separat.</p>}
               <p className="text-sm font-medium">
                 {detail.version.payload.title} · v{detail.version.version}
               </p>
@@ -1564,7 +1574,7 @@ export default function AgencyDocumentCenter({
                 className="dc-button dc-primary"
                 disabled={
                   busy ||
-                  !share.confirmed ||
+                  !detail.approvals.length || !share.confirmed ||
                   !share.recipientId ||
                   (share.attachment !== "none" && !share.attachmentConfirmed)
                 }

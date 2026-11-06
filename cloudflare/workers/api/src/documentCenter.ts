@@ -32,6 +32,7 @@ import {
   type DocumentPermission,
 } from "../../../../src/shared/documents/model";
 import { DOCUMENT_TEMPLATES } from "../../../../src/shared/documents/templates";
+import { isModernDocument, DOCUMENT_RENDERER } from "../../../../src/shared/documents/design";
 import { SERVICE_COMMERCIAL_SOURCES } from "../../../../src/data/serviceCommercialSources";
 import staffGuides from "./documentStaffGuides.json";
 
@@ -660,7 +661,7 @@ documentCenterRouter.get("/api/documents/context", async (c) => {
       .bind(...templateFilter.values)
       .all(),
     c.env.DB.prepare(
-      "SELECT legal_name,tax_id,registration_number,address,representative,contact_email FROM document_company_profile WHERE id='avyron'",
+      "SELECT legal_name,tax_id,registration_number,address,representative,contact_email,share_capital FROM document_company_profile WHERE id='avyron'",
     ).first(),
     c.env.DB.prepare(
       "SELECT catalog_id,configuration_json FROM document_service_profiles",
@@ -1558,14 +1559,15 @@ documentCenterRouter.put("/api/documents/settings/company", async (c) => {
       address: z.string().max(1000),
       representative: z.string().max(240),
       contact_email: z.string().email().max(254),
+      share_capital: z.string().max(120).optional(),
     })
     .strict();
   const b = schema.safeParse(await c.req.json().catch(() => null));
   if (!b.success) return error(c, "invalid_input");
   return write(c, { ok: true }, [
     c.env.DB.prepare(
-      "UPDATE document_company_profile SET legal_name=?,tax_id=?,registration_number=?,address=?,representative=?,contact_email=?,updated_by=?,updated_at=? WHERE id='avyron'",
-    ).bind(...Object.values(b.data), c.get("userId"), stamp()),
+      "UPDATE document_company_profile SET legal_name=?,tax_id=?,registration_number=?,address=?,representative=?,contact_email=?,share_capital=COALESCE(?,share_capital),updated_by=?,updated_at=? WHERE id='avyron'",
+    ).bind(b.data.legal_name,b.data.tax_id,b.data.registration_number,b.data.address,b.data.representative,b.data.contact_email,b.data.share_capital ?? null,c.get("userId"),stamp()),
   ]);
 });
 documentCenterRouter.put("/api/documents/settings/client/:id", async (c) => {
@@ -1678,15 +1680,18 @@ async function generatedFile(
 ) {
   if (c.env.DOCUMENT_STORAGE_PRIVACY_VERIFIED !== "true")
     throw new Error("document_storage_unverified");
+  const payload: DocumentPayload = JSON.parse(version.payload_json);
+  const modern = isModernDocument(payload);
+  const rendererVersion = modern ? DOCUMENT_RENDERER : "classic";
   const approved = !!(await c.env.DB.prepare(
     "SELECT 1 FROM document_approvals WHERE version_id=?",
   )
     .bind(version.id)
     .first());
   const known = await c.env.DB.prepare(
-    "SELECT id,object_key,file_name,content_type FROM document_files WHERE version_id=? AND kind=? AND scan_status='clean_generated' AND (expires_at IS NULL OR expires_at>?) AND ((?=1 AND expires_at IS NULL) OR (?=0 AND expires_at IS NOT NULL)) ORDER BY created_at DESC LIMIT 1",
+    "SELECT id,object_key,file_name,content_type FROM document_files WHERE version_id=? AND kind=? AND renderer_version=? AND scan_status='clean_generated' AND (expires_at IS NULL OR expires_at>?) AND ((?=1 AND expires_at IS NULL) OR (?=0 AND expires_at IS NOT NULL)) ORDER BY created_at DESC LIMIT 1",
   )
-    .bind(version.id, format, stamp(), approved ? 1 : 0, approved ? 1 : 0)
+    .bind(version.id, format, rendererVersion, stamp(), approved ? 1 : 0, approved ? 1 : 0)
     .first<{
       id: string;
       object_key: string;
@@ -1713,10 +1718,10 @@ async function generatedFile(
   if (!c.env.DOCUMENT_EXPORTS)
     throw new Error("document_export_runtime_unconfigured");
   const renderer = c.env.DOCUMENT_EXPORTS.getByName(
-    `${version.id}:${format}:${approved ? "final" : "draft"}`,
+    `${version.id}:${format}:${approved ? "final" : "draft"}${modern ? `:${DOCUMENT_RENDERER}` : ""}`,
   );
   const bytes = await renderer.render(
-    JSON.parse(version.payload_json),
+    payload,
     d.number,
     version.version,
     format,
@@ -1732,11 +1737,12 @@ async function generatedFile(
         : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
   await c.env.FILES.put(objectKey, bytes, {
     httpMetadata: { contentType: ct },
+    ...(modern ? { customMetadata: { documentRenderer: DOCUMENT_RENDERER } } : {}),
   });
   try {
     await c.env.DB.batch([
       c.env.DB.prepare(
-        "INSERT INTO document_files(id,document_id,version_id,kind,object_key,file_name,content_type,sha256,size_bytes,scan_status,expires_at,created_at) VALUES(?,?,?,?,?,?,?,?,?,'clean_generated',?,?)",
+        "INSERT INTO document_files(id,document_id,version_id,kind,object_key,file_name,content_type,sha256,size_bytes,scan_status,expires_at,created_at,renderer_version) VALUES(?,?,?,?,?,?,?,?,?,'clean_generated',?,?,?)",
       ).bind(
         id,
         d.id,
@@ -1749,6 +1755,7 @@ async function generatedFile(
         bytes.length,
         approved ? null : stamp() + 86400000,
         stamp(),
+        rendererVersion,
       ),
       audit(c, d.id, "export.created", version.id, { format }),
     ]);
@@ -1756,9 +1763,9 @@ async function generatedFile(
     await c.env.FILES.delete(objectKey);
     if (/UNIQUE constraint failed/.test(String(cause))) {
       const winner = await c.env.DB.prepare(
-        "SELECT id,object_key,file_name,content_type FROM document_files WHERE version_id=? AND kind=? AND scan_status='clean_generated' AND ((?=1 AND expires_at IS NULL) OR (?=0 AND expires_at>?))",
+        "SELECT id,object_key,file_name,content_type FROM document_files WHERE version_id=? AND kind=? AND renderer_version=? AND scan_status='clean_generated' AND ((?=1 AND expires_at IS NULL) OR (?=0 AND expires_at>?))",
       )
-        .bind(version.id, format, approved ? 1 : 0, approved ? 1 : 0, stamp())
+        .bind(version.id, format, rendererVersion, approved ? 1 : 0, approved ? 1 : 0, stamp())
         .first<{
           id: string;
           object_key: string;

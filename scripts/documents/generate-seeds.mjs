@@ -1,5 +1,7 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { build } from "esbuild";
+if (existsSync("cloudflare/d1/migrations/0076_document_template_families.sql"))
+  throw new Error("0076 is immutable. Use a new additive template migration; never regenerate an applied seed.");
 const output = await build({
   stdin: {
     contents:

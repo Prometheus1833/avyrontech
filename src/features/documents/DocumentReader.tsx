@@ -1,15 +1,16 @@
+import { readableField, isModernDocument, commercialTotalReady, commercialTotals, billingLabel, documentMoney as money } from "@/shared/documents/design";
 import { Fragment, type ReactNode } from "react";
 import {
   replaceVariables,
   type DocumentNode,
   type DocumentPayload,
 } from "@/shared/documents/model";
-function nodeView(node: DocumentNode): ReactNode {
+function nodeView(node: DocumentNode, labels: Record<string,string>, modern: boolean): ReactNode {
   const children = node.content?.map((child, index) => (
-    <Fragment key={index}>{nodeView(child)}</Fragment>
+    <Fragment key={index}>{nodeView(child, labels, modern)}</Fragment>
   ));
   if (node.type === "text") {
-    let value: ReactNode = node.text || "";
+    let value: ReactNode = modern ? (node.text || "").split(/(\{\{[a-zA-Z0-9_.-]+\}\})/g).map((part, index) => part.startsWith("{{") ? <span key={index} className="dc-field-placeholder">De completat: {readableField(part, labels)}</span> : part) : node.text || "";
     for (const mark of node.marks || [])
       value =
         mark.type === "bold" ? (
@@ -111,37 +112,26 @@ function nodeView(node: DocumentNode): ReactNode {
       return <>{children}</>;
   }
 }
-const money = (value: number, currency: string) =>
-  new Intl.NumberFormat("ro-RO", { style: "currency", currency }).format(
-    value / 100,
-  );
 export default function DocumentReader({
   payload,
+  fieldLabels,
 }: {
   payload: DocumentPayload;
+  fieldLabels?: Record<string,string>;
 }) {
-  const document = replaceVariables(payload, payload.fields),
-    totals = new Map<string, number>();
-  for (const line of document.lines)
-    totals.set(
-      line.currency,
-      (totals.get(line.currency) || 0) +
-        Math.round(
-          line.quantity *
-            line.offeredPriceMinor *
-            (1 + line.vatBasisPoints / 10000),
-        ),
-    );
+  const document = replaceVariables(payload, payload.fields);
+  const totals = commercialTotals(document.lines);
   return (
     <article
       aria-label="Conținutul documentului"
-      className="min-w-0 rounded-xl bg-white p-4 text-sm text-slate-900 shadow-sm sm:p-8"
+      className={`dc-document-paper min-w-0 rounded-xl bg-white p-4 text-sm text-slate-900 shadow-sm sm:p-8 ${isModernDocument(document) ? "dc-modern-paper" : ""}`}
     >
+      {isModernDocument(document) && <div className="dc-paper-brand"><strong>AVYRON</strong><span>DOCUMENT CENTER</span></div>}
       <p className="whitespace-pre-wrap border-b border-slate-200 pb-3 text-xs text-slate-600">
         {document.header}
       </p>
-      <p className="mt-5 text-lg font-semibold">{document.title}</p>
-      <div className="break-words">{nodeView(document.body)}</div>
+      <p className="dc-paper-title mt-5 text-lg font-semibold">{document.title}</p>
+      <div className="dc-paper-body break-words">{nodeView(document.body, { ...document.labels, ...fieldLabels }, isModernDocument(document))}</div>
       {document.lines.length > 0 && (
         <section className="mt-6">
           <h3 className="font-semibold">Servicii și produse incluse</h3>
@@ -171,7 +161,7 @@ export default function DocumentReader({
                     <td className="border border-slate-300 p-2">
                       {line.label}
                       <span className="block text-[10px]">
-                        {line.sku} · {line.billingCycle}
+                        {line.sku} · {billingLabel(line.billingCycle)}
                       </span>
                       {line.discountReason && (
                         <span className="block">{line.discountReason}</span>
@@ -186,21 +176,23 @@ export default function DocumentReader({
                         : money(line.catalogPriceMinor, line.currency)}
                     </td>
                     <td className="border border-slate-300 p-2">
-                      {money(line.offeredPriceMinor, line.currency)}
+                      {line.priceConfirmed === false ? "De confirmat" : money(line.offeredPriceMinor, line.currency)}
                     </td>
                     <td className="border border-slate-300 p-2">
-                      {line.vatBasisPoints / 100}%
+                      {line.taxVerified === false ? "De verificat" : `${line.vatBasisPoints / 100}%`}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          {[...totals].map(([currency, value]) => (
-            <p key={currency} className="mt-3 font-semibold">
-              Total cu taxele înscrise: {money(value, currency)}
-            </p>
-          ))}
+          <div className="dc-paper-totals">{totals.map((total) => (
+            <div key={`${total.currency}:${total.cycle}`}>
+              <h4>{billingLabel(total.cycle)} · {total.currency}</h4>
+              {commercialTotalReady(document.lines, total) ? <><small>Valoare fără taxe: {money(total.net, total.currency)} · Taxe înscrise: {money(total.tax, total.currency)}</small>
+              <p className="mt-2 font-semibold">Total cu taxele înscrise: {money(total.gross, total.currency)}</p></> : <p className="mt-2 text-xs">Totalul se calculează după confirmarea prețurilor și a regimului fiscal.</p>}
+            </div>
+          ))}</div>
         </section>
       )}
       <p className="mt-6 whitespace-pre-wrap border-t border-slate-200 pt-3 text-xs text-slate-600">

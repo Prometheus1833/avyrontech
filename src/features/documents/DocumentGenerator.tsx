@@ -25,26 +25,10 @@ import {
   type CommercialLine,
 } from "@/shared/documents/model";
 import { serviceDocumentProfile } from "@/shared/documents/services";
-import { FIELD_LABELS, templateFields } from "@/shared/documents/templates";
+import { applicableTemplatePayload, FIELD_LABELS, templateFields } from "@/shared/documents/templates";
+import DocumentReader from "./DocumentReader";
 
-function applicablePayload(
-  model: DocumentTemplate,
-  mode: string,
-): DocumentPayload {
-  if (model.id !== "privacy" || mode === "DPA") return model.payload;
-  const content = model.payload.body.content || [];
-  const boundary = content.findIndex(
-    (node) =>
-      node.type === "heading" &&
-      node.content?.some((text) => text.text?.startsWith("Art. 3.")),
-  );
-  return boundary < 0
-    ? model.payload
-    : {
-        ...model.payload,
-        body: { ...model.payload.body, content: content.slice(0, boundary) },
-      };
-}
+export type GeneratedDocumentAction = "edit" | "pdf" | "docx" | "share";
 const steps = [
   "Context și model",
   "Date și personalizare",
@@ -64,6 +48,8 @@ export default function DocumentGenerator({
   onCreated,
   onCancel,
   onContextRefresh,
+  canExport = false,
+  canShare = false,
 }: {
   context: DocumentContext;
   lockedClientId?: string;
@@ -74,9 +60,11 @@ export default function DocumentGenerator({
   initialSubscriptionId?: string;
   company?: boolean;
   initialScope?: DocumentScope;
-  onCreated: (id: string) => void;
+  onCreated: (id: string, action: GeneratedDocumentAction) => void;
   onCancel: () => void;
   onContextRefresh: () => Promise<void>;
+  canExport?: boolean;
+  canShare?: boolean;
 }) {
   const contextKey = useRef(crypto.randomUUID());
   const [manualMode, setManualMode] = useState(false);
@@ -226,6 +214,13 @@ export default function DocumentGenerator({
       .filter(Boolean)
       .join("; "),
     privacy_mode: "Confidențialitate",
+    offer_variant: "Ofertă personalizată",
+    deliverables: catalogIds.flatMap((id) => {
+      const item = context.catalog.find((c) => c.id === id);
+      if (!item) return [];
+      return `${item.display_name}: ${serviceDocumentProfile(item, context.serviceProfiles.find((p) => p.catalog_id === id)?.configuration_json).deliverables}`;
+    }).join("\n"),
+    objectives: futureProject.description.trim(),
     ...fields,
   };
   const serviceFields = Object.fromEntries(
@@ -247,7 +242,8 @@ export default function DocumentGenerator({
     ...new Set([
       ...models.flatMap((t) => [
         ...t.required,
-        ...templateFields(applicablePayload(t, automatic.privacy_mode)),
+        ...templateFields(applicableTemplatePayload(t.payload, t.family, automatic)),
+        ...(t.family === "offer" ? ["optional_extras"] : []),
       ]),
       ...Object.keys(serviceFields),
       ...Object.keys(automatic).filter((key) => key.startsWith("provider.") || (manualMode && key.startsWith("beneficiary.")) || (!!futureProject.name && key.startsWith("project.future_"))),
@@ -356,7 +352,7 @@ export default function DocumentGenerator({
       : []),
   ]);
   const build = (model: DocumentTemplate): DocumentPayload => {
-    const original = applicablePayload(model, automatic.privacy_mode);
+    const original = applicableTemplatePayload(model.payload, model.family, automatic);
     const relevantFields = new Set([
       ...model.required,
       ...templateFields(original),
@@ -475,7 +471,7 @@ export default function DocumentGenerator({
               sku: item.sku || "",
               quantity: 1,
               catalogPriceMinor: item.base_price_minor,
-              priceConfirmed: item.base_price_minor !== null,
+              priceConfirmed: item.base_price_minor !== null && item.price_model === "fixed",
               offeredPriceMinor: item.base_price_minor ?? 0,
               discountReason: "",
               currency: item.currency,
@@ -517,7 +513,7 @@ export default function DocumentGenerator({
       setBusy(false);
     }
   };
-  const create = async () => {
+  const create = async (action: GeneratedDocumentAction = "edit") => {
     setCreationStarted(true);
     setBusy(true);
     setError("");
@@ -556,7 +552,7 @@ export default function DocumentGenerator({
         results[i] = result.id;
         setCreated([...results]);
       }
-      onCreated(results[0]);
+      onCreated(results[0], action);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -1189,6 +1185,7 @@ export default function DocumentGenerator({
                   />
                 </label>
               ))}
+              <label className="dc-check sm:col-span-4"><input type="checkbox" checked={line.priceConfirmed} onChange={(e) => setLines((values) => values.map((item, index) => index === i ? { ...item, priceConfirmed: e.target.checked } : item))} />Confirm prețul ofertat pentru această poziție</label>
             </div>
           ))}
           <p className="dc-notice">
@@ -1215,7 +1212,7 @@ export default function DocumentGenerator({
                 {issues.length ? (
                   <ul className="mt-3 space-y-1 text-xs text-amber-200">
                     {issues.map((issue) => (
-                      <li key={issue}>{issue}</li>
+                      <li key={issue}>{issue.replace(/Completează: (.+)/, (_, key) => `Completează: ${FIELD_LABELS[key] || serviceFields[key] || key}`)}</li>
                     ))}
                   </ul>
                 ) : (
@@ -1227,12 +1224,8 @@ export default function DocumentGenerator({
                   <summary className="cursor-pointer text-sm text-violet-300">
                     Previzualizare conținut
                   </summary>
-                  <div className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-300">
-                    {draft.body.content?.map((node, i) => (
-                      <p className="mb-2" key={i}>
-                        {node.content?.map((n) => n.text || "").join("")}
-                      </p>
-                    ))}
+                  <div className="mt-3">
+                    <DocumentReader payload={draft} />
                   </div>
                 </details>
               </article>
@@ -1250,15 +1243,17 @@ export default function DocumentGenerator({
             Creează {models.length === 1 ? "ciorna" : `${models.length} ciorne`}
           </h3>
           <p className="text-sm text-slate-400">
-            Deschidem editorul vizual. Poți descărca PDF și Word; ciornele
-            sunt marcate ca neaprobate. Aprobarea și publicarea se fac separat.
+            Salvăm documentul în Biblioteca Agenției, apoi continuăm cu acțiunea
+            aleasă. Exporturile neaprobate sunt marcate ca ciorne.
           </p>
+          {models.length > 1 && <p className="text-xs text-slate-400">Se creează întregul lot și se deschide primul document. Celelalte rămân în bibliotecă.</p>}
           {created.length > 0 && (
             <p role="status">
               {created.length} documente create. Reîncercarea continuă lotul
               fără duplicare.
             </p>
           )}
+          <div className="dc-output-actions" role="group" aria-label="Salvare și export document">
           <button
             className="dc-button dc-primary justify-self-start"
             disabled={busy || !!contextError}
@@ -1266,6 +1261,10 @@ export default function DocumentGenerator({
           >
             {busy ? "Se creează…" : "Creează și deschide editorul"}
           </button>
+          {canExport && (["pdf", "docx"] as const).map((format) => <button key={format} className="dc-button" disabled={busy || !!contextError} onClick={() => void create(format)}>Salvează și descarcă {format === "pdf" ? "PDF" : "Word (.docx)"}</button>)}
+          {canShare && <button className="dc-button" disabled={busy || !!contextError} onClick={() => void create("share")}>Salvează și pregătește distribuirea</button>}
+          </div>
+          <p className="text-xs text-slate-400">Distribuirea cere aprobare, un destinatar autorizat și confirmarea ta. Documentul nu se trimite automat.</p>
         </div>
       )}
       <div className="flex justify-between gap-2">
