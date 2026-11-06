@@ -95,7 +95,8 @@ describe("domain lookup input", () => {
       }
       if (url === "https://rdap.registry.test/domain/nume-liber.com") return new Response(null, { status: 404 });
       if (url === "https://rdap.registry.test/domain/avyron.com") return Response.json({ objectClassName: "domain" });
-      if (url.includes("cloudflare-dns.com") && url.includes("nume-liber.ro")) {
+      const parsed = new URL(url);
+      if (parsed.origin === "https://cloudflare-dns.com" && parsed.pathname === "/dns-query" && parsed.searchParams.get("name") === "nume-liber.ro") {
         return Response.json({ Status: 3 });
       }
       throw new Error(`Unexpected test request: ${url}`);
