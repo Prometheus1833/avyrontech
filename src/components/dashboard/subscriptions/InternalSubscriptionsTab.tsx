@@ -179,7 +179,7 @@ export default function InternalSubscriptionsTab() {
             Conturi, planuri și reînnoiri pentru instrumentele echipei.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex min-w-0 flex-wrap gap-2">
           <Button
             variant="outline"
             aria-label="Reîmprospătează evidența"
@@ -188,7 +188,7 @@ export default function InternalSubscriptionsTab() {
             <RefreshCw className="size-4" />
           </Button>
           {data?.canManage && (
-            <Button onClick={() => start()}>
+            <Button className="h-auto min-h-10 max-w-full whitespace-normal" onClick={() => start()}>
               <Plus className="mr-2 size-4" />
               Adaugă cont / abonament
             </Button>

@@ -1,4 +1,15 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page, type Locator } from "@playwright/test";
+async function expectNoOverflow(locator: Locator) {
+  const layout = await locator.evaluate((element) => ({
+    width: element.clientWidth,
+    scroll: element.scrollWidth,
+    outliers: [...element.querySelectorAll("*")]
+      .filter((child) => child.getBoundingClientRect().right > element.getBoundingClientRect().right + 1)
+      .slice(0, 15)
+      .map((child) => ({ tag: child.tagName, css: child.className, text: child.textContent?.slice(0, 60) })),
+  }));
+  expect(layout.scroll, JSON.stringify(layout)).toBeLessThanOrEqual(layout.width + 1);
+}
 const when = Date.UTC(2027, 0, 31, 12);
 const billing = {
   entityType: "company",
@@ -521,9 +532,7 @@ for (const width of [304, 320, 390])
           .map((animation) => animation.finished.catch(() => undefined)),
       );
     });
-    expect(await d.evaluate((e) => e.scrollWidth <= e.clientWidth + 1)).toBe(
-      true,
-    );
+    await expectNoOverflow(d);
     await page.screenshot({
       path: info.outputPath(`allocation-mobile-${width}.png`),
     });
@@ -532,19 +541,11 @@ for (const width of [304, 320, 390])
     await expect(
       page.getByRole("heading", { name: "Abonamente AVYRON", exact: true }),
     ).toBeVisible();
-    expect(
-      await page.evaluate(
-        () =>
-          document.documentElement.scrollWidth <=
-          document.documentElement.clientWidth + 1,
-      ),
-    ).toBe(true);
+    await expectNoOverflow(page.locator("html"));
     await page.getByRole("button", { name: "Lovable", exact: true }).click();
     const internal = page.getByRole("dialog", {
       name: "Adaugă un cont intern",
     });
     await expect(internal).toBeVisible();
-    expect(
-      await internal.evaluate((e) => e.scrollWidth <= e.clientWidth + 1),
-    ).toBe(true);
+    await expectNoOverflow(internal);
   });
