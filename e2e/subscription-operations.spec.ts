@@ -493,7 +493,7 @@ test("clientul vede planul și condițiile alocate fără navigare internă", as
     page.getByRole("button", { name: "Abonamente AVYRON", exact: true }),
   ).toHaveCount(0);
 });
-for (const width of [320, 390])
+for (const width of [304, 320, 390])
   test(`abonamentele și mini-dashboardurile încap la ${width}px`, async ({
     page,
   }, info) => {

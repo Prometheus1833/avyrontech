@@ -146,13 +146,15 @@ export default function CollaboratorsTab({
   return (
     <div className="min-w-0 space-y-4 text-slate-100">
       <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <div className="w-full min-w-0 sm:w-auto sm:flex-1">
           <p className="text-xs uppercase tracking-widest text-violet-300">
             {portal ? "Contul meu" : "Principal · relații profesionale"}
           </p>
           <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold">
-            <Handshake className="size-6 text-violet-300" />
-            {portal ? "Colaborările mele" : "Colaboratori/Parteneri"}
+            <Handshake className="size-6 shrink-0 text-violet-300" />
+            <span className="min-w-0 [overflow-wrap:anywhere]">
+              {portal ? "Colaborările mele" : "Colaboratori/Parteneri"}
+            </span>
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-300">
             {portal

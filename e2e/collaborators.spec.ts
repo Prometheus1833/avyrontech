@@ -407,7 +407,7 @@ test("business partner badge and user-menu entry are derived from server identit
     page.getByRole("menu").getByText("Avyron Partener", { exact: true }),
   ).toBeVisible();
 });
-for (const width of [320, 390, 1440])
+for (const width of [304, 320, 390, 1440])
   test(`compact partner page and sheet fit ${width}px with accessible controls`, async ({
     page,
   }, info) => {

@@ -42,6 +42,8 @@ Frontendul real pe domeniile AVYRON este livrat împreună cu API-ul și activel
 
 Prima verificare GitHub a primit HTTP 403 de la protecția publică Cloudflare la citirea textelor serviciilor. CI folosește acum explicit snapshotul public versionat, prin opțiunea existentă `SERVICE_CONTENT_SNAPSHOT_SKIP=1`, numai în pasul de build de verificare. Buildul efectiv de lansare continuă să citească textele publicate. Nu sunt relaxate WAF, autorizarea sau validarea câmpurilor; testele snapshotului folosesc în continuare furnizorul local controlat.
 
+Suita completă următoare a trecut 220/224 scenarii și a identificat patru regresii. Au fost corectate restrângerea titlului colaboratorilor, încadrarea butoanelor de abonamente, butoanele lungi din directorul OS și lățimea intrinsecă a cardurilor AVY Engine. Verificările responsive includ suplimentar 304 px pentru a acoperi spațiul disponibil redus de barele native de scroll și diferențele de font. Testul public al caruselului primește acum configurația publică locală controlată, fără a depinde de API-ul de producție încă nelansat; comportamentul fail-closed al caruselului rămâne neschimbat.
+
 ## Configurare amânată și limite explicite
 
 Utilizatorul a confirmat că **nu există încă un cont Bouncer și nici DPA/evaluare aprobată a transferului**. Cheia, aprobarea procesării sensibile și verificarea confidențialității stocării rămân neconfigurate. Nicio scanare reală și niciun document al clientului nu au fost trimise furnizorului. Uploadurile care necesită aceste verificări rămân blocate; încărcările istorice nu devin CLEAN prin migrare. Limitele Free sunt plafonate la 500/lună și 25.000.000 bytes/fișier, fără depășire automată ori abonament nou.

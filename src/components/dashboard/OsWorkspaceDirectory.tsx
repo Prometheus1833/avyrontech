@@ -95,20 +95,23 @@ export default function OsWorkspaceDirectory({
             <article className="os-workspace-row" key={s.id}>
               <div className="flex min-w-0 items-start gap-3">
                 <Icon className="mt-1 size-4 shrink-0 text-violet-300" />
-                <div>
+                <div className="min-w-0 [overflow-wrap:anywhere]">
                   <h3>{meta.label}</h3>
                   <p>{meta.hint}</p>
                 </div>
               </div>
-              <div className="os-workspace-controls">
+              <div className="os-workspace-controls min-w-0 max-w-full">
                 <Button
                   variant="outline"
                   size="sm"
+                  className="h-auto min-h-9 min-w-0 max-w-full whitespace-normal py-2 text-left"
                   onClick={() => onNavigate(s.id)}
                 >
-                  {s.id === "documents"
-                    ? "Bibliotecă"
-                    : `Deschide ${meta.label}`}
+                  <span className="min-w-0 [overflow-wrap:anywhere]">
+                    {s.id === "documents"
+                      ? "Bibliotecă"
+                      : `Deschide ${meta.label}`}
+                  </span>
                   <ArrowUpRight className="ml-1 size-3" />
                 </Button>
                 {s.id === "documents" &&

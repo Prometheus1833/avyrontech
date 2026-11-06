@@ -1,4 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+const exampleDefaults = JSON.parse(readFileSync("src/shared/exampleCarouselDefaults.json", "utf8"));
 
 const consent = () => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
   necessary: true,
@@ -28,6 +30,9 @@ async function mockStaff(page: Page) {
 
 test("public pages remain indexable and fluid on mobile", async ({ page }) => {
   test.setTimeout(120_000);
+  await page.route("**/api/public/example-carousels/premium-website", route =>
+    route.fulfill({ json: { config: exampleDefaults } }),
+  );
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(consent);
 

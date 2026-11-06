@@ -532,7 +532,7 @@ test("Media descarcă numai fișiere CLEAN și oferă backup verificat", async (
   await expect(page.getByRole("dialog").getByRole("button", { name: /Descarcă|Previzualizează imaginea/ })).toHaveCount(0);
   await expect(page.getByRole("dialog")).toContainText("Fișier în carantină");
 });
-for (const width of [320, 390, 1440])
+for (const width of [304, 320, 390, 1440])
   test(`Financiar, Centre, Media și scrolluri uniforme la ${width}px`, async ({
     page,
   }, info) => {
@@ -557,11 +557,23 @@ for (const width of [320, 390, 1440])
           exact: true,
         }),
       ).toBeVisible();
+      const layout = await page.evaluate(() => ({
+        viewport: innerWidth,
+        width: document.documentElement.scrollWidth,
+        outliers: [...document.querySelectorAll("main *")]
+          .filter((e) => e.getBoundingClientRect().right > innerWidth + 1)
+          .slice(0, 12)
+          .map((e) => ({
+            tag: e.tagName,
+            css: e.className,
+            right: e.getBoundingClientRect().right,
+            text: e.textContent?.slice(0, 70),
+          })),
+      }));
       expect(
-        await page.evaluate(
-          () => document.documentElement.scrollWidth <= innerWidth,
-        ),
-      ).toBe(true);
+        layout.width,
+        `${section}: ${JSON.stringify(layout)}`,
+      ).toBeLessThanOrEqual(layout.viewport);
       const thumb = await page.evaluate(() => {
         const css = getComputedStyle(
           document.documentElement,
