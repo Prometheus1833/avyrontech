@@ -205,6 +205,7 @@ export type AiProjectDetail = {
 };
 
 export const aiProjectsApi = {
+  create: (body: { name: string; summary: string; objective: string }, key: string) => cfAuth.request<{id:string;slug:string}>("/api/ai-projects", { method: "POST", headers: { "Idempotency-Key": key }, body: JSON.stringify(body) }),
   list: () => cfAuth.request<{ data: AiProjectListRow[]; platformRole: string | null }>("/api/ai-projects"),
   detail: (slug: string) => cfAuth.request<AiProjectDetail>(`/api/ai-projects/${encodeURIComponent(slug)}`),
   update: (id: string, patch: Record<string, unknown>) =>
@@ -224,7 +225,7 @@ export const aiProjectsApi = {
       method: "PATCH", body: JSON.stringify(patch),
     }),
   runSocialPlan: (projectId: string) =>
-    cfAuth.request<{ ok: true; created: number; processed: number }>(`/api/ai-projects/${projectId}/social-studio/plan`, { method: "POST" }),
+    cfAuth.request<{ ok: true; created: number }>(`/api/ai-projects/${projectId}/social-studio/plan`, { method: "POST" }),
   createSocialBackup: (projectId: string, scope: "configuration" | "content" | "full" = "configuration") =>
     cfAuth.request<{ ok: true; id: string; status: "verified"; sha256: string; byteSize: number; rowCounts: Record<string, number> }>(
       `/api/ai-projects/${projectId}/social-studio/backups`,
@@ -232,8 +233,8 @@ export const aiProjectsApi = {
     ),
   downloadSocialBackup: (projectId: string, backupId: string) =>
     cfAuth.requestResponse(`/api/ai-projects/${projectId}/social-studio/backups/${backupId}/download`),
-  retrySocialJob: (projectId: string, jobId: string) =>
-    cfAuth.request<{ ok: true }>(`/api/ai-projects/${projectId}/social-jobs/${jobId}/retry`, { method: "POST" }),
+  retrySocialJob: (projectId: string, jobId: string, expectedUpdatedAt?: number) =>
+    cfAuth.request<{ ok: true }>(`/api/ai-projects/${projectId}/social-jobs/${jobId}/retry`, { method: "POST", body: JSON.stringify({ expectedUpdatedAt }) }),
   addSocialSource: (projectId: string, input: Record<string, unknown>) =>
     cfAuth.request<{ id: string }>(`/api/ai-projects/${projectId}/social-sources`, { method: "POST", body: JSON.stringify(input) }),
   reviewSocialSource: (projectId: string, sourceId: string, status: "approved" | "rejected") =>

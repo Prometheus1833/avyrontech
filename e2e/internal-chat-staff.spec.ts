@@ -9,7 +9,7 @@ test("rangurile și gestionarea păstrează alocările și separarea drepturilor
   const { captures } = await staffFixture(page);
   await page.goto("/profil?tab=team-staff");
   await expect(
-    page.getByRole("heading", { name: "Membrii Agenției AVYRON", exact: true }),
+    page.getByRole("heading", { name: "AVY STAFF", exact: true }),
   ).toBeVisible();
   for (const p of STAFF_RANKS)
     await expect(
@@ -181,7 +181,7 @@ test("AvyContabil primește navigare financiară, fără proiecte sau marketing"
   await staffFixture(page, { role: "avy_contabil" });
   await page.goto("/profil?tab=team-staff");
   await expect(
-    page.getByRole("heading", { name: "Membrii Agenției AVYRON", exact: true }),
+    page.getByRole("heading", { name: "AVY STAFF", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Cont nou", exact: true }),

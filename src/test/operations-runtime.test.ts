@@ -253,8 +253,43 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
  it('keeps conservative usage and a failed model step when generation fails',async()=>{
   chatSeed();env.AI={run:async()=>{throw new Error('provider error');}} as unknown as Ai;const response=await chat('Cloudflare optimizare');expect(response.status).toBe(200);expect((await response.json()).reply).toBe('Validated answer');const run=db.prepare('SELECT input_tokens,output_tokens,usage_source FROM ai_runs').get()!;expect(run.usage_source).toBe('estimated');expect(Number(run.input_tokens)).toBeGreaterThan(0);expect(Number(run.output_tokens)).toBeGreaterThan(0);expect(db.prepare("SELECT status FROM ai_run_steps WHERE kind='model'").get()!.status).toBe('failed');
  });
- it('does not call the model for uncovered topics or stopped agents',async()=>{
-  chatSeed();const model=vi.fn();env.AI={run:model} as unknown as Ai;expect((await chat('Subiect extraterestru necunoscut')).status).toBe(200);await Promise.all(pending);expect(db.prepare('SELECT COUNT(*) n FROM ai_learning_queue').get()!.n).toBe(1);await req('agents/avy/stop',{enabled:true,reason:'Test pause'});expect((await chat('Cloudflare optimizare')).status).toBe(503);expect(model).not.toHaveBeenCalled();
+ it('answers general questions through the guarded model without adding them to company knowledge',async()=>{
+  chatSeed();const model=vi.fn(async()=>({response:'Explicație generală verificabilă'}));env.AI={run:model} as unknown as Ai;
+  const response=await chat('Explică fotosinteza simplu');expect(response.status).toBe(200);expect(await response.json()).toMatchObject({reply:'Explicație generală verificabilă',answerSource:'model'});expect(model).toHaveBeenCalledTimes(1);
+  const input=model.mock.calls[0] as unknown as [string,{messages:{content:string}[]}];expect(input[1].messages[0].content).toContain('poți discuta subiecte generale');expect(input[1].messages[0].content).toContain('Nu ai acces la documente private');
+  await Promise.all(pending);expect(db.prepare('SELECT COUNT(*) n FROM ai_learning_queue').get()!.n).toBe(0);
+  await req('agents/avy/stop',{enabled:true,reason:'Test pause'});expect((await chat('Cloudflare optimizare')).status).toBe(503);expect(model).toHaveBeenCalledTimes(1);
+  const health=await (await app.request('/api/ai/admin/runtime',{},env)).json();expect(health.blockers).toContain('paused');
+ });
+ it('handles Romanian greetings with diacritics and thanks locally without model costs',async()=>{
+  chatSeed();const model=vi.fn();env.AI={run:model} as unknown as Ai;
+  for(const message of ['Bună!','Mulțumesc mult!','Hello']){const response=await chat(message);expect(response.status).toBe(200);expect(await response.json()).toMatchObject({answerSource:'conversation'});}
+  expect(model).not.toHaveBeenCalled();expect(db.prepare('SELECT SUM(input_tokens+output_tokens) n FROM ai_runs').get()!.n).toBe(0);
+ });
+ it('shows an honest general-conversation fallback if the provider policy is inactive',async()=>{
+  chatSeed();db.exec("UPDATE financial_agent_provider_policies SET status='paused' WHERE agent_slug='avy'");const model=vi.fn();env.AI={run:model} as unknown as Ai;
+  const response=await chat('Explică fotosinteza simplu');expect(response.status).toBe(200);expect(await response.json()).toMatchObject({answerSource:'unavailable',reply:expect.stringContaining('momentan indisponibil')});expect(model).not.toHaveBeenCalled();
+ });
+ it('preserves owned follow-up history and excludes another visitor from it',async()=>{
+  chatSeed();db.exec("UPDATE ai_model_registry SET daily_neuron_limit=5000 WHERE role='primary'; UPDATE ai_agent_versions SET max_tokens=64 WHERE agent_slug='avy'");const model=vi.fn(async()=>({response:'Explicație cu context'}));env.AI={run:model} as unknown as Ai;
+  const first=await (await chat('Explică fotosinteza simplu')).json() as {conversationId:string};
+  const next=await chat('Și de ce este importantă?',{conversationId:first.conversationId});expect((await next.json()).conversationId).toBe(first.conversationId);
+  const messages=(model.mock.calls[1] as unknown as [string,{messages:{content:string}[]}])[1].messages;expect(messages.map(m=>m.content).join(' ')).toContain('Explică fotosinteza simplu');
+  const other=await chat('Și de ce este importantă?',{conversationId:first.conversationId,visitorId:'other-visitor'});expect((await other.json()).conversationId).not.toBe(first.conversationId);
+  expect((model.mock.calls[2] as unknown as [string,{messages:{content:string}[]}])[1].messages.slice(1).map(m=>m.content).join(' ')).not.toContain('Explică fotosinteza simplu');
+ });
+ it('rejects stale configuration versions and delegated writes without replacing approved history',async()=>{
+  const version=db.prepare("SELECT current_version FROM ai_agents WHERE slug='avy'").get()!.current_version as number;
+  const update=(body:unknown)=>app.request('/api/ai/admin/agents/avy',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(body)},env);
+  expect((await update({name:'AVY configurat',expectedVersion:version})).status).toBe(200);
+  expect((await update({name:'Schimbare veche',expectedVersion:version})).status).toBe(409);
+  expect(db.prepare("SELECT name,current_version FROM ai_agents WHERE slug='avy'").get()).toMatchObject({name:'AVY configurat',current_version:version+1});
+  expect(db.prepare("SELECT COUNT(*) n FROM ai_agent_versions WHERE agent_slug='avy' AND version=?").get(version)!.n).toBe(1);
+  actor='delegated';expect((await update({name:'Interzis'})).status).toBe(403);
+ });
+ it('filters public-chat conversation history by agent',async()=>{
+  chatSeed();await chat('Bună!');db.prepare("INSERT INTO ai_conversations(id,agent_slug,channel,language,created_at,last_at,messages) VALUES('other-agent','leads','site','ro',1,1,0)").run();
+  const response=await app.request('/api/ai/admin/conversations?agent=avy',{},env);expect(response.status).toBe(200);expect((await response.json()).data.map((row:{agent_slug:string})=>row.agent_slug)).toEqual(['avy']);
  });
  it('rolls back quota consumption if usage persistence fails',async()=>{
   budget();db.exec("CREATE TRIGGER fail_usage AFTER INSERT ON financial_usage_events BEGIN SELECT RAISE(ABORT,'injected usage failure'); END");await expect(reserve('rollback')).rejects.toThrow();expect(db.prepare('SELECT quota_used FROM financial_provider_quotas').get()!.quota_used).toBe(0);

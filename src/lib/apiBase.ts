@@ -29,3 +29,18 @@ export const API_BASE = detect();
 
 export const apiUrl = (path: string) =>
   path.startsWith("http") ? path : `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
+
+/** One host-only HttpOnly session cookie for the public website and account.
+ * Never broaden the cookie to client subdomains or put refresh tokens in URLs. */
+export function authBaseForHost(host: string, configured?: string): string {
+  if (configured) return configured.replace(/\/+$/, "");
+  return ["avyron.ro", "www.avyron.ro", "app.avyron.ro"].includes(host.toLowerCase())
+    ? FALLBACK
+    : apiBaseForHost(host);
+}
+
+const AUTH_BASE = authBaseForHost(
+  typeof window === "undefined" ? "" : window.location.hostname,
+  import.meta.env.VITE_CF_API_BASE as string | undefined,
+);
+export const authUrl = (path: string) => `${AUTH_BASE}${path}`;

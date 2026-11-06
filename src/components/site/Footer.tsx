@@ -1,6 +1,6 @@
 import { useLang } from "@/i18n/LanguageContext";
 import { Link, useLocation } from "react-router-dom";
-import { Phone, MessageCircle, Mail, LogIn, ArrowRight, Sparkles, ShieldCheck, MessagesSquare, Briefcase } from "lucide-react";
+import { Phone, MessageCircle, Mail, ArrowRight, Sparkles, ShieldCheck, MessagesSquare, Briefcase } from "lucide-react";
 import { COOKIE_SETTINGS_EVENT } from "@/components/site/CookieBanner";
 import { trackEvent } from "@/lib/analytics";
 import logo from "@/assets/avyron-logo.webp";
@@ -282,7 +282,7 @@ const Footer = () => {
           })()}
         </nav>
 
-        <div data-testid="footer-utility-row" className="mx-auto mt-2 grid w-full max-w-[510px] grid-cols-2 gap-2">
+        <div data-testid="footer-utility-row" className="mx-auto mt-2 grid w-full max-w-[250px] grid-cols-1 gap-2">
           <a
             href="https://reclamatiisal.anpc.ro/"
             target="_blank"
@@ -292,10 +292,7 @@ const Footer = () => {
           >
             <img src="/anpc-sal-pictograma.png" alt="ANPC SAL" width={201} height={50} className="h-full max-w-full object-contain" />
           </a>
-          <Link to="/auth" className="inline-flex h-[50px] min-w-0 items-center justify-center gap-1.5 rounded-lg border border-violet-300/25 bg-gradient-to-r from-violet-700/35 to-indigo-700/35 px-2 text-center font-display text-[10px] font-semibold leading-tight text-white transition-colors hover:border-violet-300/60 hover:from-violet-700/55 hover:to-indigo-700/55 sm:text-xs">
-            <LogIn className="size-4 shrink-0 text-violet-200" aria-hidden />
-            <span>{t.auth.loginCta}</span>
-          </Link>
+
         </div>
 
         {/* Copyright — single compact row */}

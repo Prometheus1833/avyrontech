@@ -52,7 +52,7 @@ export function catalogSql({ ITEMS, PROGRESSION, PLANS, generatedAt }) {
   const rows = ITEMS.map((item) => {
     const released = new Date(`${item.released}T00:00:00Z`).getTime();
     const proAt = item.access === "studio" ? shift(released, PROGRESSION.proAfterDays) : null;
-    const freeAt = item.access === "free" ? null : shift(released, PROGRESSION.freeAfterDays);
+    const freeAt = item.access === "free" || item.slug === "logo-studio-3d" ? null : shift(released, PROGRESSION.freeAfterDays);
     return `  (${[
       q(item.slug),
       q(item.type),

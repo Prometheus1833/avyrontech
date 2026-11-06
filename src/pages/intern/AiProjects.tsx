@@ -1,3 +1,4 @@
+import CreateAiProject from "@/components/dashboard/CreateAiProject";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -27,6 +28,7 @@ export default function AiProjects({ embedded = false }: { embedded?: boolean })
   const [projects, setProjects] = useState<AiProjectListRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [canCreate, setCanCreate] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -34,6 +36,7 @@ export default function AiProjects({ embedded = false }: { embedded?: boolean })
     try {
       const result = await aiProjectsApi.list();
       setProjects(result.data);
+      setCanCreate(!!result.platformRole);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Proiectele AI nu au putut fi încărcate.");
     } finally {
@@ -71,11 +74,11 @@ export default function AiProjects({ embedded = false }: { embedded?: boolean })
                 Agenți specializați, strategie, memorie și conținut pentru produsele Avyron și proiectele clienților. Publicarea rămâne controlată și necesită aprobare umană.
               </p>
             </div>
-            <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="grid w-full grid-cols-3 gap-2 text-center sm:w-auto">
               {[
                 [projects.length, "proiecte"], [readyAgents, "agenți gata"], [connected, "canale active"],
               ].map(([value, label]) => (
-                <div key={label} className="min-w-24 rounded-2xl border border-border/60 bg-background/60 px-3 py-3">
+                <div key={label} className="min-w-0 rounded-2xl border border-border/60 bg-background/60 px-3 py-3">
                   <p className="text-xl font-semibold">{loading ? "—" : value}</p>
                   <p className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">{label}</p>
                 </div>
@@ -84,11 +87,12 @@ export default function AiProjects({ embedded = false }: { embedded?: boolean })
           </div>
         </header>
 
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold">Portofoliu administrat</h2>
             <p className="text-sm text-muted-foreground">Separat de proiectele operaționale aflate în lucru.</p>
           </div>
+          {canCreate && <CreateAiProject />}
           <span className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
             <ShieldCheck className="size-3.5 text-emerald-500" /> acces explicit
           </span>

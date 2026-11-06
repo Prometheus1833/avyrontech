@@ -219,7 +219,7 @@ billingRouter.post("/api/billing/payment-methods/setup",async(c)=>{
   const userId=c.get("userId"),user=await c.env.DB.prepare("SELECT email FROM users WHERE id=?").bind(userId).first<{email:string}>();
   if(!user)return c.json({error:{code:"billing_identity_missing"}},409);
   const customer=await ensureStripeCustomer(c.env,userId,user.email),appUrl=(c.env.APP_URL||"https://avyron.ro").replace(/\/+$/,"");
-  const response=await fetch("https://api.stripe.com/v1/checkout/sessions",{method:"POST",headers:stripeHeaders(c.env),body:stripeForm({mode:"setup",customer,success_url:`${appUrl}/profil?tab=payments&metoda=salvata`,cancel_url:`${appUrl}/profil?tab=payments&metoda=anulata`,"payment_method_types[0]":"card","metadata[user_id]":userId})});
+  const response=await fetch("https://api.stripe.com/v1/checkout/sessions",{method:"POST",headers:stripeHeaders(c.env),body:stripeForm({mode:"setup",customer,success_url:`${appUrl}/profil?tab=payments&billingView=settings&metoda=salvata`,cancel_url:`${appUrl}/profil?tab=payments&billingView=settings&metoda=anulata`,"payment_method_types[0]":"card","metadata[user_id]":userId})});
   if(!response.ok)return c.json({error:{code:"setup_provider_failed"}},502);
   const session=await response.json() as {id?:string;url?:string};
   if(!session.id||!session.url)return c.json({error:{code:"setup_provider_invalid_response"}},502);
@@ -234,18 +234,18 @@ billingRouter.post("/api/billing/portal",async(c)=>{
   const identity=await checkStripeAccount(c.env);if(!identity.ok)return c.json({error:{code:identity.code,provider:"stripe"}},503);
   const customer=await c.env.DB.prepare("SELECT provider_customer_id FROM billing_customers WHERE user_id=? AND provider='stripe'").bind(c.get("userId")).first<{provider_customer_id:string}>();
   if(!customer)return c.json({error:{code:"stripe_customer_missing"}},404);const appUrl=(c.env.APP_URL||"https://avyron.ro").replace(/\/+$/,"");
-  const response=await fetch("https://api.stripe.com/v1/billing_portal/sessions",{method:"POST",headers:stripeHeaders(c.env),body:stripeForm({customer:customer.provider_customer_id,return_url:`${appUrl}/profil?tab=payments`})});
+  const response=await fetch("https://api.stripe.com/v1/billing_portal/sessions",{method:"POST",headers:stripeHeaders(c.env),body:stripeForm({customer:customer.provider_customer_id,return_url:`${appUrl}/profil?tab=payments&billingView=settings`})});
   if(!response.ok)return c.json({error:{code:"portal_provider_failed"}},502);const session=await response.json() as {url?:string};return c.json({url:session.url??null},201);
 });
 
-async function recordPaidOrder(env:Env,input:{provider:Provider;providerReference:string;order:OrderRow;subscriptionId?:string|null}){
+export async function recordPaidOrder(env:Env,input:{provider:Provider;providerReference:string;order:OrderRow;subscriptionId?:string|null}){
   const timestamp=Date.now();if(input.order.status==="paid")return {replay:true,invoiced:false};
   const items=orderItems(input.order),recurring=subscriptionItem(items),referenceColumn=input.provider==="stripe"?"stripe_reference":"revolut_reference";
   const statements=[
     env.DB.prepare("INSERT INTO billing_order_fulfillments(order_id,provider,provider_reference,created_at) VALUES (?,?,?,?)").bind(input.order.id,input.provider,input.providerReference,timestamp),
     env.DB.prepare("UPDATE commerce_orders SET status='paid',updated_at=? WHERE id=? AND status!='paid'").bind(timestamp,input.order.id),
-    env.DB.prepare(`INSERT INTO financial_revenues(id,revenue_type,service_name,status,currency,gross_amount_minor,amount_ron_minor,payment_date,payment_processor,payment_method,${referenceColumn},notes,source,external_reference,created_at,updated_at) VALUES (?,?,?,'paid',?,?,?,?,?,'card',?,'Plată confirmată de webhook','system_generated',?,?,?)`)
-      .bind(crypto.randomUUID(),recurring?"subscriptions":"digital_products",orderDescription(items),input.order.currency,input.order.total_cents,input.order.currency.toUpperCase()==="RON"?input.order.total_cents:null,timestamp,input.provider,input.providerReference,input.order.id,timestamp,timestamp),
+    env.DB.prepare(`INSERT INTO financial_revenues(id,revenue_type,service_name,status,currency,gross_amount_minor,amount_ron_minor,payment_date,payment_processor,payment_method,${referenceColumn},notes,source,created_at,updated_at) VALUES (?,?,?,'paid',?,?,?,?,?,'card',?,'Plată confirmată de webhook','system_generated',?,?)`)
+      .bind(crypto.randomUUID(),recurring?"subscriptions":"digital_products",orderDescription(items),input.order.currency,input.order.total_cents,input.order.currency.toUpperCase()==="RON"?input.order.total_cents:null,timestamp,input.provider,input.providerReference,timestamp,timestamp),
     env.DB.prepare("UPDATE billing_checkout_sessions SET status='paid',updated_at=? WHERE order_id=? AND provider=? AND status!='paid'").bind(timestamp,input.order.id,input.provider),
   ];
   if(input.subscriptionId&&recurring&&input.provider==="stripe")statements.push(env.DB.prepare("INSERT OR IGNORE INTO billing_subscriptions(id,user_id,order_id,provider,provider_subscription_id,sku,status,period,amount_minor,currency,created_at,updated_at) VALUES (?,?,?,'stripe',?,?,'active',?,?,?,?,?)").bind(crypto.randomUUID(),input.order.user_id,input.order.id,input.subscriptionId,recurring.sku,recurring.period,input.order.total_cents,input.order.currency,timestamp,timestamp));
@@ -268,7 +268,7 @@ async function syncOblioInvoiceForOrder(env:Env,order:OrderRow){
   const prior=await env.DB.prepare("SELECT status FROM billing_invoices WHERE order_id=? AND provider='oblio'").bind(order.id).first<{status:string}>();
   if(prior?.status==="issued")return true;
   const otherInvoice=await env.DB.prepare("SELECT 1 FROM billing_invoices WHERE order_id=? AND provider!='oblio' AND status='issued' LIMIT 1").bind(order.id).first();
-  const revenueInvoice=await env.DB.prepare("SELECT 1 FROM financial_revenues WHERE external_reference=? AND invoice_number IS NOT NULL AND invoice_number!='' AND archived_at IS NULL LIMIT 1").bind(order.id).first();
+  const revenueInvoice=await env.DB.prepare("SELECT 1 FROM financial_revenues revenue WHERE EXISTS (SELECT 1 FROM billing_order_fulfillments fulfillment WHERE fulfillment.order_id=? AND ((fulfillment.provider='stripe' AND fulfillment.provider_reference=revenue.stripe_reference) OR (fulfillment.provider='revolut' AND fulfillment.provider_reference=revenue.revolut_reference))) AND invoice_number IS NOT NULL AND invoice_number!='' AND archived_at IS NULL LIMIT 1").bind(order.id).first();
   const timestamp=Date.now(),items=orderItems(order);
   const identity=await env.DB.prepare("SELECT COALESCE(bp.invoice_email,u.email) AS email,COALESCE(bp.legal_name,p.company_name,p.display_name,u.email) AS name,COALESCE(bp.tax_id,p.cui) AS tax_id,COALESCE(bp.address,p.address) AS address FROM users u LEFT JOIN profiles p ON p.id=u.id LEFT JOIN billing_profiles bp ON bp.user_id=u.id WHERE u.id=?").bind(order.user_id).first<{email:string;name:string;tax_id:string|null;address:string|null}>();
   const lines=items.map((item)=>({name:item.name||item.sku||item.id||"Serviciu AVYRON",code:item.accountingCode||item.sku||item.id,quantity:item.quantity||1,unitPriceMinor:Math.round((item.lineTotalCents??item.unitPriceCents??order.total_cents)/(item.quantity||1))}));
@@ -280,7 +280,7 @@ async function syncOblioInvoiceForOrder(env:Env,order:OrderRow){
   else try{invoice=await issueOblioInvoice(env,invoiceInput);}catch{invoice={issued:false,reason:"invoice_failed"};}
   await env.DB.prepare("INSERT INTO billing_invoices(id,user_id,order_id,provider,provider_invoice_id,series,number,status,currency,total_minor,document_url,error_code,issued_at,created_at,updated_at) VALUES (?,?,?,'oblio',?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(order_id,provider) DO UPDATE SET provider_invoice_id=excluded.provider_invoice_id,series=excluded.series,number=excluded.number,status=excluded.status,document_url=excluded.document_url,error_code=excluded.error_code,issued_at=excluded.issued_at,updated_at=excluded.updated_at WHERE billing_invoices.status!='issued'")
     .bind(crypto.randomUUID(),order.user_id,order.id,invoice.issued?invoice.providerId:null,invoice.issued?invoice.series:null,invoice.issued?invoice.number:null,invoice.issued?"issued":"pending",order.currency,order.total_cents,invoice.issued?invoice.documentUrl:null,invoice.issued?null:invoice.reason,invoice.issued?timestamp:null,timestamp,timestamp).run();
-  if(invoice.issued)await env.DB.prepare("UPDATE financial_revenues SET invoice_number=?,invoice_date=?,updated_at=? WHERE external_reference=?").bind(`${invoice.series}${invoice.number}`,timestamp,timestamp,order.id).run();
+  if(invoice.issued)await env.DB.prepare("UPDATE financial_revenues SET invoice_number=?,invoice_date=?,updated_at=? WHERE EXISTS (SELECT 1 FROM billing_order_fulfillments fulfillment WHERE fulfillment.order_id=? AND ((fulfillment.provider='stripe' AND fulfillment.provider_reference=financial_revenues.stripe_reference) OR (fulfillment.provider='revolut' AND fulfillment.provider_reference=financial_revenues.revolut_reference)))").bind(`${invoice.series}${invoice.number}`,timestamp,timestamp,order.id).run();
   return invoice.issued;
 }
 

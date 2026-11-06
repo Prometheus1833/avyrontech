@@ -194,7 +194,7 @@
   font-size: 13px;
 }
 @media (max-width: 1199px) {
-  .staff-header-action > span {
+  .staff-header-action > span:not([data-staff-action-icon]) {
     display: none;
   }
   .staff-header-actions [data-testid="nav-date"] span:not([data-nav-date-label]) {
@@ -268,7 +268,7 @@
   }
 }
 
-.staff-header-actions--compact > .staff-header-action > span,
+.staff-header-actions--compact > .staff-header-action > span:not([data-staff-action-icon]),
 .staff-header-actions--compact [data-testid="nav-date"] span:not([data-nav-date-label]) {
   display: none;
 }

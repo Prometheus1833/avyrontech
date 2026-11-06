@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { ArrowRight, Check, Quote, Star } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -76,6 +77,7 @@ function ReviewCard({ review, lang }: { review: PublicReview; lang: Props["lang"
 
 export default function ServiceReviews({ lang }: Props) {
   const t = copy[lang];
+  const { user, profile } = useAuth();
   const [reviews, setReviews] = useState<PublicReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -133,7 +135,10 @@ export default function ServiceReviews({ lang }: Props) {
         </div>
       </div> : <div className="mx-5 mt-8 rounded-[1.5rem] border border-dashed border-violet-400/25 bg-background/65 px-6 py-9 text-center sm:mx-8"><Star className="mx-auto size-7 text-violet-400" aria-hidden /><p className="mt-3 text-sm text-muted-foreground">{t.empty}</p></div>}
     <div className="relative mt-8 px-5 text-center sm:px-8">
-      <Button className="h-12 gap-2 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-7 text-white shadow-lg shadow-violet-800/15 hover:from-violet-500 hover:to-indigo-500" onClick={() => { setOpen(true); setDone(false); setError(""); }}>
+      <Button className="h-12 gap-2 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-7 text-white shadow-lg shadow-violet-800/15 hover:from-violet-500 hover:to-indigo-500" onClick={() => { setForm(current => ({ ...current,
+        displayName: current.displayName || profile?.display_name || user?.display_name || "",
+        email: current.email || user?.email || "",
+      })); setOpen(true); setDone(false); setError(""); }}>
         {t.cta}<ArrowRight className="size-4" aria-hidden />
       </Button>
       <p className="mt-3 text-xs text-muted-foreground">{t.noAccount}</p>

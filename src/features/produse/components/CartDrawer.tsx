@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import {useAccountCart} from "@/hooks/useAccountCart";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ShoppingCart, Trash2, X } from "lucide-react";
 import type { Lang } from "@/i18n/translations";
 import { ITEM_BY_SLUG } from "../data/items";
@@ -6,7 +7,7 @@ import { useLivePlans } from "../lib/useLivePlans";
 import { EUR_FOR_RON } from "../data/taxonomy";
 import { store, useProduseStore } from "../lib/store";
 import { useProduseAccount } from "../lib/account";
-import { accountCartApi, type AccountCartItem } from "@/lib/accountCart";
+import { type AccountCartItem } from "@/lib/accountCart";
 import { billingApi, type BillingAccount } from "@/lib/billingApi";
 
 /**
@@ -18,6 +19,8 @@ export default function CartDrawer({ lang, open, onOpenChange }: { lang: Lang; o
   const ro = lang === "ro";
   const cart = useProduseStore((s) => s.cart);
   const account = useProduseAccount(open);
+  const {replace:replaceAccountCart}=useAccountCart();
+  const previousSelection=useRef<AccountCartItem[] | null>(null);
   const [paying, setPaying] = useState(false);
   const [payNotice, setPayNotice] = useState<string | null>(null);
   const [providers, setProviders] = useState<BillingAccount["providers"] | null>(null);
@@ -25,7 +28,6 @@ export default function CartDrawer({ lang, open, onOpenChange }: { lang: Lang; o
   const planById = useMemo(() => new Map(plans.map(plan => [plan.id, plan])), [plans]);
 
   useEffect(() => {
-    if (!account.signedIn) return;
     const lines: AccountCartItem[] = cart.map((line) => {
       if (line.kind === "plan") {
         const plan = planById.get(line.plan);
@@ -48,11 +50,22 @@ export default function CartDrawer({ lang, open, onOpenChange }: { lang: Lang; o
         productSlug: line.slug,
       };
     });
-    const timer = window.setTimeout(() => {
-      void accountCartApi.replaceSource("products", lines).catch(() => undefined);
-    }, 320);
-    return () => window.clearTimeout(timer);
-  }, [account.signedIn, cart, lang, planById]);
+    const previous=previousSelection.current;
+    previousSelection.current=lines;
+    // Do not resurrect old browser selections on mount. Only deliberate changes
+    // in this visit enter the native cart, including pending guest changes.
+    if (!previous) return;
+    // The public drawer owns its selection, not every product in the account.
+    const same=(a:AccountCartItem,b:AccountCartItem)=>a.type===b.type&&(a.productSlug? a.productSlug===b.productSlug : a.sku===b.sku);
+    const removed=previous.filter(old=>!lines.some(line=>same(old,line)));
+    const added=lines.filter(line=>!previous.some(old=>same(old,line)));
+    if(!added.length&&!removed.length)return;
+    replaceAccountCart(current=>{
+      const kept=current.filter(item=>!removed.some(old=>same(item,old)));
+      const additions=added.filter(line=>!kept.some(item=>same(item,line)));
+      return [...kept,...additions];
+    });
+  }, [cart, lang, planById,replaceAccountCart]);
 
   useEffect(() => {
     if (!open || account.signedIn !== true) {

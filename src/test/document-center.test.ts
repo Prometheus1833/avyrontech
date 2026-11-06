@@ -509,6 +509,22 @@ describe("Document Center actual handlers, immutable records and private storage
     delete env.DOCUMENT_BACKUPS;
     expect((await req("/" + d.id + "/backups", {})).status).toBe(503);
   });
+  it("exports a prospective beneficiary and future project as a private unapproved draft without creating CRM records", async () => {
+    const before = db.prepare("SELECT count(*) n FROM clients").get()!.n;
+    const manual = { ...payload, title: "Propunere pentru proiect viitor", fields: { ...payload.fields, "beneficiary.legal_name":"Beneficiar viitor", "project.future_name":"Website în negociere" }, body: {type:"doc",content:[paragraph("Beneficiar viitor · date completate direct"),paragraph("Website în negociere · proiect viitor")]}};
+    const response = await req("",{payload:manual,scope:"internal",collection:"library",beneficiaryId:null,templateVersionId:null,assignments:[]});
+    expect(response.status, await response.clone().text()).toBe(200);
+    const {id}=await response.json();
+    expect(db.prepare("SELECT count(*) n FROM clients").get()!.n).toBe(before);
+    const pdf = await req(`/${id}/export/pdf`); expect(pdf.status).toBe(200); expect((await pdf.text()).startsWith("%PDF")).toBe(true);
+    const word = await req(`/${id}/export/docx`); expect(word.status).toBe(200);
+    expect(word.headers.get("cache-control")).toBe("private, no-store"); expect(word.headers.get("content-disposition")).toContain("attachment;");
+    const zip=unzipSync(new Uint8Array(await word.arrayBuffer()));
+    expect(new TextDecoder().decode(zip["word/document.xml"])).toContain("Beneficiar viitor");
+    expect(new TextDecoder().decode(zip["word/document.xml"])).toContain("Website în negociere");
+    expect(new TextDecoder().decode(zip["word/document.xml"])).toContain("CIORNĂ NEAPROBATĂ");
+    actor="a"; expect((await req(`/${id}`)).status).toBe(404); expect((await req(`/${id}/export/docx`)).status).toBe(404);
+  });
   it("generates genuine PDF/DOCX exports with Romanian text, tables and several pages", async () => {
     const long = {
       ...payload,

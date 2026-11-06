@@ -1,9 +1,11 @@
+import { LeadArchiveDialog, LeadArchiveList } from "./leads/LeadArchivePanels";
+import LeadWhatsApp from "./leads/LeadWhatsApp";
 import { LeadDeleteDialog,LeadDeletionLogDialog } from "@/components/dashboard/leads/LeadDeletionDialogs";
 import { LeadDetailDialog } from "@/components/dashboard/leads/LeadDetailDialog";
 import { NewLeadDialog } from "@/components/dashboard/leads/NewLeadDialog";
 import { Button } from "@/components/ui/button";
 import { leadsApi,type LeadDeletionReasonCode,type LeadListRow,type LeadStage } from "@/lib/leadsApi";
-import { AlertCircle,ArrowRight,CalendarDays,Columns3,History,List,Mail,Phone,Plus,RefreshCw,Search,Star,Trash2,UserRound } from "lucide-react";
+import { AlertCircle,Archive,ArrowRight,CalendarDays,Columns3,History,List,Mail,Phone,Plus,RefreshCw,Search,Star,Trash2,UserRound } from "lucide-react";
 import { useCallback,useEffect,useMemo,useState } from "react";
 import { toast } from "sonner";
 import LeadPipeline from "./leads/LeadPipeline";
@@ -36,6 +38,9 @@ export const StaffLeadsTab = ({
   sourceFilter,
   allowCreate = true,
 }: StaffLeadsTabProps = {}) => {
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [archiving, setArchiving] = useState<LeadListRow | null>(null);
+  const [archiveRevision, setArchiveRevision] = useState(0);
   const [rows, setRows] = useState<LeadListRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -73,9 +78,10 @@ export const StaffLeadsTab = ({
   const update = async (lead: LeadListRow, patch: { lifecycleStage?: LeadStage; urgent?: boolean }) => {
     setSaving(lead.id);
     try {
-      await leadsApi.update(lead.id, patch);
+      const result = await leadsApi.update(lead.id, patch);
       setRows((current) => current.map((row) => row.id === lead.id ? {
         ...row,
+        updated_at: result.updatedAt ?? row.updated_at,
         lifecycle_stage: patch.lifecycleStage ?? row.lifecycle_stage,
         urgent: patch.urgent === undefined ? row.urgent : Number(patch.urgent),
       } : row));
@@ -121,11 +127,14 @@ export const StaffLeadsTab = ({
         </div>
         <div className="flex flex-wrap gap-2">
           {allowCreate && <Button type="button" onClick={() => setNewLeadOpen(true)} className="rounded-xl"><Plus /> Lead nou</Button>}
+          <Button type="button" variant="outline" aria-expanded={archiveOpen} onClick={() => setArchiveOpen(!archiveOpen)} className="rounded-xl"><Archive /> Leaduri arhivate</Button>
           {platformRole && <Button type="button" variant="outline" onClick={() => setDeletionLogOpen(true)} className="rounded-xl"><History /> Jurnal ștergeri</Button>}
           <Button type="button" variant="outline" onClick={() => void load()} className="rounded-xl"><RefreshCw /> Reîmprospătează</Button>
         </div>
       </header>
 
+      {archiveOpen && <LeadArchiveList key={archiveRevision} onOpen={setSelectedLeadId} onChanged={() => void load()} />}
+      <LeadArchiveDialog lead={archiving} onClose={() => setArchiving(null)} onDone={() => { void load(); setArchiveRevision(v=>v+1); toast.success("Leadul a fost arhivat cu istoricul păstrat."); }} />
       <div className="grid gap-3 sm:grid-cols-3">
         <Metric label="Total accesibil" value={rows.length} />
         <Metric label="Lead-uri noi" value={waitingCount} />
@@ -160,13 +169,13 @@ export const StaffLeadsTab = ({
                 <button type="button" onClick={() => setPreviewLeadId(lead.id)} className="min-w-0 text-left">
                   <span className="flex items-center gap-2"><span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"><UserRound className="size-3.5" /></span><span className="min-w-0"><strong className="block truncate text-sm">{lead.name || lead.business || "Lead fără nume"}</strong><span className="block truncate text-[11px] text-muted-foreground">{lead.business || lead.email || lead.phone || "Contact necompletat"}</span></span></span>
                 </button>
-                <div className="min-w-0"><p className="truncate text-xs font-medium">{lead.product || "Serviciu neclasificat"}</p><p className="truncate text-[10px] text-muted-foreground">{lead.source || "Sursă necunoscută"}</p></div>
+                <div className="min-w-0"><LeadWhatsApp phone={lead.phone} /><p className="truncate text-xs font-medium">{lead.product || "Serviciu neclasificat"}</p><p className="truncate text-[10px] text-muted-foreground">{lead.source || "Sursă necunoscută"}</p></div>
                 <select value={lead.lifecycle_stage} disabled={saving === lead.id || lead.lifecycle_stage === "converted"} onChange={(event) => void update(lead, { lifecycleStage: event.target.value as LeadStage })} className={field}>
                   {STAGES.filter(([value]) => value !== "converted").map(([value, stageLabel]) => <option key={value} value={value}>{stageLabel}</option>)}
                   {lead.lifecycle_stage === "converted" && <option value="converted">Proiect</option>}
                 </select>
                 <div className="text-[11px] text-muted-foreground"><span className="inline-flex items-center gap-1"><CalendarDays className="size-3" /> {new Date(lead.created_at).toLocaleDateString("ro-RO")}</span>{lead.next_follow_up_at && <p className={lead.next_follow_up_at < Date.now() ? "mt-1 text-red-500" : "mt-1"}>Follow-up {new Date(lead.next_follow_up_at).toLocaleDateString("ro-RO")}</p>}</div>
-                <div className="flex items-center justify-end gap-1"><button type="button" aria-label="Marchează urgent" onClick={() => void update(lead, { urgent: !lead.urgent })} className={`rounded-lg p-2 ${lead.urgent ? "text-amber-500" : "text-muted-foreground hover:bg-muted"}`}><Star className="size-3.5" fill={lead.urgent ? "currentColor" : "none"} /></button><button type="button" aria-label="Șterge" onClick={() => setDeletingLead(lead)} className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="size-3.5" /></button></div>
+                <div className="flex flex-wrap items-center justify-end gap-1"><button disabled={lead.can_archive === 0 || saving === lead.id} type="button" aria-label="Arhivează leadul" onClick={() => setArchiving(lead)} className="rounded-lg p-2 text-muted-foreground hover:bg-muted"><Archive className="size-3.5" /></button><button type="button" aria-label="Marchează urgent" onClick={() => void update(lead, { urgent: !lead.urgent })} className={`rounded-lg p-2 ${lead.urgent ? "text-amber-500" : "text-muted-foreground hover:bg-muted"}`}><Star className="size-3.5" fill={lead.urgent ? "currentColor" : "none"} /></button><button type="button" aria-label="Șterge" onClick={() => setDeletingLead(lead)} className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="size-3.5" /></button></div>
               </article>)}
               {filtered.length === 0 && <p className="p-8 text-center text-sm text-muted-foreground">Nu există leaduri pentru filtrul curent.</p>}
             </div>
@@ -175,14 +184,14 @@ export const StaffLeadsTab = ({
             {previewLead ? <div className="space-y-4">
               <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/70">Mini-profil client</p><h3 className="mt-1 text-lg font-semibold">{previewLead.name || previewLead.business || "Lead fără nume"}</h3><p className="text-xs text-muted-foreground">{previewLead.business || "Persoană fizică / necompletat"}</p></div>{previewLead.urgent === 1 && <span className="rounded-full bg-amber-500/10 px-2 py-1 text-[10px] font-medium text-amber-600">Urgent</span>}</div>
               <div className="grid gap-2 text-xs"><p className="rounded-xl border border-border/60 bg-background/60 p-3"><span className="block text-[10px] uppercase text-muted-foreground">Interes</span>{previewLead.product || "Neclasificat"}</p><p className="rounded-xl border border-border/60 bg-background/60 p-3"><span className="block text-[10px] uppercase text-muted-foreground">Sursă</span>{previewLead.source || "Necunoscută"}</p></div>
-              <div className="flex flex-wrap gap-2">{previewLead.email && <a href={`mailto:${previewLead.email}`} className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-2.5 py-2 text-xs hover:bg-muted"><Mail className="size-3.5" /> Email</a>}{previewLead.phone && <a href={`tel:${previewLead.phone}`} className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-2.5 py-2 text-xs hover:bg-muted"><Phone className="size-3.5" /> Telefon</a>}</div>
+              <div className="flex flex-wrap gap-2"><LeadWhatsApp phone={previewLead.phone} />{previewLead.email && <a href={`mailto:${previewLead.email}`} className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-2.5 py-2 text-xs hover:bg-muted"><Mail className="size-3.5" /> Email</a>}{previewLead.phone && <a href={`tel:${previewLead.phone}`} className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-2.5 py-2 text-xs hover:bg-muted"><Phone className="size-3.5" /> Telefon</a>}</div>
               <Button type="button" className="w-full rounded-xl" onClick={() => setSelectedLeadId(previewLead.id)}>Deschide fișa completă <ArrowRight className="size-4" /></Button>
             </div> : <p className="text-sm text-muted-foreground">Selectează un lead pentru mini-profil.</p>}
           </aside>
-        </div> : <LeadPipeline rows={filtered} saving={saving} onOpen={setSelectedLeadId} onRemove={setDeletingLead} onUpdate={(lead,patch)=>void update(lead,patch)} />
+        </div> : <LeadPipeline rows={filtered} saving={saving} onOpen={setSelectedLeadId} onRemove={setDeletingLead} onArchive={setArchiving} onUpdate={(lead,patch)=>void update(lead,patch)} />
       )}
       {allowCreate && <NewLeadDialog open={newLeadOpen} onOpenChange={setNewLeadOpen} onCreated={(id) => { void load(); setSelectedLeadId(id); }} />}
-      <LeadDetailDialog leadId={selectedLeadId} onOpenChange={(open) => !open && setSelectedLeadId(null)} onChanged={() => void load()} onDeleted={() => { setSelectedLeadId(null); void load(); }} />
+      <LeadDetailDialog onArchive={lead => { setSelectedLeadId(null); setArchiving(lead); }} leadId={selectedLeadId} onOpenChange={(open) => !open && setSelectedLeadId(null)} onChanged={() => void load()} onDeleted={() => { setSelectedLeadId(null); void load(); }} />
       <LeadDeleteDialog lead={deletingLead} open={deletingLead !== null} busy={Boolean(deletingLead && saving === deletingLead.id)} onOpenChange={(open) => !open && setDeletingLead(null)} onConfirm={remove} />
       <LeadDeletionLogDialog open={deletionLogOpen} onOpenChange={setDeletionLogOpen} />
     </div>

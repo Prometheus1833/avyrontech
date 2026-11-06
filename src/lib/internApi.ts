@@ -1,9 +1,11 @@
+import type {ProjectSummary} from "@/shared/projectSummary";
 // Client pentru rutele /api/projects* (Cloudflare Workers).
 // Folosește cfAuth pentru access token + refresh automat.
 import { cfAuth } from "./cfAuth";
 
-export type BannerStatus = "online" | "offline" | "revizuire" | "in_progress" | "testing";
+export type BannerStatus = "proposed" | "online" | "offline" | "revizuire" | "in_progress" | "testing";
 export type ProjectKind =
+  | "blog_profesional"
   | "external_asset"
   | "website_prezentare"
   | "prezentare_premium"
@@ -22,7 +24,9 @@ export type Project = {
   cover_image_url: string | null;
   price_ron: number | null; price_eur: number | null;
   subscription_plan: string | null; subscription_status: string | null; billing_next: number | null;
-  owner_user_id: string | null; client_id: string;
+  owner_user_id: string | null; client_id: string | null;
+  planned_start_at?: number | null; planned_end_at?: number | null;
+  client_name?: string | null; service_names?: string | null; budget_visible?: boolean;
   created_at: number; updated_at: number;
 };
 export type ProjectLink = { id: string; project_id: string; kind: LinkKind; label: string; url: string; updated_at: number };
@@ -34,12 +38,13 @@ export type ProjectPurchase = { id: string; name: string; kind: "subscription" |
 export type ProjectSale = { id: string; project_id: string | null; project_name: string | null; name: string; revenue_type: string; total_cents: number; currency: string; status: "paid" | "partially_paid"; updated_at: number };
 
 export type ProjectDetail = {
+  subscriptions?:{id:string;status:string;next_billing_date:number|null;plan_sku:string|null;service_name:string;billing_cycle:string;price:number|null}[];
   project: Project;
   links: ProjectLink[];
   proposals: ProjectProposal[];
   updates: ProjectUpdate[];
   staff: ProjectStaff[];
-  permission: { read: boolean; write: boolean; isStaff: boolean; isOwner: boolean };
+  permission: { read: boolean; write: boolean; isStaff: boolean; isOwner: boolean; finance?:boolean };
 };
 
 export type ProjectMedia = {
@@ -105,9 +110,9 @@ export type LeadPipeline = {
 };
 
 export const internApi = {
-  listProjects: (mine=false) => cfAuth.request<{ data: Array<Pick<Project, "id"|"slug"|"name"|"kind"|"banner_status"|"status"|"url"|"favicon_url"|"updated_at">>; purchases?: ProjectPurchase[]; sales?: ProjectSale[] }>("/api/projects"+(mine?'?scope=mine':'')),
+  listProjects: (mine=false) => cfAuth.request<{ data: Array<ProjectSummary & {favicon_url?:string|null}>; purchases?: ProjectPurchase[]; sales?: ProjectSale[] }>("/api/projects"+(mine?'?scope=mine':'')),
   getProject: (slug: string) => cfAuth.request<ProjectDetail>(`/api/projects/${encodeURIComponent(slug)}`),
-  createProject: (body: { name: string; slug: string; kind?: ProjectKind; url?: string; description?: string; client_id: string; organization_id?: string; owner_user_id?: string; recurring_service?: { enabled: boolean; service_name: string; price: number; billing_cycle: "monthly" | "yearly"; next_billing_date: number; subscription_status: "active" | "paused" } }, key?: string) =>
+  createProject: (body: { name: string; slug?: string; stage?: import("@/shared/projectLifecycle").ProjectStage; kind?: ProjectKind; url?: string; description?: string; client_id?: string | null; organization_id?: string; owner_user_id?: string; recurring_service?: { enabled: boolean; service_name: string; price: number; billing_cycle: "monthly" | "yearly"; next_billing_date: number; subscription_status: "active" | "paused" } }, key?: string) =>
     cfAuth.request<{ id: string; slug: string }>("/api/projects", { method: "POST", headers: key ? { "Idempotency-Key": key } : undefined, body: JSON.stringify(body) }),
   listClients: () => cfAuth.request<{ data: ClientOption[] }>("/api/clients"),
   listAccounts: () => cfAuth.request<{ data: AccountOption[] }>("/api/admin/users"),
@@ -136,7 +141,7 @@ export const internApi = {
   revokeAccountSessions: (userId: string) =>
     cfAuth.request<{ ok: true; revoked: number }>(`/api/admin/users/${encodeURIComponent(userId)}/sessions`, { method: "DELETE" }),
   updateProject: (id: string, patch: Partial<Project>) =>
-    cfAuth.request<{ ok: true }>(`/api/projects/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+    cfAuth.request<{ ok: true }>(`/api/projects/${id}`, { method: "PATCH", body: JSON.stringify(patch) }).then(result=>{if(typeof window!=="undefined")window.dispatchEvent(new Event("avyron:projects-changed"));return result;}),
   addProposal: (id: string, body: { title: string; description?: string }) =>
     cfAuth.request<{ id: string }>(`/api/projects/${id}/proposals`, { method: "POST", body: JSON.stringify(body) }),
   updateProposal: (id: string, patch: { status?: ProposalStatus; title?: string; description?: string }) =>

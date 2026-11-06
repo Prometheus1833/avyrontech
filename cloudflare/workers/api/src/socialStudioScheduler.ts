@@ -296,12 +296,12 @@ export function plannedSocialJobs(policy: SocialPolicy, timestamp = now()): Plan
   return jobs;
 }
 
-async function enqueueDueJobs(env: Env, timestamp: number) {
+export async function enqueueDueJobs(env: Env, timestamp: number, projectId?: string) {
   const policies = await env.DB.prepare(
     `SELECT policy.* FROM ai_social_policies policy
       JOIN ai_projects project ON project.id=policy.project_id
-     WHERE policy.status='active' AND project.status='active'`,
-  ).all<SocialPolicy>();
+     WHERE policy.status='active' AND project.status='active' ${projectId ? 'AND project.id=?' : ''}`,
+  ).bind(...(projectId ? [projectId] : [])).all<SocialPolicy>();
   let created = 0;
   for (const policy of policies.results) {
     const jobs = plannedSocialJobs(policy, timestamp);

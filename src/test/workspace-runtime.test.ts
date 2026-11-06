@@ -12,6 +12,8 @@ import { mediaRouter } from '../../cloudflare/workers/api/src/media';
 import { projectsRouter } from '../../cloudflare/workers/api/src/projects';
 import { adminOperationsRouter } from '../../cloudflare/workers/api/src/adminOperations';
 import { privilegedMfaSatisfied } from '../../cloudflare/workers/api/src/mfaPolicy';
+import {scanUpload,putScannedObject} from '../../cloudflare/workers/api/src/malware';
+import {recordPaidOrder} from '../../cloudflare/workers/api/src/billing';
 const { DatabaseSync }=createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
 class Statement {
   values:SQLInputValue[]=[];
@@ -22,7 +24,7 @@ class Statement {
   async run(){return {meta:this.db.prepare(this.sql).run(...this.values)};}
 }
 describe('Cloudflare workspace: actual handlers, all migrations, atomic writes',()=>{
- let db:SqliteDatabase,app:Hono,actor:string,verified:boolean,policy:string;
+ let db:SqliteDatabase,app:Hono,actor:string,verified:boolean,policy:string,fixtureEnv:Record<string,unknown>;
  let objects:Map<string,Uint8Array>,storageReads:number;
  let beforeBatch:(()=>void)|null;
  const stamp=Date.now();
@@ -42,6 +44,7 @@ describe('Cloudflare workspace: actual handlers, all migrations, atomic writes',
    const hook=beforeBatch;beforeBatch=null;hook?.();
    db.exec('BEGIN');try{const results=[];for(const statement of statements)results.push({meta:db.prepare(statement.sql).run(...statement.values)});db.exec('COMMIT');return results;}catch(e){db.exec('ROLLBACK');throw e;}
   }};
+  fixtureEnv={...fixtureScannerSettings,DB:binding,FILES:bucket};
   app=new Hono();app.use('*',async(c,next)=>{
    Object.assign(c.env,{...fixtureScannerSettings,DB:binding,ADMIN_MFA_POLICY:policy,FILES:{...bucket,
      get:async(key:string)=>{storageReads++;return bucket.get(key);},
@@ -56,6 +59,20 @@ describe('Cloudflare workspace: actual handlers, all migrations, atomic writes',
  afterEach(()=>{vi.unstubAllGlobals();db.close();});
  const request=(path:string,body?:unknown,method='POST',key='test-idempotency-key-123')=>app.request(`/api/workspace/${path}`,body===undefined?{}:{method,headers:{'content-type':'application/json','idempotency-key':key},body:JSON.stringify(body)},{});
  const announcement={title:'Release',content:'Internal note',priority:'normal'};
+ it.each(['stripe','revolut'] as const)('records a confirmed %s order against the real revenue schema without an invented external_reference column',async provider=>{
+  const items=JSON.stringify([{sku:'website-starter',name:'Website',type:'package',quantity:1,lineTotalCents:10000}]);
+  db.prepare("INSERT INTO commerce_orders(id,user_id,items_json,subtotal_cents,total_cents,status,created_at,updated_at) VALUES ('paid-fixture','client',?,10000,10000,'accepted',1,1)").run(items);
+  const order={id:'paid-fixture',user_id:'client',items_json:items,total_cents:10000,currency:'RON',requires_manual_quote:0,status:'accepted',promotion_code:null};
+  const input={provider,providerReference:'provider-reference',order};
+  expect(await recordPaidOrder(fixtureEnv as never,input)).toMatchObject({replay:false});
+  expect(db.prepare('SELECT status FROM commerce_orders').get()!.status).toBe('paid');
+  expect(db.prepare('SELECT COUNT(*) n FROM financial_revenues').get()!.n).toBe(1);
+  expect(db.prepare('SELECT status FROM billing_invoices').get()!.status).toBe('pending');
+  db.exec("UPDATE financial_revenues SET client_id='a'");actor='client';expect((await (await request('invoices')).json()).data[0].order_id).toBe('paid-fixture');
+  actor='other';expect((await (await request('invoices')).json()).data).toEqual([]);
+  expect(await recordPaidOrder(fixtureEnv as never,input)).toMatchObject({replay:true});
+  expect(db.prepare('SELECT COUNT(*) n FROM financial_revenues').get()!.n).toBe(1);
+ });
  it('allows only unenrolled platform principals under the temporary policy',async()=>{
   for(const who of ['owner','admin']){actor=who;expect(await (await app.request('/mfa-policy',{},{})).json()).toEqual({allowed:true});}
   for(const who of ['staff','client']){actor=who;expect(await (await app.request('/mfa-policy',{},{})).json()).toEqual({allowed:false});}
@@ -76,6 +93,19 @@ describe('Cloudflare workspace: actual handlers, all migrations, atomic writes',
   expect((await request('tickets/ticket-b/messages')).status).toBe(404);
   expect((await request('tickets/ticket-b/messages',{content:'forbidden'})).status).toBe(404);
   expect((await request('account-access/other',{client_ids:['a']},'PUT')).status).toBe(403);
+ });
+ it('downloads only an assigned non-draft invoice and rechecks CLEAN storage and revoked account access',async()=>{
+  db.exec("INSERT INTO financial_revenues(id,client_id,revenue_type,service_name,currency,gross_amount_minor,status,created_at,updated_at) VALUES ('invoice-a','a','other','Invoice','RON',1000,'sent',1,1),('invoice-b','b','other','Invoice B','RON',1000,'sent',1,1)");
+  const bytes=new TextEncoder().encode('%PDF-1.7 synthetic invoice'),key='finance/revenue/invoice-a/pdf';
+  const verdict=await scanUpload(fixtureEnv as never,bytes,{source:'finance',scope:'revenue:invoice-a',mimeType:'application/pdf',actorId:'owner'});
+  expect(verdict.status).toBe('clean');await putScannedObject(fixtureEnv as never,'FILES',key,bytes,{httpMetadata:{contentType:'application/pdf'}},verdict);
+  db.prepare("INSERT INTO financial_documents(id,revenue_id,document_type,r2_object_key,file_name,content_type,size_bytes,sha256,uploaded_by,created_at) VALUES ('file-a','invoice-a','invoice',?,'factura.pdf','application/pdf',?,'fixture','owner',1)").run(key,bytes.length);
+  actor='client';const list=await (await request('invoices')).json();expect(list.data[0].download_url).toBe('/api/workspace/invoices/invoice-a/content');
+  const response=await request('invoices/invoice-a/content');expect(response.status).toBe(200);expect(await response.text()).toBe('%PDF-1.7 synthetic invoice');expect(response.headers.get('cache-control')).toBe('private, no-store');
+  expect((await request('invoices/invoice-b/content')).status).toBe(404);
+  db.exec("UPDATE financial_revenues SET status='draft' WHERE id='invoice-a'");expect((await request('invoices/invoice-a/content')).status).toBe(404);
+  db.exec("UPDATE financial_revenues SET status='sent' WHERE id='invoice-a'; DELETE FROM malware_object_verdicts");expect((await request('invoices/invoice-a/content')).status).toBe(404);
+  db.exec("DELETE FROM client_account_access WHERE user_id='client';UPDATE clients SET access_managed=1 WHERE id='a'");const reads=storageReads;expect((await request('invoices/invoice-a/content')).status).toBe(404);expect(storageReads).toBe(reads);
  });
  it('blocks legacy project enumeration and owner reassignment while preserving assigned edits',async()=>{
   actor='staff';
@@ -106,10 +136,36 @@ describe('Cloudflare workspace: actual handlers, all migrations, atomic writes',
   expect((await create('a','other')).status).toBe(403);
   expect((await create('a','client')).status).toBe(201);
  });
+ it('projects expose compact native summaries while staff without finance never receive budgets',async()=>{
+  db.exec("UPDATE projects SET price_ron=0,price_eur=500,url='https://example.test',planned_start_at=1800000000000,planned_end_at=1801000000000 WHERE id='pa'; INSERT INTO services(id,project_id,service_name,price,billing_cycle) VALUES('summary-service','pa','SEO lunar',125,'monthly'); INSERT INTO subscriptions(id,client_id,service_id,status,next_billing_date) VALUES('summary-sub','a','summary-service','active',1802000000000)");
+  let body=await (await app.request('/api/projects',{},{})).json();expect(body.data.find((p:{id:string})=>p.id==='pa')).toMatchObject({client_name:'Client A',price_ron:0,price_eur:500,budget_visible:true,service_names:'SEO lunar',planned_start_at:1800000000000});
+  actor='client';body=await (await app.request('/api/projects',{},{})).json();expect(body.data.map((p:{id:string})=>p.id)).toEqual(['pa']);expect(body.data[0].price_ron).toBe(0);
+  actor='staff';db.exec("INSERT INTO project_staff VALUES('pa','staff','contributor',1)");body=await (await app.request('/api/projects',{},{})).json();expect(body.data[0]).toMatchObject({price_ron:null,price_eur:null,budget_visible:false,client_name:'Client A'});
+  expect(body.sales).toEqual([]);db.exec("INSERT INTO project_logs(id,project_id,actor_id,action,meta_json,created_at) VALUES('budget-log','pa','owner','project.update','{\"price_ron\":1450}',1)");const logs=await (await app.request('/api/projects/pa/logs',{},{})).json();expect(logs.data[0].meta_json).toBeNull();
+  const detail=await (await app.request('/api/projects/project-a',{},{})).json();expect(detail.project.price_eur).toBeNull();expect(detail.subscriptions[0]).toMatchObject({id:'summary-sub',service_name:'SEO lunar',price:null});
+  db.exec("DELETE FROM project_staff WHERE project_id='pa' AND user_id='staff'");expect((await (await app.request('/api/projects?scope=mine',{},{})).json()).data).toEqual([]);
+ });
+ it('reports cross-beneficiary subscription drift through a read-only aggregate audit',()=>{
+  const queries=readFileSync('cloudflare/d1/checks/account-integration-audit.sql','utf8').split(';').filter(q=>q.trim());
+  expect(queries.slice(0,3).map(query=>db.prepare(query).get()!.issues)).toEqual([0,0,0]);
+  db.exec("INSERT INTO services(id,project_id,service_name,price,billing_cycle) VALUES('audit-service','pa','Serviciu',100,'monthly'); INSERT INTO subscriptions(id,client_id,service_id,status,next_billing_date) VALUES('bad-beneficiary','b','audit-service','active',1800000000000)");
+  expect(db.prepare(queries[2]).get()!.issues).toBe(1);
+ });
+ it('does not infer finance rights from a user-only operational project grant',async()=>{
+  db.exec("UPDATE projects SET price_ron=1450; INSERT INTO user_capabilities(id,user_id,capability,granted_by,reason,created_at) VALUES('operator-projects','client','projects.all','owner','Operational project access',1)");actor='client';
+  const body=await (await app.request('/api/projects',{},{})).json();expect(body.data).toHaveLength(2);for(const row of body.data)expect(row).toMatchObject({price_ron:null,budget_visible:false});
+ });
+ it('validates a project schedule and requires an explicit financial permission for budget changes',async()=>{
+  const update=(body:unknown)=>app.request('/api/projects/pa',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(body)},{});
+  expect((await update({planned_start_at:1800000000000,planned_end_at:1801000000000})).status).toBe(200);
+  expect((await update({planned_start_at:1802000000000})).status).toBe(400);expect((await update({planned_end_at:'invalid'})).status).toBe(400);expect((await update({price_ron:-1})).status).toBe(400);expect((await update({kind:'blog_profesional'})).status).toBe(200);
+  actor='staff';db.exec("INSERT INTO project_staff VALUES('pa','staff','contributor',1)");expect((await update({price_ron:100})).status).toBe(403);expect((await update({planned_end_at:null})).status).toBe(200);
+  expect(db.prepare("SELECT planned_start_at,planned_end_at FROM projects WHERE id='pa'").get()).toMatchObject({planned_start_at:1800000000000,planned_end_at:null});
+ });
  it('scopes paid project sales to the staff assignment',async()=>{
   db.exec("INSERT INTO project_staff(project_id,user_id,role,assigned_at) VALUES ('pa','staff','contributor',1)");
   for(const [id,project] of [['ra','pa'],['rb','pb']])db.prepare("INSERT INTO financial_revenues(id,project_id,revenue_type,service_name,currency,gross_amount_minor,status,created_at,updated_at) VALUES (?,?,'other','Synthetic sale','RON',1000,'paid',1,1)").run(id,project);
-  actor='staff';
+  actor='staff';db.exec("INSERT INTO user_capabilities(id,user_id,capability,granted_by,reason,created_at) VALUES('finance-staff','staff','finance.read','owner','Authorized financial scope',1)");
   const staffSales=await (await app.request('/api/projects',{},{})).json();
   expect(staffSales.sales.map((row:{id:string})=>row.id)).toEqual(['ra']);
   actor='owner';

@@ -102,11 +102,11 @@ describe("cablajul dintre magazin și dashboardul intern", () => {
 
   it("are o categorie proprie de produse, separată de facturare", () => {
     const produse = SECTIONS.filter((section) => section.group === "produse");
-    expect(produse.map((section) => section.id).sort()).toEqual(["collection", "internal-subscriptions", "produse-avyron", "subscriptions-admin"]);
+    expect(produse.map((section) => section.id).sort()).toEqual(["collection", "logo-simulations", "produse-avyron"]);
     expect(produse.find((section) => section.id === "collection")!.audience).toBe("everyone");
     expect(produse.find((section) => section.id === "produse-avyron")!.audience).toBe("superadmin");
-    expect(produse.find((section) => section.id === "subscriptions-admin")!.audience).toBe("superadmin");
-    expect(produse.find((section) => section.id === "internal-subscriptions")!.audience).toBe("staff");
+    expect(SECTIONS.find((section) => section.id === "subscriptions-admin")!.audience).toBe("superadmin");
+    expect(SECTIONS.find((section) => section.id === "internal-subscriptions")!.audience).toBe("staff");
   });
 
   it("ține serviciile într-o categorie OS distinctă de produse", () => {
@@ -133,10 +133,10 @@ describe("cablajul dintre magazin și dashboardul intern", () => {
     for (const match of api.matchAll(/"(\/api\/[^"]+)"/g)) expect(match[1].startsWith("/api/produse/")).toBe(true);
   });
 
-  it("leagă colecția din cont de aceleași rute publice ale produselor", () => {
+  it("leagă produsele cumpărate din cont de aceleași rute publice", () => {
     const tab = read("src/components/dashboard/ProductCollectionTab.tsx");
     expect(tab).toContain("PRODUSE_ITEM_ROUTES");
-    expect(tab).toContain("produseApi.collection");
+    expect(tab).toContain("produseApi.state()");
   });
 });
 

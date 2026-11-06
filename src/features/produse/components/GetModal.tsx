@@ -165,7 +165,7 @@ npx shadcn@latest add @avyron/${item.slug}`;
           <p className="mt-3 text-[11px] text-muted-foreground">
             {ro ? (
               <>
-                Cu un cont gratuit îți ții colecția și istoricul pe toate dispozitivele.{" "}
+                Cu un cont gratuit ai acces la produse și la istoricul lor pe toate dispozitivele.{" "}
                 <Link to="/autentificare" className="underline underline-offset-2">
                   Creează cont
                 </Link>
@@ -173,7 +173,7 @@ npx shadcn@latest add @avyron/${item.slug}`;
               </>
             ) : (
               <>
-                A free account keeps your collection and history across devices.{" "}
+                A free account keeps your product access and history across devices.{" "}
                 <Link to="/autentificare" className="underline underline-offset-2">
                   Create an account
                 </Link>
@@ -202,7 +202,7 @@ npx shadcn@latest add @avyron/${item.slug}`;
                 <button
                   type="button"
                   onClick={() => {
-                    store.addToCart({ kind: "item", slug: item.slug });
+                    store.addToCart({ kind: "item", slug: item.slug }, item.name[lang]);
                     setInCart(true);
                   }}
                   className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 px-3.5 py-2 text-xs font-semibold text-foreground"

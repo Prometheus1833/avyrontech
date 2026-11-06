@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Megaphone, Plus, Trash2 } from "lucide-react";
+import { Check, Megaphone, Plus, Trash2 } from "lucide-react";
 
 type Announcement = {
   id: string;
@@ -21,6 +21,7 @@ type Announcement = {
   content: string;
   priority: "info" | "normal" | "important" | "critical";
   created_at: string;
+  read_at?: number | null;
 };
 
 const priorityVariant: Record<Announcement["priority"], "default" | "secondary" | "destructive" | "outline"> = {
@@ -125,6 +126,7 @@ export function StaffAnnouncementsTab() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  {!a.read_at && a.author_id!==user?.id && <Button variant="outline" size="sm" onClick={async()=>{try{await workspaceApi.write(`announcements/${encodeURIComponent(a.id)}/read`,{});setItems(old=>old.map(row=>row.id===a.id?{...row,read_at:Date.now()}:row));}catch(error){toast.error(error instanceof Error?error.message:"Confirmarea nu s-a salvat.");}}}><Check className="size-3.5" />Am citit</Button>}
                   <Badge variant={priorityVariant[a.priority]}>{a.priority}</Badge>
                   {(isAdmin || a.author_id === user?.id) && (
                     <Button size="icon" variant="ghost" onClick={() => remove(a.id)}>

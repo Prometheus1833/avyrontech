@@ -89,8 +89,8 @@ export type SubscriptionCategory = {
   icon: "globe" | "store" | "pen" | "cpu" | "smartphone" | "search" | "chart";
   /**
    * Tipurile de proiect din platforma internă acoperite de categorie
-   * (`projects.kind`). Valorile `blog` și `agent_ai` nu există încă în
-   * platformă — sunt pregătite aici pentru când se sincronizează lista de
+   * (`projects.kind`). Valoarea `agent_ai` nu există încă în
+   * platformă — este pregătită aici pentru când se sincronizează lista de
    * abonamente din `/intern`, într-un task separat.
    */
   internProjectKinds: string[];
@@ -551,7 +551,7 @@ const SHOP: SubscriptionCategory = {
 const BLOG: SubscriptionCategory = {
   key: "blog",
   icon: "pen",
-  internProjectKinds: ["blog", "retele_sociale", "identitate_completa"],
+  internProjectKinds: ["blog", "blog_profesional", "retele_sociale", "identitate_completa"],
   services: ["social-identity"],
   servicePath: { ro: "/servicii/blog-profesional", en: "/en/services/professional-blog" },
   theme: {

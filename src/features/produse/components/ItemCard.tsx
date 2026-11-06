@@ -1,20 +1,18 @@
 import { memo } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowUpRight, Heart, ShoppingCart, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowUpRight, ShoppingCart, Sparkles } from "lucide-react";
 import type { Lang } from "@/i18n/translations";
 import { ACCESS_LABEL, CATEGORIES, TECH_LABEL, TYPE_BY_ID } from "../data/taxonomy";
 import type { CatalogItem } from "../data/types";
 import { defaultValues, priceLabel } from "../lib/item";
 import { itemPath } from "../lib/paths";
-import { store, useProduseStore } from "../lib/store";
+import { store } from "../lib/store";
 import DemoStage from "./DemoStage";
-import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
 import { Pill } from "./Primitives";
 
 /**
  * Cardul de produs: poster static la încărcare, demo live la hover sau focus,
- * acțiuni rapide (colecție, coș) și un titlu care duce în pagina produsului.
+ * acțiune rapidă pentru coș și un titlu care duce în pagina produsului.
  * Grila e construită pentru conversie: accesul și prețul se văd din primul rând.
  */
 const ItemCard = memo(function ItemCard({
@@ -34,20 +32,8 @@ const ItemCard = memo(function ItemCard({
   headingAs?: "h2" | "h3";
 }) {
   const ro = lang === "ro";
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const favorites = useProduseStore((s) => s.favorites);
-  const isFav = favorites.includes(item.slug);
   const type = TYPE_BY_ID.get(item.type)!;
   const price = priceLabel(item, lang);
-  const saveFavorite = async () => {
-    if (!user) { navigate("/auth", { state: { from: location.pathname } }); return; }
-    const added = store.toggleFavorite(item.slug);
-    try { const { produseApi } = await import("@/lib/produseApi"); if (added) await produseApi.collection.add(item.slug); else await produseApi.collection.remove(item.slug); }
-    catch { store.toggleFavorite(item.slug); toast.error(ro ? "Produsul nu a putut fi salvat în cont." : "Could not save the product to your account."); }
-  };
-
   return (
     <article
       className="pa-edge group relative flex flex-col overflow-hidden rounded-2xl border border-foreground/8 bg-card/50 transition-all duration-500 hover:-translate-y-0.5 hover:border-brand/25 hover:shadow-[0_24px_60px_-40px_hsl(var(--pa-hue)_90%_50%)]"
@@ -65,20 +51,12 @@ const ItemCard = memo(function ItemCard({
           )}
           {price && <Pill tone="price">{price}</Pill>}
         </div>
-        <div className="absolute right-2.5 top-2.5 flex gap-1.5 opacity-0 transition-opacity duration-300 focus-within:opacity-100 group-hover:opacity-100">
-          <button
-            type="button"
-            onClick={() => void saveFavorite()}
-            aria-pressed={isFav}
-            aria-label={user ? (ro ? "Salvează în colecție" : "Save to collection") : (ro ? "Conectează-te pentru favorite" : "Sign in for favorites")}
-            className="grid size-8 place-items-center rounded-full border border-white/15 bg-black/45 text-white/80 backdrop-blur transition hover:text-white"
-          >
-            <Heart className={`size-3.5 ${isFav ? "fill-current text-pink-300" : ""}`} aria-hidden />
-          </button>
+        <div className="absolute right-2.5 top-2.5 z-10 flex gap-1.5">
+
           {item.priceRon && (
             <button
               type="button"
-              onClick={() => store.addToCart({ kind: "item", slug: item.slug })}
+              onClick={() => store.addToCart({ kind: "item", slug: item.slug }, item.name[lang])}
               aria-label={ro ? "Adaugă în coș" : "Add to cart"}
               className="grid size-8 place-items-center rounded-full border border-white/15 bg-black/45 text-white/80 backdrop-blur transition hover:text-white"
             >

@@ -442,9 +442,10 @@ describe("OS refinement: scoped visual resources and real Engine state", () => {
     );
     expect(rows.slice(rows.indexOf("configurator") + 1)).toEqual([
       "example-carousels",
-      "careers",
-      "library",
     ]);
+    for (const id of ["careers", "library", "antivirus"]) {
+      expect(SECTIONS.find(section => section.id === id)?.group).toBe("os");
+    }
     expect(rows.indexOf("domains") + 1).toBe(rows.indexOf("surveys"));
     expect(SECTIONS.at(-2)!.id).toBe("other-hub");
     expect(FINANCE_GROUPS).toHaveLength(5);

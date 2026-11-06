@@ -3,7 +3,10 @@ import {
   consistentSubscriptionBilling,
 } from "@/shared/documents/autofill";
 import { useMemo, useState } from "react";
-import { cfAuth } from "@/lib/cfAuth";
+import { clientWorkspaceApi } from "@/lib/clientWorkspaceApi";
+import { ENTITY_TYPES } from "@/shared/documents/model";
+import type { ClientEntityType } from "@/shared/clientWorkspace";
+import { useRef } from "react";
 import { internApi } from "@/lib/internApi";
 import {
   documentsApi,
@@ -75,6 +78,10 @@ export default function DocumentGenerator({
   onCancel: () => void;
   onContextRefresh: () => Promise<void>;
 }) {
+  const contextKey = useRef(crypto.randomUUID());
+  const [manualMode, setManualMode] = useState(false);
+  const [manual, setManual] = useState({ name: "", type: "", email: "", tax: "", registration: "", address: "", representative: "" });
+  const [futureProject, setFutureProject] = useState({ name: "", description: "" });
   const seedServiceId = initialScope ? undefined : initialServiceId;
   const seedSubscriptionId = initialScope ? undefined : initialSubscriptionId;
   const seedSubscription = context.subscriptions.find(
@@ -196,12 +203,15 @@ export default function DocumentGenerator({
   const automatic: Record<string, string> = {
     ...automaticDocumentFields(
       context.company,
-      client,
+      manualMode ? { company_name: manual.name, legal_name: manual.name, entity_type: manual.type, email: manual.email, tax_id: manual.tax, registration_number: manual.registration, address: manual.address, representative: manual.representative } : client,
       documentDate,
       scope !== "client",
       subscriptionBilling,
     ),
+    "project.future_name": futureProject.name,
+    "project.future_description": futureProject.description,
     scope: [
+      futureProject.name,
       ...catalogIds.map(
         (id) => context.catalog.find((c) => c.id === id)?.display_name,
       ),
@@ -240,7 +250,7 @@ export default function DocumentGenerator({
         ...templateFields(applicablePayload(t, automatic.privacy_mode)),
       ]),
       ...Object.keys(serviceFields),
-      ...Object.keys(automatic).filter((key) => key.startsWith("provider.")),
+      ...Object.keys(automatic).filter((key) => key.startsWith("provider.") || (manualMode && key.startsWith("beneficiary.")) || (!!futureProject.name && key.startsWith("project.future_"))),
       ...(productIds.length ||
       entitlements.length ||
       billingSubscriptions.length
@@ -253,7 +263,7 @@ export default function DocumentGenerator({
       "Beneficiar și contact",
       allFields.filter(
         (k) =>
-          k.startsWith("beneficiary.") ||
+          (!manualMode && k.startsWith("beneficiary.")) ||
           k === "contacts" ||
           k === "signatories",
       ),
@@ -263,6 +273,7 @@ export default function DocumentGenerator({
       allFields.filter(
         (k) =>
           !k.startsWith("provider.") &&
+          !k.startsWith("project.future_") &&
           !k.startsWith("beneficiary.") &&
           !k.startsWith("service.") &&
           !["contacts", "signatories"].includes(k),
@@ -350,7 +361,7 @@ export default function DocumentGenerator({
       ...model.required,
       ...templateFields(original),
       ...Object.keys(serviceFields),
-      ...Object.keys(automatic).filter((key) => key.startsWith("provider.")),
+      ...Object.keys(automatic).filter((key) => key.startsWith("provider.") || (manualMode && key.startsWith("beneficiary.")) || (!!futureProject.name && key.startsWith("project.future_"))),
       ...(productIds.length ||
       entitlements.length ||
       billingSubscriptions.length
@@ -405,7 +416,9 @@ export default function DocumentGenerator({
       body: {
         ...value.body,
         content: [
+          ...(manualMode ? [heading("Beneficiar"), paragraph([manual.name, manual.type, manual.tax ? `Cod fiscal: ${manual.tax}` : "", manual.registration ? `Înregistrare: ${manual.registration}` : "", manual.address, manual.email, manual.representative ? `Reprezentant: ${manual.representative}` : ""].filter(Boolean).join(" · "))] : []),
           ...(value.body.content || []),
+          ...(futureProject.name.trim() ? [heading("Context proiect viitor"), paragraph(futureProject.name.trim()), ...(futureProject.description.trim() ? [paragraph(futureProject.description.trim())] : [])] : []),
           ...sections,
           ...productSections,
           ...(purchases.length ||
@@ -480,32 +493,23 @@ export default function DocumentGenerator({
     setError("");
     try {
       if (newMode === "client") {
-        const r = await cfAuth.request<{ id: string }>("/api/clients", {
-          method: "POST",
-          body: JSON.stringify(newClient),
-        });
+        const r = await clientWorkspaceApi.create({ identity: { companyName: newClient.company_name.trim(), legalName: newClient.company_name.trim(), email: newClient.email.trim(), contactName: newClient.contact_name, phone: "", entityType: (manualMode && manual.type ? manual.type : "Altă formă") as ClientEntityType, taxId: manualMode ? manual.tax : "", registrationNumber: manualMode ? manual.registration : "", address: manualMode ? manual.address : "", representative: manualMode ? manual.representative : "", notes: "", status: "active" }, account: { mode: "none" } }, contextKey.current);
         await onContextRefresh();
         setClientId(r.id);
+        setManualMode(false);
         setScope("client");
         setProjects([]);
       } else if (clientId && newProject.trim()) {
         const r = await internApi.createProject({
           name: newProject,
-          slug:
-            newProject
-              .toLowerCase()
-              .normalize("NFD")
-              .replace(/[\u0300-\u036f]/g, "")
-              .replace(/[^a-z0-9]+/g, "-")
-              .replace(/^-|-$/g, "") +
-            "-" +
-            crypto.randomUUID().slice(0, 6),
+          stage: "proposed",
           client_id: clientId,
           organization_id: client?.organization_id || undefined,
-        });
+        }, contextKey.current);
         await onContextRefresh();
         setProjects((value) => [...value, r.id]);
       }
+      contextKey.current = crypto.randomUUID();
       setNewMode(null);
     } catch (e) {
       setError((e as Error).message);
@@ -540,9 +544,9 @@ export default function DocumentGenerator({
         const result = await documentsApi.create(
           {
             payload: build(model),
-            scope,
+            scope: manualMode && scope === "client" ? "internal" : scope,
             collection: "library",
-            beneficiaryId: scope === "client" ? clientId : null,
+            beneficiaryId: scope === "client" && !manualMode ? clientId : null,
             templateVersionId: model.version_id || null,
             legal: !!model.legal || legalDocument,
             assignments,
@@ -560,8 +564,8 @@ export default function DocumentGenerator({
     }
   };
   const contextError =
-    scope === "client" && !clientId
-      ? "Selectează beneficiarul juridic."
+    scope === "client" && (manualMode ? !manual.name.trim() : !clientId)
+      ? manualMode ? "Completează numele beneficiarului." : "Selectează beneficiarul juridic."
       : scope !== "client" && projects.length
         ? "Documentele asociate proiectelor trebuie să aibă beneficiarul proiectelor."
         : "";
@@ -615,6 +619,9 @@ export default function DocumentGenerator({
               disabled={!!lockedClientId}
               onChange={(e) => {
                 setScope(e.target.value as DocumentScope);
+                setManualMode(false);
+                setNewMode(null);
+                setFutureProject({ name: "", description: "" });
                 if (e.target.value !== "client") {
                   setClientId("");
                   setFields({});
@@ -640,7 +647,13 @@ export default function DocumentGenerator({
           </label>
           {scope === "client" && (
             <>
-              <label className="dc-label">
+              {!lockedClientId && <fieldset className="md:col-span-2 flex flex-wrap gap-4 rounded-xl border border-white/10 p-3"><legend className="px-1 text-xs text-slate-400">Beneficiar</legend>{[[false,"Client existent / CRM"],[true,"Completare directă"]].map(([value,label]) => <label key={String(label)} className="dc-check"><input type="radio" name="document-beneficiary-mode" checked={manualMode === value} onChange={() => { setManualMode(value as boolean); setNewMode(null); setFutureProject({name:"",description:""}); setClientId(""); setProjects([]); setInstanceIds([]); setSubscriptionIds([]); setPurchases([]); setEntitlements([]); setBillingSubscriptions([]); setFields({}); setCatalogIds([]); setLines([]); }} />{label as string}</label>)}</fieldset>}
+              {manualMode && <div className="dc-grid md:col-span-2"><p className="dc-notice text-xs">Beneficiarul se completează direct în document. Documentul rămâne intern, fără cont sau acces în portal creat automat.</p><div className="dc-grid md:grid-cols-2">
+                <label className="dc-label">Nume / denumire beneficiar *<input className="dc-input" maxLength={180} value={manual.name} onChange={e => setManual({...manual,name:e.target.value})} /></label>
+                <label className="dc-label">Forma beneficiarului<select className="dc-input" value={manual.type} onChange={e => setManual({...manual,type:e.target.value})}><option value="">Selectează forma</option>{ENTITY_TYPES.map(type => <option key={type}>{type}</option>)}</select></label>
+                {[["email","E-mail beneficiar"],["tax","CUI / cod fiscal beneficiar"],["registration","Număr de înregistrare beneficiar"],["address","Adresă beneficiar"],["representative","Reprezentant beneficiar"]].map(([key,label]) => <label className="dc-label" key={key}>{label}<input className="dc-input" type={key === "email" ? "email" : "text"} maxLength={key === "address" ? 600 : 254} value={manual[key as keyof typeof manual]} onChange={e => setManual({...manual,[key]:e.target.value})} /></label>)}
+              </div></div>}
+              {!manualMode && <label className="dc-label">
                 Beneficiar juridic
                 <select
                   className="dc-input"
@@ -648,6 +661,7 @@ export default function DocumentGenerator({
                   disabled={!!lockedClientId}
                   onChange={(e) => {
                     setClientId(e.target.value);
+                    setFutureProject({ name: "", description: "" });
                     setLines([]);
                     setCatalogIds([]);
                     setTitles({});
@@ -667,15 +681,15 @@ export default function DocumentGenerator({
                     </option>
                   ))}
                 </select>
-              </label>
+              </label>}
               <div className="dc-grid">
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
                     className="dc-button"
                     disabled={!!lockedClientId}
-                    onClick={() => setNewMode("client")}
+                    onClick={() => { if (manualMode) setNewClient({company_name:manual.name,email:manual.email,contact_name:manual.representative}); setNewMode("client"); }}
                   >
-                    Client nou în CRM
+                    {manualMode ? "Salvează beneficiarul în CRM" : "Client nou în CRM"}
                   </button>
                   <button
                     className="dc-button"
@@ -784,6 +798,7 @@ export default function DocumentGenerator({
               </div>
             </>
           )}
+          {(scope === "client" || scope === "internal") && <div className="md:col-span-2 dc-panel dc-grid"><h3 className="text-sm font-semibold">Proiect viitor / în negociere</h3><p className="text-xs text-slate-400">Opțional. Poți pregăti documentul înainte de crearea proiectului în registru.</p><label className="dc-label">Denumire proiect viitor<input className="dc-input" maxLength={180} value={futureProject.name} onChange={e => setFutureProject({...futureProject,name:e.target.value})} /></label><label className="dc-label">Contextul proiectului viitor<textarea className="dc-input" maxLength={2000} rows={3} value={futureProject.description} onChange={e => setFutureProject({...futureProject,description:e.target.value})} /></label></div>}
           <div className="md:col-span-2 dc-grid md:grid-cols-2">
             <label className="dc-label">
               Serviciu / produs din catalog
@@ -1235,8 +1250,8 @@ export default function DocumentGenerator({
             Creează {models.length === 1 ? "ciorna" : `${models.length} ciorne`}
           </h3>
           <p className="text-sm text-slate-400">
-            Deschidem editorul vizual. Pentru aprobare, export și publicare,
-            urmează verificările documentului.
+            Deschidem editorul vizual. Poți descărca PDF și Word; ciornele
+            sunt marcate ca neaprobate. Aprobarea și publicarea se fac separat.
           </p>
           {created.length > 0 && (
             <p role="status">

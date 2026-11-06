@@ -1,3 +1,5 @@
+import { LEAD_ARCHIVE_REASONS } from "../../../../src/shared/leadArchive";
+import { readJsonBodyUpTo } from "./requestBody";
 import { Hono,type Context } from "hono";
 import { LEAD_DELETION_REASONS } from "../../../../src/shared/leadDeletionReasons";
 import { hasCapability,organizationRoleForUser,platformRoleForUser } from "./authorization";
@@ -18,21 +20,26 @@ const CHANNELS = new Set<string>(LEAD_CHANNELS);
 const ACTIVITY_KINDS = new Set<string>(LEAD_ACTIVITY_KINDS);
 const deletionReasons = new Set<string>(LEAD_DELETION_REASONS.map(reason => reason.code));
 
-type LeadAccess = { read: boolean; write: boolean; organizationId: string | null };
+/** Same row predicate for the active list and navigation activity counts. */
+export function leadReadPredicate(userId:string,unrestricted:boolean){
+  return unrestricted?{sql:"1=1",values:[] as string[]}:{sql:`(EXISTS (SELECT 1 FROM lead_assignments assignment WHERE assignment.lead_id=lead.id AND assignment.user_id=?) OR EXISTS(SELECT 1 FROM organization_memberships membership WHERE membership.organization_id=lead.organization_id AND membership.user_id=? AND membership.status='active'))`,values:[userId,userId]};
+}
+
+type LeadAccess = { read: boolean; write: boolean; organizationId: string | null; archived: boolean };
 
 async function leadAccess(c: Context<AppBindings>, leadId: string): Promise<LeadAccess | null> {
-  const lead = await c.env.DB.prepare("SELECT organization_id FROM leads WHERE id = ? AND deleted_at IS NULL")
-    .bind(leadId).first<{ organization_id: string | null }>();
+  const lead = await c.env.DB.prepare("SELECT organization_id,archived_at FROM leads WHERE id = ? AND deleted_at IS NULL")
+    .bind(leadId).first<{ organization_id: string | null; archived_at: number | null }>();
   if (!lead) return null;
   const userId = c.get("userId");
   const platformRole = await platformRoleForUser(c.env.DB, userId);
-  if (platformRole) return { read: true, write: true, organizationId: lead.organization_id };
+  if (platformRole) return { read: true, write: true, organizationId: lead.organization_id, archived: lead.archived_at != null };
   const [capabilityRead, capabilityWrite] = await Promise.all([
     hasCapability(c.env.DB, userId, "leads.read", lead.organization_id || undefined),
     hasCapability(c.env.DB, userId, "leads.write", lead.organization_id || undefined),
   ]);
   if (capabilityRead || capabilityWrite) {
-    return { read: true, write: capabilityWrite, organizationId: lead.organization_id };
+    return { read: true, write: capabilityWrite, organizationId: lead.organization_id, archived: lead.archived_at != null };
   }
 
   if (lead.organization_id) {
@@ -40,18 +47,18 @@ async function leadAccess(c: Context<AppBindings>, leadId: string): Promise<Lead
     if (role) return {
       read: true,
       write: ["owner", "admin", "manager", "specialist"].includes(role),
-      organizationId: lead.organization_id,
+      organizationId: lead.organization_id, archived: lead.archived_at != null,
     };
   }
 
   const assignment = await c.env.DB.prepare(
     "SELECT assignment_role FROM lead_assignments WHERE lead_id = ? AND user_id = ?",
   ).bind(leadId, userId).first<{ assignment_role: string }>();
-  if (assignment) return { read: true, write: assignment.assignment_role !== "reviewer", organizationId: lead.organization_id };
+  if (assignment) return { read: true, write: assignment.assignment_role !== "reviewer", organizationId: lead.organization_id, archived: lead.archived_at != null };
 
   // Legacy unassigned leads remain available to platform principals and
   // explicit capability holders above; a staff role alone is not an ACL.
-  return { read: false, write: false, organizationId: lead.organization_id };
+  return { read: false, write: false, organizationId: lead.organization_id, archived: lead.archived_at != null };
 }
 
 async function audit(c: Context<AppBindings>, leadId: string, action: string, outcome: "allowed" | "denied") {
@@ -188,33 +195,57 @@ leadsRouter.get("/api/leads", async (c) => {
     if (!role) return c.json({ error: { code: "forbidden" } }, 403);
   }
 
+  const globalWrite = !!platformRole || await hasCapability(c.env.DB,userId,"leads.write",organizationId || undefined);
   const values: unknown[] = [];
-  const filters: string[] = ["lead.deleted_at IS NULL"];
+  const archived = c.req.query("archived");
+  if (archived !== undefined && archived !== "1") return c.json({error:{code:"invalid_filter"}},400);
+  const rawOffset = c.req.query("offset") || "0";
+  if (!/^\d{1,6}$/.test(rawOffset)) return c.json({error:{code:"invalid_offset"}},400);
+  const offset = archived === "1" ? Number(rawOffset) : 0, limit = archived === "1" ? 50 : 250;
+  const filters: string[] = ["lead.deleted_at IS NULL", archived === "1" ? "lead.archived_at IS NOT NULL" : "lead.archived_at IS NULL"];
   if (organizationId) { filters.push("lead.organization_id = ?"); values.push(organizationId); }
   if (stage) { filters.push("lead.lifecycle_stage = ?"); values.push(stage); }
-  if (!platformRole && !capabilityRead) {
-    filters.push(`(
-      EXISTS (SELECT 1 FROM lead_assignments assignment WHERE assignment.lead_id = lead.id AND assignment.user_id = ?)
-      OR EXISTS (SELECT 1 FROM organization_memberships membership
-                  WHERE membership.organization_id = lead.organization_id
-                    AND membership.user_id = ? AND membership.status = 'active')
-    )`);
-    values.push(userId, userId);
-  }
+  const visibility=leadReadPredicate(userId,!!platformRole||capabilityRead);
+  filters.push(visibility.sql);values.push(...visibility.values);
   const where = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
   const { results } = await c.env.DB.prepare(
     `SELECT lead.id, lead.organization_id, lead.source, lead.name, lead.business,
             lead.phone, lead.email, lead.product, lead.status, lead.lifecycle_stage,
             lead.preferred_channel, lead.next_follow_up_at, lead.urgent,
             lead.converted_project_id, lead.estimate_ron, lead.delivery_status,
-            lead.created_at, lead.updated_at
+            CASE WHEN lead.product IN ('logo-studio','logo-studio-3d') THEN lead.config_json ELSE NULL END config_json,
+            lead.created_at, lead.updated_at,lead.archived_at,lead.archived_by,lead.archive_reason,lead.archive_note,
+            CASE WHEN ?=1 OR EXISTS(SELECT 1 FROM lead_assignments a WHERE a.lead_id=lead.id AND a.user_id=? AND a.assignment_role<>'reviewer') OR EXISTS(SELECT 1 FROM organization_memberships m WHERE m.organization_id=lead.organization_id AND m.user_id=? AND m.status='active' AND m.role IN ('owner','admin','manager','specialist')) THEN 1 ELSE 0 END can_archive
        FROM leads AS lead ${where}
-      ORDER BY lead.urgent DESC,
+      ORDER BY ${archived === "1" ? "lead.archived_at DESC," : ""} lead.urgent DESC,
                CASE WHEN lead.next_follow_up_at IS NULL THEN 1 ELSE 0 END,
-               lead.next_follow_up_at, lead.created_at DESC
-      LIMIT 250`,
-  ).bind(...values).all();
-  return c.json({ data: results, platformRole });
+               lead.next_follow_up_at, lead.created_at DESC,lead.id
+      LIMIT ? OFFSET ?`,
+  ).bind(globalWrite?1:0,userId,userId,...values, limit, offset).all();
+  c.header("Cache-Control", "private, no-store");
+  return c.json({ data: results, platformRole, nextOffset: archived === "1" && results.length === limit ? offset + limit : null });
+});
+
+leadsRouter.post("/api/leads/:leadId/archive", async c => {
+  const id = c.req.param("leadId"), access = await leadAccess(c,id);
+  if (!access) return c.json({error:{code:"not_found"}},404);
+  if (!access.write) return c.json({error:{code:"forbidden"}},403);
+  const input = await readJsonBodyUpTo(c.req.raw,4096);
+  if (!input.ok) return c.json({error:{code:input.error}},input.error === "payload_too_large" ? 413 : 400);
+  const b = input.value as {restore?:unknown;reason?:unknown;note?:unknown;expectedUpdatedAt?:unknown;confirmed?:unknown}|null;
+  if (!b || typeof b.restore !== "boolean" || b.confirmed !== true || typeof b.expectedUpdatedAt !== "number" || !Number.isSafeInteger(b.expectedUpdatedAt) || b.expectedUpdatedAt<0 || (b.note !== undefined && (typeof b.note!=="string" || b.note.length>1000)) || (!b.restore && !LEAD_ARCHIVE_REASONS.some(r=>r.code===b.reason))) return c.json({error:{code:"invalid_archive_request"}},400);
+  const timestamp = Math.max(now(),b.expectedUpdatedAt+1), note = typeof b.note === "string" ? b.note.trim() : "";
+  const [result] = await c.env.DB.batch([
+    c.env.DB.prepare(`UPDATE leads SET archived_at=?,archived_by=?,archive_reason=?,archive_note=?,updated_at=? WHERE id=? AND deleted_at IS NULL AND coalesce(updated_at,0)=? AND ${b.restore ? "archived_at IS NOT NULL" : "archived_at IS NULL"}`)
+      .bind(b.restore?null:timestamp,b.restore?null:c.get("userId"),b.restore?null:b.reason,b.restore?null:note,timestamp,id,b.expectedUpdatedAt),
+    c.env.DB.prepare(`INSERT INTO lead_activities(id,lead_id,actor_user_id,kind,direction,outcome,content,occurred_at,created_at) SELECT ?,?,?,'status_change','internal',?,?,?,? WHERE changes()=1`)
+      .bind(identifier("la"),id,c.get("userId"),b.restore?"restored":"archived",b.restore ? "Lead restaurat din arhivă." : `Arhivat: ${LEAD_ARCHIVE_REASONS.find(r=>r.code===b.reason)?.label}${note ? " · " + note : ""}`,timestamp,timestamp),
+    c.env.DB.prepare(`INSERT INTO security_events(id,organization_id,actor_user_id,actor_type,action,target_type,target_id,outcome,severity,request_id,metadata_json,created_at)
+      SELECT ?,?,?,'user',?,'lead',?,'allowed','info',?,?,? WHERE changes()=1`)
+      .bind(identifier("evt"),access.organizationId,c.get("userId"),b.restore?"lead.restore":"lead.archive",id,c.get("requestId")||null,JSON.stringify({reason:b.restore?null:b.reason}),timestamp),
+  ]);
+  if (!result.meta.changes) return c.json({error:{code:"lead_changed",message:"Leadul s-a modificat. Reîncarcă lista înainte de confirmare."}},409);
+  return c.json({ok:true});
 });
 
 leadsRouter.get("/api/leads/deletions", async (c) => {
@@ -254,7 +285,7 @@ leadsRouter.get("/api/leads/:leadId", async (c) => {
     ).bind(leadId).all(),
     c.env.DB.prepare("SELECT * FROM lead_reminders WHERE lead_id = ? ORDER BY due_at DESC LIMIT 100").bind(leadId).all(),
   ]);
-  return c.json({ data: lead, activities: activities.results, assignments: assignments.results, reminders: reminders.results, canEdit: access.write });
+  return c.json({ data: lead, activities: activities.results, assignments: assignments.results, reminders: reminders.results, canEdit: access.write && !access.archived });
 });
 
 leadsRouter.patch("/api/leads/:leadId", async (c) => {
@@ -262,6 +293,7 @@ leadsRouter.patch("/api/leads/:leadId", async (c) => {
   const access = await leadAccess(c, leadId);
   if (!access) return c.json({ error: { code: "not_found" } }, 404);
   if (!access.write) { await audit(c, leadId, "lead.update", "denied"); return c.json({ error: { code: "forbidden" } }, 403); }
+  if (access.archived) return c.json({error:{code:"lead_archived",message:"Restaurează leadul înainte de modificare."}},409);
   const body = await c.req.json<{
     lifecycleStage?: string; urgent?: boolean; nextFollowUpAt?: number | null;
     preferredChannel?: string | null; lostReason?: string | null;
@@ -294,10 +326,11 @@ leadsRouter.patch("/api/leads/:leadId", async (c) => {
     sets.push("lost_reason = ?"); values.push(reason || null);
   }
   if (!sets.length) return c.json({ error: { code: "nothing_to_update" } }, 400);
-  sets.push("updated_at = ?"); values.push(now(), leadId);
-  await c.env.DB.prepare(`UPDATE leads SET ${sets.join(", ")} WHERE id = ?`).bind(...values).run();
+  sets.push("updated_at = max(?, coalesce(updated_at, 0) + 1)"); values.push(now(), leadId);
+  const updated = await c.env.DB.prepare(`UPDATE leads SET ${sets.join(", ")} WHERE id = ? AND archived_at IS NULL AND deleted_at IS NULL RETURNING updated_at`).bind(...values).first<{updated_at:number}>();
+  if (!updated) return c.json({error:{code:"lead_changed"}},409);
   await audit(c, leadId, "lead.update", "allowed");
-  return c.json({ ok: true });
+  return c.json({ ok: true, updatedAt: updated.updated_at });
 });
 
 leadsRouter.delete("/api/leads/:leadId", async (c) => {
@@ -346,6 +379,7 @@ leadsRouter.post("/api/leads/:leadId/activities", async (c) => {
   const access = await leadAccess(c, leadId);
   if (!access) return c.json({ error: { code: "not_found" } }, 404);
   if (!access.write) return c.json({ error: { code: "forbidden" } }, 403);
+  if (access.archived) return c.json({error:{code:"lead_archived",message:"Restaurează leadul înainte de modificare."}},409);
   const body = await c.req.json<{ kind?: string; direction?: string; outcome?: string; content?: string; occurredAt?: number }>().catch(() => null);
   if (!body?.kind || !ACTIVITY_KINDS.has(body.kind)) return c.json({ error: { code: "invalid_activity" } }, 400);
   const direction = body.direction || "internal";
@@ -354,15 +388,13 @@ leadsRouter.post("/api/leads/:leadId/activities", async (c) => {
   if (content.length > 4_000) return c.json({ error: { code: "content_too_long" } }, 400);
   const timestamp = now();
   const activityId = identifier("lead_activity");
-  await c.env.DB.batch([
-    c.env.DB.prepare(
-      `INSERT INTO lead_activities
-         (id, lead_id, actor_user_id, kind, direction, outcome, content, occurred_at, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).bind(activityId, leadId, c.get("userId"), body.kind, direction, String(body.outcome || "").slice(0, 300) || null, content || null, body.occurredAt || timestamp, timestamp),
-    c.env.DB.prepare("UPDATE leads SET updated_at = ?, first_response_at = COALESCE(first_response_at, ?) WHERE id = ?")
+  const [updated] = await c.env.DB.batch([
+    c.env.DB.prepare("UPDATE leads SET updated_at = max(?,coalesce(updated_at,0)+1), first_response_at = COALESCE(first_response_at, ?) WHERE id = ? AND archived_at IS NULL AND deleted_at IS NULL")
       .bind(timestamp, direction === "outbound" ? timestamp : null, leadId),
+    c.env.DB.prepare(`INSERT INTO lead_activities(id,lead_id,actor_user_id,kind,direction,outcome,content,occurred_at,created_at) SELECT ?,?,?,?,?,?,?,?,? WHERE changes()=1`)
+      .bind(activityId,leadId,c.get("userId"),body.kind,direction,String(body.outcome||"").slice(0,300)||null,content||null,body.occurredAt||timestamp,timestamp),
   ]);
+  if (!updated.meta.changes) return c.json({error:{code:"lead_changed"}},409);
   await audit(c, leadId, "lead.activity.create", "allowed");
   return c.json({ id: activityId }, 201);
 });
@@ -372,6 +404,7 @@ leadsRouter.post("/api/leads/:leadId/reminders", async (c) => {
   const access = await leadAccess(c, leadId);
   if (!access) return c.json({ error: { code: "not_found" } }, 404);
   if (!access.write) return c.json({ error: { code: "forbidden" } }, 403);
+  if (access.archived) return c.json({error:{code:"lead_archived",message:"Restaurează leadul înainte de modificare."}},409);
   const body = await c.req.json<{ assignedTo?: string; dueAt?: number; note?: string }>().catch(() => null);
   const dueAt = Number(body?.dueAt);
   const note = String(body?.note || "").trim();
@@ -389,10 +422,11 @@ leadsRouter.post("/api/leads/:leadId/reminders", async (c) => {
   ).bind(assignedTo, access.organizationId, access.organizationId).first();
   if (!assignee) return c.json({ error: { code: "invalid_assignee" } }, 400);
   const reminderId = identifier("lead_reminder");
-  await c.env.DB.prepare(
+  const inserted = await c.env.DB.prepare(
     `INSERT INTO lead_reminders (id, lead_id, assigned_to, due_at, note, created_by, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-  ).bind(reminderId, leadId, assignedTo, dueAt, note, c.get("userId"), now()).run();
+     SELECT ?, ?, ?, ?, ?, ?, ? WHERE EXISTS(SELECT 1 FROM leads WHERE id=? AND archived_at IS NULL AND deleted_at IS NULL)`,
+  ).bind(reminderId, leadId, assignedTo, dueAt, note, c.get("userId"), now(),leadId).run();
+  if (!inserted.meta.changes) return c.json({error:{code:"lead_changed"}},409);
   await audit(c, leadId, "lead.reminder.create", "allowed");
   return c.json({ id: reminderId }, 201);
 });
@@ -402,6 +436,7 @@ leadsRouter.patch("/api/leads/:leadId/reminders/:reminderId", async (c) => {
   const access = await leadAccess(c, leadId);
   if (!access) return c.json({ error: { code: "not_found" } }, 404);
   if (!access.write) return c.json({ error: { code: "forbidden" } }, 403);
+  if (access.archived) return c.json({error:{code:"lead_archived",message:"Restaurează leadul înainte de modificare."}},409);
   const body = await c.req.json<{ status?: string }>().catch(() => null);
   if (!body?.status || !["done", "cancelled"].includes(body.status)) {
     return c.json({ error: { code: "invalid_reminder_status" } }, 400);
@@ -411,9 +446,10 @@ leadsRouter.patch("/api/leads/:leadId/reminders/:reminderId", async (c) => {
   ).bind(c.req.param("reminderId"), leadId).first();
   if (!reminder) return c.json({ error: { code: "not_found" } }, 404);
   const timestamp = now();
-  await c.env.DB.prepare(
-    "UPDATE lead_reminders SET status = ?, completed_at = ? WHERE id = ? AND lead_id = ?",
-  ).bind(body.status, body.status === "done" ? timestamp : null, c.req.param("reminderId"), leadId).run();
+  const updated = await c.env.DB.prepare(
+    "UPDATE lead_reminders SET status = ?, completed_at = ? WHERE id = ? AND lead_id = ? AND EXISTS(SELECT 1 FROM leads WHERE id=? AND archived_at IS NULL AND deleted_at IS NULL)",
+  ).bind(body.status, body.status === "done" ? timestamp : null, c.req.param("reminderId"), leadId,leadId).run();
+  if (!updated.meta.changes) return c.json({error:{code:"lead_changed"}},409);
   await audit(c, leadId, `lead.reminder.${body.status}`, "allowed");
   return c.json({ ok: true });
 });

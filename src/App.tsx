@@ -1,3 +1,4 @@
+import { AccountCartProvider } from "@/hooks/AccountCartProvider";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import LangRouteSync from "@/components/site/LangRouteSync";
 import { FEATURES } from "@/config/features";
@@ -165,7 +166,7 @@ const HeadManager = () => {
 const App = () => {
  const servicePreview=typeof window!=="undefined"&&new URLSearchParams(window.location.search).has("servicePreview");
  return <LanguageProvider>
-    <AuthProvider>
+    <AuthProvider><AccountCartProvider>
       <BrowserRouter>
         <PerformanceGovernor />
         <HeadManager />
@@ -394,7 +395,7 @@ const App = () => {
         {!surveyHost&&!servicePreview && <CookieBanner />}
       </BrowserRouter>
       {!surveyHost&&!servicePreview && <DeferredGlobalUi />}
-    </AuthProvider>
+    </AccountCartProvider></AuthProvider>
   </LanguageProvider>;
 };
 

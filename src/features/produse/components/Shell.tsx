@@ -1,7 +1,7 @@
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Blocks, BookOpen, Boxes, Handshake, Heart, Layers, Search, Sparkles } from "lucide-react";
+import { Blocks, BookOpen, Boxes, Handshake, Layers, Search, Sparkles } from "lucide-react";
 import Nav, { type NavLinkDef } from "@/components/site/Nav";
 import Footer from "@/components/site/Footer";
 import type { Lang } from "@/i18n/translations";
@@ -10,8 +10,6 @@ import { collectionsPath, faqPath, guidePath, homePath, typePath } from "../lib/
 import CartDrawer from "./CartDrawer";
 import PageBackLink from "@/components/site/PageBackLink";
 import ProductLocaleSwitcher from "./ProductLocaleSwitcher";
-import { useAuth } from "@/hooks/useAuth";
-import { store } from "../lib/store";
 
 const Backdrop = lazyWithRetry(() => import("./Backdrop"));
 const SearchPalette = lazyWithRetry(() => import("./SearchPalette"));
@@ -33,18 +31,6 @@ export default function Shell({ lang, children }: { lang: Lang; children: ReactN
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [tier] = useState(() => detectTier());
-  const { user, loading: authLoading } = useAuth();
-
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) { store.setFavorites([]); return; }
-    let active = true;
-    void import("@/lib/produseApi").then(({ produseApi }) => produseApi.state()).then((account) => {
-      if (active && account.day) store.setFavorites(account.collection);
-    }).catch(() => {});
-    return () => { active = false; };
-  }, [user, authLoading]);
-
   const links: NavLinkDef[] = [
     { label: ro ? "Componente" : "Components", to: typePath(lang, "component"), icon: Blocks, isRoute: true },
     { label: ro ? "Secțiuni" : "Sections", to: typePath(lang, "section"), icon: Layers, isRoute: true },
@@ -165,14 +151,7 @@ export default function Shell({ lang, children }: { lang: Lang; children: ReactN
               <Search className="size-3.5" aria-hidden />
               <span className="pa-mono hidden sm:inline">{finePointer() ? "⌘K" : ro ? "Caută" : "Search"}</span>
             </button>
-            <Link
-              to={`${typePath(lang, "component")}`}
-              className="pa-glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] text-muted-foreground transition hover:text-foreground"
-              aria-label={ro ? "Vezi colecția de componente" : "View the component collection"}
-            >
-              <Heart className="size-3.5" aria-hidden />
-              <span className="hidden sm:inline">{ro ? "Colecția mea" : "My collection"}</span>
-            </Link>
+
             <Link
               to={faqPath(lang)}
               className="pa-glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] text-muted-foreground transition hover:text-foreground"

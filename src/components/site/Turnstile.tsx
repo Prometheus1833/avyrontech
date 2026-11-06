@@ -33,9 +33,9 @@ const loadScript = () => {
   return scriptPromise;
 };
 
-type Props = { onToken: (token: string) => void; resetKey?: number; action: string };
+type Props = { onToken: (token: string) => void; resetKey?: number; action: string; size?: "flexible" | "compact" };
 
-const Turnstile = ({ onToken, resetKey = 0, action }: Props) => {
+const Turnstile = ({ onToken, resetKey = 0, action, size = "flexible" }: Props) => {
   const ref = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | null>(null);
 
@@ -48,7 +48,7 @@ const Turnstile = ({ onToken, resetKey = 0, action }: Props) => {
         widgetId.current = window.turnstile.render(ref.current, {
           sitekey: TURNSTILE_SITE_KEY,
           theme: "auto",
-          size: "flexible",
+          size,
           action,
           callback: (token: string) => onToken(token),
           "expired-callback": () => onToken(""),
@@ -67,7 +67,7 @@ const Turnstile = ({ onToken, resetKey = 0, action }: Props) => {
         widgetId.current = null;
       }
     };
-  }, [action, onToken]);
+  }, [action, onToken, size]);
 
   useEffect(() => {
     if (resetKey && widgetId.current && window.turnstile) {
@@ -80,7 +80,7 @@ const Turnstile = ({ onToken, resetKey = 0, action }: Props) => {
   }, [resetKey]);
 
   if (!TURNSTILE_SITE_KEY) return null;
-  return <div ref={ref} className="mt-1 min-h-[65px]" role="group" aria-label="Verificare anti-spam" />;
+  return <div ref={ref} className={`mt-1 ${size === "compact" ? "min-h-[140px]" : "min-h-[65px]"}`} role="group" aria-label="Verificare anti-spam" />;
 };
 
 export default Turnstile;

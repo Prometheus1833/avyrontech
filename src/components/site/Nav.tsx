@@ -95,17 +95,17 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
     >
       <div className="mx-auto max-w-7xl px-3 sm:px-4 mt-3">
         <nav className={`flex items-center justify-between gap-2 rounded-full border pl-3 pr-2 py-2 backdrop-blur-2xl transition-[background-color,border-color,box-shadow] duration-500 ${scrollLift > 2 ? "border-white/20 bg-background/[0.72] shadow-[0_18px_55px_-25px_rgba(15,23,42,0.65),inset_0_1px_0_rgba(255,255,255,0.18)]" : "glass border-white/10 shadow-soft"}`}>
-          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <a href={`${homePath}#hero`} aria-label="AVYRON" className="flex items-center gap-2">
+          <div className={user ? "flex shrink-0 items-center gap-1 sm:gap-2" : "flex shrink-0 items-center gap-2 sm:gap-3"}>
+            <a href={`${homePath}#hero`} aria-label={user ? "Avyron Web — Acasă" : "AVYRON"} className="flex items-center gap-2">
               <img src={logo} alt="" width={22} height={22} className="size-[1.4rem] rounded-md object-cover" />
               <span
-                className={`text-sm sm:text-base md:text-lg font-bold uppercase tracking-[0.18em] bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent ${user ? "max-[359px]:hidden" : ""}`}
+                className={`text-sm sm:text-base md:text-lg font-bold uppercase tracking-[0.18em] bg-gradient-to-r from-foreground to-brand bg-clip-text text-transparent ${user ? "!text-sm max-[359px]:!text-xs !normal-case !tracking-normal" : ""}`}
                 style={{ fontFamily: '"Times New Roman", Times, serif' }}
               >
-                AVYRON
+                {user ? "Avyron Web" : "AVYRON"}
               </span>
             </a>
-            <NavDate className={user ? "max-[419px]:hidden" : ""} />
+            <NavDate className={user ? "hidden xl:inline-flex" : ""} />
             {!loading&&user&&!isStaff&&<Suspense fallback={null}><ClientChatButton/></Suspense>}
             <div className="hidden xl:inline-flex items-center gap-1.5">
               {showCurrency && <CurrencySwitch compact showDetails={false} />}
@@ -113,6 +113,7 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
               <ThemeToggle />
             </div>
           </div>
+          {!loading && user && <Link to="/profil?tab=overview" aria-label="Deschide Avy Cont" className="inline-flex min-h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-violet-400/25 bg-violet-500/10 px-2 sm:px-3 text-xs font-semibold text-foreground transition hover:bg-violet-500/20">Avy Cont</Link>}
           <ul className="hidden xl:flex min-w-0 items-center gap-1.5 2xl:gap-3 text-sm font-medium">
             {links.map((l) => (
               <li key={l.href ?? l.to} className="shrink-0">
@@ -147,7 +148,7 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
             ))}
           </ul>
           <div className="hidden xl:flex shrink-0 items-center gap-2">
-            <a
+            {!user && <a
               href={ctaHref}
               title={ctaLabel}
               className="inline-flex h-11 min-w-[9.5rem] shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -156,7 +157,7 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
                 <span className="whitespace-nowrap">{ctaLabel}</span>
                 <span className="mt-0.5 text-[9px] font-normal opacity-70">{ctaSub}</span>
               </span>
-            </a>
+            </a>}
             {!loading && (user ? (
               <Suspense fallback={<span className="size-10" aria-hidden />}><UserMenu /></Suspense>
             ) : (
@@ -170,9 +171,9 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
             ))}
           </div>
           <div className="xl:hidden flex shrink-0 items-center gap-1.5">
-            {showCurrency && <CurrencySwitch compact showDetails={false} />}
+            <div className={user ? "hidden items-center gap-1.5 md:flex" : "flex items-center gap-1.5"}>{showCurrency && <CurrencySwitch compact showDetails={false} />}
             <LangSwitch />
-            <ThemeToggle />
+            <ThemeToggle /></div>
             {!loading && user ? (
               <Suspense fallback={<span className="size-10" aria-hidden />}><UserMenu /></Suspense>
             ) : (

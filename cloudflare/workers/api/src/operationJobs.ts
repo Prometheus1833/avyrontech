@@ -16,7 +16,7 @@ export async function operationPreview(env:Env,action:OperationAction) {
   ]);
   if(action==='deadlines')return {generated_at:timestamp,work:work.results,records:records.results,limit_per_collection:100};
   const [leads,approvals,receipts]=await Promise.all([
-    env.DB.prepare("SELECT COUNT(*) total FROM leads WHERE status NOT IN ('won','lost','archived')").first(),
+    env.DB.prepare("SELECT COUNT(*) total FROM leads WHERE deleted_at IS NULL AND archived_at IS NULL AND status NOT IN ('won','lost','archived')").first(),
     env.DB.prepare("SELECT COUNT(*) total FROM ai_approvals WHERE status='pending' AND expires_at>?").bind(timestamp).first(),
     env.DB.prepare('SELECT currency,SUM(amount_minor) amount_minor FROM financial_receipts WHERE paid_at>=? GROUP BY currency').bind(timestamp-30*86400000).all(),
   ]);

@@ -1,3 +1,8 @@
+import ProjectSummaryCard from "@/components/intern/ProjectSummaryCard";
+import {PROJECT_KIND_LABELS,type ProjectSummary} from "@/shared/projectSummary";
+import { PROJECT_STAGES, projectStage, type ProjectStage } from "@/shared/projectLifecycle";
+import { clientWorkspaceApi } from "@/lib/clientWorkspaceApi";
+import { CLIENT_ENTITY_TYPES, type ClientEntityType } from "@/shared/clientWorkspace";
 import { STAFF_MANAGED } from "@/shared/staffAccess";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -15,14 +20,12 @@ import { Plus, ArrowUpRight, ExternalLink, FolderKanban, CheckCircle2, Receipt, 
 import { toast } from "sonner";
 import ContactRail from "@/components/intern/ContactRail";
 import PageBackLink from "@/components/site/PageBackLink";
-import { normalizeExternalLink } from "@/shared/externalUrl";
 
-type Row = {
-  id: string; slug: string; name: string; kind: ProjectKind;
-  banner_status: BannerStatus; status: string; url: string | null; favicon_url: string | null; updated_at: number;
-};
+
+type Row = ProjectSummary & {favicon_url?:string|null};
 
 const BANNER: Record<BannerStatus, { label: string; cls: string }> = {
+  proposed: { label: "Propus", cls: "bg-slate-500/15 text-muted-foreground" },
   online:      { label: "Online / Finalizat", cls: "bg-green-500/15 text-green-600 dark:text-green-400" },
   testing:     { label: "Testare",             cls: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
   in_progress: { label: "În dezvoltare",       cls: "bg-primary/15 text-primary" },
@@ -30,19 +33,11 @@ const BANNER: Record<BannerStatus, { label: string; cls: string }> = {
   offline:     { label: "Offline",             cls: "bg-muted text-muted-foreground" },
 };
 
-const KINDS: { value: ProjectKind; label: string }[] = [
-  {value:"external_asset",label:"Proiect / produs extern"},
-  { value: "website_prezentare",  label: "Website prezentare" },
-  { value: "prezentare_premium",  label: "Prezentare premium" },
-  { value: "magazin_online",      label: "Magazin online" },
-  { value: "retele_sociale",      label: "Rețele sociale" },
-  { value: "identitate_completa", label: "Identitate completă" },
-  { value: "aplicatie",           label: "Aplicație" },
-];
+const KINDS=Object.entries(PROJECT_KIND_LABELS).map(([value,label])=>({value:value as ProjectKind,label}));
 
 export default function InternHome({ embedded = false }: { embedded?: boolean;
 }) {
-  const { user, isStaff, capabilities, loading: authLoading } = useAuth();
+  const { user, isStaff, isSuperAdmin, capabilities, loading: authLoading } = useAuth();
   const [params,setParams]=useSearchParams();
   const mine=params.get("scope")==="mine";
   const canCreate =
@@ -58,8 +53,27 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
   const [projectView, setProjectView] = useState<"pipeline" | "list">("pipeline");
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [accounts, setAccounts] = useState<AccountOption[]>([]);
-  const [form, setForm] = useState({ name: "", slug: "", kind: "website_prezentare" as ProjectKind, url: "", description: "", client_id: "", owner_user_id: "", recurring_enabled: false, recurring_name: "Mentenanță AVYRON", recurring_price: "", recurring_cycle: "monthly" as "monthly" | "yearly", next_billing_date: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10) });
+  const [form, setForm] = useState({ name: "", stage: "proposed" as ProjectStage, kind: "website_prezentare" as ProjectKind, url: "", description: "", client_id: "none", owner_user_id: "", recurring_enabled: false, recurring_name: "Mentenanță AVYRON", recurring_price: "", recurring_cycle: "monthly" as "monthly" | "yearly", next_billing_date: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10) });
 
+  const [newClient, setNewClient] = useState(false);
+  const [savingClient, setSavingClient] = useState(false);
+  const [clientDraft, setClientDraft] = useState({ name: "", email: "", phone: "", contact: "", type: "Altă formă" as ClientEntityType });
+  const projectKey = useRef(crypto.randomUUID());
+  const clientKey = useRef(crypto.randomUUID());
+  const canCreateClient = isSuperAdmin || capabilities.includes("clients.write");
+  const createClient = async () => {
+    if (savingClient) return;
+    setSavingClient(true);
+    try {
+      const name = clientDraft.name.trim();
+      if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientDraft.email.trim())) throw new Error("Completează numele și un e-mail valid.");
+      const result = await clientWorkspaceApi.create({ identity: { companyName: name, legalName: name, email: clientDraft.email.trim(), phone: clientDraft.phone.trim(), contactName: clientDraft.contact.trim(), entityType: clientDraft.type, status: "active", taxId: "", registrationNumber: "", address: "", representative: "", notes: "" }, account: { mode: "none" } }, clientKey.current);
+      setClients(old => [...old, { id: result.id, company_name: name, email: clientDraft.email.trim(), contact_name: clientDraft.contact.trim() || null, status: "active" }]);
+      setForm(old => ({ ...old, client_id: result.id, owner_user_id: "" }));
+      setNewClient(false); setClientDraft({ name: "", email: "", phone: "", contact: "", type: "Altă formă" }); clientKey.current = crypto.randomUUID();
+      toast.success("Clientul a fost adăugat în CRM și selectat pentru proiect.");
+    } catch (e) { toast.error((e as Error).message); } finally { setSavingClient(false); }
+  };
   const loadSeq=useRef(0);
   const load = useCallback(async () => {
     const seq=++loadSeq.current;
@@ -86,10 +100,10 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
   }, [userId,load]);
   useEffect(() => {
     if (!user || !canCreate) return;
-    Promise.all([internApi.listClients(), internApi.listAccounts()])
+    Promise.allSettled([internApi.listClients(), internApi.listAccounts()])
       .then(([clientResult, accountResult]) => {
-        setClients(clientResult.data);
-        setAccounts(accountResult.data.filter((account) => !/(^|,)(staff|admin)(,|$)/.test(account.roles || "")));
+        setClients(clientResult.status === "fulfilled" ? clientResult.value.data : []);
+        setAccounts(accountResult.status === "fulfilled" ? accountResult.value.data.filter((account) => !/(^|,)(staff|admin)(,|$)/.test(account.roles || "")) : []);
       })
       .catch(() => {
         setClients([]);
@@ -98,28 +112,31 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
   }, [user, canCreate]);
 
   const handleCreate = async () => {
-    if (!form.name.trim() || !form.slug.trim() || !form.client_id.trim()) {
-      toast.error("Nume, slug și client ID sunt obligatorii");
+    if (creating) return;
+    if (!form.name.trim()) {
+      toast.error("Completează numele proiectului.");
       return;
     }
     setCreating(true);
     try {
       await internApi.createProject({
         name: form.name.trim(),
-        slug: form.slug.trim().toLowerCase(),
+        stage: form.stage,
         kind: form.kind,
         url: form.url || undefined,
         description: form.description || undefined,
-        client_id: form.client_id.trim(),
+        client_id: form.client_id === "none" ? null : form.client_id,
         owner_user_id: form.owner_user_id.trim() || undefined,
         recurring_service: form.recurring_enabled ? {
           enabled: true, service_name: form.recurring_name.trim(), price: Number(form.recurring_price),
           billing_cycle: form.recurring_cycle, next_billing_date: new Date(`${form.next_billing_date}T12:00:00`).getTime(), subscription_status: "active",
         } : undefined,
-      });
-      toast.success("Proiect creat");
+      }, projectKey.current);
+      projectKey.current = crypto.randomUUID();
+      window.dispatchEvent(new Event("avyron:projects-changed"));
+      toast.success("Proiect creat în etapa selectată");
       setOpenCreate(false);
-      setForm({ name: "", slug: "", kind: "website_prezentare", url: "", description: "", client_id: "", owner_user_id: "", recurring_enabled: false, recurring_name: "Mentenanță AVYRON", recurring_price: "", recurring_cycle: "monthly", next_billing_date: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10) });
+      setForm({ name: "", stage: "proposed" as ProjectStage, kind: "website_prezentare", url: "", description: "", client_id: "none", owner_user_id: "", recurring_enabled: false, recurring_name: "Mentenanță AVYRON", recurring_price: "", recurring_cycle: "monthly", next_billing_date: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10) });
       await load();
     } catch (e) {
       toast.error((e as Error).message);
@@ -154,7 +171,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
         </div>
 
         {canCreate && (
-          <Dialog open={openCreate} onOpenChange={setOpenCreate}>
+          <Dialog open={openCreate} onOpenChange={value => { if (!creating) setOpenCreate(value); }}>
             <DialogTrigger asChild>
               <button className="group relative inline-flex items-center gap-2.5 rounded-full bg-zinc-950 px-5 py-2.5 text-sm font-medium text-white shadow-[0_8px_30px_-12px_rgba(0,0,0,0.6)] ring-1 ring-white/10 transition-all hover:bg-zinc-900 hover:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.8)] hover:scale-[1.02] active:scale-[0.98] dark:bg-white dark:text-zinc-950 dark:ring-zinc-900/10 dark:hover:bg-zinc-100">
                 <span className="relative flex size-5 items-center justify-center rounded-full bg-white/10 dark:bg-zinc-950/10">
@@ -164,15 +181,14 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
                 <ArrowUpRight className="size-3.5 opacity-60 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-h-[90dvh] overflow-y-auto max-w-lg">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2"><Plus className="size-4 text-primary" /> Proiect nou</DialogTitle>
-                <DialogDescription>Slug-ul apare în URL: {" "}
-                  <code>/intern/projects/&lt;slug&gt;</code>.</DialogDescription>
+                <DialogDescription>Alege etapa și beneficiarul. Adresa internă se generează automat; clientul poate fi asociat și ulterior din fișa sa.</DialogDescription>
               </DialogHeader>
               <div className="space-y-3">
-                <div><Label>Nume *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Clar Lumânări" /></div>
-                <div><Label>Slug * (fără spații)</Label><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="clarlumanari" /></div>
+                <div><Label htmlFor="project-name">Nume *</Label><Input id="project-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Clar Lumânări" /></div>
+                <div><Label htmlFor="project-stage">Etapă</Label><Select value={form.stage} onValueChange={value => setForm({ ...form, stage: value as ProjectStage })}><SelectTrigger id="project-stage"><SelectValue /></SelectTrigger><SelectContent>{PROJECT_STAGES.map(stage => <SelectItem key={stage.id} value={stage.id}>{stage.label}</SelectItem>)}</SelectContent></Select></div>
                 <div>
                   <Label>Tip</Label>
                   <Select value={form.kind} onValueChange={(v) => setForm({ ...form, kind: v as ProjectKind })}>
@@ -184,17 +200,18 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
                 <div><Label>URL live</Label><Input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} placeholder="https://clarlumanari.ro" /></div>
                 <div><Label>Descriere</Label><Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
                 <div>
-                  <Label>Client *</Label>
+                  <Label htmlFor="project-client">Client</Label>
                   <Select
                     value={form.client_id}
                     onValueChange={(clientId) => {
-                      const client = clients.find((item) => item.id === clientId);
-                      const owner = accounts.find((item) => item.email.toLowerCase() === client?.email.toLowerCase());
-                      setForm({ ...form, client_id: clientId, owner_user_id: owner?.id || form.owner_user_id });
+                      if (clientId === "new") { setNewClient(true); return; }
+                      setForm({ ...form, client_id: clientId, owner_user_id: "", recurring_enabled: clientId === "none" ? false : form.recurring_enabled });
                     }}
                   >
-                    <SelectTrigger><SelectValue placeholder="Selectează clientul" /></SelectTrigger>
+                    <SelectTrigger id="project-client"><SelectValue placeholder="Selectează clientul" /></SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="none">Fără client încă</SelectItem>
+                      {canCreateClient && <SelectItem value="new">+ Client nou</SelectItem>}
                       {clients.map((client) => (
                         <SelectItem key={client.id} value={client.id}>{client.company_name} · {client.email}</SelectItem>
                       ))}
@@ -203,7 +220,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
                 </div>
                 <div>
                   <Label>Cont client asociat</Label>
-                  <Select value={form.owner_user_id || "unassigned"} onValueChange={(value) => setForm({ ...form, owner_user_id: value === "unassigned" ? "" : value })}>
+                  <Select disabled={form.client_id === "none"} value={form.owner_user_id || "unassigned"} onValueChange={(value) => setForm({ ...form, owner_user_id: value === "unassigned" ? "" : value })}>
                     <SelectTrigger><SelectValue placeholder="Selectează contul" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="unassigned">Fără cont asociat</SelectItem>
@@ -215,15 +232,15 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
                   </Select>
                 </div>
                 {clients.length === 0 && (
-                  <p className="text-[11px] text-muted-foreground">Creează sau importă mai întâi un client din secțiunea Clienți.</p>
+                  <p className="text-[11px] text-muted-foreground">Poți crea un client nou aici sau poți continua fără client.</p>
                 )}
-                <fieldset className="rounded-xl border border-border/60 p-3"><label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" checked={form.recurring_enabled} onChange={(event) => setForm({ ...form, recurring_enabled: event.target.checked })} />{" "}
+                <fieldset className="rounded-xl border border-border/60 p-3"><label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" disabled={form.client_id === "none"} checked={form.recurring_enabled} onChange={(event) => setForm({ ...form, recurring_enabled: event.target.checked })} />{" "}
                     Pornește proiectul cu mentenanță și abonament</label><p className="mt-1 text-[11px] text-muted-foreground">Proiectul, serviciul recurent și abonamentul clientului sunt create atomic și rămân sincronizate.</p>{form.recurring_enabled && (
                     <div className="mt-3 grid gap-3 sm:grid-cols-2"><div className="sm:col-span-2"><Label>Serviciu recurent</Label><Input value={form.recurring_name} onChange={(event) => setForm({ ...form, recurring_name: event.target.value })} /></div><div><Label>Preț RON</Label><Input type="number" min="0" step="1" value={form.recurring_price} onChange={(event) => setForm({ ...form, recurring_price: event.target.value })} /></div><div><Label>Ciclu</Label><Select value={form.recurring_cycle} onValueChange={(value) => setForm({ ...form, recurring_cycle: value as "monthly" | "yearly" })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="monthly">Lunar</SelectItem><SelectItem value="yearly">Anual</SelectItem></SelectContent></Select></div><div className="sm:col-span-2"><Label>Prima facturare</Label><Input type="date" value={form.next_billing_date} onChange={(event) => setForm({ ...form, next_billing_date: event.target.value })} /></div></div>
                   )}</fieldset>
               </div>
               <DialogFooter>
-                <Button variant="ghost" onClick={() => setOpenCreate(false)}>Anulează</Button>
+                <Button variant="ghost" disabled={creating} onClick={() => setOpenCreate(false)}>Anulează</Button>
                 <Button onClick={handleCreate} disabled={creating}>{creating ? "Se creează…" : "Creează"}</Button>
               </DialogFooter>
             </DialogContent>
@@ -239,6 +256,19 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
       </div>
       )}
 
+      <Dialog open={newClient} onOpenChange={value => { if (!savingClient) setNewClient(value); }}>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
+          <DialogHeader><DialogTitle>Client nou</DialogTitle><DialogDescription>Datele minime se salvează în CRM-ul existent. Contul de acces și datele de facturare se pot completa din fișa clientului.</DialogDescription></DialogHeader>
+          <div className="space-y-3">
+            <div><Label htmlFor="new-client-name">Nume / denumire *</Label><Input id="new-client-name" maxLength={180} value={clientDraft.name} onChange={e => setClientDraft({ ...clientDraft, name: e.target.value })} /></div>
+            <div><Label htmlFor="new-client-email">E-mail *</Label><Input id="new-client-email" type="email" maxLength={254} value={clientDraft.email} onChange={e => setClientDraft({ ...clientDraft, email: e.target.value })} /></div>
+            <div><Label htmlFor="new-client-type">Tip client</Label><select id="new-client-type" className="w-full rounded-md border bg-background p-2 text-sm" value={clientDraft.type} onChange={e => setClientDraft({ ...clientDraft, type: e.target.value as ClientEntityType })}>{CLIENT_ENTITY_TYPES.map(type => <option key={type}>{type}</option>)}</select></div>
+            <div><Label htmlFor="new-client-contact">Persoană de contact</Label><Input id="new-client-contact" maxLength={180} value={clientDraft.contact} onChange={e => setClientDraft({ ...clientDraft, contact: e.target.value })} /></div>
+            <div><Label htmlFor="new-client-phone">Telefon</Label><Input id="new-client-phone" type="tel" maxLength={40} value={clientDraft.phone} onChange={e => setClientDraft({ ...clientDraft, phone: e.target.value })} /></div>
+          </div>
+          <DialogFooter><Button variant="outline" disabled={savingClient} onClick={() => setNewClient(false)}>Renunță</Button><Button disabled={savingClient} onClick={() => void createClient()}>{savingClient ? "Se salvează…" : "Salvează și selectează clientul"}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
       {loading ? (
         <div className="text-sm text-muted-foreground">Se încarcă proiectele…</div>
       ) : (isStaff ? rows.length === 0 : activeRows.length === 0 && purchases.length === 0 && sales.length === 0) ? (
@@ -268,15 +298,15 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
           })()}
 
           {isStaff && projectView === "pipeline" && (
-            <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-5" aria-label="Pipeline proiecte">
-            {(["offline", "in_progress", "revizuire", "testing", "online"] as const).map((status) => {
-              const projects = workflowRows.filter((project) => project.banner_status === status);
+            <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-4" aria-label="Pipeline proiecte">
+            {PROJECT_STAGES.map((stage) => {
+              const status = stage.banner;
+              const projects = workflowRows.filter((project) => projectStage(project) === stage.id);
               return (
-                  <details open key={status} aria-label={BANNER[status].label} className="min-w-0 rounded-2xl border border-border/60 bg-card/40 p-3">
-                <summary className="mb-3 flex cursor-pointer items-center justify-between gap-2 text-sm font-semibold"><span>{BANNER[status].label}</span><span className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">{projects.length} ▾</span></summary>
+                  <details open key={status} aria-label={stage.label} className="min-w-0 rounded-2xl border border-border/60 bg-card/40 p-3">
+                <summary className="mb-3 flex cursor-pointer items-center justify-between gap-2 text-sm font-semibold"><span>{stage.label}</span><span className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">{projects.length} ▾</span></summary>
                 <div className="space-y-2">{projects.map((project) => (
-                        <Link key={project.id} to={`/intern/projects/${project.slug}`} className="block rounded-xl border border-border/60 bg-card p-3 transition hover:border-primary/50 hover:shadow-sm"><span className="block truncate text-sm font-medium">{project.name}</span><span className="mt-1 block text-xs text-muted-foreground">Actualizat {" "}
-                            {new Date(project.updated_at).toLocaleDateString("ro-RO")}</span></Link>))}{projects.length === 0 && (
+                        <ProjectSummaryCard key={project.id} project={project}/>))}{projects.length === 0 && (
                         <p className="rounded-xl border border-dashed border-border/60 p-3 text-xs text-muted-foreground">Niciun proiect.</p>
                       )}</div>
               </details>
@@ -294,34 +324,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
                 (category) => (
                   <details open key={category} className="min-w-0 rounded-xl border bg-card/30 p-3"><summary className="mb-3 cursor-pointer text-sm font-semibold">{KINDS.find((kind) =>kind.value===category)?.label||category}{" "}
                       ·{" "}
-                      {activeRows.filter((row) =>row.kind===category).length}</summary><div className="space-y-3">{activeRows.filter((row) =>row.kind===category).map((p) => {
-              const B = BANNER[p.banner_status] ?? BANNER.in_progress;
-              return (
-                <Link key={p.id} to={`/intern/projects/${p.slug}`} className="group block rounded-xl border bg-card p-4 hover:border-primary/50 hover:shadow-md transition">
-                  <div className="flex items-start gap-3">
-                    {p.favicon_url ? (
-                      <img src={p.favicon_url} alt="" className="size-8 rounded-md border bg-background object-contain" onError={(e) => (e.currentTarget.style.display = "none")} />
-                    ) : (
-                      <div className="size-8 rounded-md border bg-muted grid place-items-center text-[10px] text-muted-foreground">{p.slug.slice(0, 2).toUpperCase()}</div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-medium truncate group-hover:text-primary">{p.name}</h3>
-                        <Badge variant="secondary" className={B.cls}>{B.label}</Badge>
-                      </div>
-                      {p.url && normalizeExternalLink(p.url) && (
-                        <a href={normalizeExternalLink(p.url)!} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
-                          {p.url.replace(/^https?:\/\//, "")}{" "}
-                                      <ExternalLink className="size-3" />
-                        </a>
-                      )}
-                      <p className="mt-2 text-[11px] text-muted-foreground">Actualizat {" "}
-                                    {new Date(p.updated_at).toLocaleDateString("ro-RO")}</p>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}</div></details>),
+                      {activeRows.filter((row) =>row.kind===category).length}</summary><div className="space-y-3">{activeRows.filter((row) =>row.kind===category).map((p) => <ProjectSummaryCard key={p.id} project={p}/>)}</div></details>),
               )}
           </div>
           )}

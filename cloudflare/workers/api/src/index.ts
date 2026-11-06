@@ -1,3 +1,4 @@
+import { linkClientsByEmail } from "./clientAccountSync";
 import {collaboratorsRouter} from "./collaborators";
 import {collaborationIdentity} from "./collaboratorPolicy";
 import { antivirusRouter } from "./antivirus";
@@ -857,6 +858,7 @@ app.get("/api/auth/me", requireAuth, async (c) => {
   const u = await c.env.DB.prepare("SELECT id,email,username,display_name,avatar_url,email_verified,must_change_password,created_at FROM users WHERE id = ? AND disabled_at IS NULL")
     .bind(c.get("userId")).first();
   if (!u) return c.json({ error: { code: "account_unavailable" } }, 401);
+  if (!c.get("roles").some(role=>role==="staff"||role==="admin")) await linkClientsByEmail(c.env.DB,c.get("userId"));
   let profile = await c.env.DB.prepare(`SELECT ${PROFILE_SELECT} FROM profiles WHERE id = ?`).bind(c.get("userId")).first();
   if (!profile) {
     await c.env.DB.prepare("INSERT INTO profiles (id,display_name,entity_type,language,theme,updated_at) VALUES (?,?,'individual','ro','system',?)")
@@ -1653,7 +1655,8 @@ import { catalogCodesRouter } from "./catalogCodes";
 import { contactRouter } from "./contact";
 import { financeRouter } from "./finance";
 import { leadsRouter } from "./leads";
-import { logoStudioRouter } from "./logoStudio";
+import { logoOperationsRouter } from "./logoOperations";
+import { cleanupLogoSimulations, logoStudioRouter } from "./logoStudio";
 import { mediaRouter } from "./media";
 import { operationsOAuthRouter,operationsRouter } from "./operations";
 import { organizationsRouter } from "./organizations";
@@ -1676,6 +1679,10 @@ app.use("/api/metadata/*", requireAuth);
 app.use("/api/media/*", requireAuth);
 app.use("/api/commerce/*", requireAuth);
 app.use("/api/logo-studio/generate", requireAuth);
+app.use("/api/logo-studio/simulations", requireAuth);
+app.use("/api/logo-studio/product-interest", requireAuth);
+app.use("/api/logo-studio/admin/*", requireAuth, requirePrivilegedMfa);
+app.use("/api/logo-studio/orders", async(c,next)=>c.req.header("authorization")?requireAuth(c,next):next());
 app.use("/api/promotions/*", requireAuth);
 app.use("/api/leads", requireAuth);
 app.use("/api/leads/*", requireAuth);
@@ -1767,6 +1774,7 @@ app.route("/", promotionsRouter);
 // Formularul public (fără auth)
 app.route("/", contactRouter);
 app.route("/", logoStudioRouter);
+app.route("/", logoOperationsRouter);
 app.route("/", produseRouter);
 // Magazinul cere cont; webhook-ul Stripe rămâne public, semnat criptografic.
 app.use("/api/produse/account/*", requireAuth);
@@ -1947,6 +1955,7 @@ export default {
       ctx.waitUntil(maintainMalwareScans(env).catch(() => console.error(JSON.stringify({event:"antivirus_poll_failed",code:"maintenance_unavailable"}))));
       ctx.waitUntil(enqueueAsyncJobs(env, ["operation_drain", "social_drain", "survey_delivery", "survey_ai"]));
       if (new Date(controller.scheduledTime).getUTCMinutes() === 0) {
+        ctx.waitUntil(cleanupLogoSimulations(env.DB).catch(()=>console.error(JSON.stringify({event:"logo_metadata_cleanup_failed"}))));
         ctx.waitUntil(cleanupAvyronEditorialContent(env).catch((error) => {
           console.error(JSON.stringify({ event: "ai_editorial_cleanup_failed", error: String(error) }));
           throw error;

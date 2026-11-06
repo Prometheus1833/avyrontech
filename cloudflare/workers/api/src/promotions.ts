@@ -95,7 +95,7 @@ type PricedOrderItem = {
   unitPriceCents: number | null;
   lineTotalCents: number | null;
   referenceUnitPriceCents: number | null;
-  referenceCurrency: "RON" | "EUR";
+  referenceCurrency: string;
   serviceKey: string | null;
   productSlug: string | null;
   accountingCode: string | null;
@@ -161,7 +161,7 @@ export function priceOrderItems(
       unitPriceCents,
       lineTotalCents,
       referenceUnitPriceCents: commercial ? commercial.base_price_minor : catalogItem!.unitPriceCents,
-      referenceCurrency: commercial ? "RON" : catalogItem!.currency,
+      referenceCurrency: commercial ? commercial.currency : catalogItem!.currency,
       serviceKey,
       productSlug: commercial?.entity_type === "product" ? commercial.entity_key : productSlug,
       accountingCode: commercial?.accounting_code ?? null,

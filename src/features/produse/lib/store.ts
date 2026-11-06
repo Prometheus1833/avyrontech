@@ -1,3 +1,4 @@
+import { addLocalAccountCartItem } from "@/lib/accountCart";
 import { useSyncExternalStore } from "react";
 
 /**
@@ -71,7 +72,17 @@ export const store = {
     commit({ ...state, favorites: has ? state.favorites.filter((s) => s !== slug) : [slug, ...state.favorites] });
     return !has;
   },
-  addToCart(line: CartLine) {
+  addToCart(line: CartLine, displayName?: string) {
+    // Every explicit add is an intent, even when the public selection already
+    // contains the product from an older visit. The native cart deduplicates it.
+    if (typeof window !== "undefined") {
+      const id = line.kind === "item" ? `product-${line.slug}` : `partnership-${line.plan}`;
+      addLocalAccountCartItem({ id, source: "products", sku: id,
+        type: line.kind === "item" ? "product" : "partnership",
+        name: displayName || (line.kind === "item" ? line.slug : line.plan),
+        ...(line.kind === "item" ? { productSlug: line.slug } : { period: "annual" as const }),
+      });
+    }
     const exists = state.cart.some((l) => JSON.stringify(l) === JSON.stringify(line));
     if (exists) return false;
     // Un singur parteneriat în coș: alegerea nouă îl înlocuiește pe cel vechi.

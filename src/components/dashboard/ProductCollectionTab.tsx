@@ -1,5 +1,7 @@
+import PaidDevelopmentProducts from "./PaidDevelopmentProducts";
+import { publicSiteHref } from "@/lib/appHost";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BadgeCheck, Boxes, ExternalLink, Heart, RefreshCw, Sparkles } from "lucide-react";
+import { BadgeCheck, Boxes, ExternalLink, RefreshCw, Sparkles } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,15 +10,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { EMPTY_STATE, produseApi, type AccountState, type LimitBucket } from "@/lib/produseApi";
 import { PRODUSE_BASE, PRODUSE_ITEM_ROUTES } from "@/features/produse/data/routes";
-import { SERVICE_COMMERCIAL_SOURCES } from "@/data/serviceCommercialSources";
-import { cfAuth } from "@/lib/cfAuth";
-import { toast } from "sonner";
 
 /**
- * „Colecția mea” — partea din cont a paginii Produse Avyron.
+ * „Produsele mele” — partea din cont a paginii Produse Avyron.
  *
  * Arată parteneriatul activ, cât a mai rămas din limitele de azi, produsele
- * salvate, cele cumpărate și ce s-a obținut recent. Cifrele vin de la Worker:
+ * cumpărate și ce s-a obținut recent. Cifrele vin de la Worker:
  * ce scrie aici e exact ce ar accepta serverul la următoarea obținere.
  */
 
@@ -53,13 +52,13 @@ export function ProductCollectionTab() {
   const { user } = useAuth();
   const [state, setState] = useState<AccountState>(EMPTY_STATE);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState<string | null>(null);
-  const [serviceFavorites, setServiceFavorites] = useState<string[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       setState(await produseApi.state());
+    } catch {
+      setState(EMPTY_STATE);
     } finally {
       setLoading(false);
     }
@@ -68,43 +67,7 @@ export function ProductCollectionTab() {
   useEffect(() => {
     if (!user) return;
     void load();
-    void cfAuth.request<{ data: string[] }>("/api/commerce/favorites/services").then((response) => setServiceFavorites(response.data ?? [])).catch(() => {});
   }, [user, load]);
-
-  const removeService = async (key: string) => {
-    setBusy(key);
-    try {
-      await cfAuth.request(`/api/commerce/favorites/services/${encodeURIComponent(key)}`, { method: "DELETE" });
-      setServiceFavorites((current) => current.filter((entry) => entry !== key));
-    } catch { toast.error("Serviciul nu a putut fi scos din favorite."); }
-    finally { setBusy(null); }
-  };
-
-  // Ce a strâns vizitatorul în browser înainte de login urcă o singură dată în
-  // cont; după aceea contul e sursa, iar pagina publică citește de la el.
-  useEffect(() => {
-    if (!user || loading) return;
-    let local: string[] = [];
-    try {
-      const raw = window.localStorage.getItem("avyron-produse-v1");
-      local = raw ? ((JSON.parse(raw) as { favorites?: string[] }).favorites ?? []) : [];
-    } catch {
-      return;
-    }
-    const missing = local.filter((slug) => !state.collection.includes(slug));
-    if (!missing.length) return;
-    void produseApi.collection.sync(missing).then((data) => setState((current) => ({ ...current, collection: data })));
-  }, [user, loading, state.collection]);
-
-  const remove = async (slug: string) => {
-    setBusy(slug);
-    try {
-      const data = await produseApi.collection.remove(slug);
-      setState((current) => ({ ...current, collection: data }));
-    } finally {
-      setBusy(null);
-    }
-  };
 
   const expiry = useMemo(() => formatDate(state.planExpiresAt), [state.planExpiresAt]);
   const notMigrated = !loading && state.day === "";
@@ -112,6 +75,7 @@ export function ProductCollectionTab() {
   if (loading) {
     return (
       <div className="space-y-4">
+        <PaidDevelopmentProducts key={user?.id} />
         <Skeleton className="h-28 w-full" />
         <Skeleton className="h-48 w-full" />
       </div>
@@ -120,6 +84,7 @@ export function ProductCollectionTab() {
 
   return (
     <div className="space-y-4">
+        <PaidDevelopmentProducts key={user?.id} />
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -133,7 +98,7 @@ export function ProductCollectionTab() {
         <CardContent className="space-y-4">
           {notMigrated ? (
             <p className="text-sm text-muted-foreground">
-              Colecția din cont nu poate fi încărcată acum. Reîncearcă peste câteva momente.
+              Produsele din cont nu pot fi încărcate acum. Reîncearcă peste câteva momente.
             </p>
           ) : (
             <>
@@ -141,7 +106,7 @@ export function ProductCollectionTab() {
                 <Badge variant="default">{PLAN_LABEL[state.plan]}</Badge>
                 {expiry && <span className="text-sm text-muted-foreground">valabil până pe {expiry}</span>}
                 {state.plan === "free" && (
-                  <a className="inline-flex items-center gap-1 text-sm underline underline-offset-4" href="/produse#parteneriate">
+                  <a className="inline-flex items-center gap-1 text-sm underline underline-offset-4" href={publicSiteHref("/produse#parteneriate")}>
                     Vezi parteneriatele <ExternalLink className="h-3 w-3" aria-hidden="true" />
                   </a>
                 )}
@@ -176,58 +141,25 @@ export function ProductCollectionTab() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Heart className="h-4 w-4" /> Servicii favorite</CardTitle></CardHeader>
-          <CardContent>{serviceFavorites.length === 0 ? <p className="text-sm text-muted-foreground">Nu ai servicii salvate. Le poți adăuga din catalog.</p> : <ul className="space-y-2">{serviceFavorites.map((key) => <li key={key} className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2"><span className="text-sm">{SERVICE_COMMERCIAL_SOURCES.find((source) => source.entity_key === key)?.display_name || key}</span><Button size="sm" variant="ghost" disabled={busy === key} onClick={() => void removeService(key)}>Scoate</Button></li>)}</ul>}</CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Heart className="h-4 w-4" aria-hidden="true" />
-              Produse salvate
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {state.collection.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Nimic salvat încă. Pe pagina Produse Avyron, inima de pe card adaugă produsul aici.
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {state.collection.map((slug) => (
-                  <li key={slug} className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2">
-                    <a className="text-sm hover:underline" href={productHref(slug)}>
-                      {prettySlug(slug)}
-                    </a>
-                    <Button variant="ghost" size="sm" disabled={busy === slug} onClick={() => void remove(slug)}>
-                      Scoate
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
+      <div className="space-y-4">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <BadgeCheck className="h-4 w-4" aria-hidden="true" />
-              Cumpărate
+              Drepturi individuale active
             </CardTitle>
           </CardHeader>
           <CardContent>
             {state.purchases.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nimic cumpărat separat. Produsele din parteneriat nu apar aici.</p>
+              <p className="text-sm text-muted-foreground">Nu ai drepturi individuale active. Achizițiile achitate rămân în istoricul de mai sus.</p>
             ) : (
               <ul className="space-y-2">
                 {state.purchases.map((slug) => (
                   <li key={slug} className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2">
-                    <a className="text-sm hover:underline" href={productHref(slug)}>
+                    <a className="text-sm hover:underline" href={publicSiteHref(productHref(slug))}>
                       {prettySlug(slug)}
                     </a>
-                    <Badge variant="secondary">licență pe viață</Badge>
+                    <Badge variant="secondary">acces activ</Badge>
                   </li>
                 ))}
               </ul>
@@ -250,7 +182,7 @@ export function ProductCollectionTab() {
             <ul className="divide-y">
               {state.recent.map((entry) => (
                 <li key={`${entry.slug}-${entry.created_at}`} className="flex items-center justify-between gap-2 py-2 text-sm">
-                  <a className="hover:underline" href={productHref(entry.slug)}>
+                  <a className="hover:underline" href={publicSiteHref(productHref(entry.slug))}>
                     {prettySlug(entry.slug)}
                   </a>
                   <span className="text-muted-foreground">

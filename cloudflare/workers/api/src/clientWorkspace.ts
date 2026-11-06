@@ -1,3 +1,4 @@
+import {projectSummaryColumns} from "./projectSummary";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import type { AppBindings } from "./types";
@@ -91,8 +92,10 @@ const clientSelect = `SELECT c.*,l.entity_type,l.legal_name,l.tax_id,l.registrat
 (SELECT count(*) FROM client_account_access g WHERE g.client_id=c.id) account_count FROM clients c LEFT JOIN client_legal_profiles l ON l.client_id=c.id`;
 const accountSelect = `SELECT u.id,u.email,u.username,coalesce(p.display_name,u.display_name) display_name,p.company_name,u.email_verified,u.disabled_at,u.must_change_password,u.last_login_at FROM users u LEFT JOIN profiles p ON p.id=u.id`;
 const eligibleAccount = `u.disabled_at IS NULL AND u.email_verified=1 AND NOT EXISTS(SELECT 1 FROM user_roles r WHERE r.user_id=u.id AND r.role IN('staff','admin')) AND NOT EXISTS(SELECT 1 FROM platform_principals pp WHERE pp.email=u.email COLLATE NOCASE) AND lower(u.email)<>'${STAFF_OPERATIONAL_EMAIL}' AND NOT EXISTS(SELECT 1 FROM agent_operator_bindings ab WHERE ab.user_id=u.id AND ab.status='active')`;
-// Reassignment is limited to blank, unowned, non-tenant projects. Client history is never transferred silently.
-const blankProject = `p.organization_id IS NULL AND p.owner_user_id IS NULL AND NOT EXISTS(SELECT 1 FROM leads history WHERE history.converted_project_id=p.id) ${["staff_chat_messages", "visual_assets", "project_staff", "project_logs", "services", "project_media", "project_links", "project_proposals", "project_updates", "project_work_items", "project_statistics", "website_content", "financial_revenues", "support_tickets", "financial_expense_allocations", "financial_budgets", "financial_usage_events", "os_center_records", "surveys", "financial_expenses", "operation_records", "hub_documents", "document_assignments"].map((table) => `AND NOT EXISTS(SELECT 1 FROM ${table} history WHERE history.project_id=p.id)`).join(" ")}`;
+// Never-assigned projects may keep internal stage/staff history. Existing beneficiary history is never transferred silently.
+const blankProject = `p.organization_id IS NULL AND p.owner_user_id IS NULL AND NOT EXISTS(SELECT 1 FROM leads history WHERE history.converted_project_id=p.id)
+AND NOT EXISTS(SELECT 1 FROM project_staff history WHERE history.project_id=p.id AND p.client_id IS NOT NULL)
+AND NOT EXISTS(SELECT 1 FROM project_logs history WHERE history.project_id=p.id AND p.client_id IS NOT NULL) ${["staff_chat_messages", "visual_assets", "services", "project_media", "project_links", "project_proposals", "project_updates", "project_work_items", "project_statistics", "website_content", "financial_revenues", "support_tickets", "financial_expense_allocations", "financial_budgets", "financial_usage_events", "os_center_records", "surveys", "financial_expenses", "operation_records", "hub_documents", "document_assignments"].map((table) => `AND NOT EXISTS(SELECT 1 FROM ${table} history WHERE history.project_id=p.id)`).join(" ")}`;
 async function principal(c: Ctx) {
   return !!(await platformRoleForUser(c.env.DB, c.get("userId")));
 }
@@ -487,7 +490,7 @@ clientWorkspaceRouter.get(root + "/:id", async (c) => {
     carts,
   ] = await Promise.all([
     c.env.DB.prepare(
-      "SELECT id,name,slug,kind,status,url,client_id,organization_id,owner_user_id,coalesce(updated_at,0) updated_at FROM projects WHERE client_id=? ORDER BY updated_at DESC,id LIMIT 500",
+      `SELECT ${projectSummaryColumns("p",permissions.finance)},p.owner_user_id FROM projects p WHERE p.client_id=? ORDER BY p.updated_at DESC,p.id LIMIT 500`,
     )
       .bind(id)
       .all(),
@@ -504,7 +507,7 @@ clientWorkspaceRouter.get(root + "/:id", async (c) => {
       .all(),
     permissions.manageProjects
       ? c.env.DB.prepare(
-          `SELECT p.id,p.name,p.slug,p.kind,p.status,p.url,p.client_id,p.organization_id,p.owner_user_id,coalesce(p.updated_at,0) updated_at,c.company_name,CASE WHEN p.client_id=? OR (${blankProject}) THEN 1 ELSE 0 END can_assign FROM projects p JOIN clients c ON c.id=p.client_id WHERE p.status<>'archived' ORDER BY p.client_id=? DESC,p.name LIMIT 500`,
+          `SELECT p.id,p.name,p.slug,p.kind,p.status,p.url,p.client_id,p.organization_id,p.owner_user_id,coalesce(p.updated_at,0) updated_at,c.company_name,CASE WHEN p.client_id=? OR (${blankProject}) THEN 1 ELSE 0 END can_assign FROM projects p LEFT JOIN clients c ON c.id=p.client_id WHERE p.status<>'archived' ORDER BY p.client_id=? DESC,p.name LIMIT 500`,
         )
           .bind(id, id)
           .all()
@@ -564,7 +567,7 @@ clientWorkspaceRouter.get(root + "/:id", async (c) => {
   return c.json({
     client,
     organizationId: mapping?.organization_id || null,
-    projects: projects.results,
+    projects: projects.results.map(row=>({...row,budget_visible:permissions.finance})),
     subscriptions: subscriptions.results,
     accounts: accounts.results,
     availableProjects: available.results.map((p: Record<string, unknown>) => ({
@@ -738,7 +741,7 @@ clientWorkspaceRouter.put(root + "/:id/projects", async (c) => {
           z
             .object({
               id: ident,
-              sourceClientId: ident,
+              sourceClientId: ident.nullable(),
               updatedAt: z.number().int().min(0),
             })
             .strict(),
@@ -761,7 +764,7 @@ clientWorkspaceRouter.put(root + "/:id/projects", async (c) => {
       .bind(id, p.id)
       .first<{
         assignable: number;
-        client_id: string;
+        client_id: string | null;
         revision_timestamp: number;
       }>();
     if (
@@ -778,8 +781,9 @@ clientWorkspaceRouter.put(root + "/:id/projects", async (c) => {
       );
     writes.push(
       c.env.DB.prepare(
-        `UPDATE projects AS p SET client_id=CASE WHEN p.client_id=? AND coalesce(p.updated_at,0)=? AND (p.client_id=? OR (${blankProject})) THEN ? ELSE NULL END,updated_at=? WHERE p.id=?`,
-      ).bind(p.sourceClientId, p.updatedAt, id, id, Date.now(), p.id),
+        `UPDATE clients SET revision=CASE WHEN EXISTS(SELECT 1 FROM projects p WHERE p.id=? AND p.client_id IS ? AND coalesce(p.updated_at,0)=? AND (p.client_id=? OR (${blankProject}))) THEN revision ELSE NULL END WHERE id=?`,
+      ).bind(p.id, p.sourceClientId, p.updatedAt, id, id),
+      c.env.DB.prepare("UPDATE projects SET client_id=?,updated_at=? WHERE id=?").bind(id, Date.now(), p.id),
       c.env.DB.prepare(
         "INSERT INTO project_logs(id,project_id,actor_id,action,meta_json,created_at) VALUES(?,?,?,'client_assigned',?,?)",
       ).bind(

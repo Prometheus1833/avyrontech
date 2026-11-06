@@ -123,7 +123,7 @@ export async function funnelSummary(db: D1Database, page: string, days: number) 
 
 export async function leadPipeline(db: D1Database, product: string | null, days: number) {
   const since = Date.now() - days * 86400000;
-  const where = product ? "WHERE created_at >= ? AND product = ?" : "WHERE created_at >= ?";
+  const where = product ? "WHERE deleted_at IS NULL AND archived_at IS NULL AND created_at >= ? AND product = ?" : "WHERE deleted_at IS NULL AND archived_at IS NULL AND created_at >= ?";
   const binds = product ? [since, product] : [since];
 
   const byStatus = await db

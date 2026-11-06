@@ -216,6 +216,9 @@ export const openApiDocument = {
     "/commerce/quote": {
       post: { tags: ["Platform"], summary: "Calculează server-side prețul și reducerea unei comenzi", security: [{ bearerAuth: [] }], responses: { "200": { description: "Ofertă calculată" }, "400": { $ref: "#/components/responses/Problem" }, "409": { $ref: "#/components/responses/Problem" } } },
     },
+    "/produse/account/purchases": {
+      get: { tags: ["Platform"], summary: "Istoricul paginat al produselor achitate de contul curent", security: [{ bearerAuth: [] }], responses: { "200": { description: "Achiziții confirmate; cursor pentru pagina următoare" }, "400": { $ref: "#/components/responses/Problem" } } },
+    },
     "/commerce/orders": {
       get: { tags: ["Platform"], summary: "Listează comenzile contului curent", security: [{ bearerAuth: [] }], responses: { "200": { description: "Listă de comenzi" } } },
       post: { tags: ["Platform"], summary: "Creează o comandă folosind prețurile validate de Worker", security: [{ bearerAuth: [] }], responses: { "201": { description: "Comandă creată" }, "400": { $ref: "#/components/responses/Problem" } } },

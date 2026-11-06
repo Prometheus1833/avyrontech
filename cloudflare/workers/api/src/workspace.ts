@@ -1,3 +1,6 @@
+import { linkClientsByEmail } from "./clientAccountSync";
+export { linkClientsByEmail } from "./clientAccountSync";
+import { dashboardActivityRouter } from "./dashboardActivity";
 import {managedStaff,canManageStaffTarget} from "./staffAccessPolicy";
 import { createMaintenanceRouter } from "./maintenance";
 import {maintenanceWorkAccess,maintenanceProjectScope} from "./maintenancePolicy";
@@ -10,8 +13,10 @@ import { privilegedMfaSatisfied } from "./mfaPolicy";
 import { checkRateLimit } from "./antispam";
 import { sha256 } from "./security";
 import { canAccessProject } from "./projects";
+import { getScannedObject } from "./malware";
 
 export const workspaceRouter = new Hono<AppBindings>();
+workspaceRouter.route("/", dashboardActivityRouter);
 type Ctx = Context<AppBindings>;
 const staff = (c: Ctx) => c.get("roles").some(r => r === "staff" || r === "admin");
 const fail = (c: Ctx, code: string, status: 400 | 403 | 404 | 409 = 400) => c.json({error:{code}},status);
@@ -97,10 +102,23 @@ workspaceRouter.get('/api/workspace/clients',async c => {
 workspaceRouter.get('/api/workspace/invoices',async c => {
   if (!staff(c)) await linkClientsByEmail(c.env.DB,c.get('userId'));
   const {limit,offset}=page(c);
-  const {results}=await c.env.DB.prepare(`SELECT record.id,record.invoice_number,record.gross_amount_minor amount_cents,record.currency,record.status,record.invoice_date,record.due_date
+  const {results}=await c.env.DB.prepare(`SELECT record.id,record.invoice_number,record.gross_amount_minor amount_cents,record.currency,record.status,record.invoice_date,record.due_date,(SELECT fulfillment.order_id FROM billing_order_fulfillments fulfillment JOIN commerce_orders purchase ON purchase.id=fulfillment.order_id AND purchase.user_id=? WHERE (fulfillment.provider='stripe' AND fulfillment.provider_reference=record.stripe_reference) OR (fulfillment.provider='revolut' AND fulfillment.provider_reference=record.revolut_reference) LIMIT 1) order_id,
+    EXISTS(SELECT 1 FROM financial_documents document WHERE document.revenue_id=record.id AND document.document_type='invoice' AND document.content_type='application/pdf' AND document.status='active') has_pdf
     FROM financial_revenues record WHERE ${clientScope} AND record.archived_at IS NULL AND record.status NOT IN ('draft','archived') ORDER BY record.invoice_date DESC,record.id LIMIT ? OFFSET ?`)
-    .bind(c.get('userId'),limit,offset).all<Record<string,unknown>>();
-  return c.json({data:results.map(r=>({...r,invoice_number:r.invoice_number||r.id,status:r.status==='paid'?'paid':r.status==='overdue'?'overdue':['cancelled','refunded'].includes(String(r.status))?'cancelled':'pending',issued_at:iso(r.invoice_date),due_at:iso(r.due_date),pdf_url:null}))});
+    .bind(c.get('userId'),c.get('userId'),limit,offset).all<Record<string,unknown>>();
+  c.header('cache-control','private, no-store');
+  return c.json({data:results.map(r=>({...r,invoice_number:r.invoice_number||r.id,status:r.status==='paid'?'paid':r.status==='overdue'?'overdue':['cancelled','refunded'].includes(String(r.status))?'cancelled':'pending',issued_at:iso(r.invoice_date),due_at:iso(r.due_date),pdf_url:null,download_url:r.has_pdf?`/api/workspace/invoices/${encodeURIComponent(String(r.id))}/content`:null})),nextOffset:results.length===limit?offset+limit:null});
+});
+workspaceRouter.get('/api/workspace/invoices/:invoiceId/content',async c=>{
+  if(!staff(c))await linkClientsByEmail(c.env.DB,c.get('userId'));
+  const invoice=await c.env.DB.prepare(`SELECT record.id FROM financial_revenues record WHERE record.id=? AND ${clientScope} AND record.archived_at IS NULL AND record.status NOT IN ('draft','archived')`).bind(c.req.param('invoiceId'),c.get('userId')).first();
+  if(!invoice)return fail(c,'not_found',404);
+  const file=await c.env.DB.prepare("SELECT r2_object_key,file_name FROM financial_documents WHERE revenue_id=? AND document_type='invoice' AND content_type='application/pdf' AND status='active' ORDER BY version DESC,created_at DESC,id DESC LIMIT 1").bind(c.req.param('invoiceId')).first<{r2_object_key:string;file_name:string}>();
+  if(!file)return fail(c,'not_found',404);
+  const object=await getScannedObject(c.env,'FILES',file.r2_object_key);
+  if(!object)return fail(c,'not_found',404);
+  await audit(c,'client.invoice.download',c.req.param('invoiceId')).run();
+  return new Response(object.body,{headers:{'content-type':'application/pdf','content-disposition':`attachment; filename="${file.file_name.replace(/[^A-Za-z0-9._-]/g,'_').slice(0,120)||'factura.pdf'}"`,'cache-control':'private, no-store','x-content-type-options':'nosniff'}});
 });
 workspaceRouter.get('/api/workspace/subscriptions',async c => {
   if (!staff(c)) await linkClientsByEmail(c.env.DB,c.get('userId'));
@@ -149,11 +167,6 @@ workspaceRouter.put('/api/workspace/account-access/:userId',async c => {
 });
 
 // Support is a team workflow: staff and admins work the whole queue.
-/** Links a verified account to the client with the same email (unverified emails never gain client data); creates a client record when none exists yet. */
-export async function linkClientsByEmail(db: D1Database,userId: string) {
-  await db.prepare(`INSERT OR IGNORE INTO client_account_access(client_id,user_id,granted_by,created_at)
-    SELECT cl.id,u.id,u.id,? FROM users u JOIN clients cl ON lower(trim(cl.email))=lower(trim(u.email)) WHERE u.id=? AND u.email_verified=1 AND cl.access_managed=0`).bind(Date.now(),userId).run();
-}
 async function ensureClientForUser(c: Ctx,requested?: string): Promise<string|null> {
   const userId=c.get('userId'), db=c.env.DB;
   const linked=async()=>{
@@ -238,8 +251,15 @@ workspaceRouter.patch('/api/workspace/tickets/:id',async c => {
 workspaceRouter.get('/api/workspace/announcements',async c => {
   if (!staff(c)) return fail(c,'forbidden',403);
   const {limit,offset}=page(c);
-  const {results}=await c.env.DB.prepare('SELECT id,author_id,title,content,priority,created_at FROM staff_announcements WHERE archived_at IS NULL ORDER BY created_at DESC,id LIMIT ? OFFSET ?').bind(limit,offset).all<Record<string,unknown>>();
+  const {results}=await c.env.DB.prepare('SELECT a.id,a.author_id,a.title,a.content,a.priority,a.created_at,r.read_at FROM staff_announcements a LEFT JOIN staff_announcement_reads r ON r.announcement_id=a.id AND r.user_id=? WHERE a.archived_at IS NULL ORDER BY a.created_at DESC,a.id LIMIT ? OFFSET ?').bind(c.get('userId'),limit,offset).all<Record<string,unknown>>();
   return c.json({data:results.map(r=>({...r,created_at:iso(r.created_at)}))});
+});
+workspaceRouter.post('/api/workspace/announcements/:id/read',async c => {
+  if (!staff(c)) return fail(c,'forbidden',403);
+  const id=c.req.param('id');
+  const row=await c.env.DB.prepare('SELECT 1 FROM staff_announcements WHERE id=? AND archived_at IS NULL').bind(id).first();
+  if(!row)return fail(c,'not_found',404);
+  return mutate(c,{id},{ok:true},[c.env.DB.prepare('INSERT INTO staff_announcement_reads(user_id,announcement_id,read_at) VALUES(?,?,?) ON CONFLICT(user_id,announcement_id) DO NOTHING').bind(c.get('userId'),id,Date.now())]);
 });
 workspaceRouter.post('/api/workspace/announcements',async c => {
   if (!staff(c)) return fail(c,'forbidden',403);

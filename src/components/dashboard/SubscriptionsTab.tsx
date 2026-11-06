@@ -65,7 +65,7 @@ const parseItems = (raw?: string): OrderItem[] => {
   }
 };
 
-export function SubscriptionsTab() {
+export function SubscriptionsTab({embedded=false}:{embedded?:boolean}={}) {
   const { user } = useAuth();
   const { t, lang } = useLang();
   const ro = lang === "ro";
@@ -147,11 +147,11 @@ export function SubscriptionsTab() {
 
   return (
     <div className="space-y-6">
-      <div>
+      {!embedded&&<div>
         <h2 className="text-2xl font-display font-bold">{t.auth.dash.subs.title}</h2>
         <p className="text-sm text-muted-foreground">{t.auth.dash.subs.subtitle}</p>
         <a href="/profil?tab=cart" className="mt-3 inline-flex rounded-lg border border-primary/20 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/5">Adaugă un abonament în coș</a>
-      </div>
+      </div>}
 
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
 
@@ -223,7 +223,7 @@ export function SubscriptionsTab() {
                   </div>
                   <Badge variant={statusVariant[s.status]}>{t.auth.dash.subs.statuses[s.status]}</Badge>
                 </CardHeader>
-                {(s.maintenance_enabled===1||!!s.plan_sku||readSpecifications(s.specifications_json).length>0)&&<div className="px-6 pb-4 text-sm"><details><summary className="cursor-pointer text-primary">Plan și specificații · {s.plan_sku||"Personalizat"}</summary><dl className="mt-3 space-y-2">{readSpecifications(s.specifications_json).map(([key,value])=><div key={key}><dt className="font-medium">{key}</dt><dd className="whitespace-pre-wrap break-words text-muted-foreground">{value}</dd></div>)}</dl></details>{s.staff_names&&<p className="mt-2 text-xs text-muted-foreground">Echipa de mentenanță: {s.staff_names}</p>}{s.maintenance_enabled===1&&<Link className="mt-3 inline-block text-primary underline" to={`/profil?tab=maintenance&project=${encodeURIComponent(s.project_id||'')}`}>Activități și materiale · AVY Core</Link>}</div>}
+                {(s.maintenance_enabled===1||!!s.plan_sku||readSpecifications(s.specifications_json).length>0)&&<div className="px-6 pb-4 text-sm"><details><summary className="cursor-pointer text-primary">Plan și specificații · {s.plan_sku||"Personalizat"}</summary><dl className="mt-3 space-y-2">{readSpecifications(s.specifications_json).map(([key,value])=><div key={key}><dt className="font-medium">{key}</dt><dd className="whitespace-pre-wrap break-words text-muted-foreground">{value}</dd></div>)}</dl></details>{s.staff_names&&<p className="mt-2 text-xs text-muted-foreground">Echipa de mentenanță: {s.staff_names}</p>}{s.maintenance_enabled===1&&<Link className="mt-3 inline-block text-primary underline" to={`/profil?tab=subscriptions&recurringView=activities&project=${encodeURIComponent(s.project_id||'')}`}>Activități și materiale · Mentenanță</Link>}</div>}
                 <CardContent className="grid sm:grid-cols-3 gap-4 text-sm border-t pt-4">
                   <div>
                     <div className="text-muted-foreground text-xs">{t.auth.dash.subs.price}</div>

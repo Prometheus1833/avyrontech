@@ -32,6 +32,23 @@ async function actor(c: Ctx) {
         managedPermission(policy, "projects.all")),
   };
 }
+function projectScope(a: Awaited<ReturnType<typeof actor>>, user: string) {
+  const args: string[] = [];
+  let scope = "1";
+  if (!a.all) {
+    scope = `(p.owner_user_id=? OR EXISTS(SELECT 1 FROM organization_memberships m WHERE m.organization_id=p.organization_id AND m.user_id=? AND m.status='active') OR ${a.staff ? "EXISTS(SELECT 1 FROM project_staff ps WHERE ps.project_id=p.id AND ps.user_id=?) OR (p.organization_id IS NULL AND EXISTS(SELECT 1 FROM client_account_access g WHERE g.client_id=p.client_id AND g.user_id=?))" : clientProjectGrantSql("p")})`;
+    args.push(user, user, user);
+    if (a.staff) args.push(user);
+  }
+  return {scope,args};
+}
+export async function projectChatUnread(c: Ctx) {
+  const a = await actor(c);
+  if (!a.read || !a.projects) return 0;
+  const user = c.get("userId"), {scope,args} = projectScope(a,user);
+  const row = await c.env.DB.prepare(`SELECT count(*) total FROM projects p JOIN staff_chat_messages m ON m.project_id=p.id LEFT JOIN staff_chat_reads r ON r.user_id=? AND r.target='project:'||p.id WHERE ${scope} AND m.author_id<>? AND (r.message_at IS NULL OR m.created_at>r.message_at OR (m.created_at=r.message_at AND m.id>r.message_id))`).bind(user,...args,user).first<{total:number}>();
+  return Number(row?.total || 0);
+}
 async function access(c: Ctx, id: string) {
   const a = await actor(c);
   if (!a.read || !a.projects) return null;
@@ -74,14 +91,8 @@ projectChatRouter.use(root + "*", async (c, next) => {
 projectChatRouter.get(root + "/projects", async (c) => {
   const a = await actor(c);
   if (!a.read || !a.projects) return fail(c, "forbidden", 403);
-  const user = c.get("userId"),
-    args: string[] = [];
-  let scope = "1";
-  if (!a.all) {
-    scope = `(p.owner_user_id=? OR EXISTS(SELECT 1 FROM organization_memberships m WHERE m.organization_id=p.organization_id AND m.user_id=? AND m.status='active') OR ${a.staff ? "EXISTS(SELECT 1 FROM project_staff ps WHERE ps.project_id=p.id AND ps.user_id=?) OR (p.organization_id IS NULL AND EXISTS(SELECT 1 FROM client_account_access g WHERE g.client_id=p.client_id AND g.user_id=?))" : clientProjectGrantSql("p")})`;
-    args.push(user, user, user);
-    if (a.staff) args.push(user);
-  }
+  const user = c.get("userId"), {scope: initialScope,args} = projectScope(a,user);
+  let scope = initialScope;
   const query = (c.req.query("q") || "").trim().slice(0, 120),
     focus = (c.req.query("focus") || "").slice(0, 160);
   if (query) {

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildAccess, canOpenSection, defaultSection, sectionsFor, SECTIONS } from "@/lib/access";
-import { DASHBOARD_SECTION_META } from "@/components/dashboard/dashboardNavigation";
+import { DASHBOARD_SECTION_META, DASHBOARD_GROUP_ORDER } from "@/components/dashboard/dashboardNavigation";
 
 describe("AVYRON OS dashboard", () => {
   it("deschide prezentarea generală pentru toate rolurile", () => {
@@ -57,13 +57,25 @@ describe("AVYRON OS dashboard", () => {
       expect(SECTIONS.find((item) => item.id === section)?.navigation).not.toBe(false);
     }
     expect(canOpenSection("workflows", owner)).toBe(false);
-    expect(canOpenSection("maintenance", client)).toBe(true);
+    expect(canOpenSection("maintenance", client)).toBe(false);
+    expect(canOpenSection("client-maintenance", client)).toBe(false);
+    expect(canOpenSection("subscriptions", client)).toBe(true);
+    expect(canOpenSection("maintenance", staff)).toBe(false);
+    expect(canOpenSection("maintenance", owner)).toBe(true);
     expect(canOpenSection("platform-control", owner)).toBe(false);
     expect(canOpenSection("avy-engine", owner)).toBe(true);
     expect(canOpenSection("platform-control", admin)).toBe(false);
     expect(canOpenSection("platform-control", staff)).toBe(false);
   });
 
+  it("grupează activitățile recurente înainte de documente și separă AVY Core", () => {
+    for (const id of ["client-maintenance", "subscriptions-admin", "internal-subscriptions"]) expect(SECTIONS.find(s => s.id === id)?.group).toBe("recurring");
+    expect(DASHBOARD_GROUP_ORDER.indexOf("recurring")).toBeLessThan(DASHBOARD_GROUP_ORDER.indexOf("documents"));
+    expect(SECTIONS.find(s => s.id === "maintenance")?.group).toBe("os");
+    const staff = buildAccess({ roles: ["staff"], capabilities: ["staff.access.managed", "maintenance.read"] });
+    expect(canOpenSection("client-maintenance", staff)).toBe(true);
+    expect(canOpenSection("maintenance", staff)).toBe(false);
+  });
   it("protejează actualizarea pipeline-ului demo pe server și limitează stadiile", () => {
     const index = readFileSync(resolve(process.cwd(), "cloudflare/workers/api/src/index.ts"), "utf8");
     expect(index).toContain('app.patch("/api/example-requests/:id", requireAuth, requireRole("staff", "admin")');

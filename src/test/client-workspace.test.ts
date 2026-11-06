@@ -171,6 +171,34 @@ describe("Client workspace: real SQLite, Hono and existing portal authorization"
     choice: unknown = { mode: "none" },
     key = crypto.randomUUID(),
   ) => req(root, { identity: identity(suffix), account: choice }, "POST", key);
+  it("creates all four stages without requiring a slug or beneficiary and remains idempotent", async () => {
+    for (const [stage, banner, status] of [["proposed", "proposed", "lead"], ["in_progress", "in_progress", "in_progress"], ["testing", "testing", "in_progress"], ["completed", "online", "live"]]) {
+      const key = crypto.randomUUID(), body = { name: "Proiect românesc", stage, client_id: null };
+      const result = await ok(await req("/api/projects", body, "POST", key), 201);
+      expect(await ok(await req("/api/projects", body, "POST", key), 201)).toEqual(result);
+      expect(result.slug).toMatch(/^proiect-romanesc-[a-z0-9]+$/);
+      expect(db.prepare("SELECT client_id,banner_status,status FROM projects WHERE id=?").get(result.id)).toMatchObject({ client_id: null, banner_status: banner, status });
+      expect((await canAccessProject(binding, result.id, "client-a", ["user"])).read).toBe(false);
+    }
+    expect((await req("/api/projects", { name: "Invalid", stage: "invented" })).status).toBe(400);
+    expect((await req("/api/projects", { name: "Invalid", owner_user_id: "client-a" })).status).toBe(400);
+    expect((await req("/api/projects", { name: "Invalid", url: {} })).status).toBe(400);
+    actor = "client-a";
+    expect((await req("/api/projects", { name: "Forbidden", stage: "proposed" })).status).toBe(403);
+  });
+  it("assigns a new unassigned project to the existing CRM client, never transfers its later history", async () => {
+    const created = await ok(await req("/api/projects", { name: "Fără client", stage: "testing" }), 201);
+    await ok(await req("/api/projects/" + created.id, { banner_status: "online" }, "PATCH"));
+    expect(db.prepare("SELECT banner_status,status FROM projects WHERE id=?").get(created.id)).toMatchObject({ banner_status: "online", status: "live" });
+    const file = await ok(await req(root + "/ca"));
+    expect(file.availableProjects.find((p: {id: string}) => p.id === created.id)?.canAssign).toBe(true);
+    const updatedAt = db.prepare("SELECT updated_at FROM projects WHERE id=?").get(created.id)!.updated_at;
+    await ok(await req(root + "/ca/projects", { confirmed: true, projects: [{ id: created.id, sourceClientId: null, updatedAt }] }, "PUT"));
+    expect((await canAccessProject(binding, created.id, "client-a", ["user"])).read).toBe(true);
+    expect((await canAccessProject(binding, created.id, "client-b", ["user"])).read).toBe(false);
+    const revision = db.prepare("SELECT updated_at FROM projects WHERE id=?").get(created.id)!.updated_at;
+    expect((await req(root + "/cb/projects", { confirmed: true, projects: [{ id: created.id, sourceClientId: "ca", updatedAt: revision }] }, "PUT")).status).toBe(409);
+  });
   it("creates one CRM identity, a native hashed user and grant atomically; retries do not duplicate", async () => {
     const key = crypto.randomUUID(),
       body = { mode: "new", identity: account(), confirmed: true };
@@ -359,6 +387,20 @@ describe("Client workspace: real SQLite, Hono and existing portal authorization"
         })
       ).status,
     ).toBe(400);
+  });
+  it("reconciles a verified legacy account once before projects and subscriptions, without reviving managed grants",async()=>{
+    db.exec("DELETE FROM client_account_access WHERE user_id='client-a'; UPDATE clients SET access_managed=0 WHERE id='ca'");
+    await linkClientsByEmail(binding,'client-a');await linkClientsByEmail(binding,'client-a');
+    expect(db.prepare("SELECT count(*) n FROM client_account_access WHERE client_id='ca' AND user_id='client-a'").get()!.n).toBe(1);
+    actor='client-a';expect((await ok(await req('/api/projects'))).data.map((p:{id:string})=>p.id)).toEqual(['pa']);
+    expect((await ok(await req('/api/workspace/subscriptions'))).data.map((p:{id:string})=>p.id)).toEqual(['sub-a']);
+    db.exec("UPDATE clients SET access_managed=1 WHERE id='ca'; DELETE FROM client_account_access WHERE user_id='client-a'");
+    await linkClientsByEmail(binding,'client-a');expect((await ok(await req('/api/projects'))).data).toEqual([]);expect((await ok(await req('/api/workspace/subscriptions'))).data).toEqual([]);
+  });
+  it("never auto-links disabled, unverified, staff or platform accounts by email",async()=>{
+    db.exec("DELETE FROM client_account_access; UPDATE clients SET access_managed=0,email='unverified@example.test' WHERE id='ca'");
+    await linkClientsByEmail(binding,'unverified');expect(db.prepare('SELECT count(*) n FROM client_account_access').get()!.n).toBe(0);
+    for(const who of ['staff','owner','client-a']){const u=db.prepare('SELECT email FROM users WHERE id=?').get(who)!;db.prepare("UPDATE clients SET email=? WHERE id='ca'").run(u.email!);if(who==='client-a')db.exec("UPDATE users SET disabled_at=1 WHERE id='client-a'");await linkClientsByEmail(binding,who);expect(db.prepare('SELECT count(*) n FROM client_account_access').get()!.n).toBe(0);}
   });
   it("revokes access immediately, survives email fallback and rejects stale or raced grant replacement", async () => {
     expect(

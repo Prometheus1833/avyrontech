@@ -232,7 +232,7 @@ function LogoScene({ config, active }: { config: LogoConfig; active: boolean }) 
   return <div ref={host} className="h-full w-full" />;
 }
 
-export default function LogoStudio({ lang, active = true, onBuy }: { lang: "ro" | "en"; active?: boolean; onBuy?: () => void }) {
+export default function LogoStudio({ lang, active = true, onBuy,exportPriceLabel }: { lang: "ro" | "en"; active?: boolean; onBuy?: (config:LogoConfig) => void; exportPriceLabel?: string }) {
   const ro = lang === "ro";
   const [config, setConfig] = useState<LogoConfig>(DEFAULT_LOGO);
   const set = <K extends keyof LogoConfig>(key: K, value: LogoConfig[K]) => setConfig((c) => ({ ...c, [key]: value }));
@@ -319,11 +319,11 @@ export default function LogoStudio({ lang, active = true, onBuy }: { lang: "ro" 
           </p>
           <button
             type="button"
-            onClick={onBuy}
+            onClick={()=>onBuy?onBuy(config):window.location.assign(lang==="ro"?"/produse/logo":"/en/products/logo")}
             className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-br from-brand to-brand-2 px-3.5 py-2 text-xs font-semibold text-white shadow-[0_10px_30px_-12px_hsl(264_90%_60%)]"
           >
             <Lock className="size-3.5" aria-hidden />
-            {ro ? "Descarcă pachetul — 75 lei" : "Download the pack — 75 lei"}
+            {exportPriceLabel ? `${ro?"Pachet descărcare":"Download pack"} — ${exportPriceLabel}` : ro?"Vezi pachetul contra cost":"View the paid download pack"}
           </button>
         </div>
       </div>

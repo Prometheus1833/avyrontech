@@ -98,3 +98,40 @@ Continuare de la `1397ce3`, pe `codex/bouncer-antivirus-2026-11-06`. [ANTIVIRUS_
 ## Colaboratori / Parteneri — 06.11.2026, local
 
 Continuare de la `0dd2286`, pe `codex/collaborators-partners-2026-11-06`. [COLLABORATORS_PARTNERS.md](./COLLABORATORS_PARTNERS.md) descrie ultimul buton din Principal, fișele compacte cu mini-dashboard, contactele, codurile interne și legăturile explicite la CRM/conturi existente. Registrul este distinct de planurile de produse AVY Partener. Badge-ul și Colaborările mele sunt derivate server-side; nu acordă roluri sau licențe. 0090 adaugă numai metadate și asocieri, cu maximum trei fișiere active × 5 MB, în Document Center/R2 existente, supuse porții antivirus. Notele interne, permisiunile granulare și revocarea sunt verificate în backend; schimbarea contului retrage publicarea documentelor. Uploadurile reale rămân blocate până la configurarea/verificarea Bouncer. Lotul ajunge la 0078–0090; push, PR, merge, migrări remote și deploy rămân amânate.
+
+
+## Proiecte, activități sociale și recurente — 6 noiembrie 2026
+
+Lotul precedent a fost integrat prin [PR #93](https://github.com/Prometheus1833/avyrontech/pull/93), la `dcfd638`, cu migrații până la 0090 și release verificat anterior. Însemnările mai vechi „local/amânat” de mai sus sunt instantanee istorice. Noua ramură `codex/project-social-recurring-2026-11-06` pornește din acest commit și implementează [etapele proiectelor, clientul opțional/nou, comenzile viitoare sociale și grupa Activități Recurente](./PROJECTS_SOCIAL_RECURRING.md). Migrațiile 0091–0092 sunt doar ale noii ramuri, probate local; nu au fost aplicate remote în acest task. Noul push/PR nu înseamnă merge/deploy. Nu se configurează acum cheile rămase și nu se execută publicări sociale.
+
+## Creare proiect AI, arhivă de leaduri și beneficiari direcți — 6 noiembrie 2026
+
+Continuare de la `05ced74` (PR #94 verificat verde în GitHub la începutul acestui task), pe `codex/ai-leads-document-workflows-2026-11-06`. [Runbookul fluxurilor](./AI_LEAD_DOCUMENT_WORKFLOWS.md) descrie crearea AI cu aprobare/MFA/idempotency, arhivarea reversibilă a leadurilor cu cinci motive și listă în pagină, contactarea manuală WhatsApp validată, rezumatul editabil Documente SC, beneficiarul completat direct și proiectele viitoare cu exporturi reale private. 0093 adaugă numai metadatele arhivării în tabela existentă. Nu există merge, migrare remote sau deploy nou în această etapă; conturile, serviciile plătite și cheile rămân neatinse.
+
+## Contoare de activitate și separarea Logo — 6 noiembrie 2026
+
+Continuare din `c6f2865` (#95, incluzând #94), pe `codex/dashboard-activity-logo-products-2026-11-06`. [Runbookul](./DASHBOARD_ACTIVITY_LOGO_MODULES.md) descrie contoarele autorizate desktop/mobil, confirmările individuale ale anunțurilor, AVY STAFF și mutările cerute, produsul 3D plătit în Produse și simulatorul 2D în Platformă, istoricul privat al briefurilor, tariful asistat AI păstrat și situația comercială nativă. 0094–0096 sunt append-only; prețurile și achizițiile existente nu sunt suprascrise. D1 remote a refuzat citirea cu 7403; nu există reverificare a datelor live, migrare remote, merge, deploy sau activare de furnizori în acest task.
+
+## Căutare directă și AVY ChatBot AI — 6 noiembrie 2026
+
+Continuare din `67a2223` (#96, incluzând #94–#95), pe `codex/dashboard-search-chatbot-2026-11-06`. [Runbookul](./DASHBOARD_SEARCH_CHATBOT.md) descrie mutarea Financiar în Principal, căutarea inline autorizată și neblocantă, tooltipurile barei superioare și pagina Platformă → AVY ChatBot AI. Agentul public existent suportă conversații generale sub aceleași cote/politici, fără acces la documente private sau instrumente noi; configurația se aprobă explicit și respinge versiuni vechi. 0097 creează o versiune nouă numai pentru instrucțiunile standard istorice nemodificate și păstrează configurațiile personalizate, istoricul, instrumentele și finanțele. Testele cu furnizor simulat nu sunt dovadă de generare live. Nu există merge, migrare remote, deploy sau activare de furnizori în acest task.
+
+## Rezumate de proiecte și sincronizarea conturilor — 6 noiembrie 2026
+
+Continuare din `f61b8f2` (#97, incluzând #94–#96), pe `codex/project-summaries-account-sync-2026-11-06`. [Runbookul](./PROJECT_SUMMARIES_ACCOUNT_SYNC.md) descrie cardurile compacte cu tip/client/site/buget/etapă/perioadă/servicii, calendarul opțional din migrarea 0098, abonamentele native din fișa proiectului și reconcilierea legacy a contului înainte de răspunsul `/auth/me`, cu protejarea revocărilor. Accesul financiar este verificat în backend inclusiv pentru încasări și metadatele istoricului. Un audit read-only agregat este disponibil; citirea D1 remote din acest task a fost refuzată cu 7403, deci sincronizarea conturilor reale nu este declarată verificată. Nu există migrări remote, activări de furnizori, merge sau deploy în acest task.
+
+## Portal client simplificat — 6 noiembrie 2026
+
+Continuare din `96fc8c8` (#98, incluzând #94–#97; verificările GitHub ale #98 au fost reverificate și sunt verzi), pe `codex/client-portal-simplification-2026-11-06`. [Runbookul portalului](./CLIENT_PORTAL_SIMPLIFICATION.md) descrie marca Avyron Tech, navigarea clientului fără AVY Core/biblioteci interne, unificarea mentenanței și abonamentelor, căutarea autorizată în proiecte/documente și interfața separată Centru Documente pentru citire, versiuni, export și distribuire cu confirmare. Accesul rămâne derivat din granturile/publicările native; nu sunt adăugate migrații sau furnizori și nu se modifică rolurile staffului. Testele browser sunt sintetice; acceptanța în contul real rămâne la utilizator. Nu există merge, migrare remote sau deploy nou în acest task.
+
+## Suport, facturi și coș client — 6 noiembrie 2026
+
+Continuare din `e892fc8` (#99, incluzând #94–#98, reverificat verde), pe `codex/client-support-billing-cart-2026-11-06`. [Runbookul](./CLIENT_COMMERCE_SUPPORT.md) descrie Suport și mesaje, Plăți și facturi cu descărcări autorizate/CLEAN, bara mobilă Acasă–Servicii–Coș–Produse–Mai multe și starea comună a coșului, cu jurnal de modificări neconfirmate, reîncercare, timeout și catalog curent. Sertarul public gol nu șterge coșul contului. S-a corectat folosirea unei coloane financiare inexistente, reutilizând relațiile de reconciliere Stripe/Revolut native, fără migrări noi. Testele sunt locale/sintetice; nu există conturi reale modificate, plăți, furnizori activați, merge sau deploy în acest task.
+
+## Avy Cont și navigarea clientului — 6 noiembrie 2026
+
+Continuare din `efccced` (#100, incluzând #94–#99), pe `codex/client-account-home-navigation-2026-11-06`. [Runbookul](./CLIENT_ACCOUNT_HOME.md) descrie marca Avyron Web, intrarea Avy Cont, meniul cu Blog/Biblioteca Artefacte și prima pagină cu proiecte/achiziții native, Mentenanță, Profil și metode de plată. Favoritele personale și sincronizarea lor automată sunt retrase din UI, fără ștergerea istoricului sau a achizițiilor/licențelor. Nu există migrări noi, efecte comerciale, merge sau deploy; contul real rămâne de verificat de utilizator.
+
+## Creează Logo și produse Development achitate — 6 noiembrie 2026
+
+Continuare din `4924253` (#101, întregul lot #94–#101 verificat verde), pe `codex/client-logo-paid-products-2026-11-06`. [Runbookul](./CLIENT_LOGO_PAID_PRODUCTS.md) descrie intrarea către simulatorul existent, autentificarea comună site/cont pe hostul API fără extinderea cookie-ului la subdomenii, recenziile precompletate cu aprobare păstrată și istoricul paginat al produselor cu plată confirmată. Nu adaugă migrări, roluri, tarife sau furnizori. Sesiunile vechi pot necesita reautentificare o dată. Utilizatorul a omis Hugging Face și a autorizat explicit D1 Write pentru backup/migrări. Starea release-ului și verificările finale se consemnează în PR; această notă nu dovedește merge/deploy.

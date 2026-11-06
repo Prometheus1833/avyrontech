@@ -244,7 +244,7 @@ test.describe("public SEO routes", () => {
     await expect(footer.getByRole("link", { name: /ANPC/ })).toHaveAttribute("href", "https://reclamatiisal.anpc.ro/");
     await expect(footer.locator('img[src="/anpc-sal-pictograma.png"]')).toBeVisible();
     await expect(footer.getByRole("link", { name: "E-mail AVYRON" })).toHaveAttribute("href", "mailto:contact@avyron.ro");
-    await expect(footer.getByRole("link", { name: "Conectează-te / Înregistrează-te" })).toHaveAttribute("href", "/auth");
+    await expect(footer.getByRole("link", { name: "Conectează-te / Înregistrează-te" })).toHaveCount(0);
     await expect(footer.getByText("Instagram", { exact: true })).toHaveCount(0);
     await expect(footer.getByText("Facebook", { exact: true })).toHaveCount(0);
     await expect(footer.getByText("TikTok", { exact: true })).toHaveCount(0);
@@ -280,7 +280,7 @@ test.describe("public SEO routes", () => {
     }
   });
 
-  test("footer actions adapt to the page while the SAL and account row remains accessible on mobile", async ({ page }) => {
+  test("footer actions adapt to the page while SAL remains accessible without a duplicate account entry", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
       necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12",
@@ -305,18 +305,16 @@ test.describe("public SEO routes", () => {
       }
       else await expect(actions.last()).not.toHaveAttribute("href", /^mailto:/);
       const utility = footer.getByTestId("footer-utility-row").locator("a");
-      await expect(utility).toHaveCount(2);
-      await utility.last().scrollIntoViewIfNeeded();
-      const left = (await utility.first().boundingBox())!;
-      const right = (await utility.last().boundingBox())!;
-      expect(Math.abs(left.y - right.y)).toBeLessThan(2);
-      expect(left.x + left.width).toBeLessThanOrEqual(right.x);
-      expect(right.x + right.width).toBeLessThanOrEqual(390);
+      await expect(utility).toHaveCount(1);
+      await utility.first().scrollIntoViewIfNeeded();
+      const box = (await utility.first().boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(390);
       const clickable = await utility.last().evaluate((element) => {
         const bounds = element.getBoundingClientRect();
         return element.contains(document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2));
       });
-      expect(clickable, `${path}: account button must not be covered by the floating contact bar`).toBe(true);
+      expect(clickable, `${path}: SAL link must not be covered by the floating contact bar`).toBe(true);
     }
     await page.goto("/cariere");
     await page.locator("footer").getByRole("link", { name: /Descoperă colaborarea/ }).click();

@@ -358,11 +358,11 @@ export default function TeamStaffTab() {
       !["platform_owner", "superadmin"].includes(p.id),
   );
   return (
-    <section className="agency-team" aria-label="Membrii Agenției AVYRON">
+    <section className="agency-team" aria-label="AVY STAFF">
       <header className="agency-team-heading">
         <div>
           <p className="agency-kicker">AVYRON OS · ORGANIZAȚIE</p>
-          <h1>Membrii Agenției AVYRON</h1>
+          <h1>AVY STAFF</h1>
           <p className="agency-muted">
             O echipă, roluri clare. Ranguri, responsabilități și accesuri
             într-un singur loc.

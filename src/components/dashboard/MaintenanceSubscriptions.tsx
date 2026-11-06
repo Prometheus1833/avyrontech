@@ -410,7 +410,7 @@ export default function MaintenanceSubscriptions() {
               </dl>
               {!row.maintenance_enabled && (
                 <p className="mt-2 text-xs text-amber-200">
-                  Abonament existent. Specificațiile AVY Core nu au fost
+                  Abonament existent. Specificațiile mentenanței nu au fost
                   configurate încă.
                 </p>
               )}

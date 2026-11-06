@@ -448,7 +448,8 @@ export const STAFF_SECTION_PERMISSIONS: Record<string, string[]> = {
   collaborators:["collaborators.read","collaborators.manage"],
   overview: ["dashboard.read"],
   projects: ["projects.read"],
-  maintenance: ["maintenance.read"],
+  maintenance: [],
+  "client-maintenance": ["maintenance.read"],
   intern: ["chat.read"],
   "team-staff": ["team.read"],
   announcements: ["announcements.read"],
@@ -468,6 +469,7 @@ export const STAFF_SECTION_PERMISSIONS: Record<string, string[]> = {
   surveys: ["leads.read"],
   configurator: ["leads.read"],
   "logo-simulations": ["leads.read"],
+  "logo-2d-simulations": ["leads.read"],
   "other-hub": ["team.read"],
   library: ["services.read"],
   careers: ["services.read"],
@@ -484,7 +486,9 @@ export function staffRequestPermission(
     path.startsWith("/api/profile/")
   )
     return null;
+  if (path.startsWith("/api/logo-studio/admin")) return "leads.read";
   if (path.startsWith("/api/staff-access")) return "team.read";
+  if (path === "/api/workspace/activity-counts") return null;
   if (path === "/api/workspace/staff") return "team.read";
   if (path === "/api/admin/users") return "team.options";
   if (path.startsWith("/api/project-chat")) return path.endsWith("/read") || !write ? "chat.read" : "chat.write";
@@ -494,6 +498,7 @@ export function staffRequestPermission(
       : write
         ? "chat.write"
         : "chat.read";
+  if (/^\/api\/workspace\/announcements\/[^/]+\/read$/.test(path)) return "announcements.read";
   if (path.startsWith("/api/workspace/announcements"))
     return write ? "announcements.write" : "announcements.read";
   if (

@@ -260,10 +260,11 @@ test("new directory is the final Principal button, with compact contact cards an
     name: "Navigare AVYRON OS",
     exact: true,
   });
-  const order = await nav.locator("[data-os-section]").allTextContents();
-  expect(order.findIndex((v) => v.trim() === "Colaboratori/Parteneri")).toBe(
-    order.findIndex((v) => v.trim() === "Antivirus") + 1,
-  );
+  const principal=nav.locator('button[aria-expanded]').filter({hasText:/^Principal$/}).locator('..');
+  const order=await principal.locator('[data-os-section]').allTextContents();
+  expect(order.at(-1)?.trim()).toBe('Colaboratori/Parteneri');
+  expect(order.map(v=>v.trim())).toContain('Financiar');
+  expect(order.map(v=>v.trim())).not.toContain('Antivirus');
   const card = page
     .locator("article")
     .filter({ hasText: "Cabinet juridic sintetic" });

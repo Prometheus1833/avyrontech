@@ -21,7 +21,7 @@ export const ITEMS: CatalogItem[] = [
     type: "logo",
     category: "brand",
     tech: ["react", "three", "glsl"],
-    access: "free",
+    access: "pro",
     priceRon: 75,
     status: "new",
     hue: 330,

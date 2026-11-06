@@ -1,3 +1,5 @@
+import IconHint from "@/components/ui/icon-hint";
+import ActivityBadge from "@/components/dashboard/ActivityBadge";
 import { Suspense, useEffect, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import Link from "./WorkspaceLink";
@@ -12,9 +14,11 @@ const Panels = lazyWithRetry(() => import("./StaffQuickPanels"));
 export default function StaffWorkspaceActions({
   className = "",
   compact = false,
+  counts = {},
 }: {
   className?: string;
   compact?: boolean;
+  counts?: Record<string,number>;
 }) {
   const { roles, isSuperAdmin, capabilities } = useAuth(),
     access = buildAccess({ roles, superadmin: isSuperAdmin, capabilities }),
@@ -36,9 +40,9 @@ export default function StaffWorkspaceActions({
     >
       <NavDate />
       {canOpenSection("intern", access) && (
-        <button
+        <IconHint label="Conversații cu echipa și clienții proiectelor"><button
           className="staff-header-action"
-          aria-label="Deschide mesaje"
+          aria-label={`Deschide mesaje${counts.intern ? `, ${counts.intern} necitite` : ""}`}
           title="Mesaje"
           aria-haspopup="dialog"
           aria-expanded={panel === "chat"}
@@ -47,12 +51,12 @@ export default function StaffWorkspaceActions({
             setPanel((p) => (p === "chat" ? null : "chat"));
           }}
         >
-          <MessagesSquare size={18} />
+          <span data-staff-action-icon className="relative inline-flex"><MessagesSquare size={18} /><ActivityBadge count={counts.intern} label="mesaje necitite" /></span>
           <span>Chat</span>
-        </button>
+        </button></IconHint>
       )}
       {resources && (
-        <button
+        <IconHint label="Documente, resurse și template-uri autorizate"><button
           className="staff-header-action"
           aria-label="Resurse și template-uri"
           title="Resurse și template-uri"
@@ -65,10 +69,10 @@ export default function StaffWorkspaceActions({
         >
           <BookOpen size={18} />
           <span>Resurse</span>
-        </button>
+        </button></IconHint>
       )}
       {canOpenSection("projects", access) && (
-        <button
+        <IconHint label="Proiectele în care ești implicat sau alocat"><button
           className="staff-header-action"
           aria-label="Proiectele mele"
           title="Proiectele mele"
@@ -81,18 +85,18 @@ export default function StaffWorkspaceActions({
         >
           <FolderKanban size={18} />
           <span>Proiectele mele</span>
-        </button>
+        </button></IconHint>
       )}
-      {canOpenSection("maintenance", access) && (
-        <Link
+      {canOpenSection("client-maintenance", access) && (
+        <IconHint label="Mentenanța și activitățile recurente alocate"><Link
           className="staff-header-action"
-          aria-label="Mentenanță · AVY Core"
-          title="Mentenanță · AVY Core"
-          to="/profil?tab=maintenance"
+          aria-label="Mentenanță Clienți"
+          title="Mentenanță Clienți"
+          to="/profil?tab=client-maintenance"
         >
           <Wrench size={18} />
           <span>Mentenanță</span>
-        </Link>
+        </Link></IconHint>
       )}
       {panel && (
         <Suspense

@@ -302,7 +302,7 @@ async function setup(page: Page) {
   });
   return { mutations, reads, markClean(){assets[0].scan_status="clean";} };
 }
-test("navigația are AVY Engine în OS, Cariere și Biblioteca sub Configurator, Altele la final", async ({
+test("navigația are AVY Engine, Cariere și Biblioteca în OS, Altele la final", async ({
   page,
 }) => {
   await setup(page);
@@ -324,9 +324,8 @@ test("navigația are AVY Engine în OS, Cariere și Biblioteca sub Configurator,
   expect(order.findIndex((t) => t.trim() === "Configurator") + 1).toBe(
     order.findIndex((t) => t.trim() === "Carusele Exemple"),
   );
-  expect(order.findIndex((t) => t.trim() === "Carusele Exemple") + 1).toBe(
-    order.findIndex((t) => t.trim() === "Cariere"),
-  );
+  const os=nav.locator('button[aria-expanded]').filter({hasText:/^AVYRON OS$/}).locator('..');
+  for(const label of ['AVY Engine','Cariere','Biblioteca Artefacte','Antivirus'])await expect(os.getByRole('button',{name:label,exact:true})).toBeVisible();
   expect(order.findIndex((t) => t.trim() === "Cariere") + 1).toBe(
     order.findIndex((t) => t.trim() === "Biblioteca Artefacte"),
   );

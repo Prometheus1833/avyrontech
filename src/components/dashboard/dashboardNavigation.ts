@@ -48,6 +48,7 @@ export type DashboardSectionMeta = {
 
 export const DASHBOARD_GROUP_LABELS: Record<string, string> = {
   documents: "Documente",
+  recurring: "Activități Recurente",
   overview: "Principal",
   projects: "Proiecte",
   activity: "Activitate",
@@ -65,6 +66,7 @@ export const DASHBOARD_GROUP_ORDER = [
   "projects",
   "servicii",
   "produse",
+  "recurring",
   "documents",
   "activity",
   "platform",
@@ -86,7 +88,8 @@ export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
   settings: { label: "Setări", commandLabel: "Deschide setările", hint: "Preferințe și configurarea contului", icon: Settings },
   projects: { label: "Proiecte", commandLabel: "Deschide proiectele", hint: "Livrări, termene și progres", icon: FolderKanban },
   "ai-projects": { label: "Proiecte AI", commandLabel: "Deschide proiectele AI", hint: "Strategie, agenți și producție controlată", icon: Bot },
-  maintenance: { label: "AVY Core", commandLabel: "Deschide AVY Core", hint: "Sistem, mentenanță lunară și abonamente pe proiect", icon: Wrench },
+  "client-maintenance": { label: "Mentenanță Clienți", commandLabel: "Deschide mentenanța clienților", hint: "Planuri lunare, proiecte, materiale și echipe alocate", icon: Wrench },
+  maintenance: { label: "AVY Core", commandLabel: "Deschide AVY Core", hint: "Diagnostice, verificări și operațiuni de sistem", icon: Wrench },
   clients: { label: "Clienți", commandLabel: "Deschide clienții", hint: "Companii, contacte și relații active", icon: Users },
   reviews: { label: "Recenzii", commandLabel: "Deschide recenziile", hint: "Colectare și aprobare pentru servicii și surse conectate", icon: Star },
   domains: { label: "Domenii", commandLabel: "Deschide domeniile", hint: "DNS, SSL și active digitale", icon: Globe },
@@ -110,18 +113,36 @@ export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
   intern: { label: "Chat intern", commandLabel: "Deschide chatul intern", hint: "Conversațiile echipei AVYRON", icon: MessagesSquare },
   announcements: { label: "Anunțuri", commandLabel: "Deschide anunțurile", hint: "Actualizări și comunicări interne", icon: Megaphone },
   resources: { label: "Documente și resurse", commandLabel: "Deschide documentele", hint: "Cunoaștere și materiale interne", icon: BookOpen },
-  "team-staff": { label: "Membrii Agenției", mobileLabel: "Echipă", commandLabel: "Deschide membrii Agenției AVYRON", hint: "Echipă, roluri, permisiuni și acces", icon: Users },
+  "team-staff": { label: "AVY STAFF", mobileLabel: "STAFF", commandLabel: "Deschide AVY STAFF", hint: "Echipă, roluri, permisiuni și acces", icon: Users },
   finance: { label: "Financiar", commandLabel: "Deschide situația financiară", hint: "Costuri, venituri, plăți și bugete", icon: Wallet },
   "commercial-codes": { label: "Coduri servicii și produse", commandLabel: "Deschide nomenclatorul comercial", hint: "Coduri, TVA și trasee de plată", icon: FileCode2 },
   promotions: { label: "Promoții", commandLabel: "Deschide promoțiile", hint: "Campanii și reguli comerciale", icon: BadgePercent },
   newsletter: { label: "Newsletter", commandLabel: "Deschide newsletterul", hint: "Abonați, campanii și consimțământ", icon: Mail },
   "avy-engine": { label: "AVY Engine", commandLabel: "Deschide AVY Engine", hint: "Surse, capabilități, statusuri și legături de flux", icon: Sparkles },
-  "ai-os": { label: "Agenți AI", mobileLabel: "AVY", commandLabel: "Deschide agenții AVY", hint: "Agenți, activitate și cunoaștere din Centre AVYRON OS", icon: Sparkles },
+  "ai-os": { label: "AVY ChatBot AI", mobileLabel: "ChatBot", commandLabel: "Deschide AVY ChatBot AI", hint: "Chatbotul public, conversații, configurare și cunoștințe aprobate", icon: Sparkles },
   "os-centers": { label: "Centre AVYRON OS", mobileLabel: "Mai multe", commandLabel: "Vezi toate centrele AVYRON OS", hint: "Integrări, automatizări și operațiuni", icon: ShieldCheck },
-  "logo-simulations": { label: "Simulări Logo 3D", commandLabel: "Deschide simulările Logo 3D", hint: "Cereri Logo Studio, configurații și rezultate", icon: ScanSearch },
+  "logo-2d-simulations": { label: "Simulări Logo 2D", commandLabel: "Deschide simulările Logo 2D", hint: "Simulări standard gratuite, variante AI și cereri de livrare asistată", icon: ScanSearch },
+  "logo-simulations": { label: "Simulări Logo 3D", commandLabel: "Deschide simulările Logo 3D", hint: "Produs Logo Studio 3D, configurații, achiziții și livrări", icon: ScanSearch },
   surveys: { label: "Surveys", commandLabel: "Deschide Surveys", hint: "Chestionare, pipeline și briefuri", icon: ClipboardList },
   configurator: { label: "Configurator", commandLabel: "Deschide Configurator", hint: "Estimări, cereri și rezultate comerciale", icon: Calculator },
   "other-hub": { label: "Altele", commandLabel: "Deschide inventarul de module", hint: "Funcții, statistici și rapoarte fără secțiune dedicată", icon: PackageSearch },
   careers: { label: "Cariere", commandLabel: "Deschide Cariere", hint: "Roluri, candidați și resurse pentru recrutare", icon: UserRoundSearch },
   library: { label: "Biblioteca Artefacte", commandLabel: "Deschide Biblioteca Artefacte", hint: "Efecte, artefacte, integrări și referințe digitale", icon: LibraryBig },
 };
+
+export function dashboardSectionMeta(section:SectionId,client:boolean):DashboardSectionMeta{
+ const base=DASHBOARD_SECTION_META[section];
+ if(!client)return base;
+ const overrides:Partial<Record<SectionId,Partial<DashboardSectionMeta>>>={
+ overview:{label:"Acasă",commandLabel:"Deschide contul meu",hint:"Proiectele, serviciile și documentele tale"},
+ projects:{label:"Proiectele mele",mobileLabel:"Proiecte",commandLabel:"Deschide proiectele mele",hint:"Progresul și livrabilele proiectelor alocate"},
+ catalog:{label:"Servicii",mobileLabel:"Servicii",commandLabel:"Deschide serviciile",hint:"Servicii și produse disponibile pentru tine"},
+ subscriptions:{label:"Mentenanță / Abonamente",mobileLabel:"Abonamente",commandLabel:"Deschide mentenanța și abonamentele",hint:"Planurile, facturarea și activitățile tale recurente"},
+ payments:{label:"Plăți și facturi",commandLabel:"Deschide plățile și facturile",hint:"Istoric, descărcare facturi, date fiscale și metode de plată"},
+ documents:{label:"Centru Documente",mobileLabel:"Documente",commandLabel:"Deschide Centrul de Documente",hint:"Documentele alocate și disponibile pentru contul tău"},
+ collection:{label:"Produsele mele",mobileLabel:"Produse",commandLabel:"Deschide produsele mele",hint:"Licențele și produsele digitale din cont"},
+ tickets:{label:"Suport și mesaje",commandLabel:"Deschide suportul și mesajele",hint:"Solicitări și conversații cu echipa proiectelor tale"},
+ };
+ return {...base,...overrides[section]};
+}
+export const dashboardGroupLabel=(group:string,client:boolean)=>client?({projects:"Secțiuni",overview:"Principal",billing:"Comenzi",activity:"Asistență",account:"Contul meu"} as Record<string,string>)[group]||DASHBOARD_GROUP_LABELS[group]:DASHBOARD_GROUP_LABELS[group];

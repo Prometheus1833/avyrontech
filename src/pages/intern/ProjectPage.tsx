@@ -1,5 +1,8 @@
+import {PROJECT_KIND_LABELS} from "@/shared/projectSummary";
+import ProjectOverviewFields from "@/components/intern/ProjectOverviewFields";
+import { PROJECT_STAGES } from "@/shared/projectLifecycle";
 import { lazy, Suspense } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import Link from "@/components/site/WorkspaceLink";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,12 +21,12 @@ import { ExternalLink, Trash2, RefreshCw, Plus } from "lucide-react";
 import { ProjectStatisticsForm } from "@/components/intern/ProjectStatisticsForm";
 import { ProjectWorkItems } from "@/components/intern/ProjectWorkItems";
 import { MediaAttachments } from "@/components/intern/MediaAttachments";
-import PaymentMethodCard from "@/components/intern/PaymentMethodCard";
 import ContactRail from "@/components/intern/ContactRail";
 import PageBackLink from "@/components/site/PageBackLink";
 import { normalizeExternalLink } from "@/shared/externalUrl";
 
 const BANNER_LABEL: Record<BannerStatus, { label: string; className: string }> = {
+  proposed: { label: "Propus", className: "bg-slate-500/15 text-slate-400 border-slate-500/30" },
   online:      { label: "Online",              className: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30" },
   offline:     { label: "Offline",             className: "bg-red-500/15 text-red-500 border-red-500/30" },
   revizuire:   { label: "Revizuire",           className: "bg-amber-500/15 text-amber-500 border-amber-500/30" },
@@ -31,15 +34,7 @@ const BANNER_LABEL: Record<BannerStatus, { label: string; className: string }> =
   testing:     { label: "Testare",             className: "bg-violet-500/15 text-violet-500 border-violet-500/30" },
 };
 
-const KIND_LABEL: Record<ProjectKind, string> = {
-  external_asset:"Proiect / produs extern",
-  website_prezentare: "Website Prezentare",
-  prezentare_premium: "Prezentare Premium",
-  magazin_online: "Magazin Online",
-  retele_sociale: "Rețele Sociale",
-  identitate_completa: "Identitate Completă Online",
-  aplicatie: "Aplicație",
-};
+const KIND_LABEL=PROJECT_KIND_LABELS;
 
 const PROPOSAL_LABEL: Record<ProposalStatus, string> = {
   proposed: "Propus", reviewed: "Revizuit", in_progress: "În curs", done: "Finalizat", rejected: "Respins",
@@ -57,15 +52,7 @@ const LINK_KINDS: { value: LinkKind; label: string }[] = [
   { value: "other", label: "Alt link" },
 ];
 
-const SUB_PLANS = [
-  { value: "50e", label: "50€ / lună · site-uri de prezentare și bloguri" },
-  { value: "150e", label: "150€ / lună · magazine online și primării" },
-  { value: "300e", label: "300€ / lună · instituții și platforme" },
-];
 
-const subscriptionPlanLabel = (value: string | null) => value === "100e"
-  ? "100€ / lună · plan anterior"
-  : SUB_PLANS.find((plan) => plan.value === value)?.label ?? value;
 
 const ProjectDocuments = lazy(() => import("@/features/documents/DocumentCenter"));
 
@@ -80,19 +67,22 @@ export default function ProjectPage() {
   const [savingUrl, setSavingUrl] = useState(false);
   const [urlDraft, setUrlDraft] = useState("");
 
+  const loadEpoch=useRef(0);
   const load = useCallback(async () => {
+    const epoch=++loadEpoch.current;
     setLoading(true); setError(null);
     try {
       const d = await internApi.getProject(slug);
+      if(epoch!==loadEpoch.current)return;
       setData(d);
       setUrlDraft(d.project.url ?? "");
     } catch (e) {
-      setError((e as Error).message);
-    } finally { setLoading(false); }
+      if(epoch===loadEpoch.current)setError((e as Error).message);
+    } finally { if(epoch===loadEpoch.current)setLoading(false); }
   }, [slug]);
   useEffect(() => { if (slug) void load(); }, [load, slug]);
 
-  if (authLoading || loading) return <PageShell><p className="text-muted-foreground">Se încarcă…</p></PageShell>;
+  if (authLoading || (loading&&!data) || (data&&data.project.slug!==slug)) return <PageShell><p className="text-muted-foreground">Se încarcă…</p></PageShell>;
   if (!user) return <PageShell><p>Necesită autentificare. <Link className="underline" to="/auth">Loghează-te</Link></p></PageShell>;
   if (error || !data) return <PageShell><p className="text-red-500">{error ?? "Proiect indisponibil"}</p></PageShell>;
 
@@ -157,6 +147,8 @@ export default function ProjectPage() {
         </div>
       </div>
 
+      <ProjectOverviewFields project={project} canWrite={canWrite} onChanged={load}/>
+
       {/* URL + Metadata extractor */}
       <Card className="mt-5">
         <CardHeader><CardTitle className="text-base">Link produs & metadate</CardTitle></CardHeader>
@@ -201,48 +193,15 @@ export default function ProjectPage() {
 
       {/* Info produs (preluat conceptual din /servicii — se poate edita) */}
       <Card className="mt-5">
-        <CardHeader><CardTitle className="text-base">Detalii produs & preț</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Buget și abonamente</CardTitle></CardHeader>
         <CardContent className="grid sm:grid-cols-3 gap-4 text-sm">
-          <EditableField label="Preț (RON)" value={project.price_ron?.toString() ?? ""} disabled={!canWrite}
-            onSave={async (v) => { await internApi.updateProject(project.id, { price_ron: v ? parseFloat(v) : null }); void load(); }} />
-          <EditableField label="Preț (EUR)" value={project.price_eur?.toString() ?? ""} disabled={!canWrite}
-            onSave={async (v) => { await internApi.updateProject(project.id, { price_eur: v ? parseFloat(v) : null }); void load(); }} />
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">Abonament</p>
-            {project.subscription_status === "active" && project.subscription_plan ? (
-              <div>
-                <Badge variant="secondary">{subscriptionPlanLabel(project.subscription_plan)}</Badge>
-                {project.billing_next && <p className="text-xs text-muted-foreground mt-1">Următoarea facturare: {new Date(project.billing_next).toLocaleDateString("ro-RO")}</p>}
-              </div>
-            ) : (
-              <Select
-                value={project.subscription_plan ?? ""}
-                onValueChange={async (v) => {
-                  await internApi.updateProject(project.id, { subscription_plan: v, subscription_status: "active" });
-                  toast({ description: "Abonament selectat (doar vizual)" });
-                  void load();
-                }}
-                disabled={!canWrite}
-              >
-                <SelectTrigger><SelectValue placeholder="Selectează abonament" /></SelectTrigger>
-                <SelectContent>
-                  {SUB_PLANS.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+          <EditableField label="Preț (RON)" value={project.price_ron?.toString() ?? ""} disabled={!canWrite||!permission.finance}
+            onSave={async (v) => { await internApi.updateProject(project.id, { price_ron: v ? Number(v) : null }); void load(); }} />
+          <EditableField label="Preț (EUR)" value={project.price_eur?.toString() ?? ""} disabled={!canWrite||!permission.finance}
+            onSave={async (v) => { await internApi.updateProject(project.id, { price_eur: v ? Number(v) : null }); void load(); }} />
+          <div className="sm:col-span-3"><h2 className="text-sm font-semibold">Abonamentele proiectului</h2><p className="mt-1 text-xs text-muted-foreground">Date din abonamentele native, cu stare și calendar real de facturare.</p><div className="mt-2 grid gap-2 sm:grid-cols-2">{data.subscriptions?.length?data.subscriptions.map(sub=><article key={sub.id} className="rounded-lg border p-3"><p className="font-medium">{sub.service_name}</p><p className="text-xs text-muted-foreground">{sub.status==='active'?'Activ':sub.status==='paused'?'În pauză':sub.status==='cancelled'?'Anulat':sub.status} · {sub.billing_cycle==='monthly'?'Lunar':sub.billing_cycle==='yearly'?'Anual':sub.billing_cycle}</p>{sub.price!=null&&<p className="mt-1 text-xs">{new Intl.NumberFormat('ro-RO',{style:'currency',currency:'RON'}).format(sub.price)}</p>}<p className="mt-1 text-xs">{sub.next_billing_date?`Facturare: ${new Date(sub.next_billing_date).toLocaleDateString('ro-RO')}`:'Data facturării nu este stabilită'}</p>{sub.plan_sku&&<p className="mt-1 break-words text-[10px] text-muted-foreground">{sub.plan_sku}</p>}</article>):<p className="text-xs text-muted-foreground">Nu există abonamente alocate acestui proiect.</p>}</div>{canOpenSection('subscriptions-admin',access)?<Link className="mt-3 inline-flex min-h-10 items-center text-xs text-violet-400 underline" to={`/profil?tab=subscriptions-admin&client=${encodeURIComponent(project.client_id||'')}`}>Administrează abonamentele clientului</Link>:!access.isStaff&&<Link className="mt-3 inline-flex min-h-10 items-center text-xs text-violet-400 underline" to="/profil?tab=subscriptions">Vezi abonamentele din cont</Link>}</div>
         </CardContent>
       </Card>
-
-      {/* Metodă de plată vizuală (sincronizată cu abonamentul de mai sus) */}
-      {project.subscription_plan && (
-        <div className="mt-5">
-          <PaymentMethodCard
-            planLabel={subscriptionPlanLabel(project.subscription_plan)}
-            billingNext={project.billing_next}
-          />
-        </div>
-      )}
 
       {/* Linkuri externe */}
       <LinksSection projectId={project.id} links={links} canWrite={canWrite} onChange={load} />
@@ -302,15 +261,22 @@ function PageShell({ children }: { children: React.ReactNode }) {
 
 function BannerStatusRow({ status, projectId, canWrite, onChange }: { status: BannerStatus; projectId: string; canWrite: boolean; onChange: () => void }) {
   const cfg = BANNER_LABEL[status] ?? BANNER_LABEL.in_progress;
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
   return (
     <div className={`rounded-lg border px-4 py-3 flex items-center gap-3 flex-wrap ${cfg.className}`}>
       <span className="w-2 h-2 rounded-full bg-current" />
       <span className="font-medium">Stare: {cfg.label}</span>
       {canWrite && (
-        <Select value={status} onValueChange={async (v) => { await internApi.updateProject(projectId, { banner_status: v as BannerStatus }); onChange(); }}>
-          <SelectTrigger className="w-48 ml-auto bg-background/40"><SelectValue /></SelectTrigger>
+        <Select value={status} disabled={saving} onValueChange={async (v) => {
+          setSaving(true);
+          try { await internApi.updateProject(projectId, { banner_status: v as BannerStatus }); window.dispatchEvent(new Event("avyron:projects-changed")); onChange(); }
+          catch (e) { toast({ variant: "destructive", description: (e as Error).message }); }
+          finally { setSaving(false); }
+        }}>
+          <SelectTrigger aria-label="Etapă proiect" className="w-48 ml-auto bg-background/40"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {(Object.keys(BANNER_LABEL) as BannerStatus[]).map((s) => <SelectItem key={s} value={s}>{BANNER_LABEL[s].label}</SelectItem>)}
+            {PROJECT_STAGES.map(stage => <SelectItem key={stage.id} value={stage.banner}>{stage.label}</SelectItem>)}
           </SelectContent>
         </Select>
       )}
@@ -319,17 +285,9 @@ function BannerStatusRow({ status, projectId, canWrite, onChange }: { status: Ba
 }
 
 function EditableField({ label, value, disabled, onSave }: { label: string; value: string; disabled?: boolean; onSave: (v: string) => Promise<void> }) {
-  const [v, setV] = useState(value);
-  useEffect(() => setV(value), [value]);
-  return (
-    <div>
-      <p className="text-xs text-muted-foreground mb-1">{label}</p>
-      <div className="flex gap-1">
-        <Input value={v} onChange={(e) => setV(e.target.value)} disabled={disabled} />
-        {!disabled && v !== value && <Button size="sm" onClick={() => onSave(v)}>OK</Button>}
-      </div>
-    </div>
-  );
+  const [v,setV]=useState(value),[busy,setBusy]=useState(false),[error,setError]=useState('');
+  useEffect(()=>setV(value),[value]);
+  return <div><p className="text-xs text-muted-foreground">{label}</p><div className="mt-1 flex gap-1"><Input aria-label={label} type="number" min={0} max={1e12} step="0.01" value={v} onChange={e=>{setV(e.target.value);setError('');}} disabled={disabled||busy}/>{!disabled&&v!==value&&<Button size="sm" disabled={busy} onClick={async()=>{if(busy)return;if(v!==''&&(!Number.isFinite(Number(v))||Number(v)<0||Number(v)>1e12)){setError('Introdu un buget valid, pozitiv sau zero.');return;}setBusy(true);try{await onSave(v);}catch{setError('Bugetul nu s-a salvat. Verifică accesul și reîncearcă.');}finally{setBusy(false);}}}>OK</Button>}</div>{error&&<p role="alert" className="mt-1 text-xs text-amber-500">{error}</p>}</div>;
 }
 
 function LinksSection({ projectId, links, canWrite, onChange }: { projectId: string; links: ProjectDetail["links"]; canWrite: boolean; onChange: () => void }) {

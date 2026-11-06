@@ -1,10 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Bell, Check, Clock3, ExternalLink, LoaderCircle, Mail, MessageCircle, Phone, Save, Star, Trash2 } from "lucide-react";
+import LogoLeadDetails from "./LogoLeadDetails";
+import { leadWhatsAppUrl } from "@/shared/leadArchive";
+import LeadWhatsApp from "./LeadWhatsApp";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Archive, Bell, Check, Clock3, ExternalLink, LoaderCircle, Mail, MessageCircle, Phone, Save, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   leadsApi,
+  type LeadListRow,
   type LeadChannel,
   type LeadDeletionReasonCode,
   type LeadDetailResponse,
@@ -31,19 +35,15 @@ const dateTimeLocal = (value: number | null) => {
   return new Date(value - offset).toISOString().slice(0, 16);
 };
 
-const whatsAppHref = (phone: string) => {
-  let digits = phone.replace(/\D/g, "");
-  if (digits.startsWith("0")) digits = `40${digits.slice(1)}`;
-  return `https://wa.me/${digits}`;
-};
-
 const formatDate = (value: number) => new Intl.DateTimeFormat("ro-RO", {
   dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Bucharest",
 }).format(value);
 
-export function LeadDetailDialog({ leadId, onOpenChange, onChanged, onDeleted }: {
-  leadId: string | null; onOpenChange: (open: boolean) => void; onChanged: () => void; onDeleted: () => void;
+export function LeadDetailDialog({ leadId, onOpenChange, onChanged, onDeleted, onArchive }: {
+  leadId: string | null; onOpenChange: (open: boolean) => void; onChanged: () => void; onDeleted: () => void; onArchive?: (lead: LeadListRow) => void;
 }) {
+  const loadSequence = useRef(0), currentLead = useRef(leadId);
+  currentLead.current = leadId;
   const [detail, setDetail] = useState<LeadDetailResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -57,12 +57,18 @@ export function LeadDetailDialog({ leadId, onOpenChange, onChanged, onDeleted }:
   const [reminderAt, setReminderAt] = useState("");
   const [reminderNote, setReminderNote] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [waMessage, setWaMessage] = useState("");
+  useEffect(() => { setWaMessage(""); }, [leadId]);
 
   const load = useCallback(async () => {
+    if (currentLead.current !== leadId) return;
+    const sequence = ++loadSequence.current;
+    setDetail(null);
+    setLoading(!!leadId);
     if (!leadId) return;
-    setLoading(true);
     try {
       const result = await leadsApi.detail(leadId);
+      if (sequence !== loadSequence.current || currentLead.current !== leadId) return;
       setDetail(result);
       setStage(result.data.lifecycle_stage);
       setUrgent(result.data.urgent === 1);
@@ -70,13 +76,13 @@ export function LeadDetailDialog({ leadId, onOpenChange, onChanged, onDeleted }:
       setFollowUp(dateTimeLocal(result.data.next_follow_up_at));
       setLostReason(result.data.lost_reason ?? "");
     } catch {
-      toast.error("Fișa lead-ului nu a putut fi încărcată.");
+      if (sequence === loadSequence.current) toast.error("Fișa lead-ului nu a putut fi încărcată.");
     } finally {
-      setLoading(false);
+      if (sequence === loadSequence.current) setLoading(false);
     }
   }, [leadId]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { const sequence = loadSequence; void load(); return () => { ++sequence.current; }; }, [load]);
   const pendingReminders = useMemo(() => detail?.reminders.filter((item) => item.status === "pending") ?? [], [detail]);
 
   const save = async () => {
@@ -153,17 +159,18 @@ export function LeadDetailDialog({ leadId, onOpenChange, onChanged, onDeleted }:
     catch { toast.error("Lead-ul nu a putut fi șters."); }
     finally { setSaving(false); }
   };
-  const lead = detail?.data;
+  const lead = detail?.data?.id === leadId ? detail.data : undefined;
 
   return (
     <>
     <Dialog open={leadId !== null && !deleteOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[94vh] max-w-5xl overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <div className="flex items-center justify-between gap-3"><DialogTitle>{lead?.name || lead?.business || "Fișă lead"}</DialogTitle>{detail?.canEdit && <Button type="button" variant="ghost" size="sm" disabled={saving} onClick={() => setDeleteOpen(true)} className="text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="mr-2 size-4" /> Șterge</Button>}</div>
+          <div className="flex flex-wrap items-center justify-between gap-3"><DialogTitle className="min-w-0 max-w-full break-words">{lead?.name || lead?.business || "Fișă lead"}</DialogTitle>{lead && detail?.canEdit && onArchive && <Button type="button" variant="outline" size="sm" disabled={saving} onClick={() => onArchive(detail.data)}><Archive className="size-4" />Arhivează</Button>}{lead && detail?.canEdit && <Button type="button" variant="ghost" size="sm" disabled={saving} onClick={() => setDeleteOpen(true)} className="text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="mr-2 size-4" /> Șterge</Button>}</div>
           <DialogDescription>{lead?.business && lead?.name ? lead.business : "Istoric, contactări, responsabilitate și următorul pas."}</DialogDescription>
         </DialogHeader>
         {loading && <div className="grid min-h-64 place-items-center"><LoaderCircle className="size-6 animate-spin" /></div>}
+        {!loading && !lead && leadId && <div role="alert" className="rounded-xl border p-4 text-sm">Fișa nu este disponibilă. <button className="underline" onClick={() => void load()}>Reîncearcă încărcarea</button></div>}
         {!loading && lead && detail && (
           <div className="grid gap-5 lg:grid-cols-[1.05fr_.95fr]">
             <div className="space-y-4">
@@ -196,15 +203,17 @@ export function LeadDetailDialog({ leadId, onOpenChange, onChanged, onDeleted }:
               <section className="space-y-3 rounded-2xl border border-border/60 bg-card/60 p-4">
                 <h3 className="font-medium">Contact</h3>
                 <div className="flex flex-wrap gap-2">
-                  {lead.phone && <><Button asChild variant="outline" size="sm"><a href={`tel:${lead.phone}`}><Phone /> Sună</a></Button><Button asChild variant="outline" size="sm"><a href={whatsAppHref(lead.phone)} target="_blank" rel="noopener noreferrer"><MessageCircle /> WhatsApp</a></Button><Button asChild variant="outline" size="sm"><a href={`sms:${lead.phone}`}><MessageCircle /> SMS</a></Button></>}
+                  {lead.phone && <><Button asChild variant="outline" size="sm"><a href={`tel:${lead.phone}`}><Phone /> Sună</a></Button><LeadWhatsApp phone={lead.phone} label="WhatsApp" /><Button asChild variant="outline" size="sm"><a href={`sms:${lead.phone}`}><MessageCircle /> SMS</a></Button></>}
                   {lead.email && <Button asChild variant="outline" size="sm"><a href={`mailto:${lead.email}`}><Mail /> Email</a></Button>}
                   {lead.website && <Button asChild variant="outline" size="sm"><a href={lead.website} target="_blank" rel="noopener noreferrer"><ExternalLink /> Website</a></Button>}
                 </div>
+                {leadWhatsAppUrl(lead.phone) && <details className="rounded-xl border border-border/60 p-3"><summary className="cursor-pointer text-xs font-medium">Pregătește mesaj WhatsApp</summary><label className="mt-3 block text-xs">Mesaj pentru WhatsApp<textarea className={field+" mt-1"} value={waMessage} maxLength={2000} rows={3} onChange={e => setWaMessage(e.target.value)} /></label><div className="mt-2"><LeadWhatsApp phone={lead.phone} message={waMessage} label="Deschide WhatsApp cu mesajul" /></div><p className="mt-2 text-xs text-muted-foreground">Verifici destinatarul și trimiți manual din WhatsApp. Deschiderea aplicației nu confirmă trimiterea.</p></details>}
                 {detail.canEdit && <div className="flex flex-wrap gap-1.5 border-t border-border/60 pt-3 text-xs">
                   <span className="w-full text-muted-foreground">După contactarea reală, înregistrează canalul:</span>
                   {lead.phone && <><button type="button" onClick={() => recordContact("call", "telefonică")} className="rounded-lg border px-2 py-1">Telefon ✓</button><button type="button" onClick={() => recordContact("whatsapp", "WhatsApp")} className="rounded-lg border px-2 py-1">WhatsApp ✓</button><button type="button" onClick={() => recordContact("sms", "SMS")} className="rounded-lg border px-2 py-1">SMS ✓</button></>}
                   {lead.email && <button type="button" onClick={() => recordContact("email", "prin email")} className="rounded-lg border px-2 py-1">Email ✓</button>}
                 </div>}
+                <LogoLeadDetails lead={lead}/>
                 {lead.message && <p className="whitespace-pre-wrap rounded-xl bg-muted/50 p-3 text-sm text-muted-foreground">{lead.message}</p>}
               </section>
 

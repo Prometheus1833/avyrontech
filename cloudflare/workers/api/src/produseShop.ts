@@ -1,3 +1,4 @@
+import { paidProductLines, type PaidProductHistory } from "../../../../src/shared/paidProducts";
 import { getScannedObject } from "./malware";
 // Magazinul Produse Avyron — partea care cere cont.
 //
@@ -53,7 +54,8 @@ export type CatalogRow = { slug: string; type: string; access: PlanId; price_ron
  * după `pro_at`, Pro → Free după `free_at`. Datele sunt stocate explicit, ca
  * un produs anume să poată fi ținut pe loc fără să schimbăm regula.
  */
-export function effectiveAccess(item: Pick<CatalogRow, "access" | "pro_at" | "free_at">, timestamp = Date.now()): PlanId {
+export function effectiveAccess(item: Pick<CatalogRow, "access" | "pro_at" | "free_at"> & {slug?: string}, timestamp = Date.now()): PlanId {
+  if(item.slug === "logo-studio-3d") return item.access === "studio" ? "studio" : "pro";
   let access = item.access;
   if (item.pro_at !== null && timestamp >= item.pro_at) access = "pro";
   if (item.free_at !== null && timestamp >= item.free_at) access = "free";
@@ -188,6 +190,37 @@ produseShopRouter.get("/api/produse/account/state", async (c) => {
     if (isMissingTable(error)) return c.json({ error: { code: "catalog_unavailable", message: "Catalogul de produse nu e încă migrat." } }, 503);
     throw error;
   }
+});
+
+/** Historical paid orders, including expired/revoked licenses; no access is granted here. */
+produseShopRouter.get("/api/produse/account/purchases", async (c) => {
+  const cursorValue = c.req.query("cursor");
+  let cursor: { at: number; id: string } | null = null;
+  if (cursorValue) {
+    try {
+      if (cursorValue.length > 512) throw new Error("invalid_cursor");
+      cursor = z.object({ at: z.number().int().nonnegative(), id: z.string().min(1).max(128) }).strict().parse(JSON.parse(atob(cursorValue)));
+    } catch { return c.json({ error: { code: "invalid_cursor" } }, 400); }
+  }
+  const limit = 20;
+  const { results } = await c.env.DB.prepare(
+    `SELECT purchase.id,purchase.created_at,purchase.items_json,
+       (SELECT MIN(created_at) FROM billing_order_fulfillments WHERE order_id=purchase.id) AS paid_at
+       FROM commerce_orders purchase
+      WHERE purchase.user_id=? AND purchase.status='paid'
+        AND EXISTS (SELECT 1 FROM json_each(CASE WHEN json_valid(purchase.items_json) THEN purchase.items_json ELSE '[]' END) line
+          WHERE json_extract(CASE WHEN line.type='object' THEN line.value ELSE '{}' END,'$.type')='product'
+             OR json_extract(CASE WHEN line.type='object' THEN line.value ELSE '{}' END,'$.kind')='item')
+        AND (? IS NULL OR purchase.created_at < ? OR (purchase.created_at=? AND purchase.id < ?))
+      ORDER BY purchase.created_at DESC,purchase.id DESC LIMIT ?`,
+  ).bind(c.get("userId"), cursor?.at ?? null, cursor?.at ?? null, cursor?.at ?? null, cursor?.id ?? null, limit + 1)
+    .all<{ id: string; created_at: number; items_json: string; paid_at: number | null }>();
+  const page = results.slice(0, limit), last = page.at(-1);
+  const history: PaidProductHistory = {
+    data: page.map(row => ({ id: row.id, createdAt: row.created_at, paidAt: row.paid_at, items: paidProductLines(row.items_json) })),
+    nextCursor: results.length > limit && last ? btoa(JSON.stringify({ at: last.created_at, id: last.id })) : null,
+  };
+  return c.json(history);
 });
 
 const copySchema = z.object({ slug: z.string().min(1).max(80), channel: z.enum(["cli", "code", "zip", "mcp", "prompt"]) }).strict();

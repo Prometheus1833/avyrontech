@@ -6,7 +6,6 @@ import { isNoindexPath, PRERENDER_ROUTES } from "@/seo/publicRoutes";
 
 const root = process.cwd();
 const appSource = readFileSync(resolve(root, "src/App.tsx"), "utf8");
-const menuSource = readFileSync(resolve(root, "src/components/auth/UserMenu.tsx"), "utf8");
 const pageSource = readFileSync(resolve(root, "src/pages/Careers.tsx"), "utf8");
 
 describe("careers page", () => {
@@ -17,10 +16,9 @@ describe("careers page", () => {
     expect(isNoindexPath("/en/careers")).toBe(false);
   });
 
-  it("registers both routes and exposes them only through the authenticated user menu", () => {
+  it("keeps both public routes registered independently of the account menu", () => {
     expect(appSource).toContain('<Route path="/cariere" element={<Careers />} />');
     expect(appSource).toContain('<Route path="/en/careers" element={<Careers />} />');
-    expect(menuSource).toContain('const careersPath = lang === "en" ? "/en/careers" : "/cariere"');
   });
 
   it("uses honest WebPage structured data instead of advertising fictional vacancies", () => {
