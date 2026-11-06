@@ -40,6 +40,8 @@ Frontendul real pe domeniile AVYRON este livrat împreună cu API-ul și activel
 - Integritate locală: 88 de fișiere de migrare până la 0090, `quick_check=ok`, zero încălcări FK.
 - Verificările GitHub se rulează separat pe PR-ul acestui lot; rezultatul lor nu este presupus din testele locale.
 
+Prima verificare GitHub a primit HTTP 403 de la protecția publică Cloudflare la citirea textelor serviciilor. CI folosește acum explicit snapshotul public versionat, prin opțiunea existentă `SERVICE_CONTENT_SNAPSHOT_SKIP=1`, numai în pasul de build de verificare. Buildul efectiv de lansare continuă să citească textele publicate. Nu sunt relaxate WAF, autorizarea sau validarea câmpurilor; testele snapshotului folosesc în continuare furnizorul local controlat.
+
 ## Configurare amânată și limite explicite
 
 Utilizatorul a confirmat că **nu există încă un cont Bouncer și nici DPA/evaluare aprobată a transferului**. Cheia, aprobarea procesării sensibile și verificarea confidențialității stocării rămân neconfigurate. Nicio scanare reală și niciun document al clientului nu au fost trimise furnizorului. Uploadurile care necesită aceste verificări rămân blocate; încărcările istorice nu devin CLEAN prin migrare. Limitele Free sunt plafonate la 500/lună și 25.000.000 bytes/fișier, fără depășire automată ori abonament nou.

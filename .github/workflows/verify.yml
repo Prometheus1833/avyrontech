@@ -45,6 +45,10 @@ jobs:
         run: npm run service-content:check && npm run catalog:produse:check
 
       - name: Build Cloudflare Pages output
+        # CI verifies the committed snapshot. Production builds still fetch
+        # published content; GitHub runners must not depend on public WAF access.
+        env:
+          SERVICE_CONTENT_SNAPSHOT_SKIP: "1"
         run: npm run build:pages
 
       - name: Run tests against prerendered output
