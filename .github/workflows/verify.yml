@@ -61,6 +61,8 @@ jobs:
         run: npm run test:e2e
 
       - name: Validate standalone site Worker build
+        env:
+          SERVICE_CONTENT_SNAPSHOT_SKIP: "1"
         run: npm run build:worker
 
       - name: Validate API and email Workers

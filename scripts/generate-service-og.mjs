@@ -18,7 +18,8 @@ const fonts = await Promise.all(["outfit-latin-700-normal", "outfit-latin-ext-70
 function outlineText(svg) {
   return svg.replace(/<text([^>]*)>([^<]*)<\/text>/g, (_, attributes, content) => {
     const attr = key => attributes.match(new RegExp(`(?:^|\\s)${key}="([^"]*)"`))?.[1];
-    const text = content.replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("&quot;", '"');
+    const entities = { "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"' };
+    const text = content.replace(/&(?:amp|lt|gt|quot);/g, entity => entities[entity]);
     const size = Number(attr("font-size"));
     const tracking = Number(attr("letter-spacing") || 0);
     const glyphs = [...text].map(character => {

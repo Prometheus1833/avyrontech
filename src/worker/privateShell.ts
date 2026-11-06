@@ -8,18 +8,27 @@ const PRIVATE_DESCRIPTION = "Spațiu securizat pentru autentificare și administ
 
 function replaceMeta(html: string, attribute: "name" | "property", key: string, value: string) {
   const expression = new RegExp(`<meta\\s+${attribute}=["']${key}["'][^>]*>`, "i");
-  const tag = `<meta ${attribute}="${key}" content="${value}">`;
-  return expression.test(html) ? html.replace(expression, tag) : html.replace("</head>", `  ${tag}\n</head>`);
+  const escaped = value.replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]!);
+  const tag = `<meta ${attribute}="${key}" content="${escaped}">`;
+  return expression.test(html) ? html.replace(expression, () => tag) : html.replace("</head>", () => `  ${tag}\n</head>`);
 }
 
 function privateShellHtml(html: string, url: URL) {
-  let result = html
+  // This is repository-built shell HTML, never document/user HTML. Remove
+  // structured data to a fixed point so nested matches cannot be exposed by
+  // an earlier removal; retain the application's executable module scripts.
+  let stripped = html;
+  let previous: string;
+  do {
+    previous = stripped;
+    stripped = stripped.replace(/\s*<script[^>]+type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi, "");
+  } while (stripped !== previous);
+  let result = stripped
     .replace(/<title>[\s\S]*?<\/title>/i, `<title>${PRIVATE_TITLE}</title>`)
     .replace(/\s*<meta\s+name=["']keywords["'][^>]*>/gi, "")
     .replace(/\s*<meta\s+name=["']geo\.[^"']+["'][^>]*>/gi, "")
     .replace(/\s*<link\s+rel=["']canonical["'][^>]*>/gi, "")
-    .replace(/\s*<link\s+rel=["']alternate["'][^>]*>/gi, "")
-    .replace(/\s*<script[^>]+type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi, "");
+    .replace(/\s*<link\s+rel=["']alternate["'][^>]*>/gi, "");
   result = replaceMeta(result, "name", "description", PRIVATE_DESCRIPTION);
   result = replaceMeta(result, "name", "robots", NOINDEX);
   result = replaceMeta(result, "property", "og:title", PRIVATE_TITLE);

@@ -508,6 +508,7 @@ export function staffRequestPermission(
     path.startsWith("/api/proposals") ||
     path.startsWith("/api/links") ||
     path.startsWith("/api/media") ||
+    path.startsWith("/api/visual-assets") ||
     path.startsWith("/api/metadata")
   )
     return path === "/api/projects" && method === "POST"

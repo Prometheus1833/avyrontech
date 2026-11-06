@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, it, expect } from "vitest";
 import { staffAccessRouter } from "../../cloudflare/workers/api/src/staffAccess";
 import { aiProjectsRouter } from "../../cloudflare/workers/api/src/aiProjects";
 import { workspaceRouter } from "../../cloudflare/workers/api/src/workspace";
+import { visualAssetsRouter } from "../../cloudflare/workers/api/src/visualAssets";
 import {
   staffRequestAllowed,
   canManageStaffTarget,
@@ -121,6 +122,7 @@ describe("Agency ranks and private chat: real Hono/D1 handlers", () => {
     app.route("/", staffAccessRouter);
     app.route("/", workspaceRouter);
     app.route("/", aiProjectsRouter);
+    app.route("/", visualAssetsRouter);
     app.onError((e) => {
       console.error(e);
       return new Response("safe failure", { status: 500 });
@@ -213,6 +215,34 @@ describe("Agency ranks and private chat: real Hono/D1 handlers", () => {
     expect(view.data.some((m: { id: string }) => m.id === "client")).toBe(
       false,
     );
+  });
+  it("allows managed project staff into Media without exposing another client's resources", async () => {
+    await grant("dev", "vibe_dev", { projectIds: ["pa"] });
+    actor = "dev";
+    const options = await req("/api/visual-assets/options");
+    expect(options.status).toBe(200);
+    const data = await options.json();
+    expect(data.projects.map((p: { id: string }) => p.id)).toEqual(["pa"]);
+    expect(data.canManageAgency).toBe(false);
+    expect((await req("/api/visual-assets?scope=client")).status).toBe(200);
+    expect((await req("/api/visual-assets/context?project=pb")).status).toBe(404);
+    expect(staffRequestPermission("/api/visual-assets/upload", "POST")).toBe("projects.write");
+  });
+  it("does not recreate a revoked legacy client grant by matching email after staff demotion", async () => {
+    db.exec("UPDATE clients SET email='dev@example.test' WHERE id='ca'");
+    await grant("dev", "vibe_dev", { clientIds: ["ca"] });
+    expect(db.prepare("SELECT access_managed FROM clients WHERE id='ca'").get()!.access_managed).toBe(1);
+    // Reproduce a grant created before managed client-access replacement existed.
+    db.exec("UPDATE clients SET access_managed=0 WHERE id='ca'");
+    const removed = await req("/api/staff-access/dev", assignment("vibe_dev", {
+      rankId: null, permissions: [], clientIds: [], revision: 1,
+    }));
+    expect(removed.status).toBe(200);
+    actor = "dev";
+    await req("/api/workspace/invoices");
+    await req("/api/workspace/subscriptions");
+    expect(db.prepare("SELECT access_managed FROM clients WHERE id='ca'").get()!.access_managed).toBe(1);
+    expect(db.prepare("SELECT count(*) n FROM client_account_access WHERE user_id='dev'").get()!.n).toBe(0);
   });
   it("enforces canonical capability revocation even when the reviewed snapshot still lists it", async () => {
     await grant("dev", "vibe_dev");

@@ -227,6 +227,17 @@ describe("worker HTTP statuses", () => {
     }
   });
 
+  it("removes nested structured data and treats private metadata values as literal HTML attributes", async () => {
+    const shell = `<html><head><title>Public</title><meta property="og:url" content="public"><script type="application/ld+json"><script type="application/ld+json">{}</script></script><script type="module" src="/assets/app.js"></script></head><body><div id="root"></div></body></html>`;
+    const response = await worker.fetch(new Request("https://avyron.ro/profil/$&token"), {
+      ASSETS: { fetch: async () => new Response(shell, { headers: { "content-type": "text/html" } }) },
+    });
+    const html = await response.text();
+    expect(html).not.toContain("application/ld+json");
+    expect(html).toContain('content="https://avyron.ro/profil/$&amp;token"');
+    expect(html).toContain('type="module" src="/assets/app.js"');
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+  });
   it("fails closed with noindex and no-store if the private shell is missing", async () => {
     const response = await worker.fetch(new Request("https://avyron.ro/profil"), {
       ASSETS: { fetch: async () => new Response("Missing", { status: 404 }) },

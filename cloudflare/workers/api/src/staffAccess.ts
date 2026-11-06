@@ -256,6 +256,9 @@ export async function planStaffAssignment(
     c.env.DB.prepare(
       "INSERT INTO subscription_staff(subscription_id,user_id,assigned_by,assigned_at) SELECT value,?,?,? FROM json_each(?)",
     ).bind(target.id, actor, t, JSON.stringify(input.subscriptionIds)),
+    c.env.DB.prepare(
+      "UPDATE clients SET access_managed=1 WHERE id IN(SELECT client_id FROM client_account_access WHERE user_id=?) OR id IN(SELECT value FROM json_each(?))",
+    ).bind(target.id, JSON.stringify(input.clientIds)),
     c.env.DB.prepare("DELETE FROM client_account_access WHERE user_id=?").bind(
       target.id,
     ),
