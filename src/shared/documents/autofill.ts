@@ -61,6 +61,7 @@ export function automaticDocumentFields(
     "provider.address": company.address || "",
     "provider.registration_number": company.registration_number || "",
     "provider.representative": company.representative || "",
+    "provider.share_capital": company.share_capital || "",
     "provider.contact_email": company.contact_email || "",
     "beneficiary.legal_name": beneficiaryName,
     "beneficiary.entity_type": entityType,
@@ -71,6 +72,13 @@ export function automaticDocumentFields(
       client?.email ||
       (internal ? company.contact_email : "") ||
       "",
+    "beneficiary.summary": [
+      entityType,
+      entityType !== "PF" && tax ? `Cod fiscal: ${tax}` : "",
+      client?.registration_number ? `Înregistrare: ${client.registration_number}` : "",
+      address,
+      billing?.invoice_email || client?.email,
+    ].filter(Boolean).join("\n") || "Beneficiarul este identificat prin numele înscris mai sus.",
     "beneficiary.identification":
       entityType === "PF"
         ? "Persoană fizică identificată prin numele și adresa înscrise în document"

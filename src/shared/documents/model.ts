@@ -261,7 +261,7 @@ export const blankPayload = (title = "Document nou"): DocumentPayload => ({
   footer: "Document privat · acces autorizat",
   body: { type: "doc", content: [paragraph("")] },
   fields: {},
-  labels: {},
+  labels: { __avyron_design: "2026" },
   lines: [],
 });
 export function replaceVariables(

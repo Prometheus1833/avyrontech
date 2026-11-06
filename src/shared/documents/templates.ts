@@ -12,7 +12,7 @@ export type TemplateDefinition = {
   required: string[];
   payload: DocumentPayload;
 };
-const base = ["date", "provider.legal_name", "beneficiary.legal_name", "scope"];
+const base = ["date", "provider.legal_name", "provider.tax_id", "provider.registration_number", "provider.address", "provider.share_capital", "beneficiary.legal_name", "scope"];
 const legalBase = [
   ...base,
   "provider.tax_id",
@@ -32,18 +32,27 @@ const template = (
   id,
   name,
   legal,
-  required,
+  required: [...new Set(required)],
   payload: {
     ...blankPayload(name),
-    header: "AVYRON · {{provider.legal_name}} · {{date}}",
+    header: "AVYRON · {{provider.legal_name}}",
     footer:
-      "Document privat · {{beneficiary.legal_name}} · versiunea și numărul sunt înscrise la export",
+      "{{provider.contact_email}} · Document privat · {{beneficiary.legal_name}}",
     body: {
       type: "doc",
       content: [
-        paragraph(
-          "Prestator / emitent: {{provider.legal_name}}. Beneficiar / destinatar: {{beneficiary.legal_name}}. Data: {{date}}. Obiect: {{scope}}.",
-        ),
+        paragraph(TEMPLATE_INTROS[id]),
+        paragraph("Proiect / activitate: {{scope}}. Data documentului: {{date}}."),
+        {
+          type: "table",
+          content: [
+            { type: "tableRow", content: ["Emitent AVYRON", "Beneficiar / destinatar"].map((label) => ({ type: "tableHeader", content: [paragraph(label)] })) },
+            { type: "tableRow", content: [
+              { type: "tableCell", content: [paragraph("{{provider.legal_name}}"), paragraph("CUI {{provider.tax_id}} · ONRC {{provider.registration_number}}"), paragraph("Sediu: {{provider.address}}"), paragraph("Capital social: {{provider.share_capital}}"), paragraph("Contact: {{provider.contact_email}}") ] },
+              { type: "tableCell", content: [paragraph("{{beneficiary.legal_name}}"), paragraph("{{beneficiary.summary}}")] },
+            ] },
+          ],
+        },
         ...(legal
           ? [
               paragraph(
@@ -59,6 +68,20 @@ const template = (
     },
   },
 });
+
+const TEMPLATE_INTROS: Record<string, string> = {
+  brief: "Pornim de la activitatea și prioritățile dumneavoastră. Acest brief reunește informațiile necesare unei propuneri relevante și delimitează ce mai trebuie clarificat înainte de ofertare.",
+  audit: "Acest raport prezintă starea evaluată, dovezile disponibile și ordinea recomandată a intervențiilor. Cititorul poate identifica rapid ce este confirmat, care este impactul și ce decizie urmează.",
+  offer: "Vă propunem o soluție construită în jurul activității dumneavoastră. Oferta separă rezultatul urmărit, livrabilele, investiția și pașii de lucru, pentru a putea decide în cunoștință de cauză.",
+  framework: "Acest contract stabilește cadrul colaborării, responsabilitățile părților și condițiile în care serviciile sunt comandate, verificate și predate. Anexele acceptate individualizează fiecare activitate.",
+  annex: "Această anexă transformă propunerea acceptată într-un perimetru de lucru verificabil: ce se livrează, în ce condiții, cu ce limite și după ce criterii se confirmă finalizarea.",
+  access: "Acest acord descrie accesul autorizat pentru activitatea convenită. Drepturile sunt limitate la scopul declarat, se acordă individual și pot fi retrase prin procedura stabilită mai jos.",
+  privacy: "Acest document stabilește cum sunt utilizate și protejate informațiile schimbate în colaborare. Regimul de prelucrare a datelor se alege după rolurile și operațiunile efective ale părților.",
+  implementation: "Planul face vizibile etapele, responsabilitățile și punctele de decizie. Fiecare livrabil este legat de un termen, de dependențele sale și de dovada necesară finalizării.",
+  report: "Raportul reunește activitățile efectuate, rezultatele observate și prioritățile perioadei următoare. Concluziile sunt susținute de sursele și limitele de măsurare indicate în document.",
+  handover: "Părțile consemnează ce a fost predat, ce s-a verificat și ce observații rămân de soluționat. Inventarul și rezultatul recepției permit urmărirea clară a responsabilităților ulterioare.",
+  sla: "Acest acord clarifică resursele protejate, intervențiile incluse și modul de solicitare a suportului. Nivelurile de serviciu, backupul și costurile sunt delimitate explicit, fără acoperire implicit nelimitată.",
+};
 
 export const DOCUMENT_TEMPLATES: TemplateDefinition[] = [
   template(
@@ -138,7 +161,7 @@ export const DOCUMENT_TEMPLATES: TemplateDefinition[] = [
     "Ofertă comercială și deviz",
     false,
     [
-      ...legalBase,
+      ...base,
       "objectives",
       "deliverables",
       "schedule",
@@ -148,37 +171,53 @@ export const DOCUMENT_TEMPLATES: TemplateDefinition[] = [
     ],
     [
       [
-        "1. Context și propunere",
+        "01 Contextul și direcția propusă",
         [
-          "AVYRON propune beneficiarului {{beneficiary.legal_name}} soluția descrisă în această ofertă pentru {{scope}}. Obiectivele urmărite: {{objectives}}. Varianta comercială și relația avută în vedere: {{offer_variant}}.",
-          "Soluția propusă și beneficiile urmărite: {{solution}}. Beneficiile reprezintă obiective de lucru; rezultatele dependente de piață, algoritmi, furnizori ori deciziile beneficiarului nu sunt garantate.",
+          "Am organizat propunerea pentru {{scope}}, pornind de la următoarele obiective: {{objectives}}.",
+          "Soluția propusă: {{solution}}. Varianta comercială: {{offer_variant}}. Beneficiile urmărite sunt obiective ale colaborării; poziționările, vânzările și rezultatele dependente de terți nu sunt garantate.",
         ],
       ],
       [
-        "2. Servicii, produse și livrabile",
+        "02 Ce primește beneficiarul",
         [
-          "Serviciile și produsele ofertate sunt individualizate în deviz prin identificator, SKU unde există, cantitate, monedă și recurență. Livrabilele și limitele fiecărui element: {{deliverables}}.",
-          "Opțiuni incluse: {{inclusions}}. Opțiuni excluse și servicii ale terților: {{exclusions}}. Costurile media pentru Ads, licențele externe și taxele furnizorilor sunt separate de onorariul AVYRON și se includ numai dacă sunt înscrise expres.",
+          "Livrabilele, formatele și limitele asumate: {{deliverables}}.",
+          "Opțiunile incluse: {{inclusions}}. Fiecare serviciu sau produs este individualizat în deviz și în detaliile activității, fără extinderea implicită la alte proiecte.",
         ],
       ],
       [
-        "3. Calendar și dependențe",
+        "03 Cum lucrăm și ce avem nevoie",
         [
-          "Calendarul estimativ și etapele propuse: {{schedule}}. Acesta depinde de materialele, accesurile și aprobările indicate: {{dependencies}}. Orice modificare de scop se evaluează și se confirmă înainte de executare.",
+          "Calendarul estimativ și punctele de verificare: {{schedule}}.",
+          "Materialele, accesurile, responsabilii și aprobările necesare: {{dependencies}}. Modificările de scop se evaluează și se confirmă înainte de executare, împreună cu impactul asupra costurilor și termenelor.",
         ],
       ],
       [
-        "4. Prețuri și condiții comerciale",
+        "04 Investiția și costurile separate",
         [
-          "Devizul păstrează prețul de catalog și prețul ofertat. Reducerile sau majorările se aplică exclusiv prezentei oferte și sunt motivate individual. Regimul fiscal aplicabil: {{tax_regime}}. Valorile recurente se disting de cele unice și de bugetele externe.",
-          "Condițiile de plată, scadențele și eventualul avans: {{payment_terms}}. Durata serviciilor recurente: {{duration}}. Oferta este valabilă până la {{valid_until}}. Nicio taxă ori durată necompletată nu se consideră acceptată implicit.",
+          "Devizul de la final distinge valoarea de catalog de valoarea ofertată și arată cantitatea, taxele și recurența fiecărei poziții. Orice reducere sau majorare este justificată și se aplică exclusiv acestei oferte.",
+          "Elementele excluse și costurile furnizorilor externi: {{exclusions}}. Domeniile, bugetele media, licențele și abonamentele terților nu se confundă cu onorariul AVYRON. Regimul fiscal aplicabil: {{tax_regime}}.",
+          "Durata și condițiile costurilor recurente: {{duration}}. Sumele unice și cele periodice se citesc separat; variantele alternative se confirmă înainte de acceptare.",
         ],
       ],
       [
-        "5. Acceptare și pașii următori",
+        "05 Plata și valabilitatea",
         [
-          "Acceptarea se exprimă de reprezentanții autorizați pentru versiunea și pachetul selectate, prin {{acceptance_method}}. Condițiile de acceptare și eventualele documente ulterioare: {{acceptance}}.",
-          "Date de contact AVYRON: {{provider.contact_email}}. Reprezentanți și semnături, dacă sunt necesare: {{signatories}}. Prezenta ofertă nu autorizează debitarea automată a conturilor și nu înlocuiește condițiile contractuale care trebuie convenite separat.",
+          "Condițiile de plată, eventualul avans și scadențele: {{payment_terms}}.",
+          "Oferta este valabilă până la {{valid_until}}. Un câmp necompletat nu introduce un tarif, o durată sau o autorizare de debitare. Factura fiscală se emite prin fluxul de facturare aplicabil, separat de prezenta ofertă.",
+        ],
+      ],
+      [
+        "Opțiuni suplimentare",
+        [
+          "Propuneri care pot completa proiectul: {{optional_extras}}.",
+          "Aceste opțiuni sunt prezentate pentru analiză, fără obligație de achiziție. Nu intră în totalul ofertei și nu se execută fără acceptarea separată a conținutului, prețului și condițiilor lor.",
+        ],
+      ],
+      [
+        "06 Acceptare și pasul următor",
+        [
+          "Pentru continuare se confirmă versiunea ofertei, pachetul ales și condițiile de acceptare: {{acceptance}}. Modalitatea de confirmare este {{acceptance_method}}.",
+          "Contact AVYRON: {{provider.contact_email}}. Confirmarea aparține persoanelor autorizate să reprezinte beneficiarul; semnăturile se colectează prin canalul convenit, dacă sunt necesare. Oferta nu transferă singură drepturi asupra codului sau creațiilor și nu înlocuiește acordurile contractuale care trebuie încheiate separat.",
         ],
       ],
     ],
@@ -549,6 +588,10 @@ export const DOCUMENT_TEMPLATES: TemplateDefinition[] = [
 ];
 
 export const FIELD_LABELS: Record<string, string> = {
+  "beneficiary.summary": "Identificarea și contactul beneficiarului",
+  "provider.share_capital": "Capital social AVYRON (valoare și monedă)",
+  "provider.registration_number": "Registrul Comerțului AVYRON",
+  optional_extras: "Opțiuni suplimentare fără obligație de achiziție (opțional)",
   "project.future_name": "Denumirea proiectului viitor",
   "project.future_description": "Contextul proiectului viitor",
   date: "Data documentului",
@@ -637,6 +680,23 @@ Object.assign(FIELD_LABELS, {
   maintenance_windows: "Ferestre de mentenanță",
   storage_terms: "Costuri și limite de stocare",
 });
+/** Optional clauses are removed before validation, not silently filled with promises. */
+export function applicableTemplatePayload(payload: DocumentPayload, family: string, fields: Record<string, string>): DocumentPayload {
+  let content = payload.body.content || [];
+  if (family === "privacy" && fields.privacy_mode !== "DPA") {
+    const boundary = content.findIndex((n) => n.type === "heading" && n.content?.some((t) => t.text?.startsWith("Art. 3.")));
+    if (boundary >= 0) content = content.slice(0, boundary);
+  }
+  if (family === "offer" && !fields.optional_extras?.trim()) {
+    const start = content.findIndex((n) => n.type === "heading" && n.content?.some((t) => t.text === "Opțiuni suplimentare"));
+    if (start >= 0) {
+      const next = content.findIndex((n, i) => i > start && n.type === "heading");
+      content = [...content.slice(0, start), ...(next < 0 ? [] : content.slice(next))];
+    }
+  }
+  return { ...payload, body: { ...payload.body, content } };
+}
+
 export const templateFields = (payload: DocumentPayload) => [
   ...new Set(
     JSON.stringify(payload)

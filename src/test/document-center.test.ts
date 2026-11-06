@@ -44,12 +44,14 @@ class Statement {
 }
 function store() {
   const data = new Map<string, Uint8Array>();
+  const metadata = new Map<string, Record<string,string>>();
   return {
     data,
-    put: async (key: string, value: Uint8Array | string) => {
+    put: async (key: string, value: Uint8Array | string, options?: { customMetadata?: Record<string,string> }) => {
       const bytes =
         typeof value === "string" ? new TextEncoder().encode(value) : value;
       data.set(key, bytes);
+      metadata.set(key, options?.customMetadata || {});
       return { size: bytes.length };
     },
     get: async (key: string) => {
@@ -57,6 +59,7 @@ function store() {
       return b
         ? {
             size: b.length,
+            customMetadata: metadata.get(key),
             body: new Response(b).body,
             arrayBuffer: async () =>
               b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength),
@@ -66,6 +69,7 @@ function store() {
     },
     delete: async (key: string) => {
       data.delete(key);
+      metadata.delete(key);
     },
   };
 }
@@ -369,6 +373,16 @@ describe("Document Center actual handlers, immutable records and private storage
         .get()!.payload_json,
     ).toBe(master);
   });
+  it("restricts company settings to platform principals and preserves capital for older clients", async () => {
+    const identity = { legal_name: "Emitent configurat SRL", tax_id: "CUI-TEST", registration_number: "ONRC-TEST", address: "Sediu confirmat", representative: "Reprezentant confirmat", contact_email: "issuer@example.test" };
+    actor = "staff";
+    expect((await req("/settings/company", { ...identity, share_capital: "500 RON" }, "PUT")).status).toBe(403);
+    actor = "owner";
+    expect((await req("/settings/company", { ...identity, share_capital: "500 RON" }, "PUT")).status).toBe(200);
+    expect((await req("/settings/company", identity, "PUT")).status).toBe(200);
+    const result = await req("/context");
+    expect((await result.json()).company).toMatchObject({ ...identity, share_capital: "500 RON" });
+  });
   it("provides all 11 substantial families, and blocks unresolved legal documents", async () => {
     expect(DOCUMENT_TEMPLATES).toHaveLength(11);
     for (const t of DOCUMENT_TEMPLATES) {
@@ -595,7 +609,7 @@ describe("Document Center actual handlers, immutable records and private storage
           "AVYRON · AVYRON",
         );
         expect(new TextDecoder().decode(zip["word/styles.xml"])).toContain(
-          "3D377B",
+          "6550A3",
         );
         expect(new TextDecoder().decode(zip["word/document.xml"])).toContain(
           "Știință",
@@ -1125,10 +1139,10 @@ describe("Document Center actual handlers, immutable records and private storage
     };
     expect((await req(`/${d.id}/export/pdf`)).status).toBe(200);
     expect((await req(`/${d.id}/export/pdf`)).status).toBe(200);
-    expect(names).toEqual([`${d.versionId}:pdf:draft`]);
+    expect(names).toEqual([`${d.versionId}:pdf:draft:avyron-2026-r1`]);
     await approve(d.id);
     expect((await req(`/${d.id}/export/pdf`)).status).toBe(200);
-    expect(names[1]).toBe(`${d.versionId}:pdf:final`);
+    expect(names[1]).toBe(`${d.versionId}:pdf:final:avyron-2026-r1`);
     actor = "b";
     expect((await req(`/${d.id}/export/pdf`)).status).toBe(404);
     expect(names).toHaveLength(2);
@@ -1378,6 +1392,30 @@ describe("Document Center actual handlers, immutable records and private storage
       mkdirSync("/tmp/avyron-document-qa", { recursive: true });
       writeFileSync(`/tmp/avyron-document-qa/contract.${format}`, bytes);
     }
+  });
+  it("keeps legacy payloads and their cached exports readable without changing design", async () => {
+    const legacy = { ...payload, labels: {} };
+    const result = await req("", { payload: legacy, scope: "internal", collection: "library", beneficiaryId: null, templateVersionId: null, assignments: [] });
+    expect(result.status).toBe(200);
+    const d = await result.json();
+    expect((await req(`/${d.id}/export/pdf`)).status).toBe(200);
+    expect((await req(`/${d.id}/export/pdf`)).status).toBe(200);
+    expect(db.prepare("SELECT count(*) n FROM document_files WHERE document_id=? AND kind='pdf'").get(d.id)!.n).toBe(1);
+    expect(JSON.parse(db.prepare("SELECT payload_json FROM document_versions WHERE document_id=?").get(d.id)!.payload_json as string)).toEqual(legacy);
+  });
+  it("refreshes an export with unknown rendering metadata without deleting the official copy", async () => {
+    const d = await create(); await approve(d.id);
+    expect((await req(`/${d.id}/export/pdf`)).status).toBe(200);
+    const previous = db.prepare("SELECT object_key FROM document_files WHERE document_id=? AND kind='pdf' AND expires_at IS NULL").get(d.id)!.object_key as string;
+    const bytes = files.data.get(previous)!;
+    await files.put(previous, bytes);
+    db.prepare("UPDATE document_files SET renderer_version='classic' WHERE object_key=?").run(previous); // Retained export produced by the previous API.
+    expect((await req(`/${d.id}/export/pdf`)).status).toBe(200);
+    expect(files.data.get(previous)).toEqual(bytes);
+    const count = db.prepare("SELECT count(*) n FROM document_files WHERE document_id=? AND kind='pdf' AND expires_at IS NULL").get(d.id)!.n;
+    expect(count).toBe(2);
+    expect((await req(`/${d.id}/export/pdf`)).status).toBe(200);
+    expect(db.prepare("SELECT count(*) n FROM document_files WHERE document_id=? AND kind='pdf'").get(d.id)!.n).toBe(count);
   });
   it("cleans only partial backup copies when a source fails, preserving verified backups and original files", async () => {
     const d = await create();

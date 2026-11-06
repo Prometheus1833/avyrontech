@@ -34,3 +34,23 @@ describe("client document reader", () => {
     expect(totals[1].textContent).toMatch(/0,00.*EUR/);
   });
 });
+
+it("renders missing fields with human labels while preserving the editable source", () => {
+  const payload = blankPayload("Ciornă");
+  payload.labels["provider.registration_number"] = "Registrul Comerțului AVYRON";
+  payload.body = { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "ONRC {{provider.registration_number}}" }] }] };
+  render(<DocumentReader payload={payload} />);
+  expect(screen.getByText("De completat: Registrul Comerțului AVYRON")).toBeInTheDocument();
+  expect(screen.queryByText("{{provider.registration_number}}", { exact: false })).not.toBeInTheDocument();
+  expect(JSON.stringify(payload.body)).toContain("{{provider.registration_number}}");
+});
+
+it("does not present an unconfirmed quote or tax regime as a zero-priced final offer", () => {
+  const payload = blankPayload("Deviz în lucru");
+  payload.lines = [{ catalogId: "quote", label: "Serviciu la ofertare", sku: "DEMO", quantity: 1, catalogPriceMinor: null, offeredPriceMinor: 0, priceConfirmed: false, discountReason: "", currency: "RON", vatBasisPoints: 0, taxVerified: false, billingCycle: "monthly", priceModel: "quote", package: "" }];
+  render(<DocumentReader payload={payload} />);
+  expect(screen.getByText("De confirmat", { exact: true })).toBeInTheDocument();
+  expect(screen.getByText("De verificat", { exact: true })).toBeInTheDocument();
+  expect(screen.getByText("Totalul se calculează după confirmarea prețurilor și a regimului fiscal.")).toBeInTheDocument();
+  expect(screen.queryByText(/Total cu taxele înscrise/)).not.toBeInTheDocument();
+});

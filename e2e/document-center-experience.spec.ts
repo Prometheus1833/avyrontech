@@ -399,8 +399,8 @@ test("separate views, compact library, contextual search and safe download", asy
     .getByRole("button", { name: "Previzualizează", exact: true })
     .click();
   const preview = page.getByRole("dialog");
-  await expect(preview.locator(".dc-template-paper")).toContainText(
-    "AVYRON propune",
+  await expect(preview.locator(".dc-document-paper")).toContainText(
+    "Vă propunem",
   );
   await page.screenshot({ path: info.outputPath("template-preview.png") });
   await preview
@@ -662,4 +662,42 @@ test('beneficiarul completat direct poate fi salvat explicit în CRM cu datele s
  await page.route('**/api/documents/context',route=>route.fulfill({json:current}));
  await page.route('**/api/admin/operations/clients',route=>{saved=route.request().postDataJSON();const identity=(saved!.identity as Record<string,string>);current={...current,clients:[...current.clients,{id:'manual-crm',company_name:identity.companyName,legal_name:identity.legalName,email:identity.email,entity_type:identity.entityType,address:identity.address,tax_id:identity.taxId,contact_name:identity.contactName}]};return route.fulfill({json:{ok:true,id:'manual-crm',accountId:null}});});
  await page.goto('/profil?tab=documents&documentView=generator');await page.getByRole('radio',{name:'Completare directă',exact:true}).check();await page.getByLabel('Nume / denumire beneficiar *',{exact:true}).fill('Beneficiar de înregistrat');await page.getByRole('combobox',{name:'Forma beneficiarului',exact:true}).selectOption('PJ');await page.getByLabel('E-mail beneficiar',{exact:true}).fill('direct@example.test');await page.getByLabel('CUI / cod fiscal beneficiar',{exact:true}).fill('CUI-SINTETIC');await page.getByLabel('Număr de înregistrare beneficiar',{exact:true}).fill('REG-SINTETIC');await page.getByLabel('Adresă beneficiar',{exact:true}).fill('Adresă introdusă direct');await page.getByRole('button',{name:'Salvează beneficiarul în CRM',exact:true}).click();await expect(page.getByRole('textbox',{name:'Denumire',exact:true})).toHaveValue('Beneficiar de înregistrat');await page.getByRole('button',{name:'Creează',exact:true}).click();await expect(page.getByLabel('Beneficiar juridic')).toHaveValue('manual-crm');expect(saved).toMatchObject({identity:{entityType:'PJ',taxId:'CUI-SINTETIC',registrationNumber:'REG-SINTETIC',address:'Adresă introdusă direct'},account:{mode:'none'}});
+});
+
+for (const format of ["pdf", "docx"] as const) test(`generator saves before direct ${format} download at 320px`, async ({ page }, info) => {
+  const state = await setup(page);
+  await page.setViewportSize({ width: 320, height: 900 });
+  const paths: string[] = [];
+  await page.route(`**/api/documents/doc-a/export/${format}*`, route => {
+    paths.push(route.request().url());
+    return route.fulfill({ contentType: format === "pdf" ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document", body: "Synthetic download; real package validation runs in the exporter tests." });
+  });
+  await page.goto("/profil?tab=documents&documentView=generator&documentTemplate=tv-offer&client=ca");
+  for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "Continuă", exact: true }).click();
+  const actions = page.getByRole("region", { name: "Generator de documente" }).getByLabel("Salvare și export document");
+  await expect(actions).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await page.screenshot({ path: info.outputPath(`generator-download-${format}-320.png`), animations: "disabled" });
+  const downloaded = page.waitForEvent("download");
+  await page.getByRole("button", { name: format === "pdf" ? "Salvează și descarcă PDF" : "Salvează și descarcă Word (.docx)", exact: true }).click();
+  expect((await downloaded).suggestedFilename()).toBe(`${summary.number}-v1.${format}`);
+  expect(state.created()).toMatchObject({ beneficiaryId: "ca", payload: { labels: { __avyron_design: "2026" } } });
+  expect(paths).toHaveLength(1);
+  expect(paths[0]).toContain("version=v-a");
+});
+
+test("generator can prepare sharing but never sends an unapproved document", async ({ page }) => {
+  const state = await setup(page);
+  let sent = 0;
+  await page.route("**/api/documents/doc-a", route => route.fulfill({ json: { ...detail(), approvals: [], actions: { read: true, export: true, share: true } } }));
+  await page.route("**/api/documents/doc-a/recipients", route => route.fulfill({ json: { data: [{ id: "owner", email: "owner@example.test", display_name: "Destinatar autorizat" }] } }));
+  await page.route("**/api/documents/doc-a/share", route => { sent++; return route.fulfill({ json: { status: "prepared" } }); });
+  await page.goto("/profil?tab=documents&documentView=generator&documentTemplate=tv-offer&client=ca");
+  for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "Continuă", exact: true }).click();
+  await page.getByRole("button", { name: "Salvează și pregătește distribuirea" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText(/documentul trebuie verificat și aprobat/)).toBeVisible();
+  await expect(dialog.getByRole("button", { name: /Confirmă/ })).toBeDisabled();
+  expect(state.created()).not.toBeNull();
+  expect(sent).toBe(0);
 });
