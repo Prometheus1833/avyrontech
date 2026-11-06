@@ -131,3 +131,7 @@ Continuare din `e892fc8` (#99, incluzând #94–#98, reverificat verde), pe `cod
 ## Avy Cont și navigarea clientului — 6 noiembrie 2026
 
 Continuare din `efccced` (#100, incluzând #94–#99), pe `codex/client-account-home-navigation-2026-11-06`. [Runbookul](./CLIENT_ACCOUNT_HOME.md) descrie marca Avyron Web, intrarea Avy Cont, meniul cu Blog/Biblioteca Artefacte și prima pagină cu proiecte/achiziții native, Mentenanță, Profil și metode de plată. Favoritele personale și sincronizarea lor automată sunt retrase din UI, fără ștergerea istoricului sau a achizițiilor/licențelor. Nu există migrări noi, efecte comerciale, merge sau deploy; contul real rămâne de verificat de utilizator.
+
+## Creează Logo și produse Development achitate — 6 noiembrie 2026
+
+Continuare din `4924253` (#101, întregul lot #94–#101 verificat verde), pe `codex/client-logo-paid-products-2026-11-06`. [Runbookul](./CLIENT_LOGO_PAID_PRODUCTS.md) descrie intrarea către simulatorul existent, autentificarea comună site/cont pe hostul API fără extinderea cookie-ului la subdomenii, recenziile precompletate cu aprobare păstrată și istoricul paginat al produselor cu plată confirmată. Nu adaugă migrări, roluri, tarife sau furnizori. Sesiunile vechi pot necesita reautentificare o dată. Utilizatorul a omis Hugging Face și a autorizat explicit D1 Write pentru backup/migrări. Starea release-ului și verificările finale se consemnează în PR; această notă nu dovedește merge/deploy.

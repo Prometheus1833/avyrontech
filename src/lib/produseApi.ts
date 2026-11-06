@@ -1,3 +1,4 @@
+import type { PaidProductHistory } from "@/shared/paidProducts";
 import { cfAuth } from "./cfAuth";
 
 /**
@@ -114,6 +115,11 @@ async function call<T>(path: string, init?: RequestInit): Promise<{ ok: boolean;
 }
 
 export const produseApi = {
+  async purchases(cursor?: string): Promise<PaidProductHistory> {
+    const { ok, body } = await call<PaidProductHistory>(`/api/produse/account/purchases${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`);
+    if (!ok) throw new Error("Achizițiile nu pot fi încărcate acum. Reîncearcă.");
+    return body;
+  },
   async state(): Promise<AccountState> {
     const { ok, body } = await call<AccountState>("/api/produse/account/state");
     // Baza încă nemigrată nu e o eroare pentru utilizator: e „în curând”.

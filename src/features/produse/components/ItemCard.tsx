@@ -56,7 +56,7 @@ const ItemCard = memo(function ItemCard({
           {item.priceRon && (
             <button
               type="button"
-              onClick={() => store.addToCart({ kind: "item", slug: item.slug })}
+              onClick={() => store.addToCart({ kind: "item", slug: item.slug }, item.name[lang])}
               aria-label={ro ? "Adaugă în coș" : "Add to cart"}
               className="grid size-8 place-items-center rounded-full border border-white/15 bg-black/45 text-white/80 backdrop-blur transition hover:text-white"
             >

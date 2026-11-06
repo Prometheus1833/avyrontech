@@ -1,3 +1,5 @@
+import { STUDIO_PATHS } from "@/data/logoStudioCopy";
+import { useLang } from "@/i18n/LanguageContext";
 import { publicSiteHref } from "@/lib/appHost";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -8,6 +10,8 @@ import {
   CreditCard,
   LibraryBig,
   Repeat,
+  PenTool,
+  BadgeCheck,
   UserRound,
 } from "lucide-react";
 import type { SectionId } from "@/lib/access";
@@ -33,6 +37,7 @@ export function CustomerHomeTab({
   onOpenSection: OpenSection;
 }) {
   const { user, hasCollaborations } = useAuth();
+  const { lang } = useLang();
   const [projects, setProjects] = useState<ProjectList | null>(null);
   const [error, setError] = useState(false);
   const [refresh, setRefresh] = useState(0);
@@ -239,6 +244,18 @@ export function CustomerHomeTab({
           </button>
         ))}
       </div>
+      <section aria-label="Creație și achiziții" className="grid gap-3 sm:grid-cols-2">
+        <a href={publicSiteHref(STUDIO_PATHS[lang])} className={`${panel} transition hover:border-violet-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400`}>
+          <PenTool className="size-5 text-violet-300" aria-hidden />
+          <h2 className="mt-2 text-sm font-semibold">Creează Logo</h2>
+          <p className="mt-1 text-xs leading-5 text-slate-400">Deschide simulatorul de logo și personalizează variantele pentru brandul tău.</p>
+        </a>
+        <button type="button" onClick={() => onOpenSection("collection")} className={`${panel} text-left transition hover:border-violet-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400`}>
+          <BadgeCheck className="size-5 text-emerald-300" aria-hidden />
+          <h2 className="mt-2 text-sm font-semibold">Produse Development Achitate</h2>
+          <p className="mt-1 text-xs leading-5 text-slate-400">Produsele plătite, istoricul achizițiilor și accesul la livrabilele disponibile.</p>
+        </button>
+      </section>
       <section
         aria-label="Lectură și inspirație"
         className="grid gap-3 sm:grid-cols-2"

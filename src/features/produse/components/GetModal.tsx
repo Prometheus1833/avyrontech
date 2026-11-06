@@ -202,7 +202,7 @@ npx shadcn@latest add @avyron/${item.slug}`;
                 <button
                   type="button"
                   onClick={() => {
-                    store.addToCart({ kind: "item", slug: item.slug });
+                    store.addToCart({ kind: "item", slug: item.slug }, item.name[lang]);
                     setInCart(true);
                   }}
                   className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 px-3.5 py-2 text-xs font-semibold text-foreground"

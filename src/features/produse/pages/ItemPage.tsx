@@ -120,7 +120,7 @@ export default function ItemPage({ item, lang }: { item: CatalogItem; lang: Lang
               {item.priceRon && (
                 <button
                   type="button"
-                  onClick={() => store.addToCart({ kind: "item", slug: item.slug })}
+                  onClick={() => store.addToCart({ kind: "item", slug: item.slug }, item.name[lang])}
                   className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 px-4 py-2.5 text-sm font-semibold text-foreground"
                   data-ripple
                 >

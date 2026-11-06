@@ -1,3 +1,5 @@
+import PaidDevelopmentProducts from "./PaidDevelopmentProducts";
+import { publicSiteHref } from "@/lib/appHost";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BadgeCheck, Boxes, ExternalLink, RefreshCw, Sparkles } from "lucide-react";
 
@@ -55,6 +57,8 @@ export function ProductCollectionTab() {
     setLoading(true);
     try {
       setState(await produseApi.state());
+    } catch {
+      setState(EMPTY_STATE);
     } finally {
       setLoading(false);
     }
@@ -71,6 +75,7 @@ export function ProductCollectionTab() {
   if (loading) {
     return (
       <div className="space-y-4">
+        <PaidDevelopmentProducts key={user?.id} />
         <Skeleton className="h-28 w-full" />
         <Skeleton className="h-48 w-full" />
       </div>
@@ -79,6 +84,7 @@ export function ProductCollectionTab() {
 
   return (
     <div className="space-y-4">
+        <PaidDevelopmentProducts key={user?.id} />
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -100,7 +106,7 @@ export function ProductCollectionTab() {
                 <Badge variant="default">{PLAN_LABEL[state.plan]}</Badge>
                 {expiry && <span className="text-sm text-muted-foreground">valabil până pe {expiry}</span>}
                 {state.plan === "free" && (
-                  <a className="inline-flex items-center gap-1 text-sm underline underline-offset-4" href="/produse#parteneriate">
+                  <a className="inline-flex items-center gap-1 text-sm underline underline-offset-4" href={publicSiteHref("/produse#parteneriate")}>
                     Vezi parteneriatele <ExternalLink className="h-3 w-3" aria-hidden="true" />
                   </a>
                 )}
@@ -135,25 +141,25 @@ export function ProductCollectionTab() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="space-y-4">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <BadgeCheck className="h-4 w-4" aria-hidden="true" />
-              Cumpărate
+              Drepturi individuale active
             </CardTitle>
           </CardHeader>
           <CardContent>
             {state.purchases.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nimic cumpărat separat. Produsele din parteneriat nu apar aici.</p>
+              <p className="text-sm text-muted-foreground">Nu ai drepturi individuale active. Achizițiile achitate rămân în istoricul de mai sus.</p>
             ) : (
               <ul className="space-y-2">
                 {state.purchases.map((slug) => (
                   <li key={slug} className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2">
-                    <a className="text-sm hover:underline" href={productHref(slug)}>
+                    <a className="text-sm hover:underline" href={publicSiteHref(productHref(slug))}>
                       {prettySlug(slug)}
                     </a>
-                    <Badge variant="secondary">licență pe viață</Badge>
+                    <Badge variant="secondary">acces activ</Badge>
                   </li>
                 ))}
               </ul>
@@ -176,7 +182,7 @@ export function ProductCollectionTab() {
             <ul className="divide-y">
               {state.recent.map((entry) => (
                 <li key={`${entry.slug}-${entry.created_at}`} className="flex items-center justify-between gap-2 py-2 text-sm">
-                  <a className="hover:underline" href={productHref(entry.slug)}>
+                  <a className="hover:underline" href={publicSiteHref(productHref(entry.slug))}>
                     {prettySlug(entry.slug)}
                   </a>
                   <span className="text-muted-foreground">

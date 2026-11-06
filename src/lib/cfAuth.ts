@@ -1,6 +1,6 @@
-// Cloudflare auth client — cheamă workerul avyrontech (cross-origin în preview / same-origin în prod).
+// Cloudflare auth client — same-origin business API; one canonical auth host for site/account.
 // Access token (JWT 15min) e ținut in-memory + refresh via cookie `sid`.
-import { apiUrl } from "./apiBase";
+import { apiUrl, authUrl } from "./apiBase";
 
 
 export type Role = "user" | "staff" | "admin";
@@ -172,7 +172,7 @@ class CfAuth {
 
   async refresh(): Promise<boolean> {
     try {
-      const res = await fetch(apiUrl("/api/auth/refresh"), { method: "POST", credentials: "include" });
+      const res = await fetch(authUrl("/api/auth/refresh"), { method: "POST", credentials: "include" });
       if (res.status === 204) return false;
       if (!res.ok) return false;
       const j = await res.json() as SessionResponse;
@@ -184,7 +184,7 @@ class CfAuth {
   }
 
   async signup(input: { email: string; password: string; displayName?: string; entityType?: string; organizationName?: string; taxId?: string; language?: "ro" | "en"; turnstileToken?: string }) {
-    const res = await fetch(apiUrl("/api/auth/signup"), {
+    const res = await fetch(authUrl("/api/auth/signup"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       credentials: "include",
@@ -196,7 +196,7 @@ class CfAuth {
   }
 
   async verifyEmail(token: string) {
-    const res = await fetch(apiUrl("/api/auth/verify-email"), {
+    const res = await fetch(authUrl("/api/auth/verify-email"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ token }),
@@ -205,7 +205,7 @@ class CfAuth {
   }
 
   async resendVerification(email: string) {
-    await fetch(apiUrl("/api/auth/resend-verification"), {
+    await fetch(authUrl("/api/auth/resend-verification"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ email }),
@@ -213,14 +213,14 @@ class CfAuth {
   }
 
   async signupProtectionEnabled(): Promise<boolean> {
-    const res = await fetch(apiUrl("/api/auth/providers"), { credentials: "include" });
+    const res = await fetch(authUrl("/api/auth/providers"), { credentials: "include" });
     if (!res.ok) throw new Error("provider_status_unavailable");
     const body = await res.json() as { data: Array<{ provider: string; enabled: boolean }> };
     return body.data.some((provider) => provider.provider === "turnstile" && provider.enabled);
   }
 
   async login(identifier: string, password: string, remember = false) {
-    const res = await fetch(apiUrl("/api/auth/login"), {
+    const res = await fetch(authUrl("/api/auth/login"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       credentials: "include",
@@ -236,7 +236,7 @@ class CfAuth {
   }
 
   async verifyMfaChallenge(challengeToken: string, code: string) {
-    const res = await fetch(apiUrl("/api/auth/mfa/challenge"), {
+    const res = await fetch(authUrl("/api/auth/mfa/challenge"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       credentials: "include",
@@ -249,7 +249,7 @@ class CfAuth {
   }
 
   async logout() {
-    await fetch(apiUrl("/api/auth/logout"), { method: "POST", credentials: "include" }).catch(() => {});
+    await fetch(authUrl("/api/auth/logout"), { method: "POST", credentials: "include" }).catch(() => {});
     this.clearSession();
     try {
       localStorage.removeItem("avyron_cart_v2");
@@ -271,7 +271,7 @@ class CfAuth {
   }
 
   async forgot(email: string) {
-    const res = await fetch(apiUrl("/api/auth/forgot"), {
+    const res = await fetch(authUrl("/api/auth/forgot"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ email }),
@@ -280,7 +280,7 @@ class CfAuth {
   }
 
   async reset(token: string, password: string) {
-    const res = await fetch(apiUrl("/api/auth/reset"), {
+    const res = await fetch(authUrl("/api/auth/reset"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ token, password }),

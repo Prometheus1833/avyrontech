@@ -1,3 +1,4 @@
+import UserMenu from "@/components/auth/UserMenu";
 import { serviceSocialForPath } from "@/seo/serviceSocial";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -190,9 +191,10 @@ function StudioBody() {
           <div className="inline-flex items-center rounded-full border border-white/15 bg-white/[0.04] px-2 py-1 backdrop-blur">
             <LangSwitch />
           </div>
+          {user && <UserMenu />}
           <a href={ro ? "/#hero" : "/en#hero"} aria-label={ro ? "Acasă" : "Home"} className="flex items-center gap-2 rounded-full px-1.5 py-1 hover:bg-white/5">
             <img src={logo} alt="" width={32} height={32} className="size-7 rounded-md ring-1 ring-white/15 sm:size-8" />
-            <span className="font-display text-xs tracking-[0.2em] sm:text-sm">AVYRON</span>
+            <span className={`font-display text-xs tracking-[0.2em] sm:text-sm ${user ? "hidden sm:inline" : ""}`}>AVYRON</span>
           </a>
         </div>
       </header>

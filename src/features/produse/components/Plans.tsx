@@ -91,7 +91,7 @@ export default function Plans({ lang }: { lang: Lang }) {
               ) : (
                 <button
                   type="button"
-                  onClick={() => store.addToCart({ kind: "plan", plan: plan.id as "pro" | "studio" })}
+                  onClick={() => store.addToCart({ kind: "plan", plan: plan.id as "pro" | "studio" }, plan.name)}
                   className={`mt-4 inline-flex w-full items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold transition ${
                     plan.recommended ? "bg-gradient-to-br from-brand to-brand-2 text-white shadow-[0_14px_40px_-18px_hsl(264_90%_60%)]" : "border border-foreground/15 text-foreground hover:border-brand/40"
                   }`}

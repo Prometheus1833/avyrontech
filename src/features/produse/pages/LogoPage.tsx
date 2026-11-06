@@ -88,7 +88,7 @@ export default function LogoPage({ lang }: { lang: Lang }) {
             lang={ro ? "ro" : "en"}
             exportPriceLabel={priceLabel(studio,lang)||undefined}
             onBuy={async(config) => {
-              store.addToCart({ kind: "item", slug: studio.slug });
+              store.addToCart({ kind: "item", slug: studio.slug }, studio.name[lang]);
               setAdded(true);
               setTrackingError(false);
               if(user){const signature=JSON.stringify(config);const key=attempts.current.get(signature)||crypto.randomUUID();attempts.current.set(signature,key);try{await logoOperationsApi.interest(config,key);}catch{setTrackingError(true);}}

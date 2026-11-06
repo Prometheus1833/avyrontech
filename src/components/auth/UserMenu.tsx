@@ -1,3 +1,4 @@
+import { STUDIO_PATHS } from "@/data/logoStudioCopy";
 import { publicSiteHref } from "@/lib/appHost";
 import {useAccountCart} from "@/hooks/useAccountCart";
 import { useState } from "react";
@@ -26,6 +27,7 @@ import {
   ShoppingCart,
   BookOpen,
   LibraryBig,
+  PenTool,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -59,6 +61,8 @@ const UserMenu = () => {
   const userItems:MenuItem[]=[
     {label:lang==='en'?'My account':'Contul meu',icon:UserIcon,dot:'264, 90%, 62%',to:'/profil?tab=overview'},
     {label:lang==='en'?'My projects':'Proiectele mele',icon:Boxes,dot:'200, 95%, 55%',to:'/profil?tab=projects'},
+    {label:lang==='en'?'Create Logo':'Creează Logo',icon:PenTool,dot:'280, 85%, 65%',to:publicSiteHref(STUDIO_PATHS[lang])},
+    {label:lang==='en'?'Paid Development Products':'Produse Development Achitate',icon:Package,dot:'155, 72%, 42%',to:'/profil?tab=collection'},
     {label:lang==='en'?'Services':'Servicii',icon:Package,dot:'330, 85%, 65%',to:'/profil?tab=catalog'},
     {label:lang==='en'?'Maintenance / Subscriptions':'Mentenanță / Abonamente',icon:CreditCard,dot:'40, 95%, 60%',to:'/profil?tab=subscriptions'},
     {label:lang==='en'?'Payments and invoices':'Plăți și facturi',icon:Wallet,dot:'155, 72%, 42%',to:'/profil?tab=payments'},
