@@ -496,7 +496,7 @@ for (const role of ["staff", "client"] as const)
   }) => {
     const state = await setup(page, role);
     await page.goto("/profil?tab=documents&documentView=company");
-    await expect(nav(page)).toBeVisible();
+    if(role==="client"){await expect(page.getByRole("heading",{name:"Centru Documente",exact:true})).toBeVisible();await expect(nav(page)).toHaveCount(0);}else await expect(nav(page)).toBeVisible();
     await expect(
       nav(page).getByRole("button", { name: /Documente SC/ }),
     ).toHaveCount(0);

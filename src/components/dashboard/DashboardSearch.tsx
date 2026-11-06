@@ -1,3 +1,6 @@
+import { useNavigate } from "react-router-dom";
+import { clientPortalSearch } from "@/lib/clientPortalSearch";
+import type { DashboardCommand } from "@/lib/dashboardSearch";
 import {
   useEffect,
   useId,
@@ -14,7 +17,7 @@ import {
   rankDashboardCommands,
 } from "@/lib/dashboardSearch";
 import {
-  DASHBOARD_GROUP_LABELS,
+  dashboardGroupLabel,
   DASHBOARD_SECTION_META,
 } from "./dashboardNavigation";
 type Props = {
@@ -48,11 +51,48 @@ export default function DashboardSearch({
     panel = useRef<HTMLDivElement>(null),
     listId = useId(),
     hintId = useId();
+  const navigate = useNavigate();
+  const [resourceCommands, setResourceCommands] = useState<DashboardCommand[]>(
+      [],
+    ),
+    [resourceBusy, setResourceBusy] = useState(false),
+    [resourceError, setResourceError] = useState(false);
+  useEffect(() => {
+    let current = true;
+    setResourceCommands([]);
+    setResourceError(false);
+    setResourceBusy(false);
+    if (!access.isClient || !open || query.trim().length < 2) return;
+    const timer = setTimeout(() => {
+      setResourceBusy(true);
+      void clientPortalSearch(query)
+        .then((result) => {
+          if (current) {
+            setResourceCommands(result.commands);
+            setResourceError(result.partial);
+          }
+        })
+        .catch(() => {
+          if (current) setResourceError(true);
+        })
+        .finally(() => {
+          if (current) setResourceBusy(false);
+        });
+    }, 300);
+    return () => {
+      current = false;
+      clearTimeout(timer);
+    };
+  }, [access.isClient, userId, open, query]);
   const storageKey = `avyron-os-search-recent:${userId}`;
   const commands = useMemo(() => dashboardCommands(access), [access]);
   const results = useMemo(
-    () => rankDashboardCommands(commands, query, recent, current),
-    [commands, query, recent, current],
+    () =>
+      [
+        ...resourceCommands,
+        ...rankDashboardCommands(commands, query, recent, current),
+      ].slice(0, 8),
+    [commands, query, recent, current, resourceCommands],
   );
   useEffect(() => {
     try {
@@ -69,7 +109,7 @@ export default function DashboardSearch({
   }, [storageKey]);
   useEffect(() => {
     setActive(0);
-  }, [query]);
+  }, [query, resourceCommands]);
   useEffect(() => {
     if (open) inputRef.current?.focus();
     else setActive(0);
@@ -132,13 +172,19 @@ export default function DashboardSearch({
       command.key,
       ...recent.filter((v) => v !== command.key),
     ].slice(0, 5);
-    setRecent(next);
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(next));
-    } catch {
-      /* Navigation remains available without browser storage. */
+    if (
+      !command.key.startsWith("project:") &&
+      !command.key.startsWith("document:")
+    ) {
+      setRecent(next);
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(next));
+      } catch {
+        /* Optional local storage. */
+      }
     }
-    onNavigate(command.section, command.params);
+    if (command.href) navigate(command.href);
+    else onNavigate(command.section, command.params);
     onOpenChange(false);
     setQuery("");
     inputRef.current?.blur();
@@ -153,7 +199,7 @@ export default function DashboardSearch({
           role="combobox"
           aria-label={
             access.isClient
-              ? "Caută secțiuni din cont"
+              ? "Caută un proiect sau document"
               : "Caută secțiuni și fluxuri"
           }
           aria-autocomplete="list"
@@ -163,6 +209,7 @@ export default function DashboardSearch({
             open && results[active] ? `${listId}-${active}` : undefined
           }
           aria-describedby={open ? hintId : undefined}
+          maxLength={200}
           autoComplete="off"
           spellCheck={false}
           value={query}
@@ -190,7 +237,11 @@ export default function DashboardSearch({
               choose(active);
             }
           }}
-          placeholder="Caută secțiuni…"
+          placeholder={
+            access.isClient
+              ? "Caută un proiect sau document"
+              : "Caută secțiuni…"
+          }
           className="w-full min-w-0 bg-transparent text-base text-slate-100 outline-none placeholder:text-slate-400 md:text-sm"
         />
         {query ? (
@@ -263,14 +314,27 @@ export default function DashboardSearch({
                       </span>
                     </span>
                     <span className="hidden text-[10px] text-slate-400 sm:inline">
-                      {DASHBOARD_GROUP_LABELS[command.group]}
+                      {dashboardGroupLabel(command.group, access.isClient)}
                     </span>
                   </button>
                 );
               })}
-              {!results.length && (
+              {resourceBusy && (
+                <p role="status" className="p-3 text-xs text-slate-400">
+                  Se caută în proiectele și documentele tale…
+                </p>
+              )}
+              {resourceError && (
+                <p role="status" className="p-3 text-xs text-amber-200">
+                  Unele rezultate nu au putut fi încărcate. Verifică accesul și
+                  reîncearcă.
+                </p>
+              )}
+              {!results.length && !resourceBusy && (
                 <p role="status" className="p-4 text-sm text-slate-400">
-                  Nicio secțiune potrivită. Încearcă un nume sau un serviciu.
+                  {access.isClient
+                    ? "Nu există rezultate autorizate pentru această căutare."
+                    : "Nicio secțiune potrivită. Încearcă un nume sau un serviciu."}
                 </p>
               )}
             </div>

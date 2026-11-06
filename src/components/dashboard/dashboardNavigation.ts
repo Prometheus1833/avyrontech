@@ -129,3 +129,20 @@ export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
   careers: { label: "Cariere", commandLabel: "Deschide Cariere", hint: "Roluri, candidați și resurse pentru recrutare", icon: UserRoundSearch },
   library: { label: "Biblioteca Artefacte", commandLabel: "Deschide Biblioteca Artefacte", hint: "Efecte, artefacte, integrări și referințe digitale", icon: LibraryBig },
 };
+
+export function dashboardSectionMeta(section:SectionId,client:boolean):DashboardSectionMeta{
+ const base=DASHBOARD_SECTION_META[section];
+ if(!client)return base;
+ const overrides:Partial<Record<SectionId,Partial<DashboardSectionMeta>>>={
+ overview:{label:"Acasă",commandLabel:"Deschide contul meu",hint:"Proiectele, serviciile și documentele tale"},
+ projects:{label:"Proiectele mele",mobileLabel:"Proiecte",commandLabel:"Deschide proiectele mele",hint:"Progresul și livrabilele proiectelor alocate"},
+ catalog:{label:"Servicii",mobileLabel:"Servicii",commandLabel:"Deschide serviciile",hint:"Servicii și produse disponibile pentru tine"},
+ subscriptions:{label:"Mentenanță / Abonamente",mobileLabel:"Abonamente",commandLabel:"Deschide mentenanța și abonamentele",hint:"Planurile, facturarea și activitățile tale recurente"},
+ payments:{label:"Metodă de plată salvată",commandLabel:"Deschide metoda de plată salvată",hint:"Metodele proprii și preferințele de facturare"},
+ documents:{label:"Centru Documente",mobileLabel:"Documente",commandLabel:"Deschide Centrul de Documente",hint:"Documentele alocate și disponibile pentru contul tău"},
+ collection:{label:"Produsele mele",commandLabel:"Deschide produsele mele",hint:"Licențele și produsele digitale din cont"},
+ intern:{label:"Mesaje",mobileLabel:"Mesaje",hint:"Conversațiile proiectelor tale"},
+ };
+ return {...base,...overrides[section]};
+}
+export const dashboardGroupLabel=(group:string,client:boolean)=>client?({projects:"Secțiuni",overview:"Principal",billing:"Facturi și comenzi",activity:"Asistență",account:"Contul meu"} as Record<string,string>)[group]||DASHBOARD_GROUP_LABELS[group]:DASHBOARD_GROUP_LABELS[group];

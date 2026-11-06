@@ -58,7 +58,8 @@ describe("AVYRON OS dashboard", () => {
     }
     expect(canOpenSection("workflows", owner)).toBe(false);
     expect(canOpenSection("maintenance", client)).toBe(false);
-    expect(canOpenSection("client-maintenance", client)).toBe(true);
+    expect(canOpenSection("client-maintenance", client)).toBe(false);
+    expect(canOpenSection("subscriptions", client)).toBe(true);
     expect(canOpenSection("maintenance", staff)).toBe(false);
     expect(canOpenSection("maintenance", owner)).toBe(true);
     expect(canOpenSection("platform-control", owner)).toBe(false);

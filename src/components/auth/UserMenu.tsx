@@ -14,11 +14,9 @@ import {
   Package,
   CreditCard,
   Settings,
-  Newspaper,
+  FileText,
   MessageSquare,
   LogOut,
-  Briefcase,
-  ShoppingCart,
   Boxes,
   UsersRound,
   Bot,
@@ -54,25 +52,15 @@ const UserMenu = () => {
     .join("")
     .toUpperCase();
 
-  const productsLabel = lang === "en" ? "Services" : "Servicii";
-  const productsPath = lang === "en" ? "/en/services" : "/servicii";
-  const aboutLabel = lang === "en" ? "About us" : "Despre noi";
-  const aboutPath = lang === "en" ? "/en/about" : "/despre-noi";
-  const careersLabel = lang === "en" ? "Careers" : "Cariere";
-  const careersPath = lang === "en" ? "/en/careers" : "/cariere";
-
-  const userItems: MenuItem[] = [
-    { label: t.auth.menu.profile, icon: UserIcon, dot: "264, 90%, 62%", to: "/profil?tab=profile" },
-    { label: "AI AVY Prod", icon: Bot, dot: "270, 88%, 62%", to: "/intern/ai-projects" },
-    { label: productsLabel, icon: Boxes, dot: "200, 95%, 55%", to: productsPath },
-    { label: aboutLabel, icon: UsersRound, dot: "86, 78%, 60%", to: aboutPath },
-    { label: careersLabel, icon: Briefcase, dot: "44, 90%, 58%", to: careersPath },
-    { label: t.auth.menu.product, icon: Package, dot: "330, 85%, 65%", to: "/profil?tab=subscriptions" },
-    { label: t.auth.menu.subscription, icon: CreditCard, dot: "40, 95%, 60%", to: "/profil?tab=invoices" },
-    { label: t.auth.menu.cart, icon: ShoppingCart, dot: "170, 80%, 45%", to: "/profil?tab=cart" },
-    { label: t.auth.menu.settings, icon: Settings, dot: "222, 25%, 40%", to: "/profil?tab=settings" },
-    { label: t.auth.menu.news, icon: Newspaper, dot: "280, 70%, 55%", to: "/profil?tab=tickets" },
-    { label: t.auth.menu.contact, icon: MessageSquare, dot: "340, 80%, 60%", onSelect: () => setContactOpen(true) },
+  const userItems:MenuItem[]=[
+    {label:lang==='en'?'My account':'Contul meu',icon:UserIcon,dot:'264, 90%, 62%',to:'/profil?tab=overview'},
+    {label:lang==='en'?'My projects':'Proiectele mele',icon:Boxes,dot:'200, 95%, 55%',to:'/profil?tab=projects'},
+    {label:lang==='en'?'Services':'Servicii',icon:Package,dot:'330, 85%, 65%',to:'/profil?tab=catalog'},
+    {label:lang==='en'?'Maintenance / Subscriptions':'Mentenanță / Abonamente',icon:CreditCard,dot:'40, 95%, 60%',to:'/profil?tab=subscriptions'},
+    {label:lang==='en'?'Saved payment method':'Metodă de plată salvată',icon:Wallet,dot:'155, 72%, 42%',to:'/profil?tab=payments'},
+    {label:lang==='en'?'Document Center':'Centru Documente',icon:FileText,dot:'264, 90%, 62%',to:'/profil?tab=documents'},
+    {label:t.auth.menu.settings,icon:Settings,dot:'222, 25%, 40%',to:'/profil?tab=settings'},
+    {label:t.auth.menu.contact,icon:MessageSquare,dot:'340, 80%, 60%',onSelect:()=>setContactOpen(true)},
   ];
 
   const access=buildAccess({roles,superadmin:isSuperAdmin,capabilities});

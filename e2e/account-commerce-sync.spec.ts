@@ -72,9 +72,10 @@ test("the customer dashboard keeps staff controls out and combines service and p
   await mockFreeAccount(page);
   await page.goto("/profil", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "Bună, Client Free." })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Explorează catalogul", exact: true })).toBeVisible();
+  const services = page.getByRole("button", { name: "Servicii Servicii și produse disponibile", exact: true });
+  await expect(services).toBeVisible();
   await expect(page.getByText("Necesită atenție · Azi")).toHaveCount(0);
-  await page.getByRole("button", { name: "Explorează catalogul", exact: true }).click();
+  await services.click();
   await expect(page.getByRole("heading", { name: "Servicii și produse pentru contul tău" })).toBeVisible();
   await page.getByRole("button", { name: "Adaugă Site Prezentare Profesional la favorite" }).click();
   await expect(page.getByRole("button", { name: "Scoate Site Prezentare Profesional din favorite" })).toBeVisible();

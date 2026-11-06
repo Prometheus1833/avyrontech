@@ -1,5 +1,5 @@
 import { sectionsFor, type Access, type SectionId } from "./access";
-import { DASHBOARD_SECTION_META } from "../components/dashboard/dashboardNavigation";
+import { dashboardSectionMeta } from "../components/dashboard/dashboardNavigation";
 import { SERVICE_PAGES } from "../shared/servicePagePolicy";
 export type DashboardCommand = {
   key: string;
@@ -9,6 +9,7 @@ export type DashboardCommand = {
   group: string;
   search: string;
   params?: Record<string, string>;
+  href?: string;
 };
 export const normalizeDashboardSearch = (value: string) =>
   value
@@ -18,7 +19,7 @@ export const normalizeDashboardSearch = (value: string) =>
 export function dashboardCommands(access: Access): DashboardCommand[] {
   const sections = sectionsFor(access).filter((s) => s.navigation !== false);
   const commands: DashboardCommand[] = sections.map((s) => {
-    const meta = DASHBOARD_SECTION_META[s.id];
+    const meta = dashboardSectionMeta(s.id, access.isClient);
     return {
       key: s.id,
       section: s.id,
@@ -26,7 +27,7 @@ export function dashboardCommands(access: Access): DashboardCommand[] {
       hint: meta.hint,
       group: s.group,
       search: normalizeDashboardSearch(
-        `${meta.label} ${meta.commandLabel} ${meta.hint} ${s.keywords.join(" ")}`,
+        `${meta.label} ${meta.commandLabel} ${meta.hint} ${access.isClient ? (s.id === "documents" ? "documente contracte oferte facturi proiecte servicii abonamente produse" : s.id === "subscriptions" ? "mentenanta abonamente planuri facturare" : s.keywords.join(" ")) : s.keywords.join(" ")}`,
       ),
     };
   });

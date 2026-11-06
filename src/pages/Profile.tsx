@@ -6,7 +6,7 @@ import StaffWorkspaceActions from "@/components/site/StaffWorkspaceActions";
 import { capabilityRank, staffRankLabel } from "@/shared/staffAccess";
 import logo from "@/assets/avyron-logo.webp";
 import {
-DASHBOARD_GROUP_LABELS,
+dashboardSectionMeta,dashboardGroupLabel,
 DASHBOARD_GROUP_ORDER,
 DASHBOARD_SECTION_META,
 } from "@/components/dashboard/dashboardNavigation";
@@ -32,7 +32,7 @@ import { useSearchParams } from "react-router-dom";
 
 const InternalSubscriptionsTab = lazyWithRetry(() => import("@/components/dashboard/subscriptions/InternalSubscriptionsTab"));
 const ProfileTab = lazyWithRetry(() => import("@/components/dashboard/ProfileTab").then((m) => ({ default: m.ProfileTab })));
-const SubscriptionsTab = lazyWithRetry(() => import("@/components/dashboard/SubscriptionsTab").then((m) => ({ default: m.SubscriptionsTab })));
+const SubscriptionsTab = lazyWithRetry(() => import("@/components/dashboard/ClientRecurringTab"));
 const StatsTab = lazyWithRetry(() => import("@/components/dashboard/StatsTab").then((m) => ({ default: m.StatsTab })));
 const InvoicesTab = lazyWithRetry(() => import("@/components/dashboard/InvoicesTab").then((m) => ({ default: m.InvoicesTab })));
 const TicketsTab = lazyWithRetry(() => import("@/components/dashboard/TicketsTab").then((m) => ({ default: m.TicketsTab })));
@@ -92,8 +92,9 @@ function ProfileDashboard() {
   const access = useMemo(() => buildAccess({ roles, capabilities, email: user?.email, superadmin: isSuperAdmin,hasCollaborations }), [roles, capabilities, user?.email, isSuperAdmin,hasCollaborations]);
   const activityCounts = useDashboardActivity(user?.id, access.isStaff, `${platformRole||""}:${[...capabilities].sort().join(",")}`);
   const [params, setParams] = useSearchParams();
-  const legacyMaintenance = params.get("tab") === "maintenance" && (!access.isSuperAdmin || (params.has("project") && params.get("core") !== "system"));
-  const requested = legacyMaintenance ? "client-maintenance" : params.get("tab") === "workflows" ? "projects" : params.get("tab") === "platform-control" ? "os-centers" : (params.get("tab") ?? "");
+  const legacyMaintenance = !access.isClient && params.get("tab") === "maintenance" && (!access.isSuperAdmin || (params.has("project") && params.get("core") !== "system"));
+  useEffect(()=>{if(access.isClient&&["maintenance","client-maintenance"].includes(params.get("tab")||"")){const next=new URLSearchParams(params);next.set("tab","subscriptions");next.set("recurringView","activities");setParams(next,{replace:true});}},[access.isClient,params,setParams]);
+  const requested = access.isClient&&["maintenance","client-maintenance"].includes(params.get("tab")||"")?"subscriptions":legacyMaintenance ? "client-maintenance" : params.get("tab") === "workflows" ? "projects" : params.get("tab") === "platform-control" ? "os-centers" : (params.get("tab") ?? "");
   const [tab, setTab] = useState<SectionId>(canOpenSection(requested, access) ? (requested as SectionId)
       : defaultSection(access));
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -108,9 +109,9 @@ function ProfileDashboard() {
   });
 
   const allowed = useMemo(() => sectionsFor(access), [access]);
-  const groups = DASHBOARD_GROUP_ORDER.map((group) => ({ id: group, label: DASHBOARD_GROUP_LABELS[group], items: allowed.filter((section) => section.group === group && section.navigation !== false && !(access.isStaff && section.id === "collection") && (access.isStaff || !["stats"].includes(section.id))) })).filter((group) => group.items.length);
-  const mobilePrimary = new Set<SectionId>(access.isStaff ? ["overview", "projects", "leads", ...(access.isSuperAdmin ? ["ai-os" as SectionId] : ["client-maintenance" as SectionId])] : ["overview", "catalog", "cart", "orders"]);
-  const mobileMoreGroups = groups
+  const groups = DASHBOARD_GROUP_ORDER.map((group) => ({ id: group, label: dashboardGroupLabel(group,access.isClient), items: allowed.filter((section) => section.group === group && section.navigation !== false && !(access.isStaff && section.id === "collection") && (access.isStaff || !["stats"].includes(section.id))) })).filter((group) => group.items.length);
+  const mobilePrimary = new Set<SectionId>(access.isStaff ? ["overview", "projects", "leads", ...(access.isSuperAdmin ? ["ai-os" as SectionId] : ["client-maintenance" as SectionId])] : ["overview", "projects", "subscriptions", "documents"]);
+  const mobileMoreGroups = access.isClient?groups:groups
     .map((group) => ({ ...group, items: group.items.filter((section) => !mobilePrimary.has(section.id)) }))
     .filter((group) => group.items.length);
   const displayName = profile?.display_name || user?.display_name || user?.email?.split("@")[0] || "utilizator";
@@ -146,11 +147,13 @@ function ProfileDashboard() {
 
   const openSection = async (section: SectionId,extraParams?:Record<string,string>) => {
     if(!(await flushDocumentEditors()) || !(await flushServicePageEdits()))return;
-    const destination = canOpenSection(section, access) ? section : ["security", "automations"].includes(String(section)) && access.isStaff ? "os-centers" : null;
+    const canonical=access.isClient&&["maintenance","client-maintenance"].includes(section)?"subscriptions":section;
+    const destination = canOpenSection(canonical, access) ? canonical : ["security", "automations"].includes(String(section)) && access.isStaff ? "os-centers" : null;
     if (destination) {
       setTab(destination);
       const next = new URLSearchParams(params);
       next.set("tab", destination);
+      if(canonical!==section)next.set("recurringView","activities");else if(destination!=="subscriptions")next.delete("recurringView");
       next.delete("core");
       if (destination === "maintenance") next.delete("project");
       if(destination!=="documents")for(const key of ["documentView","documentTemplate","template","document","version"])next.delete(key);
@@ -171,12 +174,12 @@ function ProfileDashboard() {
   const NavButton = ({ section, mobile = false }: { section: SectionId; mobile?: boolean;
   }) => {
     if (!canOpenSection(section, access)) return null;
-    const sectionMeta = DASHBOARD_SECTION_META[section];
+    const sectionMeta = dashboardSectionMeta(section,access.isClient);
     const Icon = sectionMeta.icon;
     const label = section === "projects" && !access.isStaff ? "Proiectele mele" : section === "intern" && !access.isStaff ? "Mesaje proiecte" : sectionMeta.label;
     const active = tab === section;
     return (
-      <><button type="button" data-os-section={section} aria-current={active?"page":undefined} aria-label={`${label}${activityCounts[section] ? `, ${activityCounts[section]} activități de văzut` : ""}`} title={sidebarCollapsed ? label : undefined} aria-expanded={section==="servicii-avyron"?servicesExpanded:undefined} onClick={() => {if(section==="servicii-avyron"){setServicesExpanded((current) =>tab===section?!current:true);if(tab!==section)void openSection(section);}else void openSection(section);}} className={`${mobile ? "flex min-w-0 flex-1 flex-col" : "w-full flex-row"} group flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-left text-xs font-medium transition lg:justify-start ${active ? "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white shadow-[0_10px_30px_-16px_rgba(124,58,237,.9)]" : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"}`}>
+      <><button type="button" data-os-section={section} aria-current={active?"page":undefined} aria-label={`${label}${activityCounts[section] ? `, ${activityCounts[section]} activități de văzut` : ""}`} title={sidebarCollapsed ? label : undefined} aria-expanded={section==="servicii-avyron"?servicesExpanded:undefined} onClick={() => {if(section==="servicii-avyron"){setServicesExpanded((current) =>tab===section?!current:true);if(tab!==section)void openSection(section);}else void openSection(section);}} className={`${mobile ? "flex min-w-0 flex-1 flex-col" : "w-full flex-row"} group flex items-center justify-center gap-1.5 rounded-xl ${mobile && access.isClient ? "px-0" : "px-3"} py-2.5 text-left text-xs font-medium transition lg:justify-start ${active ? "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white shadow-[0_10px_30px_-16px_rgba(124,58,237,.9)]" : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"}`}>
       <span className={`relative inline-flex shrink-0 ${activityCounts[section] ? "mr-1.5" : ""}`}><Icon className="size-4 shrink-0" strokeWidth={2.1} /><ActivityBadge count={activityCounts[section]} label={section === "intern" || section === "announcements" ? "necitite" : "activități de văzut"} /></span>
       {mobile ? (
             <span className="max-w-full truncate text-[9px]">{sectionMeta.mobileLabel || label}</span>
@@ -206,8 +209,7 @@ function ProfileDashboard() {
           <a href={publicSiteHref()} className="flex min-w-0 items-center gap-2.5 rounded-xl p-1.5 hover:bg-white/[0.04]">
             <img src={logo} alt="Avyron" className="size-9 rounded-xl ring-1 ring-white/10" />
             {!sidebarCollapsed && (
-                <div className="min-w-0"><p className="font-display text-sm font-bold tracking-[0.08em] text-white">AVYRON {" "}
-                    <span className="text-violet-300">{access.isClient ? "CONT" : "OS"}</span></p><p className="text-[9px] text-slate-400">{access.isClient ? "Spațiul tău personal" : "Sistem operațional intern"}</p></div>
+                <div className="min-w-0"><p className="font-display text-sm font-bold tracking-[0.04em] text-white">{access.isClient?"Avyron Tech":<>AVYRON <span className="text-violet-300">OS</span></>}</p><p className={access.isClient?"mt-1 text-[11px] leading-4 text-slate-400":"text-[9px] text-slate-400"}>{access.isClient?"Serviciile, produsele și anexele într-un singur loc":"Sistem operațional intern"}</p></div>
               )}
           </a>
           {!sidebarCollapsed && (
@@ -218,8 +220,8 @@ function ProfileDashboard() {
             <button type="button" onClick={() => setSidebarCollapsed(false)} aria-label="Extinde meniul" className="mx-auto mt-2 rounded-lg p-2 text-slate-400 hover:bg-white/[0.05] hover:text-slate-300"><PanelLeftOpen className="size-4" /></button>
           )}
 
-        <nav className="avyron-sidebar-scroll mt-5 min-h-0 flex-1 space-y-2 overflow-y-auto pb-4 pr-1" aria-label="Navigare AVYRON OS">
-          <div aria-label="Secțiuni AVYRON OS" onKeyDown={event=>{if(!['ArrowDown','ArrowUp','ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;const targets=Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[data-os-section]')).filter(el=>el.offsetParent!==null);if(!targets.length)return;const index=targets.indexOf(document.activeElement as HTMLButtonElement);const next=event.key==='Home'?0:event.key==='End'?targets.length-1:(index+(event.key==='ArrowDown'||event.key==='ArrowRight'?1:-1)+targets.length)%targets.length;event.preventDefault();targets[next].focus()}}>
+        <nav className="avyron-sidebar-scroll mt-5 min-h-0 flex-1 space-y-2 overflow-y-auto pb-4 pr-1" aria-label={access.isClient?"Navigare cont":"Navigare AVYRON OS"}>
+          <div aria-label={access.isClient?"Secțiunile contului":"Secțiuni AVYRON OS"} onKeyDown={event=>{if(!['ArrowDown','ArrowUp','ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;const targets=Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[data-os-section]')).filter(el=>el.offsetParent!==null);if(!targets.length)return;const index=targets.indexOf(document.activeElement as HTMLButtonElement);const next=event.key==='Home'?0:event.key==='End'?targets.length-1:(index+(event.key==='ArrowDown'||event.key==='ArrowRight'?1:-1)+targets.length)%targets.length;event.preventDefault();targets[next].focus()}}>
           {groups.map((group) => {
             const expanded = sidebarCollapsed || (openGroups[group.id] ?? true);
             return (
@@ -247,7 +249,7 @@ function ProfileDashboard() {
       <div className="min-w-0 flex-1 pb-20 lg:pb-0">
         <header className="sticky top-0 z-30 border-b border-white/[0.07] bg-[#080d1b]/90 px-3 py-2.5 backdrop-blur-xl sm:px-5 lg:px-6">
           <div className="mx-auto flex max-w-[1500px] items-center gap-2.5">
-            <IconHint label="Toate secțiunile AVYRON OS"><button type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Deschide toate secțiunile" className="rounded-xl p-2 text-slate-400 hover:bg-white/[0.05] hover:text-slate-200 lg:hidden"><Menu className="size-5" /></button></IconHint>
+            <IconHint label={access.isClient?"Secțiunile contului":"Toate secțiunile AVYRON OS"}><button type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Deschide toate secțiunile" className="rounded-xl p-2 text-slate-400 hover:bg-white/[0.05] hover:text-slate-200 lg:hidden"><Menu className="size-5" /></button></IconHint>
             <IconHint label="Înapoi la site-ul public"><a href={publicSiteHref()} aria-label="Înapoi la site" data-testid="page-back-link" className="hidden rounded-xl p-2 text-slate-400 hover:bg-white/[0.05] hover:text-slate-300 lg:inline-flex"><ChevronLeft className="size-5" /></a></IconHint>
             <IconHint label="Prezentare generală"><button type="button" onClick={() => openSection("overview")} className="mr-auto flex items-center gap-2 lg:hidden" aria-label="Deschide prezentarea generală">
               <img src={logo} alt="" className="size-7 rounded-lg ring-1 ring-white/10" />
@@ -366,7 +368,7 @@ function ProfileDashboard() {
               mobile
             />
           ) : (
-            <NavButton section="catalog" mobile />
+            <NavButton section="projects" mobile />
           )}
         {access.isStaff &&
           (access.isSuperAdmin || canOpenSection("client-maintenance", access)) ? (
@@ -381,7 +383,7 @@ function ProfileDashboard() {
           ) : access.isStaff ? (
             <NavButton section="intern" mobile />
           ) : (
-            <NavButton section="cart" mobile />
+            <NavButton section="subscriptions" mobile />
           )}
         {access.isStaff ? (
             <NavButton section={
@@ -390,7 +392,7 @@ function ProfileDashboard() {
               mobile
             />
           ) : (
-            <NavButton section="orders" mobile />
+            <NavButton section="documents" mobile />
           )}
         <button type="button" aria-label="Deschide mai multe secțiuni" aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(true)} className={`group flex min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[9px] font-medium transition ${mobilePrimary.has(tab) ? "text-slate-500" : "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white"}`}><Ellipsis className="size-4" /><span>Mai multe</span></button>
       </div>
@@ -401,12 +403,11 @@ function ProfileDashboard() {
         <SheetHeader className="border-b border-white/[0.07] p-5 text-left">
           <div className="flex items-center gap-3">
             <img src={logo} alt="" className="size-10 rounded-xl ring-1 ring-white/10" />
-            <div><SheetTitle className="font-display text-base text-white">AVYRON {" "}
-                  <span className="text-violet-300">{access.isClient ? "CONT" : "OS"}</span></SheetTitle><SheetDescription className="text-xs text-slate-500">{access.isClient ? "Serviciile și documentele tale." : "Toate funcțiile autorizate, într-un singur loc."}</SheetDescription></div>
+            <div><SheetTitle className="font-display text-base text-white">{access.isClient?"Avyron Tech":<>AVYRON <span className="text-violet-300">OS</span></>}</SheetTitle><SheetDescription className="text-xs text-slate-500">{access.isClient ? "Serviciile, produsele și anexele într-un singur loc" : "Toate funcțiile autorizate, într-un singur loc."}</SheetDescription></div>
           </div>
         </SheetHeader>
-        <nav className="space-y-5 p-4 pb-28" aria-label="Toate secțiunile AVYRON OS">
-          <button type="button" onClick={() => { setMobileMenuOpen(false); setCommandOpen(true); }} className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-violet-400/20 bg-violet-500/[0.08] px-4 text-left text-sm text-slate-200"><Search className="size-4 text-violet-300" /> Caută o secțiune sau un flux</button>
+        <nav className="space-y-5 p-4 pb-28" aria-label={access.isClient?"Secțiunile contului":"Toate secțiunile AVYRON OS"}>
+          <button type="button" onClick={() => { setMobileMenuOpen(false); setCommandOpen(true); }} className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-violet-400/20 bg-violet-500/[0.08] px-4 text-left text-sm text-slate-200"><Search className="size-4 text-violet-300" /> {access.isClient?"Caută un proiect sau document":"Caută o secțiune sau un flux"}</button>
           {access.isStaff && (
               <section aria-label="Scurtături pentru echipă"><p className="mb-2 px-2 font-mono text-[9px] uppercase tracking-[0.18em] text-slate-500">Acces rapid</p><div className="grid grid-cols-2 gap-2">{([ ["projects", "Proiecte"], ["intern", "Chat intern"], ["os-centers", "Centre OS"], ["announcements", "Anunțuri"] ] as const).filter(([section]) => canOpenSection(section, access)).map(([section, label]) => (
                       <button key={section} type="button" onClick={() => openSection(section)} className="relative min-h-12 rounded-xl border border-white/[0.09] bg-white/[0.035] px-3 text-left text-xs font-semibold text-slate-200 hover:border-violet-400/30">{label}<ActivityBadge count={activityCounts[section]} label="activități de văzut" /></button>))}</div></section>
@@ -416,7 +417,7 @@ function ProfileDashboard() {
             <button type="button" onClick={() => toggleGroup(group.id)} aria-expanded={openGroups[group.id] ?? true} className="mb-2 flex w-full items-center justify-between rounded-lg px-2 py-2 font-mono text-[9px] uppercase tracking-[0.18em] text-slate-500 hover:bg-white/[0.04]"><span>{group.label}</span><ChevronDown className={`size-3 transition-transform ${(openGroups[group.id] ?? true) ? "rotate-180" : ""}`} /></button>
             <div className={`${(openGroups[group.id] ?? true) ? "grid" : "hidden"} grid-cols-2 gap-2`}>
               {group.items.map((section) => {
-                const sectionMeta = DASHBOARD_SECTION_META[section.id];
+                const sectionMeta = dashboardSectionMeta(section.id,access.isClient);
                 const Icon = sectionMeta.icon;
                 const active = tab === section.id;
                 return (

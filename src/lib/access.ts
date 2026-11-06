@@ -152,6 +152,7 @@ export const SECTIONS: readonly SectionDef[] = [
 
 const canOpenDefinition = (section: SectionDef, access: Access) => {
   if(section.id==="maintenance")return access.isSuperAdmin;
+  if(section.id==="client-maintenance"&&access.isClient)return false;
   if(section.id==="my-collaborations")return access.hasCollaborations===true;
   if(section.id==="collaborators")return access.isSuperAdmin || (access.isStaff&&access.capabilities.some(c=>["collaborators.read","collaborators.manage"].includes(c)));
   if (access.capabilities.includes(STAFF_MANAGED) && !access.isSuperAdmin) {
@@ -173,7 +174,12 @@ const canOpenDefinition = (section: SectionDef, access: Access) => {
   );
 };
 
-export const sectionsFor = (a: Access) => SECTIONS.filter((s) => canOpenDefinition(s, a));
+export const CLIENT_SECTION_ORDER:SectionId[]=["overview","projects","catalog","subscriptions","payments","documents","collection","orders","invoices","cart","intern","tickets","my-collaborations","profile","settings"];
+export const sectionsFor = (a: Access) => {
+ const allowed=SECTIONS.filter(s=>canOpenDefinition(s,a));
+ if(!a.isClient)return allowed;
+ return CLIENT_SECTION_ORDER.flatMap(id=>{const section=allowed.find(s=>s.id===id);return section?[{...section,group:(["projects","catalog","subscriptions","payments","documents","collection"].includes(id)?"projects":section.group) as SectionDef["group"]}]:[];});
+};
 
 export const canOpenSection = (id: string, a: Access) => {
   const s = SECTIONS.find((x) => x.id === id);
