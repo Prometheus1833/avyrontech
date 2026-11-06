@@ -49,3 +49,11 @@ Trei etape: preferințe, situația pe scurt, solicitarea. Câmpurile chestionaru
 Documentele pot fi pregătite local prin selecție: maximum 3 PDF/JPG/PNG, total 10 MB. Nu sunt citite, încărcate sau atașate automat. Numele/dimensiunea se afișează local; mesajul menționează numai existența unor documente, fără a transmite numele. Acest control nu înlocuiește un viitor sistem securizat de încărcare și nici scanarea fișierelor.
 
 Explicațiile repetitive despre neconfirmare/demonstrație au fost eliminate din subsol, CTA-uri și rezumat. Rămân instrucțiunile necesare despre următorul pas, onorariu, transmiterea mesajului și documente. Funcțiile de calendar conectat, plată și CMS rămân în afara implementării statice.
+
+## Meniu și limbaj vizual — V5
+
+Programări precedă Arii de practică în toate cele 42 pagini RO/EN, inclusiv meniul mobil. Accent de calendar cu stare curentă distinctă. Cele șase pictograme SVG sunt individualizate, cu palete discrete și elemente decorative aria-hidden. §, numerotarea și săgețile sunt texte/vector; titlurile au un ritm vizual echilibrat, iar descrierile ariilor sunt mai concrete.
+
+Cele 11 surse fotografice active au fost inspectate. Au fost înlocuite cadrul succesiunilor și imaginea ghidului internațional cu două compoziții ImageGen native 1536×1024, ilustrative. Aceleași imagini au crop 4:3 desktop și 3:2 mobil, AVIF/WebP. Prompturi exacte și căi: assets/GENERATED-V5.md; dimensiuni/greutăți: assets/images-v5.json. `sizes` este adaptat rolului card/ghid/copertă/fundal. Nu se declară rezoluție 4K/8K.
+
+Verificări curente: toate cele 42 pagini la 320×568, fără overflow și cu ordinea corectă a meniului. Șase pagini × trei dimensiuni (320/768/1440) cu text 130% și contrast: 18 combinații fără overflow. Meniu și carduri verificate și pe domeniul public. `visual.css`: 1954 B gzip, fără JS nou sau scheduler suplimentar. Capturi și rapoarte: output/visual-v5-proof/. Modurile de contrast și mișcare redusă rămân disponibile. QA nu înlocuiește testarea pe telefoane fizice.

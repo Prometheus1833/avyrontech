@@ -7,7 +7,7 @@ export const practices = [
     "icon": "family",
     "ro": {
       "title": "Dreptul familiei",
-      "short": "Consultanță și reprezentare în raporturile de familie și în cauzele care implică minori.",
+      "short": "Divorț, relații părinte–copil și protecție. Analiză atentă a situațiilor familiale, inclusiv cu elemente internaționale.",
       "lead": "Consultanță, asistență și reprezentare în raporturile de familie, în cauzele privind minori și în situațiile cu elemente de extraneitate.",
       "body": "Cabinetul oferă asistență și reprezentare în probleme de familie, de la clarificarea opțiunilor înaintea unui litigiu până la susținerea intereselor clientului în instanță. Situațiile care implică minori sunt abordate cu atenție la interesul copilului și la particularitățile familiei.",
       "services": [
@@ -64,7 +64,7 @@ export const practices = [
     },
     "en": {
       "title": "Family law",
-      "short": "Advice and representation in family relationships and matters involving children.",
+      "short": "Divorce, parent–child relationships and protection. Careful assessment of family matters, including international connections.",
       "lead": "Advice, assistance and representation in family relationships, matters involving children and cases with cross-border elements.",
       "body": "The practice provides advice and representation in family matters, from understanding the options before a dispute to representation in court. Matters involving children require particular attention to their interests and the circumstances of the family.",
       "services": [
@@ -127,7 +127,7 @@ export const practices = [
     "icon": "tree",
     "ro": {
       "title": "Succesiuni și moșteniri",
-      "short": "Analiza drepturilor succesorale și asistență în proceduri și litigii privind moștenirea.",
+      "short": "Drepturi succesorale, partaj și litigii privind moștenirea. Clarificarea transmiterii patrimoniului între generații.",
       "lead": "Asistență în proceduri succesorale, litigii privind moștenirea și partaj succesoral, pentru clarificarea drepturilor și a raporturilor dintre moștenitori.",
       "body": "Asistența juridică urmărește clarificarea drepturilor succesorale, analiza documentelor și identificarea unei căi potrivite pentru soluționarea diferendelor. Fiecare situație este analizată în raport cu actele existente și cu împrejurările concrete.",
       "services": [
@@ -181,7 +181,7 @@ export const practices = [
     },
     "en": {
       "title": "Inheritance & estates",
-      "short": "Assessment of inheritance rights and assistance with succession proceedings and disputes.",
+      "short": "Succession rights, estate division and inheritance disputes. Clarifying the transfer of assets between generations.",
       "lead": "Assistance with succession proceedings, inheritance disputes and partition of estates, clarifying rights and relationships between heirs.",
       "body": "Legal assistance focuses on understanding inheritance rights, reviewing relevant documents and identifying an appropriate way to address disputes. Each matter is assessed against the available evidence and its particular circumstances.",
       "services": [
@@ -233,7 +233,7 @@ export const practices = [
         ]
       ]
     },
-    "image": "inheritance-v2"
+    "image": "inheritance-v5"
   },
   {
     "slug": "drept-imobiliar",
@@ -241,7 +241,7 @@ export const practices = [
     "icon": "home",
     "ro": {
       "title": "Drept imobiliar și drept de proprietate",
-      "short": "Asistență în raporturile de proprietate, posesie și folosință a imobilelor.",
+      "short": "Proprietate, posesie și folosință. Asistență în litigii privind imobilele, limitele și exercitarea drepturilor.",
       "lead": "Asistență pentru persoane fizice și societăți în raporturile privind proprietatea, posesia, limitele și folosința imobilelor.",
       "body": "Cabinetul asistă persoane fizice și societăți în diferende privind proprietatea, posesia și folosința imobilelor. Analiza titlurilor, a situației cadastrale și a raporturilor dintre părți ajută la conturarea unei abordări juridice potrivite.",
       "services": [
@@ -297,7 +297,7 @@ export const practices = [
     },
     "en": {
       "title": "Real estate and property law",
-      "short": "Assistance with ownership, possession and use of real estate.",
+      "short": "Ownership, possession and use. Assistance in property disputes, boundaries and the exercise of rights.",
       "lead": "Assistance for individuals and companies with ownership, possession, boundaries and the use of real estate.",
       "body": "The practice assists individuals and companies with disputes over ownership, possession and use of real estate. Reviewing titles, cadastral information and the relationship between the parties informs the appropriate legal approach.",
       "services": [
@@ -359,7 +359,7 @@ export const practices = [
     "icon": "document",
     "ro": {
       "title": "Drept civil și recuperarea creanțelor",
-      "short": "Litigii civile, raporturi contractuale și recuperarea creanțelor civile și comerciale.",
+      "short": "Contracte, răspundere și recuperarea creanțelor. Evaluarea obligațiilor și a căilor de valorificare a drepturilor.",
       "lead": "Consultanță și reprezentare în litigii civile, raporturi contractuale, repararea prejudiciilor și recuperarea creanțelor civile sau comerciale.",
       "body": "De la neexecutarea unui contract la repararea unui prejudiciu, cabinetul oferă asistență pentru înțelegerea situației juridice și pregătirea demersurilor necesare. Posibilitatea unei soluții amiabile este analizată în funcție de context.",
       "services": [
@@ -414,7 +414,7 @@ export const practices = [
     },
     "en": {
       "title": "Civil law and debt recovery",
-      "short": "Civil litigation, contractual relationships and recovery of civil and commercial debts.",
+      "short": "Contracts, liability and debt recovery. Assessing obligations and the available ways to enforce rights.",
       "lead": "Advice and representation in civil disputes, contractual relationships, claims for damages and recovery of civil or commercial debts.",
       "body": "From a breach of contract to a claim for damages, the practice helps clients understand their position and prepare appropriate steps. Opportunities for an amicable resolution are assessed in context.",
       "services": [
@@ -475,7 +475,7 @@ export const practices = [
     "icon": "briefcase",
     "ro": {
       "title": "Dreptul muncii",
-      "short": "Consultanță și reprezentare în raporturile dintre angajați și angajatori.",
+      "short": "Concedieri, drepturi salariale și raporturi de muncă. Asistență juridică pentru angajați și angajatori.",
       "lead": "Asistență pentru angajați și angajatori în legătură cu concedieri, sancțiuni disciplinare, drepturi salariale și negocierea sau încetarea raporturilor de muncă.",
       "body": "Cabinetul oferă asistență atât angajaților, cât și angajatorilor, în legătură cu desfășurarea și încetarea raporturilor de muncă. Documentele și termenele relevante sunt analizate pentru fiecare situație în parte.",
       "services": [
@@ -530,7 +530,7 @@ export const practices = [
     },
     "en": {
       "title": "Employment law",
-      "short": "Advice and representation in relationships between employees and employers.",
+      "short": "Dismissals, pay entitlements and employment relationships. Legal assistance for employees and employers.",
       "lead": "Assistance for employees and employers concerning dismissals, disciplinary sanctions, salary claims, negotiation and termination of employment.",
       "body": "The practice assists employees and employers with the conduct and termination of employment relationships. Relevant documents and deadlines are considered individually for each matter.",
       "services": [
@@ -591,7 +591,7 @@ export const practices = [
     "icon": "building",
     "ro": {
       "title": "Drept comercial și consultanță pentru societăți",
-      "short": "Asistență contractuală, consultanță pentru societăți și reprezentare în litigii comerciale.",
+      "short": "Contracte și decizii de afaceri. Consultanță pentru societăți, negociere și reprezentare în litigii comerciale.",
       "lead": "Consultanță juridică pentru societăți, redactarea și verificarea contractelor, asistență la negociere și executare, reprezentare în litigii comerciale.",
       "body": "Cabinetul oferă consultanță pentru societăți, asistență contractuală și reprezentare în litigii comerciale. Abordarea urmărește corelarea obiectivelor de afaceri cu obligațiile asumate și cu riscurile identificate.",
       "services": [
@@ -646,7 +646,7 @@ export const practices = [
     },
     "en": {
       "title": "Commercial law and company advisory",
-      "short": "Contractual assistance, company advice and representation in commercial disputes.",
+      "short": "Contracts and business decisions. Advice for companies, negotiation and representation in commercial disputes.",
       "lead": "Company legal advice, contract drafting and review, assistance with negotiation and performance, and representation in commercial disputes.",
       "body": "The practice provides company advice, contractual assistance and representation in commercial disputes. The approach connects business objectives with agreed obligations and identified risks.",
       "services": [
@@ -776,7 +776,7 @@ export const articles = [
   {
     "slug": "situatii-internationale",
     "enSlug": "cross-border-matters",
-    "image": "family-v2",
+    "image": "crossborder-v5",
     "category": [
       "Perspectivă internațională",
       "Cross-border perspective"

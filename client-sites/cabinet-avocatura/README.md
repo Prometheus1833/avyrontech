@@ -87,3 +87,11 @@ Pagina RO/EN are un parcurs în trei etape, text mai mare, instrucțiuni directe
 `booking.js` și `booking.css` sunt livrate numai pe pagina de programări. Chestionarul și descrierea de maximum 1200 de caractere rămân în memoria paginii, fără scriere în localStorage/server. Descrierea și celelalte răspunsuri opționale intră în mesajul ales de vizitator. Fișierele PDF/JPG/PNG (maximum 3, total 10 MB) sunt selectate local: codul citește numai numele, dimensiunea și tipul, fără accesarea conținutului și fără upload. Mesajul menționează doar existența documentelor; numele fișierelor rămân în pagină. Atașarea se face separat, prin canalul convenit. Validarea de tip/dimensiune nu este scanare antivirus. Resetarea elimină răspunsurile și metadatele locale.
 
 Testele verifică termenele condiționale, contextul pe arie, data/intervalul, mesajele RO/EN, lipsa citirii și trimiterii fișierelor, limitele selecției, randarea ca text și resetarea. Verificările de compatibilitate sunt în browser, nu pe dispozitive fizice iOS/Android.
+
+## Revizia meniului și a limbajului vizual
+
+Meniul RO/EN afișează Programări înainte de Arii de practică, cu simbol de calendar și accent discret; ordinea este aceeași pe desktop și mobil. Pictogramele celor șase arii sunt SVG originale, individualizate pe o grilă comună, cu accente cromatice și contrast dedicat. Semnele §, numerotarea și săgețile sunt HTML/vector; elementele decorative sunt aria-hidden. Cardurile au texte mai concrete, titluri echilibrate și etichete tematice lizibile.
+
+Au fost inspectate cele 11 surse fotografice active. Cadrul de succesiuni și cel pentru ghidul internațional sunt noi: ImageGen integrat, 1536×1024 nativ, fără upscaling, cu derivate AVIF/WebP desktop/mobil din aceeași sursă. Prompturi și proveniență: assets/GENERATED-V5.md. Dimensiuni și greutăți: assets/images-v5.json. Textele rămân HTML, separat de imagini. Fotografiile sunt ilustrative.
+
+`visual.css` adaugă 1954 B gzip, fără JavaScript sau scheduler suplimentar. `sizes` corespunde rolului card/ghid/copertă/fundal pentru a reduce descărcările inutile. Fonturile locale și modurile contrast/mișcare redusă sunt păstrate. Verificare browser: toate cele 42 pagini la 320 px și 18 combinații cu text 130% + contrast pe șase pagini, fără overflow.

@@ -56,7 +56,7 @@ for(const name of ['editorial','sans']) {
  assert(!css.includes('https://'),'Fonts must be self-hosted');
  for(const m of css.matchAll(/url\(([^)]+)\)/g))await access(`dist/assets/fonts-v2/${m[1]}`);
 }
-const budgets=[['app.js',6000],['booking.js',4200],['booking.css',4200],['styles.css',10000],['motion.js',4000],['motion.css',4500],['editorial.js',1600],['editorial.css',4500]];
+const budgets=[['app.js',6000],['booking.js',4200],['booking.css',4200],['styles.css',10000],['motion.js',4000],['motion.css',4500],['editorial.js',1600],['editorial.css',4500],['visual.css',3000]];
 for(const [file,budget] of budgets){const size=gzipSync(await readFile('dist/'+file)).length;assert(size<=budget,`${file}: ${size} gzip bytes > ${budget}`);console.log(`${file}: ${size} bytes gzip (budget ${budget})`);}
 assert((await stat('dist/assets/consultation-v2-hero-mobile-480.avif')).size<100000,'mobile hero exceeds 100KB');
 assert((await stat('dist/assets/consultation-v2-hero-desktop-800.avif')).size<260000,'desktop hero exceeds 260KB');
