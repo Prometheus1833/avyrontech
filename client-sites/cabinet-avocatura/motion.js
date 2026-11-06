@@ -111,11 +111,11 @@
 
  document.querySelectorAll('[data-process]').forEach(journey=>{
   const progress=journey.querySelector('.process-progress'),steps=[...journey.querySelectorAll('.process-steps>li')];
-  const rail=journey.querySelector('.process-rail>span'),count=journey.querySelector('[data-process-count]');
+  const fill=journey.querySelector('.process-fill');
   const mobile=window.matchMedia('(max-width: 760px)');
   let visible=false,dirty=true,current=-1,previous=-1;
-  progress.hidden=false;
-  const invalidate=()=>{dirty=true;schedule();};
+  progress.hidden=!mobile.matches;
+  const invalidate=()=>{dirty=true;progress.hidden=!mobile.matches;schedule();};
   window.addEventListener('scroll',invalidate,{passive:true});
   window.addEventListener('resize',invalidate,{passive:true});
   watchMedia(mobile,invalidate);
@@ -125,15 +125,18 @@
   tasks.push(()=>{
    if(!dirty||!visible||!mobile.matches)return false;
    dirty=false;
-   const anchor=Math.max(document.querySelector('.header').getBoundingClientRect().height+progress.getBoundingClientRect().height+24,window.innerHeight*.58);
-   const centers=steps.map(step=>{const rect=step.getBoundingClientRect();return rect.top+rect.height*.5;});
-   const value=Math.max(0,Math.min(1,(anchor-centers[0])/Math.max(1,centers[centers.length-1]-centers[0])));
+   const anchor=Math.max(document.querySelector('.header').getBoundingClientRect().height+32,window.innerHeight*.58);
+   const bounds=steps.map(step=>step.getBoundingClientRect());
+   const centers=bounds.map(rect=>rect.top+rect.height*.5);
+   const start=bounds[0].top,end=bounds[bounds.length-1].top+bounds[bounds.length-1].height;
+   const value=Math.max(0,Math.min(1,(anchor-start)/Math.max(1,end-start)));
    const rounded=Math.round(value*100);
    const active=centers.reduce((best,center,i)=>Math.abs(center-anchor)<Math.abs(centers[best]-anchor)?i:best,0);
-   if(rounded!==previous){rail.style.transform=`scaleX(${value})`;progress.setAttribute('aria-valuenow',String(rounded));previous=rounded;}
+   fill.style.transform=`scaleY(${value})`;
+   steps.forEach((step,i)=>step.classList.toggle('is-complete',bounds[i].top+bounds[i].height<=anchor));
+   if(rounded!==previous){progress.setAttribute('aria-valuenow',String(rounded));previous=rounded;}
    if(active!==current){
-    steps.forEach((step,i)=>{step.classList.toggle('is-active',i===active);step.classList.toggle('is-complete',i<active);if(i===active)step.setAttribute('aria-current','step');else step.removeAttribute('aria-current');});
-    count.textContent='0'+(active+1)+' / 03';
+    steps.forEach((step,i)=>{step.classList.toggle('is-active',i===active);if(i===active)step.setAttribute('aria-current','step');else step.removeAttribute('aria-current');});
     progress.setAttribute('aria-valuetext',(en?'Step ':'Etapa ')+(active+1)+' / 3: '+steps[active].querySelector('h3').textContent);
     current=active;
    }

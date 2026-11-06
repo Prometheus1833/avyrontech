@@ -57,3 +57,11 @@ Programări precedă Arii de practică în toate cele 42 pagini RO/EN, inclusiv 
 Cele 11 surse fotografice active au fost inspectate. Au fost înlocuite cadrul succesiunilor și imaginea ghidului internațional cu două compoziții ImageGen native 1536×1024, ilustrative. Aceleași imagini au crop 4:3 desktop și 3:2 mobil, AVIF/WebP. Prompturi exacte și căi: assets/GENERATED-V5.md; dimensiuni/greutăți: assets/images-v5.json. `sizes` este adaptat rolului card/ghid/copertă/fundal. Nu se declară rezoluție 4K/8K.
 
 Verificări curente: toate cele 42 pagini la 320×568, fără overflow și cu ordinea corectă a meniului. Șase pagini × trei dimensiuni (320/768/1440) cu text 130% și contrast: 18 combinații fără overflow. Meniu și carduri verificate și pe domeniul public. `visual.css`: 1954 B gzip, fără JS nou sau scheduler suplimentar. Capturi și rapoarte: output/visual-v5-proof/. Modurile de contrast și mișcare redusă rămân disponibile. QA nu înlocuiește testarea pe telefoane fizice.
+
+## Progresul celor trei carduri — corecție
+
+Pe mobil există exact trei carduri și o singură linie verticală continuă de 3 px, lipită de marginea stângă a acestora. Panoul sticky suplimentar, contorul separat și liniile individuale ale cardurilor au fost eliminate. Traseul se umple de la începutul primului card până la finalul celui de-al treilea, proporțional cu geometria reală a scrollului; la revenire, progresul scade. Elementul nu ocupă spațiu în flux. Desktopul păstrează trei coloane și ascunde indicatorul vertical.
+
+Se folosește același scheduler rAF, actualizare directă scaleY, fără tranziție sau cronometru nou. ARIA expune o bară verticală unică; lista rămâne semantică. Mișcarea redusă nu dezactivează citirea progresului, numai animațiile decorative.
+
+Verificări: build/check/toate testele trecute; teste RO/EN la 0/25/50/75/100%, revenire și schimbare mobile/desktop. Browser la 320/390/430/768/1440 px, plus text 130% și contrast la 320/430 px, fără overflow. Pe public, trei carduri, un traseu de 3 px și progres 61% → 34% la scroll în sus. Capturi și rapoarte: output/process-proof/. Gzip motion.js 3176 B și motion.css 3755 B. Fără schimbări de imagini, DNS, date sau integrări.

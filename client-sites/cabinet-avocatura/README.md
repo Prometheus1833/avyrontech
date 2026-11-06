@@ -58,7 +58,7 @@ Verificarea publică a detectat și scriptul de protecție Cloudflare injectat d
 
 Colecțiile de arii de practică (landing și index, RO/EN) sunt carusele orizontale cu scroll nativ, swipe, drag cu mouse, săgeți și tastatură. Derularea automată deplasează cardurile spre stânga și se oprește la apăsare/hover/focus, în afara ecranului, în tab ascuns și la mișcare redusă. Focusul și săgețile solicită repornire explicită prin controlul de mișcare. Copiile vizuale de buclă nu intră în ordinea de tab sau în arborele accesibil. Cardurile au perspectivă CSS 2.5D și zoom discret la hover; fără WebGL sau librărie de animație.
 
-Un singur scheduler requestAnimationFrame deservește caruselul și indicatorul parcursului. Pe mobil, bara sticky urmărește geometria celor trei etape la scroll, indicând etapa și progresul. Nu folosește un cronometru. Conținutul rămâne un ordered list semantic, disponibil fără JavaScript.
+Un singur scheduler requestAnimationFrame deservește caruselul și indicatorul parcursului. Pe mobil, o singură linie verticală de 3 px se află la marginea stângă a celor trei carduri și se umple continuu de la începutul primului până la finalul celui de-al treilea, după geometria reală la scroll. Nu există panou suplimentar, contor separat sau linii individuale pe carduri. Indicatorul este ascuns pe desktop și nu ocupă spațiu în flux. Nu folosește un cronometru. Conținutul rămâne un ordered list semantic, disponibil fără JavaScript.
 
 Subsolul are o fotografie cinematică juridică statică, nativă **1774 × 887 px**, cu decupaje desktop/mobil și încărcare lazy. AVIF 17–33 KB, fără mărire artificială; promptul și proveniența: [assets/GENERATED-V3.md](assets/GENERATED-V3.md). Fundalul se elimină la contrast ridicat.
 
@@ -95,3 +95,7 @@ Meniul RO/EN afișează Programări înainte de Arii de practică, cu simbol de 
 Au fost inspectate cele 11 surse fotografice active. Cadrul de succesiuni și cel pentru ghidul internațional sunt noi: ImageGen integrat, 1536×1024 nativ, fără upscaling, cu derivate AVIF/WebP desktop/mobil din aceeași sursă. Prompturi și proveniență: assets/GENERATED-V5.md. Dimensiuni și greutăți: assets/images-v5.json. Textele rămân HTML, separat de imagini. Fotografiile sunt ilustrative.
 
 `visual.css` adaugă 1954 B gzip, fără JavaScript sau scheduler suplimentar. `sizes` corespunde rolului card/ghid/copertă/fundal pentru a reduce descărcările inutile. Fonturile locale și modurile contrast/mișcare redusă sunt păstrate. Verificare browser: toate cele 42 pagini la 320 px și 18 combinații cu text 130% + contrast pe șase pagini, fără overflow.
+
+## Corecția progresului celor trei pași
+
+Linia continuă folosește scaleY, origine sus, fără interpolare sau timer separat. Reversarea scrollului reduce progresul. Cele trei carduri rămân un ordered list; o singură bară verticală expune procentul și etapa prin ARIA, iar elementele vizibile nu sunt duplicate într-o notificare. Regimul reduced-motion păstrează progresul legat direct de scroll. Testele RO/EN verifică 0/25/50/75/100%, revenirea și schimbarea mobile/desktop.

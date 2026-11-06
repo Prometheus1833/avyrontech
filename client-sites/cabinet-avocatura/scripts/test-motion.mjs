@@ -32,8 +32,16 @@ for(const lang of ['ro','en']){
  hidden=true;d.dispatchEvent(new w.Event('visibilitychange'));assert.equal(frames.size,0);hidden=false;d.dispatchEvent(new w.Event('visibilitychange'));advance(50);
  const reduced=media.get('(prefers-reduced-motion: reduce)');reduced.matches=true;reduced.listeners.forEach(cb=>cb({matches:true}));advance(30);before=viewport.scrollLeft;advance(200);assert.equal(viewport.scrollLeft,before,'reduced motion disables autoplay');assert(play.disabled);
  d.querySelector('[data-carousel-next]').click();advance(20);assert(viewport.scrollLeft>before&&viewport.scrollLeft-before<=344,'manual navigation remains available');
- scroll=936;w.dispatchEvent(new w.Event('scroll'));advance(20);const progress=d.querySelector('.process-progress');assert.equal(progress.getAttribute('aria-valuenow'),'50');assert.equal(d.querySelector('[data-process-count]').textContent,'02 / 03');
- scroll=1300;w.dispatchEvent(new w.Event('scroll'));advance(20);assert.equal(progress.getAttribute('aria-valuenow'),'100');assert.equal(d.querySelector('[data-process-count]').textContent,'03 / 03');
+ const progress=d.querySelector('.process-progress'),fill=d.querySelector('.process-fill');
+ assert.equal(d.querySelectorAll('[data-process] .process-steps>li').length,3,'exactly three content cards');
+ assert.equal(d.querySelectorAll('[data-process] [role=progressbar]').length,1,'one continuous rail');
+ assert.equal(progress.getAttribute('aria-orientation'),'vertical');
+ assert.equal(d.querySelector('.progress-caption,[data-process-count],.process-rail'),null,'no extra notification or horizontal progress');
+ for(const [position,expected]of [[400,0],[736,25],[936,50],[1136,75],[1400,100],[736,25]]){
+  scroll=position;w.dispatchEvent(new w.Event('scroll'));advance(20);assert.equal(progress.getAttribute('aria-valuenow'),String(expected),'continuous forward and reverse reading progress');assert(Math.abs(parseFloat(fill.style.transform.slice(7))-expected/100)<1e-9);
+ }
+ scroll=936;w.dispatchEvent(new w.Event('scroll'));advance(20);assert.equal(d.querySelectorAll('.process-steps>[aria-current=step]').length,1);assert.equal(d.querySelector('.process-steps>[aria-current=step] .step-number').textContent,'02');
+ const mobile=media.get('(max-width: 760px)');mobile.matches=false;mobile.listeners.forEach(cb=>cb({matches:false}));advance(20);assert(progress.hidden,'rail hidden on desktop');mobile.matches=true;mobile.listeners.forEach(cb=>cb({matches:true}));advance(20);assert(!progress.hidden,'rail restored on mobile');
  assert.equal(errors.length,0,errors.join('\n'));dom.window.close();
 }
 console.log('PASS: RO/EN carousel direction, press pause, focus/resume, arrows/keyboard, loop bounds, hidden/offscreen idle, reduced motion and scroll-linked progress.');

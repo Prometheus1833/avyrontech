@@ -3,9 +3,9 @@
 ## Publicare verificată
 
 - URL: https://cabinet-avocatura.avyron.eu/; pagini revizuite: /programari/ și /en/appointments/.
-- Sites: versiunea 11, `appgprj_6aee16d68fcc8191a51c7f828bcfab51~appgver_c530fe7b944481919069f7d54a9eaac7`.
-- Deployment: `appgdep_6aee47b79f00819196f12ef8f6cbf451`, `succeeded`.
-- Sursă Sites: `3b3880a5e52d076e9a761cfbf897b058aa8390e0`; runtime `3f3d979f70`.
+- Sites: versiunea 12, `appgprj_6aee16d68fcc8191a51c7f828bcfab51~appgver_6fc766152c64819190ecfc85bcd45cfe`.
+- Deployment: `appgdep_6aee49b4f6b08191acadfa8c8644f79c`, `succeeded`.
+- Sursă Sites: `4c10964b19d786c57523ebb25b41b7a81d095a16`; runtime `56d197f574`.
 - AVYRON: `client-sites/cabinet-avocatura/`, ramura `codex/cabinet-avocatura-2026-11-06`, PR #102, fără merge în main.
 - DNS existent păstrat; HTTPS public verificat cu validarea normală a certificatului.
 
@@ -31,7 +31,7 @@ Fotografii ilustrative native 1536×1024, fără mărire artificială; nu reprez
 - Validator: 42 pagini, 1862 referințe interne, 514 resurse directe; metadate, srcset/fonturi, ancore, paritate și destinatari.
 - Teste RO/EN: date/intervale, chestionar, termene condiționale, text sigur, mesaje contextuale, selecție și limite de fișiere, fără citire/transmitere fișiere, resetare. Editorul, caruselul, mișcarea redusă, progresul și acoperirea brief-ului rămân verificate.
 - Browser: 16 combinații RO/EN la opt dimensiuni 320–1440 px, fără overflow; câmpuri 16 px. Rezumat EN cu text 130% + contrast la cinci dimensiuni: fără overflow, câmpuri 20,8 px. Tableta ajustată verificată din nou la 768/844 px și mobilul la 320 px.
-- Public: formular, navigare, rezumat, fingerprint și capturi pe domeniul final. Toate cele 42 HTML, 9 CSS/JS și 20 derivate noi de imagine comparate cu build-ul local: 71/71 identice. Normalizarea exclude numai scriptul Cloudflare injectat de hosting. Dovezi în output/appointments-proof/.
+- Public: formular, navigare, rezumat, fingerprint și capturi pe domeniul final. Cele 42 HTML și cele două fișiere motion CSS/JS comparate în această revizie cu build-ul local: 44/44 identice. Normalizarea exclude numai scriptul Cloudflare injectat de hosting. Dovezi în output/appointments-proof/.
 - Gzip: booking.js 3389 B și booking.css 2908 B, numai pe programări; app.js comun redus la 2813 B.
 - Build-urile aplicației AVYRON nu au fost rulate local, site-ul fiind autonom. CI verifică separat aplicația și site-ul.
 
@@ -48,3 +48,11 @@ Programări precedă Arii de practică în toate cele 42 pagini RO/EN, inclusiv 
 Cele 11 surse fotografice active au fost inspectate. Au fost înlocuite cadrul succesiunilor și imaginea ghidului internațional cu două compoziții ImageGen native 1536×1024, ilustrative. Aceleași imagini au crop 4:3 desktop și 3:2 mobil, AVIF/WebP. Prompturi exacte și căi: assets/GENERATED-V5.md; dimensiuni/greutăți: assets/images-v5.json. `sizes` este adaptat rolului card/ghid/copertă/fundal. Nu se declară rezoluție 4K/8K.
 
 Verificări curente: toate cele 42 pagini la 320×568, fără overflow și cu ordinea corectă a meniului. Șase pagini × trei dimensiuni (320/768/1440) cu text 130% și contrast: 18 combinații fără overflow. Meniu și carduri verificate și pe domeniul public. `visual.css`: 1954 B gzip, fără JS nou sau scheduler suplimentar. Capturi și rapoarte: output/visual-v5-proof/. Modurile de contrast și mișcare redusă rămân disponibile. QA nu înlocuiește testarea pe telefoane fizice.
+
+## Progresul celor trei carduri — corecție
+
+Pe mobil există exact trei carduri și o singură linie verticală continuă de 3 px, lipită de marginea stângă a acestora. Panoul sticky suplimentar, contorul separat și liniile individuale ale cardurilor au fost eliminate. Traseul se umple de la începutul primului card până la finalul celui de-al treilea, proporțional cu geometria reală a scrollului; la revenire, progresul scade. Elementul nu ocupă spațiu în flux. Desktopul păstrează trei coloane și ascunde indicatorul vertical.
+
+Se folosește același scheduler rAF, actualizare directă scaleY, fără tranziție sau cronometru nou. ARIA expune o bară verticală unică; lista rămâne semantică. Mișcarea redusă nu dezactivează citirea progresului, numai animațiile decorative.
+
+Verificări: build/check/toate testele trecute; teste RO/EN la 0/25/50/75/100%, revenire și schimbare mobile/desktop. Browser la 320/390/430/768/1440 px, plus text 130% și contrast la 320/430 px, fără overflow. Pe public, trei carduri, un traseu de 3 px și progres 61% → 34% la scroll în sus. Capturi și rapoarte: output/process-proof/. Gzip motion.js 3176 B și motion.css 3755 B. Fără schimbări de imagini, DNS, date sau integrări.
