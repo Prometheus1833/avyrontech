@@ -1,3 +1,4 @@
+import type { LeadArchiveReason } from "@/shared/leadArchive";
 import type { LeadDeletionReasonCode } from "@/shared/leadDeletionReasons";
 import { cfAuth } from "./cfAuth";
 
@@ -15,6 +16,7 @@ export type LeadListRow = {
   next_follow_up_at: number | null; urgent: number; converted_project_id: string | null;
   estimate_ron: number | null; delivery_status: string | null;
   created_at: number; updated_at: number | null;
+  can_archive?: number; archived_at?: number | null; archived_by?: string | null; archive_reason?: LeadArchiveReason | null; archive_note?: string | null;
 };
 
 export type LeadDetail = LeadListRow & {
@@ -61,6 +63,9 @@ export type NewLeadInput = {
 };
 
 export const leadsApi = {
+  archive: (lead: LeadListRow, reason: LeadArchiveReason, note: string) => cfAuth.request<{ok:true}>(`/api/leads/${encodeURIComponent(lead.id)}/archive`, { method: "POST", body: JSON.stringify({restore:false,reason,note,expectedUpdatedAt:lead.updated_at ?? 0,confirmed:true}) }),
+  restore: (lead: LeadListRow) => cfAuth.request<{ok:true}>(`/api/leads/${encodeURIComponent(lead.id)}/archive`, { method: "POST", body: JSON.stringify({restore:true,expectedUpdatedAt:lead.updated_at ?? 0,confirmed:true}) }),
+  archived: (offset = 0) => cfAuth.request<{data:LeadListRow[];nextOffset:number|null}>(`/api/leads?archived=1&offset=${offset}`),
   list: () => cfAuth.request<{ data: LeadListRow[]; platformRole: "platform_owner" | "superadmin" | null }>("/api/leads"),
   detail: (id: string) => cfAuth.request<LeadDetailResponse>(`/api/leads/${id}`),
   create: (input: NewLeadInput) =>
@@ -72,7 +77,7 @@ export const leadsApi = {
   update: (id: string, patch: {
     lifecycleStage?: LeadStage; urgent?: boolean; nextFollowUpAt?: number | null;
     preferredChannel?: LeadChannel | null; lostReason?: string | null;
-  }) => cfAuth.request<{ ok: true }>(`/api/leads/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  }) => cfAuth.request<{ ok: true; updatedAt: number }>(`/api/leads/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   remove: (id: string, input: { reasonCode: LeadDeletionReasonCode; reasonDetail?: string }) => cfAuth.request<{ ok: true }>(`/api/leads/${id}`, { method: "DELETE", body: JSON.stringify(input) }),
   deletionLog: () => cfAuth.request<{ data: LeadDeletionLog[] }>("/api/leads/deletions"),
   addActivity: (id: string, input: { kind: string; direction?: string; outcome?: string; content?: string }) =>

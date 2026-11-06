@@ -69,7 +69,7 @@ produseAdminRouter.get("/api/produse/admin/overview", async (c) => {
       ).all<{ id: string; user_id: string; total_cents: number; status: string; created_at: number; items_json: string }>(),
       c.env.DB.prepare(
         `SELECT id, source, email, message, config_json, status, created_at FROM leads
-          WHERE product = 'avyron-products' ORDER BY created_at DESC LIMIT 25`,
+          WHERE deleted_at IS NULL AND archived_at IS NULL AND product = 'avyron-products' ORDER BY created_at DESC LIMIT 25`,
       ).all<{ id: string; source: string; email: string; message: string | null; config_json: string | null; status: string; created_at: number }>(),
       c.env.DB.prepare(
         `SELECT slug, name_ro AS name, access, pro_at, free_at FROM product_items

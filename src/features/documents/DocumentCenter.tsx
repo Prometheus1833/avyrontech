@@ -1,3 +1,4 @@
+import CompanySummary from "./CompanySummary";
 import DocumentLibrary from "./DocumentLibrary";
 import {
   DOCUMENT_VIEWS,
@@ -710,6 +711,7 @@ export default function DocumentCenter({
       )}
       {bootstrap && detail ? (
         <>
+          {detail.actions.export && <p className="dc-notice text-xs">Descarcă PDF sau Word editabil pentru utilizare externă. {detail.approvals.length ? "Exportul corespunde versiunii aprobate." : "Exporturile acestei versiuni sunt marcate CIORNĂ NEAPROBATĂ; revizuirea și aprobarea se fac separat."}</p>}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <button className="dc-button" onClick={() => void close()}>
               <ArrowLeft className="size-4" />{" "}
@@ -732,14 +734,14 @@ export default function DocumentCenter({
                     disabled={busy}
                     onClick={() => void download("pdf")}
                   >
-                    <Download className="size-4" /> PDF
+                    <Download className="size-4" /> Descarcă PDF
                   </button>
                   <button
                     className="dc-button"
                     disabled={busy}
                     onClick={() => void download("docx")}
                   >
-                    Word
+                    Descarcă Word (.docx)
                   </button>
                 </>
               )}
@@ -1136,7 +1138,7 @@ export default function DocumentCenter({
                     <Plus className="size-4" /> Creează document
                   </button>
                 )}
-                {!!bootstrap.platformRole && !embedded && (
+                {!!bootstrap.platformRole && !embedded && view !== "company" && (
                   <button
                     className="dc-button"
                     onClick={() => void prepareAction("settings")}
@@ -1154,6 +1156,7 @@ export default function DocumentCenter({
                 </button>
               </div>
             </div>
+            {view === "company" && context && bootstrap.permissions["documents.company.owner"] && <CompanySummary company={context.company} onEdit={() => void prepareAction("settings")} />}
             <DocumentLibrary
               items={items}
               total={total}

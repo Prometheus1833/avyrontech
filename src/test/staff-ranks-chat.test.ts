@@ -317,6 +317,20 @@ describe("Agency ranks and private chat: real Hono/D1 handlers", () => {
     expect((await req("/api/finance/overview")).status).toBe(403);
     expect((await req("/api/projects", {}, "POST")).status).toBe(403);
   });
+  it("creates an AI project once with safe defaults and requires a platform principal plus MFA", async () => {
+    const key=crypto.randomUUID(),body={name:"Proiect AI viitor",summary:"Contextul agenției",objective:"visibility"};
+    const response=await req("/api/ai-projects",body,"POST",key); expect(response.status).toBe(201);
+    const result=await response.json();
+    const createdDetail=await req(`/api/ai-projects/${result.slug}`); expect(createdDetail.status).toBe(200);
+    expect((await createdDetail.json()).project.id).toBe(result.id);
+    expect(await (await req("/api/ai-projects",body,"POST",key)).json()).toEqual(result);
+    expect(db.prepare("SELECT name,status,automation_mode,allow_outbound_messages,ownership_scope FROM ai_projects WHERE id=?").get(result.id)).toMatchObject({name:body.name,status:"setup",automation_mode:"approval",allow_outbound_messages:0,ownership_scope:"agency"});
+    expect(db.prepare("SELECT count(*) n FROM ai_project_events WHERE project_id=? AND action='ai_project.create'").get(result.id)!.n).toBe(1);
+    expect((await req("/api/ai-projects",{...body,name:"Alt proiect"},"POST",key)).status).toBe(409);
+    expect((await req("/api/ai-projects",{...body,name:""},"POST")).status).toBe(400);
+    actor="dev"; expect((await req("/api/ai-projects",body,"POST")).status).toBe(403);
+    actor="owner"; mfa=false; expect((await req("/api/ai-projects",body,"POST")).status).toBe(403);
+  });
   const socialFixture = () => {
     const t = Date.now();
     db.prepare("INSERT INTO ai_projects(id,slug,name,product_key,status,created_at,updated_at) VALUES('social-a','social-a','Social A','other','active',?,?),('social-b','social-b','Social B','other','active',?,?)").run(t,t,t,t);

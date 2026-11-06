@@ -205,6 +205,7 @@ export type AiProjectDetail = {
 };
 
 export const aiProjectsApi = {
+  create: (body: { name: string; summary: string; objective: string }, key: string) => cfAuth.request<{id:string;slug:string}>("/api/ai-projects", { method: "POST", headers: { "Idempotency-Key": key }, body: JSON.stringify(body) }),
   list: () => cfAuth.request<{ data: AiProjectListRow[]; platformRole: string | null }>("/api/ai-projects"),
   detail: (slug: string) => cfAuth.request<AiProjectDetail>(`/api/ai-projects/${encodeURIComponent(slug)}`),
   update: (id: string, patch: Record<string, unknown>) =>

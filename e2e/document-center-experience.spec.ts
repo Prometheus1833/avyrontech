@@ -462,7 +462,7 @@ test("four-step generator prepopulates issuer, inherits project context and clea
   expect(payload.fields["provider.tax_id"]).toBe("55055976");
   expect(payload.fields["beneficiary.legal_name"]).toBe("Beneficiar B");
   await expect(
-    page.getByRole("button", { name: "Word", exact: true }),
+    page.getByRole("button", { name: "Descarcă Word (.docx)", exact: true }),
   ).toBeVisible();
   await page.screenshot({
     path: info.outputPath("document-editor.png"),
@@ -633,4 +633,33 @@ test("company and staff libraries ignore a previous project's client context", a
     ).toBeVisible();
     await expect(page.getByRole("alert")).toHaveCount(0);
   }
+});
+
+test("Documente SC afișează datele confirmate și permite completarea profilului în aceeași secțiune", async ({page},info) => {
+  await setup(page); let company = {...context.company}, saved:unknown;
+  await page.route('**/api/documents/context',route=>route.fulfill({json:{...context,company}}));
+  await page.route('**/api/documents/settings/company',route=>{saved=route.request().postDataJSON();company={...company,...saved as typeof company};return route.fulfill({json:{ok:true}});});
+  await page.goto('/profil?tab=documents&documentView=company');
+  const section=page.getByRole('region',{name:'Datele societății AVYRON'}); // section is labelled and therefore a landmark
+  await expect(section.getByText(context.company.legal_name,{exact:true})).toBeVisible();await expect(section.getByText('55055976',{exact:true})).toBeVisible();
+  await section.getByRole('button',{name:'Completează datele firmei'}).click();
+  const dialog=page.getByRole('dialog');await dialog.getByLabel('Registrul Comerțului',{exact:true}).fill('REGISTRU-TEST');await dialog.getByLabel('Reprezentant autorizat').fill('Reprezentant confirmat');await dialog.getByRole('button',{name:'Salvează datele confirmate'}).click();
+  await expect(dialog).not.toBeVisible();expect(saved).toMatchObject({tax_id:'55055976',registration_number:'REGISTRU-TEST',representative:'Reprezentant confirmat'});await expect(section.getByText('REGISTRU-TEST',{exact:true})).toBeVisible();await page.screenshot({path:info.outputPath('company-summary.png'),animations:'disabled'});
+});
+for(const width of [320,1440]) test(`beneficiar direct și proiect viitor fără CRM, cu export extern la ${width}px`,async({page},info)=>{
+  const state=await setup(page);await page.setViewportSize({width,height:900});
+  await page.route('**/api/documents/doc-a/export/docx*',route=>route.fulfill({contentType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',headers:{'Content-Disposition':'attachment; filename="fixture.docx"'},body:'synthetic browser download; valid DOCX is verified in runtime tests'}));
+  await page.goto('/profil?tab=documents&documentView=generator');await page.getByRole('radio',{name:'Completare directă',exact:true}).check();
+  await page.getByLabel('Nume / denumire beneficiar *',{exact:true}).fill('Beneficiar viitor direct');await page.getByRole('combobox',{name:'Forma beneficiarului',exact:true}).selectOption('PF');await page.getByLabel('Adresă beneficiar',{exact:true}).fill('Adresă furnizată de beneficiar');await page.getByLabel('Denumire proiect viitor',{exact:true}).fill('Proiect încă necontractat');await page.getByLabel('Contextul proiectului viitor',{exact:true}).fill('Pregătirea unei propuneri, cu termen de stabilit.');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);await page.screenshot({path:info.outputPath(`manual-beneficiary-${width}.png`),animations:'disabled'});
+  for(let i=0;i<3;i++)await page.getByRole('button',{name:'Continuă',exact:true}).click();await page.getByRole('button',{name:'Creează și deschide editorul'}).click();await expect.poll(()=>state.created()).not.toBeNull();
+  const result=state.created() as {scope:string;beneficiaryId:string|null;assignments:unknown[];payload:{fields:Record<string,string>;body:unknown}};
+  expect(result).toMatchObject({scope:'internal',beneficiaryId:null,assignments:[]});expect(result.payload.fields['beneficiary.legal_name']).toBe('Beneficiar viitor direct');expect(result.payload.fields['project.future_name']).toBe('Proiect încă necontractat');expect(JSON.stringify(result.payload.body)).toContain('Pregătirea unei propuneri');
+  const download=page.waitForEvent('download');await page.getByRole('button',{name:'Descarcă Word (.docx)',exact:true}).click();expect((await download).suggestedFilename()).toBe(`${summary.number}-v1.docx`);
+});
+test('beneficiarul completat direct poate fi salvat explicit în CRM cu datele sale fiscale',async({page})=>{
+ await setup(page);let current={...context,clients:[...context.clients]}, saved:Record<string,unknown>|null=null;
+ await page.route('**/api/documents/context',route=>route.fulfill({json:current}));
+ await page.route('**/api/admin/operations/clients',route=>{saved=route.request().postDataJSON();const identity=(saved!.identity as Record<string,string>);current={...current,clients:[...current.clients,{id:'manual-crm',company_name:identity.companyName,legal_name:identity.legalName,email:identity.email,entity_type:identity.entityType,address:identity.address,tax_id:identity.taxId,contact_name:identity.contactName}]};return route.fulfill({json:{ok:true,id:'manual-crm',accountId:null}});});
+ await page.goto('/profil?tab=documents&documentView=generator');await page.getByRole('radio',{name:'Completare directă',exact:true}).check();await page.getByLabel('Nume / denumire beneficiar *',{exact:true}).fill('Beneficiar de înregistrat');await page.getByRole('combobox',{name:'Forma beneficiarului',exact:true}).selectOption('PJ');await page.getByLabel('E-mail beneficiar',{exact:true}).fill('direct@example.test');await page.getByLabel('CUI / cod fiscal beneficiar',{exact:true}).fill('CUI-SINTETIC');await page.getByLabel('Număr de înregistrare beneficiar',{exact:true}).fill('REG-SINTETIC');await page.getByLabel('Adresă beneficiar',{exact:true}).fill('Adresă introdusă direct');await page.getByRole('button',{name:'Salvează beneficiarul în CRM',exact:true}).click();await expect(page.getByRole('textbox',{name:'Denumire',exact:true})).toHaveValue('Beneficiar de înregistrat');await page.getByRole('button',{name:'Creează',exact:true}).click();await expect(page.getByLabel('Beneficiar juridic')).toHaveValue('manual-crm');expect(saved).toMatchObject({identity:{entityType:'PJ',taxId:'CUI-SINTETIC',registrationNumber:'REG-SINTETIC',address:'Adresă introdusă direct'},account:{mode:'none'}});
 });

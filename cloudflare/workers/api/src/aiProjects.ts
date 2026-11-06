@@ -104,6 +104,36 @@ const requireAiProjectMfa = async (c: Context<AppBindings>, next: () => Promise<
 aiProjectsRouter.use("/api/ai-projects", requireAiProjectMfa);
 aiProjectsRouter.use("/api/ai-projects/*", requireAiProjectMfa);
 
+aiProjectsRouter.post("/api/ai-projects", async c => {
+  if (!(await platformRoleForUser(c.env.DB, c.get("userId")))) return c.json({error:{code:"forbidden"}},403);
+  const input = await readJsonBodyUpTo(c.req.raw, 8192);
+  if (!input.ok) return c.json({error:{code:input.error}},input.error === "payload_too_large" ? 413 : 400);
+  const b = input.value as {name?: unknown; summary?: unknown; objective?: unknown} | null;
+  if (!b || typeof b.name !== "string" || !b.name.trim() || b.name.length>180 || typeof b.summary !== "string" || b.summary.length>2000 || !["sales","promotion","visibility","monetization","community"].includes(String(b.objective))) return c.json({error:{code:"invalid_project"}},400);
+  const key = c.req.header("Idempotency-Key") || "";
+  if (!/^[A-Za-z0-9_-]{16,128}$/.test(key)) return c.json({error:{code:"idempotency_key_required"}},400);
+  const hash = await sha256(JSON.stringify({name:b.name.trim(),summary:b.summary.trim(),objective:b.objective}));
+  const scope = `ai-project-create:${c.get("userId")}`;
+  const previous = () => c.env.DB.prepare("SELECT request_hash,response_json FROM idempotency_keys WHERE scope=? AND idempotency_key=? AND expires_at>?").bind(scope,key,now()).first<{request_hash:string;response_json:string}>();
+  const cached = await previous();
+  if (cached) return cached.request_hash===hash ? c.json(JSON.parse(cached.response_json),201) : c.json({error:{code:"idempotency_key_reused"}},409);
+  const id = identifier("aip"), timestamp = now();
+  const slug = `${b.name.trim().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,60)||"proiect-ai"}-${crypto.randomUUID().slice(0,8)}`;
+  const result = {id,slug};
+  try {
+    await c.env.DB.batch([
+      c.env.DB.prepare("INSERT INTO idempotency_keys(scope,idempotency_key,request_hash,response_status,response_json,created_at,expires_at) VALUES(?,?,?,201,?,?,?)").bind(scope,key,hash,JSON.stringify(result),timestamp,timestamp+86400000),
+      c.env.DB.prepare("INSERT INTO ai_projects(id,slug,name,product_key,summary,primary_objective,ownership_scope,status,automation_mode,allow_outbound_messages,created_by,created_at,updated_at) VALUES(?,?,?,'other',?,?,'agency','setup','approval',0,?,?,?)").bind(id,slug,b.name.trim(),b.summary.trim(),b.objective,c.get("userId"),timestamp,timestamp),
+      c.env.DB.prepare("INSERT INTO ai_project_events(id,project_id,actor_user_id,action,metadata_json,created_at) VALUES(?,?,?,'ai_project.create','{}',?)").bind(identifier("aipe"),id,c.get("userId"),timestamp),
+    ]);
+    return c.json(result,201);
+  } catch {
+    const raced = await previous();
+    if (raced) return raced.request_hash===hash ? c.json(JSON.parse(raced.response_json),201) : c.json({error:{code:"idempotency_key_reused"}},409);
+    return c.json({error:{code:"project_create_failed"}},409);
+  }
+});
+
 aiProjectsRouter.get("/api/ai-projects", async (c) => {
   const platformRole = await platformRoleForUser(c.env.DB, c.get("userId"));
   const membershipFilter = platformRole

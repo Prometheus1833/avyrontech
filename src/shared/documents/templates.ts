@@ -549,6 +549,8 @@ export const DOCUMENT_TEMPLATES: TemplateDefinition[] = [
 ];
 
 export const FIELD_LABELS: Record<string, string> = {
+  "project.future_name": "Denumirea proiectului viitor",
+  "project.future_description": "Contextul proiectului viitor",
   date: "Data documentului",
   "provider.legal_name": "Denumirea juridică AVYRON",
   "provider.tax_id": "CUI AVYRON",

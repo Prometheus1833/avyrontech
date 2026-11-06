@@ -108,7 +108,7 @@ dashboardRouter.get("/api/os/overview", async (c) => {
                   SUM(CASE WHEN status IN ('new','qualified') THEN 1 ELSE 0 END) AS open,
                   SUM(CASE WHEN first_response_at IS NULL AND status IN ('new','qualified')
                     AND (urgent = 1 OR (created_at < ? AND status = 'new')) THEN 1 ELSE 0 END) AS waiting
-             FROM leads WHERE ${permitted("leads.read") ? "1=1" : "0=1"}`,
+             FROM leads WHERE deleted_at IS NULL AND archived_at IS NULL AND ${permitted("leads.read") ? "1=1" : "0=1"}`,
         ).bind(timestamp - 4 * 60 * 60 * 1000).first<{ total: number; open: number; waiting: number }>(),
         c.env.DB.prepare(
           `SELECT COUNT(*) AS total FROM clients WHERE status='active' AND ${permitted("clients.read") ? "1=1" : "0=1"}`,
@@ -127,7 +127,7 @@ dashboardRouter.get("/api/os/overview", async (c) => {
       ? c.env.DB.prepare(
           `SELECT status, COUNT(*) AS total
              FROM leads
-            WHERE status IN ('new','contacted','qualified','won','lost')
+            WHERE deleted_at IS NULL AND archived_at IS NULL AND status IN ('new','contacted','qualified','won','lost')
             GROUP BY status`,
         ).all<{ status: "new" | "contacted" | "qualified" | "won" | "lost"; total: number;
         }>()

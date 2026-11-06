@@ -1,5 +1,6 @@
+import LeadWhatsApp from "./LeadWhatsApp";
 import { useMemo, useState } from "react";
-import { ArrowRight, Clock3, Star, Trash2 } from "lucide-react";
+import { Archive, ArrowRight, Clock3, Star, Trash2 } from "lucide-react";
 import type { LeadListRow, LeadStage } from "@/lib/leadsApi";
 
 export const LEAD_STAGES = [
@@ -39,12 +40,14 @@ export default function LeadPipeline({
   saving,
   onOpen,
   onRemove,
+  onArchive,
   onUpdate,
 }: {
   rows: LeadListRow[];
   saving: string | null;
   onOpen: (id: string) => void;
   onRemove: (lead: LeadListRow) => void;
+  onArchive: (lead: LeadListRow) => void;
   onUpdate: (
     lead: LeadListRow,
     patch: { lifecycleStage?: LeadStage; urgent?: boolean },
@@ -181,6 +184,7 @@ export default function LeadPipeline({
                       key={lead.id}
                       className={`min-w-0 space-y-3 rounded-xl border bg-card p-3 ${lead.urgent ? "border-amber-400/40" : "border-border/60"}`}
                     >
+                      <LeadWhatsApp phone={lead.phone} />
                       <div className="flex items-start justify-between gap-2">
                         <button
                           type="button"
@@ -211,6 +215,7 @@ export default function LeadPipeline({
                               fill={lead.urgent ? "currentColor" : "none"}
                             />
                           </button>
+                          <button type="button" disabled={saving === lead.id || lead.can_archive === 0} aria-label={`Arhivează leadul: ${name}`} onClick={() => onArchive(lead)} className="rounded-lg p-2 text-muted-foreground hover:bg-muted"><Archive className="size-4" /></button>
                           <button
                             type="button"
                             disabled={saving === lead.id}
