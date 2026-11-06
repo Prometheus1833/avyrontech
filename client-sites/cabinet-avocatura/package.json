@@ -1,0 +1,14 @@
+{
+  "name": "cabinet-avocatura-manuela",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs",
+    "dev": "python3 -m http.server 4179 --directory dist",
+    "test:interactions": "node scripts/test-interactions.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0"
+  }
+}
