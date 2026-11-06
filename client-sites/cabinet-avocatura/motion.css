@@ -10,7 +10,7 @@
 html[data-contrast=high] .footer-cinematic{background:#000;--line:#fff}html[data-contrast=high] .footer-scene{display:none}html[data-contrast=high] .footer-cinematic:before{background:#000}html[data-contrast=high] .footer-cinematic :is(h2,h3,p,small,li,a,.footer-location,.footer-notice,.footer-bottom,.eyebrow){color:#fff}html[data-contrast=high] .footer-contact-actions>a{border-color:#fff;background:#000}html[data-contrast=high] .footer-contact-actions svg{color:#fff}html[data-contrast=high] .floating-contact{border-color:#000;background:#fff}html[data-contrast=high] .floating-contact>a{background:#000;color:#fff;border:1px solid #fff}html[data-contrast=high] .carousel-controls button{background:#fff;color:#000;border-color:#000}
 @media(prefers-reduced-motion:reduce){.practice-track .practice-card,.practice-track .practice-image img,.floating-contact>a,.floating-contact>a>span,.process-steps .step-number{transition:none!important;transform:none!important}.carousel-viewport{scroll-behavior:auto}.footer-contact-actions>a{transition:none}}
 
-.practice-carousel:not([data-enhanced]) .carousel-controls{display:none}
+[data-carousel]:not([data-enhanced]) .carousel-controls{display:none}
 
 /* One continuous reading rail along the left edge of the three existing cards. */
 @media(max-width:760px){
@@ -28,3 +28,17 @@ html[data-contrast=high] .footer-cinematic{background:#000;--line:#fff}html[data
  html[data-contrast=high] .process-steps>li{background:#fff;border-color:#000;color:#000}
 }
 @media(max-width:380px){.process-steps>li{padding:22px 16px 22px 23px;grid-template-columns:26px minmax(0,1fr);gap:9px 11px}.process-steps>li:last-child{padding-bottom:22px}}
+
+/* The home editorial carousel shares controls, native input and the animation scheduler. */
+.article-carousel{min-width:0}.article-track.article-grid{display:flex;width:100%;max-width:none;gap:24px;align-items:stretch;margin:0}
+.article-track>.article-card{flex:0 0 calc((100% - 48px)/3);min-width:0;display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:6px;overflow:hidden;transform-origin:50% 60%;box-shadow:0 8px 20px #14344208;transition:transform .28s ease,box-shadow .28s ease,border-color .28s;backface-visibility:hidden}
+.article-track .article-image{flex-shrink:0;margin:0;border:0;border-radius:0;box-shadow:none;aspect-ratio:4/3}
+.article-track .article-image picture,.article-track .article-image img{display:block;width:100%;height:100%;object-fit:cover}.article-track .article-image img{transition:transform .5s ease}
+.article-card-content{padding:25px;display:flex;flex-direction:column;flex:1;min-width:0}.article-card-content>.eyebrow{font-size:.72rem;line-height:1.7;margin-bottom:15px}.article-card-content h3{font-size:1.65rem;line-height:1.25;margin-bottom:16px;overflow-wrap:anywhere}.article-card-content>p:not(.eyebrow){font-size:1.02rem;line-height:1.8;color:var(--muted);margin-bottom:16px}.article-card-content>.text-link{margin-top:auto;padding-top:14px;font-size:.92rem;align-self:flex-start}
+.article-track .article-card:focus-within{border-color:#718f9f;box-shadow:0 8px 24px #14344215}
+@media(hover:hover) and (pointer:fine){.article-track>.article-card:hover{transform:perspective(1100px) rotateX(1.5deg) rotateY(-2deg) translateY(-6px);box-shadow:8px 19px 33px #1434421c;border-color:#91acb8}.article-track>.article-card:hover .article-image img{transform:scale(1.035)}}
+@media(max-width:1020px){.article-track>.article-card{flex-basis:calc((100% - 24px)/2)}}
+@media(max-width:760px){.article-track>.article-card{flex-basis:88%;max-width:360px}.article-track .article-image{aspect-ratio:3/2}.article-card-content{padding:23px}.article-card-content h3{font-size:1.6rem}.article-card-content>.eyebrow{font-size:.74rem}.article-card-content>.text-link{font-size:.92rem}.insights-section .section-head{margin-bottom:22px}}
+@media(max-width:380px){.article-track>.article-card{flex-basis:92%}.article-card-content{padding:21px}.article-card-content h3{font-size:1.5rem}}
+html[data-contrast=high] .article-track>.article-card{background:#fff;color:#000;border-color:#000}html[data-contrast=high] .article-card-content>p:not(.eyebrow){color:#000}
+@media(prefers-reduced-motion:reduce){.article-track>.article-card,.article-track>.article-card:hover,.article-track .article-image img{transform:none!important;transition:none!important}}

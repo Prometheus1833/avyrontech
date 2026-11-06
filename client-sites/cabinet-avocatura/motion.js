@@ -9,15 +9,16 @@
  function tick(time){frame=0;const delta=Math.min(40,last?time-last:16);last=time;let again=false;for(const task of tasks)again=task(time,delta)||again;if(again)schedule();}
  document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(frame);frame=0;last=0;}else schedule();});
 
- document.querySelectorAll('[data-practice-carousel]').forEach(carousel=>{
-  const viewport=carousel.querySelector('.carousel-viewport'),track=carousel.querySelector('.practice-track');
+ document.querySelectorAll('[data-carousel]').forEach(carousel=>{
+  const viewport=carousel.querySelector('.carousel-viewport'),track=carousel.querySelector('.carousel-track');
   const originals=[...track.children],pause=carousel.querySelector('[data-carousel-pause]');
   const status=carousel.querySelector('.carousel-status');
+  const articles=carousel.hasAttribute('data-article-carousel'),direction=carousel.dataset.carouselDirection==='reverse'?-1:1;
   let visible=false,hover=false,holding=false,userPaused=false,measure=true,period=0,position=0,manualUntil=0,drag=null,blockClickUntil=0,manualTween=null,pauseIntent=null;
-  // Visual loop copies share cached assets. Only the six original links enter the accessibility tree and tab order.
+  // Visual loop copies share cached assets. Only original cards enter the accessibility tree and tab order.
   for(const side of ['before','after']){
    const copies=document.createDocumentFragment();
-   for(const original of originals){const copy=original.cloneNode(true);copy.dataset.loopCopy=side;copy.setAttribute('aria-hidden','true');copy.tabIndex=-1;copies.append(copy);}
+   for(const original of originals){const copy=original.cloneNode(true);copy.dataset.loopCopy=side;copy.setAttribute('aria-hidden','true');copy.tabIndex=-1;copy.querySelectorAll('a,button,input,select,textarea,[tabindex]').forEach(element=>{element.tabIndex=-1;});copies.append(copy);}
    if(side==='before')track.prepend(copies);else track.append(copies);
   }
   carousel.dataset.enhanced='true';
@@ -44,7 +45,7 @@
    const destination=direction>0?Math.floor(phase+.001)+1:Math.ceil(phase-.001)-1;
    manualTween={start:viewport.scrollLeft,end:period+destination*step,at:performance.now()};
    const index=(destination+originals.length)%originals.length;
-   status.textContent=(en?'Practice area ':'Aria de practică ')+(index+1)+' / '+originals.length+': '+originals[index].querySelector('h3').textContent;
+   status.textContent=(articles?(en?'Article ':'Articolul '):(en?'Practice area ':'Aria de practică '))+(index+1)+' / '+originals.length+': '+originals[index].querySelector('h3').textContent;
    schedule();
   }
   carousel.querySelector('[data-carousel-prev]').addEventListener('click',()=>move(-1));
@@ -102,8 +103,9 @@
    carousel.dataset.motion=running?'running':'paused';
    if(!running)return false;
    if(time<manualUntil)return true;
-   position+=delta*.032;
+   position+=direction*delta*.032;
    if(position>=period*2)position-=period;
+   else if(position<period)position+=period;
    viewport.scrollLeft=position;
    return true;
   });

@@ -99,3 +99,9 @@ Au fost inspectate cele 11 surse fotografice active. Cadrul de succesiuni și ce
 ## Corecția progresului celor trei pași
 
 Linia continuă folosește scaleY, origine sus, fără interpolare sau timer separat. Reversarea scrollului reduce progresul. Cele trei carduri rămân un ordered list; o singură bară verticală expune procentul și etapa prin ARIA, iar elementele vizibile nu sunt duplicate într-o notificare. Regimul reduced-motion păstrează progresul legat direct de scroll. Testele RO/EN verifică 0/25/50/75/100%, revenirea și schimbarea mobile/desktop.
+
+## Caruselul Note și repere juridice
+
+Secțiunea editorială de pe home RO/EN folosește același motor de carusel ca ariile de practică, cu sens automat invers: stânga spre dreapta. Săgețile păstrează orientarea intuitivă stânga/dreapta, independent de autoplay. Sunt disponibile swipe/scroll nativ, drag cu mouse-ul, pauză la apăsare/hover/focus, buton de pauză/reluare și navigare cu tastatura. Derularea se oprește în afara ecranului, în tab ascuns și la mișcare redusă. Efectele CSS 2.5D au fallback fără mișcare.
+
+Cele două carusele sunt independente și folosesc un singur scheduler rAF. Doar cele trei articole originale și legăturile lor sunt în ordinea de tabulare; copiile buclei sunt aria-hidden, iar toate legăturile descendente au tabindex=-1. Resursele imaginilor sunt comune și se reutilizează din cache. Indexul complet Articole rămâne o grilă. Verificare: teste RO/EN pentru ambele direcții, input, buclă și idle; browser în 12 combinații RO/EN la 320–1440 px, fără overflow, plus trei dimensiuni cu text 130% și contrast.

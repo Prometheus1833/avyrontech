@@ -3,9 +3,9 @@
 ## Publicare verificată
 
 - URL: https://cabinet-avocatura.avyron.eu/; pagini revizuite: /programari/ și /en/appointments/.
-- Sites: versiunea 12, `appgprj_6aee16d68fcc8191a51c7f828bcfab51~appgver_6fc766152c64819190ecfc85bcd45cfe`.
-- Deployment: `appgdep_6aee49b4f6b08191acadfa8c8644f79c`, `succeeded`.
-- Sursă Sites: `4c10964b19d786c57523ebb25b41b7a81d095a16`; runtime `56d197f574`.
+- Sites: versiunea 13, `appgprj_6aee16d68fcc8191a51c7f828bcfab51~appgver_93669584d8088191865c0e2a7b5e7e9b`.
+- Deployment: `appgdep_6aee4c2aef3c8191bbae61c664729ec8`, `succeeded`.
+- Sursă Sites: `12dd4c64d84dd193e882d286c9575e9cd0034d07`; runtime `bc9b71d4df`.
 - AVYRON: `client-sites/cabinet-avocatura/`, ramura `codex/cabinet-avocatura-2026-11-06`, PR #102, fără merge în main.
 - DNS existent păstrat; HTTPS public verificat cu validarea normală a certificatului.
 
@@ -55,4 +55,12 @@ Pe mobil există exact trei carduri și o singură linie verticală continuă de
 
 Se folosește același scheduler rAF, actualizare directă scaleY, fără tranziție sau cronometru nou. ARIA expune o bară verticală unică; lista rămâne semantică. Mișcarea redusă nu dezactivează citirea progresului, numai animațiile decorative.
 
-Verificări: build/check/toate testele trecute; teste RO/EN la 0/25/50/75/100%, revenire și schimbare mobile/desktop. Browser la 320/390/430/768/1440 px, plus text 130% și contrast la 320/430 px, fără overflow. Pe public, trei carduri, un traseu de 3 px și progres 61% → 34% la scroll în sus. Capturi și rapoarte: output/process-proof/. Gzip motion.js 3176 B și motion.css 3755 B. Fără schimbări de imagini, DNS, date sau integrări.
+Verificări: build/check/toate testele trecute; teste RO/EN la 0/25/50/75/100%, revenire și schimbare mobile/desktop. Browser la 320/390/430/768/1440 px, plus text 130% și contrast la 320/430 px, fără overflow. Pe public, trei carduri, un traseu de 3 px și progres 61% → 34% la scroll în sus. Capturi și rapoarte: output/process-proof/. Gzip motion.js 3277 B și motion.css 4152 B. Fără schimbări de imagini, DNS, date sau integrări.
+
+## Caruselul Note și repere juridice
+
+Secțiunea de articole de pe home RO/EN este un carusel cu sens automat stânga → dreapta, invers celui de arii de practică. Reutilizează același motor și scheduler rAF. Săgeți, swipe/scroll nativ, drag cu mouse, pauză la apăsare/hover/focus, reluare explicită, tastatură, oprire offscreen/tab ascuns și mișcare redusă; efecte CSS 2.5D și fallback fără mișcare. Ambele carusele au controale și stări independente. Indexul Articole păstrează grila.
+
+Bucla are trei articole originale. Copiile vizuale sunt aria-hidden și toate legăturile descendente sunt excluse din ordinea de tabulare. ID-urile celor două carusele și aria-controls sunt unice. Nu se adaugă imagini, dependențe sau solicitări de rețea pentru un motor separat.
+
+Verificări: build/check/toate testele trecute. Testele RO/EN rulează pentru ambele carusele, în sensuri opuse, incluzând controale/input, buclă, copii, reduced-motion și idle. Browser: 12 combinații RO/EN la 320/390/430/768/1024/1440 px, fără overflow; text 130% + contrast la trei dimensiuni. Derulare orizontală nativă verificată, precum și comenzi independente pe public (articole în pauză, arii neafectate). Mișcare inversă observată în browser: -256,5 px, normalizată după perioada buclei. Nu se pretinde testare fizică iOS/Android. Dovezi: output/articles-carousel-proof/. Public: 42 HTML + motion.js/motion.css identice cu build-ul local, după excluderea exclusivă a scriptului Cloudflare injectat.

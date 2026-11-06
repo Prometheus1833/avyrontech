@@ -24,6 +24,8 @@ for(const route of routes) {
  check(html.includes('hero-mobile')||route.key!=='home','mobile hero art direction');
  check(html.includes('legal-cinematic-v3-mobile'),'cinematic mobile footer');
  check(html.includes('data-practice-carousel')===['home','practices'].includes(route.key),'carousel only on practice collections');
+ check(html.includes('data-article-carousel')===(route.key==='home'),'editorial carousel only on home');
+ const ids=[...html.matchAll(/\sid="([^"]+)"/g)].map(match=>match[1]);check(new Set(ids).size===ids.length,'unique IDs for independent carousel controls');
  check(html.includes('class="floating-contact"')===(route.key==='home'),'floating contact only on landing');
  for(const link of html.matchAll(/href="(mailto:[^"]+|https:\/\/wa\.me\/[^"]+)"/g)){const target=new URL(link[1]);if(target.protocol==='mailto:'){check(target.pathname===firm.email,'email destination');check(!!target.searchParams.get('subject')&&!!target.searchParams.get('body'),'email draft');}else{check(target.pathname==='/40723228582','WhatsApp destination');check(!!target.searchParams.get('text'),'WhatsApp draft');}}
  check(html.includes('name="robots" content="noindex, follow"'),'demo noindex');
