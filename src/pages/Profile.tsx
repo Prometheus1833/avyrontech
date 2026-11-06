@@ -32,6 +32,7 @@ import { Suspense,useEffect,useMemo,useState,useRef } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 
+const UserMenu = lazyWithRetry(() => import("@/components/auth/UserMenu"));
 const InternalSubscriptionsTab = lazyWithRetry(() => import("@/components/dashboard/subscriptions/InternalSubscriptionsTab"));
 const ProfileTab = lazyWithRetry(() => import("@/components/dashboard/ProfileTab").then((m) => ({ default: m.ProfileTab })));
 const SubscriptionsTab = lazyWithRetry(() => import("@/components/dashboard/ClientRecurringTab"));
@@ -256,24 +257,35 @@ function ProfileDashboard() {
 
       <div className="min-w-0 flex-1 pb-20 lg:pb-0">
         <header className="sticky top-0 z-30 border-b border-white/[0.07] bg-[#080d1b]/90 px-3 py-2.5 backdrop-blur-xl sm:px-5 lg:px-6">
-          <div className="mx-auto flex max-w-[1500px] items-center gap-2.5">
-            <IconHint label={access.isClient?"Secțiunile contului":"Toate secțiunile AVYRON OS"}><button type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Deschide toate secțiunile" className="rounded-xl p-2 text-slate-400 hover:bg-white/[0.05] hover:text-slate-200 lg:hidden"><Menu className="size-5" /></button></IconHint>
+          <div className="mx-auto flex max-w-[1500px] flex-wrap items-center gap-2.5 lg:flex-nowrap">
+            {access.isClient ? <>
+              <div className="order-1 flex min-w-0 flex-1 items-center gap-2 lg:flex-none">
+                <button type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Deschide toate secțiunile" className="grid size-9 shrink-0 place-items-center rounded-xl text-slate-400 hover:bg-white/5 lg:hidden"><Menu className="size-5" /></button>
+                <a href={publicSiteHref()} aria-label="Avyron Web — Acasă" data-testid="page-back-link" className="inline-flex min-h-10 min-w-0 items-center gap-2 rounded-xl px-1 text-sm font-semibold text-white hover:text-violet-200"><img src={logo} alt="" className="size-7 rounded-lg" /><span>Avyron Web</span></a>
+              </div>
+              <div className="order-5 flex basis-full items-center gap-2 lg:order-2 lg:basis-auto lg:flex-1">
+                <button type="button" onClick={() => void openSection("overview")} aria-label="Deschide Avy Cont" aria-current={tab === "overview" ? "page" : undefined} className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl border border-violet-400/25 bg-violet-500/10 px-3 text-xs font-semibold text-violet-100 hover:bg-violet-500/20">Avy Cont</button>
+                <DashboardSearch access={access} userId={user?.id||""} current={tab} open={commandOpen} onOpenChange={setCommandOpen} onNavigate={openSection} inputRef={searchInput}/>
+              </div>
+            </> : <>            <IconHint label={"Toate secțiunile AVYRON OS"}><button type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Deschide toate secțiunile" className="rounded-xl p-2 text-slate-400 hover:bg-white/[0.05] hover:text-slate-200 lg:hidden"><Menu className="size-5" /></button></IconHint>
             <IconHint label="Înapoi la site-ul public"><a href={publicSiteHref()} aria-label="Înapoi la site" data-testid="page-back-link" className="hidden rounded-xl p-2 text-slate-400 hover:bg-white/[0.05] hover:text-slate-300 lg:inline-flex"><ChevronLeft className="size-5" /></a></IconHint>
             <IconHint label="Prezentare generală"><button type="button" onClick={() => openSection("overview")} className="mr-auto flex items-center gap-2 lg:hidden" aria-label="Deschide prezentarea generală">
               <img src={logo} alt="" className="size-7 rounded-lg ring-1 ring-white/10" />
               <span className="hidden font-display text-xs font-bold tracking-[0.08em] text-white">AVYRON {" "}
                   <span className="text-violet-300">{access.isClient ? "CONT" : "OS"}</span></span>
             </button></IconHint>
-            <DashboardSearch access={access} userId={user?.id||""} current={tab} open={commandOpen} onOpenChange={setCommandOpen} onNavigate={openSection} inputRef={searchInput}/>
+
+              <DashboardSearch access={access} userId={user?.id||""} current={tab} open={commandOpen} onOpenChange={setCommandOpen} onNavigate={openSection} inputRef={searchInput}/>
+            </>}
             {access.isStaff&&<StaffWorkspaceActions counts={activityCounts} compact className="staff-dashboard-actions-desktop"/>}
-            {<Suspense fallback={<span className="size-10" />}><NotificationCenter access={access} onNavigate={openSection} autoOpen={params.get("notifications") === "1"} /></Suspense>}
-            <IconHint label="Profilul și datele contului"><button type="button" onClick={() => openSection("profile")} aria-label="Deschide profilul" className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-xl bg-violet-500/15 text-[10px] font-semibold text-violet-100 ring-1 ring-white/10">{user?.avatar_url ? (
+            <div className={access.isClient ? "order-3 shrink-0" : "contents"}><Suspense fallback={<span className="size-10" />}><NotificationCenter access={access} onNavigate={openSection} autoOpen={params.get("notifications") === "1"} /></Suspense></div>
+            {access.isClient ? <div className="order-4 shrink-0"><Suspense fallback={<span className="size-10" />}><UserMenu /></Suspense></div> : <IconHint label="Profilul și datele contului"><button type="button" onClick={() => openSection("profile")} aria-label="Deschide profilul" className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-xl bg-violet-500/15 text-[10px] font-semibold text-violet-100 ring-1 ring-white/10">{user?.avatar_url ? (
                   <img src={user.avatar_url} alt="" className="size-full object-cover" />
                 ) : (
                   displayName.slice(0, 2).toUpperCase()
-                )}</button></IconHint>
-            <IconHint label="Deconectare din cont"><button type="button" onClick={() => void signOut().then(() => window.location.assign("/"))} aria-label="Deconectare" title="Deconectare" className="hidden rounded-xl p-2.5 text-slate-400 hover:bg-rose-400/10 hover:text-rose-300 lg:inline-flex"><LogOut className="size-4" /></button></IconHint>
-            <span className="hidden items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1.5 text-[10px] text-slate-500 xl:inline-flex">{isSuperAdmin ? (
+                )}</button></IconHint>}
+            <IconHint label="Deconectare din cont"><button type="button" onClick={() => void signOut().then(() => window.location.assign("/"))} aria-label="Deconectare" title="Deconectare" className={`${access.isClient ? "order-5" : ""} hidden rounded-xl p-2.5 text-slate-400 hover:bg-rose-400/10 hover:text-rose-300 lg:inline-flex`}><LogOut className="size-4" /></button></IconHint>
+            <span className="order-6 hidden items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1.5 text-[10px] text-slate-500 xl:inline-flex">{isSuperAdmin ? (
                   <Lock className="size-3" />
                 ) : (
                   <ShieldCheck className="size-3" />

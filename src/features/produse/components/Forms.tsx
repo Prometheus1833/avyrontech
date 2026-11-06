@@ -169,7 +169,7 @@ export function FeatureRequest({ lang }: { lang: Lang }) {
       </div>
       {TURNSTILE_SITE_KEY && (
         <div className="mt-2">
-          <Turnstile onToken={setToken} resetKey={resetKey} action="produse-feature" />
+          <Turnstile size="compact" onToken={setToken} resetKey={resetKey} action="produse-feature" />
         </div>
       )}
       <Status state={state} lang={lang} />
@@ -215,11 +215,11 @@ export function OfferSelector({ lang }: { lang: Lang }) {
   };
 
   return (
-    <form onSubmit={submit} className="grid gap-3">
-      <div className="grid gap-3 lg:grid-cols-3">
+    <form onSubmit={submit} className="grid min-w-0 grid-cols-1 gap-3">
+      <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-3">
         {groups.map((group, index) => (
-          <Reveal key={group} index={index}>
-            <div className="pa-glass h-full rounded-2xl p-3.5">
+          <Reveal key={group} index={index} className="min-w-0">
+            <div className="pa-glass min-w-0 h-full rounded-2xl p-3.5">
               <p className="pa-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{OFFER_GROUPS[group][lang]}</p>
               <ul className="mt-2 grid list-none gap-1 p-0">
                 {OFFER.filter((o) => o.group === group).map((option) => {
@@ -233,7 +233,7 @@ export function OfferSelector({ lang }: { lang: Lang }) {
                           onChange={() => setPicked((p) => (on ? p.filter((x) => x !== option.id) : [...p, option.id]))}
                           className="mt-0.5 size-3.5 shrink-0 accent-[hsl(264_90%_68%)]"
                         />
-                        <span className="min-w-0">
+                        <span className="min-w-0 break-words">
                           <span className="block text-[13px] font-medium leading-snug text-foreground">{option.name[lang]}</span>
                           <span className="mt-0.5 block text-[11.5px] leading-snug text-muted-foreground">{option.spec[lang]}</span>
                         </span>
@@ -280,7 +280,7 @@ export function OfferSelector({ lang }: { lang: Lang }) {
         />
         {TURNSTILE_SITE_KEY && (
           <div className="mt-2">
-            <Turnstile onToken={setToken} resetKey={resetKey} action="produse-brief" />
+            <Turnstile size="compact" onToken={setToken} resetKey={resetKey} action="produse-brief" />
           </div>
         )}
         <Status state={state} lang={lang} />

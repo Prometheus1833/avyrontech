@@ -8,7 +8,7 @@ import type { Access, CatalogItem, ItemType, Tech } from "../data/types";
 import { sortItems, type Sort } from "../lib/item";
 import { typePath } from "../lib/paths";
 import { searchItems } from "../lib/search";
-import { store, useProduseStore } from "../lib/store";
+import { store } from "../lib/store";
 import ItemCard from "./ItemCard";
 import { Reveal } from "./Primitives";
 
@@ -45,11 +45,9 @@ export default function Catalog({
   const [query, setQuery] = useState(initialQuery);
   const [tech, setTech] = useState<Tech | null>(null);
   const [access, setAccess] = useState<Access | null>(null);
-  const [onlyFavorites, setOnlyFavorites] = useState(false);
   const [sort, setSort] = useState<Sort>("relevance");
   const [openFilters, setOpenFilters] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const favorites = useProduseStore((s) => s.favorites);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => setQuery(initialQuery), [initialQuery]);
@@ -65,9 +63,8 @@ export default function Catalog({
     if (activeType) list = list.filter((item) => item.type === activeType);
     if (tech) list = list.filter((item) => item.tech.includes(tech));
     if (access) list = list.filter((item) => item.access === access);
-    if (onlyFavorites) list = list.filter((item) => favorites.includes(item.slug));
     return query.trim() && sort === "relevance" ? list : sortItems(list, sort === "relevance" ? "popular" : sort);
-  }, [query, activeType, tech, access, onlyFavorites, favorites, sort]);
+  }, [query, activeType, tech, access, sort]);
 
   const techs = useMemo(() => {
     const set = new Set<Tech>();
@@ -75,10 +72,10 @@ export default function Catalog({
     return [...set];
   }, []);
 
-  const activeFilters = (tech ? 1 : 0) + (access ? 1 : 0) + (onlyFavorites ? 1 : 0);
+  const activeFilters = (tech ? 1 : 0) + (access ? 1 : 0);
   const visibleResults = results.slice(0, visibleCount);
 
-  useEffect(() => setVisibleCount(PAGE_SIZE), [query, activeType, tech, access, onlyFavorites, sort]);
+  useEffect(() => setVisibleCount(PAGE_SIZE), [query, activeType, tech, access, sort]);
 
   return (
     <div>
@@ -182,21 +179,13 @@ export default function Catalog({
                 {ACCESS_LABEL[a][lang]}
               </button>
             ))}
-            <button
-              type="button"
-              aria-pressed={onlyFavorites}
-              onClick={() => setOnlyFavorites((v) => !v)}
-              className={`rounded-full border px-2.5 py-1 text-[11.5px] transition ${onlyFavorites ? "border-pink-400 bg-pink-400/15 text-foreground" : "border-foreground/10 text-muted-foreground hover:text-foreground"}`}
-            >
-              {ro ? `Colecția mea (${favorites.length})` : `My collection (${favorites.length})`}
-            </button>
+
             {activeFilters > 0 && (
               <button
                 type="button"
                 onClick={() => {
                   setTech(null);
                   setAccess(null);
-                  setOnlyFavorites(false);
                 }}
                 className="rounded-full px-2.5 py-1 text-[11.5px] text-muted-foreground underline underline-offset-4 hover:text-foreground"
               >

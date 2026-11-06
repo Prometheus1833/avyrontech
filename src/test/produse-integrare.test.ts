@@ -133,10 +133,10 @@ describe("cablajul dintre magazin și dashboardul intern", () => {
     for (const match of api.matchAll(/"(\/api\/[^"]+)"/g)) expect(match[1].startsWith("/api/produse/")).toBe(true);
   });
 
-  it("leagă colecția din cont de aceleași rute publice ale produselor", () => {
+  it("leagă produsele cumpărate din cont de aceleași rute publice", () => {
     const tab = read("src/components/dashboard/ProductCollectionTab.tsx");
     expect(tab).toContain("PRODUSE_ITEM_ROUTES");
-    expect(tab).toContain("produseApi.collection");
+    expect(tab).toContain("produseApi.state()");
   });
 });
 

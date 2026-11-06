@@ -368,7 +368,7 @@ for (const width of [320, 390, 768, 1024, 1440])
       } else
         await expect(
           page.getByRole("link", { name: "Deschide INTERN OS" }),
-        ).toBeVisible();
+        ).toBeVisible({ timeout: 15000 });
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,

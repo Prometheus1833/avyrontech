@@ -165,7 +165,7 @@ npx shadcn@latest add @avyron/${item.slug}`;
           <p className="mt-3 text-[11px] text-muted-foreground">
             {ro ? (
               <>
-                Cu un cont gratuit îți ții colecția și istoricul pe toate dispozitivele.{" "}
+                Cu un cont gratuit ai acces la produse și la istoricul lor pe toate dispozitivele.{" "}
                 <Link to="/autentificare" className="underline underline-offset-2">
                   Creează cont
                 </Link>
@@ -173,7 +173,7 @@ npx shadcn@latest add @avyron/${item.slug}`;
               </>
             ) : (
               <>
-                A free account keeps your collection and history across devices.{" "}
+                A free account keeps your product access and history across devices.{" "}
                 <Link to="/autentificare" className="underline underline-offset-2">
                   Create an account
                 </Link>

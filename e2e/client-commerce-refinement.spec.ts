@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 
 async function setup(
   page: Page,
-  options: { slowLoad?: boolean; oldQuote?: boolean; failSave?: boolean;quotedSitePrice?:number;userId?:string } = {},
+  options: { slowLoad?: boolean; oldQuote?: boolean; failSave?: boolean;quotedSitePrice?:number;userId?:string;collaborations?:boolean } = {},
 ) {
   let cloud: Record<string, unknown>[] = [],
     failSave = !!options.failSave,
@@ -51,6 +51,7 @@ async function setup(
           roles: ["user"],
           capabilities: [],
           superadmin: false,
+          hasCollaborations: options.collaborations === true,
         },
       });
     if (path === "/api/commerce/cart" && req.method() === "GET") {
@@ -588,4 +589,113 @@ test('două conturi în file diferite nu își amestecă produsele sau notele di
  await expect(page.getByText('Notă privată A',{exact:true})).toBeVisible();await expect(page.getByText('Notă privată B',{exact:true})).toHaveCount(0);
  await page.getByRole('button',{name:'Șterge Site profesional',exact:true}).click();await expect(page.getByText('Coșul este gol.',{exact:true})).toBeVisible();
  await expect(second.getByText('Notă privată B',{exact:true})).toBeVisible();expect(await second.evaluate(()=>JSON.parse(localStorage.getItem('avyron_cart_v2')||'[]')[0]?.notes)).toBe('Notă privată B');await second.close();
+});
+
+for (const width of [320, 390, 1440]) test(`Avy Cont organizează proiectele și accesurile la ${width}px`, async ({page}) => {
+  await page.setViewportSize({width, height:width === 320 ? 568 : 900});
+  const state = await setup(page);
+  await page.route('**/api/projects**', route => route.fulfill({json:{data:[
+    {id:'project-current',slug:'in-dezvoltare',name:'Website în dezvoltare',kind:'website_prezentare',status:'in_progress',banner_status:'in_progress',url:null,updated_at:1},
+    {id:'project-done',slug:'finalizat',name:'Magazin finalizat',kind:'magazin_online',status:'completed',banner_status:'online',url:null,updated_at:1},
+  ],purchases:[{id:'paid-service',name:'Pachet SEO achiziționat',kind:'service',status:'paid',total_cents:90000,currency:'RON',updated_at:1}]}}));
+  await page.goto('/profil?tab=overview');
+  await expect(page.getByRole('heading',{name:'Bună, Client test.',exact:true})).toBeVisible();
+  await expect(page.getByText('Proiectele, serviciile și produsele într-un singur loc de unde le gestionezi simplu și inteligent.',{exact:true})).toBeVisible();
+  await expect(page.getByRole('link',{name:/Website în dezvoltare/})).toBeVisible();
+  await expect(page.getByRole('link',{name:/Magazin finalizat/})).toBeVisible();
+  await expect(page.getByRole('button',{name:/Pachet SEO achiziționat/})).toBeVisible();
+  const headings = await page.locator('main h2, [role="region"] h2').allTextContents();
+  expect(headings.slice(0,4)).toEqual(['Proiectele mele','Mentenanță','Profil','Metode de plată salvate']);
+  await expect(page.getByRole('button',{name:/Explorează catalogul|favorite/i})).toHaveCount(0);
+  const header = page.locator('header').first();
+  await expect(header.getByRole('link',{name:'Avyron Web — Acasă'})).toBeVisible();
+  await expect(header.getByRole('button',{name:'Deschide Avy Cont'})).toBeVisible();
+  await header.getByRole('button',{name:'Profil',exact:true}).click();
+  await page.getByRole('menuitem',{name:'Blog Avyron',exact:true}).scrollIntoViewIfNeeded();
+  await expect(page.getByRole('menuitem',{name:'Blog Avyron',exact:true})).toBeVisible();
+  await expect(page.getByRole('menuitem',{name:'Blog Avyron',exact:true})).toHaveAttribute('href','https://avyron.ro/blog');
+  await expect(page.getByRole('menuitem',{name:'Biblioteca Artefacte',exact:true})).toHaveAttribute('href','https://avyron.ro/biblioteca');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('menu')).toBeHidden();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({path:test.info().outputPath(`avy-cont-${width}.png`),fullPage:true,animations:"disabled"});
+  await page.getByRole('button',{name:'Metode de plată salvate',exact:false}).click();
+  await expect(page).toHaveURL(/tab=payments.*billingView=settings/);
+  await expect(page.getByLabel('Nume pentru factură',{exact:true})).toBeVisible();
+  await header.getByRole('button',{name:'Deschide Avy Cont'}).click();
+  await expect(page).toHaveURL(/tab=overview/);
+  expect(state.requests.some(path=>path.includes('/favorites/')||path.includes('/account/collection'))).toBe(false);
+});
+
+test('prima pagină distinge eroarea proiectelor de un cont fără alocări și permite reîncercarea', async ({page}) => {
+  await setup(page);
+  let failing=true;
+  await page.route('**/api/projects**', route => failing ? route.fulfill({status:503,json:{error:{code:'unavailable'}}}) : route.fulfill({json:{data:[],purchases:[],sales:[]}}));
+  await page.goto('/profil?tab=overview');
+  await expect(page.getByRole('alert').filter({hasText:'Proiectele nu pot fi încărcate acum.'})).toBeVisible();
+  failing=false;
+  await page.getByRole('button',{name:'Reîncearcă',exact:true}).click();
+  await expect(page.getByText('Proiectele și achizițiile confirmate vor apărea aici după alocarea în cont.',{exact:true})).toBeVisible();
+});
+
+test('mentenanța deschide colaborările autorizate și facturile în fluxurile native', async ({page}) => {
+  const state=await setup(page,{collaborations:true});
+  await page.goto('/profil?tab=overview');
+  await page.getByRole('button',{name:'Colaborările mele',exact:true}).click();
+  await expect(page).toHaveURL(/recurringView=collaborations/);
+  await expect.poll(()=>state.requests.some(path=>path.startsWith('/api/my/collaborations?'))).toBe(true);
+  await page.getByRole('link',{name:'Plăți și facturi',exact:true}).click();
+  await expect(page).toHaveURL(/tab=payments&billingView=invoices/);
+  await expect(page.getByText('AVY-101',{exact:true})).toBeVisible();
+});
+
+for (const width of [320,390,1280]) test(`catalogul public și contul elimină favoritele și păstrează adăugarea în coș la ${width}px`, async ({page}) => {
+  await page.setViewportSize({width,height:900});
+  const state=await setup(page);
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.goto('/profil?tab=catalog');
+  await expect(page.getByRole('button',{name:/favorite|colecție/i})).toHaveCount(0);
+  await page.getByRole('article').filter({hasText:'Site profesional'}).getByRole('button',{name:'Adaugă în coș',exact:true}).click();
+  await expect(page.getByRole("navigation", {name:width < 1024 ? "Navigare mobilă" : "Navigare cont",exact:true}).getByRole('button',{name:/Coș, 1 produs/})).toBeVisible();
+  await page.goto('/produse');
+  await expect(page.locator('header').getByRole('link',{name:'Avyron Web — Acasă'})).toBeVisible();
+  await expect(page.getByRole('link',{name:'Deschide Avy Cont'})).toBeVisible();
+  await expect(page.getByRole('button',{name:/favorite|Salvează în colecție/})).toHaveCount(0);
+  await expect(page.getByRole('link',{name:'Vezi colecția de componente'})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Adaugă în coș',exact:true}).first()).toBeVisible();
+  const itemHref = await page.getByRole('button',{name:'Adaugă în coș',exact:true}).first().locator('xpath=ancestor::article').getByRole('link').first().getAttribute('href');
+  await page.getByRole('button',{name:'Adaugă în coș',exact:true}).first().click();
+  await expect(page.getByRole('button',{name:'Coș (1)',exact:true})).toBeVisible();
+  await expect(page.locator('footer').getByRole('link',{name:/Conectează-te|Înregistrează/})).toHaveCount(0);
+  const selector = page.locator('#selector input[type="checkbox"]').first();
+  await selector.scrollIntoViewIfNeeded();
+  await expect(selector).toBeVisible();
+  await selector.check();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  await page.screenshot({path:test.info().outputPath(`public-catalog-${width}.png`),animations:'disabled'});
+  if (width === 390) {
+    expect(itemHref).toBeTruthy();
+    await page.goto(itemHref!);
+    await expect(page.getByRole('button',{name:'Adaugă în coș',exact:true})).toBeVisible();
+    await expect(page.getByRole('button',{name:/Salvează în colecție|favorite/})).toHaveCount(0);
+  }
+  expect(state.requests.some(path=>path.includes('/favorites/')||path.includes('/account/collection'))).toBe(false);
+});
+
+
+test('Blogul și Biblioteca Artefacte ies din hostul privat către site-ul public', async ({page, baseURL}) => {
+  await setup(page);
+  await page.route('https://app.avyron.ro/**', async route => {
+    const path = new URL(route.request().url());
+    if (path.pathname.startsWith('/api/')) return route.fallback();
+    const response = await route.fetch({url: baseURL + path.pathname + path.search});
+    return route.fulfill({response});
+  });
+  await page.goto('https://app.avyron.ro/profil?tab=overview');
+  await expect(page.getByRole('heading',{name:'Bună, Client test.',exact:true})).toBeVisible();
+  await expect(page.getByRole('link',{name:/Blog Avyron/})).toHaveAttribute('href','https://avyron.ro/blog');
+  await expect(page.getByRole('link',{name:/Biblioteca Artefacte/})).toHaveAttribute('href','https://avyron.ro/biblioteca');
+  await page.locator('header').getByRole('button',{name:'Profil',exact:true}).click();
+  await expect(page.getByRole('menuitem',{name:'Blog Avyron',exact:true})).toHaveAttribute('href','https://avyron.ro/blog');
+  await expect(page.getByRole('menuitem',{name:'Biblioteca Artefacte',exact:true})).toHaveAttribute('href','https://avyron.ro/biblioteca');
 });

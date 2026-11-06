@@ -127,3 +127,7 @@ Continuare din `96fc8c8` (#98, incluzând #94–#97; verificările GitHub ale #9
 ## Suport, facturi și coș client — 6 noiembrie 2026
 
 Continuare din `e892fc8` (#99, incluzând #94–#98, reverificat verde), pe `codex/client-support-billing-cart-2026-11-06`. [Runbookul](./CLIENT_COMMERCE_SUPPORT.md) descrie Suport și mesaje, Plăți și facturi cu descărcări autorizate/CLEAN, bara mobilă Acasă–Servicii–Coș–Produse–Mai multe și starea comună a coșului, cu jurnal de modificări neconfirmate, reîncercare, timeout și catalog curent. Sertarul public gol nu șterge coșul contului. S-a corectat folosirea unei coloane financiare inexistente, reutilizând relațiile de reconciliere Stripe/Revolut native, fără migrări noi. Testele sunt locale/sintetice; nu există conturi reale modificate, plăți, furnizori activați, merge sau deploy în acest task.
+
+## Avy Cont și navigarea clientului — 6 noiembrie 2026
+
+Continuare din `efccced` (#100, incluzând #94–#99), pe `codex/client-account-home-navigation-2026-11-06`. [Runbookul](./CLIENT_ACCOUNT_HOME.md) descrie marca Avyron Web, intrarea Avy Cont, meniul cu Blog/Biblioteca Artefacte și prima pagină cu proiecte/achiziții native, Mentenanță, Profil și metode de plată. Favoritele personale și sincronizarea lor automată sunt retrase din UI, fără ștergerea istoricului sau a achizițiilor/licențelor. Nu există migrări noi, efecte comerciale, merge sau deploy; contul real rămâne de verificat de utilizator.

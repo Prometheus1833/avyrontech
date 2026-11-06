@@ -1,3 +1,4 @@
+import { publicSiteHref } from "@/lib/appHost";
 import {useAccountCart} from "@/hooks/useAccountCart";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -23,6 +24,8 @@ import {
   Bot,
   Wallet,
   ShoppingCart,
+  BookOpen,
+  LibraryBig,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -107,7 +110,7 @@ const UserMenu = () => {
           onCloseAutoFocus={(event) => event.preventDefault()}
           onPointerDownOutside={() => setMenuOpen(false)}
           onInteractOutside={() => setMenuOpen(false)}
-          className="z-[70] w-64"
+          className="z-[70] max-h-[calc(100dvh-5rem)] w-64 overflow-y-auto"
         >
           <DropdownMenuLabel className="flex flex-col">
             <span className="font-medium truncate">{profile?.display_name || user.email}</span>
@@ -165,6 +168,13 @@ const UserMenu = () => {
               </DropdownMenuItem>
             );
           })}
+          {!isStaff && <>
+            <DropdownMenuSeparator />
+            <div className="mx-1 my-1 rounded-xl border border-violet-400/15 bg-violet-500/5 p-1" aria-label={lang === "en" ? "Reading and inspiration" : "Lectură și inspirație"}>
+              <DropdownMenuItem asChild className="cursor-pointer"><Link to={publicSiteHref(lang === "en" ? "/en/blog" : "/blog")} onClick={() => setMenuOpen(false)}><BookOpen className="mr-2 size-4 text-violet-300" />Blog Avyron</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild className="cursor-pointer"><Link to={publicSiteHref(lang === "en" ? "/en/library" : "/biblioteca")} onClick={() => setMenuOpen(false)}><LibraryBig className="mr-2 size-4 text-violet-300" />{lang === "en" ? "Artifact Library" : "Biblioteca Artefacte"}</Link></DropdownMenuItem>
+            </div>
+          </>}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onSelect={handleSignOut}
