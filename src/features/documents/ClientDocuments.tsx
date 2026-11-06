@@ -80,6 +80,9 @@ export default function ClientDocuments({
   useEffect(() => {
     const requestCounter = listEpoch;
     const epoch = ++requestCounter.current;
+    // Fetch the library only while it is visible. Navigation may be deferred
+    // by React; returning from a document must not retry its detail request.
+    if (id) return;
     setLoading(true);
     setError("");
     setItems([]);
@@ -118,6 +121,7 @@ export default function ClientDocuments({
       requestCounter.current++;
     };
   }, [
+    id,
     user?.id,
     search,
     sort,
@@ -169,7 +173,6 @@ export default function ClientDocuments({
   const open = (next: string, nextVersion?: string) => {
     if (!next) {
       setError("");
-      setRefresh((value) => value + 1);
     }
     if (embedded) {
       setLocalId(next);
