@@ -27,12 +27,15 @@ for(const route of routes) {
  check(html.includes('class="floating-contact"')===(route.key==='home'),'floating contact only on landing');
  for(const link of html.matchAll(/href="(mailto:[^"]+|https:\/\/wa\.me\/[^"]+)"/g)){const target=new URL(link[1]);if(target.protocol==='mailto:'){check(target.pathname===firm.email,'email destination');check(!!target.searchParams.get('subject')&&!!target.searchParams.get('body'),'email draft');}else{check(target.pathname==='/40723228582','WhatsApp destination');check(!!target.searchParams.get('text'),'WhatsApp draft');}}
  check(html.includes('name="robots" content="noindex, follow"'),'demo noindex');
+ if(route.key==='practice'){for(const id of ['servicii','abordare','pregatire','intrebari','solicitare'])check(html.includes('id="'+id+'"'),'practice section '+id);check((html.match(/<details>/g)||[]).length>=3,'substantive practice FAQ');}
+ if(route.key==='article')check(html.includes('article-contents'),'article contents');
+ check(html.includes('viewport-fit=cover'),'safe-area viewport');
  check(html.includes('href="#main"'),'skip link');
  check(html.includes(`rel="canonical" href="${firm.origin}${route.path}"`),'canonical');
  for(const language of ['ro','en','x-default']) check(html.includes(`hreflang="${language}"`),'hreflang '+language);
  check(html.includes('property="og:image"'),'social image');
  const json=html.match(/<script type="application\/ld\+json">(.*?)<\/script>/)?.[1];
- try{const data=JSON.parse(json);if(route.key==='home'||route.key==='practice')check(data.mainEntity?.areaServed?.name==='Romania','nationwide service area');}catch{check(false,'valid structured data');}
+ try{const data=JSON.parse(json);if(route.key==='home'||route.key==='practice')check(data.mainEntity?.areaServed?.name==='Romania','nationwide service area');if(route.key!=='home'){check(data.breadcrumb?.['@type']==='BreadcrumbList','breadcrumb schema');const trail=data.breadcrumb?.itemListElement||[];check(trail.length>=2&&trail.every((entry,i)=>entry.position===i+1),'breadcrumb order');check(trail[trail.length-1]?.item===firm.origin+route.path,'breadcrumb canonical destination');}}catch{check(false,'valid structured data');}
  for(const match of html.matchAll(/(?:href|src)="([^"#?]+)(?:[?#][^"]*)?"/g)) {
   const target=match[1];
   if(!target.startsWith('/'))continue;
@@ -44,7 +47,8 @@ for(const route of routes) {
  for(const img of html.matchAll(/<img\b[^>]*>/g))check(/\balt="[^"]*"/.test(img[0]),'image needs alt');
  if(route.key!=='studio')check(!/<input[^>]+(?:type="(?:email|password)"|name="(?:email|name)")/.test(html),'demo must not collect client data');
  if(route.key==='booking'){check(html.includes('id="review-booking" disabled'),'review initially disabled');check(html.includes('Europe/Bucharest'),'explicit booking timezone');}
- check(!/href="(?:#|javascript:)/.test(html.replace('href="#main"','').replace('href="#arii"','').replace('href="#top"','')),'no inert links');
+ check(!/href="(?:javascript:|")/.test(html),'no inert links');
+ for(const anchor of html.matchAll(/href="#([^"]*)"/g))check(!!anchor[1]&&html.includes('id="'+anchor[1]+'"'),'local anchor '+anchor[1]);
  check(!/https:\/\/(?:fonts\.googleapis|fonts\.gstatic|images\.unsplash)/.test(html),'no third-party runtime media');
 }
 for(const name of ['editorial','sans']) {
@@ -52,7 +56,7 @@ for(const name of ['editorial','sans']) {
  assert(!css.includes('https://'),'Fonts must be self-hosted');
  for(const m of css.matchAll(/url\(([^)]+)\)/g))await access(`dist/assets/fonts-v2/${m[1]}`);
 }
-const budgets=[['app.js',6000],['styles.css',10000],['motion.js',4000],['motion.css',4500]];
+const budgets=[['app.js',6000],['styles.css',10000],['motion.js',4000],['motion.css',4500],['editorial.js',1600],['editorial.css',4500]];
 for(const [file,budget] of budgets){const size=gzipSync(await readFile('dist/'+file)).length;assert(size<=budget,`${file}: ${size} gzip bytes > ${budget}`);console.log(`${file}: ${size} bytes gzip (budget ${budget})`);}
 assert((await stat('dist/assets/consultation-v2-hero-mobile-480.avif')).size<100000,'mobile hero exceeds 100KB');
 assert((await stat('dist/assets/consultation-v2-hero-desktop-800.avif')).size<260000,'desktop hero exceeds 260KB');

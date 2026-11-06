@@ -2,6 +2,7 @@
  'use strict';
  const en=document.documentElement.lang==='en';
  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
+ function watchMedia(media,callback){if(media.addEventListener)media.addEventListener('change',callback);else media.addListener?.(callback);}
  const tasks=[];
  let frame=0,last=0;
  function schedule(){if(!frame&&!document.hidden)frame=requestAnimationFrame(tick);}
@@ -89,7 +90,7 @@
   else window.addEventListener('resize',()=>{measure=true;schedule();},{passive:true});
   if('IntersectionObserver' in window)new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;schedule();},{threshold:.05}).observe(carousel);
   else visible=true;
-  reduced.addEventListener('change',()=>{rotationControl();schedule();});
+  watchMedia(reduced,()=>{rotationControl();schedule();});
   rotationControl();
   tasks.push((time,delta)=>{
    if(measure){
@@ -117,7 +118,7 @@
   const invalidate=()=>{dirty=true;schedule();};
   window.addEventListener('scroll',invalidate,{passive:true});
   window.addEventListener('resize',invalidate,{passive:true});
-  mobile.addEventListener('change',invalidate);
+  watchMedia(mobile,invalidate);
   if('ResizeObserver' in window)new ResizeObserver(invalidate).observe(journey);
   if('IntersectionObserver' in window)new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;invalidate();}).observe(journey);
   else visible=true;
@@ -126,7 +127,7 @@
    dirty=false;
    const anchor=Math.max(document.querySelector('.header').getBoundingClientRect().height+progress.getBoundingClientRect().height+24,window.innerHeight*.58);
    const centers=steps.map(step=>{const rect=step.getBoundingClientRect();return rect.top+rect.height*.5;});
-   const value=Math.max(0,Math.min(1,(anchor-centers[0])/Math.max(1,centers.at(-1)-centers[0])));
+   const value=Math.max(0,Math.min(1,(anchor-centers[0])/Math.max(1,centers[centers.length-1]-centers[0])));
    const rounded=Math.round(value*100);
    const active=centers.reduce((best,center,i)=>Math.abs(center-anchor)<Math.abs(centers[best]-anchor)?i:best,0);
    if(rounded!==previous){rail.style.transform=`scaleX(${value})`;progress.setAttribute('aria-valuenow',String(rounded));previous=rounded;}

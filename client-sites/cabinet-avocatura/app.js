@@ -8,7 +8,9 @@
  menu?.addEventListener('click', () => { const open = menu.getAttribute('aria-expanded') !== 'true'; menu.setAttribute('aria-expanded', String(open)); menu.setAttribute('aria-label',open ? menu.dataset.close : menu.dataset.open); nav?.classList.toggle('is-open',open); });
  document.addEventListener('keydown',e => { if(e.key === 'Escape' && menu?.getAttribute('aria-expanded') === 'true') { closeMenu(); menu.focus(); } });
  document.addEventListener('click',e => { if(!e.target.closest('.header')) closeMenu(); });
- window.matchMedia('(min-width: 1021px)').addEventListener('change',e => { if(e.matches) closeMenu(); });
+ const desktopMenu=window.matchMedia('(min-width: 1021px)');
+ const desktopChange=e=>{if(e.matches)closeMenu();};
+ if(desktopMenu.addEventListener)desktopMenu.addEventListener('change',desktopChange);else desktopMenu.addListener?.(desktopChange);
 
  const accessibilityToggle=document.querySelector('#accessibility-toggle');
  const accessibilityPanel=document.querySelector('#accessibility-panel');
