@@ -1,3 +1,5 @@
+import IconHint from "@/components/ui/icon-hint";
+import DashboardSearch from "@/components/dashboard/DashboardSearch";
 import ActivityBadge from "@/components/dashboard/ActivityBadge";
 import { useDashboardActivity } from "@/hooks/useDashboardActivity";
 import StaffWorkspaceActions from "@/components/site/StaffWorkspaceActions";
@@ -24,7 +26,7 @@ MessagesSquare,
 PanelLeftClose,PanelLeftOpen,Search,ShieldCheck,Sparkles,
 Wrench,
 } from "lucide-react";
-import { Suspense,useEffect,useMemo,useState } from "react";
+import { Suspense,useEffect,useMemo,useState,useRef } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 
@@ -51,7 +53,7 @@ const StaffFinanceTab = lazyWithRetry(() => import("@/components/dashboard/Staff
 const StaffMediaTab = lazyWithRetry(() => import("@/components/dashboard/StaffMediaTab").then((m) => ({ default: m.StaffMediaTab })));
 const StaffLeadsTab = lazyWithRetry(() => import("@/components/dashboard/StaffLeadsTab").then((m) => ({ default: m.StaffLeadsTab })));
 const StaffPromotionsTab = lazyWithRetry(() => import("@/components/dashboard/StaffPromotionsTab").then((m) => ({ default: m.StaffPromotionsTab })));
-const AiOsConsole = lazyWithRetry(() => import("@/pages/intern/AiOs"));
+const AvyChatbotTab = lazyWithRetry(() => import("@/components/dashboard/AvyChatbotTab"));
 const AiProductionEntryCard = lazyWithRetry(() => import("@/components/dashboard/AiProductionEntryCard"));
 const AvyEngine = lazyWithRetry(() => import("@/pages/intern/AvyEngine"));
 const CollaboratorsTab = lazyWithRetry(() => import("@/components/dashboard/collaborators/CollaboratorsTab"));
@@ -62,7 +64,6 @@ const CustomerCatalogTab = lazyWithRetry(() => import("@/components/dashboard/Cu
 const OrdersTab = lazyWithRetry(() => import("@/components/dashboard/OrdersTab").then((m) => ({ default: m.OrdersTab })));
 const TeamStaffTab = lazyWithRetry(() => import("@/components/dashboard/TeamStaffTab"));
 const OsCentersTab = lazyWithRetry(() => import("@/components/dashboard/OsCentersTab"));
-const CommandCenter = lazyWithRetry(() => import("@/components/dashboard/CommandCenter"));
 const ProductCollectionTab = lazyWithRetry(() => import("@/components/dashboard/ProductCollectionTab").then((m) => ({ default: m.ProductCollectionTab })));
 const StaffProduseTab = lazyWithRetry(() => import("@/components/dashboard/StaffProduseTab").then((m) => ({ default: m.StaffProduseTab })));
 const StaffServicesTab = lazyWithRetry(() => import("@/components/dashboard/StaffServicesTab").then((m) => ({ default: m.StaffServicesTab })));
@@ -98,6 +99,7 @@ function ProfileDashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [servicesExpanded,setServicesExpanded]=useState(requested==="servicii-avyron");
   const [commandOpen, setCommandOpen] = useState(false);
+  const searchInput=useRef<HTMLInputElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     if (typeof window === "undefined") return {};
@@ -245,26 +247,22 @@ function ProfileDashboard() {
       <div className="min-w-0 flex-1 pb-20 lg:pb-0">
         <header className="sticky top-0 z-30 border-b border-white/[0.07] bg-[#080d1b]/90 px-3 py-2.5 backdrop-blur-xl sm:px-5 lg:px-6">
           <div className="mx-auto flex max-w-[1500px] items-center gap-2.5">
-            <button type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Deschide toate secțiunile" className="rounded-xl p-2 text-slate-400 hover:bg-white/[0.05] hover:text-slate-200 lg:hidden"><Menu className="size-5" /></button>
-            <a href={publicSiteHref()} aria-label="Înapoi la site" data-testid="page-back-link" className="hidden rounded-xl p-2 text-slate-400 hover:bg-white/[0.05] hover:text-slate-300 lg:inline-flex"><ChevronLeft className="size-5" /></a>
-            <button type="button" onClick={() => openSection("overview")} className="mr-auto flex items-center gap-2 lg:hidden" aria-label="Deschide prezentarea generală">
+            <IconHint label="Toate secțiunile AVYRON OS"><button type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Deschide toate secțiunile" className="rounded-xl p-2 text-slate-400 hover:bg-white/[0.05] hover:text-slate-200 lg:hidden"><Menu className="size-5" /></button></IconHint>
+            <IconHint label="Înapoi la site-ul public"><a href={publicSiteHref()} aria-label="Înapoi la site" data-testid="page-back-link" className="hidden rounded-xl p-2 text-slate-400 hover:bg-white/[0.05] hover:text-slate-300 lg:inline-flex"><ChevronLeft className="size-5" /></a></IconHint>
+            <IconHint label="Prezentare generală"><button type="button" onClick={() => openSection("overview")} className="mr-auto flex items-center gap-2 lg:hidden" aria-label="Deschide prezentarea generală">
               <img src={logo} alt="" className="size-7 rounded-lg ring-1 ring-white/10" />
-              <span className="hidden font-display text-xs font-bold tracking-[0.08em] text-white min-[360px]:inline">AVYRON {" "}
+              <span className="hidden font-display text-xs font-bold tracking-[0.08em] text-white">AVYRON {" "}
                   <span className="text-violet-300">{access.isClient ? "CONT" : "OS"}</span></span>
-            </button>
-            <button type="button" onClick={() => setCommandOpen(true)} aria-label={access.isClient ? "Caută secțiuni din cont" : "Caută secțiuni și fluxuri"} className="grid size-10 shrink-0 place-items-center rounded-xl border border-white/[0.08] text-slate-300 transition hover:border-violet-400/35 hover:bg-violet-500/10 lg:hidden"><Search className="size-[18px]" /></button>
-            <button type="button" onClick={() => setCommandOpen(true)} className="hidden min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2.5 text-left text-xs text-slate-400 transition hover:border-violet-400/25 hover:text-slate-400 sm:max-w-xl lg:flex"><Search className="size-4 shrink-0" /><span className="truncate">{access.isClient ? "Caută secțiuni din cont…" : "Caută secțiuni și fluxuri…"}</span><kbd className="ml-auto rounded border border-white/10 bg-black/20 px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd></button>
+            </button></IconHint>
+            <DashboardSearch access={access} userId={user?.id||""} current={tab} open={commandOpen} onOpenChange={setCommandOpen} onNavigate={openSection} inputRef={searchInput}/>
             {access.isStaff&&<StaffWorkspaceActions counts={activityCounts} compact className="staff-dashboard-actions-desktop"/>}
-            {access.isSuperAdmin && (
-                <button type="button" onClick={() => openSection("ai-os")} className="hidden items-center gap-2 rounded-xl border border-violet-400/20 bg-violet-500/10 px-3 py-2.5 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/20 sm:inline-flex"><Sparkles className="size-4" /> Întreabă AVY</button>
-              )}
             {<Suspense fallback={<span className="size-10" />}><NotificationCenter access={access} onNavigate={openSection} autoOpen={params.get("notifications") === "1"} /></Suspense>}
-            <button type="button" onClick={() => openSection("profile")} aria-label="Deschide profilul" className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-xl bg-violet-500/15 text-[10px] font-semibold text-violet-100 ring-1 ring-white/10">{user?.avatar_url ? (
+            <IconHint label="Profilul și datele contului"><button type="button" onClick={() => openSection("profile")} aria-label="Deschide profilul" className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-xl bg-violet-500/15 text-[10px] font-semibold text-violet-100 ring-1 ring-white/10">{user?.avatar_url ? (
                   <img src={user.avatar_url} alt="" className="size-full object-cover" />
                 ) : (
                   displayName.slice(0, 2).toUpperCase()
-                )}</button>
-            <button type="button" onClick={() => void signOut().then(() => window.location.assign("/"))} aria-label="Deconectare" title="Deconectare" className="hidden rounded-xl p-2.5 text-slate-400 hover:bg-rose-400/10 hover:text-rose-300 lg:inline-flex"><LogOut className="size-4" /></button>
+                )}</button></IconHint>
+            <IconHint label="Deconectare din cont"><button type="button" onClick={() => void signOut().then(() => window.location.assign("/"))} aria-label="Deconectare" title="Deconectare" className="hidden rounded-xl p-2.5 text-slate-400 hover:bg-rose-400/10 hover:text-rose-300 lg:inline-flex"><LogOut className="size-4" /></button></IconHint>
             <span className="hidden items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1.5 text-[10px] text-slate-500 xl:inline-flex">{isSuperAdmin ? (
                   <Lock className="size-3" />
                 ) : (
@@ -345,7 +343,7 @@ function ProfileDashboard() {
                 <TabsContent value="internal-subscriptions" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["internal-subscriptions"].label} className="mt-0"><InternalSubscriptionsTab /></TabsContent>
               )}
           {access.isSuperAdmin && (
-                <><TabsContent value="avy-engine" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["avy-engine"].label} className="mt-0"><AvyEngine embedded /></TabsContent><TabsContent value="commercial-codes" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["commercial-codes"].label} className="mt-0"><CommercialCodesTab /></TabsContent><TabsContent value="promotions" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["promotions"].label} className="mt-0"><StaffPromotionsTab /></TabsContent><TabsContent value="produse-avyron" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["produse-avyron"].label} className="mt-0"><StaffProduseTab /></TabsContent><TabsContent value="subscriptions-admin" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["subscriptions-admin"].label} className="mt-0"><StaffSubscriptionsAdminTab /></TabsContent><TabsContent value="ai-os" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["ai-os"].label} className="mt-0"><AiOsConsole embedded /></TabsContent></>
+                <><TabsContent value="avy-engine" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["avy-engine"].label} className="mt-0"><AvyEngine embedded /></TabsContent><TabsContent value="commercial-codes" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["commercial-codes"].label} className="mt-0"><CommercialCodesTab /></TabsContent><TabsContent value="promotions" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["promotions"].label} className="mt-0"><StaffPromotionsTab /></TabsContent><TabsContent value="produse-avyron" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["produse-avyron"].label} className="mt-0"><StaffProduseTab /></TabsContent><TabsContent value="subscriptions-admin" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["subscriptions-admin"].label} className="mt-0"><StaffSubscriptionsAdminTab /></TabsContent><TabsContent value="ai-os" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["ai-os"].label} className="mt-0"><AvyChatbotTab /></TabsContent></>
               )}
           </Suspense>
           {access.isSuperAdmin && tab === "overview" && (
@@ -399,7 +397,7 @@ function ProfileDashboard() {
       </nav>
     </Tabs>
     <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-      <SheetContent side="left" className="dark w-[88vw] max-w-sm overflow-y-auto border-white/[0.08] bg-[#090e1d] p-0 text-slate-100">
+      <SheetContent onCloseAutoFocus={event=>{if(commandOpen){event.preventDefault();searchInput.current?.focus();}}} side="left" className="dark w-[88vw] max-w-sm overflow-y-auto border-white/[0.08] bg-[#090e1d] p-0 text-slate-100">
         <SheetHeader className="border-b border-white/[0.07] p-5 text-left">
           <div className="flex items-center gap-3">
             <img src={logo} alt="" className="size-10 rounded-xl ring-1 ring-white/10" />
@@ -432,7 +430,6 @@ function ProfileDashboard() {
         </nav>
       </SheetContent>
     </Sheet>
-    <Suspense fallback={null}><CommandCenter open={commandOpen} onOpenChange={setCommandOpen} access={access} onNavigate={openSection} /></Suspense>
   </main>
   );
 }

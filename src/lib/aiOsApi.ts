@@ -16,6 +16,7 @@ export type ChatReply = {
   messageId: string;
   reply: string;
   confidence: number;
+  answerSource?: "conversation"|"knowledge"|"model"|"unavailable";
   sources: { id: string; question: string; category: string }[];
   handoff: string | null;
 };
@@ -94,7 +95,7 @@ export const avyApi = {
 export const aiOsAdmin = {
   runtime: () => cfAuth.request<AvyRuntimeStatus>("/api/ai/admin/runtime"),
   agents: () => cfAuth.request<{ data: AiAgent[]; canEdit: boolean }>("/api/ai/admin/agents"),
-  saveAgent: (slug: string, patch: Partial<AiAgent>) =>
+  saveAgent: (slug: string, patch: Partial<AiAgent> & {expectedVersion?:number}) =>
     cfAuth.request<{ ok: true; version: number }>(`/api/ai/admin/agents/${slug}`, { method: "PUT", body: JSON.stringify(patch) }),
   createAgent: (body: { slug: string; name: string; mission?: string; channel?: string }) =>
     cfAuth.request<{ ok: true; slug: string; version: number }>("/api/ai/admin/agents", { method: "POST", body: JSON.stringify(body) }),
@@ -108,9 +109,9 @@ export const aiOsAdmin = {
   updateSource: (id: string, patch: { status?: string; trustLevel?: string; visibility?: string }) =>
     cfAuth.request<{ ok: true }>(`/api/ai/admin/sources/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   stats: (days = 30) => cfAuth.request<AiStats>(`/api/ai/admin/stats?days=${days}`),
-  conversations: () =>
+  conversations: (agent?:string) =>
     cfAuth.request<{ data: { id: string; agent_slug: string; language: string; page: string | null; messages: number; last_at: number }[] }>(
-      "/api/ai/admin/conversations",
+      `/api/ai/admin/conversations${agent?`?agent=${encodeURIComponent(agent)}`:""}`,
     ),
   transcript: (id: string) =>
     cfAuth.request<{ data: { role: string; content: string; confidence: number | null; created_at: number }[] }>(

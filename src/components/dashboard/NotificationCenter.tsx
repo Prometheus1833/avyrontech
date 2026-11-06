@@ -1,3 +1,4 @@
+import IconHint from "@/components/ui/icon-hint";
 import { ACTIVITY_CHANGED,refreshDashboardActivity } from "@/lib/dashboardActivity";
 import { useCallback, useEffect, useMemo, useState, useId, useRef } from "react";
 import { Bell, Check, Megaphone, RefreshCw, X } from "lucide-react";
@@ -73,12 +74,12 @@ export default function NotificationCenter({ access, onNavigate, autoOpen = fals
   const navigate = (section: SectionId) => { setOpen(false); onNavigate(section); };
 
   return <Popover open={open} onOpenChange={setOpen} modal={false}>
-    <PopoverTrigger asChild>
+    <IconHint label="Notificări, anunțuri și activități de verificat"><PopoverTrigger asChild>
       <button type="button" aria-label={`Notificări${unread ? `, ${unread} necitite` : ""}`} title="Notificări" className="relative grid size-10 shrink-0 place-items-center rounded-xl border border-white/[0.08] text-slate-300 transition hover:border-violet-400/35 hover:bg-violet-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">
         <Bell className="size-[18px]" />
         {unread > 0 && <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-fuchsia-700 px-1 text-[10px] font-bold text-white" aria-hidden="true">{unread > 9 ? "9+" : unread}</span>}
       </button>
-    </PopoverTrigger>
+    </PopoverTrigger></IconHint>
     <PopoverContent side="bottom" align="end" sideOffset={8} collisionPadding={8} aria-labelledby={titleId} aria-describedby={descriptionId} className="dark flex w-[min(26rem,calc(100vw-1rem))] max-h-[min(620px,var(--radix-popover-content-available-height),calc(100dvh-5rem))] flex-col gap-0 overflow-hidden rounded-2xl border-white/10 bg-[#0b1120] p-0 text-slate-100 shadow-2xl">
       <header className="shrink-0 border-b border-white/[0.08] px-4 py-3 text-left">
         <div className="flex items-start justify-between gap-2"><div className="min-w-0"><h2 id={titleId} className="text-sm font-semibold text-white">Notificări și anunțuri</h2><p id={descriptionId} className="mt-1 text-xs text-slate-400">Evenimentele tale și noutățile echipei</p></div><div className="flex shrink-0 gap-1"><button type="button" onClick={() => void load()} disabled={loading} aria-label="Reîmprospătează notificările" className="grid size-9 place-items-center rounded-lg text-slate-300 hover:bg-white/[0.07]"><RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} /></button><button type="button" aria-label="Închide notificările" onClick={() => setOpen(false)} className="grid size-9 place-items-center rounded-lg text-slate-300 hover:bg-white/[0.07]"><X className="size-4" /></button></div></div>

@@ -194,14 +194,14 @@ test.describe("dashboard AVYRON OS în română", () => {
     await page.screenshot({path:testInfo.outputPath('intern-os-direct.png')});
   });
 
-  test("rămâne utilizabil pe mobil și oferă Command Center", async ({ page }, testInfo) => {
+  test("rămâne utilizabil pe mobil și oferă căutare directă", async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/profil?tab=overview");
 
     await expect(page.getByRole("navigation", { name: "Navigare mobilă" })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("overview-mobile.png"), fullPage: true });
-    await page.getByRole("button", { name: "Caută secțiuni și fluxuri" }).click();
-    await expect(page.getByPlaceholder("Caută secțiuni și fluxuri…")).toBeVisible();
+    await page.getByRole("combobox", { name: "Caută secțiuni și fluxuri" }).click();
+    await expect(page.getByRole("listbox", { name: "Sugestii de navigare" })).toBeVisible();
     await expect(page.getByText("Acces rapid", { exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
     await page.keyboard.press("Escape");

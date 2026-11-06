@@ -84,6 +84,7 @@ export type SectionDef = {
  */
 export const SECTIONS: readonly SectionDef[] = [
   { id: "overview", group: "overview", audience: "everyone", keywords: ["acasa", "azi", "overview", "dashboard", "briefing", "atentie"] },
+  { id: "finance", group: "overview", audience: "superadmin", keywords: ["financiar", "facturare", "venituri", "plati", "incasari", "finance"] },
   { id: "social-manager", group: "activity", audience: "superadmin", requiredCapability: "ai_projects.read", keywords: ["social media", "publicare", "aprobari", "continut ai", "facebook", "instagram"] },
   { id: "antivirus", group: "os", audience: "superadmin", keywords: ["antivirus", "bouncer", "malware", "carantina", "scanare", "cote"] },
   { id:"collaborators",group:"overview",audience:"staff",requiredCapability:"collaborators.read",keywords:["colaboratori","parteneri","juridic","economic","financiar"] },
@@ -127,6 +128,7 @@ export const SECTIONS: readonly SectionDef[] = [
 
   { id: "team-staff", group: "platform", audience: "staff", keywords: ["echipa", "staff", "roluri", "permisiuni", "acces"] },
   { id: "clients", group: "platform", audience: "staff", keywords: ["clienti", "clients", "companii"] },
+  { id: "ai-os", group: "platform", audience: "superadmin", keywords: ["ai", "avy", "agenti", "chatbot", "automatizare"] },
   { id: "reviews", group: "platform", audience: "admin", keywords: ["recenzii", "review", "testimoniale", "aprobari", "rating"] },
   { id: "demo-requests", group: "platform", audience: "staff", keywords: ["demo", "solicitari", "leaduri"] },
   { id: "logo-2d-simulations", group: "platform", audience: "staff", requiredCapability: "leads.read", keywords: ["logo", "2d", "gratuit", "simulator", "ai"] },
@@ -138,12 +140,10 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "careers", group: "os", audience: "staff", keywords: ["cariere", "joburi", "roluri", "recrutare"] },
   { id: "library", group: "os", audience: "staff", keywords: ["biblioteca", "resurse", "surse", "referinte"] },
 
-  { id: "finance", group: "os", audience: "superadmin", keywords: ["financiar", "facturare", "venituri", "plati", "incasari", "finance"] },
   { id: "commercial-codes", group: "os", audience: "superadmin", keywords: ["coduri", "sku", "contabilitate", "servicii", "produse", "tva", "plata"] },
   { id: "newsletter", group: "os", audience: "superadmin", keywords: ["newsletter", "abonati", "email", "campanii", "consimtamant"] },
   { id: "avy-engine", group: "os", audience: "superadmin", keywords: ["avy engine", "surse", "capabilitati", "conectori", "fluxuri", "documentatie"] },
   { id: "os-centers", group: "os", audience: "staff", keywords: ["securitate", "automatizari", "integrari", "backup", "erori", "agenti ai", "programari", "comentarii", "pluginuri"] },
-  { id: "ai-os", group: "os", audience: "superadmin", navigation: false, keywords: ["ai", "avy", "agenti", "chatbot", "automatizare"] },
   { id: "promotions", group: "os", audience: "superadmin", navigation: false, keywords: ["promotii", "reduceri", "campanii"] },
 
   { id: "other-hub", group: "other", audience: "staff", keywords: ["altele", "module", "rapoarte", "functii", "roadmap"] },

@@ -1,3 +1,4 @@
+import IconHint from "@/components/ui/icon-hint";
 import { CalendarDays } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLang } from "@/i18n/LanguageContext";
@@ -33,7 +34,7 @@ const NavDate = ({ className = "" }: { className?: string }) => {
   }).format(today);
 
   return (
-    <time
+    <IconHint label={`${lang==="ro"?"Data curentă":"Current date"}: ${local.date} · ${local.timeZone}`}><time
       dateTime={today.toISOString().slice(0, 10)}
       data-testid="nav-date"
       title={local.timeZone}
@@ -43,7 +44,7 @@ const NavDate = ({ className = "" }: { className?: string }) => {
       <CalendarDays className="size-3.5 shrink-0 text-brand/75" aria-hidden="true" focusable="false" />
       <span aria-hidden="true" className="hidden sm:inline whitespace-nowrap tabular-nums">{local.date}</span>
       <span aria-hidden="true" className="sm:hidden whitespace-nowrap tabular-nums">{short}</span>
-    </time>
+    </time></IconHint>
   );
 };
 

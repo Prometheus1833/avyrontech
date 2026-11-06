@@ -47,9 +47,9 @@ const promptJson = (value: string) => JSON.stringify(
 const AiOs = ({ embedded = false }: { embedded?: boolean }) => {
   const { user, isSuperAdmin, loading: authLoading } = useAuth();
   const [params] = useSearchParams();
-  const [tab, setTab] = useState<TabId>(params.get("ai_panel") === "learning" ? "learning" : "overview");
+  const [tab, setTab] = useState<TabId>(TABS.find(item=>item.id===params.get("ai_panel"))?.id || "overview");
   const requestedPanel = params.get("ai_panel");
-  useEffect(() => { if (requestedPanel === "learning") setTab("learning"); }, [requestedPanel]);
+  useEffect(() => { const selected=TABS.find(item=>item.id===requestedPanel);if(selected)setTab(selected.id); }, [requestedPanel]);
   const [stats, setStats] = useState<AiStats | null>(null);
   const [runtime, setRuntime] = useState<AvyRuntimeStatus | null>(null);
   const [agents, setAgents] = useState<AiAgent[]>([]);
