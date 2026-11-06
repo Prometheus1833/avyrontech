@@ -1,3 +1,4 @@
+import { getScannedObject } from "./malware";
 // Magazinul Produse Avyron — partea care cere cont.
 //
 //   GET    /api/produse/account/state            starea parteneriatului și limitele de azi
@@ -284,7 +285,7 @@ produseShopRouter.get("/api/produse/account/download/:slug", async (c) => {
       .first<{ r2_key: string; version: string; sha256: string; bytes: number }>();
     if (!version) return c.json({ error: { code: "version_unavailable", message: "Pachetul nu e încă încărcat pentru acest produs." } }, 404);
 
-    const object = await c.env.FILES.get(version.r2_key);
+    const object = await getScannedObject(c.env,"FILES",version.r2_key);
     if (!object) return c.json({ error: { code: "version_unavailable" } }, 404);
 
     const headers = new Headers();

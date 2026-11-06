@@ -23,6 +23,7 @@ PanelLeftClose,PanelLeftOpen,Search,ShieldCheck,Sparkles,
 Wrench,
 } from "lucide-react";
 import { Suspense,useEffect,useMemo,useState } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 
 const InternalSubscriptionsTab = lazyWithRetry(() => import("@/components/dashboard/subscriptions/InternalSubscriptionsTab"));
@@ -50,6 +51,7 @@ const StaffPromotionsTab = lazyWithRetry(() => import("@/components/dashboard/St
 const AiOsConsole = lazyWithRetry(() => import("@/pages/intern/AiOs"));
 const AiProductionEntryCard = lazyWithRetry(() => import("@/components/dashboard/AiProductionEntryCard"));
 const AvyEngine = lazyWithRetry(() => import("@/pages/intern/AvyEngine"));
+const AntivirusTab = lazyWithRetry(() => import("@/components/dashboard/AntivirusTab"));
 const AvyronOverview = lazyWithRetry(() => import("@/components/dashboard/AvyronOverview"));
 const CustomerHomeTab = lazyWithRetry(() => import("@/components/dashboard/CustomerHomeTab").then((m) => ({ default: m.CustomerHomeTab })));
 const CustomerCatalogTab = lazyWithRetry(() => import("@/components/dashboard/CustomerCatalogTab").then((m) => ({ default: m.CustomerCatalogTab })));
@@ -73,6 +75,11 @@ const StaffSubscriptionsAdminTab = lazyWithRetry(() => import("@/components/dash
 const ResourceSurfaceTab = lazyWithRetry(() => import("@/components/dashboard/ResourceSurfaceTab"));
 
 export default function Profile() {
+  const [client] = useState(() => new QueryClient());
+  return <QueryClientProvider client={client}><ProfileDashboard /></QueryClientProvider>;
+}
+
+function ProfileDashboard() {
   const { user, profile, roles, capabilities,
     platformRole,
     isSuperAdmin, isStaff, isAdmin, signOut } = useAuth();
@@ -300,6 +307,7 @@ export default function Profile() {
 
             <TabsContent value="announcements" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["announcements"].label} className="mt-0"><StaffAnnouncementsTab /></TabsContent>
             <TabsContent value="resources" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["resources"].label} className="mt-0"><DocumentCenter initialView="staff" /></TabsContent>
+            {canOpenSection("antivirus", access) && <TabsContent value="antivirus" role="region" aria-label="Antivirus" className="mt-0"><AntivirusTab /></TabsContent>}
             {canOpenSection("example-carousels", access) && <TabsContent value="example-carousels" role="region" aria-label="Carusele Exemple" className="mt-0"><ExampleCarouselsTab /></TabsContent>}
             <TabsContent value="careers" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["careers"].label} className="mt-0"><ResourceSurfaceTab kind="career" /></TabsContent>
             <TabsContent value="library" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["library"].label} className="mt-0"><ResourceSurfaceTab kind="library" /></TabsContent>

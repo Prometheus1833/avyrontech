@@ -2,7 +2,8 @@
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { readFileSync, readdirSync } from "node:fs";
 import { Hono } from "hono";
-import { beforeEach, afterEach, it, expect, describe } from "vitest";
+import { beforeEach, afterEach, it, expect, describe, vi } from "vitest";
+import { bouncerFixture, fixtureScannerSettings, malwareBucket } from "./helpers/bouncerFixture";
 import { visualAssetsRouter } from "../../cloudflare/workers/api/src/visualAssets";
 import { engineRouter } from "../../cloudflare/workers/api/src/engine";
 import { clientWorkspaceRouter } from "../../cloudflare/workers/api/src/clientWorkspace";
@@ -34,37 +35,13 @@ class Statement {
   }
 }
 class Bucket {
-  objects = new Map<string, Uint8Array>();
+  private storage = malwareBucket();
+  objects = this.storage.data;
   failAfterPut = false;
-  async put(k: string, value: ArrayBuffer | Uint8Array | string) {
-    const bytes = new Uint8Array(
-      typeof value === "string"
-        ? new TextEncoder().encode(value)
-        : value instanceof ArrayBuffer
-          ? value.slice(0)
-          : value.slice(),
-    );
-    this.objects.set(k, bytes);
-    if (this.failAfterPut) {
-      this.failAfterPut = false;
-      throw new Error("synthetic ambiguous put failure");
-    }
-    return { size: bytes.length };
-  }
-  async get(k: string) {
-    const v = this.objects.get(k);
-    return v
-      ? {
-          size: v.length,
-          body: new Blob([v]).stream(),
-          arrayBuffer: async () => v.slice().buffer,
-          text: async () => new TextDecoder().decode(v),
-        }
-      : null;
-  }
-  async delete(k: string) {
-    this.objects.delete(k);
-  }
+  async put(k:string,value:ArrayBuffer|Uint8Array|string,options?:R2PutOptions){const result=await this.storage.put(k,value,options);if(this.failAfterPut&&!k.startsWith("antivirus/")){this.failAfterPut=false;throw new Error("synthetic ambiguous put failure");}return result;}
+  async get(k:string){return this.storage.get(k);}
+  async head(k:string){return this.storage.head(k);}
+  async delete(k:string){return this.storage.delete(k);}
 }
 const root = "/api/visual-assets",
   png = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 0]);
@@ -142,9 +119,11 @@ describe("OS refinement: scoped visual resources and real Engine state", () => {
     files = new Bucket();
     company = new Bucket();
     clients = new Bucket();
+    bouncerFixture();
     app = new Hono();
     app.use("*", async (c, next) => {
       Object.assign(c.env, {
+        ...fixtureScannerSettings,
         DB: binding,
         FILES: files,
         DOCUMENT_COMPANY_BACKUPS: company,
@@ -170,6 +149,7 @@ describe("OS refinement: scoped visual resources and real Engine state", () => {
     app.onError(() => new Response("safe failure", { status: 500 }));
   });
   afterEach(() => {
+    vi.unstubAllGlobals();
     expect(db.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
     db.close();
   });
@@ -213,7 +193,7 @@ describe("OS refinement: scoped visual resources and real Engine state", () => {
     expect(r.status, await r.clone().text()).toBe(status);
     return r.json();
   };
-  it("uploads privately in quarantine, replays safely, and keeps opaque object keys out of metadata", async () => {
+  it("uploads only after CLEAN, replays safely, and keeps opaque object keys out of metadata", async () => {
     const key = crypto.randomUUID(),
       first = await ok(await upload(meta(), key), 201);
     expect(await ok(await upload(meta(), key), 201)).toEqual(first);
@@ -221,9 +201,12 @@ describe("OS refinement: scoped visual resources and real Engine state", () => {
     expect([...files.objects.keys()][0]).not.toContain("logo");
     const list = await ok(await req(root));
     expect(list.data).toHaveLength(1);
-    expect(list.data[0].scan_status).toBe("quarantined");
+    expect(list.data[0].scan_status).toBe("clean");
     expect(list.data[0].object_key).toBeUndefined();
-    expect((await req(root + "/" + first.id + "/content")).status).toBe(423);
+    expect((await req(root + "/" + first.id + "/content")).status).toBe(200);
+    db.prepare("UPDATE visual_assets SET scan_status='quarantined' WHERE id=?").run(first.id);
+    expect((await req(root + "/" + first.id + "/content?inspect=1")).status).toBe(423);
+    db.prepare("UPDATE visual_assets SET scan_status='clean' WHERE id=?").run(first.id);
     const inspect = await req(root + "/" + first.id + "/content?inspect=1");
     expect(inspect.status).toBe(200);
     expect(inspect.headers.get("cache-control")).toBe("private, no-store");
@@ -299,9 +282,10 @@ describe("OS refinement: scoped visual resources and real Engine state", () => {
       "sandbox",
     );
     actor = "staff-a";
-    expect((await req(root + "/" + a.id + "/content?inspect=1")).status).toBe(
-      404,
-    );
+    expect((await req(root + "/" + a.id + "/content?inspect=1")).status).toBe(200);
+    db.prepare("UPDATE visual_assets SET scan_status='quarantined' WHERE id=?").run(a.id);
+    actor = "owner";
+    expect((await req(root + "/" + a.id + "/content?inspect=1")).status).toBe(423);
   });
   it("rejects oversize or empty files and rolls back uncommitted R2 objects", async () => {
     expect(
@@ -534,8 +518,8 @@ describe("OS refinement: scoped visual resources and real Engine state", () => {
   it("removes uncommitted objects when a provider fails after writing bytes", async () => {
     files.failAfterPut = true;
     expect((await upload()).status).toBe(500);
-    expect(files.objects.size).toBe(0);
-    const asset = await ok(await upload(), 201);
+    expect([...files.objects.keys()].filter(k=>!k.startsWith("antivirus/"))).toHaveLength(0);
+    const asset = await ok(await upload(meta(),crypto.randomUUID(),new Uint8Array([...png,1])), 201);
     company.failAfterPut = true;
     expect(
       (await req(root + "/" + asset.id + "/backup", { confirmed: true }))
@@ -545,6 +529,7 @@ describe("OS refinement: scoped visual resources and real Engine state", () => {
   });
   it("does not preserve corporate quarantine access after the principal is revoked", async () => {
     const a = await ok(await upload(), 201);
+    db.prepare("UPDATE visual_assets SET scan_status='quarantined' WHERE id=?").run(a.id);
     db.exec(
       "UPDATE platform_principals SET status='suspended' WHERE email='prometheus@avyron.ro'",
     );

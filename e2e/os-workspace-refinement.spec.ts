@@ -249,6 +249,10 @@ async function setup(page: Page) {
       const body = r.request().postDataJSON();
       mutations.push({ path: p, body });
       if (p.endsWith("/backup")) backed = true;
+      if (p.endsWith("/restore")) {
+        assets = assets.map(a => ({ ...a, scan_status: "quarantined" }));
+        return r.fulfill({ json: { ok: true, scanStatus: "quarantined" } });
+      }
       if (r.request().method() === "PATCH")
         assets = assets.map((a) =>
           p.endsWith("/" + a.id)
@@ -296,7 +300,7 @@ async function setup(page: Page) {
     }
     return r.fulfill({ json: { write: true } });
   });
-  return { mutations, reads };
+  return { mutations, reads, markClean(){assets[0].scan_status="clean";} };
 }
 test("navigația are AVY Engine în OS, Cariere și Biblioteca sub Configurator, Altele la final", async ({
   page,
@@ -318,6 +322,9 @@ test("navigația are AVY Engine în OS, Cariere și Biblioteca sub Configurator,
     order.findIndex((t) => t.trim() === "Surveys"),
   );
   expect(order.findIndex((t) => t.trim() === "Configurator") + 1).toBe(
+    order.findIndex((t) => t.trim() === "Carusele Exemple"),
+  );
+  expect(order.findIndex((t) => t.trim() === "Carusele Exemple") + 1).toBe(
     order.findIndex((t) => t.trim() === "Cariere"),
   );
   expect(order.findIndex((t) => t.trim() === "Cariere") + 1).toBe(
@@ -486,18 +493,24 @@ test("Media încarcă în biblioteca clientului, editează și arhivează fără
     page.getByRole("heading", { name: "Logo final client A", exact: true }),
   ).toBeVisible();
 });
-test("Media descarcă privat pentru revizuire și oferă backup verificat", async ({
+test("Media descarcă numai fișiere CLEAN și oferă backup verificat", async ({
   page,
 }) => {
   const f = await setup(page);
   await page.goto("/profil?tab=media");
+  await page.getByRole("button", { name: "Deschide resursa" }).click();
+  const quarantined=page.getByRole("dialog");
+  await expect(quarantined.getByRole("button",{name:"Previzualizează imaginea"})).toHaveCount(0);
+  await expect(quarantined.getByRole("button",{name:/Descarcă/})).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  f.markClean();await page.reload();
   await page.getByRole("button", { name: "Deschide resursa" }).click();
   const d = page.getByRole("dialog");
   await d.getByRole("button", { name: "Previzualizează imaginea" }).click();
   await expect(d.getByRole("img", { name: asset.title })).toBeVisible();
   page.on("dialog", (d) => d.accept());
   const download = page.waitForEvent("download");
-  await d.getByRole("button", { name: "Descarcă pentru revizuire" }).click();
+  await d.getByRole("button", { name: "Descarcă fișierul verificat" }).click();
   expect((await download).suggestedFilename()).toBe(asset.file_name);
   await d.getByText("Backup și restaurare", { exact: true }).click();
   await d.getByRole("button", { name: "Creează backup verificat" }).click();
@@ -511,8 +524,13 @@ test("Media descarcă privat pentru revizuire și oferă backup verificat", asyn
   expect(
     f.reads
       .filter((u) => u.pathname.endsWith("/content"))
-      .every((u) => u.searchParams.get("inspect") === "1"),
+      .every((u) => !u.searchParams.has("inspect")),
   ).toBe(true);
+  await d.getByRole("button", { name: "Restaurează fișierul" }).click();
+  await expect(d).not.toBeVisible();
+  await page.getByRole("button", { name: "Deschide resursa" }).click();
+  await expect(page.getByRole("dialog").getByRole("button", { name: /Descarcă|Previzualizează imaginea/ })).toHaveCount(0);
+  await expect(page.getByRole("dialog")).toContainText("Fișier în carantină");
 });
 for (const width of [320, 390, 1440])
   test(`Financiar, Centre, Media și scrolluri uniforme la ${width}px`, async ({

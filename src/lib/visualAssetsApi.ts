@@ -22,7 +22,7 @@ export const visualAssetsApi = {
     const meta = encodeURIComponent(JSON.stringify(input));
     if (meta.length > 10000)
       throw new Error("Scurtează descrierea și etichetele fișierului.");
-    return cfAuth.request<{ id: string; scanStatus: "quarantined" }>(
+    return cfAuth.request<{ id: string; scanStatus: "quarantined" | "clean" }>(
       root + "/upload",
       {
         method: "POST",
@@ -51,8 +51,9 @@ export const visualAssetsApi = {
       body: JSON.stringify({ ...input, revision: a.revision }),
     }),
   content: async (a: VisualAsset, preview = false) => {
+    if(a.scan_status!=="clean")throw new Error("Fișier în carantină. Acces permis numai după CLEAN.");
     const r = await cfAuth.requestResponse(
-      `${root}/${a.id}/content?inspect=${a.canInspect ? "1" : "0"}&preview=${preview ? "1" : "0"}`,
+      `${root}/${a.id}/content?preview=${preview ? "1" : "0"}`,
     );
     return URL.createObjectURL(await r.blob());
   },

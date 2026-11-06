@@ -1,8 +1,9 @@
+import { bouncerFixture, fixtureScannerSettings, malwareBucket } from "./helpers/bouncerFixture";
 // @vitest-environment node
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { readdirSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { Hono } from "hono";
-import { beforeEach, afterEach, describe, it, expect } from "vitest";
+import { beforeEach, afterEach, describe, it, expect, vi } from "vitest";
 import {
   documentCenterRouter,
   cleanupDocumentExports,
@@ -438,28 +439,25 @@ describe("Document Center actual handlers, immutable records and private storage
     expect(body.manualUrl).toContain("wa.me");
     expect(body.link).toContain("app.avyron.ro/profil");
   });
-  it("quarantines imports and never serves their bytes or changes their scan status", async () => {
+  it("blocks confidential imports before storage until provider compliance is configured", async () => {
     const d = await create();
-    const r = await app.request(
-      `/api/documents/${d.id}/import`,
-      {
-        method: "POST",
-        headers: {
-          "content-type": "application/pdf",
-          "X-File-Name": "test.pdf",
-          "idempotency-key": crypto.randomUUID(),
-        },
-        body: "%PDF-1.7\nfixture",
-      },
-      {},
-    );
-    expect(r.status).toBe(202);
-    const f = await r.json();
-    expect((await req(`/${d.id}/files/${f.id}`)).status).toBe(423);
-    expect(
-      db.prepare("SELECT scan_status FROM document_files WHERE id=?").get(f.id)!
-        .scan_status,
-    ).toBe("quarantined");
+    const r = await app.request(`/api/documents/${d.id}/import`, {
+      method: "POST", headers: {"content-type":"application/pdf","X-File-Name":"test.pdf","idempotency-key":crypto.randomUUID()},body:"%PDF-1.7\nfixture",
+    }, {});
+    expect(r.status).toBe(503);
+    expect((await r.json()).error.code).toBe("antivirus_compliance_blocked");
+    expect(db.prepare("SELECT count(*) n FROM document_files WHERE document_id=?").get(d.id)!.n).toBe(0);
+    expect(files.data.size).toBe(0);
+  });
+  it("admits imported bytes only after Bouncer CLEAN and keeps malware out of the document record", async () => {
+    files=malwareBucket();Object.assign(env,fixtureScannerSettings,{FILES:files});const provider=bouncerFixture();
+    const d=await create();
+    const upload=(text:string)=>app.request(`/api/documents/${d.id}/import`,{method:"POST",headers:{"content-type":"application/pdf","X-File-Name":"fixture.pdf","idempotency-key":crypto.randomUUID()},body:text},{});
+    const response=await upload("%PDF-1.7\nSynthetic CLEAN fixture");expect(response.status).toBe(201);
+    const f=await response.json();expect(f.status).toBe("clean_scanned");const downloaded=await req(`/${d.id}/files/${f.id}`);expect(downloaded.status).toBe(200);expect(await downloaded.text()).toContain("Synthetic CLEAN");
+    provider.setVerdict("malicious");expect((await upload("%PDF-1.7\nDifferent malware fixture")).status).toBe(400);
+    expect(db.prepare("SELECT count(*) n FROM document_files WHERE document_id=?").get(d.id)!.n).toBe(1);
+    expect((await req(`/${d.id}/files/${f.id}`)).status).toBe(200);
   });
   it("rejects unconfigured mail and forbidden external attachments without claiming delivery", async () => {
     const d = await create();

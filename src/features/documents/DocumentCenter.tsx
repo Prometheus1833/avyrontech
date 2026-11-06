@@ -949,9 +949,9 @@ export default function DocumentCenter({
                       setError("Fișierul depășește limita de 15 MiB.");
                     else if (file)
                       void transact(async () => {
-                        await documentsApi.import(detail.document.id, file);
+                        const imported=await documentsApi.import(detail.document.id, file);
                         setMessage(
-                          "Fișier încărcat în carantină. Scanarea necesită configurare.",
+                          imported.status === "clean_scanned" ? "Fișier verificat CLEAN și importat privat." : "Fișier în carantină, fără acces până la verificare.",
                         );
                       });
                     e.target.value = "";
@@ -963,8 +963,8 @@ export default function DocumentCenter({
           {detail.actions.edit && !readonly && (
             <p className="text-xs text-slate-400">
               Import: PDF, DOCX, TXT, PNG sau JPEG · maximum 15 MiB. Fișierele
-              încărcate rămân în carantină până la scanarea antimalware, încă
-              neconfigurată. PDF și Word generate pot fi descărcate separat.
+              încărcate necesită verdict CLEAN. Fără furnizor configurat sau verificarea
+              conformității, importurile reale sunt blocate. PDF și Word generate pot fi descărcate separat.
             </p>
           )}
           {detail.files.length > 0 && (
@@ -985,7 +985,7 @@ export default function DocumentCenter({
                           ? "Scanat și verificat"
                           : "Indisponibil"}
                   </span>
-                  {!["quarantined", "rejected"].includes(f.scan_status) && (
+                  {["clean_generated", "clean_scanned"].includes(f.scan_status) && (
                     <button
                       className="dc-button"
                       onClick={() =>

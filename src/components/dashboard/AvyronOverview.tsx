@@ -1,3 +1,4 @@
+import AntivirusSummary from "./AntivirusSummary";
 import { STAFF_MANAGED } from "@/shared/staffAccess";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -205,6 +206,8 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
           </button>
         </div>
       </header>
+
+      {access.isSuperAdmin && <AntivirusSummary onOpen={() => onOpenSection("antivirus")} />}
 
       <div className="grid items-start gap-4 xl:grid-cols-12">
         <Panel className="p-4 sm:p-5 xl:col-span-7">

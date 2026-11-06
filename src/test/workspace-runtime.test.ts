@@ -1,9 +1,10 @@
+import {bouncerFixture,fixtureScannerSettings,malwareBucket} from "./helpers/bouncerFixture";
 // @vitest-environment node
 import type { DatabaseSync as SqliteDatabase, SQLInputValue } from 'node:sqlite';
 import { createRequire } from 'node:module';
 import { readdirSync, readFileSync } from 'node:fs';
 import { Hono } from 'hono';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { receiptsRouter } from '../../cloudflare/workers/api/src/receipts';
 import { financialTotals } from '../../cloudflare/workers/api/src/financialTotals';
 import { workspaceRouter } from '../../cloudflare/workers/api/src/workspace';
@@ -36,16 +37,14 @@ describe('Cloudflare workspace: actual handlers, all migrations, atomic writes',
     INSERT INTO client_account_access VALUES ('a','client','owner',1),('b','other','owner',1);
     INSERT INTO projects(id,client_id,name,slug,owner_user_id,created_at) VALUES ('pa','a','Project A','project-a','client',1),('pb','b','Project B','project-b','other',1);
     INSERT INTO support_tickets(id,client_id,subject,created_at) VALUES ('ticket-a','a','A',1),('ticket-b','b','B',1);`);
-  actor='owner';verified=false;policy='optional_until_enrollment';objects=new Map();storageReads=0;beforeBatch=null;
+  actor='owner';verified=false;policy='optional_until_enrollment';const bucket=malwareBucket();objects=bucket.data;storageReads=0;beforeBatch=null;bouncerFixture();
   const binding={prepare:(sql:string)=>new Statement(db,sql),batch:async(statements:Statement[])=>{
    const hook=beforeBatch;beforeBatch=null;hook?.();
    db.exec('BEGIN');try{const results=[];for(const statement of statements)results.push({meta:db.prepare(statement.sql).run(...statement.values)});db.exec('COMMIT');return results;}catch(e){db.exec('ROLLBACK');throw e;}
   }};
   app=new Hono();app.use('*',async(c,next)=>{
-   Object.assign(c.env,{DB:binding,ADMIN_MFA_POLICY:policy,FILES:{
-     put:async(key:string,bytes:Uint8Array)=>{objects.set(key,bytes);return {size:bytes.byteLength};},
-     delete:async(key:string)=>{objects.delete(key);},
-     get:async(key:string)=>{storageReads++;const bytes=objects.get(key);return bytes?{body:bytes,size:bytes.byteLength,httpEtag:'"fixture-etag"',writeHttpMetadata:()=>{}}:null;},
+   Object.assign(c.env,{...fixtureScannerSettings,DB:binding,ADMIN_MFA_POLICY:policy,FILES:{...bucket,
+     get:async(key:string)=>{storageReads++;return bucket.get(key);},
    }});
    c.set('userId',actor);c.set('roles',['owner','admin'].includes(actor)?['admin']:actor==='staff'?['staff']:['user']);c.set('mfaVerified',verified);
    await next();
@@ -54,7 +53,7 @@ describe('Cloudflare workspace: actual handlers, all migrations, atomic writes',
   app.route('/',workspaceRouter);app.route('/',projectsRouter);app.route('/',mediaRouter);app.route('/',receiptsRouter);app.route('/',adminOperationsRouter);
   app.get('/totals',async c=>c.json(await financialTotals(c.env.DB,stamp-1000,stamp+1000)));app.onError(()=>new Response('safe failure',{status:500}));
  });
- afterEach(()=>db.close());
+ afterEach(()=>{vi.unstubAllGlobals();db.close();});
  const request=(path:string,body?:unknown,method='POST',key='test-idempotency-key-123')=>app.request(`/api/workspace/${path}`,body===undefined?{}:{method,headers:{'content-type':'application/json','idempotency-key':key},body:JSON.stringify(body)},{});
  const announcement={title:'Release',content:'Internal note',priority:'normal'};
  it('allows only unenrolled platform principals under the temporary policy',async()=>{

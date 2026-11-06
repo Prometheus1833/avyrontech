@@ -1,3 +1,4 @@
+import { scanUpload, antivirusFailure, putScannedObject } from "./malware";
 // Formularul public „Vreau exemplu gratuit”.
 //   POST /api/contact/demo   (multipart/form-data)
 //     câmpuri: name, business, phone, email, description?, website?
@@ -106,17 +107,23 @@ contactRouter.post("/api/contact/demo", async (c) => {
     attachments.push({ filename: safeFilename(f.name), contentType: ct, content: bytes });
   }
 
-  const stored: string[] = [];
+  const scans=[];
   for (const attachment of attachments) {
+    const scan=await scanUpload(c.env,attachment.content,{source:"contact",scope:await hashKey(email.toLowerCase()),mimeType:attachment.contentType});
+    if(scan.status!=="clean")return antivirusFailure(c,scan);
+    scans.push(scan);
+  }
+  const stored: string[] = [];
+  for (const [index,attachment] of attachments.entries()) {
     const key = leadObjectKey(leadId, attachment.filename);
     try {
-      await c.env.FILES.put(key, attachment.content, {
+      await putScannedObject(c.env,"FILES",key,attachment.content, {
         httpMetadata: { contentType: attachment.contentType },
         customMetadata: { leadId, source: "website-cta-demo" },
-      });
+      },scans[index]);
       stored.push(key);
     } catch (e) {
-      console.error("lead attachment r2 put failed", e);
+      console.error(JSON.stringify({event:"lead_attachment_storage_failed",leadId,code:"storage_unavailable"}));
     }
   }
 
@@ -168,7 +175,7 @@ contactRouter.post("/api/contact/demo", async (c) => {
     ).run();
   } catch (error) {
     await Promise.all(stored.map((key) => c.env.FILES.delete(key).catch((cleanupError) =>
-      console.error(JSON.stringify({ event: "lead_r2_orphan_cleanup_failed", key, cleanupError: String(cleanupError) })),
+      console.error(JSON.stringify({ event: "lead_r2_orphan_cleanup_failed", leadId, code: "storage_unavailable" })),
     )));
     throw error;
   }

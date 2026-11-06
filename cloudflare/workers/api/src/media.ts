@@ -1,3 +1,4 @@
+import { scanUpload, antivirusFailure, putScannedObject, getScannedObject } from "./malware";
 // R2 media routes — attach images/documents to proposals or project itself.
 // Storage layout in R2 bucket FILES:
 //   projects/<projectId>/<mediaId>-<safeFilename>
@@ -63,13 +64,15 @@ mediaRouter.post("/api/projects/:id/media", async (c) => {
   if (bytes.byteLength > MAX_BYTES) return c.json({ error: { code: "too_large", message: "Max 15MB" } }, 413);
   if (!inspectProjectMedia(filename, contentType, bytes)) return c.json({ error: { code: "invalid_file" } }, 415);
 
+  const scan = await scanUpload(c.env, bytes, {source:"project_media",scope:projectId,mimeType:contentType,actorId:c.get("userId")});
+  if(scan.status!=="clean")return antivirusFailure(c,scan);
   const mediaId = uuid();
   const r2Key = projectObjectKey(projectId, mediaId, filename);
   const uploaderId = c.get("userId");
-  const put = await c.env.FILES.put(r2Key, bytes, {
+  const put = await putScannedObject(c.env, "FILES", r2Key, bytes, {
     httpMetadata: { contentType, contentDisposition: projectMediaDisposition(filename, contentType) },
     customMetadata: { projectId, mediaId, uploaderId },
-  });
+  }, scan);
   const size = put.size;
 
   try {
@@ -78,7 +81,7 @@ mediaRouter.post("/api/projects/:id/media", async (c) => {
     ).bind(mediaId, projectId, proposalId, uploaderId, r2Key, filename, contentType, size, now()).run();
   } catch (error) {
     await c.env.FILES.delete(r2Key).catch((cleanupError) =>
-      console.error(JSON.stringify({ event: "r2_orphan_cleanup_failed", r2Key, cleanupError: String(cleanupError) })),
+      console.error(JSON.stringify({ event: "r2_orphan_cleanup_failed", mediaId, code: "storage_unavailable" })),
     );
     throw error;
   }
@@ -114,7 +117,7 @@ mediaRouter.get("/api/media/:mediaId/file", async (c) => {
   if (!row) return c.json({ error: { code: "not_found" } }, 404);
   const perm = await canAccessProject(c.env.DB, row.project_id, c.get("userId"), c.get("roles"));
   if (!perm.read) return c.json({ error: { code: "forbidden" } }, 403);
-  const obj = await c.env.FILES.get(row.r2_key, { range: c.req.raw.headers });
+  const obj = await getScannedObject(c.env, "FILES", row.r2_key, c.req.header("range") ? { range: c.req.raw.headers } : undefined);
   if (!obj) return c.json({ error: { code: "missing_blob" } }, 404);
   if (c.req.header("if-none-match") === obj.httpEtag) {
     return new Response(null, { status: 304, headers: { etag: obj.httpEtag, "cache-control": "private, no-store" } });
@@ -130,7 +133,7 @@ mediaRouter.get("/api/media/:mediaId/file", async (c) => {
   headers.set("content-security-policy", "sandbox; default-src 'none'");
   headers.set("content-disposition", projectMediaDisposition(row.filename, row.content_type));
   let status = 200;
-  if (obj.range) {
+  if (obj.range && c.req.header("range")) {
     const length = "suffix" in obj.range
       ? Math.min(obj.range.suffix, obj.size)
       : obj.range.length ?? Math.max(0, obj.size - (obj.range.offset || 0));
@@ -156,7 +159,7 @@ mediaRouter.delete("/api/media/:mediaId", async (c) => {
   try {
     await c.env.FILES.delete(row.r2_key);
   } catch (error) {
-    console.error(JSON.stringify({ event: "r2_delete_failed", mediaId, r2Key: row.r2_key, error: String(error) }));
+    console.error(JSON.stringify({ event: "r2_delete_failed", mediaId, code: "storage_unavailable" }));
     return c.json({ error: { code: "storage_unavailable" } }, 503);
   }
   await c.env.DB.prepare("DELETE FROM project_media WHERE id = ?").bind(mediaId).run();

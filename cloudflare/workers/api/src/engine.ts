@@ -1,3 +1,4 @@
+import { scanUpload, antivirusFailure, putScannedObject, getScannedObject } from "./malware";
 import {readJsonBodyUpTo} from "./requestBody";
 import {checkRateLimit} from "./antispam";
 import {privilegedMfaSatisfied} from "./mfaPolicy";
@@ -265,7 +266,9 @@ engineRouter.post("/api/engine/sources/:sourceId/documents", async (c) => {
   const safeName = file.name.replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 120) || "document";
   const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), (byte) => byte.toString(16).padStart(2, "0")).join(""), documentId = id("engdoc"), timestamp = now();
   const objectKey = `engine/${c.req.param("sourceId")}/${documentId}-${safeName}`;
-  await c.env.FILES.put(objectKey, bytes, { httpMetadata: { contentType }, customMetadata: { schema: "avy-engine-document:v1", trust: "untrusted" } });
+  const scan=await scanUpload(c.env,bytes,{source:"engine",scope:c.req.param("sourceId"),mimeType:contentType,actorId:c.get("userId")});
+  if(scan.status!=="clean")return antivirusFailure(c,scan);
+  await putScannedObject(c.env,"FILES",objectKey, bytes, { httpMetadata: { contentType }, customMetadata: { schema: "avy-engine-document:v1", trust: "untrusted" } },scan);
   try {
     await c.env.DB.prepare(`INSERT INTO engine_documents
       (id,source_id,document_type,title,r2_object_key,file_name,content_type,size_bytes,sha256,status,trust_level,agent_usable,uploaded_by,created_at,updated_at)
@@ -282,7 +285,7 @@ engineRouter.get("/api/engine/documents/:documentId/content", async (c) => {
   if (!(await allowed(c, "engine.documents"))) return deny(c);
   const row = await c.env.DB.prepare("SELECT r2_object_key,file_name,content_type FROM engine_documents WHERE id=? AND status<>'archived'").bind(c.req.param("documentId")).first<{ r2_object_key: string; file_name: string; content_type: string }>();
   if (!row) return c.json({ error: { code: "not_found" } }, 404);
-  const object = await c.env.FILES.get(row.r2_object_key);
+  const object = await getScannedObject(c.env,"FILES",row.r2_object_key);
   if (!object) return c.json({ error: { code: "object_missing" } }, 404);
   const headers = new Headers({ "Content-Type": row.content_type, "Content-Disposition": `attachment; filename="${row.file_name.replace(/["\\]/g, "_")}"`, "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" });
   return new Response(object.body, { headers });

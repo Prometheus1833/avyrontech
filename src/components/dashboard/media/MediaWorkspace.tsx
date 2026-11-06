@@ -261,9 +261,8 @@ export default function MediaWorkspace() {
         </summary>
         <p className="cw-hint">
           Fișiere private, acces verificat la fiecare deschidere. Încărcările
-          noi rămân în carantină: scannerul antimalware nu este configurat.
-          Inspecția și descărcarea pentru revizuire sunt disponibile numai
-          persoanelor autorizate. Resursele nu sunt publicate automat și nu sunt
+          noi necesită verdict antivirus CLEAN. Fișierele neverificate sau suspecte
+          nu pot fi inspectate sau descărcate, inclusiv de administratori. Resursele nu sunt publicate automat și nu sunt
           folosite de AI.
         </p>
       </details>
@@ -510,7 +509,7 @@ function UploadAsset({
               ? "Biblioteca AVYRON"
               : "Biblioteca unui client"}{" "}
             · PNG, JPG, WEBP, GIF, SVG sau PDF, maximum 15 MB. SVG: maximum 2
-            MB. Fișierul rămâne în carantină.
+            MB. Accesul necesită scanare CLEAN și verificarea conformității.
           </DialogDescription>
         </DialogHeader>
         <form
@@ -531,8 +530,8 @@ function UploadAsset({
             void run(
               { value, fingerprint },
               (key) => api.upload(file, value, key),
-              () => {
-                toast.success("Resursa a fost încărcată privat, în carantină.");
+              (result) => {
+                toast.success(result.scanStatus === "clean" ? "Resursa a fost verificată CLEAN și salvată privat." : "Resursa rămâne în carantină, fără acces la fișier.");
                 onDone();
               },
             );
@@ -608,8 +607,8 @@ function UploadAsset({
           )}
           <Confirm checked={confirmed} onChange={setConfirmed}>
             Am verificat biblioteca, beneficiarul și drepturile de utilizare ale
-            resursei. Înțeleg că încărcarea nu reprezintă scanare antimalware
-            sau publicare.
+            resursei. Înțeleg că accesul necesită scanare antimalware CLEAN
+            și că resursa nu este publicată automat.
           </Confirm>
           {error && (
             <p role="alert" className="cw-error">
@@ -713,25 +712,18 @@ function AssetDetail({
         <div className="cw-stack">
           <p className="cw-hint">
             {asset.scan_status === "quarantined"
-              ? "Fișier în carantină. Inspecția este limitată la încărcător și administratorii autorizați. Scanarea antimalware nu este configurată."
+              ? "Fișier în carantină. Inspecția, previzualizarea și descărcarea sunt blocate până la verdictul CLEAN."
               : asset.scan_status === "clean"
                 ? "Scanare înregistrată în sistem."
                 : "Fișier respins."}
           </p>
           <div className="cw-actions">
-            {(asset.scan_status === "clean" || asset.canInspect) && (
+            {asset.scan_status === "clean" && (
               <>
                 <Button
                   variant="outline"
                   disabled={busy}
                   onClick={() => {
-                    if (
-                      asset.scan_status !== "clean" &&
-                      !window.confirm(
-                        "Descarci un fișier în carantină pentru revizuire. Nu îl distribui înainte de verificare. Continui?",
-                      )
-                    )
-                      return;
                     void run(
                       { download: asset.id },
                       () => api.download(asset),
@@ -740,7 +732,7 @@ function AssetDetail({
                   }}
                 >
                   <Download className="mr-1 size-4" />
-                  Descarcă pentru revizuire
+                  Descarcă fișierul verificat
                 </Button>
                 {/^image\/(png|jpeg|webp|gif)$/.test(asset.content_type) && (
                   <Button variant="outline" onClick={() => void doPreview()}>
@@ -749,6 +741,7 @@ function AssetDetail({
                 )}
               </>
             )}
+            {asset.scan_status !== "clean" && options?.canManageAgency && <Button variant="outline" asChild><Link to="/profil?tab=antivirus">Monitorizare antivirus</Link></Button>}
             {asset.canEdit && (
               <Button
                 variant="outline"
@@ -880,8 +873,9 @@ function AssetDetail({
                           () => api.restore(asset.id, b.id),
                           () => {
                             toast.success(
-                              "Fișier restaurat cu checksum verificat.",
+                              "Fișier restaurat cu checksum verificat. Accesul rămâne blocat până la o nouă verificare CLEAN.",
                             );
+                            onChanged();
                           },
                         );
                     }}

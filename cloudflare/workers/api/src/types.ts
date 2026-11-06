@@ -4,6 +4,14 @@ export type Role = "user" | "staff" | "admin";
 // Wrangler source of truth in worker-configuration.d.ts. Only truly optional
 // integrations are extended here.
 type OptionalIntegrations = {
+  /** Bouncer Malware API only. Optional secret; never committed or exposed to clients. */
+  BOUNCER_API_KEY?: string;
+  BOUNCER_ENABLED?: string;
+  BOUNCER_STORAGE_PRIVACY_VERIFIED?: string;
+  /** Deployment gates set only after actual DPA and international-transfer review. */
+  BOUNCER_SENSITIVE_PROCESSING_APPROVED?: string;
+  BOUNCER_DPA_REFERENCE?: string;
+  BOUNCER_TRANSFER_REVIEW_REFERENCE?: string;
   /** Private backup destinations. Provision only after approval; never fall back to FILES. */
   DOCUMENT_BACKUPS?: R2Bucket;
   DOCUMENT_COMPANY_BACKUPS?: R2Bucket;
@@ -69,5 +77,5 @@ type OptionalIntegrations = {
 
 export type Env = CloudflareBindings & OptionalIntegrations;
 
-export type AppVariables = { userId: string; roles: Role[]; requestId: string; sessionId: string; mfaVerified: boolean };
+export type AppVariables = { userId: string; roles: Role[]; requestId: string; sessionId: string; mfaVerified: boolean; antivirusIntent: {first:boolean;key:string;scope:string;body:{confirmed?:boolean;sample?:string}} };
 export type AppBindings = { Bindings: Env; Variables: AppVariables };

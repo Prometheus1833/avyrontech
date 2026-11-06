@@ -1,3 +1,4 @@
+import { scanUpload, antivirusFailure, putScannedObject, getScannedObject } from "./malware";
 import { hasCapability } from "./authorization";
 import { Hono, type Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -87,7 +88,7 @@ const error = (
                 "Stocarea documentelor necesită verificarea accesului privat înainte de activare.",
               document_export_runtime_unconfigured:
                 "Runtime-ul securizat pentru export nu este configurat. Documentul rămâne salvat.",
-              quarantined: "Fișier în carantină. Scanarea nu este configurată.",
+              quarantined: "Fișier în carantină. Verdictul antivirus CLEAN nu este confirmat.",
               document_center_unavailable:
                 "Document Center necesită migrațiile aprobate înainte de activare.",
               image_quarantine_required:
@@ -411,7 +412,7 @@ async function embeddedImagesAllowed(
     const checksum = await digestBytes(bytes);
     if (
       !(await c.env.DB.prepare(
-        "SELECT 1 FROM document_files WHERE document_id=? AND sha256=? AND content_type IN('image/png','image/jpeg') AND scan_status='clean_scanned'",
+        "SELECT 1 FROM document_files f JOIN malware_object_verdicts o ON o.bucket='FILES' AND o.object_key=f.object_key JOIN malware_scan_jobs s ON s.id=o.scan_id AND s.status='clean' AND s.sha256=f.sha256 WHERE f.document_id=? AND f.sha256=? AND f.content_type IN('image/png','image/jpeg') AND f.scan_status='clean_scanned'",
       )
         .bind(documentId, checksum)
         .first())
@@ -1897,13 +1898,15 @@ documentCenterRouter.post("/api/documents/:id/import", async (c) => {
     return old.request_hash === hash
       ? c.json(JSON.parse(old.response_json))
       : error(c, "idempotency_key_reused", 409);
+  const scan=await scanUpload(c.env,bytes,{source:"documents",scope:d.id,mimeType:type,actorId:c.get("userId")});
+  if(scan.status!=="clean")return antivirusFailure(c,scan);
   const id = uid(),
     objectKey = `documents/${d.id}/quarantine/${id}`,
     time = stamp(),
-    response = { id, status: "quarantined", scanner: "unconfigured" };
-  await c.env.FILES.put(objectKey, bytes, {
+    response = { id, status: "clean_scanned", scanner: "bouncer" };
+  await putScannedObject(c.env,"FILES",objectKey,bytes,{
     httpMetadata: { contentType: "application/octet-stream" },
-  });
+  },scan);
   try {
     await c.env.DB.batch([
       c.env.DB.prepare(
@@ -1917,7 +1920,7 @@ documentCenterRouter.post("/api/documents/:id/import", async (c) => {
         time + 30 * 86400000,
       ),
       c.env.DB.prepare(
-        "INSERT INTO document_files(id,document_id,version_id,kind,object_key,file_name,content_type,sha256,size_bytes,scan_status,created_at) VALUES(?,?,?,'import',?,?,?,?,?,'quarantined',?)",
+        "INSERT INTO document_files(id,document_id,version_id,kind,object_key,file_name,content_type,sha256,size_bytes,scan_status,scanner_reference,created_at) VALUES(?,?,?,'import',?,?,?,?,?,'clean_scanned',?,?)",
       ).bind(
         id,
         d.id,
@@ -1927,9 +1930,10 @@ documentCenterRouter.post("/api/documents/:id/import", async (c) => {
         type,
         hash,
         size,
+        scan.id,
         time,
       ),
-      audit(c, d.id, "import.quarantined", d.current_version_id, {
+      audit(c, d.id, "import.clean_scanned", d.current_version_id, {
         sizeBytes: size,
       }),
     ]);
@@ -1937,7 +1941,7 @@ documentCenterRouter.post("/api/documents/:id/import", async (c) => {
     await c.env.FILES.delete(objectKey);
     throw cause;
   }
-  return c.json(response, 202);
+  return c.json(response, 201);
 });
 documentCenterRouter.get("/api/documents/:id/files/:fileId", async (c) => {
   const d = await current(c, c.req.param("id"), "documents.export");
@@ -1950,6 +1954,7 @@ documentCenterRouter.get("/api/documents/:id/files/:fileId", async (c) => {
     .bind(c.req.param("fileId"), d.id, stamp())
     .first<{
       scan_status: string;
+      kind: string;
       object_key: string;
       version_id: string;
       content_type: string;
@@ -1959,7 +1964,8 @@ documentCenterRouter.get("/api/documents/:id/files/:fileId", async (c) => {
     return error(c, "not_found", 404);
   if (!["clean_generated", "clean_scanned"].includes(f.scan_status))
     return error(c, "quarantined", 423);
-  const obj = await c.env.FILES.get(f.object_key);
+  if(f.kind==='import'&&f.scan_status!=='clean_scanned')return error(c,'quarantined',423);
+  const obj = f.scan_status === "clean_generated" && f.kind!=='import' ? await c.env.FILES.get(f.object_key) : await getScannedObject(c.env,"FILES",f.object_key);
   if (
     !(await revalidateVersionAccess(c, d.id, f.version_id, "documents.export"))
   )

@@ -1,3 +1,4 @@
+import { scanUpload, antivirusFailure, putScannedObject, getScannedObject } from "./malware";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import type { AppBindings } from "./types";
@@ -279,7 +280,7 @@ visualAssetsRouter.get(root, async (c) => {
           r.client_id as string | null,
           r.project_id as string | null,
         ),
-        canInspect: full || r.created_by === c.get("userId"),
+        canInspect: false, // Retained for old clients; quarantine has no inspection bypass.
       })),
     ),
     total: count?.n || 0,
@@ -406,21 +407,23 @@ visualAssetsRouter.post(root + "/upload", async (c) => {
     return cached.request_hash === hash
       ? c.json(JSON.parse(cached.response_json), 201)
       : fail(c, "idempotency_key_reused", 409);
+  const scan=await scanUpload(c.env,bytes,{source:"visual_assets",scope:b.scope+":"+(b.clientId||"agency")+":"+(b.projectId||""),mimeType:mime,actorId:c.get("userId")});
+  if(scan.status!=="clean")return antivirusFailure(c,scan);
   const id = crypto.randomUUID(),
     objectKey = `visual-assets/quarantine/${id}`,
     t = Date.now(),
-    result = { id, scanStatus: "quarantined", scanner: "unconfigured" };
+    result = { id, scanStatus: "clean", scanner: "bouncer" };
   try {
-    await c.env.FILES.put(objectKey, bytes, {
+    await putScannedObject(c.env,"FILES",objectKey,bytes, {
       httpMetadata: { contentType: mime, contentDisposition: "attachment" },
       customMetadata: { assetId: id, sha256: sum },
-    });
+    },scan);
     await c.env.DB.batch([
       c.env.DB.prepare(
         "INSERT INTO idempotency_keys(scope,idempotency_key,request_hash,response_status,response_json,created_at,expires_at) VALUES(?,?,?,201,?,?,?)",
       ).bind(scope, key, hash, JSON.stringify(result), t, t + 86400000),
       c.env.DB.prepare(
-        "INSERT INTO visual_assets(id,scope,client_id,project_id,title,category,description,tags_json,object_key,file_name,content_type,size_bytes,sha256,created_by,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO visual_assets(id,scope,client_id,project_id,title,category,description,tags_json,object_key,file_name,content_type,size_bytes,sha256,created_by,created_at,updated_at,scan_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'clean')",
       ).bind(
         id,
         b.scope,
@@ -442,7 +445,7 @@ visualAssetsRouter.post(root + "/upload", async (c) => {
       event(c, "visual_asset.uploaded", id, {
         scope: b.scope,
         clientId: b.clientId,
-        scanStatus: "quarantined",
+        scanStatus: "clean",
       }),
     ]);
   } catch (e) {
@@ -502,17 +505,9 @@ visualAssetsRouter.get(root + "/:id/content", async (c) => {
   const a = await row(c, c.req.param("id") || "");
   if (!a) return fail(c, "not_found", 404);
   if (!ready(c)) return fail(c, "private_storage_unconfigured", 503);
-  const inspection =
-    c.req.query("inspect") === "1" &&
-    ((await principal(c)) || a.created_by === c.get("userId"));
-  if (a.scan_status !== "clean" && !inspection)
-    return fail(
-      c,
-      "quarantined",
-      423,
-      "Fișier în carantină; scanarea nu este configurată.",
-    );
-  const object = await c.env.FILES.get(a.object_key);
+  if (a.scan_status !== "clean")
+    return fail(c,"quarantined",423,"Fișier în carantină; acces permis numai după verdict CLEAN.");
+  const object = await getScannedObject(c.env,"FILES",a.object_key);
   if (!object) return fail(c, "file_missing", 404);
   const preview =
       c.req.query("preview") === "1" &&
@@ -710,6 +705,10 @@ visualAssetsRouter.post(root + "/:id/restore", async (c) => {
     .join("");
   if (restoredHash !== a.sha256)
     return fail(c, "restore_integrity_failed", 409);
-  await event(c, "visual_asset.restored", a.id, { backupId: b.backupId }).run();
-  return c.json({ ok: true, scanStatus: a.scan_status });
+  await c.env.DB.batch([
+    c.env.DB.prepare("UPDATE visual_assets SET scan_status='quarantined' WHERE id=?").bind(a.id),
+    c.env.DB.prepare("UPDATE malware_object_verdicts SET scan_id=NULL,etag=NULL,r2_version=NULL WHERE bucket='FILES' AND object_key=?").bind(a.object_key),
+    event(c, "visual_asset.restored", a.id, { backupId: b.backupId }),
+  ]);
+  return c.json({ ok: true, scanStatus: "quarantined" });
 });

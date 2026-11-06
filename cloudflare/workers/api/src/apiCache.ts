@@ -1,8 +1,6 @@
 const CACHEABLE_PUBLIC_PATHS = [
   /^\/api\/blog\/posts(?:\/[^/]+)?$/,
   /^\/api\/blog\/sitemap$/,
-  /^\/api\/blog\/media\/[a-f0-9-]{36}\.(?:png|jpe?g|webp|avif)$/i,
-  /^\/api\/profile\/avatar\/[a-zA-Z0-9-]+$/,
   /^\/api\/public\/domain-check$/,
   /^\/api\/public\/exchange-rate$/,
   /^\/api\/newsletter\/config$/,
@@ -25,6 +23,8 @@ export function publicApiCacheRequest(request: Request): Request | null {
   for (const key of [...url.searchParams.keys()]) {
     if (!allowed.has(key)) url.searchParams.delete(key);
   }
+  // Bypass historical blog JSON entries carrying pre-antivirus image URLs.
+  if (url.pathname.startsWith("/api/blog/posts")) url.searchParams.set("_av_cache", "20261106");
   url.searchParams.sort();
   return new Request(url, { method: "GET", headers: { accept: request.headers.get("accept") || "application/json" } });
 }

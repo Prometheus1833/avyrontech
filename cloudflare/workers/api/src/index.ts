@@ -1,3 +1,7 @@
+import { antivirusRouter } from "./antivirus";
+import { maintainMalwareScans } from "./malware";
+import { matchesRasterSignature } from "./imageSignature";
+import { scanUpload, antivirusFailure, putScannedObject, getScannedObject } from "./malware";
 import { exampleCarouselsRouter, publishedCarousel } from "./exampleCarousels";
 import { rewriteExampleCarousels } from "../../../../src/worker/exampleCarousels";
 import {visualAssetsRouter} from "./visualAssets";
@@ -371,7 +375,7 @@ app.get("/", async (c, next) => {
 });
 app.get("/openapi.json", async (c, next) => {
   if (!isApiHostname(new URL(c.req.url).hostname)) return next();
-  c.header("cache-control", "public, max-age=3600, stale-while-revalidate=86400");
+  c.header("cache-control", "private, no-store");
   return c.json(openApiDocument);
 });
 app.get("/healthz", async (c, next) => {
@@ -1123,11 +1127,14 @@ app.post("/api/profile/avatar", requireAuth, async (c) => {
   const bytes = await c.req.arrayBuffer();
   if (!bytes.byteLength || bytes.byteLength > 5 * 1024 * 1024) return c.json({ error: { code: "too_large" } }, 413);
   const userId = c.get("userId");
+  if(!matchesRasterSignature(new Uint8Array(bytes),type))return c.json({error:{code:"invalid_image"}},415);
+  const scan=await scanUpload(c.env,new Uint8Array(bytes),{source:"avatar",scope:userId,mimeType:type,actorId:userId});
+  if(scan.status!=="clean")return antivirusFailure(c,scan);
   const key = avatarObjectKey(userId);
-  await c.env.MEDIA.put(key, bytes, {
-    httpMetadata: { contentType: type, cacheControl: "public, max-age=3600" },
+  await putScannedObject(c.env,"MEDIA",key,new Uint8Array(bytes), {
+    httpMetadata: { contentType: type, cacheControl: "private, no-store" },
     customMetadata: { userId, kind: "avatar" },
-  });
+  },scan);
   const avatarUrl = `/api/profile/avatar/${userId}?v=${now()}`;
   await c.env.DB.batch([
     c.env.DB.prepare("UPDATE users SET avatar_url = ?, updated_at = ? WHERE id = ?").bind(avatarUrl, now(), userId),
@@ -1137,14 +1144,14 @@ app.post("/api/profile/avatar", requireAuth, async (c) => {
 });
 
 app.get("/api/profile/avatar/:userId", async (c) => {
-  const object = await c.env.MEDIA.get(avatarObjectKey(c.req.param("userId")));
+  const object = await getScannedObject(c.env,"MEDIA",avatarObjectKey(c.req.param("userId")));
   if (!object) return c.body(null, 404);
   const headers = new Headers();
   object.writeHttpMetadata(headers);
   headers.set("etag", object.httpEtag);
   headers.set("content-length", String(object.size));
   headers.set("x-content-type-options", "nosniff");
-  headers.set("cache-control", "public, max-age=3600, stale-while-revalidate=86400");
+  headers.set("cache-control", "private, no-store");
   return new Response(object.body, { headers });
 });
 
@@ -1717,6 +1724,9 @@ app.route("/", aiProjectsRouter);
 app.use("/api/admin/service-pages/*", requireAuth);
 app.route("/", servicePagesRouter);
 app.use("/api/admin/example-carousels*", requireAuth);
+app.use("/api/antivirus/*", requireAuth);
+app.use("/api/antivirus", requireAuth);
+app.route("/", antivirusRouter);
 app.route("/", exampleCarouselsRouter);
 app.route("/", catalogCodesRouter);
 app.use("/api/documents", requireAuth);
@@ -1927,6 +1937,7 @@ export default {
   },
   scheduled: (controller, env, ctx) => {
     if (controller.cron === "0,15,30,45 * * * *") {
+      ctx.waitUntil(maintainMalwareScans(env).catch(() => console.error(JSON.stringify({event:"antivirus_poll_failed",code:"maintenance_unavailable"}))));
       ctx.waitUntil(enqueueAsyncJobs(env, ["operation_drain", "social_drain", "survey_delivery", "survey_ai"]));
       if (new Date(controller.scheduledTime).getUTCMinutes() === 0) {
         ctx.waitUntil(cleanupAvyronEditorialContent(env).catch((error) => {

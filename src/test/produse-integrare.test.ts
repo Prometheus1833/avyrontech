@@ -91,7 +91,7 @@ describe("cablajul dintre magazin și D1", () => {
   it("nu servește cod plătit din bundle-ul public", () => {
     // Sursele publice sunt doar pentru produse gratuite (verificat în
     // produse.test.ts); aici verificăm că descărcarea plătită trece prin R2.
-    expect(shop).toContain("c.env.FILES.get(version.r2_key)");
+    expect(shop).toContain('getScannedObject(c.env,"FILES",version.r2_key)');
     expect(shop).toContain("product_versions");
   });
 });
