@@ -3,9 +3,9 @@ import { readFile } from 'node:fs/promises';
 import { strict as assert } from 'node:assert';
 
 const script=await readFile('app.js','utf8');
-async function open(route) {
+async function open(route,search='') {
  const html=await readFile('dist'+route+'index.html','utf8');
- const dom=new JSDOM(html,{url:'https://cabinet-avocatura.avyron.eu'+route,runScripts:'outside-only',pretendToBeVisual:true});
+ const dom=new JSDOM(html,{url:'https://cabinet-avocatura.avyron.eu'+route+search,runScripts:'outside-only',pretendToBeVisual:true});
  const {window}=dom;
  const NativeDate=window.Date;
  window.Date=class extends NativeDate {
@@ -20,7 +20,8 @@ async function open(route) {
 }
 for(const prefix of ['/','/en/']) {
  const booking=prefix+(prefix==='/'?'programari/':'appointments/');
- const {dom,w,d,errors}=await open(booking);
+ const {dom,w,d,errors}=await open(booking,'?area=dreptul-familiei');
+ const area=d.querySelector('#consultation-area');assert.equal(area.value,'dreptul-familiei');assert(decodeURIComponent(d.querySelector('[data-booking-contact=email]').href).includes(prefix==='/'?'Dreptul familiei':'Family law'));
  const menu=d.querySelector('.menu-toggle');menu.click();assert.equal(menu.getAttribute('aria-expanded'),'true');assert(d.querySelector('#navigation').classList.contains('is-open'));
  d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape'}));assert.equal(menu.getAttribute('aria-expanded'),'false');
  const switcher=d.querySelector('#language-toggle');
@@ -44,12 +45,14 @@ for(const prefix of ['/','/en/']) {
  assert(d.querySelector('#review-booking').disabled,'date alone must not enable review');
  d.querySelector('.time-slot').click();assert(!d.querySelector('#review-booking').disabled);
  d.querySelector('#review-booking').click();assert(d.querySelector('#booking-result').textContent.includes(prefix==='/'?'Nu s-a rezervat':'Nothing has been reserved'));
+ const contactEmail=new URL(d.querySelector('[data-booking-contact=email]').href);assert(contactEmail.searchParams.get('body').includes(d.querySelector('.time-slot[aria-pressed=true]').textContent));
  const duration=d.querySelector('[name=duration][value="60"]');duration.checked=true;duration.dispatchEvent(new w.Event('change'));assert.equal(d.querySelector('#summary-duration').textContent,'60 min');assert.equal(d.querySelector('#booking-result').textContent,'','changes clear stale result');
  const office=d.querySelector('[name=format][value=office]');office.checked=true;office.dispatchEvent(new w.Event('change'));assert(d.querySelector('#summary-format').textContent.includes(prefix==='/'?'La cabinet':'At the practice'));
  for(let i=0;i<5;i++)d.querySelector('[data-calendar-next]').click();assert(d.querySelector('[data-calendar-next]').disabled);
  for(let i=0;i<5;i++)d.querySelector('[data-calendar-prev]').click();assert(d.querySelector('[data-calendar-prev]').disabled);
  const selected=d.querySelector('#calendar-days button[aria-pressed=true]');assert(selected,'selected date persists while browsing months');
  const next=d.querySelectorAll('#calendar-days button:not(:disabled)')[1];next.click();assert(d.querySelector('#review-booking').disabled,'changing date clears previous time');
+ area.value='drept-comercial';area.dispatchEvent(new w.Event('change'));assert(decodeURIComponent(d.querySelector('[data-booking-contact=whatsapp]').href).includes(prefix==='/'?'Drept comercial':'Commercial law'));
  assert.equal(errors.length,0,errors.join('\n'));dom.window.close();
 
  const studio=await open(prefix+(prefix==='/'?'administrare/':'editor/'));

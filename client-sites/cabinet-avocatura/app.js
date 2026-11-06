@@ -54,6 +54,10 @@
   const days = document.querySelector('#calendar-days');
   const times = document.querySelector('#time-slots');
   const review = document.querySelector('#review-booking');
+  const area=booking.querySelector('#consultation-area');
+  const requestedArea=new URLSearchParams(location.search).get('area');
+  if(area&&[...area.options].some(option=>option.value===requestedArea))area.value=requestedArea;
+
   const dateKey = date => [date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-');
   function summary() {
    const format = booking.querySelector('[name=format]:checked').value;
@@ -63,6 +67,11 @@
    document.querySelector('#summary-date').textContent = selectedDay ? selectedDay.toLocaleDateString(locale,{day:'numeric',month:'long',year:'numeric'}) + (selectedTime?' · '+selectedTime:'') : (en?'Not selected':'Neselectate');
    review.disabled = !(selectedDay && selectedTime);
    document.querySelector('#booking-result').textContent='';
+   const topic=area?.value?area.selectedOptions[0].textContent:'';
+   const subject=(en?'Legal consultation request':'Solicitare de consultație juridică')+(topic?' · '+topic:'');
+   const preferences=[en?'Good afternoon,':'Bună ziua,','',en?'I would like to arrange a legal consultation.':'Doresc să stabilesc o consultație juridică.',topic?(en?'Practice area: ':'Aria de practică: ')+topic:'',(en?'Preferred format: ':'Format preferat: ')+(format==='online'?(en?'online':'online'):(en?'at the practice':'la cabinet')),(en?'Indicative duration: ':'Durată orientativă: ')+duration+' min',selectedDay?(en?'Preferred date and time: ':'Dată și oră preferate: ')+document.querySelector('#summary-date').textContent+' · Europe/Bucharest':'','',en?'These are website preferences, without a confirmed reservation. Please let me know your availability and the consultation terms.':'Acestea sunt preferințe selectate pe site, fără o rezervare confirmată. Vă rog să îmi comunicați disponibilitatea și condițiile consultației.','',en?'Thank you.':'Vă mulțumesc.'].filter(line=>line!=='').join('\n');
+   document.querySelectorAll('[data-booking-contact]').forEach(link=>{link.href=link.dataset.bookingContact==='whatsapp'?'https://wa.me/'+link.dataset.destination+'?text='+encodeURIComponent(preferences):'mailto:'+link.dataset.destination+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(preferences);});
+
    const progress=document.querySelectorAll('.booking-progress li');
    progress.forEach((li,i)=> { if(i === (selectedTime?2:selectedDay?1:0)) li.setAttribute('aria-current','step'); else li.removeAttribute('aria-current'); });
   }
@@ -93,7 +102,7 @@
   }
   document.querySelector('[data-calendar-prev]').addEventListener('click',()=>{month=new Date(month.getFullYear(),month.getMonth()-1,1);renderCalendar();});
   document.querySelector('[data-calendar-next]').addEventListener('click',()=>{month=new Date(month.getFullYear(),month.getMonth()+1,1);renderCalendar();});
-  booking.querySelectorAll('input').forEach(i=>i.addEventListener('change',summary));
+  booking.querySelectorAll('input,select').forEach(i=>i.addEventListener('change',summary));
   review.addEventListener('click',()=>{ if(review.disabled)return; document.querySelector('#booking-result').textContent=(en?'Demo reviewed: ':'Selecție demonstrativă verificată: ')+document.querySelector('#summary-date').textContent+(en?'. Nothing has been reserved or charged. Please contact the practice to arrange an actual meeting.':'. Nu s-a rezervat și nu s-a plătit nimic. Contactați cabinetul pentru o întâlnire reală.'); });
   renderCalendar();summary();
  }

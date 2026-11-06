@@ -22,6 +22,10 @@ for(const route of routes) {
  check(html.includes('id="accessibility-toggle"'),'accessibility control');
  check(html.includes('id="language-toggle"'),'compact language switch');
  check(html.includes('hero-mobile')||route.key!=='home','mobile hero art direction');
+ check(html.includes('legal-cinematic-v3-mobile'),'cinematic mobile footer');
+ check(html.includes('data-practice-carousel')===['home','practices'].includes(route.key),'carousel only on practice collections');
+ check(html.includes('class="floating-contact"')===(route.key==='home'),'floating contact only on landing');
+ for(const link of html.matchAll(/href="(mailto:[^"]+|https:\/\/wa\.me\/[^"]+)"/g)){const target=new URL(link[1]);if(target.protocol==='mailto:'){check(target.pathname===firm.email,'email destination');check(!!target.searchParams.get('subject')&&!!target.searchParams.get('body'),'email draft');}else{check(target.pathname==='/40723228582','WhatsApp destination');check(!!target.searchParams.get('text'),'WhatsApp draft');}}
  check(html.includes('name="robots" content="noindex, follow"'),'demo noindex');
  check(html.includes('href="#main"'),'skip link');
  check(html.includes(`rel="canonical" href="${firm.origin}${route.path}"`),'canonical');
@@ -48,7 +52,7 @@ for(const name of ['editorial','sans']) {
  assert(!css.includes('https://'),'Fonts must be self-hosted');
  for(const m of css.matchAll(/url\(([^)]+)\)/g))await access(`dist/assets/fonts-v2/${m[1]}`);
 }
-const budgets=[['app.js',6000],['styles.css',10000]];
+const budgets=[['app.js',6000],['styles.css',10000],['motion.js',4000],['motion.css',4500]];
 for(const [file,budget] of budgets){const size=gzipSync(await readFile('dist/'+file)).length;assert(size<=budget,`${file}: ${size} gzip bytes > ${budget}`);console.log(`${file}: ${size} bytes gzip (budget ${budget})`);}
 assert((await stat('dist/assets/consultation-v2-hero-mobile-480.avif')).size<100000,'mobile hero exceeds 100KB');
 assert((await stat('dist/assets/consultation-v2-hero-desktop-800.avif')).size<260000,'desktop hero exceeds 260KB');
