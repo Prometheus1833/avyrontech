@@ -730,7 +730,7 @@ export const articles = [
         ],
         [
           "Semnalați un termen apropiat",
-          "Menționați existența unei citații, decizii sau notificări și data la care a fost primită. Un termen apropiat trebuie comunicat direct, preferabil telefonic, pentru verificarea disponibilității cabinetului. Trimiterea unui mesaj sau selectarea unui interval demonstrativ nu confirmă preluarea unei cauze și nu suspendă termenele aplicabile."
+          "Menționați existența unei citații, decizii sau notificări și data la care a fost primită. Un termen apropiat trebuie comunicat direct, preferabil telefonic, pentru verificarea disponibilității cabinetului. Trimiterea unui mesaj sau pregătirea unei solicitări nu confirmă preluarea unei cauze și nu suspendă termenele aplicabile."
         ],
         [
           "Protejați informațiile confidențiale",
@@ -760,7 +760,7 @@ export const articles = [
         ],
         [
           "Flag an approaching deadline",
-          "Identify any court notice, decision or formal notification and the date received. Contact the practice directly, preferably by phone, if a deadline is approaching so availability can be checked. Sending a message or selecting an illustrative slot does not confirm acceptance of a matter or suspend deadlines."
+          "Identify any court notice, decision or formal notification and the date received. Contact the practice directly, preferably by phone, if a deadline is approaching so availability can be checked. Sending a message or preparing a consultation request does not confirm acceptance of a matter or suspend deadlines."
         ],
         [
           "Protect confidential information",
@@ -957,7 +957,7 @@ export const translations = {
     "articleLabel": "Material informativ",
     "ctaKicker": "PRIMUL CONTACT",
     "ctaTitle": "Consultații juridice.<br><em>Online sau la cabinet.</em>",
-    "ctaText": "Un prim contact poate clarifica domeniul solicitării și modalitatea consultației. Disponibilitatea, durata și onorariul se confirmă direct cu cabinetul.",
+    "ctaText": "Pregătiți întrebările care contează pentru dumneavoastră. O discuție structurată ajută la înțelegerea situației și a opțiunilor juridice.",
     "footerText": "Consultanță, asistență și reprezentare juridică pentru persoane fizice și societăți din întreaga Românie.",
     "navigation": "Explorați",
     "legal": "Informații utile",
@@ -969,7 +969,6 @@ export const translations = {
     "accessibility": "Accesibilitate",
     "rights": "Toate drepturile rezervate.",
     "disclaimer": "Informațiile de pe acest site au caracter general și nu înlocuiesc o consultație juridică. Contactarea cabinetului nu constituie, prin ea însăși, o relație avocat–client.",
-    "concept": "Concept de prezentare · Programările și plățile online nu sunt activate.",
     "skip": "Sari la conținut",
     "menu": "Deschide meniul",
     "close": "Închide meniul",
@@ -1032,7 +1031,7 @@ export const translations = {
     "articleLabel": "General information",
     "ctaKicker": "INITIAL CONTACT",
     "ctaTitle": "Legal consultations.<br><em>Online or in person.</em>",
-    "ctaText": "Initial contact helps define the request and consultation format. Availability, duration and fees are confirmed directly with the practice.",
+    "ctaText": "Prepare the questions that matter to you. A structured conversation helps clarify your circumstances and legal options.",
     "footerText": "Legal advice, assistance and representation for individuals and companies throughout Romania.",
     "navigation": "Explore",
     "legal": "Useful information",
@@ -1044,7 +1043,6 @@ export const translations = {
     "accessibility": "Accessibility",
     "rights": "All rights reserved.",
     "disclaimer": "Information on this website is general and does not replace legal advice. Contacting the practice does not, by itself, establish a lawyer–client relationship.",
-    "concept": "Presentation concept · Online appointments and payments are not activated.",
     "skip": "Skip to content",
     "menu": "Open navigation",
     "close": "Close navigation",

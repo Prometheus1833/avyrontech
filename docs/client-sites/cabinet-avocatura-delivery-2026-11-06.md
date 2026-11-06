@@ -2,60 +2,41 @@
 
 ## Publicare verificată
 
-- URL principal: https://cabinet-avocatura.avyron.eu/
-- Adresă tehnică: https://cabinet-avocatura-manuela.try-blue44.chatgpt.site/
-- Audience public, păstrat.
-- Sites project: `appgprj_6aee16d68fcc8191a51c7f828bcfab51`.
-- Versiunea 9: `appgprj_6aee16d68fcc8191a51c7f828bcfab51~appgver_787c1513933c81918a1b963e34e62c14`.
-- Deployment: `appgdep_6aee3f813b60819197434fa6d217915c`, `succeeded`.
-- Sursă Sites: `16cbe99d153edd52f35e2edc28ce9bd20aacfba5`.
-- Build runtime: `09691be414`.
-- Surse AVYRON: `client-sites/cabinet-avocatura/`; PR #102, fără merge în main.
+- URL: https://cabinet-avocatura.avyron.eu/; pagini revizuite: /programari/ și /en/appointments/.
+- Sites: versiunea 10, `appgprj_6aee16d68fcc8191a51c7f828bcfab51~appgver_193b06a40ad481919a05cab39cfa6b06`.
+- Deployment: `appgdep_6aee441db29c8191997e55e895a2c978`, `succeeded`.
+- Sursă Sites: `e2e326ee6ca635e1da8ba449bfdbbd7a0a10ce1c`; runtime `82192b0661`.
+- AVYRON: `client-sites/cabinet-avocatura/`, ramura `codex/cabinet-avocatura-2026-11-06`, PR #102, fără merge în main.
+- DNS existent păstrat; HTTPS public verificat cu validarea normală a certificatului.
 
-GitHub AVYRON și sursa Sites păstrează istorii Git distincte. Arborele site-ului și artefactul publicat sunt sincronizate; auditul brief-ului și documentația de livrare sunt păstrate suplimentar în AVYRON. Nu a fost folosit Lovable.
+## Programări — versiunea curentă
 
-## Revizie față de brief
+Trei etape: consultația, situația pe scurt și solicitarea. Text și controale mai mari, spații reduse, instrucțiuni directe. Calendarul cu disponibilitate fictivă a fost înlocuit cu data și intervalul preferate, raportate la Europe/Bucharest. Format online/cabinet; durată 30/60 minute sau recomandarea cabinetului.
 
-Audit complet: [cabinet-avocatura-brief-audit.md](cabinet-avocatura-brief-audit.md). Conține serviciile solicitate și distincția dintre exemplul de prezentare și funcțiile operaționale de configurat.
+Chestionar opțional: persoană/societate, etapă, context național/internațional, termen și descriere de maximum 1200 caractere. Ghidaj adaptat ariei; termenele apropiate sugerează apelul direct, fără sfat juridic automat. Răspunsurile rămân în memoria paginii, fără localStorage/server. Resetarea le elimină.
 
-42 de pagini (21 RO + 21 EN), cu șase dosare de practică în fiecare limbă, trei ghiduri, consultații demonstrative, editor local și cinci pagini juridice/accesibilitate. Pagina principală rămâne sintetică. Conținutul extins este în paginile dedicate: servicii, analiză, documente utile, trei întrebări frecvente și ancore directe. Toate ariile și serviciile din brief sunt verificate automat, inclusiv Haga, paternitate, liberalități excesive, tulburarea posesiei și asistență pentru angajați și angajatori.
+Documente: maximum 3 PDF/JPG/PNG și 10 MB total. Selecție locală de nume, tip și dimensiune; codul nu citește conținutul, nu încarcă și nu atașează automat. Mesajul menționează existența documentelor, fără numele fișierelor. Atașarea se face separat în canalul convenit. Validarea metadatelor nu este scanare antivirus.
 
-Indexul serviciilor orientează separat persoanele fizice și societățile. Articolele au cuprins, timp de lectură estimat din conținut și resurse oficiale relevante. Nu sunt atribuite titularei opinii personale neaprobate sau un portret generat.
+Rezumat verificabil, apoi e-mail sau WhatsApp către destinatarii din brief. Mesajele nu se trimit automat. Cabinetul comunică disponibilitatea, onorariul și condițiile înaintea întâlnirii. Repetițiile despre demonstrație/neconfirmare au fost eliminate din subsol, CTA-uri și etichetele editoriale; paginile juridice descriu comportamentul actual.
 
-Brandul este Cabinet de Avocatură Manuela Galuscan; localizarea București, România, fără sector. Textele, metadatele și LegalService/Service descriu reprezentare națională, fără adresă, barou sau acreditări inventate. Canonical/hreflang/sitemap folosesc domeniul AVYRON. BreadcrumbList reflectă ierarhia paginilor. Exemplul rămâne noindex pentru revizia cabinetului; nu se declară indexare sau poziționare confirmată.
+## Conținut și design păstrate
 
-## Design și interacțiuni
+42 pagini (21 RO + 21 EN), șase arii complete, trei ghiduri, fotografii AVIF/WebP cu încadrări desktop/mobil, fundaluri cinematice, carusel și progres la scroll. Cabinet de Avocatură Manuela Galuscan; București, România; reprezentare națională. Fără adresă, barou, premii, rezultate sau onorarii inventate. [Auditul brief-ului](cabinet-avocatura-brief-audit.md).
 
-Source Serif 4 și Source Sans 3 sunt locale, cu licențe OFL. Hero-ul separă textul de imagine. Cardurile de practică au carusel continuu spre stânga, scroll/swipe nativ, drag, săgeți care aliniază cardul următor și tastatură. Mișcarea se oprește la apăsare, hover, focus, în afara ecranului, în tab ascuns și la mișcare redusă. Copiile de buclă nu intră în ordinea de tab/arborele accesibil. Efectul de profunzime este CSS 2.5D, fără WebGL.
+Fotografii ilustrative native 1536×1024, fără mărire artificială; nu reprezintă sediul sau titulara reală. Prompturi în assets/GENERATED-V2/V3/V4.md. Noindex rămâne pentru revizia cabinetului; canonical/hreflang/sitemap/LegalService și breadcrumbs sunt păstrate.
 
-Pe mobil, bara sticky urmărește geometria celor trei pași. Un singur scheduler deservește caruselul și progresul. Intrările scurte ale secțiunilor folosesc Web Animations ca îmbunătățire opțională: conținutul este vizibil implicit, iar mișcarea redusă/tabul ascuns anulează animațiile. Nu se folosește video.
+## Verificări curente
 
-Fotografiile noi de prezentare și consultații sunt native 1536 × 1024, optimizate AVIF/WebP, cu încadrări distincte desktop/mobil din aceeași sursă. Cadrul luminos: 18–82 KB AVIF; fundalul de consultații: 22–47 KB. Subsolul cinematic păstrat este nativ 1774 × 887. Imaginile sunt ilustrative, fără a reprezenta sediul real. Nu sunt 4K/8K mărite artificial. Prompturi: `assets/GENERATED-V2.md`, `GENERATED-V3.md`, `GENERATED-V4.md`.
+- Build, check, test:interactions, sintaxă JS, git diff --check: trecute.
+- Validator: 42 pagini, 1820 referințe interne, 472 resurse directe; metadate, srcset/fonturi, ancore, paritate și destinatari.
+- Teste RO/EN: date/intervale, chestionar, termene condiționale, text sigur, mesaje contextuale, selecție și limite de fișiere, fără citire/transmitere fișiere, resetare. Editorul, caruselul, mișcarea redusă, progresul și acoperirea brief-ului rămân verificate.
+- Browser: 16 combinații RO/EN la opt dimensiuni 320–1440 px, fără overflow; câmpuri 16 px. Rezumat EN cu text 130% + contrast la cinci dimensiuni: fără overflow, câmpuri 20,8 px. Tableta ajustată verificată din nou la 768/844 px și mobilul la 320 px.
+- Public: formular, navigare, rezumat, fingerprint și capturi pe domeniul final. Toate cele 42 HTML și 8 CSS/JS comparate cu build-ul local: 50/50 identice. Normalizarea exclude numai scriptul Cloudflare injectat de hosting. Dovezi în output/appointments-proof/.
+- Gzip: booking.js 3389 B și booking.css 2908 B, numai pe programări; app.js comun redus la 2813 B.
+- Build-urile aplicației AVYRON nu au fost rulate local, site-ul fiind autonom. CI verifică separat aplicația și site-ul.
 
-CTA principal: „Solicitați o consultație”. Apel, WhatsApp și e-mail plutitoare apar pe landing, vertical pe desktop și într-o bară compactă pe mobil. Mesajele preiau domeniul și preferințele consultației, fără trimitere automată și fără rezervare implicită. Nu au fost trimise mesaje de verificare și nu a fost verificată existența contului WhatsApp pe număr.
+Nu se pretinde testare pe dispozitive fizice iOS/Android, certificare WCAG/GDPR, audit complet Core Web Vitals sau încărcare universală sub două secunde.
 
-Comutatorul afișează doar RO sau EN și deschide pagina echivalentă. Opțiunile de text 100/115/130%, contrast și resetare păstrează preferințe locale. În landscape, panoul are scroll propriu și înălțime limitată la viewport. Bannerele cu imagine folosesc alb pe negru și elimină fotografia în contrast ridicat.
+## Limite operaționale
 
-## Verificări
-
-- Build static, sintaxă JS, `git diff --check`.
-- Validator: 42 pagini, 1.818 referințe interne, 468 resurse directe, toate srcset/fonturile, metadate, schema breadcrumb și ancore locale, paritate RO/EN și destinatari/drafturi de contact.
-- Teste: calendar/editor și regenerare raster sigură, allowlist pentru domeniul consultației, context precompletat, carousel press/touch-hold, focus/reluare, săgeți/tastatură, buclă, offscreen/hidden idle, mișcare redusă, progres la scroll, acoperirea brief-ului, dosare extinse și fallback de animație/media.
-- Toate cele 42 de pagini în browser la 320 × 568, normal și text 130% + contrast, fără overflow orizontal.
-- 54 combinații pagină/dimensiune: home, index servicii, comercial, consultații, contact, articol; 320×568, 360×800, 375×812, 390×844, 412×915, 430×932, 768×1024, 844×390 și 1440×1000. Fără overflow; selectul de consultație are minimum 16 px.
-- Corecții observate: contrast în bannere și panoul de accesibilitate în landscape. La viewport 844×390, panoul este derulabil, cu top 89/bottom 369; toate opțiunile sunt accesibile.
-- Compatibilitate pregătită prin safe-area/viewport-fit, controale native și fallback media. Nu se declară testare pe telefoane fizice iOS/Android sau certificarea fiecărei versiuni de browser. Browserul integrat nu expune injectarea gesturilor tactile fizice.
-- 162 resurse publice comparate cu build-ul local, inclusiv toate cele 42 pagini și imaginile/fonturile/CSS/JS: identice. Este exclus din comparație numai scriptul de protecție Cloudflare injectat de infrastructură.
-- Gzip: app 4.937 B, motion 3.175 B doar pe colecțiile de arii, editorial 752 B; CSS principal 9.899 B, motion 3.708 B, editorial 3.214 B. Intro decorativ 0,75 s, respectă mișcarea redusă.
-
-Capturi și rapoarte: `output/brief-proof/` în workspace; versiunile anterioare au dovezi în `output/dns-proof/`, `refinement-proof/`, `carousel-proof/`. Nu reprezintă audit complet Core Web Vitals sau certificare WCAG. Nu se garantează un timp de încărcare universal sub 2 secunde.
-
-Build-urile aplicației AVYRON nu au fost rulate local, deoarece site-ul este autonom și nu modifică aplicația/API-ul. CI verifică separat site-ul și aplicația; rezultatele trebuie raportate pentru commitul curent, nu pentru o revizie anterioară.
-
-## DNS și limite operaționale
-
-DNS a fost configurat anterior în zona avyron.eu din contul Cloudflare Avyron: CNAME DNS only spre custom-domains.chatgpt.site și cele două TXT emise de Sites. Configurația exactă este în `cabinet-avocatura-dns.json`. Custom domain `appgdom_6aee1b96ca348191a290fc6df5ea7007` a fost confirmat activ, cu SSL activ, în configurarea inițială. În această revizie nu s-a modificat DNS; publicarea și verificările HTTPS pe domeniu au reușit cu verificarea normală a certificatului.
-
-Calendarul, plățile și editorul sunt demonstrative. Nu se rezervă intervale, nu se încasează onorarii și nu se emit confirmări automate. Nu există formular operațional de client sau upload de dosare. Articolele și paginile juridice necesită revizia cabinetului. Onorariile, anulările, procesatorul, calendarul real, notificările, CMS-ul autentificat, conturile cabinetului și oferta de hosting/mentenanță/SLA rămân pentru configurare și acorduri separate. Nu au fost inventate tarife, condiții comerciale ori certificări GDPR.
-
-Politica de cookies descrie comportamentul Cloudflare observat pe hosting. `_headers` este pregătit pentru Pages, dar hostingul static Sites nu a fost observat aplicând toate antetele. Meta CSP restricționează object-src/base-uri/form-action; aceasta nu reprezintă o certificare de securitate sau conformitate a viitorului sistem de date personale.
+Calendarul conectat, plățile/webhook-urile și confirmările automate, CMS-ul autentificat, datele legale finale, politicile aprobate, accesul securizat/retentia și oferta de mentenanță/SLA necesită configurare distinctă. Editorul actual este local. Conturile cabinetului și procesatorul nu sunt activate de această publicare. Nu există migrări sau modificări în aplicația/API AVYRON, nici modificări DNS în această revizie. Lovable nu a fost folosit.

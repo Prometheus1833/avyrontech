@@ -16,6 +16,7 @@ async function open(route,search='') {
  const errors=[];
  window.addEventListener('error',e=>errors.push(e.message));
  window.eval(script);
+ if(window.document.querySelector('[data-booking]'))window.eval(await readFile('booking.js','utf8'));
  return {dom,w:window,d:window.document,errors};
 }
 for(const prefix of ['/','/en/']) {
@@ -38,21 +39,34 @@ for(const prefix of ['/','/en/']) {
  d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape'}));assert(panel.hidden);assert.equal(d.activeElement,accessibility);
  accessibility.click();d.querySelector('#accessibility-reset').click();assert.equal(d.querySelector('#text-size-label').textContent,'100%');assert.equal(d.documentElement.dataset.contrast,'normal');assert.equal(w.localStorage.getItem('mg-accessibility-v1'),null);
  d.body.click();assert(panel.hidden);
- assert(d.querySelector('[data-calendar-prev]').disabled);
- assert(d.querySelector('#review-booking').disabled);
- const available=d.querySelector('#calendar-days button:not(:disabled)');assert(available,'calendar has example availability');available.click();
- assert.equal(d.querySelectorAll('.time-slot').length,4);
- assert(d.querySelector('#review-booking').disabled,'date alone must not enable review');
- d.querySelector('.time-slot').click();assert(!d.querySelector('#review-booking').disabled);
- d.querySelector('#review-booking').click();assert(d.querySelector('#booking-result').textContent.includes(prefix==='/'?'Nu s-a rezervat':'Nothing has been reserved'));
- const contactEmail=new URL(d.querySelector('[data-booking-contact=email]').href);assert(contactEmail.searchParams.get('body').includes(d.querySelector('.time-slot[aria-pressed=true]').textContent));
- const duration=d.querySelector('[name=duration][value="60"]');duration.checked=true;duration.dispatchEvent(new w.Event('change'));assert.equal(d.querySelector('#summary-duration').textContent,'60 min');assert.equal(d.querySelector('#booking-result').textContent,'','changes clear stale result');
- const office=d.querySelector('[name=format][value=office]');office.checked=true;office.dispatchEvent(new w.Event('change'));assert(d.querySelector('#summary-format').textContent.includes(prefix==='/'?'La cabinet':'At the practice'));
- for(let i=0;i<5;i++)d.querySelector('[data-calendar-next]').click();assert(d.querySelector('[data-calendar-next]').disabled);
- for(let i=0;i<5;i++)d.querySelector('[data-calendar-prev]').click();assert(d.querySelector('[data-calendar-prev]').disabled);
- const selected=d.querySelector('#calendar-days button[aria-pressed=true]');assert(selected,'selected date persists while browsing months');
- const next=d.querySelectorAll('#calendar-days button:not(:disabled)')[1];next.click();assert(d.querySelector('#review-booking').disabled,'changing date clears previous time');
- area.value='drept-comercial';area.dispatchEvent(new w.Event('change'));assert(decodeURIComponent(d.querySelector('[data-booking-contact=whatsapp]').href).includes(prefix==='/'?'Drept comercial':'Commercial law'));
+ assert.equal(d.querySelector('#preferred-date').min,'2026-11-06');
+ assert(d.querySelector('#request-review').hidden);
+ d.querySelector('#preferred-date').value='2026-11-09';
+ const time=d.querySelector('#preferred-time');time.value='morning';time.dispatchEvent(new w.Event('change',{bubbles:true}));
+ assert(d.querySelector('#summary-date').textContent.includes('09:00'));
+ const duration=d.querySelector('#consultation-duration');duration.value='60';duration.dispatchEvent(new w.Event('change',{bubbles:true}));assert(d.querySelector('#summary-duration').textContent.includes('60'));
+ const office=d.querySelector('[name=format][value=office]');office.checked=true;office.dispatchEvent(new w.Event('change',{bubbles:true}));assert(d.querySelector('#summary-format').textContent.includes(prefix==='/'?'La cabinet':'At the practice'));
+ const deadline=d.querySelector('#request-deadline');deadline.value='yes';deadline.dispatchEvent(new w.Event('change',{bubbles:true}));assert(!d.querySelector('#deadline-field').hidden);assert(!d.querySelector('#deadline-alert').hidden);
+ const deadlineDate=d.querySelector('#deadline-date');deadlineDate.value='2026-11-30';deadlineDate.dispatchEvent(new w.Event('input',{bubbles:true}));assert(d.querySelector('#deadline-alert').hidden);
+ deadlineDate.value='2026-11-08';deadlineDate.dispatchEvent(new w.Event('input',{bubbles:true}));assert(!d.querySelector('#deadline-alert').hidden);
+ deadline.value='no';deadline.dispatchEvent(new w.Event('change',{bubbles:true}));assert(d.querySelector('#deadline-field').hidden);assert.equal(deadlineDate.value,'');
+ const description=d.querySelector('#situation-description');description.value='<img src=x onerror=alert(1)> întrebarea principală';description.dispatchEvent(new w.Event('input',{bubbles:true}));
+ assert(d.querySelector('#request-preview').textContent.includes(description.value));assert(!d.querySelector('#request-preview img'),'description renders as text');assert(d.querySelector('#situation-count').textContent.startsWith(String(description.value.length)));
+ d.querySelector('#consultation-request').dispatchEvent(new w.Event('submit',{cancelable:true}));assert(!d.querySelector('#request-review').hidden);assert.equal(d.activeElement,d.querySelector('#request-preview'));
+ const contactEmail=new URL(d.querySelector('[data-booking-contact=email]').href);assert(contactEmail.searchParams.get('body').includes(description.value));assert(contactEmail.searchParams.get('body').includes('09:00'));
+ area.value='drept-comercial';area.dispatchEvent(new w.Event('change',{bubbles:true}));assert(decodeURIComponent(d.querySelector('[data-booking-contact=whatsapp]').href).includes(prefix==='/'?'Drept comercial':'Commercial law'));assert(d.querySelector('#area-guidance').textContent.length>20);
+ // Selection uses file metadata only, rejects unsupported types and never reads or uploads contents.
+ const docs=d.querySelector('#request-documents');
+ w.FileReader=class{constructor(){throw new Error('File contents must not be read');}};
+ w.fetch=()=>{throw new Error('Requests must stay local');};
+ function files(items){Object.defineProperty(docs,'files',{value:items,configurable:true});docs.dispatchEvent(new w.Event('change',{bubbles:true}));}
+ files([new w.File(['example'],'contract-privat.pdf',{type:'application/pdf'})]);assert.equal(d.querySelectorAll('#document-list li').length,1);assert(!d.querySelector('#attachment-reminder').hidden);assert(!decodeURIComponent(d.querySelector('[data-booking-contact=email]').href).includes('contract-privat.pdf'),'filenames are not disclosed in draft');
+ files([new w.File(['html'],'attack.html',{type:'text/html'})]);assert.equal(d.querySelectorAll('#document-list li').length,0);assert(d.querySelector('#document-status').textContent.includes('PDF'));
+ files(Array.from({length:4},(_,i)=>new w.File(['x'],i+'.pdf',{type:'application/pdf'})));assert.equal(d.querySelectorAll('#document-list li').length,0);
+ files([{name:'large.pdf',type:'application/pdf',size:11*1024*1024}]);assert.equal(d.querySelectorAll('#document-list li').length,0);
+ files([new w.File(['x'],'safe.pdf',{type:'application/pdf'})]);d.querySelector('#clear-documents').click();assert.equal(d.querySelectorAll('#document-list li').length,0);assert(d.querySelector('#attachment-reminder').hidden);
+ assert.equal(w.localStorage.length,0,'no questionnaire persistence');
+ d.querySelector('#consultation-request').reset();await new Promise(resolve=>w.setTimeout(resolve,0));assert.equal(description.value,'');assert.equal(d.querySelector('#situation-count').textContent,'0 / 1200');assert(d.querySelector('#request-review').hidden);assert.equal(d.querySelector('#preferred-date').value,'');
  assert.equal(errors.length,0,errors.join('\n'));dom.window.close();
 
  const studio=await open(prefix+(prefix==='/'?'administrare/':'editor/'));
@@ -81,4 +95,4 @@ for(const prefix of ['/','/en/']) {
  assert.notEqual(studio.d.querySelector('#editor-preview-content h2').textContent,unsafe);
  assert.equal(studio.errors.length,0,studio.errors.join('\n'));studio.dom.window.close();
 }
-console.log('PASS: RO/EN navigation, keyboard dismissal, calendar bounds, date/time selection, duration/format updates, no false booking confirmation, safe editor rendering and local draft lifecycle.');
+console.log('PASS: RO/EN navigation, keyboard dismissal, consultation questionnaire, preferred date/time, contextual drafts, safe local file selection and full reset, safe editor rendering and local draft lifecycle.');

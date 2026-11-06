@@ -46,7 +46,7 @@ for(const route of routes) {
  for(const match of html.matchAll(/srcset="([^"]+)"/g))for(const candidate of match[1].split(',').map(s=>s.trim().split(' ')[0])){try{await access(path.join('dist',candidate));}catch{check(false,'missing srcset asset '+candidate);}}
  for(const img of html.matchAll(/<img\b[^>]*>/g))check(/\balt="[^"]*"/.test(img[0]),'image needs alt');
  if(route.key!=='studio')check(!/<input[^>]+(?:type="(?:email|password)"|name="(?:email|name)")/.test(html),'demo must not collect client data');
- if(route.key==='booking'){check(html.includes('id="review-booking" disabled'),'review initially disabled');check(html.includes('Europe/Bucharest'),'explicit booking timezone');}
+ if(route.key==='booking'){check(html.includes('id="consultation-request"')&&html.includes('id="request-review" hidden'),'request starts with editable preferences');check(html.includes('Europe/Bucharest'),'explicit booking timezone');}
  check(!/href="(?:javascript:|")/.test(html),'no inert links');
  for(const anchor of html.matchAll(/href="#([^"]*)"/g))check(!!anchor[1]&&html.includes('id="'+anchor[1]+'"'),'local anchor '+anchor[1]);
  check(!/https:\/\/(?:fonts\.googleapis|fonts\.gstatic|images\.unsplash)/.test(html),'no third-party runtime media');
@@ -56,7 +56,7 @@ for(const name of ['editorial','sans']) {
  assert(!css.includes('https://'),'Fonts must be self-hosted');
  for(const m of css.matchAll(/url\(([^)]+)\)/g))await access(`dist/assets/fonts-v2/${m[1]}`);
 }
-const budgets=[['app.js',6000],['styles.css',10000],['motion.js',4000],['motion.css',4500],['editorial.js',1600],['editorial.css',4500]];
+const budgets=[['app.js',6000],['booking.js',4200],['booking.css',4200],['styles.css',10000],['motion.js',4000],['motion.css',4500],['editorial.js',1600],['editorial.css',4500]];
 for(const [file,budget] of budgets){const size=gzipSync(await readFile('dist/'+file)).length;assert(size<=budget,`${file}: ${size} gzip bytes > ${budget}`);console.log(`${file}: ${size} bytes gzip (budget ${budget})`);}
 assert((await stat('dist/assets/consultation-v2-hero-mobile-480.avif')).size<100000,'mobile hero exceeds 100KB');
 assert((await stat('dist/assets/consultation-v2-hero-desktop-800.avif')).size<260000,'desktop hero exceeds 260KB');
