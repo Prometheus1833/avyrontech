@@ -1,3 +1,5 @@
+import { robotsDirectiveForPath } from "@/seo/publicRoutes";
+
 const MEASUREMENT_ID =
   import.meta.env.VITE_GOOGLE_ANALYTICS_ID ||
   import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_ANALYTICS_API_KEY ||
@@ -5,18 +7,37 @@ const MEASUREMENT_ID =
 
 export const GA_ENABLED = Boolean(MEASUREMENT_ID);
 let initialized = false;
+let analyticsAllowed = false;
 
-const isPrivateSurveySurface = () => typeof window !== "undefined" && (
-  window.location.hostname === "surveys.avyron.ro" || window.location.pathname.startsWith("/s/")
+export const isPrivateAnalyticsSurface = () => typeof window !== "undefined" && (
+  !["avyron.ro", "www.avyron.ro", "localhost", "127.0.0.1"].includes(window.location.hostname)
+  || new URLSearchParams(window.location.search).has("servicePreview")
+  || robotsDirectiveForPath(window.location.pathname.replace(/\/+$/, "") || "/") === "noindex, nofollow"
 );
 
+// Queries/fragments can contain recovery tokens, emails or document identifiers.
+const publicLocation = () => `${window.location.origin}${window.location.pathname}`;
+const publicReferrer = () => {
+  try { const url = new URL(document.referrer); return url.origin; } catch { return ""; }
+};
+const syncMeasurementGate = () => {
+  if (typeof window !== "undefined") {
+    (window as unknown as Record<string, unknown>)[`ga-disable-${MEASUREMENT_ID}`] = !analyticsAllowed || isPrivateAnalyticsSurface();
+  }
+};
+
 function ensureAnalytics() {
-  if (isPrivateSurveySurface()) return;
+  if (isPrivateAnalyticsSurface()) return;
   if (!GA_ENABLED || initialized || typeof window === "undefined") return;
   initialized = true;
-  const state = window as unknown as { dataLayer: unknown[][]; gtag: (...args: unknown[]) => void };
+  const state = window as unknown as { dataLayer: IArguments[]; gtag: (...args: unknown[]) => void };
   state.dataLayer = state.dataLayer || [];
-  state.gtag = (...args: unknown[]) => state.dataLayer.push(args);
+  // gtag.js consumes an Arguments queue, as specified by Google. Arrays are
+  // ignored: the script loads successfully but no GA4 collect event is sent.
+  state.gtag = function () {
+    // eslint-disable-next-line prefer-rest-params
+    state.dataLayer.push(arguments);
+  };
   state.gtag("consent", "default", {
     analytics_storage: "denied",
     ad_storage: "denied",
@@ -24,7 +45,7 @@ function ensureAnalytics() {
     ad_personalization: "denied",
   });
   state.gtag("js", new Date());
-  state.gtag("config", MEASUREMENT_ID, { send_page_view: false });
+  state.gtag("config", MEASUREMENT_ID, { send_page_view: false, page_location: publicLocation(), page_referrer: publicReferrer() });
   const script = document.createElement("script");
   script.async = true;
   script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(MEASUREMENT_ID)}`;
@@ -35,7 +56,9 @@ function ensureAnalytics() {
  * Safe gtag wrapper. No-ops when GA is not configured or when running server-side.
  */
 export function gtag(...args: unknown[]) {
-  if (isPrivateSurveySurface() || typeof window === "undefined" || !GA_ENABLED || !initialized) return;
+  syncMeasurementGate();
+  if (isPrivateAnalyticsSurface() || typeof window === "undefined" || !GA_ENABLED || !initialized) return;
+  if (args[0] === "event" && !analyticsAllowed) return;
   const w = window as unknown as { gtag?: (...a: unknown[]) => void };
   w.gtag?.(...args);
 }
@@ -44,11 +67,13 @@ export function gtag(...args: unknown[]) {
  * Send a GA4 page_view event. Should be called on every client-side route change.
  */
 export function pageView(path: string, title?: string) {
-  if (!GA_ENABLED || isPrivateSurveySurface()) return;
+  syncMeasurementGate();
+  if (!GA_ENABLED || typeof window === "undefined" || isPrivateAnalyticsSurface()) return;
   gtag("event", "page_view", {
     page_path: path,
     page_title: title || document.title,
-    page_location: window.location.href,
+    page_location: publicLocation(),
+    page_referrer: publicReferrer(),
   });
 }
 
@@ -59,8 +84,8 @@ export function trackEvent(
   name: string,
   params: Record<string, string | number | boolean | undefined> = {},
 ) {
-  if (!GA_ENABLED || isPrivateSurveySurface()) return;
-  gtag("event", name, params);
+  if (!GA_ENABLED || typeof window === "undefined" || isPrivateAnalyticsSurface()) return;
+  gtag("event", name, { ...params, page_location: publicLocation(), page_referrer: publicReferrer() });
 }
 
 /**
@@ -73,7 +98,9 @@ export type ConsentPreferences = {
 };
 
 export function updateConsent({ analytics, marketing }: ConsentPreferences) {
-  if (!GA_ENABLED || isPrivateSurveySurface()) return;
+  analyticsAllowed = analytics;
+  syncMeasurementGate();
+  if (!GA_ENABLED || isPrivateAnalyticsSurface()) return;
   if (analytics || marketing) ensureAnalytics();
   if (!initialized) return;
   gtag("consent", "update", {

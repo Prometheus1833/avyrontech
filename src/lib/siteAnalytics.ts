@@ -4,7 +4,7 @@
 // Identificatorul de sesiune trăiește în sessionStorage și dispare la închiderea tab-ului.
 
 import { apiUrl } from "./apiBase";
-import { trackEvent } from "./analytics";
+import { isPrivateAnalyticsSurface, trackEvent } from "./analytics";
 import { hasAnalyticsConsent } from "./cookieConsent";
 
 export type FunnelEvent =
@@ -47,9 +47,7 @@ export function trackFunnel(
   page: string,
   gaParams: Record<string, string | number | boolean | undefined> = {},
 ) {
-  if (!hasAnalyticsConsent() || (typeof window !== "undefined" && (
-    window.location.hostname === "surveys.avyron.ro" || window.location.pathname.startsWith("/s/")
-  ))) return;
+  if (!hasAnalyticsConsent() || isPrivateAnalyticsSurface()) return;
   trackEvent(event === "page_view" ? "page_view_product" : event, { location: page, ...gaParams });
   if (typeof window === "undefined") return;
 

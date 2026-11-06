@@ -2,6 +2,7 @@ import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { JSDOM } from "jsdom";
+import { discoveryReport } from "./lib/seo-discovery.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = existsSync(join(root, "dist/client/index.html")) ? join(root, "dist/client") : join(root, "dist");
@@ -90,7 +91,8 @@ const pages = htmlFiles(dist).map((file) => {
   if (isProductDetail && !schemaTypes.has("Product")) {
     recommendations.push({ route, code: "product_schema", recommendation: "Descrie produsul prin Product și adaugă Offer numai pentru prețul afișat." });
   }
-  return { route, title, description, canonical, robots, noindex, ids, schemaTypes: [...schemaTypes] };
+  const links = [...document.querySelectorAll("a[href]")].map(link => link.getAttribute("href"));
+  return { route, title, description, canonical, robots, noindex, ids, schemaTypes: [...schemaTypes], links };
 });
 
 const sitemap = readFileSync(join(dist, "sitemap.xml"), "utf8");
@@ -250,6 +252,8 @@ if (llmsRoutes.length !== sitemapSet.size || new Set(llmsRoutes).size !== sitema
 for (const route of sitemapSet) {
   if (!llmsRoutes.includes(route)) failures.push(`llms.txt is missing sitemap page ${route}`);
 }
+const discovery = discoveryReport(pages, [...sitemapSet]);
+for (const route of discovery.orphanPages) failures.push(`${route}: sitemap page has no HTML link path from the homepage`);
 if (failures.length) {
   throw new Error(`SEO audit failed (${failures.length}):\n${failures.map((item) => `- ${item}`).join("\n")}`);
 }
@@ -264,6 +268,7 @@ writeFileSync(join(dist, "seo-audit.json"), JSON.stringify({
     llmsPages: llmsRoutes.length,
   },
   recommendations,
+  discovery,
 }, null, 2));
 
 console.log(

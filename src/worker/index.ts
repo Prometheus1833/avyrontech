@@ -1,4 +1,5 @@
 import { rewriteExampleCarousels } from "./exampleCarousels";
+import { applicationHostResponse } from "./applicationHost";
 /**
  * Site edge runtime (Cloudflare Pages advanced mode or standalone Worker) —
  * serves the prerendered static build and applies correct HTTP semantics: 301
@@ -84,7 +85,7 @@ async function serveLlms(env: Env, request: Request) {
   return new Response(request.method === "HEAD" ? null : mergeBlogLlms(await asset.text(), payload.data || []), { status: 200, headers });
 }
 
-export default {
+const site = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const surveyResponse = await serveSurveyHost(request, env.ASSETS);
     if (surveyResponse) return surveyResponse;
@@ -142,5 +143,11 @@ export default {
         return new Response(assetRes.body, { status: assetRes.status, headers });
       }
     }
+  },
+};
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    return applicationHostResponse(request, await site.fetch(request, env));
   },
 };

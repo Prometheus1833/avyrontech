@@ -1,5 +1,7 @@
 # Continuitatea proiectului AVYRON
 
+Actualizare SEO 06.11.2026: auditul de build verifică și descoperirea paginilor din linkuri HTML, iar GA4 folosește coada Google `Arguments`, acord explicit și excluderea suprafețelor private. Dovada Bing este în meta tagul public `msvalidate.01`; starea verificării, sitemapurile și primirea efectivă a evenimentelor trebuie confirmate după deploy. Se reutilizează Cloudflare Crawler Hints pentru IndexNow, fără conector paralel. Vezi [runbookul de indexare](./SEO_INDEXATION_RUNBOOK.md); cifrele private de trafic și exporturile de cont nu se păstrează în Git.
+
 Acest document permite unui agent să continue lucrul fără să confunde codul local, PR-ul, preview-ul și producția. Verifică întotdeauna starea curentă înainte de a folosi inventarul datat de mai jos.
 
 ## Limite și surse de adevăr
