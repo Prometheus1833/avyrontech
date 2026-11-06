@@ -136,6 +136,16 @@ export function pdfDefinition(
 ): TDocumentDefinitions {
   const modern = isModernDocument(payload);
   if (modern && draft) payload = readableDocumentDraft(payload);
+  const body: Content[] = [];
+  const nodes = payload.body.content || [];
+  for (let i = 0; i < nodes.length; i++) {
+    const next = nodes[i + 1];
+    if (modern && nodes[i].type === "heading" && next?.type === "paragraph" && plainText(next).length <= 900) {
+      // Bound the group so a long contractual clause can still flow over pages.
+      body.push({ stack: [pdfNode(nodes[i], modern), pdfNode(next, modern)], unbreakable: true });
+      i++;
+    } else body.push(pdfNode(nodes[i], modern));
+  }
   const keepCommercialTogether = modern && payload.lines.length <= 6 && commercialTotals(payload.lines).length <= 3 && payload.lines.reduce((n,l) => n+l.label.length+l.sku.length+l.discountReason.length,0) <= 900;
   const table: Content[] = payload.lines.length
     ? [
@@ -262,7 +272,7 @@ export function pdfDefinition(
         color: "#596477",
         margin: [0, 0, 0, 16],
       },
-      ...(payload.body.content || []).map((child) => pdfNode(child, modern)),
+      ...body,
       ...table,
     ],
   };
