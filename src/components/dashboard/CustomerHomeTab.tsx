@@ -7,7 +7,7 @@ const actions = [
  {id:"projects",label:"Proiectele mele",description:"Progresul și livrabilele alocate",icon:Boxes},
  {id:"catalog",label:"Servicii",description:"Servicii și produse disponibile",icon:Boxes},
  {id:"subscriptions",label:"Mentenanță / Abonamente",description:"Planuri, facturare și activități",icon:Repeat},
- {id:"payments",label:"Metodă de plată salvată",description:"Carduri și preferințe de facturare",icon:CreditCard},
+ {id:"payments",label:"Plăți și facturi",description:"Facturi, carduri și date de facturare",icon:CreditCard},
  {id:"documents",label:"Centru Documente",description:"Documentele disponibile pentru contul tău",icon:BookOpen},
 ] as const;
 

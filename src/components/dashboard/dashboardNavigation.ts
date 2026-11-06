@@ -138,11 +138,11 @@ export function dashboardSectionMeta(section:SectionId,client:boolean):Dashboard
  projects:{label:"Proiectele mele",mobileLabel:"Proiecte",commandLabel:"Deschide proiectele mele",hint:"Progresul și livrabilele proiectelor alocate"},
  catalog:{label:"Servicii",mobileLabel:"Servicii",commandLabel:"Deschide serviciile",hint:"Servicii și produse disponibile pentru tine"},
  subscriptions:{label:"Mentenanță / Abonamente",mobileLabel:"Abonamente",commandLabel:"Deschide mentenanța și abonamentele",hint:"Planurile, facturarea și activitățile tale recurente"},
- payments:{label:"Metodă de plată salvată",commandLabel:"Deschide metoda de plată salvată",hint:"Metodele proprii și preferințele de facturare"},
+ payments:{label:"Plăți și facturi",commandLabel:"Deschide plățile și facturile",hint:"Istoric, descărcare facturi, date fiscale și metode de plată"},
  documents:{label:"Centru Documente",mobileLabel:"Documente",commandLabel:"Deschide Centrul de Documente",hint:"Documentele alocate și disponibile pentru contul tău"},
- collection:{label:"Produsele mele",commandLabel:"Deschide produsele mele",hint:"Licențele și produsele digitale din cont"},
- intern:{label:"Mesaje",mobileLabel:"Mesaje",hint:"Conversațiile proiectelor tale"},
+ collection:{label:"Produsele mele",mobileLabel:"Produse",commandLabel:"Deschide produsele mele",hint:"Licențele și produsele digitale din cont"},
+ tickets:{label:"Suport și mesaje",commandLabel:"Deschide suportul și mesajele",hint:"Solicitări și conversații cu echipa proiectelor tale"},
  };
  return {...base,...overrides[section]};
 }
-export const dashboardGroupLabel=(group:string,client:boolean)=>client?({projects:"Secțiuni",overview:"Principal",billing:"Facturi și comenzi",activity:"Asistență",account:"Contul meu"} as Record<string,string>)[group]||DASHBOARD_GROUP_LABELS[group]:DASHBOARD_GROUP_LABELS[group];
+export const dashboardGroupLabel=(group:string,client:boolean)=>client?({projects:"Secțiuni",overview:"Principal",billing:"Comenzi",activity:"Asistență",account:"Contul meu"} as Record<string,string>)[group]||DASHBOARD_GROUP_LABELS[group]:DASHBOARD_GROUP_LABELS[group];

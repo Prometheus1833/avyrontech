@@ -174,7 +174,7 @@ const canOpenDefinition = (section: SectionDef, access: Access) => {
   );
 };
 
-export const CLIENT_SECTION_ORDER:SectionId[]=["overview","projects","catalog","subscriptions","payments","documents","collection","orders","invoices","cart","intern","tickets","my-collaborations","profile","settings"];
+export const CLIENT_SECTION_ORDER:SectionId[]=["overview","projects","catalog","subscriptions","payments","documents","collection","orders","cart","tickets","my-collaborations","profile","settings"];
 export const sectionsFor = (a: Access) => {
  const allowed=SECTIONS.filter(s=>canOpenDefinition(s,a));
  if(!a.isClient)return allowed;

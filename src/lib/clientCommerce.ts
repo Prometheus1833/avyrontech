@@ -1,0 +1,72 @@
+import {
+  commerceItemBySku,
+  type CommerceCatalogItem,
+} from "@/data/commerceCatalog";
+import type { AccountCartItem } from "./accountCart";
+export type CartCatalogEntry = {
+  key: string;
+  name: string;
+  category: string;
+  sku: string | null;
+  priceMinor: number | null;
+  currency: string;
+  payable: boolean;
+};
+export type Catalog = {
+  services: CartCatalogEntry[];
+  products: CartCatalogEntry[];
+  subscriptions?: CommerceCatalogItem[];
+};
+export function cartDisplayItem(
+  item: AccountCartItem,
+  catalog: Catalog,
+): AccountCartItem {
+  const entry =
+    item.serviceKey && item.type !== "subscription"
+      ? catalog.services.find((e) => e.key === item.serviceKey)
+      : item.productSlug
+        ? catalog.products.find((e) => e.key === item.productSlug)
+        : [...catalog.services, ...catalog.products].find(
+            (e) => e.sku === item.sku,
+          );
+  if (entry)
+    return {
+      ...item,
+      name: entry.name,
+      sku: entry.sku || "custom-request",
+      price_estimate: ["RON", "EUR"].includes(entry.currency)
+        ? (entry.priceMinor ?? undefined)
+        : undefined,
+      price_currency: entry.currency === "EUR" ? "EUR" : "RON",
+    };
+  const preset =
+    (catalog.subscriptions || []).find((p) => p.sku === item.sku) ||
+    commerceItemBySku(item.sku);
+  if (preset)
+    return {
+      ...item,
+      name: preset.name,
+      price_estimate: preset.unitPriceCents ?? undefined,
+      price_currency: preset.currency,
+    };
+  return { ...item, price_estimate: undefined, price_currency: undefined };
+}
+export function safeInvoiceDownload(
+  url: string | null | undefined,
+): string | null {
+  if (!url) return null;
+  if (/^\/api\/workspace\/invoices\/[A-Za-z0-9_%.-]+\/content$/.test(url))
+    return url;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" &&
+      !parsed.username &&
+      !parsed.password &&
+      !parsed.port &&
+      ["oblio.eu", "www.oblio.eu", "api.oblio.eu"].includes(parsed.hostname)
+      ? parsed.href
+      : null;
+  } catch {
+    return null;
+  }
+}

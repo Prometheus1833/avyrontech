@@ -52,7 +52,7 @@ test("a registered free user can sync a service into the account cart", async ({
   await mockFreeAccount(page);
   let saved: Array<Record<string, unknown>> = [];
   page.on("request", (request) => {
-    if (new URL(request.url()).pathname === "/api/commerce/cart/sync" && request.method() === "POST") saved = request.postDataJSON().items;
+    if (new URL(request.url()).pathname === "/api/commerce/cart" && request.method() === "PUT") saved = request.postDataJSON().items;
   });
   await page.goto("/servicii/website-prezentare-profesional", { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: "Adaugă serviciul în coș" }).click();
@@ -81,7 +81,7 @@ test("the customer dashboard keeps staff controls out and combines service and p
   await expect(page.getByRole("button", { name: "Scoate Site Prezentare Profesional din favorite" })).toBeVisible();
   await page.getByRole("button", { name: "Adaugă în coș" }).first().click();
   await page.getByRole("button", { name: "Adaugă în coș" }).last().click();
-  await page.getByRole("button", { name: "Coș" }).first().click();
+  await page.getByRole("button", { name: /^Coș/ }).first().click();
   await expect(page.getByRole("heading", { name: "Conținutul coșului (2)" })).toBeVisible();
   await expect(page.getByText("Card holografic").first()).toBeVisible();
 });
@@ -89,7 +89,8 @@ test("the customer dashboard keeps staff controls out and combines service and p
 test("the registered user sees only masked saved methods in the payments section", async ({ page }) => {
   await mockFreeAccount(page);
   await page.goto("/profil?tab=payments", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Metode de plată și facturare" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Plăți și facturi" })).toBeVisible();
+  await page.getByRole("button",{name:"Date și metode de plată",exact:true}).click();
   await expect(page.getByText("Visa •••• 4242")).toBeVisible();
   await expect(page.getByRole("button", { name: "Salvează un card" })).toBeEnabled();
   await expect(page.getByText("Revolut Pay · în configurare")).toBeVisible();

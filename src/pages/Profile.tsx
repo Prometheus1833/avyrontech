@@ -1,3 +1,5 @@
+import {useAccountCart} from "@/hooks/useAccountCart";
+import {clientSectionDestination} from "@/lib/clientPortalNavigation";
 import IconHint from "@/components/ui/icon-hint";
 import DashboardSearch from "@/components/dashboard/DashboardSearch";
 import ActivityBadge from "@/components/dashboard/ActivityBadge";
@@ -34,6 +36,8 @@ const InternalSubscriptionsTab = lazyWithRetry(() => import("@/components/dashbo
 const ProfileTab = lazyWithRetry(() => import("@/components/dashboard/ProfileTab").then((m) => ({ default: m.ProfileTab })));
 const SubscriptionsTab = lazyWithRetry(() => import("@/components/dashboard/ClientRecurringTab"));
 const StatsTab = lazyWithRetry(() => import("@/components/dashboard/StatsTab").then((m) => ({ default: m.StatsTab })));
+const ClientBillingTab=lazyWithRetry(()=>import("@/components/dashboard/ClientBillingTab"));
+const ClientSupportTab=lazyWithRetry(()=>import("@/components/dashboard/ClientSupportTab"));
 const InvoicesTab = lazyWithRetry(() => import("@/components/dashboard/InvoicesTab").then((m) => ({ default: m.InvoicesTab })));
 const TicketsTab = lazyWithRetry(() => import("@/components/dashboard/TicketsTab").then((m) => ({ default: m.TicketsTab })));
 const StaffClientsTab = lazyWithRetry(() => import("@/components/dashboard/StaffClientsTab").then((m) => ({ default: m.StaffClientsTab })));
@@ -47,7 +51,6 @@ const DocumentCenter = lazyWithRetry(() => import("@/features/documents/Document
 const StaffDomainStatsTab = lazyWithRetry(() => import("@/components/dashboard/StaffDomainStatsTab").then((m) => ({ default: m.StaffDomainStatsTab })));
 const StaffExampleRequestsTab = lazyWithRetry(() => import("@/components/dashboard/StaffExampleRequestsTab").then((m) => ({ default: m.StaffExampleRequestsTab })));
 const SettingsTab = lazyWithRetry(() => import("@/components/dashboard/SettingsTab").then((m) => ({ default: m.SettingsTab })));
-const BillingSettingsCard = lazyWithRetry(() => import("@/components/dashboard/BillingSettingsCard"));
 const CartTab = lazyWithRetry(() => import("@/components/dashboard/CartTab").then((m) => ({ default: m.CartTab })));
 const StaffFinanceTab = lazyWithRetry(() => import("@/components/dashboard/StaffFinanceTab").then((m) => ({ default: m.StaffFinanceTab })));
 const StaffMediaTab = lazyWithRetry(() => import("@/components/dashboard/StaffMediaTab").then((m) => ({ default: m.StaffMediaTab })));
@@ -90,11 +93,13 @@ function ProfileDashboard() {
     platformRole, hasCollaborations,
     isSuperAdmin, isStaff, isAdmin, signOut } = useAuth();
   const access = useMemo(() => buildAccess({ roles, capabilities, email: user?.email, superadmin: isSuperAdmin,hasCollaborations }), [roles, capabilities, user?.email, isSuperAdmin,hasCollaborations]);
+  const {items:cartItems}=useAccountCart();
   const activityCounts = useDashboardActivity(user?.id, access.isStaff, `${platformRole||""}:${[...capabilities].sort().join(",")}`);
   const [params, setParams] = useSearchParams();
   const legacyMaintenance = !access.isClient && params.get("tab") === "maintenance" && (!access.isSuperAdmin || (params.has("project") && params.get("core") !== "system"));
-  useEffect(()=>{if(access.isClient&&["maintenance","client-maintenance"].includes(params.get("tab")||"")){const next=new URLSearchParams(params);next.set("tab","subscriptions");next.set("recurringView","activities");setParams(next,{replace:true});}},[access.isClient,params,setParams]);
-  const requested = access.isClient&&["maintenance","client-maintenance"].includes(params.get("tab")||"")?"subscriptions":legacyMaintenance ? "client-maintenance" : params.get("tab") === "workflows" ? "projects" : params.get("tab") === "platform-control" ? "os-centers" : (params.get("tab") ?? "");
+  const clientTarget=access.isClient?clientSectionDestination(params.get("tab")||""):null;
+  useEffect(()=>{const target=access.isClient?clientSectionDestination(params.get("tab")||""):null;if(target){const next=new URLSearchParams(params);next.set("tab",target.section);for(const [key,value] of Object.entries(target.params))next.set(key,value);setParams(next,{replace:true});}},[access.isClient,params,setParams]);
+  const requested = clientTarget?clientTarget.section:legacyMaintenance ? "client-maintenance" : params.get("tab") === "workflows" ? "projects" : params.get("tab") === "platform-control" ? "os-centers" : (params.get("tab") ?? "");
   const [tab, setTab] = useState<SectionId>(canOpenSection(requested, access) ? (requested as SectionId)
       : defaultSection(access));
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -110,7 +115,7 @@ function ProfileDashboard() {
 
   const allowed = useMemo(() => sectionsFor(access), [access]);
   const groups = DASHBOARD_GROUP_ORDER.map((group) => ({ id: group, label: dashboardGroupLabel(group,access.isClient), items: allowed.filter((section) => section.group === group && section.navigation !== false && !(access.isStaff && section.id === "collection") && (access.isStaff || !["stats"].includes(section.id))) })).filter((group) => group.items.length);
-  const mobilePrimary = new Set<SectionId>(access.isStaff ? ["overview", "projects", "leads", ...(access.isSuperAdmin ? ["ai-os" as SectionId] : ["client-maintenance" as SectionId])] : ["overview", "projects", "subscriptions", "documents"]);
+  const mobilePrimary = new Set<SectionId>(access.isStaff ? ["overview", "projects", "leads", ...(access.isSuperAdmin ? ["ai-os" as SectionId] : ["client-maintenance" as SectionId])] : ["overview", "catalog", "cart", "collection"]);
   const mobileMoreGroups = access.isClient?groups:groups
     .map((group) => ({ ...group, items: group.items.filter((section) => !mobilePrimary.has(section.id)) }))
     .filter((group) => group.items.length);
@@ -147,13 +152,14 @@ function ProfileDashboard() {
 
   const openSection = async (section: SectionId,extraParams?:Record<string,string>) => {
     if(!(await flushDocumentEditors()) || !(await flushServicePageEdits()))return;
-    const canonical=access.isClient&&["maintenance","client-maintenance"].includes(section)?"subscriptions":section;
+    const clientTarget=access.isClient?clientSectionDestination(section):null;
+    const canonical=clientTarget?.section||section;
     const destination = canOpenSection(canonical, access) ? canonical : ["security", "automations"].includes(String(section)) && access.isStaff ? "os-centers" : null;
     if (destination) {
       setTab(destination);
       const next = new URLSearchParams(params);
       next.set("tab", destination);
-      if(canonical!==section)next.set("recurringView","activities");else if(destination!=="subscriptions")next.delete("recurringView");
+      if(destination!=="subscriptions")next.delete("recurringView");if(destination!=="tickets")next.delete("supportView");if(destination!=="payments")next.delete("billingView");if(clientTarget)for(const [key,value] of Object.entries(clientTarget.params))next.set(key,value);
       next.delete("core");
       if (destination === "maintenance") next.delete("project");
       if(destination!=="documents")for(const key of ["documentView","documentTemplate","template","document","version"])next.delete(key);
@@ -178,9 +184,11 @@ function ProfileDashboard() {
     const Icon = sectionMeta.icon;
     const label = section === "projects" && !access.isStaff ? "Proiectele mele" : section === "intern" && !access.isStaff ? "Mesaje proiecte" : sectionMeta.label;
     const active = tab === section;
+    const count=section==="cart"&&access.isClient?cartItems.length:section==="tickets"&&access.isClient?(activityCounts.tickets||0)+(activityCounts.intern||0):activityCounts[section];
+    const countLabel=section==="cart"&&access.isClient?(count===1?"produs în coș":"produse în coș"):"activități de văzut";
     return (
-      <><button type="button" data-os-section={section} aria-current={active?"page":undefined} aria-label={`${label}${activityCounts[section] ? `, ${activityCounts[section]} activități de văzut` : ""}`} title={sidebarCollapsed ? label : undefined} aria-expanded={section==="servicii-avyron"?servicesExpanded:undefined} onClick={() => {if(section==="servicii-avyron"){setServicesExpanded((current) =>tab===section?!current:true);if(tab!==section)void openSection(section);}else void openSection(section);}} className={`${mobile ? "flex min-w-0 flex-1 flex-col" : "w-full flex-row"} group flex items-center justify-center gap-1.5 rounded-xl ${mobile && access.isClient ? "px-0" : "px-3"} py-2.5 text-left text-xs font-medium transition lg:justify-start ${active ? "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white shadow-[0_10px_30px_-16px_rgba(124,58,237,.9)]" : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"}`}>
-      <span className={`relative inline-flex shrink-0 ${activityCounts[section] ? "mr-1.5" : ""}`}><Icon className="size-4 shrink-0" strokeWidth={2.1} /><ActivityBadge count={activityCounts[section]} label={section === "intern" || section === "announcements" ? "necitite" : "activități de văzut"} /></span>
+      <><button type="button" data-os-section={section} aria-current={active?"page":undefined} aria-label={`${label}${count ? `, ${count} ${countLabel}` : ""}`} title={sidebarCollapsed ? label : undefined} aria-expanded={section==="servicii-avyron"?servicesExpanded:undefined} onClick={() => {if(section==="servicii-avyron"){setServicesExpanded((current) =>tab===section?!current:true);if(tab!==section)void openSection(section);}else void openSection(section);}} className={`${mobile ? "flex min-w-0 flex-1 flex-col" : "w-full flex-row"} group flex items-center justify-center gap-1.5 rounded-xl ${mobile && access.isClient ? "px-0" : "px-3"} py-2.5 text-left text-xs font-medium transition lg:justify-start ${active ? "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white shadow-[0_10px_30px_-16px_rgba(124,58,237,.9)]" : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"}`}>
+      <span className={`relative inline-flex shrink-0 ${count ? "mr-1.5" : ""}`}><Icon className="size-4 shrink-0" strokeWidth={2.1} /><ActivityBadge count={count} label={section === "intern" || section === "announcements" ? "necitite" : countLabel} /></span>
       {mobile ? (
             <span className="max-w-full truncate text-[9px]">{sectionMeta.mobileLabel || label}</span>
           ) : (
@@ -291,7 +299,7 @@ function ProfileDashboard() {
               )}
           <TabsContent value="profile" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["profile"].label} className="mt-0"><ProfileTab /></TabsContent><TabsContent value="settings" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["settings"].label} className="mt-0"><SettingsTab /></TabsContent><TabsContent value="collection" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["collection"].label} className="mt-0"><ProductCollectionTab /></TabsContent><TabsContent value="projects" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["projects"].label} className="mt-0"><CloudflareProjects embedded /></TabsContent>
           {access.isClient && (
-                <><TabsContent value="catalog" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["catalog"].label} className="mt-0"><CustomerCatalogTab /></TabsContent><TabsContent value="orders" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["orders"].label} className="mt-0"><OrdersTab /></TabsContent><TabsContent value="subscriptions" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["subscriptions"].label} className="mt-0"><SubscriptionsTab /></TabsContent><TabsContent value="payments" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["payments"].label} className="mt-0"><BillingSettingsCard /></TabsContent><TabsContent value="invoices" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["invoices"].label} className="mt-0"><InvoicesTab /></TabsContent><TabsContent value="cart" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["cart"].label} className="mt-0"><CartTab /></TabsContent><TabsContent value="stats" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["stats"].label} className="mt-0"><StatsTab /></TabsContent><TabsContent value="tickets" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["tickets"].label} className="mt-0"><TicketsTab /></TabsContent></>
+                <><TabsContent value="catalog" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["catalog"].label} className="mt-0"><CustomerCatalogTab /></TabsContent><TabsContent value="orders" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["orders"].label} className="mt-0"><OrdersTab /></TabsContent><TabsContent value="subscriptions" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["subscriptions"].label} className="mt-0"><SubscriptionsTab /></TabsContent><TabsContent value="payments" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["payments"].label} className="mt-0"><ClientBillingTab /></TabsContent><TabsContent value="invoices" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["invoices"].label} className="mt-0"><InvoicesTab /></TabsContent><TabsContent value="cart" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["cart"].label} className="mt-0"><CartTab /></TabsContent><TabsContent value="stats" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["stats"].label} className="mt-0"><StatsTab /></TabsContent><TabsContent value="tickets" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["tickets"].label} className="mt-0"><ClientSupportTab /></TabsContent></>
               )}
             {canOpenSection("my-collaborations",access)&&<TabsContent value="my-collaborations" role="region" aria-label="Colaborările mele" className="mt-0"><CollaboratorsTab portal /></TabsContent>}
           {canOpenSection("intern",access)&&<TabsContent value="intern" role="region" aria-label="Mesaje"><StaffChatTab /></TabsContent>}
@@ -368,7 +376,7 @@ function ProfileDashboard() {
               mobile
             />
           ) : (
-            <NavButton section="projects" mobile />
+            <NavButton section="catalog" mobile />
           )}
         {access.isStaff &&
           (access.isSuperAdmin || canOpenSection("client-maintenance", access)) ? (
@@ -383,7 +391,7 @@ function ProfileDashboard() {
           ) : access.isStaff ? (
             <NavButton section="intern" mobile />
           ) : (
-            <NavButton section="subscriptions" mobile />
+            <NavButton section="cart" mobile />
           )}
         {access.isStaff ? (
             <NavButton section={
@@ -392,7 +400,7 @@ function ProfileDashboard() {
               mobile
             />
           ) : (
-            <NavButton section="documents" mobile />
+            <NavButton section="collection" mobile />
           )}
         <button type="button" aria-label="Deschide mai multe secțiuni" aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(true)} className={`group flex min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[9px] font-medium transition ${mobilePrimary.has(tab) ? "text-slate-500" : "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white"}`}><Ellipsis className="size-4" /><span>Mai multe</span></button>
       </div>

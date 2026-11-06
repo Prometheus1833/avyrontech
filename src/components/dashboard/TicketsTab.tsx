@@ -39,7 +39,7 @@ const statusVariant: Record<Ticket["status"], "default" | "secondary" | "destruc
   closed: "outline",
 };
 
-export function TicketsTab({ staffMode = false }: { staffMode?: boolean }) {
+export function TicketsTab({ staffMode = false, embedded=false }: { staffMode?: boolean; embedded?:boolean }) {
   const { user } = useAuth();
   const { t, lang } = useLang();
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -90,9 +90,9 @@ export function TicketsTab({ staffMode = false }: { staffMode?: boolean }) {
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="text-2xl font-display font-bold">
+          {!embedded&&<h2 className="text-2xl font-display font-bold">
             {staffMode ? t.auth.dash.staff.ticketsTitle : t.auth.dash.tickets.title}
-          </h2>
+          </h2>}
           <p className="text-sm text-muted-foreground">
             {staffMode ? t.auth.dash.staff.ticketsSub : t.auth.dash.tickets.subtitle}
           </p>

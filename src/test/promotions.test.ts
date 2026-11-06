@@ -11,6 +11,13 @@ import {
   normalizeAccountCartItems,
   promotionsRouter,
 } from "../../cloudflare/workers/api/src/promotions";
+
+it("keeps the actual reference currency when a commercial price needs a manual quote",()=>{
+  const commercial={sku:"svc-eur",entity_key:"premium-website",entity_type:"service" as const,display_name:"Website",accounting_code:"WEB",base_price_minor:10000,currency:"EUR",price_model:"fixed",tax_status:"unverified",payment_status:"needs_configuration",active:1};
+  const quote=priceOrderItems([{sku:"svc-eur",quantity:1}],5,[commercial]);
+  expect(quote).toMatchObject({requiresManualQuote:true});
+  expect(quote?.items[0]).toMatchObject({referenceUnitPriceCents:10000,referenceCurrency:"EUR",lineTotalCents:null});
+});
 import { ANNUAL_DISCOUNT_PERCENT, annualSubscriptionTotal } from "@/lib/subscriptionCheckout";
 import type { AppBindings } from "../../cloudflare/workers/api/src/types";
 

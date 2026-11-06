@@ -1,14 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Heart, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cfAuth } from "@/lib/cfAuth";
-import { addLocalAccountCartItem, syncLocalAccountCartSource, type AccountCartItem } from "@/lib/accountCart";
+import { type AccountCartItem } from "@/lib/accountCart";
+import { useAccountCart } from "@/hooks/useAccountCart";
 
 type Entry = { key: string; name: string; category: string; sku: string | null; priceMinor: number | null; currency: string; payable: boolean };
 const price = (entry: Entry) => entry.priceMinor === null ? "Preț la ofertă" : `${entry.payable ? "" : "De la "}${new Intl.NumberFormat("ro-RO", { style: "currency", currency: entry.currency }).format(entry.priceMinor / 100)}`;
 
 export function CustomerCatalogTab() {
+  const cart=useAccountCart(),adding=useRef(new Set<string>());
+  const [pending,setPending]=useState<string[]>([]);
   const [catalog, setCatalog] = useState<{ services: Entry[]; products: Entry[] }>({ services: [], products: [] });
   const [favorites, setFavorites] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,16 +33,21 @@ export function CustomerCatalogTab() {
   };
 
   const add = async (entry: Entry, type: "service" | "product") => {
+    const key=type+":"+entry.key;if(adding.current.has(key))return;
+    if(cart.items.some(item=>type==="service"?item.type==="service"&&item.serviceKey===entry.key:item.type==="product"&&item.productSlug===entry.key))return toast.info("Elementul este deja în coș.");
+    if(cart.items.length>=20)return toast.error("Coșul poate conține cel mult 20 de elemente.");
+    adding.current.add(key);setPending([...adding.current]);
     const item: AccountCartItem = { id: crypto.randomUUID(), source: type === "service" ? "services" : "products", sku: entry.sku || "custom-request", type, name: entry.name, ...(type === "service" ? { serviceKey: entry.key } : { productSlug: entry.key }), ...(entry.priceMinor !== null ? { price_estimate: entry.priceMinor, price_currency: "RON" as const } : {}) };
-    addLocalAccountCartItem(item);
-    try { await syncLocalAccountCartSource(item.source); toast.success("Adăugat în coșul contului."); }
+    cart.replace([...cart.items,item]);
+    try { await cart.flush(); toast.success("Adăugat în coșul contului."); }
     catch { toast.info("Adăugat local; sincronizarea în cont se va relua."); }
+    finally {adding.current.delete(key);setPending([...adding.current]);}
   };
 
   const render = (entries: Entry[], type: "service" | "product") => <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{entries.map((entry) => <article key={entry.key} className="group flex flex-col rounded-2xl border border-white/[.09] bg-[#10162a]/90 p-4 transition hover:border-violet-400/30 hover:bg-[#141b33]">
     <div className="flex items-start justify-between gap-2"><span className="text-[10px] font-semibold uppercase tracking-[.17em] text-violet-300">{entry.category}</span>{type === "service" && <button type="button" onClick={() => void toggleFavorite(entry.key)} aria-pressed={favorites.includes(entry.key)} aria-label={favorites.includes(entry.key) ? `Scoate ${entry.name} din favorite` : `Adaugă ${entry.name} la favorite`} className="rounded-full border border-white/10 p-2 text-slate-400 transition hover:text-pink-300"><Heart className={`size-4 ${favorites.includes(entry.key) ? "fill-pink-300 text-pink-300" : ""}`} /></button>}</div>
     <h3 className="mt-2 font-display text-base font-semibold">{entry.name}</h3><p className="mt-1 text-xs text-slate-400">{price(entry)} · {entry.payable ? "preț comercial verificat" : "valoare orientativă, se confirmă prin ofertă"}</p>
-    <div className="mt-auto flex flex-wrap gap-2 pt-5"><Button size="sm" onClick={() => void add(entry, type)}><ShoppingCart className="mr-1.5 size-3.5" /> Adaugă în coș</Button>{type === "product" && <a href="/produse" className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-slate-400 hover:text-white">Vezi produsele <ArrowUpRight className="size-3.5" /></a>}</div>
+    <div className="mt-auto flex flex-wrap gap-2 pt-3"><Button size="sm" disabled={pending.includes(type+":"+entry.key)} onClick={() => void add(entry, type)}><ShoppingCart className="mr-1.5 size-3.5" /> {pending.includes(type+":"+entry.key)?"Se adaugă…":"Adaugă în coș"}</Button>{type === "product" && <a href="/produse" className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-slate-400 hover:text-white">Vezi produsele <ArrowUpRight className="size-3.5" /></a>}</div>
   </article>)}</div>;
 
   return <div className="space-y-7"><header className="rounded-2xl border border-white/[.09] bg-gradient-to-br from-violet-500/10 via-[#10162a] to-cyan-500/5 p-5"><p className="text-xs font-semibold uppercase tracking-[.2em] text-violet-300">Catalog AVYRON</p><h1 className="mt-2 font-display text-2xl font-bold">Servicii și produse pentru contul tău</h1><p className="mt-1 max-w-2xl text-sm text-slate-400">Alege ce îți trebuie, salvează serviciile preferate și adaugă tipuri diferite în coș. Prețul final este verificat înainte de plată.</p></header>

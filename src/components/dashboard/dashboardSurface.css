@@ -150,3 +150,10 @@ html[data-avyron-os] [role="dialog"] {
   color: #b9c4d7;
   min-width: 0;
 }
+
+/* Keep transient feedback above the dashboard's mobile navigation. */
+@media (max-width: 1023px) {
+  html[data-avyron-os] [data-sonner-toaster][data-y-position="bottom"] {
+    bottom: calc(90px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}

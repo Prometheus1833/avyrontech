@@ -1,3 +1,4 @@
+import {useAccountCart} from "@/hooks/useAccountCart";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,12 +22,12 @@ import {
   UsersRound,
   Bot,
   Wallet,
+  ShoppingCart,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import {buildAccess,canOpenSection} from "@/lib/access";
-import { ContactDialog } from "./ContactDialog";
 
 type MenuItem = {
   label: string;
@@ -40,7 +41,7 @@ type MenuItem = {
 const UserMenu = () => {
   const { user, profile, isStaff, isSuperAdmin, roles, capabilities, hasCollaborations, isAgencyPartner,refreshProfile, signOut } = useAuth();
   const { t, lang } = useLang();
-  const [contactOpen, setContactOpen] = useState(false);
+  const {items:cartItems}=useAccountCart();
   const [menuOpen, setMenuOpen] = useState(false);
 
   if (!user) return null;
@@ -57,10 +58,11 @@ const UserMenu = () => {
     {label:lang==='en'?'My projects':'Proiectele mele',icon:Boxes,dot:'200, 95%, 55%',to:'/profil?tab=projects'},
     {label:lang==='en'?'Services':'Servicii',icon:Package,dot:'330, 85%, 65%',to:'/profil?tab=catalog'},
     {label:lang==='en'?'Maintenance / Subscriptions':'Mentenanță / Abonamente',icon:CreditCard,dot:'40, 95%, 60%',to:'/profil?tab=subscriptions'},
-    {label:lang==='en'?'Saved payment method':'Metodă de plată salvată',icon:Wallet,dot:'155, 72%, 42%',to:'/profil?tab=payments'},
+    {label:lang==='en'?'Payments and invoices':'Plăți și facturi',icon:Wallet,dot:'155, 72%, 42%',to:'/profil?tab=payments'},
+    {label:(lang==='en'?'Cart':'Coș')+(cartItems.length?` (${cartItems.length})`:''),icon:ShoppingCart,dot:'170, 80%, 45%',to:'/profil?tab=cart'},
     {label:lang==='en'?'Document Center':'Centru Documente',icon:FileText,dot:'264, 90%, 62%',to:'/profil?tab=documents'},
     {label:t.auth.menu.settings,icon:Settings,dot:'222, 25%, 40%',to:'/profil?tab=settings'},
-    {label:t.auth.menu.contact,icon:MessageSquare,dot:'340, 80%, 60%',onSelect:()=>setContactOpen(true)},
+    {label:lang==='en'?'Support and messages':'Suport și mesaje',icon:MessageSquare,dot:'340, 80%, 60%',to:'/profil?tab=tickets'},
   ];
 
   const access=buildAccess({roles,superadmin:isSuperAdmin,capabilities});
@@ -179,7 +181,6 @@ const UserMenu = () => {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <ContactDialog open={contactOpen} onOpenChange={setContactOpen} />
     </>
   );
 };
