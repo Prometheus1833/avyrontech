@@ -1,6 +1,6 @@
 {
   "hostname": "cabinet-avocatura.avyron.eu",
-  "status": "prepared-not-applied",
+  "status": "applied-verified",
   "records": [
     {
       "type": "CNAME",
@@ -21,5 +21,16 @@
       "content": "9bc92145-0b73-4c91-ae2c-d0040912517b",
       "ttl": 1
     }
-  ]
+  ],
+  "verified_at": "2026-11-06T19:09:16.641783+00:00",
+  "verification": {
+    "cloudflare_ui": true,
+    "public_resolvers": [
+      "1.1.1.1",
+      "8.8.8.8"
+    ],
+    "site_status": "active",
+    "provider_status": "active",
+    "ssl_status": "active"
+  }
 }

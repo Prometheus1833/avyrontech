@@ -1,4 +1,4 @@
-export const firm = { name: 'Manuela Galuscan', phone: '+40723228582', phoneLabel: '+40 723 228 582', email: 'manuela.galuscan@yahoo.com', origin: process.env.SITE_ORIGIN || 'https://cabinet-avocatura-manuela.try-blue44.chatgpt.site' };
+export const firm = { name: 'Manuela Galuscan', phone: '+40723228582', phoneLabel: '+40 723 228 582', email: 'manuela.galuscan@yahoo.com', origin: process.env.SITE_ORIGIN || 'https://cabinet-avocatura.avyron.eu' };
 export const practices = [
   {
     slug: 'dreptul-familiei', enSlug: 'family-law', icon: 'family',
