@@ -46,7 +46,21 @@ for(const prefix of ['/','/en/']) {
  assert.equal(studio.d.querySelector('#editor-preview-content img'),null,'editor must not interpret HTML');
  studio.d.querySelector('#save-draft').click();
  assert.equal(JSON.parse(studio.w.localStorage.getItem('mg-editor-demo-'+(prefix==='/'?'ro':'en'))).headline,unsafe);
+ const imageInput=studio.d.querySelector('#editor-image');
+ const safePNG='data:image/png;base64,iVBORw0KGgo=';
+ studio.w.createImageBitmap=async file=>{if(file.name==='invalid.png')throw new Error('decode-failed');return {width:20,height:10,close(){}};};
+ studio.w.HTMLCanvasElement.prototype.getContext=()=>({drawImage(){}});
+ studio.w.HTMLCanvasElement.prototype.toDataURL=()=>safePNG;
+ function selectFile(name,type){Object.defineProperty(imageInput,'files',{value:[new studio.w.File(['test'],name,{type})],configurable:true});imageInput.dispatchEvent(new studio.w.Event('change'));}
+ selectFile('valid.png','image/png');await new Promise(resolve=>studio.w.setTimeout(resolve,0));
+ assert.equal(studio.d.querySelector('#editor-preview-image').src,safePNG,'image preview must use re-encoded raster output');
+ selectFile('invalid.png','image/png');await new Promise(resolve=>studio.w.setTimeout(resolve,0));
+ assert.equal(studio.d.querySelector('#editor-preview-image').src,safePNG,'failed image decoding must preserve only prior safe pixels');
+ assert(studio.d.querySelector('#editor-status').textContent.includes(prefix==='/'?'în siguranță':'safely'));
+ selectFile('attack.html','text/html');await new Promise(resolve=>studio.w.setTimeout(resolve,0));
+ assert.equal(studio.d.querySelector('#editor-preview-image').src,safePNG,'HTML files must be rejected');
  studio.d.querySelector('#clear-draft').click();assert.equal(studio.w.localStorage.length,0);
+ assert(studio.d.querySelector('#editor-preview-image').hidden,'clearing a draft also removes image preview');
  assert.notEqual(studio.d.querySelector('#editor-preview-content h2').textContent,unsafe);
  assert.equal(studio.errors.length,0,studio.errors.join('\n'));studio.dom.window.close();
 }

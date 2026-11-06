@@ -72,10 +72,29 @@
   function preview(){const d=data(),out=document.querySelector('#editor-preview-content');out.replaceChildren();for(const [tag,value] of [['h2',d.headline],['p',d.intro],['h3',d.articleTitle],['p',d.articleBody],['p',d.fee?(en?'Draft fee: ':'Onorariu în ciornă: ')+d.fee+' RON':'']]){if(!value)continue;const el=document.createElement(tag);el.textContent=value;out.append(el);}}
   editor.addEventListener('submit',e=>{e.preventDefault();preview();status.textContent=en?'Local preview updated. The published website is unchanged.':'Previzualizare locală actualizată. Site-ul publicat nu este modificat.';});
   document.querySelector('#save-draft').addEventListener('click',()=>{try{localStorage.setItem(key,JSON.stringify(data()));status.textContent=en?'Demonstration draft saved on this device.':'Ciornă demonstrativă salvată pe acest dispozitiv.';}catch{status.textContent=en?'Browser storage is unavailable. Export the draft instead.':'Stocarea în browser nu este disponibilă. Puteți exporta ciorna.';}});
-  document.querySelector('#clear-draft').addEventListener('click',()=>{try{localStorage.removeItem(key);}catch{}editor.reset();preview();if(imageURL)URL.revokeObjectURL(imageURL);imageURL=null;image.hidden=true;image.removeAttribute('src');status.textContent=en?'Local draft removed.':'Ciorna locală a fost ștearsă.';});
+  document.querySelector('#clear-draft').addEventListener('click',()=>{try{localStorage.removeItem(key);}catch{}editor.reset();preview();imageGeneration++;image.hidden=true;image.removeAttribute('src');status.textContent=en?'Local draft removed.':'Ciorna locală a fost ștearsă.';});
   document.querySelector('#export-draft').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({kind:'editorial-demo',language:en?'en':'ro',published:false,...data()},null,2)],{type:'application/json'});const link=document.createElement('a');const downloadURL=URL.createObjectURL(blob);link.href=downloadURL;link.download='manuela-galuscan-editorial-draft.json';link.click();setTimeout(()=>URL.revokeObjectURL(downloadURL),1000);status.textContent=en?'Draft exported. No online publication was performed.':'Ciornă exportată. Nu s-a efectuat nicio publicare online.';});
-  let imageURL=null; const image=document.querySelector('#editor-preview-image');
-  document.querySelector('#editor-image').addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;if(!['image/jpeg','image/png','image/webp','image/avif'].includes(file.type)||file.size>10*1024*1024){status.textContent=en?'Choose a JPEG, PNG, WebP or AVIF image under 10 MB.':'Alegeți o imagine JPEG, PNG, WebP sau AVIF de maximum 10 MB.';e.target.value='';return;}if(imageURL)URL.revokeObjectURL(imageURL);imageURL=URL.createObjectURL(file);image.src=imageURL;image.hidden=false;status.textContent=en?'Image preview stays on this device; it is not included in the JSON export.':'Imaginea rămâne pe dispozitiv; nu este inclusă în exportul JSON.';});
+  let imageGeneration=0; const image=document.querySelector('#editor-preview-image');
+  document.querySelector('#editor-image').addEventListener('change',async e=>{
+   const file=e.target.files[0]; if(!file)return;
+   const generation=++imageGeneration;
+   if(!['image/jpeg','image/png','image/webp','image/avif'].includes(file.type)||file.size>10*1024*1024){status.textContent=en?'Choose a JPEG, PNG, WebP or AVIF image under 10 MB.':'Alegeți o imagine JPEG, PNG, WebP sau AVIF de maximum 10 MB.';e.target.value='';return;}
+   let bitmap;
+   try {
+    bitmap=await createImageBitmap(file);
+    if(generation!==imageGeneration)return;
+    if(!bitmap.width||!bitmap.height||bitmap.width*bitmap.height>32000000)throw new Error('image-size');
+    const scale=Math.min(1,1600/bitmap.width,1200/bitmap.height);
+    const canvas=document.createElement('canvas');canvas.width=Math.round(bitmap.width*scale);canvas.height=Math.round(bitmap.height*scale);
+    const context=canvas.getContext('2d');if(!context)throw new Error('canvas-unavailable');
+    context.drawImage(bitmap,0,0,canvas.width,canvas.height);
+    // Decode into pixels and re-encode as PNG. Never expose the original file as a navigable Blob URL.
+    image.src=canvas.toDataURL('image/png');image.hidden=false;
+    status.textContent=en?'Image decoded locally as PNG; it is not included in the JSON export.':'Imagine decodată local în format PNG; nu este inclusă în exportul JSON.';
+   } catch {
+    if(generation===imageGeneration){e.target.value='';status.textContent=en?'This image could not be previewed safely. Choose another image or use the text editor.':'Această imagine nu a putut fi previzualizată în siguranță. Alegeți alta sau utilizați editorul de texte.';}
+   } finally {bitmap?.close();}
+  });
   try{const saved=JSON.parse(localStorage.getItem(key)||'null');if(saved&&typeof saved==='object')for(const n of names)if(typeof saved[n]==='string')editor.elements[n].value=saved[n];}catch{}
   preview();
  }

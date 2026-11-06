@@ -4,9 +4,9 @@
 
 - URL public, fără autentificare: https://cabinet-avocatura-manuela.try-blue44.chatgpt.site/
 - Sites project: `appgprj_6aee16d68fcc8191a51c7f828bcfab51`.
-- Saved version: `appgprj_6aee16d68fcc8191a51c7f828bcfab51~appgver_344441e08f248191ac1ebd1689b5cb79`, versiunea 3.
-- Deployment: `appgdep_6aee1dcd0c7481919f6ee04d3222ecca`, `succeeded`.
-- Sites source revision: `9583436ab9d341f02b729916f24dfef41d407cea`.
+- Saved version: `appgprj_6aee16d68fcc8191a51c7f828bcfab51~appgver_b6535c0c5a1c8191b309bbcfefe2faf4`, versiunea 4.
+- Deployment: `appgdep_6aee1f35265c8191b74c9387e360abc8`, `succeeded`.
+- Sites source revision: `c1f03845f91ab739eaf211d1f1588dd91595a949`.
 - Director sursă în repo AVYRON: `client-sites/cabinet-avocatura/`.
 
 Directorul autonom din AVYRON este sincronizat cu sursa utilizată de Sites; repository-ul tehnic al furnizorului păstrează propria istorie și propriul SHA. Codul frontend, conținutul și build-ul sunt identice. Documentele de livrare și workflow-ul de verificare sunt păstrate suplimentar în AVYRON.
@@ -17,10 +17,10 @@ Directorul autonom din AVYRON este sincronizat cu sursa utilizată de Sites; rep
 
 - Build static, verificare sintaxă JavaScript, `git diff --check`.
 - Validator: 42 pagini, 1.394 referințe interne, 248 referințe directe către fișiere, toate variantele srcset și fonturile locale, canonical/hreflang/metadate/JSON-LD, paritate RO/EN, noindex.
-- Teste jsdom RO/EN: navigație și Escape, limitele calendarului, alegerea datei/orei, schimbarea formatului și duratei, invalidarea selecției anterioare, lipsa unei confirmări false de rezervare, previzualizare sigură prin textContent, salvare și ștergere ciornă locală.
+- Teste jsdom RO/EN: navigație și Escape, limitele calendarului, alegerea datei/orei, schimbarea formatului și duratei, invalidarea selecției anterioare, lipsa unei confirmări false de rezervare, previzualizare sigură prin textContent, salvare și ștergere ciornă locală, regenerare PNG a imaginilor locale și respingerea fișierelor HTML/indecodabile.
 - Toate cele 42 de rute: HTTP 200 local și public. HTML-ul aplicației publice corespunde exact build-ului după eliminarea exclusivă a scriptului de protecție Cloudflare identificat ca injecție a hostingului.
 - CSS, JS, imagine socială, hero mobil AVIF și fonturi reprezentative: conținut public identic cu build-ul. Rută inexistentă: HTTP 404.
-- Bugete: JS 3.252 bytes gzip; CSS 7.419 bytes gzip; hero mobil AVIF aproximativ 25 KB, desktop aproximativ 87 KB. Aceste dimensiuni nu constituie măsurători LCP/INP/CLS sau o garanție de încărcare sub 2 secunde.
+- Bugete: JS 3.673 bytes gzip; CSS 7.419 bytes gzip; hero mobil AVIF aproximativ 25 KB, desktop aproximativ 87 KB. Aceste dimensiuni nu constituie măsurători LCP/INP/CLS sau o garanție de încărcare sub 2 secunde.
 - Intro 0,75 secunde prin CSS, fără blocarea interacțiunii; redus/omis la preferința de mișcare redusă.
 
 Nu au fost rulate build-urile aplicației AVYRON (`build:pages`, `build:worker`, Worker API/email), deoarece această schimbare adaugă un proiect static autonom, fără modificarea aplicației sau configurației sale de hosting. Aceste verificări rămân în CI-ul general existent. Workflow-ul nou verifică separat directorul cabinetului și nu publică nimic.
