@@ -171,6 +171,34 @@ describe("Client workspace: real SQLite, Hono and existing portal authorization"
     choice: unknown = { mode: "none" },
     key = crypto.randomUUID(),
   ) => req(root, { identity: identity(suffix), account: choice }, "POST", key);
+  it("creates all four stages without requiring a slug or beneficiary and remains idempotent", async () => {
+    for (const [stage, banner, status] of [["proposed", "proposed", "lead"], ["in_progress", "in_progress", "in_progress"], ["testing", "testing", "in_progress"], ["completed", "online", "live"]]) {
+      const key = crypto.randomUUID(), body = { name: "Proiect românesc", stage, client_id: null };
+      const result = await ok(await req("/api/projects", body, "POST", key), 201);
+      expect(await ok(await req("/api/projects", body, "POST", key), 201)).toEqual(result);
+      expect(result.slug).toMatch(/^proiect-romanesc-[a-z0-9]+$/);
+      expect(db.prepare("SELECT client_id,banner_status,status FROM projects WHERE id=?").get(result.id)).toMatchObject({ client_id: null, banner_status: banner, status });
+      expect((await canAccessProject(binding, result.id, "client-a", ["user"])).read).toBe(false);
+    }
+    expect((await req("/api/projects", { name: "Invalid", stage: "invented" })).status).toBe(400);
+    expect((await req("/api/projects", { name: "Invalid", owner_user_id: "client-a" })).status).toBe(400);
+    expect((await req("/api/projects", { name: "Invalid", url: {} })).status).toBe(400);
+    actor = "client-a";
+    expect((await req("/api/projects", { name: "Forbidden", stage: "proposed" })).status).toBe(403);
+  });
+  it("assigns a new unassigned project to the existing CRM client, never transfers its later history", async () => {
+    const created = await ok(await req("/api/projects", { name: "Fără client", stage: "testing" }), 201);
+    await ok(await req("/api/projects/" + created.id, { banner_status: "online" }, "PATCH"));
+    expect(db.prepare("SELECT banner_status,status FROM projects WHERE id=?").get(created.id)).toMatchObject({ banner_status: "online", status: "live" });
+    const file = await ok(await req(root + "/ca"));
+    expect(file.availableProjects.find((p: {id: string}) => p.id === created.id)?.canAssign).toBe(true);
+    const updatedAt = db.prepare("SELECT updated_at FROM projects WHERE id=?").get(created.id)!.updated_at;
+    await ok(await req(root + "/ca/projects", { confirmed: true, projects: [{ id: created.id, sourceClientId: null, updatedAt }] }, "PUT"));
+    expect((await canAccessProject(binding, created.id, "client-a", ["user"])).read).toBe(true);
+    expect((await canAccessProject(binding, created.id, "client-b", ["user"])).read).toBe(false);
+    const revision = db.prepare("SELECT updated_at FROM projects WHERE id=?").get(created.id)!.updated_at;
+    expect((await req(root + "/cb/projects", { confirmed: true, projects: [{ id: created.id, sourceClientId: "ca", updatedAt: revision }] }, "PUT")).status).toBe(409);
+  });
   it("creates one CRM identity, a native hashed user and grant atomically; retries do not duplicate", async () => {
     const key = crypto.randomUUID(),
       body = { mode: "new", identity: account(), confirmed: true };

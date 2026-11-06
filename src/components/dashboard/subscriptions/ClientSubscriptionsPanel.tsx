@@ -498,7 +498,7 @@ export default function ClientSubscriptionsPanel({
                       {s.maintenance_enabled === 1 ? (
                         <Link
                           className="inline-flex min-h-9 items-center underline"
-                          to={`/profil?tab=maintenance&project=${encodeURIComponent(s.project_id)}`}
+                          to={`/profil?tab=client-maintenance&project=${encodeURIComponent(s.project_id)}`}
                         >
                           Plan și echipă · AVY Core
                         </Link>

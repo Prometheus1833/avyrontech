@@ -88,7 +88,7 @@ describe("Additive company identity migration", () => {
       const db = new DatabaseSync(":memory:");
       try {
         for (const file of readdirSync("cloudflare/d1/migrations")
-          .filter((f) => f.endsWith(".sql") && !f.startsWith("0082_"))
+          .filter((f) => f.endsWith(".sql") && f < "0082_")
           .sort())
           db.exec(readFileSync(`cloudflare/d1/migrations/${file}`, "utf8"));
         if (mode === "configured")

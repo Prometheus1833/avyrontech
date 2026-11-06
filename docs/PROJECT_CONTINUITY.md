@@ -98,3 +98,8 @@ Continuare de la `1397ce3`, pe `codex/bouncer-antivirus-2026-11-06`. [ANTIVIRUS_
 ## Colaboratori / Parteneri — 06.11.2026, local
 
 Continuare de la `0dd2286`, pe `codex/collaborators-partners-2026-11-06`. [COLLABORATORS_PARTNERS.md](./COLLABORATORS_PARTNERS.md) descrie ultimul buton din Principal, fișele compacte cu mini-dashboard, contactele, codurile interne și legăturile explicite la CRM/conturi existente. Registrul este distinct de planurile de produse AVY Partener. Badge-ul și Colaborările mele sunt derivate server-side; nu acordă roluri sau licențe. 0090 adaugă numai metadate și asocieri, cu maximum trei fișiere active × 5 MB, în Document Center/R2 existente, supuse porții antivirus. Notele interne, permisiunile granulare și revocarea sunt verificate în backend; schimbarea contului retrage publicarea documentelor. Uploadurile reale rămân blocate până la configurarea/verificarea Bouncer. Lotul ajunge la 0078–0090; push, PR, merge, migrări remote și deploy rămân amânate.
+
+
+## Proiecte, activități sociale și recurente — 6 noiembrie 2026
+
+Lotul precedent a fost integrat prin [PR #93](https://github.com/Prometheus1833/avyrontech/pull/93), la `dcfd638`, cu migrații până la 0090 și release verificat anterior. Însemnările mai vechi „local/amânat” de mai sus sunt instantanee istorice. Noua ramură `codex/project-social-recurring-2026-11-06` pornește din acest commit și implementează [etapele proiectelor, clientul opțional/nou, comenzile viitoare sociale și grupa Activități Recurente](./PROJECTS_SOCIAL_RECURRING.md). Migrațiile 0091–0092 sunt doar ale noii ramuri, probate local; nu au fost aplicate remote în acest task. Noul push/PR nu înseamnă merge/deploy. Nu se configurează acum cheile rămase și nu se execută publicări sociale.

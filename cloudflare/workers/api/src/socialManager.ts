@@ -14,6 +14,7 @@ export async function socialManagerSnapshot(
   options: { status?: string; offset: number },
   canReview: boolean,
   canCreate: boolean,
+  canPlan = false,
 ) {
   const timestamp = Date.now();
   const valid = `project_id=? AND status<>'expired' AND (status IN ('scheduled','published') OR ((expires_at IS NULL OR expires_at>?) AND created_at>?))`;
@@ -38,9 +39,9 @@ export async function socialManagerSnapshot(
       )
       .all(),
     env.DB.prepare(
-      `SELECT id,kind,format,primary_channel,topic,status,due_at,content_id,blog_post_id,last_error_code,updated_at FROM ai_social_jobs WHERE project_id=? AND status IN('queued','generating','draft_ready','awaiting_budget','awaiting_approval','approved','failed') ORDER BY due_at,id LIMIT 60`,
+      `SELECT id,kind,format,primary_channel,topic,status,due_at,content_id,blog_post_id,last_error_code,updated_at,plan_review_state,plan_reviewed_by,plan_reviewed_at FROM ai_social_jobs WHERE project_id=? AND status IN('queued','generating','draft_ready','awaiting_budget','awaiting_approval','approved','failed','skipped') AND (status<>'skipped' OR updated_at>?) ORDER BY CASE WHEN status='skipped' THEN 1 ELSE 0 END,due_at,id LIMIT 60`,
     )
-      .bind(project.id)
+      .bind(project.id, timestamp - 7 * 86400000)
       .all(),
     env.DB.prepare(
       `SELECT id,title,channels_json,scheduled_at,status FROM ai_content_items WHERE project_id=? AND status='scheduled' ORDER BY scheduled_at,id LIMIT 60`,
@@ -48,6 +49,10 @@ export async function socialManagerSnapshot(
       .bind(project.id)
       .all(),
   ]);
+  const contentIds = [...new Set(jobs.results.map(job => String(job.content_id || "")).filter(Boolean))];
+  const linked = contentIds.length ? await env.DB.prepare(
+    `SELECT id,generated_by_agent,format,objective,channels_json,title,caption,visual_direction,cta,hashtags_json,status,scheduled_at,published_at,expires_at,created_at,updated_at FROM ai_content_items WHERE ${valid} AND id IN (${contentIds.map(() => "?").join(",")}) ORDER BY updated_at DESC`,
+  ).bind(...values, ...contentIds).all() : { results: [] };
   const totals = Object.fromEntries(
     editorialStates.map((state) => [
       state,
@@ -59,7 +64,7 @@ export async function socialManagerSnapshot(
     : totals.draft + totals.pending_approval;
   return {
     project,
-    permission: { canReview, canCreate },
+    permission: { canReview, canCreate, canPlan },
     counts: totals,
     content: content.results,
     total,
@@ -68,6 +73,7 @@ export async function socialManagerSnapshot(
         ? options.offset + content.results.length
         : null,
     activities: jobs.results,
+    activityContent: linked.results,
     scheduled: scheduled.results,
     generatedAt: timestamp,
   };

@@ -403,7 +403,7 @@ test("un conflict de salvare păstrează textul și împiedică pierderea sa la 
     "Ciornă care trebuie păstrată",
   );
   await expect(page).toHaveURL(/tab=servicii-avyron/);
-  await page.getByRole("link", { name: "Mentenanță · AVY Core" }).click();
+  await page.getByRole("link", { name: "Mentenanță Clienți" }).click();
   await expect(page.getByLabel("Titlu principal", { exact: true })).toHaveValue(
     "Ciornă care trebuie păstrată",
   );

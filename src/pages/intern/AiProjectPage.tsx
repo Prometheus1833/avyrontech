@@ -232,7 +232,7 @@ export default function AiProjectPage() {
     setBusy(true);
     try {
       const result = await aiProjectsApi.runSocialPlan(detail.project.id);
-      toast.success(`Plan actualizat: ${result.created} sarcini noi, ${result.processed} procesate.`);
+      toast.success(`Plan actualizat: ${result.created} sarcini noi.`);
       await load();
     } catch (cause) { toast.error(cause instanceof Error ? cause.message : "Planificarea nu a putut fi rulată."); }
     finally { setBusy(false); }

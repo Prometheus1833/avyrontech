@@ -317,6 +317,67 @@ describe("Agency ranks and private chat: real Hono/D1 handlers", () => {
     expect((await req("/api/finance/overview")).status).toBe(403);
     expect((await req("/api/projects", {}, "POST")).status).toBe(403);
   });
+  const socialFixture = () => {
+    const t = Date.now();
+    db.prepare("INSERT INTO ai_projects(id,slug,name,product_key,status,created_at,updated_at) VALUES('social-a','social-a','Social A','other','active',?,?),('social-b','social-b','Social B','other','active',?,?)").run(t,t,t,t);
+    db.prepare("INSERT INTO ai_social_jobs(id,project_id,schedule_key,kind,format,primary_channel,topic,status,due_at,created_at,updated_at) VALUES('plan-a','social-a','plan-a','daily_post','post','facebook','Tema viitoare','queued',?,?,17),('plan-b','social-b','plan-b','daily_post','post','facebook','Alta tema','queued',?,?,17)").run(t+86400000,t,t+86400000,t);
+    return t;
+  };
+  it("reviews future plans with project scope, confirmation, revision checks and one audit event", async () => {
+    socialFixture();
+    const path = "/api/ai-projects/social-a/social-jobs/plan-a/review";
+    expect((await req(path,{decision:"approved",expectedUpdatedAt:17,confirmed:false},"POST")).status).toBe(400);
+    expect((await req("/api/ai-projects/social-a/social-jobs/plan-b/review",{decision:"approved",expectedUpdatedAt:17,confirmed:true},"POST")).status).toBe(409);
+    expect((await req(path,{decision:"approved",expectedUpdatedAt:17,confirmed:true},"POST")).status).toBe(200);
+    const job = db.prepare("SELECT status,plan_review_state,plan_reviewed_by,updated_at FROM ai_social_jobs WHERE id='plan-a'").get()!;
+    expect(job).toMatchObject({status:"queued",plan_review_state:"approved",plan_reviewed_by:"owner"});
+    expect((await req(path,{decision:"approved",expectedUpdatedAt:17,confirmed:true},"POST")).status).toBe(409);
+    expect(db.prepare("SELECT count(*) n FROM ai_project_events WHERE action='social_studio.plan.approved'").get()!.n).toBe(1);
+    expect((await req(path,{decision:"rejected",expectedUpdatedAt:job.updated_at,confirmed:true},"POST")).status).toBe(200);
+    expect(db.prepare("SELECT status,plan_review_state FROM ai_social_jobs WHERE id='plan-a'").get()).toMatchObject({status:"skipped",plan_review_state:"rejected"});
+    expect((await req("/api/ai-projects/social-a/social-jobs/plan-a/retry",{},"POST")).status).toBe(409);
+  });
+  it("exposes linked material across filters and synchronizes approved content atomically within its own project", async () => {
+    const t = socialFixture();
+    db.prepare("INSERT INTO ai_content_items(id,project_id,format,objective,title,caption,status,created_at,updated_at,expires_at) VALUES('future-material','social-a','post','visibility','Material viitor','Text verificabil','pending_approval',?,?,?)").run(t,31,t+86400000);
+    db.exec("UPDATE ai_social_jobs SET content_id='future-material',status='awaiting_approval' WHERE id='plan-a'");
+    const snapshot = await (await req("/api/ai-projects/social-a/social-manager?status=approved")).json();
+    expect(snapshot.content).toEqual([]);
+    expect(snapshot.activityContent[0].id).toBe("future-material");
+    expect(snapshot.permission).toMatchObject({canReview:true,canPlan:true});
+    expect((await req("/api/ai-projects/social-a/content/future-material",{status:"approved",expectedUpdatedAt:31},"PATCH")).status).toBe(200);
+    expect(db.prepare("SELECT status FROM ai_social_jobs WHERE id='plan-a'").get()!.status).toBe("approved");
+    db.exec("UPDATE ai_social_jobs SET status='draft_ready' WHERE id='plan-a'");
+    expect((await req("/api/ai-projects/social-a/social-manager/sync",{},"POST")).status).toBe(200);
+    expect(db.prepare("SELECT status FROM ai_social_jobs WHERE id='plan-a'").get()!.status).toBe("approved");
+    expect(db.prepare("SELECT status FROM ai_social_jobs WHERE id='plan-b'").get()!.status).toBe("queued");
+    expect(db.prepare("SELECT published_at,scheduled_at FROM ai_content_items WHERE id='future-material'").get()).toMatchObject({published_at:null,scheduled_at:null});
+  });
+  it("denies future commands to viewers, revoked members and sessions without MFA", async () => {
+    socialFixture();
+    db.exec("INSERT INTO ai_project_members(project_id,user_id,role,status,granted_at,updated_at) VALUES('social-a','client','viewer','active',1,1)");
+    actor = "client";
+    const path = "/api/ai-projects/social-a/social-jobs/plan-a/review", body = {decision:"approved",expectedUpdatedAt:17,confirmed:true};
+    expect((await req(path,body,"POST")).status).toBe(403);
+    expect((await req("/api/ai-projects/social-a/social-manager/sync",{},"POST")).status).toBe(403);
+    expect((await req("/api/ai-projects/social-a/social-studio/plan",{},"POST")).status).toBe(403);
+    db.exec("UPDATE ai_project_members SET status='revoked' WHERE user_id='client'");
+    expect((await req(path,body,"POST")).status).toBe(404);
+    actor = "owner"; mfa = false;
+    expect((await req(path,body,"POST")).status).toBe(403);
+    expect(db.prepare("SELECT plan_review_state FROM ai_social_jobs WHERE id='plan-a'").get()!.plan_review_state).toBe("pending");
+  });
+  it("plans only the selected project, with stable keys and without generating content", async () => {
+    socialFixture();
+    db.exec("INSERT INTO ai_social_policies(project_id,status,created_at,updated_at) VALUES('social-a','active',1,1),('social-b','active',1,1)");
+    expect((await req("/api/ai-projects/social-a/social-studio/plan",{},"POST")).status).toBe(200);
+    const count = db.prepare("SELECT count(*) n FROM ai_social_jobs WHERE project_id='social-a'").get()!.n;
+    expect(Number(count)).toBeGreaterThan(1);
+    expect((await req("/api/ai-projects/social-a/social-studio/plan",{},"POST")).status).toBe(200);
+    expect(db.prepare("SELECT count(*) n FROM ai_social_jobs WHERE project_id='social-a'").get()!.n).toBe(count);
+    expect(db.prepare("SELECT count(*) n FROM ai_social_jobs WHERE project_id='social-b'").get()!.n).toBe(1);
+    expect(db.prepare("SELECT count(*) n FROM ai_content_items WHERE project_id IN ('social-a','social-b')").get()!.n).toBe(0);
+  });
   it("allows editorial approval separately from content creation, in the assigned AI project only", async () => {
     const t = Date.now();
     db.prepare(

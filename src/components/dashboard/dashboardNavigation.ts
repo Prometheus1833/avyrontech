@@ -48,6 +48,7 @@ export type DashboardSectionMeta = {
 
 export const DASHBOARD_GROUP_LABELS: Record<string, string> = {
   documents: "Documente",
+  recurring: "Activități Recurente",
   overview: "Principal",
   projects: "Proiecte",
   activity: "Activitate",
@@ -65,6 +66,7 @@ export const DASHBOARD_GROUP_ORDER = [
   "projects",
   "servicii",
   "produse",
+  "recurring",
   "documents",
   "activity",
   "platform",
@@ -86,7 +88,8 @@ export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
   settings: { label: "Setări", commandLabel: "Deschide setările", hint: "Preferințe și configurarea contului", icon: Settings },
   projects: { label: "Proiecte", commandLabel: "Deschide proiectele", hint: "Livrări, termene și progres", icon: FolderKanban },
   "ai-projects": { label: "Proiecte AI", commandLabel: "Deschide proiectele AI", hint: "Strategie, agenți și producție controlată", icon: Bot },
-  maintenance: { label: "AVY Core", commandLabel: "Deschide AVY Core", hint: "Sistem, mentenanță lunară și abonamente pe proiect", icon: Wrench },
+  "client-maintenance": { label: "Mentenanță Clienți", commandLabel: "Deschide mentenanța clienților", hint: "Planuri lunare, proiecte, materiale și echipe alocate", icon: Wrench },
+  maintenance: { label: "AVY Core", commandLabel: "Deschide AVY Core", hint: "Diagnostice, verificări și operațiuni de sistem", icon: Wrench },
   clients: { label: "Clienți", commandLabel: "Deschide clienții", hint: "Companii, contacte și relații active", icon: Users },
   reviews: { label: "Recenzii", commandLabel: "Deschide recenziile", hint: "Colectare și aprobare pentru servicii și surse conectate", icon: Star },
   domains: { label: "Domenii", commandLabel: "Deschide domeniile", hint: "DNS, SSL și active digitale", icon: Globe },

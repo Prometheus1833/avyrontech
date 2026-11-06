@@ -2,7 +2,7 @@
 // Folosește cfAuth pentru access token + refresh automat.
 import { cfAuth } from "./cfAuth";
 
-export type BannerStatus = "online" | "offline" | "revizuire" | "in_progress" | "testing";
+export type BannerStatus = "proposed" | "online" | "offline" | "revizuire" | "in_progress" | "testing";
 export type ProjectKind =
   | "external_asset"
   | "website_prezentare"
@@ -22,7 +22,7 @@ export type Project = {
   cover_image_url: string | null;
   price_ron: number | null; price_eur: number | null;
   subscription_plan: string | null; subscription_status: string | null; billing_next: number | null;
-  owner_user_id: string | null; client_id: string;
+  owner_user_id: string | null; client_id: string | null;
   created_at: number; updated_at: number;
 };
 export type ProjectLink = { id: string; project_id: string; kind: LinkKind; label: string; url: string; updated_at: number };
@@ -107,7 +107,7 @@ export type LeadPipeline = {
 export const internApi = {
   listProjects: (mine=false) => cfAuth.request<{ data: Array<Pick<Project, "id"|"slug"|"name"|"kind"|"banner_status"|"status"|"url"|"favicon_url"|"updated_at">>; purchases?: ProjectPurchase[]; sales?: ProjectSale[] }>("/api/projects"+(mine?'?scope=mine':'')),
   getProject: (slug: string) => cfAuth.request<ProjectDetail>(`/api/projects/${encodeURIComponent(slug)}`),
-  createProject: (body: { name: string; slug: string; kind?: ProjectKind; url?: string; description?: string; client_id: string; organization_id?: string; owner_user_id?: string; recurring_service?: { enabled: boolean; service_name: string; price: number; billing_cycle: "monthly" | "yearly"; next_billing_date: number; subscription_status: "active" | "paused" } }, key?: string) =>
+  createProject: (body: { name: string; slug?: string; stage?: import("@/shared/projectLifecycle").ProjectStage; kind?: ProjectKind; url?: string; description?: string; client_id?: string | null; organization_id?: string; owner_user_id?: string; recurring_service?: { enabled: boolean; service_name: string; price: number; billing_cycle: "monthly" | "yearly"; next_billing_date: number; subscription_status: "active" | "paused" } }, key?: string) =>
     cfAuth.request<{ id: string; slug: string }>("/api/projects", { method: "POST", headers: key ? { "Idempotency-Key": key } : undefined, body: JSON.stringify(body) }),
   listClients: () => cfAuth.request<{ data: ClientOption[] }>("/api/clients"),
   listAccounts: () => cfAuth.request<{ data: AccountOption[] }>("/api/admin/users"),

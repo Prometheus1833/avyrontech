@@ -65,13 +65,13 @@ export type ClientProject = {
   kind: string;
   status: string;
   url: string | null;
-  client_id: string;
+  client_id: string | null;
   organization_id: string | null;
   owner_user_id: string | null;
   updated_at: number;
 };
 export type ClientProjectOption = ClientProject & {
-  company_name: string;
+  company_name: string | null;
   canAssign: boolean;
   assignmentReason: string | null;
 };

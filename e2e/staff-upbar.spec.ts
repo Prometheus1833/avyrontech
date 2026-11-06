@@ -164,6 +164,7 @@ test("staff gets direct INTERN OS and a focused personal menu without marketing 
     "/cariere",
     "/profil?tab=intern",
     "/profil?tab=maintenance",
+    "/profil?tab=client-maintenance",
     "/profil?tab=projects",
     "/profil?tab=resources",
   ])

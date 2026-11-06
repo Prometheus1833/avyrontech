@@ -83,12 +83,12 @@ export default function StaffWorkspaceActions({
           <span>Proiectele mele</span>
         </button>
       )}
-      {canOpenSection("maintenance", access) && (
+      {canOpenSection("client-maintenance", access) && (
         <Link
           className="staff-header-action"
-          aria-label="Mentenanță · AVY Core"
-          title="Mentenanță · AVY Core"
-          to="/profil?tab=maintenance"
+          aria-label="Mentenanță Clienți"
+          title="Mentenanță Clienți"
+          to="/profil?tab=client-maintenance"
         >
           <Wrench size={18} />
           <span>Mentenanță</span>

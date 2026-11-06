@@ -12,6 +12,8 @@ import type { Env } from "./types";
 import { fetchMetadataHtml, validateMetadataUrl } from "./metadata";
 import { organizationRoleForUser, platformRoleForUser,hasClientProjectGrant,clientProjectGrantSql } from "./authorization";
 import { normalizeExternalLink } from "../../../../src/shared/externalUrl";
+import { PROJECT_STAGES, type ProjectStage } from "../../../../src/shared/projectLifecycle";
+import { readJsonBodyUpTo } from "./requestBody";
 
 type Role = "user" | "staff" | "admin";
 type Vars = { userId: string; roles: Role[] };
@@ -214,26 +216,44 @@ projectsRouter.post("/api/projects", async (c) => {
   const ranked = await managedStaff(c.env.DB, c.get("userId"));
   if (ranked && !managedPermission(ranked, "projects.create")) return c.json({ error: { code: "forbidden" } }, 403);
   const userId = c.get("userId");
-  const b = (await c.req.json().catch(() => ({}))) as {
+  const input = await readJsonBodyUpTo(c.req.raw, 16 * 1024);
+  if (!input.ok) return c.json({error:{code:input.error}}, input.error === "payload_too_large" ? 413 : 400);
+  const b = input.value as {
     name?: string; slug?: string; kind?: string; url?: string; description?: string;
-    client_id?: string; owner_user_id?: string; organization_id?: string;
+    client_id?: string | null; owner_user_id?: string; organization_id?: string; stage?: ProjectStage;
     recurring_service?: {
       enabled?: boolean; service_name?: string; price?: number; billing_cycle?: string;
       next_billing_date?: number; subscription_status?: string;
     };
   };
-  if (!b.name || !b.slug || !b.client_id) return c.json({ error: { code: "invalid_input", message: "name, slug, client_id required" } }, 400);
+  if (!b || typeof b !== "object" || Array.isArray(b) ||
+      (b.url != null && typeof b.url !== "string") ||
+      (b.organization_id != null && (typeof b.organization_id !== "string" || b.organization_id.length > 160)) ||
+      (b.owner_user_id != null && (typeof b.owner_user_id !== "string" || b.owner_user_id.length > 160)) ||
+      (b.kind !== undefined && !["external_asset", "website_prezentare", "prezentare_premium", "magazin_online", "retele_sociale", "identitate_completa", "aplicatie"].includes(b.kind)) ||
+      (b.recurring_service != null && (typeof b.recurring_service !== "object" || Array.isArray(b.recurring_service))) ||
+      typeof b.name !== "string" || !b.name.trim() || b.name.length > 180 ||
+      (b.slug !== undefined && (typeof b.slug !== "string" || !/^[a-z0-9][a-z0-9_-]{0,99}$/.test(b.slug))) ||
+      (b.client_id != null && (typeof b.client_id !== "string" || !b.client_id.trim() || b.client_id.length > 160)) ||
+      (b.description != null && (typeof b.description !== "string" || b.description.length > 3000)))
+    return c.json({ error: { code: "invalid_input", message: "Completează numele și un context valid pentru proiect." } }, 400);
+  const stage = PROJECT_STAGES.find(stage => stage.id === (b.stage ?? "in_progress"));
+  if (!stage) return c.json({ error: { code: "invalid_stage" } }, 400);
+  b.name = b.name.trim();
+  if (!b.client_id && (b.organization_id || b.owner_user_id || b.recurring_service?.enabled))
+    return c.json({ error: { code: "client_required", message: "Asociază un client înainte de cont, organizație sau abonament." } }, 400);
   const projectUrl = b.url ? normalizeExternalLink(b.url) : null;
   if (b.url && !projectUrl) return c.json({ error: { code: "invalid_url" } }, 400);
-  const clientOrganization = await c.env.DB.prepare("SELECT organization_id FROM client_organizations WHERE client_id = ?")
-    .bind(b.client_id).first<{ organization_id: string }>();
+  const clientOrganization = b.client_id ? await c.env.DB.prepare("SELECT organization_id FROM client_organizations WHERE client_id = ?")
+    .bind(b.client_id).first<{ organization_id: string }>() : null;
+  if (!b.organization_id) b.organization_id = clientOrganization?.organization_id;
   if (clientOrganization?.organization_id !== (b.organization_id || undefined)) {
     return c.json({ error: { code: "organization_scope_denied" } }, 403);
   }
   const broadCreation =
     (await hasCapability(c.env.DB, userId, "projects.create")) &&
     (await hasCapability(c.env.DB, userId, "projects.all"));
-  if (!b.organization_id && !(await platformRoleForUser(c.env.DB, userId)) &&
+  if (b.client_id && !b.organization_id && !(await platformRoleForUser(c.env.DB, userId)) &&
     !broadCreation
   ) {
     const access = await c.env.DB.prepare("SELECT 1 FROM client_account_access WHERE client_id = ? AND user_id = ?")
@@ -249,6 +269,7 @@ projectsRouter.post("/api/projects", async (c) => {
     if (!ownerAccess && !ownerMembership) return c.json({ error: { code: "owner_scope_denied" } }, 403);
   }
   const id = uuid();
+  const slug = b.slug ?? `${b.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 72) || "proiect"}-${id.slice(0, 8)}`;
   const t = now();
   if (b.organization_id) {
     const [platformRole, membership] = await Promise.all([
@@ -275,9 +296,9 @@ projectsRouter.post("/api/projects", async (c) => {
           owner_user_id, banner_status, status, created_at, updated_at)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`
     ).bind(
-      id, b.client_id, b.organization_id ?? null, b.name, b.slug,
+      id, b.client_id ?? null, b.organization_id ?? null, b.name, slug,
       b.kind ?? "website_prezentare", projectUrl, b.description ?? null,
-      b.owner_user_id ?? null, "in_progress", "in_progress", t, t,
+      b.owner_user_id ?? null, stage.banner, stage.status, t, t,
     ), c.env.DB.prepare("INSERT INTO project_staff (project_id, user_id, role, assigned_at) VALUES (?,?,?,?)")
       .bind(id, userId, "owner", t)];
     const recurring = b.recurring_service;
@@ -299,10 +320,10 @@ projectsRouter.post("/api/projects", async (c) => {
     }
     statements.push(c.env.DB.prepare(
       "INSERT INTO project_logs (id,project_id,actor_id,action,target_type,target_id,meta_json,created_at) VALUES (?,?,?,?,?,?,?,?)",
-    ).bind(uuid(), id, userId, "project.create", "project", id, JSON.stringify({ recurringService: Boolean(recurring?.enabled) }), t));
-    if(key) statements.unshift(c.env.DB.prepare("INSERT INTO idempotency_keys(scope,idempotency_key,request_hash,response_status,response_json,created_at,expires_at) VALUES(?,?,?,201,?,?,?)").bind(scope,key,hash,JSON.stringify({id,slug:b.slug}),t,t+86400000));
+    ).bind(uuid(), id, userId, "project.create", "project", id, JSON.stringify({ recurringService: Boolean(recurring?.enabled), stage: stage.id, clientId: b.client_id ?? null }), t));
+    if(key) statements.unshift(c.env.DB.prepare("INSERT INTO idempotency_keys(scope,idempotency_key,request_hash,response_status,response_json,created_at,expires_at) VALUES(?,?,?,201,?,?,?)").bind(scope,key,hash,JSON.stringify({id,slug}),t,t+86400000));
     await c.env.DB.batch(statements);
-    return c.json({ id, slug: b.slug }, 201);
+    return c.json({ id, slug }, 201);
   } catch {
     const replay = await previous();
     if(replay) return replay.request_hash === hash ? c.json(JSON.parse(replay.response_json),201) : c.json({error:{code:"idempotency_key_reused"}},409);
@@ -345,9 +366,15 @@ projectsRouter.patch("/api/projects/:id", async (c) => {
     if (!url) return c.json({ error: { code: "invalid_url" } }, 400);
     b.url = url;
   }
+  delete b.status;
+  if ("banner_status" in b) {
+    const stage = PROJECT_STAGES.find(stage => stage.banner === b.banner_status);
+    if (!stage && !["offline", "revizuire"].includes(String(b.banner_status))) return c.json({ error: { code: "invalid_stage" } }, 400);
+    if (stage) b.status = stage.status;
+  }
   // Ownership is an access grant. It must never be mass-assigned by a project editor.
   if ("owner_user_id" in b) return c.json({ error: { code: "owner_transfer_forbidden" } }, 403);
-  const allowed = ["name", "kind", "description", "banner_status", "url", "favicon_url", "og_title", "og_description", "og_image_url", "cover_image_url", "price_ron", "price_eur", "subscription_plan", "subscription_status", "billing_next"];
+  const allowed = ["name", "kind", "description", "status", "banner_status", "url", "favicon_url", "og_title", "og_description", "og_image_url", "cover_image_url", "price_ron", "price_eur", "subscription_plan", "subscription_status", "billing_next"];
   const sets: string[] = [], vals: Array<string | number | null> = [];
   for (const k of allowed) {
     if (!(k in b)) continue;

@@ -188,7 +188,7 @@ export default function ClientProjects({
                   .filter(
                     (p) =>
                       p.client_id !== file.client.id &&
-                      `${p.name} ${p.company_name}`
+                      `${p.name} ${p.company_name || "fără client"}`
                         .toLowerCase()
                         .includes(query.toLowerCase()),
                   )
@@ -210,7 +210,7 @@ export default function ClientProjects({
                       <span>
                         <strong>{p.name}</strong>
                         <span className="block cw-muted">
-                          {p.company_name} · {statusName(p.status)}
+                          {p.company_name || "Fără client încă"} · {statusName(p.status)}
                         </span>
                         {!p.canAssign && (
                           <span className="block cw-hint">

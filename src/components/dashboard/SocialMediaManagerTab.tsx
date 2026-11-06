@@ -63,6 +63,8 @@ export default function SocialMediaManagerTab() {
     [confirmed, setConfirmed] = useState(false),
     [busy, setBusy] = useState(false),
     [upcoming, setUpcoming] = useState(false);
+  const [command, setCommand] = useState<null | { type: "approved" | "rejected" | "retry" | "sync" | "plan"; title: string; job?: SocialSnapshot["activities"][number] }>(null);
+  const [commandConfirmed, setCommandConfirmed] = useState(false);
   const sequence = useRef(0),
     alive = useRef(true);
   useEffect(() => {
@@ -113,6 +115,7 @@ export default function SocialMediaManagerTab() {
     alive.current = true;
     setData(null);
     setSelected(null);
+    setCommand(null);
     void load();
     const refresh = () => {
       if (document.visibilityState === "visible") void load();
@@ -130,6 +133,7 @@ export default function SocialMediaManagerTab() {
     };
   }, [load]);
   const review = (item: AiContentItem, next: Decision | null) => {
+    setUpcoming(false);
     setSelected(item);
     setDecision(next);
     setConfirmed(false);
@@ -161,6 +165,21 @@ export default function SocialMediaManagerTab() {
       setBusy(false);
     }
   };
+  const requestCommand = (next: NonNullable<typeof command>) => { setCommand(next); setCommandConfirmed(false); setUpcoming(false); };
+  const executeCommand = async () => {
+    if (!data || !command || busy || !commandConfirmed) return;
+    setBusy(true);
+    try {
+      if (command.type === "sync") await socialManagerApi.sync(data.project.id);
+      else if (command.type === "plan") await aiProjectsApi.runSocialPlan(data.project.id);
+      else if (command.type === "retry" && command.job) await aiProjectsApi.retrySocialJob(data.project.id, command.job.id, command.job.updated_at);
+      else if ((command.type === "approved" || command.type === "rejected") && command.job) await socialManagerApi.reviewPlan(data.project.id, command.job.id, command.type, command.job.updated_at);
+      setCommand(null); setUpcoming(true);
+      toast.success("Comanda a fost înregistrată. Datele proiectului au fost actualizate.");
+      window.dispatchEvent(new Event("avyron:approvals-changed"));
+      await load();
+    } catch (e) { toast.error((e as Error).message); await load(); } finally { setBusy(false); }
+  };
   const scheduled = new Set(data?.scheduled.map((item) => item.id));
   const activities = [
     ...(data?.activities
@@ -172,6 +191,8 @@ export default function SocialMediaManagerTab() {
         at: job.due_at,
         channel: job.primary_channel,
         error: job.last_error_code,
+        job,
+        content: data?.activityContent?.find(item => item.id === job.content_id) || data?.content.find(item => item.id === job.content_id),
       })) || []),
     ...(data?.scheduled.map((item) => ({
       id: "content-" + item.id,
@@ -180,6 +201,8 @@ export default function SocialMediaManagerTab() {
       at: item.scheduled_at || 0,
       channel: values(item.channels_json),
       error: null,
+      job: undefined,
+      content: undefined,
     })) || []),
   ].sort((a, b) => a.at - b.at);
   const pending =
@@ -467,6 +490,12 @@ export default function SocialMediaManagerTab() {
               Aprobarea, programarea și publicarea au stări distincte.
             </DialogDescription>
           </DialogHeader>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" disabled={loading || busy} onClick={() => void load()}>Actualizează lista</Button>
+            {data?.permission.canReview && <Button variant="outline" disabled={busy} onClick={() => requestCommand({ type: "sync", title: "Sincronizează stările proiectului" })}>Sincronizează stările</Button>}
+            {data?.permission.canPlan && <Button disabled={busy} onClick={() => requestCommand({ type: "plan", title: "Actualizează planul editorial" })}>Actualizează planul</Button>}
+          </div>
+          <p className="text-xs text-slate-400">Planul confirmă tema și calendarul. Materialul rezultat se revizuiește separat, înainte de programare sau publicare.</p>
           <div className="grid gap-2 sm:grid-cols-3">
             <Metric
               label="În pregătire"
@@ -484,7 +513,7 @@ export default function SocialMediaManagerTab() {
                     "draft_ready",
                     "awaiting_approval",
                     "awaiting_budget",
-                  ].includes(a.status),
+                  ].includes(a.status) || (a.job && !a.job.content_id && !a.job.blog_post_id && a.status === "queued" && a.job.plan_review_state === "pending"),
                 ).length
               }
             />
@@ -515,6 +544,20 @@ export default function SocialMediaManagerTab() {
                   Necesită verificare: {activity.error}
                 </p>
               )}
+              {activity.job?.plan_review_state === "approved" && <p className="mt-2 text-xs text-emerald-300">Plan aprobat · materialul necesită decizie separată.</p>}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {activity.content && <Button size="sm" variant="outline" onClick={() => review(activity.content!, null)}>Vezi materialul</Button>}
+                {activity.content?.status === "pending_approval" && data?.permission.canReview && <Button size="sm" onClick={() => review(activity.content!, "approved")}>Aprobă materialul</Button>}
+                {activity.content && ["draft", "pending_approval"].includes(activity.content.status) && data?.permission.canReview && <Button size="sm" variant="outline" onClick={() => review(activity.content!, "rejected")}>Respinge materialul</Button>}
+                {activity.content?.status === "draft" && data?.permission.canCreate && <Button size="sm" onClick={() => review(activity.content!, "pending_approval")}>Trimite materialul la aprobare</Button>}
+                {activity.job && !activity.job.content_id && !activity.job.blog_post_id && ["queued", "awaiting_budget", "failed"].includes(activity.status) && (activity.job.plan_review_state || "pending") === "pending" && data?.permission.canReview && <>
+                  <Button size="sm" onClick={() => requestCommand({ type: "approved", title: activity.title, job: activity.job })}>Aprobă planul</Button>
+                  <Button size="sm" variant="outline" onClick={() => requestCommand({ type: "rejected", title: activity.title, job: activity.job })}>Respinge planul</Button>
+                </>}
+                {activity.job && !activity.job.content_id && !activity.job.blog_post_id && activity.job.plan_review_state === "approved" && ["queued", "awaiting_budget", "failed"].includes(activity.status) && data?.permission.canReview && <Button size="sm" variant="outline" onClick={() => requestCommand({ type: "rejected", title: activity.title, job: activity.job })}>Respinge planul</Button>}
+                {activity.job && ["failed", "awaiting_budget"].includes(activity.status) && data?.permission.canReview && <Button size="sm" variant="outline" onClick={() => requestCommand({ type: "retry", title: activity.title, job: activity.job })}>Reîncearcă pregătirea</Button>}
+                {activity.job?.blog_post_id && <Button size="sm" variant="outline" asChild><Link to={`/intern/ai-projects/${encodeURIComponent(slug)}`}>Revizuiește articolul în studio</Link></Button>}
+              </div>
               {activity.at > 0 &&
                 activity.at < Date.now() &&
                 activity.status !== "failed" && (
@@ -533,6 +576,14 @@ export default function SocialMediaManagerTab() {
             Sunt afișate până la 60 de activități de producție și 60 de
             programări.
           </p>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!command} onOpenChange={open => { if (!open && !busy) setCommand(null); }}>
+        <DialogContent className="max-h-[85dvh] overflow-y-auto border-white/10 bg-[#10162a] text-slate-100 sm:max-w-lg">
+          <DialogHeader><DialogTitle>{command?.title}</DialogTitle><DialogDescription>{command?.type === "approved" ? "Confirmă tema și data planificată. Aprobarea conținutului și publicarea rămân separate." : command?.type === "rejected" ? "Activitatea va fi oprită. Materialele publicate nu sunt modificate." : command?.type === "retry" ? "Activitatea revine în coada existentă, cu aceleași limite de buget și aprobare. Verifică motivul blocării înainte de reîncercare." : "Se actualizează doar planul sau stările acestui proiect, fără generare AI ori publicare."}</DialogDescription></DialogHeader>
+          {command?.job && <p className="text-sm text-slate-300">{command.job.primary_channel} · {new Date(command.job.due_at).toLocaleString("ro-RO")}</p>}
+          <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={commandConfirmed} onChange={e => setCommandConfirmed(e.target.checked)} />Am verificat activitatea și confirm comanda.</label>
+          <Button disabled={!commandConfirmed || busy} onClick={() => void executeCommand()}>{busy ? "Se salvează…" : "Confirmă comanda"}</Button>
         </DialogContent>
       </Dialog>
     </div>

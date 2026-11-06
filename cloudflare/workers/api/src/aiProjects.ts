@@ -1,3 +1,4 @@
+import { readJsonBodyUpTo } from "./requestBody";
 import {managedStaff,managedPermission} from "./staffAccessPolicy";
 import { editorialStates, socialManagerSnapshot } from "./socialManager";
 import { privilegedMfaSatisfied } from "./mfaPolicy";
@@ -8,7 +9,7 @@ import { reserveAiCost } from "./aiCostGuard";
 import { runAiCore } from "./aiCore";
 import { resolveSocialModelRoute } from "./socialModelRouting";
 import { now, sha256 } from "./security";
-import { runSocialStudioScheduler } from "./socialStudioScheduler";
+import { enqueueDueJobs } from "./socialStudioScheduler";
 import { proposeAudienceCandidates, type AudienceProfile } from "./socialAudienceOptimizer";
 import { createSocialStudioBackup, type SocialBackupScope } from "./socialStudioBackup";
 import {
@@ -132,7 +133,7 @@ aiProjectsRouter.get("/api/ai-projects/:slug/social-manager", async c => {
   if(!access)return c.json({error:{code:"not_found"}},404);
   const status=c.req.query("status"),raw=c.req.query("offset")||"0";
   if((status&&!editorialStates.includes(status as typeof editorialStates[number]))||!/^\d{1,6}$/.test(raw))return c.json({error:{code:"invalid_filter"}},400);
-  return c.json(await socialManagerSnapshot(c.env,access.project,{status,offset:Number(raw)},access.canManage,access.canCreateContent));
+  return c.json(await socialManagerSnapshot(c.env,access.project,{status,offset:Number(raw)},access.canManage,access.canCreateContent,access.canConnect));
 });
 
 aiProjectsRouter.get("/api/ai-projects/:slug", async (c) => {
@@ -669,9 +670,51 @@ aiProjectsRouter.post("/api/ai-projects/:projectId/social-studio/plan", async (c
   const access = await projectAccess(c, c.req.param("projectId"));
   if (!access) return c.json({ error: { code: "not_found" } }, 404);
   if (!access.canConnect) return c.json({ error: { code: "platform_owner_required" } }, 403);
-  const result = await runSocialStudioScheduler(c.env, now());
+  const result = { created: await enqueueDueJobs(c.env, now(), access.project.id) };
   await event(c, access.project.id, "social_studio.plan.run", "ai_project", access.project.id, result);
   return c.json({ ok: true, ...result });
+});
+
+// Refresh relationships only. No generation, provider calls or publication.
+aiProjectsRouter.post("/api/ai-projects/:projectId/social-manager/sync", async c => {
+  const access = await projectAccess(c, c.req.param("projectId"));
+  if (!access) return c.json({ error: { code: "not_found" } }, 404);
+  if (!access.canManage) return c.json({ error: { code: "forbidden" } }, 403);
+  const timestamp = now();
+  const [updated] = await c.env.DB.batch([
+    c.env.DB.prepare(`UPDATE ai_social_jobs SET status=CASE (SELECT status FROM ai_content_items WHERE id=content_id AND project_id=ai_social_jobs.project_id)
+      WHEN 'approved' THEN 'approved' WHEN 'scheduled' THEN 'approved' WHEN 'published' THEN 'completed'
+      WHEN 'pending_approval' THEN 'awaiting_approval' ELSE 'draft_ready' END,updated_at=max(updated_at+1,?)
+      WHERE project_id=? AND content_id IS NOT NULL AND plan_review_state<>'rejected' AND status NOT IN ('generating','completed','skipped')
+      AND EXISTS(SELECT 1 FROM ai_content_items c WHERE c.id=content_id AND c.project_id=ai_social_jobs.project_id AND c.status IN ('draft','pending_approval','approved','scheduled','published','rejected')
+        AND ai_social_jobs.status<>CASE c.status WHEN 'approved' THEN 'approved' WHEN 'scheduled' THEN 'approved' WHEN 'published' THEN 'completed' WHEN 'pending_approval' THEN 'awaiting_approval' ELSE 'draft_ready' END)`)
+      .bind(timestamp, access.project.id),
+    c.env.DB.prepare(`INSERT INTO ai_project_events(id,project_id,actor_user_id,action,metadata_json,created_at) VALUES(?,?,?,'social_studio.sync','{}',?)`)
+      .bind(identifier("aipe"), access.project.id, c.get("userId"), timestamp),
+  ]);
+  return c.json({ ok: true, updated: updated.meta.changes });
+});
+
+aiProjectsRouter.post("/api/ai-projects/:projectId/social-jobs/:jobId/review", async c => {
+  const access = await projectAccess(c, c.req.param("projectId"));
+  if (!access) return c.json({ error: { code: "not_found" } }, 404);
+  if (!access.canManage) return c.json({ error: { code: "forbidden" } }, 403);
+  const input = await readJsonBodyUpTo(c.req.raw, 4096);
+  if (!input.ok) return c.json({ error: { code: input.error } }, input.error === "payload_too_large" ? 413 : 400);
+  const body = input.value as { decision?: string; expectedUpdatedAt?: number; confirmed?: boolean } | null;
+  if (!body || !['approved','rejected'].includes(body.decision || '') || body.confirmed !== true || !Number.isSafeInteger(body.expectedUpdatedAt) || Number(body.expectedUpdatedAt) < 0)
+    return c.json({ error: { code: "invalid_plan_review" } }, 400);
+  const timestamp = Math.max(now(), Number(body.expectedUpdatedAt)+1);
+  const [updated] = await c.env.DB.batch([
+    c.env.DB.prepare(`UPDATE ai_social_jobs SET plan_review_state=?,plan_reviewed_by=?,plan_reviewed_at=?,updated_at=?,status=CASE WHEN ?='rejected' THEN 'skipped' ELSE status END
+      WHERE id=? AND project_id=? AND updated_at=? AND content_id IS NULL AND blog_post_id IS NULL AND status IN ('queued','awaiting_budget','failed') AND (plan_review_state='pending' OR (?='rejected' AND plan_review_state='approved'))`)
+      .bind(body.decision, c.get("userId"), timestamp, timestamp, body.decision, c.req.param("jobId"), access.project.id, body.expectedUpdatedAt, body.decision),
+    c.env.DB.prepare(`INSERT INTO ai_project_events(id,project_id,actor_user_id,action,target_type,target_id,metadata_json,created_at)
+      SELECT ?,?,?,?,'social_job',?,'{}',? WHERE changes()=1`)
+      .bind(identifier("aipe"), access.project.id, c.get("userId"), `social_studio.plan.${body.decision}`, c.req.param("jobId"), timestamp),
+  ]);
+  if (!updated.meta.changes) return c.json({ error: { code: "plan_changed", message: "Activitatea s-a modificat. Actualizează planul înainte de decizie." } }, 409);
+  return c.json({ ok: true });
 });
 
 aiProjectsRouter.post("/api/ai-projects/:projectId/social-studio/backups", async (c) => {
@@ -725,11 +768,13 @@ aiProjectsRouter.post("/api/ai-projects/:projectId/social-jobs/:jobId/retry", as
   const access = await projectAccess(c, c.req.param("projectId"));
   if (!access) return c.json({ error: { code: "not_found" } }, 404);
   if (!access.canManage) return c.json({ error: { code: "forbidden" } }, 403);
+  const body = await c.req.json<{ expectedUpdatedAt?: number }>().catch(() => null);
+  if (body?.expectedUpdatedAt !== undefined && (!Number.isSafeInteger(body.expectedUpdatedAt) || body.expectedUpdatedAt < 0)) return c.json({error:{code:"invalid_revision"}},400);
   const timestamp = now();
   const result = await c.env.DB.prepare(
     `UPDATE ai_social_jobs SET status='queued',last_error_code=NULL,updated_at=?
-      WHERE id=? AND project_id=? AND status IN ('failed','awaiting_budget')`,
-  ).bind(timestamp, c.req.param("jobId"), access.project.id).run();
+      WHERE id=? AND project_id=? AND status IN ('failed','awaiting_budget') AND (? IS NULL OR updated_at=?)`,
+  ).bind(timestamp, c.req.param("jobId"), access.project.id, body?.expectedUpdatedAt ?? null, body?.expectedUpdatedAt ?? null).run();
   if (!result.meta.changes) return c.json({ error: { code: "job_not_retryable" } }, 409);
   await event(c, access.project.id, "social_studio.job.retry", "social_job", c.req.param("jobId"));
   return c.json({ ok: true });
@@ -1084,7 +1129,7 @@ aiProjectsRouter.patch("/api/ai-projects/:projectId/content/:contentId", async (
   const [updated] = await c.env.DB.batch([decisionUpdate, c.env.DB.prepare(
     `INSERT INTO ai_project_events(id,project_id,actor_user_id,action,target_type,target_id,metadata_json,created_at)
      SELECT ?,?,?,?,'ai_content',?,'{}',? WHERE changes()=1`,
-  ).bind(identifier("aipe"),access.project.id,c.get("userId"),`ai_project.content.${next}`,c.req.param("contentId"),timestamp)]);
+  ).bind(identifier("aipe"),access.project.id,c.get("userId"),`ai_project.content.${next}`,c.req.param("contentId"),timestamp), c.env.DB.prepare(`UPDATE ai_social_jobs SET status=?,updated_at=max(updated_at+1,?) WHERE project_id=? AND content_id=? AND plan_review_state<>'rejected' AND status NOT IN ('generating','completed','skipped') AND EXISTS(SELECT 1 FROM ai_content_items c WHERE c.id=content_id AND c.project_id=ai_social_jobs.project_id AND c.status=? AND c.updated_at=?)`).bind(next === "approved" ? "approved" : next === "pending_approval" ? "awaiting_approval" : "draft_ready", timestamp, access.project.id, c.req.param("contentId"), next, timestamp)]);
   if (!updated.meta.changes) return c.json({ error: { code: "content_changed_or_expired", message: "Materialul s-a modificat sau a expirat. Actualizează solicitarea." } }, 409);
   return c.json({ ok: true });
 });

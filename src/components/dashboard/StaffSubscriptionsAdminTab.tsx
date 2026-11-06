@@ -59,7 +59,7 @@ export default function StaffSubscriptionsAdminTab() {
   const open = (item: AdminSubscription) => {
     if (item.maintenance_enabled) {
       navigate(
-        `/profil?tab=maintenance&project=${encodeURIComponent(item.project_id)}`,
+        `/profil?tab=client-maintenance&project=${encodeURIComponent(item.project_id)}`,
       );
       return;
     }

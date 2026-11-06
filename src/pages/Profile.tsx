@@ -36,6 +36,7 @@ const StaffClientsTab = lazyWithRetry(() => import("@/components/dashboard/Staff
 const StaffReviewsTab = lazyWithRetry(() => import("@/components/dashboard/StaffReviewsTab"));
 const StaffAnnouncementsTab = lazyWithRetry(() => import("@/components/dashboard/StaffAnnouncementsTab").then((m) => ({ default: m.StaffAnnouncementsTab })));
 const CloudflareProjects = lazyWithRetry(() => import("@/pages/intern/InternHome"));
+const ClientMaintenanceTab = lazyWithRetry(() => import("@/components/dashboard/ClientMaintenanceTab"));
 const StaffMaintenanceTab = lazyWithRetry(() => import("@/components/dashboard/StaffMaintenanceTab").then((m) => ({ default: m.StaffMaintenanceTab })));
 const StaffChatTab = lazyWithRetry(() => import("@/components/dashboard/StaffChatTab").then((m) => ({ default: m.StaffChatTab })));
 const DocumentCenter = lazyWithRetry(() => import("@/features/documents/DocumentCenter"));
@@ -86,7 +87,8 @@ function ProfileDashboard() {
     isSuperAdmin, isStaff, isAdmin, signOut } = useAuth();
   const access = useMemo(() => buildAccess({ roles, capabilities, email: user?.email, superadmin: isSuperAdmin,hasCollaborations }), [roles, capabilities, user?.email, isSuperAdmin,hasCollaborations]);
   const [params, setParams] = useSearchParams();
-  const requested = params.get("tab") === "workflows" ? "projects" : params.get("tab") === "platform-control" ? "os-centers" : (params.get("tab") ?? "");
+  const legacyMaintenance = params.get("tab") === "maintenance" && (!access.isSuperAdmin || (params.has("project") && params.get("core") !== "system"));
+  const requested = legacyMaintenance ? "client-maintenance" : params.get("tab") === "workflows" ? "projects" : params.get("tab") === "platform-control" ? "os-centers" : (params.get("tab") ?? "");
   const [tab, setTab] = useState<SectionId>(canOpenSection(requested, access) ? (requested as SectionId)
       : defaultSection(access));
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -101,7 +103,7 @@ function ProfileDashboard() {
 
   const allowed = useMemo(() => sectionsFor(access), [access]);
   const groups = DASHBOARD_GROUP_ORDER.map((group) => ({ id: group, label: DASHBOARD_GROUP_LABELS[group], items: allowed.filter((section) => section.group === group && section.navigation !== false && !(access.isStaff && section.id === "collection") && (access.isStaff || !["stats"].includes(section.id))) })).filter((group) => group.items.length);
-  const mobilePrimary = new Set<SectionId>(access.isStaff ? ["overview", "projects", "leads", ...(access.isSuperAdmin ? ["ai-os" as SectionId] : ["maintenance" as SectionId])] : ["overview", "catalog", "cart", "orders"]);
+  const mobilePrimary = new Set<SectionId>(access.isStaff ? ["overview", "projects", "leads", ...(access.isSuperAdmin ? ["ai-os" as SectionId] : ["client-maintenance" as SectionId])] : ["overview", "catalog", "cart", "orders"]);
   const mobileMoreGroups = groups
     .map((group) => ({ ...group, items: group.items.filter((section) => !mobilePrimary.has(section.id)) }))
     .filter((group) => group.items.length);
@@ -144,6 +146,7 @@ function ProfileDashboard() {
       const next = new URLSearchParams(params);
       next.set("tab", destination);
       next.delete("core");
+      if (destination === "maintenance") next.delete("project");
       if(destination!=="documents")for(const key of ["documentView","documentTemplate","template","document","version"])next.delete(key);
       if(destination!=="servicii-avyron"){next.delete("service");next.delete("serviceGroup");}
       if(extraParams)for(const [key,value] of Object.entries(extraParams)){if(value)next.set(key,value);else next.delete(key);}
@@ -275,6 +278,7 @@ function ProfileDashboard() {
                 ) : (
                   <AvyronOverview access={access} displayName={displayName} onOpenSection={openSection} onOpenCommand={() => setCommandOpen(true)} />
                 )}</TabsContent>
+          {canOpenSection("client-maintenance", access) && <TabsContent value="client-maintenance" role="region" aria-label="Mentenanță Clienți" className="mt-0"><ClientMaintenanceTab /></TabsContent>}
           {canOpenSection("maintenance", access) && (
                 <TabsContent value="maintenance" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["maintenance"].label} className="mt-0"><StaffMaintenanceTab /></TabsContent>
               )}
@@ -362,14 +366,14 @@ function ProfileDashboard() {
             <NavButton section="catalog" mobile />
           )}
         {access.isStaff &&
-          (access.isSuperAdmin || canOpenSection("maintenance", access)) ? (
-            <button type="button" aria-label={access.isSuperAdmin ? "Deschide AVY" : "Deschide AVY Core"} aria-pressed={tab === (access.isSuperAdmin ? "ai-os" : "maintenance")} onClick={() => openSection(access.isSuperAdmin ? "ai-os" : "maintenance")} className="group -mt-5 flex min-w-0 flex-col items-center justify-center gap-1 text-[9px] font-medium text-violet-100">
+          (access.isSuperAdmin || canOpenSection("client-maintenance", access)) ? (
+            <button type="button" aria-label={access.isSuperAdmin ? "Deschide AVY" : "Deschide mentenanța clienților"} aria-pressed={tab === (access.isSuperAdmin ? "ai-os" : "client-maintenance")} onClick={() => openSection(access.isSuperAdmin ? "ai-os" : "client-maintenance")} className="group -mt-5 flex min-w-0 flex-col items-center justify-center gap-1 text-[9px] font-medium text-violet-100">
           <span className="grid size-12 place-items-center rounded-full border border-violet-300/30 bg-gradient-to-br from-violet-500 to-indigo-700 shadow-[0_0_28px_rgba(124,58,237,.55)] ring-4 ring-[#080d1b]">{access.isSuperAdmin? (
                   <Sparkles className="size-5" />
                 ) : (
                   <Wrench className="size-5" />
                 )}</span>
-          <span>{access.isSuperAdmin ? "AVY" : "AVY Core"}</span>
+          <span>{access.isSuperAdmin ? "AVY" : "Mentenanță"}</span>
         </button>
           ) : access.isStaff ? (
             <NavButton section="intern" mobile />

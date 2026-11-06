@@ -1,3 +1,4 @@
+import { PROJECT_STAGES } from "@/shared/projectLifecycle";
 import { lazy, Suspense } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -24,6 +25,7 @@ import PageBackLink from "@/components/site/PageBackLink";
 import { normalizeExternalLink } from "@/shared/externalUrl";
 
 const BANNER_LABEL: Record<BannerStatus, { label: string; className: string }> = {
+  proposed: { label: "Propus", className: "bg-slate-500/15 text-slate-400 border-slate-500/30" },
   online:      { label: "Online",              className: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30" },
   offline:     { label: "Offline",             className: "bg-red-500/15 text-red-500 border-red-500/30" },
   revizuire:   { label: "Revizuire",           className: "bg-amber-500/15 text-amber-500 border-amber-500/30" },
@@ -302,15 +304,22 @@ function PageShell({ children }: { children: React.ReactNode }) {
 
 function BannerStatusRow({ status, projectId, canWrite, onChange }: { status: BannerStatus; projectId: string; canWrite: boolean; onChange: () => void }) {
   const cfg = BANNER_LABEL[status] ?? BANNER_LABEL.in_progress;
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
   return (
     <div className={`rounded-lg border px-4 py-3 flex items-center gap-3 flex-wrap ${cfg.className}`}>
       <span className="w-2 h-2 rounded-full bg-current" />
       <span className="font-medium">Stare: {cfg.label}</span>
       {canWrite && (
-        <Select value={status} onValueChange={async (v) => { await internApi.updateProject(projectId, { banner_status: v as BannerStatus }); onChange(); }}>
-          <SelectTrigger className="w-48 ml-auto bg-background/40"><SelectValue /></SelectTrigger>
+        <Select value={status} disabled={saving} onValueChange={async (v) => {
+          setSaving(true);
+          try { await internApi.updateProject(projectId, { banner_status: v as BannerStatus }); window.dispatchEvent(new Event("avyron:projects-changed")); onChange(); }
+          catch (e) { toast({ variant: "destructive", description: (e as Error).message }); }
+          finally { setSaving(false); }
+        }}>
+          <SelectTrigger aria-label="Etapă proiect" className="w-48 ml-auto bg-background/40"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {(Object.keys(BANNER_LABEL) as BannerStatus[]).map((s) => <SelectItem key={s} value={s}>{BANNER_LABEL[s].label}</SelectItem>)}
+            {PROJECT_STAGES.map(stage => <SelectItem key={stage.id} value={stage.banner}>{stage.label}</SelectItem>)}
           </SelectContent>
         </Select>
       )}

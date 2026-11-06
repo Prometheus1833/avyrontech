@@ -60,7 +60,7 @@ export const canSee = (audience: Audience, a: Access) => {
 
 export type SectionId =
   | "documents" | "overview" | "profile" | "settings" | "projects" | "subscriptions" | "invoices" | "payments" | "cart" | "orders" | "catalog" | "collection"
-  | "stats" | "tickets" | "maintenance" | "clients" | "domains"
+  | "stats" | "tickets" | "maintenance" | "client-maintenance" | "clients" | "domains"
   | "finance" | "media" | "leads" | "staff-tickets" | "demo-requests" | "intern"
   | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "servicii-avyron" | "produse-avyron"
   | "newsletter" | "ai-projects" | "logo-simulations" | "surveys" | "configurator"
@@ -69,7 +69,7 @@ export type SectionId =
 export type SectionDef = {
   id: SectionId;
   group:
-    | "overview" | "account" | "projects" | "billing" | "documents" | "servicii" | "produse" | "activity" | "platform" | "os" | "other";
+    | "overview" | "account" | "projects" | "billing" | "recurring" | "documents" | "servicii" | "produse" | "activity" | "platform" | "os" | "other";
   audience: Audience;
   /** Secțiunile false rămân accesibile din huburi și căutare, fără duplicate în sidebar. */
   navigation?: boolean;
@@ -93,7 +93,8 @@ export const SECTIONS: readonly SectionDef[] = [
 
   { id: "projects", group: "projects", audience: "everyone", keywords: ["proiecte", "site", "projects", "livrare", "vanzari"] },
   { id: "ai-projects", group: "projects", audience: "staff", requiredCapability: "ai_projects.read", keywords: ["proiecte ai", "productie ai", "continut"] },
-  { id: "maintenance", group: "projects", audience: "everyone", keywords: ["mentenanta", "uptime", "maintenance"] },
+  { id: "maintenance", group: "os", audience: "superadmin", keywords: ["avy core", "sistem", "diagnostice"] },
+  { id: "client-maintenance", group: "recurring", audience: "everyone", keywords: ["mentenanta clienti", "activitati", "abonamente", "maintenance"] },
   { id: "leads", group: "projects", audience: "staff", requiredCapability: "leads.read", keywords: ["leads", "crm", "vanzari", "oferta", "prospecti"] },
   { id: "media", group: "projects", audience: "staff", keywords: ["media", "imagini", "fisiere"] },
 
@@ -115,8 +116,8 @@ export const SECTIONS: readonly SectionDef[] = [
   // super adminul centrul magazinului — două fețe ale aceluiași lucru.
   { id: "collection", group: "produse", audience: "everyone", keywords: ["colectia mea", "produse avyron", "componente", "parteneriat", "avy", "collection", "artefacte"] },
   { id: "produse-avyron", group: "produse", audience: "superadmin", keywords: ["produse avyron", "artefacte", "catalog", "parteneriate", "magazin", "componente"] },
-  { id: "subscriptions-admin", group: "produse", audience: "superadmin", keywords: ["abonamente", "mentenanta", "preturi", "clienti abonati", "trafic"] },
-  { id: "internal-subscriptions", group: "produse", audience: "staff", keywords: ["abonamente avyron", "conturi interne", "lovable", "codex", "cloudflare", "github", "reinnoiri"] },
+  { id: "subscriptions-admin", group: "recurring", audience: "superadmin", keywords: ["abonamente", "mentenanta", "preturi", "clienti abonati", "trafic"] },
+  { id: "internal-subscriptions", group: "recurring", audience: "staff", keywords: ["abonamente avyron", "conturi interne", "lovable", "codex", "cloudflare", "github", "reinnoiri"] },
 
   { id: "stats", group: "activity", audience: "client", keywords: ["statistici", "vizite", "stats"] },
   { id: "tickets", group: "activity", audience: "client", keywords: ["suport", "tichete", "tickets", "mesaje"] },
@@ -149,6 +150,7 @@ export const SECTIONS: readonly SectionDef[] = [
 ];
 
 const canOpenDefinition = (section: SectionDef, access: Access) => {
+  if(section.id==="maintenance")return access.isSuperAdmin;
   if(section.id==="my-collaborations")return access.hasCollaborations===true;
   if(section.id==="collaborators")return access.isSuperAdmin || (access.isStaff&&access.capabilities.some(c=>["collaborators.read","collaborators.manage"].includes(c)));
   if (access.capabilities.includes(STAFF_MANAGED) && !access.isSuperAdmin) {

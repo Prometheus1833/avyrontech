@@ -102,11 +102,11 @@ describe("cablajul dintre magazin și dashboardul intern", () => {
 
   it("are o categorie proprie de produse, separată de facturare", () => {
     const produse = SECTIONS.filter((section) => section.group === "produse");
-    expect(produse.map((section) => section.id).sort()).toEqual(["collection", "internal-subscriptions", "produse-avyron", "subscriptions-admin"]);
+    expect(produse.map((section) => section.id).sort()).toEqual(["collection", "produse-avyron"]);
     expect(produse.find((section) => section.id === "collection")!.audience).toBe("everyone");
     expect(produse.find((section) => section.id === "produse-avyron")!.audience).toBe("superadmin");
-    expect(produse.find((section) => section.id === "subscriptions-admin")!.audience).toBe("superadmin");
-    expect(produse.find((section) => section.id === "internal-subscriptions")!.audience).toBe("staff");
+    expect(SECTIONS.find((section) => section.id === "subscriptions-admin")!.audience).toBe("superadmin");
+    expect(SECTIONS.find((section) => section.id === "internal-subscriptions")!.audience).toBe("staff");
   });
 
   it("ține serviciile într-o categorie OS distinctă de produse", () => {
