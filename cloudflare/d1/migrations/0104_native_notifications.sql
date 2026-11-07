@@ -5,6 +5,7 @@ ALTER TABLE operation_notifications ADD COLUMN resource_type TEXT CHECK(resource
 ALTER TABLE operation_notifications ADD COLUMN resource_id TEXT;
 CREATE INDEX operation_notifications_unread ON operation_notifications(user_id,read_at,created_at DESC,id DESC);
 CREATE INDEX operation_notifications_resource ON operation_notifications(resource_type,resource_id);
+CREATE INDEX operation_notifications_metrics ON operation_notifications(created_at,category,read_at);
 CREATE TABLE notification_settings (
  id INTEGER PRIMARY KEY CHECK(id=1), revision INTEGER NOT NULL DEFAULT 0,
  config_json TEXT NOT NULL CHECK(json_valid(config_json)), updated_by TEXT REFERENCES users(id), updated_at INTEGER NOT NULL
