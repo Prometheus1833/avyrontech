@@ -334,7 +334,7 @@ export default function NotificationSettingsTab() {
                   <p className="break-words text-sm leading-relaxed text-slate-300">
                     {draft.guest.messages[context].body[language]}
                   </p>
-                  <span className="inline-block rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white">
+                  <span className="inline-block max-w-full [overflow-wrap:anywhere] rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white">
                     {draft.guest.messages[context].cta[language]}
                   </span>
                 </div>

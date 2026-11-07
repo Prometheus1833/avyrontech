@@ -281,6 +281,38 @@ describe("Native notifications with real migrated SQLite and production Hono han
         .get(),
     ).toBeUndefined();
   });
+  it("timestamps legacy subscription writes now and preserves repeated real transitions without duplicating callbacks", async () => {
+    const before = Date.now() - 1500;
+    db.exec(
+      "INSERT INTO services(id,project_id,service_name,price) VALUES('legacy-service','pa','Core',100); INSERT INTO subscriptions(id,client_id,service_id,next_billing_date,status) VALUES('legacy','ca','legacy-service',2000000000000,'active'); UPDATE subscriptions SET status='paused' WHERE id='legacy'; UPDATE subscriptions SET status='paused' WHERE id='legacy'; UPDATE subscriptions SET status='active' WHERE id='legacy'; UPDATE subscriptions SET status='paused' WHERE id='legacy'",
+    );
+    const notices = db
+      .prepare(
+        "SELECT created_at,deduplication_key FROM operation_notifications WHERE user_id='a' AND resource_type='subscription' AND resource_id='legacy'",
+      )
+      .all();
+    expect(notices).toHaveLength(4);
+    expect(notices.every((n) => Number(n.created_at) >= before)).toBe(true);
+    expect(new Set(notices.map((n) => n.deduplication_key)).size).toBe(4);
+  });
+  it("accepts a full valid multilingual configuration within the documented character bounds", async () => {
+    actor = "owner";
+    roles = ["admin"];
+    const config = structuredClone(DEFAULT_NOTIFICATION_SETTINGS);
+    for (const message of Object.values(config.guest.messages))
+      for (const text of Object.values(message)) {
+        text.ro = "ă".repeat(240);
+        text.en = "🙂".repeat(120);
+      }
+    const body = JSON.stringify({ revision: 0, config });
+    expect(new TextEncoder().encode(body).length).toBeGreaterThan(16 * 1024);
+    const response = await app.request(
+      "/api/notifications/admin",
+      { method: "PUT", body },
+      { DB: binding } as AppBindings["Bindings"],
+    );
+    expect(response.status).toBe(200);
+  });
   it("materializes only public blog posts once, hides archived posts and respects preferences", async () => {
     const now = Date.now();
     const insert = db.prepare(

@@ -75,7 +75,7 @@ notificationsRouter.get("/api/notifications/admin", async (c) => {
   });
 });
 notificationsRouter.put("/api/notifications/admin", async (c) => {
-  const input = await readJsonBodyUpTo(c.req.raw, 16 * 1024);
+  const input = await readJsonBodyUpTo(c.req.raw, 64 * 1024);
   if (!input.ok) return c.json({ error: { code: input.error } }, 400);
   const body = input.value as { revision?: unknown; config?: unknown };
   const parsed = notificationSettingsSchema.safeParse(body?.config);

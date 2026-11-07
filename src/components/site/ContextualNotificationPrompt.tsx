@@ -142,7 +142,7 @@ export default function ContextualNotificationPrompt() {
         <a
           onClick={dismiss}
           href={publicSiteHref(en ? "/en#cta" : "/#cta")}
-          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-violet-300/25 bg-violet-500/20 px-3 py-2 text-sm font-semibold text-violet-100 hover:bg-violet-500/30 focus-visible:ring-2 focus-visible:ring-violet-400"
+          className="inline-flex min-h-11 max-w-full [overflow-wrap:anywhere] items-center gap-2 rounded-xl border border-violet-300/25 bg-violet-500/20 px-3 py-2 text-sm font-semibold text-violet-100 hover:bg-violet-500/30 focus-visible:ring-2 focus-visible:ring-violet-400"
         >
           {copy.cta[language]}
           <ArrowUpRight className="size-4 shrink-0" />

@@ -60,9 +60,11 @@ Nu sunt necesare chei noi. Contoarele sunt înregistrări native și citiri, nu 
 
 - TypeScript aplicație + Workers, lint: trecute; patru avertismente React Refresh preexistente în Logo Studio.
 - Build static/Pages și Worker, API dry-run: trecute; audit SEO cu 78 pagini indexabile și 212 pagini publice noindex. Aceste rezultate nu reprezintă confirmări de indexare GSC.
-- 10 teste de integrare dedicate pe toate migrările reale SQLite/Hono și 3 teste pentru ceasul de activitate: trecute.
+- 12 teste de integrare dedicate pe toate migrările reale SQLite/Hono și 3 teste pentru ceasul de activitate: trecute.
 - Suita completă: 991 teste trecute, 1 benchmark opțional omis și 3 depășiri de 5 secunde sub încărcare. Cele trei cazuri au fost reluate izolat împreună cu al patrulea caz din aceleași fișiere: 4/4 trecute în 2,89 secunde. Nu au rămas aserțiuni eșuate în acele cazuri.
 - Browser Chromium: 16/16 teste de notificări și regresii carusele trecute la 320, 390 și 1440 px. Capturile au fost inspectate vizual; clopoțelul duplicat din antetul mobil a fost eliminat.
 - WebKit cu profil iPhone: 7/7 teste de notificări trecute. Reproducere: `PLAYWRIGHT_WEBKIT=1 npm run test:e2e -- --project=webkit-mobile e2e/native-notifications.spec.ts --workers=1` (necesită browserul WebKit Playwright instalat).
 
 Nu au fost aplicate migrări remote și nu a fost publicată această funcționalitate în producție la momentul acestor verificări. Confirmarea în conturi reale rămâne etapa de acceptanță după lansare.
+
+Revizuire suplimentară: scrierile legacy de abonament cu `updated_at=0` primesc data reală a evenimentului în inbox. Tranzițiile distincte sunt păstrate chiar când revin la o stare anterioară; un callback repetat fără schimbări de valori nu produce un rând nou. Configurațiile RO/EN valide la limita de caractere încap în limita tehnică de 64 KiB a cererii administrative.
