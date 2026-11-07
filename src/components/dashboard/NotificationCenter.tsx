@@ -1,3 +1,4 @@
+import IconHint from "@/components/ui/icon-hint";
 import {
   ACTIVITY_CHANGED,
   NOTIFICATIONS_OPEN_EVENT,
@@ -139,15 +140,47 @@ export default function NotificationCenter({
         : Promise.resolve({ data: [] as Announcement[] }),
     ]);
     if (controller.signal.aborted) return;
+    const operationData =
+      results[0].status === "fulfilled" &&
+      Array.isArray(results[0].value.data) &&
+      results[0].value.data.every(
+        (row) =>
+          row &&
+          typeof row.id === "string" &&
+          typeof row.title === "string" &&
+          typeof row.body === "string" &&
+          typeof row.created_at === "number" &&
+          Number.isFinite(new Date(row.created_at).getTime()) &&
+          (typeof row.destination === "string" || row.destination === null) &&
+          (row.category === undefined || typeof row.category === "string"),
+      )
+        ? results[0].value.data
+        : null;
+    const announcementData =
+      results[1].status === "fulfilled" &&
+      Array.isArray(results[1].value.data) &&
+      results[1].value.data.every(
+        (row) =>
+          row &&
+          typeof row.id === "string" &&
+          typeof row.title === "string" &&
+          typeof row.content === "string" &&
+          (typeof row.created_at === "string" ||
+            typeof row.created_at === "number") &&
+          Number.isFinite(new Date(row.created_at).getTime()),
+      )
+        ? results[1].value.data
+        : null;
     setOperations(
-      results[0].status === "fulfilled" ? results[0].value.data : [],
+      operationData?.map((row) => ({
+        ...row,
+        destination: row.destination || "",
+      })) ?? [],
     );
     if (results[0].status === "fulfilled")
       setBlogEnabled(results[0].value.blogEnabled !== false);
-    setAnnouncements(
-      results[1].status === "fulfilled" ? results[1].value.data : [],
-    );
-    setError(results.some((r) => r.status === "rejected"));
+    setAnnouncements(announcementData ?? []);
+    setError(operationData === null || announcementData === null);
     setLoading(false);
   }, [access, user?.id, lang]);
   useEffect(() => {
@@ -482,24 +515,32 @@ export default function NotificationCenter({
       }}
       modal={false}
     >
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label={`${en ? "Notifications" : "Notificări"}${unread ? `, ${unread} ${en ? "unread" : "necitite"}` : ""}`}
-          title={en ? "Notifications" : "Notificări"}
-          className="relative grid size-10 shrink-0 place-items-center rounded-xl border border-white/10 text-current transition hover:bg-violet-500/10 focus-visible:ring-2 focus-visible:ring-violet-400"
-        >
-          <Bell className="size-[18px]" />
-          {unread > 0 && (
-            <span
-              aria-hidden="true"
-              className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-fuchsia-700 px-1 text-[10px] font-bold text-white"
-            >
-              {unread > 99 ? "99+" : unread}
-            </span>
-          )}
-        </button>
-      </PopoverTrigger>
+      <IconHint
+        label={
+          en
+            ? "Notifications, announcements and updates to review"
+            : "Notificări, anunțuri și activități de verificat"
+        }
+      >
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-label={`${en ? "Notifications" : "Notificări"}${unread ? `, ${unread} ${en ? "unread" : "necitite"}` : ""}`}
+            title={en ? "Notifications" : "Notificări"}
+            className="relative grid size-10 shrink-0 place-items-center rounded-xl border border-white/10 text-current transition hover:bg-violet-500/10 focus-visible:ring-2 focus-visible:ring-violet-400"
+          >
+            <Bell className="size-[18px]" />
+            {unread > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-fuchsia-700 px-1 text-[10px] font-bold text-white"
+              >
+                {unread > 99 ? "99+" : unread}
+              </span>
+            )}
+          </button>
+        </PopoverTrigger>
+      </IconHint>
       <PopoverContent
         side="bottom"
         align="end"

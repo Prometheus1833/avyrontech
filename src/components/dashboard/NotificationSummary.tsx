@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Bell, ArrowUpRight } from "lucide-react";
-import { cfAuth } from "@/lib/cfAuth";
-import type { AdminData } from "./NotificationSettingsTab";
+import {
+  loadNotificationAdmin,
+  type NotificationAdminData as AdminData,
+} from "@/lib/notificationAdmin";
 export default function NotificationSummary({
   onOpen,
 }: {
@@ -11,10 +13,7 @@ export default function NotificationSummary({
     [error, setError] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
-    void cfAuth
-      .request<AdminData>("/api/notifications/admin", {
-        signal: controller.signal,
-      })
+    void loadNotificationAdmin(controller.signal)
       .then(setData)
       .catch(() => {
         if (!controller.signal.aborted) setError(true);
@@ -36,7 +35,7 @@ export default function NotificationSummary({
         </span>
         <span className="mt-1 block text-xs text-slate-400">
           {error
-            ? "Verifică accesul pentru a încărca starea"
+            ? "Starea notificărilor nu este disponibilă"
             : data
               ? `${data.counts.reduce((sum, row) => sum + row.total, 0)} notificări în 30 de zile · mesaje pentru vizitatori ${data.config.guest.enabled ? "active" : "oprite"}`
               : "Se verifică starea…"}

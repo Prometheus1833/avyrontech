@@ -1,3 +1,7 @@
+import {
+  loadNotificationAdmin,
+  type NotificationAdminData as AdminData,
+} from "@/lib/notificationAdmin";
 import { useEffect, useState } from "react";
 import {
   Bell,
@@ -15,12 +19,6 @@ import {
 } from "@/shared/notifications";
 import { Link } from "react-router-dom";
 
-export type AdminData = {
-  config: NotificationSettings;
-  revision: number;
-  updated_at: number;
-  counts: { category: string; total: number; unread: number }[];
-};
 const labels = {
   general: "General",
   website: "Website",
@@ -43,7 +41,7 @@ export default function NotificationSettingsTab() {
     setLoading(true);
     setError("");
     try {
-      const next = await cfAuth.request<AdminData>("/api/notifications/admin");
+      const next = await loadNotificationAdmin();
       setData(next);
       setDraft(structuredClone(next.config));
     } catch {
@@ -56,8 +54,7 @@ export default function NotificationSettingsTab() {
   };
   useEffect(() => {
     let active = true;
-    void cfAuth
-      .request<AdminData>("/api/notifications/admin")
+    void loadNotificationAdmin()
       .then((next) => {
         if (active) {
           setData(next);

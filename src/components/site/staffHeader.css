@@ -328,3 +328,6 @@
   flex-shrink: 0;
   padding-top: 0;
 }
+
+/* Keep brand, INTERN OS and personal controls on one compact 320px row. */
+@media (max-width:359px){.staff-site-bar{column-gap:4px;}}

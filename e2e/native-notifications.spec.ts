@@ -226,7 +226,7 @@ test("visitor contact suggestion respects active time, consent, dismissal and pa
       JSON.stringify({
         necessary: true,
         analytics: false,
-        marketing: true,
+        marketing: false,
         savedAt: new Date().toISOString(),
         policyVersion: "2026-09-12",
       }),
@@ -262,6 +262,15 @@ test("visitor contact suggestion respects active time, consent, dismissal and pa
       configurable: true,
     }),
   );
+  await page.clock.runFor(35000);
+  await expect(
+    page.getByRole("status", { name: "O sugestie pentru proiectul tău" }),
+  ).toHaveCount(0);
+  await page.evaluate(() => {
+    const key = "avyron-cookie-consent-v2";
+    const consent = JSON.parse(localStorage.getItem(key)!);
+    localStorage.setItem(key, JSON.stringify({ ...consent, marketing: true }));
+  });
   await page.evaluate(() =>
     Object.defineProperty(document, "hidden", {
       value: true,
@@ -318,4 +327,66 @@ test("public user mini panel opens an anchored inbox without blocking navigation
   );
   await page.keyboard.press("Escape");
   await expect(inbox).not.toBeVisible();
+});
+
+test("incomplete notification monitoring data cannot crash the operational dashboard", async ({
+  page,
+}) => {
+  await feedFixture(page);
+  await page.route("**/api/os/overview", (route) =>
+    route.fulfill({
+      json: {
+        generatedAt: stamp,
+        role: "super_admin",
+        leadPipeline: [],
+        activeProjects: [],
+        metrics: {
+          projects: 0,
+          activeProjects: 0,
+          openLeads: 0,
+          leads: 0,
+          clients: 0,
+          visits: 0,
+          revenuesMinor: 0,
+          expensesMinor: 0,
+          approvals: 0,
+          criticalAlerts: 0,
+        },
+        briefing: "Date de test",
+        attention: [],
+        approvals: [],
+        agentRuns: [],
+        health: [],
+        integrations: [],
+      },
+    }),
+  );
+  await page.route("**/api/notifications/admin", (route) =>
+    route.fulfill({ json: { data: [] } }),
+  );
+  await page.route("**/api/notifications?*", (route) =>
+    route.fulfill({ json: { data: null } }),
+  );
+  await page.goto("/profil?tab=overview");
+  const summary = page.getByRole("button", { name: /Sistem de notificări/ });
+  await expect(summary).toContainText(
+    "Starea notificărilor nu este disponibilă",
+  );
+  await expect(page.getByRole("heading", { name: /Bună/ })).toBeVisible();
+  await page
+    .locator('header button[title="Notificări"][aria-haspopup="dialog"]')
+    .click();
+  const inbox = page.getByRole("dialog", { name: "Notificările tale" });
+  await expect(inbox.getByRole("alert")).toContainText(
+    "Unele notificări nu sunt disponibile",
+  );
+  await page.keyboard.press("Escape");
+  await expect(inbox).not.toBeVisible();
+  await summary.click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Configurația" }),
+  ).toContainText("Configurația nu a putut fi încărcată");
+  await expect(
+    page.getByRole("button", { name: "Salvează", exact: true }),
+  ).toBeDisabled();
 });
