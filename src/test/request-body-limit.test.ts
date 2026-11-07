@@ -36,4 +36,18 @@ describe("API request body limit", () => {
     expect(apiBodyLimitBytes("/api/contact/demo")).toBe(21 * 1024 * 1024);
     expect(apiBodyLimitBytes("/api/auth/login")).toBe(1024 * 1024);
   });
+
+  it("lets valid multi-megabyte uploads reach the existing module gates without enlarging JSON routes", async () => {
+    const uploads = new Hono<AppBindings>();
+    uploads.use("/api/*", enforceApiBodyLimit);
+    uploads.post("/api/*", async c => c.json({ received: (await c.req.arrayBuffer()).byteLength }));
+    const size=2*1024*1024;
+    for (const path of ["/api/documents/doc/import", "/api/visual-assets/upload", "/api/collaborations/partner/files", "/api/skills/site-builder/resources/resource/file"]) {
+      const response=await uploads.request(path,{method:"POST",body:new Uint8Array(size)},{} as AppBindings["Bindings"]);
+      expect(response.status,path).toBe(200);
+      expect(await response.json()).toEqual({received:size});
+    }
+    expect((await uploads.request("/api/skills/site-builder/runs",{method:"POST",body:new Uint8Array(size)},{} as AppBindings["Bindings"])).status).toBe(413);
+    expect((await uploads.request("/api/collaborations/partner/files",{method:"POST",body:new Uint8Array(5_000_001)},{} as AppBindings["Bindings"])).status).toBe(413);
+  });
 });

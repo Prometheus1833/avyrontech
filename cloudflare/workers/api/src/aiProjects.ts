@@ -293,7 +293,7 @@ aiProjectsRouter.get("/api/ai-projects/:slug", async (c) => {
     ).bind(access.project.id).all(),
     c.env.DB.prepare(
       `SELECT route.agent_slug,route.task_key,route.action_class,route.executor,
-              route.requires_approval,route.max_daily_runs,route.status,route.notes
+              route.requires_approval,route.max_daily_runs,route.limit_mode,route.status,route.notes
          FROM agent_execution_routes route
         WHERE route.agent_slug IN (SELECT agent_slug FROM ai_project_agents WHERE project_id=?)
            OR route.agent_slug='leads'

@@ -1296,7 +1296,7 @@ app.get("/api/admin/agent-operators/codex", requireAuth, requireSuperAdmin, asyn
          FROM agent_operator_bindings WHERE user_id=? ORDER BY agent_slug`,
     ).bind(account.id).all(),
     c.env.DB.prepare(
-      `SELECT agent_slug,task_key,action_class,executor,requires_approval,max_daily_runs,status,notes
+      `SELECT agent_slug,task_key,action_class,executor,requires_approval,max_daily_runs,limit_mode,status,notes
          FROM agent_execution_routes WHERE agent_slug IN ('leads','ai-prod-content')
         ORDER BY agent_slug,task_key`,
     ).all(),
@@ -1671,6 +1671,7 @@ import { projectsRouter } from "./projects";
 import { seedRouter } from "./seed";
 import { surveyAdminRouter } from "./surveyAdmin";
 import { systemDiagnosticsRouter } from "./systemDiagnostics";
+import { cleanupLeadFollowUpDrafts } from "./leadFollowUps";
 import { workspaceRouter } from "./workspace";
 app.use("/api/projects/*", requireAuth);
 app.use("/api/organizations/*", requireAuth);
@@ -1947,6 +1948,7 @@ async function cleanupExpiredData(env: AppBindings["Bindings"]) {
     env.DB.prepare("UPDATE newsletter_subscribers SET confirmation_token_hash = NULL, confirmation_expires_at = NULL, updated_at = ? WHERE status = 'pending' AND confirmation_expires_at < ?")
       .bind(timestamp, timestamp),
   ]);
+  await cleanupLeadFollowUpDrafts(env, timestamp);
 }
 
 export default {
@@ -1957,7 +1959,7 @@ export default {
   scheduled: (controller, env, ctx) => {
     if (controller.cron === "0,15,30,45 * * * *") {
       ctx.waitUntil(maintainMalwareScans(env).catch(() => console.error(JSON.stringify({event:"antivirus_poll_failed",code:"maintenance_unavailable"}))));
-      ctx.waitUntil(enqueueAsyncJobs(env, ["operation_drain", "social_drain", "survey_delivery", "survey_ai"]));
+      ctx.waitUntil(enqueueAsyncJobs(env, ["operation_drain", "social_drain", "survey_delivery", "survey_ai", "lead_follow_up_drain"]));
       ctx.waitUntil((async()=>{
         const pending=await env.DB.prepare("SELECT 1 FROM avy_skill_runs WHERE status='queued' OR (status='preparing' AND started_at<?) LIMIT 1").bind(Date.now()-15*60_000).first();
         if(pending)await enqueueAsyncJobs(env,["skills_drain"]);

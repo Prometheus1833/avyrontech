@@ -76,7 +76,9 @@ unsafe_lead_agent_state=$(sqlite3 "$audit_database" \
         AND agent.visibility = 'private'
         AND agent.handoff_email = 'avyrontech@gmail.com'
         AND version.status = 'approved'
-        AND agent.current_version = 3
+        AND agent.current_version >= 4
+        AND instr(version.system_prompt, 'checkpoint') > 0
+        AND instr(version.guardrails, 'Nu trimite extern automat') > 0
         AND instr(version.system_prompt, 'Nu transformi descoperirea într-un chestionar') > 0
         AND instr(version.system_prompt, 'Stările conversației sunt') > 0
         AND instr(version.guardrails, 'soliciți intervenția echipei') > 0
@@ -138,7 +140,7 @@ if [[ "$foreign_key_issues" != "0" || "$integrity" != "ok" || "$legacy_ai_timest
    || "$platform_owners" != "3" || "$unsafe_social_sources" != "0" || "$invalid_lead_state" != "0" \
    || "$unsafe_engine_state" != "0" || "$unsafe_audience_state" != "0" \
    || "$unsafe_social_backup_state" != "0" || "$unsafe_admin_only_audience_state" != "0" \
-   || "$unsafe_lead_agent_state" != "0" || "$agent_execution_route_count" != "21" \
+   || "$unsafe_lead_agent_state" != "0" || "$agent_execution_route_count" != "26" \
    || "$unsafe_codex_operator_state" != "0" || "$unsafe_social_content_strategy" != "0" ]]; then
   echo "D1 schema audit failed: foreign_keys=$foreign_key_issues integrity=$integrity legacy_ai_timestamps=$legacy_ai_timestamps platform_owners=$platform_owners unsafe_social_sources=$unsafe_social_sources invalid_lead_state=$invalid_lead_state unsafe_engine_state=$unsafe_engine_state unsafe_audience_state=$unsafe_audience_state unsafe_social_backup_state=$unsafe_social_backup_state unsafe_admin_only_audience_state=$unsafe_admin_only_audience_state unsafe_lead_agent_state=$unsafe_lead_agent_state agent_execution_routes=$agent_execution_route_count unsafe_codex_operator_state=$unsafe_codex_operator_state unsafe_social_content_strategy=$unsafe_social_content_strategy" >&2
   exit 1

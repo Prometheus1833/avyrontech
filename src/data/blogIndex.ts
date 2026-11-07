@@ -615,6 +615,147 @@ Pentru un proiect nou, aceste cerințe pot fi incluse în arhitectură, design �
     published_at: "2026-08-28T09:00:00.000+03:00",
     updated_at: "2026-08-28T09:00:00.000+03:00",
   },
+  {
+    id: "06cd6dd6-e316-47f1-99f8-ee88be0855d2",
+    title: "Variantele de produs într-un magazin online: când o alegere simplă devine o problemă de UX, SEO și stoc",
+    slug: "variante-produs-magazin-online-ux-seo",
+    excerpt: "Cum organizezi mărimi, culori și configurații într-un magazin online, cu selecție clară, URL-uri coerente, stoc corect și date utile pentru Google.",
+    content: `Un produs poate avea trei culori, patru mărimi și două materiale. Pentru echipă, acestea par doar opțiuni într-un catalog. Pentru client și pentru sistemele care citesc magazinul, fiecare combinație poate însemna însă o imagine, un preț, un stoc, un cod și un URL diferit.
+
+Aici apare întrebarea importantă: **când selectează o variantă, utilizatorul vede și cumpără exact opțiunea pe care crede că a ales-o?**
+
+O pagină de produs reușită nu se limitează la un selector frumos. Ea ține aceeași variantă sincronizată în interfață, coș, stoc, datele pentru motoarele de căutare și confirmarea comenzii. Dacă aceste straturi se contrazic, magazinul devine greu de folosit și greu de verificat.
+
+## Ce este, de fapt, o variantă de produs
+
+O variantă este o versiune distinctă a aceluiași produs, diferențiată printr-un atribut relevant: mărime, culoare, material, capacitate, configurație sau altă opțiune care schimbă ceea ce primește clientul.
+
+Un tricou în mărimea M și culoarea neagră nu este doar o etichetă vizuală. Într-un catalog bine organizat, combinația are o identitate proprie: un SKU sau alt identificator, disponibilitate, imagine, preț și date corecte pentru comandă.
+
+Google Merchant Center recomandă ca fiecare variantă distinctă să aibă propriul ID, iar variantele aceluiași produs să fie grupate printr-un \`item_group_id\` comun. Google Search Central descrie aceeași relație prin \`ProductGroup\`, \`hasVariant\`, \`variesBy\` și \`productGroupID\` în datele structurate.
+
+Pentru antreprenor, concluzia practică este simplă: **variantele trebuie gândite ca date coerente, nu doar ca butoane colorate.**
+
+## Patru locuri în care variantele se rup frecvent
+
+### 1. Selecția nu actualizează toate informațiile
+
+Clientul alege albastru, dar imaginea rămâne roșie. Selectează mărimea L, dar mesajul de stoc aparține mărimii M. Prețul se schimbă abia în coș. Astfel de diferențe îl obligă să verifice singur dacă produsul ales este cel corect.
+
+La fiecare schimbare de variantă ar trebui actualizate, după caz:
+
+- fotografia sau galeria relevantă;
+- prețul și eventualele diferențe explicate;
+- stocul ori termenul real de livrare;
+- codul variantei;
+- URL-ul sau starea care poate fi distribuită;
+- linia care intră în coș.
+
+Nu toate produsele folosesc aceleași atribute, dar regula rămâne: interfața trebuie să descrie o singură stare, fără contradicții.
+
+### 2. Opțiunile imposibile rămân selectabile
+
+Dacă o combinație nu există — de exemplu, materialul ales nu este produs în culoarea selectată — magazinul trebuie să explice acest lucru înainte ca utilizatorul să ajungă la „Adaugă în coș”.
+
+O opțiune indisponibilă poate fi dezactivată clar, însoțită de o explicație sau înlocuită cu o alternativă relevantă. Important este ca indisponibilitatea să nu fie comunicată doar prin culoare și să nu apară abia după apăsarea butonului final.
+
+Etichetele vizibile contează și pentru accesibilitate. W3C recomandă ca elementele de formular și opțiunile să aibă etichete care le descriu scopul, asociate corect în cod. Un pătrat colorat fără numele culorii poate fi ambiguu pentru oricine și inaccesibil pentru un utilizator de tehnologie asistivă.
+
+### 3. URL-ul nu păstrează varianta selectată
+
+Un client configurează produsul, copiază linkul și îl trimite unui coleg. Dacă destinatarul deschide pagina și vede varianta implicită, discuția pornește de la două produse diferite.
+
+Google recomandă ca fiecare variantă să poată fi preselectată printr-un URL distinct, folosind un segment de cale sau parametri. La deschiderea acelui URL trebuie să apară imaginea, prețul, disponibilitatea și selecția corespunzătoare.
+
+Nu înseamnă că fiecare magazin are nevoie de o pagină complet separată pentru fiecare combinație. Înseamnă că arhitectura URL-urilor, canonicalul și comportamentul interfeței trebuie stabilite împreună, nu adăugate după lansare.
+
+### 4. Catalogul, feedul și pagina publică spun lucruri diferite
+
+Datele trimise către Google trebuie să reflecte experiența de pe pagina de destinație. Dacă feedul declară o variantă disponibilă și un anumit preț, iar pagina arată altă stare, problema nu este doar SEO. Clientul întâlnește aceeași neconcordanță.
+
+De aceea, sursa stocului, politica de actualizare și identificatorii trebuie definite de la început. Pentru informații care se schimbă rapid, precum prețul și disponibilitatea, datele structurate generate doar în browser pot fi mai greu de recitit constant. Google recomandă ca informația esențială despre produs să fie disponibilă în HTML-ul inițial atunci când este posibil.
+
+## Cum arată un traseu sănătos al unei variante
+
+Un test simplu poate urmări o singură combinație de la pagină până la confirmare:
+
+1. Alegi culoarea și mărimea.
+2. Interfața arată imaginea, prețul și stocul corect.
+3. URL-ul păstrează selecția și o poate redeschide.
+4. Coșul afișează aceleași atribute și același cod.
+5. Checkout-ul nu înlocuiește varianta cu produsul părinte.
+6. Confirmarea comenzii păstrează denumirea completă.
+7. Feedul și datele structurate descriu aceeași combinație.
+
+Acest traseu trebuie verificat pe mobil, cu tastatura și cu tehnologii asistive, nu doar într-un browser desktop. Butoanele de variantă au nevoie de etichete, stare selectată, focus vizibil și o zonă tactilă suficientă. Instrucțiunile importante nu ar trebui ascunse într-un placeholder care dispare după interacțiune. Pentru fluxurile critice, un [audit QA web și mobile](/servicii/qa-testing-web-mobile) poate transforma aceste verificări în criterii repetabile.
+
+## O singură pagină sau mai multe URL-uri?
+
+Ambele modele pot funcționa.
+
+În modelul cu o singură pagină, produsul părinte are un URL principal, iar varianta este preselectată prin parametri ori stare controlată. Canonicalul trebuie să fie consecvent, iar fiecare combinație relevantă trebuie să poată fi redeschisă direct.
+
+În modelul cu pagini multiple, fiecare variantă importantă poate avea propriul URL și propriile informații complete. Google cere ca markup-ul fiecărei pagini să fie suficient pentru înțelegerea entităților descrise acolo.
+
+Alegerea depinde de catalog, numărul combinațiilor, comportamentul de căutare și modul în care echipa administrează stocul. Nu există o regulă universală potrivită oricărui produs.
+
+## Checklist înainte de lansare
+
+- Fiecare variantă are un identificator stabil.
+- Produsul părinte și variantele sunt grupate consecvent.
+- Etichetele sunt textuale și accesibile, nu doar culori sau pictograme.
+- Selecția actualizează imaginea, prețul, stocul și coșul.
+- Combinațiile imposibile sunt explicate înainte de checkout.
+- Un link direct poate redeschide varianta corectă.
+- Canonicalul și datele structurate urmează arhitectura aleasă.
+- Feedul extern corespunde paginii publice.
+- Varianta rămâne corectă în coș, checkout și confirmare.
+- Fluxul a fost testat pe mobil și cu tastatura.
+
+## Ce înseamnă asta pentru un magazin online construit bine
+
+Variantele ating simultan designul interfeței, modelul de date, inventarul, SEO tehnic și comenzile. Dacă sunt tratate doar ca un selector adăugat la final, erorile apar exact în zonele în care clientul are nevoie de certitudine.
+
+În proiectele AVYRON, pornim de la catalogul real și de la operațiunile afacerii: ce se vinde, ce diferențiază variantele, cum se ține stocul, ce trebuie transmis în coș și ce informație poate fi publicată. Abia apoi definim pagina, URL-urile și integrarea cu sursele de date.
+
+**[Vezi cum construim un magazin online adaptat catalogului și fluxurilor tale](https://avyron.ro/servicii/magazin-online).**
+
+## Întrebări frecvente
+
+### Fiecare culoare sau mărime are nevoie de pagină separată?
+
+Nu obligatoriu. Variantele pot exista pe o singură pagină sau pe URL-uri distincte. Important este ca fiecare variantă relevantă să poată fi preselectată direct și ca imaginea, prețul, stocul, canonicalul și datele structurate să fie coerente cu modelul ales.
+
+### Ce este \`item_group_id\`?
+
+Este identificatorul comun folosit în datele de produs pentru a grupa variantele aceluiași produs. Fiecare variantă păstrează un ID propriu, iar grupul folosește o valoare stabilă comună.
+
+### Este suficient un selector de culoare?
+
+Nu, dacă selecția nu actualizează toate informațiile relevante și nu are etichete accesibile. Varianta trebuie să rămână corectă în imagine, preț, stoc, URL, coș și confirmarea comenzii.
+
+### Cum verific variantele înainte de lansare?
+
+Testează combinații reale și imposibile, linkurile directe, stocul, coșul și checkout-ul pe mobil și desktop. Verifică apoi datele structurate în Rich Results Test și rapoartele relevante din Search Console.
+
+## Surse editoriale
+
+- [Google Search Central — Product variant structured data](https://developers.google.com/search/docs/appearance/structured-data/product-variants), actualizat la 8 septembrie 2026, consultat la 6 noiembrie 2026.
+- [Google Merchant Center — Item group ID](https://support.google.com/merchants/answer/6324507), consultat la 6 noiembrie 2026.
+- [W3C WAI — Labeling Controls](https://www.w3.org/WAI/tutorials/forms/labels/), actualizat la 13 mai 2024, consultat la 6 noiembrie 2026.
+- [W3C WAI — Form Instructions](https://www.w3.org/WAI/tutorials/forms/instructions/), actualizat la 13 mai 2024, consultat la 6 noiembrie 2026.`,
+    cover_image_url: "/news/variante-produs-magazin-online-ux-seo.webp",
+    cover_image_alt: "Interfață schematică AVYRON pentru o pagină de produs, cu variante de culoare și mărime legate de imagine, preț, stoc și URL.",
+    tags: ["magazin-online", "variante-produs", "ux-ecommerce", "seo-tehnic", "product-data", "accesibilitate"],
+    category: "web-design",
+    seo_title: "Variante de produs: UX și SEO pentru magazine online",
+    seo_description: "Cum organizezi mărimi, culori și configurații într-un magazin online, cu selecție clară, URL-uri coerente, stoc corect și date utile pentru Google.",
+    social_title: "Variante de produs: 5 straturi, o singură alegere",
+    social_description: "Imaginea, prețul, stocul, URL-ul și coșul trebuie să descrie aceeași combinație. Vezi checklistul AVYRON pentru magazine online.",
+    has_translation: false,
+    published_at: "2026-11-06T20:30:00.000+02:00",
+    updated_at: "2026-11-06T20:30:00.000+02:00",
+  },
 ];
 
 /** Full English counterparts use the same stable slugs for reciprocal hreflang. */

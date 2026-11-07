@@ -123,6 +123,31 @@ const covers = [
         <path d="M295 153l97 80M917 127l-103 91M983 451l-117-50M195 445l125-45" stroke="#60a5fa" stroke-opacity=".35" stroke-width="3" stroke-dasharray="6 12"/>
       </g>` }),
   },
+  {
+    file: "variante-produs-magazin-online-ux-seo.webp",
+    svg: shell({ start: "#050713", end: "#191033", glow: "#7c3aed", body: `
+      <g filter="url(#shadow)">
+        <rect x="92" y="78" width="1016" height="474" rx="42" fill="#080d1c" fill-opacity=".9" stroke="#a78bfa" stroke-opacity=".34" stroke-width="3"/>
+        <g transform="translate(136 126)">
+          <rect width="330" height="350" rx="34" fill="#12182b" stroke="#64748b" stroke-opacity=".34" stroke-width="2"/>
+          <rect x="30" y="30" width="270" height="210" rx="26" fill="#e8e6ff"/>
+          <path d="M84 202l58-112h88l42 112z" fill="#5b5ce2"/><path d="M156 90l30-33 30 33z" fill="#312e81"/><circle cx="257" cy="64" r="15" fill="#5eead4"/>
+          <text x="30" y="288" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="24" font-weight="700">Produs / Albastru / M</text>
+          <text x="30" y="326" fill="#9ea6bb" font-family="Arial,Helvetica,sans-serif" font-size="19">SKU · preț · stoc sincronizat</text>
+        </g>
+        <g transform="translate(540 136)" font-family="Arial,Helvetica,sans-serif">
+          <text x="0" y="34" fill="#fff" font-size="42" font-weight="800" letter-spacing="-1">O ALEGERE.</text>
+          <text x="0" y="84" fill="#8fb6ff" font-size="42" font-weight="800" letter-spacing="-1">CINCI STRATURI.</text>
+          <g transform="translate(0 132)" fill="#f8fafc" font-size="24" font-weight="700">
+            <g><circle cx="16" cy="16" r="16" fill="#5eead4"/><path d="M8 16l6 6 11-13" fill="none" stroke="#042f2e" stroke-width="4"/><text x="50" y="24">Imagine</text></g>
+            <g transform="translate(0 58)"><circle cx="16" cy="16" r="16" fill="#a78bfa"/><path d="M8 16l6 6 11-13" fill="none" stroke="#2e1065" stroke-width="4"/><text x="50" y="24">Preț și stoc</text></g>
+            <g transform="translate(0 116)"><circle cx="16" cy="16" r="16" fill="#60a5fa"/><path d="M8 16l6 6 11-13" fill="none" stroke="#172554" stroke-width="4"/><text x="50" y="24">URL distribuibil</text></g>
+            <g transform="translate(0 174)"><circle cx="16" cy="16" r="16" fill="#fbbf24"/><path d="M8 16l6 6 11-13" fill="none" stroke="#422006" stroke-width="4"/><text x="50" y="24">Coș și confirmare</text></g>
+            <g transform="translate(0 232)"><circle cx="16" cy="16" r="16" fill="#f472b6"/><path d="M8 16l6 6 11-13" fill="none" stroke="#500724" stroke-width="4"/><text x="50" y="24">Date pentru Google</text></g>
+          </g>
+        </g>
+      </g>` }),
+  },
 ];
 
 await Promise.all(covers.map(({ file, svg }) => sharp(Buffer.from(svg)).webp({ quality: 82, effort: 6 }).toFile(path.join(outputDir, file))));

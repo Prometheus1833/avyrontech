@@ -1,0 +1,128 @@
+[
+  {
+    "name": "legal-daylight-v4",
+    "native": {
+      "width": 1536,
+      "height": 1024
+    },
+    "files": [
+      {
+        "file": "legal-daylight-v4-desktop-640.avif",
+        "bytes": 30820,
+        "width": 640,
+        "height": 480
+      },
+      {
+        "file": "legal-daylight-v4-desktop-640.webp",
+        "bytes": 46114,
+        "width": 640,
+        "height": 480
+      },
+      {
+        "file": "legal-daylight-v4-desktop-960.avif",
+        "bytes": 56093,
+        "width": 960,
+        "height": 720
+      },
+      {
+        "file": "legal-daylight-v4-desktop-960.webp",
+        "bytes": 89484,
+        "width": 960,
+        "height": 720
+      },
+      {
+        "file": "legal-daylight-v4-desktop-1280.avif",
+        "bytes": 82245,
+        "width": 1280,
+        "height": 960
+      },
+      {
+        "file": "legal-daylight-v4-desktop-1280.webp",
+        "bytes": 132518,
+        "width": 1280,
+        "height": 960
+      },
+      {
+        "file": "legal-daylight-v4-mobile-480.avif",
+        "bytes": 17766,
+        "width": 480,
+        "height": 320
+      },
+      {
+        "file": "legal-daylight-v4-mobile-480.webp",
+        "bytes": 25838,
+        "width": 480,
+        "height": 320
+      },
+      {
+        "file": "legal-daylight-v4-mobile-720.avif",
+        "bytes": 33740,
+        "width": 720,
+        "height": 480
+      },
+      {
+        "file": "legal-daylight-v4-mobile-720.webp",
+        "bytes": 50520,
+        "width": 720,
+        "height": 480
+      }
+    ]
+  },
+  {
+    "name": "legal-atrium-v4",
+    "native": {
+      "width": 1536,
+      "height": 1024
+    },
+    "files": [
+      {
+        "file": "legal-atrium-v4-desktop-960.avif",
+        "bytes": 23796,
+        "width": 960,
+        "height": 540
+      },
+      {
+        "file": "legal-atrium-v4-desktop-960.webp",
+        "bytes": 40440,
+        "width": 960,
+        "height": 540
+      },
+      {
+        "file": "legal-atrium-v4-desktop-1536.avif",
+        "bytes": 47315,
+        "width": 1536,
+        "height": 864
+      },
+      {
+        "file": "legal-atrium-v4-desktop-1536.webp",
+        "bytes": 83730,
+        "width": 1536,
+        "height": 864
+      },
+      {
+        "file": "legal-atrium-v4-mobile-480.avif",
+        "bytes": 22469,
+        "width": 480,
+        "height": 640
+      },
+      {
+        "file": "legal-atrium-v4-mobile-480.webp",
+        "bytes": 35610,
+        "width": 480,
+        "height": 640
+      },
+      {
+        "file": "legal-atrium-v4-mobile-720.avif",
+        "bytes": 39180,
+        "width": 720,
+        "height": 960
+      },
+      {
+        "file": "legal-atrium-v4-mobile-720.webp",
+        "bytes": 65936,
+        "width": 720,
+        "height": 960
+      }
+    ]
+  }
+]

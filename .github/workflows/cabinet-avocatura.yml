@@ -1,0 +1,34 @@
+name: Cabinet avocatura concept
+
+on:
+  pull_request:
+    paths:
+      - 'client-sites/cabinet-avocatura/**'
+      - '.github/workflows/cabinet-avocatura.yml'
+  push:
+    branches: [main, 'codex/cabinet-avocatura-*']
+    paths:
+      - 'client-sites/cabinet-avocatura/**'
+      - '.github/workflows/cabinet-avocatura.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: client-sites/cabinet-avocatura
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: client-sites/cabinet-avocatura/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: npm run check
+      - run: npm run test:interactions
