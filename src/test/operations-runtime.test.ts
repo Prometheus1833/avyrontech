@@ -74,7 +74,7 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
  it('runs each scheduled job once across concurrent drains and notifies each principal once',async()=>{
   expect((await req('automations',{name:'Briefing',action:'briefing',interval_minutes:15,enabled:true})).status).toBe(200);
   await Promise.all([runOperationJobs(env),runOperationJobs(env)]);
-  expect(db.prepare('SELECT status,attempts FROM operation_jobs').get()).toMatchObject({status:'succeeded',attempts:1});expect(db.prepare('SELECT COUNT(*) n FROM operation_jobs').get()!.n).toBe(1);expect(db.prepare('SELECT COUNT(*) n FROM operation_notifications').get()!.n).toBe(3);
+  expect(db.prepare('SELECT status,attempts FROM operation_jobs').get()).toMatchObject({status:'succeeded',attempts:1});expect(db.prepare('SELECT COUNT(*) n FROM operation_jobs').get()!.n).toBe(1);expect(db.prepare('SELECT COUNT(*) n FROM operation_notifications WHERE deduplication_key LIKE \'job:%\'').get()!.n).toBe(3);
   const own=await (await req('notifications')).json();actor='admin';const other=await (await req('notifications')).json();expect(own.data[0].id).not.toBe(other.data[0].id);await req(`notifications/${own.data[0].id}/read`,{});expect(db.prepare('SELECT read_at FROM operation_notifications WHERE id=?').get(own.data[0].id)!.read_at).toBeNull();
  });
  it('cancels queued jobs when the automation is paused and rejects stale changes',async()=>{
@@ -90,7 +90,7 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
  it('does not publish results after a running job is cancelled',async()=>{
   db.exec("INSERT INTO operation_jobs(id,action,deduplication_key,available_at,created_at) VALUES ('j','health','lease-fixture',0,0)");
   env.FILES.list=async()=>{db.exec("UPDATE operation_jobs SET status='cancelled' WHERE id='j'");return {objects:[]} as R2Objects;};await runOperationJobs(env);
-  expect(db.prepare('SELECT status,result_json FROM operation_jobs').get()).toMatchObject({status:'cancelled',result_json:null});expect(db.prepare('SELECT COUNT(*) n FROM operation_notifications').get()!.n).toBe(0);
+  expect(db.prepare('SELECT status,result_json FROM operation_jobs').get()).toMatchObject({status:'cancelled',result_json:null});expect(db.prepare('SELECT COUNT(*) n FROM operation_notifications WHERE deduplication_key LIKE \'job:%\'').get()!.n).toBe(0);
  });
  it('blocks new and legacy bank API access while preserving a way to disconnect its old reference',async()=>{
   expect((await req('integrations',{provider:'revolut',label:'Bank',environment:'live'})).status).toBe(409);

@@ -1,3 +1,5 @@
+import { useAuth } from "@/hooks/useAuth";
+import { useGuestNotificationConfig } from "@/lib/guestNotifications";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { Bot, Send, X, Sparkles, ThumbsUp, ThumbsDown, MessageCircle } from "lucide-react";
 import { useLocation } from "react-router-dom";
@@ -114,6 +116,8 @@ const writeStoredChat = (agent: string, state: StoredChat) => {
 /** Buton flotant (stânga, mijloc) + panou de chat conectat la AI OS "AVY". */
 const AvyChat = ({ agent = "avy", initiallyOpen = false }: { agent?: string; initiallyOpen?: boolean }) => {
   const { lang } = useLang();
+  const {user,loading:authLoading}=useAuth();
+  const contactConfig=useGuestNotificationConfig(!authLoading&&!user);
   const { pathname } = useLocation();
   const onLanding = pathname === "/" || pathname === "/en";
   const bubblePositionKey = onLanding ? "avy_bubble_pos_home_v2" : "avy_bubble_pos";
@@ -188,7 +192,8 @@ const AvyChat = ({ agent = "avy", initiallyOpen = false }: { agent?: string; ini
   }, [greeting]);
 
   useEffect(() => {
-    if (!hydrated || open || conversationId || messages.some((message) => message.role === "user")) return;
+    setProactivePrompt(null);
+    if (authLoading || user || contactConfig?.enabled || !hydrated || open || conversationId || messages.some((message) => message.role === "user")) return;
     let lastShown: number | null = null;
     try {
       const stored = Number(localStorage.getItem(promptStorageKey(agent)));
@@ -211,7 +216,7 @@ const AvyChat = ({ agent = "avy", initiallyOpen = false }: { agent?: string; ini
       trackEvent("avy_prompt_view", { agent, page: pathname });
     }, AVY_PROMPT_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [agent, conversationId, hydrated, messages, open, pathname, proactivePrompts]);
+  }, [agent, conversationId, hydrated, messages, open, pathname, proactivePrompts, authLoading, user, contactConfig]);
 
   const clamp = useCallback((x: number, y: number) => {
     const el = bubbleRef.current;

@@ -493,6 +493,8 @@ export function staffRequestPermission(
     path.startsWith("/api/profile/")
   )
     return null;
+  if (path.startsWith("/api/notifications/admin")) return "platform.restricted";
+  if (path === "/api/notifications" || path.startsWith("/api/notifications/")) return null; // Own inbox reauthorizes every resource.
   if (path.startsWith("/api/logo-studio/admin")) return "leads.read";
   if (path.startsWith("/api/staff-access")) return "team.read";
   if (path === "/api/workspace/activity-counts") return null;

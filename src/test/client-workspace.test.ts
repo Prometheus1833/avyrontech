@@ -226,7 +226,7 @@ describe("Client workspace: real SQLite, Hono and existing portal authorization"
       JSON.stringify(db.prepare("SELECT * FROM security_events").all()),
     ).not.toContain(account().temporaryPassword);
     expect(
-      db.prepare("SELECT count(*) n FROM operation_notifications").get()!.n,
+      db.prepare("SELECT count(*) n FROM operation_notifications WHERE deduplication_key LIKE 'client-workspace:%'").get()!.n,
     ).toBe(1);
     expect(
       db

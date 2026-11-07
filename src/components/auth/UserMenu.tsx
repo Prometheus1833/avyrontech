@@ -1,7 +1,10 @@
+import {NOTIFICATIONS_OPEN_EVENT} from "@/lib/dashboardActivity";
+import NotificationCenter from "@/components/dashboard/NotificationCenter";
+import { useNavigate } from "react-router-dom";
 import { STUDIO_PATHS } from "@/data/logoStudioCopy";
 import { publicSiteHref } from "@/lib/appHost";
 import {useAccountCart} from "@/hooks/useAccountCart";
-import { useState } from "react";
+import { useMemo,useState } from "react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -28,6 +31,7 @@ import {
   BookOpen,
   LibraryBig,
   PenTool,
+  Bell,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -43,11 +47,14 @@ type MenuItem = {
   comingSoon?: boolean;
 };
 
-const UserMenu = () => {
+const UserMenu = ({showNotificationBell=true}:{showNotificationBell?:boolean}) => {
   const { user, profile, isStaff, isSuperAdmin, roles, capabilities, hasCollaborations, isAgencyPartner,refreshProfile, signOut } = useAuth();
   const { t, lang } = useLang();
   const {items:cartItems}=useAccountCart();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [noticeOpen,setNoticeOpen]=useState(false);
+  const navigate=useNavigate();
+  const noticeAccess=useMemo(()=>buildAccess({roles,superadmin:isSuperAdmin,capabilities,hasCollaborations}),[roles,isSuperAdmin,capabilities,hasCollaborations]);
 
   if (!user) return null;
 
@@ -91,6 +98,7 @@ const UserMenu = () => {
 
   return (
     <>
+      {showNotificationBell&&<NotificationCenter access={noticeAccess} onNavigate={section=>navigate(`/profil?tab=${section}`)} requestedOpen={noticeOpen} onClose={()=>setNoticeOpen(false)} />}
       <DropdownMenu open={menuOpen} onOpenChange={(open)=>{setMenuOpen(open);if(open)void refreshProfile();}} modal={false}>
         <DropdownMenuTrigger asChild>
           <button
@@ -127,6 +135,7 @@ const UserMenu = () => {
             )}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={()=>{setMenuOpen(false);if(showNotificationBell)setNoticeOpen(true);else window.dispatchEvent(new Event(NOTIFICATIONS_OPEN_EVENT));}}><Bell className="mr-2 size-4"/>{lang==="en"?"Notifications":"Notificări"}</DropdownMenuItem>
           {items.map((item) => {
             const itemStyle = { ["--dot-color" as string]: item.dot };
             const inner = (

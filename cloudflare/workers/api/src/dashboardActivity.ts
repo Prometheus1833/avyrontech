@@ -4,7 +4,7 @@ import { leadReadPredicate } from "./leads";
 import { platformRoleForUser,hasCapability } from "./authorization";
 import { staffRequestAllowed } from "./staffAccessPolicy";
 import { projectChatUnread } from "./projectChat";
-import { filterPrivateDocumentNotices } from "./documentPolicy";
+import { filterNotifications, type StoredNotice } from "./notificationPolicy";
 import { buildAccess, canOpenSection } from "../../../../src/lib/access";
 
 export const dashboardActivityRouter = new Hono<AppBindings>();
@@ -43,10 +43,11 @@ dashboardActivityRouter.get("/api/workspace/activity-counts", async c => {
     counts["social-manager"]+=Number(plans?.total||0);
   }
   // Reuse the document feed's resource filter before deriving any count, including corporate notices.
-  const notices=await db.prepare("SELECT id,deduplication_key,destination FROM operation_notifications WHERE user_id=? AND read_at IS NULL ORDER BY created_at DESC LIMIT 1000").bind(user).all<{id:string;deduplication_key:string;destination:string|null}>();
-  const visible=await filterPrivateDocumentNotices(db,user,notices.results);
+  const notices=await db.prepare("SELECT * FROM operation_notifications WHERE user_id=? ORDER BY created_at DESC,id DESC LIMIT 200").bind(user).all<StoredNotice>();
+  const visible=(await filterNotifications(db,user,c.get("roles"),notices.results)).slice(0,100).filter(n=>!n.read_at);
+  counts.notifications=visible.length+(counts.announcements||0);
   const destinations:Record<string,number>={};
-  for(const n of visible)if(n.destination&&canOpenSection(n.destination,access))destinations[n.destination]=(destinations[n.destination]||0)+1;
+  for(const n of visible){const destination=n.category==="project"?"projects":n.category==="subscription"?"subscriptions":n.destination;if(destination&&canOpenSection(destination,access))destinations[destination]=(destinations[destination]||0)+1;}
   for(const [section,total] of Object.entries(destinations))if(counts[section]===undefined)counts[section]=total;
   return c.json({counts,generatedAt:timestamp});
 });
