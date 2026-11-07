@@ -1,0 +1,140 @@
+[
+  {
+    "name": "inheritance-v5",
+    "native": {
+      "width": 1536,
+      "height": 1024
+    },
+    "files": [
+      {
+        "file": "inheritance-v5-desktop-640.avif",
+        "width": 640,
+        "height": 480,
+        "bytes": 34716
+      },
+      {
+        "file": "inheritance-v5-desktop-640.webp",
+        "width": 640,
+        "height": 480,
+        "bytes": 51150
+      },
+      {
+        "file": "inheritance-v5-desktop-960.avif",
+        "width": 960,
+        "height": 720,
+        "bytes": 79554
+      },
+      {
+        "file": "inheritance-v5-desktop-960.webp",
+        "width": 960,
+        "height": 720,
+        "bytes": 117208
+      },
+      {
+        "file": "inheritance-v5-desktop-1280.avif",
+        "width": 1280,
+        "height": 960,
+        "bytes": 131900
+      },
+      {
+        "file": "inheritance-v5-desktop-1280.webp",
+        "width": 1280,
+        "height": 960,
+        "bytes": 199736
+      },
+      {
+        "file": "inheritance-v5-mobile-480.avif",
+        "width": 480,
+        "height": 320,
+        "bytes": 19326
+      },
+      {
+        "file": "inheritance-v5-mobile-480.webp",
+        "width": 480,
+        "height": 320,
+        "bytes": 29470
+      },
+      {
+        "file": "inheritance-v5-mobile-720.avif",
+        "width": 720,
+        "height": 480,
+        "bytes": 40491
+      },
+      {
+        "file": "inheritance-v5-mobile-720.webp",
+        "width": 720,
+        "height": 480,
+        "bytes": 59896
+      }
+    ]
+  },
+  {
+    "name": "crossborder-v5",
+    "native": {
+      "width": 1536,
+      "height": 1024
+    },
+    "files": [
+      {
+        "file": "crossborder-v5-desktop-640.avif",
+        "width": 640,
+        "height": 480,
+        "bytes": 27799
+      },
+      {
+        "file": "crossborder-v5-desktop-640.webp",
+        "width": 640,
+        "height": 480,
+        "bytes": 37896
+      },
+      {
+        "file": "crossborder-v5-desktop-960.avif",
+        "width": 960,
+        "height": 720,
+        "bytes": 54343
+      },
+      {
+        "file": "crossborder-v5-desktop-960.webp",
+        "width": 960,
+        "height": 720,
+        "bytes": 73152
+      },
+      {
+        "file": "crossborder-v5-desktop-1280.avif",
+        "width": 1280,
+        "height": 960,
+        "bytes": 83096
+      },
+      {
+        "file": "crossborder-v5-desktop-1280.webp",
+        "width": 1280,
+        "height": 960,
+        "bytes": 114688
+      },
+      {
+        "file": "crossborder-v5-mobile-480.avif",
+        "width": 480,
+        "height": 320,
+        "bytes": 17020
+      },
+      {
+        "file": "crossborder-v5-mobile-480.webp",
+        "width": 480,
+        "height": 320,
+        "bytes": 23846
+      },
+      {
+        "file": "crossborder-v5-mobile-720.avif",
+        "width": 720,
+        "height": 480,
+        "bytes": 33115
+      },
+      {
+        "file": "crossborder-v5-mobile-720.webp",
+        "width": 720,
+        "height": 480,
+        "bytes": 45668
+      }
+    ]
+  }
+]
