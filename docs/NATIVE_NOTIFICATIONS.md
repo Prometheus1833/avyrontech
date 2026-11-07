@@ -22,7 +22,7 @@ Evenimentele sunt create prin triggere în aceeași tranzacție cu entitatea sur
 
 Articolele sunt materializate la citirea inboxului, maximum cinci articole eligibile pe cerere, deduplicate per articol și cont. Această limită controlează fan-out-ul, nu accesul la blog. Nu se creează notificări retroactive pentru toate proiectele vechi.
 
-`projectAccessMap` este evaluatorul comun pentru accesul individual și verificarea în lot. Păstrează regulile existente pentru principal, organizație, proiect, client și permisiunile staff active. Referințele sunt rezolvate în lot; nu se trimite câte un lanț de interogări pentru fiecare rând din inbox. Nu există cache comun pentru conținutul privat.
+`projectAccessMap` este evaluatorul comun pentru accesul individual și verificarea în lot. Păstrează regulile existente pentru principal, organizație, proiect, client și permisiunile staff active. Referințele sunt rezolvate în lot; nu se trimite câte un lanț de interogări pentru fiecare rând din inbox. Nu există cache comun pentru conținutul privat. Inboxul staff verifică aceeași politică MFA nativă ca documentele și feedurile operaționale, inclusiv pentru metadate. Conturile obișnuite de client nu primesc această condiție de staff.
 
 ## Rute și ecrane
 

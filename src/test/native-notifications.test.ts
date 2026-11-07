@@ -374,6 +374,16 @@ describe("Native notifications with real migrated SQLite and production Hono han
         } as AppBindings["Bindings"])
       ).status,
     ).toBe(403);
+    mfa = false;
+    expect((await get()).status).toBe(200); // A normal client needs no staff MFA.
+    actor = "staff";
+    roles = ["staff"];
+    const staffInbox = await get();
+    expect(staffInbox.status).toBe(403);
+    expect(await staffInbox.json()).toEqual({
+      error: { code: "mfa_required" },
+    });
+    mfa = true;
     actor = "staff";
     roles = ["staff"];
     expect(

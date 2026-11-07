@@ -17,6 +17,13 @@ notificationsRouter.use("/api/notifications*", async (c, next) => {
   c.header("X-Robots-Tag", "noindex, nofollow");
   if (!c.get("userId"))
     return c.json({ error: { code: "unauthenticated" } }, 401);
+  // Staff inbox metadata follows the same native MFA policy as the document
+  // and operational feeds; ordinary client accounts retain their normal access.
+  if (
+    c.get("roles").some((role) => role === "staff" || role === "admin") &&
+    !(await privilegedMfaSatisfied(c))
+  )
+    return c.json({ error: { code: "mfa_required" } }, 403);
   if (c.req.path === "/api/notifications/admin") {
     if (!(await platformRoleForUser(c.env.DB, c.get("userId"))))
       return c.json({ error: { code: "forbidden" } }, 403);
