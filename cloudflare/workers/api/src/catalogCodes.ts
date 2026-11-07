@@ -1,3 +1,4 @@
+import { nextCommercialIdentity, type Identity } from "../../../../src/shared/commercialIdentity";
 import { Hono } from "hono";
 import { z } from "zod";
 import { SERVICE_COMMERCIAL_SOURCES } from "../../../../src/data/serviceCommercialSources";
@@ -8,10 +9,6 @@ export const catalogCodesRouter = new Hono<AppBindings>();
 
 const serviceSources = SERVICE_COMMERCIAL_SOURCES;
 type ProductSource = { entity_key: string; display_name: string; category: string; base_price_minor: number | null; status: string };
-const suggestedSku = (type: "service" | "product", key: string) => {
-  const sku = `${type === "service" ? "svc" : "product"}-${key}`;
-  return sku.length <= 64 ? sku : null;
-};
 
 const bodySchema = z.object({
   displayName: z.string().trim().min(1).max(180),
@@ -67,37 +64,43 @@ catalogCodesRouter.get("/api/finance/commercial-codes", async (c) => {
 catalogCodesRouter.post("/api/finance/commercial-codes/sync", async (c) => {
   if (!(await platformRoleForUser(c.env.DB, c.get("userId")))) return c.json({ error: { code: "forbidden" } }, 403);
   const [current, products] = await Promise.all([
-    c.env.DB.prepare("SELECT entity_type,entity_key,sku FROM commercial_catalog_codes").all<{ entity_type: string; entity_key: string; sku: string | null }>(),
+    c.env.DB.prepare("SELECT id,entity_type,entity_key,sku,accounting_code FROM commercial_catalog_codes").all<{ id:string; entity_type: string; entity_key: string; sku: string | null; accounting_code:string|null }>(),
     productSources(c.env.DB),
   ]);
-  const known = new Set(current.results.map((row) => `${row.entity_type}:${row.entity_key}`));
-  const usedSkus = new Set(current.results.map((row) => row.sku).filter(Boolean));
+  const identities:Identity[]=[...current.results];
   const sources = [
     ...serviceSources.map((source) => ({ ...source, entity_type: "service" as const, active: 1, price_model: "price_model" in source ? source.price_model : source.base_price_minor === null ? "quote" as const : "starting_at" as const, unit_label: "serviciu" })),
     ...products.map((source) => ({ ...source, entity_type: "product" as const, active: source.status === "live" ? 1 : 0, price_model: source.base_price_minor === null ? "unreviewed" as const : "fixed" as const, unit_label: "unitate" })),
   ];
   const statements: D1PreparedStatement[] = [];
   let created = 0;
-  let requiresSku = 0;
+  const requiresSku = 0;
+  let completed = 0;
   const timestamp = Date.now();
   for (const source of sources) {
-    if (known.has(`${source.entity_type}:${source.entity_key}`)) continue;
+    const existing=current.results.find(row=>row.entity_type===source.entity_type&&row.entity_key===source.entity_key);
+    if(existing?.sku&&existing.accounting_code)continue;
+    const chosen=nextCommercialIdentity(source.entity_type,source.entity_key,source.category,identities,existing);
+    const sku=existing?.sku||("sku" in source && !identities.some(row=>row.sku===source.sku)?source.sku:chosen.sku);
+    const accountingCode=existing?.accounting_code||("accounting_code" in source&&!identities.some(row=>row.accounting_code===source.accounting_code)?source.accounting_code:chosen.accounting_code);
+    identities.push({sku,accounting_code:accountingCode});
+    if(existing){
+      statements.push(c.env.DB.prepare("UPDATE commercial_catalog_codes SET sku=COALESCE(sku,?),accounting_code=COALESCE(accounting_code,?),updated_by=?,updated_at=? WHERE id=?").bind(sku,accountingCode,c.get("userId"),timestamp,existing.id));
+      statements.push(c.env.DB.prepare("INSERT INTO commercial_catalog_audit(id,catalog_id,actor_user_id,before_json,after_json,created_at) VALUES(?,?,?,?,?,?)").bind(crypto.randomUUID(),existing.id,c.get("userId"),JSON.stringify(existing),JSON.stringify({source:'identity_completion',sku,accountingCode}),timestamp));
+      completed++;continue;
+    }
     const id = `catalog_${crypto.randomUUID().replace(/-/g, "")}`;
-    const candidate = "sku" in source ? source.sku : suggestedSku(source.entity_type, source.entity_key);
-    const sku = candidate && !usedSkus.has(candidate) ? candidate : null;
-    if (sku) usedSkus.add(sku);
-    else requiresSku++;
     statements.push(c.env.DB.prepare(
       `INSERT INTO commercial_catalog_codes
       (id,entity_type,entity_key,display_name,accounting_code,sku,category,base_price_minor,currency,vat_basis_points,payment_route,payment_status,promotion_code,active,notes,created_by,updated_by,created_at,updated_at,unit_label,price_model,billing_cycle,tax_status)
       VALUES (?,?,?,?,?,?,?,?,?,0,'unconfigured','needs_configuration',NULL,?,'',?,?,?,?,?,?,?,'unverified')`,
-    ).bind(id, source.entity_type, source.entity_key, source.display_name, "accounting_code" in source ? source.accounting_code : null, sku, source.category, source.base_price_minor, "RON", source.active, c.get("userId"), c.get("userId"), timestamp, timestamp, source.unit_label, source.price_model, "billing_cycle" in source ? source.billing_cycle : "unreviewed"));
+    ).bind(id, source.entity_type, source.entity_key, source.display_name, accountingCode, sku, source.category, source.base_price_minor, "RON", source.active, c.get("userId"), c.get("userId"), timestamp, timestamp, source.unit_label, source.price_model, "billing_cycle" in source ? source.billing_cycle : "unreviewed"));
     statements.push(c.env.DB.prepare("INSERT INTO commercial_catalog_audit (id,catalog_id,actor_user_id,before_json,after_json,created_at) VALUES (?,?,?,NULL,?,?)")
       .bind(`catalog_audit_${crypto.randomUUID().replace(/-/g, "")}`, id, c.get("userId"), JSON.stringify({ source: "catalog_sync", entityType: source.entity_type, entityKey: source.entity_key, sku, taxStatus: "unverified" }), timestamp));
     created++;
   }
-  if (statements.length) await c.env.DB.batch(statements);
-  return c.json({ ok: true, created, existing: sources.length - created, requiresSku, total: sources.length });
+  if (statements.length) {try{await c.env.DB.batch(statements)}catch(e){if(/UNIQUE constraint/.test(String(e)))return c.json({error:{code:"catalog_sync_conflict",message:"Registrul a fost actualizat simultan. Reîncearcă sincronizarea."}},409);throw e}}
+  return c.json({ ok: true, created, completed, existing: sources.length - created, requiresSku, total: sources.length });
 });
 
 catalogCodesRouter.put("/api/finance/commercial-codes/:entityType/:entityKey", async (c) => {
@@ -114,6 +117,7 @@ catalogCodesRouter.put("/api/finance/commercial-codes/:entityType/:entityKey", a
   if (entityType === "product" && !(await c.env.DB.prepare("SELECT 1 FROM product_items WHERE slug=?").bind(entityKey).first())) return c.json({ error: { code: "product_not_found" } }, 404);
   const before = await c.env.DB.prepare("SELECT * FROM commercial_catalog_codes WHERE entity_type=? AND entity_key=?")
     .bind(entityType, entityKey).first<Record<string, unknown>>();
+  if(before && (before.sku!==value.sku || before.accounting_code!==value.accountingCode) && await c.env.DB.prepare("SELECT 1 FROM commerce_orders orders,json_each(orders.items_json) line WHERE json_extract(line.value,'$.sku')=? LIMIT 1").bind(before.sku??'').first())return c.json({error:{code:'commercial_identity_in_use',message:'Codurile utilizate în comenzi sunt stabile și nu pot fi rescrise.'}},409);
   if (value.paymentStatus === "active" && before?.payment_status !== "active") return c.json({ error: { code: "connector_verification_required" } }, 409);
   const priceModel = value.priceModel ?? String(before?.price_model ?? (value.basePriceMinor === null ? "quote" : "unreviewed"));
   if (value.basePriceMinor === null && ["fixed", "starting_at"].includes(priceModel)) return c.json({ error: { code: "price_required" } }, 400);
@@ -129,6 +133,7 @@ catalogCodesRouter.put("/api/finance/commercial-codes/:entityType/:entityKey", a
     billingCycle: value.billingCycle ?? String(before?.billing_cycle ?? "unreviewed"),
     taxStatus: value.taxStatus ?? String(before?.tax_status ?? "unverified"),
   };
+  if(entityType==='product'&&before&&['sku','accounting_code','base_price_minor','currency','vat_basis_points','price_model','billing_cycle','tax_status','preferred_payment_provider','invoice_provider','unit_label','active'].some(key=>String(before[key]??'')!==String(({sku:value.sku,accounting_code:value.accountingCode,base_price_minor:value.basePriceMinor,currency:value.currency,vat_basis_points:value.vatBasisPoints,price_model:after.priceModel,billing_cycle:after.billingCycle,tax_status:after.taxStatus,preferred_payment_provider:value.preferredPaymentProvider,invoice_provider:value.invoiceProvider,unit_label:after.unitLabel,active:value.active?1:0} as Record<string,unknown>)[key]??'')))after.paymentStatus='needs_configuration';
   const taxVerifiedAt = after.taxStatus === "verified" ? (before?.tax_status === "verified" ? Number(before?.tax_verified_at || timestamp) : timestamp) : null;
   const taxVerifiedBy = after.taxStatus === "verified" ? (before?.tax_status === "verified" ? String(before?.tax_verified_by || c.get("userId")) : c.get("userId")) : null;
   try {
@@ -148,7 +153,7 @@ catalogCodesRouter.put("/api/finance/commercial-codes/:entityType/:entityKey", a
       ).bind(
         id, entityType, entityKey, value.displayName, value.accountingCode, value.sku,
         value.category, value.basePriceMinor, value.currency, value.vatBasisPoints,
-        value.paymentRoute, value.preferredPaymentProvider, value.invoiceProvider, value.paymentStatus, value.promotionCode, value.active ? 1 : 0,
+        value.paymentRoute, value.preferredPaymentProvider, value.invoiceProvider, after.paymentStatus, value.promotionCode, value.active ? 1 : 0,
         value.notes, c.get("userId"), c.get("userId"), Number(before?.created_at || timestamp), timestamp,
         after.unitLabel, after.priceModel, after.billingCycle, after.taxStatus, taxVerifiedAt, taxVerifiedBy,
       ),

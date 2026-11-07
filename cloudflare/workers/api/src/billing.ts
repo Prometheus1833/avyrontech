@@ -15,7 +15,7 @@ export const billingRouter = new Hono<AppBindings>();
 const REVOLUT_VERSION = "2026-08-17";
 type Provider = "stripe" | "revolut";
 type OrderRow = { id:string; user_id:string; items_json:string; total_cents:number; currency:string; requires_manual_quote:number; status:string; promotion_code:string|null };
-type StoredItem = { sku?:string; type?:string; kind?:"plan"|"item"; id?:string; name?:string; quantity?:number; period?:"monthly"|"annual"; lineTotalCents?:number; unitPriceCents?:number; taxId?:string|null; accountingCode?:string|null; serviceKey?:string|null; productSlug?:string|null };
+type StoredItem = { sku?:string; type?:string; kind?:"plan"|"item"; id?:string; name?:string; quantity?:number; period?:"monthly"|"annual"; lineTotalCents?:number; unitPriceCents?:number; taxId?:string|null; accountingCode?:string|null; serviceKey?:string|null; productSlug?:string|null;invoiceProvider?:string|null;vatBasisPoints?:number;unitLabel?:string };
 
 const checkoutSchema = z.object({ orderId:z.string().uuid(), provider:z.enum(["stripe","revolut"]), savePaymentMethod:z.boolean().optional().default(false) }).strict();
 const profileSchema = z.object({
@@ -34,6 +34,11 @@ export const providerCapabilities=(env:Env)=>({
   oblio:{enabled:env.OBLIO_AUTO_ISSUE_ENABLED==="true"&&Boolean(env.OBLIO_CLIENT_ID?.trim()&&env.OBLIO_CLIENT_SECRET?.trim()&&env.OBLIO_CIF?.trim()&&env.OBLIO_SERIES?.trim()&&env.OBLIO_VAT_NAME?.trim()&&env.OBLIO_VAT_PERCENTAGE?.trim()),configured:Boolean(env.OBLIO_CLIENT_ID?.trim()&&env.OBLIO_CLIENT_SECRET?.trim()&&env.OBLIO_CIF?.trim()&&env.OBLIO_SERIES?.trim()),invoices:true},
   netopia:{enabled:false,oneTime:true,subscriptions:false,status:"planned" as const},
 });
+export function billingConfiguration(env:Env){
+  const present=(key:keyof Env)=>typeof env[key]==='string'&&Boolean((env[key] as string).trim());
+  const fields={stripe:['STRIPE_SECRET_KEY','STRIPE_WEBHOOK_SECRET','STRIPE_ACCOUNT_ID'],oblio:['OBLIO_CLIENT_ID','OBLIO_CLIENT_SECRET','OBLIO_CIF','OBLIO_SERIES','OBLIO_VAT_NAME','OBLIO_VAT_PERCENTAGE'],revolut_merchant:['REVOLUT_MERCHANT_SECRET_KEY','REVOLUT_MERCHANT_WEBHOOK_SECRET']} as const;
+  return Object.fromEntries(Object.entries(fields).map(([provider,keys])=>[provider,{fields:keys.map(key=>({name:key,configured:present(key)})),automaticIssue:provider==='oblio'?env.OBLIO_AUTO_ISSUE_ENABLED==='true':null}]));
+}
 const stripeHeaders=(env:Env,idempotencyKey?:string)=>{const headers:Record<string,string>={authorization:`Bearer ${env.STRIPE_SECRET_KEY!.trim()}`,"content-type":"application/x-www-form-urlencoded"};if(env.STRIPE_API_VERSION?.trim())headers["stripe-version"]=env.STRIPE_API_VERSION.trim();if(idempotencyKey)headers["Idempotency-Key"]=idempotencyKey;return headers;};
 const revolutHeaders=(env:Env,idempotencyKey?:string)=>({authorization:`Bearer ${env.REVOLUT_MERCHANT_SECRET_KEY!.trim()}`,"content-type":"application/json","Revolut-Api-Version":env.REVOLUT_MERCHANT_API_VERSION?.trim()||REVOLUT_VERSION,...(idempotencyKey?{"Idempotency-Key":idempotencyKey}:{})});
 const revolutRoot=(env:Env)=>(env.REVOLUT_MERCHANT_API_URL?.trim()||"https://merchant.revolut.com/api").replace(/\/+$/,"");
@@ -271,11 +276,12 @@ async function syncOblioInvoiceForOrder(env:Env,order:OrderRow){
   const revenueInvoice=await env.DB.prepare("SELECT 1 FROM financial_revenues revenue WHERE EXISTS (SELECT 1 FROM billing_order_fulfillments fulfillment WHERE fulfillment.order_id=? AND ((fulfillment.provider='stripe' AND fulfillment.provider_reference=revenue.stripe_reference) OR (fulfillment.provider='revolut' AND fulfillment.provider_reference=revenue.revolut_reference))) AND invoice_number IS NOT NULL AND invoice_number!='' AND archived_at IS NULL LIMIT 1").bind(order.id).first();
   const timestamp=Date.now(),items=orderItems(order);
   const identity=await env.DB.prepare("SELECT COALESCE(bp.invoice_email,u.email) AS email,COALESCE(bp.legal_name,p.company_name,p.display_name,u.email) AS name,COALESCE(bp.tax_id,p.cui) AS tax_id,COALESCE(bp.address,p.address) AS address FROM users u LEFT JOIN profiles p ON p.id=u.id LEFT JOIN billing_profiles bp ON bp.user_id=u.id WHERE u.id=?").bind(order.user_id).first<{email:string;name:string;tax_id:string|null;address:string|null}>();
-  const lines=items.map((item)=>({name:item.name||item.sku||item.id||"Serviciu AVYRON",code:item.accountingCode||item.sku||item.id,quantity:item.quantity||1,unitPriceMinor:Math.round((item.lineTotalCents??item.unitPriceCents??order.total_cents)/(item.quantity||1))}));
+  const lines=items.map((item)=>({name:item.name||item.sku||item.id||"Serviciu AVYRON",code:item.accountingCode||item.sku||item.id,quantity:item.quantity||1,vatBasisPoints:item.vatBasisPoints,unitLabel:item.unitLabel,unitPriceMinor:Math.round((item.lineTotalCents??item.unitPriceCents??order.total_cents)/(item.quantity||1))}));
   const grossMinor=lines.reduce((sum,line)=>sum+line.unitPriceMinor*line.quantity,0);
   const invoiceInput={orderId:order.id,buyer:{name:identity?.name||identity?.email||"Client AVYRON",email:identity?.email,taxId:identity?.tax_id,address:identity?.address},lines,discountMinor:Math.max(0,grossMinor-order.total_cents),discountLabel:order.promotion_code?`Reducere ${order.promotion_code}`:"Reducere aplicată",currency:order.currency,issuedAt:timestamp};
-  let invoice:Awaited<ReturnType<typeof issueOblioInvoice>>|{issued:false;reason:"manual_invoice_exists"|"invoice_amount_mismatch"};
-  if(otherInvoice||revenueInvoice)invoice={issued:false,reason:"manual_invoice_exists"};
+  let invoice:Awaited<ReturnType<typeof issueOblioInvoice>>|{issued:false;reason:"manual_invoice_exists"|"manual_invoice_required"|"invoice_amount_mismatch"};
+  if(items.some(item=>item.invoiceProvider==='manual'))invoice={issued:false,reason:"manual_invoice_required"};
+  else if(otherInvoice||revenueInvoice)invoice={issued:false,reason:"manual_invoice_exists"};
   else if(grossMinor<order.total_cents)invoice={issued:false,reason:"invoice_amount_mismatch"};
   else try{invoice=await issueOblioInvoice(env,invoiceInput);}catch{invoice={issued:false,reason:"invoice_failed"};}
   await env.DB.prepare("INSERT INTO billing_invoices(id,user_id,order_id,provider,provider_invoice_id,series,number,status,currency,total_minor,document_url,error_code,issued_at,created_at,updated_at) VALUES (?,?,?,'oblio',?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(order_id,provider) DO UPDATE SET provider_invoice_id=excluded.provider_invoice_id,series=excluded.series,number=excluded.number,status=excluded.status,document_url=excluded.document_url,error_code=excluded.error_code,issued_at=excluded.issued_at,updated_at=excluded.updated_at WHERE billing_invoices.status!='issued'")
@@ -410,11 +416,11 @@ billingRouter.get("/api/billing/admin/status",async(c)=>{
     const approved=provider==="oblio"?capabilities.oblio.enabled:configured;
     return {...playbook,phase:financialSyncPhase({provider,configured,approved,connection:records.get(provider),now:Date.now()})};
   });
-  return c.json({providers:capabilities,providerPlaybooks,security:{mfaEnabled:mfaAuthEnabled(c.env),mfaVerified:Boolean(c.get("mfaVerified")),canVerify:(await platformRoleForUser(c.env.DB,c.get("userId")))==="platform_owner"},sessions:sessions.results,subscriptions:subscriptions.results,invoices:invoices.results,pendingInvoices:pendingInvoices.results,paymentsByCurrency:paymentsByCurrency.results,invoicesByCurrency:invoicesByCurrency.results,recentPayments:recentPayments.results,recentSubscriptions:recentSubscriptions.results,recentInvoices:recentInvoices.results,connectionRecords:connectionRecords.results,recentFailures:failed.results});
+  return c.json({providers:capabilities,providerPlaybooks,configuration:billingConfiguration(c.env),security:{mfaEnabled:mfaAuthEnabled(c.env),mfaVerified:Boolean(c.get("mfaVerified")),canVerify:Boolean(await platformRoleForUser(c.env.DB,c.get("userId")))},sessions:sessions.results,subscriptions:subscriptions.results,invoices:invoices.results,pendingInvoices:pendingInvoices.results,paymentsByCurrency:paymentsByCurrency.results,invoicesByCurrency:invoicesByCurrency.results,recentPayments:recentPayments.results,recentSubscriptions:recentSubscriptions.results,recentInvoices:recentInvoices.results,connectionRecords:connectionRecords.results,recentFailures:failed.results});
 });
 
 billingRouter.post("/api/billing/admin/connections/:provider/verify",async(c)=>{
-  if ((await platformRoleForUser(c.env.DB,c.get("userId")))!=="platform_owner") return c.json({error:{code:"platform_owner_required"}},403);
+  if (!(await platformRoleForUser(c.env.DB,c.get("userId")))) return c.json({error:{code:"platform_role_required"}},403);
   if (!c.get("mfaVerified")) return c.json({error:{code:"mfa_required"}},403);
   const provider=c.req.param("provider");
   if (!["stripe","oblio","revolut_merchant"].includes(provider)) return c.json({error:{code:"unsupported_provider"}},404);

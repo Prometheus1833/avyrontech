@@ -150,11 +150,11 @@ produseAdminRouter.post("/api/produse/admin/items", async (c) => {
     }
     // Schimbările catalogului comercial D1 se auditează; paginile publice
     // versionate în cod au nevoie de o lansare separată pentru aceeași ofertă.
-    const hasCommercialCodes = patch.priceRonCents === undefined ? false : Boolean(await c.env.DB.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='commercial_catalog_codes'").first());
+    const hasCommercialCodes = Boolean(await c.env.DB.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='commercial_catalog_codes'").first());
     await c.env.DB.batch([
       c.env.DB.prepare(`UPDATE product_items SET ${fields.join(", ")}, updated_at = ? WHERE slug = ?`).bind(...values, now, patch.slug),
-      ...(hasCommercialCodes ? [c.env.DB.prepare("UPDATE commercial_catalog_codes SET base_price_minor=?,updated_by=?,updated_at=? WHERE entity_type='product' AND entity_key=?")
-        .bind(patch.priceRonCents ?? null, c.get("userId"), now, patch.slug)] : []),
+      ...(hasCommercialCodes ? [c.env.DB.prepare("UPDATE commercial_catalog_codes SET base_price_minor=CASE WHEN ?=1 THEN ? ELSE base_price_minor END,payment_status='needs_configuration',updated_by=?,updated_at=? WHERE entity_type='product' AND entity_key=?")
+        .bind(patch.priceRonCents===undefined?0:1,patch.priceRonCents??null, c.get("userId"), now, patch.slug)] : []),
       c.env.DB.prepare("INSERT INTO audit_log (user_id,action,meta_json,created_at) VALUES (?,?,?,?)").bind(c.get("userId"), "produse_item_updated", JSON.stringify(patch), now),
     ]);
     return c.json({ ok: true });

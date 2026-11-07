@@ -4,6 +4,8 @@ export type PaidProductLine = {
   sku: string | null;
   slug: string | null;
   quantity: number | null;
+  deliveryMode?:string|null;
+  licenseName?:string|null; licenseTerms?:string|null;
 };
 export type PaidProductPurchase = {
   id: string;
@@ -28,7 +30,7 @@ export function paidProductLines(snapshot: string): PaidProductLine[] {
     const slug = text(line.productSlug) || (line.kind === "item" ? text(line.id) : null);
     return [{
       name: text(line.name) || slug || text(line.sku) || "Produs AVYRON",
-      sku: text(line.sku), slug,
+      sku: text(line.sku), slug, ...(text(line.licenseTerms)?{licenseName:text(line.licenseName),licenseTerms:text(line.licenseTerms),deliveryMode:text(line.deliveryMode)}:{}),
       quantity: Number.isSafeInteger(line.quantity) && Number(line.quantity) > 0 ? Number(line.quantity) : null,
     }];
   });

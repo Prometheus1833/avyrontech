@@ -151,3 +151,5 @@ Continuare din `4924253` (#101, întregul lot #94–#101 verificat verde), pe `c
 ## Generator Documente — structură și exporturi AVYRON, 06.11.2026
 
 Continuare de la PR #103 (`b6c4f7b`) pe ramură dedicată: [DOCUMENT_GENERATOR_EDITORIAL.md](./DOCUMENT_GENERATOR_EDITORIAL.md). Acțiuni directe de salvare/PDF/Word/pregătire distribuire, previzualizare comună și 11 familii cu structură modernă, cu noi versiuni de master și păstrarea personalizărilor/istoricului. 0099 este aditivă. Utilizatorul a confirmat păstrarea sediului din OS și completarea ulterioară a ONRC/reprezentant/capital în Documente SC. Consultați PR-ul pentru verificări și starea efectivă a migrării/deployului; documentul de continuitate nu dovedește o lansare.
+
+Financiar / produse — 08.11.2026: [fluxuri și limite](./FINANCE_COMMERCE_COMPLETION.md), migrarea aditivă 0106. Conturi editabile, verificare procesatori accesibilă, completare identități, licențe/livrabile și activarea verificată a produselor. Nu reprezintă dovadă de migrare remote, vânzări active sau deploy; PR #113/#114 și cabinetul rămân livrări distincte.

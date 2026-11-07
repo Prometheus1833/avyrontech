@@ -42,7 +42,7 @@ export default function CommercialCodesTab() {
   const coded = rows.filter(row => row.config?.accounting_code && row.config?.sku && row.config.tax_status === "verified").length;
   const sync = async () => {
     setSyncing(true);
-    try { const result = await catalogCodesApi.sync(); await load(); toast.success(`${result.created} elemente noi înregistrate; ${result.existing} păstrate. Codurile contabile și taxele rămân de verificat.`); }
+    try { const result = await catalogCodesApi.sync(); await load(); toast.success(`${result.created} elemente noi; ${result.completed} identități completate; ${result.existing} păstrate. Fiscalitatea rămâne de verificat.`); }
     catch (cause) { toast.error(cause instanceof Error ? cause.message : "Sincronizarea nu a reușit."); }
     finally { setSyncing(false); }
   };

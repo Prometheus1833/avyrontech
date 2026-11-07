@@ -37,7 +37,7 @@ type OrderItemInput = {
   productSlug?: unknown;
 };
 
-type CommercialItem = { sku: string; entity_key: string; entity_type: "service" | "product"; display_name: string; accounting_code: string | null; base_price_minor: number | null; currency: string; price_model: string; tax_status: string; payment_status: string; active: number };
+type CommercialItem = { sku: string; entity_key: string; entity_type: "service" | "product"; display_name: string; accounting_code: string | null; base_price_minor: number | null; currency: string; price_model: string; tax_status: string; payment_status: string; active: number; license_name?:string|null; license_terms?:string|null; invoice_provider?:string|null; vat_basis_points?:number; unit_label?:string;delivery_mode?:string|null };
 
 export type AccountCartSource = "dashboard" | "subscriptions" | "services" | "products";
 export type AccountCartItem = {
@@ -99,6 +99,7 @@ type PricedOrderItem = {
   serviceKey: string | null;
   productSlug: string | null;
   accountingCode: string | null;
+  licenseName?:string|null; licenseTerms?:string|null; invoiceProvider?:string|null;vatBasisPoints?:number;unitLabel?:string;deliveryMode?:string|null;
 };
 
 export const normalizePromotionCode = (value: unknown) =>
@@ -165,6 +166,7 @@ export function priceOrderItems(
       serviceKey,
       productSlug: commercial?.entity_type === "product" ? commercial.entity_key : productSlug,
       accountingCode: commercial?.accounting_code ?? null,
+      ...(commercial?.entity_type==='product'&&commercial.license_terms?{licenseName:commercial.license_name,licenseTerms:commercial.license_terms,invoiceProvider:commercial.invoice_provider,vatBasisPoints:commercial.vat_basis_points,unitLabel:commercial.unit_label,deliveryMode:commercial.delivery_mode}:{}),
     });
   }
   return { items, subtotalCents, requiresManualQuote };
@@ -201,7 +203,7 @@ async function priceRequest(c: Context<AppBindings>, value: unknown) {
     exchangeRate = { rate: snapshot.rate, referenceDate: snapshot.referenceDate, status: snapshot.status };
   }
   const requestedSkus = Array.isArray(value) ? [...new Set(value.map((raw) => String((raw as OrderItemInput)?.sku ?? "").trim()).filter((sku) => !commerceItemBySku(sku)))].slice(0, MAX_ORDER_ITEMS) : [];
-  const commercialItems = requestedSkus.length ? (await c.env.DB.prepare(`SELECT c.sku,c.entity_key,c.entity_type,c.display_name,c.accounting_code,c.base_price_minor,c.currency,c.price_model,c.tax_status,c.payment_status,c.active FROM commercial_catalog_codes c LEFT JOIN product_items p ON c.entity_type='product' AND p.slug=c.entity_key WHERE c.sku IN (${requestedSkus.map(() => "?").join(",")}) AND (c.entity_type!='product' OR p.status='live')`).bind(...requestedSkus).all<CommercialItem>()).results : [];
+  const commercialItems = requestedSkus.length ? (await c.env.DB.prepare(`SELECT c.sku,c.entity_key,c.entity_type,c.display_name,c.accounting_code,c.base_price_minor,c.currency,c.price_model,c.tax_status,c.payment_status,c.active,c.invoice_provider,c.vat_basis_points,c.unit_label,s.license_name,s.license_terms,s.delivery_mode FROM commercial_catalog_codes c LEFT JOIN product_sales_profiles s ON c.entity_type='product' AND s.slug=c.entity_key LEFT JOIN product_items p ON c.entity_type='product' AND p.slug=c.entity_key WHERE c.sku IN (${requestedSkus.map(() => "?").join(",")}) AND (c.entity_type!='product' OR (p.status='live' AND s.license_approved=1))`).bind(...requestedSkus).all<CommercialItem>()).results : [];
   return { priced: priceOrderItems(value, exchangeRate?.rate, commercialItems), exchangeRate };
 }
 
