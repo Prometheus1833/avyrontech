@@ -36,6 +36,10 @@ for(const route of routes) {
  check(html.includes(`rel="canonical" href="${firm.origin}${route.path}"`),'canonical');
  for(const language of ['ro','en','x-default']) check(html.includes(`hreflang="${language}"`),'hreflang '+language);
  check(html.includes('property="og:image"'),'social image');
+ for(const field of ['og:site_name','og:title','og:description','og:image:alt'])check(new RegExp('property="'+field+'" content="[^"<]+"').test(html),'complete preview '+field);
+ check(/name="twitter:description" content="[^"<]+"/.test(html),'complete card description');
+ check(!/[§↗→←↓↑Ⅱ▷⌂◐]/.test(html.split('<body')[1]),'no font-dependent decorative glyphs');
+ if(route.key==='home')check(html.includes('data-icon="calendar"'),'consultation calendar pictogram');
  const json=html.match(/<script type="application\/ld\+json">(.*?)<\/script>/)?.[1];
  try{const data=JSON.parse(json);if(route.key==='home'||route.key==='practice')check(data.mainEntity?.areaServed?.name==='Romania','nationwide service area');if(route.key!=='home'){check(data.breadcrumb?.['@type']==='BreadcrumbList','breadcrumb schema');const trail=data.breadcrumb?.itemListElement||[];check(trail.length>=2&&trail.every((entry,i)=>entry.position===i+1),'breadcrumb order');check(trail[trail.length-1]?.item===firm.origin+route.path,'breadcrumb canonical destination');}}catch{check(false,'valid structured data');}
  for(const match of html.matchAll(/(?:href|src)="([^"#?]+)(?:[?#][^"]*)?"/g)) {

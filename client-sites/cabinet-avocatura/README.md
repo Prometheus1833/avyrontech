@@ -109,3 +109,7 @@ Cele două carusele sunt independente și folosesc un singur scheduler rAF. Doar
 ## Contactele plutitoare — poziție stabilă
 
 Apel, WhatsApp și e-mail sunt trei butoane circulare unul sub altul, în dreapta jos, pe toate dimensiunile. Mobil: 48×48 px și spațiu 8 px; desktop: 50×50 px și spațiu 10 px. Safe-area este respectată. Etichetele rămân disponibile la hover/focus, cu aria-label pentru fiecare acțiune. Bara orizontală și spațiul rezervat acesteia au fost eliminate. Înapoi sus este în stânga jos pe home pentru a nu se suprapune cu contactele. Destinatarii și mesajele precompletate sunt păstrate.
+
+## Iconuri și preview al linkului
+
+Butoanele de consultație au calendar SVG; iconurile de format, navigare, ghiduri, afișare și carusele folosesc aceeași grilă vectorială. Glyphurile decorative de font și simbolurile § au fost eliminate din interfață, inclusiv din listele de servicii. Cele trei contacte rămân verticale. Preview-ul linkului include titlu și descriere RO/EN, numele cabinetului, imagine și alternative text Open Graph/Twitter. Validarea împiedică reapariția glyphurilor și a metadatelor goale.

@@ -3,10 +3,10 @@
 ## Publicare verificată
 
 - URL: https://cabinet-avocatura.avyron.eu/; pagini revizuite: /programari/ și /en/appointments/.
-- Sites: versiunea 14, `appgprj_6aee16d68fcc8191a51c7f828bcfab51~appgver_5a6b481815ec819195ea324684513aa3`.
-- Deployment: `appgdep_6aee4e01a214819182876f40455d65ea`, `succeeded`.
-- Sursă Sites: `f56c5e63be9a8e1ebc55c5a63ba5d600aeaca375`; runtime `8c7ed7702a`.
-- AVYRON: `client-sites/cabinet-avocatura/`, ramura `codex/cabinet-avocatura-2026-11-06`, PR #102, fără merge în main.
+- Sites: versiunea 15, `appgprj_6aee16d68fcc8191a51c7f828bcfab51~appgver_95b56e88c7188191961ace631e392319`.
+- Deployment: `appgdep_6aeef11a0cfc819198949600c2b6a72b`, `succeeded`.
+- Sursă Sites: `7dea0cb823e9e0463640052b995945eb02492b5e`; runtime `8221300ba3`.
+- AVYRON: `client-sites/cabinet-avocatura/`, ramura `codex/cabinet-icons-preview-2026-11-07`, pornită din `origin/main` la `6d00e41`. PR #102 este integrat; această revizie are PR separat, fără merge automat.
 - DNS existent păstrat; HTTPS public verificat cu validarea normală a certificatului.
 
 ## Programări — versiunea curentă
@@ -70,3 +70,11 @@ Verificări: build/check/toate testele trecute. Testele RO/EN rulează pentru am
 Apel, WhatsApp și e-mail sunt circulare și verticale, unul sub altul în dreapta jos, pe desktop, tabletă și mobil. Mobil 48×48 px, gap 8 px; desktop 50×50 px, gap 10 px. Respectă safe-area. Bara orizontală și spațiul rezervat acesteia au fost eliminate. Înapoi sus este în stânga jos pe home, separat de contactele din dreapta. Destinatarii, aria-label și mesajele precompletate sunt păstrate.
 
 Build/check/toate testele trecute. Browser: 320×568, 390×844, 430×932, 844×390, 768×1024 și 1440×1000: flex-direction column, exact trei butoane cu aceeași coordonată x și coordonate y crescătoare, fără overlap între ele sau overflow. EN la 320 px confirmat. Public la 390×844: x 315 px, y 672/728/784 px, 48×48 px, runtime 8c7ed7702a. Home RO/EN și CSS motion/editorial corespund build-ului. Dovezi: output/floating-proof/. Gzip motion.css 4094 B, editorial.css 3176 B. Fără modificări JS, imagini, DNS sau integrări.
+
+## Iconuri de interfață și preview — 7 noiembrie 2026
+
+Eliminate glyphurile tipografice decorative din interfață, inclusiv săgeata oblică de la consultații, simbolul § repetat și săgețile listelor de servicii. Pictograme SVG locale pe grilă 24 px: calendar la butoanele consultației, monitor/clădire la format, carte pentru ghiduri, chevroane pentru navigare, plus/închidere/contrast și pauză/reluare. Etichetele și aria-label denumesc acțiunile; iconurile sunt decorative și fără font/dependență/rețea nouă. Pauza caruselelor schimbă vizibilitatea iconurilor fără innerHTML. Contactele rămân trei cercuri verticale în dreapta jos.
+
+Preview-ul linkului are titlu, descriere, numele cabinetului, imagine 1200×630, tip JPEG și alternative text pentru Open Graph/Twitter. Descrierea RO: „Peste 27 de ani de experiență. Consultanță, asistență și reprezentare pentru persoane fizice și societăți. București, România · Consultații online sau la cabinet.” Versiunea EN are descriere echivalentă. Titlul afișat al proiectului Sites a fost actualizat; API-ul de metadate Sites permite numai titlul, nu și descrierea internă a proiectului din Library.
+
+Build/check/test:interactions trecute local și pentru sursa exactă Sites. Validatorul verifică acum metadatele preview și absența glyphurilor vechi în toate cele 42 de pagini. Browser: home RO/EN la 320/390/768/1440 px, fără overflow, CTA calendar și contacte verticale; programări RO/EN la 320 px și EN la 1440 px, iconuri format 24×24; pauză/reluare SVG verificată. Public: home la 390 px, runtime 8221300ba3, calendar vizibil și metadate actualizate. Patru pagini cu metadate comparate cu build-ul și trei resurse runtime identice. Dovezi: output/icon-proof/. Fără migrații, schimbări DNS sau integrări. Gzip: styles.css 9908 B, visual.css 2131 B, motion.js 3276 B. Verificarea nu reprezintă testare pe telefoane fizice.
