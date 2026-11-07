@@ -61,6 +61,7 @@ const AvyChatbotTab = lazyWithRetry(() => import("@/components/dashboard/AvyChat
 const AiProductionEntryCard = lazyWithRetry(() => import("@/components/dashboard/AiProductionEntryCard"));
 const AvyEngine = lazyWithRetry(() => import("@/pages/intern/AvyEngine"));
 const CollaboratorsTab = lazyWithRetry(() => import("@/components/dashboard/collaborators/CollaboratorsTab"));
+const AvySkillsTab = lazyWithRetry(() => import("@/components/dashboard/skills/AvySkillsTab"));
 const AntivirusTab = lazyWithRetry(() => import("@/components/dashboard/AntivirusTab"));
 const AvyronOverview = lazyWithRetry(() => import("@/components/dashboard/AvyronOverview"));
 const CustomerHomeTab = lazyWithRetry(() => import("@/components/dashboard/CustomerHomeTab").then((m) => ({ default: m.CustomerHomeTab })));
@@ -316,6 +317,9 @@ function ProfileDashboard() {
             {canOpenSection("my-collaborations",access)&&<TabsContent value="my-collaborations" role="region" aria-label="Colaborările mele" className="mt-0"><CollaboratorsTab portal /></TabsContent>}
           {canOpenSection("intern",access)&&<TabsContent value="intern" role="region" aria-label="Mesaje"><StaffChatTab /></TabsContent>}
           <TabsContent value="documents" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["documents"].label} className="mt-0"><DocumentCenter /></TabsContent>
+          {canOpenSection("skill-site-builder",access)&&<TabsContent value="skill-site-builder" role="region" aria-label="Site Builder" className="mt-0"><AvySkillsTab slug="site-builder"/></TabsContent>}
+          {canOpenSection("skill-logo-engine",access)&&<TabsContent value="skill-logo-engine" role="region" aria-label="Logo Engine" className="mt-0"><AvySkillsTab slug="logo-engine"/></TabsContent>}
+          {canOpenSection("skill-media-generate",access)&&<TabsContent value="skill-media-generate" role="region" aria-label="Media Generate" className="mt-0"><AvySkillsTab slug="media-generate"/></TabsContent>}
           {canOpenSection("ai-projects", access) && (
                 <TabsContent value="ai-projects" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["ai-projects"].label} className="mt-0"><AiProjects embedded /></TabsContent>
               )}

@@ -1,4 +1,5 @@
 import LogoLeadDetails from "./LogoLeadDetails";
+import SkillLaunchLink from "../skills/SkillLaunchLink";
 import { leadWhatsAppUrl } from "@/shared/leadArchive";
 import LeadWhatsApp from "./LeadWhatsApp";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -206,6 +207,7 @@ export function LeadDetailDialog({ leadId, onOpenChange, onChanged, onDeleted, o
                   {lead.phone && <><Button asChild variant="outline" size="sm"><a href={`tel:${lead.phone}`}><Phone /> Sună</a></Button><LeadWhatsApp phone={lead.phone} label="WhatsApp" /><Button asChild variant="outline" size="sm"><a href={`sms:${lead.phone}`}><MessageCircle /> SMS</a></Button></>}
                   {lead.email && <Button asChild variant="outline" size="sm"><a href={`mailto:${lead.email}`}><Mail /> Email</a></Button>}
                   {lead.website && <Button asChild variant="outline" size="sm"><a href={lead.website} target="_blank" rel="noopener noreferrer"><ExternalLink /> Website</a></Button>}
+                  <SkillLaunchLink leadId={lead.id} />
                 </div>
                 {leadWhatsAppUrl(lead.phone) && <details className="rounded-xl border border-border/60 p-3"><summary className="cursor-pointer text-xs font-medium">Pregătește mesaj WhatsApp</summary><label className="mt-3 block text-xs">Mesaj pentru WhatsApp<textarea className={field+" mt-1"} value={waMessage} maxLength={2000} rows={3} onChange={e => setWaMessage(e.target.value)} /></label><div className="mt-2"><LeadWhatsApp phone={lead.phone} message={waMessage} label="Deschide WhatsApp cu mesajul" /></div><p className="mt-2 text-xs text-muted-foreground">Verifici destinatarul și trimiți manual din WhatsApp. Deschiderea aplicației nu confirmă trimiterea.</p></details>}
                 {detail.canEdit && <div className="flex flex-wrap gap-1.5 border-t border-border/60 pt-3 text-xs">

@@ -1,5 +1,9 @@
 /** Registered permissions map to enforced API operations; rank labels never authorize requests. */
 export const STAFF_PERMISSIONS = [
+  ["skills.read", "Avy Skills", "Citire skilluri", "Instrucțiuni și resurse reutilizabile aprobate; fără acces implicit la briefurile altor clienți."],
+  ["skills.use", "Avy Skills", "Utilizare skilluri", "Pregătire mockupuri și briefuri interne în limitele existente."],
+  ["skills.manage", "Avy Skills", "Configurare skilluri", "Ciorne de instrucțiuni și resurse; nu aprobă sau publică automat."],
+  ["skills.approve", "Avy Skills", "Aprobare skilluri", "Aprobă versiuni, resurse și rezultate interne; nu publică pe site."],
   ["collaborators.read", "Comercial", "Citire colaboratori / parteneri", "Registrul profesional, fișe și documente autorizate."],
   ["collaborators.manage", "Comercial", "Administrare colaboratori / parteneri", "Fișe, asocieri explicite de cont și vizibilitatea documentelor; nu acordă acces la produse."],
   ["examples.read", "Platformă", "Citire carusele exemple", "Configurări, ciorne și istoric pentru exemplele publice."],
@@ -445,6 +449,9 @@ export function capabilityRank(
 }
 /** Navigation and request categories share the same registered permission keys. */
 export const STAFF_SECTION_PERMISSIONS: Record<string, string[]> = {
+  "skill-site-builder": ["skills.read", "skills.use", "skills.manage", "skills.approve"],
+  "skill-logo-engine": ["skills.read", "skills.use", "skills.manage", "skills.approve"],
+  "skill-media-generate": ["skills.read", "skills.use", "skills.manage", "skills.approve"],
   collaborators:["collaborators.read","collaborators.manage"],
   overview: ["dashboard.read"],
   projects: ["projects.read"],
