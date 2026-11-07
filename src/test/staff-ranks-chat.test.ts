@@ -244,6 +244,150 @@ describe("Agency ranks and private chat: real Hono/D1 handlers", () => {
     expect(result.finances.totals).toEqual([{currency:"RON",paid_orders:1,paid_minor:6000}]);expect(result.finances.orders).toHaveLength(2);
     mfa=false;expect((await req("/api/logo-studio/admin/overview")).status).toBe(403);
   });
+  it("edits only the 3D product with principal access, MFA, catalog synchronization and stale-write protection", async () => {
+    const before = db
+      .prepare(
+        "SELECT updated_at FROM product_items WHERE slug='logo-studio-3d'",
+      )
+      .get()!;
+    const body = {
+      priceMinor: 12990,
+      expectedUpdatedAt: before.updated_at,
+      confirmed: true,
+    };
+    actor = "client";
+    expect(
+      (await req("/api/logo-studio/admin/product-price", body, "PATCH")).status,
+    ).toBe(403);
+    actor = "dev";
+    expect(
+      (await req("/api/logo-studio/admin/product-price", body, "PATCH")).status,
+    ).toBe(403);
+    actor = "owner";
+    mfa = false;
+    expect(
+      (await req("/api/logo-studio/admin/product-price", body, "PATCH")).status,
+    ).toBe(403);
+    mfa = true;
+    const saved = await req(
+      "/api/logo-studio/admin/product-price",
+      body,
+      "PATCH",
+    );
+    expect(saved.status, await saved.clone().text()).toBe(200);
+    expect(
+      db
+        .prepare(
+          "SELECT price_ron_cents FROM product_items WHERE slug='logo-studio-3d'",
+        )
+        .get()!.price_ron_cents,
+    ).toBe(12990);
+    expect(
+      db
+        .prepare(
+          "SELECT base_price_minor,payment_status FROM commercial_catalog_codes WHERE entity_type='product' AND entity_key='logo-studio-3d'",
+        )
+        .get(),
+    ).toMatchObject({
+      base_price_minor: 12990,
+      payment_status: "needs_configuration",
+    });
+    expect(
+      db
+        .prepare(
+          "SELECT count(*) n FROM audit_log WHERE action='logo.product.price'",
+        )
+        .get()!.n,
+    ).toBe(1);
+    expect(
+      (await req("/api/logo-studio/admin/product-price", body, "PATCH")).status,
+    ).toBe(409);
+    actor = "client";
+    const price = await req("/api/logo-studio/product-price");
+    expect(price.headers.get("Cache-Control")).toBe("no-store");
+    expect(await price.json()).toMatchObject({
+      priceMinor: 12990,
+      currency: "RON",
+    });
+    actor = "super";
+    const current = db
+      .prepare(
+        "SELECT updated_at FROM product_items WHERE slug='logo-studio-3d'",
+      )
+      .get()!;
+    expect(
+      (
+        await req(
+          "/api/logo-studio/admin/product-price",
+          { ...body, priceMinor: 13500, expectedUpdatedAt: current.updated_at },
+          "PATCH",
+        )
+      ).status,
+    ).toBe(200);
+  });
+  it("rolls back all catalog effects when a concurrent price edit wins", async () => {
+    const before = db
+      .prepare(
+        "SELECT updated_at FROM product_items WHERE slug='logo-studio-3d'",
+      )
+      .get()!;
+    beforeBatch = () =>
+      db.exec(
+        "UPDATE product_items SET price_ron_cents=8400,updated_at=updated_at+1 WHERE slug='logo-studio-3d'",
+      );
+    expect(
+      (
+        await req(
+          "/api/logo-studio/admin/product-price",
+          {
+            priceMinor: 99900,
+            expectedUpdatedAt: before.updated_at,
+            confirmed: true,
+          },
+          "PATCH",
+        )
+      ).status,
+    ).toBe(409);
+    expect(
+      db
+        .prepare(
+          "SELECT price_ron_cents FROM product_items WHERE slug='logo-studio-3d'",
+        )
+        .get()!.price_ron_cents,
+    ).toBe(8400);
+    expect(
+      db
+        .prepare(
+          "SELECT count(*) n FROM audit_log WHERE action='logo.product.price'",
+        )
+        .get()!.n,
+    ).toBe(0);
+  });
+  it("counts generic product orders at their historical line price after catalog edits", async () => {
+    db.prepare(
+      "INSERT INTO commerce_orders(id,user_id,items_json,subtotal_cents,total_cents,currency,status,created_at,updated_at) VALUES('new-order','client',?,10000,8000,'RON','paid',1,1)",
+    ).run(
+      JSON.stringify([
+        {
+          type: "product",
+          productSlug: "logo-studio-3d",
+          quantity: 2,
+          lineTotalCents: 7500,
+        },
+        { type: "product", productSlug: "another", lineTotalCents: 2500 },
+      ]),
+    );
+    db.exec(
+      "UPDATE product_items SET price_ron_cents=99900 WHERE slug='logo-studio-3d'",
+    );
+    const overview = await (
+      await req("/api/logo-studio/admin/overview?mode=3d")
+    ).json();
+    expect(overview.finances.totals).toEqual([
+      { currency: "RON", paid_orders: 1, paid_minor: 6000 },
+    ]);
+    expect(overview.finances.orders[0].unit_price_cents).toBe(3750);
+  });
   it("keeps lead and logo badges inside the list ACL and removes archived activity",async()=>{
     for(const [id,product,source,config] of [["badge-a","logo-studio-3d","logo-product:3d","{}"],["badge-b","logo-studio","logo-studio:ai",JSON.stringify({kind:"static"})]])db.prepare("INSERT INTO leads(id,source,product,config_json,status,lifecycle_stage,created_at,updated_at) VALUES(?,?,?,?,'new','new_lead',1,1)").run(id,source,product,config);
     db.prepare("INSERT INTO lead_assignments(lead_id,user_id,assignment_role,assigned_at) VALUES('badge-a','dev','reviewer',1)").run();

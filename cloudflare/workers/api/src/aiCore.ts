@@ -36,6 +36,7 @@ type AiCoreInput = {
   projectId?: string | null;
   clientId?: string | null;
   financialReserved?: boolean;
+  freeOnly?: boolean;
   priority?: "background" | "important" | "user";
   imageDimensions?: {width:number;height:number};
 };
@@ -116,6 +117,7 @@ export async function runAiCore(input: AiCoreInput): Promise<{
        FROM ai_model_registry WHERE role=?`,
   ).bind(role).first<RegistryRow>();
   if (!registry || registry.status === "disabled") throw new AiCoreError("ai_model_not_configured");
+  if (input.freeOnly && registry.requires_billing) throw new AiCoreError("paid_ai_disabled");
   if (registry.requires_billing && !(enabled(input.env.PAID_AI_ENABLED) && enabled(input.env.ALLOW_AI_OVERAGE))) {
     throw new AiCoreError("paid_ai_disabled");
   }

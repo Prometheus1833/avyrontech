@@ -140,6 +140,7 @@ export type SkillRun = {
   lead_id: string | null;
   brief_json: string;
   mode: "template" | "ai" | "image";
+  free_only?:0|1;
   generatedFile?: boolean;
   status: keyof typeof RUN_STATES;
   output_md: string | null;

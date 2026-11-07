@@ -316,6 +316,52 @@ describe('Cloudflare workspace: actual handlers, all migrations, atomic writes',
   const config=await (await request('maintenance/config')).json();expect(config.canManage).toBe(true);expect(config.plans.length).toBeGreaterThanOrEqual(24);expect(config.plans.some(p=>p.sku==='pro')).toBe(true);
   actor='client';const own=await (await request('maintenance/config')).json();expect(own.canManage).toBe(false);expect(own.projects.map(p=>p.id)).toEqual(['pa']);expect(own.clients).toEqual([]);expect(own.staff).toEqual([]);
  });
+  it("persists the selected service and yearly catalog cycle without changing monthly plans", async () => {
+    const config = await (await request("maintenance/config")).json();
+    expect(config.services.some((s) => s.key === "premium-website")).toBe(true);
+    expect(config.plans.find((p) => p.sku === "pro").billingCycle).toBe(
+      "yearly",
+    );
+    const made = await createMaintenance({
+      planSku: "pro",
+      serviceKey: "premium-website",
+      billingCycle: "yearly",
+    });
+    expect(
+      db
+        .prepare(
+          "SELECT billing_cycle FROM services WHERE id=(SELECT service_id FROM subscriptions WHERE id=?)",
+        )
+        .get(made.id)!.billing_cycle,
+    ).toBe("yearly");
+    expect(
+      (await (await request("maintenance")).json()).data[0].service_key,
+    ).toBe("premium-website");
+    expect(
+      (
+        await request(
+          "maintenance",
+          maintenance({
+            projectId: "pb",
+            planSku: "pro",
+            billingCycle: "monthly",
+          }),
+          "POST",
+          "bad-cycle-fixture",
+        )
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await request(
+          "maintenance",
+          maintenance({ serviceKey: "invented-service" }),
+          "POST",
+          "bad-service-fixture",
+        )
+      ).status,
+    ).toBe(400);
+  });
  it('creates one canonical monthly subscription, synchronizes its project and is idempotent',async()=>{
   const created=await createMaintenance();const replay=await createMaintenance();expect(replay.id).toBe(created.id);
   expect(db.prepare('SELECT count(*) total FROM subscriptions').get()!.total).toBe(1);expect(db.prepare('SELECT count(*) total FROM services').get()!.total).toBe(1);

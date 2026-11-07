@@ -407,7 +407,7 @@ test("legătura veche de mentenanță ajunge în zona comună și nu în AVY Cor
   ).toHaveAttribute("aria-pressed", "true");
   await expect(
     page.getByRole("button", {
-      name: "Configurează abonament lunar",
+      name: "Mentenanță nouă",
       exact: true,
     }),
   ).toHaveCount(0);

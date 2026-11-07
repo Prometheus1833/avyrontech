@@ -1,3 +1,11 @@
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { useAuth } from "@/hooks/useAuth";
+import { clientWorkspaceApi } from "@/lib/clientWorkspaceApi";
+import {
+  CLIENT_ENTITY_TYPES,
+  type ClientEntityType,
+} from "@/shared/clientWorkspace";
+import { serviceMatchesSubscription } from "@/data/commerceCatalog";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Plus, RefreshCw, Users } from "lucide-react";
@@ -20,7 +28,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 const field =
-  "w-full min-w-0 rounded-xl border border-white/10 bg-[#080d1c] px-3 py-2 text-sm text-slate-100";
+  "w-full min-w-0 min-h-11 rounded-xl border border-white/15 bg-white/[.035] px-3 py-2 text-base text-slate-100 outline-none focus:border-violet-400/60 sm:text-sm";
 const panel =
   "min-w-0 rounded-2xl border border-white/10 bg-[#10162a]/90 p-4 sm:p-5";
 const money = (value: number) =>
@@ -59,6 +67,8 @@ const blank = () => ({
   externalName: "",
   mode: "project",
   planSku: "",
+  serviceKey: "",
+  billingCycle: "monthly" as "monthly" | "yearly",
   name: "",
   price: "",
   specifications: [{ key: "Servicii incluse", value: "" }],
@@ -71,6 +81,70 @@ const blank = () => ({
   status: "active" as MaintenanceInput["status"],
 });
 export default function MaintenanceSubscriptions() {
+  const auth = useAuth();
+  const canCreateClient =
+    auth.isSuperAdmin || auth.capabilities.includes("clients.write");
+  const [clientOpen, setClientOpen] = useState(false),
+    [clientBusy, setClientBusy] = useState(false),
+    [clientDraft, setClientDraft] = useState({
+      name: "",
+      email: "",
+      phone: "",
+      type: "Altă formă" as ClientEntityType,
+    });
+  const clientKey = useRef(crypto.randomUUID());
+  const createClient = async () => {
+    if (clientBusy) return;
+    setClientBusy(true);
+    try {
+      const result = await clientWorkspaceApi.create(
+        {
+          identity: {
+            companyName: clientDraft.name.trim(),
+            legalName: clientDraft.name.trim(),
+            email: clientDraft.email.trim(),
+            phone: clientDraft.phone,
+            entityType: clientDraft.type,
+            contactName: "",
+            taxId: "",
+            registrationNumber: "",
+            address: "",
+            representative: "",
+            notes: "",
+            status: "active",
+          },
+          account: { mode: "none" },
+        },
+        clientKey.current,
+      );
+      if (!alive.current) return;
+      setConfig((previous) =>
+        previous
+          ? {
+              ...previous,
+              clients: [
+                ...previous.clients.filter((c) => c.id !== result.id),
+                { id: result.id, company_name: clientDraft.name.trim() },
+              ],
+            }
+          : previous,
+      );
+      setDraft((previous) => ({
+        ...previous,
+        mode: "external",
+        clientId: result.id,
+        projectId: "",
+      }));
+      setClientOpen(false);
+      setClientDraft({ name: "", email: "", phone: "", type: "Altă formă" });
+      clientKey.current = crypto.randomUUID();
+      toast.success("Client creat în CRM și selectat pentru mentenanță.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Clientul nu a fost creat.");
+    } finally {
+      if (alive.current) setClientBusy(false);
+    }
+  };
   const [params, setParams] = useSearchParams();
   const [config, setConfig] = useState<MaintenanceConfig | null>(null),
     [rows, setRows] = useState<MaintenanceSubscription[]>([]),
@@ -97,7 +171,18 @@ export default function MaintenanceSubscriptions() {
       if (alive.current && seq.current === current) {
         setRows(result.data);
         if (!result.canManage) {
-          setConfig(previous => previous ? { ...previous, canManage: false, clients: [], staff: [], products: [], plans: [] } : previous);
+          setConfig((previous) =>
+            previous
+              ? {
+                  ...previous,
+                  canManage: false,
+                  clients: [],
+                  staff: [],
+                  products: [],
+                  plans: [],
+                }
+              : previous,
+          );
           setOpen(false);
         }
       }
@@ -167,6 +252,9 @@ export default function MaintenanceSubscriptions() {
       initial.name = row.service_name;
       initial.price = String(row.price);
       initial.planSku = row.plan_sku || "";
+      initial.serviceKey = row.service_key || "";
+      initial.billingCycle =
+        row.billing_cycle === "yearly" ? "yearly" : "monthly";
       initial.specifications = specifications(row.specifications_json).map(
         ([key, value]) => ({ key, value }),
       );
@@ -202,7 +290,9 @@ export default function MaintenanceSubscriptions() {
         "Selectează clientul și denumirea proiectului sau produsului extern.",
       );
     if (!draft.name.trim() || !/^\d+(?:[.,]\d{1,2})?$/.test(draft.price))
-      throw Error("Completează denumirea și un tarif lunar valid.");
+      throw Error(
+        "Completează denumirea și un tarif valid pentru perioada selectată.",
+      );
     const specs = draft.specifications.map(
       (s) => [s.key.trim(), s.value.trim()] as const,
     );
@@ -230,6 +320,8 @@ export default function MaintenanceSubscriptions() {
         : { projectId: draft.projectId }),
       ...(editing ? { revision: editing.revision } : {}),
       planSku: draft.planSku || null,
+      serviceKey: draft.serviceKey || null,
+      billingCycle: draft.billingCycle,
       name: draft.name.trim(),
       priceMinor: Math.round(Number(draft.price.replace(",", ".")) * 100),
       specifications: Object.fromEntries(specs),
@@ -256,7 +348,6 @@ export default function MaintenanceSubscriptions() {
       setOpen(false);
       selectProject(result.projectId);
       await Promise.all([load(), refreshConfig()]);
-      window.dispatchEvent(new Event("avyron:maintenance-changed"));
       toast.success("Abonamentul, planul și alocările au fost sincronizate.");
     } catch (e) {
       toast.error(
@@ -280,7 +371,7 @@ export default function MaintenanceSubscriptions() {
               id="core-maintenance-title"
               className="font-display text-xl font-semibold"
             >
-              Mentenanță și abonamente lunare
+              Mentenanță și abonamente
             </h2>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
               Selectează proiectul pentru a accesa materialele și activitățile
@@ -304,25 +395,39 @@ export default function MaintenanceSubscriptions() {
         </div>
         <label className="mt-4 block max-w-xl text-xs text-slate-300">
           Proiect
-          <select
-            aria-label="Proiect mentenanță"
-            className={field + " mt-1"}
-            value={selectedProject}
-            onChange={(e) => selectProject(e.target.value)}
-          >
-            <option value="">Toate proiectele autorizate</option>
-            {config?.projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.name}
-              </option>
-            ))}
-          </select>
+          <div className="mt-1">
+            <SearchableSelect
+              label="Proiect mentenanță"
+              value={selectedProject}
+              onChange={selectProject}
+              emptyLabel="Toate proiectele autorizate"
+              options={(config?.projects || []).map((p) => ({
+                value: p.id,
+                label: p.name,
+                description: [
+                  config?.clients.find((c) => c.id === p.client_id)
+                    ?.company_name,
+                  (
+                    {
+                      lead: "Propus",
+                      in_progress: "În dezvoltare",
+                      live: "Finalizat",
+                      maintenance: "Mentenanță",
+                      archived: "Arhivat",
+                    } as Record<string, string>
+                  )[p.status] || p.status,
+                ]
+                  .filter(Boolean)
+                  .join(" · "),
+              }))}
+            />
+          </div>
         </label>
         {config?.canManage && (
           <div className="mt-3 flex flex-wrap gap-2">
             <Button onClick={() => configure()}>
               <Plus className="mr-1 size-4" />
-              Configurează abonament lunar
+              Mentenanță nouă
             </Button>
             <Button
               variant="outline"
@@ -352,7 +457,7 @@ export default function MaintenanceSubscriptions() {
             : ""}
         </p>
       )}
-      <div className="grid gap-3 xl:grid-cols-2">
+      <div className="grid items-start gap-3 xl:grid-cols-2">
         {visible.map((row) => (
           <article key={row.id} className={panel}>
             <div className="flex flex-wrap items-start justify-between gap-2">
@@ -433,7 +538,7 @@ export default function MaintenanceSubscriptions() {
                 <Button size="sm" onClick={() => configure(row)}>
                   {row.maintenance_enabled
                     ? "Editează abonamentul"
-                    : "Configurează în AVY Core"}
+                    : "Configurează mentenanța"}
                 </Button>
               )}
             </div>
@@ -463,11 +568,9 @@ export default function MaintenanceSubscriptions() {
         }}
       >
         <DialogContent className="max-h-[90vh] overflow-y-auto border-white/10 bg-[#10162a] text-slate-100 sm:max-w-3xl">
-          <DialogHeader>
+          <DialogHeader className="pr-7 text-left">
             <DialogTitle>
-              {editing
-                ? "Configurare abonament existent"
-                : "Abonament lunar nou"}
+              {editing ? "Configurare abonament existent" : "Mentenanță nouă"}
             </DialogTitle>
             <DialogDescription>
               Configurarea păstrează serviciul și abonamentul în același
@@ -489,28 +592,64 @@ export default function MaintenanceSubscriptions() {
                 }
               }}
             >
+              {!editing && (
+                <div
+                  className="flex flex-wrap gap-2"
+                  aria-label="Context mentenanță"
+                >
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={draft.mode === "project" ? "default" : "outline"}
+                    onClick={() => setDraft({ ...draft, mode: "project" })}
+                  >
+                    Proiect existent
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={draft.mode === "external" ? "default" : "outline"}
+                    onClick={() => setDraft({ ...draft, mode: "external" })}
+                  >
+                    Client / proiect nou sau extern
+                  </Button>
+                </div>
+              )}
               {draft.mode === "external" ? (
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="text-xs">
                     Client
-                    <select
-                      required
-                      className={field + " mt-1"}
-                      value={draft.clientId}
-                      onChange={(e) =>
-                        setDraft({ ...draft, clientId: e.target.value })
-                      }
-                    >
-                      <option value="">Selectează clientul existent</option>
-                      {config?.clients.map((client) => (
-                        <option key={client.id} value={client.id}>
-                          {client.company_name}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="mt-1">
+                      <SearchableSelect
+                        label="Client mentenanță"
+                        required
+                        value={draft.clientId}
+                        onChange={(id) => setDraft({ ...draft, clientId: id })}
+                        options={(config?.clients || []).map((c) => ({
+                          value: c.id,
+                          label: c.company_name,
+                        }))}
+                        placeholder="Caută clientul existent"
+                      />
+                    </div>
+                    {canCreateClient && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="mt-2"
+                        onClick={() => {
+                          clientKey.current = crypto.randomUUID();
+                          setClientOpen(true);
+                        }}
+                      >
+                        <Plus className="mr-1 size-3.5" />
+                        Client nou
+                      </Button>
+                    )}
                   </label>
                   <label className="text-xs">
-                    Denumire proiect sau produs extern
+                    Denumire proiect / produs pentru mentenanță
                     <input
                       required
                       maxLength={180}
@@ -525,57 +664,112 @@ export default function MaintenanceSubscriptions() {
               ) : (
                 <label className="block text-xs">
                   Proiect asociat
-                  <select
-                    required
-                    disabled={!!editing}
-                    className={field + " mt-1"}
-                    value={draft.projectId}
-                    onChange={(e) =>
-                      setDraft({ ...draft, projectId: e.target.value })
-                    }
-                  >
-                    <option value="">Selectează proiectul</option>
-                    {config?.projects.map((project) => (
-                      <option key={project.id} value={project.id}>
-                        {project.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="mt-1">
+                    <SearchableSelect
+                      label="Proiect asociat"
+                      required
+                      disabled={!!editing}
+                      value={draft.projectId}
+                      onChange={(id) => setDraft({ ...draft, projectId: id })}
+                      options={(config?.projects || []).map((p) => ({
+                        value: p.id,
+                        label: p.name,
+                        description: config?.clients.find(
+                          (c) => c.id === p.client_id,
+                        )?.company_name,
+                      }))}
+                      placeholder="Caută proiectul"
+                    />
+                  </div>
+                  {canCreateClient && !editing && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="mt-1"
+                      onClick={() => {
+                        clientKey.current = crypto.randomUUID();
+                        setClientOpen(true);
+                      }}
+                    >
+                      Client nou și proiect de mentenanță
+                    </Button>
+                  )}
                 </label>
               )}
-              <label className="block text-xs">
-                Plan din catalog
-                <select
-                  className={field + " mt-1"}
-                  value={draft.planSku}
-                  onChange={(e) => {
-                    const plan = config?.plans.find(
-                      (p) => p.sku === e.target.value,
-                    );
-                    setDraft({
-                      ...draft,
-                      planSku: e.target.value,
-                      ...(plan
-                        ? {
-                            name: plan.name,
-                            price: String(plan.priceMinor / 100),
-                            specifications: Object.entries(
-                              plan.specifications,
-                            ).map(([key, value]) => ({ key, value })),
-                          }
-                        : {}),
-                    });
-                  }}
-                >
-                  <option value="">Plan personalizat</option>
-                  {config?.plans.map((plan) => (
-                    <option key={plan.sku} value={plan.sku}>
-                      {plan.category} · {plan.name} ·{" "}
-                      {money(plan.priceMinor / 100)}/lună
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div className="grid items-start gap-3 sm:grid-cols-2">
+                <label className="block text-xs">
+                  Serviciu de pe site
+                  <div className="mt-1">
+                    <SearchableSelect
+                      label="Serviciu mentenanță"
+                      value={draft.serviceKey}
+                      emptyLabel="Serviciu personalizat"
+                      options={(config?.services || []).map((service) => ({
+                        value: service.key,
+                        label: service.name,
+                        group: service.category,
+                      }))}
+                      onChange={(id) => {
+                        const service = config?.services?.find(
+                          (s) => s.key === id,
+                        );
+                        setDraft({
+                          ...draft,
+                          serviceKey: id,
+                          planSku: "",
+                          name: service
+                            ? `Mentenanță — ${service.name}`
+                            : draft.name,
+                          price: "",
+                        });
+                      }}
+                    />
+                  </div>
+                </label>
+                <label className="block text-xs">
+                  Plan din catalog
+                  <div className="mt-1">
+                    <SearchableSelect
+                      label="Plan din catalog"
+                      value={draft.planSku}
+                      emptyLabel="Plan personalizat"
+                      options={(config?.plans || [])
+                        .filter(
+                          (p) =>
+                            !draft.serviceKey ||
+                            serviceMatchesSubscription(p.sku, draft.serviceKey),
+                        )
+                        .map((p) => ({
+                          value: p.sku,
+                          label: `${p.name} · ${money(p.priceMinor / 100)}/${p.billingCycle === "yearly" ? "an" : "lună"}`,
+                          group: p.category,
+                          description: Object.entries(p.specifications)
+                            .slice(0, 2)
+                            .map(([k, v]) => `${k}: ${v}`)
+                            .join(" · "),
+                        }))}
+                      onChange={(id) => {
+                        const plan = config?.plans.find((p) => p.sku === id);
+                        setDraft({
+                          ...draft,
+                          planSku: id,
+                          ...(plan
+                            ? {
+                                name: plan.name,
+                                price: String(plan.priceMinor / 100),
+                                billingCycle: plan.billingCycle || "monthly",
+                                specifications: Object.entries(
+                                  plan.specifications,
+                                ).map(([key, value]) => ({ key, value })),
+                              }
+                            : {}),
+                        });
+                      }}
+                    />
+                  </div>
+                </label>
+              </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="text-xs">
                   Denumire abonament
@@ -590,7 +784,9 @@ export default function MaintenanceSubscriptions() {
                   />
                 </label>
                 <label className="text-xs">
-                  Tarif lunar RON
+                  {draft.billingCycle === "yearly"
+                    ? "Tarif anual RON"
+                    : "Tarif lunar RON"}
                   <input
                     required
                     inputMode="decimal"
@@ -600,6 +796,26 @@ export default function MaintenanceSubscriptions() {
                       setDraft({ ...draft, price: e.target.value })
                     }
                   />
+                </label>
+                <label className="text-xs">
+                  Periodicitate
+                  <div className="mt-1">
+                    <SearchableSelect
+                      label="Periodicitate mentenanță"
+                      disabled={!!draft.planSku}
+                      value={draft.billingCycle}
+                      options={[
+                        { value: "monthly", label: "Lunar" },
+                        { value: "yearly", label: "Anual" },
+                      ]}
+                      onChange={(value) =>
+                        setDraft({
+                          ...draft,
+                          billingCycle: value as "monthly" | "yearly",
+                        })
+                      }
+                    />
+                  </div>
                 </label>
                 <label className="text-xs">
                   Următoarea perioadă
@@ -615,20 +831,23 @@ export default function MaintenanceSubscriptions() {
                 </label>
                 <label className="text-xs">
                   Starea abonamentului
-                  <select
-                    className={field + " mt-1"}
-                    value={draft.status}
-                    onChange={(e) =>
-                      setDraft({
-                        ...draft,
-                        status: e.target.value as MaintenanceInput["status"],
-                      })
-                    }
-                  >
-                    <option value="active">Activ</option>
-                    <option value="paused">Suspendat</option>
-                    <option value="cancelled">Anulat</option>
-                  </select>
+                  <div className="mt-1">
+                    <SearchableSelect
+                      label="Starea abonamentului"
+                      value={draft.status}
+                      options={[
+                        { value: "active", label: "Activ" },
+                        { value: "paused", label: "Suspendat" },
+                        { value: "cancelled", label: "Anulat" },
+                      ]}
+                      onChange={(status) =>
+                        setDraft({
+                          ...draft,
+                          status: status as MaintenanceInput["status"],
+                        })
+                      }
+                    />
+                  </div>
                 </label>
               </div>
               <fieldset className="space-y-2">
@@ -708,17 +927,23 @@ export default function MaintenanceSubscriptions() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="text-xs">
                   Asociere
-                  <select
-                    className={field + " mt-1"}
-                    value={draft.target}
-                    onChange={(e) =>
-                      setDraft({ ...draft, target: e.target.value })
-                    }
-                  >
-                    <option value="project">Întregul proiect</option>
-                    <option value="product">Produs din catalog</option>
-                    <option value="external">Produs / serviciu extern</option>
-                  </select>
+                  <div className="mt-1">
+                    <SearchableSelect
+                      label="Asociere mentenanță"
+                      value={draft.target}
+                      onChange={(value) =>
+                        setDraft({ ...draft, target: value })
+                      }
+                      options={[
+                        { value: "project", label: "Întregul proiect" },
+                        { value: "product", label: "Produs din catalog" },
+                        {
+                          value: "external",
+                          label: "Produs / serviciu extern",
+                        },
+                      ]}
+                    />
+                  </div>
                 </label>
                 <label className="text-xs">
                   Denumire asociere
@@ -734,21 +959,21 @@ export default function MaintenanceSubscriptions() {
                 {draft.target === "product" && (
                   <label className="text-xs">
                     Produs
-                    <select
-                      required
-                      className={field + " mt-1"}
-                      value={draft.productSlug}
-                      onChange={(e) =>
-                        setDraft({ ...draft, productSlug: e.target.value })
-                      }
-                    >
-                      <option value="">Selectează produsul</option>
-                      {config?.products.map((product) => (
-                        <option key={product.slug} value={product.slug}>
-                          {product.name}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="mt-1">
+                      <SearchableSelect
+                        label="Produs mentenanță"
+                        required
+                        value={draft.productSlug}
+                        onChange={(id) =>
+                          setDraft({ ...draft, productSlug: id })
+                        }
+                        options={(config?.products || []).map((p) => ({
+                          value: p.slug,
+                          label: p.name,
+                        }))}
+                        placeholder="Caută produsul din catalog"
+                      />
+                    </div>
                   </label>
                 )}
                 {draft.target === "external" && (
@@ -773,10 +998,11 @@ export default function MaintenanceSubscriptions() {
                   {config?.staff.map((staff) => (
                     <label
                       key={staff.id}
-                      className="flex items-center gap-2 text-sm"
+                      className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-violet-500/10 focus-within:ring-2 focus-within:ring-violet-400"
                     >
                       <input
                         type="checkbox"
+                        className="size-5 shrink-0 accent-violet-400"
                         checked={draft.staffIds.includes(staff.id)}
                         onChange={(e) =>
                           setDraft({
@@ -807,7 +1033,8 @@ export default function MaintenanceSubscriptions() {
                     ? draft.externalName
                     : config?.projects.find((p) => p.id === draft.projectId)
                         ?.name}{" "}
-                  · {money(Number(draft.price.replace(",", ".")))}/lună
+                  · {money(Number(draft.price.replace(",", ".")))}/
+                  {draft.billingCycle === "yearly" ? "an" : "lună"}
                 </p>
                 <p className="mt-1 text-xs text-slate-400">
                   Data următoarei perioade: {draft.date} ·{" "}
@@ -865,6 +1092,95 @@ export default function MaintenanceSubscriptions() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={clientOpen}
+        onOpenChange={(value) => {
+          if (!clientBusy) setClientOpen(value);
+        }}
+      >
+        <DialogContent className="max-h-[90dvh] overflow-y-auto border-white/15 bg-[#10162a] text-slate-100 sm:max-w-md">
+          <DialogHeader className="pr-7 text-left">
+            <DialogTitle>Client nou pentru mentenanță</DialogTitle>
+            <DialogDescription>
+              Se creează fișa în CRM-ul existent. Contul de acces și datele
+              fiscale se completează separat în fișa clientului.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void createClient();
+            }}
+          >
+            <label className="block text-xs">
+              Nume / denumire
+              <input
+                aria-label="Nume client nou"
+                required
+                minLength={2}
+                maxLength={180}
+                className={field + " mt-1"}
+                value={clientDraft.name}
+                onChange={(e) => {
+                  setClientDraft({ ...clientDraft, name: e.target.value });
+                  clientKey.current = crypto.randomUUID();
+                }}
+              />
+            </label>
+            <label className="block text-xs">
+              E-mail
+              <input
+                aria-label="E-mail client nou"
+                required
+                type="email"
+                maxLength={254}
+                className={field + " mt-1"}
+                value={clientDraft.email}
+                onChange={(e) => {
+                  setClientDraft({ ...clientDraft, email: e.target.value });
+                  clientKey.current = crypto.randomUUID();
+                }}
+              />
+            </label>
+            <label className="block text-xs">
+              Telefon (opțional)
+              <input
+                maxLength={25}
+                className={field + " mt-1"}
+                value={clientDraft.phone}
+                onChange={(e) => {
+                  setClientDraft({ ...clientDraft, phone: e.target.value });
+                  clientKey.current = crypto.randomUUID();
+                }}
+              />
+            </label>
+            <label className="block text-xs">
+              Tip client
+              <div className="mt-1">
+                <SearchableSelect
+                  label="Tip client nou"
+                  value={clientDraft.type}
+                  options={CLIENT_ENTITY_TYPES.map((type) => ({
+                    value: type,
+                    label: type,
+                  }))}
+                  onChange={(value) => {
+                    setClientDraft({
+                      ...clientDraft,
+                      type: value as ClientEntityType,
+                    });
+                    clientKey.current = crypto.randomUUID();
+                  }}
+                />
+              </div>
+            </label>
+            <Button disabled={clientBusy} type="submit">
+              {clientBusy ? "Se salvează…" : "Creează și selectează clientul"}
+            </Button>
+          </form>
         </DialogContent>
       </Dialog>
     </section>

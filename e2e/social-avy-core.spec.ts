@@ -39,18 +39,18 @@ test('o ciornă trece în aprobare, iar un responsabil fără drept de decizie n
 test('Mentenanță Clienți configurează planul, specificațiile și stafful după confirmarea rezumatului',async({page},testInfo)=>{
  await setup(page);let submitted:Record<string,unknown>|undefined;let rows:unknown[]=[];
  await page.route('**/api/workspace/maintenance',route=>{if(route.request().method()==='POST'){submitted=route.request().postDataJSON();rows=[subscription];return route.fulfill({json:{id:'sub-a',projectId:'pa',revision:1}});}return route.fulfill({json:{data:rows,canManage:true}});});
- await page.goto('/profil?tab=client-maintenance');await expect(page.getByRole('heading',{name:'Mentenanță Clienți',exact:true})).toBeVisible();await page.getByRole('button',{name:'Configurează abonament lunar'}).click();
- const dialog=page.getByRole('dialog');await dialog.getByLabel('Proiect asociat').selectOption('pa');await dialog.getByLabel('Plan din catalog').selectOption('plan-fixture');await expect(dialog.getByLabel('Tarif lunar RON')).toHaveValue('125.5');await dialog.getByRole('checkbox',{name:'Daria · demo'}).check();await dialog.getByRole('button',{name:'Verifică abonamentul'}).click();await expect(dialog.getByRole('button',{name:'Confirmă și salvează abonamentul'})).toBeDisabled();await expect(dialog.getByText('2 ore/lună',{exact:true})).toBeVisible();await dialog.getByRole('checkbox').check();await dialog.getByRole('button',{name:'Confirmă și salvează abonamentul'}).click();await expect(page.getByRole('heading',{name:'Mentenanță Plus',exact:true})).toBeVisible();expect(submitted).toMatchObject({projectId:'pa',planSku:'plan-fixture',priceMinor:12550,staffIds:['staff'],specifications:{'Ore incluse':'2 ore/lună','Backup':'Conform acordului aprobat'}});await page.screenshot({path:testInfo.outputPath('avy-core-saved.png'),fullPage:true});
+ await page.goto('/profil?tab=client-maintenance');await expect(page.getByRole('heading',{name:'Mentenanță Clienți',exact:true})).toBeVisible();await page.getByRole('button',{name:'Mentenanță nouă'}).click();
+ const dialog=page.getByRole('dialog');await dialog.getByRole('combobox',{name:'Proiect asociat',exact:true}).click();await page.getByRole('option',{name:/Proiect A demonstrativ/}).click();await dialog.getByRole('combobox',{name:'Plan din catalog',exact:true}).click();await page.getByRole('option',{name:/Mentenanță Plus/}).click();await expect(dialog.getByLabel('Tarif lunar RON')).toHaveValue('125.5');await dialog.getByRole('checkbox',{name:'Daria · demo'}).check();await dialog.getByRole('button',{name:'Verifică abonamentul'}).click();await expect(dialog.getByRole('button',{name:'Confirmă și salvează abonamentul'})).toBeDisabled();await expect(dialog.getByText('2 ore/lună',{exact:true})).toBeVisible();await dialog.getByRole('checkbox').check();await dialog.getByRole('button',{name:'Confirmă și salvează abonamentul'}).click();await expect(page.getByRole('heading',{name:'Mentenanță Plus',exact:true})).toBeVisible();expect(submitted).toMatchObject({projectId:'pa',planSku:'plan-fixture',priceMinor:12550,staffIds:['staff'],specifications:{'Ore incluse':'2 ore/lună','Backup':'Conform acordului aprobat'}});await page.screenshot({path:testInfo.outputPath('avy-core-saved.png'),fullPage:true});
 });
 test('un client vede mentenanța autorizată și nu poate configura planuri sau personal',async({page})=>{
- await setup(page,true);await page.goto('/profil?tab=maintenance');await expect(page.getByRole('heading',{name:'Mentenanță Plus',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'Configurează abonament lunar'})).toHaveCount(0);await expect(page.getByRole('button',{name:'Editează abonamentul'})).toHaveCount(0);await expect(page.getByRole('button',{name:'Sistem AVYRON'})).toHaveCount(0);await page.getByText('Plan și specificații',{exact:false}).click();await expect(page.getByText('2 ore/lună',{exact:true})).toBeVisible();await expect(page.getByText('Daria · demo',{exact:true})).toBeVisible();
+ await setup(page,true);await page.goto('/profil?tab=maintenance');await expect(page.getByRole('heading',{name:'Mentenanță Plus',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'Mentenanță nouă'})).toHaveCount(0);await expect(page.getByRole('button',{name:'Editează abonamentul'})).toHaveCount(0);await expect(page.getByRole('button',{name:'Sistem AVYRON'})).toHaveCount(0);await page.getByText('Plan și specificații',{exact:false}).click();await expect(page.getByText('2 ore/lună',{exact:true})).toBeVisible();await expect(page.getByText('Daria · demo',{exact:true})).toBeVisible();
 });
 test('categoriile de proiecte se închid și se deschid, iar Fluxuri și pipeline nu mai apare în navigare',async({page})=>{
  await setup(page);await page.goto('/profil?tab=projects');const pipeline=page.getByLabel('Pipeline proiecte');await expect(pipeline).toBeVisible();const category=pipeline.locator('details[aria-label="În dezvoltare"]');await expect(category.getByRole('link',{name:'Deschide proiectul',exact:true})).toBeVisible();await category.locator('summary').click();await expect(category.getByRole('link',{name:'Deschide proiectul',exact:true})).not.toBeVisible();await category.locator('summary').click();await expect(category.getByRole('link',{name:'Deschide proiectul',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'Fluxuri și pipeline'})).toHaveCount(0);await expect(page.getByRole('button',{name:'AVY Core',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Listă',exact:true}).click();const listed=page.locator('details').filter({has:page.locator('summary').filter({hasText:'Site Prezentare Profesional'})});await expect(listed.getByRole('link',{name:'Deschide proiectul',exact:true})).toBeVisible();await listed.locator('summary').click();await expect(listed.getByRole('link',{name:'Deschide proiectul',exact:true})).not.toBeVisible();await listed.locator('summary').click();await expect(listed.getByRole('link',{name:'Deschide proiectul',exact:true})).toBeVisible();
 });
 for(const width of [320,390])test(`Manager Social și AVY Core încap la ${width}px`,async({page},testInfo)=>{
- await setup(page);await page.setViewportSize({width,height:844});await page.goto('/profil?tab=client-maintenance');await expect(page.getByRole('heading',{name:'Mentenanță Clienți',exact:true})).toBeVisible();await page.getByRole('button',{name:'Configurează abonament lunar'}).click();await expect(page.getByRole('dialog')).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1)).toBe(true);await page.screenshot({path:testInfo.outputPath(`avy-core-${width}.png`)});await page.getByRole('dialog').getByRole('button',{name:'Close',exact:true}).click();await page.goto('/profil?tab=social-manager');await expect(page.getByRole('heading',{name:'Manager Social Media',exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1)).toBe(true);
+ await setup(page);await page.setViewportSize({width,height:844});await page.goto('/profil?tab=client-maintenance');await expect(page.getByRole('heading',{name:'Mentenanță Clienți',exact:true})).toBeVisible();await page.getByRole('button',{name:'Mentenanță nouă'}).click();await expect(page.getByRole('dialog')).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1)).toBe(true);await page.screenshot({path:testInfo.outputPath(`avy-core-${width}.png`)});await page.getByRole('dialog').getByRole('button',{name:'Close',exact:true}).click();await page.goto('/profil?tab=social-manager');await expect(page.getByRole('heading',{name:'Manager Social Media',exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1)).toBe(true);
 });
 
 test('respingerea unui material este confirmată și actualizează lista',async({page})=>{
@@ -98,7 +98,7 @@ test('materialul unei activități se aprobă chiar când filtrul principal este
  await page.goto('/profil?tab=social-manager');await page.getByRole('button',{name:/Activități viitoare/}).click();await page.getByRole('button',{name:'Aprobă materialul',exact:true}).click();const dialog=page.getByRole('dialog',{name:material.title});await expect(dialog.getByText(material.caption)).toBeVisible();await dialog.getByRole('checkbox').check();await dialog.getByRole('button',{name:'Confirmă aprobarea'}).click();await expect.poll(()=>submitted).toEqual({status:'approved',expectedUpdatedAt:51});
 });
 test('AVY Core rămâne separat de activitățile recurente în navigare',async({page},testInfo)=>{
- await setup(page);await page.goto('/profil?tab=client-maintenance');await expect(page.getByRole('heading',{name:'Mentenanță Clienți',exact:true})).toBeVisible();const nav=page.getByRole('navigation',{name:'Navigare AVYRON OS'});await expect(nav.getByText('Activități Recurente',{exact:true})).toBeVisible();for(const name of ['Mentenanță Clienți','Abonamente Clienți','Abonamente AVYRON'])await expect(nav.getByRole('button',{name,exact:true})).toBeVisible();await nav.getByRole('button',{name:'AVY Core',exact:true}).click();await expect(page.getByRole('heading',{name:'AVY Core',exact:true})).toBeVisible();await expect(page.getByRole('heading',{name:'Diagnostice sistem',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'Configurează abonament lunar'})).toHaveCount(0);await page.screenshot({path:testInfo.outputPath('core-system-separated.png'),fullPage:true});
+ await setup(page);await page.goto('/profil?tab=client-maintenance');await expect(page.getByRole('heading',{name:'Mentenanță Clienți',exact:true})).toBeVisible();const nav=page.getByRole('navigation',{name:'Navigare AVYRON OS'});await expect(nav.getByText('Activități Recurente',{exact:true})).toBeVisible();for(const name of ['Mentenanță Clienți','Abonamente Clienți','Abonamente AVYRON'])await expect(nav.getByRole('button',{name,exact:true})).toBeVisible();await nav.getByRole('button',{name:'AVY Core',exact:true}).click();await expect(page.getByRole('heading',{name:'AVY Core',exact:true})).toBeVisible();await expect(page.getByRole('heading',{name:'Diagnostice sistem',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'Mentenanță nouă'})).toHaveCount(0);await page.screenshot({path:testInfo.outputPath('core-system-separated.png'),fullPage:true});
 });
 for(const width of [320,390])test(`proiectul și mini-dashul de client sunt accesibile la ${width}px`,async({page},testInfo)=>{
  await setup(page);await page.setViewportSize({width,height:844});await page.goto('/profil?tab=projects');await page.getByRole('button',{name:'Creează proiect',exact:true}).click();const projectDialog=page.getByRole('dialog',{name:'Proiect nou'});await projectDialog.getByLabel('Client',{exact:true}).click();await page.getByRole('option',{name:'+ Client nou',exact:true}).click();const mini=page.getByRole('dialog',{name:'Client nou',exact:true});await expect(mini.getByLabel('Nume / denumire *')).toBeVisible();await expect(mini.getByRole('button',{name:'Salvează și selectează clientul'})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1)).toBe(true);await page.screenshot({path:testInfo.outputPath(`project-new-client-${width}.png`),animations:'disabled'});
@@ -109,3 +109,107 @@ test('crearea cu un client existent păstrează ciorna după eroare și reutiliz
  await page.route('**/api/projects',route=>{if(route.request().method()==='POST'){attempts++;const body=route.request().postDataJSON();expect(body.client_id).toBe('existing');expect(body.owner_user_id).toBeUndefined();keys.push(route.request().headers()['idempotency-key']);return attempts===1?route.fulfill({status:503,json:{error:{code:'temporarily_unavailable',message:'Serviciul nu este disponibil temporar.'}}}):route.fulfill({status:201,json:{id:'created',slug:'auto-generated'}});}return route.fulfill({json:{data:[]}});});
  await page.goto('/profil?tab=projects');await page.getByRole('button',{name:'Creează proiect',exact:true}).click();const dialog=page.getByRole('dialog',{name:'Proiect nou'});await dialog.getByLabel('Nume *',{exact:true}).fill('Ciornă recuperabilă');await dialog.getByLabel('Client',{exact:true}).click();await page.getByRole('option',{name:/Beneficiar existent/}).click();await dialog.getByRole('button',{name:'Creează',exact:true}).click();await expect(page.getByText('Serviciul nu este disponibil temporar.',{exact:false})).toBeVisible();await expect(dialog.getByLabel('Nume *',{exact:true})).toHaveValue('Ciornă recuperabilă');await dialog.getByRole('button',{name:'Creează',exact:true}).click();await expect(dialog).not.toBeVisible();expect(attempts).toBe(2);expect(keys[0]).toBe(keys[1]);
 });
+
+for (const width of [320, 1440])
+  test(`mentenanța permite client nou, căutare și plan anual la ${width}px`, async ({
+    page,
+  }, info) => {
+    await setup(page);
+    await page.setViewportSize({ width, height: 900 });
+    let client: unknown, maintenance: Record<string, unknown> | undefined;
+    await page.route("**/api/workspace/maintenance/config", (route) =>
+      route.fulfill({
+        json: {
+          ...configuration,
+          services: [
+            {
+              key: "premium-website",
+              name: "Site Prezentare Profesional",
+              category: "Website",
+            },
+          ],
+          plans: [
+            ...configuration.plans,
+            {
+              sku: "pro",
+              name: "AVY Studio Pro",
+              category: "AVY Studio",
+              priceMinor: 90000,
+              billingCycle: "yearly",
+              specifications: { Acces: "Plan anual" },
+            },
+          ],
+        },
+      }),
+    );
+    await page.route("**/api/admin/operations/clients", (route) => {
+      client = route.request().postDataJSON();
+      return route.fulfill({ status: 201, json: { id: "new-client" } });
+    });
+    await page.route("**/api/workspace/maintenance", (route) => {
+      if (route.request().method() === "POST") {
+        maintenance = route.request().postDataJSON();
+        return route.fulfill({
+          json: { id: "created-maintenance", projectId: "pa", revision: 1 },
+        });
+      }
+      return route.fulfill({ json: { data: [], canManage: true } });
+    });
+    await page.goto("/profil?tab=client-maintenance");
+    await page
+      .getByRole("button", { name: "Mentenanță nouă", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Client nou și proiect de mentenanță" })
+      .click();
+    const clientDialog = page.getByRole("dialog", {
+      name: "Client nou pentru mentenanță",
+    });
+    await clientDialog
+      .getByRole("textbox", { name: "Nume client nou" })
+      .fill("Client nou sintetic");
+    await clientDialog
+      .getByRole("textbox", { name: "E-mail client nou" })
+      .fill("nou@example.test");
+    await clientDialog
+      .getByRole("button", { name: "Creează și selectează clientul" })
+      .click();
+    await expect(clientDialog).toHaveCount(0);
+    expect(client).toMatchObject({ account: { mode: "none" } });
+    const dialog = page.getByRole("dialog", { name: "Mentenanță nouă" });
+    await dialog
+      .getByLabel("Denumire proiect / produs pentru mentenanță")
+      .fill("Proiect viitor");
+    await dialog.getByRole("combobox", { name: "Serviciu mentenanță" }).click();
+    await page
+      .getByRole("combobox", { name: "Caută · Serviciu mentenanță" })
+      .fill("Site Prezentare");
+    await page
+      .getByRole("option", { name: "Site Prezentare Profesional" })
+      .click();
+    await dialog
+      .getByRole("combobox", { name: "Plan din catalog", exact: true })
+      .click();
+    await page.getByRole("option", { name: /AVY Studio Pro/ }).click();
+    await expect(dialog.getByLabel("Tarif anual RON")).toHaveValue("900");
+    await expect(
+      dialog.getByRole("combobox", { name: "Periodicitate mentenanță" }),
+    ).toBeDisabled();
+    await page.screenshot({
+      path: info.outputPath(`maintenance-new-${width}.png`),
+    });
+    expect(
+      await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+    ).toBe(true);
+    await dialog.getByRole("button", { name: "Verifică abonamentul" }).click();
+    await dialog.getByRole("checkbox").check();
+    await dialog
+      .getByRole("button", { name: "Confirmă și salvează abonamentul" })
+      .click();
+    await expect.poll(() => maintenance?.billingCycle).toBe("yearly");
+    expect(maintenance).toMatchObject({
+      serviceKey: "premium-website",
+      planSku: "pro",
+      externalProject: { clientId: "new-client", name: "Proiect viitor" },
+    });
+  });

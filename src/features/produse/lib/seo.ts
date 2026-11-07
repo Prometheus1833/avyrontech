@@ -1,7 +1,10 @@
 import { FEATURES } from "@/config/features";
 import type { Lang } from "@/i18n/translations";
 import { ITEMS } from "../data/items";
-import { PRODUCT_HUB_PATHS, productHubAlternates } from "../data/productLocales";
+import {
+  PRODUCT_HUB_PATHS,
+  productHubAlternates,
+} from "../data/productLocales";
 import { isProduseIndexablePath } from "../data/routes";
 import { EUR_FOR_RON, TYPE_BY_ID } from "../data/taxonomy";
 import type { CatalogItem } from "../data/types";
@@ -27,10 +30,19 @@ export type PageSeo = {
   jsonLd?: Array<[string, LdValue]>;
 };
 
-export async function applySeo({ title, description, path, lang, image = "/og/home.jpg", imageAlt, jsonLd = [] }: PageSeo) {
+export async function applySeo({
+  title,
+  description,
+  path,
+  lang,
+  image = "/og/home.jpg",
+  imageAlt,
+  jsonLd = [],
+}: PageSeo) {
   const [{ setPageMeta, setJsonLd }] = await Promise.all([import("@/lib/seo")]);
   const alt = alternatePath(path, lang === "ro" ? "en" : "ro");
-  const isProductsHub = path === PRODUCT_HUB_PATHS.ro || path === PRODUCT_HUB_PATHS.en;
+  const isProductsHub =
+    path === PRODUCT_HUB_PATHS.ro || path === PRODUCT_HUB_PATHS.en;
   const isIndexable = FEATURES.produseLive && isProduseIndexablePath(path);
   setPageMeta({
     title,
@@ -45,12 +57,17 @@ export async function applySeo({ title, description, path, lang, image = "/og/ho
       : undefined,
     image,
     imageAlt,
-    robots: isIndexable ? undefined : FEATURES.produseLive ? "noindex, follow" : "noindex, nofollow",
+    robots: isIndexable
+      ? undefined
+      : FEATURES.produseLive
+        ? "noindex, follow"
+        : "noindex, nofollow",
   });
   // Structured data describes the public catalog even where the page is
   // intentionally noindex; the robots directive still controls search eligibility.
   if (FEATURES.produseLive) {
-    for (const [id, value] of jsonLd) setJsonLd(`produse-${id}`, value as never);
+    for (const [id, value] of jsonLd)
+      setJsonLd(`produse-${id}`, value as never);
   }
 }
 
@@ -77,11 +94,20 @@ export function metaFrom(intro: string, min = 90, max = 165): string {
   return `${(lastSpace > min ? cut.slice(0, lastSpace) : cut).replace(/[\s—,;:]+$/, "")}…`;
 }
 
-export function breadcrumb(lang: Lang, trail: Array<{ name: string; path: string }>): LdValue {
+export function breadcrumb(
+  lang: Lang,
+  trail: Array<{ name: string; path: string }>,
+): LdValue {
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
-    itemListElement: [{ name: lang === "ro" ? "Acasă" : "Home", path: lang === "ro" ? "/" : "/en" }, ...trail].map((entry, index) => ({
+    itemListElement: [
+      {
+        name: lang === "ro" ? "Acasă" : "Home",
+        path: lang === "ro" ? "/" : "/en",
+      },
+      ...trail,
+    ].map((entry, index) => ({
       "@type": "ListItem",
       position: index + 1,
       name: entry.name,
@@ -91,7 +117,12 @@ export function breadcrumb(lang: Lang, trail: Array<{ name: string; path: string
 }
 
 /** Lista de produse ca ItemList — ce citește Google pentru o pagină de catalog. */
-export function itemListLd(lang: Lang, items: CatalogItem[], name: string, path: string): LdValue {
+export function itemListLd(
+  lang: Lang,
+  items: CatalogItem[],
+  name: string,
+  path: string,
+): LdValue {
   return {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -114,11 +145,19 @@ export function itemListLd(lang: Lang, items: CatalogItem[], name: string, path:
 
 /** Product plus its digital work type and a visible, priced offer when paid. */
 export function productLd(lang: Lang, item: CatalogItem): LdValue {
-  const price = item.priceRon ? EUR_FOR_RON[item.priceRon] : null;
+  const isLogo = item.slug === "logo-studio-3d";
+  const price = isLogo
+    ? item.priceRon
+    : item.priceRon
+      ? EUR_FOR_RON[item.priceRon]
+      : null;
   return {
     "@context": "https://schema.org",
     "@type": "Product",
-    additionalType: item.type === "doc" ? "https://schema.org/CreativeWork" : "https://schema.org/SoftwareSourceCode",
+    additionalType:
+      item.type === "doc"
+        ? "https://schema.org/CreativeWork"
+        : "https://schema.org/SoftwareSourceCode",
     "@id": `${BASE}${itemPath(lang, item)}#product`,
     name: item.name[lang],
     description: item.short[lang],
@@ -138,7 +177,7 @@ export function productLd(lang: Lang, item: CatalogItem): LdValue {
           offers: {
             "@type": "Offer",
             price,
-            priceCurrency: "EUR",
+            priceCurrency: isLogo ? "RON" : "EUR",
             url: `${BASE}${itemPath(lang, item)}`,
             seller: { "@id": `${BASE}/#organization` },
           },

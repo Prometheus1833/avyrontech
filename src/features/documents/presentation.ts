@@ -33,12 +33,11 @@ export const DOCUMENT_VIEWS: Record<
 };
 export function allowedDocumentViews(b: DocumentBootstrap): DocumentView[] {
   return [
-    "library",
-    ...(b.permissions["documents.company.owner"] ? ["company" as const] : []),
-    ...(b.staff
-      ? ["staff" as const, "templates" as const, "hub" as const]
-      : []),
     ...(b.permissions["documents.create"] ? ["generator" as const] : []),
+    ...(b.staff ? ["templates" as const, "staff" as const] : []),
+    ...(b.permissions["documents.company.owner"] ? ["company" as const] : []),
+    "library",
+    ...(b.staff ? ["hub" as const] : []),
   ];
 }
 export function documentState(item: DocumentSummary) {
