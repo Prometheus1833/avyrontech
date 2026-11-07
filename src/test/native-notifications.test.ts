@@ -250,6 +250,10 @@ describe("Native notifications with real migrated SQLite and production Hono han
     db.exec(
       "INSERT INTO services(id,project_id,service_name,price) VALUES('sa','pa','Core',100); INSERT INTO subscriptions(id,client_id,service_id,next_billing_date,status,created_at,updated_at) VALUES('sub','ca','sa',2000000000000,'active',21,21); UPDATE subscriptions SET status='active' WHERE id='sub'; INSERT INTO billing_subscriptions(id,user_id,provider,provider_subscription_id,sku,status,period,amount_minor,created_at,updated_at) VALUES('bill','a','stripe','synthetic','AVY-STUDIO','active','monthly',100,22,22)",
     );
+    const billingNotice = (await (await get()).json()).data.find(
+      (n: StoredNotice) => n.title === "Abonamentul de produs · actualizare",
+    );
+    expect(billingNotice.destination).toBe("/profil?tab=subscriptions");
     expect(
       db
         .prepare(

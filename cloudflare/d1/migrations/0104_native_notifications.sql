@@ -86,7 +86,7 @@ CREATE TRIGGER notification_billing_subscription_created AFTER INSERT ON billing
 WHEN (1) AND coalesce((SELECT json_extract(config_json,'$.events.subscriptions') FROM notification_settings WHERE id=1),1)=1
 BEGIN
  INSERT OR IGNORE INTO operation_notifications(id,user_id,deduplication_key,title,body,destination,created_at,category,priority,resource_type,resource_id)
- SELECT lower(hex(randomblob(16))),recipient.user_id,'billing-subscription-created:'||NEW.id,'Abonamentul de produs · actualizare','Există o modificare a abonamentului pentru produsul tău. Consultă situația în cont.','/profil?tab=payments',NEW.updated_at,'subscription','important','billing_subscription',NEW.id
+ SELECT lower(hex(randomblob(16))),recipient.user_id,'billing-subscription-created:'||NEW.id,'Abonamentul de produs · actualizare','Există o modificare a abonamentului pentru produsul tău. Consultă situația în cont.','/profil?tab=subscriptions',NEW.updated_at,'subscription','important','billing_subscription',NEW.id
  FROM (SELECT NEW.user_id user_id) recipient JOIN users u ON u.id=recipient.user_id AND u.disabled_at IS NULL AND u.email_verified=1
  WHERE recipient.user_id IS NOT NULL;
 END;
@@ -95,7 +95,7 @@ CREATE TRIGGER notification_billing_subscription_updated AFTER UPDATE OF status,
 WHEN (NEW.status IS NOT OLD.status OR NEW.current_period_end IS NOT OLD.current_period_end OR NEW.cancel_at_period_end IS NOT OLD.cancel_at_period_end) AND coalesce((SELECT json_extract(config_json,'$.events.subscriptions') FROM notification_settings WHERE id=1),1)=1
 BEGIN
  INSERT OR IGNORE INTO operation_notifications(id,user_id,deduplication_key,title,body,destination,created_at,category,priority,resource_type,resource_id)
- SELECT lower(hex(randomblob(16))),recipient.user_id,'billing-subscription-transition:'||NEW.id||':'||lower(hex(randomblob(16))),'Abonamentul de produs · actualizare','Există o modificare a abonamentului pentru produsul tău. Consultă situația în cont.','/profil?tab=payments',NEW.updated_at,'subscription','important','billing_subscription',NEW.id
+ SELECT lower(hex(randomblob(16))),recipient.user_id,'billing-subscription-transition:'||NEW.id||':'||lower(hex(randomblob(16))),'Abonamentul de produs · actualizare','Există o modificare a abonamentului pentru produsul tău. Consultă situația în cont.','/profil?tab=subscriptions',NEW.updated_at,'subscription','important','billing_subscription',NEW.id
  FROM (SELECT NEW.user_id user_id) recipient JOIN users u ON u.id=recipient.user_id AND u.disabled_at IS NULL AND u.email_verified=1
  WHERE recipient.user_id IS NOT NULL;
 END;
