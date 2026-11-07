@@ -42,3 +42,20 @@ test('o fișă întârziată nu înlocuiește contactul curent sau destinatarul 
  await page.route('**/api/leads/fast-b',route=>route.fulfill({json:{data:b,activities:[],assignments:[],reminders:[],canEdit:true}}));
  await page.goto('/profil?tab=leads');await page.getByRole('button',{name:/Deschide fișa completă/}).click();await expect.poll(()=>requestedA).toBe(true);await page.getByRole('dialog').getByRole('button',{name:'Close',exact:true}).click();await page.locator('article').getByRole('button',{name:/Contact B curent/}).click();await page.getByRole('button',{name:/Deschide fișa completă/}).click();const dialog=page.getByRole('dialog');await expect(dialog.getByRole('link',{name:'WhatsApp',exact:true})).toHaveAttribute('href','https://wa.me/40722222222');const late=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/leads/late-a');releaseA();await late;await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));await expect(dialog.getByRole('heading',{name:b.name,exact:true})).toBeVisible();await expect(dialog.getByRole('link',{name:'WhatsApp',exact:true})).toHaveAttribute('href','https://wa.me/40722222222');
 });
+
+test('fișa leadului permite aprobarea și respingerea ciornei fără trimitere externă',async({page})=>{
+ await setup(page);await page.setViewportSize({width:390,height:844});
+ const draft={id:'draft-review',sequence:1,due_at:stamp,status:'ready',whatsapp_body:'Bună ziua! Mai este actual proiectul? https://example.test/'+ 'x'.repeat(300),email_subject:'Revenire Necesit',email_body:'Bună ziua! Vă putem ajuta cu o clarificare?',generated_by_model:'fixture',generated_at:stamp,sent_at:null,expires_at:stamp+86400000,approval_status:'pending',approved_by:null,approved_at:null,revision:1,updated_at:stamp};
+ let decisions=0;
+ await page.route('**/api/leads',route=>route.fulfill({json:{data:[lead],platformRole:'platform_owner'}}));
+ await page.route('**/api/leads/lead-new',route=>route.fulfill({json:{data:lead,activities:[],assignments:[],reminders:[],followUps:[draft],canEdit:true,currentUserId:'self'}}));
+ await page.route('**/api/leads/lead-new/follow-ups/draft-review/review',route=>{const body=route.request().postDataJSON();expect(body.revision).toBe(draft.revision);draft.approval_status=body.decision;draft.revision++;decisions++;return route.fulfill({json:{ok:true,revision:draft.revision}});});
+ await page.goto('/profil?tab=leads');await page.getByRole('button',{name:/Deschide fișa completă/}).click();
+ const dialog=page.getByRole('dialog');await expect(dialog.getByText('Reveniri Necesit pregătite',{exact:true})).toBeVisible();
+ await dialog.getByRole('button',{name:'Aprobă',exact:true}).click();
+ await expect(dialog.getByText('Aprobată · v2',{exact:true})).toBeVisible();
+ await expect(dialog.getByRole('button',{name:'Confirmă trimiterea',exact:true})).toBeEnabled();
+ await dialog.getByRole('button',{name:'Respinge',exact:true}).click();
+ await expect(dialog.getByText('Respinsă · v3',{exact:true})).toBeVisible();
+ expect(decisions).toBe(2);expect(draft.sent_at).toBeNull();expect(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
+});

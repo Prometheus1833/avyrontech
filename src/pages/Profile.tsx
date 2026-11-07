@@ -17,7 +17,7 @@ import { Sheet,SheetContent,SheetDescription,SheetHeader,SheetTitle } from "@/co
 import { Tabs,TabsContent } from "@/components/ui/tabs";
 import { flushDocumentEditors } from "@/features/documents/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { buildAccess,canOpenSection,defaultSection,sectionsFor,type SectionId } from "@/lib/access";
+import { buildAccess,canOpenSection,defaultSection,sectionsFor,navigationSectionsFor,type SectionId } from "@/lib/access";
 import { publicSiteHref } from "@/lib/appHost";
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { flushServicePageEdits } from "@/lib/servicePageNavigation";
@@ -116,7 +116,8 @@ function ProfileDashboard() {
   });
 
   const allowed = useMemo(() => sectionsFor(access), [access]);
-  const groups = DASHBOARD_GROUP_ORDER.map((group) => ({ id: group, label: dashboardGroupLabel(group,access.isClient), items: allowed.filter((section) => section.group === group && section.navigation !== false && !(access.isStaff && section.id === "collection") && (access.isStaff || !["stats"].includes(section.id))) })).filter((group) => group.items.length);
+  const navigation = navigationSectionsFor(access);
+  const groups = DASHBOARD_GROUP_ORDER.map((group) => ({ id: group, label: dashboardGroupLabel(group,access.isClient), items: navigation.filter((section) => section.group === group) })).filter((group) => group.items.length);
   const mobilePrimary = new Set<SectionId>(access.isStaff ? ["overview", "projects", "leads", ...(access.isSuperAdmin ? ["ai-os" as SectionId] : ["client-maintenance" as SectionId])] : ["overview", "catalog", "cart", "collection"]);
   const mobileMoreGroups = access.isClient?groups:groups
     .map((group) => ({ ...group, items: group.items.filter((section) => !mobilePrimary.has(section.id)) }))
@@ -352,7 +353,7 @@ function ProfileDashboard() {
             <TabsContent value="surveys" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["surveys"].label} className="mt-0"><SurveysTab /></TabsContent>
             <TabsContent value="configurator" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["configurator"].label} className="mt-0"><PlatformLeadTab kind="configurator" /></TabsContent>
             <TabsContent value="os-centers" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["os-centers"].label} className="mt-0"><OsCentersTab access={access} onNavigate={openSection} /></TabsContent>
-            <TabsContent value="other-hub" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["other-hub"].label} className="mt-0"><OtherModulesTab onNavigate={openSection} /></TabsContent>
+            <TabsContent value="other-hub" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["other-hub"].label} className="mt-0"><OtherModulesTab access={access} onNavigate={openSection} /></TabsContent>
           </>
               )}
               {canOpenSection("finance", access) && (

@@ -13,6 +13,8 @@ validateNewLead,
 } from "./leadPolicy";
 import { now,sha256 } from "./security";
 import type { AppBindings } from "./types";
+import { AiCoreError } from "./aiCore";
+import { reviseLeadFollowUpSection, type FollowUpRevisionSection } from "./leadFollowUps";
 
 const identifier = (prefix: string) => `${prefix}_${crypto.randomUUID().replace(/-/g, "")}`;
 const LEAD_STAGE_SET = new Set<string>(LEAD_STAGES);
@@ -275,7 +277,7 @@ leadsRouter.get("/api/leads/:leadId", async (c) => {
   if (!access) return c.json({ error: { code: "not_found" } }, 404);
   if (!access.read) return c.json({ error: { code: "forbidden" } }, 403);
   const lead = await c.env.DB.prepare("SELECT * FROM leads WHERE id = ?").bind(leadId).first();
-  const [activities, assignments, reminders] = await Promise.all([
+  const [activities, assignments, reminders, followUps] = await Promise.all([
     c.env.DB.prepare("SELECT * FROM lead_activities WHERE lead_id = ? ORDER BY occurred_at DESC LIMIT 200").bind(leadId).all(),
     c.env.DB.prepare(
       `SELECT assignment.user_id, assignment.assignment_role, assignment.assigned_at,
@@ -284,8 +286,18 @@ leadsRouter.get("/api/leads/:leadId", async (c) => {
         WHERE assignment.lead_id = ? ORDER BY assignment.assigned_at`,
     ).bind(leadId).all(),
     c.env.DB.prepare("SELECT * FROM lead_reminders WHERE lead_id = ? ORDER BY due_at DESC LIMIT 100").bind(leadId).all(),
+    c.env.DB.prepare(
+      `SELECT id,sequence,due_at,status,whatsapp_body,email_subject,email_body,
+              generated_by_model,generated_at,sent_at,whatsapp_sent_at,email_sent_at,expires_at,approval_status,
+              approved_by,approved_at,revision,updated_at
+         FROM lead_follow_up_drafts WHERE lead_id=? ORDER BY sequence DESC LIMIT 10`,
+    ).bind(leadId).all(),
   ]);
-  return c.json({ data: lead, activities: activities.results, assignments: assignments.results, reminders: reminders.results, canEdit: access.write && !access.archived });
+  return c.json({
+    data: lead, activities: activities.results, assignments: assignments.results,
+    reminders: reminders.results, followUps: followUps.results,
+    canEdit: access.write && !access.archived, currentUserId: c.get("userId"),
+  });
 });
 
 leadsRouter.patch("/api/leads/:leadId", async (c) => {
@@ -329,6 +341,13 @@ leadsRouter.patch("/api/leads/:leadId", async (c) => {
   sets.push("updated_at = max(?, coalesce(updated_at, 0) + 1)"); values.push(now(), leadId);
   const updated = await c.env.DB.prepare(`UPDATE leads SET ${sets.join(", ")} WHERE id = ? AND archived_at IS NULL AND deleted_at IS NULL RETURNING updated_at`).bind(...values).first<{updated_at:number}>();
   if (!updated) return c.json({error:{code:"lead_changed"}},409);
+  if (body.lifecycleStage && ["accepted", "rejected"].includes(body.lifecycleStage)) {
+    await c.env.DB.prepare(
+      `UPDATE lead_follow_up_drafts
+          SET status='cancelled',approval_status='rejected',updated_at=?
+        WHERE lead_id=? AND status IN ('queued','generating','ready')`,
+    ).bind(updated.updated_at, leadId).run();
+  }
   await audit(c, leadId, "lead.update", "allowed");
   return c.json({ ok: true, updatedAt: updated.updated_at });
 });
@@ -393,10 +412,219 @@ leadsRouter.post("/api/leads/:leadId/activities", async (c) => {
       .bind(timestamp, direction === "outbound" ? timestamp : null, leadId),
     c.env.DB.prepare(`INSERT INTO lead_activities(id,lead_id,actor_user_id,kind,direction,outcome,content,occurred_at,created_at) SELECT ?,?,?,?,?,?,?,?,? WHERE changes()=1`)
       .bind(activityId,leadId,c.get("userId"),body.kind,direction,String(body.outcome||"").slice(0,300)||null,content||null,body.occurredAt||timestamp,timestamp),
+    ...(direction === "inbound" ? [c.env.DB.prepare(
+      `UPDATE lead_follow_up_drafts
+          SET status='cancelled',approval_status='rejected',updated_at=?
+        WHERE lead_id=? AND status IN ('queued','generating','ready')`,
+    ).bind(timestamp, leadId)] : []),
   ]);
   if (!updated.meta.changes) return c.json({error:{code:"lead_changed"}},409);
   await audit(c, leadId, "lead.activity.create", "allowed");
   return c.json({ id: activityId }, 201);
+});
+
+leadsRouter.post("/api/leads/:leadId/claim", async (c) => {
+  const leadId = c.req.param("leadId");
+  const access = await leadAccess(c, leadId);
+  if (!access) return c.json({ error: { code: "not_found" } }, 404);
+  if (!access.write) return c.json({ error: { code: "forbidden" } }, 403);
+  if (access.archived) return c.json({error:{code:"lead_archived"}},409);
+  const userId = c.get("userId");
+  const timestamp = now();
+  await c.env.DB.batch([
+    c.env.DB.prepare(
+      "UPDATE lead_assignments SET assignment_role='collaborator' WHERE lead_id=? AND assignment_role='owner' AND user_id<>?",
+    ).bind(leadId, userId),
+    c.env.DB.prepare(
+      `INSERT INTO lead_assignments (lead_id,user_id,assignment_role,assigned_by,assigned_at)
+       VALUES (?,?,'owner',?,?)
+       ON CONFLICT(lead_id,user_id) DO UPDATE SET
+         assignment_role='owner',assigned_by=excluded.assigned_by,assigned_at=excluded.assigned_at`,
+    ).bind(leadId, userId, userId, timestamp),
+    c.env.DB.prepare(
+      `INSERT INTO lead_activities
+        (id,lead_id,actor_user_id,kind,direction,outcome,content,occurred_at,created_at)
+       VALUES (?, ?, ?, 'assignment', 'internal', 'claimed',
+               'Responsabilitatea principală a fost preluată din dashboardul intern.', ?, ?)`,
+    ).bind(identifier("lead_activity"), leadId, userId, timestamp, timestamp),
+    c.env.DB.prepare("UPDATE leads SET updated_at=? WHERE id=?").bind(timestamp, leadId),
+  ]);
+  await audit(c, leadId, "lead.claim", "allowed");
+  return c.json({ ok: true });
+});
+
+leadsRouter.post("/api/leads/:leadId/follow-ups/:draftId/review", async (c) => {
+  const leadId = c.req.param("leadId");
+  const draftId = c.req.param("draftId");
+  const access = await leadAccess(c, leadId);
+  if (!access) return c.json({ error: { code: "not_found" } }, 404);
+  if (!access.write) return c.json({ error: { code: "forbidden" } }, 403);
+  if (access.archived) return c.json({error:{code:"lead_archived"}},409);
+  const body = await c.req.json<{ decision?: string; revision?: number }>().catch(() => null);
+  if (!body || !["approved", "rejected"].includes(body.decision || "") || !Number.isSafeInteger(body.revision) || Number(body.revision) < 1) {
+    return c.json({ error: { code: "invalid_review" } }, 400);
+  }
+  const timestamp = now();
+  const result = await c.env.DB.prepare(
+    `UPDATE lead_follow_up_drafts
+        SET approval_status=?,approved_by=?,approved_at=?,revision=revision+1,updated_at=?
+      WHERE id=? AND lead_id=? AND status='ready' AND expires_at>unixepoch()*1000 AND revision=?`,
+  ).bind(body.decision, c.get("userId"), timestamp, timestamp, draftId, leadId, body.revision).run();
+  if (!result.meta.changes) return c.json({ error: { code: "stale_or_unavailable_draft" } }, 409);
+  await c.env.DB.prepare(
+    `INSERT INTO lead_activities
+      (id,lead_id,actor_user_id,kind,direction,outcome,content,occurred_at,created_at)
+     VALUES (?, ?, ?, 'note', 'internal', ?, ?, ?, ?)`,
+  ).bind(
+    identifier("lead_activity"), leadId, c.get("userId"),
+    `follow_up_${body.decision}`,
+    body.decision === "approved"
+      ? "Ciorna exactă a fost aprobată intern; nu a fost trimisă extern."
+      : "Ciorna a fost respinsă și rămâne netrimisă.",
+    timestamp, timestamp,
+  ).run();
+  await audit(c, leadId, `lead.follow_up.${body.decision}`, "allowed");
+  return c.json({ ok: true, revision: Number(body.revision) + 1 });
+});
+
+leadsRouter.post("/api/leads/:leadId/follow-ups/:draftId/revise", async (c) => {
+  const leadId = c.req.param("leadId");
+  const draftId = c.req.param("draftId");
+  const access = await leadAccess(c, leadId);
+  if (!access) return c.json({ error: { code: "not_found" } }, 404);
+  if (!access.write) return c.json({ error: { code: "forbidden" } }, 403);
+  if (access.archived) return c.json({error:{code:"lead_archived"}},409);
+  const idempotencyKey = (c.req.header("idempotency-key") || "").trim();
+  if (!/^[A-Za-z0-9_.:-]{16,128}$/.test(idempotencyKey)) {
+    return c.json({ error: { code: "idempotency_key_required" } }, 400);
+  }
+  const body = await c.req.json<{ section?: string; instruction?: string; revision?: number }>().catch(() => null);
+  const section = body?.section as FollowUpRevisionSection | undefined;
+  const instruction = String(body?.instruction || "").trim();
+  if (!section || !["whatsapp", "email"].includes(section) || instruction.length < 5 || instruction.length > 1_200
+    || !Number.isSafeInteger(body?.revision) || Number(body?.revision) < 1) {
+    return c.json({ error: { code: "invalid_revision_request" } }, 400);
+  }
+  const requestHash = await sha256(JSON.stringify({leadId,draftId,userId:c.get("userId"),section,instruction,revision:body!.revision}));
+  const previous = await c.env.DB.prepare(
+    `SELECT status,section,proposed_text,proposed_subject,base_revision,error_code,request_hash
+       FROM lead_follow_up_draft_revisions WHERE idempotency_key=?`,
+  ).bind(idempotencyKey).first<{
+    status: string; section: string; proposed_text: string | null; proposed_subject: string | null;
+    base_revision: number; error_code: string | null; request_hash:string;
+  }>();
+  if (previous) {
+    if (previous.section !== section || previous.request_hash !== requestHash) return c.json({ error: { code: "idempotency_key_reused" } }, 409);
+    if (previous.status === "ready") return c.json({
+      ok: true, section, body: previous.proposed_text, subject: previous.proposed_subject,
+      revision: previous.base_revision + 1,
+    });
+    return c.json({ error: { code: previous.status === "generating" ? "revision_in_progress" : "revision_requires_new_key" } }, 409);
+  }
+  const draft = await c.env.DB.prepare(
+    `SELECT draft.revision,draft.status,draft.whatsapp_body,draft.email_subject,draft.email_body,draft.whatsapp_sent_at,draft.email_sent_at,
+            lead.name,lead.business,lead.product
+       FROM lead_follow_up_drafts draft JOIN leads lead ON lead.id=draft.lead_id
+      WHERE draft.id=? AND draft.lead_id=? AND lead.deleted_at IS NULL AND lead.archived_at IS NULL AND draft.expires_at>unixepoch()*1000`,
+  ).bind(draftId, leadId).first<{
+    revision: number; status: string; whatsapp_body: string | null; email_subject: string | null; email_body: string | null; whatsapp_sent_at:number|null;email_sent_at:number|null;
+    name: string | null; business: string | null; product: string | null;
+  }>();
+  if (!draft) return c.json({ error: { code: "not_found" } }, 404);
+  if (draft.status !== "ready" || draft.revision !== body!.revision) {
+    return c.json({ error: { code: "stale_or_unavailable_draft" } }, 409);
+  }
+  if(section === "whatsapp" ? draft.whatsapp_sent_at : draft.email_sent_at) return c.json({error:{code:"channel_already_sent"}},409);
+  const currentBody = section === "whatsapp" ? draft.whatsapp_body : draft.email_body;
+  if (!currentBody) return c.json({ error: { code: "section_unavailable" } }, 400);
+  const revisionId = identifier("lead_follow_up_revision");
+  const timestamp = now();
+  const beforeText = section === "email"
+    ? JSON.stringify({ subject: draft.email_subject, body: draft.email_body })
+    : currentBody;
+  try {
+    await c.env.DB.prepare(
+      `INSERT INTO lead_follow_up_draft_revisions
+        (id,draft_id,section,instruction,before_text,status,idempotency_key,requested_by,base_revision,created_at,request_hash)
+       VALUES (?,?,?,?,?,'generating',?,?,?,?,?)`,
+    ).bind(revisionId, draftId, section, instruction, beforeText, idempotencyKey, c.get("userId"), draft.revision, timestamp, requestHash).run();
+    const proposed = await reviseLeadFollowUpSection(c.env, {
+      draftId, section, instruction, idempotencyKey: `lead-follow-up-revision:${idempotencyKey}`,
+      name: draft.name, business: draft.business, product: draft.product,
+      currentBody, currentSubject: section === "email" ? draft.email_subject : null,
+    });
+    const refreshed = await leadAccess(c,leadId);
+    if (!refreshed?.write || refreshed.archived) throw new AiCoreError("lead_access_revoked");
+    const completedAt = now();
+    const updateDraft = section === "whatsapp"
+      ? c.env.DB.prepare(
+        `UPDATE lead_follow_up_drafts
+            SET whatsapp_body=?,approval_status='pending',approved_by=NULL,approved_at=NULL,
+                generated_by_model=?,revision=revision+1,updated_at=?
+          WHERE id=? AND lead_id=? AND status='ready' AND expires_at>unixepoch()*1000 AND revision=?`,
+      ).bind(proposed.body, proposed.model, completedAt, draftId, leadId, draft.revision)
+      : c.env.DB.prepare(
+        `UPDATE lead_follow_up_drafts
+            SET email_subject=?,email_body=?,approval_status='pending',approved_by=NULL,approved_at=NULL,
+                generated_by_model=?,revision=revision+1,updated_at=?
+          WHERE id=? AND lead_id=? AND status='ready' AND expires_at>unixepoch()*1000 AND revision=?`,
+      ).bind(proposed.subject, proposed.body, proposed.model, completedAt, draftId, leadId, draft.revision);
+    const results = await c.env.DB.batch([
+      updateDraft,
+      c.env.DB.prepare(
+        `UPDATE lead_follow_up_draft_revisions
+            SET proposed_text=?,proposed_subject=?,model=?,status='ready',completed_at=?
+          WHERE id=? AND status='generating'`,
+      ).bind(proposed.body, proposed.subject, proposed.model, completedAt, revisionId),
+    ]);
+    if (!results[0].meta.changes) {
+      await c.env.DB.prepare(
+        "UPDATE lead_follow_up_draft_revisions SET status='superseded',error_code='stale_revision',completed_at=? WHERE id=?",
+      ).bind(completedAt, revisionId).run();
+      return c.json({ error: { code: "stale_or_unavailable_draft" } }, 409);
+    }
+    await c.env.DB.prepare(
+      `INSERT INTO lead_activities
+        (id,lead_id,actor_user_id,actor_agent_slug,kind,direction,outcome,content,occurred_at,created_at)
+       VALUES (?, ?, ?, 'leads', 'note', 'internal', 'follow_up_section_revised', ?, ?, ?)`,
+    ).bind(
+      identifier("lead_activity"), leadId, c.get("userId"),
+      `Workers AI a revizuit exclusiv secțiunea ${section === "whatsapp" ? "WhatsApp" : "e-mail"}; aprobarea anterioară a fost resetată.`,
+      completedAt, completedAt,
+    ).run();
+    await audit(c, leadId, "lead.follow_up.revise", "allowed");
+    return c.json({ ok: true, section, body: proposed.body, subject: proposed.subject, revision: draft.revision + 1 });
+  } catch (error) {
+    const code = error instanceof AiCoreError ? error.code : "revision_failed";
+    await c.env.DB.prepare(
+      `UPDATE lead_follow_up_draft_revisions
+          SET status='failed',error_code=?,completed_at=? WHERE id=? AND status='generating'`,
+    ).bind(code, now(), revisionId).run().catch(() => undefined);
+    return c.json({ error: { code } }, 503);
+  }
+});
+
+leadsRouter.post("/api/leads/:leadId/follow-ups/:draftId/sent", async (c) => {
+  const leadId=c.req.param("leadId"), draftId=c.req.param("draftId"), access=await leadAccess(c,leadId);
+  if(!access?.write) return c.json({error:{code:"forbidden"}},403);
+  if(access.archived) return c.json({error:{code:"lead_archived"}},409);
+  const body=await c.req.json<{revision?:number;channels?:unknown}>().catch(()=>null);
+  if(!Number.isSafeInteger(body?.revision)||!Array.isArray(body?.channels)||!body.channels.length||body.channels.some(v=>!["whatsapp","email"].includes(v))) return c.json({error:{code:"invalid_send_confirmation"}},400);
+  const channels=[...new Set(body.channels)] as string[], stamp=now();
+  const draft=await c.env.DB.prepare("SELECT sequence,whatsapp_body,email_body,whatsapp_sent_at,email_sent_at FROM lead_follow_up_drafts WHERE id=? AND lead_id=? AND status='ready' AND approval_status='approved' AND revision=? AND expires_at>?").bind(draftId,leadId,body.revision,stamp).first<{sequence:number;whatsapp_body:string|null;email_body:string|null;whatsapp_sent_at:number|null;email_sent_at:number|null}>();
+  if(!draft) return c.json({error:{code:"stale_unapproved_or_unavailable_draft"}},409);
+  if(channels.some(v=>v==='whatsapp'?(!draft.whatsapp_body||draft.whatsapp_sent_at):(!draft.email_body||draft.email_sent_at))) return c.json({error:{code:"channel_unavailable_or_already_confirmed"}},409);
+  const complete=(!draft.whatsapp_body||!!draft.whatsapp_sent_at||channels.includes('whatsapp'))&&(!draft.email_body||!!draft.email_sent_at||channels.includes('email'));
+  try {
+    await c.env.DB.batch([
+      c.env.DB.prepare("UPDATE lead_follow_up_drafts SET whatsapp_sent_at=CASE WHEN ? THEN ? ELSE whatsapp_sent_at END,email_sent_at=CASE WHEN ? THEN ? ELSE email_sent_at END,status=?,sent_at=?,updated_at=?,revision=CASE WHEN revision=? AND status='ready' AND approval_status='approved' AND expires_at>? THEN revision+1 ELSE NULL END WHERE id=? AND lead_id=?").bind(Number(channels.includes('whatsapp')),stamp,Number(channels.includes('email')),stamp,complete?'sent':'ready',complete?stamp:null,stamp,body.revision,stamp,draftId,leadId),
+      ...channels.map(channel=>c.env.DB.prepare("INSERT INTO lead_activities(id,lead_id,actor_user_id,kind,direction,outcome,content,occurred_at,created_at) VALUES(?,?,?,?,'outbound','sent_confirmed_by_staff',?,?,?)").bind(identifier('lead_activity'),leadId,c.get('userId'),channel,`Trimiterea revenirii ${draft.sequence} prin ${channel} a fost confirmată manual de staff.`,stamp,stamp)),
+      c.env.DB.prepare("UPDATE leads SET next_follow_up_at=CASE WHEN ?=1 AND ?=1 THEN first_response_at+? WHEN ?=1 THEN NULL ELSE next_follow_up_at END,updated_at=? WHERE id=?").bind(draft.sequence,Number(complete),7*24*60*60*1000,Number(complete),stamp,leadId),
+      c.env.DB.prepare("UPDATE lead_reminders SET status='done',completed_at=? WHERE id=? AND status='pending' AND ?=1").bind(stamp,`lead_reminder_${draftId}`,Number(complete)),
+    ]);
+  } catch {return c.json({error:{code:"stale_unapproved_or_unavailable_draft"}},409);}
+  await audit(c,leadId,'lead.follow_up.sent_confirmed','allowed');
+  return c.json({ok:true,revision:Number(body.revision)+1,complete});
 });
 
 leadsRouter.post("/api/leads/:leadId/reminders", async (c) => {

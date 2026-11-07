@@ -1,41 +1,41 @@
-import { ArrowUpRight, Radar, Wrench } from "lucide-react";
-import { Link } from "react-router-dom";
-import type { SectionId } from "@/lib/access";
+import { useState } from "react";
+import { ArrowUpRight, Search } from "lucide-react";
+import { additionalSectionsFor, type Access, type SectionId } from "@/lib/access";
+import { DASHBOARD_SECTION_META } from "./dashboardNavigation";
 
-const internalModules: Array<{
-  title: string;
-  detail: string;
-  status: string;
-  icon: typeof Wrench;
-  destination?: SectionId;
-  href?: string;
-}> = [
-  { title: "Rapoarte transversale", detail: "Rapoarte unificate între proiecte, vânzări, mentenanță și platformă.", status: "De dezvoltat", icon: Radar },
-];
+const fold = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-export default function OtherModulesTab({ onNavigate }: { onNavigate: (section: SectionId) => void }) {
+export default function OtherModulesTab({ access, onNavigate }: { access: Access; onNavigate: (section: SectionId) => void }) {
+  const [query, setQuery] = useState("");
+  const sections = additionalSectionsFor(access);
+  const filtered = sections.filter(section => {
+    const meta = DASHBOARD_SECTION_META[section.id];
+    return fold([meta.label, meta.hint, ...section.keywords].join(" ")).includes(fold(query.trim()));
+  });
   return (
-    <div className="space-y-5">
-      <header className="rounded-2xl border border-violet-400/15 bg-gradient-to-br from-violet-500/10 via-white/[0.025] to-cyan-400/[0.05] p-5 sm:p-6">
-        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-violet-300">Inventar funcțional</p>
+    <section className="space-y-4" aria-label="Alte module AVYRON OS">
+      <header>
+        <p className="font-mono text-[10px] uppercase tracking-[.2em] text-violet-300">Acces rapid</p>
         <h1 className="mt-2 font-display text-2xl font-bold text-white">Altele</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">Inventarul funcțiilor fără secțiune dedicată. Starea lor arată clar ce funcționează și ce trebuie dezvoltat în continuare.</p>
+        <p className="mt-2 text-sm text-slate-400">Paginile disponibile contului tău care nu au un buton propriu în meniu. Se deschid în același dashboard.</p>
       </header>
-      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3" aria-label="Alte module AVYRON OS">
-        {internalModules.map((item) => {
-          const Icon = item.icon;
-          const content = (
-            <>
-              <div className="flex items-start justify-between gap-3"><span className="grid size-9 place-items-center rounded-xl bg-violet-400/10 text-violet-300"><Icon className="size-4" /></span><span className="rounded-full border border-white/[0.08] px-2 py-1 text-[9px] uppercase tracking-wide text-slate-400">{item.status}</span></div>
-              <h2 className="mt-4 text-sm font-semibold text-slate-100">{item.title}</h2>
-              <p className="mt-1 min-h-10 text-xs leading-relaxed text-slate-400">{item.detail}</p>
-              {(item.destination || item.href) && <span className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-violet-300">Deschide <ArrowUpRight className="size-3.5" /></span>}
-            </>
-          );
-          if (item.href) return <Link key={item.title} to={item.href} className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 transition hover:border-violet-400/30 hover:bg-violet-500/[0.06]">{content}</Link>;
-          return <button key={item.title} type="button" disabled={!item.destination} onClick={() => item.destination && onNavigate(item.destination)} className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 text-left transition enabled:hover:border-violet-400/30 enabled:hover:bg-violet-500/[0.06] disabled:cursor-default">{content}</button>;
+      <label className="relative block">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+        <span className="sr-only">Caută în Altele</span>
+        <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Caută o pagină sau o funcție…" className="os-workspace-input w-full pl-10" />
+      </label>
+      <p className="text-xs text-slate-400" role="status">Pagini disponibile: {filtered.length}</p>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {filtered.map(section => {
+          const meta = DASHBOARD_SECTION_META[section.id], Icon = meta.icon;
+          return <button key={section.id} type="button" onClick={() => onNavigate(section.id)} aria-label={`Deschide ${meta.label}`} className="min-w-0 rounded-2xl border border-white/10 bg-white/[.025] p-4 text-left transition hover:border-violet-400/40 hover:bg-violet-500/[.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300 motion-reduce:transition-none">
+            <div className="flex items-center justify-between gap-3"><Icon className="size-5 text-violet-300" aria-hidden="true" /><ArrowUpRight className="size-4 text-slate-400" aria-hidden="true" /></div>
+            <h2 className="mt-3 break-words text-sm font-semibold text-slate-100">{meta.label}</h2>
+            <p className="mt-1 break-words text-xs leading-relaxed text-slate-400">{meta.hint}</p>
+          </button>;
         })}
-      </section>
-    </div>
+      </div>
+      {!filtered.length && <p className="rounded-xl border border-dashed border-white/10 p-5 text-sm text-slate-400">{sections.length ? "Nicio pagină pentru această căutare." : "Toate paginile disponibile au deja o intrare în meniu."}</p>}
+    </section>
   );
 }

@@ -154,7 +154,8 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "resources", group: "documents", audience: "staff", navigation: false, keywords: ["resurse", "documente", "ghid", "siteuri", "campuri"] },
 ];
 
-const canOpenDefinition = (section: SectionDef, access: Access) => {
+const canOpenDefinition = (section: SectionDef, access: Access): boolean => {
+  if (section.id === "other-hub" && !access.isClient && SECTIONS.some(candidate => candidate.id !== "other-hub" && (candidate.navigation === false || (access.isStaff && candidate.id === "collection")) && canOpenDefinition(candidate, access))) return true;
   if(section.group==="skills") return access.isSuperAdmin || access.capabilities.some(c=>["skills.read","skills.use","skills.manage","skills.approve"].includes(c)) || (access.isOperator && access.capabilities.includes("leads.read") && access.capabilities.includes("ai_projects.read"));
   if(section.id==="maintenance")return access.isSuperAdmin;
   if(section.id==="client-maintenance"&&access.isClient)return false;
@@ -189,6 +190,14 @@ export const sectionsFor = (a: Access) => {
 export const canOpenSection = (id: string, a: Access) => {
   const s = SECTIONS.find((x) => x.id === id);
   return !!s && canOpenDefinition(s, a);
+};
+
+/** Shared placement for sidebar, mobile and the overflow directory. */
+export const navigationSectionsFor = (a: Access) => sectionsFor(a).filter(section => section.navigation !== false && !(a.isStaff && section.id === "collection") && (a.isStaff || section.id !== "stats"));
+export const additionalSectionsFor = (a: Access) => {
+  if (a.isClient) return [];
+  const primary = new Set(navigationSectionsFor(a).map(section => section.id));
+  return sectionsFor(a).filter(section => section.id !== "other-hub" && !primary.has(section.id));
 };
 
 export const defaultSection = (a: Access): SectionId =>

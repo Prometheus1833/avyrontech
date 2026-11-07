@@ -1,10 +1,23 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildAccess, canOpenSection, defaultSection, sectionsFor, SECTIONS } from "@/lib/access";
+import { buildAccess, canOpenSection, defaultSection, sectionsFor, SECTIONS, additionalSectionsFor, navigationSectionsFor } from "@/lib/access";
 import { DASHBOARD_SECTION_META, DASHBOARD_GROUP_ORDER } from "@/components/dashboard/dashboardNavigation";
 
 describe("AVYRON OS dashboard", () => {
+  it("face fiecare pagină internă accesibilă din meniu sau Altele, fără duplicate", () => {
+    for (const access of [buildAccess({roles:["admin"],superadmin:true}), buildAccess({roles:["staff"]}),buildAccess({roles:["staff"],capabilities:["staff.access.managed","documents.read"]})]) {
+      const primary=navigationSectionsFor(access).map(s=>s.id), other=additionalSectionsFor(access).map(s=>s.id);
+      expect(primary.filter(id=>other.includes(id))).toEqual([]);
+      expect([...primary,...other].sort()).toEqual(sectionsFor(access).map(s=>s.id).sort());
+      if(other.length) expect(canOpenSection("other-hub",access)).toBe(true);
+    }
+    const owner=buildAccess({roles:["admin"],superadmin:true});
+    expect(additionalSectionsFor(owner).map(s=>s.id).sort()).toEqual(["collection","promotions","resources"]);
+    const restricted=buildAccess({roles:["staff"],capabilities:["staff.access.managed","documents.read"]});
+    expect(additionalSectionsFor(restricted).map(s=>s.id)).toEqual(["resources"]);
+    expect(additionalSectionsFor(buildAccess({roles:["user"]}))).toEqual([]);
+  });
   it("deschide prezentarea generală pentru toate rolurile", () => {
     const client = buildAccess({ roles: ["user"] });
     const staff = buildAccess({ roles: ["staff"] });

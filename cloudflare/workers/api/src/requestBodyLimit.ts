@@ -1,8 +1,14 @@
 import { bodyLimit } from "hono/body-limit";
 import type { Context, Next } from "hono";
 import type { AppBindings } from "./types";
+import { COLLABORATOR_LIMITS } from "../../../../src/shared/collaborators";
 
 export const apiBodyLimitBytes = (path: string): number => {
+  // Raw upload bodies must reach their module's validation/scanning gate.
+  // Keep ordinary JSON routes bounded by the default below.
+  if (/^\/api\/skills\/[^/]+\/resources\/[^/]+\/file$/.test(path)) return 25_000_000;
+  if (/^\/api\/documents\/[^/]+\/import$/.test(path) || path === "/api/visual-assets/upload") return 15 * 1024 * 1024;
+  if (/^\/api\/collaborations\/[^/]+\/files$/.test(path)) return COLLABORATOR_LIMITS.fileBytes;
   if (path === "/api/contact/demo") return 21 * 1024 * 1024;
   if (/^\/api\/projects\/[^/]+\/media$/.test(path)) return 16 * 1024 * 1024;
   if (path === "/api/surveys/files" || /^\/api\/engine\/sources\/[^/]+\/documents$/.test(path) || path === "/api/finance/documents") return 11 * 1024 * 1024;

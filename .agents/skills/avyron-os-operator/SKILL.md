@@ -12,3 +12,9 @@ The canonical AVYRON WEB agent slugs are `leads` and `ai-prod-content`. Their op
 For lead and content work, use the OS record and exact conversation/content history. Preserve draft, approval, scheduled, published and provider-verified states as distinct. Reconcile duplicates and check the destination before any external action. Never infer a connected provider from a label or URL. Do not send, publish, change a provider, or trigger paid inference merely because an agent route exists; follow the user's specific authorization and the repository's review boundaries.
 
 This skill contains no credentials or private session data. It is a repository-local, reviewable operating contract. It does not copy the operator's private desktop skills, log a browser into third-party services, create a remote Codex session, or grant AVYRON OS permissions. If a task needs any of those, report the exact missing capability and use an authorized hosted runtime or the user's authenticated browser session.
+
+## Reveniri și limite native
+
+Fișa leadului oferă preluare, aprobare/respingere și revizie punctuală prin API-urile native `/api/leads/ID/claim` și `/api/leads/ID/follow-ups/DRAFT/{review,revise,sent}`. Revizia se leagă de utilizator, ciornă, versiune și intenție; păstrează aceeași Idempotency-Key la retry de rețea. Confirmă numai canalele în care mesajul este deja verificat ca trimis. Un canal confirmat nu se rescrie și nu se reconfirmă. Nu transmite mesaje din această operație.
+
+În registrul `agent_execution_routes`, `limit_mode=native_budget` înseamnă bugetele existente AI Core, iar `manual` înseamnă operație manuală autorizată; `max_daily_runs=0` nu introduce un plafon zilnic în aceste două moduri. Regulile `daily` existente sunt păstrate. Codex local necesită calculatorul deschis; coada Cloudflare pregătește numai ciornele autorizate.
