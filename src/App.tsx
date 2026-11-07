@@ -52,6 +52,7 @@ const ServiciiAvyronOs = lazyWithRetry(() => import("./pages/intern/ServiciiAvyr
 const AvyEngine = lazyWithRetry(() => import("./pages/intern/AvyEngine.tsx"));
 const Biblioteca = lazyWithRetry(() => import("./pages/Biblioteca.tsx"));
 const AvyChat = lazyWithRetry(() => import("@/components/ai/AvyChat"));
+const ContextualNotificationPrompt=lazyWithRetry(()=>import("@/components/site/ContextualNotificationPrompt"));
 const NewsletterPrompt = lazyWithRetry(() => import("@/components/site/NewsletterPrompt"));
 const SurveyLanding = lazyWithRetry(() => import("./pages/surveys/Landing.tsx"));
 const SurveyInterview = lazyWithRetry(() => import("./pages/surveys/Interview.tsx"));
@@ -173,7 +174,7 @@ const App = () => {
         <LangRouteSync />
         {!servicePreview&&<AnalyticsTracker />}
         {!servicePreview&&<AvyLauncher />}
-        {!servicePreview&&<DeferredNewsletterPrompt />}
+        {!servicePreview&&<><Suspense fallback={null}><ContextualNotificationPrompt /></Suspense><DeferredNewsletterPrompt /></>}
 
         <AppHostGuard>
           <Suspense fallback={<div className="min-h-screen" />}>

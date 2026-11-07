@@ -59,6 +59,7 @@ export const canSee = (audience: Audience, a: Access) => {
 };
 
 export type SectionId =
+  | "notifications" | "notification-settings"
   | "skill-site-builder" | "skill-logo-engine" | "skill-media-generate"
   | "documents" | "overview" | "profile" | "settings" | "projects" | "subscriptions" | "invoices" | "payments" | "cart" | "orders" | "catalog" | "collection"
   | "stats" | "tickets" | "maintenance" | "client-maintenance" | "clients" | "domains"
@@ -88,6 +89,8 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "finance", group: "overview", audience: "superadmin", keywords: ["financiar", "facturare", "venituri", "plati", "incasari", "finance"] },
   { id: "social-manager", group: "activity", audience: "superadmin", requiredCapability: "ai_projects.read", keywords: ["social media", "publicare", "aprobari", "continut ai", "facebook", "instagram"] },
   { id: "antivirus", group: "os", audience: "superadmin", keywords: ["antivirus", "bouncer", "malware", "carantina", "scanare", "cote"] },
+  { id:"notifications",group:"activity",audience:"everyone",keywords:["notificari","actualizari","noutati"] },
+  { id:"notification-settings",group:"os",audience:"superadmin",keywords:["notificari","mesaje","reguli","contact"] },
   { id:"collaborators",group:"overview",audience:"staff",requiredCapability:"collaborators.read",keywords:["colaboratori","parteneri","juridic","economic","financiar"] },
   { id:"my-collaborations",group:"account",audience:"everyone",navigation:false,keywords:["colaborarile mele","parteneriat"] },
   { id: "profile", group: "account", audience: "everyone", keywords: ["cont", "profil", "date", "account"] },
@@ -157,6 +160,7 @@ export const SECTIONS: readonly SectionDef[] = [
 const canOpenDefinition = (section: SectionDef, access: Access): boolean => {
   if (section.id === "other-hub" && !access.isClient && SECTIONS.some(candidate => candidate.id !== "other-hub" && (candidate.navigation === false || (access.isStaff && candidate.id === "collection")) && canOpenDefinition(candidate, access))) return true;
   if(section.group==="skills") return access.isSuperAdmin || access.capabilities.some(c=>["skills.read","skills.use","skills.manage","skills.approve"].includes(c)) || (access.isOperator && access.capabilities.includes("leads.read") && access.capabilities.includes("ai_projects.read"));
+  if(section.id==="notifications")return true;
   if(section.id==="maintenance")return access.isSuperAdmin;
   if(section.id==="client-maintenance"&&access.isClient)return false;
   if(section.id==="my-collaborations")return access.hasCollaborations===true;
@@ -180,7 +184,7 @@ const canOpenDefinition = (section: SectionDef, access: Access): boolean => {
   );
 };
 
-export const CLIENT_SECTION_ORDER:SectionId[]=["overview","projects","catalog","subscriptions","payments","documents","collection","orders","cart","tickets","my-collaborations","profile","settings"];
+export const CLIENT_SECTION_ORDER:SectionId[]=["overview","projects","catalog","subscriptions","payments","documents","collection","orders","cart","tickets","my-collaborations","notifications","profile","settings"];
 export const sectionsFor = (a: Access) => {
  const allowed=SECTIONS.filter(s=>canOpenDefinition(s,a));
  if(!a.isClient)return allowed;

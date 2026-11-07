@@ -216,21 +216,21 @@ test.describe("dashboard AVYRON OS în română", () => {
     await page.route("**/api/workspace/announcements**", (route) => route.fulfill({ json: { data: [
       { id: "announce-1", read_at: now, title: "Ședința echipei", content: "Actualizăm prioritățile astăzi.", priority: "normal", created_at: new Date(now - 60_000).toISOString() },
     ] } }));
-    await page.route("**/api/operations/notifications**", (route) => route.fulfill({ json: { data: [
+    await page.route("**/api/notifications?*", (route) => route.fulfill({ json: { data: [
       { id: "notice-1", title: "Brief nou", body: "Un brief a sosit pentru revizuire.", destination: "surveys", read_at: operationRead?now:null, created_at: now },
     ] } }));
-    await page.route("**/api/operations/notifications/notice-1/read", (route) => {operationRead=true;return route.fulfill({ json: { ok: true } });});
+    await page.route("**/api/notifications/notice-1/read", (route) => {operationRead=true;return route.fulfill({ json: { ok: true } });});
     await page.goto("/profil?tab=overview&notifications=1");
-    const dialog = page.getByRole("dialog", { name: "Notificări și anunțuri" });
+    const dialog = page.getByRole("dialog", { name: "Notificările tale" });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText("Brief nou")).toBeVisible();
     await expect(dialog.getByText("Ședința echipei")).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("notifications-mobile.png") });
-    await dialog.getByRole("button", { name: "Necitite 1" }).click();
+    await dialog.getByRole("button", { name: "Necitite · 1" }).click();
     await expect(dialog.getByText("Ședința echipei")).not.toBeVisible();
     await dialog.getByRole("button", { name: "Marchează citită" }).click();
-    await expect(dialog.getByText("Nu ai notificări necitite.")).toBeVisible();
-    await dialog.getByRole("button", { name: "Anunțuri 1" }).click();
+    await expect(dialog.getByText("Ești la zi.")).toBeVisible();
+    await dialog.getByRole("button", { name: "Anunțuri", exact:true }).click();
     await expect(dialog.getByText("Ședința echipei")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
   });
@@ -248,8 +248,8 @@ test.describe("dashboard AVYRON OS în română", () => {
       { id: "team-1", read_at: now, title: "Prioritățile săptămânii", content: "Revizuim proiectele active.", priority: "important", created_at: new Date(now).toISOString() },
     ] } }));
     await page.goto("/profil?tab=overview");
-    await page.getByRole("button", { name: "Notificări", exact: true }).click();
-    const dialog = page.getByRole("dialog", { name: "Notificări și anunțuri" });
+    await page.locator('header button[title="Notificări"][aria-haspopup="dialog"]').click();
+    const dialog = page.getByRole("dialog", { name: "Notificările tale" });
     await expect(dialog.getByText("Prioritățile săptămânii")).toBeVisible();
     await expect(dialog.getByText("Invalid Date")).toHaveCount(0);
     expect(privilegedCalls).toBe(0);

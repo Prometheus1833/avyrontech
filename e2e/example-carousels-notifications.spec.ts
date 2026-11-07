@@ -201,7 +201,13 @@ test("editing hiding ordering and deleting stay in draft until explicit review a
   await publish(page);
   expect(f.calls.filter((c) => c.path.endsWith("/publish"))).toHaveLength(1);
   expect(f.calls.every((c) => !!c.id)).toBe(true);
+  const publicConfig = page.waitForResponse(
+    (r) =>
+      r.url().includes("/api/public/example-carousels/premium-website") &&
+      r.status() === 200,
+  );
   await page.goto("/servicii/website-prezentare-profesional");
+  await (await publicConfig).finished();
   await expect(
     page
       .getByTestId("portfolio-carousel")
@@ -243,7 +249,13 @@ test("future service carousels can add examples and settings without changing th
   await expect(page.getByText("Ciornă v1", { exact: false })).toBeVisible();
   await publish(page);
   expect(f.details("premium-website").revision).toBe(0);
+  const publicConfig = page.waitForResponse(
+    (r) =>
+      r.url().includes("/api/public/example-carousels/seo-ai") &&
+      r.status() === 200,
+  );
   await page.goto("/servicii/seo-ai-visibility-performance");
+  await (await publicConfig).finished();
   await expect(
     page
       .getByTestId("portfolio-carousel")
@@ -318,7 +330,7 @@ for (const width of [320, 390, 1440])
   }, info) => {
     await fixture(page);
     await page.setViewportSize({ width, height: 844 });
-    await page.route("**/api/operations/notifications", (r) =>
+    await page.route("**/api/notifications?*", (r) =>
       r.fulfill({
         json: {
           data: [
@@ -343,10 +355,12 @@ for (const width of [320, 390, 1440])
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    const trigger = page.getByRole("button", { name: /^Notificări/ });
+    const trigger = page.locator(
+      'button[aria-haspopup="dialog"][title="Notificări"]',
+    );
     const before = await trigger.boundingBox();
     await trigger.click();
-    const panel = page.getByRole("dialog", { name: "Notificări și anunțuri" });
+    const panel = page.getByRole("dialog", { name: "Notificările tale" });
     await expect(panel.getByText("Carusel de verificat")).toBeVisible();
     const bounds = await panel.boundingBox();
     expect(bounds!.y).toBeGreaterThanOrEqual(before!.y + before!.height - 1);
@@ -363,6 +377,10 @@ for (const width of [320, 390, 1440])
     await expect(panel).not.toBeVisible();
     await expect(trigger).toBeFocused();
     await trigger.click();
+    await expect(panel).toBeVisible();
+    await expect(
+      panel.getByRole("button", { name: "Reîmprospătează notificările" }),
+    ).toBeEnabled();
     // Click page content at the left edge, away from the native scrollbar.
     await page.mouse.click(2, bounds!.y + 20);
     await expect(panel).not.toBeVisible();

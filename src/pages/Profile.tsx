@@ -80,6 +80,7 @@ const SurveysTab = lazyWithRetry(() => import("@/components/dashboard/SurveysTab
 const CommercialCodesTab = lazyWithRetry(() => import("@/components/dashboard/CommercialCodesTab"));
 const OtherModulesTab = lazyWithRetry(() => import("@/components/dashboard/OtherModulesTab"));
 const ExampleCarouselsTab = lazyWithRetry(() => import("@/components/dashboard/ExampleCarouselsTab"));
+const NotificationSettingsTab=lazyWithRetry(()=>import("@/components/dashboard/NotificationSettingsTab"));
 const NotificationCenter = lazyWithRetry(() => import("@/components/dashboard/NotificationCenter"));
 const SocialMediaManagerTab = lazyWithRetry(() => import("@/components/dashboard/SocialMediaManagerTab"));
 const StaffSubscriptionsAdminTab = lazyWithRetry(() => import("@/components/dashboard/StaffSubscriptionsAdminTab"));
@@ -281,7 +282,7 @@ function ProfileDashboard() {
             </>}
             {access.isStaff&&<StaffWorkspaceActions counts={activityCounts} compact className="staff-dashboard-actions-desktop"/>}
             <div className={access.isClient ? "order-3 shrink-0" : "contents"}><Suspense fallback={<span className="size-10" />}><NotificationCenter access={access} onNavigate={openSection} autoOpen={params.get("notifications") === "1"} /></Suspense></div>
-            {access.isClient ? <div className="order-4 shrink-0"><Suspense fallback={<span className="size-10" />}><UserMenu /></Suspense></div> : <IconHint label="Profilul și datele contului"><button type="button" onClick={() => openSection("profile")} aria-label="Deschide profilul" className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-xl bg-violet-500/15 text-[10px] font-semibold text-violet-100 ring-1 ring-white/10">{user?.avatar_url ? (
+            {access.isClient ? <div className="order-4 shrink-0"><Suspense fallback={<span className="size-10" />}><UserMenu showNotificationBell={false} /></Suspense></div> : <IconHint label="Profilul și datele contului"><button type="button" onClick={() => openSection("profile")} aria-label="Deschide profilul" className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-xl bg-violet-500/15 text-[10px] font-semibold text-violet-100 ring-1 ring-white/10">{user?.avatar_url ? (
                   <img src={user.avatar_url} alt="" className="size-full object-cover" />
                 ) : (
                   displayName.slice(0, 2).toUpperCase()
@@ -299,6 +300,8 @@ function ProfileDashboard() {
         <div className="mx-auto max-w-[1500px] p-3 sm:p-5 lg:p-6">
           <MfaEnrollBanner onOpenSettings={() => openSection("settings")} />
           <Suspense fallback={contentFallback}>
+          <TabsContent value="notifications" className="mt-0"><NotificationCenter access={access} onNavigate={openSection} embedded /></TabsContent>
+          {access.isSuperAdmin&&<TabsContent value="notification-settings" className="mt-0"><NotificationSettingsTab /></TabsContent>}
           <TabsContent value="overview" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["overview"].label} className="mt-0">{access.isClient ? (
                   <CustomerHomeTab displayName={displayName} onOpenSection={openSection} />
                 ) : (

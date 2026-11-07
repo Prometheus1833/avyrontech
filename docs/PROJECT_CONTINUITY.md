@@ -1,5 +1,7 @@
 # Continuitatea proiectului AVYRON
 
+Notificări native — 07.11.2026: [arhitectură și runbook](./NATIVE_NOTIFICATIONS.md), migrarea aditivă 0104, inbox client/staff, reguli live de acces, mesaje contextuale și administrare Owner/Super Admin. Starea locală, PR și producție se verifică separat; această notă nu dovedește deployul. Proiectul cabinetului și PR #110 sunt excluse.
+
 Înlocuire Qwen — 07.11.2026: din `6d00e41`, ramura `codex/replace-qwen-cloudflare-2026-11-07` pregătește Mistral Small 3.1 24B prin bindingul existent. [Runbook](./QWEN_REPLACEMENT.md): 0103, versiuni istorice păstrate, alias legacy, rute sincronizate și controale Free neschimbate. Starea efectivă și verificarea furnizorului se citesc din PR.
 
 Consolidare — 07.11.2026: [inventarul de reconciliere](./RELEASE_RECONCILIATION_2026-11-07.md) acoperă PR-urile restante, dependențele, Altele și recuperarea fluxului Leads prin migrarea aditivă 0101. Publicarea cabinetului este verificată separat în Sites. Rezultatele CI, integrarea și versiunea Worker se consemnează în PR; documentația locală nu constituie dovadă de deploy.

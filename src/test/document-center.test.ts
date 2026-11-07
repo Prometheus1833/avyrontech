@@ -1306,7 +1306,7 @@ describe("Document Center actual handlers, immutable records and private storage
     });
     const notices = db
       .prepare(
-        "SELECT id,deduplication_key FROM operation_notifications WHERE user_id=?",
+        "SELECT id,deduplication_key FROM operation_notifications WHERE user_id=? AND deduplication_key LIKE 'document-share:%'",
       )
       .all("owner") as { id: string; deduplication_key: string }[];
     const original = { id: "ordinary", deduplication_key: "ordinary" };

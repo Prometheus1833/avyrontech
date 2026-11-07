@@ -186,15 +186,15 @@ test("principal, platformă și explicațiile iconurilor din bara de sus", async
   await expect(page.getByRole("tooltip")).toContainText(
     "Conversații cu echipa",
   );
-  await page.getByRole("button", { name: "Notificări", exact: true }).hover();
+  await page.locator('header button[title="Notificări"][aria-haspopup="dialog"]').hover();
   await expect(
     page.getByRole("tooltip", {
       name: "Notificări, anunțuri și activități de verificat",
     }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Notificări", exact: true }).click();
+  await page.locator('header button[title="Notificări"][aria-haspopup="dialog"]').click();
   await expect(
-    page.getByRole("heading", { name: "Notificări și anunțuri" }),
+    page.getByRole("heading", { name: "Notificările tale" }),
   ).toBeVisible();
 });
 test("conversație cu continuare, eroare recuperabilă și versiune aprobată explicit", async ({

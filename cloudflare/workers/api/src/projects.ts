@@ -12,7 +12,7 @@ import { hasCapability } from "./authorization";
 import { Hono } from "hono";
 import type { Env } from "./types";
 import { fetchMetadataHtml, validateMetadataUrl } from "./metadata";
-import { organizationRoleForUser, platformRoleForUser,hasClientProjectGrant,clientProjectGrantSql } from "./authorization";
+import { organizationRoleForUser, platformRoleForUser,clientProjectGrantSql } from "./authorization";
 import { normalizeExternalLink } from "../../../../src/shared/externalUrl";
 import { PROJECT_STAGES, type ProjectStage } from "../../../../src/shared/projectLifecycle";
 import { readJsonBodyUpTo } from "./requestBody";
@@ -23,68 +23,36 @@ type Vars = { userId: string; roles: Role[] };
 const uuid = () => crypto.randomUUID();
 const now = () => Date.now();
 
-async function originalProjectAccess(db: D1Database, projectId: string, userId: string, roles: Role[]): Promise<{ read: boolean; write: boolean; isStaff: boolean; isOwner: boolean;
-}> {
-  const isAdmin = roles.includes("admin");
-  const isStaff = roles.includes("staff") || isAdmin;
-  const proj = await db.prepare("SELECT owner_user_id, organization_id FROM projects WHERE id = ?").bind(projectId)
-    .first<{ owner_user_id: string | null; organization_id: string | null }>();
-  if (!proj) return { read: false, write: false, isStaff: false, isOwner: false };
-  const isOwner = proj.owner_user_id === userId;
-  if (await platformRoleForUser(db, userId)) return { read: true, write: true, isStaff: true, isOwner };
-
-  const membership = proj.organization_id
-    ? await organizationRoleForUser(db, proj.organization_id, userId)
-    : null;
-  if (membership) {
-    const write = ["owner", "admin", "manager", "specialist"].includes(membership);
-    return { read: true, write, isStaff, isOwner };
-  }
-  if (proj.organization_id) {
-    const assigned = isStaff
-      ? await db.prepare("SELECT 1 FROM project_staff WHERE project_id = ? AND user_id = ?").bind(projectId, userId).first()
-      : null;
-    return { read: !!assigned || isOwner || (!isStaff && (await hasClientProjectGrant(db,projectId,userId))), write: !!assigned, isStaff, isOwner };
-  }
-
-  // Legacy records need the same explicit project or client grant as tenant records.
-  if (isStaff) {
-    const assigned = await db.prepare("SELECT 1 FROM project_staff WHERE project_id = ? AND user_id = ?").bind(projectId, userId).first();
-    if (assigned) return { read: true, write: true, isStaff: true, isOwner };
-    const clientGrant = await db.prepare("SELECT 1 FROM client_account_access WHERE client_id = (SELECT client_id FROM projects WHERE id = ?) AND user_id = ?")
-      .bind(projectId, userId).first();
-    return { read: Boolean(clientGrant) || isOwner, write: isAdmin && Boolean(clientGrant), isStaff: true, isOwner };
-  }
-  if (isOwner) return { read: true, write: false, isStaff: false, isOwner: true };
-  const clientGrant = await hasClientProjectGrant(db,projectId,userId);
-  return { read: !!clientGrant, write: false, isStaff, isOwner: false };
+type ProjectAccess = { read: boolean; write: boolean; isStaff: boolean; isOwner: boolean };
+/** One native ACL evaluator for both project actions and multi-resource private feeds.
+ * All authorization inputs are live D1 records, scoped to this request. */
+export async function projectAccessMap(db:D1Database, projectIds:string[], userId:string, roles:Role[]):Promise<Map<string,ProjectAccess>> {
+  const ids=[...new Set(projectIds)].slice(0,200);
+  if(!ids.length)return new Map();
+  const principal=await platformRoleForUser(db,userId);
+  const policy=principal?null:await managedStaff(db,userId);
+  const rows=await db.prepare(`SELECT p.id,p.owner_user_id,p.organization_id,
+    (SELECT m.role FROM organization_memberships m WHERE m.organization_id=p.organization_id AND m.user_id=? AND m.status='active') membership,
+    EXISTS(SELECT 1 FROM project_staff ps WHERE ps.project_id=p.id AND ps.user_id=?) assigned,
+    ${clientProjectGrantSql("p")} client_grant,
+    EXISTS(SELECT 1 FROM client_account_access ca WHERE ca.client_id=p.client_id AND ca.user_id=?) legacy_grant
+    FROM projects p WHERE p.id IN(SELECT value FROM json_each(?))`)
+    .bind(userId,userId,userId,userId,JSON.stringify(ids)).all<{id:string;owner_user_id:string|null;organization_id:string|null;membership:string|null;assigned:number;client_grant:number;legacy_grant:number}>();
+  const staff=roles.includes("staff")||roles.includes("admin"),admin=roles.includes("admin");
+  return new Map(rows.results.map(p=>{
+    const isOwner=p.owner_user_id===userId;
+    let read=false,write=false;
+    if(principal){read=true;write=true;}
+    else if(p.membership){read=true;write=["owner","admin","manager","specialist"].includes(p.membership);}
+    else if(p.organization_id){read=Boolean((staff&&p.assigned)||isOwner||(!staff&&p.client_grant));write=staff&&Boolean(p.assigned);}
+    else if(staff){read=Boolean(p.assigned||p.legacy_grant||isOwner);write=Boolean(p.assigned||(admin&&p.legacy_grant));}
+    else{read=isOwner||Boolean(p.client_grant);}
+    if(policy){const all=managedPermission(policy,"projects.all");read=(all||read)&&managedPermission(policy,"projects.read");write=(all||write)&&managedPermission(policy,"projects.write");}
+    return [p.id,{read,write,isStaff:principal?true:staff,isOwner}];
+  }));
 }
-
-export async function canAccessProject(
-  db: D1Database,
-  projectId: string,
-  userId: string,
-  roles: Role[],
-) {
-  const access = await originalProjectAccess(db, projectId, userId, roles);
-  if (await platformRoleForUser(db, userId)) return access;
-  const policy = await managedStaff(db, userId);
-  if (!policy) return access;
-  const all = managedPermission(policy, "projects.all");
-  const exists = all
-    ? !!(await db
-        .prepare("SELECT id FROM projects WHERE id=?")
-        .bind(projectId)
-        .first())
-    : access.read;
-  return {
-    ...access,
-    read: !!exists && managedPermission(policy, "projects.read"),
-    write:
-      !!exists &&
-      (all || access.write) &&
-      managedPermission(policy, "projects.write"),
-  };
+export async function canAccessProject(db:D1Database,projectId:string,userId:string,roles:Role[]):Promise<ProjectAccess> {
+  return (await projectAccessMap(db,[projectId],userId,roles)).get(projectId)??{read:false,write:false,isStaff:false,isOwner:false};
 }
 
 async function log(db: D1Database, projectId: string, actorId: string, action: string, targetType?: string, targetId?: string, meta?: unknown) {

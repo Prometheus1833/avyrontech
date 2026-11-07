@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type { AppBindings } from './types';
 import { platformRoleForUser } from './authorization';
 import { privilegedMfaSatisfied } from './mfaPolicy';
-import { filterPrivateDocumentNotices } from './documentPolicy';
+import { filterNotifications, type StoredNotice } from './notificationPolicy';
 import { checkRateLimit } from './antispam';
 import { sha256 } from './security';
 import { completeGoogleOAuth, googleOAuthAuthorization, integrationProviders, normalizeSupabaseProjectUrl, readIntegration, sealCredential, ProviderError, type IntegrationAccount } from './integrationAdapters';
@@ -150,8 +150,12 @@ operationsRouter.post('/api/operations/jobs/:id/:action',async c=>{
  const row=await c.env.DB.prepare('SELECT status FROM operation_jobs WHERE id=?').bind(c.req.param('id')).first<{status:string}>();if(!row)return bad(c,'not_found',404);if(action==='retry'?row.status!=='failed':!['queued','running'].includes(row.status))return bad(c,'invalid_job_state',409);
  return write(c,{ok:true},[action==='cancel'?c.env.DB.prepare("UPDATE operation_jobs SET status='cancelled',locked_until=NULL WHERE id=? AND status IN ('queued','running')").bind(c.req.param('id')):c.env.DB.prepare("UPDATE operation_jobs SET status='queued',attempts=0,available_at=?,error_code=NULL WHERE id=? AND status='failed'").bind(Date.now(),c.req.param('id')),audit(c,`operations.job.${action}`,c.req.param('id'))]);
 });
-operationsRouter.get('/api/operations/notifications',async c=>{const notices=await c.env.DB.prepare('SELECT * FROM operation_notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 100').bind(c.get('userId')).all<{id:string;deduplication_key:string}>();return c.json({data:await filterPrivateDocumentNotices(c.env.DB,c.get('userId'),notices.results)});});
-operationsRouter.post('/api/operations/notifications/:id/read',async c=>write(c,{ok:true},[c.env.DB.prepare('UPDATE operation_notifications SET read_at=? WHERE id=? AND user_id=?').bind(Date.now(),c.req.param('id'),c.get('userId'))]));
+operationsRouter.get('/api/operations/notifications',async c=>{const notices=await c.env.DB.prepare('SELECT * FROM operation_notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 100').bind(c.get('userId')).all<StoredNotice>();return c.json({data:await filterNotifications(c.env.DB,c.get('userId'),c.get('roles'),notices.results)});});
+operationsRouter.post('/api/operations/notifications/:id/read',async c=>{
+ const rows=await c.env.DB.prepare('SELECT * FROM operation_notifications WHERE id=? AND user_id=?').bind(c.req.param('id'),c.get('userId')).all<StoredNotice>();
+ if(!(await filterNotifications(c.env.DB,c.get('userId'),c.get('roles'),rows.results)).length)return c.json({error:{code:'not_found'}},404);
+ return write(c,{ok:true},[c.env.DB.prepare('UPDATE operation_notifications SET read_at=coalesce(read_at,?) WHERE id=? AND user_id=?').bind(Date.now(),c.req.param('id'),c.get('userId'))]);
+});
 operationsRouter.get('/api/operations/integrations',async c=>{
  const accounts=await c.env.DB.prepare("SELECT account.id,account.provider,account.label,account.environment,account.status,account.revision,account.checked_at,account.synced_at,account.error_code,account.secret_reference IS NOT NULL has_credential,CASE WHEN account.provider='supabase' THEN json_extract(account.config_json,'$.projectUrl') ELSE NULL END project_url,account.owner_user_id,owner.email owner_email,json_extract(snapshot.summary_json,'$.account_email') verified_identity,json_extract(snapshot.summary_json,'$.storage_limit_bytes') storage_limit_bytes,json_extract(snapshot.summary_json,'$.storage_usage_bytes') storage_usage_bytes,json_extract(snapshot.summary_json,'$.storage_usage_drive_bytes') storage_usage_drive_bytes FROM integration_accounts account JOIN users owner ON owner.id=account.owner_user_id LEFT JOIN integration_snapshots snapshot ON snapshot.account_id=account.id ORDER BY account.label").all();
  return c.json({providers:integrationProviders,data:accounts.results.map(account=>({...account,data_operations_enabled:account.provider==='revolut'?false:account.provider==='supabase'?String(c.env.SUPABASE_DATA_OPERATIONS_ENABLED)==='true':account.provider==='google_drive'?String(c.env.GOOGLE_DRIVE_DATA_OPERATIONS_ENABLED)==='true':true})),backup_jobs_enabled:String(c.env.BACKUP_JOBS_ENABLED)==='true',canEdit:await platformRoleForUser(c.env.DB,c.get('userId'))==='platform_owner'});
