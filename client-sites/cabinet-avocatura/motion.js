@@ -27,7 +27,9 @@
    pause.setAttribute('aria-pressed',String(userPaused||reduced.matches));
    pause.setAttribute('aria-label',reduced.matches?(en?'Automatic scrolling disabled by reduced-motion preference':'Derulare automată dezactivată prin preferința de mișcare redusă'):userPaused?(en?'Start automatic scrolling':'Pornește derularea automată'):(en?'Pause automatic scrolling':'Oprește derularea automată'));
    pause.querySelector('[data-carousel-motion-label]').textContent=reduced.matches?(en?'Manual':'Manual'):userPaused?(en?'Play':'Pornește'):(en?'Pause':'Pauză');
-   pause.querySelector('[data-carousel-motion-icon]').textContent=userPaused||reduced.matches?'▷':'Ⅱ';
+   const showPlay=userPaused||reduced.matches;
+   pause.querySelector('[data-icon=pause]').hidden=showPlay;
+   pause.querySelector('[data-icon=play]').hidden=!showPlay;
   }
   function wrap(){
    if(!period)return;
