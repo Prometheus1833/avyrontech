@@ -1,3 +1,4 @@
+import NotificationSummary from "./NotificationSummary";
 import AntivirusSummary from "./AntivirusSummary";
 import { STAFF_MANAGED } from "@/shared/staffAccess";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -208,6 +209,31 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
       </header>
 
       {access.isSuperAdmin && <AntivirusSummary onOpen={() => onOpenSection("antivirus")} />}
+      <Panel className="p-4 sm:p-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div><p className="font-mono text-[10px] uppercase tracking-[0.22em] text-emerald-200/70">Stare verificată</p><h2 className="mt-1 font-display text-lg font-semibold text-white">Infrastructură și integrări</h2></div><Cloud className="size-5 text-emerald-300" /></div>
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {data.health.map((item) => (
+            <div key={item.id} title={item.detail} className="flex items-center gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
+              <span className={`size-2 rounded-full ${statusTone(item.status)}`} />
+              <span className="min-w-0 flex-1 truncate text-xs text-slate-300">{item.label}</span>
+              <span className="text-[10px] text-slate-600">{item.status}</span>
+            </div>
+          ))}
+        </div>
+        {access.isSuperAdmin && <StorageStatus />}
+        <div className="mt-4 border-t border-white/[0.06] pt-4">
+          <div className="mb-2 flex items-center justify-between"><h3 className="text-xs font-semibold text-slate-300">Registrul integrărilor</h3><span className="text-[10px] text-slate-600">{data.integrations.length} înregistrate</span></div>
+          {data.integrations.length === 0 ? (
+            <EmptyState>Nu există conectori externi validați. Aceștia vor apărea după configurare.</EmptyState>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {data.integrations.slice(0, 12).map((item, index) => (
+                <span key={`${item.name}-${index}`} className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[11px] text-slate-400"><span className={`size-1.5 rounded-full ${statusTone(item.status)}`} />{item.name}</span>))}
+            </div>
+          )}
+        </div>
+      </Panel>
+      {access.isSuperAdmin&&<NotificationSummary onOpen={()=>onOpenSection("notification-settings")} />}
 
       <div className="grid items-start gap-4 xl:grid-cols-12">
         <Panel className="p-4 sm:p-5 xl:col-span-7">
@@ -318,30 +344,7 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
         </Panel>
       </div>
 
-      <Panel className="p-4 sm:p-5">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div><p className="font-mono text-[10px] uppercase tracking-[0.22em] text-emerald-200/70">Stare verificată</p><h2 className="mt-1 font-display text-lg font-semibold text-white">Infrastructură și integrări</h2></div><Cloud className="size-5 text-emerald-300" /></div>
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-          {data.health.map((item) => (
-            <div key={item.id} title={item.detail} className="flex items-center gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
-              <span className={`size-2 rounded-full ${statusTone(item.status)}`} />
-              <span className="min-w-0 flex-1 truncate text-xs text-slate-300">{item.label}</span>
-              <span className="text-[10px] text-slate-600">{item.status}</span>
-            </div>
-          ))}
-        </div>
-        {access.isSuperAdmin && <StorageStatus />}
-        <div className="mt-4 border-t border-white/[0.06] pt-4">
-          <div className="mb-2 flex items-center justify-between"><h3 className="text-xs font-semibold text-slate-300">Registrul integrărilor</h3><span className="text-[10px] text-slate-600">{data.integrations.length} înregistrate</span></div>
-          {data.integrations.length === 0 ? (
-            <EmptyState>Nu există conectori externi validați. Aceștia vor apărea după configurare.</EmptyState>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {data.integrations.slice(0, 12).map((item, index) => (
-                <span key={`${item.name}-${index}`} className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[11px] text-slate-400"><span className={`size-1.5 rounded-full ${statusTone(item.status)}`} />{item.name}</span>))}
-            </div>
-          )}
-        </div>
-      </Panel>
+
     </div>
   );
 }

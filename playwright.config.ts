@@ -13,7 +13,9 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    ...(process.env.PLAYWRIGHT_WEBKIT === "1" ? [{name:"webkit-mobile",use:{...devices["iPhone 13"]}}] : []),
+  ],
   webServer: {
     command: `npm run preview -- --host 127.0.0.1 --port ${previewPort}`,
     url: previewUrl,

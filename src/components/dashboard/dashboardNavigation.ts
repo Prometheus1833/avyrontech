@@ -1,6 +1,7 @@
 import type { SectionId } from "@/lib/access";
 import type { LucideIcon } from "lucide-react";
 import {
+Bell,
 BadgePercent,
 BarChart3,
 BookOpen,
@@ -79,6 +80,8 @@ export const DASHBOARD_GROUP_ORDER = [
 ];
 
 export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
+  notifications: {label:"Notificări",commandLabel:"Deschide notificările",hint:"Ultimele actualizări din cont",icon:Bell},
+  "notification-settings": {label:"Sistem notificări",commandLabel:"Configurează notificările",hint:"Reguli, mesaje și monitorizare",icon:Bell},
   "skill-site-builder": {label:"Site Builder",commandLabel:"Deschide Site Builder",hint:"Mockupuri, briefuri Codex și componente reutilizabile",icon:Globe},
   "skill-logo-engine": {label:"Logo Engine",commandLabel:"Deschide Logo Engine",hint:"Brief de identitate și direcții pentru Logo Studio",icon:Sparkles},
   "skill-media-generate": {label:"Media Generate",commandLabel:"Deschide Media Generate",hint:"Direcție vizuală, prompturi și resurse aprobate",icon:Image},

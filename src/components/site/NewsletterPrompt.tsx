@@ -1,3 +1,5 @@
+import { useAuth } from "@/hooks/useAuth";
+import { useGuestNotificationConfig } from "@/lib/guestNotifications";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowRight, Check, Mail, Sparkles, X } from "lucide-react";
 import { useLocation } from "react-router-dom";
@@ -72,6 +74,8 @@ const pageViews = (pathname: string) => {
 
 export default function NewsletterPrompt() {
   const { pathname, search } = useLocation();
+  const {user,loading:authLoading}=useAuth();
+  const contactConfig=useGuestNotificationConfig(!authLoading&&!user);
   const language: "ro" | "en" = pathname === "/en" || pathname.startsWith("/en/") ? "en" : "ro";
   const [config, setConfig] = useState<NewsletterConfig | null>(null);
   const [visible, setVisible] = useState(false);
@@ -112,13 +116,14 @@ export default function NewsletterPrompt() {
   }, [eligiblePath]);
 
   useEffect(() => {
-    if (!eligiblePath || !config?.enabled || !config.promptEnabled || dismissed) return;
+    setVisible(false);
+    if (authLoading || user || !contactConfig || contactConfig.enabled || !eligiblePath || !config?.enabled || !config.promptEnabled || dismissed) return;
     const promptState = readState();
     if (promptState.subscribedAt) return;
     if (promptState.lastShownAt && Date.now() - promptState.lastShownAt < config.cooldownDays * 86400000) return;
     if (pageViews(pathname) < config.minPageViews) return;
 
-    let consentDecided = Boolean(readCookieConsent());
+    let consentDecided = readCookieConsent()?.marketing===true;
     let elapsed = false;
     let engaged = window.scrollY / Math.max(1, document.documentElement.scrollHeight - window.innerHeight) * 100 >= config.scrollPercent;
     const reveal = () => {
@@ -130,7 +135,7 @@ export default function NewsletterPrompt() {
       const scroll = window.scrollY / Math.max(1, document.documentElement.scrollHeight - window.innerHeight) * 100;
       if (scroll >= config.scrollPercent) { engaged = true; reveal(); }
     };
-    const consentTimer = window.setInterval(() => { consentDecided = Boolean(readCookieConsent()); reveal(); }, 1000);
+    const consentTimer = window.setInterval(() => { consentDecided = readCookieConsent()?.marketing===true; reveal(); }, 1000);
     const timer = window.setTimeout(() => { elapsed = true; reveal(); }, config.delaySeconds * 1000);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
@@ -138,7 +143,7 @@ export default function NewsletterPrompt() {
       window.clearTimeout(timer);
       window.removeEventListener("scroll", onScroll);
     };
-  }, [config, dismissed, eligiblePath, pathname]);
+  }, [config, dismissed, eligiblePath, pathname, authLoading, user, contactConfig]);
 
   const copy = useMemo(() => config && ({
     title: config.title[language], body: config.body[language], cta: config.cta[language], frequency: config.frequency[language],

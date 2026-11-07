@@ -1,3 +1,4 @@
+import { notificationsRouter } from "./notifications";
 import { linkClientsByEmail } from "./clientAccountSync";
 import {collaboratorsRouter} from "./collaborators";
 import {collaborationIdentity} from "./collaboratorPolicy";
@@ -1749,6 +1750,14 @@ app.route("/",collaboratorsRouter);
 app.route("/", exampleCarouselsRouter);
 app.route("/", catalogCodesRouter);
 app.use("/api/documents", requireAuth);
+app.use("/api/notifications", async(c,next)=>{c.header("Cache-Control","private, no-store");c.header("X-Robots-Tag","noindex, nofollow");return requireAuth(c,next);});
+app.use("/api/notifications/*", async (c,next) => {
+  if(c.req.path === "/api/notifications/config") return next();
+  c.header("Cache-Control","private, no-store"); c.header("X-Robots-Tag","noindex, nofollow");
+  return requireAuth(c,next);
+});
+app.route("/", notificationsRouter);
+
 app.use("/api/documents/*", requireAuth);
 app.route("/", documentCenterRouter);
 app.route("/", surveyPublic);
