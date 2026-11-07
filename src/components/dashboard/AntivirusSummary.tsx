@@ -38,7 +38,7 @@ export default function AntivirusSummary({ onOpen }: { onOpen: () => void }) {
           {d?.quota
             ? `${Math.max(d.quota.reserved, d.quota.provider_used)} / 500 scanări în luna curentă`
             : "Plan Free · maximum 500 scanări/lună"}{" "}
-          · {blocked} blocate · acces numai după CLEAN
+          · {blocked} blocate · uploaduri externe, acces după CLEAN
         </p>
       </div>
       <button

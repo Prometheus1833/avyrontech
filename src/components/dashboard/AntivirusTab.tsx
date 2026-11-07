@@ -149,8 +149,9 @@ export default function AntivirusTab() {
             Antivirus
           </h1>
           <p className="mt-2 max-w-3xl text-sm text-slate-400">
-            Bouncer Malware API · un singur furnizor · fișierele sunt accesibile
-            numai după verdictul CLEAN.
+            Bouncer Malware API · scanare pentru fișiere încărcate din exterior,
+            accesibile numai după verdictul CLEAN. Generările interne ale
+            platformei nu consumă scanări.
           </p>
         </div>
         <Button
