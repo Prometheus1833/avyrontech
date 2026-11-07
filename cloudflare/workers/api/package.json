@@ -16,7 +16,7 @@
     "@modelcontextprotocol/client": "2.4.0",
     "@modelcontextprotocol/sdk": "1.32.2",
     "@modelcontextprotocol/server": "2.4.0",
-    "agents": "0.32.0",
+    "agents": "0.33.0",
     "hono": "^4.13.16",
     "svix": "^2.9.1",
     "zod": "4.6.7"
