@@ -3,10 +3,10 @@
 ## Publicare verificată
 
 - URL: https://cabinet-avocatura.avyron.eu/; pagini revizuite: /programari/ și /en/appointments/.
-- Sites: versiunea 15, `appgprj_6aee16d68fcc8191a51c7f828bcfab51~appgver_95b56e88c7188191961ace631e392319`.
-- Deployment: `appgdep_6aeef11a0cfc819198949600c2b6a72b`, `succeeded`.
-- Sursă Sites: `7dea0cb823e9e0463640052b995945eb02492b5e`; runtime `8221300ba3`.
-- AVYRON: `client-sites/cabinet-avocatura/`, ramura `codex/cabinet-icons-preview-2026-11-07`, pornită din `origin/main` la `6d00e41`. PR #102 este integrat; această revizie are PR separat, fără merge automat.
+- Sites: versiunea 16, `appgprj_6aee16d68fcc8191a51c7f828bcfab51~appgver_19ddfd297640819190769dd4cfdb6aa6`.
+- Deployment: `appgdep_6aeef47322d88191b9e3e05754fe0925`, `succeeded`.
+- Sursă Sites: `778a6e72120758ef57796cb5ef462f0e09716200`; runtime `04e88e63f7`.
+- AVYRON: `client-sites/cabinet-avocatura/`, ramura `codex/cabinet-icons-preview-2026-11-07`, pornită din `origin/main` la `6d00e41`. PR #102 este integrat; această revizie continuă PR #110, deschis, fără merge automat.
 - DNS existent păstrat; HTTPS public verificat cu validarea normală a certificatului.
 
 ## Programări — versiunea curentă
@@ -78,3 +78,13 @@ Eliminate glyphurile tipografice decorative din interfață, inclusiv săgeata o
 Preview-ul linkului are titlu, descriere, numele cabinetului, imagine 1200×630, tip JPEG și alternative text pentru Open Graph/Twitter. Descrierea RO: „Peste 27 de ani de experiență. Consultanță, asistență și reprezentare pentru persoane fizice și societăți. București, România · Consultații online sau la cabinet.” Versiunea EN are descriere echivalentă. Titlul afișat al proiectului Sites a fost actualizat; API-ul de metadate Sites permite numai titlul, nu și descrierea internă a proiectului din Library.
 
 Build/check/test:interactions trecute local și pentru sursa exactă Sites. Validatorul verifică acum metadatele preview și absența glyphurilor vechi în toate cele 42 de pagini. Browser: home RO/EN la 320/390/768/1440 px, fără overflow, CTA calendar și contacte verticale; programări RO/EN la 320 px și EN la 1440 px, iconuri format 24×24; pauză/reluare SVG verificată. Public: home la 390 px, runtime 8221300ba3, calendar vizibil și metadate actualizate. Patru pagini cu metadate comparate cu build-ul și trei resurse runtime identice. Dovezi: output/icon-proof/. Fără migrații, schimbări DNS sau integrări. Gzip: styles.css 9908 B, visual.css 2131 B, motion.js 3276 B. Verificarea nu reprezintă testare pe telefoane fizice.
+
+## Landing compact, selector de limbă și intro — 7 noiembrie 2026
+
+Home: padding vertical redus pentru secțiuni, toolbarurile caruselelor, CTA și subsol. Cardurile „Note și repere juridice” au înălțime naturală, fără stretch după cel mai lung articol și fără margin-top:auto la link; textul este integral. Imagini 16:10 și padding 18–20 px. În RO, măsurători browser la 390 px: primul card aproximativ 630 → 438 px, cel mai lung 630 → 511 px; spațiul dintre descriere și link 133 → 8 px pentru primul card. La 1440 px: primul card 621 → 484 px. Înălțimea home: 7790 → 7301 px mobil, 5802 → 5181 px desktop. Valorile sunt geometrie de layout, nu metrici Core Web Vitals. Efectele și motorul ambelor carusele, progresul celor trei pași și contactele verticale sunt păstrate.
+
+RO/EN este acum details/summary nativ, cu o singură alternativă vizibilă după apăsare. Nu există navigare la prima apăsare; linkul opțiunii păstrează ruta echivalentă în cealaltă limbă. Funcționează și fără JavaScript; JS adaugă Escape cu revenirea focusului, ArrowDown, închidere la click/focus în exterior și exclusivitate cu meniul/accesibilitatea. Testele RO/EN verifică explicit aceste comportamente.
+
+Intro-ul home: CSS 420 ms, estompare de la primul cadru, fără hold-ul inițial al animației de 750 ms; fundal discret în profunzime și linie de 300 ms. Nu blochează interacțiunea și nu așteaptă imagini/load events, nu introduce temporizatoare, stocare sau progres fictiv. La mișcare redusă este ascuns. Durata intro-ului nu dovedește un timp total de încărcare de 420 ms și nu reprezintă audit Lighthouse.
+
+Verificări: build/check/test:interactions trecute local și pentru sursa exactă împachetată. Browser: RO/EN la 320/390/430/768/1440 px, fără overflow, dropdown în viewport, prima apăsare păstrează URL-ul, alternativa navighează corect. EN la 320 px cu text 130% și contrast ridicat fără overflow; reduced-motion ascunde intro și dezactivează autoplay. Pe domeniul public, selectorul și navigarea RO → EN sunt verificate; CSS intro 0.42s, visibility hidden după terminare. Patru pagini cu disclosure identic build-ului și patru resurse runtime identice. Capturi și rapoarte: output/landing-compact-proof/. Fără migrări, DNS, dependențe sau integrări. Nu se declară testare pe dispozitive fizice iOS/Android. Gzip: app.js 2962 B, styles.css 9936 B, editorial.css 3654 B, visual.css 2411 B.

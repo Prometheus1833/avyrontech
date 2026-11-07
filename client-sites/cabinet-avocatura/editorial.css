@@ -8,3 +8,44 @@ html[data-contrast=high] .hero,html[data-contrast=high] .about-section,html[data
 .service-section>.eyebrow{font-size:.7rem;line-height:1.6;color:var(--gold);margin-bottom:18px}.inner-hero.with-image .eyebrow{color:#c9dce5}.inner-hero.with-image .lead,.inner-hero.with-image .breadcrumb{color:#e4edf2}html[data-contrast=high] .inner-hero.with-image{background:#000;color:#fff}html[data-contrast=high] .inner-hero.with-image .inner-image{display:none}html[data-contrast=high] .inner-hero.with-image :is(h1,.eyebrow,.lead,.breadcrumb,.breadcrumb a,.breadcrumb span){color:#fff}
 .accessibility-panel{max-height:calc(100vh - 110px);max-height:calc(100dvh - 110px);overflow-y:auto;overscroll-behavior:contain}
 .consultation-cinematic:before{display:block}.consultation-cinematic:after{content:'';position:absolute;z-index:1;bottom:0;left:0;right:0;height:85px;background:linear-gradient(180deg,transparent,#071a25);pointer-events:none}.footer-cinematic:after{content:'';position:absolute;z-index:1;top:0;left:0;right:0;height:125px;background:linear-gradient(180deg,#071a25,transparent);pointer-events:none}html[data-contrast=high] .consultation-cinematic:after,html[data-contrast=high] .footer-cinematic:after{display:none}
+
+/* Home spacing follows the content; carousel cards keep natural text flow. */
+body[data-page=home] .section{padding-block:64px}
+body[data-page=home] :is(.about-section,.insights-section){padding-block:60px}
+body[data-page=home] .section-head{margin-bottom:24px;gap:32px}
+body[data-page=home] .process-section .section-head{margin-bottom:28px}
+body[data-page=home] .hero{padding-block:24px 28px}
+body[data-page=home] .hero-copy{margin-top:20px}
+body[data-page=home] .hero-actions{margin-top:24px}
+body[data-page=home] .hero-location{margin-top:24px}
+body[data-page=home] .trust-strip .container>div{min-height:68px}
+body[data-page=home] .carousel-toolbar{margin-top:0;gap:18px}
+body[data-page=home] .carousel-viewport{padding-block:14px 20px}
+body[data-page=home] .cta-inner{padding-block:52px;gap:44px}
+body[data-page=home] .footer-invitation{padding-block:56px 40px;gap:54px}
+body[data-page=home] .footer-cinematic .footer-top{padding-block:36px 28px}
+body[data-page=home] .footer-cinematic .footer-notice{padding-block:16px}
+body[data-page=home] .footer-cinematic .footer-bottom{padding-block:18px 22px}
+body[data-page=home] .article-track{align-items:flex-start}
+body[data-page=home] .article-track .article-image{aspect-ratio:16/10}
+body[data-page=home] .article-card-content{padding:20px;flex:0 0 auto}
+body[data-page=home] .article-card-content>.eyebrow{margin-bottom:10px;line-height:1.5}
+body[data-page=home] .article-card-content h3{font-size:1.5rem;line-height:1.25;margin-bottom:10px;overflow-wrap:normal}
+body[data-page=home] .article-card-content>p:not(.eyebrow){font-size:1rem;line-height:1.65;margin-bottom:8px}
+body[data-page=home] .article-card-content>.text-link{margin-top:0;padding-block:8px 0;min-height:36px}
+@media(max-width:760px){
+ body[data-page=home] .section{padding-block:42px}
+ body[data-page=home] :is(.about-section,.insights-section){padding-block:44px}
+ body[data-page=home] .section-head{margin-bottom:20px}
+ body[data-page=home] .process-section .section-head{margin-bottom:24px}
+ body[data-page=home] .hero{padding-block:26px 22px}
+ body[data-page=home] .hero-grid{gap:22px}
+ body[data-page=home] .about-grid{gap:28px}
+ body[data-page=home] .carousel-toolbar{gap:14px}
+ body[data-page=home] .carousel-viewport{padding-block:12px 16px}
+ body[data-page=home] .cta-inner{padding-block:40px;gap:20px}
+ body[data-page=home] .footer-invitation{padding-block:42px 30px;gap:24px}
+ body[data-page=home] .footer-cinematic .footer-top{padding-block:28px 22px;gap:24px}
+ body[data-page=home] .article-card-content{padding:18px}
+ body[data-page=home] .article-card-content h3{font-size:1.45rem}
+}

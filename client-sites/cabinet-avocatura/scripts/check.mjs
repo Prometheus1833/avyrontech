@@ -33,6 +33,7 @@ for(const route of routes) {
  if(route.key==='article')check(html.includes('article-contents'),'article contents');
  check(html.includes('viewport-fit=cover'),'safe-area viewport');
  check(html.includes('href="#main"'),'skip link');
+ check(html.includes('<details class="language-control"')&&html.includes('<summary id="language-toggle"')&&html.includes('id="language-option"'),'explicit language disclosure');
  check(html.includes(`rel="canonical" href="${firm.origin}${route.path}"`),'canonical');
  for(const language of ['ro','en','x-default']) check(html.includes(`hreflang="${language}"`),'hreflang '+language);
  check(html.includes('property="og:image"'),'social image');
