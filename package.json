@@ -126,7 +126,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.66.0",
-    "@cloudflare/workers-types": "5.20261102.1",
+    "@cloudflare/workers-types": "5.20261104.1",
     "@eslint/js": "^9.32.0",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/typography": "^0.5.16",
@@ -155,7 +155,7 @@
     "vite": "^6.4.2",
     "vite-plugin-glsl": "^1.6.1",
     "vitest": "5.0.5",
-    "wrangler": "4.156.1"
+    "wrangler": "4.157.0"
   },
   "overrides": {
     "sharp": "0.35.5",
