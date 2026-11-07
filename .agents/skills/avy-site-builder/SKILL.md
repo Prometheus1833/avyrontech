@@ -1,0 +1,25 @@
+---
+name: avy-site-builder
+description: "Mockupuri vizuale și briefuri Codex adaptate domeniului, pornind din componente și lecții reutilizabile aprobate."
+---
+
+# Site Builder
+
+Folosește pentru un mockup vizual de website sau pentru pregătirea implementării unui site AVYRON pentru un client nou ori existent. Nu publica, nu trimite și nu activa furnizori din acest skill.
+
+1. Brief minim: denumirea afacerii, activitatea și obiectivul. Preferințele vizuale sunt opționale. Proiectul sau leadul existent oferă context numai după autorizare. Nu cere CNP, parole sau date fiscale pentru un mockup.
+2. Citește cel mult trei referințe aprobate potrivite domeniului; rezumă structura, nu copia marca, textele sau activele altui client. Datele comerciale private și briefurile nu devin automat cunoștințe comune.
+3. Propune cel puțin cinci secțiuni utile: hero, servicii/beneficii, proces/diferențiatori, întrebări/contact și urmărește-ne. Adaptează structura nișei; fără testimoniale, prețuri, rezultate sau certificări inventate. Identifică explicit macheta drept concept, nu site final.
+4. Upbar compact cu liquid glass progresiv, contrast solid ca fallback, logo lizibil, navigare simplă și user menu numai când există conturi reale. CTA principal clar; linkuri ancoră și tastatură funcționale. Pe mobil, meniul nu acoperă CTA-urile.
+5. Hero cu fundal cinematic profund, lumină și compoziție specifice domeniului. Text vizibil imediat în HTML; fără așteptarea canvasului. Poster static de calitate maximă disponibilă; WebGL/3D numai când explică produsul. Nu reduce calitatea imaginii master pentru economie de tokens: economisește prin reutilizare, context scurt, cache și variante de livrare AVIF/WebP.
+6. Landing compact, fără ecrane goale sau padding excesiv. Carduri cu hover și focus echivalente; mișcare redusă, scroll discret, fără scroll-jacking. Footer profund/cinematic, cu date reale și linkuri legale potrivite activității; nu pretinde conformitate juridică automată.
+7. Trei acțiuni flotante: apel, WhatsApp și email, numai cu contacte validate. Pentru mockupul comercial, folosește explicit contactele AVYRON pentru discuția despre concept dacă lipsesc contactele beneficiarului. Mesajul WhatsApp și subiectul emailului includ denumirea proiectului, fără informații sensibile. Nu trimite mesaje automat.
+8. Spre final: urmărește-ne cu Facebook, Instagram și TikTok, doar pentru URL-uri confirmate; altfel arată că lipsesc, fără linkuri fictive. Personalizează paleta, tipografia, fotografiile, iconografia și tonul pentru nișă, fără a transfera automat identitatea AVYRON.
+9. Construcție: componente reutilizabile, HTML semantic, un H1, headinguri logice, contrast și focus vizibil, ținte tactile de minimum 44px. Desktop și 320/390/768px, fără overflow orizontal. Imagini responsive, dimensiuni rezervate, încărcare leneșă sub fold, fonturi limitate. Verifică reduced-motion și fallback fără WebGL.
+10. SEO numai pe site-ul final autorizat: canonical, metadata/OG specifice, sitemap, robots și date structurate conforme cu textul vizibil. Mockupurile și informațiile private rămân noindex. Nu promite indexare sau trafic.
+11. Înainte de livrare: verifică linkurile, formularul real sau starea neconfigurată, layoutul mobil, tastatura și conținutul factual. Păstrează snapshotul skillului și al brief-ului; aprobarea internă nu reprezintă publicare.
+
+Economie: pornește din profilul de nișă și mockupul determinist fără AI; cere rafinare doar dacă ajută. Folosește modelul text primary din registrul AI Core existent și limitele sale. Modelele suplimentare sau imaginile plătite cer autorizare separată; nu activa overage. Output: plan de secțiuni, direcție vizuală, componente de reutilizat, instrucțiuni Codex și lista datelor lipsă.
+
+## Sursa operațională
+Acestea sunt instrucțiunile de pornire, fără date private. Pentru versiunea curentă aprobată, citește prin autentificarea AVYRON existentă GET /api/skills/site-builder/skill.md. Referințele relevante se citesc la GET /api/skills/site-builder/context?domain=DOMENIU. Nu afișa tokenul în loguri, prompturi sau fișiere. Folosește POST /api/skills/site-builder/runs pentru pregătire internă și GET /api/skills/site-builder/runs/ID pentru rezultat. Toate mutațiile necesită permisiuni, MFA conform politicii și Idempotency-Key; schema este publicată în /api/skills/site-builder/context. Codex local nu poate rula când Mac-ul este oprit; coada cloud rulează numai pregătirea autorizată, fără trimitere, publicare sau deploy.

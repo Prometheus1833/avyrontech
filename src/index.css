@@ -196,6 +196,11 @@ html {
   scroll-behavior: smooth;
   scrollbar-gutter: stable;
 }
+/* Match the reserved scrollbar gutter to the private workspace only. */
+html:has([data-avyron-os]) {
+  color-scheme: dark;
+  background: #060a14;
+}
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
 }

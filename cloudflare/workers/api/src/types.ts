@@ -1,3 +1,4 @@
+import type { SkillPermissions } from "../../../../src/shared/skills/model";
 export type Role = "user" | "staff" | "admin";
 
 // Resource bindings, vars and required secrets are generated from the
@@ -77,5 +78,5 @@ type OptionalIntegrations = {
 
 export type Env = CloudflareBindings & OptionalIntegrations;
 
-export type AppVariables = { userId: string; roles: Role[]; requestId: string; sessionId: string; mfaVerified: boolean; antivirusIntent: {first:boolean;key:string;scope:string;body:{confirmed?:boolean;sample?:string}} };
+export type AppVariables = { userId: string; roles: Role[]; requestId: string; sessionId: string; mfaVerified: boolean; skillAccess?: SkillPermissions; antivirusIntent: {first:boolean;key:string;scope:string;body:{confirmed?:boolean;sample?:string}} };
 export type AppBindings = { Bindings: Env; Variables: AppVariables };

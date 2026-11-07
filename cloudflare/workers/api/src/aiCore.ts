@@ -1,6 +1,7 @@
 import { reserveAiCost } from "./aiCostGuard";
 import { now, sha256 } from "./security";
 import type { Env } from "./types";
+import { verifiedImageReservation } from "./skillImages";
 
 export type AiModelRole = "primary" | "secondary" | "image";
 export type AiTokenTier = "default" | "normal" | "special";
@@ -35,6 +36,7 @@ type AiCoreInput = {
   clientId?: string | null;
   financialReserved?: boolean;
   priority?: "background" | "important" | "user";
+  imageDimensions?: {width:number;height:number};
 };
 
 export class AiCoreError extends Error {
@@ -120,7 +122,7 @@ export async function runAiCore(input: AiCoreInput): Promise<{
   const tier = input.tier || "default";
   const maxTokens = role === "image" ? 0 : tokenLimit(registry, tier, input.requestedMaxTokens);
   const estimatedInput = Math.max(1, Math.ceil(Math.max(0, input.promptCharacters) / 4));
-  const estimatedNeurons = Math.max(1, estimatedInput + maxTokens);
+  const estimatedNeurons = role === "image" ? verifiedImageReservation(registry.model_id,input.imageDimensions?.width,input.imageDimensions?.height) : Math.max(1, estimatedInput + maxTokens);
   const priority = input.priority || "user";
   const currentUsage = await input.env.DB.prepare(
     "SELECT COALESCE(SUM(estimated_neurons),0) AS total FROM ai_core_reservations WHERE usage_day=?",

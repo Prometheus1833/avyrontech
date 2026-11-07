@@ -54,6 +54,7 @@ export const DASHBOARD_GROUP_LABELS: Record<string, string> = {
   activity: "Activitate",
   platform: "Platformă",
   os: "AVYRON OS",
+  skills: "Avy Skills",
   other: "Altele",
   billing: "Facturare",
   servicii: "Servicii AVYRON",
@@ -73,10 +74,14 @@ export const DASHBOARD_GROUP_ORDER = [
   "os",
   "billing",
   "account",
+  "skills",
   "other",
 ];
 
 export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
+  "skill-site-builder": {label:"Site Builder",commandLabel:"Deschide Site Builder",hint:"Mockupuri, briefuri Codex și componente reutilizabile",icon:Globe},
+  "skill-logo-engine": {label:"Logo Engine",commandLabel:"Deschide Logo Engine",hint:"Brief de identitate și direcții pentru Logo Studio",icon:Sparkles},
+  "skill-media-generate": {label:"Media Generate",commandLabel:"Deschide Media Generate",hint:"Direcție vizuală, prompturi și resurse aprobate",icon:Image},
   collaborators:{label:"Colaboratori/Parteneri",commandLabel:"Deschide Colaboratori/Parteneri",hint:"Relații profesionale, fișe și documente de colaborare",icon:Users},
   "my-collaborations":{label:"Colaborările mele",commandLabel:"Deschide colaborările mele",hint:"Detaliile și documentele colaborărilor proprii cu AVYRON",icon:BriefcaseBusiness},
   antivirus: {label:"Antivirus",commandLabel:"Deschide Antivirus",hint:"Bouncer Free, carantină, cote, conformitate și istoricul scanărilor",icon:ShieldCheck},

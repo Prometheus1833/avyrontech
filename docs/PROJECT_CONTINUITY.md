@@ -1,5 +1,7 @@
 # Continuitatea proiectului AVYRON
 
+Avy Skills — 07.11.2026: ramura `codex/avy-skills-2026-11-07`, pornită din `3d08c3f`, adaugă cele trei ateliere interne și migrarea 0100. [Arhitectură și limite verificate](./AVY_SKILLS.md): instrucțiuni/resurse versionate, briefuri private, mockup fără AI, pregătire în coada nativă și Media Generate prin AI Core. Antivirusul se aplică numai uploadurilor externe; generările interne nu consumă scanări. Nu există plafon nou de pregătiri sau resurse, doar paginare, protecții tehnice și bugetele existente. Starea locală/PR/remote/live se verifică separat; această notă nu dovedește deployul.
+
 Actualizare SEO 06.11.2026: auditul de build verifică și descoperirea paginilor din linkuri HTML, iar GA4 folosește coada Google `Arguments`, acord explicit și excluderea suprafețelor private. Dovada Bing este în meta tagul public `msvalidate.01`; starea verificării, sitemapurile și primirea efectivă a evenimentelor trebuie confirmate după deploy. Se reutilizează Cloudflare Crawler Hints pentru IndexNow, fără conector paralel. Vezi [runbookul de indexare](./SEO_INDEXATION_RUNBOOK.md); cifrele private de trafic și exporturile de cont nu se păstrează în Git.
 
 Acest document permite unui agent să continue lucrul fără să confunde codul local, PR-ul, preview-ul și producția. Verifică întotdeauna starea curentă înainte de a folosi inventarul datat de mai jos.

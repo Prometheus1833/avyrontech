@@ -4,10 +4,11 @@ import { runBillingReconciliation } from "./billing";
 import { runOperationJobs } from "./operationJobs";
 import { runSocialStudioScheduler } from "./socialStudioScheduler";
 import { cleanupSurveys, processSurveyAiJobs, processSurveyEvents } from "./surveys/tasks";
+import { drainSkillRuns } from "./skillRuntime";
 
 export type AsyncJob = {
   id: string;
-  kind: "operation_drain" | "social_drain" | "billing_reconcile" | "exchange_rate_refresh" | "survey_delivery" | "survey_ai" | "survey_cleanup";
+  kind: "operation_drain" | "social_drain" | "billing_reconcile" | "exchange_rate_refresh" | "survey_delivery" | "survey_ai" | "survey_cleanup" | "skills_drain";
   requestedAt: number;
 };
 
@@ -15,10 +16,11 @@ const validJob = (value: unknown): value is AsyncJob => {
   if (!value || typeof value !== "object") return false;
   const job = value as Partial<AsyncJob>;
   return typeof job.id === "string" && job.id.length >= 12 && typeof job.requestedAt === "number"
-    && ["operation_drain", "social_drain", "billing_reconcile", "exchange_rate_refresh", "survey_delivery", "survey_ai", "survey_cleanup"].includes(String(job.kind));
+    && ["operation_drain", "social_drain", "billing_reconcile", "exchange_rate_refresh", "survey_delivery", "survey_ai", "survey_cleanup", "skills_drain"].includes(String(job.kind));
 };
 
 async function execute(job: AsyncJob, env: Env) {
+  if (job.kind === "skills_drain") return drainSkillRuns(env);
   if (job.kind === "operation_drain") return runOperationJobs(env);
   if (job.kind === "social_drain") return runSocialStudioScheduler(env);
   if (job.kind === "billing_reconcile") return runBillingReconciliation(env);

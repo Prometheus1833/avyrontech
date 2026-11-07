@@ -1649,6 +1649,7 @@ import { decide,isKnownSpaRoute,normalizePath } from "../../../../src/worker/rou
 import { adminOperationsRouter } from "./adminOperations";
 import { aiOsRouter } from "./aiOs";
 import { aiProjectsRouter } from "./aiProjects";
+import { skillsRouter } from "./skills";
 import { consumeAsyncJobs,enqueueAsyncJobs } from "./asyncJobs";
 import { billingRouter } from "./billing";
 import { blogRouter,getBlogSitemapEntries,getPublishedBlogPost } from "./blog";
@@ -1732,6 +1733,8 @@ app.route("/", aiOsRouter);
 app.route("/", newsletterRouter);
 app.route("/", leadsRouter);
 app.route("/", aiProjectsRouter);
+app.use("/api/skills*", async(c,next)=>{c.header("Cache-Control","private, no-store");c.header("X-Robots-Tag","noindex, nofollow");return requireAuth(c,next);});
+app.route("/", skillsRouter);
 app.use("/api/admin/service-pages/*", requireAuth);
 app.route("/", servicePagesRouter);
 app.use("/api/admin/example-carousels*", requireAuth);
@@ -1955,6 +1958,10 @@ export default {
     if (controller.cron === "0,15,30,45 * * * *") {
       ctx.waitUntil(maintainMalwareScans(env).catch(() => console.error(JSON.stringify({event:"antivirus_poll_failed",code:"maintenance_unavailable"}))));
       ctx.waitUntil(enqueueAsyncJobs(env, ["operation_drain", "social_drain", "survey_delivery", "survey_ai"]));
+      ctx.waitUntil((async()=>{
+        const pending=await env.DB.prepare("SELECT 1 FROM avy_skill_runs WHERE status='queued' OR (status='preparing' AND started_at<?) LIMIT 1").bind(Date.now()-15*60_000).first();
+        if(pending)await enqueueAsyncJobs(env,["skills_drain"]);
+      })().catch(()=>console.error(JSON.stringify({event:"skills_schedule_unavailable",code:"maintenance_unavailable"}))));
       if (new Date(controller.scheduledTime).getUTCMinutes() === 0) {
         ctx.waitUntil(cleanupLogoSimulations(env.DB).catch(()=>console.error(JSON.stringify({event:"logo_metadata_cleanup_failed"}))));
         ctx.waitUntil(cleanupAvyronEditorialContent(env).catch((error) => {

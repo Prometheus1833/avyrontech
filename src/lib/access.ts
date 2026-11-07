@@ -59,6 +59,7 @@ export const canSee = (audience: Audience, a: Access) => {
 };
 
 export type SectionId =
+  | "skill-site-builder" | "skill-logo-engine" | "skill-media-generate"
   | "documents" | "overview" | "profile" | "settings" | "projects" | "subscriptions" | "invoices" | "payments" | "cart" | "orders" | "catalog" | "collection"
   | "stats" | "tickets" | "maintenance" | "client-maintenance" | "clients" | "domains"
   | "finance" | "media" | "leads" | "staff-tickets" | "demo-requests" | "intern"
@@ -69,7 +70,7 @@ export type SectionId =
 export type SectionDef = {
   id: SectionId;
   group:
-    | "overview" | "account" | "projects" | "billing" | "recurring" | "documents" | "servicii" | "produse" | "activity" | "platform" | "os" | "other";
+    | "overview" | "account" | "projects" | "billing" | "recurring" | "documents" | "servicii" | "produse" | "activity" | "platform" | "os" | "skills" | "other";
   audience: Audience;
   /** Secțiunile false rămân accesibile din huburi și căutare, fără duplicate în sidebar. */
   navigation?: boolean;
@@ -146,11 +147,15 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "os-centers", group: "os", audience: "staff", keywords: ["securitate", "automatizari", "integrari", "backup", "erori", "agenti ai", "programari", "comentarii", "pluginuri"] },
   { id: "promotions", group: "os", audience: "superadmin", navigation: false, keywords: ["promotii", "reduceri", "campanii"] },
 
+  { id: "skill-site-builder", group: "skills", audience: "staff", keywords: ["site builder", "mockup", "skill", "codex", "prompt", "website"] },
+  { id: "skill-logo-engine", group: "skills", audience: "staff", keywords: ["logo engine", "skill", "identitate", "brand"] },
+  { id: "skill-media-generate", group: "skills", audience: "staff", keywords: ["media generate", "skill", "imagini", "fundal", "prompt"] },
   { id: "other-hub", group: "other", audience: "staff", keywords: ["altele", "module", "rapoarte", "functii", "roadmap"] },
   { id: "resources", group: "documents", audience: "staff", navigation: false, keywords: ["resurse", "documente", "ghid", "siteuri", "campuri"] },
 ];
 
 const canOpenDefinition = (section: SectionDef, access: Access) => {
+  if(section.group==="skills") return access.isSuperAdmin || access.capabilities.some(c=>["skills.read","skills.use","skills.manage","skills.approve"].includes(c)) || (access.isOperator && access.capabilities.includes("leads.read") && access.capabilities.includes("ai_projects.read"));
   if(section.id==="maintenance")return access.isSuperAdmin;
   if(section.id==="client-maintenance"&&access.isClient)return false;
   if(section.id==="my-collaborations")return access.hasCollaborations===true;
