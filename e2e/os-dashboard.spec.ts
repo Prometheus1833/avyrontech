@@ -164,6 +164,7 @@ test.describe("dashboard AVYRON OS în română", () => {
   });
 
   test("afișează sumarul operațional și centrele principale pe desktop", async ({ page }, testInfo) => {
+    await page.setViewportSize({width:1440,height:1000});
     await page.goto("/profil?tab=overview");
 
     await expect(page.getByRole("heading", { name: /Bună (dimineața|ziua|seara), Andrei\./ })).toBeVisible();

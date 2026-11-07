@@ -2,7 +2,7 @@ import { reserveAiCost } from "./aiCostGuard";
 import { now, sha256 } from "./security";
 import type { Env } from "./types";
 import { verifiedImageReservation } from "./skillImages";
-import { cloudflareModelInput } from "./aiModelInput";
+import { cloudflareModelInput, cloudflareModelOutput } from "./aiModelInput";
 
 export type AiModelRole = "primary" | "secondary" | "image";
 export type AiTokenTier = "default" | "normal" | "special";
@@ -149,6 +149,7 @@ export async function runAiCore(input: AiCoreInput): Promise<{
 
   await reserveModelBudget(input.env, registry, input.agentSlug, estimatedNeurons, input.idempotencyKey, priority);
   const modelInput = role === "image" ? input.input : { ...input.input, max_tokens: maxTokens };
-  const output = await input.env.AI.run(registry.model_id, cloudflareModelInput(registry.model_id,modelInput));
+  const rawOutput = await input.env.AI.run(registry.model_id, cloudflareModelInput(registry.model_id,modelInput));
+  const output = role==='image'?rawOutput:cloudflareModelOutput(rawOutput);
   return { output, model: registry.model_id, role, maxTokens, estimatedNeurons };
 }

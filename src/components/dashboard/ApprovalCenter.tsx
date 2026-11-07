@@ -35,6 +35,7 @@ export default function ApprovalCenter({
     [selected, setSelected] = useState<ApprovalDetail | null>(null),
     [busy, setBusy] = useState(false),
     [confirmed, setConfirmed] = useState(false);
+  const [intent,setIntent]=useState<'review'|'approve'|'withdraw'>('review');
   const sequence = useRef(0),
     alive = useRef(true),
     decisionKey = useRef(crypto.randomUUID());
@@ -88,10 +89,11 @@ export default function ApprovalCenter({
       document.removeEventListener("visibilitychange", refresh);
     };
   }, [load, authorized]);
-  const review = async (item: ApprovalItem) => {
+  const review = async (item: ApprovalItem,nextIntent:'review'|'approve'|'withdraw'='review') => {
     setBusy(true);
     setError("");
     setConfirmed(false);
+    setIntent(nextIntent);
     decisionKey.current = crypto.randomUUID();
     try {
       const next = await osApi.approval(item);
@@ -131,12 +133,19 @@ export default function ApprovalCenter({
       setBusy(false);
     }
   };
+  const withdraw=async()=>{
+    if(!selected||!confirmed||busy)return;
+    setBusy(true);
+    try{await osApi.withdrawItem(selected,decisionKey.current);setSelected(null);toast.success('Solicitarea a fost retrasă din listă. Istoricul a fost păstrat.');window.dispatchEvent(new Event('avyron:approvals-changed'));await load();}
+    catch(e){toast.error(e instanceof Error?e.message:'Solicitarea nu poate fi retrasă.');await load();}
+    finally{setBusy(false);}
+  };
   const rows = (all: boolean) => (
     <div className="space-y-2">
       {(all ? inbox?.data : inbox?.data.slice(0, 4))?.map((item) => (
         <article
           key={item.source + item.id}
-          className="flex min-w-0 items-start justify-between gap-3 rounded-xl border border-white/[0.07] bg-white/[0.025] p-3"
+          className="flex min-w-0 flex-col gap-3 rounded-xl border border-white/[0.07] bg-white/[0.025] p-3"
         >
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-wide text-fuchsia-200/70">
@@ -149,13 +158,15 @@ export default function ApprovalCenter({
               {item.summary}
             </p>
           </div>
-          <button
+          <div className="flex flex-wrap gap-2"><button
             className={button + " shrink-0"}
             disabled={busy}
             onClick={() => void review(item)}
           >
             Revizuiește
           </button>
+          <button className={button+' text-emerald-300'} disabled={busy} onClick={()=>void review(item,'approve')}>Aprobă</button>
+          <button className={button+' text-rose-300'} title={item.canWithdraw===false?'Retragerea necesită rolul Owner în modulul sursă.':'Retrage solicitarea și păstrează istoricul'} disabled={busy||item.canWithdraw===false} onClick={()=>void review(item,'withdraw')}>Șterge</button></div>
         </article>
       ))}
     </div>
@@ -304,7 +315,13 @@ export default function ApprovalCenter({
           <div className="whitespace-pre-wrap break-words rounded-xl bg-white/5 p-4 text-sm leading-relaxed">
             {selected?.detail}
           </div>
-          {selected?.canDecide && (
+          {selected&&intent==='withdraw'&&<>
+            <p className="text-sm text-slate-300">Retragi această solicitare în așteptare. Înregistrarea sursă și istoricul rămân păstrate; versiunea unui tipizat este retrasă, fără ștergerea documentelor generate.</p>
+            <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/>Confirm retragerea acestei versiuni.</label>
+            <button className={button+' text-rose-300'} disabled={!confirmed||busy||selected.canWithdraw===false} onClick={()=>void withdraw()}>Șterge solicitarea</button>
+          </>}
+          {selected&&intent==='approve'&&!selected.canDecide&&<p className="text-sm text-amber-200">Aprobarea acestui tip de solicitare se finalizează în modulul specializat, după verificările sale obligatorii. Pentru modelele juridice este necesară referința revizuirii de specialitate.</p>}
+          {selected?.canDecide && intent!=='withdraw' && (
             <>
               <p className="text-xs text-slate-400">
                 Decizia privește versiunea revizuită. Publicarea, expedierea și
@@ -349,7 +366,7 @@ export default function ApprovalCenter({
                 navigate(selected.href);
               }}
             >
-              Deschide în modulul sursă
+              {intent==='approve'&&!selected.canDecide?'Continuă aprobarea în modulul sursă':'Deschide în modulul sursă'}
             </button>
           )}
         </DialogContent>

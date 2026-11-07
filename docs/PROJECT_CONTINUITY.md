@@ -151,3 +151,7 @@ Continuare din `4924253` (#101, întregul lot #94–#101 verificat verde), pe `c
 ## Generator Documente — structură și exporturi AVYRON, 06.11.2026
 
 Continuare de la PR #103 (`b6c4f7b`) pe ramură dedicată: [DOCUMENT_GENERATOR_EDITORIAL.md](./DOCUMENT_GENERATOR_EDITORIAL.md). Acțiuni directe de salvare/PDF/Word/pregătire distribuire, previzualizare comună și 11 familii cu structură modernă, cu noi versiuni de master și păstrarea personalizărilor/istoricului. 0099 este aditivă. Utilizatorul a confirmat păstrarea sediului din OS și completarea ulterioară a ONRC/reprezentant/capital în Documente SC. Consultați PR-ul pentru verificări și starea efectivă a migrării/deployului; documentul de continuitate nu dovedește o lansare.
+
+## Prezentare generală — diagnostic și acțiuni (07.11.2026)
+
+Vezi [runbookul operațional](./OVERVIEW_OPERATIONS.md): nume native pentru agenți, selecție proiect AI, priorități detaliate și retragerea controlată a cererilor. Reautorizarea R2/AI și probele reale sunt consemnate separat de cod. Nu există migrare nouă; PR #113/0105 rămâne separat. Proiectul cabinetului și designul public sunt excluse. Starea PR/CI/deploy se citește din GitHub, nu din această notă.
