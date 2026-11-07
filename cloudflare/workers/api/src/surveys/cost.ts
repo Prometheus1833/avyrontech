@@ -1,4 +1,12 @@
 import type { Env } from '../types';
+import { MISTRAL_SMALL_MODEL } from '../agentRuntimePolicy';
+const LLAMA_SURVEY_MODEL='@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+// Official Cloudflare per-million-token prices checked 2026-11-07.
+const MODEL_PRICING:Readonly<Record<string,{input:number;output:number}>>={
+ [LLAMA_SURVEY_MODEL]:{input:0.293,output:2.253},
+ [MISTRAL_SMALL_MODEL]:{input:0.351,output:0.555},
+};
+export const surveyModelPricing=(model:string):{input:number;output:number}|undefined=>MODEL_PRICING[model];
 const FX_KEY='survey:usd-ron:v1';
 const FX_URL='https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml';
 export function parseSurveyFx(xml:string,now=Date.now()){
@@ -14,8 +22,9 @@ export async function surveyFx(env:Env){
  try{const response=await fetch(FX_URL,{signal:AbortSignal.timeout(4000)});if(!response.ok)throw new Error('fx_unavailable');const value=parseSurveyFx(await response.text());await env.KV.put(FX_KEY,JSON.stringify({...value,cachedAt:Date.now()}),{expirationTtl:7*86400});return value.rate;}catch{if(cached&&Date.now()-cached.at<7*86400000&&cached.rate>1&&cached.rate<15)return cached.rate;throw new Error('fx_unavailable');}
 }
 /** Conservative RON minor-unit reservation including a 50% FX/tax buffer. */
-export function surveyCostEstimate(source:string,maxOutput:number,ronPerUsd:number){
+export function surveyCostEstimate(source:string,maxOutput:number,ronPerUsd:number,model=LLAMA_SURVEY_MODEL){
  if(!Number.isFinite(ronPerUsd)||ronPerUsd<=0||!Number.isInteger(maxOutput)||maxOutput<1)throw new Error('invalid_estimate');
  const input=new TextEncoder().encode(source).length+1500;
- return {units:input+maxOutput,minor:Math.max(1,Math.ceil((input*0.293+maxOutput*2.253)*ronPerUsd*1.5/10000))};
+ const pricing=surveyModelPricing(model);if(!pricing)throw new Error('unsupported_model_pricing');
+ return {units:input+maxOutput,minor:Math.max(1,Math.ceil((input*pricing.input+maxOutput*pricing.output)*ronPerUsd*1.5/10000))};
 }

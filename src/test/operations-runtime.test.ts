@@ -10,6 +10,7 @@ import {operationsRouter} from '../../cloudflare/workers/api/src/operations';
 import {runOperationJobs} from '../../cloudflare/workers/api/src/operationJobs';
 import {retrieveKnowledge,retrievePublicSources,boundedKnowledgeContext} from '../../cloudflare/workers/api/src/knowledgeRetrieval';
 import {reserveAiCost} from '../../cloudflare/workers/api/src/aiCostGuard';
+import {runAiCore} from '../../cloudflare/workers/api/src/aiCore';
 import {sealCredential,openCredential,boundedProviderJson,readIntegration,googleOAuthAuthorization,completeGoogleOAuth} from '../../cloudflare/workers/api/src/integrationAdapters';
 import type {Env} from '../../cloudflare/workers/api/src/types';
 const {DatabaseSync}=createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
@@ -244,6 +245,19 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
  it('uses the approved prompt snapshot and provider-reported token usage',async()=>{
   chatSeed();db.exec("UPDATE ai_agents SET system_prompt='UNAPPROVED_CHANGE' WHERE slug='avy'; UPDATE ai_agent_versions SET system_prompt='APPROVED_SNAPSHOT' WHERE agent_slug='avy'");const model=vi.fn(async()=>({response:'Grounded reply',usage:{prompt_tokens:123,completion_tokens:12}}));env.AI={run:model} as unknown as Ai;
   const response=await chat('Cloudflare optimizare',{page:'/servicii/website-prezentare-profesional'});expect(response.status).toBe(200);expect((await response.json()).reply).toBe('Grounded reply');expect(model).toHaveBeenCalledTimes(1);const input=model.mock.calls[0] as unknown as [string,{messages:{content:string}[]}];expect(input[1].messages[0].content).toContain('APPROVED_SNAPSHOT');expect(input[1].messages[0].content).not.toContain('UNAPPROVED_CHANGE');expect(input[1].messages[0].content).toContain('pagina serviciului Website Prezentare Profesional');expect(db.prepare('SELECT input_tokens,output_tokens,usage_source FROM ai_runs').get()).toMatchObject({input_tokens:123,output_tokens:12,usage_source:'provider'});
+ });
+ it('routes public chat through the replacement model in the migrated central registry',async()=>{
+  chatSeed();const model=vi.fn(async()=>({response:'Un proiect web reunește obiectivele, conținutul și funcționalitățile unui site.'}));env.AI={run:model} as unknown as Ai;
+  const response=await chat('Cloudflare optimizare');expect(response.status).toBe(200);
+  expect(model).toHaveBeenCalledWith('@cf/mistralai/mistral-small-3.1-24b-instruct',expect.objectContaining({messages:expect.any(Array)}));
+  expect((await response.json()).answerSource).toBe('model');
+ });
+ it('sends JSON constraints through AI Core using the Mistral-specific API field',async()=>{
+  const model=vi.fn(async()=>({response:'{"answer":"ok"}'}));env.AI={run:model} as unknown as Ai;
+  const schema={type:'object',properties:{answer:{type:'string'}},required:['answer'],additionalProperties:false};
+  const result=await runAiCore({env,agentSlug:'avy',operation:'model_compatibility_test',idempotencyKey:'model-json-test',promptCharacters:32,requestedMaxTokens:64,input:{messages:[{role:'user',content:'Return an answer object.'}],response_format:{type:'json_schema',json_schema:schema}}});
+  expect(result.model).toBe('@cf/mistralai/mistral-small-3.1-24b-instruct');
+  expect(model).toHaveBeenCalledWith(result.model,{messages:[{role:'user',content:'Return an answer object.'}],guided_json:schema,max_tokens:64});
  });
  it('publishes dashboard-managed chat prompts and rejects malformed prompt lists',async()=>{
   const publicResponse=await app.request('/api/ai/agents',{},env);expect(publicResponse.status).toBe(200);expect(publicResponse.headers.get('cache-control')).toBe('no-store');const publicBody=await publicResponse.json() as {data:Array<{starterQuestions:{ro:string[]};proactivePrompts:{ro:string[]}}>};expect(publicBody.data[0].starterQuestions.ro).toContain('Vreau un site');expect(publicBody.data[0].proactivePrompts.ro).toContain('Ai nevoie de un site?');

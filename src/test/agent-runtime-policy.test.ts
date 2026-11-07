@@ -17,7 +17,9 @@ const base = {
 describe("AI agent runtime policy", () => {
   it("maps retired model identifiers to the supported runtime model", () => {
     expect(resolveAgentModel("@cf/meta/llama-3.1-8b-instruct")).toBe(DEFAULT_AGENT_MODEL);
+    expect(resolveAgentModel("@cf/qwen/qwen3-30b-a3b-fp8")).toBe(DEFAULT_AGENT_MODEL);
     expect(resolveAgentModel(DEFAULT_AGENT_MODEL)).toBe(DEFAULT_AGENT_MODEL);
+    expect(resolveAgentModel("custom-owner-model")).toBe("custom-owner-model");
   });
 
   it("allows a registered read tool inside a read-only policy", () => {

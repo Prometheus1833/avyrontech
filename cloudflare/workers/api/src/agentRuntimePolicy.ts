@@ -1,9 +1,11 @@
 export type AgentActionClass = "read" | "write" | "external" | "financial" | "publish";
 export type ToolMode = "disabled" | "read" | "approval" | "execute";
 
-export const DEFAULT_AGENT_MODEL = "@cf/qwen/qwen3-30b-a3b-fp8";
+export const MISTRAL_SMALL_MODEL = "@cf/mistralai/mistral-small-3.1-24b-instruct";
+export const DEFAULT_AGENT_MODEL = MISTRAL_SMALL_MODEL;
 
 const AGENT_MODEL_ALIASES: Readonly<Record<string, string>> = {
+  "@cf/qwen/qwen3-30b-a3b-fp8": DEFAULT_AGENT_MODEL,
   "@cf/meta/llama-3.1-8b-instruct": DEFAULT_AGENT_MODEL,
   "@cf/meta/llama-3.1-8b-instruct-fast": DEFAULT_AGENT_MODEL,
 };

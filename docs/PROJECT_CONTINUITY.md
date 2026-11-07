@@ -1,5 +1,7 @@
 # Continuitatea proiectului AVYRON
 
+Înlocuire Qwen — 07.11.2026: din `6d00e41`, ramura `codex/replace-qwen-cloudflare-2026-11-07` pregătește Mistral Small 3.1 24B prin bindingul existent. [Runbook](./QWEN_REPLACEMENT.md): 0103, versiuni istorice păstrate, alias legacy, rute sincronizate și controale Free neschimbate. Starea efectivă și verificarea furnizorului se citesc din PR.
+
 Consolidare — 07.11.2026: [inventarul de reconciliere](./RELEASE_RECONCILIATION_2026-11-07.md) acoperă PR-urile restante, dependențele, Altele și recuperarea fluxului Leads prin migrarea aditivă 0101. Publicarea cabinetului este verificată separat în Sites. Rezultatele CI, integrarea și versiunea Worker se consemnează în PR; documentația locală nu constituie dovadă de deploy.
 
 Baza `9dead20` include deja livrările #93 (lotul OS integrat), #103 (portal/client/logo/achiziții), #105 (generator documente), #106 (SEO) și #107 (Avy Skills). Paragrafele istorice marcate „local” sau „deploy amânat” de mai jos descriu momentul redactării, nu o restanță curentă. Verificați istoricul GitHub și dovezile de release pentru starea live.
