@@ -7,6 +7,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { dashboardRouter } from '../../cloudflare/workers/api/src/osDashboard';
 import { bucharestMonthStart } from '../../cloudflare/workers/api/src/financialTotals';
 import { aiProjectsRouter } from '../../cloudflare/workers/api/src/aiProjects';
+import { runSocialStudioScheduler } from '../../cloudflare/workers/api/src/socialStudioScheduler';
+import { cleanupAvyronEditorialContent } from '../../cloudflare/workers/api/src/aiContentRetention';
+import type { Env } from '../../cloudflare/workers/api/src/types';
 import { operationsRouter } from '../../cloudflare/workers/api/src/operations';
 
 // Node 22 supports SQLite but does not list this experimental module among all
@@ -256,6 +259,89 @@ describe('OS dashboard — migrated SQLite and actual Hono handlers', () => {
     const result=await (await app.request('/api/ai-projects/avyron-web/social-manager',{},{})).json();expect(result.content).toEqual([]);
     expect((await app.request('/api/ai-projects/avyron-web/social-manager?status=private',{},{})).status).toBe(400);
     actor='client';expect((await app.request('/api/ai-projects/avyron-web/social-manager',{},{})).status).toBe(404);
+  });
+
+  const editorialDraft={title:'Pachet editorial reutilizabil',caption:'Text complet despre fluxul magazinului online AVYRON.',format:'carousel',channels:['facebook','instagram'],sourceRef:'fixture:campaign',sourceRevision:'R2',reusable:true,requestApproval:true};
+  const postDraft=(body:unknown,key='editorial-import-fixture-01')=>app.request('/api/ai-projects/aip_avyron_web/social-manager/drafts',{method:'POST',headers:{'content-type':'application/json','Idempotency-Key':key},body:JSON.stringify(body)},{});
+  it('imports real material once, rejects revision drift and keeps it visible in the native approval center',async()=>{
+    const response=await postDraft(editorialDraft);expect(response.status).toBe(201);const {id}=await response.json();
+    const retry=await postDraft(editorialDraft);expect(retry.status).toBe(200);expect((await retry.json()).id).toBe(id);
+    expect((await postDraft({...editorialDraft,caption:'Un text schimbat fără revizie nouă.'})).status).toBe(409);
+    const result=await(await app.request('/api/ai-projects/avyron-web/social-manager',{},{})).json();expect(result.content[0].id).toBe(id);expect(result.counts.pending_approval).toBe(1);expect((await inbox()).counts.content).toBe(1);
+  });
+  it('hides old jobs and distant dates from focus but keeps future planning and history discoverable',async()=>{
+    const seed=db.prepare("INSERT INTO ai_social_jobs(id,project_id,schedule_key,kind,format,primary_channel,topic,status,due_at,created_at,updated_at) VALUES(?,'aip_avyron_web',?,'daily_post','post','facebook',?,'queued',?,?,?)");
+    for(const [id,delta] of [['old',-2*86400000],['recent',-3600000],['next',3600000],['later',3*86400000]] as const)seed.run(id,id,id,stamp+delta,stamp,stamp);
+    const focus=await(await app.request('/api/ai-projects/avyron-web/social-manager',{},{})).json();expect(focus.activities.map((j:{id:string})=>j.id)).toEqual(['recent','next']);
+    const future=await(await app.request('/api/ai-projects/avyron-web/social-manager?view=upcoming',{},{})).json();expect(future.activities.map((j:{id:string})=>j.id)).toEqual(['next','later']);
+    expect((await app.request('/api/ai-projects/aip_avyron_web/social-manager/archive',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({confirmed:true})},{})).status).toBe(200);
+    expect(db.prepare("SELECT archived_at FROM ai_social_jobs WHERE id='old'").get()!.archived_at).toBeTruthy();expect(db.prepare('SELECT count(*) total FROM ai_social_jobs').get()!.total).toBe(4);
+    const history=await(await app.request('/api/ai-projects/avyron-web/social-manager?view=history',{},{})).json();expect(history.activities.some((j:{id:string})=>j.id==='old')).toBe(true);
+  });
+  it('an unrelated client cannot import, mutate, archive or fetch private assets',async()=>{
+    actor='client';expect((await postDraft(editorialDraft)).status).toBe(404);
+    for(const path of ['social-manager/archive','social-jobs/missing/reschedule'])expect((await app.request('/api/ai-projects/aip_avyron_web/'+path,{method:'POST',body:'{}'},{})).status).toBe(404);
+    expect((await app.request('/api/ai-projects/aip_avyron_web/social-assets/other',{},{})).status).toBe(404);
+  });
+  it('edits invalidate the pending version and stale dashboard/chat approvals cannot win',async()=>{
+    const {id}=await(await postDraft(editorialDraft)).json();const before=db.prepare('SELECT updated_at FROM ai_content_items WHERE id=?').get(id)!.updated_at as number;
+    const update=await app.request(`/api/ai-projects/aip_avyron_web/social-manager/drafts/${id}`,{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({draft:{...editorialDraft,requestApproval:false,caption:'Text revizuit pentru o variantă mai clară.'},expectedUpdatedAt:before})},{});expect(update.status).toBe(200);
+    expect(db.prepare('SELECT status FROM ai_content_items WHERE id=?').get(id)!.status).toBe('draft');
+    const stale=await app.request(`/api/ai-projects/aip_avyron_web/content/${id}`,{method:'PATCH',body:JSON.stringify({status:'approved',expectedUpdatedAt:before,origin:'codex_chat',approvalReference:'thread/approved-version'})},{});expect(stale.status).toBe(409);
+  });
+  it('dashboard and authenticated Codex review use the same approval record and exact revision',async()=>{
+    const {id}=await(await postDraft(editorialDraft)).json();const revision=db.prepare('SELECT updated_at FROM ai_content_items WHERE id=?').get(id)!.updated_at;
+    for(const missing of [{origin:'codex_chat',expectedUpdatedAt:revision},{origin:'codex_chat',approvalReference:'codex://human-message/exact-r2'}])expect((await app.request(`/api/ai-projects/aip_avyron_web/content/${id}`,{method:'PATCH',body:JSON.stringify({status:'approved',...missing})},{})).status).toBe(400);
+    const response=await app.request(`/api/ai-projects/aip_avyron_web/content/${id}`,{method:'PATCH',body:JSON.stringify({status:'approved',expectedUpdatedAt:revision,origin:'codex_chat',approvalReference:'codex://human-message/exact-r2'})},{});expect(response.status).toBe(200);
+    const record=db.prepare('SELECT status,approved_by FROM ai_content_items WHERE id=?').get(id)!;expect(record).toMatchObject({status:'approved',approved_by:'owner'});
+    const log=db.prepare("SELECT metadata_json FROM ai_project_events WHERE target_id=? AND action='ai_project.content.approved'").get(id)!;expect(JSON.parse(String(log.metadata_json))).toMatchObject({origin:'codex_chat',approvalReference:'codex://human-message/exact-r2'});
+    const snap=await(await app.request('/api/ai-projects/avyron-web/social-manager?status=approved',{},{})).json();expect(snap.content[0].id).toBe(id);
+  });
+  it('reuses an old source as a fresh draft without carrying over approval or copying assets',async()=>{
+    const {id}=await(await postDraft(editorialDraft)).json();db.prepare("UPDATE ai_content_items SET created_at=?,expires_at=? WHERE id=?").run(stamp-10*86400000,stamp-7*86400000,id);
+    const library=await(await app.request('/api/ai-projects/avyron-web/social-manager?view=library',{},{})).json();expect(library.content[0].id).toBe(id);
+    const revision=db.prepare('SELECT updated_at FROM ai_content_items WHERE id=?').get(id)!.updated_at;
+    const request=()=>app.request(`/api/ai-projects/aip_avyron_web/social-manager/drafts/${id}/reuse`,{method:'POST',headers:{'content-type':'application/json','Idempotency-Key':'editorial-reuse-fixture-01'},body:JSON.stringify({expectedUpdatedAt:revision,scheduledAt:stamp+3600000})},{});
+    const response=await request();expect(response.status).toBe(201);const reused=await response.json();expect((await request()).status).toBe(200);
+    const copy=db.prepare('SELECT reused_from_id,status,approved_by,reusable FROM ai_content_items WHERE id=?').get(reused.id)!;expect(copy).toMatchObject({reused_from_id:id,status:'draft',approved_by:null,reusable:0});
+    expect(db.prepare('SELECT count(*) total FROM ai_content_items').get()!.total).toBe(2);
+  });
+  it('rescheduling resets plan approval and rejects stale revisions',async()=>{
+    db.prepare("INSERT INTO ai_social_jobs(id,project_id,schedule_key,kind,format,primary_channel,topic,status,due_at,created_at,updated_at,plan_review_state) VALUES('move','aip_avyron_web','move','daily_post','post','facebook','Temă','queued',?,?,?,'approved')").run(stamp,stamp,stamp);
+    const request=()=>app.request('/api/ai-projects/aip_avyron_web/social-jobs/move/reschedule',{method:'POST',body:JSON.stringify({dueAt:stamp+86400000,expectedUpdatedAt:stamp})},{});
+    expect((await request()).status).toBe(200);expect((await request()).status).toBe(409);expect(db.prepare("SELECT plan_review_state FROM ai_social_jobs WHERE id='move'").get()!.plan_review_state).toBe('pending');
+  });
+
+  it('prepares a matching reusable source without invoking or requiring an AI binding',async()=>{
+    app.get('/fixture-scheduler',async c=>{Object.assign(c.env,{AI:undefined});return c.json(await runSocialStudioScheduler(c.env as Env,stamp));});
+    const {id}=await(await postDraft({...editorialDraft,provenance:{serviceFocus:'online_store'}})).json();
+    db.exec("UPDATE ai_social_policies SET status='paused'");
+    db.prepare("INSERT INTO ai_social_jobs(id,project_id,schedule_key,kind,format,primary_channel,topic,brief_json,status,due_at,created_at,updated_at) VALUES('reuse-auto','aip_avyron_web','reuse-auto','daily_post','post','multi','Aceeași temă',?,'queued',?,?,?)").run(JSON.stringify({serviceFocus:'online_store'}),stamp+6*86400000/24,stamp,stamp);
+    expect((await app.request('/fixture-scheduler',{},{})).status).toBe(200);
+    const job=db.prepare("SELECT status,content_id FROM ai_social_jobs WHERE id='reuse-auto'").get()!;expect(job.status).toBe('draft_ready');
+    expect(db.prepare('SELECT reused_from_id,status FROM ai_content_items WHERE id=?').get(job.content_id as string)).toMatchObject({reused_from_id:id,status:'draft'});
+  });
+  it('retention keeps reusable sources and shared asset records when a temporary parent expires',async()=>{
+    app.get('/fixture-retention',async c=>c.json(await cleanupAvyronEditorialContent(c.env as Env,stamp)));
+    const {id}=await(await postDraft(editorialDraft)).json();db.prepare('UPDATE ai_content_items SET created_at=?,expires_at=? WHERE id=?').run(stamp-10*86400000,stamp-7*86400000,id);
+    const project=seedContent('temporary',10*86400000);
+    db.prepare("INSERT INTO ai_social_assets(id,project_id,content_id,role,r2_bucket,object_key,mime_type,byte_size,sha256,created_at,updated_at) VALUES('shared-asset',?,'temporary','visual','files','social/private/shared.png','image/png',20,'fixture',?,?)").run(project,stamp,stamp);
+    db.prepare("UPDATE ai_content_items SET source_metadata_json=json_set(source_metadata_json,'$.assetIds',json('[\"shared-asset\"]')) WHERE id=?").run(id);
+    expect((await app.request('/fixture-retention',{},{})).status).toBe(200);expect(db.prepare('SELECT id FROM ai_content_items WHERE id=?').get(id)).toBeTruthy();expect(db.prepare("SELECT id FROM ai_content_items WHERE id='temporary'").get()).toBeUndefined();expect(db.prepare("SELECT content_id FROM ai_social_assets WHERE id='shared-asset'").get()!.content_id).toBeNull();
+  });
+
+  it('the native social editor cannot approve a chat or dashboard decision and loses access on revocation',async()=>{
+    db.prepare("INSERT INTO users(id,email,password_hash,email_verified,created_at,updated_at) VALUES('staff','operator@example.test','fixture',1,?,?)").run(stamp,stamp);
+    db.prepare("INSERT INTO ai_project_members(project_id,user_id,role,status,granted_at,updated_at) VALUES('aip_avyron_web','staff','editor','active',?,?)").run(stamp,stamp);actor='staff';
+    const response=await postDraft(editorialDraft);expect(response.status).toBe(201);const {id}=await response.json();const revision=db.prepare('SELECT updated_at FROM ai_content_items WHERE id=?').get(id)!.updated_at;
+    expect((await app.request(`/api/ai-projects/aip_avyron_web/content/${id}`,{method:'PATCH',body:JSON.stringify({status:'approved',expectedUpdatedAt:revision,origin:'codex_chat',approvalReference:'untrusted-self-approval'})},{})).status).toBe(403);
+    db.exec("UPDATE ai_project_members SET status='revoked' WHERE user_id='staff'");expect((await app.request('/api/ai-projects/avyron-web/social-manager',{},{})).status).toBe(404);
+  });
+
+  it('focus hides already-approved past material while its explicit editorial filter remains usable',async()=>{
+    const project=seedContent('done');db.prepare("UPDATE ai_content_items SET status='approved',approved_by='owner',approved_at=?,scheduled_at=? WHERE id='done'").run(stamp,stamp-3600000);
+    expect((await(await app.request('/api/ai-projects/avyron-web/social-manager',{},{})).json()).content).toEqual([]);
+    expect((await(await app.request('/api/ai-projects/avyron-web/social-manager?status=approved',{},{})).json()).content[0].id).toBe('done');
   });
 
 });

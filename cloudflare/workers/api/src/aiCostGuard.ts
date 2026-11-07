@@ -11,6 +11,7 @@ type ReserveInput = {
   idempotencyKey: string;
   requestId?: string | null;
   projectId?: string | null;
+  aiProjectId?: string | null;
   clientId?: string | null;
 };
 
@@ -37,10 +38,10 @@ const safeInteger = (value: number) => Number.isSafeInteger(value) && value >= 0
 type UsageEvent = {
   quota_id: string | null; decision: CostGuardDecision["decision"] | "failed";
   reason: string; units: number; vendor_id: string; agent_slug: string;
-  operation: string; estimated_cost_minor: number; project_id: string | null; client_id: string | null;
+  operation: string; estimated_cost_minor: number; project_id: string | null; ai_project_id?: string | null; client_id: string | null;
 };
 const replayQuery = `SELECT quota_id,decision,reason,units,vendor_id,agent_slug,operation,
-  estimated_cost_minor,project_id,client_id FROM financial_usage_events WHERE idempotency_key_hash=?`;
+  estimated_cost_minor,project_id,ai_project_id,client_id FROM financial_usage_events WHERE idempotency_key_hash=?`;
 
 function replayReservation(previous: UsageEvent, input: ReserveInput): AiCostReservation {
   // A key identifies one semantic request, including its tenant and cost.
@@ -49,7 +50,8 @@ function replayReservation(previous: UsageEvent, input: ReserveInput): AiCostRes
     && previous.operation === input.operation.slice(0, 120) && previous.units === input.requestedUnits
     && previous.estimated_cost_minor === input.estimatedCostMinor
     && previous.project_id === (input.projectId || null) && previous.client_id === (input.clientId || null);
-  if (!matches) return { decision: "blocked", reason: "idempotency_key_reused", projectedQuotaUsed: 0, quotaId: null };
+  const aiScopeMatches=(previous.ai_project_id||null)===(input.aiProjectId||null);
+  if (!matches||!aiScopeMatches) return { decision: "blocked", reason: "idempotency_key_reused", projectedQuotaUsed: 0, quotaId: null };
   return { decision: previous.decision === "failed" ? "blocked" : previous.decision,
     reason: previous.reason, projectedQuotaUsed: previous.units, quotaId: previous.quota_id };
 }
@@ -120,12 +122,12 @@ export async function reserveAiCost(input: ReserveInput): Promise<AiCostReservat
   const persistedAt = now();
   const persist = () => input.db.prepare(
     `INSERT INTO financial_usage_events
-      (id,vendor_id,quota_id,agent_slug,project_id,client_id,operation,units,
+      (id,vendor_id,quota_id,agent_slug,project_id,ai_project_id,client_id,operation,units,
        estimated_cost_minor,currency,decision,reason,idempotency_key_hash,request_id,created_at,reservation_mode)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'atomic')`,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'atomic')`,
   ).bind(
     `fuse_${crypto.randomUUID().replace(/-/g, "")}`, input.vendorId, quota?.id || null,
-    input.agentSlug, input.projectId || null, input.clientId || null,
+    input.agentSlug, input.projectId || null,input.aiProjectId||null, input.clientId || null,
     input.operation.slice(0, 120), input.requestedUnits, input.estimatedCostMinor,
     policy?.currency || "RON", decision.decision, decision.reason,
     idempotencyHash, input.requestId || null, persistedAt,

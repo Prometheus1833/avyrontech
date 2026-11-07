@@ -1,6 +1,8 @@
 import { readJsonBodyUpTo } from "./requestBody";
 import {managedStaff,managedPermission} from "./staffAccessPolicy";
-import { editorialStates, socialManagerSnapshot } from "./socialManager";
+import { editorialStates, socialManagerSnapshot, socialContentColumns } from "./socialManager";
+import { socialDraftSchema, socialViews, type SocialView } from "../../../../src/shared/socialEditorial";
+import { archivePastSocialJobs, createSocialDraft, SOCIAL_DAY } from "./socialEditorial";
 import { privilegedMfaSatisfied } from "./mfaPolicy";
 import { Hono, type Context } from "hono";
 import type { AppBindings } from "./types";
@@ -161,9 +163,96 @@ aiProjectsRouter.get("/api/ai-projects/:slug/social-manager", async c => {
   c.header("Cache-Control", "private, no-store");
   const access=await projectAccess(c,c.req.param("slug"),true);
   if(!access)return c.json({error:{code:"not_found"}},404);
-  const status=c.req.query("status"),raw=c.req.query("offset")||"0";
-  if((status&&!editorialStates.includes(status as typeof editorialStates[number]))||!/^\d{1,6}$/.test(raw))return c.json({error:{code:"invalid_filter"}},400);
-  return c.json(await socialManagerSnapshot(c.env,access.project,{status,offset:Number(raw)},access.canManage,access.canCreateContent,access.canConnect));
+  const status=c.req.query("status"),raw=c.req.query("offset")||"0",view=c.req.query("view")||"focus",query=c.req.query("q")?.trim();
+  if((status&&!editorialStates.includes(status as typeof editorialStates[number]))||!/^\d{1,6}$/.test(raw)||!socialViews.includes(view as SocialView)||(query?.length||0)>120)return c.json({error:{code:"invalid_filter"}},400);
+  return c.json(await socialManagerSnapshot(c.env,access.project,{status,offset:Number(raw),view:view as SocialView,query},access.canManage,access.canCreateContent,access.canConnect));
+});
+
+// Manual/Codex handoffs use the same material, membership, MFA and approval path.
+aiProjectsRouter.post("/api/ai-projects/:projectId/social-manager/drafts", async c => {
+  const access=await projectAccess(c,c.req.param("projectId"));
+  if(!access)return c.json({error:{code:"not_found"}},404);
+  if(!access.canCreateContent)return c.json({error:{code:"content_edit_required"}},403);
+  const input=await readJsonBodyUpTo(c.req.raw,196608);
+  if(!input.ok)return c.json({error:{code:input.error}},input.error==='payload_too_large'?413:400);
+  const parsed=socialDraftSchema.safeParse(input.value);
+  if(!parsed.success)return c.json({error:{code:"invalid_editorial_material",message:"Completează titlul, textul și cel puțin un canal. Verifică datele pachetului."}},400);
+  const intent=c.req.header('Idempotency-Key');
+  if(!intent||!/^[A-Za-z0-9_-]{16,128}$/.test(intent))return c.json({error:{code:"idempotency_key_required"}},400);
+  try {
+    const result=await createSocialDraft(c.env,access.project,c.get('userId'),parsed.data,null,intent);
+    if('error' in result)return c.json({error:{code:result.error}},409);
+    return c.json(result,result.replayed?200:201);
+  } catch(error) {
+    // A racing retry may have committed the same source. Resolve through the same intent.
+    if(!/UNIQUE constraint/i.test(String(error)))throw error;
+    const result=await createSocialDraft(c.env,access.project,c.get('userId'),parsed.data,null,intent);
+    return 'error' in result?c.json({error:{code:result.error}},409):c.json(result);
+  }
+});
+
+aiProjectsRouter.put('/api/ai-projects/:projectId/social-manager/drafts/:contentId',async c=>{
+  const access=await projectAccess(c,c.req.param('projectId'));
+  if(!access)return c.json({error:{code:'not_found'}},404);
+  if(!access.canCreateContent)return c.json({error:{code:'content_edit_required'}},403);
+  const input=await readJsonBodyUpTo(c.req.raw,196608);if(!input.ok)return c.json({error:{code:input.error}},400);
+  const body=input.value as Record<string,unknown>|null;
+  const parsed=socialDraftSchema.safeParse(body?.draft);
+  if(!parsed.success||!Number.isSafeInteger(body?.expectedUpdatedAt))return c.json({error:{code:'invalid_editorial_material'}},400);
+  const draft=parsed.data,stamp=Math.max(now(),Number(body!.expectedUpdatedAt)+1);
+  const [updated]=await c.env.DB.batch([
+    c.env.DB.prepare(`UPDATE ai_content_items SET title=?,caption=?,format=?,objective=?,channels_json=?,visual_direction=?,cta=?,hashtags_json=?,scheduled_at=?,reusable=?,status=?,approved_by=NULL,approved_at=NULL,updated_at=?
+      WHERE id=? AND project_id=? AND updated_at=? AND archived_at IS NULL AND status IN('draft','pending_approval','rejected') AND expires_at>?`)
+      .bind(draft.title,draft.caption,draft.format,draft.objective,JSON.stringify(draft.channels),draft.visualDirection,draft.cta,JSON.stringify(draft.hashtags),draft.scheduledAt,draft.reusable?1:0,draft.requestApproval?'pending_approval':'draft',stamp,c.req.param('contentId'),access.project.id,body!.expectedUpdatedAt,now()),
+    c.env.DB.prepare(`INSERT INTO ai_project_events(id,project_id,actor_user_id,action,target_type,target_id,metadata_json,created_at) SELECT ?,?,?,'social_studio.draft.revised','ai_content',?,'{}',? WHERE changes()=1`)
+      .bind(identifier('aipe'),access.project.id,c.get('userId'),c.req.param('contentId'),stamp),
+    c.env.DB.prepare(`UPDATE ai_social_jobs SET status=?,updated_at=? WHERE project_id=? AND content_id=? AND archived_at IS NULL AND plan_review_state<>'rejected' AND status NOT IN('generating','completed') AND EXISTS(SELECT 1 FROM ai_content_items WHERE id=content_id AND updated_at=?)`)
+      .bind(draft.requestApproval?'awaiting_approval':'draft_ready',stamp,access.project.id,c.req.param('contentId'),stamp),
+  ]);
+  return updated.meta.changes?c.json({ok:true,updatedAt:stamp}):c.json({error:{code:'material_changed',message:'Materialul a fost modificat, finalizat sau arhivat. Reîncarcă înainte de editare.'}},409);
+});
+
+aiProjectsRouter.post('/api/ai-projects/:projectId/social-manager/drafts/:contentId/reuse',async c=>{
+  const access=await projectAccess(c,c.req.param('projectId'));
+  if(!access)return c.json({error:{code:'not_found'}},404);
+  if(!access.canCreateContent)return c.json({error:{code:'content_edit_required'}},403);
+  const input=await readJsonBodyUpTo(c.req.raw,4096);if(!input.ok)return c.json({error:{code:input.error}},400);
+  const body=input.value as {expectedUpdatedAt?:number;scheduledAt?:number|null}|null,intent=c.req.header('Idempotency-Key');
+  if(!body||!Number.isSafeInteger(body.expectedUpdatedAt)||!intent||!/^[A-Za-z0-9_-]{16,128}$/.test(intent))return c.json({error:{code:'invalid_reuse'}},400);
+  const item=await c.env.DB.prepare(`SELECT ${socialContentColumns} FROM ai_content_items WHERE id=? AND project_id=? AND status NOT IN('published','scheduled')`)
+    .bind(c.req.param('contentId'),access.project.id).first<Record<string,unknown>>();
+  if(!item)return c.json({error:{code:'not_found'}},404);
+  if(item.updated_at!==body.expectedUpdatedAt)return c.json({error:{code:'material_changed'}},409);
+  const metadata=JSON.parse(String(item.source_metadata_json)),draft=socialDraftSchema.safeParse({title:item.title,caption:item.caption,format:item.format,objective:item.objective,channels:JSON.parse(String(item.channels_json)),visualDirection:item.visual_direction,cta:item.cta,hashtags:JSON.parse(String(item.hashtags_json)),scheduledAt:body.scheduledAt??now(),reusable:false,variants:metadata.variants||[],provenance:{assetIds:metadata.assetIds||[],assetState:metadata.assetState,pendingAssets:metadata.pendingAssets,placements:[]}});
+  if(!draft.success)return c.json({error:{code:'invalid_reuse'}},400);
+  const result=await createSocialDraft(c.env,access.project,c.get('userId'),draft.data,String(item.id),intent);
+  return 'error' in result?c.json({error:{code:result.error}},409):c.json(result,result.replayed?200:201);
+});
+
+aiProjectsRouter.post('/api/ai-projects/:projectId/social-manager/archive',async c=>{
+  const access=await projectAccess(c,c.req.param('projectId'));
+  if(!access)return c.json({error:{code:'not_found'}},404);
+  if(!access.canManage)return c.json({error:{code:'forbidden'}},403);
+  const input=await readJsonBodyUpTo(c.req.raw,4096);if(!input.ok)return c.json({error:{code:input.error}},input.error==='payload_too_large'?413:400);
+  const body=input.value as {confirmed?:boolean}|null;
+  if(body?.confirmed!==true)return c.json({error:{code:'confirmation_required'}},400);
+  const archived=await archivePastSocialJobs(c.env,now(),access.project.id);
+  await event(c,access.project.id,'social_studio.queue.archived','ai_project',access.project.id,{archived});
+  return c.json({ok:true,archived});
+});
+
+aiProjectsRouter.get('/api/ai-projects/:projectId/social-assets/:assetId',async c=>{
+  const access=await projectAccess(c,c.req.param('projectId'));
+  if(!access)return c.json({error:{code:'not_found'}},404);
+  const asset=await c.env.DB.prepare("SELECT object_key,r2_bucket,mime_type,sha256,provenance_json FROM ai_social_assets WHERE id=? AND project_id=? AND status='active'")
+    .bind(c.req.param('assetId'),access.project.id).first<{object_key:string;r2_bucket:string;mime_type:string;sha256:string;provenance_json:string}>();
+  if(!asset)return c.json({error:{code:'not_found'}},404);
+  // Only trusted, internally generated assets use this route. External uploads keep native scan gates.
+  if(JSON.parse(asset.provenance_json).origin!=='internal_generated')return c.json({error:{code:'external_asset_requires_scan'}},403);
+  const object=await (asset.r2_bucket==='media'?c.env.MEDIA:c.env.FILES).get(asset.object_key);
+  if(!object)return c.json({error:{code:'asset_missing'}},404);
+  const inline=['image/png','image/webp','image/jpeg'].includes(asset.mime_type);
+  return new Response(object.body,{headers:{'Content-Type':asset.mime_type,'Cache-Control':'private, no-store','X-Robots-Tag':'noindex, nofollow','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; sandbox",'Content-Disposition':`${inline?'inline':'attachment'}; filename="avyron-${c.req.param('assetId').replace(/[^a-zA-Z0-9_-]/g,'')}.${asset.mime_type==='image/png'?'png':'bin'}"`}});
 });
 
 aiProjectsRouter.get("/api/ai-projects/:slug", async (c) => {
@@ -711,18 +800,38 @@ aiProjectsRouter.post("/api/ai-projects/:projectId/social-manager/sync", async c
   if (!access) return c.json({ error: { code: "not_found" } }, 404);
   if (!access.canManage) return c.json({ error: { code: "forbidden" } }, 403);
   const timestamp = now();
+  const archived = await archivePastSocialJobs(c.env,timestamp,access.project.id);
+  const created = await enqueueDueJobs(c.env,timestamp,access.project.id);
   const [updated] = await c.env.DB.batch([
     c.env.DB.prepare(`UPDATE ai_social_jobs SET status=CASE (SELECT status FROM ai_content_items WHERE id=content_id AND project_id=ai_social_jobs.project_id)
       WHEN 'approved' THEN 'approved' WHEN 'scheduled' THEN 'approved' WHEN 'published' THEN 'completed'
       WHEN 'pending_approval' THEN 'awaiting_approval' ELSE 'draft_ready' END,updated_at=max(updated_at+1,?)
-      WHERE project_id=? AND content_id IS NOT NULL AND plan_review_state<>'rejected' AND status NOT IN ('generating','completed','skipped')
+      WHERE project_id=? AND archived_at IS NULL AND content_id IS NOT NULL AND plan_review_state<>'rejected' AND status NOT IN ('generating','completed','skipped')
       AND EXISTS(SELECT 1 FROM ai_content_items c WHERE c.id=content_id AND c.project_id=ai_social_jobs.project_id AND c.status IN ('draft','pending_approval','approved','scheduled','published','rejected')
         AND ai_social_jobs.status<>CASE c.status WHEN 'approved' THEN 'approved' WHEN 'scheduled' THEN 'approved' WHEN 'published' THEN 'completed' WHEN 'pending_approval' THEN 'awaiting_approval' ELSE 'draft_ready' END)`)
       .bind(timestamp, access.project.id),
     c.env.DB.prepare(`INSERT INTO ai_project_events(id,project_id,actor_user_id,action,metadata_json,created_at) VALUES(?,?,?,'social_studio.sync','{}',?)`)
       .bind(identifier("aipe"), access.project.id, c.get("userId"), timestamp),
   ]);
-  return c.json({ ok: true, updated: updated.meta.changes });
+  return c.json({ ok: true, updated: updated.meta.changes, archived, created });
+});
+
+aiProjectsRouter.post('/api/ai-projects/:projectId/social-jobs/:jobId/reschedule',async c=>{
+  const access=await projectAccess(c,c.req.param('projectId'));
+  if(!access)return c.json({error:{code:'not_found'}},404);
+  if(!access.canManage)return c.json({error:{code:'forbidden'}},403);
+  const input=await readJsonBodyUpTo(c.req.raw,4096);if(!input.ok)return c.json({error:{code:input.error}},input.error==='payload_too_large'?413:400);
+  const body=input.value as {dueAt?:number;expectedUpdatedAt?:number}|null;
+  const stamp=now();
+  if(!body||!Number.isSafeInteger(body.dueAt)||Number(body.dueAt)<=stamp||Number(body.dueAt)>stamp+366*SOCIAL_DAY||!Number.isSafeInteger(body.expectedUpdatedAt))return c.json({error:{code:'invalid_schedule'}},400);
+  const [updated]=await c.env.DB.batch([
+    c.env.DB.prepare(`UPDATE ai_social_jobs SET due_at=?,status='queued',archived_at=NULL,plan_review_state='pending',plan_reviewed_by=NULL,plan_reviewed_at=NULL,last_error_code=NULL,updated_at=max(updated_at+1,?)
+      WHERE id=? AND project_id=? AND updated_at=? AND status<>'generating' AND content_id IS NULL AND blog_post_id IS NULL`)
+      .bind(body.dueAt,stamp,c.req.param('jobId'),access.project.id,body.expectedUpdatedAt),
+    c.env.DB.prepare(`INSERT INTO ai_project_events(id,project_id,actor_user_id,action,target_type,target_id,metadata_json,created_at) SELECT ?,?,?,'social_studio.plan.rescheduled','social_job',?,?,? WHERE changes()=1`)
+      .bind(identifier('aipe'),access.project.id,c.get('userId'),c.req.param('jobId'),JSON.stringify({dueAt:body.dueAt}),stamp),
+  ]);
+  return updated.meta.changes?c.json({ok:true}):c.json({error:{code:'plan_changed',message:'Activitatea s-a modificat sau are deja un material. Reîncarcă lista.'}},409);
 });
 
 aiProjectsRouter.post("/api/ai-projects/:projectId/social-jobs/:jobId/review", async c => {
@@ -737,8 +846,8 @@ aiProjectsRouter.post("/api/ai-projects/:projectId/social-jobs/:jobId/review", a
   const timestamp = Math.max(now(), Number(body.expectedUpdatedAt)+1);
   const [updated] = await c.env.DB.batch([
     c.env.DB.prepare(`UPDATE ai_social_jobs SET plan_review_state=?,plan_reviewed_by=?,plan_reviewed_at=?,updated_at=?,status=CASE WHEN ?='rejected' THEN 'skipped' ELSE status END
-      WHERE id=? AND project_id=? AND updated_at=? AND content_id IS NULL AND blog_post_id IS NULL AND status IN ('queued','awaiting_budget','failed') AND (plan_review_state='pending' OR (?='rejected' AND plan_review_state='approved'))`)
-      .bind(body.decision, c.get("userId"), timestamp, timestamp, body.decision, c.req.param("jobId"), access.project.id, body.expectedUpdatedAt, body.decision),
+      WHERE id=? AND project_id=? AND updated_at=? AND archived_at IS NULL AND due_at>=? AND content_id IS NULL AND blog_post_id IS NULL AND status IN ('queued','awaiting_budget','failed') AND (plan_review_state='pending' OR (?='rejected' AND plan_review_state='approved'))`)
+      .bind(body.decision, c.get("userId"), timestamp, timestamp, body.decision, c.req.param("jobId"), access.project.id, body.expectedUpdatedAt, now()-SOCIAL_DAY, body.decision),
     c.env.DB.prepare(`INSERT INTO ai_project_events(id,project_id,actor_user_id,action,target_type,target_id,metadata_json,created_at)
       SELECT ?,?,?,?,'social_job',?,'{}',? WHERE changes()=1`)
       .bind(identifier("aipe"), access.project.id, c.get("userId"), `social_studio.plan.${body.decision}`, c.req.param("jobId"), timestamp),
@@ -1034,6 +1143,7 @@ aiProjectsRouter.post("/api/ai-projects/:projectId/content/generate", async (c) 
       estimatedCostMinor: 0,
       idempotencyKey: `ai-run:${runId}`,
       requestId: c.get("requestId") || null,
+      aiProjectId: access.project.id,
     });
     if (reservation.decision !== "allowed") {
       await c.env.DB.prepare("UPDATE ai_runs SET status = ?, error_code = ?, completed_at = ? WHERE id = ?")
@@ -1043,7 +1153,7 @@ aiProjectsRouter.post("/api/ai-projects/:projectId/content/generate", async (c) 
     const core = await runAiCore({
       env: c.env, agentSlug: agent.slug, operation: `social_model_${route.route_key}`,
       idempotencyKey: `ai-run:${runId}`, requestId: c.get("requestId") || null,
-      projectId: access.project.id, promptCharacters: prompt.length + 28,
+      aiProjectId: access.project.id, promptCharacters: prompt.length + 28,
       tier: request.format === "article" ? "special" : "normal", requestedMaxTokens: maxTokens,
       financialReserved: true,
       input: {
@@ -1120,7 +1230,10 @@ aiProjectsRouter.patch("/api/ai-projects/:projectId/content/:contentId", async (
   const access = await projectAccess(c, c.req.param("projectId"));
   if (!access) return c.json({ error: { code: "not_found" } }, 404);
   if (!access.canCreateContent && !access.canManage) return c.json({ error: { code: "forbidden" } }, 403);
-  const body = await c.req.json<{ status?: string; expectedUpdatedAt?: number }>().catch(() => null);
+  const input=await readJsonBodyUpTo(c.req.raw,4096);if(!input.ok)return c.json({error:{code:input.error}},input.error==='payload_too_large'?413:400);
+  const body = input.value as { status?: string; expectedUpdatedAt?: number; origin?: string; approvalReference?: string } | null;
+  if((body?.origin&&!['dashboard','codex_chat'].includes(body.origin))||(body?.approvalReference!==undefined&&(typeof body.approvalReference!=='string'||body.approvalReference.length>500)))return c.json({error:{code:'invalid_review_reference'}},400);
+  if(body?.origin==='codex_chat'&&(!Number.isSafeInteger(body.expectedUpdatedAt)||!body.approvalReference?.trim()))return c.json({error:{code:'exact_chat_review_required'}},400);
   if (body?.expectedUpdatedAt !== undefined && (!Number.isSafeInteger(body.expectedUpdatedAt) || body.expectedUpdatedAt < 0)) {
     return c.json({ error: { code: "invalid_revision" } }, 400);
   }
@@ -1135,7 +1248,7 @@ aiProjectsRouter.patch("/api/ai-projects/:projectId/content/:contentId", async (
     return c.json({ error: { code: "content_edit_required" } }, 403);
   }
   const content = await c.env.DB.prepare(
-    "SELECT id, status, created_at, updated_at, expires_at FROM ai_content_items WHERE id = ? AND project_id = ? AND status NOT IN ('published','scheduled','expired')",
+    "SELECT id, status, created_at, updated_at, expires_at FROM ai_content_items WHERE id = ? AND project_id = ? AND archived_at IS NULL AND status NOT IN ('published','scheduled','expired')",
   ).bind(c.req.param("contentId"), access.project.id).first<{ id: string; status: string; created_at: number; updated_at: number; expires_at: number | null }>();
   if (!content) return c.json({ error: { code: "not_found" } }, 404);
   if (body?.expectedUpdatedAt !== undefined && content.updated_at !== body.expectedUpdatedAt) return c.json({error:{code:"content_changed_or_expired",message:"Materialul s-a modificat. Deschide din nou solicitarea înainte de decizie."}},409);
@@ -1158,8 +1271,8 @@ aiProjectsRouter.patch("/api/ai-projects/:projectId/content/:contentId", async (
   );
   const [updated] = await c.env.DB.batch([decisionUpdate, c.env.DB.prepare(
     `INSERT INTO ai_project_events(id,project_id,actor_user_id,action,target_type,target_id,metadata_json,created_at)
-     SELECT ?,?,?,?,'ai_content',?,'{}',? WHERE changes()=1`,
-  ).bind(identifier("aipe"),access.project.id,c.get("userId"),`ai_project.content.${next}`,c.req.param("contentId"),timestamp), c.env.DB.prepare(`UPDATE ai_social_jobs SET status=?,updated_at=max(updated_at+1,?) WHERE project_id=? AND content_id=? AND plan_review_state<>'rejected' AND status NOT IN ('generating','completed','skipped') AND EXISTS(SELECT 1 FROM ai_content_items c WHERE c.id=content_id AND c.project_id=ai_social_jobs.project_id AND c.status=? AND c.updated_at=?)`).bind(next === "approved" ? "approved" : next === "pending_approval" ? "awaiting_approval" : "draft_ready", timestamp, access.project.id, c.req.param("contentId"), next, timestamp)]);
+     SELECT ?,?,?,?,'ai_content',?,?,? WHERE changes()=1`,
+  ).bind(identifier("aipe"),access.project.id,c.get("userId"),`ai_project.content.${next}`,c.req.param("contentId"),JSON.stringify({origin:body?.origin||'dashboard',approvalReference:body?.approvalReference||null,expectedUpdatedAt:content.updated_at}),timestamp), c.env.DB.prepare(`UPDATE ai_social_jobs SET status=?,updated_at=max(updated_at+1,?) WHERE project_id=? AND content_id=? AND plan_review_state<>'rejected' AND status NOT IN ('generating','completed','skipped') AND EXISTS(SELECT 1 FROM ai_content_items c WHERE c.id=content_id AND c.project_id=ai_social_jobs.project_id AND c.status=? AND c.updated_at=?)`).bind(next === "approved" ? "approved" : next === "pending_approval" ? "awaiting_approval" : "draft_ready", timestamp, access.project.id, c.req.param("contentId"), next, timestamp)]);
   if (!updated.meta.changes) return c.json({ error: { code: "content_changed_or_expired", message: "Materialul s-a modificat sau a expirat. Actualizează solicitarea." } }, 409);
   return c.json({ ok: true });
 });

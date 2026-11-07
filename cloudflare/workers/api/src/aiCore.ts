@@ -34,6 +34,7 @@ type AiCoreInput = {
   role?: AiModelRole;
   requestId?: string | null;
   projectId?: string | null;
+  aiProjectId?: string | null;
   clientId?: string | null;
   financialReserved?: boolean;
   priority?: "background" | "important" | "user";
@@ -142,6 +143,7 @@ export async function runAiCore(input: AiCoreInput): Promise<{
       idempotencyKey: input.idempotencyKey,
       requestId: input.requestId,
       projectId: input.projectId,
+      aiProjectId: input.aiProjectId,
       clientId: input.clientId,
     });
     if (financial.decision !== "allowed") throw new AiCoreError(financial.reason);

@@ -1,5 +1,7 @@
 # Continuitatea proiectului AVYRON
 
+Manager Social Media — 07.11.2026: [flux editorial și runbook](./SOCIAL_EDITORIAL_WORKFLOW.md), migrarea aditivă 0105, agenda -24h/+24h, decizii native cu revizie, reutilizare și handoff Codex. Corectează și rezervarea financiară a proiectelor AI, separată de proiectele CRM. Șase materiale text/proveniență au fost importate în D1, strategia operațională și patru automatizări Codex existente au fost actualizate; acestea nu reprezintă publicări sociale. Încărcarea imaginilor în R2 este blocată de autorizare (403), fără fișiere pretins încărcate. Codul, migrarea remote și deployul necesită verificare separată în PR. Cabinetul și PR #110 sunt excluse.
+
 Notificări native — 07.11.2026: [arhitectură și runbook](./NATIVE_NOTIFICATIONS.md), migrarea aditivă 0104, inbox client/staff, reguli live de acces, mesaje contextuale și administrare Owner/Super Admin. Starea locală, PR și producție se verifică separat; această notă nu dovedește deployul. Proiectul cabinetului și PR #110 sunt excluse.
 
 Înlocuire Qwen — 07.11.2026: din `6d00e41`, ramura `codex/replace-qwen-cloudflare-2026-11-07` pregătește Mistral Small 3.1 24B prin bindingul existent. [Runbook](./QWEN_REPLACEMENT.md): 0103, versiuni istorice păstrate, alias legacy, rute sincronizate și controale Free neschimbate. Starea efectivă și verificarea furnizorului se citesc din PR.

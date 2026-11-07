@@ -18,3 +18,11 @@ This skill contains no credentials or private session data. It is a repository-l
 Fișa leadului oferă preluare, aprobare/respingere și revizie punctuală prin API-urile native `/api/leads/ID/claim` și `/api/leads/ID/follow-ups/DRAFT/{review,revise,sent}`. Revizia se leagă de utilizator, ciornă, versiune și intenție; păstrează aceeași Idempotency-Key la retry de rețea. Confirmă numai canalele în care mesajul este deja verificat ca trimis. Un canal confirmat nu se rescrie și nu se reconfirmă. Nu transmite mesaje din această operație.
 
 În registrul `agent_execution_routes`, `limit_mode=native_budget` înseamnă bugetele existente AI Core, iar `manual` înseamnă operație manuală autorizată; `max_daily_runs=0` nu introduce un plafon zilnic în aceste două moduri. Regulile `daily` existente sunt păstrate. Codex local necesită calculatorul deschis; coada Cloudflare pregătește numai ciornele autorizate.
+
+## Social editorial workflow
+
+For `ai-prod-content`, use `docs/SOCIAL_EDITORIAL_WORKFLOW.md` and the native social-manager API. `ai_content_items` is the canonical material; a job without content is not an approval package. Read the -24h/+24h agenda, reuse an appropriate unpublished source, persist the actual draft with stable source/revision and Idempotency-Key, then verify it by reading back. Retain reusable sources and shared private assets; archive elapsed queue entries rather than deleting evidence.
+
+Dashboard and Codex chat decisions target the same content ID and `updated_at`. A Codex decision records `origin=codex_chat` and the exact human message in `approvalReference`, through a native authenticated reviewer session. The editor operator must not grant itself approval rights. Unavailable authorization is a pending synchronization, never a successful approval. A new date, text or target matrix requires review of the changed version; do not repeatedly request approval for the unchanged exact matrix already approved.
+
+An old composer or pending R2 matrix is not a permanent browser lease. Avoid concurrent active operations, preserve published R1, and close only tabs opened by the current run. Draft preparation continues when no publication session is available. No model, paid feature, AI quota or lead-outreach route is activated by this workflow.
