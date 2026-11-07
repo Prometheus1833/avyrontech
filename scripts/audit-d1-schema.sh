@@ -107,7 +107,7 @@ unsafe_social_content_strategy=$(sqlite3 "$audit_database" \
         ON version.agent_slug=agent.slug AND version.version=agent.current_version
       JOIN ai_project_agents assigned
         ON assigned.agent_slug=agent.slug AND assigned.project_id='aip_avyron_web' AND assigned.role='content'
-      WHERE agent.slug='ai-prod-content' AND agent.current_version=10
+      WHERE agent.slug='ai-prod-content' AND agent.current_version>=10
         AND version.status='approved' AND assigned.status='ready'
         AND instr(version.system_prompt,'5-8 cadre')>0
         AND instr(version.system_prompt,'tool_plan')>0
