@@ -236,6 +236,7 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
   const found=await retrievePublicSources(env.DB,'ro','integrare publică');expect(found.map(item=>item.entry.id)).toContain('document:public-doc');expect(found.map(item=>item.entry.id)).not.toContain('document:internal-doc');
  });
  it('shows why the public agent is in knowledge-only mode',async()=>{
+  db.exec("UPDATE financial_agent_provider_policies SET status='paused' WHERE agent_slug='avy' AND vendor_id='fin_vendor_cloudflare_ai'");
   const response=await app.request('/api/ai/admin/runtime',{},env);expect(response.status).toBe(200);
   const body=await response.json() as {mode:string;blockers:string[];knowledge:{faq:number;publicServices:number}};
   expect(body.mode).toBe('knowledge_only');expect(body.blockers).toContain('provider_policy_inactive');expect(body.knowledge.publicServices).toBeGreaterThan(0);
