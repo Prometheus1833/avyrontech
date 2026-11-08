@@ -1,6 +1,6 @@
 # Blogul în landing page
 
-Ramură: `codex/home-blog-carousel-2026-11-08`, bazată pe PR #119, commit `8ca17408121fbea10b6049cb5894a51bdcec6516`. Baza `origin/main` verificată la început: `01acfb909a7026731f2542f17da00bb3391f99a3`. Este o livrare separată; nota nu confirmă merge sau deploy. După integrarea PR #119, retargetați acest PR către main și revalidați baza.
+Ramură: `codex/home-blog-carousel-2026-11-08`, bazată pe PR #119, commit `8ca17408121fbea10b6049cb5894a51bdcec6516`. Baza `origin/main` verificată la început: `01acfb909a7026731f2542f17da00bb3391f99a3`. Este o livrare separată; nota nu confirmă merge sau deploy. PR-ul țintește main pentru a rula fluxurile CI existente, care nu pornesc pe o bază de tip feature branch. Integrați întâi #119, apoi actualizați ramura și revalidați acest PR. Modificarea proprie de blog se poate revizui separat în commitul `64b12ee791b07c595da415493e0b99933730cba3`.
 
 ## Sursa comună și interfața
 
