@@ -81,7 +81,7 @@ necesită o acțiune separată și confirmarea textuală a numelui campaniei.
 
 ## Import de conturi
 
-Endpointul `POST /api/admin/import-users` cere întotdeauna `X-Seed-Token`. Nu există
+Endpointul `POST /api/admin/import-users` cere întotdeauna o sesiune nativă Owner/Super Admin prin `Authorization: Bearer`, plus `X-Seed-Token`. Tokenul de seed singur nu autorizează importuri. Se aplică RBAC și politica Access, dacă aceasta este activată. Resetarea prin import revocă sesiunile contului țintă. Nu există
 parole sau liste de utilizatori în repository. Conturile importate primesc
 `must_change_password=1` și trebuie să schimbe parola temporară la primul login.
 

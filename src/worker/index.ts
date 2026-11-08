@@ -1,3 +1,5 @@
+import { boundaryEntry } from "./adminBoundary";
+import type { SecurityBoundaryEnv } from "../shared/securityBoundary";
 import { rewriteExampleCarousels } from "./exampleCarousels";
 import { applicationHostResponse } from "./applicationHost";
 /**
@@ -16,7 +18,7 @@ interface Fetcher {
   fetch: (req: Request) => Promise<Response>;
 }
 
-interface Env {
+interface Env extends SecurityBoundaryEnv {
   ASSETS: Fetcher;
   /** Service binding to the existing API Worker ("avyrontech"). */
   API?: Fetcher;
@@ -148,6 +150,8 @@ const site = {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    return applicationHostResponse(request, await site.fetch(request, env));
+    const blocked = await boundaryEntry(request, env);
+    if (blocked) return blocked;
+    return applicationHostResponse(request, await site.fetch(request, env), env);
   },
 };

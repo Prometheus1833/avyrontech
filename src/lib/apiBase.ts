@@ -5,8 +5,10 @@
 // Poate fi suprascris prin VITE_CF_API_BASE dacă schimbi domeniul.
 
 const FALLBACK = "https://api.avyron.ro";
+const ADMIN_HOST = (import.meta.env.VITE_ADMIN_HOSTNAME || "").trim().toLowerCase();
 
-export function apiBaseForHost(host: string, configured?: string): string {
+export function apiBaseForHost(host: string, configured?: string, adminHost = ADMIN_HOST): string {
+  if (adminHost && host.toLowerCase() === adminHost) return "";
   if (configured) return configured.replace(/\/+$/, "");
   if (
     host === "surveys.avyron.ro" ||
@@ -32,11 +34,12 @@ export const apiUrl = (path: string) =>
 
 /** One host-only HttpOnly session cookie for the public website and account.
  * Never broaden the cookie to client subdomains or put refresh tokens in URLs. */
-export function authBaseForHost(host: string, configured?: string): string {
+export function authBaseForHost(host: string, configured?: string, adminHost = ADMIN_HOST): string {
+  if (adminHost && host.toLowerCase() === adminHost) return "";
   if (configured) return configured.replace(/\/+$/, "");
   return ["avyron.ro", "www.avyron.ro", "app.avyron.ro"].includes(host.toLowerCase())
     ? FALLBACK
-    : apiBaseForHost(host);
+    : apiBaseForHost(host, undefined, adminHost);
 }
 
 const AUTH_BASE = authBaseForHost(

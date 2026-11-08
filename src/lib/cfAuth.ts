@@ -305,6 +305,11 @@ class CfAuth {
     });
   }
 
+  async logoutAll(currentPassword: string) {
+    await this.request("/api/auth/logout-all", { method: "POST", body: JSON.stringify({ currentPassword }) });
+    this.clearSession();
+  }
+
   async listSessions(): Promise<AuthSession[]> {
     const result = await this.request<{ data: AuthSession[] }>("/api/auth/sessions");
     return result.data;
@@ -314,7 +319,7 @@ class CfAuth {
     return this.request<{ ok: true }>(`/api/auth/sessions/${encodeURIComponent(id)}`, { method: "DELETE" });
   }
 
-  async mfaStatus(): Promise<{ data: MfaFactor[]; session_verified: boolean }> {
+  async mfaStatus(): Promise<{ data: MfaFactor[]; session_verified: boolean; auth_enabled?: boolean }> {
     return this.request("/api/auth/mfa");
   }
 

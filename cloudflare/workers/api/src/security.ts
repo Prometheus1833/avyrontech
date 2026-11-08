@@ -87,14 +87,21 @@ export async function signJwt(payload: object, secret: string, ttlSeconds = 900)
 }
 
 export async function verifyJwt<T>(token: string, secret: string): Promise<T | null> {
+  if (token.length > 16384 || token.split(".").length !== 3) return null;
   const [header, body, signature] = token.split(".");
   if (!header || !body || !signature) return null;
   try {
+    const algorithm = JSON.parse(new TextDecoder().decode(decodeBase64(header)));
+    if (algorithm.alg !== "HS256" || algorithm.typ !== "JWT" || algorithm.crit !== undefined) return null;
     const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
     const valid = await crypto.subtle.verify("HMAC", key, decodeBase64(signature), encoder.encode(`${header}.${body}`));
     if (!valid) return null;
-    const payload = JSON.parse(new TextDecoder().decode(decodeBase64(body))) as T & { exp?: number };
-    return payload.exp && payload.exp < Math.floor(Date.now() / 1000) ? null : payload;
+    const payload = JSON.parse(new TextDecoder().decode(decodeBase64(body))) as T & { exp?: number; iat?: number; nbf?: number };
+    const timestamp = Math.floor(Date.now() / 1000);
+    if (!Number.isSafeInteger(payload.exp) || payload.exp! <= timestamp ||
+      !Number.isSafeInteger(payload.iat) || payload.iat! > timestamp + 30 || payload.iat! >= payload.exp! ||
+      payload.nbf !== undefined && (!Number.isSafeInteger(payload.nbf) || payload.nbf > timestamp + 30)) return null;
+    return payload;
   } catch {
     return null;
   }

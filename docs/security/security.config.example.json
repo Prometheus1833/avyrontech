@@ -1,0 +1,13 @@
+{
+  "workerName": "avyrontech-preview",
+  "adminHostname": "admin-preview.avyron.ro",
+  "teamDomain": "",
+  "audience": "",
+  "identities": { "administrators": [], "staff": [], "collaborators": [] },
+  "validation": {
+    "freePlanVerified": false,
+    "identityPilotVerified": false,
+    "emergencyRecoveryVerified": false,
+    "integrationsAndAlternativeUrlsVerified": false
+  }
+}

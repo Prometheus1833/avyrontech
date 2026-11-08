@@ -10,12 +10,14 @@ describe("application hostname SEO boundary", () => {
     expect(response.headers.get("X-Content-Type-Options")).toBe("nosniff");
     expect(await response.text()).toBe("Public library");
   });
-  it("keeps immutable static bundles cached and canonical public pages indexable", () => {
+  it("keeps immutable static bundles cached and canonical public pages indexable", async () => {
     const bundle = applicationHostResponse(new Request("https://app.avyron.ro/assets/app-a1234.js"), new Response("js", { headers: { "Content-Type": "application/javascript", "Cache-Control": "public, max-age=31536000, immutable" } }));
     expect(bundle.headers.get("Cache-Control")).toContain("immutable");
     const original = new Response("Public", { headers: { "Content-Type": "text/html" } });
-    expect(applicationHostResponse(new Request("https://avyron.ro/en/library"), original)).toBe(original);
-    expect(original.headers.get("X-Robots-Tag")).toBeNull();
+    const secured = applicationHostResponse(new Request("https://avyron.ro/en/library"), original);
+    expect(secured.headers.get("X-Robots-Tag")).toBeNull();
+    expect(secured.headers.get("Strict-Transport-Security")).toBe("max-age=31536000");
+    expect(await secured.text()).toBe("Public");
   });
   it("applies the boundary through the native Pages/site Worker", async () => {
     const env = { ASSETS: { fetch: async () => new Response("<html><h1>Library</h1></html>", { headers: { "Content-Type": "text/html" } }) } };

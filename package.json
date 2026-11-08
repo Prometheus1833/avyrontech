@@ -43,7 +43,8 @@
     "service-content:generate": "node scripts/generate-service-content-manifest.mjs",
     "service-content:check": "node scripts/generate-service-content-manifest.mjs --check",
     "service-content:snapshot": "node scripts/snapshot-service-content.mjs",
-    "og:services": "node scripts/generate-service-og.mjs"
+    "og:services": "node scripts/generate-service-og.mjs",
+    "test:security:local": "node scripts/test-security-local.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

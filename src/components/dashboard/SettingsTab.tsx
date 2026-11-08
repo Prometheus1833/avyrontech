@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 export const SettingsTab = () => {
-  const { user, isStaff, isAdmin } = useAuth();
+  const { user, isStaff, isAdmin, isSuperAdmin } = useAuth();
   const { lang, setLang } = useLang();
   const [theme, setTheme] = useState<string>(localStorage.getItem("theme") || "system");
 
@@ -29,6 +29,7 @@ export const SettingsTab = () => {
   const [maintenanceMode, setMaintenanceMode] = useState<boolean>(localStorage.getItem("staff_maintenance") === "true");
   const [autoAssign, setAutoAssign] = useState<boolean>(localStorage.getItem("staff_auto_assign") === "true");
   const [sessions, setSessions] = useState<AuthSession[]>([]);
+  const [mfaAvailable, setMfaAvailable] = useState(false);
   const [mfaFactors, setMfaFactors] = useState<MfaFactor[]>([]);
   const [securityBusy, setSecurityBusy] = useState(false);
   const [mfaPassword, setMfaPassword] = useState("");
@@ -37,6 +38,23 @@ export const SettingsTab = () => {
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [emailPassword, setEmailPassword] = useState("");
   const [newEmail, setNewEmail] = useState("");
+  const [logoutPassword, setLogoutPassword] = useState("");
+  const [boundaryStatus, setBoundaryStatus] = useState<{
+    mode: "off" | "observe" | "enforce"; configured: boolean; adminHostname: string | null;
+    alerts: { denied24h: number; critical24h: number; needsReview: boolean };
+  } | null>(null);
+  useEffect(() => {
+    if (!user || !isSuperAdmin) { setBoundaryStatus(null); return; }
+    let active = true;
+    cfAuth.request<NonNullable<typeof boundaryStatus>>("/api/admin/security")
+      .then(value => {
+        if (!value || !["off", "observe", "enforce"].includes(value.mode) || !value.alerts ||
+          !Number.isFinite(value.alerts.denied24h) || !Number.isFinite(value.alerts.critical24h)) throw new Error("invalid_security_status");
+        if (active) setBoundaryStatus(value);
+      })
+      .catch(() => { if (active) toast.error("Starea protecțiilor interne nu a putut fi verificată."); });
+    return () => { active = false; };
+  }, [user, isSuperAdmin]);
 
   // theme apply
   useEffect(() => {
@@ -66,6 +84,7 @@ export const SettingsTab = () => {
         if (!active) return;
         setSessions(sessionRows);
         setMfaFactors(mfa.data);
+        setMfaAvailable(mfa.auth_enabled === true);
       })
       .catch(() => active && toast.error("Starea de securitate nu a putut fi încărcată."));
     return () => { active = false; };
@@ -203,13 +222,15 @@ export const SettingsTab = () => {
       <Card>
         <CardHeader className="py-3">
           <CardTitle className="flex items-center gap-2 text-sm"><KeyRound className="size-4" />Autentificare în doi pași</CardTitle>
-          <CardDescription className="text-xs">Obligatorie pentru administratori și acțiuni privilegiate.</CardDescription>
+          <CardDescription className="text-xs">{mfaAvailable ? "Configurare suplimentară de securitate a contului." : "În pregătire. Autentificarea MFA nu este activată în această etapă."}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 pt-0 pb-3">
           {mfaFactors.some((factor) => factor.status === "active") ? (
             <div className="flex items-center justify-between rounded-lg border px-3 py-2 text-xs">
               <span>Aplicație de autentificare</span><Badge variant="secondary">Activ</Badge>
             </div>
+          ) : !mfaAvailable ? (
+            <p className="text-xs text-muted-foreground">Accesul continuă prin autentificarea existentă.</p>
           ) : mfaEnrollment ? (
             <div className="space-y-3 rounded-lg border p-3">
               <p className="text-xs text-muted-foreground">Adaugă manual cheia în aplicația ta TOTP, apoi introdu primul cod de 6 cifre.</p>
@@ -241,6 +262,26 @@ export const SettingsTab = () => {
           <CardDescription className="text-xs">Revocarea dispozitivului curent necesită o autentificare nouă.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 pt-0 pb-3">
+          <details className="rounded-lg border p-3 text-xs">
+            <summary className="cursor-pointer font-medium">Deconectează toate dispozitivele</summary>
+            <form className="mt-3 space-y-2" onSubmit={async event => {
+              event.preventDefault();
+              if (!logoutPassword || securityBusy) return;
+              setSecurityBusy(true);
+              try {
+                await cfAuth.logoutAll(logoutPassword);
+                setLogoutPassword("");
+                window.location.assign("/auth");
+              } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Sesiunile nu au putut fi revocate.");
+              } finally { setSecurityBusy(false); }
+            }}>
+              <p className="text-muted-foreground">Revocă inclusiv sesiunea curentă. Confirmă cu parola contului.</p>
+              <Label htmlFor="logout-all-password">Parola curentă pentru deconectare</Label>
+              <PasswordInput id="logout-all-password" autoComplete="current-password" value={logoutPassword} onChange={event => setLogoutPassword(event.target.value)} required />
+              <Button type="submit" variant="outline" size="sm" className="h-auto w-full whitespace-normal py-2" disabled={securityBusy || !logoutPassword}>Confirmă deconectarea tuturor dispozitivelor</Button>
+            </form>
+          </details>
           {sessions.length === 0 && <p className="text-xs text-muted-foreground">Nu există sesiuni active de afișat.</p>}
           {sessions.map((session) => (
             <div key={session.id} className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2">
@@ -254,6 +295,20 @@ export const SettingsTab = () => {
         </CardContent>
       </Card>
 
+      {isSuperAdmin && boundaryStatus && <Card>
+        <CardHeader className="py-3">
+          <CardTitle className="flex items-center gap-2 text-sm"><Shield className="size-4" />Protecția spațiului intern</CardTitle>
+          <CardDescription className="text-xs">Starea modulului din aplicație. Configurarea Cloudflare Access se verifică separat înainte de activare.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2 pb-3 text-xs">
+          <div className="flex flex-wrap items-center gap-2"><Badge>{boundaryStatus.mode === "enforce" ? "Aplicare activă" : boundaryStatus.mode === "observe" ? "Observare" : "Pregătit, neactivat"}</Badge>
+            {boundaryStatus.adminHostname && <span className="break-all text-muted-foreground">{boundaryStatus.adminHostname}</span>}</div>
+          <div className="grid grid-cols-2 gap-2"><p className="rounded-lg border p-2">Refuzuri / erori · 24h<br /><strong>{boundaryStatus.alerts.denied24h}</strong></p>
+            <p className="rounded-lg border p-2">Evenimente critice · 24h<br /><strong>{boundaryStatus.alerts.critical24h}</strong></p></div>
+          {boundaryStatus.alerts.needsReview && <p role="status" className="rounded-lg border border-amber-400/40 p-2 text-amber-600 dark:text-amber-300">Activitatea de securitate necesită revizuire în jurnalul administrativ.</p>}
+          <p className="text-muted-foreground">Identitatea, rolurile și accesul la resurse sunt verificate în backend. MFA și passkeys nu sunt activate prin această configurare.</p>
+        </CardContent>
+      </Card>}
       {/* Appearance */}
       <Card>
         <CardHeader className="py-3"><CardTitle className="flex items-center gap-2 text-sm"><Palette className="size-4" />Aspect</CardTitle></CardHeader>

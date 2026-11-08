@@ -1,3 +1,5 @@
+import { securityReportsRouter } from "./securityReports";
+import { signSessionJwt, verifySessionJwt } from "./sessionJwt";
 import { notificationsRouter } from "./notifications";
 import { linkClientsByEmail } from "./clientAccountSync";
 import {collaboratorsRouter} from "./collaborators";
@@ -34,7 +36,9 @@ import { surveyPublic } from "./surveys/public";
 //   ... extinde după nevoie (vezi cloudflare/workers/README.md)
 
 import { Hono,type Context,type Next } from "hono";
-import { deleteCookie,getCookie,setCookie } from "hono/cookie";
+import { sessionCookie, writeSessionCookie, clearSessionCookie, findRefreshSession, refreshSession } from "./sessionSecurity";
+import { boundaryEntry, authenticatedBoundary } from "./securityBoundary";
+import { boundaryPolicy, safeSecurityMetadata } from "../../../../src/shared/securityBoundary";
 import { cors } from "hono/cors";
 import { cleanupAvyronEditorialContent } from "./aiContentRetention";
 import { funnelSummary,leadPipeline,recordPageEvent } from "./analytics";
@@ -54,7 +58,7 @@ import { promotionsRouter } from "./promotions";
 import { readJsonBodyUpTo } from "./requestBody";
 import { enforceApiBodyLimit } from "./requestBodyLimit";
 import { parseReviewSubmission,WEBSITE_REVIEW_SURFACE } from "./reviewsPolicy";
-import { hashPassword,now,randomHex,sha256,signJwt,verifyJwt,verifyPassword } from "./security";
+import { hashPassword,now,randomHex,sha256,verifyPassword } from "./security";
 import { handleMappedHostname } from "./sites.config";
 import { avatarObjectKey,contentConfigKey,jsonByteLength,MAX_CONTENT_CONFIG_BYTES } from "./storage";
 import { base32Encode,decryptTotpSecret,encryptTotpSecret,generateTotpSecret,totpUri,verifyTotp } from "./totp";
@@ -76,6 +80,12 @@ app.use("*", async (c, next) => {
   await next();
 });
 
+app.use("*", async (c, next) => {
+  const stopped = await boundaryEntry(c.req.raw, c.env);
+  if (stopped) return stopped;
+  await next();
+});
+
 app.use("/api/*", enforceApiBodyLimit);
 
 const appendVary = (current: string | null, value: string) => {
@@ -94,7 +104,8 @@ app.use("*", async (c, next) => {
   const origin = c.req.header("origin");
   const unsafeMethod = !["GET", "HEAD", "OPTIONS"].includes(c.req.method);
 
-  if (unsafeMethod && origin && !allowedOrigin(c.env, origin)) {
+  if (unsafeMethod && ((origin && !allowedOrigin(c.env, origin)) ||
+    (!origin && c.req.header("sec-fetch-site") === "cross-site" && c.req.header("cookie")))) {
     c.res = c.json({ error: { code: "forbidden_origin", message: "Originea nu este permisă", requestId } }, 403);
   } else {
     await next();
@@ -104,6 +115,7 @@ app.use("*", async (c, next) => {
   c.header("X-API-Version", API_VERSION);
   c.header("X-Robots-Tag", "noindex, nofollow");
   c.header("X-Content-Type-Options", "nosniff");
+  if (new URL(c.req.url).protocol === "https:") c.header("Strict-Transport-Security", "max-age=31536000");
   c.header("X-Frame-Options", "DENY");
   c.header("Referrer-Policy", "no-referrer");
   c.header("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
@@ -114,6 +126,10 @@ app.use("*", async (c, next) => {
 });
 
 const authUiBaseUrl = (c: Context<AppBindings>): string => {
+  const boundary = boundaryPolicy(c.env);
+  if (boundary.configured && new URL(c.req.url).hostname.toLowerCase() === boundary.hostname) {
+    return `https://${boundary.hostname}`;
+  }
   if (new URL(c.req.url).hostname.toLowerCase() === "app.avyron.ro") {
     return "https://app.avyron.ro";
   }
@@ -199,16 +215,16 @@ async function requireAuth(c: Context<AppBindings>, next: Next) {
   const auth = c.req.header("authorization");
   const token = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
   if (!token) return c.json({ error: { code: "unauthenticated", message: "Missing token" } }, 401);
-  const payload = await verifyJwt<{ sub: string; sid?: string }>(token, c.env.JWT_SECRET);
+  const payload = await verifySessionJwt(token, c.env);
   if (!payload?.sub || !payload.sid) return c.json({ error: { code: "unauthenticated", message: "Invalid token" } }, 401);
   const session = await c.env.DB.prepare(
-    `SELECT session.mfa_verified_at, account.must_change_password, group_concat(role.role) AS roles_csv
+    `SELECT session.mfa_verified_at, account.must_change_password, account.email, account.email_verified, group_concat(role.role) AS roles_csv
        FROM sessions AS session
        JOIN users AS account ON account.id = session.user_id AND account.disabled_at IS NULL
        LEFT JOIN user_roles AS role ON role.user_id = account.id
       WHERE session.id = ? AND session.user_id = ? AND session.revoked_at IS NULL AND session.expires_at > ?
       GROUP BY session.id`,
-  ).bind(payload.sid, payload.sub, now()).first<{ mfa_verified_at: number | null; must_change_password: number; roles_csv: string | null }>();
+  ).bind(payload.sid, payload.sub, now()).first<{ mfa_verified_at: number | null; must_change_password: number; roles_csv: string | null; email: string; email_verified: number }>();
   if (!session) return c.json({ error: { code: "session_revoked", message: "Sesiunea nu mai este activă" } }, 401);
   if (session.must_change_password === 1 && !forcedPasswordAllowedPath(c.req.path)) {
     return c.json({ error: { code: "password_change_required", message: "Schimbă parola temporară înainte de a continua" } }, 428);
@@ -218,6 +234,8 @@ async function requireAuth(c: Context<AppBindings>, next: Next) {
   c.set("sessionId", payload.sid);
   c.set("roles", liveRoles.length ? liveRoles : ["user"]);
   c.set("mfaVerified", session.mfa_verified_at !== null);
+  const boundaryFailure = await authenticatedBoundary(c, session);
+  if (boundaryFailure) return boundaryFailure;
   if (!await staffRequestAllowed(c.env.DB, payload.sub, c.req.path, c.req.method)) return c.json({error:{code:"staff_permission_required",message:"Rangul curent nu permite această operațiune."}},403);
   await next();
 }
@@ -366,7 +384,7 @@ async function recordSecurityEvent(
   ).bind(
     uuid(), userId, userId ? "user" : "anonymous", action, outcome, severity,
     c.get("requestId") || null, await hashKey(clientIp(c.req.raw)),
-    JSON.stringify({ device, userAgent, country: c.req.header("cf-ipcountry") || null, ...metadata }), now(),
+    JSON.stringify(safeSecurityMetadata({ device, country: c.req.header("cf-ipcountry") || null, ...metadata })), now(),
   ).run();
 }
 
@@ -608,15 +626,15 @@ async function createSession(
   await c.env.DB.batch([
     c.env.DB.prepare(
       `INSERT INTO sessions
-        (id,user_id,user_agent,ip,device_name,mfa_verified_at,created_at,last_seen_at,expires_at)
-       VALUES (?,?,?,?,?,?,?,?,?)`,
-    ).bind(sessionId, userId, userAgent, c.req.header("cf-connecting-ip") || null, deviceName, mfaVerified ? t : null, t, t, exp),
+        (id,user_id,user_agent,ip,device_name,mfa_verified_at,created_at,last_seen_at,expires_at,refresh_token_hash,refresh_rotated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+    ).bind(sessionId, userId, userAgent, c.req.header("cf-connecting-ip") || null, deviceName, mfaVerified ? t : null, t, t, exp, sessionId, t),
     c.env.DB.prepare("UPDATE users SET last_login_at = ? WHERE id = ?").bind(t, userId),
     c.env.DB.prepare("INSERT INTO audit_log (user_id,action,ip,created_at) VALUES (?,?,?,?)")
       .bind(userId, mfaVerified ? "login_mfa" : "login", c.req.header("cf-connecting-ip") || null, t),
   ]);
-  setCookie(c, "sid", sid, { httpOnly: true, secure: true, sameSite: c.env.APP_ENV === "production" ? "Lax" : "None", path: "/", ...(remember ? { maxAge: lifetime } : {}) });
-  const access = await signJwt({ sub: userId, sid: sessionId }, c.env.JWT_SECRET, 900);
+  writeSessionCookie(c, sid, remember ? lifetime : undefined);
+  const access = await signSessionJwt({ sub: userId, sid: sessionId }, c.env);
   await recordSecurityEvent(c, userId, "auth.login", "allowed", "info", { mfaVerified });
   return c.json({ user: { id: userId, roles }, access_token: access, expires_in: 900, ...extra });
 }
@@ -697,7 +715,7 @@ app.get("/api/auth/mfa", requireAuth, async (c) => {
     `SELECT id,kind,label,status,verified_at,last_used_at,created_at
        FROM mfa_factors WHERE user_id = ? AND status <> 'revoked' ORDER BY created_at DESC`,
   ).bind(c.get("userId")).all();
-  return c.json({ data: results, session_verified: c.get("mfaVerified") });
+  return c.json({ data: results, session_verified: c.get("mfaVerified"), auth_enabled: mfaAuthEnabled(c.env) });
 });
 
 app.post("/api/auth/mfa/totp/enroll", requireAuth, async (c) => {
@@ -733,11 +751,11 @@ app.post("/api/auth/mfa/totp/enroll", requireAuth, async (c) => {
 app.post("/api/auth/mfa/totp/verify", requireAuth, async (c) => {
   const body = await c.req.json().catch(() => ({})) as { factorId?: string; code?: string };
   const factorId = String(body.factorId || "");
-  const sid = getCookie(c, "sid");
+  const sid = sessionCookie(c);
   if (!sid) return c.json({ error: { code: "session_required" } }, 401);
-  const hashedSid = await sha256(sid);
   const sessionId = c.get("sessionId");
-  if (sessionId !== hashedSid && sessionId !== sid) return c.json({ error: { code: "session_mismatch" } }, 401);
+  const refresh = await findRefreshSession(c.env.DB, sid);
+  if (!refresh || refresh.id !== sessionId) return c.json({ error: { code: "session_mismatch" } }, 401);
   const factor = await c.env.DB.prepare(
     `SELECT secret_ciphertext FROM mfa_factors
       WHERE id = ? AND user_id = ? AND kind = 'totp' AND status = 'pending'`,
@@ -766,7 +784,7 @@ app.post("/api/auth/mfa/totp/verify", requireAuth, async (c) => {
   await c.env.DB.prepare(
     "UPDATE sessions SET mfa_verified_at = ? WHERE id IN (?, ?) AND user_id = ? AND revoked_at IS NULL",
   ).bind(timestamp, sessionId, sid, c.get("userId")).run();
-  const access = await signJwt({ sub: c.get("userId"), sid: sessionId }, c.env.JWT_SECRET, 900);
+  const access = await signSessionJwt({ sub: c.get("userId"), sid: sessionId }, c.env);
   await recordSecurityEvent(c, c.get("userId"), "auth.mfa_enabled", "allowed");
   return c.json({ ok: true, access_token: access, expires_in: 900, recoveryCodes });
 });
@@ -789,7 +807,7 @@ app.delete("/api/auth/mfa/:id", requireAuth, async (c) => {
     c.env.DB.prepare("UPDATE mfa_factors SET status = 'revoked' WHERE id = ? AND user_id = ?").bind(c.req.param("id"), userId),
     c.env.DB.prepare("UPDATE sessions SET revoked_at = ?, revoked_reason = 'mfa_disabled' WHERE user_id = ? AND revoked_at IS NULL").bind(timestamp, userId),
   ]);
-  deleteCookie(c, "sid", { path: "/" });
+  clearSessionCookie(c);
   await recordSecurityEvent(c, userId, "auth.mfa_disabled", "allowed", "warning");
   return c.json({ ok: true });
 });
@@ -797,38 +815,36 @@ app.delete("/api/auth/mfa/:id", requireAuth, async (c) => {
 app.post("/api/auth/logout", async (c) => {
   const origin = c.req.header("origin");
   if (origin && !allowedOrigin(c.env, origin)) return c.json({ error: { code: "forbidden_origin" } }, 403);
-  const sid = getCookie(c, "sid");
+  const sid = sessionCookie(c);
   if (sid) {
-    const hashedSid = await sha256(sid);
-    const session = await c.env.DB.prepare("SELECT user_id FROM sessions WHERE id IN (?,?) LIMIT 1")
-      .bind(hashedSid, sid).first<{ user_id: string }>();
-    await c.env.DB.prepare(
-      "UPDATE sessions SET revoked_at = ?, revoked_reason = 'logout' WHERE id IN (?, ?) AND revoked_at IS NULL",
-    ).bind(now(), hashedSid, sid).run();
-    if (session) await recordSecurityEvent(c, session.user_id, "auth.logout", "allowed");
+    const session = await findRefreshSession(c.env.DB, sid);
+    if (session) {
+      await c.env.DB.prepare("UPDATE sessions SET revoked_at=?,revoked_reason='logout' WHERE id=? AND revoked_at IS NULL")
+        .bind(now(), session.id).run();
+      await recordSecurityEvent(c, session.user_id, "auth.logout", "allowed");
+    }
   }
-  deleteCookie(c, "sid", { path: "/" });
+  clearSessionCookie(c);
   return c.json({ ok: true });
 });
 
 app.post("/api/auth/refresh", async (c) => {
   const origin = c.req.header("origin");
   if (origin && !allowedOrigin(c.env, origin)) return c.json({ error: { code: "forbidden_origin" } }, 403);
-  const sid = getCookie(c, "sid");
+  const sid = sessionCookie(c);
   // Lipsa unei sesiuni este starea normală pentru vizitatorii publici. Un
   // răspuns gol reușit evită o eroare falsă în consolă, fără a emite token.
   if (!sid) return c.body(null, 204);
-  const hashedSid = await sha256(sid);
-  const row = await c.env.DB.prepare(
-    `SELECT session.id,session.user_id,session.expires_at,session.mfa_verified_at,session.last_seen_at,account.must_change_password
-       FROM sessions session JOIN users account ON account.id=session.user_id AND account.disabled_at IS NULL
-      WHERE session.id IN (?, ?) AND session.revoked_at IS NULL LIMIT 1`,
-  ).bind(hashedSid, sid).first<{ id: string; user_id: string; expires_at: number; mfa_verified_at: number | null; last_seen_at: number; must_change_password: number }>();
-  if (!row || row.expires_at < now()) {
-    if (row) await c.env.DB.prepare(
-      "UPDATE sessions SET revoked_at = ?, revoked_reason = 'expired' WHERE id = ? AND revoked_at IS NULL",
-    ).bind(now(), row.id).run();
-    deleteCookie(c, "sid", { path: "/" });
+  const ipHash = await hashKey(clientIp(c.req.raw));
+  const refreshRate = await checkRateLimit(c.env.DB, [
+    { key: `refresh:ip:${ipHash}:15m`, limit: 500, windowSec: 900 },
+    { key: `refresh:session:${await sha256(sid)}:m`, limit: 120, windowSec: 60 },
+  ], { limiter: c.env.PUBLIC_API_RATE_LIMITER, key: `refresh:${ipHash}` });
+  if (!refreshRate.ok) return c.json({ error: { code: "rate_limited" } }, 429, { "Retry-After": String(refreshRate.retryAfter || 60) });
+  const row = await refreshSession(c, sid);
+  if (!row) {
+    // A delayed response carrying a stale refresh must not erase a newer
+    // cookie issued to another tab. Server revocation/expiry remains decisive.
     return c.body(null, 204);
   }
   const refreshedAt = now();
@@ -838,8 +854,42 @@ app.post("/api/auth/refresh", async (c) => {
   }
   const roles = await rolesFor(c.env.DB, row.user_id);
   const resolvedRoles = roles.length ? roles : ["user"] as Role[];
-  const access = await signJwt({ sub: row.user_id, sid: row.id }, c.env.JWT_SECRET, 900);
+  const access = await signSessionJwt({ sub: row.user_id, sid: row.id }, c.env);
   return c.json({ access_token: access, expires_in: 900, user: { id: row.user_id, roles: resolvedRoles }, must_change_password: row.must_change_password === 1 });
+});
+
+app.post("/api/auth/logout-all", requireAuth, async c => {
+  const rate = await checkRateLimit(c.env.DB, [{ key: `logout-all:${c.get("userId")}`, limit: 5, windowSec: 900 }]);
+  if (!rate.ok) return c.json({ error: { code: "rate_limited" } }, 429);
+  const body = await c.req.json<{ currentPassword?: unknown }>().catch(() => null);
+  if (typeof body?.currentPassword !== "string" || body.currentPassword.length > 512) return c.json({ error: { code: "invalid_input" } }, 400);
+  const user = await c.env.DB.prepare("SELECT password_hash FROM users WHERE id=? AND disabled_at IS NULL")
+    .bind(c.get("userId")).first<{ password_hash: string }>();
+  if (!user || !await verifyPassword(body.currentPassword, user.password_hash)) {
+    await recordSecurityEvent(c, c.get("userId"), "auth.logout_all", "denied", "warning");
+    return c.json({ error: { code: "invalid_password" } }, 403);
+  }
+  await c.env.DB.prepare("UPDATE sessions SET revoked_at=?,revoked_reason='logout_all' WHERE user_id=? AND revoked_at IS NULL")
+    .bind(now(), c.get("userId")).run();
+  clearSessionCookie(c);
+  await recordSecurityEvent(c, c.get("userId"), "auth.logout_all", "allowed");
+  return c.json({ ok: true });
+});
+
+app.get("/api/admin/security", requireAuth, requireSuperAdmin, async c => {
+  const policy = boundaryPolicy(c.env);
+  const { results } = await c.env.DB.prepare(`SELECT action,severity,count(*) AS count,max(created_at) AS last_at
+    FROM security_events WHERE created_at>? GROUP BY action,severity ORDER BY last_at DESC LIMIT 50`)
+    .bind(now() - 86400000).all();
+  const totals = await c.env.DB.prepare(`SELECT
+    coalesce(sum(CASE WHEN outcome IN ('denied','failed') THEN 1 ELSE 0 END),0) AS denied,
+    coalesce(sum(CASE WHEN severity='critical' THEN 1 ELSE 0 END),0) AS critical
+    FROM security_events WHERE created_at>?`).bind(now() - 86400000).first<{denied:number;critical:number}>();
+  return c.json({ mode: policy.mode, configured: policy.configured, configurationErrors: policy.errors,
+    adminHostname: policy.hostname || null, mfa: "unchanged_preparation_only", passkeys: "planned",
+    mfaEnabled: mfaAuthEnabled(c.env), accessProvider: "requires_operator_validation", events: results,
+    alerts: { denied24h: totals?.denied || 0, critical24h: totals?.critical || 0,
+      needsReview: !!totals && (totals.critical > 0 || totals.denied >= 10) } });
 });
 
 app.get("/api/auth/providers", async (c) => {
@@ -881,8 +931,7 @@ app.get("/api/auth/me", requireAuth, async (c) => {
 });
 
 app.get("/api/auth/sessions", requireAuth, async (c) => {
-  const sid = getCookie(c, "sid");
-  const currentId = sid ? await sha256(sid) : null;
+  const currentId = c.get("sessionId");
   const { results } = await c.env.DB.prepare(
     `SELECT id, device_name, created_at, last_seen_at, expires_at, mfa_verified_at
        FROM sessions
@@ -909,8 +958,7 @@ app.delete("/api/auth/sessions/:id", requireAuth, async (c) => {
   ).bind(now(), sessionId, c.get("userId")).run();
   if ((result.meta.changes ?? 0) !== 1) return c.json({ error: { code: "not_found" } }, 404);
 
-  const currentSid = getCookie(c, "sid");
-  if (currentSid && await sha256(currentSid) === sessionId) deleteCookie(c, "sid", { path: "/" });
+  if (c.get("sessionId") === sessionId) clearSessionCookie(c);
   return c.json({ ok: true });
 });
 
@@ -986,7 +1034,7 @@ app.post("/api/auth/change-password", requireAuth, async (c) => {
     c.env.DB.prepare("INSERT INTO audit_log (user_id,action,ip,created_at) VALUES (?,?,?,?)")
       .bind(userId, "password_change", c.req.header("cf-connecting-ip") || null, timestamp),
   ]);
-  deleteCookie(c, "sid", { path: "/" });
+  clearSessionCookie(c);
   return c.json({ ok: true });
 });
 
@@ -1077,7 +1125,7 @@ app.post("/api/auth/change-email/confirm", requireAuth, async (c) => {
     c.env.DB.prepare("INSERT INTO audit_log (user_id,action,ip,created_at) VALUES (?,?,?,?)")
       .bind(request.user_id, "email_change", c.req.header("cf-connecting-ip") || null, timestamp),
   ]);
-  deleteCookie(c, "sid", { path: "/" });
+  clearSessionCookie(c);
   await recordSecurityEvent(c, request.user_id, "auth.email_changed", "allowed", "warning");
   return c.json({ ok: true, reauthentication_required: true });
 });
@@ -1785,6 +1833,7 @@ app.route("/", projectsRouter);
 app.route("/", mediaRouter);
 app.route("/", blogRouter);
 app.route("/", domainRouter);
+app.route("/", securityReportsRouter);
 app.route("/", promotionsRouter);
 // Formularul public (fără auth)
 app.route("/", contactRouter);
@@ -1812,6 +1861,7 @@ app.route("/", produseAdminRouter);
 app.route("/", productSalesRouter);
 app.route("/", billingRouter);
 // Importul administrativ are propria gardă constant-time X-Seed-Token.
+app.use("/api/admin/import-users", requireAuth, requireSuperAdmin);
 app.route("/", seedRouter);
 
 async function publicBlogPage(c: Context<AppBindings>, language: "ro" | "en", requestedSlug?: string) {
@@ -1886,7 +1936,14 @@ app.get("/llms.txt", async (c) => {
 // hostname stays on the same Worker so /api remains same-origin and no second
 // deployment or database boundary is introduced.
 app.get("/", async (c, next) => {
-  if (new URL(c.req.url).hostname.toLowerCase() !== "app.avyron.ro") return next();
+  const hostname = new URL(c.req.url).hostname.toLowerCase();
+  const admin = boundaryPolicy(c.env);
+  if (admin.configured && hostname === admin.hostname) {
+    c.header("Cache-Control", "private, no-store");
+    c.header("X-Robots-Tag", "noindex, nofollow");
+    return c.redirect("/intern", 302);
+  }
+  if (hostname !== "app.avyron.ro") return next();
   c.header("X-Robots-Tag", "noindex, nofollow");
   c.header("Cache-Control", "private, no-store");
   return c.redirect("https://app.avyron.ro/profil", 302);
@@ -1944,7 +2001,7 @@ app.all("*", async (c) => {
 
 app.onError((error, c) => {
   const requestId = c.get("requestId") || c.req.header("cf-ray") || crypto.randomUUID();
-  console.error(JSON.stringify({ event: "unhandled_error", requestId, path: c.req.path, method: c.req.method, error: error.message }));
+  console.error(JSON.stringify({ event: "unhandled_error", requestId, path: c.req.path, method: c.req.method, error: error.name }));
   return c.json({ error: { code: "internal_error", message: "A apărut o eroare internă", requestId } }, 500);
 });
 
@@ -1963,7 +2020,7 @@ async function cleanupExpiredData(env: AppBindings["Bindings"]) {
 }
 
 export default {
-  fetch: async (request, env, ctx) => applicationHostResponse(request, await app.fetch(normalizeVersionedApiRequest(request), env, ctx)),
+  fetch: async (request, env, ctx) => applicationHostResponse(request, await app.fetch(normalizeVersionedApiRequest(request), env, ctx), env),
   queue: (batch, env, ctx) => {
     ctx.waitUntil(consumeAsyncJobs(batch, env));
   },
