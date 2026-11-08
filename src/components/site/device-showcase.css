@@ -136,7 +136,10 @@
 .phone-app-content h4 { font-size:9cqw; line-height:1.04; letter-spacing:-.04em; font-weight:600; }
 .phone-booking-hero { position:relative; height:40cqw; margin:5cqw 0; border-radius:5cqw; padding:5cqw; background:linear-gradient(125deg,#dce1cc,#b5c6a5); overflow:hidden; }
 .phone-booking-hero > span { position:relative; display:block; max-width:65%; font-size:4.3cqw; font-weight:600; }.phone-booking-hero > strong { position:relative; display:block; font-size:7cqw; margin-top:2cqw; }.phone-booking-hero > i { position:relative; display:block; font-size:3cqw; font-style:normal; margin-top:4cqw; }
-.phone-orb { position:absolute; right:-2cqw; top:4cqw; width:36cqw; height:36cqw; border-radius:45% 45% 10% 10%; background:radial-gradient(circle at 30% 20%,#faf5df,#c6ae88 60%,#6e866750); transform:rotate(15deg); box-shadow:-3cqw 4cqw 6cqw #4b664130; }
+.phone-booking-photo { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:62% 48%; }
+.phone-booking-hero { color:#fffaf0; background:#332b21; }
+.phone-booking-hero:after { content:""; position:absolute; inset:0; background:linear-gradient(90deg,rgba(18,20,15,.82),rgba(18,20,15,.35) 64%,rgba(18,20,15,.04)); pointer-events:none; }
+.phone-booking-hero > span,.phone-booking-hero > strong,.phone-booking-hero > i { z-index:1; text-shadow:0 1px 6px #0005; }
 .phone-row-heading { display:flex; align-items:center; justify-content:space-between; gap:2cqw; font-size:3.7cqw; margin:4cqw 0; }.phone-row-heading > span { font-size:2.8cqw; color:#72826c; }
 .phone-date-grid { display:flex; justify-content:space-between; gap:2cqw; }.phone-date-grid > span { display:flex; flex:1; align-items:center; flex-direction:column; gap:3cqw; padding:3cqw 1cqw; background:#e9ecdf; border-radius:3cqw; }.phone-date-grid small { font-size:2.6cqw; }.phone-date-grid strong { font-size:4.5cqw; }.phone-date-grid .is-selected { background:#324b38; color:#f4f5e9; }
 .phone-time-grid { display:flex; gap:2cqw; margin-top:3cqw; }.phone-time-grid > span { flex:1; text-align:center; border:1px solid #50634b30; border-radius:2cqw; padding:2cqw 0; font-size:3cqw; }.phone-time-grid .is-selected { border-color:#728562; background:#dbe6cd; }

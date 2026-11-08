@@ -1,3 +1,4 @@
+import {creativeQualityContext} from "../../../../src/shared/skills/creative";
 import {siteQualityContext} from "../../../../src/shared/skills/siteKnowledge";
 import {
   hasCapability,
@@ -195,5 +196,5 @@ export async function approvedSkillContext(
   slug: string,
   domain: string,
 ) {
-  return [slug === "site-builder" ? siteQualityContext(domain) : "", referenceMarkdown(await selectedSkillReferences(db, slug, domain))].filter(Boolean).join("\n\n");
+  return [slug === "site-builder" ? siteQualityContext(domain) : creativeQualityContext(slug), referenceMarkdown(await selectedSkillReferences(db, slug, domain))].filter(Boolean).join("\n\n");
 }

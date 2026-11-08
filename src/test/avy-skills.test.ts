@@ -665,6 +665,10 @@ it("stores generated binary images privately and revalidates their exact object 
   expect(response.status).toBe(201);
   const made = await response.json();
   await drainSkillRuns(env);
+  const {mediaPrompt}=await import('../shared/skills/creative');
+  const input=vi.mocked(runAiCore).mock.calls[0][0].input.multipart as {body:ReadableStream;contentType:string};
+  const posted=await new Response(input.body,{headers:{'content-type':input.contentType}}).formData();
+  expect(String(posted.get('prompt')).replace(/\r\n/g,'\n')).toBe(mediaPrompt(briefSchema.parse(brief())));
   const path = `https://app.fixture.test/api/skills/media-generate/runs/${made.id}/image`;
   const image = await app.request(path, { method: "GET" }, env);
   expect(image.status).toBe(200);
@@ -878,4 +882,23 @@ it("keeps repository agent entrypoints synchronized with the shared knowledge co
  const {SITE_AGENT_GUIDES,SITE_QUALITY_CONTRACT,SITE_KNOWLEDGE_VERSION}=await import('../shared/skills/siteKnowledge');
  const common=readFileSync('docs/site-builder/COMMON.md','utf8');expect(common).toContain(SITE_QUALITY_CONTRACT);expect(common).toContain(SITE_KNOWLEDGE_VERSION);
  for(const [agent,instructions] of Object.entries(SITE_AGENT_GUIDES))expect(readFileSync(`docs/site-builder/${agent.toUpperCase()}.md`,'utf8')).toContain(instructions);
+});
+it("exports logo SVG from its immutable snapshot and enforces resource authorization",async()=>{
+ const response=await app.request('https://app.fixture.test/api/skills/logo-engine/runs',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({brief:brief({projectId:'pa'}),mode:'template'})},env);expect(response.status).toBe(201);const made=await response.json();
+ const path=`https://app.fixture.test/api/skills/logo-engine/runs/${made.id}/export?format=svg&direction=1`;
+ const exported=await app.request(path,{},env);expect(exported.status).toBe(200);expect(exported.headers.get('content-type')).toContain('image/svg+xml');expect(exported.headers.get('cache-control')).toBe('private, no-store');const original=await exported.text();expect(original).toContain('Semnătură');
+ expect(()=>db.prepare('UPDATE avy_skill_runs SET brief_json=? WHERE id=?').run(JSON.stringify(brief({business:'Changed brand'})),made.id)).toThrow('skill_result_immutable');expect(await(await app.request(path,{},env)).text()).toBe(original);
+ expect((await app.request(path.replace('direction=1','direction=99'),{},env)).status).toBe(400);
+ actor='b';grant(actor,'skills.read');grant(actor,'skills.use');expect((await app.request(path,{},env)).status).toBe(404);actor='client';expect((await app.request(path,{},env)).status).toBe(403);
+});
+it("preserves legacy idempotency hashes when new creative controls are left at defaults",async()=>{
+ const {sha256}=await import('../../cloudflare/workers/api/src/security');const {logo,media,...legacy}=brief();void logo;void media;
+ const key=crypto.randomUUID();const made=await create({},'template',key);const stored=db.prepare('SELECT request_hash FROM avy_skill_runs WHERE id=?').get(made.id)!;
+ expect(stored.request_hash).toBe(await sha256(JSON.stringify({slug:'site-builder',brief:legacy,mode:'template'})));
+ const retry=await req('/runs',{brief:legacy,mode:'template'},'POST',{'Idempotency-Key':key});expect(retry.status).toBe(200);expect((await retry.json()).id).toBe(made.id);
+});
+it("includes approved creative references in the compact AI handoff",async()=>{
+ db.exec("INSERT INTO avy_skill_resources(id,skill_slug,title,domain,body,status,created_by,created_at,updated_at) VALUES('logo-reference','logo-engine','Materiale aprobate','general','Tipografie lizibila, contrast si proportii validate pentru concept.','approved','owner',1,1)");
+ const response=await app.request('https://app.fixture.test/api/skills/logo-engine/runs',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({brief:brief(),mode:'ai'})},env);expect(response.status).toBe(201);const made=await response.json();await processSkillRun(env,made.id);
+ const input=vi.mocked(runAiCore).mock.calls[0][0].input as {messages:{content:string}[]};expect(JSON.parse(input.messages[1].content).references.join('\n')).toContain('Materiale aprobate');expect(input.messages[0].content).toContain('Standard creativ AVYRON');
 });

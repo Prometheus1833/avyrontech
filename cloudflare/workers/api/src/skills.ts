@@ -1,3 +1,5 @@
+import {idempotencyBrief} from "../../../../src/shared/skills/model";
+import {creativeQualityContext} from "../../../../src/shared/skills/creative";
 import {siteBuilderRoutes} from "./siteKnowledge";
 import {siteQualityContext} from "../../../../src/shared/skills/siteKnowledge";
 import { Hono, type Context } from "hono";
@@ -154,7 +156,7 @@ skillsRouter.get(root + "/:slug/context", async (c) => {
     version: s.published_version,
     paused: !!s.paused,
     instructions: v?.instructions,
-    references: [s.slug === "site-builder" ? siteQualityContext((c.req.query("domain")||"general").slice(0,80)) : "",referenceMarkdown(references)].filter(Boolean).join("\n\n"),
+    references: [s.slug === "site-builder" ? siteQualityContext((c.req.query("domain")||"general").slice(0,80)) : creativeQualityContext(s.slug),referenceMarkdown(references)].filter(Boolean).join("\n\n"),
     resources: references.map((r) => ({
       id: r.id,
       title: r.title,
@@ -182,6 +184,8 @@ skillsRouter.get(root + "/:slug/context", async (c) => {
           "projectId",
           "leadId",
           "imageFormat",
+          "logo",
+          "media",
         ],
       },
     },
@@ -376,7 +380,7 @@ skillsRouter.post(root + "/:slug/runs", async (c) => {
     return fail(c, "idempotency_key_required");
   if (!(await skillBriefAccess(c.env, c.get("userId"), parsed.data.brief)))
     return fail(c, "context_not_authorized", 403);
-  const hash = await sha256(JSON.stringify({ slug: s.slug, ...parsed.data }));
+  const hash = await sha256(JSON.stringify({ slug: s.slug, ...parsed.data, brief:idempotencyBrief(parsed.data.brief) }));
   const previous = () =>
     c.env.DB.prepare(
       "SELECT id,request_hash,status FROM avy_skill_runs WHERE created_by=? AND idempotency_key=?",
@@ -465,6 +469,17 @@ skillsRouter.get(root + "/:slug/runs/:id/export", async (c) => {
   if (!["ready", "approved", "archived"].includes(r.status))
     return fail(c, "result_not_ready", 409);
   const format = c.req.query("format");
+  if(format==="svg"){
+    const direction=c.req.query("direction");
+    if(r.skill_slug!=="logo-engine"||!direction||!/^[012]$/.test(direction))return fail(c,"invalid_format");
+    const source=r.preview_html?.match(/<svg\b[\s\S]*?<\/svg>/g)?.[Number(direction)];
+    if(!source)return fail(c,"concept_svg_unavailable",409);
+    c.header("Content-Type","image/svg+xml; charset=utf-8");
+    c.header("Content-Disposition",`attachment; filename="avy-logo-concept-${Number(direction)+1}-${r.id.slice(0,8)}.svg"`);
+    c.header("Content-Security-Policy","sandbox; default-src 'none'; base-uri 'none'; form-action 'none'");
+    await event(c,r.skill_slug,"run.exported",r.id,{format,direction:Number(direction),source:"immutable_preview"}).run();
+    return c.body(source);
+  }
   if (format !== "html" && format !== "md") return fail(c, "invalid_format");
   c.header(
     "Content-Type",

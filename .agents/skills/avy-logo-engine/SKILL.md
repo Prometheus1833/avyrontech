@@ -13,3 +13,6 @@ Folosește primary din AI Core pentru structură și copy scurt. Pentru randări
 
 ## Sursa operațională
 Acestea sunt instrucțiunile de pornire, fără date private. Pentru versiunea curentă aprobată, citește prin autentificarea AVYRON existentă GET /api/skills/logo-engine/skill.md. Referințele relevante se citesc la GET /api/skills/logo-engine/context?domain=DOMENIU. Nu afișa tokenul în loguri, prompturi sau fișiere. Folosește POST /api/skills/logo-engine/runs pentru pregătire internă și GET /api/skills/logo-engine/runs/ID pentru rezultat. Toate mutațiile necesită permisiuni, MFA conform politicii și Idempotency-Key; schema este publicată în /api/skills/logo-engine/context. Codex local nu poate rula când Mac-ul este oprit; coada cloud rulează numai pregătirea autorizată, fără trimitere, publicare sau deploy.
+
+## Atelier creativ versionat
+Brief-ul nativ include `logo.kind`, `logo.palette`, `logo.tagline`, `logo.symbols` si `logo.avoid`; campurile raman optionale pentru istorice. Atelierul prezinta trei studii de compozitie si exporta fiecare SVG din snapshotul istoric, dupa verificarea drepturilor pe resursa. SVG-ul pastreaza text editabil; verifica fonturile si converteste contururile in livrabilul final. Nu prezenta studiile drept marca disponibila juridic sau creatie finala livrata.
