@@ -33,6 +33,7 @@ for (const path of ["/", "/servicii", "/configurator", "/biblioteca"]) test(`acc
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto(path);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.getByRole("main")).toHaveCount(1);
   await page.addScriptTag({ path: require.resolve("axe-core/axe.min.js") });
   const violations = await page.evaluate(async () => {
     const axe = (window as unknown as { axe: { run: (root: Document, options: unknown) => Promise<{ violations: { id: string; nodes: { target: string[] }[] }[] }> } }).axe;
