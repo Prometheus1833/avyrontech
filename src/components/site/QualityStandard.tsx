@@ -45,7 +45,9 @@ export default function QualityStandard() {
       frame = requestAnimationFrame(tick);
     };
     const observer = new IntersectionObserver(
-      ([entry]) => {
+      (entries) => {
+        const entry = entries[entries.length - 1];
+        if (!entry) return;
         if (entry.isIntersecting) start();
         else if (started && !finished) finish();
       },

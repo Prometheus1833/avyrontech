@@ -11,7 +11,6 @@ test.beforeEach(async ({ page }) => {
         policyVersion: "2026-09-12",
       }),
     );
-    HTMLElement.prototype.scrollIntoView = () => {};
   });
 });
 for (const width of [320, 1440])
@@ -22,6 +21,11 @@ for (const width of [320, 1440])
       await page.setViewportSize({ width, height: 900 });
       await page.goto(
         (language === "ro" ? "/" : "/en") + "#avyron-quality-standard",
+      );
+      await expect(page.locator("main[data-anchor-ready]")).toHaveAttribute(
+        "data-anchor-ready",
+        "true",
+        { timeout: 10000 },
       );
       const section = page.locator("#avyron-quality-standard");
       await expect(section).toBeAttached();
@@ -66,6 +70,11 @@ test("quality standard respects reduced motion and stays after the website benef
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/#avyron-quality-standard");
+  await expect(page.locator("main[data-anchor-ready]")).toHaveAttribute(
+    "data-anchor-ready",
+    "true",
+    { timeout: 10000 },
+  );
   const section = page.locator("#avyron-quality-standard");
   await section.evaluate((el) =>
     window.scrollTo({
@@ -119,6 +128,11 @@ test("domain check keeps a late .ro verdict attached to the submitted name and p
     });
   });
   await page.goto("/#verificare-domeniu");
+  await expect(page.locator("main[data-anchor-ready]")).toHaveAttribute(
+    "data-anchor-ready",
+    "true",
+    { timeout: 10000 },
+  );
   const section = page.locator("#verificare-domeniu");
   await section.evaluate((el) =>
     window.scrollTo({
@@ -168,6 +182,11 @@ test("domain lookup recovers from network failure without claiming unavailable e
     });
   });
   await page.goto("/#verificare-domeniu");
+  await expect(page.locator("main[data-anchor-ready]")).toHaveAttribute(
+    "data-anchor-ready",
+    "true",
+    { timeout: 10000 },
+  );
   const section = page.locator("#verificare-domeniu");
   await section.getByRole("textbox").fill("atelier-test");
   await section.getByRole("button", { name: "Verifică", exact: true }).click();

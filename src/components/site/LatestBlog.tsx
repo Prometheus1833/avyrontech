@@ -61,7 +61,12 @@ export default function LatestBlog() {
     const node = section.current;
     if (!node) return;
     const observer = new IntersectionObserver(
-      ([entry]) => setVisible(entry.isIntersecting),
+      (entries) => {
+        // A layout/scroll update can queue both exit and entry in one delivery.
+        // Only the newest observation represents the current viewport state.
+        const entry = entries[entries.length - 1];
+        if (entry) setVisible(entry.isIntersecting);
+      },
       { threshold: 0.2 },
     );
     observer.observe(node);

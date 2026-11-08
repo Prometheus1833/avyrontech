@@ -154,3 +154,23 @@ it("does not leave touch users in a synthetic hover state when playback is resum
   act(() => vi.advanceTimersByTime(6000));
   expect(state.next).toHaveBeenCalledTimes(1);
 });
+
+it("uses the newest queued intersection instead of an obsolete exit event", async () => {
+  mount();
+  await act(async () => {});
+  const batch = (values: boolean[]) =>
+    act(() =>
+      state.visible!(
+        values.map(
+          (isIntersecting) => ({ isIntersecting }) as IntersectionObserverEntry,
+        ),
+        {} as IntersectionObserver,
+      ),
+    );
+  batch([false, true]);
+  act(() => vi.advanceTimersByTime(6000));
+  expect(state.next).toHaveBeenCalledTimes(1);
+  batch([true, false]);
+  act(() => vi.advanceTimersByTime(12000));
+  expect(state.next).toHaveBeenCalledTimes(1);
+});

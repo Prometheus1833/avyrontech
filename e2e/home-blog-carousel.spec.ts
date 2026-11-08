@@ -12,7 +12,6 @@ test.beforeEach(async ({ page }) => {
         policyVersion: "2026-09-12",
       }),
     );
-    HTMLElement.prototype.scrollIntoView = () => {};
   });
   await page.route("**/api/blog/posts?**", (route) =>
     route.fulfill({ json: { data: [] } }),
@@ -23,6 +22,11 @@ async function openPreview(
   language = "ro",
 ) {
   await page.goto(`${language === "en" ? "/en" : "/"}#blog-avyron`);
+  await expect(page.locator("main[data-anchor-ready]")).toHaveAttribute(
+    "data-anchor-ready",
+    "true",
+    { timeout: 10000 },
+  );
   const section = page.locator("#blog-avyron");
   await expect(section).toBeAttached();
   await section.evaluate((el) => {
@@ -133,13 +137,23 @@ test("autoplay stops on focus and drag; reduced motion keeps manual controls", a
   await page.waitForTimeout(6200);
   expect(await section.getAttribute("data-carousel-index")).toBe(before);
   if (await page.evaluate(() => navigator.maxTouchPoints > 0)) {
-    const playback = await section.getByRole("button", {name:"Pornește rularea automată"}).boundingBox();
+    const playback = await section
+      .getByRole("button", { name: "Pornește rularea automată" })
+      .boundingBox();
     if (!playback) throw Error("Missing playback control");
-    await page.touchscreen.tap(playback.x + playback.width / 2, playback.y + playback.height / 2);
+    await page.touchscreen.tap(
+      playback.x + playback.width / 2,
+      playback.y + playback.height / 2,
+    );
     await expect(section).toHaveAttribute("data-autoplay", "playing");
   }
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.reload();
+  await expect(page.locator("main[data-anchor-ready]")).toHaveAttribute(
+    "data-anchor-ready",
+    "true",
+    { timeout: 10000 },
+  );
   await section.evaluate((el) =>
     window.scrollTo({
       top: window.scrollY + el.getBoundingClientRect().top - 100,
@@ -222,4 +236,27 @@ test("a new published API article is shared by landing and blog, with cover reco
         ),
     )
     .toBe(true);
+});
+
+test("deep link waits for a slow preceding section without moving the carousel out of view", async ({
+  page,
+}) => {
+  await page.route(/\/assets\/Problem-[^/]+\.js$/, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await route.continue();
+  });
+  await page.setViewportSize({ width: 390, height: 1000 });
+  await page.goto("/#blog-avyron");
+  await expect(page.locator("main")).toHaveAttribute(
+    "data-anchor-ready",
+    "true",
+    { timeout: 10000 },
+  );
+  const section = page.locator("#blog-avyron");
+  await expect(section.getByRole("heading", { level: 2 })).toBeInViewport();
+  await page.mouse.move(1, 1);
+  await expect(section).toHaveAttribute("data-autoplay", "playing");
+  await page.waitForTimeout(1800);
+  await expect(section.getByRole("heading", { level: 2 })).toBeInViewport();
+  await expect(section).toHaveAttribute("data-autoplay", "playing");
 });

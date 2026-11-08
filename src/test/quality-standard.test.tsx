@@ -75,3 +75,17 @@ it("uses the final static state with reduced motion and cleans up the observer",
   view.unmount();
   expect(cancelAnimationFrame).toHaveBeenCalled();
 });
+
+it("starts for the newest entry when the observer batches exit and entry", () => {
+  const { section } = setup(true);
+  act(() =>
+    callback(
+      [
+        { isIntersecting: false },
+        { isIntersecting: true },
+      ] as IntersectionObserverEntry[],
+      {} as IntersectionObserver,
+    ),
+  );
+  expect(section.dataset.qualityProgress).toBe("100");
+});
