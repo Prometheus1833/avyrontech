@@ -1,9 +1,4 @@
-import restaurant from "@/assets/work-restaurant-new.jpg";
-import travel from "@/assets/work-hotel-new.jpg";
-import professional from "@/assets/work-lawyer-new.jpg";
-import local from "@/assets/work-local-new.jpg";
-import wellness from "@/assets/showcase-wellness-editorial.webp";
-import wellnessSmall from "@/assets/showcase-wellness-editorial-960.webp";
+import {showcasePhoto} from "./showcaseImages";
 
 export type AppMode = "app" | "game" | "crm" | "platform";
 export type AutomationMode = "social" | "leads" | "chat" | "other";
@@ -16,6 +11,9 @@ type DomainTheme = {
   ink: string;
   image?: string;
   imageSet?: string;
+  imageAvifSet?:string;
+  imageWidth?:number;
+  imageHeight?:number;
   brand: string;
   hero: Translation;
   intro: Translation;
@@ -29,8 +27,7 @@ const detail = (roTitle: string, enTitle: string, roDescription: string, enDescr
 // These are interface examples, not customer results, availability or conversion claims.
 const themes: Record<string, DomainTheme> = {
   beauty: {
-    accent: "#ddc49e", surface: "#221c18", ink: "#fff8ed", image: wellness,
-    imageSet: `${wellnessSmall} 960w, ${wellness} 1600w`, brand: "NORD / WELLNESS", visual: "photo",
+    accent: "#ddc49e", surface: "#221c18", ink: "#fff8ed", ...showcasePhoto("wellness"), brand: "NORD / WELLNESS", visual: "photo",
     hero: ["Frumusețe, în ritmul tău.", "Beauty, at your own pace."],
     intro: ["Un ritual de îngrijire începe cu o alegere simplă.", "A care ritual starts with a simple choice."],
     action: ["Alege un tratament", "Choose a treatment"],
@@ -44,7 +41,7 @@ const themes: Record<string, DomainTheme> = {
     ],
   },
   resto: {
-    accent: "#e7b77a", surface: "#241e19", ink: "#fff3e3", image: restaurant, brand: "MAISON / TABLE", visual: "photo",
+    accent: "#e7b77a", surface: "#241e19", ink: "#fff3e3", ...showcasePhoto("restaurant"), brand: "MAISON / TABLE", visual: "photo",
     hero: ["O masă bună. O seară de ținut minte.", "Good food. An evening to remember."],
     intro: ["Ingrediente de sezon, povești la aceeași masă.", "Seasonal ingredients, stories around one table."],
     action: ["Rezervă o masă", "Reserve a table"],
@@ -72,7 +69,7 @@ const themes: Record<string, DomainTheme> = {
     ],
   },
   turism: {
-    accent: "#d4e5c1", surface: "#172b27", ink: "#f5f8ed", image: travel, brand: "NORD / RETREAT", visual: "photo",
+    accent: "#d4e5c1", surface: "#172b27", ink: "#f5f8ed", ...showcasePhoto("travel"), brand: "NORD / RETREAT", visual: "photo",
     hero: ["Un loc în care timpul încetinește.", "A place where time slows down."],
     intro: ["Camere cu priveliște. Dimineți aproape de natură.", "Rooms with a view. Mornings close to nature."],
     action: ["Descoperă camerele", "Explore the rooms"],
@@ -86,7 +83,7 @@ const themes: Record<string, DomainTheme> = {
     ],
   },
   pro: {
-    accent: "#d3b68a", surface: "#24221e", ink: "#f6f0e7", image: professional, brand: "CONSILIUM / EXPERTISE", visual: "photo",
+    accent: "#d3b68a", surface: "#24221e", ink: "#f6f0e7", ...showcasePhoto("professional"), brand: "CONSILIUM / EXPERTISE", visual: "photo",
     hero: ["Decizii informate. Încredere construită.", "Informed decisions. Earned trust."],
     intro: ["O perspectivă clară pentru situațiile care contează.", "A clear perspective for the matters that count."],
     action: ["Solicită o consultație", "Request a consultation"],
@@ -100,7 +97,7 @@ const themes: Record<string, DomainTheme> = {
     ],
   },
   local: {
-    accent: "#bade8d", surface: "#eef0e8", ink: "#263329", image: local, brand: "LOCAL / SERVICE", visual: "local",
+    accent: "#bade8d", surface: "#eef0e8", ink: "#263329", ...showcasePhoto("local"), brand: "LOCAL / SERVICE", visual: "local",
     hero: ["Oameni pricepuți. Lucrări bine făcute.", "Skilled people. Work done right."],
     intro: ["Spune-ne ce ai nevoie. Găsim următorul pas.", "Tell us what you need. Find the next step."],
     action: ["Cere o estimare", "Request an estimate"],

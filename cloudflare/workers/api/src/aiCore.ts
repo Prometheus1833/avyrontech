@@ -2,7 +2,7 @@ import { reserveAiCost } from "./aiCostGuard";
 import { now, sha256 } from "./security";
 import type { Env } from "./types";
 import { verifiedImageReservation } from "./skillImages";
-import { cloudflareModelInput } from "./aiModelInput";
+import { cloudflareModelInput, cloudflareModelOutput } from "./aiModelInput";
 
 export type AiModelRole = "primary" | "secondary" | "image";
 export type AiTokenTier = "default" | "normal" | "special";
@@ -34,8 +34,10 @@ type AiCoreInput = {
   role?: AiModelRole;
   requestId?: string | null;
   projectId?: string | null;
+  aiProjectId?: string | null;
   clientId?: string | null;
   financialReserved?: boolean;
+  freeOnly?: boolean;
   priority?: "background" | "important" | "user";
   imageDimensions?: {width:number;height:number};
 };
@@ -116,6 +118,7 @@ export async function runAiCore(input: AiCoreInput): Promise<{
        FROM ai_model_registry WHERE role=?`,
   ).bind(role).first<RegistryRow>();
   if (!registry || registry.status === "disabled") throw new AiCoreError("ai_model_not_configured");
+  if (input.freeOnly && registry.requires_billing) throw new AiCoreError("paid_ai_disabled");
   if (registry.requires_billing && !(enabled(input.env.PAID_AI_ENABLED) && enabled(input.env.ALLOW_AI_OVERAGE))) {
     throw new AiCoreError("paid_ai_disabled");
   }
@@ -142,6 +145,7 @@ export async function runAiCore(input: AiCoreInput): Promise<{
       idempotencyKey: input.idempotencyKey,
       requestId: input.requestId,
       projectId: input.projectId,
+      aiProjectId: input.aiProjectId,
       clientId: input.clientId,
     });
     if (financial.decision !== "allowed") throw new AiCoreError(financial.reason);
@@ -149,6 +153,7 @@ export async function runAiCore(input: AiCoreInput): Promise<{
 
   await reserveModelBudget(input.env, registry, input.agentSlug, estimatedNeurons, input.idempotencyKey, priority);
   const modelInput = role === "image" ? input.input : { ...input.input, max_tokens: maxTokens };
-  const output = await input.env.AI.run(registry.model_id, cloudflareModelInput(registry.model_id,modelInput));
+  const rawOutput = await input.env.AI.run(registry.model_id, cloudflareModelInput(registry.model_id,modelInput));
+  const output = role==='image'?rawOutput:cloudflareModelOutput(rawOutput);
   return { output, model: registry.model_id, role, maxTokens, estimatedNeurons };
 }

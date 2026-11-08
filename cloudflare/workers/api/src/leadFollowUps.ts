@@ -1,3 +1,4 @@
+import {siteAgentKnowledge} from "./siteAgentKnowledge";
 import { AiCoreError, runAiCore } from "./aiCore";
 import { now } from "./security";
 import type { Env } from "./types";
@@ -75,6 +76,7 @@ async function generateDraft(env: Env, row: DraftRow): Promise<GeneratedDraft & 
   const prompt = [
     `Ești AVY Leads. Redactează revenirea ${row.sequence} pentru un lead Necesit fără răspuns.`,
     cadence,
+    await siteAgentKnowledge(env, row.product || ""),
     "Returnează exclusiv JSON valid cu cheile whatsappBody, emailSubject și emailBody.",
     "Mesajele trebuie să continue natural contactul inițial, să menționeze platforma Necesit și să verifice politicos dacă proiectul mai este actual, dacă solicitarea a fost greșită sau dacă serviciul necesită clarificări.",
     "Folosește o singură întrebare principală pe canal. Nu comunica prețuri, reduceri, termene, contracte, garanții ori rezultate promise. Nu inventa detalii.",
@@ -130,6 +132,7 @@ export async function reviseLeadFollowUpSection(env: Env, input: {
     "Ești AVY Leads. Revizuiești o singură secțiune dintr-o ciornă internă deja existentă.",
     `Secțiunea selectată este ${input.section === "whatsapp" ? "WhatsApp" : "e-mail"}. Nu ai acces la cealaltă secțiune și nu trebuie să propui modificarea ei.`,
     outputShape,
+    await siteAgentKnowledge(env, input.product || ""),
     "Păstrează limba română cu diacritice, tonul profesionist și consultativ și o singură întrebare principală.",
     "Nu inventa informații și nu adăuga prețuri, reduceri, termene, contracte, garanții sau rezultate promise.",
     `Instrucțiunea membrului staff: ${input.instruction}`,

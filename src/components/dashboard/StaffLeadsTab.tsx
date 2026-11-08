@@ -9,6 +9,7 @@ import { AlertCircle,Archive,ArrowRight,CalendarDays,Columns3,History,List,Mail,
 import { useCallback,useEffect,useMemo,useState } from "react";
 import { toast } from "sonner";
 import LeadPipeline from "./leads/LeadPipeline";
+import {useSearchParams} from 'react-router-dom';
 
 const STAGES = [
   ["new_lead", "Lead nou"], ["contacted", "Contactat"], ["discussion", "Discuție"],
@@ -47,6 +48,9 @@ export const StaffLeadsTab = ({
   const [leadFilter, setLeadFilter] = useState<LeadFilter>("all");
   const [saving, setSaving] = useState<string | null>(null);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [searchParams]=useSearchParams();
+  const requestedLead=searchParams.get('lead');
+  useEffect(()=>{if(requestedLead&&requestedLead.length<=160)setSelectedLeadId(requestedLead);},[requestedLead]);
   const [newLeadOpen, setNewLeadOpen] = useState(false);
   const [deletingLead, setDeletingLead] = useState<LeadListRow | null>(null);
   const [deletionLogOpen, setDeletionLogOpen] = useState(false);

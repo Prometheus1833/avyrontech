@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { MessageSquarePlus, Send, ChevronDown, ChevronUp } from "lucide-react";
+import {useSearchParams} from 'react-router-dom';
 
 type Ticket = {
   id: string;
@@ -46,6 +47,9 @@ export function TicketsTab({ staffMode = false, embedded=false }: { staffMode?: 
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [searchParams]=useSearchParams();
+  const requestedTicket=searchParams.get('ticket');
+  useEffect(()=>{if(requestedTicket&&tickets.some(row=>row.id===requestedTicket))setExpanded(requestedTicket);},[requestedTicket,tickets]);
 
   const [clients, setClients] = useState<{id:string;company_name:string}[]>([]);
   const [clientId, setClientId] = useState("");

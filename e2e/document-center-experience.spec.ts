@@ -345,6 +345,9 @@ test("separate views, compact library, contextual search and safe download", asy
   await expect(
     page.getByRole("heading", { name: "Centru Documente", exact: true }),
   ).toBeVisible();
+  await expect(nav(page).getByRole("button", { name: /^Generator/ })).toHaveAttribute("aria-current", "page");
+  await expect(nav(page).locator("strong")).toHaveText(["Generator", "Tipizate", "Documente STAFF", "Documente SC", "Bibliotecă Agenție"]);
+  await nav(page).getByRole("button", { name: /Bibliotecă Agenție/ }).click();
   await expect(
     nav(page).getByRole("button", { name: /Bibliotecă Agenție/ }),
   ).toHaveAttribute("aria-current", "page");
@@ -500,7 +503,8 @@ for (const role of ["staff", "client"] as const)
     await expect(
       nav(page).getByRole("button", { name: /Documente SC/ }),
     ).toHaveCount(0);
-    await expect.poll(() => state.lists.length).toBeGreaterThan(0);
+    if (role === "client") await expect.poll(() => state.lists.length).toBeGreaterThan(0);
+    else await expect(page.getByRole("heading", {name:"Generator de documente"})).toBeVisible();
     expect(
       state.lists.every((url) => url.searchParams.get("scope") !== "company"),
     ).toBe(true);
@@ -530,7 +534,7 @@ for (const width of [320, 390, 768])
   }, info) => {
     await page.setViewportSize({ width, height: 844 });
     await setup(page);
-    await page.goto("/profil?tab=documents");
+    await page.goto("/profil?tab=documents&documentView=library");
     await expect(
       page.getByRole("region", { name: "Bibliotecă Agenție" }),
     ).toBeVisible();
@@ -561,7 +565,7 @@ test("document views meet basic WCAG AA checks and artifact library is named dis
   page,
 }) => {
   await setup(page);
-  await page.goto("/profil?tab=documents");
+  await page.goto("/profil?tab=documents&documentView=library");
   await expect(nav(page)).toBeVisible();
   const { createRequire } = await import("node:module");
   await page.addScriptTag({

@@ -1,3 +1,7 @@
+import OverviewAiProjects from "./OverviewAiProjects";
+import OperationalPriorities from "./OperationalPriorities";
+import { Link } from "react-router-dom";
+import { canOpenSection } from "@/lib/access";
 import NotificationSummary from "./NotificationSummary";
 import AntivirusSummary from "./AntivirusSummary";
 import { STAFF_MANAGED } from "@/shared/staffAccess";
@@ -88,6 +92,8 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
   const [data, setData] = useState<OsOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [probingAi,setProbingAi]=useState(false);
+  const [aiProbe,setAiProbe]=useState<import("@/lib/osApi").OsHealth|null>(null);
   const request = useRef(0);
   const alive = useRef(true);
 
@@ -186,6 +192,8 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
   );
 
   const activeProjects = data.activeProjects ?? [];
+  const health=data.health.map(item=>item.id==='ai'&&aiProbe?.checkedAt&&Date.now()-aiProbe.checkedAt<900000&&(aiProbe.checkedAt>data.generatedAt||!['atenție','eroare','neconfigurat'].includes(item.status))?aiProbe:item);
+  const testAi=async()=>{if(probingAi)return;setProbingAi(true);try{const result=await osApi.probeAi(crypto.randomUUID());setAiProbe(result);if(result.status==='funcțional')toast.success('Execuția AI Free a fost confirmată.');else toast.warning(result.detail);}catch(e){toast.error(e instanceof Error?e.message:'Testul nu poate fi efectuat.');}finally{setProbingAi(false);}};
 
   return (
     <div className="flex flex-col gap-4 text-slate-100">
@@ -212,15 +220,14 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
       <Panel className="p-4 sm:p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div><p className="font-mono text-[10px] uppercase tracking-[0.22em] text-emerald-200/70">Stare verificată</p><h2 className="mt-1 font-display text-lg font-semibold text-white">Infrastructură și integrări</h2></div><Cloud className="size-5 text-emerald-300" /></div>
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-          {data.health.map((item) => (
-            <div key={item.id} title={item.detail} className="flex items-center gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
-              <span className={`size-2 rounded-full ${statusTone(item.status)}`} />
-              <span className="min-w-0 flex-1 truncate text-xs text-slate-300">{item.label}</span>
-              <span className="text-[10px] text-slate-600">{item.status}</span>
-            </div>
+          {health.map((item) => (
+            <details key={item.id} className="min-w-0 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
+              <summary className="flex min-h-8 cursor-pointer items-center gap-2.5 text-xs"><span className={`size-2 shrink-0 rounded-full ${statusTone(item.status)}`} /><span className="min-w-0 flex-1 text-slate-200">{item.label}</span><span className="shrink-0 text-[10px] text-slate-400">{item.status}</span></summary>
+              <p className="mt-2 break-words text-xs leading-relaxed text-slate-400">{item.detail}</p>{item.checkedAt&&<p className="mt-1 text-[10px] text-slate-500">Verificat {new Date(item.checkedAt).toLocaleString('ro-RO')}</p>}
+            </details>
           ))}
         </div>
-        {access.isSuperAdmin && <StorageStatus />}
+        {access.isSuperAdmin && <><div className="mt-3 flex flex-wrap items-center gap-2"><button type="button" className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/10 px-3 text-xs disabled:opacity-50" disabled={probingAi} onClick={()=>void testAi()}><RefreshCw className={`size-3.5 ${probingAi?'animate-spin':''}`}/>{probingAi?'Se testează…':'Testează AI · Free'}</button><span className="text-[11px] text-slate-500">R2: verificare de citire memorată 15 min · AI: execuție numai la cerere</span></div><StorageStatus /></>}
         <div className="mt-4 border-t border-white/[0.06] pt-4">
           <div className="mb-2 flex items-center justify-between"><h3 className="text-xs font-semibold text-slate-300">Registrul integrărilor</h3><span className="text-[10px] text-slate-600">{data.integrations.length} înregistrate</span></div>
           {data.integrations.length === 0 ? (
@@ -236,30 +243,7 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
       {access.isSuperAdmin&&<NotificationSummary onOpen={()=>onOpenSection("notification-settings")} />}
 
       <div className="grid items-start gap-4 xl:grid-cols-12">
-        <Panel className="p-4 sm:p-5 xl:col-span-7">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-amber-200/70">Prioritate operațională</p>
-              <h2 className="mt-1 font-display text-lg font-semibold text-white">Necesită atenție · Azi</h2>
-            </div>
-            <span className="rounded-full bg-amber-300/10 px-2.5 py-1 text-xs font-semibold text-amber-200">{data.attention.length}</span>
-          </div>
-          <div className="grid items-start gap-2 sm:grid-cols-2">
-            {data.attention.length === 0 && (
-              <EmptyState>Nu există urgențe confirmate în modulele conectate.</EmptyState>
-            )}
-            {data.attention.map((item) => (
-              <button key={item.id} type="button" onClick={() => onOpenSection(item.destination as SectionId)} className="group flex min-w-0 w-full items-start gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 text-left transition hover:border-violet-400/25 hover:bg-violet-400/[0.06]">
-                <span className={`mt-1 size-2 shrink-0 rounded-full ${item.severity === "critic" ? "bg-rose-400 shadow-[0_0_14px_rgba(251,113,133,.7)]" : "bg-amber-300"}`} />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-slate-100">{item.title}</span>
-                  <span className="mt-0.5 block text-xs leading-relaxed text-slate-500">{item.detail}</span>
-                </span>
-                <ArrowRight className="mt-1 size-4 shrink-0 text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-violet-300" />
-              </button>
-            ))}
-          </div>
-        </Panel>
+        <OperationalPriorities items={data.attention} onOpenSection={onOpenSection} />
 
         <ApprovalCenter authorized={access.isSuperAdmin} />
       </div>
@@ -281,6 +265,8 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
           );
         })}
       </div>
+
+      {canOpenSection("ai-projects",access)&&<OverviewAiProjects />}
 
       <div className="grid gap-4 xl:grid-cols-12">
         {access.isStaff &&
@@ -313,11 +299,11 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
             {activeProjects.slice(0, 5).map((project) => {
               const state = projectStatus(project.bannerStatus);
               return (
-                <button key={project.id} type="button" onClick={() => onOpenSection("projects")} className="group flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5 text-left transition hover:border-violet-400/25">
+                <Link key={project.id} to={`/intern/projects/${encodeURIComponent(project.slug)}`} className="group flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5 text-left transition hover:border-violet-400/25">
                 <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-violet-400/10 text-violet-300"><FolderKanban className="size-4" /></span>
                 <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium text-slate-200">{project.name}</span><span className="block text-[11px] text-slate-600">actualizat {relativeTime(project.updatedAt)}</span></span>
                 <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${state.className}`}>{state.label}</span>
-              </button>
+              </Link>
               );
             })}
           </div>
@@ -337,7 +323,7 @@ export default function AvyronOverview({ access, displayName, onOpenSection, onO
             {data.agentRuns.slice(0, 5).map((run) => (
               <div key={run.id} className="grid grid-cols-[auto_1fr] items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
                 <span className="grid size-8 place-items-center rounded-lg bg-fuchsia-400/10 text-fuchsia-300"><Bot className="size-4" /></span>
-                <div className="min-w-0"><div className="flex items-center justify-between gap-2"><p className="truncate text-sm font-medium text-slate-200">{run.agent_slug}</p><span className="flex shrink-0 items-center gap-1.5 text-[10px] text-slate-500"><span className={`size-1.5 rounded-full ${statusTone(run.status)}`} />{agentStatusLabel(run.status)}</span></div><p className="text-[11px] text-slate-600">{run.steps} pași · {relativeTime(run.created_at)}</p></div>
+                <div className="min-w-0"><div className="flex items-center justify-between gap-2"><p className="min-w-0 flex-1 break-words text-sm font-medium text-slate-200">{run.agent_name||run.agent_slug.replace(/[-_]/g," ")}</p><span className="flex shrink-0 items-center gap-1.5 text-[10px] text-slate-500"><span className={`size-1.5 rounded-full ${statusTone(run.status)}`} />{agentStatusLabel(run.status)}</span></div><p className="text-[11px] text-slate-600">{run.steps} pași · {relativeTime(run.created_at)}</p></div>
               </div>
             ))}
           </div>

@@ -1,3 +1,4 @@
+import { SERVICE_COMMERCIAL_SOURCES } from "../../../../src/data/serviceCommercialSources";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import type { AppBindings } from "./types";
@@ -30,6 +31,8 @@ const form = z
     existingSubscriptionId: z.string().min(1).max(120).optional(),
     revision: z.number().int().positive().optional(),
     planSku: z.string().max(120).nullable(),
+    serviceKey: z.string().max(120).nullable().optional(),
+    billingCycle: z.enum(["monthly", "yearly"]).optional(),
     name: z.string().trim().min(1).max(180),
     priceMinor: z.number().int().min(0).max(100000000),
     specifications: z
@@ -54,6 +57,7 @@ export async function subscriptionPlans(db: D1Database) {
       name: plan.name,
       category: category.copy.ro.title,
       priceMinor: plan.priceCents,
+      billingCycle: "monthly" as const,
       specifications: Object.fromEntries(
         plan.specs.map((spec) => [SPEC_LABELS[spec.key].ro, spec.ro]),
       ),
@@ -78,6 +82,7 @@ export async function subscriptionPlans(db: D1Database) {
       name: plan.name,
       category: "AVY Partener / AVY Studio",
       priceMinor: plan.price_ron_cents,
+      billingCycle: "yearly" as const,
       specifications: {
         "Componente pe zi": String(plan.components_per_day),
         "Secțiuni pe zi": String(plan.sections_per_day),
@@ -135,6 +140,13 @@ export function createMaintenanceRouter(mutate: Mutation) {
     ]);
     return c.json({
       canManage: actor.manage,
+      services: actor.manage
+        ? SERVICE_COMMERCIAL_SOURCES.map((s) => ({
+            key: s.entity_key,
+            name: s.display_name,
+            category: s.category,
+          }))
+        : [],
       projects: projects.results,
       clients: clients.results,
       products: products.results,
@@ -153,7 +165,7 @@ export function createMaintenanceRouter(mutate: Mutation) {
       : maintenanceProjectScope(c.get("userId"), actor.staff);
     const project = c.req.query("project");
     const { results } = await c.env.DB.prepare(
-      `SELECT s.id,s.status,s.next_billing_date,s.maintenance_enabled,s.plan_sku,s.specifications_json,s.product_slug,s.external_url,s.target_label,s.revision,v.id service_id,v.service_name,v.price,v.billing_cycle,p.id project_id,p.name project_name,p.status project_status,p.client_id,cl.company_name,
+      `SELECT s.id,s.status,s.next_billing_date,s.maintenance_enabled,s.maintenance_service_key service_key,s.plan_sku,s.specifications_json,s.product_slug,s.external_url,s.target_label,s.revision,v.id service_id,v.service_name,v.price,v.billing_cycle,p.id project_id,p.name project_name,p.status project_status,p.client_id,cl.company_name,
    (SELECT json_group_array(json_object('id',u.id,'name',COALESCE(pr.pseudonym,pr.display_name,u.display_name,'Membru staff'))) FROM subscription_staff ss JOIN users u ON u.id=ss.user_id LEFT JOIN profiles pr ON pr.id=u.id WHERE ss.subscription_id=s.id AND u.disabled_at IS NULL AND EXISTS(SELECT 1 FROM user_roles ur WHERE ur.user_id=u.id AND ur.role IN('staff','admin'))) staff_json
    FROM subscriptions s JOIN services v ON v.id=s.service_id JOIN projects p ON p.id=v.project_id JOIN clients cl ON cl.id=p.client_id
    WHERE s.client_id=p.client_id AND ${scope.sql} ${project ? "AND p.id=?" : ""} ORDER BY s.status='active' DESC,s.next_billing_date,s.id LIMIT 500`,
@@ -200,6 +212,22 @@ export function createMaintenanceRouter(mutate: Mutation) {
       plan = b.planSku
         ? (await subscriptionPlans(c.env.DB)).find((p) => p.sku === b.planSku)
         : null;
+    if (
+      b.serviceKey &&
+      !SERVICE_COMMERCIAL_SOURCES.some((s) => s.entity_key === b.serviceKey)
+    )
+      return problem(
+        c,
+        "invalid_service",
+        "Serviciul nu mai există în catalog.",
+      );
+    const cycle = b.billingCycle || plan?.billingCycle || "monthly";
+    if (plan && plan.billingCycle !== cycle)
+      return problem(
+        c,
+        "invalid_billing_cycle",
+        "Periodicitatea trebuie să corespundă planului selectat.",
+      );
     if (b.planSku && !plan)
       return problem(c, "invalid_plan", "Planul nu mai există în catalog.");
     if (!Object.keys(b.specifications).length)
@@ -363,8 +391,8 @@ export function createMaintenanceRouter(mutate: Mutation) {
     if (current)
       statements.push(
         c.env.DB.prepare(
-          "UPDATE services SET service_name=?,price=?,billing_cycle='monthly' WHERE id=?",
-        ).bind(b.name, b.priceMinor / 100, serviceId),
+          "UPDATE services SET service_name=?,price=?,billing_cycle=? WHERE id=?",
+        ).bind(b.name, b.priceMinor / 100, cycle, serviceId),
         c.env.DB.prepare(
           "UPDATE subscriptions SET maintenance_enabled=1,plan_sku=?,specifications_json=?,product_slug=?,external_url=?,target_label=?,maintenance_key=?,status=?,next_billing_date=?,updated_at=?,revision=CASE WHEN revision=? THEN revision+1 ELSE NULL END WHERE id=?",
         ).bind(
@@ -384,8 +412,8 @@ export function createMaintenanceRouter(mutate: Mutation) {
     else
       statements.push(
         c.env.DB.prepare(
-          "INSERT INTO services(id,project_id,service_name,price,billing_cycle) VALUES(?,?,?,?,'monthly')",
-        ).bind(serviceId, project.id, b.name, b.priceMinor / 100),
+          "INSERT INTO services(id,project_id,service_name,price,billing_cycle) VALUES(?,?,?,?,?)",
+        ).bind(serviceId, project.id, b.name, b.priceMinor / 100, cycle),
         c.env.DB.prepare(
           "INSERT INTO subscriptions(id,client_id,service_id,next_billing_date,status,maintenance_enabled,plan_sku,specifications_json,product_slug,external_url,target_label,maintenance_key,created_at,updated_at) VALUES(?,?,?,?,?,1,?,?,?,?,?,?,?,?)",
         ).bind(
@@ -404,6 +432,11 @@ export function createMaintenanceRouter(mutate: Mutation) {
           t,
         ),
       );
+    statements.push(
+      c.env.DB.prepare(
+        "UPDATE subscriptions SET maintenance_service_key=? WHERE id=?",
+      ).bind(b.serviceKey || null, subscriptionId),
+    );
     statements.push(
       c.env.DB.prepare(
         "DELETE FROM subscription_staff WHERE subscription_id=?",

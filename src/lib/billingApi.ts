@@ -20,6 +20,7 @@ export type BillingInvoice={
 };
 export type BillingAdminStatus={
   providers:{stripe:BillingProviderStatus;revolut:BillingProviderStatus;oblio:BillingProviderStatus;netopia:BillingProviderStatus};
+  configuration?:Record<string,{fields:Array<{name:string;configured:boolean}>;automaticIssue:boolean|null}>;
   security?:{mfaEnabled:boolean;mfaVerified:boolean;canVerify:boolean};
   sessions:Array<{provider:string;status:string;total:number}>;
   subscriptions:Array<{provider:string;status:string;total:number}>;

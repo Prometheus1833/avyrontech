@@ -1,5 +1,7 @@
 # Continuitatea proiectului AVYRON
 
+Manager Social Media — 07.11.2026: [flux editorial și runbook](./SOCIAL_EDITORIAL_WORKFLOW.md), migrarea aditivă 0105, agenda -24h/+24h, decizii native cu revizie, reutilizare și handoff Codex. Corectează și rezervarea financiară a proiectelor AI, separată de proiectele CRM. Șase materiale text/proveniență au fost importate în D1, strategia operațională și patru automatizări Codex existente au fost actualizate; acestea nu reprezintă publicări sociale. Încărcarea imaginilor în R2 este blocată de autorizare (403), fără fișiere pretins încărcate. Codul, migrarea remote și deployul necesită verificare separată în PR. Cabinetul și PR #110 sunt excluse.
+
 Notificări native — 07.11.2026: [arhitectură și runbook](./NATIVE_NOTIFICATIONS.md), migrarea aditivă 0104, inbox client/staff, reguli live de acces, mesaje contextuale și administrare Owner/Super Admin. Starea locală, PR și producție se verifică separat; această notă nu dovedește deployul. Proiectul cabinetului și PR #110 sunt excluse.
 
 Înlocuire Qwen — 07.11.2026: din `6d00e41`, ramura `codex/replace-qwen-cloudflare-2026-11-07` pregătește Mistral Small 3.1 24B prin bindingul existent. [Runbook](./QWEN_REPLACEMENT.md): 0103, versiuni istorice păstrate, alias legacy, rute sincronizate și controale Free neschimbate. Starea efectivă și verificarea furnizorului se citesc din PR.
@@ -151,3 +153,9 @@ Continuare din `4924253` (#101, întregul lot #94–#101 verificat verde), pe `c
 ## Generator Documente — structură și exporturi AVYRON, 06.11.2026
 
 Continuare de la PR #103 (`b6c4f7b`) pe ramură dedicată: [DOCUMENT_GENERATOR_EDITORIAL.md](./DOCUMENT_GENERATOR_EDITORIAL.md). Acțiuni directe de salvare/PDF/Word/pregătire distribuire, previzualizare comună și 11 familii cu structură modernă, cu noi versiuni de master și păstrarea personalizărilor/istoricului. 0099 este aditivă. Utilizatorul a confirmat păstrarea sediului din OS și completarea ulterioară a ONRC/reprezentant/capital în Documente SC. Consultați PR-ul pentru verificări și starea efectivă a migrării/deployului; documentul de continuitate nu dovedește o lansare.
+
+## Prezentare generală — diagnostic și acțiuni (07.11.2026)
+
+Vezi [runbookul operațional](./OVERVIEW_OPERATIONS.md): nume native pentru agenți, selecție proiect AI, priorități detaliate și retragerea controlată a cererilor. Reautorizarea R2/AI și probele reale sunt consemnate separat de cod. Nu există migrare nouă; PR #113/0105 rămâne separat. Proiectul cabinetului și designul public sunt excluse. Starea PR/CI/deploy se citește din GitHub, nu din această notă.
+
+Financiar / produse — 08.11.2026: [fluxuri și limite](./FINANCE_COMMERCE_COMPLETION.md), migrarea aditivă 0106. Conturi editabile, verificare procesatori accesibilă, completare identități, licențe/livrabile și activarea verificată a produselor. Nu reprezintă dovadă de migrare remote, vânzări active sau deploy; PR #113/#114 și cabinetul rămân livrări distincte.

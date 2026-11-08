@@ -4,6 +4,7 @@ import Nav from "@/components/site/Nav";
 import Hero from "@/components/site/Hero";
 import AgencyServices from "@/components/site/AgencyServices";
 import { useLocation } from "react-router-dom";
+import { homeAnchorDepth, useHomeAnchor } from "@/lib/useHomeAnchor";
 import { useLang } from "@/i18n/LanguageContext";
 
 const Problem = lazyWithRetry(() => import("@/components/site/Problem"));
@@ -11,8 +12,10 @@ const Process = lazyWithRetry(() => import("@/components/site/Process"));
 const LogoStudioIntro = lazyWithRetry(() => import("@/components/site/LogoStudioIntro"));
 const Examples = lazyWithRetry(() => import("@/components/site/Examples"));
 const DomainCheck = lazyWithRetry(() => import("@/components/site/DomainCheck"));
+const QualityStandard = lazyWithRetry(() => import("@/components/site/QualityStandard"));
 const Benefits = lazyWithRetry(() => import("@/components/site/Benefits"));
 const HomepageQuickLinks = lazyWithRetry(() => import("@/components/site/HomepageQuickLinks"));
+const LatestBlog = lazyWithRetry(() => import("@/components/site/LatestBlog"));
 const Socials = lazyWithRetry(() => import("@/components/site/Socials"));
 const CTA = lazyWithRetry(() => import("@/components/site/CTA"));
 const ContactBar = lazyWithRetry(() => import("@/components/site/ContactBar"));
@@ -35,8 +38,8 @@ const Deferred = ({
       return;
     }
     if (ready || !ref.current) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries[entries.length - 1]?.isIntersecting) return;
       setReady(true);
       observer.disconnect();
     }, { rootMargin: "500px 0px" });
@@ -59,16 +62,8 @@ const Index = () => {
   const isRo = lang === "ro";
   const location = useLocation();
 
-  useEffect(() => {
-    if (!location.hash) return;
-    const id = location.hash.slice(1);
-    const tryScroll = (attempts = 0) => {
-      const el = document.getElementById(id);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-      else if (attempts < 10) setTimeout(() => tryScroll(attempts + 1), 80);
-    };
-    tryScroll();
-  }, [location.hash]);
+  const anchorDepth = homeAnchorDepth(location.hash);
+  const anchorReady = useHomeAnchor(location.hash);
 
   useEffect(() => {
     Promise.all([import("@/lib/seo"), import("@/lib/structuredData")]).then(
@@ -93,20 +88,22 @@ const Index = () => {
   }, [t.seo.title, t.seo.desc, location.pathname]);
 
   return (
-    <main className="min-h-screen overflow-x-clip">
+    <main className="min-h-screen overflow-x-clip" data-anchor-ready={anchorReady ? "true" : "false"}>
       <Nav />
       <Hero />
       <AgencyServices />
       <Deferred minHeight={1120} forceReady><Examples /></Deferred>
-      <Deferred minHeight={520}><Problem /></Deferred>
+      <Deferred minHeight={520} forceReady={anchorDepth >= 1}><Problem /></Deferred>
       <div className="h-8 md:h-16" aria-hidden />
-      <Deferred minHeight={300} forceReady={location.hash === "#logo-studio"}><LogoStudioIntro /></Deferred>
-      <Deferred minHeight={500} forceReady={location.hash === "#proces"}><Process /></Deferred>
-      <Deferred minHeight={360}><DomainCheck /></Deferred>
-      <Deferred minHeight={440}><Benefits /></Deferred>
-      <Deferred minHeight={220}><HomepageQuickLinks /></Deferred>
-      <Deferred minHeight={520} forceReady={location.hash === "#cta"}><CTA /></Deferred>
-      <Deferred minHeight={320}><Socials /></Deferred>
+      <Deferred minHeight={300} forceReady={anchorDepth >= 2}><LogoStudioIntro /></Deferred>
+      <Deferred minHeight={500} forceReady={anchorDepth >= 3}><Process /></Deferred>
+      <Deferred minHeight={360} forceReady={anchorDepth >= 4}><DomainCheck /></Deferred>
+      <Deferred minHeight={440} forceReady={anchorDepth >= 5}><Benefits /></Deferred>
+      <Deferred minHeight={260} forceReady={anchorDepth >= 6}><QualityStandard /></Deferred>
+      <Deferred minHeight={220} forceReady={anchorDepth >= 7}><HomepageQuickLinks /></Deferred>
+      <Deferred minHeight={520} forceReady={anchorDepth >= 8}><CTA /></Deferred>
+      <Deferred minHeight={540} forceReady={anchorDepth >= 9}><LatestBlog /></Deferred>
+      <Deferred minHeight={320} forceReady={anchorDepth >= 10}><Socials /></Deferred>
       {/* Footerul trebuie să existe chiar și când vizitatorul sare direct la
           finalul paginii folosind bara de scroll. */}
       <Deferred minHeight={260} forceReady><Footer /></Deferred>

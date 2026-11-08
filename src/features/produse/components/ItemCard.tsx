@@ -1,3 +1,4 @@
+import { usePricedLogoItem } from "../lib/useLogoPrice";
 import { memo } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, ShoppingCart, Sparkles } from "lucide-react";
@@ -16,7 +17,7 @@ import { Pill } from "./Primitives";
  * Grila e construită pentru conversie: accesul și prețul se văd din primul rând.
  */
 const ItemCard = memo(function ItemCard({
-  item,
+  item:sourceItem,
   lang,
   index = 0,
   /**
@@ -31,6 +32,7 @@ const ItemCard = memo(function ItemCard({
   index?: number;
   headingAs?: "h2" | "h3";
 }) {
+  const item=usePricedLogoItem(sourceItem);
   const ro = lang === "ro";
   const type = TYPE_BY_ID.get(item.type)!;
   const price = priceLabel(item, lang);

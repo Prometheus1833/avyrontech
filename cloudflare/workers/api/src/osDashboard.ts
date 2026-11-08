@@ -1,12 +1,15 @@
-import { managedStaff, managedPermission } from "./staffAccessPolicy";
 import { Hono, type Context } from "hono";
-import type { AppBindings, Role } from "./types";
-import { platformRoleForUser,clientProjectGrantSql } from "./authorization";
+import type { AppBindings } from "./types";
+import { platformRoleForUser } from "./authorization";
 import { now } from "./security";
 import { bucharestMonthStart, financialTotals } from "./financialTotals";
-import { approvalSources, readApprovalCenter, readApprovalDetail, type ApprovalSource } from "./approvalCenter";
+import { approvalSources, readApprovalCenter, readApprovalDetail, withdrawApproval, type ApprovalSource } from "./approvalCenter";
 import { readStorageStatus } from "./storageStatus";
 import { checkRateLimit } from "./antispam";
+import { overviewScope } from "./overviewScope";
+import { attentionEvents } from "./operationalAttention";
+import { readCoreHealth, probeFreeAi } from './overviewHealth';
+import { readJsonBodyUpTo } from './requestBody';
 
 type AttentionItem = {
   id: string;
@@ -44,14 +47,40 @@ dashboardRouter.get("/api/os/storage", async (c) => {
   const result=await readStorageStatus(c.env,c.get("userId"));
   return result?c.json(result):c.json({error:{code:"forbidden"}},403);
 });
+dashboardRouter.post('/api/os/health/ai',async c=>{
+ if(!(await platformRoleForUser(c.env.DB,c.get('userId'))))return c.json({error:{code:'forbidden'}},403);
+ const body=await readJsonBodyUpTo(c.req.raw,2048);
+ const key=c.req.header('Idempotency-Key')||'';
+ if(!body.ok)return c.json({error:{code:body.error}},body.error==='payload_too_large'?413:400);
+ if(!body.value||typeof body.value!=='object'||(body.value as {confirmed?:unknown}).confirmed!==true||!/^[A-Za-z0-9_-]{8,100}$/.test(key))return c.json({error:{code:'confirmed_probe_required'}},400);
+ const result=await probeFreeAi(c.env,c.get('userId'),key);
+ await c.env.DB.prepare("INSERT INTO security_events(id,actor_user_id,actor_type,action,target_type,target_id,outcome,severity,metadata_json,created_at) VALUES(?,?,'user','os.health.ai','infrastructure','ai',?,?,?,?)").bind(crypto.randomUUID(),c.get('userId'),result.status==='funcțional'?'allowed':'failed',result.status==='funcțional'?'info':'warning',JSON.stringify({status:result.status,code:result.code||null,checkedAt:result.checkedAt||null}),Date.now()).run();
+ return c.json(result);
+});
 dashboardRouter.get("/api/os/approval-center/:source/:id", async (c) => {
   const source = c.req.param("source") as ApprovalSource;
   if (!approvalSources.includes(source) || c.req.param("id").length>160) return c.json({error:{code:"not_found"}},404);
   const result = await readApprovalDetail(c.env,c.get("userId"),source,c.req.param("id"));
   return result ? c.json(result) : c.json({error:{code:"not_found"}},404);
 });
+dashboardRouter.delete('/api/os/approval-center/:source/:id',async c=>{
+ const source=c.req.param('source') as ApprovalSource;
+ if(!approvalSources.includes(source)||c.req.param('id').length>160)return c.json({error:{code:'not_found'}},404);
+ const input=await readJsonBodyUpTo(c.req.raw,2048);
+ if(!input.ok)return c.json({error:{code:input.error}},input.error==='payload_too_large'?413:400);
+ const body=input.value as {confirmed?:unknown;revision?:number}|null;
+ if(!body||body.confirmed!==true||!Number.isSafeInteger(body.revision)||body.revision!<0)return c.json({error:{code:'confirmed_revision_required'}},400);
+ const result=await withdrawApproval(c.env,c.get('userId'),source,c.req.param('id'),body.revision!);
+ return 'code' in result?c.json({error:{code:result.code}},result.status):c.json(result);
+});
 
-const isStaffRole = (roles: Role[]) => roles.includes("staff") || roles.includes("admin");
+
+dashboardRouter.get('/api/os/attention/:id',async c=>{
+ const offset=Number(c.req.query('offset')||0);
+ if(!Number.isSafeInteger(offset)||offset<0||offset>10000||c.req.param('id').length>200)return c.json({error:{code:'invalid_attention_query'}},400);
+ const result=await attentionEvents(c.env,c.get('userId'),c.get('roles')||[],c.req.param('id'),offset);
+ return result?c.json(result):c.json({error:{code:'not_found'}},404);
+});
 
 const statusLabel = (status: string) => {
   if (["active", "connected"].includes(status)) return "conectat";
@@ -76,25 +105,11 @@ const buildBriefing = (attention: AttentionItem[], metrics: Record<string, numbe
 dashboardRouter.get("/api/os/overview", async (c) => {
   const userId = c.get("userId");
   const roles = c.get("roles") ?? [];
-  const staff = isStaffRole(roles);
-  const superAdmin = (await platformRoleForUser(c.env.DB, userId)) !== null;
-  const ranked = await managedStaff(c.env.DB, userId);
-  const permitted = (key: string) =>
-    !ranked || superAdmin || managedPermission(ranked, key);
+  const {staff,superAdmin,permitted,projectScope}=await overviewScope(c.env,userId,roles);
   const timestamp = now();
   const monthStart = bucharestMonthStart(timestamp);
   const thirtyDaysAgo = timestamp - 30 * 24 * 60 * 60 * 1000;
 
-  // Match the project resource boundary: platform, owner, organization, or
-  // an explicit staff assignment/client grant for legacy projects.
-  const projectScope =
-    !permitted("projects.read") && !permitted("maintenance.read")
-      ? { sql: "0=1", values: [] as string[] }
-      : superAdmin || (ranked && managedPermission(ranked, "projects.all"))
-        ? {sql:"1=1",values:[] as string[]} : {
-    sql:`(project.owner_user_id=? OR EXISTS(SELECT 1 FROM organization_memberships membership WHERE membership.organization_id=project.organization_id AND membership.user_id=? AND membership.status='active') OR ${staff ? "(project.organization_id IS NULL AND EXISTS(SELECT 1 FROM client_account_access granted WHERE granted.client_id=project.client_id AND granted.user_id=?)) OR EXISTS(SELECT 1 FROM project_staff assigned WHERE assigned.project_id=project.id AND assigned.user_id=?)" : clientProjectGrantSql("project")})`,
-    values: staff ? [userId,userId,userId,userId] : [userId,userId,userId],
-  };
   const projectSummary = await c.env.DB.prepare(
     `SELECT COUNT(*) total,SUM(CASE WHEN status IN ('in_progress','maintenance') THEN 1 ELSE 0 END) active,
       SUM(CASE WHEN banner_status IN ('revizuire','testing') THEN 1 ELSE 0 END) review
@@ -114,7 +129,7 @@ dashboardRouter.get("/api/os/overview", async (c) => {
           `SELECT COUNT(*) AS total FROM clients WHERE status='active' AND ${permitted("clients.read") ? "1=1" : "0=1"}`,
         ).first<CountRow>(),
         c.env.DB.prepare(
-          `SELECT COUNT(*) AS total FROM support_tickets WHERE status IN ('open','pending') AND ${permitted("support.read") ? "1=1" : "0=1"}`,
+          `SELECT COUNT(*) AS total FROM support_tickets WHERE status IN ('open','pending','in_progress') AND ${permitted("support.read") ? "1=1" : "0=1"}`,
         ).first<CountRow>(),
         c.env.DB.prepare(
           `SELECT COUNT(*) AS total,COUNT(DISTINCT session_id) AS sessions FROM page_events WHERE event='page_view' AND created_at>=? AND ${permitted("marketing.read") ? "1=1" : "0=1"}`,
@@ -159,16 +174,17 @@ dashboardRouter.get("/api/os/overview", async (c) => {
             ORDER BY approval.requested_at DESC LIMIT 8`,
         ).bind(timestamp).all<Record<string, unknown>>(),
         c.env.DB.prepare(
-          `SELECT run.id, run.agent_slug, run.status, run.input_tokens, run.output_tokens,
+          `SELECT run.id, run.agent_slug, coalesce(nullif(registry.name,''),run.agent_slug) agent_name, run.status, run.input_tokens, run.output_tokens,
                   run.estimated_cost_micros, run.started_at, run.completed_at, run.created_at,
                   COUNT(step.id) AS steps
              FROM (SELECT * FROM ai_runs ORDER BY created_at DESC LIMIT 8) AS run
              LEFT JOIN ai_run_steps AS step ON step.run_id = run.id
+             LEFT JOIN ai_agents registry ON registry.slug=run.agent_slug
             GROUP BY run.id
             ORDER BY run.created_at DESC LIMIT 8`,
         ).all<Record<string, unknown>>(),
         c.env.DB.prepare(
-          `SELECT id, kind, severity, title, message, detected_at
+          `SELECT id, kind, severity, title, message, detected_at, COUNT(*) OVER() alert_total
              FROM financial_alerts WHERE status IN ('open','acknowledged')
             ORDER BY CASE severity WHEN 'critical' THEN 0 WHEN 'warning' THEN 1 ELSE 2 END, detected_at DESC LIMIT 6`,
         ).all<Record<string, unknown>>(),
@@ -227,13 +243,8 @@ dashboardRouter.get("/api/os/overview", async (c) => {
     title: `${securityWarnings?.total} evenimente de securitate de verificat`,
     detail: "Evenimente refuzate, eșuate sau cu severitate ridicată în ultimele 30 de zile.", destination: "security",
   });
-  for (const alert of financialAlerts.results) {
-    attention.push({
-      id: `alertă-${String(alert.id)}`, kind: "financiar",
-      severity: alert.severity === "critical" ? "critic" : "atenție",
-      title: String(alert.title), detail: String(alert.message || "Alertă financiară activă."), destination: "finance",
-    });
-  }
+  if(financialAlerts.results.length){const first=financialAlerts.results[0];attention.push({id:'alerte-financiare',kind:'financiar',severity:first.severity==='critical'?'critic':'atenție',title:`${first.alert_total} alerte financiare active`,detail:'Bugete, plăți și verificări care necesită o decizie.',destination:'finance'});}
+
 
   const metrics = {
     projects: Number(projectSummary?.total || 0),
@@ -263,16 +274,14 @@ dashboardRouter.get("/api/os/overview", async (c) => {
     role: superAdmin ? "super_admin" : staff ? "staff" : "client",
     briefing: buildBriefing(attention, metrics),
     metrics,
-    attention: attention.slice(0, 12),
+    attention: attention.sort((a,b)=>({critic:0,'atenție':1,informare:2}[a.severity]-{critic:0,'atenție':1,informare:2}[b.severity])),
     approvals: approvals.results,
     agentRuns: agentRuns.results,
     health: [
       { id: "api", label: "API AVYRON", status: "funcțional", detail: "Workerul a răspuns autentificat." },
       { id: "auth", label: "Autentificare", status: "funcțional", detail: "Sesiunea și rolul au fost validate." },
       { id: "d1", label: "Baza de date D1", status: "funcțional", detail: "Interogările dashboardului au reușit." },
-      { id: "files", label: "Documente R2", status: c.env.FILES ? "configurat" : "neconfigurat", detail: "Disponibilitatea bindingului nu confirmă o operațiune de stocare." },
-      { id: "media", label: "Media R2", status: c.env.MEDIA ? "configurat" : "neconfigurat", detail: "Disponibilitatea bindingului nu confirmă o operațiune de stocare." },
-      { id: "ai", label: "Workers AI", status: c.env.AI ? "configurat" : "neconfigurat", detail: "Nu se consumă resurse AI pentru verificarea stării. Utilizarea necesită Cost Guard." },
+      ...await readCoreHealth(c.env,superAdmin),
     ],
     integrations: integrationRows,
     leadPipeline: leadPipelineRows.results.map((row) => ({ status: row.status, total: Number(row.total || 0) })),

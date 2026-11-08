@@ -196,7 +196,9 @@ export default function IndustryDeviceShowcase({ domains, activeDomain, onDomain
     const resize = new ResizeObserver(() => { measure(); schedule(); });
     resize.observe(section);
     resize.observe(frame);
-    const observer = new IntersectionObserver(([entry]) => {
+    const observer = new IntersectionObserver((entries) => {
+      const entry = entries[entries.length - 1];
+      if (!entry) return;
       visible = entry.isIntersecting;
       if (visible) { measure(); readTarget(); current = target; paint(current, reduced.matches ? active : undefined); schedule(); }
       else { if (raf) cancelAnimationFrame(raf); raf = 0; deviceRefs.current.forEach((device) => { if (device) device.style.willChange = "auto"; }); }

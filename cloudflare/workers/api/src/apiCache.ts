@@ -23,6 +23,7 @@ export function publicApiCacheRequest(request: Request): Request | null {
   for (const key of [...url.searchParams.keys()]) {
     if (!allowed.has(key)) url.searchParams.delete(key);
   }
+  if (url.pathname === "/api/public/domain-check") url.searchParams.set("_av_cache", "20261108-registry");
   // Bypass historical blog JSON entries carrying pre-antivirus image URLs.
   if (url.pathname.startsWith("/api/blog/posts")) url.searchParams.set("_av_cache", "20261106");
   url.searchParams.sort();

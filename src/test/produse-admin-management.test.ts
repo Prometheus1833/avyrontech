@@ -79,7 +79,7 @@ describe("administrarea produselor și parteneriatelor", () => {
     expect(firstBody.created).toBe(firstBody.total - 13);
     expect(firstBody.requiresSku).toBe(0);
     expect(db.prepare("SELECT sku,tax_status,accounting_code,price_model FROM commercial_catalog_codes WHERE entity_type='service' AND entity_key='premium-website'").get())
-      .toMatchObject({ sku: "svc-premium-website", tax_status: "unverified", accounting_code: null, price_model: "starting_at" });
+      .toMatchObject({ sku: "AVY-SRV-WEB-001", tax_status: "unverified", accounting_code: "AVS001", price_model: "starting_at" });
     expect(db.prepare("SELECT sku,tax_status,accounting_code,base_price_minor FROM commercial_catalog_codes WHERE entity_type='service' AND entity_key='sub-seo-essential'").get())
       .toMatchObject({ sku: "sub-seo-essential", tax_status: "unverified", accounting_code: "AVY-SEO-ESS", base_price_minor: 69000 });
     for (const source of SERVICE_COMMERCIAL_SOURCES) {
@@ -88,7 +88,7 @@ describe("administrarea produselor și parteneriatelor", () => {
         .toMatchObject({ sku: source.sku, accounting_code: source.accounting_code, base_price_minor: source.base_price_minor, price_model: source.price_model, billing_cycle: source.billing_cycle, tax_status: "unverified" });
     }
     expect(db.prepare("SELECT sku,base_price_minor FROM commercial_catalog_codes WHERE entity_type='product' AND entity_key='logo-studio-3d'").get())
-      .toMatchObject({ sku: "product-logo-studio-3d", base_price_minor: 7500 });
+      .toMatchObject({ sku: expect.stringMatching(/^AVY-DIG-LGO-\d+$/), base_price_minor: 7500 });
     const prematureActivation = {
       displayName: "Site Prezentare Profesional", accountingCode: null, sku: "svc-premium-website", category: "presence",
       basePriceMinor: 145000, currency: "RON", vatBasisPoints: 0, paymentRoute: "stripe",

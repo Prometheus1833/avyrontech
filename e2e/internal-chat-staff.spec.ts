@@ -380,9 +380,9 @@ test("AvyContabil folosește registrul financiar fără panourile de conectare a
     page.getByRole("button", { name: "Cheltuială", exact: true }),
   ).toBeEnabled();
   await page.getByRole("button",{name:"Conturi și facturare",exact:true}).click();
-  await expect(
-    page.getByRole("button", { name: "Cont intern", exact: true }),
-  ).toBeDisabled();
+  const accountsPanel = page.getByRole("region", { name: "Configurare conturi financiare" });
+  await expect(accountsPanel).toBeVisible();
+  await expect(accountsPanel.getByRole("button", { name: /Adaugă|Configurează/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Verifică.*API/ })).toHaveCount(
     0,
   );

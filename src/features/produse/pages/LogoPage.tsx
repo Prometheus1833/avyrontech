@@ -1,3 +1,4 @@
+import { usePricedLogoItem } from "../lib/useLogoPrice";
 import { useAuth } from "@/hooks/useAuth";
 import { logoOperationsApi } from "@/lib/logoOperationsApi";
 import { useEffect, useRef, useState } from "react";
@@ -23,7 +24,7 @@ import { store } from "../lib/store";
  */
 export default function LogoPage({ lang }: { lang: Lang }) {
   const ro = lang === "ro";
-  const studio = ITEM_BY_SLUG.get("logo-studio-3d")!;
+  const studio = usePricedLogoItem(ITEM_BY_SLUG.get("logo-studio-3d")!);
   const kit = ITEM_BY_SLUG.get("kit-monograme")!;
   const path = typePath(lang, "logo");
   const [added, setAdded] = useState(false);
@@ -107,7 +108,7 @@ export default function LogoPage({ lang }: { lang: Lang }) {
           <div className="grid gap-3 sm:grid-cols-3">
             {[
               { icon: Sparkles, ro: ["Previzualizare gratuită", "Câte variante vrei, fără cont și fără limită."], en: ["Free preview", "As many variants as you like, no account, no limit."] },
-              { icon: Download, ro: ["Pachet de descărcare — 75 lei", "PNG 4K și SVG transparente, GLB, animație MP4/WebM, favicon, ghid."], en: ["Download pack — 75 lei", "4K PNG and transparent SVG, GLB, MP4/WebM animation, favicon, guide."] },
+              { icon: Download, ro: [`Pachet de descărcare${priceLabel(studio,lang)?" — "+priceLabel(studio,lang):" · preț verificat la checkout"}`, "PNG 4K și SVG transparente, GLB, animație MP4/WebM, favicon, ghid."], en: [`Download pack${priceLabel(studio,lang)?" — "+priceLabel(studio,lang):" · price verified at checkout"}`, "4K PNG and transparent SVG, GLB, MP4/WebM animation, favicon, guide."] },
               { icon: PenTool, ro: ["Sau desenat de echipă", "Dacă vrei ceva cu adevărat propriu, serviciul e mai jos."], en: ["Or drawn by the team", "If you want something truly your own, the service is below."] },
             ].map((card, index) => (
               <div key={card.ro[0]} className="pa-glass rounded-2xl p-4">

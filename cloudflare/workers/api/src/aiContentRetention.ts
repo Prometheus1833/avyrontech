@@ -14,7 +14,7 @@ export async function cleanupAvyronEditorialContent(env: Env, timestamp = now())
   const cutoff = timestamp - THREE_DAYS;
   const expired = await env.DB.prepare(
     `SELECT id,r2_object_key FROM ai_content_items WHERE project_id=?
-       AND status IN (${TEMPORARY_STATES}) AND created_at<=? ORDER BY created_at LIMIT 50`,
+       AND reusable=0 AND status IN (${TEMPORARY_STATES}) AND created_at<=? ORDER BY created_at LIMIT 50`,
   ).bind(project.id, cutoff).all<ExpiredContent>();
   let content = 0;
   for (const item of expired.results) {
@@ -22,7 +22,11 @@ export async function cleanupAvyronEditorialContent(env: Env, timestamp = now())
       "SELECT id,r2_bucket,object_key FROM ai_social_assets WHERE content_id=?",
     ).bind(item.id).all<LinkedAsset>();
     for (const asset of assets.results) {
-      await (asset.r2_bucket === "media" ? env.MEDIA : env.FILES).delete(asset.object_key);
+      const shared = await env.DB.prepare(`SELECT 1 FROM ai_content_items WHERE id<>? AND
+        (r2_object_key=? OR EXISTS(SELECT 1 FROM json_each(json_extract(source_metadata_json,'$.assetIds')) WHERE value=?)) LIMIT 1`)
+        .bind(item.id,asset.object_key,asset.id).first();
+      if (!shared) await (asset.r2_bucket === "media" ? env.MEDIA : env.FILES).delete(asset.object_key);
+      else await env.DB.prepare("UPDATE ai_social_assets SET content_id=NULL WHERE id=?").bind(asset.id).run();
     }
     if (item.r2_object_key) {
       const shared = await env.DB.prepare(
@@ -37,7 +41,7 @@ export async function cleanupAvyronEditorialContent(env: Env, timestamp = now())
     await env.DB.batch([
       env.DB.prepare("DELETE FROM ai_social_assets WHERE content_id=?").bind(item.id),
       env.DB.prepare(
-        `DELETE FROM ai_content_items WHERE id=? AND project_id=? AND status IN (${TEMPORARY_STATES}) AND created_at<=?`,
+        `DELETE FROM ai_content_items WHERE id=? AND project_id=? AND reusable=0 AND status IN (${TEMPORARY_STATES}) AND created_at<=?`,
       ).bind(item.id, project.id, cutoff),
     ]);
     content++;

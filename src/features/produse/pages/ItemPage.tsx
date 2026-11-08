@@ -1,3 +1,4 @@
+import { usePricedLogoItem } from "../lib/useLogoPrice";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Copy, Gauge, Info, Lock, MessageCircle, Pause, Play, RotateCcw, Settings2, ShoppingCart, Sparkles } from "lucide-react";
@@ -21,7 +22,8 @@ import { store } from "../lib/store";
  * props, compatibilitate și produse înrudite. Butonul principal deschide
  * modalul de instalare; pentru produsele plătite, tot drumul spre coș.
  */
-export default function ItemPage({ item, lang }: { item: CatalogItem; lang: Lang }) {
+export default function ItemPage({ item:sourceItem, lang }: { item: CatalogItem; lang: Lang }) {
+  const item=usePricedLogoItem(sourceItem);
   const ro = lang === "ro";
   const [values, setValues] = useState<PropValues>(() => defaultValues(item));
   const [showEditor, setShowEditor] = useState(false);
@@ -33,9 +35,9 @@ export default function ItemPage({ item, lang }: { item: CatalogItem; lang: Lang
   const note = progressionNote(item, lang);
 
   useEffect(() => {
-    setValues(defaultValues(item));
+    setValues(defaultValues(sourceItem));
     setResetKey((k) => k + 1);
-  }, [item]);
+  }, [sourceItem]);
 
   useEffect(() => {
     const title = ro

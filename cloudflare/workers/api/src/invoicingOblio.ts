@@ -3,7 +3,7 @@ import type { Env } from "./types";
 export type OblioInvoiceInput = {
   orderId: string;
   buyer: { name: string; email?: string | null; taxId?: string | null; address?: string | null };
-  lines: Array<{ name: string; code?: string; quantity: number; unitPriceMinor: number }>;
+  lines: Array<{ name: string; code?: string; quantity: number; unitPriceMinor: number;vatBasisPoints?:number;unitLabel?:string }>;
   discountMinor?: number;
   discountLabel?: string;
   currency: string;
@@ -65,10 +65,10 @@ export async function issueOblioInvoice(env: Env, input: OblioInvoiceInput): Pro
         name: line.name,
         ...(line.code ? { code: line.code } : {}),
         price: line.unitPriceMinor / 100,
-        measuringUnit: "buc",
+        measuringUnit: line.unitLabel || "buc",
         currency: input.currency.toUpperCase(),
         vatName: env.OBLIO_VAT_NAME!.trim(),
-        vatPercentage,
+        vatPercentage: line.vatBasisPoints===undefined?vatPercentage:line.vatBasisPoints/100,
         vatIncluded: true,
         quantity: line.quantity,
         productType: "Serviciu",

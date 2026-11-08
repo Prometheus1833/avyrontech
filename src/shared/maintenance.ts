@@ -3,6 +3,7 @@ export type MaintenancePlan = {
   name: string;
   category: string;
   priceMinor: number;
+  billingCycle?: "monthly" | "yearly";
   specifications: Record<string, string>;
 };
 export type MaintenanceSubscription = {
@@ -25,10 +26,12 @@ export type MaintenanceSubscription = {
   target_label: string;
   revision: number;
   maintenance_enabled: number;
+  service_key?: string | null;
   staff: { id: string; name: string }[];
 };
 export type MaintenanceConfig = {
   canManage: boolean;
+  services?: { key: string; name: string; category: string }[];
   projects: {
     id: string;
     slug: string | null;
@@ -47,6 +50,8 @@ export type MaintenanceInput = {
   existingSubscriptionId?: string;
   revision?: number;
   planSku: string | null;
+  serviceKey?: string | null;
+  billingCycle?: "monthly" | "yearly";
   name: string;
   priceMinor: number;
   specifications: Record<string, string>;

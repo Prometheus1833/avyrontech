@@ -21,7 +21,7 @@ import {
 import { COLLECTIONS } from "@/features/produse/data/collections";
 import { CATEGORIES, EUR_FOR_RON, TYPES, TYPE_BY_ID } from "@/features/produse/data/taxonomy";
 import { DEMOS } from "@/features/produse/demos/registry";
-import { accessNow, defaultValues } from "@/features/produse/lib/item";
+import { accessNow, defaultValues, priceLabel } from "@/features/produse/lib/item";
 import { alternatePath, itemPath, parseRoute, typePath } from "@/features/produse/lib/paths";
 import { searchItems } from "@/features/produse/lib/search";
 import { metaFrom, productLd, productOgImage } from "@/features/produse/lib/seo";
@@ -138,7 +138,7 @@ describe("catalogul de produse", () => {
 
 describe("date structurate pentru produse digitale", () => {
   it("publică un Product și o ofertă doar pentru prețul afișat în catalog", () => {
-    const paid = ITEMS.find((item) => item.priceRon && EUR_FOR_RON[item.priceRon]);
+    const paid = ITEMS.find((item) => item.slug !== "logo-studio-3d" && item.priceRon && EUR_FOR_RON[item.priceRon]);
     expect(paid).toBeDefined();
     const schema = productLd("ro", paid!);
     expect(schema["@type"]).toBe("Product");
@@ -149,6 +149,13 @@ describe("date structurate pentru produse digitale", () => {
     });
     expect(schema.isAccessibleForFree).toBe(false);
   });
+});
+
+it("keeps dynamic Logo Studio 3D prices in RON without inventing a euro conversion",()=>{
+ const logo={...ITEM_BY_SLUG.get("logo-studio-3d")!,priceRon:129.9};
+ expect(productLd("ro",logo).offers).toMatchObject({price:129.9,priceCurrency:"RON"});
+ expect(priceLabel(logo,"ro")).toContain("129,90");expect(priceLabel(logo,"ro")).not.toContain("undefined");
+ expect(productLd("ro",{...logo,priceRon:undefined})).not.toHaveProperty("offers");
 });
 
 describe("rutele paginii", () => {

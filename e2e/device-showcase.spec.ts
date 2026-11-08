@@ -20,8 +20,15 @@ test("homepage keeps six website reasons in three paired cards and a compact dem
   const reasons = page.getByTestId("problem-reasons");
   await expect(reasons.locator("article")).toHaveCount(3);
   await expect(reasons.locator("h3, h4")).toHaveCount(6);
-  await reasons.evaluate((el) => el.scrollIntoView({ block: "center", behavior: "instant" }));
-  await expect.poll(() => reasons.locator('article[data-active="true"]').count()).toBe(3);
+  // Mobile stacks the cards: only the one crossing the centre is active.
+  // Verify every card can activate instead of assuming a desktop-only row.
+  for (const card of await reasons.locator("article").all()) {
+    await card.evaluate((el) => el.scrollIntoView({ block: "center", behavior: "instant" }));
+    await expect(card).toHaveAttribute("data-active", "true");
+  }
+  if ((page.viewportSize()?.width ?? 0) >= 768) {
+    await expect.poll(() => reasons.locator('article[data-active="true"]').count()).toBe(3);
+  }
   await page.goto("/#cta");
   const cta = page.locator("#cta");
   await expect(cta.locator("details")).toHaveCount(1);
@@ -78,6 +85,11 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
     await showcase.getByRole("button", { name: /Aplicație$/ }).click();
     const phone = await settledDevice(showcase, "phone");
     await expect(showcase.locator(".domain-notes").first()).not.toBeVisible();
+    const bookingPhoto=phone.locator('.phone-booking-photo');
+    await expect(bookingPhoto).toBeVisible();
+    await expect.poll(()=>bookingPhoto.evaluate((img:HTMLImageElement)=>img.complete&&img.naturalWidth>0)).toBe(true);
+    await expect(bookingPhoto).toHaveAttribute('srcset',/480w/);
+    await page.screenshot({path:testInfo.outputPath('wellness-booking-photo.png')});
     for (const [label, mode, heading] of [["Web/Mobile App", "app", "Următoarea ta pauză."], ["Joc", "game", "Dincolo de orizont."], ["CRM", "crm", "Fiecare oportunitate, la locul ei."], ["Platformă", "platform", "Echipa ta. Un singur spațiu."]]) {
       await showcase.getByRole("button", { name: label, exact: true }).click();
       await expect(phone.locator("[data-screen-variant]")).toHaveAttribute("data-screen-variant", mode);

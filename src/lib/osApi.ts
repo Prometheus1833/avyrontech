@@ -24,6 +24,7 @@ export type OsApproval = {
 export type OsAgentRun = {
   id: string;
   agent_slug: string;
+  agent_name?: string;
   status: string;
   input_tokens: number;
   output_tokens: number;
@@ -39,6 +40,8 @@ export type OsHealth = {
   label: string;
   status: "funcțional" | "configurat" | "atenție" | "eroare" | "neconfigurat";
   detail: string;
+  checkedAt?: number;
+  code?: string;
 };
 
 export type OsIntegration = {
@@ -89,6 +92,9 @@ export type OsOverview = {
 };
 
 export const osApi = {
+  attention: (id:string,offset=0)=>cfAuth.request<AttentionPage>(`/api/os/attention/${encodeURIComponent(id)}?offset=${offset}`),
+  probeAi: (key:string)=>cfAuth.request<OsHealth>('/api/os/health/ai',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify({confirmed:true})}),
+  withdrawItem: (item:ApprovalDetail,key:string)=>cfAuth.request(`/api/os/approval-center/${item.source}/${encodeURIComponent(item.id)}`,{method:'DELETE',headers:{'Idempotency-Key':key},body:JSON.stringify({confirmed:true,revision:item.revision})}),
   approvals: (source?: ApprovalSource, cursor?: string) => {
     const query = new URLSearchParams();
     if (source) query.set("source", source);
@@ -113,3 +119,6 @@ export const osApi = {
       body: JSON.stringify({ decision, note, revision }),
     }),
 };
+
+export type AttentionEvent={id:string;title:string;detail:string;status:string;created_at:number;href:string;action:'acknowledge'|'resolve'|null};
+export type AttentionPage={data:AttentionEvent[];total:number;nextOffset:number|null};

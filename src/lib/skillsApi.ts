@@ -29,11 +29,12 @@ export const skillsApi = {
     brief: SkillBrief,
     mode: "template" | "ai" | "image",
     key: string,
+    options?:{freeOnly:boolean},
   ) =>
     cfAuth.request<{ id: string; status: string }>(root(s) + "/runs", {
       method: "POST",
       headers: { "Idempotency-Key": key },
-      body: JSON.stringify({ brief, mode }),
+      body: JSON.stringify({ brief, mode,...(options?.freeOnly?{freeOnly:true}:{}) }),
     }),
   version: (
     s: SkillSlug,
