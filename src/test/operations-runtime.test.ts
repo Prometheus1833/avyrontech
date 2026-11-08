@@ -160,6 +160,18 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
  it('charges a duplicate concurrent AI reservation exactly once',async()=>{
   budget();const result=await Promise.all([reserve('same-key'),reserve('same-key')]);expect(result.every(r=>r.decision==='allowed')).toBe(true);expect(db.prepare('SELECT quota_used FROM financial_provider_quotas').get()!.quota_used).toBe(60);expect(db.prepare('SELECT COUNT(*) n FROM financial_usage_events').get()!.n).toBe(1);
  });
+ it('accounts for native AI projects without using the CRM project foreign key',async()=>{
+  budget();
+  const aiProject=db.prepare('SELECT id FROM ai_projects LIMIT 1').get()!.id as string;
+  expect(db.prepare('SELECT id FROM projects WHERE id=?').get(aiProject)).toBeUndefined();
+  const request={db:env.DB,agentSlug:'avy',vendorId:'fin_vendor_cloudflare_ai',operation:'social_content_generation',requestedUnits:1,estimatedCostMinor:0,idempotencyKey:'native-ai-scope',aiProjectId:aiProject};
+  expect(await reserveAiCost(request)).toMatchObject({decision:'allowed'});
+  expect(await reserveAiCost(request)).toMatchObject({decision:'allowed'});
+  expect(db.prepare("SELECT project_id,ai_project_id FROM financial_usage_events WHERE operation='social_content_generation'").get()).toMatchObject({project_id:null,ai_project_id:aiProject});
+  expect(await reserveAiCost({...request,aiProjectId:null,projectId:'pa'})).toMatchObject({decision:'blocked',reason:'idempotency_key_reused'});
+  expect(db.prepare('SELECT quota_used FROM financial_provider_quotas').get()!.quota_used).toBe(1);
+  expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+ });
  it('resets an expired hard-stopped daily quota before reserving free units',async()=>{
   budget();db.exec("UPDATE financial_provider_quotas SET quota_used=100,status='exhausted',reset_frequency='daily',reset_date=1,hard_stop_before_paid=1");
   expect(await reserve('daily-reset',10)).toMatchObject({decision:'allowed'});

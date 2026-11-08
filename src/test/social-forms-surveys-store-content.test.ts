@@ -29,7 +29,7 @@ describe("AVYRON Social Studio forms, surveys and store content", () => {
   });
 
   it("requires real post-tap forms, exact Surveys routing and safe universal domains", () => {
-    expect(config.schemaVersion).toBe(7);
+    expect(config.schemaVersion).toBe(8);
     expect(config.conversion.formUx).toMatchObject({
       persistentLabels: true,
       minimumTouchTargetPx: 44,

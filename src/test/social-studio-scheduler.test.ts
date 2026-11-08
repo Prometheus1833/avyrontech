@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   canonicalAvyronConversionUrl,
-  plannedSocialJobs,
+  plannedSocialJobs, plannedSocialWindow,
   recoverStaleSocialGenerationJobs,
   removeSocialPriceDetails,
   sanitizeFacebookCaptionLinks,
@@ -38,7 +38,7 @@ describe("Social Studio scheduler", () => {
       shortCopy: true,
       nativeLinkPreferred: true,
       defaultLink: "https://avyron.ro/servicii/website-prezentare-profesional",
-      frameCount: 3,
+      frameCountMode: "editorial", minimumFrames: 1,
       storyMicrocopyRequired: true,
       storyCaptionRequiredWhenSupported: true,
       storyCaptionFallback: "unsupported",
@@ -180,4 +180,14 @@ describe("Social Studio scheduler", () => {
     expect(calls[0].values).toEqual([timestamp, timestamp - 15 * 60_000, 3]);
     expect(calls[1].values).toEqual([timestamp, timestamp - 15 * 60_000, 3]);
   });
+});
+
+
+describe("rolling editorial agenda",()=>{
+ const policy:SocialPolicy={project_id:"aip_avyron_web",timezone:"Europe/Bucharest",daily_post_count:1,daily_image_count:1,reel_interval_days:3,weekly_article_weekday:5,weekly_article_hour:16,weekly_article_minute:0,engagement_interval_minutes:180,story_like_target:8,feed_like_target:6,time_slots_json:"{}",channel_priority_json:"[]",industry_rotation_json:"[]"};
+ it("plans the next 24 hours before their due time without duplicate schedule keys",()=>{
+  const timestamp=Date.UTC(2026,10,7,6,0),jobs=plannedSocialWindow(policy,timestamp);
+  expect(jobs.some(j=>j.kind==='story'&&j.dueAt>timestamp)).toBe(true);expect(new Set(jobs.map(j=>j.key)).size).toBe(jobs.length);
+  expect(jobs.every(j=>j.dueAt>=timestamp-86400000&&j.dueAt<=timestamp+86400000)).toBe(true);
+ });
 });

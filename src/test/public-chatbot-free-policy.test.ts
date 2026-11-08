@@ -25,6 +25,8 @@ describe('Public chatbot Free activation',()=>{
       expect(db.prepare("SELECT status,daily_budget_minor,monthly_budget_minor,max_request_cost_minor FROM financial_agent_provider_policies WHERE agent_slug='avy'").get()).toMatchObject({status:'active',daily_budget_minor:0,monthly_budget_minor:0,max_request_cost_minor:0});
       expect(db.prepare('SELECT * FROM financial_provider_quotas').all()).toEqual(quotas);
       expect(db.prepare("SELECT COUNT(*) n FROM financial_audit_events WHERE id='fin_audit_avy_free_release_20261107'").get()!.n).toBe(1);
+      // Runtime cost accounting uses the current schema; the activation assertions above stay scoped to 0102.
+      for(const file of readdirSync('cloudflare/d1/migrations').filter(f=>f.endsWith('.sql')&&f>'0102_public_chatbot_free_policy.sql').sort())db.exec(readFileSync(`cloudflare/d1/migrations/${file}`,'utf8'));
       const request={db:adapter(db),agentSlug:'avy',vendorId:'fin_vendor_cloudflare_ai',operation:'public_chat_generation',requestedUnits:1,estimatedCostMinor:0,idempotencyKey:'free-activation-test'};
       expect((await reserveAiCost(request)).decision).toBe('allowed');
       expect((await reserveAiCost({...request,estimatedCostMinor:1,idempotencyKey:'paid-rejected'})).decision).not.toBe('allowed');
