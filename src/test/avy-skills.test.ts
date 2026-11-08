@@ -9,6 +9,10 @@ import {
   processSkillRun,
   drainSkillRuns,
 } from "../../cloudflare/workers/api/src/skillRuntime";
+import {
+  freeTextModel,
+  freeTextOutput,
+} from "../../cloudflare/workers/api/src/freeTextModel";
 import { runAiCore } from "../../cloudflare/workers/api/src/aiCore";
 import type { AppBindings, Env } from "../../cloudflare/workers/api/src/types";
 import {
@@ -25,7 +29,10 @@ import {
 } from "../../cloudflare/workers/api/src/skillImages";
 import { buildAccess, sectionsFor } from "../lib/access";
 
-vi.mock("../../cloudflare/workers/api/src/aiCore", () => ({
+vi.mock("../../cloudflare/workers/api/src/aiCore", async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import("../../cloudflare/workers/api/src/aiCore")
+  >()),
   runAiCore: vi.fn(async () => ({
     output: { response: "O direcție AI sintetică, fără publicare." },
     model: "registered-primary",
@@ -831,4 +838,60 @@ it("rolls back approval when its audit event cannot be recorded", async () => {
       )
       .get(),
   ).toMatchObject({ published_version: 1, revision: 2 });
+});
+
+it("persists Free-only AI intent and falls back to the registered Free secondary without changing quotas", async () => {
+  db.exec(
+    "UPDATE ai_model_registry SET requires_billing=0,status='configured'; UPDATE ai_model_registry SET daily_neuron_limit=1 WHERE role='primary'",
+  );
+  const selected = await freeTextModel(env, 300);
+  expect(selected.role).toBe("secondary");
+  const response = await req("/runs", {
+    brief: brief(),
+    mode: "ai",
+    freeOnly: true,
+  });
+  expect(response.status).toBe(201);
+  const made = await response.json();
+  expect(
+    db.prepare("SELECT free_only FROM avy_skill_runs WHERE id=?").get(made.id)!
+      .free_only,
+  ).toBe(1);
+  await processSkillRun(env, made.id);
+  expect(vi.mocked(runAiCore).mock.calls[0][0]).toMatchObject({
+    role: "secondary",
+    freeOnly: true,
+    requestedMaxTokens: 256,
+  });
+  expect(
+    db
+      .prepare(
+        "SELECT daily_neuron_limit FROM ai_model_registry WHERE role='primary'",
+      )
+      .get()!.daily_neuron_limit,
+  ).toBe(1);
+  expect(
+    (await req("/runs", { brief: brief(), mode: "template", freeOnly: true }))
+      .status,
+  ).toBe(400);
+});
+it("never selects paid or exhausted models for a Free-only request and accepts both text response formats", async () => {
+  db.exec(
+    "UPDATE ai_model_registry SET requires_billing=1 WHERE role='primary'; UPDATE ai_model_registry SET daily_neuron_limit=1 WHERE role='secondary'",
+  );
+  await expect(freeTextModel(env, 300)).rejects.toThrow(
+    "ai_free_budget_exhausted",
+  );
+  expect(runAiCore).not.toHaveBeenCalled();
+  expect(
+    freeTextOutput({
+      choices: [
+        { message: { content: " Ciornă Gemma ", reasoning_content: "secret" } },
+      ],
+    }),
+  ).toBe("Ciornă Gemma");
+  expect(freeTextOutput({ response: " Ciornă " })).toBe("Ciornă");
+  expect(
+    freeTextOutput({ choices: [{ message: { reasoning_content: "only" } }] }),
+  ).toBe("");
 });

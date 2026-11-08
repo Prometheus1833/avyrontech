@@ -15,7 +15,8 @@ async function setup(page:Page){
   if(path==='/api/workspace/announcements/a/read'){announced=true;return route.fulfill({json:{ok:true}});}
   if(path==='/api/workspace/announcements')return route.fulfill({json:{data:[{id:'a',author_id:'other',title:'Anunț de verificat',content:'Informații interne',priority:'normal',created_at:now,read_at:announced?now:null}]}});
   if(path==='/api/operations/notifications')return route.fulfill({json:{data:[]}});
-  if(path==='/api/logo-studio/admin/overview')return route.fulfill({json:{product:{slug:'logo-studio-3d',name_ro:'Logo Studio 3D',price_ron_cents:7500,access:'pro',status:'live'},version:null,simulations:[{id:'s',kind:'static',source:'standard',brief_json:JSON.stringify(brief),concept_count:4,lead_id:null,created_at:now}],summary:[{source:'standard',total:1}],nextOffset:null,canFinance:true,canManageCatalog:true,scope:'authorized_all',variants:4,prices:{standard:0,assistedAi:150},finances:u.searchParams.get('mode')==='3d'?{orders:[],totals:[],limit:100,source:'commerce_orders'}:null,infrastructure:{database:'D1',storage:'R2 privat',packageScan:'Verificare obligatorie la download',payment:'Checkout nativ'}}});
+  if(path==='/api/logo-studio/product-price')return route.fulfill({json:{priceMinor:12990,currency:'RON',updatedAt:2}});
+  if(path==='/api/logo-studio/admin/overview')return route.fulfill({json:{product:{slug:'logo-studio-3d',name_ro:'Logo Studio 3D',price_ron_cents:7500,updated_at:1,access:'pro',status:'live'},version:null,simulations:[{id:'s',kind:'static',source:'standard',brief_json:JSON.stringify(brief),concept_count:4,lead_id:null,created_at:now}],summary:[{source:'standard',total:1}],nextOffset:null,canFinance:true,canManageCatalog:true,scope:'authorized_all',variants:4,prices:{standard:0,assistedAi:150},finances:u.searchParams.get('mode')==='3d'?{orders:[],totals:[],limit:100,source:'commerce_orders'}:null,infrastructure:{database:'D1',storage:'R2 privat',packageScan:'Verificare obligatorie la download',payment:'Checkout nativ'}}});
   if(path==='/api/logo-studio/simulations'){standardCalls++;return route.fulfill({json:{concepts:localConcepts(cleanBrief(brief)!,4),simulationId:'new-simulation'}});}
   if(path==='/api/leads')return route.fulfill({json:{data:leads,platformRole:'platform_owner'}});
   return route.fulfill({json:{data:[]}});
@@ -50,4 +51,121 @@ test('produsul 3D salvează configurația explicită în fluxul nativ al coșulu
 });
 test('previzualizarea anonimă standard este locală și nu colectează briefuri',async({page})=>{
  const state=await setup(page);await page.route('**/api/auth/me',route=>route.fulfill({status:401,json:{error:'unauthorized'}}));await page.route('**/api/auth/refresh',route=>route.fulfill({status:401,json:{error:'unauthorized'}}));await page.goto('/servicii/creare-logo-3d-dinamic-cinematic/creeaza');await page.locator('#brief input').first().fill(brief.name);await page.getByRole('button',{name:'Vezi logo-ul tău',exact:true}).click();await expect(page.locator('.ls-grid > li')).toHaveCount(4);expect(state.standardCalls()).toBe(0);await expect(page.getByText('4 variante standard fără AI, export standard gratuit cu cont.',{exact:false})).toBeVisible();
+});
+
+for (const width of [320, 1440])
+  test(`prețul Logo 3D necesită confirmare și fluxul AI cere numai modele Free la ${width}px`, async ({
+    page,
+  }, info) => {
+    await setup(page);
+    await page.setViewportSize({ width, height: 900 });
+    let submitted: unknown, ai: Record<string, unknown> | undefined;
+    await page.route("**/api/logo-studio/admin/overview*", (route) => {
+      return route.fulfill({
+        json: {
+          models: [
+            {
+              role: "secondary",
+              model_id: "@cf/google/gemma-4-12b-it",
+              status: "configured",
+            },
+          ],
+          product: {
+            slug: "logo-studio-3d",
+            name_ro: "Logo Studio 3D",
+            price_ron_cents: 7500,
+            updated_at: 1,
+            access: "pro",
+            status: "live",
+          },
+          version: null,
+          simulations: [],
+          summary: [],
+          nextOffset: null,
+          canFinance: false,
+          canManageCatalog: true,
+          scope: "authorized_all",
+          variants: 4,
+          prices: { standard: 0, assistedAi: 150 },
+          finances: null,
+          infrastructure: {
+            database: "D1",
+            storage: "R2 privat",
+            packageScan: "Verificare obligatorie",
+            payment: "Checkout nativ",
+          },
+        },
+      });
+    });
+    await page.route("**/api/logo-studio/admin/product-price", (route) => {
+      submitted = route.request().postDataJSON();
+      return route.fulfill({ json: { ok: true } });
+    });
+    await page.route("**/api/skills/logo-engine/runs", (route) => {
+      ai = route.request().postDataJSON();
+      return route.fulfill({
+        status: 201,
+        json: { id: "run-free", status: "queued" },
+      });
+    });
+    await page.route("**/api/skills/logo-engine/runs/run-free", (route) =>
+      route.fulfill({
+        json: {
+          run: {
+            id: "run-free",
+            status: "ready",
+            model: "@cf/google/gemma-4-12b-it",
+            output_md: "Ciornă internă sintetică, necesită revizuire.",
+          },
+        },
+      }),
+    );
+    await page.goto("/profil?tab=logo-simulations");
+    await page
+      .getByRole("button", { name: "Configurează prețul", exact: true })
+      .click();
+    const price = page.getByRole("dialog", { name: "Preț Logo Studio 3D" });
+    await price
+      .getByRole("textbox", { name: "Preț Logo 3D RON" })
+      .fill("129,90");
+    await expect(
+      price.getByRole("button", { name: "Salvează prețul" }),
+    ).toBeDisabled();
+    await price.getByRole("checkbox").check();
+    await price.getByRole("button", { name: "Salvează prețul" }).click();
+    await expect(price).toHaveCount(0);
+    expect(submitted).toEqual({
+      priceMinor: 12990,
+      expectedUpdatedAt: 1,
+      confirmed: true,
+    });
+    await page
+      .getByRole("button", { name: "Asistență flux · AI Free" })
+      .click();
+    const dialog = page.getByRole("dialog");
+    await dialog
+      .getByRole("textbox", { name: "Brand / afacere" })
+      .fill("Brand sintetic");
+    await dialog
+      .getByRole("textbox", { name: "Activitate", exact: true })
+      .fill("Design interior");
+    await dialog
+      .getByRole("button", { name: "Pregătește ciorna cu AI Free" })
+      .click();
+    await expect(
+      dialog.getByText("Ciornă internă sintetică, necesită revizuire."),
+    ).toBeVisible();
+    expect(ai).toMatchObject({ mode: "ai", freeOnly: true });
+    expect(
+      await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+    ).toBe(true);
+    await page.screenshot({
+      path: info.outputPath(`logo-controls-${width}.png`),
+    });
+  });
+
+test('pagina publică Logo 3D afișează prețul actual din catalog, în RON',async({page})=>{
+ await setup(page);await page.emulateMedia({reducedMotion:'reduce'});await page.goto('/produse/logo');
+ await expect(page.getByRole('button',{name:/Pachet descărcare — 129,90/})).toBeVisible();
+ await expect.poll(()=>page.locator('script[type="application/ld+json"]').allTextContents().then(values=>values.some(value=>value.includes('"price":129.9')&&value.includes('"priceCurrency":"RON"')))).toBe(true);
 });

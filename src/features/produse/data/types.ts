@@ -38,7 +38,7 @@ export type CatalogItem = {
   tech: Tech[];
   access: Access;
   /** Preț pentru cumpărarea separată, în lei. Lipsă = doar prin parteneriat. */
-  priceRon?: 30 | 50 | 75 | 100 | 150;
+  priceRon?: number;
   status?: "new" | "popular" | "soon";
   /** Nuanța de accent a cardului și a fundalului când produsul e activ. */
   hue: number;

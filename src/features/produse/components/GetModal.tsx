@@ -1,3 +1,4 @@
+import { usePricedLogoItem } from "../lib/useLogoPrice";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { BookOpen, Check, Copy, Lock, MessageCircle, ShoppingCart, X } from "lucide-react";
@@ -28,7 +29,7 @@ const PMS = [
 type Tab = "cli" | "code" | "mcp" | "prompt";
 
 export default function GetModal({
-  item,
+  item:sourceItem,
   values,
   lang,
   open,
@@ -40,6 +41,7 @@ export default function GetModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const item=usePricedLogoItem(sourceItem);
   const ro = lang === "ro";
   const [tab, setTab] = useState<Tab>("cli");
   const [pm, setPm] = useState<(typeof PMS)[number]["id"]>("npm");
@@ -208,7 +210,7 @@ npx shadcn@latest add @avyron/${item.slug}`;
                   className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 px-3.5 py-2 text-xs font-semibold text-foreground"
                 >
                   {inCart ? <Check className="size-3.5" aria-hidden /> : <ShoppingCart className="size-3.5" aria-hidden />}
-                  {inCart ? (ro ? "În coș" : "In cart") : `${ro ? "Cumpără" : "Buy"} — ${priceLabel(item, lang)}`}
+                  {inCart ? (ro ? "În coș" : "In cart") : `${ro ? "Cumpără" : "Buy"} — ${priceLabel(item, lang)|| (ro?"preț la checkout":"price at checkout")}`}
                 </button>
               )}
             </div>

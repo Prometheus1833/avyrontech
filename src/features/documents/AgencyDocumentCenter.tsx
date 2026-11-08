@@ -74,7 +74,7 @@ export default function AgencyDocumentCenter({
   clientId,
   serviceId,
   subscriptionId,
-  initialView = "library",
+  initialView,
   embedded = false,
 }: {
   projectId?: string;
@@ -84,6 +84,7 @@ export default function AgencyDocumentCenter({
   initialView?: View;
   embedded?: boolean;
 }) {
+  const defaultView = initialView ?? (embedded ? "library" : "generator");
   const { user } = useAuth();
   const [generatorClient, setGeneratorClient] = useState<string>();
   const [generatorScope, setGeneratorScope] = useState<
@@ -100,7 +101,7 @@ export default function AgencyDocumentCenter({
         params.get("documentView")!,
       )
         ? (params.get("documentView") as View)
-        : initialView,
+        : defaultView,
     ),
     [items, setItems] = useState<DocumentSummary[]>([]),
     [total, setTotal] = useState(0),
@@ -197,18 +198,18 @@ export default function AgencyDocumentCenter({
     setLegalReference("");
     setAction("template");
   }, [requestedTemplate, embedded, context, bootstrap]);
-  const requestedView = params.get("documentView") || initialView;
+  const requestedView = params.get("documentView") || defaultView;
   useEffect(() => {
     if (embedded || !bootstrap) return;
     const allowed = allowedDocumentViews(bootstrap);
     if (allowed.includes(requestedView as View)) {
       setView(requestedView as View);
     } else {
-      setView("library");
+      setView(allowed.includes("generator") ? "generator" : "library");
       setItems([]);
-      setError("Secțiune indisponibilă pentru accesul curent.");
+      if (params.get("documentView")) setError("Secțiune indisponibilă pentru accesul curent.");
     }
-  }, [requestedView, bootstrap, embedded]);
+  }, [requestedView, bootstrap, embedded, params]);
   const requestedSubscription = !embedded
     ? params.get("subscription") || undefined
     : undefined;

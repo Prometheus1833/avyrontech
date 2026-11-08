@@ -350,7 +350,7 @@ skillsRouter.get(root + "/:slug/runs", async (c) => {
     Math.min(1000000, Number(c.req.query("offset")) || 0),
   );
   const rows = await c.env.DB.prepare(
-    `SELECT r.id,r.skill_slug,r.skill_version,r.created_by,r.project_id,r.lead_id,r.brief_json,r.mode,r.status,r.model,r.error_code,r.revision,r.created_at,r.updated_at,r.started_at,r.completed_at,r.input_characters,r.output_characters FROM avy_skill_runs r WHERE r.skill_slug=? AND ${scope.sql} ORDER BY r.created_at DESC,r.id LIMIT 51 OFFSET ?`,
+    `SELECT r.id,r.skill_slug,r.skill_version,r.created_by,r.project_id,r.lead_id,r.brief_json,r.mode,r.free_only,r.status,r.model,r.error_code,r.revision,r.created_at,r.updated_at,r.started_at,r.completed_at,r.input_characters,r.output_characters FROM avy_skill_runs r WHERE r.skill_slug=? AND ${scope.sql} ORDER BY r.created_at DESC,r.id LIMIT 51 OFFSET ?`,
   )
     .bind(c.req.param("slug") || "", ...scope.args, offset)
     .all<SkillRun>();
@@ -363,7 +363,11 @@ skillsRouter.post(root + "/:slug/runs", async (c) => {
   const p = permissions(c);
   if (!p.use) return fail(c, "forbidden", 403);
   const parsed = z
-    .object({ brief: briefSchema, mode: z.enum(["template", "ai", "image"]) })
+    .object({
+      brief: briefSchema,
+      mode: z.enum(["template", "ai", "image"]),
+      freeOnly: z.boolean().optional(),
+    })
     .strict()
     .safeParse(await json(c));
   const s = await skill(c, c.req.param("slug") || "");
@@ -384,6 +388,8 @@ skillsRouter.post(root + "/:slug/runs", async (c) => {
     return cached.request_hash === hash
       ? c.json({ id: cached.id, status: cached.status })
       : fail(c, "idempotency_key_reused", 409);
+  if (parsed.data.freeOnly && parsed.data.mode !== "ai")
+    return fail(c, "free_text_mode_required");
   if (parsed.data.mode === "image" && s.slug !== "media-generate")
     return fail(c, "image_mode_not_supported");
   if (s.paused) return fail(c, "skill_paused", 409);
@@ -394,7 +400,7 @@ skillsRouter.post(root + "/:slug/runs", async (c) => {
   try {
     await c.env.DB.batch([
       c.env.DB.prepare(
-        "INSERT INTO avy_skill_runs(id,skill_slug,skill_version,created_by,project_id,lead_id,brief_json,context_md,mode,idempotency_key,request_hash,input_characters,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO avy_skill_runs(id,skill_slug,skill_version,created_by,project_id,lead_id,brief_json,context_md,mode,idempotency_key,request_hash,input_characters,created_at,updated_at,free_only) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
       ).bind(
         id,
         s.slug,
@@ -410,6 +416,7 @@ skillsRouter.post(root + "/:slug/runs", async (c) => {
         JSON.stringify(b).length + context.length,
         timestamp,
         timestamp,
+        parsed.data.freeOnly ? 1 : 0,
       ),
       event(c, s.slug, "run.queued", id),
     ]);

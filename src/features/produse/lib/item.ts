@@ -13,6 +13,7 @@ export function defaultValues(item: CatalogItem): PropValues {
 /** „30 lei · 6 €” — prețul unei cumpărări separate. */
 export function priceLabel(item: CatalogItem, lang: Lang): string | null {
   if (!item.priceRon) return null;
+  if(item.slug==="logo-studio-3d"||!EUR_FOR_RON[item.priceRon])return new Intl.NumberFormat(lang==="ro"?"ro-RO":"en-GB",{style:"currency",currency:"RON"}).format(item.priceRon);
   const eur = EUR_FOR_RON[item.priceRon];
   return lang === "ro" ? `${item.priceRon} lei · ${eur} €` : `${item.priceRon} lei · €${eur}`;
 }

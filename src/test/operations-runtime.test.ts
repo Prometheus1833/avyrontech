@@ -271,6 +271,30 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
   expect(result.model).toBe('@cf/mistralai/mistral-small-3.1-24b-instruct');
   expect(model).toHaveBeenCalledWith(result.model,{messages:[{role:'user',content:'Return an answer object.'}],guided_json:schema,max_tokens:64});
  });
+  it("keeps a Free-only request blocked if its selected registry role becomes paid even when overage is enabled", async () => {
+    const model = vi.fn(async () => ({ response: "must not run" }));
+    env.AI = { run: model } as unknown as Ai;
+    env.PAID_AI_ENABLED = "true";
+    env.ALLOW_AI_OVERAGE = "true";
+    db.exec(
+      "UPDATE ai_model_registry SET requires_billing=1 WHERE role='primary'",
+    );
+    await expect(
+      runAiCore({
+        env,
+        agentSlug: "avy",
+        operation: "free_workflow",
+        idempotencyKey: "paid-transition",
+        promptCharacters: 32,
+        freeOnly: true,
+        input: { messages: [] },
+      }),
+    ).rejects.toThrow("paid_ai_disabled");
+    expect(model).not.toHaveBeenCalled();
+    expect(
+      db.prepare("SELECT count(*) n FROM ai_core_reservations").get()!.n,
+    ).toBe(0);
+  });
  it('publishes dashboard-managed chat prompts and rejects malformed prompt lists',async()=>{
   const publicResponse=await app.request('/api/ai/agents',{},env);expect(publicResponse.status).toBe(200);expect(publicResponse.headers.get('cache-control')).toBe('no-store');const publicBody=await publicResponse.json() as {data:Array<{starterQuestions:{ro:string[]};proactivePrompts:{ro:string[]}}>};expect(publicBody.data[0].starterQuestions.ro).toContain('Vreau un site');expect(publicBody.data[0].proactivePrompts.ro).toContain('Ai nevoie de un site?');
   const update=(body:unknown)=>app.request('/api/ai/admin/agents/avy',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(body)},env);

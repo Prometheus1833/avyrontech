@@ -6,6 +6,35 @@ import {
   automaticDocumentFields,
   consistentSubscriptionBilling,
 } from "../shared/documents/autofill";
+import { allowedDocumentViews } from "../features/documents/presentation";
+import type { DocumentBootstrap } from "../lib/documentsApi";
+it("orders staff document tools without exposing company documents to unauthorized roles", () => {
+  const bootstrap = (staff: boolean, create: boolean, owner: boolean) =>
+    ({
+      staff,
+      permissions: {
+        "documents.create": create,
+        "documents.company.owner": owner,
+      },
+    }) as DocumentBootstrap;
+  expect(allowedDocumentViews(bootstrap(true, true, true))).toEqual([
+    "generator",
+    "templates",
+    "staff",
+    "company",
+    "library",
+    "hub",
+  ]);
+  expect(allowedDocumentViews(bootstrap(true, false, false))).toEqual([
+    "templates",
+    "staff",
+    "library",
+    "hub",
+  ]);
+  expect(allowedDocumentViews(bootstrap(false, false, false))).toEqual([
+    "library",
+  ]);
+});
 const company = {
   legal_name: "Emitent configurat",
   tax_id: "CUI configurat",
