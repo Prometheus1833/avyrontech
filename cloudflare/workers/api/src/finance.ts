@@ -1,4 +1,5 @@
 import { scanUpload, antivirusFailure, putScannedObject, getScannedObject } from "./malware";
+import { registerFinanceAccounts } from "./financeAccounts";
 import { receiptsRouter } from "./receipts";
 import { Hono, type Context } from "hono";
 import type { AppBindings } from "./types";
@@ -14,7 +15,7 @@ type Permission = "finance.read" | "finance.write" | "finance.accounts.read" | "
 
 async function allowed(c: Context<AppBindings>, permission: Permission) {
   const platformRole = await platformRoleForUser(c.env.DB, c.get("userId"));
-  if (platformRole === "platform_owner") return true;
+  if (platformRole === "platform_owner" || platformRole === "superadmin") return true;
   if (["finance.read", "finance.accounts.read", "finance.documents.read", "finance.audit.read"].includes(permission) && (platformRole === "superadmin" || c.get("roles").includes("admin"))) return true;
   return hasCapability(c.env.DB, c.get("userId"), permission);
 }
@@ -52,6 +53,7 @@ financeRouter.use("/api/finance/*", async (c, next) => {
 });
 
 financeRouter.route("/", receiptsRouter);
+registerFinanceAccounts(financeRouter, allowed);
 
 financeRouter.get("/api/finance/overview", async (c) => {
   if (!(await allowed(c, "finance.read"))) return deny(c);
@@ -220,8 +222,8 @@ financeRouter.delete("/api/finance/revenues/:revenueId", async (c) => {
 
 financeRouter.get("/api/finance/accounts", async (c) => {
   if (!(await allowed(c,"finance.accounts.read"))) return deny(c);
-  const [accounts,methods]=await Promise.all([c.env.DB.prepare("SELECT id,name,institution,currency,account_type,internal_alias,iban_last4,status,balance_minor,balance_as_of,purpose,source FROM financial_accounts WHERE archived_at IS NULL ORDER BY name").all(),c.env.DB.prepare("SELECT id,account_id,provider,alias,cardholder_name,last4,expiry_month,expiry_year,card_type,currency,purpose,status FROM financial_payment_methods WHERE archived_at IS NULL ORDER BY alias").all()]);
-  return c.json({accounts:accounts.results,methods:methods.results.map((row)=>maskPaymentMethod(row as Parameters<typeof maskPaymentMethod>[0]))});
+  const [accounts,methods]=await Promise.all([c.env.DB.prepare("SELECT id,name,institution,currency,account_type,internal_alias,iban_last4,status,balance_minor,balance_as_of,purpose,source,updated_at FROM financial_accounts WHERE archived_at IS NULL ORDER BY name").all(),c.env.DB.prepare("SELECT id,account_id,provider,alias,cardholder_name,last4,expiry_month,expiry_year,card_type,currency,purpose,status,updated_at FROM financial_payment_methods WHERE archived_at IS NULL ORDER BY alias").all()]);
+  return c.json({accounts:accounts.results,methods:methods.results.map((row)=>({...row,...maskPaymentMethod(row as Parameters<typeof maskPaymentMethod>[0])}))});
 });
 
 financeRouter.post("/api/finance/accounts", async (c) => {

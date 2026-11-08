@@ -70,7 +70,7 @@ export type CommercialCodeDraft = {
 
 export const catalogCodesApi = {
   list: () => cfAuth.request<{ data: CommercialCode[]; services: ServiceCatalogSource[]; products: ProductCatalogSource[]; references: CommercialProviderRef[] }>("/api/finance/commercial-codes"),
-  sync: () => cfAuth.request<{ ok: true; created: number; existing: number; requiresSku: number; total: number }>("/api/finance/commercial-codes/sync", { method: "POST", headers: { "Idempotency-Key": crypto.randomUUID() } }),
+  sync: () => cfAuth.request<{ ok: true; created: number; completed: number; existing: number; requiresSku: number; total: number }>("/api/finance/commercial-codes/sync", { method: "POST", headers: { "Idempotency-Key": crypto.randomUUID() } }),
   save: (entityType: "service" | "product", entityKey: string, body: CommercialCodeDraft) =>
     cfAuth.request<{ ok: true; id: string }>(`/api/finance/commercial-codes/${entityType}/${encodeURIComponent(entityKey)}`, {
       method: "PUT",

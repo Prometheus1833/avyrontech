@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { BadgeCheck, ArrowUpRight, RefreshCw } from "lucide-react";
@@ -13,6 +14,8 @@ const date = (value: number) => new Intl.DateTimeFormat("ro-RO", { dateStyle: "m
 
 export default function PaidDevelopmentProducts() {
   const { user } = useAuth();
+  const [downloading,setDownloading]=useState<string|null>(null);
+  const download=async(slug:string)=>{setDownloading(slug);try{await produseApi.download(slug)}catch(e){toast.error(e instanceof Error?e.message:"Descărcarea nu a reușit.")}finally{setDownloading(null)}};
   const [history, setHistory] = useState<PaidProductHistory | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -55,8 +58,8 @@ export default function PaidDevelopmentProducts() {
     {!!history?.data.length && <ul className="mt-3 space-y-2">{history.data.map(purchase => <li key={purchase.id} className="min-w-0 rounded-xl border border-white/10 bg-black/10 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs"><span className="text-slate-400">#{purchase.id.slice(0, 8).toUpperCase()} · {purchase.paidAt ? `Achitat la ${date(purchase.paidAt)}` : `Comandă din ${date(purchase.createdAt)}`}</span><span className="rounded-md bg-emerald-500/10 px-2 py-1 text-emerald-200">Plată confirmată</span></div>
       <ul className="mt-2 divide-y divide-white/5">{purchase.items.map((item, index) => <li key={`${item.sku || item.slug}-${index}`} className="flex min-w-0 flex-col items-start gap-2 py-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0 w-full flex-1 break-words sm:w-auto"><h2 className="text-sm font-medium">{item.name}</h2>{item.sku && <p className="mt-1 break-all text-xs text-slate-500">{item.sku}{item.quantity ? ` · ${item.quantity} buc.` : ""}</p>}</div>
-        <a className={action} href={publicSiteHref(paths.get(item.slug || "") || "/produse")}>{paths.has(item.slug || "") ? "Deschide produsul" : "Catalog produse"}<ArrowUpRight className="size-3.5" aria-hidden /></a>
+        <div className="min-w-0 w-full flex-1 break-words sm:w-auto"><h2 className="text-sm font-medium">{item.name}</h2>{item.licenseTerms&&<details className="mt-2 text-xs text-slate-400"><summary className="cursor-pointer text-violet-200">{item.licenseName||"Licența achiziției"}</summary><p className="mt-2 whitespace-pre-wrap">{item.licenseTerms}</p></details>}{item.sku && <p className="mt-1 break-all text-xs text-slate-500">{item.sku}{item.quantity ? ` · ${item.quantity} buc.` : ""}</p>}</div>
+        {item.slug&&(item.slug!=="logo-studio-3d"||item.deliveryMode==="download")&&<button type="button" className={action} disabled={!!downloading} onClick={()=>void download(item.slug!)}>{downloading===item.slug?"Se descarcă…":"Descarcă ZIP"}</button>}<a className={action} href={publicSiteHref(paths.get(item.slug || "") || "/produse")}>{paths.has(item.slug || "") ? "Deschide produsul" : "Catalog produse"}<ArrowUpRight className="size-3.5" aria-hidden /></a>
       </li>)}</ul>
       <Link to={`/profil?tab=orders&order=${encodeURIComponent(purchase.id)}`} className={`${action} mt-2`}>Vezi comanda</Link>
     </li>)}</ul>}

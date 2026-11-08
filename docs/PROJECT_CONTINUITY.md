@@ -157,3 +157,5 @@ Continuare de la PR #103 (`b6c4f7b`) pe ramură dedicată: [DOCUMENT_GENERATOR_E
 ## Prezentare generală — diagnostic și acțiuni (07.11.2026)
 
 Vezi [runbookul operațional](./OVERVIEW_OPERATIONS.md): nume native pentru agenți, selecție proiect AI, priorități detaliate și retragerea controlată a cererilor. Reautorizarea R2/AI și probele reale sunt consemnate separat de cod. Nu există migrare nouă; PR #113/0105 rămâne separat. Proiectul cabinetului și designul public sunt excluse. Starea PR/CI/deploy se citește din GitHub, nu din această notă.
+
+Financiar / produse — 08.11.2026: [fluxuri și limite](./FINANCE_COMMERCE_COMPLETION.md), migrarea aditivă 0106. Conturi editabile, verificare procesatori accesibilă, completare identități, licențe/livrabile și activarea verificată a produselor. Nu reprezintă dovadă de migrare remote, vânzări active sau deploy; PR #113/#114 și cabinetul rămân livrări distincte.

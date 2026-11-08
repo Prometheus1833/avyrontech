@@ -39,8 +39,8 @@ export type FinanceRevenue = {
   amount_ron_minor: number | null; invoice_date: number | null; due_date: number | null; payment_date: number | null;
 };
 
-export type FinanceAccount = { id: string; name: string; institution: string; currency: string; account_type: string; internal_alias: string; iban_last4: string | null; status: string; balance_minor: number | null; purpose: string };
-export type FinancePaymentMethod = { id: string; account_id: string | null; provider: string; alias: string; display: string; last4: string | null; expiry_month: number | null; expiry_year: number | null; status: string; purpose: string };
+export type FinanceAccount = { id: string; name: string; institution: string; currency: string; account_type: string; internal_alias: string; iban_last4: string | null; status: string; balance_minor: number | null; source: string; updated_at: number; purpose: string };
+export type FinancePaymentMethod = { id: string; account_id: string | null; provider: string; alias: string; display: string; last4: string | null; expiry_month: number | null; expiry_year: number | null; status: string; updated_at: number; currency: string | null; purpose: string };
 export type FinanceBudget = { id: string; name: string; category: string; period_start: number; period_end: number; currency: string; limit_minor: number; hard_stop: number; status: string };
 export type FinanceQuota = { id: string; vendor_id: string; vendor_name: string; plan: string | null; quota_type: string; quota_total: number | null; quota_used: number; warning_threshold_basis_points: number; hard_stop_before_paid: number; status: string; reset_date: number | null };
 export type FinanceAgentPolicy = { agent_slug: string; agent_name: string; vendor_id: string; vendor_name: string; status: string; daily_budget_minor: number | null; monthly_budget_minor: number | null; max_request_cost_minor: number | null; currency: string };
@@ -57,6 +57,8 @@ export const financeApi = {
   createRevenue: (input: Record<string, unknown>) => cfAuth.request<{ id: string }>("/api/finance/revenues", { method: "POST", headers: { "Idempotency-Key": crypto.randomUUID() }, body: JSON.stringify(input) }),
   accounts: () => cfAuth.request<{ accounts: FinanceAccount[]; methods: FinancePaymentMethod[] }>("/api/finance/accounts"),
   createAccount: (input: Record<string, unknown>) => cfAuth.request<{ id: string }>("/api/finance/accounts", { method: "POST", body: JSON.stringify(input) }),
+  updateAccount: (id: string, input: Record<string, unknown>) => cfAuth.request<{ ok: true }>(`/api/finance/accounts/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) }),
+  updatePaymentMethod: (id: string, input: Record<string, unknown>) => cfAuth.request<{ ok: true }>(`/api/finance/payment-methods/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) }),
   createPaymentMethod: (input: Record<string, unknown>) => cfAuth.request<{ id: string }>("/api/finance/payment-methods", { method: "POST", body: JSON.stringify(input) }),
   budgets: () => cfAuth.request<{ budgets: FinanceBudget[]; quotas: FinanceQuota[]; policies: FinanceAgentPolicy[] }>("/api/finance/budgets"),
   createBudget: (input: Record<string, unknown>) => cfAuth.request<{ id: string }>("/api/finance/budgets", { method: "POST", body: JSON.stringify(input) }),

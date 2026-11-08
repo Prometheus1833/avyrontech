@@ -1,0 +1,79 @@
+import { expect, test, type Page } from '@playwright/test';
+import { staffFixture } from './staff-fixtures';
+const stamp = Date.now();
+async function setup(page: Page) {
+    await staffFixture(page);
+    const overview = { period: { from: stamp - 86400000, to: stamp }, kpis: { expensesMinor: 0, revenuesMinor: 0, operatingProfitEstimateMinor: 0, activeSubscriptions: 0, aiCostMinor: 0, advertisingMinor: 0, costPerLeadMinor: null, invoicesPayable: 0, invoicesReceivable: 0, nextPayment: null, budgetLimitMinor: 0, budgetCount: 0, freeTierSavingsMinor: null, criticalAlerts: 0 }, notice: '' };
+    await page.route('**/api/finance/**', r => { const path = new URL(r.request().url()).pathname; return r.fulfill({ json: path.endsWith('/overview') ? overview : path.endsWith('/config') ? { vendors: [], projects: [], clients: [] } : path.endsWith('/accounts') ? { accounts: [{ id: 'a', name: 'Cont sintetic', institution: 'Bancă Test', currency: 'RON', account_type: 'bank', internal_alias: 'Test', iban_last4: 'AB12', status: 'needs_configuration', balance_minor: null, purpose: 'Operațiuni', source: 'manual', updated_at: stamp }], methods: [] } : path.endsWith('/budgets') ? { budgets: [], quotas: [], policies: [] } : path.endsWith('/analytics') ? { categories: [], projections: [], clients: [], projects: [] } : { data: [] } }); });
+    await page.route('**/api/billing/admin/status', r => r.fulfill({ json: { providers: { stripe: { enabled: true }, revolut: { enabled: false }, oblio: { enabled: false }, netopia: { enabled: false } }, configuration: { stripe: { fields: [{ name: 'STRIPE_SECRET_KEY', configured: true }, { name: 'STRIPE_ACCOUNT_ID', configured: true }], automaticIssue: null } }, security: { mfaEnabled: true, mfaVerified: true, canVerify: true }, providerPlaybooks: [{ provider: 'stripe', title: 'Stripe', purpose: 'Încasări', phase: 'configuration_only', authentication: 'Chei securizate în Worker', intake: 'Webhook', reconciliation: 'Comenzi', gate: 'Identitate verificată', cadence: 'La evenimente', sources: [] }], sessions: [], subscriptions: [], invoices: [], pendingInvoices: [], paymentsByCurrency: [], invoicesByCurrency: [], recentPayments: [], recentSubscriptions: [], recentInvoices: [], connectionRecords: [], recentFailures: [] } }));
+}
+for (const width of [320, 390, 1440])
+    test(`finance navigation and configuration fit ${width}px`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 900 });
+        await setup(page);
+        await page.goto('/profil?tab=finance&view=accounts');
+        const nav = page.getByRole('navigation', { name: 'Secțiuni financiare' });
+        await expect(nav).toBeVisible();
+        const sizes = await nav.getByRole('button').evaluateAll(buttons => buttons.map(button => ({ width: button.getBoundingClientRect().width, height: button.getBoundingClientRect().height })));
+        expect(sizes.every(s => s.height < 65 && s.width < 260)).toBe(true);
+        await expect(page.getByRole('heading', { name: 'Conturi interne', exact: true })).toBeVisible();
+        await page.getByRole('button', { name: 'Configurează', exact: true }).first().click();
+        const dialog = page.getByRole('dialog');
+        await expect(dialog.getByRole('button', { name: 'Salvează' })).toBeDisabled();
+        await dialog.getByLabel('Denumire *', { exact: true }).fill('Cont completat');
+        await dialog.getByLabel('Stare', { exact: true }).selectOption('active');
+        await dialog.getByLabel('Confirm datele și starea în registrul intern.').check();
+        let body: Record<string, unknown> | null = null;
+        await page.route('**/api/finance/accounts/a', r => { body = r.request().postDataJSON(); return r.fulfill({ json: { ok: true } }); });
+        await dialog.getByRole('button', { name: 'Salvează și activează' }).click();
+        await expect(dialog).not.toBeVisible();
+        expect(body).toMatchObject({ name: 'Cont completat', status: 'active', expectedUpdatedAt: stamp, confirmed: true });
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        await page.screenshot({ path: info.outputPath(`finance-${width}.png`), fullPage: true });
+    });
+test('processor configuration exposes exact requirements and a real verification command', async ({ page }) => {
+    await setup(page);
+    await page.goto('/profil?tab=finance&view=accounts');
+    const provider = page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Stripe', exact: true }) });
+    await provider.getByRole('button', { name: 'Configurează' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByText('STRIPE_SECRET_KEY', { exact: true })).toBeVisible();
+    let sent = false;
+    await page.route('**/api/billing/admin/connections/stripe/verify', r => { sent = true; return r.fulfill({ json: { ok: true, provider: 'stripe', account: 'acct_fixture', detail: null, synchronized: false } }); });
+    await dialog.getByRole('button', { name: 'Verifică și înregistrează conexiunea' }).click();
+    await expect.poll(() => sent).toBe(true);
+});
+test('expanded completed projects never stretch empty testing column', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await setup(page);
+    await page.route('**/api/projects', r => r.fulfill({ json: { data: Array.from({ length: 8 }, (_, i) => ({ id: `p${i}`, name: `Proiect finalizat ${i}`, slug: `p-${i}`, kind: 'website_prezentare', status: 'completed', banner_status: 'online', created_at: stamp, updated_at: stamp })), purchases: [], sales: [] } }));
+    await page.goto('/profil?tab=projects');
+    const board = page.getByLabel('Pipeline proiecte'), testing = board.locator('details').filter({ has: page.getByText('Testare', { exact: true }) }), done = board.locator('details').last();
+    await expect(testing).toBeVisible();
+    const before = (await testing.boundingBox())!.height;
+    await done.locator('summary').click();
+    const collapsed = (await testing.boundingBox())!.height;
+    await done.locator('summary').click();
+    const expanded = (await testing.boundingBox())!.height;
+    expect(Math.abs(before - expanded)).toBeLessThan(2);
+    expect(Math.abs(collapsed - expanded)).toBeLessThan(2);
+    expect(expanded).toBeLessThan(220);
+});
+test('product preparation displays missing deliverables and keeps sales inactive', async ({ page }, info) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await setup(page);
+    const item = { slug: 'demo-component', type: 'component', category: 'ui', access: 'pro', price_ron_cents: 7500, status: 'live', name_ro: 'Componentă sintetică', name_en: 'Synthetic component', pro_at: null, free_at: null, updated_at: stamp };
+    const row = { ...item, product_updated_at: stamp, catalog_id: 'code', sku: 'AVY-DIG-CMP-0001', accounting_code: 'AVD0001', base_price_minor: 7500, currency: 'RON', tax_status: 'unverified', price_model: 'fixed', billing_cycle: 'one_time', payment_status: 'needs_configuration', active: 1, code_updated_at: stamp, profile_updated_at: null, version: null, checks: [{ key: 'identity', label: 'SKU și cod articol', ok: true }, { key: 'tax', label: 'Fiscalitate confirmată', ok: false }, { key: 'delivery', label: 'Livrare pregătită', ok: false }] };
+    await page.route('**/api/produse/admin/overview', r => r.fulfill({ json: { catalog: [], items: [item], plans: [], entitlements: [], copies: [], topItems: [], orders: [], requests: [], transitions: [] } }));
+    await page.route('**/api/finance/commercial-codes', r => r.fulfill({ json: { data: [], references: [], services: [], products: [] } }));
+    await page.route('**/api/produse/admin/sales/readiness', r => r.fulfill({ json: { data: [row] } }));
+    await page.route('**/api/produse/admin/sales/demo-component', r => r.fulfill({ json: { data: row, checks: row.checks } }));
+    await page.goto('/profil?tab=produse-avyron');
+    await page.getByRole('button', { name: 'Pregătește vânzarea' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByRole('button', { name: 'Activează vânzarea' })).toBeDisabled();
+    await expect(dialog.getByText('Nicio versiune încărcată.', { exact: false })).toBeVisible();
+    await expect(dialog.getByLabel('Pachet ZIP')).toBeVisible();
+    await page.screenshot({ path: info.outputPath('product-preparation-mobile.png'), fullPage: true });
+    expect(await dialog.evaluate(node => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+});

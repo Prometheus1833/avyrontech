@@ -1,5 +1,6 @@
 import type { PaidProductHistory } from "@/shared/paidProducts";
 import { cfAuth } from "./cfAuth";
+import { apiUrl } from "./apiBase";
 
 /**
  * Magazinul Produse Avyron, din partea contului.
@@ -115,6 +116,12 @@ async function call<T>(path: string, init?: RequestInit): Promise<{ ok: boolean;
 }
 
 export const produseApi = {
+  async download(slug:string){
+    const request=()=>fetch(apiUrl(`/api/produse/account/download/${encodeURIComponent(slug)}`),{headers:cfAuth.getToken()?{authorization:`Bearer ${cfAuth.getToken()}`}:{},credentials:'include'});
+    let response=await request();if(response.status===401&&await cfAuth.refresh())response=await request();
+    if(!response.ok){const body=await response.json().catch(()=>null) as {error?:{code?:string;message?:string}}|null;throw new Error(body?.error?.code==='upgrade_required'?'Dreptul de acces la produs nu este activ.':body?.error?.message||'Pachetul nu este disponibil pentru descărcare.');}
+    const url=URL.createObjectURL(await response.blob()),link=document.createElement('a');link.href=url;link.download=`${slug.replace(/[^a-z0-9._-]/gi,'-')}.zip`;link.click();setTimeout(()=>URL.revokeObjectURL(url),30000);
+  },
   async purchases(cursor?: string): Promise<PaidProductHistory> {
     const { ok, body } = await call<PaidProductHistory>(`/api/produse/account/purchases${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`);
     if (!ok) throw new Error("Achizițiile nu pot fi încărcate acum. Reîncearcă.");

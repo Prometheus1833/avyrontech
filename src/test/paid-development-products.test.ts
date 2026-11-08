@@ -67,6 +67,13 @@ describe("paid Development product history", () => {
     expect(history.data[0]).toMatchObject({id:"confirmed",items:[{name:"Logo Studio 3D",slug:"logo-studio-3d"}]});
     expect(history.data[0].paidAt).toBeGreaterThan(1);
   });
+  it("preserves licence snapshots and does not auto-issue an invoice selected as manual",async()=>{
+    const conditions={...line,licenseName:"Licență achiziție",licenseTerms:"Condițiile originale ale achiziției.",invoiceProvider:"manual"};order("manual-order","accepted","a",[conditions]);
+    const snapshot=db.prepare("SELECT * FROM commerce_orders WHERE id='manual-order'").get();
+    await recordPaidOrder({...env(),OBLIO_AUTO_ISSUE_ENABLED:"true"} as never,{provider:"stripe",providerReference:"manual-ref",order:snapshot} as never);
+    expect(db.prepare("SELECT error_code FROM billing_invoices WHERE order_id='manual-order'").get()).toMatchObject({error_code:"manual_invoice_required"});
+    const history=await (await send()).json() as PaidProductHistory;expect(history.data[0].items[0]).toMatchObject({licenseName:conditions.licenseName,licenseTerms:conditions.licenseTerms});
+  });
   it("paginates stable ties without duplicates and includes old item snapshots in mixed orders", async () => {
     for (let i=0;i<23;i++) order(`history-${String(i).padStart(2,"0")}`);
     order("legacy", "paid", "a", [{kind:"item",id:"old-product",name:"Produs istoric"},{type:"service",name:"Serviciu"}], 2);

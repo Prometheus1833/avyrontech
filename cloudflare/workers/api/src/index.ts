@@ -1665,6 +1665,7 @@ import { operationsOAuthRouter,operationsRouter } from "./operations";
 import { organizationsRouter } from "./organizations";
 import { dashboardRouter } from "./osDashboard";
 import { produseRouter } from "./produse";
+import { productSalesRouter } from "./productSales";
 import { produseAdminRouter } from "./produseAdmin";
 import { produseCheckoutRouter } from "./produseCheckoutV2";
 import { produseShopRouter } from "./produseShop";
@@ -1808,6 +1809,7 @@ app.use("/api/billing/admin/*", requireAuth, requireRole("staff", "admin"), requ
 app.route("/", produseShopRouter);
 app.route("/", produseCheckoutRouter);
 app.route("/", produseAdminRouter);
+app.route("/", productSalesRouter);
 app.route("/", billingRouter);
 // Importul administrativ are propria gardă constant-time X-Seed-Token.
 app.route("/", seedRouter);

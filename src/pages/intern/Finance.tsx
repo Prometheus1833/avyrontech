@@ -1,12 +1,13 @@
+import FinanceAccountsPanel from "@/components/finance/FinanceAccountsPanel";
 import { FINANCE_GROUPS, financialView, financialRange, bucharestLocalTime, bucharestMonthBounds } from "@/shared/financeWorkspace";
 import { useAuth } from "@/hooks/useAuth";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertTriangle, BarChart3, Bot, Building2, CreditCard,
+  AlertTriangle, BarChart3, Bot, CreditCard,
   Gauge, Plus, Receipt, Search, ShieldCheck, TrendingDown, TrendingUp, Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import PageBackLink from "@/components/site/PageBackLink";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   BudgetProgress, ExpenseDetailDrawer, ExpenseRow, FinancialAlert, FinancialChart,
-  FinancialSummaryCard, PaymentMethodMasked, QuotaProgress, UpcomingPayment,
+  FinancialSummaryCard, QuotaProgress, UpcomingPayment,
 } from "@/components/finance/FinanceComponents";
 import { money } from "@/lib/financeFormat";
 import { StaffPaymentsTab } from "@/components/dashboard/StaffPaymentsTab";
@@ -131,7 +132,7 @@ export default function Finance({ embedded=false }: { embedded?: boolean }) {
   return (
     <main className={embedded?"space-y-5":"dark min-h-screen bg-[#060a14] text-slate-100 px-4 py-7 sm:px-6"}><div className={embedded?"space-y-5":"mx-auto max-w-7xl space-y-5"}>
     {!embedded&&<PageBackLink to="/profil" label="Dashboard"/>}
-    <header className="relative overflow-hidden rounded-3xl border border-violet-500/20 bg-card/75 p-5 sm:p-6"><div className="pointer-events-none absolute -right-24 -top-32 size-80 rounded-full bg-violet-500/10 blur-3xl"/><div className="relative flex flex-wrap items-end justify-between gap-5"><div><p className="font-mono text-[10px] uppercase tracking-[.2em] text-violet-500">AVYRON OS · Evidență financiară</p><h1 className="mt-2 text-2xl font-semibold">Financiar</h1><p className="mt-2 max-w-2xl text-sm text-muted-foreground">Costuri, venituri, bugete și limite într-un singur sistem Cloudflare. Estimările sunt operaționale, nu contabilitate fiscală.</p></div><div className="flex flex-wrap justify-end gap-2"><select aria-label="Perioadă financiară" className={field} value={period} onChange={(e)=>setPeriod(e.target.value)}><option value="current">Luna curentă</option><option value="previous">Luna trecută</option><option value="3m">Ultimele 3 luni</option><option value="6m">Ultimele 6 luni</option><option value="year">Anul curent</option><option value="custom">Custom</option></select>{period==="custom"&& (
+    <header className="relative overflow-hidden rounded-3xl border border-violet-500/20 bg-card/75 p-5 sm:p-6"><div className="pointer-events-none absolute -right-24 -top-32 size-80 rounded-full bg-violet-500/10 blur-3xl"/><div className="relative flex flex-wrap items-end justify-between gap-5"><div><p className="font-mono text-[10px] uppercase tracking-[.2em] text-violet-500">AVYRON OS · Evidență financiară</p><h1 className="mt-2 text-2xl font-semibold">Financiar</h1><p className="mt-2 max-w-2xl text-sm text-muted-foreground">Costuri, încasări și facturare. Configurează conturile și urmărește plățile, bugetele și limitele.</p></div><div className="flex flex-wrap justify-end gap-2"><select aria-label="Perioadă financiară" className={field} value={period} onChange={(e)=>setPeriod(e.target.value)}><option value="current">Luna curentă</option><option value="previous">Luna trecută</option><option value="3m">Ultimele 3 luni</option><option value="6m">Ultimele 6 luni</option><option value="year">Anul curent</option><option value="custom">Custom</option></select>{period==="custom"&& (
                 <><Input aria-label="De la" type="date" className="w-auto" value={customFrom} onChange={(e)=>setCustomFrom(e.target.value)}/><Input aria-label="Până la" type="date" className="w-auto" value={customTo} onChange={(e)=>setCustomTo(e.target.value)}/></>
               )}{view==="expenses"&& (
                 <Button
@@ -141,16 +142,12 @@ export default function Finance({ embedded=false }: { embedded?: boolean }) {
                 <Button
                   disabled={!canWrite}
                   onClick={()=>setCreateKind("revenue")}><Plus className="mr-2 size-4"/>Venit</Button>
-              )}{view==="accounts"&& (
-                <Button
-                  disabled={!canSettings}
-                  onClick={()=>setCreateKind("account")}><Plus className="mr-2 size-4"/>Cont intern</Button>
               )}{view==="budgets"&& (
                 <Button
                   disabled={!canBudget}
                   onClick={()=>setCreateKind("budget")}><Plus className="mr-2 size-4"/>Buget</Button>
               )}</div></div></header>
-    <nav className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5" aria-label="Secțiuni financiare">{FINANCE_GROUPS.filter(g=>g.views.some(v=>v!=='accounts'||canAccounts)).map(g=><button key={g.id} type="button" aria-current={g.id===activeGroup.id} onClick={()=>setView(g.views[0])} className={`rounded-xl border px-3 py-3 text-left text-sm transition ${g.id===activeGroup.id?'border-violet-400/40 bg-violet-500/15 text-violet-100':'border-white/10 bg-card/70 text-slate-300 hover:border-violet-400/30'}`}>{g.label}</button>)}</nav>
+    <nav className="flex flex-wrap items-center gap-1.5 rounded-2xl border border-border/60 bg-card/40 p-2" aria-label="Secțiuni financiare">{FINANCE_GROUPS.filter(g=>g.views.some(v=>v!=='accounts'||canAccounts)).map(g=><button key={g.id} type="button" aria-current={g.id===activeGroup.id} onClick={()=>setView(g.views[0])} className={`min-h-10 rounded-xl border px-3 py-2 text-left text-xs font-medium transition ${g.id===activeGroup.id?'border-violet-400/40 bg-violet-500/15 text-violet-100':'border-white/10 bg-card/70 text-slate-300 hover:border-violet-400/30'}`}>{g.label}</button>)}</nav>
     <div className="flex flex-wrap items-center justify-between gap-3"><nav className="flex flex-wrap gap-2" aria-label="Instrumente financiare">{views.filter(item=>(activeGroup.views as readonly string[]).includes(item.id)&&(item.id!=='accounts'||canAccounts)&&(item.id!=='audit'||canAudit)).map(item=><Button key={item.id} size="sm" variant={view===item.id?'default':'outline'} aria-current={view===item.id} onClick={()=>setView(item.id)}>{item.label}</Button>)}</nav><Button variant="outline" size="sm" disabled={loading} onClick={()=>void load()}>Actualizează datele</Button></div>
     {loading&& (
           <div className="h-72 animate-pulse rounded-2xl bg-card/50" aria-label="Se încarcă financiar"/>
@@ -186,17 +183,7 @@ export default function Finance({ embedded=false }: { embedded?: boolean }) {
                       <p className="text-sm text-muted-foreground">Nicio politică agent/provider disponibilă.</p>
                     )}</div></div></section>
             )}
-      {view==="accounts"&& (
-              <section className="grid gap-4 lg:grid-cols-2"><div className="rounded-2xl border border-border/70 bg-card/70 p-5"><h2 className="font-semibold">Conturi în registrul intern</h2><p className="mt-1 text-xs text-muted-foreground">Referințe administrative, nu conexiuni API sau solduri bancare verificate.</p><div className="mt-4 space-y-2">{accounts.map((account)=> (
-                      <div key={account.id} className="flex gap-3 rounded-xl border border-border/65 p-3"><Building2 className="size-4 shrink-0 text-cyan-500"/><div className="min-w-0"><p className="text-sm font-medium">{account.name}</p><p className="text-xs text-muted-foreground">{account.institution} · {account.currency} · {" "}
-                            {account.iban_last4?`•••• ${account.iban_last4}`:"IBAN neconfigurat"}</p><p className="mt-1 text-[10px] text-muted-foreground">{account.purpose} · {" "}
-                            {account.status==="active"?"activ în registru":"neconfigurat"}</p></div></div>))}</div></div><div className="rounded-2xl border border-border/70 bg-card/70 p-5"><div className="flex items-center justify-between gap-3"><h2 className="font-semibold">Metode de plată mascate</h2><Button size="sm" variant="outline"
-                      disabled={!canSettings}
-                      onClick={()=>setCreateKind("payment-method")}><Plus className="mr-1 size-3"/>Metodă</Button></div><div className="mt-4 space-y-2">{methods.map((method)=> (
-                      <PaymentMethodMasked key={method.id} method={method}/>))}{methods.length===0&& (
-                      <p className="rounded-xl border border-dashed p-5 text-center text-xs text-muted-foreground">Niciun card configurat. Nu se stochează număr complet, CVV sau PIN.</p>
-                    )}</div></div></section>
-            )}
+      {view==="accounts"&& <FinanceAccountsPanel accounts={accounts} methods={methods} canEdit={canSettings} onSaved={load}/>}
       {view==="budgets"&& (
               <section className="rounded-2xl border border-border/70 bg-card/70 p-5"><h2 className="font-semibold">Bugete</h2><p className="mb-4 text-xs text-muted-foreground">General, AI, SaaS, publicitate, generare leaduri și infrastructură.</p><div className="grid gap-3 md:grid-cols-2">{budgets.map((budget)=> (
                     <BudgetProgress key={budget.id} name={budget.name} limitMinor={budget.limit_minor} currency={budget.currency}/>))}{budgets.length===0&& (
@@ -234,7 +221,7 @@ export default function Finance({ embedded=false }: { embedded?: boolean }) {
         )}
     {view==="receipts"&&<StaffPaymentsTab/>}
     {view==="accounts"&& (
-          <section className="space-y-4 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4 sm:p-5"><div><h2 className="font-semibold">Încasări și facturare</h2><p className="mt-1 text-xs text-muted-foreground">Stripe procesează checkoutul; Revolut Merchant poate fi o alternativă de încasare doar după verificare. Oblio emite documente fiscale. Un cont intern de evidență nu conectează banca și nu este necesar pentru checkout.</p></div>{isSuperAdmin&&<BillingOperationsPanel/>}</section>
+          <section className="space-y-4 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4 sm:p-5"><div><h2 className="font-semibold">Încasări și facturare</h2><p className="mt-1 text-xs text-muted-foreground">Stripe procesează checkoutul; Revolut Merchant poate fi o alternativă de încasare doar după verificare. Oblio emite documente fiscale. Un cont intern de evidență nu conectează banca și nu este necesar pentru checkout.</p></div>{isSuperAdmin&&<><Button asChild size="sm" variant="outline"><Link to="/profil?tab=commercial-codes">Catalog · SKU și articole de facturare</Link></Button><BillingOperationsPanel/></>}</section>
         )}
     <ExpenseDetailDrawer detail={detail} open={drawerOpen} onOpenChange={setDrawerOpen} onUpload={canWrite?(file)=>void uploadExpenseDocument(file):undefined} onDownload={permission("finance.documents.read")?(id,fileName)=>void downloadDocument(id,fileName):undefined}/>
     <Dialog open={createOpen} onOpenChange={setCreateOpen}><DialogContent><DialogHeader><DialogTitle>Cheltuială nouă</DialogTitle><DialogDescription>Date manuale, auditabile. Câmpurile necunoscute rămân neconfigurate.</DialogDescription></DialogHeader><div className="grid max-h-[65vh] gap-3 overflow-y-auto pr-1 sm:grid-cols-2"><div><Label>Furnizor</Label><select className={field} value={expenseForm.vendorId} onChange={(e)=>{const vendor=vendors.find((v)=>v.id===e.target.value);setExpenseForm({...expenseForm,vendorId:e.target.value,category:vendor?.category||"other"});}}>{vendors.map((v)=> (

@@ -298,7 +298,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
           })()}
 
           {isStaff && projectView === "pipeline" && (
-            <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-4" aria-label="Pipeline proiecte">
+            <div className="grid items-start gap-3 lg:grid-cols-2 2xl:grid-cols-4" aria-label="Pipeline proiecte">
             {PROJECT_STAGES.map((stage) => {
               const status = stage.banner;
               const projects = workflowRows.filter((project) => projectStage(project) === stage.id);
@@ -319,7 +319,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
             <p className="rounded-xl border border-dashed border-border/60 p-4 text-sm text-muted-foreground">Nu există proiecte active în listă. Verifică pipeline-ul pentru cele finalizate sau online.</p>
           )}
           {(!isStaff || projectView === "list") && (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid items-start gap-3 sm:grid-cols-2">
             {[...new Set(activeRows.map((row) =>row.kind))].map(
                 (category) => (
                   <details open key={category} className="min-w-0 rounded-xl border bg-card/30 p-3"><summary className="mb-3 cursor-pointer text-sm font-semibold">{KINDS.find((kind) =>kind.value===category)?.label||category}{" "}
