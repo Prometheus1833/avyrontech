@@ -58,7 +58,6 @@ const StaffMediaTab = lazyWithRetry(() => import("@/components/dashboard/StaffMe
 const StaffLeadsTab = lazyWithRetry(() => import("@/components/dashboard/StaffLeadsTab").then((m) => ({ default: m.StaffLeadsTab })));
 const StaffPromotionsTab = lazyWithRetry(() => import("@/components/dashboard/StaffPromotionsTab").then((m) => ({ default: m.StaffPromotionsTab })));
 const AvyChatbotTab = lazyWithRetry(() => import("@/components/dashboard/AvyChatbotTab"));
-const AiProductionEntryCard = lazyWithRetry(() => import("@/components/dashboard/AiProductionEntryCard"));
 const AvyEngine = lazyWithRetry(() => import("@/pages/intern/AvyEngine"));
 const CollaboratorsTab = lazyWithRetry(() => import("@/components/dashboard/collaborators/CollaboratorsTab"));
 const AvySkillsTab = lazyWithRetry(() => import("@/components/dashboard/skills/AvySkillsTab"));
@@ -165,6 +164,8 @@ function ProfileDashboard() {
       next.set("tab", destination);
       if(destination!=="subscriptions")next.delete("recurringView");if(destination!=="tickets")next.delete("supportView");if(destination!=="payments")next.delete("billingView");if(clientTarget)for(const [key,value] of Object.entries(clientTarget.params))next.set(key,value);
       next.delete("core");
+      if(destination!=="leads")next.delete("lead");
+      if(destination!=="staff-tickets"&&destination!=="tickets")next.delete("ticket");
       if (destination === "maintenance") next.delete("project");
       if(destination!=="documents")for(const key of ["documentView","documentTemplate","template","document","version"])next.delete(key);
       if(destination!=="servicii-avyron"){next.delete("service");next.delete("serviceGroup");}
@@ -376,9 +377,6 @@ function ProfileDashboard() {
                 <><TabsContent value="avy-engine" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["avy-engine"].label} className="mt-0"><AvyEngine embedded /></TabsContent><TabsContent value="commercial-codes" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["commercial-codes"].label} className="mt-0"><CommercialCodesTab /></TabsContent><TabsContent value="promotions" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["promotions"].label} className="mt-0"><StaffPromotionsTab /></TabsContent><TabsContent value="produse-avyron" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["produse-avyron"].label} className="mt-0"><StaffProduseTab /></TabsContent><TabsContent value="subscriptions-admin" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["subscriptions-admin"].label} className="mt-0"><StaffSubscriptionsAdminTab /></TabsContent><TabsContent value="ai-os" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["ai-os"].label} className="mt-0"><AvyChatbotTab /></TabsContent></>
               )}
           </Suspense>
-          {access.isSuperAdmin && tab === "overview" && (
-                <Suspense fallback={contentFallback}><div className="mt-4 grid gap-3 lg:grid-cols-2"><AiProductionEntryCard /></div></Suspense>
-              )}
         </div>
       </div>
 

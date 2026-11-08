@@ -5,7 +5,7 @@ type Snapshot = {
   checkedAt: number;
   environment: string;
   modules: Record<string, number>;
-  resources: { id: string; label: string; status: string; detail: string }[];
+  resources: { id: string; label: string; status: string; detail: string;checkedAt?:number }[];
 };
 const labels: Record<string, string> = {
   clients: "Clienți",
@@ -93,6 +93,7 @@ export default function StorageStatus() {
                 <p className="mt-1 text-[10px] leading-relaxed text-slate-500">
                   {resource.detail}
                 </p>
+                {resource.checkedAt&&<p className="mt-1 text-[10px] text-slate-500">Verificare: {new Date(resource.checkedAt).toLocaleString('ro-RO')}</p>}
               </div>
             ))}
           </div>

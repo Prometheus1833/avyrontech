@@ -1,4 +1,5 @@
 import type { Env } from "./types";
+import {readCoreHealth} from './overviewHealth';
 import {
   documentActor,
   documentCapability,
@@ -49,18 +50,6 @@ export async function readStorageStatus(env: Env, userId: string) {
       id: "kv",
       label: "Configurări și cache · KV",
       read: env.KV ? () => env.KV.get("os:storage-readiness:v1") : null,
-    },
-    {
-      id: "files",
-      label: "Fișiere documente · R2",
-      read: env.FILES
-        ? () => env.FILES.list({ prefix: "documents/", limit: 1 })
-        : null,
-    },
-    {
-      id: "media",
-      label: "Media · R2",
-      read: env.MEDIA ? () => env.MEDIA.list({ limit: 1 }) : null,
     },
     {
       id: "backups",
@@ -121,6 +110,6 @@ export async function readStorageStatus(env: Env, userId: string) {
     checkedAt: Date.now(),
     environment: env.APP_ENV === "preview" ? "preview" : "production",
     modules: modules || {},
-    resources,
+    resources: [...resources,...await readCoreHealth(env)],
   };
 }

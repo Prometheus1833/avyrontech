@@ -17,6 +17,7 @@ export type ApprovalItem = {
   href: string;
   canDecide: boolean;
   canReject: boolean;
+  canWithdraw?: boolean;
 };
 export type ApprovalDetail = ApprovalItem & {
   contextId: string | null;

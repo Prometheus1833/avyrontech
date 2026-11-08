@@ -119,9 +119,10 @@ const item = (
   canDecide:
     source === "agent" ||
     source === "operation" ||
-    (source === "content" && role === "platform_owner"),
+    source === "content",
   canReject:
-    source === "agent" || (source === "content" && role === "platform_owner"),
+    source === "agent" || source === "content",
+  canWithdraw: source !== 'learning' || role === 'platform_owner',
 });
 
 export async function readApprovalCenter(
@@ -233,4 +234,31 @@ export async function readApprovalDetail(
     contextId: row.context_id || null,
     detail: row.detail || row.summary,
   };
+}
+
+/** Withdraw only an exact pending request. Native records and their audit survive. */
+export async function withdrawApproval(env:Env,userId:string,source:ApprovalSource,id:string,revision:number){
+ const detail=await readApprovalDetail(env,userId,source,id);
+ if(!detail?.canWithdraw)return{code:'not_found',status:404 as const};
+ if(detail.revision!==revision)return{code:'revision_conflict',status:409 as const};
+ const timestamp=Math.max(Date.now(),revision+1),eventId=crypto.randomUUID();
+ const definitions:Record<ApprovalSource,{table:string;where:string;values:(string|number)[];set:string;setValues:(string|number)[]}>= {
+  agent:{table:'ai_approvals',where:"id=? AND revision=? AND status='pending' AND expires_at>?",values:[id,revision,Date.now()],set:"status='rejected',decided_by=?,decided_at=?,decision_note='Retrasă din centrul de aprobări',revision=revision+1",setValues:[userId,timestamp]},
+  content:{table:'ai_content_items',where:"id=? AND updated_at=? AND status='pending_approval' AND (expires_at IS NULL OR expires_at>?)",values:[id,revision,Date.now()],set:"status='rejected',approved_by=NULL,approved_at=NULL,updated_at=?",setValues:[timestamp]},
+  operation:{table:'operation_records',where:"id=? AND revision=? AND status='pending' AND archived_at IS NULL",values:[id,revision],set:'archived_at=?,updated_at=?,revision=revision+1',setValues:[timestamp,timestamp]},
+  template:{table:'document_template_versions',where:"id=? AND version=? AND review_status='review_required'",values:[id,revision],set:"review_status='retired'",setValues:[]},
+  carousel:{table:'example_carousel_configs',where:"page_key=? AND revision=? AND review_state='in_review'",values:[id,revision],set:"review_state='rejected',updated_by=?,updated_at=?",setValues:[userId,timestamp]},
+  learning:{table:'ai_learning_queue',where:"id=? AND updated_at=? AND status='pending'",values:[id,revision],set:"status='rejected',updated_at=?",setValues:[timestamp]},
+ };
+ const definition=definitions[source];
+ const statements=[env.DB.prepare(`INSERT INTO security_events(id,actor_user_id,actor_type,action,target_type,target_id,outcome,severity,metadata_json,created_at)
+ SELECT ?,?,'user','os.approval.withdrawn',?,?,'allowed','info',?,? WHERE EXISTS(SELECT 1 FROM ${definition.table} WHERE ${definition.where})`)
+ .bind(eventId,userId,source,id,JSON.stringify({revision}),timestamp,...definition.values),
+ env.DB.prepare(`UPDATE ${definition.table} SET ${definition.set} WHERE ${definition.where} AND EXISTS(SELECT 1 FROM security_events WHERE id=?)`).bind(...definition.setValues,...definition.values,eventId)];
+ if(source==='agent')statements.push(
+ env.DB.prepare("UPDATE ai_run_steps SET status='denied' WHERE id=(SELECT step_id FROM ai_approvals WHERE id=?) AND status='awaiting_approval' AND EXISTS(SELECT 1 FROM security_events WHERE id=?)").bind(id,eventId),
+ env.DB.prepare("UPDATE ai_runs SET status='denied' WHERE id=(SELECT run_id FROM ai_approvals WHERE id=?) AND status='awaiting_approval' AND EXISTS(SELECT 1 FROM security_events WHERE id=?)").bind(id,eventId));
+ if(source==='content')statements.push(env.DB.prepare("UPDATE ai_social_jobs SET status='skipped',updated_at=? WHERE content_id=? AND status NOT IN('generating','completed','skipped') AND EXISTS(SELECT 1 FROM security_events WHERE id=?)").bind(timestamp,id,eventId));
+ const [claim]=await env.DB.batch(statements);
+ return Number(claim.meta.changes)?{ok:true}:{code:'revision_conflict',status:409 as const};
 }
