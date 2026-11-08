@@ -72,10 +72,10 @@ export const DASHBOARD_GROUP_ORDER = [
   "documents",
   "activity",
   "platform",
+  "skills",
   "os",
   "billing",
   "account",
-  "skills",
   "other",
 ];
 

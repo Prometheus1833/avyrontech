@@ -1,3 +1,4 @@
+import SiteBuilderKnowledgePanel from "./SiteBuilderKnowledgePanel";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
@@ -96,7 +97,7 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
   const client = useQueryClient(),
     [params, setParams] = useSearchParams();
   const [view, setView] = useState<
-      "atelier" | "resources" | "instructions" | "monitor"
+      "atelier" | "resources" | "instructions" | "monitor" | "knowledge"
     >("atelier"),
     [brief, setBrief] = useState(blankBrief),
     [mode, setMode] = useState<"template" | "ai" | "image">("template");
@@ -319,6 +320,7 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
         {(
           [
             ["atelier", "Atelier", Sparkles],
+            ...(slug === "site-builder" ? [["knowledge", "Cunoștințe și agenți", Layers] as const] : []),
             ["resources", "Resurse", Layers],
             ["instructions", "Instrucțiuni", FileText],
             ["monitor", "Monitorizare", Settings2],
@@ -445,6 +447,7 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
                 value={brief.domain}
                 onChange={(e) => setBrief({ ...brief, domain: e.target.value })}
               >
+                {(data.resourceDomains||[]).filter(d=>!NICHE_PROFILES.some(n=>n.id===d.domain)).map(d=><option key={d.domain} value={d.domain}>{d.domain} · profil personalizat</option>)}
                 {NICHE_PROFILES.map((n) => (
                   <option key={n.id} value={n.id}>
                     {n.label}
@@ -831,8 +834,10 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
           </section>
         </div>
       )}
+      {view === "knowledge" && slug === "site-builder" && <SiteBuilderKnowledgePanel canManage={data.permissions.manage} onUse={domain=>{setBrief(b=>({...b,domain}));setView("atelier")}}/>}
       {view === "resources" && (
         <section className="space-y-3">
+          <div className="flex flex-wrap gap-2" aria-label="Domenii resurse"><button className="min-h-10 rounded-lg border border-white/10 px-3 text-xs" onClick={()=>setResourceSearch("")}>Toate domeniile</button>{(data.resourceDomains||[]).map(d=><button key={d.domain} className="min-h-10 rounded-lg border border-white/10 px-3 text-xs" onClick={()=>setResourceSearch(d.domain)}>{d.domain} · {d.total}</button>)}</div>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="font-semibold">Bibliotecă reutilizabilă</h2>

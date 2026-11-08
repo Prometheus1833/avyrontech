@@ -367,6 +367,7 @@ test.describe("dashboard AVYRON OS în română", () => {
     });
     await page.goto("/profil?tab=commercial-codes");
     await expect(page.getByRole("heading", { name: "Coduri servicii și produse" })).toBeVisible();
+    await page.getByText("Configurare detaliată și filtre", {exact:true}).click();
     await page.getByRole("button", { name: "Înregistrează lipsurile" }).click();
     const service = page.locator("article").filter({ has: page.getByRole("heading", { name: "Site Prezentare Profesional", exact: true }) });
     await expect(service.getByText("svc-premium-website")).toBeVisible();
@@ -379,6 +380,7 @@ test.describe("dashboard AVYRON OS în română", () => {
     await dialog.getByRole("button", { name: "Salvează ID" }).click();
     await expect(dialog.getByText("stripe · test · product · prod_test_avyron")).toBeVisible();
     await page.reload();
+    await page.getByText("Configurare detaliată și filtre", {exact:true}).click();
     await service.getByRole("button", { name: "Configurează" }).click();
     await expect(page.getByRole("dialog").getByText("stripe · test · product · prod_test_avyron")).toBeVisible();
   });

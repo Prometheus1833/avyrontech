@@ -112,6 +112,7 @@ export type SkillDetail = {
   paused: number;
   resources: SkillResource[];
   resourceTotal: number;
+  resourceDomains?:{domain:string;total:number;approved:number}[];
   resourceNextOffset: number | null;
   permissions: SkillPermissions;
   uploadBlock: string | null;

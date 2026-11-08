@@ -1,3 +1,5 @@
+import {siteBuilderRoutes} from "./siteKnowledge";
+import {siteQualityContext} from "../../../../src/shared/skills/siteKnowledge";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import type { AppBindings } from "./types";
@@ -152,7 +154,7 @@ skillsRouter.get(root + "/:slug/context", async (c) => {
     version: s.published_version,
     paused: !!s.paused,
     instructions: v?.instructions,
-    references: referenceMarkdown(references),
+    references: [s.slug === "site-builder" ? siteQualityContext((c.req.query("domain")||"general").slice(0,80)) : "",referenceMarkdown(references)].filter(Boolean).join("\n\n"),
     resources: references.map((r) => ({
       id: r.id,
       title: r.title,
@@ -234,7 +236,7 @@ skillsRouter.get(root + "/:slug", async (c) => {
   const resourceSearch = `%${(c.req.query("q") || "").trim().slice(0, 100)}%`;
   const resourceWhere = `skill_slug=? AND status!='archived' ${p.manage || p.approve ? "" : "AND status='approved'"} AND (title LIKE ? OR body LIKE ? OR domain LIKE ?)`;
   const resourceArgs = [s.slug, resourceSearch, resourceSearch, resourceSearch];
-  const [resources, stats, models, resourceCount] = await Promise.all([
+  const [resources, stats, models, resourceCount, resourceDomains] = await Promise.all([
     c.env.DB.prepare(
       `SELECT id,skill_slug,title,domain,body,source_url,status,revision,file_name,content_type,size_bytes,created_at,(backup_key IS NOT NULL) backup_protected FROM avy_skill_resources WHERE ${resourceWhere} ORDER BY created_at DESC,id LIMIT 20 OFFSET ?`,
     )
@@ -253,9 +255,11 @@ skillsRouter.get(root + "/:slug", async (c) => {
     )
       .bind(...resourceArgs)
       .first<{ total: number }>(),
+    c.env.DB.prepare(`SELECT domain,count(*) total,SUM(status='approved') approved FROM avy_skill_resources WHERE skill_slug=? AND status!='archived' ${p.manage || p.approve ? "" : "AND status='approved'"} GROUP BY domain ORDER BY domain`).bind(s.slug).all(),
   ]);
   return c.json({
     ...s,
+    resourceDomains:resourceDomains.results,
     permissions: p,
     resources: resources.results,
     resourceTotal: resourceCount?.total || 0,
@@ -872,3 +876,5 @@ skillsRouter.get(root + "/:slug/resources/:id/file", async (c) => {
   }).run();
   return c.body(o ? o.body : recovered!);
 });
+
+siteBuilderRoutes(skillsRouter);

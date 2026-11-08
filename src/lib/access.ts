@@ -98,7 +98,6 @@ export const SECTIONS: readonly SectionDef[] = [
 
   { id: "projects", group: "projects", audience: "everyone", keywords: ["proiecte", "site", "projects", "livrare", "vanzari"] },
   { id: "ai-projects", group: "projects", audience: "staff", requiredCapability: "ai_projects.read", keywords: ["proiecte ai", "productie ai", "continut"] },
-  { id: "maintenance", group: "os", audience: "superadmin", keywords: ["avy core", "sistem", "diagnostice"] },
   { id: "client-maintenance", group: "recurring", audience: "everyone", keywords: ["mentenanta clienti", "activitati", "abonamente", "maintenance"] },
   { id: "leads", group: "projects", audience: "staff", requiredCapability: "leads.read", keywords: ["leads", "crm", "vanzari", "oferta", "prospecti"] },
   { id: "media", group: "projects", audience: "staff", keywords: ["media", "imagini", "fisiere"] },
@@ -146,6 +145,7 @@ export const SECTIONS: readonly SectionDef[] = [
 
   { id: "commercial-codes", group: "os", audience: "superadmin", keywords: ["coduri", "sku", "contabilitate", "servicii", "produse", "tva", "plata"] },
   { id: "newsletter", group: "os", audience: "superadmin", keywords: ["newsletter", "abonati", "email", "campanii", "consimtamant"] },
+  { id: "maintenance", group: "os", audience: "superadmin", keywords: ["avy core", "sistem", "diagnostice"] },
   { id: "avy-engine", group: "os", audience: "superadmin", keywords: ["avy engine", "surse", "capabilitati", "conectori", "fluxuri", "documentatie"] },
   { id: "os-centers", group: "os", audience: "staff", keywords: ["securitate", "automatizari", "integrari", "backup", "erori", "agenti ai", "programari", "comentarii", "pluginuri"] },
   { id: "promotions", group: "os", audience: "superadmin", navigation: false, keywords: ["promotii", "reduceri", "campanii"] },

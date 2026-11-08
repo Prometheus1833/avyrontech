@@ -1,3 +1,4 @@
+import {siteQualityContext} from "../../../../src/shared/skills/siteKnowledge";
 import {
   hasCapability,
   platformRoleForUser,
@@ -194,5 +195,5 @@ export async function approvedSkillContext(
   slug: string,
   domain: string,
 ) {
-  return referenceMarkdown(await selectedSkillReferences(db, slug, domain));
+  return [slug === "site-builder" ? siteQualityContext(domain) : "", referenceMarkdown(await selectedSkillReferences(db, slug, domain))].filter(Boolean).join("\n\n");
 }
