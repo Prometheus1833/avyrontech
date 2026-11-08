@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, X, Activity, Globe, Loader2, AlertTriangle, ExternalLink } from "lucide-react";
+import { Check, X, Activity, Globe, Loader2, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useLang } from "@/i18n/LanguageContext";
 import { apiUrl } from "@/lib/apiBase";
-import { toast } from "sonner";
 
 const slugify = (s: string) =>
   s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9-]/g, "").replace(/^-+|-+$/g, "");
@@ -13,9 +12,11 @@ const slugify = (s: string) =>
 const tlds = [".ro", ".com", ".eu", ".net", ".org", ".io", ".app", ".dev", ".tech", ".store", ".online", ".biz", ".info", ".co", ".shop"];
 
 type Status = "available" | "registered" | "unknown";
-type LookupSource = "iana-rdap" | "cloudflare-doh" | "unavailable";
+type LookupSource = "iana-rdap" | "cloudflare-doh" | "openprovider" | "unavailable";
 type Result = {
   tld: string;
+  domain:string;
+  checkedAt?:string;
   status: Status;
   label: string;
   message: string;
@@ -29,9 +30,12 @@ const DomainCheck = () => {
   const [name, setName] = useState("");
   const [tld, setTld] = useState(".ro");
   const [checking, setChecking] = useState(false);
+  const [error,setError]=useState("");
   const [results, setResults] = useState<null | Result[]>(null);
   const [livePreview, setLivePreview] = useState("");
   const reduceMotion = useReducedMotion();
+  const inFlight=useRef(false),controller=useRef<AbortController|null>(null),alive=useRef(true);
+  useEffect(()=>{alive.current=true;return()=>{alive.current=false;controller.current?.abort()}},[]);
 
   const slug = slugify(name).slice(0, 30);
 
@@ -40,17 +44,25 @@ const DomainCheck = () => {
   }, [slug]);
 
   const check = async () => {
-    if (!slug || slug.length < 2) return;
+    if (!slug || slug.length < 2 || inFlight.current) return;
+    inFlight.current=true;
+    const abort=new AbortController();controller.current=abort;
+    const timeout=setTimeout(()=>abort.abort(),20000);
     setChecking(true);
+    setError("");
     setResults(null);
     try {
       const domain = `${slug}${tld}`;
       const response = await fetch(apiUrl("/api/public/domain-check"), {
+        signal:abort.signal,
         method: "POST",
         headers: { accept: "application/json", "content-type": "application/json" },
         body: JSON.stringify({ domain, language: lang, surface: "landing" }),
       });
       const data = await response.json() as {
+        domain?:string;
+        cached?:boolean;
+        checkedAt?:string;
         status?: Status;
         source?: LookupSource;
         label?: Partial<Record<"ro" | "en", string>>;
@@ -59,21 +71,26 @@ const DomainCheck = () => {
         error?: { message?: string; code?: string };
       };
       if (!response.ok) throw new Error(data.error?.message || data.error?.code || "Verificare eșuată");
-      const status = (data.status ?? "unknown") as Status;
+      if(!alive.current)return;
+      if(data.domain&&data.domain!==domain)throw new Error(lang==="ro"?"Rezultat incompatibil. Reîncearcă verificarea.":"Mismatched result. Please retry.");
+      const status:Status = data.status&&["available","registered","unknown"].includes(data.status)?data.status:"unknown";
       setResults([{
         tld,
+        domain,
+        checkedAt:data.checkedAt&&Number.isFinite(Date.parse(data.checkedAt))?data.checkedAt:undefined,
         status,
         label: data.label?.[lang] ?? status,
         message: data.message?.[lang] ?? "",
         source: data.source,
-        cached: response.headers.get("X-Avyron-Cache") === "HIT",
+        cached: data.cached || response.headers.get("X-Avyron-Cache") === "HIT",
         officialVerificationUrl: data.officialVerificationUrl,
       }]);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Verificare eșuată";
-      toast.error(msg);
+      const msg = abort.signal.aborted ? (lang==="ro"?"Verificarea a expirat. Încearcă din nou.":"The check timed out. Please try again.") : e instanceof Error ? e.message : "Verificare eșuată";
+      if(alive.current)setError(msg);
     } finally {
-      setChecking(false);
+      clearTimeout(timeout);inFlight.current=false;
+      if(alive.current)setChecking(false);
     }
   };
 
@@ -129,7 +146,7 @@ const DomainCheck = () => {
                   id="domain-name"
                   value={name}
                   onChange={(e) => setName(e.target.value.slice(0, 40))}
-                  onKeyDown={(e) => e.key === "Enter" && check()}
+                  onKeyDown={(e) => {if(e.key === "Enter"){e.preventDefault();void check()}}}
                   placeholder={t.domain.placeholder}
                   className="h-12 rounded-full bg-white/10 border-white/20 text-white placeholder:text-white/50 px-5 focus-visible:ring-brand-glow flex-1 min-w-0"
                 />
@@ -146,13 +163,14 @@ const DomainCheck = () => {
               </div>
               <Button
                 onClick={check}
-                disabled={!slug || checking}
+                disabled={slug.length<2 || checking}
                 className="h-12 rounded-full bg-accent text-accent-foreground hover:bg-accent/90 px-6 font-semibold disabled:opacity-60"
               >
                 {checking ? <Loader2 className="size-4 animate-spin" /> : t.domain.check}
               </Button>
             </div>
 
+            {error&&<p role="alert" className="mx-auto mt-3 max-w-lg rounded-xl border border-amber-300/30 bg-amber-300/10 p-3 text-sm text-amber-100">{error}</p>}
             <AnimatePresence>
               {results && (
                 <motion.div
@@ -188,8 +206,7 @@ const DomainCheck = () => {
                         </span>
                         <div className="min-w-0 text-left">
                           <div className="break-all font-mono font-semibold">
-                            {slug}
-                            <span className="opacity-70">{r.tld}</span>
+                            {r.domain}
                           </div>
                           <div className="mt-0.5 text-xs leading-relaxed text-white/70">
                             <span className="font-semibold">{r.label}</span>
@@ -198,22 +215,13 @@ const DomainCheck = () => {
                               <span className="ml-1 opacity-55">
                                 · {r.source === "iana-rdap"
                                   ? (lang === "ro" ? "registru public RDAP" : "public RDAP registry")
-                                  : (lang === "ro" ? "DNS public" : "public DNS")}
+                                  : r.source === "openprovider" ? (lang === "ro" ? "API registrar" : "registrar API") : (lang === "ro" ? "DNS public" : "public DNS")}
                               </span>
                             ) : null}
                             {r.cached ? <span className="ml-1 opacity-50">(cache)</span> : null}
+                            {r.checkedAt&&<span className="mt-1 block opacity-70">{lang==="ro"?"Verificat la":"Checked at"} {new Date(r.checkedAt).toLocaleTimeString(lang==="ro"?"ro-RO":"en-GB",{hour:"2-digit",minute:"2-digit"})}</span>}
                           </div>
-                          {r.officialVerificationUrl ? (
-                            <a
-                              href={r.officialVerificationUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-glow"
-                            >
-                              {t.domain.confirmOfficial}
-                              <ExternalLink className="size-3.5" aria-hidden="true" />
-                            </a>
-                          ) : null}
+
                         </div>
                       </div>
                     </motion.div>

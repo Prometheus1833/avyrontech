@@ -1,3 +1,5 @@
+import {queryDomainProvider,DomainProviderError} from "./domainProvider";
+import type {Env} from "./types";
 import { Hono, type Context } from "hono";
 import { checkRateLimit, clientIp, hashKey } from "./antispam";
 import { readTextUpTo, validateMetadataUrl } from "./metadata";
@@ -6,7 +8,7 @@ import type { AppBindings } from "./types";
 
 type DomainStatus = "available" | "registered" | "unknown";
 type Bootstrap = { services?: Array<[string[], string[]]> };
-type LookupResult = { status: DomainStatus; source: "iana-rdap" | "cloudflare-doh" | "unavailable" };
+type LookupResult = { status: DomainStatus; source: "iana-rdap" | "cloudflare-doh" | "openprovider" | "unavailable"; reason?:string; checkedAt?:string; cached?:boolean };
 type SupportedLanguage = "ro" | "en";
 
 const IANA_BOOTSTRAP_URL = "https://data.iana.org/rdap/dns.json";
@@ -92,15 +94,18 @@ async function queryDns(domain: string): Promise<LookupResult> {
     cf: { cacheEverything: true, cacheTtl: 300 },
   });
   if (!response.ok) throw new Error(`DoH returned ${response.status}`);
-  const data = JSON.parse(await readTextUpTo(response, DOH_MAX_BYTES)) as { Status?: number; Answer?: unknown[]; Authority?: unknown[] };
-  if (data.Status === 0 && ((data.Answer?.length || 0) > 0 || (data.Authority?.length || 0) > 0)) {
+  const data = JSON.parse(await readTextUpTo(response, DOH_MAX_BYTES)) as { Status?: number; Answer?: {name?:string;type?:number;data?:string}[] };
+  if (data.Status === 0 && (data.Answer||[]).some(r=>r.type===2&&r.name?.toLowerCase().replace(/\.$/,"")===domain&&typeof r.data==="string"&&!!r.data)) {
     return { status: "registered", source: "cloudflare-doh" };
   }
   // NXDOMAIN cannot prove availability: a registered domain may be undelegated.
   return { status: "unknown", source: "cloudflare-doh" };
 }
 
-export async function lookupDomain(domain: string): Promise<LookupResult> {
+export async function lookupDomain(domain: string, env?:Env): Promise<LookupResult> {
+  const normalized=normalizeDomain(domain);if(!normalized||normalized!==domain)return {status:"unknown",source:"unavailable",reason:"invalid_domain"};
+  let providerReason:string|undefined;
+  if(domain.endsWith(".ro")&&env){try{return await queryDomainProvider(env,domain)}catch(error){providerReason=error instanceof DomainProviderError?error.code:"provider_unavailable";}}
   const tld = domain.split(".").at(-1) || "";
   try {
     const endpoint = await rdapEndpoint(tld);
@@ -109,17 +114,17 @@ export async function lookupDomain(domain: string): Promise<LookupResult> {
     console.warn(JSON.stringify({ event: "domain_rdap_unavailable" }));
   }
   try {
-    return await queryDns(domain);
+    const result=await queryDns(domain);return result.status==="unknown"&&providerReason?{...result,reason:providerReason}:result;
   } catch {
     console.warn(JSON.stringify({ event: "domain_doh_unavailable" }));
-    return { status: "unknown", source: "unavailable" };
+    return { status: "unknown", source: "unavailable", ...(providerReason?{reason:providerReason}:{}) };
   }
 }
 
 const copy = {
   available: {
     label: { ro: "Pare disponibil", en: "Appears available" },
-    message: { ro: "Registrul RDAP autoritativ nu a găsit domeniul. Confirmă la un registrar înainte de comandă.", en: "The authoritative RDAP registry did not find the domain. Confirm with a registrar before ordering." },
+    message: { ro: "Sursa de disponibilitate nu indică o înregistrare activă. Disponibilitatea se reconfirmă la comandă.", en: "The availability source does not indicate an active registration. Availability is checked again before ordering." },
   },
   registered: {
     label: { ro: "Înregistrat", en: "Registered" },
@@ -127,7 +132,7 @@ const copy = {
   },
   unknown: {
     label: { ro: "Necesită confirmare", en: "Needs confirmation" },
-    message: { ro: "Extensia nu oferă o confirmare RDAP publică. Verifică rezultatul la registrarul ales.", en: "The extension does not provide a public RDAP confirmation. Verify with your chosen registrar." },
+    message: { ro: "Disponibilitatea nu a putut fi confirmată acum. Încearcă din nou mai târziu.", en: "Availability could not be confirmed right now. Please try again later." },
   },
 } as const;
 
@@ -145,7 +150,9 @@ const payloadFor = (domain: string, result: LookupResult, language: SupportedLan
   source: result.source,
   label: copy[result.status].label,
   message: copy[result.status].message,
-  checkedAt: new Date().toISOString(),
+  checkedAt: result.checkedAt || new Date().toISOString(),
+  cached:!!result.cached,
+  ...(result.reason?{reason:result.reason}:{}),
   disclaimer: "Rezultatul este informativ și nu rezervă domeniul.",
   officialVerificationUrl: officialDomainVerificationUrl(domain, language),
 });
@@ -170,9 +177,9 @@ domainRouter.get("/api/public/domain-check", async (c) => {
   const rate = await domainCheckLimit(c);
   if (!rate.ok) return rateLimited(c, rate.retryAfter);
 
-  const result = await lookupDomain(domain);
-  const ttl = result.status === "registered" ? 3600 : result.status === "available" ? 300 : 60;
-  c.header("cache-control", `public, max-age=${ttl}, stale-while-revalidate=${ttl}`);
+  const result = await lookupDomain(domain,c.env);
+  const ttl = result.status === "registered" ? 900 : result.status === "available" ? 120 : 30;
+  c.header("cache-control", `public, max-age=${ttl}`);
   const language = c.req.query("language") === "en" ? "en" : "ro";
   return c.json(payloadFor(domain, result, language));
 });
@@ -189,7 +196,7 @@ domainRouter.post("/api/public/domain-check", async (c) => {
   const rate = await domainCheckLimit(c);
   if (!rate.ok) return rateLimited(c, rate.retryAfter);
 
-  const result = await lookupDomain(domain);
+  const result = await lookupDomain(domain,c.env);
   const language = body?.language === "en" ? "en" : "ro";
   const surface = String(body?.surface || "landing").trim().slice(0, 40) || "landing";
   await c.env.DB.prepare(

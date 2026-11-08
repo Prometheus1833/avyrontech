@@ -11,6 +11,7 @@ const Process = lazyWithRetry(() => import("@/components/site/Process"));
 const LogoStudioIntro = lazyWithRetry(() => import("@/components/site/LogoStudioIntro"));
 const Examples = lazyWithRetry(() => import("@/components/site/Examples"));
 const DomainCheck = lazyWithRetry(() => import("@/components/site/DomainCheck"));
+const QualityStandard = lazyWithRetry(() => import("@/components/site/QualityStandard"));
 const Benefits = lazyWithRetry(() => import("@/components/site/Benefits"));
 const HomepageQuickLinks = lazyWithRetry(() => import("@/components/site/HomepageQuickLinks"));
 const Socials = lazyWithRetry(() => import("@/components/site/Socials"));
@@ -102,8 +103,9 @@ const Index = () => {
       <div className="h-8 md:h-16" aria-hidden />
       <Deferred minHeight={300} forceReady={location.hash === "#logo-studio"}><LogoStudioIntro /></Deferred>
       <Deferred minHeight={500} forceReady={location.hash === "#proces"}><Process /></Deferred>
-      <Deferred minHeight={360}><DomainCheck /></Deferred>
+      <Deferred minHeight={360} forceReady={location.hash === "#verificare-domeniu"}><DomainCheck /></Deferred>
       <Deferred minHeight={440}><Benefits /></Deferred>
+      <Deferred minHeight={260} forceReady={location.hash === "#avyron-quality-standard"}><QualityStandard /></Deferred>
       <Deferred minHeight={220}><HomepageQuickLinks /></Deferred>
       <Deferred minHeight={520} forceReady={location.hash === "#cta"}><CTA /></Deferred>
       <Deferred minHeight={320}><Socials /></Deferred>

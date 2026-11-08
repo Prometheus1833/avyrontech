@@ -5,6 +5,10 @@ export type Role = "user" | "staff" | "admin";
 // Wrangler source of truth in worker-configuration.d.ts. Only truly optional
 // integrations are extended here.
 type OptionalIntegrations = {
+  /** Read-only .ro availability through an operator-configured free registrar API account. */
+  DOMAIN_OPENPROVIDER_ENABLED?:string;
+  OPENPROVIDER_USERNAME?:string;
+  OPENPROVIDER_PASSWORD?:string;
   /** Bouncer Malware API only. Optional secret; never committed or exposed to clients. */
   BOUNCER_API_KEY?: string;
   BOUNCER_ENABLED?: string;

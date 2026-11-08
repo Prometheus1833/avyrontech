@@ -359,3 +359,9 @@ describe.skipIf(!hasBuild)("prerendered HTML", () => {
     }
   });
 });
+
+it.skipIf(!hasBuild)('prerenders the bilingual quality presentation after benefits without the removed RoTLD handoff copy',()=>{
+ for(const [route,title] of [['/','Standardul de calitate Avyron'],['/en','The Avyron quality standard']]){
+  const html=read(route);expect(html).toContain(title);expect(html).toContain('Avyron Quality Standard');expect(html.indexOf('id="avyron-quality-standard"')).toBeGreaterThan(html.indexOf('id="avantaje"'));expect(html).not.toContain('Pentru .ro poți confirma direct');expect(html).not.toContain('For .ro, you can confirm directly');
+ }
+});
