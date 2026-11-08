@@ -964,3 +964,21 @@ it("includes approved creative references in the compact AI handoff",async()=>{
  const response=await app.request('https://app.fixture.test/api/skills/logo-engine/runs',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({brief:brief(),mode:'ai'})},env);expect(response.status).toBe(201);const made=await response.json();await processSkillRun(env,made.id);
  const input=vi.mocked(runAiCore).mock.calls[0][0].input as {messages:{content:string}[]};expect(JSON.parse(input.messages[1].content).references.join('\n')).toContain('Materiale aprobate');expect(input.messages[0].content).toContain('Standard creativ AVYRON');
 });
+
+it("retains approved creative references in Free-only runs without widening model budgets", async () => {
+  db.exec("UPDATE ai_model_registry SET requires_billing=0,status='configured'");
+  db.exec("INSERT INTO avy_skill_resources(id,skill_slug,title,domain,body,status,created_by,created_at,updated_at) VALUES('release-logo-reference','logo-engine','Referinta aprobata pentru release','general','Contrast si lizibilitate validate pentru studiul vizual.','approved','owner',1,1)");
+  const response = await app.request('https://app.fixture.test/api/skills/logo-engine/runs', {
+    method:'POST', headers:{'Content-Type':'application/json','Idempotency-Key':crypto.randomUUID()},
+    body:JSON.stringify({brief:brief(),mode:'ai',freeOnly:true}),
+  }, env);
+  expect(response.status).toBe(201);
+  const made=await response.json();await processSkillRun(env,made.id);
+  const call=vi.mocked(runAiCore).mock.calls[0][0];
+  expect(call.freeOnly).toBe(true);expect(call.requestedMaxTokens).toBeLessThanOrEqual(256);
+  const input=call.input as {messages:{content:string}[]};
+  expect(input.messages[0].content).toContain('Standard creativ AVYRON');
+  const context=JSON.parse(input.messages[1].content);
+  expect(context.references.join('\n')).toContain('Referinta aprobata pentru release');
+  expect(context.logo).toBeDefined();
+});
