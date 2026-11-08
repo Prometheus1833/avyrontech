@@ -214,7 +214,7 @@ const Biblioteca = () => {
   const showBackdrop = tier !== "none";
 
   return (
-    <main className="avy-library relative isolate min-h-screen bg-[#07080d] text-white">
+    <div className="avy-library relative isolate min-h-screen bg-[#07080d] text-white">
       {loading && <Preloader ready={backdropReady || !showBackdrop} onDone={() => setLoading(false)} />}
 
       {showBackdrop && (
@@ -324,7 +324,7 @@ const Biblioteca = () => {
       </footer>
 
       <BriefBar codes={codes} lang={lang} origin={origin} onRemove={remove} />
-    </main>
+    </div>
   );
 };
 
