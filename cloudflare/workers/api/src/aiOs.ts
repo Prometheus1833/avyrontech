@@ -1,3 +1,4 @@
+import {WEBSITE_SUBSCRIPTION_PATH} from "../../../../src/shared/websiteSubscriptions";
 import { simpleConversationReply,isConversationFollowup,isAvyronBusinessQuestion,unavailableConversationReply } from "./publicConversation";
 // AI OS "AVY" — agenți, retrieval din D1, conversații, statistici și auto-învățare.
 //
@@ -50,6 +51,7 @@ const aiBinding = (env: unknown): AiBinding | null => {
 const publicPageContext = (page: string | undefined, language: string) => {
   const pathname = (page || "").split(/[?#]/, 1)[0].slice(0, 200);
   const contexts: Array<[RegExp, string, string]> = [
+    [/^\/(?:en\/services\/website-subscription|servicii\/website-prin-abonament)(?:\/|$)/,"pagina Website prin abonament: dezvoltare inclusă la 0 lei, abonament lunar contra cost, domeniu furnizat de client","the Website subscription page: development included at 0 RON, paid monthly subscription, client-provided domain"],
     [/^\/(?:en\/services\/professional-presentation-website|servicii\/website-prezentare-profesional)/, "pagina serviciului Website Prezentare Profesional", "the Professional Presentation Website service page"],
     [/^\/(?:en\/products|produse|it\/prodotti|hu\/termekek|de\/produkte|fr\/produits|pl\/produkty)/, "catalogul Produse Avyron", "the Avyron Products catalogue"],
     [/^\/(?:en\/services|servicii)/, "pagina de servicii Avyron", "the Avyron services page"],
@@ -300,7 +302,12 @@ aiOsRouter.post("/api/ai/chat", async (c) => {
     }
   }
   const previousUser=history.filter(item=>item.role==="user").at(-1)?.content;
-  const retrievalQuestion=previousUser&&isConversationFollowup(message)?`${previousUser.slice(-500)} ${message}`:message;
+  const baseQuestion=previousUser&&isConversationFollowup(message)?`${previousUser.slice(-500)} ${message}`:message;
+  const pagePath=(body.page||"").split(/[?#]/,1)[0].replace(/\/+$/,"");
+  const websitePage=pagePath===WEBSITE_SUBSCRIPTION_PATH.ro||pagePath===WEBSITE_SUBSCRIPTION_PATH.en;
+  const normalized=normalizeQuestion(message);
+  const contextualWebsite=websitePage&&/\b(pret|costa|cost|tarif|price|pricing|much|aici|here|acesta|this|dezvoltare|development|gratuit|free)\b/.test(normalized)&&!/\b(logo|seo|ads|magazin|blog|agent|marketing)\b/.test(normalized);
+  const retrievalQuestion=contextualWebsite?`${baseQuestion} website abonament subscription`:baseQuestion;
   const conversational=agent.slug==="avy"?simpleConversationReply(message,language):null;
   const started = Date.now();
   const [faqMatches, sourceMatches] = await Promise.all([

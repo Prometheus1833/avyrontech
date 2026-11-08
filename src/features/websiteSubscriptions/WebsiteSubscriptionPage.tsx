@@ -337,7 +337,7 @@ function WebsiteSubscriptionContent() {
         </div>
       </div>
       <main>
-        <div className="ws-wrap pt-5">
+        <div className="ws-wrap pt-5 pl-16 sm:pl-20 xl:pl-0">
           <Breadcrumbs
             items={[
               { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },

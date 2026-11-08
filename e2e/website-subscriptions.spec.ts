@@ -52,6 +52,17 @@ for (const width of [320, 390, 768, 1440])
       "Fără costuri de dezvoltare.",
     );
     await expect(page.locator(".ws-plan")).toHaveCount(3);
+    const homeCrumb = page
+      .getByRole("navigation", { name: "Breadcrumb" })
+      .getByRole("link", { name: "Acasă", exact: true });
+    expect(
+      await homeCrumb.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return el.contains(
+          document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2),
+        );
+      }),
+    ).toBe(true);
     await expect(
       page.locator('[data-example-carousel="premium-website"]'),
     ).toBeAttached();
