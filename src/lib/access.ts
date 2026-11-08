@@ -59,7 +59,7 @@ export const canSee = (audience: Audience, a: Access) => {
 };
 
 export type SectionId =
-  | "notifications" | "notification-settings"
+  | "website-subscriptions" | "notifications" | "notification-settings"
   | "skill-site-builder" | "skill-logo-engine" | "skill-media-generate"
   | "documents" | "overview" | "profile" | "settings" | "projects" | "subscriptions" | "invoices" | "payments" | "cart" | "orders" | "catalog" | "collection"
   | "stats" | "tickets" | "maintenance" | "client-maintenance" | "clients" | "domains"
@@ -98,6 +98,7 @@ export const SECTIONS: readonly SectionDef[] = [
 
   { id: "projects", group: "projects", audience: "everyone", keywords: ["proiecte", "site", "projects", "livrare", "vanzari"] },
   { id: "ai-projects", group: "projects", audience: "staff", requiredCapability: "ai_projects.read", keywords: ["proiecte ai", "productie ai", "continut"] },
+  {id:"website-subscriptions",group:"recurring",audience:"staff",requiredCapability:"maintenance.read",keywords:["site-uri abonament","website","start","business","premium"]},
   { id: "client-maintenance", group: "recurring", audience: "everyone", keywords: ["mentenanta clienti", "activitati", "abonamente", "maintenance"] },
   { id: "leads", group: "projects", audience: "staff", requiredCapability: "leads.read", keywords: ["leads", "crm", "vanzari", "oferta", "prospecti"] },
   { id: "media", group: "projects", audience: "staff", keywords: ["media", "imagini", "fisiere"] },

@@ -1,3 +1,4 @@
+import { websiteSubscriptionsRouter } from "./websiteSubscriptions";
 import { notificationsRouter } from "./notifications";
 import { linkClientsByEmail } from "./clientAccountSync";
 import {collaboratorsRouter} from "./collaborators";
@@ -1797,6 +1798,8 @@ app.use("/api/produse/admin/*", requireAuth);
 app.use("/api/produse/admin/*", requirePrivilegedMfa);
 // Billing account routes are private. Only the two cryptographically signed
 // webhook endpoints remain public; the admin status also requires role + MFA.
+app.use("/api/website-subscriptions/internal/*", requireAuth);
+app.use("/api/website-subscriptions/account/*", requireAuth);
 app.use("/api/billing/config", requireAuth);
 app.use("/api/billing/checkout", requireAuth);
 app.use("/api/billing/account", requireAuth);
@@ -1811,6 +1814,7 @@ app.route("/", produseCheckoutRouter);
 app.route("/", produseAdminRouter);
 app.route("/", productSalesRouter);
 app.route("/", billingRouter);
+app.route("/", websiteSubscriptionsRouter);
 // Importul administrativ are propria gardă constant-time X-Seed-Token.
 app.route("/", seedRouter);
 
@@ -1943,6 +1947,9 @@ app.all("*", async (c) => {
 });
 
 app.onError((error, c) => {
+  const knownConstraint=/website_(?:client_approval_required|change_review_required|change_quota_exceeded|beneficiary_immutable|accepted_plan_immutable)/.exec(error.message)?.[0];
+  if(knownConstraint)return c.json({error:{code:knownConstraint,message:"Operațiunea necesită verificarea aprobării sau a limitei perioadei active."}},409);
+
   const requestId = c.get("requestId") || c.req.header("cf-ray") || crypto.randomUUID();
   console.error(JSON.stringify({ event: "unhandled_error", requestId, path: c.req.path, method: c.req.method, error: error.message }));
   return c.json({ error: { code: "internal_error", message: "A apărut o eroare internă", requestId } }, 500);

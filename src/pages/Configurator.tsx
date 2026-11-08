@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -293,7 +294,8 @@ export default function Configurator() {
             <Sparkles className="size-3.5" aria-hidden />
             {copy.eyebrow}
           </div>
-          <h1 className="mx-auto mt-5 max-w-4xl font-display text-4xl font-black leading-[0.98] tracking-[-0.045em] sm:text-6xl lg:text-7xl">
+          <Link to={ro?"/servicii/website-prin-abonament":"/en/services/website-subscription"} className="mb-4 inline-flex min-h-9 items-center rounded-full border border-brand/25 px-3 py-2 text-xs text-brand">{ro?"Website prin abonament · dezvoltare inclusă":"Website subscription · development included"} ↗</Link>
+            <h1 className="mx-auto mt-5 max-w-4xl font-display text-4xl font-black leading-[0.98] tracking-[-0.045em] sm:text-6xl lg:text-7xl">
             {copy.title}
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">{copy.description}</p>

@@ -159,3 +159,7 @@ Continuare de la PR #103 (`b6c4f7b`) pe ramură dedicată: [DOCUMENT_GENERATOR_E
 Vezi [runbookul operațional](./OVERVIEW_OPERATIONS.md): nume native pentru agenți, selecție proiect AI, priorități detaliate și retragerea controlată a cererilor. Reautorizarea R2/AI și probele reale sunt consemnate separat de cod. Nu există migrare nouă; PR #113/0105 rămâne separat. Proiectul cabinetului și designul public sunt excluse. Starea PR/CI/deploy se citește din GitHub, nu din această notă.
 
 Financiar / produse — 08.11.2026: [fluxuri și limite](./FINANCE_COMMERCE_COMPLETION.md), migrarea aditivă 0106. Conturi editabile, verificare procesatori accesibilă, completare identități, licențe/livrabile și activarea verificată a produselor. Nu reprezintă dovadă de migrare remote, vânzări active sau deploy; PR #113/#114 și cabinetul rămân livrări distincte.
+
+### Website prin abonament — task branch, not production (2026-11-08)
+
+See `docs/WEBSITE_SUBSCRIPTIONS.md` for audit, native entity mapping, migration 0111, routes, payment/approval/quota rules, activation prerequisites and rollback. Homepage chooser gains a third square card; Cinematic 3D stays coming soon; the general services directory stays unchanged. Three monthly plans start unpriced and require explicit Owner review plus the existing verified payment/invoice setup. No remote migration/provider write/deploy is implied by local implementation. Preserve independent security PR #122 (migration 0110) and Cabinet PR #110.

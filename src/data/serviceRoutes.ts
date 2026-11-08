@@ -6,6 +6,7 @@
  */
 export const SERVICE_ROUTES = {
   home: { ro: "/servicii", en: "/en/services" },
+  websiteSubscription: {ro:"/servicii/website-prin-abonament",en:"/en/services/website-subscription"},
   website: {
     ro: "/servicii/website-prezentare-profesional",
     en: "/en/services/professional-presentation-website",

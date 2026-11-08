@@ -1,5 +1,6 @@
-import { useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { createPortal } from "react-dom";
+import { useId, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { WEBSITE_SUBSCRIPTION_PATH } from "@/shared/websiteSubscriptions";
 import {
   Box,
   BookOpen,
@@ -17,7 +18,6 @@ import {
   SearchCheck,
   Sparkles,
   Wand2,
-  X,
   type LucideIcon,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -134,27 +134,13 @@ const AgencyServices = () => {
   const { lang } = useLang();
   const content = copy[lang];
   const [open, setOpen] = useState(false);
+  const websiteTrigger=useRef<HTMLButtonElement>(null);
   const [showAllServices, setShowAllServices] = useState(false);
   const panelId = useId();
   const moreServicesId = useId();
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    panelRef.current?.focus();
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [open]);
-
   const tone = (k: string) => TONES[k as keyof typeof TONES];
   const tilt = (event: ReactPointerEvent<HTMLElement>) => {
-    if (event.pointerType !== "mouse") return;
+    if (event.pointerType !== "mouse" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const element = event.currentTarget;
     const rect = element.getBoundingClientRect();
     const x = (event.clientX - rect.left) / rect.width - 0.5;
@@ -200,6 +186,7 @@ const AgencyServices = () => {
                   <button
                     key={key}
                     type="button"
+                    ref={websiteTrigger}
                     aria-expanded={open}
                     aria-controls={panelId}
                     onClick={() => setOpen((v) => !v)}
@@ -220,83 +207,32 @@ const AgencyServices = () => {
               })}
             </div>
 
-            {/* Modal peste ecran: două tipuri de site */}
-            {open && typeof document !== "undefined" && createPortal(
-              <div
-                id={panelId}
-                role="dialog"
-                aria-modal="true"
-                aria-label={content.choose}
-                className="fixed inset-0 z-[80] flex items-center justify-center p-4"
-              >
-                <button
-                  type="button"
-                  aria-label={lang === "ro" ? "Închide" : "Close"}
-                  onClick={() => setOpen(false)}
-                  className="absolute inset-0 bg-foreground/45 backdrop-blur-sm motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-200"
-                />
-                <div
-                  ref={panelRef}
-                  tabIndex={-1}
-                  className="relative w-full max-w-2xl rounded-3xl border border-white/20 bg-background/90 p-4 shadow-[0_32px_100px_-28px_rgba(0,0,0,.65)] outline-none backdrop-blur-2xl motion-safe:animate-in motion-safe:zoom-in-95 motion-safe:fade-in-0 motion-safe:duration-200 sm:p-5"
-                >
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{content.choose}</p>
-                    <button
-                      type="button"
-                      onClick={() => setOpen(false)}
-                      aria-label={lang === "ro" ? "Închide" : "Close"}
-                      className="grid size-8 place-items-center rounded-full border border-border/70 text-muted-foreground transition-colors hover:border-brand/40 hover:text-foreground"
-                    >
-                      <X className="size-4" aria-hidden />
-                    </button>
-                  </div>
-                  <div className="grid gap-2.5 sm:grid-cols-2">
-                    <Link
-                      to={content.featured[0].path}
-                      onClick={() => setOpen(false)}
-                      onPointerMove={tilt}
-                      onPointerLeave={resetTilt}
-                      className="group rounded-2xl border border-border/70 bg-card/80 p-4 transition-[transform,border-color,box-shadow] duration-300 hover:border-brand/40 hover:shadow-elev active:scale-[0.985] motion-reduce:transform-none"
-                    >
-                      <span className="flex items-center gap-2">
-                        <span className={`grid size-8 place-items-center rounded-lg bg-gradient-to-br ${TONES.website}`}><Code2 className="size-4" aria-hidden /></span>
-                        <span className="font-display text-sm font-semibold">{content.classic.title}</span>
-                        <span aria-hidden className="ml-auto text-xs text-brand transition-transform group-hover:translate-x-0.5">→</span>
-                      </span>
-                      <span className="mt-1.5 block text-xs text-muted-foreground">{content.classic.text}</span>
-                      <span className="mt-3 flex flex-wrap gap-1.5">
-                        {content.classic.cats.slice(0, 3).map((c) => (
-                          <span key={c} className="rounded-full border border-border/70 bg-background/70 px-2 py-0.5 text-[10px] font-medium">{c}</span>
-                        ))}
-                      </span>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogContent id={panelId} onCloseAutoFocus={e=>{e.preventDefault();websiteTrigger.current?.focus();}} className="max-w-[950px] overflow-hidden border-border/70 bg-background/95 p-5 backdrop-blur-2xl">
+                <DialogHeader><DialogTitle className="pr-8 text-base">{content.choose}</DialogTitle><DialogDescription className="text-xs">{lang==='ro'?'Același standard AVYRON. Alege formula potrivită afacerii tale.':'The same AVYRON standard. Choose the right approach for your business.'}</DialogDescription></DialogHeader>
+                <div className="overflow-x-auto pb-2" aria-label={content.choose}>
+                  <div data-testid="website-choices" className="grid grid-cols-[repeat(3,minmax(220px,1fr))] gap-3">
+                    <Link to={content.featured[0].path} onClick={() => setOpen(false)} className="group flex aspect-square flex-col justify-between rounded-2xl border border-border/70 bg-card/80 p-5 transition-colors hover:border-brand/50">
+                      <span className="grid size-10 place-items-center rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-300"><Code2 size={21}/></span>
+                      <span><strong className="block font-display text-lg leading-tight">{content.classic.title}</strong><span className="mt-2 block text-xs leading-relaxed text-muted-foreground">{content.classic.text}</span></span>
+                      <span className="text-xs font-semibold text-brand">{content.classic.cta} ↗</span>
                     </Link>
-                    <button
-                      type="button"
-                      onClick={() => toast(content.soon, { description: content.soonToast })}
-                      onPointerMove={tilt}
-                      onPointerLeave={resetTilt}
-                      className="group relative overflow-hidden rounded-2xl border border-brand/30 bg-gradient-to-br from-brand/12 via-brand-2/[0.07] to-transparent p-4 text-left transition-[transform,border-color,box-shadow] duration-300 hover:border-brand/50 hover:shadow-elev active:scale-[0.985] motion-reduce:transform-none"
-                    >
-                      <span className="absolute right-3 top-3 rotate-2 rounded-full border border-brand/25 bg-background/85 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.13em] text-brand shadow-sm backdrop-blur">
-                        {content.soon}
-                      </span>
-                      <span className="flex items-center gap-2">
-                        <span className="grid size-8 place-items-center rounded-lg bg-gradient-to-br from-brand/30 to-brand-2/20 text-brand"><Sparkles className="size-4" aria-hidden /></span>
-                        <span className="max-w-[70%] font-display text-sm font-semibold">{content.cinematic.title}</span>
-                      </span>
-                      <span className="mt-1.5 block text-xs text-muted-foreground">{content.cinematic.text}</span>
-                      <span className="mt-3 flex flex-wrap gap-1.5">
-                        {content.cinematic.cats.slice(0, 3).map((c) => (
-                          <span key={c} className="rounded-full border border-brand/25 bg-background/60 px-2 py-0.5 text-[10px] font-medium">{c}</span>
-                        ))}
-                      </span>
+                    <button type="button" aria-disabled="true" onClick={() => toast(content.soon, { description: content.soonToast })} className="relative flex aspect-square flex-col justify-between rounded-2xl border border-brand/25 bg-gradient-to-br from-brand/10 to-transparent p-5 text-left">
+                      <span className="absolute right-3 top-4 rounded-full border border-brand/20 bg-background/80 px-2 py-1 text-[9px] font-bold uppercase text-brand">{content.soon}</span>
+                      <span className="grid size-10 place-items-center rounded-xl bg-brand/10 text-brand"><Sparkles size={21}/></span>
+                      <span><strong className="block font-display text-lg leading-tight">{content.cinematic.title}</strong><span className="mt-2 block text-xs leading-relaxed text-muted-foreground">{content.cinematic.text}</span></span>
+                      <span className="text-xs text-muted-foreground">{content.soon}</span>
                     </button>
+                    <Link to={WEBSITE_SUBSCRIPTION_PATH[lang]} onClick={() => setOpen(false)} className="group flex aspect-square flex-col justify-between rounded-2xl border border-lime-500/35 bg-gradient-to-br from-lime-400/10 to-transparent p-5 transition-colors hover:border-lime-500/70">
+                      <span className="grid size-10 place-items-center rounded-xl bg-lime-400/15 text-lime-700 dark:text-lime-300"><Layers size={21}/></span>
+                      <span><strong className="block font-display text-lg leading-tight">{lang==='ro'?'Website prin abonament':'Website subscription'}</strong><span className="mt-2 block text-xs leading-relaxed text-muted-foreground">{lang==='ro'?'Dezvoltare inclusă. Hosting, mentenanță și actualizări prin abonament lunar.':'Development included. Hosting, maintenance and updates through a monthly subscription.'}</span></span>
+                      <span className="text-xs font-semibold text-lime-700 dark:text-lime-300">{lang==='ro'?'Descoperă planurile':'Explore plans'} ↗</span>
+                    </Link>
                   </div>
                 </div>
-              </div>,
-              document.body,
-            )}
+                <p className="text-[10px] text-muted-foreground sm:hidden">{lang==='ro'?'Glisează pentru toate cele trei opțiuni.':'Swipe to see all three options.'}</p>
+              </DialogContent>
+            </Dialog>
 
             <div className="mt-3 flex items-center justify-between px-1">
               <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{content.more}</span>

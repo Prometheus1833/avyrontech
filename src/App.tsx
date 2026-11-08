@@ -34,6 +34,7 @@ const Unsubscribe = lazyWithRetry(() => import("./pages/Unsubscribe.tsx"));
 const ProjectPage = lazyWithRetry(() => import("./pages/intern/ProjectPage.tsx"));
 const InternHome = lazyWithRetry(() => import("./pages/intern/InternHome.tsx"));
 const InternBlog = lazyWithRetry(() => import("./pages/intern/InternBlog.tsx"));
+const WebsiteSubscriptionPage = lazyWithRetry(() => import("./features/websiteSubscriptions/WebsiteSubscriptionPage"));
 const ServiceDetail = lazyWithRetry(() => import("./pages/services/ServicePage.tsx"));
 const QaTesting = lazyWithRetry(() => import("./pages/services/QaTestingPage.tsx"));
 const MaintenancePartnerships = lazyWithRetry(() => import("./pages/MaintenancePartnerships.tsx"));
@@ -207,6 +208,8 @@ const App = () => {
                 <Route path="/en/configurator" element={<Configurator />} />
                 <Route path="/servicii" element={<Services />} />
                 <Route path="/en/services" element={<Services />} />
+                <Route path="/servicii/website-prin-abonament" element={<WebsiteSubscriptionPage />} />
+                <Route path="/en/services/website-subscription" element={<WebsiteSubscriptionPage />} />
                 <Route path="/servicii/website-prezentare-profesional" element={<ServiceDetail />} />
                 <Route path="/servicii/creare-logo-3d-dinamic-cinematic" element={<LogoDinamic3D />} />
                 <Route path="/en/services/cinematic-dynamic-3d-logo-design" element={<LogoDinamic3D />} />

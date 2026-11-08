@@ -1,3 +1,4 @@
+import { isWebsiteSubscription, confirmWebsiteCheckout, recordWebsitePeriod, syncWebsiteSubscriptionStatus, websiteOrderContext, websiteOrderAuthorized, linkWebsiteRenewalOrder, reconcileWebsiteBilling } from "./websiteSubscriptionBilling";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import type { AppBindings, Env } from "./types";
@@ -151,6 +152,8 @@ async function createRevolutCheckout(env:Env,order:OrderRow,items:StoredItem[],e
 export async function createCheckoutForOrder(c:Context<AppBindings>,input:{orderId:string;provider:Provider;savePaymentMethod?:boolean}){
   const userId=c.get("userId");const order=await getOrder(c.env.DB,input.orderId,userId);
   if(!order)return {status:404 as const,body:{error:{code:"unknown_order"}}};
+  if(isWebsiteSubscription(order.items_json)&&input.provider!=="stripe")return {status:409 as const,body:{error:{code:"website_subscription_provider_required"}}};
+  if(!await websiteOrderAuthorized(c.env,order))return {status:409 as const,body:{error:{code:"website_context_and_terms_required"}}};
   if(order.requires_manual_quote||order.total_cents<=0)return {status:409 as const,body:{error:{code:"manual_quote_required"}}};
   if(!checkoutBillingCompatible(orderItems(order)))return {status:409 as const,body:{error:{code:"mixed_billing_requires_separate_orders"}}};
   if(order.status==="paid")return {status:409 as const,body:{error:{code:"order_already_paid"}}};
@@ -246,11 +249,13 @@ billingRouter.post("/api/billing/portal",async(c)=>{
 export async function recordPaidOrder(env:Env,input:{provider:Provider;providerReference:string;order:OrderRow;subscriptionId?:string|null}){
   const timestamp=Date.now();if(input.order.status==="paid")return {replay:true,invoiced:false};
   const items=orderItems(input.order),recurring=subscriptionItem(items),referenceColumn=input.provider==="stripe"?"stripe_reference":"revolut_reference";
+  const websiteContext=isWebsiteSubscription(input.order.items_json)?await websiteOrderContext(env,input.order.id):null;
+  if(isWebsiteSubscription(input.order.items_json)&&!websiteContext)throw new Error("website_order_assignment_missing");
   const statements=[
     env.DB.prepare("INSERT INTO billing_order_fulfillments(order_id,provider,provider_reference,created_at) VALUES (?,?,?,?)").bind(input.order.id,input.provider,input.providerReference,timestamp),
     env.DB.prepare("UPDATE commerce_orders SET status='paid',updated_at=? WHERE id=? AND status!='paid'").bind(timestamp,input.order.id),
-    env.DB.prepare(`INSERT INTO financial_revenues(id,revenue_type,service_name,status,currency,gross_amount_minor,amount_ron_minor,payment_date,payment_processor,payment_method,${referenceColumn},notes,source,created_at,updated_at) VALUES (?,?,?,'paid',?,?,?,?,?,'card',?,'Plată confirmată de webhook','system_generated',?,?)`)
-      .bind(crypto.randomUUID(),recurring?"subscriptions":"digital_products",orderDescription(items),input.order.currency,input.order.total_cents,input.order.currency.toUpperCase()==="RON"?input.order.total_cents:null,timestamp,input.provider,input.providerReference,timestamp,timestamp),
+    env.DB.prepare(`INSERT INTO financial_revenues(id,client_id,project_id,revenue_type,service_name,status,currency,gross_amount_minor,amount_ron_minor,payment_date,payment_processor,payment_method,${referenceColumn},notes,source,created_at,updated_at) VALUES (?,?,?,?,?,'paid',?,?,?,?,?,'card',?,'Plată confirmată de webhook','system_generated',?,?)`)
+      .bind(crypto.randomUUID(),websiteContext?.client_id||null,websiteContext?.project_id||null,recurring?"subscriptions":"digital_products",orderDescription(items),input.order.currency,input.order.total_cents,input.order.currency.toUpperCase()==="RON"?input.order.total_cents:null,timestamp,input.provider,input.providerReference,timestamp,timestamp),
     env.DB.prepare("UPDATE billing_checkout_sessions SET status='paid',updated_at=? WHERE order_id=? AND provider=? AND status!='paid'").bind(timestamp,input.order.id,input.provider),
   ];
   if(input.subscriptionId&&recurring&&input.provider==="stripe")statements.push(env.DB.prepare("INSERT OR IGNORE INTO billing_subscriptions(id,user_id,order_id,provider,provider_subscription_id,sku,status,period,amount_minor,currency,created_at,updated_at) VALUES (?,?,?,'stripe',?,?,'active',?,?,?,?,?)").bind(crypto.randomUUID(),input.order.user_id,input.order.id,input.subscriptionId,recurring.sku,recurring.period,input.order.total_cents,input.order.currency,timestamp,timestamp));
@@ -276,9 +281,11 @@ async function syncOblioInvoiceForOrder(env:Env,order:OrderRow){
   const revenueInvoice=await env.DB.prepare("SELECT 1 FROM financial_revenues revenue WHERE EXISTS (SELECT 1 FROM billing_order_fulfillments fulfillment WHERE fulfillment.order_id=? AND ((fulfillment.provider='stripe' AND fulfillment.provider_reference=revenue.stripe_reference) OR (fulfillment.provider='revolut' AND fulfillment.provider_reference=revenue.revolut_reference))) AND invoice_number IS NOT NULL AND invoice_number!='' AND archived_at IS NULL LIMIT 1").bind(order.id).first();
   const timestamp=Date.now(),items=orderItems(order);
   const identity=await env.DB.prepare("SELECT COALESCE(bp.invoice_email,u.email) AS email,COALESCE(bp.legal_name,p.company_name,p.display_name,u.email) AS name,COALESCE(bp.tax_id,p.cui) AS tax_id,COALESCE(bp.address,p.address) AS address FROM users u LEFT JOIN profiles p ON p.id=u.id LEFT JOIN billing_profiles bp ON bp.user_id=u.id WHERE u.id=?").bind(order.user_id).first<{email:string;name:string;tax_id:string|null;address:string|null}>();
+  const websiteInvoiceContext=isWebsiteSubscription(order.items_json)?await websiteOrderContext(env,order.id):null;
+  const acceptedBuyer=websiteInvoiceContext?JSON.parse(websiteInvoiceContext.buyer_snapshot_json) as {name:string;email:string;taxId:string|null;address:string}:null;
   const lines=items.map((item)=>({name:item.name||item.sku||item.id||"Serviciu AVYRON",code:item.accountingCode||item.sku||item.id,quantity:item.quantity||1,vatBasisPoints:item.vatBasisPoints,unitLabel:item.unitLabel,unitPriceMinor:Math.round((item.lineTotalCents??item.unitPriceCents??order.total_cents)/(item.quantity||1))}));
   const grossMinor=lines.reduce((sum,line)=>sum+line.unitPriceMinor*line.quantity,0);
-  const invoiceInput={orderId:order.id,buyer:{name:identity?.name||identity?.email||"Client AVYRON",email:identity?.email,taxId:identity?.tax_id,address:identity?.address},lines,discountMinor:Math.max(0,grossMinor-order.total_cents),discountLabel:order.promotion_code?`Reducere ${order.promotion_code}`:"Reducere aplicată",currency:order.currency,issuedAt:timestamp};
+  const invoiceInput={orderId:order.id,buyer:acceptedBuyer||{name:identity?.name||identity?.email||"Client AVYRON",email:identity?.email,taxId:identity?.tax_id,address:identity?.address},lines,discountMinor:Math.max(0,grossMinor-order.total_cents),discountLabel:order.promotion_code?`Reducere ${order.promotion_code}`:"Reducere aplicată",currency:order.currency,issuedAt:timestamp};
   let invoice:Awaited<ReturnType<typeof issueOblioInvoice>>|{issued:false;reason:"manual_invoice_exists"|"manual_invoice_required"|"invoice_amount_mismatch"};
   if(items.some(item=>item.invoiceProvider==='manual'))invoice={issued:false,reason:"manual_invoice_required"};
   else if(otherInvoice||revenueInvoice)invoice={issued:false,reason:"manual_invoice_exists"};
@@ -304,10 +311,12 @@ billingRouter.post("/api/billing/webhooks/stripe",async(c)=>{
     const result=await c.env.DB.prepare("UPDATE billing_subscriptions SET status=?,current_period_start=?,current_period_end=?,cancel_at_period_end=?,updated_at=? WHERE provider='stripe' AND provider_subscription_id=?")
       .bind(stripeSubscriptionStatus(subscription.status||"",event.type),subscription.current_period_start?subscription.current_period_start*1000:null,subscription.current_period_end?subscription.current_period_end*1000:null,subscription.cancel_at_period_end?1:0,Date.now(),subscription.id).run();
     if(!Number(result.meta.changes||0)){await setWebhookStatus(c.env,"stripe",event.id,"failed","subscription_not_registered");return c.json({error:{code:"subscription_not_registered"}},503);}
+    const websiteProduct=await c.env.DB.prepare("SELECT co.items_json FROM billing_subscriptions bs JOIN commerce_orders co ON co.id=bs.order_id WHERE bs.provider='stripe' AND bs.provider_subscription_id=?").bind(subscription.id).first<{items_json:string}>();
+    if(websiteProduct&&isWebsiteSubscription(websiteProduct.items_json))await syncWebsiteSubscriptionStatus(c.env,subscription.id);
     await setWebhookStatus(c.env,"stripe",event.id,"processed");return c.json({ok:true,subscriptionUpdated:true});
   }
   if(event.type==="invoice.paid"){
-    const invoice=event.data.object as {id?:string;amount_paid?:number;currency?:string;billing_reason?:string;subscription?:string;payment_intent?:string;period_start?:number;period_end?:number;parent?:{subscription_details?:{subscription?:string}}};
+    const invoice=event.data.object as {id?:string;amount_paid?:number;currency?:string;billing_reason?:string;subscription?:string;payment_intent?:string;period_start?:number;period_end?:number;lines?:{data?:{period?:{start:number;end:number}}[]};parent?:{subscription_details?:{subscription?:string}}};
     if(invoice.billing_reason==="subscription_create"){await setWebhookStatus(c.env,"stripe",event.id,"ignored","initial_invoice_confirmed_by_checkout");return c.json({ok:true,ignored:"subscription_create"});}
     const subscriptionId=invoice.subscription||invoice.parent?.subscription_details?.subscription||"";
     const local=subscriptionId?await c.env.DB.prepare("SELECT bs.user_id,bs.order_id,bs.currency,co.items_json FROM billing_subscriptions bs JOIN commerce_orders co ON co.id=bs.order_id WHERE bs.provider='stripe' AND bs.provider_subscription_id=?").bind(subscriptionId).first<{user_id:string;order_id:string;currency:string;items_json:string}>():null;
@@ -317,10 +326,12 @@ billingRouter.post("/api/billing/webhooks/stripe",async(c)=>{
     const renewalOrderId=`stripe-invoice-${invoice.id}`,renewedAt=Date.now();
     await c.env.DB.prepare("INSERT OR IGNORE INTO commerce_orders(id,user_id,items_json,subtotal_cents,promotion_id,promotion_code,discount_percent,discount_base_cents,discount_cents,total_cents,currency,requires_manual_quote,status,created_at,updated_at) VALUES (?,?,?,?,NULL,NULL,0,0,0,?,?,0,'requested',?,?)")
       .bind(renewalOrderId,local.user_id,local.items_json,amount,amount,currency,renewedAt,renewedAt).run();
+    if(isWebsiteSubscription(local.items_json))await linkWebsiteRenewalOrder(c.env,renewalOrderId,subscriptionId);
     const order=await getOrder(c.env.DB,renewalOrderId);if(!order){await setWebhookStatus(c.env,"stripe",event.id,"failed","renewal_order_failed");return c.json({error:{code:"renewal_order_failed"}},500);}
     let result:Awaited<ReturnType<typeof recordPaidOrder>>;try{result=await recordPaidOrder(c.env,{provider:"stripe",providerReference:invoice.payment_intent||invoice.id,order,subscriptionId});}catch(error){await setWebhookStatus(c.env,"stripe",event.id,"failed","fulfillment_failed");throw error;}
     await c.env.DB.prepare("UPDATE billing_subscriptions SET status='active',current_period_start=?,current_period_end=?,updated_at=? WHERE provider='stripe' AND provider_subscription_id=?")
       .bind(invoice.period_start?invoice.period_start*1000:null,invoice.period_end?invoice.period_end*1000:null,Date.now(),subscriptionId).run();
+    if(isWebsiteSubscription(local.items_json)){try{await recordWebsitePeriod(c.env,{subscriptionId,invoiceId:invoice.id,startsAt:(invoice.lines?.data?.[0]?.period?.start||invoice.period_start||0)*1000,endsAt:(invoice.lines?.data?.[0]?.period?.end||invoice.period_end||0)*1000,amountMinor:amount,currency});await syncWebsiteSubscriptionStatus(c.env,subscriptionId);}catch{await setWebhookStatus(c.env,"stripe",event.id,"failed","website_subscription_sync_failed");return c.json({error:{code:"website_subscription_sync_failed"}},503);}}
     await setWebhookStatus(c.env,"stripe",event.id,"processed");return c.json({ok:true,renewal:true,...result});
   }
   if(event.type==="checkout.session.async_payment_failed"||event.type==="checkout.session.expired"){
@@ -329,7 +340,7 @@ billingRouter.post("/api/billing/webhooks/stripe",async(c)=>{
     await setWebhookStatus(c.env,"stripe",event.id,"processed");return c.json({ok:true,paymentFailed:event.type==="checkout.session.async_payment_failed"});
   }
   if(event.type!=="checkout.session.completed"&&event.type!=="checkout.session.async_payment_succeeded"){await setWebhookStatus(c.env,"stripe",event.id,"ignored");return c.json({ok:true,ignored:event.type});}
-  const session=event.data.object as {id?:string;mode?:string;setup_intent?:string;client_reference_id?:string;payment_status?:string;amount_total?:number;subscription?:string;payment_intent?:string;metadata?:Record<string,string>};
+  const session=event.data.object as {id?:string;mode?:string;setup_intent?:string;client_reference_id?:string;payment_status?:string;amount_total?:number;subscription?:string;invoice?:string;payment_intent?:string;metadata?:Record<string,string>};
   if(session.mode==="setup"&&session.setup_intent&&session.id){
     const started=await c.env.DB.prepare("SELECT user_id,provider_customer_id,status FROM billing_method_setup_sessions WHERE provider='stripe' AND provider_session_id=?").bind(session.id).first<{user_id:string;provider_customer_id:string;status:string}>();
     if(!started||started.user_id!==session.metadata?.user_id){await setWebhookStatus(c.env,"stripe",event.id,"failed","setup_session_mismatch");return c.json({error:{code:"setup_session_mismatch"}},400);}
@@ -346,6 +357,7 @@ billingRouter.post("/api/billing/webhooks/stripe",async(c)=>{
   if(!order||!localSession||session.metadata?.user_id!==order.user_id||Number(session.amount_total)!==order.total_cents){await setWebhookStatus(c.env,"stripe",event.id,"failed","order_mismatch");return c.json({error:{code:"order_mismatch"}},400);}
   if(!stripePaymentConfirmed(session.payment_status)){await c.env.DB.prepare("UPDATE billing_checkout_sessions SET status='pending',updated_at=? WHERE provider='stripe' AND provider_session_id=? AND status='created'").bind(Date.now(),session.id).run();await setWebhookStatus(c.env,"stripe",event.id,"processed","payment_pending");return c.json({ok:true,pending:true},202);}
   let result:Awaited<ReturnType<typeof recordPaidOrder>>;try{result=await recordPaidOrder(c.env,{provider:"stripe",providerReference:session.payment_intent||session.id||event.id,order,subscriptionId:session.subscription});}catch(error){await setWebhookStatus(c.env,"stripe",event.id,"failed","fulfillment_failed");throw error;}
+  try{await confirmWebsiteCheckout(c.env,order,session.subscription,session.invoice);}catch{await setWebhookStatus(c.env,"stripe",event.id,"failed","website_subscription_sync_failed");return c.json({error:{code:"website_subscription_sync_failed"}},503);}
   if(localSession.save_payment_method===1&&session.mode==="payment"&&session.payment_intent){
     try{await saveCheckoutStripeMethod(c.env,order.user_id,session.payment_intent);}catch{await setWebhookStatus(c.env,"stripe",event.id,"failed","saved_method_sync_failed");return c.json({error:{code:"saved_method_sync_failed"}},502);}
   }
@@ -455,6 +467,15 @@ billingRouter.post("/api/billing/admin/invoices/:orderId/retry",async(c)=>{
 });
 
 export async function runBillingReconciliation(env:Env){
+  if(providerCapabilities(env).stripe.enabled){
+    const identity=await checkStripeAccount(env);
+    if(identity.ok) await reconcileWebsiteBilling(env,async(orderId,reference,subscriptionId)=>{
+      const order=await getOrder(env.DB,orderId);
+      if(!order)throw Error("website_reconciliation_order_missing");
+      await recordPaidOrder(env,{provider:"stripe",providerReference:reference,order,subscriptionId});
+      await syncOblioInvoiceForOrder(env,order);
+    });
+  }
   if(!providerCapabilities(env).revolut.enabled)return;
   const {results}=await env.DB.prepare(`SELECT bs.provider_subscription_id,bs.order_id,co.user_id,co.items_json,co.currency
     FROM billing_subscriptions bs JOIN commerce_orders co ON co.id=bs.order_id

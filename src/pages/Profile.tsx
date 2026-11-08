@@ -33,6 +33,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 
 const UserMenu = lazyWithRetry(() => import("@/components/auth/UserMenu"));
+const WebsiteSubscriptionsHub = lazyWithRetry(() => import("@/features/websiteSubscriptions/WebsiteSubscriptionsHub"));
 const InternalSubscriptionsTab = lazyWithRetry(() => import("@/components/dashboard/subscriptions/InternalSubscriptionsTab"));
 const ProfileTab = lazyWithRetry(() => import("@/components/dashboard/ProfileTab").then((m) => ({ default: m.ProfileTab })));
 const SubscriptionsTab = lazyWithRetry(() => import("@/components/dashboard/ClientRecurringTab"));
@@ -308,6 +309,7 @@ function ProfileDashboard() {
                 ) : (
                   <AvyronOverview access={access} displayName={displayName} onOpenSection={openSection} onOpenCommand={() => setCommandOpen(true)} />
                 )}</TabsContent>
+          {canOpenSection("website-subscriptions",access)&&<TabsContent value="website-subscriptions" className="mt-0"><WebsiteSubscriptionsHub/></TabsContent>}
           {canOpenSection("client-maintenance", access) && <TabsContent value="client-maintenance" role="region" aria-label="Mentenanță Clienți" className="mt-0"><ClientMaintenanceTab /></TabsContent>}
           {canOpenSection("maintenance", access) && (
                 <TabsContent value="maintenance" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["maintenance"].label} className="mt-0"><StaffMaintenanceTab /></TabsContent>

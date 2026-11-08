@@ -1,3 +1,4 @@
+import { WEBSITE_SUBSCRIPTION_PATH } from "./websiteSubscriptions";
 import { z } from "zod";
 import defaults from "./exampleCarouselDefaults.json";
 import { SERVICE_PAGES } from "./servicePagePolicy";
@@ -152,6 +153,7 @@ export function publicCarousel(
 }
 export function carouselPageForPath(path: string) {
   const clean = path.replace(/\/$/, "");
+  if(clean===WEBSITE_SUBSCRIPTION_PATH.ro || clean===WEBSITE_SUBSCRIPTION_PATH.en) return {key:"premium-website",lang:clean===WEBSITE_SUBSCRIPTION_PATH.en?"en" as const:"ro" as const};
   const p = CAROUSEL_PAGES.find((p) => p.ro === clean || p.en === clean);
   return p
     ? { key: p.key, lang: clean === p.en ? ("en" as const) : ("ro" as const) }
