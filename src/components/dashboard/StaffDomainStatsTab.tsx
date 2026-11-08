@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import {cfAuth} from "@/lib/cfAuth";
 import { workspaceApi } from "@/lib/workspaceApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +40,8 @@ const csvEscape = (v: unknown) => {
 
 export const StaffDomainStatsTab = () => {
   const [domain, setDomain] = useState("");
+  const [provider,setProvider]=useState<{configured:boolean;enabled:boolean;credentials:boolean;vault:boolean}|null>(null);
+  useEffect(()=>{let active=true;void cfAuth.request<{configured:boolean;enabled:boolean;credentials:boolean;vault:boolean}>("/api/workspace/domains/provider").then(value=>{if(active)setProvider(value)}).catch(()=>{});return()=>{active=false}},[]);
   const [checking, setChecking] = useState(false);
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,6 +138,7 @@ export const StaffDomainStatsTab = () => {
 
   return (
     <div className="space-y-6">
+      {provider&&<div className="rounded-xl border border-border bg-card p-4 text-sm"><h2 className="font-semibold">Disponibilitate .ro · Openprovider</h2><p className="mt-1 text-xs text-muted-foreground">{provider.configured?"Configurat pentru verificări de disponibilitate. Un rezultat primit prin API confirmă funcționarea efectivă.":"Integrare pregătită, neconfigurată. Fără un cont API autorizat, lipsa DNS nu confirmă că un domeniu este liber."}</p><div className="mt-2 flex flex-wrap gap-2 text-xs"><span>Activare: {provider.enabled?'configurată':'inactivă'}</span><span>Credențiale: {provider.credentials?'prezente':'lipsă'}</span><span>Vault: {provider.vault?'disponibil':'indisponibil'}</span><a className="underline" href="https://developer.openprovider.com/get-started.html" target="_blank" rel="noreferrer">Configurare API</a></div></div>}
       <form className="flex flex-wrap gap-2" onSubmit={async e=>{e.preventDefault();setChecking(true);try{await workspaceApi.write('domains',{domain});await load();}catch(error){toast.error(error instanceof Error?error.message:'Verificarea a eșuat.');}finally{setChecking(false);}}}><Input aria-label="Domeniu de verificat" placeholder="exemplu.ro" value={domain} onChange={e=>setDomain(e.target.value)} required className="max-w-sm"/><Button disabled={checking}>{checking?'Se verifică…':'Verifică domeniul'}</Button></form>
       <p className="text-xs text-muted-foreground">Istoric sincronizat pentru verificările din AVYRON OS și de pe landing page. Sumarul include ultimele 100 de rezultate; exportul parcurge întregul interval (maximum 50.000). Disponibilitatea necesită confirmare la registrar.</p>
       <Card>

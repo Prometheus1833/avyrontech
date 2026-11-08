@@ -56,8 +56,8 @@ export type BlogSettings = {
   updated_at: number;
 };
 
-async function publicRequest<T>(path: string): Promise<T> {
-  const response = await fetch(apiUrl(path), { headers: { accept: "application/json" } });
+async function publicRequest<T>(path: string, signal?: AbortSignal): Promise<T> {
+  const response = await fetch(apiUrl(path), { signal, headers: { accept: "application/json" } });
   if (!response.ok) throw new Error(response.status === 404 ? "not_found" : `HTTP ${response.status}`);
   const type = response.headers.get("content-type") || "";
   if (!type.includes("application/json")) throw new Error("invalid_api_response");
@@ -65,8 +65,8 @@ async function publicRequest<T>(path: string): Promise<T> {
 }
 
 export const blogApi = {
-  listPublished: (language: BlogLanguage) =>
-    publicRequest<{ data: BlogPost[] }>(`/api/blog/posts?lang=${language}&limit=100`),
+  listPublished: (language: BlogLanguage, limit = 100, signal?: AbortSignal) =>
+    publicRequest<{ data: BlogPost[] }>(`/api/blog/posts?lang=${language}&limit=${Math.max(1, Math.min(100, Math.floor(limit) || 100))}`, signal),
   getPublished: (language: BlogLanguage, slug: string) =>
     publicRequest<{ data: BlogPost }>(`/api/blog/posts/${encodeURIComponent(slug)}?lang=${language}`),
   listStaff: () => cfAuth.request<{ data: BlogPost[] }>("/api/blog/staff/posts"),

@@ -1,3 +1,4 @@
+import {domainProviderStatus} from "./domainProvider";
 import { linkClientsByEmail } from "./clientAccountSync";
 export { linkClientsByEmail } from "./clientAccountSync";
 import { dashboardActivityRouter } from "./dashboardActivity";
@@ -338,6 +339,7 @@ workspaceRouter.post('/api/workspace/chat',async c => {
   return mutate(c,b,{id},[c.env.DB.prepare('INSERT INTO staff_chat_messages(id,author_id,recipient_id,channel,content,created_at) VALUES (?,?,?,?,?,?)').bind(id,c.get('userId'),b.recipient_id,b.channel,b.content,Date.now()),audit(c,'workspace.chat.sent',id)]);
 });
 
+workspaceRouter.get('/api/workspace/domains/provider',async c=>{if(!staff(c))return fail(c,'forbidden',403);c.header('Cache-Control','private, no-store');return c.json(domainProviderStatus(c.env));});
 workspaceRouter.get('/api/workspace/domains',async c=>{
   if(!staff(c))return fail(c,'forbidden',403);
   const from=Number(c.req.query('from')||0),to=Number(c.req.query('to')||Date.now());
@@ -357,7 +359,7 @@ workspaceRouter.post('/api/workspace/domains',async c=>{
   const domain=normalizeDomain(b.data.domain);if(!domain)return fail(c,'invalid_domain');
   const rate=await checkRateLimit(c.env.DB,[{key:`domain-internal:${c.get('userId')}`,limit:30,windowSec:3600}]);
   if(!rate.ok)return c.json({error:{code:'rate_limited'}},429);
-  const result=await lookupDomain(domain),id=crypto.randomUUID();
+  const result=await lookupDomain(domain,c.env),id=crypto.randomUUID();
   return mutate(c,b.data,{id,...result},[c.env.DB.prepare('INSERT INTO internal_domain_checks(id,domain,status,source,checked_by,created_at) VALUES (?,?,?,?,?,?)').bind(id,domain,result.status,result.source,c.get('userId'),Date.now()),audit(c,'workspace.domain.checked',id)]);
 });
 workspaceRouter.get('/api/workspace/statistics',async c=>{
