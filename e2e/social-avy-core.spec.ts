@@ -177,6 +177,7 @@ for (const width of [320, 1440])
     await expect(clientDialog).toHaveCount(0);
     expect(client).toMatchObject({ account: { mode: "none" } });
     const dialog = page.getByRole("dialog", { name: "Mentenanță nouă" });
+    await dialog.evaluate(el=>{(el as HTMLElement).style.scrollbarGutter='stable';});
     await dialog
       .getByLabel("Denumire proiect / produs pentru mentenanță")
       .fill("Proiect viitor");

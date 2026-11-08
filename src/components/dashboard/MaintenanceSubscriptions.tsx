@@ -580,7 +580,7 @@ export default function MaintenanceSubscriptions() {
           </DialogHeader>
           {!review ? (
             <form
-              className="space-y-4"
+              className="min-w-0 space-y-4 [&_button]:max-w-full [&_button]:whitespace-normal"
               onSubmit={(event) => {
                 event.preventDefault();
                 try {
@@ -600,6 +600,7 @@ export default function MaintenanceSubscriptions() {
                   <Button
                     type="button"
                     size="sm"
+                    className="h-auto min-h-10 whitespace-normal"
                     variant={draft.mode === "project" ? "default" : "outline"}
                     onClick={() => setDraft({ ...draft, mode: "project" })}
                   >
@@ -608,6 +609,7 @@ export default function MaintenanceSubscriptions() {
                   <Button
                     type="button"
                     size="sm"
+                    className="h-auto min-h-10 whitespace-normal"
                     variant={draft.mode === "external" ? "default" : "outline"}
                     onClick={() => setDraft({ ...draft, mode: "external" })}
                   >
@@ -686,7 +688,7 @@ export default function MaintenanceSubscriptions() {
                       type="button"
                       size="sm"
                       variant="ghost"
-                      className="mt-1"
+                      className="mt-1 h-auto min-h-10 whitespace-normal"
                       onClick={() => {
                         clientKey.current = crypto.randomUUID();
                         setClientOpen(true);

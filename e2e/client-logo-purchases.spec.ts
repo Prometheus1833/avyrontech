@@ -20,8 +20,9 @@ async function fixture(context: BrowserContext, signedIn = true) {
         expect(url.hostname).toBe("api.avyron.ro");
         return route.fulfill({json:{access_token:"synthetic-token",expires_in:900,user:{id:"client",roles:["user"]}},headers:{...headers,"set-cookie":"sid=synthetic-client; Path=/; HttpOnly; Secure; SameSite=Lax"}});
       }
-      if(path==="/api/auth/refresh")return request.headers().cookie?.includes("sid=synthetic-client")?json({access_token:"synthetic-token",expires_in:900}):route.fulfill({status:204,headers});
+      if(path==="/api/auth/refresh")return (signedIn || request.headers().cookie?.includes("sid=synthetic-client"))?json({access_token:"synthetic-token",expires_in:900}):route.fulfill({status:204,headers});
       if(path==="/api/auth/me")return request.headers().authorization?json({user:{id:"client",email:"client@example.test",display_name:"Client test",email_verified:1,must_change_password:0},profile:{display_name:"Client test",language:"ro"},roles:["user"],capabilities:[],superadmin:false}):json({error:{code:"unauthorized"}},401);
+      if(path==="/api/logo-studio/product-price")return json({priceMinor:7500,currency:"RON",updatedAt:1});
       if(path==="/api/auth/providers")return json({data:[]});
       if(path==="/api/projects")return json({data:[],purchases:[],sales:[]});
       if(path==="/api/produse/account/purchases") {
@@ -114,8 +115,11 @@ for(const width of [320,1440])test(`paid products remain in history and recover 
 test("a signed-in user can add a public product to the same account cart",async({page,context})=>{
   const data=await fixture(context);
   await context.addInitScript(()=>localStorage.setItem("avyron-produse-v1",JSON.stringify({cart:[{kind:"item",slug:"logo-studio-3d"}],favorites:[],recent:[],copied:[]})));
+  // Establish the signed-in first-party session before navigating to the public site.
+  await page.goto("https://app.avyron.ro/profil?tab=overview");
+  await expect(page.getByRole("heading",{name:"Bună, Client test."})).toBeVisible();
   await page.goto("https://avyron.ro/produse/logo/logo-studio-3d");
-  await expect(page.getByRole("button",{name:"Profil",exact:true})).toBeVisible();
+  await expect(page.getByRole("button",{name:"Adaugă în coș",exact:true})).toBeVisible();
   await page.getByRole("button",{name:"Adaugă în coș",exact:true}).click();
   await expect.poll(()=>data.cart().length===1 && data.cart()[0].sku==="product-logo-studio-3d").toBe(true);
   await page.goto("https://app.avyron.ro/profil?tab=cart");
