@@ -1,3 +1,4 @@
+import {ADDITIONAL_SITE_NICHES} from "./siteKnowledge";
 import type { SkillSlug } from "./model";
 
 export const SKILL_SEEDS: {
@@ -129,4 +130,5 @@ export const NICHE_PROFILES = [
     ],
     source: "src/examples/studiomaradesign.tsx",
   },
+  ...ADDITIONAL_SITE_NICHES,
 ] as const;

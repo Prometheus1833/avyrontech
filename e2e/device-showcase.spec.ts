@@ -78,6 +78,11 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
     await showcase.getByRole("button", { name: /Aplicație$/ }).click();
     const phone = await settledDevice(showcase, "phone");
     await expect(showcase.locator(".domain-notes").first()).not.toBeVisible();
+    const bookingPhoto=phone.locator('.phone-booking-photo');
+    await expect(bookingPhoto).toBeVisible();
+    await expect.poll(()=>bookingPhoto.evaluate((img:HTMLImageElement)=>img.complete&&img.naturalWidth>0)).toBe(true);
+    await expect(bookingPhoto).toHaveAttribute('srcset',/480w/);
+    await page.screenshot({path:testInfo.outputPath('wellness-booking-photo.png')});
     for (const [label, mode, heading] of [["Web/Mobile App", "app", "Următoarea ta pauză."], ["Joc", "game", "Dincolo de orizont."], ["CRM", "crm", "Fiecare oportunitate, la locul ei."], ["Platformă", "platform", "Echipa ta. Un singur spațiu."]]) {
       await showcase.getByRole("button", { name: label, exact: true }).click();
       await expect(phone.locator("[data-screen-variant]")).toHaveAttribute("data-screen-variant", mode);

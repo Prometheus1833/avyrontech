@@ -672,6 +672,10 @@ it("stores generated binary images privately and revalidates their exact object 
   expect(response.status).toBe(201);
   const made = await response.json();
   await drainSkillRuns(env);
+  const {mediaPrompt}=await import('../shared/skills/creative');
+  const input=vi.mocked(runAiCore).mock.calls[0][0].input.multipart as {body:ReadableStream;contentType:string};
+  const posted=await new Response(input.body,{headers:{'content-type':input.contentType}}).formData();
+  expect(String(posted.get('prompt')).replace(/\r\n/g,'\n')).toBe(mediaPrompt(briefSchema.parse(brief())));
   const path = `https://app.fixture.test/api/skills/media-generate/runs/${made.id}/image`;
   const image = await app.request(path, { method: "GET" }, env);
   expect(image.status).toBe(200);
@@ -894,4 +898,69 @@ it("never selects paid or exhausted models for a Free-only request and accepts b
   expect(
     freeTextOutput({ choices: [{ message: { reasoning_content: "only" } }] }),
   ).toBe("");
+});
+it("exports agent-specific approved handoffs and marks demos distinctly from integrations",async()=>{
+ const knowledge=await(await req('/knowledge',undefined,'GET')).json();expect(knowledge.domains.length).toBeGreaterThanOrEqual(14);expect(knowledge.examples.some(e=>e.kind==='mockup')).toBe(true);expect(knowledge.library.some(s=>s.effects.some(e=>e.state==='demo'))).toBe(true);
+ for(const agent of ['codex','claude','lovable']){const response=await req(`/agents/${agent}.md?domain=medical`,undefined,'GET');expect(response.status).toBe(200);expect(response.headers.get('cache-control')).toBe('private, no-store');expect(response.headers.get('etag')).toMatch(/^"[A-Za-z0-9_-]{43}"$/);const text=await response.text();expect(text).toContain('medical');expect(text).not.toContain('Client B');}
+ actor='client';expect((await req('/knowledge',undefined,'GET')).status).toBe(403);expect((await req('/agents/codex.md',undefined,'GET')).status).toBe(403);
+});
+it("synchronizes published examples into idempotent drafts and removes hidden sources from future context",async()=>{
+ const first=await(await req('/sources/sync',{},'POST')).json();expect(first.created).toBeGreaterThan(0);expect((await(await req('/sources/sync',{},'POST')).json()).created).toBe(0);
+ expect(db.prepare("SELECT count(*) n FROM avy_skill_resources WHERE source_kind='carousel' AND status='approved'").get()!.n).toBe(0);
+ const resource=db.prepare("SELECT id,revision FROM avy_skill_resources WHERE source_kind='carousel' LIMIT 1").get()!;expect((await req(`/resources/${resource.id}/state`,{revision:resource.revision,status:'approved'},'POST')).status).toBe(200);
+ const {DEFAULT_EXAMPLE_CAROUSEL}=await import('../shared/exampleCarousels');const content={...DEFAULT_EXAMPLE_CAROUSEL,enabled:false};
+ db.exec("INSERT INTO example_carousel_configs(page_key,revision,draft_json,updated_by,updated_at) VALUES('premium-website',1,'{}','owner',1)");db.prepare("INSERT INTO example_carousel_versions(page_key,revision,content_json,actor_user_id,created_at) VALUES('premium-website',1,?,'owner',1)").run(JSON.stringify(content));db.exec("UPDATE example_carousel_configs SET published_revision=1 WHERE page_key='premium-website'");
+ const second=await(await req('/sources/sync',{},'POST')).json();expect(second.archived).toBe(first.references);expect(db.prepare('SELECT status FROM avy_skill_resources WHERE id=?').get(resource.id)!.status).toBe('archived');expect((await(await req('/knowledge',undefined,'GET')).json()).examples).toHaveLength(0);
+});
+it("includes custom resource domains in selection without exposing unapproved tags to read-only staff",async()=>{
+ const response=await req('/resources',{title:'Domeniu nou',domain:'acoperisuri',body:'Referință personalizată pentru proiecte de acoperișuri.',sourceUrl:''});expect(response.status).toBe(201);
+ const own=await(await req('',undefined,'GET')).json();expect(own.resourceDomains.some(d=>d.domain==='acoperisuri')).toBe(true);
+ actor='a';grant(actor,'skills.read');const limited=await(await req('',undefined,'GET')).json();expect(limited.resourceDomains.some(d=>d.domain==='acoperisuri')).toBe(false);
+});
+it("keeps full approved instructions but sends a concise Site Builder refinement input",async()=>{
+ const made=await create({},'ai');await processSkillRun(env,made.id);const call=vi.mocked(runAiCore).mock.calls[0][0];const input=call.input as {messages:{content:string}[]};const parsed=JSON.parse(input.messages[1].content);expect(parsed.business).toBe('Afacere sintetică');expect(parsed.references.length).toBeLessThanOrEqual(3);expect(input.messages[0].content).toContain('Instrucțiuni aprobate');expect(db.prepare('SELECT output_md FROM avy_skill_runs WHERE id=?').get(made.id)!.output_md).toContain('Contract comun AVYRON');
+});
+it("rejects a source sync when the published carousel changes before its transaction",async()=>{
+ const batch=env.DB.batch.bind(env.DB);
+ env.DB.batch=async(statements)=>{
+  if(statements.some(s=>(s as unknown as Stmt).sql.includes("'sources.synced'"))){
+   db.exec("INSERT INTO example_carousel_configs(page_key,revision,draft_json,updated_by,updated_at) VALUES('fixture-race',1,'{}','owner',1)");
+   db.exec("INSERT INTO example_carousel_versions(page_key,revision,content_json,actor_user_id,created_at) VALUES('fixture-race',1,'{}','owner',1); UPDATE example_carousel_configs SET published_revision=1 WHERE page_key='fixture-race'");
+  }
+  return batch(statements);
+ };
+ expect((await req('/sources/sync',{},'POST')).status).toBe(409);
+ expect(db.prepare("SELECT count(*) n FROM avy_skill_resources WHERE source_kind='carousel'").get()!.n).toBe(0);
+ expect(db.prepare("SELECT count(*) n FROM avy_skill_events WHERE action='sources.synced'").get()!.n).toBe(0);
+});
+it("offers a bounded approved agent digest and respects a paused Site Builder",async()=>{
+ const {siteAgentKnowledge}=await import('../../cloudflare/workers/api/src/siteAgentKnowledge');
+ expect(await siteAgentKnowledge(env,'campanie social media')).toBe('');
+ const digest=await siteAgentKnowledge(env,'website de prezentare');expect(digest).toContain('Tipare aprobate Site Builder');expect(digest.length).toBeLessThan(1800);expect(digest).not.toContain('Client B');
+ const medical=await siteAgentKnowledge(env,'website clinica medicala');expect(medical).toContain('medical');
+ db.exec("UPDATE avy_skills SET paused=1 WHERE slug='site-builder'");expect(await siteAgentKnowledge(env,'website')).toBe('');
+});
+it("keeps repository agent entrypoints synchronized with the shared knowledge contract",async()=>{
+ const {SITE_AGENT_GUIDES,SITE_QUALITY_CONTRACT,SITE_KNOWLEDGE_VERSION}=await import('../shared/skills/siteKnowledge');
+ const common=readFileSync('docs/site-builder/COMMON.md','utf8');expect(common).toContain(SITE_QUALITY_CONTRACT);expect(common).toContain(SITE_KNOWLEDGE_VERSION);
+ for(const [agent,instructions] of Object.entries(SITE_AGENT_GUIDES))expect(readFileSync(`docs/site-builder/${agent.toUpperCase()}.md`,'utf8')).toContain(instructions);
+});
+it("exports logo SVG from its immutable snapshot and enforces resource authorization",async()=>{
+ const response=await app.request('https://app.fixture.test/api/skills/logo-engine/runs',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({brief:brief({projectId:'pa'}),mode:'template'})},env);expect(response.status).toBe(201);const made=await response.json();
+ const path=`https://app.fixture.test/api/skills/logo-engine/runs/${made.id}/export?format=svg&direction=1`;
+ const exported=await app.request(path,{},env);expect(exported.status).toBe(200);expect(exported.headers.get('content-type')).toContain('image/svg+xml');expect(exported.headers.get('cache-control')).toBe('private, no-store');const original=await exported.text();expect(original).toContain('Semnătură');
+ expect(()=>db.prepare('UPDATE avy_skill_runs SET brief_json=? WHERE id=?').run(JSON.stringify(brief({business:'Changed brand'})),made.id)).toThrow('skill_result_immutable');expect(await(await app.request(path,{},env)).text()).toBe(original);
+ expect((await app.request(path.replace('direction=1','direction=99'),{},env)).status).toBe(400);
+ actor='b';grant(actor,'skills.read');grant(actor,'skills.use');expect((await app.request(path,{},env)).status).toBe(404);actor='client';expect((await app.request(path,{},env)).status).toBe(403);
+});
+it("preserves legacy idempotency hashes when new creative controls are left at defaults",async()=>{
+ const {sha256}=await import('../../cloudflare/workers/api/src/security');const {logo,media,...legacy}=brief();void logo;void media;
+ const key=crypto.randomUUID();const made=await create({},'template',key);const stored=db.prepare('SELECT request_hash FROM avy_skill_runs WHERE id=?').get(made.id)!;
+ expect(stored.request_hash).toBe(await sha256(JSON.stringify({slug:'site-builder',brief:legacy,mode:'template'})));
+ const retry=await req('/runs',{brief:legacy,mode:'template'},'POST',{'Idempotency-Key':key});expect(retry.status).toBe(200);expect((await retry.json()).id).toBe(made.id);
+});
+it("includes approved creative references in the compact AI handoff",async()=>{
+ db.exec("INSERT INTO avy_skill_resources(id,skill_slug,title,domain,body,status,created_by,created_at,updated_at) VALUES('logo-reference','logo-engine','Materiale aprobate','general','Tipografie lizibila, contrast si proportii validate pentru concept.','approved','owner',1,1)");
+ const response=await app.request('https://app.fixture.test/api/skills/logo-engine/runs',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({brief:brief(),mode:'ai'})},env);expect(response.status).toBe(201);const made=await response.json();await processSkillRun(env,made.id);
+ const input=vi.mocked(runAiCore).mock.calls[0][0].input as {messages:{content:string}[]};expect(JSON.parse(input.messages[1].content).references.join('\n')).toContain('Materiale aprobate');expect(input.messages[0].content).toContain('Standard creativ AVYRON');
 });

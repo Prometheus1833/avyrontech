@@ -8,6 +8,7 @@ import { Hono, type Context } from "hono";
 import type { AppBindings } from "./types";
 import { hasCapability, platformRoleForUser } from "./authorization";
 import { reserveAiCost } from "./aiCostGuard";
+import {siteAgentKnowledge} from "./siteAgentKnowledge";
 import { runAiCore } from "./aiCore";
 import { resolveSocialModelRoute } from "./socialModelRouting";
 import { now, sha256 } from "./security";
@@ -1093,6 +1094,7 @@ aiProjectsRouter.post("/api/ai-projects/:projectId/content/generate", async (c) 
     `Ofertă: ${access.project.core_offer || "nespecificată"}`,
     `Reguli proiect: ${access.project.agent_instructions || "fără reguli suplimentare"}`,
     `Subiect: ${request.topic}`,
+    access.project.slug === "avyron-web" ? await siteAgentKnowledge(c.env,request.topic) : "",
     request.context ? `Context introdus de operator: ${request.context}` : "",
     request.format === "story"
       ? "Descrierea trebuie să fie scurtă, tematică și lizibilă imediat."

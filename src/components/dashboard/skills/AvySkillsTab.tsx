@@ -1,3 +1,6 @@
+import {CreativeStudioIntro,CreativeBriefFields,CreativeQualityPanel} from "./CreativeStudio";
+import {LOGO_DIRECTIONS} from "@/shared/skills/creative";
+import SiteBuilderKnowledgePanel from "./SiteBuilderKnowledgePanel";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
@@ -96,11 +99,12 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
   const client = useQueryClient(),
     [params, setParams] = useSearchParams();
   const [view, setView] = useState<
-      "atelier" | "resources" | "instructions" | "monitor"
+      "atelier" | "resources" | "instructions" | "monitor" | "knowledge"
     >("atelier"),
     [brief, setBrief] = useState(blankBrief),
     [mode, setMode] = useState<"template" | "ai" | "image">("template");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageSize,setImageSize]=useState<{width:number;height:number}|null>(null);
   const [selected, setSelected] = useState<string | null>(null),
     [busy, setBusy] = useState(false),
     [mobilePreview, setMobilePreview] = useState(false),
@@ -139,7 +143,7 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
     queryKey: ["skills", slug, resourceOffset, resourceQuery],
     queryFn: ({ signal }) =>
       api.detail(slug, signal, resourceOffset, resourceQuery),
-    placeholderData: (previous) => previous,
+    placeholderData: (previous) => previous?.slug===slug?previous:undefined,
   });
   const history = useQuery({
     queryKey: ["skill-runs", slug, historyOffset],
@@ -198,6 +202,7 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
     let active = true,
       url: string | null = null;
     setImageUrl(null);
+    setImageSize(null);
     if (r?.generatedFile) {
       cfAuth
         .requestResponse(`${api.path(slug)}/runs/${r.id}/image`)
@@ -319,6 +324,7 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
         {(
           [
             ["atelier", "Atelier", Sparkles],
+            ...(slug === "site-builder" ? [["knowledge", "Cunoștințe și agenți", Layers] as const] : []),
             ["resources", "Resurse", Layers],
             ["instructions", "Instrucțiuni", FileText],
             ["monitor", "Monitorizare", Settings2],
@@ -336,10 +342,11 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
           </button>
         ))}
       </nav>
+      {view === "atelier" && <CreativeStudioIntro slug={slug} brief={brief} onChange={setBrief}/>}
       {view === "atelier" && (
         <div className="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]">
           <form
-            className={panel + " space-y-4"}
+            className={panel + " min-w-0 space-y-4"}
             onSubmit={(e) => {
               e.preventDefault();
               void create();
@@ -445,6 +452,7 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
                 value={brief.domain}
                 onChange={(e) => setBrief({ ...brief, domain: e.target.value })}
               >
+                {(data.resourceDomains||[]).filter(d=>!NICHE_PROFILES.some(n=>n.id===d.domain)).map(d=><option key={d.domain} value={d.domain}>{d.domain} · profil personalizat</option>)}
                 {NICHE_PROFILES.map((n) => (
                   <option key={n.id} value={n.id}>
                     {n.label}
@@ -463,7 +471,8 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
                 }
               />
             </Field>
-            <details>
+            <CreativeBriefFields slug={slug} brief={brief} onChange={setBrief}/>
+            {slug === "site-builder" && <details>
               <summary className="cursor-pointer py-2 text-xs font-medium text-violet-200">
                 Preferințe, contacte și conturi sociale
               </summary>
@@ -512,7 +521,7 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
                   sociale lipsă rămân neconfigurate.
                 </p>
               </div>
-            </details>
+            </details>}
             <Field id="skill-mode" label="Cum pregătim">
               <select
                 id="skill-mode"
@@ -533,7 +542,7 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
                     value="image"
                     disabled={data.runtime.imageStatus !== "configured"}
                   >
-                    Generează imagine · master 1920px / cotă strictă
+                    Generează imagine · modelul aprobat
                   </option>
                 )}
               </select>
@@ -556,7 +565,7 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
                   <option value="portrait">Portret · 1088 × 1920</option>
                 </select>
                 <p className="mt-2 text-xs text-slate-400">
-                  O imagine per pregătire. Nu reducem calitatea când cota este
+                  Rezoluție nativă configurată, nu 4K/8K. O imagine per pregătire. Nu reducem calitatea când cota este
                   insuficientă: operațiunea rămâne blocată până la resetare.
                   Fără upgrade plătit.
                 </p>
@@ -569,7 +578,7 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
             ) : null}
             <Button
               type="submit"
-              className="w-full"
+              className="h-auto min-h-11 w-full whitespace-normal"
               disabled={
                 busy ||
                 !data.permissions.use ||
@@ -596,12 +605,12 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
             </p>
           </form>
           <section
-            className={panel + " min-w-0"}
+            className={panel + " min-w-0" + (slug!=="site-builder"?" xl:sticky xl:top-20 xl:max-h-[calc(100dvh-110px)] xl:overflow-y-auto":"")}
             aria-label="Rezultatul pregătirii"
           >
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-base font-semibold">
-                {showPrompt ? "Brief pentru Codex / AI" : "Concept vizual"}
+                {showPrompt ? "Brief pentru Codex / AI" : slug === "logo-engine" ? "Direcții de identitate" : slug === "media-generate" ? "Imagine și art direction" : "Concept vizual"}
               </h2>
               {r && (
                 <div className="flex gap-1">
@@ -631,6 +640,7 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
                 </div>
               )}
             </div>
+            <CreativeQualityPanel slug={slug}/>
             {!selected && (
               <div className="grid min-h-64 place-content-center rounded-xl border border-dashed border-white/15 p-6 text-center">
                 <Sparkles className="mx-auto mb-3 size-7 text-violet-300" />
@@ -720,11 +730,12 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
                   <figure>
                     <img
                       src={imageUrl}
+                      onLoad={e=>setImageSize({width:e.currentTarget.naturalWidth,height:e.currentTarget.naturalHeight})}
                       alt={`Imagine generată pentru ${JSON.parse(r.brief_json).activity}`}
                       className="max-h-[620px] w-full rounded-xl object-contain"
                     />
                     <figcaption className="mt-2 text-xs text-slate-400">
-                      Master generat, privat. Necesită verificare umană înainte
+                      Fișier generat, privat{imageSize?` · ${imageSize.width} × ${imageSize.height} px`:""}. Necesită verificare umană înainte
                       de utilizare.
                     </figcaption>
                   </figure>
@@ -756,6 +767,8 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
                       <Download className="mr-2 size-3.5" />
                       Instrucțiunile folosite
                     </Button>
+                    {slug === "logo-engine" && r.preview_html?.includes("<svg") && LOGO_DIRECTIONS.map((direction,i)=><Button key={direction} size="sm" variant="outline" disabled={busy} onClick={()=>void action(()=>api.download(`${api.path(slug)}/runs/${r.id}/export?format=svg&direction=${i}`,`avy-logo-concept-${i+1}-${r.id.slice(0,8)}.svg`))}><Download className="mr-2 size-3.5"/>SVG · {direction}</Button>)}
+                    {slug !== "site-builder" && <Button size="sm" variant="outline" onClick={()=>{const original=briefSchema.safeParse(JSON.parse(r.brief_json));if(!original.success){toast.error("Brief incompatibil");return}setBrief(original.data);setMode(r.mode);setSelected(null);setShowPrompt(false);requestAnimationFrame(()=>document.getElementById("skill-business")?.focus());toast.success("Brief reluat, fără generare automată")}}><Copy className="mr-2 size-3.5"/>Reia brief-ul</Button>}
                     {r.generatedFile && (
                       <Button
                         size="sm"
@@ -831,8 +844,10 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
           </section>
         </div>
       )}
+      {view === "knowledge" && slug === "site-builder" && <SiteBuilderKnowledgePanel canManage={data.permissions.manage} onUse={domain=>{setBrief(b=>({...b,domain}));setView("atelier")}}/>}
       {view === "resources" && (
         <section className="space-y-3">
+          <div className="flex flex-wrap gap-2" aria-label="Domenii resurse"><button className="min-h-10 rounded-lg border border-white/10 px-3 text-xs" onClick={()=>setResourceSearch("")}>Toate domeniile</button>{(data.resourceDomains||[]).map(d=><button key={d.domain} className="min-h-10 rounded-lg border border-white/10 px-3 text-xs" onClick={()=>setResourceSearch(d.domain)}>{d.domain} · {d.total}</button>)}</div>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="font-semibold">Bibliotecă reutilizabilă</h2>
@@ -1058,13 +1073,10 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
               disponibil. Nu se pornesc servere sau servicii plătite.
             </p>
             {slug === "logo-engine" && (
-              <a
-                className="mt-3 inline-flex min-h-11 items-center gap-2 text-xs text-violet-200"
-                href="/servicii/creare-logo-3d-dinamic-cinematic/creeaza"
-              >
-                Deschide produsul Logo Studio 3D{" "}
-                <ArrowRight className="size-3.5" />
-              </a>
+              <div className="mt-3 flex flex-wrap gap-3">
+                <a className="inline-flex min-h-11 items-center gap-2 text-xs text-violet-200" href="https://avyron.ro/servicii/creare-logo-3d-dinamic-cinematic/creeaza">Deschide simulatorul Logo 2D<ArrowRight className="size-3.5"/></a>
+                <a className="inline-flex min-h-11 items-center gap-2 text-xs text-violet-200" href="https://avyron.ro/produse/logo/logo-studio-3d">Deschide produsul Logo Studio 3D<ArrowRight className="size-3.5"/></a>
+              </div>
             )}
           </div>
           <h3 className="text-sm font-semibold">

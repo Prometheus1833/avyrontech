@@ -174,3 +174,11 @@ export function verifyResendWebhook(env: Env, payload: string, headers: Headers)
   if (!verified || typeof verified !== "object") throw new Error("Invalid webhook payload");
   return verified as ResendWebhookEvent;
 }
+
+/** Read only the native campaign's provider record. Never import or send unrelated broadcasts. */
+export async function retrieveResendBroadcast(env: Env, id: string) {
+  if(!/^[a-zA-Z0-9_-]{1,120}$/.test(id))throw new ResendMarketingError("Identificator Resend invalid",400);
+  const {data}=await resendRequest(env,`/broadcasts/${encodeURIComponent(id)}`);
+  if(data.id!==id||typeof data.status!=="string")throw new ResendMarketingError("Răspuns Resend incomplet");
+  return {id,status:data.status,segmentId:typeof data.segment_id==='string'?data.segment_id:null,sentAt:typeof data.sent_at==='string'?Date.parse(data.sent_at):null,scheduledAt:typeof data.scheduled_at==='string'?Date.parse(data.scheduled_at):null};
+}

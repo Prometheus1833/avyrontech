@@ -1,3 +1,4 @@
+import {newsletterOperationsRouter} from "./newsletterOperations";
 import { Hono, type Context } from "hono";
 import type { AppBindings } from "./types";
 import { checkRateLimit, clientIp, hashKey, verifyTurnstile } from "./antispam";
@@ -614,4 +615,5 @@ router.post("/api/newsletter/admin/campaigns/:id/send", async (c) => {
   }
 });
 
+router.route("/",newsletterOperationsRouter);
 export const newsletterRouter = router;

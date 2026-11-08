@@ -1,3 +1,4 @@
+import {wellnessImage} from "./showcaseImages";
 import {
   ArrowRight, ArrowUpRight, Bell, CalendarDays, Check, ChevronRight, CirclePlay,
   FileText, Gamepad2, Globe2, Home, Layers3, MapPin, MessageCircle,
@@ -59,7 +60,11 @@ export function WebsiteScreen({ domain, ro }: { domain: Domain; ro: boolean }) {
       <div className="web-navigation"><strong>{theme.brand}</strong><span>{ro ? "Descoperă · Despre · Contact" : "Discover · About · Contact"}</span><i><MenuDots /></i></div>
       <div className={`web-hero ${photo && theme.visual === "photo" ? "web-hero--photo" : ""}`}>
         {photo && (
+          <picture>
+          {theme.imageAvifSet && <source type="image/avif" srcSet={theme.imageAvifSet} sizes="(max-width: 600px) 100vw, 800px"/>}
           <img
+            width={theme.imageWidth}
+            height={theme.imageHeight}
             src={photo}
             srcSet={theme.imageSet}
             sizes={theme.imageSet ? "(max-width: 600px) 100vw, 800px" : undefined}
@@ -68,6 +73,7 @@ export function WebsiteScreen({ domain, ro }: { domain: Domain; ro: boolean }) {
             decoding="async"
             className="web-hero-photo"
           />
+          </picture>
         )}
         <div className="web-hero-copy">
           <p className="web-kicker">{domain.label}</p>
@@ -95,7 +101,7 @@ export function PhoneScreen({ mode, ro }: { mode: AppMode; ro: boolean }) {
           <div className="phone-app-header"><span>NORD / WELLNESS</span><Bell size={16}/></div>
           <p className="phone-overline">{ro?"UN MOMENT PENTRU TINE":"A MOMENT FOR YOURSELF"}</p>
           <h4>{ro?"Următoarea ta pauză.":"Your next pause."}</h4>
-          <div className="phone-booking-hero"><div className="phone-orb"/><span>{ro?"Ritual de relaxare":"Relaxation ritual"}</span><strong>60 min</strong><i>{ro?"Vezi tratamentul":"View treatment"} ↗</i></div>
+          <div className="phone-booking-hero"><picture><source type="image/avif" srcSet={wellnessImage.avifSet} sizes="(max-width:600px) 220px, 320px"/><img className="phone-booking-photo" src={wellnessImage.src} srcSet={wellnessImage.srcSet} sizes="(max-width:600px) 220px, 320px" width={wellnessImage.width} height={wellnessImage.height} alt={ro?"Suită spa cu piatră naturală, prosoape și lumină caldă":"Spa suite with natural stone, towels and warm light"} loading="lazy" decoding="async"/></picture><span>{ro?"Ritual de relaxare":"Relaxation ritual"}</span><strong>60 min</strong><i>{ro?"Vezi tratamentul":"View treatment"} ↗</i></div>
           <div className="phone-row-heading"><strong>{ro?"Alege ziua":"Choose a day"}</strong><span>{ro?"Octombrie":"October"}</span></div>
           <div className="phone-date-grid">{(ro ? ["L","M","M","J","V"] : ["M","T","W","T","F"]).map((day,i)=><span key={i} className={i===2?"is-selected":""}><small>{day}</small><strong>{12+i}</strong></span>)}</div>
           <div className="phone-time-grid"><span>10:00</span><span className="is-selected">14:30</span><span>16:00</span></div>

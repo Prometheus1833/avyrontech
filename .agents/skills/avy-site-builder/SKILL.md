@@ -23,3 +23,11 @@ Economie: pornește din profilul de nișă și mockupul determinist fără AI; c
 
 ## Sursa operațională
 Acestea sunt instrucțiunile de pornire, fără date private. Pentru versiunea curentă aprobată, citește prin autentificarea AVYRON existentă GET /api/skills/site-builder/skill.md. Referințele relevante se citesc la GET /api/skills/site-builder/context?domain=DOMENIU. Nu afișa tokenul în loguri, prompturi sau fișiere. Folosește POST /api/skills/site-builder/runs pentru pregătire internă și GET /api/skills/site-builder/runs/ID pentru rezultat. Toate mutațiile necesită permisiuni, MFA conform politicii și Idempotency-Key; schema este publicată în /api/skills/site-builder/context. Codex local nu poate rula când Mac-ul este oprit; coada cloud rulează numai pregătirea autorizată, fără trimitere, publicare sau deploy.
+
+## Reutilizare și handoff
+
+Pentru eficiență de comunicare, citește [contractul comun](../../../docs/site-builder/COMMON.md), apoi numai profilul și resursele necesare. Catalogul verificabil este la `GET /api/skills/site-builder/knowledge`; include proveniența, diferența dintre portofoliu/mockup și demo/integrare, plus sursele analizei de piață. Detaliile editoriale și limitele cercetării sunt în [RESEARCH.md](../../../docs/site-builder/RESEARCH.md).
+
+Pentru mediul țintă, exportă documentul curent de la `GET /api/skills/site-builder/agents/codex.md?domain=DOMENIU`, `claude.md` sau `lovable.md`. Același contract de calitate, instrucțiunile aprobate și referințele selectate sunt livrate cu versiune și checksum. Nu citi toate nișele și toate fișierele la fiecare solicitare. Exportul Lovable pregătește un handoff; nu autorizează agentul, consumul creditelor sau modificarea repository-ului.
+
+Cunoștințele comune pot include reguli generalizate din conversații autorizate, nu prețuri negociate, identități fiscale, contacte private sau briefuri ale altor clienți. Referințele sincronizate din caruselele publicate intră ca drafturi; verifică aprobarea înainte de folosire. Calitatea imaginilor master și a produsului final rămâne prioritară; optimizează repetiția, citirea și handofful, nu rezultatul vizual.
