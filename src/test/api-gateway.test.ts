@@ -110,7 +110,7 @@ describe("domain lookup input", () => {
 
 describe('DNS evidence never substitutes an availability verdict',()=>{
  it('ignores parent SOA / unrelated answers, but accepts an exact NS delegation',async()=>{
-  let exact=false;vi.stubGlobal('fetch',vi.fn(async(input:RequestInfo|URL)=>String(input).includes('iana.org')?Response.json({services:[]}):Response.json({Status:0,Answer:exact?[{name:'atelier.ro.',type:2,data:'ns1.example.net.'}]:[{name:'ro.',type:6,data:'parent SOA'}],Authority:[{name:'ro.',type:6,data:'parent SOA'}]})));
+  let exact=false;vi.stubGlobal('fetch',vi.fn(async(input:RequestInfo|URL)=>new URL(String(input)).hostname === 'data.iana.org'?Response.json({services:[]}):Response.json({Status:0,Answer:exact?[{name:'atelier.ro.',type:2,data:'ns1.example.net.'}]:[{name:'ro.',type:6,data:'parent SOA'}],Authority:[{name:'ro.',type:6,data:'parent SOA'}]})));
   expect((await lookupDomain('atelier.ro')).status).toBe('unknown');exact=true;expect((await lookupDomain('atelier.ro')).status).toBe('registered');
  });
 });
