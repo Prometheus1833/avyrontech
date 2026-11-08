@@ -365,3 +365,13 @@ it.skipIf(!hasBuild)('prerenders the bilingual quality presentation after benefi
   const html=read(route);expect(html).toContain(title);expect(html).toContain('Avyron Quality Standard');expect(html.indexOf('id="avyron-quality-standard"')).toBeGreaterThan(html.indexOf('id="avantaje"'));expect(html).not.toContain('Pentru .ro poți confirma direct');expect(html).not.toContain('For .ro, you can confirm directly');
  }
 });
+
+it.skipIf(!hasBuild)('prerenders the latest blog links immediately before the social section in both languages',()=>{
+ for(const [route,base] of [['/','/blog'],['/en','/en/blog']]){
+  const html=read(route), start=html.indexOf('id="blog-avyron"'),end=html.indexOf('id="social"');
+  expect(start).toBeGreaterThan(0);expect(end).toBeGreaterThan(start);
+  const preview=html.slice(start,end);expect(preview).toContain(`href="${base}"`);
+  expect((preview.match(/class="avy-blog-preview-slide"/g)||[]).length).toBe(6);
+  expect(preview).toContain(`href="${base}/${route === '/' ? 'variante-produs-magazin-online-ux-seo' : 'ai-act-reguli-transparenta-2-august-2026'}"`);
+ }
+});

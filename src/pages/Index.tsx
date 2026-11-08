@@ -14,6 +14,7 @@ const DomainCheck = lazyWithRetry(() => import("@/components/site/DomainCheck"))
 const QualityStandard = lazyWithRetry(() => import("@/components/site/QualityStandard"));
 const Benefits = lazyWithRetry(() => import("@/components/site/Benefits"));
 const HomepageQuickLinks = lazyWithRetry(() => import("@/components/site/HomepageQuickLinks"));
+const LatestBlog = lazyWithRetry(() => import("@/components/site/LatestBlog"));
 const Socials = lazyWithRetry(() => import("@/components/site/Socials"));
 const CTA = lazyWithRetry(() => import("@/components/site/CTA"));
 const ContactBar = lazyWithRetry(() => import("@/components/site/ContactBar"));
@@ -108,6 +109,7 @@ const Index = () => {
       <Deferred minHeight={260} forceReady={location.hash === "#avyron-quality-standard"}><QualityStandard /></Deferred>
       <Deferred minHeight={220}><HomepageQuickLinks /></Deferred>
       <Deferred minHeight={520} forceReady={location.hash === "#cta"}><CTA /></Deferred>
+      <Deferred minHeight={540} forceReady={location.hash === "#blog-avyron"}><LatestBlog /></Deferred>
       <Deferred minHeight={320}><Socials /></Deferred>
       {/* Footerul trebuie să existe chiar și când vizitatorul sare direct la
           finalul paginii folosind bara de scroll. */}

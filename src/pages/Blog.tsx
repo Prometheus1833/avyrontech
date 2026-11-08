@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import DOMPurify from "dompurify";
 import {
@@ -16,15 +16,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { BLOG_INDEX, BLOG_INDEX_EN, type BlogIndexEntry } from "@/data/blogIndex";
-import { apiUrl } from "@/lib/apiBase";
+import { mergeBlogPosts, staticBlogPosts } from "@/lib/blogFeed";
+import { resolveBlogMediaUrl as mediaUrl } from "@/lib/blogMedia";
+import BlogCover from "@/components/site/BlogCover";
 import { blogApi, type BlogLanguage, type BlogPost, type BlogPostInput, type BlogStatus } from "@/lib/blogApi";
 import { toast } from "sonner";
 import PageBackLink from "@/components/site/PageBackLink";
 import { trackFunnel } from "@/lib/siteAnalytics";
 
 const SITE_URL = "https://avyron.ro";
-const FALLBACK_IMAGE = "/og/home.jpg";
 const CATEGORIES: Record<string, { ro: string; en: string }> = {
   business: { ro: "Afaceri", en: "Business" },
   "web-design": { ro: "Web design", en: "Web design" },
@@ -45,21 +45,7 @@ const initials = (name?: string | null) => (name || "Avyron").split(/\s+/).map((
 const categoryLabel = (category: string, lang: BlogLanguage) => CATEGORIES[category]?.[lang] || category.replace(/-/g, " ");
 const canonicalCategory = (category: string) => category === "technology" ? "tech" : category === "securitate" ? "security" : category;
 const slugify = (value: string) => value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 96);
-const mediaUrl = (value?: string | null) => !value ? FALLBACK_IMAGE : value.startsWith("/api/") ? apiUrl(value) : value;
 const absoluteUrl = (value?: string | null) => mediaUrl(value).startsWith("http") ? mediaUrl(value) : `${SITE_URL}${mediaUrl(value)}`;
-
-const fromIndex = (entry: BlogIndexEntry, language: BlogLanguage): BlogPost => ({
-  ...entry, language, status: "published", author_name: "Echipa Avyron", author_avatar_url: null,
-  cover_image_alt: entry.cover_image_alt || entry.title, created_at: entry.published_at,
-  alternate_slug: entry.has_translation === false ? null : entry.slug,
-  translation_key: entry.slug,
-});
-
-const mergePosts = (remote: BlogPost[], local: BlogPost[]) => {
-  const bySlug = new Map(local.map((post) => [post.slug, post]));
-  for (const post of remote) bySlug.set(post.slug, { ...bySlug.get(post.slug), ...post });
-  return [...bySlug.values()].sort((a, b) => toTime(b.published_at) - toTime(a.published_at));
-};
 
 const safeInline = (value: string) => {
   const escaped = value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -128,7 +114,7 @@ const ArticleCard = ({ post, language, variant = "standard" }: { post: BlogPost;
   const href = `${language === "en" ? "/en/blog" : "/blog"}/${post.slug}`;
   const lead = variant === "lead", compact = variant === "compact";
   return <article data-blog-card={variant} className={`group overflow-hidden border border-border/70 bg-card/80 transition-colors hover:border-brand/45 ${lead ? "grid min-h-full rounded-[1.75rem] shadow-soft lg:grid-rows-[minmax(260px,1fr)_auto]" : compact ? "grid grid-cols-[7.5rem_minmax(0,1fr)] rounded-2xl sm:grid-cols-[9rem_minmax(0,1fr)]" : "flex h-full flex-col rounded-2xl"}`}>
-    <Link to={href} className={`relative block overflow-hidden bg-muted ${lead ? "min-h-72" : compact ? "min-h-32" : "aspect-[16/10]"}`} aria-label={post.title}><img src={mediaUrl(post.cover_image_url)} alt={post.cover_image_alt || post.title} width={lead ? 1200 : 720} height={lead ? 675 : 450} loading={lead ? "eager" : "lazy"} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.035]" /><div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" /></Link>
+    <Link to={href} className={`relative block overflow-hidden bg-muted ${lead ? "min-h-72" : compact ? "min-h-32" : "aspect-[16/10]"}`} aria-label={post.title}><BlogCover src={post.cover_image_url} alt={post.cover_image_alt || post.title} width={lead ? 1200 : 720} height={lead ? 675 : 450} loading={lead ? "eager" : "lazy"} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.035]" /><div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" /></Link>
     <div className={`flex min-w-0 flex-1 flex-col ${lead ? "p-6 md:p-8" : compact ? "p-4" : "p-5"}`}><div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground"><span className="font-semibold text-brand">{categoryLabel(post.category, language)}</span><span>{formatDate(post.published_at, language)}</span>{!compact && <span>{readingTime(post.content)} min</span>}</div>
       <h2 className={`${lead ? "mt-4 font-serif text-3xl md:text-[2.55rem]" : compact ? "mt-2 line-clamp-3 font-serif text-lg sm:text-xl" : "mt-3 font-serif text-2xl"} font-semibold leading-[1.08] tracking-[-0.025em]`}><Link to={href} className="transition-colors hover:text-brand">{post.title}</Link></h2>{!compact && <p className={`${lead ? "mt-4 text-base" : "mt-3 text-sm"} line-clamp-3 leading-relaxed text-muted-foreground`}>{post.excerpt}</p>}
       <div className={`${compact ? "pt-3" : "mt-auto pt-6"} flex items-center justify-between gap-3 border-t border-border/60`}><span className="truncate text-[11px] font-medium text-muted-foreground">{post.author_name || "Echipa Avyron"}</span><Link to={href} className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-brand">{language === "en" ? "Read" : "Citește"}<ArrowRight className="size-3.5" /></Link></div>
@@ -172,12 +158,13 @@ export const EditorialWorkspace = ({ language, isAdmin, onPublished }: { languag
 const Blog = () => {
   const { slug } = useParams<{ slug?: string }>();
   const language: BlogLanguage = window.location.pathname.startsWith("/en/") ? "en" : "ro";
-  const staticPosts = useMemo(() => mergePosts([], (language === "en" ? BLOG_INDEX_EN : BLOG_INDEX).map((entry) => fromIndex(entry, language))), [language]);
+  const staticPosts = useMemo(() => staticBlogPosts(language), [language]);
   const [posts, setPosts] = useState<BlogPost[]>(staticPosts), [loaded, setLoaded] = useState(false), [query, setQuery] = useState(""), [category, setCategory] = useState("all");
-  const refresh = useCallback(async () => { try { setPosts(mergePosts((await blogApi.listPublished(language)).data, staticPosts)); } catch { setPosts(staticPosts); } finally { setLoaded(true); } }, [language, staticPosts]);
-  useEffect(() => { setPosts(staticPosts); setLoaded(false); void refresh(); }, [refresh, staticPosts]);
+  const requests = useRef({version: 0}).current;
+  const refresh = useCallback(async () => { const version = ++requests.version; try { const {data} = await blogApi.listPublished(language); if(version === requests.version) setPosts(mergeBlogPosts(data, staticPosts, language)); } catch { if(version === requests.version) setPosts(staticPosts); } finally { if(version === requests.version) setLoaded(true); } }, [language, staticPosts, requests]);
+  useEffect(() => { setPosts(staticPosts); setLoaded(false); void refresh(); return () => {requests.version++;}; }, [refresh, staticPosts, requests]);
   const current = slug ? posts.find((post) => post.slug === slug) || null : null;
-  useEffect(() => { if (!slug || current || !loaded) return; blogApi.getPublished(language, slug).then(({ data }) => setPosts((items) => mergePosts([data], items))).catch(() => {}); }, [current, language, loaded, slug]);
+  useEffect(() => { if (!slug || current || !loaded) return; blogApi.getPublished(language, slug).then(({ data }) => setPosts((items) => mergeBlogPosts([data], items, language))).catch(() => {}); }, [current, language, loaded, slug]);
 
   /* Vizitele blogului sunt numărate în baza noastră (și în GA4). */
   useEffect(() => {
@@ -213,7 +200,7 @@ const Blog = () => {
     const related = posts.filter((post) => post.slug !== current.slug && (post.category === current.category || post.tags.some((tag) => current.tags.includes(tag)))).slice(0, 3);
     return <main className="min-h-screen overflow-x-hidden bg-background"><Nav /><article className="mx-auto max-w-6xl px-4 pb-20 pt-28 md:pt-36"><PageBackLink to={basePath} label={language === "en" ? "Back" : "Înapoi"} title={language === "en" ? "All insights" : "Toate articolele"} />
       <header className="mx-auto mt-8 max-w-5xl text-center"><Badge variant="secondary" className="rounded-full text-brand">{categoryLabel(current.category, language)}</Badge><h1 className="mt-4 text-balance font-display text-4xl font-bold leading-[1.08] tracking-tight md:text-5xl">{current.title}</h1><p className="mx-auto mt-5 max-w-3xl text-base leading-relaxed text-muted-foreground md:text-lg">{current.excerpt}</p><div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground"><span className="inline-flex items-center gap-1.5"><UserRound className="size-4" />{current.author_name || "Echipa Avyron"}</span><span className="inline-flex items-center gap-1.5"><Calendar className="size-4" />{formatDate(current.published_at, language)}</span><span className="inline-flex items-center gap-1.5"><Clock className="size-4" />{readingTime(current.content)} {language === "en" ? "min read" : "min de citit"}</span></div><div className="mt-5 flex justify-center"><ShareButtons post={current} language={language} compact /></div></header>
-      <figure className="mt-8 overflow-hidden rounded-[2rem] border border-border/70 bg-muted shadow-elev"><img src={mediaUrl(current.cover_image_url)} alt={current.cover_image_alt || current.title} width={1200} height={630} className="aspect-[40/21] w-full object-cover" /></figure>
+      <figure className="mt-8 overflow-hidden rounded-[2rem] border border-border/70 bg-muted shadow-elev"><BlogCover src={current.cover_image_url} alt={current.cover_image_alt || current.title} width={1200} height={630} className="aspect-[40/21] w-full object-cover" /></figure>
       <div className="mx-auto mt-8 grid max-w-6xl gap-7 lg:grid-cols-[minmax(0,1fr)_220px]"><div className="rounded-3xl border border-border/60 bg-card/65 p-5 shadow-soft md:p-8"><MarkdownArticle content={current.content} />{current.tags.length > 0 && <div className="mt-8 flex flex-wrap gap-2 border-t border-border/70 pt-5">{current.tags.map((tag) => <Badge key={tag} variant="outline"><Tag className="mr-1 size-3" />{tag}</Badge>)}</div>}<ShareButtons post={current} language={language} /></div><aside className="space-y-5 lg:sticky lg:top-28 lg:self-start"><div className="rounded-3xl border border-border/70 bg-card/65 p-5"><Avatar className="size-12 border border-border"><AvatarImage src={current.author_avatar_url ? mediaUrl(current.author_avatar_url) : undefined} alt="" /><AvatarFallback>{initials(current.author_name)}</AvatarFallback></Avatar><p className="mt-4 font-semibold">{current.author_name || "Echipa Avyron"}</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{language === "en" ? "Practical analysis based on design, development, SEO and infrastructure work." : "Analiză practică bazată pe proiecte de design, dezvoltare, SEO și infrastructură."}</p></div><div className="rounded-3xl border border-brand/20 bg-brand/5 p-5"><ShieldCheck className="size-5 text-brand" /><p className="mt-3 text-sm font-semibold">{language === "en" ? "Editorial standard" : "Standard editorial"}</p><p className="mt-2 text-xs leading-relaxed text-muted-foreground">{language === "en" ? "Clear scope, verifiable statements and no guaranteed outcomes." : "Informații clare, afirmații verificabile și fără rezultate garantate artificial."}</p></div></aside></div>
       {related.length > 0 && <section className="mx-auto mt-16 max-w-5xl"><div><p className="text-xs font-bold uppercase tracking-[.2em] text-brand">Avyron Insights</p><h2 className="mt-2 font-serif text-3xl font-semibold">{language === "en" ? "Related guides" : "Ghiduri conexe"}</h2></div><div className="mt-6 grid gap-5 md:grid-cols-3">{related.map((post) => <ArticleCard key={post.id} post={post} language={language} />)}</div></section>}
       <section className="mx-auto mt-16 max-w-5xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-brand/20 via-brand-2/10 to-brand-3/20 p-8 text-center md:p-12"><BookOpen className="mx-auto size-7 text-brand" /><h2 className="mt-4 font-display text-3xl font-bold md:text-4xl">{language === "en" ? "Turn useful information into a digital system" : "Transformă informația utilă într-un sistem digital"}</h2><p className="mx-auto mt-4 max-w-2xl text-muted-foreground">{language === "en" ? "Avyron combines strategy, design, development, SEO and Cloudflare infrastructure." : "Avyron combină strategie, design, dezvoltare, SEO și infrastructură Cloudflare."}</p><Button asChild className="mt-7 rounded-full"><Link to={language === "en" ? "/en/services" : "/servicii"}>{language === "en" ? "Explore services" : "Vezi serviciile"}<ArrowRight className="ml-2 size-4" /></Link></Button></section>
