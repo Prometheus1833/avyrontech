@@ -553,3 +553,9 @@ html[data-motion-tier="usor"] .avy-route-transition {
     transform: none;
   }
 }
+
+/* A consent decision takes precedence over optional floating contact controls. */
+html[data-cookie-panel-open] .public-contact-rail {
+  visibility: hidden;
+  pointer-events: none;
+}

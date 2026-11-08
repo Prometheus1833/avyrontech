@@ -78,3 +78,73 @@ describe("public GA4 measurement", () => {
     expect(document.querySelector('script[src*="googletagmanager"]')).toBeNull();
   });
 });
+
+describe("consent and lazy navigation regressions", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    history.replaceState({}, "", "/");
+    delete analyticsWindow().dataLayer;
+    delete analyticsWindow().gtag;
+    document.head.innerHTML = '<title>Home</title><link rel="canonical" href="https://avyron.ro/">';
+    document.cookie = "_ga=; Max-Age=0; Path=/";
+    sessionStorage.clear();
+  });
+  it("does not load Google for marketing-only consent", async () => {
+    const { updateConsent } = await import("@/lib/analytics");
+    updateConsent({ analytics: false, marketing: true });
+    expect(document.querySelector('script[src*="googletagmanager"]')).toBeNull();
+  });
+  it("does not count saving identical preferences as another page view", async () => {
+    const { updateConsent } = await import("@/lib/analytics");
+    updateConsent({ analytics: true, marketing: false });
+    updateConsent({ analytics: true, marketing: false });
+    expect(commands().filter(c => c[0] === "event")).toHaveLength(1);
+  });
+  it("waits for the destination metadata before counting SPA navigation", async () => {
+    const { updateConsent, trackPageViewWhenReady } = await import("@/lib/analytics");
+    updateConsent({ analytics: true, marketing: false });
+    history.replaceState({}, "", "/servicii");
+    const stop = trackPageViewWhenReady("/servicii");
+    expect(commands().filter(c => c[0] === "event")).toHaveLength(1);
+    document.title = "Services";
+    document.querySelector('link[rel="canonical"]')!.setAttribute("href", "https://avyron.ro/servicii");
+    await Promise.resolve();
+    const events = commands().filter(c => c[0] === "event");
+    expect(events).toHaveLength(2);
+    expect(events[1][2]).toMatchObject({ page_path: "/servicii", page_title: "Services" });
+    stop();
+  });
+  it("removes optional identifiers on withdrawal and starts a fresh native session on re-consent", async () => {
+    const { updateConsent } = await import("@/lib/analytics");
+    const { trackFunnel } = await import("@/lib/siteAnalytics");
+    const { saveCookieConsent } = await import("@/lib/cookieConsent");
+    const sendBeacon = vi.fn(() => true);
+    Object.defineProperty(navigator, "sendBeacon", { configurable: true, value: sendBeacon });
+    saveCookieConsent({ necessary: true, analytics: true, marketing: false });
+    updateConsent({ analytics: true, marketing: false });
+    trackFunnel("cta_click", "test");
+    const previous = sessionStorage.getItem("avyron:sid");
+    expect(previous).toBeTruthy();
+    document.cookie = "_ga=synthetic; Path=/";
+    document.cookie = "essential=keep; Path=/";
+    updateConsent({ analytics: false, marketing: false });
+    expect(document.cookie).not.toContain("_ga=");
+    expect(document.cookie).toContain("essential=keep");
+    expect(sessionStorage.getItem("avyron:sid")).toBeNull();
+    updateConsent({ analytics: true, marketing: false });
+    trackFunnel("cta_click", "test");
+    expect(sessionStorage.getItem("avyron:sid")).not.toBe(previous);
+  });
+});
+
+it("does not send a misconfigured connector credential to a Google tag URL", async () => {
+  vi.resetModules();
+  vi.stubEnv("VITE_GOOGLE_ANALYTICS_ID", "invalid-connector-value");
+  document.querySelectorAll('script[src*="googletagmanager"]').forEach(node => node.remove());
+  try {
+    const { updateConsent, GA_ENABLED } = await import("@/lib/analytics");
+    expect(GA_ENABLED).toBe(false);
+    updateConsent({ analytics: true, marketing: false });
+    expect(document.querySelector('script[src*="googletagmanager"]')).toBeNull();
+  } finally { vi.unstubAllEnvs(); }
+});

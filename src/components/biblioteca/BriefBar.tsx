@@ -28,7 +28,7 @@ export default function BriefBar({ codes, lang, origin, onRemove }: Props) {
 
   return (
     <>
-      <div id="brief" className="fixed inset-x-0 bottom-0 z-40 px-3 pb-3 sm:px-5 sm:pb-5">
+      <div id="selected-brief" className="fixed inset-x-0 bottom-0 z-40 px-3 pb-3 sm:px-5 sm:pb-5">
         <div className="mx-auto max-w-3xl overflow-hidden rounded-xl border border-white/15 bg-[#0b0d14]/95 shadow-2xl backdrop-blur">
           <div
             className={cn(

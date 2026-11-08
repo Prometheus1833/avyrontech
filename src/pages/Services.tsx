@@ -245,7 +245,7 @@ const Services = () => {
             aria-label={ro ? "Acasă Avyron" : "Avyron home"}
             className="flex min-w-0 items-center justify-self-center gap-2 rounded-full px-1.5 py-1 transition-colors hover:bg-foreground/5"
           >
-            <img src={logo} alt="Avyron" className="size-7 rounded-md ring-1 ring-white/20 sm:size-8" />
+            <img src={logo} alt="Avyron" width={32} height={32} className="size-7 rounded-md ring-1 ring-white/20 sm:size-8" />
             <span className="hidden font-display text-xs tracking-[0.2em] min-[380px]:inline sm:text-sm sm:tracking-[0.25em]">AVYRON</span>
           </a>
 
@@ -404,7 +404,7 @@ const Services = () => {
               onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "pricing_footer" })}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-full bg-[#25D366] hover:bg-[#1ebe5a] px-6 py-3 text-sm font-bold text-white transition-colors"
+              className="inline-flex items-center gap-2 rounded-full bg-[#25D366] hover:bg-[#1ebe5a] px-6 py-3 text-sm font-bold text-slate-950 transition-colors"
             >
               WhatsApp
             </a>
@@ -416,8 +416,8 @@ const Services = () => {
               contact@avyron.ro
             </a>
             <Link
-              to="/#examples"
-              className="inline-flex items-center gap-2 rounded-full bg-cyan-400 text-background hover:bg-cyan-300 px-6 py-3 text-sm font-bold transition-colors"
+              to="/#exemple"
+              className="inline-flex items-center gap-2 rounded-full bg-cyan-400 text-slate-950 hover:bg-cyan-300 px-6 py-3 text-sm font-bold transition-colors"
             >
               {(ro ? serviceInlineCopy.text_49fd39229a0f.ro : serviceInlineCopy.text_49fd39229a0f.en)}
             </Link>

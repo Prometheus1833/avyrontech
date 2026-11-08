@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { isSavedContact, publicFormRequest, type ContactReceipt } from "@/lib/publicFormRequest";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
@@ -169,6 +170,8 @@ export default function Configurator() {
   const [turnstileResetKey, setTurnstileResetKey] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState("");
+  const inFlight = useRef(false);
 
   const selectedBusinesses = HORECA_BUSINESSES.filter((item) => businessIds.includes(item.id));
   const selectedGoals = HORECA_GOALS.filter((item) => goalIds.includes(item.id));
@@ -190,6 +193,8 @@ export default function Configurator() {
         path,
         alternates: { ro: "/configurator", en: "/en/configurator" },
         image: websitePreviewImage,
+        imageWidth: 704,
+        imageHeight: 704,
         imageAlt: ro
           ? "Configurator pentru website, servicii și funcții digitale AVYRON"
           : "AVYRON configurator for websites, services and digital features",
@@ -231,12 +236,14 @@ export default function Configurator() {
 
   const submitConfiguration = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (inFlight.current) return;
+    setSubmitError("");
     if (name.trim().length < 2 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim()) || phone.trim().length < 6) {
-      toast.error(ro ? "Completează numele, e-mailul și telefonul." : "Complete your name, email and phone number.");
+      setSubmitError(ro ? "Completează numele, e-mailul și telefonul." : "Complete your name, email and phone number.");
       return;
     }
     if (TURNSTILE_SITE_KEY && !turnstileToken) {
-      toast.error(ro ? "Confirmă verificarea anti-spam." : "Complete the anti-spam check.");
+      setSubmitError(ro ? "Confirmă verificarea anti-spam." : "Complete the anti-spam check.");
       return;
     }
     const configuration = {
@@ -259,20 +266,22 @@ export default function Configurator() {
     form.set("config", JSON.stringify(configuration));
     form.set("turnstileToken", turnstileToken);
     form.set("company_url", "");
+    inFlight.current = true;
     setSubmitting(true);
     try {
-      const response = await fetch(apiUrl("/api/contact/demo"), { method: "POST", body: form });
-      const result = await response.json().catch(() => ({})) as { leadId?: string; error?: string };
-      if (!response.ok && !result.leadId) throw new Error(result.error || "request_failed");
-      setSubmittedId(result.leadId || "saved");
+      const { response, body: result } = await publicFormRequest<ContactReceipt>(apiUrl("/api/contact/demo"), { method: "POST", body: form });
+      if (!isSavedContact(response, result)) throw new Error("request_failed");
+      setSubmittedId(result.leadId!);
       trackFunnel("generate_lead", "configurator", { language, services: selectedServices.length, features: selectedFeatures.length });
       toast.success(ro ? "Configurația a fost salvată în AVYRON OS." : "Your configuration was saved in AVYRON OS.");
     } catch {
       setTurnstileToken("");
       setTurnstileResetKey((value) => value + 1);
+      setSubmitError(ro ? "Trimiterea nu a putut fi confirmată. Datele tale sunt păstrate; poți încerca din nou sau ne poți contacta pe WhatsApp." : "Submission could not be confirmed. Your entries are kept; retry or contact us on WhatsApp.");
       toast.error(ro ? "Configurația nu a putut fi trimisă. Încearcă din nou." : "The configuration could not be sent. Please try again.");
     } finally {
       setSubmitting(false);
+      inFlight.current = false;
     }
   };
 
@@ -290,7 +299,7 @@ export default function Configurator() {
         <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[32rem] bg-[radial-gradient(circle_at_18%_10%,hsl(var(--brand)/0.16),transparent_34%),radial-gradient(circle_at_80%_0%,hsl(var(--foreground)/0.08),transparent_28%)]" />
 
         <div className="mx-auto max-w-4xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand/[0.07] px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.22em] text-brand sm:text-[11px]">
+          <div className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand/[0.07] px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.22em] text-violet-700 dark:text-violet-300 sm:text-[11px]">
             <Sparkles className="size-3.5" aria-hidden />
             {copy.eyebrow}
           </div>
@@ -299,7 +308,7 @@ export default function Configurator() {
             {copy.title}
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">{copy.description}</p>
-          <p className="mx-auto mt-3 max-w-2xl text-xs leading-5 text-muted-foreground/80 sm:text-sm">{copy.helper}</p>
+          <p className="mx-auto mt-3 max-w-2xl text-xs leading-5 text-muted-foreground sm:text-sm">{copy.helper}</p>
         </div>
 
         <div className="mt-10 grid items-start gap-5 lg:mt-14 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] lg:gap-8">
@@ -487,7 +496,7 @@ export default function Configurator() {
                 <div className="p-5 sm:p-6">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#9b6948]">{copy.popular}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#815235]">{copy.popular}</p>
                       <p className="mt-1 font-display text-xl font-black">{ro ? "Clar, relevant, pregătit pentru conversie." : "Clear, relevant and ready to convert."}</p>
                     </div>
                     <span className="rounded-full border border-[#172018]/10 px-3 py-1.5 text-[10px] font-semibold">{tx(business.label)}</span>
@@ -496,7 +505,7 @@ export default function Configurator() {
                     {business.menu.map((item) => (
                       <div key={item.ro} className="flex items-center justify-between gap-4 rounded-xl bg-white/55 px-3.5 py-3">
                         <span className="text-xs font-semibold">{tx(item)}</span>
-                        <span className="shrink-0 text-[10px] font-bold text-[#9b6948]">{ro ? "INCLUS" : "INCLUDED"}</span>
+                        <span className="shrink-0 text-[10px] font-bold text-[#815235]">{ro ? "INCLUS" : "INCLUDED"}</span>
                       </div>
                     ))}
                   </div>
@@ -520,15 +529,19 @@ export default function Configurator() {
                 {selectedModules.map((item) => <span key={item.id} className="rounded-full bg-muted px-2.5 py-1">{tx(item.label)}</span>)}
               </div>
               {submittedId ? (
-                <div className="mt-5 rounded-2xl border border-emerald-400/25 bg-emerald-400/10 p-4 text-sm text-emerald-700 dark:text-emerald-200">
+                <div role="status" className="mt-5 rounded-2xl border border-emerald-400/25 bg-emerald-400/10 p-4 text-sm text-emerald-700 dark:text-emerald-200">
                   <p className="font-semibold">{ro ? "Configurație sincronizată" : "Configuration synced"}</p>
                   <p className="mt-1 text-xs opacity-80">{ro ? "Rezultatul este acum disponibil în AVYRON OS → Configurator." : "The result is now available in AVYRON OS → Configurator."}</p>
                 </div>
               ) : (
-                <form onSubmit={submitConfiguration} className="mt-5 space-y-2.5">
-                  <Input value={name} onChange={(event) => setName(event.target.value)} maxLength={80} required placeholder={ro ? "Numele tău" : "Your name"} className="h-11 rounded-xl" />
-                  <Input value={email} onChange={(event) => setEmail(event.target.value)} type="email" maxLength={120} required placeholder="email@exemplu.ro" className="h-11 rounded-xl" />
-                  <Input value={phone} onChange={(event) => setPhone(event.target.value)} type="tel" maxLength={30} required placeholder={ro ? "Telefon" : "Phone"} className="h-11 rounded-xl" />
+                <form onSubmit={submitConfiguration} aria-busy={submitting} aria-describedby={submitError ? "configuration-error" : undefined} className="mt-5 space-y-2.5">
+                  <label htmlFor="configuration-name" className="sr-only">{ro ? "Numele tău" : "Your name"}</label>
+                  <Input id="configuration-name" name="name" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} minLength={2} maxLength={80} required placeholder={ro ? "Numele tău" : "Your name"} className="h-11 rounded-xl" />
+                  <label htmlFor="configuration-email" className="sr-only">E-mail</label>
+                  <Input id="configuration-email" name="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} type="email" maxLength={120} required placeholder="email@exemplu.ro" className="h-11 rounded-xl" />
+                  <label htmlFor="configuration-phone" className="sr-only">{ro ? "Telefon" : "Phone"}</label>
+                  <Input id="configuration-phone" name="phone" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} type="tel" minLength={6} maxLength={30} required placeholder={ro ? "Telefon" : "Phone"} className="h-11 rounded-xl" />
+                  {submitError && <p id="configuration-error" role="alert" className="text-sm text-red-700 dark:text-red-300">{submitError}</p>}
                   <Turnstile action="contact-demo" onToken={setTurnstileToken} resetKey={turnstileResetKey} />
                   <button type="submit" disabled={submitting} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 py-3 text-sm font-bold text-background transition hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60">
                     {submitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}

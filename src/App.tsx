@@ -4,10 +4,10 @@ import LangRouteSync from "@/components/site/LangRouteSync";
 import { FEATURES } from "@/config/features";
 import { AuthProvider,useAuth } from "@/hooks/useAuth";
 import { LanguageProvider } from "@/i18n/LanguageContext";
-import { pageView } from "@/lib/analytics";
+import { trackPageViewWhenReady } from "@/lib/analytics";
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { resetManagedHead } from "@/lib/seo";
-import { Bot } from "lucide-react";
+import { Bot, Loader2 } from "lucide-react";
 import { Suspense,useEffect,useRef,useState } from "react";
 import { BrowserRouter,Navigate,Route,Routes,useLocation } from "react-router-dom";
 import Index from "./pages/Index.tsx";
@@ -104,6 +104,7 @@ import AppHostGuard from "@/components/auth/AppHostGuard";
 import CookieBanner from "@/components/site/CookieBanner";
 import PerformanceGovernor from "@/components/site/PerformanceGovernor";
 import RouteTransition from "@/components/site/RouteTransition";
+import RouteErrorBoundary from "@/components/site/RouteErrorBoundary";
 
 const Notifications = lazyWithRetry(() =>
   import("@/components/ui/sonner").then(({ Toaster }) => ({ default: Toaster })),
@@ -144,9 +145,15 @@ const DeferredGlobalUi = () => {
 const AnalyticsTracker = () => {
   const { pathname } = useLocation();
   useEffect(() => {
-    pageView(pathname);
+    return trackPageViewWhenReady(pathname);
   }, [pathname]);
   return null;
+};
+
+const RouteLoading = () => {
+  const { pathname } = useLocation();
+  const ro = !/^\/(en|it|hu|de|fr|pl)(\/|$)/.test(pathname);
+  return <div role="status" className="grid min-h-[70dvh] place-items-center px-6 text-muted-foreground"><span className="inline-flex items-center gap-3 rounded-2xl border border-border/60 bg-card/80 px-5 py-4 text-sm"><Loader2 className="size-5 motion-safe:animate-spin text-brand" aria-hidden />{ro ? "Se încarcă pagina…" : "Loading page…"}</span></div>;
 };
 
 /**
@@ -178,7 +185,8 @@ const App = () => {
         {!servicePreview&&<><Suspense fallback={null}><ContextualNotificationPrompt /></Suspense><DeferredNewsletterPrompt /></>}
 
         <AppHostGuard>
-          <Suspense fallback={<div className="min-h-screen" />}>
+          <RouteErrorBoundary>
+          <Suspense fallback={<RouteLoading />}>
             <RouteTransition>
               <Routes>
                 <Route path="/" element={surveyHost ? <SurveyLanding /> : <Index />} />
@@ -395,6 +403,7 @@ const App = () => {
               </Routes>
             </RouteTransition>
           </Suspense>
+          </RouteErrorBoundary>
         </AppHostGuard>
         {!surveyHost&&!servicePreview && <CookieBanner />}
       </BrowserRouter>

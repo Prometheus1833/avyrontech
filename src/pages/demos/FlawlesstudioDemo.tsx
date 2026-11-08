@@ -31,10 +31,9 @@ const FlawlesstudioDemo = () => {
             <nav className="hidden md:flex items-center gap-6 text-sm text-[#6b4a52]">
               <a href="#servicii" className="hover:text-[#c97b8a]">Servicii</a>
               <a href="#echipa" className="hover:text-[#c97b8a]">Echipă</a>
-              <a href="#galerie" className="hover:text-[#c97b8a]">Galerie</a>
               <a href="#contact" className="hover:text-[#c97b8a]">Contact</a>
             </nav>
-            <a href="#programari" className="inline-flex items-center gap-1.5 bg-[#2a1a1f] text-white rounded-full px-4 py-2 text-sm font-bold hover:opacity-90">
+            <a href="#contact" className="inline-flex items-center gap-1.5 bg-[#2a1a1f] text-white rounded-full px-4 py-2 text-sm font-bold hover:opacity-90">
               <Calendar className="size-4" /> Programează
             </a>
           </div>
@@ -55,11 +54,11 @@ const FlawlesstudioDemo = () => {
               Epilare definitivă MedValley, tratamente faciale și ritualuri de îngrijire cu rezultate vizibile încă de la prima ședință.
             </p>
             <div className="flex flex-wrap items-center gap-3 mt-6">
-              <a href="#programari" className="inline-flex items-center gap-2 bg-[#2a1a1f] text-white rounded-full px-6 py-3 text-sm font-bold hover:opacity-90">
+              <a href="#contact" className="inline-flex items-center gap-2 bg-[#2a1a1f] text-white rounded-full px-6 py-3 text-sm font-bold hover:opacity-90">
                 Rezervă o ședință <ArrowRight className="size-4" />
               </a>
-              <a href="#galerie" className="inline-flex items-center gap-2 rounded-full border-2 border-[#2a1a1f]/30 px-5 py-3 text-sm font-semibold hover:bg-[#2a1a1f]/5">
-                Vezi galeria
+              <a href="#servicii" className="inline-flex items-center gap-2 rounded-full border-2 border-[#2a1a1f]/30 px-5 py-3 text-sm font-semibold hover:bg-[#2a1a1f]/5">
+                Vezi serviciile
               </a>
             </div>
             <div className="flex items-center gap-6 mt-8 pt-6 border-t border-[#e8d5d0]">

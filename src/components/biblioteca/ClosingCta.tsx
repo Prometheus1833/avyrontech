@@ -32,7 +32,7 @@ export default function ClosingCta({ codes, lang, origin }: Props) {
     : `Hi! I explored the Avyron Library${codes.length ? ` and selected ${codes.length} directions` : ""}.`;
 
   return (
-    <section className="mx-auto max-w-6xl px-4 pb-24 pt-8 sm:px-6">
+    <section id="brief" className="scroll-mt-24 mx-auto max-w-6xl px-4 pb-24 pt-8 sm:px-6">
       <div className="rounded-2xl border border-white/12 bg-white/[0.03] p-7 backdrop-blur-md sm:p-10">
         <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-4xl">
           {ro

@@ -2,7 +2,7 @@ name: Verify AVYRON
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, "codex/**"]
   push:
     branches:
       - main

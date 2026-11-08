@@ -71,3 +71,14 @@ describe("dynamic blog sitemap", () => {
     expect(headers.get("cache-control")).toBe("public");
   });
 });
+
+it("does not inherit the homepage image type or claim unknown upload dimensions", async () => {
+  const { injectBlogHtml } = await import("@/worker/blogHtml");
+  const html = injectBlogHtml('<html lang="ro"><head><title>Home</title><meta property="og:image:type" content="image/jpeg" /></head><body><div id="root"></div></body></html>', {
+    language: "ro", slug: "test", title: "Test", excerpt: "Test article", content: "Content", category: "test", tags: [],
+    cover_image_url: "/api/blog/media/upload", published_at: "2026-11-01", updated_at: "2026-11-01",
+  });
+  expect(html).not.toContain('property="og:image:type"');
+  expect(html).not.toContain('property="og:image:width"');
+  expect(html).toContain('aspect-ratio:40/21');
+});

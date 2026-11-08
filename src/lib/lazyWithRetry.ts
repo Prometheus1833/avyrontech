@@ -1,6 +1,16 @@
 import { lazy, type ComponentType } from "react";
 
 const RELOAD_FLAG = "avyron:chunk-reload";
+let unloading = false;
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeunload", () => {
+    unloading = true;
+    // If a beforeunload dialog cancels navigation, the current page stays usable.
+    window.setTimeout(() => { unloading = false; }, 0);
+  });
+  window.addEventListener("pagehide", () => { unloading = true; });
+  window.addEventListener("pageshow", () => { unloading = false; });
+}
 
 /**
  * lazy() cu o singură reîncărcare automată la eșec de import.
@@ -17,9 +27,12 @@ export function lazyWithRetry<T extends ComponentType<unknown>>(
     try {
       return await factory();
     } catch (error) {
-      const alreadyReloaded = sessionStorage.getItem(RELOAD_FLAG) === "1";
+      // A cancelled import from the old document must not override navigation.
+      if (unloading) return new Promise<{ default: T }>(() => {});
+      let alreadyReloaded = true;
+      try { alreadyReloaded = sessionStorage.getItem(RELOAD_FLAG) === "1"; } catch { /* No persistent retry guard: fail through to ErrorBoundary. */ }
       if (!alreadyReloaded && typeof window !== "undefined") {
-        sessionStorage.setItem(RELOAD_FLAG, "1");
+        try { sessionStorage.setItem(RELOAD_FLAG, "1"); } catch { throw error; }
         window.location.reload();
         // Nu rezolvăm promisiunea: pagina se reîncarcă oricum.
         return new Promise<{ default: T }>(() => {});

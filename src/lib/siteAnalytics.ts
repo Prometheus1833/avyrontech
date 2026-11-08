@@ -16,6 +16,9 @@ export type FunnelEvent =
 
 const KEY = "avyron:sid";
 let memorySession = "";
+if (typeof window !== "undefined") window.addEventListener("avyron:analytics-consent", (event) => {
+  if (!(event as CustomEvent<{ analytics: boolean }>).detail.analytics) memorySession = "";
+});
 
 function sessionId(): string {
   if (typeof window === "undefined") return "";

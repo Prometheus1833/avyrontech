@@ -83,3 +83,14 @@ describe("SPA head cleanup between routes", () => {
     expect(document.querySelectorAll('meta[property="og:locale:alternate"]').length).toBe(6);
   });
 });
+
+it("uses true custom image dimensions/MIME and clears them when the next size is unknown", () => {
+  setPageMeta({ title: "Configurator", description: "d", path: "/configurator", image: "/assets/preview.webp", imageWidth: 704, imageHeight: 704 });
+  expect(document.querySelector('meta[property="og:image:width"]')).toHaveAttribute("content", "704");
+  expect(document.querySelector('meta[property="og:image:type"]')).toHaveAttribute("content", "image/webp");
+  setPageMeta({ title: "Article", description: "d", path: "/blog/test", image: "https://example.test/unknown" });
+  expect(document.querySelector('meta[property="og:image:width"]')).toBeNull();
+  expect(document.querySelector('meta[property="og:image:type"]')).toBeNull();
+  setPageMeta({ title: "Home", description: "d", path: "/" });
+  expect(document.querySelector('meta[property="og:image:width"]')).toHaveAttribute("content", "1200");
+});

@@ -28,7 +28,6 @@ const RetuvoDemo = () => {
             </div>
             <nav className="hidden md:flex items-center gap-6 text-sm text-emerald-900/70">
               <a href="#cum" className="hover:text-emerald-600">Cum funcționează</a>
-              <a href="#harta" className="hover:text-emerald-600">Hartă puncte</a>
               <a href="#parteneri" className="hover:text-emerald-600">Parteneri</a>
               <a href="#download" className="hover:text-emerald-600">Aplicație</a>
             </nav>

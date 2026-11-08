@@ -168,7 +168,7 @@ export function injectBlogHtml(shell: string, post: EdgeBlogPost) {
   const metaKeys = [
     "description", "robots", "og:title", "og:description", "og:url", "og:type", "og:locale",
     "og:locale:alternate", "og:image", "og:image:secure_url", "og:image:alt", "og:image:width",
-    "og:image:height", "twitter:card", "twitter:title", "twitter:description", "twitter:image",
+    "og:image:height", "og:image:type", "twitter:card", "twitter:title", "twitter:description", "twitter:image",
     "twitter:image:alt", "article:published_time", "article:modified_time", "article:section", "article:tag",
   ];
   let html = metaKeys.reduce(removeMeta, shell);
@@ -237,8 +237,7 @@ export function injectBlogHtml(shell: string, post: EdgeBlogPost) {
     <meta property="og:image" content="${escapeHtml(image)}" />
     <meta property="og:image:secure_url" content="${escapeHtml(image)}" />
     <meta property="og:image:alt" content="${escapeHtml(post.cover_image_alt || post.title)}" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
+    ${image.startsWith(`${SITE_URL}/og/`) ? '<meta property="og:image:width" content="1200" /><meta property="og:image:height" content="630" />' : ""}
     <meta property="article:published_time" content="${published}" />
     <meta property="article:modified_time" content="${modified}" />
     <meta property="article:section" content="${escapeHtml(post.category)}" />
@@ -257,7 +256,7 @@ export function injectBlogHtml(shell: string, post: EdgeBlogPost) {
     <nav aria-label="Breadcrumb"><a href="${language === "en" ? "/en/blog" : "/blog"}">${language === "en" ? "All insights" : "Toate articolele"}</a></nav>
     <article>
       <header><p>${escapeHtml(post.category)}</p><h1>${escapeHtml(post.title)}</h1><p>${escapeHtml(post.excerpt)}</p><p>${escapeHtml(post.author_name || "Echipa Avyron")} · <time datetime="${published}">${escapeHtml(dateLabel)}</time></p></header>
-      <figure><img src="${escapeHtml(image)}" alt="${escapeHtml(post.cover_image_alt || post.title)}" width="1200" height="630" style="max-width:100%;height:auto" /></figure>
+      <figure><img src="${escapeHtml(image)}" alt="${escapeHtml(post.cover_image_alt || post.title)}" width="1200" height="630" style="width:100%;height:auto;aspect-ratio:40/21;object-fit:cover" /></figure>
       <div>${markdownToHtml(post.content)}</div>
     </article>
   </main>`;

@@ -27,7 +27,10 @@ for (const width of [390, 1440]) test(`GA4 public cu acord și fără conturi pr
       queue.push=function(){for(const command of arguments)receive(command);return push.apply(this,arguments)};
     ` });
   });
+  // Wait for the client's consent gate, not just the visible prerendered HTML.
   await page.goto("/?email=synthetic%40example.test#test");
+  await page.waitForFunction(() => Object.keys(window).some(key => key.startsWith("ga-disable-")));
+  await page.waitForLoadState("networkidle");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   expect(tagLoads).toBe(0);
   await page.getByRole("button", { name: "Setări cookie", exact: true }).click();

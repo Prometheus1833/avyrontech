@@ -48,11 +48,11 @@ const CONFIGS: Record<ErrorVariant, Config> = {
     badge: "Eroare server",
     title: "Ceva a clipit la noi pe server.",
     message:
-      "A apărut o eroare neașteptată. Echipa Avyron este notificată automat. Încearcă din nou într-un minut sau revino la pagina principală.",
+      "A apărut o eroare neașteptată. Încearcă din nou într-un minut sau revino la pagina principală.",
     Icon: ServerCrash,
     metaTitle: "500 — Eroare internă | Avyron",
     metaDescription:
-      "Eroare internă pe avyron.ro. Echipa Avyron a fost notificată automat. Reîncearcă sau revino la pagina principală.",
+      "Eroare internă pe avyron.ro. Reîncearcă sau revino la pagina principală.",
     accent: "from-rose-500/30 to-orange-500/30",
     showRetry: true,
   },
