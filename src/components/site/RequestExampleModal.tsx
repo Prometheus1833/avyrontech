@@ -171,7 +171,7 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
               </div>
             ) : (
               <>
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 text-brand px-3 py-1 text-[11px] font-semibold uppercase tracking-wider">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 text-violet-700 dark:text-violet-300 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider">
                   <Wand2 className="size-3" /> Exemplu personalizat
                 </div>
                 <Dialog.Title asChild><h3 id="request-example-title" className="mt-3 font-display font-bold text-xl sm:text-2xl leading-tight">

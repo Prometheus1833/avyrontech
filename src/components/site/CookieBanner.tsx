@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Cookie, Settings2, Check, X } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { updateConsent } from "@/lib/analytics";
@@ -108,6 +108,7 @@ const CookieBanner = () => {
   const [open, setOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [prefs, setPrefs] = useState<CookieConsentPreferences>({ necessary: true, analytics: false, marketing: false });
+  const appliedConsent = useRef<CookieConsentPreferences | null>(null);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -128,10 +129,13 @@ const CookieBanner = () => {
       if (event.key !== null && event.key !== COOKIE_CONSENT_STORAGE_KEY) return;
       const consent = readCookieConsent();
       const next = consent ?? { necessary: true as const, analytics: false, marketing: false };
+      // A timestamp-only write in another context must not discard edits.
+      if (consent && appliedConsent.current?.analytics === next.analytics && appliedConsent.current?.marketing === next.marketing) return;
+      appliedConsent.current = next;
       setPrefs(next);
       updateConsent(next);
       if (timer) clearTimeout(timer);
-      setOpen(!consent);
+      setOpen(current => !consent || current);
     };
     window.addEventListener("storage", syncOtherTab);
 
@@ -144,6 +148,7 @@ const CookieBanner = () => {
           analytics: Boolean(parsed.analytics),
           marketing: Boolean(parsed.marketing),
         };
+        appliedConsent.current = next;
         setPrefs(next);
         updateConsent(next);
       } else {
@@ -171,6 +176,7 @@ const CookieBanner = () => {
   }, [open]);
 
   const save = (p: CookieConsentPreferences) => {
+    appliedConsent.current = p;
     try {
       saveCookieConsent(p);
     } catch {

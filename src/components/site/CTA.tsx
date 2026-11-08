@@ -110,7 +110,7 @@ const CTA = () => {
         leadId?: string;
         saved?: boolean;
         delivered?: boolean;
-      }>(apiUrl("/api/contact/demo"), { method: "POST", body: fd });
+      }>(apiUrl("/api/contact/demo"), { method: "POST", body: fd }, files.length ? 180_000 : 20_000);
 
       if (res.status === 429) {
         showError(t.cta.rateLimited);

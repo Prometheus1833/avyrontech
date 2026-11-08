@@ -5,6 +5,7 @@ const require = createRequire(import.meta.url);
 test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.addInitScript(() => {
+    if (window !== window.top) return;
     localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({ necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12" }));
     let callback: (token: string) => void = () => {};
     window.turnstile = { render: (_element, options) => { callback = options.callback as (token: string) => void; queueMicrotask(() => callback("synthetic-audit")); return "synthetic"; }, remove: () => {}, reset: () => { queueMicrotask(() => callback("synthetic-audit-reset")); } };
@@ -28,7 +29,7 @@ for (const width of [320, 390, 768, 1440]) test(`public layouts and intrinsic so
   await expect(page.locator('meta[property="og:image:type"]')).toHaveAttribute("content", "image/webp");
 });
 
-for (const path of ["/", "/servicii", "/configurator"]) test(`accessible controls and contrast: ${path}`, async ({ page }) => {
+for (const path of ["/", "/servicii", "/configurator", "/biblioteca"]) test(`accessible controls and contrast: ${path}`, async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto(path);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
@@ -87,6 +88,11 @@ test("library quote works before any effects are selected and traps keyboard foc
   await quote.click();
   const dialog = page.getByRole("dialog", { name: /Solicită un exemplu/ });
   await expect(dialog).toBeVisible();
+  await page.addScriptTag({ path: require.resolve("axe-core/axe.min.js") });
+  expect(await dialog.evaluate(async node => {
+    const axe = (window as unknown as { axe: { run: (root: Element, options: unknown) => Promise<{ violations: { id: string }[] }> } }).axe;
+    return (await axe.run(node, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21aa"] } })).violations.map(v => v.id);
+  })).toEqual([]);
   for (let count = 0; count < 9; count++) {
     await page.keyboard.press("Tab");
     expect(await dialog.evaluate(node => node.contains(document.activeElement))).toBe(true);

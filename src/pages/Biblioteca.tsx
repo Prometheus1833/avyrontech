@@ -214,7 +214,7 @@ const Biblioteca = () => {
   const showBackdrop = tier !== "none";
 
   return (
-    <div className="relative min-h-screen text-white">
+    <div className="avy-library relative isolate min-h-screen bg-[#07080d] text-white">
       {loading && <Preloader ready={backdropReady || !showBackdrop} onDone={() => setLoading(false)} />}
 
       {showBackdrop && (

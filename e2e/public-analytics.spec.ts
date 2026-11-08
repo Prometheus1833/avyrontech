@@ -4,7 +4,7 @@ for (const width of [390, 1440]) test(`GA4 public cu acord și fără conturi pr
   const collected: string[] = [];
   let tagLoads = 0;
   await page.setViewportSize({ width, height: 900 });
-  await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({ necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12" })));
+  await page.addInitScript(() => { if (window === window.top) localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({ necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12" })); });
   await page.route("**/api/**", route => route.fulfill({ status: 401, json: { error: { code: "unauthenticated" } } }));
   await page.route("https://www.google-analytics.com/**", route => {
     const url = new URL(route.request().url());
