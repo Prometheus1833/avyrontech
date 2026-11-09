@@ -251,6 +251,8 @@ async function setup(page: Page, portal = false, configured = false) {
 test("new directory is the final Principal button, with compact contact cards and safe contact links", async ({
   page,
 }) => {
+  // This case asserts desktop sidebar order; responsive cases use explicit widths.
+  await page.setViewportSize({width:1440,height:960});
   await setup(page);
   await page.goto("/profil?tab=collaborators");
   await expect(

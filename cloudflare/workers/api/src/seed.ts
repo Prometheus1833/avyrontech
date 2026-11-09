@@ -1,8 +1,10 @@
 // Legacy account importer. No temporary passwords live in source control.
 import { Hono } from "hono";
-import type { Env, Role } from "./types";
+import type { Role } from "./types";
 import { constantTimeEqual, hashPassword } from "./security";
-import { isReservedPlatformEmail } from "./authorization";
+import { isReservedPlatformEmail, platformRoleForUser } from "./authorization";
+import { checkRateLimit } from "./antispam";
+import type { AppBindings } from "./types";
 
 type ImportUser = {
   email: string;
@@ -42,12 +44,17 @@ type ImportReport = {
   projects?: Array<{ slug: string; status: ImportStatus }>;
 };
 
-export const seedRouter = new Hono<{ Bindings: Env }>();
+export const seedRouter = new Hono<AppBindings>();
 
 seedRouter.post("/api/admin/import-users", async (c) => {
+  const actor = c.get("userId");
+  if (!actor) return c.json({ error: { code: "unauthenticated" } }, 401);
+  if (!await platformRoleForUser(c.env.DB, actor)) return c.json({ error: { code: "platform_principal_required" } }, 403);
   const supplied = c.req.header("x-seed-token") || "";
   if (!c.env.SEED_TOKEN || !(await constantTimeEqual(supplied, c.env.SEED_TOKEN)))
     return c.json({ error: { code: "forbidden" } }, 403);
+  const limit = await checkRateLimit(c.env.DB, [{ key: `account-import:${actor}`, limit: 3, windowSec: 3600 }]);
+  if (!limit.ok) return c.json({ error: { code: "rate_limited" } }, 429);
 
   const body = await c.req.json().catch(() => ({})) as { users?: ImportUser[] };
   if (!Array.isArray(body.users) || body.users.length < 1 || body.users.length > 100)
@@ -77,6 +84,7 @@ seedRouter.post("/api/admin/import-users", async (c) => {
       await c.env.DB.batch([
         c.env.DB.prepare("UPDATE users SET password_hash = ?, email_verified = 1, must_change_password = ?, updated_at = ? WHERE id = ?")
           .bind(await hashPassword(item.temporaryPassword), mustChange, timestamp, id),
+        c.env.DB.prepare("UPDATE sessions SET revoked_at=?,revoked_reason='account_import_reset' WHERE user_id=? AND revoked_at IS NULL").bind(timestamp, id),
         ...roles.map((role) => c.env.DB.prepare("INSERT OR IGNORE INTO user_roles (user_id,role) VALUES (?,?)").bind(id, role)),
         c.env.DB.prepare("INSERT INTO audit_log (user_id,action,meta_json,created_at) VALUES (?,?,?,?)")
           .bind(id, "account_elevated", JSON.stringify({ roles }), timestamp),

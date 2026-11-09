@@ -30,6 +30,7 @@ const Deferred = ({
   minHeight?: number;
   forceReady?: boolean;
 }) => {
+  const { lang } = useLang();
   const ref = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(forceReady);
   useEffect(() => {
@@ -51,7 +52,7 @@ const Deferred = ({
   // toate secțiunile deja afișate, pagina se scurta și browserul arunca
   // vizitatorul înapoi la zona de servicii.
   return (
-    <div ref={ref} data-deferred-pending={ready ? undefined : "true"} style={!ready ? { minHeight } : undefined}>
+    <div ref={ref} role={ready ? undefined : "group"} tabIndex={ready ? -1 : 0} aria-label={ready ? undefined : lang === "ro" ? "Încarcă următoarea secțiune" : "Load the next section"} aria-busy={!ready} onFocus={() => setReady(true)} data-deferred-pending={ready ? undefined : "true"} style={!ready ? { minHeight } : undefined}>
       {ready ? <Suspense fallback={<div data-deferred-lazy="true" style={{ minHeight }} />}>{children}</Suspense> : null}
     </div>
   );
@@ -92,7 +93,7 @@ const Index = () => {
       <Nav />
       <Hero />
       <AgencyServices />
-      <Deferred minHeight={1120} forceReady><Examples /></Deferred>
+      <Deferred minHeight={1120} forceReady={anchorDepth >= 0}><Examples /></Deferred>
       <Deferred minHeight={520} forceReady={anchorDepth >= 1}><Problem /></Deferred>
       <div className="h-8 md:h-16" aria-hidden />
       <Deferred minHeight={300} forceReady={anchorDepth >= 2}><LogoStudioIntro /></Deferred>

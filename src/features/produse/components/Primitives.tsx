@@ -63,7 +63,7 @@ export function Reveal({
   }, [immediate]);
   const Component = Tag as unknown as React.ElementType;
   return (
-    <Component ref={ref} className={`pa-reveal ${className}`} data-in={immediate ? "1" : undefined} style={{ "--i": index } as never} {...rest}>
+    <Component ref={ref} className={`pa-reveal min-w-0 ${className}`} data-in={immediate ? "1" : undefined} style={{ "--i": index } as never} {...rest}>
       {children}
     </Component>
   );
@@ -117,7 +117,7 @@ export function Section({
   }, [hue]);
 
   return (
-    <section ref={ref} id={id} aria-label={label} className={`scroll-mt-24 ${className}`}>
+    <section ref={ref} id={id} aria-label={label} className={`min-w-0 scroll-mt-24 ${className}`}>
       {children}
     </section>
   );

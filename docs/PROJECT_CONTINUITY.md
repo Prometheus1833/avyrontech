@@ -1,5 +1,7 @@
 # Continuitatea proiectului AVYRON
 
+Securitate — 08.11.2026: [audit, limită Access și rollback](./security/SECURITY_BOUNDARIES_2026-11-08.md), migrare aditivă 0110, cookie host-only/rotație/revocare, importator legacy restricționat și teste native Workers/D1. Access este doar pregătit, configurarea externă fiind amânată explicit de utilizator; MFA nu se activează. Nu s-au aplicat migrări remote, DNS/WAF sau deploy. Verificați commitul și rezultatele finale în PR. Cabinetul și PR #110 sunt excluse.
+
 Manager Social Media — 07.11.2026: [flux editorial și runbook](./SOCIAL_EDITORIAL_WORKFLOW.md), migrarea aditivă 0105, agenda -24h/+24h, decizii native cu revizie, reutilizare și handoff Codex. Corectează și rezervarea financiară a proiectelor AI, separată de proiectele CRM. Șase materiale text/proveniență au fost importate în D1, strategia operațională și patru automatizări Codex existente au fost actualizate; acestea nu reprezintă publicări sociale. Încărcarea imaginilor în R2 este blocată de autorizare (403), fără fișiere pretins încărcate. Codul, migrarea remote și deployul necesită verificare separată în PR. Cabinetul și PR #110 sunt excluse.
 
 Notificări native — 07.11.2026: [arhitectură și runbook](./NATIVE_NOTIFICATIONS.md), migrarea aditivă 0104, inbox client/staff, reguli live de acces, mesaje contextuale și administrare Owner/Super Admin. Starea locală, PR și producție se verifică separat; această notă nu dovedește deployul. Proiectul cabinetului și PR #110 sunt excluse.

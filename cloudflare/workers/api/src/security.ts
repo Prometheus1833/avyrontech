@@ -45,17 +45,20 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 export async function verifyPassword(password: string, stored: string): Promise<boolean> {
+  // Database/import corruption must never select an empty or attacker-sized KDF output.
+  if (stored.length > 256) return false;
   const parts = stored.split("$");
   if (parts[0] === "scrypt") {
     const [, nValue, rValue, pValue, saltValue, expectedValue] = parts;
     const N = Number(nValue);
     const r = Number(rValue);
     const p = Number(pValue);
-    if (N !== SCRYPT_N || r !== SCRYPT_R || p !== SCRYPT_P || !saltValue || !expectedValue) return false;
+    if (parts.length !== 6 || N !== SCRYPT_N || r !== SCRYPT_R || p !== SCRYPT_P || !saltValue || !expectedValue) return false;
     try {
       const salt = decodeBase64(saltValue);
       const expected = decodeBase64(expectedValue);
-      const actual = scryptSync(password, salt, expected.byteLength, { N, r, p, maxmem: SCRYPT_MAX_MEMORY });
+      if (salt.byteLength !== 16 || expected.byteLength !== 32) return false;
+      const actual = scryptSync(password, salt, 32, { N, r, p, maxmem: SCRYPT_MAX_MEMORY });
       return actual.byteLength === expected.byteLength && nodeTimingSafeEqual(actual, expected);
     } catch {
       return false;
@@ -66,11 +69,12 @@ export async function verifyPassword(password: string, stored: string): Promise<
   // runtime rejects counts above 100k, so such accounts must use reset/import.
   const [iterationsValue, saltValue, expectedValue] = stored.split("$");
   const iterations = Number(iterationsValue);
-  if (!Number.isSafeInteger(iterations) || iterations < 100_000 || iterations > LEGACY_MAX_ITERATIONS || !saltValue || !expectedValue) return false;
+  if (parts.length !== 3 || !Number.isSafeInteger(iterations) || iterations < 100_000 || iterations > LEGACY_MAX_ITERATIONS || !saltValue || !expectedValue) return false;
   try {
     const salt = decodeBase64(saltValue);
     const expected = decodeBase64(expectedValue);
-    const actual = pbkdf2Sync(password, salt, iterations, expected.byteLength, "sha256");
+    if (salt.byteLength !== 16 || expected.byteLength !== 32) return false;
+    const actual = pbkdf2Sync(password, salt, iterations, 32, "sha256");
     return actual.byteLength === expected.byteLength && nodeTimingSafeEqual(actual, expected);
   } catch {
     return false;
@@ -87,14 +91,21 @@ export async function signJwt(payload: object, secret: string, ttlSeconds = 900)
 }
 
 export async function verifyJwt<T>(token: string, secret: string): Promise<T | null> {
+  if (token.length > 16384 || token.split(".").length !== 3) return null;
   const [header, body, signature] = token.split(".");
   if (!header || !body || !signature) return null;
   try {
+    const algorithm = JSON.parse(new TextDecoder().decode(decodeBase64(header)));
+    if (algorithm.alg !== "HS256" || algorithm.typ !== "JWT" || algorithm.crit !== undefined) return null;
     const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
     const valid = await crypto.subtle.verify("HMAC", key, decodeBase64(signature), encoder.encode(`${header}.${body}`));
     if (!valid) return null;
-    const payload = JSON.parse(new TextDecoder().decode(decodeBase64(body))) as T & { exp?: number };
-    return payload.exp && payload.exp < Math.floor(Date.now() / 1000) ? null : payload;
+    const payload = JSON.parse(new TextDecoder().decode(decodeBase64(body))) as T & { exp?: number; iat?: number; nbf?: number };
+    const timestamp = Math.floor(Date.now() / 1000);
+    if (!Number.isSafeInteger(payload.exp) || payload.exp! <= timestamp ||
+      !Number.isSafeInteger(payload.iat) || payload.iat! > timestamp + 30 || payload.iat! >= payload.exp! ||
+      payload.nbf !== undefined && (!Number.isSafeInteger(payload.nbf) || payload.nbf > timestamp + 30)) return null;
+    return payload;
   } catch {
     return null;
   }

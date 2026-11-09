@@ -77,7 +77,7 @@ export default function GuidePage({ lang }: { lang: Lang }) {
               { ro: ["2. Încerci", "Demo-ul rulează în pagină, iar Editor Mode îți schimbă setările pe loc."], en: ["2. Try", "The demo runs on the page and Editor Mode changes the settings live."] },
               { ro: ["3. Iei codul", "CLI, cod, MCP sau prompt pentru asistentul tău AI — toate cu setările tale."], en: ["3. Take the code", "CLI, code, MCP or a prompt for your AI assistant — all with your settings."] },
             ].map((step, index) => (
-              <div key={step.ro[0]} className="pa-glass rounded-2xl p-4" style={{ "--pa-hue": 265 + index * 20 } as never}>
+              <div key={step.ro[0]} className="pa-glass min-w-0 rounded-2xl p-4" style={{ "--pa-hue": 265 + index * 20 } as never}>
                 <p className="font-display text-sm font-bold text-foreground">{ro ? step.ro[0] : step.en[0]}</p>
                 <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{ro ? step.ro[1] : step.en[1]}</p>
               </div>
@@ -125,7 +125,7 @@ export default function GuidePage({ lang }: { lang: Lang }) {
         <SectionHead eyebrow={ro ? "Licență" : "Licence"} title={ro ? "Licențe și utilizare" : "Licence and use"} />
         <Reveal>
           <div className="grid gap-3 lg:grid-cols-2">
-            <div className="pa-glass rounded-2xl p-4">
+            <div className="pa-glass min-w-0 rounded-2xl p-4">
               <p className="font-display text-sm font-bold text-lime-300">{ro ? "Ai voie" : "You may"}</p>
               <ul className="mt-2 grid list-none gap-1.5 p-0 text-[13px] text-muted-foreground">
                 {(ro
@@ -146,7 +146,7 @@ export default function GuidePage({ lang }: { lang: Lang }) {
                 ))}
               </ul>
             </div>
-            <div className="pa-glass rounded-2xl p-4">
+            <div className="pa-glass min-w-0 rounded-2xl p-4">
               <p className="font-display text-sm font-bold text-red-300">{ro ? "Nu ai voie" : "You may not"}</p>
               <ul className="mt-2 grid list-none gap-1.5 p-0 text-[13px] text-muted-foreground">
                 {(ro
@@ -180,7 +180,7 @@ export default function GuidePage({ lang }: { lang: Lang }) {
         <SectionHead eyebrow={ro ? "Instalare" : "Installation"} title={ro ? "Patru căi spre același fișier" : "Four ways to the same file"} />
         <Reveal>
           <div className="grid gap-3 lg:grid-cols-2">
-            <div className="pa-glass rounded-2xl p-4">
+            <div className="pa-glass min-w-0 rounded-2xl p-4">
               <p className="inline-flex items-center gap-1.5 font-display text-sm font-bold text-foreground">
                 <Terminal className="size-4 text-brand" aria-hidden /> CLI
               </p>
@@ -189,17 +189,17 @@ export default function GuidePage({ lang }: { lang: Lang }) {
                   ? "Registrul e compatibil cu CLI-ul shadcn, deci merge din bun, npm, pnpm sau yarn, fără să instalezi nimic global."
                   : "The registry is shadcn-CLI compatible, so it works from bun, npm, pnpm or yarn without installing anything globally."}
               </p>
-              <pre className="pa-mono mt-2 overflow-x-auto rounded-xl border border-foreground/10 bg-black/40 p-3 text-[11.5px] text-foreground">{cliExample}</pre>
+              <pre tabIndex={0} className="pa-mono mt-2 overflow-x-auto rounded-xl border border-foreground/10 bg-black/40 p-3 text-[11.5px] text-foreground">{cliExample}</pre>
               <CopyButton value={cliExample} label={ro ? "Copiază" : "Copy"} copiedLabel={ro ? "Copiat" : "Copied"} className="mt-2 inline-flex rounded-full border border-foreground/15 px-3 py-1.5 text-[11.5px] font-semibold text-foreground" />
             </div>
-            <div className="pa-glass rounded-2xl p-4">
+            <div className="pa-glass min-w-0 rounded-2xl p-4">
               <p className="font-display text-sm font-bold text-foreground">MCP</p>
               <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
                 {ro
                   ? "Adaugi registrul în components.json și asistentul tău (Claude, Cursor, Copilot) cere produsele pe nume: @avyron/nume-produs."
                   : "Add the registry to components.json and your assistant (Claude, Cursor, Copilot) pulls products by name: @avyron/product-name."}
               </p>
-              <pre className="pa-mono mt-2 overflow-x-auto rounded-xl border border-foreground/10 bg-black/40 p-3 text-[11.5px] text-foreground">{mcpExample}</pre>
+              <pre tabIndex={0} className="pa-mono mt-2 overflow-x-auto rounded-xl border border-foreground/10 bg-black/40 p-3 text-[11.5px] text-foreground">{mcpExample}</pre>
               <CopyButton value={mcpExample} label={ro ? "Copiază" : "Copy"} copiedLabel={ro ? "Copiat" : "Copied"} className="mt-2 inline-flex rounded-full border border-foreground/15 px-3 py-1.5 text-[11.5px] font-semibold text-foreground" />
             </div>
           </div>

@@ -170,6 +170,8 @@ async function setup(page: Page, staff = false) {
 test("Leaduri: pipeline compact, priorități, etape și motive comerciale de eliminare", async ({
   page,
 }, info) => {
+  // This case exercises the persistent desktop panes; small-screen cases are separate.
+  await page.setViewportSize({width:1440,height:960});
   const state = await setup(page);
   await page.goto("/profil?tab=leads");
   const nav = page.getByRole("navigation", { name: "Navigare AVYRON OS" });
@@ -223,6 +225,7 @@ test("Leaduri: pipeline compact, priorități, etape și motive comerciale de el
 test("Servicii deschide mini-lista și configurări individuale pentru toate paginile", async ({
   page,
 }) => {
+  await page.setViewportSize({width:1440,height:960});
   await setup(page);
   await page.goto("/profil?tab=leads");
   await page
@@ -374,6 +377,8 @@ test("staff poate consulta configurarea, fără drept de salvare sau publicare",
 test("un conflict de salvare păstrează textul și împiedică pierderea sa la navigare", async ({
   page,
 }) => {
+  // This case exercises the persistent desktop panes; small-screen cases are separate.
+  await page.setViewportSize({width:1440,height:960});
   await setup(page);
   await page.route("**/api/admin/service-pages/premium-website", (route) =>
     route.request().method() === "PUT"

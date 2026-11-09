@@ -1,0 +1,4899 @@
+{
+  "format": "avyron-security-quality-audit/v1",
+  "generatedAt": "2026-11-09T03:24:57.549Z",
+  "main": "7322cf40e09e20b8b6b22a0f18090df574f9f15e",
+  "candidateBase": "8eccf49ca767a1caff43d74b2cf35aa71a24f62d",
+  "assurance": "inventory and reference integrity only; not compliance certification",
+  "configs": [
+    {
+      "path": "wrangler.jsonc",
+      "name": "avyrontech",
+      "compatibilityDate": "2026-10-09",
+      "workersDev": true,
+      "routes": [
+        "surveys.avyron.ro",
+        "avyron.ro",
+        "www.avyron.ro",
+        "api.avyron.ro",
+        "app.avyron.ro",
+        "exemplu1.avyron.ro/*",
+        "exemplu2.avyron.ro/*",
+        "exemplu3.avyron.ro/*",
+        "avyron.eu/*",
+        "*.avyron.eu/*"
+      ],
+      "d1": [
+        "avyron-db"
+      ],
+      "r2": [
+        "avyron-files",
+        "avyron-media",
+        "avyron-document-backups",
+        "avyron-company-document-backups"
+      ],
+      "kvBindings": [
+        "KV"
+      ],
+      "services": [],
+      "durableObjects": [
+        "AvyronAgentRuntime",
+        "DocumentExportRuntime"
+      ],
+      "queues": [
+        "avyron-async-jobs"
+      ],
+      "workflows": [
+        "avyron-maintenance"
+      ],
+      "aiBinding": true,
+      "securityFlags": {
+        "APP_ENV": "production",
+        "MFA_AUTH_ENABLED": "false",
+        "ADMIN_MFA_POLICY": "disabled",
+        "BACKUP_JOBS_ENABLED": "false",
+        "PAID_AI_ENABLED": "false",
+        "ALLOW_AI_OVERAGE": "false"
+      }
+    },
+    {
+      "path": "wrangler.worker.jsonc",
+      "name": "avyron-site",
+      "compatibilityDate": "2026-06-01",
+      "workersDev": "provider default",
+      "routes": [],
+      "d1": [],
+      "r2": [],
+      "kvBindings": [],
+      "services": [
+        "avyrontech"
+      ],
+      "durableObjects": [],
+      "queues": [],
+      "workflows": [],
+      "aiBinding": false,
+      "securityFlags": {}
+    },
+    {
+      "path": "cloudflare/workers/email/wrangler.jsonc",
+      "name": "avyron-email",
+      "compatibilityDate": "2026-10-09",
+      "workersDev": "provider default",
+      "routes": [],
+      "d1": [],
+      "r2": [],
+      "kvBindings": [],
+      "services": [],
+      "durableObjects": [],
+      "queues": [],
+      "workflows": [],
+      "aiBinding": false,
+      "securityFlags": {}
+    }
+  ],
+  "inventory": {
+    "schemaVersion": 1,
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/api/admin/operations/staff",
+        "file": "cloudflare/workers/api/src/adminOperations.ts",
+        "line": 53,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/admin/operations/staff/:id/projects",
+        "file": "cloudflare/workers/api/src/adminOperations.ts",
+        "line": 70,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/operations/subscriptions",
+        "file": "cloudflare/workers/api/src/adminOperations.ts",
+        "line": 93,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/admin/operations/subscriptions/:id",
+        "file": "cloudflare/workers/api/src/adminOperations.ts",
+        "line": 113,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/operations/resources",
+        "file": "cloudflare/workers/api/src/adminOperations.ts",
+        "line": 139,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/admin/operations/resources",
+        "file": "cloudflare/workers/api/src/adminOperations.ts",
+        "line": 146,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/admin/operations/resources/:id",
+        "file": "cloudflare/workers/api/src/adminOperations.ts",
+        "line": 163,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/ai/agents",
+        "file": "cloudflare/workers/api/src/aiOs.ts",
+        "line": 217,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/ai/chat",
+        "file": "cloudflare/workers/api/src/aiOs.ts",
+        "line": 246,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/ai/feedback",
+        "file": "cloudflare/workers/api/src/aiOs.ts",
+        "line": 443,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/ai/admin/runtime",
+        "file": "cloudflare/workers/api/src/aiOs.ts",
+        "line": 461,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/ai/admin/agents",
+        "file": "cloudflare/workers/api/src/aiOs.ts",
+        "line": 494,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/ai/admin/agents/:slug",
+        "file": "cloudflare/workers/api/src/aiOs.ts",
+        "line": 565,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/ai/admin/agents",
+        "file": "cloudflare/workers/api/src/aiOs.ts",
+        "line": 620,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/ai/admin/knowledge",
+        "file": "cloudflare/workers/api/src/aiOs.ts",
+        "line": 650,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/ai/admin/knowledge",
+        "file": "cloudflare/workers/api/src/aiOs.ts",
+        "line": 662,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/ai/admin/knowledge/:id",
+        "file": "cloudflare/workers/api/src/aiOs.ts",
+        "line": 690,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/ai/admin/sources",
+        "file": "cloudflare/workers/api/src/aiOs.ts",
+        "line": 714,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/ai/admin/connections",
+        "file": "cloudflare/workers/api/src/aiOs.ts",
+        "line": 730,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/ai/admin/sources",
+        "file": "cloudflare/workers/api/src/aiOs.ts",
+        "line": 764,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/ai/admin/sources/:id",
+        "file": "cloudflare/workers/api/src/aiOs.ts",
+        "line": 798,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/ai/admin/stats",
+        "file": "cloudflare/workers/api/src/aiOs.ts",
+        "line": 841,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/ai/admin/conversations",
+        "file": "cloudflare/workers/api/src/aiOs.ts",
+        "line": 871,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/ai/admin/conversations/:id",
+        "file": "cloudflare/workers/api/src/aiOs.ts",
+        "line": 881,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/ai/admin/learning",
+        "file": "cloudflare/workers/api/src/aiOs.ts",
+        "line": 888,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/ai/admin/learning/:id",
+        "file": "cloudflare/workers/api/src/aiOs.ts",
+        "line": 895,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/ai-projects",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 110,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/ai-projects",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 140,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/ai-projects/:slug/social-manager",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 163,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/ai-projects/:projectId/social-manager/drafts",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 173,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/ai-projects/:projectId/social-manager/drafts/:contentId",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 195,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/ai-projects/:projectId/social-manager/drafts/:contentId/reuse",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 216,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/ai-projects/:projectId/social-manager/archive",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 233,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/ai-projects/:projectId/social-assets/:assetId",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 245,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/ai-projects/:slug",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 259,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/ai-projects/:projectId",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 432,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/ai-projects/:projectId/channels/:provider",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 469,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/ai-projects/:projectId/audience/accounts",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 530,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/ai-projects/:projectId/audience/accounts/:accountId/snapshot",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 566,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/ai-projects/:projectId/audience/runs/:runId/review",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 684,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/ai-projects/:projectId/social-policy",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 726,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/ai-projects/:projectId/social-studio/plan",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 789,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/ai-projects/:projectId/social-manager/sync",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 799,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/ai-projects/:projectId/social-jobs/:jobId/reschedule",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 820,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/ai-projects/:projectId/social-jobs/:jobId/review",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 838,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/ai-projects/:projectId/social-studio/backups",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 860,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/ai-projects/:projectId/social-studio/backups/:backupId/download",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 883,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/ai-projects/:projectId/social-jobs/:jobId/retry",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 907,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/ai-projects/:projectId/social-sources",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 923,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/ai-projects/:projectId/social-sources/:sourceId",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 956,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/ai-projects/:projectId/social-opportunities/:opportunityId",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 972,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/ai-projects/:projectId/content/generate",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 1017,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/ai-projects/:projectId/content/:contentId",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 1231,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/billing/config",
+        "file": "cloudflare/workers/api/src/billing.ts",
+        "line": 191,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/billing/checkout",
+        "file": "cloudflare/workers/api/src/billing.ts",
+        "line": 195,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/billing/payment-methods",
+        "file": "cloudflare/workers/api/src/billing.ts",
+        "line": 197,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/billing/account",
+        "file": "cloudflare/workers/api/src/billing.ts",
+        "line": 199,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/billing/profile",
+        "file": "cloudflare/workers/api/src/billing.ts",
+        "line": 210,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/billing/payment-methods/setup",
+        "file": "cloudflare/workers/api/src/billing.ts",
+        "line": 219,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/billing/portal",
+        "file": "cloudflare/workers/api/src/billing.ts",
+        "line": 237,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/billing/webhooks/stripe",
+        "file": "cloudflare/workers/api/src/billing.ts",
+        "line": 293,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/billing/webhooks/revolut",
+        "file": "cloudflare/workers/api/src/billing.ts",
+        "line": 355,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/billing/subscriptions/:id/cancel",
+        "file": "cloudflare/workers/api/src/billing.ts",
+        "line": 388,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/billing/admin/status",
+        "file": "cloudflare/workers/api/src/billing.ts",
+        "line": 396,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/billing/admin/connections/:provider/verify",
+        "file": "cloudflare/workers/api/src/billing.ts",
+        "line": 422,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/billing/admin/invoices/:orderId/retry",
+        "file": "cloudflare/workers/api/src/billing.ts",
+        "line": 445,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/blog/posts",
+        "file": "cloudflare/workers/api/src/blog.ts",
+        "line": 182,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/blog/posts/:slug",
+        "file": "cloudflare/workers/api/src/blog.ts",
+        "line": 199,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/blog/sitemap",
+        "file": "cloudflare/workers/api/src/blog.ts",
+        "line": 207,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/blog/staff/posts",
+        "file": "cloudflare/workers/api/src/blog.ts",
+        "line": 213,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/blog/staff/settings",
+        "file": "cloudflare/workers/api/src/blog.ts",
+        "line": 223,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/blog/staff/settings",
+        "file": "cloudflare/workers/api/src/blog.ts",
+        "line": 232,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/blog/staff/posts",
+        "file": "cloudflare/workers/api/src/blog.ts",
+        "line": 252,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/blog/staff/posts/:id",
+        "file": "cloudflare/workers/api/src/blog.ts",
+        "line": 281,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/blog/staff/posts/:id",
+        "file": "cloudflare/workers/api/src/blog.ts",
+        "line": 313,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/blog/staff/media",
+        "file": "cloudflare/workers/api/src/blog.ts",
+        "line": 323,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/blog/media/:filename",
+        "file": "cloudflare/workers/api/src/blog.ts",
+        "line": 342,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/finance/commercial-codes",
+        "file": "cloudflare/workers/api/src/catalogCodes.ts",
+        "line": 39,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/finance/commercial-codes/sync",
+        "file": "cloudflare/workers/api/src/catalogCodes.ts",
+        "line": 64,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/finance/commercial-codes/:entityType/:entityKey",
+        "file": "cloudflare/workers/api/src/catalogCodes.ts",
+        "line": 106,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/finance/commercial-codes/:entityType/:entityKey/provider-refs/:provider/:environment/:referenceType",
+        "file": "cloudflare/workers/api/src/catalogCodes.ts",
+        "line": 181,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/finance/commercial-codes/:entityType/:entityKey/provider-refs/:provider/:environment/:referenceType",
+        "file": "cloudflare/workers/api/src/catalogCodes.ts",
+        "line": 211,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/my/collaborations",
+        "file": "cloudflare/workers/api/src/collaborators.ts",
+        "line": 243,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/contact/demo",
+        "file": "cloudflare/workers/api/src/contact.ts",
+        "line": 29,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/contact/example",
+        "file": "cloudflare/workers/api/src/contact.ts",
+        "line": 254,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspace/activity-counts",
+        "file": "cloudflare/workers/api/src/dashboardActivity.ts",
+        "line": 11,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/documents/bootstrap",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 555,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/documents/context",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 602,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/documents/service-profiles/:id",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 741,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/documents/staff-guides",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 787,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/documents/legacy-hub",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 792,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/documents",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 802,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/documents",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 922,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/documents/notices",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 1001,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/documents/notices/:noticeId/read",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 1010,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/documents/:id",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 1027,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/documents/:id",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 1132,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/documents/:id/approve",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 1156,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/documents/:id/publish",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 1211,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/documents/:id/recipients",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 1285,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/documents/:id/access",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 1305,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/documents/:id/assign",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 1355,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/documents/:id/archive",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 1372,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/documents/:id/duplicate",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 1390,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/documents/templates/:id/versions",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 1449,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/documents/templates/:id/review",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 1483,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/documents/:id/save-template",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 1518,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/documents/settings/company",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 1551,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/documents/settings/client/:id",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 1573,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/documents/legacy-hub/:id/import",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 1601,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/documents/:id/export/:format",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 1792,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/documents/:id/import",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 1822,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/documents/:id/files/:fileId",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 1956,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/documents/:id/share",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 1996,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/documents/:id/backups",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 2214,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/documents/:id/backups",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 2402,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/documents/project-backups",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 2406,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/documents/:id/backups/:backupId/restore",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 2459,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/documents/:id/prepare-billing",
+        "file": "cloudflare/workers/api/src/documentCenter.ts",
+        "line": 2658,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/public/domain-check",
+        "file": "cloudflare/workers/api/src/domain.ts",
+        "line": 173,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/public/domain-check",
+        "file": "cloudflare/workers/api/src/domain.ts",
+        "line": 187,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/engine/overview",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 60,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/engine/sources",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 77,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/engine/sources/:sourceId",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 93,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/engine/capabilities",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 106,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/engine/sources",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 115,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/engine/sources/:sourceId",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 134,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/engine/sources/:sourceId/connectors",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 169,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/engine/connectors/:connectorId",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 200,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/engine/sources/:sourceId/capabilities",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 217,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/engine/capabilities/:capabilityId",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 241,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/engine/sources/:sourceId/documents",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 256,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/engine/documents/:documentId/content",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 284,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/engine/documents/:documentId",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 294,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/engine/documentation/prompts",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 310,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/engine/documentation/drafts/:draftId",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 342,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/engine/suggestions",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 362,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/engine/suggestions",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 368,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/engine/suggestions/:suggestionId/promote",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 385,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/engine/suggestions/:suggestionId",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 405,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/engine/bindings",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 417,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/engine/bindings/reconcile",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 426,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/engine/bindings",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 438,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/engine/bindings/:bindingId",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 454,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/engine/projections/:targetType/:targetKey",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 472,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/engine/audit",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 487,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/engine/sources/:sourceId/discover",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 567,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/engine/discovery-policy",
+        "file": "cloudflare/workers/api/src/engine.ts",
+        "line": 583,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/public/example-carousels/:key",
+        "file": "cloudflare/workers/api/src/exampleCarousels.ts",
+        "line": 73,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/finance/overview",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 58,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/finance/config",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 87,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/finance/expenses",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 97,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/finance/expenses/:expenseId",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 114,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/finance/expenses",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 129,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/finance/expenses/:expenseId",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 146,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/finance/expenses/:expenseId",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 158,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/finance/revenues",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 167,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/finance/revenues",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 173,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/finance/revenues/:revenueId",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 192,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/finance/revenues/:revenueId",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 211,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/finance/accounts",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 223,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/finance/accounts",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 229,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/finance/payment-methods",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 243,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/finance/budgets",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 255,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/finance/budgets",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 261,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/finance/quotas/:quotaId",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 273,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/finance/agent-policies/:agentSlug/:vendorId",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 289,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/finance/analytics",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 303,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/finance/cost-guard/evaluate",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 317,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/finance/alerts",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 329,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/finance/alerts/scan",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 330,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/finance/alerts/:alertId",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 343,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/finance/audit",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 344,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/finance/documents",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 346,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/finance/documents/:documentId/content",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 363,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/finance/documents/:documentId",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 372,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/finance/export",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 380,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/public/reviews",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 268,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/public/reviews",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 279,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/reviews",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 328,
+        "handlers": [
+          "requireAuth",
+          "requireRole",
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/admin/reviews/:id",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 339,
+        "handlers": [
+          "requireAuth",
+          "requireRole",
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/health",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 419,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/health/:component",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 423,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/public/exchange-rate",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 439,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/signup",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 453,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/resend-verification",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 507,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/verify-email",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 522,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/login",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 540,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/mfa/challenge",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 642,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/auth/mfa",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 713,
+        "handlers": [
+          "requireAuth",
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/mfa/totp/enroll",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 721,
+        "handlers": [
+          "requireAuth",
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/mfa/totp/verify",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 751,
+        "handlers": [
+          "requireAuth",
+          "inline"
+        ]
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/auth/mfa/:id",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 792,
+        "handlers": [
+          "requireAuth",
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/logout",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 815,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/refresh",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 831,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/logout-all",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 861,
+        "handlers": [
+          "requireAuth",
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/security",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 879,
+        "handlers": [
+          "requireAuth",
+          "requireSuperAdmin",
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/auth/providers",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 895,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/auth/me",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 909,
+        "handlers": [
+          "requireAuth",
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/auth/sessions",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 933,
+        "handlers": [
+          "requireAuth",
+          "inline"
+        ]
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/auth/sessions/:id",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 949,
+        "handlers": [
+          "requireAuth",
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/forgot",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 965,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/reset",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 999,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/change-password",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1019,
+        "handlers": [
+          "requireAuth",
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/change-email/request",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1041,
+        "handlers": [
+          "requireAuth",
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/change-email/confirm",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1098,
+        "handlers": [
+          "requireAuth",
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/profile",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1144,
+        "handlers": [
+          "requireAuth",
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/profile/avatar",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1177,
+        "handlers": [
+          "requireAuth",
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/profile/avatar/:userId",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1201,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/clients",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1227,
+        "handlers": [
+          "requireAuth",
+          "requireRole",
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/users",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1235,
+        "handlers": [
+          "requireAuth",
+          "requireRole",
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/admin/users",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1264,
+        "handlers": [
+          "requireAuth",
+          "requireSuperAdmin",
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/agent-operators/codex",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1331,
+        "handlers": [
+          "requireAuth",
+          "requireSuperAdmin",
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/admin/agent-operators/codex/synchronize",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1367,
+        "handlers": [
+          "requireAuth",
+          "requireSuperAdmin",
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/admin/users/:userId/status",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1457,
+        "handlers": [
+          "requireAuth",
+          "requireSuperAdmin",
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/admin/users/:userId/temporary-password",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1486,
+        "handlers": [
+          "requireAuth",
+          "requireSuperAdmin",
+          "inline"
+        ]
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/admin/users/:userId/sessions",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1511,
+        "handlers": [
+          "requireAuth",
+          "requireSuperAdmin",
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/admin/users/:userId/roles",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1522,
+        "handlers": [
+          "requireAuth",
+          "requireSuperAdmin",
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/email-failures",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1599,
+        "handlers": [
+          "requireAuth",
+          "requireSuperAdmin",
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/clients",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1610,
+        "handlers": [
+          "requireAuth",
+          "requireRole",
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/analytics/event",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1621,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/analytics/funnel",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1639,
+        "handlers": [
+          "requireAuth",
+          "requireRole",
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/leads/pipeline",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1645,
+        "handlers": [
+          "requireAuth",
+          "requireRole",
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/example-requests",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1651,
+        "handlers": [
+          "requireAuth",
+          "requireRole",
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/example-requests/:id",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1658,
+        "handlers": [
+          "requireAuth",
+          "requireRole",
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/content/:key",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1674,
+        "handlers": [
+          "requireAuth",
+          "requireRole",
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/content/:key",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1680,
+        "handlers": [
+          "requireAuth",
+          "requireRole",
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/leads",
+        "file": "cloudflare/workers/api/src/leads.ts",
+        "line": 82,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/leads",
+        "file": "cloudflare/workers/api/src/leads.ts",
+        "line": 188,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/leads/:leadId/archive",
+        "file": "cloudflare/workers/api/src/leads.ts",
+        "line": 231,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/leads/deletions",
+        "file": "cloudflare/workers/api/src/leads.ts",
+        "line": 253,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/leads/:leadId",
+        "file": "cloudflare/workers/api/src/leads.ts",
+        "line": 274,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/leads/:leadId",
+        "file": "cloudflare/workers/api/src/leads.ts",
+        "line": 303,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/leads/:leadId",
+        "file": "cloudflare/workers/api/src/leads.ts",
+        "line": 355,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/leads/:leadId/activities",
+        "file": "cloudflare/workers/api/src/leads.ts",
+        "line": 396,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/leads/:leadId/claim",
+        "file": "cloudflare/workers/api/src/leads.ts",
+        "line": 426,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/leads/:leadId/follow-ups/:draftId/review",
+        "file": "cloudflare/workers/api/src/leads.ts",
+        "line": 456,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/leads/:leadId/follow-ups/:draftId/revise",
+        "file": "cloudflare/workers/api/src/leads.ts",
+        "line": 490,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/leads/:leadId/follow-ups/:draftId/sent",
+        "file": "cloudflare/workers/api/src/leads.ts",
+        "line": 607,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/leads/:leadId/reminders",
+        "file": "cloudflare/workers/api/src/leads.ts",
+        "line": 630,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/leads/:leadId/reminders/:reminderId",
+        "file": "cloudflare/workers/api/src/leads.ts",
+        "line": 662,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/logo-studio/admin/overview",
+        "file": "cloudflare/workers/api/src/logoOperations.ts",
+        "line": 26,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/logo-studio/admin/product-price",
+        "file": "cloudflare/workers/api/src/logoOperations.ts",
+        "line": 134,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/logo-studio/product-price",
+        "file": "cloudflare/workers/api/src/logoOperations.ts",
+        "line": 227,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/logo-studio/product-interest",
+        "file": "cloudflare/workers/api/src/logoOperations.ts",
+        "line": 247,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/logo-studio/simulations",
+        "file": "cloudflare/workers/api/src/logoStudio.ts",
+        "line": 49,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/logo-studio/generate",
+        "file": "cloudflare/workers/api/src/logoStudio.ts",
+        "line": 85,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/logo-studio/orders",
+        "file": "cloudflare/workers/api/src/logoStudio.ts",
+        "line": 137,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspace/maintenance/config",
+        "file": "cloudflare/workers/api/src/maintenance.ts",
+        "line": 110,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspace/maintenance",
+        "file": "cloudflare/workers/api/src/maintenance.ts",
+        "line": 157,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/workspace/maintenance",
+        "file": "cloudflare/workers/api/src/maintenance.ts",
+        "line": 482,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/workspace/maintenance/:id",
+        "file": "cloudflare/workers/api/src/maintenance.ts",
+        "line": 483,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/projects/:id/media",
+        "file": "cloudflare/workers/api/src/media.ts",
+        "line": 30,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/projects/:id/media",
+        "file": "cloudflare/workers/api/src/media.ts",
+        "line": 93,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/media/:mediaId/file",
+        "file": "cloudflare/workers/api/src/media.ts",
+        "line": 113,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/media/:mediaId",
+        "file": "cloudflare/workers/api/src/media.ts",
+        "line": 152,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/newsletter/config",
+        "file": "cloudflare/workers/api/src/newsletter.ts",
+        "line": 127,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/newsletter/subscribe",
+        "file": "cloudflare/workers/api/src/newsletter.ts",
+        "line": 148,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/newsletter/confirm",
+        "file": "cloudflare/workers/api/src/newsletter.ts",
+        "line": 239,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/newsletter/unsubscribe",
+        "file": "cloudflare/workers/api/src/newsletter.ts",
+        "line": 266,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/newsletter/unsubscribe",
+        "file": "cloudflare/workers/api/src/newsletter.ts",
+        "line": 275,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/newsletter/resend/webhook",
+        "file": "cloudflare/workers/api/src/newsletter.ts",
+        "line": 293,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/newsletter/admin",
+        "file": "cloudflare/workers/api/src/newsletter.ts",
+        "line": 348,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/newsletter/admin/settings",
+        "file": "cloudflare/workers/api/src/newsletter.ts",
+        "line": 371,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/newsletter/admin/provider",
+        "file": "cloudflare/workers/api/src/newsletter.ts",
+        "line": 373,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/newsletter/admin/provider/sync",
+        "file": "cloudflare/workers/api/src/newsletter.ts",
+        "line": 385,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/newsletter/admin/settings",
+        "file": "cloudflare/workers/api/src/newsletter.ts",
+        "line": 406,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/newsletter/admin/subscribers",
+        "file": "cloudflare/workers/api/src/newsletter.ts",
+        "line": 430,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/newsletter/admin/subscribers/:id",
+        "file": "cloudflare/workers/api/src/newsletter.ts",
+        "line": 455,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/newsletter/admin/export.csv",
+        "file": "cloudflare/workers/api/src/newsletter.ts",
+        "line": 489,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/newsletter/admin/campaigns",
+        "file": "cloudflare/workers/api/src/newsletter.ts",
+        "line": 506,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/newsletter/admin/campaigns",
+        "file": "cloudflare/workers/api/src/newsletter.ts",
+        "line": 511,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/newsletter/admin/campaigns/:id",
+        "file": "cloudflare/workers/api/src/newsletter.ts",
+        "line": 530,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/newsletter/admin/campaigns/:id/resend-draft",
+        "file": "cloudflare/workers/api/src/newsletter.ts",
+        "line": 549,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/newsletter/admin/campaigns/:id/send",
+        "file": "cloudflare/workers/api/src/newsletter.ts",
+        "line": 576,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/notifications/config",
+        "file": "cloudflare/workers/api/src/notifications.ts",
+        "line": 65,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/notifications/admin",
+        "file": "cloudflare/workers/api/src/notifications.ts",
+        "line": 70,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/notifications/admin",
+        "file": "cloudflare/workers/api/src/notifications.ts",
+        "line": 84,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/notifications",
+        "file": "cloudflare/workers/api/src/notifications.ts",
+        "line": 142,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/notifications/preferences",
+        "file": "cloudflare/workers/api/src/notifications.ts",
+        "line": 205,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/notifications/:id/read",
+        "file": "cloudflare/workers/api/src/notifications.ts",
+        "line": 223,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/integrations/google-drive/callback",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 20,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/operations/config",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 76,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/operations/records",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 84,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/operations/records",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 95,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/operations/records/:id",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 102,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/operations/records/:id/approve",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 113,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/operations/records/:id",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 119,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/operations/automations",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 124,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/operations/automations",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 128,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/operations/automations/:id",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 132,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/operations/preview",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 139,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/operations/jobs",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 143,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/operations/jobs/:id/:action",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 148,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/operations/notifications",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 153,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/operations/notifications/:id/read",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 154,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/operations/integrations",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 159,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/operations/integrations",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 163,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/operations/integrations/:id/credential",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 171,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/operations/integrations/:id/google-oauth/start",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 187,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/operations/integrations/:id/:action",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 193,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/operations/integrations/:id/documents",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 220,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/operations/agents",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 225,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/operations/agents/:slug/stop",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 234,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/operations/agents/:slug/evaluate",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 241,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/organizations",
+        "file": "cloudflare/workers/api/src/organizations.ts",
+        "line": 49,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/organizations",
+        "file": "cloudflare/workers/api/src/organizations.ts",
+        "line": 70,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/organizations/:organizationId/members",
+        "file": "cloudflare/workers/api/src/organizations.ts",
+        "line": 101,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/organizations/:organizationId/invitations",
+        "file": "cloudflare/workers/api/src/organizations.ts",
+        "line": 118,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/organization-invitations/accept",
+        "file": "cloudflare/workers/api/src/organizations.ts",
+        "line": 184,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/os/approval-center",
+        "file": "cloudflare/workers/api/src/osDashboard.ts",
+        "line": 30,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/os/storage",
+        "file": "cloudflare/workers/api/src/osDashboard.ts",
+        "line": 43,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/os/health/ai",
+        "file": "cloudflare/workers/api/src/osDashboard.ts",
+        "line": 50,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/os/approval-center/:source/:id",
+        "file": "cloudflare/workers/api/src/osDashboard.ts",
+        "line": 60,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/os/approval-center/:source/:id",
+        "file": "cloudflare/workers/api/src/osDashboard.ts",
+        "line": 66,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/os/attention/:id",
+        "file": "cloudflare/workers/api/src/osDashboard.ts",
+        "line": 78,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/os/overview",
+        "file": "cloudflare/workers/api/src/osDashboard.ts",
+        "line": 105,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/os/approvals/:approvalId",
+        "file": "cloudflare/workers/api/src/osDashboard.ts",
+        "line": 299,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/produse/admin/sales/readiness",
+        "file": "cloudflare/workers/api/src/productSales.ts",
+        "line": 19,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/produse/admin/sales/:slug",
+        "file": "cloudflare/workers/api/src/productSales.ts",
+        "line": 23,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/produse/admin/sales/:slug",
+        "file": "cloudflare/workers/api/src/productSales.ts",
+        "line": 30,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/produse/admin/sales/:slug/activate",
+        "file": "cloudflare/workers/api/src/productSales.ts",
+        "line": 52,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/produse/admin/sales/:slug/package",
+        "file": "cloudflare/workers/api/src/productSales.ts",
+        "line": 98,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/produse/requests",
+        "file": "cloudflare/workers/api/src/produse.ts",
+        "line": 25,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/produse/public/plans",
+        "file": "cloudflare/workers/api/src/produseAdmin.ts",
+        "line": 17,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/produse/admin/overview",
+        "file": "cloudflare/workers/api/src/produseAdmin.ts",
+        "line": 32,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/produse/admin/items",
+        "file": "cloudflare/workers/api/src/produseAdmin.ts",
+        "line": 115,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/produse/admin/items/new",
+        "file": "cloudflare/workers/api/src/produseAdmin.ts",
+        "line": 177,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/produse/admin/plans/:id",
+        "file": "cloudflare/workers/api/src/produseAdmin.ts",
+        "line": 206,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/produse/account/checkout",
+        "file": "cloudflare/workers/api/src/produseCheckoutV2.ts",
+        "line": 19,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/produse/account/state",
+        "file": "cloudflare/workers/api/src/produseShop.ts",
+        "line": 156,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/produse/account/purchases",
+        "file": "cloudflare/workers/api/src/produseShop.ts",
+        "line": 196,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/produse/account/copy",
+        "file": "cloudflare/workers/api/src/produseShop.ts",
+        "line": 228,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/produse/account/download/:slug",
+        "file": "cloudflare/workers/api/src/produseShop.ts",
+        "line": 297,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/produse/account/collection",
+        "file": "cloudflare/workers/api/src/produseShop.ts",
+        "line": 337,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/produse/account/collection",
+        "file": "cloudflare/workers/api/src/produseShop.ts",
+        "line": 354,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/projects",
+        "file": "cloudflare/workers/api/src/projects.ts",
+        "line": 68,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/projects",
+        "file": "cloudflare/workers/api/src/projects.ts",
+        "line": 186,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/projects/:slug",
+        "file": "cloudflare/workers/api/src/projects.ts",
+        "line": 308,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/projects/:id",
+        "file": "cloudflare/workers/api/src/projects.ts",
+        "line": 336,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/projects/:id/proposals",
+        "file": "cloudflare/workers/api/src/projects.ts",
+        "line": 382,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/proposals/:id",
+        "file": "cloudflare/workers/api/src/projects.ts",
+        "line": 398,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/projects/:id/links",
+        "file": "cloudflare/workers/api/src/projects.ts",
+        "line": 425,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/links/:id",
+        "file": "cloudflare/workers/api/src/projects.ts",
+        "line": 446,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/projects/:id/logs",
+        "file": "cloudflare/workers/api/src/projects.ts",
+        "line": 458,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/metadata/extract",
+        "file": "cloudflare/workers/api/src/projects.ts",
+        "line": 472,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/commerce/catalog",
+        "file": "cloudflare/workers/api/src/promotions.ts",
+        "line": 263,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/commerce/favorites/services",
+        "file": "cloudflare/workers/api/src/promotions.ts",
+        "line": 280,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/commerce/favorites/services/:key",
+        "file": "cloudflare/workers/api/src/promotions.ts",
+        "line": 285,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/commerce/favorites/services/:key",
+        "file": "cloudflare/workers/api/src/promotions.ts",
+        "line": 292,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/commerce/quote",
+        "file": "cloudflare/workers/api/src/promotions.ts",
+        "line": 297,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/commerce/orders",
+        "file": "cloudflare/workers/api/src/promotions.ts",
+        "line": 315,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/commerce/orders",
+        "file": "cloudflare/workers/api/src/promotions.ts",
+        "line": 399,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/commerce/cart",
+        "file": "cloudflare/workers/api/src/promotions.ts",
+        "line": 407,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/commerce/cart",
+        "file": "cloudflare/workers/api/src/promotions.ts",
+        "line": 419,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/commerce/cart/sync",
+        "file": "cloudflare/workers/api/src/promotions.ts",
+        "line": 436,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/promotions/admin",
+        "file": "cloudflare/workers/api/src/promotions.ts",
+        "line": 462,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/promotions/admin",
+        "file": "cloudflare/workers/api/src/promotions.ts",
+        "line": 473,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/promotions/admin/:id",
+        "file": "cloudflare/workers/api/src/promotions.ts",
+        "line": 511,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/finance/receipts",
+        "file": "cloudflare/workers/api/src/receipts.ts",
+        "line": 8,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/finance/receipts",
+        "file": "cloudflare/workers/api/src/receipts.ts",
+        "line": 18,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/security/csp-report",
+        "file": "cloudflare/workers/api/src/securityReports.ts",
+        "line": 17,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/admin/import-users",
+        "file": "cloudflare/workers/api/src/seed.ts",
+        "line": 49,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/public/service-pages/:key",
+        "file": "cloudflare/workers/api/src/servicePages.ts",
+        "line": 44,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/service-pages/:key",
+        "file": "cloudflare/workers/api/src/servicePages.ts",
+        "line": 89,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/service-pages/:key/versions/:revision",
+        "file": "cloudflare/workers/api/src/servicePages.ts",
+        "line": 118,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/admin/service-pages/:key",
+        "file": "cloudflare/workers/api/src/servicePages.ts",
+        "line": 132,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/admin/service-pages/:key/publish",
+        "file": "cloudflare/workers/api/src/servicePages.ts",
+        "line": 218,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/staff-access",
+        "file": "cloudflare/workers/api/src/staffAccess.ts",
+        "line": 358,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/staff-access/:userId",
+        "file": "cloudflare/workers/api/src/staffAccess.ts",
+        "line": 411,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/staff-access/:userId",
+        "file": "cloudflare/workers/api/src/staffAccess.ts",
+        "line": 460,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/staff-access/profiles/:id",
+        "file": "cloudflare/workers/api/src/staffAccess.ts",
+        "line": 527,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/client-subscriptions",
+        "file": "cloudflare/workers/api/src/subscriptionOperations.ts",
+        "line": 240,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/admin/client-subscriptions",
+        "file": "cloudflare/workers/api/src/subscriptionOperations.ts",
+        "line": 293,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/admin/client-subscriptions/:id/billing",
+        "file": "cloudflare/workers/api/src/subscriptionOperations.ts",
+        "line": 463,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/admin/client-subscriptions/:id/prepare-invoice",
+        "file": "cloudflare/workers/api/src/subscriptionOperations.ts",
+        "line": 524,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/internal/subscriptions",
+        "file": "cloudflare/workers/api/src/subscriptionOperations.ts",
+        "line": 652,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/internal/subscriptions",
+        "file": "cloudflare/workers/api/src/subscriptionOperations.ts",
+        "line": 848,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/internal/subscriptions/:id",
+        "file": "cloudflare/workers/api/src/subscriptionOperations.ts",
+        "line": 851,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/surveys/admin/overview",
+        "file": "cloudflare/workers/api/src/surveyAdmin.ts",
+        "line": 25,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/surveys/admin/settings",
+        "file": "cloudflare/workers/api/src/surveyAdmin.ts",
+        "line": 48,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/surveys/admin/templates/:id",
+        "file": "cloudflare/workers/api/src/surveyAdmin.ts",
+        "line": 59,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/system/seo",
+        "file": "cloudflare/workers/api/src/systemDiagnostics.ts",
+        "line": 21,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/system/diagnostics",
+        "file": "cloudflare/workers/api/src/systemDiagnostics.ts",
+        "line": 114,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/admin/system/diagnostics/run",
+        "file": "cloudflare/workers/api/src/systemDiagnostics.ts",
+        "line": 125,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/admin/system/workflows/maintenance",
+        "file": "cloudflare/workers/api/src/systemDiagnostics.ts",
+        "line": 147,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/codex-work-items",
+        "file": "cloudflare/workers/api/src/systemDiagnostics.ts",
+        "line": 157,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/admin/codex-work-items",
+        "file": "cloudflare/workers/api/src/systemDiagnostics.ts",
+        "line": 168,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/admin/codex-work-items/:id",
+        "file": "cloudflare/workers/api/src/systemDiagnostics.ts",
+        "line": 189,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspace/clients",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 98,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspace/invoices",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 103,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspace/invoices/:invoiceId/content",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 113,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspace/subscriptions",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 124,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspace/account-access/:userId",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 135,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PUT",
+        "path": "/api/workspace/account-access/:userId",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 140,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspace/tickets",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 198,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/workspace/tickets",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 206,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspace/tickets/:id/messages",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 218,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/workspace/tickets/:id/messages",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 224,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/workspace/tickets/:id",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 237,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspace/announcements",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 252,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/workspace/announcements/:id/read",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 258,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/workspace/announcements",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 265,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/workspace/announcements/:id",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 272,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspace/work-items/:projectId",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 279,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/workspace/work-items/:projectId",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 287,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/workspace/work-items/:projectId/:id",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 296,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspace/staff",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 315,
+        "handlers": [
+          "staffDirectory"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspace/chat/members",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 316,
+        "handlers": [
+          "staffDirectory"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspace/chat",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 319,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/workspace/chat",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 332,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspace/domains/provider",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 342,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspace/domains",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 343,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/workspace/domains",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 355,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspace/statistics",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 365,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/workspace/statistics/:projectId",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 373,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspace/chat/conversations",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 385,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/api/workspace/chat/read",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 396,
+        "handlers": [
+          "inline"
+        ]
+      }
+    ],
+    "middleware": [
+      {
+        "method": "USE",
+        "path": "/api/admin/operations/*",
+        "file": "cloudflare/workers/api/src/adminOperations.ts",
+        "line": 25,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/ai-projects",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 107,
+        "handlers": [
+          "requireAiProjectMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/ai-projects/*",
+        "file": "cloudflare/workers/api/src/aiProjects.ts",
+        "line": 108,
+        "handlers": [
+          "requireAiProjectMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/finance/*",
+        "file": "cloudflare/workers/api/src/finance.ts",
+        "line": 48,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 89,
+        "handlers": [
+          "enforceApiBodyLimit"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 155,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/auth/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 181,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/projects/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1726,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/organizations/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1727,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/organization-invitations/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1728,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/proposals/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1729,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/links/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1730,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/metadata/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1731,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/media/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1732,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/commerce/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1733,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/logo-studio/generate",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1734,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/logo-studio/simulations",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1735,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/logo-studio/product-interest",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1736,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/logo-studio/admin/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1737,
+        "handlers": [
+          "requireAuth",
+          "requirePrivilegedMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/logo-studio/orders",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1738,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/promotions/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1739,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/leads",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1740,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/leads/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1741,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/ai-projects",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1742,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/ai-projects/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1743,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/finance/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1744,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/engine/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1745,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/project-chat*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1746,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/os/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1748,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/surveys/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1749,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/surveys/admin/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1755,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/projects/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1756,
+        "handlers": [
+          "requirePrivilegedMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/media/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1757,
+        "handlers": [
+          "requirePrivilegedMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/organizations/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1758,
+        "handlers": [
+          "requirePrivilegedMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/organization-invitations/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1759,
+        "handlers": [
+          "requirePrivilegedMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/proposals/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1760,
+        "handlers": [
+          "requirePrivilegedMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/links/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1761,
+        "handlers": [
+          "requirePrivilegedMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/metadata/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1762,
+        "handlers": [
+          "requirePrivilegedMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/leads",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1763,
+        "handlers": [
+          "requirePrivilegedMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/leads/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1764,
+        "handlers": [
+          "requirePrivilegedMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/ai-projects",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1765,
+        "handlers": [
+          "requirePrivilegedMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/ai-projects/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1766,
+        "handlers": [
+          "requirePrivilegedMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/finance/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1767,
+        "handlers": [
+          "requirePrivilegedMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/engine/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1768,
+        "handlers": [
+          "requirePrivilegedMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/os/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1769,
+        "handlers": [
+          "requirePrivilegedMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/surveys/admin/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1770,
+        "handlers": [
+          "requirePrivilegedMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/admin/operations/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1771,
+        "handlers": [
+          "requireAuth",
+          "requireRole"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/admin/system/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1772,
+        "handlers": [
+          "requireAuth",
+          "requireSuperAdmin"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/admin/codex-work-items",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1773,
+        "handlers": [
+          "requireAuth",
+          "requireSuperAdmin"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/admin/codex-work-items/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1774,
+        "handlers": [
+          "requireAuth",
+          "requireSuperAdmin"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/blog/staff/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1777,
+        "handlers": [
+          "requireAuth",
+          "requireRole"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/ai/admin/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1780,
+        "handlers": [
+          "requireAuth",
+          "requireSuperAdmin"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/newsletter/admin",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1781,
+        "handlers": [
+          "requireAuth",
+          "requireSuperAdmin"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/newsletter/admin/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1782,
+        "handlers": [
+          "requireAuth",
+          "requireSuperAdmin"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/skills*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1787,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/admin/service-pages/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1789,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/admin/example-carousels*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1791,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/antivirus/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1792,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/antivirus",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1793,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/collaborators*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1795,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/collaborations*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1796,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/my/collaborations",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1797,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/documents",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1801,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/notifications",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1802,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/notifications/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1803,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/documents/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1810,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/admin/client-subscriptions*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1814,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/internal/subscriptions*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1815,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/staff-access*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1820,
+        "handlers": [
+          "requireAuth",
+          "requirePrivilegedMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/workspace/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1822,
+        "handlers": [
+          "requireAuth",
+          "requirePrivilegedMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/operations/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1824,
+        "handlers": [
+          "requireAuth",
+          "requirePrivilegedMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/visual-assets*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1828,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/produse/account/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1844,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/produse/admin/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1845,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/produse/admin/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1846,
+        "handlers": [
+          "requirePrivilegedMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/billing/config",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1849,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/billing/checkout",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1850,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/billing/account",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1851,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/billing/profile",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1852,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/billing/payment-methods",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1853,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/billing/payment-methods/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1854,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/billing/portal",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1855,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/billing/subscriptions/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1856,
+        "handlers": [
+          "requireAuth"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/billing/admin/*",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1857,
+        "handlers": [
+          "requireAuth",
+          "requireRole",
+          "requirePrivilegedMfa"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/admin/import-users",
+        "file": "cloudflare/workers/api/src/index.ts",
+        "line": 1864,
+        "handlers": [
+          "requireAuth",
+          "requireSuperAdmin"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/logo-studio/admin/*",
+        "file": "cloudflare/workers/api/src/logoOperations.ts",
+        "line": 20,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/notifications*",
+        "file": "cloudflare/workers/api/src/notifications.ts",
+        "line": 14,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/operations/*",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 50,
+        "handlers": [
+          "bodyLimit"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/operations/*",
+        "file": "cloudflare/workers/api/src/operations.ts",
+        "line": 51,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/os/*",
+        "file": "cloudflare/workers/api/src/osDashboard.ts",
+        "line": 26,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/produse/admin/sales/*",
+        "file": "cloudflare/workers/api/src/productSales.ts",
+        "line": 12,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/promotions/admin",
+        "file": "cloudflare/workers/api/src/promotions.ts",
+        "line": 459,
+        "handlers": [
+          "requirePromotionOwner"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/promotions/admin/*",
+        "file": "cloudflare/workers/api/src/promotions.ts",
+        "line": 460,
+        "handlers": [
+          "requirePromotionOwner"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/admin/service-pages/*",
+        "file": "cloudflare/workers/api/src/servicePages.ts",
+        "line": 61,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/staff-access*",
+        "file": "cloudflare/workers/api/src/staffAccess.ts",
+        "line": 325,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/admin/client-subscriptions*",
+        "file": "cloudflare/workers/api/src/subscriptionOperations.ts",
+        "line": 211,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/internal/subscriptions*",
+        "file": "cloudflare/workers/api/src/subscriptionOperations.ts",
+        "line": 622,
+        "handlers": [
+          "inline"
+        ]
+      },
+      {
+        "method": "USE",
+        "path": "/api/workspace/*",
+        "file": "cloudflare/workers/api/src/workspace.ts",
+        "line": 63,
+        "handlers": [
+          "inline"
+        ]
+      }
+    ],
+    "panels": [
+      {
+        "path": "/staff",
+        "file": "src/App.tsx"
+      },
+      {
+        "path": "/admin",
+        "file": "src/App.tsx"
+      },
+      {
+        "path": "/profil",
+        "file": "src/App.tsx"
+      },
+      {
+        "path": "/finance",
+        "file": "src/App.tsx"
+      },
+      {
+        "path": "/intern",
+        "file": "src/App.tsx"
+      },
+      {
+        "path": "/intern/blog",
+        "file": "src/App.tsx"
+      },
+      {
+        "path": "/intern/servicii",
+        "file": "src/App.tsx"
+      },
+      {
+        "path": "/intern/produse",
+        "file": "src/App.tsx"
+      },
+      {
+        "path": "/intern/ai-os",
+        "file": "src/App.tsx"
+      },
+      {
+        "path": "/intern/ai-projects",
+        "file": "src/App.tsx"
+      },
+      {
+        "path": "/intern/ai-projects/:slug",
+        "file": "src/App.tsx"
+      },
+      {
+        "path": "/intern/avy-engine",
+        "file": "src/App.tsx"
+      },
+      {
+        "path": "/intern/projects",
+        "file": "src/App.tsx"
+      },
+      {
+        "path": "/intern/projects/:slug",
+        "file": "src/App.tsx"
+      }
+    ],
+    "limitations": [
+      "Dynamic routes and parent mounts require runtime negative tests.",
+      "An inventory entry is not proof of protection or provider configuration."
+    ]
+  },
+  "liveVerified": {
+    "d1": [
+      "avyron-db",
+      "avyron-db-preview"
+    ],
+    "r2": [
+      "avyron-files",
+      "avyron-media",
+      "avyron-document-backups",
+      "avyron-company-document-backups"
+    ],
+    "kv": [
+      "avyron_kv",
+      "avyron_kv_preview"
+    ],
+    "queues": [
+      "avyron-async-jobs",
+      "avyron-async-jobs-dlq"
+    ],
+    "managedR2Urls": "disabled for all four buckets",
+    "customR2Domains": "none for all four buckets",
+    "activeAlternate": "avyrontech.avyrontech.workers.dev",
+    "providerAuth": "read-only Wrangler; Access/WAF not verified",
+    "note": "no object contents, secrets, users or financial records exported"
+  }
+}

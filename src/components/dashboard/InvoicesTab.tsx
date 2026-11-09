@@ -271,6 +271,7 @@ export function InvoicesTab({ embedded = false }: { embedded?: boolean }) {
                       href={row.download}
                       target="_blank"
                       rel="noopener noreferrer"
+                      referrerPolicy="no-referrer"
                       aria-label={`Descarcă factura ${row.number}`}
                     >
                       <Download className="mr-1 size-4" /> PDF

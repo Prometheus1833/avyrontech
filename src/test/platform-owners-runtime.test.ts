@@ -129,7 +129,8 @@ describe('designated platform owners', () => {
   });
 
   it('does not let the legacy seed token reset or manufacture an owner account', async () => {
-    const app = new Hono();
+    const app = new Hono<AppBindings>();
+    app.use('*', async (c, next) => { c.set('userId', 'prometheus'); c.set('roles', ['admin']); await next(); });
     app.route('/', seedRouter);
     const env = { DB: binding(db), SEED_TOKEN: 'fixture-seed-token' } as AppBindings['Bindings'];
     const before = db.prepare("SELECT password_hash FROM users WHERE id='avyrontech'").get()?.password_hash;
@@ -145,6 +146,19 @@ describe('designated platform owners', () => {
     const result = await response.json() as { report: Array<{ status: string }> };
     expect(result.report.map((entry) => entry.status)).toEqual(['invalid', 'invalid']);
     expect(db.prepare("SELECT password_hash FROM users WHERE id='avyrontech'").get()?.password_hash).toBe(before);
+  });
+
+  it('does not let a seed credential alone or an ordinary admin import privileged accounts', async () => {
+    const app = new Hono<AppBindings>();
+    let actor: string | null = null;
+    app.use('*', async (c, next) => { if (actor) c.set('userId', actor); await next(); });
+    app.route('/', seedRouter);
+    const env = { DB: binding(db), SEED_TOKEN: 'fixture-seed-token' } as AppBindings['Bindings'];
+    const send = () => app.request('/api/admin/import-users', { method:'POST', headers:{'content-type':'application/json','x-seed-token':'fixture-seed-token'}, body:JSON.stringify({users:[{email:'new-admin@example.test',temporaryPassword:'SyntheticPassword123',roles:['admin']}]}) }, env);
+    expect((await send()).status).toBe(401);
+    actor = 'ordinary-admin';
+    expect((await send()).status).toBe(403);
+    expect(db.prepare("SELECT 1 FROM users WHERE email='new-admin@example.test'").get()).toBeUndefined();
   });
 
   it('permits only an owner to promote a verified reserved account through workspace access', async () => {

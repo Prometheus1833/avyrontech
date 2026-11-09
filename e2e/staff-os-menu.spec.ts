@@ -66,6 +66,7 @@ async function session(
 
 for (const role of [null, "user", "staff", "admin"] as const) {
   test(`OS respects the ${role ?? "anonymous"} session`, async ({ page }) => {
+    if (!role) await page.setViewportSize({width:1440,height:960});
     await session(page, role);
     await page.goto("/");
     await expect(

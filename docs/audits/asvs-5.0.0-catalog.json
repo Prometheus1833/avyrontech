@@ -1,0 +1,2079 @@
+{
+  "standard": "OWASP ASVS 5.0.0",
+  "source": "https://raw.githubusercontent.com/OWASP/ASVS/v5.0.0/5.0/docs_en/OWASP_Application_Security_Verification_Standard_5.0.0_en.csv",
+  "source_sha256": "98c8fe911b9edb403af8ee05d3ce8201ecac2659e313b053890a62847cdcf680",
+  "license": "CC-BY-SA-4.0; OWASP Foundation",
+  "retrieved": "2026-11-09",
+  "requirements": [
+    {
+      "id": "V1.1.1",
+      "level": 2,
+      "section": "Encoding and Sanitization Architecture",
+      "description_sha256": "c58121e2f333835a069a600ea179c4d826f43efb021f3a98034d5068d224d331"
+    },
+    {
+      "id": "V1.1.2",
+      "level": 2,
+      "section": "Encoding and Sanitization Architecture",
+      "description_sha256": "3d96473ca1850e80e08f8f6946bd82ada8928061b5d73cfad6a35e4a2b106021"
+    },
+    {
+      "id": "V1.2.1",
+      "level": 1,
+      "section": "Injection Prevention",
+      "description_sha256": "0f9eec1cbc630a3b4cad2151c932b18c6163e0b1382be3193653109ae635aacd"
+    },
+    {
+      "id": "V1.2.2",
+      "level": 1,
+      "section": "Injection Prevention",
+      "description_sha256": "1f1e7752b3d78af08f892f312248f0690557ca540aba4dee21345deaea9c17a2"
+    },
+    {
+      "id": "V1.2.3",
+      "level": 1,
+      "section": "Injection Prevention",
+      "description_sha256": "c9afea554852ca62387ccc9914865f8f9e2155f6007d0822196f1741f3b9b17c"
+    },
+    {
+      "id": "V1.2.4",
+      "level": 1,
+      "section": "Injection Prevention",
+      "description_sha256": "fc275fa4067c2d62d625c1de033d7f3759d9f860742331bca73d189c8c5a1420"
+    },
+    {
+      "id": "V1.2.5",
+      "level": 1,
+      "section": "Injection Prevention",
+      "description_sha256": "bae0e744ae9744005ce181ec18e38d4c1e651efdb4e5eb3415f259931580d3ef"
+    },
+    {
+      "id": "V1.2.6",
+      "level": 2,
+      "section": "Injection Prevention",
+      "description_sha256": "41de2938229ca679847075dda712c7714823adc0c2bbf2d99acecfae7c6f47cb"
+    },
+    {
+      "id": "V1.2.7",
+      "level": 2,
+      "section": "Injection Prevention",
+      "description_sha256": "19fee91c0962204b7f635bb2e1732465168b0d8aee787e028a177366c53a6b28"
+    },
+    {
+      "id": "V1.2.8",
+      "level": 2,
+      "section": "Injection Prevention",
+      "description_sha256": "a625c72a88949737cdb437b2225d8d0a99f823c5a3184540cfb03193782f481b"
+    },
+    {
+      "id": "V1.2.9",
+      "level": 2,
+      "section": "Injection Prevention",
+      "description_sha256": "803fe2f65c82169df8a57f0b93051e7753883c19b528397e09e8240c51a9bdf3"
+    },
+    {
+      "id": "V1.2.10",
+      "level": 3,
+      "section": "Injection Prevention",
+      "description_sha256": "ce92b1a3982ebf7d108c9164ca0807a778abce6e7c0f8f8cbb49d19bd457a216"
+    },
+    {
+      "id": "V1.3.1",
+      "level": 1,
+      "section": "Sanitization",
+      "description_sha256": "2ba8e5b865c17e46a9120cfe3dadb48a760aa273ebacdca86ff5fa91173c0343"
+    },
+    {
+      "id": "V1.3.2",
+      "level": 1,
+      "section": "Sanitization",
+      "description_sha256": "8464c40f1fd925859114b6a12e53a362534503831e9873dd3cd2c817a2d14cfe"
+    },
+    {
+      "id": "V1.3.3",
+      "level": 2,
+      "section": "Sanitization",
+      "description_sha256": "ee02d1a17c1f9684ed73b36eab028baeb4f03518549600faa83ca61421c60578"
+    },
+    {
+      "id": "V1.3.4",
+      "level": 2,
+      "section": "Sanitization",
+      "description_sha256": "82edbbdaf45d8bbe299accc6258d39830e22a6ef250943a4394a3fd7c2227ac4"
+    },
+    {
+      "id": "V1.3.5",
+      "level": 2,
+      "section": "Sanitization",
+      "description_sha256": "25377c028956a9e27198e8522013ab78315c63b8782070fe8e97d2b5fb0b55bd"
+    },
+    {
+      "id": "V1.3.6",
+      "level": 2,
+      "section": "Sanitization",
+      "description_sha256": "9c7d2d40c9117f4017694aea8722ed2c3000b7db4ada18bcaabb09a94a8a0723"
+    },
+    {
+      "id": "V1.3.7",
+      "level": 2,
+      "section": "Sanitization",
+      "description_sha256": "2d1614dcdc36ad30aa544470d06f7dc3e9727c0c768c48030c2c129d0f46cef0"
+    },
+    {
+      "id": "V1.3.8",
+      "level": 2,
+      "section": "Sanitization",
+      "description_sha256": "a3e1786d32c2d2d7939ebe8bc2601fbd8caf14f16839d950108a829f74af2044"
+    },
+    {
+      "id": "V1.3.9",
+      "level": 2,
+      "section": "Sanitization",
+      "description_sha256": "b484b63a8852b8a3b00eefc89fb64c920b5d1028609c963871c7240907d24aab"
+    },
+    {
+      "id": "V1.3.10",
+      "level": 2,
+      "section": "Sanitization",
+      "description_sha256": "0a60b313dff5e5b0c46fa42d058d6e0949ac499a226a15a9cc182a9bbaa11349"
+    },
+    {
+      "id": "V1.3.11",
+      "level": 2,
+      "section": "Sanitization",
+      "description_sha256": "970201fb7a98ae90068cb87206db705ec20cf78bd819acd6f336c7f83aaefa47"
+    },
+    {
+      "id": "V1.3.12",
+      "level": 3,
+      "section": "Sanitization",
+      "description_sha256": "08a1abec95e38851fa9f640e22adc78f5d4fe7468aaf3b08921dc565477bec07"
+    },
+    {
+      "id": "V1.4.1",
+      "level": 2,
+      "section": "Memory, String, and Unmanaged Code",
+      "description_sha256": "f80adef7cf5ce5bb75a3debb59e0d30434a0b42472ac4455a3c93fff669b35e4"
+    },
+    {
+      "id": "V1.4.2",
+      "level": 2,
+      "section": "Memory, String, and Unmanaged Code",
+      "description_sha256": "0b74530c0ba4dbb5718a4848c138154fc05eb66cf42d8bf098ac27cff6fd6592"
+    },
+    {
+      "id": "V1.4.3",
+      "level": 2,
+      "section": "Memory, String, and Unmanaged Code",
+      "description_sha256": "24efa266aa596dd9c9b8999981b12a35a849b9c7cf7aff1299ed89e02194d989"
+    },
+    {
+      "id": "V1.5.1",
+      "level": 1,
+      "section": "Safe Deserialization",
+      "description_sha256": "db003aab9bc75852287c584abaf88847b93d2ff421d58d11e1c6cee8bd2b70af"
+    },
+    {
+      "id": "V1.5.2",
+      "level": 2,
+      "section": "Safe Deserialization",
+      "description_sha256": "da4e09284babacf35cac2f9dcf79cf25d85a63281268fbd7ff5925f795ea7305"
+    },
+    {
+      "id": "V1.5.3",
+      "level": 3,
+      "section": "Safe Deserialization",
+      "description_sha256": "e73a8023ad06b8a9e4dbcf6919fbeb29d6cc44876b94ddba6bbefbf64f966303"
+    },
+    {
+      "id": "V2.1.1",
+      "level": 1,
+      "section": "Validation and Business Logic Documentation",
+      "description_sha256": "0a0b87e9d83323086bd6548e151910fd5874aa739440800964ab3d3187cca58e"
+    },
+    {
+      "id": "V2.1.2",
+      "level": 2,
+      "section": "Validation and Business Logic Documentation",
+      "description_sha256": "0444707d195769639119e86ebc9a7a1fe85982e4e344e644e98b291f469fd22d"
+    },
+    {
+      "id": "V2.1.3",
+      "level": 2,
+      "section": "Validation and Business Logic Documentation",
+      "description_sha256": "bdb24065c06355e67cb3a0b53ef3d8ba9bbfa5241d62d7d2b449593835765cb1"
+    },
+    {
+      "id": "V2.2.1",
+      "level": 1,
+      "section": "Input Validation",
+      "description_sha256": "2276841ed9fd6d11b731cd1f9a2fb3ac0b205077bb6ffbf8c40ab5f6471d8cd0"
+    },
+    {
+      "id": "V2.2.2",
+      "level": 1,
+      "section": "Input Validation",
+      "description_sha256": "cdb05a8c5b7913f2f004053d6d8560d515ae502a2d4953e28e709015f49cb29d"
+    },
+    {
+      "id": "V2.2.3",
+      "level": 2,
+      "section": "Input Validation",
+      "description_sha256": "d746a9768e612f9ff24272abbc0a8becd85e7e9b84ce1d4dc201d7f49968d914"
+    },
+    {
+      "id": "V2.3.1",
+      "level": 1,
+      "section": "Business Logic Security",
+      "description_sha256": "7e1938ef2a7e44be64cd0f9b0ab11604ac348d3956448e7986354f26fa7fd620"
+    },
+    {
+      "id": "V2.3.2",
+      "level": 2,
+      "section": "Business Logic Security",
+      "description_sha256": "50deb73759dbff515737533be1492c8ec067a7177496cb870edb7722de537fbf"
+    },
+    {
+      "id": "V2.3.3",
+      "level": 2,
+      "section": "Business Logic Security",
+      "description_sha256": "87130a0295423a10adbc2c81338b8d32264829b776eba0bb3c1d6c05d6986076"
+    },
+    {
+      "id": "V2.3.4",
+      "level": 2,
+      "section": "Business Logic Security",
+      "description_sha256": "db25b00c1955a09c5eca3a5193f9a4bc1ba4a6a407836c9d560f11c421cdb506"
+    },
+    {
+      "id": "V2.3.5",
+      "level": 3,
+      "section": "Business Logic Security",
+      "description_sha256": "883b3e0ead41c8fd8d900b525dc9b045b14d0dd9ccea7aba447c6afbb9c15753"
+    },
+    {
+      "id": "V2.4.1",
+      "level": 2,
+      "section": "Anti-automation",
+      "description_sha256": "ad6f67b25d4558fe160b8068be94389bd40a17adef720e39376b93be60ee68ad"
+    },
+    {
+      "id": "V2.4.2",
+      "level": 3,
+      "section": "Anti-automation",
+      "description_sha256": "5ea531a39180116e1c952a4cf96e6a91bd6ac31cbce09df9eced5be4c73da7fa"
+    },
+    {
+      "id": "V3.1.1",
+      "level": 3,
+      "section": "Web Frontend Security Documentation",
+      "description_sha256": "c83c2bea017bd8fb2c4a87dd059be440e5b1713b730e2afe7014ea3902d96a6b"
+    },
+    {
+      "id": "V3.2.1",
+      "level": 1,
+      "section": "Unintended Content Interpretation",
+      "description_sha256": "5c0cc1d80b5eb022eaeaabd447e8ad8e8bf768acbc7ab108bcdd387179884a0f"
+    },
+    {
+      "id": "V3.2.2",
+      "level": 1,
+      "section": "Unintended Content Interpretation",
+      "description_sha256": "90eb8d6f84f5afea4a215f0af0f701456d242012f3c9a9d5a6fa8299b538d655"
+    },
+    {
+      "id": "V3.2.3",
+      "level": 3,
+      "section": "Unintended Content Interpretation",
+      "description_sha256": "9b157056e57289c3b67f97a381f0e8b391ba194013152ea1f61637179bcb3620"
+    },
+    {
+      "id": "V3.3.1",
+      "level": 1,
+      "section": "Cookie Setup",
+      "description_sha256": "12b4a4ad1a5122bcbd2c2e1465e5667753307d322290e27161e50e21359e1ac7"
+    },
+    {
+      "id": "V3.3.2",
+      "level": 2,
+      "section": "Cookie Setup",
+      "description_sha256": "051adcb67aabf4169ed1803d7f769147572d8ebbe6997232050f6949b5f9230f"
+    },
+    {
+      "id": "V3.3.3",
+      "level": 2,
+      "section": "Cookie Setup",
+      "description_sha256": "63d2ead1fca6801496a47b503f14fc17aaa996b84b59105ce1f616853ee17ed1"
+    },
+    {
+      "id": "V3.3.4",
+      "level": 2,
+      "section": "Cookie Setup",
+      "description_sha256": "48e30576bb03490b79f328df6d09a45cb7a446ef781cca7621b1d9eae2b08cfd"
+    },
+    {
+      "id": "V3.3.5",
+      "level": 3,
+      "section": "Cookie Setup",
+      "description_sha256": "aea7830ecf4e61b4d2472dfa4ff38d73f8c0102eb763a29a11b224e1a4973cfc"
+    },
+    {
+      "id": "V3.4.1",
+      "level": 1,
+      "section": "Browser Security Mechanism Headers",
+      "description_sha256": "3c6807b0017a5be256984c5dbcfd28481c9b83f0a5031c7b2284caa58b5e0b4c"
+    },
+    {
+      "id": "V3.4.2",
+      "level": 1,
+      "section": "Browser Security Mechanism Headers",
+      "description_sha256": "1f85ed153b1f62ac22b657562cde809c5c5de19c59e85a53de2cb496e3d9dccb"
+    },
+    {
+      "id": "V3.4.3",
+      "level": 2,
+      "section": "Browser Security Mechanism Headers",
+      "description_sha256": "2285874aa3cbdbd826b1b4eb5e550d3601ad28766efc96879f0b6e42de01cd6e"
+    },
+    {
+      "id": "V3.4.4",
+      "level": 2,
+      "section": "Browser Security Mechanism Headers",
+      "description_sha256": "54fdb9df811f5eb5c8cd951cb9e6e48ee22597dc2c84ff90078e3243f4cd900e"
+    },
+    {
+      "id": "V3.4.5",
+      "level": 2,
+      "section": "Browser Security Mechanism Headers",
+      "description_sha256": "3c4b86f83fe4f24ebf378b0be8bca79c09a37d0afbef6fbed7d067f78d9f4090"
+    },
+    {
+      "id": "V3.4.6",
+      "level": 2,
+      "section": "Browser Security Mechanism Headers",
+      "description_sha256": "fb4f7b612530013072fee8f68917bb0b9798d53ba47fa2ab88598b809b72cf64"
+    },
+    {
+      "id": "V3.4.7",
+      "level": 3,
+      "section": "Browser Security Mechanism Headers",
+      "description_sha256": "d5d3f18da489aa0cd8fe1e51ed68458fa19ec7d263b2c4e74a25b2fbcf048ebd"
+    },
+    {
+      "id": "V3.4.8",
+      "level": 3,
+      "section": "Browser Security Mechanism Headers",
+      "description_sha256": "678046d74d08c17a8c2bbdfcbc51a39bc347b2b842322f7d4b41eb621cf21514"
+    },
+    {
+      "id": "V3.5.1",
+      "level": 1,
+      "section": "Browser Origin Separation",
+      "description_sha256": "43bd37553456ad03f614c02d833c0c2a6608d07dd1493bdbc32f48c7c6936964"
+    },
+    {
+      "id": "V3.5.2",
+      "level": 1,
+      "section": "Browser Origin Separation",
+      "description_sha256": "9d188557dc379be4f08ff9a8ee2ea0f6e5da5402fb5a4ae8e142d243dfe91168"
+    },
+    {
+      "id": "V3.5.3",
+      "level": 1,
+      "section": "Browser Origin Separation",
+      "description_sha256": "d94b40e1e6af0dad81b29d7ddf094a629c2482db3b66ca290080894119ab56b5"
+    },
+    {
+      "id": "V3.5.4",
+      "level": 2,
+      "section": "Browser Origin Separation",
+      "description_sha256": "5d074a0a203c789d47d513e98626ea206f8231b7c4734d775796514895694320"
+    },
+    {
+      "id": "V3.5.5",
+      "level": 2,
+      "section": "Browser Origin Separation",
+      "description_sha256": "748b74e8ffaad286250ecf7b3eca6f5ba4382376cd570acd13dd1e00f7cc6e35"
+    },
+    {
+      "id": "V3.5.6",
+      "level": 3,
+      "section": "Browser Origin Separation",
+      "description_sha256": "71ed74f936a16d05f55d8b9a313f3119a82f71d527b159c9962b86e2e3595674"
+    },
+    {
+      "id": "V3.5.7",
+      "level": 3,
+      "section": "Browser Origin Separation",
+      "description_sha256": "4e77bc29b3a5aab43c3051d5e0e246fccd9be9f6655f77cf2a17aaf1c843576b"
+    },
+    {
+      "id": "V3.5.8",
+      "level": 3,
+      "section": "Browser Origin Separation",
+      "description_sha256": "ba040048c32c100e87809ef8b593fef33c6cf5b7a9c9b24f300470abfb548e07"
+    },
+    {
+      "id": "V3.6.1",
+      "level": 3,
+      "section": "External Resource Integrity",
+      "description_sha256": "c31357d977295037cbf06ec213faf849f2cde3d6ceb37bfbd8f21c1b36b1e400"
+    },
+    {
+      "id": "V3.7.1",
+      "level": 2,
+      "section": "Other Browser Security Considerations",
+      "description_sha256": "a64e6a4d75e6e490310001d45d80985e465c0fdf5d26ee1bbe86844f9afff44f"
+    },
+    {
+      "id": "V3.7.2",
+      "level": 2,
+      "section": "Other Browser Security Considerations",
+      "description_sha256": "6e1cd628a7225f31523be139d8da4305ea5deb6cb81b7e412e76531dd3780479"
+    },
+    {
+      "id": "V3.7.3",
+      "level": 3,
+      "section": "Other Browser Security Considerations",
+      "description_sha256": "29f8cbaffca57b21a4b13de59c6875be5505cf25d273cfe8bd412c60a9b4a323"
+    },
+    {
+      "id": "V3.7.4",
+      "level": 3,
+      "section": "Other Browser Security Considerations",
+      "description_sha256": "c98501c089a0d07c45e68244d4437f4d421aec78f3282924c638c199a2ff0dcc"
+    },
+    {
+      "id": "V3.7.5",
+      "level": 3,
+      "section": "Other Browser Security Considerations",
+      "description_sha256": "b0e6dc1987102168b023188111cb4750cb1c1b3d54e38bbba884495ec4b167d9"
+    },
+    {
+      "id": "V4.1.1",
+      "level": 1,
+      "section": "Generic Web Service Security",
+      "description_sha256": "558699c6dd0f3df4dde39c45b6c9f90dd3079442beb64b5ed865f8ebda02a790"
+    },
+    {
+      "id": "V4.1.2",
+      "level": 2,
+      "section": "Generic Web Service Security",
+      "description_sha256": "a00004674f51b48b733d8a1518919dfdd80a9dfa2ddf1880a22ba81a2a614d44"
+    },
+    {
+      "id": "V4.1.3",
+      "level": 2,
+      "section": "Generic Web Service Security",
+      "description_sha256": "9a317e1db516ab973db1d232649ae3d04368331550dbb4c41605019b9ee7dfc3"
+    },
+    {
+      "id": "V4.1.4",
+      "level": 3,
+      "section": "Generic Web Service Security",
+      "description_sha256": "500fc6439e811b754a3a25fd0d97651d5ddf43a43fc31844b1537b04f3c983c9"
+    },
+    {
+      "id": "V4.1.5",
+      "level": 3,
+      "section": "Generic Web Service Security",
+      "description_sha256": "aa2ecb42c6f37e5551a3462a6571ae1293f2f581b0f3ca91b88c5523d2e44dd3"
+    },
+    {
+      "id": "V4.2.1",
+      "level": 2,
+      "section": "HTTP Message Structure Validation",
+      "description_sha256": "f15925e85deef50a9fc410fa43396dc026846e6e4c02aef6db23a2b5be2df226"
+    },
+    {
+      "id": "V4.2.2",
+      "level": 3,
+      "section": "HTTP Message Structure Validation",
+      "description_sha256": "186154710b1fb8c87d5850868d84a8bff12421cd7e1ad7d269c624d273f19b83"
+    },
+    {
+      "id": "V4.2.3",
+      "level": 3,
+      "section": "HTTP Message Structure Validation",
+      "description_sha256": "b3ce1cc706d3c7a29dd94c59e312e8f6e63dec3e5b349e6d7248702443961db2"
+    },
+    {
+      "id": "V4.2.4",
+      "level": 3,
+      "section": "HTTP Message Structure Validation",
+      "description_sha256": "78c367cfab5c2046d51b9bd833c0fc6386f9c1809ed92cdef2df5adb4b5ae37b"
+    },
+    {
+      "id": "V4.2.5",
+      "level": 3,
+      "section": "HTTP Message Structure Validation",
+      "description_sha256": "baabe4928233bf688d63e29cf806cee9d4f65bd9552739ff34f0af3dc1ab9e8f"
+    },
+    {
+      "id": "V4.3.1",
+      "level": 2,
+      "section": "GraphQL",
+      "description_sha256": "6abf5ceff8892b2fafa6c1b170183ebd6e7dc8cb8d49776273386ab82a46d7d6"
+    },
+    {
+      "id": "V4.3.2",
+      "level": 2,
+      "section": "GraphQL",
+      "description_sha256": "4c794a17652fdcddff4ae99af06f3309926cce18ceb2bf7f2955114b9e810682"
+    },
+    {
+      "id": "V4.4.1",
+      "level": 1,
+      "section": "WebSocket",
+      "description_sha256": "1d1920ea67560b2c06781e2d4346a292cda7bcef696ae7d710bf5ef77d4ee27b"
+    },
+    {
+      "id": "V4.4.2",
+      "level": 2,
+      "section": "WebSocket",
+      "description_sha256": "ff35d44d999f230bf7f0eadbe5dc88389a6f8b74cce0faf645749894ac03eb98"
+    },
+    {
+      "id": "V4.4.3",
+      "level": 2,
+      "section": "WebSocket",
+      "description_sha256": "fdc34cd6b25d068be886bbe146da7bb9170eb60024bbe334c89f51715ee0e10c"
+    },
+    {
+      "id": "V4.4.4",
+      "level": 2,
+      "section": "WebSocket",
+      "description_sha256": "4db2de0d1332b30490851649e3bc47d043245184fbad72f41fb5e5b73388d735"
+    },
+    {
+      "id": "V5.1.1",
+      "level": 2,
+      "section": "File Handling Documentation",
+      "description_sha256": "5e96efb03d3d00ce7d0df97e9dd6aaba1f3acaa13d6a0cf874e3bd51a46c97a3"
+    },
+    {
+      "id": "V5.2.1",
+      "level": 1,
+      "section": "File Upload and Content",
+      "description_sha256": "27436ff515d21adba2f6a6712b6a55aad8da95c9e4d10f489a938463173d7c44"
+    },
+    {
+      "id": "V5.2.2",
+      "level": 1,
+      "section": "File Upload and Content",
+      "description_sha256": "7c9735d7958b27555c1cd96906c1c36048669f23f85d7512572c6c11df2f34a3"
+    },
+    {
+      "id": "V5.2.3",
+      "level": 2,
+      "section": "File Upload and Content",
+      "description_sha256": "7b1ad71d675290942f90d036bfed2ec2683d0cca15e82e9af6961bd956fe2def"
+    },
+    {
+      "id": "V5.2.4",
+      "level": 3,
+      "section": "File Upload and Content",
+      "description_sha256": "ee992c415630f152406735f30eb2eb155e560aa7ca157a977d3df2a22a2c4316"
+    },
+    {
+      "id": "V5.2.5",
+      "level": 3,
+      "section": "File Upload and Content",
+      "description_sha256": "89103486b2f80e4b0f2df4f1a433ba1449fdf3e45cbc82fc4898ccdd01a727e4"
+    },
+    {
+      "id": "V5.2.6",
+      "level": 3,
+      "section": "File Upload and Content",
+      "description_sha256": "2c45fa8ab61c44607cbfe6b208f767de6db5d741029123220789add5d1b4e6ba"
+    },
+    {
+      "id": "V5.3.1",
+      "level": 1,
+      "section": "File Storage",
+      "description_sha256": "252e8eecd7790c2a144ef68fc80af6419497ec52bda8a20694ff7ab5c67746fe"
+    },
+    {
+      "id": "V5.3.2",
+      "level": 1,
+      "section": "File Storage",
+      "description_sha256": "6d70e4a2e2aaa0278fb470dc01953f394e70e360aa908afa9e068fd61914c8d3"
+    },
+    {
+      "id": "V5.3.3",
+      "level": 3,
+      "section": "File Storage",
+      "description_sha256": "69e8d6a0ec4dbb944d1ce6b57eff048d51d563cd1544b8bdffec07e1d5bb00bf"
+    },
+    {
+      "id": "V5.4.1",
+      "level": 2,
+      "section": "File Download",
+      "description_sha256": "cd2efab34c3db555fc02180143a68f64e740f6f73d7b46b130f395553866a742"
+    },
+    {
+      "id": "V5.4.2",
+      "level": 2,
+      "section": "File Download",
+      "description_sha256": "311e695c1fa6fca3c2a57edc0629259a5adaef54ffe1b184a6b2685cae7a660a"
+    },
+    {
+      "id": "V5.4.3",
+      "level": 2,
+      "section": "File Download",
+      "description_sha256": "e9d235f0215d9678d8b8af520ec8485eeca77f2ca398ec65d1fb4a74521cf0d4"
+    },
+    {
+      "id": "V6.1.1",
+      "level": 1,
+      "section": "Authentication Documentation",
+      "description_sha256": "30e39fb88828424885c9ca501708f789a64b491aa30ac6fe48321076ba3ebccb"
+    },
+    {
+      "id": "V6.1.2",
+      "level": 2,
+      "section": "Authentication Documentation",
+      "description_sha256": "3616378e4fb27475420939cdacd49b03932abf825b21946a221bdedffdc8660c"
+    },
+    {
+      "id": "V6.1.3",
+      "level": 2,
+      "section": "Authentication Documentation",
+      "description_sha256": "adba48c57e9e1749e00c2426ba4b921b293f0b54ce32c1df72777841a8365915"
+    },
+    {
+      "id": "V6.2.1",
+      "level": 1,
+      "section": "Password Security",
+      "description_sha256": "7e1ccfb2f166c0bcc7cafa68539414da3eec86c59df9929ef90afe00732b760d"
+    },
+    {
+      "id": "V6.2.2",
+      "level": 1,
+      "section": "Password Security",
+      "description_sha256": "81b22c3dbda5942c4cc0577ced851fc0c1dbf3fddfaa53fa2a44436c2ad05cc7"
+    },
+    {
+      "id": "V6.2.3",
+      "level": 1,
+      "section": "Password Security",
+      "description_sha256": "f6828f6799d167880467624dacf55539ae09211dad21b1b4b4c410391031f57f"
+    },
+    {
+      "id": "V6.2.4",
+      "level": 1,
+      "section": "Password Security",
+      "description_sha256": "e97c37b35402ae91f6c52347999c9964464006c6e4ee6fb891da5534a05fc7eb"
+    },
+    {
+      "id": "V6.2.5",
+      "level": 1,
+      "section": "Password Security",
+      "description_sha256": "c721b9c3691d09a0df5a9337e5658c26532ab52f3681fd86e428f1a80ed45e60"
+    },
+    {
+      "id": "V6.2.6",
+      "level": 1,
+      "section": "Password Security",
+      "description_sha256": "3ace564917641ac78060c0dac0f3d623627a0071976038b58b50cbb4b2890d59"
+    },
+    {
+      "id": "V6.2.7",
+      "level": 1,
+      "section": "Password Security",
+      "description_sha256": "396d2b317067e7403b10dcf811443b7606be21645c1233da1b3bc1257f9aac26"
+    },
+    {
+      "id": "V6.2.8",
+      "level": 1,
+      "section": "Password Security",
+      "description_sha256": "878bd3caa751a45f795e138e38f728344f0791b1b2fa796986ca62259a2eaa18"
+    },
+    {
+      "id": "V6.2.9",
+      "level": 2,
+      "section": "Password Security",
+      "description_sha256": "393328867c82fa07cc452aff51e1f05a891479a0d79170d1527882c27fc6fffa"
+    },
+    {
+      "id": "V6.2.10",
+      "level": 2,
+      "section": "Password Security",
+      "description_sha256": "2e5de9d858667778792f67fb3fa6a3c92c44f3f7043a7e4c17c16c23c7d5a467"
+    },
+    {
+      "id": "V6.2.11",
+      "level": 2,
+      "section": "Password Security",
+      "description_sha256": "c3b324a70450c1bb035a21d8006ca35380a4418a67512a36e8e32a9725a679cf"
+    },
+    {
+      "id": "V6.2.12",
+      "level": 2,
+      "section": "Password Security",
+      "description_sha256": "f8db37515807626917201331aa7a85807b411b5f570e3c346770de83ced255fd"
+    },
+    {
+      "id": "V6.3.1",
+      "level": 1,
+      "section": "General Authentication Security",
+      "description_sha256": "f50bacf3816ae80d625b8eb68e4b309bf2d505323465c8a5a533776304560ce1"
+    },
+    {
+      "id": "V6.3.2",
+      "level": 1,
+      "section": "General Authentication Security",
+      "description_sha256": "6ff34b253f16627815426f83c0153a672059600887020be150c26f691b842519"
+    },
+    {
+      "id": "V6.3.3",
+      "level": 2,
+      "section": "General Authentication Security",
+      "description_sha256": "e52d0b9f5cfe7b8d5d7672b790efe4c86ce6aad42e89faf6fe1ccefd35fb04a2"
+    },
+    {
+      "id": "V6.3.4",
+      "level": 2,
+      "section": "General Authentication Security",
+      "description_sha256": "db932832dab3724f5d35d0c89876fa6dbb95ec6128ce6cca2fe1107d43db0748"
+    },
+    {
+      "id": "V6.3.5",
+      "level": 3,
+      "section": "General Authentication Security",
+      "description_sha256": "1ab36fc4d6a765d436f259ceae87104d6197a69e924004b067a467c7f23740c2"
+    },
+    {
+      "id": "V6.3.6",
+      "level": 3,
+      "section": "General Authentication Security",
+      "description_sha256": "765fd9f044cc0c5621a45ca239ab0441b9c3420267b22a62e33c6de165d02f3d"
+    },
+    {
+      "id": "V6.3.7",
+      "level": 3,
+      "section": "General Authentication Security",
+      "description_sha256": "bdc282a8f7bf7c664ba3409b7452f1468c0d758495593df2fb0b3c89b27de14e"
+    },
+    {
+      "id": "V6.3.8",
+      "level": 3,
+      "section": "General Authentication Security",
+      "description_sha256": "c4e8f3610807687926d960cff12e9147c685afc943a62c50780a43fc38c77244"
+    },
+    {
+      "id": "V6.4.1",
+      "level": 1,
+      "section": "Authentication Factor Lifecycle and Recovery",
+      "description_sha256": "f516e2eeac328f5ee8c4e0d4cff34d29e53700c9db715b52ccf78fc627e3eeb2"
+    },
+    {
+      "id": "V6.4.2",
+      "level": 1,
+      "section": "Authentication Factor Lifecycle and Recovery",
+      "description_sha256": "9e43c5b79c61a5658750ea744c5e6d32eb1c2042bd62e3e5dbd4556bbb311c28"
+    },
+    {
+      "id": "V6.4.3",
+      "level": 2,
+      "section": "Authentication Factor Lifecycle and Recovery",
+      "description_sha256": "1ecd6b9885c12717e53797d60b05c7a9f0838b41d70db8ee1b62698be659f210"
+    },
+    {
+      "id": "V6.4.4",
+      "level": 2,
+      "section": "Authentication Factor Lifecycle and Recovery",
+      "description_sha256": "ed6605709f0423e03721fb981a02f21268787cd314f8cb1d5281aea89b5aa467"
+    },
+    {
+      "id": "V6.4.5",
+      "level": 3,
+      "section": "Authentication Factor Lifecycle and Recovery",
+      "description_sha256": "30924c5ef20a8c420cb35c3c61f2f29f659170415d0395261e277d24a88c7650"
+    },
+    {
+      "id": "V6.4.6",
+      "level": 3,
+      "section": "Authentication Factor Lifecycle and Recovery",
+      "description_sha256": "b61b7a2f3428e7d8d66a9fd97bd34fedf02e8f47a1af28b92eb3da1a13e925f5"
+    },
+    {
+      "id": "V6.5.1",
+      "level": 2,
+      "section": "General Multi-factor authentication requirements",
+      "description_sha256": "e1cfb439058f8ed958a0cf375588dabd6247849a02f9c7f8251fe651e2cbc31c"
+    },
+    {
+      "id": "V6.5.2",
+      "level": 2,
+      "section": "General Multi-factor authentication requirements",
+      "description_sha256": "c65d036016bad9fd6c2d282af684b1b35f538e858e2910254c1938967583abd7"
+    },
+    {
+      "id": "V6.5.3",
+      "level": 2,
+      "section": "General Multi-factor authentication requirements",
+      "description_sha256": "6838c64c8445c588d9cb8df4368cb15894530356311feddb82d2f22b4b986482"
+    },
+    {
+      "id": "V6.5.4",
+      "level": 2,
+      "section": "General Multi-factor authentication requirements",
+      "description_sha256": "ebe943dd83500f1f1b4f0a4c0ca9b508783355e5beae5752da980afc038d40b8"
+    },
+    {
+      "id": "V6.5.5",
+      "level": 2,
+      "section": "General Multi-factor authentication requirements",
+      "description_sha256": "426555f613dbbc1cd15fe87fa0da4596c22bead6d4f0f6d8dc3a5b39548a50c5"
+    },
+    {
+      "id": "V6.5.6",
+      "level": 3,
+      "section": "General Multi-factor authentication requirements",
+      "description_sha256": "919e57ce60754e7e2ff30a49829d1a57a6752d0a6ee97609e76a1bdc15f1e063"
+    },
+    {
+      "id": "V6.5.7",
+      "level": 3,
+      "section": "General Multi-factor authentication requirements",
+      "description_sha256": "c618cae7ba88f2bd1519695fcf7b7ae97962b3b23e239ea0996a438209002df7"
+    },
+    {
+      "id": "V6.5.8",
+      "level": 3,
+      "section": "General Multi-factor authentication requirements",
+      "description_sha256": "ac24f89c4a1dd8aa16b9fdca21058a5c534b6123193defc0ac60480e2c11c667"
+    },
+    {
+      "id": "V6.6.1",
+      "level": 2,
+      "section": "Out-of-Band authentication mechanisms",
+      "description_sha256": "b85f0c47b7d5289bd47924c55e20cff7e788cdab36b821beb28b9702e98c1bc2"
+    },
+    {
+      "id": "V6.6.2",
+      "level": 2,
+      "section": "Out-of-Band authentication mechanisms",
+      "description_sha256": "468398b90c908679541074b49343350f884263dfca1fa8d4ac6026cb130e3831"
+    },
+    {
+      "id": "V6.6.3",
+      "level": 2,
+      "section": "Out-of-Band authentication mechanisms",
+      "description_sha256": "a7065018ff371f65c21e308dfb786917a078aa7be72a637ad8e2076e639ea826"
+    },
+    {
+      "id": "V6.6.4",
+      "level": 3,
+      "section": "Out-of-Band authentication mechanisms",
+      "description_sha256": "32f8c4639d4695aee1b507e6d75159c788ae92c1bc4ba4d927c1ab3e84378c4e"
+    },
+    {
+      "id": "V6.7.1",
+      "level": 3,
+      "section": "Cryptographic authentication mechanism",
+      "description_sha256": "2ec7f0890303d310ea9679c4479b084008c0f2f50aedbf93c2faf8533ac33869"
+    },
+    {
+      "id": "V6.7.2",
+      "level": 3,
+      "section": "Cryptographic authentication mechanism",
+      "description_sha256": "270f6ba10faab6758b3b0de838db464c8a71e02af6d91a9b3e544a0f169a7b83"
+    },
+    {
+      "id": "V6.8.1",
+      "level": 2,
+      "section": "Authentication with an Identity Provider",
+      "description_sha256": "692813dbed42d2251bb15cffe93a06a4a68ade99a8795ce3a066770e69900250"
+    },
+    {
+      "id": "V6.8.2",
+      "level": 2,
+      "section": "Authentication with an Identity Provider",
+      "description_sha256": "cb5fc2c61dd90b97dd351341abf986d35a2ec0deeda36ac5e1634865b2aad132"
+    },
+    {
+      "id": "V6.8.3",
+      "level": 2,
+      "section": "Authentication with an Identity Provider",
+      "description_sha256": "6b01559dc12e22e0b93413e48a53ff5c8a9377bf299d578b08288ff72a25281f"
+    },
+    {
+      "id": "V6.8.4",
+      "level": 2,
+      "section": "Authentication with an Identity Provider",
+      "description_sha256": "9023885444887881a404dcf8a751f185afc24e9b283f2bd9224434cd99eaddb2"
+    },
+    {
+      "id": "V7.1.1",
+      "level": 2,
+      "section": "Session Management Documentation",
+      "description_sha256": "a2574f6b602e44ae5b35acb34582d55b84a62b5897e82cbb0de27c2ed9369837"
+    },
+    {
+      "id": "V7.1.2",
+      "level": 2,
+      "section": "Session Management Documentation",
+      "description_sha256": "94bc64d790db29c09b358f8cdaab765e2d64b6987b6c84e5dfbf3b0dcc417d66"
+    },
+    {
+      "id": "V7.1.3",
+      "level": 2,
+      "section": "Session Management Documentation",
+      "description_sha256": "93a3162a01171c50913276f6d595fbea11a0bea3803804a467909b45f9c2a08a"
+    },
+    {
+      "id": "V7.2.1",
+      "level": 1,
+      "section": "Fundamental Session Management Security",
+      "description_sha256": "7bfcdeea8f1576b153cc1a46971a3556b5531b4dc763e6554e800ab86e2db6cd"
+    },
+    {
+      "id": "V7.2.2",
+      "level": 1,
+      "section": "Fundamental Session Management Security",
+      "description_sha256": "b029bea600414f6aceff7a7df71a6b294f44118285321a7a9a8a7b0ed74c4c8d"
+    },
+    {
+      "id": "V7.2.3",
+      "level": 1,
+      "section": "Fundamental Session Management Security",
+      "description_sha256": "c11244d1d647f8de5b094ad9c17639fd697b79d41e5143c74ae2a805ef15ac3d"
+    },
+    {
+      "id": "V7.2.4",
+      "level": 1,
+      "section": "Fundamental Session Management Security",
+      "description_sha256": "da00f439c25ec72c12d0bbaecd3d14d5100d60cec834f043baea1c94b293ef6c"
+    },
+    {
+      "id": "V7.3.1",
+      "level": 2,
+      "section": "Session Timeout",
+      "description_sha256": "799af40680949a448059ffe19781440e509f7d0dbae0d633aabdcd9f8e4af6e6"
+    },
+    {
+      "id": "V7.3.2",
+      "level": 2,
+      "section": "Session Timeout",
+      "description_sha256": "effc0e5597ec7c43aab2eec6dfb443f8cbe4c51f3a587dc1bb56e8af6d5b42cf"
+    },
+    {
+      "id": "V7.4.1",
+      "level": 1,
+      "section": "Session Termination",
+      "description_sha256": "f931fd1db20ad5c91a82c590d6c8bc1aeb98f8e447ee2c8a764ddc81a217290b"
+    },
+    {
+      "id": "V7.4.2",
+      "level": 1,
+      "section": "Session Termination",
+      "description_sha256": "969453f3198b934b88df95a0297f474d9e771bc3e32955122da4e60f9d505f77"
+    },
+    {
+      "id": "V7.4.3",
+      "level": 2,
+      "section": "Session Termination",
+      "description_sha256": "fa58e10891be0968095c053ff7424563e43963abc6cfb78255460b389d704804"
+    },
+    {
+      "id": "V7.4.4",
+      "level": 2,
+      "section": "Session Termination",
+      "description_sha256": "d1516980a6b31f981edebb99c272a80c0438af31ac92067fb08664fab4d50581"
+    },
+    {
+      "id": "V7.4.5",
+      "level": 2,
+      "section": "Session Termination",
+      "description_sha256": "85eae75dec587b715bdb290dde8fbc576d9536e707bac15a0ceac6ed9b0ad7e6"
+    },
+    {
+      "id": "V7.5.1",
+      "level": 2,
+      "section": "Defenses Against Session Abuse",
+      "description_sha256": "c9f7aeae899269a1826388806a6f48e68f6936f9d362d0d0d08db9f1f6fccc0c"
+    },
+    {
+      "id": "V7.5.2",
+      "level": 2,
+      "section": "Defenses Against Session Abuse",
+      "description_sha256": "496674150e8260ef56a1cfab53050f6311c13ba5c78fc155e780d7461c0ebf5f"
+    },
+    {
+      "id": "V7.5.3",
+      "level": 3,
+      "section": "Defenses Against Session Abuse",
+      "description_sha256": "9be9d0057e04aa9d9a54de000c20c2cae14ab3512bc07a54607000804a4540f6"
+    },
+    {
+      "id": "V7.6.1",
+      "level": 2,
+      "section": "Federated Re-authentication",
+      "description_sha256": "7914e8c426064a94fae1eba5fc7662bf4a46afe44a3a543d4cd641208d4c24fd"
+    },
+    {
+      "id": "V7.6.2",
+      "level": 2,
+      "section": "Federated Re-authentication",
+      "description_sha256": "fffb65f16b4399988249749b50ca6980f590044354dface03cab5de29ccb3255"
+    },
+    {
+      "id": "V8.1.1",
+      "level": 1,
+      "section": "Authorization Documentation",
+      "description_sha256": "003e748fcbacf8149318eceef32befe67da1f211f9afd8d97d3ad24d7d1a1481"
+    },
+    {
+      "id": "V8.1.2",
+      "level": 2,
+      "section": "Authorization Documentation",
+      "description_sha256": "be3be7e4c1922523db17670134d04739c6ddbe64670e6f63d1f990e6ddb4ca46"
+    },
+    {
+      "id": "V8.1.3",
+      "level": 3,
+      "section": "Authorization Documentation",
+      "description_sha256": "fa129ef0de9d2c7fe21d01e8f6faad0328d442614329bd6ef919ac6e0a3b2d49"
+    },
+    {
+      "id": "V8.1.4",
+      "level": 3,
+      "section": "Authorization Documentation",
+      "description_sha256": "71e0475f8868fe712e31d621a7ba624d53299ac1602c6940f8b50ca193309c57"
+    },
+    {
+      "id": "V8.2.1",
+      "level": 1,
+      "section": "General Authorization Design",
+      "description_sha256": "bc70d385fc9d02dec59b069752ccaa82cb79322d8bc0855699a0609eca020c47"
+    },
+    {
+      "id": "V8.2.2",
+      "level": 1,
+      "section": "General Authorization Design",
+      "description_sha256": "6658978be1e44089f659d78db99fb6b29c71d4062e2dd7b4eac3b07761cc97a7"
+    },
+    {
+      "id": "V8.2.3",
+      "level": 2,
+      "section": "General Authorization Design",
+      "description_sha256": "49ad72022d9bfea4f33906744104abccffe928c3c759598d856af7a598681ef8"
+    },
+    {
+      "id": "V8.2.4",
+      "level": 3,
+      "section": "General Authorization Design",
+      "description_sha256": "f3bd6bbe908d3eb8f376dbdb1ffc8ab7d142bc3401941ff8dfc31bd0dd43554b"
+    },
+    {
+      "id": "V8.3.1",
+      "level": 1,
+      "section": "Operation Level Authorization",
+      "description_sha256": "f43c2c3b4233d81b1a5b6d21087737c75b32804f8c0b2be80bcc8cb3b24da0a4"
+    },
+    {
+      "id": "V8.3.2",
+      "level": 3,
+      "section": "Operation Level Authorization",
+      "description_sha256": "e5cc3106ad38d9ddac5a66b3cb7aacbec1e363b5bcec6af99c7a8cfe206b51d7"
+    },
+    {
+      "id": "V8.3.3",
+      "level": 3,
+      "section": "Operation Level Authorization",
+      "description_sha256": "e18fb8c6401a42a0ea359ef55fa8462f9841c8134faadaefdc395b6dc7c4eda3"
+    },
+    {
+      "id": "V8.4.1",
+      "level": 2,
+      "section": "Other Authorization Considerations",
+      "description_sha256": "1bcafb23e1197f7dd63df8943f151c10000f735fb1c4e9a9bc95c15a360d9564"
+    },
+    {
+      "id": "V8.4.2",
+      "level": 3,
+      "section": "Other Authorization Considerations",
+      "description_sha256": "df2919ad2f76ba7ed48a1ccc4002f0b1f7aa9fa352cb84565bc3b5f0fb4c79bf"
+    },
+    {
+      "id": "V9.1.1",
+      "level": 1,
+      "section": "Token source and integrity",
+      "description_sha256": "4be74958297101b0fbd24df97497bd04a92a67dbf9c0aeacf2c66ed7875da289"
+    },
+    {
+      "id": "V9.1.2",
+      "level": 1,
+      "section": "Token source and integrity",
+      "description_sha256": "560e295547fbb4faa6e241a3a1d58bb28e833ee330277abac7fb4f4c5378dcbe"
+    },
+    {
+      "id": "V9.1.3",
+      "level": 1,
+      "section": "Token source and integrity",
+      "description_sha256": "49df7619a7146501b0cde2919aee3d9317fedd0e73d0f11313650fc3ad8d9589"
+    },
+    {
+      "id": "V9.2.1",
+      "level": 1,
+      "section": "Token content",
+      "description_sha256": "4960c5fb7103b8bd975b6c2fe58331c2fe9a6999bc40e47c8d40f951f9188c14"
+    },
+    {
+      "id": "V9.2.2",
+      "level": 2,
+      "section": "Token content",
+      "description_sha256": "990dee9bea856947b56ed0238e94d0d411af5f03985c964b3cc21aa80c28a6b4"
+    },
+    {
+      "id": "V9.2.3",
+      "level": 2,
+      "section": "Token content",
+      "description_sha256": "061d61af2d71939e9cceddd3b0a31db9a2f88e6c1cdcd3ebeec1797ce2ef96a6"
+    },
+    {
+      "id": "V9.2.4",
+      "level": 2,
+      "section": "Token content",
+      "description_sha256": "f96ed42bc9516ecff57ab5b327f70a553f2ea8ae8c2a0572aacec68d91abc722"
+    },
+    {
+      "id": "V10.1.1",
+      "level": 2,
+      "section": "Generic OAuth and OIDC Security",
+      "description_sha256": "c54bed3b875d6752cca7c19a614ed7bcade7ce33d22db2ed8fff77bbeacf20ff"
+    },
+    {
+      "id": "V10.1.2",
+      "level": 2,
+      "section": "Generic OAuth and OIDC Security",
+      "description_sha256": "6ffc0fe5652d7d2fdc726a388d392e76abe7b9b7797f98fbbf183a1300aec57d"
+    },
+    {
+      "id": "V10.2.1",
+      "level": 2,
+      "section": "OAuth Client",
+      "description_sha256": "120736c90855754d5ecdb79c5914bbd2ecdb65a256e6438872cbc0b547304df6"
+    },
+    {
+      "id": "V10.2.2",
+      "level": 2,
+      "section": "OAuth Client",
+      "description_sha256": "28d8471397bdafffb65a335a0ec4cea6d4cb0fc60e7e075b84103cda5ec33f58"
+    },
+    {
+      "id": "V10.2.3",
+      "level": 3,
+      "section": "OAuth Client",
+      "description_sha256": "07cdb9dc88af2e8745e7725f5511c8fb9e6eb8c90595f2a2088b6cb6b16e96a7"
+    },
+    {
+      "id": "V10.3.1",
+      "level": 2,
+      "section": "OAuth Resource Server",
+      "description_sha256": "a6c502ed55078cc7f0d7f648c3c4988cd95f8456c674146b1f903a8315805b81"
+    },
+    {
+      "id": "V10.3.2",
+      "level": 2,
+      "section": "OAuth Resource Server",
+      "description_sha256": "6e3b9df0e02ea90842ea4ac7c77810cfe38e44d86b124f0ed1e03bc6a5cb0acd"
+    },
+    {
+      "id": "V10.3.3",
+      "level": 2,
+      "section": "OAuth Resource Server",
+      "description_sha256": "6cc3a48959e728c213c49923302fd411261f9bedc76907898ef886022a641884"
+    },
+    {
+      "id": "V10.3.4",
+      "level": 2,
+      "section": "OAuth Resource Server",
+      "description_sha256": "957799f1d1fe05ce5a629aeb96e5e8898d4a81773f5c04472754b87d54208b2b"
+    },
+    {
+      "id": "V10.3.5",
+      "level": 3,
+      "section": "OAuth Resource Server",
+      "description_sha256": "257621a653d874b77bfb06d16863663eb8ca275ec2b3353a8290eed77dd24c75"
+    },
+    {
+      "id": "V10.4.1",
+      "level": 1,
+      "section": "OAuth Authorization Server",
+      "description_sha256": "141117585de7c211d1a9356ea95d87ddeb2f21dac02d6212da3101647034d284"
+    },
+    {
+      "id": "V10.4.2",
+      "level": 1,
+      "section": "OAuth Authorization Server",
+      "description_sha256": "0fe41a875fd793285c9e70e86c060b14b608d7698b6f7d6504662277b8c29aac"
+    },
+    {
+      "id": "V10.4.3",
+      "level": 1,
+      "section": "OAuth Authorization Server",
+      "description_sha256": "1bafd9fb54cc6a75cf28d5440495e269582453789caec56465e5193f31657923"
+    },
+    {
+      "id": "V10.4.4",
+      "level": 1,
+      "section": "OAuth Authorization Server",
+      "description_sha256": "98b065379f2d9d7c5fea2a7207ea02252ea1591a57c4abe27c92b39aaa445414"
+    },
+    {
+      "id": "V10.4.5",
+      "level": 1,
+      "section": "OAuth Authorization Server",
+      "description_sha256": "7181927b980505d3a54073000971b1c529dc293c065abc37faa8f98afd0b0167"
+    },
+    {
+      "id": "V10.4.6",
+      "level": 2,
+      "section": "OAuth Authorization Server",
+      "description_sha256": "d9dabf47dd44fd8869ed309200421f365f2e6cee2de34e843b0da3249c6044af"
+    },
+    {
+      "id": "V10.4.7",
+      "level": 2,
+      "section": "OAuth Authorization Server",
+      "description_sha256": "de870d51c55a685b7e19a9a6778943f75f9f87d2def039cac41c52f7a0e68257"
+    },
+    {
+      "id": "V10.4.8",
+      "level": 2,
+      "section": "OAuth Authorization Server",
+      "description_sha256": "0199a3ee74aea31c79f7dcc8f340903ce34b5e0f0c5060cf2b65ab39708732ff"
+    },
+    {
+      "id": "V10.4.9",
+      "level": 2,
+      "section": "OAuth Authorization Server",
+      "description_sha256": "1ea1e64b7cb69989c3a67f7d33181ea5cde55fb7ceee83e1c263472eeacb663e"
+    },
+    {
+      "id": "V10.4.10",
+      "level": 2,
+      "section": "OAuth Authorization Server",
+      "description_sha256": "7a5fed35c30eaf4d211e2716d61b93a6a9970093b22fdddb6b4b6d570cdf4da5"
+    },
+    {
+      "id": "V10.4.11",
+      "level": 2,
+      "section": "OAuth Authorization Server",
+      "description_sha256": "24a617068d648c4e16d18ad4992e210e96490fee6734dbb14e54852e9055dbaf"
+    },
+    {
+      "id": "V10.4.12",
+      "level": 3,
+      "section": "OAuth Authorization Server",
+      "description_sha256": "151d9f968b0563c4ee6b55e500e3e2b92120871495c047ad1a0c381a4f39d87e"
+    },
+    {
+      "id": "V10.4.13",
+      "level": 3,
+      "section": "OAuth Authorization Server",
+      "description_sha256": "b5794cc535a547821914a3ea484f4a3d9acb8a992538448163da8ebd8ade571b"
+    },
+    {
+      "id": "V10.4.14",
+      "level": 3,
+      "section": "OAuth Authorization Server",
+      "description_sha256": "055f9d5c78b94fa390c2eaf64335c459027877cd2babcd06c32bc6b0c01413af"
+    },
+    {
+      "id": "V10.4.15",
+      "level": 3,
+      "section": "OAuth Authorization Server",
+      "description_sha256": "5e37461c4d5e25682fcd744318b40fa9302e24e21e3a322385f50402525b99b4"
+    },
+    {
+      "id": "V10.4.16",
+      "level": 3,
+      "section": "OAuth Authorization Server",
+      "description_sha256": "cb7474b0cad808c9470664289c3ed6688021630c29ac7bc38619d38d15b6dedb"
+    },
+    {
+      "id": "V10.5.1",
+      "level": 2,
+      "section": "OIDC Client",
+      "description_sha256": "e6d7396a00d1b081cfb9057321ad8183d67ea586c2a1aee870b9e7b729a5918c"
+    },
+    {
+      "id": "V10.5.2",
+      "level": 2,
+      "section": "OIDC Client",
+      "description_sha256": "fdf42c72d06990595c4efc9e9257b77068129ffb0718cf76169b26b3d30f1085"
+    },
+    {
+      "id": "V10.5.3",
+      "level": 2,
+      "section": "OIDC Client",
+      "description_sha256": "1827811679f70933268804a56b30d6cb24d3acbb24ba30b36fc25f6b0f9ab248"
+    },
+    {
+      "id": "V10.5.4",
+      "level": 2,
+      "section": "OIDC Client",
+      "description_sha256": "fe07e9935d8f01d0eaa8e62dd6d5c1cd77d20517b7670862d173ce53f6110c81"
+    },
+    {
+      "id": "V10.5.5",
+      "level": 2,
+      "section": "OIDC Client",
+      "description_sha256": "52fa7d3a3a35f60df094ac01a45ce5f0c9d9d3ad0e954d395b044be01b02ed5b"
+    },
+    {
+      "id": "V10.6.1",
+      "level": 2,
+      "section": "OpenID Provider",
+      "description_sha256": "7a75394b5a5128522fc2142720cc8f0cca875b1ded76bc415e9d39a32450bf3d"
+    },
+    {
+      "id": "V10.6.2",
+      "level": 2,
+      "section": "OpenID Provider",
+      "description_sha256": "4e0e96cbb838d7af746e2fa24a728ebae8fd413323db2924b48ad713c9f8a814"
+    },
+    {
+      "id": "V10.7.1",
+      "level": 2,
+      "section": "Consent Management",
+      "description_sha256": "eab8d4176c151f49375661b3172ee2bc480f72c693631d46b3b88dbaef284726"
+    },
+    {
+      "id": "V10.7.2",
+      "level": 2,
+      "section": "Consent Management",
+      "description_sha256": "c07ad9e805f6b0da248b4c75b0b1d51b8b9b4ed3988bcbcdec421ce3db6e62a8"
+    },
+    {
+      "id": "V10.7.3",
+      "level": 2,
+      "section": "Consent Management",
+      "description_sha256": "2cfa36531ccae6ca390f843c7904b4e2cc5287074239e6fcdf6f1fc80e5569b2"
+    },
+    {
+      "id": "V11.1.1",
+      "level": 2,
+      "section": "Cryptographic Inventory and Documentation",
+      "description_sha256": "865ba95556e5e819ee199cf2adbe3a90d55dca371e9be6ad787c51efe3a02f8b"
+    },
+    {
+      "id": "V11.1.2",
+      "level": 2,
+      "section": "Cryptographic Inventory and Documentation",
+      "description_sha256": "dc4a8c4857819ae0ff6c888f31f6110de9112ca5b377f90ec6c68a5e6c86a27e"
+    },
+    {
+      "id": "V11.1.3",
+      "level": 3,
+      "section": "Cryptographic Inventory and Documentation",
+      "description_sha256": "c69d1eab345e52ed53f20419dd89e49ea83b02a6abb5fceaffc41a3433bd5116"
+    },
+    {
+      "id": "V11.1.4",
+      "level": 3,
+      "section": "Cryptographic Inventory and Documentation",
+      "description_sha256": "a9d6edf91e4d4950b3b1c881cc6a989995617cb15797b93e52317a9c01436529"
+    },
+    {
+      "id": "V11.2.1",
+      "level": 2,
+      "section": "Secure Cryptography Implementation",
+      "description_sha256": "0fdbe426363be80702027bb24e715481c1fe15e31ab13743212652664f34cc77"
+    },
+    {
+      "id": "V11.2.2",
+      "level": 2,
+      "section": "Secure Cryptography Implementation",
+      "description_sha256": "43d5f35103cf73f1e417d8fc3c8bdfbc9865f65610cf3d6db1ce276535e65426"
+    },
+    {
+      "id": "V11.2.3",
+      "level": 2,
+      "section": "Secure Cryptography Implementation",
+      "description_sha256": "c5cb2e3d397af72cb962edfbd9fffddf4d2cdcb45dda926316f96d9cf581a00b"
+    },
+    {
+      "id": "V11.2.4",
+      "level": 3,
+      "section": "Secure Cryptography Implementation",
+      "description_sha256": "3336c1591c09b355dc723366157d8dd9079a1c546278603e9f564ab35d80ddf5"
+    },
+    {
+      "id": "V11.2.5",
+      "level": 3,
+      "section": "Secure Cryptography Implementation",
+      "description_sha256": "ad98b57a066212da13208da61a49af4e68b4f15d14f6533b6ee99d89888ee1c3"
+    },
+    {
+      "id": "V11.3.1",
+      "level": 1,
+      "section": "Encryption Algorithms",
+      "description_sha256": "ee505be9e7d8aa2c6704c1b09e0dc94821af93a5d8de03481a8f850823baa0e8"
+    },
+    {
+      "id": "V11.3.2",
+      "level": 1,
+      "section": "Encryption Algorithms",
+      "description_sha256": "7c6aea0af8d9b3e4afd63fbfb8be977648d3f51d2e0fab1cd881179a53599104"
+    },
+    {
+      "id": "V11.3.3",
+      "level": 2,
+      "section": "Encryption Algorithms",
+      "description_sha256": "7f9a969ab956b79ee65aff824d53f54bc33cbbed61ee255907e0c6823e060fc5"
+    },
+    {
+      "id": "V11.3.4",
+      "level": 3,
+      "section": "Encryption Algorithms",
+      "description_sha256": "7d46fa7efc2c1eee9658bf6877183ef75948e82497f2a601a37f16e07f14dfd6"
+    },
+    {
+      "id": "V11.3.5",
+      "level": 3,
+      "section": "Encryption Algorithms",
+      "description_sha256": "3a6d0edf807f3071f9f952dfb91893d4e047747e901103a9c549eaf6a1d884e7"
+    },
+    {
+      "id": "V11.4.1",
+      "level": 1,
+      "section": "Hashing and Hash-based Functions",
+      "description_sha256": "4c9a84edb9a81b0c27b7bf892763141763d9ff90f8e195833935c5467628281b"
+    },
+    {
+      "id": "V11.4.2",
+      "level": 2,
+      "section": "Hashing and Hash-based Functions",
+      "description_sha256": "9bad8acb105dd349400a006e6b50f846fdbdac15461a9402d8d7043642de78c2"
+    },
+    {
+      "id": "V11.4.3",
+      "level": 2,
+      "section": "Hashing and Hash-based Functions",
+      "description_sha256": "25f31c4b23a985c11b6333584d7b5a181ea5599ee28b9ffb7c66542ecc9a5053"
+    },
+    {
+      "id": "V11.4.4",
+      "level": 2,
+      "section": "Hashing and Hash-based Functions",
+      "description_sha256": "8f485c0761ff1370e89cd2b7476dd747e1022d72018780075b214a5b932c1fd8"
+    },
+    {
+      "id": "V11.5.1",
+      "level": 2,
+      "section": "Random Values",
+      "description_sha256": "4a57f48b548745ff22670f16f0dcb4bde21381be034c80e5b2468832ac70d706"
+    },
+    {
+      "id": "V11.5.2",
+      "level": 3,
+      "section": "Random Values",
+      "description_sha256": "88ba81fa027d101ca072a24046ad1e5328bc34deeeeb73812fd483a00f6e486d"
+    },
+    {
+      "id": "V11.6.1",
+      "level": 2,
+      "section": "Public Key Cryptography",
+      "description_sha256": "a2d1f0ea4a95c0a5e679da7e742cc84fb47c6caf744732445a851a84a7c72efc"
+    },
+    {
+      "id": "V11.6.2",
+      "level": 3,
+      "section": "Public Key Cryptography",
+      "description_sha256": "0ffd44f406408e5eab62da5fbf4741b8899e50384825e41ef0e89b0512594538"
+    },
+    {
+      "id": "V11.7.1",
+      "level": 3,
+      "section": "In-Use Data Cryptography",
+      "description_sha256": "dbbb70d0edb88e42771aee9e75864fef927e528b88b1c5c8cb4bfd081d4d87d9"
+    },
+    {
+      "id": "V11.7.2",
+      "level": 3,
+      "section": "In-Use Data Cryptography",
+      "description_sha256": "eca2ad28a4b017374e394b22f6676babc05a0b68dc04b416a80cf0d63af4aa11"
+    },
+    {
+      "id": "V12.1.1",
+      "level": 1,
+      "section": "General TLS Security Guidance",
+      "description_sha256": "d908eeec050e4c69b7c785911e51f44448642bf42099548ff08fb8e97e58cfac"
+    },
+    {
+      "id": "V12.1.2",
+      "level": 2,
+      "section": "General TLS Security Guidance",
+      "description_sha256": "9697c2b91f76cf98e57bf662ff0dbba0590e3fe121017212fc0c57755c4b9ced"
+    },
+    {
+      "id": "V12.1.3",
+      "level": 2,
+      "section": "General TLS Security Guidance",
+      "description_sha256": "a051a9aef0fb4c74b307e694cd8ab086c0e25defc6c9a0ccbc2fb43b1165d6b0"
+    },
+    {
+      "id": "V12.1.4",
+      "level": 3,
+      "section": "General TLS Security Guidance",
+      "description_sha256": "6a9600224d993378a1cedd12a462aab815f7a1a8fe8e178c3f7ce970fc45d224"
+    },
+    {
+      "id": "V12.1.5",
+      "level": 3,
+      "section": "General TLS Security Guidance",
+      "description_sha256": "a148f22df105a0520a57b0b7b4cf0d82cf666ff25f331426eaf33d3417c60e3f"
+    },
+    {
+      "id": "V12.2.1",
+      "level": 1,
+      "section": "HTTPS Communication with External Facing Services",
+      "description_sha256": "bd4681b55ea1a5e66335eb23fe89c620d266299141b0aa73e3cf4fcae605215a"
+    },
+    {
+      "id": "V12.2.2",
+      "level": 1,
+      "section": "HTTPS Communication with External Facing Services",
+      "description_sha256": "1fd4a0aae821fff56cf012c13c20ad4bb92d52d46430714a1e2517fa086f8939"
+    },
+    {
+      "id": "V12.3.1",
+      "level": 2,
+      "section": "General Service to Service Communication Security",
+      "description_sha256": "0eb35073d962650ce931175f74d2256b9497104324eefe0d91b26d81a2bf37f7"
+    },
+    {
+      "id": "V12.3.2",
+      "level": 2,
+      "section": "General Service to Service Communication Security",
+      "description_sha256": "8d7d812283464854a073fca626dd56208dfb93c7a19a38e8b2dacb4988d692cd"
+    },
+    {
+      "id": "V12.3.3",
+      "level": 2,
+      "section": "General Service to Service Communication Security",
+      "description_sha256": "b763ac690e0eb341335ac00187364d25dd0e1028d655b95c9da20459640c80a2"
+    },
+    {
+      "id": "V12.3.4",
+      "level": 2,
+      "section": "General Service to Service Communication Security",
+      "description_sha256": "ab37e85d0abb71d613bb8a261146eee3852cd8ffc37eb83fb2ddec0122733cdd"
+    },
+    {
+      "id": "V12.3.5",
+      "level": 3,
+      "section": "General Service to Service Communication Security",
+      "description_sha256": "2c9e2de3937c5a4a093ea8d34b3d538c6fdc281b02f24e04381f5bdd2d146ee3"
+    },
+    {
+      "id": "V13.1.1",
+      "level": 2,
+      "section": "Configuration Documentation",
+      "description_sha256": "956cf2b756aca8cf5f76ead1d6fab278b33f663a28ec6a99b05677307c6d4ccb"
+    },
+    {
+      "id": "V13.1.2",
+      "level": 3,
+      "section": "Configuration Documentation",
+      "description_sha256": "6acd924aba56b5252b97c1259b1161200d23ed7c765de7adcecbc3e5500e5ddb"
+    },
+    {
+      "id": "V13.1.3",
+      "level": 3,
+      "section": "Configuration Documentation",
+      "description_sha256": "be77c6df65772e51f7e27f1cecb9e48ffa47e59da2ec6a73a68bc90c23ad334d"
+    },
+    {
+      "id": "V13.1.4",
+      "level": 3,
+      "section": "Configuration Documentation",
+      "description_sha256": "5a6515335e34f234258c9c6b492040e7f73d8f2c0f93d66313a3e7fa75fd3e59"
+    },
+    {
+      "id": "V13.2.1",
+      "level": 2,
+      "section": "Backend Communication Configuration",
+      "description_sha256": "4b804e9819a559fcae6d86fd759177f999b33220ee1a61bcb4203e08720930e1"
+    },
+    {
+      "id": "V13.2.2",
+      "level": 2,
+      "section": "Backend Communication Configuration",
+      "description_sha256": "09b2edb9b023915f263fad7b6f60035460ca902d742fdc2cfb5b725205709e42"
+    },
+    {
+      "id": "V13.2.3",
+      "level": 2,
+      "section": "Backend Communication Configuration",
+      "description_sha256": "1265518218be53161dcde492b9b84d9a177866b2a5c096dbae9c53a48180852b"
+    },
+    {
+      "id": "V13.2.4",
+      "level": 2,
+      "section": "Backend Communication Configuration",
+      "description_sha256": "1375dceb77596c16befd48199bb653c1b14d743f03191d784939b1ff4d1e4ed1"
+    },
+    {
+      "id": "V13.2.5",
+      "level": 2,
+      "section": "Backend Communication Configuration",
+      "description_sha256": "c8e3d7cdc5a7332d12576093dfee9b3b24b406aa5bee2ba8229ba6a2546b3e63"
+    },
+    {
+      "id": "V13.2.6",
+      "level": 3,
+      "section": "Backend Communication Configuration",
+      "description_sha256": "c7eabd9eeb09abb3821e81ee41da74e603dd83da6579549c898d4d99e198245d"
+    },
+    {
+      "id": "V13.3.1",
+      "level": 2,
+      "section": "Secret Management",
+      "description_sha256": "19504c19f3b9dbf014d36f35e8a5ac751078e833d4bb4c15be5d796dabaaa7f0"
+    },
+    {
+      "id": "V13.3.2",
+      "level": 2,
+      "section": "Secret Management",
+      "description_sha256": "b26aa6cdb26c30ed90a30d74f36f9adf370b2b9fe2522c7d1662f6fcd496a9e0"
+    },
+    {
+      "id": "V13.3.3",
+      "level": 3,
+      "section": "Secret Management",
+      "description_sha256": "57ddf590684db5afc34996d50f4f26cb7c7d82d66a7e50704a673d4cfa052342"
+    },
+    {
+      "id": "V13.3.4",
+      "level": 3,
+      "section": "Secret Management",
+      "description_sha256": "c7539bad143790f6a84c1cff18f7d0cd8d7ad9f78c2790c06aba9b20447fbae2"
+    },
+    {
+      "id": "V13.4.1",
+      "level": 1,
+      "section": "Unintended Information Leakage",
+      "description_sha256": "349bd76551a5f930d9b1bf1ccb133376f98694fd2e3aff50002606a4a0482b3c"
+    },
+    {
+      "id": "V13.4.2",
+      "level": 2,
+      "section": "Unintended Information Leakage",
+      "description_sha256": "e8660b4ae5cb0d248c83ef21c76c97fde022709699ce64c702b061b4de50358c"
+    },
+    {
+      "id": "V13.4.3",
+      "level": 2,
+      "section": "Unintended Information Leakage",
+      "description_sha256": "0543286e61f28dcb3e01333539d926477bab74e45ea9884acfa933981ba5696b"
+    },
+    {
+      "id": "V13.4.4",
+      "level": 2,
+      "section": "Unintended Information Leakage",
+      "description_sha256": "ac207dbd4b6c9fc1ba4263c5966a4f86b5122c46a3002ce85bfd69050c1f4185"
+    },
+    {
+      "id": "V13.4.5",
+      "level": 2,
+      "section": "Unintended Information Leakage",
+      "description_sha256": "de6efea55d7357347310b36b41c22517777705e8ef54a3bf59180bd9ef94d189"
+    },
+    {
+      "id": "V13.4.6",
+      "level": 3,
+      "section": "Unintended Information Leakage",
+      "description_sha256": "071ecf4a51c652a4f55f4b9c8bfb45e400ad83ef44014df9518874eebf170596"
+    },
+    {
+      "id": "V13.4.7",
+      "level": 3,
+      "section": "Unintended Information Leakage",
+      "description_sha256": "04272210da87582e8c19784ffeb866a64b743605a743db746a18dc915f911577"
+    },
+    {
+      "id": "V14.1.1",
+      "level": 2,
+      "section": "Data Protection Documentation",
+      "description_sha256": "e350a1babef2635883a1526669fb7012f49f31c1471d0549fddd86ea09961fd9"
+    },
+    {
+      "id": "V14.1.2",
+      "level": 2,
+      "section": "Data Protection Documentation",
+      "description_sha256": "89f9005ccdeb3b7fe579112b9e2b6fdc01a9cfdb4909bbd0d7663b449871997e"
+    },
+    {
+      "id": "V14.2.1",
+      "level": 1,
+      "section": "General Data Protection",
+      "description_sha256": "2983ba3228b0011dcc4d8859e8f19bc490e04c38171fa252c12a9db4c1cbfc6e"
+    },
+    {
+      "id": "V14.2.2",
+      "level": 2,
+      "section": "General Data Protection",
+      "description_sha256": "ac4323e0916f7732e1150c2d6b9c0171f6e708815d04e68d87365cb03fbc6127"
+    },
+    {
+      "id": "V14.2.3",
+      "level": 2,
+      "section": "General Data Protection",
+      "description_sha256": "f13ea75fd22ed9a29b10686acba80fd4349ac5d0fbb8627f0a571ca92ce34409"
+    },
+    {
+      "id": "V14.2.4",
+      "level": 2,
+      "section": "General Data Protection",
+      "description_sha256": "5a8ea508cb30bdec5b508dd57896e304bb29c400595749b1f090d8197aba3dd2"
+    },
+    {
+      "id": "V14.2.5",
+      "level": 3,
+      "section": "General Data Protection",
+      "description_sha256": "412fda044d78759503a6d3e8220567ec9fa409cf2a18012952e447f4c8cbacf4"
+    },
+    {
+      "id": "V14.2.6",
+      "level": 3,
+      "section": "General Data Protection",
+      "description_sha256": "2561ef89f45eed99daee84e7e88f4fdabba21c38eb7d561006528d22b08c0c6c"
+    },
+    {
+      "id": "V14.2.7",
+      "level": 3,
+      "section": "General Data Protection",
+      "description_sha256": "4645f072991aab5e5b70071803421bd356e94f8a03b4821aace7e89fa576bfa9"
+    },
+    {
+      "id": "V14.2.8",
+      "level": 3,
+      "section": "General Data Protection",
+      "description_sha256": "de7728e7408e8beb522495ff31f45c1136e2df6c2b1a90e8a52f96dcd526aff2"
+    },
+    {
+      "id": "V14.3.1",
+      "level": 1,
+      "section": "Client-side Data Protection",
+      "description_sha256": "8c1239eaede761d3126b0427a04e401bdebb5f87d431a8b32ab00c2e2380465a"
+    },
+    {
+      "id": "V14.3.2",
+      "level": 2,
+      "section": "Client-side Data Protection",
+      "description_sha256": "41fc0098db312ac61f0049fd647549919c1adb7c4ccdc2acde15debe1d97bf06"
+    },
+    {
+      "id": "V14.3.3",
+      "level": 2,
+      "section": "Client-side Data Protection",
+      "description_sha256": "f1d183dcb32e805364538222d14cf4177782c333100ae700e1b35b6aaa615fff"
+    },
+    {
+      "id": "V15.1.1",
+      "level": 1,
+      "section": "Secure Coding and Architecture Documentation",
+      "description_sha256": "ea6402cfa6ad926580eec1851a9ee82b66ee0a7d32d08eb92b723fb559de94d1"
+    },
+    {
+      "id": "V15.1.2",
+      "level": 2,
+      "section": "Secure Coding and Architecture Documentation",
+      "description_sha256": "a5300ffb35f2095b7aa2359e4293401abedc59c97dd3f91b422e6b5bd2b5f915"
+    },
+    {
+      "id": "V15.1.3",
+      "level": 2,
+      "section": "Secure Coding and Architecture Documentation",
+      "description_sha256": "8753b412c1ec2a70c316b901c60bf55128b18478c37522bb111ff08e44eba26a"
+    },
+    {
+      "id": "V15.1.4",
+      "level": 3,
+      "section": "Secure Coding and Architecture Documentation",
+      "description_sha256": "2e8a680f1132401f21d518c81c3666133e1f1c5b202637bb4137270067ec9e1f"
+    },
+    {
+      "id": "V15.1.5",
+      "level": 3,
+      "section": "Secure Coding and Architecture Documentation",
+      "description_sha256": "9ffda9548277c6a89dc7c3b934b667f1e3b9e818497a2942860402b0c3be20cc"
+    },
+    {
+      "id": "V15.2.1",
+      "level": 1,
+      "section": "Security Architecture and Dependencies",
+      "description_sha256": "83a76f8ee9295fab33e591434bd0af240260f2fcafef345ca997d07eeaae8b74"
+    },
+    {
+      "id": "V15.2.2",
+      "level": 2,
+      "section": "Security Architecture and Dependencies",
+      "description_sha256": "b89e5daec799e66c163fd9d637372387e273dab9ad25a67dd2d80c72f1f1d8e2"
+    },
+    {
+      "id": "V15.2.3",
+      "level": 2,
+      "section": "Security Architecture and Dependencies",
+      "description_sha256": "f1bd4f49d2b6a4c898f27036f6ce4faa1de8091f006967b61ceae56002437866"
+    },
+    {
+      "id": "V15.2.4",
+      "level": 3,
+      "section": "Security Architecture and Dependencies",
+      "description_sha256": "0e0b463c42d208330f014f16ac3f1bcf149d6938f36b0fd403e108e09c9d63ec"
+    },
+    {
+      "id": "V15.2.5",
+      "level": 3,
+      "section": "Security Architecture and Dependencies",
+      "description_sha256": "94487b32f09ea741e7d2776da45720ba7371b62c174eefb34127f69bce98388e"
+    },
+    {
+      "id": "V15.3.1",
+      "level": 1,
+      "section": "Defensive Coding",
+      "description_sha256": "bd412d1b9fb75aa18f766bb00efa64e84d6a9bc461e83ecb90b7b067a02a0526"
+    },
+    {
+      "id": "V15.3.2",
+      "level": 2,
+      "section": "Defensive Coding",
+      "description_sha256": "002aaaea89789d1e9add79de1f94f4e0b4a478a95230b14d47ef4ce6a8b4f1c6"
+    },
+    {
+      "id": "V15.3.3",
+      "level": 2,
+      "section": "Defensive Coding",
+      "description_sha256": "d97d0128fe39310044bb12385f6d416aac6781b49859f965b1f2d0124fc99e74"
+    },
+    {
+      "id": "V15.3.4",
+      "level": 2,
+      "section": "Defensive Coding",
+      "description_sha256": "df546cb9d36146313cc36f6e688274ed490060400c8575e9a1a858487544ff60"
+    },
+    {
+      "id": "V15.3.5",
+      "level": 2,
+      "section": "Defensive Coding",
+      "description_sha256": "32818fcd3b0e6f67ec031444f1b64a560cd03317b7c4acc51ad78d1956d70374"
+    },
+    {
+      "id": "V15.3.6",
+      "level": 2,
+      "section": "Defensive Coding",
+      "description_sha256": "999a47b787bbc3da5969218be559917839a90bd2923a41803141e1a05652716f"
+    },
+    {
+      "id": "V15.3.7",
+      "level": 2,
+      "section": "Defensive Coding",
+      "description_sha256": "16eb705e8f207b7e03dde0e88fca17980fc425658417ae634aabb7c348aa8b5e"
+    },
+    {
+      "id": "V15.4.1",
+      "level": 3,
+      "section": "Safe Concurrency",
+      "description_sha256": "c87ec4816223bf3ef70a4c36a1f07d0f369dbc328d24e77b582d8792d1520902"
+    },
+    {
+      "id": "V15.4.2",
+      "level": 3,
+      "section": "Safe Concurrency",
+      "description_sha256": "8058bb74bc632158dac33e35b888855a91a28366b03fbd3589fc419fce4af226"
+    },
+    {
+      "id": "V15.4.3",
+      "level": 3,
+      "section": "Safe Concurrency",
+      "description_sha256": "b2b0b5b865367d2aa5404dc900e00bce3d5f2f0236da7772f022bac4929c3ec6"
+    },
+    {
+      "id": "V15.4.4",
+      "level": 3,
+      "section": "Safe Concurrency",
+      "description_sha256": "66e25b505c2012494ba306cac8a86aa23de21417e09290450d4ecdb51fa2a1cf"
+    },
+    {
+      "id": "V16.1.1",
+      "level": 2,
+      "section": "Security Logging Documentation",
+      "description_sha256": "501b5c54566882c439c0bf19161837cea5205c3f3c9ce51983490075b04e83a6"
+    },
+    {
+      "id": "V16.2.1",
+      "level": 2,
+      "section": "General Logging",
+      "description_sha256": "96d2ee366b92c090f5f9eeaf27b6d1d51cbaee151c67933b449bcc28fd8269f0"
+    },
+    {
+      "id": "V16.2.2",
+      "level": 2,
+      "section": "General Logging",
+      "description_sha256": "a34a96d378e732d2b8aaf97085f293c21bcf91df5537844fa38e3b23b58709f1"
+    },
+    {
+      "id": "V16.2.3",
+      "level": 2,
+      "section": "General Logging",
+      "description_sha256": "7e0a0ad78f320147329d874a1455314d5e6681b042930eb737688817269d6763"
+    },
+    {
+      "id": "V16.2.4",
+      "level": 2,
+      "section": "General Logging",
+      "description_sha256": "38330de83cb457fbdadae949dd88a55b8ea6fb022fdd4b0010da8637c21b7d45"
+    },
+    {
+      "id": "V16.2.5",
+      "level": 2,
+      "section": "General Logging",
+      "description_sha256": "a511c2b2069530236c26bc9b3113f0aeda4a11e299ddc38688b98fce84ef5682"
+    },
+    {
+      "id": "V16.3.1",
+      "level": 2,
+      "section": "Security Events",
+      "description_sha256": "be2b76cfd66f4f86eca2eea6f4b5cccedecbc72c2fb175dcef2b0802e26c2f0d"
+    },
+    {
+      "id": "V16.3.2",
+      "level": 2,
+      "section": "Security Events",
+      "description_sha256": "538fd14baf4305fbf2eb58d818d3b8f2953cfe2708135c3f4715e63e409a1ef8"
+    },
+    {
+      "id": "V16.3.3",
+      "level": 2,
+      "section": "Security Events",
+      "description_sha256": "1ca4ae106b1c9ebc8533f0e5de7d7c611bc70282ea93ef05c66beb1d6a185698"
+    },
+    {
+      "id": "V16.3.4",
+      "level": 2,
+      "section": "Security Events",
+      "description_sha256": "8acbd60cc0305f0869b92bf21b60a89d7a6b0617d4ef8d0b6b95a5312f2039ce"
+    },
+    {
+      "id": "V16.4.1",
+      "level": 2,
+      "section": "Log Protection",
+      "description_sha256": "ed30322a77927f865b28f3635d6b7734ee9c2d65d2187782e685541a9658609e"
+    },
+    {
+      "id": "V16.4.2",
+      "level": 2,
+      "section": "Log Protection",
+      "description_sha256": "eebf7c40a8970bd6ed075d598837e19b11ef600a7ac398fa00989e9fa55a536d"
+    },
+    {
+      "id": "V16.4.3",
+      "level": 2,
+      "section": "Log Protection",
+      "description_sha256": "1fe6cf6160567b2437d44a5ef74518ecb98d992b0bed1fd1966786fa63854141"
+    },
+    {
+      "id": "V16.5.1",
+      "level": 2,
+      "section": "Error Handling",
+      "description_sha256": "2f877146266d0c1bab5e689b53807bb5168d53587eef281326f3b71e35987565"
+    },
+    {
+      "id": "V16.5.2",
+      "level": 2,
+      "section": "Error Handling",
+      "description_sha256": "0505d011b9f2b0a33806934b3dc2e4790a347a94dbb5b67c5251a51ed32ae73d"
+    },
+    {
+      "id": "V16.5.3",
+      "level": 2,
+      "section": "Error Handling",
+      "description_sha256": "9b82ac1eabf9d72ca530d1d63698cb6d81ea33f8aae4b88836cbe9911cb307ee"
+    },
+    {
+      "id": "V16.5.4",
+      "level": 3,
+      "section": "Error Handling",
+      "description_sha256": "24af86106550857f6c51107b658eba95df022dfe33fbe9b38d6b6ec0cbb0fed3"
+    },
+    {
+      "id": "V17.1.1",
+      "level": 2,
+      "section": "TURN Server",
+      "description_sha256": "2a3e2938a84dbd82dd5fe718320ed70d5717c1949fb0022b6c8844fed7d9378f"
+    },
+    {
+      "id": "V17.1.2",
+      "level": 3,
+      "section": "TURN Server",
+      "description_sha256": "71fedfad894e9994c3ebfacdc83292fc641e78d96368f50d7a4f0159bc51d7ff"
+    },
+    {
+      "id": "V17.2.1",
+      "level": 2,
+      "section": "Media",
+      "description_sha256": "10a31a401354d727ac107a44a74ae76560d589f0290069c132657cac383f6340"
+    },
+    {
+      "id": "V17.2.2",
+      "level": 2,
+      "section": "Media",
+      "description_sha256": "20d58c434ce6ba0036c2b51b6aad4f47a511cef0ac628e855de0c070f21be9b2"
+    },
+    {
+      "id": "V17.2.3",
+      "level": 2,
+      "section": "Media",
+      "description_sha256": "9d4672799b65bafa09daea4a1ce3500ad022af197ded82a7d79b9d06e4b859f2"
+    },
+    {
+      "id": "V17.2.4",
+      "level": 2,
+      "section": "Media",
+      "description_sha256": "c1be2d8fda96bb824f18d85250daacce6ce64c7df741c30180828a55831e1320"
+    },
+    {
+      "id": "V17.2.5",
+      "level": 3,
+      "section": "Media",
+      "description_sha256": "d8b2b8e121c4e85bf3a44acf218ad778e63e2b1c100a1948bd040524fb3b2d94"
+    },
+    {
+      "id": "V17.2.6",
+      "level": 3,
+      "section": "Media",
+      "description_sha256": "4f74d04626282e8e6d715a02c499debe9d55bbd317e01db2bb0cd285ec0709bb"
+    },
+    {
+      "id": "V17.2.7",
+      "level": 3,
+      "section": "Media",
+      "description_sha256": "e56cdbc6c4601f7cd69b1d21dbca283d651e5f6e6ad5a451c0c03c0391bd9adb"
+    },
+    {
+      "id": "V17.2.8",
+      "level": 3,
+      "section": "Media",
+      "description_sha256": "a5856686362a000b5850651db046b40c1a5a0206cc26e161f2bb8c0c5e5a9125"
+    },
+    {
+      "id": "V17.3.1",
+      "level": 2,
+      "section": "Signaling",
+      "description_sha256": "e14ad8a243a77fc49084fa1742545614e58dad0f7c4277d68f95149beeeaa117"
+    },
+    {
+      "id": "V17.3.2",
+      "level": 2,
+      "section": "Signaling",
+      "description_sha256": "7e5d1f536ad76ed80fdf78158e028aa7c647e27cfac55b61b50915f21aa6202f"
+    }
+  ]
+}

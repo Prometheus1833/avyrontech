@@ -72,7 +72,9 @@ test("the customer dashboard keeps staff controls out and combines service and p
   await mockFreeAccount(page);
   await page.goto("/profil", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "Bună, Client Free." })).toBeVisible();
-  const services = page.getByRole("navigation", {name:"Navigare cont",exact:true}).getByRole("button", {name:"Servicii",exact:true});
+  const desktopNavigation = page.getByRole("navigation", {name:"Navigare cont",exact:true});
+  const navigation = await desktopNavigation.isVisible() ? desktopNavigation : page.getByRole("navigation", {name:"Navigare mobilă",exact:true});
+  const services = navigation.getByRole("button", {name:"Servicii",exact:true});
   await expect(services).toBeVisible();
   await expect(page.getByText("Necesită atenție · Azi")).toHaveCount(0);
   await services.click();
