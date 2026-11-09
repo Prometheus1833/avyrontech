@@ -196,6 +196,9 @@ async function renderRoute(route) {
     preload.href = `/assets/${subscriptionModules[0]}`;
     doc.head.appendChild(preload);
   }
+  // The simulated observer intersects everything. Visibility is runtime state:
+  // never ship a hidden contact rail, or a false hydration-ready signal.
+  doc.documentElement.removeAttribute("data-footer-contact-visible");
   const html = `<!DOCTYPE html>\n${doc.documentElement.outerHTML}\n`;
   rootInstance.unmount();
   return html;

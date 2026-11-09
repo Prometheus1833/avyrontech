@@ -1,5 +1,6 @@
 import { expect,test } from "@playwright/test";
 import { readFileSync } from "node:fs";
+import { showFooter } from "./footer-fixtures";
 
 const canonical = (path: string) => `https://avyron.ro${path === "/" ? "/" : path}`;
 
@@ -247,8 +248,7 @@ test.describe("public SEO routes", () => {
     // the prerendered body is still only one viewport tall.
     await page.waitForFunction(() => document.body.scrollHeight > window.innerHeight * 2);
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    const footer = page.locator("footer");
-    await expect(footer).toBeVisible();
+    const footer = await showFooter(page);
     const primaryRow = footer.getByTestId("footer-primary-row");
     const primaryRowBox = await primaryRow.boundingBox();
     expect(primaryRowBox?.width).toBeLessThanOrEqual(1024);
@@ -266,8 +266,8 @@ test.describe("public SEO routes", () => {
     expect(legalLabels.indexOf("Setări cookie")).toBeLessThan(legalLabels.indexOf("Termeni de utilizare"));
     await expect(footer.getByRole("link", { name: /ANPC/ })).toHaveAttribute("href", "https://reclamatiisal.anpc.ro/");
     await expect(footer.locator('img[src="/anpc-sal-pictograma.png"]')).toBeVisible();
-    await expect(footer.getByRole("link", { name: "contact@avyron.ro", exact: true })).toHaveAttribute("href", "mailto:contact@avyron.ro");
-    await expect(footer.getByRole("link", { name: "0734 605 055", exact: true })).toHaveAttribute("href", "tel:+40734605055");
+    await expect(footer.getByRole("link", { name: "E-mail AVYRON", exact: true })).toHaveAttribute("href", "mailto:contact@avyron.ro");
+    await expect(footer.getByRole("link", { name: "Sună-ne", exact: true })).toHaveAttribute("href", "tel:+40734605055");
     await expect(footer.getByRole("link", { name: "Conectează-te / Înregistrează-te" })).toHaveCount(0);
     await expect(footer.getByText("Instagram", { exact: true })).toHaveCount(0);
     await expect(footer.getByText("Facebook", { exact: true })).toHaveCount(0);
@@ -284,6 +284,7 @@ test.describe("public SEO routes", () => {
     for (const width of [320, 390, 1280]) {
       await page.setViewportSize({ width, height: 844 });
       await page.goto("/");
+      await showFooter(page);
       const row = page.getByTestId("footer-legal-row");
       await row.scrollIntoViewIfNeeded();
       const actions = row.locator("a, button");
@@ -304,22 +305,20 @@ test.describe("public SEO routes", () => {
     }
   });
 
-  test("footer actions adapt to the page while SAL remains accessible without a duplicate account entry", async ({ page }) => {
+  test("footer contact and contextual actions remain accessible without a duplicate account entry", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
       necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12",
     })));
-    for (const [path, primary] of [["/", /Exemplu Gratuit/], ["/servicii", /Cere ofertă personalizată/], ["/servicii/website-prezentare-profesional", /Discutăm despre proiectul tău/], ["/cariere", /Descoperă colaborarea/], ["/termeni", /Ai o întrebare/]] as const) {
+    for (const [path, primary] of [["/", /Exemplu Gratuit/], ["/servicii", /Cere ofertă personalizată/], ["/servicii/website-prezentare-profesional", /Discutăm despre proiectul tău/], ["/cariere", /Trimite candidatura/], ["/termeni", null]] as const) {
       await page.goto(path);
-      const footer = page.locator("footer");
-      await footer.scrollIntoViewIfNeeded();
+      const footer = await showFooter(page);
       const actions = footer.getByTestId("footer-contact-actions").locator("a");
-      await expect(actions).toHaveCount(4);
-      await expect(actions.first()).toContainText(primary);
-      await expect(actions.nth(1)).toHaveAttribute("href", "https://wa.me/40734605055");
-      await expect(actions.nth(2)).toHaveAttribute("href", "tel:+40734605055");
+      await expect(actions).toHaveCount(primary ? 4 : 3);
+      await expect(actions.first()).toHaveAttribute("href", "https://wa.me/40734605055");
+      if (primary) await expect(footer.locator('.avy-footer-cta')).toContainText(primary);
+      await expect(footer.locator('.avy-footer-phone')).toHaveAttribute("href", "tel:+40734605055");
       await expect(actions.last()).toHaveAttribute("href", "mailto:contact@avyron.ro");
-      await expect(footer.locator('.avy-footer-cta')).toHaveCount(1);
       expect(await footer.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
       const utility = footer.getByTestId("footer-utility-row").locator("a");
       await expect(utility).toHaveCount(1);
@@ -327,14 +326,17 @@ test.describe("public SEO routes", () => {
       const box = (await utility.first().boundingBox())!;
       expect(box.x).toBeGreaterThanOrEqual(0);
       expect(box.x + box.width).toBeLessThanOrEqual(390);
-      const clickable = () => utility.last().evaluate((element) => {
-        const bounds = element.getBoundingClientRect();
-        return element.contains(document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2));
-      });
-      await expect.poll(clickable, {message:`${path}: SAL link must remain accessible after the intro`,timeout:8000}).toBe(true);
+      await expect.poll(async () => {
+        await utility.last().scrollIntoViewIfNeeded();
+        return utility.last().evaluate((element) => {
+          const bounds = element.getBoundingClientRect();
+          return element.contains(document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2));
+        });
+      }, {message:`${path}: SAL link must remain accessible`,timeout:8000}).toBe(true);
     }
     await page.goto("/cariere");
-    await page.locator("footer").getByRole("link", { name: /Descoperă colaborarea/ }).click();
+    await showFooter(page);
+    await page.locator("footer").getByRole("link", { name: /Trimite candidatura/ }).click();
     await expect(page).toHaveURL(/#candidatura$/);
     await expect(page.locator("#candidatura")).toBeInViewport();
   });
