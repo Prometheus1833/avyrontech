@@ -3,7 +3,7 @@ import { trackEvent } from "@/lib/analytics";
 
 const ContactBar = () => {
   return (
-    <div data-testid="floating-contact-bar" className="public-contact-rail fixed bottom-[max(.75rem,env(safe-area-inset-bottom))] right-[max(.75rem,env(safe-area-inset-right))] z-40 flex flex-col gap-1.5 md:gap-2">
+    <div data-testid="floating-contact-bar" className="public-contact-rail public-contact-shortcut fixed bottom-[max(.75rem,env(safe-area-inset-bottom))] right-[max(.75rem,env(safe-area-inset-right))] z-40 flex flex-col gap-1.5 md:gap-2">
       <a
         href="https://wa.me/40734605055"
         target="_blank"
