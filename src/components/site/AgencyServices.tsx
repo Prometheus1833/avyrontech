@@ -64,6 +64,14 @@ const copy = {
       cats: ["Clinici", "Studiouri fitness", "Construcții", "Restaurante", "Consultanți", "Saloane"],
       cta: "Deschide",
     },
+    recommended: "Recomandat",
+    subscription: {
+      title: "Website la 0 lei",
+      text: "Dezvoltare 0 lei. Plătești doar abonamentul: hosting, securitate, marketing de bază (SEO inițial) și mentenanță.",
+      price: "De la 199 lei/lună",
+      flexibility: "Schimbi treapta oricând, la cerere.",
+      cta: "Solicită oferta",
+    },
     cinematic: {
       title: "Website Cinematic 3D",
       text: "Experiențe spațiale care vând prin imagine.",
@@ -105,6 +113,14 @@ const copy = {
       cats: ["Clinics", "Fitness studios", "Construction", "Restaurants", "Consultants", "Salons"],
       cta: "Open",
     },
+    recommended: "Recommended",
+    subscription: {
+      title: "Website with no development fee",
+      text: "No development fee. Pay only for the subscription: hosting, security, basic marketing (initial SEO) and maintenance.",
+      price: "From RON 199 / month",
+      flexibility: "Request a plan change at any time.",
+      cta: "Request an offer",
+    },
     cinematic: {
       title: "Cinematic 3D Website",
       text: "Spatial experiences that sell through visuals.",
@@ -136,6 +152,7 @@ const AgencyServices = () => {
   const content = copy[lang];
   const [open, setOpen] = useState(false);
   const websiteTrigger=useRef<HTMLButtonElement>(null);
+  const professionalChoice = useRef<HTMLAnchorElement>(null);
   const [showAllServices, setShowAllServices] = useState(false);
   const panelId = useId();
   const moreServicesId = useId();
@@ -214,19 +231,25 @@ const AgencyServices = () => {
             >
               <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-lime-500/10 text-lime-700 dark:text-lime-300"><Layers size={19} aria-hidden="true" /></span>
               <span className="min-w-0 flex-1">
-                <span className="block font-display text-sm font-semibold">{lang === "ro" ? "Website la 0 lei" : "Website with no development fee"}</span>
-                <span className="mt-0.5 block text-[11px] leading-relaxed text-muted-foreground">{lang === "ro" ? "Dezvoltare 0 lei. Hosting și mentenanță prin abonament lunar contra cost." : "No development fee. Hosting and maintenance through a paid monthly subscription."}</span>
+                <span className="block font-display text-sm font-semibold">{content.subscription.title}</span>
+                <span className="mt-0.5 block text-[11px] leading-relaxed text-muted-foreground">{content.subscription.text}</span>
+                <span className="mt-1 block text-xs font-semibold text-lime-800 dark:text-lime-200">{content.subscription.price}</span>
+                <span className="block text-[11px] text-muted-foreground">{content.subscription.flexibility}</span>
               </span>
               <span className="shrink-0 text-lime-700 dark:text-lime-300" aria-hidden="true">↗</span>
             </Link>
 
             <Dialog open={open} onOpenChange={setOpen}>
-              <DialogContent id={panelId} onCloseAutoFocus={e=>{e.preventDefault();websiteTrigger.current?.focus();}} className="website-chooser w-[calc(100%-1.5rem)] max-w-[720px] max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl border-border/70 bg-background/95 p-4 backdrop-blur-2xl sm:p-5">
+              <DialogContent id={panelId} onOpenAutoFocus={e=>{e.preventDefault();professionalChoice.current?.focus({preventScroll:true});}} onCloseAutoFocus={e=>{e.preventDefault();websiteTrigger.current?.focus();}} className="website-chooser w-[calc(100%-1.5rem)] max-w-[720px] max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl border-border/70 bg-background/95 p-4 backdrop-blur-2xl sm:p-5">
                 <DialogHeader><DialogTitle className="pr-8 text-base">{content.choose}</DialogTitle><DialogDescription className="website-chooser-description text-xs">{lang==='ro'?'Alege formula potrivită afacerii tale.':'Choose the right approach for your business.'}</DialogDescription></DialogHeader>
                 <div data-testid="website-choices" className="website-choices" aria-label={content.choose}>
-                  <Link to={content.featured[0].path} onClick={() => setOpen(false)} className="website-choice border-border/70 bg-card/80 hover:border-brand/50">
+                  <Link ref={professionalChoice} to={content.featured[0].path} data-recommended="true" onClick={() => setOpen(false)} className="website-choice border-brand/50 bg-card/80 ring-1 ring-brand/15 hover:border-brand/70">
                     <span className="website-choice-icon bg-cyan-500/10 text-cyan-600 dark:text-cyan-300"><Code2 size={21} aria-hidden="true" /></span>
-                    <span className="website-choice-copy"><strong>{content.classic.title}</strong><span className="website-choice-description">{content.classic.text}</span><span className="website-choice-action text-brand">{content.classic.cta} ↗</span></span>
+                    <span className="website-choice-copy"><span className="website-choice-action text-brand">{content.recommended}</span><strong>{content.classic.title}</strong><span className="website-choice-description">{content.classic.text}</span><span className="website-choice-action text-brand">{content.classic.cta} ↗</span></span>
+                  </Link>
+                  <Link to={WEBSITE_SUBSCRIPTION_PATH[lang]} onClick={() => setOpen(false)} className="website-choice border-lime-500/30 bg-lime-500/[.06] hover:border-lime-500/60">
+                    <span className="website-choice-icon bg-lime-500/10 text-lime-700 dark:text-lime-300"><Layers size={21} aria-hidden="true" /></span>
+                    <span className="website-choice-copy"><strong>{content.subscription.title}</strong><span className="website-choice-description">{content.subscription.text}</span><span className="website-choice-action text-lime-800 dark:text-lime-200">{content.subscription.price}</span><span className="website-choice-action text-muted-foreground">{content.subscription.flexibility}</span><span className="website-choice-action text-brand">{content.subscription.cta} ↗</span></span>
                   </Link>
                   <button type="button" aria-disabled="true" onClick={() => toast(content.soon, { description: content.soonToast })} className="website-choice border-brand/25 bg-gradient-to-br from-brand/10 to-transparent text-left">
                     <span className="website-choice-icon bg-brand/10 text-brand"><Sparkles size={21} aria-hidden="true" /></span>

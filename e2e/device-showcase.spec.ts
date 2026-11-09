@@ -16,6 +16,7 @@ test.beforeEach(async ({ page }) => {
 
 test("homepage keeps six website reasons in three paired cards and a compact demo form", async ({ page }) => {
   await page.goto("/#de-ce");
+  await expect(page.locator('main[data-anchor-ready="true"]')).toBeVisible();
   const reasons = page.getByTestId("problem-reasons");
   await expect(reasons.locator("article")).toHaveCount(3);
   await expect(reasons.locator("h3, h4")).toHaveCount(6);
