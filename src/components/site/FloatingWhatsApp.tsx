@@ -34,7 +34,7 @@ const FloatingWhatsApp = ({ message, location = "blog_profesional" }: Props) => 
       aria-label={label}
       title={label}
       onClick={() => trackEvent("contact_click", { method: "whatsapp", location })}
-      className="fixed bottom-3 right-3 z-40 grid size-12 place-items-center rounded-full bg-[#25D366] text-slate-950 shadow-elev transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background md:bottom-4 md:right-4 md:size-14"
+      className="public-contact-rail fixed bottom-[max(.75rem,env(safe-area-inset-bottom))] right-[max(.75rem,env(safe-area-inset-right))] z-40 grid size-12 place-items-center rounded-full bg-[#25D366] text-slate-950 shadow-elev transition-transform motion-safe:hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background md:size-14"
     >
       <MessageCircle className="size-5 md:size-6" aria-hidden="true" />
       <span className="sr-only">{label}</span>

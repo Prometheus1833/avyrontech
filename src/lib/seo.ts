@@ -62,6 +62,8 @@ export function setPageMeta({
   alternates,
   image,
   imageAlt,
+  imageWidth,
+  imageHeight,
   type = "website",
   locale,
   robots = DEFAULT_ROBOTS,
@@ -80,6 +82,9 @@ export function setPageMeta({
   image?: string;
   /** Alt text for the social image. */
   imageAlt?: string;
+  /** Supply both dimensions for custom images; generated /og/ covers are 1200×630. */
+  imageWidth?: number;
+  imageHeight?: number;
   /** Open Graph type — defaults to "website". Use "article" for blog posts. */
   type?: string;
   /** OG locale, e.g. "ro_RO" or "en_US". Inferred from alternates when omitted. */
@@ -153,9 +158,16 @@ export function setPageMeta({
     const absImage = resolvedImage.startsWith("http") ? resolvedImage : `${BASE}${resolvedImage}`;
     upsertMeta("property", "og:image", absImage);
     upsertMeta("property", "og:image:secure_url", absImage);
-    upsertMeta("property", "og:image:width", "1200");
-    upsertMeta("property", "og:image:height", "630");
-    upsertMeta("property", "og:image:type", /\.png(?:$|\?)/i.test(absImage) ? "image/png" : "image/jpeg");
+    const generatedCover = new URL(absImage).pathname.startsWith("/og/");
+    const width = imageWidth ?? (generatedCover ? 1200 : undefined);
+    const height = imageHeight ?? (generatedCover ? 630 : undefined);
+    for (const [key, value] of [["width", width], ["height", height]] as const) {
+      if (width && height) upsertMeta("property", `og:image:${key}`, String(value));
+      else document.head.querySelector(`meta[property="og:image:${key}"]`)?.remove();
+    }
+    const format = new URL(absImage).pathname.match(/\.(png|webp|avif|gif|jpe?g)$/i)?.[1]?.toLowerCase();
+    if (format) upsertMeta("property", "og:image:type", `image/${/^jpe?g$/.test(format) ? "jpeg" : format}`);
+    else document.head.querySelector('meta[property="og:image:type"]')?.remove();
     upsertMeta("name", "twitter:image", absImage);
     upsertMeta("property", "og:image:alt", resolvedAlt);
     upsertMeta("name", "twitter:image:alt", resolvedAlt);

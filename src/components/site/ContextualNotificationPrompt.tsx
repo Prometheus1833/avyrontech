@@ -116,7 +116,7 @@ export default function ContextualNotificationPrompt() {
         en ? "A suggestion for your project" : "O sugestie pentru proiectul tău"
       }
       role="status"
-      className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-3 z-40 w-[min(23rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-violet-300/25 bg-[#0b1120]/95 text-slate-100 shadow-[0_20px_65px_-20px_rgba(99,102,241,.4)] backdrop-blur-xl sm:bottom-6 sm:left-6"
+      className="public-contact-rail fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-3 z-40 w-[min(23rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-violet-300/25 bg-[#0b1120]/95 text-slate-100 shadow-[0_20px_65px_-20px_rgba(99,102,241,.4)] backdrop-blur-xl sm:bottom-6 sm:left-6"
     >
       <div className="flex items-center gap-2 bg-gradient-to-r from-violet-500/15 to-cyan-500/5 py-2 pl-4 pr-2">
         <MessageCircle className="size-4 text-violet-300" />

@@ -34,28 +34,36 @@ type Technology = {
   purpose: string;
   storage: string;
   retention: string;
-  category: "necessary" | "analytics";
+  category: "necessary" | "analytics" | "marketing";
 };
 
 const legalPillClass = "inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-slate-200 transition-colors hover:border-cyan-200/30 hover:bg-white/[0.1] hover:text-white";
 
 const technologiesRo: Technology[] = [
+  { name: "avyron_cart_v2 · avyron_cart_owner_v1 · avyron-produse-v1 · avyron-brief-v1", provider: "Avyron", purpose: "Păstrează coșul, separarea între conturi și selecțiile cerute pentru produse sau brief.", storage: "Stocare locală", retention: "Până la modificarea selecției sau ștergerea datelor browserului; coșul este separat pe cont.", category: "necessary" },
+  { name: "avyron-website-subscription-draft-v1 · :step · :key", provider: "Avyron", purpose: "Păstrează temporar datele și pasul cererii de website prin abonament, pentru recuperare și prevenirea trimiterilor duplicate.", storage: "Stocare de sesiune", retention: "Până la trimiterea confirmată sau închiderea filei.", category: "necessary" },
+  { name: "avyron-newsletter-prompt-v1 · avyron-newsletter-pages-v1 · avyron-context-notice-v1", provider: "Avyron", purpose: "Limitează frecvența invitațiilor și adaptează sugestiile de contact; istoricul de pagini pentru newsletter este creat numai după acordul Marketing.", storage: "Stocare locală și de sesiune", retention: "Datele de sesiune dispar la închiderea filei; preferințele locale rămân până la ștergere sau retragerea acordului.", category: "marketing" },
+
   { name: "sid", provider: "Avyron · Cloudflare", purpose: "Menține în siguranță sesiunea după autentificare. Este HttpOnly și nu poate fi citit de JavaScript.", storage: "Cookie securizat", retention: "Maximum 30 de zile; este revocat la logout, expirare sau din lista de sesiuni.", category: "necessary" },
   { name: "avyron-cookie-consent-v2", provider: "Avyron", purpose: "Reține alegerile privind analiza și marketingul, împreună cu versiunea politicii.", storage: "Stocare locală", retention: "Până la retragere, ștergerea datelor browserului sau schimbarea versiunii politicii.", category: "necessary" },
   { name: "theme · webcore-lang · avyron-display-currency", provider: "Avyron", purpose: "Păstrează tema, limba și moneda alese expres de vizitator.", storage: "Stocare locală", retention: "Până la modificarea preferinței sau ștergerea datelor browserului.", category: "necessary" },
   { name: "avy_visitor · avy_bubble_pos · avy_chat_state:avy · avy_prompt_seen:avy", provider: "Avyron AI Assistant", purpose: "Continuitatea locală a conversației, poziția butonului și limitarea invitațiilor discrete la cel mult una la 14 zile.", storage: "Stocare locală", retention: "Până la ștergerea datelor browserului; istoricul local este limitat la ultimele 30 de mesaje.", category: "necessary" },
   { name: "avyron:blogpro:intro", provider: "Avyron", purpose: "Evită repetarea introducerii animate în aceeași filă.", storage: "Stocare de sesiune", retention: "Până la închiderea filei.", category: "necessary" },
-  { name: "avyron:sid", provider: "Avyron · Cloudflare D1", purpose: "Măsoară agregat pașii parcurși pe anumite pagini de produs, fără a salva nume, email sau IP în eveniment.", storage: "Stocare de sesiune", retention: "Până la închiderea filei; este creat numai după acceptarea categoriei Analiză.", category: "analytics" },
+  { name: "avyron:sid", provider: "Avyron · Cloudflare D1", purpose: "Măsoară agregat pașii parcurși pe anumite pagini de produs, fără a salva nume, email sau IP în eveniment.", storage: "Stocare de sesiune", retention: "Până la închiderea filei sau retragerea acordului; este creat numai după acceptarea categoriei Analiză.", category: "analytics" },
   { name: "_ga · _ga_<container>", provider: "Google Analytics 4", purpose: "Diferențiază vizitele și produce statistici de utilizare atunci când analiza este acceptată.", storage: "Cookies de analiză", retention: "De regulă până la 2 ani, în funcție de configurația Google și de setările browserului.", category: "analytics" },
 ];
 
 const technologiesEn: Technology[] = [
+  { name: "avyron_cart_v2 · avyron_cart_owner_v1 · avyron-produse-v1 · avyron-brief-v1", provider: "Avyron", purpose: "Stores the requested cart, account separation and product or brief selections.", storage: "Local storage", retention: "Until selections change or browser data is deleted; the cart is separated per account.", category: "necessary" },
+  { name: "avyron-website-subscription-draft-v1 · :step · :key", provider: "Avyron", purpose: "Temporarily stores the website subscription application and current step for recovery and duplicate-submission protection.", storage: "Session storage", retention: "Until confirmed submission or the tab is closed.", category: "necessary" },
+  { name: "avyron-newsletter-prompt-v1 · avyron-newsletter-pages-v1 · avyron-context-notice-v1", provider: "Avyron", purpose: "Limits invitation frequency and adapts contact suggestions; newsletter page history starts only after Marketing consent.", storage: "Local and session storage", retention: "Session data is removed when the tab closes; local preferences remain until deletion or withdrawal.", category: "marketing" },
+
   { name: "sid", provider: "Avyron · Cloudflare", purpose: "Securely maintains the session after sign-in. It is HttpOnly and cannot be read by JavaScript.", storage: "Secure cookie", retention: "Up to 30 days; revoked on logout, expiry or from the session list.", category: "necessary" },
   { name: "avyron-cookie-consent-v2", provider: "Avyron", purpose: "Stores analytics and marketing choices together with the policy version.", storage: "Local storage", retention: "Until withdrawal, browser-data deletion or a policy-version change.", category: "necessary" },
   { name: "theme · webcore-lang · avyron-display-currency", provider: "Avyron", purpose: "Stores the theme, language and currency expressly selected by the visitor.", storage: "Local storage", retention: "Until the preference changes or browser data is deleted.", category: "necessary" },
   { name: "avy_visitor · avy_bubble_pos · avy_chat_state:avy · avy_prompt_seen:avy", provider: "Avyron AI Assistant", purpose: "Local conversation continuity, the selected button position and limiting subtle prompts to at most once every 14 days.", storage: "Local storage", retention: "Until browser data is deleted; local history is limited to the latest 30 messages.", category: "necessary" },
   { name: "avyron:blogpro:intro", provider: "Avyron", purpose: "Prevents the animated introduction from repeating in the same tab.", storage: "Session storage", retention: "Until the tab is closed.", category: "necessary" },
-  { name: "avyron:sid", provider: "Avyron · Cloudflare D1", purpose: "Measures aggregate steps on selected product pages without saving a name, email or IP in the event.", storage: "Session storage", retention: "Until the tab is closed; created only after Analytics is accepted.", category: "analytics" },
+  { name: "avyron:sid", provider: "Avyron · Cloudflare D1", purpose: "Measures aggregate steps on selected product pages without saving a name, email or IP in the event.", storage: "Session storage", retention: "Until the tab is closed or consent is withdrawn; created only after Analytics is accepted.", category: "analytics" },
   { name: "_ga · _ga_<container>", provider: "Google Analytics 4", purpose: "Distinguishes visits and produces usage statistics when analytics is accepted.", storage: "Analytics cookies", retention: "Usually up to 2 years, depending on Google configuration and browser settings.", category: "analytics" },
 ];
 
@@ -68,8 +76,8 @@ const TechnologyList = ({ rows, ro }: { rows: Technology[]; ro: boolean }) => (
             <code className="break-all font-mono text-xs font-semibold text-cyan-200">{item.name}</code>
             <p className="mt-1 text-xs text-slate-400">{item.provider} · {item.storage}</p>
           </div>
-          <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${item.category === "analytics" ? "border-purple-300/25 bg-purple-400/10 text-purple-200" : "border-emerald-300/20 bg-emerald-400/10 text-emerald-200"}`}>
-            {item.category === "analytics" ? (ro ? "Analiză" : "Analytics") : (ro ? "Necesar / funcțional" : "Necessary / functional")}
+          <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${item.category !== "necessary" ? "border-purple-300/25 bg-purple-400/10 text-purple-200" : "border-emerald-300/20 bg-emerald-400/10 text-emerald-200"}`}>
+            {item.category === "marketing" ? "Marketing" : item.category === "analytics" ? (ro ? "Analiză" : "Analytics") : (ro ? "Necesar / funcțional" : "Necessary / functional")}
           </span>
         </div>
         <p className="mt-3 text-sm leading-relaxed text-slate-300">{item.purpose}</p>

@@ -1,3 +1,4 @@
+import WebsiteSubscriptionsHub from "@/features/websiteSubscriptions/WebsiteSubscriptionsHub";
 import {Link} from "react-router-dom";
 import { useEffect, useState } from "react";
 import { workspaceApi } from "@/lib/workspaceApi";
@@ -82,7 +83,7 @@ export function SubscriptionsTab({embedded=false}:{embedded?:boolean}={}) {
     let active = true,sequence=0;
     setLoading(true); setError("");setItems([]);
     const load=()=>{const seq=++sequence;workspaceApi.list<Subscription>("subscriptions")
-      .then(({ data }) => { if (active&&seq===sequence) {setItems(data);setError("");} })
+      .then(({ data }) => { if (active&&seq===sequence) {setItems(data.filter(row=>!row.plan_sku?.startsWith("AVY-WEB-SUB-")));setError("");} })
       .catch((cause) => { if (active&&seq===sequence) {setItems([]);setError(cause instanceof Error ? cause.message : "Datele nu pot fi încărcate.");} })
       .finally(() => { if (active&&seq===sequence) setLoading(false); });};
     const update=()=>{if(document.visibilityState==="visible")load()};
@@ -94,7 +95,7 @@ export function SubscriptionsTab({embedded=false}:{embedded?:boolean}={}) {
     if (!user) return;
     let active = true;
     billingApi.account()
-      .then((account) => { if (active) { setBillingItems(account.subscriptions); setBillingAccount(account); } })
+      .then((account) => { if (active) { setBillingItems(account.subscriptions.filter(row=>!row.sku.startsWith("AVY-WEB-SUB-"))); setBillingAccount(account); } })
       .catch(() => { if (active) setBillingItems([]); });
     return () => { active = false; };
   }, [user]);
@@ -125,7 +126,7 @@ export function SubscriptionsTab({embedded=false}:{embedded?:boolean}={}) {
     try {
       await billingApi.cancelSubscription(subscription.id);
       const account = await billingApi.account();
-      setBillingItems(account.subscriptions);
+      setBillingItems(account.subscriptions.filter(row=>!row.sku.startsWith("AVY-WEB-SUB-")));
       setBillingAccount(account);
       toast.success(ro ? "Anularea a fost trimisă furnizorului de plată." : "Cancellation was sent to the payment provider.");
     } catch (cause) {
@@ -147,6 +148,7 @@ export function SubscriptionsTab({embedded=false}:{embedded?:boolean}={}) {
 
   return (
     <div className="space-y-6">
+      <WebsiteSubscriptionsHub client/>
       {!embedded&&<div>
         <h2 className="text-2xl font-display font-bold">{t.auth.dash.subs.title}</h2>
         <p className="text-sm text-muted-foreground">{t.auth.dash.subs.subtitle}</p>

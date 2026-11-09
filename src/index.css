@@ -553,3 +553,14 @@ html[data-motion-tier="usor"] .avy-route-transition {
     transform: none;
   }
 }
+
+/* A consent decision takes precedence over optional floating contact controls. */
+html[data-cookie-panel-open] .public-contact-rail {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Keep subdued library copy readable on its intended dark canvas. */
+.avy-library :where([class~="text-white/30"], [class~="text-white/35"], [class~="text-white/40"], [class~="text-white/45"]) {
+  color: rgb(255 255 255 / .65);
+}

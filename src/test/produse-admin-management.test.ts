@@ -8,6 +8,7 @@ import { produseAdminRouter } from "../../cloudflare/workers/api/src/produseAdmi
 import { catalogCodesRouter } from "../../cloudflare/workers/api/src/catalogCodes";
 import { SERVICE_COMMERCIAL_SOURCES } from "../data/serviceCommercialSources";
 import { SERVICES } from "../data/services";
+import { WEBSITE_PLAN_DEFAULTS } from "../shared/websiteSubscriptions";
 
 const { DatabaseSync } = createRequire(import.meta.url)("node:sqlite") as typeof import("node:sqlite");
 class Statement {
@@ -69,14 +70,15 @@ describe("administrarea produselor și parteneriatelor", () => {
       expect(commercial).toMatchObject({ display_name: service.copy.ro.name, category: service.category, base_price_minor: service.priceRon > 0 ? service.priceRon * 100 : null });
     }
     // Auditul este o ofertă la cerere, iar blogul are o pagină separată.
-    expect(SERVICE_COMMERCIAL_SOURCES).toHaveLength(SERVICES.length + 15);
+    expect(SERVICE_COMMERCIAL_SOURCES).toHaveLength(SERVICES.length + 15 + WEBSITE_PLAN_DEFAULTS.length);
   });
 
   it("înregistrează lipsurile idempotent, păstrează codurile editate și separă referințele test/live", async () => {
+    const seeded=Number(db.prepare("SELECT count(*) n FROM commercial_catalog_codes").get()!.n);
     const first = await send("/api/finance/commercial-codes/sync", {});
     expect(first.status).toBe(200);
     const firstBody = await first.json() as { created: number; total: number; requiresSku: number };
-    expect(firstBody.created).toBe(firstBody.total - 13);
+    expect(firstBody.created).toBe(firstBody.total - seeded);
     expect(firstBody.requiresSku).toBe(0);
     expect(db.prepare("SELECT sku,tax_status,accounting_code,price_model FROM commercial_catalog_codes WHERE entity_type='service' AND entity_key='premium-website'").get())
       .toMatchObject({ sku: "AVY-SRV-WEB-001", tax_status: "unverified", accounting_code: "AVS001", price_model: "starting_at" });

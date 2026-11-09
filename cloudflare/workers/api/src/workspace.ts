@@ -9,7 +9,7 @@ import { normalizeDomain, lookupDomain } from "./domain";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import type { AppBindings } from "./types";
-import { hasCapability, isReservedPlatformEmail, platformRoleForUser } from "./authorization";
+import { hasCapability, isReservedPlatformEmail, platformRoleForUser,projectOwnerAccessSql } from "./authorization";
 import { privilegedMfaSatisfied } from "./mfaPolicy";
 import { checkRateLimit } from "./antispam";
 import { sha256 } from "./security";
@@ -366,7 +366,7 @@ workspaceRouter.get('/api/workspace/statistics',async c=>{
   const principal=await platformRoleForUser(c.env.DB,c.get('userId'));
   const {limit,offset}=page(c);
   const {results}=await c.env.DB.prepare(`SELECT metric.*,project.name product_name FROM project_statistics metric JOIN projects project ON project.id=metric.project_id
-    WHERE (?=1 OR project.owner_user_id=? OR EXISTS (SELECT 1 FROM project_staff WHERE project_id=project.id AND user_id=?) OR EXISTS (SELECT 1 FROM organization_memberships WHERE organization_id=project.organization_id AND user_id=? AND status='active'))
+    WHERE (?=1 OR ${projectOwnerAccessSql("project")} OR EXISTS (SELECT 1 FROM project_staff WHERE project_id=project.id AND user_id=?) OR EXISTS (SELECT 1 FROM organization_memberships WHERE organization_id=project.organization_id AND user_id=? AND status='active'))
     ORDER BY metric.period_end DESC,metric.id LIMIT ? OFFSET ?`).bind(principal?1:0,c.get('userId'),c.get('userId'),c.get('userId'),limit,offset).all<Record<string,unknown>>();
   return c.json({data:results.map(r=>({...r,subscription_id:r.project_id,period_start:iso(r.period_start),period_end:iso(r.period_end)}))});
 });

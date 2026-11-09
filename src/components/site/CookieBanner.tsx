@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Cookie, Settings2, Check, X } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { updateConsent } from "@/lib/analytics";
@@ -108,6 +108,7 @@ const CookieBanner = () => {
   const [open, setOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [prefs, setPrefs] = useState<CookieConsentPreferences>({ necessary: true, analytics: false, marketing: false });
+  const appliedConsent = useRef<CookieConsentPreferences | null>(null);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -124,6 +125,19 @@ const CookieBanner = () => {
       setOpen(true);
     };
     window.addEventListener(COOKIE_SETTINGS_EVENT, reopen);
+    const syncOtherTab = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== COOKIE_CONSENT_STORAGE_KEY) return;
+      const consent = readCookieConsent();
+      const next = consent ?? { necessary: true as const, analytics: false, marketing: false };
+      // A timestamp-only write in another context must not discard edits.
+      if (consent && appliedConsent.current?.analytics === next.analytics && appliedConsent.current?.marketing === next.marketing) return;
+      appliedConsent.current = next;
+      setPrefs(next);
+      updateConsent(next);
+      if (timer) clearTimeout(timer);
+      setOpen(current => !consent || current);
+    };
+    window.addEventListener("storage", syncOtherTab);
 
     try {
       const raw = localStorage.getItem(COOKIE_CONSENT_STORAGE_KEY);
@@ -134,6 +148,7 @@ const CookieBanner = () => {
           analytics: Boolean(parsed.analytics),
           marketing: Boolean(parsed.marketing),
         };
+        appliedConsent.current = next;
         setPrefs(next);
         updateConsent(next);
       } else {
@@ -151,10 +166,17 @@ const CookieBanner = () => {
     return () => {
       if (timer) clearTimeout(timer);
       window.removeEventListener(COOKIE_SETTINGS_EVENT, reopen);
+      window.removeEventListener("storage", syncOtherTab);
     };
   }, []);
 
+  useEffect(() => {
+    document.documentElement.toggleAttribute("data-cookie-panel-open", open);
+    return () => { document.documentElement.removeAttribute("data-cookie-panel-open"); };
+  }, [open]);
+
   const save = (p: CookieConsentPreferences) => {
+    appliedConsent.current = p;
     try {
       saveCookieConsent(p);
     } catch {
@@ -174,7 +196,7 @@ const CookieBanner = () => {
     <div
       role="dialog"
       aria-label={c.dialog}
-      className="fixed inset-x-0 bottom-0 z-[60] px-3 pb-3 sm:px-4 sm:pb-4 animate-in slide-in-from-bottom-4 fade-in duration-300"
+      className="fixed inset-x-0 bottom-0 z-[60] max-h-[100dvh] overflow-y-auto overscroll-contain px-3 pb-[max(.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-4 sm:pb-[max(1rem,env(safe-area-inset-bottom))] motion-safe:animate-in motion-safe:slide-in-from-bottom-4 motion-safe:fade-in duration-300"
     >
       <div className="mx-auto max-w-3xl rounded-2xl border border-white/10 bg-[#0a0612]/95 backdrop-blur-xl text-white shadow-[0_20px_60px_-20px_rgba(168,85,247,0.5)] overflow-hidden">
         {/* Top accent */}
@@ -193,7 +215,7 @@ const CookieBanner = () => {
                 {c.body}{" "}
                 <a href={c.detailsHref} className="underline text-purple-300 hover:text-purple-200">{c.details}</a>
               </p>
-              <p className="mt-1 text-[10px] text-white/60">{c.version}: {COOKIE_POLICY_VERSION}</p>
+              <p className="mt-1 text-[10px] text-white/65">{c.version}: {COOKIE_POLICY_VERSION}</p>
 
               {showSettings && (
                 <div className="mt-3 space-y-2">
@@ -274,14 +296,14 @@ const Row = ({
       aria-label={label}
       disabled={disabled}
       onClick={() => !disabled && onChange?.(!checked)}
-      className={`relative shrink-0 h-5 w-9 overflow-hidden rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0612] ${
+      className={`relative shrink-0 h-6 w-10 overflow-hidden rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0612] ${
         checked ? "bg-gradient-to-r from-purple-500 to-purple-700" : "bg-white/15"
       } ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
     >
       <span
         aria-hidden="true"
         className={`pointer-events-none absolute left-0.5 top-1/2 size-4 -translate-y-1/2 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-          checked ? "translate-x-4" : "translate-x-0"
+          checked ? "translate-x-5" : "translate-x-0"
         }`}
       />
     </button>

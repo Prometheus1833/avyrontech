@@ -1,13 +1,16 @@
 import { robotsDirectiveForPath } from "@/seo/publicRoutes";
 
-const MEASUREMENT_ID =
+const configuredId =
   import.meta.env.VITE_GOOGLE_ANALYTICS_ID ||
   import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_ANALYTICS_API_KEY ||
   "G-5KMPKNG8WS";
+// A connector API key is not a GA4 measurement ID and must never enter a tag URL.
+const MEASUREMENT_ID = /^G-[A-Z0-9]+$/.test(configuredId) ? configuredId : "";
 
 export const GA_ENABLED = Boolean(MEASUREMENT_ID);
 let initialized = false;
 let analyticsAllowed = false;
+let lastPageView = "";
 
 export const isPrivateAnalyticsSurface = () => typeof window !== "undefined" && (
   !["avyron.ro", "www.avyron.ro", "localhost", "127.0.0.1"].includes(window.location.hostname)
@@ -68,13 +71,51 @@ export function gtag(...args: unknown[]) {
  */
 export function pageView(path: string, title?: string) {
   syncMeasurementGate();
-  if (!GA_ENABLED || typeof window === "undefined" || isPrivateAnalyticsSurface()) return;
+  if (!GA_ENABLED || !analyticsAllowed || typeof window === "undefined" || isPrivateAnalyticsSurface()) return;
+  const cleanPath = path.split(/[?#]/, 1)[0];
+  if (lastPageView === cleanPath) return;
+  lastPageView = cleanPath;
   gtag("event", "page_view", {
-    page_path: path,
+    page_path: cleanPath,
     page_title: title || document.title,
     page_location: publicLocation(),
     page_referrer: publicReferrer(),
   });
+}
+
+/** Lazy routes write their title after navigation; wait for their canonical. */
+export function trackPageViewWhenReady(path: string) {
+  syncMeasurementGate();
+  if (isPrivateAnalyticsSurface()) return () => undefined;
+  const ready = () => {
+    const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    if (canonical && new URL(canonical.href).pathname === path && window.location.pathname === path) {
+      pageView(path);
+      observer.disconnect();
+    }
+  };
+  const observer = new MutationObserver(ready);
+  observer.observe(document.head, { childList: true, subtree: true, attributes: true, characterData: true });
+  ready();
+  return () => observer.disconnect();
+}
+
+function clearAnalyticsIdentifiers() {
+  // Only our optional measurement identifiers. Authentication/cart are untouched.
+  const domains = window.location.hostname.split(".");
+  const paths = window.location.pathname.split("/");
+  for (const cookie of document.cookie.split(";")) {
+    const name = cookie.split("=", 1)[0].trim();
+    if (!/^_ga(?:_|$)/.test(name)) continue;
+    for (let depth = 1; depth <= paths.length; depth++) {
+      const path = paths.slice(0, depth).join("/") || "/";
+      document.cookie = `${name}=; Max-Age=0; Path=${path}`;
+      for (let part = 0; part < domains.length - 1; part++) {
+        document.cookie = `${name}=; Max-Age=0; Path=${path}; Domain=${domains.slice(part).join(".")}`;
+      }
+    }
+  }
+  try { window.sessionStorage.removeItem("avyron:sid"); } catch { /* Storage may be blocked. */ }
 }
 
 /**
@@ -98,10 +139,22 @@ export type ConsentPreferences = {
 };
 
 export function updateConsent({ analytics, marketing }: ConsentPreferences) {
+  const newlyGranted = analytics && !analyticsAllowed;
   analyticsAllowed = analytics;
+  if (!analytics && typeof window !== "undefined") {
+    lastPageView = "";
+    clearAnalyticsIdentifiers();
+  }
+  if (!marketing && typeof window !== "undefined") {
+    for (const key of ["avyron-newsletter-prompt-v1", "avyron-newsletter-pages-v1", "avyron-context-notice-v1"]) {
+      try { window.localStorage?.removeItem(key); window.sessionStorage?.removeItem(key); } catch { /* Optional storage. */ }
+    }
+  }
   syncMeasurementGate();
+  if (typeof window !== "undefined") window.dispatchEvent?.(new CustomEvent("avyron:analytics-consent", { detail: { analytics } }));
   if (!GA_ENABLED || isPrivateAnalyticsSurface()) return;
-  if (analytics || marketing) ensureAnalytics();
+  // Marketing permission alone must not load an analytics provider.
+  if (analytics) ensureAnalytics();
   if (!initialized) return;
   gtag("consent", "update", {
     analytics_storage: analytics ? "granted" : "denied",
@@ -109,7 +162,7 @@ export function updateConsent({ analytics, marketing }: ConsentPreferences) {
     ad_user_data: marketing ? "granted" : "denied",
     ad_personalization: marketing ? "granted" : "denied",
   });
-  if (analytics) pageView(window.location.pathname, document.title);
+  if (newlyGranted) pageView(window.location.pathname, document.title);
 }
 
 /**

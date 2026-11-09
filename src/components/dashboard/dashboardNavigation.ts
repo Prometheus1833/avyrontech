@@ -80,6 +80,7 @@ export const DASHBOARD_GROUP_ORDER = [
 ];
 
 export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
+ "website-subscriptions":{label:"Site-uri prin abonament",commandLabel:"Deschide site-urile prin abonament",hint:"Cereri, planuri, clienți, proiecte și modificări lunare",icon:Globe},
   notifications: {label:"Notificări",commandLabel:"Deschide notificările",hint:"Ultimele actualizări din cont",icon:Bell},
   "notification-settings": {label:"Sistem notificări",commandLabel:"Configurează notificările",hint:"Reguli, mesaje și monitorizare",icon:Bell},
   "skill-site-builder": {label:"Site Builder",commandLabel:"Deschide Site Builder",hint:"Mockupuri, briefuri Codex și componente reutilizabile",icon:Globe},

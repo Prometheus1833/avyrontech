@@ -230,6 +230,13 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
   const response=await chat('Cât costă un site?');expect(response.status).toBe(200);
   const body=await response.json() as {reply:string;sources:Array<{id:string}>};
   expect(body.reply).toContain('1.450 RON');expect(body.reply).not.toContain('300 euro');expect(body.sources[0].id).toBe('service:premium-website');
+  const monthly=await chat('Cât costă?',{page:'/servicii/website-prin-abonament'});
+  expect(monthly.status).toBe(200);
+  const subscription=await monthly.json() as {reply:string;sources:Array<{id:string}>};
+  expect(subscription.reply).toContain('abonamentul lunar este contra cost');
+  expect(subscription.reply).toContain('solicită oferta lunară');
+  expect(subscription.reply).not.toContain('1.450 RON');
+  expect(subscription.sources[0].id).toBe('service:website-subscription');
  });
  it('keeps stale seeded prices out of model context for a matched service',async()=>{
   chatSeed();db.prepare("INSERT INTO ai_knowledge(id,category,language,question,answer,keywords,source,priority,status,created_at,updated_at) VALUES('stale-price','preturi','ro','Cât costă un site?','Preț vechi: 300 euro.','site pret','seed',10,'active',1,1)").run();

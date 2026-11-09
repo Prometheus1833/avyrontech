@@ -2,7 +2,7 @@ name: Verify AVYRON
 
 on:
   pull_request:
-    branches: [main, codex/security-boundaries-2026-11-08]
+    branches: [main, "codex/**"]
   push:
     branches:
       - main

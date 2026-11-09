@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import * as Dialog from "@radix-ui/react-dialog";
+import { publicFormRequest } from "@/lib/publicFormRequest";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Loader2, Check, Mail, Phone, Wand2 } from "lucide-react";
 import { z } from "zod";
@@ -31,41 +33,58 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
   const [done, setDone] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const [resetKey, setResetKey] = useState(0);
+  const [formError, setFormError] = useState("");
+  const inFlight = useRef(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout>>();
+  const returnFocus = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (open) return;
+    const remember = (event: Event) => {
+      if (event.target instanceof HTMLElement) returnFocus.current = event.target.closest<HTMLElement>("button,a,input,[tabindex]");
+    };
+    document.addEventListener("focusin", remember);
+    document.addEventListener("pointerdown", remember, true);
+    return () => {
+      document.removeEventListener("focusin", remember);
+      document.removeEventListener("pointerdown", remember, true);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (open) {
       setEmail("");
       setPhone("");
       setDone(false);
+      setFormError("");
       setTurnstileToken("");
     }
+    return () => clearTimeout(closeTimer.current);
   }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [open, onClose]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!source) return;
+    if (!source || inFlight.current) return;
+    setFormError("");
 
     const parsed = schema.safeParse({ email, phone });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
+      setFormError(parsed.error.issues[0].message);
       return;
     }
     if (TURNSTILE_SITE_KEY && !turnstileToken) {
       toast.error("Confirmă verificarea anti-spam.");
+      setFormError("Confirmă verificarea anti-spam.");
       return;
     }
 
+    inFlight.current = true;
     setSubmitting(true);
-    const response = await fetch(apiUrl("/api/contact/example"), {
+    let response: Response | undefined;
+    let body: { saved?: boolean; delivered?: boolean } | undefined;
+    try {
+      ({ response, body } = await publicFormRequest(apiUrl("/api/contact/example"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
@@ -76,21 +95,25 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
         source_name: source.name,
         turnstileToken,
       }),
-    }).catch(() => null);
-    setSubmitting(false);
+      }));
+    } catch {
+      setTurnstileToken("");
+      setResetKey((value) => value + 1);
+    } finally {
+      inFlight.current = false;
+      setSubmitting(false);
+    }
 
     if (response?.status === 403) {
       setTurnstileToken("");
       setResetKey((value) => value + 1);
       toast.error("Verificarea anti-spam a expirat. Încearcă din nou.");
+      setFormError("Verificarea anti-spam a expirat. Încearcă din nou.");
       return;
     }
-    const body = response ? await response.json().catch(() => ({})) as {
-      saved?: boolean;
-      delivered?: boolean;
-    } : null;
-    if (!response?.ok || !body?.saved) {
+    if (!response?.ok || body?.saved !== true) {
       toast.error("A apărut o eroare. Te rugăm încearcă din nou.");
+      setFormError("Trimiterea nu a putut fi confirmată. Datele sunt păstrate; încearcă din nou.");
       return;
     }
 
@@ -98,20 +121,21 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
       toast.warning("Solicitarea a fost înregistrată în sistemul Avyron; notificarea email va fi verificată separat.");
     }
     setDone(true);
-    setTimeout(() => onClose(), 2400);
+    closeTimer.current = setTimeout(() => onClose(), 2400);
   };
 
   return (
+    <Dialog.Root open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
     <AnimatePresence>
       {open && (
-        <motion.div
+        <Dialog.Portal forceMount><Dialog.Overlay asChild><motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
           className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm grid place-items-center p-4"
         >
-          <motion.div
+          <Dialog.Content asChild aria-describedby="request-example-description" onCloseAutoFocus={(event) => { event.preventDefault(); returnFocus.current?.focus(); }}><motion.div
             initial={{ scale: 0.92, y: 20, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.92, y: 20, opacity: 0 }}
@@ -120,7 +144,7 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
             role="dialog"
             aria-modal="true"
             aria-labelledby="request-example-title"
-            className="w-full max-w-md rounded-3xl bg-card border border-border/60 shadow-elev p-6 sm:p-7 relative"
+            className="w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-3xl bg-card border border-border/60 shadow-elev p-6 sm:p-7 relative"
           >
             <button
               onClick={onClose}
@@ -140,25 +164,26 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
                 >
                   <Check className="size-7" />
                 </motion.div>
-                <h3 id="request-example-title" className="font-display font-bold text-xl">Solicitarea a fost înregistrată!</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
+                <Dialog.Title asChild><h3 id="request-example-title" className="font-display font-bold text-xl">Solicitarea a fost înregistrată!</h3></Dialog.Title>
+                <p id="request-example-description" className="mt-2 text-sm text-muted-foreground">
                   Te contactăm în maxim 24 de ore cu un exemplu personalizat asemănător cu <span className="font-semibold text-foreground">{source?.name}</span>.
                 </p>
               </div>
             ) : (
               <>
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 text-brand px-3 py-1 text-[11px] font-semibold uppercase tracking-wider">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 text-violet-700 dark:text-violet-300 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider">
                   <Wand2 className="size-3" /> Exemplu personalizat
                 </div>
-                <h3 id="request-example-title" className="mt-3 font-display font-bold text-xl sm:text-2xl leading-tight">
+                <Dialog.Title asChild><h3 id="request-example-title" className="mt-3 font-display font-bold text-xl sm:text-2xl leading-tight">
                   Solicită un exemplu asemănător cu{" "}
                   <span className="text-brand">{source?.name}</span>
-                </h3>
-                <p className="mt-1.5 text-sm text-muted-foreground">
+                </h3></Dialog.Title>
+                <p id="request-example-description" className="mt-1.5 text-sm text-muted-foreground">
                   Lasă-ne emailul și numărul de telefon. Te contactăm cu o variantă personalizată pentru activitatea ta.
                 </p>
 
-                <form onSubmit={submit} className="mt-5 space-y-3">
+                <form onSubmit={submit} aria-busy={submitting} aria-describedby={formError ? "example-form-error" : undefined} className="mt-5 space-y-3">
+                  {formError && <p id="example-form-error" role="alert" className="text-sm text-red-700 dark:text-red-300">{formError}</p>}
                   <div>
                     <label htmlFor="request-example-email" className="text-xs font-semibold text-foreground/80 mb-1 flex items-center gap-1.5">
                       <Mail className="size-3.5" /> Email
@@ -215,9 +240,10 @@ export const RequestExampleModal = ({ open, onClose, source }: Props) => {
                 </form>
               </>
             )}
-          </motion.div>
-        </motion.div>
+          </motion.div></Dialog.Content>
+        </motion.div></Dialog.Overlay></Dialog.Portal>
       )}
     </AnimatePresence>
+    </Dialog.Root>
   );
 };

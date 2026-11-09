@@ -523,6 +523,7 @@ test.describe("public SEO routes", () => {
   });
 
   test("mobile landing and article controls remain compact and fluid", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({ necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12" })));
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
 

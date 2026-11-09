@@ -449,6 +449,7 @@ export function capabilityRank(
 }
 /** Navigation and request categories share the same registered permission keys. */
 export const STAFF_SECTION_PERMISSIONS: Record<string, string[]> = {
+ "website-subscriptions":["maintenance.read","maintenance.work"],
   "skill-site-builder": ["skills.read", "skills.use", "skills.manage", "skills.approve"],
   "skill-logo-engine": ["skills.read", "skills.use", "skills.manage", "skills.approve"],
   "skill-media-generate": ["skills.read", "skills.use", "skills.manage", "skills.approve"],
@@ -493,6 +494,9 @@ export function staffRequestPermission(
     path.startsWith("/api/profile/")
   )
     return null;
+  if (path.startsWith("/api/website-subscriptions/internal/projects/") && method === "PATCH") return "maintenance.work";
+  if (path.startsWith("/api/website-subscriptions/internal/")) return write?"maintenance.manage":"maintenance.read";
+  if (path.startsWith("/api/website-subscriptions/account/")) return write?"maintenance.work":"maintenance.read";
   if (path.startsWith("/api/notifications/admin")) return "platform.restricted";
   if (path === "/api/notifications" || path.startsWith("/api/notifications/")) return null; // Own inbox reauthorizes every resource.
   if (path.startsWith("/api/logo-studio/admin")) return "leads.read";
