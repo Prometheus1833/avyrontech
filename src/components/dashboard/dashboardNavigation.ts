@@ -102,6 +102,7 @@ export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
   reviews: { label: "Recenzii", commandLabel: "Deschide recenziile", hint: "Colectare și aprobare pentru servicii și surse conectate", icon: Star },
   domains: { label: "Domenii", commandLabel: "Deschide domeniile", hint: "DNS, SSL și active digitale", icon: Globe },
   media: { label: "Media", commandLabel: "Deschide biblioteca media", hint: "Fișiere, imagini și livrabile", icon: Image },
+  "leads-agency": { label: "Leads Agency", mobileLabel: "Leads Agency", commandLabel:"Deschide Leads Agency", hint:"Achiziție proiecte B2B · FREE-FIRST", icon: BriefcaseBusiness },
   leads: { label: "Leaduri", mobileLabel: "Leaduri", commandLabel: "Arată leadurile", hint: "Pipeline, oportunități și răspunsuri", icon: Target },
   subscriptions: { label: "Abonamente", commandLabel: "Deschide abonamentele", hint: "Planuri și servicii recurente", icon: CreditCard },
   payments: { label: "Metode de plată", commandLabel: "Deschide metodele de plată", hint: "Carduri salvate și date de facturare", icon: Wallet },

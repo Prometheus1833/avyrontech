@@ -55,6 +55,7 @@ const SettingsTab = lazyWithRetry(() => import("@/components/dashboard/SettingsT
 const CartTab = lazyWithRetry(() => import("@/components/dashboard/CartTab").then((m) => ({ default: m.CartTab })));
 const StaffFinanceTab = lazyWithRetry(() => import("@/components/dashboard/StaffFinanceTab").then((m) => ({ default: m.StaffFinanceTab })));
 const StaffMediaTab = lazyWithRetry(() => import("@/components/dashboard/StaffMediaTab").then((m) => ({ default: m.StaffMediaTab })));
+const LeadsAgency = lazyWithRetry(() => import("@/features/leads-agency/LeadsAgency"));
 const StaffLeadsTab = lazyWithRetry(() => import("@/components/dashboard/StaffLeadsTab").then((m) => ({ default: m.StaffLeadsTab })));
 const StaffPromotionsTab = lazyWithRetry(() => import("@/components/dashboard/StaffPromotionsTab").then((m) => ({ default: m.StaffPromotionsTab })));
 const AvyChatbotTab = lazyWithRetry(() => import("@/components/dashboard/AvyChatbotTab"));
@@ -165,6 +166,7 @@ function ProfileDashboard() {
       if(destination!=="subscriptions")next.delete("recurringView");if(destination!=="tickets")next.delete("supportView");if(destination!=="payments")next.delete("billingView");if(clientTarget)for(const [key,value] of Object.entries(clientTarget.params))next.set(key,value);
       next.delete("core");
       if(destination!=="leads")next.delete("lead");
+      if(destination!=="leads-agency"){next.delete("agencyOpportunity");next.delete("agencyView");}
       if(destination!=="staff-tickets"&&destination!=="tickets")next.delete("ticket");
       if (destination === "maintenance") next.delete("project");
       if(destination!=="documents")for(const key of ["documentView","documentTemplate","template","document","version"])next.delete(key);
@@ -331,6 +333,7 @@ function ProfileDashboard() {
           {canOpenSection("leads", access) && (
                 <TabsContent value="leads" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["leads"].label} className="mt-0"><StaffLeadsTab /></TabsContent>
               )}
+          {canOpenSection("leads-agency", access) && <TabsContent value="leads-agency" role="region" aria-label="Leads Agency" className="mt-0"><LeadsAgency /></TabsContent>}
           {access.isStaff && (
                 <>
             <TabsContent value="servicii-avyron" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["servicii-avyron"].label} className="mt-0"><StaffServicesTab /></TabsContent>

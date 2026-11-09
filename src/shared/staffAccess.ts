@@ -1,5 +1,7 @@
 /** Registered permissions map to enforced API operations; rank labels never authorize requests. */
 export const STAFF_PERMISSIONS = [
+  ["leads_agency.read", "Comercial", "Citire Leads Agency", "Surse B2B și oportunități private ale agenției; fără încasări sau permisiuni externe."],
+  ["leads_agency.manage", "Comercial", "Administrare Leads Agency", "Fișe, calificare, pipeline și verificări manuale. Transferul, documentele și finanțele cer drepturi native distincte."],
   ["skills.read", "Avy Skills", "Citire skilluri", "Instrucțiuni și resurse reutilizabile aprobate; fără acces implicit la briefurile altor clienți."],
   ["skills.use", "Avy Skills", "Utilizare skilluri", "Pregătire mockupuri și briefuri interne în limitele existente."],
   ["skills.manage", "Avy Skills", "Configurare skilluri", "Ciorne de instrucțiuni și resurse; nu aprobă sau publică automat."],
@@ -318,6 +320,8 @@ const dev: StaffPermission[] = [
 const commercial: StaffPermission[] = [
   "clients.read",
   "clients.write",
+  "leads_agency.read",
+  "leads_agency.manage",
   "leads.read",
   "leads.write",
   "leads.create",
@@ -464,6 +468,7 @@ export const STAFF_SECTION_PERMISSIONS: Record<string, string[]> = {
   resources: ["documents.read"],
   clients: ["clients.read"],
   leads: ["leads.read"],
+  "leads-agency": ["leads_agency.read", "leads_agency.manage"],
   "servicii-avyron": ["services.read"],
   finance: ["finance.read"],
   "social-manager": ["ai_projects.read"],
@@ -495,6 +500,7 @@ export function staffRequestPermission(
     return null;
   if (path.startsWith("/api/notifications/admin")) return "platform.restricted";
   if (path === "/api/notifications" || path.startsWith("/api/notifications/")) return null; // Own inbox reauthorizes every resource.
+  if (path.startsWith("/api/leads-agency")) return write ? "leads_agency.manage" : "leads_agency.read";
   if (path.startsWith("/api/logo-studio/admin")) return "leads.read";
   if (path.startsWith("/api/staff-access")) return "team.read";
   if (path === "/api/workspace/activity-counts") return null;
@@ -610,6 +616,7 @@ export function staffPermissionIssues(keys: readonly string[]) {
     "maintenance.manage": ["maintenance.read"],
     "clients.write": ["clients.read"],
     "collaborators.manage": ["collaborators.read"],
+    "leads_agency.manage": ["leads_agency.read"],
     "leads.write": ["leads.read"],
     "leads.create": ["leads.read"],
     "leads.delete": ["leads.read"],

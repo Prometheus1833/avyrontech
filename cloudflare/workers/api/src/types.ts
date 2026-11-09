@@ -82,5 +82,5 @@ type OptionalIntegrations = {
 
 export type Env = CloudflareBindings & OptionalIntegrations;
 
-export type AppVariables = { userId: string; roles: Role[]; requestId: string; sessionId: string; mfaVerified: boolean; skillAccess?: SkillPermissions; antivirusIntent: {first:boolean;key:string;scope:string;body:{confirmed?:boolean;sample?:string}} };
+export type AppVariables = { agencyAccess?: import("./leadsAgencyPolicy").AgencyPermissions; userId: string; roles: Role[]; requestId: string; sessionId: string; mfaVerified: boolean; skillAccess?: SkillPermissions; antivirusIntent: {first:boolean;key:string;scope:string;body:{confirmed?:boolean;sample?:string}} };
 export type AppBindings = { Bindings: Env; Variables: AppVariables };

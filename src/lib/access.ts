@@ -63,7 +63,7 @@ export type SectionId =
   | "skill-site-builder" | "skill-logo-engine" | "skill-media-generate"
   | "documents" | "overview" | "profile" | "settings" | "projects" | "subscriptions" | "invoices" | "payments" | "cart" | "orders" | "catalog" | "collection"
   | "stats" | "tickets" | "maintenance" | "client-maintenance" | "clients" | "domains"
-  | "finance" | "media" | "leads" | "staff-tickets" | "demo-requests" | "intern"
+  | "finance" | "media" | "leads-agency" | "leads" | "staff-tickets" | "demo-requests" | "intern"
   | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "servicii-avyron" | "produse-avyron"
   | "newsletter" | "ai-projects" | "logo-simulations" | "logo-2d-simulations" | "surveys" | "configurator"
   | "collaborators" | "my-collaborations" | "antivirus" | "example-carousels" | "commercial-codes" | "other-hub" | "social-manager" | "subscriptions-admin" | "internal-subscriptions" | "careers" | "library" | "reviews" | "avy-engine";
@@ -100,6 +100,7 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "ai-projects", group: "projects", audience: "staff", requiredCapability: "ai_projects.read", keywords: ["proiecte ai", "productie ai", "continut"] },
   { id: "client-maintenance", group: "recurring", audience: "everyone", keywords: ["mentenanta clienti", "activitati", "abonamente", "maintenance"] },
   { id: "leads", group: "projects", audience: "staff", requiredCapability: "leads.read", keywords: ["leads", "crm", "vanzari", "oferta", "prospecti"] },
+  { id: "leads-agency", group: "projects", audience: "staff", requiredCapability:"leads_agency.read", keywords: ["leads agency", "b2b", "gratuit", "parteneriate", "rfp", "achizitie proiecte"] },
   { id: "media", group: "projects", audience: "staff", keywords: ["media", "imagini", "fisiere"] },
 
   { id: "subscriptions", group: "billing", audience: "client", keywords: ["abonament", "plan", "subscriptions"] },
@@ -164,6 +165,7 @@ const canOpenDefinition = (section: SectionDef, access: Access): boolean => {
   if(section.id==="maintenance")return access.isSuperAdmin;
   if(section.id==="client-maintenance"&&access.isClient)return false;
   if(section.id==="my-collaborations")return access.hasCollaborations===true;
+  if(section.id==="leads-agency")return access.isSuperAdmin || (access.isStaff&&access.capabilities.some(c=>["leads_agency.read","leads_agency.manage"].includes(c)));
   if(section.id==="collaborators")return access.isSuperAdmin || (access.isStaff&&access.capabilities.some(c=>["collaborators.read","collaborators.manage"].includes(c)));
   if (access.capabilities.includes(STAFF_MANAGED) && !access.isSuperAdmin) {
     if (["profile", "settings"].includes(section.id)) return true;
