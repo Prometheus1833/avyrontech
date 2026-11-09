@@ -144,6 +144,12 @@ export const openApiDocument = {
     "/billing/profile": {
       put: { tags: ["Commerce"], summary: "Actualizează datele beneficiarului pentru facturare Oblio", security: [{ bearerAuth: [] }], responses: { "200": { description: "Profil actualizat" } } },
     },
+    "/billing/recurring": {
+      get: { tags: ["Commerce"], summary: "Mentenanța și abonamentele autorizate, cu date și stări reale de debitare", security: [{ bearerAuth: [] }], responses: { "200": { description: "Lista izolată pe cont și beneficiar" } } },
+    },
+    "/billing/recurring/{id}/checkout": {
+      post: { tags: ["Commerce"], summary: "Autorizează explicit debitarea recurentă a planului alocat, pe oferta verificată", security: [{ bearerAuth: [] }], parameters: [{name:"id",in:"path",required:true,schema:{type:"string"}}], responses: { "201": { description: "Checkout Stripe găzduit" }, "409": { $ref: "#/components/responses/Problem" } } },
+    },
     "/billing/payment-methods/setup": {
       post: { tags: ["Commerce"], summary: "Creează o sesiune găzduită pentru tokenizarea sigură a cardului", security: [{ bearerAuth: [] }], responses: { "201": { description: "Sesiune de configurare creată" } } },
     },

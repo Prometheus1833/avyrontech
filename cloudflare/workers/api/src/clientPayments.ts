@@ -13,17 +13,21 @@ export async function clientPaymentHistory(
     SELECT record.* FROM financial_revenues record
     WHERE record.archived_at IS NULL AND record.status NOT IN ('draft','archived','cancelled','refunded')
     AND EXISTS(SELECT 1 FROM client_account_access access WHERE access.client_id=record.client_id AND access.user_id=?1)
+  ), own_linked_orders AS (
+    SELECT f.order_id,r.id revenue_id FROM billing_order_fulfillments f JOIN visible_revenues r
+    ON (f.provider='stripe' AND f.provider_reference=r.stripe_reference) OR (f.provider='revolut' AND f.provider_reference=r.revolut_reference)
+    JOIN commerce_orders own_order ON own_order.id=f.order_id AND own_order.user_id=?1
   ), linked_paid_orders AS (
     SELECT DISTINCT f.order_id FROM billing_order_fulfillments f JOIN visible_revenues r
     ON (f.provider='stripe' AND f.provider_reference=r.stripe_reference) OR (f.provider='revolut' AND f.provider_reference=r.revolut_reference)
     WHERE (r.status='paid' AND r.gross_amount_minor>0) OR EXISTS(SELECT 1 FROM financial_receipts receipt WHERE receipt.revenue_id=r.id)
   ), history AS (
     SELECT 'receipt:'||receipt.id id,r.service_name title,receipt.amount_minor,receipt.currency,receipt.paid_at,'payment' date_kind,
-    r.id invoice_id,r.invoice_number,NULL order_id,r.payment_processor provider
+    r.id invoice_id,r.invoice_number,(SELECT own.order_id FROM own_linked_orders own WHERE own.revenue_id=r.id LIMIT 1) order_id,r.payment_processor provider
     FROM financial_receipts receipt JOIN visible_revenues r ON r.id=receipt.revenue_id
     UNION ALL
     SELECT 'balance:'||r.id,r.service_name,r.gross_amount_minor,r.currency,coalesce(r.payment_date,r.updated_at),
-    CASE WHEN r.payment_date IS NULL THEN 'confirmation' ELSE 'payment' END,r.id,r.invoice_number,NULL,r.payment_processor
+    CASE WHEN r.payment_date IS NULL THEN 'confirmation' ELSE 'payment' END,r.id,r.invoice_number,(SELECT own.order_id FROM own_linked_orders own WHERE own.revenue_id=r.id LIMIT 1),r.payment_processor
     FROM visible_revenues r WHERE (r.status='paid' AND r.gross_amount_minor>0) AND NOT EXISTS(SELECT 1 FROM financial_receipts receipt WHERE receipt.revenue_id=r.id)
     UNION ALL
     SELECT 'online:'||s.id,coalesce(json_extract(o.items_json,'$[0].name'),'Comandă AVYRON'),s.amount_minor,s.currency,s.updated_at,'confirmation',NULL,NULL,o.id,s.provider

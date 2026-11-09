@@ -70,3 +70,12 @@ export function safeInvoiceDownload(
     return null;
   }
 }
+
+/** Provider redirects never receive the AVYRON bearer token. */
+export function safePaymentRedirect(raw: string | null | undefined, provider: "stripe" | "revolut") {
+  let url: URL;
+  try{url=new URL(raw || "")}catch{throw Error("Procesatorul nu a returnat o adresă de plată sigură.")}
+  const allowed = provider === "stripe" ? ["checkout.stripe.com", "billing.stripe.com"] : ["checkout.revolut.com", "pay.revolut.com", "revolut.me"];
+  if (url.protocol !== "https:" || url.username || url.password || url.port || !allowed.includes(url.hostname)) throw Error("Procesatorul nu a returnat o adresă de plată sigură.");
+  return url.href;
+}

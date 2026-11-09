@@ -1,0 +1,23 @@
+export type ClientRecurringItem = {
+  id: string;
+  source: "native" | "provider" | "license";
+  name: string;
+  status: string;
+  amountMinor: number;
+  currency: string;
+  period: "monthly" | "annual";
+  startsAt: number | null;
+  nextBillingAt: number | null;
+  accessEndsAt?: number | null;
+  project: { id: string; name: string; slug: string | null; url: string | null } | null;
+  billingId: string | null;
+  paymentStatus: string | null;
+  cancelAtPeriodEnd: boolean;
+  canManage: boolean;
+  checkoutReady: boolean;
+  unavailableReason: string | null;
+  revision: number;
+  quoteHash: string | null;
+  beneficiary: string | null;
+};
+export type ClientRecurringResponse = { data: ClientRecurringItem[] };

@@ -116,6 +116,7 @@ adminOperationsRouter.patch("/api/admin/operations/subscriptions/:id", async (c)
   const current = await c.env.DB.prepare("SELECT service_id,maintenance_enabled,revision FROM subscriptions WHERE id=?").bind(id).first<{ service_id: string; maintenance_enabled:number; revision:number;
       }>();
   if (!current) return c.json({ error: { code: "not_found" } }, 404);
+  if(await c.env.DB.prepare("SELECT 1 FROM billing_recurring_agreements WHERE subscription_id=? AND closed_at IS NULL").bind(id).first())return c.json({error:{code:"provider_managed_recurring_subscription",message:"Gestionează debitarea în Stripe înainte de a modifica acest abonament."}},409);
   if(current.maintenance_enabled)return c.json({error:{code:"use_avy_core",message:"Editează acest abonament în AVY Core pentru a păstra sincronizarea planului și alocărilor."}},409);
   const status = text(body.status, 20);
   const billingCycle = text(body.billingCycle, 20);
