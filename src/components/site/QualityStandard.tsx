@@ -1,14 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import {
-  Gauge,
-  MousePointer2,
-  PenTool,
-  ScanSearch,
-  ShieldCheck,
-} from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import "./quality-standard.css";
-const icons = [ScanSearch, ShieldCheck, Gauge, MousePointer2, PenTool];
 /** A brand-standard presentation, never a fabricated Lighthouse/audit result. */
 export default function QualityStandard() {
   const { t } = useLang(),
@@ -91,7 +83,6 @@ export default function QualityStandard() {
           aria-label={t.qualityStandard.criteria}
         >
           {t.qualityStandard.items.map((item, i) => {
-            const Icon = icons[i];
             return (
               <article
                 key={i}
@@ -103,24 +94,19 @@ export default function QualityStandard() {
                   } as CSSProperties
                 }
               >
-                <div className="avy-quality-item-heading">
-                  <Icon aria-hidden="true" />
-                  <h3>{item.label}</h3>
+                <div className="avy-quality-ring" aria-hidden="true">
+                  <svg viewBox="0 0 100 100" focusable="false">
+                    <circle className="avy-quality-ring-track" cx="50" cy="50" r="43" />
+                    <circle className="avy-quality-ring-fill" cx="50" cy="50" r="43" pathLength="100" strokeDasharray="100" strokeDashoffset={100 - progress} transform="rotate(-90 50 50)" />
+                  </svg>
+                  <div className="avy-quality-number"><strong>{progress}</strong><span>/100</span></div>
                 </div>
-                <div className="avy-quality-number" aria-hidden="true">
-                  <strong>{progress}</strong>
-                  <span>/100</span>
-                </div>
+                <h3>{item.label}</h3>
                 <p className="avy-quality-item-copy">{item.description}</p>
                 <span className="sr-only">
                   {t.qualityStandard.target}: 100/100
                 </span>
-                <div className="avy-quality-track" aria-hidden="true">
-                  <i />
-                  <span />
-                  <span />
-                  <span />
-                </div>
+
               </article>
             );
           })}

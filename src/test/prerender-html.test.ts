@@ -366,10 +366,10 @@ it.skipIf(!hasBuild)('prerenders the bilingual quality presentation after benefi
  }
 });
 
-it.skipIf(!hasBuild)('prerenders the latest blog links immediately before the social section in both languages',()=>{
+it.skipIf(!hasBuild)('prerenders the free example and latest blog before discovery links and socials in both languages',()=>{
  for(const [route,base] of [['/','/blog'],['/en','/en/blog']]){
-  const html=read(route), start=html.indexOf('id="blog-avyron"'),end=html.indexOf('id="social"');
-  expect(start).toBeGreaterThan(0);expect(end).toBeGreaterThan(start);
+  const html=read(route), start=html.indexOf('id="blog-avyron"'),end=html.indexOf('id="descopera-avyron"');
+  expect(start).toBeGreaterThan(html.indexOf('id="cta"'));expect(end).toBeGreaterThan(start);expect(html.indexOf('id="social"')).toBeGreaterThan(end);
   const preview=html.slice(start,end);expect(preview).toContain(`href="${base}"`);
   expect((preview.match(/class="avy-blog-preview-slide"/g)||[]).length).toBe(6);
   expect(preview).toContain(`href="${base}/${route === '/' ? 'variante-produs-magazin-online-ux-seo' : 'ai-act-reguli-transparenta-2-august-2026'}"`);

@@ -38,6 +38,13 @@ for (const width of [320, 1440])
       });
       await expect(section).toHaveAttribute("data-quality-progress", "100");
       await expect(section.locator("article")).toHaveCount(5);
+      await expect(section.locator(".avy-quality-ring")).toHaveCount(5);
+      for (const ring of await section.locator(".avy-quality-ring").all()) {
+        const rect = await ring.boundingBox();
+        expect(rect).not.toBeNull();
+        expect(Math.abs(rect!.width - rect!.height)).toBeLessThan(1);
+        await expect(ring.locator(".avy-quality-ring-fill")).toHaveAttribute("stroke-dashoffset", "0");
+      }
       await expect(
         section.getByRole("heading", {
           name:

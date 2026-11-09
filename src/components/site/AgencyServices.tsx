@@ -1,5 +1,6 @@
 import { useId, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import "./website-chooser.css";
 import { WEBSITE_SUBSCRIPTION_PATH } from "@/shared/websiteSubscriptions";
 import {
   Box,
@@ -208,29 +209,22 @@ const AgencyServices = () => {
             </div>
 
             <Dialog open={open} onOpenChange={setOpen}>
-              <DialogContent id={panelId} onCloseAutoFocus={e=>{e.preventDefault();websiteTrigger.current?.focus();}} className="max-w-[950px] overflow-hidden border-border/70 bg-background/95 p-5 backdrop-blur-2xl">
-                <DialogHeader><DialogTitle className="pr-8 text-base">{content.choose}</DialogTitle><DialogDescription className="text-xs">{lang==='ro'?'Același standard AVYRON. Alege formula potrivită afacerii tale.':'The same AVYRON standard. Choose the right approach for your business.'}</DialogDescription></DialogHeader>
-                <div className="overflow-x-auto pb-2" aria-label={content.choose}>
-                  <div data-testid="website-choices" className="grid grid-cols-[repeat(3,minmax(220px,1fr))] gap-3">
-                    <Link to={content.featured[0].path} onClick={() => setOpen(false)} className="group flex aspect-square flex-col justify-between rounded-2xl border border-border/70 bg-card/80 p-5 transition-colors hover:border-brand/50">
-                      <span className="grid size-10 place-items-center rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-300"><Code2 size={21}/></span>
-                      <span><strong className="block font-display text-lg leading-tight">{content.classic.title}</strong><span className="mt-2 block text-xs leading-relaxed text-muted-foreground">{content.classic.text}</span></span>
-                      <span className="text-xs font-semibold text-brand">{content.classic.cta} ↗</span>
-                    </Link>
-                    <button type="button" aria-disabled="true" onClick={() => toast(content.soon, { description: content.soonToast })} className="relative flex aspect-square flex-col justify-between rounded-2xl border border-brand/25 bg-gradient-to-br from-brand/10 to-transparent p-5 text-left">
-                      <span className="absolute right-3 top-4 rounded-full border border-brand/20 bg-background/80 px-2 py-1 text-[9px] font-bold uppercase text-brand">{content.soon}</span>
-                      <span className="grid size-10 place-items-center rounded-xl bg-brand/10 text-brand"><Sparkles size={21}/></span>
-                      <span><strong className="block font-display text-lg leading-tight">{content.cinematic.title}</strong><span className="mt-2 block text-xs leading-relaxed text-muted-foreground">{content.cinematic.text}</span></span>
-                      <span className="text-xs text-muted-foreground">{content.soon}</span>
-                    </button>
-                    <Link to={WEBSITE_SUBSCRIPTION_PATH[lang]} onClick={() => setOpen(false)} className="group flex aspect-square flex-col justify-between rounded-2xl border border-lime-500/35 bg-gradient-to-br from-lime-400/10 to-transparent p-5 transition-colors hover:border-lime-500/70">
-                      <span className="grid size-10 place-items-center rounded-xl bg-lime-400/15 text-lime-700 dark:text-lime-300"><Layers size={21}/></span>
-                      <span><strong className="block font-display text-lg leading-tight">{lang==='ro'?'Website prin abonament':'Website subscription'}</strong><span className="mt-2 block text-xs leading-relaxed text-muted-foreground">{lang==='ro'?'Dezvoltare inclusă. Hosting, mentenanță și actualizări prin abonament lunar.':'Development included. Hosting, maintenance and updates through a monthly subscription.'}</span></span>
-                      <span className="text-xs font-semibold text-lime-700 dark:text-lime-300">{lang==='ro'?'Descoperă planurile':'Explore plans'} ↗</span>
-                    </Link>
-                  </div>
+              <DialogContent id={panelId} onCloseAutoFocus={e=>{e.preventDefault();websiteTrigger.current?.focus();}} className="website-chooser w-[calc(100%-1.5rem)] max-w-[720px] max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl border-border/70 bg-background/95 p-4 backdrop-blur-2xl sm:p-5">
+                <DialogHeader><DialogTitle className="pr-8 text-base">{content.choose}</DialogTitle><DialogDescription className="website-chooser-description text-xs">{lang==='ro'?'Alege formula potrivită afacerii tale.':'Choose the right approach for your business.'}</DialogDescription></DialogHeader>
+                <div data-testid="website-choices" className="website-choices" aria-label={content.choose}>
+                  <Link to={content.featured[0].path} onClick={() => setOpen(false)} className="website-choice border-border/70 bg-card/80 hover:border-brand/50">
+                    <span className="website-choice-icon bg-cyan-500/10 text-cyan-600 dark:text-cyan-300"><Code2 size={21} aria-hidden="true" /></span>
+                    <span className="website-choice-copy"><strong>{content.classic.title}</strong><span className="website-choice-description">{content.classic.text}</span><span className="website-choice-action text-brand">{content.classic.cta} ↗</span></span>
+                  </Link>
+                  <button type="button" aria-disabled="true" onClick={() => toast(content.soon, { description: content.soonToast })} className="website-choice border-brand/25 bg-gradient-to-br from-brand/10 to-transparent text-left">
+                    <span className="website-choice-icon bg-brand/10 text-brand"><Sparkles size={21} aria-hidden="true" /></span>
+                    <span className="website-choice-copy"><strong>{content.cinematic.title}</strong><span className="website-choice-description">{content.cinematic.text}</span><span className="website-choice-action text-muted-foreground">{content.soon}</span></span>
+                  </button>
+                  <Link to={WEBSITE_SUBSCRIPTION_PATH[lang]} onClick={() => setOpen(false)} className="website-choice border-lime-500/35 bg-gradient-to-br from-lime-400/10 to-transparent hover:border-lime-500/70">
+                    <span className="website-choice-icon bg-lime-400/15 text-lime-700 dark:text-lime-300"><Layers size={21} aria-hidden="true" /></span>
+                    <span className="website-choice-copy"><strong>{lang==='ro'?'Website prin abonament':'Website subscription'}</strong><span className="website-choice-description">{lang==='ro'?'Dezvoltare inclusă. Hosting și mentenanță prin abonament lunar.':'Development included. Hosting and maintenance through a monthly subscription.'}</span><span className="website-choice-action text-lime-700 dark:text-lime-300">{lang==='ro'?'Descoperă planurile':'Explore plans'} ↗</span></span>
+                  </Link>
                 </div>
-                <p className="text-[10px] text-muted-foreground sm:hidden">{lang==='ro'?'Glisează pentru toate cele trei opțiuni.':'Swipe to see all three options.'}</p>
               </DialogContent>
             </Dialog>
 

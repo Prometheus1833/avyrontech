@@ -146,21 +146,19 @@ export default function LatestBlog() {
     >
       <div className="avy-blog-preview-shell">
         <header className="avy-blog-preview-header">
-          <div>
-            <p className="avy-blog-preview-eyebrow">
+          <p className="avy-blog-preview-eyebrow">
               <BookOpen aria-hidden="true" /> Avyron Insights
             </p>
             <h2 id="avy-blog-preview-title">
               {ro
-                ? "Idei utile pentru următorul tău proiect."
-                : "Useful ideas for your next project."}
+                ? "Idei pentru proiectul tău."
+                : "Ideas for your next project."}
             </h2>
             <p className="avy-blog-preview-description">
               {ro
-                ? "Website-uri, design, SEO și tehnologie. Explicate clar, cu aplicare în afacerea ta."
-                : "Websites, design, SEO and technology. Clear insights to apply in your business."}
+                ? "Website-uri, design, SEO și tehnologie. Pe scurt, pentru afacerea ta."
+                : "Websites, design, SEO and technology. Brief insights for your business."}
             </p>
-          </div>
           <Link to={base} className="avy-blog-preview-all">
             {ro ? "Explorează blogul" : "Explore the blog"}
             <ArrowRight aria-hidden="true" />

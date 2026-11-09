@@ -1,234 +1,47 @@
-.avy-quality {
-  padding: 8px 16px 28px;
-  scroll-margin-top: 100px;
-}
+.avy-quality { padding: 8px 16px 24px; scroll-margin-top: 100px; }
 .avy-quality-shell {
-  max-width: 1120px;
-  margin: auto;
-  display: grid;
-  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.6fr);
-  gap: 16px 28px;
-  padding: 24px;
-  border: 1px solid #c4b5fd33;
-  border-radius: 24px;
-  background:
-    radial-gradient(ellipse at 6% 0%, #8b5cf61b, transparent 50%),
-    linear-gradient(120deg, #111424, #0b101b);
-  color: #f6f5fb;
-  box-shadow: 0 14px 36px #1010200a;
-  overflow: hidden;
+  max-width: 1120px; margin: auto; display: grid;
+  grid-template-columns: minmax(220px, .85fr) minmax(0, 1.5fr);
+  gap: 16px 28px; padding: 22px; border: 1px solid #c4b5fd33; border-radius: 24px;
+  background: radial-gradient(ellipse at 6% 0%, #8b5cf61b, transparent 50%), linear-gradient(120deg, #111424, #0b101b);
+  color: #f6f5fb; overflow: hidden;
 }
-.avy-quality-intro {
-  min-width: 0;
-}
-.avy-quality-eyebrow {
-  margin: 0;
-  font:
-    10px/1.4 ui-monospace,
-    monospace;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  color: #c6b5ff;
-}
-.avy-quality-intro h2 {
-  margin: 8px 0;
-  font: 600 clamp(20px, 2.1vw, 26px) / 1.15 var(--font-display, system-ui);
-  letter-spacing: -0.025em;
-}
-.avy-quality-description {
-  max-width: 42ch;
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.6;
-  color: #bec4d6;
-}
-.avy-quality-target {
-  display: inline-flex;
-  margin-top: 10px;
-  font:
-    10px/1.5 ui-monospace,
-    monospace;
-  color: #b9e5c9;
-}
-.avy-quality-indicators {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
-  align-self: center;
-}
-.avy-quality-indicator {
-  position: relative;
-  min-width: 0;
-  padding: 14px 10px 12px;
-  border: 1px solid #ffffff18;
-  border-radius: 14px 14px 4px 14px;
-  background: linear-gradient(145deg, #ffffff07, #ffffff01);
-}
-.avy-quality-item-heading {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  min-width: 0;
-}
-.avy-quality-item-heading svg {
-  width: 13px;
-  height: 13px;
-  flex-shrink: 0;
-  color: #c6b5ff;
-}
-.avy-quality-item-heading h3 {
-  margin: 0;
-  font-size: 10px;
-  font-weight: 500;
-  white-space: nowrap;
-  color: #e4e6f0;
-}
-.avy-quality-number {
-  display: flex;
-  align-items: baseline;
-  gap: 2px;
-  margin-top: 12px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-.avy-quality-number strong {
-  font-size: clamp(24px, 2.6vw, 34px);
-  line-height: 1.1;
-  letter-spacing: -0.06em;
-  font-weight: 600;
-  color: #c4f8b2;
-}
-.avy-quality-number span {
-  font:
-    10px/1.2 ui-monospace,
-    monospace;
-  color: #aeb8cc;
-}
-.avy-quality-item-copy {
-  margin: 5px 0 12px;
-  font-size: 10px;
-  color: #aeb8cc;
-  line-height: 1.35;
-}
-.avy-quality-track {
-  height: 3px;
-  position: relative;
-  background: #ffffff16;
-  overflow: hidden;
-  border-radius: 8px;
-}
-.avy-quality-track i {
-  display: block;
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, #9a83ff, #b6f292);
-  transform: scaleX(var(--quality-progress, 0));
-  transform-origin: left;
-}
-.avy-quality-track > span {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: #101622;
-  left: 25%;
-}
-.avy-quality-track > span:nth-of-type(2) {
-  left: 50%;
-}
-.avy-quality-track > span:nth-of-type(3) {
-  left: 75%;
-}
-.avy-quality-note {
-  grid-column: 1/-1;
-  margin: 0;
-  padding-top: 12px;
-  border-top: 1px solid #ffffff12;
-  font-size: 10px;
-  line-height: 1.5;
-  color: #a4aec4;
-}
+.avy-quality-intro { min-width: 0; }
+.avy-quality-eyebrow { margin: 0; font: 10px/1.4 ui-monospace, monospace; text-transform: uppercase; letter-spacing: .18em; color: #c6b5ff; }
+.avy-quality-intro h2 { margin: 7px 0; font: 600 clamp(20px, 2.1vw, 25px)/1.15 var(--font-display, system-ui); letter-spacing: -.025em; }
+.avy-quality-description { max-width: 44ch; margin: 0; font-size: 12px; line-height: 1.5; color: #bec4d6; }
+.avy-quality-target { display: inline-flex; margin-top: 8px; font: 10px/1.5 ui-monospace, monospace; color: #b9e5c9; }
+.avy-quality-indicators { min-width: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; align-self: center; }
+.avy-quality-indicator { min-width: 0; text-align: center; }
+.avy-quality-ring { width: clamp(56px, 6.5vw, 82px); aspect-ratio: 1; position: relative; margin: 0 auto 9px; border-radius: 50%; background: #b6f2920a; }
+.avy-quality-ring svg { width: 100%; height: 100%; display: block; fill: none; stroke-width: 6; }
+.avy-quality-ring-track { stroke: #c4f8b21f; }
+.avy-quality-ring-fill { stroke: #b6f292; stroke-linecap: round; }
+.avy-quality-number { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; font-variant-numeric: tabular-nums; }
+.avy-quality-number strong { font: 600 clamp(20px, 2.2vw, 28px)/1 ui-monospace, monospace; letter-spacing: -.06em; color: #c4f8b2; }
+.avy-quality-number span { margin-top: 3px; font: 9px/1 ui-monospace, monospace; color: #b2bcd0; }
+.avy-quality-indicator h3 { margin: 0; font-size: 11px; line-height: 1.3; font-weight: 500; color: #e4e6f0; }
+.avy-quality-item-copy { margin: 5px 0 0; font-size: 10px; color: #aeb8cc; line-height: 1.35; }
+.avy-quality-note { grid-column: 1/-1; margin: 0; padding-top: 10px; border-top: 1px solid #ffffff12; font-size: 10px; line-height: 1.5; color: #aeb8cc; }
 @media (max-width: 900px) {
-  .avy-quality-shell {
-    grid-template-columns: 1fr;
-    gap: 16px;
-    padding: 20px;
-  }
-  .avy-quality-description {
-    max-width: 70ch;
-  }
-  .avy-quality-indicator {
-    padding: 12px;
-  }
-  .avy-quality-item-heading h3 {
-    font-size: 11px;
-  }
+  .avy-quality-shell { grid-template-columns: 1fr; gap: 14px; padding: 18px; }
+  .avy-quality-description { max-width: 70ch; }
+  .avy-quality-ring { width: 66px; }
 }
 @media (max-width: 540px) {
-  .avy-quality-shell {
-    padding: 16px;
-    border-radius: 20px;
-    gap: 12px;
-  }
-  .avy-quality-intro h2 {
-    font-size: 21px;
-  }
-  .avy-quality-description {
-    font-size: 12px;
-  }
-  .avy-quality-indicators {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 5px;
-  }
-  .avy-quality-indicator {
-    grid-column: span 2;
-    padding: 8px 6px;
-    border-radius: 12px 12px 3px 12px;
-  }
-  .avy-quality-indicator:nth-child(4) {
-    grid-column: 2 / span 2;
-  }
-  .avy-quality-indicator:nth-child(5) {
-    grid-column: 4 / span 2;
-  }
-  .avy-quality-item-heading {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 3px;
-  }
-  .avy-quality-item-heading h3 {
-    font-size: 10px;
-  }
-  .avy-quality-item-heading svg {
-    width: 12px;
-    height: 12px;
-  }
-  .avy-quality-number {
-    margin-top: 7px;
-    gap: 1px;
-  }
-  .avy-quality-number strong {
-    font-size: 26px;
-  }
-  .avy-quality-number span {
-    font-size: 8px;
-  }
-  .avy-quality-item-copy {
-    display: none;
-  }
-  .avy-quality-track {
-    height: 3px;
-    margin-top: 7px;
-  }
-  .avy-quality-note {
-    padding-top: 8px;
-    font-size: 10px;
-  }
+  .avy-quality-shell { padding: 14px; border-radius: 20px; gap: 12px; }
+  .avy-quality-intro h2 { font-size: 20px; }
+  .avy-quality-indicators { gap: 5px; }
+  .avy-quality-ring { width: 52px; margin-bottom: 7px; }
+  .avy-quality-number strong { font-size: 20px; }
+  .avy-quality-indicator h3 { font-size: 10px; letter-spacing: -.025em; }
+  .avy-quality-item-copy { display: none; }
+  .avy-quality-note { padding-top: 8px; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .avy-quality * {
-    animation: none !important;
-    transition: none !important;
-  }
+@media (max-width: 380px) {
+  .avy-quality-indicators { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px 6px; }
+  .avy-quality-indicator { grid-column: span 2; }
+  .avy-quality-indicator:nth-child(4) { grid-column: 2 / span 2; }
+  .avy-quality-indicator:nth-child(5) { grid-column: 4 / span 2; }
 }
+@media (prefers-reduced-motion: reduce) { .avy-quality * { animation: none !important; transition: none !important; } }
