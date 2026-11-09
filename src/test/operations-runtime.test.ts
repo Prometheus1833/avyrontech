@@ -245,6 +245,62 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
   const input=model.mock.calls[0] as unknown as [string,{messages:{content:string}[]}];
   expect(input[1].messages[0].content).toContain('1.450 RON');expect(input[1].messages[0].content).not.toContain('300 euro');
  });
+ it.each(['Cât costă un proiect?', 'Cat costa un proiect pentru afacerea mea?', 'Care este prețul unui proiect?', 'How much does a project cost?'])('clarifies project pricing without quoting a cheap digital product: %s',async message=>{
+  chatSeed();const model=vi.fn();env.AI={run:model} as unknown as Ai;
+  const response=await chat(message,{language:message.startsWith('How')?'en':'ro'});expect(response.status).toBe(200);
+  const body=await response.json() as {reply:string;answerSource:string;sources:{id:string}[]};
+  expect(body.answerSource).toBe('conversation');expect(body.reply).not.toMatch(/50|calculator|24 (?:ore|hours)/i);expect(body.reply).toMatch(/site de prezentare|business website/);expect(body.sources.some(source=>source.id.startsWith('product:'))).toBe(false);expect(model).not.toHaveBeenCalled();
+ });
+ it('keeps the actual 50 RON calculator product discoverable when it is explicitly requested',async()=>{
+  chatSeed();const response=await chat('Cât costă Calculator de cost pentru proiect?');expect(response.status).toBe(200);
+  const body=await response.json() as {reply:string;sources:{id:string}[]};expect(body.reply).toContain('50 RON');expect(body.reply).toContain('Calculator de cost pentru proiect');expect(body.sources[0].id).toBe('product:calculator-cost-proiect');
+ });
+ it('keeps price clarification useful when the LLM quota is exhausted',async()=>{
+  chatSeed();db.exec('UPDATE financial_provider_quotas SET quota_used=quota_total');const model=vi.fn();env.AI={run:model} as unknown as Ai;
+  const response=await chat('Cât costă un proiect?');expect(response.status).toBe(200);expect((await response.json()).reply).toContain('Sigur, te ajut');expect(model).not.toHaveBeenCalled();
+ });
+ it('uses an established service in follow-ups and lets a new explicit service override it and the page',async()=>{
+  chatSeed();const first=await (await chat('Cât costă un proiect?')).json();
+  const next=await (await chat('Un site de prezentare pentru un salon cu programări online',{conversationId:first.conversationId})).json();expect(next.reply).toContain('1.450 RON');expect(next.reply).not.toMatch(/\b50\s+RON/);expect(next.sources[0].id).toBe('service:premium-website');
+  const continued=await (await chat('Și cât costă?',{conversationId:first.conversationId})).json();expect(continued.reply).toContain('1.450 RON');
+  const switched=await (await chat('Cât costă un magazin online?',{conversationId:first.conversationId,page:'/servicii/website-prin-abonament'})).json();expect(switched.reply).toContain('5.250 RON');expect(switched.reply).not.toContain('1.450 RON');expect(switched.sources[0].id).toBe('service:online-store');
+ });
+ it('does not use a previous cheap product as the price of a newly requested website',async()=>{
+  chatSeed();const first=await (await chat('Cât costă Calculator de cost pentru proiect?')).json();
+  const next=await (await chat('Cât costă un site de prezentare?',{conversationId:first.conversationId})).json();expect(next.reply).toContain('1.450 RON');expect(next.reply).not.toMatch(/\b50\s+RON/);expect(next.sources.every((source:{id:string})=>!source.id.startsWith('product:'))).toBe(true);
+ });
+ it('clarifies a generic project after a calculator discussion even on the product page',async()=>{
+  chatSeed();const first=await (await chat('Cât costă Calculator de cost pentru proiect?')).json();
+  const next=await (await chat('Cât costă un proiect?',{conversationId:first.conversationId,page:'/produse/unelte/calculator-cost-proiect'})).json();expect(next.answerSource).toBe('conversation');expect(next.reply).not.toMatch(/\b50\s+RON/);expect(next.sources.every((source:{id:string})=>!source.id.startsWith('product:'))).toBe(true);
+ });
+ it('resolves a generic price from the actual public service page without mixing all web services',async()=>{
+  chatSeed();const response=await chat('Cât costă?',{page:'/servicii/aplicatii-si-platforme'});const body=await response.json();expect(body.reply).toContain('7.900 RON');expect(body.reply).not.toContain('1.450 RON');expect(body.sources[0].id).toBe('service:apps');
+ });
+ const servicePrice=(price:number|null,model='starting_at',cycle='one_time',currency='RON',active=1)=>db.prepare("INSERT INTO commercial_catalog_codes(id,entity_type,entity_key,display_name,category,base_price_minor,currency,price_model,billing_cycle,active,created_at,updated_at) VALUES('current-site','service','premium-website','Site Prezentare Profesional','presence',?,?,?,?,?,1,1)").run(price,currency,model,cycle,active);
+ it('reads current D1 prices, currency and billing period instead of bundled defaults',async()=>{
+  chatSeed();servicePrice(230000,'fixed','monthly','EUR');const body=await (await chat('Cât costă un site?')).json();expect(body.reply).toContain('2.300 EUR / lună');expect(body.reply).not.toContain('1.450');
+  db.exec("UPDATE commercial_catalog_codes SET base_price_minor=260000 WHERE id='current-site'");expect((await (await chat('Cât costă un site?')).json()).reply).toContain('2.600 EUR / lună');
+ });
+ it.each([[null,'quote'],[145000,'quote'],[145000,'unreviewed']])('never restores a stale bundled price when D1 requires a quote: %s / %s',async(price,model)=>{
+  chatSeed();servicePrice(price as number|null,model as string);const body=await (await chat('Cât costă un site?')).json();expect(body.reply).toContain('ofertă personalizată');expect(body.reply).not.toContain('1.450');
+ });
+ it('does not quote inactive services',async()=>{
+  chatSeed();servicePrice(145000,'starting_at','one_time','RON',0);const body=await (await chat('Cât costă un site?')).json();expect(body.reply).not.toContain('1.450');expect(body.sources.some((source:{id:string})=>source.id==='service:premium-website')).toBe(false);
+ });
+ it('does not expose private accounting labels or unlisted service identities to the public model',async()=>{
+  chatSeed();servicePrice(175000);db.exec("UPDATE commercial_catalog_codes SET display_name='Private Client Name' WHERE id='current-site'");
+  const site=await (await chat('Cât costă un site?')).json();expect(site.reply).toContain('1.750 RON');expect(site.reply).not.toContain('Private Client Name');
+  db.exec("INSERT INTO commercial_catalog_codes(id,entity_type,entity_key,display_name,category,base_price_minor,currency,price_model,billing_cycle,active,created_at,updated_at) VALUES('private-code','service','private-special','Private Secret Service','internal',123400,'RON','fixed','one_time',1,1,1)");
+  expect((await retrievePublicSources(env.DB,'ro','Private Secret Service')).some(match=>match.entry.id==='service:private-special')).toBe(false);
+ });
+ it('rejects invented model prices while preserving charged usage and a failed model step',async()=>{
+  chatSeed();const model=vi.fn(async()=>({response:'Îți realizăm site-ul complet pentru 50 de lei.'}));env.AI={run:model} as unknown as Ai;
+  const body=await (await chat('Cum ai aborda un site pentru un salon?')).json();expect(model).toHaveBeenCalledOnce();expect(body.reply).not.toContain('50 de lei');expect(body.answerSource).not.toBe('model');expect(db.prepare("SELECT status,output_json FROM ai_run_steps WHERE kind='model'").get()).toMatchObject({status:'failed',output_json:expect.stringContaining('"rejectedPrice":true')});expect(Number(db.prepare('SELECT output_tokens FROM ai_runs').get()!.output_tokens)).toBeGreaterThan(0);
+ });
+ it('preserves useful grounded model advice and uses only the current service facts in its prompt',async()=>{
+  chatSeed();const model=vi.fn(async()=>({response:'Pentru salonul tău, aș începe cu o prezentare clară a tratamentelor și un flux de programări. Reperul de pornire este 1.450 lei; oferta finală depinde de funcțiile agreate.'}));env.AI={run:model} as unknown as Ai;
+  const body=await (await chat('Cum ai aborda un site pentru un salon?')).json();expect(body.answerSource).toBe('model');expect(body.reply).toContain('programări');expect(model).toHaveBeenCalledOnce();
+ });
  it('discovers published products from D1 for a broad catalogue question',async()=>{
   const found=await retrievePublicSources(env.DB,'ro','Ce produse aveți?');
   expect(found.find((item)=>item.entry.id==='product:catalog')?.entry.answer).toContain('produse sunt publicate acum');
