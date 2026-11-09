@@ -1,3 +1,4 @@
+import type { SiteStageKey } from "@/shared/skills/siteStages";
 import { cfAuth } from "./cfAuth";
 import type {
   SkillSlug,
@@ -7,11 +8,21 @@ import type {
 } from "@/shared/skills/model";
 const root = (s: SkillSlug) => `/api/skills/${s}`;
 export const skillsApi = {
-  detail: (s: SkillSlug, signal?: AbortSignal, offset = 0, query = "") =>
+  detail: (
+    s: SkillSlug,
+    signal?: AbortSignal,
+    offset = 0,
+    query = "",
+    stage?: SiteStageKey,
+  ) =>
     cfAuth.request<SkillDetail>(
       root(s) +
         "?" +
-        new URLSearchParams({ resourceOffset: String(offset), q: query }),
+        new URLSearchParams({
+          resourceOffset: String(offset),
+          q: query,
+          ...(stage ? { stage } : {}),
+        }),
       { signal },
     ),
   runs: (s: SkillSlug, signal?: AbortSignal, offset = 0) =>
@@ -29,12 +40,16 @@ export const skillsApi = {
     brief: SkillBrief,
     mode: "template" | "ai" | "image",
     key: string,
-    options?:{freeOnly:boolean},
+    options?: { freeOnly: boolean },
   ) =>
     cfAuth.request<{ id: string; status: string }>(root(s) + "/runs", {
       method: "POST",
       headers: { "Idempotency-Key": key },
-      body: JSON.stringify({ brief, mode,...(options?.freeOnly?{freeOnly:true}:{}) }),
+      body: JSON.stringify({
+        brief,
+        mode,
+        ...(options?.freeOnly ? { freeOnly: true } : {}),
+      }),
     }),
   version: (
     s: SkillSlug,
@@ -61,7 +76,13 @@ export const skillsApi = {
     }),
   resource: (
     s: SkillSlug,
-    data: { title: string; domain: string; body: string; sourceUrl: string },
+    data: {
+      title: string;
+      domain: string;
+      body: string;
+      sourceUrl: string;
+      stageKey?: SiteStageKey | null;
+    },
   ) =>
     cfAuth.request<{ id: string }>(root(s) + "/resources", {
       method: "POST",
@@ -90,7 +111,13 @@ export const skillsApi = {
     s: SkillSlug,
     id: string,
     revision: number,
-    data: { title: string; domain: string; body: string; sourceUrl: string },
+    data: {
+      title: string;
+      domain: string;
+      body: string;
+      sourceUrl: string;
+      stageKey?: SiteStageKey | null;
+    },
   ) =>
     cfAuth.request(root(s) + "/resources/" + encodeURIComponent(id), {
       method: "PATCH",

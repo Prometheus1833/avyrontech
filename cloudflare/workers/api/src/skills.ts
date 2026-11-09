@@ -1,7 +1,8 @@
-import {idempotencyBrief} from "../../../../src/shared/skills/model";
-import {creativeQualityContext} from "../../../../src/shared/skills/creative";
-import {siteBuilderRoutes} from "./siteKnowledge";
-import {siteQualityContext} from "../../../../src/shared/skills/siteKnowledge";
+import { siteStageKeySchema } from "../../../../src/shared/skills/siteStages";
+import { idempotencyBrief } from "../../../../src/shared/skills/model";
+import { creativeQualityContext } from "../../../../src/shared/skills/creative";
+import { siteBuilderRoutes } from "./siteKnowledge";
+import { siteQualityContext } from "../../../../src/shared/skills/siteKnowledge";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import type { AppBindings } from "./types";
@@ -119,7 +120,7 @@ skillsRouter.use(root + "*", async (c, next) => {
     if (!r.ok) return fail(c, "rate_limited", 429);
     await next();
   } catch (e) {
-    if (/no such table/.test(String(e)))
+    if (/no such table|no such column: (?:\w+\.)?stage_key/.test(String(e)))
       return fail(
         c,
         "skills_not_migrated",
@@ -156,7 +157,14 @@ skillsRouter.get(root + "/:slug/context", async (c) => {
     version: s.published_version,
     paused: !!s.paused,
     instructions: v?.instructions,
-    references: [s.slug === "site-builder" ? siteQualityContext((c.req.query("domain")||"general").slice(0,80)) : creativeQualityContext(s.slug),referenceMarkdown(references)].filter(Boolean).join("\n\n"),
+    references: [
+      s.slug === "site-builder"
+        ? siteQualityContext((c.req.query("domain") || "general").slice(0, 80))
+        : creativeQualityContext(s.slug),
+      referenceMarkdown(references),
+    ]
+      .filter(Boolean)
+      .join("\n\n"),
     resources: references.map((r) => ({
       id: r.id,
       title: r.title,
@@ -237,12 +245,31 @@ skillsRouter.get(root + "/:slug", async (c) => {
     0,
     Math.min(1000000, Number(c.req.query("resourceOffset")) || 0),
   );
+  const stageQuery = c.req.query("stage");
+  const stageFilter = stageQuery
+    ? siteStageKeySchema.safeParse(stageQuery)
+    : null;
+  if (stageQuery && (s.slug !== "site-builder" || !stageFilter?.success))
+    return fail(c, "invalid_stage");
   const resourceSearch = `%${(c.req.query("q") || "").trim().slice(0, 100)}%`;
-  const resourceWhere = `skill_slug=? AND status!='archived' ${p.manage || p.approve ? "" : "AND status='approved'"} AND (title LIKE ? OR body LIKE ? OR domain LIKE ?)`;
-  const resourceArgs = [s.slug, resourceSearch, resourceSearch, resourceSearch];
-  const [resources, stats, models, resourceCount, resourceDomains] = await Promise.all([
+  const resourceWhere = `skill_slug=? AND status!='archived' ${p.manage || p.approve ? "" : "AND status='approved'"} AND (title LIKE ? OR body LIKE ? OR domain LIKE ?) ${stageFilter?.success ? "AND stage_key=?" : ""}`;
+  const resourceArgs = [
+    s.slug,
+    resourceSearch,
+    resourceSearch,
+    resourceSearch,
+    ...(stageFilter?.success ? [stageFilter.data] : []),
+  ];
+  const [
+    resources,
+    stats,
+    models,
+    resourceCount,
+    resourceDomains,
+    resourceStages,
+  ] = await Promise.all([
     c.env.DB.prepare(
-      `SELECT id,skill_slug,title,domain,body,source_url,status,revision,file_name,content_type,size_bytes,created_at,(backup_key IS NOT NULL) backup_protected FROM avy_skill_resources WHERE ${resourceWhere} ORDER BY created_at DESC,id LIMIT 20 OFFSET ?`,
+      `SELECT id,skill_slug,title,domain,body,source_url,stage_key,status,revision,file_name,content_type,size_bytes,created_at,(backup_key IS NOT NULL) backup_protected FROM avy_skill_resources WHERE ${resourceWhere} ORDER BY created_at DESC,id LIMIT 20 OFFSET ?`,
     )
       .bind(...resourceArgs, resourceOffset)
       .all(),
@@ -259,11 +286,21 @@ skillsRouter.get(root + "/:slug", async (c) => {
     )
       .bind(...resourceArgs)
       .first<{ total: number }>(),
-    c.env.DB.prepare(`SELECT domain,count(*) total,SUM(status='approved') approved FROM avy_skill_resources WHERE skill_slug=? AND status!='archived' ${p.manage || p.approve ? "" : "AND status='approved'"} GROUP BY domain ORDER BY domain`).bind(s.slug).all(),
+    c.env.DB.prepare(
+      `SELECT domain,count(*) total,SUM(status='approved') approved FROM avy_skill_resources WHERE skill_slug=? AND status!='archived' ${p.manage || p.approve ? "" : "AND status='approved'"} GROUP BY domain ORDER BY domain`,
+    )
+      .bind(s.slug)
+      .all(),
+    c.env.DB.prepare(
+      `SELECT stage_key,count(*) total,SUM(status='approved') approved FROM avy_skill_resources WHERE skill_slug=? AND stage_key IS NOT NULL AND status!='archived' ${p.manage || p.approve ? "" : "AND status='approved'"} GROUP BY stage_key`,
+    )
+      .bind(s.slug)
+      .all(),
   ]);
   return c.json({
     ...s,
-    resourceDomains:resourceDomains.results,
+    resourceStages: resourceStages.results,
+    resourceDomains: resourceDomains.results,
     permissions: p,
     resources: resources.results,
     resourceTotal: resourceCount?.total || 0,
@@ -384,7 +421,13 @@ skillsRouter.post(root + "/:slug/runs", async (c) => {
     return fail(c, "idempotency_key_required");
   if (!(await skillBriefAccess(c.env, c.get("userId"), parsed.data.brief)))
     return fail(c, "context_not_authorized", 403);
-  const hash = await sha256(JSON.stringify({ slug: s.slug, ...parsed.data, brief:idempotencyBrief(parsed.data.brief) }));
+  const hash = await sha256(
+    JSON.stringify({
+      slug: s.slug,
+      ...parsed.data,
+      brief: idempotencyBrief(parsed.data.brief),
+    }),
+  );
   const previous = () =>
     c.env.DB.prepare(
       "SELECT id,request_hash,status FROM avy_skill_runs WHERE created_by=? AND idempotency_key=?",
@@ -619,11 +662,13 @@ skillsRouter.post(root + "/:slug/resources", async (c) => {
   const b = resourceSchema.safeParse(await json(c));
   if (!b.success || !(await skill(c, c.req.param("slug") || "")))
     return fail(c, "invalid_resource");
+  if (b.data.stageKey && c.req.param("slug") !== "site-builder")
+    return fail(c, "invalid_stage");
   const id = crypto.randomUUID();
   try {
     await c.env.DB.batch([
       c.env.DB.prepare(
-        "INSERT INTO avy_skill_resources(id,skill_slug,title,domain,body,source_url,created_by,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO avy_skill_resources(id,skill_slug,title,domain,body,source_url,stage_key,created_by,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
       ).bind(
         id,
         c.req.param("slug") || "",
@@ -631,6 +676,7 @@ skillsRouter.post(root + "/:slug/resources", async (c) => {
         b.data.domain,
         b.data.body,
         b.data.sourceUrl,
+        b.data.stageKey ?? null,
         c.get("userId"),
         Date.now(),
         Date.now(),
@@ -700,6 +746,8 @@ skillsRouter.patch(root + "/:slug/resources/:id", async (c) => {
     .strict()
     .safeParse(await json(c));
   if (!b.success) return fail(c, "invalid_resource");
+  if (b.data.stageKey && c.req.param("slug") !== "site-builder")
+    return fail(c, "invalid_stage");
   const current = await c.env.DB.prepare(
     "SELECT status FROM avy_skill_resources WHERE id=? AND skill_slug=?",
   )
@@ -710,12 +758,14 @@ skillsRouter.patch(root + "/:slug/resources/:id", async (c) => {
   try {
     await c.env.DB.batch([
       c.env.DB.prepare(
-        "UPDATE avy_skill_resources SET title=?,domain=?,body=?,source_url=?,status='draft',approved_by=NULL,revision=CASE WHEN revision=? AND status!='archived' THEN revision+1 ELSE NULL END,updated_at=? WHERE id=? AND skill_slug=?",
+        "UPDATE avy_skill_resources SET title=?,domain=?,body=?,source_url=?,stage_key=CASE WHEN ? THEN ? ELSE stage_key END,status='draft',approved_by=NULL,revision=CASE WHEN revision=? AND status!='archived' THEN revision+1 ELSE NULL END,updated_at=? WHERE id=? AND skill_slug=?",
       ).bind(
         b.data.title,
         b.data.domain,
         b.data.body,
         b.data.sourceUrl,
+        b.data.stageKey !== undefined ? 1 : 0,
+        b.data.stageKey ?? null,
         b.data.revision,
         Date.now(),
         c.req.param("id"),

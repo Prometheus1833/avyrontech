@@ -26,6 +26,8 @@ Acestea sunt instrucțiunile de pornire, fără date private. Pentru versiunea c
 
 ## Reutilizare și handoff
 
+Workflowul de dezvoltare este organizat în **Etape**, lângă Monitorizare: Exemplu Vizual → Rafinare → Integrări Suplimentare → Funcții Speciale → Domeniu/DNS/Build → Securitate → CRM/Funcții → Lansare. Citește numai etapa necesară prin `GET /api/skills/site-builder/stages/ETAPA.md`, unde ETAPA este `visual`, `refinement`, `integrations`, `special-features`, `domain-build`, `security`, `crm` sau `launch`. Exportul include numai resurse aprobate, ID/revizie și continuare explicită dacă sunt peste 20; revalidează accesul la fiecare pagină și fișier. `409 stage_review_required` înseamnă că instrucțiunile necesită aprobare, nu că trebuie inventate sau aprobate de agent. Nu trata workflowul ca autorizare de publicare, DNS, operații financiare sau modificări în alte proiecte.
+
 Pentru eficiență de comunicare, citește [contractul comun](../../../docs/site-builder/COMMON.md), apoi numai profilul și resursele necesare. Catalogul verificabil este la `GET /api/skills/site-builder/knowledge`; include proveniența, diferența dintre portofoliu/mockup și demo/integrare, plus sursele analizei de piață. Detaliile editoriale și limitele cercetării sunt în [RESEARCH.md](../../../docs/site-builder/RESEARCH.md).
 
 Pentru mediul țintă, exportă documentul curent de la `GET /api/skills/site-builder/agents/codex.md?domain=DOMENIU`, `claude.md` sau `lovable.md`. Același contract de calitate, instrucțiunile aprobate și referințele selectate sunt livrate cu versiune și checksum. Nu citi toate nișele și toate fișierele la fiecare solicitare. Exportul Lovable pregătește un handoff; nu autorizează agentul, consumul creditelor sau modificarea repository-ului.
