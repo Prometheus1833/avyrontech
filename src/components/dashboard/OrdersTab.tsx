@@ -10,7 +10,7 @@ type Order = { id: string; items_json: string; total_cents: number; currency: st
 const money = (minor: number, currency: string) => new Intl.NumberFormat("ro-RO", { style: "currency", currency }).format(minor / 100);
 const statusLabel: Record<string, string> = { requested: "Înregistrată", quoted: "Ofertată", accepted: "Plată inițiată", paid: "Plătită", cancelled: "Anulată" };
 
-export function OrdersTab() {
+export function OrdersTab({embedded=false,pendingOnly=false,loadAccount=billingApi.account}:{embedded?:boolean;pendingOnly?:boolean;loadAccount?:(force?:boolean)=>Promise<BillingAccount>}) {
   const returnParams = typeof window === "undefined" ? null : new URLSearchParams(window.location.search);
   const paymentReturn = returnParams?.get("plata");
   const returnedOrderId = returnParams?.get("order");
@@ -19,19 +19,20 @@ export function OrdersTab() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState("");
   const [saveCard, setSaveCard] = useState(false);
-  const load = useCallback(async () => {
-    setLoading(true);
+  const [loadError,setLoadError]=useState("");
+  const load = useCallback(async (force=false) => {
+    setLoading(true);setLoadError("");
     try {
       const [history, account] = await Promise.all([
         cfAuth.request<{ data: Order[] }>("/api/commerce/orders"),
-        billingApi.account().then((value) => value.providers ? value : null).catch(() => null),
+        loadAccount(force).then((value) => value.providers ? value : null).catch(() => null),
       ]);
-      setOrders(history.data ?? []);
+      setOrders((history.data ?? []).filter(order=>!pendingOnly||!["paid","cancelled"].includes(order.status)||returnedOrderId===order.id));
       setBilling(account);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Istoricul nu poate fi încărcat.");
+    } catch {
+      setOrders([]);setLoadError("Comenzile nu pot fi încărcate. Reîncearcă.");
     } finally { setLoading(false); }
-  }, []);
+  }, [pendingOnly,returnedOrderId,loadAccount]);
   useEffect(() => { void load(); }, [load]);
 
   const pay = async (orderId: string, provider: "stripe" | "revolut", recurring: boolean) => {
@@ -46,10 +47,11 @@ export function OrdersTab() {
     }
   };
 
+  if(pendingOnly&&!loading&&!loadError&&!orders.length)return null;
   return <div className="space-y-5">
     <header className="flex flex-wrap items-end justify-between gap-3 rounded-2xl border border-white/10 bg-gradient-to-br from-violet-500/10 via-[#10162a] to-cyan-500/5 p-5">
-      <div><p className="text-xs font-semibold uppercase tracking-[.2em] text-violet-300">Contul meu</p><h1 className="mt-2 font-display text-2xl font-bold">Istoric și plăți</h1><p className="mt-1 text-sm text-slate-400">Comenzile sunt separate de abonamentele active. Starea plății se actualizează după confirmarea procesatorului.</p></div>
-      <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}><RefreshCw className="mr-2 size-4" /> Actualizează</Button>
+      <div><p className="text-xs font-semibold uppercase tracking-[.2em] text-violet-300">Contul meu</p>{embedded?<h2 className="mt-1 text-base font-semibold">{returnedOrderId?"Detalii comandă":"Comenzi în așteptare"}</h2>:<h1 className="mt-2 font-display text-2xl font-bold">Istoric și plăți</h1>}<p className="mt-1 text-sm text-slate-400">Comenzile sunt separate de abonamentele active. Starea plății se actualizează după confirmarea procesatorului.</p></div>
+      <Button variant="outline" size="sm" onClick={() => void load(true)} disabled={loading}><RefreshCw className="mr-2 size-4" /> Actualizează</Button>
     </header>
     {returnedOrderId && paymentReturn === "verificare" && <div role="status" className="rounded-2xl border border-violet-400/25 bg-violet-500/10 p-4 text-sm text-violet-100">
       {orders.some((order) => order.id === returnedOrderId && order.status === "paid")
@@ -57,7 +59,7 @@ export function OrdersTab() {
         : "Ai revenit de la Stripe. Verificăm confirmarea plății prin webhook; folosește «Actualizează» dacă starea comenzii nu se schimbă imediat."}
     </div>}
     {returnedOrderId && paymentReturn === "anulata" && <div role="status" className="rounded-2xl border border-amber-400/25 bg-amber-500/10 p-4 text-sm text-amber-100">Ai revenit de la pagina de plată fără o confirmare. Verifică starea comenzii înainte să reîncerci.</div>}
-    {loading ? <div className="rounded-2xl border border-white/10 p-8 text-sm text-slate-400">Se încarcă istoricul…</div> : orders.length === 0 ? <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center"><p className="font-medium">Nu ai comenzi încă.</p><a href="/profil?tab=cart" className="mt-3 inline-flex items-center gap-1 text-sm text-violet-300">Explorează coșul <ArrowRight className="size-4" /></a></div> : (
+    {loadError ? <p role="alert" className="rounded-xl border border-amber-400/30 p-3 text-sm text-amber-200">{loadError}</p> : loading ? <div className="rounded-2xl border border-white/10 p-8 text-sm text-slate-400">Se încarcă istoricul…</div> : orders.length === 0 ? <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center"><p className="font-medium">Nu ai comenzi încă.</p><a href="/profil?tab=cart" className="mt-3 inline-flex items-center gap-1 text-sm text-violet-300">Explorează coșul <ArrowRight className="size-4" /></a></div> : (
       <div className="space-y-3">{orders.map((order) => {
         let lines: OrderLine[] = [];
         try { const parsed = JSON.parse(order.items_json) as OrderLine[]; if (Array.isArray(parsed)) lines = parsed; } catch { /* date istorice */ }

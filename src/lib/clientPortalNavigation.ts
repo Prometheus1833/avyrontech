@@ -9,6 +9,7 @@ export function clientSectionDestination(
     };
   if (section === "intern")
     return { section: "tickets", params: { supportView: "messages" } };
+  if(section==="orders")return {section:"payments",params:{}};
   if (section === "invoices")
     return { section: "payments", params: { billingView: "invoices" } };
   return null;

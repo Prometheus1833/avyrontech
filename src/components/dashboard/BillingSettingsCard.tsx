@@ -44,8 +44,10 @@ const methodName = (method: BillingPaymentMethod) =>
 
 export default function BillingSettingsCard({
   embedded = false,
+  loadAccount = billingApi.account,
 }: {
   embedded?: boolean;
+  loadAccount?: (force?: boolean) => Promise<BillingAccount>;
 }) {
   const { user } = useAuth(),
     userId = user?.id;
@@ -57,6 +59,8 @@ export default function BillingSettingsCard({
   const [refreshing, setRefreshing] = useState(false);
   const [syncWarning, setSyncWarning] = useState(false);
   const [saving, setSaving] = useState(false);
+  const redirecting = useRef(false);
+  const [redirectAction, setRedirectAction] = useState("");
   const [form, setForm] = useState({
     entityType: "individual",
     legalName: "",
@@ -69,28 +73,31 @@ export default function BillingSettingsCard({
     defaultProvider: "stripe",
   });
 
-  const load = useCallback(async () => {
-    if (!userId) return;
-    const data = await billingApi.account();
-    setAccount(data);
-    providers.current = {
-      stripe: data.providers.stripe.enabled,
-      revolut: data.providers.revolut.enabled,
-    };
-    setMethods(data.methods || []);
-    if (data.profile)
-      setForm({
-        entityType: data.profile.entity_type || "individual",
-        legalName: data.profile.legal_name || "",
-        taxId: data.profile.tax_id || "",
-        invoiceEmail: data.profile.invoice_email || "",
-        address: data.profile.address || "",
-        city: data.profile.city || "",
-        county: data.profile.county || "",
-        automaticCharging: Boolean(data.profile.automatic_charging),
-        defaultProvider: data.profile.default_provider || "stripe",
-      });
-  }, [userId]);
+  const load = useCallback(
+    async (force = false) => {
+      if (!userId) return;
+      const data = await loadAccount(force);
+      setAccount(data);
+      providers.current = {
+        stripe: data.providers.stripe.enabled,
+        revolut: data.providers.revolut.enabled,
+      };
+      setMethods(data.methods || []);
+      if (data.profile)
+        setForm({
+          entityType: data.profile.entity_type || "individual",
+          legalName: data.profile.legal_name || "",
+          taxId: data.profile.tax_id || "",
+          invoiceEmail: data.profile.invoice_email || "",
+          address: data.profile.address || "",
+          city: data.profile.city || "",
+          county: data.profile.county || "",
+          automaticCharging: Boolean(data.profile.automatic_charging),
+          defaultProvider: data.profile.default_provider || "stripe",
+        });
+    },
+    [userId, loadAccount],
+  );
 
   const refreshMethods = useCallback(async () => {
     setRefreshing(true);
@@ -135,14 +142,27 @@ export default function BillingSettingsCard({
   }, [load, refreshMethods]);
 
   const redirect = async (action: "setup" | "portal") => {
+    if (redirecting.current) return;
+    redirecting.current = true;
+    setRedirectAction(action);
     try {
       const result =
         action === "setup"
           ? await billingApi.setupMethod("stripe")
           : await billingApi.portal();
-      if (result.url) window.location.assign(result.url);
-      else toast.error("Procesatorul nu a returnat o adresă sigură.");
+      const target = new URL(result.url || "");
+      if (
+        target.protocol !== "https:" ||
+        target.username ||
+        target.password ||
+        target.port ||
+        !["checkout.stripe.com", "billing.stripe.com"].includes(target.hostname)
+      )
+        throw Error("Procesatorul nu a returnat o adresă sigură.");
+      window.location.assign(target.href);
     } catch (error) {
+      redirecting.current = false;
+      setRedirectAction("");
       toast.error(
         error instanceof Error
           ? error.message
@@ -156,7 +176,7 @@ export default function BillingSettingsCard({
     try {
       await billingApi.saveProfile({ ...form, countryCode: "RO" });
       toast.success("Datele de facturare au fost salvate.");
-      await load();
+      await load(true);
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -215,36 +235,38 @@ export default function BillingSettingsCard({
       <Card>
         <CardHeader className="p-4">
           <CardTitle className="flex items-center gap-2 text-base">
-            <CreditCard className="size-4" /> Metode salvate
+            <CreditCard className="size-4" /> Cardul tău pentru plăți
           </CardTitle>
           <CardDescription>
-            O metodă apare aici după confirmarea procesatorului. Cardurile
-            pentru abonamente se salvează în fluxul de activare recurentă.
+            Adaugă sau actualizează cardul prin formularul securizat Stripe.
+            Salvarea cardului nu inițiază o plată.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 p-4 pt-0">
-          <div className="flex flex-wrap gap-2">
-            <Badge
-              variant={
-                account?.providers.stripe.enabled ? "default" : "secondary"
-              }
-            >
-              Stripe ·{" "}
-              {account?.providers.stripe.enabled
-                ? "disponibil"
-                : "în configurare"}
-            </Badge>
-            <Badge
-              variant={
-                account?.providers.revolut.enabled ? "default" : "secondary"
-              }
-            >
-              Revolut Pay ·{" "}
-              {account?.providers.revolut.enabled
-                ? "disponibil"
-                : "în configurare"}
-            </Badge>
-          </div>
+          {!embedded && (
+            <div className="flex flex-wrap gap-2">
+              <Badge
+                variant={
+                  account?.providers.stripe.enabled ? "default" : "secondary"
+                }
+              >
+                Stripe ·{" "}
+                {account?.providers.stripe.enabled
+                  ? "disponibil"
+                  : "în configurare"}
+              </Badge>
+              <Badge
+                variant={
+                  account?.providers.revolut.enabled ? "default" : "secondary"
+                }
+              >
+                Revolut Pay ·{" "}
+                {account?.providers.revolut.enabled
+                  ? "disponibil"
+                  : "în configurare"}
+              </Badge>
+            </div>
+          )}
           {syncWarning && (
             <p
               role="status"
@@ -259,7 +281,7 @@ export default function BillingSettingsCard({
               {methods.map((method) => (
                 <li
                   key={method.id}
-                  className="flex flex-wrap items-center gap-3 rounded-xl border p-3"
+                  className="flex min-w-0 flex-wrap items-center gap-3 rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-500/15 via-[#11182c] to-cyan-500/5 p-4"
                 >
                   <ShieldCheck className="size-4 text-emerald-500" />
                   <div className="min-w-0 flex-1">
@@ -285,24 +307,29 @@ export default function BillingSettingsCard({
             </ul>
           ) : (
             <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
-              Nu există încă metode salvate în cont.
+              {account
+                ? "Nu există încă metode salvate în cont."
+                : "Metodele nu pot fi verificate momentan."}
             </p>
           )}
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
-              disabled={!account?.providers.stripe.enabled}
+              disabled={!account?.providers.stripe.enabled || !!redirectAction}
               onClick={() => void redirect("setup")}
             >
-              <CreditCard className="mr-1.5 size-4" /> Salvează un card
+              <CreditCard className="mr-1.5 size-4" />{" "}
+              {redirectAction === "setup"
+                ? "Se deschide formularul securizat…"
+                : "Adaugă card securizat"}
             </Button>
             <Button
               size="sm"
               variant="outline"
-              disabled={!account?.providers.stripe.enabled}
+              disabled={!account?.providers.stripe.enabled || !!redirectAction}
               onClick={() => void redirect("portal")}
             >
-              <ExternalLink className="mr-1.5 size-4" /> Gestionează în Stripe
+              <ExternalLink className="mr-1.5 size-4" /> Gestionează cardul
             </Button>
             <Button
               size="sm"
@@ -317,131 +344,146 @@ export default function BillingSettingsCard({
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Revolut salvează metoda pentru reînnoiri la prima plată a
-            abonamentului. Cardurile noi pot fi salvate separat prin pagina
-            securizată Stripe când acesta este configurat.
+            {account?.providers.stripe.enabled
+              ? "Datele cardului se introduc pe pagina securizată a procesatorului."
+              : "Adăugarea cardurilor este momentan indisponibilă. Metodele existente rămân vizibile."}
           </p>
         </CardContent>
       </Card>
-      <Card>
-        <CardHeader className="p-4">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <FileText className="size-4" /> Date de facturare
-          </CardTitle>
-          <CardDescription>
-            Folosite pentru factură după confirmarea plății. Alegerea
-            procesatorului preferat nu inițiază o debitare.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-3 p-4 pt-0 sm:grid-cols-2">
-          <div className="space-y-1">
-            <Label>Tip beneficiar</Label>
-            <Select
-              value={form.entityType}
-              onValueChange={(entityType) => setForm({ ...form, entityType })}
-            >
-              <SelectTrigger aria-label="Tip beneficiar">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="individual">Persoană fizică</SelectItem>
-                <SelectItem value="company">Companie / PFA</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="billing-legalName">Nume pentru factură</Label>
-            <Input
-              id="billing-legalName"
-              value={form.legalName}
-              onChange={(event) =>
-                setForm({ ...form, legalName: event.target.value })
-              }
-            />
-          </div>
-          {form.entityType === "company" && (
+      <details className="rounded-xl border border-white/10 bg-white/[.02]">
+        <summary className="cursor-pointer px-4 py-3 text-sm font-medium">
+          Datele de facturare
+        </summary>
+        <Card className="border-0 bg-transparent shadow-none">
+          <CardHeader className="p-4">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <FileText className="size-4" /> Date de facturare
+            </CardTitle>
+            <CardDescription>
+              Folosite pentru factură după confirmarea plății. Alegerea
+              procesatorului preferat nu inițiază o debitare.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 p-4 pt-0 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label htmlFor="billing-taxId">CUI / identificator fiscal</Label>
+              <Label>Tip beneficiar</Label>
+              <Select
+                value={form.entityType}
+                onValueChange={(entityType) => setForm({ ...form, entityType })}
+              >
+                <SelectTrigger aria-label="Tip beneficiar">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="individual">Persoană fizică</SelectItem>
+                  <SelectItem value="company">Companie / PFA</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="billing-legalName">Nume pentru factură</Label>
               <Input
-                id="billing-taxId"
-                value={form.taxId}
+                id="billing-legalName"
+                autoComplete="billing name"
+                value={form.legalName}
                 onChange={(event) =>
-                  setForm({ ...form, taxId: event.target.value.toUpperCase() })
+                  setForm({ ...form, legalName: event.target.value })
                 }
               />
             </div>
-          )}
-          <div className="space-y-1">
-            <Label htmlFor="billing-invoiceEmail">Email factură</Label>
-            <Input
-              id="billing-invoiceEmail"
-              type="email"
-              value={form.invoiceEmail}
-              onChange={(event) =>
-                setForm({ ...form, invoiceEmail: event.target.value })
-              }
-            />
-          </div>
-          <div className="space-y-1 sm:col-span-2">
-            <Label htmlFor="billing-address">Adresă</Label>
-            <Input
-              id="billing-address"
-              value={form.address}
-              onChange={(event) =>
-                setForm({ ...form, address: event.target.value })
-              }
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="billing-city">Localitate</Label>
-            <Input
-              id="billing-city"
-              value={form.city}
-              onChange={(event) =>
-                setForm({ ...form, city: event.target.value })
-              }
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="billing-county">Județ</Label>
-            <Input
-              id="billing-county"
-              value={form.county}
-              onChange={(event) =>
-                setForm({ ...form, county: event.target.value })
-              }
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Procesator preferat</Label>
-            <Select
-              value={form.defaultProvider}
-              onValueChange={(defaultProvider) =>
-                setForm({ ...form, defaultProvider })
-              }
+            {form.entityType === "company" && (
+              <div className="space-y-1">
+                <Label htmlFor="billing-taxId">
+                  CUI / identificator fiscal
+                </Label>
+                <Input
+                  id="billing-taxId"
+                  value={form.taxId}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      taxId: event.target.value.toUpperCase(),
+                    })
+                  }
+                />
+              </div>
+            )}
+            <div className="space-y-1">
+              <Label htmlFor="billing-invoiceEmail">Email factură</Label>
+              <Input
+                id="billing-invoiceEmail"
+                type="email"
+                autoComplete="billing email"
+                value={form.invoiceEmail}
+                onChange={(event) =>
+                  setForm({ ...form, invoiceEmail: event.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-1 sm:col-span-2">
+              <Label htmlFor="billing-address">Adresă</Label>
+              <Input
+                id="billing-address"
+                autoComplete="billing street-address"
+                value={form.address}
+                onChange={(event) =>
+                  setForm({ ...form, address: event.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="billing-city">Localitate</Label>
+              <Input
+                id="billing-city"
+                autoComplete="billing address-level2"
+                value={form.city}
+                onChange={(event) =>
+                  setForm({ ...form, city: event.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="billing-county">Județ</Label>
+              <Input
+                id="billing-county"
+                autoComplete="billing address-level1"
+                value={form.county}
+                onChange={(event) =>
+                  setForm({ ...form, county: event.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Procesator preferat</Label>
+              <Select
+                value={form.defaultProvider}
+                onValueChange={(defaultProvider) =>
+                  setForm({ ...form, defaultProvider })
+                }
+              >
+                <SelectTrigger aria-label="Procesator preferat">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="stripe">Stripe</SelectItem>
+                  <SelectItem value="revolut">Revolut Pay</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="self-center text-xs text-muted-foreground">
+              Abonamentele se reînnoiesc automat prin procesatorul ales la prima
+              plată. Le poți opri din secțiunea Abonamente.
+            </p>
+            <Button
+              className="sm:col-span-2"
+              disabled={saving || !account || !!error}
+              onClick={() => void save()}
             >
-              <SelectTrigger aria-label="Procesator preferat">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="stripe">Stripe</SelectItem>
-                <SelectItem value="revolut">Revolut Pay</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <p className="self-center text-xs text-muted-foreground">
-            Abonamentele se reînnoiesc automat prin procesatorul ales la prima
-            plată. Le poți opri din secțiunea Abonamente.
-          </p>
-          <Button
-            className="sm:col-span-2"
-            disabled={saving || !account || !!error}
-            onClick={() => void save()}
-          >
-            {saving ? "Se salvează…" : "Salvează datele de facturare"}
-          </Button>
-        </CardContent>
-      </Card>
+              {saving ? "Se salvează…" : "Salvează datele de facturare"}
+            </Button>
+          </CardContent>
+        </Card>
+      </details>
     </div>
   );
 }

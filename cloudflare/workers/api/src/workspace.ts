@@ -1,4 +1,5 @@
 import {domainProviderStatus} from "./domainProvider";
+import {clientPaymentHistory} from "./clientPayments";
 import { linkClientsByEmail } from "./clientAccountSync";
 export { linkClientsByEmail } from "./clientAccountSync";
 import { dashboardActivityRouter } from "./dashboardActivity";
@@ -109,6 +110,11 @@ workspaceRouter.get('/api/workspace/invoices',async c => {
     .bind(c.get('userId'),c.get('userId'),limit,offset).all<Record<string,unknown>>();
   c.header('cache-control','private, no-store');
   return c.json({data:results.map(r=>({...r,invoice_number:r.invoice_number||r.id,status:r.status==='paid'?'paid':r.status==='overdue'?'overdue':['cancelled','refunded'].includes(String(r.status))?'cancelled':'pending',issued_at:iso(r.invoice_date),due_at:iso(r.due_date),pdf_url:null,download_url:r.has_pdf?`/api/workspace/invoices/${encodeURIComponent(String(r.id))}/content`:null})),nextOffset:results.length===limit?offset+limit:null});
+});
+workspaceRouter.get('/api/workspace/payments',async c=>{
+  if(!staff(c))await linkClientsByEmail(c.env.DB,c.get('userId'));
+  const {limit,offset}=page(c);
+  return c.json(await clientPaymentHistory(c.env.DB,c.get('userId'),limit,offset));
 });
 workspaceRouter.get('/api/workspace/invoices/:invoiceId/content',async c=>{
   if(!staff(c))await linkClientsByEmail(c.env.DB,c.get('userId'));
