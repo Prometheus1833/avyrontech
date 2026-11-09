@@ -165,7 +165,7 @@ export async function selectedSkillReferences(
 ) {
   const items = await db
     .prepare(
-      `SELECT id,title,body,source_url,revision,file_name,content_type,size_bytes FROM avy_skill_resources WHERE skill_slug=? AND status='approved' AND domain IN(?, 'general') ORDER BY CASE WHEN domain=? THEN 0 ELSE 1 END,created_at DESC,id LIMIT 3`,
+      `SELECT id,title,body,source_url,revision,file_name,content_type,size_bytes FROM avy_skill_resources WHERE skill_slug=? AND stage_key IS NULL AND status='approved' AND domain IN(?, 'general') ORDER BY CASE WHEN domain=? THEN 0 ELSE 1 END,created_at DESC,id LIMIT 3`,
     )
     .bind(slug, domain, domain)
     .all<{

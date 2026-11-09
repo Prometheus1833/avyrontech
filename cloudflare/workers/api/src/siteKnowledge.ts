@@ -18,6 +18,11 @@ import {
   type SiteAgent,
 } from "../../../../src/shared/skills/siteKnowledge";
 import { LIBRARY_SECTIONS } from "../../../../src/data/bibliotecaCatalog";
+import {
+  SITE_STAGES,
+  siteStageKeySchema,
+  stageResourceMarkdown,
+} from "../../../../src/shared/skills/siteStages";
 const root = "/api/skills/site-builder";
 export async function publishedSiteExamples(db: D1Database) {
   const rows = await db
@@ -61,6 +66,59 @@ export async function publishedSiteExamples(db: D1Database) {
   );
 }
 export function siteBuilderRoutes(router: Hono<AppBindings>) {
+  router.get(root + "/stages/:stage", async (c) => {
+    const stage = siteStageKeySchema.safeParse(
+      (c.req.param("stage") || "").replace(/\.md$/, ""),
+    );
+    if (!stage.success)
+      return c.json({ error: { code: "invalid_stage" } }, 400);
+    // Agent handoff is explicitly stage-scoped and never exports unapproved drafts.
+    const offset = Number(c.req.query("offset") || 0);
+    if (!Number.isSafeInteger(offset) || offset < 0 || offset > 1_000_000)
+      return c.json({ error: { code: "invalid_offset" } }, 400);
+    const rows = await c.env.DB.prepare(
+      "SELECT id,title,revision,body,file_name FROM avy_skill_resources WHERE skill_slug='site-builder' AND stage_key=? AND status='approved' ORDER BY created_at DESC,id LIMIT 21 OFFSET ?",
+    )
+      .bind(stage.data, offset)
+      .all<{
+        id: string;
+        title: string;
+        revision: number;
+        body: string;
+        file_name: string | null;
+      }>();
+    if (!rows.results.length)
+      return c.json(
+        {
+          error: {
+            code: "stage_review_required",
+            message:
+              "Aprobă cel puțin o resursă a etapei înainte de exportul pentru agent.",
+          },
+        },
+        409,
+      );
+    // Bound each response, without imposing a storage ceiling or silently losing context.
+    const nextPath =
+      rows.results.length > 20
+        ? `${root}/stages/${stage.data}.md?offset=${offset + 20}`
+        : null;
+    const text =
+      stageResourceMarkdown(
+        SITE_STAGES.find((s) => s.key === stage.data)!.title,
+        rows.results.slice(0, 20),
+      ) +
+      (nextPath
+        ? `\n## Continuare\nAcest fișier conține 20 de resurse aprobate. Continuă prin GET ${nextPath}, folosind aceeași autentificare. Biblioteca poate fi modificată între citiri; verifică reviziile înainte de execuție.\n`
+        : "");
+    c.header("Content-Type", "text/markdown; charset=utf-8");
+    c.header(
+      "Content-Disposition",
+      `attachment; filename="AVYRON-Site-Builder-${stage.data}.md"`,
+    );
+    c.header("ETag", `"${await sha256(text)}"`);
+    return c.body(text);
+  });
   router.get(root + "/knowledge", async (c) => {
     const p = c.get("skillAccess")!;
     const [examples, domains, bindings] = await Promise.all([

@@ -16,6 +16,20 @@ Atelierul pregătește concepte private. Monogramele nu sunt logo-uri originale 
 
 ## Cunoștințe și versiuni
 
+### Site Builder · Etape
+
+Lângă **Monitorizare**, **Etape** organizează opt faze: Exemplu Vizual, Rafinare, Integrări Suplimentare, Funcții Speciale, Domeniu/DNS/Build, Securitate, CRM/Funcții și Lansare. Fiecare prezintă scopul, rezultatul urmărit, punctul de control uman și resursele sale. Acesta este workflowul reutilizabil al agenției, nu progresul unui proiect sau o comandă de execuție automată.
+
+Migrarea append-only `0112_site_builder_stages.sql` adaugă `stage_key` nullable și index în **aceeași** tabelă `avy_skill_resources`. Resursele existente rămân neclasificate; documentele și imaginile folosesc aceleași obiecte private, scanare, backup și permisiuni. Cele opt workflowuri inițiale sunt salvate în D1 ca **ciorne**, editabile și supuse aprobării. Clasificarea poate fi schimbată sau eliminată fără copierea fișierului. Editorii vechi care omit `stageKey` păstrează clasificarea. Editarea retrage aprobarea, iar revizia împiedică suprascrierea unei modificări concurente.
+
+- `GET /api/skills/site-builder?stage=visual&resourceOffset=0&q=...`: resurse paginate, cu totaluri pe etapă filtrate după permisiuni. Celelalte chei sunt `refinement`, `integrations`, `special-features`, `domain-build`, `security`, `crm`, `launch`.
+- `POST /api/skills/site-builder/resources` și `PATCH /api/skills/site-builder/resources/:id`: câmpul opțional `stageKey`, validat în API și în D1; etapele nu se pot aloca altor skilluri.
+- `GET /api/skills/site-builder/stages/visual.md`: handoff privat pentru agent, cu ID și revizie, numai din resurse aprobate. Fără aprobare răspunde `409 stage_review_required`. Exportul este paginat la 20 de resurse și indică explicit continuarea `?offset=20`; nu limitează numărul de resurse stocate. Accesul este revalidat la fiecare citire, inclusiv pentru fișierele referite.
+
+Instrucțiunile unei etape nu intră automat în contextul generic al mockupului. Agentul citește numai etapa necesară, în contextul autorizat, și păstrează reviziile în handoff. Aprobarea unei resurse nu autorizează trimiterea, DNS, migrarea remote, consumuri plătite sau deployul. Fișierele externe rămân blocate când scanarea/conformitatea nu sunt configurate; salvarea textului intern continuă fără scanări antivirus.
+
+**Ordine de lansare:** verificare/backup D1 conform procedurii existente → aplicarea migrării 0112 → API → frontend → smoke test autorizat. Numerele 0110 și 0111 sunt rezervate de PR-uri independente și nu reprezintă dependențe de schemă pentru Etape. Nu aplica automat migrarea sau schimbările acelor PR-uri. Revenire: restaurează versiunile anterioare API/frontend, păstrând coloana nullable și datele; nu șterge resursele sau fișierele pentru rollback.
+
 Migrarea append-only `0100_avy_skills.sql` adaugă registrul, versiuni imuabile, resurse, execuții, fișiere generate și evenimente. Instrucțiunile inițiale includ liquid glass cu fallback, hero/footer cinematic, minimum cinci secțiuni utile, CTA-uri și trei acțiuni flotante, adaptare la nișă, accesibilitate, mișcare redusă, SEO și verificări desktop/mobil. Referințele inițiale descriu mecanisme din codul existent: beauty, reciclare, turism, gastronomie și design. Nu certifică licențele activelor sau rezultate comerciale ale proiectelor.
 
 Modificarea instrucțiunilor creează o versiune nouă, neaprobată. Pregătirile folosesc versiunea aprobată și păstrează brief-ul, contextul și rezultatul original. Resursele revizuite revin în ciornă; nu rescriu snapshoturile folosite. Agenții primesc numai referințele aprobate relevante, încărcate progresiv, fără importarea automată a fișelor private ale clienților.

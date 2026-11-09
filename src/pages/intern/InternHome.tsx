@@ -1,6 +1,7 @@
+import ProjectsWorkspace from "@/components/intern/ProjectsWorkspace";
 import ProjectSummaryCard from "@/components/intern/ProjectSummaryCard";
 import {PROJECT_KIND_LABELS,type ProjectSummary} from "@/shared/projectSummary";
-import { PROJECT_STAGES, projectStage, type ProjectStage } from "@/shared/projectLifecycle";
+import { PROJECT_STAGES, type ProjectStage } from "@/shared/projectLifecycle";
 import { clientWorkspaceApi } from "@/lib/clientWorkspaceApi";
 import { CLIENT_ENTITY_TYPES, type ClientEntityType } from "@/shared/clientWorkspace";
 import { STAFF_MANAGED } from "@/shared/staffAccess";
@@ -16,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, ArrowUpRight, ExternalLink, FolderKanban, CheckCircle2, Receipt, TrendingUp, Columns3, List } from "lucide-react";
+import { Plus, ArrowUpRight, ExternalLink, FolderKanban, CheckCircle2, Receipt, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import ContactRail from "@/components/intern/ContactRail";
 import PageBackLink from "@/components/site/PageBackLink";
@@ -50,7 +51,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
   const [loading, setLoading] = useState(true);
   const [openCreate, setOpenCreate] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [projectView, setProjectView] = useState<"pipeline" | "list">("pipeline");
+  const [loadError,setLoadError]=useState<string|null>(null);
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [accounts, setAccounts] = useState<AccountOption[]>([]);
   const [form, setForm] = useState({ name: "", stage: "proposed" as ProjectStage, kind: "website_prezentare" as ProjectKind, url: "", description: "", client_id: "none", owner_user_id: "", recurring_enabled: false, recurring_name: "Mentenanță AVYRON", recurring_price: "", recurring_cycle: "monthly" as "monthly" | "yearly", next_billing_date: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10) });
@@ -77,22 +78,25 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
   const loadSeq=useRef(0);
   const load = useCallback(async () => {
     const seq=++loadSeq.current;
-    setLoading(true);
     try {
       const res = await internApi.listProjects(mine);
       if(seq!==loadSeq.current)return;
+      setLoadError(null);
       setRows(res.data as Row[]);
       setPurchases(res.purchases ?? []);
       setSales(res.sales ?? []);
     } catch (e) {
-      if(seq===loadSeq.current){setRows([]);setPurchases([]);setSales([]);toast.error((e as Error).message);}
+      if(seq===loadSeq.current){
+        setLoadError((e as Error).message);
+        if(e instanceof Error && "status" in e && [401,403,404].includes(Number(e.status))){setRows([]);setPurchases([]);setSales([]);}
+      }
     } finally { if(seq===loadSeq.current)setLoading(false); }
   }, [mine]);
   const userId=user?.id;
   useEffect(() => {
     if (!userId) return;
     const counter=loadSeq;
-    setRows([]);setPurchases([]);setSales([]);void load();
+    setLoading(true);setLoadError(null);setRows([]);setPurchases([]);setSales([]);void load();
     const update=()=>{if(document.visibilityState==="visible")void load()};
     const timer=setInterval(update,30000);
     window.addEventListener("focus",update);window.addEventListener("avyron:projects-changed",update);
@@ -147,10 +151,6 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
       <div className="min-h-screen grid place-items-center text-sm text-muted-foreground">Se încarcă…</div>
     );
 
-  const activeRows = isStaff
-    ? rows.filter((project) => !["archived", "cancelled", "done", "completed"].includes(project.status) && project.banner_status !== "online")
-    : rows;
-  const workflowRows = rows.filter((project) => !["archived", "cancelled"].includes(project.status));
 
   return (
     <div className={embedded ? "space-y-6" : "max-w-5xl mx-auto p-4 sm:p-6 space-y-6"}>
@@ -248,13 +248,8 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
         )}
       </header>
 
-      {isStaff && (
-        <div className="flex flex-wrap gap-2" aria-label="Afișare proiecte">
-        {isStaff&&mine&&<Button type="button" size="sm" variant="outline" onClick={()=>setParams(current=>{const next=new URLSearchParams(current);next.delete('scope');return next},{replace:true})}>Vezi toate proiectele autorizate</Button>}
-        <Button type="button" size="sm" variant={projectView === "pipeline" ? "default" : "outline"} aria-pressed={projectView === "pipeline"} onClick={() => setProjectView("pipeline")}><Columns3 className="mr-1.5 size-4" />Pipeline</Button>
-        <Button type="button" size="sm" variant={projectView === "list" ? "default" : "outline"} aria-pressed={projectView === "list"} onClick={() => setProjectView("list")}><List className="mr-1.5 size-4" />Listă</Button>
-      </div>
-      )}
+      {isStaff&&mine&&<Button type="button" size="sm" variant="outline" onClick={()=>setParams(current=>{const next=new URLSearchParams(current);next.delete('scope');return next},{replace:true})}>Vezi toate proiectele autorizate</Button>}
+      {loadError&&<div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-destructive/30 p-3 text-sm"><span>Nu am putut actualiza proiectele. {loadError}</span><Button variant="outline" onClick={()=>void load()}>Reîncearcă</Button></div>}
 
       <Dialog open={newClient} onOpenChange={value => { if (!savingClient) setNewClient(value); }}>
         <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
@@ -271,7 +266,7 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
       </Dialog>
       {loading ? (
         <div className="text-sm text-muted-foreground">Se încarcă proiectele…</div>
-      ) : (isStaff ? rows.length === 0 : activeRows.length === 0 && purchases.length === 0 && sales.length === 0) ? (
+      ) : loadError&&rows.length===0 ? null : (isStaff ? rows.length === 0 : rows.length === 0 && purchases.length === 0 && sales.length === 0) ? (
         <Card><CardContent className="p-8 text-center text-muted-foreground">
           {canCreate
               ? "Nu există proiecte încă. Folosește butonul „Creează proiect”." : "Nu ai încă proiecte asignate. Vei fi anunțat când unul e disponibil."}
@@ -297,34 +292,15 @@ export default function InternHome({ embedded = false }: { embedded?: boolean;
             );
           })()}
 
-          {isStaff && projectView === "pipeline" && (
-            <div className="grid items-start gap-3 lg:grid-cols-2 2xl:grid-cols-4" aria-label="Pipeline proiecte">
-            {PROJECT_STAGES.map((stage) => {
-              const status = stage.banner;
-              const projects = workflowRows.filter((project) => projectStage(project) === stage.id);
-              return (
-                  <details open key={status} aria-label={stage.label} className="min-w-0 rounded-2xl border border-border/60 bg-card/40 p-3">
-                <summary className="mb-3 flex cursor-pointer items-center justify-between gap-2 text-sm font-semibold"><span>{stage.label}</span><span className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">{projects.length} ▾</span></summary>
-                <div className="space-y-2">{projects.map((project) => (
-                        <ProjectSummaryCard key={project.id} project={project}/>))}{projects.length === 0 && (
-                        <p className="rounded-xl border border-dashed border-border/60 p-3 text-xs text-muted-foreground">Niciun proiect.</p>
-                      )}</div>
-              </details>
-                );
-            })}
-          </div>
-          )}
+          {isStaff&&<ProjectsWorkspace rows={rows}/>}
 
-          {isStaff && projectView === "list" && activeRows.length === 0 && (
-            <p className="rounded-xl border border-dashed border-border/60 p-4 text-sm text-muted-foreground">Nu există proiecte active în listă. Verifică pipeline-ul pentru cele finalizate sau online.</p>
-          )}
-          {(!isStaff || projectView === "list") && (
+          {!isStaff && (
             <div className="grid items-start gap-3 sm:grid-cols-2">
-            {[...new Set(activeRows.map((row) =>row.kind))].map(
+            {[...new Set(rows.map((row) =>row.kind))].map(
                 (category) => (
                   <details open key={category} className="min-w-0 rounded-xl border bg-card/30 p-3"><summary className="mb-3 cursor-pointer text-sm font-semibold">{KINDS.find((kind) =>kind.value===category)?.label||category}{" "}
                       ·{" "}
-                      {activeRows.filter((row) =>row.kind===category).length}</summary><div className="space-y-3">{activeRows.filter((row) =>row.kind===category).map((p) => <ProjectSummaryCard key={p.id} project={p}/>)}</div></details>),
+                      {rows.filter((row) =>row.kind===category).length}</summary><div className="space-y-3">{rows.filter((row) =>row.kind===category).map((p) => <ProjectSummaryCard key={p.id} project={p}/>)}</div></details>),
               )}
           </div>
           )}

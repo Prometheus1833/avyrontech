@@ -162,7 +162,7 @@ class CfAuth {
     } catch {
       // Keep the HTTP status fallback when the body is not JSON.
     }
-    return new Error(msg);
+    return Object.assign(new Error(msg), { status: res.status });
   }
 
   private async ensureToken(): Promise<string | null> {
