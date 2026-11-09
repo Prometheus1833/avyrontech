@@ -101,9 +101,9 @@ const Index = () => {
       <Deferred minHeight={360} forceReady={anchorDepth >= 4}><DomainCheck /></Deferred>
       <Deferred minHeight={440} forceReady={anchorDepth >= 5}><Benefits /></Deferred>
       <Deferred minHeight={260} forceReady={anchorDepth >= 6}><QualityStandard /></Deferred>
-      <Deferred minHeight={220} forceReady={anchorDepth >= 7}><HomepageQuickLinks /></Deferred>
-      <Deferred minHeight={520} forceReady={anchorDepth >= 8}><CTA /></Deferred>
-      <Deferred minHeight={540} forceReady={anchorDepth >= 9}><LatestBlog /></Deferred>
+      <Deferred minHeight={520} forceReady={anchorDepth >= 7}><CTA /></Deferred>
+      <Deferred minHeight={340} forceReady={anchorDepth >= 8}><LatestBlog /></Deferred>
+      <Deferred minHeight={220} forceReady={anchorDepth >= 9}><HomepageQuickLinks /></Deferred>
       <Deferred minHeight={320} forceReady={anchorDepth >= 10}><Socials /></Deferred>
       {/* Footerul trebuie să existe chiar și când vizitatorul sare direct la
           finalul paginii folosind bara de scroll. */}

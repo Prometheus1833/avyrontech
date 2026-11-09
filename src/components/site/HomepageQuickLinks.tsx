@@ -44,7 +44,7 @@ export default function HomepageQuickLinks() {
     },
   ];
 
-  return <section aria-label={ro ? "Descoperă Avyron" : "Discover Avyron"} className="pt-8 pb-3 md:pt-12 md:pb-4">
+  return <section id="descopera-avyron" aria-label={ro ? "Descoperă Avyron" : "Discover Avyron"} className="pt-8 pb-3 md:pt-12 md:pb-4">
     <div className="mx-auto grid max-w-6xl gap-3 px-4 sm:grid-cols-2 xl:grid-cols-4">
       {cards.map(({ to, eyebrow, title, detail, icon: Icon, testId, tone }) => <Link key={to} to={to} data-testid={testId} className={`group relative overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br ${tone} p-4 shadow-soft transition hover:-translate-y-0.5 hover:border-brand/35 hover:shadow-elev sm:p-5`}>
         <div className="flex items-start gap-3">

@@ -51,7 +51,7 @@ it("cancels the earlier anchor when the destination changes", async () => {
   expect(first).not.toHaveBeenCalled();
 });
 it("only reveals sections preceding a known destination", () => {
-  expect(homeAnchorDepth("#blog-avyron")).toBe(9);
+  expect(homeAnchorDepth("#blog-avyron")).toBe(8);
   expect(homeAnchorDepth("#domenii")).toBe(0);
   expect(homeAnchorDepth("#de-ce")).toBe(1);
   expect(homeAnchorDepth("#unknown")).toBe(-1);

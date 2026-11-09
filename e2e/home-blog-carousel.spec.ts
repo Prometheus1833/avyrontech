@@ -260,3 +260,19 @@ test("deep link waits for a slow preceding section without moving the carousel o
   await expect(section.getByRole("heading", { level: 2 })).toBeInViewport();
   await expect(section).toHaveAttribute("data-autoplay", "playing");
 });
+
+for (const width of [320, 390, 1440]) {
+  test(`landing keeps the free example and compact Insights before discovery links at ${width}px`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.setViewportSize({width,height:900});
+    await page.goto("/#social");
+    await expect(page.locator('main[data-anchor-ready]')).toHaveAttribute('data-anchor-ready','true',{timeout:10000});
+    const order=await page.evaluate(()=>['cta','blog-avyron','descopera-avyron','social'].map(id=>document.getElementById(id)!.getBoundingClientRect().top));
+    expect(order.every((top,i)=>i===0||top>order[i-1])).toBe(true);
+    const section=page.locator('#blog-avyron');
+    await section.scrollIntoViewIfNeeded();
+    const box=await section.boundingBox();
+    expect(box!.height).toBeLessThan(width<540?370:340);
+    for(const card of (await section.locator('.avy-blog-preview-card').all()).slice(0,1)) expect((await card.boundingBox())!.height).toBeLessThan(180);
+  });
+}

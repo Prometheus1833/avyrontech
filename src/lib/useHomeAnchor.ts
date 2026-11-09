@@ -9,8 +9,9 @@ const depths: Record<string, number> = {
   "verificare-domeniu": 4,
   avantaje: 5,
   "avyron-quality-standard": 6,
-  cta: 8,
-  "blog-avyron": 9,
+  cta: 7,
+  "blog-avyron": 8,
+  "descopera-avyron": 9,
   social: 10,
 };
 export const homeAnchorDepth = (hash: string) => depths[hash.slice(1)] ?? -1;

@@ -84,7 +84,7 @@ for (const width of [320, 390, 768, 1440])
     });
     expect(errors).toEqual([]);
   });
-test("chooser has three square cards, third is subscription, cinematic stays unavailable", async ({
+test("chooser keeps all three compact options within the viewport, cinematic stays unavailable", async ({
   page,
 }, info) => {
   await publicFixture(page);
@@ -97,17 +97,20 @@ test("chooser has three square cards, third is subscription, cinematic stays una
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
   const choices = page.getByTestId("website-choices");
-  expect(
-    await choices.evaluate((el) =>
-      Array.from(el.children).every((c) => {
-        const b = c.getBoundingClientRect();
-        return (
-          Math.abs(b.width - b.height) < 2 &&
-          Math.abs(b.top - el.children[0].getBoundingClientRect().top) < 2
-        );
-      }),
-    ),
-  ).toBe(true);
+  for (const viewport of [{width:320,height:568},{width:390,height:844},{width:844,height:390},{width:1440,height:900}]) {
+    await page.setViewportSize(viewport);
+    const bounds = await choices.locator(":scope > *").evaluateAll(nodes => nodes.map(node => { const r=node.getBoundingClientRect(); return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}; }));
+    expect(bounds).toHaveLength(3);
+    for (const [i, rect] of bounds.entries()) {
+      expect(rect.left).toBeGreaterThanOrEqual(8);
+      expect(rect.right).toBeLessThanOrEqual(viewport.width-8);
+      expect(rect.top).toBeGreaterThanOrEqual(8);
+      expect(rect.bottom).toBeLessThanOrEqual(viewport.height-8);
+      expect(rect.width).toBeGreaterThan(rect.height);
+      if (i) expect(rect.top).toBeGreaterThanOrEqual(bounds[i-1].bottom);
+    }
+    expect(await choices.evaluate(el => el.scrollWidth<=el.clientWidth+1)).toBe(true);
+  }
   await expect(choices.locator(":scope > *")).toHaveCount(3);
   await expect(choices.locator(":scope > *").nth(1)).toHaveAttribute(
     "aria-disabled",
@@ -134,6 +137,7 @@ test("chooser has three square cards, third is subscription, cinematic stays una
   ).toBe(true);
   await choices.getByRole("link", { name: /Website prin abonament/ }).click();
   await expect(page).toHaveURL(path);
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Fără costuri de dezvoltare.");
   await page.goto("/servicii");
   await expect(page.locator(`main a[href="${path}"]`)).toHaveCount(0);
 });
