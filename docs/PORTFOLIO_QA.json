@@ -1,0 +1,88 @@
+{
+  "base": "7322cf40e09e20b8b6b22a0f18090df574f9f15e",
+  "branch": "codex/portfolio-showcase-2026-11-09",
+  "environment": "Local native Pages Worker, isolated Chrome. Cold anonymous visit; default consent banner. External api.avyron.ro blocked. Mobile and desktop measured sequentially without builds or browser tests running.",
+  "checks": {
+    "browser": {
+      "status": "PASS",
+      "cases": 30,
+      "engines": [
+        "Chromium",
+        "WebKit"
+      ],
+      "widths": [
+        320,
+        390,
+        768,
+        1440
+      ]
+    },
+    "unitIntegration": {
+      "status": "PASS",
+      "cases": 64,
+      "files": 7
+    },
+    "axe": {
+      "status": "PASS",
+      "violations": 0,
+      "scope": ".pf-page",
+      "tags": [
+        "wcag2a",
+        "wcag2aa",
+        "wcag21a",
+        "wcag21aa",
+        "wcag22a",
+        "wcag22aa"
+      ]
+    },
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "buildStatic": "PASS",
+    "buildPages": "PASS",
+    "buildSiteWorker": "PASS",
+    "apiDryRun": "PASS",
+    "seoAudit": "PASS"
+  },
+  "lighthouse": {
+    "mobile": {
+      "measuredAt": "2026-11-09T07:24:27.716Z",
+      "lighthouse": "13.6.0",
+      "browser": "Chrome/153.0.0.0",
+      "scores": {
+        "performance": 76,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100
+      },
+      "metrics": {
+        "LCP_ms": 5235,
+        "TBT_ms": 233,
+        "CLS": 0
+      },
+      "rawReportSHA256": "12e867b2318006f059b19949139f11997edc2a68bb09e9f13cde29745894c9ec"
+    },
+    "desktop": {
+      "measuredAt": "2026-11-09T07:24:42.238Z",
+      "lighthouse": "13.6.0",
+      "browser": "Chrome/153.0.0.0",
+      "scores": {
+        "performance": 97,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100
+      },
+      "metrics": {
+        "LCP_ms": 1164,
+        "TBT_ms": 9,
+        "CLS": 0
+      },
+      "rawReportSHA256": "db607d9cec4caa6d2932f9d61064f9b379d75e356d94480c755e439ed5585cee"
+    }
+  },
+  "limits": [
+    "Mobile performance remains below the green Lighthouse range; LCP is not within the 2.5 s good threshold in this lab run.",
+    "These are local synthetic tests, not field Core Web Vitals or proof of indexing.",
+    "Physical iOS/Android, real screen readers, authenticated account journeys and external transactions were not tested.",
+    "No production deployment, database migration or provider configuration."
+  ]
+}

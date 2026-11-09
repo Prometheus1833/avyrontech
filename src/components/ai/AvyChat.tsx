@@ -114,13 +114,13 @@ const writeStoredChat = (agent: string, state: StoredChat) => {
 };
 
 /** Buton flotant (stânga, mijloc) + panou de chat conectat la AI OS "AVY". */
-const AvyChat = ({ agent = "avy", initiallyOpen = false }: { agent?: string; initiallyOpen?: boolean }) => {
+const AvyChat = ({ agent = "avy", initiallyOpen = false, dock = "default" }: { agent?: string; initiallyOpen?: boolean; dock?: "default" | "bottom-right" }) => {
   const { lang } = useLang();
   const {user,loading:authLoading}=useAuth();
   const contactConfig=useGuestNotificationConfig(!authLoading&&!user);
   const { pathname } = useLocation();
   const onLanding = pathname === "/" || pathname === "/en";
-  const bubblePositionKey = onLanding ? "avy_bubble_pos_home_v2" : "avy_bubble_pos";
+  const bubblePositionKey = dock === "bottom-right" ? "avy_bubble_pos_portfolio_v1" : onLanding ? "avy_bubble_pos_home_v2" : "avy_bubble_pos";
   const t = COPY[lang === "en" ? "en" : "ro"];
   const language = lang === "en" ? "en" : "ro";
   const [open, setOpen] = useState(initiallyOpen);
@@ -376,12 +376,12 @@ const AvyChat = ({ agent = "avy", initiallyOpen = false }: { agent?: string; ini
         <div
           role="status"
           className={`fixed z-40 flex max-w-[min(18rem,calc(100vw-5.5rem))] items-start gap-2 rounded-2xl border border-primary/30 bg-background/92 p-2 pl-3 text-sm shadow-xl backdrop-blur-xl motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-left-2 ${
-            pos || onLanding ? "" : "left-[4.75rem] top-20"
+            pos || onLanding || dock === "bottom-right" ? "" : "left-[4.75rem] top-20"
           }`}
           style={pos ? {
             left: Math.min(pos.x + 64, Math.max(8, window.innerWidth - 288)),
             top: Math.min(pos.y, Math.max(8, window.innerHeight - 96)),
-          } : onLanding ? { left: "4.75rem", top: "52dvh" } : undefined}
+          } : onLanding ? { left: "4.75rem", top: "52dvh" } : dock === "bottom-right" ? { right: 16, bottom: 80 } : undefined}
         >
           <button
             type="button"
@@ -412,9 +412,9 @@ const AvyChat = ({ agent = "avy", initiallyOpen = false }: { agent?: string; ini
           ? { left: pos.x, top: pos.y, right: "auto", bottom: "auto" }
           : onLanding
             ? { left: 12, top: "52dvh", right: "auto", bottom: "auto" }
-            : undefined}
+            : dock === "bottom-right" ? { right: 16, bottom: 16 } : undefined}
         className={`fixed z-40 touch-none select-none rounded-2xl border border-border/60 bg-background/70 p-3 shadow-lg backdrop-blur-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
-          pos || onLanding ? "" : "left-3 top-20"
+          pos || onLanding || dock === "bottom-right" ? "" : "left-3 top-20"
         } ${dragging ? "scale-105 cursor-grabbing" : "cursor-grab transition hover:scale-105 hover:bg-background/90"}`}
       >
         <span className="relative flex items-center gap-2">

@@ -32,6 +32,7 @@ import NotFound from "@/pages/NotFound";
 import {
 Accessibility,
 ArrowRight,
+ArrowUpRight,
 BarChart3,
 Bug,
 Calculator,
@@ -544,6 +545,12 @@ const ServicePage = () => {
         <PortfolioCarousel lang={ro ? "ro" : "en"} carouselKey={product.key} heading={product.key === "premium-website" ? {
           eyebrow: serviceInlineCopy.text_ac6ac9de0060[lang], title: serviceInlineCopy.text_ae32a95869c2[lang], description: serviceInlineCopy.text_af843ee5535c[lang],
         } : undefined} />
+
+        {product.key === "premium-website" && <div className="mt-6 flex justify-center">
+          <Link to={ro ? "/portofoliu" : "/en/portfolio"} className="inline-flex min-h-12 items-center gap-3 rounded-xl border border-violet-400/30 bg-violet-500/10 px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:border-violet-400/60 hover:bg-violet-500/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-violet-400">
+            {ro ? "Explorează portofoliul Avyron" : "Explore the Avyron portfolio"}<ArrowUpRight className="size-4" aria-hidden="true" />
+          </Link>
+        </div>}
 
         {product.key !== "premium-website" && faqSection}
 

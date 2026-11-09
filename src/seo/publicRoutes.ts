@@ -60,8 +60,6 @@ export const REDIRECTS: Record<string, string> = {
   "/en/pricing": "/en/services",
   "/despre": "/despre-noi",
   "/despre-si-portofoliu": "/servicii/website-prezentare-profesional#portofoliu",
-  "/portofoliu": "/servicii/website-prezentare-profesional#portofoliu",
-  "/en/portfolio": "/en/services/professional-presentation-website#portofoliu",
   "/noutati": "/blog",
   "/produse/audit-website": "/?request=audit#cta",
   "/en/products/website-audit": "/en?request=audit#cta",

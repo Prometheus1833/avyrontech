@@ -97,7 +97,7 @@ const pageSecondary = (pathname: string, lang: "ro" | "en") => {
   const p = pathname.toLowerCase();
   if (p.startsWith("/servicii/") || p.startsWith("/en/services/")) return { label: en ? "Other services" : "Alte servicii", to: en ? "/en/services" : "/servicii" };
   if (p === "/servicii" || p === "/en/services") return { label: en ? "Configure a website" : "Configurează un website", to: en ? "/en/configurator" : "/configurator" };
-  if (p === "/despre-noi" || p === "/en/about") return { label: en ? "See the portfolio" : "Vezi portofoliul", to: en ? "/en/services/professional-presentation-website#portofoliu" : "/servicii/website-prezentare-profesional#portofoliu" };
+  if (p === "/despre-noi" || p === "/en/about") return { label: en ? "See the portfolio" : "Vezi portofoliul", to: en ? "/en/portfolio" : "/portofoliu" };
   if (p === "/cariere" || p === "/en/careers") return { label: en ? "About AVYRON" : "Despre AVYRON", to: en ? "/en/about" : "/despre-noi" };
   if (p === "/produse" || p.startsWith("/produse/") || p === "/en/products" || p.startsWith("/en/products/")) return { label: en ? "Product questions" : "Întrebări despre produse", to: en ? "/en/products/faq" : "/produse/intrebari-frecvente" };
   if (p.includes("/blog")) return { label: en ? "Read more articles" : "Alte articole", to: en ? "/en/blog" : "/blog" };
