@@ -144,6 +144,8 @@ async function publish(page: Page) {
 test("Platformă opens the carousel registry and preserves the original website examples", async ({
   page,
 }) => {
+  // This case exercises the persistent desktop panes; small-screen cases are separate.
+  await page.setViewportSize({width:1440,height:960});
   await fixture(page);
   await page.goto("/profil?tab=example-carousels");
   await expect(
@@ -286,6 +288,8 @@ test("future service carousels can add examples and settings without changing th
 test("read-only staff cannot mutate and a failed save preserves changes during navigation", async ({
   page,
 }) => {
+  // This case exercises the persistent desktop panes; small-screen cases are separate.
+  await page.setViewportSize({width:1440,height:960});
   const f = await fixture(page);
   await page.goto("/profil?tab=example-carousels&carousel=premium-website");
   await page.getByRole("button", { name: "Editează Ruller.eu" }).click();

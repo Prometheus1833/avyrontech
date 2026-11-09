@@ -20,7 +20,7 @@ export default function EffectRow({ effect, lang, selected, onToggle }: Props) {
     <li className="group flex items-start gap-4 border-b border-white/[0.07] py-3 last:border-b-0">
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-medium text-white/90">{effect.name[lang]}</span>
-        <span className="block text-xs leading-relaxed text-white/45">{effect.desc[lang]}</span>
+        <span className="block text-xs leading-relaxed text-white/65">{effect.desc[lang]}</span>
       </span>
 
       <button
@@ -35,7 +35,7 @@ export default function EffectRow({ effect, lang, selected, onToggle }: Props) {
         className={`flex size-7 shrink-0 items-center justify-center rounded-full border transition-colors ${
           selected
             ? "border-emerald-400/70 bg-emerald-400/15 text-emerald-300"
-            : "border-white/15 text-white/40 hover:border-white/45 hover:text-white"
+            : "border-white/15 text-white/65 hover:border-white/45 hover:text-white"
         }`}
       >
         {selected ? <Check className="size-3.5" aria-hidden="true" /> : <Plus className="size-3.5" aria-hidden="true" />}

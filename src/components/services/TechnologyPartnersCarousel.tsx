@@ -59,6 +59,9 @@ export default function TechnologyPartnersCarousel({ lang }: { lang: "ro" | "en"
       </div>
       <div
         ref={ref}
+        tabIndex={0}
+        role="region"
+        aria-labelledby="technology-partners-title"
         data-testid="technology-partners-carousel"
         onMouseEnter={() => (paused.current = true)}
         onMouseLeave={() => (paused.current = false)}

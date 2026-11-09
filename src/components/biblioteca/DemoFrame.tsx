@@ -61,7 +61,7 @@ export default function DemoFrame({ effect, lang, onFocusChange }: Props) {
     >
       <figcaption className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-white/10 px-5 py-3">
         <h3 className="text-sm font-semibold text-white">{effect.name[lang]}</h3>
-        <p className="w-full text-xs text-white/50">{effect.desc[lang]}</p>
+        <p className="w-full text-xs text-white/65">{effect.desc[lang]}</p>
       </figcaption>
 
       <div className="relative">
@@ -77,7 +77,7 @@ export default function DemoFrame({ effect, lang, onFocusChange }: Props) {
                     "radial-gradient(120% 90% at 20% 10%, hsla(265,60%,28%,0.55), transparent 60%), radial-gradient(90% 80% at 85% 60%, hsla(200,70%,26%,0.45), transparent 65%), #090b11",
                 }}
               >
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/35">
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/65">
                   {lang === "ro" ? "se pregătește scena…" : "preparing the scene…"}
                 </span>
               </div>

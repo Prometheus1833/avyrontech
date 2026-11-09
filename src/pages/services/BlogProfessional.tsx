@@ -213,7 +213,7 @@ const BlogProfessional = () => {
             accent={{
               from: "from-amber-400",
               to: "to-orange-600",
-              text: "text-amber-600 dark:text-amber-300",
+              text: "text-amber-800 dark:text-amber-300",
               border: "border-amber-300/30",
             }}
             productName={ro ? "blogul tău" : "your blog"}

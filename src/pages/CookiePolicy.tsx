@@ -66,7 +66,7 @@ const TechnologyList = ({ rows, ro }: { rows: Technology[]; ro: boolean }) => (
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
             <code className="break-all font-mono text-xs font-semibold text-cyan-200">{item.name}</code>
-            <p className="mt-1 text-xs text-slate-500">{item.provider} · {item.storage}</p>
+            <p className="mt-1 text-xs text-slate-400">{item.provider} · {item.storage}</p>
           </div>
           <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${item.category === "analytics" ? "border-purple-300/25 bg-purple-400/10 text-purple-200" : "border-emerald-300/20 bg-emerald-400/10 text-emerald-200"}`}>
             {item.category === "analytics" ? (ro ? "Analiză" : "Analytics") : (ro ? "Necesar / funcțional" : "Necessary / functional")}

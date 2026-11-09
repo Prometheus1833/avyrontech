@@ -1,6 +1,6 @@
 // Cloudflare auth client — same-origin business API; one canonical auth host for site/account.
 // Access token (JWT 15min) e ținut in-memory + refresh via cookie `sid`.
-import { apiUrl, authUrl } from "./apiBase";
+import { apiUrl, authenticatedApiUrl, authUrl } from "./apiBase";
 
 
 export type Role = "user" | "staff" | "admin";
@@ -95,10 +95,11 @@ class CfAuth {
   }
 
   async raw(path: string, init: RequestInit = {}): Promise<Response> {
+    const destination = authenticatedApiUrl(path);
     const token = await this.ensureToken();
     const headers = new Headers(init.headers);
     if (token) headers.set("authorization", `Bearer ${token}`);
-    const send = () => fetch(apiUrl(path), { ...init, headers, credentials: "include" });
+    const send = () => fetch(destination, { ...init, headers, credentials: "include", redirect: "error" });
     let response = await send();
     if (response.status === 401) {
       this.clearSession();
@@ -132,19 +133,20 @@ class CfAuth {
 
   async requestResponse(path: string, init: RequestInit = {}): Promise<Response> {
     if(typeof window!=="undefined"&&new URLSearchParams(window.location.search).has("servicePreview")&&!["GET","HEAD","OPTIONS"].includes((init.method||"GET").toUpperCase()))throw new Error("Previzualizare: acțiunile care modifică datele sunt dezactivate.");
+    const destination = authenticatedApiUrl(path);
     const token = await this.ensureToken();
     const headers = new Headers(init.headers);
     if (token) headers.set("authorization", `Bearer ${token}`);
     if (init.body && !headers.has("content-type") && !(init.body instanceof FormData) && !(init.body instanceof Blob)) {
       headers.set("content-type", "application/json");
     }
-    const res = await fetch(apiUrl(path), { ...init, headers, credentials: "include" });
+    const res = await fetch(destination, { ...init, headers, credentials: "include", redirect: "error" });
     if (res.status === 401) {
       this.clearSession();
       const refreshed = await this.refresh();
       if (refreshed) {
         headers.set("authorization", `Bearer ${this.accessToken}`);
-        const retry = await fetch(apiUrl(path), { ...init, headers, credentials: "include" });
+        const retry = await fetch(destination, { ...init, headers, credentials: "include", redirect: "error" });
         if (!retry.ok) throw await this.errorFrom(retry);
         return retry;
       }

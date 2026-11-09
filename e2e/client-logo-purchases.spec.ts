@@ -12,16 +12,26 @@ async function fixture(context: BrowserContext, signedIn = true) {
   await context.route("**/*",async route => {
     const request=route.request(), url=new URL(request.url()), path=url.pathname;
     if(path.startsWith("/api/")) {
+      const requestHeaders=await request.allHeaders();
       calls.push(url.origin+path);
-      const headers:Record<string,string>={"access-control-allow-origin":request.headers().origin||"https://app.avyron.ro","access-control-allow-credentials":"true","access-control-allow-headers":"content-type,authorization,idempotency-key","access-control-allow-methods":"GET,POST,PUT,OPTIONS","cache-control":"private, no-store"};
+      const headers:Record<string,string>={"access-control-allow-origin":requestHeaders.origin||"https://app.avyron.ro","access-control-allow-credentials":"true","access-control-allow-headers":"content-type,authorization,idempotency-key","access-control-allow-methods":"GET,POST,PUT,OPTIONS","cache-control":"private, no-store"};
       const json=(body:unknown,status=200)=>route.fulfill({status,json:body,headers});
       if(request.method()==="OPTIONS")return route.fulfill({status:204,headers});
       if(path==="/api/auth/login") {
         expect(url.hostname).toBe("api.avyron.ro");
+        // A synthetic login establishes the HttpOnly cookie jar explicitly.
+        // Seed the real HttpOnly cookie jar only after this synthetic login.
+        // Native Worker Set-Cookie attributes are covered by the runtime suite.
+        await context.addCookies([{name:"sid",value:"synthetic-client",url:"https://api.avyron.ro",httpOnly:true,secure:true,sameSite:"Lax"}]);
         return route.fulfill({json:{access_token:"synthetic-token",expires_in:900,user:{id:"client",roles:["user"]}},headers:{...headers,"set-cookie":"sid=synthetic-client; Path=/; HttpOnly; Secure; SameSite=Lax"}});
       }
-      if(path==="/api/auth/refresh")return (signedIn || request.headers().cookie?.includes("sid=synthetic-client"))?json({access_token:"synthetic-token",expires_in:900}):route.fulfill({status:204,headers});
-      if(path==="/api/auth/me")return request.headers().authorization?json({user:{id:"client",email:"client@example.test",display_name:"Client test",email_verified:1,must_change_password:0},profile:{display_name:"Client test",language:"ro"},roles:["user"],capabilities:[],superadmin:false}):json({error:{code:"unauthorized"}},401);
+      if(path==="/api/auth/refresh"){
+        // Interception omits Cookie in WebKit even when it is sent on the wire:
+        // covered independently by scripts/test-browser-cookie-wire.mjs.
+        const cookies=await context.cookies("https://api.avyron.ro");
+        return (signedIn || cookies.some(cookie=>cookie.name==="sid"&&cookie.value==="synthetic-client"))?json({access_token:"synthetic-token",expires_in:900}):route.fulfill({status:204,headers});
+      }
+      if(path==="/api/auth/me")return requestHeaders.authorization?json({user:{id:"client",email:"client@example.test",display_name:"Client test",email_verified:1,must_change_password:0},profile:{display_name:"Client test",language:"ro"},roles:["user"],capabilities:[],superadmin:false}):json({error:{code:"unauthorized"}},401);
       if(path==="/api/logo-studio/product-price")return json({priceMinor:7500,currency:"RON",updatedAt:1});
       if(path==="/api/auth/providers")return json({data:[]});
       if(path==="/api/projects")return json({data:[],purchases:[],sales:[]});

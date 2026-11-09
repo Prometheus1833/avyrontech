@@ -679,7 +679,7 @@ const MaintenancePartnerships = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "subscriptions_cta" })}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#25D366] px-6 py-3 text-sm font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-[#1ebe5a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#25D366] px-6 py-3 text-sm font-bold text-slate-950 transition-all hover:-translate-y-0.5 hover:bg-[#1ebe5a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50"
                 >
                   <MessageCircle className="size-4" aria-hidden />
                   WhatsApp

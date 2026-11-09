@@ -193,7 +193,7 @@ const CookieBanner = () => {
                 {c.body}{" "}
                 <a href={c.detailsHref} className="underline text-purple-300 hover:text-purple-200">{c.details}</a>
               </p>
-              <p className="mt-1 text-[10px] text-white/45">{c.version}: {COOKIE_POLICY_VERSION}</p>
+              <p className="mt-1 text-[10px] text-white/60">{c.version}: {COOKIE_POLICY_VERSION}</p>
 
               {showSettings && (
                 <div className="mt-3 space-y-2">

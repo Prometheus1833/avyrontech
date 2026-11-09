@@ -493,10 +493,14 @@ test("mesajele și suportul sunt unificate fără canale sau membri staff", asyn
       /\/api\/workspace\/(staff-directory|chat)/.test(path),
     ),
   ).toBe(false);
-  const nav = page.getByRole("navigation", {
+  let nav = page.getByRole("navigation", {
     name: "Navigare cont",
     exact: true,
   });
+  if (!await nav.isVisible()) {
+    await page.getByRole("button", {name:"Deschide toate secțiunile", exact:true}).click();
+    nav = page.getByRole("dialog").getByRole("navigation", {name:"Secțiunile contului", exact:true});
+  }
   await expect(
     nav.getByRole("button", { name: "Suport și mesaje", exact: true }),
   ).toBeVisible();

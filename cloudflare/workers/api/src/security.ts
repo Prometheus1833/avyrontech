@@ -45,17 +45,20 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 export async function verifyPassword(password: string, stored: string): Promise<boolean> {
+  // Database/import corruption must never select an empty or attacker-sized KDF output.
+  if (stored.length > 256) return false;
   const parts = stored.split("$");
   if (parts[0] === "scrypt") {
     const [, nValue, rValue, pValue, saltValue, expectedValue] = parts;
     const N = Number(nValue);
     const r = Number(rValue);
     const p = Number(pValue);
-    if (N !== SCRYPT_N || r !== SCRYPT_R || p !== SCRYPT_P || !saltValue || !expectedValue) return false;
+    if (parts.length !== 6 || N !== SCRYPT_N || r !== SCRYPT_R || p !== SCRYPT_P || !saltValue || !expectedValue) return false;
     try {
       const salt = decodeBase64(saltValue);
       const expected = decodeBase64(expectedValue);
-      const actual = scryptSync(password, salt, expected.byteLength, { N, r, p, maxmem: SCRYPT_MAX_MEMORY });
+      if (salt.byteLength !== 16 || expected.byteLength !== 32) return false;
+      const actual = scryptSync(password, salt, 32, { N, r, p, maxmem: SCRYPT_MAX_MEMORY });
       return actual.byteLength === expected.byteLength && nodeTimingSafeEqual(actual, expected);
     } catch {
       return false;
@@ -66,11 +69,12 @@ export async function verifyPassword(password: string, stored: string): Promise<
   // runtime rejects counts above 100k, so such accounts must use reset/import.
   const [iterationsValue, saltValue, expectedValue] = stored.split("$");
   const iterations = Number(iterationsValue);
-  if (!Number.isSafeInteger(iterations) || iterations < 100_000 || iterations > LEGACY_MAX_ITERATIONS || !saltValue || !expectedValue) return false;
+  if (parts.length !== 3 || !Number.isSafeInteger(iterations) || iterations < 100_000 || iterations > LEGACY_MAX_ITERATIONS || !saltValue || !expectedValue) return false;
   try {
     const salt = decodeBase64(saltValue);
     const expected = decodeBase64(expectedValue);
-    const actual = pbkdf2Sync(password, salt, iterations, expected.byteLength, "sha256");
+    if (salt.byteLength !== 16 || expected.byteLength !== 32) return false;
+    const actual = pbkdf2Sync(password, salt, iterations, 32, "sha256");
     return actual.byteLength === expected.byteLength && nodeTimingSafeEqual(actual, expected);
   } catch {
     return false;

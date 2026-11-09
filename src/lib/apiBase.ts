@@ -47,3 +47,17 @@ const AUTH_BASE = authBaseForHost(
   import.meta.env.VITE_CF_API_BASE as string | undefined,
 );
 export const authUrl = (path: string) => `${AUTH_BASE}${path}`;
+
+/** Only configured first-party API/auth transports may receive the session token.
+ * Public catalog/provider URLs must use an unauthenticated fetch or browser link. */
+export function authenticatedApiUrl(path: string): string {
+  const origin = typeof window === "undefined" ? "http://localhost" : window.location.origin;
+  const destination = apiUrl(path);
+  const url = new URL(destination, origin);
+  const allowed = new Set([new URL(apiUrl("/"), origin).origin, new URL(authUrl("/"), origin).origin]);
+  if (!allowed.has(url.origin) || !["https:", "http:"].includes(url.protocol) ||
+      url.username || url.password || url.hash || !url.pathname.startsWith("/api/")) {
+    throw new Error("untrusted_api_destination");
+  }
+  return destination;
+}

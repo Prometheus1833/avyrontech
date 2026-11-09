@@ -108,6 +108,8 @@ async function confirm(page: Page, title: string) {
 test("Antivirus is the final Principal entry and clearly blocks unconfigured/confidential uploads", async ({
   page,
 }) => {
+  // Sidebar ordering is a desktop contract; dedicated cases below verify 320px.
+  await page.setViewportSize({width:1440,height:960});
   await fixture(page);
   await page.goto("/profil?tab=antivirus");
   await expect(

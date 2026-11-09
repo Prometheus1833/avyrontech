@@ -404,7 +404,7 @@ const Services = () => {
               onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "pricing_footer" })}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-full bg-[#25D366] hover:bg-[#1ebe5a] px-6 py-3 text-sm font-bold text-white transition-colors"
+              className="inline-flex items-center gap-2 rounded-full bg-[#25D366] hover:bg-[#1ebe5a] px-6 py-3 text-sm font-bold text-slate-950 transition-colors"
             >
               WhatsApp
             </a>
@@ -417,7 +417,7 @@ const Services = () => {
             </a>
             <Link
               to="/#examples"
-              className="inline-flex items-center gap-2 rounded-full bg-cyan-400 text-background hover:bg-cyan-300 px-6 py-3 text-sm font-bold transition-colors"
+              className="inline-flex items-center gap-2 rounded-full bg-cyan-400 text-slate-950 hover:bg-cyan-300 px-6 py-3 text-sm font-bold transition-colors"
             >
               {(ro ? serviceInlineCopy.text_49fd39229a0f.ro : serviceInlineCopy.text_49fd39229a0f.en)}
             </Link>

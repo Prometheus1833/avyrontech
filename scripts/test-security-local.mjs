@@ -16,6 +16,7 @@ import { createServer } from "node:net";
 import { scryptSync, randomBytes, createHash, createHmac } from "node:crypto";
 import assert from "node:assert/strict";
 import ts from "typescript";
+import { securityInventory } from "./security-readiness.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const work = mkdtempSync(join(tmpdir(), "avyron-security-local-"));
@@ -259,6 +260,47 @@ try {
       "anonymous denied " + path,
       response.status === 401 &&
         response.headers.get("cache-control")?.includes("no-store"),
+    );
+  }
+  // Exercise the explicit private route inventory against real workerd middleware.
+  // This establishes anonymous denial, not exhaustive role/resource authorization.
+  const inventory = securityInventory(root);
+  const protectedPatterns = inventory.middleware
+    .filter((row) => row.handlers.includes("requireAuth"))
+    .map((row) => row.path);
+  const matches = (pattern, path) =>
+    pattern.endsWith("*")
+      ? path.startsWith(pattern.slice(0, -1))
+      : pattern === path;
+  const privateRoutes = [
+    ...new Map(
+      inventory.endpoints
+        .filter(
+          (row) =>
+            ["GET", "POST", "PUT", "PATCH", "DELETE"].includes(row.method) &&
+            (row.handlers.includes("requireAuth") ||
+              protectedPatterns.some((pattern) => matches(pattern, row.path))),
+        )
+        .map((row) => [row.method + ":" + row.path, row]),
+    ).values(),
+  ];
+  for (let i = 0; i < privateRoutes.length; i += 4) {
+    await Promise.all(
+      privateRoutes.slice(i, i + 4).map(async (row) => {
+        const path = row.path.replace(
+          /:[A-Za-z_]\w*(?:\{[^}]*\})?/g,
+          "audit-missing",
+        );
+        const response = await request(path, {
+          method: row.method,
+          ...(row.method === "GET" ? {} : { body: {} }),
+        });
+        await response.arrayBuffer();
+        check(
+          `inventory anonymous denied ${row.method} ${row.path}`,
+          response.status === 401 || response.status === 403,
+        );
+      }),
     );
   }
   const owner = await login("security-owner@example.test"),

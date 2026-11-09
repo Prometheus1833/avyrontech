@@ -289,6 +289,8 @@ test("messenger panel supports team DM and project clients with explicit shared 
 test("failed send keeps text and idempotency key; project switching isolates drafts and messages", async ({
   page,
 }) => {
+    // Persistent sidebar/two-pane contract; responsive counterparts set narrow viewports.
+    await page.setViewportSize({width:1440,height:960});
   const f = await setup(page);
   await page.goto("/");
   await page

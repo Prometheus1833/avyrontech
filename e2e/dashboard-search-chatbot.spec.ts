@@ -156,6 +156,7 @@ for (const width of [320, 390, 1440])
 test("principal, platformă și explicațiile iconurilor din bara de sus", async ({
   page,
 }) => {
+  await page.setViewportSize({width:1440,height:960});
   await setup(page);
   await page.goto("/profil?tab=ai-os");
   const nav = page.getByRole("navigation", {

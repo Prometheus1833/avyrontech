@@ -305,6 +305,8 @@ async function setup(page: Page) {
 test("navigația are AVY Engine, Cariere și Biblioteca în OS, Altele la final", async ({
   page,
 }) => {
+    // Persistent sidebar/two-pane contract; responsive counterparts set narrow viewports.
+    await page.setViewportSize({width:1440,height:960});
   await setup(page);
   await page.goto("/profil?tab=profile");
   const nav = page.getByRole("navigation", {

@@ -39,7 +39,7 @@ const LangSwitch = ({ className = "" }: { className?: string }) => {
         className="px-2 py-0.5 rounded-full bg-muted/70 text-[10px] font-bold uppercase text-foreground transition-all duration-200 ease-out hover:bg-muted hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label={lang === "ro" ? "Schimbă limba (română activă)" : "Change language (English active)"}
+        aria-label={lang === "ro" ? "RO — Schimbă limba (română activă)" : "EN — Change language (English active)"}
         title={lang === "ro" ? "Limbă: Română" : "Language: English"}
       >
         {lang}

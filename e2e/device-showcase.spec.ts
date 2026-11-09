@@ -15,8 +15,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("homepage keeps six website reasons in three paired cards and a compact demo form", async ({ page }) => {
-  await page.goto("/");
-  await page.locator('[data-deferred-pending]').first().scrollIntoViewIfNeeded();
+  await page.goto("/#de-ce");
   const reasons = page.getByTestId("problem-reasons");
   await expect(reasons.locator("article")).toHaveCount(3);
   await expect(reasons.locator("h3, h4")).toHaveCount(6);

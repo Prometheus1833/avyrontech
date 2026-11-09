@@ -77,7 +77,7 @@ export default function ServiceSection({
           </div>
 
           <div>
-            <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-white/45">
+            <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-white/65">
               {lang === "ro" ? "Elemente esențiale" : "Essential elements"}
             </h3>
             <ul className="mt-3">
@@ -103,7 +103,7 @@ export default function ServiceSection({
               {lang === "ro" ? `Vezi pachetul ${section.name.ro}` : `See the ${section.name.en} package`}
               <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
-            <a href="#brief" className="text-sm text-white/45 underline-offset-4 hover:text-white/80 hover:underline">
+            <a href="#brief" className="text-sm text-white/65 underline-offset-4 hover:text-white/80 hover:underline">
               {lang === "ro" ? "sau trimite efectele alese" : "or send the effects you picked"}
             </a>
           </div>

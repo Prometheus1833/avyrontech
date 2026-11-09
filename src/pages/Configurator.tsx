@@ -297,7 +297,7 @@ export default function Configurator() {
             {copy.title}
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">{copy.description}</p>
-          <p className="mx-auto mt-3 max-w-2xl text-xs leading-5 text-muted-foreground/80 sm:text-sm">{copy.helper}</p>
+          <p className="mx-auto mt-3 max-w-2xl text-xs leading-5 text-muted-foreground sm:text-sm">{copy.helper}</p>
         </div>
 
         <div className="mt-10 grid items-start gap-5 lg:mt-14 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] lg:gap-8">
@@ -485,7 +485,7 @@ export default function Configurator() {
                 <div className="p-5 sm:p-6">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#9b6948]">{copy.popular}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#865637]">{copy.popular}</p>
                       <p className="mt-1 font-display text-xl font-black">{ro ? "Clar, relevant, pregătit pentru conversie." : "Clear, relevant and ready to convert."}</p>
                     </div>
                     <span className="rounded-full border border-[#172018]/10 px-3 py-1.5 text-[10px] font-semibold">{tx(business.label)}</span>
@@ -494,7 +494,7 @@ export default function Configurator() {
                     {business.menu.map((item) => (
                       <div key={item.ro} className="flex items-center justify-between gap-4 rounded-xl bg-white/55 px-3.5 py-3">
                         <span className="text-xs font-semibold">{tx(item)}</span>
-                        <span className="shrink-0 text-[10px] font-bold text-[#9b6948]">{ro ? "INCLUS" : "INCLUDED"}</span>
+                        <span className="shrink-0 text-[10px] font-bold text-[#865637]">{ro ? "INCLUS" : "INCLUDED"}</span>
                       </div>
                     ))}
                   </div>

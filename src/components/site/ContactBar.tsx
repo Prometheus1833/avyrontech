@@ -8,7 +8,7 @@ const ContactBar = () => {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="WhatsApp"
-        className="size-10 md:size-12 rounded-full bg-[#25D366] text-white grid place-items-center shadow-elev hover:scale-110 transition-transform"
+        className="size-10 md:size-12 rounded-full bg-[#25D366] text-slate-950 grid place-items-center shadow-elev hover:scale-110 transition-transform"
       >
         <MessageCircle className="size-4 md:size-5" />
       </a>

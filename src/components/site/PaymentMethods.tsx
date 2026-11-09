@@ -42,7 +42,7 @@ const PaymentMethods = ({ compact = false }: { compact?: boolean }) => {
       }
     >
       <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-600 dark:text-cyan-300">
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-300">
           <ShieldCheck className="size-3.5" aria-hidden />
           {ro ? "Plăți sigure" : "Secure payments"}
         </span>
@@ -69,13 +69,13 @@ const PaymentMethods = ({ compact = false }: { compact?: boolean }) => {
             </span>
             <span className="min-w-0 text-left">
               <span className="block truncate text-xs font-bold leading-tight">{m.label}</span>
-              <span className="block truncate text-[10px] text-foreground/55">{m.hint}</span>
+              <span className="block truncate text-[10px] text-foreground/65">{m.hint}</span>
             </span>
           </li>
         ))}
       </ul>
 
-      <p className="mt-3 text-center text-[10px] leading-relaxed text-foreground/50">
+      <p className="mt-3 text-center text-[10px] leading-relaxed text-foreground/65">
         {ro
           ? "Procesatorul este afișat numai în checkout, dacă este activ pentru comanda respectivă. Avyron nu stochează datele complete ale cardului, iar plățile recurente cer acord explicit."
           : "The processor is shown only in checkout when active for that order. Avyron does not store full card details, and recurring payments require explicit consent."}

@@ -406,7 +406,7 @@ const QaTestingPage = () => {
                   }`}
                 >
                   {p.highlight && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-emerald-400 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-background">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-emerald-400 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-950">
                       {(ro ? serviceInlineCopy.text_ec3e71150dd9.ro : serviceInlineCopy.text_ec3e71150dd9.en)}
                     </div>
                   )}
@@ -444,7 +444,7 @@ const QaTestingPage = () => {
                     onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "qa_package", product: p.key })}
                     className={`mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
                       p.highlight
-                        ? "bg-emerald-400 text-background hover:bg-emerald-300"
+                        ? "bg-emerald-400 text-slate-950 hover:bg-emerald-300"
                         : "border border-foreground/15 bg-foreground/[0.06] hover:bg-foreground/[0.12]"
                     }`}
                   >

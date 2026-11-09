@@ -161,7 +161,7 @@ export default function CollectionPage({ seg, lang }: { seg: string; lang: Lang 
           {items.map((item, index) => {
             const type = TYPE_BY_ID.get(item!.type)!;
             return (
-              <li key={item!.slug}>
+              <li key={item!.slug} className="min-w-0">
                 <Link to={itemPath(lang, item!)} className="pa-edge flex items-center gap-3 rounded-2xl px-3.5 py-3 transition hover:-translate-y-0.5">
                   <span className="pa-mono w-5 text-center text-[11px] text-muted-foreground">{index + 1}</span>
                   <span className="min-w-0 flex-1">

@@ -66,6 +66,8 @@ test.describe("public SEO routes", () => {
   });
 
   test("homepage displays the approved hero and services wording", async ({ page }) => {
+    // Persistent sidebar/two-pane contract; responsive counterparts set narrow viewports.
+    await page.setViewportSize({width:1440,height:960});
     await page.goto("/#cta");
 
     await expect(page.getByText("Prezență digitală care lucrează pentru tine", { exact: true })).toBeVisible();
@@ -127,7 +129,7 @@ test.describe("public SEO routes", () => {
         JSON.stringify({ necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12" }),
       );
     });
-    await page.goto("/");
+    await page.goto("/#exemple");
     const examples = page.locator("#exemple");
     const showcase = examples.getByTestId("industry-device-showcase");
     await examples.scrollIntoViewIfNeeded();
@@ -160,7 +162,7 @@ test.describe("public SEO routes", () => {
     await expect(showcase).toHaveAttribute("data-active-stage", "tablet");
     await expect(showcase.getByRole("link", { name: "Automatizări și AI" })).toHaveAttribute("href", "/servicii/automatizari-si-ai");
 
-    await page.goto("/en");
+    await page.goto("/en#exemple");
     const englishExamples = page.locator("#exemple");
     const englishShowcase = englishExamples.getByTestId("industry-device-showcase");
     await englishShowcase.scrollIntoViewIfNeeded();
@@ -194,6 +196,8 @@ test.describe("public SEO routes", () => {
   });
 
   test("About stays indexable and legacy Portfolio routes consolidate into the service portfolio", async ({ page }) => {
+    // Persistent sidebar/two-pane contract; responsive counterparts set narrow viewports.
+    await page.setViewportSize({width:1440,height:960});
     // The static preview server does not emulate the public D1 carousel API.
     await page.route("**/api/public/example-carousels/premium-website", route => route.fulfill({
       json: { config: JSON.parse(readFileSync("src/shared/exampleCarouselDefaults.json", "utf8")) },
@@ -313,11 +317,11 @@ test.describe("public SEO routes", () => {
       const box = (await utility.first().boundingBox())!;
       expect(box.x).toBeGreaterThanOrEqual(0);
       expect(box.x + box.width).toBeLessThanOrEqual(390);
-      const clickable = await utility.last().evaluate((element) => {
+      const clickable = () => utility.last().evaluate((element) => {
         const bounds = element.getBoundingClientRect();
         return element.contains(document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2));
       });
-      expect(clickable, `${path}: SAL link must not be covered by the floating contact bar`).toBe(true);
+      await expect.poll(clickable, {message:`${path}: SAL link must remain accessible after the intro`,timeout:8000}).toBe(true);
     }
     await page.goto("/cariere");
     await page.locator("footer").getByRole("link", { name: /Descoperă colaborarea/ }).click();
@@ -506,7 +510,7 @@ test.describe("public SEO routes", () => {
     await expect(page.getByRole("link", { name: "Distribuie pe WhatsApp" }).first()).toHaveAttribute("href", /wa\.me/);
     await expect(page.getByRole("button", { name: "Copiază linkul" })).toHaveCount(0);
     await expect(page.getByTestId("article-share-row").first()).toHaveCSS("flex-wrap", "nowrap");
-    expect(await page.locator(".article-copy p").first().evaluate((node) => getComputedStyle(node).textAlign)).toBe("justify");
+    await expect(page.locator(".article-copy p").first()).toHaveCSS("text-align", (page.viewportSize()?.width ?? 1280) < 640 ? "left" : "justify");
   });
 
   test("AI Act article is an individual bilingual, indexable publication", async ({ page }) => {
@@ -667,6 +671,8 @@ test.describe("forms and authentication", () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
   });
   test("AI AVY Prod opens from the dashboard and creates approval-only drafts", async ({ page }) => {
+    // Persistent sidebar/two-pane contract; responsive counterparts set narrow viewports.
+    await page.setViewportSize({width:1440,height:960});
     let generationPayload: Record<string, unknown> | null = null;
     let generationKey = "";
     const project = {
@@ -752,6 +758,8 @@ test.describe("forms and authentication", () => {
   });
 
   test("AVY Engine opens from the dashboard and keeps sources behind review gates", async ({ page }) => {
+    // Persistent sidebar/two-pane contract; responsive counterparts set narrow viewports.
+    await page.setViewportSize({width:1440,height:960});
     const source = {
       id: "eng_src_originkit", slug: "originkit", name: "OriginKit", canonical_url: "https://www.originkit.dev/",
       source_type: "platform", access_mode: "account_required", pricing_model: "freemium",
@@ -898,6 +906,8 @@ test.describe("forms and authentication", () => {
   });
 
   test("authenticated staff can open the Cloudflare editorial workspace", async ({ page }) => {
+    // Persistent sidebar/two-pane contract; responsive counterparts set narrow viewports.
+    await page.setViewportSize({width:1440,height:960});
     await page.route("**/api/auth/refresh", (route) => route.fulfill({
       status: 200,
       contentType: "application/json",

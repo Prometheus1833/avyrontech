@@ -5,6 +5,10 @@ const viewports = [
   { name: "desktop", width: 1280, height: 900 },
 ] as const;
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({ necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12" })));
+});
+
 const scrollToProgress = async (page: Page, target: number) => {
   await page.evaluate((t) => {
     const el = document.querySelector<HTMLElement>('[data-testid="website-intro-scene"]')!;
@@ -22,8 +26,11 @@ const visibleIndex = (page: Page) =>
 
 for (const vp of viewports) {
   test(`website intro scene advances with scroll and stays readable (${vp.name})`, async ({ page }) => {
+    await page.emulateMedia({reducedMotion:"no-preference"});
     await page.setViewportSize({ width: vp.width, height: vp.height });
     await page.goto("/servicii/website-prezentare-profesional");
+    await expect(page.locator("[data-service-intro]")).toBeVisible({timeout:5000});
+    await expect(page.locator("[data-service-intro]")).toBeHidden({timeout:5000});
     const scene = page.getByTestId("website-intro-scene");
     await scene.scrollIntoViewIfNeeded();
     await expect(page.getByTestId("website-intro-paragraph")).toHaveCount(3);
@@ -33,6 +40,12 @@ for (const vp of viewports) {
       const progress = Number(await scene.getAttribute("data-progress"));
       expect(Math.abs(progress - target)).toBeLessThan(0.12);
 
+      // Wait for the real CSS transition, rather than sampling a fixed delay
+      // mid-frame on software-rendered WebKit.
+      await expect.poll(async () => {
+        const values = await visibleIndex(page);
+        return values[expected] > 0.8 && values.every((v, i) => i === expected || v < 0.35);
+      }).toBe(true);
       const opacities = await visibleIndex(page);
       const best = opacities.indexOf(Math.max(...opacities));
       expect(best).toBe(expected);

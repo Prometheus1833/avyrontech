@@ -435,12 +435,12 @@ const Configurator = () => {
               </div>
             </div>
 
+            {estimate.items.length === 0 && <p className="mt-4 text-xs text-muted-foreground">{c.none}</p>}
             <dl className="mt-4 space-y-2 text-sm" aria-live="polite">
               <div className="flex items-baseline justify-between gap-3">
                 <dt className="text-muted-foreground">{c.base}</dt>
                 <dd className="font-semibold">{formatLei(BASE_PRICE)}</dd>
               </div>
-              {estimate.items.length === 0 && <p className="text-xs text-muted-foreground">{c.none}</p>}
               {estimate.items.map((item) => (
                 <div key={item.id} className="flex items-baseline justify-between gap-3">
                   <dt className="min-w-0 text-muted-foreground">{item.label[lang]}</dt>
