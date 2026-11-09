@@ -35,6 +35,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
 import {buildAccess,canOpenSection} from "@/lib/access";
+import { accountDisplayName } from "@/lib/accountDisplayName";
 
 type MenuItem = {
   label: string;
@@ -54,12 +55,13 @@ const UserMenu = ({showNotificationBell=true}:{showNotificationBell?:boolean}) =
 
   if (!user) return null;
 
-  const initials = (profile?.display_name || user.email || "A")
+  const accountName = accountDisplayName(user, profile, lang === "en" ? "My account" : "Contul meu", isStaff);
+  const initials = accountName
     .split(" ")
-    .map((s) => s[0])
+    .map((s) => s.match(/[\p{L}\p{N}]/u)?.[0] ?? "")
     .slice(0, 2)
     .join("")
-    .toUpperCase();
+    .toUpperCase() || "A";
 
   const userItems:MenuItem[]=[
     {label:lang==='en'?'Profile':'Profil',icon:UserIcon,to:'/profil?tab=profile'},
@@ -119,8 +121,7 @@ const UserMenu = ({showNotificationBell=true}:{showNotificationBell?:boolean}) =
           className={`z-[70] max-h-[min(var(--radix-dropdown-menu-content-available-height),calc(100dvh-5rem))] max-w-[calc(100vw-1.5rem)] ${isStaff ? "w-64" : "w-72"} overflow-y-auto overscroll-contain rounded-xl p-1`}
         >
           <DropdownMenuLabel className="flex min-w-0 flex-col px-3 py-2">
-            <span className="font-medium truncate">{profile?.display_name || user.email}</span>
-            <span className="text-xs text-muted-foreground truncate">{user.email}</span>
+            <span data-testid="account-menu-identity" title={accountName} className="line-clamp-2 break-words font-medium leading-5 [overflow-wrap:anywhere]">{accountName}</span>
             {isAgencyPartner&&<span className="mt-1 w-fit rounded-full bg-brand/10 px-2 py-0.5 text-xs font-semibold text-brand">Avyron Partener</span>}
             {isStaff && (
               <span className="mt-1 inline-flex w-fit text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-brand/10 text-brand">

@@ -311,9 +311,11 @@ for (const width of [320,1440]) test(`meniul personal păstrează ordinea cerut�
   expect((await menu.getByRole("menuitem").allTextContents()).slice(0,9).map(t=>t.trim())).toEqual(entries.map(([label])=>label));
   for(const [label,tab] of entries)if(tab)await expect(menu.getByRole("menuitem",{name:label!,exact:true})).toHaveAttribute("href",`/profil?tab=${tab}`);
   await expect(menu.getByRole("menuitem", { name: /AVY Core|Bibliotecă Agenție|AI AVY Prod|Proiecte AI|Financiar/ })).toHaveCount(0);
-  const bounds = await menu.getByRole("menuitem").evaluateAll(nodes => nodes.map(node => { const r=node.getBoundingClientRect(); return {x:r.x,y:r.y,width:r.width,height:r.height}; }));
-  expect(new Set(bounds.map(rect => Math.round(rect.x))).size).toBe(1);
-  expect(bounds.every(rect => rect.width <= 280 && rect.height <= 40 && rect.height >= 36)).toBe(true);
+  // The opening animation briefly scales 36px rows below their final height.
+  await expect.poll(async () => {
+    const bounds = await menu.getByRole("menuitem").evaluateAll(nodes => nodes.map(node => { const r=node.getBoundingClientRect(); return {x:r.x,width:r.width,height:r.height}; }));
+    return new Set(bounds.map(rect => Math.round(rect.x))).size === 1 && bounds.every(rect => rect.width <= 280 && rect.height <= 40 && rect.height >= 36);
+  }, {message:"Meniul păstrează o coloană compactă după animația de deschidere"}).toBe(true);
   const menuBox=await menu.boundingBox();expect(menuBox!.width).toBeLessThanOrEqual(288);
   const blog=menu.getByRole("menuitem",{name:"Blogul Avyron",exact:true}),logout=menu.getByRole("menuitem",{name:"Deconectează-te",exact:true});
   await blog.scrollIntoViewIfNeeded();await expect(blog).toHaveAttribute("href","https://avyron.ro/blog");

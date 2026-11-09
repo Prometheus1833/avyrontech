@@ -133,12 +133,13 @@ for (const width of [320, 390, 768, 1440])
     });
     expect(errors).toEqual([]);
   });
-test("website offer follows apps, chooser stays compact and cinematic remains unavailable", async ({
+test("website chooser recommends the professional site, puts the subscription second and keeps cinematic unavailable", async ({
   page,
 }, info) => {
   await publicFixture(page);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/#servicii");
+  await expect(page.locator('main[data-anchor-ready="true"]')).toBeVisible();
   const trigger = page
     .getByTestId("service-list")
     .getByRole("button", { name: /Site Prezentare Profesional/ });
@@ -146,10 +147,17 @@ test("website offer follows apps, chooser stays compact and cinematic remains un
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
   const choices = page.getByTestId("website-choices");
+  await expect(choices.locator(':scope > *').first()).toHaveAttribute('data-recommended','true');
+  await expect(choices.locator(':scope > *').first()).toHaveAttribute('href','/servicii/website-prezentare-profesional');
+  await expect(choices.locator(':scope > *').first()).toBeFocused();
+  expect(await choices.locator('strong').allTextContents()).toEqual(['Site Prezentare Profesional','Website la 0 lei','Website Cinematic 3D']);
+  const subscription = choices.locator(':scope > *').nth(1);
+  await expect(subscription).toHaveAttribute('href',path);
+  for (const benefit of ['hosting','securitate','SEO inițial','mentenanță','199 lei/lună','Schimbi treapta oricând']) await expect(subscription).toContainText(benefit);
   for (const viewport of [{width:320,height:568},{width:390,height:844},{width:844,height:390},{width:1440,height:900}]) {
     await page.setViewportSize(viewport);
     const bounds = await choices.locator(":scope > *").evaluateAll(nodes => nodes.map(node => { const r=node.getBoundingClientRect(); return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}; }));
-    expect(bounds).toHaveLength(2);
+    expect(bounds).toHaveLength(3);
     for (const [i, rect] of bounds.entries()) {
       expect(rect.left).toBeGreaterThanOrEqual(8);
       expect(rect.right).toBeLessThanOrEqual(viewport.width-8);
@@ -159,9 +167,10 @@ test("website offer follows apps, chooser stays compact and cinematic remains un
       if (i) expect(rect.top).toBeGreaterThanOrEqual(bounds[i-1].bottom);
     }
     expect(await choices.evaluate(el => el.scrollWidth<=el.clientWidth+1)).toBe(true);
+    await dialog.screenshot({path:info.outputPath(`chooser-${viewport.width}-${viewport.height}.png`)});
   }
-  await expect(choices.locator(":scope > *")).toHaveCount(2);
-  await expect(choices.locator(":scope > *").nth(1)).toHaveAttribute(
+  await expect(choices.locator(":scope > *")).toHaveCount(3);
+  await expect(choices.locator(":scope > *").nth(2)).toHaveAttribute(
     "aria-disabled",
     "true",
   );
@@ -174,7 +183,8 @@ test("website offer follows apps, chooser stays compact and cinematic remains un
   await offer.scrollIntoViewIfNeeded();
   const apps=await page.getByTestId("service-list").getByRole("link",{name:/Aplicații Web și Mobile/}).boundingBox(),offerBox=await offer.boundingBox();
   expect(offerBox!.y).toBeGreaterThanOrEqual(apps!.y+apps!.height);
-  await expect(offer).toContainText("abonament lunar contra cost");
+  await expect(offer).toContainText("De la 199 lei/lună");
+  await expect(offer).toContainText("Schimbi treapta oricând, la cerere.");
   await expect(offer).toHaveAttribute("href",path);
   await page.screenshot({path:info.outputPath("website-offer-mobile.png")});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
@@ -183,6 +193,22 @@ test("website offer follows apps, chooser stays compact and cinematic remains un
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Fără costuri de dezvoltare.");
   await page.goto("/servicii");
   await expect(page.locator(`main a[href="${path}"]`)).toHaveCount(0);
+});
+test("English website chooser preserves recommendation and opens the middle subscription offer", async ({page}) => {
+  await publicFixture(page);
+  await page.goto('/en#servicii');
+  await expect(page.locator('main[data-anchor-ready="true"]')).toBeVisible();
+  await page.getByTestId('service-list').getByRole('button',{name:/Business websites/}).click();
+  const choices=page.getByTestId('website-choices');
+  expect(await choices.locator('strong').allTextContents()).toEqual(['Business Website','Website with no development fee','Cinematic 3D Website']);
+  await expect(choices.locator(':scope > *').first()).toBeFocused();
+  const subscription=choices.locator(':scope > *').nth(1);
+  await expect(subscription).toContainText('From RON 199 / month');
+  await expect(subscription).toContainText('initial SEO');
+  await expect(choices.locator(':scope > *').nth(2)).toHaveAttribute('aria-disabled','true');
+  await subscription.click();
+  await expect(page).toHaveURL('/en/services/website-subscription');
+  await expect(page.getByRole('heading',{level:1})).toBeVisible();
 });
 test("three-step brief preserves progress, never requires login, retries one request", async ({
   page,
