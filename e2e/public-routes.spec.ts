@@ -193,7 +193,7 @@ test.describe("public SEO routes", () => {
     await expect(studio.getByRole("link", { name: /Dincolo de 2D/ })).toHaveAttribute("href", "/servicii/creare-logo-3d-dinamic-cinematic");
   });
 
-  test("About stays indexable and legacy Portfolio routes consolidate into the service portfolio", async ({ page }) => {
+  test("About stays indexable and the portfolio has its own canonical page", async ({ page }) => {
     // The static preview server does not emulate the public D1 carousel API.
     await page.route("**/api/public/example-carousels/premium-website", route => route.fulfill({
       json: { config: JSON.parse(readFileSync("src/shared/exampleCarouselDefaults.json", "utf8")) },
@@ -206,15 +206,16 @@ test.describe("public SEO routes", () => {
     await expect(page.getByText("Cybersecurity", { exact: true })).toBeVisible();
     await expect(page.getByText("QA Testing", { exact: true })).toBeVisible();
     await expect(page.getByText("Vibe Development", { exact: true })).toBeVisible();
-    await expect(page.locator("header").getByRole("link", { name: "Bibliotecă", exact: true })).toHaveAttribute("href", "/biblioteca");
+    if ((page.viewportSize()?.width ?? 1280) >= 640) {
+      await expect(page.locator("header").getByRole("link", { name: "Bibliotecă", exact: true })).toHaveAttribute("href", "/biblioteca");
+    }
     await expect(page.getByRole("link", { name: "Vezi biblioteca", exact: true })).toHaveAttribute("href", "/biblioteca");
-    await expect(page.locator('a[href="/portofoliu"]')).toHaveCount(0);
-    await expect(page.locator("footer").getByRole("link", { name: "Vezi portofoliul" })).toHaveAttribute("href", "/servicii/website-prezentare-profesional#portofoliu");
+    await expect(page.locator("footer").getByRole("link", { name: "Vezi portofoliul" })).toHaveAttribute("href", "/portofoliu");
 
     await page.goto("/portofoliu");
-    await expect(page).toHaveURL(/\/servicii\/website-prezentare-profesional#portofoliu$/);
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro/servicii/website-prezentare-profesional");
-    await expect(page.locator("#portofoliu")).toBeVisible();
+    await expect(page).toHaveURL(/\/portofoliu$/);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://avyron.ro/portofoliu");
+    await expect(page.locator("#portfolio-title")).toBeVisible();
 
     await page.goto("/despre-si-portofoliu");
     await expect(page).toHaveURL(/\/servicii\/website-prezentare-profesional#portofoliu$/);
@@ -642,7 +643,7 @@ test.describe("forms and authentication", () => {
     await expect.poll(ringCenter).toBeGreaterThan(before - 2);
     expect(await ringCenter()).toBeLessThan(before + 2);
 
-    await page.getByRole("button", { name: "Schimbă limba (română activă)" }).click();
+    await page.getByRole("button", { name: "Schimbă limba (RO — română activă)" }).click();
     await page.getByRole("option", { name: "en" }).click();
     await expect(page.getByRole("heading", { name: "Start here" })).toBeVisible();
     await expect(page.locator("html")).toHaveAttribute("lang", "en");

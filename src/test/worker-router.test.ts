@@ -8,6 +8,8 @@ import { decide } from "@/worker/router";
 const FILES: Record<string, string> = {
   "/index.html": "<html lang=ro><h1>home</h1>",
   "/servicii/index.html": "<html lang=ro><h1>pricing</h1>",
+  "/portofoliu/index.html": "<html lang=ro><h1>Portofoliu</h1>",
+  "/en/portfolio/index.html": "<html lang=en><h1>Portfolio</h1>",
   "/produse/index.html": "<html lang=ro><h1>products</h1>",
   "/produse/componente/buton-magnetic/index.html": "<html lang=ro><h1>product</h1>",
   "/termeni/index.html": "<html lang=ro><h1>terms</h1>",
@@ -87,6 +89,13 @@ describe("service draft preview isolation", () => {
 });
 
 describe("worker redirects", () => {
+  it.each(["/portofoliu", "/en/portfolio"])("serves %s without the retired redirect", async path => {
+    const response = await get(path);
+    expect(response.status).toBe(200);
+    expect(response.headers.has("location")).toBe(false);
+    expect(response.headers.get("x-robots-tag") || "").not.toContain("noindex");
+    expect(await response.text()).toContain("<h1>");
+  });
   it.each([
     ["/costuri", "/servicii"],
     ["/despre", "/despre-noi"],

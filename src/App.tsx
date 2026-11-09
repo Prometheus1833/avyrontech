@@ -19,6 +19,7 @@ const CookiePolicy = lazyWithRetry(() => import("./pages/CookiePolicy.tsx"));
 const Services = lazyWithRetry(() => import("./pages/Services.tsx"));
 const Configurator = lazyWithRetry(() => import("./pages/Configurator.tsx"));
 const AboutUs = lazyWithRetry(() => import("./pages/AboutUs.tsx"));
+const Portfolio = lazyWithRetry(() => import("./pages/Portfolio.tsx"));
 const Careers = lazyWithRetry(() => import("./pages/Careers.tsx"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound.tsx"));
 const ErrorPage = lazyWithRetry(() => import("./pages/ErrorPage.tsx"));
@@ -76,6 +77,7 @@ const DeferredNewsletterPrompt = () => {
 /** Butonul AVY apare pe paginile comerciale, nu pe cele private sau pe demo-uri. */
 const AvyLauncher = () => {
   const { pathname } = useLocation();
+  const portfolioDock = pathname === "/portofoliu" || pathname === "/en/portfolio";
   const [ready, setReady] = useState(false);
   const [openOnLoad, setOpenOnLoad] = useState(false);
   const excluded = surveyHost || pathname === "/surveys" || pathname.startsWith("/s/") || /^\/(auth|autentificare|staff|admin|profil|intern|finance|exemple|examples|demo|forgot-password|reset-password|403|500|offline|mentenanta|unsubscribe)/.test(pathname);
@@ -89,11 +91,11 @@ const AvyLauncher = () => {
     type="button"
     aria-label="Discută cu AVY, asistentul Avyron"
     onClick={() => { setOpenOnLoad(true); setReady(true); }}
-    className="fixed left-3 top-20 z-40 select-none rounded-2xl border border-border/60 bg-background/70 p-3 shadow-lg backdrop-blur-xl transition hover:scale-105 hover:bg-background/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+    className={`fixed ${portfolioDock ? "bottom-4 right-4" : "left-3 top-20"} z-40 select-none rounded-2xl border border-border/60 bg-background/70 p-3 shadow-lg backdrop-blur-xl transition hover:scale-105 hover:bg-background/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50`}
   ><span className="relative flex items-center gap-2"><span className="absolute -inset-2 -z-10 rounded-2xl bg-primary/20 blur-xl" aria-hidden /><Bot className="size-5 text-primary" strokeWidth={2.25} /><span className="hidden text-xs font-semibold tracking-wide sm:inline">AVY</span></span></button>;
   return (
     <Suspense fallback={null}>
-      <AvyChat initiallyOpen={openOnLoad} />
+      <AvyChat initiallyOpen={openOnLoad} dock={portfolioDock ? "bottom-right" : "default"} />
     </Suspense>
   );
 };
@@ -273,8 +275,8 @@ const App = () => {
                 <Route path="/en/about" element={<AboutUs />} />
                 <Route path="/cariere" element={<Careers />} />
                 <Route path="/en/careers" element={<Careers />} />
-                <Route path="/portofoliu" element={<Navigate to="/servicii/website-prezentare-profesional#portofoliu" replace />} />
-                <Route path="/en/portfolio" element={<Navigate to="/en/services/professional-presentation-website#portofoliu" replace />} />
+                <Route path="/portofoliu" element={<Portfolio />} />
+                <Route path="/en/portfolio" element={<Portfolio />} />
                 <Route path="/exemple/flawlesstudio" element={<FlawlesstudioDemo />} />
                 <Route path="/exemple/retuvo" element={<RetuvoDemo />} />
                 <Route path="/blog" element={<Blog />} />
