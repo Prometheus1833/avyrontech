@@ -266,7 +266,8 @@ test.describe("public SEO routes", () => {
     expect(legalLabels.indexOf("Setări cookie")).toBeLessThan(legalLabels.indexOf("Termeni de utilizare"));
     await expect(footer.getByRole("link", { name: /ANPC/ })).toHaveAttribute("href", "https://reclamatiisal.anpc.ro/");
     await expect(footer.locator('img[src="/anpc-sal-pictograma.png"]')).toBeVisible();
-    await expect(footer.getByRole("link", { name: "E-mail AVYRON" })).toHaveAttribute("href", "mailto:contact@avyron.ro");
+    await expect(footer.getByRole("link", { name: "contact@avyron.ro", exact: true })).toHaveAttribute("href", "mailto:contact@avyron.ro");
+    await expect(footer.getByRole("link", { name: "0734 605 055", exact: true })).toHaveAttribute("href", "tel:+40734605055");
     await expect(footer.getByRole("link", { name: "Conectează-te / Înregistrează-te" })).toHaveCount(0);
     await expect(footer.getByText("Instagram", { exact: true })).toHaveCount(0);
     await expect(footer.getByText("Facebook", { exact: true })).toHaveCount(0);

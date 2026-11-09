@@ -42,7 +42,8 @@ for (const width of [390, 1440]) test(`GA4 public cu acord și fără conturi pr
   expect(new URL(collected[0]).hash).toBe("");
   const footer = page.getByRole("navigation", { name: "Navigare", exact: true });
   await expect(footer.getByRole("link", { name: "Colaborări & cariere", exact: true })).toBeVisible();
-  await expect(footer.getByRole("link", { name: "Demo beauty", exact: true })).toHaveAttribute("href", "/exemple/flawlesstudio");
+  await expect(footer.getByRole("link", { name: "Portofoliu", exact: true })).toHaveAttribute("href", "/portofoliu");
+  await expect(footer.locator('a[href^="/exemple/"]')).toHaveCount(0);
   await footer.scrollIntoViewIfNeeded();
   await page.screenshot({ path: info.outputPath("public-discovery-footer.png") });
   await footer.getByRole("link", { name: "Servicii", exact: true }).click();

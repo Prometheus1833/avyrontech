@@ -103,7 +103,7 @@ const Footer = () => {
       <img className="avy-footer-background" src={planetBg} alt="" aria-hidden="true" loading="lazy" width={1920} height={768} />
       <div className="avy-footer-shell">
         <div className="avy-footer-primary" data-testid="footer-primary-row">
-          <Link className="avy-footer-brand" to={en ? "/en" : "/"} aria-label={en ? "AVYRON home" : "AVYRON acasă"}>
+          <Link className="avy-footer-brand" to={en ? "/en" : "/"}>
             <img src={logo} width={36} height={36} alt="" loading="lazy" />
             <span><strong>AVYRON</strong><small>Innovate. Develop. Elevate.</small></span>
           </Link>
@@ -111,8 +111,8 @@ const Footer = () => {
             {cta.to.startsWith("#") ? <a className="avy-footer-cta" href={cta.to} onClick={() => track("project")}>{ctaContent}</a> : <Link className="avy-footer-cta" to={cta.to} onClick={() => track("project")}>{ctaContent}</Link>}
             <div className="avy-footer-contact">
               <a href="https://wa.me/40734605055" target="_blank" rel="noopener noreferrer" onClick={() => track("whatsapp")}><MessageCircle size={15} aria-hidden="true" />WhatsApp</a>
-              <a href="tel:+40734605055" aria-label={en ? "Call us" : "Sună-ne"} onClick={() => track("phone")}><Phone size={15} aria-hidden="true" />0734 605 055</a>
-              <a href="mailto:contact@avyron.ro" aria-label={en ? "Email AVYRON" : "E-mail AVYRON"} onClick={() => track("email")}><Mail size={15} aria-hidden="true" />contact@avyron.ro</a>
+              <a href="tel:+40734605055" onClick={() => track("phone")}><Phone size={15} aria-hidden="true" />0734 605 055</a>
+              <a href="mailto:contact@avyron.ro" onClick={() => track("email")}><Mail size={15} aria-hidden="true" />contact@avyron.ro</a>
             </div>
           </div>
         </div>
