@@ -188,14 +188,14 @@ function ProfileDashboard() {
   const sectionCount = (section:SectionId) => section==="cart"&&access.isClient?cartItems.length:activityCounts[section];
   const sectionCountLabel = (section:SectionId) => section==="tickets"&&access.isClient?"mesaje necitite":"activități de văzut";
 
-  const NavButton = ({ section, mobile = false }: { section: SectionId; mobile?: boolean;
+  const NavButton = ({ section, mobile = false, card = false }: { section: SectionId; mobile?: boolean; card?: boolean;
   }) => {
     if (!canOpenSection(section, access)) return null;
     const sectionMeta = dashboardSectionMeta(section,access.isClient);
     const Icon = sectionMeta.icon;
     const label = section === "projects" && !access.isStaff ? "Proiectele mele" : section === "intern" && !access.isStaff ? "Mesaje proiecte" : sectionMeta.label;
     const active = tab === section;
-    const clientCard = access.isClient && !mobile && !sidebarCollapsed;
+    const clientCard = card && access.isClient && !mobile && !sidebarCollapsed;
     const count=sectionCount(section);
     const countLabel=section==="cart"&&access.isClient?(count===1?"produs în coș":"produse în coș"):sectionCountLabel(section);
     return (
@@ -250,7 +250,7 @@ function ProfileDashboard() {
                     access.isClient?<p className="mb-2 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">{group.label}</p>:(<button type="button" onClick={() => toggleGroup(group.id)} aria-expanded={expanded} className="mb-1 flex w-full items-center justify-between rounded-lg px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-slate-400 transition hover:bg-white/[0.035] hover:text-slate-400"><span>{group.label}</span><ChevronDown className={`size-3 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} /></button>)
                   )}
               <div className={`grid transition-[grid-template-rows,opacity] duration-200 ${expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-60"}`}><div className="min-h-0 overflow-hidden"><div className={access.isClient?"grid grid-cols-2 gap-1":"space-y-1"}>{expanded && group.items.map((section) => (
-                            <NavButton key={section.id} section={section.id} />))}</div></div></div>
+                            <NavButton key={section.id} section={section.id} card />))}</div></div></div>
             </div>
               );
           })}

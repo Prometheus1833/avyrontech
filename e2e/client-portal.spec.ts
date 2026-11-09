@@ -463,6 +463,7 @@ for (const width of [320,390,1440]) test(`servicii proprii, contor necitite și 
     return page.getByRole('navigation',{name:width<1024?'Secțiunile contului':'Navigare cont',exact:true});
   };
   let nav=await openDrawer();
+  if(width>=1024)expect((await page.locator('header').first().boundingBox())!.height).toBeLessThanOrEqual(72);
   const support=nav.getByRole('button',{name:'Suport Staff, 3 mesaje necitite',exact:true});
   await expect(support).toBeVisible();
   {const position=await support.evaluate(card=>{const a=card.getBoundingClientRect(),b=card.querySelector('[aria-label="3 mesaje necitite"]')!.getBoundingClientRect();return {right:a.right-b.right,top:b.top-a.top};});expect(position.right).toBeLessThan(14);expect(position.right).toBeGreaterThan(0);expect(position.top).toBeLessThan(14);expect(position.top).toBeGreaterThan(0);}
