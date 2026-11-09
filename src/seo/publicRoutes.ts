@@ -26,8 +26,6 @@ export const STANDALONE_PUBLIC_ROUTES = [
   ...INTERNATIONAL_PRODUCT_HUB_ROUTES,
   ...BLOG_SLUGS.map((slug) => `/blog/${slug}`),
   ...BLOG_SLUGS_EN.map((slug) => `/en/blog/${slug}`),
-  "/exemple/flawlesstudio",
-  "/exemple/retuvo",
   ...EXAMPLE_SLUGS.map((s) => `/examples/${s}`),
 ];
 
@@ -55,6 +53,8 @@ export const STATUS_PAGES: Array<{ route: string; file: string; status: number }
 
 /** Permanent redirects for legacy URLs (301, query string preserved). */
 export const REDIRECTS: Record<string, string> = {
+  "/exemple/flawlesstudio": "/portofoliu#wellness",
+  "/exemple/retuvo": "/portofoliu#servicii",
   "/costuri": "/servicii",
   "/costurisiproduse": "/servicii",
   "/en/pricing": "/en/services",

@@ -1,0 +1,31 @@
+{
+  "type": "lab-observations",
+  "date": "2026-11-09",
+  "entry": "/assets/index-Bda3sK1L.js",
+  "artifactPath": "/servicii/website-prin-abonament/index.html",
+  "desktopBefore": {
+    "viewport": "1440x1000x1",
+    "cpu": 1,
+    "lcpMs": 1548,
+    "cls": 0
+  },
+  "desktopAfter": {
+    "viewport": "1440x1000x1",
+    "cpu": 1,
+    "lcpMs": 585,
+    "cls": 0
+  },
+  "mobileAfter": {
+    "viewport": "390x844x3",
+    "cpu": 4,
+    "network": "Fast 4G",
+    "lcpMs": 3468,
+    "cls": 0
+  },
+  "limits": [
+    "shared local machine",
+    "no CrUX or INP evidence",
+    "not a PageSpeed score",
+    "plain Vite preview canonical SPA fallback excluded from route artifact comparison"
+  ]
+}

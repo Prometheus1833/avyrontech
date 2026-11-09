@@ -23,8 +23,6 @@ const Portfolio = lazyWithRetry(() => import("./pages/Portfolio.tsx"));
 const Careers = lazyWithRetry(() => import("./pages/Careers.tsx"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound.tsx"));
 const ErrorPage = lazyWithRetry(() => import("./pages/ErrorPage.tsx"));
-const FlawlesstudioDemo = lazyWithRetry(() => import("./pages/demos/FlawlesstudioDemo.tsx"));
-const RetuvoDemo = lazyWithRetry(() => import("./pages/demos/RetuvoDemo.tsx"));
 const Auth = lazyWithRetry(() => import("./pages/Auth.tsx"));
 const ForgotPassword = lazyWithRetry(() => import("./pages/ForgotPassword.tsx"));
 const ResetPassword = lazyWithRetry(() => import("./pages/ResetPassword.tsx"));
@@ -288,8 +286,8 @@ const App = () => {
                 <Route path="/en/careers" element={<Careers />} />
                 <Route path="/portofoliu" element={<Portfolio />} />
                 <Route path="/en/portfolio" element={<Portfolio />} />
-                <Route path="/exemple/flawlesstudio" element={<FlawlesstudioDemo />} />
-                <Route path="/exemple/retuvo" element={<RetuvoDemo />} />
+                <Route path="/exemple/flawlesstudio" element={<Navigate to="/portofoliu#wellness" replace />} />
+                <Route path="/exemple/retuvo" element={<Navigate to="/portofoliu#servicii" replace />} />
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/blog/:slug" element={<Blog />} />
                 <Route path="/en/blog" element={<Blog />} />

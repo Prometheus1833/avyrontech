@@ -26,12 +26,15 @@ const distDir = existsSync(resolve(root, "dist/client/index.html"))
   ? resolve(root, "dist/client")
   : resolve(root, "dist");
 const template = readFileSync(resolve(distDir, "index.html"), "utf8");
-// Only the portfolio needs this new route hint. Resolve the content-addressed
-// Vite chunk from the clean build instead of committing a changing asset hash.
+// Route-critical modules use content-addressed chunks from the clean build.
 const portfolioModules = readdirSync(resolve(distDir, "assets")).filter((file) =>
   /^Portfolio-[\w-]+\.js$/.test(file),
 );
 if (portfolioModules.length !== 1) throw new Error("Expected one built Portfolio module for route preloading");
+const subscriptionModules = readdirSync(resolve(distDir, "assets")).filter((file) =>
+  /^WebsiteSubscriptionPage-[\w-]+\.js$/.test(file),
+);
+if (subscriptionModules.length !== 1) throw new Error("Expected one built website subscription module for route preloading");
 
 const outDir = resolve(root, "node_modules/.avyron-prerender");
 
@@ -153,7 +156,7 @@ const templateHead = window.document.head.innerHTML;
 const templateBody = window.document.body.innerHTML;
 
 // ------------------------------------------------------------- render loop
-const { mount, PRERENDER_ROUTES, STATUS_PAGES } = await import(
+const { mount, PRERENDER_ROUTES, STATUS_PAGES, WEBSITE_SUBSCRIPTION_PATH } = await import(
   pathToFileURL(resolve(outDir, "entry.mjs")).href
 );
 
@@ -184,6 +187,13 @@ async function renderRoute(route) {
     preload.rel = "modulepreload";
     preload.setAttribute("crossorigin", "");
     preload.href = `/assets/${portfolioModules[0]}`;
+    doc.head.appendChild(preload);
+  }
+  if (Object.values(WEBSITE_SUBSCRIPTION_PATH).includes(route)) {
+    const preload = doc.createElement("link");
+    preload.rel = "modulepreload";
+    preload.setAttribute("crossorigin", "");
+    preload.href = `/assets/${subscriptionModules[0]}`;
     doc.head.appendChild(preload);
   }
   const html = `<!DOCTYPE html>\n${doc.documentElement.outerHTML}\n`;
