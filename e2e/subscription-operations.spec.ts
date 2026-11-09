@@ -318,6 +318,8 @@ async function allocationForm(page: Page, future = false) {
 test("alocă unui cont existent planul și calendarul lunar numai după verificare", async ({
   page,
 }, info) => {
+    // Persistent sidebar/two-pane contract; responsive counterparts set narrow viewports.
+    await page.setViewportSize({width:1440,height:960});
   const state = await setup(page);
   await page.goto("/profil?tab=subscriptions-admin");
   await expect(

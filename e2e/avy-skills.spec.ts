@@ -1,8 +1,14 @@
+import {checkWorkspaceAccessibility} from "./workspace-accessibility";
 import { test, expect, type Page } from "@playwright/test";
 import { staffFixture } from "./staff-fixtures";
 import { SKILL_SEEDS } from "../src/shared/skills/catalog";
 import { renderSkillPreview, preparedBrief } from "../src/shared/skills/render";
-import { blankBrief, type SkillRun } from "../src/shared/skills/model";
+import { SITE_STAGES } from "../src/shared/skills/siteStages";
+import {
+  blankBrief,
+  type SkillResource,
+  type SkillRun,
+} from "../src/shared/skills/model";
 async function setup(page: Page, restricted = false) {
   let blockNext = false;
   await staffFixture(page, restricted ? { role: "vibe_dev" } : {});
@@ -11,6 +17,21 @@ async function setup(page: Page, restricted = false) {
     published = 1,
     summary = SKILL_SEEDS[0].summary,
     instructions = SKILL_SEEDS[0].instructions;
+  const resources: SkillResource[] = SITE_STAGES.map((stage) => ({
+    id: "site_workflow_" + stage.key,
+    skill_slug: "site-builder",
+    title: "Workflow · " + stage.title,
+    domain: "general",
+    body: stage.workflow,
+    source_url: "",
+    stage_key: stage.key,
+    status: "draft",
+    revision: 1,
+    file_name: null,
+    content_type: null,
+    size_bytes: 0,
+    created_at: 1,
+  }));
   const runs: SkillRun[] = [],
     keys = new Map<string, string>(),
     calls: { path: string; body: unknown; key?: string }[] = [];
@@ -33,9 +54,60 @@ async function setup(page: Page, restricted = false) {
       path = u.pathname,
       seed =
         SKILL_SEEDS.find((x) => path.includes("/" + x.slug)) || SKILL_SEEDS[0],
-      body = req.method() === "POST" ? req.postDataJSON() : null;
+      body = ["POST", "PATCH"].includes(req.method())
+        ? req.postDataJSON()
+        : null;
     if (req.method() === "POST")
       calls.push({ path, body, key: req.headers()["idempotency-key"] });
+    if (path.includes("/stages/")) {
+      const stage = path.split("/").pop()!.replace(".md", "");
+      return route.fulfill({
+        headers: { "content-type": "text/markdown" },
+        body: resources
+          .filter((r) => r.stage_key === stage && r.status === "approved")
+          .map((r) => r.body)
+          .join("\n\n"),
+      });
+    }
+    if (path.endsWith("/resources") && req.method() === "POST") {
+      const resource: SkillResource = {
+        id: "resource-" + resources.length,
+        skill_slug: "site-builder",
+        title: body.title,
+        domain: body.domain,
+        body: body.body,
+        source_url: body.sourceUrl,
+        stage_key: body.stageKey,
+        status: "draft",
+        revision: 1,
+        file_name: null,
+        content_type: null,
+        size_bytes: 0,
+        created_at: Date.now(),
+      };
+      resources.unshift(resource);
+      return route.fulfill({ status: 201, json: { id: resource.id } });
+    }
+    if (path.includes("/resources/")) {
+      const resource = resources.find((r) => path.includes("/" + r.id))!;
+      if (path.endsWith("/state")) {
+        resource.status = body.status;
+        resource.revision++;
+        return route.fulfill({ json: { ok: true } });
+      }
+      if (req.method() === "PATCH") {
+        Object.assign(resource, {
+          title: body.title,
+          body: body.body,
+          domain: body.domain,
+          source_url: body.sourceUrl,
+          stage_key: body.stageKey,
+          status: "draft",
+          revision: resource.revision + 1,
+        });
+        return route.fulfill({ json: { ok: true } });
+      }
+    }
     if (path.endsWith("/runs") && req.method() === "POST") {
       const key = req.headers()["idempotency-key"],
         known = keys.get(key);
@@ -73,7 +145,16 @@ async function setup(page: Page, restricted = false) {
     }
     if (path.endsWith("/export")) {
       const r = runs.find((x) => path.includes("/" + x.id + "/"))!;
-      if(u.searchParams.get("format")==="svg")return route.fulfill({headers:{"content-type":"image/svg+xml","content-disposition":'attachment; filename="concept.svg"'},body:r.preview_html!.match(/<svg\b[\s\S]*?<\/svg>/g)![Number(u.searchParams.get("direction"))]});
+      if (u.searchParams.get("format") === "svg")
+        return route.fulfill({
+          headers: {
+            "content-type": "image/svg+xml",
+            "content-disposition": 'attachment; filename="concept.svg"',
+          },
+          body: r.preview_html!.match(/<svg\b[\s\S]*?<\/svg>/g)![
+            Number(u.searchParams.get("direction"))
+          ],
+        });
       return route.fulfill({
         headers: {
           "content-type": "text/html",
@@ -125,7 +206,40 @@ async function setup(page: Page, restricted = false) {
           approve: true,
           platform: true,
         },
-        resources: [],
+        resources:
+          seed.slug === "site-builder"
+            ? resources
+                .filter(
+                  (r) =>
+                    r.status !== "archived" &&
+                    (!u.searchParams.get("stage") ||
+                      r.stage_key === u.searchParams.get("stage")) &&
+                    (!u.searchParams.get("q") ||
+                      r.title
+                        .toLowerCase()
+                        .includes(u.searchParams.get("q")!.toLowerCase())),
+                )
+                .slice(
+                  Number(u.searchParams.get("resourceOffset") || 0),
+                  Number(u.searchParams.get("resourceOffset") || 0) + 20,
+                )
+            : [],
+        resourceTotal: resources.filter(
+          (r) =>
+            r.status !== "archived" &&
+            (!u.searchParams.get("stage") ||
+              r.stage_key === u.searchParams.get("stage")),
+        ).length,
+        resourceNextOffset: null,
+        resourceStages: SITE_STAGES.map((stage) => ({
+          stage_key: stage.key,
+          total: resources.filter(
+            (r) => r.stage_key === stage.key && r.status !== "archived",
+          ).length,
+          approved: resources.filter(
+            (r) => r.stage_key === stage.key && r.status === "approved",
+          ).length,
+        })),
         uploadBlock: "compliance_blocked",
         stats: { total: runs.length, queued: 0, ready: runs.length, failed: 0 },
         runtime: {
@@ -140,6 +254,7 @@ async function setup(page: Page, restricted = false) {
   });
   return {
     runs,
+    resources,
     calls,
     blockNext: () => {
       blockNext = true;
@@ -295,3 +410,110 @@ for(const width of [320,1440]){
   const state=await setup(page);await page.setViewportSize({width,height:900});await page.goto('/profil?tab=skill-media-generate');await page.getByRole('button',{name:'Produs în studio',exact:true}).click();await page.getByLabel('Afacere / viitorul client').fill('Atelier Nord');await page.getByLabel('Activitate',{exact:true}).fill('Cosmetice naturale');await page.getByLabel('Subiectul principal').fill('Serum în sticlă mată');await expect(page.getByLabel('Lumină',{exact:true})).toHaveValue('studio');await expect(page.getByLabel('Compoziție',{exact:true})).toHaveValue('center');await page.getByText('Promptul pregătit · fără apel AI',{exact:true}).click();const wait=page.waitForEvent('download');await page.getByRole('button',{name:'Descarcă prompt',exact:true}).click();expect((await wait).suggestedFilename()).toBe('avy-media-prompt.txt');expect(state.calls.filter(x=>x.path.endsWith('/runs'))).toHaveLength(0);await page.getByRole('button',{name:'Pregătește direcția',exact:true}).click();await expect(page.frameLocator('iframe').getByText('Serum în sticlă mată',{exact:true})).toBeVisible();expect(state.runs[0].brief_json).toContain('"purpose":"product"');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);await page.screenshot({path:info.outputPath(`media-generate-${width}.png`)});
  });
 }
+
+for (const width of [320, 390, 1440])
+  test(`Site Builder organizează și aprobă resurse pe etape la ${width}px`, async ({
+    page,
+  }, info) => {
+    const state = await setup(page);
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/profil?tab=skill-site-builder");
+    const nav = page.getByRole("navigation", { name: "Zonele skillului" });
+    await expect(
+      nav.getByRole("button", { name: "Etape", exact: true }),
+    ).toBeVisible();
+    await nav.getByRole("button", { name: "Etape", exact: true }).click();
+    const stages = page.getByRole("navigation", {
+      name: "Etape de dezvoltare",
+    });
+    if(width>=1280) await expect(stages.getByRole("button")).toHaveCount(8);
+    else await expect(page.getByRole("combobox",{name:"Selectează etapa de dezvoltare"})).toBeVisible();
+    const panel = page.getByRole("region", { name: "Etapele Site Builder" });
+    await expect(
+      panel.getByRole("heading", { name: "Exemplu Vizual", exact: true }),
+    ).toBeVisible();
+    await expect(
+      panel.getByRole("button", {
+        name: "Instrucțiuni pentru agent",
+        exact: true,
+      }),
+    ).toBeDisabled();
+    await panel.getByRole("button", { name: "Aprobă", exact: true }).click();
+    await expect(
+      panel.getByRole("button", {
+        name: "Instrucțiuni pentru agent",
+        exact: true,
+      }),
+    ).toBeEnabled();
+    const wait = page.waitForEvent("download");
+    await panel
+      .getByRole("button", { name: "Instrucțiuni pentru agent", exact: true })
+      .click();
+    expect((await wait).suggestedFilename()).toBe(
+      "AVYRON-Site-Builder-visual.md",
+    );
+    await panel.getByRole("button", { name: "Editează", exact: true }).click();
+    await expect(page.getByLabel("Etapă de dezvoltare")).toHaveValue("visual");
+    await page
+      .getByLabel("Instrucțiuni / informații utile")
+      .fill(
+        "Workflow revizuit: păstrează brief-ul autorizat și verifică versiunea mobilă înainte de predare.",
+      );
+    await page
+      .getByRole("button", { name: "Salvează ciorna", exact: true })
+      .click();
+    await expect(
+      panel.getByRole("button", { name: "Aprobă", exact: true }),
+    ).toBeVisible();
+    expect(state.resources.find((r) => r.stage_key === "visual")!.status).toBe(
+      "draft",
+    );
+    if(width>=1280) await stages.getByRole("button", { name: /Rafinare/ }).click();
+    else {await page.getByRole("combobox",{name:"Selectează etapa de dezvoltare"}).click();await expect(page.getByRole("option")).toHaveCount(8);await page.getByRole("option",{name:/Rafinare/}).click();}
+    await expect(
+      panel.getByRole("heading", { name: "Rafinare", exact: true }),
+    ).toBeVisible();
+    await expect(
+      panel.getByRole("heading", {
+        name: "Workflow · Exemplu Vizual",
+        exact: true,
+      }),
+    ).toHaveCount(0);
+    await panel
+      .getByRole("button", { name: "Adaugă prompt / resursă", exact: true })
+      .click();
+    await expect(page.getByLabel("Etapă de dezvoltare")).toHaveValue(
+      "refinement",
+    );
+    await expect(
+      page.getByLabel("Document sau imagine · maximum 25 MB"),
+    ).toBeDisabled();
+    await page
+      .getByLabel("Titlu", { exact: true })
+      .fill("Prompt rafinare mobil");
+    await page
+      .getByLabel("Instrucțiuni / informații utile")
+      .fill(
+        "Verifică layoutul, contrastul și aria-label pentru ecranele mici.",
+      );
+    await page
+      .getByRole("button", { name: "Salvează ciorna", exact: true })
+      .click();
+    await expect(
+      panel.getByRole("heading", {
+        name: "Prompt rafinare mobil",
+        exact: true,
+      }),
+    ).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth + 1,
+      ),
+    ).toBe(true);
+    await checkWorkspaceAccessibility(page,'[aria-label="Etapele Site Builder"]');
+    await panel.screenshot({
+      path: info.outputPath(`site-builder-stages-${width}.png`),
+    });
+    await panel.getByRole("heading",{name:"Workflow de dezvoltare",exact:true}).scrollIntoViewIfNeeded();
+    await page.screenshot({path:info.outputPath(`site-builder-stages-viewport-${width}.png`)});
+  });

@@ -797,7 +797,7 @@ html[data-logo3d="on"] .l3d-view[data-engine="on"] .l3d-fallback {
   font-weight: 700;
   letter-spacing: -0.03em;
   color: transparent;
-  -webkit-text-stroke: 1px rgba(244, 241, 250, 0.35);
+  -webkit-text-stroke: 1px rgba(244, 241, 250, 0.5);
   white-space: nowrap;
 }
 

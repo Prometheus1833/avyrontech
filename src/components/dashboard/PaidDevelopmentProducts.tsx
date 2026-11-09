@@ -47,7 +47,7 @@ export default function PaidDevelopmentProducts() {
   return <section aria-labelledby="paid-development-title" className="min-w-0 rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-500/10 to-[#10162a] p-4 sm:p-5">
     <header className="flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0">
-        <h1 id="paid-development-title" className="flex items-center gap-2 text-lg font-semibold"><BadgeCheck className="size-5 shrink-0 text-emerald-300" aria-hidden />Produse Development Achitate</h1>
+        <h1 id="paid-development-title" className="flex items-center gap-2 text-lg font-semibold"><BadgeCheck className="size-5 shrink-0 text-emerald-300" aria-hidden />Produse Development</h1>
         <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-400">Produsele apar după confirmarea plății. Istoricul se păstrează și după expirarea unui drept de acces; licența și livrabilele se verifică la deschiderea produsului.</p>
       </div>
       <button type="button" onClick={() => void load()} disabled={loading} className={action}><RefreshCw className="size-3.5" aria-hidden />Actualizează achizițiile</button>

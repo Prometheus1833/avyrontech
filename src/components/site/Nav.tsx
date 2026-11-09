@@ -105,15 +105,16 @@ const Nav = ({ links: customLinks, cta: customCta }: { links?: NavLinkDef[]; cta
                 {user ? "Avyron Web" : "AVYRON"}
               </span>
             </a>
+            {!loading && user && <Link to="/profil?tab=overview" aria-label="Deschide Avy Cont" className="inline-flex min-h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-violet-400/25 bg-violet-500/10 px-2 sm:px-3 text-xs font-semibold text-foreground transition hover:bg-violet-500/20">Avy Cont</Link>}
             <NavDate className={user ? "hidden xl:inline-flex" : ""} />
-            {!loading&&user&&!isStaff&&<Suspense fallback={null}><ClientChatButton/></Suspense>}
+            {!loading&&user&&!isStaff&&<span className="hidden sm:inline-flex"><Suspense fallback={null}><ClientChatButton/></Suspense></span>}
             <div className="hidden xl:inline-flex items-center gap-1.5">
               {showCurrency && <CurrencySwitch compact showDetails={false} />}
               <LangSwitch />
               <ThemeToggle />
             </div>
           </div>
-          {!loading && user && <Link to="/profil?tab=overview" aria-label="Deschide Avy Cont" className="inline-flex min-h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-violet-400/25 bg-violet-500/10 px-2 sm:px-3 text-xs font-semibold text-foreground transition hover:bg-violet-500/20">Avy Cont</Link>}
+
           <ul className="hidden xl:flex min-w-0 items-center gap-1.5 2xl:gap-3 text-sm font-medium">
             {links.map((l) => (
               <li key={l.href ?? l.to} className="shrink-0">

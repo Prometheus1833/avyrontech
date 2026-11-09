@@ -2,7 +2,7 @@ import { Hono, type Context } from "hono";
 import { z } from "zod";
 import type { AppBindings } from "./types";
 import { hasCapability, platformRoleForUser } from "./authorization";
-import { privilegedMfaSatisfied } from "./mfaPolicy";
+import { privilegedMfaSatisfied, financialMfaSatisfied } from "./mfaPolicy";
 import { checkRateLimit } from "./antispam";
 import { readJsonBodyUpTo } from "./requestBody";
 import { sha256 } from "./security";
@@ -286,7 +286,7 @@ subscriptionOperationsRouter.get(
       products: products.results,
       plans: await subscriptionPlans(c.env.DB),
       providerSubscriptions: providers.results,
-      canPrepareInvoices: (await financeWrite(c)) && !!c.get("mfaVerified"),
+      canPrepareInvoices: (await financeWrite(c)) && financialMfaSatisfied(c),
     });
   },
 );
@@ -488,6 +488,7 @@ subscriptionOperationsRouter.put(
         billing_cycle: string;
       }>();
     if (!sub) return fail(c, "not_found", 404);
+    if(await c.env.DB.prepare("SELECT 1 FROM website_subscription_projects WHERE subscription_id=?").bind(id).first()) return fail(c,"provider_managed_website_subscription",409,"Folosește Site-uri prin abonament pentru date și portalul Stripe pentru anulare. Scadența și starea se confirmă prin procesator.");
     if (sub.billing_cycle !== "monthly")
       return fail(
         c,
@@ -525,7 +526,8 @@ subscriptionOperationsRouter.post(
   "/api/admin/client-subscriptions/:id/prepare-invoice",
   async (c) => {
     if (!(await financeWrite(c))) return fail(c, "forbidden", 403);
-    if (!c.get("mfaVerified"))
+    if(await c.env.DB.prepare("SELECT 1 FROM subscriptions WHERE id=? AND plan_sku LIKE 'AVY-WEB-SUB-%'").bind(c.req.param("id")).first())return fail(c,"provider_managed_website_invoice",409,"Facturile acestui abonament se sincronizează prin procesator. Folosește istoricul central, fără o a doua factură pentru aceeași perioadă.");
+    if (!financialMfaSatisfied(c))
       return fail(
         c,
         "mfa_required",
@@ -638,7 +640,7 @@ subscriptionOperationsRouter.use(
     if (!rate.ok) return c.json({ error: { code: "rate_limited" } }, 429);
     if (c.req.method !== "GET") {
       if (!(await financeWrite(c))) return fail(c, "forbidden", 403);
-      if (!c.get("mfaVerified"))
+      if (!financialMfaSatisfied(c))
         return fail(
           c,
           "mfa_required",

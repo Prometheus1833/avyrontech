@@ -316,8 +316,8 @@ test("public user mini panel opens an anchored inbox without blocking navigation
 }) => {
   await feedFixture(page, true);
   await page.goto("/");
-  await page.getByRole("button", { name: "Profil", exact: true }).click();
-  await page.getByRole("menuitem", { name: "Notificări", exact: true }).click();
+  // Clients use the persistent header bell; their simplified avatar menu has no duplicate notification entry.
+  await page.getByRole("button", { name: /^Notificări(?:,|$)/ }).click();
   const inbox = page.getByRole("dialog", { name: "Notificările tale" });
   await expect(
     inbox.getByText("Proiectul tău a intrat în testare"),

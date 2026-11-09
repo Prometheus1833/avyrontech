@@ -182,6 +182,7 @@ for (const width of [320, 768, 1440])
     await page.getByRole("button", { name: "Listă", exact: true }).click();
     await expect(card).toContainText("Beneficiar Sintetic SRL");
     await expect(card).toContainText("Site profesional · SEO");
+    await expect(card.getByRole("link",{name:"Site proiect: Portal Beneficiar",exact:true})).toHaveAttribute("href","https://example.test/");
     expect(await page.locator("a a").count()).toBe(0);
   });
 test("fișa proiectului salvează calendarul și afișează abonamentul nativ, fără selectorul doar vizual", async ({

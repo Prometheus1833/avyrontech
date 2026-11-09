@@ -29,12 +29,11 @@ const FlawlesstudioDemo = () => {
               </span>
             </div>
             <nav className="hidden md:flex items-center gap-6 text-sm text-[#6b4a52]">
-              <a href="#servicii" className="hover:text-[#c97b8a]">Servicii</a>
-              <a href="#echipa" className="hover:text-[#c97b8a]">Echipă</a>
-              <a href="#galerie" className="hover:text-[#c97b8a]">Galerie</a>
-              <a href="#contact" className="hover:text-[#c97b8a]">Contact</a>
+              <a href="#servicii" className="hover:text-[#995365]">Servicii</a>
+              <a href="#echipa" className="hover:text-[#995365]">Echipă</a>
+              <a href="#contact" className="hover:text-[#995365]">Contact</a>
             </nav>
-            <a href="#programari" className="inline-flex items-center gap-1.5 bg-[#2a1a1f] text-white rounded-full px-4 py-2 text-sm font-bold hover:opacity-90">
+            <a href="#contact" className="inline-flex items-center gap-1.5 bg-[#2a1a1f] text-white rounded-full px-4 py-2 text-sm font-bold hover:opacity-90">
               <Calendar className="size-4" /> Programează
             </a>
           </div>
@@ -43,23 +42,23 @@ const FlawlesstudioDemo = () => {
         {/* HERO */}
         <section className="max-w-6xl mx-auto px-4 py-12 md:py-20 grid md:grid-cols-5 gap-8 items-center">
           <div className="md:col-span-3">
-            <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.25em] text-[#c97b8a] font-bold">
+            <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.25em] text-[#995365] font-bold">
               <span className="size-1.5 rounded-full bg-[#c97b8a] animate-pulse" /> Salon premium · București
             </span>
             <h1 className="font-display font-bold text-5xl md:text-7xl leading-[0.95] mt-3">
               Pielea ta,<br />
-              <span className="italic font-light text-[#c97b8a]">la fel de</span><br />
+              <span className="italic font-light text-[#995365]">la fel de</span><br />
               perfectă ca tine.
             </h1>
             <p className="text-base text-[#6b4a52] mt-4 max-w-md leading-relaxed">
               Epilare definitivă MedValley, tratamente faciale și ritualuri de îngrijire cu rezultate vizibile încă de la prima ședință.
             </p>
             <div className="flex flex-wrap items-center gap-3 mt-6">
-              <a href="#programari" className="inline-flex items-center gap-2 bg-[#2a1a1f] text-white rounded-full px-6 py-3 text-sm font-bold hover:opacity-90">
+              <a href="#contact" className="inline-flex items-center gap-2 bg-[#2a1a1f] text-white rounded-full px-6 py-3 text-sm font-bold hover:opacity-90">
                 Rezervă o ședință <ArrowRight className="size-4" />
               </a>
-              <a href="#galerie" className="inline-flex items-center gap-2 rounded-full border-2 border-[#2a1a1f]/30 px-5 py-3 text-sm font-semibold hover:bg-[#2a1a1f]/5">
-                Vezi galeria
+              <a href="#servicii" className="inline-flex items-center gap-2 rounded-full border-2 border-[#2a1a1f]/30 px-5 py-3 text-sm font-semibold hover:bg-[#2a1a1f]/5">
+                Vezi serviciile
               </a>
             </div>
             <div className="flex items-center gap-6 mt-8 pt-6 border-t border-[#e8d5d0]">
@@ -77,7 +76,7 @@ const FlawlesstudioDemo = () => {
               <Sparkles className="size-32 text-white/40" />
             </div>
             <div className="absolute top-3 right-3 left-3 rounded-2xl bg-white/95 backdrop-blur p-3 shadow-lg">
-              <div className="text-[10px] font-bold text-[#c97b8a] uppercase tracking-wider">Următorul slot</div>
+              <div className="text-[10px] font-bold text-[#995365] uppercase tracking-wider">Următorul slot</div>
               <div className="text-sm font-bold mt-0.5">Joi · 10:30</div>
               <div className="text-xs text-[#6b4a52]">cu Andreea M.</div>
             </div>
@@ -92,7 +91,7 @@ const FlawlesstudioDemo = () => {
         <section id="servicii" className="bg-white border-y border-[#e8d5d0] py-14">
           <div className="max-w-6xl mx-auto px-4">
             <div className="text-center max-w-xl mx-auto mb-10">
-              <span className="text-xs uppercase tracking-[0.25em] text-[#c97b8a] font-bold">Servicii</span>
+              <span className="text-xs uppercase tracking-[0.25em] text-[#995365] font-bold">Servicii</span>
               <h2 className="font-display font-bold text-3xl md:text-4xl mt-2">Ritualuri pentru o piele radiantă</h2>
             </div>
             <div className="grid md:grid-cols-4 gap-4">
@@ -104,11 +103,11 @@ const FlawlesstudioDemo = () => {
               ].map(([t, s, p, c]) => (
                 <div key={t} className={`rounded-2xl bg-gradient-to-br ${c} to-white border border-[#e8d5d0] p-5 hover:shadow-lg transition-shadow`}>
                   <div className="size-10 rounded-full bg-white grid place-items-center mb-3">
-                    <Heart className="size-5 text-[#c97b8a]" />
+                    <Heart className="size-5 text-[#995365]" />
                   </div>
                   <div className="font-display font-bold text-base">{t}</div>
                   <div className="text-xs text-[#6b4a52] mt-1">{s}</div>
-                  <div className="text-sm font-bold text-[#c97b8a] mt-2">{p}</div>
+                  <div className="text-sm font-bold text-[#995365] mt-2">{p}</div>
                 </div>
               ))}
             </div>
@@ -119,7 +118,7 @@ const FlawlesstudioDemo = () => {
         <section id="echipa" className="py-14">
           <div className="max-w-6xl mx-auto px-4">
             <div className="text-center max-w-xl mx-auto mb-10">
-              <span className="text-xs uppercase tracking-[0.25em] text-[#c97b8a] font-bold">Echipa</span>
+              <span className="text-xs uppercase tracking-[0.25em] text-[#995365] font-bold">Echipa</span>
               <h2 className="font-display font-bold text-3xl md:text-4xl mt-2">Profesioniste cu peste 19 ani de experiență</h2>
             </div>
             <div className="grid md:grid-cols-3 gap-4">
@@ -134,7 +133,7 @@ const FlawlesstudioDemo = () => {
                   </div>
                   <div className="font-display font-bold text-lg">{n}</div>
                   <div className="text-sm text-[#6b4a52]">{r}</div>
-                  <div className="text-xs text-[#c97b8a] font-bold mt-1">{e} experiență</div>
+                  <div className="text-xs text-[#995365] font-bold mt-1">{e} experiență</div>
                 </div>
               ))}
             </div>

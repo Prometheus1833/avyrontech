@@ -110,7 +110,7 @@ export default function Shell({ lang, children }: { lang: Lang; children: ReactN
   const showBackdrop = tier !== "none";
 
   return (
-    <div className="pa-root min-h-screen bg-background text-foreground">
+    <div className="pa-root dark min-h-screen bg-background text-foreground">
       {showBackdrop ? (
         <Suspense fallback={null}>
           <Backdrop tier={tier} />

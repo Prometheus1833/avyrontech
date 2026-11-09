@@ -78,3 +78,8 @@ export const clientProjectGrantSql=(alias: "p" | "project")=>`EXISTS(SELECT 1 FR
 export async function hasClientProjectGrant(db:D1Database,projectId:string,userId:string){
   return !!(await db.prepare(`SELECT 1 FROM projects p WHERE p.id=? AND ${clientProjectGrantSql("p")}`).bind(projectId,userId).first());
 }
+
+/** Subscription websites retain historical payer identity, but the owner field
+ * is never an alternative to the client's current explicit access grant. */
+export const projectOwnerResourceGrantSql=(alias:"p"|"project")=>`(NOT EXISTS(SELECT 1 FROM website_subscription_projects w WHERE w.project_id=${alias}.id) OR EXISTS(SELECT 1 FROM client_account_access cg WHERE cg.client_id=${alias}.client_id AND cg.user_id=${alias}.owner_user_id))`;
+export const projectOwnerAccessSql=(alias:"p"|"project")=>`(${alias}.owner_user_id=? AND ${projectOwnerResourceGrantSql(alias)})`;

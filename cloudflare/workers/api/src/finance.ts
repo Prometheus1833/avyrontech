@@ -1,3 +1,4 @@
+import { financialMfaSatisfied } from "./mfaPolicy";
 import { scanUpload, antivirusFailure, putScannedObject, getScannedObject } from "./malware";
 import { registerFinanceAccounts } from "./financeAccounts";
 import { receiptsRouter } from "./receipts";
@@ -48,7 +49,7 @@ async function idempotency(c: Context<AppBindings>, scope: string, request: unkn
 financeRouter.use("/api/finance/*", async (c, next) => {
   const rate = await checkRateLimit(c.env.DB, [{ key: `finance:${c.get("userId")}:h`, limit: 600, windowSec: 3600 }]);
   if (!rate.ok) return c.json({ error: { code: "rate_limited" } }, 429);
-  if (!["GET", "HEAD", "OPTIONS"].includes(c.req.method) && !c.get("mfaVerified")) return c.json({ error: { code: "mfa_required" } }, 403);
+  if (!["GET", "HEAD", "OPTIONS"].includes(c.req.method) && !(await financialMfaSatisfied(c))) return c.json({ error: { code: "mfa_required" } }, 403);
   await next();
 });
 
@@ -378,7 +379,7 @@ financeRouter.delete("/api/finance/documents/:documentId", async (c) => {
 });
 
 financeRouter.get("/api/finance/export", async (c) => {
-  if(!c.get("mfaVerified"))return c.json({error:{code:"mfa_required"}},403);
+  if(!(await financialMfaSatisfied(c)))return c.json({error:{code:"mfa_required"}},403);
   if(!(await allowed(c,"finance.audit.read")))return deny(c);
   const resource=c.req.query("resource")==="revenues"?"revenues":"expenses",format=c.req.query("format")==="json"?"json":"csv";
   const result=resource==="expenses"?await c.env.DB.prepare(`SELECT vendor.name vendor,expense.service_name,expense.category,expense.status,expense.billing_type,expense.billing_cycle,expense.currency,expense.net_amount_minor,expense.vat_amount_minor,expense.gross_amount_minor,expense.amount_ron_minor,expense.invoice_number,expense.invoice_date,expense.due_date,expense.paid_date,expense.next_billing_date,expense.source FROM financial_expenses expense JOIN financial_vendors vendor ON vendor.id=expense.vendor_id WHERE expense.archived_at IS NULL ORDER BY expense.updated_at DESC LIMIT 10000`).all<Record<string,unknown>>():await c.env.DB.prepare(`SELECT service_name,revenue_type,status,currency,net_amount_minor,vat_amount_minor,gross_amount_minor,amount_ron_minor,invoice_number,invoice_date,due_date,payment_date,source FROM financial_revenues WHERE archived_at IS NULL ORDER BY updated_at DESC LIMIT 10000`).all<Record<string,unknown>>();

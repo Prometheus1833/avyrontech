@@ -1,3 +1,5 @@
+import {websitePlans} from "./websiteSubscriptionPlans";
+import {WEBSITE_SUBSCRIPTION_PATH} from "../../../../src/shared/websiteSubscriptions";
 import { SERVICE_COMMERCIAL_SOURCES } from "../../../../src/data/serviceCommercialSources";
 
 export type KnowledgeEntry={id:string;category:string;language:string;question:string;answer:string;keywords:string;priority:number;source:string;agent_slug:string|null};
@@ -50,7 +52,7 @@ export async function retrievePublicSources(db: D1Database, language: string, qu
   const terms = catalogTerms(question);
   const browseProducts = !terms.length && /\b(produse|catalog|products|catalogue)\b/.test(normalizeQuestion(question));
   if (!terms.length && !browseProducts) return [];
-  const services: KnowledgeMatch[] = SERVICE_COMMERCIAL_SOURCES.map((service) => {
+  const services: KnowledgeMatch[] = SERVICE_COMMERCIAL_SOURCES.filter(service=>!service.entity_key.startsWith("website-sub-")).map((service) => {
     const price = service.base_price_minor === null
       ? (language === "en" ? "Price is confirmed after an audit." : "Prețul se stabilește după audit.")
       : (language === "en" ? `Starting at ${money(service.base_price_minor, language)}.` : `Preț de pornire: ${money(service.base_price_minor, language)}.`);
@@ -58,6 +60,15 @@ export async function retrievePublicSources(db: D1Database, language: string, qu
     const entry: KnowledgeEntry = { id: `service:${service.entity_key}`, category: "servicii", language, question: service.display_name, answer, keywords: catalogAliases[service.entity_key] || "", priority: 10, source: "public-service-catalog", agent_slug: null };
     return { entry, exact: false, score: catalogScore(terms, `${entry.question} ${entry.keywords}`) };
   }).filter((match) => match.score >= 0.5);
+
+  // Discovery is contextual, not part of the general services directory. Keep
+  // monthly plans out of ambiguous one-time website price answers.
+  if(/\b(abonament|abonamente|subscription|subscriptions)\b/.test(normalizeQuestion(question)) && /\b(site|website|web)\b/.test(normalizeQuestion(question))) {
+    const plans=await websitePlans(db);
+    const detail=plans.map(p=>`${p.name}: ${p.available&&p.priceMinor!==null?`${money(p.priceMinor,language)} / ${language==="en"?"month":"lună"}`:language==="en"?"request a monthly quote":"solicită oferta lunară"}`).join("; ");
+    const answer=language==="en"?`Website subscription: bespoke development is included at 0 RON; the monthly subscription is paid. The client provides the main domain. ${detail}. Details: ${WEBSITE_SUBSCRIPTION_PATH.en}. Terms require explicit acceptance; no automatic twelve-month commitment is implied.`:`Website prin abonament: dezvoltare personalizată inclusă — 0 lei; abonamentul lunar este contra cost. Clientul furnizează domeniul principal. ${detail}. Detalii: ${WEBSITE_SUBSCRIPTION_PATH.ro}. Termenii se acceptă explicit; ciclul de 12 luni nu presupune automat o perioadă obligatorie.`;
+    services.push({entry:{id:"service:website-subscription",category:"servicii",language,question:language==="en"?"Website subscription":"Website prin abonament",answer,keywords:"site website abonament subscription",priority:11,source:"public-service-catalog",agent_slug:null},exact:false,score:1});
+  }
 
   const products = await db.prepare(
     `SELECT slug,type,access,price_ron_cents,name_ro,name_en FROM product_items WHERE status='live' AND released_at<=? ORDER BY name_ro LIMIT 250`,

@@ -43,7 +43,7 @@
     --accent: 86 78% 60%;
     --accent-foreground: 222 25% 8%;
 
-    --brand: 264 90% 62%;
+    --brand: 264 90% 55%;
     --brand-foreground: 0 0% 100%;
     --brand-2: 200 95% 55%;
     --brand-3: 330 85% 65%;
@@ -552,4 +552,15 @@ html[data-motion-tier="usor"] .avy-route-transition {
     animation: none;
     transform: none;
   }
+}
+
+/* A consent decision takes precedence over optional floating contact controls. */
+html[data-cookie-panel-open] .public-contact-rail {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Keep subdued library copy readable on its intended dark canvas. */
+.avy-library :where([class~="text-white/30"], [class~="text-white/35"], [class~="text-white/40"], [class~="text-white/45"]) {
+  color: rgb(255 255 255 / .65);
 }

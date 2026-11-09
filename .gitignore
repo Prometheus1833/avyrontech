@@ -36,3 +36,4 @@ playwright/.cache/
 .avyron-current.tar.gz
 Claude outputs/
 .worktrees/
+.security-private/

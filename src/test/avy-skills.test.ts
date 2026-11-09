@@ -27,6 +27,7 @@ import {
   decodedGeneratedImage,
   imageDimensions,
 } from "../../cloudflare/workers/api/src/skillImages";
+import { SITE_STAGES } from "../shared/skills/siteStages";
 import { buildAccess, sectionsFor } from "../lib/access";
 
 vi.mock("../../cloudflare/workers/api/src/aiCore", async (importOriginal) => ({
@@ -516,6 +517,7 @@ it("blocks sensitive uploads before reading or forwarding them when compliance i
   const vendor = bouncerFixture();
   vi.stubGlobal("fetch", vendor.fetcher);
   const id = await resource();
+  db.prepare("UPDATE avy_skill_resources SET stage_key='visual' WHERE id=?").run(id);
   expect((await fileRequest(id, "private synthetic bytes")).status).toBe(503);
   expect(vendor.fetcher).not.toHaveBeenCalled();
   expect(
@@ -981,4 +983,201 @@ it("retains approved creative references in Free-only runs without widening mode
   const context=JSON.parse(input.messages[1].content);
   expect(context.references.join('\n')).toContain('Referinta aprobata pentru release');
   expect(context.logo).toBeDefined();
+});
+
+it("seeds all eight stage workflows as reviewable drafts without changing existing resource classifications", async () => {
+  const rows = db
+    .prepare(
+      "SELECT stage_key,title,body,status FROM avy_skill_resources WHERE stage_key IS NOT NULL ORDER BY stage_key",
+    )
+    .all();
+  expect(rows).toHaveLength(8);
+  for (const stage of SITE_STAGES) {
+    const saved = rows.find((r) => r.stage_key === stage.key)!;
+    expect(saved.status).toBe("draft");
+    expect(saved.body).toBe(stage.workflow);
+  }
+  expect((await req("?stage=visual", undefined, "GET")).status).toBe(200);
+  expect((await req("?stage=unknown", undefined, "GET")).status).toBe(400);
+  actor = "a";
+  grant(actor, "skills.read");
+  const limited = await (await req("?stage=visual", undefined, "GET")).json();
+  expect(limited.resources).toEqual([]);
+  expect(limited.resourceStages).toEqual([]);
+  actor = "client";
+  expect((await req("?stage=visual", undefined, "GET")).status).toBe(403);
+});
+it("stage editing uses native revision checks, preserves classification for legacy editors and requires reapproval", async () => {
+  const id = "site_workflow_visual",
+    original = SITE_STAGES[0];
+  expect(
+    (await req(`/resources/${id}/state`, { revision: 1, status: "approved" }))
+      .status,
+  ).toBe(200);
+  const patch = {
+    title: "Workflow vizual revizuit",
+    domain: "beauty",
+    body: original.workflow,
+    sourceUrl: "",
+    revision: 2,
+  };
+  expect((await req(`/resources/${id}`, patch, "PATCH")).status).toBe(200);
+  let saved = db
+    .prepare(
+      "SELECT stage_key,status,revision FROM avy_skill_resources WHERE id=?",
+    )
+    .get(id)!;
+  expect(saved).toMatchObject({
+    stage_key: "visual",
+    status: "draft",
+    revision: 3,
+  });
+  expect((await req(`/resources/${id}`, patch, "PATCH")).status).toBe(409);
+  expect(
+    (
+      await req(
+        `/resources/${id}`,
+        { ...patch, revision: 3, stageKey: "refinement" },
+        "PATCH",
+      )
+    ).status,
+  ).toBe(200);
+  const detail = await (
+    await req("?stage=refinement", undefined, "GET")
+  ).json();
+  expect(detail.resources.some((r) => r.id === id)).toBe(true);
+  expect(
+    (
+      await req(
+        `/resources/${id}`,
+        { ...patch, revision: 4, stageKey: null },
+        "PATCH",
+      )
+    ).status,
+  ).toBe(200);
+  saved = db
+    .prepare("SELECT stage_key FROM avy_skill_resources WHERE id=?")
+    .get(id)!;
+  expect(saved.stage_key).toBeNull();
+  actor = "a";
+  grant(actor, "skills.read");
+  expect(
+    (await req(`/resources/${id}`, { ...patch, revision: 5 }, "PATCH")).status,
+  ).toBe(403);
+});
+it("exports only approved stage instructions, excludes them from unrelated mockup context, and revalidates revocation", async () => {
+  const id = "site_workflow_security";
+  expect((await req("/stages/security.md", undefined, "GET")).status).toBe(409);
+  expect(
+    (await req(`/resources/${id}/state`, { revision: 1, status: "approved" }))
+      .status,
+  ).toBe(200);
+  actor = "a";
+  grant(actor, "skills.read");
+  const exported = await req("/stages/security.md", undefined, "GET");
+  expect(exported.status).toBe(200);
+  expect(exported.headers.get("Cache-Control")).toBe("private, no-store");
+  const text = await exported.text();
+  expect(text).toContain(
+    SITE_STAGES.find((s) => s.key === "security")!.workflow,
+  );
+  expect(text).not.toContain(SITE_STAGES[0].workflow);
+  const generic = await (await req("/context", undefined, "GET")).json();
+  expect(generic.references).not.toContain("Raport de securitate");
+  expect(generic.references).not.toContain("Fișierele externe se eliberează");
+  db.prepare("DELETE FROM user_capabilities WHERE user_id='a'").run();
+  expect((await req("/stages/security.md", undefined, "GET")).status).toBe(403);
+  actor = "owner";
+  expect(
+    (await req(`/resources/${id}/state`, { revision: 2, status: "archived" }))
+      .status,
+  ).toBe(200);
+  expect((await req("/stages/security.md", undefined, "GET")).status).toBe(409);
+});
+it("validates stage assignment in API and database and keeps pagination stage-scoped", async () => {
+  expect(
+    (
+      await req("/resources", {
+        title: "Prompt",
+        body: "Instrucțiune pentru o etapă",
+        stageKey: "not-a-stage",
+      })
+    ).status,
+  ).toBe(400);
+  const result = await req("/resources", {
+    title: "Prompt test",
+    body: "Instrucțiune pentru exemplul vizual",
+    stageKey: "visual",
+  });
+  expect(result.status).toBe(201);
+  const { id } = await result.json();
+  expect(
+    db.prepare("SELECT stage_key FROM avy_skill_resources WHERE id=?").get(id)!
+      .stage_key,
+  ).toBe("visual");
+  expect(
+    (
+      await app.request(
+        "https://app.fixture.test/api/skills/logo-engine/resources",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: "Nu este site",
+            body: "Resursă într-un alt skill",
+            stageKey: "visual",
+          }),
+        },
+        env,
+      )
+    ).status,
+  ).toBe(400);
+  expect(() =>
+    db
+      .prepare(
+        "UPDATE avy_skill_resources SET skill_slug='logo-engine' WHERE id=?",
+      )
+      .run(id),
+  ).toThrow();
+  for (let i = 0; i < 25; i++)
+    db.prepare(
+      "INSERT INTO avy_skill_resources(id,skill_slug,title,body,stage_key,created_at,updated_at) VALUES(?,'site-builder',?,'Instrucțiuni de test','visual',1,1)",
+    ).run("stage_page_" + i, "Stage page " + i);
+  const first = await (
+    await req("?stage=visual&q=Stage%20page", undefined, "GET")
+  ).json();
+  expect(first.resourceTotal).toBe(25);
+  expect(first.resources).toHaveLength(20);
+  const last = await (
+    await req(
+      "?stage=visual&q=Stage%20page&resourceOffset=20",
+      undefined,
+      "GET",
+    )
+  ).json();
+  expect(last.resources).toHaveLength(5);
+  expect(last.resourceNextOffset).toBeNull();
+  const other = await (
+    await req("?stage=launch&q=Stage%20page", undefined, "GET")
+  ).json();
+  expect(other.resourceTotal).toBe(0);
+});
+
+it("paginates approved stage handoffs explicitly without imposing a library ceiling", async () => {
+  for (let i = 0; i < 25; i++)
+    db.prepare(
+      "INSERT INTO avy_skill_resources(id,skill_slug,title,body,stage_key,status,created_at,updated_at) VALUES(?,'site-builder',?,'Prompt aprobat de test','launch','approved',1,1)",
+    ).run("handoff_" + String(i).padStart(2, "0"), "Handoff " + i);
+  const first = await (await req("/stages/launch.md", undefined, "GET")).text();
+  expect(first).toContain("offset=20");
+  expect(first).toContain("Handoff 0");
+  expect(first).not.toContain("## Handoff 24");
+  const last = await (
+    await req("/stages/launch.md?offset=20", undefined, "GET")
+  ).text();
+  expect(last).toContain("Handoff 24");
+  expect(last).not.toContain("## Continuare");
+  expect(
+    (await req("/stages/launch.md?offset=-1", undefined, "GET")).status,
+  ).toBe(400);
 });

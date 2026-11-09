@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { useLang } from "@/i18n/LanguageContext";
 import { apiUrl } from "@/lib/apiBase";
+import { isSavedContact, publicFormRequest, type ContactReceipt } from "@/lib/publicFormRequest";
 
 import { trackFunnel } from "@/lib/siteAnalytics";
 import Turnstile from "@/components/site/Turnstile";
@@ -128,6 +129,9 @@ const Configurator = () => {
   const [selection, setSelection] = useState<Selection>(() => defaultSelection());
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState("");
+  const inFlight = useRef(false);
+  const showError = (message: string) => { setFormError(message); toast.error(message); };
   const [token, setToken] = useState("");
   const [resetKey, setResetKey] = useState(0);
   const honeypot = useRef<HTMLInputElement>(null);
@@ -215,6 +219,8 @@ const Configurator = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (inFlight.current) return;
+    setFormError("");
     const schema = z.object({
       name: z.string().trim().min(2, c.errName).max(80),
       business: z.string().trim().min(2, c.errBusiness).max(80),
@@ -225,13 +231,14 @@ const Configurator = () => {
     });
     const parsed = schema.safeParse(form);
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0].message);
+      showError(parsed.error.issues[0].message);
       return;
     }
     if (TURNSTILE_SITE_KEY && !token) {
-      toast.error(c.captcha);
+      showError(c.captcha);
       return;
     }
+    inFlight.current = true;
     setLoading(true);
     try {
       const fd = new FormData();
@@ -251,11 +258,11 @@ const Configurator = () => {
       fd.append("company_url", honeypot.current?.value ?? "");
       if (token) fd.append("cf-turnstile-response", token);
 
-      const res = await fetch(apiUrl("/api/contact/demo"), { method: "POST", body: fd });
-      if (!res.ok) {
+      const { response: res, body } = await publicFormRequest<ContactReceipt>(apiUrl("/api/contact/demo"), { method: "POST", body: fd });
+      if (!isSavedContact(res, body)) {
         setToken("");
         setResetKey((k) => k + 1);
-        toast.error(res.status === 429 ? c.rateLimited : res.status === 403 ? c.captchaFailed : c.error);
+        showError(res.status === 429 ? c.rateLimited : res.status === 403 ? c.captchaFailed : c.error);
         return;
       }
       trackFunnel("generate_lead", "blogpro", {
@@ -271,11 +278,13 @@ const Configurator = () => {
       requestAnimationFrame(() =>
         document.getElementById("configurator-lead")?.scrollIntoView({ behavior: "smooth", block: "center" }),
       );
-    } catch (err) {
-      console.error("blog configurator submit failed", err);
-      toast.error(c.error);
+    } catch {
+      showError(c.error);
+      setToken("");
+      setResetKey((k) => k + 1);
     } finally {
       setLoading(false);
+      inFlight.current = false;
     }
   };
 
@@ -435,12 +444,12 @@ const Configurator = () => {
               </div>
             </div>
 
+            {estimate.items.length === 0 && <p className="mt-4 text-xs text-muted-foreground">{c.none}</p>}
             <dl className="mt-4 space-y-2 text-sm" aria-live="polite">
               <div className="flex items-baseline justify-between gap-3">
                 <dt className="text-muted-foreground">{c.base}</dt>
                 <dd className="font-semibold">{formatLei(BASE_PRICE)}</dd>
               </div>
-              {estimate.items.length === 0 && <p className="text-xs text-muted-foreground">{c.none}</p>}
               {estimate.items.map((item) => (
                 <div key={item.id} className="flex items-baseline justify-between gap-3">
                   <dt className="min-w-0 text-muted-foreground">{item.label[lang]}</dt>
@@ -486,7 +495,8 @@ const Configurator = () => {
             </div>
           </div>
         ) : (
-          <form onSubmit={submit} className="grid gap-4 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)]">
+          <form onSubmit={submit} aria-busy={loading} aria-describedby={formError ? "blog-form-error" : undefined} className="grid gap-4 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)]">
+            {formError && <p id="blog-form-error" role="alert" className="text-sm text-red-700 dark:text-red-300 lg:col-span-2">{formError}</p>}
             <div>
               <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-brand">
                 <Sparkles className="size-3.5" aria-hidden />

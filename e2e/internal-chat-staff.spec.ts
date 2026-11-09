@@ -115,6 +115,8 @@ test("Super Admin vede politica SC dar nu poate atribui Owner; MFA este obligato
 test("chat desktop: căutare, ciorne separate și Enter/Shift Enter", async ({
   page,
 }, info) => {
+  // This case exercises the persistent desktop panes; small-screen cases are separate.
+  await page.setViewportSize({width:1440,height:960});
   const { captures } = await staffFixture(page);
   await page.goto("/profil?tab=intern");
   await page.getByLabel("Caută conversație sau coleg").fill("anisoara");
@@ -198,6 +200,8 @@ test("AvyContabil primește navigare financiară, fără proiecte sau marketing"
 });
 
 test("răspunsul întârziat din A nu șterge ciorna din B", async ({ page }) => {
+  // This case exercises the persistent desktop panes; small-screen cases are separate.
+  await page.setViewportSize({width:1440,height:960});
   await staffFixture(page);
   let acknowledge: () => void = () => {};
   let entered = false;

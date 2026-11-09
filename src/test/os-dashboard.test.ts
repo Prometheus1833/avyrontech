@@ -146,7 +146,9 @@ describe("AVYRON OS dashboard", () => {
   it("afișează selectorul principal de website prin portal și păstrează produsele clar denumite", () => {
     const services = readFileSync(resolve(process.cwd(), "src/components/site/AgencyServices.tsx"), "utf8");
     const servicePage = readFileSync(resolve(process.cwd(), "src/pages/services/ServicePage.tsx"), "utf8");
-    expect(services).toContain("createPortal");
+    expect(services).toContain("<DialogContent");
+    expect(services).toContain('data-testid="website-choices"');
+    expect(services).toContain("WEBSITE_SUBSCRIPTION_PATH[lang]");
     expect(services).toContain('mainService: "Serviciu principal"');
     expect(services).toContain('"Produse AVYRON"');
     expect(servicePage).toContain('product.key === "premium-website"');

@@ -10,11 +10,11 @@ describe("Client portal boundary and navigation", () => {
       sections.filter((s) => s.group === "projects").map((s) => s.id),
     ).toEqual([
       "projects",
-      "catalog",
       "subscriptions",
-      "payments",
-      "documents",
       "collection",
+      "catalog",
+      "documents",
+      "payments",
     ]);
     expect(sections.some((s) => s.id === "client-maintenance")).toBe(false);
     for (const id of [

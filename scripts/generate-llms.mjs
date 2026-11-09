@@ -24,7 +24,7 @@ function sectionFor(path) {
   if (/^\/(?:servicii|en\/services)(?:\/|$)/.test(path)) return "Servicii / Services";
   if (/^\/(?:en\/)?products(?:\/|$)/.test(path) || /^\/produse(?:\/|$)/.test(path) || /^\/(?:it\/prodotti|hu\/termekek|de\/produkte|fr\/produits|pl\/produkty)$/.test(path)) return "Produse / Products";
   if (/^\/(?:en\/)?blog\//.test(path)) return "Articole / Articles";
-  if (["/", "/en", "/despre-noi", "/en/about", "/blog", "/en/blog", "/biblioteca", "/en/library"].includes(path)) return "Pagini principale / Main pages";
+  if (["/", "/en", "/despre-noi", "/en/about", "/portofoliu", "/en/portfolio", "/blog", "/en/blog", "/biblioteca", "/en/library"].includes(path)) return "Pagini principale / Main pages";
   return "Alte pagini publice / Other public pages";
 }
 

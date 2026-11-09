@@ -26,13 +26,12 @@ const RetuvoDemo = () => {
               </div>
               <span className="font-display font-bold text-lg tracking-tight">retuvo</span>
             </div>
-            <nav className="hidden md:flex items-center gap-6 text-sm text-emerald-900/70">
-              <a href="#cum" className="hover:text-emerald-600">Cum funcționează</a>
-              <a href="#harta" className="hover:text-emerald-600">Hartă puncte</a>
-              <a href="#parteneri" className="hover:text-emerald-600">Parteneri</a>
-              <a href="#download" className="hover:text-emerald-600">Aplicație</a>
+            <nav className="hidden md:flex items-center gap-6 text-sm text-emerald-900/85">
+              <a href="#cum" className="hover:text-emerald-700">Cum funcționează</a>
+              <a href="#parteneri" className="hover:text-emerald-700">Parteneri</a>
+              <a href="#download" className="hover:text-emerald-700">Aplicație</a>
             </nav>
-            <a href="#download" className="inline-flex items-center gap-1.5 bg-emerald-500 text-white rounded-full px-4 py-2 text-sm font-bold hover:bg-emerald-600">
+            <a href="#download" className="inline-flex items-center gap-1.5 bg-emerald-500 text-emerald-950 rounded-full px-4 py-2 text-sm font-bold hover:bg-emerald-600">
               <Smartphone className="size-4" /> Descarcă
             </a>
           </div>
@@ -50,11 +49,11 @@ const RetuvoDemo = () => {
                 <span className="text-emerald-500">Recuperează</span><br />
                 garanția.
               </h1>
-              <p className="text-base text-emerald-900/70 mt-4 max-w-md leading-relaxed">
+              <p className="text-base text-emerald-900/85 mt-4 max-w-md leading-relaxed">
                 Scanează codul de bare al recipientelor PET, aluminiu sau sticlă. Primești instant 0,5 RON în walletul digital. Simplu, rapid, eco.
               </p>
               <div className="flex flex-wrap gap-3 mt-6">
-                <a href="#download" className="inline-flex items-center gap-2 bg-emerald-500 text-white rounded-full px-6 py-3 text-sm font-bold hover:bg-emerald-600 shadow-lg shadow-emerald-500/30">
+                <a href="#download" className="inline-flex items-center gap-2 bg-emerald-500 text-emerald-950 rounded-full px-6 py-3 text-sm font-bold hover:bg-emerald-600 shadow-lg shadow-emerald-500/30">
                   Descarcă aplicația <ArrowRight className="size-4" />
                 </a>
                 <a href="#cum" className="inline-flex items-center gap-2 rounded-full border-2 border-emerald-500/30 text-emerald-700 px-5 py-3 text-sm font-semibold hover:bg-emerald-50">
@@ -64,8 +63,8 @@ const RetuvoDemo = () => {
               <div className="flex items-center gap-6 mt-8 pt-6 border-t border-emerald-100">
                 {[["2.4M+", "recipiente"], ["120K+", "utilizatori"], ["1.2M RON", "returnați"]].map(([v, l]) => (
                   <div key={l}>
-                    <div className="font-display font-bold text-2xl text-emerald-600 leading-none">{v}</div>
-                    <div className="text-[10px] uppercase tracking-wider text-emerald-900/60 mt-1">{l}</div>
+                    <div className="font-display font-bold text-2xl text-emerald-700 leading-none">{v}</div>
+                    <div className="text-[10px] uppercase tracking-wider text-emerald-900/85 mt-1">{l}</div>
                   </div>
                 ))}
               </div>
@@ -81,14 +80,14 @@ const RetuvoDemo = () => {
                     <div className="font-display font-bold text-4xl mt-1">42,50 <span className="text-base font-normal opacity-80">RON</span></div>
                   </div>
                   <div className="bg-white text-emerald-950 flex-1 rounded-t-[2rem] p-5 space-y-3">
-                    <button className="w-full bg-emerald-500 text-white rounded-2xl py-4 flex items-center justify-center gap-2 font-bold shadow-lg">
+                    <button className="w-full bg-emerald-500 text-emerald-950 rounded-2xl py-4 flex items-center justify-center gap-2 font-bold shadow-lg">
                       <ScanLine className="size-5" /> Scanează cod
                     </button>
-                    <div className="text-xs font-bold uppercase tracking-wider text-emerald-900/60 pt-2">Ultimele returnări</div>
+                    <div className="text-xs font-bold uppercase tracking-wider text-emerald-900/85 pt-2">Ultimele returnări</div>
                     {[["PET 0.5L · Coca-Cola", "+0,50"], ["Aluminiu · Ursus", "+0,50"], ["Sticlă · Borsec", "+0,50"]].map(([n, v]) => (
                       <div key={n} className="flex items-center justify-between text-xs py-2 border-b border-emerald-100">
                         <span className="truncate pr-2">{n}</span>
-                        <span className="font-bold text-emerald-600 shrink-0">{v}</span>
+                        <span className="font-bold text-emerald-700 shrink-0">{v}</span>
                       </div>
                     ))}
                   </div>
@@ -102,7 +101,7 @@ const RetuvoDemo = () => {
         <section id="cum" className="py-16">
           <div className="max-w-6xl mx-auto px-4">
             <div className="text-center max-w-xl mx-auto mb-12">
-              <span className="text-xs uppercase tracking-[0.25em] text-emerald-600 font-bold">3 pași</span>
+              <span className="text-xs uppercase tracking-[0.25em] text-emerald-700 font-bold">3 pași</span>
               <h2 className="font-display font-bold text-3xl md:text-4xl mt-2">Cum recuperezi garanția</h2>
             </div>
             <div className="grid md:grid-cols-3 gap-5">
@@ -112,12 +111,12 @@ const RetuvoDemo = () => {
                 [Wallet, "Primești instant", "0,5 RON pe recipient în wallet, retragi prin transfer bancar sau vouchere."],
               ].map(([Icon, t, d], i) => (
                 <div key={t as string} className="bg-emerald-50/50 border border-emerald-100 rounded-3xl p-6">
-                  <div className="size-12 rounded-2xl bg-emerald-500 text-white grid place-items-center mb-4">
+                  <div className="size-12 rounded-2xl bg-emerald-500 text-emerald-950 grid place-items-center mb-4">
                     <Icon className="size-6" />
                   </div>
-                  <div className="text-xs font-bold text-emerald-600 mb-1">PAS {i + 1}</div>
+                  <div className="text-xs font-bold text-emerald-700 mb-1">PAS {i + 1}</div>
                   <div className="font-display font-bold text-xl">{t as string}</div>
-                  <div className="text-sm text-emerald-900/70 mt-2">{d as string}</div>
+                  <div className="text-sm text-emerald-900/85 mt-2">{d as string}</div>
                 </div>
               ))}
             </div>
@@ -164,12 +163,12 @@ const RetuvoDemo = () => {
         <section id="download" className="py-16 bg-emerald-50/40">
           <div className="max-w-2xl mx-auto px-4 text-center">
             <h2 className="font-display font-bold text-3xl md:text-4xl">Descarcă aplicația retuvo</h2>
-            <p className="text-emerald-900/70 mt-3">Disponibilă gratuit pentru iOS și Android</p>
+            <p className="text-emerald-900/85 mt-3">Disponibilă gratuit pentru iOS și Android</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
               <button className="inline-flex items-center justify-center gap-2 bg-black text-white rounded-2xl px-6 py-3.5 font-semibold">
                 <Smartphone className="size-5" /> App Store
               </button>
-              <button className="inline-flex items-center justify-center gap-2 bg-emerald-500 text-white rounded-2xl px-6 py-3.5 font-semibold hover:bg-emerald-600">
+              <button className="inline-flex items-center justify-center gap-2 bg-emerald-500 text-emerald-950 rounded-2xl px-6 py-3.5 font-semibold hover:bg-emerald-600">
                 <Smartphone className="size-5" /> Google Play
               </button>
             </div>

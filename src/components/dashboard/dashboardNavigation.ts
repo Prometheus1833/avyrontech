@@ -80,6 +80,7 @@ export const DASHBOARD_GROUP_ORDER = [
 ];
 
 export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
+ "website-subscriptions":{label:"Site-uri prin abonament",commandLabel:"Deschide site-urile prin abonament",hint:"Cereri, planuri, clienți, proiecte și modificări lunare",icon:Globe},
   notifications: {label:"Notificări",commandLabel:"Deschide notificările",hint:"Ultimele actualizări din cont",icon:Bell},
   "notification-settings": {label:"Sistem notificări",commandLabel:"Configurează notificările",hint:"Reguli, mesaje și monitorizare",icon:Bell},
   "skill-site-builder": {label:"Site Builder",commandLabel:"Deschide Site Builder",hint:"Mockupuri, briefuri Codex și componente reutilizabile",icon:Globe},
@@ -102,11 +103,13 @@ export const DASHBOARD_SECTION_META: Record<SectionId, DashboardSectionMeta> = {
   reviews: { label: "Recenzii", commandLabel: "Deschide recenziile", hint: "Colectare și aprobare pentru servicii și surse conectate", icon: Star },
   domains: { label: "Domenii", commandLabel: "Deschide domeniile", hint: "DNS, SSL și active digitale", icon: Globe },
   media: { label: "Media", commandLabel: "Deschide biblioteca media", hint: "Fișiere, imagini și livrabile", icon: Image },
+  "leads-agency": { label: "Leads Agency", mobileLabel: "Leads Agency", commandLabel:"Deschide Leads Agency", hint:"Achiziție proiecte B2B · FREE-FIRST", icon: BriefcaseBusiness },
   leads: { label: "Leaduri", mobileLabel: "Leaduri", commandLabel: "Arată leadurile", hint: "Pipeline, oportunități și răspunsuri", icon: Target },
   subscriptions: { label: "Abonamente", commandLabel: "Deschide abonamentele", hint: "Planuri și servicii recurente", icon: CreditCard },
   payments: { label: "Metode de plată", commandLabel: "Deschide metodele de plată", hint: "Carduri salvate și date de facturare", icon: Wallet },
   cart: { label: "Coș", commandLabel: "Deschide coșul", hint: "Produse și servicii pregătite pentru comandă", icon: ShoppingCart },
   orders: { label: "Istoric și plăți", mobileLabel: "Comenzi", commandLabel: "Deschide comenzile", hint: "Comenzi, stare și finalizarea plății", icon: CreditCard },
+  "product-catalog": { label:"Produse",mobileLabel:"Produse",commandLabel:"Deschide catalogul de produse",hint:"Produse digitale disponibile în catalog",icon:PackageSearch },
   catalog: { label: "Servicii și produse", mobileLabel: "Catalog", commandLabel: "Explorează catalogul", hint: "Servicii, produse și favorite", icon: Boxes },
   invoices: { label: "Facturi", commandLabel: "Deschide facturile", hint: "Documente, scadențe și plăți", icon: Receipt },
   collection: { label: "Colecția mea", commandLabel: "Deschide colecția", hint: "Produsele și artefactele tale digitale", icon: Boxes },
@@ -144,12 +147,12 @@ export function dashboardSectionMeta(section:SectionId,client:boolean):Dashboard
  const overrides:Partial<Record<SectionId,Partial<DashboardSectionMeta>>>={
  overview:{label:"Acasă",commandLabel:"Deschide contul meu",hint:"Proiectele, serviciile și documentele tale"},
  projects:{label:"Proiectele mele",mobileLabel:"Proiecte",commandLabel:"Deschide proiectele mele",hint:"Progresul și livrabilele proiectelor alocate"},
- catalog:{label:"Servicii",mobileLabel:"Servicii",commandLabel:"Deschide serviciile",hint:"Servicii și produse disponibile pentru tine"},
+ catalog:{label:"Servicii",mobileLabel:"Servicii",commandLabel:"Deschide serviciile",hint:"Servicii disponibile pentru proiectele tale"},
  subscriptions:{label:"Mentenanță / Abonamente",mobileLabel:"Abonamente",commandLabel:"Deschide mentenanța și abonamentele",hint:"Planurile, facturarea și activitățile tale recurente"},
- payments:{label:"Plăți și facturi",commandLabel:"Deschide plățile și facturile",hint:"Istoric, descărcare facturi, date fiscale și metode de plată"},
- documents:{label:"Centru Documente",mobileLabel:"Documente",commandLabel:"Deschide Centrul de Documente",hint:"Documentele alocate și disponibile pentru contul tău"},
- collection:{label:"Produsele mele",mobileLabel:"Produse",commandLabel:"Deschide produsele mele",hint:"Licențele și produsele digitale din cont"},
- tickets:{label:"Suport și mesaje",commandLabel:"Deschide suportul și mesajele",hint:"Solicitări și conversații cu echipa proiectelor tale"},
+ payments:{label:"Plăți/Istoric",commandLabel:"Deschide plățile și istoricul",hint:"Cardul salvat, plățile confirmate și facturile lor"},
+ documents:{label:"Documentele Mele",mobileLabel:"Documente",commandLabel:"Deschide documentele",hint:"Documentele alocate și disponibile pentru contul tău"},
+ collection:{label:"Produsele mele",mobileLabel:"Produsele mele",commandLabel:"Deschide produsele mele",hint:"Licențele și produsele digitale din cont"},
+ tickets:{label:"Suport Staff",commandLabel:"Deschide suportul staff",hint:"Solicitări și conversații cu echipa proiectelor tale"},
  };
  return {...base,...overrides[section]};
 }

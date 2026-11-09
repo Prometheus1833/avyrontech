@@ -11,6 +11,7 @@ import { useLang } from "@/i18n/LanguageContext";
 import { apiUrl } from "@/lib/apiBase";
 import Turnstile from "@/components/site/Turnstile";
 import { TURNSTILE_SITE_KEY } from "@/config/turnstile";
+import { isSavedContact, publicFormRequest } from "@/lib/publicFormRequest";
 
 const MAX_FILES = 5;
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -60,6 +61,9 @@ const CTA = () => {
   const [token, setToken] = useState("");
   const [resetKey, setResetKey] = useState(0);
   const [captchaReady, setCaptchaReady] = useState(false);
+  const [formError, setFormError] = useState("");
+  const inFlight = useRef(false);
+  const showError = (message: string) => { setFormError(message); toast.error(message); };
   const fileInput = useRef<HTMLInputElement>(null);
   const honeypot = useRef<HTMLInputElement>(null);
 
@@ -79,15 +83,18 @@ const CTA = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (inFlight.current) return;
+    setFormError("");
     const parsed = schema.safeParse(data);
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0].message);
+      showError(parsed.error.issues[0].message);
       return;
     }
     if (TURNSTILE_SITE_KEY && !token) {
-      toast.error(t.cta.captchaRequired);
+      showError(t.cta.captchaRequired);
       return;
     }
+    inFlight.current = true;
     setLoading(true);
     try {
       const fd = new FormData();
@@ -97,26 +104,25 @@ const CTA = () => {
       if (token) fd.append("cf-turnstile-response", token);
       files.forEach((f) => fd.append("files", f, f.name));
 
-      const res = await fetch(apiUrl("/api/contact/demo"), { method: "POST", body: fd });
-      const body = (await res.json().catch(() => ({}))) as {
+      const { response: res, body } = await publicFormRequest<{
         summary?: Summary;
         error?: string;
         leadId?: string;
         saved?: boolean;
         delivered?: boolean;
-      };
+      }>(apiUrl("/api/contact/demo"), { method: "POST", body: fd }, files.length ? 180_000 : 20_000);
 
       if (res.status === 429) {
-        toast.error(t.cta.rateLimited);
+        showError(t.cta.rateLimited);
         return;
       }
       if (res.status === 403) {
-        toast.error(t.cta.captchaFailed);
+        showError(t.cta.captchaFailed);
         setToken("");
         setResetKey((k) => k + 1);
         return;
       }
-      if (!res.ok && !body.saved) throw new Error(body.error || `HTTP ${res.status}`);
+      if (!isSavedContact(res, body)) throw new Error("unconfirmed_submission");
 
       const receipt = body.summary ?? {
         leadId: body.leadId ?? "—",
@@ -136,11 +142,13 @@ const CTA = () => {
       setFiles([]);
       setToken("");
       setResetKey((k) => k + 1);
-    } catch (err) {
-      console.error("demo-request submit failed", err);
-      toast.error(t.cta.sendError);
+    } catch {
+      showError(t.cta.sendError);
+      setToken("");
+      setResetKey((k) => k + 1);
     } finally {
       setLoading(false);
+      inFlight.current = false;
     }
   };
 
@@ -220,10 +228,13 @@ const CTA = () => {
           ) : (
           <form
             onSubmit={submit}
+            aria-busy={loading}
+            aria-describedby={formError ? "demo-form-error" : undefined}
             onFocusCapture={() => setCaptchaReady(true)}
             onPointerDownCapture={() => setCaptchaReady(true)}
             className="bg-card p-5 sm:p-6 space-y-3"
           >
+            {formError && <p id="demo-form-error" role="alert" className="text-sm text-red-700 dark:text-red-300">{formError}</p>}
 
             <div className="grid gap-2 sm:grid-cols-2">
             <div>

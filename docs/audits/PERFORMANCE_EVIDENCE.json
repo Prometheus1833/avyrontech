@@ -1,0 +1,271 @@
+{
+  "date": "2026-11-09",
+  "method": "Lighthouse 13.6.0, isolated Chrome, localhost production build; laboratory only, not CrUX/INP",
+  "runs": [
+    {
+      "name": "mobile",
+      "execution_status": "PASS",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+      "scores": {
+        "performance": 0.41,
+        "accessibility": 1,
+        "best-practices": 0.96,
+        "seo": 1
+      },
+      "config": {
+        "formFactor": "mobile",
+        "screenEmulation": {
+          "mobile": true,
+          "width": 412,
+          "height": 823,
+          "deviceScaleFactor": 1.75,
+          "disabled": false
+        },
+        "throttlingMethod": "simulate",
+        "throttling": {
+          "rttMs": 150,
+          "throughputKbps": 1638.4,
+          "requestLatencyMs": 562.5,
+          "downloadThroughputKbps": 1474.5600000000002,
+          "uploadThroughputKbps": 675,
+          "cpuSlowdownMultiplier": 4
+        }
+      },
+      "metrics": {
+        "first-contentful-paint": {
+          "ms_or_unitless": 1071.1171,
+          "error": null
+        },
+        "largest-contentful-paint": {
+          "ms_or_unitless": 7181.026949999999,
+          "error": null
+        },
+        "total-blocking-time": {
+          "ms_or_unitless": 2660,
+          "error": null
+        },
+        "cumulative-layout-shift": {
+          "ms_or_unitless": 0,
+          "error": null
+        },
+        "speed-index": {
+          "ms_or_unitless": 6879.208392951135,
+          "error": null
+        }
+      }
+    },
+    {
+      "name": "desktop",
+      "execution_status": "PASS",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+      "scores": {
+        "performance": 0.97,
+        "accessibility": 0.96,
+        "best-practices": 0.96,
+        "seo": 1
+      },
+      "config": {
+        "formFactor": "desktop",
+        "screenEmulation": {
+          "mobile": false,
+          "width": 1350,
+          "height": 940,
+          "deviceScaleFactor": 1,
+          "disabled": false
+        },
+        "throttlingMethod": "simulate",
+        "throttling": {
+          "rttMs": 40,
+          "throughputKbps": 10240,
+          "requestLatencyMs": 0,
+          "downloadThroughputKbps": 0,
+          "uploadThroughputKbps": 0,
+          "cpuSlowdownMultiplier": 1
+        }
+      },
+      "metrics": {
+        "first-contentful-paint": {
+          "ms_or_unitless": 308.981,
+          "error": null
+        },
+        "largest-contentful-paint": {
+          "ms_or_unitless": 1234.9430000000002,
+          "error": null
+        },
+        "total-blocking-time": {
+          "ms_or_unitless": 49.5095,
+          "error": null
+        },
+        "cumulative-layout-shift": {
+          "ms_or_unitless": 0,
+          "error": null
+        },
+        "speed-index": {
+          "ms_or_unitless": 947.4887600043978,
+          "error": null
+        }
+      }
+    },
+    {
+      "name": "mobile-retry",
+      "execution_status": "NOT_VERIFIED",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36",
+      "scores": {
+        "performance": null,
+        "accessibility": 1,
+        "best-practices": 0.96,
+        "seo": 1
+      },
+      "config": {
+        "formFactor": "mobile",
+        "screenEmulation": {
+          "mobile": true,
+          "width": 412,
+          "height": 823,
+          "deviceScaleFactor": 1.75,
+          "disabled": false
+        },
+        "throttlingMethod": "simulate",
+        "throttling": {
+          "rttMs": 150,
+          "throughputKbps": 1638.4,
+          "requestLatencyMs": 562.5,
+          "downloadThroughputKbps": 1474.5600000000002,
+          "uploadThroughputKbps": 675,
+          "cpuSlowdownMultiplier": 4
+        }
+      },
+      "metrics": {
+        "first-contentful-paint": {
+          "ms_or_unitless": 1072.79,
+          "error": null
+        },
+        "largest-contentful-paint": {
+          "ms_or_unitless": null,
+          "error": "NO_LCP"
+        },
+        "total-blocking-time": {
+          "ms_or_unitless": null,
+          "error": "NO_LCP"
+        },
+        "cumulative-layout-shift": {
+          "ms_or_unitless": 0,
+          "error": null
+        },
+        "speed-index": {
+          "ms_or_unitless": 1989.5071483537233,
+          "error": null
+        }
+      }
+    },
+    {
+      "name": "mobile-chrome156",
+      "execution_status": "PASS",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+      "scores": {
+        "performance": 0.71,
+        "accessibility": 1,
+        "best-practices": 0.96,
+        "seo": 1
+      },
+      "config": {
+        "formFactor": "mobile",
+        "screenEmulation": {
+          "mobile": true,
+          "width": 412,
+          "height": 823,
+          "deviceScaleFactor": 1.75,
+          "disabled": false
+        },
+        "throttlingMethod": "simulate",
+        "throttling": {
+          "rttMs": 150,
+          "throughputKbps": 1638.4,
+          "requestLatencyMs": 562.5,
+          "downloadThroughputKbps": 1474.5600000000002,
+          "uploadThroughputKbps": 675,
+          "cpuSlowdownMultiplier": 4
+        }
+      },
+      "metrics": {
+        "first-contentful-paint": {
+          "ms_or_unitless": 1071.0963,
+          "error": null
+        },
+        "largest-contentful-paint": {
+          "ms_or_unitless": 4347.918525,
+          "error": null
+        },
+        "total-blocking-time": {
+          "ms_or_unitless": 560.4518500000001,
+          "error": null
+        },
+        "cumulative-layout-shift": {
+          "ms_or_unitless": 0,
+          "error": null
+        },
+        "speed-index": {
+          "ms_or_unitless": 2141.876523510843,
+          "error": null
+        }
+      }
+    },
+    {
+      "name": "desktop-chrome156",
+      "execution_status": "PASS",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+      "scores": {
+        "performance": 0.97,
+        "accessibility": 1,
+        "best-practices": 0.96,
+        "seo": 1
+      },
+      "config": {
+        "formFactor": "desktop",
+        "screenEmulation": {
+          "mobile": false,
+          "width": 1350,
+          "height": 940,
+          "deviceScaleFactor": 1,
+          "disabled": false
+        },
+        "throttlingMethod": "simulate",
+        "throttling": {
+          "rttMs": 40,
+          "throughputKbps": 10240,
+          "requestLatencyMs": 0,
+          "downloadThroughputKbps": 0,
+          "uploadThroughputKbps": 0,
+          "cpuSlowdownMultiplier": 1
+        }
+      },
+      "metrics": {
+        "first-contentful-paint": {
+          "ms_or_unitless": 312.2542,
+          "error": null
+        },
+        "largest-contentful-paint": {
+          "ms_or_unitless": 1098.7626000000002,
+          "error": null
+        },
+        "total-blocking-time": {
+          "ms_or_unitless": 104.87290000000002,
+          "error": null
+        },
+        "cumulative-layout-shift": {
+          "ms_or_unitless": 0,
+          "error": null
+        },
+        "speed-index": {
+          "ms_or_unitless": 728.6277163363366,
+          "error": null
+        }
+      }
+    }
+  ],
+  "limitations": [
+    "Initial Chrome 151 and final Chrome 156 are different engines: no controlled causal claim from score delta",
+    "One regular Chrome 151 repeat timed out; headless-shell retry returned NO_LCP and is not a valid performance score",
+    "MFA, production security changes, provider operations and external account mutations were not performed"
+  ]
+}

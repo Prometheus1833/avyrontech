@@ -10,7 +10,7 @@ import { productSalesRouter } from '../../cloudflare/workers/api/src/productSale
 import { produseShopRouter } from '../../cloudflare/workers/api/src/produseShop';
 import { produseCheckoutRouter } from '../../cloudflare/workers/api/src/produseCheckoutV2';
 import { nextCommercialIdentity } from '@/shared/commercialIdentity';
-import { billingConfiguration } from '../../cloudflare/workers/api/src/billing';
+import { billingConfiguration, billingRouter } from '../../cloudflare/workers/api/src/billing';
 import type { Env } from '../../cloudflare/workers/api/src/types';
 import {bouncerFixture,fixtureScannerSettings,malwareBucket} from './helpers/bouncerFixture';
 const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
@@ -24,6 +24,7 @@ class Statement {
 }
 describe('Financial configuration and product sales — actual handlers and all migrations', () => {
     let db: SqliteDatabase, app: Hono, actor: string, mfa: boolean, stamp: number;
+    let mfaPolicy: string | undefined;
     let bucket:ReturnType<typeof malwareBucket>,scannerConfig:Record<string,string>;
     beforeEach(() => {
         db = new DatabaseSync(':memory:');
@@ -38,6 +39,7 @@ describe('Financial configuration and product sales — actual handlers and all 
         bucket=malwareBucket();scannerConfig={};
         actor = 'owner';
         mfa = true;
+        mfaPolicy = undefined;
         const binding = { prepare: (sql: string) => new Statement(db, sql), batch: async (statements: Statement[]) => { db.exec('BEGIN'); try {
                 const result = [];
                 for (const s of statements)
@@ -50,13 +52,14 @@ describe('Financial configuration and product sales — actual handlers and all 
                 throw e;
             } } };
         app = new Hono();
-        app.use('*', async (c, next) => { Object.assign(c.env, { DB: binding, FILES: bucket, ...scannerConfig, STRIPE_SECRET_KEY: 'sk_live_fixture', STRIPE_WEBHOOK_SECRET: 'fixture', STRIPE_ACCOUNT_ID: 'acct_fixture', APP_ENV: 'production' }); c.set('userId', actor); c.set('roles', actor === 'client' ? ['user'] : actor === 'staff' ? ['staff'] : ['admin']); c.set('mfaVerified', mfa); await next(); });
+        app.use('*', async (c, next) => { Object.assign(c.env, { DB: binding, FILES: bucket, ...scannerConfig, STRIPE_SECRET_KEY: 'sk_live_fixture', STRIPE_WEBHOOK_SECRET: 'fixture', STRIPE_ACCOUNT_ID: 'acct_fixture', APP_ENV: 'production', MFA_AUTH_ENABLED: mfaPolicy }); c.set('userId', actor); c.set('roles', actor === 'client' ? ['user'] : actor === 'staff' ? ['staff'] : ['admin']); c.set('mfaVerified', mfa); await next(); });
         app.onError(e => { throw e; });
         app.route('/', financeRouter);
         app.route('/', catalogCodesRouter);
         app.route('/', productSalesRouter);
         app.route('/', produseCheckoutRouter);
         app.route('/', produseShopRouter);
+        app.route('/', billingRouter);
     });
     afterEach(() => {db.close();vi.unstubAllGlobals()});
     const request = (path: string, body: unknown, method = 'POST') => app.request(path, { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }, {});
@@ -68,6 +71,40 @@ describe('Financial configuration and product sales — actual handlers and all 
     it('allows a platform Super Admin to configure and activate an internal account', async () => { seedAccount(); actor = 'super'; const res = await request('/api/finance/accounts/fixture', account(), 'PATCH'); expect(res.status).toBe(200); expect(db.prepare("SELECT status FROM financial_accounts WHERE id='fixture'").get()!.status).toBe('active'); expect(db.prepare("SELECT count(*) n FROM financial_audit_events WHERE action='finance.accounts.update'").get()!.n).toBe(1); });
     it.each(['staff', 'client'])('denies account and product mutations to %s', async (who) => { seedAccount(); actor = who; expect((await request('/api/finance/accounts/fixture', account(), 'PATCH')).status).toBe(403); expect((await request('/api/produse/admin/sales/logo-studio-3d', {}, 'PUT')).status).toBe(403); });
     it('keeps MFA required for financial and sales writes', async () => { seedAccount(); mfa = false; expect((await request('/api/finance/accounts/fixture', account(), 'PATCH')).status).toBe(403); expect((await request('/api/produse/admin/sales/logo-studio-3d', {}, 'PUT')).status).toBe(403); });
+    it('honors the explicit MFA exception for authorized finance and sales while retaining RBAC', async () => {
+      seedAccount(); mfa = false; mfaPolicy = 'false';
+      expect((await request('/api/finance/accounts/fixture', account(), 'PATCH')).status).toBe(200);
+      const slug = await seedSale();
+      const body = { licenseName: 'Licență', licenseTerms: 'Condiții confirmate pentru produs, care păstrează drepturile terților.', licenseApproved: true, deliveryMode: 'assisted', deliveryInstructions: 'Livrare în fluxul dedicat pentru Logo Studio.', expectedUpdatedAt: stamp };
+      expect((await request(`/api/produse/admin/sales/${slug}`, body, 'PUT')).status).toBe(200);
+      actor = 'client';
+      expect((await request('/api/finance/accounts/fixture', account(), 'PATCH')).status).toBe(403);
+      expect((await request(`/api/produse/admin/sales/${slug}`, body, 'PUT')).status).toBe(403);
+    });
+    it('keeps billing verification fail-closed except for the explicit disabled policy, without external calls', async () => {
+      mfa = false;
+      for (const policy of [undefined, 'true', 'invalid']) {
+        mfaPolicy = policy;
+        expect((await request('/api/billing/admin/connections/unsupported/verify', {})).status).toBe(403);
+      }
+      mfaPolicy = 'false';
+      expect((await request('/api/billing/admin/connections/unsupported/verify', {})).status).toBe(404);
+      actor = 'client';
+      expect((await request('/api/billing/admin/connections/unsupported/verify', {})).status).toBe(403);
+    });
+    it('requires granular billing permissions and observes their revocation immediately', async () => {
+      mfa = false; mfaPolicy = 'false'; actor = 'staff';
+      expect((await app.request('/api/billing/admin/status', {}, {})).status).toBe(403);
+      expect((await request('/api/billing/admin/invoices/order-1/retry', {})).status).toBe(403);
+      db.prepare("INSERT INTO user_capabilities(id,user_id,capability,reason,created_at) VALUES('billing-read','staff','finance.read','Release fixture',?),('billing-write','staff','finance.write','Release fixture',?)").run(stamp,stamp);
+      const response = await app.request('/api/billing/admin/status', {}, {});
+      expect(response.status).toBe(200);
+      expect((await response.json()).security).toMatchObject({mfaVerified:false,mfaSatisfied:true,canVerify:false});
+      expect((await request('/api/billing/admin/invoices/order-1/retry', {})).status).toBe(409);
+      db.prepare("UPDATE user_capabilities SET revoked_at=? WHERE user_id='staff'").run(stamp);
+      expect((await app.request('/api/billing/admin/status', {}, {})).status).toBe(403);
+      expect((await request('/api/billing/admin/invoices/order-1/retry', {})).status).toBe(403);
+    });
     it('rejects stale versions, duplicate aliases and secret/card fields without changing data', async () => { seedAccount(); expect((await request('/api/finance/accounts/fixture', { ...account(), expectedUpdatedAt: stamp - 1 }, 'PATCH')).status).toBe(409); expect((await request('/api/finance/accounts/fixture', { ...account(), cardNumber: '1234' }, 'PATCH')).status).toBe(400); expect((await request('/api/finance/accounts/fixture', { ...account(), internalAlias: 'AVYRON RON' }, 'PATCH')).status).toBe(409); expect(db.prepare("SELECT status FROM financial_accounts WHERE id='fixture'").get()!.status).toBe('needs_configuration'); });
     it('archives records while retaining transaction references and audit', async () => { seedAccount(); expect((await request('/api/finance/accounts/fixture', { ...account(), status: 'archived' }, 'PATCH')).status).toBe(200); expect(db.prepare("SELECT archived_at FROM financial_accounts WHERE id='fixture'").get()!.archived_at).toBeTruthy(); expect((await (await app.request('/api/finance/accounts', {}, {})).json()).accounts.some((r: {
         id: string;

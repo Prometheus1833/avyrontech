@@ -446,7 +446,7 @@ const Auth = () => {
                 </div>}
                 {formalEntity && <div className="space-y-1.5">
                   <Label htmlFor="rg-tax-id">{copy.taxId}</Label>
-                  <Input id="rg-tax-id" inputMode="numeric" autoComplete="off" maxLength={40} {...registerForm.register("taxId")} />
+                  <Input id="rg-tax-id" inputMode="text" autoComplete="off" maxLength={40} {...registerForm.register("taxId")} />
                   <p className="text-xs text-slate-400">{copy.taxHint}</p>
                   {registerForm.formState.errors.taxId && <p className="text-xs text-destructive">{authValidationMessage(registerForm.formState.errors.taxId.message, lang)}</p>}
                 </div>}

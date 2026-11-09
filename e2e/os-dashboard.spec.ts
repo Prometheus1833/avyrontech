@@ -291,6 +291,8 @@ test.describe("dashboard AVYRON OS în română", () => {
   });
 
   test("linkul vechi deschide proiectele, iar staff vede chatul fără controlul superadminului", async ({ page }) => {
+    // Persistent sidebar/two-pane contract; responsive counterparts set narrow viewports.
+    await page.setViewportSize({width:1440,height:960});
     await page.route("**/api/auth/me", (route) => route.fulfill({ json: {
       user: { id: "staff-1", email: "staff@example.test", display_name: "Alex", avatar_url: null },
       profile: { display_name: "Alex", avatar_url: null }, roles: ["staff"], superadmin: false,
@@ -304,6 +306,8 @@ test.describe("dashboard AVYRON OS în română", () => {
   });
 
   test("operatorul cu capabilitate vede panoul leadurilor fără acces financiar", async ({ page }) => {
+    // Persistent sidebar/two-pane contract; responsive counterparts set narrow viewports.
+    await page.setViewportSize({width:1440,height:960});
     await page.route("**/api/auth/me", (route) => route.fulfill({ json: {
       user: { id: "operator-1", email: "operator@example.test", display_name: "Operator", avatar_url: null },
       profile: { display_name: "Operator", avatar_url: null }, roles: ["user"], superadmin: false, capabilities: ["leads.read"],
@@ -338,6 +342,8 @@ test.describe("dashboard AVYRON OS în română", () => {
   });
 
   test("separă serviciile personalizate de catalogul de produse", async ({ page }) => {
+    // Persistent sidebar/two-pane contract; responsive counterparts set narrow viewports.
+    await page.setViewportSize({width:1440,height:960});
     await page.goto("/profil?tab=servicii-avyron");
     await expect(page.getByRole("heading", { name: "Servicii", exact: true })).toBeVisible({ timeout: 10_000 });
     await expect(page.getByRole("heading", { name: "Pagina Toate serviciile", exact: true })).toBeVisible({ timeout: 10_000 });
@@ -387,6 +393,8 @@ test.describe("dashboard AVYRON OS în română", () => {
   });
 
   test("pune prioritățile înaintea KPI-urilor și leagă centrele existente", async ({page}) => {
+    // Persistent sidebar/two-pane contract; responsive counterparts set narrow viewports.
+    await page.setViewportSize({width:1440,height:960});
     await page.goto('/profil?tab=overview');
     const attention = page.getByText('Necesită atenție · Azi');
     await expect(attention).toBeVisible();

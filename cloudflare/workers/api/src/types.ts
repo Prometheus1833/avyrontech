@@ -1,10 +1,16 @@
 import type { SkillPermissions } from "../../../../src/shared/skills/model";
+import type { SecurityBoundaryEnv } from "../../../../src/shared/securityBoundary";
 export type Role = "user" | "staff" | "admin";
 
 // Resource bindings, vars and required secrets are generated from the
 // Wrangler source of truth in worker-configuration.d.ts. Only truly optional
 // integrations are extended here.
 type OptionalIntegrations = {
+  /** Optional authentication-only key ring; never rotates newsletter/link keys implicitly. */
+  SESSION_JWT_SECRET?: string;
+  SESSION_JWT_PREVIOUS_SECRET?: string;
+  SESSION_JWT_ROTATED_AT?: string;
+  SESSION_JWT_PREVIOUS_VALID_UNTIL?: string;
   /** Read-only .ro availability through an operator-configured free registrar API account. */
   DOMAIN_OPENPROVIDER_ENABLED?:string;
   OPENPROVIDER_USERNAME?:string;
@@ -80,7 +86,7 @@ type OptionalIntegrations = {
   AUTO_AI_UPGRADE?: string;
 };
 
-export type Env = CloudflareBindings & OptionalIntegrations;
+export type Env = CloudflareBindings & OptionalIntegrations & SecurityBoundaryEnv;
 
-export type AppVariables = { userId: string; roles: Role[]; requestId: string; sessionId: string; mfaVerified: boolean; skillAccess?: SkillPermissions; antivirusIntent: {first:boolean;key:string;scope:string;body:{confirmed?:boolean;sample?:string}} };
+export type AppVariables = { agencyAccess?: import("./leadsAgencyPolicy").AgencyPermissions; userId: string; roles: Role[]; requestId: string; sessionId: string; mfaVerified: boolean; skillAccess?: SkillPermissions; antivirusIntent: {first:boolean;key:string;scope:string;body:{confirmed?:boolean;sample?:string}} };
 export type AppBindings = { Bindings: Env; Variables: AppVariables };

@@ -2,7 +2,7 @@ name: Verify AVYRON
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, "codex/**"]
   push:
     branches:
       - main
@@ -20,10 +20,12 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Use Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 22
           cache: npm
@@ -40,6 +42,9 @@ jobs:
       - name: Audit all D1 migrations
         run: npm run audit:d1
 
+      - name: Validate security audit inventory and standard references
+        run: npm run audit:security
+
       - name: Check editable service content and effective product catalog
         run: npm run service-content:check && npm run catalog:produse:check
 
@@ -55,6 +60,9 @@ jobs:
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
+
+      - name: Verify real HttpOnly cookie transport in isolated localhost
+        run: npm run test:security:browser-cookie
 
       - name: Run browser journeys
         run: npm run test:e2e

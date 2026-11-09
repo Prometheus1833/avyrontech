@@ -133,10 +133,16 @@ export default function IndustryDeviceShowcase({ domains, activeDomain, onDomain
     let travel = 1;
     let stickyTop = 80;
     let stageJumpTimer = 0;
+    let pendingStage: number | null = null;
 
     const paint = (progress: number, manualStage?: number) => {
       const phase = manualStage ?? phaseAt(progress);
       const nextStage = Math.min(2, Math.round(phase));
+      // A completed jump must never pull a subsequent reverse scroll back to its old destination.
+      if (pendingStage === nextStage) {
+        window.clearTimeout(stageJumpTimer);
+        pendingStage = null;
+      }
       const drift = reduced.matches ? 0 : Math.sin(progress * Math.PI * 2) * 1.8;
       deviceRefs.current.forEach((device, index) => {
         if (!device) return;
@@ -211,6 +217,7 @@ export default function IndustryDeviceShowcase({ domains, activeDomain, onDomain
         measure();
         return window.scrollY + section.getBoundingClientRect().top - stickyTop + travel * anchors[stage];
       };
+      pendingStage = stage;
       const destination = destinationForStage();
       window.scrollTo({ top: destination, behavior: "smooth" });
       // Mobile browsers can cancel a smooth scroll while restoring focus after
@@ -227,7 +234,13 @@ export default function IndustryDeviceShowcase({ domains, activeDomain, onDomain
         paint(current);
       }, 850);
     };
+    const cancelPendingJump = () => {
+      window.clearTimeout(stageJumpTimer);
+      pendingStage = null;
+    };
     modeChanged();
+    window.addEventListener("wheel", cancelPendingJump, {passive:true});
+    window.addEventListener("touchstart", cancelPendingJump, {passive:true});
     window.addEventListener("scroll", schedule, { passive: true });
     document.addEventListener("visibilitychange", schedule);
     reduced.addEventListener("change", modeChanged);
@@ -237,6 +250,8 @@ export default function IndustryDeviceShowcase({ domains, activeDomain, onDomain
       observer.disconnect();
       resize.disconnect();
       window.removeEventListener("scroll", schedule);
+      window.removeEventListener("wheel", cancelPendingJump);
+      window.removeEventListener("touchstart", cancelPendingJump);
       document.removeEventListener("visibilitychange", schedule);
       reduced.removeEventListener("change", modeChanged);
       controller.current = () => undefined;

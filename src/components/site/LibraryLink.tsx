@@ -36,7 +36,7 @@ export default function LibraryLink({ sectionId }: { sectionId?: string } = {}) 
       >
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div className="max-w-xl">
-            <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-foreground/45">
+            <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-foreground/65">
               <Sparkles className="size-3.5" aria-hidden="true" />
               {lang === "ro" ? "Bibliotecă de efecte" : "Effects library"}
             </p>

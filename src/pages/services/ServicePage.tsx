@@ -32,6 +32,7 @@ import NotFound from "@/pages/NotFound";
 import {
 Accessibility,
 ArrowRight,
+ArrowUpRight,
 BarChart3,
 Bug,
 Calculator,
@@ -440,7 +441,7 @@ const ServicePage = () => {
                 {c.tech.lead}
               </p>
             </Reveal>
-            <div className="mt-7 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div tabIndex={0} role="region" aria-label={c.tech.title} className="mt-7 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {c.tech.groups.map((g, i) => (
                 <Reveal key={g.name} delay={i * 60} className="w-[82vw] max-w-[20rem] shrink-0 snap-center sm:w-[19rem]">
                   <div className="flex h-full flex-col items-center rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-5 text-center md:backdrop-blur">
@@ -498,7 +499,7 @@ const ServicePage = () => {
                   aria-hidden
                   className={`absolute -left-[9px] mt-1 size-4 rounded-full bg-gradient-to-br ${a.from} ${a.to} ring-4 ring-background`}
                 />
-                <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-foreground/45">
+                <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-foreground/65">
                   {String(i + 1).padStart(2, "0")}
                 </div>
                 <h3 className="mt-1 font-display font-bold">{step.title}</h3>
@@ -545,6 +546,12 @@ const ServicePage = () => {
           eyebrow: serviceInlineCopy.text_ac6ac9de0060[lang], title: serviceInlineCopy.text_ae32a95869c2[lang], description: serviceInlineCopy.text_af843ee5535c[lang],
         } : undefined} />
 
+        {product.key === "premium-website" && <div className="mt-6 flex justify-center">
+          <Link to={ro ? "/portofoliu" : "/en/portfolio"} className="inline-flex min-h-12 items-center gap-3 rounded-xl border border-violet-400/30 bg-violet-500/10 px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:border-violet-400/60 hover:bg-violet-500/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-violet-400">
+            {ro ? "Explorează portofoliul Avyron" : "Explore the Avyron portfolio"}<ArrowUpRight className="size-4" aria-hidden="true" />
+          </Link>
+        </div>}
+
         {product.key !== "premium-website" && faqSection}
 
         {/* Abonamente, recenzii și răspunsuri, înainte de opțiunile finale. */}
@@ -558,6 +565,7 @@ const ServicePage = () => {
           />
         )}
 
+        {product.key === "premium-website" && <div className="mx-auto max-w-6xl px-4 py-6"><Link className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-brand/25 bg-brand/5 px-4 py-3 text-sm font-medium text-brand" to={ro?"/servicii/website-prin-abonament":"/en/services/website-subscription"}>{ro?"Preferi dezvoltare inclusă și abonament lunar? Descoperă Website prin abonament.":"Prefer development included with a monthly subscription? Explore Website subscription."} →</Link></div>}
         {product.key === "premium-website" && <ServiceReviews lang={ro ? "ro" : "en"} />}
 
         {product.key === "premium-website" && faqSection}
@@ -583,7 +591,7 @@ const ServicePage = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => trackEvent("contact_click", { method: "whatsapp", location: "product_cta", product: product.key })}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#25D366] hover:bg-[#1ebe5a] px-6 py-3 text-sm font-bold text-white transition-colors"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#25D366] hover:bg-[#1ebe5a] px-6 py-3 text-sm font-bold text-slate-950 transition-colors"
                 >
                   <MessageCircle className="size-4" aria-hidden />
                   WhatsApp

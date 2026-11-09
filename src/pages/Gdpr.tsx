@@ -42,7 +42,7 @@ const sections = [
           ))}
         </div>
         <p className="mt-4">Entitatea responsabilă pentru un proiect, o factură sau o relație contractuală este identificată în oferta, contractul și documentele fiscale aplicabile. Rolurile privind prelucrarea datelor sunt stabilite în funcție de scopul concret și de implicarea fiecărei entități, fără a extinde accesul la date dincolo de ceea ce este necesar.</p>
-        <p>Pentru site, solicitări inițiale și exercitarea drepturilor GDPR este disponibil un punct unic de contact: <a className="text-brand hover:underline" href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> · <a className="text-brand hover:underline" href={`tel:${COMPANY.phone}`}>+40 734 605 055</a>. Cererea va fi direcționată către entitatea responsabilă.</p>
+        <p>Pentru site, solicitări inițiale și exercitarea drepturilor GDPR este disponibil un punct unic de contact: <a className="text-brand underline underline-offset-2" href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> · <a className="text-brand underline underline-offset-2" href={`tel:${COMPANY.phone}`}>+40 734 605 055</a>. Cererea va fi direcționată către entitatea responsabilă.</p>
       </>
     ),
   },
@@ -146,7 +146,7 @@ const sections = [
           <li>Dreptul la opoziție</li>
           <li>Dreptul de a retrage consimțământul</li>
         </ul>
-        <p className="mt-3">Pentru exercitarea acestor drepturi, indiferent de entitatea indicată în documentele contractuale, ne puteți contacta la: <a className="text-brand hover:underline" href="mailto:contact@avyron.ro">contact@avyron.ro</a>. Solicitarea va fi transmisă intern entității responsabile și tratată în termenul legal.</p>
+        <p className="mt-3">Pentru exercitarea acestor drepturi, indiferent de entitatea indicată în documentele contractuale, ne puteți contacta la: <a className="text-brand underline underline-offset-2" href="mailto:contact@avyron.ro">contact@avyron.ro</a>. Solicitarea va fi transmisă intern entității responsabile și tratată în termenul legal.</p>
       </>
     ),
   },
@@ -176,7 +176,7 @@ const sections = [
           <li>Analiză de trafic, numai după activarea opțiunii Analytics</li>
           <li>Marketing și personalizare publicitară, numai după activarea separată a opțiunii Marketing</li>
         </ul>
-        <p className="mt-3">Preferințele pot fi modificate sau retrase oricând din opțiunea „Setări cookie” disponibilă în footer. Inventarul actual, scopurile și duratele sunt publicate în <Link className="text-brand hover:underline" to="/politica-cookies">Politica de cookies</Link>.</p>
+        <p className="mt-3">Preferințele pot fi modificate sau retrase oricând din opțiunea „Setări cookie” disponibilă în footer. Inventarul actual, scopurile și duratele sunt publicate în <Link className="text-brand underline underline-offset-2" to="/politica-cookies">Politica de cookies</Link>.</p>
       </>
     ),
   },
@@ -206,7 +206,7 @@ const sections = [
       <>
         <p>Aveți dreptul de a depune plângere la:</p>
         <p className="mt-2"><strong>Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal (ANSPDCP)</strong><br />
-          Website: <a className="text-brand hover:underline" href="https://www.dataprotection.ro" target="_blank" rel="noopener noreferrer">https://www.dataprotection.ro</a></p>
+          Website: <a className="text-brand underline underline-offset-2" href="https://www.dataprotection.ro" target="_blank" rel="noopener noreferrer">https://www.dataprotection.ro</a></p>
       </>
     ),
   },
@@ -241,7 +241,7 @@ const sectionsEn = [
           ))}
         </div>
         <p className="mt-4">The entity responsible for a project, invoice, or contractual relationship is identified in the applicable proposal, contract, and fiscal documents. Data-processing roles depend on the specific purpose and each entity's involvement, without extending access beyond what is necessary.</p>
-        <p>For this website, initial enquiries, and GDPR rights requests, a single contact point is available at <a className="text-brand hover:underline" href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> · <a className="text-brand hover:underline" href={`tel:${COMPANY.phone}`}>+40 734 605 055</a>. The request will be directed to the responsible entity.</p>
+        <p>For this website, initial enquiries, and GDPR rights requests, a single contact point is available at <a className="text-brand underline underline-offset-2" href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> · <a className="text-brand underline underline-offset-2" href={`tel:${COMPANY.phone}`}>+40 734 605 055</a>. The request will be directed to the responsible entity.</p>
       </>
     ),
   },
@@ -326,7 +326,7 @@ const sectionsEn = [
           <li>access and a copy of your data</li><li>rectification</li><li>erasure</li><li>restriction of processing</li>
           <li>data portability</li><li>objection to processing</li><li>withdrawal of consent at any time</li>
         </ul>
-        <p className="mt-3">Contact <a className="text-brand hover:underline" href="mailto:contact@avyron.ro">contact@avyron.ro</a> to exercise a right. The request will be routed to the responsible entity and handled within the applicable legal period.</p>
+        <p className="mt-3">Contact <a className="text-brand underline underline-offset-2" href="mailto:contact@avyron.ro">contact@avyron.ro</a> to exercise a right. The request will be routed to the responsible entity and handled within the applicable legal period.</p>
       </>
     ),
   },
@@ -350,7 +350,7 @@ const sectionsEn = [
           <li>traffic and performance measurement when Analytics is enabled</li>
           <li>advertising storage, advertising user data, and ad personalization when Marketing is enabled separately</li>
         </ul>
-        <p className="mt-3">Preferences can be changed or withdrawn at any time through “Cookie settings” in the footer. The current inventory, purposes and retention periods are published in the <Link className="text-brand hover:underline" to="/en/cookie-policy">Cookie Policy</Link>.</p>
+        <p className="mt-3">Preferences can be changed or withdrawn at any time through “Cookie settings” in the footer. The current inventory, purposes and retention periods are published in the <Link className="text-brand underline underline-offset-2" to="/en/cookie-policy">Cookie Policy</Link>.</p>
       </>
     ),
   },
@@ -377,7 +377,7 @@ const sectionsEn = [
       <>
         <p>You may lodge a complaint with the Romanian supervisory authority:</p>
         <p className="mt-2"><strong>National Supervisory Authority for Personal Data Processing (ANSPDCP)</strong><br />
-          Website: <a className="text-brand hover:underline" href="https://www.dataprotection.ro" target="_blank" rel="noopener noreferrer">https://www.dataprotection.ro</a></p>
+          Website: <a className="text-brand underline underline-offset-2" href="https://www.dataprotection.ro" target="_blank" rel="noopener noreferrer">https://www.dataprotection.ro</a></p>
       </>
     ),
   },
@@ -434,7 +434,7 @@ const Gdpr = () => {
               ? "Clear information on how we collect, process, retain, and protect personal data under the GDPR."
               : "Transparență totală asupra modului în care colectăm, prelucrăm și protejăm datele tale."}
           </p>
-          <p className="mt-8 text-xs uppercase tracking-widest text-muted-foreground/80">
+          <p className="mt-8 text-xs uppercase tracking-widest text-muted-foreground">
             {isEn ? "Policy version · 2026-10-04" : "Versiunea politicii · 2026-10-04"}
           </p>
 

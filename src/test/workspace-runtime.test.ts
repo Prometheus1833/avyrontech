@@ -58,6 +58,30 @@ describe('Cloudflare workspace: actual handlers, all migrations, atomic writes',
  });
  afterEach(()=>{vi.unstubAllGlobals();db.close();});
  const request=(path:string,body?:unknown,method='POST',key='test-idempotency-key-123')=>app.request(`/api/workspace/${path}`,body===undefined?{}:{method,headers:{'content-type':'application/json','idempotency-key':key},body:JSON.stringify(body)},{});
+ it('lists only confirmed native payments, isolates beneficiaries and immediately respects revoked grants',async()=>{
+  db.exec("UPDATE clients SET access_managed=1; INSERT INTO financial_revenues(id,revenue_type,client_id,service_name,status,currency,gross_amount_minor,created_at,updated_at) VALUES('history-a','digital_services','a','Serviciu achitat A','invoiced','RON',10000,1,1),('history-b','digital_services','b','Serviciu privat B','invoiced','RON',10000,1,1)");
+  db.exec("INSERT INTO financial_receipts(id,revenue_id,amount_minor,currency,reference,paid_at,created_by,created_at) VALUES('receipt-a','history-a',4000,'RON','manual-a',10,'owner',1),('receipt-b','history-b',5000,'RON','manual-b',20,'owner',1)");
+  actor='client';const result=await request('payments');expect(result.status).toBe(200);expect(result.headers.get('Cache-Control')).toBe('private, no-store');const body=await result.json();expect(body.data).toHaveLength(1);expect(body.data[0]).toMatchObject({id:'receipt:receipt-a',title:'Serviciu achitat A',amount_minor:4000,date_kind:'payment',download_available:0});expect(JSON.stringify(body)).not.toContain('privat B');
+  db.exec("DELETE FROM client_account_access WHERE user_id='client'");expect((await(await request('payments')).json()).data).toEqual([]);
+ });
+ it('deduplicates a paid order and checkout against its exact native receipt while retaining account-owned payments',async()=>{
+  const items=JSON.stringify([{sku:'fixture',name:'Produs confirmat',quantity:1}]);
+  for(const [id,uid] of [['paid','client'],['private','other']])db.prepare("INSERT INTO commerce_orders(id,user_id,items_json,subtotal_cents,total_cents,status,created_at,updated_at) VALUES(?,?,?,10000,10000,'paid',1,20)").run(id,uid,items);
+  db.exec("INSERT INTO billing_checkout_sessions(id,user_id,order_id,provider,provider_session_id,mode,status,amount_minor,currency,created_at,updated_at) VALUES('session','client','paid','stripe','cs_fixture','payment','paid',10000,'RON',1,20),('private-session','other','private','stripe','cs_private','payment','paid',10000,'RON',1,20)");
+  actor='client';let history=await(await request('payments')).json();expect(history.data).toHaveLength(1);expect(history.data[0].id).toBe('online:session');expect(JSON.stringify(history)).not.toContain('cs_fixture');expect(JSON.stringify(history)).not.toContain('private');
+  db.exec("INSERT INTO financial_revenues(id,revenue_type,client_id,service_name,status,currency,gross_amount_minor,stripe_reference,created_at,updated_at) VALUES('linked-payment','digital_products','a','Produs confirmat','invoiced','RON',10000,'pi_fixture',1,1);INSERT INTO billing_order_fulfillments(order_id,provider,provider_reference,created_at) VALUES('paid','stripe','pi_fixture',1);INSERT INTO financial_receipts(id,revenue_id,amount_minor,currency,reference,paid_at,created_by,created_at) VALUES('linked-receipt','linked-payment',10000,'RON','pi_fixture',20,'owner',1)");
+  history=await(await request('payments')).json();expect(history.data).toHaveLength(1);expect(history.data[0].id).toBe('receipt:linked-receipt');
+  db.exec("UPDATE clients SET access_managed=1;DELETE FROM client_account_access WHERE user_id='client'");history=await(await request('payments')).json();expect(history.data).toHaveLength(1);expect(history.data[0].id).toBe('online:session');
+ });
+ it('includes legacy fully paid balances and labels fallback dates without inventing receipts',async()=>{
+  db.exec("UPDATE clients SET access_managed=1;INSERT INTO financial_revenues(id,revenue_type,client_id,service_name,status,currency,gross_amount_minor,payment_date,created_at,updated_at) VALUES('legacy-paid','digital_services','a','Sold istoric achitat','paid','RON',7000,NULL,1,20),('legacy-dated','digital_services','a','Plată datată','paid','RON',9000,10,1,30),('history-draft','digital_services','a','Ciornă','draft','RON',10000,NULL,1,40)");
+  actor='client';const result=await(await request('payments')).json();expect(result.data).toHaveLength(2);expect(result.data[0]).toMatchObject({id:'balance:legacy-paid',amount_minor:7000,paid_at:20,date_kind:'confirmation'});expect(result.data[1]).toMatchObject({id:'balance:legacy-dated',amount_minor:9000,paid_at:10,date_kind:'payment'});
+ });
+ it('keeps unpaid orders out of payment history and paginates confirmed records without filters',async()=>{
+  const items=JSON.stringify([{name:'Comandă',sku:'fixture'}]);for(let i=0;i<4;i++)db.prepare("INSERT INTO commerce_orders(id,user_id,items_json,subtotal_cents,total_cents,status,created_at,updated_at) VALUES(?,'client',?,10000,10000,?,1,?)").run('history-order-'+i,items,i===0?'requested':'paid',i);
+  actor='client';const first=await(await request('payments?limit=2&offset=0')).json();expect(first.data.map(r=>r.id)).toEqual(['order:history-order-3','order:history-order-2']);expect(first.nextOffset).toBe(2);
+  const last=await(await request('payments?limit=2&offset=2')).json();expect(last.data.map(r=>r.id)).toEqual(['order:history-order-1']);expect(last.nextOffset).toBeNull();expect((await request('payments?limit=-1')).status).toBe(400);
+ });
  const announcement={title:'Release',content:'Internal note',priority:'normal'};
  it.each(['stripe','revolut'] as const)('records a confirmed %s order against the real revenue schema without an invented external_reference column',async provider=>{
   const items=JSON.stringify([{sku:'website-starter',name:'Website',type:'package',quantity:1,lineTotalCents:10000}]);

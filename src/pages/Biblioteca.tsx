@@ -214,7 +214,7 @@ const Biblioteca = () => {
   const showBackdrop = tier !== "none";
 
   return (
-    <div className="relative min-h-screen text-white">
+    <div className="avy-library dark relative isolate min-h-screen bg-[#07080d] text-white">
       {loading && <Preloader ready={backdropReady || !showBackdrop} onDone={() => setLoading(false)} />}
 
       {showBackdrop && (
@@ -244,7 +244,7 @@ const Biblioteca = () => {
             <Link to={lang === "ro" ? "/" : "/en"} className="mr-auto flex items-center gap-2 text-sm">
               <img src={logo} alt="" width={20} height={20} className="size-5 rounded object-cover" />
               <span className="font-semibold">Avyron</span>
-              <span className="text-white/40">/ {lang === "ro" ? "Bibliotecă" : "Library"}</span>
+              <span className="text-white/65">/ {lang === "ro" ? "Bibliotecă" : "Library"}</span>
             </Link>
             <a
               href="#brief"
@@ -259,7 +259,7 @@ const Biblioteca = () => {
       <SectionNav activeId={activeId} lang={lang} onJump={jump} />
 
       <header className="mx-auto max-w-6xl px-4 pb-8 pt-16 sm:px-6 sm:pt-24">
-        <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-white/45">
+        <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-white/65">
           {lang === "ro" ? "Bibliotecă de experiențe digitale" : "Digital experience library"}
         </p>
         <h1 className="mt-5 max-w-4xl text-4xl font-extrabold leading-[1.02] tracking-tight sm:text-7xl">
@@ -287,7 +287,7 @@ const Biblioteca = () => {
         <button
           type="button"
           onClick={() => jump(LIBRARY_SECTIONS[0].id)}
-          className="mt-10 inline-flex items-center gap-2 text-sm text-white/50 transition-colors hover:text-white"
+          className="mt-10 inline-flex items-center gap-2 text-sm text-white/65 transition-colors hover:text-white"
         >
           <ArrowDown className="size-4 animate-bounce motion-reduce:animate-none" aria-hidden="true" />
           {lang === "ro" ? "Începe cu site-urile de prezentare" : "Start with presentation websites"}

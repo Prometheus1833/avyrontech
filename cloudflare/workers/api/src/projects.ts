@@ -12,7 +12,7 @@ import { hasCapability } from "./authorization";
 import { Hono } from "hono";
 import type { Env } from "./types";
 import { fetchMetadataHtml, validateMetadataUrl } from "./metadata";
-import { organizationRoleForUser, platformRoleForUser,clientProjectGrantSql } from "./authorization";
+import { organizationRoleForUser, platformRoleForUser,clientProjectGrantSql,projectOwnerResourceGrantSql,projectOwnerAccessSql } from "./authorization";
 import { normalizeExternalLink } from "../../../../src/shared/externalUrl";
 import { PROJECT_STAGES, type ProjectStage } from "../../../../src/shared/projectLifecycle";
 import { readJsonBodyUpTo } from "./requestBody";
@@ -31,16 +31,16 @@ export async function projectAccessMap(db:D1Database, projectIds:string[], userI
   if(!ids.length)return new Map();
   const principal=await platformRoleForUser(db,userId);
   const policy=principal?null:await managedStaff(db,userId);
-  const rows=await db.prepare(`SELECT p.id,p.owner_user_id,p.organization_id,
+  const rows=await db.prepare(`SELECT p.id,p.owner_user_id,p.organization_id,${projectOwnerResourceGrantSql("p")} owner_granted,
     (SELECT m.role FROM organization_memberships m WHERE m.organization_id=p.organization_id AND m.user_id=? AND m.status='active') membership,
     EXISTS(SELECT 1 FROM project_staff ps WHERE ps.project_id=p.id AND ps.user_id=?) assigned,
     ${clientProjectGrantSql("p")} client_grant,
     EXISTS(SELECT 1 FROM client_account_access ca WHERE ca.client_id=p.client_id AND ca.user_id=?) legacy_grant
     FROM projects p WHERE p.id IN(SELECT value FROM json_each(?))`)
-    .bind(userId,userId,userId,userId,JSON.stringify(ids)).all<{id:string;owner_user_id:string|null;organization_id:string|null;membership:string|null;assigned:number;client_grant:number;legacy_grant:number}>();
+    .bind(userId,userId,userId,userId,JSON.stringify(ids)).all<{id:string;owner_user_id:string|null;organization_id:string|null;owner_granted:number;membership:string|null;assigned:number;client_grant:number;legacy_grant:number}>();
   const staff=roles.includes("staff")||roles.includes("admin"),admin=roles.includes("admin");
   return new Map(rows.results.map(p=>{
-    const isOwner=p.owner_user_id===userId;
+    const isOwner=p.owner_user_id===userId && Boolean(p.owner_granted);
     let read=false,write=false;
     if(principal){read=true;write=true;}
     else if(p.membership){read=true;write=["owner","admin","manager","specialist"].includes(p.membership);}
@@ -80,7 +80,7 @@ projectsRouter.get("/api/projects", async (c) => {
   if(c.req.query('scope')==='mine'){
     const result=await c.env.DB.prepare(`SELECT ${projection("p")},
       (SELECT count(*) FROM project_staff ps JOIN users u ON u.id=ps.user_id WHERE ps.project_id=p.id AND u.disabled_at IS NULL) member_count
-      FROM projects p WHERE p.owner_user_id=? ${isStaff?'OR EXISTS(SELECT 1 FROM project_staff ps WHERE ps.project_id=p.id AND ps.user_id=?)':''} OR EXISTS(SELECT 1 FROM organization_memberships m WHERE m.organization_id=p.organization_id AND m.user_id=? AND m.status='active') ${isStaff?'':`OR ${clientProjectGrantSql('p')}`} ORDER BY p.updated_at DESC,p.id LIMIT 200`).bind(userId,userId,userId).all();
+      FROM projects p WHERE ${projectOwnerAccessSql("p")} ${isStaff?'OR EXISTS(SELECT 1 FROM project_staff ps WHERE ps.project_id=p.id AND ps.user_id=?)':''} OR EXISTS(SELECT 1 FROM organization_memberships m WHERE m.organization_id=p.organization_id AND m.user_id=? AND m.status='active') ${isStaff?'':`OR ${clientProjectGrantSql('p')}`} ORDER BY p.updated_at DESC,p.id LIMIT 200`).bind(userId,userId,userId).all();
     return c.json({data:result.results.map(row=>({...row,budget_visible:finance})),purchases:[],sales:[],scope:'mine'});
   }
   if (
@@ -100,7 +100,7 @@ projectsRouter.get("/api/projects", async (c) => {
            ON assignment.project_id = project.id AND assignment.user_id = ?
          LEFT JOIN client_account_access AS client_access
            ON client_access.client_id = project.client_id AND client_access.user_id = ?
-        WHERE project.owner_user_id=? OR membership.user_id IS NOT NULL OR assignment.user_id IS NOT NULL OR (project.organization_id IS NULL AND client_access.user_id IS NOT NULL)
+        WHERE ${projectOwnerAccessSql("project")} OR membership.user_id IS NOT NULL OR assignment.user_id IS NOT NULL OR (project.organization_id IS NULL AND client_access.user_id IS NOT NULL)
         ORDER BY project.updated_at DESC LIMIT 200`,
     ).bind(userId, userId, userId, userId).all();
   } else {
@@ -110,7 +110,7 @@ projectsRouter.get("/api/projects", async (c) => {
          LEFT JOIN organization_memberships AS membership
            ON membership.organization_id = project.organization_id
           AND membership.user_id = ? AND membership.status = 'active'
-        WHERE project.owner_user_id = ? OR membership.user_id IS NOT NULL
+        WHERE ${projectOwnerAccessSql("project")} OR membership.user_id IS NOT NULL
           OR ${clientProjectGrantSql("project")}
         ORDER BY project.updated_at DESC`,
     ).bind(userId, userId,userId).all();

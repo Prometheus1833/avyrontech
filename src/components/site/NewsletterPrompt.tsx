@@ -1,12 +1,13 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useGuestNotificationConfig } from "@/lib/guestNotifications";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Check, Mail, Sparkles, X } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import Turnstile from "@/components/site/Turnstile";
 import { apiUrl } from "@/lib/apiBase";
 import { readCookieConsent } from "@/lib/cookieConsent";
+import { publicFormRequest } from "@/lib/publicFormRequest";
 
 type NewsletterConfig = {
   enabled: boolean;
@@ -51,6 +52,9 @@ const readState = (): PromptState => {
   try { return JSON.parse(localStorage.getItem(STATE_KEY) || "{}") as PromptState; }
   catch { return {}; }
 };
+const writeState = (value: PromptState) => {
+  try { localStorage.setItem(STATE_KEY, JSON.stringify(value)); } catch { /* Optional persistence. */ }
+};
 
 const interestForPath = (path: string) => {
   if (/logo/.test(path)) return "logo-3d";
@@ -87,13 +91,15 @@ export default function NewsletterPrompt() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [resetKey, setResetKey] = useState(0);
+  const [formError, setFormError] = useState("");
+  const inFlight = useRef(false);
   const onTurnstileToken = useCallback((token: string) => setTurnstileToken(token), []);
   const eligiblePath = !excluded.test(pathname);
 
   useEffect(() => {
     const state = new URLSearchParams(search).get("newsletter");
     if (state === "confirmed") {
-      localStorage.setItem(STATE_KEY, JSON.stringify({ ...readState(), subscribedAt: Date.now() }));
+      writeState({ ...readState(), subscribedAt: Date.now() });
       toast.success(language === "en" ? "Subscription confirmed. Welcome!" : "Abonarea a fost confirmată. Bine ai venit!");
       window.history.replaceState({}, "", pathname + window.location.hash);
     } else if (state === "invalid") {
@@ -121,15 +127,18 @@ export default function NewsletterPrompt() {
     const promptState = readState();
     if (promptState.subscribedAt) return;
     if (promptState.lastShownAt && Date.now() - promptState.lastShownAt < config.cooldownDays * 86400000) return;
-    if (pageViews(pathname) < config.minPageViews) return;
+    if (readCookieConsent()?.marketing !== true || pageViews(pathname) < config.minPageViews) return;
 
     let consentDecided = readCookieConsent()?.marketing===true;
     let elapsed = false;
+    let revealed = false;
     let engaged = window.scrollY / Math.max(1, document.documentElement.scrollHeight - window.innerHeight) * 100 >= config.scrollPercent;
     const reveal = () => {
-      if (!consentDecided || !elapsed || !engaged) return;
+      if (!consentDecided) { setVisible(false); return; }
+      if (revealed || !elapsed || !engaged) return;
+      revealed = true;
       setVisible(true);
-      localStorage.setItem(STATE_KEY, JSON.stringify({ ...readState(), lastShownAt: Date.now() }));
+      writeState({ ...readState(), lastShownAt: Date.now() });
     };
     const onScroll = () => {
       const scroll = window.scrollY / Math.max(1, document.documentElement.scrollHeight - window.innerHeight) * 100;
@@ -153,13 +162,16 @@ export default function NewsletterPrompt() {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (inFlight.current) return;
+    setFormError("");
     if (!consent) {
       toast.error(language === "en" ? "Please confirm your newsletter consent." : "Confirmă acordul pentru newsletter.");
       return;
     }
+    inFlight.current = true;
     setBusy(true);
     try {
-      const response = await fetch(apiUrl("/api/newsletter/subscribe"), {
+      const { response, body: data } = await publicFormRequest<{ ok?: boolean; confirmationRequired?: boolean; error?: { message?: string } }>(apiUrl("/api/newsletter/subscribe"), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -167,21 +179,22 @@ export default function NewsletterPrompt() {
           interest: interestForPath(pathname), consentPolicyVersion: config?.consentPolicyVersion,
         }),
       });
-      const data = await response.json().catch(() => ({})) as { error?: { message?: string } };
-      if (!response.ok) throw new Error(data.error?.message || (language === "en" ? "Subscription could not be saved." : "Abonarea nu a putut fi salvată."));
+      if (!response.ok || data.ok !== true || data.confirmationRequired !== true) throw new Error(data.error?.message || (language === "en" ? "Subscription could not be confirmed. Your entries are kept; please retry." : "Abonarea nu a putut fi confirmată. Datele sunt păstrate; încearcă din nou."));
       setDone(true);
-      localStorage.setItem(STATE_KEY, JSON.stringify({ ...readState(), subscribedAt: Date.now() }));
+      writeState({ ...readState(), subscribedAt: Date.now() });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Newsletter indisponibil");
+      const message = error instanceof Error && !["invalid_response", "request_timeout"].includes(error.message) && !["AbortError", "SyntaxError", "TypeError"].includes(error.name) ? error.message : (language === "en" ? "Submission could not be confirmed. Your entries are kept; please retry." : "Trimiterea nu a putut fi confirmată. Datele sunt păstrate; încearcă din nou.");
+      toast.error(message);
+      setFormError(message);
       setResetKey((value) => value + 1);
       setTurnstileToken("");
-    } finally { setBusy(false); }
+    } finally { setBusy(false); inFlight.current = false; }
   };
 
   if (!visible || !config || !copy) return null;
 
   return (
-    <aside className="fixed inset-x-3 bottom-3 z-[65] ml-auto max-w-md sm:inset-x-auto sm:bottom-5 sm:right-5" role="dialog" aria-modal="false" aria-labelledby="newsletter-title">
+    <aside className="public-contact-rail fixed inset-x-3 bottom-[max(.75rem,env(safe-area-inset-bottom))] z-[65] ml-auto max-h-[calc(100dvh-1.5rem)] overflow-y-auto max-w-md sm:inset-x-auto sm:right-5" role="dialog" aria-modal="false" aria-labelledby="newsletter-title">
       <div className="relative overflow-hidden rounded-[1.6rem] border border-violet-300/20 bg-[#090d19]/95 p-5 text-white shadow-[0_28px_90px_-25px_rgba(79,70,229,.8)] backdrop-blur-2xl sm:p-6">
         <div aria-hidden className="pointer-events-none absolute -right-16 -top-20 size-52 rounded-full bg-violet-500/20 blur-3xl" />
         <button type="button" onClick={close} className="absolute right-3 top-3 rounded-full p-2 text-slate-400 transition hover:bg-white/10 hover:text-white" aria-label={language === "en" ? "Close" : "Închide"}><X className="size-4" /></button>
@@ -199,7 +212,8 @@ export default function NewsletterPrompt() {
               <h2 id="newsletter-title" className="mt-3 font-display text-xl font-bold tracking-tight sm:text-2xl">{copy.title}</h2>
               <p className="mt-2 text-sm leading-relaxed text-slate-300">{copy.body}</p>
             </div>
-            <form onSubmit={submit} className="relative mt-5 space-y-3">
+            <form onSubmit={submit} aria-busy={busy} aria-describedby={formError ? "newsletter-form-error" : undefined} className="relative mt-5 space-y-3">
+              {formError && <p id="newsletter-form-error" role="alert" className="text-sm text-red-300">{formError}</p>}
               <div className="grid gap-2 sm:grid-cols-[.8fr_1.2fr]">
                 <input name="name" aria-label={language === "en" ? "Name (optional)" : "Nume (opțional)"} value={name} onChange={(event) => setName(event.target.value)} maxLength={120} autoComplete="name" placeholder={language === "en" ? "Name (optional)" : "Nume (opțional)"} className="min-w-0 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-sm outline-none placeholder:text-slate-600 focus:border-violet-400/50" />
                 <label className="relative"><span className="sr-only">Email</span><Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-violet-300" /><input name="email" required type="email" value={email} onChange={(event) => setEmail(event.target.value)} maxLength={254} autoComplete="email" placeholder="email@companie.ro" className="w-full rounded-xl border border-white/10 bg-white/[0.06] py-2.5 pl-9 pr-3 text-sm outline-none placeholder:text-slate-600 focus:border-violet-400/50" /></label>

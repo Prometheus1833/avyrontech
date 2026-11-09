@@ -1,6 +1,5 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
-import { clearChunkReloadFlag } from "@/lib/lazyWithRetry";
 import "./index.css";
 
 // Apply theme as early as possible to avoid FOUC
@@ -32,7 +31,3 @@ import "./index.css";
 })();
 
 createRoot(document.getElementById("root")!).render(<App />);
-
-// Aplicația a pornit: permitem din nou o viitoare reîncărcare automată
-// dacă un chunk lipsește după un deploy ulterior.
-clearChunkReloadFlag();

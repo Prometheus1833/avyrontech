@@ -15,8 +15,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("homepage keeps six website reasons in three paired cards and a compact demo form", async ({ page }) => {
-  await page.goto("/");
-  await page.locator('[data-deferred-pending]').first().scrollIntoViewIfNeeded();
+  await page.goto("/#de-ce");
   const reasons = page.getByTestId("problem-reasons");
   await expect(reasons.locator("article")).toHaveCount(3);
   await expect(reasons.locator("h3, h4")).toHaveCount(6);
@@ -210,4 +209,22 @@ test("English interfaces fit on mobile and the industry picker supports Escape",
     await showcase.getByRole("button", { name: label, exact: true }).click();
     expect(await tablet.locator(".tablet-workspace").evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(2);
   }
+});
+
+test("a completed stage jump never overrides a later reverse scroll", async ({page}) => {
+  await page.setViewportSize({width:390,height:667});
+  await page.goto("/#domenii");
+  const scene=page.getByTestId("industry-device-showcase");
+  await settledDevice(scene,"laptop");
+  await page.evaluate(()=>{
+    const original=window.scrollTo.bind(window);
+    window.scrollTo=((options:ScrollToOptions)=>original({...options,behavior:"instant"})) as typeof window.scrollTo;
+  });
+  await scene.getByRole("button",{name:/Automatizări$/}).click();
+  await settledDevice(scene,"tablet");
+  await scene.evaluate(el=>window.scrollTo({top:window.scrollY+el.getBoundingClientRect().top,behavior:"instant"}));
+  await settledDevice(scene,"laptop");
+  // Observe beyond the 850 ms cancellation-recovery deadline, with native rAF still running.
+  await page.waitForTimeout(1000);
+  await settledDevice(scene,"laptop");
 });

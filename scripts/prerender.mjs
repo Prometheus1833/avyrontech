@@ -16,7 +16,7 @@ import { build } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import glsl from "vite-plugin-glsl";
 import { JSDOM } from "jsdom";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -26,6 +26,12 @@ const distDir = existsSync(resolve(root, "dist/client/index.html"))
   ? resolve(root, "dist/client")
   : resolve(root, "dist");
 const template = readFileSync(resolve(distDir, "index.html"), "utf8");
+// Only the portfolio needs this new route hint. Resolve the content-addressed
+// Vite chunk from the clean build instead of committing a changing asset hash.
+const portfolioModules = readdirSync(resolve(distDir, "assets")).filter((file) =>
+  /^Portfolio-[\w-]+\.js$/.test(file),
+);
+if (portfolioModules.length !== 1) throw new Error("Expected one built Portfolio module for route preloading");
 
 const outDir = resolve(root, "node_modules/.avyron-prerender");
 
@@ -173,6 +179,13 @@ async function renderRoute(route) {
   }
   await tick(120);
 
+  if (route === "/portofoliu" || route === "/en/portfolio") {
+    const preload = doc.createElement("link");
+    preload.rel = "modulepreload";
+    preload.setAttribute("crossorigin", "");
+    preload.href = `/assets/${portfolioModules[0]}`;
+    doc.head.appendChild(preload);
+  }
   const html = `<!DOCTYPE html>\n${doc.documentElement.outerHTML}\n`;
   rootInstance.unmount();
   return html;

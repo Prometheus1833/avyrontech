@@ -2,6 +2,7 @@ import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { JSDOM } from "jsdom";
+import sharp from "sharp";
 import { discoveryReport } from "./lib/seo-discovery.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -30,7 +31,22 @@ function routeFor(file) {
 
 const failures = [];
 const recommendations = [];
-const pages = htmlFiles(dist).map((file) => {
+const imageMetadata = new Map();
+for (const [file, size] of [["favicon.png", 96], ["favicon-32.png", 32], ["favicon-16.png", 16], ["apple-touch-icon.png", 180], ["icon-192.png", 192], ["icon-512.png", 512]]) {
+  const metadata = await sharp(join(dist, file)).metadata();
+  if (metadata.width !== size || metadata.height !== size) failures.push(`${file}: incorrect icon dimensions`);
+}
+const iconHeader = readFileSync(join(dist, "favicon.ico"));
+if (iconHeader.readUInt16LE(0) !== 0 || iconHeader.readUInt16LE(2) !== 1 || !iconHeader.readUInt16LE(4)) failures.push("favicon.ico: invalid icon header");
+const manifest = JSON.parse(readFileSync(join(dist, "site.webmanifest"), "utf8"));
+for (const icon of manifest.icons || []) {
+  const metadata = await sharp(join(dist, icon.src)).metadata();
+  if (icon.sizes !== `${metadata.width}x${metadata.height}`) failures.push(`${icon.src}: incorrect manifest dimensions`);
+}
+const pages = [];
+// Release each DOM before parsing the next page; large catalogs must not retain
+// hundreds of JSDOM windows while image metadata is being read.
+for (const file of htmlFiles(dist)) {
   const route = routeFor(file);
   const html = readFileSync(file, "utf8");
   const document = new JSDOM(html).window.document;
@@ -48,6 +64,13 @@ const pages = htmlFiles(dist).map((file) => {
   const h1 = document.querySelectorAll("h1").length;
   const jsonLd = [...document.querySelectorAll('script[type="application/ld+json"]')];
   const schemaTypes = new Set();
+  for (const image of document.querySelectorAll("img")) {
+    const src = image.getAttribute("src") || "";
+    if (src.startsWith("/") && !src.startsWith("/api/")) {
+      const imagePath = new URL(src, origin).pathname;
+      if (!existsSync(join(dist, decodeURIComponent(imagePath)))) failures.push(`${route}: image does not exist (${imagePath})`);
+    }
+  }
 
   if (!title) failures.push(`${route}: missing title`);
   if (!description) failures.push(`${route}: missing meta description`);
@@ -60,6 +83,32 @@ const pages = htmlFiles(dist).map((file) => {
   if (!noindex && !robots.includes("max-snippet:-1")) failures.push(`${route}: indexable page lacks unlimited snippet directive`);
   if (!noindex && !robots.includes("max-video-preview:-1")) failures.push(`${route}: indexable page lacks unlimited video preview directive`);
   if (!noindex && !/^https:\/\//.test(ogImage)) failures.push(`${route}: indexable page lacks an absolute HTTPS og:image`);
+  if (!noindex) {
+    for (const key of ["twitter:card", "twitter:title", "twitter:description", "twitter:image", "twitter:image:alt"]) {
+      if (!document.querySelector(`meta[name="${key}"]`)?.getAttribute("content")) failures.push(`${route}: missing ${key}`);
+    }
+    for (const image of document.querySelectorAll("img")) {
+      if (!image.hasAttribute("alt")) failures.push(`${route}: image is missing an alt attribute`);
+      if (!(Number(image.getAttribute("width")) > 0 && Number(image.getAttribute("height")) > 0)) failures.push(`${route}: image lacks intrinsic dimensions`);
+    }
+    try {
+      const imageUrl = new URL(ogImage);
+      if (imageUrl.origin === origin) {
+        const imageFile = join(dist, decodeURIComponent(imageUrl.pathname));
+        if (!existsSync(imageFile)) failures.push(`${route}: social image does not exist (${imageUrl.pathname})`);
+        else {
+          if (!imageMetadata.has(imageFile)) imageMetadata.set(imageFile, sharp(imageFile).metadata());
+          const metadata = await imageMetadata.get(imageFile);
+          for (const key of ["width", "height"]) {
+            const declared = document.querySelector(`meta[property="og:image:${key}"]`)?.getAttribute("content");
+            if (declared && Number(declared) !== metadata[key]) failures.push(`${route}: og:image:${key} differs from the image`);
+          }
+          const type = document.querySelector('meta[property="og:image:type"]')?.getAttribute("content");
+          if (type && type !== `image/${metadata.format}`) failures.push(`${route}: social image MIME type differs from the image`);
+        }
+      }
+    } catch { failures.push(`${route}: social image cannot be verified`); }
+  }
   if (noindex && alternates.length) failures.push(`${route}: noindex page must not publish hreflang alternatives`);
   if (noindex && /^(?:\/produse|\/en\/products)\//.test(route) && !/(?:^|[\s,])follow(?:$|[\s,])/i.test(robots)) {
     failures.push(`${route}: public product utility page must remain noindex, follow`);
@@ -92,8 +141,9 @@ const pages = htmlFiles(dist).map((file) => {
     recommendations.push({ route, code: "product_schema", recommendation: "Descrie produsul prin Product și adaugă Offer numai pentru prețul afișat." });
   }
   const links = [...document.querySelectorAll("a[href]")].map(link => link.getAttribute("href"));
-  return { route, title, description, canonical, robots, noindex, ids, schemaTypes: [...schemaTypes], links };
-});
+  pages.push({ route, title, description, canonical, robots, noindex, ids, schemaTypes: [...schemaTypes], links });
+  document.defaultView.close();
+}
 
 const sitemap = readFileSync(join(dist, "sitemap.xml"), "utf8");
 const sitemapDocument = new JSDOM(sitemap, { contentType: "application/xml" }).window.document;
@@ -229,6 +279,17 @@ if (readFileSync(join(root, "index.html"), "utf8").includes('name="keywords"')) 
 const llms = readFileSync(join(dist, "llms.txt"), "utf8");
 const llmsLinks = [...llms.matchAll(/\]\(([^)]+)\)/g)].map((match) => match[1]);
 const pageByRoute = new Map(pages.map((page) => [page.route, page]));
+for (const page of pages) {
+  for (const href of new Set(page.links)) {
+    try {
+      const target = new URL(href, `${origin}${page.route}`);
+      const destination = pageByRoute.get(target.pathname);
+      if (target.origin === origin && target.hash && destination && !destination.ids.has(decodeURIComponent(target.hash.slice(1)))) {
+        failures.push(`${page.route}: link points to a missing fragment (${target.pathname}${target.hash})`);
+      }
+    } catch { failures.push(`${page.route}: invalid internal link`); }
+  }
+}
 for (const href of llmsLinks) {
   const target = new URL(href, origin);
   if (target.origin !== origin) continue;

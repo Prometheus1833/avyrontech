@@ -1,3 +1,4 @@
+import { financialMfaSatisfied } from "./mfaPolicy";
 import { productSaleChecks, type SalesRow } from "../../../../src/shared/productSales";
 import { Hono } from 'hono';
 import { z } from 'zod';
@@ -12,7 +13,7 @@ export async function salesRows(db: D1Database, slug?: string) {
 productSalesRouter.use('/api/produse/admin/sales/*', async (c, next) => {
     if (!await platformRoleForUser(c.env.DB, c.get('userId')))
         return c.json({ error: { code: 'forbidden' } }, 403);
-    if (c.req.method !== 'GET' && !c.get('mfaVerified'))
+    if (c.req.method !== 'GET' && !(await financialMfaSatisfied(c)))
         return c.json({ error: { code: 'mfa_required' } }, 403);
     await next();
 });

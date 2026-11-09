@@ -1,9 +1,9 @@
 import { safeInvoiceDownload } from "@/lib/clientCommerce";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, Receipt, Search } from "lucide-react";
+import { Download, Receipt } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { cfAuth } from "@/lib/cfAuth";
-import { billingApi, type BillingInvoice } from "@/lib/billingApi";
+import { billingApi, type BillingAccount,type BillingInvoice } from "@/lib/billingApi";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 type Invoice = {
@@ -36,7 +36,7 @@ const labels: Record<string, string> = {
   issued: "Emisă",
   failed: "Emiterea a eșuat",
 };
-export function InvoicesTab({ embedded = false }: { embedded?: boolean }) {
+export function InvoicesTab({ embedded = false,loadAccount=billingApi.account }: { embedded?: boolean;loadAccount?:(force?:boolean)=>Promise<BillingAccount> }) {
   const { user } = useAuth(),
     userId = user?.id;
   const [items, setItems] = useState<Invoice[]>([]),
@@ -45,8 +45,6 @@ export function InvoicesTab({ embedded = false }: { embedded?: boolean }) {
     [error, setError] = useState(""),
     [offset, setOffset] = useState<number | null>(0),
     [revision, setRevision] = useState(0),
-    [query, setQuery] = useState(""),
-    [status, setStatus] = useState("all"),
     [busy, setBusy] = useState("");
   const load = useCallback(async () => {
     if (!userId) return;
@@ -56,7 +54,7 @@ export function InvoicesTab({ embedded = false }: { embedded?: boolean }) {
       cfAuth.request<{ data: Invoice[]; nextOffset?: number | null }>(
         "/api/workspace/invoices?limit=50&offset=0",
       ),
-      billingApi.account(),
+      loadAccount(revision>0),
     ]);
     if (results[0].status === "fulfilled") {
       setItems(results[0].value.data);
@@ -73,7 +71,7 @@ export function InvoicesTab({ embedded = false }: { embedded?: boolean }) {
         "O parte din istoricul facturilor nu poate fi încărcată. Reîncearcă.",
       );
     setLoading(false);
-  }, [userId]);
+  }, [userId,loadAccount,revision]);
   useEffect(() => {
     void load();
   }, [load, revision]);
@@ -130,17 +128,20 @@ export function InvoicesTab({ embedded = false }: { embedded?: boolean }) {
         ),
     ].sort((a, b) => (b.issued || 0) - (a.issued || 0));
   }, [items, online]);
-  const filtered = rows.filter(
-    (row) =>
-      (status === "all" || row.status === status) &&
-      row.number
-        .toLocaleLowerCase("ro")
-        .includes(query.trim().toLocaleLowerCase("ro")),
-  );
   const download = async (row: Row) => {
     if (!row.download || busy) return;
     setBusy(row.key);
     try {
+      // Provider-hosted invoices open without forwarding the AVYRON session token.
+      if (!row.download.startsWith("/")) {
+        const link = document.createElement("a");
+        link.href = row.download;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.referrerPolicy = "no-referrer";
+        link.click();
+        return;
+      }
       const response = await cfAuth.raw(row.download);
       if (!response.ok) throw new Error("unavailable");
       const blob = await response.blob(),
@@ -171,30 +172,6 @@ export function InvoicesTab({ embedded = false }: { embedded?: boolean }) {
         </header>
       )}
       <div className="flex flex-wrap gap-2">
-        <label className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border px-3">
-          <Search className="size-4 shrink-0" />
-          <input
-            aria-label="Caută factura"
-            className="h-10 min-w-0 w-full bg-transparent text-sm outline-none"
-            placeholder="Numărul facturii"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            maxLength={100}
-          />
-        </label>
-        <select
-          aria-label="Starea facturii"
-          className="h-10 max-w-full rounded-lg border bg-background px-2 text-sm"
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-        >
-          <option value="all">Toate stările</option>
-          {Object.entries(labels).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
         <Button
           size="sm"
           variant="outline"
@@ -216,17 +193,15 @@ export function InvoicesTab({ embedded = false }: { embedded?: boolean }) {
         <p role="status" className="p-3 text-sm">
           Se încarcă facturile…
         </p>
-      ) : !filtered.length ? (
+      ) : !rows.length ? (
         <p className="rounded-xl border border-dashed p-4 text-sm text-slate-400">
-          {rows.length
-            ? "Nu există facturi care corespund filtrului."
-            : error
+          {error
               ? "Istoricul disponibil este incomplet."
               : "Nu ai încă facturi disponibile în cont."}
         </p>
       ) : (
         <ul className="divide-y rounded-xl border border-white/10">
-          {filtered.map((row) => (
+          {rows.map((row) => (
             <li
               key={row.key}
               className="flex min-w-0 flex-wrap items-center gap-3 p-3"
@@ -271,6 +246,7 @@ export function InvoicesTab({ embedded = false }: { embedded?: boolean }) {
                       href={row.download}
                       target="_blank"
                       rel="noopener noreferrer"
+                      referrerPolicy="no-referrer"
                       aria-label={`Descarcă factura ${row.number}`}
                     >
                       <Download className="mr-1 size-4" /> PDF

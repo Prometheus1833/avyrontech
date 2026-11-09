@@ -117,8 +117,20 @@ describe('Overview actions — native handlers and full migrated SQLite', () => 
     expect(db.prepare("SELECT status FROM ai_content_items WHERE id='content'").get()!.status).toBe('rejected');expect(db.prepare("SELECT status FROM ai_runs WHERE id='run-approval'").get()!.status).toBe('denied');expect(db.prepare("SELECT archived_at FROM operation_records WHERE id='op'").get()!.archived_at).toBeTruthy();expect(db.prepare("SELECT count(*) n FROM security_events WHERE action='os.approval.withdrawn'").get()!.n).toBe(3);
   });
   it('retires an unapproved template version without deleting or approving its content',async()=>{
-    const row=db.prepare("SELECT id,version,payload_json FROM document_template_versions WHERE review_status='review_required' LIMIT 1").get()!;expect((await withdraw('template',String(row.id),Number(row.version))).status).toBe(200);expect(db.prepare('SELECT review_status,payload_json FROM document_template_versions WHERE id=?').get(row.id)).toMatchObject({review_status:'retired',payload_json:row.payload_json});
+    // The approval center intentionally exposes only the latest master version.
+    // Older review_required versions remain immutable history after migration 0099.
+    const row=db.prepare("SELECT v.id,v.template_id,v.version,v.payload_json FROM document_template_versions v JOIN document_templates t ON t.id=v.template_id WHERE v.review_status='review_required' AND t.visibility='shared' AND v.version=(SELECT max(version) FROM document_template_versions WHERE template_id=v.template_id) ORDER BY v.id LIMIT 1").get()!;
+    const historical=db.prepare("SELECT id,version,payload_json FROM document_template_versions WHERE template_id=? AND version<? ORDER BY version DESC LIMIT 1").get(row.template_id,row.version)!;
+    expect(historical).toBeTruthy();
+    expect((await withdraw('template',String(historical.id),Number(historical.version))).status).toBe(404);
+    expect(db.prepare('SELECT payload_json FROM document_template_versions WHERE id=?').get(historical.id)!.payload_json).toBe(historical.payload_json);expect((await withdraw('template',String(row.id),Number(row.version))).status).toBe(200);expect(db.prepare('SELECT review_status,payload_json FROM document_template_versions WHERE id=?').get(row.id)).toMatchObject({review_status:'retired',payload_json:row.payload_json});
     actor='client';expect((await withdraw('template',String(row.id),Number(row.version))).status).toBe(404);
+  });
+  it('keeps historical template versions outside the approval center even when their old review flag remains pending',async()=>{
+    const row=db.prepare("SELECT v.id,v.version,v.review_status,v.payload_json FROM document_template_versions v WHERE v.review_status='review_required' AND v.version<(SELECT max(version) FROM document_template_versions WHERE template_id=v.template_id) ORDER BY v.id LIMIT 1").get()!;
+    expect(row).toBeTruthy();
+    expect((await withdraw('template',String(row.id),Number(row.version))).status).toBe(404);
+    expect(db.prepare('SELECT review_status,payload_json FROM document_template_versions WHERE id=?').get(row.id)).toMatchObject({review_status:row.review_status,payload_json:row.payload_json});
   });
   it('withdraws learning and carousel requests while preserving answers and the published carousel revision',async()=>{
     db.prepare("INSERT INTO ai_learning_queue(id,agent_slug,question,draft_answer,created_at,updated_at) VALUES ('learn','avy','Question','Draft answer',?,?)").run(stamp,stamp);

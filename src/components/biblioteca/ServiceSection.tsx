@@ -77,7 +77,7 @@ export default function ServiceSection({
           </div>
 
           <div>
-            <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-white/45">
+            <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-white/65">
               {lang === "ro" ? "Elemente esențiale" : "Essential elements"}
             </h3>
             <ul className="mt-3">
@@ -97,13 +97,13 @@ export default function ServiceSection({
         {section.service && (
           <div className="mt-10 flex flex-wrap items-center gap-4 border-t border-white/10 pt-6">
             <Link
-              to={`${section.service[lang]}#pachet`}
+              to={`${section.service[lang]}#${section.id === "blog-profesional" ? "configurator-blog" : section.id === "testare-qa-web-mobile" ? "preturi" : "pachet"}`}
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm text-white/85 transition-colors hover:border-white/60 hover:text-white"
             >
               {lang === "ro" ? `Vezi pachetul ${section.name.ro}` : `See the ${section.name.en} package`}
               <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
-            <a href="#brief" className="text-sm text-white/45 underline-offset-4 hover:text-white/80 hover:underline">
+            <a href="#brief" className="text-sm text-white/65 underline-offset-4 hover:text-white/80 hover:underline">
               {lang === "ro" ? "sau trimite efectele alese" : "or send the effects you picked"}
             </a>
           </div>

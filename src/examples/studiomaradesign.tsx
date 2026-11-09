@@ -1,16 +1,16 @@
 import { useEffect } from "react";
 import { ArrowUpRight, Mail, Instagram } from "lucide-react";
 import avyronLogo from "@/assets/avyron-logo.jpg";
-import floreascaImg from "@/assets/mara-floreasca.jpg.asset.json";
-import auraImg from "@/assets/mara-aura.jpg.asset.json";
-import baneasaImg from "@/assets/mara-baneasa.jpg.asset.json";
-import lumenImg from "@/assets/mara-lumen.jpg.asset.json";
+import floreascaImg from "@/assets/mara-floreasca.jpg";
+import auraImg from "@/assets/mara-aura.jpg";
+import baneasaImg from "@/assets/mara-baneasa.jpg";
+import lumenImg from "@/assets/mara-lumen.jpg";
 
 const projects = [
-  { title: "Apartament Floreasca", year: "2024", tag: "Rezidențial · 92 mp · Stil japandi", img: floreascaImg.url },
-  { title: "Cabinet stomatologic Aura", year: "2024", tag: "Comercial · 140 mp · Sector 1", img: auraImg.url },
-  { title: "Penthouse Băneasa", year: "2023", tag: "Rezidențial · 180 mp · Două nivele", img: baneasaImg.url },
-  { title: "Showroom Lumen", year: "2023", tag: "Retail · 220 mp · Iluminat decorativ", img: lumenImg.url },
+  { title: "Apartament Floreasca", year: "2024", tag: "Rezidențial · 92 mp · Stil japandi", img: floreascaImg },
+  { title: "Cabinet stomatologic Aura", year: "2024", tag: "Comercial · 140 mp · Sector 1", img: auraImg },
+  { title: "Penthouse Băneasa", year: "2023", tag: "Rezidențial · 180 mp · Două nivele", img: baneasaImg },
+  { title: "Showroom Lumen", year: "2023", tag: "Retail · 220 mp · Iluminat decorativ", img: lumenImg },
 ];
 
 export default function StudioMaraDesign() {
@@ -36,7 +36,7 @@ export default function StudioMaraDesign() {
       </header>
 
       <section className="max-w-5xl mx-auto px-6 sm:px-8 py-20 sm:py-28 md:py-36 text-center">
-        <p className="uppercase text-[11px] sm:text-xs tracking-[0.3em] text-[#7a7a7a]">Studio de design interior · București · Din 2017</p>
+        <p className="uppercase text-[11px] sm:text-xs tracking-[0.3em] text-[#626262]">Studio de design interior · București · Din 2017</p>
         <h1 className="mt-6 font-serif text-4xl sm:text-5xl md:text-7xl leading-[1.05]">Spații care respiră.<br/><em className="italic text-[#7a5a3a]">Detalii care durează.</em></h1>
         <p className="mt-8 max-w-xl mx-auto text-[#3a3a3a] leading-relaxed">Concepem interioare rezidențiale și comerciale care îmbină materiale autentice cu o estetică liniștită. Fiecare proiect începe cu o întâlnire la fața locului și se termină cu cheile predate la termen.</p>
         <a href="#contact" className="mt-10 inline-flex items-center gap-2 border-b border-[#1a1a1a] pb-1 text-sm uppercase tracking-[0.2em] hover:text-[#7a5a3a] hover:border-[#7a5a3a] transition-colors">Programează o întâlnire <ArrowUpRight className="size-4" /></a>
@@ -45,7 +45,7 @@ export default function StudioMaraDesign() {
       <section id="proiecte" className="border-t border-black/10">
         <div className="max-w-7xl mx-auto px-6 sm:px-8 py-16 sm:py-20">
           <div className="text-center mb-12">
-            <span className="uppercase text-[11px] sm:text-xs tracking-[0.3em] text-[#7a7a7a]">Selecție 2023 — 2024</span>
+            <span className="uppercase text-[11px] sm:text-xs tracking-[0.3em] text-[#626262]">Selecție 2023 — 2024</span>
             <h2 className="mt-3 font-serif text-3xl sm:text-4xl">Proiecte recente</h2>
           </div>
           <div className="grid sm:grid-cols-2 gap-8">
@@ -56,7 +56,7 @@ export default function StudioMaraDesign() {
                 </div>
                 <div className="flex items-baseline justify-between">
                   <h3 className="font-serif text-xl sm:text-2xl">{p.title}</h3>
-                  <span className="text-xs uppercase tracking-[0.2em] text-[#7a7a7a]">{p.year}</span>
+                  <span className="text-xs uppercase tracking-[0.2em] text-[#626262]">{p.year}</span>
                 </div>
                 <p className="text-sm text-[#5a5a5a] mt-1">{p.tag}</p>
               </article>
@@ -68,7 +68,7 @@ export default function StudioMaraDesign() {
       <section id="proces" className="bg-[#1a1a1a] text-[#f4f1ec] py-20 sm:py-24">
         <div className="max-w-4xl mx-auto px-6 sm:px-8">
           <div className="text-center mb-12">
-            <span className="uppercase text-[11px] sm:text-xs tracking-[0.3em] text-[#7a5a3a]">Cum lucrăm</span>
+            <span className="uppercase text-[11px] sm:text-xs tracking-[0.3em] text-[#c29a73]">Cum lucrăm</span>
             <h2 className="mt-3 font-serif text-3xl sm:text-4xl">Patru pași, fără surprize</h2>
           </div>
           <ol className="space-y-6 max-w-2xl mx-auto">
@@ -79,7 +79,7 @@ export default function StudioMaraDesign() {
               ["04", "Coordonare execuție", "Lucrăm cu meșteri verificați, supervizăm șantierul, predăm la termen."],
             ].map(([n, t, d]) => (
               <li key={n} className="grid grid-cols-[60px_1fr] gap-6 border-t border-white/10 pt-6">
-                <span className="font-mono text-[#7a5a3a]">{n}</span>
+                <span className="font-mono text-[#c29a73]">{n}</span>
                 <div>
                   <h3 className="font-serif text-xl">{t}</h3>
                   <p className="text-[#bdb4a4] mt-1 text-sm leading-relaxed">{d}</p>
@@ -100,7 +100,7 @@ export default function StudioMaraDesign() {
       </section>
 
       <footer className="border-t border-black/10 py-8">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] uppercase tracking-[0.2em] text-[#7a7a7a]">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] uppercase tracking-[0.2em] text-[#626262]">
           <span>© 2026 Mara Design Studio SRL</span>
           <a href="https://avyron.ro" target="_blank" rel="noopener" className="flex items-center gap-2 hover:text-[#1a1a1a] transition-colors normal-case tracking-normal text-xs">
             <span>Website by</span>

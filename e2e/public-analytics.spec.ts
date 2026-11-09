@@ -4,7 +4,7 @@ for (const width of [390, 1440]) test(`GA4 public cu acord și fără conturi pr
   const collected: string[] = [];
   let tagLoads = 0;
   await page.setViewportSize({ width, height: 900 });
-  await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({ necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12" })));
+  await page.addInitScript(() => { if (window === window.top) localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({ necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12" })); });
   await page.route("**/api/**", route => route.fulfill({ status: 401, json: { error: { code: "unauthenticated" } } }));
   await page.route("https://www.google-analytics.com/**", route => {
     const url = new URL(route.request().url());
@@ -27,7 +27,10 @@ for (const width of [390, 1440]) test(`GA4 public cu acord și fără conturi pr
       queue.push=function(){for(const command of arguments)receive(command);return push.apply(this,arguments)};
     ` });
   });
+  // Wait for the client's consent gate, not just the visible prerendered HTML.
   await page.goto("/?email=synthetic%40example.test#test");
+  await page.waitForFunction(() => Object.keys(window).some(key => key.startsWith("ga-disable-")));
+  await page.waitForLoadState("networkidle");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   expect(tagLoads).toBe(0);
   await page.getByRole("button", { name: "Setări cookie", exact: true }).click();
