@@ -5,11 +5,15 @@ let unloading = false;
 if (typeof window !== "undefined") {
   window.addEventListener("beforeunload", () => {
     unloading = true;
-    // If a beforeunload dialog cancels navigation, the current page stays usable.
-    window.setTimeout(() => { unloading = false; }, 0);
   });
   window.addEventListener("pagehide", () => { unloading = true; });
-  window.addEventListener("pageshow", () => { unloading = false; });
+  const activeDocument = () => { unloading = false; };
+  window.addEventListener("pageshow", activeDocument);
+  // A timer can run while a new navigation is still in progress. Clearing the
+  // guard there lets a failed import reload the old URL and cancel the new one.
+  // After a cancelled unload, actual interaction restores normal recovery.
+  window.addEventListener("pointerdown", activeDocument, { capture: true, passive: true });
+  window.addEventListener("keydown", activeDocument, { capture: true });
 }
 
 /**

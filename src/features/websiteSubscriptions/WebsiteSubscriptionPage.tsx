@@ -10,7 +10,6 @@ import {
   Globe2,
   HeartHandshake,
   Layers3,
-  LockKeyhole,
   MonitorSmartphone,
   RefreshCw,
   ShieldCheck,
@@ -34,7 +33,10 @@ import {
   type WebsitePlan,
   type WebsitePlanId,
 } from "@/shared/websiteSubscriptions";
+import SubscriptionShowcase from "./SubscriptionShowcase";
 import "./website-subscriptions.css";
+import subscriptionStyles from "./website-subscriptions.css?inline";
+import { useCriticalStyles } from "@/lib/useCriticalStyles";
 const draftKey = "avyron-website-subscription-draft-v1";
 const empty = {
   planId: "start" as WebsitePlanId,
@@ -99,6 +101,7 @@ const faqEn = [
   ],
 ];
 function WebsiteSubscriptionContent() {
+  useCriticalStyles("avyron-website-subscription-critical", subscriptionStyles);
   const { lang } = useLang(),
     ro = lang === "ro",
     { user } = useAuth();
@@ -337,7 +340,7 @@ function WebsiteSubscriptionContent() {
         </div>
       </div>
       <main>
-        <div className="ws-wrap pt-5 pl-16 sm:pl-20 xl:pl-0">
+        <div className="ws-wrap ws-breadcrumbs">
           <Breadcrumbs
             items={[
               { name: ro ? "Acasă" : "Home", path: ro ? "/" : "/en" },
@@ -352,14 +355,14 @@ function WebsiteSubscriptionContent() {
             ]}
           />
         </div>
-        <section className="ws-hero ws-wrap">
+        <section className="ws-hero ws-wrap" aria-labelledby="ws-hero-title">
           <div className="ws-hero-copy">
             <span className="ws-eyebrow">
               {ro
                 ? "O NOUĂ MODALITATE DE A FI ONLINE"
                 : "A NEW WAY TO BE ONLINE"}
             </span>
-            <h1>
+            <h1 id="ws-hero-title">
               {ro
                 ? "Afacerea ta merită un website extraordinar."
                 : "Your business deserves an extraordinary website."}
@@ -395,87 +398,9 @@ function WebsiteSubscriptionContent() {
                 : "0 RON development • Paid monthly subscription • Built for you"}
             </p>
           </div>
-          <div
-            className="ws-stage"
-            aria-label={
-              ro
-                ? "Vizualizare conceptuală de website pe desktop și telefon"
-                : "Concept website on desktop and phone"
-            }
-          >
-            <div className="ws-orbit" />
-            <div className="ws-browser">
-              <div className="ws-browser-bar">
-                <i />
-                <i />
-                <i />
-                <span>afacerea-ta.ro</span>
-                <LockKeyhole size={11} />
-              </div>
-              <div className="ws-screen">
-                <div className="ws-preview-nav">
-                  <b>
-                    FORMA<span> / STUDIO</span>
-                  </b>
-                  <span>
-                    {ro
-                      ? "Despre · Servicii · Contact"
-                      : "About · Services · Contact"}
-                  </span>
-                </div>
-                <div className="ws-preview-body">
-                  <small>
-                    {ro ? "CREAT ÎN JURUL TĂU" : "BUILT AROUND YOU"}
-                  </small>
-                  <strong>
-                    {ro ? "Mai mult decât" : "More than"}
-                    <br />
-                    {ro ? "o primă impresie." : "a first impression."}
-                  </strong>
-                  <p>
-                    {ro
-                      ? "O experiență care dă formă ideilor tale."
-                      : "An experience that gives shape to your ideas."}
-                  </p>
-                  <span className="ws-mini-cta">
-                    {ro ? "Hai să vorbim" : "Let's talk"} ↗
-                  </span>
-                  <div className="ws-sculpture">
-                    <span />
-                    <span />
-                    <span />
-                  </div>
-                </div>
-                <div className="ws-preview-cards">
-                  <span>01 / {ro ? "Identitate" : "Identity"}</span>
-                  <span>02 / {ro ? "Experiență" : "Experience"}</span>
-                  <span>03 / {ro ? "Conexiune" : "Connection"}</span>
-                </div>
-              </div>
-            </div>
-            <div className="ws-phone">
-              <i />
-              <span>FORMA /</span>
-              <b>
-                Brandul tău.
-                <br />
-                Oriunde.
-              </b>
-              <div />
-              <small>Descoperă →</small>
-            </div>
-            <span className="ws-float-tag">
-              <Check size={15} />
-              {ro ? "De la zero. Pentru tine." : "From scratch. For you."}
-            </span>
-            <p className="ws-stage-caption">
-              {ro
-                ? "Vizualizare conceptuală. Website-ul final urmează identitatea afacerii tale."
-                : "Concept visual. Your final website follows your business identity."}
-            </p>
-          </div>
+          <SubscriptionShowcase ro={ro} />
         </section>
-        <section className="ws-wrap ws-section">
+        <section className="ws-wrap ws-section ws-value" id="website-benefits">
           <div className="ws-section-head">
             <span className="ws-eyebrow">
               01 / {ro ? "SIMPLU, DE LA ÎNCEPUT" : "SIMPLE FROM THE START"}
@@ -517,7 +442,7 @@ function WebsiteSubscriptionContent() {
               : "The monthly subscription is paid. The client provides the primary domain."}
           </p>
         </section>
-        <section className="ws-wrap ws-section">
+        <section className="ws-wrap ws-section" id="website-personalisation">
           <div className="ws-split">
             <div className="ws-section-head">
               <span className="ws-eyebrow">
@@ -571,20 +496,22 @@ function WebsiteSubscriptionContent() {
                   ][niche]
                 }
               </h3>
-              <div className="ws-wireframe">
-                <span />
-                <span />
-                <span />
-              </div>
-              <p>
-                {ro
-                  ? "Direcție conceptuală • Mesaj, structură și CTA adaptate"
-                  : "Concept direction • Tailored copy, structure and calls to action"}
-              </p>
+              <dl className="ws-sector-details">
+                {(ro ? [
+                  ["Mesaj", "Serviciile explicate clar, în limbajul clienților tăi."],
+                  ["Experiență", "Structură, identitate și funcții potrivite domeniului."],
+                  ["Contact", "Un traseu firesc de la prima vizită la conversație."],
+                ] : [
+                  ["Message", "Services explained clearly, in your customers' language."],
+                  ["Experience", "Structure, identity and features suited to your sector."],
+                  ["Contact", "A natural path from the first visit to a conversation."],
+                ]).map(([title,text]) => <div key={title}><dt>{title}</dt><dd>{text}</dd></div>)}
+              </dl>
+              <a className="ws-text-link" href="#website-brief" onClick={() => change("industry", niches[niche])}>{ro ? "Pornim de la afacerea ta" : "Start with your business"} <ArrowRight size={15} aria-hidden="true" /></a>
             </div>
           </div>
         </section>
-        <section className="ws-wrap ws-section">
+        <section className="ws-wrap ws-section" id="website-process">
           <div className="ws-section-head">
             <span className="ws-eyebrow">
               03 / {ro ? "DIN IDEE ÎN REALITATE" : "FROM IDEA TO REALITY"}
@@ -642,10 +569,25 @@ function WebsiteSubscriptionContent() {
             ))}
           </div>
         </section>
+        <section className="ws-wrap ws-section ws-connections" id="website-connections" aria-labelledby="ws-connections-title">
+          <div className="ws-section-head">
+            <span className="ws-eyebrow">04 / {ro ? "DE LA VIZITĂ LA CONVERSAȚIE" : "FROM A VISIT TO A CONVERSATION"}</span>
+            <h2 id="ws-connections-title">{ro ? "Conectat cu lumea. Pregătit pentru clienți." : "Connected to the world. Ready for customers."}</h2>
+            <p>{ro ? "Un serviciu descoperit pe Instagram. Un website care explică exact ce oferi. O întrebare pe WhatsApp. Fiecare punct de contact lucrează pentru aceeași afacere: a ta." : "A service discovered on Instagram. A website that explains what you offer. A question on WhatsApp. Every point of contact works for the same business: yours."}</p>
+          </div>
+          <div className="ws-contact-journey">
+            <div><small>01</small><Globe2 aria-hidden="true" /><h3>{ro ? "Te descoperă" : "They discover you"}</h3><p>Instagram · Facebook · TikTok · LinkedIn</p></div>
+            <ArrowRight className="ws-journey-arrow" aria-hidden="true" />
+            <div><small>02</small><MonitorSmartphone aria-hidden="true" /><h3>{ro ? "Te cunosc" : "They get to know you"}</h3><p>{ro ? "Servicii, proiecte, răspunsuri. În identitatea ta." : "Services, projects, answers. In your own identity."}</p></div>
+            <ArrowRight className="ws-journey-arrow" aria-hidden="true" />
+            <div><small>03</small><HeartHandshake aria-hidden="true" /><h3>{ro ? "Îți scriu" : "They get in touch"}</h3><p>WhatsApp · {ro ? "Formular" : "Form"} · E-mail</p></div>
+          </div>
+          <p className="ws-note">{ro ? "Linkurile și butoanele sociale sunt incluse conform planului. Publicarea automată și integrările API se configurează separat, numai cu autorizare." : "Social links and contact buttons follow your plan. Automated publishing and API integrations are configured separately, with authorisation."}</p>
+        </section>
         <section className="ws-wrap ws-section" id="website-plans">
           <div className="ws-section-head">
             <span className="ws-eyebrow">
-              04 / {ro ? "SPAȚIU SĂ CREȘTI" : "ROOM TO GROW"}
+              05 / {ro ? "SPAȚIU SĂ CREȘTI" : "ROOM TO GROW"}
             </span>
             <h2>
               {ro
@@ -664,7 +606,7 @@ function WebsiteSubscriptionContent() {
                 className={"ws-plan " + (i === 1 ? "ws-plan-featured" : "")}
                 key={p.id}
               >
-                <span className="ws-plan-number">0{i + 1} / AVYRON</span>
+                <span className="ws-plan-number">0{i + 1} / AVYRON{ i === 1 && <span className="ws-plan-badge">{ro ? "Mai mult spațiu să crești" : "More room to grow"}</span>}</span>
                 <h3>{p.name}</h3>
                 <p>{p.tagline[lang]}</p>
                 <div className="ws-price">
@@ -695,33 +637,13 @@ function WebsiteSubscriptionContent() {
                   {ro ? "Aleg" : "Choose"} {p.name}
                   <ArrowRight size={15} />
                 </button>
-                <ul>
-                  <li>
-                    <Check />
-                    {p.pages} {ro ? "pagini" : "pages"}
-                  </li>
-                  <li>
-                    <Check />
-                    {p.changes}{" "}
-                    {ro
-                      ? "modificări de conținut / lună"
-                      : "content changes / month"}
-                  </li>
-                  <li>
-                    <Check />
-                    {p.buttons} {ro ? "butoane plutitoare" : "floating buttons"}
-                  </li>
-                  <li>
-                    <Check />
-                    {p.emails} {ro ? "adrese e-mail*" : "email addresses*"}
-                  </li>
-                  {p.features[lang].map((v) => (
-                    <li key={v}>
-                      <Check />
-                      {v}
-                    </li>
-                  ))}
-                </ul>
+                <dl className="ws-plan-metrics">
+                  <div><dt>{ro ? "Pagini" : "Pages"}</dt><dd>{p.pages}</dd></div>
+                  <div><dt>{ro ? "Modificări / lună" : "Changes / month"}</dt><dd>{p.changes}</dd></div>
+                  <div><dt>{ro ? "Butoane rapide" : "Quick contact buttons"}</dt><dd>{p.buttons}</dd></div>
+                  <div><dt>{ro ? "Adrese e-mail*" : "Email addresses*"}</dt><dd>{p.emails}</dd></div>
+                </dl>
+                <details className="ws-plan-features"><summary>{ro ? "Ce include" : "What's included"} {p.name}</summary><ul>{p.features[lang].map(v => <li key={v}><Check aria-hidden="true" />{v}</li>)}</ul></details>
                 <details>
                   <summary>
                     {ro
@@ -750,7 +672,7 @@ function WebsiteSubscriptionContent() {
               : "All plans include an AVYRON subdomain, hosting and maintenance. You provide the primary domain. *Email depends on the provider and domain; any additional cost is confirmed before activation."}
           </p>
         </section>
-        <section className="ws-wrap ws-section">
+        <section className="ws-wrap ws-section" id="website-account">
           <div className="ws-split">
             <div className="ws-account-preview">
               <div>
@@ -790,7 +712,7 @@ function WebsiteSubscriptionContent() {
             </div>
             <div className="ws-section-head">
               <span className="ws-eyebrow">
-                05 /{" "}
+                06 /{" "}
                 {ro
                   ? "CONECTAT. ORGANIZAT. AL TĂU."
                   : "CONNECTED. ORGANISED. YOURS."}
@@ -805,23 +727,13 @@ function WebsiteSubscriptionContent() {
                   ? "Urmărești progresul, consulți documentele, comunici cu echipa și soliciți modificări din același cont. Proiectele, abonamentul și informațiile tale rămân centralizate, cu acces doar la ceea ce îți este alocat."
                   : "Follow progress, read documents, talk to the team and request changes from one account. Projects, subscriptions and information stay together, with access limited to your authorised resources."}
               </p>
-              <h3>
-                {ro
-                  ? "Conectat cu lumea. Pregătit pentru clienți."
-                  : "Connected to the world. Ready for customers."}
-              </h3>
-              <p>
-                {ro
-                  ? "Un vizitator trece din pagina serviciului în conversația WhatsApp sau găsește profilul tău social printr-o apăsare. Linkuri și butoane clare; conectările API se fac doar cu acordul și accesurile necesare."
-                  : "Visitors can move from a service page to WhatsApp or your social profile in one tap. Clear links and buttons; API connections require consent and the necessary access."}
-              </p>
             </div>
           </div>
         </section>
-        <section className="ws-wrap ws-section">
+        <section className="ws-wrap ws-section" id="website-care">
           <div className="ws-section-head">
             <span className="ws-eyebrow">
-              06 / {ro ? "CONTINUITATE" : "CONTINUITY"}
+              07 / {ro ? "CONTINUITATE" : "CONTINUITY"}
             </span>
             <h2>
               {ro
@@ -878,7 +790,7 @@ function WebsiteSubscriptionContent() {
         >
           <div className="ws-section-head">
             <span className="ws-eyebrow">
-              07 / {ro ? "ÎNCEPE CU O IDEE" : "START WITH AN IDEA"}
+              08 / {ro ? "ÎNCEPE CU O IDEE" : "START WITH AN IDEA"}
             </span>
             <h2>
               {ro

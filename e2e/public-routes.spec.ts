@@ -4,6 +4,22 @@ import { readFileSync } from "node:fs";
 const canonical = (path: string) => `https://avyron.ro${path === "/" ? "/" : path}`;
 
 test.describe("public SEO routes", () => {
+  test("a cancelled old route import cannot reload over the next navigation", async ({page}) => {
+    const chunk=/\/(?:assets\/Portfolio-[^/]+\.js|src\/pages\/Portfolio\.tsx)(?:\?|$)/;
+    let release!:()=>void;
+    const pending=new Promise<void>(resolve=>{release=resolve;});
+    let oldNavigations=0;
+    page.on('request',request=>{if(request.isNavigationRequest()&&new URL(request.url()).pathname==='/portofoliu')oldNavigations++;});
+    await page.route(chunk,async route=>{await pending;await route.abort('failed').catch(()=>{});});
+    const requested=page.waitForRequest(chunk);
+    await page.goto('/portofoliu',{waitUntil:'domcontentloaded'});
+    await requested;
+    await page.route('**/servicii',async route=>{await new Promise(resolve=>setTimeout(resolve,40));release();await new Promise(resolve=>setTimeout(resolve,120));await route.continue().catch(()=>{});});
+    await page.goto('/servicii',{waitUntil:'domcontentloaded'});
+    await expect(page).toHaveURL(/\/servicii$/);
+    await expect(page.getByRole('heading',{level:1})).toHaveText('Servicii digitale construite pentru fiecare proiect');
+    expect(oldNavigations).toBe(1);
+  });
   for (const path of ["/", "/servicii", "/servicii/website-prezentare-profesional"] as const) {
     test(`${path} has content and a self canonical`, async ({ page }) => {
       await page.goto(path);
@@ -119,7 +135,7 @@ test.describe("public SEO routes", () => {
     await expect(aboutCard).toContainText("Web design, development, cybersecurity și QA");
     const cardsBox = await servicesCard.boundingBox();
     const ctaBox = await page.locator("#cta").boundingBox();
-    expect(cardsBox?.y).toBeLessThan(ctaBox?.y ?? 0);
+    expect(cardsBox?.y).toBeGreaterThan(ctaBox?.y ?? 0);
   });
 
   test("homepage turns the selected field into website, app and AI device stages", async ({ page }) => {
@@ -213,7 +229,7 @@ test.describe("public SEO routes", () => {
       await expect(page.locator("header").getByRole("link", { name: "Bibliotecă", exact: true })).toHaveAttribute("href", "/biblioteca");
     }
     await expect(page.getByRole("link", { name: "Vezi biblioteca", exact: true })).toHaveAttribute("href", "/biblioteca");
-    await expect(page.locator("footer").getByRole("link", { name: "Vezi portofoliul" })).toHaveAttribute("href", "/portofoliu");
+    await expect(page.locator("footer").getByRole("link", { name: "Portofoliu", exact:true })).toHaveAttribute("href", "/portofoliu");
 
     await page.goto("/portofoliu");
     await expect(page).toHaveURL(/\/portofoliu$/);
@@ -238,10 +254,10 @@ test.describe("public SEO routes", () => {
     expect(primaryRowBox?.width).toBeLessThanOrEqual(1024);
     await expect(footer.getByRole("link", { name: /Exemplu Gratuit.*Personalizat/ })).toBeVisible();
     const footerNavLinks = footer.locator("nav a");
-    await expect(footerNavLinks).toHaveCount(11);
+    await expect(footerNavLinks).toHaveCount(10);
     await expect(footer.getByRole("link", { name: "Colaborări & cariere", exact: true })).toHaveAttribute("href", "/cariere");
-    await expect(footer.getByRole("link", { name: "Demo beauty", exact: true })).toHaveAttribute("href", "/exemple/flawlesstudio");
-    await expect(footer.getByRole("link", { name: "Demo reciclare", exact: true })).toHaveAttribute("href", "/exemple/retuvo");
+    await expect(footer.locator('a[href^="/exemple/"]')).toHaveCount(0);
+    await expect(footer.getByRole("link", {name:"Portofoliu",exact:true})).toHaveAttribute("href","/portofoliu");
     expect((await footerNavLinks.allTextContents()).slice(0, 6)).toEqual(["Blog", "Produse", "Servicii", "Despre Noi", "Abonamente", "Bibliotecă"]);
     const cookieButton = footer.getByRole("button", { name: "Setări cookie", exact: true });
     const termsLink = footer.getByRole("link", { name: "Termeni de utilizare", exact: true });
@@ -292,25 +308,18 @@ test.describe("public SEO routes", () => {
     await page.addInitScript(() => localStorage.setItem("avyron-cookie-consent-v2", JSON.stringify({
       necessary: true, analytics: false, marketing: false, savedAt: new Date().toISOString(), policyVersion: "2026-09-12",
     })));
-    for (const [path, primary] of [["/", /Exemplu Gratuit/], ["/servicii", /Cere ofertă personalizată/], ["/servicii/website-prezentare-profesional", /Cere ofertă pentru acest serviciu/], ["/cariere", /Descoperă colaborarea/], ["/termeni", /Ai o întrebare/]] as const) {
+    for (const [path, primary] of [["/", /Exemplu Gratuit/], ["/servicii", /Cere ofertă personalizată/], ["/servicii/website-prezentare-profesional", /Discutăm despre proiectul tău/], ["/cariere", /Descoperă colaborarea/], ["/termeni", /Ai o întrebare/]] as const) {
       await page.goto(path);
       const footer = page.locator("footer");
       await footer.scrollIntoViewIfNeeded();
       const actions = footer.getByTestId("footer-contact-actions").locator("a");
       await expect(actions).toHaveCount(4);
-      await expect(actions.first()).toHaveAttribute("href", "https://wa.me/40734605055");
-      await expect(actions.nth(1)).toContainText(primary);
+      await expect(actions.first()).toContainText(primary);
+      await expect(actions.nth(1)).toHaveAttribute("href", "https://wa.me/40734605055");
       await expect(actions.nth(2)).toHaveAttribute("href", "tel:+40734605055");
-      if (path === "/") {
-        await expect(actions.last()).toHaveAttribute("href", "mailto:contact@avyron.ro");
-        const positions = await actions.evaluateAll((links) => links.map((link) => {
-          const box = link.getBoundingClientRect();
-          return { centerY: box.top + box.height / 2, width: box.width };
-        }));
-        expect(Math.max(...positions.map((item) => item.centerY)) - Math.min(...positions.map((item) => item.centerY))).toBeLessThan(3);
-        expect(positions[3].width, "the red email control stays a small icon in the contact line").toBeLessThanOrEqual(40);
-      }
-      else await expect(actions.last()).not.toHaveAttribute("href", /^mailto:/);
+      await expect(actions.last()).toHaveAttribute("href", "mailto:contact@avyron.ro");
+      await expect(footer.locator('.avy-footer-cta')).toHaveCount(1);
+      expect(await footer.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
       const utility = footer.getByTestId("footer-utility-row").locator("a");
       await expect(utility).toHaveCount(1);
       await utility.first().scrollIntoViewIfNeeded();

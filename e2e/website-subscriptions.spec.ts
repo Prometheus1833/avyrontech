@@ -7,6 +7,48 @@ const carousel = JSON.parse(
 );
 import { staffFixture } from "./staff-fixtures";
 const path = "/servicii/website-prin-abonament";
+test("the subscription artifact is styled and readable before JavaScript", async ({browser,baseURL}) => {
+  const context=await browser.newContext({javaScriptEnabled:false,viewport:{width:390,height:844}});
+  try {
+    const page=await context.newPage();
+    // Vite's plain preview needs the directory URL to serve this route's HTML;
+    // the production Worker maps the canonical URL to the same artifact.
+    await page.goto(`${baseURL}${path}/`,{waitUntil:'domcontentloaded'});
+    await expect(page.getByRole('heading',{level:1})).toContainText('Fără costuri de dezvoltare.');
+    await expect(page.locator('.ws-hero')).toHaveCSS('display','grid');
+    await expect(page.locator('footer')).toHaveCSS('background-color','rgb(10, 6, 18)');
+    await expect.poll(()=>page.locator('.ws-project-main img').evaluate((el:HTMLImageElement)=>el.complete&&el.naturalWidth>0)).toBe(true);
+    await expect(page.locator('footer a[href^="/exemple/"]')).toHaveCount(0);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  } finally {await context.close();}
+});
+test("subscription tells the benefits-first story with actual agency work and compact plan choices", async ({page}, info) => {
+  await publicFixture(page);
+  for (const width of [320,390,1440]) {
+    await page.setViewportSize({width,height:900});
+    await page.goto(path);
+    const hero=page.locator('.ws-hero');
+    await expect(hero.getByRole('link',{name:/Flawless Studio/})).toHaveAttribute('href','https://flawlesstudio.ro/');
+    await expect(hero.getByRole('link',{name:/Ruller/})).toHaveAttribute('href','https://ruller.eu/');
+    await expect(hero).not.toContainText('FORMA');
+    const top=await page.evaluate(()=>['website-benefits','website-personalisation','website-process','website-connections','website-plans','website-account','website-care','portofoliu','website-brief'].map(id=>document.getElementById(id)!.getBoundingClientRect().top));
+    expect(top.every((y,i)=>i===0||y>top[i-1])).toBe(true);
+    for (const plan of await page.locator('.ws-plan').all()) {
+      await expect(plan.locator('.ws-plan-metrics>div')).toHaveCount(4);
+      expect((await plan.boundingBox())!.height).toBeLessThan(650);
+      await plan.locator('.ws-plan-features summary').click();
+      await expect(plan.locator('.ws-plan-features li').first()).toBeVisible();
+      await plan.locator('.ws-plan-features summary').click();
+    }
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+    await hero.screenshot({path:info.outputPath(`subscription-hero-${width}.png`)});
+    const footer=page.locator('footer');
+    await footer.scrollIntoViewIfNeeded();
+    await expect(footer.locator('a[href^="/exemple/"]')).toHaveCount(0);
+    await expect(footer.locator('.avy-footer-cta')).toHaveCount(1);
+    await footer.screenshot({path:info.outputPath(`subscription-footer-${width}.png`)});
+  }
+});
 async function publicFixture(page: Page) {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.addInitScript(() => {

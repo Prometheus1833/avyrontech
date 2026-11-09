@@ -13,3 +13,4 @@ export function mount(container: HTMLElement) {
 }
 
 export { PRERENDER_ROUTES, STATUS_PAGES } from "@/seo/publicRoutes";
+export { WEBSITE_SUBSCRIPTION_PATH } from "@/shared/websiteSubscriptions";

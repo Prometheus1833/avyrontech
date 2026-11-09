@@ -32,6 +32,27 @@ describe("route chunk recovery", () => {
     expect(sessionStorage.getItem("avyron:chunk-reload")).toBeNull();
     expect(screen.getByText("Loading")).toBeVisible();
   });
+  it("does not reload the old URL when an import fails on a later task during navigation", async () => {
+    let reject!: (error: Error) => void;
+    const Pending = lazyWithRetry(() => new Promise((_resolve, fail) => { reject = fail; }));
+    render(<Suspense fallback={<p>Loading</p>}><Pending /></Suspense>);
+    await act(async () => {
+      window.dispatchEvent(new Event("beforeunload"));
+      await new Promise(resolve => setTimeout(resolve, 10));
+      reject(new TypeError("Failed to fetch dynamically imported module"));
+      await Promise.resolve();
+    });
+    expect(sessionStorage.getItem("avyron:chunk-reload")).toBeNull();
+  });
+  it("allows normal recovery again when the user stays and interacts with the document", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    sessionStorage.setItem("avyron:chunk-reload", "1");
+    window.dispatchEvent(new Event("beforeunload"));
+    window.dispatchEvent(new KeyboardEvent("keydown", {key:"Tab"}));
+    const Failed = lazyWithRetry(() => Promise.reject(new Error("recoverable import error")));
+    await act(async () => { render(<Boundary><Suspense fallback={<p>Loading</p>}><Failed /></Suspense></Boundary>); });
+    expect(screen.getByRole("alert")).toHaveTextContent("recoverable import error");
+  });
   it("keeps the actual import error when browser storage is blocked", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => { throw new DOMException("Blocked", "SecurityError"); });
