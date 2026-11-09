@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { workspaceApi } from "@/lib/workspaceApi";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/i18n/LanguageContext";
@@ -185,12 +185,46 @@ function TicketThread({ ticket, staffMode, onChanged }: { ticket: Ticket; staffM
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
 
-  const load = useCallback(async () => {
-    try { const { data } = await workspaceApi.list<Message>(`tickets/${encodeURIComponent(ticket.id)}/messages`); setMessages(data); }
-    catch (error) { toast.error(error instanceof Error ? error.message : "Mesajele nu pot fi încărcate."); }
+  const [older, setOlder] = useState(false), [loadingOlder, setLoadingOlder] = useState(false);
+  const [readError, setReadError] = useState(false), [readAttempt, setReadAttempt] = useState(0);
+  const historyOffset = useRef(0), lastRead = useRef("");
+  const scroller = useRef<HTMLDivElement>(null), end = useRef<HTMLDivElement>(null), atBottom = useRef(true);
+  const load = useCallback(async (offset = 0) => {
+    try {
+      const {data} = await workspaceApi.list<Message>(`tickets/${encodeURIComponent(ticket.id)}/messages?recent=1&offset=${offset}`);
+      setMessages(previous => Array.from(new Map([...previous,...data].map(message=>[message.id,message])).values())
+        .sort((a,b)=>Date.parse(a.created_at)-Date.parse(b.created_at)||a.id.localeCompare(b.id)));
+      if(offset>0||historyOffset.current===0){setOlder(data.length===50);historyOffset.current=offset+data.length;}
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Mesajele nu pot fi încărcate."); }
   }, [ticket.id]);
-
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+    const timer=setInterval(()=>{if(document.visibilityState==='visible')void load();},30000);
+    return()=>clearInterval(timer);
+  }, [load]);
+  const lastId=messages[messages.length-1]?.id;
+  useEffect(()=>{
+    if(atBottom.current&&scroller.current)scroller.current.scrollTop=scroller.current.scrollHeight;
+  },[lastId]);
+  useEffect(()=>{
+    if(staffMode||!lastId||!end.current)return;
+    let active=true;
+    const observer=new IntersectionObserver(entries=>{
+      if(!entries.some(entry=>entry.isIntersecting)||document.visibilityState!=='visible'||lastRead.current===lastId)return;
+      lastRead.current=lastId;
+      void workspaceApi.write(`tickets/${encodeURIComponent(ticket.id)}/read`,{messageId:lastId})
+        .then(()=>{if(active)setReadError(false);})
+        .catch(()=>{lastRead.current='';if(active)setReadError(true);});
+    });
+    const node=end.current,observe=()=>{observer.unobserve(node);observer.observe(node);};
+    observe();document.addEventListener('visibilitychange',observe);
+    return()=>{active=false;observer.disconnect();document.removeEventListener('visibilitychange',observe);};
+  },[lastId,staffMode,ticket.id,readAttempt]);
+  const loadOlder=async()=>{
+    if(loadingOlder)return;
+    setLoadingOlder(true);atBottom.current=false;
+    try{await load(historyOffset.current);}finally{setLoadingOlder(false);}
+  };
 
   const send = async () => {
     if (!user || !reply.trim()) return;
@@ -221,7 +255,11 @@ function TicketThread({ ticket, staffMode, onChanged }: { ticket: Ticket; staffM
         </div>
       )}
 
-      <div className="space-y-2 max-h-72 overflow-y-auto">
+      <div className="flex items-center justify-between gap-2">
+        {older?<Button variant="ghost" size="sm" disabled={loadingOlder} onClick={()=>void loadOlder()}>Mesaje mai vechi</Button>:<span/>}
+        <Button variant="ghost" size="sm" onClick={()=>void load()}>Actualizează răspunsurile</Button>
+      </div>
+      <div ref={scroller} onScroll={()=>{const node=scroller.current;if(node)atBottom.current=node.scrollHeight-node.scrollTop-node.clientHeight<40;}} className="space-y-2 max-h-72 overflow-y-auto" role="log" aria-live="polite" aria-label="Răspunsurile solicitării">
         {messages.map((m) => (
           <div key={m.id} className={`rounded-lg p-3 text-sm ${m.is_staff_reply ? "bg-primary/10 ml-6" : "bg-muted/40 mr-6"}`}>
             <div className="text-xs text-muted-foreground mb-1">
@@ -230,7 +268,9 @@ function TicketThread({ ticket, staffMode, onChanged }: { ticket: Ticket; staffM
             <div className="whitespace-pre-wrap">{m.content}</div>
           </div>
         ))}
+        {!!messages.length&&<div ref={end} aria-hidden="true" className="h-px"/>}
       </div>
+      {readError&&<p role="status" className="text-xs text-amber-300">Citirea mesajelor nu a putut fi confirmată. <button className="underline" onClick={()=>setReadAttempt(n=>n+1)}>Reîncearcă</button></p>}
 
       {ticket.status !== "closed" && (
         <div className="flex gap-2">

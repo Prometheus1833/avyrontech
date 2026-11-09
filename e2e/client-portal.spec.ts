@@ -507,3 +507,23 @@ test('citirea conversației elimină contorul din meniu, iar valorile mari răm�
  await page.getByRole('button',{name:'Deschide mai multe secțiuni'}).click();
  await expect(nav.getByRole('button',{name:'Suport Staff',exact:true})).toBeVisible();await expect(nav.getByLabel('120 mesaje necitite',{exact:true})).toHaveCount(0);
 });
+
+test('Suport Staff însumează solicitările și proiectele, confirmând citirea numai când răspunsurile sunt vizibile',async({page})=>{
+ await setup(page);await page.setViewportSize({width:390,height:844});let supportUnread=2,reads=0,failRead=true;
+ await page.route('**/api/project-chat/unread-count',r=>r.fulfill({json:{unread:3}}));
+ await page.route('**/api/workspace/support-unread-count',r=>r.fulfill({json:{unread:supportUnread}}));
+ await page.route('**/api/workspace/tickets',r=>r.fulfill({json:{data:[{id:'ticket-a',subject:'Solicitare mentenanță',revision:1,description:null,status:'open',priority:'medium',created_at:new Date().toISOString()}]}}));
+ await page.route('**/api/workspace/tickets/ticket-a/messages?*',r=>r.fulfill({json:{data:[{id:'reply-old',ticket_id:'ticket-a',author_id:'staff-a',content:'Primul răspuns primit',is_staff_reply:true,created_at:new Date(Date.now()-1000).toISOString()},{id:'reply-a',ticket_id:'ticket-a',author_id:'staff-a',content:'Răspuns de suport primit',is_staff_reply:true,created_at:new Date().toISOString()}]}}));
+ await page.route('**/api/workspace/tickets/ticket-a/read',r=>{expect(r.request().postDataJSON()).toEqual({messageId:'reply-a'});reads++;if(failRead)return r.fulfill({status:503,json:{error:{code:'temporarily_unavailable'}}});supportUnread=0;return r.fulfill({json:{ok:true}})});
+ await page.goto('/profil?tab=overview');await page.getByRole('button',{name:'Deschide mai multe secțiuni'}).click();
+ const nav=page.getByRole('navigation',{name:'Secțiunile contului',exact:true});
+ await expect(nav.getByRole('button',{name:'Suport Staff, 5 mesaje necitite',exact:true})).toBeVisible();expect(reads).toBe(0);
+ await nav.getByRole('button',{name:'Suport Staff, 5 mesaje necitite',exact:true}).click();
+ expect(reads).toBe(0);await page.getByRole('button',{name:/Solicitare mentenanță/}).click();
+ await expect(page.getByText('Răspuns de suport primit',{exact:true})).toBeVisible();
+ await expect(page.getByText('Citirea mesajelor nu a putut fi confirmată.',{exact:false})).toBeVisible();
+ failRead=false;await page.getByRole('button',{name:'Reîncearcă',exact:true}).click();
+ await expect.poll(()=>supportUnread).toBe(0);
+ await page.getByRole('button',{name:'Deschide mai multe secțiuni'}).click();
+ await expect(nav.getByRole('button',{name:'Suport Staff, 3 mesaje necitite',exact:true})).toBeVisible();
+});

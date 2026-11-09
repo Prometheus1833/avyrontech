@@ -58,6 +58,40 @@ describe('Cloudflare workspace: actual handlers, all migrations, atomic writes',
  });
  afterEach(()=>{vi.unstubAllGlobals();db.close();});
  const request=(path:string,body?:unknown,method='POST',key='test-idempotency-key-123')=>app.request(`/api/workspace/${path}`,body===undefined?{}:{method,headers:{'content-type':'application/json','idempotency-key':key},body:JSON.stringify(body)},{});
+ it('counts received support replies only within current client grants and preserves a monotonic read cursor',async()=>{
+  db.exec("INSERT INTO support_messages(id,ticket_id,author_id,content,is_staff_reply,created_at) VALUES('m1','ticket-a','staff','Reply A',1,10),('m2','ticket-a','client','Own reply',0,11),('m3','ticket-a','staff','New reply A',1,12),('mb','ticket-b','staff','Private B',1,20)");
+  actor='client';
+  const count=async()=>{const response=await request('support-unread-count');expect(response.status).toBe(200);expect(response.headers.get('cache-control')).toBe('private, no-store');return response.json();};
+  expect(await count()).toEqual({unread:2});expect(db.prepare('SELECT count(*) n FROM support_ticket_reads').get()!.n).toBe(0);
+  expect((await request('tickets/ticket-a/read',{messageId:'x'.repeat(3000)})).status).toBe(413);
+  expect((await request('tickets/ticket-a/read',{messageId:'mb'})).status).toBe(404);
+  expect((await request('tickets/ticket-b/read',{messageId:'mb'})).status).toBe(404);
+  expect((await request('tickets/ticket-a/read',{messageId:'m2'},'POST','support-read-own-key')).status).toBe(200);
+  expect(await count()).toEqual({unread:1});
+  db.exec("UPDATE support_tickets SET status='closed' WHERE id='ticket-a'");
+  expect((await request('tickets/ticket-a/read',{messageId:'m3'},'POST','support-read-new-key')).status).toBe(200);
+  expect((await request('tickets/ticket-a/read',{messageId:'m1'},'POST','support-read-old-key')).status).toBe(200);
+  expect(await count()).toEqual({unread:0});expect(db.prepare('SELECT message_id FROM support_ticket_reads').get()!.message_id).toBe('m3');
+  expect((await request('tickets/ticket-a/read',{messageId:'m1'},'POST','support-read-new-key')).status).toBe(409);
+  db.exec('UPDATE support_ticket_reads SET is_baseline=1');
+  expect((await request('tickets/ticket-a/read',{messageId:'m3'},'POST','support-read-baseline-key')).status).toBe(200);
+  expect(db.prepare('SELECT is_baseline FROM support_ticket_reads').get()!.is_baseline).toBe(0);
+  db.exec("DELETE FROM client_account_access WHERE user_id='client'");
+  expect(await count()).toEqual({unread:0});
+  expect((await request('tickets/ticket-a/read',{messageId:'m3'},'POST','support-read-new-key')).status).toBe(404);
+  actor='other';expect(await count()).toEqual({unread:1});
+  db.exec("INSERT INTO client_account_access VALUES('a','other','owner',1)");expect(await count()).toEqual({unread:4});
+  actor='staff';expect((await request('support-unread-count')).status).toBe(403);
+ });
+ it('loads the newest support messages first while retaining the legacy order and allowing older pages',async()=>{
+  const insert=db.prepare("INSERT INTO support_messages(id,ticket_id,author_id,content,is_staff_reply,created_at) VALUES(?,'ticket-a','staff','Reply',1,?)");
+  for(let i=1;i<=60;i++)insert.run('msg-'+String(i).padStart(3,'0'),i);
+  actor='client';
+  const latest=await(await request('tickets/ticket-a/messages?recent=1')).json();expect(latest.data).toHaveLength(50);expect(latest.data[0].id).toBe('msg-011');expect(latest.data[49].id).toBe('msg-060');
+  const older=await(await request('tickets/ticket-a/messages?recent=1&offset=50')).json();expect(older.data).toHaveLength(10);expect(older.data[0].id).toBe('msg-001');
+  const legacy=await(await request('tickets/ticket-a/messages')).json();expect(legacy.data[0].id).toBe('msg-001');
+  actor='other';expect((await request('tickets/ticket-a/messages?recent=1')).status).toBe(404);
+ });
  it('lists only confirmed native payments, isolates beneficiaries and immediately respects revoked grants',async()=>{
   db.exec("UPDATE clients SET access_managed=1; INSERT INTO financial_revenues(id,revenue_type,client_id,service_name,status,currency,gross_amount_minor,created_at,updated_at) VALUES('history-a','digital_services','a','Serviciu achitat A','invoiced','RON',10000,1,1),('history-b','digital_services','b','Serviciu privat B','invoiced','RON',10000,1,1)");
   db.exec("INSERT INTO financial_receipts(id,revenue_id,amount_minor,currency,reference,paid_at,created_by,created_at) VALUES('receipt-a','history-a',4000,'RON','manual-a',10,'owner',1),('receipt-b','history-b',5000,'RON','manual-b',20,'owner',1)");

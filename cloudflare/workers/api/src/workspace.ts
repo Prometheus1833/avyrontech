@@ -14,6 +14,7 @@ import { hasCapability, isReservedPlatformEmail, platformRoleForUser,projectOwne
 import { privilegedMfaSatisfied } from "./mfaPolicy";
 import { checkRateLimit } from "./antispam";
 import { sha256 } from "./security";
+import { readJsonBodyUpTo } from "./requestBody";
 import { canAccessProject } from "./projects";
 import { getScannedObject } from "./malware";
 
@@ -33,11 +34,11 @@ const audit = (c: Ctx, action: string, target: string, metadata: unknown = {}) =
 
 // The idempotency reservation and every domain/audit write share one D1 batch.
 // A concurrent duplicate fails the unique reservation before it can write again.
-async function mutate(c: Ctx, _value: unknown, result: Record<string,unknown>, statements: D1PreparedStatement[]) {
+async function mutate(c: Ctx, _value: unknown, result: Record<string,unknown>, statements: D1PreparedStatement[], requestHash?:string) {
   const key = c.req.header('idempotency-key') || '';
   if (!/^[A-Za-z0-9_.:-]{16,128}$/.test(key)) return fail(c,'idempotency_key_required');
   const scope = `workspace:${c.get('userId')}:${c.req.method}:${c.req.path}`;
-  const hash = await sha256(JSON.stringify(await c.req.json().catch(()=>null)));
+  const hash = requestHash ?? await sha256(JSON.stringify(await c.req.json().catch(()=>null)));
   const lookup = () => c.env.DB.prepare('SELECT request_hash,response_json FROM idempotency_keys WHERE scope=? AND idempotency_key=?')
     .bind(scope,key).first<{request_hash:string;response_json:string}>();
   const replay = (old: {request_hash:string;response_json:string}) => old.request_hash === hash
@@ -83,7 +84,9 @@ workspaceRouter.use('/api/workspace/*',async (c,next) => {
     const access=maintenance?await maintenanceWorkAccess(c.env,workPath[1],c.get('userId'),c.get('roles')):await canAccessProject(c.env.DB,workPath[1],c.get('userId'),c.get('roles'));
     if(!access.write)return fail(c,'forbidden',403);
   }
-  if (!['GET','HEAD','OPTIONS'].includes(c.req.method)) {
+  // Read receipts validate their resource and bounded body before replaying a result.
+  const supportRead=c.req.method==='POST'&&/^\/api\/workspace\/tickets\/[^/]+\/read$/.test(c.req.path);
+  if (!['GET','HEAD','OPTIONS'].includes(c.req.method)&&!supportRead) {
     const key=c.req.header('idempotency-key') || '';
     if (!/^[A-Za-z0-9_.:-]{16,128}$/.test(key)) return fail(c,'idempotency_key_required');
     const prior=await c.env.DB.prepare('SELECT request_hash,response_json FROM idempotency_keys WHERE scope=? AND idempotency_key=?')
@@ -201,6 +204,37 @@ async function ticketAccess(c: Ctx,id: string) {
   return c.env.DB.prepare(`SELECT record.* FROM support_tickets record WHERE record.id=? AND (${principal?'1':clientScope})`)
     .bind(...(principal?[id]:[id,c.get('userId')])).first<{id:string;status:string;revision:number;client_id:string}>();
 }
+workspaceRouter.get('/api/workspace/support-unread-count',async c => {
+  if(staff(c))return fail(c,'forbidden',403);
+  const user=c.get('userId');
+  const row=await c.env.DB.prepare(`SELECT count(*) total FROM client_account_access access
+    JOIN support_tickets record ON record.client_id=access.client_id
+    JOIN support_messages message ON message.ticket_id=record.id
+    LEFT JOIN support_ticket_reads seen ON seen.ticket_id=record.id AND seen.user_id=?
+    WHERE access.user_id=? AND message.author_id<>? AND
+      (seen.message_at IS NULL OR message.created_at>seen.message_at OR
+      (message.created_at=seen.message_at AND message.id>seen.message_id))`)
+    .bind(user,user,user).first<{total:number}>();
+  return c.json({unread:Number(row?.total||0)});
+});
+workspaceRouter.post('/api/workspace/tickets/:id/read',async c => {
+  const ticket=await ticketAccess(c,c.req.param('id'));
+  if(!ticket)return fail(c,'not_found',404);
+  const input=await readJsonBodyUpTo(c.req.raw,2048);
+  if(!input.ok)return c.json({error:{code:input.error}},input.error==='payload_too_large'?413:400);
+  const parsed=z.object({messageId:z.string().min(1).max(160)}).strict().safeParse(input.value);
+  if(!parsed.success)return fail(c,'invalid_input');
+  const message=await c.env.DB.prepare('SELECT id,created_at FROM support_messages WHERE ticket_id=? AND id=?')
+    .bind(ticket.id,parsed.data.messageId).first<{id:string;created_at:number}>();
+  if(!message)return fail(c,'not_found',404);
+  return mutate(c,parsed.data,{ok:true},[
+    c.env.DB.prepare(`INSERT INTO support_ticket_reads(user_id,ticket_id,message_id,message_at,updated_at) VALUES(?,?,?,?,?)
+      ON CONFLICT(user_id,ticket_id) DO UPDATE SET message_id=excluded.message_id,message_at=excluded.message_at,updated_at=excluded.updated_at,is_baseline=0
+      WHERE excluded.message_at>support_ticket_reads.message_at OR (excluded.message_at=support_ticket_reads.message_at AND (excluded.message_id>support_ticket_reads.message_id OR (excluded.message_id=support_ticket_reads.message_id AND support_ticket_reads.is_baseline=1)))`)
+      .bind(c.get('userId'),ticket.id,message.id,message.created_at,Date.now()),
+    audit(c,'workspace.ticket.read',ticket.id),
+  ],await sha256(JSON.stringify(parsed.data)));
+});
 workspaceRouter.get('/api/workspace/tickets',async c => {
   const principal=staff(c);
   const {limit,offset}=page(c);
@@ -224,7 +258,11 @@ workspaceRouter.post('/api/workspace/tickets',async c => {
 workspaceRouter.get('/api/workspace/tickets/:id/messages',async c => {
   if (!(await ticketAccess(c,c.req.param('id')))) return fail(c,'not_found',404);
   const {limit,offset}=page(c);
-  const {results}=await c.env.DB.prepare('SELECT id,ticket_id,author_id,content,is_staff_reply,created_at FROM support_messages WHERE ticket_id=? ORDER BY created_at,id LIMIT ? OFFSET ?').bind(c.req.param('id'),limit,offset).all<Record<string,unknown>>();
+  const columns='id,ticket_id,author_id,content,is_staff_reply,created_at';
+  const sql=c.req.query('recent')==='1'
+    ? `SELECT * FROM (SELECT ${columns} FROM support_messages WHERE ticket_id=? ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?) ORDER BY created_at,id`
+    : `SELECT ${columns} FROM support_messages WHERE ticket_id=? ORDER BY created_at,id LIMIT ? OFFSET ?`;
+  const {results}=await c.env.DB.prepare(sql).bind(c.req.param('id'),limit,offset).all<Record<string,unknown>>();
   return c.json({data:results.map(r=>({...r,is_staff_reply:r.is_staff_reply===1,created_at:iso(r.created_at)}))});
 });
 workspaceRouter.post('/api/workspace/tickets/:id/messages',async c => {
