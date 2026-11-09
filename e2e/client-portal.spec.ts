@@ -227,7 +227,7 @@ for (const width of [320, 390, 1440])
     await page.setViewportSize({ width, height: 950 });
     await page.goto("/profil?tab=documents");
     await expect(
-      page.getByRole("heading", { name: "Centru Documente", exact: true }),
+      page.getByRole("heading", { name: "Documente", exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Contract Cafenea", exact: true }),
@@ -271,7 +271,7 @@ for (const width of [320, 390, 1440])
     for (const label of [
       "Servicii",
       "Mentenanță / Abonamente",
-      "Plăți și facturi",
+      "Plăți/Istoric",
     ])
       await expect(
         nav.getByRole("button", { name: label, exact: true }),
@@ -301,7 +301,7 @@ test("meniul personal al clientului folosește destinațiile contului", async ({
   await page.goto("/");
   await page.locator("header").first().getByRole("button", { name: "Profil", exact: true }).click();
   const menu = page.getByRole("menu");
-  for (const [label, tab] of [["Proiectele mele", "projects"], ["Servicii", "catalog"], ["Mentenanță / Abonamente", "subscriptions"], ["Plăți și facturi", "payments"], ["Centru Documente", "documents"]])
+  for (const [label, tab] of [["Proiectele mele", "projects"], ["Servicii", "catalog"], ["Mentenanță / Abonamente", "subscriptions"], ["Plăți/Istoric", "payments"], ["Documente", "documents"]])
     await expect(menu.getByRole("menuitem", { name: label, exact: true })).toHaveAttribute("href", `/profil?tab=${tab}`);
   await expect(menu.getByRole("menuitem", { name: /AVY Core|Bibliotecă Agenție|AI AVY Prod|Proiecte AI|Financiar/ })).toHaveCount(0);
 });
@@ -315,7 +315,7 @@ test("clientul poate citi documentul fără permisiune de descărcare", async ({
   await expect(page.getByRole("button", { name: "Descarcă Word", exact: true })).toHaveCount(0);
   expect(state.requests.some(p => p.includes("/export/"))).toBe(false);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
-  for (const label of ["Servicii", "Coș", "Produsele mele"]) {
+  for (const label of ["Servicii", "Coș", "Produse"]) {
     const caption = page.getByRole("navigation", { name: "Navigare mobilă", exact: true }).getByRole("button", { name: label, exact: true }).locator("span").last();
     const metrics = await caption.evaluate(el => ({ fits: el.scrollWidth <= el.clientWidth + 1, text: el.textContent, scroll: el.scrollWidth, width: el.clientWidth, font: getComputedStyle(el).font, padding: getComputedStyle(el.parentElement!).padding }));
     expect(metrics.fits, JSON.stringify(metrics)).toBe(true);
@@ -403,8 +403,8 @@ test("legătura veche de mentenanță ajunge în zona comună și nu în AVY Cor
     page.getByRole("heading", { name: "Mentenanță / Abonamente", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Activități și materiale", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
+    page.getByRole("button", { name: "Înapoi la abonamente", exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByRole("button", {
       name: "Mentenanță nouă",

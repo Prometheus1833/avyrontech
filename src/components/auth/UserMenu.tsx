@@ -3,7 +3,6 @@ import NotificationCenter from "@/components/dashboard/NotificationCenter";
 import { useNavigate } from "react-router-dom";
 import { STUDIO_PATHS } from "@/data/logoStudioCopy";
 import { publicSiteHref } from "@/lib/appHost";
-import {useAccountCart} from "@/hooks/useAccountCart";
 import { useMemo,useState } from "react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -27,7 +26,6 @@ import {
   UsersRound,
   Bot,
   Wallet,
-  ShoppingCart,
   BookOpen,
   LibraryBig,
   PenTool,
@@ -50,7 +48,6 @@ type MenuItem = {
 const UserMenu = ({showNotificationBell=true}:{showNotificationBell?:boolean}) => {
   const { user, profile, isStaff, isSuperAdmin, roles, capabilities, hasCollaborations, isAgencyPartner,refreshProfile, signOut } = useAuth();
   const { t, lang } = useLang();
-  const {items:cartItems}=useAccountCart();
   const [menuOpen, setMenuOpen] = useState(false);
   const [noticeOpen,setNoticeOpen]=useState(false);
   const navigate=useNavigate();
@@ -66,17 +63,17 @@ const UserMenu = ({showNotificationBell=true}:{showNotificationBell?:boolean}) =
     .toUpperCase();
 
   const userItems:MenuItem[]=[
-    {label:lang==='en'?'My account':'Contul meu',icon:UserIcon,dot:'264, 90%, 62%',to:'/profil?tab=overview'},
+    {label:lang==='en'?'Home':'Acasă',icon:UserIcon,dot:'264, 90%, 62%',to:'/profil?tab=overview'},
+    {label:lang==='en'?'Staff Support':'Suport Staff',icon:MessageSquare,dot:'340, 80%, 60%',to:'/profil?tab=tickets'},
     {label:lang==='en'?'My projects':'Proiectele mele',icon:Boxes,dot:'200, 95%, 55%',to:'/profil?tab=projects'},
-    {label:lang==='en'?'Create Logo':'Creează Logo',icon:PenTool,dot:'280, 85%, 65%',to:publicSiteHref(STUDIO_PATHS[lang])},
-    {label:lang==='en'?'Paid Development Products':'Produse Development Achitate',icon:Package,dot:'155, 72%, 42%',to:'/profil?tab=collection'},
-    {label:lang==='en'?'Services':'Servicii',icon:Package,dot:'330, 85%, 65%',to:'/profil?tab=catalog'},
     {label:lang==='en'?'Maintenance / Subscriptions':'Mentenanță / Abonamente',icon:CreditCard,dot:'40, 95%, 60%',to:'/profil?tab=subscriptions'},
-    {label:lang==='en'?'Payments and invoices':'Plăți și facturi',icon:Wallet,dot:'155, 72%, 42%',to:'/profil?tab=payments'},
-    {label:(lang==='en'?'Cart':'Coș')+(cartItems.length?` (${cartItems.length})`:''),icon:ShoppingCart,dot:'170, 80%, 45%',to:'/profil?tab=cart'},
-    {label:lang==='en'?'Document Center':'Centru Documente',icon:FileText,dot:'264, 90%, 62%',to:'/profil?tab=documents'},
+    {label:lang==='en'?'My products':'Produsele mele',icon:Package,dot:'155, 72%, 42%',to:'/profil?tab=collection'},
+    {label:lang==='en'?'Services':'Servicii',icon:Package,dot:'330, 85%, 65%',to:'/profil?tab=catalog'},
+    {label:lang==='en'?'Documents':'Documente',icon:FileText,dot:'264, 90%, 62%',to:'/profil?tab=documents'},
+    {label:lang==='en'?'Payments / History':'Plăți/Istoric',icon:Wallet,dot:'155, 72%, 42%',to:'/profil?tab=payments'},
+    {label:lang==='en'?'Create Logo':'Creează Logo',icon:PenTool,dot:'280, 85%, 65%',to:publicSiteHref(STUDIO_PATHS[lang])},
+    {label:t.auth.menu.profile,icon:UserIcon,dot:'222, 25%, 40%',to:'/profil?tab=profile'},
     {label:t.auth.menu.settings,icon:Settings,dot:'222, 25%, 40%',to:'/profil?tab=settings'},
-    {label:lang==='en'?'Support and messages':'Suport și mesaje',icon:MessageSquare,dot:'340, 80%, 60%',to:'/profil?tab=tickets'},
   ];
 
   const access=buildAccess({roles,superadmin:isSuperAdmin,capabilities});
@@ -122,7 +119,7 @@ const UserMenu = ({showNotificationBell=true}:{showNotificationBell?:boolean}) =
           onCloseAutoFocus={(event) => event.preventDefault()}
           onPointerDownOutside={() => setMenuOpen(false)}
           onInteractOutside={() => setMenuOpen(false)}
-          className="z-[70] max-h-[calc(100dvh-5rem)] w-64 overflow-y-auto"
+          className={`z-[70] max-h-[calc(100dvh-5rem)] ${isStaff?"w-64":"w-[min(22rem,calc(100vw-1.5rem))]"} overflow-y-auto`}
         >
           <DropdownMenuLabel className="flex flex-col">
             <span className="font-medium truncate">{profile?.display_name || user.email}</span>
@@ -135,12 +132,12 @@ const UserMenu = ({showNotificationBell=true}:{showNotificationBell?:boolean}) =
             )}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={()=>{setMenuOpen(false);if(showNotificationBell)setNoticeOpen(true);else window.dispatchEvent(new Event(NOTIFICATIONS_OPEN_EVENT));}}><Bell className="mr-2 size-4"/>{lang==="en"?"Notifications":"Notificări"}</DropdownMenuItem>
-          {items.map((item) => {
+          {isStaff&&<DropdownMenuItem onSelect={()=>{setMenuOpen(false);if(showNotificationBell)setNoticeOpen(true);else window.dispatchEvent(new Event(NOTIFICATIONS_OPEN_EVENT));}}><Bell className="mr-2 size-4"/>{lang==="en"?"Notifications":"Notificări"}</DropdownMenuItem>}
+          <div className={isStaff?"":"grid grid-cols-2 gap-1"}>{items.map((item) => {
             const itemStyle = { ["--dot-color" as string]: item.dot };
             const inner = (
               <span className="flex items-center justify-between w-full gap-2">
-                <span className="flex items-center gap-2">
+                <span className="flex min-w-0 items-center gap-2">
                   <item.icon className="size-4" />
                   <span
                     aria-hidden="true"
@@ -180,7 +177,7 @@ const UserMenu = ({showNotificationBell=true}:{showNotificationBell?:boolean}) =
                 {inner}
               </DropdownMenuItem>
             );
-          })}
+          })}</div>
           {!isStaff && <>
             <DropdownMenuSeparator />
             <div className="mx-1 my-1 rounded-xl border border-violet-400/15 bg-violet-500/5 p-1" aria-label={lang === "en" ? "Reading and inspiration" : "Lectură și inspirație"}>

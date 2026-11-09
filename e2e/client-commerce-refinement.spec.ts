@@ -225,10 +225,7 @@ for (const width of [320, 390, 1440])
       .getByRole("button", { name: "Adaugă în coș", exact: true })
       .first()
       .click();
-    const nav = page.getByRole("navigation", {
-      name: width < 1024 ? "Navigare mobilă" : "Navigare cont",
-      exact: true,
-    });
+    const nav = width<1024?page.getByRole("navigation",{name:"Navigare mobilă",exact:true}):page.locator("header").first();
     await expect(
       nav.getByRole("button", { name: "Coș, 1 produs în coș", exact: true }),
     ).toBeVisible();
@@ -440,14 +437,14 @@ test("facturile, datele fiscale și metodele salvate folosesc o singură secțiu
   await page.goto("/profil?tab=invoices");
   await expect(page).toHaveURL(/tab=payments.*billingView=invoices/);
   await expect(
-    page.getByRole("heading", { name: "Plăți și facturi", exact: true }),
+    page.getByRole("heading", { name: "Plăți/Istoric", exact: true }),
   ).toBeVisible();
   const download = page.waitForEvent("download");
   await page
     .getByRole("button", { name: "Descarcă factura AVY-101", exact: true })
     .click();
   expect((await download).suggestedFilename()).toBe("Factura-AVY-101.pdf");
-  await page.getByRole("button", { name: "Date și metode de plată" }).click();
+  await page.getByText("Datele de facturare",{exact:true}).click();
   await page
     .getByLabel("Nume pentru factură", { exact: true })
     .fill("Client Actualizat");
@@ -477,7 +474,7 @@ test("mesajele și suportul sunt unificate fără canale sau membri staff", asyn
   await page.goto("/profil?tab=intern");
   await expect(page).toHaveURL(/tab=tickets.*supportView=messages/);
   await expect(
-    page.getByRole("heading", { name: "Suport și mesaje", exact: true }),
+    page.getByRole("heading", { name: "Suport Staff", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Mesaje proiecte", exact: true }),
@@ -498,7 +495,7 @@ test("mesajele și suportul sunt unificate fără canale sau membri staff", asyn
     exact: true,
   });
   await expect(
-    nav.getByRole("button", { name: "Suport și mesaje", exact: true }),
+    nav.getByRole("button", { name: "Suport Staff", exact: true }),
   ).toBeVisible();
   await expect(
     nav.getByRole("button", {
@@ -605,11 +602,12 @@ for (const width of [320, 390, 1440]) test(`Avy Cont organizează proiectele și
   await expect(page.getByRole('link',{name:/Magazin finalizat/})).toBeVisible();
   await expect(page.getByRole('button',{name:/Pachet SEO achiziționat/})).toBeVisible();
   const headings = await page.locator('main h2, [role="region"] h2').allTextContents();
-  expect(headings.slice(0,4)).toEqual(['Proiectele mele','Mentenanță','Profil','Metode de plată salvate']);
+  expect(headings.filter(title=>!['Principal','Secțiuni','Contul meu'].includes(title)).slice(0,6)).toEqual(['Proiectele mele','Mentenanță / Abonamente','Produsele mele','Servicii','Documente','Plăți/Istoric']);
   await expect(page.getByRole('button',{name:/Explorează catalogul|favorite/i})).toHaveCount(0);
   const header = page.locator('header').first();
   await expect(header.getByRole('link',{name:'Avyron Web — Acasă'})).toBeVisible();
   await expect(header.getByRole('button',{name:'Deschide Avy Cont'})).toBeVisible();
+  const brandBox=await header.getByRole('link',{name:'Avyron Web — Acasă'}).boundingBox(),accountBox=await header.getByRole('button',{name:'Deschide Avy Cont'}).boundingBox();expect(brandBox!.x+brandBox!.width).toBeLessThanOrEqual(accountBox!.x-3);
   await header.getByRole('button',{name:'Profil',exact:true}).click();
   await page.getByRole('menuitem',{name:'Blog Avyron',exact:true}).scrollIntoViewIfNeeded();
   await expect(page.getByRole('menuitem',{name:'Blog Avyron',exact:true})).toBeVisible();
@@ -619,8 +617,9 @@ for (const width of [320, 390, 1440]) test(`Avy Cont organizează proiectele și
   await expect(page.getByRole('menu')).toBeHidden();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({path:test.info().outputPath(`avy-cont-${width}.png`),fullPage:true,animations:"disabled"});
-  await page.getByRole('button',{name:'Metode de plată salvate',exact:false}).click();
-  await expect(page).toHaveURL(/tab=payments.*billingView=settings/);
+  await page.getByRole('button',{name:/Plăți\/Istoric/}).last().click();
+  await expect(page).toHaveURL(/tab=payments/);
+  await page.getByText('Datele de facturare',{exact:true}).click();
   await expect(page.getByLabel('Nume pentru factură',{exact:true})).toBeVisible();
   await header.getByRole('button',{name:'Deschide Avy Cont'}).click();
   await expect(page).toHaveURL(/tab=overview/);
@@ -632,21 +631,14 @@ test('prima pagină distinge eroarea proiectelor de un cont fără alocări și 
   let failing=true;
   await page.route('**/api/projects**', route => failing ? route.fulfill({status:503,json:{error:{code:'unavailable'}}}) : route.fulfill({json:{data:[],purchases:[],sales:[]}}));
   await page.goto('/profil?tab=overview');
-  await expect(page.getByRole('alert').filter({hasText:'Proiectele nu pot fi încărcate acum.'})).toBeVisible();
+  await expect(page.getByRole('alert').filter({hasText:'Proiectele nu pot fi încărcate.'})).toBeVisible();
   failing=false;
   await page.getByRole('button',{name:'Reîncearcă',exact:true}).click();
-  await expect(page.getByText('Proiectele și achizițiile confirmate vor apărea aici după alocarea în cont.',{exact:true})).toBeVisible();
+  await expect(page.getByText('Proiectele și serviciile alocate vor apărea aici.',{exact:true})).toBeVisible();
 });
 
-test('mentenanța deschide colaborările autorizate și facturile în fluxurile native', async ({page}) => {
-  const state=await setup(page,{collaborations:true});
-  await page.goto('/profil?tab=overview');
-  await page.getByRole('button',{name:'Colaborările mele',exact:true}).click();
-  await expect(page).toHaveURL(/recurringView=collaborations/);
-  await expect.poll(()=>state.requests.some(path=>path.startsWith('/api/my/collaborations?'))).toBe(true);
-  await page.getByRole('link',{name:'Plăți și facturi',exact:true}).click();
-  await expect(page).toHaveURL(/tab=payments&billingView=invoices/);
-  await expect(page.getByText('AVY-101',{exact:true})).toBeVisible();
+test('mentenanța păstrează colaborările autorizate fără butoane duplicate de plăți sau activități',async({page})=>{
+ const state=await setup(page,{collaborations:true});await page.goto('/profil?tab=subscriptions');await page.getByRole('button',{name:'Colaborările mele',exact:true}).click();await expect.poll(()=>state.requests.some(path=>path.startsWith('/api/my/collaborations?'))).toBe(true);await expect(page.getByRole('link',{name:'Plăți și facturi',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'Activități și materiale',exact:true})).toHaveCount(0);
 });
 
 for (const width of [320,390,1280]) test(`catalogul public și contul elimină favoritele și păstrează adăugarea în coș la ${width}px`, async ({page}) => {
@@ -656,7 +648,7 @@ for (const width of [320,390,1280]) test(`catalogul public și contul elimină f
   await page.goto('/profil?tab=catalog');
   await expect(page.getByRole('button',{name:/favorite|colecție/i})).toHaveCount(0);
   await page.getByRole('article').filter({hasText:'Site profesional'}).getByRole('button',{name:'Adaugă în coș',exact:true}).click();
-  await expect(page.getByRole("navigation", {name:width < 1024 ? "Navigare mobilă" : "Navigare cont",exact:true}).getByRole('button',{name:/Coș, 1 produs/})).toBeVisible();
+  await expect((width<1024?page.getByRole("navigation",{name:"Navigare mobilă",exact:true}):page.locator("header").first()).getByRole('button',{name:/Coș, 1 produs/})).toBeVisible();
   await page.goto('/produse');
   await expect(page.locator('header').getByRole('link',{name:'Avyron Web — Acasă'})).toBeVisible();
   await expect(page.getByRole('link',{name:'Deschide Avy Cont'})).toBeVisible();
@@ -698,4 +690,61 @@ test('Blogul și Biblioteca Artefacte ies din hostul privat către site-ul publi
   await page.locator('header').getByRole('button',{name:'Profil',exact:true}).click();
   await expect(page.getByRole('menuitem',{name:'Blog Avyron',exact:true})).toHaveAttribute('href','https://avyron.ro/blog');
   await expect(page.getByRole('menuitem',{name:'Biblioteca Artefacte',exact:true})).toHaveAttribute('href','https://avyron.ro/biblioteca');
+});
+
+for(const width of [320,390,1440])test(`contul separă catalogul de achiziții și păstrează meniul compact la ${width}px`,async({page},info)=>{
+ await setup(page);await page.setViewportSize({width,height:900});await page.goto('/profil?tab=catalog');await expect(page.getByRole('heading',{name:'Servicii',exact:true})).toBeVisible();await expect(page.getByRole('heading',{name:'Componentă digitală',exact:true})).toHaveCount(0);
+ if(width<1024){await page.getByRole('navigation',{name:'Navigare mobilă',exact:true}).getByRole('button',{name:'Produse',exact:true}).click()}else await page.goto('/profil?tab=product-catalog');
+ await expect(page).toHaveURL(/tab=product-catalog/);await expect(page.getByRole('heading',{name:'Produse',exact:true})).toBeVisible();await expect(page.getByRole('heading',{name:'Componentă digitală',exact:true})).toBeVisible();await expect(page.getByRole('heading',{name:'Produse Development Achitate',exact:true})).toHaveCount(0);
+ await page.getByRole('button',{name:'Adaugă în coș',exact:true}).click();await expect(page.getByText('Adăugat în coșul contului.',{exact:true})).toBeVisible();
+ if(width<1024)await page.getByRole('button',{name:'Deschide mai multe secțiuni'}).click();const nav=page.getByRole('navigation',{name:width<1024?'Secțiunile contului':'Navigare cont',exact:true});
+ const labels=['Acasă','Suport Staff','Proiectele mele','Mentenanță / Abonamente','Produsele mele','Servicii','Documente','Plăți/Istoric'];for(const label of labels)await expect(nav.getByRole('button',{name:label,exact:true})).toBeVisible();
+ for(const label of ['Coș','Notificări','Istoric și plăți','Plăți și facturi'])await expect(nav.getByRole('button',{name:label,exact:true})).toHaveCount(0);
+ for(let i=0;i<labels.length;i+=2){const a=await nav.getByRole('button',{name:labels[i],exact:true}).boundingBox(),b=await nav.getByRole('button',{name:labels[i+1],exact:true}).boundingBox();expect(Math.abs(a!.y-b!.y)).toBeLessThan(2)}
+ await nav.getByRole('button',{name:'Produsele mele',exact:true}).click();await expect(page).toHaveURL(/tab=collection/);await expect(page.getByRole('heading',{name:'Produse Development Achitate',exact:true})).toBeVisible();
+ await page.goto('/profil?tab=subscriptions');await expect(page.getByRole('button',{name:'Activități și materiale',exact:true})).toHaveCount(0);await expect(page.getByRole('link',{name:'Plăți și facturi',exact:true})).toHaveCount(0);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);await page.screenshot({path:info.outputPath(`simple-account-${width}.png`),fullPage:true});
+});
+for(const width of [320,1440])test(`plățile au cardul sus și istoricul fără filtre la ${width}px`,async({page},info)=>{
+ const state=await setup(page);await page.setViewportSize({width,height:900});
+ await page.route('**/api/workspace/payments*',r=>r.fulfill({json:{data:[{id:'receipt:test',title:'Website achitat',amount_minor:24000,currency:'RON',paid_at:Date.UTC(2026,10,1),date_kind:'payment',invoice_id:'invoice-a',invoice_number:'AVY-101',order_id:null,provider:'stripe',download_available:1}],nextOffset:null}}));
+ await page.route('**/api/billing/payment-methods',r=>r.fulfill({json:{methods:[{id:'masked',provider:'stripe',type:'card',brand:'visa',last4:'4242',expiry_month:12,expiry_year:2028,is_default:1}],refreshed:{stripe:true,revolut:false}}}));
+ await page.goto('/profil?tab=orders');await expect(page).toHaveURL(/tab=payments/);await expect(page.getByRole('heading',{name:'Plăți/Istoric',exact:true})).toBeVisible();await expect(page.getByText('Visa •••• 4242',{exact:true})).toBeVisible();await expect(page.getByRole('heading',{name:'Website achitat',exact:true})).toBeVisible();
+ const card=await page.getByText('Cardul tău pentru plăți',{exact:true}).boundingBox(),history=await page.getByRole('heading',{name:'Istoricul plăților',exact:true}).boundingBox();expect(card!.y).toBeLessThan(history!.y);
+ await expect(page.getByRole('searchbox')).toHaveCount(0);await expect(page.getByLabel('Starea facturii')).toHaveCount(0);await expect(page.locator('input[autocomplete="cc-number"],input[autocomplete="cc-csc"]')).toHaveCount(0);
+ const wait=page.waitForEvent('download');await page.getByRole('button',{name:'Descarcă factura pentru Website achitat',exact:true}).click();expect((await wait).suggestedFilename()).toBe('Factura-AVY-101.pdf');
+ await expect(page.getByRole('button',{name:'Descarcă factura pentru Website achitat',exact:true})).toBeEnabled();await page.mouse.move(0,0);await page.evaluate(()=>window.scrollTo(0,0));
+ await page.locator('main').evaluate(async element=>{await Promise.all(element.getAnimations({subtree:true}).filter(a=>a.effect?.getTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>undefined)))});
+ const {createRequire}=await import('node:module');await page.addScriptTag({path:createRequire(import.meta.url).resolve('axe-core/axe.min.js')});
+ const violations=await page.evaluate(async()=>{const axe=(window as unknown as {axe:{run:(selector:string,options:object)=>Promise<{violations:{id:string;impact:string;nodes:{target:string[];failureSummary:string}[]}[]}>}}).axe;return(await axe.run('main',{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa']}})).violations.filter(v=>['serious','critical'].includes(v.impact)).map(v=>({id:v.id,nodes:v.nodes.map(n=>({target:n.target,reason:n.failureSummary}))}))});expect(violations).toEqual([]);
+ expect(state.requests.filter(path=>path==='/api/billing/account').length).toBe(1);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);await page.screenshot({path:info.outputPath(`payment-history-${width}.png`),fullPage:true});
+});
+
+test('adăugarea cardului folosește formularul Stripe, permite reîncercare și nu colectează date de card în AVYRON',async({page})=>{
+ await setup(page);let attempts=0;
+ await page.route('**/api/billing/account',r=>r.fulfill({json:{profile:null,methods:[],subscriptions:[],invoices:[],revolutPlans:[],providers:{stripe:{enabled:true},revolut:{enabled:false},oblio:{enabled:false},netopia:{enabled:false}}}}));
+ await page.route('**/api/billing/payment-methods/setup',r=>{attempts++;expect(r.request().postDataJSON()).toEqual({provider:'stripe'});return attempts===1?r.fulfill({status:503,json:{error:{message:'Procesator indisponibil temporar'}}}):r.fulfill({status:201,json:{url:'https://checkout.stripe.com/c/pay/fixture-secure-card'}})});
+ await page.route('https://checkout.stripe.com/c/pay/fixture-secure-card',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><html lang="ro"><title>Procesator sintetic</title><h1>Formular securizat al procesatorului</h1></html>'}));
+ await page.goto('/profil?tab=payments');const add=page.getByRole('button',{name:'Adaugă card securizat',exact:true});await expect(add).toBeEnabled();await add.focus();await page.keyboard.press('Enter');await expect(page.getByText('Procesator indisponibil temporar',{exact:true})).toBeVisible();await expect(add).toBeEnabled();await expect(page.locator('input[autocomplete="cc-number"],input[autocomplete="cc-csc"]')).toHaveCount(0);await add.click();await expect(page).toHaveURL('https://checkout.stripe.com/c/pay/fixture-secure-card');expect(attempts).toBe(2);
+});
+
+
+test('istoricul raportează erorile recuperabil și nu atribuie o factură fără legătura comenzii',async({page})=>{
+ await setup(page);let available=false;
+ await page.route('**/api/billing/account',r=>r.fulfill({json:{profile:null,methods:[],subscriptions:[],invoices:[{id:'unrelated',order_id:null,status:'issued',document_url:'/api/workspace/invoices/unrelated/content'}],revolutPlans:[],providers:{stripe:{enabled:false},revolut:{enabled:false},oblio:{enabled:false},netopia:{enabled:false}}}}));
+ await page.route('**/api/workspace/payments*',r=>available?r.fulfill({json:{data:[{id:'receipt:without-file',title:'Plată fără factură atașată',amount_minor:9000,currency:'RON',paid_at:10,date_kind:'payment',invoice_id:'without-file',invoice_number:null,order_id:null,provider:null,download_available:0}],nextOffset:null}}):r.fulfill({status:503,json:{error:{code:'unavailable'}}}));
+ await page.goto('/profil?tab=payments');const history=page.getByRole('region',{name:'Istoricul plăților efectuate',exact:true});await expect(history.getByRole('alert')).toContainText('Istoricul plăților nu poate fi încărcat');available=true;await history.getByRole('button',{name:'Reîncearcă',exact:true}).click();await expect(history.getByRole('heading',{name:'Plată fără factură atașată',exact:true})).toBeVisible();await expect(history.getByRole('button',{name:/Descarcă factura/})).toHaveCount(0);
+});
+
+test('factura găzduită la furnizor se deschide fără tokenul sau refererul AVYRON',async({page,context})=>{
+ await setup(page);const invoiceUrl='https://www.oblio.eu/facturi/fixture-client.pdf';let headers:Record<string,string>|undefined;
+ await context.route(invoiceUrl,route=>{headers=route.request().headers();return route.fulfill({contentType:'text/html',body:'<!doctype html><html lang="ro"><title>Factură sintetică</title><h1>Factura furnizorului</h1></html>'})});
+ await page.route('**/api/billing/account',r=>r.fulfill({json:{profile:null,methods:[],subscriptions:[],invoices:[{id:'provider-invoice',order_id:'confirmed-order',status:'issued',document_url:invoiceUrl}],revolutPlans:[],providers:{stripe:{enabled:false},revolut:{enabled:false},oblio:{enabled:false},netopia:{enabled:false}}}}));
+ await page.route('**/api/workspace/payments*',r=>r.fulfill({json:{data:[{id:'online:confirmed',title:'Comandă cu factură externă',amount_minor:9000,currency:'RON',paid_at:10,date_kind:'confirmation',invoice_id:null,invoice_number:null,order_id:'confirmed-order',provider:'stripe',download_available:0}],nextOffset:null}}));
+ await page.goto('/profil?tab=payments');const popupEvent=page.waitForEvent('popup');await page.getByRole('button',{name:'Descarcă factura pentru Comandă cu factură externă',exact:true}).click();const popup=await popupEvent;await expect(popup.getByRole('heading',{name:'Factura furnizorului',exact:true})).toBeVisible();expect(headers?.authorization).toBeUndefined();expect(headers?.referer).toBeUndefined();await popup.close();
+});
+
+test('comenzile în așteptare păstrează o eroare recuperabilă și actualizează disponibilitatea procesatorului',async({page})=>{
+ const state=await setup(page);let available=false;await page.route('**/api/commerce/orders',r=>available?r.fulfill({json:{data:[{id:'pending',items_json:'[{"sku":"svc-site","name":"Website","quantity":1}]',total_cents:24000,currency:'RON',status:'requested',requires_manual_quote:0,created_at:1}]}}):r.fulfill({status:503,json:{error:{code:'unavailable'}}}));
+ await page.goto('/profil?tab=payments');await expect(page.getByRole('alert').filter({hasText:'Comenzile nu pot fi încărcate'})).toBeVisible();available=true;await page.locator('header').filter({has:page.getByRole('heading',{name:'Comenzi în așteptare',exact:true})}).getByRole('button',{name:'Actualizează',exact:true}).click();await expect(page.getByRole('heading',{name:'Website',exact:true})).toBeVisible();await expect(page.getByRole('alert').filter({hasText:'Comenzile nu pot fi încărcate'})).toHaveCount(0);expect(state.requests.filter(path=>path==='/api/billing/account').length).toBe(2);
 });

@@ -94,9 +94,9 @@ for(const width of [320,1440])test(`paid products remain in history and recover 
   const data=await fixture(context);
   await page.setViewportSize({width,height:width===320?700:960});
   await page.goto("https://app.avyron.ro/profil?tab=overview");
-  await expect(page.getByRole("button",{name:/Produse Development Achitate/})).toBeVisible();
+  await expect(page.getByRole("button",{name:/Produsele mele/}).last()).toBeVisible();
   await page.screenshot({path:`/tmp/avyron-client-home-${width}.png`,fullPage:true});
-  await page.getByRole("button",{name:/Produse Development Achitate/}).click();
+  await page.getByRole("button",{name:/Produsele mele/}).last().click();
   await expect(page.getByRole("heading",{name:"Produse Development Achitate",exact:true})).toBeVisible();
   await expect(page.getByRole("heading",{name:"Logo Studio 3D achitat"})).toBeVisible();
   await expect(page.getByRole("link",{name:"Deschide produsul",exact:true})).toHaveAttribute("href","https://avyron.ro/produse/logo/logo-studio-3d");

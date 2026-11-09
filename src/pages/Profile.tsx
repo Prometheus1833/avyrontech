@@ -118,7 +118,7 @@ function ProfileDashboard() {
   const allowed = useMemo(() => sectionsFor(access), [access]);
   const navigation = navigationSectionsFor(access);
   const groups = DASHBOARD_GROUP_ORDER.map((group) => ({ id: group, label: dashboardGroupLabel(group,access.isClient), items: navigation.filter((section) => section.group === group) })).filter((group) => group.items.length);
-  const mobilePrimary = new Set<SectionId>(access.isStaff ? ["overview", "projects", "leads", ...(access.isSuperAdmin ? ["ai-os" as SectionId] : ["client-maintenance" as SectionId])] : ["overview", "catalog", "cart", "collection"]);
+  const mobilePrimary = new Set<SectionId>(access.isStaff ? ["overview", "projects", "leads", ...(access.isSuperAdmin ? ["ai-os" as SectionId] : ["client-maintenance" as SectionId])] : ["overview", "catalog", "cart", "product-catalog"]);
   const mobileMoreGroups = access.isClient?groups:groups
     .map((group) => ({ ...group, items: group.items.filter((section) => !mobilePrimary.has(section.id)) }))
     .filter((group) => group.items.length);
@@ -197,7 +197,7 @@ function ProfileDashboard() {
       {mobile ? (
             <span className="max-w-full truncate text-[9px]">{sectionMeta.mobileLabel || label}</span>
           ) : (
-            !sidebarCollapsed && <span className="truncate">{label}</span>
+            !sidebarCollapsed && <span className={access.isClient?"min-w-0 break-words text-[11px] leading-4":"truncate"}>{label}</span>
           )}
     {section==="servicii-avyron"&&!sidebarCollapsed&& (
             <ChevronDown className={`ml-auto size-3 ${servicesExpanded?"rotate-180":""}`}/>
@@ -236,13 +236,13 @@ function ProfileDashboard() {
         <nav className="avyron-sidebar-scroll mt-5 min-h-0 flex-1 space-y-2 overflow-y-auto pb-4 pr-1" aria-label={access.isClient?"Navigare cont":"Navigare AVYRON OS"}>
           <div aria-label={access.isClient?"Secțiunile contului":"Secțiuni AVYRON OS"} onKeyDown={event=>{if(!['ArrowDown','ArrowUp','ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;const targets=Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[data-os-section]')).filter(el=>el.offsetParent!==null);if(!targets.length)return;const index=targets.indexOf(document.activeElement as HTMLButtonElement);const next=event.key==='Home'?0:event.key==='End'?targets.length-1:(index+(event.key==='ArrowDown'||event.key==='ArrowRight'?1:-1)+targets.length)%targets.length;event.preventDefault();targets[next].focus()}}>
           {groups.map((group) => {
-            const expanded = sidebarCollapsed || (openGroups[group.id] ?? true);
+            const expanded = access.isClient || sidebarCollapsed || (openGroups[group.id] ?? true);
             return (
                 <div key={group.id} className="rounded-xl">
               {!sidebarCollapsed && (
-                    <button type="button" onClick={() => toggleGroup(group.id)} aria-expanded={expanded} className="mb-1 flex w-full items-center justify-between rounded-lg px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-slate-400 transition hover:bg-white/[0.035] hover:text-slate-400"><span>{group.label}</span><ChevronDown className={`size-3 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} /></button>
+                    access.isClient?<p className="mb-2 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">{group.label}</p>:(<button type="button" onClick={() => toggleGroup(group.id)} aria-expanded={expanded} className="mb-1 flex w-full items-center justify-between rounded-lg px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-slate-400 transition hover:bg-white/[0.035] hover:text-slate-400"><span>{group.label}</span><ChevronDown className={`size-3 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} /></button>)
                   )}
-              <div className={`grid transition-[grid-template-rows,opacity] duration-200 ${expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-60"}`}><div className="min-h-0 overflow-hidden"><div className="space-y-1">{expanded && group.items.map((section) => (
+              <div className={`grid transition-[grid-template-rows,opacity] duration-200 ${expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-60"}`}><div className="min-h-0 overflow-hidden"><div className={access.isClient?"grid grid-cols-2 gap-1":"space-y-1"}>{expanded && group.items.map((section) => (
                             <NavButton key={section.id} section={section.id} />))}</div></div></div>
             </div>
               );
@@ -264,11 +264,13 @@ function ProfileDashboard() {
           <div className="mx-auto flex max-w-[1500px] flex-wrap items-center gap-2.5 lg:flex-nowrap">
             {access.isClient ? <>
               <div className="order-1 flex min-w-0 flex-1 items-center gap-2 lg:flex-none">
-                <button type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Deschide toate secțiunile" className="grid size-9 shrink-0 place-items-center rounded-xl text-slate-400 hover:bg-white/5 lg:hidden"><Menu className="size-5" /></button>
-                <a href={publicSiteHref()} aria-label="Avyron Web — Acasă" data-testid="page-back-link" className="inline-flex min-h-10 min-w-0 items-center gap-2 rounded-xl px-1 text-sm font-semibold text-white hover:text-violet-200"><img src={logo} alt="" className="size-7 rounded-lg" /><span>Avyron Web</span></a>
+
+                <a href={publicSiteHref()} aria-label="Avyron Web — Acasă" data-testid="page-back-link" className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-1 text-sm font-semibold text-white hover:text-violet-200"><img src={logo} alt="" className="size-7 rounded-lg" /><span className="whitespace-nowrap text-xs min-[360px]:text-sm">Avyron Web</span></a>
+                <button type="button" onClick={() => void openSection("overview")} aria-label="Deschide Avy Cont" aria-current={tab === "overview" ? "page" : undefined} className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl border border-violet-400/25 bg-violet-500/10 px-2 text-xs font-semibold text-violet-100 hover:bg-violet-500/20">Avy Cont</button>
               </div>
               <div className="order-5 flex basis-full items-center gap-2 lg:order-2 lg:basis-auto lg:flex-1">
-                <button type="button" onClick={() => void openSection("overview")} aria-label="Deschide Avy Cont" aria-current={tab === "overview" ? "page" : undefined} className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl border border-violet-400/25 bg-violet-500/10 px-3 text-xs font-semibold text-violet-100 hover:bg-violet-500/20">Avy Cont</button>
+
+                <button type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Deschide toate secțiunile" className="grid size-9 shrink-0 place-items-center rounded-xl text-slate-400 hover:bg-white/5 lg:hidden"><Menu className="size-5" /></button>
                 <DashboardSearch access={access} userId={user?.id||""} current={tab} open={commandOpen} onOpenChange={setCommandOpen} onNavigate={openSection} inputRef={searchInput}/>
               </div>
             </> : <>            <IconHint label={"Toate secțiunile AVYRON OS"}><button type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Deschide toate secțiunile" className="rounded-xl p-2 text-slate-400 hover:bg-white/[0.05] hover:text-slate-200 lg:hidden"><Menu className="size-5" /></button></IconHint>
@@ -281,6 +283,7 @@ function ProfileDashboard() {
 
               <DashboardSearch access={access} userId={user?.id||""} current={tab} open={commandOpen} onOpenChange={setCommandOpen} onNavigate={openSection} inputRef={searchInput}/>
             </>}
+            {access.isClient&&<div className="order-3 hidden shrink-0 lg:block"><NavButton section="cart"/></div>}
             {access.isStaff&&<StaffWorkspaceActions counts={activityCounts} compact className="staff-dashboard-actions-desktop"/>}
             <div className={access.isClient ? "order-3 shrink-0" : "contents"}><Suspense fallback={<span className="size-10" />}><NotificationCenter access={access} onNavigate={openSection} autoOpen={params.get("notifications") === "1"} /></Suspense></div>
             {access.isClient ? <div className="order-4 shrink-0"><Suspense fallback={<span className="size-10" />}><UserMenu showNotificationBell={false} /></Suspense></div> : <IconHint label="Profilul și datele contului"><button type="button" onClick={() => openSection("profile")} aria-label="Deschide profilul" className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-xl bg-violet-500/15 text-[10px] font-semibold text-violet-100 ring-1 ring-white/10">{user?.avatar_url ? (
@@ -315,13 +318,13 @@ function ProfileDashboard() {
           {canOpenSection("social-manager", access) && (
                 <TabsContent value="social-manager" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["social-manager"].label} className="mt-0"><SocialMediaManagerTab /></TabsContent>
               )}
-          <TabsContent value="profile" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["profile"].label} className="mt-0"><ProfileTab /></TabsContent><TabsContent value="settings" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["settings"].label} className="mt-0"><SettingsTab /></TabsContent><TabsContent value="collection" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["collection"].label} className="mt-0"><ProductCollectionTab key={user?.id} /></TabsContent><TabsContent value="projects" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["projects"].label} className="mt-0"><CloudflareProjects embedded /></TabsContent>
+          <TabsContent value="profile" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["profile"].label} className="mt-0"><ProfileTab /></TabsContent><TabsContent value="settings" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["settings"].label} className="mt-0"><SettingsTab /></TabsContent><TabsContent value="collection" role="region" aria-labelledby={undefined} aria-label={dashboardSectionMeta("collection",access.isClient).label} className="mt-0"><ProductCollectionTab key={user?.id} /></TabsContent><TabsContent value="projects" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["projects"].label} className="mt-0"><CloudflareProjects embedded /></TabsContent>
           {access.isClient && (
-                <><TabsContent value="catalog" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["catalog"].label} className="mt-0"><CustomerCatalogTab /></TabsContent><TabsContent value="orders" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["orders"].label} className="mt-0"><OrdersTab /></TabsContent><TabsContent value="subscriptions" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["subscriptions"].label} className="mt-0"><SubscriptionsTab /></TabsContent><TabsContent value="payments" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["payments"].label} className="mt-0"><ClientBillingTab /></TabsContent><TabsContent value="invoices" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["invoices"].label} className="mt-0"><InvoicesTab /></TabsContent><TabsContent value="cart" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["cart"].label} className="mt-0"><CartTab /></TabsContent><TabsContent value="stats" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["stats"].label} className="mt-0"><StatsTab /></TabsContent><TabsContent value="tickets" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["tickets"].label} className="mt-0"><ClientSupportTab /></TabsContent></>
+                <><TabsContent value="catalog" role="region" aria-labelledby={undefined} aria-label={dashboardSectionMeta("catalog",access.isClient).label} className="mt-0"><CustomerCatalogTab kind="service" /></TabsContent><TabsContent value="product-catalog" role="region" aria-label="Produse" className="mt-0"><CustomerCatalogTab kind="product" /></TabsContent><TabsContent value="orders" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["orders"].label} className="mt-0"><OrdersTab /></TabsContent><TabsContent value="subscriptions" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["subscriptions"].label} className="mt-0"><SubscriptionsTab /></TabsContent><TabsContent value="payments" role="region" aria-labelledby={undefined} aria-label={dashboardSectionMeta("payments",access.isClient).label} className="mt-0"><ClientBillingTab key={user?.id} /></TabsContent><TabsContent value="invoices" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["invoices"].label} className="mt-0"><InvoicesTab /></TabsContent><TabsContent value="cart" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["cart"].label} className="mt-0"><CartTab /></TabsContent><TabsContent value="stats" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["stats"].label} className="mt-0"><StatsTab /></TabsContent><TabsContent value="tickets" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["tickets"].label} className="mt-0"><ClientSupportTab /></TabsContent></>
               )}
             {canOpenSection("my-collaborations",access)&&<TabsContent value="my-collaborations" role="region" aria-label="Colaborările mele" className="mt-0"><CollaboratorsTab portal /></TabsContent>}
           {canOpenSection("intern",access)&&<TabsContent value="intern" role="region" aria-label="Mesaje"><StaffChatTab /></TabsContent>}
-          <TabsContent value="documents" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["documents"].label} className="mt-0"><DocumentCenter /></TabsContent>
+          <TabsContent value="documents" role="region" aria-labelledby={undefined} aria-label={dashboardSectionMeta("documents",access.isClient).label} className="mt-0"><DocumentCenter /></TabsContent>
           {canOpenSection("skill-site-builder",access)&&<TabsContent value="skill-site-builder" role="region" aria-label="Site Builder" className="mt-0"><AvySkillsTab slug="site-builder"/></TabsContent>}
           {canOpenSection("skill-logo-engine",access)&&<TabsContent value="skill-logo-engine" role="region" aria-label="Logo Engine" className="mt-0"><AvySkillsTab slug="logo-engine"/></TabsContent>}
           {canOpenSection("skill-media-generate",access)&&<TabsContent value="skill-media-generate" role="region" aria-label="Media Generate" className="mt-0"><AvySkillsTab slug="media-generate"/></TabsContent>}
@@ -418,7 +421,7 @@ function ProfileDashboard() {
               mobile
             />
           ) : (
-            <NavButton section="collection" mobile />
+            <NavButton section="product-catalog" mobile />
           )}
         <button type="button" aria-label="Deschide mai multe secțiuni" aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(true)} className={`group flex min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[9px] font-medium transition ${mobilePrimary.has(tab) ? "text-slate-500" : "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white"}`}><Ellipsis className="size-4" /><span>Mai multe</span></button>
       </div>
@@ -440,8 +443,8 @@ function ProfileDashboard() {
             )}
           {mobileMoreGroups.map((group) => (
               <section key={group.id}>
-            <button type="button" onClick={() => toggleGroup(group.id)} aria-expanded={openGroups[group.id] ?? true} className="mb-2 flex w-full items-center justify-between rounded-lg px-2 py-2 font-mono text-[9px] uppercase tracking-[0.18em] text-slate-500 hover:bg-white/[0.04]"><span>{group.label}</span><ChevronDown className={`size-3 transition-transform ${(openGroups[group.id] ?? true) ? "rotate-180" : ""}`} /></button>
-            <div className={`${(openGroups[group.id] ?? true) ? "grid" : "hidden"} grid-cols-2 gap-2`}>
+            {access.isClient?<h2 className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-widest text-slate-300">{group.label}</h2>:(<button type="button" onClick={() => toggleGroup(group.id)} aria-expanded={access.isClient || (openGroups[group.id] ?? true)} className="mb-2 flex w-full items-center justify-between rounded-lg px-2 py-2 font-mono text-[9px] uppercase tracking-[0.18em] text-slate-500 hover:bg-white/[0.04]"><span>{group.label}</span><ChevronDown className={`size-3 transition-transform ${(openGroups[group.id] ?? true) ? "rotate-180" : ""}`} /></button>)}
+            <div className={`${(access.isClient || (openGroups[group.id] ?? true)) ? "grid" : "hidden"} grid-cols-2 gap-2`}>
               {group.items.map((section) => {
                 const sectionMeta = dashboardSectionMeta(section.id,access.isClient);
                 const Icon = sectionMeta.icon;

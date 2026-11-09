@@ -8,13 +8,13 @@ export default function ClientSupportTab() {
   return (
     <section className="min-w-0 space-y-4">
       <header>
-        <h1 className="text-2xl font-semibold">Suport și mesaje</h1>
+        <h1 className="text-2xl font-semibold">Suport Staff</h1>
         <p className="mt-1 text-sm text-slate-400">
           Solicitările tale și conversațiile cu echipa proiectelor, într-un
           singur loc.
         </p>
       </header>
-      <nav aria-label="Suport și mesaje" className="flex flex-wrap gap-2">
+      <nav aria-label="Suport Staff" className="flex flex-wrap gap-2">
         {[
           [false, "Solicitări de suport"],
           [true, "Mesaje proiecte"],

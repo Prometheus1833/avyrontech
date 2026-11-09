@@ -36,7 +36,7 @@ export function CustomerHomeTab({
   displayName: string;
   onOpenSection: OpenSection;
 }) {
-  const { user, hasCollaborations } = useAuth();
+  const { user } = useAuth();
   const { lang } = useLang();
   const [projects, setProjects] = useState<ProjectList | null>(null);
   const [error, setError] = useState(false);
@@ -64,8 +64,10 @@ export function CustomerHomeTab({
     window.addEventListener("avyron:projects-changed", reload);
     return () => window.removeEventListener("avyron:projects-changed", reload);
   }, [reload]);
-  const rows = projects?.data || [],
-    purchases = projects?.purchases || [];
+  const rows = projects?.data || [];
+  const purchases = (projects?.purchases || []).filter(
+    (p) => p.kind === "service",
+  );
   return (
     <div className="space-y-4">
       <header className="relative overflow-hidden rounded-3xl border border-violet-300/15 bg-[radial-gradient(circle_at_80%_20%,rgba(124,58,237,.22),transparent_45%),linear-gradient(135deg,#11162a,#0a1020)] p-5 sm:p-7">
@@ -80,180 +82,155 @@ export function CustomerHomeTab({
           gestionezi simplu și inteligent.
         </p>
       </header>
-      <section aria-labelledby="account-projects-title" className={panel}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2
-            id="account-projects-title"
-            className="flex items-center gap-2 text-base font-semibold"
-          >
-            <Boxes className="size-5 text-violet-300" />
-            Proiectele mele
-          </h2>
-          <button
-            type="button"
-            onClick={() => onOpenSection("projects")}
-            className={action}
-          >
-            Vezi toate <ArrowUpRight className="size-3.5" />
-          </button>
-        </div>
-        <p className="mt-1 text-xs leading-5 text-slate-400">
-          Proiectele în care ești inclus și serviciile achiziționate, în
-          dezvoltare sau finalizate.
-        </p>
-        {error ? (
-          <div
-            role="alert"
-            className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-300"
-          >
-            Proiectele nu pot fi încărcate acum.
-            <button type="button" className={action} onClick={reload}>
-              Reîncearcă
-            </button>
-          </div>
-        ) : !projects ? (
-          <p role="status" className="mt-3 text-sm text-slate-400">
-            Se încarcă proiectele…
-          </p>
-        ) : !rows.length && !purchases.length ? (
-          <p className="mt-3 rounded-xl border border-dashed border-white/10 p-3 text-sm text-slate-400">
-            Proiectele și achizițiile confirmate vor apărea aici după alocarea
-            în cont.
-          </p>
-        ) : (
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            {rows.slice(0, 4).map((project) => (
-              <Link
-                key={project.id}
-                to={`/intern/projects/${encodeURIComponent(project.slug)}`}
-                className="min-w-0 rounded-xl border border-white/10 bg-white/[.025] p-3 transition hover:border-violet-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
-              >
-                <span className="block break-words text-sm font-medium">
-                  {project.name}
-                </span>
-                <span className="mt-1 block text-xs text-slate-400">
-                  {projectKindLabel(project.kind)}
-                </span>
-                <span className="mt-2 inline-flex rounded-md bg-violet-500/10 px-2 py-1 text-[10px] text-violet-200">
-                  {projectStageLabel(project)}
-                </span>
-              </Link>
-            ))}
-            {purchases.slice(0, 4).map((purchase) => (
-              <button
-                key={purchase.id}
-                type="button"
-                onClick={() => onOpenSection("projects")}
-                className="min-w-0 rounded-xl border border-white/10 bg-white/[.025] p-3 text-left transition hover:border-violet-400/40"
-              >
-                <span className="block break-words text-sm font-medium">
-                  {purchase.name}
-                </span>
-                <span className="mt-1 block text-xs text-slate-400">
-                  {purchase.kind === "service"
-                    ? "Serviciu achiziționat"
-                    : purchase.kind === "subscription"
-                      ? "Abonament"
-                      : "Produs achiziționat"}
-                </span>
-                <span className="mt-2 inline-flex rounded-md bg-emerald-500/10 px-2 py-1 text-[10px] text-emerald-200">
-                  Plată confirmată
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
-      </section>
-      <section aria-labelledby="account-maintenance-title" className={panel}>
-        <h2
-          id="account-maintenance-title"
-          className="flex items-center gap-2 text-base font-semibold"
-        >
-          <Repeat className="size-5 text-violet-300" />
-          Mentenanță
-        </h2>
-        <p className="mt-1 text-xs leading-5 text-slate-400">
-          Abonamentele, activitățile și colaborările tale, cu termenele și
-          plățile aferente.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button
-            type="button"
-            className={action}
-            onClick={() => onOpenSection("subscriptions")}
-          >
-            Abonamente și activități <ArrowUpRight className="size-3.5" />
-          </button>
-          {hasCollaborations && (
-            <button
-              type="button"
-              className={action}
-              onClick={() =>
-                onOpenSection("subscriptions", {
-                  recurringView: "collaborations",
-                })
-              }
-            >
-              Colaborările mele
-            </button>
-          )}
-          <button
-            type="button"
-            className={action}
-            onClick={() =>
-              onOpenSection("payments", { billingView: "invoices" })
-            }
-          >
-            Plăți și facturi
-          </button>
-        </div>
-      </section>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div
+        className="grid grid-cols-2 items-start gap-3"
+        aria-label="Secțiunile mele"
+      >
         {[
           {
-            id: "profile" as const,
-            label: "Profil",
-            description: "Datele tale de contact și informațiile contului.",
-            icon: UserRound,
+            id: "projects" as const,
+            label: "Proiectele mele",
+            description: "Progres, livrabile și proiecte finalizate.",
+            icon: Boxes,
+          },
+          {
+            id: "subscriptions" as const,
+            label: "Mentenanță / Abonamente",
+            description: "Planurile active și serviciile incluse.",
+            icon: Repeat,
+          },
+          {
+            id: "collection" as const,
+            label: "Produsele mele",
+            description: "Achizițiile confirmate și livrabilele disponibile.",
+            icon: BadgeCheck,
+          },
+          {
+            id: "catalog" as const,
+            label: "Servicii",
+            description: "Serviciile AVYRON pentru proiectul tău.",
+            icon: Boxes,
+          },
+          {
+            id: "documents" as const,
+            label: "Documente",
+            description: "Documentele alocate contului tău.",
+            icon: BookOpen,
           },
           {
             id: "payments" as const,
-            label: "Metode de plată salvate",
-            description: "Carduri mascate, procesator și date de facturare.",
+            label: "Plăți/Istoric",
+            description: "Cardul salvat, plățile și facturile tale.",
             icon: CreditCard,
           },
         ].map((card) => (
           <button
             key={card.id}
             type="button"
-            className={`${panel} group text-left transition hover:border-violet-400/40`}
-            onClick={() =>
-              onOpenSection(
-                card.id,
-                card.id === "payments"
-                  ? { billingView: "settings" }
-                  : undefined,
-              )
-            }
+            onClick={() => onOpenSection(card.id)}
+            className={`${panel} h-full text-left transition hover:border-violet-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400`}
           >
-            <card.icon className="size-5 text-violet-300" />
-            <h2 className="mt-3 text-sm font-semibold">{card.label}</h2>
-            <p className="mt-1 text-xs leading-5 text-slate-400">
+            <card.icon className="size-5 text-violet-300" aria-hidden />
+            <h2 className="mt-2 break-words text-sm font-semibold">
+              {card.label}
+            </h2>
+            <p className="mt-1 text-xs leading-5 text-slate-300">
               {card.description}
             </p>
           </button>
         ))}
       </div>
-      <section aria-label="Creație și achiziții" className="grid gap-3 sm:grid-cols-2">
-        <a href={publicSiteHref(STUDIO_PATHS[lang])} className={`${panel} transition hover:border-violet-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400`}>
+      <section className={panel} aria-label="Proiectele tale recente">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold">Proiectele tale recente</h2>
+          <button
+            type="button"
+            className={action}
+            onClick={() => onOpenSection("projects")}
+          >
+            Vezi proiectele <ArrowUpRight className="size-3.5" />
+          </button>
+        </div>
+        {error ? (
+          <p role="alert" className="mt-3 text-sm text-amber-200">
+            Proiectele nu pot fi încărcate.{" "}
+            <button className="underline" onClick={reload}>
+              Reîncearcă
+            </button>
+          </p>
+        ) : !projects ? (
+          <p role="status" className="mt-3 text-xs text-slate-300">
+            Se încarcă proiectele…
+          </p>
+        ) : !rows.length && !purchases.length ? (
+          <p className="mt-3 text-xs text-slate-300">
+            Proiectele și serviciile alocate vor apărea aici.
+          </p>
+        ) : (
+          <ul className="mt-3 divide-y divide-white/10">
+            {rows.slice(0, 3).map((project) => (
+              <li key={project.id}>
+                <Link
+                  to={`/intern/projects/${encodeURIComponent(project.slug)}`}
+                  className="flex min-h-12 min-w-0 flex-wrap items-center justify-between gap-2 py-2 text-sm"
+                >
+                  <span className="min-w-0 break-words font-medium">
+                    {project.name}
+                    <span className="mt-1 block text-xs font-normal text-slate-300">
+                      {projectKindLabel(project.kind)}
+                    </span>
+                  </span>
+                  <span className="rounded-lg bg-violet-500/10 px-2 py-1 text-[11px] text-violet-200">
+                    {projectStageLabel(project)}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+        {!!purchases.length && (
+          <div className="mt-2 divide-y divide-white/10">
+            {purchases.slice(0, 2).map((purchase) => (
+              <button
+                key={purchase.id}
+                type="button"
+                onClick={() => onOpenSection("projects")}
+                className="flex min-h-12 w-full min-w-0 items-center justify-between gap-2 py-2 text-left text-sm"
+              >
+                <span className="break-words font-medium">{purchase.name}</span>
+                <span className="shrink-0 text-[11px] text-emerald-300">
+                  Achiziție confirmată
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+      <section
+        aria-label="Creație și achiziții"
+        className="grid gap-3 sm:grid-cols-2"
+      >
+        <a
+          href={publicSiteHref(STUDIO_PATHS[lang])}
+          className={`${panel} transition hover:border-violet-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400`}
+        >
           <PenTool className="size-5 text-violet-300" aria-hidden />
           <h2 className="mt-2 text-sm font-semibold">Creează Logo</h2>
-          <p className="mt-1 text-xs leading-5 text-slate-400">Deschide simulatorul de logo și personalizează variantele pentru brandul tău.</p>
+          <p className="mt-1 text-xs leading-5 text-slate-400">
+            Deschide simulatorul de logo și personalizează variantele pentru
+            brandul tău.
+          </p>
         </a>
-        <button type="button" onClick={() => onOpenSection("collection")} className={`${panel} text-left transition hover:border-violet-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400`}>
-          <BadgeCheck className="size-5 text-emerald-300" aria-hidden />
-          <h2 className="mt-2 text-sm font-semibold">Produse Development Achitate</h2>
-          <p className="mt-1 text-xs leading-5 text-slate-400">Produsele plătite, istoricul achizițiilor și accesul la livrabilele disponibile.</p>
+        <button
+          type="button"
+          onClick={() => onOpenSection("profile")}
+          className={`${panel} text-left transition hover:border-violet-400/40`}
+        >
+          <UserRound className="size-5 text-violet-300" />
+          <h2 className="mt-2 text-sm font-semibold">Profil</h2>
+          <p className="mt-1 text-xs text-slate-300">
+            Datele de contact și informațiile contului.
+          </p>
         </button>
       </section>
       <section

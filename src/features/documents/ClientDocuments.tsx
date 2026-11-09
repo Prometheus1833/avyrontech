@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   Download,
   RefreshCw,
-  Search,
   Share2,
 } from "lucide-react";
 import {
@@ -36,10 +35,8 @@ export default function ClientDocuments({
     [localVersion, setLocalVersion] = useState<string>();
   const id = embedded ? localId : params.get("document") || "",
     version = embedded ? localVersion : params.get("version") || undefined;
-  const [query, setQuery] = useState(""),
-    [search, setSearch] = useState(""),
-    [sort, setSort] = useState("recent"),
-    [offset, setOffset] = useState(0),
+  const search="",sort="recent";
+  const [offset, setOffset] = useState(0),
     [refresh, setRefresh] = useState(0),
     [items, setItems] = useState<DocumentSummary[]>([]),
     [total, setTotal] = useState(0),
@@ -70,13 +67,6 @@ export default function ClientDocuments({
     previewRef.current = "";
     setPreview("");
   }, []);
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearch(query.trim());
-      setOffset(0);
-    }, 250);
-    return () => clearTimeout(timer);
-  }, [query]);
   useEffect(() => {
     const requestCounter = listEpoch;
     const epoch = ++requestCounter.current;
@@ -243,10 +233,10 @@ export default function ClientDocuments({
     }
   };
   return (
-    <section className="document-center dc-grid" aria-label="Centru Documente">
+    <section className="document-center dc-grid" aria-label="Documente">
       <header className="rounded-2xl border border-white/10 bg-violet-500/5 p-4">
         <h1 className="text-2xl font-semibold">
-          {embedded ? "Documentele proiectului" : "Centru Documente"}
+          {embedded ? "Documentele proiectului" : "Documente"}
         </h1>
         <p className="mt-2 max-w-3xl text-sm text-slate-400">
           Documentele proiectelor, serviciilor, abonamentelor și produselor
@@ -547,34 +537,6 @@ export default function ClientDocuments({
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
-            <label className="dc-label">
-              <span className="flex items-center gap-2">
-                <Search size={15} />
-                Caută documentul
-              </span>
-              <input
-                className="dc-input"
-                type="search" maxLength={200}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Titlu, număr, proiect sau serviciu"
-              />
-            </label>
-            <label className="dc-label">
-              Ordonează
-              <select
-                className="dc-input"
-                value={sort}
-                onChange={(e) => {
-                  setSort(e.target.value);
-                  setOffset(0);
-                }}
-              >
-                <option value="recent">Cele mai recente</option>
-                <option value="title">Titlu</option>
-                <option value="number">Număr</option>
-              </select>
-            </label>
             <button
               className="dc-button self-end"
               disabled={loading}
