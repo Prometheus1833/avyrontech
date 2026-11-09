@@ -647,7 +647,7 @@ test.describe("forms and authentication", () => {
     await expect.poll(ringCenter).toBeGreaterThan(before - 2);
     expect(await ringCenter()).toBeLessThan(before + 2);
 
-    await page.getByRole("button", { name: "Schimbă limba (RO — română activă)" }).click();
+    await page.getByRole("button", { name: /^RO\b.*Schimbă limba/ }).click();
     await page.getByRole("option", { name: "en" }).click();
     await expect(page.getByRole("heading", { name: "Start here" })).toBeVisible();
     await expect(page.locator("html")).toHaveAttribute("lang", "en");

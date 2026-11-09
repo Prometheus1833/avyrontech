@@ -51,16 +51,15 @@ function ProjectCard({
         href={project.url}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label={`${new URL(project.url).hostname.replace(/^www\./, "")} ${ro ? "Deschide website-ul" : "Open website"} ${project.name} (${ro ? "tab nou" : "new tab"})`}
       >
-        <div className="pf-browser-bar" aria-hidden="true">
-          <span>
+        <div className="pf-browser-bar">
+          <span aria-hidden="true">
             <i />
             <i />
             <i />
           </span>
           <span>{new URL(project.url).hostname.replace(/^www\./, "")}</span>
-          <ArrowUpRight size={13} />
+          <ArrowUpRight size={13} aria-hidden="true" />
         </div>
         <img
           src={image.large}
@@ -74,15 +73,14 @@ function ProjectCard({
           height="800"
           loading="lazy"
           decoding="async"
-          alt={
-            ro
-              ? `Captură a paginii ${project.name}, proiect din portofoliul Avyron`
-              : `${project.name} website capture, an Avyron portfolio project`
-          }
+          alt=""
         />
-        <span className="pf-image-action" aria-hidden="true">
+        <span className="pf-image-action">
           {ro ? "Deschide website-ul" : "Open website"}
-          <ArrowUpRight size={15} />
+          <ArrowUpRight size={15} aria-hidden="true" />
+        </span>
+        <span className="sr-only">
+          {` · ${project.name} (${ro ? "tab nou" : "new tab"})`}
         </span>
       </a>
       <div className="pf-case-body">

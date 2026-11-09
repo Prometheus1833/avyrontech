@@ -154,3 +154,11 @@ it("rejects oversized or unrecognized reports without storing them", async () =>
     db.prepare("SELECT count(*) AS count FROM security_events").get()!.count,
   ).toBe(0);
 });
+
+it.each(["avyrontech-preview.avyrontech.workers.dev", "abc-avyrontech-preview.avyrontech.workers.dev", "avyrontech.avyrontech.workers.dev", "avyrontech.pages.dev", "branch.avyrontech.pages.dev"])("keeps technical deployment host %s private and outside search indexes", async hostname => {
+  const response = applicationHostResponse(new Request(`https://${hostname}/portofoliu`), html());
+  expect(response.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
+  expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+  expect(response.headers.get("Referrer-Policy")).toBe("no-referrer");
+  expect(await response.text()).toContain("AVYRON");
+});

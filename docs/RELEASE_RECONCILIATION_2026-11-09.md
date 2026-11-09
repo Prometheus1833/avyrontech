@@ -23,6 +23,8 @@ Corecții identificate la reconciliere:
 - #128 nu avea controlul comun de revenire pe portofoliu; este acum prezent în hero, în RO/EN.
 - Temporizatorul de recuperare a unui salt de dispozitiv putea readuce utilizatorul la etapa anterioară după o derulare înapoi. Se anulează la atingerea etapei și la gesturile de wheel/touch; există regresie specifică.
 - Cele două demo-uri aveau conflicte între contrastul corectat și eliminarea unor secțiuni vechi. S-au păstrat culorile accesibile și s-au eliminat linkurile către fragmentele inexistente Galerie/Hartă. Auditul SEO verifică din nou ancorele.
+- URL-urile tehnice AVYRON workers.dev/Pages sunt marcate server-side noindex/nofollow, cu HTML private/no-store. Domeniul public canonic rămâne indexabil, iar hosturile proiectelor clienților nu sunt schimbate; cinci regresii verifică separarea.
+- Controlul Lighthouse suplimentar pentru concordanța etichetelor vizibile a identificat șase linkuri de captură în portofoliu. Numele accesibil este acum derivat din domeniul și acțiunea vizibile, cu contextul proiectului/tabului pentru cititoare de ecran; imaginile din aceste linkuri sunt decorative. Regresia axe include explicit această regulă, pe lângă regulile WCAG AA.
 
 ## Ramuri istorice și alte worktree-uri
 
@@ -72,7 +74,15 @@ Suita integrală consolidată: **140 fișiere, 1.253 teste PASS, un benchmark op
 
 Preview-ul existent este publicat la versiunea `adce2918-4799-4c16-a16b-3acc37ea95bf`, cu D1 până la 0113, fără cron de producție. Smoke HTTP: health 200, portofoliu și Website prin abonament 200; Leads Agency, planuri interne și securitate refuzate anonim cu 401 și private/no-store. Toate cele patru bucketuri de producție au r2.dev dezactivat și zero custom domains la verificarea read-only.
 
+Smoke vizual pe preview, cu API real și contexte separate: șase combinații Chromium desktop / WebKit mobil pentru portofoliu, Website prin abonament și autentificare au HTTP 200, fără erori JavaScript sau overflow orizontal. Profilarea Chrome pe portofoliu a măsurat LCP 404 ms / CLS 0 desktop și LCP 1.616 ms / CLS 0 la 390×844, DPR 3, CPU 4× și Fast 4G. Sunt probe de laborator, nu CrUX/INP ori scor Lighthouse de performanță. Auditul Lighthouse snapshot pe prototipul corecției semantice are 35 controale PASS, zero FAIL; este reluat pe buildul publicat. Nu s-a redus calitatea imaginilor sau designul cinematic pentru obținerea scorurilor.
+
+Limite păstrate explicit: nu există test de încasare Stripe sau emitere Oblio în producție, sesiune reală Owner/Client reverificată în această lansare, test pe telefoane fizice, dovadă GSC de indexare ori restaurare nouă de obiecte R2. Testele autentificate folosesc runtime local real și fixture-uri browser separate. Auditul tehnic de securitate păstrează excepția MFA și constatările NOT_VERIFIED, inclusiv limitarea exportului WebGL în runnerul software WebKit; nu se declară conformitate integrală sau suport fizic iOS verificat.
+
 CI și producția se completează la finalul lansării. Capturile și stările istorice ale fiecărui PR rămân probe ale etapelor lor, nu sunt prezentate drept verificări de producție.
+
+Prima execuție CI a ramurii consolidate a trecut securitatea, tipurile, lint, migrările, buildul Pages, cele 1.253 teste și 445/446 scenarii browser. Scenariul rămas căuta vechea etichetă completă a selectorului RO/EN, înaintea corecției de accesibilitate care începe numele cu textul vizibil. Selectorul din test a fost sincronizat cu eticheta actuală; verificările nu sunt dezactivate și suita este reluată pe noul head înainte de merge.
+
+După ultimele corecții: typecheck și lint țintit PASS; 12 probe unitare portofoliu/antete PASS; înregistrarea mobilă în engleză și accesibilitatea portofoliului PASS în ambele motoare, 4/4. Buildurile standalone Worker, static/Pages și API dry run sunt regenerate cu aceste corecții și au trecut. Scanarea de igienă a secretelor nu a găsit rezultate.
 
 ## Rollback
 

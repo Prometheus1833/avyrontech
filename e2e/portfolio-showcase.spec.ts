@@ -230,7 +230,11 @@ test("portfolio is keyboard accessible, readable and usable without WebGL", asyn
         ],
       },
     });
-    return result.violations;
+    // Also cover the speech-input label check used by Lighthouse, outside AA tags.
+    const labels = await axe.run(document.querySelector(".pf-page")!, {
+      runOnly: { type: "rule", values: ["label-content-name-mismatch"] },
+    });
+    return [...result.violations, ...labels.violations];
   });
   expect(violations).toEqual([]);
   await page
