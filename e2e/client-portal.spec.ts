@@ -465,7 +465,7 @@ for (const width of [320,390,1440]) test(`servicii proprii, contor necitite și 
   let nav=await openDrawer();
   const support=nav.getByRole('button',{name:'Suport Staff, 3 mesaje necitite',exact:true});
   await expect(support).toBeVisible();
-  if(width<1024){const position=await support.evaluate(card=>{const a=card.getBoundingClientRect(),b=card.querySelector('[aria-label="3 mesaje necitite"]')!.getBoundingClientRect();return {right:a.right-b.right,top:b.top-a.top};});expect(position.right).toBeLessThan(14);expect(position.right).toBeGreaterThan(0);expect(position.top).toBeLessThan(14);expect(position.top).toBeGreaterThan(0);}
+  {const position=await support.evaluate(card=>{const a=card.getBoundingClientRect(),b=card.querySelector('[aria-label="3 mesaje necitite"]')!.getBoundingClientRect();return {right:a.right-b.right,top:b.top-a.top};});expect(position.right).toBeLessThan(14);expect(position.right).toBeGreaterThan(0);expect(position.top).toBeLessThan(14);expect(position.top).toBeGreaterThan(0);}
   const labels=await nav.getByRole('button').allTextContents();
   expect(labels.findIndex(s=>s.includes('Mentenanță / Abonamente'))).toBeLessThan(labels.findIndex(s=>s.includes('Proiectele mele')));
   await expect(nav.getByRole('button',{name:'Servicii',exact:true})).toHaveCount(0);

@@ -195,15 +195,16 @@ function ProfileDashboard() {
     const Icon = sectionMeta.icon;
     const label = section === "projects" && !access.isStaff ? "Proiectele mele" : section === "intern" && !access.isStaff ? "Mesaje proiecte" : sectionMeta.label;
     const active = tab === section;
+    const clientCard = access.isClient && !mobile && !sidebarCollapsed;
     const count=sectionCount(section);
     const countLabel=section==="cart"&&access.isClient?(count===1?"produs în coș":"produse în coș"):sectionCountLabel(section);
     return (
-      <><button type="button" data-os-section={section} aria-current={active?"page":undefined} aria-label={`${label}${count ? `, ${count} ${countLabel}` : ""}`} title={sidebarCollapsed ? label : undefined} aria-expanded={section==="servicii-avyron"?servicesExpanded:undefined} onClick={() => {if(section==="servicii-avyron"){setServicesExpanded((current) =>tab===section?!current:true);if(tab!==section)void openSection(section);}else void openSection(section);}} className={`${mobile ? "flex min-w-0 flex-1 flex-col" : "w-full flex-row"} group flex items-center justify-center gap-1.5 rounded-xl ${mobile && access.isClient ? "px-0" : "px-3"} py-2.5 text-left text-xs font-medium transition lg:justify-start ${active ? "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white shadow-[0_10px_30px_-16px_rgba(124,58,237,.9)]" : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"}`}>
-      <span className={`relative inline-flex shrink-0 ${count ? "mr-1.5" : ""}`}><Icon className="size-4 shrink-0" strokeWidth={2.1} /><ActivityBadge count={count} label={section === "intern" || section === "announcements" ? "necitite" : countLabel} /></span>
+      <><button type="button" data-os-section={section} aria-current={active?"page":undefined} aria-label={`${label}${count ? `, ${count} ${countLabel}` : ""}`} title={sidebarCollapsed ? label : undefined} aria-expanded={section==="servicii-avyron"?servicesExpanded:undefined} onClick={() => {if(section==="servicii-avyron"){setServicesExpanded((current) =>tab===section?!current:true);if(tab!==section)void openSection(section);}else void openSection(section);}} className={`${mobile ? "flex min-w-0 flex-1 flex-col" : clientCard ? "relative min-h-20 w-full flex-col" : "w-full flex-row"} group flex ${clientCard ? "items-start justify-between" : "items-center justify-center lg:justify-start"} gap-1.5 rounded-xl ${mobile && access.isClient ? "px-0" : "px-3"} py-2.5 text-left text-xs font-medium transition ${active ? "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white shadow-[0_10px_30px_-16px_rgba(124,58,237,.9)]" : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"}`}>
+      <span className={`relative inline-flex shrink-0 ${count ? "mr-1.5" : ""}`}><Icon className="size-4 shrink-0" strokeWidth={2.1} />{!clientCard&&<ActivityBadge count={count} label={section === "intern" || section === "announcements" ? "necitite" : countLabel} />}</span>{clientCard&&<ActivityBadge count={count} label={countLabel} placement="card" />}
       {mobile ? (
             <span className="max-w-full truncate text-[9px]">{sectionMeta.mobileLabel || label}</span>
           ) : (
-            !sidebarCollapsed && <span className={access.isClient?"min-w-0 break-words text-[11px] leading-4":"truncate"}>{label}</span>
+            !sidebarCollapsed && <span className={access.isClient?"w-full min-w-0 break-words text-[11px] leading-4":"truncate"}>{label}</span>
           )}
     {section==="servicii-avyron"&&!sidebarCollapsed&& (
             <ChevronDown className={`ml-auto size-3 ${servicesExpanded?"rotate-180":""}`}/>
