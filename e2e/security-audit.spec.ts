@@ -49,6 +49,8 @@ test("invoice provider navigation never receives the AVYRON bearer or referrer",
           superadmin: false,
         },
       });
+    if (path === "/api/billing/payment-methods")
+      return route.fulfill({json:{methods:[],refreshed:{stripe:false,revolut:false}}});
     if (path === "/api/billing/account")
       return route.fulfill({
         json: {

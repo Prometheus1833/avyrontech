@@ -16,6 +16,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import Nav from "@/components/site/Nav";
+import PageBackLink from "@/components/site/PageBackLink";
 import Footer from "@/components/site/Footer";
 import PortfolioIntro from "@/components/portfolio/PortfolioIntro";
 import PortfolioScene from "@/components/portfolio/PortfolioScene";
@@ -271,6 +272,7 @@ export default function Portfolio() {
           aria-labelledby="portfolio-title"
         >
           <div className="pf-hero-copy">
+            <PageBackLink to={servicePath} label={ro ? "Înapoi" : "Back"} title={ro ? "Înapoi la serviciul website" : "Back to the website service"} inverse className="mb-5" />
             <p className="pf-eyebrow">
               <span />
               AVYRON / {ro ? "PORTOFOLIU SELECTAT" : "SELECTED PORTFOLIO"}

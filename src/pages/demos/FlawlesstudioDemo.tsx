@@ -31,7 +31,6 @@ const FlawlesstudioDemo = () => {
             <nav className="hidden md:flex items-center gap-6 text-sm text-[#6b4a52]">
               <a href="#servicii" className="hover:text-[#995365]">Servicii</a>
               <a href="#echipa" className="hover:text-[#995365]">Echipă</a>
-              <a href="#galerie" className="hover:text-[#995365]">Galerie</a>
               <a href="#contact" className="hover:text-[#995365]">Contact</a>
             </nav>
             <a href="#contact" className="inline-flex items-center gap-1.5 bg-[#2a1a1f] text-white rounded-full px-4 py-2 text-sm font-bold hover:opacity-90">
