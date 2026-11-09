@@ -1,3 +1,4 @@
+import AgencyGeneratorContext from "@/features/leads-agency/AgencyGeneratorContext";
 import CompanySummary from "./CompanySummary";
 import DocumentLibrary from "./DocumentLibrary";
 import {
@@ -1040,13 +1041,14 @@ export default function AgencyDocumentCenter({
         </Suspense>
       ) : bootstrap && view === "generator" && context ? (
         <Suspense fallback={<p>Se încarcă generatorul…</p>}>
-          <DocumentGenerator
+          <AgencyGeneratorContext id={!embedded ? params.get("agencyOpportunity") : null}>{agencySeed => <DocumentGenerator
+            agencySeed={agencySeed}
             key={
-              (!embedded && params.get("documentTemplate")) || "blank-generator"
+              ((!embedded && params.get("documentTemplate")) || "blank-generator") + (agencySeed ? ":agency:" + agencySeed.opportunityId + ":" + agencySeed.revision : "")
             }
             initialTemplateVersion={
               !embedded
-                ? params.get("documentTemplate") || undefined
+                ? params.get("documentTemplate") || (agencySeed ? context.templates.find(t=>t.family==="offer")?.version_id : undefined)
                 : undefined
             }
             initialClientId={
@@ -1079,7 +1081,7 @@ export default function AgencyDocumentCenter({
             })()}
             onCancel={() => void switchView("library")}
             onContextRefresh={refreshContext}
-          />
+          />}</AgencyGeneratorContext>
         </Suspense>
       ) : (
         bootstrap && (

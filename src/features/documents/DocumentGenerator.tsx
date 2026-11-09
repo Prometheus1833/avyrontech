@@ -1,3 +1,4 @@
+import type {AgencyDocumentSeed} from "@/lib/leadsAgencyApi";
 import {
   automaticDocumentFields,
   consistentSubscriptionBilling,
@@ -37,6 +38,7 @@ const steps = [
 ];
 export default function DocumentGenerator({
   context,
+  agencySeed,
   lockedClientId,
   projectId,
   initialTemplateVersion,
@@ -52,6 +54,7 @@ export default function DocumentGenerator({
   canShare = false,
 }: {
   context: DocumentContext;
+  agencySeed?: AgencyDocumentSeed;
   lockedClientId?: string;
   projectId?: string;
   initialTemplateVersion?: string;
@@ -67,9 +70,9 @@ export default function DocumentGenerator({
   canShare?: boolean;
 }) {
   const contextKey = useRef(crypto.randomUUID());
-  const [manualMode, setManualMode] = useState(false);
-  const [manual, setManual] = useState({ name: "", type: "", email: "", tax: "", registration: "", address: "", representative: "" });
-  const [futureProject, setFutureProject] = useState({ name: "", description: "" });
+  const [manualMode, setManualMode] = useState(!!agencySeed && !agencySeed.clientId);
+  const [manual, setManual] = useState({ name: agencySeed?.name || "", type: "", email: agencySeed?.email || "", tax: "", registration: "", address: "", representative: "" });
+  const [futureProject, setFutureProject] = useState({ name: agencySeed?.projectName || "", description: agencySeed?.description || "" });
   const seedServiceId = initialScope ? undefined : initialServiceId;
   const seedSubscriptionId = initialScope ? undefined : initialSubscriptionId;
   const seedSubscription = context.subscriptions.find(
@@ -94,6 +97,7 @@ export default function DocumentGenerator({
         seedSubscription?.client_id ||
         seedService?.client_id ||
         initialClientId ||
+        agencySeed?.clientId ||
         "");
   const [step, setStep] = useState(0),
     [clientId, setClientId] = useState(seedClientId),
@@ -110,14 +114,14 @@ export default function DocumentGenerator({
         : [],
     ),
     [catalogIds, setCatalogIds] = useState<string[]>(
-      context.services
+      [...new Set([...(agencySeed?.serviceId && context.catalog.some(c=>c.id===agencySeed.serviceId) ? [agencySeed.serviceId] : []), ...context.services
         .filter(
           (s) =>
             (s.id === seedServiceId ||
               (!!seedProjectId && s.project_id === seedProjectId)) &&
             s.catalog_code_id,
         )
-        .map((s) => s.catalog_code_id!),
+        .map((s) => s.catalog_code_id!)])],
     ),
     [instanceIds, setInstanceIds] = useState<string[]>(
       context.services

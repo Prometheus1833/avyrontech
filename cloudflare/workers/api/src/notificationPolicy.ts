@@ -1,3 +1,4 @@
+import { agencyPermissions } from "./leadsAgencyPolicy";
 import { projectAccessMap } from "./projects";
 import { platformRoleForUser } from "./authorization";
 import { filterPrivateDocumentNotices } from "./documentPolicy";
@@ -75,9 +76,14 @@ export async function filterNotifications(
     .filter((n) => n.resource_allowed && n.project_id)
     .map((n) => n.project_id!);
   const access = await projectAccessMap(db, projectIds, user, roles);
+  const agencyNotices=privateSafe.filter(n=>n.deduplication_key?.startsWith("agency:"));
+  let agencyAllowed=false;
+  if(agencyNotices.length)agencyAllowed=(await agencyPermissions(db,user)).read;
   const allowed = new Set(
     result.results
       .filter((n) => {
+        const agencyNotice=agencyNotices.find(row=>row.id===n.id);
+        if(agencyNotice)return agencyAllowed;
         if (!n.resource_type) {
           const notice = privateSafe.find((row) => row.id === n.id);
           return (

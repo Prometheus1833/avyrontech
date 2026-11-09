@@ -79,8 +79,9 @@ async function audit(c: Context<AppBindings>, leadId: string, action: string, ou
 
 export const leadsRouter = new Hono<AppBindings>();
 
-leadsRouter.post("/api/leads", async (c) => {
-  const parsed = validateNewLead(await c.req.json<unknown>().catch(() => null));
+/** Shared native creation; an internal caller may add transactional linkage, never HTTP input. */
+export async function createNativeLead(c: Context<AppBindings>, options?: {input: unknown; statements?: (id:string,timestamp:number)=>D1PreparedStatement[]}) {
+  const parsed = validateNewLead(options ? options.input : await c.req.json<unknown>().catch(() => null));
   if (!parsed.ok) return c.json({ error: { code: parsed.code, field: parsed.field } }, 400);
   const lead = parsed.value;
   const userId = c.get("userId");
@@ -180,10 +181,12 @@ leadsRouter.post("/api/leads", async (c) => {
         (id, lead_id, actor_user_id, kind, direction, outcome, content, occurred_at, created_at)
        VALUES (?, ?, ?, 'note', 'internal', 'created', ?, ?, ?)`,
     ).bind(activityId, leadId, userId, lead.message || "Lead adăugat manual în AVYRON OS.", timestamp, timestamp),
+    ...(options?.statements?.(leadId, timestamp) || []),
   ]);
   await audit(c, leadId, "lead.create", "allowed");
   return c.json({ id: leadId }, 201);
-});
+}
+leadsRouter.post("/api/leads", (c) => createNativeLead(c));
 
 leadsRouter.get("/api/leads", async (c) => {
   const userId = c.get("userId");
