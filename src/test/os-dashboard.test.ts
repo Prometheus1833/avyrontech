@@ -18,6 +18,15 @@ describe("AVYRON OS dashboard", () => {
     expect(additionalSectionsFor(restricted).map(s=>s.id)).toEqual(["resources"]);
     expect(additionalSectionsFor(buildAccess({roles:["user"]}))).toEqual([]);
   });
+  it("separă serviciile proprii de catalog și inversează proiectele cu abonamentele numai pentru client", () => {
+    const client = buildAccess({ roles: ["user"] });
+    const nav = navigationSectionsFor(client).map(section => section.id);
+    expect(nav.indexOf("subscriptions")).toBeLessThan(nav.indexOf("projects"));
+    expect(nav).toContain("my-services");
+    expect(nav).not.toContain("catalog");
+    expect(canOpenSection("catalog", client)).toBe(true);
+    expect(canOpenSection("my-services", buildAccess({ roles: ["staff"] }))).toBe(false);
+  });
   it("deschide prezentarea generală pentru toate rolurile", () => {
     const client = buildAccess({ roles: ["user"] });
     const staff = buildAccess({ roles: ["staff"] });

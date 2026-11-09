@@ -269,7 +269,7 @@ for (const width of [320, 390, 1440])
         .last(),
     ).toBeVisible();
     for (const label of [
-      "Servicii",
+      "Serviciile mele",
       "Mentenanță / Abonamente",
       "Plăți/Istoric",
     ])
@@ -283,6 +283,7 @@ for (const width of [320, 390, 1440])
       const blog=nav.getByRole("link",{name:"Blogul Avyron",exact:true}),logout=nav.getByRole("button",{name:"Deconectare",exact:true});
       await blog.scrollIntoViewIfNeeded();await expect(blog).toHaveAttribute("href","https://avyron.ro/blog");
       const a=await blog.boundingBox(),b=await logout.boundingBox();expect(a!.y+a!.height).toBeLessThanOrEqual(b!.y);expect(Math.abs(a!.width-b!.width)).toBeLessThan(2);
+      const text=await blog.locator("span").boundingBox();expect(Math.abs((text!.x+text!.width/2)-(a!.x+a!.width/2))).toBeLessThan(2);
     }
     expect(
       state.requests.some(
@@ -444,4 +445,64 @@ test("un document inaccesibil și o eroare de listă nu afișează conținut sau
   await expect(
     page.getByText("Nu ai încă documente disponibile.", { exact: false }),
   ).toHaveCount(0);
+});
+
+for (const width of [320,390,1440]) test(`servicii proprii, contor necitite și ordinea din Mai multe la ${width}px`,async({page},info)=>{
+  const state=await setup(page);
+  await page.setViewportSize({width,height:950});
+  let unread=3;
+  await page.route('**/api/project-chat/unread-count',r=>r.fulfill({json:{unread}}));
+  await page.route('**/api/projects?view=services',r=>r.fulfill({json:{data:[
+    {id:'pa',slug:'cafenea',name:'Website Cafenea',kind:'website_prezentare',status:'live',banner_status:'online',url:null,updated_at:1},
+    {id:'pb',slug:'brand',name:'Identitate Cafenea',kind:'identitate_completa',status:'in_progress',banner_status:'testing',url:null,updated_at:1},
+    {id:'external',slug:'external',name:'Produs extern fără servicii',kind:'external_asset',status:'live',banner_status:'online',url:null,updated_at:1}
+  ],services:[{id:'sa',project_id:'pa',service_name:'Website profesional finalizat'}],servicePurchases:[{order_id:'order-a',line_index:0,name:'Audit SEO achiziționat'}]}}));
+  await page.goto('/profil?tab=overview');
+  const openDrawer=async()=>{
+    if(width<1024) await page.getByRole('button',{name:'Deschide mai multe secțiuni'}).click();
+    return page.getByRole('navigation',{name:width<1024?'Secțiunile contului':'Navigare cont',exact:true});
+  };
+  let nav=await openDrawer();
+  const support=nav.getByRole('button',{name:'Suport Staff, 3 mesaje necitite',exact:true});
+  await expect(support).toBeVisible();
+  if(width<1024){const position=await support.evaluate(card=>{const a=card.getBoundingClientRect(),b=card.querySelector('[aria-label="3 mesaje necitite"]')!.getBoundingClientRect();return {right:a.right-b.right,top:b.top-a.top};});expect(position.right).toBeLessThan(14);expect(position.right).toBeGreaterThan(0);expect(position.top).toBeLessThan(14);expect(position.top).toBeGreaterThan(0);}
+  const labels=await nav.getByRole('button').allTextContents();
+  expect(labels.findIndex(s=>s.includes('Mentenanță / Abonamente'))).toBeLessThan(labels.findIndex(s=>s.includes('Proiectele mele')));
+  await expect(nav.getByRole('button',{name:'Servicii',exact:true})).toHaveCount(0);
+  await page.screenshot({path:info.outputPath(`client-more-${width}.png`),animations:'disabled'});
+  await nav.getByRole('button',{name:'Serviciile mele',exact:true}).click();
+  await expect(page).toHaveURL(/tab=my-services/);
+  await expect(page.getByRole('heading',{name:'Serviciile mele',exact:true})).toBeVisible();
+  await expect(page.getByText('Website profesional finalizat',{exact:true})).toBeVisible();
+  await expect(page.getByText('Audit SEO achiziționat',{exact:true})).toBeVisible();
+  await expect(page.getByText('Finalizat',{exact:true})).toBeVisible();
+  await expect(page.getByText('Testare',{exact:true})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Produs extern fără servicii'})).toHaveCount(0);
+  expect(state.requests.some(p=>p.startsWith('/api/commerce/catalog')||p.startsWith('/api/workspace/activity-counts'))).toBe(false);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  await page.screenshot({path:info.outputPath(`client-services-${width}.png`),animations:'disabled'});
+  unread=0;
+  await page.evaluate(()=>window.dispatchEvent(new Event('avyron:activity-changed')));
+  nav=await openDrawer();
+  await expect(nav.getByRole('button',{name:'Suport Staff',exact:true})).toBeVisible();
+  await expect(nav.getByLabel('3 mesaje necitite',{exact:true})).toHaveCount(0);
+  if(width<1024){const blog=nav.getByRole('link',{name:'Blogul Avyron',exact:true});await blog.scrollIntoViewIfNeeded();
+  const b=await blog.boundingBox(),text=await blog.locator('span').boundingBox();expect(Math.abs(b!.x+b!.width/2-text!.x-text!.width/2)).toBeLessThan(2);}
+});
+
+test('citirea conversației elimină contorul din meniu, iar valorile mari rămân compacte',async({page})=>{
+ await setup(page);await page.setViewportSize({width:390,height:844});let unread=120,reads=0;
+ await page.route('**/api/project-chat/unread-count',r=>r.fulfill({json:{unread}}));
+ await page.route('**/api/project-chat/projects?*',r=>r.fulfill({json:{canWrite:true,data:[{id:'pa',slug:'cafenea',name:'Proiect Cafenea',kind:'website_prezentare',status:'in_progress',last_content:'Mesaj de la echipă',last_at:1,unread}]}}));
+ await page.route('**/api/project-chat/pa/messages',r=>r.fulfill({json:{data:[{id:'m1',author_id:'staff-a',author_name:'Echipa proiectului',content:'Mesaj de la echipă',created_at:1}]}}));
+ await page.route('**/api/project-chat/pa/read',r=>{unread=0;reads++;return r.fulfill({json:{ok:true}})});
+ await page.goto('/profil?tab=overview');await page.getByRole('button',{name:'Deschide mai multe secțiuni'}).click();
+ const nav=page.getByRole('navigation',{name:'Secțiunile contului',exact:true});
+ await expect(nav.getByLabel('120 mesaje necitite',{exact:true})).toHaveText('99+');
+ await nav.getByRole('button',{name:'Suport Staff, 120 mesaje necitite',exact:true}).click();
+ await page.getByRole('button',{name:'Mesaje proiecte',exact:true}).click();
+ await page.getByRole('navigation',{name:'Proiecte autorizate'}).getByRole('button',{name:/Proiect Cafenea/}).click();
+ await expect.poll(()=>reads).toBe(1);
+ await page.getByRole('button',{name:'Deschide mai multe secțiuni'}).click();
+ await expect(nav.getByRole('button',{name:'Suport Staff',exact:true})).toBeVisible();await expect(nav.getByLabel('120 mesaje necitite',{exact:true})).toHaveCount(0);
 });

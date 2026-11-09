@@ -73,12 +73,13 @@ test("the customer dashboard separates catalogs while keeping selections in the 
   await mockFreeAccount(page);
   await page.goto("/profil", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "Bună, Client Free." })).toBeVisible();
-  const desktopNavigation = page.getByRole("navigation", {name:"Navigare cont",exact:true});
-  const navigation = await desktopNavigation.isVisible() ? desktopNavigation : page.getByRole("navigation", {name:"Navigare mobilă",exact:true});
-  const services = navigation.getByRole("button", {name:"Servicii",exact:true});
-  await expect(services).toBeVisible();
+  const services = page.getByRole("navigation", {name:"Navigare mobilă",exact:true}).getByRole("button", {name:"Servicii",exact:true});
   await expect(page.getByText("Necesită atenție · Azi")).toHaveCount(0);
-  await services.click();
+  if(await services.isVisible()) await services.click();
+  else {
+    await page.locator("header").first().getByRole("button",{name:"Profil",exact:true}).click();
+    await page.getByRole("menuitem",{name:"Servicii",exact:true}).click();
+  }
   await expect(page.getByRole("heading", { name: "Servicii",exact:true })).toBeVisible();
   await expect(page.getByText("Card holografic",{exact:true})).toHaveCount(0);
   await expect(page.getByRole("button", {name:/favorite/i})).toHaveCount(0);

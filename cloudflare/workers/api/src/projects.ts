@@ -1,5 +1,6 @@
 import {projectSummaryColumns,projectBudgetAccess} from "./projectSummary";
 import {PROJECT_KIND_LABELS} from "../../../../src/shared/projectSummary";
+import {confirmedServiceItems,type ClientServicePurchase,type ClientProjectService} from "../../../../src/shared/clientServices";
 import { managedStaff, managedPermission } from "./staffAccessPolicy";
 import { hasCapability } from "./authorization";
 // Avyron API — Rute Platformă Internă pentru proiecte
@@ -116,6 +117,13 @@ projectsRouter.get("/api/projects", async (c) => {
     ).bind(userId, userId,userId).all();
   }
   let purchases: Array<Record<string, unknown>> = [];
+  const serviceView=c.req.query("view")==="services";
+  let servicePurchases:ClientServicePurchase[]=[];
+  let services:ClientProjectService[]=[];
+  if(serviceView&&rows.results.length){
+    const ids=rows.results.map(row=>String(row.id));
+    services=(await c.env.DB.prepare("SELECT id,project_id,service_name FROM services WHERE project_id IN(SELECT value FROM json_each(?)) ORDER BY service_name,id").bind(JSON.stringify(ids)).all<ClientProjectService>()).results;
+  }
   let sales: Array<Record<string, unknown>> = [];
   if (!isStaff) {
     try {
@@ -126,6 +134,7 @@ projectsRouter.get("/api/projects", async (c) => {
           ORDER BY updated_at DESC LIMIT 100`,
       ).bind(userId).all<{ id: string; items_json: string; total_cents: number; currency: string; status: string; updated_at: number;
         }>();
+      if(serviceView)servicePurchases=results.flatMap(confirmedServiceItems);
       purchases = results.map((order) => {
         let items: Array<Record<string, unknown>> = [];
         try {
@@ -179,7 +188,7 @@ projectsRouter.get("/api/projects", async (c) => {
       if (!/no such table: financial_revenues/i.test(String(error))) throw error;
     }
   }
-  return c.json({ data: rows.results.map(row=>({...row,budget_visible:finance})), purchases, sales });
+  return c.json({ data: rows.results.map(row=>({...row,budget_visible:finance})), purchases, sales,...(serviceView?{services,servicePurchases}:{}) });
 });
 
 // ─── CREARE (staff only — via floating button "Creează proiect") ─────────
