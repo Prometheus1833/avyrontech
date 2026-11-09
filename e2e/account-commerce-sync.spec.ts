@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 async function mockFreeAccount(page: Page) {
   let serviceFavorite = false;
+  let cart:Record<string,unknown>[]=[];
   await page.route("**/api/**", async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
@@ -20,14 +21,14 @@ async function mockFreeAccount(page: Page) {
       return route.fulfill({ json: { ok: true } });
     }
     if (path === "/api/commerce/orders") return route.fulfill({ json: { data: [] } });
-    if (path === "/api/commerce/cart" && request.method() === "GET") return route.fulfill({ json: { data: [], updatedAt: null } });
+    if (path === "/api/commerce/cart" && request.method() === "GET") return route.fulfill({ json: { data: cart, updatedAt: null } });
     if (path === "/api/commerce/cart" && request.method() === "PUT") {
-      const body = request.postDataJSON();
-      return route.fulfill({ json: { data: body.items, updatedAt: Date.now() } });
+      const body = request.postDataJSON();cart=body.items;
+      return route.fulfill({ json: { data: cart, updatedAt: Date.now() } });
     }
     if (path === "/api/commerce/cart/sync" && request.method() === "POST") {
-      const body = request.postDataJSON();
-      return route.fulfill({ json: { data: body.items, updatedAt: Date.now() } });
+      const body = request.postDataJSON();cart=body.items;
+      return route.fulfill({ json: { data: cart, updatedAt: Date.now() } });
     }
     if (path === "/api/projects") return route.fulfill({ json: {
       data: [],
@@ -68,7 +69,7 @@ test("paid purchases are visible in Projects for the registered user", async ({ 
   await expect(page.getByText("1.450,00 RON")).toBeVisible();
 });
 
-test("the customer dashboard keeps staff controls out and combines service and product selections", async ({ page }) => {
+test("the customer dashboard separates catalogs while keeping selections in the same native cart", async ({ page }) => {
   await mockFreeAccount(page);
   await page.goto("/profil", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "Bună, Client Free." })).toBeVisible();
@@ -76,10 +77,15 @@ test("the customer dashboard keeps staff controls out and combines service and p
   await expect(services).toBeVisible();
   await expect(page.getByText("Necesită atenție · Azi")).toHaveCount(0);
   await services.click();
-  await expect(page.getByRole("heading", { name: "Servicii și produse pentru contul tău" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Servicii",exact:true })).toBeVisible();
+  await expect(page.getByText("Card holografic",{exact:true})).toHaveCount(0);
   await expect(page.getByRole("button", {name:/favorite/i})).toHaveCount(0);
-  await page.getByRole("button", { name: "Adaugă în coș" }).first().click();
-  await page.getByRole("button", { name: "Adaugă în coș" }).last().click();
+  const saved=page.waitForResponse(response=>new URL(response.url()).pathname==="/api/commerce/cart"&&response.request().method()==="PUT");
+  await page.getByRole("button", { name: "Adaugă în coș",exact:true }).click();await saved;
+  await page.goto("/profil?tab=product-catalog");
+  await expect(page.getByRole("heading",{name:"Produse",exact:true})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"Site Prezentare Profesional",exact:true})).toHaveCount(0);
+  await page.getByRole("button", { name: "Adaugă în coș",exact:true }).click();
   await page.getByRole("button", { name: /^Coș/ }).first().click();
   await expect(page.getByRole("heading", { name: "Conținutul coșului (2)" })).toBeVisible();
   await expect(page.getByText("Card holografic").first()).toBeVisible();
@@ -88,9 +94,8 @@ test("the customer dashboard keeps staff controls out and combines service and p
 test("the registered user sees only masked saved methods in the payments section", async ({ page }) => {
   await mockFreeAccount(page);
   await page.goto("/profil?tab=payments", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Plăți și facturi" })).toBeVisible();
-  await page.getByRole("button",{name:"Date și metode de plată",exact:true}).click();
+  await expect(page.getByRole("heading", { name: "Plăți/Istoric",exact:true })).toBeVisible();
   await expect(page.getByText("Visa •••• 4242")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Salvează un card" })).toBeEnabled();
-  await expect(page.getByText("Revolut Pay · în configurare")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Adaugă card securizat",exact:true })).toBeEnabled();
+  await expect(page.locator('input[autocomplete="cc-number"],input[autocomplete="cc-csc"]')).toHaveCount(0);
 });
