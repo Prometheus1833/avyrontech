@@ -694,7 +694,7 @@ test('Blogul și Biblioteca Artefacte ies din hostul privat către site-ul publi
   await page.goto('https://app.avyron.ro/profil?tab=overview');
   await expect(page.getByRole('heading',{name:'Bună, Client test.',exact:true})).toBeVisible();
   await expect(page.getByRole('link',{name:/Blog Avyron/})).toHaveAttribute('href','https://avyron.ro/blog');
-  await expect(page.getByRole('link',{name:/Biblioteca Artefacte/})).toHaveAttribute('href','https://avyron.ro/biblioteca');
+  await expect(page.getByRole('link',{name:/Bibliotecă Artefacte/})).toHaveAttribute('href','https://avyron.ro/biblioteca');
   await page.locator('header').getByRole('button',{name:'Profil',exact:true}).click();
   await expect(page.getByRole('menuitem',{name:'Blogul Avyron',exact:true})).toHaveAttribute('href','https://avyron.ro/blog');
   await expect(page.getByRole('menuitem',{name:'Bibliotecă Artefacte',exact:true})).toHaveAttribute('href','https://avyron.ro/biblioteca');
