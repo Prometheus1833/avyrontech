@@ -208,6 +208,18 @@ const AgencyServices = () => {
               })}
             </div>
 
+            <Link
+              to={WEBSITE_SUBSCRIPTION_PATH[lang]}
+              className="mt-3 flex min-w-0 items-center gap-3 rounded-2xl border border-lime-500/30 bg-lime-500/[.06] px-3 py-3 transition-colors hover:border-lime-500/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:px-4"
+            >
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-lime-500/10 text-lime-700 dark:text-lime-300"><Layers size={19} aria-hidden="true" /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-display text-sm font-semibold">{lang === "ro" ? "Website la 0 lei" : "Website with no development fee"}</span>
+                <span className="mt-0.5 block text-[11px] leading-relaxed text-muted-foreground">{lang === "ro" ? "Dezvoltare 0 lei. Hosting și mentenanță prin abonament lunar contra cost." : "No development fee. Hosting and maintenance through a paid monthly subscription."}</span>
+              </span>
+              <span className="shrink-0 text-lime-700 dark:text-lime-300" aria-hidden="true">↗</span>
+            </Link>
+
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogContent id={panelId} onCloseAutoFocus={e=>{e.preventDefault();websiteTrigger.current?.focus();}} className="website-chooser w-[calc(100%-1.5rem)] max-w-[720px] max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl border-border/70 bg-background/95 p-4 backdrop-blur-2xl sm:p-5">
                 <DialogHeader><DialogTitle className="pr-8 text-base">{content.choose}</DialogTitle><DialogDescription className="website-chooser-description text-xs">{lang==='ro'?'Alege formula potrivită afacerii tale.':'Choose the right approach for your business.'}</DialogDescription></DialogHeader>
@@ -220,10 +232,6 @@ const AgencyServices = () => {
                     <span className="website-choice-icon bg-brand/10 text-brand"><Sparkles size={21} aria-hidden="true" /></span>
                     <span className="website-choice-copy"><strong>{content.cinematic.title}</strong><span className="website-choice-description">{content.cinematic.text}</span><span className="website-choice-action text-muted-foreground">{content.soon}</span></span>
                   </button>
-                  <Link to={WEBSITE_SUBSCRIPTION_PATH[lang]} onClick={() => setOpen(false)} className="website-choice border-lime-500/35 bg-gradient-to-br from-lime-400/10 to-transparent hover:border-lime-500/70">
-                    <span className="website-choice-icon bg-lime-400/15 text-lime-700 dark:text-lime-300"><Layers size={21} aria-hidden="true" /></span>
-                    <span className="website-choice-copy"><strong>{lang==='ro'?'Website prin abonament':'Website subscription'}</strong><span className="website-choice-description">{lang==='ro'?'Dezvoltare inclusă. Hosting și mentenanță prin abonament lunar.':'Development included. Hosting and maintenance through a monthly subscription.'}</span><span className="website-choice-action text-lime-700 dark:text-lime-300">{lang==='ro'?'Descoperă planurile':'Explore plans'} ↗</span></span>
-                  </Link>
                 </div>
               </DialogContent>
             </Dialog>

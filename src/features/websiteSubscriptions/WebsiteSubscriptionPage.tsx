@@ -177,7 +177,7 @@ function WebsiteSubscriptionContent() {
     const path = WEBSITE_SUBSCRIPTION_PATH[lang];
     setPageMeta({
       title: ro
-        ? "Website prin abonament, dezvoltare inclusă | AVYRON"
+        ? "Website la 0 lei, dezvoltare inclusă | AVYRON"
         : "Website subscription, development included | AVYRON",
       description: ro
         ? "Un website creat de la zero pentru afacerea ta, fără taxă separată de dezvoltare. Abonament lunar cu hosting, mentenanță și actualizări."
@@ -188,7 +188,7 @@ function WebsiteSubscriptionContent() {
     setJsonLd("website-subscription", {
       "@type": "Service",
       "@id": "https://avyron.ro" + path + "#service",
-      name: ro ? "Website prin abonament" : "Website subscription",
+      name: ro ? "Website la 0 lei" : "Website subscription",
       serviceType: "Bespoke website development and maintenance",
       url: "https://avyron.ro" + path,
       provider: { "@id": "https://avyron.ro/#organization" },
@@ -204,7 +204,7 @@ function WebsiteSubscriptionContent() {
           name: ro ? "Servicii" : "Services",
           path: ro ? "/servicii" : "/en/services",
         },
-        { name: ro ? "Website prin abonament" : "Website subscription", path },
+        { name: ro ? "Website la 0 lei" : "Website subscription", path },
       ]),
     );
     setJsonLd("website-subscription-faq", {
@@ -349,7 +349,7 @@ function WebsiteSubscriptionContent() {
                 path: ro ? "/servicii" : "/en/services",
               },
               {
-                name: ro ? "Website prin abonament" : "Website subscription",
+                name: ro ? "Website la 0 lei" : "Website subscription",
                 path: WEBSITE_SUBSCRIPTION_PATH[lang],
               },
             ]}
