@@ -94,6 +94,13 @@ for (const width of [320, 390, 768, 1440])
       "Fără costuri de dezvoltare.",
     );
     await expect(page.locator(".ws-plan")).toHaveCount(3);
+    const launcher = page.getByRole("button", {name: "Discută cu AVY, asistentul Avyron", exact: true});
+    await expect(launcher).toHaveCSS("bottom", "16px");
+    await launcher.click();
+    await expect(page.getByRole("button", {name: "Închide conversația", exact: true})).toBeVisible();
+    await page.getByRole("button", {name: "Închide conversația", exact: true}).click();
+    await expect(launcher).toHaveCSS("bottom", "16px");
+    await expect(launcher).toHaveCSS("right", "16px");
     const homeCrumb = page
       .getByRole("navigation", { name: "Breadcrumb" })
       .getByRole("link", { name: "Acasă", exact: true });
@@ -248,6 +255,7 @@ test("English metadata and keyboard/contrast checks", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
     "Without development costs.",
   );
+  await expect(page.getByRole("button", {name: "Chat with AVY, the Avyron assistant", exact: true})).toHaveCSS("bottom", "16px");
   await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
     "content",
     "https://avyron.ro/en/services/website-subscription",

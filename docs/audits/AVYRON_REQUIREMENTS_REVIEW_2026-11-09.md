@@ -87,6 +87,8 @@ Vite preview simplu servește homepage-ul SPA la o adresă de director fără sl
 
 ## Publicare și probe externe
 
+Inspecția capturii mobile live de după PR #132 a identificat suplimentar butonul AVY la `top: 80px`, care putea acoperi începutul titlului în timpul derulării. Corecția separată aplică dock-ul existent din dreapta-jos pe ambele rute ale abonamentului, inclusiv pentru butonul inițial înaintea încărcării chatului. Regresia reproducea problema în Chromium și WebKit înaintea corecției și verifică poziția și după deschiderea/închiderea chatului. Celelalte rute comerciale își păstrează poziționarea existentă.
+
 Prima execuție CI pe `4e52bdc` a trecut 1.277 teste unitare (un benchmark opțional omis) și 453 scenarii browser, dar a respins trei scenarii: etichetele accesibile ale brandului/telefonului/e-mailului din subsol nu includeau tot textul vizibil, iar două aserțiuni analytics încă cereau vechiul demo beauty. Etichetele artificiale au fost eliminate în favoarea textului vizibil, iar verificările cer acum portofoliul real și absența demo-urilor retrase. Nu se publică pe baza acelei execuții eșuate; rezultatul CI pe revizia corectată se consemnează în PR.
 
 Preview-ul Cloudflare izolat a trecut patru verificări reale Chromium/WebKit × 390/1440 px, fără scriere de solicitări comerciale. În laboratorul Chrome mobil, CPU 4× și Fast 4G, HTML-ul canonic servit de Cloudflare a avut LCP 2.977 ms și CLS 0. Acest rezultat nu echivalează cu date CrUX sau scor PageSpeed 100.
