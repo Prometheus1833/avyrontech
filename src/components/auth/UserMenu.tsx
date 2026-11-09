@@ -22,10 +22,10 @@ import {
   FileText,
   MessageSquare,
   LogOut,
-  Boxes,
   UsersRound,
   Bot,
   Wallet,
+  ShoppingCart,
   BookOpen,
   LibraryBig,
   PenTool,
@@ -63,16 +63,15 @@ const UserMenu = ({showNotificationBell=true}:{showNotificationBell?:boolean}) =
     .toUpperCase();
 
   const userItems:MenuItem[]=[
-    {label:lang==='en'?'Home':'Acasă',icon:UserIcon,dot:'264, 90%, 62%',to:'/profil?tab=overview'},
-    {label:lang==='en'?'Staff Support':'Suport Staff',icon:MessageSquare,dot:'340, 80%, 60%',to:'/profil?tab=tickets'},
-    {label:lang==='en'?'My projects':'Proiectele mele',icon:Boxes,dot:'200, 95%, 55%',to:'/profil?tab=projects'},
-    {label:lang==='en'?'Maintenance / Subscriptions':'Mentenanță / Abonamente',icon:CreditCard,dot:'40, 95%, 60%',to:'/profil?tab=subscriptions'},
-    {label:lang==='en'?'My products':'Produsele mele',icon:Package,dot:'155, 72%, 42%',to:'/profil?tab=collection'},
+    {label:lang==='en'?'Profile':'Profil',icon:UserIcon,dot:'264, 90%, 62%',to:'/profil?tab=profile'},
     {label:lang==='en'?'Services':'Servicii',icon:Package,dot:'330, 85%, 65%',to:'/profil?tab=catalog'},
-    {label:lang==='en'?'Documents':'Documente',icon:FileText,dot:'264, 90%, 62%',to:'/profil?tab=documents'},
-    {label:lang==='en'?'Payments / History':'Plăți/Istoric',icon:Wallet,dot:'155, 72%, 42%',to:'/profil?tab=payments'},
+    {label:lang==='en'?'Maintenance / Subscriptions':'Mentenanță / Abonamente',icon:CreditCard,dot:'40, 95%, 60%',to:'/profil?tab=subscriptions'},
+    {label:lang==='en'?'Payments and Invoices':'Plăți și Facturi',icon:Wallet,dot:'155, 72%, 42%',to:'/profil?tab=payments'},
+    {label:lang==='en'?'Development Products':'Produse Development',icon:Package,dot:'155, 72%, 42%',to:'/profil?tab=collection'},
+    {label:lang==='en'?'My Documents':'Documentele Mele',icon:FileText,dot:'264, 90%, 62%',to:'/profil?tab=documents'},
     {label:lang==='en'?'Create Logo':'Creează Logo',icon:PenTool,dot:'280, 85%, 65%',to:publicSiteHref(STUDIO_PATHS[lang])},
-    {label:t.auth.menu.profile,icon:UserIcon,dot:'222, 25%, 40%',to:'/profil?tab=profile'},
+    {label:lang==='en'?'Cart':'Coș',icon:ShoppingCart,dot:'170, 80%, 45%',to:'/profil?tab=cart'},
+    {label:lang==='en'?'Staff Support':'Suport Staff',icon:MessageSquare,dot:'340, 80%, 60%',to:'/profil?tab=tickets'},
     {label:t.auth.menu.settings,icon:Settings,dot:'222, 25%, 40%',to:'/profil?tab=settings'},
   ];
 
@@ -137,11 +136,11 @@ const UserMenu = ({showNotificationBell=true}:{showNotificationBell?:boolean}) =
             const itemStyle = { ["--dot-color" as string]: item.dot };
             const inner = (
               <span className="flex items-center justify-between w-full gap-2">
-                <span className="flex min-w-0 items-center gap-2">
-                  <item.icon className="size-4" />
+                <span className={`flex min-w-0 items-center gap-2 ${isStaff ? "" : "text-[13px] leading-5"}`}>
+                  <item.icon className="size-4 shrink-0" />
                   <span
                     aria-hidden="true"
-                    className="size-2 rounded-full shadow-sm"
+                    className="size-2 shrink-0 rounded-full shadow-sm"
                     style={{ backgroundColor: `hsl(${item.dot})` }}
                   />
                   {item.label}
@@ -181,9 +180,11 @@ const UserMenu = ({showNotificationBell=true}:{showNotificationBell?:boolean}) =
           {!isStaff && <>
             <DropdownMenuSeparator />
             <div className="mx-1 my-1 rounded-xl border border-violet-400/15 bg-violet-500/5 p-1" aria-label={lang === "en" ? "Reading and inspiration" : "Lectură și inspirație"}>
-              <DropdownMenuItem asChild className="cursor-pointer"><Link to={publicSiteHref(lang === "en" ? "/en/blog" : "/blog")} onClick={() => setMenuOpen(false)}><BookOpen className="mr-2 size-4 text-violet-300" />Blog Avyron</Link></DropdownMenuItem>
               <DropdownMenuItem asChild className="cursor-pointer"><Link to={publicSiteHref(lang === "en" ? "/en/library" : "/biblioteca")} onClick={() => setMenuOpen(false)}><LibraryBig className="mr-2 size-4 text-violet-300" />{lang === "en" ? "Artifact Library" : "Biblioteca Artefacte"}</Link></DropdownMenuItem>
             </div>
+            <DropdownMenuItem asChild className="my-2 min-h-12 w-full cursor-pointer rounded-xl border border-violet-400/20 bg-violet-500/[.07] px-4 text-sm font-semibold focus:bg-violet-500/15">
+              <Link to={publicSiteHref(lang === "en" ? "/en/blog" : "/blog")} onClick={() => setMenuOpen(false)}><BookOpen className="mr-3 size-4 shrink-0 text-violet-300" />{lang === "en" ? "Avyron Blog" : "Blogul Avyron"}</Link>
+            </DropdownMenuItem>
           </>}
           <DropdownMenuSeparator />
           <DropdownMenuItem

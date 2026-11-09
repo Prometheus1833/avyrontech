@@ -602,16 +602,16 @@ for (const width of [320, 390, 1440]) test(`Avy Cont organizează proiectele și
   await expect(page.getByRole('link',{name:/Magazin finalizat/})).toBeVisible();
   await expect(page.getByRole('button',{name:/Pachet SEO achiziționat/})).toBeVisible();
   const headings = await page.locator('main h2, [role="region"] h2').allTextContents();
-  expect(headings.filter(title=>!['Principal','Secțiuni','Contul meu'].includes(title)).slice(0,6)).toEqual(['Proiectele mele','Mentenanță / Abonamente','Produsele mele','Servicii','Documente','Plăți/Istoric']);
+  expect(headings.filter(title=>!['Principal','Secțiuni','Contul meu'].includes(title)).slice(0,6)).toEqual(['Proiectele mele','Mentenanță / Abonamente','Produsele mele','Servicii','Documentele Mele','Plăți/Istoric']);
   await expect(page.getByRole('button',{name:/Explorează catalogul|favorite/i})).toHaveCount(0);
   const header = page.locator('header').first();
   await expect(header.getByRole('link',{name:'Avyron Web — Acasă'})).toBeVisible();
   await expect(header.getByRole('button',{name:'Deschide Avy Cont'})).toBeVisible();
   const brandBox=await header.getByRole('link',{name:'Avyron Web — Acasă'}).boundingBox(),accountBox=await header.getByRole('button',{name:'Deschide Avy Cont'}).boundingBox();expect(brandBox!.x+brandBox!.width).toBeLessThanOrEqual(accountBox!.x-3);
   await header.getByRole('button',{name:'Profil',exact:true}).click();
-  await page.getByRole('menuitem',{name:'Blog Avyron',exact:true}).scrollIntoViewIfNeeded();
-  await expect(page.getByRole('menuitem',{name:'Blog Avyron',exact:true})).toBeVisible();
-  await expect(page.getByRole('menuitem',{name:'Blog Avyron',exact:true})).toHaveAttribute('href','https://avyron.ro/blog');
+  await page.getByRole('menuitem',{name:'Blogul Avyron',exact:true}).scrollIntoViewIfNeeded();
+  await expect(page.getByRole('menuitem',{name:'Blogul Avyron',exact:true})).toBeVisible();
+  await expect(page.getByRole('menuitem',{name:'Blogul Avyron',exact:true})).toHaveAttribute('href','https://avyron.ro/blog');
   await expect(page.getByRole('menuitem',{name:'Biblioteca Artefacte',exact:true})).toHaveAttribute('href','https://avyron.ro/biblioteca');
   await page.keyboard.press('Escape');
   await expect(page.getByRole('menu')).toBeHidden();
@@ -688,20 +688,20 @@ test('Blogul și Biblioteca Artefacte ies din hostul privat către site-ul publi
   await expect(page.getByRole('link',{name:/Blog Avyron/})).toHaveAttribute('href','https://avyron.ro/blog');
   await expect(page.getByRole('link',{name:/Biblioteca Artefacte/})).toHaveAttribute('href','https://avyron.ro/biblioteca');
   await page.locator('header').getByRole('button',{name:'Profil',exact:true}).click();
-  await expect(page.getByRole('menuitem',{name:'Blog Avyron',exact:true})).toHaveAttribute('href','https://avyron.ro/blog');
+  await expect(page.getByRole('menuitem',{name:'Blogul Avyron',exact:true})).toHaveAttribute('href','https://avyron.ro/blog');
   await expect(page.getByRole('menuitem',{name:'Biblioteca Artefacte',exact:true})).toHaveAttribute('href','https://avyron.ro/biblioteca');
 });
 
 for(const width of [320,390,1440])test(`contul separă catalogul de achiziții și păstrează meniul compact la ${width}px`,async({page},info)=>{
  await setup(page);await page.setViewportSize({width,height:900});await page.goto('/profil?tab=catalog');await expect(page.getByRole('heading',{name:'Servicii',exact:true})).toBeVisible();await expect(page.getByRole('heading',{name:'Componentă digitală',exact:true})).toHaveCount(0);
  if(width<1024){await page.getByRole('navigation',{name:'Navigare mobilă',exact:true}).getByRole('button',{name:'Produse',exact:true}).click()}else await page.goto('/profil?tab=product-catalog');
- await expect(page).toHaveURL(/tab=product-catalog/);await expect(page.getByRole('heading',{name:'Produse',exact:true})).toBeVisible();await expect(page.getByRole('heading',{name:'Componentă digitală',exact:true})).toBeVisible();await expect(page.getByRole('heading',{name:'Produse Development Achitate',exact:true})).toHaveCount(0);
+ await expect(page).toHaveURL(/tab=product-catalog/);await expect(page.getByRole('heading',{name:'Produse',exact:true})).toBeVisible();await expect(page.getByRole('heading',{name:'Componentă digitală',exact:true})).toBeVisible();await expect(page.getByRole('heading',{name:'Produse Development',exact:true})).toHaveCount(0);
  await page.getByRole('button',{name:'Adaugă în coș',exact:true}).click();await expect(page.getByText('Adăugat în coșul contului.',{exact:true})).toBeVisible();
  if(width<1024)await page.getByRole('button',{name:'Deschide mai multe secțiuni'}).click();const nav=page.getByRole('navigation',{name:width<1024?'Secțiunile contului':'Navigare cont',exact:true});
- const labels=['Acasă','Suport Staff','Proiectele mele','Mentenanță / Abonamente','Produsele mele','Servicii','Documente','Plăți/Istoric'];for(const label of labels)await expect(nav.getByRole('button',{name:label,exact:true})).toBeVisible();
+ const labels=['Acasă','Suport Staff','Proiectele mele','Mentenanță / Abonamente','Produsele mele','Servicii','Documentele Mele','Plăți/Istoric'];for(const label of labels)await expect(nav.getByRole('button',{name:label,exact:true})).toBeVisible();
  for(const label of ['Coș','Notificări','Istoric și plăți','Plăți și facturi'])await expect(nav.getByRole('button',{name:label,exact:true})).toHaveCount(0);
  for(let i=0;i<labels.length;i+=2){const a=await nav.getByRole('button',{name:labels[i],exact:true}).boundingBox(),b=await nav.getByRole('button',{name:labels[i+1],exact:true}).boundingBox();expect(Math.abs(a!.y-b!.y)).toBeLessThan(2)}
- await nav.getByRole('button',{name:'Produsele mele',exact:true}).click();await expect(page).toHaveURL(/tab=collection/);await expect(page.getByRole('heading',{name:'Produse Development Achitate',exact:true})).toBeVisible();
+ await nav.getByRole('button',{name:'Produsele mele',exact:true}).click();await expect(page).toHaveURL(/tab=collection/);await expect(page.getByRole('heading',{name:'Produse Development',exact:true})).toBeVisible();
  await page.goto('/profil?tab=subscriptions');await expect(page.getByRole('button',{name:'Activități și materiale',exact:true})).toHaveCount(0);await expect(page.getByRole('link',{name:'Plăți și facturi',exact:true})).toHaveCount(0);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);await page.screenshot({path:info.outputPath(`simple-account-${width}.png`),fullPage:true});
 });

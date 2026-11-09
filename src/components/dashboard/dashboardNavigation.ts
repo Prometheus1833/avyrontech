@@ -148,7 +148,7 @@ export function dashboardSectionMeta(section:SectionId,client:boolean):Dashboard
  catalog:{label:"Servicii",mobileLabel:"Servicii",commandLabel:"Deschide serviciile",hint:"Servicii disponibile pentru proiectele tale"},
  subscriptions:{label:"Mentenanță / Abonamente",mobileLabel:"Abonamente",commandLabel:"Deschide mentenanța și abonamentele",hint:"Planurile, facturarea și activitățile tale recurente"},
  payments:{label:"Plăți/Istoric",commandLabel:"Deschide plățile și istoricul",hint:"Cardul salvat, plățile confirmate și facturile lor"},
- documents:{label:"Documente",mobileLabel:"Documente",commandLabel:"Deschide documentele",hint:"Documentele alocate și disponibile pentru contul tău"},
+ documents:{label:"Documentele Mele",mobileLabel:"Documente",commandLabel:"Deschide documentele",hint:"Documentele alocate și disponibile pentru contul tău"},
  collection:{label:"Produsele mele",mobileLabel:"Produsele mele",commandLabel:"Deschide produsele mele",hint:"Licențele și produsele digitale din cont"},
  tickets:{label:"Suport Staff",commandLabel:"Deschide suportul staff",hint:"Solicitări și conversații cu echipa proiectelor tale"},
  };

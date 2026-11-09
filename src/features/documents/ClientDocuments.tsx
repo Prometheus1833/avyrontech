@@ -233,10 +233,10 @@ export default function ClientDocuments({
     }
   };
   return (
-    <section className="document-center dc-grid" aria-label="Documente">
+    <section className="document-center dc-grid" aria-label="Documentele Mele">
       <header className="rounded-2xl border border-white/10 bg-violet-500/5 p-4">
         <h1 className="text-2xl font-semibold">
-          {embedded ? "Documentele proiectului" : "Documente"}
+          {embedded ? "Documentele proiectului" : "Documentele Mele"}
         </h1>
         <p className="mt-2 max-w-3xl text-sm text-slate-400">
           Documentele proiectelor, serviciilor, abonamentelor și produselor

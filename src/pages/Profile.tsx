@@ -23,7 +23,7 @@ import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { flushServicePageEdits } from "@/lib/servicePageNavigation";
 import { SERVICE_PAGES } from "@/shared/servicePagePolicy";
 import {
-ChevronDown,ChevronLeft,Ellipsis,Lock,LogOut,Menu,
+BookOpen,ChevronDown,ChevronLeft,Ellipsis,Lock,LogOut,Menu,
 MessagesSquare,
 PanelLeftClose,PanelLeftOpen,Search,ShieldCheck,Sparkles,
 Wrench,
@@ -456,6 +456,7 @@ function ProfileDashboard() {
             </div>
           </section>
             ))}
+          {access.isClient&&<a href={publicSiteHref("/blog")} className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-violet-400/20 bg-violet-500/[.07] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-violet-500/15"><BookOpen className="size-4 shrink-0 text-violet-300" />Blogul Avyron</a>}
           <button type="button" onClick={() => void signOut().then(() => window.location.assign("/"))} className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-400/15 bg-rose-400/[0.06] px-4 py-3 text-xs font-semibold text-rose-200"><LogOut className="size-4" /> Deconectare</button>
         </nav>
       </SheetContent>

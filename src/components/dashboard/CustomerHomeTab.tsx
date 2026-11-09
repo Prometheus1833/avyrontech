@@ -113,7 +113,7 @@ export function CustomerHomeTab({
           },
           {
             id: "documents" as const,
-            label: "Documente",
+            label: "Documentele Mele",
             description: "Documentele alocate contului tău.",
             icon: BookOpen,
           },

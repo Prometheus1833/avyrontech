@@ -227,7 +227,7 @@ for (const width of [320, 390, 1440])
     await page.setViewportSize({ width, height: 950 });
     await page.goto("/profil?tab=documents");
     await expect(
-      page.getByRole("heading", { name: "Documente", exact: true }),
+      page.getByRole("heading", { name: "Documentele Mele", exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Contract Cafenea", exact: true }),
@@ -279,6 +279,11 @@ for (const width of [320, 390, 1440])
     await expect(
       nav.getByRole("button", { name: "Mentenanță Clienți", exact: true }),
     ).toHaveCount(0);
+    if(width<1024){
+      const blog=nav.getByRole("link",{name:"Blogul Avyron",exact:true}),logout=nav.getByRole("button",{name:"Deconectare",exact:true});
+      await blog.scrollIntoViewIfNeeded();await expect(blog).toHaveAttribute("href","https://avyron.ro/blog");
+      const a=await blog.boundingBox(),b=await logout.boundingBox();expect(a!.y+a!.height).toBeLessThanOrEqual(b!.y);expect(Math.abs(a!.width-b!.width)).toBeLessThan(2);
+    }
     expect(
       state.requests.some(
         (p) =>
@@ -296,14 +301,20 @@ for (const width of [320, 390, 1440])
       animations: "disabled",
     });
   });
-test("meniul personal al clientului folosește destinațiile contului", async ({ page }) => {
-  await setup(page);
+for (const width of [320,1440]) test(`meniul personal păstrează ordinea cerută și Blogul Avyron înainte de deconectare la ${width}px`, async ({ page }, info) => {
+  await setup(page);await page.setViewportSize({width,height:950});
   await page.goto("/");
   await page.locator("header").first().getByRole("button", { name: "Profil", exact: true }).click();
   const menu = page.getByRole("menu");
-  for (const [label, tab] of [["Proiectele mele", "projects"], ["Servicii", "catalog"], ["Mentenanță / Abonamente", "subscriptions"], ["Plăți/Istoric", "payments"], ["Documente", "documents"]])
-    await expect(menu.getByRole("menuitem", { name: label, exact: true })).toHaveAttribute("href", `/profil?tab=${tab}`);
+  const entries=[["Profil","profile"],["Servicii","catalog"],["Mentenanță / Abonamente","subscriptions"],["Plăți și Facturi","payments"],["Produse Development","collection"],["Documentele Mele","documents"],["Creează Logo",null],["Coș","cart"],["Suport Staff","tickets"]];
+  expect((await menu.getByRole("menuitem").allTextContents()).slice(0,9).map(t=>t.trim())).toEqual(entries.map(([label])=>label));
+  for(const [label,tab] of entries)if(tab)await expect(menu.getByRole("menuitem",{name:label!,exact:true})).toHaveAttribute("href",`/profil?tab=${tab}`);
   await expect(menu.getByRole("menuitem", { name: /AVY Core|Bibliotecă Agenție|AI AVY Prod|Proiecte AI|Financiar/ })).toHaveCount(0);
+  const blog=menu.getByRole("menuitem",{name:"Blogul Avyron",exact:true}),logout=menu.getByRole("menuitem",{name:"Deconectează-te",exact:true});
+  await blog.scrollIntoViewIfNeeded();await expect(blog).toHaveAttribute("href","https://avyron.ro/blog");
+  const blogBox=await blog.boundingBox(),logoutBox=await logout.boundingBox();expect(blogBox!.y+blogBox!.height).toBeLessThanOrEqual(logoutBox!.y);expect(Math.abs(blogBox!.width-logoutBox!.width)).toBeLessThan(2);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);await page.screenshot({path:info.outputPath(`client-avatar-menu-${width}.png`),animations:"disabled"});
+  await menu.getByRole("menuitem",{name:"Profil",exact:true}).click();await expect(page).toHaveURL(/tab=profile/);
 });
 test("clientul poate citi documentul fără permisiune de descărcare", async ({ page }, info) => {
   const state = await setup(page);
