@@ -61,7 +61,8 @@ describe("financial dashboard contract", () => {
     expect(await response.json()).toEqual({ error: { code: "mfa_required" } });
   });
   it("honors the explicit disabled policy without bypassing invoice approval or configuration", async () => {
-    const response = await adminApp().request("http://localhost/api/billing/admin/invoices/order-1/retry", { method: "POST" }, { MFA_AUTH_ENABLED: "false" } as AppBindings["Bindings"]);
+    const DB = { prepare: () => ({ bind: () => ({ first: async () => ({ role: "platform_owner" }) }) }) };
+    const response = await adminApp().request("http://localhost/api/billing/admin/invoices/order-1/retry", { method: "POST" }, { DB, MFA_AUTH_ENABLED: "false" } as unknown as AppBindings["Bindings"]);
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({ error: { code: "oblio_approval_or_configuration_required" } });
   });

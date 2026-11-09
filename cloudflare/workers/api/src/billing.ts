@@ -8,7 +8,7 @@ import { revolutSignatureValid, stripeSignatureValid } from "./billingSignatures
 import { mfaAuthEnabled } from "./authPolicy";
 import { FINANCIAL_PROVIDER_PLAYBOOKS, financialSyncPhase, type FinancialConnectionRecord, type FinancialProviderKey } from "./providerSyncPolicy";
 import { listAccountPaymentMethods } from "./billingMethods";
-import { platformRoleForUser } from "./authorization";
+import { hasCapability, platformRoleForUser } from "./authorization";
 import { checkRateLimit } from "./antispam";
 import { verifyFinancialConnection } from "./financialConnectionVerification";
 import { checkStripeAccount } from "./stripeAccount";
@@ -408,6 +408,7 @@ billingRouter.post("/api/billing/subscriptions/:id/cancel",async(c)=>{
 
 billingRouter.get("/api/billing/admin/status",async(c)=>{
   if(!c.get("roles").some((role)=>role==="staff"||role==="admin"))return c.json({error:{code:"forbidden"}},403);
+  if(!c.get("roles").includes("admin")&&!await hasCapability(c.env.DB,c.get("userId"),"finance.read"))return c.json({error:{code:"forbidden"}},403);
   const [sessions,subscriptions,invoices,failed,pendingInvoices,paymentsByCurrency,invoicesByCurrency,recentPayments,recentSubscriptions,recentInvoices,connectionRecords]=await Promise.all([
     c.env.DB.prepare("SELECT provider,status,COUNT(*) AS total FROM billing_checkout_sessions GROUP BY provider,status").all(),
     c.env.DB.prepare("SELECT provider,status,COUNT(*) AS total FROM billing_subscriptions GROUP BY provider,status").all(),
@@ -458,6 +459,7 @@ billingRouter.post("/api/billing/admin/connections/:provider/verify",async(c)=>{
 billingRouter.post("/api/billing/admin/invoices/:orderId/retry",async(c)=>{
   if(!c.get("roles").some((role)=>role==="staff"||role==="admin"))return c.json({error:{code:"forbidden"}},403);
   if(!(await financialMfaSatisfied(c)))return c.json({error:{code:"mfa_required"}},403);
+  if(!await platformRoleForUser(c.env.DB,c.get("userId"))&&!await hasCapability(c.env.DB,c.get("userId"),"finance.write"))return c.json({error:{code:"forbidden"}},403);
   if(!providerCapabilities(c.env).oblio.enabled)return c.json({error:{code:"oblio_approval_or_configuration_required"}},409);
   const order=await getOrder(c.env.DB,c.req.param("orderId"));
   if(!order||order.status!=="paid")return c.json({error:{code:"paid_order_required"}},409);

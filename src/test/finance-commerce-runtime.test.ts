@@ -92,6 +92,19 @@ describe('Financial configuration and product sales — actual handlers and all 
       actor = 'client';
       expect((await request('/api/billing/admin/connections/unsupported/verify', {})).status).toBe(403);
     });
+    it('requires granular billing permissions and observes their revocation immediately', async () => {
+      mfa = false; mfaPolicy = 'false'; actor = 'staff';
+      expect((await app.request('/api/billing/admin/status', {}, {})).status).toBe(403);
+      expect((await request('/api/billing/admin/invoices/order-1/retry', {})).status).toBe(403);
+      db.prepare("INSERT INTO user_capabilities(id,user_id,capability,reason,created_at) VALUES('billing-read','staff','finance.read','Release fixture',?),('billing-write','staff','finance.write','Release fixture',?)").run(stamp,stamp);
+      const response = await app.request('/api/billing/admin/status', {}, {});
+      expect(response.status).toBe(200);
+      expect((await response.json()).security).toMatchObject({mfaVerified:false,mfaSatisfied:true,canVerify:false});
+      expect((await request('/api/billing/admin/invoices/order-1/retry', {})).status).toBe(409);
+      db.prepare("UPDATE user_capabilities SET revoked_at=? WHERE user_id='staff'").run(stamp);
+      expect((await app.request('/api/billing/admin/status', {}, {})).status).toBe(403);
+      expect((await request('/api/billing/admin/invoices/order-1/retry', {})).status).toBe(403);
+    });
     it('rejects stale versions, duplicate aliases and secret/card fields without changing data', async () => { seedAccount(); expect((await request('/api/finance/accounts/fixture', { ...account(), expectedUpdatedAt: stamp - 1 }, 'PATCH')).status).toBe(409); expect((await request('/api/finance/accounts/fixture', { ...account(), cardNumber: '1234' }, 'PATCH')).status).toBe(400); expect((await request('/api/finance/accounts/fixture', { ...account(), internalAlias: 'AVYRON RON' }, 'PATCH')).status).toBe(409); expect(db.prepare("SELECT status FROM financial_accounts WHERE id='fixture'").get()!.status).toBe('needs_configuration'); });
     it('archives records while retaining transaction references and audit', async () => { seedAccount(); expect((await request('/api/finance/accounts/fixture', { ...account(), status: 'archived' }, 'PATCH')).status).toBe(200); expect(db.prepare("SELECT archived_at FROM financial_accounts WHERE id='fixture'").get()!.archived_at).toBeTruthy(); expect((await (await app.request('/api/finance/accounts', {}, {})).json()).accounts.some((r: {
         id: string;

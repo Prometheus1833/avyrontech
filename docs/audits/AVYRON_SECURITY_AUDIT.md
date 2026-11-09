@@ -275,3 +275,10 @@ Baseline-ul în Chrome 151 a avut 41 mobil / 97 desktop. Versiunile de motor dif
 - [WCAG 2.2](https://www.w3.org/TR/WCAG22/), [EN 301 549 și armonizare](https://digital-strategy.ec.europa.eu/en/policies/web-accessibility-directive-standards-and-harmonisation), [EAA — Directiva 2019/882](https://eur-lex.europa.eu/eli/dir/2019/882/oj).
 - [LLM Top 10 2026, sursă canonică](https://github.com/GenAI-Security-Project/GenAI-LLM-Top10/tree/9253e38ade58e959b531c0c5c9a4842272c9cd0e/2026/final), [Agentic Top 10 2026](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/), [ACS](https://owaspacs.org/docs/acs/).
 - [OpenSSF Scorecard](https://scorecard.dev/), [SLSA 1.2](https://slsa.dev/spec/v1.2/), [OWASP SAMM](https://owaspsamm.org/model/), [GitHub secure use](https://docs.github.com/en/actions/reference/security/secure-use), [Cloudflare Workers best practices](https://developers.cloudflare.com/workers/best-practices/workers-best-practices/).
+
+
+## Reconciliere de lansare — acces financiar, 09.11.2026
+
+**AQ-17 — FIXED în candidatul de lansare.** Registrul agregat de facturare permitea accesul unui Staff fără capabilitatea financiară distinctă, iar reîncercarea facturilor verifica rolul general și MFA fără `finance.write`. `billing.ts` cere acum `finance.read` pentru Staff și principal de platformă sau `finance.write` pentru reîncercare. Citirea rolului Admin rămâne compatibilă cu politica nativă a modulului Financiar. Testul cu SQLite migrat acordă și revocă permisiunile și verifică refuzul la cererea imediat următoare.
+
+Politica financiară comună permite excepția numai când `MFA_AUTH_ENABLED=false` este explicit sau factorul este efectiv verificat; configurația absentă/invalidă ori înscrierea opțională nu o înlocuiesc. Starea `mfaVerified` nu este falsificată. Excepția MFA acceptată, aprobările comerciale/fiscale, verificarea identității procesatorului și limitele de asigurare din raport rămân valabile. Probe: `finance-commerce-runtime.test.ts`, `billing-dashboard.test.ts`, `billing-mfa-policy.test.tsx`, `subscription-operations-runtime.test.ts`; fără încasări, facturi sau mesaje reale.
