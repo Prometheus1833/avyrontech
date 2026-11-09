@@ -207,63 +207,42 @@ export function CustomerHomeTab({
         )}
       </section>
       <section
-        aria-label="Creație și achiziții"
+        aria-label="Creație și inspirație"
         className="grid gap-3 sm:grid-cols-2"
       >
-        <a
-          href={publicSiteHref(STUDIO_PATHS[lang])}
-          className={`${panel} transition hover:border-violet-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400`}
-        >
-          <PenTool className="size-5 text-violet-300" aria-hidden />
-          <h2 className="mt-2 text-sm font-semibold">Creează Logo</h2>
-          <p className="mt-1 text-xs leading-5 text-slate-400">
-            Deschide simulatorul de logo și personalizează variantele pentru
-            brandul tău.
-          </p>
-        </a>
-        <button
-          type="button"
-          onClick={() => onOpenSection("profile")}
-          className={`${panel} text-left transition hover:border-violet-400/40`}
-        >
-          <UserRound className="size-5 text-violet-300" />
-          <h2 className="mt-2 text-sm font-semibold">Profil</h2>
-          <p className="mt-1 text-xs text-slate-300">
-            Datele de contact și informațiile contului.
-          </p>
-        </button>
-      </section>
-      <section
-        aria-label="Lectură și inspirație"
-        className="grid gap-3 sm:grid-cols-2"
-      >
-        {[
-          {
-            href: "/blog",
-            label: "Blog Avyron",
-            description: "Idei, ghiduri și noutăți pentru proiectele tale.",
-            icon: BookOpen,
-          },
-          {
-            href: "/biblioteca",
-            label: "Biblioteca Artefacte",
-            description:
-              "Exemple vizuale, efecte și integrări pentru inspirație.",
-            icon: LibraryBig,
-          },
-        ].map((card) => (
-          <Link
-            key={card.href}
-            to={publicSiteHref(card.href)}
-            className={`${panel} group transition hover:border-violet-400/40`}
+        <div className="grid content-start gap-3">
+          <a
+            href={publicSiteHref(STUDIO_PATHS[lang])}
+            className={`${panel} transition hover:border-violet-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400`}
           >
-            <card.icon className="size-5 text-violet-300" />
-            <h2 className="mt-3 text-sm font-semibold">{card.label}</h2>
-            <p className="mt-1 text-xs leading-5 text-slate-400">
-              {card.description}
+            <PenTool className="size-5 text-violet-300" aria-hidden />
+            <h2 className="mt-2 text-sm font-semibold">Creează Logo</h2>
+            <p className="mt-1 text-xs leading-5 text-slate-300">
+              Deschide simulatorul de logo și personalizează variantele pentru brandul tău.
             </p>
+          </a>
+          <Link to={publicSiteHref("/blog")} className={`${panel} transition hover:border-violet-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400`}>
+            <BookOpen className="size-5 text-violet-300" aria-hidden />
+            <h2 className="mt-2 text-sm font-semibold">Blog Avyron</h2>
+            <p className="mt-1 text-xs leading-5 text-slate-300">Idei, ghiduri și noutăți pentru proiectele tale.</p>
           </Link>
-        ))}
+        </div>
+        <div className="grid content-start gap-3">
+          <button
+            type="button"
+            onClick={() => onOpenSection("profile")}
+            className={`${panel} text-left transition hover:border-violet-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400`}
+          >
+            <UserRound className="size-5 text-violet-300" aria-hidden />
+            <h2 className="mt-2 text-sm font-semibold">Profil</h2>
+            <p className="mt-1 text-xs leading-5 text-slate-300">Datele de contact și informațiile contului.</p>
+          </button>
+          <Link to={publicSiteHref("/biblioteca")} className={`${panel} transition hover:border-violet-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400`}>
+            <LibraryBig className="size-5 text-violet-300" aria-hidden />
+            <h2 className="mt-2 text-sm font-semibold">Bibliotecă Artefacte</h2>
+            <p className="mt-1 text-xs leading-5 text-slate-300">Exemple vizuale, efecte și integrări pentru inspirație.</p>
+          </Link>
+        </div>
       </section>
     </div>
   );

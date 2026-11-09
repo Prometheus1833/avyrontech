@@ -39,7 +39,6 @@ import {buildAccess,canOpenSection} from "@/lib/access";
 type MenuItem = {
   label: string;
   icon: typeof UserIcon;
-  dot: string; // comma-separated HSL, e.g. "264, 90%, 62%"
   to?: string;
   onSelect?: () => void;
   comingSoon?: boolean;
@@ -63,27 +62,27 @@ const UserMenu = ({showNotificationBell=true}:{showNotificationBell?:boolean}) =
     .toUpperCase();
 
   const userItems:MenuItem[]=[
-    {label:lang==='en'?'Profile':'Profil',icon:UserIcon,dot:'264, 90%, 62%',to:'/profil?tab=profile'},
-    {label:lang==='en'?'Services':'Servicii',icon:Package,dot:'330, 85%, 65%',to:'/profil?tab=catalog'},
-    {label:lang==='en'?'Maintenance / Subscriptions':'Mentenanță / Abonamente',icon:CreditCard,dot:'40, 95%, 60%',to:'/profil?tab=subscriptions'},
-    {label:lang==='en'?'Payments and Invoices':'Plăți și Facturi',icon:Wallet,dot:'155, 72%, 42%',to:'/profil?tab=payments'},
-    {label:lang==='en'?'Development Products':'Produse Development',icon:Package,dot:'155, 72%, 42%',to:'/profil?tab=collection'},
-    {label:lang==='en'?'My Documents':'Documentele Mele',icon:FileText,dot:'264, 90%, 62%',to:'/profil?tab=documents'},
-    {label:lang==='en'?'Create Logo':'Creează Logo',icon:PenTool,dot:'280, 85%, 65%',to:publicSiteHref(STUDIO_PATHS[lang])},
-    {label:lang==='en'?'Cart':'Coș',icon:ShoppingCart,dot:'170, 80%, 45%',to:'/profil?tab=cart'},
-    {label:lang==='en'?'Staff Support':'Suport Staff',icon:MessageSquare,dot:'340, 80%, 60%',to:'/profil?tab=tickets'},
-    {label:t.auth.menu.settings,icon:Settings,dot:'222, 25%, 40%',to:'/profil?tab=settings'},
+    {label:lang==='en'?'Profile':'Profil',icon:UserIcon,to:'/profil?tab=profile'},
+    {label:lang==='en'?'Services':'Servicii',icon:Package,to:'/profil?tab=catalog'},
+    {label:lang==='en'?'Maintenance / Subscriptions':'Mentenanță / Abonamente',icon:CreditCard,to:'/profil?tab=subscriptions'},
+    {label:lang==='en'?'Payments and Invoices':'Plăți și Facturi',icon:Wallet,to:'/profil?tab=payments'},
+    {label:lang==='en'?'Development Products':'Produse Development',icon:Package,to:'/profil?tab=collection'},
+    {label:lang==='en'?'My Documents':'Documentele Mele',icon:FileText,to:'/profil?tab=documents'},
+    {label:lang==='en'?'Create Logo':'Creează Logo',icon:PenTool,to:publicSiteHref(STUDIO_PATHS[lang])},
+    {label:lang==='en'?'Cart':'Coș',icon:ShoppingCart,to:'/profil?tab=cart'},
+    {label:lang==='en'?'Staff Support':'Suport Staff',icon:MessageSquare,to:'/profil?tab=tickets'},
+    {label:t.auth.menu.settings,icon:Settings,to:'/profil?tab=settings'},
   ];
 
   const access=buildAccess({roles,superadmin:isSuperAdmin,capabilities});
   const staffItems: MenuItem[] = [
-    {label:t.auth.menu.profile,icon:UserIcon,dot:"264, 90%, 62%",to:"/profil?tab=profile"},
-    ...(canOpenSection("ai-projects",access)?[{label:"Proiecte AI",icon:Bot,dot:"270, 88%, 62%",to:"/profil?tab=ai-projects"}]:[]),
-    ...(canOpenSection("finance",access)?[{label:"Financiar",icon:Wallet,dot:"155, 72%, 42%",to:"/profil?tab=finance"}]:[]),
-    {label:t.auth.menu.settings,icon:Settings,dot:"222, 25%, 40%",to:"/profil?tab=settings"},
+    {label:t.auth.menu.profile,icon:UserIcon,to:"/profil?tab=profile"},
+    ...(canOpenSection("ai-projects",access)?[{label:"Proiecte AI",icon:Bot,to:"/profil?tab=ai-projects"}]:[]),
+    ...(canOpenSection("finance",access)?[{label:"Financiar",icon:Wallet,to:"/profil?tab=finance"}]:[]),
+    {label:t.auth.menu.settings,icon:Settings,to:"/profil?tab=settings"},
   ];
 
-  const items = [...(isStaff ? staffItems : userItems),...(hasCollaborations?[{label:lang==="en"?"My collaborations":"Colaborările mele",icon:UsersRound,dot:"264, 90%, 62%",to:"/profil?tab=my-collaborations"}]:[])];
+  const items = [...(isStaff ? staffItems : userItems),...(hasCollaborations?[{label:lang==="en"?"My collaborations":"Colaborările mele",icon:UsersRound,to:"/profil?tab=my-collaborations"}]:[])];
 
   const handleSignOut = async () => {
     setMenuOpen(false);
@@ -100,7 +99,7 @@ const UserMenu = ({showNotificationBell=true}:{showNotificationBell?:boolean}) =
           <button
             type="button"
             className="size-10 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-brand/40 transition"
-            aria-label="Profil"
+            aria-label={lang === "en" ? "Profile" : "Profil"}
             aria-expanded={menuOpen}
           >
             <Avatar className="size-10">
@@ -115,12 +114,11 @@ const UserMenu = ({showNotificationBell=true}:{showNotificationBell?:boolean}) =
           align="end"
           sideOffset={8}
           collisionPadding={12}
-          onCloseAutoFocus={(event) => event.preventDefault()}
           onPointerDownOutside={() => setMenuOpen(false)}
           onInteractOutside={() => setMenuOpen(false)}
-          className={`z-[70] max-h-[calc(100dvh-5rem)] ${isStaff?"w-64":"w-[min(22rem,calc(100vw-1.5rem))]"} overflow-y-auto`}
+          className={`z-[70] max-h-[min(var(--radix-dropdown-menu-content-available-height),calc(100dvh-5rem))] max-w-[calc(100vw-1.5rem)] ${isStaff ? "w-64" : "w-72"} overflow-y-auto overscroll-contain rounded-xl p-1`}
         >
-          <DropdownMenuLabel className="flex flex-col">
+          <DropdownMenuLabel className="flex min-w-0 flex-col px-3 py-2">
             <span className="font-medium truncate">{profile?.display_name || user.email}</span>
             <span className="text-xs text-muted-foreground truncate">{user.email}</span>
             {isAgencyPartner&&<span className="mt-1 w-fit rounded-full bg-brand/10 px-2 py-0.5 text-xs font-semibold text-brand">Avyron Partener</span>}
@@ -132,17 +130,11 @@ const UserMenu = ({showNotificationBell=true}:{showNotificationBell?:boolean}) =
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           {isStaff&&<DropdownMenuItem onSelect={()=>{setMenuOpen(false);if(showNotificationBell)setNoticeOpen(true);else window.dispatchEvent(new Event(NOTIFICATIONS_OPEN_EVENT));}}><Bell className="mr-2 size-4"/>{lang==="en"?"Notifications":"Notificări"}</DropdownMenuItem>}
-          <div className={isStaff?"":"grid grid-cols-2 gap-1"}>{items.map((item) => {
-            const itemStyle = { ["--dot-color" as string]: item.dot };
+          <div className="space-y-0.5">{items.map((item) => {
             const inner = (
               <span className="flex items-center justify-between w-full gap-2">
                 <span className={`flex min-w-0 items-center gap-2 ${isStaff ? "" : "text-[13px] leading-5"}`}>
-                  <item.icon className="size-4 shrink-0" />
-                  <span
-                    aria-hidden="true"
-                    className="size-2 shrink-0 rounded-full shadow-sm"
-                    style={{ backgroundColor: `hsl(${item.dot})` }}
-                  />
+                  <item.icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                   {item.label}
                 </span>
                 {item.comingSoon && (
@@ -155,8 +147,7 @@ const UserMenu = ({showNotificationBell=true}:{showNotificationBell?:boolean}) =
                 <DropdownMenuItem
                   key={item.label}
                   asChild
-                  className="cursor-pointer menu-press active:scale-[0.98] transition-transform duration-150 ease-out"
-                  style={itemStyle}
+                  className="min-h-9 cursor-pointer rounded-lg px-3 py-2"
                 >
                   <Link to={item.to} onClick={() => setMenuOpen(false)}>{inner}</Link>
                 </DropdownMenuItem>
@@ -170,8 +161,7 @@ const UserMenu = ({showNotificationBell=true}:{showNotificationBell?:boolean}) =
                   setMenuOpen(false);
                   item.onSelect?.();
                 }}
-                className="cursor-pointer menu-press active:scale-[0.98] transition-transform duration-150 ease-out"
-                style={itemStyle}
+                className="min-h-9 cursor-pointer rounded-lg px-3 py-2"
               >
                 {inner}
               </DropdownMenuItem>
@@ -179,25 +169,19 @@ const UserMenu = ({showNotificationBell=true}:{showNotificationBell?:boolean}) =
           })}</div>
           {!isStaff && <>
             <DropdownMenuSeparator />
-            <div className="mx-1 my-1 rounded-xl border border-violet-400/15 bg-violet-500/5 p-1" aria-label={lang === "en" ? "Reading and inspiration" : "Lectură și inspirație"}>
-              <DropdownMenuItem asChild className="cursor-pointer"><Link to={publicSiteHref(lang === "en" ? "/en/library" : "/biblioteca")} onClick={() => setMenuOpen(false)}><LibraryBig className="mr-2 size-4 text-violet-300" />{lang === "en" ? "Artifact Library" : "Biblioteca Artefacte"}</Link></DropdownMenuItem>
-            </div>
-            <DropdownMenuItem asChild className="my-2 min-h-12 w-full cursor-pointer rounded-xl border border-violet-400/20 bg-violet-500/[.07] px-4 text-sm font-semibold focus:bg-violet-500/15">
-              <Link to={publicSiteHref(lang === "en" ? "/en/blog" : "/blog")} onClick={() => setMenuOpen(false)}><BookOpen className="mr-3 size-4 shrink-0 text-violet-300" />{lang === "en" ? "Avyron Blog" : "Blogul Avyron"}</Link>
+            <DropdownMenuItem asChild className="min-h-9 cursor-pointer rounded-lg px-3 py-2 text-[13px]">
+              <Link to={publicSiteHref(lang === "en" ? "/en/library" : "/biblioteca")} onClick={() => setMenuOpen(false)}><LibraryBig className="mr-2 size-4 text-muted-foreground" aria-hidden="true" />{lang === "en" ? "Artifact Library" : "Bibliotecă Artefacte"}</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="min-h-9 cursor-pointer rounded-lg px-3 py-2 text-[13px]">
+              <Link to={publicSiteHref(lang === "en" ? "/en/blog" : "/blog")} onClick={() => setMenuOpen(false)}><BookOpen className="mr-2 size-4 text-muted-foreground" aria-hidden="true" />{lang === "en" ? "Avyron Blog" : "Blogul Avyron"}</Link>
             </DropdownMenuItem>
           </>}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onSelect={handleSignOut}
-            className="cursor-pointer menu-press active:scale-[0.98] transition-transform duration-150 ease-out text-destructive focus:text-destructive"
-            style={{ ["--dot-color" as string]: "0, 84%, 60%" }}
+            className="min-h-9 cursor-pointer rounded-lg px-3 py-2 text-[13px] text-destructive focus:text-destructive"
           >
             <LogOut className="size-4 mr-2" />
-            <span
-              aria-hidden="true"
-              className="size-2 rounded-full shadow-sm mr-2"
-              style={{ backgroundColor: "hsl(0, 84%, 60%)" }}
-            />
             {t.auth.logout}
           </DropdownMenuItem>
         </DropdownMenuContent>

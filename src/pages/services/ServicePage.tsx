@@ -565,7 +565,7 @@ const ServicePage = () => {
           />
         )}
 
-        {product.key === "premium-website" && <div className="mx-auto max-w-6xl px-4 py-6"><Link className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-brand/25 bg-brand/5 px-4 py-3 text-sm font-medium text-brand" to={ro?"/servicii/website-prin-abonament":"/en/services/website-subscription"}>{ro?"Preferi dezvoltare inclusă și abonament lunar? Descoperă Website prin abonament.":"Prefer development included with a monthly subscription? Explore Website subscription."} →</Link></div>}
+        {product.key === "premium-website" && <div className="mx-auto max-w-6xl px-4 py-6"><Link className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-brand/25 bg-brand/5 px-4 py-3 text-sm font-medium text-brand" to={ro?"/servicii/website-prin-abonament":"/en/services/website-subscription"}>{ro?"Preferi dezvoltare inclusă și abonament lunar? Descoperă Website la 0 lei.":"Prefer development included with a monthly subscription? Explore Website subscription."} →</Link></div>}
         {product.key === "premium-website" && <ServiceReviews lang={ro ? "ro" : "en"} />}
 
         {product.key === "premium-website" && faqSection}

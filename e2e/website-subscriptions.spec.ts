@@ -133,7 +133,7 @@ for (const width of [320, 390, 768, 1440])
     });
     expect(errors).toEqual([]);
   });
-test("chooser keeps all three compact options within the viewport, cinematic stays unavailable", async ({
+test("website offer follows apps, chooser stays compact and cinematic remains unavailable", async ({
   page,
 }, info) => {
   await publicFixture(page);
@@ -149,7 +149,7 @@ test("chooser keeps all three compact options within the viewport, cinematic sta
   for (const viewport of [{width:320,height:568},{width:390,height:844},{width:844,height:390},{width:1440,height:900}]) {
     await page.setViewportSize(viewport);
     const bounds = await choices.locator(":scope > *").evaluateAll(nodes => nodes.map(node => { const r=node.getBoundingClientRect(); return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}; }));
-    expect(bounds).toHaveLength(3);
+    expect(bounds).toHaveLength(2);
     for (const [i, rect] of bounds.entries()) {
       expect(rect.left).toBeGreaterThanOrEqual(8);
       expect(rect.right).toBeLessThanOrEqual(viewport.width-8);
@@ -160,31 +160,25 @@ test("chooser keeps all three compact options within the viewport, cinematic sta
     }
     expect(await choices.evaluate(el => el.scrollWidth<=el.clientWidth+1)).toBe(true);
   }
-  await expect(choices.locator(":scope > *")).toHaveCount(3);
+  await expect(choices.locator(":scope > *")).toHaveCount(2);
   await expect(choices.locator(":scope > *").nth(1)).toHaveAttribute(
     "aria-disabled",
     "true",
-  );
-  await expect(choices.locator(":scope > *").nth(2)).toHaveAttribute(
-    "href",
-    path,
   );
   await page.screenshot({ path: info.outputPath("chooser-desktop.png") });
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
   await expect(trigger).toBeFocused();
   await page.setViewportSize({ width: 320, height: 800 });
-  await trigger.click();
-  await choices
-    .getByRole("link", { name: /Website prin abonament/ })
-    .scrollIntoViewIfNeeded();
-  await page.screenshot({ path: info.outputPath("chooser-mobile.png") });
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth + 1,
-    ),
-  ).toBe(true);
-  await choices.getByRole("link", { name: /Website prin abonament/ }).click();
+  const offer=page.getByTestId("service-list").getByRole("link",{name:/Website la 0 lei/});
+  await offer.scrollIntoViewIfNeeded();
+  const apps=await page.getByTestId("service-list").getByRole("link",{name:/Aplicații Web și Mobile/}).boundingBox(),offerBox=await offer.boundingBox();
+  expect(offerBox!.y).toBeGreaterThanOrEqual(apps!.y+apps!.height);
+  await expect(offer).toContainText("abonament lunar contra cost");
+  await expect(offer).toHaveAttribute("href",path);
+  await page.screenshot({path:info.outputPath("website-offer-mobile.png")});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  await offer.click();
   await expect(page).toHaveURL(path);
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Fără costuri de dezvoltare.");
   await page.goto("/servicii");
@@ -348,3 +342,13 @@ for (const width of [390, 1440])
         .getByRole("button", { name: "Creează și sincronizează", exact: true }),
     ).toBeDisabled();
   });
+
+for (const width of [320,390,1440]) test(`library brand stays readable at ${width}px`, async ({page},info) => {
+  await publicFixture(page);await page.setViewportSize({width,height:844});await page.goto('/biblioteca');
+  const header=page.locator('.sticky').first();
+  await expect(header.getByRole('link',{name:'Avyron Bibliotecă Artefacte',exact:true})).toBeVisible();
+  const boxes=await header.locator(':scope > div > *').evaluateAll(nodes=>nodes.map(node=>{const r=node.getBoundingClientRect();return {x:r.x,right:r.right,y:r.y,bottom:r.bottom};}));
+  for(const [i,rect] of boxes.entries()){expect(rect.x).toBeGreaterThanOrEqual(0);expect(rect.right).toBeLessThanOrEqual(width);if(i)expect(rect.x).toBeGreaterThanOrEqual(boxes[i-1].right);}
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  await page.screenshot({path:info.outputPath(`library-header-${width}.png`),animations:'disabled'});
+});

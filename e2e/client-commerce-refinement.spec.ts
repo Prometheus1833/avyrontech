@@ -607,6 +607,10 @@ for (const width of [320, 390, 1440]) test(`Avy Cont organizează proiectele și
   await expect(page.getByRole('button',{name:/Pachet SEO achiziționat/})).toBeVisible();
   const headings = await page.locator('main h2, [role="region"] h2').allTextContents();
   expect(headings.filter(title=>!['Principal','Secțiuni','Contul meu'].includes(title)).slice(0,6)).toEqual(['Mentenanță / Abonamente','Proiectele mele','Produsele mele','Serviciile mele','Documentele Mele','Plăți/Istoric']);
+  const logoCard=page.getByRole('link',{name:/Creează Logo/}), blogCard=page.getByRole('link',{name:/Blog Avyron/});
+  const logoBox=await logoCard.boundingBox(), blogBox=await blogCard.boundingBox();
+  expect(logoBox!.y+logoBox!.height).toBeLessThanOrEqual(blogBox!.y);
+  expect(Math.abs(logoBox!.x-blogBox!.x)).toBeLessThan(1);
   await expect(page.getByRole('button',{name:/Explorează catalogul|favorite/i})).toHaveCount(0);
   const header = page.locator('header').first();
   await expect(header.getByRole('link',{name:'Avyron Web — Acasă'})).toBeVisible();
@@ -616,7 +620,7 @@ for (const width of [320, 390, 1440]) test(`Avy Cont organizează proiectele și
   await page.getByRole('menuitem',{name:'Blogul Avyron',exact:true}).scrollIntoViewIfNeeded();
   await expect(page.getByRole('menuitem',{name:'Blogul Avyron',exact:true})).toBeVisible();
   await expect(page.getByRole('menuitem',{name:'Blogul Avyron',exact:true})).toHaveAttribute('href','https://avyron.ro/blog');
-  await expect(page.getByRole('menuitem',{name:'Biblioteca Artefacte',exact:true})).toHaveAttribute('href','https://avyron.ro/biblioteca');
+  await expect(page.getByRole('menuitem',{name:'Bibliotecă Artefacte',exact:true})).toHaveAttribute('href','https://avyron.ro/biblioteca');
   await page.keyboard.press('Escape');
   await expect(page.getByRole('menu')).toBeHidden();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -693,7 +697,7 @@ test('Blogul și Biblioteca Artefacte ies din hostul privat către site-ul publi
   await expect(page.getByRole('link',{name:/Biblioteca Artefacte/})).toHaveAttribute('href','https://avyron.ro/biblioteca');
   await page.locator('header').getByRole('button',{name:'Profil',exact:true}).click();
   await expect(page.getByRole('menuitem',{name:'Blogul Avyron',exact:true})).toHaveAttribute('href','https://avyron.ro/blog');
-  await expect(page.getByRole('menuitem',{name:'Biblioteca Artefacte',exact:true})).toHaveAttribute('href','https://avyron.ro/biblioteca');
+  await expect(page.getByRole('menuitem',{name:'Bibliotecă Artefacte',exact:true})).toHaveAttribute('href','https://avyron.ro/biblioteca');
 });
 
 for(const width of [320,390,1440])test(`contul separă catalogul de achiziții și păstrează meniul compact la ${width}px`,async({page},info)=>{

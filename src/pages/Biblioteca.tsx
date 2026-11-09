@@ -239,16 +239,18 @@ const Biblioteca = () => {
         <ContextBar origin={origin} lang={lang} />
       ) : (
         <div className="sticky top-0 z-40 border-b border-white/10 bg-[#07080d]/80 backdrop-blur">
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
-            <PageBackLink to={lang === "ro" ? "/" : "/en"} label={lang === "ro" ? "Înapoi" : "Back"} inverse />
-            <Link to={lang === "ro" ? "/" : "/en"} className="mr-auto flex items-center gap-2 text-sm">
-              <img src={logo} alt="" width={20} height={20} className="size-5 rounded object-cover" />
-              <span className="font-semibold">Avyron</span>
-              <span className="text-white/65">/ {lang === "ro" ? "Bibliotecă" : "Library"}</span>
+          <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-6">
+            <PageBackLink to={lang === "ro" ? "/" : "/en"} label={lang === "ro" ? "Înapoi" : "Back"} inverse className="shrink-0 max-sm:size-9 max-sm:justify-center max-sm:p-0 max-sm:[&>span:not(:nth-child(2))]:hidden" />
+            <Link to={lang === "ro" ? "/" : "/en"} className="mr-auto flex min-w-0 items-center gap-2 text-sm">
+              <img src={logo} alt="" width={24} height={24} className="size-6 shrink-0 rounded object-cover" />
+              <span className="flex min-w-0 flex-col leading-tight sm:flex-row sm:items-center sm:gap-2">
+                <span className="font-semibold">Avyron</span>
+                <span className="text-[11px] text-white/70 sm:text-sm">{lang === "ro" ? "Bibliotecă Artefacte" : "Artifact Library"}</span>
+              </span>
             </Link>
             <a
               href="#brief"
-              className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/80 transition-colors hover:border-white/50 hover:text-white"
+              className="inline-flex min-h-9 shrink-0 items-center rounded-full border border-white/20 px-2.5 py-1 text-xs text-white/80 transition-colors hover:border-white/50 hover:text-white"
             >
               {lang === "ro" ? "Cere ofertă" : "Get a quote"}
             </a>

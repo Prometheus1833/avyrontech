@@ -303,7 +303,7 @@ export default function Configurator() {
             <Sparkles className="size-3.5" aria-hidden />
             {copy.eyebrow}
           </div>
-          <Link to={ro?"/servicii/website-prin-abonament":"/en/services/website-subscription"} className="mb-4 inline-flex min-h-9 items-center rounded-full border border-brand/25 px-3 py-2 text-xs text-brand">{ro?"Website prin abonament · dezvoltare inclusă":"Website subscription · development included"} ↗</Link>
+          <Link to={ro?"/servicii/website-prin-abonament":"/en/services/website-subscription"} className="mb-4 inline-flex min-h-9 items-center rounded-full border border-brand/25 px-3 py-2 text-xs text-brand">{ro?"Website la 0 lei · dezvoltare inclusă":"Website subscription · development included"} ↗</Link>
             <h1 className="mx-auto mt-5 max-w-4xl font-display text-4xl font-black leading-[0.98] tracking-[-0.045em] sm:text-6xl lg:text-7xl">
             {copy.title}
           </h1>
