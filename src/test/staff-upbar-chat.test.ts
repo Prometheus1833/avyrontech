@@ -376,3 +376,54 @@ it("keeps project content out of legacy channel and unrelated DM queries during 
     ),
   ).toThrow(/invalid_project_chat_scope/);
 });
+
+it("counts received unread client messages only and updates after reading or revocation", async () => {
+  const sent = await json(await send());
+  await json(await req('/api/workspace/chat', {recipient_id:null,channel:'general',content:'Only internal'}));
+  actor='ca';
+  await json(await send('pa','Own reply'));
+  const before=db.prepare("SELECT count(*) n FROM staff_chat_reads WHERE user_id='ca'").get()!.n;
+  const response=await req(root+'/unread-count');
+  expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+  expect(await json(response)).toEqual({unread:1});
+  expect(db.prepare("SELECT count(*) n FROM staff_chat_reads WHERE user_id='ca'").get()!.n).toBe(before);
+  actor='cb';expect(await json(await req(root+'/unread-count'))).toEqual({unread:0});
+  actor='ca';await json(await req(root+'/pa/read',{messageId:sent.id}));
+  expect(await json(await req(root+'/unread-count'))).toEqual({unread:0});
+  actor='sa';await json(await send('pa','New unread'));
+  actor='ca';expect(await json(await req(root+'/unread-count'))).toEqual({unread:1});
+  db.exec("DELETE FROM client_account_access WHERE user_id='ca'");
+  expect(await json(await req(root+'/unread-count'))).toEqual({unread:0});
+});
+
+it("returns only authorized service allocations and own paid service lines, including mixed orders", async () => {
+  db.exec("INSERT INTO services(id,project_id,service_name,price,billing_cycle) VALUES('service-a','pa','SEO A',100,'monthly'),('service-b','pb','Private B',100,'monthly')");
+  const insert=db.prepare('INSERT INTO commerce_orders(id,user_id,status,items_json,subtotal_cents,total_cents,created_at,updated_at) VALUES(?,?,?,?,100,100,1,1)');
+  const mixed=JSON.stringify([{type:'service',name:'Paid SEO'},{type:'product',name:'Only product'},{type:'plan',name:'Only plan'}]);
+  insert.run('paid-a','ca','paid',mixed);
+  insert.run('pending-a','ca','requested',JSON.stringify([{type:'service',name:'Unpaid'}]));
+  insert.run('paid-b','cb','paid',JSON.stringify([{type:'service',name:'Secret B'}]));
+  actor='ca';
+  const feed=await json(await req('/api/projects?view=services'));
+  expect(feed.data.map((p:{id:string})=>p.id)).toEqual(['pa']);
+  expect(feed.services).toEqual([{id:'service-a',project_id:'pa',service_name:'SEO A'}]);
+  expect(feed.servicePurchases).toEqual([{order_id:'paid-a',line_index:0,name:'Paid SEO'}]);
+  expect(JSON.stringify(feed)).not.toContain('Secret B');
+  expect((await json(await req('/api/projects'))).services).toBeUndefined();
+  db.exec("DELETE FROM client_account_access WHERE user_id='ca'");
+  const revoked=await json(await req('/api/projects?view=services'));
+  expect(revoked.services).toEqual([]);expect(revoked.data).toEqual([]);
+  expect(revoked.servicePurchases).toHaveLength(1);
+  actor='cb';expect((await json(await req('/api/projects?view=services'))).services[0].id).toBe('service-b');
+});
+
+it("revokes unread project names and services even for a subscription's retained owner", async () => {
+  db.exec("UPDATE projects SET owner_user_id='ca' WHERE id='pa'; INSERT INTO services(id,project_id,service_name,price,billing_cycle) VALUES('web-a','pa','Website',0,'monthly'); INSERT INTO subscriptions(id,client_id,service_id,status,next_billing_date) VALUES('sub-web','a','web-a','active',2000000000000); INSERT INTO website_subscription_projects(project_id,plan_id,plan_revision,subscription_id,plan_snapshot_json,allocation_key,allocation_hash,created_at) VALUES('pa','start',1,'sub-web','{}','test-allocation','test-hash',1)");
+  await json(await send());actor='ca';
+  expect(await json(await req(root+'/unread-count'))).toEqual({unread:1});
+  db.exec("DELETE FROM client_account_access WHERE user_id='ca'");
+  expect(await json(await req(root+'/unread-count'))).toEqual({unread:0});
+  expect((await json(await req(root+'/projects'))).data).toEqual([]);
+  expect((await json(await req('/api/projects?view=services'))).services).toEqual([]);
+  expect((await req(root+'/pa/messages')).status).toBe(404);
+});

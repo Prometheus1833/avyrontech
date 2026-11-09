@@ -61,7 +61,7 @@ export const canSee = (audience: Audience, a: Access) => {
 export type SectionId =
   | "website-subscriptions" | "notifications" | "notification-settings"
   | "skill-site-builder" | "skill-logo-engine" | "skill-media-generate"
-  | "documents" | "overview" | "profile" | "settings" | "projects" | "subscriptions" | "invoices" | "payments" | "cart" | "orders" | "catalog" | "product-catalog" | "collection"
+  | "documents" | "overview" | "profile" | "settings" | "projects" | "subscriptions" | "invoices" | "payments" | "cart" | "orders" | "catalog" | "my-services" | "product-catalog" | "collection"
   | "stats" | "tickets" | "maintenance" | "client-maintenance" | "clients" | "domains"
   | "finance" | "media" | "leads-agency" | "leads" | "staff-tickets" | "demo-requests" | "intern"
   | "announcements" | "resources" | "promotions" | "ai-os" | "team-staff" | "os-centers" | "servicii-avyron" | "produse-avyron"
@@ -107,6 +107,7 @@ export const SECTIONS: readonly SectionDef[] = [
   { id: "subscriptions", group: "billing", audience: "client", keywords: ["abonament", "plan", "subscriptions"] },
   { id: "payments", group: "billing", audience: "client", keywords: ["metode de plata", "card", "stripe", "revolut", "facturare"] },
   { id: "catalog", group: "servicii", audience: "client", keywords: ["catalog", "servicii", "oferta"] },
+  { id: "my-services", group: "projects", audience: "client", keywords: ["serviciile mele", "servicii achizitionate", "servicii finalizate"] },
   { id: "product-catalog", group: "produse", audience: "client", navigation:false, keywords: ["produse", "catalog produse", "digitale"] },
   { id: "cart", group: "billing", audience: "client", keywords: ["cos", "comanda", "cart"] },
   { id: "orders", group: "billing", audience: "client", keywords: ["istoric", "comenzi", "plata", "orders"] },
@@ -188,11 +189,11 @@ const canOpenDefinition = (section: SectionDef, access: Access): boolean => {
   );
 };
 
-export const CLIENT_SECTION_ORDER:SectionId[]=["overview","tickets","projects","subscriptions","collection","catalog","documents","payments","product-catalog","cart","my-collaborations","notifications","profile","settings"];
+export const CLIENT_SECTION_ORDER:SectionId[]=["overview","tickets","subscriptions","projects","collection","my-services","documents","payments","catalog","product-catalog","cart","my-collaborations","notifications","profile","settings"];
 export const sectionsFor = (a: Access) => {
  const allowed=SECTIONS.filter(s=>canOpenDefinition(s,a));
  if(!a.isClient)return allowed;
- return CLIENT_SECTION_ORDER.flatMap(id=>{const section=allowed.find(s=>s.id===id);return section?[{...section,group:(["overview","tickets"].includes(id)?"overview":["projects","subscriptions","collection","catalog","documents","payments"].includes(id)?"projects":section.group) as SectionDef["group"],...(["cart","orders","notifications"].includes(id)?{navigation:false}:{})}]:[];});
+ return CLIENT_SECTION_ORDER.flatMap(id=>{const section=allowed.find(s=>s.id===id);return section?[{...section,group:(["overview","tickets"].includes(id)?"overview":["projects","subscriptions","collection","my-services","documents","payments"].includes(id)?"projects":section.group) as SectionDef["group"],...(["cart","orders","notifications","catalog"].includes(id)?{navigation:false}:{})}]:[];});
 };
 
 export const canOpenSection = (id: string, a: Access) => {

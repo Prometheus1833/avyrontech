@@ -2,7 +2,7 @@ import { Hono, type Context } from "hono";
 import { z } from "zod";
 import type { AppBindings } from "./types";
 import { canAccessProject } from "./projects";
-import { clientProjectGrantSql, platformRoleForUser } from "./authorization";
+import { clientProjectGrantSql, platformRoleForUser, projectOwnerAccessSql } from "./authorization";
 import { managedStaff, managedPermission } from "./staffAccessPolicy";
 import { privilegedMfaSatisfied } from "./mfaPolicy";
 import { checkRateLimit } from "./antispam";
@@ -36,7 +36,7 @@ function projectScope(a: Awaited<ReturnType<typeof actor>>, user: string) {
   const args: string[] = [];
   let scope = "1";
   if (!a.all) {
-    scope = `(p.owner_user_id=? OR EXISTS(SELECT 1 FROM organization_memberships m WHERE m.organization_id=p.organization_id AND m.user_id=? AND m.status='active') OR ${a.staff ? "EXISTS(SELECT 1 FROM project_staff ps WHERE ps.project_id=p.id AND ps.user_id=?) OR (p.organization_id IS NULL AND EXISTS(SELECT 1 FROM client_account_access g WHERE g.client_id=p.client_id AND g.user_id=?))" : clientProjectGrantSql("p")})`;
+    scope = `(${projectOwnerAccessSql("p")} OR EXISTS(SELECT 1 FROM organization_memberships m WHERE m.organization_id=p.organization_id AND m.user_id=? AND m.status='active') OR ${a.staff ? "EXISTS(SELECT 1 FROM project_staff ps WHERE ps.project_id=p.id AND ps.user_id=?) OR (p.organization_id IS NULL AND EXISTS(SELECT 1 FROM client_account_access g WHERE g.client_id=p.client_id AND g.user_id=?))" : clientProjectGrantSql("p")})`;
     args.push(user, user, user);
     if (a.staff) args.push(user);
   }
@@ -88,6 +88,9 @@ projectChatRouter.use(root + "*", async (c, next) => {
     return fail(c, "mfa_required", 403);
   await next();
 });
+projectChatRouter.get(root + "/unread-count", async (c) =>
+  c.json({ unread: await projectChatUnread(c) }),
+);
 projectChatRouter.get(root + "/projects", async (c) => {
   const a = await actor(c);
   if (!a.read || !a.projects) return fail(c, "forbidden", 403);

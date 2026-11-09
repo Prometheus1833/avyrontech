@@ -40,6 +40,7 @@ const SubscriptionsTab = lazyWithRetry(() => import("@/components/dashboard/Clie
 const StatsTab = lazyWithRetry(() => import("@/components/dashboard/StatsTab").then((m) => ({ default: m.StatsTab })));
 const ClientBillingTab=lazyWithRetry(()=>import("@/components/dashboard/ClientBillingTab"));
 const ClientSupportTab=lazyWithRetry(()=>import("@/components/dashboard/ClientSupportTab"));
+const ClientServicesTab=lazyWithRetry(()=>import("@/components/dashboard/ClientServicesTab"));
 const InvoicesTab = lazyWithRetry(() => import("@/components/dashboard/InvoicesTab").then((m) => ({ default: m.InvoicesTab })));
 const TicketsTab = lazyWithRetry(() => import("@/components/dashboard/TicketsTab").then((m) => ({ default: m.TicketsTab })));
 const StaffClientsTab = lazyWithRetry(() => import("@/components/dashboard/StaffClientsTab").then((m) => ({ default: m.StaffClientsTab })));
@@ -98,7 +99,7 @@ function ProfileDashboard() {
     isSuperAdmin, isStaff, isAdmin, signOut } = useAuth();
   const access = useMemo(() => buildAccess({ roles, capabilities, email: user?.email, superadmin: isSuperAdmin,hasCollaborations }), [roles, capabilities, user?.email, isSuperAdmin,hasCollaborations]);
   const {items:cartItems}=useAccountCart();
-  const activityCounts = useDashboardActivity(user?.id, access.isStaff, `${platformRole||""}:${[...capabilities].sort().join(",")}`);
+  const activityCounts = useDashboardActivity(user?.id, access.isStaff||access.isClient, `${platformRole||""}:${[...capabilities].sort().join(",")}`,access.isClient);
   const [params, setParams] = useSearchParams();
   const legacyMaintenance = !access.isClient && params.get("tab") === "maintenance" && (!access.isSuperAdmin || (params.has("project") && params.get("core") !== "system"));
   const clientTarget=access.isClient?clientSectionDestination(params.get("tab")||""):null;
@@ -184,23 +185,26 @@ function ProfileDashboard() {
   };
 
   const toggleGroup = (group: string) => setOpenGroups((current) => ({ ...current, [group]: !(current[group] ?? true) }));
+  const sectionCount = (section:SectionId) => section==="cart"&&access.isClient?cartItems.length:activityCounts[section];
+  const sectionCountLabel = (section:SectionId) => section==="tickets"&&access.isClient?"mesaje necitite":"activități de văzut";
 
-  const NavButton = ({ section, mobile = false }: { section: SectionId; mobile?: boolean;
+  const NavButton = ({ section, mobile = false, card = false }: { section: SectionId; mobile?: boolean; card?: boolean;
   }) => {
     if (!canOpenSection(section, access)) return null;
     const sectionMeta = dashboardSectionMeta(section,access.isClient);
     const Icon = sectionMeta.icon;
     const label = section === "projects" && !access.isStaff ? "Proiectele mele" : section === "intern" && !access.isStaff ? "Mesaje proiecte" : sectionMeta.label;
     const active = tab === section;
-    const count=section==="cart"&&access.isClient?cartItems.length:section==="tickets"&&access.isClient?(activityCounts.tickets||0)+(activityCounts.intern||0):activityCounts[section];
-    const countLabel=section==="cart"&&access.isClient?(count===1?"produs în coș":"produse în coș"):"activități de văzut";
+    const clientCard = card && access.isClient && !mobile && !sidebarCollapsed;
+    const count=sectionCount(section);
+    const countLabel=section==="cart"&&access.isClient?(count===1?"produs în coș":"produse în coș"):sectionCountLabel(section);
     return (
-      <><button type="button" data-os-section={section} aria-current={active?"page":undefined} aria-label={`${label}${count ? `, ${count} ${countLabel}` : ""}`} title={sidebarCollapsed ? label : undefined} aria-expanded={section==="servicii-avyron"?servicesExpanded:undefined} onClick={() => {if(section==="servicii-avyron"){setServicesExpanded((current) =>tab===section?!current:true);if(tab!==section)void openSection(section);}else void openSection(section);}} className={`${mobile ? "flex min-w-0 flex-1 flex-col" : "w-full flex-row"} group flex items-center justify-center gap-1.5 rounded-xl ${mobile && access.isClient ? "px-0" : "px-3"} py-2.5 text-left text-xs font-medium transition lg:justify-start ${active ? "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white shadow-[0_10px_30px_-16px_rgba(124,58,237,.9)]" : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"}`}>
-      <span className={`relative inline-flex shrink-0 ${count ? "mr-1.5" : ""}`}><Icon className="size-4 shrink-0" strokeWidth={2.1} /><ActivityBadge count={count} label={section === "intern" || section === "announcements" ? "necitite" : countLabel} /></span>
+      <><button type="button" data-os-section={section} aria-current={active?"page":undefined} aria-label={`${label}${count ? `, ${count} ${countLabel}` : ""}`} title={sidebarCollapsed ? label : undefined} aria-expanded={section==="servicii-avyron"?servicesExpanded:undefined} onClick={() => {if(section==="servicii-avyron"){setServicesExpanded((current) =>tab===section?!current:true);if(tab!==section)void openSection(section);}else void openSection(section);}} className={`${mobile ? "flex min-w-0 flex-1 flex-col" : clientCard ? "relative min-h-20 w-full flex-col" : "w-full flex-row"} group flex ${clientCard ? "items-start justify-between" : "items-center justify-center lg:justify-start"} gap-1.5 rounded-xl ${mobile && access.isClient ? "px-0" : "px-3"} py-2.5 text-left text-xs font-medium transition ${active ? "bg-gradient-to-r from-violet-600/90 to-indigo-600/80 text-white shadow-[0_10px_30px_-16px_rgba(124,58,237,.9)]" : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"}`}>
+      <span className={`relative inline-flex shrink-0 ${count ? "mr-1.5" : ""}`}><Icon className="size-4 shrink-0" strokeWidth={2.1} />{!clientCard&&<ActivityBadge count={count} label={section === "intern" || section === "announcements" ? "necitite" : countLabel} />}</span>{clientCard&&<ActivityBadge count={count} label={countLabel} placement="card" />}
       {mobile ? (
             <span className="max-w-full truncate text-[9px]">{sectionMeta.mobileLabel || label}</span>
           ) : (
-            !sidebarCollapsed && <span className={access.isClient?"min-w-0 break-words text-[11px] leading-4":"truncate"}>{label}</span>
+            !sidebarCollapsed && <span className={access.isClient?"w-full min-w-0 break-words text-[11px] leading-4":"truncate"}>{label}</span>
           )}
     {section==="servicii-avyron"&&!sidebarCollapsed&& (
             <ChevronDown className={`ml-auto size-3 ${servicesExpanded?"rotate-180":""}`}/>
@@ -246,7 +250,7 @@ function ProfileDashboard() {
                     access.isClient?<p className="mb-2 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">{group.label}</p>:(<button type="button" onClick={() => toggleGroup(group.id)} aria-expanded={expanded} className="mb-1 flex w-full items-center justify-between rounded-lg px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-slate-400 transition hover:bg-white/[0.035] hover:text-slate-400"><span>{group.label}</span><ChevronDown className={`size-3 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} /></button>)
                   )}
               <div className={`grid transition-[grid-template-rows,opacity] duration-200 ${expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-60"}`}><div className="min-h-0 overflow-hidden"><div className={access.isClient?"grid grid-cols-2 gap-1":"space-y-1"}>{expanded && group.items.map((section) => (
-                            <NavButton key={section.id} section={section.id} />))}</div></div></div>
+                            <NavButton key={section.id} section={section.id} card />))}</div></div></div>
             </div>
               );
           })}
@@ -323,6 +327,9 @@ function ProfileDashboard() {
                 <TabsContent value="social-manager" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["social-manager"].label} className="mt-0"><SocialMediaManagerTab /></TabsContent>
               )}
           <TabsContent value="profile" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["profile"].label} className="mt-0"><ProfileTab /></TabsContent><TabsContent value="settings" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["settings"].label} className="mt-0"><SettingsTab /></TabsContent><TabsContent value="collection" role="region" aria-labelledby={undefined} aria-label={dashboardSectionMeta("collection",access.isClient).label} className="mt-0"><ProductCollectionTab key={user?.id} /></TabsContent><TabsContent value="projects" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["projects"].label} className="mt-0"><CloudflareProjects embedded /></TabsContent>
+          {access.isClient && (
+                <TabsContent value="my-services" role="region" aria-labelledby={undefined} aria-label="Serviciile mele" className="mt-0"><ClientServicesTab key={user?.id} /></TabsContent>
+              )}
           {access.isClient && (
                 <><TabsContent value="catalog" role="region" aria-labelledby={undefined} aria-label={dashboardSectionMeta("catalog",access.isClient).label} className="mt-0"><CustomerCatalogTab kind="service" /></TabsContent><TabsContent value="product-catalog" role="region" aria-label="Produse" className="mt-0"><CustomerCatalogTab kind="product" /></TabsContent><TabsContent value="orders" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["orders"].label} className="mt-0"><OrdersTab /></TabsContent><TabsContent value="subscriptions" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["subscriptions"].label} className="mt-0"><SubscriptionsTab /></TabsContent><TabsContent value="payments" role="region" aria-labelledby={undefined} aria-label={dashboardSectionMeta("payments",access.isClient).label} className="mt-0"><ClientBillingTab key={user?.id} /></TabsContent><TabsContent value="invoices" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["invoices"].label} className="mt-0"><InvoicesTab /></TabsContent><TabsContent value="cart" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["cart"].label} className="mt-0"><CartTab /></TabsContent><TabsContent value="stats" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["stats"].label} className="mt-0"><StatsTab /></TabsContent><TabsContent value="tickets" role="region" aria-labelledby={undefined} aria-label={DASHBOARD_SECTION_META["tickets"].label} className="mt-0"><ClientSupportTab /></TabsContent></>
               )}
@@ -455,13 +462,13 @@ function ProfileDashboard() {
                 const Icon = sectionMeta.icon;
                 const active = tab === section.id;
                 return (
-                      <button key={section.id} type="button" onClick={() => openSection(section.id)} aria-current={active ? "page" : undefined} className={`flex min-h-20 flex-col items-start justify-between rounded-xl border p-3 text-left transition ${active ? "border-violet-400/35 bg-violet-500/15 text-white" : "border-white/[0.07] bg-white/[0.025] text-slate-300 hover:border-violet-400/25"}`}><span className="relative inline-flex"><Icon className="size-4 text-violet-300" /><ActivityBadge count={activityCounts[section.id]} label="activități de văzut" /></span><span className="mt-3 text-xs font-medium leading-tight">{sectionMeta.label}</span></button>
+                      <button key={section.id} type="button" onClick={() => openSection(section.id)} aria-current={active ? "page" : undefined} aria-label={`${sectionMeta.label}${sectionCount(section.id)?`, ${sectionCount(section.id)} ${sectionCountLabel(section.id)}`:""}`} className={`relative flex min-h-20 flex-col items-start justify-between rounded-xl border p-3 text-left transition ${active ? "border-violet-400/35 bg-violet-500/15 text-white" : "border-white/[0.07] bg-white/[0.025] text-slate-300 hover:border-violet-400/25"}`}><span className="relative inline-flex"><Icon className="size-4 text-violet-300" />{!access.isClient&&<ActivityBadge count={activityCounts[section.id]} label="activități de văzut" />}</span>{access.isClient&&<ActivityBadge count={sectionCount(section.id)} label={sectionCountLabel(section.id)} placement="card" />}<span className="mt-3 text-xs font-medium leading-tight">{sectionMeta.label}</span></button>
                     );
               })}
             </div>
           </section>
             ))}
-          {access.isClient&&<a href={publicSiteHref("/blog")} className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-violet-400/20 bg-violet-500/[.07] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-violet-500/15"><BookOpen className="size-4 shrink-0 text-violet-300" />Blogul Avyron</a>}
+          {access.isClient&&<a href={publicSiteHref("/blog")} className="relative flex min-h-12 w-full items-center justify-center rounded-xl border border-violet-400/20 bg-violet-500/[.07] px-12 py-3 text-center text-sm font-semibold text-slate-100 transition hover:bg-violet-500/15"><BookOpen aria-hidden className="absolute left-4 size-4 text-violet-300" /><span>Blogul Avyron</span></a>}
           <button type="button" onClick={() => void signOut().then(() => window.location.assign("/"))} className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-400/15 bg-rose-400/[0.06] px-4 py-3 text-xs font-semibold text-rose-200"><LogOut className="size-4" /> Deconectare</button>
         </nav>
       </SheetContent>

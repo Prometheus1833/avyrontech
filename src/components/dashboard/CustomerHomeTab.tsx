@@ -88,16 +88,16 @@ export function CustomerHomeTab({
       >
         {[
           {
-            id: "projects" as const,
-            label: "Proiectele mele",
-            description: "Progres, livrabile și proiecte finalizate.",
-            icon: Boxes,
-          },
-          {
             id: "subscriptions" as const,
             label: "Mentenanță / Abonamente",
             description: "Planurile active și serviciile incluse.",
             icon: Repeat,
+          },
+          {
+            id: "projects" as const,
+            label: "Proiectele mele",
+            description: "Progres, livrabile și proiecte finalizate.",
+            icon: Boxes,
           },
           {
             id: "collection" as const,
@@ -106,9 +106,9 @@ export function CustomerHomeTab({
             icon: BadgeCheck,
           },
           {
-            id: "catalog" as const,
-            label: "Servicii",
-            description: "Serviciile AVYRON pentru proiectul tău.",
+            id: "my-services" as const,
+            label: "Serviciile mele",
+            description: "Servicii din proiecte și achiziții confirmate.",
             icon: Boxes,
           },
           {
