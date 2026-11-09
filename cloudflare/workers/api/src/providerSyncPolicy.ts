@@ -9,7 +9,7 @@ export const FINANCIAL_PROVIDER_PLAYBOOKS = [
     authentication: "Cheie API în secretul Worker + secretul webhook separat pentru test/live.",
     intake: "Webhook semnat pe corpul brut; deduplicare după event ID și verificarea resursei/comenzii. Evenimentele pot veni în altă ordine.",
     reconciliation: "Evenimentele eșuate se reiau după event ID; plățile confirmate, refundurile și payouturile se reconciliază separat, fără a presupune decontarea bancară.",
-    gate: "Verificarea identității și dreptul de încasare în cont, test mode, webhook live și MFA pentru operațiuni interne.",
+    gate: "Verificarea identității și dreptul de încasare în cont, test mode, webhook live și politica de autentificare configurată pentru operațiuni interne.",
     cadence: "Webhook la eveniment; reconciliere periodică limitată și reluare idempotentă.",
     sources: ["https://docs.stripe.com/webhooks", "https://docs.stripe.com/api/idempotent_requests"],
   },

@@ -1,3 +1,4 @@
+import { financialMfaSatisfied } from "./mfaPolicy";
 import { isWebsiteSubscription, confirmWebsiteCheckout, recordWebsitePeriod, syncWebsiteSubscriptionStatus, websiteOrderContext, websiteOrderAuthorized, linkWebsiteRenewalOrder, reconcileWebsiteBilling } from "./websiteSubscriptionBilling";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
@@ -428,12 +429,12 @@ billingRouter.get("/api/billing/admin/status",async(c)=>{
     const approved=provider==="oblio"?capabilities.oblio.enabled:configured;
     return {...playbook,phase:financialSyncPhase({provider,configured,approved,connection:records.get(provider),now:Date.now()})};
   });
-  return c.json({providers:capabilities,providerPlaybooks,configuration:billingConfiguration(c.env),security:{mfaEnabled:mfaAuthEnabled(c.env),mfaVerified:Boolean(c.get("mfaVerified")),canVerify:Boolean(await platformRoleForUser(c.env.DB,c.get("userId")))},sessions:sessions.results,subscriptions:subscriptions.results,invoices:invoices.results,pendingInvoices:pendingInvoices.results,paymentsByCurrency:paymentsByCurrency.results,invoicesByCurrency:invoicesByCurrency.results,recentPayments:recentPayments.results,recentSubscriptions:recentSubscriptions.results,recentInvoices:recentInvoices.results,connectionRecords:connectionRecords.results,recentFailures:failed.results});
+  return c.json({providers:capabilities,providerPlaybooks,configuration:billingConfiguration(c.env),security:{mfaEnabled:mfaAuthEnabled(c.env),mfaVerified:Boolean(c.get("mfaVerified")),mfaSatisfied:await financialMfaSatisfied(c),canVerify:Boolean(await platformRoleForUser(c.env.DB,c.get("userId")))},sessions:sessions.results,subscriptions:subscriptions.results,invoices:invoices.results,pendingInvoices:pendingInvoices.results,paymentsByCurrency:paymentsByCurrency.results,invoicesByCurrency:invoicesByCurrency.results,recentPayments:recentPayments.results,recentSubscriptions:recentSubscriptions.results,recentInvoices:recentInvoices.results,connectionRecords:connectionRecords.results,recentFailures:failed.results});
 });
 
 billingRouter.post("/api/billing/admin/connections/:provider/verify",async(c)=>{
   if (!(await platformRoleForUser(c.env.DB,c.get("userId")))) return c.json({error:{code:"platform_role_required"}},403);
-  if (!c.get("mfaVerified")) return c.json({error:{code:"mfa_required"}},403);
+  if (!(await financialMfaSatisfied(c))) return c.json({error:{code:"mfa_required"}},403);
   const provider=c.req.param("provider");
   if (!["stripe","oblio","revolut_merchant"].includes(provider)) return c.json({error:{code:"unsupported_provider"}},404);
   const rate=await checkRateLimit(c.env.DB,[{key:`billing_verify:${c.get("userId")}:h`,limit:12,windowSec:3600}]);
@@ -456,7 +457,7 @@ billingRouter.post("/api/billing/admin/connections/:provider/verify",async(c)=>{
 
 billingRouter.post("/api/billing/admin/invoices/:orderId/retry",async(c)=>{
   if(!c.get("roles").some((role)=>role==="staff"||role==="admin"))return c.json({error:{code:"forbidden"}},403);
-  if(!c.get("mfaVerified"))return c.json({error:{code:"mfa_required"}},403);
+  if(!(await financialMfaSatisfied(c)))return c.json({error:{code:"mfa_required"}},403);
   if(!providerCapabilities(c.env).oblio.enabled)return c.json({error:{code:"oblio_approval_or_configuration_required"}},409);
   const order=await getOrder(c.env.DB,c.req.param("orderId"));
   if(!order||order.status!=="paid")return c.json({error:{code:"paid_order_required"}},409);

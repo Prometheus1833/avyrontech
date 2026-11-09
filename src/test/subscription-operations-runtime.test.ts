@@ -39,6 +39,7 @@ describe("Subscription operations: real handlers, SQLite migrations and existing
     actor: string,
     mfa: boolean,
     beforeBatch: (() => void) | null;
+  let mfaPolicy: string | undefined;
   beforeEach(() => {
     db = new DatabaseSync(":memory:");
     db.exec("PRAGMA foreign_keys=ON");
@@ -64,6 +65,7 @@ describe("Subscription operations: real handlers, SQLite migrations and existing
     );
     actor = "owner";
     mfa = true;
+    mfaPolicy = undefined;
     beforeBatch = null;
     const DB = {
       prepare: (sql: string) => new Statement(db, sql),
@@ -88,6 +90,7 @@ describe("Subscription operations: real handlers, SQLite migrations and existing
       Object.assign(c.env, {
         DB,
         ADMIN_MFA_POLICY: "optional_until_enrollment",
+        MFA_AUTH_ENABLED: mfaPolicy,
       });
       c.set("userId", actor);
       c.set(
@@ -529,6 +532,16 @@ describe("Subscription operations: real handlers, SQLite migrations and existing
       expect(item).not.toHaveProperty(field);
     actor = "a";
     expect((await request("/api/internal/subscriptions")).status).toBe(403);
+  });
+  it("allows authorized internal records under the explicit disabled policy while retaining client isolation", async () => {
+    mfa = false;
+    mfaPolicy = "false";
+    const response = await request("/api/internal/subscriptions", internal(), "POST", "internal-explicit-disabled-policy");
+    expect(response.status).toBe(200);
+    const saved = await response.json();
+    expect(db.prepare("SELECT id FROM financial_expenses WHERE id=?").get(saved.id)).toBeTruthy();
+    actor = "a";
+    expect((await request("/api/internal/subscriptions", internal(), "POST", "client-explicit-disabled-policy")).status).toBe(403);
   });
   it("enforces MFA, idempotency and optimistic concurrency for internal accounts", async () => {
     const b = internal(),

@@ -31,7 +31,7 @@ describe("financial dashboard contract", () => {
     expect(response.status).toBe(200);
     const status = await response.json();
     expect(status).toMatchObject({
-      security: { mfaEnabled: false, mfaVerified: false, canVerify: false },
+      security: { mfaEnabled: false, mfaVerified: false, mfaSatisfied: true, canVerify: false },
       providers: { stripe: { enabled: false }, oblio: { enabled: false } },
       paymentsByCurrency: [], invoicesByCurrency: [],
       recentPayments: [], recentSubscriptions: [], recentInvoices: [], connectionRecords: [],
@@ -55,9 +55,14 @@ describe("financial dashboard contract", () => {
     expect((await testKeyInProduction.json()).preferred).toBeNull();
   });
 
-  it("blocks invoice issuance retry when MFA was not actually verified, even if the global switch is off", async () => {
-    const response = await adminApp().request("http://localhost/api/billing/admin/invoices/order-1/retry", { method: "POST" }, { MFA_AUTH_ENABLED: "false" } as AppBindings["Bindings"]);
+  it.each([undefined, "true", "invalid"])("blocks invoice retry without a satisfied MFA policy: %s", async (policy) => {
+    const response = await adminApp().request("http://localhost/api/billing/admin/invoices/order-1/retry", { method: "POST" }, { MFA_AUTH_ENABLED: policy } as AppBindings["Bindings"]);
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({ error: { code: "mfa_required" } });
+  });
+  it("honors the explicit disabled policy without bypassing invoice approval or configuration", async () => {
+    const response = await adminApp().request("http://localhost/api/billing/admin/invoices/order-1/retry", { method: "POST" }, { MFA_AUTH_ENABLED: "false" } as AppBindings["Bindings"]);
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: { code: "oblio_approval_or_configuration_required" } });
   });
 });
