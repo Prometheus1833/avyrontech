@@ -1,5 +1,7 @@
 # Continuitatea proiectului AVYRON
 
+AVY Chat — 09.11.2026: [context comercial și prețuri](./AVY_CHAT_PRICING.md). Corecția distinge proiectele personalizate de produsele digitale, citește tarifele configurate în D1, clarifică întrebările ambigue și validează sumele generate. Se reutilizează AI Core și modelele existente, numai în cotele gratuite. Nu necesită migrare sau rescrierea configurațiilor personalizate. Starea CI și a verificării live se citește în PR.
+
 Reconciliere de producție — 09.11.2026: [inventar, verificări și rollout](./RELEASE_RECONCILIATION_2026-11-09.md) pentru PR-urile #122–#129 și migrările 0110–0113. Se păstrează ordinea dependențelor, sesiuni fără activare MFA/Access, portalul simplificat, abonamentul website, Site Builder / Etape, portofoliul și Leads Agency. Configurația Cloudflare confirmă că domeniile canonice sunt servite de Workerul `avyrontech` cu ASSETS; compatibilitatea Pages rămâne verificată separat. PR #110 și proiectele cabinetelor sunt excluse. Starea merge/deploy și versiunile efective se verifică în raport și PR, nu se deduc din această notă.
 
 Securitate — 08.11.2026: [audit, limită Access și rollback](./security/SECURITY_BOUNDARIES_2026-11-08.md), migrare aditivă 0110, cookie host-only/rotație/revocare, importator legacy restricționat și teste native Workers/D1. Access este doar pregătit, configurarea externă fiind amânată explicit de utilizator; MFA nu se activează. Nu s-au aplicat migrări remote, DNS/WAF sau deploy. Verificați commitul și rezultatele finale în PR. Cabinetul și PR #110 sunt excluse.
