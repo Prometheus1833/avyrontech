@@ -42,6 +42,7 @@ Verificări locale executate:
 | Tipuri aplicație și Worker | PASS |
 | ESLint repository | PASS, 0 erori; 4 avertismente preexistente Fast Refresh în alte fișiere |
 | Registru + migrare + finanțe + Site Builder + catalog servicii | PASS, 90 teste |
+| Operațiuni și prețuri/izolare chatbot după reconcilierea catalogului | PASS, 73 teste |
 | Browser Chromium, 320/390/1440 px | PASS, 32 scenarii + recuperare eroare în serverul de dezvoltare |
 | WebKit/Safari emulat, 320/1440 px | PASS, 12 scenarii + recuperare eroare în serverul de dezvoltare |
 | axe-core, registru și atelier, 320/1440 px | PASS, 0 încălcări automate în suprafețele analizate; nu certifică WCAG integral |
@@ -51,6 +52,8 @@ Verificări locale executate:
 | Build standalone Worker | PASS |
 | API Worker, tipuri generate și dry-run | PASS |
 | Bootstrap / contract comun / snapshot migrare | PASS, sincronizate |
+
+Regresia CI a identificat șase fixture-uri care inserau serviciul acum înregistrat de 0117. Pregătirea scenariilor actualizează înregistrarea canonică existentă și folosește cheia stabilă, fără înlocuirea identității și fără schimbarea aserțiunilor pentru preț, monedă, servicii inactive sau confidențialitate.
 
 Capturile Chromium au fost inspectate la 320 px pentru registru și 1440 px pentru criteriile și resursele Site Builder. Bazele locale rezultate au 87 produse și 49 servicii/pachete cu identități complete. Migrarea este testată și cu articole proprii, coliziuni de numere/SKU, master personalizat și reexecutare fără duplicate. Scenariile acoperă drafturi și aprobare, retragerea surselor, revocarea accesului, protecția inter-clienți existentă și conflicte concurente de sincronizare.
 
