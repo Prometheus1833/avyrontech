@@ -215,7 +215,7 @@ test("Leaduri: pipeline compact, priorități, etape și motive comerciale de el
     await expect(dialog.getByText(name, { exact: true })).toBeVisible();
   await dialog.getByText("Nu dorește să plătească", { exact: true }).click();
   await dialog.getByRole("button", { name: "Confirmă eliminarea" }).click();
-  expect(state.removed()).toMatchObject({ reasonCode: "unwilling_to_pay" });
+  await expect.poll(() => state.removed()).toMatchObject({ reasonCode: "unwilling_to_pay" });
   await expect(dialog).toBeHidden();
   await page.screenshot({
     path: info.outputPath("leads-pipeline.png"),

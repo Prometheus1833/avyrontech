@@ -1,5 +1,17 @@
 # Verificare și reconciliere AVYRON — 10 noiembrie 2026
 
+## Actualizare cumulativă după PR #146 și #147
+
+- Codul AVYRON finalizat este integrat până la `main` / `012e8246c6b9302ac33dc9b41ccb8548e24e4aa0`. Release-ul #147 are arborele `48434e00e8182f0a6b9883094dc5fd7f6d64950a`, identic candidatului verificat. Build Cloudflare `3205fd3c-7998-4d9d-aff0-c736c5e04f2e` a reușit; versiunea `2a4715b5-6100-4ef0-b996-6bfce494a8f3` a fost confirmată la 100%. Acestea sunt identificatori ai checkpointului #147; următoarele publicări se documentează în PR, fără a confunda snapshotul cu starea viitoare.
+- Ultimul inventar nu identifică sursă AVYRON necomisă. PR-urile recente sunt integrate direct sau prin consolidări; headurile PR #124/#127 sunt deja în istoricul main, deși PR-urile au fost închise prin consolidare. Ramurile istorice echivalente/înlocuite nu se reintroduc peste sistemele actuale. PR #110 al cabinetului este singurul PR deschis și rămâne exclus.
+- Stripe și Oblio au trecut din nou verificarea API și sincronizarea din contul real Owner. Eroarea Oblio inițială, descrisă mai jos, a fost remediată prin #146: modul redirect neimplementat în Workers a fost înlocuit, iar cheia nouă a fost validată securizat. Firma este neplătitoare, cu nomenclatorul confirmat `Neplatitor TVA` 0% și seria AVY. Emiterea automată este activată pentru comenzile eligibile cu plată confirmată nativ; emailul automat rămâne oprit. CM, Cutiuța Magică și Retuvo sunt nemodificate.
+- Încasarea, factura reală și transmiterea e-Factura/SPV nu au fost executate ca test. Candidatul de consistență reformulează cerințele SPV ca instrucțiuni, fără o confirmare dedusă din autentificarea API. Comutatorul de emitere activ nu certifică aprobarea fiecărui articol sau document.
+- Recontrol live: D1 quick_check OK, zero încălcări FK, migrarea 0118; cele patru bucketuri R2 fără r2.dev ori domenii publice; API-uri private 401/private,no-store; cinci fișiere JS/CSS publice comparate SHA-256, inclusiv bundle-urile modificate. Auditul SEO live a trecut pentru 80 URL-uri, două robots și excluderile app/private. Indexarea efectivă și traficul nu se deduc din acest audit.
+- Rămân neconfigurate, conform etapei agreate: Bouncer și conformitatea pentru fișiere sensibile, Access, registrar .ro și Revolut Merchant. Hugging Face a fost omis explicit. Backupul automat general nu este operațional; înregistrările de backup per document/general nu conțin execuții verificate în acest checkpoint. Existența bucketurilor private și testele sintetice nu se prezintă drept backup complet activ.
+- CI pe commitul main al #147 a trecut: 1.476 teste PASS, un benchmark opțional SKIP, 520 scenarii browser PASS și șase probe native furnizori PASS; Security PASS. Verify: https://github.com/Prometheus1833/avyrontech/actions/runs/42884211035 ; Security: https://github.com/Prometheus1833/avyrontech/actions/runs/42884211339 . Rularea anterioară a PR-ului avusese un scenariu CRM trecut la retry; corecția de consistență așteaptă explicit rezultatul asincron al acelui test, fără schimbarea aserțiunii sau a logicii CRM. Cele 20 de scenarii locale Chromium/WebKit ale corecției landingului au trecut. Verificările și publicarea corecției de consistență se înregistrează în PR-ul ei, nu se atribuie anticipat acestui checkpoint.
+
+Secțiunile următoare păstrează diagnosticul inițial #145 și probele lui istorice. Pentru configurarea actuală Oblio prevalează actualizarea de mai sus și [raportul dedicat](../OBLIO_STRIPE_ACTIVATION_2026-11-10.md).
+
 ## Destinație și delimitare
 
 Bază: `origin/main` la `2acd9d26a7f7c803ea847740862dc0ceb223cd11` (PR #144).
@@ -64,7 +76,7 @@ Auditul live înaintea candidatului: **PASS**, 80 URL-uri, două robots, trei ex
 
 Surse oficiale: [raportul Indexarea paginilor](https://support.google.com/webmasters/answer/7440203), [sitemapuri](https://developers.google.com/search/docs/crawling-indexing/sitemaps/overview), [solicitări de recrawl](https://developers.google.com/search/docs/crawling-indexing/ask-google-to-recrawl). Google decide indexarea; nu există o setare legitimă care garantează trafic sau indexare imediată.
 
-## Verificări operaționale și limite
+## Verificări operaționale și limite la checkpointul inițial #145
 
 - Ownerul real Prometheus a rămas autentificat după reîncărcarea dashboardului în Safari; noua navigație, Leaduri Viitoare și codurile catalogului sunt prezente. Un tab vechi deschis nu reprezintă proba versiunii curente până la reîncărcare.
 - D1 remote: `quick_check=ok`, zero probleme de chei străine; migrarea curentă `0118_future_leads.sql`. Candidatul nu adaugă migrări.
