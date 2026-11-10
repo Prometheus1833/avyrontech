@@ -6,6 +6,18 @@ import { resolve } from 'node:path';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const migrationNames = () => readdirSync(resolve(root, 'cloudflare/d1/migrations')).filter(name => name.endsWith('.sql')).sort();
 
+export function assertMigrationSequence(names) {
+  let previous = -1;
+  if (!Array.isArray(names) || !names.length) throw new Error('D1 migration sequence is empty.');
+  for (const name of names) {
+    const match = typeof name === 'string' && /^(\d{4})(?:_[^/]+)?\.sql$/.exec(name);
+    if (!match || Number(match[1]) <= previous) {
+      throw new Error('D1 migrations must have unique, increasing four-digit numbers.');
+    }
+    previous = Number(match[1]);
+  }
+}
+
 export function assertMigrationPrefix(applied, expected) {
   if (!Array.isArray(applied) || applied.some((name, index) => name !== expected[index])) {
     throw new Error('D1 migration history differs from this release. Audit the database before deploying.');
@@ -75,6 +87,7 @@ export function assertD1Integrity(query) {
 /** Runs using the existing deployment identity. Never creates credentials or
  * changes token scopes. Every failed check stops before publishing code. */
 export function releaseApi({ preview = false, run = cli, expected = migrationNames(), checkAssets = true, ciName = process.env.WRANGLER_CI_OVERRIDE_NAME } = {}) {
+  assertMigrationSequence(expected);
   if (checkAssets && !existsSync(resolve(root, 'dist/index.html'))) throw new Error('Run npm run build before release.');
   const worker = preview ? 'avyrontech-preview' : 'avyrontech';
   if (ciName && ciName !== worker) throw new Error(`Connect this build to ${worker}; refusing a CI Worker-name override.`);

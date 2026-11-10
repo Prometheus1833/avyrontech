@@ -38,6 +38,14 @@ describe('Cloudflare release preflight', () => {
     for (const history of [['0002.sql'],['other.sql'],[...expected,'0003.sql']]) expect(() => assertMigrationPrefix(history, expected)).toThrow();
     expect(() => assertMigrationPrefix(expected.slice(0,1), expected)).not.toThrow();
   });
+  it.each([
+    ['0114_native_billing.sql', '0114_support.sql'],
+    ['0115_native_billing.sql', '0114_support.sql'],
+  ])('rejects duplicate or reordered numbers before any remote call: %s', (...names) => {
+    const calls: string[][] = [];
+    expect(() => releaseApi({ expected: names, checkAssets: false, run: (args: string[]) => { calls.push(args); } })).toThrow('unique, increasing');
+    expect(calls).toHaveLength(0);
+  });
   it('captures recovery information, migrates and audits before deploying', () => {
     const f = fixture(); f.release();
     expect(f.calls.findIndex(args => args.includes('time-travel'))).toBeLessThan(f.calls.findIndex(args => args.includes('apply')));

@@ -1,6 +1,6 @@
 # Plăți/Istoric și debitare recurentă nativă
 
-Bază verificată: `cc61c6d71d3ff7b4f224bb4551decf72bae5d1f4`, ramură dedicată. Migrare aditivă `0114_native_recurring_billing.sql`. Retuvo, Cutiuța Magică, cabinetele și PR #110 sunt excluse.
+Bază verificată: `cc61c6d71d3ff7b4f224bb4551decf72bae5d1f4`, ramură dedicată. Migrare aditivă `0115_native_recurring_billing.sql`, după `0114_support_ticket_read_cursors.sql` existentă. Verificarea locală și release-ul resping acum numerele duplicate înaintea oricărui apel remote. Retuvo, Cutiuța Magică, cabinetele și PR #110 sunt excluse.
 
 ## Traseul clientului
 
@@ -40,7 +40,7 @@ Revolut Merchant: sunt necesare cheile și webhookul verificat ale contului AVYR
 
 Rezultatele exacte, commitul, CI, migrarea remote și versiunea servită se consemnează în PR. Testele locale utilizează conturi, tarife, metode și furnizori sintetici, în SQLite cu toate migrările, Chromium și WebKit. Nu constituie o tranzacție reală sau certificare PCI/WCAG integrală.
 
-Aplicați 0114 cu backupul/verificările release-ului existent înainte de API. Validați în preview: două firme distincte, autorizare explicită, tarif revizuit, revenire cu 0 lei fără încasare, prima plată/renewal, webhook duplicat, anulare, reconcilieri și factură. În producție nu se creează date comerciale sau mandate de test fără autorizarea persoanei responsabile și confirmarea clientului.
+Aplicați 0115 cu backupul/verificările release-ului existent înainte de API. Validați în preview: două firme distincte, autorizare explicită, tarif revizuit, revenire cu 0 lei fără încasare, prima plată/renewal, webhook duplicat, anulare, reconcilieri și factură. În producție nu se creează date comerciale sau mandate de test fără autorizarea persoanei responsabile și confirmarea clientului.
 
 Înainte de primul acord poate fi revertat codul, păstrând migrarea aditivă. După existența unor acorduri, opriți noile activări prin nomenclator și reveniți numai asupra interfeței; păstrați procesarea webhookurilor, anularea, datele acceptate și reconcilierea. Nu faceți downgrade la un API care pierde asocierile beneficiar/proiect și nu ștergeți evidențele financiare. Configurațiile/secretele furnizorilor nu se rotesc ca parte a unui rollback UI.
 
