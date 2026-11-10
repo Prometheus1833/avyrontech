@@ -155,7 +155,7 @@ function PageBody() {
             <div className="inline-flex items-center rounded-full border border-white/15 bg-white/[0.04] px-2 py-1 backdrop-blur">
               <LangSwitch />
             </div>
-            <a href={ro ? "/#hero" : "/en#hero"} aria-label={ro ? "Acasă" : "Home"} className="flex items-center gap-2 rounded-full px-1.5 py-1 transition-colors hover:bg-white/5">
+            <a href={ro ? "/#hero" : "/en#hero"} aria-label={ro ? "AVYRON — Acasă" : "AVYRON — Home"} className="flex items-center gap-2 rounded-full px-1.5 py-1 transition-colors hover:bg-white/5">
               <img src={logo} alt="" width={32} height={32} className="size-7 rounded-md ring-1 ring-white/15 sm:size-8" />
               <span className="font-display text-xs tracking-[0.2em] sm:text-sm">AVYRON</span>
             </a>

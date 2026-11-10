@@ -74,8 +74,8 @@ const FAQ = () => {
             </span>
             <span className="mt-1 hidden text-xs leading-relaxed text-muted-foreground sm:block">
               {lang === "ro"
-                ? "Web design, development, cybersecurity și QA, reunite într-un proces clar și atent la fiecare detaliu."
-                : "Web design, development, cybersecurity and QA brought together in a clear, detail-focused process."}
+                ? "De la prima idee la lansare: design, dezvoltare web, securitate și testare, alături de echipa Avyron."
+                : "From the first idea to launch: design, web development, security and testing with the Avyron team."}
             </span>
           </span>
           <span className="relative grid size-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 text-white transition-transform group-hover:translate-x-0.5 md:size-10">

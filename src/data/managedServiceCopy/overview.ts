@@ -420,8 +420,8 @@ export const SERVICES: ServiceDef[] = [
     title: { ro: "Aplicații Mobile & Web", en: "Mobile & Web Apps" },
     tagline: { ro: "iOS · Android · PWA · SaaS", en: "iOS · Android · PWA · SaaS" },
     desc: {
-      ro: "Construim aplicații mobile și web custom — de la idee, prototip și UX, până la publicare în App Store, Google Play sau pe propriul tău domeniu. Lucrăm cu tehnologii moderne (React, React Native, Node, Supabase) care îți dau viteză, scalare reală și un cost de mentenanță predictibil pe termen lung.",
-      en: "We build custom mobile and web apps — from idea, prototype and UX through to publishing on the App Store, Google Play or your own domain. We use modern technologies (React, React Native, Node, Supabase) that deliver speed, real scalability and predictable long-term maintenance cost.",
+      ro: "Construim aplicații web și mobile pentru procesele afacerii tale: de la idee, design și prototip până la lansare și suport. Alegem tehnologiile și infrastructura după nevoile proiectului, cu integrarea sistemelor existente, accesuri clare și un plan de extindere stabilit împreună.",
+      en: "We build web and mobile apps around your business processes, from the first idea, design and prototype to launch and support. We choose technology and infrastructure for your project's needs, integrating existing systems with clear access controls and an agreed plan for future growth.",
     },
     time: { ro: "Timp aproximativ dezvoltare: 7–30 zile", en: "Approx. development time: 7–30 days" },
     includes: { ro: "Include:", en: "Includes:" },

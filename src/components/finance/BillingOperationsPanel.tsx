@@ -12,6 +12,9 @@ const PROVIDER_LABELS: Record<string, string> = { revolut: "Revolut Merchant", s
 const STATUS_LABELS: Record<string, string> = { created: "Creată", pending: "În așteptare", paid: "Plătită", failed: "Eșuată", expired: "Expirată", cancelled: "Anulată", active: "Activ", past_due: "Restant", paused: "În pauză", incomplete: "Incomplet", trialing: "Perioadă de probă", issued: "Emisă", not_connected: "Neconectat", verifying: "În verificare", connected: "Conectat", error: "Eroare" };
 const PHASE_LABELS: Record<string, string> = { not_connected: "Neconectat", configuration_only: "Configurat, neverificat", awaiting_approval: "Așteaptă aprobare", verification_required: "Necesită verificare API", connected_unsynced: "API verificat, fără sincronizare", synced: "Referințe native verificate", stale: "Sincronizare veche", error: "Eroare de verificare/sincronizare" };
 const statusLabel = (status: string) => STATUS_LABELS[status] || status.replace(/_/g, " ");
+const providerFailureMessage = (code: string) => /unreachable|sync_read_failed|provider_read_failed/.test(code)
+  ? "Furnizorul nu a putut fi contactat. Reîncearcă verificarea API; operațiunea nu este confirmată."
+  : "Verificarea sau sincronizarea nu a reușit. Verifică detaliile și configurarea înainte de a continua.";
 
 export function BillingOperationsPanel() {
   const [setup,setSetup]=useState<string|null>(null);
@@ -21,6 +24,7 @@ export function BillingOperationsPanel() {
   const [retrying, setRetrying] = useState<string | null>(null);
   const [syncing,setSyncing]=useState<string|null>(null);
   const [verifying, setVerifying] = useState<string | null>(null);
+  const [operationErrors, setOperationErrors] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -40,21 +44,33 @@ export function BillingOperationsPanel() {
 
   const verifyConnection = async (provider: BillingAdminStatus["providerPlaybooks"][number]["provider"]) => {
     setVerifying(provider);
+    setOperationErrors(previous => ({ ...previous, [provider]: "" }));
     try {
       const result = await billingApi.verifyConnection(provider);
       toast.success(`${provider}: API verificat${result.detail ? ` · ${result.detail}` : ""}. Datele nu sunt încă sincronizate.`);
       await load();
-    } catch (cause) { toast.error(cause instanceof Error ? cause.message : "Verificarea API nu a reușit."); }
+    } catch (cause) {
+      const code = cause instanceof Error ? cause.message : "verification_failed";
+      setOperationErrors(previous => ({ ...previous, [provider]: code }));
+      toast.error(providerFailureMessage(code));
+      await load();
+    }
     finally { setVerifying(null); }
   };
 
   const syncConnection = async (provider: BillingAdminStatus["providerPlaybooks"][number]["provider"]) => {
     setSyncing(provider);
+    setOperationErrors(previous => ({ ...previous, [provider]: "" }));
     try {
       const {state}=await billingApi.syncConnection(provider);
       const message=state.status==='running'?`Lot verificat · ${state.checked} referințe; continuă următorul lot.`:state.status==='differences'?`${state.issueCount} diferențe de verificat. Nu au fost efectuate operațiuni financiare.`:`${state.checked} referințe AVYRON verificate la furnizor. ${state.checked===0?'Nu există încă tranzacții native de comparat.':''}`;
       toast[state.status==='differences'?'warning':'success'](message); await load();
-    } catch(cause) {toast.error(cause instanceof Error?cause.message:'Sincronizarea nu a reușit.');}
+    } catch(cause) {
+      const code = cause instanceof Error ? cause.message : "sync_failed";
+      setOperationErrors(previous => ({ ...previous, [provider]: code }));
+      toast.error(providerFailureMessage(code));
+      await load();
+    }
     finally{setSyncing(null);}
   };
 
@@ -71,13 +87,13 @@ export function BillingOperationsPanel() {
     <section className="rounded-2xl border border-border/70 bg-card/70 p-5 lg:col-span-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div><h2 className="flex items-center gap-2 font-semibold"><CreditCard className="size-4 text-violet-500" /> Plăți și facturare</h2><p className="mt-1 text-xs text-muted-foreground">Stare operațională pentru checkout, abonamente, carduri tokenizate și facturi.</p></div>
-        <Button size="sm" variant="outline" onClick={() => void load()} disabled={loading}><RefreshCw className={`mr-1 size-3.5 ${loading ? "animate-spin" : ""}`} /> Actualizează</Button>
+        <Button size="sm" variant="outline" onClick={() => { setOperationErrors({}); void load(); }} disabled={loading}><RefreshCw className={`mr-1 size-3.5 ${loading ? "animate-spin" : ""}`} /> Actualizează</Button>
       </div>
       {error && <div role="alert" className="mt-4 flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-xs"><AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" /><span>{error}</span></div>}
       {data && <>
         {!policySatisfied && <div role="alert" className="mt-4 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs"><AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-500" /><span>Politica de acces financiar nu este satisfăcută. Citirea autorizată rămâne disponibilă; verifică starea sesiunii și configurația securității.</span></div>}
         <div className="mt-4 grid items-start gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label="Procesatori și facturare">
-          {data.providerPlaybooks?.map(playbook=>{const record=connectionByProvider.get(playbook.provider);return <article key={playbook.provider} className="min-w-0 rounded-xl border border-border/65 p-3"><h3 className="font-medium">{playbook.title}</h3><Badge className="mt-2 max-w-full whitespace-normal" variant="outline">{PHASE_LABELS[playbook.phase]}</Badge><p className="mt-2 text-xs text-muted-foreground">{playbook.purpose}</p><p className="mt-2 text-[11px] text-muted-foreground">{record?`Ultima sincronizare: ${financeDate(record.last_sync_at)}`:'Nicio sincronizare înregistrată.'}</p><div className="mt-3 flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={()=>setSetup(playbook.provider)}>Configurează</Button>{data.security?.canVerify&&<Button size="sm" disabled={!policySatisfied||playbook.phase==='not_connected'||!!verifying||!!syncing} onClick={()=>void verifyConnection(playbook.provider)}>{verifying===playbook.provider?'Se verifică…':'Verifică API'}</Button>}{data.security?.canVerify&&record?.status==='connected'&&<Button size="sm" variant="outline" disabled={!policySatisfied||!!syncing||!!verifying} onClick={()=>void syncConnection(playbook.provider)}>{syncing===playbook.provider?'Se compară…':record.sync?.status==='running'?'Continuă lotul':'Sincronizează'}</Button>}</div>{record?.sync&&<p className="mt-2 text-xs" role="status">{record.sync.checked} referințe comparate · {record.sync.matched} concordante · {record.sync.issueCount} diferențe{record.sync.status==='running'?' · loturi rămase':''}</p>}{!!record?.sync?.issues.length&&<details className="mt-2 text-xs"><summary>Diferențe de verificat</summary><ul className="mt-2 space-y-1">{record.sync.issues.map(issue=><li className="break-all" key={issue.id}>{issue.id} · {issue.code}</li>)}</ul></details>}{data.security?.mfaEnabled&&!policySatisfied&&<Link className="mt-2 inline-flex min-h-9 items-center text-xs text-violet-300 underline" to="/profil?tab=settings">Confirmă MFA în Setări</Link>}</article>})}
+          {data.providerPlaybooks?.map(playbook=>{const record=connectionByProvider.get(playbook.provider);const failure=operationErrors[playbook.provider]||record?.last_error_code;return <article key={playbook.provider} className="min-w-0 rounded-xl border border-border/65 p-3"><h3 className="font-medium">{playbook.title}</h3><Badge className="mt-2 max-w-full whitespace-normal" variant="outline">{PHASE_LABELS[playbook.phase]}</Badge><p className="mt-2 text-xs text-muted-foreground">{playbook.purpose}</p><p className="mt-2 text-[11px] text-muted-foreground">{record?`Ultima sincronizare: ${financeDate(record.last_sync_at)}`:'Nicio sincronizare înregistrată.'}</p><div className="mt-3 flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={()=>setSetup(playbook.provider)}>Configurează</Button>{data.security?.canVerify&&<Button size="sm" disabled={!policySatisfied||playbook.phase==='not_connected'||!!verifying||!!syncing} onClick={()=>void verifyConnection(playbook.provider)}>{verifying===playbook.provider?'Se verifică…':'Verifică API'}</Button>}{data.security?.canVerify&&record?.status==='connected'&&<Button size="sm" variant="outline" disabled={!policySatisfied||!!syncing||!!verifying} onClick={()=>void syncConnection(playbook.provider)}>{syncing===playbook.provider?'Se compară…':record.sync?.status==='running'?'Continuă lotul':'Sincronizează'}</Button>}</div>{failure&&<div role="alert" className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 p-2 text-xs"><p>{providerFailureMessage(failure)}</p><details className="mt-1"><summary>Detalii verificare</summary><code className="break-all">{failure}</code></details></div>}{record?.sync&&<p className="mt-2 text-xs" role="status">{record.sync.checked} referințe comparate · {record.sync.matched} concordante · {record.sync.issueCount} diferențe{record.sync.status==='running'?' · loturi rămase':''}</p>}{!!record?.sync?.issues.length&&<details className="mt-2 text-xs"><summary>Diferențe de verificat</summary><ul className="mt-2 space-y-1">{record.sync.issues.map(issue=><li className="break-all" key={issue.id}>{issue.id} · {issue.code}</li>)}</ul></details>}{data.security?.mfaEnabled&&!policySatisfied&&<Link className="mt-2 inline-flex min-h-9 items-center text-xs text-violet-300 underline" to="/profil?tab=settings">Confirmă MFA în Setări</Link>}</article>})}
         </div>
         <Dialog open={!!setup} onOpenChange={open=>!open&&setSetup(null)}><DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl"><DialogHeader><DialogTitle>Configurează {data.providerPlaybooks?.find(p=>p.provider===setup)?.title}</DialogTitle><DialogDescription>Configurația folosește Workerul și furnizorii existenți. Secretele nu sunt afișate și nu sunt salvate în formulare sau în baza de conținut.</DialogDescription></DialogHeader>{data.providerPlaybooks?.filter(p=>p.provider===setup).map(playbook=><div key={playbook.provider} className="space-y-4"><ol className="space-y-3 text-sm"><li><strong>1. Acces securizat</strong>{playbook.loginUrl&&<a className="ml-2 inline-flex min-h-10 items-center text-violet-300 underline" href={playbook.loginUrl} target="_blank" rel="noreferrer">Autentificare {playbook.title}</a>}<p className="mt-1 text-xs text-muted-foreground">{data.security?.mfaEnabled ? playbook.authentication : "Folosește sesiunea autorizată Owner / Super Admin. MFA nu este impus în acest mediu; permisiunile și verificările furnizorului rămân obligatorii."}</p>{data.security?.mfaEnabled && <Link className="inline-flex min-h-10 items-center text-violet-300 underline" to="/profil?tab=settings" onClick={()=>setSetup(null)}>Deschide setările MFA</Link>}</li><li><strong>2. Completează configurația Worker</strong><div className="mt-2 space-y-1">{data.configuration?.[playbook.provider]?.fields.map(f=><p key={f.name} className="flex flex-wrap justify-between gap-1 rounded-lg bg-muted/40 px-2 py-1.5 text-xs"><code className="break-all">{f.name}</code><span>{f.configured?'Prezent':'Lipsește'}</span></p>)}</div><p className="mt-2 text-xs text-muted-foreground">Cheile se introduc numai în secretele Workerului avyrontech din contul Avyron. Prezența lor nu dovedește conectarea.</p><a className="inline-flex min-h-10 items-center text-violet-300 underline" href="https://dash.cloudflare.com/" target="_blank" rel="noreferrer">Deschide Cloudflare · Workers → avyrontech → Settings</a></li><li><strong>3. Verifică identitatea și accesul API</strong><p className="mt-1 text-xs text-muted-foreground">{playbook.gate}</p><Button className="mt-2" size="sm" disabled={!data.security?.canVerify||!policySatisfied||playbook.phase==='not_connected'||!!verifying||!!syncing} onClick={()=>void verifyConnection(playbook.provider)}>{verifying===playbook.provider?'Se verifică…':'Verifică și înregistrează conexiunea'}</Button></li><li><strong>4. Finalizare și monitorizare</strong><p className="mt-1 text-xs text-muted-foreground">{playbook.intake} {playbook.reconciliation}</p>{playbook.provider==='oblio'&&<p className="mt-2 text-xs text-amber-300">Emiterea automată este {data.configuration?.oblio?.automaticIssue?'activată în configurație':'oprită'}. Activarea OBLIO_AUTO_ISSUE_ENABLED se face separat, după confirmarea seriei și fiscalității; verificarea API nu emite facturi.</p>}<p className="mt-2 text-xs text-muted-foreground">{playbook.cadence}</p></li></ol><details className="rounded-lg border p-3 text-xs"><summary>Documentație furnizor</summary><div className="mt-2 grid gap-2">{playbook.sources.map((source,i)=><a key={source} href={source} target="_blank" rel="noreferrer" className="break-all text-violet-300 underline">Documentație oficială {i+1}</a>)}</div></details><Button variant="outline" onClick={()=>setSetup(null)}>Închide configurarea</Button></div>)}</DialogContent></Dialog>
         <p className="mt-2 text-[11px] text-muted-foreground">Sincronizarea compară în loturi referințele native AVYRON cu API-ul furnizorului, fără debitări sau emitere de facturi. Nu importă alte firme, conturi bancare ori tranzacții fără comandă AVYRON. Stările nu sunt recalculate la fiecare afișare. „Sincronizare înregistrată” nu dovedește singură că plata, factura și decontarea sunt reconciliate.</p>

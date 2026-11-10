@@ -192,7 +192,7 @@ function StudioBody() {
             <LangSwitch />
           </div>
           {user && <UserMenu />}
-          <a href={ro ? "/#hero" : "/en#hero"} aria-label={ro ? "Acasă" : "Home"} className="flex items-center gap-2 rounded-full px-1.5 py-1 hover:bg-white/5">
+          <a href={ro ? "/#hero" : "/en#hero"} aria-label={ro ? "AVYRON — Acasă" : "AVYRON — Home"} className="flex items-center gap-2 rounded-full px-1.5 py-1 hover:bg-white/5">
             <img src={logo} alt="" width={32} height={32} className="size-7 rounded-md ring-1 ring-white/15 sm:size-8" />
             <span className={`font-display text-xs tracking-[0.2em] sm:text-sm ${user ? "hidden sm:inline" : ""}`}>AVYRON</span>
           </a>

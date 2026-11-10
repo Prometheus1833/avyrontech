@@ -163,7 +163,7 @@ const QaTestingPage = () => {
             </div>
             <a
               href={ro ? "/#hero" : "/en#hero"}
-              aria-label={ro ? "Acasă" : "Home"}
+              aria-label={ro ? "AVYRON — Acasă" : "AVYRON — Home"}
               className="flex items-center gap-2 rounded-full px-1.5 py-1 hover:bg-foreground/5 transition-colors"
             >
               <img src={logo} alt="Avyron" width={32} height={32} className="size-7 sm:size-8 rounded-md ring-1 ring-foreground/15" />
