@@ -18,7 +18,7 @@ export const FINANCIAL_PROVIDER_PLAYBOOKS = [
     authentication: "OAuth client_id/client_secret păstrate doar în secretele Worker; tokenul expiră și se reînnoiește.",
     intake: "Emitere numai după confirmarea plății și aprobarea seriei/TVA. Folosește orderNumber și idempotencyKey stabile per comandă.",
     reconciliation: "Citește factura după serie+număr și listează documentele paginat (max. 100/pagină); verifică separat încasarea și e-Factura.",
-    gate: "Seria, regimul TVA, datele juridice și trimiterea în SPV sunt confirmate; emiterea și e-mailul rămân comutatoare separate.",
+    gate: "Confirmă seria, regimul TVA și datele juridice. Verifică separat configurarea e-Factura/SPV; conectarea API nu confirmă transmiterea documentelor. Emiterea și e-mailul au activări separate.",
     cadence: "La plată confirmată; reconciliere periodică paginată. Sub 30 emiteri/100 s și 30 citiri/10 s.",
     sources: ["https://www.oblio.eu/api/"],
   },
