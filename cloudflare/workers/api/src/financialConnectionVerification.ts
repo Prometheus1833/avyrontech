@@ -8,14 +8,19 @@ type Verification = { ok: true; account: string; capabilities: string[]; detail?
 const API_ROOT = "https://www.oblio.eu/api";
 const REVOLUT_VERSION = "2026-08-17";
 
-async function jsonResponse(url: string, init: RequestInit): Promise<{ ok: boolean; status: number; data: Record<string, unknown> }> {
+async function jsonResponse(url: string, init: RequestInit): Promise<{ ok: boolean; status: number; data: Record<string, unknown>; failure?: string }> {
+  let status = 0;
   try {
     const response = await fetch(url, { ...init, redirect: "error", signal: AbortSignal.timeout(10_000) });
+    status = response.status;
     const parsed:unknown = JSON.parse(await readTextUpTo(response,262144));
     const data = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string,unknown> : {};
     return { ok: response.ok, status: response.status, data };
-  } catch {
-    return { ok: false, status: 0, data: {} };
+  } catch (error) {
+    // Preserve HTTP evidence when a gateway returns HTML instead of JSON.
+    // Neither the response body nor credential-bearing error text is logged.
+    const failure = status ? "invalid_response" : error instanceof Error && /Timeout|Abort/.test(error.name) ? "timeout" : "network";
+    return { ok: false, status, data: {}, failure };
   }
 }
 
@@ -37,14 +42,14 @@ export async function verifyFinancialConnection(env: Env, provider: FinancialPro
     if (!clientId || !clientSecret || !cif || !series) return { ok: false, code: "oblio_secrets_or_series_missing" };
     const token = await jsonResponse(`${API_ROOT}/authorize/token`, {
       method: "POST", headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/json" },
-      body: new URLSearchParams({ client_id: clientId, client_secret: clientSecret }),
+      body: new URLSearchParams({ client_id: clientId, client_secret: clientSecret }).toString(),
     });
     const accessToken = token.data.access_token;
-    if (!token.ok || typeof accessToken !== "string" || !accessToken) return { ok: false, code: `oblio_auth_${token.status || "unreachable"}` };
+    if (!token.ok || typeof accessToken !== "string" || !accessToken) return { ok: false, code: token.failure ? `oblio_auth_${token.status ? `${token.status}_` : ""}${token.failure}` : token.ok ? "oblio_auth_invalid_response" : `oblio_auth_${token.status}` };
     const response = await jsonResponse(`${API_ROOT}/nomenclature/series?cif=${encodeURIComponent(cif)}`, {
       headers: { authorization: `Bearer ${accessToken}`, accept: "application/json" },
     });
-    if (!response.ok) return { ok: false, code: `oblio_series_api_${response.status || "unreachable"}` };
+    if (!response.ok) return { ok: false, code: `oblio_series_api_${response.status || response.failure || "unreachable"}` };
     const rows = Array.isArray(response.data.data) ? response.data.data : [];
     const invoiceSeries = rows.find((row): row is Record<string, unknown> => typeof row === "object" && row !== null && (row as Record<string, unknown>).type === "Factura" && (row as Record<string, unknown>).name === series);
     if (!invoiceSeries) return { ok: false, code: "oblio_invoice_series_not_found" };

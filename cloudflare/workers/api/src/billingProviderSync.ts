@@ -102,7 +102,7 @@ export async function syncBillingReferences(env: Env, provider: FinancialProvide
       const page = await references(env, provider, state), rows = page.results.slice(0, budget);
       let oblioToken: string | undefined;
       if (provider === 'oblio' && rows.length) {
-        const auth = await providerObject('https://www.oblio.eu/api/authorize/token', { 'content-type': 'application/x-www-form-urlencoded' }, { method: 'POST', body: new URLSearchParams({ client_id: env.OBLIO_CLIENT_ID!.trim(), client_secret: env.OBLIO_CLIENT_SECRET!.trim() }) });
+        const auth = await providerObject('https://www.oblio.eu/api/authorize/token', { 'content-type': 'application/x-www-form-urlencoded' }, { method: 'POST', body: new URLSearchParams({ client_id: env.OBLIO_CLIENT_ID!.trim(), client_secret: env.OBLIO_CLIENT_SECRET!.trim() }).toString() });
         if (typeof auth.access_token !== 'string' || !auth.access_token) throw Error('provider_auth_failed');
         oblioToken = auth.access_token;
       }

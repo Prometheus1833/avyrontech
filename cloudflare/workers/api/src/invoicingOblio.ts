@@ -26,6 +26,7 @@ export async function issueOblioInvoice(env: Env, input: OblioInvoiceInput): Pro
   if (!configured(env)) return { issued: false, reason: "unconfigured" };
   const vatPercentage = Number(env.OBLIO_VAT_PERCENTAGE);
   if (!Number.isFinite(vatPercentage) || vatPercentage < 0 || vatPercentage > 100) return { issued: false, reason: "invalid_vat" };
+  if (env.OBLIO_VAT_NAME?.trim() === "Neplatitor TVA" && (vatPercentage !== 0 || input.lines.some(line => line.vatBasisPoints !== undefined && line.vatBasisPoints !== 0))) return { issued: false, reason: "invalid_vat" };
 
   const tokenBody = new URLSearchParams({
     client_id: env.OBLIO_CLIENT_ID!.trim(),
@@ -34,7 +35,9 @@ export async function issueOblioInvoice(env: Env, input: OblioInvoiceInput): Pro
   const tokenResponse = await fetch(`${API_ROOT}/authorize/token`, {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/json" },
-    body: tokenBody,
+    body: tokenBody.toString(),
+    redirect: "error",
+    signal: AbortSignal.timeout(10_000),
   });
   if (!tokenResponse.ok) return { issued: false, reason: "token_failed", status: tokenResponse.status };
   const tokenPayload = await tokenResponse.json() as { access_token?: string };
@@ -42,6 +45,8 @@ export async function issueOblioInvoice(env: Env, input: OblioInvoiceInput): Pro
 
   const invoiceResponse = await fetch(`${API_ROOT}/docs/invoice`, {
     method: "POST",
+    redirect: "error",
+    signal: AbortSignal.timeout(15_000),
     headers: {
       authorization: `Bearer ${tokenPayload.access_token}`,
       "content-type": "application/json",
