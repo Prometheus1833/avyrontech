@@ -55,6 +55,8 @@ Verificări locale executate:
 
 Regresia CI a identificat șase fixture-uri care inserau serviciul acum înregistrat de 0117. Pregătirea scenariilor actualizează înregistrarea canonică existentă și folosește cheia stabilă, fără înlocuirea identității și fără schimbarea aserțiunilor pentru preț, monedă, servicii inactive sau confidențialitate.
 
+Scenariul E2E pentru separarea ID-urilor test/live folosește noua acțiune directă „Sincronizează codurile” și sursele din API. Verificările de persistență a referințelor și blocarea activării neconfirmate sunt păstrate; este verificat și codul de articol completat.
+
 Capturile Chromium au fost inspectate la 320 px pentru registru și 1440 px pentru criteriile și resursele Site Builder. Bazele locale rezultate au 87 produse și 49 servicii/pachete cu identități complete. Migrarea este testată și cu articole proprii, coliziuni de numere/SKU, master personalizat și reexecutare fără duplicate. Scenariile acoperă drafturi și aprobare, retragerea surselor, revocarea accesului, protecția inter-clienți existentă și conflicte concurente de sincronizare.
 
  Testele folosesc baze SQLite de unică folosință și conturi sintetice; nu creează plăți, facturi, mesaje sau consum AI real.
