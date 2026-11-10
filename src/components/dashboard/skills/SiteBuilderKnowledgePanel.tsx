@@ -14,6 +14,9 @@ import {
 } from "@/shared/skills/siteKnowledge";
 type Knowledge = {
   version: string;
+  internalLibrary?: {id:string;title:string;category:string;revision:number}[];
+  connections?: { id: string; title: string; description: string; href: string | null; state: string }[];
+  deliveryGates?: { id: string; title: string; detail: string }[];
   domains: typeof SITE_DOMAIN_PLAYBOOKS;
   features: typeof SITE_FEATURES;
   marketSources: typeof SITE_MARKET_SOURCES;
@@ -136,12 +139,10 @@ export default function SiteBuilderKnowledgePanel({
               Cunoștințe comune · {data.version}
             </p>
             <h2 className="mt-1 text-lg font-semibold">
-              Mai puțin context repetat. Aceeași calitate a produsului.
+              Calitate maximă pentru fiecare client.
             </h2>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
-              Brief minim, profil de nișă și referințe selectate. Masterele
-              vizuale și personalizarea se păstrează la calitatea aprobată;
-              optimizarea pentru web produce variante separate.
+              Organizarea și reutilizarea reduc munca repetitivă internă. Produsul, imaginile și personalizarea sunt rafinate până la standardul de livrare; timpul și consumul AI nu justifică o calitate inferioară.
             </p>
           </div>
           {canManage && (
@@ -164,6 +165,9 @@ export default function SiteBuilderKnowledgePanel({
           identitatea altui client.
         </p>
       </header>
+      {!!data.connections?.length && <section className={panel} aria-label="Resurse conectate Site Builder"><h3 className="text-sm font-semibold">Instrumente și resurse native</h3><div className="mt-3 grid items-start gap-2 sm:grid-cols-2">{data.connections.map(link => <article key={link.id} className="min-w-0 rounded-xl border border-white/10 p-3"><h4 className="text-sm font-semibold">{link.title}</h4><p className="mt-1 text-xs leading-relaxed text-slate-400">{link.description}</p>{link.href ? <a href={link.href} className="mt-2 inline-flex min-h-11 items-center gap-2 text-xs text-cyan-200 underline underline-offset-4">Deschide {link.title}<ArrowRight className="size-3.5" /></a> : <p className="mt-2 text-xs text-slate-400">Acces prin responsabilul autorizat</p>}</article>)}</div><p className="mt-2 text-xs text-slate-400">Catalogul și instrucțiunile sunt reutilizabile. Conectarea și funcționarea integrărilor se verifică pentru fiecare proiect.</p></section>}
+      {!!data.internalLibrary?.length && <section className={panel} aria-label="Artefacte interne disponibile"><h3 className="text-sm font-semibold">Biblioteca Artefacte · resurse active</h3><ul className="mt-2 grid gap-2 sm:grid-cols-2">{data.internalLibrary.map(r => <li key={r.id} className="min-w-0 rounded-lg bg-white/[.035] p-2"><strong className="block text-xs">{r.title}</strong><span className="text-[11px] text-slate-400">{r.category} · revizie {r.revision}</span></li>)}</ul><p className="mt-2 text-xs text-slate-400">Sincronizează pentru a pregăti referințe de revizuit. Faptul că o resursă este activă în bibliotecă nu constituie aprobare pentru utilizarea de către AI.</p></section>}
+      {!!data.deliveryGates?.length && <details className={panel}><summary className="cursor-pointer text-sm font-semibold">Criterii de prezentare către client</summary><div className="mt-3 grid gap-2 sm:grid-cols-2">{data.deliveryGates.map(g => <article key={g.id} className="rounded-lg bg-white/[.035] p-3"><h4 className="text-sm font-semibold">{g.title}</h4><p className="mt-1 text-xs leading-relaxed text-slate-400">{g.detail}</p></article>)}</div></details>}
       <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
         <aside className={panel}>
           <h3 className="text-sm font-semibold">Domeniu / nișă</h3>

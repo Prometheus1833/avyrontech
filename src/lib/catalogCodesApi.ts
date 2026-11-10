@@ -34,7 +34,7 @@ export type ProductCatalogSource = {
   status: string;
 };
 
-export type ServiceCatalogSource = Omit<ProductCatalogSource, "status">;
+export type ServiceCatalogSource = Omit<ProductCatalogSource, "status"> & { currency?: string };
 export type CommercialProviderRef = {
   id: string;
   catalog_id: string;
@@ -68,7 +68,12 @@ export type CommercialCodeDraft = {
   taxStatus: CommercialCode["tax_status"];
 };
 
+export type CommercialJournalEntry = {
+  id: string; created_at: number; entity_type: "service" | "product"; entity_key: string; display_name: string;
+  before_sku: string | null; before_article: string | null; sku: string | null; article: string | null; action: string;
+};
 export const catalogCodesApi = {
+  journal: (offset = 0) => cfAuth.request<{data: CommercialJournalEntry[]; nextOffset: number | null}>(`/api/finance/commercial-codes/journal?offset=${offset}`),
   list: () => cfAuth.request<{ data: CommercialCode[]; services: ServiceCatalogSource[]; products: ProductCatalogSource[]; references: CommercialProviderRef[] }>("/api/finance/commercial-codes"),
   sync: () => cfAuth.request<{ ok: true; created: number; completed: number; existing: number; requiresSku: number; total: number }>("/api/finance/commercial-codes/sync", { method: "POST", headers: { "Idempotency-Key": crypto.randomUUID() } }),
   save: (entityType: "service" | "product", entityKey: string, body: CommercialCodeDraft) =>

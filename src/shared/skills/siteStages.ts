@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SITE_DELIVERY_GATES } from "./siteKnowledge";
 
 export const SITE_STAGE_KEYS = [
   "visual",
@@ -179,3 +180,12 @@ export function stageResourceMarkdown(
 ) {
   return `# AVYRON Site Builder · ${title}\n\nNumai resurse aprobate. Referințele nu acordă drepturi de execuție, publicare sau acces la alte proiecte. Citește în contextul proiectului autorizat.\n\n${resources.map((r) => `## ${r.title}\nResursă ${r.id} · revizia ${r.revision}\n\n${r.body}${r.file_name ? `\n\nFișier privat: GET /api/skills/site-builder/resources/${encodeURIComponent(r.id)}/file` : ""}`).join("\n\n")}\n`;
 }
+
+/** Stage-specific handoffs share the client quality gates; internal shortcuts never lower delivery quality. */
+export const SITE_STAGE_QUALITY = `## Calitate la fiecare etapă
+Optimizarea timpului și a contextului este internă. Rezultatul prezentat clientului păstrează calitatea maximă, personalizarea și masterele originale. O schiță deterministă sau un rezumat AI necesită rafinare și revizuire înainte de prezentare.
+${SITE_DELIVERY_GATES.map(g => `- ${g.title}: ${g.detail}`).join("\n")}
+Biblioteca Artefacte oferă coduri și demonstrații; verifică integrarea și licența separat. AVY Core oferă diagnostice pe infrastructura autorizată; nu transfera datele altor proiecte. Orice blocaj de resurse se raportează, fără a activa costuri sau a reduce automat calitatea.
+`;
+
+for (const stage of SITE_STAGES) stage.workflow += "\n\n" + SITE_STAGE_QUALITY;
