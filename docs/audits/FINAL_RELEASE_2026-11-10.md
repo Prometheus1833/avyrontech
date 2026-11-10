@@ -97,4 +97,6 @@ Surse oficiale: [raportul Indexarea paginilor](https://support.google.com/webmas
 
 Testele fizice Android/iOS, încasarea/factura reală, livrarea notificărilor la date viitoare, furnizorii neconfigurați și conformitatea integrală rămân distincte de rezultatele de mai sus. Nu se declară că orice dispozitiv sau integrare externă este validată.
 
+Prima rulare CI a trecut 519/520 scenarii; verificarea rămasă aștepta formularea veche din cardul „Despre noi”. Așteptarea a fost actualizată la noul text în română, păstrând verificările de navigare și aranjare; reverificarea locală a scenariului a trecut în Chromium și WebKit. Nu s-a modificat codul aplicației ca să fie ocolit testul.
+
 Identificatorii care există numai după merge (commit, build Cloudflare și versiune activă), rezultatul CI pe commitul final și verificările independente după publicare sunt înregistrate în descrierea PR-ului și în raportul de livrare al sesiunii. Capturile GSC și logurile operaționale private rămân în afara Git.

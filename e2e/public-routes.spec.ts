@@ -133,7 +133,8 @@ test.describe("public SEO routes", () => {
     await expect(blogCard).toHaveAttribute("href", "/blog");
     await expect(aboutCard).toHaveAttribute("href", "/despre-noi");
     await expect(aboutCard).toContainText("Despre Noi");
-    await expect(aboutCard).toContainText("Web design, development, cybersecurity și QA");
+    await expect(aboutCard).toContainText("Design, dezvoltare web, securitate și testare");
+    await expect(aboutCard).toContainText("o echipă care înțelege afacerea ta");
     const cardsBox = await servicesCard.boundingBox();
     const ctaBox = await page.locator("#cta").boundingBox();
     expect(cardsBox?.y).toBeGreaterThan(ctaBox?.y ?? 0);
