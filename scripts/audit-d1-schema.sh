@@ -2,6 +2,14 @@
 set -euo pipefail
 
 repository_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+node --input-type=module - "$repository_root" <<'JS'
+import { readdirSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+const root = process.argv[2];
+const { assertMigrationSequence } = await import(pathToFileURL(resolve(root, 'scripts/release-api.mjs')).href);
+assertMigrationSequence(readdirSync(resolve(root, 'cloudflare/d1/migrations')).filter(name => name.endsWith('.sql')).sort());
+JS
 audit_directory=$(mktemp -d /tmp/avyron-d1-audit.XXXXXX)
 audit_database="$audit_directory/avyron.db"
 trap 'rm -rf "$audit_directory"' EXIT
