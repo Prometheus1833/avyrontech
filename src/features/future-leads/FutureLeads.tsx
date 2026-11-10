@@ -218,6 +218,9 @@ export default function FutureLeads() {
   const key = useRef(crypto.randomUUID()),
     request = useRef(0),
     detailRequest = useRef(0),
+    existingRequest = useRef(0),
+    opener = useRef<HTMLElement | null>(null),
+    heading = useRef<HTMLHeadingElement | null>(null),
     savedInput = useRef("");
   const load = useCallback(async () => {
     const token = ++request.current;
@@ -291,10 +294,18 @@ export default function FutureLeads() {
   }, []);
   useEffect(() => {
     if (selected) void show(selected);
+    else {
+      detailRequest.current++;
+      existingRequest.current++;
+      setOpen(false);
+      setBusy(false);
+      setLoadingDetail(false);
+    }
   }, [selected, show]);
   const close = () => {
     if (busy) return;
     detailRequest.current++;
+    existingRequest.current++;
     setOpen(false);
     setConfirmConvert(false);
     if (selected)
@@ -306,7 +317,9 @@ export default function FutureLeads() {
         { replace: true },
       );
   };
-  const create = () => {
+  const create = (target: HTMLElement) => {
+    opener.current = target;
+    existingRequest.current++;
     setLoadingDetail(false);
     setNotice("");
     setRecord(null);
@@ -422,11 +435,16 @@ export default function FutureLeads() {
     }
   }
   async function chooseExisting(id: string) {
+    const token = ++existingRequest.current;
     setLeadId(id);
-    if (!id) return;
+    if (!id) {
+      setBusy(false);
+      return;
+    }
     setBusy(true);
     try {
       const r = await leadsApi.detail(id);
+      if (token !== existingRequest.current) return;
       const l = r.data;
       setInput((p) => ({
         ...p,
@@ -440,9 +458,12 @@ export default function FutureLeads() {
         staffIds: r.assignments.map((a) => a.user_id),
       }));
     } catch (e) {
-      setFormError(futureLeadError(e));
+      if (token === existingRequest.current) {
+        setLeadId("");
+        setFormError(futureLeadError(e));
+      }
     } finally {
-      setBusy(false);
+      if (token === existingRequest.current) setBusy(false);
     }
   }
   const hasErrors = !!error;
@@ -456,7 +477,13 @@ export default function FutureLeads() {
           <div className="mb-1 flex items-center gap-2 text-xs uppercase tracking-[.18em] text-primary">
             <CalendarClock className="h-4 w-4" /> AVYRON · Planificare
           </div>
-          <h2 className="text-2xl font-semibold">Leaduri Viitoare</h2>
+          <h2
+            ref={heading}
+            tabIndex={-1}
+            className="text-2xl font-semibold focus-visible:outline-primary"
+          >
+            Leaduri Viitoare
+          </h2>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
             Clienți confirmați, cu următorul pas programat. Cele mai apropiate
             contactări apar primele.
@@ -473,7 +500,7 @@ export default function FutureLeads() {
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
           {boot?.canCreate && (
-            <Button onClick={create}>
+            <Button onClick={(event) => create(event.currentTarget)}>
               <Plus className="mr-2 h-4 w-4" /> Adaugă / programează
             </Button>
           )}
@@ -614,7 +641,8 @@ export default function FutureLeads() {
                   </div>
                   <button
                     className="min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    onClick={() => {
+                    onClick={(event) => {
+                      opener.current = event.currentTarget;
                       setParams((p) => {
                         p.set("futureLead", row.lead_id);
                         return p;
@@ -639,7 +667,8 @@ export default function FutureLeads() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
+                      onClick={(event) => {
+                        opener.current = event.currentTarget;
                         setParams((p) => {
                           p.set("futureLead", row.lead_id);
                           return p;
@@ -686,6 +715,11 @@ export default function FutureLeads() {
         }}
       >
         <SheetContent
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            if (opener.current?.isConnected) opener.current.focus();
+            else heading.current?.focus();
+          }}
           className="flex h-dvh w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-xl"
           onInteractOutside={(e) => {
             if (busy) e.preventDefault();
@@ -719,6 +753,7 @@ export default function FutureLeads() {
                 <div className="grid gap-2 rounded-xl border bg-muted/20 p-3">
                   <Choice
                     label="Originea înregistrării"
+                    disabled={busy}
                     value={mode}
                     onChange={async (v) => {
                       setMode(v);
@@ -748,6 +783,7 @@ export default function FutureLeads() {
                   {mode === "existing" && (
                     <Choice
                       label="Selectează leadul din CRM"
+                      disabled={busy}
                       value={leadId || "none"}
                       onChange={(v) =>
                         void chooseExisting(v === "none" ? "" : v)

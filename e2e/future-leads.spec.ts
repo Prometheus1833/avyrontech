@@ -67,7 +67,7 @@ const test = base.extend<{ backend: AgencyBackend }>({
                   ? "staff"
                   : "user",
             ],
-            capabilities: [],
+            capabilities: b.actor === "reader" ? ["leads.future.assigned"] : [],
             superadmin: b.actor === "owner",
           },
         });
@@ -320,4 +320,142 @@ test("network save failures preserve the draft and offer a recoverable error", a
   await expect(
     dialog.getByLabel("Ce își dorește clientul", { exact: true }),
   ).toHaveValue("Date păstrate după eroare.");
+});
+
+test("browser Back closes the routed record and restores the list", async ({
+  page,
+  backend,
+}) => {
+  await seed(backend);
+  await page.goto("/profil?tab=future-leads");
+  const region = page
+    .getByRole("region", { name: "Leaduri Viitoare", exact: true })
+    .first();
+  await region.getByRole("button", { name: "Deschide fișa" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(
+    region.getByRole("button", { name: "Deschide fișa" }),
+  ).toBeFocused();
+  await expect(
+    region.getByRole("heading", { name: "Leaduri Viitoare", exact: true }),
+  ).toBeVisible();
+});
+
+test("existing CRM selection is locked while its record loads and preserves the selected identity", async ({
+  page,
+  backend,
+}) => {
+  const r = await backend.request("/api/leads", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Idempotency-Key": crypto.randomUUID(),
+    },
+    body: JSON.stringify({
+      name: "Contact CRM",
+      business: "Business CRM",
+      email: "crm@example.test",
+      source: "Recomandare CRM",
+      product: "Website CRM",
+    }),
+  });
+  expect(r.status).toBe(201);
+  const { id } = (await r.json()) as { id: string };
+  await page.goto("/profil?tab=future-leads");
+  await page.getByRole("button", { name: "Adaugă / programează" }).click();
+  await choose(page, "Originea înregistrării", "Din Leaduri (CRM existent)");
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(`**/api/leads/${id}`, async (route) => {
+    await gate;
+    await route.fallback();
+  });
+  try {
+    await choose(
+      page,
+      "Selectează leadul din CRM",
+      "Business CRM · Recomandare CRM",
+    );
+    await expect(
+      page.getByRole("combobox", {
+        name: "Selectează leadul din CRM",
+        exact: true,
+      }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("combobox", {
+        name: "Originea înregistrării",
+        exact: true,
+      }),
+    ).toBeDisabled();
+  } finally {
+    release();
+  }
+  await expect(
+    page.getByRole("dialog").getByLabel("Firmă / client", { exact: true }),
+  ).toHaveValue("Business CRM");
+  await expect(
+    page.getByRole("combobox", {
+      name: "Selectează leadul din CRM",
+      exact: true,
+    }),
+  ).toBeEnabled();
+});
+
+test("a new allocation opens from its reminder without requiring another login", async ({
+  page,
+  backend,
+}) => {
+  const id = await seed(backend);
+  backend.actor = "reader";
+  let meCalls = 0;
+  await page.route("**/api/auth/me", (route) =>
+    route.fulfill({
+      json: {
+        user: {
+          id: "reader",
+          email: "reader@example.test",
+          display_name: "Staff alocat",
+          email_verified: 1,
+          must_change_password: 0,
+        },
+        profile: { display_name: "Staff alocat" },
+        roles: ["staff"],
+        superadmin: false,
+        capabilities: ++meCalls > 1 ? ["leads.future.assigned"] : [],
+      },
+    }),
+  );
+  await page.route("**/api/notifications?*", (route) =>
+    route.fulfill({
+      json: {
+        data: [
+          {
+            id: "future-reminder",
+            title: "Contactare client programată",
+            body: "Deschide fișa",
+            destination: `/profil?tab=future-leads&futureLead=${id}`,
+            created_at: Date.now(),
+            read_at: null,
+            category: "activity",
+            priority: "important",
+          },
+        ],
+        blogEnabled: true,
+      },
+    }),
+  );
+  await page.goto("/profil?tab=notifications");
+  await page.getByRole("button", { name: "Vezi detalii", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`tab=future-leads&futureLead=${id}`));
+  await expect(
+    page
+      .getByRole("dialog")
+      .getByRole("heading", { name: "Fișa leadului viitor" }),
+  ).toBeVisible();
+  expect(meCalls).toBeGreaterThan(1);
 });

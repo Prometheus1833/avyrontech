@@ -35,6 +35,9 @@ respinse, fără proiecte orfane. Cererile idempotente includ identitatea leadul
 - Numai identități staff/admin active și cu e-mail verificat; clienții nu au acces,
   nici ca membri ai unei organizații și nici prin URL direct.
 - Owner/Super Admin: acces prin identitatea de platformă verificată în D1.
+- Meniul folosește un indicator derivat din alocări (`leads.future.assigned`),
+  recalculat în `/api/auth/me`; nu este un grant și nu acordă acces global CRM.
+  Deschiderea unui reminder reîmprospătează acest context înainte de navigare.
 - `leads.read` global: vizualizarea listei integrale; `leads.write` global:
   administrare. Fără aceste drepturi, un membru vede numai leadurile alocate lui.
 - Creare/programare: `leads.write` + `leads.create`. Conversie:

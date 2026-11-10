@@ -1,3 +1,4 @@
+import { futureLeadHasAssignment } from "../../cloudflare/workers/api/src/futureLeadPolicy";
 // @vitest-environment node
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
@@ -73,6 +74,15 @@ describe("Future leads: native CRM, project conversion and scheduled private not
     expect(SECTIONS[i + 1].id).toBe("future-leads");
     expect(
       canOpenSection("future-leads", buildAccess({ roles: ["staff"] })),
+    ).toBe(false);
+    expect(
+      canOpenSection(
+        "future-leads",
+        buildAccess({
+          roles: ["staff"],
+          capabilities: ["leads.future.assigned"],
+        }),
+      ),
     ).toBe(true);
     expect(
       canOpenSection("future-leads", buildAccess({ roles: ["user"] })),
@@ -141,6 +151,9 @@ describe("Future leads: native CRM, project conversion and scheduled private not
   });
   it("denies clients, unassigned staff, removed allocations and disabled identities", async () => {
     const id = await create();
+    expect(await futureLeadHasAssignment(b.env.DB, "reader")).toBe(true);
+    expect(await futureLeadHasAssignment(b.env.DB, "other")).toBe(false);
+    expect(await futureLeadHasAssignment(b.env.DB, "client")).toBe(false);
     b.actor = "client";
     expect((await req("")).status).toBe(403);
     expect((await req("/" + id)).status).toBe(403);

@@ -81,3 +81,15 @@ export function futureWriteSql(
         : `(${cap("leads.write")} AND ${cap(action === "create" ? "leads.create" : "projects.create")})`;
   return `actor.disabled_at IS NULL AND actor.email_verified=1 AND EXISTS(SELECT 1 FROM user_roles r WHERE r.user_id=actor.id AND r.role IN('staff','admin')) AND (${principal} OR ${explicit})`;
 }
+
+/** A navigation hint only; never an authorization grant. It is derived from current assignments on /auth/me. */
+export async function futureLeadHasAssignment(db: D1Database, user: string) {
+  return !!(await db
+    .prepare(
+      `SELECT 1 FROM lead_assignments a JOIN future_leads f ON f.lead_id=a.lead_id
+  JOIN leads l ON l.id=f.lead_id JOIN users u ON u.id=a.user_id WHERE a.user_id=? AND l.deleted_at IS NULL AND l.archived_at IS NULL
+  AND u.disabled_at IS NULL AND u.email_verified=1 AND EXISTS(SELECT 1 FROM user_roles r WHERE r.user_id=u.id AND r.role IN('staff','admin')) LIMIT 1`,
+    )
+    .bind(user)
+    .first());
+}

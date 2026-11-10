@@ -99,7 +99,7 @@ export default function NotificationCenter({
   const [open, setOpen] = useState(autoOpen);
   const titleId = useId(),
     descriptionId = useId();
-  const { user } = useAuth(),
+  const { user, refreshProfile } = useAuth(),
     { lang } = useLang(),
     navigate = useNavigate();
   const en = lang === "en";
@@ -261,10 +261,13 @@ export default function NotificationCenter({
       setReading(null);
     }
   };
-  const visit = (destination: string) => {
+  const visit = async (destination: string) => {
     if (destination === "operations") destination = "os-centers";
     const href = notificationHref(destination);
     if (!href) return;
+    if(/^\/profil\?tab=future-leads(?:&|$)/.test(href)){
+      try{await refreshProfile();}catch{setError(true);return;}
+    }
     setOpen(false);
     onClose?.();
     if (canOpenSection(destination, access))

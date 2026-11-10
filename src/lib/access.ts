@@ -169,7 +169,7 @@ const canOpenDefinition = (section: SectionDef, access: Access): boolean => {
   if(section.id==="maintenance")return access.isSuperAdmin;
   if(section.id==="client-maintenance"&&access.isClient)return false;
   if(section.id==="my-collaborations")return access.hasCollaborations===true;
-  if(section.id==="future-leads")return access.isStaff; // Backend scopes each row to its live assignments or explicit CRM permissions.
+  if(section.id==="future-leads")return access.isSuperAdmin || (access.isStaff && access.capabilities.some(key=>["leads.read","leads.write","leads.create","leads.future.assigned"].includes(key))); // Backend scopes each row to its live assignments or explicit CRM permissions.
   if(section.id==="leads-agency")return access.isSuperAdmin || (access.isStaff&&access.capabilities.some(c=>["leads_agency.read","leads_agency.manage"].includes(c)));
   if(section.id==="collaborators")return access.isSuperAdmin || (access.isStaff&&access.capabilities.some(c=>["collaborators.read","collaborators.manage"].includes(c)));
   if (access.capabilities.includes(STAFF_MANAGED) && !access.isSuperAdmin) {

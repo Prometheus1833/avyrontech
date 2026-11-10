@@ -925,10 +925,13 @@ app.get("/api/auth/me", requireAuth, async (c) => {
         AND (expires_at IS NULL OR expires_at>?) ORDER BY capability`,
   ).bind(c.get("userId"), now()).all<{ capability: string }>();
   const platformRole = await platformRoleForUser(c.env.DB, c.get("userId"));
+  const futureAssigned=!platformRole && c.get("roles").some(role=>role==="staff"||role==="admin")
+    && !capabilityRows.some(row=>["leads.read","leads.write","leads.create"].includes(row.capability))
+    && await futureLeadHasAssignment(c.env.DB,c.get("userId"));
   return c.json({
     user: u, profile, roles: c.get("roles"), superadmin: platformRole !== null, platformRole,
     ...await collaborationIdentity(c.env.DB,c.get("userId")),
-    capabilities: capabilityRows.map((row) => row.capability),
+    capabilities: [...capabilityRows.map((row) => row.capability),...(futureAssigned?["leads.future.assigned"]:[])],
   });
 });
 
@@ -1708,6 +1711,7 @@ import { catalogCodesRouter } from "./catalogCodes";
 import { contactRouter } from "./contact";
 import { financeRouter } from "./finance";
 import { leadsRouter } from "./leads";
+import { futureLeadHasAssignment } from "./futureLeadPolicy";
 import { futureLeadsRouter } from "./futureLeads";
 import { leadsAgencyRouter } from "./leadsAgency";
 import { logoOperationsRouter } from "./logoOperations";
