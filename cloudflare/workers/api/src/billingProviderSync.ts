@@ -58,7 +58,7 @@ async function checkReference(env: Env, provider: FinancialProviderKey, phase: B
       const item = Array.isArray(data) && data.length === 1 ? object(data[0]) : {};
       const price = object(item.price), recurrence = object(price.recurring);
       const mapped = ({ canceled: 'cancelled', unpaid: 'past_due', incomplete_expired: 'expired' } as Record<string, string>)[String(remote.status)] || remote.status;
-      if (mapped !== row.status || Number(item.quantity) !== 1 || Number(price.unit_amount) !== row.amount_minor || String(price.currency).toUpperCase() !== row.currency.toUpperCase() || recurrence.interval !== (row.period === 'annual' ? 'year' : 'month')) throw Error('subscription_requires_reconciliation');
+      if (mapped !== row.status || Number(item.quantity) !== 1 || Number(price.unit_amount) !== row.amount_minor || String(price.currency).toUpperCase() !== row.currency.toUpperCase() || (recurrence.interval !== (row.period === 'annual' ? 'year' : 'month') || Number(recurrence.interval_count) !== 1)) throw Error('subscription_requires_reconciliation');
     }
     return;
   }
@@ -68,7 +68,7 @@ async function checkReference(env: Env, provider: FinancialProviderKey, phase: B
   if (remote.id !== row.remote_id) throw Error('provider_resource_mismatch');
   if (phase === 'checkout') {
     const reference = remote.merchant_order_ext_ref || object(remote.merchant_order_data).reference;
-    if (reference !== row.order_id || String(remote.currency).toUpperCase() !== row.currency.toUpperCase() || Number(remote.amount) !== row.amount_minor && !(row.mode === 'subscription' && remote.amount === 0)) throw Error('checkout_contract_mismatch');
+    if (reference !== row.order_id || String(remote.currency).toUpperCase() !== row.currency.toUpperCase() || Number(remote.amount) !== row.amount_minor) throw Error('checkout_contract_mismatch');
     if ((row.status === 'paid') !== (remote.state === 'completed')) throw Error('checkout_requires_reconciliation');
   } else {
     const mapped = ({ overdue: 'past_due', finished: 'expired', pending: 'incomplete' } as Record<string, string>)[String(remote.state)] || remote.state;

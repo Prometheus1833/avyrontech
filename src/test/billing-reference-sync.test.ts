@@ -77,10 +77,11 @@ it('refuses a different Stripe account and persists its verification error witho
 });
 it('checks native subscription pricing and reports changed provider terms without editing them',async()=>{
  seed(1);db.exec("INSERT INTO billing_subscriptions(id,user_id,order_id,provider,provider_subscription_id,sku,status,period,amount_minor,currency,created_at,updated_at) VALUES('sub','owner','o_000','stripe','sub_own','SYNTHETIC','active','monthly',1000,'RON',1,1)");
- let amount=1000;const original=globalThis.fetch;
- vi.stubGlobal('fetch',vi.fn(async(input:string|URL,init?:RequestInit)=>String(input).endsWith('/subscriptions/sub_own')?Response.json({id:'sub_own',customer:'cus_owner',metadata:{order_id:'o_000'},status:'active',items:{data:[{quantity:1,price:{unit_amount:amount,currency:'ron',recurring:{interval:'month',interval_count:1}}}]}}):original(input,init)));
+ let amount=1000,intervalCount=1;const original=globalThis.fetch;
+ vi.stubGlobal('fetch',vi.fn(async(input:string|URL,init?:RequestInit)=>String(input).endsWith('/subscriptions/sub_own')?Response.json({id:'sub_own',customer:'cus_owner',metadata:{order_id:'o_000'},status:'active',items:{data:[{quantity:1,price:{unit_amount:amount,currency:'ron',recurring:{interval:'month',interval_count:intervalCount}}}]}}):original(input,init)));
  expect(await syncBillingReferences(env,'stripe','owner')).toMatchObject({state:{status:'complete',checked:2,matched:2}});
  amount=999;expect(await syncBillingReferences(env,'stripe','owner')).toMatchObject({state:{status:'differences',checked:2,matched:1,issues:[{id:'sub',code:'subscription_requires_reconciliation'}]}});
+ amount=1000;intervalCount=2;expect(await syncBillingReferences(env,'stripe','owner')).toMatchObject({state:{status:'differences',checked:2,matched:1}});
  expect(db.prepare('SELECT amount_minor FROM billing_subscriptions').get()!.amount_minor).toBe(1000);
 });
 it('reads only an already-issued Oblio invoice in the configured series and never issues a document',async()=>{
@@ -94,6 +95,8 @@ it('reads only an already-issued Oblio invoice in the configured series and neve
 it('compares Revolut order identity, amount and completion using the native AVYRON order reference',async()=>{
  seed(1);db.exec("INSERT INTO financial_provider_connections(id,provider,status,created_at,updated_at) VALUES('rev','revolut_merchant','connected',1,1); UPDATE billing_checkout_sessions SET provider='revolut'; UPDATE billing_customers SET provider='revolut'");
  Object.assign(env,{REVOLUT_MERCHANT_SECRET_KEY:'synthetic',REVOLUT_MERCHANT_WEBHOOK_SECRET:'synthetic_signing'});
- vi.stubGlobal('fetch',vi.fn(async(input:string|URL)=>Response.json(String(input).endsWith('/webhooks')?{webhooks:[{url:'https://avyron.ro/api/billing/webhooks/revolut',events:['ORDER_COMPLETED']}]}:{id:'cs_000',merchant_order_ext_ref:'o_000',amount:1000,currency:'RON',state:'completed'})));
+ let remoteAmount=1000;vi.stubGlobal('fetch',vi.fn(async(input:string|URL)=>Response.json(String(input).endsWith('/webhooks')?{webhooks:[{url:'https://avyron.ro/api/billing/webhooks/revolut',events:['ORDER_COMPLETED']}]}:{id:'cs_000',merchant_order_ext_ref:'o_000',amount:remoteAmount,currency:'RON',state:'completed'})));
  expect(await syncBillingReferences(env,'revolut_merchant','owner')).toMatchObject({state:{status:'complete',checked:1,matched:1},moneyActions:false});
+ db.exec("UPDATE billing_checkout_sessions SET mode='subscription'");remoteAmount=0;
+ expect(await syncBillingReferences(env,'revolut_merchant','owner')).toMatchObject({state:{status:'differences',checked:1,matched:0,issues:[{code:'checkout_contract_mismatch'}]}});
 });
