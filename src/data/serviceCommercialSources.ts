@@ -1,11 +1,12 @@
 /** Lightweight service identities shared with the API Worker; keep aligned with SERVICES. */
+import { COMMERCE_CATALOG } from "./commerceCatalog";
 import { WEBSITE_PLAN_DEFAULTS } from "../shared/websiteSubscriptions";
 import { ADS_MONTHLY_OFFERS, ADS_SETUP, SEO_MONTHLY_OFFERS, SEO_ONE_TIME_OFFERS } from "./growthOffers";
 
 const growthCode = (entity_key: string, display_name: string, category: string, base_price_minor: number | null, sku: string, accounting_code: string, price_model: "fixed" | "starting_at" | "quote", billing_cycle: "monthly" | "one_time") =>
   ({ entity_key, display_name, category, base_price_minor, sku, accounting_code, price_model, billing_cycle });
 
-export const SERVICE_COMMERCIAL_SOURCES = [
+const CORE_SERVICE_SOURCES = [
   ...WEBSITE_PLAN_DEFAULTS.map(p=>growthCode("website-sub-"+p.id,"Website prin abonament — "+p.name,"website-subscription",null,p.sku,p.sku,"fixed","monthly")),
   { entity_key: "premium-website", display_name: "Site Prezentare Profesional", category: "presence", base_price_minor: 145_000 },
   { entity_key: "logo-3d", display_name: "Logo Profesional 3D", category: "brand", base_price_minor: 50_000 },
@@ -24,3 +25,16 @@ export const SERVICE_COMMERCIAL_SOURCES = [
   ...ADS_MONTHLY_OFFERS.map((item) => growthCode(item.sku, `Digital Marketing & Ads — ${item.name}`, "growth", item.priceCents, item.sku, item.accountingCode, item.startingAt ? "starting_at" : "fixed", "monthly")),
   growthCode(ADS_SETUP.sku, ADS_SETUP.name, "growth", ADS_SETUP.priceCents, ADS_SETUP.sku, ADS_SETUP.accountingCode, "starting_at", "one_time"),
 ] as const;
+
+export const SERVICE_COMMERCIAL_SOURCES = CORE_SERVICE_SOURCES;
+
+/** The checkout catalogue includes maintenance subscriptions and legacy packages too. Keep its SKUs and currencies. */
+export const COMMERCIAL_REFERENCE_SOURCES = [
+  ...CORE_SERVICE_SOURCES,
+  ...COMMERCE_CATALOG.filter(item => item.sku !== "custom-request" && !CORE_SERVICE_SOURCES.some(source => source.entity_key === item.sku || ("sku" in source && source.sku === item.sku))).map(item => ({
+    entity_key: item.sku, display_name: item.name, category: item.type === "subscription" ? "maintenance" : "commercial-package",
+    base_price_minor: item.unitPriceCents, sku: item.sku, currency: item.currency,
+    price_model: item.unitPriceCents === null ? "quote" as const : "fixed" as const,
+    billing_cycle: item.billing,
+  })),
+];

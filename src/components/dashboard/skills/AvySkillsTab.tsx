@@ -1,3 +1,4 @@
+import SiteBuilderWorkspace from "./SiteBuilderWorkspace";
 import SiteBuilderStagesPanel from "./SiteBuilderStagesPanel";
 import Resource from "./SkillResourceCard";
 import {SITE_STAGES, type SiteStageKey} from "@/shared/skills/siteStages";
@@ -348,6 +349,7 @@ export default function AvySkillsTab({ slug }: { slug: SkillSlug }) {
           </button>
         ))}
       </nav>
+      {view === "atelier" && slug === "site-builder" && <SiteBuilderWorkspace onOpen={setView} />}
       {view === "atelier" && <CreativeStudioIntro slug={slug} brief={brief} onChange={setBrief}/>}
       {view === "atelier" && (
         <div className="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]">

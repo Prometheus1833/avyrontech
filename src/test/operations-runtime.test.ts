@@ -276,10 +276,11 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
  it('resolves a generic price from the actual public service page without mixing all web services',async()=>{
   chatSeed();const response=await chat('Cât costă?',{page:'/servicii/aplicatii-si-platforme'});const body=await response.json();expect(body.reply).toContain('7.900 RON');expect(body.reply).not.toContain('1.450 RON');expect(body.sources[0].id).toBe('service:apps');
  });
- const servicePrice=(price:number|null,model='starting_at',cycle='one_time',currency='RON',active=1)=>db.prepare("INSERT INTO commercial_catalog_codes(id,entity_type,entity_key,display_name,category,base_price_minor,currency,price_model,billing_cycle,active,created_at,updated_at) VALUES('current-site','service','premium-website','Site Prezentare Profesional','presence',?,?,?,?,?,1,1)").run(price,currency,model,cycle,active);
+ // 0117 registers the canonical service before the scenario; vary its financial facts without replacing its identity.
+ const servicePrice=(price:number|null,model='starting_at',cycle='one_time',currency='RON',active=1)=>db.prepare("UPDATE commercial_catalog_codes SET base_price_minor=?,currency=?,price_model=?,billing_cycle=?,active=? WHERE entity_type='service' AND entity_key='premium-website'").run(price,currency,model,cycle,active);
  it('reads current D1 prices, currency and billing period instead of bundled defaults',async()=>{
   chatSeed();servicePrice(230000,'fixed','monthly','EUR');const body=await (await chat('Cât costă un site?')).json();expect(body.reply).toContain('2.300 EUR / lună');expect(body.reply).not.toContain('1.450');
-  db.exec("UPDATE commercial_catalog_codes SET base_price_minor=260000 WHERE id='current-site'");expect((await (await chat('Cât costă un site?')).json()).reply).toContain('2.600 EUR / lună');
+  db.exec("UPDATE commercial_catalog_codes SET base_price_minor=260000 WHERE entity_type='service' AND entity_key='premium-website'");expect((await (await chat('Cât costă un site?')).json()).reply).toContain('2.600 EUR / lună');
  });
  it.each([[null,'quote'],[145000,'quote'],[145000,'unreviewed']])('never restores a stale bundled price when D1 requires a quote: %s / %s',async(price,model)=>{
   chatSeed();servicePrice(price as number|null,model as string);const body=await (await chat('Cât costă un site?')).json();expect(body.reply).toContain('ofertă personalizată');expect(body.reply).not.toContain('1.450');
@@ -288,7 +289,7 @@ describe('Operations: real handlers, migrated D1 and simulated bindings',()=>{
   chatSeed();servicePrice(145000,'starting_at','one_time','RON',0);const body=await (await chat('Cât costă un site?')).json();expect(body.reply).not.toContain('1.450');expect(body.sources.some((source:{id:string})=>source.id==='service:premium-website')).toBe(false);
  });
  it('does not expose private accounting labels or unlisted service identities to the public model',async()=>{
-  chatSeed();servicePrice(175000);db.exec("UPDATE commercial_catalog_codes SET display_name='Private Client Name' WHERE id='current-site'");
+  chatSeed();servicePrice(175000);db.exec("UPDATE commercial_catalog_codes SET display_name='Private Client Name' WHERE entity_type='service' AND entity_key='premium-website'");
   const site=await (await chat('Cât costă un site?')).json();expect(site.reply).toContain('1.750 RON');expect(site.reply).not.toContain('Private Client Name');
   db.exec("INSERT INTO commercial_catalog_codes(id,entity_type,entity_key,display_name,category,base_price_minor,currency,price_model,billing_cycle,active,created_at,updated_at) VALUES('private-code','service','private-special','Private Secret Service','internal',123400,'RON','fixed','one_time',1,1,1)");
   expect((await retrievePublicSources(env.DB,'ro','Private Secret Service')).some(match=>match.entry.id==='service:private-special')).toBe(false);

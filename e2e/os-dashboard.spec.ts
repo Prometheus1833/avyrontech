@@ -358,26 +358,26 @@ test.describe("dashboard AVYRON OS în română", () => {
     let referenceSaved = false;
     const configured = {
       id: "catalog-test", entity_type: "service", entity_key: "premium-website", display_name: "Site Prezentare Profesional",
-      accounting_code: null, sku: "svc-premium-website", category: "presence", base_price_minor: 145000,
+      accounting_code: "AVS001", sku: "svc-premium-website", category: "presence", base_price_minor: 145000,
       currency: "RON", vat_basis_points: 0, payment_route: "unconfigured", preferred_payment_provider: null,
       invoice_provider: null, payment_status: "needs_configuration", promotion_code: null, active: 1, notes: "",
       unit_label: "serviciu", price_model: "starting_at", billing_cycle: "unreviewed", tax_status: "unverified", tax_verified_at: null,
     };
     await page.route("**/api/finance/commercial-codes", route => route.fulfill({ json: {
-      data: synced ? [configured] : [], products: [], services: [],
+      data: synced ? [configured] : [], products: [], services: [{entity_key: configured.entity_key, display_name: configured.display_name, category: configured.category, base_price_minor: configured.base_price_minor}],
       references: referenceSaved ? [{ id: "ref-test", catalog_id: "catalog-test", entity_type: "service", entity_key: "premium-website", provider: "stripe", environment: "test", reference_type: "product", external_id: "prod_test_avyron", updated_at: now }] : [],
     } }));
-    await page.route("**/api/finance/commercial-codes/sync", route => { synced = true; return route.fulfill({ json: { ok: true, created: 1, existing: 8, requiresSku: 0, total: 9 } }); });
+    await page.route("**/api/finance/commercial-codes/sync", route => { synced = true; return route.fulfill({ json: { ok: true, created: 1, completed: 0, existing: 8, requiresSku: 0, total: 9 } }); });
     await page.route("**/api/finance/commercial-codes/service/premium-website/provider-refs/stripe/test/product", route => {
       referenceSaved = true;
       return route.fulfill({ json: { ok: true } });
     });
     await page.goto("/profil?tab=commercial-codes");
     await expect(page.getByRole("heading", { name: "Coduri servicii și produse" })).toBeVisible();
-    await page.getByText("Configurare detaliată și filtre", {exact:true}).click();
-    await page.getByRole("button", { name: "Înregistrează lipsurile" }).click();
+    await page.getByRole("button", { name: "Sincronizează codurile", exact: true }).click();
     const service = page.locator("article").filter({ has: page.getByRole("heading", { name: "Site Prezentare Profesional", exact: true }) });
     await expect(service.getByText("svc-premium-website")).toBeVisible();
+    await expect(service.getByText("AVS001", {exact:true})).toBeVisible();
     await service.getByRole("button", { name: "Configurează" }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByLabel("Unitate facturabilă")).toHaveValue("serviciu");
@@ -387,7 +387,6 @@ test.describe("dashboard AVYRON OS în română", () => {
     await dialog.getByRole("button", { name: "Salvează ID" }).click();
     await expect(dialog.getByText("stripe · test · product · prod_test_avyron")).toBeVisible();
     await page.reload();
-    await page.getByText("Configurare detaliată și filtre", {exact:true}).click();
     await service.getByRole("button", { name: "Configurează" }).click();
     await expect(page.getByRole("dialog").getByText("stripe · test · product · prod_test_avyron")).toBeVisible();
   });

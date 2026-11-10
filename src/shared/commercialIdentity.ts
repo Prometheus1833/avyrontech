@@ -19,10 +19,10 @@ export function nextCommercialIdentity(type: 'service' | 'product', key: string,
     const prefix = type === 'product' ? 'AVD' : 'AVS', width = type === 'product' ? 4 : 3;
     let number = Math.max(type === 'service' ? 9 : 0, ...known.map(r => r.accounting_code?.match(new RegExp(`^${prefix}(\\d+)$`))).filter(Boolean).map(m => Number(m![1]))) + 1;
     const suggested = type === 'service' ? SERVICE_IDENTITIES[key] : null;
-    let sku = existing?.sku || suggested?.sku, article = existing?.accounting_code || suggested?.article;
-    if (!existing?.sku && sku && usedSku.has(sku))
+    let sku = (existing?.sku?.trim() ? existing.sku : undefined) || suggested?.sku, article = (existing?.accounting_code?.trim() ? existing.accounting_code : undefined) || suggested?.article;
+    if (!existing?.sku?.trim() && sku && usedSku.has(sku))
         sku = undefined;
-    if (!existing?.accounting_code && article && usedArticles.has(article))
+    if (!existing?.accounting_code?.trim() && article && usedArticles.has(article))
         article = undefined;
     while (usedArticles.has(`${prefix}${String(number).padStart(width, '0')}`) || usedSku.has(type === 'product' ? `AVY-DIG-${PRODUCT_CODE_FAMILIES[category] || 'GEN'}-${String(number).padStart(4, '0')}` : `AVY-SRV-GEN-${String(number).padStart(3, '0')}`))
         number++;

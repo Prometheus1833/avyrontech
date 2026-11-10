@@ -9,6 +9,8 @@ import {
 } from "../../../../src/shared/exampleCarousels";
 import {
   SITE_KNOWLEDGE_VERSION,
+  SITE_DELIVERY_GATES,
+  SITE_REUSABLE_CAPABILITIES,
   SITE_DOMAIN_PLAYBOOKS,
   SITE_FEATURES,
   SITE_CASES,
@@ -64,6 +66,10 @@ export async function publishedSiteExamples(db: D1Database) {
           }))
       : [],
   );
+}
+async function reusableLibrary(db: D1Database) {
+  return (await db.prepare("SELECT id,title,description,category,updated_at FROM internal_resources WHERE kind='library' AND status='active' ORDER BY id")
+    .all<{id:string;title:string;description:string;category:string;updated_at:number}>()).results;
 }
 export function siteBuilderRoutes(router: Hono<AppBindings>) {
   router.get(root + "/stages/:stage", async (c) => {
@@ -121,7 +127,7 @@ export function siteBuilderRoutes(router: Hono<AppBindings>) {
   });
   router.get(root + "/knowledge", async (c) => {
     const p = c.get("skillAccess")!;
-    const [examples, domains, bindings] = await Promise.all([
+    const [examples, domains, bindings, internalLibrary] = await Promise.all([
       publishedSiteExamples(c.env.DB),
       c.env.DB.prepare(
         `SELECT domain,count(*) total,SUM(status='approved') approved FROM avy_skill_resources WHERE skill_slug='site-builder' AND status!='archived' ${p.manage || p.approve ? "" : "AND status='approved'"} GROUP BY domain ORDER BY domain`,
@@ -131,9 +137,16 @@ export function siteBuilderRoutes(router: Hono<AppBindings>) {
       )
         .bind(...(p.platform ? [] : [c.get("userId")]))
         .all(),
+      p.platform ? reusableLibrary(c.env.DB) : Promise.resolve([]),
     ]);
     return c.json({
+      internalLibrary: internalLibrary.map(r => ({id:r.id,title:r.title,category:r.category,revision:r.updated_at})),
       version: SITE_KNOWLEDGE_VERSION,
+      deliveryGates: SITE_DELIVERY_GATES,
+      connections: SITE_REUSABLE_CAPABILITIES.map(link => ({ ...link,
+        href: link.platformOnly && !p.platform ? null : ("publicPath" in link ? link.publicPath : null) || `/profil?tab=${link.tab}`,
+        state: "available_in_repository",
+      })),
       quality: siteQualityContext("general"),
       domains: SITE_DOMAIN_PLAYBOOKS,
       resourceDomains: domains.results,
@@ -194,11 +207,29 @@ export function siteBuilderRoutes(router: Hono<AppBindings>) {
     const t = Date.now(),
       ids: string[] = [];
     const signatureSql =
-      "COALESCE((SELECT group_concat(page_key||':'||published_revision,'|') FROM (SELECT page_key,published_revision FROM example_carousel_configs WHERE published_revision IS NOT NULL ORDER BY page_key)), '')";
+      "COALESCE((SELECT group_concat(page_key||':'||published_revision,'|') FROM (SELECT page_key,published_revision FROM example_carousel_configs WHERE published_revision IS NOT NULL ORDER BY page_key)), '') || '#' || COALESCE((SELECT group_concat(json_array(id,title,description,category,updated_at),'|') FROM (SELECT id,title,description,category,updated_at FROM internal_resources WHERE kind='library' AND status='active' ORDER BY id)), '')";
     const snapshot = await c.env.DB.prepare(
       `SELECT ${signatureSql} signature`,
     ).first<{ signature: string }>();
     const examples = await publishedSiteExamples(c.env.DB);
+    // Repository-owned descriptors only. No customer projects, files, credentials or provider state are copied.
+    const reusable = [
+      ...LIBRARY_SECTIONS.map(section => ({
+        key: `artifacts:${section.id}`, name: `Biblioteca Artefacte · ${section.name.ro}`, domain: "general",
+        url: `https://avyron.ro/biblioteca#${section.id}`, revision: SITE_KNOWLEDGE_VERSION,
+        body: `Catalog AVYRON, nu integrare activă. ${section.claim.ro} Efecte: ${section.effects.map(e => `${e.code} — ${e.name.ro}: ${e.desc.ro} [${e.demo ? "demo disponibil" : "numai catalog"}; ${e.webgl ? "WebGL cu fallback obligatoriu" : "verifică implementarea"}]`).join("; ")}. Reutilizează numai mecanisme autorizate și verifică licența, accesibilitatea, sursa și performanța înainte de integrare.`,
+      })),
+      ...SITE_REUSABLE_CAPABILITIES.map(link => ({ key: `capability:${link.id}`, name: `Flux nativ · ${link.title}`,
+        domain: "general", url: "", revision: SITE_KNOWLEDGE_VERSION, body: link.description + " Citește numai resursele autorizate. Această referință nu acordă permisiuni și nu confirmă conectarea furnizorilor sau finalizarea unui proiect." })),
+    ];
+    const includeInternal = !!c.get("skillAccess")?.platform;
+    const internal = includeInternal ? await reusableLibrary(c.env.DB) : [];
+    const sources = [
+      ...internal.map(item => ({key:`library:${item.id}`,name:item.title,domain:"general",url:"https://app.avyron.ro/profil?tab=library",revision:String(item.updated_at),sourceKind:"builder-library",
+        body:`Referință din Biblioteca Artefacte internă. Categorie: ${item.category}. ${item.description} Verifică înainte de aprobare că materialul poate deveni instrucțiune comună: drepturi, lipsa datelor private și a secretelor, relevanța pentru reutilizare. Citește sursa numai cu acces autorizat; sincronizarea nu descarcă URL-uri externe sau fișiere.`})),
+      ...examples.map(item => ({ ...item, sourceKind: "carousel", body: `Referință publicată în catalogul AVYRON: ${item.name}. Tip: ${item.kind === "mockup" ? "mockup demonstrativ, nu proiect client dovedit live" : "referință de portofoliu; funcțiile live necesită verificare separată"}. ${item.description} Reutilizează numai tiparul și structura, cu identitate proprie și drepturi confirmate. Revizia caruselului: ${item.revision}.` })),
+      ...reusable.map(item => ({ ...item, sourceKind: "builder-catalog" })),
+    ];
     const statements: D1PreparedStatement[] = [
       c.env.DB.prepare(
         `INSERT INTO avy_skill_events(id,skill_slug,actor_id,action,detail_json,created_at) VALUES(?,'site-builder',?,'sources.synced',CASE WHEN ${signatureSql}=? THEN ? ELSE NULL END,?)`,
@@ -207,19 +238,22 @@ export function siteBuilderRoutes(router: Hono<AppBindings>) {
         c.get("userId"),
         snapshot?.signature || "",
         JSON.stringify({
-          references: examples.length,
+          references: sources.length,
+          examples: examples.length,
+          reusable: reusable.length,
+          internal: internal.length,
           version: SITE_KNOWLEDGE_VERSION,
         }),
         t,
       ),
     ];
-    for (const item of examples) {
-      const body = `Referință publicată în catalogul AVYRON: ${item.name}. Tip: ${item.kind === "mockup" ? "mockup demonstrativ, nu proiect client dovedit live" : "referință de portofoliu; funcțiile live necesită verificare separată"}. ${item.description} Reutilizează numai tiparul și structura, cu identitate proprie și drepturi confirmate. Revizia caruselului: ${item.revision}.`,
-        id = "site_source_" + (await sha256(JSON.stringify(item))).slice(0, 32);
+    for (const item of sources) {
+      const body = item.body,
+        id = "site_source_" + (await sha256(JSON.stringify(item.sourceKind === "carousel" ? Object.fromEntries(Object.entries(item).filter(([key]) => key !== "sourceKind" && key !== "body")) : item))).slice(0, 32);
       ids.push(id);
       statements.push(
         c.env.DB.prepare(
-          "INSERT OR IGNORE INTO avy_skill_resources(id,skill_slug,title,domain,body,source_url,status,created_by,created_at,updated_at,source_kind,source_key,source_revision) VALUES(?,'site-builder',?,?,?,?,'draft',?,?,?,'carousel',?,?)",
+          "INSERT OR IGNORE INTO avy_skill_resources(id,skill_slug,title,domain,body,source_url,status,created_by,created_at,updated_at,source_kind,source_key,source_revision) VALUES(?,'site-builder',?,?,?,?,'draft',?,?,?,?,?,?)",
         ).bind(
           id,
           item.name,
@@ -229,6 +263,7 @@ export function siteBuilderRoutes(router: Hono<AppBindings>) {
           c.get("userId"),
           t,
           t,
+          item.sourceKind,
           item.key,
           String(item.revision),
         ),
@@ -236,7 +271,7 @@ export function siteBuilderRoutes(router: Hono<AppBindings>) {
     }
     statements.push(
       c.env.DB.prepare(
-        "UPDATE avy_skill_resources SET status='archived',revision=revision+1,updated_at=? WHERE skill_slug='site-builder' AND source_kind='carousel' AND status!='archived' AND id NOT IN(SELECT value FROM json_each(?))",
+        `UPDATE avy_skill_resources SET status='archived',revision=revision+1,updated_at=? WHERE skill_slug='site-builder' AND source_kind IN('carousel','builder-catalog'${includeInternal ? ",'builder-library'" : ""}) AND status!='archived' AND id NOT IN(SELECT value FROM json_each(?))`,
       ).bind(t, JSON.stringify(ids)),
     );
     const results = await c.env.DB.batch(statements).catch((error) => {
@@ -254,13 +289,16 @@ export function siteBuilderRoutes(router: Hono<AppBindings>) {
           error: {
             code: "source_revision_conflict",
             message:
-              "Caruselele publicate s-au modificat. Reîncearcă sincronizarea.",
+              "Sursele s-au modificat. Reîncearcă sincronizarea.",
           },
         },
         409,
       );
     return c.json({
       references: ids.length,
+      examples: examples.length,
+      reusable: reusable.length,
+          internal: internal.length,
       created: results
         .slice(1, ids.length + 1)
         .reduce((n, r) => n + Number(r.meta.changes || 0), 0),

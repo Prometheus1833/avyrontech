@@ -1,0 +1,12 @@
+import { ArrowRight, CheckCircle2, Layers, Route, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { SITE_DELIVERY_GATES } from "@/shared/skills/siteKnowledge";
+
+export default function SiteBuilderWorkspace({ onOpen }: { onOpen: (view: "knowledge" | "stages" | "resources") => void }) {
+  return <section aria-label="Standard de lucru Site Builder" className="min-w-0 rounded-2xl border border-violet-300/20 bg-gradient-to-br from-violet-500/10 via-white/[.025] to-cyan-500/5 p-4 sm:p-5">
+    <div className="flex flex-wrap items-start justify-between gap-3"><div className="max-w-3xl"><p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-cyan-200"><Sparkles className="size-3.5" />AVYRON · Site Builder</p><h2 className="mt-2 text-xl font-semibold">Un concept propriu. Un rezultat la standard maxim.</h2><p className="mt-2 text-sm leading-relaxed text-slate-300">Completează afacerea, activitatea și obiectivul. Referințele și instrumentele aprobate simplifică pregătirea internă. Direcția vizuală, imaginile și experiența clientului primesc rafinarea necesară, fără compromisuri pentru economie de timp sau tokens.</p></div></div>
+    <div className="mt-3 grid grid-cols-2 items-start gap-2 xl:grid-cols-4">{SITE_DELIVERY_GATES.map((gate, i) => <details key={gate.id} className="min-w-0 rounded-xl border border-white/10 bg-black/10 p-3"><summary className="cursor-pointer text-xs font-semibold"><CheckCircle2 className="mr-1 inline size-3.5 text-cyan-200" />{i + 1}. {gate.title}</summary><p className="mt-2 text-xs leading-relaxed text-slate-400">{gate.detail}</p></details>)}</div>
+    <div className="mt-3 flex flex-wrap gap-2"><Button variant="outline" className="min-h-11" onClick={() => onOpen("knowledge")}><Layers className="mr-2 size-4" />Bibliotecă și instrumente</Button><Button variant="outline" className="min-h-11" onClick={() => onOpen("stages")}><Route className="mr-2 size-4" />Workflow pe etape</Button><Button variant="ghost" className="min-h-11" onClick={() => onOpen("resources")}>Resurse și documente<ArrowRight className="ml-2 size-4" /></Button></div>
+    <p className="mt-3 text-xs leading-relaxed text-slate-400">Schița HTML și rezumatul AI sunt materiale interne de lucru. Prezentarea clientului cere personalizare și revizuire vizuală. Resursele insuficiente se raportează explicit; costurile noi și publicarea păstrează aprobările existente.</p>
+  </section>;
+}

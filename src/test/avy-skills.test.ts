@@ -302,20 +302,20 @@ it("uses a separate immutable skill version and never rewrites existing results"
   };
   expect((await req("/versions", edit)).status).toBe(200);
   expect((await (await req("/context", undefined, "GET")).json()).version).toBe(
-    1,
+    s.published_version,
   );
-  expect((await req("/approve", { revision: 2 })).status).toBe(200);
+  expect((await req("/approve", { revision: s.revision + 1 })).status).toBe(200);
   const next = await create();
   expect(
     db
       .prepare("SELECT skill_version FROM avy_skill_runs WHERE id=?")
       .get(first.id)?.skill_version,
-  ).toBe(1);
+  ).toBe(s.published_version);
   expect(
     db
       .prepare("SELECT skill_version FROM avy_skill_runs WHERE id=?")
       .get(next.id)?.skill_version,
-  ).toBe(2);
+  ).toBe(s.current_version + 1);
   expect(() =>
     db.exec("UPDATE avy_skill_versions SET instructions='overwrite'"),
   ).toThrow(/immutable/);
@@ -827,8 +827,9 @@ it("honors an organization's kill switch without sending the client's context to
   ).toBe("agent_paused");
 });
 it("rolls back approval when its audit event cannot be recorded", async () => {
+  const before = db.prepare("SELECT published_version,revision FROM avy_skills WHERE slug='site-builder'").get()!;
   await req("/versions", {
-    revision: 1,
+    revision: Number(before.revision),
     summary: "O nouă configurație de verificat înainte de folosire.",
     instructions: "Instrucțiuni de verificare atomică. ".repeat(8),
     paused: false,
@@ -836,14 +837,14 @@ it("rolls back approval when its audit event cannot be recorded", async () => {
   db.exec(
     "CREATE TRIGGER fixture_fail_approval BEFORE INSERT ON avy_skill_events WHEN NEW.action='version.approved' BEGIN SELECT RAISE(ABORT,'fixture_audit_unavailable'); END",
   );
-  expect((await req("/approve", { revision: 2 })).status).toBe(409);
+  expect((await req("/approve", { revision: Number(before.revision) + 1 })).status).toBe(409);
   expect(
     db
       .prepare(
         "SELECT published_version,revision FROM avy_skills WHERE slug='site-builder'",
       )
       .get(),
-  ).toMatchObject({ published_version: 1, revision: 2 });
+  ).toMatchObject({ published_version: before.published_version, revision: Number(before.revision) + 1 });
 });
 
 it("persists Free-only AI intent and falls back to the registered Free secondary without changing quotas", async () => {
@@ -864,6 +865,8 @@ it("persists Free-only AI intent and falls back to the registered Free secondary
       .free_only,
   ).toBe(1);
   await processSkillRun(env, made.id);
+  const executed=db.prepare("SELECT status,error_code FROM avy_skill_runs WHERE id=?").get(made.id)!;
+  expect(executed, JSON.stringify(executed)).toMatchObject({status:'ready',error_code:null});
   expect(vi.mocked(runAiCore).mock.calls[0][0]).toMatchObject({
     role: "secondary",
     freeOnly: true,
@@ -912,7 +915,28 @@ it("synchronizes published examples into idempotent drafts and removes hidden so
  const resource=db.prepare("SELECT id,revision FROM avy_skill_resources WHERE source_kind='carousel' LIMIT 1").get()!;expect((await req(`/resources/${resource.id}/state`,{revision:resource.revision,status:'approved'},'POST')).status).toBe(200);
  const {DEFAULT_EXAMPLE_CAROUSEL}=await import('../shared/exampleCarousels');const content={...DEFAULT_EXAMPLE_CAROUSEL,enabled:false};
  db.exec("INSERT INTO example_carousel_configs(page_key,revision,draft_json,updated_by,updated_at) VALUES('premium-website',1,'{}','owner',1)");db.prepare("INSERT INTO example_carousel_versions(page_key,revision,content_json,actor_user_id,created_at) VALUES('premium-website',1,?,'owner',1)").run(JSON.stringify(content));db.exec("UPDATE example_carousel_configs SET published_revision=1 WHERE page_key='premium-website'");
- const second=await(await req('/sources/sync',{},'POST')).json();expect(second.archived).toBe(first.references);expect(db.prepare('SELECT status FROM avy_skill_resources WHERE id=?').get(resource.id)!.status).toBe('archived');expect((await(await req('/knowledge',undefined,'GET')).json()).examples).toHaveLength(0);
+ const second=await(await req('/sources/sync',{},'POST')).json();expect(second.archived).toBe(first.examples);expect(db.prepare('SELECT status FROM avy_skill_resources WHERE id=?').get(resource.id)!.status).toBe('archived');expect((await(await req('/knowledge',undefined,'GET')).json()).examples).toHaveLength(0);
+});
+it("syncs artifact codes and native capabilities as drafts while preserving approval and private isolation",async()=>{
+ const first=await(await req('/sources/sync',{},'POST')).json();expect(first.reusable).toBeGreaterThan(0);
+ const rows=db.prepare("SELECT id,body,status FROM avy_skill_resources WHERE source_kind='builder-catalog'").all();
+ expect(rows.length).toBe(first.reusable);expect(rows.every(r=>r.status==='draft')).toBe(true);expect(rows.some(r=>String(r.body).includes('PRZ-'))).toBe(true);
+ const chosen=rows[0];expect((await req(`/resources/${chosen.id}/state`,{revision:1,status:'approved'},'POST')).status).toBe(200);
+ expect((await(await req('/sources/sync',{},'POST')).json()).created).toBe(0);
+ expect(db.prepare("SELECT status FROM avy_skill_resources WHERE id=?").get(chosen.id)!.status).toBe('approved');
+ actor='a';grant(actor,'skills.read');
+ const limited=await(await req('/knowledge',undefined,'GET')).json();expect(limited.connections.find(c=>c.id==='core').href).toBeNull();expect(limited.connections.find(c=>c.id==='artifacts').href).toBe('/biblioteca');
+ expect(JSON.stringify(limited)).not.toContain('Client B');expect(limited.deliveryGates).toHaveLength(4);
+ expect((await req('/sources/sync',{},'POST')).status).toBe(403);
+});
+it("imports active internal library records as reviewable references, retires archived sources and preserves manual resources",async()=>{
+ db.exec("INSERT INTO internal_resources(id,kind,title,description,category,status,created_by,updated_by,created_at,updated_at) VALUES('reuse-fixture','library','Accessible section','Reusable public layout pattern.','UI','active','owner','owner',1,1)");
+ const first=await(await req('/sources/sync',{},'POST')).json();expect(first.internal).toBe(1);
+ const source=db.prepare("SELECT id,status,source_url FROM avy_skill_resources WHERE source_kind='builder-library' AND source_key='library:reuse-fixture'").get()!;expect(source.status).toBe('draft');expect(source.source_url).toBe('https://app.avyron.ro/profil?tab=library');
+ actor='a';grant(actor,'skills.manage');const restricted=await(await req('/knowledge',undefined,'GET')).json();expect(restricted.internalLibrary).toEqual([]);await req('/sources/sync',{},'POST');expect(db.prepare('SELECT status FROM avy_skill_resources WHERE id=?').get(source.id)!.status).toBe('draft');actor='owner';
+ db.exec("UPDATE internal_resources SET status='archived',updated_at=2 WHERE id='reuse-fixture'");
+ await req('/sources/sync',{},'POST');expect(db.prepare('SELECT status FROM avy_skill_resources WHERE id=?').get(source.id)!.status).toBe('archived');
+ expect(db.prepare("SELECT count(*) n FROM avy_skill_resources WHERE source_kind='repository' AND status='approved'").get()!.n).toBeGreaterThan(0);
 });
 it("includes custom resource domains in selection without exposing unapproved tags to read-only staff",async()=>{
  const response=await req('/resources',{title:'Domeniu nou',domain:'acoperisuri',body:'Referință personalizată pentru proiecte de acoperișuri.',sourceUrl:''});expect(response.status).toBe(201);
@@ -988,7 +1012,7 @@ it("retains approved creative references in Free-only runs without widening mode
 it("seeds all eight stage workflows as reviewable drafts without changing existing resource classifications", async () => {
   const rows = db
     .prepare(
-      "SELECT stage_key,title,body,status FROM avy_skill_resources WHERE stage_key IS NOT NULL ORDER BY stage_key",
+      "SELECT stage_key,title,body,status FROM avy_skill_resources WHERE stage_key IS NOT NULL AND source_revision='2026-11-10.2' ORDER BY stage_key",
     )
     .all();
   expect(rows).toHaveLength(8);
@@ -1066,7 +1090,7 @@ it("stage editing uses native revision checks, preserves classification for lega
   ).toBe(403);
 });
 it("exports only approved stage instructions, excludes them from unrelated mockup context, and revalidates revocation", async () => {
-  const id = "site_workflow_security";
+  const id = "site_workflow_20261110_security";
   expect((await req("/stages/security.md", undefined, "GET")).status).toBe(409);
   expect(
     (await req(`/resources/${id}/state`, { revision: 1, status: "approved" }))

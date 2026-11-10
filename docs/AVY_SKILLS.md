@@ -64,3 +64,13 @@ Conform [documentației Cloudflare](https://developers.cloudflare.com/changelog/
 ## Verificarea lansării
 
 Separă testele locale cu furnizor simulat, schema migrată remote, versiunea Worker activă și testele într-un cont real. Nu numi inferența sau scanarea „verificată live” numai pentru că există un model/secret. Verifică PR-ul, CI, migrările/integritatea D1, deployul și răspunsurile anonime înainte de a raporta lansarea.
+
+### Site Builder · calitate și registru de referință (2026-11-10)
+
+Eficiența vizează pregătirea internă: brief minim, context progresiv, reutilizare și handoff cu versiuni. Rezultatul prezentat clientului urmărește calitatea maximă, indiferent de timpul sau consumul AI necesar în resursele autorizate. Un mockup determinist ori un rezumat AI reprezintă pregătire internă, cu rafinare și revizuire înainte de prezentare. Resursele insuficiente se raportează; nu se activează automat costuri sau o livrare inferioară.
+
+Atelierul expune criteriile de identitate, mastere, experiență și predare. „Cunoștințe și agenți” conectează Biblioteca Artefacte, AVY Core, Media Generate și registrul comercial, cu linkuri filtrate după drepturi. Acestea indică instrumente disponibile în repository, nu furnizori verificați automat pentru un proiect.
+
+`POST /api/skills/site-builder/sources/sync` sincronizează caruselele publicate, descriptorii din catalogul de efecte, capabilitățile native și, exclusiv pentru Owner/Super Admin, resursele active `internal_resources.kind=library`. Operatorii limitați primesc numai referințele aprobate, fără inventarul intern brut. Noile referințe sunt drafturi; aprobarea este separată. Sincronizarea nu accesează URL-urile externe, nu citește documentele clienților și nu preia conturi sau secrete. Revizia și conținutul surselor sunt verificate atomic; retragerea unei surse o exclude din contextul viitor, păstrând snapshoturile istorice. Verifică drepturile și absența datelor private înainte de aprobarea materialelor din biblioteca internă.
+
+Migrarea 0117 adaugă versiunea 2 numai masterului Site Builder inițial, nemodificat. Masterele personalizate și rezultatele istorice sunt păstrate. Cele opt workflowuri actualizate intră ca drafturi distincte, pentru aprobare. Contractul comun din cod, exporturile agenților și bootstrapul local descriu aceeași prioritate de calitate; AI Core păstrează limitele și aprobările financiare existente. Compresia contextului modelului text este exclusiv pregătire internă; handofful complet și snapshotul păstrează contractul de livrare.

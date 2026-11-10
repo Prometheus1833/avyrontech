@@ -117,6 +117,27 @@ describe('Financial configuration and product sales — actual handlers and all 
       expect((await request('/api/finance/payment-methods/method',{provider:'Bancă',alias:'Card',accountId:'fixture',last4:'1234',currency:'RON',purpose:'Operațiuni',status:'active',expectedUpdatedAt:stamp,confirmed:true},'PATCH')).status).toBe(200);
       expect(db.prepare("SELECT status FROM financial_payment_methods WHERE id='method'").get()!.status).toBe('active');
     });
+    it('reads a bounded code journal, keeps registry-only records, and denies staff/client access', async () => {
+      await sync();
+      const response=await app.request('/api/finance/commercial-codes/journal',{},{});
+      const journal=await response.json();
+      expect(response.status).toBe(200);expect(journal.data.length).toBeLessThanOrEqual(40);expect(journal.data[0]).toHaveProperty('entity_key');
+      expect(JSON.stringify(journal)).not.toContain('actor_user_id');expect(JSON.stringify(journal)).not.toContain('before_json');
+      expect((await app.request('/api/finance/commercial-codes/journal?offset=-1',{},{})).status).toBe(400);
+      for (const who of ['staff','client']) {actor=who;expect((await app.request('/api/finance/commercial-codes/journal',{},{})).status).toBe(403);expect((await sync()).status).toBe(403);}
+    });
+    it('completes future gaps once and preserves their identity on retry', async () => {
+      db.exec("UPDATE commercial_catalog_codes SET sku=NULL,accounting_code=NULL WHERE entity_type='product' AND entity_key='logo-studio-3d'");
+      expect((await(await sync()).json()).completed).toBe(1);
+      const before=db.prepare("SELECT sku,accounting_code FROM commercial_catalog_codes WHERE entity_type='product' AND entity_key='logo-studio-3d'").get();
+      const retry=await(await sync()).json();expect(retry.created).toBe(0);expect(retry.completed).toBe(0);
+      expect(db.prepare("SELECT sku,accounting_code FROM commercial_catalog_codes WHERE entity_type='product' AND entity_key='logo-studio-3d'").get()).toEqual(before);
+    });
+    it('also completes bespoke registry records that are absent from the public catalogue', async () => {
+      db.exec("INSERT INTO commercial_catalog_codes(id,entity_type,entity_key,display_name,category,sku,accounting_code,base_price_minor,created_at,updated_at) VALUES('bespoke','service','bespoke-service','Bespoke','custom','KEEP-BESPOKE',NULL,12345,1,1)");
+      expect((await(await sync()).json()).completed).toBe(1);
+      expect(db.prepare("SELECT sku,accounting_code,base_price_minor FROM commercial_catalog_codes WHERE id='bespoke'").get()).toMatchObject({sku:'KEEP-BESPOKE',accounting_code:expect.stringMatching(/^AVS/),base_price_minor:12345});
+    });
     it('preserves existing SKU while filling an article code', async () => { await sync(); db.prepare("UPDATE commercial_catalog_codes SET accounting_code=NULL,sku='KEEP-LEGACY' WHERE entity_type='product' AND entity_key='logo-studio-3d'").run(); expect((await (await sync()).json()).completed).toBe(1); expect(db.prepare("SELECT sku,accounting_code FROM commercial_catalog_codes WHERE sku='KEEP-LEGACY'").get()).toMatchObject({ sku: 'KEEP-LEGACY', accounting_code: expect.stringMatching(/^AVD\d+$/) }); });
     it('reports actual missing conditions and exposes no R2 object keys', async () => { const response = await app.request('/api/produse/admin/sales/readiness', {}, {}), data = await response.json(); expect(response.status).toBe(200); expect(data.data).toHaveLength(87); expect(data.data.some((r: {
         checks: {
