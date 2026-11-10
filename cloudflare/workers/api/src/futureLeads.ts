@@ -154,12 +154,11 @@ function assignments(
     c.env.DB.prepare(
       "DELETE FROM lead_assignments WHERE lead_id=? AND user_id NOT IN(SELECT value FROM json_each(?))",
     ).bind(id, JSON.stringify(ids)),
-    ...ids.map((user) =>
-      c.env.DB.prepare(
-        `INSERT INTO lead_assignments(lead_id,user_id,assignment_role,assigned_by,assigned_at)
-      VALUES(?,?,'collaborator',?,?) ON CONFLICT(lead_id,user_id) DO NOTHING`,
-      ).bind(id, user, c.get("userId"), time),
-    ),
+    c.env.DB.prepare(
+      `INSERT INTO lead_assignments(lead_id,user_id,assignment_role,assigned_by,assigned_at)
+      SELECT ?,value,'collaborator',?,? FROM json_each(?) WHERE 1
+      ON CONFLICT(lead_id,user_id) DO NOTHING`,
+    ).bind(id, c.get("userId"), time, JSON.stringify(ids)),
   ];
 }
 function event(

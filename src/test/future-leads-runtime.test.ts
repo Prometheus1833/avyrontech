@@ -413,6 +413,40 @@ describe("Future leads: native CRM, project conversion and scheduled private not
     b.actor = "owner";
     expect((await detail(id)).title).toBe("Website programat");
   });
+  it("keeps creation and conversion within the free D1 query budget with 30 allocated staff", async () => {
+    const ids = Array.from({ length: 30 }, (_, i) => "team-" + i);
+    for (const id of ids) {
+      b.db
+        .prepare(
+          "INSERT INTO users(id,email,password_hash,email_verified,created_at,updated_at) VALUES(?,?,'synthetic',1,1,1)",
+        )
+        .run(id, id + "@example.test");
+      b.db
+        .prepare("INSERT INTO user_roles(user_id,role) VALUES(?,'staff')")
+        .run(id);
+    }
+    const before = b.queryCount;
+    const id = await create({ ...newFutureLead(), staffIds: ids });
+    expect(b.queryCount - before).toBeLessThan(50);
+    expect(
+      b.db
+        .prepare("SELECT count(*) total FROM lead_assignments WHERE lead_id=?")
+        .get(id)?.total,
+    ).toBe(30);
+    const conversionStart = b.queryCount;
+    expect(
+      (
+        await req("/" + id + "/convert", "POST", {
+          revision: 1,
+          stage: "proposed",
+        })
+      ).status,
+    ).toBe(201);
+    expect(b.queryCount - conversionStart).toBeLessThan(50);
+    expect(
+      b.db.prepare("SELECT count(*) total FROM project_staff").get()?.total,
+    ).toBe(31);
+  });
   async function reminders(id: string, offset: number) {
     const today = bucharestDay();
     b.db
@@ -505,7 +539,11 @@ describe("Future leads: native CRM, project conversion and scheduled private not
   });
 });
 describe("Romanian business dates and threshold catch-up", () => {
-  it("keeps future lead APIs inside the existing administrative host boundary",()=>{expect(internalApi("/api/future-leads")).toBe(true);expect(internalApi("/api/future-leads/lead-a/convert")).toBe(true);expect(internalApi("/api/future-leads-other")).toBe(false);});
+  it("keeps future lead APIs inside the existing administrative host boundary", () => {
+    expect(internalApi("/api/future-leads")).toBe(true);
+    expect(internalApi("/api/future-leads/lead-a/convert")).toBe(true);
+    expect(internalApi("/api/future-leads-other")).toBe(false);
+  });
   it("handles DST and local 09:00, and never backfills thresholds before registration", () => {
     const target = "2026-11-10",
       scheduled = Date.parse("2026-10-01");

@@ -28,18 +28,22 @@ class Statement {
   constructor(
     readonly db: Sqlite,
     readonly sql: string,
+    readonly count:()=>void,
   ) {}
   bind(...values: SQLInputValue[]) {
     this.values = values;
     return this;
   }
   async first<T>() {
+    this.count();
     return (this.db.prepare(this.sql).get(...this.values) ?? null) as T | null;
   }
   async all<T>() {
+    this.count();
     return { results: this.db.prepare(this.sql).all(...this.values) as T[] };
   }
   async run() {
+    this.count();
     return { meta: this.db.prepare(this.sql).run(...this.values) };
   }
 }
@@ -76,9 +80,10 @@ export function createAgencyBackend() {
     "INSERT INTO user_capabilities(id,user_id,capability,granted_by,reason,created_at) VALUES('reader-grant','reader','leads_agency.read','owner','fixture',1)",
   ).run();
   let actor = "owner";
+  let queryCount=0;
   let beforeBatch: (() => void) | undefined;
   const DB = {
-    prepare: (sql: string) => new Statement(db, sql),
+    prepare: (sql: string) => new Statement(db, sql,()=>queryCount++),
     batch: async (ss: Statement[]) => {
       const hook=beforeBatch;beforeBatch=undefined;hook?.();
       db.exec("BEGIN");
@@ -114,6 +119,7 @@ export function createAgencyBackend() {
   return {
     db,
     env,
+    get queryCount(){return queryCount;},
     beforeBatch: (hook:()=>void)=>{beforeBatch=hook;},
     get actor() {
       return actor;
