@@ -124,7 +124,7 @@ export default function DocumentReader({
   return (
     <article
       aria-label="Conținutul documentului"
-      className={`dc-document-paper min-w-0 rounded-xl bg-white p-4 text-sm text-slate-900 shadow-sm sm:p-8 ${isModernDocument(document) ? "dc-modern-paper" : ""}`}
+      className={`dc-document-paper min-w-0 rounded-xl bg-white p-4 text-sm text-slate-900 shadow-sm sm:p-8 ${isModernDocument(document) ? "dc-modern-paper" : ""} ${document.labels.__avyron_edition === '2026-11' ? 'dc-agency-paper' : ''}`}
     >
       {isModernDocument(document) && <div className="dc-paper-brand"><strong>AVYRON</strong><span>DOCUMENT CENTER</span></div>}
       <p className="whitespace-pre-wrap border-b border-slate-200 pb-3 text-xs text-slate-600">

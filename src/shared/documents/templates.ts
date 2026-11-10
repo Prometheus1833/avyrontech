@@ -4,6 +4,7 @@ import {
   paragraph,
   type DocumentPayload,
 } from "./model";
+import { FAMILY_LEGAL_NOTES, LEGAL_REVIEW_DATE, TEMPLATE_STAGES } from './legal';
 
 export type TemplateDefinition = {
   id: string;
@@ -12,7 +13,8 @@ export type TemplateDefinition = {
   required: string[];
   payload: DocumentPayload;
 };
-const base = ["date", "provider.legal_name", "provider.tax_id", "provider.registration_number", "provider.address", "provider.share_capital", "beneficiary.legal_name", "scope"];
+const base = ["date", "provider.legal_name", "provider.tax_id", "provider.registration_number", "provider.address", "provider.registered_address", "provider.share_capital", "beneficiary.legal_name", "scope"];
+const commercialFamilies = new Set(['offer', 'framework', 'annex', 'sla']);
 const legalBase = [
   ...base,
   "provider.tax_id",
@@ -32,27 +34,30 @@ const template = (
   id,
   name,
   legal,
-  required: [...new Set(required)],
+  required: [...new Set([...required, ...(commercialFamilies.has(id) ? ['contract_capacity'] : [])])],
   payload: {
     ...blankPayload(name),
     header: "AVYRON · {{provider.legal_name}}",
+    labels: { __avyron_design: '2026', __avyron_edition: '2026-11', __avyron_stage: `${TEMPLATE_STAGES[id]}/5`, __avyron_legal_review: LEGAL_REVIEW_DATE },
     footer:
       "{{provider.contact_email}} · Document privat · {{beneficiary.legal_name}}",
     body: {
       type: "doc",
       content: [
         paragraph(TEMPLATE_INTROS[id]),
-        paragraph("Proiect / activitate: {{scope}}. Data documentului: {{date}}."),
+        paragraph(`TRASEU AVYRON · ETAPA ${TEMPLATE_STAGES[id]}/5 · ${FAMILY_LEGAL_NOTES[id].checkpoint}`),
+        paragraph("Activitate: {{scope}}. Data: {{date}}."),
         {
           type: "table",
           content: [
             { type: "tableRow", content: ["Emitent AVYRON", "Beneficiar / destinatar"].map((label) => ({ type: "tableHeader", content: [paragraph(label)] })) },
             { type: "tableRow", content: [
-              { type: "tableCell", content: [paragraph("{{provider.legal_name}}"), paragraph("CUI {{provider.tax_id}} · ONRC {{provider.registration_number}}"), paragraph("Sediu: {{provider.address}}"), paragraph("Capital social: {{provider.share_capital}}"), paragraph("Contact: {{provider.contact_email}}") ] },
+              { type: "tableCell", content: [paragraph("{{provider.legal_name}}"), paragraph("CUI {{provider.tax_id}} · ONRC {{provider.registration_number}}"), paragraph("Activitate / corespondență: {{provider.address}}"), paragraph("Sediu social: {{provider.registered_address}}"), paragraph("Capital social: {{provider.share_capital}}"), paragraph("Contact: {{provider.contact_email}}") ] },
               { type: "tableCell", content: [paragraph("{{beneficiary.legal_name}}"), paragraph("{{beneficiary.summary}}")] },
             ] },
           ],
         },
+        ...(commercialFamilies.has(id) ? [paragraph('Calitatea beneficiarului în această relație: {{contract_capacity}}.')] : []),
         ...(legal
           ? [
               paragraph(
@@ -60,10 +65,12 @@ const template = (
               ),
             ]
           : []),
+        ...(id === 'privacy' ? FAMILY_LEGAL_NOTES[id].clauses.map(paragraph) : []),
         ...sections.flatMap(([title, paragraphs]) => [
           heading(title),
           ...paragraphs.map(paragraph),
         ]),
+        ...(id === 'privacy' ? [] : [heading('Condiții specifice și repere de aplicare'), ...FAMILY_LEGAL_NOTES[id].clauses.map(paragraph)]),
       ],
     },
   },
@@ -241,7 +248,7 @@ export const DOCUMENT_TEMPLATES: TemplateDefinition[] = [
       [
         "Art. 1. Părțile și natura relației",
         [
-          "{{provider.legal_name}}, identificată prin {{provider.tax_id}}, cu sediul în {{provider.address}}, și {{beneficiary.legal_name}}, forma {{beneficiary.entity_type}}, cu sediul/adresa în {{beneficiary.address}}, convin prezentul contract prin reprezentanții {{signatories}}.",
+          "{{provider.legal_name}}, identificată în fișa părților, cu adresa de activitate și corespondență {{provider.address}}, și {{beneficiary.legal_name}}, forma {{beneficiary.entity_type}}, cu sediul/adresa în {{beneficiary.address}}, convin prezentul contract prin reprezentanții {{signatories}}.",
           "Relația juridică avută în vedere este {{relationship_type}}. Pentru parteneriate, colaborare independentă, subcontractare ori alte raporturi, dispozițiile specifice se verifică și se adaptează înainte de aprobare; titulatura documentului nu stabilește singură natura juridică.",
         ],
       ],
@@ -398,14 +405,14 @@ export const DOCUMENT_TEMPLATES: TemplateDefinition[] = [
       [
         "Art. 3. Roluri și instrucțiuni privind datele",
         [
-          "Rolurile părților și temeiul relației se stabilesc în {{data_roles}}. Pentru o relație operator–persoană împuternicită, obiectul, durata, natura și scopul prelucrării, tipurile de date și categoriile de persoane vizate se descriu în anexa {{processing_annex}}.",
+          "Rolurile părților și temeiul relației se stabilesc în {{data_roles}}. Pentru o relație operator–persoană împuternicită conform art. 28 alin. (3) GDPR, obiectul, durata, natura și scopul prelucrării, tipurile de date și categoriile de persoane vizate se descriu în anexa {{processing_annex}}.",
           "Persoana împuternicită prelucrează datele numai pe baza instrucțiunilor documentate, asigură confidențialitatea persoanelor autorizate și aplică măsurile tehnice și organizatorice convenite. Instrucțiunile considerate contrare normelor aplicabile sunt semnalate operatorului.",
         ],
       ],
       [
         "Art. 4. Cerințe condiționale pentru acordul de prelucrare",
         [
-          "Dacă se activează regimul DPA, subîmputerniciții și condițiile autorizării lor, transferurile internaționale și garanțiile aplicabile sunt {{subprocessors_transfers}}. Asistența pentru cereri ale persoanelor vizate, incidente, evaluări și verificări se organizează potrivit {{dpa_assistance}}.",
+          "Dacă se activează regimul DPA, subîmputerniciții și condițiile autorizării lor, transferurile internaționale și garanțiile aplicabile sunt {{subprocessors_transfers}}, cu verificarea art. 28 și art. 44–49 GDPR. Asistența pentru cereri ale persoanelor vizate, incidente, evaluări și verificări se organizează potrivit {{dpa_assistance}}.",
           "La încetare, datele sunt returnate sau șterse conform opțiunii documentate și obligațiilor legale de păstrare. Dovezile de conformitate și condițiile auditului sunt {{audit_conditions}}. Această secțiune nu poate fi aprobată fără anexele și verificarea de specialitate necesare.",
         ],
       ],
@@ -597,7 +604,13 @@ export const FIELD_LABELS: Record<string, string> = {
   date: "Data documentului",
   "provider.legal_name": "Denumirea juridică AVYRON",
   "provider.tax_id": "CUI AVYRON",
-  "provider.address": "Sediu AVYRON",
+  "provider.address": "Adresă AVYRON de activitate / corespondență",
+  "provider.registered_address": "Sediu social confirmat pentru identificarea legală",
+  contract_capacity: "Relația contractuală · profesionist sau consumator",
+  cross_border: "Clauză transfrontalieră (opțional)",
+  consumer_withdrawal_information: "Informarea privind retragerea, termenul și procedura aplicabile",
+  consumer_performance_request: "Cererea expresă de începere în perioada de retragere, dacă există",
+  jurisdiction_terms: "Competența și mecanismul de soluționare, verificate pentru țările implicate",
   "provider.contact_email": "E-mail AVYRON",
   "beneficiary.legal_name": "Beneficiar",
   "beneficiary.entity_type": "Forma juridică",
@@ -694,6 +707,15 @@ export function applicableTemplatePayload(payload: DocumentPayload, family: stri
       content = [...content.slice(0, start), ...(next < 0 ? [] : content.slice(next))];
     }
   }
+  if (commercialFamilies.has(family) && fields.contract_capacity === 'B2C') content = [...content,
+    heading('Condiții specifice pentru consumatori'),
+    paragraph('Se respectă informarea precontractuală, retragerea și excepțiile aplicabile potrivit OUG nr. 34/2014, în special art. 6, 9 și 16. Personalizarea unui serviciu nu este tratată automat ca renunțare la drepturi; cererile și acordurile exprese necesare se obțin separat, fără opțiuni preselectate.'),
+    paragraph('Informarea pentru acest contract: {{consumer_withdrawal_information}}. Solicitarea expresă privind începerea prestării, dacă este relevantă: {{consumer_performance_request}}. Drepturile imperative ale consumatorului nu sunt excluse de clauzele standard.'),
+  ];
+  if (commercialFamilies.has(family) && fields.cross_border === 'yes') content = [...content,
+    heading('Relație transfrontalieră · condiții de confirmat'),
+    paragraph('Legea aplicabilă este {{governing_terms}}, iar soluționarea disputelor este {{jurisdiction_terms}}. Pentru raporturile acoperite de Regulamentul (CE) nr. 593/2008 (Roma I), alegerea legii se verifică potrivit art. 3 și, în relațiile cu consumatori, art. 6; normele imperative și protecția consumatorului nu sunt înlăturate printr-o alegere formală.'),
+  ];
   return { ...payload, body: { ...payload.body, content } };
 }
 

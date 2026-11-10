@@ -4,7 +4,7 @@ import { cfAuth } from "./cfAuth";
 export type BillingProviderStatus={enabled:boolean;configured?:boolean;oneTime?:boolean;subscriptions?:boolean;savedMethods?:boolean;customerPortal?:boolean;invoices?:boolean;status?:"planned"};
 export type FinancialProviderPlaybook={
   provider:"stripe"|"oblio"|"revolut_merchant";
-  title:string;purpose:string;authentication:string;intake:string;reconciliation:string;gate:string;cadence:string;
+  loginUrl?:string;title:string;purpose:string;authentication:string;intake:string;reconciliation:string;gate:string;cadence:string;
   sources:readonly string[];
   phase:"not_connected"|"configuration_only"|"awaiting_approval"|"verification_required"|"connected_unsynced"|"synced"|"stale"|"error";
 };
@@ -19,6 +19,7 @@ export type BillingInvoice={
   status:"pending"|"issued"|"failed"|"cancelled";currency:string;total_minor:number;
   document_url:string|null;issued_at:number|null;created_at:number;
 };
+export type BillingReferenceSync={runId:string;status:"running"|"complete"|"differences";checked:number;matched:number;issueCount:number;startedAt:number;finishedAt:number|null;lockedUntil:number;issues:Array<{id:string;code:string}>};
 export type BillingAdminStatus={
   providers:{stripe:BillingProviderStatus;revolut:BillingProviderStatus;oblio:BillingProviderStatus;netopia:BillingProviderStatus};
   configuration?:Record<string,{fields:Array<{name:string;configured:boolean}>;automaticIssue:boolean|null}>;
@@ -32,7 +33,7 @@ export type BillingAdminStatus={
   recentPayments:Array<{id:string;order_id:string;provider:string;mode:string;status:string;amount_minor:number;currency:string;updated_at:number}>;
   recentSubscriptions:Array<{id:string;sku:string;provider:string;status:string;period:string;amount_minor:number;currency:string;current_period_end:number|null;updated_at:number}>;
   recentInvoices:Array<{id:string;order_id:string;provider:string;series:string|null;number:string|null;status:string;total_minor:number;currency:string;error_code:string|null;updated_at:number}>;
-  connectionRecords:Array<{provider:string;status:string;last_sync_at:number|null;last_error_code:string|null}>;
+  connectionRecords:Array<{provider:string;status:string;last_sync_at:number|null;last_error_code:string|null;sync?:BillingReferenceSync|null}>;
   providerPlaybooks:FinancialProviderPlaybook[];
   recentFailures:Array<{provider:string;event_type:string;error_code:string|null;received_at:number}>;
 };
@@ -77,6 +78,10 @@ const financialRequest = async <T>(path:string,init?:RequestInit):Promise<T> => 
    checkout_preference_locked:"Există deja o sesiune Stripe cu alte opțiuni de salvare a cardului. Păstrează opțiunea inițială sau contactează echipa.",
    checkout_already_active:"Există o plată deschisă la celălalt procesator. Continuă acolo înainte de o nouă încercare.",
    payment_pending:"Plata este în curs de confirmare. Actualizează starea înainte să reîncerci.",
+   verified_connection_required:"Verifică mai întâi conexiunea API a furnizorului.",
+   sync_in_progress:"Un lot este deja în verificare. Actualizează starea înainte de reluare.",
+   revolut_avyron_webhook_required:"Configurează destinația webhook AVYRON și evenimentul ORDER_COMPLETED în Revolut Merchant.",
+   oblio_approval_or_configuration_required:"Completează și aprobă configurația fiscală Oblio înainte de emitere.",
    rate_limited:"Ai făcut mai multe încercări într-un interval scurt. Reîncearcă mai târziu.",
   };
   if(messages[error.message])error.message=messages[error.message];throw error;
@@ -94,5 +99,6 @@ export const billingApi={
   cancelSubscription:(id:string)=>financialRequest<{ok:true;status?:string}>(`/api/billing/subscriptions/${encodeURIComponent(id)}/cancel`,{method:"POST"}),
   adminStatus:async()=>validateBillingAdminStatus(await cfAuth.request<unknown>("/api/billing/admin/status")),
   verifyConnection:(provider:FinancialProviderPlaybook["provider"])=>cfAuth.request<{ok:true;provider:string;account:string;detail:string|null;synchronized:false}>(`/api/billing/admin/connections/${provider}/verify`,{method:"POST"}),
+  syncConnection:(provider:FinancialProviderPlaybook["provider"])=>financialRequest<{state:BillingReferenceSync;scope:"native_avyron_references";moneyActions:false}>(`/api/billing/admin/connections/${provider}/sync`,{method:"POST"}),
   retryInvoice:(orderId:string)=>cfAuth.request<{ok:true;invoiced:boolean}>(`/api/billing/admin/invoices/${encodeURIComponent(orderId)}/retry`,{method:"POST"}),
 };

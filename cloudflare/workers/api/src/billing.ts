@@ -14,6 +14,7 @@ import { listAccountPaymentMethods } from "./billingMethods";
 import { hasCapability, platformRoleForUser } from "./authorization";
 import { checkRateLimit } from "./antispam";
 import { verifyFinancialConnection } from "./financialConnectionVerification";
+import { billingSyncState, syncBillingReferences } from "./billingProviderSync";
 import { checkStripeAccount } from "./stripeAccount";
 
 export const billingRouter = new Hono<AppBindings>();
@@ -486,7 +487,7 @@ billingRouter.get("/api/billing/admin/status",async(c)=>{
     c.env.DB.prepare("SELECT id,order_id,provider,mode,status,amount_minor,currency,updated_at FROM billing_checkout_sessions WHERE mode!='setup' ORDER BY updated_at DESC LIMIT 12").all(),
     c.env.DB.prepare("SELECT id,sku,provider,status,period,amount_minor,currency,current_period_end,updated_at FROM billing_subscriptions ORDER BY updated_at DESC LIMIT 12").all(),
     c.env.DB.prepare("SELECT id,order_id,provider,series,number,status,total_minor,currency,error_code,updated_at FROM billing_invoices ORDER BY updated_at DESC LIMIT 12").all(),
-    c.env.DB.prepare("SELECT provider,status,last_sync_at,last_error_code FROM financial_provider_connections WHERE provider IN ('stripe','oblio','revolut_merchant') ORDER BY provider").all<FinancialConnectionRecord>(),
+    c.env.DB.prepare("SELECT provider,status,last_sync_at,last_error_code,sync_state_json FROM financial_provider_connections WHERE vendor_id IS NULL AND provider IN ('stripe','oblio','revolut_merchant') ORDER BY updated_at").all<FinancialConnectionRecord>(),
   ]);
   const capabilities=providerCapabilities(c.env);
   const records=new Map(connectionRecords.results.map((record)=>[record.provider,record]));
@@ -496,7 +497,7 @@ billingRouter.get("/api/billing/admin/status",async(c)=>{
     const approved=provider==="oblio"?capabilities.oblio.enabled:configured;
     return {...playbook,phase:financialSyncPhase({provider,configured,approved,connection:records.get(provider),now:Date.now()})};
   });
-  return c.json({providers:capabilities,providerPlaybooks,configuration:billingConfiguration(c.env),security:{mfaEnabled:mfaAuthEnabled(c.env),mfaVerified:Boolean(c.get("mfaVerified")),mfaSatisfied:await financialMfaSatisfied(c),canVerify:Boolean(await platformRoleForUser(c.env.DB,c.get("userId")))},sessions:sessions.results,subscriptions:subscriptions.results,invoices:invoices.results,pendingInvoices:pendingInvoices.results,paymentsByCurrency:paymentsByCurrency.results,invoicesByCurrency:invoicesByCurrency.results,recentPayments:recentPayments.results,recentSubscriptions:recentSubscriptions.results,recentInvoices:recentInvoices.results,connectionRecords:connectionRecords.results,recentFailures:failed.results});
+  return c.json({providers:capabilities,providerPlaybooks,configuration:billingConfiguration(c.env),security:{mfaEnabled:mfaAuthEnabled(c.env),mfaVerified:Boolean(c.get("mfaVerified")),mfaSatisfied:await financialMfaSatisfied(c),canVerify:Boolean(await platformRoleForUser(c.env.DB,c.get("userId")))},sessions:sessions.results,subscriptions:subscriptions.results,invoices:invoices.results,pendingInvoices:pendingInvoices.results,paymentsByCurrency:paymentsByCurrency.results,invoicesByCurrency:invoicesByCurrency.results,recentPayments:recentPayments.results,recentSubscriptions:recentSubscriptions.results,recentInvoices:recentInvoices.results,connectionRecords:connectionRecords.results.map(({sync_state_json,...record})=>({...record,sync:billingSyncState(sync_state_json||null)})),recentFailures:failed.results});
 });
 
 billingRouter.post("/api/billing/admin/connections/:provider/verify",async(c)=>{
@@ -504,15 +505,17 @@ billingRouter.post("/api/billing/admin/connections/:provider/verify",async(c)=>{
   if (!(await financialMfaSatisfied(c))) return c.json({error:{code:"mfa_required"}},403);
   const provider=c.req.param("provider");
   if (!["stripe","oblio","revolut_merchant"].includes(provider)) return c.json({error:{code:"unsupported_provider"}},404);
-  const rate=await checkRateLimit(c.env.DB,[{key:`billing_verify:${c.get("userId")}:h`,limit:12,windowSec:3600}]);
+  const rate=await checkRateLimit(c.env.DB,[{key:`billing_verify:${c.get("userId")}:h`,limit:12,windowSec:3600},{key:`billing_provider_reads:${provider}:ten`,limit:3,windowSec:10}]);
   if (!rate.ok) return c.json({error:{code:"rate_limited"}},429);
-  const result=await verifyFinancialConnection(c.env,provider as FinancialProviderKey);
   const timestamp=Date.now();
-  const existing=await c.env.DB.prepare("SELECT id FROM financial_provider_connections WHERE provider=? AND vendor_id IS NULL ORDER BY updated_at DESC LIMIT 1")
-    .bind(provider).first<{id:string}>();
+  const existing=await c.env.DB.prepare("SELECT id,sync_state_json FROM financial_provider_connections WHERE provider=? AND vendor_id IS NULL ORDER BY updated_at DESC LIMIT 1")
+    .bind(provider).first<{id:string;sync_state_json:string|null}>();
+  if ((billingSyncState(existing?.sync_state_json||null)?.lockedUntil||0) > timestamp) return c.json({error:{code:"sync_in_progress"}},409);
+  const result=await verifyFinancialConnection(c.env,provider as FinancialProviderKey);
   if (existing) {
-    await c.env.DB.prepare("UPDATE financial_provider_connections SET status=?,last_error_code=?,capabilities_json=?,last_sync_at=NULL,updated_by=?,updated_at=? WHERE id=?")
-      .bind(result.ok?"connected":"error",result.ok?null:result.code,result.ok?JSON.stringify(result.capabilities):"[]",c.get("userId"),timestamp,existing.id).run();
+    const verified=await c.env.DB.prepare("UPDATE financial_provider_connections SET status=?,last_error_code=?,capabilities_json=?,last_sync_at=NULL,sync_state_json=NULL,updated_by=?,updated_at=? WHERE id=? AND sync_state_json IS ?")
+      .bind(result.ok?"connected":"error",result.ok?null:result.code,result.ok?JSON.stringify(result.capabilities):"[]",c.get("userId"),timestamp,existing.id,existing.sync_state_json).run();
+    if(!verified.meta.changes)return c.json({error:{code:"sync_in_progress"}},409);
   } else if (result.ok) {
     await c.env.DB.prepare("INSERT INTO financial_provider_connections(id,provider,status,capabilities_json,secret_binding_reference,created_by,updated_by,created_at,updated_at) VALUES (?,?,'connected',?,?,?,?,?,?)")
       .bind(`fpc_${crypto.randomUUID().replace(/-/g,"")}`,provider,JSON.stringify(result.capabilities),null,c.get("userId"),c.get("userId"),timestamp,timestamp).run();
@@ -520,6 +523,17 @@ billingRouter.post("/api/billing/admin/connections/:provider/verify",async(c)=>{
   await c.env.DB.prepare("INSERT INTO financial_audit_events(id,actor_user_id,action,resource_type,resource_id,before_json,after_json,source,request_id,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)")
     .bind(`faud_${crypto.randomUUID().replace(/-/g,"")}`,c.get("userId"),"billing.connection.verify","financial_provider_connection",provider,null,JSON.stringify({ok:result.ok,code:result.ok?null:result.code}),"api",c.get("requestId")||null,timestamp).run();
   return result.ok?c.json({ok:true,provider,account:result.account,capabilities:result.capabilities,detail:result.detail||null,synchronized:false}):c.json({error:{code:result.code}},409);
+});
+
+billingRouter.post("/api/billing/admin/connections/:provider/sync",async(c)=>{
+  if (!(await platformRoleForUser(c.env.DB,c.get("userId")))) return c.json({error:{code:"platform_role_required"}},403);
+  if (!(await financialMfaSatisfied(c))) return c.json({error:{code:"mfa_required"}},403);
+  const provider=c.req.param("provider");
+  if (!["stripe","oblio","revolut_merchant"].includes(provider)) return c.json({error:{code:"unsupported_provider"}},404);
+  const rate=await checkRateLimit(c.env.DB,[{key:`billing_sync:${c.get("userId")}:${provider}:m`,limit:6,windowSec:60},{key:`billing_provider_reads:${provider}:ten`,limit:3,windowSec:10}]);
+  if (!rate.ok) return c.json({error:{code:"rate_limited"}},429);
+  const result=await syncBillingReferences(c.env,provider as FinancialProviderKey,c.get("userId"));
+  return "error" in result ? c.json({error:{code:result.error}},409) : c.json(result);
 });
 
 billingRouter.post("/api/billing/admin/invoices/:orderId/retry",async(c)=>{

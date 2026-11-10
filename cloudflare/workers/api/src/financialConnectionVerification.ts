@@ -1,5 +1,6 @@
 import type { Env } from "./types";
 import type { FinancialProviderKey } from "./providerSyncPolicy";
+import { readTextUpTo } from "./metadata";
 import { checkStripeAccount } from "./stripeAccount";
 
 type Verification = { ok: true; account: string; capabilities: string[]; detail?: string } | { ok: false; code: string };
@@ -9,8 +10,9 @@ const REVOLUT_VERSION = "2026-08-17";
 
 async function jsonResponse(url: string, init: RequestInit): Promise<{ ok: boolean; status: number; data: Record<string, unknown> }> {
   try {
-    const response = await fetch(url, { ...init, signal: AbortSignal.timeout(10_000) });
-    const data = await response.json().catch(() => ({})) as Record<string, unknown>;
+    const response = await fetch(url, { ...init, redirect: "error", signal: AbortSignal.timeout(10_000) });
+    const parsed:unknown = JSON.parse(await readTextUpTo(response,262144));
+    const data = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string,unknown> : {};
     return { ok: response.ok, status: response.status, data };
   } catch {
     return { ok: false, status: 0, data: {} };
@@ -56,12 +58,16 @@ export async function verifyFinancialConnection(env: Env, provider: FinancialPro
     const key = env.REVOLUT_MERCHANT_SECRET_KEY?.trim();
     if (!key || !env.REVOLUT_MERCHANT_WEBHOOK_SECRET?.trim()) return { ok: false, code: "revolut_merchant_secrets_missing" };
     const root = (env.REVOLUT_MERCHANT_API_URL?.trim() || "https://merchant.revolut.com/api").replace(/\/+$/, "");
+    if(root!=="https://merchant.revolut.com/api" && !(env.APP_ENV!=="production" && root==="https://sandbox-merchant.revolut.com/api"))return {ok:false,code:"merchant_origin_rejected"};
     const response = await jsonResponse(`${root}/webhooks`, {
       headers: { authorization: `Bearer ${key}`, "Revolut-Api-Version": env.REVOLUT_MERCHANT_API_VERSION?.trim() || REVOLUT_VERSION },
     });
     if (!response.ok) return { ok: false, code: `revolut_merchant_api_${response.status || "unreachable"}` };
     if (!Array.isArray(response.data.webhooks)) return { ok: false, code: "revolut_merchant_webhooks_unreadable" };
-    return { ok: true, account: "merchant_api", capabilities: ["webhooks_read", "checkout_configured", "webhook_secret_configured"], detail: `${response.data.webhooks.length} webhook(uri)` };
+    const allowed = new Set(["https://avyron.ro/api/billing/webhooks/revolut","https://app.avyron.ro/api/billing/webhooks/revolut","https://api.avyron.ro/v1/billing/webhooks/revolut","https://api.avyron.ro/api/billing/webhooks/revolut"]);
+    const destination = response.data.webhooks.find((value):value is Record<string,unknown>=>Boolean(value&&typeof value==='object'&&allowed.has(String((value as Record<string,unknown>).url))&&Array.isArray((value as Record<string,unknown>).events)&&((value as Record<string,unknown>).events as unknown[]).includes('ORDER_COMPLETED')));
+    if(!destination)return {ok:false,code:"revolut_avyron_webhook_required"};
+    return { ok: true, account: "merchant_api", capabilities: ["webhooks_read", "avyron_webhook_destination_verified", "checkout_configured", "webhook_secret_configured"], detail: "Destinație AVYRON și eveniment ORDER_COMPLETED verificate; livrarea se confirmă separat." };
   }
 
   return { ok: false, code: "unsupported_provider" };

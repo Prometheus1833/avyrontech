@@ -20,7 +20,7 @@ import {
   BorderStyle,
   ImageRun,
 } from "docx";
-import { DOCUMENT_DESIGN, commercialTotalReady, commercialTotals, billingLabel, isModernDocument, readableDocumentDraft } from "../../../../src/shared/documents/design";
+import { DOCUMENT_DESIGN, commercialTotalReady, commercialTotals, billingLabel, isModernDocument, isAgencyDocument, readableDocumentDraft } from "../../../../src/shared/documents/design";
 import { documentBrandPng } from "./documentBrand";
 import {
   plainText,
@@ -135,6 +135,7 @@ export function pdfDefinition(
   draft: boolean,
 ): TDocumentDefinitions {
   const modern = isModernDocument(payload);
+  const agency = isAgencyDocument(payload);
   if (modern && draft) payload = readableDocumentDraft(payload);
   const body: Content[] = [];
   const nodes = payload.body.content || [];
@@ -211,7 +212,7 @@ export function pdfDefinition(
     : [];
   return {
     pageSize: "A4",
-    pageMargins: modern ? [44, 82, 44, 66] : [48, 86, 48, 66],
+    pageMargins: agency ? [42, 78, 42, 60] : modern ? [44, 82, 44, 66] : [48, 86, 48, 66],
     ...(modern ? { pageBreakBefore: (node, queries) => {
       if (node.id === "commercial-estimate" && keepCommercialTogether && queries.getPreviousNodesOnPage().length > 0)
         return !queries.getFollowingNodesOnPage().some((following) => following.id === "commercial-total-final");
@@ -231,6 +232,7 @@ export function pdfDefinition(
           stack: [
             { text: "AVYRON", bold: true, fontSize: 12, color: "#3d377b" },
             { text: payload.header, fontSize: 8, color: "#566077" },
+            ...(agency ? [{text: `DOCUMENT CENTER · ETAPA ${payload.labels.__avyron_stage}`,fontSize:7,color:`#${DOCUMENT_DESIGN.accent}`}]:[]),
           ],
           margin: [10, 0, 0, 0],
         },
@@ -397,6 +399,7 @@ export async function exportDocument(
         .getBuffer(),
     );
   const modern = isModernDocument(payload);
+  const agency = isAgencyDocument(payload);
   if (modern && draft) payload = readableDocumentDraft(payload);
   const logo = Uint8Array.from(atob(documentBrandPng.split(",")[1]), (c) =>
     c.charCodeAt(0),
@@ -500,14 +503,14 @@ export async function exportDocument(
     title: payload.title,
     styles: {
       default: {
-        document: { run: { font: "Arial", size: 21, color: modern ? DOCUMENT_DESIGN.ink : "263046" }, ...(modern ? { paragraph: { spacing: { line: 290, after: 140 } } } : {}) },
-        ...(modern ? { title: { run: { font: "Arial", size: 44, bold: true, color: "111827" }, paragraph: { keepNext: true, spacing: { before: 0, after: 160 } } } } : {}),
+        document: { run: { font: agency ? "Calibri" : "Arial", size: 21, color: modern ? DOCUMENT_DESIGN.ink : "263046" }, ...(modern ? { paragraph: { spacing: { line: 290, after: 140 } } } : {}) },
+        ...(modern ? { title: { run: { font: agency ? "Calibri" : "Arial", size: 44, bold: true, color: "111827" }, paragraph: { keepNext: true, spacing: { before: 0, after: 160 } } } } : {}),
         heading1: {
-          run: { font: "Arial", size: 34, bold: true, color: "222B50" },
+          run: { font: agency ? "Calibri" : "Arial", size: 34, bold: true, color: "222B50" },
           paragraph: { spacing: { before: 280, after: 180 }, keepNext: true },
         },
         heading2: {
-          run: { font: "Arial", size: 26, bold: true, color: modern ? DOCUMENT_DESIGN.accent : "3D377B" },
+          run: { font: agency ? "Calibri" : "Arial", size: 26, bold: true, color: modern ? DOCUMENT_DESIGN.accent : "3D377B" },
           paragraph: { spacing: { before: 240, after: 140 }, keepNext: true },
         },
       },

@@ -248,6 +248,7 @@ export default function DocumentGenerator({
         ...t.required,
         ...templateFields(applicableTemplatePayload(t.payload, t.family, automatic)),
         ...(t.family === "offer" ? ["optional_extras"] : []),
+        ...(["offer", "framework", "annex", "sla"].includes(t.family) ? ["cross_border"] : []),
       ]),
       ...Object.keys(serviceFields),
       ...Object.keys(automatic).filter((key) => key.startsWith("provider.") || (manualMode && key.startsWith("beneficiary.")) || (!!futureProject.name && key.startsWith("project.future_"))),
@@ -392,6 +393,7 @@ export default function DocumentGenerator({
       return [
         heading(`Serviciu: ${item.display_name}`),
         paragraph(profile.deliverables),
+        ...(profile.legalNotes || []).map(paragraph),
         ...Object.entries(profile.fields).map(([key, label]) =>
           paragraph(
             `${label}: ${automatic[`service.${id}.${key}`] || `{{service.${id}.${key}}}`}`,
@@ -1040,7 +1042,12 @@ export default function DocumentGenerator({
                         {models.some((t) => t.required.includes(key))
                           ? " *"
                           : ""}
-                        {key === "privacy_mode" ? (
+                        {key === "contract_capacity" || key === "cross_border" ? (
+                          <select className="dc-input" value={automatic[key] || ""} onChange={e => setFields(v => ({...v,[key]:e.target.value}))}>
+                            <option value="">{key === "contract_capacity" ? "Selectează calitatea în acest contract" : "Fără clauză transfrontalieră suplimentară"}</option>
+                            {key === "contract_capacity" ? <><option value="B2B">Profesionist · B2B</option><option value="B2C">Consumator · B2C</option></> : <option value="yes">Relație transfrontalieră · necesită verificare</option>}
+                          </select>
+                        ) : key === "privacy_mode" ? (
                           <select
                             className="dc-input"
                             value={automatic[key] || "Confidențialitate"}

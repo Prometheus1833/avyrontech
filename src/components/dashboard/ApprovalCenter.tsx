@@ -20,7 +20,15 @@ import {
 } from "@/components/ui/dialog";
 
 const button =
-  "rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium hover:bg-white/10 disabled:opacity-50";
+  "min-h-11 sm:min-h-9 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-medium hover:bg-white/10 disabled:opacity-50";
+const platformLabels: Record<string, string> = { facebook: 'Facebook', instagram: 'Instagram', threads: 'Threads', tiktok: 'TikTok', linkedin: 'LinkedIn', whatsapp: 'WhatsApp', telegram: 'Telegram', youtube: 'YouTube', blog: 'Blog AVYRON' };
+const approvalDate = (time: number) => new Intl.DateTimeFormat('ro-RO', { timeZone: 'Europe/Bucharest', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(time);
+function ApprovalContext({ item }: { item: ApprovalItem }) {
+  return <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] leading-snug text-slate-300">
+    {item.publication && <><span>{item.publication.platforms.length ? item.publication.platforms.map(p => platformLabels[p] || p).join(' · ') : 'Platformă de stabilit'}</span><span>{item.publication.scheduledAt ? `Programat: ${approvalDate(item.publication.scheduledAt)}` : 'Dată de publicare de stabilit'}</span>{item.publication.format && <span className="capitalize">{item.publication.format.replace(/_/g, ' ')}</span>}</>}
+    <span className="text-slate-400">Solicitat: {approvalDate(item.requestedAt)}</span>
+  </div>;
+}
 export default function ApprovalCenter({
   authorized,
 }: {
@@ -141,22 +149,23 @@ export default function ApprovalCenter({
     finally{setBusy(false);}
   };
   const rows = (all: boolean) => (
-    <div className="space-y-2">
-      {(all ? inbox?.data : inbox?.data.slice(0, 4))?.map((item) => (
+    <div className="space-y-1.5">
+      {(all ? inbox?.data : inbox?.data.slice(0, 8))?.map((item, index) => (
         <article
           key={item.source + item.id}
-          className="flex min-w-0 flex-col gap-3 rounded-xl border border-white/[0.07] bg-white/[0.025] p-3"
+          className={`${!all && index >= 6 ? 'hidden 2xl:flex' : !all && index >= 4 ? 'hidden md:flex' : 'flex'} min-w-0 flex-col gap-2 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2.5`}
         >
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-wide text-fuchsia-200/70">
               {approvalLabels[item.source]}
             </p>
-            <p className="mt-1 break-words text-sm font-medium text-slate-100">
+            <p className="mt-0.5 break-words text-sm font-medium leading-snug text-slate-100">
               {item.title}
             </p>
-            <p className="mt-1 break-words text-xs text-slate-400">
+            <p title={item.summary} className="mt-0.5 line-clamp-1 break-words text-xs leading-snug text-slate-400">
               {item.summary}
             </p>
+            <ApprovalContext item={item} />
           </div>
           <div className="flex flex-wrap gap-2"><button
             className={button + " shrink-0"}
@@ -315,6 +324,7 @@ export default function ApprovalCenter({
           <div className="whitespace-pre-wrap break-words rounded-xl bg-white/5 p-4 text-sm leading-relaxed">
             {selected?.detail}
           </div>
+          {selected && <ApprovalContext item={selected} />}
           {selected&&intent==='withdraw'&&<>
             <p className="text-sm text-slate-300">Retragi această solicitare în așteptare. Înregistrarea sursă și istoricul rămân păstrate; versiunea unui tipizat este retrasă, fără ștergerea documentelor generate.</p>
             <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/>Confirm retragerea acestei versiuni.</label>

@@ -1,8 +1,11 @@
+import { SERVICE_LEGAL_NOTES } from "./legal";
+
 /** Extensible document profiles enrich the actual D1 catalog; they never define prices or final inventory. */
 export type ServiceDocumentProfile = {
   fields: Record<string, string>;
   deliverables: string;
   documents: string[];
+  legalNotes?: string[];
 };
 const profiles: Record<string, ServiceDocumentProfile> = {
   website: {
@@ -175,19 +178,6 @@ export function serviceDocumentProfile(
   item: { entity_key: string; category: string },
   custom?: string,
 ): ServiceDocumentProfile {
-  if (custom) {
-    try {
-      const parsed = JSON.parse(custom);
-      if (
-        parsed.fields &&
-        typeof parsed.deliverables === "string" &&
-        Array.isArray(parsed.documents)
-      )
-        return parsed;
-    } catch {
-      /* Unknown profiles use the explicit generic schema. */
-    }
-  }
   const key = item.entity_key.toLowerCase();
   const family = /wcag|accessib/.test(key)
     ? "accessibility"
@@ -214,5 +204,18 @@ export function serviceDocumentProfile(
                         : item.category === "digital"
                           ? "digital"
                           : "general";
-  return profiles[family];
+  if (custom) {
+    try {
+      const parsed = JSON.parse(custom);
+      if (
+        parsed.fields &&
+        typeof parsed.deliverables === "string" &&
+        Array.isArray(parsed.documents)
+      )
+        return { ...parsed, legalNotes: parsed.legalNotes || SERVICE_LEGAL_NOTES[family] };
+    } catch {
+      /* Unknown profiles use the explicit generic schema. */
+    }
+  }
+  return { ...profiles[family], legalNotes: SERVICE_LEGAL_NOTES[family] };
 }

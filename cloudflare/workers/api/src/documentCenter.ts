@@ -32,7 +32,7 @@ import {
   type DocumentPermission,
 } from "../../../../src/shared/documents/model";
 import { DOCUMENT_TEMPLATES } from "../../../../src/shared/documents/templates";
-import { isModernDocument, DOCUMENT_RENDERER } from "../../../../src/shared/documents/design";
+import { isModernDocument, documentRenderer } from "../../../../src/shared/documents/design";
 import { SERVICE_COMMERCIAL_SOURCES } from "../../../../src/data/serviceCommercialSources";
 import staffGuides from "./documentStaffGuides.json";
 
@@ -661,7 +661,7 @@ documentCenterRouter.get("/api/documents/context", async (c) => {
       .bind(...templateFilter.values)
       .all(),
     c.env.DB.prepare(
-      "SELECT legal_name,tax_id,registration_number,address,representative,contact_email,share_capital FROM document_company_profile WHERE id='avyron'",
+      "SELECT legal_name,tax_id,registration_number,address,registered_address,representative,contact_email,share_capital FROM document_company_profile WHERE id='avyron'",
     ).first(),
     c.env.DB.prepare(
       "SELECT catalog_id,configuration_json FROM document_service_profiles",
@@ -1557,6 +1557,7 @@ documentCenterRouter.put("/api/documents/settings/company", async (c) => {
       tax_id: z.string().max(100),
       registration_number: z.string().max(100),
       address: z.string().max(1000),
+      registered_address: z.string().max(1000).optional(),
       representative: z.string().max(240),
       contact_email: z.string().email().max(254),
       share_capital: z.string().max(120).optional(),
@@ -1566,8 +1567,8 @@ documentCenterRouter.put("/api/documents/settings/company", async (c) => {
   if (!b.success) return error(c, "invalid_input");
   return write(c, { ok: true }, [
     c.env.DB.prepare(
-      "UPDATE document_company_profile SET legal_name=?,tax_id=?,registration_number=?,address=?,representative=?,contact_email=?,share_capital=COALESCE(?,share_capital),updated_by=?,updated_at=? WHERE id='avyron'",
-    ).bind(b.data.legal_name,b.data.tax_id,b.data.registration_number,b.data.address,b.data.representative,b.data.contact_email,b.data.share_capital ?? null,c.get("userId"),stamp()),
+      "UPDATE document_company_profile SET legal_name=?,tax_id=?,registration_number=?,address=?,registered_address=COALESCE(?,registered_address),representative=?,contact_email=?,share_capital=COALESCE(?,share_capital),updated_by=?,updated_at=? WHERE id='avyron'",
+    ).bind(b.data.legal_name,b.data.tax_id,b.data.registration_number,b.data.address,b.data.registered_address ?? null,b.data.representative,b.data.contact_email,b.data.share_capital ?? null,c.get("userId"),stamp()),
   ]);
 });
 documentCenterRouter.put("/api/documents/settings/client/:id", async (c) => {
@@ -1682,7 +1683,7 @@ async function generatedFile(
     throw new Error("document_storage_unverified");
   const payload: DocumentPayload = JSON.parse(version.payload_json);
   const modern = isModernDocument(payload);
-  const rendererVersion = modern ? DOCUMENT_RENDERER : "classic";
+  const rendererVersion = documentRenderer(payload);
   const approved = !!(await c.env.DB.prepare(
     "SELECT 1 FROM document_approvals WHERE version_id=?",
   )
@@ -1718,7 +1719,7 @@ async function generatedFile(
   if (!c.env.DOCUMENT_EXPORTS)
     throw new Error("document_export_runtime_unconfigured");
   const renderer = c.env.DOCUMENT_EXPORTS.getByName(
-    `${version.id}:${format}:${approved ? "final" : "draft"}${modern ? `:${DOCUMENT_RENDERER}` : ""}`,
+    `${version.id}:${format}:${approved ? "final" : "draft"}${modern ? `:${rendererVersion}` : ""}`,
   );
   const bytes = await renderer.render(
     payload,
@@ -1737,7 +1738,7 @@ async function generatedFile(
         : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
   await c.env.FILES.put(objectKey, bytes, {
     httpMetadata: { contentType: ct },
-    ...(modern ? { customMetadata: { documentRenderer: DOCUMENT_RENDERER } } : {}),
+    ...(modern ? { customMetadata: { documentRenderer: rendererVersion } } : {}),
   });
   try {
     await c.env.DB.batch([

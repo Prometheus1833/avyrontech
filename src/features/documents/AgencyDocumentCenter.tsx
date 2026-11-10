@@ -587,6 +587,7 @@ export default function AgencyDocumentCenter({
             "tax_id",
             "registration_number",
             "address",
+            "registered_address",
             "representative",
             "contact_email",
             "share_capital",
