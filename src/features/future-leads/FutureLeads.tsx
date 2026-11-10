@@ -477,13 +477,13 @@ export default function FutureLeads() {
           <div className="mb-1 flex items-center gap-2 text-xs uppercase tracking-[.18em] text-primary">
             <CalendarClock className="h-4 w-4" /> AVYRON · Planificare
           </div>
-          <h2
+          <h1
             ref={heading}
             tabIndex={-1}
             className="text-2xl font-semibold focus-visible:outline-primary"
           >
             Leaduri Viitoare
-          </h2>
+          </h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
             Clienți confirmați, cu următorul pas programat. Cele mai apropiate
             contactări apar primele.

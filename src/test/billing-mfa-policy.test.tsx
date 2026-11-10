@@ -35,3 +35,18 @@ it("runs read-only synchronization only on demand and displays the actual empty 
  const button=await screen.findByRole('button',{name:'Sincronizează',exact:true});expect(sync).not.toHaveBeenCalled();fireEvent.click(button);
  await waitFor(()=>expect(sync).toHaveBeenCalledWith('stripe'));expect(await screen.findByText(/0 referințe comparate · 0 concordante · 0 diferențe/)).toBeInTheDocument();
 });
+
+it.each(["verify", "sync"])("refreshes a failed %s and keeps the provider error visible even while approval is pending", async (operation) => {
+  const status = { providers: {}, security: { mfaEnabled: false, mfaVerified: false, mfaSatisfied: true, canVerify: true }, providerPlaybooks: [{ provider: "oblio", title: "Oblio", purpose: "Facturare", phase: "awaiting_approval", authentication: "", intake: "", reconciliation: "", gate: "", cadence: "", sources: [] }], sessions: [], subscriptions: [], invoices: [], pendingInvoices: [], paymentsByCurrency: [], invoicesByCurrency: [], recentPayments: [], recentSubscriptions: [], recentInvoices: [], connectionRecords: [{ provider: "oblio", status: "connected", last_sync_at: null, last_error_code: null }], recentFailures: [] } as BillingAdminStatus;
+  const refreshed = { ...status, connectionRecords: [{ ...status.connectionRecords[0], status: "error", last_error_code: "oblio_auth_unreachable" }] };
+  const read = vi.spyOn(billingApi, "adminStatus").mockResolvedValueOnce(status).mockResolvedValue(refreshed);
+  const action = operation === "verify" ? vi.spyOn(billingApi, "verifyConnection").mockRejectedValue(new Error("oblio_auth_unreachable")) : vi.spyOn(billingApi, "syncConnection").mockRejectedValue(new Error("oblio_auth_unreachable"));
+  render(<MemoryRouter><BillingOperationsPanel /></MemoryRouter>);
+  fireEvent.click(await screen.findByRole("button", { name: operation === "verify" ? "Verifică API" : "Sincronizează", exact: true }));
+  await waitFor(() => expect(action).toHaveBeenCalledWith("oblio"));
+  await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Furnizorul nu a putut fi contactat");
+  expect(screen.getByRole("alert")).toHaveTextContent("oblio_auth_unreachable");
+  expect(screen.getByText("Așteaptă aprobare")).toBeVisible();
+  expect(screen.queryByRole("button", { name: "Sincronizează", exact: true })).toBeNull();
+});

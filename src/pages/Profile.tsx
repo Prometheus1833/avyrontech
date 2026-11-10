@@ -152,10 +152,16 @@ function ProfileDashboard() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
   useEffect(() => {
-    void import("@/lib/seo").then(({ setPageMeta }) => setPageMeta({
-      title: access.isClient ? "Contul meu — AVYRON" : "Dashboard — AVYRON OS", description: access.isClient ? "Servicii, comenzi și documentele contului AVYRON." : "Sistemul operațional intern AVYRON.", path: "/profil", robots: "noindex, nofollow",
-    }));
-  }, [access.isClient]);
+    let current = true;
+    const label = dashboardSectionMeta(tab, access.isClient).label;
+    void import("@/lib/seo").then(({ setPageMeta }) => {
+      if (!current) return;
+      setPageMeta({
+        title: `${label} — ${access.isClient ? "AVYRON" : "AVYRON OS"}`, description: access.isClient ? "Servicii, comenzi și documentele contului AVYRON." : "Sistemul operațional intern AVYRON.", path: "/profil", robots: "noindex, nofollow",
+      });
+    });
+    return () => { current = false; };
+  }, [access.isClient, tab]);
 
   const openSection = async (section: SectionId,extraParams?:Record<string,string>) => {
     if(!(await flushDocumentEditors()) || !(await flushServicePageEdits()))return;

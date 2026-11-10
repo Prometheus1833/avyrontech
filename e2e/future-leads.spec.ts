@@ -129,11 +129,12 @@ for (const width of [1440, 390, 320])
   }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/profil?tab=future-leads");
+    await expect(page).toHaveTitle("Leaduri Viitoare — AVYRON OS");
     const region = page
       .getByRole("region", { name: "Leaduri Viitoare", exact: true })
       .first();
     await expect(
-      region.getByRole("heading", { name: "Leaduri Viitoare", exact: true }),
+      region.getByRole("heading", { name: "Leaduri Viitoare", level: 1, exact: true }),
     ).toBeVisible();
     await region.getByRole("button", { name: "Adaugă / programează" }).click();
     const dialog = page.getByRole("dialog");

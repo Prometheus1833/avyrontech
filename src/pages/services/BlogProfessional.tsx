@@ -161,7 +161,7 @@ const BlogProfessional = () => {
             </div>
             <a
               href={ro ? "/#hero" : "/en#hero"}
-              aria-label={ro ? "Acasă" : "Home"}
+              aria-label={ro ? "AVYRON — Acasă" : "AVYRON — Home"}
               className="flex items-center gap-2 rounded-full px-1.5 py-1 transition-colors hover:bg-foreground/5"
             >
               <img src={logo} alt="Avyron" width={32} height={32} className="size-7 rounded-md ring-1 ring-foreground/15 sm:size-8" />

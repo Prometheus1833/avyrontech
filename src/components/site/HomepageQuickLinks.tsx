@@ -37,7 +37,7 @@ export default function HomepageQuickLinks() {
       to: ro ? "/despre-noi" : "/en/about",
       eyebrow: ro ? "Cunoaște echipa" : "Meet the team",
       title: ro ? "Despre Noi" : "About us",
-      detail: ro ? "Web design, development, cybersecurity și QA, reunite într-un proces clar." : "Web design, development, cybersecurity and QA in one clear process.",
+      detail: ro ? "Design, dezvoltare web, securitate și testare, cu o echipă care înțelege afacerea ta." : "Design, web development, security and testing, with a team that understands your business.",
       icon: UsersRound,
       testId: "about-card",
       tone: "from-fuchsia-500/15 to-violet-500/[0.05] text-fuchsia-600 dark:text-fuchsia-300",

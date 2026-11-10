@@ -394,7 +394,11 @@ const ServiceCinematicIntro = ({ service }: { service: ServiceIntroKey }) => {
     };
 
     resize();
+    const skip = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setVisible(false);
+    };
     window.addEventListener("resize", resize, { passive: true });
+    window.addEventListener("keydown", skip);
     animationFrame = window.requestAnimationFrame(frame);
     const guard = window.setTimeout(finish, duration + SERVICE_INTRO_GUARD_MS);
 
@@ -409,14 +413,19 @@ const ServiceCinematicIntro = ({ service }: { service: ServiceIntroKey }) => {
           { autoAlpha: 1, y: 0, filter: "blur(0px)", duration: 0.72, ease: "power3.out", delay: 0.08 },
         );
         gsapCleanup = () => tween.kill();
+      }).catch(() => {
+        // Optional copy animation: the canvas and bounded exit keep working
+        // when this chunk cannot be downloaded on an unstable connection.
       });
     }
 
     return () => {
+      finished = true;
       window.cancelAnimationFrame(animationFrame);
       window.clearTimeout(guard);
       window.clearTimeout(exitTimer);
       window.removeEventListener("resize", resize);
+      window.removeEventListener("keydown", skip);
       gsapCleanup?.();
       document.body.style.overflow = previousOverflow;
       context.clearRect(0, 0, width, height);
@@ -454,6 +463,13 @@ const ServiceCinematicIntro = ({ service }: { service: ServiceIntroKey }) => {
         }}
       />
       <canvas ref={canvasRef} aria-hidden className="absolute inset-0 size-full" />
+      <button
+        type="button"
+        onClick={() => setVisible(false)}
+        className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-10 min-h-11 rounded-full border border-white/25 bg-black/30 px-4 text-xs font-medium text-white/90 backdrop-blur-sm transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+      >
+        {lang === "ro" ? "Vezi pagina" : "View page"}
+      </button>
 
       <div ref={copyRef} className="absolute inset-x-0 bottom-[10%] flex flex-col items-center px-5 text-center sm:bottom-[12%]">
         <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.55em] text-white/45">AVYRON · DIGITAL SYSTEM</p>
