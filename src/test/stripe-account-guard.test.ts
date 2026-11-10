@@ -27,10 +27,10 @@ describe("Stripe account isolation", () => {
     const app = new Hono<AppBindings>();
     app.use("*", async (c, next) => { c.set("userId", "customer-1"); await next(); });
     app.route("/", billingRouter);
-    const db = { prepare: () => ({ bind: () => ({ first: async () => ({
+    const db = { prepare: (sql: string) => ({ bind: () => ({ first: async () => sql.includes("FROM commerce_orders") ? ({
       id: "11111111-1111-4111-8111-111111111111", user_id: "customer-1", items_json: "[]",
       total_cents: 1000, currency: "RON", requires_manual_quote: 0, status: "requested", promotion_code: null,
-    }) }) }) };
+    }) : null }) }) };
     const response = await app.request("http://localhost/api/billing/checkout", {
       method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ orderId: "11111111-1111-4111-8111-111111111111", provider: "stripe" }),
@@ -76,6 +76,6 @@ describe("Stripe account isolation", () => {
     const session = requests[2]?.body;
     expect(session?.get("payment_method_types[0]")).toBe("card");
     expect(session?.get("line_items[0][price_data][unit_amount]")).toBe("1000");
-    expect(session?.get("success_url")).toContain("https://avyron.ro/profil?tab=orders&plata=verificare");
+    expect(session?.get("success_url")).toBe("https://avyron.ro/profil?tab=payments&plata=verificare&order=11111111-1111-4111-8111-111111111111");
   });
 });
