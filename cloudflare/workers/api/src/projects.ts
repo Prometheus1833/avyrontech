@@ -10,8 +10,8 @@ import { hasCapability } from "./authorization";
 // platformă, apartenență activă la organizație, alocare explicită ori grant
 // pentru clientul proiectului; proprietarul client poate citi proiectul.
 
-import { Hono } from "hono";
-import type { Env } from "./types";
+import { Hono, type Context } from "hono";
+import type { Env, AppBindings } from "./types";
 import { fetchMetadataHtml, validateMetadataUrl } from "./metadata";
 import { organizationRoleForUser, platformRoleForUser,clientProjectGrantSql,projectOwnerResourceGrantSql,projectOwnerAccessSql } from "./authorization";
 import { normalizeExternalLink } from "../../../../src/shared/externalUrl";
@@ -19,7 +19,6 @@ import { PROJECT_STAGES, type ProjectStage } from "../../../../src/shared/projec
 import { readJsonBodyUpTo } from "./requestBody";
 
 type Role = "user" | "staff" | "admin";
-type Vars = { userId: string; roles: Role[] };
 
 const uuid = () => crypto.randomUUID();
 const now = () => Date.now();
@@ -63,7 +62,7 @@ async function log(db: D1Database, projectId: string, actorId: string, action: s
 }
 
 // Auth middleware trebuie deja aplicat pe app-ul principal — asigură-te că "userId"/"roles" există în Vars.
-export const projectsRouter = new Hono<{ Bindings: Env; Variables: Vars }>();
+export const projectsRouter = new Hono<AppBindings>();
 
 // ─── LISTĂ ────────────────────────────────────────────────────────────────
 projectsRouter.get("/api/projects", async (c) => {
@@ -192,13 +191,18 @@ projectsRouter.get("/api/projects", async (c) => {
 });
 
 // ─── CREARE (staff only — via floating button "Creează proiect") ─────────
-projectsRouter.post("/api/projects", async (c) => {
+/** Internal extensions participate in the same validated, authorized project transaction. */
+export async function createNativeProject(c: Context<AppBindings>, options?: {
+  input: unknown;
+  idempotencyContext?: unknown;
+  statements?: (id: string, timestamp: number) => D1PreparedStatement[];
+}) {
   const roles = c.get("roles");
   if (!roles.includes("staff") && !roles.includes("admin")) return c.json({ error: { code: "forbidden" } }, 403);
   const ranked = await managedStaff(c.env.DB, c.get("userId"));
   if (ranked && !managedPermission(ranked, "projects.create")) return c.json({ error: { code: "forbidden" } }, 403);
   const userId = c.get("userId");
-  const input = await readJsonBodyUpTo(c.req.raw, 16 * 1024);
+  const input = options ? { ok: true as const, value: options.input } : await readJsonBodyUpTo(c.req.raw, 16 * 1024);
   if (!input.ok) return c.json({error:{code:input.error}}, input.error === "payload_too_large" ? 413 : 400);
   const b = input.value as {
     name?: string; slug?: string; kind?: string; url?: string; description?: string;
@@ -267,7 +271,7 @@ projectsRouter.post("/api/projects", async (c) => {
   const key = c.req.header("Idempotency-Key");
   if (key && !/^[a-zA-Z0-9_-]{16,128}$/.test(key)) return c.json({error:{code:"invalid_idempotency_key"}},400);
   const scope = `project-create:${userId}`;
-  const hash = key ? Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(JSON.stringify(b))))).map(v=>v.toString(16).padStart(2,"0")).join("") : "";
+  const hash = key ? Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(JSON.stringify(options?.idempotencyContext === undefined ? b : { input: b, context: options.idempotencyContext }))))).map(v=>v.toString(16).padStart(2,"0")).join("") : "";
   const previous = async () => key ? c.env.DB.prepare("SELECT request_hash,response_json FROM idempotency_keys WHERE scope=? AND idempotency_key=? AND expires_at>?").bind(scope,key,Date.now()).first<{request_hash:string;response_json:string}>() : null;
   const cached = await previous();
   if(cached) return cached.request_hash === hash ? c.json(JSON.parse(cached.response_json),201) : c.json({error:{code:"idempotency_key_reused"}},409);
@@ -304,6 +308,7 @@ projectsRouter.post("/api/projects", async (c) => {
       "INSERT INTO project_logs (id,project_id,actor_id,action,target_type,target_id,meta_json,created_at) VALUES (?,?,?,?,?,?,?,?)",
     ).bind(uuid(), id, userId, "project.create", "project", id, JSON.stringify({ recurringService: Boolean(recurring?.enabled), stage: stage.id, clientId: b.client_id ?? null }), t));
     if(key) statements.unshift(c.env.DB.prepare("INSERT INTO idempotency_keys(scope,idempotency_key,request_hash,response_status,response_json,created_at,expires_at) VALUES(?,?,?,201,?,?,?)").bind(scope,key,hash,JSON.stringify({id,slug}),t,t+86400000));
+    statements.push(...(options?.statements?.(id, t) || []));
     await c.env.DB.batch(statements);
     return c.json({ id, slug }, 201);
   } catch {
@@ -311,7 +316,8 @@ projectsRouter.post("/api/projects", async (c) => {
     if(replay) return replay.request_hash === hash ? c.json(JSON.parse(replay.response_json),201) : c.json({error:{code:"idempotency_key_reused"}},409);
     return c.json({ error: { code: "create_failed", message: "Proiectul nu a putut fi creat. Verifică identificatorul și contextul clientului." } }, 409);
   }
-});
+}
+projectsRouter.post("/api/projects", (c) => createNativeProject(c));
 
 // ─── DETALIU (după slug) ──────────────────────────────────────────────────
 projectsRouter.get("/api/projects/:slug", async (c) => {

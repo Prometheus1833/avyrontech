@@ -1,3 +1,4 @@
+import { allowedFutureNotices } from "./futureLeadPolicy";
 import { agencyPermissions } from "./leadsAgencyPolicy";
 import { projectAccessMap } from "./projects";
 import { platformRoleForUser } from "./authorization";
@@ -79,9 +80,12 @@ export async function filterNotifications(
   const agencyNotices=privateSafe.filter(n=>n.deduplication_key?.startsWith("agency:"));
   let agencyAllowed=false;
   if(agencyNotices.length)agencyAllowed=(await agencyPermissions(db,user)).read;
+  const futureNotices=new Set(privateSafe.filter(n=>n.deduplication_key?.startsWith("future-lead:")).map(n=>n.id));
+  const futureAllowed=await allowedFutureNotices(db,user,[...futureNotices]);
   const allowed = new Set(
     result.results
       .filter((n) => {
+        if(futureNotices.has(n.id))return futureAllowed.has(n.id);
         const agencyNotice=agencyNotices.find(row=>row.id===n.id);
         if(agencyNotice)return agencyAllowed;
         if (!n.resource_type) {

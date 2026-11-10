@@ -12,6 +12,8 @@ import type { DatabaseSync as Sqlite, SQLInputValue } from "node:sqlite";
 import { Hono } from "hono";
 import type { AppBindings, Env } from "../../cloudflare/workers/api/src/types";
 import { leadsAgencyRouter } from "../../cloudflare/workers/api/src/leadsAgency";
+import { futureLeadsRouter } from "../../cloudflare/workers/api/src/futureLeads";
+import { projectsRouter } from "../../cloudflare/workers/api/src/projects";
 import { leadsRouter } from "../../cloudflare/workers/api/src/leads";
 const { DatabaseSync } = createRequire(import.meta.url)(
   "node:sqlite",
@@ -74,9 +76,11 @@ export function createAgencyBackend() {
     "INSERT INTO user_capabilities(id,user_id,capability,granted_by,reason,created_at) VALUES('reader-grant','reader','leads_agency.read','owner','fixture',1)",
   ).run();
   let actor = "owner";
+  let beforeBatch: (() => void) | undefined;
   const DB = {
     prepare: (sql: string) => new Statement(db, sql),
     batch: async (ss: Statement[]) => {
+      const hook=beforeBatch;beforeBatch=undefined;hook?.();
       db.exec("BEGIN");
       try {
         const rows = [];
@@ -105,8 +109,12 @@ export function createAgencyBackend() {
   });
   app.route("/", leadsAgencyRouter);
   app.route("/", leadsRouter);
+  app.route("/", futureLeadsRouter);
+  app.route("/", projectsRouter);
   return {
     db,
+    env,
+    beforeBatch: (hook:()=>void)=>{beforeBatch=hook;},
     get actor() {
       return actor;
     },

@@ -469,6 +469,7 @@ export const STAFF_SECTION_PERMISSIONS: Record<string, string[]> = {
   resources: ["documents.read"],
   clients: ["clients.read"],
   leads: ["leads.read"],
+  "future-leads": ["leads.read", "leads.write", "leads.create"],
   "leads-agency": ["leads_agency.read", "leads_agency.manage"],
   "servicii-avyron": ["services.read"],
   finance: ["finance.read"],
@@ -504,6 +505,7 @@ export function staffRequestPermission(
   if (path.startsWith("/api/website-subscriptions/account/")) return write?"maintenance.work":"maintenance.read";
   if (path.startsWith("/api/notifications/admin")) return "platform.restricted";
   if (path === "/api/notifications" || path.startsWith("/api/notifications/")) return null; // Own inbox reauthorizes every resource.
+  if (path.startsWith("/api/future-leads")) return null; // Dedicated staff identity + per-lead ACL, including allocated staff without global CRM grants.
   if (path.startsWith("/api/leads-agency")) return write ? "leads_agency.manage" : "leads_agency.read";
   if (path.startsWith("/api/logo-studio/admin")) return "leads.read";
   if (path.startsWith("/api/staff-access")) return "team.read";

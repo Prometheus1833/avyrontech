@@ -61,6 +61,7 @@ export function internalApi(path: string) {
     "/api/internal",
     "/api/os",
     "/api/leads",
+    "/api/future-leads",
     "/api/ai-projects",
     "/api/staff-access",
     "/api/skills",

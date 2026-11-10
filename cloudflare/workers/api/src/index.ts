@@ -1708,6 +1708,7 @@ import { catalogCodesRouter } from "./catalogCodes";
 import { contactRouter } from "./contact";
 import { financeRouter } from "./finance";
 import { leadsRouter } from "./leads";
+import { futureLeadsRouter } from "./futureLeads";
 import { leadsAgencyRouter } from "./leadsAgency";
 import { logoOperationsRouter } from "./logoOperations";
 import { cleanupLogoSimulations, logoStudioRouter } from "./logoStudio";
@@ -1787,6 +1788,8 @@ app.route("/", aiOsRouter);
 app.route("/", newsletterRouter);
 app.use("/api/leads-agency*", requireAuth);
 app.route("/", leadsAgencyRouter);
+app.use("/api/future-leads*", requireAuth, requirePrivilegedMfa);
+app.route("/", futureLeadsRouter);
 app.route("/", leadsRouter);
 app.route("/", aiProjectsRouter);
 app.use("/api/skills*", async(c,next)=>{c.header("Cache-Control","private, no-store");c.header("X-Robots-Tag","noindex, nofollow");return requireAuth(c,next);});
@@ -2041,7 +2044,7 @@ export default {
     if (controller.cron === "0,15,30,45 * * * *") {
       ctx.waitUntil((async()=>{if(await nativeBillingDue(env))await enqueueAsyncJobs(env,["billing_reconcile"]);})().catch(()=>console.error(JSON.stringify({event:"billing_schedule_unavailable",code:"reconciliation_unavailable"}))));
       ctx.waitUntil(maintainMalwareScans(env).catch(() => console.error(JSON.stringify({event:"antivirus_poll_failed",code:"maintenance_unavailable"}))));
-      ctx.waitUntil(enqueueAsyncJobs(env, ["operation_drain", "social_drain", "survey_delivery", "survey_ai", "lead_follow_up_drain"]));
+      ctx.waitUntil(enqueueAsyncJobs(env, ["operation_drain", "social_drain", "survey_delivery", "survey_ai", "lead_follow_up_drain", "future_lead_reminders"]));
       ctx.waitUntil((async()=>{
         const pending=await env.DB.prepare("SELECT 1 FROM avy_skill_runs WHERE status='queued' OR (status='preparing' AND started_at<?) LIMIT 1").bind(Date.now()-15*60_000).first();
         if(pending)await enqueueAsyncJobs(env,["skills_drain"]);

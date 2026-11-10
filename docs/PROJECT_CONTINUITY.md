@@ -171,3 +171,16 @@ Financiar / produse — 08.11.2026: [fluxuri și limite](./FINANCE_COMMERCE_COMP
 ### Website prin abonament — task branch, not production (2026-11-08)
 
 See `docs/WEBSITE_SUBSCRIPTIONS.md` for audit, native entity mapping, migration 0111, routes, payment/approval/quota rules, activation prerequisites and rollback. Homepage chooser gains a third square card; Cinematic 3D stays coming soon; the general services directory stays unchanged. Three monthly plans start unpriced and require explicit Owner review plus the existing verified payment/invoice setup. No remote migration/provider write/deploy is implied by local implementation. Preserve independent security PR #122 (migration 0110) and Cabinet PR #110.
+
+## 2026-11-10 — Leaduri Viitoare
+
+Base: `ee81e0c5b1240c94e411115119d18cd515443750`. Dedicated branch:
+`codex/future-leads-2026-11-10`. Native scheduled CRM leads, lateral editable
+records, source/contact actions, staff allocation, revision-guarded project
+conversion and private 10/5/1-day reminders. Route `/profil?tab=future-leads`,
+API `/api/future-leads*`; no public visual change or client-site edit.
+Migration `0118_future_leads.sql` creates three related tables without rewriting
+existing client/project rows. Existing queue/quarter-hour cron runs the reminders;
+no new binding or provider. Full operating, ACL, reminder and rollback details:
+[Leaduri Viitoare](leads/FUTURE_LEADS.md). Delivery/deployment state must be checked
+on GitHub and Cloudflare; this note is a source handoff, not production evidence.

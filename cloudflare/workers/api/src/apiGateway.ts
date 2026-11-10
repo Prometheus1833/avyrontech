@@ -201,6 +201,17 @@ export const openApiDocument = {
     "/leads": {
       get: { tags: ["Platform"], summary: "Listează lead-urile accesibile, filtrate server-side", security: [{ bearerAuth: [] }], responses: { "200": { description: "Pipeline Leads" }, "401": { $ref: "#/components/responses/Problem" } } },
     },
+    "/future-leads": {
+      get: { tags: ["Platform"], summary: "Leaduri viitoare, cronologic, numai pentru staff autorizat sau alocat", security: [{ bearerAuth: [] }], responses: { "200": { description: "Listă privată, paginată" }, "403": { $ref: "#/components/responses/Problem" } } },
+      post: { tags: ["Platform"], summary: "Programează un lead nou sau existent, fără duplicarea CRM", security: [{ bearerAuth: [] }], responses: { "201": { description: "Lead programat" }, "409": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/future-leads/{leadId}": {
+      get: { tags: ["Platform"], summary: "Fișa și istoricul leadului viitor autorizat", security: [{ bearerAuth: [] }], responses: { "200": { description: "Fișă privată" }, "404": { $ref: "#/components/responses/Problem" } } },
+      patch: { tags: ["Platform"], summary: "Actualizează, reprogramează sau arhivează o revizie autorizată", security: [{ bearerAuth: [] }], responses: { "200": { description: "Fișă actualizată" }, "409": { $ref: "#/components/responses/Problem" } } },
+    },
+    "/future-leads/{leadId}/convert": {
+      post: { tags: ["Platform"], summary: "Creează idempotent proiectul nativ, cu brief și staff", security: [{ bearerAuth: [] }], responses: { "201": { description: "Proiect creat" }, "200": { description: "Proiect deja asociat" }, "403": { $ref: "#/components/responses/Problem" }, "409": { $ref: "#/components/responses/Problem" } } },
+    },
     "/leads/{leadId}": {
       get: { tags: ["Platform"], summary: "Returnează lead-ul și istoricul autorizat", security: [{ bearerAuth: [] }], responses: { "200": { description: "Detalii lead" }, "403": { $ref: "#/components/responses/Problem" } } },
       patch: { tags: ["Platform"], summary: "Actualizează pipeline-ul fără a permite outreach automat", security: [{ bearerAuth: [] }], responses: { "200": { description: "Lead actualizat" }, "403": { $ref: "#/components/responses/Problem" } } },
