@@ -186,7 +186,7 @@ describe("facturarea Oblio", () => {
     expect(fetchMock.mock.calls[0][1].body).toBe("client_id=synthetic&client_secret=synthetic-secret");
     const payload=JSON.parse(String(fetchMock.mock.calls[1][1].body));
     expect(payload).toMatchObject({seriesName:"AVY",sendEmail:false,idempotencyKey:"avyron-order-test",products:[{vatName:"Neplatitor TVA",vatPercentage:0,save:0}]});
-    expect(fetchMock.mock.calls[1][1].redirect).toBe("error");
+    expect(fetchMock.mock.calls[1][1].redirect).toBe("manual");
   });
   it("blochează o linie cu TVA nenul când firma este configurată neplătitoare", async () => {
     const fetchMock=vi.fn();vi.stubGlobal("fetch",fetchMock);

@@ -37,7 +37,7 @@ const googleCredential=(value:string):GoogleOAuthCredential=>{try{const parsed=J
 async function googleTokenRequest(env:Env,body:URLSearchParams,fetcher:typeof fetch){
   if(!env.GOOGLE_OAUTH_CLIENT_ID||!env.GOOGLE_OAUTH_CLIENT_SECRET)throw new ProviderError('google_oauth_not_configured');
   body.set('client_id',env.GOOGLE_OAUTH_CLIENT_ID);body.set('client_secret',env.GOOGLE_OAUTH_CLIENT_SECRET);
-  const response=await fetcher('https://oauth2.googleapis.com/token',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded',accept:'application/json'},body:body.toString(),redirect:'error',signal:AbortSignal.timeout(10000)});
+  const response=await fetcher('https://oauth2.googleapis.com/token',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded',accept:'application/json'},body:body.toString(),redirect: "manual",signal:AbortSignal.timeout(10000)});
   if(!response.ok){await response.body?.cancel();throw new ProviderError(response.status===400?'google_reconnect_required':'provider_unavailable');}
   const payload=object(await response.json());if(typeof payload.access_token!=='string'||typeof payload.expires_in!=='number')throw new ProviderError('provider_invalid_response');return payload;
 }
@@ -71,7 +71,7 @@ export async function boundedProviderJson(url:string,token:string,provider:Integ
   if(provider==='github')headers['X-GitHub-Api-Version']='2026-03-10';
   if(provider==='stripe')headers['Stripe-Version']='2024-06-20';
   if(provider==='supabase')headers.apikey=token;
-  const response=await fetcher(url,{headers,redirect:'error',signal:AbortSignal.timeout(10000)});
+  const response=await fetcher(url,{headers,redirect: "manual",signal:AbortSignal.timeout(10000)});
   if(!response.ok){await response.body?.cancel();throw new ProviderError(response.status===401?'credentials_invalid':response.status===403?'provider_scope_or_access_denied':response.status===404?'provider_project_unavailable':response.status===402||response.status===429?'provider_quota_exceeded':'provider_unavailable');}
   const reader=response.body?.getReader();if(!reader)throw new ProviderError('provider_empty_response');
   const chunks:Uint8Array[]=[];let size=0;

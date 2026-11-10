@@ -164,9 +164,9 @@ async function expireCheckoutBeforeReplacement(env:Env,provider:Provider,session
   if(provider!=="stripe")return false;
   try{
     const path=`https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}`;
-    const expired=await fetch(path+"/expire",{method:"POST",headers:stripeHeaders(env),signal:AbortSignal.timeout(10000),redirect:"error"});
+    const expired=await fetch(path+"/expire",{method:"POST",headers:stripeHeaders(env),signal:AbortSignal.timeout(10000),redirect: "manual"});
     if(expired.ok)return (JSON.parse(await readTextUpTo(expired,262144)) as {status?:string}).status==="expired";
-    const current=await fetch(path,{headers:stripeHeaders(env),signal:AbortSignal.timeout(10000),redirect:"error"});
+    const current=await fetch(path,{headers:stripeHeaders(env),signal:AbortSignal.timeout(10000),redirect: "manual"});
     return current.ok&&(JSON.parse(await readTextUpTo(current,262144)) as {status?:string}).status==="expired";
   }catch{return false;}
 }

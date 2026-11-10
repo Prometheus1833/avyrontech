@@ -64,6 +64,9 @@ jobs:
       - name: Verify real HttpOnly cookie transport in isolated localhost
         run: npm run test:security:browser-cookie
 
+      - name: Verify provider HTTP in native Workers runtime
+        run: npm run test:providers:runtime
+
       - name: Run browser journeys
         run: npm run test:e2e
 

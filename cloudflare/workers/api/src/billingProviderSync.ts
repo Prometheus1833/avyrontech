@@ -19,7 +19,7 @@ type Reference = { id: string; remote_id: string; order_id: string; user_id: str
 const object = (value: unknown): Record<string, unknown> => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
 async function providerObject(url: string, headers: Record<string, string>, init?: RequestInit) {
   try {
-    const r = await fetch(url, { ...init, headers, redirect: 'error', signal: AbortSignal.timeout(8000) });
+    const r = await fetch(url, { ...init, headers, redirect: "manual", signal: AbortSignal.timeout(8000) });
     if (!r.ok) throw Error('provider_read_failed');
     return object(JSON.parse(await readTextUpTo(r, 262144)));
   } catch { throw Error('provider_read_failed'); }

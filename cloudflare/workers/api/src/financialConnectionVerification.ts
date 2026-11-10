@@ -11,7 +11,7 @@ const REVOLUT_VERSION = "2026-08-17";
 async function jsonResponse(url: string, init: RequestInit): Promise<{ ok: boolean; status: number; data: Record<string, unknown>; failure?: string }> {
   let status = 0;
   try {
-    const response = await fetch(url, { ...init, redirect: "error", signal: AbortSignal.timeout(10_000) });
+    const response = await fetch(url, { ...init, redirect: "manual", signal: AbortSignal.timeout(10_000) });
     status = response.status;
     const parsed:unknown = JSON.parse(await readTextUpTo(response,262144));
     const data = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string,unknown> : {};

@@ -36,7 +36,7 @@ export async function issueOblioInvoice(env: Env, input: OblioInvoiceInput): Pro
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/json" },
     body: tokenBody.toString(),
-    redirect: "error",
+    redirect: "manual",
     signal: AbortSignal.timeout(10_000),
   });
   if (!tokenResponse.ok) return { issued: false, reason: "token_failed", status: tokenResponse.status };
@@ -45,7 +45,7 @@ export async function issueOblioInvoice(env: Env, input: OblioInvoiceInput): Pro
 
   const invoiceResponse = await fetch(`${API_ROOT}/docs/invoice`, {
     method: "POST",
-    redirect: "error",
+    redirect: "manual",
     signal: AbortSignal.timeout(15_000),
     headers: {
       authorization: `Bearer ${tokenPayload.access_token}`,

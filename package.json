@@ -45,6 +45,7 @@
     "service-content:snapshot": "node scripts/snapshot-service-content.mjs",
     "og:services": "node scripts/generate-service-og.mjs",
     "test:security:local": "node scripts/test-security-local.mjs",
+    "test:providers:runtime": "node scripts/test-provider-http-runtime.mjs",
     "audit:security": "node scripts/audit-security-quality.mjs",
     "audit:a11y": "node scripts/audit-public-accessibility.mjs",
     "test:security:browser-cookie": "node scripts/test-browser-cookie-wire.mjs"
