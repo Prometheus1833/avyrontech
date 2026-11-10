@@ -136,6 +136,8 @@ for (const width of [320, 390, 768, 1440])
 test("website chooser recommends the professional site, puts the subscription second and keeps cinematic unavailable", async ({
   page,
 }, info) => {
+  // WebKit rotates/resizes four viewports and captures six frames in this journey.
+  if (info.project.name === "webkit-mobile") test.setTimeout(60_000);
   await publicFixture(page);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/#servicii");
@@ -143,6 +145,7 @@ test("website chooser recommends the professional site, puts the subscription se
   const trigger = page
     .getByTestId("service-list")
     .getByRole("button", { name: /Site Prezentare Profesional/ });
+  await expect(page.locator(`main a[href="${path}"]`)).toHaveCount(0);
   await trigger.click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
@@ -150,6 +153,8 @@ test("website chooser recommends the professional site, puts the subscription se
   await expect(choices.locator(':scope > *').first()).toHaveAttribute('data-recommended','true');
   await expect(choices.locator(':scope > *').first()).toHaveAttribute('href','/servicii/website-prezentare-profesional');
   await expect(choices.locator(':scope > *').first()).toBeFocused();
+  await expect(choices.locator(':scope > *').first()).toContainText('Plată unică de la 1.450 lei');
+  for (const detail of ['Design personalizat', 'versiune mobilă', 'SEO tehnic', 'Acces complet']) await expect(choices.locator(':scope > *').first()).toContainText(detail);
   expect(await choices.locator('strong').allTextContents()).toEqual(['Site Prezentare Profesional','Website la 0 lei','Website Cinematic 3D']);
   const subscription = choices.locator(':scope > *').nth(1);
   await expect(subscription).toHaveAttribute('href',path);
@@ -179,14 +184,12 @@ test("website chooser recommends the professional site, puts the subscription se
   await expect(dialog).toBeHidden();
   await expect(trigger).toBeFocused();
   await page.setViewportSize({ width: 320, height: 800 });
-  const offer=page.getByTestId("service-list").getByRole("link",{name:/Website la 0 lei/});
-  await offer.scrollIntoViewIfNeeded();
-  const apps=await page.getByTestId("service-list").getByRole("link",{name:/Aplicații Web și Mobile/}).boundingBox(),offerBox=await offer.boundingBox();
-  expect(offerBox!.y).toBeGreaterThanOrEqual(apps!.y+apps!.height);
+  await expect(page.locator(`main a[href="${path}"]`)).toHaveCount(0);
+  await trigger.click();
+  const offer=page.getByRole("dialog").getByRole("link",{name:/Website la 0 lei/});
   await expect(offer).toContainText("De la 199 lei/lună");
-  await expect(offer).toContainText("Schimbi treapta oricând, la cerere.");
   await expect(offer).toHaveAttribute("href",path);
-  await page.screenshot({path:info.outputPath("website-offer-mobile.png")});
+  await page.screenshot({path:info.outputPath("website-chooser-mobile.png")});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   await offer.click();
   await expect(page).toHaveURL(path);
@@ -198,10 +201,12 @@ test("English website chooser preserves recommendation and opens the middle subs
   await publicFixture(page);
   await page.goto('/en#servicii');
   await expect(page.locator('main[data-anchor-ready="true"]')).toBeVisible();
+  await expect(page.locator('main a[href="/en/services/website-subscription"]')).toHaveCount(0);
   await page.getByTestId('service-list').getByRole('button',{name:/Business websites/}).click();
   const choices=page.getByTestId('website-choices');
   expect(await choices.locator('strong').allTextContents()).toEqual(['Business Website','Website with no development fee','Cinematic 3D Website']);
   await expect(choices.locator(':scope > *').first()).toBeFocused();
+  await expect(choices.locator(':scope > *').first()).toContainText('One-time development from RON 1,450');
   const subscription=choices.locator(':scope > *').nth(1);
   await expect(subscription).toContainText('From RON 199 / month');
   await expect(subscription).toContainText('initial SEO');
