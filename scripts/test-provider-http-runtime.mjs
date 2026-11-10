@@ -14,7 +14,7 @@ import {issueOblioInvoice} from ${JSON.stringify(src+'/invoicingOblio.ts')};
 import {clientPortalConfiguration} from ${JSON.stringify(src+'/billingPortal.ts')};
 import {boundedProviderJson} from ${JSON.stringify(src+'/integrationAdapters.ts')};
 const env={OBLIO_CLIENT_ID:'synthetic',OBLIO_CLIENT_SECRET:'synthetic-secret',OBLIO_CIF:'123456',OBLIO_SERIES:'AVY',OBLIO_VAT_NAME:'Neplatitor TVA',OBLIO_VAT_PERCENTAGE:'0',OBLIO_AUTO_ISSUE_ENABLED:'true',STRIPE_SECRET_KEY:'sk_test_synthetic'};
-const input={orderId:'synthetic-order',buyer:{name:'Synthetic Buyer'},lines:[{name:'Synthetic Service',quantity:1,unitPriceMinor:1000}],currency:'RON',issuedAt:0};
+const input={orderId:'synthetic-order',buyer:{name:'Synthetic Buyer'},lines:[{name:'Synthetic Service',quantity:1,unitPriceMinor:1000}],currency:'RON',issuedAt:0,payment:{reference:'pi_synthetic',amountMinor:1000,capturedAt:0}};
 export default {async fetch(incoming){
  const scenario=new URL(incoming.url).pathname.slice(1),calls=[];const original=globalThis.fetch;
  globalThis.fetch=async(url,init)=>{
@@ -24,7 +24,7 @@ export default {async fetch(incoming){
   if(scenario==='redirect'||scenario==='integration-redirect')return new Response(null,{status:302,headers:{location:'https://must-not-receive-credentials.invalid/'}});
   if(target.pathname==='/api/authorize/token')return Response.json({access_token:'synthetic-token'});
   if(target.pathname==='/api/nomenclature/series')return Response.json({data:[{type:'Factura',name:'AVY',start:'0001',next:'0001'}]});
-  if(target.pathname==='/api/docs/invoice'){const payload=await request.json();if(payload.seriesName!=='AVY'||payload.sendEmail!==false||payload.products[0].vatName!=='Neplatitor TVA'||payload.products[0].vatPercentage!==0)throw Error('Fiscal payload mismatch');return Response.json({data:{seriesName:'AVY',number:'0001'}});}
+  if(target.pathname==='/api/docs/invoice'){const payload=await request.json();if(payload.seriesName!=='AVY'||payload.sendEmail!==false||payload.products[0].vatName!=='Neplatitor TVA'||payload.products[0].vatPercentage!==0||payload.collect?.type!=='Card'||payload.collect?.documentNumber!=='pi_synthetic'||payload.collect?.value!==10)throw Error('Fiscal payload mismatch');return Response.json({data:{seriesName:'AVY',number:'0001'}});}
   if(target.pathname==='/v1/billing_portal/configurations')return Response.json({data:[{id:'bpc_synthetic',active:true,metadata:{avyron_profile:'avyron-client-billing-v1'}}],has_more:false});
   throw Error('Unexpected provider request');
  };

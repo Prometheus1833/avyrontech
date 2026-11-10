@@ -194,4 +194,24 @@ describe("facturarea Oblio", () => {
     expect(await issueOblioInvoice(env as never,{...input,lines:[{...input.lines[0],vatBasisPoints:2100}]})).toEqual({issued:false,reason:"invalid_vat"});
     expect(fetchMock).not.toHaveBeenCalled();
   });
+  it("leagă încasarea confirmată de factură și folosește ziua fiscală din România", async () => {
+    const fetchMock=vi.fn().mockResolvedValueOnce(Response.json({access_token:"synthetic-token"})).mockResolvedValueOnce(Response.json({data:{seriesName:"AVY",number:"0001"}}));
+    vi.stubGlobal("fetch",fetchMock);
+    const env={OBLIO_CLIENT_ID:"synthetic",OBLIO_CLIENT_SECRET:"synthetic-secret",OBLIO_CIF:"123456",OBLIO_SERIES:"AVY",OBLIO_VAT_NAME:"Neplatitor TVA",OBLIO_VAT_PERCENTAGE:"0",OBLIO_AUTO_ISSUE_ENABLED:"true"};
+    const midnightBoundary=Date.UTC(2026,10,10,23,30);
+    await issueOblioInvoice(env as never,{...input,issuedAt:midnightBoundary,payment:{reference:"pi_synthetic",amountMinor:27000,capturedAt:midnightBoundary}});
+    expect(JSON.parse(String(fetchMock.mock.calls[1][1].body))).toMatchObject({issueDate:"2026-11-11",collectDate:"2026-11-11",collect:{type:"Card",documentNumber:"pi_synthetic",value:270}});
+  });
+  it("respinge o încasare care diferă de total înaintea oricărui apel extern", async () => {
+    const fetchMock=vi.fn();vi.stubGlobal("fetch",fetchMock);
+    const env={OBLIO_CLIENT_ID:"synthetic",OBLIO_CLIENT_SECRET:"synthetic-secret",OBLIO_CIF:"123456",OBLIO_SERIES:"AVY",OBLIO_VAT_NAME:"Neplatitor TVA",OBLIO_VAT_PERCENTAGE:"0",OBLIO_AUTO_ISSUE_ENABLED:"true"};
+    expect(await issueOblioInvoice(env as never,{...input,payment:{reference:"pi_synthetic",amountMinor:1,capturedAt:input.issuedAt}})).toEqual({issued:false,reason:"invalid_payment"});
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+  it("nu înregistrează în AVYRON o factură returnată într-o altă serie", async () => {
+    const fetchMock=vi.fn().mockResolvedValueOnce(Response.json({access_token:"synthetic-token"})).mockResolvedValueOnce(Response.json({data:{seriesName:"CM",number:"0001"}}));
+    vi.stubGlobal("fetch",fetchMock);
+    const env={OBLIO_CLIENT_ID:"synthetic",OBLIO_CLIENT_SECRET:"synthetic-secret",OBLIO_CIF:"123456",OBLIO_SERIES:"AVY",OBLIO_VAT_NAME:"Neplatitor TVA",OBLIO_VAT_PERCENTAGE:"0",OBLIO_AUTO_ISSUE_ENABLED:"true"};
+    expect(await issueOblioInvoice(env as never,input)).toMatchObject({issued:false,reason:"invoice_failed"});
+  });
 });
