@@ -12,6 +12,8 @@ import type { DatabaseSync as Sqlite, SQLInputValue } from "node:sqlite";
 import { Hono } from "hono";
 import type { AppBindings, Env } from "../../cloudflare/workers/api/src/types";
 import { leadsAgencyRouter } from "../../cloudflare/workers/api/src/leadsAgency";
+import { futureLeadsRouter } from "../../cloudflare/workers/api/src/futureLeads";
+import { projectsRouter } from "../../cloudflare/workers/api/src/projects";
 import { leadsRouter } from "../../cloudflare/workers/api/src/leads";
 const { DatabaseSync } = createRequire(import.meta.url)(
   "node:sqlite",
@@ -26,18 +28,22 @@ class Statement {
   constructor(
     readonly db: Sqlite,
     readonly sql: string,
+    readonly count:()=>void,
   ) {}
   bind(...values: SQLInputValue[]) {
     this.values = values;
     return this;
   }
   async first<T>() {
+    this.count();
     return (this.db.prepare(this.sql).get(...this.values) ?? null) as T | null;
   }
   async all<T>() {
+    this.count();
     return { results: this.db.prepare(this.sql).all(...this.values) as T[] };
   }
   async run() {
+    this.count();
     return { meta: this.db.prepare(this.sql).run(...this.values) };
   }
 }
@@ -74,9 +80,13 @@ export function createAgencyBackend() {
     "INSERT INTO user_capabilities(id,user_id,capability,granted_by,reason,created_at) VALUES('reader-grant','reader','leads_agency.read','owner','fixture',1)",
   ).run();
   let actor = "owner";
+  let queryCount=0,bindingCalls=0,inBatch=false;
+  let beforeBatch: (() => void) | undefined;
   const DB = {
-    prepare: (sql: string) => new Statement(db, sql),
+    prepare: (sql: string) => new Statement(db, sql,()=>{queryCount++;if(!inBatch)bindingCalls++;}),
     batch: async (ss: Statement[]) => {
+      const hook=beforeBatch;beforeBatch=undefined;hook?.();
+      bindingCalls++;inBatch=true;
       db.exec("BEGIN");
       try {
         const rows = [];
@@ -86,7 +96,7 @@ export function createAgencyBackend() {
       } catch (e) {
         db.exec("ROLLBACK");
         throw e;
-      }
+      } finally {inBatch=false;}
     },
   };
   const env = { DB, MFA_AUTH_ENABLED: "false" } as unknown as Env;
@@ -105,8 +115,14 @@ export function createAgencyBackend() {
   });
   app.route("/", leadsAgencyRouter);
   app.route("/", leadsRouter);
+  app.route("/", futureLeadsRouter);
+  app.route("/", projectsRouter);
   return {
     db,
+    env,
+    get queryCount(){return queryCount;},
+    get bindingCalls(){return bindingCalls;},
+    beforeBatch: (hook:()=>void)=>{beforeBatch=hook;},
     get actor() {
       return actor;
     },

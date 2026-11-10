@@ -29,7 +29,7 @@ export function leadReadPredicate(userId:string,unrestricted:boolean){
 
 type LeadAccess = { read: boolean; write: boolean; organizationId: string | null; archived: boolean };
 
-async function leadAccess(c: Context<AppBindings>, leadId: string): Promise<LeadAccess | null> {
+export async function leadAccess(c: Context<AppBindings>, leadId: string): Promise<LeadAccess | null> {
   const lead = await c.env.DB.prepare("SELECT organization_id,archived_at FROM leads WHERE id = ? AND deleted_at IS NULL")
     .bind(leadId).first<{ organization_id: string | null; archived_at: number | null }>();
   if (!lead) return null;
@@ -80,7 +80,7 @@ async function audit(c: Context<AppBindings>, leadId: string, action: string, ou
 export const leadsRouter = new Hono<AppBindings>();
 
 /** Shared native creation; an internal caller may add transactional linkage, never HTTP input. */
-export async function createNativeLead(c: Context<AppBindings>, options?: {input: unknown; statements?: (id:string,timestamp:number)=>D1PreparedStatement[]}) {
+export async function createNativeLead(c: Context<AppBindings>, options?: {input: unknown; idempotencyContext?: unknown; statements?: (id:string,timestamp:number)=>D1PreparedStatement[]}) {
   const parsed = validateNewLead(options ? options.input : await c.req.json<unknown>().catch(() => null));
   if (!parsed.ok) return c.json({ error: { code: parsed.code, field: parsed.field } }, 400);
   const lead = parsed.value;
@@ -90,7 +90,7 @@ export async function createNativeLead(c: Context<AppBindings>, options?: {input
     return c.json({ error: { code: "idempotency_key_required" } }, 400);
   }
   const idempotencyScope = `lead.create:${userId}`;
-  const requestHash = await sha256(JSON.stringify(lead));
+  const requestHash = await sha256(JSON.stringify(options?.idempotencyContext === undefined ? lead : { lead, context: options.idempotencyContext }));
   const previous = await c.env.DB.prepare(
     `SELECT request_hash, response_status, response_json
        FROM idempotency_keys WHERE scope = ? AND idempotency_key = ? AND expires_at > ?`,
@@ -149,7 +149,7 @@ export async function createNativeLead(c: Context<AppBindings>, options?: {input
   if (lead.nextFollowUpAt !== null && lead.nextFollowUpAt <= timestamp) {
     return c.json({ error: { code: "invalid_follow_up", field: "nextFollowUpAt" } }, 400);
   }
-  await c.env.DB.batch([
+  try { await c.env.DB.batch([
     c.env.DB.prepare(
       `INSERT INTO idempotency_keys
         (scope, idempotency_key, request_hash, response_status, response_json,
@@ -182,7 +182,12 @@ export async function createNativeLead(c: Context<AppBindings>, options?: {input
        VALUES (?, ?, ?, 'note', 'internal', 'created', ?, ?, ?)`,
     ).bind(activityId, leadId, userId, lead.message || "Lead adăugat manual în AVYRON OS.", timestamp, timestamp),
     ...(options?.statements?.(leadId, timestamp) || []),
-  ]);
+  ]); } catch {
+    const replay=await c.env.DB.prepare("SELECT request_hash,response_json,response_status FROM idempotency_keys WHERE scope=? AND idempotency_key=? AND expires_at>?")
+      .bind(idempotencyScope,idempotencyKey,now()).first<{request_hash:string;response_json:string|null;response_status:number|null}>();
+    if(replay?.request_hash===requestHash && replay.response_json)return new Response(replay.response_json,{status:replay.response_status||201,headers:{"content-type":"application/json; charset=UTF-8"}});
+    return c.json({error:{code:replay?"idempotency_key_reused":"create_failed"}},409);
+  }
   await audit(c, leadId, "lead.create", "allowed");
   return c.json({ id: leadId }, 201);
 }
