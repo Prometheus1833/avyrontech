@@ -96,3 +96,17 @@ for (const width of [320, 1440]) test(`Registrul și atelierul au verificări au
     expect(result.violations, JSON.stringify(result.violations)).toEqual([]);
   }
 });
+
+test('Lista de coduri arată eroarea de rețea și permite reîncărcarea fără închiderea fișei', async ({ page }) => {
+  await setup(page); let failing = true;
+  await page.route('**/api/finance/commercial-codes', route => failing
+    ? route.fulfill({ status: 503, json: { error: { code: 'temporarily_unavailable', message: 'Catalog indisponibil temporar.' } } })
+    : route.fulfill({ json: { data: [], services: [{ entity_key: 'premium-website', display_name: 'Site Prezentare Profesional', category: 'presence', base_price_minor: 145000 }], products: [], references: [] } }));
+  await page.goto('/profil?tab=commercial-codes');
+  await page.getByRole('button', { name: 'Coduri servicii', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Coduri servicii' });
+  await expect(dialog.getByRole('alert')).toContainText('Catalog indisponibil temporar.');
+  failing = false; await dialog.getByRole('button', { name: 'Reîncearcă încărcarea' }).click();
+  await expect(dialog.getByRole('heading', { name: 'Site Prezentare Profesional', exact: true })).toBeVisible();
+  await expect(dialog.getByRole('alert')).toHaveCount(0);
+});

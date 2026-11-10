@@ -42,8 +42,8 @@ Verificări locale executate:
 | Tipuri aplicație și Worker | PASS |
 | ESLint repository | PASS, 0 erori; 4 avertismente preexistente Fast Refresh în alte fișiere |
 | Registru + migrare + finanțe + Site Builder + catalog servicii | PASS, 90 teste |
-| Browser Chromium, 320/390/1440 px | PASS, 32 scenarii |
-| WebKit/Safari emulat, 320/1440 px | PASS, 12 scenarii |
+| Browser Chromium, 320/390/1440 px | PASS, 32 scenarii + recuperare eroare în serverul de dezvoltare |
+| WebKit/Safari emulat, 320/1440 px | PASS, 12 scenarii + recuperare eroare în serverul de dezvoltare |
 | axe-core, registru și atelier, 320/1440 px | PASS, 0 încălcări automate în suprafețele analizate; nu certifică WCAG integral |
 | Audit D1, toate migrările și integritatea relațiilor | PASS |
 | Secret hygiene și inventar securitate | PASS, fără secrete identificate; auditul general păstrează riscurile sale deschise |
@@ -60,7 +60,7 @@ Capturile Chromium au fost inspectate la 320 px pentru registru și 1440 px pent
 
 Pentru servicii/produse noi: actualizează sursa nativă și folosește „Sincronizează codurile”; verifică separat condițiile comerciale și licența înainte de vânzare. Pentru resurse noi: actualizează biblioteca/caruselele, sincronizează și aprobă explicit referințele potrivite reutilizării. Nu aproba materiale cu date private sau secrete.
 
-0117 este append-only. Nu șterge codurile după utilizarea comercială și nu rescrie migrarea după aplicare. Revenirea codului se face la versiunea Worker anterioară; păstrează schema și identitățile noi, sau pregătește o migrare compensatorie verificată. Versiunile Site Builder istorice rămân disponibile pentru selecție prin fluxul existent. Backupul D1 pre-migrare este responsabilitatea pipeline-ului de lansare existent; această modificare nu mută fișiere R2 și nu introduce stocări sau abonamente.
+0117 este append-only. Nu șterge codurile după utilizarea comercială și nu rescrie migrarea după aplicare. Revenirea codului se face la versiunea Worker anterioară; păstrează schema și identitățile noi, sau pregătește o migrare compensatorie verificată. Versiunile Site Builder istorice rămân disponibile pentru selecție prin fluxul existent. Pipeline-ul existent înregistrează punctul de recuperare D1 Time Travel înainte de migrare; acesta nu este o copie offsite separată. Această modificare nu mută fișiere R2 și nu introduce stocări sau abonamente.
 
 ## Limite reale
 
