@@ -33,7 +33,7 @@ async function storeMethods(env: Env, userId: string, provider: Provider, method
       VALUES (?,?,?,?,?,?,?,?,?,CASE WHEN EXISTS(SELECT 1 FROM billing_payment_methods WHERE user_id=? AND provider=? AND status='active' AND is_default=1) THEN 0 ELSE 1 END,'active',?,?,?)
       ON CONFLICT(provider,provider_payment_method_id) DO UPDATE SET
         type=excluded.type,brand=excluded.brand,last4=excluded.last4,expiry_month=excluded.expiry_month,expiry_year=excluded.expiry_year,
-        status='active',usage_scope=excluded.usage_scope,updated_at=excluded.updated_at`)
+        status='active',usage_scope=excluded.usage_scope,updated_at=excluded.updated_at WHERE billing_payment_methods.user_id=excluded.user_id`)
       .bind(crypto.randomUUID(), userId, provider, method.id, method.type, method.brand, method.last4, method.month, method.year, userId, provider, timestamp, timestamp, method.scope));
   }
   if (statements.length) await env.DB.batch(statements);
@@ -42,7 +42,7 @@ async function storeMethods(env: Env, userId: string, provider: Provider, method
 async function syncStripe(env: Env, userId: string, customerId: string) {
   const identity = await checkStripeAccount(env);
   if (!identity.ok) throw new Error(identity.code);
-  const response = await fetch(`https://api.stripe.com/v1/customers/${encodeURIComponent(customerId)}/payment_methods?type=card&limit=100`, { headers: stripeHeaders(env) });
+  const response = await fetch(`https://api.stripe.com/v1/customers/${encodeURIComponent(customerId)}/payment_methods?type=card&limit=100`, { headers: stripeHeaders(env),signal:AbortSignal.timeout(10000),redirect:"error" });
   if (!response.ok) throw new Error(`stripe_methods_${response.status}`);
   const data = await response.json() as { data?: StripeMethod[]; has_more?: boolean };
   const methods = (data.data || []).filter((method) => method.id && method.type === "card").map((method) => ({
@@ -54,7 +54,7 @@ async function syncStripe(env: Env, userId: string, customerId: string) {
 }
 
 async function syncRevolut(env: Env, userId: string, customerId: string) {
-  const response = await fetch(`${revolutRoot(env)}/customers/${encodeURIComponent(customerId)}/payment-methods`, { headers: revolutHeaders(env) });
+  const response = await fetch(`${revolutRoot(env)}/customers/${encodeURIComponent(customerId)}/payment-methods`, { headers: revolutHeaders(env),signal:AbortSignal.timeout(10000),redirect:"error" });
   if (!response.ok) throw new Error(`revolut_methods_${response.status}`);
   const data = await response.json() as { payment_methods?: RevolutMethod[] };
   const methods = (data.payment_methods || []).filter((method) => method.id && ["card", "revolut_pay", "sepa_direct_debit"].includes(method.type)).map((method) => ({
@@ -77,5 +77,6 @@ export async function listAccountPaymentMethods(env: Env, userId: string) {
   });
   await Promise.allSettled(syncs);
   const { results: methods } = await env.DB.prepare("SELECT id,provider,type,brand,last4,expiry_month,expiry_year,is_default,usage_scope FROM billing_payment_methods WHERE user_id=? AND status='active' ORDER BY is_default DESC,created_at DESC").bind(userId).all<MaskedPaymentMethod>();
-  return { methods, refreshed };
+  const latest=await env.DB.prepare("SELECT status FROM billing_method_setup_sessions WHERE user_id=? ORDER BY updated_at DESC LIMIT 1").bind(userId).first<{status:string}>();
+  return { methods, refreshed, hasCustomer:{stripe:customers.some(c=>c.provider==="stripe"),revolut:customers.some(c=>c.provider==="revolut")},setupStatus:latest?.status||null };
 }

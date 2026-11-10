@@ -13,6 +13,7 @@ describe("saved payment methods", () => {
       prepare(sql: string) {
         const statement = { sql, args: [] as unknown[],
           bind(...args: unknown[]) { this.args = args; return this; },
+          async first() { return null; },
           async all() {
             if (sql.includes("FROM billing_customers")) return { results: [
               { provider: "stripe", provider_customer_id: "cus_own" },

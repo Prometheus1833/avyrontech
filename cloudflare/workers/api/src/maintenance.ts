@@ -339,6 +339,7 @@ export function createMaintenanceRouter(mutate: Mutation) {
       );
     const subscriptionId =
       id || b.existingSubscriptionId || crypto.randomUUID();
+    if(await c.env.DB.prepare("SELECT 1 FROM billing_recurring_agreements WHERE subscription_id=? AND closed_at IS NULL").bind(subscriptionId).first())return problem(c,"provider_managed_recurring_subscription","Oprește debitarea în Stripe înainte de a modifica planul sau facturarea acceptate.",409);
     const current =
       id || b.existingSubscriptionId
         ? await c.env.DB.prepare(

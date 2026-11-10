@@ -72,6 +72,7 @@ export async function issueOblioInvoice(env: Env, input: OblioInvoiceInput): Pro
         vatIncluded: true,
         quantity: line.quantity,
         productType: "Serviciu",
+        save: 0,
       })), ...(input.discountMinor && input.discountMinor > 0 ? [{ name: input.discountLabel || "Reducere aplicată", discountType: "valoric", discount: input.discountMinor / 100, discountAllAbove: 1 }] : [])],
     }),
   });

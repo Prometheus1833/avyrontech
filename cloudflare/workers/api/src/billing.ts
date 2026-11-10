@@ -1,3 +1,6 @@
+import {readTextUpTo} from "./metadata";
+import {clientPortalConfiguration} from "./billingPortal";
+import { listClientRecurring, prepareNativeRecurring, recurringOrderContext, recurringOrderAuthorized, recurringProviderContext, confirmNativeCheckout, linkNativeRenewal, syncNativeProvider, advanceNativePaidPeriod, reconcileNativeBilling, validateNativeRenewal, stripePeriod, releaseUnstartedRecurring } from "./billingRecurring";
 import { financialMfaSatisfied } from "./mfaPolicy";
 import { isWebsiteSubscription, confirmWebsiteCheckout, recordWebsitePeriod, syncWebsiteSubscriptionStatus, websiteOrderContext, websiteOrderAuthorized, linkWebsiteRenewalOrder, reconcileWebsiteBilling } from "./websiteSubscriptionBilling";
 import { Hono, type Context } from "hono";
@@ -106,11 +109,17 @@ async function ensureRevolutCustomer(env:Env,userId:string,email:string,name?:st
 
 async function createStripeCheckout(env:Env,order:OrderRow,items:StoredItem[],email:string,save:boolean,appUrl:string,attemptKey:string){
   const recurring=subscriptionItem(items);const customer=await ensureStripeCustomer(env,order.user_id,email);
+  const agreement=await recurringOrderContext(env,order.id);
   const fields:Record<string,string|number|boolean|undefined>={mode:recurring?"subscription":"payment",customer,client_reference_id:order.id,"payment_method_types[0]":"card",
-    success_url:`${appUrl}/profil?tab=${recurring?"subscriptions":"orders"}&plata=verificare&order=${order.id}`,
-    cancel_url:`${appUrl}/profil?tab=orders&plata=anulata&order=${order.id}`,
+    success_url:`${appUrl}/profil?tab=payments&plata=verificare&order=${order.id}`,
+    cancel_url:`${appUrl}/profil?tab=payments&plata=anulata&order=${order.id}`,
     "metadata[order_id]":order.id,"metadata[user_id]":order.user_id,
     ...(recurring?{"subscription_data[metadata][order_id]":order.id,"subscription_data[metadata][user_id]":order.user_id,"subscription_data[metadata][sku]":recurring.sku,"subscription_data[metadata][period]":recurring.period}:save?{"payment_intent_data[setup_future_usage]":"off_session"}:{})};
+  if(agreement?.first_charge_at && agreement.first_charge_at>Date.now()+60000){
+    if(agreement.first_charge_at>Date.now()+48*60*60*1000) fields["subscription_data[trial_end]"]=Math.floor(agreement.first_charge_at/1000);
+    else { fields["subscription_data[billing_cycle_anchor]"]=Math.floor(agreement.first_charge_at/1000); fields["subscription_data[proration_behavior]"]="none"; }
+    fields.payment_method_collection="always";
+  }
   const lineAmounts=items.map((item)=>Number(item.lineTotalCents||0));
   const subtotal=lineAmounts.reduce((sum,amount)=>sum+amount,0);
   const allocatedAmounts=items.map((_,index)=>index===items.length-1?order.total_cents-lineAmounts.slice(0,-1).reduce((sum,amount)=>sum+Math.floor((amount/subtotal)*order.total_cents),0):Math.floor((lineAmounts[index]/subtotal)*order.total_cents));
@@ -150,6 +159,17 @@ async function createRevolutCheckout(env:Env,order:OrderRow,items:StoredItem[],e
   return {providerId:subscription.setup_order_id,url:setupOrder.checkout_url??null,mode:"subscription" as const};
 }
 
+async function expireCheckoutBeforeReplacement(env:Env,provider:Provider,sessionId:string){
+  if(provider!=="stripe")return false;
+  try{
+    const path=`https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}`;
+    const expired=await fetch(path+"/expire",{method:"POST",headers:stripeHeaders(env),signal:AbortSignal.timeout(10000),redirect:"error"});
+    if(expired.ok)return (JSON.parse(await readTextUpTo(expired,262144)) as {status?:string}).status==="expired";
+    const current=await fetch(path,{headers:stripeHeaders(env),signal:AbortSignal.timeout(10000),redirect:"error"});
+    return current.ok&&(JSON.parse(await readTextUpTo(current,262144)) as {status?:string}).status==="expired";
+  }catch{return false;}
+}
+
 export async function createCheckoutForOrder(c:Context<AppBindings>,input:{orderId:string;provider:Provider;savePaymentMethod?:boolean}){
   const userId=c.get("userId");const order=await getOrder(c.env.DB,input.orderId,userId);
   if(!order)return {status:404 as const,body:{error:{code:"unknown_order"}}};
@@ -157,6 +177,11 @@ export async function createCheckoutForOrder(c:Context<AppBindings>,input:{order
   if(!await websiteOrderAuthorized(c.env,order))return {status:409 as const,body:{error:{code:"website_context_and_terms_required"}}};
   if(order.requires_manual_quote||order.total_cents<=0)return {status:409 as const,body:{error:{code:"manual_quote_required"}}};
   if(!checkoutBillingCompatible(orderItems(order)))return {status:409 as const,body:{error:{code:"mixed_billing_requires_separate_orders"}}};
+  if(order.status==="cancelled")return {status:409 as const,body:{error:{code:"order_cancelled"}}};
+  if(!await recurringOrderAuthorized(c.env,order.id,userId))return {status:409 as const,body:{error:{code:"recurring_agreement_requires_review"}}};
+  const nativeAgreement=await recurringOrderContext(c.env,order.id);
+  if(nativeAgreement&&await c.env.DB.prepare("SELECT 1 FROM billing_subscriptions WHERE order_id=? AND status NOT IN('cancelled','expired')").bind(order.id).first())return {status:409 as const,body:{error:{code:"recurring_already_authorized"}}};
+  if(nativeAgreement&&input.provider!=="stripe")return {status:409 as const,body:{error:{code:"recurring_stripe_required"}}};
   if(order.status==="paid")return {status:409 as const,body:{error:{code:"order_already_paid"}}};
   if(!providerCapabilities(c.env)[input.provider].enabled)return {status:503 as const,body:{error:{code:"provider_unconfigured",provider:input.provider}}};
   if(input.provider==="stripe"){
@@ -173,6 +198,7 @@ export async function createCheckoutForOrder(c:Context<AppBindings>,input:{order
     if(input.provider==="stripe"&&existing.mode==="payment"&&Boolean(existing.save_payment_method)!==Boolean(input.savePaymentMethod))return {status:409 as const,body:{error:{code:"checkout_preference_locked",provider:input.provider}}};
     return {status:200 as const,body:{orderId:order.id,provider:input.provider,mode:existing.mode,url:existing.checkout_url,amountMinor:order.total_cents,currency:order.currency}};
   }
+  if(existing&&!await expireCheckoutBeforeReplacement(c.env,input.provider,existing.provider_session_id))return {status:409 as const,body:{error:{code:"checkout_verification_required",provider:input.provider}}};
   if(existing)await c.env.DB.prepare("UPDATE billing_checkout_sessions SET status='expired',updated_at=? WHERE provider=? AND provider_session_id=? AND status='created'").bind(Date.now(),input.provider,existing.provider_session_id).run();
   const user=await c.env.DB.prepare("SELECT u.email,COALESCE(p.company_name,p.display_name,u.email) AS name FROM users u LEFT JOIN profiles p ON p.id=u.id WHERE u.id=?").bind(userId).first<{email:string;name:string|null}>();
   if(!user?.email)return {status:409 as const,body:{error:{code:"billing_identity_missing"}}};
@@ -187,6 +213,8 @@ export async function createCheckoutForOrder(c:Context<AppBindings>,input:{order
   ]);}catch(error){
     const concurrent=await c.env.DB.prepare("SELECT checkout_url,mode FROM billing_checkout_sessions WHERE provider=? AND provider_session_id=? AND order_id=?").bind(input.provider,checkout.providerId,order.id).first<{checkout_url:string|null;mode:"payment"|"subscription"}>();
     if(concurrent?.checkout_url)return {status:200 as const,body:{orderId:order.id,provider:input.provider,mode:concurrent.mode,url:concurrent.checkout_url,amountMinor:order.total_cents,currency:order.currency}};
+    const active=await c.env.DB.prepare("SELECT provider FROM billing_checkout_sessions WHERE order_id=? AND status IN('created','pending') LIMIT 1").bind(order.id).first<{provider:string}>();
+    if(active)return {status:409 as const,body:{error:{code:"checkout_already_active",provider:active.provider}}};
     throw error;
   }
   return {status:201 as const,body:{orderId:order.id,provider:input.provider,mode:checkout.mode,url:checkout.url,amountMinor:order.total_cents,currency:order.currency}};
@@ -197,6 +225,16 @@ billingRouter.get("/api/billing/config",(c)=>{
   return c.json({providers,preferred:providers.stripe.enabled?"stripe":providers.revolut.enabled?"revolut":null});
 });
 billingRouter.post("/api/billing/checkout",async(c)=>{const parsed=checkoutSchema.safeParse(await c.req.json().catch(()=>null));if(!parsed.success)return c.json({error:{code:"invalid_request"}},400);const result=await createCheckoutForOrder(c,parsed.data);return c.json(result.body,result.status);});
+
+billingRouter.get("/api/billing/recurring",async c=>c.json(await listClientRecurring(c.env,c.get("userId"),providerCapabilities(c.env).stripe.enabled)));
+billingRouter.post("/api/billing/recurring/:id/checkout",async c=>{
+  const parsed=z.object({revision:z.number().int().positive(),quoteHash:z.string().regex(/^[a-f0-9]{64}$/),confirmed:z.literal(true)}).strict().safeParse(await c.req.json().catch(()=>null));
+  if(!parsed.success)return c.json({error:{code:"recurring_confirmation_required"}},400);
+  if(!providerCapabilities(c.env).stripe.enabled)return c.json({error:{code:"provider_unconfigured",provider:"stripe"}},503);
+  const prepared=await prepareNativeRecurring(c,c.req.param("id"),parsed.data.revision,parsed.data.quoteHash);
+  if("error" in prepared)return c.json({error:{code:prepared.error}},prepared.status);
+  const result=await createCheckoutForOrder(c,{orderId:prepared.orderId,provider:"stripe",savePaymentMethod:true});if(result.status>=400)await releaseUnstartedRecurring(c.env,prepared.orderId);return c.json(result.body,result.status);
+});
 
 billingRouter.get("/api/billing/payment-methods",async(c)=>c.json(await listAccountPaymentMethods(c.env,c.get("userId"))));
 
@@ -227,6 +265,7 @@ billingRouter.post("/api/billing/payment-methods/setup",async(c)=>{
   const identity=await checkStripeAccount(c.env);if(!identity.ok)return c.json({error:{code:identity.code,provider:"stripe"}},503);
   const userId=c.get("userId"),user=await c.env.DB.prepare("SELECT email FROM users WHERE id=?").bind(userId).first<{email:string}>();
   if(!user)return c.json({error:{code:"billing_identity_missing"}},409);
+  const rate=await checkRateLimit(c.env.DB,[{key:`billing-card-setup:${c.get("userId")}`,limit:12,windowSec:3600}]);if(!rate.ok)return c.json({error:{code:"rate_limited"}},429);
   const customer=await ensureStripeCustomer(c.env,userId,user.email),appUrl=(c.env.APP_URL||"https://avyron.ro").replace(/\/+$/,"");
   const response=await fetch("https://api.stripe.com/v1/checkout/sessions",{method:"POST",headers:stripeHeaders(c.env),body:stripeForm({mode:"setup",customer,success_url:`${appUrl}/profil?tab=payments&billingView=settings&metoda=salvata`,cancel_url:`${appUrl}/profil?tab=payments&billingView=settings&metoda=anulata`,"payment_method_types[0]":"card","metadata[user_id]":userId})});
   if(!response.ok)return c.json({error:{code:"setup_provider_failed"}},502);
@@ -243,7 +282,9 @@ billingRouter.post("/api/billing/portal",async(c)=>{
   const identity=await checkStripeAccount(c.env);if(!identity.ok)return c.json({error:{code:identity.code,provider:"stripe"}},503);
   const customer=await c.env.DB.prepare("SELECT provider_customer_id FROM billing_customers WHERE user_id=? AND provider='stripe'").bind(c.get("userId")).first<{provider_customer_id:string}>();
   if(!customer)return c.json({error:{code:"stripe_customer_missing"}},404);const appUrl=(c.env.APP_URL||"https://avyron.ro").replace(/\/+$/,"");
-  const response=await fetch("https://api.stripe.com/v1/billing_portal/sessions",{method:"POST",headers:stripeHeaders(c.env),body:stripeForm({customer:customer.provider_customer_id,return_url:`${appUrl}/profil?tab=payments&billingView=settings`})});
+  let configuration:string;
+  try{configuration=await clientPortalConfiguration(c.env,`${appUrl}/profil?tab=payments`);}catch{return c.json({error:{code:"portal_configuration_required",message:"Portalul Stripe necesită verificarea configurației de carduri și anulare. Poți folosi în continuare oprirea reînnoirii din abonament."}},409);}
+  const response=await fetch("https://api.stripe.com/v1/billing_portal/sessions",{method:"POST",headers:stripeHeaders(c.env),body:stripeForm({customer:customer.provider_customer_id,configuration,return_url:`${appUrl}/profil?tab=payments&billingView=settings`})});
   if(!response.ok)return c.json({error:{code:"portal_provider_failed"}},502);const session=await response.json() as {url?:string};return c.json({url:session.url??null},201);
 });
 
@@ -251,12 +292,13 @@ export async function recordPaidOrder(env:Env,input:{provider:Provider;providerR
   const timestamp=Date.now();if(input.order.status==="paid")return {replay:true,invoiced:false};
   const items=orderItems(input.order),recurring=subscriptionItem(items),referenceColumn=input.provider==="stripe"?"stripe_reference":"revolut_reference";
   const websiteContext=isWebsiteSubscription(input.order.items_json)?await websiteOrderContext(env,input.order.id):null;
+  const nativeContext=await recurringOrderContext(env,input.order.id);
   if(isWebsiteSubscription(input.order.items_json)&&!websiteContext)throw new Error("website_order_assignment_missing");
   const statements=[
     env.DB.prepare("INSERT INTO billing_order_fulfillments(order_id,provider,provider_reference,created_at) VALUES (?,?,?,?)").bind(input.order.id,input.provider,input.providerReference,timestamp),
     env.DB.prepare("UPDATE commerce_orders SET status='paid',updated_at=? WHERE id=? AND status!='paid'").bind(timestamp,input.order.id),
     env.DB.prepare(`INSERT INTO financial_revenues(id,client_id,project_id,revenue_type,service_name,status,currency,gross_amount_minor,amount_ron_minor,payment_date,payment_processor,payment_method,${referenceColumn},notes,source,created_at,updated_at) VALUES (?,?,?,?,?,'paid',?,?,?,?,?,'card',?,'Plată confirmată de webhook','system_generated',?,?)`)
-      .bind(crypto.randomUUID(),websiteContext?.client_id||null,websiteContext?.project_id||null,recurring?"subscriptions":"digital_products",orderDescription(items),input.order.currency,input.order.total_cents,input.order.currency.toUpperCase()==="RON"?input.order.total_cents:null,timestamp,input.provider,input.providerReference,timestamp,timestamp),
+      .bind(crypto.randomUUID(),websiteContext?.client_id||nativeContext?.client_id||null,websiteContext?.project_id||nativeContext?.project_id||null,recurring?"subscriptions":"digital_products",orderDescription(items),input.order.currency,input.order.total_cents,input.order.currency.toUpperCase()==="RON"?input.order.total_cents:null,timestamp,input.provider,input.providerReference,timestamp,timestamp),
     env.DB.prepare("UPDATE billing_checkout_sessions SET status='paid',updated_at=? WHERE order_id=? AND provider=? AND status!='paid'").bind(timestamp,input.order.id,input.provider),
   ];
   if(input.subscriptionId&&recurring&&input.provider==="stripe")statements.push(env.DB.prepare("INSERT OR IGNORE INTO billing_subscriptions(id,user_id,order_id,provider,provider_subscription_id,sku,status,period,amount_minor,currency,created_at,updated_at) VALUES (?,?,?,'stripe',?,?,'active',?,?,?,?,?)").bind(crypto.randomUUID(),input.order.user_id,input.order.id,input.subscriptionId,recurring.sku,recurring.period,input.order.total_cents,input.order.currency,timestamp,timestamp));
@@ -281,16 +323,18 @@ async function syncOblioInvoiceForOrder(env:Env,order:OrderRow){
   const otherInvoice=await env.DB.prepare("SELECT 1 FROM billing_invoices WHERE order_id=? AND provider!='oblio' AND status='issued' LIMIT 1").bind(order.id).first();
   const revenueInvoice=await env.DB.prepare("SELECT 1 FROM financial_revenues revenue WHERE EXISTS (SELECT 1 FROM billing_order_fulfillments fulfillment WHERE fulfillment.order_id=? AND ((fulfillment.provider='stripe' AND fulfillment.provider_reference=revenue.stripe_reference) OR (fulfillment.provider='revolut' AND fulfillment.provider_reference=revenue.revolut_reference))) AND invoice_number IS NOT NULL AND invoice_number!='' AND archived_at IS NULL LIMIT 1").bind(order.id).first();
   const timestamp=Date.now(),items=orderItems(order);
-  const identity=await env.DB.prepare("SELECT COALESCE(bp.invoice_email,u.email) AS email,COALESCE(bp.legal_name,p.company_name,p.display_name,u.email) AS name,COALESCE(bp.tax_id,p.cui) AS tax_id,COALESCE(bp.address,p.address) AS address FROM users u LEFT JOIN profiles p ON p.id=u.id LEFT JOIN billing_profiles bp ON bp.user_id=u.id WHERE u.id=?").bind(order.user_id).first<{email:string;name:string;tax_id:string|null;address:string|null}>();
+  const identity=await env.DB.prepare("SELECT COALESCE(bp.invoice_email,u.email) AS email,COALESCE(bp.legal_name,p.company_name,p.display_name,u.email) AS name,COALESCE(bp.tax_id,p.cui) AS tax_id,COALESCE(bp.address,p.address) AS address,COALESCE(bp.entity_type,p.entity_type,'individual') AS entity_type FROM users u LEFT JOIN profiles p ON p.id=u.id LEFT JOIN billing_profiles bp ON bp.user_id=u.id WHERE u.id=?").bind(order.user_id).first<{email:string;name:string;tax_id:string|null;address:string|null;entity_type:string}>();
   const websiteInvoiceContext=isWebsiteSubscription(order.items_json)?await websiteOrderContext(env,order.id):null;
-  const acceptedBuyer=websiteInvoiceContext?JSON.parse(websiteInvoiceContext.buyer_snapshot_json) as {name:string;email:string;taxId:string|null;address:string}:null;
+  const nativeInvoiceContext=await recurringOrderContext(env,order.id);
+  const acceptedBuyer=nativeInvoiceContext?(JSON.parse(nativeInvoiceContext.snapshot_json) as {buyer:{name:string;email:string;taxId:string|null;address:string}}).buyer:websiteInvoiceContext?JSON.parse(websiteInvoiceContext.buyer_snapshot_json) as {name:string;email:string;taxId:string|null;address:string}:null;
   const lines=items.map((item)=>({name:item.name||item.sku||item.id||"Serviciu AVYRON",code:item.accountingCode||item.sku||item.id,quantity:item.quantity||1,vatBasisPoints:item.vatBasisPoints,unitLabel:item.unitLabel,unitPriceMinor:Math.round((item.lineTotalCents??item.unitPriceCents??order.total_cents)/(item.quantity||1))}));
   const grossMinor=lines.reduce((sum,line)=>sum+line.unitPriceMinor*line.quantity,0);
   const invoiceInput={orderId:order.id,buyer:acceptedBuyer||{name:identity?.name||identity?.email||"Client AVYRON",email:identity?.email,taxId:identity?.tax_id,address:identity?.address},lines,discountMinor:Math.max(0,grossMinor-order.total_cents),discountLabel:order.promotion_code?`Reducere ${order.promotion_code}`:"Reducere aplicată",currency:order.currency,issuedAt:timestamp};
-  let invoice:Awaited<ReturnType<typeof issueOblioInvoice>>|{issued:false;reason:"manual_invoice_exists"|"manual_invoice_required"|"invoice_amount_mismatch"};
+  let invoice:Awaited<ReturnType<typeof issueOblioInvoice>>|{issued:false;reason:"manual_invoice_exists"|"manual_invoice_required"|"invoice_amount_mismatch"|"billing_identity_incomplete"};
   if(items.some(item=>item.invoiceProvider==='manual'))invoice={issued:false,reason:"manual_invoice_required"};
   else if(otherInvoice||revenueInvoice)invoice={issued:false,reason:"manual_invoice_exists"};
   else if(grossMinor<order.total_cents)invoice={issued:false,reason:"invoice_amount_mismatch"};
+  else if(providerCapabilities(env).oblio.enabled&&(!invoiceInput.buyer.name?.trim()||invoiceInput.buyer.name.includes('@')||!invoiceInput.buyer.address?.trim()||!invoiceInput.buyer.email?.trim()||!acceptedBuyer&&identity?.entity_type!=="individual"&&!invoiceInput.buyer.taxId?.trim()))invoice={issued:false,reason:"billing_identity_incomplete"};
   else try{invoice=await issueOblioInvoice(env,invoiceInput);}catch{invoice={issued:false,reason:"invoice_failed"};}
   await env.DB.prepare("INSERT INTO billing_invoices(id,user_id,order_id,provider,provider_invoice_id,series,number,status,currency,total_minor,document_url,error_code,issued_at,created_at,updated_at) VALUES (?,?,?,'oblio',?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(order_id,provider) DO UPDATE SET provider_invoice_id=excluded.provider_invoice_id,series=excluded.series,number=excluded.number,status=excluded.status,document_url=excluded.document_url,error_code=excluded.error_code,issued_at=excluded.issued_at,updated_at=excluded.updated_at WHERE billing_invoices.status!='issued'")
     .bind(crypto.randomUUID(),order.user_id,order.id,invoice.issued?invoice.providerId:null,invoice.issued?invoice.series:null,invoice.issued?invoice.number:null,invoice.issued?"issued":"pending",order.currency,order.total_cents,invoice.issued?invoice.documentUrl:null,invoice.issued?null:invoice.reason,invoice.issued?timestamp:null,timestamp,timestamp).run();
@@ -307,14 +351,25 @@ billingRouter.post("/api/billing/webhooks/stripe",async(c)=>{
   if(previous&&(previous.status==="processed"||previous.status==="ignored"))return c.json({ok:true,replay:true});
   const timestamp=Date.now();await c.env.DB.prepare("INSERT OR IGNORE INTO billing_webhook_events(id,provider,provider_event_id,event_type,status,received_at) VALUES (?,'stripe',?,?,'received',?)").bind(crypto.randomUUID(),event.id,event.type,timestamp).run();
   if(event.type.startsWith("customer.subscription.")){
-    const subscription=event.data.object as {id?:string;status?:string;current_period_start?:number;current_period_end?:number;cancel_at_period_end?:boolean};
+    const subscription=event.data.object as {items?:Record<string,unknown>;id?:string;status?:string;current_period_start?:number;current_period_end?:number;cancel_at_period_end?:boolean};
     if(!subscription.id){await setWebhookStatus(c.env,"stripe",event.id,"failed","subscription_id_missing");return c.json({error:{code:"subscription_id_missing"}},400);}
+    if(await recurringProviderContext(c.env,subscription.id)){
+      try{await syncNativeProvider(c.env,subscription.id);}catch{await setWebhookStatus(c.env,"stripe",event.id,"failed","recurring_status_verification_failed");return c.json({error:{code:"recurring_status_verification_failed"}},502);}
+      await setWebhookStatus(c.env,"stripe",event.id,"processed");return c.json({ok:true,subscriptionUpdated:true});
+    }
     const result=await c.env.DB.prepare("UPDATE billing_subscriptions SET status=?,current_period_start=?,current_period_end=?,cancel_at_period_end=?,updated_at=? WHERE provider='stripe' AND provider_subscription_id=?")
-      .bind(stripeSubscriptionStatus(subscription.status||"",event.type),subscription.current_period_start?subscription.current_period_start*1000:null,subscription.current_period_end?subscription.current_period_end*1000:null,subscription.cancel_at_period_end?1:0,Date.now(),subscription.id).run();
+      .bind(stripeSubscriptionStatus(subscription.status||"",event.type),stripePeriod(subscription).start,stripePeriod(subscription).end,subscription.cancel_at_period_end?1:0,Date.now(),subscription.id).run();
     if(!Number(result.meta.changes||0)){await setWebhookStatus(c.env,"stripe",event.id,"failed","subscription_not_registered");return c.json({error:{code:"subscription_not_registered"}},503);}
     const websiteProduct=await c.env.DB.prepare("SELECT co.items_json FROM billing_subscriptions bs JOIN commerce_orders co ON co.id=bs.order_id WHERE bs.provider='stripe' AND bs.provider_subscription_id=?").bind(subscription.id).first<{items_json:string}>();
     if(websiteProduct&&isWebsiteSubscription(websiteProduct.items_json))await syncWebsiteSubscriptionStatus(c.env,subscription.id);
+    await syncNativeProvider(c.env,subscription.id);
     await setWebhookStatus(c.env,"stripe",event.id,"processed");return c.json({ok:true,subscriptionUpdated:true});
+  }
+  if(event.type==="invoice.payment_failed"||event.type==="invoice.payment_action_required"){
+    const invoice=event.data.object as {subscription?:string;parent?:{subscription_details?:{subscription?:string}}};
+    const id=invoice.subscription||invoice.parent?.subscription_details?.subscription;
+    if(id&&await recurringProviderContext(c.env,id)){try{await syncNativeProvider(c.env,id);}catch{await setWebhookStatus(c.env,"stripe",event.id,"failed","recurring_status_verification_failed");return c.json({error:{code:"recurring_status_verification_failed"}},502);}}
+    await setWebhookStatus(c.env,"stripe",event.id,"processed");return c.json({ok:true,paymentFailed:true});
   }
   if(event.type==="invoice.paid"){
     const invoice=event.data.object as {id?:string;amount_paid?:number;currency?:string;billing_reason?:string;subscription?:string;payment_intent?:string;period_start?:number;period_end?:number;lines?:{data?:{period?:{start:number;end:number}}[]};parent?:{subscription_details?:{subscription?:string}}};
@@ -324,15 +379,19 @@ billingRouter.post("/api/billing/webhooks/stripe",async(c)=>{
     if(!invoice.id||!local){await setWebhookStatus(c.env,"stripe",event.id,"failed","subscription_not_registered");return c.json({error:{code:"subscription_not_registered"}},503);}
     const amount=Number(invoice.amount_paid||0),currency=(invoice.currency||"").toUpperCase();
     if(amount<=0||currency!==local.currency.toUpperCase()){await setWebhookStatus(c.env,"stripe",event.id,"failed","invoice_mismatch");return c.json({error:{code:"invoice_mismatch"}},400);}
+    try{await validateNativeRenewal(c.env,subscriptionId,amount,currency,invoice.lines?.data?.[0]?.period);}catch{await setWebhookStatus(c.env,"stripe",event.id,"failed","recurring_invoice_mismatch");return c.json({error:{code:"recurring_invoice_mismatch"}},400);}
     const renewalOrderId=`stripe-invoice-${invoice.id}`,renewedAt=Date.now();
     await c.env.DB.prepare("INSERT OR IGNORE INTO commerce_orders(id,user_id,items_json,subtotal_cents,promotion_id,promotion_code,discount_percent,discount_base_cents,discount_cents,total_cents,currency,requires_manual_quote,status,created_at,updated_at) VALUES (?,?,?,?,NULL,NULL,0,0,0,?,?,0,'requested',?,?)")
       .bind(renewalOrderId,local.user_id,local.items_json,amount,amount,currency,renewedAt,renewedAt).run();
     if(isWebsiteSubscription(local.items_json))await linkWebsiteRenewalOrder(c.env,renewalOrderId,subscriptionId);
+    await linkNativeRenewal(c.env,renewalOrderId,subscriptionId,amount,currency);
     const order=await getOrder(c.env.DB,renewalOrderId);if(!order){await setWebhookStatus(c.env,"stripe",event.id,"failed","renewal_order_failed");return c.json({error:{code:"renewal_order_failed"}},500);}
     let result:Awaited<ReturnType<typeof recordPaidOrder>>;try{result=await recordPaidOrder(c.env,{provider:"stripe",providerReference:invoice.payment_intent||invoice.id,order,subscriptionId});}catch(error){await setWebhookStatus(c.env,"stripe",event.id,"failed","fulfillment_failed");throw error;}
-    await c.env.DB.prepare("UPDATE billing_subscriptions SET status='active',current_period_start=?,current_period_end=?,updated_at=? WHERE provider='stripe' AND provider_subscription_id=?")
+    await c.env.DB.prepare("UPDATE billing_subscriptions SET status='active',current_period_start=?,current_period_end=?,updated_at=? WHERE provider='stripe' AND provider_subscription_id=? AND NOT EXISTS(SELECT 1 FROM billing_recurring_agreements a WHERE a.order_id=billing_subscriptions.order_id)")
       .bind(invoice.period_start?invoice.period_start*1000:null,invoice.period_end?invoice.period_end*1000:null,Date.now(),subscriptionId).run();
     if(isWebsiteSubscription(local.items_json)){try{await recordWebsitePeriod(c.env,{subscriptionId,invoiceId:invoice.id,startsAt:(invoice.lines?.data?.[0]?.period?.start||invoice.period_start||0)*1000,endsAt:(invoice.lines?.data?.[0]?.period?.end||invoice.period_end||0)*1000,amountMinor:amount,currency});await syncWebsiteSubscriptionStatus(c.env,subscriptionId);}catch{await setWebhookStatus(c.env,"stripe",event.id,"failed","website_subscription_sync_failed");return c.json({error:{code:"website_subscription_sync_failed"}},503);}}
+    await syncNativeProvider(c.env,subscriptionId);
+    await advanceNativePaidPeriod(c.env,subscriptionId,(invoice.lines?.data?.[0]?.period?.end||invoice.period_end||0)*1000||null);
     await setWebhookStatus(c.env,"stripe",event.id,"processed");return c.json({ok:true,renewal:true,...result});
   }
   if(event.type==="checkout.session.async_payment_failed"||event.type==="checkout.session.expired"){
@@ -347,21 +406,28 @@ billingRouter.post("/api/billing/webhooks/stripe",async(c)=>{
     if(!started||started.user_id!==session.metadata?.user_id){await setWebhookStatus(c.env,"stripe",event.id,"failed","setup_session_mismatch");return c.json({error:{code:"setup_session_mismatch"}},400);}
     const intentResponse=await fetch(`https://api.stripe.com/v1/setup_intents/${encodeURIComponent(session.setup_intent)}`,{headers:stripeHeaders(c.env)});
     if(!intentResponse.ok){await setWebhookStatus(c.env,"stripe",event.id,"failed","setup_verification_failed");return c.json({error:{code:"setup_verification_failed"}},502);}
-    const intent=await intentResponse.json() as {customer?:string|null;payment_method?:string};
-    if(!intent.payment_method||intent.customer!==started.provider_customer_id){await setWebhookStatus(c.env,"stripe",event.id,"failed","setup_method_mismatch");return c.json({error:{code:"setup_method_mismatch"}},400);}
+    const intent=await intentResponse.json() as {status?:string;customer?:string|null;payment_method?:string};
+    if(intent.status!=="succeeded"||!intent.payment_method||intent.customer!==started.provider_customer_id){await setWebhookStatus(c.env,"stripe",event.id,"failed","setup_method_mismatch");return c.json({error:{code:"setup_method_mismatch"}},400);}
     try{await allowStripeMethodRedisplay(c.env,intent.payment_method,started.provider_customer_id);}catch{await setWebhookStatus(c.env,"stripe",event.id,"failed","method_verification_failed");return c.json({error:{code:"method_verification_failed"}},502);}
     await c.env.DB.prepare("UPDATE billing_method_setup_sessions SET status='completed',updated_at=? WHERE provider_session_id=?").bind(Date.now(),session.id).run();
     await setWebhookStatus(c.env,"stripe",event.id,"processed");return c.json({ok:true,methodSaved:true});
   }
   const orderId=session.client_reference_id||session.metadata?.order_id||"",order=await getOrder(c.env.DB,orderId);
-  const localSession=session.id?await c.env.DB.prepare("SELECT id,save_payment_method FROM billing_checkout_sessions WHERE provider='stripe' AND provider_session_id=? AND order_id=? AND user_id=? AND amount_minor=? AND currency=? LIMIT 1").bind(session.id,orderId,order?.user_id??"",order?.total_cents??0,order?.currency??"").first<{id:string;save_payment_method:number}>():null;
-  if(!order||!localSession||session.metadata?.user_id!==order.user_id||Number(session.amount_total)!==order.total_cents){await setWebhookStatus(c.env,"stripe",event.id,"failed","order_mismatch");return c.json({error:{code:"order_mismatch"}},400);}
+  const localSession=session.id?await c.env.DB.prepare("SELECT id,save_payment_method,status,amount_minor FROM billing_checkout_sessions WHERE provider='stripe' AND provider_session_id=? AND order_id=? AND user_id=? AND (amount_minor=? OR (amount_minor=0 AND EXISTS(SELECT 1 FROM billing_recurring_agreements a WHERE a.order_id=billing_checkout_sessions.order_id))) AND currency=? LIMIT 1").bind(session.id,orderId,order?.user_id??"",order?.total_cents??0,order?.currency??"").first<{id:string;save_payment_method:number;status:string;amount_minor:number}>():null;
+  if(!order||!localSession||session.metadata?.user_id!==order.user_id||Number(session.amount_total)!==order.total_cents&&!(session.mode==="subscription"&&Number(session.amount_total)===0&&await recurringOrderContext(c.env,orderId))){await setWebhookStatus(c.env,"stripe",event.id,"failed","order_mismatch");return c.json({error:{code:"order_mismatch"}},400);}
+  if(localSession.status==="paid"&&localSession.amount_minor===0&&session.subscription&&await c.env.DB.prepare("SELECT 1 FROM billing_subscriptions WHERE provider='stripe' AND provider_subscription_id=? AND order_id=? AND user_id=?").bind(session.subscription,orderId,order.user_id).first()){
+    await setWebhookStatus(c.env,"stripe",event.id,"processed");return c.json({ok:true,replay:true,charged:false});
+  }
+  let nativeZeroStart=false;
+  try{nativeZeroStart=await confirmNativeCheckout(c.env,orderId,session);}catch{await setWebhookStatus(c.env,"stripe",event.id,"failed","recurring_checkout_verification_failed");return c.json({error:{code:"recurring_checkout_verification_failed"}},502);}
+  if(nativeZeroStart){await setWebhookStatus(c.env,"stripe",event.id,"processed");return c.json({ok:true,authorized:true,charged:false});}
   if(!stripePaymentConfirmed(session.payment_status)){await c.env.DB.prepare("UPDATE billing_checkout_sessions SET status='pending',updated_at=? WHERE provider='stripe' AND provider_session_id=? AND status='created'").bind(Date.now(),session.id).run();await setWebhookStatus(c.env,"stripe",event.id,"processed","payment_pending");return c.json({ok:true,pending:true},202);}
   let result:Awaited<ReturnType<typeof recordPaidOrder>>;try{result=await recordPaidOrder(c.env,{provider:"stripe",providerReference:session.payment_intent||session.id||event.id,order,subscriptionId:session.subscription});}catch(error){await setWebhookStatus(c.env,"stripe",event.id,"failed","fulfillment_failed");throw error;}
   try{await confirmWebsiteCheckout(c.env,order,session.subscription,session.invoice);}catch{await setWebhookStatus(c.env,"stripe",event.id,"failed","website_subscription_sync_failed");return c.json({error:{code:"website_subscription_sync_failed"}},503);}
   if(localSession.save_payment_method===1&&session.mode==="payment"&&session.payment_intent){
     try{await saveCheckoutStripeMethod(c.env,order.user_id,session.payment_intent);}catch{await setWebhookStatus(c.env,"stripe",event.id,"failed","saved_method_sync_failed");return c.json({error:{code:"saved_method_sync_failed"}},502);}
   }
+  if(session.subscription){await syncNativeProvider(c.env,session.subscription);}
   await setWebhookStatus(c.env,"stripe",event.id,"processed");return c.json({ok:true,...result});
 });
 
@@ -472,6 +538,11 @@ billingRouter.post("/api/billing/admin/invoices/:orderId/retry",async(c)=>{
 export async function runBillingReconciliation(env:Env){
   if(providerCapabilities(env).stripe.enabled){
     const identity=await checkStripeAccount(env);
+    if(identity.ok) await reconcileNativeBilling(env,async(orderId,reference,subscriptionId)=>{
+      const order=await getOrder(env.DB,orderId);if(!order)throw Error("recurring_order_missing");
+      await recordPaidOrder(env,{provider:"stripe",providerReference:reference,order,subscriptionId});
+      await syncOblioInvoiceForOrder(env,order);
+    });
     if(identity.ok) await reconcileWebsiteBilling(env,async(orderId,reference,subscriptionId)=>{
       const order=await getOrder(env.DB,orderId);
       if(!order)throw Error("website_reconciliation_order_missing");

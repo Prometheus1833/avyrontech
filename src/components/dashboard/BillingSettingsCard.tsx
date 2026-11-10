@@ -1,3 +1,4 @@
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -7,6 +8,7 @@ import {
   Loader2,
   RefreshCw,
   ShieldCheck,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +51,9 @@ export default function BillingSettingsCard({
   embedded?: boolean;
   loadAccount?: (force?: boolean) => Promise<BillingAccount>;
 }) {
+  const [params]=useSearchParams();
+  const methodReturn=params.get("metoda");
+  const [setupStatus,setSetupStatus]=useState<string|null>(null);
   const { user } = useAuth(),
     userId = user?.id;
   const providers = useRef({ stripe: false, revolut: false });
@@ -104,9 +109,10 @@ export default function BillingSettingsCard({
     try {
       const result = await billingApi.paymentMethods();
       setMethods(result.methods);
+      setSetupStatus(result.setupStatus||null);
       setSyncWarning(
-        Boolean(providers.current.stripe && !result.refreshed.stripe) ||
-          Boolean(providers.current.revolut && !result.refreshed.revolut),
+        Boolean(providers.current.stripe && result.hasCustomer?.stripe!==false && !result.refreshed.stripe) ||
+          Boolean(providers.current.revolut && result.hasCustomer?.revolut!==false && !result.refreshed.revolut),
       );
     } catch (error) {
       toast.error(
@@ -239,7 +245,7 @@ export default function BillingSettingsCard({
           </CardTitle>
           <CardDescription>
             Adaugă sau actualizează cardul prin formularul securizat Stripe.
-            Salvarea cardului nu inițiază o plată.
+            Salvarea cardului nu inițiază o plată și nu activează un abonament.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 p-4 pt-0">
@@ -267,6 +273,8 @@ export default function BillingSettingsCard({
               </Badge>
             </div>
           )}
+          {methodReturn === "salvata" && <p role="status" className="rounded-xl border border-violet-400/25 bg-violet-500/10 p-3 text-xs">{setupStatus==="completed"?"Cardul a fost confirmat de Stripe. Salvarea nu a inițiat o plată.":"Ai revenit de la Stripe. Confirmăm salvarea cardului; folosește Actualizează dacă încă nu apare."}</p>}
+          {methodReturn === "anulata" && <p role="status" className="rounded-xl border border-amber-400/25 p-3 text-xs">Adăugarea cardului nu a fost confirmată. Cardurile deja salvate rămân disponibile.</p>}
           {syncWarning && (
             <p
               role="status"
@@ -334,13 +342,15 @@ export default function BillingSettingsCard({
             <Button
               size="sm"
               variant="ghost"
+              aria-label="Actualizează cardurile salvate"
+              title="Actualizează cardurile salvate"
               disabled={refreshing}
               onClick={() => void refreshMethods()}
             >
               <RefreshCw
-                className={`mr-1.5 size-4 ${refreshing ? "animate-spin" : ""}`}
+                className={`size-4 sm:mr-1.5 ${refreshing ? "animate-spin" : ""}`}
               />{" "}
-              Actualizează
+              <span className="hidden sm:inline">Actualizează</span>
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
@@ -350,9 +360,9 @@ export default function BillingSettingsCard({
           </p>
         </CardContent>
       </Card>
-      <details className="rounded-xl border border-white/10 bg-white/[.02]">
-        <summary className="cursor-pointer px-4 py-3 text-sm font-medium">
-          Datele de facturare
+      <details className="group rounded-xl border border-violet-400/40 bg-gradient-to-r from-violet-500/15 via-white/[.025] to-cyan-500/10 shadow-[inset_0_1px_0_rgba(255,255,255,.06)]">
+        <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium text-violet-100 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 [&::-webkit-details-marker]:hidden">
+          <FileText className="size-4 shrink-0 text-violet-300" aria-hidden/>Datele de facturare<ChevronDown className="ml-auto size-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden/>
         </summary>
         <Card className="border-0 bg-transparent shadow-none">
           <CardHeader className="p-4">
@@ -466,7 +476,7 @@ export default function BillingSettingsCard({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="stripe">Stripe</SelectItem>
-                  <SelectItem value="revolut">Revolut Pay</SelectItem>
+                  <SelectItem value="revolut" disabled={!account?.providers.revolut.enabled}>Revolut Pay{!account?.providers.revolut.enabled?" · indisponibil":""}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

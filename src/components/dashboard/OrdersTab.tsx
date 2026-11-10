@@ -1,89 +1,60 @@
-import { useCallback, useEffect, useState } from "react";
-import { ArrowRight, CreditCard, RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { CreditCard, Package, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cfAuth } from "@/lib/cfAuth";
 import { billingApi, type BillingAccount } from "@/lib/billingApi";
+import { safePaymentRedirect } from "@/lib/clientCommerce";
 
-type OrderLine = { sku: string; type?: string; name: string; description?: string | null; period?: string | null; serviceKey?: string | null; quantity: number; lineTotalCents: number | null };
-type Order = { id: string; items_json: string; total_cents: number; currency: string; status: string; requires_manual_quote: number; created_at: number; promotion_code: string | null };
-const money = (minor: number, currency: string) => new Intl.NumberFormat("ro-RO", { style: "currency", currency }).format(minor / 100);
-const statusLabel: Record<string, string> = { requested: "Înregistrată", quoted: "Ofertată", accepted: "Plată inițiată", paid: "Plătită", cancelled: "Anulată" };
+type OrderLine = { sku: string; type?: string; name: string; description?: string | null; period?: string | null; quantity: number; unitPriceCents?: number; lineTotalCents?: number | null };
+type Order = { id: string; items_json: string; total_cents: number; currency: string; status: string; requires_manual_quote: number; created_at: number };
+const money = (minor: number, currency: string) => new Intl.NumberFormat("ro-RO", {style: "currency", currency}).format(minor/100);
+const labels: Record<string,string> = {requested:"Înregistrată",quoted:"Ofertată",accepted:"În așteptarea confirmării",paid:"Plătită",cancelled:"Anulată"};
+function lineAmount(line:OrderLine){
+ if(typeof line.lineTotalCents==='number'&&Number.isSafeInteger(line.lineTotalCents))return line.lineTotalCents;
+ const quantity=Number.isSafeInteger(line.quantity)&&line.quantity>0?line.quantity:1;
+ return typeof line.unitPriceCents==='number'&&Number.isSafeInteger(line.unitPriceCents)&&Number.isSafeInteger(line.unitPriceCents*quantity)?line.unitPriceCents*quantity:null;
+}
+function orderLines(raw: string): OrderLine[] { try { const parsed: unknown=JSON.parse(raw);return Array.isArray(parsed)?parsed.filter((v):v is OrderLine=>!!v&&typeof v==='object'&&typeof v.name==='string'):[] } catch { return [] } }
 
 export function OrdersTab({embedded=false,pendingOnly=false,loadAccount=billingApi.account}:{embedded?:boolean;pendingOnly?:boolean;loadAccount?:(force?:boolean)=>Promise<BillingAccount>}) {
-  const returnParams = typeof window === "undefined" ? null : new URLSearchParams(window.location.search);
-  const paymentReturn = returnParams?.get("plata");
-  const returnedOrderId = returnParams?.get("order");
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [billing, setBilling] = useState<BillingAccount | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState("");
-  const [saveCard, setSaveCard] = useState(false);
-  const [loadError,setLoadError]=useState("");
-  const load = useCallback(async (force=false) => {
-    setLoading(true);setLoadError("");
-    try {
-      const [history, account] = await Promise.all([
-        cfAuth.request<{ data: Order[] }>("/api/commerce/orders"),
-        loadAccount(force).then((value) => value.providers ? value : null).catch(() => null),
-      ]);
-      setOrders((history.data ?? []).filter(order=>!pendingOnly||!["paid","cancelled"].includes(order.status)||returnedOrderId===order.id));
-      setBilling(account);
-    } catch {
-      setOrders([]);setLoadError("Comenzile nu pot fi încărcate. Reîncearcă.");
-    } finally { setLoading(false); }
-  }, [pendingOnly,returnedOrderId,loadAccount]);
-  useEffect(() => { void load(); }, [load]);
-
-  const pay = async (orderId: string, provider: "stripe" | "revolut", recurring: boolean) => {
-    setBusy(`${orderId}:${provider}`);
-    try {
-      const checkout = await billingApi.checkout({ orderId, provider, savePaymentMethod: provider === "stripe" && !recurring && saveCard });
-      if (!checkout.url) throw new Error("Procesatorul nu a oferit o pagină de plată.");
-      window.location.assign(checkout.url);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Plata nu a putut fi inițiată.");
-      setBusy("");
-    }
-  };
-
-  if(pendingOnly&&!loading&&!loadError&&!orders.length)return null;
-  return <div className="space-y-5">
-    <header className="flex flex-wrap items-end justify-between gap-3 rounded-2xl border border-white/10 bg-gradient-to-br from-violet-500/10 via-[#10162a] to-cyan-500/5 p-5">
-      <div><p className="text-xs font-semibold uppercase tracking-[.2em] text-violet-300">Contul meu</p>{embedded?<h2 className="mt-1 text-base font-semibold">{returnedOrderId?"Detalii comandă":"Comenzi în așteptare"}</h2>:<h1 className="mt-2 font-display text-2xl font-bold">Istoric și plăți</h1>}<p className="mt-1 text-sm text-slate-400">Comenzile sunt separate de abonamentele active. Starea plății se actualizează după confirmarea procesatorului.</p></div>
-      <Button variant="outline" size="sm" onClick={() => void load(true)} disabled={loading}><RefreshCw className="mr-2 size-4" /> Actualizează</Button>
-    </header>
-    {returnedOrderId && paymentReturn === "verificare" && <div role="status" className="rounded-2xl border border-violet-400/25 bg-violet-500/10 p-4 text-sm text-violet-100">
-      {orders.some((order) => order.id === returnedOrderId && order.status === "paid")
-        ? "Plata cu cardul a fost confirmată. Comanda este marcată ca plătită."
-        : "Ai revenit de la Stripe. Verificăm confirmarea plății prin webhook; folosește «Actualizează» dacă starea comenzii nu se schimbă imediat."}
-    </div>}
-    {returnedOrderId && paymentReturn === "anulata" && <div role="status" className="rounded-2xl border border-amber-400/25 bg-amber-500/10 p-4 text-sm text-amber-100">Ai revenit de la pagina de plată fără o confirmare. Verifică starea comenzii înainte să reîncerci.</div>}
-    {loadError ? <p role="alert" className="rounded-xl border border-amber-400/30 p-3 text-sm text-amber-200">{loadError}</p> : loading ? <div className="rounded-2xl border border-white/10 p-8 text-sm text-slate-400">Se încarcă istoricul…</div> : orders.length === 0 ? <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center"><p className="font-medium">Nu ai comenzi încă.</p><a href="/profil?tab=cart" className="mt-3 inline-flex items-center gap-1 text-sm text-violet-300">Explorează coșul <ArrowRight className="size-4" /></a></div> : (
-      <div className="space-y-3">{orders.map((order) => {
-        let lines: OrderLine[] = [];
-        try { const parsed = JSON.parse(order.items_json) as OrderLine[]; if (Array.isArray(parsed)) lines = parsed; } catch { /* date istorice */ }
-        const recurring = Boolean(lines.length === 1 && lines[0]?.type === "subscription" && lines[0]?.period);
-        const mixedBilling = lines.some((line) => line.type === "subscription") && !recurring;
-        const revolutAvailable = !recurring || Boolean(billing?.revolutPlans?.some((plan) => plan.sku === lines[0]?.sku && plan.period === lines[0]?.period));
-        const stripeReady = Boolean(billing?.providers.stripe.enabled);
-        const revolutReady = Boolean(billing?.providers.revolut.enabled && revolutAvailable);
-        const canPay = order.status !== "paid" && order.status !== "cancelled" && !order.requires_manual_quote && !mixedBilling && order.total_cents > 0;
-        return <article key={order.id} className="rounded-2xl border border-white/10 bg-[#10162a]/90 p-4 sm:p-5">
-          <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs text-slate-500">#{order.id.slice(0, 8).toUpperCase()} · {new Date(order.created_at).toLocaleDateString("ro-RO")}</p><h2 className="mt-1 text-base font-semibold">{lines.map((line) => line.name).join(" · ") || "Comandă AVYRON"}</h2></div><span className="rounded-full border border-violet-300/20 bg-violet-400/10 px-3 py-1 text-xs text-violet-200">{statusLabel[order.status] || order.status}</span></div>
-          <ul className="mt-4 divide-y divide-white/5 rounded-xl border border-white/5 bg-black/10 px-3">{lines.map((line, index) => <li key={`${line.sku}-${index}`} className="flex flex-wrap justify-between gap-2 py-2.5 text-sm"><div><span>{line.name}</span><span className="ml-2 text-xs text-slate-500">{line.sku}{line.period ? ` · ${line.period === "annual" ? "anual" : "lunar"}` : ""}{line.serviceKey ? ` · ${line.serviceKey}` : ""}</span>{line.description && <p className="text-xs text-slate-400">{line.description}</p>}</div><span className="text-slate-300">{line.lineTotalCents === null ? "Ofertă" : money(line.lineTotalCents, order.currency)}</span></li>)}</ul>
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs text-slate-500">{order.requires_manual_quote ? "Prețul final se stabilește prin ofertă" : "Total verificat la înregistrare"}</p><p className="font-semibold">{order.requires_manual_quote ? "În curs de ofertare" : money(order.total_cents, order.currency)}</p></div><div className="flex flex-wrap gap-2">{canPay && stripeReady && <Button size="sm" variant={billing?.profile?.default_provider === "revolut" ? "outline" : "default"} disabled={Boolean(busy)} onClick={() => void pay(order.id, "stripe", recurring)}><CreditCard className="mr-2 size-4" /> Plătește cu cardul · Stripe</Button>}{canPay && revolutReady && <Button size="sm" variant={billing?.profile?.default_provider === "revolut" ? "default" : "outline"} disabled={Boolean(busy)} onClick={() => void pay(order.id, "revolut", recurring)}><CreditCard className="mr-2 size-4" /> Continuă la Revolut Pay</Button>}</div></div>
-          {canPay && (stripeReady || revolutReady) && <div className="mt-3 space-y-2 rounded-xl border border-white/5 bg-white/[.025] p-3 text-xs text-slate-400">
-            <p>{stripeReady && !revolutReady ? "Plata cu cardul se face pe pagina securizată Stripe. Detaliile cardului nu sunt stocate în AVYRON OS." : "Alege procesatorul. Plata cu cardul se face prin Stripe; disponibilitatea altor metode este afișată înainte de autorizare."}</p>
-            {recurring ? <p className="text-violet-200">Prima plată activează reînnoirea {lines[0]?.period === "annual" ? "anuală" : "lunară"}. Procesatorul salvează metoda pentru debitările următoare; poți opri reînnoirea din Abonamente.</p> : stripeReady && <label className="flex cursor-pointer items-center gap-2 text-slate-200"><input type="checkbox" checked={saveCard} onChange={(event) => setSaveCard(event.target.checked)} className="size-4 accent-violet-500" /> Salvează cardul folosit prin Stripe pentru plăți viitoare</label>}
-          </div>}
-          {canPay && !billing && <p className="mt-3 text-xs text-amber-200">Disponibilitatea plății nu poate fi verificată acum. Reîncarcă istoricul peste câteva momente.</p>}
-          {canPay && billing && !stripeReady && !revolutReady && <p className="mt-3 text-xs text-amber-200">Plata online va apărea după configurarea unui procesator pentru această comandă. Comanda este deja salvată în cont.</p>}
-          {order.requires_manual_quote === 1 && <p className="mt-3 text-xs text-slate-400">Această comandă conține un serviciu sau produs cu preț de confirmat. Echipa va pregăti oferta înainte de plată.</p>}
-          {mixedBilling && <p className="mt-3 text-xs text-amber-200">Abonamentele trebuie achitate într-o comandă separată de plățile unice.</p>}
-          {recurring && <p className="mt-2 text-xs text-slate-500">Abonamentul se activează numai după confirmarea plății.</p>}
-        </article>;
-      })}</div>
-    )}
-  </div>;
+ const params=new URLSearchParams(typeof window==='undefined'?'':window.location.search),paymentReturn=params.get('plata'),returnedOrderId=params.get('order');
+ const [orders,setOrders]=useState<Order[]>([]),[billing,setBilling]=useState<BillingAccount|null>(null),[loading,setLoading]=useState(true),[busy,setBusy]=useState(''),[error,setError]=useState('');
+ const [saveCards,setSaveCards]=useState<Record<string,boolean>>({});
+ const sequence=useRef(0),activePayment=useRef(false);
+ const load=useCallback(async(force=false)=>{
+  const seq=++sequence.current;setLoading(true);setError('');
+  try{
+   const [history,account]=await Promise.all([cfAuth.request<{data:Order[]}>('/api/commerce/orders'),loadAccount(force).catch(()=>null)]);
+   if(seq!==sequence.current)return;
+   const scheduled=new Set((account?.subscriptions||[]).filter(s=>['active','trialing','past_due'].includes(s.status)).map(s=>s.order_id));
+   setOrders((history.data||[]).filter(o=>!pendingOnly||(!['paid','cancelled'].includes(o.status)&&!scheduled.has(o.id))||o.id===returnedOrderId));setBilling(account?.providers?account:null);
+  }catch{if(seq===sequence.current){setOrders([]);setError('Comenzile nu pot fi încărcate. Reîncearcă.')}}finally{if(seq===sequence.current)setLoading(false)}
+ },[loadAccount,pendingOnly,returnedOrderId]);
+ useEffect(()=>{const counter=sequence;void load();return()=>{++counter.current}},[load]);
+ const pay=async(orderId:string,provider:'stripe'|'revolut',recurring:boolean)=>{
+  if(activePayment.current)return;activePayment.current=true;setBusy(orderId);
+  try{const checkout=await billingApi.checkout({orderId,provider,savePaymentMethod:provider==='stripe'&&!recurring&&!!saveCards[orderId]});window.location.assign(safePaymentRedirect(checkout.url,provider))}
+  catch(e){toast.error(e instanceof Error?e.message:'Plata nu poate fi inițiată.');activePayment.current=false;setBusy('')}
+ };
+ return <section aria-label={embedded?'Comenzi în așteptare':'Istoric și plăți'} className="min-w-0 space-y-3">
+  <header className="flex items-center justify-between gap-3"><div>{embedded?<h2 className="text-lg font-semibold">Comenzi în așteptare</h2>:<h1 className="text-2xl font-semibold">Istoric și plăți</h1>}<p className="mt-1 text-xs text-slate-400">Produsele și serviciile comandate. Plata este confirmată de procesator.</p></div><Button size="sm" variant="outline" disabled={loading} onClick={()=>void load(true)}><RefreshCw className="mr-1.5 size-4"/>Actualizează</Button></header>
+  {returnedOrderId&&paymentReturn==='verificare'&&<p role="status" className="rounded-xl border border-violet-400/25 bg-violet-500/10 p-3 text-sm">{orders.some(o=>o.id===returnedOrderId&&o.status==='paid')?'Plata a fost confirmată. Factura apare după emitere.':billing?.subscriptions.some(s=>s.order_id===returnedOrderId&&s.status==='trialing')?'Debitarea este autorizată. Prima plată este programată la data afișată în abonament.':'Verificăm confirmarea procesatorului. Poți actualiza lista peste câteva momente.'}</p>}
+  {returnedOrderId&&paymentReturn==='anulata'&&<p role="status" className="rounded-xl border border-amber-400/25 p-3 text-sm">Nu am primit o confirmare nouă. Verifică starea comenzii înainte să reîncerci plata.</p>}
+  {error?<div role="alert" className="rounded-xl border border-amber-400/30 p-3 text-sm text-amber-200">{error}</div>:loading?<p role="status" className="p-3 text-sm text-slate-300">Se încarcă comenzile…</p>:!orders.length?<p className="rounded-xl border border-dashed border-white/15 p-3 text-sm text-slate-300">{pendingOnly?'Nu ai comenzi în așteptare.':'Nu ai comenzi încă.'}</p>:<ul className="divide-y divide-white/10 overflow-hidden rounded-2xl border border-white/10 bg-white/[.025]">{orders.map(order=>{
+   const lines=orderLines(order.items_json),recurring=lines.length===1&&lines[0].type==='subscription'&&!!lines[0].period,mixed=lines.some(l=>l.type==='subscription')&&!recurring;
+   const stripe=!!billing?.providers.stripe.enabled,revolut=!!billing?.providers.revolut.enabled&&(!recurring||!!billing.revolutPlans?.some(p=>p.sku===lines[0]?.sku&&p.period===lines[0]?.period));
+   const scheduled=billing?.subscriptions.some(s=>s.order_id===order.id&&['active','trialing','past_due'].includes(s.status));
+   const canPay=!['paid','cancelled'].includes(order.status)&&!scheduled&&!order.requires_manual_quote&&!mixed&&order.total_cents>0;
+   return <li key={order.id} className="min-w-0 p-3 sm:p-4">
+    <div className="flex flex-wrap items-center justify-between gap-2 text-xs"><p className="text-slate-400">#{order.id.slice(0,8).toUpperCase()} · {new Date(order.created_at).toLocaleDateString('ro-RO')}</p><span className="text-violet-200">{scheduled?'Debitare configurată':labels[order.status]||'De verificat'}</span></div>
+    <ul className="mt-2 space-y-2">{(lines.length?lines:[{sku:'unknown',name:'Comandă AVYRON',quantity:1,lineTotalCents:order.total_cents}]).map((line,i)=><li key={`${line.sku}:${i}`} className="flex min-w-0 items-start gap-2"><Package className="mt-0.5 size-4 shrink-0 text-violet-300" aria-hidden/><div className="min-w-0 flex-1"><h3 className="break-words text-sm font-medium">{line.name}{line.quantity>1?` × ${line.quantity}`:''}</h3><p className="mt-0.5 text-xs text-slate-400">{line.period?(line.period==='annual'?'Abonament anual':'Abonament lunar'):'Plată unică'}</p></div><span className="shrink-0 text-sm text-slate-200">{lineAmount(line)!==null?money(lineAmount(line)!,order.currency):'De confirmat'}</span></li>)}</ul>
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/5 pt-3"><p className="text-sm font-semibold">{order.requires_manual_quote?'Preț de confirmat':`Total ${money(order.total_cents,order.currency)}`}</p><div className="flex flex-wrap gap-2">{canPay&&stripe&&<Button size="sm" disabled={!!busy} onClick={()=>void pay(order.id,'stripe',recurring)}><CreditCard className="mr-1.5 size-4"/>{busy===order.id?'Se deschide…':'Plătește cu cardul · Stripe'}</Button>}{canPay&&revolut&&<Button size="sm" variant="outline" disabled={!!busy} onClick={()=>void pay(order.id,'revolut',recurring)}>Revolut Pay</Button>}</div></div>
+    {canPay&&stripe&&!recurring&&<label className="mt-3 flex cursor-pointer items-center gap-2 text-xs text-slate-300"><input type="checkbox" className="size-4 accent-violet-500" checked={!!saveCards[order.id]} onChange={e=>setSaveCards(v=>({...v,[order.id]:e.target.checked}))}/>Salvează cardul folosit prin Stripe pentru plăți viitoare</label>}
+    {canPay&&(stripe||revolut)&&<p className="mt-2 text-xs text-slate-400">{recurring?'La prima plată autorizezi reînnoirea automată. Poți gestiona debitarea din abonament.':'Plătești pe pagina securizată a procesatorului. AVYRON nu stochează datele complete ale cardului.'}</p>}
+    {canPay&&!stripe&&!revolut&&<p className="mt-2 text-xs text-amber-200">{billing?'Plata online necesită configurarea procesatorului. Comanda este salvată în cont.':'Disponibilitatea plății nu poate fi verificată. Reîncearcă actualizarea.'}</p>}
+    {!!order.requires_manual_quote&&<p className="mt-2 text-xs text-slate-400">Echipa confirmă oferta înainte de plată.</p>}{mixed&&<p className="mt-2 text-xs text-amber-200">Abonamentele se achită separat de plățile unice.</p>}
+   </li>
+  })}</ul>}
+ </section>;
 }

@@ -1,3 +1,4 @@
+import type { ClientRecurringResponse } from "@/shared/clientRecurring";
 import { cfAuth } from "./cfAuth";
 
 export type BillingProviderStatus={enabled:boolean;configured?:boolean;oneTime?:boolean;subscriptions?:boolean;savedMethods?:boolean;customerPortal?:boolean;invoices?:boolean;status?:"planned"};
@@ -57,14 +58,40 @@ export type BillingAccount={
   providers:{stripe:BillingProviderStatus;revolut:BillingProviderStatus;oblio:BillingProviderStatus;netopia:BillingProviderStatus};
 };
 export type BillingPaymentMethod={id:string;provider:"stripe"|"revolut";type:string;brand:string|null;last4:string|null;expiry_month:number|null;expiry_year:number|null;is_default:0|1;usage_scope?:"future"|"recurring";status?:string};
+const financialRequest = async <T>(path:string,init?:RequestInit):Promise<T> => {
+ try{return await cfAuth.request<T>(path,init)}catch(error){
+  if(!(error instanceof Error))throw error;
+  const messages:Record<string,string>={
+   provider_unconfigured:"Procesatorul nu este încă disponibil. Echipa AVYRON trebuie să finalizeze configurația.",
+   stripe_customer_missing:"Adaugă mai întâi un card securizat pentru a deschide gestionarea.",
+   portal_provider_failed:"Gestionarea Stripe nu este disponibilă momentan. Reîncearcă sau folosește oprirea reînnoirii din abonament.",
+   setup_provider_failed:"Formularul Stripe nu poate fi deschis acum. Reîncearcă.",
+   checkout_provider_failed:"Pagina de plată nu poate fi deschisă acum. Comanda rămâne salvată.",
+   recurring_revision_conflict:"Detaliile pachetului s-au modificat. Actualizează și confirmă din nou suma și data.",
+   recurring_billing_not_ready:"Echipa trebuie să completeze beneficiarul și configurația fiscală înainte de debitare.",
+   recurring_agreement_requires_review:"Există condiții de plată deja acceptate. Solicită echipei revizuirea lor înainte de o nouă autorizare.",
+   recurring_already_authorized:"Debitarea acestui pachet este deja autorizată. Actualizează lista.",
+   recurring_existing_invoice_requires_review:"Există deja o factură pregătită pentru această perioadă. Echipa o va reconcilia înainte de debitarea automată.",
+   recurring_start_requires_review:"Data primei debitări trebuie verificată de echipă.",
+   checkout_verification_required:"Verificăm sesiunea anterioară la procesator înainte de o nouă plată. Reîncearcă mai târziu sau contactează echipa.",
+   checkout_preference_locked:"Există deja o sesiune Stripe cu alte opțiuni de salvare a cardului. Păstrează opțiunea inițială sau contactează echipa.",
+   checkout_already_active:"Există o plată deschisă la celălalt procesator. Continuă acolo înainte de o nouă încercare.",
+   payment_pending:"Plata este în curs de confirmare. Actualizează starea înainte să reîncerci.",
+   rate_limited:"Ai făcut mai multe încercări într-un interval scurt. Reîncearcă mai târziu.",
+  };
+  if(messages[error.message])error.message=messages[error.message];throw error;
+ }
+};
 export const billingApi={
+  recurring:()=>cfAuth.request<ClientRecurringResponse>("/api/billing/recurring"),
+  recurringCheckout:(id:string,value:{revision:number;quoteHash:string;confirmed:true})=>financialRequest<{url:string|null}>(`/api/billing/recurring/${encodeURIComponent(id)}/checkout`,{method:"POST",body:JSON.stringify(value)}),
   account:()=>cfAuth.request<BillingAccount>("/api/billing/account"),
-  paymentMethods:()=>cfAuth.request<{methods:BillingPaymentMethod[];refreshed:{stripe:boolean;revolut:boolean}}>("/api/billing/payment-methods"),
+  paymentMethods:()=>cfAuth.request<{methods:BillingPaymentMethod[];refreshed:{stripe:boolean;revolut:boolean};hasCustomer?:{stripe:boolean;revolut:boolean};setupStatus?:string|null}>("/api/billing/payment-methods"),
   saveProfile:(value:Record<string,unknown>)=>cfAuth.request<{ok:true}>("/api/billing/profile",{method:"PUT",body:JSON.stringify(value)}),
-  checkout:(value:{orderId:string;provider:"stripe"|"revolut";savePaymentMethod?:boolean})=>cfAuth.request<{url:string|null;provider:string;mode:string}>("/api/billing/checkout",{method:"POST",body:JSON.stringify(value)}),
-  setupMethod:(provider:"stripe")=>cfAuth.request<{url:string|null}>("/api/billing/payment-methods/setup",{method:"POST",body:JSON.stringify({provider})}),
-  portal:()=>cfAuth.request<{url:string|null}>("/api/billing/portal",{method:"POST"}),
-  cancelSubscription:(id:string)=>cfAuth.request<{ok:true;status?:string}>(`/api/billing/subscriptions/${encodeURIComponent(id)}/cancel`,{method:"POST"}),
+  checkout:(value:{orderId:string;provider:"stripe"|"revolut";savePaymentMethod?:boolean})=>financialRequest<{url:string|null;provider:string;mode:string}>("/api/billing/checkout",{method:"POST",body:JSON.stringify(value)}),
+  setupMethod:(provider:"stripe")=>financialRequest<{url:string|null}>("/api/billing/payment-methods/setup",{method:"POST",body:JSON.stringify({provider})}),
+  portal:()=>financialRequest<{url:string|null}>("/api/billing/portal",{method:"POST"}),
+  cancelSubscription:(id:string)=>financialRequest<{ok:true;status?:string}>(`/api/billing/subscriptions/${encodeURIComponent(id)}/cancel`,{method:"POST"}),
   adminStatus:async()=>validateBillingAdminStatus(await cfAuth.request<unknown>("/api/billing/admin/status")),
   verifyConnection:(provider:FinancialProviderPlaybook["provider"])=>cfAuth.request<{ok:true;provider:string;account:string;detail:string|null;synchronized:false}>(`/api/billing/admin/connections/${provider}/verify`,{method:"POST"}),
   retryInvoice:(orderId:string)=>cfAuth.request<{ok:true;invoiced:boolean}>(`/api/billing/admin/invoices/${encodeURIComponent(orderId)}/retry`,{method:"POST"}),

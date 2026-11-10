@@ -1,3 +1,5 @@
+import { useAuth } from "@/hooks/useAuth";
+import ClientBillingRecurring from "./ClientBillingRecurring";
 import { billingApi, type BillingAccount } from "@/lib/billingApi";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -13,16 +15,17 @@ import { OrdersTab } from "./OrdersTab";
 import ClientPaymentHistory from "./ClientPaymentHistory";
 const Settings = lazy(() => import("./BillingSettingsCard"));
 export default function ClientBillingTab() {
-  const cached = useRef<Promise<BillingAccount> | null>(null);
+  const {user}=useAuth();
+  const cached = useRef<{userId:string|undefined;promise:Promise<BillingAccount>} | null>(null);
   const loadAccount = useCallback((force = false) => {
-    if (force) cached.current = null;
+    if (force || cached.current?.userId!==user?.id) cached.current = null;
     if (!cached.current)
-      cached.current = billingApi.account().catch((error) => {
-        cached.current = null;
+      cached.current = {userId:user?.id,promise:billingApi.account().catch((error) => {
+        if(cached.current?.userId===user?.id)cached.current = null;
         throw error;
-      });
-    return cached.current;
-  }, []);
+      })};
+    return cached.current.promise;
+  }, [user?.id]);
   const [params] = useSearchParams();
   const [showInvoices, setShowInvoices] = useState(false);
   useEffect(() => {
@@ -37,10 +40,10 @@ export default function ClientBillingTab() {
         </p>
       </header>
       <Suspense fallback={<p role="status">Se încarcă metoda de plată…</p>}>
-        <Settings embedded loadAccount={loadAccount} />
+        <Settings key={user?.id} embedded loadAccount={loadAccount} />
       </Suspense>
-      <ClientPaymentHistory loadAccount={loadAccount} />
-      <OrdersTab embedded pendingOnly loadAccount={loadAccount} />
+      <OrdersTab key={`orders:${user?.id}`} embedded pendingOnly loadAccount={loadAccount} />
+      <ClientBillingRecurring key={`recurring:${user?.id}`} />
       <details
         open={showInvoices}
         className="rounded-xl border border-white/10 bg-white/[.02] p-3"
@@ -51,10 +54,11 @@ export default function ClientBillingTab() {
         </summary>
         {showInvoices && (
           <div className="pt-2">
-            <InvoicesTab embedded loadAccount={loadAccount} />
+            <InvoicesTab key={`invoices:${user?.id}`} embedded loadAccount={loadAccount} />
           </div>
         )}
       </details>
+      <ClientPaymentHistory key={`history:${user?.id}`} loadAccount={loadAccount} />
     </section>
   );
 }

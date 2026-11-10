@@ -1,3 +1,4 @@
+import {nativeBillingDue} from "./billingRecurring";
 import { securityReportsRouter } from "./securityReports";
 import { signSessionJwt, verifySessionJwt } from "./sessionJwt";
 import { websiteSubscriptionsRouter } from "./websiteSubscriptions";
@@ -1859,6 +1860,8 @@ app.use("/api/billing/profile", requireAuth);
 app.use("/api/billing/payment-methods", requireAuth);
 app.use("/api/billing/payment-methods/*", requireAuth);
 app.use("/api/billing/portal", requireAuth);
+app.use("/api/billing/recurring", requireAuth);
+app.use("/api/billing/recurring/*", requireAuth);
 app.use("/api/billing/subscriptions/*", requireAuth);
 app.use("/api/billing/admin/*", requireAuth, requireRole("staff", "admin"), requirePrivilegedMfa);
 app.route("/", produseShopRouter);
@@ -2036,6 +2039,7 @@ export default {
   },
   scheduled: (controller, env, ctx) => {
     if (controller.cron === "0,15,30,45 * * * *") {
+      ctx.waitUntil((async()=>{if(await nativeBillingDue(env))await enqueueAsyncJobs(env,["billing_reconcile"]);})().catch(()=>console.error(JSON.stringify({event:"billing_schedule_unavailable",code:"reconciliation_unavailable"}))));
       ctx.waitUntil(maintainMalwareScans(env).catch(() => console.error(JSON.stringify({event:"antivirus_poll_failed",code:"maintenance_unavailable"}))));
       ctx.waitUntil(enqueueAsyncJobs(env, ["operation_drain", "social_drain", "survey_delivery", "survey_ai", "lead_follow_up_drain"]));
       ctx.waitUntil((async()=>{

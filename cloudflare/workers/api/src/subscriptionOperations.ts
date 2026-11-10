@@ -488,6 +488,7 @@ subscriptionOperationsRouter.put(
         billing_cycle: string;
       }>();
     if (!sub) return fail(c, "not_found", 404);
+    if(await c.env.DB.prepare("SELECT 1 FROM billing_recurring_agreements WHERE subscription_id=? AND closed_at IS NULL").bind(id).first())return fail(c,"provider_managed_recurring_subscription",409,"Gestionează debitarea în Stripe; condițiile acceptate nu se suprascriu manual.");
     if(await c.env.DB.prepare("SELECT 1 FROM website_subscription_projects WHERE subscription_id=?").bind(id).first()) return fail(c,"provider_managed_website_subscription",409,"Folosește Site-uri prin abonament pentru date și portalul Stripe pentru anulare. Scadența și starea se confirmă prin procesator.");
     if (sub.billing_cycle !== "monthly")
       return fail(
@@ -545,6 +546,7 @@ subscriptionOperationsRouter.post(
     if (!input.success) return fail(c, "invalid_input");
     const b = input.data,
       id = c.req.param("id");
+    if(await c.env.DB.prepare("SELECT 1 FROM billing_recurring_agreements WHERE subscription_id=? AND closed_at IS NULL").bind(id).first())return fail(c,"provider_managed_recurring_subscription",409,"Facturile acestui abonament urmează plățile Stripe confirmate, fără o a doua factură manuală.");
     const replay = await previousMutation(c, b);
     if (replay) return replay;
     const existing = await c.env.DB.prepare(
