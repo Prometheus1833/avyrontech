@@ -622,3 +622,14 @@
 .dc-paper-totals small { display: block; color: #526078; margin-top: .35rem; line-height: 1.6; }
 @media (max-width: 640px) { .dc-output-actions { display: grid; grid-template-columns: 1fr; } .dc-output-actions .dc-button { width: 100%; justify-content: center; white-space: normal; } .dc-modern-paper td, .dc-modern-paper th { padding: .45rem; } }
 .dc-field-placeholder { display: inline; padding: .05rem .2rem; border-radius: .2rem; background: #fff4d9; color: #73520d; font-size: .9em; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+
+/* A compact project journey for native, versioned AVYRON masters. */
+.dc-stage-tag { display: inline-flex; align-items: baseline; gap: .15rem; border: 1px solid #a78bfa40; border-radius: .65rem; background: linear-gradient(135deg,#8b5cf625,#22d3ee0c); color: #e9ddff; padding: .25rem .5rem; font: 600 1rem/1.25 var(--font-display,inherit); }
+.dc-stage-tag > span { color: #c4b5fd; font: 500 .65rem/1 monospace; }
+.dc-template-traits { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .4rem .65rem; margin: .8rem 0 0; list-style: none; padding: 0; }
+.dc-template-traits li { display: flex; gap: .4rem; color: #cbd5e1; font-size: .72rem; line-height: 1.4; }
+.dc-template-traits li::before { content: '·'; color: #c4b5fd; font-weight: 700; }
+.dc-agency-paper .dc-paper-body, .dc-agency-paper .tiptap { font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-size: 14px; line-height: 1.55; }
+.dc-agency-paper .dc-paper-body > p, .dc-agency-paper .tiptap > p { margin-bottom: .65em; }
+.dc-agency-paper .dc-paper-body h3, .dc-agency-paper .dc-paper-body h4, .dc-agency-paper .tiptap h2 { margin-top: 1.05rem; margin-bottom: .45rem; letter-spacing: -.015em; }
+.dc-agency-paper .dc-paper-body td, .dc-agency-paper .dc-paper-body th { padding: .5rem .6rem; }

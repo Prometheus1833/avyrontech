@@ -18,6 +18,7 @@ export type ApprovalItem = {
   canDecide: boolean;
   canReject: boolean;
   canWithdraw?: boolean;
+  publication?: { platforms: string[]; scheduledAt: number | null; format: string | null };
 };
 export type ApprovalDetail = ApprovalItem & {
   contextId: string | null;

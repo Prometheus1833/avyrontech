@@ -59,6 +59,7 @@ export function automaticDocumentFields(
     "provider.legal_name": company.legal_name || "",
     "provider.tax_id": company.tax_id || "",
     "provider.address": company.address || "",
+    "provider.registered_address": company.registered_address || "",
     "provider.registration_number": company.registration_number || "",
     "provider.representative": company.representative || "",
     "provider.share_capital": company.share_capital || "",

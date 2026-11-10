@@ -485,7 +485,7 @@ export default function DocumentEditor({
             className="overflow-auto rounded-lg bg-slate-950/50 p-2 sm:p-4"
             style={{ maxHeight: "78vh" }}
           >
-            <div className={`dc-page ${isModernDocument(draft) ? "dc-modern-paper" : ""}`} style={{ zoom: `${zoom}%` }}>
+            <div className={`dc-page ${isModernDocument(draft) ? "dc-modern-paper" : ""} ${draft.labels.__avyron_edition === "2026-11" ? "dc-agency-paper" : ""}`} style={{ zoom: `${zoom}%` }}>
               {isModernDocument(draft) && <div className="dc-paper-brand"><strong>AVYRON</strong><span>DOCUMENT CENTER</span></div>}
               <label className="dc-label !text-slate-500">
                 Antet

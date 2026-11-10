@@ -632,3 +632,10 @@ test("bara de scroll a site-ului public păstrează stilul existent", async ({
     "true",
   );
 });
+
+for(const width of [390,1440])test(`Încasări și facturare apare înaintea evidenței conturilor la ${width}px`,async({page})=>{
+ await setup(page);await page.setViewportSize({width,height:1000});await page.goto('/profil?tab=finance&view=accounts');
+ const billing=page.getByRole('heading',{name:'Încasări și facturare',exact:true});await expect(billing).toBeVisible();
+ const headings=await page.locator('h2').allTextContents();expect(headings.indexOf('Încasări și facturare')).toBeLessThan(headings.findIndex(x=>x.includes('Conturi interne')));
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});

@@ -17,7 +17,7 @@ for (const width of [320, 390, 1440])
         const sizes = await nav.getByRole('button').evaluateAll(buttons => buttons.map(button => ({ width: button.getBoundingClientRect().width, height: button.getBoundingClientRect().height })));
         expect(sizes.every(s => s.height < 65 && s.width < 260)).toBe(true);
         await expect(page.getByRole('heading', { name: 'Conturi interne', exact: true })).toBeVisible();
-        await page.getByRole('button', { name: 'Configurează', exact: true }).first().click();
+        await page.getByRole('article').filter({has:page.getByRole('heading',{name:'Cont sintetic',exact:true})}).getByRole('button', { name: 'Configurează', exact: true }).click();
         const dialog = page.getByRole('dialog');
         await expect(dialog.getByRole('button', { name: 'Salvează' })).toBeDisabled();
         await dialog.getByLabel('Denumire *', { exact: true }).fill('Cont completat');

@@ -528,7 +528,7 @@ test("context failure can be retried on the templates page", async ({
     page.getByRole("heading", { name: "Alege modelul potrivit" }),
   ).toBeVisible();
 });
-for (const width of [320, 390, 768])
+for (const width of [320, 390, 768, 1440])
   test(`responsive accessible document library and template picker at ${width}px`, async ({
     page,
   }, info) => {
@@ -551,6 +551,8 @@ for (const width of [320, 390, 768])
       .getByRole("button", { name: /Tipizate/ })
       .click();
     await expect(page.locator(".dc-template-card")).toHaveCount(11);
+    await expect(page.locator(".dc-stage-tag")).toHaveCount(11);
+    await expect(page.locator(".dc-template-traits li")).toHaveCount(44);
     expect(await overflow()).toBe(false);
     await page.screenshot({
       path: info.outputPath(`templates-${width}.png`),

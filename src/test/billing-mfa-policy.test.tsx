@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { BillingOperationsPanel } from "@/components/finance/BillingOperationsPanel";
 import { billingApi, type BillingAdminStatus } from "@/lib/billingApi";
@@ -24,4 +24,14 @@ it.each([
   if (enabled) expect(button).toBeEnabled();
   else expect(button).toBeDisabled();
   if (!security.mfaEnabled) expect(screen.queryByText("Confirmă MFA în Setări")).toBeNull();
+});
+
+it("runs read-only synchronization only on demand and displays the actual empty scope",async()=>{
+ const state={runId:'synthetic',status:'complete' as const,checked:0,matched:0,issueCount:0,startedAt:1,finishedAt:2,lockedUntil:0,issues:[]};
+ const status={providers:{},security:{mfaEnabled:false,mfaVerified:false,mfaSatisfied:true,canVerify:true},providerPlaybooks:[{provider:'stripe',title:'Stripe',purpose:'Încasări',phase:'connected_unsynced',loginUrl:'https://dashboard.stripe.com/login',authentication:'',intake:'',reconciliation:'',gate:'',cadence:'',sources:[]}],sessions:[],subscriptions:[],invoices:[],pendingInvoices:[],paymentsByCurrency:[],invoicesByCurrency:[],recentPayments:[],recentSubscriptions:[],recentInvoices:[],connectionRecords:[{provider:'stripe',status:'connected',last_sync_at:null,last_error_code:null}],recentFailures:[]} as BillingAdminStatus;
+ vi.spyOn(billingApi,'adminStatus').mockResolvedValueOnce(status).mockResolvedValue({...status,connectionRecords:[{...status.connectionRecords[0],last_sync_at:2,sync:state}]});
+ const sync=vi.spyOn(billingApi,'syncConnection').mockResolvedValue({state,scope:'native_avyron_references',moneyActions:false});
+ render(<MemoryRouter><BillingOperationsPanel/></MemoryRouter>);
+ const button=await screen.findByRole('button',{name:'Sincronizează',exact:true});expect(sync).not.toHaveBeenCalled();fireEvent.click(button);
+ await waitFor(()=>expect(sync).toHaveBeenCalledWith('stripe'));expect(await screen.findByText(/0 referințe comparate · 0 concordante · 0 diferențe/)).toBeInTheDocument();
 });

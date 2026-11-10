@@ -86,6 +86,20 @@ describe("Unified approval center", () => {
       expect.objectContaining({ id: "request-1", revision: 17 }),
     );
   });
+  it("shows actual platforms and publication time separately from request time", async () => {
+    api.approvals.mockResolvedValue({...feed,data:[{...detail,publication:{platforms:['instagram','facebook'],scheduledAt:Date.UTC(2026,10,10,12,30),format:'carousel'}}]});
+    show();
+    expect(await screen.findByText('Instagram · Facebook')).toBeInTheDocument();
+    expect(screen.getByText(/Programat:.*14:30/)).toBeInTheDocument();
+    expect(screen.getByText('carousel')).toBeInTheDocument();
+  });
+  it("does not substitute request time when publication has not been scheduled", async () => {
+    api.approvals.mockResolvedValue({...feed,data:[{...detail,publication:{platforms:[],scheduledAt:null,format:null}}]});
+    show();
+    expect(await screen.findByText('Dată de publicare de stabilit')).toBeInTheDocument();
+    expect(screen.getByText('Platformă de stabilit')).toBeInTheDocument();
+    expect(screen.queryByText(/^Programat:/)).not.toBeInTheDocument();
+  });
   it("refreshes automatically while visible and stops polling in a hidden tab", async () => {
     vi.useFakeTimers();
     show();

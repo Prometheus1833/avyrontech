@@ -29,6 +29,9 @@ type Row = {
   context_slug?: string;
   detail?: string;
   legal?: number;
+  channels_json?: string;
+  scheduled_at?: number | null;
+  format?: string;
 };
 
 async function queries(
@@ -49,7 +52,7 @@ async function queries(
     {
       source: "content",
       values: [timestamp - 3 * 86400000, timestamp],
-      sql: `SELECT i.id,i.title,p.name summary,i.updated_at requested_at,i.updated_at revision,p.id context_id,p.slug context_slug,
+      sql: `SELECT i.id,i.title,p.name summary,i.updated_at requested_at,i.updated_at revision,p.id context_id,p.slug context_slug,i.channels_json,i.scheduled_at,i.format,
       i.caption||char(10)||coalesce(i.cta,'')||char(10)||coalesce(i.visual_direction,'') detail
       FROM ai_content_items i JOIN ai_projects p ON p.id=i.project_id WHERE i.status='pending_approval'
       AND (p.slug<>'avyron-web' OR i.created_at>?) AND (i.expires_at IS NULL OR i.expires_at>?)`,
@@ -123,7 +126,19 @@ const item = (
   canReject:
     source === "agent" || source === "content",
   canWithdraw: source !== 'learning' || role === 'platform_owner',
+  ...(source === 'content' ? { publication: {
+    platforms: publicationPlatforms(row.channels_json),
+    scheduledAt: Number.isSafeInteger(row.scheduled_at) && Number(row.scheduled_at) > 0 ? Number(row.scheduled_at) : null,
+    format: row.format || null,
+  } } : {}),
 });
+
+function publicationPlatforms(raw?: string): string[] {
+  try {
+    const parsed: unknown = JSON.parse(raw || '[]');
+    return Array.isArray(parsed) ? [...new Set(parsed.filter((value): value is string => typeof value === 'string' && /^[a-z][a-z0-9_-]{0,39}$/i.test(value)))].slice(0, 8) : [];
+  } catch { return []; }
+}
 
 export async function readApprovalCenter(
   env: Env,
@@ -177,7 +192,7 @@ export async function readApprovalCenter(
         ? [cursor.time, cursor.time, source.source + ":", cursor.key]
         : [];
       const page = await env.DB.prepare(
-        `SELECT id,title,summary,requested_at,revision,context_id,context_slug FROM (${source.sql}) ${after} ORDER BY requested_at DESC,id LIMIT 13`,
+        `SELECT id,title,summary,requested_at,revision,context_id,context_slug${source.source === 'content' ? ',channels_json,scheduled_at,format' : ''} FROM (${source.sql}) ${after} ORDER BY requested_at DESC,id LIMIT 13`,
       )
         .bind(...source.values, ...values)
         .all<Row>();

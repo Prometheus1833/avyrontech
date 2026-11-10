@@ -13,6 +13,7 @@ import { automaticDocumentFields } from "@/shared/documents/autofill";
 import DocumentReader from "./DocumentReader";
 import { FIELD_LABELS } from "@/shared/documents/templates";
 import { serviceDocumentProfile } from "@/shared/documents/services";
+import { FAMILY_LEGAL_NOTES, LEGAL_SOURCES } from "@/shared/documents/legal";
 import { TEMPLATE_META } from "./presentation";
 export default function DocumentTemplates({
   context,
@@ -147,7 +148,7 @@ export default function DocumentTemplates({
                 <span className="dc-kicker">
                   {meta?.group || "Personalizate"}
                 </span>
-                <span className="text-xs text-slate-500">v{t.version}</span>
+                <div className="flex items-center gap-2"><span className="text-xs text-slate-500">v{t.version}</span>{meta && <span className="dc-stage-tag" aria-label={`Etapa ${meta.stage} din 5 în proiect`}>{meta.stage}<span>/5</span></span>}</div>
               </div>
               <h3 className="mt-3 font-display text-lg font-semibold">
                 {t.name}
@@ -156,6 +157,7 @@ export default function DocumentTemplates({
                 {meta?.description ||
                   "Model privat pregătit dintr-un document existent."}
               </p>
+              {meta && <ul className="dc-template-traits" aria-label="Caracteristicile modelului">{meta.traits.map(trait => <li key={trait}>{trait}</li>)}</ul>}
               <p className="mt-3 text-xs text-violet-200">
                 {meta?.use || "Pentru contextul autorizat"}
               </p>
@@ -209,6 +211,7 @@ export default function DocumentTemplates({
           </DialogHeader>
           {preview && (
             <>
+              {FAMILY_LEGAL_NOTES[preview.family] && <details className="rounded-xl border border-white/10 p-3 text-xs text-slate-300"><summary className="cursor-pointer">Repere juridice pentru revizuire</summary><p className="mt-2">Se verifică aplicabilitatea în relația concretă. Modelul nu reprezintă o aprobare juridică.</p><ul className="mt-2 space-y-1">{FAMILY_LEGAL_NOTES[preview.family].references.map(key=><li key={key}><a className="inline-flex min-h-10 items-center text-violet-200 underline" href={LEGAL_SOURCES[key].url} target="_blank" rel="noreferrer">{LEGAL_SOURCES[key].title}</a></li>)}</ul></details>}
               <DocumentReader fieldLabels={FIELD_LABELS} payload={replaceVariables(preview.payload, { ...preview.payload.fields, ...automaticDocumentFields(context.company, undefined, new Date().toLocaleDateString("ro-RO"), false) })} />
               <button
                 className="dc-button dc-primary justify-self-start"
