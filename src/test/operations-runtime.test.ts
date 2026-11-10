@@ -428,7 +428,7 @@ describe('Integration adapter boundaries',()=>{
  it('denies alternate hosts, cleartext and redirects; bounds response bodies',async()=>{
   const fetcher=vi.fn(async()=>new Response('x'.repeat(512*1024+1))) as unknown as typeof fetch;
   for(const url of ['http://api.github.com/user','https://evil.test/user','https://user@api.github.com/user'])await expect(boundedProviderJson(url,'token','github',fetcher)).rejects.toThrow('provider_url_denied');expect(fetcher).not.toHaveBeenCalled();
-  await expect(boundedProviderJson('https://api.github.com/user','token','github',fetcher)).rejects.toThrow('provider_response_too_large');expect(fetcher).toHaveBeenCalledWith(expect.anything(),expect.objectContaining({redirect:'error',headers:expect.objectContaining({'X-GitHub-Api-Version':'2026-03-10'})}));
+  await expect(boundedProviderJson('https://api.github.com/user','token','github',fetcher)).rejects.toThrow('provider_response_too_large');expect(fetcher).toHaveBeenCalledWith(expect.anything(),expect.objectContaining({redirect:'manual',headers:expect.objectContaining({'X-GitHub-Api-Version':'2026-03-10'})}));
  });
  it.each(['github','cloudflare'] as const)('reads %s through fixed provider endpoints and retains only summarized fields',async(provider)=>{
   const master='fixture-master-key-with-at-least-32-characters',cipher=await sealCredential('fixture-token',master,'ref');const urls:string[]=[];

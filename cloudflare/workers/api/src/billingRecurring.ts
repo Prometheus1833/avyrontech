@@ -147,7 +147,7 @@ export async function prepareNativeRecurring(c: Context<AppBindings>, subscripti
 }
 
 async function stripeRead(env: Env, path: string) {
-  const response = await fetch(`https://api.stripe.com/v1/${path}`, {headers: {authorization: `Bearer ${env.STRIPE_SECRET_KEY!.trim()}`, ...(env.STRIPE_API_VERSION ? {"Stripe-Version": env.STRIPE_API_VERSION} : {})}, signal: AbortSignal.timeout(10000), redirect: "error"});
+  const response = await fetch(`https://api.stripe.com/v1/${path}`, {headers: {authorization: `Bearer ${env.STRIPE_SECRET_KEY!.trim()}`, ...(env.STRIPE_API_VERSION ? {"Stripe-Version": env.STRIPE_API_VERSION} : {})}, signal: AbortSignal.timeout(10000), redirect: "manual"});
   if (!response.ok) throw Error("recurring_provider_verification_failed");
   return JSON.parse(await readTextUpTo(response, 262144)) as Record<string, unknown>;
 }

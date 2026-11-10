@@ -42,7 +42,7 @@ async function storeMethods(env: Env, userId: string, provider: Provider, method
 async function syncStripe(env: Env, userId: string, customerId: string) {
   const identity = await checkStripeAccount(env);
   if (!identity.ok) throw new Error(identity.code);
-  const response = await fetch(`https://api.stripe.com/v1/customers/${encodeURIComponent(customerId)}/payment_methods?type=card&limit=100`, { headers: stripeHeaders(env),signal:AbortSignal.timeout(10000),redirect:"error" });
+  const response = await fetch(`https://api.stripe.com/v1/customers/${encodeURIComponent(customerId)}/payment_methods?type=card&limit=100`, { headers: stripeHeaders(env),signal:AbortSignal.timeout(10000),redirect: "manual" });
   if (!response.ok) throw new Error(`stripe_methods_${response.status}`);
   const data = await response.json() as { data?: StripeMethod[]; has_more?: boolean };
   const methods = (data.data || []).filter((method) => method.id && method.type === "card").map((method) => ({
@@ -54,7 +54,7 @@ async function syncStripe(env: Env, userId: string, customerId: string) {
 }
 
 async function syncRevolut(env: Env, userId: string, customerId: string) {
-  const response = await fetch(`${revolutRoot(env)}/customers/${encodeURIComponent(customerId)}/payment-methods`, { headers: revolutHeaders(env),signal:AbortSignal.timeout(10000),redirect:"error" });
+  const response = await fetch(`${revolutRoot(env)}/customers/${encodeURIComponent(customerId)}/payment-methods`, { headers: revolutHeaders(env),signal:AbortSignal.timeout(10000),redirect: "manual" });
   if (!response.ok) throw new Error(`revolut_methods_${response.status}`);
   const data = await response.json() as { payment_methods?: RevolutMethod[] };
   const methods = (data.payment_methods || []).filter((method) => method.id && ["card", "revolut_pay", "sepa_direct_debit"].includes(method.type)).map((method) => ({

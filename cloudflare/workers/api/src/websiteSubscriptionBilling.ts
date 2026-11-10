@@ -27,7 +27,7 @@ async function stripeObject(env: Env, path: string) {
         : {}),
     },
     signal: AbortSignal.timeout(10000),
-    redirect: "error",
+    redirect: "manual",
   });
   if (!response.ok) throw new Error("website_provider_verification_failed");
   return JSON.parse(await readTextUpTo(response, 262144)) as Record<

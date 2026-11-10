@@ -39,7 +39,7 @@ async function loadBootstrap(): Promise<Bootstrap> {
   if (bootstrapSnapshot && bootstrapSnapshot.expiresAt > Date.now()) return bootstrapSnapshot.value;
   const response = await fetch(IANA_BOOTSTRAP_URL, {
     headers: { accept: "application/json" },
-    redirect: "error",
+    redirect: "manual",
     signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     cf: { cacheEverything: true, cacheTtl: 86_400 },
   });
@@ -89,7 +89,7 @@ async function queryDns(domain: string): Promise<LookupResult> {
   url.searchParams.set("type", "NS");
   const response = await fetch(url, {
     headers: { accept: "application/dns-json" },
-    redirect: "error",
+    redirect: "manual",
     signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     cf: { cacheEverything: true, cacheTtl: 300 },
   });

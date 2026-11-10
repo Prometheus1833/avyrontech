@@ -105,7 +105,7 @@ async function credential(env: Env, reference: string, force = false) {
         password: env.OPENPROVIDER_PASSWORD,
         ip: "0.0.0.0",
       }),
-      redirect: "error",
+      redirect: "manual",
       signal: AbortSignal.timeout(TIMEOUT),
     }),
   );
@@ -183,7 +183,7 @@ export async function queryDomainProvider(
         domains: [{ name: domain.slice(0, -3), extension: "ro" }],
         with_price: false,
       }),
-      redirect: "error",
+      redirect: "manual",
       signal: AbortSignal.timeout(TIMEOUT),
     });
   let response = await check();
