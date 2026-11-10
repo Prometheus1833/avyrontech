@@ -24,7 +24,8 @@ export default function LatestBlog() {
   const [viewport, api] = useEmblaCarousel({
     align: "start",
     containScroll: "trimSnaps",
-    duration: 25,
+    loop: true,
+    duration: reduced ? 0 : 45,
   });
   const [visible, setVisible] = useState(false),
     [hidden, setHidden] = useState(false);
@@ -106,7 +107,7 @@ export default function LatestBlog() {
     const timer = window.setInterval(() => {
       if (api.canScrollNext()) api.scrollNext();
       else api.scrollTo(0);
-    }, 6000);
+    }, 3200);
     return () => window.clearInterval(timer);
   }, [api, playing]);
   const interact = (target: EventTarget) => {
@@ -130,12 +131,6 @@ export default function LatestBlog() {
       onPointerDownCapture={(event) => interact(event.target)}
       onFocusCapture={(event) => interact(event.target)}
       onClickCapture={(event) => interact(event.target)}
-      onPointerEnter={(event) => {
-        if (event.pointerType === "mouse") setHovered(true);
-      }}
-      onPointerLeave={(event) => {
-        if (event.pointerType === "mouse") setHovered(false);
-      }}
       onKeyDown={(event) => {
         if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
         event.preventDefault();
@@ -167,6 +162,12 @@ export default function LatestBlog() {
         <div
           ref={viewport}
           className="avy-blog-preview-viewport"
+          onPointerEnter={(event) => {
+            if (event.pointerType === "mouse") setHovered(true);
+          }}
+          onPointerLeave={(event) => {
+            if (event.pointerType === "mouse") setHovered(false);
+          }}
           role="region"
           aria-roledescription={ro ? "carusel" : "carousel"}
           aria-label={

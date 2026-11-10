@@ -93,10 +93,10 @@ it("pauses for keyboard focus and hover without taking over page navigation", as
   const view = mount();
   await act(async () => {});
   view.enter();
-  pointer(view.container.querySelector("section")!, "pointerover", "mouse");
+  pointer(view.container.querySelector("[role=region]")!, "pointerover", "mouse");
   act(() => vi.advanceTimersByTime(6000));
   expect(state.next).not.toHaveBeenCalled();
-  pointer(view.container.querySelector("section")!, "pointerout", "mouse");
+  pointer(view.container.querySelector("[role=region]")!, "pointerout", "mouse");
   act(() => vi.advanceTimersByTime(6000));
   expect(state.next).toHaveBeenCalledTimes(1);
   fireEvent.focus(view.container.querySelector("article a")!);

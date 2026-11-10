@@ -91,6 +91,15 @@ for (const width of [320, 1440])
         ),
       )
       .toBeLessThan(1);
+    // Both directions wrap without jumping back across the full track.
+    await section.getByRole("button", {name: "Articolele anterioare"}).click();
+    await expect(section).toHaveAttribute("data-carousel-index", "5");
+    await section.getByRole("button", {name: "Articolele următoare"}).click();
+    await expect(section).toHaveAttribute("data-carousel-index", "0");
+    await expect.poll(() => section.evaluate(el => Math.abs(
+      el.querySelector(".avy-blog-preview-card")!.getBoundingClientRect().left -
+      el.querySelector(".avy-blog-preview-viewport")!.getBoundingClientRect().left,
+    ))).toBeLessThan(1);
     await section.screenshot({
       path: info.outputPath(`landing-blog-${width}.png`),
     });
@@ -126,11 +135,16 @@ test("autoplay stops on focus and drag; reduced motion keeps manual controls", a
   test.setTimeout(45_000);
   await page.setViewportSize({ width: 390, height: 1000 });
   const section = await openPreview(page);
-  await page.mouse.move(1, 1);
+  const heading = await section.getByRole("heading", {level: 2}).boundingBox();
+  if (!heading) throw Error("Missing carousel heading");
+  await page.mouse.move(heading.x + 10, heading.y + 5);
   await expect(section).toHaveAttribute("data-autoplay", "playing");
+  const firstCard = section.locator("article").first();
+  const initialLeft = (await firstCard.boundingBox())!.x;
   await expect(section).not.toHaveAttribute("data-carousel-index", "0", {
-    timeout: 10000,
+    timeout: 5500,
   });
+  await expect.poll(async () => Math.abs((await firstCard.boundingBox())!.x - initialLeft)).toBeGreaterThan(20);
   await section.locator("article a").nth(1).focus();
   await expect(section).toHaveAttribute("data-autoplay", "paused");
   const before = await section.getAttribute("data-carousel-index");
