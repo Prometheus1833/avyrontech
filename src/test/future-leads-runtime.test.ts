@@ -447,6 +447,72 @@ describe("Future leads: native CRM, project conversion and scheduled private not
       b.db.prepare("SELECT count(*) total FROM project_staff").get()?.total,
     ).toBe(31);
   });
+  it("delivers 100-recipient batches through three D1 calls and resumes without duplicates", async () => {
+    const ids = Array.from({ length: 30 }, (_, i) => "notify-" + i);
+    for (const id of ids) {
+      b.db
+        .prepare(
+          "INSERT INTO users(id,email,password_hash,email_verified,created_at,updated_at) VALUES(?,?,'synthetic',1,1,1)",
+        )
+        .run(id, id + "@example.test");
+      b.db
+        .prepare("INSERT INTO user_roles(user_id,role) VALUES(?,'staff')")
+        .run(id);
+    }
+    for (let n = 0; n < 4; n++)
+      await create({
+        ...newFutureLead(),
+        email: `batch-${n}@example.test`,
+        phone: "",
+        staffIds: ids,
+      });
+    b.db
+      .prepare("UPDATE future_leads SET contact_on=?,scheduled_at=?")
+      .run(day(5), Date.parse(day(-20)));
+    const time = Date.parse(bucharestDay() + "T10:00:00Z"),
+      before = b.bindingCalls;
+    expect((await runFutureLeadReminders(b.env, time)).created).toBe(100);
+    expect(b.bindingCalls - before).toBe(3);
+    expect((await runFutureLeadReminders(b.env, time)).created).toBe(28);
+    expect((await runFutureLeadReminders(b.env, time)).created).toBe(0);
+    expect(
+      b.db.prepare("SELECT count(*) total FROM operation_notifications").get()
+        ?.total,
+    ).toBe(128);
+  });
+  it("revalidates each recipient inside the atomic notice batch and reports only inserts", async () => {
+    const id = await create();
+    b.beforeBatch(() =>
+      b.db
+        .prepare(
+          "DELETE FROM lead_assignments WHERE lead_id=? AND user_id='reader'",
+        )
+        .run(id),
+    );
+    expect((await reminders(id, 5)).created).toBe(2);
+    expect(
+      b.db
+        .prepare(
+          "SELECT count(*) total FROM operation_notifications WHERE user_id='reader'",
+        )
+        .get()?.total,
+    ).toBe(0);
+  });
+  it("retries a failed notification transaction without partial notices or duplicate deliveries", async () => {
+    const id = await create();
+    b.beforeBatch(() => {
+      throw new Error("synthetic transient failure");
+    });
+    await expect(reminders(id, 5)).rejects.toThrow(
+      "synthetic transient failure",
+    );
+    expect(
+      b.db.prepare("SELECT count(*) total FROM operation_notifications").get()
+        ?.total,
+    ).toBe(0);
+    expect((await reminders(id, 5)).created).toBe(3);
+    expect((await reminders(id, 5)).created).toBe(0);
+  });
   async function reminders(id: string, offset: number) {
     const today = bucharestDay();
     b.db

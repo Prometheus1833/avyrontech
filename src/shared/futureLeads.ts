@@ -87,13 +87,18 @@ export type FutureLeadBootstrap = {
     phone?: string | null;
   }[];
 };
-export const bucharestDay = (time = Date.now()) =>
-  new Intl.DateTimeFormat("sv-SE", {
-    timeZone: "Europe/Bucharest",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(time);
+const dayFormatter = new Intl.DateTimeFormat("sv-SE", {
+  timeZone: "Europe/Bucharest",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+const hourFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Europe/Bucharest",
+  hour: "2-digit",
+  hourCycle: "h23",
+});
+export const bucharestDay = (time = Date.now()) => dayFormatter.format(time);
 export const futureDays = (day: string, today = bucharestDay()) =>
   Math.round((Date.parse(day) - Date.parse(today)) / 86_400_000);
 /** Catch up only the latest eligible threshold. New entries do not backfill earlier reminders. */
@@ -103,13 +108,7 @@ export function futureReminderOffset(
   timestamp = Date.now(),
 ): 10 | 5 | 1 | null {
   const days = futureDays(contactOn, bucharestDay(timestamp));
-  const hour = Number(
-    new Intl.DateTimeFormat("en-GB", {
-      timeZone: "Europe/Bucharest",
-      hour: "2-digit",
-      hourCycle: "h23",
-    }).format(timestamp),
-  );
+  const hour = Number(hourFormatter.format(timestamp));
   if (days < 0 || days > 10 || hour < 9) return null;
   const offset = ([1, 5, 10] as const).find((n) => days <= n)!;
   return futureDays(contactOn, bucharestDay(scheduledAt)) >= offset

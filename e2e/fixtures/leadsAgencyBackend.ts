@@ -80,12 +80,13 @@ export function createAgencyBackend() {
     "INSERT INTO user_capabilities(id,user_id,capability,granted_by,reason,created_at) VALUES('reader-grant','reader','leads_agency.read','owner','fixture',1)",
   ).run();
   let actor = "owner";
-  let queryCount=0;
+  let queryCount=0,bindingCalls=0,inBatch=false;
   let beforeBatch: (() => void) | undefined;
   const DB = {
-    prepare: (sql: string) => new Statement(db, sql,()=>queryCount++),
+    prepare: (sql: string) => new Statement(db, sql,()=>{queryCount++;if(!inBatch)bindingCalls++;}),
     batch: async (ss: Statement[]) => {
       const hook=beforeBatch;beforeBatch=undefined;hook?.();
+      bindingCalls++;inBatch=true;
       db.exec("BEGIN");
       try {
         const rows = [];
@@ -95,7 +96,7 @@ export function createAgencyBackend() {
       } catch (e) {
         db.exec("ROLLBACK");
         throw e;
-      }
+      } finally {inBatch=false;}
     },
   };
   const env = { DB, MFA_AUTH_ENABLED: "false" } as unknown as Env;
@@ -120,6 +121,7 @@ export function createAgencyBackend() {
     db,
     env,
     get queryCount(){return queryCount;},
+    get bindingCalls(){return bindingCalls;},
     beforeBatch: (hook:()=>void)=>{beforeBatch=hook;},
     get actor() {
       return actor;

@@ -68,6 +68,9 @@ Job `future_lead_reminders`, în coada și cronul Cloudflare existente (la fieca
   O simplă corectare a textului nu retrimite reminderele.
 - Reprogramarea, arhivarea, conversia, contactarea și revocarea alocării fac
   notificările anterioare inaccesibile imediat, inclusiv prin feedurile vechi.
+- Cel mult trei apeluri D1 per execuție (selectare, destinatari, batch atomic).
+  [Limitele D1](https://developers.cloudflare.com/d1/platform/limits/) contabilizează
+  un batch ca un singur apel, indiferent de numărul de instrucțiuni.
 - Maximum 100 destinatari procesați pe execuție; execuția următoare continuă fără
   a relua destinatarii deja înregistrați. Erorile folosesc retry-ul/coada existente.
 
