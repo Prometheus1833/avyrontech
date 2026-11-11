@@ -1,16 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import {
-  ArrowRight,
-  Check,
-  Code2,
-  Globe2,
-  HeartHandshake,
-  MonitorSmartphone,
-  RefreshCw,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ClipboardCheck, ListChecks, MessageSquareText } from "lucide-react";
 import ServiceContentProvider from "@/components/services/ServiceContentProvider";
 import Footer from "@/components/site/Footer";
 import PortfolioCarousel from "@/components/site/PortfolioCarousel";
@@ -18,6 +8,7 @@ import Turnstile from "@/components/site/Turnstile";
 import { useLang } from "@/i18n/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { apiUrl } from "@/lib/apiBase";
+import { normalizeExternalLink } from "@/shared/externalUrl";
 import { setJsonLd, setPageMeta } from "@/lib/seo";
 import { trackEvent } from "@/lib/analytics";
 import {
@@ -28,6 +19,7 @@ import {
 } from "@/shared/websiteSubscriptions";
 import SubscriptionJourney from "./SubscriptionJourney";
 import SubscriptionPlans from "./SubscriptionPlans";
+import WebsiteOfferDetails from "./WebsiteOfferDetails";
 import WebsiteOfferHero from "./WebsiteOfferHero";
 import WebsiteOfferNav from "./WebsiteOfferNav";
 import "./website-subscriptions.css";
@@ -43,6 +35,15 @@ const empty = {
   name: "",
   email: "",
   phone: "",
+};
+const planDetails = {
+  start: { ro: "Servicii, date de contact și o prezență online clară.", en: "Services, contact details and a clear online presence." },
+  business: { ro: "Mai multe servicii, studii de caz și formulare dedicate.", en: "More services, case studies and tailored forms." },
+  premium: { ro: "Structură amplă, portofoliu și integrări mai complexe.", en: "A larger site, portfolio and more complex integrations." },
+};
+const objectives = {
+  ro: ["Cereri de ofertă", "Programări online", "Apeluri sau WhatsApp", "Portofoliu de lucrări"],
+  en: ["Quote requests", "Online bookings", "Calls or WhatsApp", "A portfolio of work"],
 };
 const faq = [
   [
@@ -68,6 +69,10 @@ const faq = [
   [
     "Sunt incluse căsuțe de e-mail găzduite?",
     "Numărul de adrese este prevăzut în plan. Activarea depinde de domeniul tău și de furnizorul de e-mail disponibil. Eventualele costuri și tipul serviciului sunt confirmate înainte de activare.",
+  ],
+  [
+    "Pot conecta programările, harta sau WhatsApp?",
+    "Da, putem propune aceste integrări în funcție de cum lucrezi. Spune-ne ce canale sau furnizori folosești deja. Compatibilitatea, ce include pachetul și eventualele costuri ale furnizorilor se clarifică în ofertă.",
   ],
 ];
 const faqEn = [
@@ -95,6 +100,10 @@ const faqEn = [
     "Are hosted email inboxes included?",
     "The plan specifies a number of addresses. Activation depends on your domain and available email provider. Any costs and the actual service are confirmed before activation.",
   ],
+  [
+    "Can I add booking, a map or WhatsApp?",
+    "Yes, we can propose these integrations based on how you work. Tell us which channels or providers you already use. We confirm compatibility, what the plan includes and any provider fees in the quote.",
+  ],
 ];
 function WebsiteSubscriptionContent() {
   useCriticalStyles("avyron-website-subscription-critical", subscriptionStyles);
@@ -106,7 +115,7 @@ function WebsiteSubscriptionContent() {
       try {
         return Math.max(
           0,
-          Math.min(2, Number(sessionStorage.getItem(draftKey + ":step")) || 0),
+          Math.min(2, Math.trunc(Number(sessionStorage.getItem(draftKey + ":step"))) || 0),
         );
       } catch {
         return 0;
@@ -128,8 +137,26 @@ function WebsiteSubscriptionContent() {
     [token, setToken] = useState(""),
     [consent, setConsent] = useState(false),
     [reset, setReset] = useState(0);
-  const key = useRef(""),
-    form = useRef<HTMLFormElement>(null);
+  const key = useRef("");
+  const stepHeading = useRef<HTMLHeadingElement>(null);
+  const websiteInput = useRef<HTMLInputElement>(null);
+  const focusStep = useRef(false);
+  const selectedPlan = plans.find(plan => plan.id === draft.planId) ?? plans[0];
+  const steps = ro ? ["Pachet", "Proiect", "Contact"] : ["Plan", "Project", "Contact"];
+  const moveStep = (next: number) => {
+    focusStep.current = true;
+    setError("");
+    setStep(next);
+  };
+  useEffect(() => {
+    if (!focusStep.current) return;
+    focusStep.current = false;
+    const heading = stepHeading.current;
+    heading?.focus({ preventScroll: true });
+    const top = heading?.getBoundingClientRect().top;
+    if (top !== undefined && (top < 90 || top > window.innerHeight - 100))
+      heading?.scrollIntoView({ block: "start" });
+  }, [step]);
   useEffect(() => {
     try {
       key.current =
@@ -172,10 +199,10 @@ function WebsiteSubscriptionContent() {
     const path = WEBSITE_SUBSCRIPTION_PATH[lang];
     setPageMeta({
       title: ro
-        ? "Site de prezentare cu 0 lei pentru dezvoltare | AVYRON"
-        : "Custom business website, no development fee | AVYRON",
+        ? "Creare site de prezentare | 0 lei dezvoltare · AVYRON"
+        : "Custom business website | No development fee · AVYRON",
       description: ro
-        ? "Site de prezentare cu design personalizat și 0 lei pentru dezvoltare. Hosting, securitate și mentenanță de la 199 lei/lună. Cere o ofertă AVYRON."
+        ? "Site de prezentare pentru afaceri, cu design personalizat și 0 lei pentru dezvoltare. Hosting, securitate și mentenanță de la 199 lei/lună."
         : "Get a custom business website with no development fee. Hosting, security and maintenance from RON 199 per month. Request an AVYRON quote.",
       path,
       alternates: WEBSITE_SUBSCRIPTION_PATH,
@@ -183,8 +210,8 @@ function WebsiteSubscriptionContent() {
     setJsonLd("website-subscription", {
       "@type": "Service",
       "@id": "https://avyron.ro" + path + "#service",
-      name: ro ? "Site de prezentare cu 0 lei pentru dezvoltare" : "Custom business website with no development fee",
-      serviceType: ro ? "Dezvoltare și mentenanță site de prezentare" : "Business website development and maintenance",
+      name: ro ? "Creare site de prezentare cu 0 lei pentru dezvoltare" : "Custom business website with no development fee",
+      serviceType: ro ? "Design, dezvoltare și mentenanță pentru site-uri de prezentare" : "Design, development and maintenance for business websites",
       url: "https://avyron.ro" + path,
       provider: { "@id": "https://avyron.ro/#organization" },
       description: ro
@@ -201,8 +228,10 @@ function WebsiteSubscriptionContent() {
     });
   }, [lang, ro]);
   const choose = (id: WebsitePlanId) => {
+    if (busy) return;
     setDraft((d) => ({ ...d, planId: id }));
     setStep(0);
+    setError("");
     const brief = document.getElementById("website-brief");
     brief?.focus({ preventScroll: true });
     brief?.scrollIntoView({
@@ -211,13 +240,31 @@ function WebsiteSubscriptionContent() {
         : "smooth",
     });
   };
-  const change = (field: keyof typeof empty, value: string) =>
+  const change = <K extends keyof typeof empty,>(field: K, value: (typeof empty)[K]) =>
     setDraft((d) => ({ ...d, [field]: value }));
-  const submit = async (e: FormEvent) => {
+  const addObjective = (value: string) => {
+    const current = draft.objectives.trim();
+    if (current.includes(value)) return;
+    const next = current ? current + "\n" + value : value;
+    if (next.length <= 1500) change("objectives", next);
+  };
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (busy) return;
     setError("");
+    const address = draft.website.trim();
+    const website = address && !/^[a-z][a-z\d+.-]*:/i.test(address) ? "https://" + address : address;
+    if (step === 1 && website && (!normalizeExternalLink(website) || (!address.includes("://") && !address.split("/")[0].includes(".")))) {
+      setError(ro ? "Introdu un domeniu valid, de exemplu afacere.ro, sau lasă câmpul gol." : "Enter a valid domain, such as business.com, or leave this field blank.");
+      websiteInput.current?.focus();
+      return;
+    }
+    if (step === 1 && (draft.company.trim().length < 2 || draft.industry.trim().length < 2 || draft.objectives.trim().length < 3)) {
+      setError(ro ? "Adaugă numele afacerii, domeniul și câteva cuvinte despre obiectivul tău." : "Add your business name, industry and a few words about your goal.");
+      return;
+    }
     if (step < 2) {
-      setStep((v) => v + 1);
+      moveStep(step + 1);
       return;
     }
     if (!consent) {
@@ -228,6 +275,10 @@ function WebsiteSubscriptionContent() {
       );
       return;
     }
+    const trap = new FormData(e.currentTarget).get("company_website_confirmation") || "";
+    const retryMessage = ro
+      ? "Nu am putut confirma trimiterea. Detaliile tale rămân în formular și poți reîncerca."
+      : "We couldn’t confirm your request. Your details are still in the form and you can retry.";
     setBusy(true);
     try {
       const r = await fetch(apiUrl("/api/website-subscriptions/requests"), {
@@ -238,27 +289,30 @@ function WebsiteSubscriptionContent() {
         },
         body: JSON.stringify({
           ...draft,
+          planId: selectedPlan.id,
+          website,
           consent: true,
           lang,
           token,
-          trap: new FormData(form.current!).get("company_fax") || "",
+          trap,
         }),
       });
       const data = (await r.json()) as {
         error?: { code?: string };
         reference?: string;
       };
-      if (!r.ok)
-        throw Error(
-          data.error?.code === "captcha_failed"
-            ? ro
-              ? "Verifică protecția anti-spam și încearcă din nou."
-              : "Complete the anti-spam check and retry."
-            : ro
-              ? "Cererea nu a fost înregistrată. Datele rămân salvate în această sesiune; poți reîncerca."
-              : "The request was not recorded. Your draft remains in this session; please retry.",
-        );
-      if (!data.reference) throw Error("Răspuns invalid. Reîncearcă.");
+      if (data.error?.code === "invalid_website") {
+        moveStep(1);
+        setError(ro ? "Verifică adresa site-ului din pasul Proiect." : "Check the website address in the Project step.");
+        return;
+      }
+      if (!r.ok || !data.reference) {
+        setError(data.error?.code === "captcha_failed"
+          ? (ro ? "Completează verificarea anti-spam și încearcă din nou." : "Complete the anti-spam check and retry.")
+          : retryMessage);
+        setReset(value => value + 1);
+        return;
+      }
       setReference(data.reference);
       try {
         sessionStorage.removeItem(draftKey);
@@ -268,69 +322,20 @@ function WebsiteSubscriptionContent() {
         /* A confirmed request must not appear failed if storage is blocked. */
       }
       trackEvent("website_subscription_request", { plan: draft.planId });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Încearcă din nou.");
+    } catch {
+      setError(retryMessage);
       setReset((v) => v + 1);
     } finally {
       setBusy(false);
     }
   };
-  const benefits = [
-    { icon: Code2, title: ro ? "Dezvoltare inclusă" : "Development included", text: ro ? "Construim site-ul și paginile prevăzute în oferta ta." : "We build your site and the pages listed in your quote." },
-    { icon: Sparkles, title: ro ? "Design personalizat" : "Custom design", text: ro ? "Aspectul și conținutul reflectă identitatea afacerii tale." : "The look and content reflect your business identity." },
-    { icon: Check, title: ro ? "Lansare după aprobare" : "Launch after approval", text: ro ? "Verifici site-ul înainte să îl publicăm." : "Review the site before we publish it." },
-    { icon: MonitorSmartphone, title: ro ? "Adaptat pentru telefon" : "Designed for mobile", text: ro ? "Text ușor de citit și butoane la îndemână pe ecrane mici." : "Readable text and easy-to-reach controls on small screens." },
-    { icon: ShieldCheck, title: ro ? "Găzduire și securitate" : "Hosting and security", text: ro ? "Site-ul este găzduit și accesibil printr-o conexiune HTTPS." : "Your site is hosted and served over HTTPS." },
-    { icon: RefreshCw, title: ro ? "Modificări lunare" : "Monthly changes", text: ro ? "Poți solicita actualizări de conținut în limita planului." : "Request content updates within your plan allowance." },
-    { icon: Globe2, title: ro ? "Profiluri și contact" : "Social profiles and contact", text: ro ? "Legăm site-ul de profilurile sociale și de canalele alese de tine." : "We link your site to your social profiles and chosen contact channels." },
-    { icon: HeartHandshake, title: ro ? "Proiectul într-un singur cont" : "One account for your project", text: ro ? "Urmărești proiectul și trimiți cereri de modificare din cont." : "Track your project and request changes from your account." },
-  ];
   return (
     <div className="ws-page">
       <WebsiteOfferNav ro={ro} />
       <main>
         <WebsiteOfferHero ro={ro} />
 
-        <section className="ws-wrap ws-section ws-value" id="website-benefits" aria-labelledby="ws-benefits-title">
-          <div className="ws-section-head">
-            <h2 id="ws-benefits-title">{ro ? "Simplu de la început" : "Simple from the start"}</h2>
-            <p>{ro ? "De la aprobarea designului până la actualizări, știi ce poți verifica și ce poți cere echipei." : "From approving the design to requesting updates, you know what you can review and what the team can handle for you."}</p>
-          </div>
-          <div className="ws-benefits">
-            {benefits.map(({ icon: Icon, title, text }) => (
-              <article key={title}>
-                <span className="ws-icon"><Icon size={20} aria-hidden="true" /></span>
-                <div>
-                  <h3>{title}</h3>
-                  <p>{text}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="ws-wrap ws-section" id="website-personalisation" aria-labelledby="ws-personal-title">
-          <div className="ws-personal">
-            <div className="ws-section-head">
-              <h2 id="ws-personal-title">{ro ? "Personal, nu generic" : "Built around your business"}</h2>
-              <p>{ro
-                ? "Fiecare site pornește de la activitatea ta, de la produsele sau serviciile pe care le oferi și de la felul în care clienții aleg. Construim structura, designul și funcțiile în jurul acestor particularități."
-                : "Each site starts with what your business does, the products or services you offer and how your customers choose. We shape its structure, design and features around those details."}</p>
-            </div>
-            <dl className="ws-personal-details">
-              {(ro ? [
-                ["Ce oferi", "Organizăm paginile în jurul serviciilor, produselor și informațiilor care contează pentru clienți."],
-                ["Cum te prezinți", "Culorile, imaginile și tonul pornesc de la identitatea afacerii tale."],
-                ["Cum te contactează", "Alegem un traseu potrivit activității tale, de la o programare până la o cerere de ofertă."],
-              ] : [
-                ["What you offer", "We organise pages around the services, products and information your customers need."],
-                ["How you present yourself", "Colours, imagery and tone reflect your business identity."],
-                ["How customers reach you", "We design a next step that suits your business, from booking to requesting a quote."],
-              ]).map(([title, detail]) => <div key={title}><dt>{title}</dt><dd>{detail}</dd></div>)}
-            </dl>
-          </div>
-        </section>
-
+        <WebsiteOfferDetails ro={ro} />
         <SubscriptionJourney ro={ro} />
         <SubscriptionPlans lang={lang} plans={plans} onChoose={choose} />
         <PortfolioCarousel
@@ -350,113 +355,52 @@ function WebsiteSubscriptionContent() {
           aria-labelledby="ws-brief-title"
           tabIndex={-1}
         >
-          <div className="ws-section-head">
-            <h2 id="ws-brief-title">{ro ? "Cere o ofertă pentru site-ul tău" : "Request a quote for your website"}</h2>
-            <p>{ro
-              ? "Spune-ne ce faci și ce ai vrea să poată face clienții pe site. Revenim cu o propunere, costul lunar și pașii de lansare."
-              : "Tell us what you do and what customers should be able to do on your site. We’ll follow up with a proposal, monthly cost and launch steps."}</p>
+          <div className="ws-brief-intro">
+            <div className="ws-section-head">
+              <h2 id="ws-brief-title">{ro ? "Cere o ofertă pentru site-ul tău" : "Request a quote for your website"}</h2>
+              <p>{ro
+                ? "Povestește-ne puțin despre afacerea ta și ce ai vrea să facă site-ul pentru tine. Poate vrei mai multe programări, cereri de ofertă mai clare sau un loc în care să îți arăți lucrările. Pornim de acolo."
+                : "Tell us a little about your business and what you would like your website to do for you. Perhaps you want more bookings, clearer enquiries or a place to showcase your work. We’ll start there."}</p>
+            </div>
+            <div className="ws-brief-delivery">
+              <h3>{ro ? "Ce primești după ce ne scrii" : "What you’ll get after you contact us"}</h3>
+              <ul role="list">
+                <li><ListChecks size={18} aria-hidden="true" />{ro ? "O propunere de pagini și funcții, pe baza obiectivelor tale." : "A proposal for pages and features based on your goals."}</li>
+                <li><ClipboardCheck size={18} aria-hidden="true" />{ro ? "Costul lunar și ce acoperă pentru site-ul tău." : "The monthly cost and what it covers for your website."}</li>
+                <li><MessageSquareText size={18} aria-hidden="true" />{ro ? "Pașii de la aprobarea propunerii până la lansare." : "The steps from approving the proposal to launching."}</li>
+              </ul>
+            </div>
           </div>
           {reference ? (
             <div className="ws-confirm" role="status">
-              <Check />
-              <h3>
-                {ro
-                  ? "Cererea ta este înregistrată."
-                  : "Your request is recorded."}
-              </h3>
-              <p>
-                {ro
-                  ? "Echipa verifică brief-ul și revine cu o propunere. Trimiterea cererii nu activează servicii și nu inițiază nicio plată."
-                  : "The team will review your brief and follow up with a proposal. Sending a request does not activate any services or initiate a payment."}
-              </p>
-              <small>
-                {ro ? "Referință" : "Reference"}: {reference}
-              </small>
+              <Check aria-hidden="true" />
+              <h3>{ro ? "Cererea ta este înregistrată." : "Your request is recorded."}</h3>
+              <p>{ro ? "Îți mulțumim. Citim detaliile și revenim la adresa de e-mail pe care ai lăsat-o." : "Thank you. We’ll review the details and reply to the email address you provided."}</p>
+              <small>{ro ? "Referință" : "Reference"}: {reference}</small>
             </div>
           ) : (
-            <form ref={form} onSubmit={submit} className="ws-form">
-              <div
-                className="ws-form-progress"
-                aria-label={ro ? "Progres formular" : "Form progress"}
-              >
-                {[0, 1, 2].map((i) => (
-                  <span
-                    key={i}
-                    aria-current={step === i ? "step" : undefined}
-                    className={i <= step ? "active" : ""}
-                  >
-                    {i + 1}
-                    <small>
-                      {
-                        (ro
-                          ? ["Website", "Afacere", "Contact"]
-                          : ["Website", "Business", "Contact"])[i]
-                      }
-                    </small>
-                  </span>
+            <form onSubmit={submit} className="ws-form" aria-labelledby="ws-quote-step">
+              <ol className="ws-form-progress" aria-label={ro ? "Pașii cererii" : "Request steps"} role="list">
+                {steps.map((label, index) => (
+                  <li key={label} aria-current={step === index ? "step" : undefined} data-complete={index < step || undefined}>
+                    <span aria-hidden="true">{index < step ? <Check size={13} /> : index + 1}</span>
+                    {label}
+                  </li>
                 ))}
-              </div>
-              <h3>
-                {
-                  (ro
-                    ? [
-                        "Ce fel de website îți imaginezi?",
-                        "Spune-ne puțin despre afacerea ta",
-                        "Cum te contactăm?",
-                      ]
-                    : [
-                        "What website do you imagine?",
-                        "Tell us a little about your business",
-                        "How can we reach you?",
-                      ])[step]
-                }
+              </ol>
+              <h3 ref={stepHeading} id="ws-quote-step" tabIndex={-1}>
+                {(ro ? ["Alege un punct de plecare", "Ce vrei să facă site-ul?", "Unde îți trimitem propunerea?"]
+                  : ["Choose a starting point", "What should the site do?", "Where should we send your proposal?"])[step]}
               </h3>
               {step === 0 && (
                 <>
-                  <div className="ws-form-plans">
-                    {plans.map((p) => (
-                      <button
-                        type="button"
-                        aria-pressed={draft.planId === p.id}
-                        key={p.id}
-                        onClick={() => change("planId", p.id)}
-                      >
-                        {p.name}
-                        <small>
-                          {p.pages} {ro ? "pagini" : "pages"}
-                        </small>
-                      </button>
-                    ))}
-                  </div>
-                  <p className="ws-muted">
-                    {ro
-                      ? "Un început clar, o structură extinsă sau o experiență premium? Poți schimba planul înainte de trimitere."
-                      : "A focused start, extended structure or a premium experience? You can change the plan before submitting."}
-                  </p>
-                  <div className="ws-chips">
-                    {(ro
-                      ? [
-                          "Afacere locală",
-                          "Mai multe servicii",
-                          "Experiență premium",
-                        ]
-                      : [
-                          "Local business",
-                          "Multiple services",
-                          "Premium experience",
-                        ]
-                    ).map((v, i) => (
-                      <button
-                        type="button"
-                        key={v}
-                        onClick={() =>
-                          change(
-                            "planId",
-                            (["start", "business", "premium"] as const)[i],
-                          )
-                        }
-                      >
-                        {v}
+                  <p className="ws-form-hint">{ro ? "Alege pachetul care pare cel mai apropiat de ce ai nevoie. Confirmăm împreună ce ți se potrivește." : "Pick the plan that feels closest to what you need. We’ll confirm the right fit together."}</p>
+                  <div className="ws-form-plans" role="group" aria-label={ro ? "Pachete pentru site" : "Website plans"}>
+                    {plans.map(plan => (
+                      <button type="button" aria-pressed={selectedPlan.id === plan.id} key={plan.id} onClick={() => change("planId", plan.id)}>
+                        <span className="ws-plan-choice-name">{plan.name}<small>{plan.pages} {ro ? "pagini" : "pages"}</small></span>
+                        <span className="ws-plan-choice-description">{planDetails[plan.id]?.[lang] ?? plan.tagline[lang]}</span>
+                        <span className="ws-plan-choice-mark" aria-hidden="true">{selectedPlan.id === plan.id && <Check size={15} />}</span>
                       </button>
                     ))}
                   </div>
@@ -464,162 +408,79 @@ function WebsiteSubscriptionContent() {
               )}
               {step === 1 && (
                 <>
+                  <div className="ws-form-fields">
+                    <label>
+                      {ro ? "Denumirea afacerii" : "Business name"}
+                      <input value={draft.company} onChange={e => change("company", e.target.value)} required minLength={2} maxLength={180} autoComplete="organization" />
+                    </label>
+                    <label>
+                      {ro ? "Domeniu de activitate" : "Industry"}
+                      <input value={draft.industry} onChange={e => change("industry", e.target.value)} required minLength={2} maxLength={120} placeholder={ro ? "Ex. cabinet, construcții" : "e.g. practice, construction"} />
+                    </label>
+                  </div>
                   <label>
-                    {ro ? "Denumirea afacerii" : "Business name"}
-                    <input
-                      value={draft.company}
-                      onChange={(e) => change("company", e.target.value)}
-                      required
-                      minLength={2}
-                      maxLength={180}
-                      autoComplete="organization"
-                    />
+                    {ro ? "Site actual" : "Current website"} <small>{ro ? "opțional" : "optional"}</small>
+                    <input ref={websiteInput} value={draft.website} onChange={e => change("website", e.target.value)} maxLength={2048} inputMode="url" autoComplete="url" placeholder={ro ? "afacere.ro" : "business.com"} />
                   </label>
-                  <label>
-                    {ro ? "Domeniu de activitate" : "Industry"}
-                    <input
-                      value={draft.industry}
-                      onChange={(e) => change("industry", e.target.value)}
-                      required
-                      minLength={2}
-                      maxLength={120}
-                      placeholder={
-                        ro
-                          ? "Ex. consultanță, HoReCa, construcții"
-                          : "e.g. consulting, hospitality, construction"
-                      }
-                    />
-                  </label>
-                  <label>
-                    {ro
-                      ? "Website existent (opțional)"
-                      : "Existing website (optional)"}
-                    <input
-                      value={draft.website}
-                      onChange={(e) => change("website", e.target.value)}
-                      maxLength={2048}
-                      inputMode="url"
-                      placeholder="https://"
-                    />
-                  </label>
-                  <label>
-                    {ro
-                      ? "Ce vrei să obții?"
-                      : "What would you like to achieve?"}
-                    <textarea
-                      value={draft.objectives}
-                      onChange={(e) => change("objectives", e.target.value)}
-                      required
-                      minLength={3}
-                      maxLength={1500}
-                      rows={3}
-                    />
-                  </label>
+                  <div className="ws-objectives">
+                    <label htmlFor="ws-objectives">{ro ? "Ce vrei să obții cu site-ul?" : "What would you like the site to achieve?"}</label>
+                    <div className="ws-chips" role="group" aria-label={ro ? "Adaugă un obiectiv sugerat" : "Add a suggested goal"}>
+                      {objectives[lang].map(value => (
+                        <button key={value} type="button" disabled={draft.objectives.includes(value) || draft.objectives.trim().length + value.length + 1 > 1500} onClick={() => addObjective(value)}>
+                          {draft.objectives.includes(value) ? <Check size={14} aria-hidden="true" /> : <span aria-hidden="true">+</span>}{value}
+                        </button>
+                      ))}
+                    </div>
+                    <textarea id="ws-objectives" value={draft.objectives} onChange={e => change("objectives", e.target.value)} required minLength={3} maxLength={1500} rows={4}
+                      placeholder={ro ? "De exemplu: vreau ca oamenii să vadă lucrări recente și să îmi poată trimite detaliile unui proiect." : "For example: I want people to see recent work and send me the details of their project."} />
+                  </div>
                 </>
               )}
               {step === 2 && (
                 <>
                   <div className="ws-summary">
-                    {plans.find((p) => p.id === draft.planId)?.name} /{" "}
-                    {draft.company}
-                    <p>{draft.objectives}</p>
+                    <div><strong>{draft.company}</strong><span>{selectedPlan.name} · {draft.industry}</span></div>
+                    <button className="ws-summary-edit" type="button" disabled={busy} onClick={() => moveStep(1)}>{ro ? "Editează proiectul" : "Edit project"}</button>
+                  </div>
+                  <div className="ws-form-fields">
+                    <label>
+                      {ro ? "Nume" : "Name"}
+                      <input value={draft.name} onChange={e => change("name", e.target.value)} required minLength={2} maxLength={120} autoComplete="name" />
+                    </label>
+                    <label>
+                      E-mail
+                      <input type="email" value={draft.email} onChange={e => change("email", e.target.value)} required maxLength={254} autoComplete="email" />
+                    </label>
                   </div>
                   <label>
-                    {ro ? "Nume" : "Name"}
-                    <input
-                      value={draft.name}
-                      onChange={(e) => change("name", e.target.value)}
-                      required
-                      minLength={2}
-                      maxLength={120}
-                      autoComplete="name"
-                    />
-                  </label>
-                  <label>
-                    E-mail
-                    <input
-                      type="email"
-                      value={draft.email}
-                      onChange={(e) => change("email", e.target.value)}
-                      required
-                      maxLength={254}
-                      autoComplete="email"
-                    />
-                  </label>
-                  <label>
-                    {ro ? "Telefon (opțional)" : "Phone (optional)"}
-                    <input
-                      type="tel"
-                      value={draft.phone}
-                      onChange={(e) => change("phone", e.target.value)}
-                      maxLength={40}
-                      autoComplete="tel"
-                    />
+                    {ro ? "Telefon" : "Phone"} <small>{ro ? "opțional" : "optional"}</small>
+                    <input type="tel" value={draft.phone} onChange={e => change("phone", e.target.value)} maxLength={40} autoComplete="tel" />
                   </label>
                   <label className="ws-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={consent}
-                      required
-                      onChange={(e) => setConsent(e.target.checked)}
-                    />
-                    <span>
-                      {ro
-                        ? "Sunt de acord să fiu contactat pentru această solicitare. Am citit"
-                        : "I agree to be contacted about this request. I have read the"}{" "}
-                      <Link to={ro ? "/gdpr" : "/en/privacy"}>
-                        {ro
-                          ? "politica de confidențialitate"
-                          : "privacy policy"}
-                      </Link>
-                      .
+                    <input type="checkbox" checked={consent} required onChange={e => setConsent(e.target.checked)} />
+                    <span>{ro ? "Sunt de acord să fiu contactat pentru această solicitare. Am citit" : "I agree to be contacted about this request. I have read the"}{" "}
+                      <Link to={ro ? "/gdpr" : "/en/privacy"}>{ro ? "politica de confidențialitate" : "privacy policy"}</Link>.
                     </span>
                   </label>
-                  <Turnstile
-                    action="website-subscription"
-                    onToken={setToken}
-                    resetKey={reset}
-                  />
-                  <p className="ws-note">
-                    {ro
-                      ? "Poți trimite cererea fără cont. Decizi dacă accepți condițiile după ce primești oferta."
-                      : "You can send the request without an account. You decide whether to accept the terms once you receive the quote."}
-                  </p>
+                  <Turnstile action="website-subscription" onToken={setToken} resetKey={reset} />
+                  <p className="ws-note">{ro ? "Poți trimite cererea fără cont și fără plată." : "You can send this request without an account or a payment."}</p>
                 </>
               )}
-              <label className="hidden" aria-hidden="true">
-                Fax
-                <input name="company_fax" tabIndex={-1} autoComplete="off" />
-              </label>
-              {error && (
-                <p className="ws-error" role="alert">
-                  {error}
-                </p>
-              )}
-              <div className="ws-actions">
+              <div className="ws-form-trap" hidden aria-hidden="true">
+                <input name="company_website_confirmation" tabIndex={-1} autoComplete="off" />
+              </div>
+              {error && <p className="ws-error" role="alert">{error}</p>}
+              <div className="ws-actions ws-form-actions">
                 {step > 0 && (
-                  <button
-                    className="ws-button ws-button-ghost"
-                    type="button"
-                    onClick={() => setStep((v) => v - 1)}
-                    disabled={busy}
-                  >
-                    {ro ? "Înapoi" : "Back"}
+                  <button className="ws-button ws-button-ghost" type="button" disabled={busy} onClick={() => moveStep(step - 1)}>
+                    <ArrowLeft size={16} aria-hidden="true" />{ro ? "Înapoi" : "Back"}
                   </button>
                 )}
                 <button className="ws-button" disabled={busy} type="submit">
-                  {busy
-                    ? ro
-                      ? "Se înregistrează…"
-                      : "Recording…"
-                    : step < 2
-                      ? ro
-                        ? "Continuă"
-                        : "Continue"
-                      : ro
-                        ? "Construiește-mi website-ul"
-                        : "Build my website"}
-                  <ArrowRight size={16} />
+                  {busy ? (ro ? "Se trimite…" : "Sending…") : (ro
+                    ? ["Continuă cu proiectul", "Continuă cu datele de contact", "Trimite cererea"][step]
+                    : ["Continue to project", "Continue to contact details", "Send request"][step])}
+                  <ArrowRight size={16} aria-hidden="true" />
                 </button>
               </div>
             </form>

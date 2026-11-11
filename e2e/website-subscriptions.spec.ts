@@ -103,6 +103,7 @@ test("website offer bar compacts at scroll and keeps anchor destinations visible
     expect(compact.y).toBeGreaterThan(start.y);
     expect(Math.abs(compact.x + compact.width / 2 - start.x - start.width / 2)).toBeLessThan(2);
     await expect(bar).toHaveCSS("backdrop-filter", "none");
+    await expect.poll(() => bar.locator(".ws-reading-track > span").evaluate(el => (el as HTMLElement).style.transform)).not.toBe("scaleX(0)");
     await bar.getByRole("link", { name: "Cere o ofertă" }).click();
     await expect(page).toHaveURL(/#website-brief$/);
     await expect.poll(async () => (await page.locator("#website-brief").boundingBox())!.y).toBeGreaterThan(compact.y + compact.height);
@@ -111,29 +112,28 @@ test("website offer bar compacts at scroll and keeps anchor destinations visible
   }
 });
 for (const width of [390, 1440]) {
-  test(`the conversation wire follows scroll at ${width}px and respects reduced motion`, async ({ page }, info) => {
+  test(`benefits reveal from both sides and the customer journey remains readable at ${width}px`, async ({ page }, info) => {
     await publicFixture(page);
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.setViewportSize({ width, height: 800 });
     await page.goto(path);
-    const journey = page.locator(".ws-contact-journey");
-    await expect(journey.locator(".ws-journey-card")).toHaveCount(3);
-    const scrub = (progress: number) => journey.evaluate((element, amount) => {
-      const box = element.getBoundingClientRect();
-      const y = box.top + scrollY + box.height / 6 + amount * box.height * 2 / 3 - innerHeight * 0.66;
-      window.scrollTo({ top: y, behavior: "instant" });
-    }, progress);
-    for (const progress of [0.2, 0.55, 0.96, 0.33]) {
-      await scrub(progress);
-      await expect.poll(async () => Math.abs(Number(await journey.getAttribute("data-wire-progress")) - progress * 100)).toBeLessThan(2);
-      const offset = await journey.locator(".ws-wire-light").evaluate(path => parseFloat(getComputedStyle(path).strokeDashoffset));
-      expect(Math.abs(offset - (1 - progress) * 100)).toBeLessThan(2);
-      if (progress === 0.55) await journey.screenshot({ path: info.outputPath(`subscription-journey-${width}.png`) });
-    }
-    await expect(journey.locator("[data-reached]")).toHaveCount(1);
+    const cards = page.locator(".ws-benefits article");
+    const right = cards.nth(width === 390 ? 1 : 3);
+    await cards.first().scrollIntoViewIfNeeded();
+    await expect(cards.first()).toHaveAttribute("data-entered", "");
+    await expect(right).toHaveAttribute("data-entered", "");
+    expect(parseFloat(await cards.first().evaluate(el => getComputedStyle(el).getPropertyValue("--ws-card-entry")))).toBeLessThan(0);
+    expect(parseFloat(await right.evaluate(el => getComputedStyle(el).getPropertyValue("--ws-card-entry")))).toBeGreaterThan(0);
+    const journey = page.locator("#website-connections");
+    const stages = journey.getByRole("listitem");
+    await expect(stages).toHaveCount(3);
+    await expect(journey.getByRole("heading", { level: 3 })).toHaveText(["Te găsește", "Își face o idee clară", "Face următorul pas"]);
+    await stages.last().scrollIntoViewIfNeeded();
+    await expect(stages.last()).toHaveAttribute("data-reached", "");
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await expect(journey).not.toHaveAttribute("data-wire-progress");
-    await expect(journey.locator(".ws-wire-light")).toHaveCSS("stroke-dashoffset", "0px");
+    await expect(cards.first()).toHaveCSS("animation-name", "none");
+    await expect(journey.locator(".ws-journey-marker span").last()).toHaveCSS("animation-name", "none");
+    await journey.screenshot({ path: info.outputPath(`website-journey-${width}.png`) });
   });
 }
 async function publicFixture(page: Page) {
@@ -300,20 +300,26 @@ test("three-step brief preserves progress, never requires login, retries one req
   await publicFixture(page);
   await page.goto(path + "#website-brief");
   const form = page.locator(".ws-form");
-  await form
-    .getByRole("button", { name: "Mai multe servicii", exact: true })
-    .click();
-  await form.getByRole("button", { name: "Continuă", exact: true }).click();
+  await expect(form.getByText("Fax", { exact: true })).toHaveCount(0);
+  await expect(form.locator("[name=company_website_confirmation]")).toBeHidden();
+  await form.getByRole("button", { name: /Site Business/ }).click();
+  await form.getByRole("button", { name: "Continuă cu proiectul", exact: true }).click();
   await form.getByLabel("Denumirea afacerii").fill("Afacere sintetică");
   await form.getByLabel("Domeniu de activitate").fill("Consultanță");
   await form
-    .getByLabel("Ce vrei să obții?")
+    .getByLabel("Ce vrei să obții cu site-ul?")
     .fill("Mai multe solicitări calificate");
+  await form.getByRole("button", { name: "Programări online" }).click();
+  await expect(form.getByLabel("Ce vrei să obții cu site-ul?")).toHaveValue("Mai multe solicitări calificate\nProgramări online");
   await page.reload();
   await expect(form.getByLabel("Denumirea afacerii")).toHaveValue(
     "Afacere sintetică",
   );
-  await form.getByRole("button", { name: "Continuă", exact: true }).click();
+  await form.getByLabel("Site actual").fill("javascript:alert(1)");
+  await form.getByRole("button", { name: "Continuă cu datele de contact", exact: true }).click();
+  await expect(form.getByRole("alert")).toContainText("domeniu valid");
+  await form.getByLabel("Site actual").fill("afacere.ro");
+  await form.getByRole("button", { name: "Continuă cu datele de contact", exact: true }).click();
   await form.getByLabel("Nume", { exact: true }).fill("Client sintetic");
   await form.getByLabel("E-mail", { exact: true }).fill("client@example.test");
   const sends: { body: Record<string, unknown>; key: string | undefined }[] =
@@ -331,7 +337,7 @@ test("three-step brief preserves progress, never requires login, retries one req
         });
   });
   const submit = form.getByRole("button", {
-    name: "Construiește-mi website-ul",
+    name: "Trimite cererea",
     exact: true,
   });
   await submit.click();
@@ -350,6 +356,9 @@ test("three-step brief preserves progress, never requires login, retries one req
   expect(sends[1].body).toMatchObject({
     planId: "business",
     company: "Afacere sintetică",
+    website: "https://afacere.ro",
+    objectives: "Mai multe solicitări calificate\nProgramări online",
+    trap: "",
     consent: true,
   });
 });

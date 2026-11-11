@@ -6,6 +6,7 @@ import PageBackLink from "@/components/site/PageBackLink";
 
 export default function WebsiteOfferNav({ ro }: { ro: boolean }) {
   const trigger = useRef<HTMLDivElement>(null);
+  const progress = useRef<HTMLSpanElement>(null);
   const [compact, setCompact] = useState(false);
   const home = ro ? "/" : "/en";
   const quote = ro ? "Cere o ofertă" : "Request a quote";
@@ -17,6 +18,35 @@ export default function WebsiteOfferNav({ ro }: { ro: boolean }) {
     });
     observer.observe(trigger.current);
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const bar = progress.current;
+    if (!bar) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const root = document.scrollingElement;
+      if (!root) return;
+      const range = root.scrollHeight - root.clientHeight;
+      const position = range > 0 ? Math.min(1, Math.max(0, root.scrollTop / range)) : 0;
+      bar.style.transform = `scaleX(${position})`;
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    const page = bar.closest(".ws-page");
+    const resize = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(schedule);
+    if (page) resize?.observe(page);
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      resize?.disconnect();
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+    };
   }, []);
 
   return (
@@ -34,6 +64,7 @@ export default function WebsiteOfferNav({ ro }: { ro: boolean }) {
             <ArrowUpRight size={17} aria-hidden="true" />
           </a>
         </div>
+        <span className="ws-reading-track" aria-hidden="true"><span ref={progress} /></span>
       </header>
     </>
   );
